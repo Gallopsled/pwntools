@@ -13,7 +13,8 @@ TEMPLATES = join(sys.path[0], TEMPLATES)
 
 _GLUE, _TEMPLATE = range(2)
 
-def _glue (emit_asm, code, bitsize):
+
+def _glue (arch, emit_asm, code, bitsize):
     if emit_asm:
         code = \
             ';;; BEGIN GLUE\n' + \
@@ -21,9 +22,13 @@ def _glue (emit_asm, code, bitsize):
         return code
     if code == '':
         return ''
-    cmd = ['rasm2',
-           '-b', str(bitsize),
-           code]
+    if   arch == INTEL:
+        cmd = ['rasm2',
+               '-b', str(bitsize),
+               code]
+    elif arch == MIPS:
+        print "NOT YET IMPLEMENTED"
+        sys.exit(0)
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     ret = p.wait()
     if ret == 0:
@@ -31,7 +36,7 @@ def _glue (emit_asm, code, bitsize):
         exit(0)
     return p.stdout.read()[:-1].decode('hex') # skip newline at end
 
-def _template (emit_asm, templ, args):
+def _template (arch, emit_asm, templ, args):
     with open(join(TEMPLATES, templ), 'r') as f:
         code = f.read()
     for k, v in args.items():
@@ -198,12 +203,13 @@ if __name__ == '__main__':
             raise
         exit(0)
 
+    arch = module.arch
     res = []
     for (type, args) in code:
         if   type == _GLUE:
-            res.append(_glue(emit_asm, *args))
+            res.append(_glue(arch, emit_asm, *args))
         elif type == _TEMPLATE:
-            res.append(_template(emit_asm, *args))
+            res.append(_template(arch, emit_asm, *args))
         else:
             raise TypeError
     res = ''.join(res)

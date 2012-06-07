@@ -5,6 +5,10 @@ TEMPLATES = 'templates'
 CODEZ     = 'codez'
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+INTEL, MIPS = range(2)
+arch = INTEL
+
 import os, sys, subprocess, warnings, struct
 from os.path import join, abspath, relpath, isfile, splitext
 
