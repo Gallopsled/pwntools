@@ -163,8 +163,6 @@ if __name__ == '__main__':
     else:
         _usage()
 
-    print module.arch
-
     if help:
         if len(args) > 0:
             doc = module.main.__doc__
