@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-import os, sys, subprocess, warnings, struct
+import os, sys, subprocess, warnings, struct, random
 from os.path import join, abspath, relpath, isfile, splitext
 from binascii import hexlify, unhexlify
-from core import DEFINES, TEMPLATES, CODEZ
+from core import *
 
 # Supress tmpnam warning
 warnings.filterwarnings('ignore', category=RuntimeWarning)
@@ -102,6 +102,7 @@ if __name__ == '__main__':
     help = False
     format = _raw
     debug = False
+    loop = False
     emit_asm = False
     def setout(file):
         global out
@@ -141,19 +142,23 @@ if __name__ == '__main__':
             help = True
         elif a in ['-d', '--debug']:
             debug = True
+        elif a in ['--loop']:
+            loop = True
         else:
             args.append(a)
         i += 1
 
     if len(args) > 0:
         try:
-            module = __import__(CODEZ + '.' + args[0], fromlist=['main'])
+            module = __import__(CODEZ + '.' + args[0], fromlist=['main', 'arch'])
         except Exception, e:
             print 'Could not load "%s":' % args[0]
             print e
             exit(0)
     else:
         _usage()
+
+    print module.arch
 
     if help:
         if len(args) > 0:
@@ -168,10 +173,13 @@ if __name__ == '__main__':
 
     try:
         if debug:
-            code = asm('int 3')
+            code = asm('int3')
         else:
             code = []
         code += module.main(*args[1:])
+        if loop:
+            lbl = 'loop%d' % random.randint(0, 999999)
+            code += asm('%s: jmp short %s' % (lbl, lbl))
     except AttributeError, e:
         if str(e).startswith("'module'"):
             print 'Module "%s" does not implement "main"' % name
