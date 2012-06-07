@@ -1,0 +1,10 @@
+formats:
+ o raw bit/oct/hex
+ o vector (byte/word/dword)
+   - C
+   - Python
+   - SML
+
+ o xxd
+ o uuencode
+ o base64

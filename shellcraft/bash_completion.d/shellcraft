@@ -1,0 +1,9 @@
+_shellcraft()
+{
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local codez=$(_shellcraft_list.py)
+    COMPREPLY=($(compgen -W "${codez}" $cur))
+}
+
+#Assign the auto-completion function _get for our command get.
+complete -F _shellcraft shellcraft

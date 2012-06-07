@@ -1,0 +1,204 @@
+#!/usr/bin/env python
+
+import os, sys, subprocess, warnings, struct
+from os.path import join, abspath, relpath, isfile, splitext
+from binascii import hexlify, unhexlify
+from core import DEFINES, TEMPLATES, CODEZ
+
+# Supress tmpnam warning
+warnings.filterwarnings('ignore', category=RuntimeWarning)
+
+DEFINES   = join(sys.path[0], DEFINES)
+TEMPLATES = join(sys.path[0], TEMPLATES)
+
+_GLUE, _TEMPLATE = range(2)
+
+def _glue (emit_asm, code, bitsize):
+    if emit_asm:
+        code = \
+            ';;; BEGIN GLUE\n' + \
+            code + '\n'
+        return code
+    if code == '':
+        return ''
+    cmd = ['rasm2',
+           '-b', str(bitsize),
+           code]
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ret = p.wait()
+    if ret == 0:
+        print 'Cannot assemble "%s"' % code
+        exit(0)
+    return p.stdout.read()[:-1].decode('hex') # skip newline at end
+
+def _template (emit_asm, templ, args):
+    with open(join(TEMPLATES, templ), 'r') as f:
+        code = f.read()
+    for k, v in args.items():
+        code = code.replace('#' + k.upper(), str(v))
+
+    if emit_asm:
+        code = \
+            ';;; BEGIN TEMPLATE %s\n' % templ + \
+            code
+        if not code[-1] == '\n':
+            code += '\n'
+        return code
+
+    name = os.tmpnam()
+    with open(name, 'w') as f:
+        f.write(code)
+    cmd = ['nasm',
+           '-I', DEFINES + '/',
+           '-o', '/dev/stdout',
+           name]
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ret = p.wait()
+    if ret <> 0:
+        print 'Error while assembling template "%s"' % templ
+        err = p.stderr.read().replace(name, templ)
+        sys.stdout.write(err)
+        exit(0)
+    os.unlink(name)
+    return p.stdout.read()
+
+def _usage ():
+    print 'Usage: %s [option [...]] <shellcode> [arg [...]]' % sys.argv[0]
+    print '  Options:'
+    print '    -o, --out <file>'
+    print '      Output file (default: stdout)'
+    print '    -l, --list'
+    print '      List available shellcodes'
+    print '    -f, --format <format>'
+    print '      r: raw (default)'
+    print '      c: C array'
+    print '      h: Hex string'
+    print '      a: Assembler code (do not assemble)'
+    print '    -h, --help [<shellcode>]'
+    print '      Show this help message or the docstring for the given shellcode'
+    print '    -d, --debug'
+    print '      Insert software breakpoint before shellcode'
+    print '  Example:'
+    print '    shellcraft linux.bindshell'
+    exit(0)
+
+def _raw(s):
+    return s
+
+def _carray(s):
+    out = []
+    for c in s:
+        out.append('0x' + hexlify(c))
+    return '{' + ', '.join(out) + '};\n'
+
+def _hex(s):
+    return hexlify(s) + '\n'
+
+if __name__ == '__main__':
+    args_ = sys.argv[1:]
+    args = []
+    i = 0
+    out = '/dev/stdout'
+    help = False
+    format = _raw
+    debug = False
+    emit_asm = False
+    def setout(file):
+        global out
+        out = abspath(join(os.getcwd(), file))
+    def setfmt(fmt):
+        global format, emit_asm
+        if   fmt == 'r' or fmt == 'raw':
+            format = _raw
+        elif fmt == 'c':
+            format = _carray
+        elif fmt == 'h' or fmt == 'hex':
+            format = _hex
+        elif fmt == 'a' or fmt == 'asm':
+            format = _raw
+            emit_asm = True
+        else:
+            print 'Unknown format: %s' % fmt
+            exit(0)
+    while i < len(args_):
+        a = args_[i]
+        if   a in ['-o', '--out']:
+            i += 1
+            setout(args_[i])
+        elif a.startswith('-o'):
+            setout(args_[i][2:])
+        elif a in ['-l', '--list']:
+            from _shellcraft_list import shellcraft_list
+            for x in shellcraft_list():
+                print x
+            exit(0)
+        elif a in ['-f', '--format']:
+            i += 1
+            setfmt(args_[i])
+        elif a.startswith('-f'):
+            setfmt(args_[i][2:])
+        elif a in ['-h', '--help']:
+            help = True
+        elif a in ['-d', '--debug']:
+            debug = True
+        else:
+            args.append(a)
+        i += 1
+
+    if len(args) > 0:
+        try:
+            module = __import__(CODEZ + '.' + args[0], fromlist=['main'])
+        except Exception, e:
+            print 'Could not load "%s":' % args[0]
+            print e
+            exit(0)
+    else:
+        _usage()
+
+    if help:
+        if len(args) > 0:
+            doc = module.main.__doc__
+            if doc:
+                print doc
+            else:
+                print 'No docstring defined for "%s"' % name
+            exit(0)
+        else:
+            _usage()
+
+    try:
+        if debug:
+            code = asm('int 3')
+        else:
+            code = []
+        code += module.main(*args[1:])
+    except AttributeError, e:
+        if str(e).startswith("'module'"):
+            print 'Module "%s" does not implement "main"' % name
+        else:
+            raise
+        exit(0)
+    except TypeError, e:
+        if   str(e).startswith('main'):
+            print 'Wrong number of arguments'
+            doc = module.main.__doc__
+            if doc:
+                print doc
+        elif str(e).startswith("'NoneType'"):
+            print 'Module "%s" returned None (did you remember "return"?)' % name
+        else:
+            raise
+        exit(0)
+
+    res = []
+    for (type, args) in code:
+        if   type == _GLUE:
+            res.append(_glue(emit_asm, *args))
+        elif type == _TEMPLATE:
+            res.append(_template(emit_asm, *args))
+        else:
+            raise TypeError
+    res = ''.join(res)
+
+    with open(out, 'w') as f:
+        f.write(format(res))

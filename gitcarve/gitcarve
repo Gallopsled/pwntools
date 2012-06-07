@@ -1,0 +1,226 @@
+#!/usr/bin/env python
+import sys, zlib, struct, os
+from argparse import ArgumentParser
+from binascii import hexlify, unhexlify
+from hashlib import sha1
+from os.path import join, dirname
+
+COMMIT    = 1
+TREE      = 2
+BLOB      = 3
+TAG       = 4
+OFS_DELTA = 6
+REF_DELTA = 7
+
+class FileUnread:
+    def __init__ (self, f):
+        self._f = f
+        self._buf = []
+
+    def read (self, n = None):
+        if n is None:
+            buf = self._buf
+            self._buf = []
+            buf.append(self._f.read())
+        else:
+            buf = []
+            while n > 0 and len(self._buf) > 0:
+                s = self._buf.pop(0)
+                if len(s) > n:
+                    self._buf.insert(0, s[n:])
+                    s = s[:n]
+                buf.append(s)
+                n -= len(s)
+            if n > 0:
+                buf.append(self._f.read(n))
+        return ''.join(buf)
+
+    def unread (self, s):
+        self._buf.append(s)
+
+    def close(self):
+        self._f.close()
+
+objs = dict()
+
+def show_type (t):
+    return {1: 'commit',
+            2: 'tree',
+            3: 'blob',
+            4: 'tag'}[t]
+
+def show_obj ((t, d)):
+    global objs
+    if t == TREE:
+        s = []
+        for (mode, name, sha) in decode_tree(d):
+            type = objs[sha][0]
+            s.append('%o %s %s %s\n' % (mode, show_type(type), hexlify(sha), name))
+        return ''.join(s)
+    else:
+        return d
+
+def fingerprint ((t, d)):
+    header = '%s %d\0' % (show_type(t), len(d))
+    f = sha1(header)
+    f.update(d)
+    return f.digest()
+
+def decode_tree (d):
+    p = 0
+    while p < len(d):
+        z = d[p:].find('\0')
+        mode, name = d[p:p + z].split(' ', 1)
+        sha = d[p + z + 1:p + z + 21]
+        p += z + 21
+        yield (int(mode, 8), name, sha)
+
+def decode_obj (f):
+    b = ord(f.read(1))
+    t = (b & 0x70) >> 4
+    if t == OFS_DELTA or t == REF_DELTA:
+        print 'Delta encoding not supported'
+        exit(1)
+    s = b & 0x0f
+    bits = 4
+    while b & 0x80:
+        b = ord(f.read(1))
+        s |= (b & 0x7f) << bits
+        bits += 7
+    d = ''
+    z = zlib.decompressobj()
+    while len(d) < s:
+        d += z.decompress(f.read(100))
+    f.unread(z.unused_data)
+    return (t, d)
+
+def parents (d):
+    for line in d.split('\n'):
+        if line.startswith('parent'):
+            yield unhexlify(line[-40:])
+
+def tree (d):
+    for line in d.split('\n'):
+        if line.startswith('tree'):
+            return unhexlify(line[-40:])
+
+def tips ():
+    global objs
+    shas = objs.keys()
+    for sha, (t, d) in objs.items():
+        if t == COMMIT:
+            for sha in parents(d):
+                try:
+                    shas.remove(sha)
+                except:
+                    pass
+        else:
+            shas.remove(sha)
+    return map(hexlify, shas)
+
+def unpack (dst, sha):
+    global objs
+    t, d = objs[sha]
+    if   t == BLOB:
+        try:
+            os.makedirs(dirname(dst))
+        except:
+            pass
+        try:
+            with open(dst, 'w') as f:
+                f.write(d)
+        except IOError as (c, e):
+            print 'Could not write file "%s": %s' % (dst, e)
+            exit(c)
+    elif t == TREE:
+        for mode, name, sha in decode_tree(d):
+            unpack(join(dst, name), sha)
+
+def read_pack (fn):
+    global objs
+    try:
+        f = FileUnread(open(fn))
+    except IOError as (c, e):
+        print 'Could not open "%s" for reading: %s' % (fn, e)
+        exit(c)
+    header = f.read(4)
+    if header <> 'PACK':
+        print 'Not a Git packfile'
+        exit(1)
+    (version,) = struct.unpack('!I', f.read(4))
+    if version <> 2:
+        print 'Only packfile v. 2 supported'
+        exit(1)
+    (entries,) = struct.unpack('!I', f.read(4))
+    for _ in range(entries):
+        obj = decode_obj(f)
+        objs[fingerprint(obj)] = obj
+
+if __name__ == '__main__':
+    p = ArgumentParser(description='Extract commits from Git packfiles')
+    p.add_argument('command',
+                   choices=['unpack', 'show', 'list'],
+                   nargs='?',
+                   help='Command')
+    p.add_argument('fingerprint',
+                   nargs='?',
+                   metavar='<fingerprint>',
+                   help='SHA1 of object')
+    p.add_argument('-o', '--output',
+                   metavar='<path>',
+                   help='Output file or directory')
+    p.add_argument('packfile',
+                   metavar='<packfile>',
+                   help='Path to Git packfile v. 2')
+    args = p.parse_args()
+    read_pack(args.packfile)
+    cmd = args.command
+    sha = args.fingerprint
+    dst = args.output
+
+    if cmd <> 'unpack':
+        if dst == None:
+            dst = sys.stdout
+        else:
+            try:
+                dst = open(dst, 'w')
+            except IOError as (c, e):
+                print 'Could not open "%s" for writing: %s' % (dst, e)
+                exit(c)
+
+    if   cmd == None:
+        dst.write('Branch tips:\n')
+        for sha in tips():
+            dst.write('  %s\n' % sha)
+        exit(0)
+    elif cmd == 'list':
+        for f, (t, _) in objs.items():
+            dst.write('%s %s\n' % (hexlify(f), show_type(t)))
+    elif cmd == 'show':
+        if sha == None:
+            print 'Show what?'
+            exit(1)
+        try:
+            obj = objs[unhexlify(sha)]
+        except:
+            print 'No object with fingerprint %s' % sha
+        dst.write(show_obj(obj))
+    elif cmd == 'unpack':
+        if sha == None:
+            print 'Unpack what?'
+            exit(1)
+        if dst == None:
+            print 'Unpack to where?'
+            exit(1)
+        try:
+            root = unhexlify(sha)
+            obj = objs[root]
+        except:
+            print 'No object with fingerprint %s' % sha
+        t, d = obj
+        if   t == COMMIT:
+            root = tree(d)
+        elif t <> TREE:
+            print 'Can only unpack commit or tree'
+            exit(1)
+        unpack(dst, root)

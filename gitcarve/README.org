@@ -1,0 +1,8 @@
+* GitCarve
+
+  Extract commits from a Git packfile.
+
+* Note
+
+  I'm aware that Git includes a range of tools for querying and manipulating
+  packfiles, but I do this as a learning experience.
