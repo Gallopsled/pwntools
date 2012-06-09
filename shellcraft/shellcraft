@@ -8,7 +8,7 @@ from core import *
 # Supress tmpnam warning
 warnings.filterwarnings('ignore', category=RuntimeWarning)
 
-DEFINES   = join(sys.path[0], DEFINES)
+INCLUDE   = join(sys.path[0], INCLUDE)
 TEMPLATES = join(sys.path[0], TEMPLATES)
 
 _GLUE, _TEMPLATE = range(2)
@@ -54,7 +54,7 @@ def _template (arch, emit_asm, templ, args):
     with open(name, 'w') as f:
         f.write(code)
     cmd = ['nasm',
-           '-I', DEFINES + '/',
+           '-I', INCLUDE + '/',
            '-o', '/dev/stdout',
            name]
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -76,6 +76,7 @@ def _usage ():
     print '      List available shellcodes'
     print '    -f, --format <format>'
     print '      r: raw (default)'
+    print '      s: String'
     print '      c: C array'
     print '      h: Hex string'
     print '      a: Assembler code (do not assemble)'
@@ -86,6 +87,16 @@ def _usage ():
     print '  Example:'
     print '    shellcraft linux.bindshell'
     exit(0)
+
+def _string(s):
+    out = []
+    for c in s:
+        co = ord(c)
+        if co >= 0x20 and co <= 0x7e:
+            out.append(c)
+        else:
+            out.append('\\x%02x' % co)
+    return '"' + ''.join(out) + '"'
 
 def _raw(s):
     return s
@@ -116,6 +127,8 @@ if __name__ == '__main__':
         global format, emit_asm
         if   fmt == 'r' or fmt == 'raw':
             format = _raw
+        elif fmt == 's':
+            format = _string
         elif fmt == 'c':
             format = _carray
         elif fmt == 'h' or fmt == 'hex':

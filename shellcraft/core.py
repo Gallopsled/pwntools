@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-DEFINES   = 'defines'
+INCLUDE   = 'include'
 TEMPLATES = 'templates'
 CODEZ     = 'codez'
 
