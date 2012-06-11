@@ -15,13 +15,13 @@ _GLUE, _TEMPLATE = range(2)
 
 
 def _glue (arch, emit_asm, code, bitsize):
+    if code == '':
+        return ''
     if emit_asm:
         code = \
             ';;; BEGIN GLUE\n' + \
             code + '\n'
         return code
-    if code == '':
-        return ''
     if   arch == INTEL:
         cmd = ['rasm2',
                '-b', str(bitsize),
