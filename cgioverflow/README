@@ -1,0 +1,2 @@
+Files used to exploit the CGI binary in the kielbasa challenge from secuinside 2012.
+Can be used as a template for exploiting CGI binaries by stack overflow.

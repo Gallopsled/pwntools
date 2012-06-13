@@ -1,0 +1,3 @@
+sql exploit tools from secuinside 2012. They can read abitrary values from MySQL one bit at a time. Use these as templates for similar exploits.
+	getorderbyval.py: order by different fields depending on the value of the current bit, and test which field the data is sorted by
+	getbycondval.py: fetch one or zero rows depending on the value of the current bit. This one also uses cookies.
