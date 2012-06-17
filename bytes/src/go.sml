@@ -25,7 +25,7 @@ fun usage name =
        , "  -o <file>"
         ]
 
-fun printVersionAndExt () = (println ("bytes version " ^ version)
+fun printVersionAndExit () = (println ("bytes version " ^ version)
                            ; OS.Process.exit OS.Process.success)
 fun printUsageAndExit () = (usage $ CommandLine.name ()
                           ; OS.Process.exit OS.Process.success)
@@ -54,8 +54,9 @@ local
   fun getOpt () =
       let
         val src = case !src of
-                    SOME f => TextIO.openIn f
-                  | NONE   => TextIO.stdIn
+                    SOME "-" => TextIO.stdIn
+                  | SOME f   => TextIO.openIn f
+                  | NONE     => printUsageAndExit ()
         val dst = case !dst of
                     SOME f => TextIO.openOut f
                   | NONE   => TextIO.stdOut
@@ -152,7 +153,7 @@ fun parseArgs args =
              | "--help"              => help
              | "-h"                  => help
              | "-?"                  => help
-             | "--version"           => return $ printVersionAndExt ()
+             | "--version"           => return $ printVersionAndExit ()
              | _                     => return $ setSrc tok
           end
       val parse =
