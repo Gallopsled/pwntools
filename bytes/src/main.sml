@@ -63,7 +63,7 @@ fun main (radix, unsigned, plain, groupsize, endian, bendian, src, dst) =
       fun goPlain () =
         let
           val groupsize = getOpt (groupsize, 1)
-          val radix = getOpt (radix, Hex)
+          (* val radix = getOpt (radix, Hex) *)
           (* a byte is `n` base `b` digits in `e` endian order *)
           fun go n b =
               app write1 o
@@ -74,17 +74,27 @@ fun main (radix, unsigned, plain, groupsize, endian, bendian, src, dst) =
               List.concat
         in
           case radix of
-            Hex =>
+            SOME Hex =>
             do whitespace
              ; ds <- many $ Lex.lexeme hex
              ; eof
              ; return $ go 2 16 ds
             end
-          | Bin =>
+          | SOME Bin =>
             do whitespace
              ; ds <- many $ Lex.lexeme bin
              ; eof
              ; return $ go 8 2 ds
+            end
+          | NONE =>
+            do whitespace
+             ; ds <- many $ Lex.lexeme hex
+             ; eof
+             ; return (
+               if List.all (List.all (fn d => d = 0 orelse d = 1)) ds
+               then go 8 2 ds
+               else go 2 16 ds
+               )
             end
           | _ => impossible "main.goPlain"
         end
