@@ -1,9 +1,10 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses, ScopedTypeVariables #-}
 module Main where
 
 import Debug.Trace
 
-import Prelude hiding (lookup)
+import Prelude hiding (lookup, catch)
+import Control.Exception (catch, SomeException)
 import System.Environment
 import System.IO.Unsafe
 
@@ -131,14 +132,15 @@ isRealInstructions = all isRealInstruction
 
 extractGadget marker insts =
   if isRealInstructions insts
+  -- if True
   then
     case (\idx -> take (idx + 1) insts) `fmap`
-         findIndex (\inst -> opcode marker == show (Disas.opcode inst)) insts of
+         findIndex (\inst -> magic marker == Disas.bytes inst) insts of
       r@(Just insts') ->
         if magic marker `isPrefixOf` Disas.bytes (last insts')
         then r
         else Nothing
-      Nothing -> Nothing
+      _ -> Nothing
   else Nothing
 
 isBoring insts =
@@ -169,11 +171,11 @@ data Trie = Branch (Map [Word8] Trie)
 
 empty = Branch M.empty
 
-lookup (code : codes) (Branch tmap) =
-  do trie <- M.lookup code tmap
-     lookup codes trie
-lookup [] (Leaf g) = Just g
-lookup _ _ = Nothing
+-- lookup (code : codes) (Branch tmap) =
+--   do trie <- M.lookup code tmap
+--      lookup codes trie
+-- lookup [] (Leaf g) = Just g
+-- lookup _ _ = Nothing
 
 insert (code : codes) gadget (Branch tmap) =
   case M.lookup code tmap of
@@ -211,13 +213,15 @@ goPOI poi =
 
 go bytes =
   let pois = findPOIs markers $ Elf.parseElf bytes
-      doit = mapM_ goPOI $ pois
+      doit = mapM_ goPOI pois
   in toList $ execState doit empty
 
-showGadget gadget = do
+showGadget_ gadget = do
   putStrLn $ "  0x" ++ (flip showHex "" $ address gadget)
   mapM (putStrLn . show) $ code gadget
   putStrLn ""
+
+showGadget g = showGadget_ g `catch` \ (_ :: SomeException) -> return ()
 
 main = do
   args <- getArgs
@@ -225,5 +229,5 @@ main = do
   case args of
     file : _ -> do bytes <- B.readFile file
                    let x = go bytes
-                   mapM_ showGadget x
+                   mapM_ (showGadget) x
     [] -> putStrLn $ "Usage: " ++ name ++ " <ELF file>"
