@@ -216,12 +216,10 @@ go bytes =
       doit = mapM_ goPOI pois
   in toList $ execState doit empty
 
-showGadget_ gadget = do
+showGadget gadget = do
   putStrLn $ "  0x" ++ (flip showHex "" $ address gadget)
   mapM (putStrLn . show) $ code gadget
   putStrLn ""
-
-showGadget g = showGadget_ g `catch` \ (_ :: SomeException) -> return ()
 
 main = do
   args <- getArgs
