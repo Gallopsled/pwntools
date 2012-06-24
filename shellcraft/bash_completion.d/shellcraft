@@ -2,7 +2,11 @@ _shellcraft()
 {
     local cur="${COMP_WORDS[COMP_CWORD]}"
     local codez=$(_shellcraft_list.py)
-    COMPREPLY=($(compgen -W "${codez}" $cur))
+    if [ $COMP_CWORD -eq 1 ]; then
+        COMPREPLY=($(compgen -W "${codez}" $cur))
+    else
+        COMPREPLY=($(compgen -W "$(ls)" "$cur" ))
+    fi
 }
 
 #Assign the auto-completion function _get for our command get.

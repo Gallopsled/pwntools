@@ -8,5 +8,5 @@ def main(str, out = 'STD_OUT', loader = ''):
         str = sys.stdin.read()
     str = repr(str)[1:-1]
     return \
-        asm(loader) + \
+        glue(loader) + \
         template('linux/echo.asm', {'str': str, 'out': out})

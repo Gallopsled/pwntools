@@ -1,9 +1,7 @@
         ;; ECX or EAX must be cleared upon entry
-[BITS 32]
-        %include "linux/32.asm"
 
         ;; Clear eax, ecx, edx
-	      imul ecx
+        imul ecx
 
         ;; Push '/bin//sh'
         push eax

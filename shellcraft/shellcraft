@@ -13,58 +13,78 @@ TEMPLATES = join(sys.path[0], TEMPLATES)
 
 _GLUE, _TEMPLATE = range(2)
 
-
-def _glue (arch, emit_asm, code, bitsize):
+def _glue (code):
     if code == '':
         return ''
-    if emit_asm:
-        code = \
-            ';;; BEGIN GLUE\n' + \
-            code + '\n'
-        return code
-    if   arch == INTEL:
-        cmd = ['rasm2',
-               '-b', str(bitsize),
-               code]
-    elif arch == MIPS:
-        print "NOT YET IMPLEMENTED"
-        sys.exit(0)
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    ret = p.wait()
-    if ret == 0:
-        print 'Cannot assemble "%s"' % code
-        exit(0)
-    return p.stdout.read()[:-1].decode('hex') # skip newline at end
+    return ';;; BEGIN GLUE\n' + \
+        code + '\n'
 
-def _template (arch, emit_asm, templ, args):
+def _template (templ, args):
     with open(join(TEMPLATES, templ), 'r') as f:
         code = f.read()
     for k, v in args.items():
         code = code.replace('#' + k.upper(), str(v))
+    code = \
+        ';;; BEGIN TEMPLATE %s\n' % templ + \
+        code
+    if not code[-1] == '\n':
+        code += '\n'
+    return code
+
+def _header(arch, platform):
+    hdr = []
+    if platform == 'LINUX':
+        if   arch == 'I386':
+            hdr.append('%include "linux/32.asm"')
+            hdr.append('bits 32')
+        elif arch == 'AMD64':
+            hdr.append('%include "linux/64.asm"')
+            hdr.append('bits 64')
+        else:
+            print 'Unsupported architechture under Linux: %s' % arch
+            exit(0)
+        hdr.append('%include "macros/nasm.asm"')
+    else:
+        print 'Unsupported platform: %s' % platform
+        exit(0)
+    return '\n'.join(hdr)
+
+def _nasm(src, debug):
+    out = ['nasm']
+    if debug:
+        out += ['-D', 'DEBUG']
+    out += ['-I', INCLUDE + '/', '-o' ,'/dev/stdout', src]
+    return out
+
+def _assembler(arch):
+    if   arch in ['I386', 'AMD64']:
+        return _nasm
+    else:
+        print 'Unsupported architechture: %s' % arch
+        exit(0)
+
+def _assemble(debug, emit_asm, arch, platform, code):
+    src = os.tmpnam()
+    hdr = _header(arch, platform)
+    cmd = _assembler(arch)(src, debug)
+    code = '\n'.join(
+        [';;; Assemble with:\n;;;   %s' % ' '.join(cmd),
+         hdr,
+         code])
 
     if emit_asm:
-        code = \
-            ';;; BEGIN TEMPLATE %s\n' % templ + \
-            code
-        if not code[-1] == '\n':
-            code += '\n'
         return code
 
-    name = os.tmpnam()
-    with open(name, 'w') as f:
+    with open(src, 'w') as f:
         f.write(code)
-    cmd = ['nasm',
-           '-I', INCLUDE + '/',
-           '-o', '/dev/stdout',
-           name]
+
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     ret = p.wait()
     if ret <> 0:
-        print 'Error while assembling template "%s"' % templ
-        err = p.stderr.read().replace(name, templ)
+        err = p.stderr.read()
         sys.stdout.write(err)
         exit(0)
-    os.unlink(name)
+    os.unlink(src)
     return p.stdout.read()
 
 def _usage ():
@@ -83,6 +103,8 @@ def _usage ():
     print '    -h, --help [<shellcode>]'
     print '      Show this help message or the docstring for the given shellcode'
     print '    -d, --debug'
+    print '      Debug mode'
+    print '    -t, --trap'
     print '      Insert software breakpoint before shellcode'
     print '  Example:'
     print '    shellcraft linux.bindshell'
@@ -118,6 +140,7 @@ if __name__ == '__main__':
     help = False
     format = _raw
     debug = False
+    trap = False
     loop = False
     emit_asm = False
     def setout(file):
@@ -137,8 +160,9 @@ if __name__ == '__main__':
             format = _raw
             emit_asm = True
         else:
-            print 'Unknown format: %s' % fmt
+            print 'Unsupported format: %s' % fmt
             exit(0)
+
     while i < len(args_):
         a = args_[i]
         if   a in ['-o', '--out']:
@@ -160,6 +184,8 @@ if __name__ == '__main__':
             help = True
         elif a in ['-d', '--debug']:
             debug = True
+        elif a in ['-t', '--trap']:
+            trap = True
         elif a in ['--loop']:
             loop = True
         else:
@@ -168,7 +194,7 @@ if __name__ == '__main__':
 
     if len(args) > 0:
         try:
-            module = __import__(CODEZ + '.' + args[0], fromlist=['main', 'arch'])
+            module = __import__(CODEZ + '.' + args[0], fromlist=['main', 'arch', 'platform'])
         except Exception, e:
             print 'Could not load "%s":' % args[0]
             print e
@@ -187,15 +213,15 @@ if __name__ == '__main__':
         else:
             _usage()
 
-    try:
-        if debug:
-            code = asm('int3')
+    try: # TODO: make this architechture independant
+        if trap:
+            pieces = glue('int3')
         else:
-            code = []
-        code += module.main(*args[1:])
+            pieces = []
+        pieces += module.main(*args[1:])
         if loop:
             lbl = 'loop%d' % random.randint(0, 999999)
-            code += asm('%s: jmp short %s' % (lbl, lbl))
+            pieces += glue('%s: jmp short %s' % (lbl, lbl))
     except AttributeError, e:
         if str(e).startswith("'module'"):
             print 'Module "%s" does not implement "main"' % name
@@ -215,15 +241,18 @@ if __name__ == '__main__':
         exit(0)
 
     arch = module.arch
-    res = []
-    for (type, args) in code:
+    platform = module.platform
+
+    code = []
+    for (type, args) in pieces:
         if   type == _GLUE:
-            res.append(_glue(arch, emit_asm, *args))
+            code.append(_glue(*args))
         elif type == _TEMPLATE:
-            res.append(_template(arch, emit_asm, *args))
+            code.append(_template(*args))
         else:
             raise TypeError
-    res = ''.join(res)
+    code = ''.join(code)
+    res = _assemble(debug, emit_asm, arch, platform, code)
 
     with open(out, 'w') as f:
         f.write(format(res))
