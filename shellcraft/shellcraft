@@ -34,7 +34,6 @@ def _template (templ, args):
 def _header(arch, platform):
     hdr = []
     if platform == 'LINUX':
-        hdr.append('%include "macros/nasm.asm"')
         if   arch == 'I386':
             hdr.append('%include "linux/32.asm"')
             hdr.append('bits 32')
@@ -44,13 +43,18 @@ def _header(arch, platform):
         else:
             print 'Unsupported architechture under Linux: %s' % arch
             exit(0)
+        hdr.append('%include "macros/nasm.asm"')
     else:
         print 'Unsupported platform: %s' % platform
         exit(0)
     return '\n'.join(hdr)
 
-def _nasm(src):
-    return ['nasm', '-I', INCLUDE + '/', '-o' ,'/dev/stdout', src]
+def _nasm(src, debug):
+    out = ['nasm']
+    if debug:
+        out += ['-D', 'DEBUG']
+    out += ['-I', INCLUDE + '/', '-o' ,'/dev/stdout', src]
+    return out
 
 def _assembler(arch):
     if   arch in ['I386', 'AMD64']:
@@ -59,13 +63,12 @@ def _assembler(arch):
         print 'Unsupported architechture: %s' % arch
         exit(0)
 
-def _assemble(emit_asm, arch, platform, code):
+def _assemble(debug, emit_asm, arch, platform, code):
     src = os.tmpnam()
     hdr = _header(arch, platform)
-    cmd = _assembler(arch)(src)
-    # print src, hdr, cmd
+    cmd = _assembler(arch)(src, debug)
     code = '\n'.join(
-        [';;; Assemble with:\n;;;   %s' % ' '.join(_assembler(arch)('<file>')),
+        [';;; Assemble with:\n;;;   %s' % ' '.join(cmd),
          hdr,
          code])
 
@@ -100,6 +103,8 @@ def _usage ():
     print '    -h, --help [<shellcode>]'
     print '      Show this help message or the docstring for the given shellcode'
     print '    -d, --debug'
+    print '      Debug mode'
+    print '    -t, --trap'
     print '      Insert software breakpoint before shellcode'
     print '  Example:'
     print '    shellcraft linux.bindshell'
@@ -135,6 +140,7 @@ if __name__ == '__main__':
     help = False
     format = _raw
     debug = False
+    trap = False
     loop = False
     emit_asm = False
     def setout(file):
@@ -178,6 +184,8 @@ if __name__ == '__main__':
             help = True
         elif a in ['-d', '--debug']:
             debug = True
+        elif a in ['-t', '--trap']:
+            trap = True
         elif a in ['--loop']:
             loop = True
         else:
@@ -206,7 +214,7 @@ if __name__ == '__main__':
             _usage()
 
     try: # TODO: make this architechture independant
-        if debug:
+        if trap:
             pieces = glue('int3')
         else:
             pieces = []
@@ -244,7 +252,7 @@ if __name__ == '__main__':
         else:
             raise TypeError
     code = ''.join(code)
-    res = _assemble(emit_asm, arch, platform, code)
+    res = _assemble(debug, emit_asm, arch, platform, code)
 
     with open(out, 'w') as f:
         f.write(format(res))

@@ -1,4 +1,3 @@
-bits 32
 %macro pushstr 1
         %strlen i %1
         %rep i / 4
