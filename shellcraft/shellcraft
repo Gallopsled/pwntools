@@ -1,91 +1,6 @@
 #!/usr/bin/env python
-
-import os, sys, subprocess, warnings, struct, random
-from os.path import join, abspath, relpath, isfile, splitext
+import os, sys, types
 from binascii import hexlify, unhexlify
-from core import *
-
-# Supress tmpnam warning
-warnings.filterwarnings('ignore', category=RuntimeWarning)
-
-INCLUDE   = join(sys.path[0], INCLUDE)
-TEMPLATES = join(sys.path[0], TEMPLATES)
-
-_GLUE, _TEMPLATE = range(2)
-
-def _glue (code):
-    if code == '':
-        return ''
-    return ';;; BEGIN GLUE\n' + \
-        code + '\n'
-
-def _template (templ, args):
-    with open(join(TEMPLATES, templ), 'r') as f:
-        code = f.read()
-    for k, v in args.items():
-        code = code.replace('#' + k.upper(), str(v))
-    code = \
-        ';;; BEGIN TEMPLATE %s\n' % templ + \
-        code
-    if not code[-1] == '\n':
-        code += '\n'
-    return code
-
-def _header(arch, platform):
-    hdr = []
-    if platform == 'LINUX':
-        if   arch == 'I386':
-            hdr.append('%include "linux/32.asm"')
-            hdr.append('bits 32')
-        elif arch == 'AMD64':
-            hdr.append('%include "linux/64.asm"')
-            hdr.append('bits 64')
-        else:
-            print 'Unsupported architechture under Linux: %s' % arch
-            exit(0)
-        hdr.append('%include "macros/nasm.asm"')
-    else:
-        print 'Unsupported platform: %s' % platform
-        exit(0)
-    return '\n'.join(hdr)
-
-def _nasm(src, debug):
-    out = ['nasm']
-    if debug:
-        out += ['-D', 'DEBUG']
-    out += ['-I', INCLUDE + '/', '-o' ,'/dev/stdout', src]
-    return out
-
-def _assembler(arch):
-    if   arch in ['I386', 'AMD64']:
-        return _nasm
-    else:
-        print 'Unsupported architechture: %s' % arch
-        exit(0)
-
-def _assemble(debug, emit_asm, arch, platform, code):
-    src = os.tmpnam()
-    hdr = _header(arch, platform)
-    cmd = _assembler(arch)(src, debug)
-    code = '\n'.join(
-        [';;; Assemble with:\n;;;   %s' % ' '.join(cmd),
-         hdr,
-         code])
-
-    if emit_asm:
-        return code
-
-    with open(src, 'w') as f:
-        f.write(code)
-
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    ret = p.wait()
-    if ret <> 0:
-        err = p.stderr.read()
-        sys.stdout.write(err)
-        exit(0)
-    os.unlink(src)
-    return p.stdout.read()
 
 def _usage ():
     print 'Usage: %s [option [...]] <shellcode> [arg [...]]' % sys.argv[0]
@@ -192,19 +107,38 @@ if __name__ == '__main__':
             args.append(a)
         i += 1
 
+    name = args[0]
+
     if len(args) > 0:
         try:
-            module = __import__(CODEZ + '.' + args[0], fromlist=['main', 'arch', 'platform'])
-        except Exception, e:
-            print 'Could not load "%s":' % args[0]
-            print e
+            arch, platform, which = name.split('.', 2)
+        except ValueError:
+            print 'Name must be of the form <arch>.<platform>.<shellcode>'
             exit(0)
+        try:
+            module = __import__('pwn.' + arch + '.' + platform,
+                                fromlist = ['_header', '_assemble', which]
+                                )
+        except:
+            raise
+        # except Exception, e:
+        #     print 'Could not load "%s":' % args[0]
+        #     print e
+        #     exit(0)
     else:
         _usage()
 
+    try:
+        codefun = module.__getattribute__(which)
+        if type(codefun) <> types.FunctionType:
+            raise AttributeError
+    except AttributeError:
+        print 'No such code for %s.%s: %s' % (arch, platform, which)
+        exit(0)
+
     if help:
         if len(args) > 0:
-            doc = module.main.__doc__
+            doc = codefun.__doc__
             if doc:
                 print doc
             else:
@@ -213,25 +147,12 @@ if __name__ == '__main__':
         else:
             _usage()
 
-    try: # TODO: make this architechture independant
-        if trap:
-            pieces = glue('int3')
-        else:
-            pieces = []
-        pieces += module.main(*args[1:])
-        if loop:
-            lbl = 'loop%d' % random.randint(0, 999999)
-            pieces += glue('%s: jmp short %s' % (lbl, lbl))
-    except AttributeError, e:
-        if str(e).startswith("'module'"):
-            print 'Module "%s" does not implement "main"' % name
-        else:
-            raise
-        exit(0)
+    try:
+        code = codefun(*args[1:])
     except TypeError, e:
-        if   str(e).startswith('main'):
+        if   str(e).startswith(which):
             print 'Wrong number of arguments'
-            doc = module.main.__doc__
+            doc = codefun.__doc__
             if doc:
                 print doc
         elif str(e).startswith("'NoneType'"):
@@ -240,19 +161,13 @@ if __name__ == '__main__':
             raise
         exit(0)
 
-    arch = module.arch
-    platform = module.platform
+    # TODO: make this architechture independant
+    if trap:
+        code = '\xcc' + code
+    if loop:
+        code += '\xeb\xfe'
 
-    code = []
-    for (type, args) in pieces:
-        if   type == _GLUE:
-            code.append(_glue(*args))
-        elif type == _TEMPLATE:
-            code.append(_template(*args))
-        else:
-            raise TypeError
-    code = ''.join(code)
-    res = _assemble(debug, emit_asm, arch, platform, code)
+    res = module.assemble(code, emit_asm = emit_asm)
 
     with open(out, 'w') as f:
         f.write(format(res))

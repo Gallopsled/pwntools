@@ -1,9 +1,12 @@
-        ;; Listens for and accepts a connection on #PORT
+from pwn import htons
+
+def listen(port):
+    """Args: port
+    Waits for a connection.  Leaves socket in EAX."""
+    return """
+        ;; Listens for and accepts a connection on %(port)d
         ;; Socket file descriptor is placed in EAX
 
-
-        %include "linux/32.asm"
-bits 32
         ;; sock = socket(AF_INET, SOCK_STREAM, 0)
         push SYS_socketcall
         pop eax
@@ -18,7 +21,7 @@ bits 32
 
         ;; bind(sock, &addr, sizeof addr); // sizeof addr == 0x10
         push edx
-        push word #PORT
+        push word %(port)d
         push word AF_INET
         mov ecx, esp
         push 0x10
@@ -42,3 +45,4 @@ bits 32
         inc ebx                 ; EBX = accept (= 5)
         mov al, byte SYS_socketcall
         int 0x80
+""" % {'port' : htons(int(port))}
