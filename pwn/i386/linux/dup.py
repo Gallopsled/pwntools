@@ -1,5 +1,5 @@
 def dup(sock = 'ebx'):
-    """Arguments: [sock = EBX]
+    """Args: [sock = EBX]
     Duplicates sock to stdin, stdout and stderr."""
     return """
         ;; Takes socket in ebx

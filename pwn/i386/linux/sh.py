@@ -1,5 +1,5 @@
 def sh():
-    """Arguments: None
+    """Args: None
     Spawn a shell."""
     return """
         ;; ECX or EAX must be cleared upon entry

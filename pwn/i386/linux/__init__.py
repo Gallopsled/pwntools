@@ -16,6 +16,9 @@ def _assemble(src):
 assemble = gen_assembler(_header, _assemble)
 
 # Codes
-from sh     import sh
-from dup    import dup
-from listen import listen
+from sh           import sh
+from dup          import dup
+from listen       import listen
+from connect      import connect
+from connectback  import connectback
+from bindshell    import bindshell
