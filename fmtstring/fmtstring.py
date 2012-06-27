@@ -87,7 +87,7 @@ def fmtstring(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Writes the address `PAYLOAD` at `WRITEAT`!")
+    parser = argparse.ArgumentParser(description="Writes the address `PAYLOAD` at `WRITEAT`! Example: ./fmtstring.py -payload \x41\x42\x43\x44 -writeat 0x0804a080 -argnum 4")
     parser.add_argument("-payload", action="store", dest='payload', help="The address to write.", required=True)
     parser.add_argument("-writeat", action="store", dest='writeat', help="Where to write PAYLOAD address.", required=True)
     parser.add_argument("-argnum", action="store", dest='argnum', type=int, help="Where the argument is found on the stack.", required=True)
