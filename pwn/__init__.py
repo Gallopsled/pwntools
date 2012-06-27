@@ -10,7 +10,7 @@ else:
 INCLUDE = 'include'
 
 # Submodules
-import util, i386, shellcraft
+import util, i386
 
 # Promote to top-level
 from util import *

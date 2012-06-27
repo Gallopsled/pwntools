@@ -1,6 +1,6 @@
-import pwn, subprocess, os, sys, warnings
+import pwn, subprocess, os, sys, warnings, inspect
 
-INCLUDE = os.path.join(os.path.dirname(__file__), pwn.INCLUDE)
+INCLUDE = os.path.join(os.path.dirname(pwn.__file__), pwn.INCLUDE)
 DEBUG   = pwn.DEBUG
 
 # Supress tmpnam warning
@@ -34,19 +34,14 @@ def gen_assembler(hdr, assembler):
         return p.stdout.read()
     return assemble
 
-# def load_codez(name):
-#     path = os.path.join(os.path.dirname(__file__),
-#                         name.split('.', 1)[1].replace('.', '/'))
-#     mod = sys.modules[name]
-#     for dir, _, files in os.walk(path):
-#         try:
-#             files.remove('__init__.py')
-#         except ValueError:
-#             pass
-#         files = filter(lambda x: x.endswith('.py'), files)
-#         for f in files:
-#             c = f[:-3]
-#             m = __
-#     print name, path
-#     # dir = os.path.dirname(path)
-#     # for
+def load(codes):
+    globs = inspect.currentframe(1).f_globals
+    base = globs['__name__']
+    for c in codes:
+        name = base + '.' + c
+        try:
+            m = __import__(name, fromlist = [c])
+            globs[c] = m.__getattribute__(c)
+        except:
+            print "Could not load %s" % name
+            exit(0)

@@ -1,4 +1,4 @@
-from pwn.shellcraft import *
+from pwn.internal.shellcraft import *
 
 _header = """
 %include "linux/32.asm"
@@ -16,9 +16,12 @@ def _assemble(src):
 assemble = gen_assembler(_header, _assemble)
 
 # Codes
-from sh           import sh
-from dup          import dup
-from listen       import listen
-from connect      import connect
-from connectback  import connectback
-from bindshell    import bindshell
+codes = ['sh',
+         'dup',
+         'listen',
+         'connect',
+         'connectback',
+         'bindshell',
+         'acceptloop']
+
+load(codes)
