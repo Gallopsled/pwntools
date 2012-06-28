@@ -8,19 +8,19 @@ extern thread_stack
 extern rand
 
 struc STATE
-    .EBX: resw 1
-    .EBP: resw 1
-    .EDI: resw 1
-    .ESI: resw 1
-    .ESP: resw 1
-    .FUNCTION: resw 1
-    .EIP: resw 1
+    .EBX: resd 1
+    .EBP: resd 1
+    .EDI: resd 1
+    .ESI: resd 1
+    .ESP: resd 1
+    .FUNCTION: resd 1
+    .EIP: resd 1
 endstruc
 
 struc FUNCTION
-    .REAL: resw 1
-    .WRAPPER: resw 1
-    .NAME: resw 1
+    .REAL: resd 1
+    .WRAPPER: resd 1
+    .NAME: resd 1
 endstruc
 
 wrapper:
