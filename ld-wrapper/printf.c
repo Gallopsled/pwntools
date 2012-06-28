@@ -13,6 +13,8 @@ void printf_wrapper(char *s) {
             continue;
         }
         else {
+            i++;
+//            puts("printf: parsing format string");
             i = parse_format(i);
         }
     }
@@ -27,7 +29,7 @@ char *parse_format(char *i) {
           *i == '+' ||
           *i == 'I' ||
           *i == '\'') {
-        puts("Parsing flags\n");
+//        puts("printf: parsing flags");
         i++;
         continue;
     }
@@ -43,7 +45,7 @@ char *parse_format(char *i) {
           *i == '7' ||
           *i == '8' ||
           *i == '9') {
-        puts("Parsing field width\n");
+//        puts("printf: parsing field width");
         i++;
         continue;
     }
@@ -60,7 +62,7 @@ char *parse_format(char *i) {
           *i == '7' ||
           *i == '8' ||
           *i == '9') {
-        puts("Parsing precision modifier\n");
+//        puts("printf: parsing precision modifier");
         i++;
         continue;
     }
@@ -73,14 +75,17 @@ char *parse_format(char *i) {
           *i == 'j' ||
           *i == 'z' ||
           *i == 't') {
-        puts("Parsing length modifier\n");
+//        puts("printf: parsing length modifier");
         i++;
         continue;
     }
 
     if(*i == 'n') {
         puts("NU DØR BABY!");
+        exit(1337);
     }
+    i++;
+
     return i;
 }
 
