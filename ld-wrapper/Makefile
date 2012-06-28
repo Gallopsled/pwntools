@@ -1,5 +1,5 @@
 TARGETS=liboverride-32.so liboverride-64.so
-CSRCS=$(shell find . -name "*.c")
+CSRCS=$(shell find . -maxdepth 1 -name "*.c")
 LIBS32=$(patsubst %.c,%.32.o,$(CSRCS)) ld-override.32.o
 LIBS64=$(patsubst %.c,%.64.o,$(CSRCS)) ld-override.64.o
 CFLAGS=-shared -Wall -Werror -fno-builtin -fPIC
