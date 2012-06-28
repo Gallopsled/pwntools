@@ -5,8 +5,17 @@
 void puts(char *);
 
 void printf_wrapper(char *s) {
-    puts(s);
-    skip_real(4242);
+    char *i = s;
+    while (*i != '\0') {
+        if (*i != '%') {
+            i++;
+            continue;
+        }
+
+        else {
+            puts("LOL");
+        }
+    }
 }
 
 WRAP(printf);
