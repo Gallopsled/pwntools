@@ -11,6 +11,9 @@ struct _override {
 };
 
 
+#define constructor __attribute__((constructor))
+
+
 #ifdef __i386__
 #define WRAP(FUNCTION) \
     struct _override _##FUNCTION##_override = { NULL, (void*) FUNCTION##_wrapper, #FUNCTION }; \
