@@ -31,10 +31,10 @@ struct _override {
           ".globl " #FUNCTION "\r\n" \
           ".type  " #FUNCTION ", @function\r\n" \
           #FUNCTION ":\r\n" \
-            "movabs $_" #FUNCTION "_override, %rax\r\n" \
-            "push %rax\r\n" \
-            "movabs $wrapper, %rax\r\n" \
-            "jmp *%rax\r\n" \
+            "movabs $_" #FUNCTION "_override, %r11\r\n" \
+            "push %r11\r\n" \
+            "movabs $wrapper, %r11\r\n" \
+            "jmp *%r11\r\n" \
     )
 #endif
 
@@ -44,7 +44,7 @@ struct _save_state {
     struct _override *function_override;
     uintptr_t eip;
 #else
-    uintptr_t rbx, rcx, rdx, rbp, rdi, rsi, r8, r9, r12, r13, r14, r15, rsp;
+    uintptr_t rax, rbx, rcx, rdx, rbp, rdi, rsi, r8, r9, r10, r12, r13, r14, r15, rsp;
     struct _override *function_override;
     uintptr_t rip;
 #endif
