@@ -31,7 +31,6 @@ char *parse_format(char *i) {
           *i == '\'') {
 //        puts("printf: parsing flags");
         i++;
-        continue;
     }
 
     // Field width
@@ -47,11 +46,12 @@ char *parse_format(char *i) {
           *i == '9') {
 //        puts("printf: parsing field width");
         i++;
-        continue;
     }
 
     // Precision modifier
     while(*i == '.' ||
+          *i == '*' ||
+          *i == '$' ||
           *i == '0' ||
           *i == '1' ||
           *i == '2' ||
@@ -64,7 +64,6 @@ char *parse_format(char *i) {
           *i == '9') {
 //        puts("printf: parsing precision modifier");
         i++;
-        continue;
     }
 
     // Length modifier
@@ -77,7 +76,6 @@ char *parse_format(char *i) {
           *i == 't') {
 //        puts("printf: parsing length modifier");
         i++;
-        continue;
     }
 
     if(*i == 'n') {
