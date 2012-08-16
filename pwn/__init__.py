@@ -5,7 +5,7 @@ for arg in sys.argv:
     if   arg == 'DEBUG':
         sys.argv.remove(arg)
         pwn.DEBUG = True
-    elif arg.startswith('HOST='):
+    elif arg.lower().startswith('host='):
         sys.argv.remove(arg)
         pwn.HOST = arg[5:]
 
