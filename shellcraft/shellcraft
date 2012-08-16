@@ -107,9 +107,9 @@ if __name__ == '__main__':
             args.append(a)
         i += 1
 
-    name = args[0]
 
     if len(args) > 0:
+        name = args[0]
         try:
             arch, platform, which = name.split('.', 2)
         except ValueError:
@@ -161,13 +161,14 @@ if __name__ == '__main__':
             raise
         exit(0)
 
-    # TODO: make this architechture independant
-    if trap:
-        code = '\xcc' + code
-    if loop:
-        code += '\xeb\xfe'
-
     res = module.assemble(code, emit_asm = emit_asm)
+
+    if not emit_asm:
+        # TODO: make this architechture independant
+        if trap:
+            res = '\xcc' + res
+        if loop:
+            res += '\xeb\xfe'
 
     with open(out, 'w') as f:
         f.write(format(res))
