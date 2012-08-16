@@ -1,3 +1,7 @@
  - Time Attack
  - Fingerprint
  - Memset Packer
+ - Unpacker
+ - IDA2Nasm
+ - Substitution cipher solver
+ - Extract browser session from pcap
