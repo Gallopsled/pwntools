@@ -1,8 +1,7 @@
-def dup(sock = 'ebx'):
-    """Args: [sock = EBX]
+def dup(sock = 'ebp'):
+    """Args: [sock (imm/reg) = ebp]
     Duplicates sock to stdin, stdout and stderr."""
     return """
-        ;; Takes socket in ebx
 dup:
         setfd ebx, %s
         push byte 3

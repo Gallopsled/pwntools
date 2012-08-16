@@ -1,3 +1,4 @@
 from misc import *
-from local import Local
-from remote import Remote
+from session import session_start
+from process import process
+from remote import remote

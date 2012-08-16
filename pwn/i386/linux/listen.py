@@ -2,9 +2,9 @@ from pwn import htons
 
 def listen(port):
     """Args: port
-    Waits for a connection.  Leaves socket in EAX."""
+    Waits for a connection.  Leaves socket in EBP."""
     return """
-        ;; Listens for and accepts a connection on %(port)d
+        ;; Listens for and accepts a connection on %(portnum)d
         ;; Socket file descriptor is placed in EAX
 
         ;; sock = socket(AF_INET, SOCK_STREAM, 0)
@@ -45,4 +45,13 @@ def listen(port):
         inc ebx                 ; EBX = accept (= 5)
         mov al, byte SYS_socketcall
         int 0x80
-""" % {'port' : htons(int(port))}
+
+        xchg eax, ebp
+
+        ;; close(sock)
+        xchg ebx, esi
+        push byte SYS_close
+        pop eax
+        int 0x80
+""" % {'port'    : htons(int(port)),
+       'portnum' : int(port)}

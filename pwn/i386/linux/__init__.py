@@ -1,4 +1,5 @@
 from pwn.internal.shellcraft import *
+from .. import *
 
 _header = """
 %include "linux/32.asm"
@@ -6,22 +7,23 @@ _header = """
 bits 32
 """
 
-def _assemble(src):
+def _asm(src):
     out = ['nasm']
     if DEBUG:
         out += ['-D', 'DEBUG']
     out += ['-I', INCLUDE + '/nasm/', '-o' ,'/dev/stdout', src]
     return out
 
-assemble = gen_assembler(_header, _assemble)
+asm = gen_assembler(_header, _asm)
 
 # Codes
-codes = ['sh',
-         'dup',
-         'listen',
-         'connect',
-         'connectback',
-         'bindshell',
-         'acceptloop']
-
-load(codes)
+load(['sh',
+      'dup',
+      'dupsh',
+      'listen',
+      'connect',
+      'connectback',
+      'bindshell',
+      'acceptloop',
+      'fork',
+      'echo'])

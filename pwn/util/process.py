@@ -1,41 +1,24 @@
 import pwn, socket, time, sys
 from threading import Thread
+from Queue import Queue, Empty
+from subprocess import *
 
-class remote:
-    def __init__(self, host, port, fam = None, typ = socket.SOCK_STREAM, proto = 0):
-        self.target = (host, port)
-        if fam is None:
-            if host.find(':') <> -1:
-                self.family = socket.AF_INET6
-            else:
-                self.family = socket.AF_INET
-        self.type = typ
-        self.proto = proto
-        self.sock = None
+class process:
+    def __init__(self, cmd, *args, **env):
         self.debug = pwn.DEBUG
-        self.connect()
-
-    def connect(self):
-        self.close()
-        self.sock = socket.socket(self.family, self.type, self.proto)
-        self.sock.connect(self.target)
-
-    def settimeout(self, n):
-        self.sock.settimeout(n)
-
-    def setblocking(self, b):
-        self.sock.setblocking(b)
+        self.proc = Popen(tuple(cmd.split()) + args, stdin=PIPE, stdout=PIPE, stderr=PIPE, env = env)
 
     def close(self):
-        if self.sock:
-            self.sock.close()
-            self.sock = None
+        if self.proc:
+            self.proc.close()
+            self.proc = None
 
     def send(self, dat):
-        return self.sock.send(dat)
+        self.proc.stdin.write(dat)
+        self.proc.stdin.flush()
 
     def recv(self, numb = 1024):
-        res = self.sock.recv(numb)
+        res = self.proc.stdout.read(numb)
         if self.debug:
             sys.stdout.write(res)
             sys.stdout.flush()

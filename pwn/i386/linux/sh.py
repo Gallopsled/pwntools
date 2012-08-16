@@ -1,11 +1,13 @@
-def sh():
+def sh(clear_ecx = True):
     """Args: None
     Spawn a shell."""
+    if clear_ecx:
+        clear_ecx = 'xor ecx, ecx\n'
+    else:
+        clear_ecx = ''
     return """
-        ;; ECX or EAX must be cleared upon entry
-
         ;; Clear eax, ecx, edx
-        imul ecx
+        %simul ecx
 
         ;; Push '/bin//sh'
         push eax
@@ -16,4 +18,4 @@ def sh():
         mov al, SYS_execve
         mov ebx, esp
         int 0x80
-"""
+""" % clear_ecx

@@ -5,6 +5,4 @@ def bindshell(port):
     Standard bind shell."""
     return \
         listen(port) + \
-        'xchg eax, ebx' + \
-        dup() + \
-        sh()
+        dupsh()
