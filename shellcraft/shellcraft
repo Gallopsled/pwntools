@@ -117,7 +117,7 @@ if __name__ == '__main__':
             exit(0)
         try:
             module = __import__('pwn.' + arch + '.' + platform,
-                                fromlist = ['_header', '_assemble', which]
+                                fromlist = ['_header', '_asm', which]
                                 )
         except:
             raise
@@ -161,7 +161,7 @@ if __name__ == '__main__':
             raise
         exit(0)
 
-    res = module.assemble(code, emit_asm = emit_asm)
+    res = module.asm(code, emit_asm = emit_asm)
 
     if not emit_asm:
         # TODO: make this architechture independant
