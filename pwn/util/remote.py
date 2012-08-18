@@ -1,8 +1,17 @@
 import pwn, socket, time, sys
 from threading import Thread
+from excepthook import addexcepthook
+
+_DEFAULT_REMOTE_TIMEOUT = 10
+
+def __hook(type, value, _traceback):
+    if type == socket.timeout or \
+            (type == socket.error and value.errno == 111):
+        exit(pwn.PWN_UNAVAILABLE)
+addexcepthook(__hook)
 
 class remote:
-    def __init__(self, host, port, fam = None, typ = socket.SOCK_STREAM, proto = 0):
+    def __init__(self, host, port, fam = None, typ = socket.SOCK_STREAM, proto = 0, **kwargs):
         self.target = (host, port)
         if fam is None:
             if host.find(':') <> -1:
@@ -13,14 +22,18 @@ class remote:
         self.proto = proto
         self.sock = None
         self.debug = pwn.DEBUG
+        self.timeout = kwargs.get('timeout', _DEFAULT_REMOTE_TIMEOUT)
         self.connect()
 
     def connect(self):
         self.close()
         self.sock = socket.socket(self.family, self.type, self.proto)
+        if self.timeout is not None:
+            self.sock.settimeout(self.timeout)
         self.sock.connect(self.target)
 
     def settimeout(self, n):
+        self.timeout = n
         self.sock.settimeout(n)
 
     def setblocking(self, b):
