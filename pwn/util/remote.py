@@ -1,17 +1,12 @@
 import pwn, socket, time, sys
 from threading import Thread
 from excepthook import addexcepthook
+from .consts import *
 
 _DEFAULT_REMOTE_TIMEOUT = 10
 
-def __hook(type, value, _traceback):
-    if type == socket.timeout or \
-            (type == socket.error and value.errno == 111):
-        exit(pwn.PWN_UNAVAILABLE)
-addexcepthook(__hook)
-
 class remote:
-    def __init__(self, host, port, fam = None, typ = socket.SOCK_STREAM, proto = 0, **kwargs):
+    def __init__(self, host, port = 1337, fam = None, typ = socket.SOCK_STREAM, proto = 0, **kwargs):
         self.target = (host, port)
         if fam is None:
             if host.find(':') <> -1:
@@ -23,6 +18,7 @@ class remote:
         self.sock = None
         self.debug = pwn.DEBUG
         self.timeout = kwargs.get('timeout', _DEFAULT_REMOTE_TIMEOUT)
+        self.checked = kwargs.get('checked', True)
         self.connect()
 
     def connect(self):
@@ -30,7 +26,21 @@ class remote:
         self.sock = socket.socket(self.family, self.type, self.proto)
         if self.timeout is not None:
             self.sock.settimeout(self.timeout)
-        self.sock.connect(self.target)
+        if self.checked:
+            try:
+                self.sock.connect(self.target)
+            except socket.error, e:
+                if e.errno == 111:
+                    pwn.trace(' [-] Connection to %s on port %d refused\n' % self.target)
+                    exit(PWN_UNAVAILABLE)
+                else:
+                    raise
+            except socket.timeout:
+                pwn.trace(' [-] Timed out while connecting to %s on port %d\n' % self.target)
+                exit(PWN_UNAVAILABLE)
+        else:
+            self.sock.connect(self.target)
+        pwn.trace(' [+] Opened connection to %s on port %d\n' % self.target)
 
     def settimeout(self, n):
         self.timeout = n
@@ -43,12 +53,30 @@ class remote:
         if self.sock:
             self.sock.close()
             self.sock = None
+            pwn.trace(' [+] Closed connection to %s on port %d\n' % self.target)
 
     def send(self, dat):
-        return self.sock.send(dat)
+        if self.checked:
+            try:
+                return self.sock.send(dat)
+            except socket.error, e:
+                if e.errno == 32:
+                    pwn.trace(' [-] Broken pipe\n')
+                    exit(PWN_UNAVAILABLE)
+                else:
+                    raise
+        else:
+            return self.sock.send(dat)
 
     def recv(self, numb = 1024):
-        res = self.sock.recv(numb)
+        if self.checked:
+            try:
+                res = self.sock.recv(numb)
+            except socket.timeout:
+                pwn.trace(' [-] Connection timed out\n')
+                exit(PWN_UNAVAILABLE)
+        else:
+            res = self.sock.recv(numb)
         if self.debug:
             sys.stdout.write(res)
             sys.stdout.flush()
@@ -86,6 +114,7 @@ class remote:
         return ''.join(res)
 
     def interactive(self, prompt = '> '):
+        pwn.trace(' [+] Switching to interactive mode\n')
         self.debug = True
         def loop():
             while True:

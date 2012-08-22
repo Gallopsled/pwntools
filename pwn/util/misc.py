@@ -1,5 +1,5 @@
 # top-level imports
-import struct
+import struct, pwn, sys
 from socket import htons, inet_aton, inet_ntoa, gethostbyname
 from os import system
 from time import sleep
