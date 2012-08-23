@@ -32,7 +32,7 @@ def gen_assembler(hdr, assembler):
             exit(0)
         os.unlink(src)
         return p.stdout.read()
-    return assemble
+    return pwn.memoize(assemble)
 
 def load(codes):
     globs = inspect.currentframe(1).f_globals
