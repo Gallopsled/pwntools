@@ -2,9 +2,14 @@ import atexit, sys, pwn, os, cPickle
 
 class __Session:
     def __init__(self):
+        self.data = None
+
+    def __load__(self):
+        if self.data is not None:
+            return
         self.file = os.path.basename(sys.argv[0])
         try:
-            self.file += '_' + pwn.HOST
+            self.file += '_' + pwn.RHOST
         except:
             pass
         self.file += '.session'
@@ -18,26 +23,29 @@ class __Session:
             self.data = dict()
 
     def __getitem__(self, key):
+        self.__load__()
         return self.data[key]
 
     def __setitem__(self, key, data):
+        self.__load__()
         self.data[key] = data
 
     def __delitem__(self, key):
+        self.__load__()
         del self.data[key]
 
     def get(self, key, default):
+        self.__load__()
         try:
             return self[key]
         except:
             return default
 
     def __save__(self):
-        fd = open(self.file, 'w')
-        cPickle.dump(self.data, fd)
-        fd.close()
+        if self.data is not None:
+            fd = open(self.file, 'w')
+            cPickle.dump(self.data, fd)
+            fd.close()
 
-def session_start():
-    s = __Session()
-    atexit.register(lambda: s.__save__())
-    __builtins__['SESSION'] = s
+pwn.SESSION = __Session()
+atexit.register(lambda: pwn.SESSION.__save__())

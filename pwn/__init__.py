@@ -1,13 +1,28 @@
 # Argument parsing
 import pwn, sys
+pwn.TRACE = True
 pwn.DEBUG = False
 for arg in sys.argv:
     if   arg == 'DEBUG':
         sys.argv.remove(arg)
         pwn.DEBUG = True
-    elif arg.lower().startswith('host='):
+    elif arg == 'NOTRACE':
         sys.argv.remove(arg)
-        pwn.HOST = arg[5:]
+        pwn.TRACE = False
+    elif arg.find('=') >= 0:
+        key, val = arg.split('=', 1)
+        sys.argv.remove(arg)
+        pwn[key] = val
+
+def trace(s):
+    if pwn.TRACE:
+        sys.stdout.write(s)
+        sys.stdout.flush()
+
+def debug(s):
+    if pwn.DEBUG:
+        sys.stderr.write(s)
+        sys.stderr.flush()
 
 # Constans
 INCLUDE = 'include'
