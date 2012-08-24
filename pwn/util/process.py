@@ -6,7 +6,11 @@ from subprocess import *
 class process:
     def __init__(self, cmd, *args, **env):
         self.debug = pwn.DEBUG
-        self.proc = Popen(tuple(cmd.split()) + args, stdin=PIPE, stdout=PIPE, stderr=PIPE, env = env)
+        self.proc = Popen(tuple(cmd.split()) + args,
+                          stdin=PIPE, stdout=PIPE, stderr=PIPE,
+                          env = env,
+                          bufsize = 0)
+        # self.proc = Popen(tuple(cmd.split()) + args, stdin=PIPE)
 
     def close(self):
         if self.proc:
@@ -56,10 +60,12 @@ class process:
         return ''.join(res)
 
     def interactive(self, prompt = '> '):
+        pwn.trace(' [+] Switching to interactive mode\n')
+        debug = self.debug
         self.debug = True
         def loop():
             while True:
-                self.recv()
+                self.recv(1)
         t = Thread(target = loop)
         t.daemon = True
         t.start()
@@ -68,4 +74,5 @@ class process:
                 time.sleep(0.1)
                 self.send(raw_input(prompt) + '\n')
             except KeyboardInterrupt:
+                self.debug = debug
                 break
