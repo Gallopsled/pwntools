@@ -63,9 +63,8 @@ org LOADER_POS
 ; Compile with:
 ; nasm elf-loader.asm && (cat elf-loader && python print_sizes.py elf-loader $STATIC_ELF && cat $STATIC_ELF) > payload
 
-[bits 64]
-
 ; Step 1a/1b
+[bits 64] ; Mixed 32/64-bit
 detect_mode:
     xor eax, eax
     and rax, rax        ; This is a "dec eax; and eax, eax" on 32-bit
@@ -73,6 +72,7 @@ detect_mode:
     jne short get_info
 
 ; Step 1b
+[bits 64] ; Pure 64-bit
 alloc_stack:
     mov rax, SYS64_mmap
     xor rdi, rdi                                    ; addr
@@ -86,6 +86,7 @@ alloc_stack:
     lea esp, [rax+120]
 
 ; Step 2
+[bits 64] ; Mixed 32/64-bit
 get_info:
     call tramp
 tramp:
@@ -94,6 +95,7 @@ tramp:
     mov ebp, [rsi + len - $$]
 
 ; Step 3
+[bits 64] ; Mixed 32/64-bit
     push SYS_mmap
     pop rax
 
@@ -112,27 +114,32 @@ tramp:
     int 0x80
 
 ; Step 4
+[bits 64] ; Mixed 32/64-bit
     mov edi, eax
     mov ecx, [rsi + len - $$]
     rep movsb
 
 ; Step 5a/5b
+[bits 64] ; Mixed 32/64-bit
     xor rax, rax
     and rax, rax
-    je switch_32
+    je jump_64
 
 ; Step 5a
+[bits 32] ; Pure 32-bit
+jump_32:
     mov ebx, parse_elf
-    jmp rbx
+    jmp ebx
 
 ; Step 5b
-switch_32:
+[bits 64] ; Pure 64-bit
+jump_64:
     push 0x23
-    push switch_32_fix
+    push jump_64_fixup
     jmp far [rsp]
 
-[bits 32]
-switch_32_fix:
+[bits 32] ; Pure 32-bit
+jump_64_fixup:
     push ss
     pop ds
 
@@ -140,6 +147,7 @@ switch_32_fix:
     pop es
 
 ; Step 6
+[bits 32] ; Pure 32-bit
 parse_elf:
     movzx   ebp, word [elf_begin + Elf32_Ehdr.e_phnum]
     mov     edx, [elf_begin + Elf32_Ehdr.e_phoff]
@@ -193,6 +201,7 @@ map_stack:
     lea esp, [eax+16*PAGE_SIZE]
 
 ; Step 7
+[bits 32] ; Pure 32-bit
 fix_stack:
     mov ecx, 64
 fix_stack_loop:
@@ -200,6 +209,7 @@ fix_stack_loop:
     loop fix_stack_loop
 
 ; Step 8
+[bits 32] ; Pure 32-bit
     jmp [elf_begin + Elf32_Ehdr.e_entry]
 
 mmap_addr:      dd $$
