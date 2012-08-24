@@ -1,6 +1,6 @@
 %include "linux/32.asm"
 %include "linux/64.asm"
-%include "elf.asm"
+%include "defines.asm"
 
 %define PAGE_SIZE   4096
 
