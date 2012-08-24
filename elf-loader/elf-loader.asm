@@ -12,7 +12,7 @@ org LOADER_POS
 ; ELF-loader written in shellcode for loading 32-bit static ELF-files
 ; It works on both 32-bit and 64-bit linux, assuming that it is possible
 ; to jump to 32-bit mode from 64-bit mode by doing a far jump to 0x23:ADDR
-
+;
 ; Algorithm: (a is 32-bit only, b is 64-bit only)
 ; 1a:
 ;       Assume that a stack is available
@@ -39,9 +39,29 @@ org LOADER_POS
 ;       Put a bit of content on the stack so that libc won't fail
 ; 8:
 ;       Jump to the entry-point
-
+;
+; Known bugs/problems:
+; - The stack is not set up in the same way as the kernel
+;   would. The argv and envp is greatly simplified and the ELF aux
+;   table is not there.
+;   See http://www.win.tue.nl/~aeb/linux/hh/stack-layout.html
+;
+; - A lot of stuff is still mapped into the memory space when the
+;   program runs.
+;
+; - In 32-bit mode you _could_ make do with just a single word needed
+;   on the stack, by only doing a single call to get the shellcode-address
+;   and use this for storage afterwards. This however makes it harder to
+;   use the same code in both 32-bit and 64-bit so this is not done currently.
+;
+; - Even if the 64-bit kernel supports jumping to 32-bit mode with the 0x23
+;   segment, it still has a few kinks. For example will mmap per default
+;   allocate pages in the entire 64-bit range even though it only returns the
+;   lower 32-bits. This behaviour can be fixed by using MAP_32BIT however it
+;   might not always be this easy.
+;
 ; Compile with:
-; nasm elf-loader.asm && (cat elf-loader; python print_sizes.py elf-loader $STATIC_ELF; cat $STATIC_ELF) > payload
+; nasm elf-loader.asm && (cat elf-loader && python print_sizes.py elf-loader $STATIC_ELF && cat $STATIC_ELF) > payload
 
 [bits 64]
 
@@ -77,13 +97,17 @@ tramp:
     push SYS_mmap
     pop rax
 
-    push 0
-    push 0
-    push MAP_SHARED | MAP_ANONYMOUS | MAP_FIXED
+    ; In 64-bit these all push 8 bytes each, but all this changes is that
+    ; it adds more 0-bytes at the top of the stack, so it doesn't really
+    ; matter much
+    push 0                                                  ; offset
+    push 0                                                  ; fd
+    push MAP_SHARED | MAP_ANONYMOUS | MAP_FIXED             ; flags
+
     lea ebx, [rsp - 12]
-    mov dword [rbx+0], $$
-    mov [rbx+4], ebp
-    mov dword [rbx+8], PROT_READ | PROT_WRITE | PROT_EXEC
+    mov dword [rbx+8], PROT_READ | PROT_WRITE | PROT_EXEC   ; prot
+    mov [rbx+4], ebp                                        ; len
+    mov dword [rbx+0], $$                                   ; addr
 
     int 0x80
 
