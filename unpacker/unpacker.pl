@@ -1,19 +1,24 @@
 #!/usr/bin/perl
 
 use strict;
+use warnings;
 use v5.10;
 use Switch;
 use Cwd;
+use File::Copy;
 
 sub decode;
-our $n = 0;
+sub unpack;
+my  $n = 0;
+my  $first_run = 1;
 
-sub main(@)
+sub main
 {
   my @files = @_;
   my $file;
   my $out_files;
   my @out_files;
+  my $choice;
 
   # Usage
   if (@files == 0) {
@@ -21,8 +26,20 @@ sub main(@)
     exit();
   }
 
-  # Create the unpacked dir
-  `mkdir unpacked 2> /dev/null`;
+  # Create the unpacking dirs
+  if($first_run && -d "unpacked") {
+    say "unpacked dir exists, do you want to delete it? [y/N]";
+    $choice = <stdin>;
+    if($choice =~ /^y/i) {
+      `rm -r unpacked`;
+    }
+    else {
+      exit();
+    }
+    $first_run = 0;
+  }
+
+  `mkdir -p unpacked/tmp 2> /dev/null`;
 
   # Try to unpack each file in the 
   foreach $file (@files) {
@@ -36,11 +53,14 @@ sub main(@)
     main(@out_files);
   }
 
+  exit();
+
 }
 
 sub decode
 {
-  my $file = $_[0];
+  my $file = shift;
+  say "$file";
   my $type = `file $file`;
   my @out;
   my $not_supported = 0;
@@ -53,8 +73,24 @@ sub decode
   #   Unpack the file to unpacked/$n/
   #   Add the used tool[s] to dependencies (use apt package names)
   switch($type) {
-    case /Zip archive/  { say "Unpacking zip-archive: $file"; `cp $file unpacked/$n.zip; unzip unpacked/$n.zip -d unpacked/$n/`; }
-    else                { say "Not supported: $type"; $not_supported = 1; }
+    case /Zip archive/      { unpacker($file, "zip", "unzip");  }
+    case /RAR archive/      { unpacker($file, "rar", "unrar", "e");  }
+    case /gzip compressed/  { unpacker($file, "gz", "gunzip");  }
+    case /tar archive/      { unpacker($file, "tar", "tar", "xf");  }
+    case /XZ compressed/    { unpacker($file, "xz", "unxz");  }
+    case /bzip2 compressed/ { unpacker($file, "bz2", "bunzip2");  }
+    case /7-zip archive/    { unpacker($file, "7z", "7z", "e");  }
+    case /LZMA compressed/  { unpacker($file, "lzma", "unlzma");  }
+    case /lzop compressed/  { unpacker($file, "lzop", "lzop", "-d");  }
+    case /rzip compressed/  { unpacker($file, "rz", "rzip", "-d");  }
+    case /uuencoded/        { unpacker($file, "uu", "uudecode"); }
+    case /ARJ archive data/ { unpacker($file, "arj", "arj", "e"); }
+    case /ARC archive data/ { unpacker($file, "arc", "arc", "e"); }
+    case /LHarc/            { unpacker($file, "lzh", "lha", "e"); }
+    case /shell archive/    { unpacker($file, "shar", "unshar"); }
+    case /xar archive/      { unpacker($file, "xar", "7z", "e"); }
+    case /ACE archive data/ { unpacker($file, "", "")}
+    else                    { say "Not supported: $type"; $not_supported = 1; }
   }
 
 
@@ -70,8 +106,26 @@ sub decode
   return @out;
 }
 
+sub unpacker {
+  my $file     = shift;
+  my $ext      = shift;
+  my $unpacker = shift;
+  my $flags    = shift // "";
 
-my $cwd = getcwd;
-`cd $cwd`;
+
+  say "Unpacking $ext archive: $file";
+
+  `mkdir unpacked/$n`;
+  copy($file,"unpacked/tmp/$n.$ext");
+  copy($file,"unpacked/$n.$ext");
+  chdir("unpacked/tmp");
+  `$unpacker $flags $n.$ext`;
+  chdir("../../");
+  unlink("unpacked/tmp/$n.$ext");
+  `mv unpacked/tmp/* unpacked/$n/`;
+}
+
+
+chdir(getcwd());
 main(@ARGV);
 say "Done!";
