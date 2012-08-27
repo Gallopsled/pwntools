@@ -1,0 +1,20 @@
+(private, public) <- server-pair genereret på forhånd. public er velkendt
+
+one-time pad = 128 bit random btis genereret live på zombie
+nonce1       = 48 bit random bits genereret live på zombie
+nonce2       = 48 bit random bits genereret live på serveren
+ts1          = 32 bit timestamp fra zombie
+ts2          = 32 bit timestamp fra server
+debug proof  = 32 bit
+
+Zombie-algoritme:
+0. no-debug challenge = recv()
+1. Kør anti-debugging + lav et proof of no-debug ud fra no-debug challenge
+2. nonce1 = rand(), ts1 == time(NULL), one-time pad = rand()
+3. send(crypt(public, (ts1, one-time pad, proof of no-debug, nonce1)  ))
+4. (ts2, nonce2, nonce1_recved) = one-time pad XOR recv()
+5. nonce1 == nonce1_recved && is_recent(ts2) ???
+6. key == hash(nonce1, nonce2)
+7. send(crypt(private1, key))
+8. init_prgn(key)
+9. delete key
