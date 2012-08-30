@@ -7,8 +7,8 @@ __tempdir = join(gettempdir(), 'pwn-memoize')
 def memoize(f):
     if __tempdir is None:
         return f
-    def g(x):
-        digest = md5.md5(str(x)).hexdigest()
+    def g(*args, **kwargs):
+        digest = md5.md5(str(args) + str(kwargs)).hexdigest()
         fname = join(__tempdir, digest)
         if exists(fname):
             try:
@@ -17,7 +17,7 @@ def memoize(f):
                 return y
             except:
                 pass
-        y = f(x)
+        y = f(*args, **kwargs)
         try:
             with open(fname, 'w') as fd:
                 dump(y, fd)
