@@ -3,6 +3,7 @@ bits 32
 
 %define URANDOM_FD 0x7f
 %define URANDOM_COUNT 16
+%define NOISE_EXTRA_STACK 128
 
 main:
     call no_signals
@@ -114,7 +115,7 @@ noise:
 
 .urandom:
     ; Read from urandom if available
-    sub esp, URANDOM_COUNT
+    sub esp, URANDOM_COUNT + NOISE_EXTRA_STACK
     mov ecx, esp
     push URANDOM_COUNT
     pop edx
@@ -145,5 +146,5 @@ noise:
     jns .loop
 
 
-    add esp, URANDOM_COUNT + 4
+    add esp, URANDOM_COUNT + NOISE_EXTRA_STACK + 4
     ret
