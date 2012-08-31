@@ -112,6 +112,7 @@ mix:
     sub edi, eax
     rol edi, 17
     xlatb
+    add eax, ecx
     xor edi, eax
     rol edi, 23
     xchg ebx, edx
