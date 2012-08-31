@@ -1,108 +1,149 @@
 bits 32
 %include "linux/32.asm"
 
-%macro PRINT0 0
-        push eax
-        push ecx
-        push byte `0`
-        mov ebx, STD_OUT
-        mov edx, 1
-        mov ecx, esp
-        mov eax, SYS_write
-        int 0x80
-        add esp, 4
-        pop ecx
-        pop eax
-%endmacro
-%macro PRINT1 0
-        push eax
-        push ecx
-        push byte `1`
-        mov ebx, STD_OUT
-        mov edx, 1
-        mov ecx, esp
-        mov eax, SYS_write
-        int 0x80
-        add esp, 4
-        pop ecx
-        pop eax
-%endmacro
+%define URANDOM_FD 0x7f
+%define URANDOM_COUNT 16
 
-;; int3
-shudder:
-        push byte 0
+main:
+    call no_signals
+    call open_urandom
+    call shudder
+    jmp $
+
+open_urandom:
+    ; push '/dev/urandom\0\0\0\0'
+    push 0
+    push 'ndom'
+    push '/ura'
+    push '/dev'
+
+    ; open("/dev/urandom", O_RDONLY | O_NONBLOCK)
+    push SYS_open
+    pop eax
+    mov ebx, esp
+    push O_RDONLY | O_NONBLOCK
+    pop ecx
+    int 0x80
+
+    ; dup2(opened_fd, URANDOM_FD)
+    push URANDOM_FD
+    pop ecx
+    mov ebx, eax
+    push SYS_dup2
+    pop eax
+    int 0x80
+
+    ; close(opened_fd)
+    push SYS_close
+    pop eax
+    int 0x80
+
+    add esp, 16
+    ret
+
+no_signals:
+    ; Ignore every signal (that you can ignore)
+    ; This has multiple nice effects:
+    ; - It doesn't leave zombie-children
+    ; - It will not die on SIGTERM
+    push 127
 .loop:
-        dec byte [esp]
-        call noise
-        push byte SYS_getpid
-        pop eax
-        int 0x80
-        push eax
-        push byte SYS_fork
-        pop eax
-        int 0x80
-        xor esi, esi
-        test eax, eax
-        jnz .parent
+    push SYS_signal
+    pop eax
+    pop ebx
+    push ebx
+    push SIG_IGN
+    pop ecx
+    int 0x80
+    dec byte [esp]
+    jno .loop
+
+    pop eax         ; remove the counter
+    ret
+
+shudder:
+    push 127
+.loop:
+    call noise
+    push byte SYS_getpid
+    pop eax
+    int 0x80
+    push eax
+    push byte SYS_fork
+    pop eax
+    int 0x80
+    xor esi, esi
+    test eax, eax
+    jnz .parent
 .child:
-        ;; push byte 0
-        push byte SYS_getpid
-        pop eax
-        int 0x80
-        dec esi
-        jmp .roulette
+    push byte SYS_setsid
+    pop eax
+    int 0x80
+    dec esi
 .parent:
-        ;; push byte 1
-.roulette:
-        call mix
-        add edi, esi
-        pop esi
-        sub edi, esi
-        jp .continue
-.die:
-        ;; test ebx, ebx
-        ;; je .foo
-        ;; PRINT1
-        ;; jmp .bar
-.foo:
-        ;; PRINT0
-.bar:
-;;         xor ecx, ecx
-;; .sleep_loop:
-;;         loop .sleep_loop
-        push byte SYS_exit
-        pop eax
-        int 0x80
+    call mix
+    xor edi, esi
+    pop eax
+    js die
 .continue:
-        jnz .loop
-        pop eax                 ; remove counter from stack
-jmp $
+    dec byte [esp]
+    jno .loop
 
+    pop eax                 ; remove counter from stack
+    ret
 
+die:
+    xor ebx, ebx
+    push byte SYS_exit
+    pop eax
+    int 0x80
 
 mix:
-        pushad
-        mov ecx, 0x1000
+    pushad
+    mov ecx, 0x1000
 .loop:
-        crc32 edi, dword [esp + ecx + 8]
-        rol edi, 13
-        ;; add more crazyness here
-        loop .loop
-        add esp, 32
-        ret
+    xor edi, dword [esp + ecx + 8]
+    rol edi, 13
+    xor edi, dword [esp + ecx + 8]
+    ;; add more crazyness here
+    loop .loop
+    add esp, 32
+    ret
 
 noise:
-        push byte SYS_times
-        pop eax
-        int 0x80
-        call mix
-        xor eax, eax
-        cpuid
-        mov ebp, eax
+
+.urandom:
+    ; Read from urandom if available
+    sub esp, URANDOM_COUNT
+    mov ecx, esp
+    push URANDOM_COUNT
+    pop edx
+    push URANDOM_FD
+    pop ebx
+    push SYS_read
+    pop eax
+    int 0x80
+
+.times:
+    ; Call SYS_times
+    xor ebx, ebx
+    push byte SYS_times
+    pop eax
+    int 0x80
+    push eax
+
+.cpuids:
+    ; Get all the cpuids and mix after every one of them
+    xor eax, eax
+    cpuid
+    mov ebp, eax
 .loop:
-        mov eax, ebp
-        cpuid
-        call mix
-        dec ebp
-        jns .loop
-        ret
+    mov eax, ebp
+    cpuid
+    call mix
+    dec ebp
+    jns .loop
+
+
+    add esp, URANDOM_COUNT + 4
+    ret
