@@ -33,3 +33,6 @@
         %define SIGPWR          30
         %define SIGSYS          31
         %define SIGUNUSED       31
+
+        %define SIG_DFL         0
+        %define SIG_IGN         1
