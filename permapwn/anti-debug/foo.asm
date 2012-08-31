@@ -100,12 +100,22 @@ die:
     int 0x80
 
 mix:
+    ; Cannot be called from an address which is less than 0x411 below an unmapped address
     pushad
-    mov ecx, 0x1000
+    mov eax, [esp+36]   ; Get the first argument 
+    mov ebx, [esp+32]   ; Get the return address
+    lea edx, [esp+403]  ; Get some address on the stack
+    mov ecx, 0x3f5
 .loop:
-    xor edi, dword [esp + ecx + 8]
+    xor edi, dword [esp + 4*ecx + 8]
     rol edi, 13
-    xor edi, dword [esp + ecx + 8]
+    sub edi, eax
+    rol edi, 17
+    xlatb
+    xor edi, eax
+    rol edi, 23
+    xchg ebx, edx
+    sub edi, dword [esp + 2*ecx + 8]
     ;; add more crazyness here
     loop .loop
     add esp, 32
