@@ -102,17 +102,18 @@ die:
 mix:
     ; Cannot be called from an address which is less than 0x411 below an unmapped address
     pushad
-    mov eax, [esp+36]   ; Get the first argument 
+    mov eax, [esp+36]   ; Get the first argument  (whatever is on the stack)
     mov ebx, [esp+32]   ; Get the return address
     lea edx, [esp+403]  ; Get some address on the stack
-    mov ecx, 0x3f5
+    mov ecx, 0x367
 .loop:
-    xor edi, dword [esp + 4*ecx + 8]
+    xor edi, dword [esp + ecx + 11]
     rol edi, 13
     sub edi, eax
     rol edi, 17
+    lea eax, [eax + 8*ecx+3]
     xlatb
-    add eax, ecx
+    lea eax, [eax + 2*ecx+6]
     xor edi, eax
     rol edi, 23
     xchg ebx, edx
