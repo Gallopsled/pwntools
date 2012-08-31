@@ -55,18 +55,15 @@ class basesock:
         return ''.join(res)
 
     def recvuntil(self, delim):
-        d = list(delim)
-        res = []
-        while d:
+        res = self.recvn(len(delim))
+
+        while not res.endswith(delim):
             c = self.recv(1)
             if not c:
                 break
-            res.append(c)
-            if c == d[0]:
-                d.pop(0)
-            else:
-                d = list(delim)
-        return ''.join(res)
+
+            res += c
+        return res
 
     def recvline(self, lines = 1):
         res = []
