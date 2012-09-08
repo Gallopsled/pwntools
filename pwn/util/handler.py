@@ -23,7 +23,7 @@ class handler(basesock.basesock):
         self.listensock = socket.socket(self.family, self.type, self.proto)
         if self.timeout is not None:
             self.listensock.settimeout(self.timeout)
-        self.listensock.bind(('localhost', 0))
+        self.listensock.bind(('', 0))
         self.port = self.listensock.getsockname()[1]
         self.listensock.listen(self.backlog)
         pwn.trace(' [+] Handler is waiting for connection on port %d\n' % self.port)
