@@ -24,6 +24,13 @@ def debug(s):
         sys.stderr.write(s)
         sys.stderr.flush()
 
+def die(s = None, exception = None, error_code = -1):
+    if s:
+        pwn.trace(' [-] FATAL: ' + s + '\n')
+    if e:
+        pwn.trace(' [-] The exception was:\n' + e)
+    exit(error_code)
+
 # Constans
 INCLUDE = 'include'
 
