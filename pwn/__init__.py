@@ -28,7 +28,7 @@ def die(s = None, e = None, error_code = -1):
     if s:
         pwn.trace(' [-] FATAL: ' + s + '\n')
     if e:
-        pwn.trace(' [-] The exception was:\n' + e)
+        pwn.trace(' [-] The exception was:\n' + str(e) + '\n')
     exit(error_code)
 
 # Constans
