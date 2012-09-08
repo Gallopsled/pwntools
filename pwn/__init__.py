@@ -16,8 +16,8 @@ for arg in sys.argv:
 
 def trace(s):
     if pwn.TRACE:
-        sys.stdout.write(s)
-        sys.stdout.flush()
+        sys.stderr.write(s)
+        sys.stderr.flush()
 
 def debug(s):
     if pwn.DEBUG:
