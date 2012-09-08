@@ -24,7 +24,7 @@ def debug(s):
         sys.stderr.write(s)
         sys.stderr.flush()
 
-def die(s = None, exception = None, error_code = -1):
+def die(s = None, e = None, error_code = -1):
     if s:
         pwn.trace(' [-] FATAL: ' + s + '\n')
     if e:
