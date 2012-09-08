@@ -1,9 +1,34 @@
-#!/bin/bash
+#!/usr/bin/env python
 
-if [ $# -eq 0 ] ; then
-    nc -vl 1337 | tee >(md5sum >&2)
-elif [ $# -eq 1 ] ; then
-    nc -vl 1337 | tee >(md5sum >&2) > "$1"
-else
-    echo "usage: $0 [filename]"
-fi
+import pwn, sys, hashlib
+
+if len(sys.argv) > 2:
+    pwn.trace('Usage: ' + sys.argv[0] + ' [filename]\n')
+    pwn.die()
+
+try:
+    h = pwn.handler(port = 1337, timeout = None)
+except Exception as e:
+    pwn.die('Unable to bind to port 1337', e)
+
+try:
+    f = open(sys.argv[1], 'w') if len(sys.argv) == 2 else sys.stdout
+except Exception as e:
+    pwn.die('Unable to open file ' + sys.argv[1], e)
+
+try:
+    h.wait_for_connection()
+except Exception as e:
+    pwn.die('Error while waiting for connection', e)
+
+m = hashlib.md5()
+
+while not f.closed:
+    d = h.recv(4096)
+    if not d:
+        break
+    m.update(d)
+    f.write(d)
+
+f.flush() # Make sure that stdout is flushed before writing to stderr
+pwn.trace(' [+] The MD5 hex-digest was: ' + m.hexdigest() + '\n')

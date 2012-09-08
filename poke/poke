@@ -1,14 +1,28 @@
-#!/bin/bash
+#!/usr/bin/env python
 
-if [ $# -eq 1 ] ; then
-    tee >(nc -v "$1" 1337) | md5sum
-elif [ $# -eq 2 ] ; then
-    if [ -e "$2" ] ; then
-        nc -v "$1" 1337 < "$2"
-        md5sum "$2"
-    else
-        echo "File does not exist: $2"
-    fi
-else
-    echo "usage: $0 [filename] host"
-fi
+import pwn, sys, hashlib
+
+if not 2 <= len(sys.argv) <= 3:
+    pwn.trace('Usage: ' + sys.argv[0] + ' host [filename]\n')
+    pwn.die()
+
+try:
+    h = pwn.remote(sys.argv[1], port = 1337, timeout = None)
+except Exception as e:
+    pwn.die('Unable to connect to ' + sys.argv[1] + ':1337', e)
+
+try:
+    f = open(sys.argv[2], 'r') if len(sys.argv) == 3 else sys.stdin
+except Exception as e:
+    pwn.die('Unable to open file ' + sys.argv[2], e)
+
+m = hashlib.md5()
+
+while not f.closed:
+    d = f.read(4095 * (len(sys.argv) == 3) + 1) # send as fast as the user can type
+    if not d:
+        break
+    m.update(d)
+    h.send(d)
+
+pwn.trace(' [+] The MD5 hex-digest was: ' + m.hexdigest() + '\n')
