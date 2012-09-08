@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ $# -eq 1 ] ; then
+    cat | tee >(nc -v "$1" 1337) | md5sum
+elif [ $# -eq 2 ] ; then
+    if [ -e "$1" ] ; then
+        nc -v "$2" 1337 < "$1"
+        md5sum "$1"
+    else
+        echo "File does not exist: $1"
+    fi
+else
+    echo "usage: $0 [filename] host"
+fi

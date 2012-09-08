@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [ $# -eq 0 ] ; then
+    nc -vl 1337 | tee >(md5sum >&2)
+elif [ $# -eq 1 ] ; then
+    nc -vl 1337 | tee >(md5sum >&2) > "$1"
+else
+    echo "usage: $0 [filename]"
+fi
