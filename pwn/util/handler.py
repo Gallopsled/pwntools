@@ -30,7 +30,7 @@ class handler(basesock.basesock):
         self.listensock.bind(('', self.port))
         self.port = self.listensock.getsockname()[1]
         self.listensock.listen(self.backlog)
-        pwn.trace(' [+] Handler is waiting for connection on port %d\n' % self.port)
+        pwn.trace(' [+] Handler is waiting for connection on { %s }:%d\n' % (', '.join(i[1] for i in pwn.get_interfaces()), self.port))
 
     def stop(self):
         if self.listensock:
@@ -48,7 +48,7 @@ class handler(basesock.basesock):
                 exit(PWN_PATCHED)
         else:
             self.sock, self.target = self.listensock.accept()
-        pwn.trace(' [+] Got connection on local port %d from %s:%d\n' % ((self.port,) + self.target))
+        pwn.trace(' [+] Got connection on local %s:%d from %s:%d\n' % (self.sock.getsockname()  + self.target))
 
     def settimeout(self, n):
         self.timeout = n
