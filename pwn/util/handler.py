@@ -5,13 +5,14 @@ _DEFAULT_HANDLER_TIMEOUT = 10
 _DEFAULT_HANDLER_BACKLOG = 10
 
 class handler(basesock.basesock):
-    def __init__(self, port = 0, fam = socket.AF_INET, typ = socket.SOCK_STREAM, proto = 0, **kwargs):
+    def __init__(self, port = 0, fam = socket.AF_INET, typ = socket.SOCK_STREAM, sock_opts = [(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)], proto = 0, **kwargs):
         self.family = fam
         self.type = typ
         self.proto = proto
         self.listensock = None
         self.sock = None
         self.port = port
+        self.sock_opts = sock_opts
         self.target = None
         self.debug = pwn.DEBUG
         self.timeout = kwargs.get('timeout', _DEFAULT_HANDLER_TIMEOUT)
@@ -21,6 +22,9 @@ class handler(basesock.basesock):
 
     def start(self):
         self.listensock = socket.socket(self.family, self.type, self.proto)
+
+        for l,o,v in self.sock_opts:
+            self.listensock.setsockopt(l,o,v)
         if self.timeout is not None:
             self.listensock.settimeout(self.timeout)
         self.listensock.bind(('', self.port))
