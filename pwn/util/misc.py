@@ -1,5 +1,5 @@
 # top-level imports
-import struct, pwn, sys
+import struct, pwn, sys, subprocess, re
 from socket import htons, inet_aton, inet_ntoa, gethostbyname
 from os import system
 from time import sleep
@@ -62,3 +62,8 @@ def enhex(s):
 # network utils
 def ip (host):
     return struct.unpack('I', inet_aton(gethostbyname(host)))[0]
+
+def get_interfaces():
+    d = subprocess.check_output('ip -4 -o addr', shell=True)
+    ifs = re.findall(r'^\S+:\s+(\S+)\s+inet\s+([^\s/]+)', d, re.MULTILINE)
+    return [i for i in ifs if i[0] != 'lo']
