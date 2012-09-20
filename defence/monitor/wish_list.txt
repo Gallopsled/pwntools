@@ -1,0 +1,8 @@
+Monitor services (autorestart when down)
+Script to move services (for obfuscation)
+Monitor enemy hosts
+Monitor (suspicious) network activity
+Monitor (suspicious) file activity
+Statistics (uptime, traffic etc)
+Monitor shells running on the system
+
