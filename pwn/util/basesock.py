@@ -91,3 +91,12 @@ class basesock:
                 self.debug = debug
                 self.settimeout(timeout)
                 break
+
+    def recvall(self):
+        r = []
+        while True:
+            s = self.recv()
+            if s == '': break
+            r.append(s)
+        self.close()
+        return ''.join(r)
