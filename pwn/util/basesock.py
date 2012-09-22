@@ -75,7 +75,7 @@ class basesock:
             res += c
         return res
 
-    def send_after(self, wait_str, dat)
+    def send_after(self, wait_str, dat):
         self.recvuntil(wait_str)
         self.send(dat)
 
