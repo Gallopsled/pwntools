@@ -110,3 +110,7 @@ class basesock:
             r.append(s)
         self.close()
         return ''.join(r)
+
+    def sendafter(self, marker, data):
+        self.recvuntil(marker)
+        self.send(data)
