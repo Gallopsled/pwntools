@@ -13,7 +13,7 @@ def _debug(s):
         sys.stderr.write(s)
         sys.stderr.flush()
 
-if sys.stderr.isatty():
+if sys.stderr.isatty() and not DEBUG:
     _spinner = None
 
     class _Spinner(Thread):
