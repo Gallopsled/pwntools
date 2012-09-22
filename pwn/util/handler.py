@@ -1,4 +1,5 @@
 import pwn, socket, basesock
+import log
 from consts import *
 
 _DEFAULT_HANDLER_TIMEOUT = 10
@@ -30,7 +31,7 @@ class handler(basesock.basesock):
         self.listensock.bind(('', self.port))
         self.port = self.listensock.getsockname()[1]
         self.listensock.listen(self.backlog)
-        pwn.trace(' [+] Handler is waiting for connection on { %s }:%d\n' % (', '.join(i[1] for i in pwn.get_interfaces()), self.port))
+        log.info('Handler is waiting for connection on {%s}:%d\n' % (', '.join(i[1] for i in pwn.get_interfaces()), self.port))
 
     def stop(self):
         if self.listensock:
@@ -44,11 +45,11 @@ class handler(basesock.basesock):
             try:
                 self.sock, self.target = self.listensock.accept()
             except socket.timeout:
-                pwn.trace(' [-] Handler on port %s timed out\n' % self.port)
+                log.failure('Handler on port %s timed out\n' % self.port)
                 exit(PWN_PATCHED)
         else:
             self.sock, self.target = self.listensock.accept()
-        pwn.trace(' [+] Got connection on local %s:%d from %s:%d\n' % (self.sock.getsockname()  + self.target))
+        log.success('Got connection on local port %d from %s:%d\n' % ((self.sock.getsockname()[1],) + self.target))
 
     def settimeout(self, n):
         self.timeout = n
