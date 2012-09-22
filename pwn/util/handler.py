@@ -41,15 +41,16 @@ class handler(basesock.basesock):
             self.port = None
 
     def wait_for_connection(self):
+        log.waitfor('Waiting for connection on port %d' % self.port)
         if self.checked:
             try:
                 self.sock, self.target = self.listensock.accept()
             except socket.timeout:
-                log.failure('Handler on port %s timed out\n' % self.port)
+                log.failed('Handler on port %d timed out\n' % self.port)
                 exit(PWN_PATCHED)
         else:
             self.sock, self.target = self.listensock.accept()
-        log.success('Got connection on local port %d from %s:%d\n' % ((self.sock.getsockname()[1],) + self.target))
+        log.succeeded('Got connection on local port %d from %s:%d\n' % ((self.sock.getsockname()[1],) + self.target))
 
     def settimeout(self, n):
         self.timeout = n
