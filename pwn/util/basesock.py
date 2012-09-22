@@ -71,8 +71,10 @@ class basesock:
             pred = lambda s: expr.match(s)
         elif 'pred' in kwargs:
             pred = kwargs['pred']
-        else:
+        elif delim != None:
             pred = lambda s: s.endswith(delim)
+        else:
+            die('recvuntil called without delim, regex or pred')
 
         res = ''
 
