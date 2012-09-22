@@ -21,7 +21,9 @@ class remote(basesock.basesock):
         self.connect()
 
     def connect(self):
-        self.close()
+        if self.connected():
+            warning('Already connected to %s on port %d\n' % self.target)
+            return
         waitfor('Opening connection to %s on port %d' % self.target)
         self.sock = socket.socket(self.family, self.type, self.proto)
         if self.timeout is not None:
