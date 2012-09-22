@@ -1,4 +1,4 @@
-import pwn, socket, time, sys
+import pwn, socket, time, sys, re
 from log import *
 from consts import *
 from threading import Thread
@@ -64,10 +64,19 @@ class basesock:
             n += 1
         return ''.join(res)
 
-    def recvuntil(self, delim):
-        res = self.recvn(len(delim))
+    def recvuntil(self, delim = None, **kwargs):
 
-        while not res.endswith(delim):
+        if 'regex' in kwargs:
+            expr = re.compile(kwargs['regex'], re.DOTALL)
+            pred = lambda s: expr.match(s)
+        elif 'pred' in kwargs:
+            pred = kwargs['pred']
+        else:
+            pred = lambda s: s.endswith(delim)
+
+        res = ''
+
+        while not pred(res):
             c = self.recv(1)
             if not c:
                 break
@@ -75,8 +84,13 @@ class basesock:
             res += c
         return res
 
-    def sendafter(self, wait_str, dat):
-        res = self.recvuntil(wait_str)
+    def sendafter(self, delim, dat):
+        res = self.recvuntil(delim)
+        self.send(dat)
+        return res
+
+    def sendwhen(self, dat, **kwargs):
+        res = self.recvuntil(**kwargs)
         self.send(dat)
         return res
 
