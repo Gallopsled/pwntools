@@ -76,8 +76,9 @@ class basesock:
         return res
 
     def sendafter(self, wait_str, dat):
-        self.recvuntil(wait_str)
+        res = self.recvuntil(wait_str)
         self.send(dat)
+        return res
 
     def recvline(self, lines = 1):
         res = []
