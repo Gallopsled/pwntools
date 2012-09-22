@@ -75,7 +75,7 @@ class basesock:
             res += c
         return res
 
-    def send_after(self, wait_str, dat):
+    def sendafter(self, wait_str, dat):
         self.recvuntil(wait_str)
         self.send(dat)
 
@@ -114,7 +114,3 @@ class basesock:
             r.append(s)
         self.close()
         return ''.join(r)
-
-    def sendafter(self, marker, data):
-        self.recvuntil(marker)
-        self.send(data)
