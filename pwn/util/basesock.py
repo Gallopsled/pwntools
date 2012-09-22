@@ -1,4 +1,5 @@
 import pwn, socket, time, sys
+from log import *
 from consts import *
 from threading import Thread
 
@@ -10,31 +11,40 @@ class basesock:
     def setblocking(self, b):
         self.sock.setblocking(b)
 
+    def connected(self):
+        return self.sock <> None
+
     def close(self):
         if self.sock:
             self.sock.close()
             self.sock = None
-            pwn.trace(' [+] Closed connection to %s on port %d\n' % self.target)
+            info('Closed connection to %s on port %d\n' % self.target)
+
+    def _send(self, dat):
+        l = len(dat)
+        i = 0
+        while l > i:
+            i += self.sock.send(dat[i:])
 
     def send(self, dat):
         if self.checked:
             try:
-                return self.sock.send(dat)
+                self._send(dat)
             except socket.error, e:
                 if e.errno == 32:
-                    pwn.trace(' [-] Broken pipe\n')
+                    failure('Broken pipe\n')
                     exit(PWN_UNAVAILABLE)
                 else:
                     raise
         else:
-            return self.sock.send(dat)
+            self._send(dat)
 
     def recv(self, numb = 1024):
         if self.checked:
             try:
                 res = self.sock.recv(numb)
             except socket.timeout:
-                pwn.trace(' [-] Connection timed out\n')
+                failure('Connection timed out\n')
                 exit(PWN_UNAVAILABLE)
         else:
             res = self.sock.recv(numb)
@@ -72,7 +82,7 @@ class basesock:
         return ''.join(res)
 
     def interactive(self, prompt = '> '):
-        pwn.trace(' [+] Switching to interactive mode\n')
+        info('Switching to interactive mode\n')
         debug = self.debug
         timeout = self.timeout
         self.debug = True
@@ -91,3 +101,12 @@ class basesock:
                 self.debug = debug
                 self.settimeout(timeout)
                 break
+
+    def recvall(self):
+        r = []
+        while True:
+            s = self.recv()
+            if s == '': break
+            r.append(s)
+        self.close()
+        return ''.join(r)

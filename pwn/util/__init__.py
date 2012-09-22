@@ -1,3 +1,4 @@
+import log
 from misc import *
 from excepthook import addexcepthook
 from memoize import memoize

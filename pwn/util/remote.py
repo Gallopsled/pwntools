@@ -1,4 +1,5 @@
 import pwn, socket, basesock
+from log import *
 from consts import *
 
 _DEFAULT_REMOTE_TIMEOUT = 10
@@ -21,6 +22,7 @@ class remote(basesock.basesock):
 
     def connect(self):
         self.close()
+        waitfor('Opening connection to %s on port %d' % self.target)
         self.sock = socket.socket(self.family, self.type, self.proto)
         if self.timeout is not None:
             self.sock.settimeout(self.timeout)
@@ -29,13 +31,13 @@ class remote(basesock.basesock):
                 self.sock.connect(self.target)
             except socket.error, e:
                 if e.errno == 111:
-                    pwn.trace(' [-] Connection to %s on port %d refused\n' % self.target)
+                    failed('Connection to %s on port %d refused\n' % self.target)
                     exit(PWN_UNAVAILABLE)
                 else:
                     raise
             except socket.timeout:
-                pwn.trace(' [-] Timed out while connecting to %s on port %d\n' % self.target)
+                failed('Timed out while connecting to %s on port %d\n' % self.target)
                 exit(PWN_UNAVAILABLE)
         else:
             self.sock.connect(self.target)
-        pwn.trace(' [+] Opened connection to %s on port %d\n' % self.target)
+        succeeded('Opened connection to %s on port %d\n' % self.target)

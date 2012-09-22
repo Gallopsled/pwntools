@@ -1,8 +1,9 @@
 # top-level imports
-import struct, pwn, sys, subprocess, re
+import struct, pwn, sys, subprocess, re, time
 from socket import htons, inet_aton, inet_ntoa, gethostbyname
 from os import system
 from time import sleep
+import log
 
 # conversion functions
 def p8(x):
@@ -67,3 +68,27 @@ def get_interfaces():
     d = subprocess.check_output('ip -4 -o addr', shell=True)
     ifs = re.findall(r'^\S+:\s+(\S+)\s+inet\s+([^\s/]+)', d, re.MULTILINE)
     return [i for i in ifs if i[0] != 'lo']
+
+# Stuff
+def pause(n = None):
+    try:
+        if n is None:
+            log.info('Paused (press enter to continue)')
+            raw_input('')
+        else:
+            log.info('Continueing in ')
+            for i in range(n, 0, -1):
+                log.trace('%d... ' % i)
+                time.sleep(1)
+            log.trace('\n')
+    except KeyboardInterrupt:
+        log.trace('\n')
+        log.warning('Interrupted\n')
+        exit(1)
+
+def die(s = None, e = None, error_code = -1):
+    if s:
+        log.failure('FATAL: ' + s + '\n')
+    if e:
+        log.failure('The exception was:\n' + str(e) + '\n')
+    exit(error_code)
