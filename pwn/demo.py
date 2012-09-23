@@ -25,3 +25,4 @@ sock.close()
 handler.wait_for_connection()
 handler.interactive()
 
+log.warning("I'm on a horse")
