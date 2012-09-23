@@ -50,8 +50,8 @@ class basesock:
         else:
             res = self.sock.recv(numb)
         if self.debug:
-            sys.stdout.write(res)
-            sys.stdout.flush()
+            sys.stderr.write(res)
+            sys.stderr.flush()
         return res
 
     def recvn(self, numb):
@@ -108,11 +108,13 @@ class basesock:
         import rlcompleter
         debug = self.debug
         timeout = self.timeout
-        self.debug = True
+        self.debug = False
         self.settimeout(None)
+        running = True
         def loop():
-            while True:
-                self.recvline()
+            while running:
+                sys.stderr.write(self.recv())
+                sys.stderr.flush()
         t = Thread(target = loop)
         t.daemon = True
         t.start()
@@ -123,6 +125,8 @@ class basesock:
             except KeyboardInterrupt:
                 self.debug = debug
                 self.settimeout(timeout)
+                running = False
+                sys.stderr.write('Interrupted\n')
                 break
 
     def recvall(self):
