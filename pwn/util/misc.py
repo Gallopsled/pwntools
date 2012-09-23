@@ -98,7 +98,6 @@ def size(n):
 
     for postfix in ['KB', 'MB', 'GB', 'TB']:
         n /= 1024.0
-        
         if n <= 1024:
             return '%.2f%s' % (n, postfix)
 
