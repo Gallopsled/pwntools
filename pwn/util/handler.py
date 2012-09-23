@@ -50,7 +50,7 @@ class handler(basesock.basesock):
                 exit(PWN_PATCHED)
         else:
             self.sock, self.target = self.listensock.accept()
-        log.succeeded('Got connection on local port %d from %s:%d' % ((self.sock.getsockname()[1],) + self.target))
+        log.succeeded('Got connection from %s:%d' % self.target)
 
     def settimeout(self, n):
         self.timeout = n

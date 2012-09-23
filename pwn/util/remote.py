@@ -32,8 +32,11 @@ class remote(basesock.basesock):
             try:
                 self.sock.connect(self.target)
             except socket.error, e:
-                if e.errno == 111:
+                if   e.errno == 111:
                     failed('Refused')
+                    exit(PWN_UNAVAILABLE)
+                elif e.errno == 101:
+                    failed('Unreachable')
                     exit(PWN_UNAVAILABLE)
                 else:
                     raise

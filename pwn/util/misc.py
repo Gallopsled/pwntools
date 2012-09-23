@@ -86,9 +86,10 @@ def pause(n = None):
 
 def die(s = None, e = None, error_code = -1):
     if s:
-        log.failure('FATAL: ' + s + '\n')
+        log.failure('FATAL: ' + s)
     if e:
-        log.failure('The exception was:\n' + str(e) + '\n')
+        log.failure('The exception was:')
+        log.trace(str(e) + '\n')
     exit(error_code)
 
 def size(n):
