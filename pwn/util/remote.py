@@ -42,4 +42,4 @@ class remote(basesock.basesock):
                 exit(PWN_UNAVAILABLE)
         else:
             self.sock.connect(self.target)
-        succeeded('Opened connection to %s on port %d\n' % self.target)
+        waitfor_done()
