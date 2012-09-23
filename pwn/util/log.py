@@ -1,4 +1,6 @@
-import sys, time
+# -*- coding: utf-8 -*-
+
+import sys, time, random
 from pwn import TRACE, DEBUG
 from text import *
 from threading import Thread, Lock
@@ -26,7 +28,19 @@ if sys.stderr.isatty() and not DEBUG:
 
         def run(self):
             i = 0
-            spinner = '1234567890'
+            spinner = random.choice([
+                    ['|', '/', '-', '\\'],
+                    ['.', 'o', 'O', '0', '*', ' ', ' ', ' '],
+                    ['▁', '▃', '▄', '▅', '▆', '▇', '█', '▇', '▆', '▅', '▄', '▃'],
+                    ['┤', '┘', '┴', '└', '├', '┌', '┬', '┐'],
+                    ['←', '↖', '↑', '↗', '→', '↘', '↓', '↙'],
+                    ['◢', '◢', '◣', '◣', '◤', '◤', '◥', '◥'],
+                    ['◐', '◓', '◑', '◒'],
+                    ['▖', '▘', '▝', '▗'],
+                    ['.', 'o', 'O', '°', ' ', ' ', '°', 'O', 'o', '.', ' ', ' '],
+                    ['<', '<', '∧', '∧', '>', '>', 'v', 'v']
+            ])
+
             _trace('\x1b[?25l') # hide curser
             while True:
                 _lock.acquire()
