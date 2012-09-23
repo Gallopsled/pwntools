@@ -1,6 +1,7 @@
 import pwn, socket, time, sys, re
 from log import *
 from consts import *
+from misc import size
 from threading import Thread
 
 class basesock:
@@ -18,7 +19,7 @@ class basesock:
         if self.sock:
             self.sock.close()
             self.sock = None
-            info('Closed connection to %s on port %d\n' % self.target)
+            info('Closed connection to %s on port %d' % self.target)
 
     def _send(self, dat):
         l = len(dat)
@@ -32,19 +33,19 @@ class basesock:
                 self._send(dat)
             except socket.error, e:
                 if e.errno == 32:
-                    failure('Broken pipe\n')
+                    failure('Broken pipe')
                     exit(PWN_UNAVAILABLE)
                 else:
                     raise
         else:
             self._send(dat)
 
-    def recv(self, numb = 1024):
+    def recv(self, numb = 4096):
         if self.checked:
             try:
                 res = self.sock.recv(numb)
             except socket.timeout:
-                failure('Connection timed out\n')
+                failure('Connection timed out')
                 exit(PWN_UNAVAILABLE)
         else:
             res = self.sock.recv(numb)
@@ -102,15 +103,16 @@ class basesock:
             res.append(self.recvuntil('\n'))
         return ''.join(res)
 
-    def interactive(self, prompt = '> '):
-        info('Switching to interactive mode\n')
+    def interactive(self, prompt = boldred('$') + ' '):
+        info('Switching to interactive mode')
+        import rlcompleter
         debug = self.debug
         timeout = self.timeout
         self.debug = True
         self.settimeout(None)
         def loop():
             while True:
-                self.recv()
+                self.recvline()
         t = Thread(target = loop)
         t.daemon = True
         t.start()
@@ -124,10 +126,14 @@ class basesock:
                 break
 
     def recvall(self):
+        waitfor('Recieving all data')
         r = []
+        l = 0
         while True:
             s = self.recv()
             if s == '': break
             r.append(s)
+            l += len(s)
+            status(size(l))
         self.close()
         return ''.join(r)

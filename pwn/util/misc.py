@@ -1,9 +1,8 @@
 # top-level imports
-import struct, pwn, sys, subprocess, re, time
+import struct, pwn, sys, subprocess, re, time, log, text
 from socket import htons, inet_aton, inet_ntoa, gethostbyname
 from os import system
 from time import sleep
-import log
 
 # conversion functions
 def p8(x):
@@ -76,14 +75,13 @@ def pause(n = None):
             log.info('Paused (press enter to continue)')
             raw_input('')
         else:
-            log.info('Continueing in ')
+            log.waitfor('Continueing in')
             for i in range(n, 0, -1):
-                log.trace('%d... ' % i)
+                log.status('%d... ' % i)
                 time.sleep(1)
-            log.trace('\n')
+            log.succeeded('Now')
     except KeyboardInterrupt:
-        log.trace('\n')
-        log.warning('Interrupted\n')
+        log.warning('Interrupted')
         exit(1)
 
 def die(s = None, e = None, error_code = -1):
@@ -92,3 +90,21 @@ def die(s = None, e = None, error_code = -1):
     if e:
         log.failure('The exception was:\n' + str(e) + '\n')
     exit(error_code)
+
+def size(n):
+    '''Convert number of bytes to human readable form'''
+    if   n < 500:
+        return '%dB' % n
+    elif n < 500000:
+        return '%.2fKB' % (n / 1024.0)
+    elif n < 500000000:
+        return '%.2fMB' % (n / 1024.0 / 1024.0)
+    elif n < 500000000000:
+        return '%.2fGB' % (n / 1024.0 / 1024.0 / 1024.0)
+    else:
+        return '%.2fTB' % (n / 1024.0 / 1024.0 / 1024.0 / 1024.0)
+
+def prompt(s, default = ''):
+    r = raw_input(' ' + text.bold('[?]') + ' ' + s)
+    if r: return r
+    return default

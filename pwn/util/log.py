@@ -1,7 +1,8 @@
 import sys, time
 from pwn import TRACE, DEBUG
 from text import *
-from threading import Thread
+from threading import Thread, Lock
+from excepthook import addexcepthook
 
 def _trace(s):
     if TRACE:
@@ -13,119 +14,119 @@ def _debug(s):
         sys.stderr.write(s)
         sys.stderr.flush()
 
-_spinner = None
-
-class _Spinner(Thread):
-    def __init__(self, s, progress):
-        Thread.__init__(self)
-        self.status = ''
-        self.progress = progress
-        _trace(''.join([' ', boldblue('[ ]'), ' ', s + ': ']))
-
-    def _update(self, color, symb, s):
-        self._tty_out(''.join(['\x1b[s\x1b[2G', color('[' + symb + ']'), '\x1b[u\x1b[s', s, '\x1b[K\x1b[u']))
-
-    def _tty_out(self, s):
-        if sys.stderr.isatty() and not DEBUG:
-            _trace(s)
-
-    def run(self):
-        i = 0
-        spinner = '|/-\\'
-        self._tty_out('\x1b[?25l')
-        while True:
-            if self.progress:
-                self.status = self.progress()
-
-            if isinstance(self.status, bool):
-                break
-
-            self._update(boldblue, spinner[i], self.status)
-            i = (i + 1) % len(spinner)
-            time.sleep(0.1)
-
-        if self.status == False:
-            self._update(boldred, '-', '')
-            _trace(boldred('FAILED!') + '\n')
-        else:
-            self._update(boldgreen, '+', '')
-            _trace(bold('Done') + '\n')
-        self._tty_out('\x1b[?25h')
-
-def _stop_spinner(status = True):
-    global _spinner
-    if _spinner is not None:
-        _spinner.status = status
-        _spinner.join()
+if sys.stderr.isatty() and not DEBUG:
     _spinner = None
+    _offset = 0
+    _lock = Lock()
+    addexcepthook(lambda *args: _trace('\x1b[?25h\x1b[0m')) # reset, show cursor
 
-def _start_spinner(s, progress = None):
-    global _spinner
-    if _spinner is not None:
-        _stop_spinner()
-    _spinner = _Spinner(s, progress)
-    _spinner.daemon = True
-    _spinner.start()
+    class _Spinner(Thread):
+        def __init__(self):
+            Thread.__init__(self)
+            self.running = True
 
-    if progress:
-        _spinner.join()
-        res = _spinner.status
+        def run(self):
+            i = 0
+            spinner = '|/-\\'
+            _trace('\x1b[?25l') # hide curser
+            while True:
+                _lock.acquire()
+                if self.running:
+                    _trace('\x1b[s\x1b[3G' + boldblue(spinner[i]) + '\x1b[u')
+                    _lock.release()
+                else:
+                    _lock.release()
+                    break
+                i = (i + 1) % len(spinner)
+                time.sleep(0.1)
+
+    def _stop_spinner(marker = boldblue('[*]'), status = ''):
+        global _spinner
+        if _spinner is not None:
+            _lock.acquire()
+            _spinner.running = False
+            s = []
+            s.append('\x1b[?25h') # show cursor
+            s.append('\x1b[2G')
+            s.append(marker)
+            if status:
+                s.append('\x1b[%dG\x1b[0K' % _offset)
+                s.append(': ')
+                s.append(status)
+            s.append('\n')
+            _trace(''.join(s))
+            _lock.release()
         _spinner = None
-        return res
 
-def waitfor_done(status = True):
-    _stop_spinner(status)
+    def _start_spinner():
+        global _spinner
+        if _spinner is not None:
+            _stop_spinner()
+        _spinner = _Spinner()
+        _spinner.daemon = True
+        _spinner.start()
 
-def waitfor(s, progress = None):
-    '''The sematics of this function is, that no function is given, then
-       it returns immediately and continues to spin until a call
-       waitfor_done. As a convenience, the other calls in this file will
-       also stop a spinner with a suitable status-code.
+    def trace(s):
+        _stop_spinner()
+        _trace(s)
 
-       If a function is given, then it blocks until the function returns
-       either True or False, with True indicating success and False
-       indicating a failure. The call to waitfor will also return this
-       status.
+    def debug(s):
+        _stop_spinner()
+        _debug(s)
 
-       While waiting for the function to return True/False, waitfor will
-       display any string-value the function returns.'''
+    def waitfor(s):
+        if _spinner is not None:
+            raise Exception('waitfor has already been called')
+        global _offset
+        trace(''.join([' ', boldblue('[ ]'), ' ', s]))
+        _offset = len(s) + 6
+        _start_spinner()
 
-    _start_spinner(s, progress)
+    def status(s):
+        if _spinner is None:
+            raise Exception('waitfor has not been called')
+        _lock.acquire()
+        _trace('\x1b[%dG\x1b[0K' % _offset)
+        if s:
+            _trace(': ' + s)
+        _lock.release()
 
-def trace(s):
-    _stop_spinner(True)
-    _trace(s)
+    def succeeded(s = 'Done'):
+        _stop_spinner(boldgreen('[+]'), s)
 
-def debug(s):
-    _stop_spinner(True)
-    _debug(s)
+    def failed(s = 'FAILED!'):
+        _stop_spinner(boldred('[-]'), s)
+
+else:
+    def trace(s):
+        _trace(s)
+
+    def debug(s):
+        _debug(s)
+
+    def waitfor(s):
+        trace(''.join([' ', boldblue('[*]'), ' ', s, '...\n']))
+
+    def status(s):
+        pass
+
+    def succeeded(s):
+        trace(''.join([' ', boldgreen('[+]'), ' ', s, '\n']))
+
+    def failed(s):
+        trace(''.join([' ', boldred('[-]'), ' ', s, '\n']))
 
 def success(s):
-    _stop_spinner(True)
-    trace(''.join([' ', boldgreen('[+]'), ' ', s]))
+    trace(''.join([' ', boldgreen('[+]'), ' ', s, '\n']))
 
 def failure(s):
-    _stop_spinner(False)
-    trace(''.join([' ', boldred('[-]'), ' ', s]))
-
-def succeeded(s):
-    _stop_spinner(True)
-    success(s)
-
-def failed(s):
-    _stop_spinner(False)
-    failure(s)
+    trace(''.join([' ', boldred('[-]'), ' ', s, '\n']))
 
 def error(s):
-    _stop_spinner(False)
     failure(s)
 
 def warning(s):
-    _stop_spinner(True)
-    trace(''.join([' ', boldyellow('[!]'), ' ', s]))
+    trace(''.join([' ', boldyellow('[!]'), ' ', s, '\n']))
 
 def info(s):
-    _stop_spinner(True)
-    trace(''.join([' ', boldblue('[*]'), ' ', s]))
-
-
+    trace(''.join([' ', boldblue('[*]'), ' ', s, '\n']))

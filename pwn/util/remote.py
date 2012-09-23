@@ -22,7 +22,7 @@ class remote(basesock.basesock):
 
     def connect(self):
         if self.connected():
-            warning('Already connected to %s on port %d\n' % self.target)
+            warning('Already connected to %s on port %d' % self.target)
             return
         waitfor('Opening connection to %s on port %d' % self.target)
         self.sock = socket.socket(self.family, self.type, self.proto)
@@ -33,13 +33,13 @@ class remote(basesock.basesock):
                 self.sock.connect(self.target)
             except socket.error, e:
                 if e.errno == 111:
-                    failed('Connection to %s on port %d refused\n' % self.target)
+                    failed('Refused')
                     exit(PWN_UNAVAILABLE)
                 else:
                     raise
             except socket.timeout:
-                failed('Timed out while connecting to %s on port %d\n' % self.target)
+                failed('Timed out')
                 exit(PWN_UNAVAILABLE)
         else:
             self.sock.connect(self.target)
-        waitfor_done()
+        succeeded()
