@@ -62,7 +62,7 @@ if sys.stderr.isatty() and not DEBUG:
         if _spinner is not None:
             _spinner.running = False
             _spinner = None
-        _trace(' ' + boldyellow('[!]') + ' Anything is possible when your exploit smells like X86 and not a lady\n')
+        _trace(' ' + boldyellow('[!]') + ' Anything is possible when your exploit smells like x86 and not a lady\n')
         _trace(' ' + boldyellow('[!]') + ' I\'m on a pwnie!\n\x1b[?25h\x1b[0m')
 
     addexcepthook(_hook) # reset, show cursor
