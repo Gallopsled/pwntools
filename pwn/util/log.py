@@ -18,7 +18,6 @@ if sys.stderr.isatty() and not DEBUG:
     _spinner = None
     _offset = 0
     _lock = Lock()
-    addexcepthook(lambda *args: _trace('\x1b[?25h\x1b[0m')) # reset, show cursor
 
     class _Spinner(Thread):
         def __init__(self):
@@ -27,7 +26,7 @@ if sys.stderr.isatty() and not DEBUG:
 
         def run(self):
             i = 0
-            spinner = '|/-\\'
+            spinner = '1234567890'
             _trace('\x1b[?25l') # hide curser
             while True:
                 _lock.acquire()
@@ -57,6 +56,15 @@ if sys.stderr.isatty() and not DEBUG:
             _trace(''.join(s))
             _lock.release()
         _spinner = None
+
+    def _hook(*args):
+        global _spinner
+        if _spinner is not None:
+            _spinner.running = False
+            _spinner = None
+        _trace(' ' + boldyellow('[!]') + ' I\'m on a pwnie!\n\x1b[?25h\x1b[0m')
+
+    addexcepthook(_hook) # reset, show cursor
 
     def _start_spinner():
         global _spinner
