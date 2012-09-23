@@ -31,4 +31,4 @@ while not f.closed:
     f.write(d)
 
 f.flush() # Make sure that stdout is flushed before writing to stderr
-pwn.trace(' [+] The MD5 hex-digest was: ' + m.hexdigest() + '\n')
+pwn.log.info('The MD5 hex-digest was: ' + m.hexdigest())

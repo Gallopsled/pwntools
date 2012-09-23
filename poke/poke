@@ -25,4 +25,4 @@ while not f.closed:
     m.update(d)
     h.send(d)
 
-pwn.trace(' [+] The MD5 hex-digest was: ' + m.hexdigest() + '\n')
+pwn.log.info('The MD5 hex-digest was: ' + m.hexdigest())
