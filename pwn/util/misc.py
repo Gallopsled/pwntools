@@ -93,16 +93,16 @@ def die(s = None, e = None, error_code = -1):
 
 def size(n):
     '''Convert number of bytes to human readable form'''
-    if   n < 500:
+    if n < 1024:
         return '%dB' % n
-    elif n < 500000:
-        return '%.2fKB' % (n / 1024.0)
-    elif n < 500000000:
-        return '%.2fMB' % (n / 1024.0 / 1024.0)
-    elif n < 500000000000:
-        return '%.2fGB' % (n / 1024.0 / 1024.0 / 1024.0)
-    else:
-        return '%.2fTB' % (n / 1024.0 / 1024.0 / 1024.0 / 1024.0)
+
+    for postfix in ['KB', 'MB', 'GB', 'TB']:
+        n /= 1024.0
+        
+        if n <= 1024:
+            return '%.2f%s' % (n, postfix)
+
+    return '%.2fPB' % n
 
 def prompt(s, default = ''):
     r = raw_input(' ' + text.bold('[?]') + ' ' + s)
