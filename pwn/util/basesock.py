@@ -1,4 +1,4 @@
-import pwn, socket, time, sys, re
+import pwn, socket, time, sys, re, errno
 from log import *
 from consts import *
 from misc import size
@@ -32,7 +32,7 @@ class basesock:
             try:
                 self._send(dat)
             except socket.error, e:
-                if e.errno == 32:
+                if e.errno == errno.EPIPE:
                     failure('Broken pipe')
                     exit(PWN_UNAVAILABLE)
                 else:

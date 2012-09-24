@@ -1,4 +1,4 @@
-import pwn, socket, basesock
+import pwn, socket, basesock, errno
 from log import *
 from consts import *
 
@@ -32,10 +32,10 @@ class remote(basesock.basesock):
             try:
                 self.sock.connect(self.target)
             except socket.error, e:
-                if   e.errno == 111:
+                if   e.errno == errno.ECONNREFUSED:
                     failed('Refused')
                     exit(PWN_UNAVAILABLE)
-                elif e.errno == 101:
+                elif e.errno == errno.ENETUNREACH:
                     failed('Unreachable')
                     exit(PWN_UNAVAILABLE)
                 else:

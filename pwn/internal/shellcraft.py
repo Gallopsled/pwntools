@@ -1,4 +1,4 @@
-import pwn, subprocess, os, sys, warnings, inspect
+import pwn, subprocess, os, sys, warnings, inspect, errno
 
 INCLUDE = os.path.join(os.path.dirname(pwn.__file__), pwn.INCLUDE)
 DEBUG   = pwn.DEBUG
@@ -27,8 +27,10 @@ def gen_assembler(hdr, assembler):
         try:
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except OSError, e:
-            if e.errno == 2:
+            if e.errno == errno.ENOENT:
                 pwn.die(cmd[0] + ' is not installed')
+            else:
+                raise
         ret = p.wait()
         if ret <> 0:
             err = p.stderr.read()
