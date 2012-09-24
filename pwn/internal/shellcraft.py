@@ -24,7 +24,11 @@ def gen_assembler(hdr, assembler):
         with open(src, 'w') as f:
             f.write(code)
 
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except OSError, e:
+            if e.errno == 2:
+                pwn.die(cmd[0] + ' is not installed')
         ret = p.wait()
         if ret <> 0:
             err = p.stderr.read()
