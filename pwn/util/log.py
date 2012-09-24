@@ -121,6 +121,8 @@ if sys.stderr.isatty() and not DEBUG:
         _stop_spinner(boldred('[-]'), s)
 
 else:
+    _message = ''
+
     def trace(s):
         _trace(s)
 
@@ -128,16 +130,18 @@ else:
         _debug(s)
 
     def waitfor(s):
+        global _message
+        _message = s
         trace(''.join([' ', boldblue('[*]'), ' ', s, '...\n']))
 
     def status(s):
         pass
 
-    def succeeded(s):
-        trace(''.join([' ', boldgreen('[+]'), ' ', s, '\n']))
+    def succeeded(s = 'Done'):
+        trace(''.join([' ', boldgreen('[+]'), ' ', _message, ': ', s, '\n']))
 
-    def failed(s):
-        trace(''.join([' ', boldred('[-]'), ' ', s, '\n']))
+    def failed(s = 'FAILED!'):
+        trace(''.join([' ', boldred('[-]'), ' ', _message, ': ', s, '\n']))
 
 def success(s):
     trace(''.join([' ', boldgreen('[+]'), ' ', s, '\n']))
