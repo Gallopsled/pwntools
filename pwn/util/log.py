@@ -18,17 +18,16 @@ def _debug(s):
 
 if sys.stderr.isatty() and not DEBUG:
     _spinner = None
-    _offset = 0
+    _message = ''
+    _status = ''
     _lock = Lock()
 
     class _Spinner(Thread):
         def __init__(self):
             Thread.__init__(self)
             self.running = True
-
-        def run(self):
-            i = 0
-            spinner = random.choice([
+            self.i = 0
+            self.spinner = random.choice([
                     ['|', '/', '-', '\\'],
                     ['.', 'o', 'O', '0', '*', ' ', ' ', ' '],
                     ['▁', '▃', '▄', '▅', '▆', '▇', '█', '▇', '▆', '▅', '▄', '▃'],
@@ -41,33 +40,36 @@ if sys.stderr.isatty() and not DEBUG:
                     ['<', '<', '∧', '∧', '>', '>', 'v', 'v']
             ])
 
+        def update(self):
+            _trace('\x1b[s ' + boldblue('[' + self.spinner[self.i] + ']') + ' ' + _message)
+            if _status:
+                _trace(': ' + _status)
+            _trace('\x1b[u')
+
+        def run(self):
+
             _trace('\x1b[?25l') # hide curser
             while True:
                 _lock.acquire()
                 if self.running:
-                    _trace('\x1b[s\x1b[3G' + boldblue(spinner[i]) + '\x1b[u')
+                    self.update()
                     _lock.release()
                 else:
                     _lock.release()
                     break
-                i = (i + 1) % len(spinner)
+                self.i = (self.i + 1) % len(self.spinner)
                 time.sleep(0.1)
 
     def _stop_spinner(marker = boldblue('[*]'), status = ''):
-        global _spinner
+        global _spinner, _status
         if _spinner is not None:
             _lock.acquire()
             _spinner.running = False
-            s = []
-            s.append('\x1b[?25h') # show cursor
-            s.append('\x1b[2G')
-            s.append(marker)
+            _status = ''
+            _trace('\x1b[0K ' + marker + ' ' + _message)
             if status:
-                s.append('\x1b[%dG\x1b[0K' % _offset)
-                s.append(': ')
-                s.append(status)
-            s.append('\n')
-            _trace(''.join(s))
+                _trace(': ' + status)
+            _trace('\n\x1b[?25h') # show cursor
             _lock.release()
         _spinner = None
 
@@ -86,6 +88,7 @@ if sys.stderr.isatty() and not DEBUG:
         if _spinner is not None:
             _stop_spinner()
         _spinner = _Spinner()
+        _spinner.update()
         _spinner.daemon = True
         _spinner.start()
 
@@ -98,20 +101,20 @@ if sys.stderr.isatty() and not DEBUG:
         _debug(s)
 
     def waitfor(s):
+        global _message
         if _spinner is not None:
             raise Exception('waitfor has already been called')
-        global _offset
-        trace(''.join([' ', boldblue('[ ]'), ' ', s]))
-        _offset = len(s) + 6
+        _message = s
         _start_spinner()
 
     def status(s):
+        global _status
         if _spinner is None:
             raise Exception('waitfor has not been called')
         _lock.acquire()
-        _trace('\x1b[%dG\x1b[0K' % _offset)
-        if s:
-            _trace(': ' + s)
+        _trace('\x1b[%dG\x1b[0K\x1b[0G' % (len(_message) + len(_status) + 8))
+        _status = s
+        _spinner.update()
         _lock.release()
 
     def succeeded(s = 'Done'):
