@@ -1,6 +1,8 @@
 import atexit, sys, pwn, os, cPickle
 
 class __Session:
+    '''Session handling.
+    Used as a dictionary.  One session per program per RHOST.'''
     def __init__(self):
         self.data = None
 
