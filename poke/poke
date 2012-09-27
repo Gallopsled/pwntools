@@ -1,10 +1,18 @@
 #!/usr/bin/env python
+import pwn, sys, hashlib, os, socket, errno
+import pwn.util.log as log
 
-import pwn, sys, hashlib
-
-if not 2 <= len(sys.argv) <= 3:
+if len(sys.argv) not in [2,3]:
     pwn.trace('Usage: ' + sys.argv[0] + ' host [filename]\n')
     pwn.die()
+
+PIPED = len(sys.argv) == 2
+BLOCK = 4096
+
+try:
+    f = open(sys.argv[2], 'r') if not PIPED else sys.stdin
+except Exception as e:
+    pwn.die('Unable to open file ' + sys.argv[2], e)
 
 try:
     h = pwn.remote(sys.argv[1], port = 1337, timeout = None)
@@ -12,17 +20,48 @@ except Exception as e:
     pwn.die('Unable to connect to ' + sys.argv[1] + ':1337', e)
 
 try:
-    f = open(sys.argv[2], 'r') if len(sys.argv) == 3 else sys.stdin
-except Exception as e:
-    pwn.die('Unable to open file ' + sys.argv[2], e)
+    if PIPED:
+        data = f.read()
+        digest = hashlib.md5(data).digest()
+        numb = len(data)
+        log.waitfor('Sending data')
+        h.send(pwn.p64(numb))
+        i = 0
+        while len(data) > 0:
+            h.send(data[:BLOCK])
+            data = data[BLOCK:]
+            i += BLOCK
+            log.status('%s/%s (%d%%)' % (pwn.size(i), pwn.size(numb), 100 * i / numb))
+    else:
+        f.seek(0, os.SEEK_END)
+        numb = f.tell()
+        f.seek(0, os.SEEK_SET)
+        h.send(pwn.p64(numb))
+        m = hashlib.md5()
+        while not f.closed:
+            d = f.read(4096)
+            if not d:
+                break
+            m.update(d)
+            h.send(d)
+        f.close()
+        digest = m.digest()
+except socket.error, e:
+    if e.errno == errno.ECONNRESET:
+        log.warning('Connection reset by peer')
+        pwn.die()
 
-m = hashlib.md5()
+h.send(digest)
+log.succeeded()
+verify = h.recv(16)
+if len(verify) < 16:
+    log.failure('Could not recieve MD5 digest')
+    pwn.die()
 
-while not f.closed:
-    d = f.read(4095 * (len(sys.argv) == 3) + 1) # send as fast as the user can type
-    if not d:
-        break
-    m.update(d)
-    h.send(d)
-
-pwn.log.info('The MD5 hex-digest was: ' + m.hexdigest())
+if verify == digest:
+    log.success('Verified MD5 digest: %s' % pwn.enhex(digest))
+else:
+    log.failure('MD5 digests does not match')
+    log.failure('Computed: %s' % pwn.enhex(digest))
+    log.failure('Recieved: %s' % pwn.enhex(verify))
+    pwn.die()
