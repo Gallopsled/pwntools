@@ -42,7 +42,7 @@ while not f.closed and i < numb:
     m.update(d)
     if f.isatty():
         # we might have a spinner running, so clear line first
-        f.write('\x1b[2K' + d)
+        f.write('\x1b[0G\x1b[2K' + d)
     else:
         f.write(d)
 
