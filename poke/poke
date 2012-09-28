@@ -19,14 +19,14 @@ try:
 except Exception as e:
     pwn.die('Unable to connect to ' + sys.argv[1] + ':1337', e)
 
+i = 0
+log.waitfor('Sending data')
 try:
     if PIPED:
         data = f.read()
         digest = hashlib.md5(data).digest()
         numb = len(data)
-        log.waitfor('Sending data')
         h.send(pwn.p64(numb))
-        i = 0
         while len(data) > 0:
             h.send(data[:BLOCK])
             data = data[BLOCK:]
@@ -44,6 +44,8 @@ try:
                 break
             m.update(d)
             h.send(d)
+            i += len(d)
+            log.status('%s/%s (%d%%)' % (pwn.size(i), pwn.size(numb), 100 * i / numb))
         f.close()
         digest = m.digest()
 except socket.error, e:
@@ -59,7 +61,7 @@ if len(verify) < 16:
     pwn.die()
 
 if verify == digest:
-    log.success('Verified MD5 digest: %s' % pwn.enhex(digest))
+    log.success('MD5 digest is OK: %s' % pwn.enhex(digest))
 else:
     log.failure('MD5 digests does not match')
     log.failure('Computed: %s' % pwn.enhex(digest))
