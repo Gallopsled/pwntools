@@ -56,8 +56,14 @@ def u64b(x):
 def dehex(s):
     return s.decode('hex')
 
+def unhex(s):
+    return s.decode('hex')
+
 def enhex(s):
     return s.encode('hex')
+
+def urlencode(s):
+    return ''.join(['%%%02x' % ord(c) for c in s])
 
 # network utils
 def ip (host):
