@@ -62,7 +62,7 @@ def unhex(s):
 def enhex(s):
     return s.encode('hex')
 
-def urlencode(s):
+def escape(s):
     return ''.join(['%%%02x' % ord(c) for c in s])
 
 # network utils
