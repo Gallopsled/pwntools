@@ -11,6 +11,7 @@ for arg in sys.argv:
         pwn.TRACE = False
     elif arg.find('=') >= 0:
         key, val = arg.split('=', 1)
+        if any(map(lambda x: not x.isupper(), key)): continue
         sys.argv.remove(arg)
         pwn[key] = val
 
@@ -18,7 +19,7 @@ for arg in sys.argv:
 INCLUDE = 'include'
 
 # Submodules
-import util, i386
+import util, i386, os
 
 # Promote to top-level
 from util import *
