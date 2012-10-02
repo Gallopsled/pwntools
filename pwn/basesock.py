@@ -1,7 +1,7 @@
 import pwn, socket, time, sys, re, errno
 from log import *
 from consts import *
-from misc import size
+from util import size
 from threading import Thread
 
 class basesock:

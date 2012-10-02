@@ -1,5 +1,7 @@
+# Submodules
+import pwn, i386, os, sys, time
+
 # Argument parsing
-import pwn, sys, time
 pwn.TRACE = True
 pwn.DEBUG = False
 for arg in sys.argv:
@@ -15,14 +17,14 @@ for arg in sys.argv:
         sys.argv.remove(arg)
         pwn[key] = val
 
+# Promote to toplevel
+from util       import *
+from log        import trace, debug
+from excepthook import addexcepthook
+from memoize    import memoize
+from process    import process
+from remote     import remote
+from handler    import handler
+
 # Constans
-INCLUDE = 'include'
-
-# Submodules
-import util, i386, os
-
-# Promote to top-level
-from util import *
-
-# Promote trace and debug to top-level
-from util.log import trace, debug
+from consts import *
