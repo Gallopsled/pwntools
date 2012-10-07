@@ -1,5 +1,8 @@
 # Submodules
-import pwn, i386, os, sys, time
+import pwn, os, sys, time
+
+# Install path
+pwn.installpath = os.path.dirname(__file__)
 
 # Argument parsing
 pwn.TRACE = True
@@ -25,6 +28,9 @@ from memoize    import memoize
 from process    import process
 from remote     import remote
 from handler    import handler
+
+import pwn.internal.init.session
+import pwn.internal.init.cloud
 
 # Constans
 from consts import *
