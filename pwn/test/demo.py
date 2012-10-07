@@ -4,7 +4,7 @@
 
 import sys, socket
 from pwn import *
-from i386.linux import *
+from pwn.i386.linux import *
 
 log.waitfor('Counting to fifty')
 for n in range(50):
