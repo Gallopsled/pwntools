@@ -65,6 +65,18 @@ def enhex(s):
 def escape(s):
     return ''.join(['%%%02x' % ord(c) for c in s])
 
+# align
+def alignup(alignment, x):
+    a = alignment
+    return ((x + a - 1) / a) * a
+
+def aligndown(alignment, x):
+    a = alignment
+    return (x / a) * a
+
+def align(alignment, x):
+    return alignup(alignment, x)
+
 # network utils
 def ip (host):
     return struct.unpack('I', inet_aton(gethostbyname(host)))[0]
