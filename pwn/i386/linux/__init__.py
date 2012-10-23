@@ -25,5 +25,6 @@ load(['sh',
       'connectback',
       'bindshell',
       'acceptloop',
+      'setperms',
       'fork',
       'echo'])
