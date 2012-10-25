@@ -1,22 +1,21 @@
 # -*- coding: utf-8 -*-
 
-import sys, time, random
-from pwn import TRACE, DEBUG
+import sys, time, random, pwn
 from text import *
 from threading import Thread, Lock
 from excepthook import addexcepthook
 
 def _trace(s):
-    if TRACE:
+    if pwn.TRACE:
         sys.stderr.write(s)
         sys.stderr.flush()
 
 def _debug(s):
-    if DEBUG:
+    if pwn.DEBUG:
         sys.stderr.write(s)
         sys.stderr.flush()
 
-if sys.stderr.isatty() and not DEBUG:
+if sys.stderr.isatty() and not pwn.DEBUG:
     _spinner = None
     _message = ''
     _status = ''
