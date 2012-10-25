@@ -63,10 +63,11 @@ markers =
   , Marker "CALL" [0xff, 0xd4] -- ESP
   ]
 
-boring =
-  [ [[0xc9], [0xc3]] -- leave ; ret
-  , [[0x5d], [0xc3]] -- pop ebp ; ret
-  ]
+-- boring =
+--   [ [[0xc9], [0xc3]] -- leave ; ret
+--   , [[0x5d], [0xc3]] -- pop ebp ; ret
+--   ]
+boring = []
 
 isExec s =
   Elf.SHF_EXECINSTR `elem` Elf.elfSectionFlags s
