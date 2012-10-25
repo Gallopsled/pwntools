@@ -7,18 +7,19 @@ pwn.installpath = os.path.dirname(__file__)
 # Argument parsing
 pwn.TRACE = True
 pwn.DEBUG = False
-for arg in sys.argv:
-    if   arg == 'DEBUG':
-        sys.argv.remove(arg)
+for _arg in sys.argv:
+    if   _arg == 'DEBUG':
+        sys.argv.remove(_arg)
         pwn.DEBUG = True
-    elif arg == 'NOTRACE':
-        sys.argv.remove(arg)
+    elif _arg == 'NOTRACE':
+        sys.argv.remove(_arg)
         pwn.TRACE = False
-    elif arg.find('=') >= 0:
-        key, val = arg.split('=', 1)
+    elif _arg.find('=') >= 0:
+        key, val = _arg.split('=', 1)
         if any(map(lambda x: not x.isupper(), key)): continue
-        sys.argv.remove(arg)
+        sys.argv.remove(_arg)
         pwn[key] = val
+del _arg
 
 # Promote to toplevel
 from util       import *
