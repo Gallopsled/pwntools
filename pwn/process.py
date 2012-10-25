@@ -4,13 +4,13 @@ from Queue import Queue, Empty
 from subprocess import *
 
 class process:
-    def __init__(self, cmd, *args, **env):
+    def __init__(self, cmd, *args, **kwargs):
+        env = kwargs.get('env', {})
         self.debug = pwn.DEBUG
         self.proc = Popen(tuple(cmd.split()) + args,
                           stdin=PIPE, stdout=PIPE, stderr=PIPE,
                           env = env,
                           bufsize = 0)
-        # self.proc = Popen(tuple(cmd.split()) + args, stdin=PIPE)
 
     def close(self):
         if self.proc:
@@ -27,6 +27,14 @@ class process:
             sys.stdout.write(res)
             sys.stdout.flush()
         return res
+
+    def recvall(self):
+        res = []
+        while True:
+            s = self.recv()
+            if not s: break
+            res.append(s)
+        return ''.join(res)
 
     def recvn(self, numb):
         res = []
