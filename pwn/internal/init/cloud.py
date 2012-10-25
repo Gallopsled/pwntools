@@ -23,7 +23,7 @@ nodes = {'fantast':
               },
          'rain':
              {'host'  : 'rain.pwnies.dk',
-              'cores' : 4,
+              'cores' : 8,
               'mem'   : 2 * 1024
               },
          'stakken':
@@ -47,7 +47,10 @@ class _Node(SSHClient):
     def __init__(self):
         SSHClient.__init__(self)
 
-    def execute(self, cmd):
+    def set_context(self, bin_path):
+        pass
+
+    def exec_command_output(self, cmd):
         i, o, e = self.exec_command(cmd)
         i.close()
         return (o.read(), e.read())
@@ -69,22 +72,32 @@ class _Cloud(object):
             return hosts[name]
         elif name in nodes:
             host = nodes[name]['host']
-            ssh = _Node(name)
+            user = nodes[name].get('user', 'pwn')
+            port = nodes[name].get('port', 22)
+            ssh = _Node()
             hosts[name] = ssh
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             pwn.log.waitfor('Connecting to %s' % name)
-            ssh.connect(
-                host,
-                username = 'pwn',
-                key_filename = os.path.join(pwn.installpath, 'ssh/pwn'),
-                look_for_keys = False,
-                compress = True,
-                timeout = 2,
-                allow_agent = False)
+            try:
+                ssh.connect(
+                    host,
+                    username = user,
+                    port = port,
+                    key_filename = os.path.join(pwn.installpath, 'ssh/pwn'),
+                    look_for_keys = False,
+                    compress = True,
+                    timeout = 10,
+                    allow_agent = False)
+            except:
+                pwn.log.failed()
+                raise
             pwn.log.succeeded()
             atexit.register(lambda: ssh.close())
             return ssh
         else:
             return object.__getattribute__(self, name)
+
+    def __getitem__(self, name):
+        return object.__getattribute__(self, '__getattribute__')(name)
 
 pwn.cloud = _Cloud()
