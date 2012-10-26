@@ -77,6 +77,30 @@ def flat(*args, **kwargs):
     else:
         return "".join(flat(o, func=func) for o in obj)
 
+def flat8(*args):
+    return flat(args, func=p8)
+
+def flat8b(*args):
+    return flat(args, func=p8)
+
+def flat16(*args):
+    return flat(args, func=p16)
+
+def flat16b(*args):
+    return flat(args, func=p16)
+
+def flat32(*args):
+    return flat(args, func=p32)
+
+def flat32b(*args):
+    return flat(args, func=p32)
+
+def flat64(*args):
+    return flat(args, func=p64)
+
+def flat64b(*args):
+    return flat(args, func=p64)
+
 def dehex(s):
     return s.decode('hex')
 
