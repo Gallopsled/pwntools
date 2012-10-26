@@ -65,6 +65,18 @@ def u64(x):
 def u64b(x):
     return struct.unpack('>Q', x)[0]
 
+def flat(*args, **kwargs):
+    func = kwargs.get('func', p32)
+
+    obj = args[0] if len(args) == 1 else args
+
+    if isinstance(obj, str):
+        return obj
+    elif isinstance(obj, int):
+        return func(obj)
+    else:
+        return "".join(flat(o, func=func) for o in obj)
+
 def dehex(s):
     return s.decode('hex')
 
