@@ -10,7 +10,7 @@ def _usage ():
     print '    -l, --list'
     print '      List available shellcodes'
     print '    -f, --format <format>'
-    print '      r: raw (default)'
+    print '      r: Raw (default)'
     print '      s: String'
     print '      c: C array'
     print '      h: Hex string'
@@ -22,7 +22,7 @@ def _usage ():
     print '    -t, --trap'
     print '      Insert software breakpoint before shellcode'
     print '  Example:'
-    print '    shellcraft linux.bindshell'
+    print '    shellcraft i386.linux.bindshell'
     exit(0)
 
 def _string(s):
