@@ -5,85 +5,91 @@ def nops(length, **kwars):
     unclobber = kwars.get('unclobber', []) + ['esp', 'ebp']
     avoid     = set(map(ord, kwars.get('avoid', '')))
 
-    sled = nops_opty2(length, avoid, unclobber)
-    if sled is not None:
-        return sled
+    #sled = nops_opty2(length, avoid, unclobber)
+    #if sled is not None:
+    #    return sled
     sled = nops_single_byte(length, avoid, unclobber)
     if sled is not None:
         return sled
     raise Exception('Cannot create nopsled under given restrictions')
 
+_STACK_NEEDED     = 0
+_STACK_DESTROYED  = 1
+_STACK_UNAFFECTED = 2
+
 # Port of MSF's single_byte.rb
 single_byte_table = \
     {
-    # opcode  affected registers
-    # ------  ------------------
-    '\x90' : [              ], # nop
-    '\x97' : [ 'eax', 'edi' ], # xchg eax,edi
-    '\x96' : [ 'eax', 'esi' ], # xchg eax,esi
-    '\x95' : [ 'eax', 'ebp' ], # xchg eax,ebp
-    '\x93' : [ 'eax', 'ebx' ], # xchg eax,ebx
-    '\x92' : [ 'eax', 'edx' ], # xchg eax,edx
-    '\x91' : [ 'eax', 'ecx' ], # xchg eax,ecx
-    '\x99' : [ 'edx'        ], # cdq
-    '\x4d' : [ 'ebp'        ], # dec ebp
-    '\x48' : [ 'eax'        ], # dec eax
-    '\x47' : [ 'edi'        ], # inc edi
-    '\x4f' : [ 'edi'        ], # dec edi
-    '\x40' : [ 'eax'        ], # inc eax
-    '\x41' : [ 'ecx'        ], # inc ecx
-    '\x37' : [ 'eax'        ], # aaa
-    '\x3f' : [ 'eax'        ], # aas
-    '\x27' : [ 'eax'        ], # daa
-    '\x2f' : [ 'eax'        ], # das
-    '\x46' : [ 'esi'        ], # inc esi
-    '\x4e' : [ 'esi'        ], # dec esi
-    '\xfc' : [              ], # cld
-    '\xfd' : [              ], # std
-    '\xf8' : [              ], # clc
-    '\xf9' : [              ], # stc
-    '\xf5' : [              ], # cmc
-    '\x98' : [ 'eax'        ], # cwde
-    '\x9f' : [ 'eax'        ], # lahf
-    '\x4a' : [ 'edx'        ], # dec edx
-    '\x44' : [ 'esp'        ], # inc esp
-    '\x42' : [ 'edx'        ], # inc edx
-    '\x43' : [ 'ebx'        ], # inc ebx
-    '\x49' : [ 'ecx'        ], # dec ecx
-    '\x4b' : [ 'ebx'        ], # dec ebx
-    '\x45' : [ 'ebp'        ], # inc ebp
-    '\x4c' : [ 'esp'        ], # dec esp
-    '\x9b' : [              ], # wait
-    '\x60' : [ 'esp'        ], # pusha
-    '\x0e' : [ 'esp'        ], # push cs
-    '\x1e' : [ 'esp'        ], # push ds
-    '\x50' : [ 'esp'        ], # push eax
-    '\x55' : [ 'esp'        ], # push ebp
-    '\x53' : [ 'esp'        ], # push ebx
-    '\x51' : [ 'esp'        ], # push ecx
-    '\x57' : [ 'esp'        ], # push edi
-    '\x52' : [ 'esp'        ], # push edx
-    '\x06' : [ 'esp'        ], # push es
-    '\x56' : [ 'esp'        ], # push esi
-    '\x54' : [ 'esp'        ], # push esp
-    '\x16' : [ 'esp'        ], # push ss
-    '\x58' : [ 'esp', 'eax' ], # pop eax
-    '\x5d' : [ 'esp', 'ebp' ], # pop ebp
-    '\x5b' : [ 'esp', 'ebx' ], # pop ebx
-    '\x59' : [ 'esp', 'ecx' ], # pop ecx
-    '\x5f' : [ 'esp', 'edi' ], # pop edi
-    '\x5a' : [ 'esp', 'edx' ], # pop edx
-    '\x5e' : [ 'esp', 'esi' ], # pop esi
-    '\xd6' : [ 'eax'        ], # salc
+    # opcode  stack state         affected registers
+    # ------  -----------         ------------------
+    '\x06' :  (_STACK_NEEDED,     [ 'esp'        ]), # push es
+    '\x0e' :  (_STACK_NEEDED,     [ 'esp'        ]), # push cs
+    '\x16' :  (_STACK_NEEDED,     [ 'esp'        ]), # push ss
+    '\x1e' :  (_STACK_NEEDED,     [ 'esp'        ]), # push ds
+    '\x27' :  (_STACK_UNAFFECTED, [ 'eax'        ]), # daa
+    '\x2f' :  (_STACK_UNAFFECTED, [ 'eax'        ]), # das
+    '\x37' :  (_STACK_UNAFFECTED, [ 'eax'        ]), # aaa
+    '\x3f' :  (_STACK_UNAFFECTED, [ 'eax'        ]), # aas
+    '\x40' :  (_STACK_UNAFFECTED, [ 'eax'        ]), # inc eax
+    '\x41' :  (_STACK_UNAFFECTED, [ 'ecx'        ]), # inc ecx
+    '\x42' :  (_STACK_UNAFFECTED, [ 'edx'        ]), # inc edx
+    '\x43' :  (_STACK_UNAFFECTED, [ 'ebx'        ]), # inc ebx
+    '\x44' :  (_STACK_UNAFFECTED, [ 'esp'        ]), # inc esp
+    '\x45' :  (_STACK_UNAFFECTED, [ 'ebp'        ]), # inc ebp
+    '\x46' :  (_STACK_UNAFFECTED, [ 'esi'        ]), # inc esi
+    '\x47' :  (_STACK_UNAFFECTED, [ 'edi'        ]), # inc edi
+    '\x48' :  (_STACK_UNAFFECTED, [ 'eax'        ]), # dec eax
+    '\x49' :  (_STACK_UNAFFECTED, [ 'ecx'        ]), # dec ecx
+    '\x4a' :  (_STACK_UNAFFECTED, [ 'edx'        ]), # dec edx
+    '\x4b' :  (_STACK_UNAFFECTED, [ 'ebx'        ]), # dec ebx
+    '\x4c' :  (_STACK_UNAFFECTED, [ 'esp'        ]), # dec esp
+    '\x4d' :  (_STACK_UNAFFECTED, [ 'ebp'        ]), # dec ebp
+    '\x4e' :  (_STACK_UNAFFECTED, [ 'esi'        ]), # dec esi
+    '\x4f' :  (_STACK_UNAFFECTED, [ 'edi'        ]), # dec edi
+    '\x50' :  (_STACK_NEEDED,     [ 'esp'        ]), # push eax
+    '\x51' :  (_STACK_NEEDED,     [ 'esp'        ]), # push ecx
+    '\x52' :  (_STACK_NEEDED,     [ 'esp'        ]), # push edx
+    '\x53' :  (_STACK_NEEDED,     [ 'esp'        ]), # push ebx
+    '\x54' :  (_STACK_NEEDED,     [ 'esp'        ]), # push esp
+    '\x55' :  (_STACK_NEEDED,     [ 'esp'        ]), # push ebp
+    '\x56' :  (_STACK_NEEDED,     [ 'esp'        ]), # push esi
+    '\x57' :  (_STACK_NEEDED,     [ 'esp'        ]), # push edi
+    '\x58' :  (_STACK_NEEDED,     [ 'esp', 'eax' ]), # pop eax
+    '\x59' :  (_STACK_NEEDED,     [ 'esp', 'ecx' ]), # pop ecx
+    '\x5a' :  (_STACK_NEEDED,     [ 'esp', 'edx' ]), # pop edx
+    '\x5b' :  (_STACK_NEEDED,     [ 'esp', 'ebx' ]), # pop ebx
+    '\x5d' :  (_STACK_NEEDED,     [ 'esp', 'ebp' ]), # pop ebp
+    '\x5e' :  (_STACK_NEEDED,     [ 'esp', 'esi' ]), # pop esi
+    '\x5f' :  (_STACK_NEEDED,     [ 'esp', 'edi' ]), # pop edi
+    '\x60' :  (_STACK_NEEDED,     [ 'esp'        ]), # pusha
+    '\x60' :  (_STACK_NEEDED,     [ 'esp', 'edi', 'esi', 'ebp', 'ebx', 'edx', 'ecx', 'eax' ]), # popa
+    '\x90' :  (_STACK_UNAFFECTED, [              ]), # nop
+    '\x91' :  (_STACK_UNAFFECTED, [ 'eax', 'ecx' ]), # xchg eax,ecx
+    '\x92' :  (_STACK_UNAFFECTED, [ 'eax', 'edx' ]), # xchg eax,edx
+    '\x93' :  (_STACK_UNAFFECTED, [ 'eax', 'ebx' ]), # xchg eax,ebx
+    '\x94' :  (_STACK_DESTROYED,  [ 'eax', 'esp' ]), # xchg eax,esp
+    '\x95' :  (_STACK_UNAFFECTED, [ 'eax', 'ebp' ]), # xchg eax,ebp
+    '\x96' :  (_STACK_UNAFFECTED, [ 'eax', 'esi' ]), # xchg eax,esi
+    '\x97' :  (_STACK_UNAFFECTED, [ 'eax', 'edi' ]), # xchg eax,edi
+    '\x98' :  (_STACK_UNAFFECTED, [ 'eax'        ]), # cwde
+    '\x99' :  (_STACK_UNAFFECTED, [ 'edx'        ]), # cdq
+    '\x9b' :  (_STACK_UNAFFECTED, [              ]), # wait
+    '\x9c' :  (_STACK_NEEDED,     [ 'esp'        ]), # pushf
+    '\x9f' :  (_STACK_UNAFFECTED, [ 'eax'        ]), # lahf
+    '\xd6' :  (_STACK_UNAFFECTED, [ 'eax'        ]), # salc
+    '\xf5' :  (_STACK_UNAFFECTED, [              ]), # cmc
+    '\xf8' :  (_STACK_UNAFFECTED, [              ]), # clc
+    '\xf9' :  (_STACK_UNAFFECTED, [              ]), # stc
+    '\xfc' :  (_STACK_UNAFFECTED, [              ]), # cld
+    '\xfd' :  (_STACK_UNAFFECTED, [              ]), # std
     }
 
-def nops_single_byte(length, avoid, unclobber):
-    sled = []
-    bytes = [b for b, rs in single_byte_table.items() if ord(b) not in avoid and \
-                 all(map(lambda r: r not in unclobber, rs))]
-    if bytes == []:
-        return None
-    return ''.join([random.choice(bytes) for _ in range(length)])
+def nops_single_byte(length, avoid, unclobber, has_stack = False):
+    bytes = [b for b, (ns, rs) in single_byte_table.items() if ord(b) not in avoid and \
+                 all(map(lambda r: r not in unclobber, rs)) and
+                 not (has_stack and ns == _STACK_DESTROYED) and
+                 not (not has_stack and ns == _STACK_NEEDED)]
+    return ''.join([random.choice(bytes) for _ in range(length)]) if bytes else None
 
 
 # Port of MSF's opty2.rb
