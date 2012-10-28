@@ -3,7 +3,8 @@ import sys
 from pwn.i386 import nops
 
 def _usage ():
-    print 'Usage: %s <length> [--printable] [(-a|--avoid) <str>] [(-u|--unclobber) regs]' % sys.argv[0]
+    print 'Usage: %s <length>' % sys.argv[0]
+    print '       [--printable] [(-a|--avoid) <str>] [(-o|--only) str] [(-u|--unclobber) regs]'
     exit(0)
 
 regnames = ['eax', 'al', 'ax', 'es', 'ecx', 'cl', 'cx', 'cs', 'edx', 'dl', 'dx',
@@ -11,8 +12,11 @@ regnames = ['eax', 'al', 'ax', 'es', 'ecx', 'cl', 'cx', 'cs', 'edx', 'dl', 'dx',
             'bp', 'gs', 'esi', 'dh', 'si', 'edi', 'bh', 'di']
 
 if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        _usage()
     i = 1
     avoid = ''
+    only = ''.join(chr(x) for x in range(256))
     unclobber = []
     length = None
     while i < len(sys.argv):
@@ -22,6 +26,14 @@ if __name__ == '__main__':
                 avoid = sys.argv[i + 1]
             except:
                 print 'no bytes to avoid given'
+                _usage()
+            i += 2
+            continue
+        if arg in ['-o', '--only']:
+            try:
+                only = sys.argv[i + 1]
+            except:
+                print 'no bytes to only use given'
                 _usage()
             i += 2
             continue
@@ -52,6 +64,14 @@ if __name__ == '__main__':
         print 'no length given'
         _usage()
 
-    sys.stdout.write(nops(length,
-                          avoid = avoid.decode('string_escape'),
-                          unclobber = unclobber))
+    avoid = avoid.decode('string_escape')
+    only = only.decode('string_escape')
+
+    allb = ''.join(chr(x) for x in range(256))
+    avoid = ''.join(b for b in allb if b in avoid or b not in only)
+
+    try:
+        sled = nops(length, avoid = avoid, unclobber = unclobber)
+        sys.stdout.write(sled)
+    except Exception, e:
+        print e
