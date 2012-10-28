@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os, sys, types
 from binascii import hexlify, unhexlify
+from pwn.i386 import nops
 
 def _usage ():
     print 'Usage: %s [option [...]] <shellcode> [arg [...]]' % sys.argv[0]
@@ -21,6 +22,10 @@ def _usage ():
     print '      Debug mode'
     print '    -t, --trap'
     print '      Insert software breakpoint before shellcode'
+    print '    -loop'
+    print '      End in an infinite loop'
+    print '    -n, --nopsled'
+    print '      Prepend nopsled'
     print '  Example:'
     print '    shellcraft i386.linux.bindshell'
     exit(0)
@@ -57,6 +62,7 @@ if __name__ == '__main__':
     debug = False
     trap = False
     loop = False
+    nopsled = 0
     emit_asm = False
     def setout(file):
         global out
@@ -103,6 +109,13 @@ if __name__ == '__main__':
             trap = True
         elif a in ['--loop']:
             loop = True
+        elif a in ['-n', '--nopsled']:
+            i += 1
+            try:
+                nopsled = int(args_[i])
+            except:
+                print 'No nopsled size given'
+                exit(0)
         else:
             args.append(a)
         i += 1
@@ -169,6 +182,8 @@ if __name__ == '__main__':
             res = '\xcc' + res
         if loop:
             res += '\xeb\xfe'
+        if nopsled > 0:
+            res = nops(nopsled) + res
 
     with open(out, 'w') as f:
         f.write(format(res))
