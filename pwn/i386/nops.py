@@ -81,6 +81,8 @@ def nops_single_byte(length, avoid, unclobber):
     sled = []
     bytes = [b for b, rs in single_byte_table.items() if ord(b) not in avoid and \
                  all(map(lambda r: r not in unclobber, rs))]
+    if bytes == []:
+        return None
     return ''.join([random.choice(bytes) for _ in range(length)])
 
 
