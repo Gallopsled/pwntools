@@ -3,7 +3,10 @@ from collections import defaultdict
 
 def nops(length, **kwars):
     unclobber = kwars.get('unclobber', []) + ['esp', 'ebp']
-    avoid     = set(map(ord, kwars.get('avoid', '')))
+    avoid     = kwars.get('avoid', '')
+    only      = kwars.get('only', '')
+
+    avoid = set(b for b in range(256) if chr(b) in avoid or chr(b) not in only)
 
     sled = nops_opty2(length, avoid, unclobber)
     if sled is not None:
