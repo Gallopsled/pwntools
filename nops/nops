@@ -67,11 +67,8 @@ if __name__ == '__main__':
     avoid = avoid.decode('string_escape')
     only = only.decode('string_escape')
 
-    allb = ''.join(chr(x) for x in range(256))
-    avoid = ''.join(b for b in allb if b in avoid or b not in only)
-
     try:
-        sled = nops(length, avoid = avoid, unclobber = unclobber)
+        sled = nops(length, avoid = avoid, only = only, unclobber = unclobber)
         sys.stdout.write(sled)
     except Exception, e:
         print e
