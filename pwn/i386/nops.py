@@ -2,7 +2,7 @@ import random
 from collections import defaultdict
 
 def nops(length, **kwars):
-    unclobber = kwars.get('unclobber', []) + ['esp', 'ebp']
+    unclobber = kwars.get('unclobber', ['esp'])
     avoid     = kwars.get('avoid', '')
     only      = kwars.get('only', '')
 
@@ -21,63 +21,63 @@ single_byte_table = \
     {
     # opcode  affected registers
     # ------  ------------------
-    '\x90' : [              ], # nop
-    '\x97' : [ 'eax', 'edi' ], # xchg eax,edi
-    '\x96' : [ 'eax', 'esi' ], # xchg eax,esi
-    '\x95' : [ 'eax', 'ebp' ], # xchg eax,ebp
-    '\x93' : [ 'eax', 'ebx' ], # xchg eax,ebx
-    '\x92' : [ 'eax', 'edx' ], # xchg eax,edx
-    '\x91' : [ 'eax', 'ecx' ], # xchg eax,ecx
-    '\x99' : [ 'edx'        ], # cdq
-    '\x4d' : [ 'ebp'        ], # dec ebp
-    '\x48' : [ 'eax'        ], # dec eax
-    '\x47' : [ 'edi'        ], # inc edi
-    '\x4f' : [ 'edi'        ], # dec edi
-    '\x40' : [ 'eax'        ], # inc eax
-    '\x41' : [ 'ecx'        ], # inc ecx
-    '\x37' : [ 'eax'        ], # aaa
-    '\x3f' : [ 'eax'        ], # aas
-    '\x27' : [ 'eax'        ], # daa
-    '\x2f' : [ 'eax'        ], # das
-    '\x46' : [ 'esi'        ], # inc esi
-    '\x4e' : [ 'esi'        ], # dec esi
-    '\xfc' : [              ], # cld
-    '\xfd' : [              ], # std
-    '\xf8' : [              ], # clc
-    '\xf9' : [              ], # stc
-    '\xf5' : [              ], # cmc
-    '\x98' : [ 'eax'        ], # cwde
-    '\x9f' : [ 'eax'        ], # lahf
-    '\x4a' : [ 'edx'        ], # dec edx
-    '\x44' : [ 'esp'        ], # inc esp
-    '\x42' : [ 'edx'        ], # inc edx
-    '\x43' : [ 'ebx'        ], # inc ebx
-    '\x49' : [ 'ecx'        ], # dec ecx
-    '\x4b' : [ 'ebx'        ], # dec ebx
-    '\x45' : [ 'ebp'        ], # inc ebp
-    '\x4c' : [ 'esp'        ], # dec esp
-    '\x9b' : [              ], # wait
-    '\x60' : [ 'esp'        ], # pusha
-    '\x0e' : [ 'esp'        ], # push cs
-    '\x1e' : [ 'esp'        ], # push ds
-    '\x50' : [ 'esp'        ], # push eax
-    '\x55' : [ 'esp'        ], # push ebp
-    '\x53' : [ 'esp'        ], # push ebx
-    '\x51' : [ 'esp'        ], # push ecx
-    '\x57' : [ 'esp'        ], # push edi
-    '\x52' : [ 'esp'        ], # push edx
-    '\x06' : [ 'esp'        ], # push es
-    '\x56' : [ 'esp'        ], # push esi
-    '\x54' : [ 'esp'        ], # push esp
-    '\x16' : [ 'esp'        ], # push ss
-    '\x58' : [ 'esp', 'eax' ], # pop eax
-    '\x5d' : [ 'esp', 'ebp' ], # pop ebp
-    '\x5b' : [ 'esp', 'ebx' ], # pop ebx
-    '\x59' : [ 'esp', 'ecx' ], # pop ecx
-    '\x5f' : [ 'esp', 'edi' ], # pop edi
-    '\x5a' : [ 'esp', 'edx' ], # pop edx
-    '\x5e' : [ 'esp', 'esi' ], # pop esi
-    '\xd6' : [ 'eax'        ], # salc
+    '\x90' : [                       ], # nop
+    '\x97' : [ 'eax', 'edi'          ], # xchg eax,edi
+    '\x96' : [ 'eax', 'esi'          ], # xchg eax,esi
+    '\x95' : [ 'eax', 'ebp'          ], # xchg eax,ebp
+    '\x93' : [ 'eax', 'ebx'          ], # xchg eax,ebx
+    '\x92' : [ 'eax', 'edx'          ], # xchg eax,edx
+    '\x91' : [ 'eax', 'ecx'          ], # xchg eax,ecx
+    '\x99' : [ 'edx'                 ], # cdq
+    '\x4d' : [ 'ebp'                 ], # dec ebp
+    '\x48' : [ 'eax'                 ], # dec eax
+    '\x47' : [ 'edi'                 ], # inc edi
+    '\x4f' : [ 'edi'                 ], # dec edi
+    '\x40' : [ 'eax'                 ], # inc eax
+    '\x41' : [ 'ecx'                 ], # inc ecx
+    '\x37' : [ 'eax'                 ], # aaa
+    '\x3f' : [ 'eax'                 ], # aas
+    '\x27' : [ 'eax'                 ], # daa
+    '\x2f' : [ 'eax'                 ], # das
+    '\x46' : [ 'esi'                 ], # inc esi
+    '\x4e' : [ 'esi'                 ], # dec esi
+    '\xfc' : [                       ], # cld
+    '\xfd' : [                       ], # std
+    '\xf8' : [                       ], # clc
+    '\xf9' : [                       ], # stc
+    '\xf5' : [                       ], # cmc
+    '\x98' : [ 'eax'                 ], # cwde
+    '\x9f' : [ 'eax'                 ], # lahf
+    '\x4a' : [ 'edx'                 ], # dec edx
+    '\x44' : [ 'esp'                 ], # inc esp
+    '\x42' : [ 'edx'                 ], # inc edx
+    '\x43' : [ 'ebx'                 ], # inc ebx
+    '\x49' : [ 'ecx'                 ], # dec ecx
+    '\x4b' : [ 'ebx'                 ], # dec ebx
+    '\x45' : [ 'ebp'                 ], # inc ebp
+    '\x4c' : [ 'esp'                 ], # dec esp
+    '\x9b' : [                       ], # wait
+    '\x60' : [ 'esp'       , 'stack' ], # pusha
+    '\x0e' : [ 'esp'       , 'stack' ], # push cs
+    '\x1e' : [ 'esp'       , 'stack' ], # push ds
+    '\x50' : [ 'esp'       , 'stack' ], # push eax
+    '\x55' : [ 'esp'       , 'stack' ], # push ebp
+    '\x53' : [ 'esp'       , 'stack' ], # push ebx
+    '\x51' : [ 'esp'       , 'stack' ], # push ecx
+    '\x57' : [ 'esp'       , 'stack' ], # push edi
+    '\x52' : [ 'esp'       , 'stack' ], # push edx
+    '\x06' : [ 'esp'       , 'stack' ], # push es
+    '\x56' : [ 'esp'       , 'stack' ], # push esi
+    '\x54' : [ 'esp'       , 'stack' ], # push esp
+    '\x16' : [ 'esp'       , 'stack' ], # push ss
+    '\x58' : [ 'esp', 'eax', 'stack' ], # pop eax
+    '\x5d' : [ 'esp', 'ebp', 'stack' ], # pop ebp
+    '\x5b' : [ 'esp', 'ebx', 'stack' ], # pop ebx
+    '\x59' : [ 'esp', 'ecx', 'stack' ], # pop ecx
+    '\x5f' : [ 'esp', 'edi', 'stack' ], # pop edi
+    '\x5a' : [ 'esp', 'edx', 'stack' ], # pop edx
+    '\x5e' : [ 'esp', 'esi', 'stack' ], # pop esi
+    '\xd6' : [ 'eax'                 ], # salc
     }
 
 def nops_single_byte(length, avoid, unclobber):
@@ -101,7 +101,7 @@ def regnum(reg):
         return 2
     elif reg in ['ebx', 'bl', 'bx', 'ds']:
         return 3
-    elif reg in ['esp', 'ah', 'sp', 'fs']:
+    elif reg in ['esp', 'ah', 'sp', 'fs', 'stack']:
         return 4
     elif reg in ['ebp', 'ch', 'bp', 'gs']:
         return 5
@@ -111,6 +111,7 @@ def regnum(reg):
         return 7
 
 def nops_opty2(length, avoid, unclobber):
+    unclobber.append('esp')
     sled = []
     prev = 256
     slen = 0

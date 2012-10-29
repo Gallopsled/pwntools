@@ -9,7 +9,7 @@ def _usage ():
 
 regnames = ['eax', 'al', 'ax', 'es', 'ecx', 'cl', 'cx', 'cs', 'edx', 'dl', 'dx',
             'ss', 'ebx', 'bl', 'bx', 'ds', 'esp', 'ah', 'sp', 'fs', 'ebp', 'ch',
-            'bp', 'gs', 'esi', 'dh', 'si', 'edi', 'bh', 'di']
+            'bp', 'gs', 'esi', 'dh', 'si', 'edi', 'bh', 'di', 'stack']
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
@@ -56,7 +56,7 @@ if __name__ == '__main__':
             continue
         try:
             length = int(arg)
-        except:
+        except ValueError:
             print 'what do you mean by "%s"?' % arg
             _usage()
         i += 1
