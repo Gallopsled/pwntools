@@ -113,17 +113,23 @@ def enhex(s):
 def escape(s):
     return ''.join(['%%%02x' % ord(c) for c in s])
 
+def xor(s, t):
+    ls = len(s)
+    lt = len(t)
+    l = max(ls, lt)
+    return ''.join(chr(ord(s[i % ls]) ^ ord(t[i % lt])) for i in range(l))
+
 # align
-def alignup(alignment, x):
+def align_up(alignment, x):
     a = alignment
     return ((x + a - 1) / a) * a
 
-def aligndown(alignment, x):
+def align_down(alignment, x):
     a = alignment
     return (x / a) * a
 
 def align(alignment, x):
-    return alignup(alignment, x)
+    return align_up(alignment, x)
 
 # hash
 for _algo in hashlib.algorithms:
