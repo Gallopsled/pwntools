@@ -113,10 +113,21 @@ def enhex(s):
 def escape(s):
     return ''.join(['%%%02x' % ord(c) for c in s])
 
-def xor(s, t):
+def xor(s, t, cut = 'max'):
     ls = len(s)
     lt = len(t)
-    l = max(ls, lt)
+    if isinstance(cut, int):
+        l = cut
+    elif cut == 'left':
+        l = ls
+    elif cut == 'right':
+        l = lt
+    elif cut == 'min':
+        l = min(ls, lt)
+    else:
+        l = max(ls, lt)
+    # In haskell this would be:
+    #     take l $ zipWith xor (cycle s) (cycle t)
     return ''.join(chr(ord(s[i % ls]) ^ ord(t[i % lt])) for i in range(l))
 
 # align
