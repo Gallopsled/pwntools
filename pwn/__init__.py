@@ -44,6 +44,7 @@ from handler    import handler
 
 import pwn.internal.init.session
 import pwn.internal.init.cloud
+import fucking
 
 # Constans
 from consts import *
