@@ -89,7 +89,7 @@ Takes a single named argument 'func', which defaults to p32.
   - Enumerables (such as lists) traversed recursivly and the concatenated.
 
 Example:
-  - flat(5, "hello", [[6, "bar"], "baz"]) == '\x05\x00\x00\x00hello\x06\x00\x00\x00barbaz'
+  - flat(5, "hello", [[6, "bar"], "baz"]) == '\\x05\\x00\\x00\\x00hello\\x06\\x00\\x00\\x00barbaz'
 """
     func = kwargs.get('func', p32)
 
@@ -232,10 +232,15 @@ for _algo in hashlib.algorithms:
             return h
         def sum(s):
             return hash(s)
-        return (lambda x: file(x).digest(),
-                lambda x: sum(x).digest(),
-                lambda x: file(x).hexdigest(),
-                lambda x: sum(x).hexdigest())
+        file = lambda x: file(x).digest()
+        file.__doc__ = 'Calculates the %s sum of a file' % _algo
+        sum = lambda x: sum(x).digest()
+        sum.__doc__ = 'Calculates the %s sum of a string' % _algo
+        fileh = lambda x: file(x).hexdigest()
+        fileh.__doc__ = 'Calculates the %s sum of a file; returns hex-encoded' % _algo
+        sumh = lambda x: sum(x).hexdigest()
+        sumh.__doc__ = 'Calculates the %s sum of a string; returns hex-encoded' % _algo
+        return file, sum, fileh, sumh
     file, sum, filehex, sumhex = _closure()
     globals()[_algo + 'file'] = file
     globals()[_algo + 'sum'] = sum
@@ -246,6 +251,7 @@ del _algo, _closure
 
 # network utils
 def ip (host):
+    """Resolve host and return IP as four byte string"""
     return struct.unpack('I', inet_aton(gethostbyname(host)))[0]
 
 def get_interfaces():
@@ -281,7 +287,7 @@ def die(s = None, e = None, exit_code = -1):
     exit(exit_code)
 
 def size(n, abbriv = 'B', si = False):
-    '''Convert number to human readable form'''
+    """Convert number to human readable form"""
     base = 1000.0 if si else 1024.0
     if n < base:
         return '%d%s' % (n, abbriv)
@@ -299,7 +305,7 @@ def size(n, abbriv = 'B', si = False):
     return '%.2fP%s' % (n, abbriv)
 
 def prompt(s, default = ''):
-    '''Prompts the user for input'''
+    """Prompts the user for input"""
     r = raw_input(' ' + text.bold('[?]') + ' ' + s)
     if r: return r
     return default
