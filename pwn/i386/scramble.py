@@ -8,9 +8,9 @@ def __parse_kwargs(kwargs):
     avoid     = kwargs.get('avoid', '')
     unclobber = kwargs.get('unclobber', ['esp'])
     only      = kwargs.get('only', '')
-    getpc     = kwargs.get('getpc', None)
+    bufreg    = kwargs.get('bufreg', None)
     avoid = set(b for b in range(256) if chr(b) in avoid or chr(b) not in only)
-    return avoid, unclobber, getpc
+    return avoid, unclobber, bufreg
 
 # def alpha_mixed(code, **kwargs):
 #     avoid, getpc = __parse_kwargs(kwargs)
@@ -18,7 +18,7 @@ def __parse_kwargs(kwargs):
 
 def xor_additive_feedback(code, **kwargs):
     """AKA shikata ga nai"""
-    avoid, unclobber, getpc = __parse_kwargs(kwargs)
+    avoid, unclobber, bufreg = __parse_kwargs(kwargs)
     def encode(code):
         orig_key = p32(random.randint(0, 1 << 32))
         key = orig_key
@@ -82,7 +82,7 @@ def xor_additive_feedback(code, **kwargs):
     decoder_size = sum([2, # clear_counter
                         2 if length <= 255 else 4, # init_counter
                         5, # init key
-                        2 + 4 + 1 if getpc is None else len(getpc),
+                        2 + 4 + 1,
                         3 + 3 + 3, # loop body
                         2]) # loop inst
     cutoff = length - len(code)
@@ -110,16 +110,15 @@ def xor_additive_feedback(code, **kwargs):
     sub4 = '\x83' + p8(0xe8 + bufptr) + p8(-4)
     add4 = '\x83' + p8(0xc0 + bufptr) + p8(4)
 
-    if getpc is None:
-        fpu = []
-        fpu += ['\xd9' + p8(x) for x in range(0xe8, 0xee)]
-        fpu += ['\xd9' + p8(x) for x in range(0xc0, 0xcf)]
-        fpu += ['\xd9' + x for x in '\xd0\xe1\xf6\xf7\xe5']
-        fpu += ['\xda' + p8(x) for x in range(0xc0, 0xdf)]
-        fpu += ['\xdb' + p8(x) for x in range(0xc0, 0xdf)]
-        fpu += ['\xdd' + p8(x) for x in range(0xc0, 0xc7)]
-        fnstenv = '\xd9\x74\x24\xf4'
-        getpc = choose(fpu) + fnstenv + p8(0x58 + bufptr)
+    fpu = []
+    fpu += ['\xd9' + p8(x) for x in range(0xe8, 0xee)]
+    fpu += ['\xd9' + p8(x) for x in range(0xc0, 0xcf)]
+    fpu += ['\xd9' + x for x in '\xd0\xe1\xf6\xf7\xe5']
+    fpu += ['\xda' + p8(x) for x in range(0xc0, 0xdf)]
+    fpu += ['\xdb' + p8(x) for x in range(0xc0, 0xdf)]
+    fpu += ['\xdd' + p8(x) for x in range(0xc0, 0xc7)]
+    fnstenv = '\xd9\x74\x24\xf4'
+    getpc = choose(fpu) + fnstenv + p8(0x58 + bufptr)
 
     xor1 = xor + p8(decoder_size - cutoff)
     xor2 = xor + p8(decoder_size - 4 - cutoff)
