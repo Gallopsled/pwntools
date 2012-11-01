@@ -1,5 +1,5 @@
-import pwn, atexit, os, paramiko
-from paramiko import SSHClient
+import pwn, atexit, os
+from paramiko import SSHClient, AutoAddPolicy
 
 nodes = {'fantast':
              {'host'  : 'fa.ntast.dk',
@@ -76,14 +76,14 @@ class _Cloud(object):
             port = nodes[name].get('port', 22)
             ssh = _Node()
             hosts[name] = ssh
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.set_missing_host_key_policy(AutoAddPolicy())
             pwn.log.waitfor('Connecting to %s' % name)
             try:
                 ssh.connect(
                     host,
                     username = user,
                     port = port,
-                    key_filename = os.path.join(pwn.installpath, 'ssh/pwn'),
+                    key_filename = os.path.join(pwn.installpath, 'dat/ssh/pwn'),
                     look_for_keys = False,
                     compress = True,
                     timeout = 10,
