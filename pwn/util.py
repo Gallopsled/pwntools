@@ -113,22 +113,29 @@ def enhex(s):
 def escape(s):
     return ''.join(['%%%02x' % ord(c) for c in s])
 
-def xor(s, t, cut = 'max'):
-    ls = len(s)
-    lt = len(t)
+def xor(*args, **kwargs):
+    cut = kwargs.get('cut', 'max')
+    func = kwargs.get('func', p8)
+
+    strs = [map(ord, flat(s, func=func)) for s in args]
+
     if isinstance(cut, int):
         l = cut
     elif cut == 'left':
-        l = ls
+        l = len(strs[0])
     elif cut == 'right':
-        l = lt
+        l = len(strs[-1])
     elif cut == 'min':
-        l = min(ls, lt)
+        l = min(map(len, strs))
+    elif cut == 'max':
+        l = max(map(len, strs))
     else:
-        l = max(ls, lt)
-    # In haskell this would be:
-    #     take l $ zipWith xor (cycle s) (cycle t)
-    return ''.join(chr(ord(s[i % ls]) ^ ord(t[i % lt])) for i in range(l))
+        raise Exception("Not a valid cut argument")
+
+    def get(n):
+        return chr(reduce(lambda x, y: x ^ y, [s[n % len(s)] for s in strs]))
+
+    return ''.join(get(n) for n in range(l))
 
 # align
 def align_up(alignment, x):
