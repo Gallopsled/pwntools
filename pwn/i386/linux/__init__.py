@@ -28,4 +28,5 @@ load(['sh',
       'acceptloop',
       'setperms',
       'fork',
-      'echo'])
+      'echo',
+      'cat'])
