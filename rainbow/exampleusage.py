@@ -18,3 +18,4 @@ for i in range(10000):
     sys.stdout.flush()
     sleep(0.001)
     sys.stdout.write("\r")
+print
