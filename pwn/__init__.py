@@ -29,7 +29,6 @@ if _do_argv:
                 pwn.TRACE = False
             elif _arg.find('=') > 0:
                 key, val = _arg.split('=', 1)
-                print key, '=', val
                 if any(map(lambda x: not x.isupper(), key)): continue
                 sys.argv.remove(_arg)
                 pwn.__builtins__[key] = val
