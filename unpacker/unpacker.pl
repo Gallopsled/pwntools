@@ -14,6 +14,7 @@ my  $first_run = 1;
 
 sub main
 {
+  no warnings 'recursion';
   my @files = @_;
   my $file;
   my $out_files;
@@ -36,8 +37,8 @@ sub main
     else {
       exit();
     }
-    $first_run = 0;
   }
+  $first_run = 0;
 
   `mkdir -p unpacked/tmp 2> /dev/null`;
 
