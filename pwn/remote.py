@@ -6,6 +6,7 @@ _DEFAULT_REMOTE_TIMEOUT = 10
 
 class remote(basesock.basesock):
     def __init__(self, host, port = 1337, fam = None, typ = socket.SOCK_STREAM, proto = 0, **kwargs):
+        port = int(port)
         self.target = (host, port)
         if fam is None:
             if host.find(':') <> -1:
