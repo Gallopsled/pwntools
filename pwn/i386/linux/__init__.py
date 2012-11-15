@@ -29,4 +29,5 @@ load(['sh',
       'setperms',
       'fork',
       'echo',
-      'cat'])
+      'cat',
+      'readfile'])
