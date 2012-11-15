@@ -19,6 +19,7 @@ class remote(basesock.basesock):
         self.debug = pwn.DEBUG
         self.timeout = kwargs.get('timeout', _DEFAULT_REMOTE_TIMEOUT)
         self.checked = kwargs.get('checked', True)
+        self.lhost = None
         self.connect()
 
     def connect(self):
@@ -46,4 +47,9 @@ class remote(basesock.basesock):
                 exit(PWN_UNAVAILABLE)
         else:
             self.sock.connect(self.target)
+        self.lhost = self.sock.getsockname()[0]
         succeeded()
+
+    def close(self):
+        self.lhost = None
+        basesock.basesock.close(self)
