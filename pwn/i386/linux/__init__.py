@@ -18,6 +18,7 @@ asm = gen_assembler(_header, _asm)
 
 # Codes
 load(['sh',
+      'fakesh',
       'dup',
       'dupsh',
       'listen',
@@ -27,4 +28,5 @@ load(['sh',
       'acceptloop',
       'setperms',
       'fork',
-      'echo'])
+      'echo',
+      'cat'])
