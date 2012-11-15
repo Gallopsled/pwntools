@@ -8,6 +8,9 @@ pwn.installpath = os.path.dirname(__file__)
 pwn.TRACE = True
 pwn.DEBUG = False
 
+# argv
+pwn.argv = sys.argv
+
 _do_argv = True
 try:
     if 'pwn.noargv' in traceback.extract_stack(limit=2)[0][3]:
@@ -17,21 +20,21 @@ except:
 
 if _do_argv:
     try:
-        for arg in sys.argv:
-            if   arg == 'DEBUG':
-                sys.argv.remove(arg)
+        for _arg in sys.argv[:]:
+            if   _arg == 'DEBUG':
+                sys.argv.remove(_arg)
                 pwn.DEBUG = True
-            elif arg == 'NOTRACE':
-                sys.argv.remove(arg)
+            elif _arg == 'NOTRACE':
+                sys.argv.remove(_arg)
                 pwn.TRACE = False
-            elif arg.find('=') >= 0:
-                key, val = arg.split('=', 1)
+            elif _arg.find('=') > 0:
+                key, val = _arg.split('=', 1)
                 if any(map(lambda x: not x.isupper(), key)): continue
-                sys.argv.remove(arg)
-                pwn[key] = val
+                sys.argv.remove(_arg)
+                pwn.__builtins__[key] = val
     except:
         pass
-del _do_argv
+del _do_argv, _arg
 
 # Promote to toplevel
 from util       import *
