@@ -11,6 +11,6 @@ def findtagsh(tag):
     sock.send_exploit()
     sock.send(findtagsh(TAG))
     time.sleep(0.1)
-    sock.send(TAG)
+    sock.send(TAG.ljust(127))
     sock.interactive()"""
     return findtag(tag) + dupsh("ebp")

