@@ -202,6 +202,26 @@ Arguments:
 
     return ''.join(get(n) for n in range(l))
 
+
+def xor_pair(data, avoid = '\x00'):
+    """Finds two pieces of data that will xor together into the argument, while avoiding
+the bytes specified."""
+    use = [chr(n) for n in range(256) if chr(n) not in avoid]
+
+    data = flat(data)
+
+    res1 = ''
+    res2 = ''
+
+    for c1 in data:
+        for c2 in use:
+            if xor(c1, c2) in use:
+                res1 += c2
+                res2 += xor(c1, c2)
+                break
+
+    return (res1, res2)
+
 # align
 def align_up(alignment, x):
     """Rounds x up to nearest multiple of the alignment."""
@@ -284,7 +304,7 @@ def die(s = None, e = None, exit_code = -1):
     if e:
         log.failure('The exception was:')
         log.trace(str(e) + '\n')
-    exit(exit_code)
+    sys.exit(exit_code)
 
 def size(n, abbriv = 'B', si = False):
     """Convert number to human readable form"""
