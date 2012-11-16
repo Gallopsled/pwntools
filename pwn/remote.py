@@ -20,6 +20,7 @@ class remote(basesock.basesock):
         self.timeout = kwargs.get('timeout', _DEFAULT_REMOTE_TIMEOUT)
         self.checked = kwargs.get('checked', True)
         self.lhost = None
+        self.lport = None
         self.connect()
 
     def connect(self):
@@ -48,8 +49,10 @@ class remote(basesock.basesock):
         else:
             self.sock.connect(self.target)
         self.lhost = self.sock.getsockname()[0]
+        self.lport = self.sock.getsockname()[1]
         succeeded()
 
     def close(self):
         self.lhost = None
+        self.lport = None
         basesock.basesock.close(self)
