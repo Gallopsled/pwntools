@@ -1,6 +1,6 @@
 from pwn import htons
 
-def findsock(port = None):
+def findpeer(port = None):
     """Args: port (defaults to any port)
     Finds a remote socket, which is connected to the specified port.
     Leaves socket in ESI."""
