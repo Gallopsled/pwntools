@@ -1,12 +1,10 @@
 import random
 from collections import defaultdict
+from pwn import get_avoided
 
-def nops(length, **kwars):
-    unclobber = kwars.get('unclobber', ['esp'])
-    avoid     = kwars.get('avoid', '')
-    only      = kwars.get('only', map(chr, range(256)))
-
-    avoid = set(b for b in range(256) if chr(b) in avoid or chr(b) not in only)
+def nops(length, **kwargs):
+    unclobber = kwargs.get('unclobber', ['esp'])
+    avoid = map(ord, get_avoided(**kwargs))
 
     sled = nops_opty2(length, avoid, unclobber)
     if sled is not None:

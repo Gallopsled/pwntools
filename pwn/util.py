@@ -3,6 +3,7 @@ import struct, pwn, sys, subprocess, re, time, log, text, hashlib
 from socket import htons, inet_aton, inet_ntoa, gethostbyname
 from os import system
 from time import sleep
+import random
 
 # list utils
 def group(lst, n):
@@ -202,11 +203,27 @@ Arguments:
 
     return ''.join(get(n) for n in range(l))
 
+def get_allowed(**kwargs):
+    """Args: [avoid = '\\x00'] [only = every character]
+    For a set of avoided and exclusively-used characters, return the bytes allowed considering both."""
+    avoid     = kwargs.get('avoid', '')
+    only      = kwargs.get('only', map(chr, range(256)))
 
-def xor_pair(data, avoid = '\x00'):
-    """Finds two pieces of data that will xor together into the argument, while avoiding
-the bytes specified."""
-    use = [chr(n) for n in range(256) if chr(n) not in avoid]
+    return [chr(b) for b in range(256) if chr(b) not in avoid and chr(b) in only]
+
+def get_avoided(**kwargs):
+    """Args: [avoid = '\\x00'] [only = every character]
+    For a set of avoided and exclusively-used characters, return the bytes avoided considering both."""
+    avoid     = kwargs.get('avoid', '\x00')
+    only      = kwargs.get('only', map(chr, range(256)))
+
+    return [chr(b) for b in range(256) if chr(b) in avoid or chr(b) not in only]
+
+def xor_pair(data, **kwargs):
+    """Args: data [avoid = '\\x00'] [only = every character]
+    Finds two pieces of data that will xor together into the argument, while avoiding
+    the bytes specified."""
+    allowed = get_allowed(**kwargs)
 
     data = flat(data)
 
@@ -214,13 +231,39 @@ the bytes specified."""
     res2 = ''
 
     for c1 in data:
-        for c2 in use:
-            if xor(c1, c2) in use:
+        for c2 in allowed:
+            if xor(c1, c2) in allowed:
                 res1 += c2
                 res2 += xor(c1, c2)
                 break
 
     return (res1, res2)
+
+def randoms(count, **kwargs):
+    """Args: count [avoid = '\x00'] [only = every character]
+    Returns a number of random bytes, which avoid the specified bytes."""
+    allowed = get_allowed(**kwargs)
+    return ''.join(random.choice(allowed) for n in range(count))
+
+def random8(**kwargs):
+    """Args: [avoid = '\x00'] [only = every character]
+    Returns a random number which fits inside a byte."""
+    return u8(randoms(1, **kwargs))
+
+def random16(**kwargs):
+    """Args: [avoid = '\x00'] [only = every character]
+    Returns a random number which fits inside a 2 bytes."""
+    return u16(randoms(2, **kwargs))
+
+def random32(**kwargs):
+    """Args: [avoid = '\x00'] [only = every character]
+    Returns a random number which fits inside a 4 bytes."""
+    return u32(randoms(4, **kwargs))
+
+def random64(**kwargs):
+    """Args: [avoid = '\x00'] [only = every character]
+    Returns a random number which fits inside a 8 bytes."""
+    return u64(randoms(8, **kwargs))
 
 # align
 def align_up(alignment, x):
