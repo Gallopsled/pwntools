@@ -239,13 +239,20 @@ def xor_pair(data, **kwargs):
 
     return (res1, res2)
 
-def bits(s):
+def bits(s, endian = 'little'):
     out = []
     for c in s:
         b = ord(c)
+        byte = []
         for _ in range(8):
-            out.append(b % 2)
+            byte.append(b % 2)
             b >>= 1
+        if endian == 'little':
+            out += byte
+        elif endian == 'big':
+            out += byte[::-1]
+        else:
+            die('Wat (endian style)')
     return out
 
 def b64(s):
