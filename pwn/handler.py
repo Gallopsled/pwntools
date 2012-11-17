@@ -47,7 +47,7 @@ class handler(basesock.basesock):
                 self.sock, self.target = self.listensock.accept()
             except socket.timeout:
                 log.failed('Handler on port %d timed out' % self.port)
-                exit(PWN_PATCHED)
+                sys.exit(PWN_PATCHED)
         else:
             self.sock, self.target = self.listensock.accept()
         log.succeeded('Got connection from %s:%d' % self.target)

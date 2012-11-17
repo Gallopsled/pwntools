@@ -338,7 +338,7 @@ def pause(n = None):
             log.succeeded('Now')
     except KeyboardInterrupt:
         log.warning('Interrupted')
-        exit(1)
+        sys.exit(1)
 
 def die(s = None, e = None, exit_code = -1):
     """Exits the program with an error string and optionally prints an exception."""

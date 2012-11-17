@@ -34,7 +34,7 @@ class basesock:
             except socket.error, e:
                 if e.errno == errno.EPIPE:
                     failure('Broken pipe')
-                    exit(PWN_UNAVAILABLE)
+                    sys.exit(PWN_UNAVAILABLE)
                 else:
                     raise
         else:
@@ -46,7 +46,7 @@ class basesock:
                 res = self.sock.recv(numb)
             except socket.timeout:
                 failure('Connection timed out')
-                exit(PWN_UNAVAILABLE)
+                sys.exit(PWN_UNAVAILABLE)
         else:
             res = self.sock.recv(numb)
         if self.debug:

@@ -37,15 +37,15 @@ class remote(basesock.basesock):
             except socket.error, e:
                 if   e.errno == errno.ECONNREFUSED:
                     failed('Refused')
-                    exit(PWN_UNAVAILABLE)
+                    sys.exit(PWN_UNAVAILABLE)
                 elif e.errno == errno.ENETUNREACH:
                     failed('Unreachable')
-                    exit(PWN_UNAVAILABLE)
+                    sys.exit(PWN_UNAVAILABLE)
                 else:
                     raise
             except socket.timeout:
                 failed('Timed out')
-                exit(PWN_UNAVAILABLE)
+                sys.exit(PWN_UNAVAILABLE)
         else:
             self.sock.connect(self.target)
         self.lhost = self.sock.getsockname()[0]

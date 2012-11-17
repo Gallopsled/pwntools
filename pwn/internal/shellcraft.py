@@ -35,7 +35,7 @@ def gen_assembler(hdr, assembler):
         if ret <> 0:
             err = p.stderr.read()
             sys.stdout.write(err)
-            exit(0)
+            sys.exit(0)
         os.unlink(src)
         return p.stdout.read()
     return pwn.memoize(assemble)
@@ -50,4 +50,4 @@ def load(codes):
             globs[c] = m.__getattribute__(c)
         except:
             print "Could not load %s" % name
-            exit(0)
+            sys.exit(0)
