@@ -50,4 +50,4 @@ findtag:
     cmp edi, 0x%08x
     push edi
     jne .loop
-""" % tag
+""" % int(tag)
