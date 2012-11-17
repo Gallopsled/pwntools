@@ -1,5 +1,5 @@
 # top-level imports
-import struct, pwn, sys, subprocess, re, time, log, text, hashlib
+import struct, pwn, sys, subprocess, re, time, log, text, hashlib, base64
 from socket import htons, inet_aton, inet_ntoa, gethostbyname
 from os import system
 from time import sleep
@@ -238,6 +238,24 @@ def xor_pair(data, **kwargs):
                 break
 
     return (res1, res2)
+
+def bits(s):
+    out = []
+    for c in s:
+        b = ord(c)
+        for _ in range(8):
+            out.append(b % 2)
+            b >>= 1
+    return out
+
+def b64(s):
+    return base64.b64encode(s)
+
+def b64e(s):
+    return b64(s)
+
+def b64d(s):
+    return base64.b64decode(s)
 
 def randoms(count, **kwargs):
     """Args: count [avoid = '\x00'] [only = every character]
