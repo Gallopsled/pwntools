@@ -206,7 +206,7 @@ Arguments:
 def get_allowed(**kwargs):
     """Args: [avoid = '\\x00'] [only = every character]
     For a set of avoided and exclusively-used characters, return the bytes allowed considering both."""
-    avoid     = kwargs.get('avoid', '')
+    avoid     = kwargs.get('avoid', '\x00')
     only      = kwargs.get('only', map(chr, range(256)))
 
     return [chr(b) for b in range(256) if chr(b) not in avoid and chr(b) in only]
