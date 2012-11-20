@@ -36,13 +36,13 @@ class Elf:
     LDD = "/usr/bin/ldd"
 
     def __init__(self):
-        self._headers = {  ".plt": 0,
-                           ".text": 0,
-                           ".got": 0,
-                           ".got.plt": 0,
-                           ".data": 0,
-                           ".bss": 0,
-                           ".comment": 0, 
+        self._headers = {  "_plt": 0,
+                           "_text": 0,
+                           "_got": 0,
+                           "_got_plt": 0,
+                           "_data": 0,
+                           "_bss": 0,
+                           "_comment": 0, 
                            "base": 0,
                         }
         self._plt = {}
@@ -82,13 +82,23 @@ class Elf:
 
         for line in out:
             for h in self._headers.keys():
-                if line.find(" " + h + " ") != -1 and self._headers[h] == 0:
+                if line.find(" " + h.replace('_','.') + " ") != -1 and self._headers[h] == 0:
                     (addr, off) = self._parse_line(line)
                     self._headers[h] = addr
-                    if h == ".text":
+                    if h == "_text":
                         self._headers["base"] = addr - off
-                    if h == ".comment":
-                        self._headers[".comment"] = self._headers["base"] + off
+                    if h == "_comment":
+                        self._headers["_comment"] = self._headers["base"] + off
+
+        cmd = self.READELF + " -s " + binfile
+        out = Popen(cmd, shell=True, stdout=PIPE).communicate()[0]
+        out = out.split("\n")
+        out = [item for item in out if "GLOBAL" in item and "DEFAULT" in item and "FUNC" in item and not "UND" in item]
+        for line in out:
+            line = line.split()
+            name, addr = line[-1], line[1]
+            if not name in self._headers:
+                self._headers[name] = int(addr, 16)
 
     # get address of specific header
     def get_header(self, name):
@@ -112,7 +122,7 @@ class Elf:
                 ent = line.split()
                 addr = int(ent[0], 16)
                 func = ent[1].split("@")[0][1:]
-                self._plt[func+'@plt'] = addr
+                self._plt[func] = addr
 
         return True
 
@@ -142,7 +152,7 @@ class Elf:
                 if len(ent) < 5: continue
                 addr = int(ent[0], 16)
                 func = ent[4]
-                self._got[func+"@got"] = addr
+                self._got[func] = addr
 
         return True
 

@@ -18,7 +18,7 @@
 #       MA 02110-1301, USA.
 
 import trie
-import distorm
+import distorm3 as distorm
 import sys
 try:
     import cPickle as pickle
@@ -193,7 +193,7 @@ class ROPGadget:
         elf = readelf.Elf()
         elf.read_headers(filename)
         base_addr = elf.get_header("base")
-        data_addr = elf.get_header(".data")
+        data_addr = elf.get_header("_data")
 
         return (base_addr, data_addr)
 
