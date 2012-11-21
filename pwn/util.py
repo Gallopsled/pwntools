@@ -239,13 +239,13 @@ def xor_pair(data, **kwargs):
 
     return (res1, res2)
 
-def bits(s, endian = 'little'):
+def bits(s, endian = 'big'):
     out = []
     for c in s:
         b = ord(c)
         byte = []
         for _ in range(8):
-            byte.append(b % 2)
+            byte.append(str(b & 1))
             b >>= 1
         if endian == 'little':
             out += byte
@@ -253,7 +253,38 @@ def bits(s, endian = 'little'):
             out += byte[::-1]
         else:
             die('Wat (endian style)')
-    return out
+    return ''.join(out)
+
+def unbits(s, endian = 'big'):
+    out = []
+
+    state = {'cur': ''}
+    count = 0
+
+    def flush():
+        cur = state['cur'].ljust(8, '0')
+        state['cur'] = ''
+        if endian == 'little':
+            out.append(chr(int(cur[::-1], 2)))
+        elif endian == 'big':
+            out.append(chr(int(cur, 2)))
+        else:
+            die('Wat (endian style)')
+    
+    for c in s:
+        if c not in ['0', '1', 0, 1, True, False]:
+            die('Unbits called with a funky argument')
+
+        state['cur'] += '1' if c in ['1', 1, True] else '0'
+        count += 1
+
+        if count == 8:
+            count = 0
+            flush()
+    if count:
+        flush()
+
+    return ''.join(out)
 
 def b64(s):
     return base64.b64encode(s)
