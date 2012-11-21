@@ -7,8 +7,8 @@ try:
         s = sys.stdin.read()
         if s[-1] == '\n':
             s = s[:-1]
-        print unhexlify(s)
+        sys.stdout.write(unhexlify(s))
     else:
-        print unhexlify(' '.join(sys.argv[1:]))
+        sys.stdout.write(unhexlify(' '.join(sys.argv[1:])))
 except TypeError, e:
     sys.stderr.write(str(e) + '\n')
