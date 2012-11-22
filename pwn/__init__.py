@@ -44,6 +44,7 @@ from memoize    import memoize
 from process    import process
 from remote     import remote
 from handler    import handler
+from aeROPics   import aeROPics
 
 import pwn.internal.init.session
 import pwn.internal.init.cloud

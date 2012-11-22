@@ -3,11 +3,17 @@ import lib.aeropiclib.gadgets as gadgets
 import lib.aeropiclib.readelf as readelf
 import re
 import pwn
+from pwn import flat
 from pwn import log
 from pwn import util
 from pwn import process
 from pwn.i386 import nops
 
+global curr_ae, got, plt, segments
+curr_ae = None
+got = None
+plt = None
+segments = None
 class symbols(dict):
     def __getattr__ (self, name):
         if name in self.keys():
@@ -21,6 +27,7 @@ class symbols(dict):
     def __getitem__(self, item):
         return self.__getattr__(item)
 
+
 class aeROPics(object):
     def __init__(self, filename):
         self.__ropfinder = gadgets.ROPGadget()
@@ -29,6 +36,13 @@ class aeROPics(object):
         self.gadgets = {}
         self.NOP = nops
         self.__load_gadgets_from_file()
+
+        global curr_ae
+        curr_ae = self
+        global plt, got, segments
+        plt = self.plt
+        got = self.got
+        segments = self.segments
 
     def __load_gadgets_from_file(self, trackback=3):
         log.waitfor('Loading symbols')
@@ -44,6 +58,27 @@ class aeROPics(object):
         elfreader.read_libc_offset(self.__filename)
         self.libc = symbols(elfreader._libc_offset)
         log.succeeded()
+
+    def __findpopret(self, num):
+        for key in sorted(m for m in self.rops.keys() if m.startswith('pop')):
+            match = len(re.findall('\w{3}\_\w{3}', key))
+            if match == num:
+                return self.rops[key]
+        return False
+
+    def call(self, arg, argv, return_to=None):
+        num = len(argv)
+        if not return_to:
+            return_to = self.__findpopret(num)
+
+        if return_to:
+            self.append(arg)
+            self.append(return_to)
+            [self.append(item) for item in argv]
+            log.success("Adding ROP gadget to payload: %s%s" % (arg, str(argv)))
+        else:
+            log.error('Could not find pop%sret symbol ' % num)
+
 
     def add(self, name, value):
         if isinstance(value, str):
@@ -65,6 +100,10 @@ class aeROPics(object):
         self.__stacks.append(item)
 
     def __repr__(self):
-        return ''.join(self.__stacks)
+        return flat(self.__stacks)
 
-
+def ropcall(arg, argv, return_to=None):
+    if not curr_ae:
+        return False
+    else:
+        curr_ae.call(arg, argv, return_to)
