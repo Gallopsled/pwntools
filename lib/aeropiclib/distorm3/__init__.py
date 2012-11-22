@@ -33,7 +33,11 @@ from os.path import split, join
 
 # Guess the DLL filename and load the library.
 _distorm_path = split(__file__)[0]
-potential_libs = ['distorm3.dll', 'libdistorm3.dll', 'libdistorm3.so', 'libdistorm3.dylib']
+import platform
+if platform.architecture()[0] == '64bit':
+    potential_libs = ['distorm3.dll', 'libdistorm3.dll', 'libdistorm3.so', 'libdistorm3.dylib']
+else:
+    potential_libs = ['libdistorm3_32.so']
 lib_was_found = False
 for i in potential_libs:
     try:
