@@ -18,7 +18,7 @@
 #       MA 02110-1301, USA.
 
 import trie
-import distorm3 as distorm
+import lib.aeropiclib.distorm3 as distorm
 import sys
 try:
     import cPickle as pickle

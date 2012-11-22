@@ -44,13 +44,9 @@ from memoize    import memoize
 from process    import process
 from remote     import remote
 from handler    import handler
-try:
-    from aeROPics   import aeROPics
-except Exception, e:
-    log.warning("Exception: %s (%s)" % (str(e), str(type(e))))
-    log.warning("aeROPics module not loaded, get it here: https://distorm.googlecode.com/files/distorm3.zip")
+from aeROPics   import aeROPics
 
-    
+
 
 import pwn.internal.init.session
 import pwn.internal.init.cloud

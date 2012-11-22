@@ -29,6 +29,8 @@ class symbols(dict):
 
 
 class aeROPics(object):
+    __recent_call_args = 0
+
     def __init__(self, filename):
         self.__ropfinder = gadgets.ROPGadget()
         self.__filename = filename
@@ -46,7 +48,11 @@ class aeROPics(object):
 
     def __load_gadgets_from_file(self, trackback=3):
         log.waitfor('Loading symbols')
-        self.__ropfinder.generate(self.__filename, trackback)
+        try:
+            self.__ropfinder.generate(self.__filename, trackback)
+        except:
+            log.failed()
+            return
         self.rops = symbols(dict([(item.strip(';;').replace(' ; ','__')[:-1].replace(' ','_'), addr) for (item, addr) in self.__ropfinder.asm_search('%')]))
         elfreader = readelf.Elf()
         elfreader.read_headers(self.__filename)
@@ -66,19 +72,39 @@ class aeROPics(object):
                 return self.rops[key]
         return False
 
-    def call(self, arg, argv, return_to=None):
-        num = len(argv)
-        if not return_to:
-            return_to = self.__findpopret(num)
-
-        if return_to:
-            self.append(arg)
-            self.append(return_to)
-            [self.append(item) for item in argv]
-            log.success("Adding ROP gadget to payload: %s%s" % (arg, str(argv)))
+    def call(self, arg, argv=None, return_to=None):
+        if not argv:
+            if self.__recent_call_args > 0: # then this is actually a return_to address
+                log.info("Detecting a singleton address after a function call, pushing this as the functions return address")
+                self.__stacks.insert(-self.__recent_call_args, arg)
+            else:
+                self.append(arg) # so this is the very first... better know what you're doing
+            self.__recent_call_args = 0
         else:
-            log.error('Could not find pop%sret symbol ' % num)
+            num = len(argv)
+            self.__recent_call_args = num
 
+            if return_to:
+                self.append(arg)
+                self.append(return_to)
+                [self.append(item) for item in argv]
+                log.success("Adding ROP gadget to payload: %s%s ret: %s" % (arg, str(argv), return_to))
+            else:
+                ret = self.__findpopret(num)
+                if ret:
+                    self.append(arg)
+                    self.append(ret)
+                    [self.append(item) for item in argv]
+                    log.success("Adding ROP gadget to payload: %s%s" % (arg, str(argv)))
+                else:
+                    self.append(arg)
+                    [self.append(item) for item in argv]
+                    log.success("Adding ROP gadget to payload: %s%s" % (arg, str(argv)))
+                    log.warning("No return address was found, you better know what you're doing!")                    
+            # else:
+            #     ret = self.__findpopret(num)
+
+            
 
     def add(self, name, value):
         if isinstance(value, str):
@@ -102,7 +128,7 @@ class aeROPics(object):
     def __repr__(self):
         return flat(self.__stacks)
 
-def ropcall(arg, argv, return_to=None):
+def ropcall(arg, argv=None, return_to=None):
     if not curr_ae:
         return False
     else:
