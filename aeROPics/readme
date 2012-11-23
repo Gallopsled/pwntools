@@ -1,4 +1,8 @@
-add 'aeROPics' to PYTHONPATH
+imported through pwn:
+from pwn.aeROPics import *
+a = aeROPics(somefile)
+
+
 
 WISH LIST:
-- add to pwn-lib
+- who knows?
