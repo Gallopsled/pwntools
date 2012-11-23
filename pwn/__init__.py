@@ -1,5 +1,6 @@
 # Submodules
 import pwn, os, sys, time, traceback
+import platform
 
 # Install path
 pwn.installpath = os.path.dirname(__file__)
@@ -44,7 +45,10 @@ from memoize    import memoize
 from process    import process
 from remote     import remote
 from handler    import handler
-from aeROPics   import aeROPics
+try:
+    from aeROPics   import aeROPics
+except:
+    log.warning("Could not load aeROPics module, failed loading distorm3 module...")
 
 
 
