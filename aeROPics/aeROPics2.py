@@ -100,11 +100,11 @@ class aeROPics(object):
                     self.append(arg)
                     [self.append(item) for item in argv]
                     log.success("Adding ROP gadget to payload: %s%s" % (arg, str(argv)))
-                    log.warning("No return address was found, you better know what you're doing!")                    
+                    log.warning("No return address was found, you better know what you're doing!")
             # else:
             #     ret = self.__findpopret(num)
 
-            
+
 
     def add(self, name, value):
         if isinstance(value, str):
