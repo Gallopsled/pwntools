@@ -5,4 +5,4 @@ a = aeROPics(somefile)
 
 
 WISH LIST:
-- who knows?
+- allow simple arithmetic on addresses, e.g. ropcall(a.segments._bss + 0x20)

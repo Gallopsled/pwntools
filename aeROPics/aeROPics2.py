@@ -14,19 +14,39 @@ curr_ae = None
 got = None
 plt = None
 segments = None
+
+class address(str):
+    def __add__(self, y):
+        # The address of each element in symbols should be wrapped into the address class when inserted, NOT when retrieved... fix me plx
+        if isinstance(self, str):
+            return util.p32(util.u32(self) + y)
+
 class symbols(dict):
     def __getattr__ (self, name):
         if name in self.keys():
-            return util.p32(self.get(name))
+            return address(util.p32(self.get(name)))
         else: return
+
+    def __fmt(self, key):
+        return key + "\t" * (6-len(key)/8) + hex(self.get(key)) + "\n"
     def __repr__(self):
         st = ''
         for key in sorted(self.keys()):
-            st += key + "\t" * (6-len(key)/8) + hex(self.get(key)) + "\n"
+            st += self.__fmt(key)
         return st
     def __getitem__(self, item):
         return self.__getattr__(item)
-
+    def __call__(self, item):
+        st = ''
+        for key in sorted(self.keys()):
+            if isinstance(item, str):
+                if item in key:
+                    st += self.__fmt(key)
+            if isinstance(item, int):
+                value = hex(self.get(key))
+                if hex(item) in value:
+                    st += self.__fmt(key)
+        print st
 
 class aeROPics(object):
     __recent_call_args = 0
@@ -78,6 +98,7 @@ class aeROPics(object):
                 log.info("Detecting a singleton address after a function call, pushing this as the functions return address")
                 self.__stacks.insert(-self.__recent_call_args, arg)
             else:
+                log.info("Inserting singleton")
                 self.append(arg) # so this is the very first... better know what you're doing
             self.__recent_call_args = 0
         else:
@@ -104,7 +125,6 @@ class aeROPics(object):
             # else:
             #     ret = self.__findpopret(num)
 
-            
 
     def add(self, name, value):
         if isinstance(value, str):
@@ -127,6 +147,7 @@ class aeROPics(object):
 
     def __repr__(self):
         return flat(self.__stacks)
+
 
 def ropcall(arg, argv=None, return_to=None):
     if not curr_ae:
