@@ -5,10 +5,16 @@ import argparse, tempfile, sys, subprocess, os
 parser = argparse.ArgumentParser()
 parser.add_argument('lines', metavar='line', nargs='*', help='Lines to assemble. If none are supplied, use stdin')
 parser.add_argument("-b", "--bits", help="The assembly mode", choices=[16,32,64], default=32, type=int)
-parser.add_argument("-f", "--format", help="Output format", choices=['raw', 'hex'], default='hex')
+parser.add_argument("-f", "--format", help="Output format (defaults to hex for ttys, otherwise raw)", choices=['raw', 'hex'])
 parser.add_argument("-o", metavar='file', help="Output file (defaults to stdout)", type=argparse.FileType('w'), default=sys.stdout)
 parser.add_argument("-O", metavar='level', help="Optimization options to pass to nasm", choices = ['0', '1', 'x'], default='x')
 args = parser.parse_args()
+
+if args.format == None:
+    if args.o.isatty():
+        args.format = 'hex'
+    else:
+        args.format = 'raw'
 
 tmp = tempfile.NamedTemporaryFile(suffix='.asm')
 tmpname = tmp.name
@@ -35,7 +41,7 @@ try:
     if args.format == 'raw':
         args.o.write(output)
     elif args.format == 'hex':
-        args.o.write(output.encode('hex'))
+        args.o.write(output.encode('hex') + '\n')
     else:
         raise Exception("Unknown output format") # This really shouldn't happen
 
