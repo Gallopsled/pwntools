@@ -55,6 +55,7 @@ except:
 import pwn.internal.init.session
 import pwn.internal.init.cloud
 import fucking
+import sqli
 
 # Constans
 from consts import *
