@@ -35,14 +35,7 @@ class _Worker(Thread):
             lock.release()
             b = bool(int(func(_req_bit(query, n // 8, n % 8))))
             lock.acquire()
-            try:
-                bits[n] = b
-            except:
-                print bits
-                print len(bits)
-                print n
-                print b
-                raise
+            bits[n] = b
             n = align_down(8, n)
             byte = bits[n : n + 8]
             if len(byte) < 8 or None in byte or _PROGRESS in byte:
@@ -100,6 +93,7 @@ class _Scroller(Thread):
             if s <> s1:
                 s = s1
                 lock.acquire()
+                # BETTER OUTPUT PLZ
                 print s
                 lock.release()
             if e['endp'] is not None and len(chrs) == e['endp'] // 8:
