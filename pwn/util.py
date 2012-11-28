@@ -244,7 +244,7 @@ types = {bool:     'bool',
          'bool':   'bool',
          str:      'str',
          'str':    'str',
-         'string': 'str', 
+         'string': 'str',
          int:      'int',
          'int':    'int',
          None:     None}
@@ -292,7 +292,7 @@ def bits(s, **kwargs):
             out += byte[::-1]
         else:
             die('Wat (endian style)')
-    
+
     if type == 'str':
         return ''.join(out)
     else:
@@ -320,7 +320,7 @@ def unbits(s, endian = 'big'):
             out.append(chr(int(cur, 2)))
         else:
             die('Wat (endian style)')
-    
+
     for c in s:
         if c not in ['0', '1', 0, 1, True, False]:
             die('Unbits called with a funky argument')
@@ -375,12 +375,12 @@ def random64(**kwargs):
 def align_up(alignment, x):
     """Rounds x up to nearest multiple of the alignment."""
     a = alignment
-    return ((x + a - 1) / a) * a
+    return ((x + a - 1) // a) * a
 
 def align_down(alignment, x):
     """Rounds x down to nearest multiple of the alignment."""
     a = alignment
-    return (x / a) * a
+    return (x // a) * a
 
 def align(alignment, x):
     """Rounds x up to nearest multiple of the alignment."""
