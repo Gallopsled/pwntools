@@ -6,8 +6,8 @@ import sys, socket
 from pwn import *
 from pwn.i386.linux import *
 
-log.waitfor('Counting to fifty')
-for n in range(50):
+log.waitfor('Counting to ten')
+for n in range(10):
     log.status(str(n))
     sleep(0.05)
 log.succeeded()
@@ -26,3 +26,14 @@ handler.wait_for_connection()
 handler.interactive()
 
 log.warning("I'm on a horse")
+
+# demonstrate that we can switch back and forth between programmed and
+# interactive mode
+
+handler.sendline('id')
+line = handler.recvline()
+user = re.findall('uid=[0-9]+\(([^)]+)\)', line)[0]
+
+log.info('Hello, %s' % user)
+
+handler.interactive()
