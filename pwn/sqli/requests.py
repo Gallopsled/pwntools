@@ -9,4 +9,7 @@ def mysql_dump(table, columns, rows = -1):
     return 'SELECT GROUP_CONCAT(CONCAT_WS("|",%s) SEPARATOR "\\n") from %s' % \
         (','.join(columns), table)
 
+def mysql_file(filename):
+    return 'SELECT load_file("%s")' % filename
+
 mysql_fulldump = ''
