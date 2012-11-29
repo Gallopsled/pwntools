@@ -38,6 +38,7 @@ if _do_argv:
 del _do_argv, _arg
 
 # Promote to toplevel
+from thread     import Thread
 from util       import *
 from log        import trace, debug
 from excepthook import addexcepthook
