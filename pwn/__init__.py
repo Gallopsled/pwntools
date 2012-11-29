@@ -50,7 +50,7 @@ try:
     from aeROPics   import aeROPics
 except:
     log.warning("Could not load aeROPics module, failed loading distorm3 module...")
-
+from useragents import randomua
 
 
 import pwn.internal.init.session
