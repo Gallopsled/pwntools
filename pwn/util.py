@@ -239,13 +239,52 @@ def xor_pair(data, **kwargs):
 
     return (res1, res2)
 
-def bits(s, endian = 'big'):
+
+types = {bool:     'bool',
+         'bool':   'bool',
+         str:      'str',
+         'str':    'str',
+         'string': 'str',
+         int:      'int',
+         'int':    'int',
+         None:     None}
+
+def bits(s, **kwargs):
+    endian = kwargs.get('endian', 'big')
+    zero   = kwargs.get('zero', None)
+    one    = kwargs.get('one', None)
+    type   = kwargs.get('type', None)
+    type   = types.get(type, None)
+
+
+    try:
+        type = types[type]
+    except:
+        die("Wat. Unknown type %s" % str(type))
+
+    if zero != None or one != None:
+        if zero == None or one == None:
+            die("Wat. You cannot specify just a zero or a one in bits")
+
+        if type != None:
+            die("You cannot specify both a type and (zero, one)")
+    else:
+        if type == 'bool':
+            zero = False
+            one = True
+        elif type == 'str':
+            zero = "0"
+            one = "1"
+        else:
+            zero = 0
+            one = 1
+
     out = []
     for c in s:
         b = ord(c)
         byte = []
         for _ in range(8):
-            byte.append(str(b & 1))
+            byte.append(one if b & 1 else zero)
             b >>= 1
         if endian == 'little':
             out += byte
@@ -253,7 +292,18 @@ def bits(s, endian = 'big'):
             out += byte[::-1]
         else:
             die('Wat (endian style)')
-    return ''.join(out)
+
+    if type == 'str':
+        return ''.join(out)
+    else:
+        return out
+
+def bits_str(s, **kwargs):
+    endian = kwargs.get('endian', 'big')
+    zero   = kwargs.get('zero', "0")
+    one    = kwargs.get('one', "1")
+
+    return ''.join(bits(s, zero=zero, one=one))
 
 def unbits(s, endian = 'big'):
     out = []
@@ -270,7 +320,7 @@ def unbits(s, endian = 'big'):
             out.append(chr(int(cur, 2)))
         else:
             die('Wat (endian style)')
-    
+
     for c in s:
         if c not in ['0', '1', 0, 1, True, False]:
             die('Unbits called with a funky argument')
@@ -325,12 +375,12 @@ def random64(**kwargs):
 def align_up(alignment, x):
     """Rounds x up to nearest multiple of the alignment."""
     a = alignment
-    return ((x + a - 1) / a) * a
+    return ((x + a - 1) // a) * a
 
 def align_down(alignment, x):
     """Rounds x down to nearest multiple of the alignment."""
     a = alignment
-    return (x / a) * a
+    return (x // a) * a
 
 def align(alignment, x):
     """Rounds x up to nearest multiple of the alignment."""
