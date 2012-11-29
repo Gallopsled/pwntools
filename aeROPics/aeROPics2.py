@@ -148,9 +148,18 @@ class aeROPics(object):
     def __repr__(self):
         return flat(self.__stacks)
 
+    def pwnit(self, *argv):
+        p = process(self.__filename, *argv)
+        p.interactive('pwnshell$ ')
 
 def ropcall(arg, argv=None, return_to=None):
     if not curr_ae:
         return False
     else:
         curr_ae.call(arg, argv, return_to)
+
+def pwnit(*argv):
+    if not curr_ae:
+        return False
+    else:
+        curr_ae.pwnit(*argv)
