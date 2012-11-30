@@ -140,7 +140,6 @@ def bitwise(func, query, threads = 20, verify = True, display = True):
         }
     for _ in range(threads):
         t = _Worker(env)
-        t.daemon = True
         t.start()
     disp = _Display(env)
     disp.start()
