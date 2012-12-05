@@ -1,0 +1,19 @@
+Have you ever thought:
+
+"Gee, I wish I knew what the ip-adresses of this box is.
+ I have shell on the server, but I cannot access /proc"
+
+Well, you're in luck. This program tries to bind to every
+ip to see if it is available locally. This if course takes
+some time (depending on the speed of the server).
+
+Some quick'n'dirty benchmarks:
+
+On a 2011 Thinkpad X220 (amd64): <10 minutes
+On a 2005 Mac mini (powerpc): <1 hour
+
+Compile with:
+    gcc [optmization_flags] ipbrute.c -static -o ipbrute
+
+Suggested flags for x86:
+    -O3 -march=native -mtune=native
