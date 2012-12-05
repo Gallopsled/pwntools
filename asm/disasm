@@ -4,7 +4,7 @@ import argparse, tempfile, sys, subprocess, os, readline
 
 parser = argparse.ArgumentParser()
 parser.add_argument('hex', metavar='hex', nargs='?', help='Hex-string to disasemble. If none are supplied, then it uses stdin in non-hex mode.')
-parser.add_argument("-b", "--bits", help="The disassembly mode", choices=[16,32,64], default=32, type=int)
+parser.add_argument("-b", "--bits", help="The disassembly mode", choices=['16','32','64'], default='32')
 args = parser.parse_args()
 
 tmp = tempfile.NamedTemporaryFile(suffix='.bin')
@@ -16,4 +16,4 @@ else:
     tmp.write(sys.stdin.read())
 
 tmp.flush()
-sys.exit(subprocess.call(['ndisasm', tmpname], stdout=sys.stderr, stderr=sys.stderr))
+sys.exit(subprocess.call(['ndisasm', '-b' + args.bits, tmpname], stdout=sys.stderr, stderr=sys.stderr))
