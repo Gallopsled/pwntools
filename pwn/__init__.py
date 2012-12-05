@@ -45,10 +45,12 @@ from memoize    import memoize
 from process    import process
 from remote     import remote
 from handler    import handler
-try:
-    from aeROPics   import aeROPics
-except:
-    log.warning("Could not load aeROPics module, failed loading distorm3 module...")
+# try:
+#     from aeROPics   import aeROPics
+# except:
+#     log.warning("Could not load aeROPics module, failed loading distorm3 module...")
+
+from rop   import *
 
 
 
