@@ -38,6 +38,7 @@ if _do_argv:
 del _do_argv, _arg
 
 # Promote to toplevel
+from thread     import Thread
 from util       import *
 from log        import trace, debug
 from excepthook import addexcepthook
@@ -45,13 +46,13 @@ from memoize    import memoize
 from process    import process
 from remote     import remote
 from handler    import handler
+from rop   import *
+
 # try:
 #     from aeROPics   import aeROPics
 # except:
 #     log.warning("Could not load aeROPics module, failed loading distorm3 module...")
-
-from rop   import *
-
+from useragents import randomua
 
 
 import pwn.internal.init.session

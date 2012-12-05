@@ -2,7 +2,7 @@ import pwn, socket, time, sys, re, errno
 from log import *
 from consts import *
 from util import size
-from threading import Thread
+from thread import Thread
 
 class basesock:
     def settimeout(self, n):
@@ -39,6 +39,9 @@ class basesock:
                     raise
         else:
             self._send(dat)
+
+    def sendline(self, line):
+        self.send(line + '\n')
 
     def recv(self, numb = 4096):
         if self.checked:
@@ -109,12 +112,15 @@ class basesock:
         debug = self.debug
         timeout = self.timeout
         self.debug = False
-        self.settimeout(None)
+        self.settimeout(0.1)
         running = True
         def loop():
             while running:
-                sys.stderr.write(self.recv())
-                sys.stderr.flush()
+                try:
+                    sys.stderr.write(self.sock.recv(4096))
+                    sys.stderr.flush()
+                except socket.timeout:
+                    pass
         t = Thread(target = loop)
         t.daemon = True
         t.start()
@@ -123,10 +129,11 @@ class basesock:
                 time.sleep(0.1)
                 self.send(raw_input(prompt) + '\n')
             except KeyboardInterrupt:
+                sys.stderr.write('Interrupted\n')
+                running = False
+                t.join()
                 self.debug = debug
                 self.settimeout(timeout)
-                running = False
-                sys.stderr.write('Interrupted\n')
                 break
 
     def recvall(self):

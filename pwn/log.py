@@ -40,10 +40,12 @@ if sys.stderr.isatty() and not pwn.DEBUG:
             ])
 
         def update(self):
-            _trace('\x1b[s ' + boldblue('[' + self.spinner[self.i] + ']') + ' ' + _message)
-            if _status:
-                _trace(': ' + _status)
-            _trace('\x1b[u')
+            s = '\x1b[s ' + boldblue('[' + self.spinner[self.i] + ']') + ' ' + _message
+            if _status and _message:
+                s += ': ' + _status
+            elif status:
+                s += _status
+            _trace(s + '\x1b[u')
 
         def run(self):
 
@@ -65,10 +67,12 @@ if sys.stderr.isatty() and not pwn.DEBUG:
             _lock.acquire()
             _spinner.running = False
             _status = ''
-            _trace('\x1b[0K ' + marker + ' ' + _message)
-            if status:
-                _trace(': ' + status)
-            _trace('\n\x1b[?25h') # show cursor
+            s = '\x1b[0K ' + marker + ' ' + _message
+            if status and _message:
+                s += ': ' + status
+            elif status:
+                s += status
+            _trace(s + '\n\x1b[?25h') # show cursor
             _lock.release()
         _spinner = None
 

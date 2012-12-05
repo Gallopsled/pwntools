@@ -1,4 +1,4 @@
-import pwn, socket, basesock
+import pwn, socket, basesock, sys
 import log
 from consts import *
 
