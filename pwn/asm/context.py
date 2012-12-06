@@ -1,21 +1,20 @@
-from pwn import concat
 from shellcode import register_shellcode
 
+# The current context
 _context = {}
 
+# Possible context values
 _possible = {
         'os': ['linux', 'freebsd'],
         'arch': ['i386'],
         'network': ['ipv4', 'ipv6']
 }
 
-_reverse = {}
-
-for _k,_vs in _possible.items():
-    for _v in _vs:
-        _reverse[_v] = _k
+# Reverse dictionary
+_reverse = {v:k for k,vs in _possible.items() for v in vs}
 
 def _validate(k, v):
+    '''Validates a context (key, value)-pair and dies if it is invalid.'''
     if k not in _possible:
         die('Invalid context key: ' + str(k))
 
@@ -23,14 +22,21 @@ def _validate(k, v):
         die('Invalid context value: ' + str(k) + '=' + str(v))
 
 def _validate_v(value):
+    '''Validates a context value and dies if it is invalid.'''
     if v not in _reverse:
         die('Invalid context value: ' + str(v))
 
 def clear_context():
+    '''Clears the current context.'''
     global _context
     _context = {}
 
 def context(*args, **kwargs):
+    '''Adds/overwrites the current context.
+
+    Typical usage:
+    context('i386', 'linux', 'ipv4')
+    '''
     global _context
     for v in args:
         _validate_v(v)
@@ -41,6 +47,10 @@ def context(*args, **kwargs):
         _context[k] = v
 
 def with_context(**kwargs):
+    '''Adds the current context to the kwargs, however kwarg-value can overrule the context.
+
+    It also validates values in kwargs and adds (key, None) for non-existant keys.
+    '''
     global _context
 
     for k in _possible:
@@ -54,6 +64,17 @@ def with_context(**kwargs):
 
 
 def shellcode_reqs(**supported_context):
+    '''A decorator for shellcode functions, which registers the function
+    with shellcraft and validates the context when the function is called.
+    
+    Example usage:
+    @shellcode_reqs(os = ['linux', 'freebsd'], arch = 'i386')
+    def sh(os = None):
+        ...
+
+    Notice that in this example the decorator will guarantee that os is
+    either 'linux' or 'freebsd' before sh is called.
+    '''
     for k,vs in supported_context.items():
         if not isinstance(vs, list):
             vs = supported_context[k] = [vs]
