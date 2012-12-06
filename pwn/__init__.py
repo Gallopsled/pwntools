@@ -45,6 +45,7 @@ from memoize    import memoize
 from process    import process
 from remote     import remote
 from handler    import handler
+from asm        import *
 try:
     from rop   import *
 except:

@@ -1,5 +1,6 @@
-from pwn import ip, htons
+from pwn import ip, htons, shellcode_reqs
 
+@shellcode_reqs(network = 'ipv4', os = 'linux', arch = 'i386')
 def connect(host, port):
     """Args: host, port
     Connects to host on port.  Leaves socket in EBP."""
