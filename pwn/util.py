@@ -442,8 +442,6 @@ for _algo in hashlib.algorithms:
     globals()[_algo + 'sum'] = sum
     globals()[_algo + 'filehex'] = filehex
     globals()[_algo + 'sumhex'] = sumhex
-# ugliest hack
-del _algo, _closure
 
 # network utils
 def ip (host):
