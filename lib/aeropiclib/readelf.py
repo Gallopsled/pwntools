@@ -42,7 +42,7 @@ class Elf:
                            "_got_plt": 0,
                            "_data": 0,
                            "_bss": 0,
-                           "_comment": 0, 
+                           "_comment": 0,
                            "base": 0,
                         }
         self._plt = {}

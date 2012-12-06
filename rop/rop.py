@@ -2,18 +2,11 @@
 import lib.aeropiclib.gadgets as gadgets
 import lib.aeropiclib.readelf as readelf
 import re
-import pwn
-from pwn import flat
-from pwn import log
-from pwn import util
-from pwn import process
+from pwn import flat, log, util, process, p32, die
 from pwn.i386 import nops
 
-global curr_ae, got, plt, segments
-curr_ae = None
-got = None
-plt = None
-segments = None
+global _curr_ae
+_curr_ae = None
 
 class address(str):
     def __add__(self, y):
@@ -55,25 +48,25 @@ class load(object):
         self.__ropfinder = gadgets.ROPGadget()
         self.__filename = filename
         self.__stacks = []
-        self.gadgets = {}
         self.NOP = nops
         self.__load_gadgets_from_file()
 
-        global curr_ae
-        curr_ae = self
-        global plt, got, segments
-        plt = self.plt
-        got = self.got
-        segments = self.segments
+        global _curr_ae
+        _curr_ae = self
+        globals()['plt'] = self.plt
+        globals()['got'] = self.got
+        globals()['segments'] = self.segments
+        globals()['libc'] = self.libc
+        globals()['gadgets'] = self.gadgets
 
     def __load_gadgets_from_file(self, trackback=3):
         log.waitfor('Loading symbols')
         try:
             self.__ropfinder.generate(self.__filename, trackback)
         except:
-            log.failed()
+            die('could not load file')
             return
-        self.rops = symbols(dict([(item.strip(';;').replace(' ; ','__')[:-1].replace(' ','_'), addr) for (item, addr) in self.__ropfinder.asm_search('%')]))
+        self.gadgets = symbols(dict([(item.strip(';;').replace(' ; ','__')[:-1].replace(' ','_'), addr) for (item, addr) in self.__ropfinder.asm_search('%')]))
         elfreader = readelf.Elf()
         elfreader.read_headers(self.__filename)
         self.segments = symbols(elfreader._headers)
@@ -86,84 +79,74 @@ class load(object):
         log.succeeded()
 
     def _findpopret(self, num):
-        for key in sorted(m for m in self.rops.keys() if m.startswith('pop')):
+        for key in sorted(m for m in self.gadgets.keys() if m.startswith('pop')):
             match = len(re.findall('\w{3}\_\w{3}', key))
             if match == num:
-                return self.rops[key]
+                return self.gadgets[key]
         return False
 
+    def _lookup(self, symb):
+        addr = self.plt[symb]
+        if addr is not None:
+            log.info("found symbol <%s> in plt" % symb)
+            return addr
+
+        addr = self.segments[symb]
+        if addr is not None:
+            log.info("found symbol <%s> in segments" % symb)
+            return addr
+
+        die("Could not find symbol <%s>" % symb)
+
+
     def call(self, arg, argv=None, return_to=None):
+        if isinstance(arg, str) and not isinstance(arg, address):
+            arg = self._lookup(arg)
+        if isinstance(arg, int):
+            arg = p32(arg)
+
         if not argv:
-            if self.__recent_call_args > 0: # then this is actually a return_to address
-                log.info("Detecting a singleton address after a function call, pushing this as the functions return address")
+            if self.__recent_call_args > 0: # then this is a return addr to the previous function
                 self.__stacks.insert(-self.__recent_call_args, arg)
             else:
-                log.info("Inserting singleton")
-                self.append(arg) # you better know what you're doing
+                self.append(arg)
             self.__recent_call_args = 0
         else:
-            if isinstance(argv, str):
-                num = 1
-            else:
-                num = len(argv)
+            argv = map(lambda a: self._lookup(a) if type(a) == str else a, argv)
+            num = 1 if isinstance(argv, str) else len(argv)
             self.__recent_call_args = num
 
+            self.append(arg)
             if return_to:
-                self.append(arg)
                 self.append(return_to)
-                [self.append(item) for item in argv]
-                log.success("Adding ROP gadget to payload: %s%s ret: %s" % (arg, str(argv), return_to))
             else:
                 ret = self._findpopret(num)
                 if ret:
-                    self.append(arg)
                     self.append(ret)
-                    [self.append(item) for item in argv]
-                    log.success("Found a proper popret")
-                    log.success("Adding ROP gadget to payload: %s%s" % (arg, str(argv)))
-                else:
-                    self.append(arg)
-                    [self.append(item) for item in argv]
-                    log.success("Adding ROP gadget to payload: %s%s" % (arg, str(argv)))
-                    log.warning("No return address was found, you better know what you're doing!")
-            # else:
-            #     ret = self.__findpopret(num)
+            [self.append(item) for item in argv]
 
+    # def __setitem__(self, i, y):
+    #     self.add(i, y)
 
-    def add(self, name, value):
-        if isinstance(value, str):
-            val = value
-        else:
-            val = util.p32(value)
-        self.gadgets.update({name: val})
+    # def __getattr__ (self, name):
+    #     if name in self.gadgets.keys():
+    #         return self.gadgets[name]
 
-    def __setitem__(self, i, y):
-        self.add(i, y)
-
-    def __getattr__ (self, name):
-        if name in self.gadgets.keys():
-            return self.gadgets[name]
-
-    def append(self, item, args=None):
-        # if args:
-        #     num_args = len(args)
+    def append(self, item):
         self.__stacks.append(item)
 
     def __repr__(self):
         return flat(self.__stacks)
 
-    def pwnit(self, *argv):
-        p = process(self.__filename, *argv)
-        p.interactive('pwnshell$ ')
+    # def pwnit(self, *argv):
+    #     p = process(self.__filename, *argv)
+    #     p.interactive('pwnshell$ ')
 
     def portable(self, portable_type='sh', pipe=False):
         def _string(s):
             out = []
             for c in s:
                 co = ord(c)
-                # if co >= 0x41 and co <= 0x60:
-                #     out.append(c)
-                # else:
                 out.append('\\x%02x' % co)
             return ''.join(out)
 
@@ -176,18 +159,29 @@ class load(object):
             print ""
 
 def call(arg, argv=None, return_to=None):
-    if not curr_ae:
+    if not _curr_ae:
         return False
     else:
-        curr_ae.call(arg, argv, return_to)
+        _curr_ae.call(arg, argv, return_to)
+
+def data(arg):
+    if not _curr_ae:
+        return False
+    else:
+        _curr_ae.append(arg)
 
 def pwnit(*argv):
-    if not curr_ae:
+    if not _curr_ae:
         return False
-    curr_ae.pwnit(*argv)
+    _curr_ae.pwnit(*argv)
+
+def payload():
+    if not _curr_ae:
+        return False
+    return str(_curr_ae)
 
 def portable(portable_type='sh', pipe=False):
-    if not curr_ae:
+    if not _curr_ae:
         return False
     if portable_type == 'sh':
-        curr_ae.portable(portable_type, pipe)
+        _curr_ae.portable(portable_type, pipe)
