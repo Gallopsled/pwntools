@@ -56,7 +56,7 @@ except:
 # except:
 #     log.warning("Could not load aeROPics module, failed loading distorm3 module...")
 from useragents import randomua
-
+from splash     import splash
 
 import pwn.internal.init.session
 import pwn.internal.init.cloud
