@@ -2,7 +2,7 @@
 import lib.aeropiclib.gadgets as gadgets
 import lib.aeropiclib.readelf as readelf
 import re
-from pwn import flat, log, util, process, p32
+from pwn import flat, log, util, process, p32, die
 from pwn.i386 import nops
 
 global _curr_ae
@@ -48,7 +48,6 @@ class load(object):
         self.__ropfinder = gadgets.ROPGadget()
         self.__filename = filename
         self.__stacks = []
-        self.gadgets = {}
         self.NOP = nops
         self.__load_gadgets_from_file()
 
@@ -58,16 +57,16 @@ class load(object):
         globals()['got'] = self.got
         globals()['segments'] = self.segments
         globals()['libc'] = self.libc
-        globals()['rops'] = self.rops
+        globals()['gadgets'] = self.gadgets
 
     def __load_gadgets_from_file(self, trackback=3):
         log.waitfor('Loading symbols')
         try:
             self.__ropfinder.generate(self.__filename, trackback)
         except:
-            log.failed()
+            die('could not load file')
             return
-        self.rops = symbols(dict([(item.strip(';;').replace(' ; ','__')[:-1].replace(' ','_'), addr) for (item, addr) in self.__ropfinder.asm_search('%')]))
+        self.gadgets = symbols(dict([(item.strip(';;').replace(' ; ','__')[:-1].replace(' ','_'), addr) for (item, addr) in self.__ropfinder.asm_search('%')]))
         elfreader = readelf.Elf()
         elfreader.read_headers(self.__filename)
         self.segments = symbols(elfreader._headers)
@@ -80,19 +79,29 @@ class load(object):
         log.succeeded()
 
     def _findpopret(self, num):
-        for key in sorted(m for m in self.rops.keys() if m.startswith('pop')):
+        for key in sorted(m for m in self.gadgets.keys() if m.startswith('pop')):
             match = len(re.findall('\w{3}\_\w{3}', key))
             if match == num:
-                return self.rops[key]
+                return self.gadgets[key]
         return False
+
+    def _lookup(self, symb):
+        addr = self.plt[symb]
+        if addr is not None:
+            log.info("found symbol <%s> in plt" % symb)
+            return addr
+
+        addr = self.segments[symb]
+        if addr is not None:
+            log.info("found symbol <%s> in segments" % symb)
+            return addr
+
+        die("Could not find symbol <%s>" % symb)
+
 
     def call(self, arg, argv=None, return_to=None):
         if isinstance(arg, str) and not isinstance(arg, address):
-            log.info("searching for %s in plt" % arg)
-            arg = self.plt[arg]
-            if arg == None:
-                log.info("symbol not found")
-                return
+            arg = self._lookup(arg)
         if isinstance(arg, int):
             arg = p32(arg)
 
@@ -103,6 +112,7 @@ class load(object):
                 self.append(arg)
             self.__recent_call_args = 0
         else:
+            argv = map(lambda a: self._lookup(a) if type(a) == str else a, argv)
             num = 1 if isinstance(argv, str) else len(argv)
             self.__recent_call_args = num
 
@@ -115,20 +125,12 @@ class load(object):
                     self.append(ret)
             [self.append(item) for item in argv]
 
+    # def __setitem__(self, i, y):
+    #     self.add(i, y)
 
-    def add(self, name, value):
-        if isinstance(value, str):
-            val = value
-        else:
-            val = util.p32(value)
-        self.gadgets.update({name: val})
-
-    def __setitem__(self, i, y):
-        self.add(i, y)
-
-    def __getattr__ (self, name):
-        if name in self.gadgets.keys():
-            return self.gadgets[name]
+    # def __getattr__ (self, name):
+    #     if name in self.gadgets.keys():
+    #         return self.gadgets[name]
 
     def append(self, item):
         self.__stacks.append(item)
