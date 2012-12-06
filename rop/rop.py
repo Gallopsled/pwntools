@@ -2,18 +2,11 @@
 import lib.aeropiclib.gadgets as gadgets
 import lib.aeropiclib.readelf as readelf
 import re
-import pwn
-from pwn import flat
-from pwn import log
-from pwn import util
-from pwn import process
+from pwn import flat, log, util, process, p32
 from pwn.i386 import nops
 
-global curr_ae, got, plt, segments
-curr_ae = None
-got = None
-plt = None
-segments = None
+global _curr_ae
+_curr_ae = None
 
 class address(str):
     def __add__(self, y):
@@ -59,12 +52,13 @@ class load(object):
         self.NOP = nops
         self.__load_gadgets_from_file()
 
-        global curr_ae
-        curr_ae = self
-        global plt, got, segments
-        plt = self.plt
-        got = self.got
-        segments = self.segments
+        global _curr_ae
+        _curr_ae = self
+        globals()['plt'] = self.plt
+        globals()['got'] = self.got
+        globals()['segments'] = self.segments
+        globals()['libc'] = self.libc
+        globals()['rops'] = self.rops
 
     def __load_gadgets_from_file(self, trackback=3):
         log.waitfor('Loading symbols')
@@ -93,41 +87,33 @@ class load(object):
         return False
 
     def call(self, arg, argv=None, return_to=None):
+        if isinstance(arg, str) and not isinstance(arg, address):
+            log.info("searching for %s in plt" % arg)
+            arg = self.plt[arg]
+            if arg == None:
+                log.info("symbol not found")
+                return
+        if isinstance(arg, int):
+            arg = p32(arg)
+
         if not argv:
-            if self.__recent_call_args > 0: # then this is actually a return_to address
-                log.info("Detecting a singleton address after a function call, pushing this as the functions return address")
+            if self.__recent_call_args > 0: # then this is a return addr to the previous function
                 self.__stacks.insert(-self.__recent_call_args, arg)
             else:
-                log.info("Inserting singleton")
-                self.append(arg) # you better know what you're doing
+                self.append(arg)
             self.__recent_call_args = 0
         else:
-            if isinstance(argv, str):
-                num = 1
-            else:
-                num = len(argv)
+            num = 1 if isinstance(argv, str) else len(argv)
             self.__recent_call_args = num
 
+            self.append(arg)
             if return_to:
-                self.append(arg)
                 self.append(return_to)
-                [self.append(item) for item in argv]
-                log.success("Adding ROP gadget to payload: %s%s ret: %s" % (arg, str(argv), return_to))
             else:
                 ret = self._findpopret(num)
                 if ret:
-                    self.append(arg)
                     self.append(ret)
-                    [self.append(item) for item in argv]
-                    log.success("Found a proper popret")
-                    log.success("Adding ROP gadget to payload: %s%s" % (arg, str(argv)))
-                else:
-                    self.append(arg)
-                    [self.append(item) for item in argv]
-                    log.success("Adding ROP gadget to payload: %s%s" % (arg, str(argv)))
-                    log.warning("No return address was found, you better know what you're doing!")
-            # else:
-            #     ret = self.__findpopret(num)
+            [self.append(item) for item in argv]
 
 
     def add(self, name, value):
@@ -144,26 +130,21 @@ class load(object):
         if name in self.gadgets.keys():
             return self.gadgets[name]
 
-    def append(self, item, args=None):
-        # if args:
-        #     num_args = len(args)
+    def append(self, item):
         self.__stacks.append(item)
 
     def __repr__(self):
         return flat(self.__stacks)
 
-    def pwnit(self, *argv):
-        p = process(self.__filename, *argv)
-        p.interactive('pwnshell$ ')
+    # def pwnit(self, *argv):
+    #     p = process(self.__filename, *argv)
+    #     p.interactive('pwnshell$ ')
 
     def portable(self, portable_type='sh', pipe=False):
         def _string(s):
             out = []
             for c in s:
                 co = ord(c)
-                # if co >= 0x41 and co <= 0x60:
-                #     out.append(c)
-                # else:
                 out.append('\\x%02x' % co)
             return ''.join(out)
 
@@ -176,18 +157,29 @@ class load(object):
             print ""
 
 def call(arg, argv=None, return_to=None):
-    if not curr_ae:
+    if not _curr_ae:
         return False
     else:
-        curr_ae.call(arg, argv, return_to)
+        _curr_ae.call(arg, argv, return_to)
+
+def data(arg):
+    if not _curr_ae:
+        return False
+    else:
+        _curr_ae.append(arg)
 
 def pwnit(*argv):
-    if not curr_ae:
+    if not _curr_ae:
         return False
-    curr_ae.pwnit(*argv)
+    _curr_ae.pwnit(*argv)
+
+def payload():
+    if not _curr_ae:
+        return False
+    return str(_curr_ae)
 
 def portable(portable_type='sh', pipe=False):
-    if not curr_ae:
+    if not _curr_ae:
         return False
     if portable_type == 'sh':
-        curr_ae.portable(portable_type, pipe)
+        _curr_ae.portable(portable_type, pipe)
