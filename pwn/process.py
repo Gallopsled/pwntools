@@ -1,6 +1,8 @@
-import pwn, socket, time, sys
-from threading import Thread
-from Queue import Queue, Empty
+import pwn, time, sys, re, errno
+from log import *
+from consts import *
+from util import size
+from thread import Thread
 from subprocess import *
 
 class process:
@@ -67,13 +69,16 @@ class process:
             res.append(self.recvuntil('\n'))
         return ''.join(res)
 
-    def interactive(self, prompt = '> '):
-        pwn.trace(' [+] Switching to interactive mode\n')
+    def interactive(self, prompt = boldred('$') + ' '):
+        info('Switching to interactive mode')
+        import rlcompleter
         debug = self.debug
-        self.debug = True
+        self.debug = False
+        running = True
         def loop():
-            while True:
-                self.recv(1)
+            while running:
+                sys.stderr.write(self.proc.stdout.read(1))
+                sys.stderr.flush()
         t = Thread(target = loop)
         t.daemon = True
         t.start()
@@ -82,5 +87,8 @@ class process:
                 time.sleep(0.1)
                 self.send(raw_input(prompt) + '\n')
             except KeyboardInterrupt:
+                sys.stderr.write('Interrupted\n')
+                running = False
+                t.join()
                 self.debug = debug
                 break
