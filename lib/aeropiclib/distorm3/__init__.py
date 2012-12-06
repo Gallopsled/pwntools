@@ -35,7 +35,7 @@ from os.path import split, join
 _distorm_path = split(__file__)[0]
 import platform
 if platform.architecture()[0] == '64bit':
-    potential_libs = ['distorm3.dll', 'libdistorm3.dll', 'libdistorm3.so', 'libdistorm3.dylib']
+    potential_libs = ['libdistorm3.so']#, 'distorm3.dll', 'libdistorm3.dll', 'libdistorm3.dylib']
 else:
     potential_libs = ['libdistorm3_32.so']
 lib_was_found = False
@@ -881,7 +881,7 @@ def DecomposeGenerator(codeOffset, code, dt, features = 0):
     instruction_off = 0
 
     while codeLen > 0:
-        
+
         usedInstructionsCount = c_uint(0)
         codeInfo = _CodeInfo(_OffsetType(codeOffset), _OffsetType(0), cast(p_code, c_char_p), codeLen, dt, features)
         status = internal_decompose(byref(codeInfo), byref(result), MAX_INSTRUCTIONS, byref(usedInstructionsCount))
