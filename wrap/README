@@ -1,0 +1,6 @@
+This is an alternative to running demo32 or demo64.  It wraps your shellcode in
+a suitable ELF-header for running it directly.
+
+Instead run something like:
+    wrap32 shellcode
+    ./shellcode.out
