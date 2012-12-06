@@ -1,4 +1,4 @@
-import pwn, subprocess, os, sys, warnings, inspect, errno
+import pwn, subprocess, os, sys, warnings, inspect, errno, traceback
 
 INCLUDE = os.path.join(os.path.dirname(pwn.__file__), pwn.INCLUDE)
 DEBUG   = pwn.DEBUG
@@ -50,4 +50,5 @@ def load(codes):
             globs[c] = m.__getattribute__(c)
         except:
             print "Could not load %s" % name
+            traceback.print_exc()
             sys.exit(0)
