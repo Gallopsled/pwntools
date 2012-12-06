@@ -17,3 +17,8 @@ Compile with:
 
 Suggested flags for x86:
     -O3 -march=native -mtune=native
+
+
+The file better.c is how it really should be done, in case
+it is possible. It does more or less the same but using IOCTL
+instead of brute force.
