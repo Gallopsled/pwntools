@@ -46,7 +46,10 @@ from memoize    import memoize
 from process    import process
 from remote     import remote
 from handler    import handler
-from rop   import *
+try:
+    from rop   import *
+except:
+    log.warning("rop module could not loaded...")
 
 # try:
 #     from aeROPics   import aeROPics
