@@ -1,0 +1,36 @@
+#!/usr/bin/python
+import argparse, os
+from pwn import flat, p8, p16, p32, p64
+
+parser = argparse.ArgumentParser()
+parser.add_argument('shellcode', type=argparse.FileType('r'), help='Shellcode to wrap into an ELF-file')
+parser.add_argument("-o", metavar='file', help="Output file (defaults to appending a .out to the input file)", type=argparse.FileType('w'), default=None)
+args = parser.parse_args()
+
+
+if args.o == None:
+    args.o = open(args.shellcode.name + '.out', 'w')
+
+os.fchmod(args.o.fileno(), 0755)
+
+shellcode = args.shellcode.read()
+args.shellcode.close()
+
+# ELF header
+base            = 0x08048000
+ehdrsize        = 52
+phdrsize        = 32
+shdrsize        = 40
+shellcodesize   = len(shellcode)
+totalsize       = ehdrsize + phdrsize + shellcodesize
+entry           = base + ehdrsize + phdrsize
+args.o.write(flat(0x7f, "ELF", 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, func=p8))
+args.o.write(flat(2, 3, func=p16))
+args.o.write(flat(1, entry, ehdrsize, 0, 0))
+args.o.write(flat(ehdrsize, phdrsize, 1, shdrsize, 0, 0, func=p16))
+
+# LOAD program header
+args.o.write(flat(1, 0, base, base, totalsize, totalsize, 7, 4096))
+
+# Shellcode
+args.o.write(shellcode)
