@@ -1,8 +1,0 @@
-imported through pwn:
-from pwn.aeROPics import *
-a = aeROPics(somefile)
-
-
-
-WISH LIST:
-- allow simple arithmetic on addresses, e.g. ropcall(a.segments._bss + 0x20)
