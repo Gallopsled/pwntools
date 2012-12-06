@@ -17,6 +17,33 @@ def group(lst, n):
     """
     return zip(*[lst[i::n] for i in range(n)])
 
+def concat(l):
+    """concat([[1,2], [3]]) => [1,2,3]
+
+    Concats a list of lists into a list.
+    """
+
+    res = []
+    for k in l:
+        res.extend(k)
+
+    return res
+
+def concat_all(*args):
+    """concat_all([1,[2,3]], [[[[4,5,6]]]]) => [1,2,3,4,5,6]
+
+    Concats all the arguments together.
+    """
+
+    if len(args) != 1: return concat_all(list(args))
+    if not isinstance(args[0], list): return [args[0]]
+
+    res = []
+    for k in args[0]:
+        res.extend(concat_all(k))
+
+    return res
+
 # conversion functions
 def p8(x):
     """Packs an integer into a 1-byte string"""
