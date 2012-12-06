@@ -35,7 +35,7 @@ from os.path import split, join
 _distorm_path = split(__file__)[0]
 import platform
 if platform.architecture()[0] == '64bit':
-    potential_libs = ['libdistorm3.so']#, 'distorm3.dll', 'libdistorm3.dll', 'libdistorm3.dylib']
+    potential_libs = ['libdistorm3.so', 'libdistorm3-glibc2.13.so']
 else:
     potential_libs = ['libdistorm3_32.so']
 lib_was_found = False
