@@ -35,7 +35,6 @@ if _do_argv:
                 pwn.__builtins__[key] = val
     except:
         pass
-del _do_argv, _arg
 
 # Promote to toplevel
 from thread     import Thread
