@@ -1,31 +1,34 @@
-from shellcode import register_shellcode
-from pwn import die
+from pwn import die, kwargs_remover, ewraps
+from functools import wraps
 
 # The current context
 _context = {}
 
+# Saved contexts
+_saved = []
+
 # Possible context values
-_possible = {
+possible_contexts = {
         'os': ['linux', 'freebsd'],
         'arch': ['i386'],
         'network': ['ipv4', 'ipv6']
 }
 
 # Reverse dictionary
-_reverse = {v:k for k,vs in _possible.items() for v in vs}
+_reverse = {v:k for k,vs in possible_contexts.items() for v in vs}
 
-def _validate(k, v):
-    '''Validates a context (key, value)-pair and dies if it is invalid.'''
-    if k not in _possible:
-        die('Invalid context key: ' + str(k))
+def validate_context(k, v = None):
+    '''Validates a context (key, value)-pair or a context value and dies if it is invalid.'''
+    if v == None:
+        v = k
+        if v not in _reverse:
+            die('Invalid context value: ' + str(v))
+    else:
+        if k not in possible_contexts:
+            die('Invalid context key: ' + str(k))
 
-    if v not in _possible[k]:
-        die('Invalid context value: ' + str(k) + '=' + str(v))
-
-def _validate_v(value):
-    '''Validates a context value and dies if it is invalid.'''
-    if v not in _reverse:
-        die('Invalid context value: ' + str(v))
+        if v not in possible_contexts[k]:
+            die('Invalid context value: ' + str(k) + '=' + str(v))
 
 def clear_context():
     '''Clears the current context.'''
@@ -40,11 +43,11 @@ def context(*args, **kwargs):
     '''
     global _context
     for v in args:
-        _validate_v(v)
+        validate_context(v)
         _context[_reverse[v]] = v
 
     for k, v in kwargs:
-        _validate(k,v)
+        validate_context(k,v)
         _context[k] = v
 
 def with_context(**kwargs):
@@ -54,44 +57,27 @@ def with_context(**kwargs):
     '''
     global _context
 
-    for k in _possible:
+    for k in possible_contexts:
         if k in kwargs and kwargs[k] != None:
-            _validate(k, kwargs[k])
+            validate_context(k, kwargs[k])
         elif k in _context:
             kwargs[k] = _context[k]
         else:
             kwargs[k] = None
     return kwargs
 
+class ExtraContext:
+    def __init__(self, kwargs):
+        global _context
+        self.old = _context.copy()
+        self.new = with_context(**kwargs)
 
-def shellcode_reqs(**supported_context):
-    '''A decorator for shellcode functions, which registers the function
-    with shellcraft and validates the context when the function is called.
-    
-    Example usage:
-    @shellcode_reqs(os = ['linux', 'freebsd'], arch = 'i386')
-    def sh(os = None):
-        ...
+    def __enter__(self):
+        global _context
+        for k in possible_contexts.keys():
+            _context[k] = self.new[k]
+        return self.new
 
-    Notice that in this example the decorator will guarantee that os is
-    either 'linux' or 'freebsd' before sh is called.
-    '''
-    for k,vs in supported_context.items():
-        if not isinstance(vs, list):
-            vs = supported_context[k] = [vs]
-        for v in vs:
-            _validate(k, v)
-
-    def deco(f):
-        register_shellcode(f, supported_context)
-        def wrapper(*args, **kwargs):
-            kwargs = with_context(**kwargs) 
-           
-            for k,vs in supported_context.items():
-                if kwargs[k] not in vs:
-                    die('Invalid context for ' + f.func_name + ': ' + k + '=' + str(kwargs[k]) + ' is not supported')
-
-            return f(*args, **kwargs)
-        return wrapper
-    return deco
-
+    def __exit__(self, exc_type, exc_value, traceback):
+        global _context
+        _context = self.old

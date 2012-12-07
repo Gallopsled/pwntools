@@ -1,11 +1,15 @@
-from context import with_context
-from pwn import die, concat_all, installpath, INCLUDE, DEBUG
+from context import with_context, possible_contexts, ExtraContext, validate_context
+from shellcode import register_shellcode
+from pwn import die, concat_all, installpath, INCLUDE, DEBUG, kwargs_remover, ewraps
 import tempfile, subprocess
 import os as OS
 
 class AssemblerBlock:
     def __add__(self, other):
         return AssemblerContainer(self, other)
+
+    def __radd__(self, other):
+        return AssemblerContainer(other, self)
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
@@ -52,21 +56,8 @@ class AssemblerContainer(AssemblerBlock):
             else:
                 die('Trying to force something of type ' + str(type(b)) + ' into an assembler block. Its value is:\n' + repr(b)[:100])
 
-def shellblob(f):
-    def wrap(*args, **kwargs):
-        blob = f(*args, **kwargs)
-        return AssemblerBlob(blob, **with_context(**kwargs))
-    return wrap
-
-def shelltext(f):
-    def wrap(*args, **kwargs):
-        blob = f(*args, **kwargs)
-        return AssemblerText(blob, **with_context(**kwargs))
-    return wrap
-
 def _nowai(arch, os):
     die('I do not know how to assemble arch=' + str(arch) + ', os=' + str(os))
-
 
 def _nasm(arch, os, blocks, emit_asm):
     nasminclude = OS.path.join(installpath, INCLUDE, 'nasm', '')
@@ -142,3 +133,42 @@ def asm(*blocks, **kwargs):
 
     system = with_context(os = blocks.os, arch = blocks.arch)
     return _asm_real(system['arch'], system['os'], blocks, kwargs.get('emit_asm', False))
+
+def shellcode_wrapper(f, args, kwargs):
+    kwargs = with_context(**kwargs)
+    return f(*args, **kwargs_remover(f, kwargs, possible_contexts.keys()))
+
+def shellcode_reqs(**supported_context):
+    '''A decorator for shellcode functions, which registers the function
+    with shellcraft and validates the context when the function is called.
+    
+    Example usage:
+    @shellcode_reqs(os = ['linux', 'freebsd'], arch = 'i386')
+    def sh(os = None):
+        ...
+
+    Notice that in this example the decorator will guarantee that os is
+    either 'linux' or 'freebsd' before sh is called.
+    '''
+
+    for k,vs in supported_context.items():
+        if not isinstance(vs, list):
+            vs = supported_context[k] = [vs]
+        for v in vs:
+            validate_context(k, v)
+
+    def deco(f):
+        register_shellcode(f, supported_context)
+        @ewraps(f)
+        def wrapper(*args, **kwargs):
+            with ExtraContext(kwargs) as kwargs:
+                for k,vs in supported_context.items():
+                    if kwargs[k] not in vs:
+                        die('Invalid context for ' + f.func_name + ': ' + k + '=' + str(kwargs[k]) + ' is not supported')
+                r = shellcode_wrapper(f, args, kwargs)
+                if isinstance(r, AssemblerBlock):
+                    return r
+                return AssemblerText(r, **kwargs)
+        return wrapper
+    return deco
+

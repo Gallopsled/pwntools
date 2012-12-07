@@ -1,4 +1,4 @@
-shellcodes = []
+all_shellcodes = []
 
 def register_shellcode(func, context):
-    shellcodes.append((func, func.func_name, context))
+    all_shellcodes.append((func, func.func_name, context))

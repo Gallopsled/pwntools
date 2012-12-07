@@ -1,3 +1,3 @@
-from context import context, with_context, clear_context, shellcode_reqs
-from shellcode import register_shellcode
+from context import *
+from shellcode import register_shellcode, all_shellcodes
 from asm import *
