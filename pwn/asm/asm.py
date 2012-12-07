@@ -1,9 +1,14 @@
 from context import with_context
-from pwn import *
-import tempfile, os
+from pwn import die, concat_all, installpath, INCLUDE, DEBUG
+import tempfile, subprocess
+import os as OS
 
 class AssemblerBlock:
-    pass
+    def __add__(self, other):
+        return AssemblerContainer(self, other)
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
 
 class AssemblerBlob(AssemblerBlock):
     def __init__(self, blob, **kwargs):
@@ -11,12 +16,41 @@ class AssemblerBlob(AssemblerBlock):
         self.os   = kwargs.get('os')
         self.blob = blob
 
+        if not isinstance(blob, str):
+            die('Trying to create an AssemblerBlob class, but the blob does not have type str.\nThe type is ' + str(type(blob)) + ' with the value:\n' + repr(blob)[:100])
+
 class AssemblerText(AssemblerBlock):
     def __init__(self, text, **kwargs):
         self.arch = kwargs.get('arch')
         self.os   = kwargs.get('os')
         self.text = text
 
+        if not isinstance(text, str):
+            die('Trying to create an AssemblerText class, but the text does not have type str.\nThe type is ' + str(type(text)) + ' with the value:\n' + repr(text)[:100])
+
+class AssemblerContainer(AssemblerBlock):
+    def __init__(self, *blocks, **kwargs):
+        self.arch   = kwargs.get('arch')
+        self.os     = kwargs.get('os')
+        self.blocks = []
+        
+        for b in concat_all(list(blocks)):
+            if isinstance(b, AssemblerBlock):
+                if self.os   == None: self.os   = b.os
+                if self.arch == None: self.arch = b.arch
+
+                if self.os != b.os and b.os != None:
+                    die('Trying to combine assembler blocks with different os: ' + self.os + ' and ' + b.os)
+
+                if self.arch != b.arch and b.arch != None:
+                    die('Trying to combine assembler blocks with different archs: ' + self.arch + ' and ' + b.arch)
+
+            if isinstance(b, AssemblerContainer):
+                self.blocks.extend(b.blocks)
+            elif isinstance(b, str) or isinstance(b, AssemblerBlock):
+                self.blocks.append(b)
+            else:
+                die('Trying to force something of type ' + str(type(b)) + ' into an assembler block. Its value is:\n' + repr(b)[:100])
 
 def shellblob(f):
     def wrap(*args, **kwargs):
@@ -34,13 +68,13 @@ def _nowai(arch, os):
     die('I do not know how to assemble arch=' + str(arch) + ', os=' + str(os))
 
 
-_nasminclude = os.path.join(installpath, INCLUDE, 'nasm', '')
-def nasm(arch, os, blocks, emit_asm):
+def _nasm(arch, os, blocks, emit_asm):
+    nasminclude = OS.path.join(installpath, INCLUDE, 'nasm', '')
     def cmd(src):
         cmd = ['nasm']
         if DEBUG:
             cmd += ['-D', 'DEBUG']
-        cmd += ['-I', _nasminclude, '-o' ,'/dev/stdout', src]
+        cmd += ['-I', nasminclude, '-o' ,'/dev/stdout', src]
         return cmd
 
     code = ['%include "macros/macros.asm"']
@@ -57,7 +91,7 @@ def nasm(arch, os, blocks, emit_asm):
         # TODO: Add 64-bit
         _nowai(arch, os)
 
-    for b in blocks:
+    for b in blocks.blocks:
         if isinstance(b, AssemblerText):
             code.append(b.text)
         elif isinstance(b, AssemblerBlob):
@@ -91,40 +125,20 @@ def nasm(arch, os, blocks, emit_asm):
             die('nasm could not compile file:\n' + err)
         return p.stdout.read()
 
-def asm_real(arch, os, blocks, emit_asm):
+def _asm_real(arch, os, blocks, emit_asm):
     if arch == 'i386':
-        return nasm(arch, os, blocks, emit_asm)
+        return _nasm(arch, os, blocks, emit_asm)
     _nowai(arch, os)
 
 def asm(*blocks, **kwargs):
-    os        = kwargs.get('os')
-    arch      = kwargs.get('arch')
-    emit_asm  = kwargs.get('emit_asm', False)
-    all_blobs = True
+    blocks = AssemblerContainer(*blocks, os=kwargs.get('os'), arch=kwargs.get('arch'))
 
-    for b in blocks:
-        if not isinstance(b, AssemblerBlob):
-            all_blobs = False
-
-        if isinstance(b, AssemblerBlock):
-            if os   == None: os   = b.os
-            if arch == None: arch = b.arch
-
-            if os != b.os and b.os != None:
-                die('Trying to assemble blocks with different os: ' + os + ' and ' + b.os)
-
-            if arch != b.arch and b.arch != None:
-                die('Trying to assemble blocks with different archs: ' + arch + ' and ' + b.arch)
-        elif not isinstance(b, str):
-            die('Unknown block of type ' + str(type(b)) + ':\n' + str(b))
-
-
-    if all_blobs:
-        data = flat(b.blob for b in blocks)
+    if all(isinstance(b, AssemblerBlob) for b in blocks.blocks):
+        data = flat(b.blob for b in blocks.blocks)
         if emit_asm:
             return 'The following blob was computed:\n' + data.encode('hex')
         else:
             return data
 
-    system = with_context(os = os, arch = arch)
-    return asm_real(system['arch'], system['os'], blocks, emit_asm)
+    system = with_context(os = blocks.os, arch = blocks.arch)
+    return _asm_real(system['arch'], system['os'], blocks, kwargs.get('emit_asm', False))
