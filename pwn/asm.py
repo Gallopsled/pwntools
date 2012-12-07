@@ -1,8 +1,9 @@
 from context import with_context, possible_contexts, ExtraContext, validate_context
-from shellcode import register_shellcode
 from pwn import die, concat_all, installpath, INCLUDE, DEBUG, kwargs_remover, ewraps
 import tempfile, subprocess
 import os as OS
+
+all_shellcodes = {}
 
 class AssemblerBlock:
     def __add__(self, other):
@@ -158,7 +159,7 @@ def shellcode_reqs(**supported_context):
             validate_context(k, v)
 
     def deco(f):
-        register_shellcode(f, supported_context)
+        all_shellcodes[f.func_name] = (f, supported_context)
         @ewraps(f)
         def wrapper(*args, **kwargs):
             with ExtraContext(kwargs) as kwargs:

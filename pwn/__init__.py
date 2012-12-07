@@ -49,6 +49,7 @@ from process    import process
 from remote     import remote
 from handler    import handler
 from asm        import *
+from context    import *
 from shellcodes import *
 try:
     from rop   import *
