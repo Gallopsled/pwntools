@@ -1,4 +1,5 @@
 from shellcode import register_shellcode
+from pwn import die
 
 # The current context
 _context = {}
@@ -54,7 +55,7 @@ def with_context(**kwargs):
     global _context
 
     for k in _possible:
-        if k in kwargs:
+        if k in kwargs and kwargs[k] != None:
             _validate(k, kwargs[k])
         elif k in _context:
             kwargs[k] = _context[k]
@@ -84,13 +85,13 @@ def shellcode_reqs(**supported_context):
     def deco(f):
         register_shellcode(f, supported_context)
         def wrapper(*args, **kwargs):
-            kwargs = with_context(kwargs) 
+            kwargs = with_context(**kwargs) 
            
-            for k,vs in supported_context:
+            for k,vs in supported_context.items():
                 if kwargs[k] not in vs:
-                    die('Invalid context for ' + f.func_name + ': ' + k + '=' + kwargs[k] + ' is not supported')
+                    die('Invalid context for ' + f.func_name + ': ' + k + '=' + str(kwargs[k]) + ' is not supported')
 
-            f(*args, **kwargs)
+            return f(*args, **kwargs)
         return wrapper
     return deco
 

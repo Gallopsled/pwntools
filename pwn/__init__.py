@@ -5,6 +5,9 @@ import platform
 # Install path
 pwn.installpath = os.path.dirname(__file__)
 
+# Constans
+from consts import *
+
 # Argument parsing
 pwn.TRACE = True
 pwn.DEBUG = False
@@ -62,6 +65,3 @@ import pwn.internal.init.session
 import pwn.internal.init.cloud
 import fucking
 import sqli
-
-# Constans
-from consts import *
