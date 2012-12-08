@@ -2,6 +2,12 @@
 import pwn, os, sys, time, traceback
 import platform
 
+# Useful re-exports
+from time import sleep
+from socket import htons, inet_aton, inet_ntoa, gethostbyname
+from os import system
+from time import sleep
+
 # Install path
 pwn.installpath = os.path.dirname(__file__)
 
@@ -33,37 +39,43 @@ if _do_argv:
                 pwn.TRACE = False
             elif _arg.find('=') > 0:
                 key, val = _arg.split('=', 1)
-                if any(map(lambda x: not x.isupper(), key)): continue
+                if not all(x.isupper() for x in key): continue
                 sys.argv.remove(_arg)
                 pwn.__builtins__[key] = val
     except:
         pass
 
 # Promote to toplevel
-from thread     import Thread
-from util       import *
-from log        import trace, debug
-from excepthook import addexcepthook
-from memoize    import memoize
-from process    import process
-from remote     import remote
-from handler    import handler
-from asm        import *
-from context    import *
-from shellcodes import *
+from pwn.thread import Thread
+from pwn.util       import *
+from pwn.binutils   import *
+from pwn.hashes     import *
+from pwn.listutil   import *
+from pwn.excepthook import addexcepthook
+from pwn.log        import *
+from pwn.memoize    import memoize
+from pwn.process    import process
+from pwn.remote     import remote
+from pwn.handler    import handler
 try:
-    from rop   import *
+    from pwn.rop   import *
 except:
-    log.warning("rop module could not loaded...")
+    traceback.print_exc()
+    warning("rop module could not loaded...")
 
 # try:
 #     from aeROPics   import aeROPics
 # except:
 #     log.warning("Could not load aeROPics module, failed loading distorm3 module...")
-from useragents import randomua
-from splash     import splash
+from pwn.useragents import randomua
+from pwn.splash     import splash
 
 import pwn.internal.init.session
 import pwn.internal.init.cloud
-import fucking
-import sqli
+import pwn.sqli
+
+# Constans
+from pwn.consts import *
+
+# Make pwn.fucking work as pwn by itself
+#import pwn as fucking

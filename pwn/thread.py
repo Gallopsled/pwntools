@@ -1,7 +1,7 @@
 import ctypes, threading, types
 
 def _async_raise(tid, exc):
-    if type(exc) <> types.TypeType:
+    if type(exc) != types.TypeType:
         raise TypeError('exception must be a type (vs. instance)')
     res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
         ctypes.c_long(tid),

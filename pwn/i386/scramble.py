@@ -1,5 +1,5 @@
-from pwn.util import group, p8, u8, p16, p32, u32, align
-import random, pwn.util
+from pwn import group, p8, u8, p16, p32, u32, align, xor
+import random
 
 def scramble(code, **kwargs):
     return xor_additive_feedback(code, **kwargs)
@@ -28,7 +28,7 @@ def xor_additive_feedback(code, **kwargs):
             okkey = True
             for block in group(code, 4):
                 block = ''.join(block)
-                oblock = pwn.util.xor(block, keyblock)
+                oblock = xor(block, keyblock)
                 keyblock = p32((u32(block) + u32(keyblock)) % (1 << 32))
                 for i in range(4):
                     if oblock[i] in avoid:
@@ -105,7 +105,7 @@ def xor_additive_feedback(code, **kwargs):
 
     init_key = p8(0xb8 + key)
 
-    xor = '\x31' + p8(0x40 + bufptr + 8 * key)
+    xorv = '\x31' + p8(0x40 + bufptr + 8 * key)
     add = '\x03' + p8(0x40 + bufptr + 8 * key)
     sub4 = '\x83' + p8(0xe8 + bufptr) + p8(-4)
     add4 = '\x83' + p8(0xc0 + bufptr) + p8(4)
@@ -120,8 +120,8 @@ def xor_additive_feedback(code, **kwargs):
     fnstenv = '\xd9\x74\x24\xf4'
     getpc = choose(fpu) + fnstenv + p8(0x58 + bufptr)
 
-    xor1 = xor + p8(decoder_size - cutoff)
-    xor2 = xor + p8(decoder_size - 4 - cutoff)
+    xor1 = xorv + p8(decoder_size - cutoff)
+    xor2 = xorv + p8(decoder_size - 4 - cutoff)
     add1 = add + p8(decoder_size - cutoff)
     add2 = add + p8(decoder_size - 4 - cutoff)
 

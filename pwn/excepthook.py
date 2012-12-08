@@ -1,4 +1,4 @@
-import pwn, traceback, socket, sys
+import traceback, sys
 
 __excepthooks__ = set()
 

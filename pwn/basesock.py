@@ -1,8 +1,5 @@
 import pwn, socket, time, sys, re, errno
-from log import *
-from consts import *
-from util import size
-from thread import Thread
+from pwn.text import boldred
 
 class basesock:
     def settimeout(self, n):
@@ -13,13 +10,13 @@ class basesock:
         self.sock.setblocking(b)
 
     def connected(self):
-        return self.sock <> None
+        return self.sock != None
 
     def close(self):
         if self.sock:
             self.sock.close()
             self.sock = None
-            info('Closed connection to %s on port %d' % self.target)
+            pwn.info('Closed connection to %s on port %d' % self.target)
 
     def _send(self, dat):
         l = len(dat)
@@ -33,8 +30,7 @@ class basesock:
                 self._send(dat)
             except socket.error, e:
                 if e.errno == errno.EPIPE:
-                    failure('Broken pipe')
-                    sys.exit(PWN_UNAVAILABLE)
+                    pwn.die('Broken pipe', exit_code = pwn.PWN_UNAVAILABLE)
                 else:
                     raise
         else:
@@ -48,8 +44,7 @@ class basesock:
             try:
                 res = self.sock.recv(numb)
             except socket.timeout:
-                failure('Connection timed out')
-                sys.exit(PWN_UNAVAILABLE)
+                pwn.die('Connection timed out', exit_code = pwn.PWN_UNAVAILABLE)
         else:
             res = self.sock.recv(numb)
         if self.debug:
@@ -78,7 +73,7 @@ class basesock:
         elif delim != None:
             pred = lambda s: s.endswith(delim)
         else:
-            die('recvuntil called without delim, regex or pred')
+            pwn.die('recvuntil called without delim, regex or pred')
 
         res = ''
 
@@ -107,7 +102,7 @@ class basesock:
         return ''.join(res)
 
     def interactive(self, prompt = boldred('$') + ' '):
-        info('Switching to interactive mode')
+        pwn.info('Switching to interactive mode')
         import rlcompleter
         debug = self.debug
         timeout = self.timeout
@@ -121,7 +116,7 @@ class basesock:
                     sys.stderr.flush()
                 except socket.timeout:
                     pass
-        t = Thread(target = loop)
+        t = pwn.Thread(target = loop)
         t.daemon = True
         t.start()
         while True:
@@ -137,7 +132,7 @@ class basesock:
                 break
 
     def recvall(self):
-        waitfor('Recieving all data')
+        pwn.waitfor('Recieving all data')
         r = []
         l = 0
         while True:
@@ -145,6 +140,6 @@ class basesock:
             if s == '': break
             r.append(s)
             l += len(s)
-            status(size(l))
+            pwn.status(pwn.size(l))
         self.close()
         return ''.join(r)

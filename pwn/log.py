@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import sys, time, random, pwn
-from text import *
-from threading import Thread, Lock
-from excepthook import addexcepthook
+import pwn.text as text
+import threading
 
 def _trace(s):
     if pwn.TRACE:
@@ -19,11 +18,11 @@ if sys.stderr.isatty() and not pwn.DEBUG:
     _spinner = None
     _message = ''
     _status = ''
-    _lock = Lock()
+    _lock = threading.Lock()
 
-    class _Spinner(Thread):
+    class _Spinner(threading.Thread):
         def __init__(self):
-            Thread.__init__(self)
+            threading.Thread.__init__(self)
             self.running = True
             self.i = 0
             self.spinner = random.choice([
@@ -41,7 +40,7 @@ if sys.stderr.isatty() and not pwn.DEBUG:
             ])
 
         def update(self):
-            s = '\x1b[s ' + boldblue('[' + self.spinner[self.i] + ']') + ' ' + _message
+            s = '\x1b[s ' + text.boldblue('[' + self.spinner[self.i] + ']') + ' ' + _message
             if _status and _message:
                 s += ': ' + _status
             elif status:
@@ -62,7 +61,7 @@ if sys.stderr.isatty() and not pwn.DEBUG:
                 self.i = (self.i + 1) % len(self.spinner)
                 time.sleep(0.1)
 
-    def _stop_spinner(marker = boldblue('[*]'), status = ''):
+    def _stop_spinner(marker = text.boldblue('[*]'), status = ''):
         global _spinner, _status
         if _spinner is not None:
             _lock.acquire()
@@ -82,10 +81,10 @@ if sys.stderr.isatty() and not pwn.DEBUG:
         if _spinner is not None:
             _spinner.running = False
             _spinner = None
-        _trace(' ' + boldyellow('[!]') + ' Anything is possible when your exploit smells like x86 and not a lady\n')
-        _trace(' ' + boldyellow('[!]') + ' I\'m on a pwnie!\n\x1b[?25h\x1b[0m')
+        _trace(' ' + text.boldyellow('[!]') + ' Anything is possible when your exploit smells like x86 and not a lady\n')
+        _trace(' ' + text.boldyellow('[!]') + ' I\'m on a pwnie!\n\x1b[?25h\x1b[0m')
 
-    addexcepthook(_hook) # reset, show cursor
+    pwn.addexcepthook(_hook) # reset, show cursor
 
     def _start_spinner():
         global _spinner
@@ -122,10 +121,10 @@ if sys.stderr.isatty() and not pwn.DEBUG:
         _lock.release()
 
     def succeeded(s = 'Done'):
-        _stop_spinner(boldgreen('[+]'), s)
+        _stop_spinner(text.boldgreen('[+]'), s)
 
     def failed(s = 'FAILED!'):
-        _stop_spinner(boldred('[-]'), s)
+        _stop_spinner(text.boldred('[-]'), s)
 
 else:
     _message = ''
@@ -139,28 +138,28 @@ else:
     def waitfor(s):
         global _message
         _message = s
-        trace(''.join([' ', boldblue('[*]'), ' ', s, '...\n']))
+        trace(''.join([' ', text.boldblue('[*]'), ' ', s, '...\n']))
 
     def status(s):
         pass
 
     def succeeded(s = 'Done'):
-        trace(''.join([' ', boldgreen('[+]'), ' ', _message, ': ', s, '\n']))
+        trace(''.join([' ', text.boldgreen('[+]'), ' ', _message, ': ', s, '\n']))
 
     def failed(s = 'FAILED!'):
-        trace(''.join([' ', boldred('[-]'), ' ', _message, ': ', s, '\n']))
+        trace(''.join([' ', text.boldred('[-]'), ' ', _message, ': ', s, '\n']))
 
 def success(s):
-    trace(''.join([' ', boldgreen('[+]'), ' ', s, '\n']))
+    trace(''.join([' ', text.boldgreen('[+]'), ' ', s, '\n']))
 
 def failure(s):
-    trace(''.join([' ', boldred('[-]'), ' ', s, '\n']))
+    trace(''.join([' ', text.boldred('[-]'), ' ', s, '\n']))
 
 def error(s):
     failure(s)
 
 def warning(s):
-    trace(''.join([' ', boldyellow('[!]'), ' ', s, '\n']))
+    trace(''.join([' ', text.boldyellow('[!]'), ' ', s, '\n']))
 
 def info(s):
-    trace(''.join([' ', boldblue('[*]'), ' ', s, '\n']))
+    trace(''.join([' ', text.boldblue('[*]'), ' ', s, '\n']))
