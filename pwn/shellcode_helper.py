@@ -60,7 +60,7 @@ def shellcode_wrapper(f, args, kwargs):
     kwargs = pwn.with_context(**kwargs)
     return f(*args, **decoutil.kwargs_remover(f, kwargs, pwn.possible_contexts.keys()))
 
-def shellcode_reqs(**supported_context):
+def shellcode_reqs(blob = False, **supported_context):
     '''A decorator for shellcode functions, which registers the function
     with shellcraft and validates the context when the function is called.
     
@@ -90,7 +90,10 @@ def shellcode_reqs(**supported_context):
                 r = shellcode_wrapper(f, args, kwargs)
                 if isinstance(r, AssemblerBlock):
                     return r
-                return AssemblerText(r, **kwargs)
+                if not blob:
+                    return AssemblerText(r, **kwargs)
+                else:
+                    return AssemblerBlob(r, **kwargs)
         return wrapper
     return deco
 
