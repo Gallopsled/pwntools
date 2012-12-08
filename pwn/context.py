@@ -1,5 +1,4 @@
-from pwn import die, kwargs_remover, ewraps
-from functools import wraps
+import pwn
 
 # The current context
 _context = {}
@@ -22,13 +21,13 @@ def validate_context(k, v = None):
     if v == None:
         v = k
         if v not in _reverse:
-            die('Invalid context value: ' + str(v))
+            pwn.die('Invalid context value: ' + str(v))
     else:
         if k not in possible_contexts:
-            die('Invalid context key: ' + str(k))
+            pwn.die('Invalid context key: ' + str(k))
 
         if v not in possible_contexts[k]:
-            die('Invalid context value: ' + str(k) + '=' + str(v))
+            pwn.die('Invalid context value: ' + str(k) + '=' + str(v))
 
 def clear_context():
     '''Clears the current context.'''
