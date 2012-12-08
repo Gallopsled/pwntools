@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from pwn import *
-from pwn.i386.linux import dupsh, asm
+context('i386', 'linux', 'ipv4')
 # from pwn.aeROPics import aeROPics, ropcall
 
 sock = remote('localhost', 32000, timeout = None)

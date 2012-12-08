@@ -4,7 +4,8 @@
 
 import sys, socket
 from pwn import *
-from pwn.i386.linux import *
+from pwn.i386 import nops
+context('i386', 'linux', 'ipv4')
 
 log.waitfor('Counting to ten')
 for n in range(10):

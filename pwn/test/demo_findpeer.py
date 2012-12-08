@@ -4,7 +4,8 @@
 
 import sys, socket
 from pwn import *
-from pwn.i386.linux import *
+context('i386', 'linux', 'ipv4')
+from pwn.i386 import nops
 
 sock = remote('localhost', 1337, timeout = 120)
 sock.recvuntil('Your output to my input? Do your best!\n')

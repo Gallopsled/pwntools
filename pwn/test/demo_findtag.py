@@ -4,7 +4,8 @@
 
 import sys, socket
 from pwn import *
-from pwn.i386.linux import *
+from pwn.i386 import nops, scramble
+context('i386', 'linux', 'ipv4')
 import time
 
 sock = remote('localhost', 1337, timeout = 120)
