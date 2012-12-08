@@ -1,7 +1,7 @@
 from pwn import *
 
 @shellcode_reqs(arch='i386', os='linux', network='ipv4')
-def connect(host, port, **kwargs):
+def connect(host, port):
     """Args: host, port
     Connects to host on port.  Leaves socket in EBP."""
     return """
