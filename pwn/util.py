@@ -93,6 +93,7 @@ def prompt(s, default = ''):
     if r: return r
     return default
 
+# stuff mostly for decorators
 def kwargs_remover(f, kwargs, check_list = None, clone = True):
     '''Removes all the keys from a kwargs-list, that a given function does not understand.
     
@@ -107,6 +108,7 @@ def kwargs_remover(f, kwargs, check_list = None, clone = True):
     return kwargs
 
 def method_signature(f):
+    '''Returns the method signature for a function.'''
     spec = list(inspect.getargspec(f))
     if spec[3] == None: spec[3] = []
 
@@ -132,6 +134,9 @@ def method_signature(f):
     return f.func_name + '(' + ', '.join(reversed(args)) + ')'
 
 def ewraps(wrapped):
+    '''Extended version of functools.wraps.
+    
+    This version also adds the original method signature to the docstring.'''
     def deco(wrapper):
         semi_fixed = functools.wraps(wrapped)(wrapper)
         if not wrapped.__dict__.get('signature_added', False):
