@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 import lib.aeropiclib.gadgets as gadgets
 import lib.aeropiclib.readelf as readelf
-import re, pwn, pwn.i386 
+import re, pwn, pwn.i386
 
 global _curr_ae
 _curr_ae = None

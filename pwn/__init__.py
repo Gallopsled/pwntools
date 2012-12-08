@@ -58,12 +58,8 @@ try:
     from pwn.rop   import *
 except:
     traceback.print_exc()
-    warning("rop module could not loaded...")
+    warning("rop module could not be loaded...")
 
-# try:
-#     from aeROPics   import aeROPics
-# except:
-#     log.warning("Could not load aeROPics module, failed loading distorm3 module...")
 from pwn.useragents import randomua
 from pwn.splash     import splash
 
