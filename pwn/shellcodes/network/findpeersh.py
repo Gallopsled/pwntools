@@ -1,4 +1,4 @@
-from pwn import *
+from pwn.shellcode_helper import *
 from findpeer import findpeer
 from .. import dupsh
 

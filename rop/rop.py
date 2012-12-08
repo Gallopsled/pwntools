@@ -2,6 +2,7 @@
 import lib.aeropiclib.gadgets as gadgets
 import lib.aeropiclib.readelf as readelf
 import re, pwn, pwn.i386 
+from pwn import log
 
 global _curr_ae
 _curr_ae = None
@@ -58,7 +59,7 @@ class load(object):
         globals()['gadgets'] = self.gadgets
 
     def __load_gadgets_from_file(self, trackback=3):
-        pwn.waitfor('Loading symbols')
+        log.waitfor('Loading symbols')
         try:
             self.__ropfinder.generate(self.__filename, trackback)
         except:
@@ -74,7 +75,7 @@ class load(object):
         self.got = symbols(elfreader._got)
         elfreader.read_libc_offset(self.__filename)
         self.libc = symbols(elfreader._libc_offset)
-        pwn.succeeded()
+        log.succeeded()
 
     def _findpopret(self, num):
         for key in sorted(m for m in self.gadgets.keys() if m.startswith('pop')):
@@ -86,12 +87,12 @@ class load(object):
     def _lookup(self, symb):
         addr = self.plt[symb]
         if addr is not None:
-            pwn.info("found symbol <%s> in plt" % symb)
+            log.info("found symbol <%s> in plt" % symb)
             return addr
 
         addr = self.segments[symb]
         if addr is not None:
-            pwn.info("found symbol <%s> in segments" % symb)
+            log.info("found symbol <%s> in segments" % symb)
             return addr
 
         pwn.die("Could not find symbol <%s>" % symb)

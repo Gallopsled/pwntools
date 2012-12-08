@@ -26,7 +26,7 @@ class HTTPwn(object):
         if isinstance(data, dict):
             data = urllib.urlencode(data)
         try:
-            url_fd  = self.opener.open(url,data)
+            url_fd  = self.opener.open(url, data)
         except:
             print "Something went wrong, site not fetched correctly"
             return

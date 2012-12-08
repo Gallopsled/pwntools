@@ -1,4 +1,4 @@
-from pwn import *
+from pwn.shellcode_helper import *
 
 @shellcode_reqs(arch='i386', os='linux', network=['ipv4', 'ipv6'])
 def findpeer(port = None):

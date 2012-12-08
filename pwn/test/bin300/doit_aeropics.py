@@ -1,10 +1,7 @@
 #!/usr/bin/env python
-from pwn import *
-context('i386', 'linux', 'ipv4')
-# from pwn.aeROPics import aeROPics, ropcall
+from pwn.classic import *
 
 sock = remote('localhost', 32000, timeout = None)
-# sock = remote('pwn.challenges.polictf.it', 32000)
 
 codeaddr = 0x0804b090
 

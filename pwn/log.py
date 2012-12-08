@@ -167,8 +167,8 @@ def info(s):
 def die(s = None, e = None, exit_code = -1):
     """Exits the program with an error string and optionally prints an exception."""
     if s:
-        pwn.failure('FATAL: ' + s)
+        failure('FATAL: ' + s)
     if e:
-        pwn.failure('The exception was:')
-        pwn.trace(str(e) + '\n')
+        failure('The exception was:')
+        trace(str(e) + '\n')
     sys.exit(exit_code)

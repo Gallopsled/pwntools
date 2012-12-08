@@ -1,4 +1,4 @@
-from pwn import *
+from pwn.shellcode_helper import *
 from findtag import findtag
 from .. import dupsh
 

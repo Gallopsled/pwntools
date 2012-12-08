@@ -14,7 +14,7 @@ possible_contexts = {
 }
 
 # Reverse dictionary
-_reverse = {v:k for k,vs in possible_contexts.items() for v in vs}
+_reverse = {v:k for k, vs in possible_contexts.items() for v in vs}
 
 def validate_context(k, v = None):
     '''Validates a context (key, value)-pair or a context value and dies if it is invalid.'''
@@ -46,7 +46,7 @@ def context(*args, **kwargs):
         _context[_reverse[v]] = v
 
     for k, v in kwargs:
-        validate_context(k,v)
+        validate_context(k, v)
         _context[k] = v
 
 def with_context(**kwargs):

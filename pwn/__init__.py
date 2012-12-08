@@ -1,26 +1,20 @@
-# Submodules
-import pwn, os, sys, time, traceback
-import platform
+# Submodules used in this file (they are deleted at the end)
+import os, traceback
 
 # Useful re-exports
 from time import sleep
 from socket import htons, inet_aton, inet_ntoa, gethostbyname
 from os import system
-from time import sleep
+from sys import argv
 
 # Install path
-pwn.installpath = os.path.dirname(__file__)
-
-# Constans
-from consts import *
+installpath = os.path.dirname(__file__)
 
 # Argument parsing
-pwn.TRACE = True
-pwn.DEBUG = False
+TRACE = True
+DEBUG = False
 
-# argv
-pwn.argv = sys.argv
-
+# Ugly hack to check if argv should be parsed
 _do_argv = True
 try:
     if 'pwn.noargv' in traceback.extract_stack(limit=2)[0][3]:
@@ -30,55 +24,63 @@ except:
 
 if _do_argv:
     try:
-        for _arg in sys.argv[:]:
+        for _arg in argv[:]:
             if   _arg == 'DEBUG':
-                sys.argv.remove(_arg)
-                pwn.DEBUG = True
+                argv.remove(_arg)
+                DEBUG = True
             elif _arg == 'NOTRACE':
-                sys.argv.remove(_arg)
-                pwn.TRACE = False
+                argv.remove(_arg)
+                TRACE = False
             elif _arg.find('=') > 0:
                 key, val = _arg.split('=', 1)
                 if not all(x.isupper() for x in key): continue
-                sys.argv.remove(_arg)
-                pwn.__builtins__[key] = val
+                argv.remove(_arg)
+                globals()[key] = val
     except:
         pass
 
 # Promote to toplevel
-from pwn.thread import Thread
+from pwn.consts     import *
+from pwn.excepthook import addexcepthook
+from pwn.thread     import Thread
+from pwn.log        import die
 from pwn.util       import *
 from pwn.binutils   import *
 from pwn.hashes     import *
 from pwn.listutil   import *
-from pwn.excepthook import addexcepthook
-from pwn.log        import *
 from pwn.memoize    import memoize
 from pwn.process    import process
 from pwn.remote     import remote
 from pwn.handler    import handler
 from pwn.context    import *
-from pwn.asm        import *
-from pwn.shellcodes import *
+from pwn.asm        import asm
+from pwn.useragents import randomua
+from pwn.splash     import splash
 try:
     from pwn.rop   import *
 except:
-    traceback.print_exc()
-    warning("rop module could not loaded...")
-
-# try:
-#     from aeROPics   import aeROPics
-# except:
-#     log.warning("Could not load aeROPics module, failed loading distorm3 module...")
-from pwn.useragents import randomua
-from pwn.splash     import splash
+    if DEBUG:
+        traceback.print_exc()
+    log.warning("rop module could not loaded...")
 
 import pwn.internal.init.session
 import pwn.internal.init.cloud
 import pwn.sqli
-
-# Constans
-from pwn.consts import *
+import pwn.shellcodes
 
 # Make pwn.fucking work as pwn by itself
-#import pwn as fucking
+import pwn as fucking
+
+# Clean up namespace by deleting imported modules and local variable
+module_type = os.__class__
+for k, v in globals().items():
+    if isinstance(v, module_type):
+        if not v.__name__.startswith('pwn.'):
+            del globals()[k]
+    elif k.startswith('_') and not k.startswith('__'):
+        del globals()[k]
+del k, v, module_type
+
+# The shellcoder_helper module is not generally useful and
+# should only be available when explicitly asked for.
+del shellcode_helper

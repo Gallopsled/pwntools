@@ -2,9 +2,7 @@
 
 # Pwnies workshop server level 1
 
-import sys, socket
-from pwn import *
-context('i386', 'linux', 'ipv4')
+from pwn.classic import *
 from pwn.i386 import nops
 
 sock = remote('localhost', 1337, timeout = 120)

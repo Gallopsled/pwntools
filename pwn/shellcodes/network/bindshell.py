@@ -1,4 +1,4 @@
-from pwn import *
+from pwn.shellcode_helper import *
 from listen import listen
 from .. import dupsh
 

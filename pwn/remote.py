@@ -1,5 +1,5 @@
 import pwn, socket, basesock, errno
-from consts import PWN_UNAVAILABLE
+from pwn import log
 
 _DEFAULT_REMOTE_TIMEOUT = 10
 
@@ -24,9 +24,9 @@ class remote(basesock.basesock):
 
     def connect(self):
         if self.connected():
-            pwn.warning('Already connected to %s on port %d' % self.target)
+            log.warning('Already connected to %s on port %d' % self.target)
             return
-        pwn.waitfor('Opening connection to %s on port %d' % self.target)
+        log.waitfor('Opening connection to %s on port %d' % self.target)
         self.sock = socket.socket(self.family, self.type, self.proto)
         if self.timeout is not None:
             self.sock.settimeout(self.timeout)
@@ -35,18 +35,18 @@ class remote(basesock.basesock):
                 self.sock.connect(self.target)
             except socket.error, e:
                 if   e.errno == errno.ECONNREFUSED:
-                    pwn.die('Refused', exit_code = PWN_UNAVAILABLE)
+                    pwn.die('Refused', exit_code = pwn.PWN_UNAVAILABLE)
                 elif e.errno == errno.ENETUNREACH:
-                    pwn.die('Unreachable', exit_code = PWN_UNAVAILABLE)
+                    pwn.die('Unreachable', exit_code = pwn.PWN_UNAVAILABLE)
                 else:
                     raise
             except socket.timeout:
-                pwn.die('Timed out', exit_code = PWN_UNAVAILABLE)
+                pwn.die('Timed out', exit_code = pwn.PWN_UNAVAILABLE)
         else:
             self.sock.connect(self.target)
         self.lhost = self.sock.getsockname()[0]
         self.lport = self.sock.getsockname()[1]
-        pwn.succeeded()
+        log.succeeded()
 
     def close(self):
         self.lhost = None

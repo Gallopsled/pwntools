@@ -1,4 +1,5 @@
-import struct, sys, subprocess, re, pwn, pwn.text, functools, inspect
+import struct, sys, subprocess, re, pwn
+from pwn import log, text
 
 # allowed/avoided
 def get_allowed(**kwargs):
@@ -48,16 +49,16 @@ def pause(n = None):
     """Waits for either user input or a specific number of seconds."""
     try:
         if n is None:
-            pwn.info('Paused (press enter to continue)')
+            log.info('Paused (press enter to continue)')
             raw_input('')
         else:
-            pwn.waitfor('Continueing in')
+            log.waitfor('Continueing in')
             for i in range(n, 0, -1):
-                pwn.status('%d... ' % i)
+                log.status('%d... ' % i)
                 pwn.sleep(1)
-            pwn.succeeded('Now')
+            log.succeeded('Now')
     except KeyboardInterrupt:
-        pwn.warning('Interrupted')
+        log.warning('Interrupted')
         sys.exit(1)
 
 def size(n, abbriv = 'B', si = False):
@@ -80,58 +81,6 @@ def size(n, abbriv = 'B', si = False):
 
 def prompt(s, default = ''):
     """Prompts the user for input"""
-    r = raw_input(' ' + pwn.text.bold('[?]') + ' ' + s)
+    r = raw_input(' ' + text.bold('[?]') + ' ' + s)
     if r: return r
     return default
-
-# stuff mostly for decorators
-def kwargs_remover(f, kwargs, check_list = None, clone = True):
-    '''Removes all the keys from a kwargs-list, that a given function does not understand.
-    
-    The keys removed can optionally be restricted, so only keys from check_list are removed.'''
-
-    if check_list == None: check_list = kwargs.keys()
-    if clone: kwargs = kwargs.copy()
-    if not f.func_code.co_flags & 8:
-        for c in check_list:
-            if c not in f.func_code.co_varnames:
-                del kwargs[c]
-    return kwargs
-
-def method_signature(f):
-    '''Returns the method signature for a function.'''
-    spec = list(inspect.getargspec(f))
-    if spec[3] == None: spec[3] = []
-
-    args = []
-
-    def simple_arg(a):
-        if isinstance(a, list):
-            return '(' + ', '.join(map(simple_arg, a)) + ')'
-        return str(a)
-
-    if spec[2] != None:
-        args.append('**' + spec[2])
-    if spec[1] != None:
-        args.append('*' + spec[1])
-
-    for n in range(len(spec[0])):
-        cur = spec[0][len(spec[0])-n-1]
-        
-        if n < len(spec[3]):
-            args.append(str(cur) + ' = ' + repr(spec[3][len(spec[3])-n-1]))
-        else:
-            args.append(simple_arg(cur))
-    return f.func_name + '(' + ', '.join(reversed(args)) + ')'
-
-def ewraps(wrapped):
-    '''Extended version of functools.wraps.
-    
-    This version also adds the original method signature to the docstring.'''
-    def deco(wrapper):
-        semi_fixed = functools.wraps(wrapped)(wrapper)
-        if not wrapped.__dict__.get('signature_added', False):
-            semi_fixed.__doc__ = method_signature(wrapped) + '\n\n' + (semi_fixed.__doc__ or '')
-        semi_fixed.__dict__['signature_added'] = True
-        return semi_fixed
-    return deco
