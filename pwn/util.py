@@ -60,15 +60,6 @@ def pause(n = None):
         pwn.warning('Interrupted')
         sys.exit(1)
 
-def die(s = None, e = None, exit_code = -1):
-    """Exits the program with an error string and optionally prints an exception."""
-    if s:
-        pwn.failure('FATAL: ' + s)
-    if e:
-        pwn.failure('The exception was:')
-        pwn.trace(str(e) + '\n')
-    sys.exit(exit_code)
-
 def size(n, abbriv = 'B', si = False):
     """Convert number to human readable form"""
     base = 1000.0 if si else 1024.0

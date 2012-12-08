@@ -163,3 +163,12 @@ def warning(s):
 
 def info(s):
     trace(''.join([' ', text.boldblue('[*]'), ' ', s, '\n']))
+
+def die(s = None, e = None, exit_code = -1):
+    """Exits the program with an error string and optionally prints an exception."""
+    if s:
+        pwn.failure('FATAL: ' + s)
+    if e:
+        pwn.failure('The exception was:')
+        pwn.trace(str(e) + '\n')
+    sys.exit(exit_code)
