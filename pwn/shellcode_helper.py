@@ -51,8 +51,16 @@ class AssemblerContainer(AssemblerBlock):
 
             if isinstance(b, AssemblerContainer):
                 self.blocks.extend(b.blocks)
-            elif isinstance(b, str) or isinstance(b, AssemblerBlock):
+            elif isinstance(b, AssemblerBlock):
                 self.blocks.append(b)
+            elif isinstance(b, str):
+                cast = kwargs.get('cast', 'blob')
+                if cast == 'text':
+                    self.blocks.append(AssemblerText(b, **kwargs))
+                elif cast == 'blob':
+                    self.blocks.append(AssemblerBlob(b, **kwargs))
+                else:
+                    die('Invalid cast for AssemblerContainer')
             else:
                 pwn.die('Trying to force something of type ' + str(type(b)) + ' into an assembler block. Its value is:\n' + repr(b)[:100])
 

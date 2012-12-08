@@ -31,9 +31,9 @@ def _nasm(target_arch, target_os, blocks, emit_asm):
         if isinstance(b, H.AssemblerText):
             code.append(b.text)
         elif isinstance(b, H.AssemblerBlob):
-            code.append('db ' + ' '.join('0x%02x' % ord(c) for c in b.blob))
+            code.append('db ' + ', '.join('0x%02x' % ord(c) for c in b.blob))
         else:
-            code.append(b)
+            die("Trying to assemble something that is not an assembler block")
     
     code = '\n'.join(code)
 
@@ -67,7 +67,7 @@ def _asm_real(arch, os, blocks, emit_asm):
     _nowai(arch, os)
 
 def asm(*blocks, **kwargs):
-    blocks = H.AssemblerContainer(*blocks, os=kwargs.get('os'), arch=kwargs.get('arch'))
+    blocks = H.AssemblerContainer(*blocks, os=kwargs.get('os'), arch=kwargs.get('arch'), cast = 'text')
     emit_asm = kwargs.get('emit_asm', False)
 
     if all(isinstance(b, H.AssemblerBlob) for b in blocks.blocks):
