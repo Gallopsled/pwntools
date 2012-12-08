@@ -1,6 +1,6 @@
 import random
 
-def randomua(opt=''):
+def randomua():
     return random.sample(useragents, 1)[0]
 
 useragents = [

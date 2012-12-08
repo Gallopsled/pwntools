@@ -1,9 +1,7 @@
 #!/usr/bin/env python2
 import lib.aeropiclib.gadgets as gadgets
 import lib.aeropiclib.readelf as readelf
-import re
-from pwn import flat, log, util, process, p32, die
-from pwn.i386 import nops
+import re, pwn, pwn.i386 
 
 global _curr_ae
 _curr_ae = None
@@ -12,12 +10,12 @@ class address(str):
     def __add__(self, y):
         # The address of each element in symbols should be wrapped into the address class when inserted, NOT when retrieved... fix me plx
         if isinstance(self, str):
-            return util.p32(util.u32(self) + y)
+            return pwn.p32(pwn.u32(self) + y)
 
 class symbols(dict):
     def __getattr__ (self, name):
         if name in self.keys():
-            return address(util.p32(self.get(name)))
+            return address(pwn.p32(self.get(name)))
         else: return
 
     def __fmt(self, key):
@@ -48,7 +46,7 @@ class load(object):
         self.__ropfinder = gadgets.ROPGadget()
         self.__filename = filename
         self.__stacks = []
-        self.NOP = nops
+        self.NOP = pwn.i386.nops
         self.__load_gadgets_from_file()
 
         global _curr_ae
@@ -60,11 +58,11 @@ class load(object):
         globals()['gadgets'] = self.gadgets
 
     def __load_gadgets_from_file(self, trackback=3):
-        log.waitfor('Loading symbols')
+        pwn.waitfor('Loading symbols')
         try:
             self.__ropfinder.generate(self.__filename, trackback)
         except:
-            die('could not load file')
+            pwn.die('could not load file')
             return
         self.gadgets = symbols(dict([(item.strip(';;').replace(' ; ','__')[:-1].replace(' ','_'), addr) for (item, addr) in self.__ropfinder.asm_search('%')]))
         elfreader = readelf.Elf()
@@ -76,7 +74,7 @@ class load(object):
         self.got = symbols(elfreader._got)
         elfreader.read_libc_offset(self.__filename)
         self.libc = symbols(elfreader._libc_offset)
-        log.succeeded()
+        pwn.succeeded()
 
     def _findpopret(self, num):
         for key in sorted(m for m in self.gadgets.keys() if m.startswith('pop')):
@@ -88,22 +86,22 @@ class load(object):
     def _lookup(self, symb):
         addr = self.plt[symb]
         if addr is not None:
-            log.info("found symbol <%s> in plt" % symb)
+            pwn.info("found symbol <%s> in plt" % symb)
             return addr
 
         addr = self.segments[symb]
         if addr is not None:
-            log.info("found symbol <%s> in segments" % symb)
+            pwn.info("found symbol <%s> in segments" % symb)
             return addr
 
-        die("Could not find symbol <%s>" % symb)
+        pwn.die("Could not find symbol <%s>" % symb)
 
 
     def call(self, arg, argv=None, return_to=None):
         if isinstance(arg, str) and not isinstance(arg, address):
             arg = self._lookup(arg)
         if isinstance(arg, int):
-            arg = p32(arg)
+            arg = pwn.p32(arg)
 
         if not argv:
             if self.__recent_call_args > 0: # then this is a return addr to the previous function
@@ -112,7 +110,7 @@ class load(object):
                 self.append(arg)
             self.__recent_call_args = 0
         else:
-            argv = map(lambda a: self._lookup(a) if type(a) == str else a, argv)
+            argv = [self._lookup(a) if type(a) == str else a for a in argv]
             num = 1 if isinstance(argv, str) else len(argv)
             self.__recent_call_args = num
 
@@ -123,7 +121,8 @@ class load(object):
                 ret = self._findpopret(num)
                 if ret:
                     self.append(ret)
-            [self.append(item) for item in argv]
+            for item in argv:
+                self.append(item)
 
     # def __setitem__(self, i, y):
     #     self.add(i, y)
@@ -136,10 +135,10 @@ class load(object):
         self.__stacks.append(item)
 
     def __repr__(self):
-        return flat(self.__stacks)
+        return pwn.flat(self.__stacks)
 
     # def pwnit(self, *argv):
-    #     p = process(self.__filename, *argv)
+    #     p = pwn.process(self.__filename, *argv)
     #     p.interactive('pwnshell$ ')
 
     def portable(self, portable_type='sh', pipe=False):

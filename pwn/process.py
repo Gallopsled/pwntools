@@ -1,22 +1,20 @@
-import pwn, time, sys, re, errno
-from log import *
-from consts import *
-from util import size
-from thread import Thread
-from subprocess import *
+import pwn, sys, time
+from subprocess import Popen, PIPE
+from pwn.text import boldred
 
 class process:
     def __init__(self, cmd, *args, **kwargs):
         env = kwargs.get('env', {})
         self.debug = pwn.DEBUG
-        self.proc = Popen(tuple(cmd.split()) + args,
-                          stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                          env = env,
-                          bufsize = 0)
+        self.proc = Popen(
+                tuple(cmd.split()) + args,
+                stdin=PIPE, stdout=PIPE, stderr=PIPE,
+                env = env,
+                bufsize = 0)
 
     def close(self):
         if self.proc:
-            self.proc.close()
+            self.proc.kill()
             self.proc = None
 
     def send(self, dat):
@@ -70,7 +68,7 @@ class process:
         return ''.join(res)
 
     def interactive(self, prompt = boldred('$') + ' '):
-        info('Switching to interactive mode')
+        pwn.info('Switching to interactive mode')
         import rlcompleter
         debug = self.debug
         self.debug = False
@@ -79,7 +77,7 @@ class process:
             while running:
                 sys.stderr.write(self.proc.stdout.read(1))
                 sys.stderr.flush()
-        t = Thread(target = loop)
+        t = pwn.Thread(target = loop)
         t.daemon = True
         t.start()
         while True:

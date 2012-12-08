@@ -1,5 +1,4 @@
 import pwn, os
-from process import process
 
 __timeattackbin = os.path.join(pwn.installpath, 'binaries/timeattack')
 
@@ -42,5 +41,5 @@ def simulate(proc, exe, argv, inputfield, inputs):
 
 def simulate_local(exe, argv, inputfield, inputs):
     argv = [os.path.basename(exe)] + argv
-    return simulate(process(__timeattackbin), exe, argv, inputfield, inputs)
+    return simulate(pwn.process(__timeattackbin), exe, argv, inputfield, inputs)
 

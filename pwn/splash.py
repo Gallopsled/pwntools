@@ -1,6 +1,5 @@
+from pwn import trace, sleep
 from pwn.text import color
-from pwn.log import trace
-from time import sleep
 
 _banner = '''  .:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:.
   )     _____                         _    _                            )

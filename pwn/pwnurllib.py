@@ -1,6 +1,4 @@
-import urllib2
-import cookielib
-from urllib import urlencode
+import urllib2, urllib, cookielib
 import useragents as ua
 
 class HTTPwn(object):
@@ -26,7 +24,7 @@ class HTTPwn(object):
 
     def open(self, url, data=None):
         if isinstance(data, dict):
-            data = urlencode(data)
+            data = urllib.urlencode(data)
         try:
             url_fd  = self.opener.open(url,data)
         except:
