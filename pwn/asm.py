@@ -66,7 +66,7 @@ def _nasm(arch, os, blocks, emit_asm):
         cmd = ['nasm']
         if DEBUG:
             cmd += ['-D', 'DEBUG']
-        cmd += ['-I', nasminclude, '-o' ,'/dev/stdout', src]
+        cmd += ['-I', nasminclude, '-o', '/dev/stdout', src]
         return cmd
 
     code = ['%include "macros/macros.asm"']
