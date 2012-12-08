@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 import lib.aeropiclib.gadgets as gadgets
 import lib.aeropiclib.readelf as readelf
-import re, pwn, pwn.i386 
+import re, pwn
 from pwn import log
 
 global _curr_ae
@@ -47,7 +47,6 @@ class load(object):
         self.__ropfinder = gadgets.ROPGadget()
         self.__filename = filename
         self.__stacks = []
-        self.NOP = pwn.i386.nops
         self.__load_gadgets_from_file()
 
         global _curr_ae
