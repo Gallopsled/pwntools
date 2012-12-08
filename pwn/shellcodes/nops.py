@@ -1,9 +1,9 @@
 import random
 from collections import defaultdict
-from pwn import get_avoided
+from pwn.shellcode_helper import *
 
-def nops(length, **kwargs):
-    unclobber = kwargs.get('unclobber', ['esp'])
+@shellcode_reqs(blob = True, arch='i386')
+def nops(length, unclobber = ['esp'], **kwargs):
     avoid = map(ord, get_avoided(**kwargs))
 
     sled = nops_opty2(length, avoid, unclobber)
