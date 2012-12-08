@@ -1,4 +1,4 @@
-import struct, sys, subprocess, re, pwn, pwn.text
+import struct, sys, subprocess, re, pwn, pwn.text, functools, inspect
 
 # allowed/avoided
 def get_allowed(**kwargs):
@@ -133,7 +133,7 @@ def method_signature(f):
 
 def ewraps(wrapped):
     def deco(wrapper):
-        semi_fixed = wraps(wrapped)(wrapper)
+        semi_fixed = functools.wraps(wrapped)(wrapper)
         if not wrapped.__dict__.get('signature_added', False):
             semi_fixed.__doc__ = method_signature(wrapped) + '\n\n' + (semi_fixed.__doc__ or '')
         semi_fixed.__dict__['signature_added'] = True

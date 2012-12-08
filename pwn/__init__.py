@@ -57,6 +57,9 @@ from pwn.memoize    import memoize
 from pwn.process    import process
 from pwn.remote     import remote
 from pwn.handler    import handler
+from pwn.context    import *
+from pwn.asm        import *
+from pwn.shellcodes import *
 try:
     from pwn.rop   import *
 except:
