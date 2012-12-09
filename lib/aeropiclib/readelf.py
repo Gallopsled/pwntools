@@ -1,223 +1,74 @@
-#!/usr/bin/env python
-#
-#       readelf.py
-#
-#       Copyright 2010 Long Le Dinh <longld at vnsecurity.net>
-#
-#       This program is free software; you can redistribute it and/or modify
-#       it under the terms of the GNU General Public License as published by
-#       the Free Software Foundation; either version 2 of the License, or
-#       (at your option) any later version.
-#
-#       This program is distributed in the hope that it will be useful,
-#       but WITHOUT ANY WARRANTY; without even the implied warranty of
-#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#       GNU General Public License for more details.
-#
-#       You should have received a copy of the GNU General Public License
-#       along with this program; if not, write to the Free Software
-#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#       MA 02110-1301, USA.
-
-import os
-import sys
+import os, sys, re
 from subprocess import *
+from pwn import die
+
+# readelf/objdump binaries
+_READELF = '/usr/bin/readelf'
+_OBJDUMP = '/usr/bin/objdump'
 
 # ELF file headers class
 # a python wrapper for for readelf (binutils)
 class Elf:
-    # readelf/objdump binary
-    READELF = "/usr/bin/readelf"
-    OBJDUMP = "/usr/bin/objdump"
-    # default libc
-#    LIBC = "/lib/libc.so.6"
-    # interesting functions
-    FUNCTIONS = ["__libc_start_main", "strcpy", "memcpy", "printf", "sprintf"]
-    LDD = "/usr/bin/ldd"
-
-    def __init__(self):
-        self._headers = {  "_plt": 0,
-                           "_text": 0,
-                           "_got": 0,
-                           "_got_plt": 0,
-                           "_data": 0,
-                           "_bss": 0,
-                           "_comment": 0,
-                           "base": 0,
-                        }
+    def __init__(self, file):
+        self._sections = {}
+        self._symbols = {}
         self._plt = {}
-        self._got = {}
-        self._libc_offset = {"mprotect":0, "read":0, "execve":0, "execv":0, "execvp":0, "system":0, "setreuid":0, "seteuid":0}
+        self._base = None
+        self._file_data = None
 
-        if os.access(self.READELF, os.X_OK) == False or os.access(self.OBJDUMP, os.X_OK) == False:
-            print "Cannot execute %s, please install/check binutils" % self.READELF
-            sys.exit(-1)
+        if not (os.access(file, os.R_OK) and os.path.isfile(file)):
+            die('File %s is not readable or does not exist' % file)
 
-    # parse single line of output
-    def _parse_line(self, line):
-        out = line.replace("[", "").replace("]", "").split()
-        #print out
-        addr = int(out[3], 16)
-        off = int(out[4], 16)
+        self._file = file
 
-        return (addr, off)
+        def check(f):
+            if not (os.access(f, os.X_OK) and os.path.isfile(f)):
+                die('Executable %s needed for readelf.py, please install binutils' % f)
 
-    def find_libc(self, binfile):
-        cmd = self.LDD + " " + binfile
+        check(_READELF)
+        check(_OBJDUMP)
+
+
+    def _load_sections(self):
+        # -W : wide output
+        # -S : sections
+        cmd = _READELF + ' -W -S ' + self._file
         out = Popen(cmd, shell=True, stdout=PIPE).communicate()[0]
-        out = out.split("\n")
+        field = '\s+(\S+)'
+        posint = '[123456789]\d*'
+        lines = re.findall('^\s+\[\s*' + posint + '\]' + field * 5, out, re.MULTILINE)
 
-        for line in out:
-            if 'libc.so.' in line:
-                l = line.split('=> ')[1]
-                libc = l.split(' (')[0]
-                return libc
-            
+        for name, _type, addr, off, size in lines:
+            addr = int(addr, 16)
+            off = int(off, 16)
+            size = int(size, 16)
+            self._sections[name] = (addr, off, size)
+            if self._base is None and _type == 'PROGBITS':
+                self._base = addr - off
 
-    # parse output from readelf
-    def read_headers(self, binfile):
-        cmd = self.READELF + " -W -S " + binfile
+    def _load_symbols(self):
+        # -s : symbol table
+        cmd = _READELF + ' -s ' + self._file
         out = Popen(cmd, shell=True, stdout=PIPE).communicate()[0]
-        out = out.split("\n")
+        field = '\s+(\S+)'
+        lines = re.findall('^\s+\d+:' + field * 7, out, re.MULTILINE)
 
-        for line in out:
-            for h in self._headers.keys():
-                if line.find(" " + h.replace('_','.') + " ") != -1 and self._headers[h] == 0:
-                    (addr, off) = self._parse_line(line)
-                    self._headers[h] = addr
-                    if h == "_text":
-                        self._headers["base"] = addr - off
-                    if h == "_comment":
-                        self._headers["_comment"] = self._headers["base"] + off
+        for value, size, type, _bind, _vis, _ndx, name in lines:
+            value = int(value, 16)
+            if value <> 0 and name <> '':
+                self._symbols[name] = (value, size, type)
 
-        cmd = self.READELF + " -s " + binfile
+    # this is crazy slow -- include this feature in the all-python ELF parser
+    def _load_plt(self):
+        cmd = _OBJDUMP + ' -d ' + self._file
         out = Popen(cmd, shell=True, stdout=PIPE).communicate()[0]
-        out = out.split("\n")
-        out = [item for item in out if "GLOBAL" in item and "DEFAULT" in item and "FUNC" in item and not "UND" in item]
-        for line in out:
-            line = line.split()
-            name, addr = line[-1], line[1]
-            if not name in self._headers:
-                self._headers[name] = int(addr, 16)
+        got32 = '[^j]*jmp\s+\*0x(\S+)'
+        got64 = '[^#]*#\s+(\S+)'
+        lines = re.findall('([a-fA-F0-9]+)\s+<([^@<]+)@plt>:(%s|%s)' % (got32, got64), out)
 
-    # get address of specific header
-    def get_header(self, name):
-        return self._headers[name]
+        # print lines
 
-    # print elf headers
-    def print_headers(self):
-        print "--- ELF headers ---"
-        print "Header \t\t Address"
-        for (k, v) in self._headers.iteritems():
-            print "%s \t %s" % (k.ljust(10), hex(v))
-
-    # get PLT entries
-    def read_plt(self, binfile):
-        cmd = self.OBJDUMP + " -d " + binfile
-        out = Popen(cmd, shell=True, stdout=PIPE).communicate()[0]
-        out = out.split("\n")
-
-        for line in out:
-            if line.find("@plt>:") != -1:
-                ent = line.split()
-                addr = int(ent[0], 16)
-                func = ent[1].split("@")[0][1:]
-                self._plt[func] = addr
-
-        return True
-
-    # get PLT address of specific funtion
-    def get_plt(self, name):
-        if name in self._plt:
-            return self._plt[name]
-        else:
-            return -1
-
-    # print PLT entries
-    def print_plt(self):
-        print "--- PLT entries ---"
-        print "Function \t\t Address"
-        for (k, v) in self._plt.iteritems():
-            print "%s \t %s" % (k.ljust(20), hex(v))
-
-    # get GOT entries
-    def read_got(self, binfile):
-        cmd = self.READELF + " -r " + binfile
-        out = Popen(cmd, shell=True, stdout=PIPE).communicate()[0]
-        out = out.split("\n")
-
-        for line in out:
-            if line.find("_JUMP_SLOT") != -1:
-                ent = line.split()
-                if len(ent) < 5: continue
-                addr = int(ent[0], 16)
-                func = ent[4]
-                self._got[func] = addr
-
-        return True
-
-    # get GOT entry address of specific funtion
-    def get_got(self, name):
-        if name in self._got:
-            return self._got[name]
-        else:
-            return -1
-
-    # print GOT table
-    def print_got(self):
-        print "--- GOT table ---"
-        print "Function \t\t Address"
-        for (k, v) in self._got.iteritems():
-            print "%s \t %s" % (k.ljust(20), hex(v))
-
-    # get libc offset for functions in plt and some predefined ones
-    def read_libc_offset(self, binfile, *functions):
-        libc = self.find_libc(binfile)
-        cmd = self.READELF + " -s " + libc
-        out = Popen(cmd, shell=True, stdout=PIPE).communicate()[0]
-        out = out.split("\n")
-
-        if functions == (): # read default functions
-            flist = self._libc_offset.keys() + self._plt.keys()
-        else:
-            flist = functions
-        for line in out:
-            for func in flist:
-                if line.find(" " + func + "@@GLIBC") != -1:
-                    ent = line.split()
-                    addr = int(ent[1], 16)
-                    self._libc_offset[func] = addr
-
-        return True
-
-    # get GOT entry address of specific funtion
-    def get_libc_offset(self, name):
-        if name in self._libc_offset:
-            return self._libc_offset[name]
-        else: # re-read 
-            self.read_libc_offset(self.LIBC, name)
-            if name in self._libc_offset:
-                return self._libc_offset[name]
-            else:
-                return 0
-
-    # print libc offsets
-    def print_libc_offset(self):
-        print "--- LIBC offset ---"
-        print "Function \t\t Address"
-        for (k, v) in self._libc_offset.iteritems():
-            print "%s \t %s" % (k.ljust(20), hex(v))
-
-if __name__ == '__main__':
-    import sys
-    binfile = sys.argv[1]
-    e = Elf()
-    e.read_headers(binfile)
-    e.read_plt(binfile)
-    e.read_got(binfile)
-    e.read_libc_offset(binfile)
-    print "Base address:", hex(e.get_header("base"))
-    e.print_headers()
-    e.print_plt()
-    e.print_got()
-    e.print_libc_offset()
+        for addr, name, _, gotaddr32, gotaddr64 in lines:
+            addr = int(addr, 16)
+            gotaddr = int(gotaddr32 or gotaddr64, 16)
+            self._plt[name] = (addr, gotaddr)
