@@ -55,15 +55,14 @@ from pwn.memoize    import memoize
 from pwn.process    import process
 from pwn.remote     import remote
 from pwn.handler    import handler
-try:
-    from pwn.rop   import *
-except:
-    traceback.print_exc()
-    warning("rop module could not be loaded...")
-
 from pwn.useragents import randomua
 from pwn.splash     import splash
 
+try:
+    import pwn.rop
+except:
+    traceback.print_exc()
+    warning("rop module could not be loaded...")
 import pwn.internal.init.session
 import pwn.internal.init.cloud
 import pwn.sqli
@@ -72,4 +71,4 @@ import pwn.sqli
 from pwn.consts import *
 
 # Make pwn.fucking work as pwn by itself
-#import pwn as fucking
+import pwn as fucking
