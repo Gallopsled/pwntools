@@ -41,7 +41,11 @@ def de_bruijn(length = -1, alphabet = string.ascii_lowercase, n = 4, join = True
     return helper(length)
 
 def de_bruijn_find(subseq, alphabet = string.ascii_lowercase, n = None):
-    """Returns the index for the subsequence of a De Bruijn Sequence for the given alphabet and subsequences of length n. If not specified, n will default to len(subseq). There exists better algorithms for this, but why bother?"""
+    """Returns the index for the subsequence of a De Bruijn Sequence for the given alphabet and subsequences of length n. If not specified, n will default to len(subseq).
+    
+    There exists better algorithms for this, but they depend on generating the De Bruijn sequence in another fashion. Somebody should look at it:
+    http://www.sciencedirect.com/science/article/pii/S0012365X00001175
+    """
     if n == None:
         n = len(subseq)
     return gen_find(subseq, de_bruijn_generator(alphabet, n))
