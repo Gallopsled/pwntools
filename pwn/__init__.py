@@ -48,6 +48,7 @@ from pwn.util       import *
 from pwn.binutils   import *
 from pwn.hashes     import *
 from pwn.listutil   import *
+from pwn.genutil    import *
 from pwn.memoize    import memoize
 from pwn.process    import process
 from pwn.remote     import remote
