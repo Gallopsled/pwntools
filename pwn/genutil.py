@@ -38,7 +38,7 @@ def de_bruijn(length = -1, alphabet = string.ascii_lowercase, n = 4, join = True
                     return
     if join:
         return ''.join(helper(length))
-    return helper(length)
+    return list(helper(length))
 
 def de_bruijn_find(subseq, alphabet = string.ascii_lowercase, n = None):
     """Returns the index for the subsequence of a De Bruijn Sequence for the given alphabet and subsequences of length n. If not specified, n will default to len(subseq).
