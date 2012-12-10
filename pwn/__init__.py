@@ -57,8 +57,9 @@ from pwn.context    import *
 from pwn.asm        import asm
 from pwn.useragents import randomua
 from pwn.splash     import splash
+
 try:
-    from pwn.rop   import *
+    import pwn.rop
 except:
     if DEBUG:
         traceback.print_exc()
