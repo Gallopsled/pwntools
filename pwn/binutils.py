@@ -86,38 +86,6 @@ Example:
     else:
         return "".join(flat(o, func=func) for o in obj)
 
-def flat8(*args):
-    """Call flat with p8 as the func"""
-    return flat(args, func=p8)
-
-def flat8b(*args):
-    """Call flat with p8b as the func"""
-    return flat(args, func=p8)
-
-def flat16(*args):
-    """Call flat with p16 as the func"""
-    return flat(args, func=p16)
-
-def flat16b(*args):
-    """Call flat with p16b as the func"""
-    return flat(args, func=p16)
-
-def flat32(*args):
-    """Call flat with p32 as the func"""
-    return flat(args, func=p32)
-
-def flat32b(*args):
-    """Call flat with p32b as the func"""
-    return flat(args, func=p32)
-
-def flat64(*args):
-    """Call flat with p64 as the func"""
-    return flat(args, func=p64)
-
-def flat64b(*args):
-    """Call flat with p64b as the func"""
-    return flat(args, func=p64)
-
 def dehex(s):
     """Hex-decodes a string"""
     return s.decode('hex')
