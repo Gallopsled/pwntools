@@ -41,7 +41,6 @@ if _do_argv:
 
 # Promote to toplevel
 from pwn.consts     import *
-from pwn.excepthook import addexcepthook
 from pwn.thread     import Thread
 from pwn.log        import die
 from pwn.util       import *
@@ -83,6 +82,6 @@ for k, v in globals().items():
         del globals()[k]
 del k, v, module_type
 
-# The shellcoder_helper module is not generally useful and
+# These modules are not generally useful and
 # should only be available when explicitly asked for.
-del shellcode_helper
+del shellcode_helper, excepthook

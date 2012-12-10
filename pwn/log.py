@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import sys, time, random, pwn
+import sys, time, random, pwn, pwn.excepthook
 import pwn.text as text
 import threading
 
@@ -84,7 +84,7 @@ if sys.stderr.isatty() and not pwn.DEBUG:
         _trace(' ' + text.boldyellow('[!]') + ' Anything is possible when your exploit smells like x86 and not a lady\n')
         _trace(' ' + text.boldyellow('[!]') + ' I\'m on a pwnie!\n\x1b[?25h\x1b[0m')
 
-    pwn.addexcepthook(_hook) # reset, show cursor
+    pwn.excepthook.addexcepthook(_hook) # reset, show cursor
 
     def _start_spinner():
         global _spinner
