@@ -11,7 +11,7 @@ def findpeersh(port = None):
 @shellcode_reqs(arch='i386', os='linux', network=['ipv4', 'ipv6'])
 def findpeer(port = None):
     """Args: port (defaults to any port)
-    Finds a remote socket, which is connected to the specified port.
+    Finds a socket, which is connected to the specified port.
     Leaves socket in ESI."""
 
     code = """
