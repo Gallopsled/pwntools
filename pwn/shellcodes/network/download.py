@@ -8,7 +8,4 @@ def download(host, port):
     
     NONFUNCTIONAL
     """
-    return \
-        connect(host, port) + \
-        recv() + \
-        'jmp esp'
+    return connect(host, port), recv(), 'jmp esp'

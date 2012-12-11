@@ -6,6 +6,4 @@ from .. import dupsh
 def bindshell(port):
     """Args: port
     Standard bind shell."""
-    return \
-        listen(port) + \
-        dupsh()
+    return listen(port), dupsh()

@@ -15,7 +15,7 @@ def findtagsh(tag):
     time.sleep(0.1)
     sock.send(TAG.ljust(127))
     sock.interactive()"""
-    return findtag(tag) + dupsh("ebp")
+    return findtag(tag), dupsh("ebp")
 
 @shellcode_reqs(arch='i386', os='linux', network=['ipv4', 'ipv6'])
 def findtag(tag):

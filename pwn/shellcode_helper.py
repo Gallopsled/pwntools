@@ -98,7 +98,9 @@ def shellcode_reqs(blob = False, **supported_context):
                 r = shellcode_wrapper(f, args, kwargs)
                 if isinstance(r, AssemblerBlock):
                     return r
-                if not blob:
+                elif isinstance(r, (tuple, list)):
+                    return AssemblerContainer(*r, **kwargs)
+                elif not blob:
                     return AssemblerText(r, **kwargs)
                 else:
                     return AssemblerBlob(r, **kwargs)

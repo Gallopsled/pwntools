@@ -12,4 +12,4 @@ imul ecx
 xor ebx, ebx
 mov al, SYS_setreuid
 int 0x80
-""" + sh(False)
+""", sh(False)
