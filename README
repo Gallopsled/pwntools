@@ -1,1 +1,2 @@
-Add this directory as well as subdirectory `lib' to PYTHONPATH
+ 1. Add the `lib' directory to your PYTHONPATH
+ 2. Whine on #pwnies on freenode.net when stuff doesn't work
