@@ -42,6 +42,7 @@ if _do_argv:
     except:
         pass
 
+_not_loaded = []
 # Promote to toplevel
 from pwn.thread import Thread
 from pwn.util       import *
@@ -61,11 +62,19 @@ from pwn.splash     import splash
 try:
     import pwn.rop
 except:
-    traceback.print_exc()
-    warning("rop module could not be loaded...")
+    _not_loaded.append('rop')
+
 import pwn.internal.init.session
-import pwn.internal.init.cloud
+
+try:
+    import pwn.internal.init.cloud
+except:
+    _not_loaded.append('cloud')
+
 import pwn.sqli
+
+if len(_not_loaded) > 0:
+    pwn.log.warning('Modules not loaded: ' + ', '.join(_not_loaded))
 
 # Constans
 from pwn.consts import *
