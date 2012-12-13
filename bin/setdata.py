@@ -1,1 +1,0 @@
-../pil/setdata.py
