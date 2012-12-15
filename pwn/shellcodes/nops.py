@@ -15,13 +15,13 @@ def nops(length, unclobber = ['esp'], **kwargs):
     raise Exception('Cannot create nopsled under given restrictions')
 
 @shellcode_reqs(blob = True, arch='i386')
-def nop_pad(length, *data):
+def nop_pad(length, *data, **kwargs):
     data = flat(data)
 
     if len(data) > length:
         die("Could not do a nop-padding since the data was larger than the requested length")
     
-    return nops(length - len(data)) + data
+    return nops(length - len(data), **kwargs) + data
 
 _STACK_NEEDED     = 0
 _STACK_DESTROYED  = 1

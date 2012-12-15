@@ -12,7 +12,7 @@ installpath = os.path.dirname(__file__)
 
 # Argument parsing
 TRACE = True
-DEBUG = False
+DEBUG = 0
 
 # Ugly hack to check if argv should be parsed
 _do_argv = True
@@ -27,7 +27,7 @@ if _do_argv:
         for _arg in argv[:]:
             if   _arg == 'DEBUG':
                 argv.remove(_arg)
-                DEBUG = True
+                DEBUG = 1
             elif _arg == 'NOTRACE':
                 argv.remove(_arg)
                 TRACE = False
@@ -38,6 +38,8 @@ if _do_argv:
                 globals()[key] = val
     except:
         pass
+
+DEBUG = int(DEBUG)
 
 # Promote to toplevel
 from pwn.consts     import *
@@ -56,18 +58,32 @@ from pwn.context    import *
 from pwn.asm        import asm
 from pwn.useragents import randomua
 from pwn.splash     import splash
+from pwn.pwnurllib  import HTTPwn
+import pwn.sqli
+import pwn.shellcodes
+import pwn.internal.init.session
+
+_not_loaded = []
+
+def _err(s):
+    if DEBUG > 1:
+        pwn.log.warning('Could not load module %s:' % s)
+        traceback.print_exc()
+    else:
+        _not_loaded.append((s, traceback.extract_stack()))
 
 try:
     import pwn.rop
 except:
-    if DEBUG:
-        traceback.print_exc()
-    log.warning("rop module could not loaded...")
+    _err('rop')
 
-import pwn.internal.init.session
-import pwn.internal.init.cloud
-import pwn.sqli
-import pwn.shellcodes
+try:
+    import pwn.internal.init.cloud
+except:
+    _err('cloud')
+
+if len(_not_loaded) > 0:
+    pwn.log.warning('Modules not loaded: ' + ', '.join(_m for _m, _t in _not_loaded))
 
 # Make pwn.fucking work as pwn by itself
 import pwn as fucking

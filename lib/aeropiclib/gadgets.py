@@ -1,17 +1,17 @@
 #       gadgets.py
-#       
+#
 #       Copyright 2010 Long Le Dinh <longld at vnsecurity.net>
-#       
+#
 #       This program is free software; you can redistribute it and/or modify
 #       it under the terms of the GNU General Public License as published by
 #       the Free Software Foundation; either version 2 of the License, or
 #       (at your option) any later version.
-#       
+#
 #       This program is distributed in the hope that it will be useful,
 #       but WITHOUT ANY WARRANTY; without even the implied warranty of
 #       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #       GNU General Public License for more details.
-#       
+#
 #       You should have received a copy of the GNU General Public License
 #       along with this program; if not, write to the Free Software
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
@@ -95,7 +95,7 @@ class ROPGadget:
                     self.__process_backward(hexbyte, base_addr + offset + i - 1)
 
 #        print >>sys.stderr, "Generated " + str(self.__asmgadget.get_size()) + " gadgets"
-        
+
         return True
 
     #

