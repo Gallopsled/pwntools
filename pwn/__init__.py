@@ -57,6 +57,7 @@ from pwn.remote     import remote
 from pwn.handler    import handler
 from pwn.useragents import randomua
 from pwn.splash     import splash
+from pwn.pwnurllib  import HTTPwn
 
 try:
     import pwn.rop
