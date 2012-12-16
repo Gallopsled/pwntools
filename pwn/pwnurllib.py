@@ -29,9 +29,10 @@ class HTTPwn(object):
             url_fd  = self.opener.open(url, data)
         except:
             print "Something went wrong, site not fetched correctly"
-            return
+            return False
         self.headers = url_fd.headers.dict
         self.html    = url_fd.read()            
+        return True
 
 
     def add_uaheaders(self):
