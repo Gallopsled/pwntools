@@ -60,25 +60,13 @@ from pwn.handler    import handler
 from pwn.context    import *
 from pwn.asm        import *
 from pwn.shellcodes import *
-try:
-    from pwn.rop   import *
-except:
-    traceback.print_exc()
-    warning("rop module could not loaded...")
-
-# try:
-#     from aeROPics   import aeROPics
-# except:
-#     log.warning("Could not load aeROPics module, failed loading distorm3 module...")
 from pwn.useragents import randomua
 from pwn.splash     import splash
+from pwn.elf        import ELF
 
 import pwn.internal.init.session
 import pwn.internal.init.cloud
 import pwn.sqli
-
-# Constans
-from pwn.consts import *
 
 # Make pwn.fucking work as pwn by itself
 #import pwn as fucking
