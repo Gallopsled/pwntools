@@ -31,7 +31,7 @@ class HTTPwn(object):
             print "Something went wrong, site not fetched correctly"
             return False
         self.headers = url_fd.headers.dict
-        self.html    = url_fd.read()            
+        self.html    = url_fd.read()
         return True
 
 

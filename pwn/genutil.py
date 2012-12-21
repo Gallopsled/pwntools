@@ -3,7 +3,7 @@ import string
 # Taken from http://en.wikipedia.org/wiki/De_Bruijn_sequence but changed to a generator
 def de_bruijn_generator(alphabet = string.ascii_lowercase, n = 4):
     """Generator for a De Bruijn Sequence for the given alphabet and subsequences of length n.
-    
+
     The yielded result contains len(alphabet)**n elements"""
     k = len(alphabet)
     a = [0] * k * n
@@ -42,7 +42,7 @@ def de_bruijn(length = -1, alphabet = string.ascii_lowercase, n = 4, join = True
 
 def de_bruijn_find(subseq, alphabet = string.ascii_lowercase, n = None):
     """Returns the index for the subsequence of a De Bruijn Sequence for the given alphabet and subsequences of length n. If not specified, n will default to len(subseq).
-    
+
     There exists better algorithms for this, but they depend on generating the De Bruijn sequence in another fashion. Somebody should look at it:
     http://www.sciencedirect.com/science/article/pii/S0012365X00001175
     """
@@ -50,12 +50,12 @@ def de_bruijn_find(subseq, alphabet = string.ascii_lowercase, n = None):
         n = len(subseq)
     return gen_find(subseq, de_bruijn_generator(alphabet, n))
 
-def de_bruijn_large(length = -1, n = 4, join = True): 
-    """Same as de_bruijn but with a larger alphabet. Gives a up to 74 MB unique subsequences.""" 
+def de_bruijn_large(length = -1, n = 4, join = True):
+    """Same as de_bruijn but with a larger alphabet. Gives a up to 74 MB unique subsequences."""
     return de_bruijn(length, string.digits + string.ascii_letters + string.punctuation, n, join)
 
 def de_bruijn_large_find(subseq, n = None):
-    """Same as de_bruijn_find but with a larger alphabet.""" 
+    """Same as de_bruijn_find but with a larger alphabet."""
     return de_bruijn_find(subseq, string.digits + string.ascii_letters + string.punctuation, n)
 
 def gen_find(subseq, generator):
@@ -71,4 +71,4 @@ def gen_find(subseq, generator):
             pos += 1
         if saved == subseq:
             return pos
-    return -1 
+    return -1
