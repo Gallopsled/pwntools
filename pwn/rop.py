@@ -4,6 +4,8 @@ from collections import defaultdict
 class ROP:
     def __init__(self, file):
         self.elf = ELF(file)
+        if self.elf.elfclass <> 'ELF32':
+            die('Can only build ROP chains for 32bit ELF')
         self._poprets = defaultdict(list)
 
         self.sections = dict()
@@ -27,10 +29,7 @@ class ROP:
         self._chain = []
 
     def _load_poprets(self):
-        if self.elf.elfclass == 'ELF32':
-            self._load_poprets32()
-        else:
-            self._load_poprets64()
+        self._load_poprets32()
 
     def _load_poprets32(self):
         addesp = '\x83\xc4'
@@ -60,34 +59,6 @@ class ROP:
                             s.append((off - 3, size + x // 4))
                 i += 1
 
-    def _load_poprets64(self):
-        addrsp = '\x48\x83\xc4'
-        popr = map(chr, [0x58, 0x59, 0x5a, 0x5b, 0x5d, 0x5e, 0x5f])
-        poprn = map(lambda x: '\x41' + chr(x), range(0x58, 0x60))
-        ret  = '\xc3'
-        for name, sec in self.elf.sections.items():
-            if 'X' not in sec['flags']: continue
-            data = self.elf.section(name)
-            addr = sec['addr']
-            i = 0
-            while True:
-                i = data.find(ret, i)
-                if i == -1: break
-                s = [(i, 0)]
-                while len(s) > 0:
-                    off, size = s.pop(0)
-                    gaddr = addr + off
-                    self._poprets[size].append(gaddr)
-                    if data[off - 1] in popr:
-                        s.append((off - 1, size + 1))
-                    if data[off - 2:off] in poprn:
-                        s.append((off - 2, size + 1))
-                    if data[off - 4:off - 1] == addrsp:
-                        x = u8(data[off - 1])
-                        if x % 8 == 0:
-                            s.append((off - 3, size + x // 8))
-                i += 1
-
     def _resolve(self, x):
         if x is None or isinstance(x, int):
             return x
@@ -107,15 +78,17 @@ class ROP:
         self._chain.append((target, args))
 
     def generate(self):
+        return self.generate32()
+
+    def generate32(self):
         out = []
         chain = self._chain
         rets = self._poprets
-        p = p32 if self.elf.elfclass == 'ELF32' else p64
-        garbage = (lambda: randoms(4)) if self.elf.elfclass == 'ELF32' else lambda: randoms(8)
+        garbage = lambda: randoms(4)
         for i in range(len(chain)):
             target, args = chain[i]
-            args = map(p, args)
-            out.append(p(target))
+            args = map(p32, args)
+            out.append(p32(target))
             final = i == len(chain) - 1
             if len(args) > 0:
                 if final:
@@ -125,7 +98,7 @@ class ROP:
                     pivot = None
                     for size in rets.keys():
                         if size >= len(args):
-                            pivot = p(rets[size][0])
+                            pivot = p32(rets[size][0])
                             break
                     for _ in range(size - len(args)):
                         args.append(garbage())
