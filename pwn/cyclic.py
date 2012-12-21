@@ -1,46 +1,26 @@
 #!/usr/bin/env python
 import pwn
-from pwn import log
-
-def garbage(size):
-    vocab1 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    vocab2 = 'abcdefghijklmnopqrstuvwxyz'
-    vocab3 = '0123456789'
-
-    current = 0
-    result = ''
-    while current < size:
-        for v1 in vocab1:
-            for v2 in vocab2:
-                for v3 in vocab3:
-                    if current<size:
-                        result += v1
-                        current += 1
-                    if current<size:
-                        result += v2
-                        current += 1
-                    if current<size:
-                        result += v3
-                        current += 1
-
-    log.info("Generated cyclic pattern, size: %d" % current)
-    return result
-
+from pwn import log, p32
+from pwn import de_bruijn, de_bruijn_find
 
 
 if __name__ == "__main__":
     import sys
     import argparse
 
-    parser = argparse.ArgumentParser(description="Usage: %s <size>\n       [(-o|--offset)]" % sys.argv[0])
-    parser.add_argument('-o','--offset', action='store_true', dest='offset', required=False)
-    parser.add_argument('size', action='store', type=int)
+    parser = argparse.ArgumentParser(description="Cyclic pattern creator/finder.")
+    parser.add_argument('-o','--offset', action='store_true', dest='offset', required=False, help="Toggle to return the offset of the specified pattern (in 0xYYYYYYYY hex form).")
+    parser.add_argument('size', action='store', help="The desired size of the created pattern.")
 
     results = parser.parse_args()
 
     size = results.size
     calc_offset = results.offset
     if calc_offset:
-        print "should calculate offset"
+        try:
+            number = p32(int(size, 16))
+            print "Pattern '%s'(%s) was found at offset:  %d" % (number, size, de_bruijn_find(number))
+        except:
+            print "Couldn't read input value.  Must be an integer, preferably on the form 0xyyyyyyyy)"
     else:
-        print garbage(size)
+        print de_bruijn(int(size))
