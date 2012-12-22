@@ -1,4 +1,5 @@
 import pwn, md5, os, tempfile
+from pwn import log
 from functools import wraps
 from cPickle import load, dump
 
@@ -30,11 +31,11 @@ if not os.path.exists(__tempdir):
     try:
         os.mkdir(__tempdir)
     except:
-        pwn.trace(' [-] Could not create memoization dir: %s\n' % __tempdir)
+        log.trace(' [-] Could not create memoization dir: %s\n' % __tempdir)
         def memoize(f):
             return f
 elif not os.path.isdir(__tempdir):
-    pwn.trace(' [-] Memoization path is not a dir: %s\n' % __tempdir)
+    log.trace(' [-] Memoization path is not a dir: %s\n' % __tempdir)
     def memoize(f):
         return f
 

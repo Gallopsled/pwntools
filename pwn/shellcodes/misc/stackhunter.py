@@ -1,4 +1,4 @@
-from pwn import *
+from pwn.shellcode_helper import *
 
 @shellcode_reqs(arch='i386')
 def stackhunter(cookie = 0x7afceb58):

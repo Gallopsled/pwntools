@@ -1,4 +1,4 @@
-from pwn import *
+from pwn.shellcode_helper import *
 from .. import sh
 
 @shellcode_reqs(arch='i386', os='linux')
@@ -12,4 +12,4 @@ imul ecx
 xor ebx, ebx
 mov al, SYS_setreuid
 int 0x80
-""" + sh(False)
+""", sh(False)

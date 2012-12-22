@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys
-from pwn.i386 import nops
+from pwn.classic import nops, asm
 
 def _usage ():
     print 'Usage: %s <length>' % sys.argv[0]
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     only = only.decode('string_escape')
 
     try:
-        sled = nops(length, avoid = avoid, only = only, unclobber = unclobber)
+        sled = asm(nops(length, avoid = avoid, only = only, unclobber = unclobber))
         sys.stdout.write(sled)
     except Exception, e:
         print e

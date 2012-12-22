@@ -1,8 +1,9 @@
-from pwn import group, p8, u8, p16, p32, u32, align, xor
+from pwn.shellcode_helper import *
 import random
 
-def scramble(code, **kwargs):
-    return xor_additive_feedback(code, **kwargs)
+@shellcode_reqs(blob = True, arch='i386')
+def scramble(*data, **kwargs):
+    return xor_additive_feedback(flat(data), **kwargs)
 
 def __parse_kwargs(kwargs):
     avoid     = kwargs.get('avoid', '')

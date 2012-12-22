@@ -1,4 +1,4 @@
-from pwn import *
+from pwn.shellcode_helper import *
 
 @shellcode_reqs(arch='i386', os='linux')
 def setresuid(src = 's', dst = 'res'):
@@ -8,7 +8,7 @@ def setresuid(src = 's', dst = 'res'):
 """
 
 
-    if src == 0 and sorted(set(dst)) == ['e','r','s']:
+    if src == 0 and sorted(set(dst)) == ['e', 'r', 's']:
         return ''' 
 setperms:
     xor ecx, ecx
@@ -56,7 +56,7 @@ setperms:
         p('mov %s, %s' % (lookup[k], lookup[dst[0]]))
 
     first = True
-    for k,v in lookup.items():
+    for k, v in lookup.items():
         if k not in dst:
             if first == True:
                 first = v

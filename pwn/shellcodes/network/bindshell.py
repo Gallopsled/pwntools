@@ -1,4 +1,4 @@
-from pwn import *
+from pwn.shellcode_helper import *
 from listen import listen
 from .. import dupsh
 
@@ -6,6 +6,4 @@ from .. import dupsh
 def bindshell(port):
     """Args: port
     Standard bind shell."""
-    return \
-        listen(port) + \
-        dupsh()
+    return listen(port), dupsh()

@@ -1,4 +1,4 @@
-from pwn import *
+from pwn.shellcode_helper import *
 
 @shellcode_reqs(arch='i386', os='linux')
 def mprotect_all(clear_ebx = True, fix_null = False):

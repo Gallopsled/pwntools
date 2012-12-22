@@ -1,4 +1,4 @@
-from pwn import *
+from pwn.shellcode_helper import *
 from connect import connect
 
 @shellcode_reqs(arch='i386', os='linux', network='ipv4')
@@ -8,7 +8,4 @@ def download(host, port):
     
     NONFUNCTIONAL
     """
-    return \
-        connect(host, port) + \
-        recv() + \
-        'jmp esp'
+    return connect(host, port), recv(), 'jmp esp'

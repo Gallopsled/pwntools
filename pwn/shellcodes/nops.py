@@ -1,9 +1,9 @@
 import random
 from collections import defaultdict
-from pwn import get_avoided
+from pwn.shellcode_helper import *
 
-def nops(length, **kwargs):
-    unclobber = kwargs.get('unclobber', ['esp'])
+@shellcode_reqs(blob = True, arch='i386')
+def nops(length, unclobber = ['esp'], **kwargs):
     avoid = map(ord, get_avoided(**kwargs))
 
     sled = nops_opty2(length, avoid, unclobber)
@@ -13,6 +13,15 @@ def nops(length, **kwargs):
     if sled is not None:
         return sled
     raise Exception('Cannot create nopsled under given restrictions')
+
+@shellcode_reqs(blob = True, arch='i386')
+def nop_pad(length, *data, **kwargs):
+    data = flat(data)
+
+    if len(data) > length:
+        die("Could not do a nop-padding since the data was larger than the requested length")
+    
+    return nops(length - len(data), **kwargs) + data
 
 _STACK_NEEDED     = 0
 _STACK_DESTROYED  = 1
