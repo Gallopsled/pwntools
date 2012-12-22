@@ -45,12 +45,14 @@ if _do_argv:
     except:
         pass
 
+_not_loaded = []
 # Promote to toplevel
 from pwn.thread import Thread
 from pwn.util       import *
 from pwn.binutils   import *
 from pwn.hashes     import *
 from pwn.listutil   import *
+from pwn.genutil    import *
 from pwn.excepthook import addexcepthook
 from pwn.log        import *
 from pwn.memoize    import memoize
@@ -64,11 +66,16 @@ from pwn.useragents import randomua
 from pwn.splash     import splash
 from pwn.elf        import ELF
 from pwn.rop        import ROP
+from pwn.pwnurllib  import HTTPwn
 
 import pwn.internal.init.session
-import pwn.internal.init.cloud
+try:
+    import pwn.internal.init.cloud
+except:
+    pwn.log.warning('Could not load `cloud\'.  Make sure that paramiko is installed.')
+
 import pwn.sqli
 import pwn.rop
 
 # Make pwn.fucking work as pwn by itself
-#import pwn as fucking
+import pwn as fucking
