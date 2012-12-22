@@ -123,7 +123,7 @@ class basesock:
             try:
                 time.sleep(0.1)
                 self.send(raw_input(prompt) + '\n')
-            except KeyboardInterrupt:
+            except (KeyboardInterrupt, EOFError):
                 sys.stderr.write('Interrupted\n')
                 running = False
                 t.join()
