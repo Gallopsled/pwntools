@@ -100,9 +100,10 @@ class ELF:
     def _read(self, addr, size):
         self._load_data()
         for sec in self.sections.values():
-            if addr >= sec['addr'] and addr < sec['addr'] + sdec['size']:
+            if 'A' not in sec['flags']: continue
+            if addr >= sec['addr'] and addr < sec['addr'] + sec['size']:
                 size = min(size, sec['size'] - (sec['addr'] - addr))
-                addr = addr - sec['addr'] + offset
+                addr = addr - sec['addr'] + sec['offset']
                 return self._file_data[addr:addr + size]
 
     def symbol(self, name):

@@ -63,10 +63,12 @@ from pwn.shellcodes import *
 from pwn.useragents import randomua
 from pwn.splash     import splash
 from pwn.elf        import ELF
+from pwn.rop        import ROP
 
 import pwn.internal.init.session
 import pwn.internal.init.cloud
 import pwn.sqli
+import pwn.rop
 
 # Make pwn.fucking work as pwn by itself
 #import pwn as fucking
