@@ -3,6 +3,7 @@
 # Pwnies workshop server level 1
 
 from pwn.classic import *
+import re
 
 log.waitfor('Counting to ten')
 for n in range(10):
