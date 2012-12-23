@@ -1,4 +1,4 @@
-from pwn.shellcode_helper import *
+from pwn.internal.shellcode_helper import *
 
 @shellcode_reqs(arch='i386', os='linux')
 def setresuid(src = 's', dst = 'res'):
@@ -9,7 +9,7 @@ def setresuid(src = 's', dst = 'res'):
 
 
     if src == 0 and sorted(set(dst)) == ['e', 'r', 's']:
-        return ''' 
+        return '''
 setperms:
     xor ecx, ecx
     imul ecx

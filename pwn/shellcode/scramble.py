@@ -1,4 +1,4 @@
-from pwn.shellcode_helper import *
+from pwn.internal.shellcode_helper import *
 import random
 
 @shellcode_reqs(blob = True, arch='i386')

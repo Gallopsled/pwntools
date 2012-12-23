@@ -1,6 +1,8 @@
 import pwn
 from pwn import decoutil
 
+_registered = {}
+
 # For the benefit of the shellcodes
 from pwn import *
 
@@ -37,7 +39,7 @@ class AssemblerContainer(AssemblerBlock):
         self.arch   = kwargs.get('arch')
         self.os     = kwargs.get('os')
         self.blocks = []
-        
+
         for b in pwn.concat_all(list(blocks)):
             if isinstance(b, AssemblerBlock):
                 if self.os   == None: self.os   = b.os
@@ -71,7 +73,7 @@ def shellcode_wrapper(f, args, kwargs):
 def shellcode_reqs(blob = False, **supported_context):
     '''A decorator for shellcode functions, which registers the function
     with shellcraft and validates the context when the function is called.
-    
+
     Example usage:
     @shellcode_reqs(os = ['linux', 'freebsd'], arch = 'i386')
     def sh(os = None):
@@ -89,6 +91,7 @@ def shellcode_reqs(blob = False, **supported_context):
 
     def deco(f):
         f.supported_context = supported_context
+        _registered[f.__name__] = supported_context
         @decoutil.ewraps(f)
         def wrapper(*args, **kwargs):
             with pwn.ExtraContext(kwargs) as kwargs:

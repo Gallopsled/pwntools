@@ -1,4 +1,4 @@
-from pwn.shellcode_helper import *
+from pwn.internal.shellcode_helper import *
 from .. import dupsh
 
 @shellcode_reqs(arch='i386', os='linux', network=['ipv4', 'ipv6'])
@@ -7,7 +7,7 @@ def findtagsh(tag, clear_socks = True):
 
     Finds the current file descriptor using the findtag
     shellcode, and then runs a dupsh.
-    
+
     Common use case:
 
     sock.send_exploit()
@@ -24,7 +24,7 @@ def findtag(tag, clear_socks = True):
     in the range [0, 65535] until one is found that outputs the magic tag as
     the first 4 bytes. If none is found, it continues to try, until it works.
     When one is found, it is left in ebp.
-    
+
     An optional side effect of this is that it can be used to remove garbage
     from a socket, and will still work as long as the magic tag is "in there
     somewhere" and as long as the magic tag becomes the first 4 bytes of the

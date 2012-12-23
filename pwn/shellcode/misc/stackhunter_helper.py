@@ -1,7 +1,7 @@
-from pwn.shellcode_helper import *
+from pwn.internal.shellcode_helper import *
 
 @shellcode_reqs(arch='i386')
-def stackhunter_helper(cookie = 0x7afceb58): 
+def stackhunter_helper(cookie = 0x7afceb58):
     """Args: shellcode [cookie = 0x7afceb58]
     The helper for the stackhunter, which prepends the cookie
     at different alignments jump suitable jumps

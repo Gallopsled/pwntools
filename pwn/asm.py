@@ -1,5 +1,5 @@
 import pwn, tempfile, subprocess, errno, os
-import pwn.shellcode_helper as H
+import pwn.internal.shellcode_helper as H
 
 def _nowai(arch, os):
     pwn.die('I do not know how to assemble arch=' + str(arch) + ', os=' + str(os))
@@ -17,7 +17,7 @@ def _nasm(target_arch, target_os, blocks, emit_asm):
 
     if target_arch == 'i386':
         code.append('bits 32')
-        
+
         if target_os == 'linux':
             code.append('%include "linux/32.asm"')
         else:
@@ -34,7 +34,7 @@ def _nasm(target_arch, target_os, blocks, emit_asm):
             code.append('db ' + ', '.join('0x%02x' % ord(c) for c in b.blob))
         else:
             die("Trying to assemble something that is not an assembler block")
-    
+
     code = '\n'.join(code)
 
     if emit_asm:

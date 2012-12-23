@@ -1,4 +1,4 @@
-from pwn.shellcode_helper import *
+from pwn.internal.shellcode_helper import *
 from .. import dupsh
 
 @shellcode_reqs(arch='i386', os='linux', network=['ipv4', 'ipv6'])

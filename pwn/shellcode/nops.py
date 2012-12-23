@@ -1,6 +1,6 @@
 import random
 from collections import defaultdict
-from pwn.shellcode_helper import *
+from pwn.internal.shellcode_helper import *
 
 @shellcode_reqs(blob = True, arch='i386')
 def nops(length, unclobber = ['esp'], **kwargs):
@@ -20,7 +20,7 @@ def nop_pad(length, *data, **kwargs):
 
     if len(data) > length:
         die("Could not do a nop-padding since the data was larger than the requested length")
-    
+
     return nops(length - len(data), **kwargs) + data
 
 _STACK_NEEDED     = 0

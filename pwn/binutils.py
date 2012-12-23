@@ -76,7 +76,7 @@ Takes a single named argument 'func', which defaults to p32.
 Example:
   - flat(5, "hello", [[6, "bar"], "baz"]) == '\\x05\\x00\\x00\\x00hello\\x06\\x00\\x00\\x00barbaz'
 """
-    from pwn.shellcode_helper import AssemblerBlock
+    from pwn.internal.shellcode_helper import AssemblerBlock
 
     func = kwargs.get('func', p32)
 

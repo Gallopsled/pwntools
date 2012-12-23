@@ -1,4 +1,4 @@
-from pwn.shellcode_helper import *
+from pwn.internal.shellcode_helper import *
 
 @shellcode_reqs(arch='i386')
 def stackhunter(cookie = 0x7afceb58):
@@ -9,7 +9,7 @@ def stackhunter(cookie = 0x7afceb58):
     generate a suitable cookie prefix for you.
 
     The default cookie has been chosen, because it makes it possible
-    to shave a single byte, but other cookies can be used too. 
+    to shave a single byte, but other cookies can be used too.
 """
 
     if (cookie & 0xffffff) == 0xfceb58:

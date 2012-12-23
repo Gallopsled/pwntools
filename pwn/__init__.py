@@ -96,7 +96,3 @@ for k, v in globals().items():
     elif k.startswith('_') and not k.startswith('__'):
         del globals()[k]
 del k, v, module_type
-
-# These modules are not generally useful and
-# should only be available when explicitly asked for.
-del shellcode_helper, excepthook

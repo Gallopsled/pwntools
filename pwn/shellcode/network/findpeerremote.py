@@ -1,4 +1,4 @@
-from pwn.shellcode_helper import *
+from pwn.internal.shellcode_helper import *
 from .. import dupsh
 
 @shellcode_reqs(arch='i386', os='linux', network=['ipv4', 'ipv6'])
@@ -16,7 +16,7 @@ def findpeerremote(clear_direction_flag = False, paranoid = False, network = Non
 
     Set clear_direction_flag to True, if the direction flag is set when this
     code is run (not likely).
-    
+
     Set to paranoid to True if you suspect there is a socket with
     a size larger than 40 bytes just beforethe socket you are looking for.
     It costs an extra byte in the shellcode.
@@ -50,7 +50,7 @@ findpeerremote:
 
     ; We possibly need to clear direction flag
     %s
-    
+
 .loop:
     ; next file descriptor please
     inc edx
