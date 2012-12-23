@@ -1,3 +1,3 @@
 from pwn import *
-from pwn.shellcodes import *
+from pwn.shellcode import *
 context('i386', 'linux', 'ipv4')

