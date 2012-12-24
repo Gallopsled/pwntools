@@ -6,40 +6,43 @@ import re, pwn, pwn.i386
 global _curr_ae
 _curr_ae = None
 
-class address(str):
-    def __add__(self, y):
-        # The address of each element in symbols should be wrapped into the address class when inserted, NOT when retrieved... fix me plx
-        if isinstance(self, str):
-            return pwn.p32(pwn.u32(self) + y)
-
-class symbols(dict):
-    def __getattr__ (self, name):
-        if name in self.keys():
-            return address(pwn.p32(self.get(name)))
-        else: return
-
-    def __fmt(self, key):
-        return key + "\t" * (6-len(key)/8) + hex(self.get(key)) + "\n"
-    def __repr__(self):
-        st = ''
-        for key in sorted(self.keys()):
-            st += self.__fmt(key)
-        return st
-    def __getitem__(self, item):
-        return self.__getattr__(item)
-    def __call__(self, item):
-        st = ''
-        for key in sorted(self.keys()):
-            if isinstance(item, str):
-                if item in key:
-                    st += self.__fmt(key)
-            if isinstance(item, int):
-                value = hex(self.get(key))
-                if hex(item) in value:
-                    st += self.__fmt(key)
-        print st
 
 class load(object):
+
+    class address(str):
+        def __add__(self, y):
+            # The address of each element in symbols should be wrapped into the address class when inserted, NOT when retrieved... fix me plx
+            if isinstance(self, str):
+                return pwn.p32(pwn.u32(self) + y)
+
+    class symbols(dict):
+        def __getattr__ (self, name):
+            if name in self.keys():
+                return load.address(pwn.p32(self.get(name)))
+            else: return
+
+        def __fmt(self, key):
+            return key + "\t" * (6-len(key)/8) + hex(self.get(key)) + "\n"
+        def __repr__(self):
+            st = ''
+            for key in sorted(self.keys()):
+                st += self.__fmt(key)
+            return st
+        def __getitem__(self, item):
+            return self.__getattr__(item)
+        def __call__(self, item):
+            st = ''
+            for key in sorted(self.keys()):
+                if isinstance(item, str):
+                    if item in key:
+                        st += self.__fmt(key)
+                if isinstance(item, int):
+                    value = hex(self.get(key))
+                    if hex(item) in value:
+                        st += self.__fmt(key)
+            print st
+
+
     __recent_call_args = 0
 
     def __init__(self, filename):
@@ -64,16 +67,16 @@ class load(object):
         except:
             pwn.die('could not load file')
             return
-        self.gadgets = symbols(dict([(item.strip(';;').replace(' ; ','__')[:-1].replace(' ','_'), addr) for (item, addr) in self.__ropfinder.asm_search('%')]))
+        self.gadgets = self.symbols(dict([(item.strip(';;').replace(' ; ','__')[:-1].replace(' ','_'), addr) for (item, addr) in self.__ropfinder.asm_search('%')]))
         elfreader = readelf.Elf()
         elfreader.read_headers(self.__filename)
-        self.segments = symbols(elfreader._headers)
+        self.segments = self.symbols(elfreader._headers)
         elfreader.read_plt(self.__filename)
-        self.plt = symbols(elfreader._plt)
+        self.plt = self.symbols(elfreader._plt)
         elfreader.read_got(self.__filename)
-        self.got = symbols(elfreader._got)
+        self.got = self.symbols(elfreader._got)
         elfreader.read_libc_offset(self.__filename)
-        self.libc = symbols(elfreader._libc_offset)
+        self.libc = self.symbols(elfreader._libc_offset)
         pwn.succeeded()
 
     def _findpopret(self, num):
@@ -98,7 +101,7 @@ class load(object):
 
 
     def call(self, arg, argv=None, return_to=None):
-        if isinstance(arg, str) and not isinstance(arg, address):
+        if isinstance(arg, str) and not isinstance(arg, self.address):
             arg = self._lookup(arg)
         if isinstance(arg, int):
             arg = pwn.p32(arg)
