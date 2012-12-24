@@ -102,6 +102,8 @@ class load(object):
             arg = self._lookup(arg)
         if isinstance(arg, int):
             arg = pwn.p32(arg)
+        if isinstance(argv, str):
+            argv = [argv]
 
         if not argv:
             if self.__recent_call_args > 0: # then this is a return addr to the previous function
