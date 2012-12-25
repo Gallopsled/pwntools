@@ -1,7 +1,7 @@
 import pwn
 from pwn import decoutil
 
-_registered = {}
+registered = {}
 
 # For the benefit of the shellcodes
 from pwn import *
@@ -91,7 +91,6 @@ def shellcode_reqs(blob = False, **supported_context):
 
     def deco(f):
         f.supported_context = supported_context
-        _registered[f.__name__] = supported_context
         @decoutil.ewraps(f)
         def wrapper(*args, **kwargs):
             with pwn.ExtraContext(kwargs) as kwargs:
@@ -102,11 +101,14 @@ def shellcode_reqs(blob = False, **supported_context):
                 if isinstance(r, AssemblerBlock):
                     return r
                 elif isinstance(r, (tuple, list)):
+                    kwargs['cast'] = 'blob' if blob else 'text'
                     return AssemblerContainer(*r, **kwargs)
                 elif not blob:
                     return AssemblerText(r, **kwargs)
                 else:
                     return AssemblerBlob(r, **kwargs)
+        # we need the undecorated function to look up argcount and such
+        registered[f.func_name] = (f, wrapper)
         return wrapper
     return deco
 
