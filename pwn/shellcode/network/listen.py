@@ -8,7 +8,7 @@ def listen(port, os = None):
     if os == 'freebsd':
         return """
         ;; Listens for and accepts a connection on %(portnum)d
-        ;; Socket file descriptor is placed in EAX
+        ;; Socket file descriptor is placed in EBP
 
         ;; sock = socket(AF_INET, SOCK_STREAM, 0)
         push SYS_socket
@@ -35,9 +35,8 @@ def listen(port, os = None):
         mov al, SYS_listen
         int 0x80
 
-        ;; accept(sock, NULL, NULL)
+        ;; accept(sock, NULL, whatever)
         pop ebx
-        push edx
         push edx
         push ebx 
         push ebx
@@ -54,7 +53,7 @@ def listen(port, os = None):
     elif os == 'linux':
         return """
         ;; Listens for and accepts a connection on %(portnum)d
-        ;; Socket file descriptor is placed in EAX
+        ;; Socket file descriptor is placed in EBP
 
         ;; sock = socket(AF_INET, SOCK_STREAM, 0)
         push SYS_socketcall
