@@ -31,13 +31,15 @@ def findpeerremote(clear_direction_flag = False, paranoid = False, network = Non
             length_push = 'push 8'
         else:
             length_push = 'push eax'
-    else:
+    elif network == 'ipv6':
         af = 'AF_INET6'
         extra = 'push 4\npop ecx\nrepe cmpsd'
         if paranoid:
             length_push = 'pushad\npush 28'
         else:
             length_push = 'pushad\npush eax'
+    else:
+        bug('Network was neither ipv4 or ipv6')
 
     return """
 

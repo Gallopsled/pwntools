@@ -173,3 +173,12 @@ def die(s = None, e = None, exit_code = -1):
         failure('The exception was:')
         trace(str(e) + '\n')
     sys.exit(exit_code)
+
+def bug(s = None, e = None, exit_code = -1):
+    """Called when the program enters a state that should not be possible."""
+    if s:
+        failure('BUG (this should not happen): ' + s)
+    if e:
+        failure('The exception was:')
+        trace(str(e) + '\n')
+    sys.exit(exit_code)
