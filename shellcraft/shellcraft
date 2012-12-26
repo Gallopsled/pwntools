@@ -126,7 +126,6 @@ if __name__ == '__main__':
                     print line
                     i += 1
             print banner
-            print '   Choose from %d sexy shellcodes!' % len(shellcodes)
             from pwn.context import _context as context
             good = {}
             bad = {}
@@ -142,6 +141,7 @@ if __name__ == '__main__':
                     good[name] = tags
                 else:
                     bad[name] = tags
+            print '   Choose from %d sexy shellcodes!' % len(good)
             for name, tags in sorted(good.items()):
                 printone(name, tags)
             if bad:
