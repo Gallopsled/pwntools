@@ -5,6 +5,7 @@ from pwn.internal.shellcode_helper import *
 @shellcode_reqs(blob = True, arch='i386')
 def nops(length, unclobber = ['esp'], **kwargs):
     avoid = map(ord, get_avoided(**kwargs))
+    length = int(length)
 
     sled = nops_opty2(length, avoid, unclobber)
     if sled is not None:
@@ -17,6 +18,7 @@ def nops(length, unclobber = ['esp'], **kwargs):
 @shellcode_reqs(blob = True, arch='i386')
 def nop_pad(length, *data, **kwargs):
     data = flat(data)
+    length = int(length)
 
     if len(data) > length:
         die("Could not do a nop-padding since the data was larger than the requested length")

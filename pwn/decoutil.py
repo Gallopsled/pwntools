@@ -2,7 +2,7 @@ import functools, inspect
 
 def kwargs_remover(f, kwargs, check_list = None, clone = True):
     '''Removes all the keys from a kwargs-list, that a given function does not understand.
-    
+
     The keys removed can optionally be restricted, so only keys from check_list are removed.'''
 
     if check_list == None: check_list = kwargs.keys()
@@ -32,7 +32,7 @@ def method_signature(f):
 
     for n in range(len(spec[0])):
         cur = spec[0][len(spec[0])-n-1]
-        
+
         if n < len(spec[3]):
             args.append(str(cur) + ' = ' + repr(spec[3][len(spec[3])-n-1]))
         else:
@@ -41,7 +41,7 @@ def method_signature(f):
 
 def ewraps(wrapped):
     '''Extended version of functools.wraps.
-    
+
     This version also adds the original method signature to the docstring.'''
     def deco(wrapper):
         semi_fixed = functools.wraps(wrapped)(wrapper)

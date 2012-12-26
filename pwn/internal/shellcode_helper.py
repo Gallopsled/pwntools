@@ -70,7 +70,7 @@ def shellcode_wrapper(f, args, kwargs):
     kwargs = pwn.with_context(**kwargs)
     return f(*args, **decoutil.kwargs_remover(f, kwargs, pwn.possible_contexts.keys()))
 
-def shellcode_reqs(blob = False, **supported_context):
+def shellcode_reqs(blob = False, hidden = False, **supported_context):
     '''A decorator for shellcode functions, which registers the function
     with shellcraft and validates the context when the function is called.
 
@@ -84,6 +84,10 @@ def shellcode_reqs(blob = False, **supported_context):
     '''
 
     for k, vs in supported_context.items():
+        if k in pwn.possible_contexts:
+            # We support it all (yay), so don't say so explicitly
+            if set(vs) == set(pwn.possible_contexts[k]):
+                del supported_context[k]
         if not isinstance(vs, list):
             vs = supported_context[k] = [vs]
         for v in vs:
@@ -107,8 +111,9 @@ def shellcode_reqs(blob = False, **supported_context):
                     return AssemblerText(r, **kwargs)
                 else:
                     return AssemblerBlob(r, **kwargs)
-        # we need the undecorated function to look up argcount and such
-        registered[f.func_name] = (f, wrapper)
+        if not hidden:
+            # we need the undecorated function to look up argcount and such
+            registered[f.func_name] = (f, wrapper)
         return wrapper
     return deco
 
