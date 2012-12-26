@@ -1,5 +1,8 @@
 from pwn.internal.shellcode_helper import shellcode_reqs
 
-@shellcode_reqs(arch = 'i386')
+@shellcode_reqs(blob = True, arch = 'i386')
 def trap():
-    return 'int3'
+    """Returns a int3 instruction for debugging."""
+
+    # Everybody should know that this is int3!
+    return '\xcc'
