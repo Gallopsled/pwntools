@@ -7,6 +7,8 @@ def stackhunter_helper(cookie = 0x7afceb58):
     at different alignments jump suitable jumps
 """
 
+    cookie = int(cookie)
+
     return"""
 stackhunter_helper:
     dd 0x%08x
@@ -20,4 +22,4 @@ stackhunter_helper:
 
     dd 0x%08x
 stackhunter_helper_end:
-""" % tuple(map(int, [cookie]*4))
+""" % (cookie, cookie, cookie, cookie)

@@ -12,13 +12,15 @@ def stackhunter(cookie = 0x7afceb58):
     to shave a single byte, but other cookies can be used too.
 """
 
+    cookie = int(cookie)
+
     if (cookie & 0xffffff) == 0xfceb58:
         return """
 stackhunter:
         cmp dword eax, 0x%08x
         jne stackhunter+1
         jmp esp
-""" % int(cookie)
+""" % cookie
 
     else:
         return """
@@ -27,4 +29,4 @@ stackhunter:
     cmp dword eax, 0x%08x
     jne stackhunter
     jmp esp
-""" % int(cookie)
+""" % cookie

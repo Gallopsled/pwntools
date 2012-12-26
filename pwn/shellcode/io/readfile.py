@@ -25,4 +25,4 @@ def readfile(filepath, out_fd = 1):
         mov al, SYS_sendfile ; hope that fd is less than 255
         int 0x80
 """ % {'filepath': filepath,
-       'out_fd'  : out_fd}
+       'out_fd'  : int(out_fd)}
