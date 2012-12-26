@@ -1,6 +1,6 @@
 from pwn.internal.shellcode_helper import *
 
-@shellcode_reqs(arch='i386', os='linux')
+@shellcode_reqs(arch='i386', os=['linux', 'freebsd'])
 def fork(parent, child = None):
     """Fork this shit."""
     code = """

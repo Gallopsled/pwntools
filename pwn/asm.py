@@ -20,6 +20,8 @@ def _nasm(target_arch, target_os, blocks, emit_asm):
 
         if target_os == 'linux':
             code.append('%include "linux/32.asm"')
+        elif target_os == 'freebsd':
+            code.append('%include "freebsd/32.asm"')
         else:
             # TODO: Add FreeBSD and others
             _nowai(target_arch, target_os)
