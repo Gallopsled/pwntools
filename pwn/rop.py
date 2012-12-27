@@ -160,11 +160,17 @@ class ROP:
         for i in range(len(chain)):
             target, args = chain[i]
             out.append(p(target))
-            final = i == len(chain) - 1
+            last = i == len(chain) - 1
+            sndlast = i == len(chain) - 2
             if len(args) > 0:
-                if final:
+                if last:
                     out.append(garbage())
                     args = pargs(args)
+                elif sndlast and len(chain[i + 1][1]) == 0:
+                    # the last target has no arguments, so go straight to it
+                    out.append(p(chain[i + 1][0]))
+                    out += pargs(args)
+                    break
                 else:
                     # find suitable popret
                     res = self._pivot(args)
