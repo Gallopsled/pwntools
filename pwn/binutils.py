@@ -11,9 +11,26 @@ def pint(x):
             break
     return out
 
+def pintb(x):
+    out = []
+    while True:
+        b = x & 0xff
+        out.insert(0, p8(b))
+        x = x >> 8
+        if x == 0 or x == -1:
+            break
+    return ''.join(out)
+
 def uint(x):
     out = 0
     for b in x[::-1]:
+        out <<= 8
+        out += u8(b)
+    return out
+
+def uintb(x):
+    out = 0
+    for b in x:
         out <<= 8
         out += u8(b)
     return out
