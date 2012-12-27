@@ -37,14 +37,12 @@ def _zero_optimized_linux(dst):
     else:
         if 'e' in dst:
             p('imul ecx')
-            p('mov al, SYS_setresuid')
         elif 'r' in dst:
             p('imul ebx')
-            p('mov al, SYS_setresuid')
         else:
             p('xor eax, eax')
             p('cdq')
-            p('mov al, SYS_setresuid')
+        p('mov al, SYS_setresuid')
 
     p('int 0x80')
     return '\n    '.join(res)
