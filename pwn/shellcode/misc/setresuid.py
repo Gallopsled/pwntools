@@ -98,12 +98,12 @@ def _linux_setresuid(src, dst):
         p('int 0x80')
         p('mov %s, eax' % lookup[dst[0]])
     elif src == 's':
+        p('mov ebx, esp')
+        p('mov ecx, esp')
+        p('push eax')
         p('mov edx, esp')
         p('xor eax, eax')
         p('mov al, SYS_getresuid')
-        p('mov ebx, esp')
-        p('mov ecx, esp')
-        p('pop eax')
         p('int 0x80')
         p('pop %s' % lookup[dst[0]])
     elif isinstance(src, int) and -128 <= src <= 127:
@@ -115,15 +115,16 @@ def _linux_setresuid(src, dst):
     for k in dst[1:]:
         p('mov %s, %s' % (lookup[k], lookup[dst[0]]))
 
-    first = True
-    for k, v in lookup.items():
-        if k not in dst:
-            if first == True:
-                first = v
-                p('push -1')
-                p('pop %s' % v)
-            else:
-                p('mov %s, %s' % (v, first))
+    if 'e' not in dst:
+        p('push -1')
+        p('pop ecx')
+
+    if 'r' not in dst:
+        if 'e' not in dst:
+            p('mov ebx, ecx')
+        else:
+            p('push -1')
+            p('pop ebx')
 
     if syscall == 'SYS_setreuid':
         p('push %s' % syscall)
@@ -133,4 +134,4 @@ def _linux_setresuid(src, dst):
         p('mov al, %s' % syscall)
     p('int 0x80')
 
-    return ''.join('\n    ' + s for s in res)
+    return '\n    '.join(res)
