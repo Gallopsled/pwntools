@@ -1,6 +1,44 @@
 import struct, re, base64, random, pwn
 
 # conversion functions
+def pint(x):
+    '''Packs an integer into a string as long as needed, little endian'''
+    out = ''
+    while True:
+        b = x & 0xff
+        out += p8(b)
+        x = x >> 8
+        if x == 0 or x == -1:
+            break
+    return out
+
+def pintb(x):
+    '''Packs an integer into a string as long as needed, big endian'''
+    out = []
+    while True:
+        b = x & 0xff
+        out.insert(0, p8(b))
+        x = x >> 8
+        if x == 0 or x == -1:
+            break
+    return ''.join(out)
+
+def uint(x):
+    '''Unpacks a string of arbitrary length into an integer, little endian'''
+    out = 0
+    for b in x[::-1]:
+        out <<= 8
+        out += u8(b)
+    return out
+
+def uintb(x):
+    '''Unpacks a string of arbitrary length into an integer, big endian'''
+    out = 0
+    for b in x:
+        out <<= 8
+        out += u8(b)
+    return out
+
 def p8(x):
     """Packs an integer into a 1-byte string"""
     return struct.pack('<B', x & 0xff)

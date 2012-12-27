@@ -56,7 +56,9 @@ if __name__ == '__main__':
                    metavar = '<opt>',
                    choices = pwn.concat_all(pwn.possible_contexts.values()),
                    action = 'append',
-                   help = 'The environment the shellcode will run in (default: %s), choose from %s' % (default_context, '; '.join('%s: %s' % (k, ', '.join(v for v in vs)) for k, vs in pwn.possible_contexts.items())),
+                   help = 'The environment the shellcode will run in (default: %s), choose from %s' % \
+                   (' '.join(default_context),
+                    '; '.join('%s: %s' % (k, ', '.join(v for v in vs)) for k, vs in pwn.possible_contexts.items())),
                    )
     p.add_argument('-?', '--show',
                    action = 'store_true',
@@ -124,7 +126,6 @@ if __name__ == '__main__':
                     print line
                     i += 1
             print banner
-            print '   Choose from %d sexy shellcodes!' % len(shellcodes)
             from pwn.context import _context as context
             good = {}
             bad = {}
@@ -140,6 +141,7 @@ if __name__ == '__main__':
                     good[name] = tags
                 else:
                     bad[name] = tags
+            print '   Choose from %d sexy shellcodes!' % len(good)
             for name, tags in sorted(good.items()):
                 printone(name, tags)
             if bad:
