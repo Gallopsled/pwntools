@@ -37,17 +37,15 @@ def _zero_optimized_linux(dst):
     else:
         if 'e' in dst:
             p('imul ecx')
-            p('mov al, SYS_setresuid')
         elif 'r' in dst:
             p('imul ebx')
-            p('mov al, SYS_setresuid')
         else:
             p('xor eax, eax')
             p('cdq')
-            p('mov al, SYS_setresuid')
+        p('mov al, SYS_setresuid')
 
     p('int 0x80')
-    return ''.join('\n    ' + s for s in res)
+    return '\n    '.join(res)
 
 @shellcode_reqs(arch='i386', os='linux')
 def setresuid(src = 's', dst = 'res'):
