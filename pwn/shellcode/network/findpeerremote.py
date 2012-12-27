@@ -11,14 +11,14 @@ def findpeerremotesh(clear_direction_flag = False, paranoid = False):
 @shellcode_reqs(arch='i386', os='linux', network=['ipv4', 'ipv6'])
 def findpeerremote(clear_direction_flag = False, paranoid = False, network = None):
     """
-    Finds a remote socket, which is connected to the specified port.
+    Finds a remote socket, which has different ips at each end of the socket.
     Leaves socket in EDX.
 
     Set clear_direction_flag to True, if the direction flag is set when this
     code is run (not likely).
 
     Set to paranoid to True if you suspect there is a socket with
-    a size larger than 40 bytes just beforethe socket you are looking for.
+    a size larger than 40 bytes just before the socket you are looking for.
     It costs an extra byte in the shellcode.
     """
 
