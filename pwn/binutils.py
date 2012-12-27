@@ -2,6 +2,7 @@ import struct, re, base64, random, pwn
 
 # conversion functions
 def pint(x):
+    '''Packs an integer into a string as long as needed, little endian'''
     out = ''
     while True:
         b = x & 0xff
@@ -12,6 +13,7 @@ def pint(x):
     return out
 
 def pintb(x):
+    '''Packs an integer into a string as long as needed, big endian'''
     out = []
     while True:
         b = x & 0xff
@@ -22,6 +24,7 @@ def pintb(x):
     return ''.join(out)
 
 def uint(x):
+    '''Unpacks a string of arbitrary length into an integer, little endian'''
     out = 0
     for b in x[::-1]:
         out <<= 8
@@ -29,6 +32,7 @@ def uint(x):
     return out
 
 def uintb(x):
+    '''Unpacks a string of arbitrary length into an integer, big endian'''
     out = 0
     for b in x:
         out <<= 8
