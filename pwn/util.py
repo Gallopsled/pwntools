@@ -1,4 +1,5 @@
-import struct, sys, subprocess, re, pwn, pwn.text
+import struct, sys, subprocess, re, pwn
+from pwn import log, text
 
 # allowed/avoided
 def get_allowed(**kwargs):
@@ -48,26 +49,17 @@ def pause(n = None):
     """Waits for either user input or a specific number of seconds."""
     try:
         if n is None:
-            pwn.info('Paused (press enter to continue)')
+            log.info('Paused (press enter to continue)')
             raw_input('')
         else:
-            pwn.waitfor('Continueing in')
+            log.waitfor('Continueing in')
             for i in range(n, 0, -1):
-                pwn.status('%d... ' % i)
+                log.status('%d... ' % i)
                 pwn.sleep(1)
-            pwn.succeeded('Now')
+            log.succeeded('Now')
     except KeyboardInterrupt:
-        pwn.warning('Interrupted')
+        log.warning('Interrupted')
         sys.exit(1)
-
-def die(s = None, e = None, exit_code = -1):
-    """Exits the program with an error string and optionally prints an exception."""
-    if s:
-        pwn.failure('FATAL: ' + s)
-    if e:
-        pwn.failure('The exception was:')
-        pwn.trace(str(e) + '\n')
-    sys.exit(exit_code)
 
 def size(n, abbriv = 'B', si = False):
     """Convert number to human readable form"""
@@ -89,6 +81,6 @@ def size(n, abbriv = 'B', si = False):
 
 def prompt(s, default = ''):
     """Prompts the user for input"""
-    r = raw_input(' ' + pwn.text.bold('[?]') + ' ' + s)
+    r = raw_input(' ' + text.bold('[?]') + ' ' + s)
     if r: return r
     return default

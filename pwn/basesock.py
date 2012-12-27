@@ -1,5 +1,5 @@
 import pwn, socket, time, sys, re, errno
-from pwn.text import boldred
+from pwn import log, text
 
 class basesock:
     def settimeout(self, n):
@@ -16,7 +16,7 @@ class basesock:
         if self.sock:
             self.sock.close()
             self.sock = None
-            pwn.info('Closed connection to %s on port %d' % self.target)
+            log.info('Closed connection to %s on port %d' % self.target)
 
     def _send(self, dat):
         l = len(dat)
@@ -101,8 +101,8 @@ class basesock:
             res.append(self.recvuntil('\n'))
         return ''.join(res)
 
-    def interactive(self, prompt = boldred('$') + ' '):
-        pwn.info('Switching to interactive mode')
+    def interactive(self, prompt = text.boldred('$') + ' '):
+        log.info('Switching to interactive mode')
         import rlcompleter
         debug = self.debug
         timeout = self.timeout
@@ -123,7 +123,7 @@ class basesock:
             try:
                 time.sleep(0.1)
                 self.send(raw_input(prompt) + '\n')
-            except KeyboardInterrupt:
+            except (KeyboardInterrupt, EOFError):
                 sys.stderr.write('Interrupted\n')
                 running = False
                 t.join()
@@ -132,7 +132,7 @@ class basesock:
                 break
 
     def recvall(self):
-        pwn.waitfor('Recieving all data')
+        log.waitfor('Recieving all data')
         r = []
         l = 0
         while True:
@@ -140,6 +140,6 @@ class basesock:
             if s == '': break
             r.append(s)
             l += len(s)
-            pwn.status(pwn.size(l))
+            log.status(pwn.size(l))
         self.close()
         return ''.join(r)

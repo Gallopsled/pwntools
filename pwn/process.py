@@ -1,6 +1,6 @@
 import pwn, sys, time
+from pwn import log, text
 from subprocess import Popen, PIPE
-from pwn.text import boldred
 
 class process:
     def __init__(self, cmd, *args, **kwargs):
@@ -67,8 +67,8 @@ class process:
             res.append(self.recvuntil('\n'))
         return ''.join(res)
 
-    def interactive(self, prompt = boldred('$') + ' '):
-        pwn.info('Switching to interactive mode')
+    def interactive(self, prompt = text.boldred('$') + ' '):
+        log.info('Switching to interactive mode')
         import rlcompleter
         debug = self.debug
         self.debug = False
@@ -84,7 +84,7 @@ class process:
             try:
                 time.sleep(0.1)
                 self.send(raw_input(prompt) + '\n')
-            except KeyboardInterrupt:
+            except (KeyboardInterrupt, EOFError):
                 sys.stderr.write('Interrupted\n')
                 running = False
                 t.join()

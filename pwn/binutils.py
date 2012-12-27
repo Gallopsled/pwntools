@@ -70,11 +70,14 @@ def flat(*args, **kwargs):
 Takes a single named argument 'func', which defaults to p32.
   - Strings are returned
   - Integers are converted using the 'func' argument.
+  - Shellcode is assembled
   - Enumerables (such as lists) traversed recursivly and the concatenated.
 
 Example:
   - flat(5, "hello", [[6, "bar"], "baz"]) == '\\x05\\x00\\x00\\x00hello\\x06\\x00\\x00\\x00barbaz'
 """
+    from pwn.internal.shellcode_helper import AssemblerBlock
+
     func = kwargs.get('func', p32)
 
     obj = args[0] if len(args) == 1 else args
@@ -83,6 +86,8 @@ Example:
         return obj
     elif isinstance(obj, int):
         return func(obj)
+    elif isinstance(obj, AssemblerBlock):
+        return pwn.asm(obj)
     else:
         return "".join(flat(o, func=func) for o in obj)
 

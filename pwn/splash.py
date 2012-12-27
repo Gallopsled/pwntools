@@ -1,4 +1,4 @@
-from pwn import trace, sleep
+from pwn import sleep, log
 from pwn.text import color
 
 _banner = '''  .:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:.
@@ -19,13 +19,13 @@ _banner = '''  .:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.
 _lines = _banner.split('\n')
 
 def splash():
-    trace('\x1b[G\x1b[?25l')
+    log.trace('\x1b[G\x1b[?25l')
     for c in range(8):
         for line in _lines:
-            trace(color(c % 8, line) + '\n')
+            log.trace(color(c % 8, line) + '\n')
             sleep(0.005)
         for _ in _lines:
-            trace('\x1b[F')
+            log.trace('\x1b[F')
     for line in _lines:
-        trace(line + '\n')
-    trace('\x1b[?25h')
+        log.trace(line + '\n')
+    log.trace('\x1b[?25h')

@@ -1,5 +1,5 @@
 import urllib2, urllib, cookielib
-import pwn
+import useragents as ua
 
 class HTTPwn(object):
 
@@ -26,9 +26,9 @@ class HTTPwn(object):
         if isinstance(data, dict):
             data = urllib.urlencode(data)
         try:
-            url_fd  = self.opener.open(url,data)
+            url_fd  = self.opener.open(url, data)
         except:
-            pwn.warning("Something went wrong, site not fetched correctly")
+            print "Something went wrong, site not fetched correctly"
             return False
         self.headers = url_fd.headers.dict
         self.html    = url_fd.read()
@@ -36,7 +36,7 @@ class HTTPwn(object):
 
 
     def add_uaheaders(self):
-        self.opener.addheaders = [('User-agent', pwn.randomua())]
+        self.opener.addheaders = [('User-agent', ua.randomua())]
         return self.opener.addheaders
 
 

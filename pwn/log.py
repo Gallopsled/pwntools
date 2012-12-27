@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sys, time, random, pwn
+from pwn.internal.excepthook import addexcepthook
 import pwn.text as text
 import threading
 
@@ -84,7 +85,7 @@ if sys.stderr.isatty() and not pwn.DEBUG:
         _trace(' ' + text.boldyellow('[!]') + ' Anything is possible when your exploit smells like x86 and not a lady\n')
         _trace(' ' + text.boldyellow('[!]') + ' I\'m on a pwnie!\n\x1b[?25h\x1b[0m')
 
-    pwn.addexcepthook(_hook) # reset, show cursor
+    addexcepthook(_hook) # reset, show cursor
 
     def _start_spinner():
         global _spinner
@@ -163,3 +164,21 @@ def warning(s):
 
 def info(s):
     trace(''.join([' ', text.boldblue('[*]'), ' ', s, '\n']))
+
+def die(s = None, e = None, exit_code = -1):
+    """Exits the program with an error string and optionally prints an exception."""
+    if s:
+        failure('FATAL: ' + s)
+    if e:
+        failure('The exception was:')
+        trace(str(e) + '\n')
+    sys.exit(exit_code)
+
+def bug(s = None, e = None, exit_code = -1):
+    """Called when the program enters a state that should not be possible."""
+    if s:
+        failure('BUG (this should not happen): ' + s)
+    if e:
+        failure('The exception was:')
+        trace(str(e) + '\n')
+    sys.exit(exit_code)

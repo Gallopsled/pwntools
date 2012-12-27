@@ -2,5 +2,4 @@
   Place `shellcraft` in your PATH.
 
 == BASH COMPLETION
-  Place `_shellcraft_list.py` in your PATH and copy
-  `bash_completion.d/shellcraft` to `/etc/bash_completion.d/`.
+  Copy `bash_completion.d/shellcraft` to `/etc/bash_completion.d/`.
