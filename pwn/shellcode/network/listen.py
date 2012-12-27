@@ -21,8 +21,7 @@ def listen(port, os = None):
         int 0x80
 
         ;; bind(sock, &addr, sizeof addr); // sizeof addr == 0x10
-        push word %(port)d
-        push word AF_INET
+        push 0x10 | (AF_INET << 8) | (%(port)d << 16) ;; sa_len and sa_family does't really matter, but why not set them right?
         mov ebx, esp
         push 0x10
         push ebx
