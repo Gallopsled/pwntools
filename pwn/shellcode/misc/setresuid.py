@@ -47,7 +47,7 @@ def _zero_optimized_linux(dst):
             p('mov al, SYS_setresuid')
 
     p('int 0x80')
-    return ''.join('\n    ' + s for s in res)
+    return '\n    '.join(res)
 
 @shellcode_reqs(arch='i386', os='linux')
 def setresuid(src = 's', dst = 'res'):
