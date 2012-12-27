@@ -1,6 +1,23 @@
 import struct, re, base64, random, pwn
 
 # conversion functions
+def pint(x):
+    out = ''
+    while True:
+        b = x & 0xff
+        out += p8(b)
+        x = x >> 8
+        if x == 0 or x == -1:
+            break
+    return out
+
+def uint(x):
+    out = 0
+    for b in x[::-1]:
+        out <<= 8
+        out += u8(b)
+    return out
+
 def p8(x):
     """Packs an integer into a 1-byte string"""
     return struct.pack('<B', x & 0xff)
