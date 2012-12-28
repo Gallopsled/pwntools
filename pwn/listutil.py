@@ -39,6 +39,9 @@ def concat_all(*args):
 def ordlist(s):
     return [ord(c) for c in s]
 
+def unordlist(cs):
+    return ''.join(chr(c) for c in cs)
+
 def __kmp_table(W):
     pos = 1
     cnd = 0
