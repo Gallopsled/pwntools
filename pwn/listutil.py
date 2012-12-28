@@ -36,6 +36,9 @@ def concat_all(*args):
 
     return res
 
+def ordlist(s):
+    return [ord(c) for c in s]
+
 def __kmp_table(W):
     pos = 1
     cnd = 0
