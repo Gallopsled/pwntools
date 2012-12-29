@@ -1,3 +1,5 @@
+import pwn
+
 def group(lst, n):
     """group([0,3,4,10,2,3], 2) => [(0,3), (4,10), (2,3)]
 
@@ -40,7 +42,7 @@ def ordlist(s):
     return [ord(c) for c in s]
 
 def unordlist(cs):
-    return flat(cs, pack=b8)
+    return pwn.flat(cs, func=pwn.p8)
 
 def __kmp_table(W):
     pos = 1
