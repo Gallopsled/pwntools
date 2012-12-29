@@ -40,7 +40,7 @@ def ordlist(s):
     return [ord(c) for c in s]
 
 def unordlist(cs):
-    return ''.join(chr(c) for c in cs)
+    return flat(cs, pack=b8)
 
 def __kmp_table(W):
     pos = 1
