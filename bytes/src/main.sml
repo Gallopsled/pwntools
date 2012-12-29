@@ -1,4 +1,3 @@
-(* fun impossible s = raise FailWithPosition $ "Impossible: %" <- s *)
 fun impossible s = raise Fail $ "Impossible: %" <- s
 
 datatype radix
@@ -217,7 +216,7 @@ fun main (radix, unsigned, plain, groupsize, endian, bendian, src, dst) =
       val go =
           if plain
           then goPlain ()
-          else goAuto ()
+          else try (goPlain ()) ||| goAuto ()
     in
       Parse.testString go $ TextIO.inputAll src
       (* test (fn c => "'" ^ str c ^ "'") *)
