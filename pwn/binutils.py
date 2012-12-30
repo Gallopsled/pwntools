@@ -1,4 +1,5 @@
 import struct, re, base64, random, pwn
+_AssemblerBlock = None
 
 # conversion functions
 def pint(x):
@@ -114,7 +115,11 @@ Takes a single named argument 'func', which defaults to p32.
 Example:
   - flat(5, "hello", [[6, "bar"], "baz"]) == '\\x05\\x00\\x00\\x00hello\\x06\\x00\\x00\\x00barbaz'
 """
-    from pwn.internal.shellcode_helper import AssemblerBlock
+
+    global _AssemblerBlock
+
+    if _AssemblerBlock == None:
+        from pwn.internal.shellcode_helper import AssemblerBlock as _AssemblerBlock
 
     func = kwargs.get('func', p32)
 
@@ -124,7 +129,7 @@ Example:
         return obj
     elif isinstance(obj, int):
         return func(obj)
-    elif isinstance(obj, AssemblerBlock):
+    elif isinstance(obj, _AssemblerBlock):
         return pwn.asm(obj)
     else:
         return "".join(flat(o, func=func) for o in obj)
@@ -303,11 +308,12 @@ Arguments:
 
     return ''.join(get(n) for n in range(l))
 
-def xor_pair(data, **kwargs):
-    """Args: data [avoid = '\\x00'] [only = every character]
+@pwn.avoider
+def xor_pair(data):
+    """Args: data
     Finds two pieces of data that will xor together into the argument, while avoiding
-    the bytes specified."""
-    allowed = pwn.get_allowed(**kwargs)
+    the bytes specified using the avoid module."""
+    only = pwn.get_only()
 
     data = flat(data)
 
@@ -315,36 +321,37 @@ def xor_pair(data, **kwargs):
     res2 = ''
 
     for c1 in data:
-        for c2 in allowed:
-            if xor(c1, c2) in allowed:
+        for c2 in only:
+            if xor(c1, c2) in only:
                 res1 += c2
                 res2 += xor(c1, c2)
                 break
 
     return (res1, res2)
 
-def randoms(count, **kwargs):
-    """Args: count [avoid = '\x00'] [only = every character]
-    Returns a number of random bytes, which avoid the specified bytes."""
-    allowed = pwn.get_allowed(**kwargs)
-    return ''.join(random.choice(allowed) for n in range(count))
+@pwn.avoider
+def randoms(count):
+    """Args: count
+    Returns a number of random bytes, while avoiding the bytes specified using the avoid module."""
+    return ''.join(random.choice(pwn.get_only()) for n in range(count))
 
-def random8(**kwargs):
-    """Args: [avoid = '\x00'] [only = every character]
-    Returns a random number which fits inside a byte."""
-    return u8(randoms(1, **kwargs))
+@pwn.avoider
+def random8():
+    """Returns a random number which fits inside 1 byte, while avoiding the bytes specified using the avoid module."""
+    return u8(randoms(1))
 
-def random16(**kwargs):
-    """Args: [avoid = '\x00'] [only = every character]
-    Returns a random number which fits inside a 2 bytes."""
-    return u16(randoms(2, **kwargs))
+@pwn.avoider
+def random16():
+    """Returns a random number which fits inside 2 byte, while avoiding the bytes specified using the avoid module."""
+    return u16(randoms(2))
 
-def random32(**kwargs):
-    """Args: [avoid = '\x00'] [only = every character]
-    Returns a random number which fits inside a 4 bytes."""
-    return u32(randoms(4, **kwargs))
+@pwn.avoider
+def random32():
+    """Returns a random number which fits inside 4 byte, while avoiding the bytes specified using the avoid module."""
+    return u32(randoms(4))
 
-def random64(**kwargs):
-    """Args: [avoid = '\x00'] [only = every character]
-    Returns a random number which fits inside a 8 bytes."""
-    return u64(randoms(8, **kwargs))
+@pwn.avoider
+def random64():
+    """Returns a random number which fits inside 8 byte, while avoiding the bytes specified using the avoid module."""
+    return u64(randoms(8))
+

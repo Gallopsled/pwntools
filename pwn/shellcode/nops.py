@@ -2,28 +2,32 @@ import random
 from collections import defaultdict
 from pwn.internal.shellcode_helper import *
 
-@shellcode_reqs(blob = True, arch='i386')
-def nops(length, unclobber = ['esp'], **kwargs):
-    avoid = map(ord, get_avoided(**kwargs))
+@shellcode_reqs(blob = True, avoider = True, arch='i386')
+def nops(length, unclobber  = None):
+    if unclobber == None:
+        unclobber = ['esp']
+
+    avoid = sorted(get_avoid())
     length = int(length)
 
     sled = nops_opty2(length, avoid, unclobber)
     if sled is not None:
-       return sled
+        return sled
     sled = nops_single_byte(length, avoid, unclobber)
     if sled is not None:
         return sled
     raise Exception('Cannot create nopsled under given restrictions')
 
 @shellcode_reqs(blob = True, arch='i386')
-def nop_pad(length, *data, **kwargs):
+@avoider
+def nop_pad(length, *data):
     data = flat(data)
     length = int(length)
 
     if len(data) > length:
         die("Could not do a nop-padding since the data was larger than the requested length")
 
-    return nops(length - len(data), **kwargs) + data
+    return nops(length - len(data)) + data
 
 _STACK_NEEDED     = 0
 _STACK_DESTROYED  = 1
@@ -98,7 +102,7 @@ single_byte_table = \
 
 def nops_single_byte(length, avoid, unclobber, has_stack = False):
     bytes = [b for b, (ns, rs) in single_byte_table.items() \
-                 if ord(b) not in avoid and \
+                 if b not in avoid and \
                  all(map(lambda r: r not in unclobber, rs)) and \
                  not (has_stack and ns == _STACK_DESTROYED) and \
                  not (not has_stack and ns == _STACK_NEEDED)]
@@ -126,7 +130,7 @@ def regnum(reg):
         return 7
 
 def nops_opty2(length, avoid, unclobber):
-    unclobber.append('esp')
+    avoid = ordlist(avoid)
     sled = []
     prev = 256
     slen = 0

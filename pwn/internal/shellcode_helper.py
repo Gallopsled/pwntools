@@ -1,5 +1,5 @@
 import pwn
-from pwn import decoutil
+from pwn import decoutils
 
 registered = {}
 
@@ -66,11 +66,14 @@ class AssemblerContainer(AssemblerBlock):
             else:
                 pwn.die('Trying to force something of type ' + str(type(b)) + ' into an assembler block. Its value is:\n' + repr(b)[:100])
 
-def shellcode_wrapper(f, args, kwargs):
+def shellcode_wrapper(f, args, kwargs, avoider):
     kwargs = pwn.with_context(**kwargs)
-    return f(*args, **decoutil.kwargs_remover(f, kwargs, pwn.possible_contexts.keys()))
+    if avoider:
+        return pwn.avoider(f)(*args, **decoutils.kwargs_remover(f, kwargs, pwn.possible_contexts.keys()))
+    else:
+        return f(*args, **decoutils.kwargs_remover(f, kwargs, pwn.possible_contexts.keys()))
 
-def shellcode_reqs(blob = False, hidden = False, **supported_context):
+def shellcode_reqs(blob = False, hidden = False, avoider = False, **supported_context):
     '''A decorator for shellcode functions, which registers the function
     with shellcraft and validates the context when the function is called.
 
@@ -95,13 +98,13 @@ def shellcode_reqs(blob = False, hidden = False, **supported_context):
 
     def deco(f):
         f.supported_context = supported_context
-        @decoutil.ewraps(f)
+        @decoutils.ewraps(f)
         def wrapper(*args, **kwargs):
             with pwn.ExtraContext(kwargs) as kwargs:
                 for k, vs in supported_context.items():
                     if kwargs[k] not in vs:
                         pwn.die('Invalid context for ' + f.func_name + ': ' + k + '=' + str(kwargs[k]) + ' is not supported')
-                r = shellcode_wrapper(f, args, kwargs)
+                r = shellcode_wrapper(f, args, kwargs, avoider)
                 if isinstance(r, AssemblerBlock):
                     return r
                 elif isinstance(r, (tuple, list)):

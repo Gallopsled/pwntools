@@ -46,6 +46,7 @@ from pwn.consts     import *
 from pwn.thread     import Thread
 from pwn.log        import die, bug
 from pwn.util       import *
+from pwn.avoid      import *
 from pwn.binutils   import *
 from pwn.hashes     import *
 from pwn.listutil   import *

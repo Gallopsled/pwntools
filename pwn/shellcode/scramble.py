@@ -1,25 +1,21 @@
 from pwn.internal.shellcode_helper import *
 import random
 
-@shellcode_reqs(blob = True, arch='i386')
-def scramble(*data, **kwargs):
-    return xor_additive_feedback(flat(data), **kwargs)
+@shellcode_reqs(blob = True, avoider = True, arch='i386')
+def scramble(data, unclobber = None, bufreg = None):
 
-def __parse_kwargs(kwargs):
-    avoid     = kwargs.get('avoid', '')
-    unclobber = kwargs.get('unclobber', ['esp'])
-    only      = kwargs.get('only', '')
-    bufreg    = kwargs.get('bufreg', None)
-    avoid = set(b for b in range(256) if chr(b) in avoid or chr(b) not in only)
-    return avoid, unclobber, bufreg
+    if unclobber == None:
+        unclobber = ['esp']
+
+    return xor_additive_feedback(flat(data), unclobber, bufreg, get_avoid())
 
 # def alpha_mixed(code, **kwargs):
 #     avoid, getpc = __parse_kwargs(kwargs)
 #     pass
 
-def xor_additive_feedback(code, **kwargs):
+def xor_additive_feedback(code, unclobber, bufreg, avoid):
     """AKA shikata ga nai"""
-    avoid, unclobber, bufreg = __parse_kwargs(kwargs)
+
     def encode(code):
         orig_key = p32(random.randint(0, 1 << 32))
         key = orig_key
