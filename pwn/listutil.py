@@ -38,6 +38,30 @@ def concat_all(*args):
 
     return res
 
+def combinations(*args):
+    """Returns all the combinations of the arguments as a generator. Example:
+    combinations([1,2,3], 'abc') ==> generator([[1, 'a'], [1, 'b'], [1, 'c'], [2, 'a'], [2, 'b'], [2, 'c']])
+    """
+
+    if len(args) == 0:
+        pwn.die('Combinations called without an argument')
+
+    if len(args) == 1:
+        args = args[0]
+
+    def recurse(args):
+        if len(args) == 0:
+            return
+        if len(args) == 1:
+            for a in args[0]:
+                yield [a]
+        else:
+            for rest in recurse(args[:-1]):
+                for a in args[-1]:
+                    yield rest + [a]
+
+    return recurse(args)
+
 def ordlist(s):
     return [ord(c) for c in s]
 
