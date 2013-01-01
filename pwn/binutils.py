@@ -326,6 +326,8 @@ def xor_pair(data):
                 res1 += c2
                 res2 += xor(c1, c2)
                 break
+        else:
+            return None
 
     return (res1, res2)
 
