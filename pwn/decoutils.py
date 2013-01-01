@@ -8,8 +8,9 @@ def kwargs_remover(f, kwargs, check_list = None, clone = True):
     if check_list == None: check_list = kwargs.keys()
     if clone: kwargs = kwargs.copy()
     if not f.func_code.co_flags & 8:
+        args, varargs, keywords, defaults = inspect.getargspec(f)
         for c in set(check_list).intersection(kwargs.keys()):
-            if c not in f.func_code.co_varnames:
+            if c not in args:
                 del kwargs[c]
     return kwargs
 
