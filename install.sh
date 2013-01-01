@@ -5,14 +5,14 @@ if [ "$(id -u)" != "0" ]; then
    exit 1
 fi
 
-echo "Adding PWNTools to \$PATH in .profile"
-echo "PATH=$PWD/bin:\$PATH" >> ~/.profile
+echo "Adding PWNTools to \$PATH in .bashrc"
+echo "PATH=$PWD/bin:\$PATH" >> ~/.bashrc
 
-echo "Adding PWNLib to \$PYTHONPATH in .profile"
-echo "PYTHONPATH=$PWD/lib:\$PYTHONPATH" >> ~/.profile
+echo "Adding PWNLib to \$PYTHONPATH in .bashrc"
+echo "PYTHONPATH=$PWD/lib:\$PYTHONPATH" >> ~/.bashrc
 
 echo "Installing packages"
-DEPS="python-crypto python-paramiko"
+DEPS="python-crypto python-paramiko python-sqlalchemy libdistorm64-dev"
 yes | sudo apt-get install ${DEPS}
 
 echo "All DONE"
