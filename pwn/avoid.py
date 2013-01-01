@@ -25,10 +25,10 @@ def reset_only():
     _avoid = _default_avoid
 
 def get_avoid():
-    return list(_avoid)
+    return sorted(_avoid)
 
 def get_only():
-    return list(_all - _avoid)
+    return sorted(_all - _avoid)
 
 class avoid:
     def __init__(self, s, append = True):
