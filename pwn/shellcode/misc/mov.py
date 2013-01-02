@@ -220,11 +220,11 @@ def _fallback_mov(dest, src, allowed):
         code += ['pop ' + r]
     return '\n'.join(code)
 
-@pwn.memoize()
+@pwn.memoize
 def _mov_only(dest, src, only, known_zero = False):
     return [(a,b) for a,b in _mov_asm(dest, src, known_zero) if all(byte in only for byte in a)]
 
-@pwn.memoize()
+@pwn.memoize
 def _mov_asm(dest, src, known_zero = False):
     NUM_THREADS = 4
     res = [None] * NUM_THREADS

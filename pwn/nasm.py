@@ -9,7 +9,7 @@ def _cmd(src, optimize = 'x'):
     cmd += ['-I', nasminclude, '-O' + optimize, '-o', '/dev/stdout', src]
     return cmd
 
-@pwn.memoize()
+@pwn.memoize
 def nasm_raw(code, checked = True, return_none = False, optimize = 'x'):
 
     with tempfile.NamedTemporaryFile(delete = False, prefix='pwn', suffix='.asm') as tmp:

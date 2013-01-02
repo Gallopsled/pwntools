@@ -4,7 +4,19 @@ from pwn import log
 from cPickle import load, dump
 
 __tempdir = os.path.join(tempfile.gettempdir(), 'pwn-memoize')
-def memoize(use_mem = True, use_file = True):
+def memoize(*args, **kwargs):
+    '''Function memoization decorator.
+    Args:
+    use_mem (default True):   Cache results in memory.
+    use_file (default True):  Cache results in files under /tmp/pwn-memoize.
+
+    Used with no arguments is the same as setting mem = True and file = True.'''
+    if len(args) == 1 and kwargs == {}:
+        return _internal_memoize()(args[0])
+    else:
+        return _internal_memoize(*args, **kwargs)
+
+def _internal_memoize(use_mem = True, use_file = True):
     cache = {}
     TYPE_VALUE     = 0
     TYPE_EXCEPTION = 1
