@@ -58,12 +58,8 @@ def setresuid(src = 's', dst = 'res'):
 
 @shellcode_reqs(hidden = True, arch='i386', os='linux')
 def _linux_setresuid(src, dst):
-    try:
-        src2 = ast.literal_eval(src)
-        if isinstance(src2, int):
-            src = src2
-    except:
-        pass
+
+    src = arg_fixup(src)
 
     dst = ''.join(sorted(set(dst)))
     if not all(c in 'res' for c in dst):

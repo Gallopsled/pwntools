@@ -1,4 +1,4 @@
-import pwn
+import pwn, ast
 from pwn import decoutils
 
 registered = {}
@@ -25,6 +25,9 @@ class AssemblerBlob(AssemblerBlock):
         if not isinstance(blob, str):
             pwn.die('Trying to create an AssemblerBlob class, but the blob does not have type str.\nThe type is ' + str(type(blob)) + ' with the value:\n' + repr(blob)[:100])
 
+    def __hash__(self):
+        return hash((self.arch, self.os, self.blob))
+
 class AssemblerText(AssemblerBlock):
     def __init__(self, text, **kwargs):
         self.arch = kwargs.get('arch')
@@ -33,6 +36,10 @@ class AssemblerText(AssemblerBlock):
 
         if not isinstance(text, str):
             pwn.die('Trying to create an AssemblerText class, but the text does not have type str.\nThe type is ' + str(type(text)) + ' with the value:\n' + repr(text)[:100])
+
+    def __hash__(self):
+        return hash((self.arch, self.os, self.text))
+
 
 class AssemblerContainer(AssemblerBlock):
     def __init__(self, *blocks, **kwargs):
@@ -65,6 +72,9 @@ class AssemblerContainer(AssemblerBlock):
                     die('Invalid cast for AssemblerContainer')
             else:
                 pwn.die('Trying to force something of type ' + str(type(b)) + ' into an assembler block. Its value is:\n' + repr(b)[:100])
+
+    def __hash__(self):
+        return hash((self.arch, self.os, tuple(self.blocks)))
 
 def shellcode_wrapper(f, args, kwargs, avoider):
     kwargs = pwn.with_context(**kwargs)
@@ -119,4 +129,15 @@ def shellcode_reqs(blob = False, hidden = False, avoider = False, **supported_co
             registered[f.func_name] = (f, wrapper)
         return wrapper
     return deco
+
+def arg_fixup(s):
+    if not isinstance(s, str):
+        return s
+    try:
+        s2 = ast.literal_eval(s)
+        if isinstance(s2, int):
+            return s2
+    except:
+        pass
+    return s
 

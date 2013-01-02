@@ -77,6 +77,7 @@ try:
 except:
     _err('cloud')
 
+import pwn.nasm
 import pwn.shellcode
 import pwn.internal.init.session
 import pwn.sqli
