@@ -2,14 +2,25 @@ from pwn.internal.shellcode_helper import *
 import pwn
 import string
 
+_reg32 = ['eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp', 'esp']
+_reg8  = ['al', 'ah', 'bl', 'bh', 'cl', 'ch', 'dl', 'dh']
+_regs  = _reg32 + _reg8
+
+_smaller8 = {
+        'eax': 'al',
+        'ebx': 'bl',
+        'ecx': 'cl',
+        'edx': 'dl',
+}
+
 @shellcode_reqs(avoider = True, arch='i386')
 def mov(dest, src, known_zero = False, stack_allowed = True, deterministic = False):
     """Does a mov into the dest while avoiding forbidden characters. Current only 8-bit and 32-bit registers are supported.
-    
+
     The src can be be an immediate or another register.
-    
+
     If the register is known to be zero then set known_zero to true, to potentially reduce the code size.
-    
+
     If the stack is not allowed to be used for pushes and pops, set stack_allowed to False.
 
     Set determistic to False if you want the output to be deterministic.
@@ -26,13 +37,13 @@ def mov(dest, src, known_zero = False, stack_allowed = True, deterministic = Fal
         l = [(a,b) for a,b in l if not 'push ' in b or 'pop ' in b]
 
     if len(l) == 0:
-        if stack_allowed and isinstance(src, int):
+        if stack_allowed and dest in _reg32 and isinstance(src, int):
             e = _fallback_mov(dest, src, allowed)
             if e != None:
-                pwn.log.warning('Constrains are pretty nasty for mov(%s, %s, %s, %s, %s). Using the retarded and long fallback.' % (dest, src, known_zero, stack_allowed, random))
+                pwn.log.warning('Constrains are pretty nasty for mov(%s, %s, %s, %s, %s). Using the retarded and long fallback.' % (dest, src, known_zero, stack_allowed, deterministic))
 
                 return e
-        pwn.die('Could not generate mov(%s, %s, %s, %s, %s) for with the given constraints.' % (dest, src, known_zero, stack_allowed, random))
+        pwn.die('Could not generate mov(%s, %s, %s, %s, %s) for with the given constraints.' % (dest, src, known_zero, stack_allowed, deterministic))
 
     best = len(l[0][0])
     l = [b for a,b in l if len(a) == best]
@@ -44,9 +55,11 @@ def mov(dest, src, known_zero = False, stack_allowed = True, deterministic = Fal
 
 
 def _fallback_mov(dest, src, allowed):
+    """Retarded fallback for mov, which pushes the bytes to the stack one at a time."""
+
     def all_in(bs):
         return all(b in allowed for b in bs)
-    
+
     if all_in('\x6a'):
         pushi = 'push strict byte 0x'
     elif all_in('\x68'):
@@ -124,7 +137,7 @@ def _fallback_mov(dest, src, allowed):
 
     if inc_oks['esp']:
         incesp = "inc esp"
-    
+
     if incesp == None:
         return None
 
@@ -147,7 +160,7 @@ def _fallback_mov(dest, src, allowed):
                 cur = (256 + c - b) % 256
                 if cur < best:
                     best = cur
-                    best_try = ('inc ', b, cur)
+                    best_try = ('inc', b, cur)
             if dec_set:
                 cur = (256 + b - c) % 256
                 if cur < best:
@@ -168,6 +181,7 @@ def _fallback_mov(dest, src, allowed):
         for r in dec_set:
             dec_reg = r
             saves.add(r)
+            break
 
     if dest in inc_set:
         inc_reg = dest
@@ -175,6 +189,7 @@ def _fallback_mov(dest, src, allowed):
         for r in inc_set:
             inc_reg = r
             saves.add(r)
+            break
 
     if dec_reg != dest and inc_reg != dest:
         for r in inc_set.intersection(dec_set):
@@ -189,7 +204,7 @@ def _fallback_mov(dest, src, allowed):
 
     code += ['push ' + junk_reg]
     regs = {'inc': inc_reg, 'dec': dec_reg}
-    
+
     for n in range(4):
         d, b, count = good[n]
         r = regs[d]
@@ -198,7 +213,7 @@ def _fallback_mov(dest, src, allowed):
         code += [pushi + "%02x" % b, 'pop ' + r] + [d + ' ' + r] * count + ['push ' + r]
         if n != 3:
             code += [incesp]
-    
+
     code += [decesp]*3 + ['pop ' + dest] + [incesp]*4
 
     for r in sorted(saves, reverse = True):
@@ -224,7 +239,7 @@ def _mov_asm(dest, src, known_zero = False):
                 s = pwn.nasm.nasm_raw('bits 32\n_start:\n' + inst, return_none = True, optimize='x')
                 if s == None:
                     cur = None
-                    print 'Skipping because of ', inst
+                    pwn.log.warning('Could not assemble: ' + inst)
                     break
                 cur.append(s)
 
@@ -236,24 +251,13 @@ def _mov_asm(dest, src, known_zero = False):
 
     for n in range(NUM_THREADS):
         threads[n] = pwn.Thread(target = assembler, args = (n,))
-        threads[n].daemon = True 
+        threads[n].daemon = True
         threads[n].start()
 
     for n in range(NUM_THREADS):
         threads[n].join()
 
     return sorted(concat(res), key=lambda (a,b): len(a))
-
-_reg32 = ['eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp', 'esp']
-_reg8  = ['al', 'ah', 'bl', 'bh', 'cl', 'ch', 'dl', 'dh']
-_regs  = _reg32 + _reg8
-
-_smaller8 = {
-        'eax': 'al',
-        'ebx': 'bl',
-        'ecx': 'cl',
-        'edx': 'dl',
-}
 
 def _size(reg):
     if reg in _reg32:
@@ -266,6 +270,7 @@ def _mov(dest, src, known_zero = False):
 
     return _mov_helper(dest, src, known_zero)
 
+@pwn.memoize(use_file = False)
 def _mov_helper(dest, src, known_zero = False, forced_zero = False, recurse = 2):
     if dest == src:
         return [['']]
@@ -287,12 +292,8 @@ def _mov_helper(dest, src, known_zero = False, forced_zero = False, recurse = 2)
             for inst in instrs:
                 if isinstance(inst, str):
                     inst = [inst]
-                    
+
                 if isinstance(inst, list) or isinstance(inst, tuple):
-                    if dest in _reg8:
-                        if any('pop DEST' in i or 'push DEST' in i for i in inst):
-                            cur = None
-                            break
                     src2  = src  if not isinstance(src , int) else hex(src)
                     srcu2 = srcu if not isinstance(srcu, int) else hex(srcu)
                     cur += [s.replace('DEST', dest).replace('SRCU', srcu2).replace('SRC', src2) for s in inst]
@@ -313,10 +314,21 @@ def _mov_helper(dest, src, known_zero = False, forced_zero = False, recurse = 2)
                 'sub DEST, DEST',
                 '.mov0: add DEST, DEST\njnz .mov0',
                 '.mov0: shl DEST, 1\njnz .mov0',    # There is a shorter version for shl reg32, 1
-                '.mov0: shr DEST, 1\njnz .mov0',    # There is a shorter version for shr reg32, 1
                 '.mov0: shl DEST, 0xc1\njnz .mov0', # 0xc1 is contained in most shl instructions
-                '.mov0: shr DEST, 0xc1\njnz .mov0', # 0xc1 is contained in most shr instructions
         ])
+
+        if dest in _reg8:
+            add([
+                '.mov0: dec DEST\njnz .mov0',
+                '.mov0: inc DEST\njnz .mov0',
+                '.mov0: add DEST, 0x61\njnz .mov0',
+            ])
+        elif dest in _reg32:
+            add([
+                '.mov0: imul DEST, 0x62\njnz .mov0',
+                ['add DEST, DEST'] * 32,
+            ])
+
     elif not known_zero:
         add(rec(s = 0), rec(f = True, k = True))
 
@@ -324,27 +336,17 @@ def _mov_helper(dest, src, known_zero = False, forced_zero = False, recurse = 2)
         if 0 <= srcu <= 255:
             if dest in _smaller8:
                 add(rec(d = _smaller8[dest]))
-            add([
-                'add DEST, strict byte SRC',
-                'or  DEST, strict byte SRC',
-                'xor DEST, strict byte SRC',
-                ['sub DEST, strict byte SRC', 'neg DEST']
-            ])
-        if isinstance(src, int):
-            if dest in _reg32:
-                add([
-                    'add DEST, strict dword SRC',
-                    'or  DEST, strict dword SRC',
-                    'xor DEST, strict dword SRC',
-                    ['sub DEST, strict dword SRC', 'neg DEST']
-                ])
-        else:
-            add([
-                'add DEST, SRC',
-                'or  DEST, SRC',
-                'xor DEST, SRC',
-                ['sub DEST, strict dword SRC', 'neg DEST']
-            ])
+
+            add([['inc DEST'] * srcu])
+
+            if dest in _reg8:
+                add([['dec DEST'] * (256 - src)])
+        add([
+            'add DEST, SRC',
+            'or  DEST, SRC',
+            'xor DEST, SRC',
+            ['sub DEST, SRC', 'neg DEST']
+        ])
 
     if not forced_zero:
         if -128 <= src <= 127:
@@ -352,72 +354,58 @@ def _mov_helper(dest, src, known_zero = False, forced_zero = False, recurse = 2)
                 add(rec(d = _smaller8[dest]), ['movsx DEST, ' + _smaller8[dest]])
 
             if dest in _reg32:
-                add([['push strict byte SRC', 'pop DEST']])
+                add([['push SRC', 'pop DEST']])
 
-            pair = xor_pair(p8(src), only = string.ascii_letters + string.digits + string.punctuation)
-            if pair != None:
-                n1, n2 = map(pwn.u8, pair)
-                add(rec(s = n1), ['xor DEST, strict byte ' + hex(n2)])
-
+                pair = xor_pair(p8(src), only = string.ascii_letters + string.digits)
+                if pair != None:
+                    n1, n2 = map(pwn.u8, pair)
+                    add([['push ' + hex(n1), 'pop DEST', 'xor DEST, ' + hex(n2)]])
         if 0 <= srcu <= 255:
             if dest in _smaller8:
                 add(rec(d = _smaller8[dest]), ['movzx DEST, ' + _smaller8[dest]])
 
-            add([['push byte 0x6a', 'pop DEST', 'xor DEST, (SRCU ^ 0x6a)']])
-            add(rec(s = 0x41), ['xor DEST, (SRC ^ 0x41)'])
+            if dest in _reg32:
+                add([['push strict byte 0x6a', 'pop DEST'] + ['inc DEST'] * (src - 0x6a) + ['dec DEST'] * (0x6a - src)])
+
+                # push 0x6a == 'jj'
+                add([['push 0x6a', 'pop DEST']], [
+                    'xor DEST, SRCU ^ 0x6a',
+                    'add DEST, SRCU - 0x6a',
+                    'sub DEST, 0x6a - SRCU'
+                ])
 
         if isinstance(src, int):
             if dest in _reg32:
-                add([['push strict dword SRC', 'pop DEST']])
-
-                if dest != 'eax':
-                    add([['push eax']], rec(d = 'eax'), [['push eax', 'pop DEST', 'pop eax']])
-                    add([['xchg eax, DEST']], rec(d = 'eax'), [['xchg eax, DEST']])
+                add(rec(s = src-1), [['inc DEST']])
+                add(rec(s = src+1), [['dec DEST']])
 
                 # push 0x68686868 == 'hhhhh'
                 add([['push 0x68686868', 'pop DEST']], [
-                    'xor DEST, (SRC ^ 0x68686868)',
-                    'add DEST, ((SRC - 0x68686868) & 0xffffffff)',
-                    'sub DEST, ((0x68686868 - SRC) & 0xffffffff)'
+                    'xor DEST, SRCU ^ 0x68686868',
+                    'add DEST, SRCU - 0x68686868',
+                    'sub DEST, 0x68686868 - SRCU'
                 ])
 
-                add(rec(s = 0x41414141), [
-                    'xor DEST, (SRC ^ 0x41414141)',
-                    'add DEST, ((SRC - 0x41414141) & 0xffffffff)',
-                    'sub DEST, ((0x41414141 - SRC) & 0xffffffff)',
-                ])
-                add(rec(s = ~src), ['xor DEST, strict dword -1'])
-                add(rec(s = -src), [
-                    ['xor DEST, strict dword -1', 'inc DEST'],
-                    ['xor DEST, strict dword -1', 'add DEST, 1'],
-                    ['xor DEST, strict dword -1', 'sub DEST, -1'],
-                ])
-
-                pair = xor_pair(p32(src), only = string.ascii_letters + string.digits + string.punctuation)
+                pair = xor_pair(p32(src), only = string.ascii_letters + string.digits)
                 if pair != None:
                     n1, n2 = map(pwn.u32, pair)
-                    add(rec(s = n1), ['xor DEST, strict dword ' + hex(n2)])
+                    add([['push ' + hex(n1), 'pop DEST', 'xor DEST, ' + hex(n2)]])
 
-
+                if dest != 'eax':
+                    add([['push eax']], rec(d = 'eax'), [
+                        ['push eax', 'pop DEST', 'pop eax'],
+                        ['mov DEST, eax', 'pop eax']
+                    ])
             add(rec(s = ~src), [
                 'not DEST',
                 ['neg DEST', 'dec DEST'],
-                ['neg DEST', 'sub DEST, 1'],
-                ['neg DEST', 'add DEST, -1'],
-                'xor DEST, -1',
             ])
             add(rec(s = -src), [
                 'neg DEST',
                 ['not DEST', 'inc DEST'],
-                ['not DEST', 'add DEST, 1'],
-                ['not DEST', 'sub DEST, -1'],
-                ['xor DEST, -1', 'inc DEST'],
-                ['xor DEST, -1', 'add DEST, 1'],
-                ['xor DEST, -1', 'sub DEST, -1'],
             ])
 
 
-        add([['mov DEST, SRC']])
-
+    add([['mov DEST, SRC']])
 
     return out
