@@ -120,7 +120,7 @@ class RSAKey (PKey):
 
     def write_private_key_file(self, filename, password=None):
         self._write_private_key_file('RSA', filename, self._encode_key(), password)
-        
+
     def write_private_key(self, file_obj, password=None):
         self._write_private_key('RSA', file_obj, self._encode_key(), password)
 
@@ -162,11 +162,11 @@ class RSAKey (PKey):
     def _from_private_key_file(self, filename, password):
         data = self._read_private_key_file('RSA', filename, password)
         self._decode_key(data)
-    
+
     def _from_private_key(self, file_obj, password):
         data = self._read_private_key('RSA', file_obj, password)
         self._decode_key(data)
-    
+
     def _decode_key(self, data):
         # private key file contains:
         # RSAPrivateKey = { version = 0, n, e, d, p, q, d mod p-1, d mod q-1, q**-1 mod p }

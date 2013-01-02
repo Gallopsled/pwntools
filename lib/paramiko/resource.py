@@ -27,30 +27,30 @@ class ResourceManager (object):
     """
     A registry of objects and resources that should be closed when those
     objects are deleted.
-    
+
     This is meant to be a safer alternative to python's C{__del__} method,
     which can cause reference cycles to never be collected.  Objects registered
     with the ResourceManager can be collected but still free resources when
     they die.
-    
+
     Resources are registered using L{register}, and when an object is garbage
     collected, each registered resource is closed by having its C{close()}
     method called.  Multiple resources may be registered per object, but a
     resource will only be closed once, even if multiple objects register it.
     (The last object to register it wins.)
     """
-    
+
     def __init__(self):
         self._table = {}
-        
+
     def register(self, obj, resource):
         """
         Register a resource to be closed with an object is collected.
-        
+
         When the given C{obj} is garbage-collected by the python interpreter,
         the C{resource} will be closed by having its C{close()} method called.
         Any exceptions are ignored.
-        
+
         @param obj: the object to track
         @type obj: object
         @param resource: the resource to close when the object is collected

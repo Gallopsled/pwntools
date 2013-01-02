@@ -77,7 +77,7 @@ def _internal_memoize(use_mem = True, use_file = True):
                         except:
                             pass
         return wrapper
-    return real    
+    return real
 
 if not os.path.exists(__tempdir):
     try:

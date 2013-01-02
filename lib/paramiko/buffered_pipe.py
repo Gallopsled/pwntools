@@ -40,7 +40,7 @@ class BufferedPipe (object):
     file or socket, but is fed data from another thread.  This is used by
     L{Channel}.
     """
-    
+
     def __init__(self):
         self._lock = threading.Lock()
         self._cv = threading.Condition(self._lock)
@@ -53,7 +53,7 @@ class BufferedPipe (object):
         Set an event on this buffer.  When data is ready to be read (or the
         buffer has been closed), the event will be set.  When no data is
         ready, the event will be cleared.
-        
+
         @param event: the event to set/clear
         @type event: Event
         """
@@ -62,12 +62,12 @@ class BufferedPipe (object):
             event.set()
         else:
             event.clear()
-        
+
     def feed(self, data):
         """
         Feed new data into this pipe.  This method is assumed to be called
         from a separate thread, so synchronization is done.
-        
+
         @param data: the data to add
         @type data: str
         """
@@ -85,7 +85,7 @@ class BufferedPipe (object):
         Returns true if data is buffered and ready to be read from this
         feeder.  A C{False} result does not mean that the feeder has closed;
         it means you may need to wait before more data arrives.
-        
+
         @return: C{True} if a L{read} call would immediately return at least
             one byte; C{False} otherwise.
         @rtype: bool
@@ -117,7 +117,7 @@ class BufferedPipe (object):
         @type timeout: float
         @return: data
         @rtype: str
-        
+
         @raise PipeTimeout: if a timeout was specified and no data was ready
             before that timeout
         """
@@ -153,11 +153,11 @@ class BufferedPipe (object):
             self._lock.release()
 
         return out
-    
+
     def empty(self):
         """
         Clear out the buffer and return all data that was in it.
-        
+
         @return: any data that was in the buffer prior to clearing it out
         @rtype: str
         """
@@ -170,7 +170,7 @@ class BufferedPipe (object):
             return out
         finally:
             self._lock.release()
-    
+
     def close(self):
         """
         Close this pipe object.  Future calls to L{read} after the buffer
@@ -188,7 +188,7 @@ class BufferedPipe (object):
     def __len__(self):
         """
         Return the number of bytes buffered.
-        
+
         @return: number of bytes bufferes
         @rtype: int
         """

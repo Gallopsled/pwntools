@@ -54,10 +54,10 @@ class SFTPFile (BufferedFile):
 
     def __del__(self):
         self._close(async=True)
-    
+
     def close(self):
         self._close(async=False)
-        
+
     def _close(self, async=False):
         # We allow double-close without signaling an error, because real
         # Python file objects do.  However, we must protect against actually
@@ -99,7 +99,7 @@ class SFTPFile (BufferedFile):
             return True
         # well, we have part of the request.  see if another chunk has the rest.
         return self._data_in_prefetch_requests(buf_offset + buf_size, offset + size - buf_offset - buf_size)
-    
+
     def _data_in_prefetch_buffers(self, offset):
         """
         if a block of data is present in the prefetch buffers, at the given
@@ -116,7 +116,7 @@ class SFTPFile (BufferedFile):
             # it's not here
             return None
         return index
-        
+
     def _read_prefetch(self, size):
         """
         read data out of the prefetch buffer, if possible.  if the data isn't
@@ -136,7 +136,7 @@ class SFTPFile (BufferedFile):
             return None
         prefetch = self._prefetch_data[offset]
         del self._prefetch_data[offset]
-        
+
         buf_offset = self._realpos - offset
         if buf_offset > 0:
             self._prefetch_data[offset] = prefetch[:buf_offset]
@@ -145,7 +145,7 @@ class SFTPFile (BufferedFile):
             self._prefetch_data[self._realpos + size] = prefetch[size:]
             prefetch = prefetch[:size]
         return prefetch
-        
+
     def _read(self, size):
         size = min(size, self.MAX_REQUEST_SIZE)
         if self._prefetching:
@@ -240,7 +240,7 @@ class SFTPFile (BufferedFile):
         attr = SFTPAttributes()
         attr.st_mode = mode
         self.sftp._request(CMD_FSETSTAT, self.handle, attr)
-        
+
     def chown(self, uid, gid):
         """
         Change the owner (C{uid}) and group (C{gid}) of this file.  As with
@@ -283,7 +283,7 @@ class SFTPFile (BufferedFile):
         Change the size of this file.  This usually extends
         or shrinks the size of the file, just like the C{truncate()} method on
         python file objects.
-        
+
         @param size: the new size of the file
         @type size: int or long
         """
@@ -291,17 +291,17 @@ class SFTPFile (BufferedFile):
         attr = SFTPAttributes()
         attr.st_size = size
         self.sftp._request(CMD_FSETSTAT, self.handle, attr)
-    
+
     def check(self, hash_algorithm, offset=0, length=0, block_size=0):
         """
         Ask the server for a hash of a section of this file.  This can be used
         to verify a successful upload or download, or for various rsync-like
         operations.
-        
+
         The file is hashed from C{offset}, for C{length} bytes.  If C{length}
         is 0, the remainder of the file is hashed.  Thus, if both C{offset}
         and C{length} are zero, the entire file is hashed.
-        
+
         Normally, C{block_size} will be 0 (the default), and this method will
         return a byte string representing the requested hash (for example, a
         string of length 16 for MD5, or 20 for SHA-1).  If a non-zero
@@ -309,12 +309,12 @@ class SFTPFile (BufferedFile):
         C{offset + length}) of C{block_size} bytes is computed as a separate
         hash.  The hash results are all concatenated and returned as a single
         string.
-        
+
         For example, C{check('sha1', 0, 1024, 512)} will return a string of
         length 40.  The first 20 bytes will be the SHA-1 of the first 512 bytes
         of the file, and the last 20 bytes will be the SHA-1 of the next 512
         bytes.
-        
+
         @param hash_algorithm: the name of the hash algorithm to use (normally
             C{"sha1"} or C{"md5"})
         @type hash_algorithm: str
@@ -330,13 +330,13 @@ class SFTPFile (BufferedFile):
         @return: string of bytes representing the hash of each block,
             concatenated together
         @rtype: str
-        
+
         @note: Many (most?) servers don't support this extension yet.
-        
+
         @raise IOError: if the server doesn't support the "check-file"
             extension, or possibly doesn't support the hash algorithm
             requested
-            
+
         @since: 1.4
         """
         t, msg = self.sftp._request(CMD_EXTENDED, 'check-file', self.handle,
@@ -345,7 +345,7 @@ class SFTPFile (BufferedFile):
         alg = msg.get_string()
         data = msg.get_remainder()
         return data
-    
+
     def set_pipelined(self, pipelined=True):
         """
         Turn on/off the pipelining of write operations to this file.  When
@@ -355,24 +355,24 @@ class SFTPFile (BufferedFile):
         server responses are collected.  This means that if there was an error
         with one of your later writes, an exception might be thrown from
         within L{close} instead of L{write}.
-        
+
         By default, files are I{not} pipelined.
-        
+
         @param pipelined: C{True} if pipelining should be turned on for this
             file; C{False} otherwise
         @type pipelined: bool
-        
+
         @since: 1.5
         """
         self.pipelined = pipelined
-    
+
     def prefetch(self):
         """
         Pre-fetch the remaining contents of this file in anticipation of
         future L{read} calls.  If reading the entire file, pre-fetching can
         dramatically improve the download speed by avoiding roundtrip latency.
         The file's contents are incrementally buffered in a background thread.
-        
+
         The prefetched data is stored in a buffer until read via the L{read}
         method.  Once data has been read, it's removed from the buffer.  The
         data may be read in a random order (using L{seek}); chunks of the
@@ -390,20 +390,20 @@ class SFTPFile (BufferedFile):
             n += chunk
         if len(chunks) > 0:
             self._start_prefetch(chunks)
-    
+
     def readv(self, chunks):
         """
         Read a set of blocks from the file by (offset, length).  This is more
         efficient than doing a series of L{seek} and L{read} calls, since the
         prefetch machinery is used to retrieve all the requested blocks at
         once.
-        
+
         @param chunks: a list of (offset, length) tuples indicating which
             sections of the file to read
         @type chunks: list(tuple(long, int))
         @return: a list of blocks read, in the same order as in C{chunks}
         @rtype: list(str)
-        
+
         @since: 1.5.4
         """
         self.sftp._log(DEBUG, 'readv(%s, %r)' % (hexlify(self.handle), chunks))
@@ -426,7 +426,7 @@ class SFTPFile (BufferedFile):
         for x in chunks:
             self.seek(x[0])
             yield self.read(x[1])
-    
+
 
     ###  internals...
 
@@ -445,7 +445,7 @@ class SFTPFile (BufferedFile):
         t = threading.Thread(target=self._prefetch_thread, args=(chunks,))
         t.setDaemon(True)
         t.start()
-        
+
     def _prefetch_thread(self, chunks):
         # do these read requests in a temporary thread because there may be
         # a lot of them, so it may block.
@@ -467,7 +467,7 @@ class SFTPFile (BufferedFile):
         self._prefetch_data[offset] = data
         if len(self._prefetch_reads) == 0:
             self._prefetch_done = True
-    
+
     def _check_exception(self):
         "if there's a saved exception, raise & clear it"
         if self._saved_exception is not None:

@@ -31,7 +31,7 @@ class Message (object):
     An SSH2 I{Message} is a stream of bytes that encodes some combination of
     strings, integers, bools, and infinite-precision integers (known in python
     as I{long}s).  This class builds or breaks down such a byte stream.
-    
+
     Normally you don't need to deal with anything this low-level, but it's
     exposed for people implementing custom extensions, or features that
     paramiko doesn't support yet.
@@ -186,7 +186,7 @@ class Message (object):
     def add_bytes(self, b):
         """
         Write bytes to the stream, without any formatting.
-        
+
         @param b: bytes to add
         @type b: str
         """
@@ -196,7 +196,7 @@ class Message (object):
     def add_byte(self, b):
         """
         Write a single byte to the stream, without any formatting.
-        
+
         @param b: byte to add
         @type b: str
         """
@@ -206,7 +206,7 @@ class Message (object):
     def add_boolean(self, b):
         """
         Add a boolean value to the stream.
-        
+
         @param b: boolean value to add
         @type b: bool
         """
@@ -215,11 +215,11 @@ class Message (object):
         else:
             self.add_byte('\x00')
         return self
-            
+
     def add_int(self, n):
         """
         Add an integer to the stream.
-        
+
         @param n: integer to add
         @type n: int
         """
@@ -240,7 +240,7 @@ class Message (object):
         """
         Add a long int to the stream, encoded as an infinite-precision
         integer.  This method only works on positive numbers.
-        
+
         @param z: long int to add
         @type z: long
         """
@@ -250,7 +250,7 @@ class Message (object):
     def add_string(self, s):
         """
         Add a string to the stream.
-        
+
         @param s: string to add
         @type s: str
         """
@@ -263,13 +263,13 @@ class Message (object):
         Add a list of strings to the stream.  They are encoded identically to
         a single string of values separated by commas.  (Yes, really, that's
         how SSH2 does it.)
-        
+
         @param l: list of strings to add
         @type l: list(str)
         """
         self.add_string(','.join(l))
         return self
-        
+
     def _add(self, i):
         if type(i) is str:
             return self.add_string(i)
@@ -291,10 +291,10 @@ class Message (object):
         """
         Add a sequence of items to the stream.  The values are encoded based
         on their type: str, int, bool, list, or long.
-        
+
         @param seq: the sequence of items
         @type seq: sequence
-        
+
         @bug: longs are encoded non-deterministically.  Don't use this method.
         """
         for item in seq:

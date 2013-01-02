@@ -41,7 +41,7 @@ class BER(object):
 
     def decode(self):
         return self.decode_next()
-    
+
     def decode_next(self):
         if self.idx >= len(self.content):
             return None

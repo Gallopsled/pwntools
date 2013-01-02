@@ -29,7 +29,7 @@ def listen(port, os = None):
         push eax
         mov al, SYS_bind
         int 0x80
-    
+
         ;; listen(sock, whatever)
         mov al, SYS_listen
         int 0x80
@@ -37,7 +37,7 @@ def listen(port, os = None):
         ;; accept(sock, NULL, whatever)
         pop ebx
         push edx
-        push ebx 
+        push ebx
         push ebx
         mov al, SYS_accept
         int 0x80

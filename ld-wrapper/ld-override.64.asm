@@ -56,7 +56,7 @@ wrapper:
     mov rdi, rsp
     mov qword r11, consistency_check
     call r11
-    
+
     ; Make sure the function pointer is valid
     mov rdi, [rsp+STATE.FUNCTION]
     mov qword r11, lookup_function
@@ -77,7 +77,7 @@ wrapper:
     add rcx, 8
     cmp rcx, STATE_size
     jl .loop
-    
+
 
     ; Call the wrapper function
     mov rax, [r11-STATE_size+STATE.RAX]
@@ -120,7 +120,7 @@ skip_real:
 
     ; Get the value to return when done from the stack
     pop rdx
-    
+
     ; Restore callee-saved values
     mov rbx, [r11-STATE_size+STATE.RBX]
     mov rbp, [r11-STATE_size+STATE.RBP]

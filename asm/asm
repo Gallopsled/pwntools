@@ -37,7 +37,7 @@ try:
 
     with open(tmpname + '.out') as f:
         output = f.read()
-    
+
     if args.format == 'raw':
         args.o.write(output)
     elif args.format == 'hex':
@@ -49,6 +49,6 @@ try:
 
 finally:
     try:
-        os.unlink(tmpname + '.out') 
+        os.unlink(tmpname + '.out')
     except:
         pass

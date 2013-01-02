@@ -69,7 +69,7 @@ mul.inner_loop:
     add ebp, 4
     add edi, 4
     dec ecx
-    
+
     test ecx, WORD_COUNT-1
     jne mul.inner_loop
 

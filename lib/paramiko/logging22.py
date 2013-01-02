@@ -45,7 +45,7 @@ class logger (object):
 
     def addFilter(self, filter):
         pass
-        
+
     def log(self, level, text):
         if level >= self.level:
             for h in self.handlers:

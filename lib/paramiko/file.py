@@ -60,7 +60,7 @@ class BufferedFile (object):
 
     def __del__(self):
         self.close()
-        
+
     def __iter__(self):
         """
         Returns an iterator that can be used to iterate over the lines in this
@@ -68,7 +68,7 @@ class BufferedFile (object):
         its own iterator.
 
         @raise ValueError: if the file is closed.
-        
+
         @return: an interator.
         @rtype: iterator
         """
@@ -273,7 +273,7 @@ class BufferedFile (object):
         @note: If a file is opened in append mode (C{'a'} or C{'a+'}), any seek
             operations will be undone at the next write (as the file position
             will move back to the end of the file).
-        
+
         @param offset: position to move to within the file, relative to
             C{whence}.
         @type offset: int

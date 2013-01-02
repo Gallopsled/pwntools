@@ -67,14 +67,14 @@ class KexGroup1(object):
         elif not self.transport.server_mode and (ptype == _MSG_KEXDH_REPLY):
             return self._parse_kexdh_reply(m)
         raise SSHException('KexGroup1 asked to handle packet type %d' % ptype)
-    
+
 
     ###  internals...
 
 
     def _generate_x(self):
         # generate an "x" (1 < x < q), where q is (p-1)/2.
-        # p is a 128-byte (1024-bit) number, where the first 64 bits are 1. 
+        # p is a 128-byte (1024-bit) number, where the first 64 bits are 1.
         # therefore q can be approximated as a 2^1023.  we drop the subset of
         # potential x where the first 63 bits are 1, because some of those will be
         # larger than q (but this is a tiny tiny subset of potential x).

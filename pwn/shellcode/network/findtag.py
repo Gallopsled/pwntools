@@ -101,6 +101,6 @@ findtag:
     cmp word [esi], 0x%08x
     jne .loop
 """ % ("0" if clear_socks else "MSG_PEEK", int(tag))
-    
+
     else:
         bug('OS was neither linux nor freebsd')

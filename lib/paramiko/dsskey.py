@@ -87,7 +87,7 @@ class DSSKey (PKey):
 
     def get_bits(self):
         return self.size
-        
+
     def can_sign(self):
         return self.x is not None
 
@@ -174,11 +174,11 @@ class DSSKey (PKey):
     def _from_private_key_file(self, filename, password):
         data = self._read_private_key_file('DSA', filename, password)
         self._decode_key(data)
-    
+
     def _from_private_key(self, file_obj, password):
         data = self._read_private_key('DSA', file_obj, password)
         self._decode_key(data)
-    
+
     def _decode_key(self, data):
         # private key file contains:
         # DSAPrivateKey = { version = 0, p, q, g, y, x }

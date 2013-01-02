@@ -29,14 +29,14 @@ class InteractiveQuery (object):
     """
     A query (set of prompts) for a user during interactive authentication.
     """
-    
+
     def __init__(self, name='', instructions='', *prompts):
         """
         Create a new interactive query to send to the client.  The name and
         instructions are optional, but are generally displayed to the end
         user.  A list of prompts may be included, or they may be added via
         the L{add_prompt} method.
-        
+
         @param name: name of this query
         @type name: str
         @param instructions: user instructions (usually short) about this query
@@ -52,12 +52,12 @@ class InteractiveQuery (object):
                 self.add_prompt(x)
             else:
                 self.add_prompt(x[0], x[1])
-    
+
     def add_prompt(self, prompt, echo=True):
         """
         Add a prompt to this query.  The prompt should be a (reasonably short)
         string.  Multiple prompts can be added to the same query.
-        
+
         @param prompt: the user prompt
         @type prompt: str
         @param echo: C{True} (default) if the user's response should be echoed;
@@ -108,7 +108,7 @@ class ServerInterface (object):
             - C{OPEN_FAILED_CONNECT_FAILED}
             - C{OPEN_FAILED_UNKNOWN_CHANNEL_TYPE}
             - C{OPEN_FAILED_RESOURCE_SHORTAGE}
-        
+
         The default implementation always returns
         C{OPEN_FAILED_ADMINISTRATIVELY_PROHIBITED}.
 
@@ -205,7 +205,7 @@ class ServerInterface (object):
         Note that you don't have to actually verify any key signtature here.
         If you're willing to accept the key, paramiko will do the work of
         verifying the client's signature.
-        
+
         The default implementation always returns L{AUTH_FAILED}.
 
         @param username: the username of the authenticating client
@@ -219,21 +219,21 @@ class ServerInterface (object):
         @rtype: int
         """
         return AUTH_FAILED
-    
+
     def check_auth_interactive(self, username, submethods):
         """
         Begin an interactive authentication challenge, if supported.  You
         should override this method in server mode if you want to support the
         C{"keyboard-interactive"} auth type, which requires you to send a
         series of questions for the client to answer.
-        
+
         Return L{AUTH_FAILED} if this auth method isn't supported.  Otherwise,
         you should return an L{InteractiveQuery} object containing the prompts
         and instructions for the user.  The response will be sent via a call
         to L{check_auth_interactive_response}.
-        
+
         The default implementation always returns L{AUTH_FAILED}.
-        
+
         @param username: the username of the authenticating client
         @type username: str
         @param submethods: a comma-separated list of methods preferred by the
@@ -244,13 +244,13 @@ class ServerInterface (object):
         @rtype: int or L{InteractiveQuery}
         """
         return AUTH_FAILED
-    
+
     def check_auth_interactive_response(self, responses):
         """
         Continue or finish an interactive authentication challenge, if
         supported.  You should override this method in server mode if you want
         to support the C{"keyboard-interactive"} auth type.
-        
+
         Return L{AUTH_FAILED} if the responses are not accepted,
         L{AUTH_SUCCESSFUL} if the responses are accepted and complete
         the authentication, or L{AUTH_PARTIALLY_SUCCESSFUL} if your
@@ -276,7 +276,7 @@ class ServerInterface (object):
         @rtype: int or L{InteractiveQuery}
         """
         return AUTH_FAILED
-        
+
     def check_port_forward_request(self, address, port):
         """
         Handle a request for port forwarding.  The client is asking that
@@ -285,11 +285,11 @@ class ServerInterface (object):
         address (any address associated with this server) and a port of C{0}
         indicates that no specific port is requested (usually the OS will pick
         a port).
-        
+
         The default implementation always returns C{False}, rejecting the
         port forwarding request.  If the request is accepted, you should return
         the port opened for listening.
-        
+
         @param address: the requested address
         @type address: str
         @param port: the requested port
@@ -299,20 +299,20 @@ class ServerInterface (object):
         @rtype: int
         """
         return False
-    
+
     def cancel_port_forward_request(self, address, port):
         """
         The client would like to cancel a previous port-forwarding request.
         If the given address and port is being forwarded across this ssh
         connection, the port should be closed.
-        
+
         @param address: the forwarded address
         @type address: str
         @param port: the forwarded port
         @type port: int
         """
         pass
-        
+
     def check_global_request(self, kind, msg):
         """
         Handle a global request of the given C{kind}.  This method is called
@@ -331,7 +331,7 @@ class ServerInterface (object):
 
         The default implementation always returns C{False}, indicating that it
         does not support any global requests.
-        
+
         @note: Port forwarding requests are handled separately, in
             L{check_port_forward_request}.
 
@@ -399,9 +399,9 @@ class ServerInterface (object):
         Determine if a shell command will be executed for the client.  If this
         method returns C{True}, the channel should be connected to the stdin,
         stdout, and stderr of the shell command.
-        
+
         The default implementation always returns C{False}.
-        
+
         @param channel: the L{Channel} the request arrived on.
         @type channel: L{Channel}
         @param command: the command to execute.
@@ -410,11 +410,11 @@ class ServerInterface (object):
             stdout, and stderr of the executing command; C{False} if the
             command will not be executed.
         @rtype: bool
-        
+
         @since: 1.1
         """
         return False
-        
+
     def check_channel_subsystem_request(self, channel, name):
         """
         Determine if a requested subsystem will be provided to the client on
@@ -469,15 +469,15 @@ class ServerInterface (object):
         @rtype: bool
         """
         return False
-    
+
     def check_channel_x11_request(self, channel, single_connection, auth_protocol, auth_cookie, screen_number):
         """
         Determine if the client will be provided with an X11 session.  If this
         method returns C{True}, X11 applications should be routed through new
         SSH channels, using L{Transport.open_x11_channel}.
-        
+
         The default implementation always returns C{False}.
-        
+
         @param channel: the L{Channel} the X11 request arrived on
         @type channel: L{Channel}
         @param single_connection: C{True} if only a single X11 channel should
@@ -533,7 +533,7 @@ class ServerInterface (object):
             - C{OPEN_FAILED_CONNECT_FAILED}
             - C{OPEN_FAILED_UNKNOWN_CHANNEL_TYPE}
             - C{OPEN_FAILED_RESOURCE_SHORTAGE}
-        
+
         The default implementation always returns
         C{OPEN_FAILED_ADMINISTRATIVELY_PROHIBITED}.
 
@@ -588,12 +588,12 @@ class SubsystemHandler (threading.Thread):
         self.__transport = channel.get_transport()
         self.__name = name
         self.__server = server
-        
+
     def get_server(self):
         """
         Return the L{ServerInterface} object associated with this channel and
         subsystem.
-        
+
         @rtype: L{ServerInterface}
         """
         return self.__server

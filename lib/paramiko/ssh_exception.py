@@ -33,11 +33,11 @@ class AuthenticationException (SSHException):
     Exception raised when authentication failed for some reason.  It may be
     possible to retry with different credentials.  (Other classes specify more
     specific reasons.)
-    
+
     @since: 1.6
     """
     pass
-    
+
 
 class PasswordRequiredException (AuthenticationException):
     """
@@ -51,20 +51,20 @@ class BadAuthenticationType (AuthenticationException):
     Exception raised when an authentication type (like password) is used, but
     the server isn't allowing that type.  (It may only allow public-key, for
     example.)
-    
+
     @ivar allowed_types: list of allowed authentication types provided by the
         server (possible values are: C{"none"}, C{"password"}, and
         C{"publickey"}).
     @type allowed_types: list
-    
+
     @since: 1.1
     """
     allowed_types = []
-    
+
     def __init__(self, explanation, types):
         AuthenticationException.__init__(self, explanation)
         self.allowed_types = types
-     
+
     def __str__(self):
         return SSHException.__str__(self) + ' (allowed_types=%r)' % self.allowed_types
 
@@ -74,7 +74,7 @@ class PartialAuthentication (AuthenticationException):
     An internal exception thrown in the case of partial authentication.
     """
     allowed_types = []
-    
+
     def __init__(self, types):
         AuthenticationException.__init__(self, 'partial authentication')
         self.allowed_types = types
@@ -83,10 +83,10 @@ class PartialAuthentication (AuthenticationException):
 class ChannelException (SSHException):
     """
     Exception raised when an attempt to open a new L{Channel} fails.
-    
+
     @ivar code: the error code returned by the server
     @type code: int
-    
+
     @since: 1.6
     """
     def __init__(self, code, text):
@@ -97,14 +97,14 @@ class ChannelException (SSHException):
 class BadHostKeyException (SSHException):
     """
     The host key given by the SSH server did not match what we were expecting.
-    
+
     @ivar hostname: the hostname of the SSH server
     @type hostname: str
     @ivar key: the host key presented by the server
     @type key: L{PKey}
     @ivar expected_key: the host key expected
     @type expected_key: L{PKey}
-    
+
     @since: 1.6
     """
     def __init__(self, hostname, got_key, expected_key):

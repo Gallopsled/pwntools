@@ -89,7 +89,7 @@ class KexGex (object):
 
     ###  internals...
 
-    
+
     def _generate_x(self):
         # generate an "x" (1 < x < (p-1)/2).
         q = (self.p - 1) // 2
@@ -215,7 +215,7 @@ class KexGex (object):
         m.add_string(str(sig))
         self.transport._send_message(m)
         self.transport._activate_outbound()
-        
+
     def _parse_kexdh_gex_reply(self, m):
         host_key = m.get_string()
         self.f = m.get_mpint()

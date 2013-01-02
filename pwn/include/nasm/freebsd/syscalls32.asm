@@ -7,10 +7,10 @@
         %define SYS_open        5
         %define SYS_close       6
         %define SYS_wait4       7
-                                        ; 8 is old creat 
+                                        ; 8 is old creat
         %define SYS_link        9
         %define SYS_unlink      10
-                                        ; 11 is obsolete execv 
+                                        ; 11 is obsolete execv
         %define SYS_chdir       12
         %define SYS_fchdir      13
         %define SYS_mknod       14
@@ -18,7 +18,7 @@
         %define SYS_chown       16
         %define SYS_break       17
         %define SYS_freebsd4_getfsstat  18
-                                        ; 19 is old lseek 
+                                        ; 19 is old lseek
         %define SYS_getpid      20
         %define SYS_mount       21
         %define SYS_unmount     22
@@ -37,21 +37,21 @@
         %define SYS_fchflags    35
         %define SYS_sync        36
         %define SYS_kill        37
-                                        ; 38 is old stat 
+                                        ; 38 is old stat
         %define SYS_getppid     39
-                                        ; 40 is old lstat 
+                                        ; 40 is old lstat
         %define SYS_dup 41
         %define SYS_pipe        42
         %define SYS_getegid     43
         %define SYS_profil      44
         %define SYS_ktrace      45
-                                        ; 46 is old sigaction 
+                                        ; 46 is old sigaction
         %define SYS_getgid      47
-                                        ; 48 is old sigprocmask 
+                                        ; 48 is old sigprocmask
         %define SYS_getlogin    49
         %define SYS_setlogin    50
         %define SYS_acct        51
-                                        ; 52 is old sigpending 
+                                        ; 52 is old sigpending
         %define SYS_sigaltstack 53
         %define SYS_ioctl       54
         %define SYS_reboot      55
@@ -61,33 +61,33 @@
         %define SYS_execve      59
         %define SYS_umask       60
         %define SYS_chroot      61
-                                        ; 62 is old fstat 
-                                        ; 63 is old getkerninfo 
-                                        ; 64 is old getpagesize 
+                                        ; 62 is old fstat
+                                        ; 63 is old getkerninfo
+                                        ; 64 is old getpagesize
         %define SYS_msync       65
         %define SYS_vfork       66
-                                        ; 67 is obsolete vread 
-                                        ; 68 is obsolete vwrite 
+                                        ; 67 is obsolete vread
+                                        ; 68 is obsolete vwrite
         %define SYS_sbrk        69
         %define SYS_sstk        70
-                                        ; 71 is old mmap 
+                                        ; 71 is old mmap
         %define SYS_vadvise     72
         %define SYS_munmap      73
         %define SYS_mprotect    74
         %define SYS_madvise     75
-                                        ; 76 is obsolete vhangup 
-                                        ; 77 is obsolete vlimit 
+                                        ; 76 is obsolete vhangup
+                                        ; 77 is obsolete vlimit
         %define SYS_mincore     78
         %define SYS_getgroups   79
         %define SYS_setgroups   80
         %define SYS_getpgrp     81
         %define SYS_setpgid     82
         %define SYS_setitimer   83
-                                        ; 84 is old wait 
+                                        ; 84 is old wait
         %define SYS_swapon      85
         %define SYS_getitimer   86
-                                        ; 87 is old gethostname 
-                                        ; 88 is old sethostname 
+                                        ; 87 is old gethostname
+                                        ; 88 is old sethostname
         %define SYS_getdtablesize       89
         %define SYS_dup2        90
         %define SYS_fcntl       92
@@ -96,23 +96,23 @@
         %define SYS_setpriority 96
         %define SYS_socket      97
         %define SYS_connect     98
-                                        ; 99 is old accept 
+                                        ; 99 is old accept
         %define SYS_getpriority 100
-                                        ; 101 is old send 
-                                        ; 102 is old recv 
-                                        ; 103 is old sigreturn 
+                                        ; 101 is old send
+                                        ; 102 is old recv
+                                        ; 103 is old sigreturn
         %define SYS_bind        104
         %define SYS_setsockopt  105
         %define SYS_listen      106
-                                        ; 107 is obsolete vtimes 
-                                        ; 108 is old sigvec 
-                                        ; 109 is old sigblock 
-                                        ; 110 is old sigsetmask 
-                                        ; 111 is old sigsuspend 
-                                        ; 112 is old sigstack 
-                                        ; 113 is old recvmsg 
-                                        ; 114 is old sendmsg 
-                                        ; 115 is obsolete vtrace 
+                                        ; 107 is obsolete vtimes
+                                        ; 108 is old sigvec
+                                        ; 109 is old sigblock
+                                        ; 110 is old sigsetmask
+                                        ; 111 is old sigsuspend
+                                        ; 112 is old sigstack
+                                        ; 113 is old recvmsg
+                                        ; 114 is old sendmsg
+                                        ; 115 is obsolete vtrace
         %define SYS_gettimeofday        116
         %define SYS_getrusage   117
         %define SYS_getsockopt  118
@@ -121,12 +121,12 @@
         %define SYS_settimeofday        122
         %define SYS_fchown      123
         %define SYS_fchmod      124
-                                        ; 125 is old recvfrom 
+                                        ; 125 is old recvfrom
         %define SYS_setreuid    126
         %define SYS_setregid    127
         %define SYS_rename      128
-                                        ; 129 is old truncate 
-                                        ; 130 is old ftruncate 
+                                        ; 129 is old truncate
+                                        ; 130 is old ftruncate
         %define SYS_flock       131
         %define SYS_mkfifo      132
         %define SYS_sendto      133
@@ -135,21 +135,21 @@
         %define SYS_mkdir       136
         %define SYS_rmdir       137
         %define SYS_utimes      138
-                                        ; 139 is obsolete 4.2 sigreturn 
+                                        ; 139 is obsolete 4.2 sigreturn
         %define SYS_adjtime     140
-                                        ; 141 is old getpeername 
-                                        ; 142 is old gethostid 
-                                        ; 143 is old sethostid 
-                                        ; 144 is old getrlimit 
-                                        ; 145 is old setrlimit 
-                                        ; 146 is old killpg 
+                                        ; 141 is old getpeername
+                                        ; 142 is old gethostid
+                                        ; 143 is old sethostid
+                                        ; 144 is old getrlimit
+                                        ; 145 is old setrlimit
+                                        ; 146 is old killpg
         %define SYS_setsid      147
         %define SYS_quotactl    148
-                                        ; 149 is old quota 
-                                        ; 150 is old getsockname 
+                                        ; 149 is old quota
+                                        ; 150 is old getsockname
         %define SYS_nlm_syscall 154
         %define SYS_nfssvc      155
-                                        ; 156 is old getdirentries 
+                                        ; 156 is old getdirentries
         %define SYS_freebsd4_statfs     157
         %define SYS_freebsd4_fstatfs    158
         %define SYS_lgetfh      160
@@ -244,7 +244,7 @@
         %define SYS_getsid      310
         %define SYS_setresuid   311
         %define SYS_setresgid   312
-                                        ; 313 is obsolete signanosleep 
+                                        ; 313 is obsolete signanosleep
         %define SYS_aio_return  314
         %define SYS_aio_suspend 315
         %define SYS_aio_cancel  316
@@ -253,8 +253,8 @@
         %define SYS_oaio_write  319
         %define SYS_olio_listio 320
         %define SYS_yield       321
-                                        ; 322 is obsolete thr_sleep 
-                                        ; 323 is obsolete thr_wakeup 
+                                        ; 322 is obsolete thr_sleep
+                                        ; 323 is obsolete thr_wakeup
         %define SYS_mlockall    324
         %define SYS_munlockall  325
         %define SYS___getcwd    326

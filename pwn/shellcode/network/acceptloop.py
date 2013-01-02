@@ -32,7 +32,7 @@ acceptloop:
         push eax
         mov al, SYS_bind
         int 0x80
-    
+
         ;; listen(servfd, whatever)
         mov al, SYS_listen
         int 0x80
@@ -41,7 +41,7 @@ acceptloop:
         pop ebx
 .accept:
         push edx
-        push ebx 
+        push ebx
         push ebx
         mov al, SYS_accept
         int 0x80
@@ -65,7 +65,7 @@ acceptloop:
         pop ecx
         test ecx, ecx
         jnz .accept
-        
+
 
 """ % {'port'    : htons(int(port)),
        'portnum' : int(port)}
@@ -119,7 +119,7 @@ acceptloop:
 
         mov al, SYS_fork
         int 0x80
-        xchg eax, edi 
+        xchg eax, edi
 
         test edi, edi
         mov ebx, ebp
@@ -130,7 +130,7 @@ acceptloop:
         pop eax
         int 0x80
 
-        test edi, edi 
+        test edi, edi
         jnz .loop
 
 """ % {'port'    : htons(int(port)),

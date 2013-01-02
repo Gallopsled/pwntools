@@ -36,7 +36,7 @@ wrapper:
     push esp
     call consistency_check
     add esp, 4
-    
+
     ; Make sure the function pointer is valid
     push dword [esp+STATE.FUNCTION]
     call lookup_function
@@ -56,7 +56,7 @@ wrapper:
     add ecx, 4
     cmp ecx, STATE_size
     jl .loop
-    
+
 
     ; Call the wrapper function
     mov edx, [eax-STATE_size+STATE.FUNCTION]
@@ -82,7 +82,7 @@ skip_real:
     ; Get the value to return when done from the stack
     pop edx
     pop edx
-    
+
     ; Restore callee-saved values
     mov ebx, [ecx-STATE_size+STATE.EBX]
     mov ebp, [ecx-STATE_size+STATE.EBP]

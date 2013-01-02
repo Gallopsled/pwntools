@@ -38,7 +38,7 @@ class AuthHandler (object):
     """
     Internal class to handle the mechanics of authentication.
     """
-    
+
     def __init__(self, transport):
         self.transport = weakref.proxy(transport)
         self.username = None
@@ -52,7 +52,7 @@ class AuthHandler (object):
         # for server mode:
         self.auth_username = None
         self.auth_fail_count = 0
-        
+
     def is_authenticated(self):
         return self.authenticated
 
@@ -93,7 +93,7 @@ class AuthHandler (object):
             self._request_auth()
         finally:
             self.transport.lock.release()
-    
+
     def auth_interactive(self, username, handler, event, submethods=''):
         """
         response_list = handler(title, instructions, prompt_list)
@@ -108,7 +108,7 @@ class AuthHandler (object):
             self._request_auth()
         finally:
             self.transport.lock.release()
-    
+
     def abort(self):
         if self.auth_event is not None:
             self.auth_event.set()
@@ -253,7 +253,7 @@ class AuthHandler (object):
             m.add_string(p[0])
             m.add_boolean(p[1])
         self.transport._send_message(m)
- 
+
     def _parse_userauth_request(self, m):
         if not self.transport.server_mode:
             # er, uh... what?
@@ -378,7 +378,7 @@ class AuthHandler (object):
         lang = m.get_string()
         self.transport._log(INFO, 'Auth banner: ' + banner)
         # who cares.
-    
+
     def _parse_userauth_info_request(self, m):
         if self.auth_method != 'keyboard-interactive':
             raise SSHException('Illegal info request from server')
@@ -390,14 +390,14 @@ class AuthHandler (object):
         for i in range(prompts):
             prompt_list.append((m.get_string(), m.get_boolean()))
         response_list = self.interactive_handler(title, instructions, prompt_list)
-        
+
         m = Message()
         m.add_byte(chr(MSG_USERAUTH_INFO_RESPONSE))
         m.add_int(len(response_list))
         for r in response_list:
             m.add_string(r)
         self.transport._send_message(m)
-    
+
     def _parse_userauth_info_response(self, m):
         if not self.transport.server_mode:
             raise SSHException('Illegal info response from server')
@@ -411,7 +411,7 @@ class AuthHandler (object):
             self._interactive_query(result)
             return
         self._send_auth_result(self.auth_username, 'keyboard-interactive', result)
-        
+
 
     _handler_table = {
         MSG_SERVICE_REQUEST: _parse_service_request,

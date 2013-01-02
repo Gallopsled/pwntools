@@ -42,7 +42,7 @@ sub main
 
   `mkdir -p unpacked/tmp 2> /dev/null`;
 
-  # Try to unpack each file in the 
+  # Try to unpack each file in the
   foreach $file (@files) {
     push (@out_files, decode($file));
   }
