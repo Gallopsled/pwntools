@@ -69,7 +69,7 @@ def _internal_memoize(use_mem = True, use_file = True):
                 if t != None:
                     if dict_miss:
                         cache[sig] = (t,val)
-                    if use_file and file_miss:
+                    if file_miss:
                         digest = md5.md5(sig).hexdigest()
                         fname = os.path.join(__tempdir, digest)
                         try:
