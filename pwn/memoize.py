@@ -1,4 +1,4 @@
-import pwn, md5, os, tempfile, sys
+import md5, os, tempfile
 from pwn import decoutils as _decoutils
 from pwn import log
 from cPickle import load, dump
@@ -16,22 +16,24 @@ def memoize(*args, **kwargs):
     else:
         return _internal_memoize(*args, **kwargs)
 
-def _internal_memoize(use_mem = True, use_file = True):
-    cache = {}
-    TYPE_VALUE     = 0
-    TYPE_EXCEPTION = 1
+_TYPE_VALUE     = 0
+_TYPE_EXCEPTION = 1
 
+def _internal_memoize(use_mem = True, use_file = True):
     def real(f):
         if use_mem == False and use_file == False:
             return f
 
-        if use_mem == False and __tempdir == None:
+        if use_mem == False or __tempdir == None:
             return f
+
+        cache = {}
 
         @_decoutils.ewraps(f)
         def wrapper(*args, **kwargs):
-            sig = str(args) + str(kwargs)
+            sig = (str(args), str(kwargs))
             t = None
+            fname = None
             file_miss = False
             dict_miss = False
 
@@ -43,7 +45,7 @@ def _internal_memoize(use_mem = True, use_file = True):
                         dict_miss = True
 
                 if t == None and use_file:
-                    digest = md5.md5(sig).hexdigest()
+                    digest = md5.md5('.'.join((f.__module__, f.__name__) + sig)).hexdigest()
                     fname = os.path.join(__tempdir, digest)
                     try:
                         if os.path.exists(fname):
@@ -56,22 +58,20 @@ def _internal_memoize(use_mem = True, use_file = True):
 
                 if t == None:
                     try:
-                        t, val = TYPE_VALUE, f(*args, **kwargs)
+                        t, val = _TYPE_VALUE, f(*args, **kwargs)
                     except Exception as e:
-                        t, val = TYPE_EXCEPTION, e
+                        t, val = _TYPE_EXCEPTION, e
                         raise
 
-                if t == TYPE_VALUE:
+                if t == _TYPE_VALUE:
                     return val
                 else:
                     raise val
             finally:
                 if t != None:
                     if dict_miss:
-                        cache[sig] = (t,val)
+                        cache[sig] = (t, val)
                     if file_miss:
-                        digest = md5.md5(sig).hexdigest()
-                        fname = os.path.join(__tempdir, digest)
                         try:
                             with open(fname, 'w') as fd:
                                 dump((t, val), fd)
@@ -85,10 +85,8 @@ if not os.path.exists(__tempdir):
         os.mkdir(__tempdir)
     except:
         log.trace(' [-] Could not create memoization dir: %s\n' % __tempdir)
-        def memoize(f):
-            return f
+        __tempdir = None
 elif not os.path.isdir(__tempdir):
     log.trace(' [-] Memoization path is not a dir: %s\n' % __tempdir)
-    def memoize(f):
-        return f
+    __tempdir = None
 
