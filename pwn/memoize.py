@@ -39,7 +39,8 @@ def _internal_memoize(use_mem = True, use_file = True):
                 if use_mem:
                     if sig in cache:
                         t, val = cache[sig]
-                    dict_miss = True
+                    else:
+                        dict_miss = True
 
                 if t == None and use_file:
                     digest = md5.md5(sig).hexdigest()
@@ -48,10 +49,10 @@ def _internal_memoize(use_mem = True, use_file = True):
                         if os.path.exists(fname):
                             with open(fname) as fd:
                                 t, val = load(fd)
-                    finally:
-                        if t == None:
+                        else:
                             file_miss = True
-                        pass
+                    except:
+                        file_miss = True
 
                 if t == None:
                     try:
