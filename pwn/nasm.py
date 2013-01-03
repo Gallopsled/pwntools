@@ -12,7 +12,7 @@ def _cmd(src, optimize = 'x'):
 @pwn.memoize
 def nasm_raw(code, checked = True, return_none = False, optimize = 'x'):
 
-    with tempfile.NamedTemporaryFile(delete = False, prefix='pwn', suffix='.asm') as tmp:
+    with tempfile.NamedTemporaryFile(prefix='pwn', suffix='.asm') as tmp:
         tmp.write(code)
         tmp.flush()
 
