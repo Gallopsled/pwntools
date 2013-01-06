@@ -130,9 +130,6 @@ class ROP:
         else:
             die('Could not find set-EBP and leave gadgets needed to migrate chain')
 
-    def word(self, word):
-        self.call(word)
-
     def call(self, target, args = ()):
         '''Irrelevant arguments should be marked by a None'''
         target = self._resolve(target)
@@ -148,6 +145,11 @@ class ROP:
             return self._generate32()
         else:
             die('Only 32bit ELF supported')
+
+    def flush(self):
+        r = self.generate()
+        self._chain = []
+        return r
 
     def _generate32(self):
         out = []
