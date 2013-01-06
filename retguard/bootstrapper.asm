@@ -109,6 +109,7 @@ handle_sigtrap:
         mov ebx, [eax + 0x30]   ; REG_ESP
         mov ecx, [ebx]          ; saved EIP
         mov ebp, [eax + 0x4c]
+        dec ebp                 ; addr of "ret" instruction
         mov [eax + 0x4c], ecx   ; REG_EIP
         add ebx, 4              ; pop
         mov [eax + 0x30], ebx   ; REG_ESP
@@ -143,16 +144,55 @@ patch_addrs_end:
         int 0x80
 
 .die:
-        ;; sub ecx, 15
-        push ebp
+;; Stack smashing detected:  ret at 0xXXXXXXXX would have returned to 0xXXXXXXXX\n
+        push `\0\0!\n`
+        sub esp, 6
+        mov eax, ecx
+        call writeaddr
+        push `o 0x`
+        push `ed t`
+        push `turn`
+        push `e re`
+        push ` hav`
+        push `ould`
+        push `\0\0 w`
+        sub esp, 6
+        mov eax, ebp
+        call writeaddr
+        push `t 0x`
+        push `et a`
+        push `d: r`
+        push `ecte`
+        push ` det`
+        push `hing`
+        push `smas`
+        push `ack `
+        push word `St`
+
         mov ecx, esp
         mov ebx, 1
-        mov edx, 4
+        mov edx, 78
         mov eax, 4
         int 0x80
-        add esp, 4
-        ;; jmp .live
+        add esp, 78
         hlt
+
+writeaddr:   ; (addr, buf)
+        lea edi, [esp + 4]
+        mov edx, 8
+.loop:
+        mov ebx, eax
+        shr eax, 4
+        and ebx, 0xf
+        add ebx, 0x30
+        cmp ebx, 0x3A
+        jl .digit
+        add ebx, 0x10
+.digit:
+        dec edx
+        mov [edi + edx], bl
+        jne .loop
+        ret
 
 addrs:
         dd #RETURN_ADDRS#
