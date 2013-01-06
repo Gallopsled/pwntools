@@ -7,7 +7,7 @@ import sys, os, re, tempfile
 READELF = '/usr/bin/readelf'
 PAGE_SIZE = 4096
 
-def asm(s):
+def nasm(s):
     with tempfile.NamedTemporaryFile() as tmp:
         tmp.write(s)
         tmp.flush()
@@ -46,21 +46,19 @@ lines = re.findall('^\s+\[\s*' + posint + '\]' + field * 6 + flags, out, re.MULT
 print 'Finding executable sections'
 for name, _type, addr, off, size, _es, flgs in lines:
     if 'X' not in flgs: continue
-    print '  %s' % name
     addr = int(addr, 16)
     off = int(off, 16)
     size = int(size, 16)
-    def patch(p, s):
-        if p < addr or p + len(s) > addr + size:
-            raise ValueError
-        s = list(s)
-        fileaddr = p - addr + off
-        filedata[fileaddr:fileaddr+len(s)] = s
+    if name == '.plt':
+        plt = (addr, size)
+    print '  %s' % name
     sections[name] = {'addr' : addr,
                      'offset': off,
                      'size'  : size,
-                     'patch' : patch,
                      }
+
+def inplt(p):
+    return p is not None and p >= plt[0] and p < plt[0] + plt[1]
 
 DecodeBits = Decode64Bits if elfclass == 'ELF64' else Decode32Bits
 
@@ -70,24 +68,116 @@ for name, sec in sections.items():
     addr = sec['addr']
     offset = sec['offset']
     size = sec['size']
-    sec['code'] = Decode(addr, ''.join(filedata[offset:offset + size]), DecodeBits)
+    code = Decode(addr, ''.join(filedata[offset:offset + size]), DecodeBits)
+    sec['code'] = {iaddr: (isize, asm) for iaddr, isize, asm, _raw in code}
 
 legit = []
 
-print 'Searching for call and return instructions'
+print 'Searching for call instructions'
 for name, sec in sections.items():
     addr = sec['addr']
     print '  %s' % name
-    for iaddr, size, code, raw in sec['code']:
-        if code.startswith('CALL'):
-            print '    0x%08x CALL' % iaddr
-            print ' 0x%08x' % (iaddr + size)
-            legit.append(iaddr + size)
-        elif code == 'RET':
-            print '    0x%08x RET' % iaddr
-            fileaddr = iaddr - addr + sec['offset']
-            # filedata[fileaddr] = '\xcc'
-            filedata[fileaddr] = '\xf4'
+    for iaddr, (isize, asm) in sec['code'].items():
+        if asm.startswith('CALL'):
+            print '    0x%08x' % iaddr
+            legit.append(iaddr + isize)
+        # elif asm == 'RET':
+        #     print '    0x%08x RET' % iaddr
+        #     fileaddr = iaddr - addr + sec['offset']
+        #     filedata[fileaddr] = '\xcc'
+        #     # filedata[fileaddr] = '\xf4'
+
+
+def nextcall(p, code):
+    while True:
+        try:
+            isize, asm = code[p]
+        except:
+            break
+        if asm.startswith('CALL'):
+            m = re.findall('CALL 0x([0-9a-fA-F]+)', asm)
+            if m <> []:
+                return int(m[0], 16)
+            break
+        p += isize
+
+def trace(p):
+    traced = set()
+    poi = set([(p, False)])
+    while len(poi) > 0:
+        p, dopatch = poi.pop()
+        if p in traced:
+            continue
+        # print '0x%08x' % p
+        for name, sec in sections.items():
+            addr = sec['addr']
+            size = sec['size']
+            if p < addr or p >= addr + size: continue
+            code = sec['code']
+            while True:
+                if p in traced:
+                    break
+                traced.add(p)
+                try:
+                    isize, asm = code[p]
+                except:
+                    # print hex(p)
+                    break
+                if asm == 'RET' or asm.startswith('RET 0x'):
+                    if dopatch:
+                        print '  0x%08x' % p
+                        fileaddr = p - addr + sec['offset']
+                        filedata[fileaddr] = '\xcc'
+                    break
+                else:
+                    for s in re.findall('0x([0-9a-fA-F]+)', asm):
+                        # heuristic here: if the next call is in a library we
+                        # might be looking at an argument here, and that
+                        # argument might be used as a callback -- so skip it
+                        if not inplt(nextcall(p, code)):
+                            poi.add((int(s, 16), True))
+                p += isize
+
+print 'Looking up main'
+# -s : symbols
+cmd = [READELF, '-s', target]
+out = check_output(cmd)
+
+main = re.findall('^\s+\d+:\s+([0-9a-f]+)\s+\d+\s+\w+\s+\w+\s+\w+\s+\w+\s+main$', out, re.MULTILINE)
+if main == []:
+    main = int(raw_input('Could not find main, please gief (0xXXXXXXXX): '), 16)
+else:
+    main = int(main[0], 16)
+    print '  0x%08x' % main
+
+print 'Tracing program to find return instructions'
+trace(main)
+
+# def patchret(p):
+#     for name, sec in sections.items():
+#         addr = sec['addr']
+#         size = sec['size']
+#         if p < addr or p >= addr + size: continue
+#         code = sec['code']
+#         try:
+#             while True:
+#                 # print '0x%08x' % p
+#                 isize, asm = code[p]
+#                 if asm == 'RET' or asm.startswith('RET 0x'):
+#                     print '  0x%08x' % p
+#                     fileaddr = p - addr + sec['offset']
+#                     filedata[fileaddr:fileaddr + isize] = ['\xcc'] * isize
+#                     return
+#                 p += isize
+#         except:
+#             pass
+
+# print 'Searching for return instructions'
+# for name, sec in sections.items():
+#     print '  %s' % name
+#     for addr, (size, asm) in sec['code'].items():
+#         for p in re.findall('0x([0-9a-fA-F]+)', asm):
+#             patchret(int(p, 16))
 
 pages = (len(filedata) - 1) // PAGE_SIZE + 1
 bootaddr = pages * PAGE_SIZE
@@ -99,7 +189,7 @@ print 'Assembling dummy loader to determine size'
 with open('loader.asm') as f:
     code = f.read()
 code = code.replace('#OFFSET#', str(bootaddr)).replace('#LENGTH#', '0')
-loaderlen = len(asm(code))
+loaderlen = len(nasm(code))
 print '  Loader size: %d bytes' % loaderlen
 
 
@@ -129,7 +219,7 @@ code = code.replace('#ENTRY_POINT#',
                     '0x%08x' % entrypoint)
 code = code.replace('#ORIG_CODE#',
                     ', '.join('0x%02x' % ord(c) for c in origcode))
-boot = asm(code)
+boot = nasm(code)
 bootlen = len(boot)
 print '  Appended bootstrapper: %d bytes' % len(boot)
 filedata += boot
@@ -139,7 +229,7 @@ print 'Creating loader'
 with open('loader.asm') as f:
     code = f.read()
 code = code.replace('#OFFSET#', str(bootaddr)).replace('#LENGTH#', str(bootlen))
-loader = asm(code)
+loader = nasm(code)
 if len(loader) <> loaderlen:
     print '!! Real loader is not the same size as dummy loader -- this is a BUG'
     exit()

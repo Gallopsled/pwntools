@@ -48,7 +48,7 @@ top:
         push dword 0            ; restore (ignored)
         push dword SA_SIGINFO   ; flags
         push HANDLE_SIGTRAP
-        mov ebx, SIGSEGV        ; signum
+        mov ebx, SIGTRAP        ; signum
         mov ecx, esp            ; act
         xor edx, edx            ; oldact
         mov esi, 8              ; sigsetsize
@@ -102,38 +102,17 @@ bottom:
 
 base:
 handle_sigtrap:
-        ;; int3
         add esp, 4
-
-        push `es!\n`
-        push `ress`
-        push ` add`
-        push `turn`
-        push `r re`
-        push ` you`
-        push `ding`
-        push ` rea`
-        push `ram,`
-        push `prog`
-        push `our `
-        push `in y`
-        push `I'm `
-        mov ebx, 0
-        mov ecx, esp
-        mov edx, 52
-        mov eax, 4
-        int 0x80
-        add esp, 52
 
         ;; Patch context to act like ret
         mov eax, [esp + 0x8]    ; context
         mov ebx, [eax + 0x30]   ; REG_ESP
         mov ecx, [ebx]          ; saved EIP
+        mov ebp, [eax + 0x4c]
         mov [eax + 0x4c], ecx   ; REG_EIP
         add ebx, 4              ; pop
         mov [eax + 0x30], ebx   ; REG_ESP
 
-        ;; int3
 patch_addrs:
         mov eax, 0
 patch_addrs_end:
@@ -159,17 +138,20 @@ patch_addrs_end:
 .check:
         cmp [eax + esi * 4], ecx
         jne .die
-
+.live:
         mov eax, SYS_rt_sigreturn
         int 0x80
 
 .die:
-        push ecx
+        ;; sub ecx, 15
+        push ebp
         mov ecx, esp
         mov ebx, 1
         mov edx, 4
         mov eax, 4
         int 0x80
+        add esp, 4
+        ;; jmp .live
         hlt
 
 addrs:
