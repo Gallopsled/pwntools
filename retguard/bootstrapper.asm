@@ -187,7 +187,7 @@ writeaddr:   ; (addr, buf)
         add ebx, 0x30
         cmp ebx, 0x3A
         jl .digit
-        add ebx, 0x10
+        add ebx, 0x27
 .digit:
         dec edx
         mov [edi + edx], bl
