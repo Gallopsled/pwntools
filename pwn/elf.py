@@ -127,7 +127,7 @@ class ELF:
             size = sec['size']
             return self._file_data[offset:offset + size]
         else:
-            die('No section named %s' % s)
+            die('No section named %s' % name)
 
     def read(self, addr, numb):
         out = []
