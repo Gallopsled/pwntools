@@ -73,7 +73,7 @@ Not sure whether this should be based on threading or subprocesses, or even dist
 
             except Exception, e:
                 log.error("Task execution failed! %s (%s)" % (str(e), str(type(e))))
-                
+
 
     def stop(self):
         self.running = False
