@@ -72,30 +72,87 @@ class Api(object):
         ins = self.exploitTable.insert()
         ins.execute(config)
 
+    def getExploits(self, amount=10):
+        column = self.exploitTable.c
+        select = self.exploitTable.select()
+        select = select.limit(amount)
+        select = select.order_by(sqlalchemy.desc(column.ts))
+        result = select.execute()
+        rows   = result.fetchall()
+        result.close()
+        return rows
+
+
     def addService(self, config):
         ins = self.serviceTable.insert()
         ins.execute(config)
+
+    def getServices(self, amount=10):
+        column = self.serviceTable.c
+        select = self.serviceTable.select()
+        select = select.limit(amount)
+        result = select.execute()
+        rows   = result.fetchall()
+        result.close()
+        return rows
+
 
     def addFlag(self, config):
         ins = self.flagTable.insert()
         ins.execute(config)
 
+    def getFlags(self, amount=10):
+        column = self.flagTable.c
+        select = self.flagTable.select()
+        select = select.limit(amount)
+        result = select.execute()
+        rows   = result.fetchall()
+        result.close()
+        return rows
+
+
+
     def addHost(self, config):
         ins = self.hostTable.insert()
         ins.execute(config)
+
+    def getHosts(self, amount=10):
+        column = self.hostTable.c
+        select = self.hostTable.select()
+        select = select.limit(amount)
+        result = select.execute()
+        rows   = result.fetchall()
+        result.close()
+        return rows
+
+
 
     def addAttack(self, config):
         ins = self.attackTable.insert()
         ins.execute(config)
 
+    def getAttacks(self, amount=10):
+        column = self.attackTable.c
+        select = self.attackTable.select()
+        select = select.limit(amount)
+        select = select.order_by(sqlalchemy.desc(column.ts))
+        result = select.execute()
+        rows   = result.fetchall()
+        result.close()
+        return rows
+
+    def promoteAttack(self, a_id, promote_level=None):
+        if not isinstance(promote_level, int):
+            self.attackTable.update().where(self.attackTable.c.id==a_id).values(priority=self.attackTable.c.priority-1)
+        else:
+            self.attackTable.update().where(self.attackTable.c.id==a_id).values(priority=promote_level)
 
 
-
-    def promoteAttack(self, config):
-        pass
-
-    def demoteAttack(self, config):
-        pass
+    def demoteAttack(self, a_id, promote_level=None):
+        if not isinstance(promote_level, int):
+            self.attackTable.update().where(self.attackTable.c.id==a_id).values(priority=self.attackTable.c.priority+1)
+        else:
+            self.attackTable.update().where(self.attackTable.c.id==a_id).values(priority=promote_level)
 
     def getBatch(self, config):
         pass

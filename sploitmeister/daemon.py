@@ -2,7 +2,7 @@
 
 import threading
 import Queue
-from pwn import log
+from pwn import process, log
 import sys
 import time
 import datetime
@@ -31,6 +31,8 @@ Not sure whether this should be based on threading or subprocesses, or even dist
     def _getNewTask(self):
         tasks = []
         for f in os.listdir(self.path):
+            if not f.endswith('.json'):
+                continue
             f_path = os.path.join(self.path, f)
             with open(f_path) as fd:
                 try:
@@ -39,17 +41,41 @@ Not sure whether this should be based on threading or subprocesses, or even dist
                     md5hash = md5.md5(f).hexdigest()
 
                     if not md5hash in self.exploits.keys():
-                        log.info("Loading new exploit: %s" % exploit)
-                        self.exploits.update({md5hash : exploit[exploit_name]})
+                        log.info("Found a new exploit")
+                        self.exploits.update({md5hash : exploit})
                     else:
-                        self.exploits.update({md5hash : exploit[exploit_name]})
+                        self.exploits.update({md5hash : exploit})
 
                 except:
                     log.error("Could not read exploit: %s" % f_path)
                     continue
 
+    def _execute(self, exploit):
+        if exploit.has_key('active'):
+            if exploit['active'].lower() == "false":
+                return
 
-    def start(self):
+        name     = exploit.keys()[0]
+        exploits = exploit[name]['exploits']
+        targets  = exploit[name]['targets']
+        log.info("--------------------------------")
+        log.info("Name: %s" % name)
+        log.info("Exploits: %s" % str(exploits))
+        log.info("Targets: %s" % str(targets))
+
+        for exploit in exploits:
+            if not os.path.exists(exploit):
+                log.error("Could not find exploit: %s" % exploit)
+            else:
+                for target in targets:
+                    log.info("Executing exploit: %s" % exploit)
+                    p = process(exploit, target)
+                    res = p.proc.communicate()
+                    log.info("result code: %s" % res[0])
+        log.info("--------------------------------")
+
+
+    def start(self, sleeping=60):
         log.info("Initiating main loop")
         self.running = True
 
@@ -61,14 +87,10 @@ Not sure whether this should be based on threading or subprocesses, or even dist
                 self._getNewTask()
                 for key in self.exploits.keys():
                     exploit = self.exploits[key]
-                    if exploit.has_key('active'):
-                        if exploit['active'].lower() == "false":
-                            continue
+                    self._execute(exploit)
 
-                    log.info("executing exploits %s" % str(exploit))
-
-                log.waitfor("%s -- sleeping" % timestamp)
-                time.sleep(10)
+                log.waitfor("%s -- sleeping for %d seconds" % (timestamp, sleeping))
+                time.sleep(sleeping)
                 log.succeeded()
 
             except Exception, e:
@@ -86,8 +108,14 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Ich bin ein Scheduler!")
     parser.add_argument('-p', '--path', action="store", required=True, help="Full path to working exploit directory.  Creates dir if it does not exist.")
+    parser.add_argument('-s', '--sleeping', action="store", type=int, required=False, default=60, help="seconds of sleeping between checks")
 
     result = parser.parse_args()
     path = result.path
+    sleeping = result.sleeping
     daemon = Daemon(path)
-    daemon.start()
+    try:
+        daemon.start(sleeping)
+    except KeyboardInterrupt:
+        log.info("Screw this shit, someone interrupted me!")
+        sys.exit()
