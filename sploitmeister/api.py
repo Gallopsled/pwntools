@@ -24,6 +24,11 @@ class Api(object):
         self._setupAttackTable()
         self.metadata.create_all()
 
+
+    def _setupConfigTable(self):
+        self.configTable = sqlalchemy.Table('', self.metadata)
+
+
     def _setupExploitTable(self):
         self.exploitTable = sqlalchemy.Table('exploits', self.metadata,
                                              sqlalchemy.Column('id', sqlalchemy.types.Integer, primary_key=True, autoincrement=True),
