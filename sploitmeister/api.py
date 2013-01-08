@@ -22,12 +22,17 @@ class Api(object):
         self._setupServiceTable()
         self._setupFlagTable()
         self._setupAttackTable()
+        self._setupConfigTable()
         self.metadata.create_all()
 
-
     def _setupConfigTable(self):
-        self.configTable = sqlalchemy.Table('', self.metadata)
-
+        self.configTable = sqlalchemy.Table('config', self.metadata,
+                                            sqlalchemy.Column('id', sqlalchemy.types.Integer, primary_key=True, autoincrement=True),
+                                            sqlalchemy.Column('flag_regexp', sqlalchemy.types.String(100), nullable=False),
+                                            sqlalchemy.Column('flag_submitter', sqlalchemy.types.BLOB, nullable=False),
+                                            sqlalchemy.Column('cooldown', sqlalchemy.types.Integer, nullable=False, default=60),
+                                            sqlalchemy.Column('batch_size', sqlalchemy.types.Integer, nullable=False, default=10)
+                                            )
 
     def _setupExploitTable(self):
         self.exploitTable = sqlalchemy.Table('exploits', self.metadata,
@@ -48,9 +53,9 @@ class Api(object):
 
     def _setupServiceTable(self):
         self.serviceTable = sqlalchemy.Table('services', self.metadata,
-                                              sqlalchemy.Column('id', sqlalchemy.types.Integer, primary_key=True, autoincrement=True),
-                                              sqlalchemy.Column('name', sqlalchemy.types.String(60))
-                                              )
+                                             sqlalchemy.Column('id', sqlalchemy.types.Integer, primary_key=True, autoincrement=True),
+                                             sqlalchemy.Column('name', sqlalchemy.types.String(60))
+                                             )
 
     def _setupFlagTable(self):
         self.flagTable = sqlalchemy.Table('flags', self.metadata,
@@ -140,7 +145,7 @@ class Api(object):
         column = self.attackTable.c
         select = self.attackTable.select()
         select = select.limit(amount)
-        select = select.order_by(sqlalchemy.desc(column.ts))
+        select = select.order_by(sqlalchemy.desc(column.last_run))
         result = select.execute()
         rows   = result.fetchall()
         result.close()
