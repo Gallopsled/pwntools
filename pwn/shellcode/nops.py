@@ -18,8 +18,7 @@ def nops(length, unclobber  = None):
         return sled
     raise Exception('Cannot create nopsled under given restrictions')
 
-@shellcode_reqs(blob = True, arch='i386')
-@avoider
+@shellcode_reqs(blob = True, arch='i386', avoider = True)
 def nop_pad(length, *data):
     data = flat(data)
     length = int(length)

@@ -1,0 +1,216 @@
+#!/usr/bin/env python
+from distorm3 import Decode, Decode32Bits, Decode64Bits
+from subprocess import check_output
+from mmap import mmap
+import sys, os, re, tempfile
+
+READELF = '/usr/bin/readelf'
+LDD = '/usr/bin/ldd'
+PAGE_SIZE = 4096
+if '-v' in sys.argv:
+    sys.argv.remove('-v')
+    VERBOSE = True
+else:
+    VERBOSE = False
+
+def nasm(s):
+    with tempfile.NamedTemporaryFile() as tmp:
+        tmp.write(s)
+        tmp.flush()
+        r = check_output(['nasm', '-o', '/dev/stdout', tmp.name])
+    return r
+
+def die(s):
+    print s
+    exit(0)
+
+if not (os.access(READELF, os.X_OK) and os.path.isfile(READELF)):
+    die('Missing /usr/bin/readelf, please install binutils')
+
+if len(sys.argv) <> 2:
+    print 'usage: %s target' % sys.argv[0]
+    exit()
+
+target = sys.argv[1]
+
+def exists(f):
+    return os.access(f, os.R_OK) and os.path.isfile(f)
+
+if not exists(target):
+    die('File %s is not readable or does not exist' % target)
+
+if exists(target + '.bak'):
+    print 'Reading from %s.bak' % target
+    with open(target + '.bak') as fd:
+        filedata = list(fd.read())
+else:
+    print 'Writing backup to %s.bak' % target
+    with open(target) as fd:
+        filedata = list(fd.read())
+    with open(target + '.bak', 'w') as fd:
+        fd.write(''.join(filedata))
+
+print 'Finding shared objects needed by binary'
+cmd = [LDD, target]
+out = check_output(cmd)
+sharedobjs = []
+if 'not a dynamic' in out:
+    print '  Not a dynamic exacutable, easy peasy'
+else:
+    m = re.findall('(=> (\S*) \()|(^\s+(\S*) \()', out, re.MULTILINE)
+    for s in m:
+        s = s[-1] or s[-3]
+        sharedobjs.append(s)
+        if s:
+            print '  %s' % s
+
+def load(path):
+    '''returns (elfclass, entrypoint, executable sections)'''
+    # -h : ELF header
+    # -W : wide output
+    # -S : sections
+    cmd = [READELF, '-hWS', path]
+    out = check_output(cmd)
+
+    elfclass = re.findall('Class:\s*(.*$)', out, re.MULTILINE)[0]
+    entrypoint = int(re.findall('Entry point address:\s*(.*$)', out, re.MULTILINE)[0], 16)
+
+    field = '\s+(\S+)'
+    posint = '[123456789]\d*'
+    flags = '\s+([WAXMSILGTExOop]*)'
+    sections = {}
+    lines = re.findall('^\s+\[\s*' + posint + '\]' + field * 6 + flags, out, re.MULTILINE)
+    got = None
+    for name, _type, addr, off, size, _es, flgs in lines:
+        if name == '.got.plt':
+            got = int(addr, 16)
+            continue
+        if 'X' not in flgs: continue
+        addr = int(addr, 16)
+        off = int(off, 16)
+        size = int(size, 16)
+        if name == '.plt':
+            plt = (addr, size)
+        sections[name] = {'addr' : addr,
+                          'offset': off,
+                          'size'  : size,
+                          }
+    return (elfclass, entrypoint, got, sections)
+
+elfclass, entrypoint, got, sections = load(target + '.bak')
+if got is None:
+    print '!! Could not find GOT, aborting'
+    exit()
+
+DecodeBits = Decode64Bits if elfclass == 'ELF64' else Decode32Bits
+
+def findcalls(filedata, sections):
+    legit = []
+    for name, sec in sections.items():
+        print '    %s' % name
+        addr = sec['addr']
+        offset = sec['offset']
+        size = sec['size']
+        sec['code'] = Decode(addr, ''.join(filedata[offset:offset + size]), DecodeBits)
+        for iaddr, isize, asm, _raw in sec['code']:
+            if asm.startswith('CALL'):
+                if VERBOSE:
+                    print '      0x%08x' % iaddr
+                legit.append(iaddr + isize)
+        print '      Found %d calls' % len(legit)
+    return legit
+
+
+print 'Searching for call instructions'
+print '  %s' % target
+legit = [findcalls(filedata, sections)]
+for s in sharedobjs:
+    if s == '':
+        legit.append([])
+        continue
+    print '  %s' % s
+    with open(s) as fd:
+        data = fd.read()
+    legit.append(findcalls(data, load(s)[3]))
+
+print 'Patching return instructions'
+i = 0
+for name, sec in sections.items():
+    print '  %s' % name
+    addr = sec['addr']
+    size = sec['size']
+    code = sec['code']
+    for iaddr, isize, asm, _raw in sec['code']:
+        if asm == 'RET' or asm.startswith('RET 0x'):
+            print '    0x%08x' % iaddr
+            fileaddr = iaddr - addr + sec['offset']
+            filedata[fileaddr:fileaddr + isize] = ['\xcc'] * isize
+            i += 1
+print '  Found %d returns' % i
+
+pages = (len(filedata) - 1) // PAGE_SIZE + 1
+bootaddr = pages * PAGE_SIZE
+print 'ELF file is %d bytes, padding to %d pages' % (len(filedata), pages)
+filedata += '\0' * (bootaddr - len(filedata))
+
+print 'Assembling dummy loader to determine size'
+with open('loader.asm') as f:
+    code = f.read()
+code = code.replace('#OFFSET#', str(bootaddr)).replace('#LENGTH#', '0')
+loaderlen = len(nasm(code))
+print '  Loader size: %d bytes' % loaderlen
+
+print 'Looking up _start, and copying original code'
+for name, sec in sections.items():
+    addr = sec['addr']
+    size = sec['size']
+    offset = sec['offset']
+    if entrypoint >= addr and entrypoint < addr + size:
+        if entrypoint + loaderlen > addr + size:
+            print '!! Section %s is not big enough to hold loader' % name
+            exit()
+        origaddr = entrypoint - addr + offset
+        origcode = filedata[origaddr:origaddr + loaderlen]
+        break
+
+print 'Creating bootstrapper'
+with open('bootstrapper.asm') as f:
+    code = f.read()
+
+code = code.replace('#GOT#', str(got))
+print '  Legitimate return addresses:'
+total = '    Total ' + str(sum(map(len, legit)))
+for x in legit:
+    print '    .' + str(len(x)).rjust(len(total) - 5)
+print total
+code = code.replace('#NUM_ADDRS#',
+                    ', '.join(str(len(x)) for x in legit))
+code = code.replace('#WHITELIST#',
+                    ', '.join('0x%08x' % addr for addr in sum(legit, [])))
+print '  Entry point: 0x%08x' % entrypoint
+code = code.replace('#ENTRY_POINT#',
+                    '0x%08x' % entrypoint)
+code = code.replace('#ORIG_CODE#',
+                    ', '.join('0x%02x' % ord(c) for c in origcode))
+# print code
+boot = nasm(code)
+bootlen = len(boot)
+print '  Appended bootstrapper: %d bytes' % len(boot)
+filedata += boot
+
+print 'Creating loader'
+with open('loader.asm') as f:
+    code = f.read()
+code = code.replace('#OFFSET#', str(bootaddr)).replace('#LENGTH#', str(bootlen))
+loader = nasm(code)
+if len(loader) <> loaderlen:
+    print '!! Real loader is not the same size as dummy loader -- this is a BUG'
+    exit()
+filedata[origaddr:origaddr + loaderlen] = list(loader)
+print '  Wrote %d bytes loader at _start' % loaderlen
+
+
+print 'Writing ELF file'
+with open(target, 'w') as f:
+    f.write(''.join(filedata))
+print '  DONE!'
