@@ -22,30 +22,36 @@ bits 32
         %define ENTRY_POINT           (ebp - base + entry_point)
         %define ORIG_CODE             (ebp - base + orig_code)
         %define ORIG_CODE_LEN         (orig_code_end - orig_code)
+        %define CLEAR_FST_ADDR        (ebp - base + bootstrapper)
+        %define CLEAR_FST_NUMB        (bootstrapper.clear_till - bootstrapper)
+        %define CLEAR_SND_ADDR        (ebp - base + clear)
+        %define CLEAR_SND_NUMB        (clear_end - clear)
+        %define RET_POINT             (ebp - base + bootstrapper.ret_point)
 
-        %define PATCH_WHITELIST       (ebp - base + sighandler.patch_whitelist + 1)
-        %define PATCH_WHITELIST_END   (ebp - base + sighandler.patch_whitelist_end + 1)
-        %define PATCH_RET             (ebp - base + bootstrapper.patch_ret + 2)
+        %define REL_WHITELIST       (ebp - base + sighandler.rel_whitelist + 1)
+        %define REL_WHITELIST_END   (ebp - base + sighandler.rel_whitelist_end + 1)
+        %define REL_RET             (ebp - base + bootstrapper.rel_ret + 1)
 
         %define LINK_MAP  4
         %define L_ADDR    0
         %define L_NEXT    12
 
-bootstrapper:
         ;; Get our address
-        jmp .bottom
-.top:
+        call base
+base:
+bootstrapper:
         pop ebp
-
-        ;; Patch addresses in signal handler
+        ;; Relocate addresses in signal handler
         lea eax, [WHITELIST]
-        mov [PATCH_WHITELIST], eax
+        mov [REL_WHITELIST], eax
         lea eax, [WHITELIST_END]
-        mov [PATCH_WHITELIST_END], eax
+        mov [REL_WHITELIST_END], eax
 
         ;; Patch address into return jump
-        lea eax, [ENTRY_POINT]
-        mov [PATCH_RET], eax
+        mov eax, [ENTRY_POINT]
+        lea ebx, [RET_POINT]
+        sub eax, ebx
+        mov [REL_RET], eax
 
         ;; The code below was constructed by a mix of stepping through the
         ;; execution of C-programs, reading the Linux source code and header
@@ -56,7 +62,8 @@ bootstrapper:
         push dword 0            ; mask (fst half)
         push dword 0            ; restore (ignored)
         push dword SA_SIGINFO   ; flags
-        push SIGHANDLER
+        lea eax, [SIGHANDLER]
+        push eax                ; handler
         mov ebx, SIGSEGV        ; signum
         mov ecx, esp            ; act
         xor edx, edx            ; oldact
@@ -121,45 +128,64 @@ bootstrapper:
         push WHITELIST_LEN
         lea eax, [WHITELIST]
         push eax
-        call sort
+        call quicksort
         add esp, 8
+
+.clear:
+        ;; Clear code we don't need any more
+        ;; Clear from after whitelist
+        mov ecx, CLEAR_SND_NUMB
+        mov eax, 0xf4
+        lea edi, [CLEAR_SND_ADDR]
+        rep stosb
+        ;; Clear until .clear_till
+        mov ecx, CLEAR_FST_NUMB
+        mov eax, 0xf4
+        lea edi, [CLEAR_FST_ADDR]
+.clear_till:
+        rep stosb
 
         ;; Restore registers saved by loader
         popf
         popa
 
-.patch_ret:
+.rel_ret:
         ;; Jump back to _start
         ;; The address of _start will be patched in during bootstrapping
         ;; I could not find out which registers are clobberable, so better be
         ;; safe than sorry.  This technique ensures that all registers are
         ;; restored.
-        jmp [0]
+        jmp dword 0
+.ret_point:
 
-.bottom:
-        call .top
-base:
-
-        %include "sighandler.asm"
-
-got:
-        dd #GOT#
-
-num_addrs:
-        dd #NUM_ADDRS#
-num_addrs_end:
+sighandler:
+        #SIGHANDLER#
+sighandler_end:
 
 whitelist:
         dd #WHITELIST#
 whitelist_end:
 
+clear:
+
+got:
+        dd #GOT#
+got_end:
+
+num_addrs:
+        dd #NUM_ADDRS#
+num_addrs_end:
+
 entry_point:
         dd #ENTRY_POINT#
+entry_point_end:
 
 orig_code:
         db #ORIG_CODE#
 orig_code_end:
 
-        ;; Quicksort
-        %include "sort.asm"
+quicksort:
+        #QUICKSORT#
+quicksort_end:
 
+clear_end:

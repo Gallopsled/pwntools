@@ -1,5 +1,4 @@
         ;; sort(int *array, int elems)
-sort:
         %define arg_array (esp + 0x4)
         %define arg_elems (esp + 0x8)
         mov eax, [arg_array]

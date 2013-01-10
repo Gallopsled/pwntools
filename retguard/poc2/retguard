@@ -13,6 +13,9 @@ if '-v' in sys.argv:
 else:
     VERBOSE = False
 
+def path(s):
+    return os.path.join(sys.path[0], s)
+
 def nasm(s):
     with tempfile.NamedTemporaryFile() as tmp:
         tmp.write(s)
@@ -57,12 +60,11 @@ sharedobjs = []
 if 'not a dynamic' in out:
     print '  Not a dynamic exacutable, easy peasy'
 else:
-    m = re.findall('(=> (\S*) \()|(^\s+(\S*) \()', out, re.MULTILINE)
+    m = re.findall(r'(=> )?(\S+) \(', out, re.MULTILINE)
     for s in m:
-        s = s[-1] or s[-3]
+        s = s[1]
         sharedobjs.append(s)
-        if s:
-            print '  %s' % s
+        print '  %s' % s
 
 def load(path):
     '''returns (elfclass, entrypoint, executable sections)'''
@@ -123,7 +125,10 @@ def findcalls(filedata, sections):
 
 print 'Searching for call instructions'
 print '  %s' % target
-legit = [findcalls(filedata, sections)]
+# hardcoded addresses for linux-gate.so.1
+legit = [(target, findcalls(filedata, sections)),
+         ('linux-gate.so.1', [0xffffe400, 0xffffe420])
+         ]
 for s in sharedobjs:
     if s == '':
         legit.append([])
@@ -131,7 +136,7 @@ for s in sharedobjs:
     print '  %s' % s
     with open(s) as fd:
         data = fd.read()
-    legit.append(findcalls(data, load(s)[3]))
+    legit.append((s, findcalls(data, load(s)[3])))
 
 print 'Patching return instructions'
 i = 0
@@ -154,9 +159,9 @@ print 'ELF file is %d bytes, padding to %d pages' % (len(filedata), pages)
 filedata += '\0' * (bootaddr - len(filedata))
 
 print 'Assembling dummy loader to determine size'
-with open('loader.asm') as f:
-    code = f.read()
-code = code.replace('#OFFSET#', str(bootaddr)).replace('#LENGTH#', '0')
+with open(path('loader.asm')) as f:
+    loadercode = f.read()
+code = loadercode.replace('#OFFSET#', str(bootaddr)).replace('#LENGTH#', '0')
 loaderlen = len(nasm(code))
 print '  Loader size: %d bytes' % loaderlen
 
@@ -174,14 +179,22 @@ for name, sec in sections.items():
         break
 
 print 'Creating bootstrapper'
-with open('bootstrapper.asm') as f:
+with open(path('bootstrapper.asm')) as f:
     code = f.read()
+with open(path('sighandler.asm')) as f:
+    sighandler = f.read()
+with open(path('quicksort.asm')) as f:
+    quicksort = f.read()
+
+code = code.replace('#SIGHANDLER#', sighandler)
+code = code.replace('#QUICKSORT#', quicksort)
 
 code = code.replace('#GOT#', str(got))
 print '  Legitimate return addresses:'
-total = '    Total ' + str(sum(map(len, legit)))
-for x in legit:
-    print '    .' + str(len(x)).rjust(len(total) - 5)
+for name, num in legit:
+    print '    ' + str(len(num)).rjust(6) + '   ' + name
+legit = map(lambda x: x[1], legit)
+total = '    In total: ' + str(sum(map(len, legit)))
 print total
 code = code.replace('#NUM_ADDRS#',
                     ', '.join(str(len(x)) for x in legit))
@@ -192,16 +205,13 @@ code = code.replace('#ENTRY_POINT#',
                     '0x%08x' % entrypoint)
 code = code.replace('#ORIG_CODE#',
                     ', '.join('0x%02x' % ord(c) for c in origcode))
-# print code
 boot = nasm(code)
 bootlen = len(boot)
 print '  Appended bootstrapper: %d bytes' % len(boot)
 filedata += boot
 
 print 'Creating loader'
-with open('loader.asm') as f:
-    code = f.read()
-code = code.replace('#OFFSET#', str(bootaddr)).replace('#LENGTH#', str(bootlen))
+code = loadercode.replace('#OFFSET#', str(bootaddr)).replace('#LENGTH#', str(bootlen))
 loader = nasm(code)
 if len(loader) <> loaderlen:
     print '!! Real loader is not the same size as dummy loader -- this is a BUG'

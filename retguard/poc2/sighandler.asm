@@ -1,33 +1,19 @@
-sighandler:
+        %define REG_EIP   0x4c
+        %define REG_ESP   0x30
         ;; This is needed for SYS_rt_sigreturn to succeed
         add esp, 4
         ;; Patch context to act like ret
         mov eax, [esp + 0x8]    ; context
-        mov ebx, [eax + 0x30]   ; REG_ESP
+        mov ebx, [eax + REG_ESP]
         mov ecx, [ebx]          ; saved EIP
-        mov ebp, [eax + 0x4c]
-        dec ebp                 ; addr of "ret" instruction
-        mov [eax + 0x4c], ecx   ; REG_EIP
-        add ebx, 4              ; pop
-        mov [eax + 0x30], ebx   ; REG_ESP
-        ;; Signal handlers return to linux-gate.so.1, which is not in the
-        ;; whitelist.  We are in a signal handler right now, so compare our
-        ;; return address with the one we are checking.  Since linux-gate.so.1
-        ;; is just a kernel page, and there are to ways (old and new) to return
-        ;; from a signal handler, we just see if we return to the same page.
-        ;; This is a liability as linux-gate.so.1 has several int 0x80's and
-        ;; sysenters.
-        ;; TODO: fix plz
-        mov eax, [esp - 4]      ; our own return address
-        mov ebx, ecx            ; the return address we are checking
-        and eax, 0xfffff000
-        and ebx, 0xfffff000
-        cmp ebx, eax
-        je .live
+        mov ebp, [eax + REG_EIP]
+        mov [eax + REG_EIP], ecx
+        add ebx, 4              ; add esp, 4
+        mov [eax + REG_ESP], ebx
 
-.patch_whitelist:
+.rel_whitelist:
         mov eax, 0
-.patch_whitelist_end:
+.rel_whitelist_end:
         mov edi, 0
         sub edi, eax
         shr edi, 2
