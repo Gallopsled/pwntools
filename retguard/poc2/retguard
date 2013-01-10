@@ -144,7 +144,7 @@ for name, sec in sections.items():
         if asm == 'RET' or asm.startswith('RET 0x'):
             print '    0x%08x' % iaddr
             fileaddr = iaddr - addr + sec['offset']
-            filedata[fileaddr:fileaddr + isize] = ['\xcc'] * isize
+            filedata[fileaddr:fileaddr + isize] = ['\xf4'] * isize
             i += 1
 print '  Found %d returns' % i
 

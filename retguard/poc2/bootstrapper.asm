@@ -13,7 +13,7 @@ bits 32
         %define SIGILL         4
         %define SIGSEGV        11
 
-        %define HANDLE_SIGTRAP        (ebp - base + handle_sigtrap)
+        %define SIGHANDLER            (ebp - base + sighandler)
         %define GOT                   (ebp - base + got)
         %define NUM_ADDRS             (ebp - base + num_addrs)
         %define WHITELIST             (ebp - base + whitelist)
@@ -23,17 +23,18 @@ bits 32
         %define ORIG_CODE             (ebp - base + orig_code)
         %define ORIG_CODE_LEN         (orig_code_end - orig_code)
 
-        %define PATCH_WHITELIST       (ebp - base + patch_whitelist + 1)
-        %define PATCH_WHITELIST_END   (ebp - base + patch_whitelist_end + 1)
-        %define PATCH_RET             (ebp - base + patch_ret + 2)
+        %define PATCH_WHITELIST       (ebp - base + sighandler.patch_whitelist + 1)
+        %define PATCH_WHITELIST_END   (ebp - base + sighandler.patch_whitelist_end + 1)
+        %define PATCH_RET             (ebp - base + bootstrapper.patch_ret + 2)
 
         %define LINK_MAP  4
         %define L_ADDR    0
         %define L_NEXT    12
 
+bootstrapper:
         ;; Get our address
-        jmp bottom
-top:
+        jmp .bottom
+.top:
         pop ebp
 
         ;; Patch addresses in signal handler
@@ -55,8 +56,8 @@ top:
         push dword 0            ; mask (fst half)
         push dword 0            ; restore (ignored)
         push dword SA_SIGINFO   ; flags
-        push HANDLE_SIGTRAP
-        mov ebx, SIGTRAP        ; signum
+        push SIGHANDLER
+        mov ebx, SIGSEGV        ; signum
         mov ecx, esp            ; act
         xor edx, edx            ; oldact
         mov esi, 8              ; sigsetsize
@@ -127,7 +128,7 @@ top:
         popf
         popa
 
-patch_ret:
+.patch_ret:
         ;; Jump back to _start
         ;; The address of _start will be patched in during bootstrapping
         ;; I could not find out which registers are clobberable, so better be
@@ -135,15 +136,11 @@ patch_ret:
         ;; restored.
         jmp [0]
 
-        ;; Quicksort
-        %include "sort.asm"
-
-bottom:
-        call top
+.bottom:
+        call .top
 base:
 
-handle_sigtrap:
-        %include "handle_sigtrap.asm"
+        %include "sighandler.asm"
 
 got:
         dd #GOT#
@@ -162,3 +159,7 @@ entry_point:
 orig_code:
         db #ORIG_CODE#
 orig_code_end:
+
+        ;; Quicksort
+        %include "sort.asm"
+
