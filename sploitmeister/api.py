@@ -78,6 +78,17 @@ class Api(object):
                                             sqlalchemy.Column('priority', sqlalchemy.types.Integer, unique=True, nullable=False)
                                             )
 
+    def addConfig(self, config):
+        ins = self.configTable.insert()
+        ins.execute(config)
+
+    def getConfig(self):
+        column = self.configTable.c
+        select = self.configTable.select()
+        result = select.execute()
+        row    = result.fetchone()
+        return row
+
     def addExploit(self, config):
         ins = self.exploitTable.insert()
         ins.execute(config)
@@ -141,7 +152,14 @@ class Api(object):
         ins = self.attackTable.insert()
         ins.execute(config)
 
-    def getAttacks(self, amount=10):
+    def getAttacks(self, amount=None):
+        if not amount:
+            config = self.getConfig()
+            if not config:
+                amount = 10
+            else:
+                amount = config[-1]
+
         column = self.attackTable.c
         select = self.attackTable.select()
         select = select.limit(amount)
@@ -152,19 +170,33 @@ class Api(object):
         return rows
 
     def promoteAttack(self, a_id, promote_level=None):
-        if not isinstance(promote_level, int):
-            self.attackTable.update().where(self.attackTable.c.id==a_id).values(priority=self.attackTable.c.priority-1)
-        else:
-            self.attackTable.update().where(self.attackTable.c.id==a_id).values(priority=promote_level)
+        try:
+            if not isinstance(promote_level, int):
+                up = self.attackTable.update()
+                up = up.where(self.attackTable.c.id==a_id)
+                up = up.values(priority=self.attackTable.c.priority-1)
+            else:
+                up = self.attackTable.update()
+                up = up.where(self.attackTable.c.id==a_id)
+                up = up.values(priority=promote_level)
+        except:
+            log.error("Failed demoting attack with id: %d" % a_id)
 
 
     def demoteAttack(self, a_id, promote_level=None):
-        if not isinstance(promote_level, int):
-            self.attackTable.update().where(self.attackTable.c.id==a_id).values(priority=self.attackTable.c.priority+1)
-        else:
-            self.attackTable.update().where(self.attackTable.c.id==a_id).values(priority=promote_level)
+        try:
+            if not isinstance(promote_level, int):
+                up = self.attackTable.update()
+                up = up.where(self.attackTable.c.id==a_id)
+                up = up.values(priority=self.attackTable.c.priority+1)
+            else:
+                up = self.attackTable.update()
+                up = up.where(self.attackTable.c.id==a_id)
+                up = up.values(priority=promote_level)
+        except:
+            log.error("Failed demoting attack with id: %d" % a_id)
 
-    def getBatch(self, config):
-        pass
+    def getBatch(self, amount=None):
+        return self.getAttacks(amount)
 
 
