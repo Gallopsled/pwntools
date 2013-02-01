@@ -6,11 +6,11 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 echo "Adding PWNTools to \$PATH in .bashrc"
-echo "PATH=$PWD/bin:\$PATH" >> $(getent passwd $SUDO_USER | cut -d: -f6)/.bashrc
+echo "export PATH=$PWD/bin:\$PATH" >> $(getent passwd $SUDO_USER | cut -d: -f6)/.bashrc
 
 
 echo "Adding PWNLib to \$PYTHONPATH in .bashrc"
-echo "PYTHONPATH=$PWD/lib:\$PYTHONPATH" >> $(getent passwd $SUDO_USER | cut -d: -f6)/.bashrc
+echo "export PYTHONPATH=$PWD/lib:\$PYTHONPATH" >> $(getent passwd $SUDO_USER | cut -d: -f6)/.bashrc
 
 echo "Installing packages"
 DEPS="python-crypto python-paramiko python-sqlalchemy libdistorm64-dev"
