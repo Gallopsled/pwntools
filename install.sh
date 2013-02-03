@@ -13,7 +13,7 @@ echo "Adding PWNLib to \$PYTHONPATH in .bashrc"
 echo "PYTHONPATH=$PWD/lib:\$PYTHONPATH" >> $(getent passwd $SUDO_USER | cut -d: -f6)/.bashrc
 
 echo "Installing packages"
-DEPS="python-crypto python-paramiko python-sqlalchemy libdistorm64-dev"
+DEPS="python-crypto python-paramiko python-sqlalchemy libdistorm64-dev python-gmpy"
 yes | sudo apt-get install ${DEPS}
 
 echo "All DONE"
