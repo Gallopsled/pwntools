@@ -18,5 +18,6 @@ if [ -f /etc/debian_version ]; then
     yes | sudo apt-get install ${DEPS}
 elif [ -f /etc/arch-release ]; then
     DEPS="python2-crypto python2-paramiko python2-sqlalchemy"
-    yes | sudo pacman -S 
+    yes | sudo pacman -S ${DEPS}
+fi
 echo "All DONE"
