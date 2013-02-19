@@ -1,5 +1,27 @@
 import pwn
 
+def partition(lst, f, save_keys = False):
+    """parition([1,2,3,4,5], lambda x: x&1) => [[1,3,5], [2,4]]
+
+    Partitions a list into sublists using a function to specify which group they belong to.
+
+    If you want to save the output from the function, set save_keys to True, to return a dictionary instead of a list.
+    """
+    d = {}
+
+    for l in lst:
+        c = f(l)
+        s = d.get(c)
+
+        if s == None:
+            d[c] = [l]
+        else:
+            s.append(l)
+    if save_keys:
+        return d
+    else:
+        return d.values()
+
 def group(lst, n):
     """group([0,3,4,10,2,3], 2) => [(0,3), (4,10), (2,3)]
 
