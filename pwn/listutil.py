@@ -52,7 +52,7 @@ def concat_all(*args):
     """
 
     if len(args) != 1: return concat_all(list(args))
-    if not isinstance(args[0], list): return [args[0]]
+    if not (isinstance(args[0], list) or isinstance(args[0], tuple)): return [args[0]]
 
     res = []
     for k in args[0]:
