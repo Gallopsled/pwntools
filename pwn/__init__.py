@@ -5,7 +5,6 @@ import os, traceback
 from time import sleep
 from socket import htons, inet_aton, inet_ntoa, gethostbyname
 from os import system
-from sys import argv
 
 # Install path
 installpath = os.path.dirname(__file__)
@@ -24,6 +23,7 @@ except:
 
 if _do_argv:
     try:
+        from sys import argv
         for _arg in argv[:]:
             if   _arg == 'DEBUG':
                 argv.remove(_arg)
