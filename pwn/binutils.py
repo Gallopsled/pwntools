@@ -129,8 +129,8 @@ Example:
         return obj
     elif isinstance(obj, int):
         return func(obj)
-    elif isinstance(obj, _AssemblerBlock):
-        return pwn.asm(obj)
+    elif hasattr(obj, '__flat__'):
+        return obj.__flat__()
     else:
         return "".join(flat(o, func=func) for o in obj)
 

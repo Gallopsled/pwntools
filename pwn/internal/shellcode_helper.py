@@ -16,6 +16,9 @@ class AssemblerBlock:
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
+    def __flat__(self):
+        return pwn.asm(self)
+
 class AssemblerBlob(AssemblerBlock):
     def __init__(self, blob, **kwargs):
         self.arch = kwargs.get('arch')
