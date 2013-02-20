@@ -26,11 +26,14 @@ class _Block:
         self._setup_lengths()
 
     def __iadd__(self, other):
-        self._entries.extend(pwn.concat_all([other]))
+        for o in pwn.concat_all([other]):
+            if isinstance(o, _Later):
+                o._block = self
+            self._entries.append(o)
         return self
 
     def _get_func(self, o):
-        if hasattr(o, '_func'):
+        if hasattr(o, '_func') and o._func:
             return o._func
         return self._func
 
@@ -71,7 +74,7 @@ class _Block:
             else:
                 out.append(repr(o))
 
-        return "Block%d [ %s ]" % (self.id, ", ".join(out))
+        return "Block%d { %s }" % (self.id, ", ".join(out))
 
     def __repr__(self):
         return self._repr_helper(set())
@@ -85,7 +88,7 @@ class _Expr:
         return self._expr()
 
     def __repr__(self):
-        return "*expression%s*" % pwn.pack_size(self._func)
+        return "*expression[%s]*" % pwn.pack_size(self._func)
 
 class _Length(_Expr):
     def __init__(self, block, func = None):
@@ -94,13 +97,31 @@ class _Length(_Expr):
         self._func = func
 
     def _name(self):
-        return "len%s" % pwn.pack_size(self._func)
+        return "len[%s]" % pwn.pack_size(self._func)
 
     def __repr__(self):
         return "%s(%s)" % (self._name(), repr(self._block))
+
+class _Later(_Expr):
+    def __init__(self, attr, func = None):
+        self._attr = attr
+        self._func = func
+
+    def _expr(self):
+        if not hasattr(self, "_block"):
+            raise Exception("You have not yet added the later expression to a block")
+        if not hasattr(self._block, self._attr):
+            raise Exception("You have not yet set the '%s' attribute!" % self._attr)
+        return getattr(self._block, self._attr)
+
+    def __repr__(self):
+        return "%s[%s]" % (self._attr, pwn.pack_size(self._func))
 
 def block(func = pwn.p32):
     return _Block(func)
 
 def expr(expr, func = None):
     return _Expr(expr, func)
+
+def later(attr, func = None):
+    return _Later(attr, func)

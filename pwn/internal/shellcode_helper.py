@@ -19,6 +19,9 @@ class AssemblerBlock:
     def __flat__(self):
         return pwn.asm(self)
 
+    def __len__(self):
+        return len(flat(self))
+
 class AssemblerBlob(AssemblerBlock):
     def __init__(self, blob, **kwargs):
         self.arch = kwargs.get('arch')
@@ -31,6 +34,9 @@ class AssemblerBlob(AssemblerBlock):
     def __hash__(self):
         return hash((self.arch, self.os, self.blob))
 
+    def __repr__(self):
+        return 'AssemberBlob(%d)' % len(self)
+
 class AssemblerText(AssemblerBlock):
     def __init__(self, text, **kwargs):
         self.arch = kwargs.get('arch')
@@ -42,6 +48,9 @@ class AssemblerText(AssemblerBlock):
 
     def __hash__(self):
         return hash((self.arch, self.os, self.text))
+
+    def __repr__(self):
+        return 'AssemblerText(%s ...)' % self.text.strip().split('\n')[0][:20]
 
 
 class AssemblerContainer(AssemblerBlock):
@@ -78,6 +87,9 @@ class AssemblerContainer(AssemblerBlock):
 
     def __hash__(self):
         return hash((self.arch, self.os, tuple(self.blocks)))
+
+    def __repr__(self):
+        return 'AssemblerContainer( %s )' % ', '.join(repr(b) for b in self.blocks)
 
 def shellcode_wrapper(f, args, kwargs, avoider):
     kwargs = pwn.with_context(**kwargs)
