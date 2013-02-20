@@ -104,6 +104,19 @@ def u64b(x):
     """Unpacks a 8-byte string into an integer (big endian)"""
     return struct.unpack('>Q', x)[0]
 
+def pack_size(f):
+    if f == p8:   return "8"
+    if f == p16:  return "16"
+    if f == p32:  return "32"
+    if f == p64:  return "64"
+
+    if f == p8b:  return "8b"
+    if f == p16b: return "16b"
+    if f == p32b: return "32b"
+    if f == p64b: return "64b"
+
+    return ""
+
 def flat(*args, **kwargs):
     """Flattens the arguments into a string.
 Takes a single named argument 'func', which defaults to p32.
