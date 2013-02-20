@@ -18,9 +18,9 @@ class _Block:
 
         self.length   = _Length(self)
 
-    def __init__(self, packer = pwn.p32):
+    def __init__(self, func = pwn.p32):
         self._entries = []
-        self._packer = packer
+        self._func = func
         self.id = _Block._block_count
         _Block._block_count += 1
         self._setup_lengths()
@@ -29,17 +29,19 @@ class _Block:
         self._entries.extend(pwn.concat_all([other]))
         return self
 
+    def _get_func(self, o):
+        if hasattr(o, '_func'):
+            return o._func
+        return self._func
+
     def __flat__(self):
         out = ''
 
         for e in self._entries:
             if isinstance(e, _Expr):
-                if e._packer:
-                    out += e._packer(e.force())
-                else:
-                    out += self._packer(e.force())
+                out += self._get_func(e)(e.force())
             else:
-                out += pwn.flat(e, func=self._packer)
+                out += pwn.flat(e, func=self._func)
         return out
 
     def __len__(self):
@@ -47,18 +49,12 @@ class _Block:
 
         for e in self._entries:
             if isinstance(e, int):
-                l += len(self._packer(0))
+                l += len(self._func(0))
             elif isinstance(e, _Expr):
-                if e._packer:
-                    l += len(e._packer(0))
-                else:
-                    l += len(self._packer(0))
+                l += len(self._get_func(e)(0))
             else:
                 l += len(e)
         return l
-
-    def __str__(self):
-        return self.__flat__()
 
     def _repr_helper(self, contained):
         if self in contained:
@@ -81,51 +77,30 @@ class _Block:
         return self._repr_helper(set())
 
 class _Expr:
-    def __init__(self, expr, packer = None):
+    def __init__(self, expr, func = None):
         self._expr = expr
-        self._packer = packer
+        self._func = func
 
     def force(self):
         return self._expr()
 
-
     def __repr__(self):
-        if self._packer == pwn.p8:   return "*expression8*"
-        if self._packer == pwn.p16:  return "*expression16*"
-        if self._packer == pwn.p32:  return "*expression32*"
-        if self._packer == pwn.p64:  return "*expression64*"
-
-        if self._packer == pwn.p8b:  return "*expression8b*"
-        if self._packer == pwn.p16b: return "*expression16b*"
-        if self._packer == pwn.p32b: return "*expression32b*"
-        if self._packer == pwn.p64b: return "*expression64b*"
-
-        return "*expression*"
+        return "*expression%s*" % pwn.pack_size(self._func)
 
 class _Length(_Expr):
-    def __init__(self, block, packer = None):
+    def __init__(self, block, func = None):
         self._expr = lambda: len(block)
         self._block = block
-        self._packer = packer
+        self._func = func
 
     def _name(self):
-        if self._packer == pwn.p8:   return "len8"
-        if self._packer == pwn.p16:  return "len16"
-        if self._packer == pwn.p32:  return "len32"
-        if self._packer == pwn.p64:  return "len64"
-
-        if self._packer == pwn.p8b:  return "len8b"
-        if self._packer == pwn.p16b: return "len16b"
-        if self._packer == pwn.p32b: return "len32b"
-        if self._packer == pwn.p64b: return "len64b"
-
-        return "len"
+        return "len%s" % pwn.pack_size(self._func)
 
     def __repr__(self):
-        return "%s(%s)" % (self._name, repr(self._block))
+        return "%s(%s)" % (self._name(), repr(self._block))
 
-def block(packer = pwn.p32):
-    return _Block(packer)
+def block(func = pwn.p32):
+    return _Block(func)
 
-def expr(expr, packer = None):
-    return _Expr(expr, packer)
+def expr(expr, func = None):
+    return _Expr(expr, func)
