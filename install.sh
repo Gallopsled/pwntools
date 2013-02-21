@@ -10,11 +10,11 @@ fi
 DO="sudo -u \"$SUDO_USER\""
 
 echo "Adding PWNTools to \$PATH in .bashrc"
-echo "export PATH=$PWD/bin:\$PATH" >> $(getent passwd $SUDO_USER | cut -d: -f6)/.zshrc
+echo "export PATH=$PWD/bin:\$PATH" >> $(getent passwd $SUDO_USER | cut -d: -f6)/.bashrc
 
 
 echo "Adding PWNLib to \$PYTHONPATH in .bashrc"
-echo "export PYTHONPATH=$PWD/lib:\$PYTHONPATH" >> $(getent passwd $SUDO_USER | cut -d: -f6)/.zshrc
+echo "export PYTHONPATH=$PWD/lib:\$PYTHONPATH" >> $(getent passwd $SUDO_USER | cut -d: -f6)/.bashrc
 
 echo "Installing packages"
 if [ -f /etc/debian_version ]; then
