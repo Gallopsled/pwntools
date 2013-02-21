@@ -1,9 +1,13 @@
 #!/bin/bash
 
-if [ "$(id -u)" != "0" ]; then
-   echo "This script must be run with sudo" 1>&2
-   exit 1
+if [ $UID -ne 0 ] || [ -z "$SUDO_USER" ] ; then
+    echo "This script must be run with sudo" 1>&2
+    exit
 fi
+
+# at this point we're running through sudo
+# commands that should run as the user must be prefixed with $DO
+DO="sudo -u \"$SUDO_USER\""
 
 echo "Adding PWNTools to \$PATH in .bashrc"
 echo "export PATH=$PWD/bin:\$PATH" >> $(getent passwd $SUDO_USER | cut -d: -f6)/.zshrc
