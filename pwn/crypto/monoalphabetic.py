@@ -3,8 +3,8 @@ import operator
 import collections
 from fractions import gcd
 
-import Utilities
-import Frequencies
+import util
+import frequencies
 
 #################################
 # GENERIC MONOALPHABETIC CIPHER #
@@ -18,25 +18,25 @@ def decrypt(ciphertext, dictionary):
     inverse = {v: k for k,v in dictionary.items()}
     return encrypt(ciphertext, inverse)
 
-def crack(ciphertext, frequencies=Frequencies.english):
+def crack(ciphertext, frequencies=frequencies.english):
     pass
 
-def genericCrack(ciphertext, candidates, frequencies=Frequencies.english):
+def genericCrack(ciphertext, candidates, frequencies=frequencies.english):
     distances = []
     for candidate in candidates:
         trial = encrypt(ciphertext, candidate)
-        freq = Frequencies.text([c for c in trial if c in candidate.keys()])
+        freq = frequencies.text([c for c in trial if c in candidate.keys()])
         distances.append(Utilities.squaredDifferences(freq, frequencies))
     guess = distances.index(min(distances))
     return (candidates[guess], encrypt(ciphertext, candidates[guess]))
 
-def crackShift(ciphertext, alphabet=string.uppercase, frequencies=Frequencies.english):
+def crackShift(ciphertext, alphabet=string.uppercase, frequencies=frequencies.english):
     candidates = [shiftDict(i, alphabet) for i in range(len(alphabet))]
     (dictionary, plaintext) = genericCrack(ciphertext, candidates, frequencies)
     shift = (key for key,value in dictionary.items() if value == alphabet[0]).next()
     return (alphabet.index(shift), plaintext)
 
-def crackAffine(ciphertext, alphabet=string.uppercase, frequencies=Frequencies.english):
+def crackAffine(ciphertext, alphabet=string.uppercase, frequencies=frequencies.english):
     n = len(alphabet)
     invertible = [i for i in range(n) if gcd(i,n) == 1]
     keys = [(a,b) for a in invertible for b in range(n)]

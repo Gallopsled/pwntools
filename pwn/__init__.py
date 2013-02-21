@@ -83,6 +83,7 @@ import pwn.shellcode
 import pwn.internal.init.session
 import pwn.sqli
 import pwn.rop
+import pwn.crypto
 
 if len(_not_loaded) > 0:
     pwn.log.warning('Modules not loaded: ' + ', '.join(_m for _m, _t in _not_loaded))
