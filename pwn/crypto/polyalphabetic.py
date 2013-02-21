@@ -4,9 +4,9 @@ from pwn import flat
 from math import ceil
 from numpy import mean
 
-import Utilities
-import Frequencies
-import MonoAlphabetic
+import util
+import frequencies
+import monoalphabetic
 
 #####################################
 # GENERAL CALCULATION OF KEY PERIOD #
@@ -15,7 +15,7 @@ import MonoAlphabetic
 def strandScores(strands, cutoff=0.06):
     scores = []
     for strand in strands:
-        score = Utilities.indexOfCoincidence(Frequencies.count(strand), len(strand))
+        score = Utilities.indexOfCoincidence(frequencies.count(strand), len(strand))
         scores.append( (score, strand) )
     return scores
 
@@ -60,7 +60,7 @@ def interleaveVigenere(strands, length):
 
 vigenere = (splitVigenere, interleaveVigenere)
 
-def vigenereCrack(ciphertext, cutoff=0.06, alphabet=string.uppercase, frequencies=Frequencies.english):
+def vigenereCrack(ciphertext, cutoff=0.06, alphabet=string.uppercase, frequencies=frequencies.english):
     limit = min((len(ciphertext) / 2) + 1, 20)
     guesses = [splitVigenere(ciphertext, period) for period in range(1, limit)]
     possible = keyPeriod(guesses, cutoff)
