@@ -62,6 +62,7 @@ from pwn.splash     import splash
 from pwn.elf        import ELF
 from pwn.rop        import ROP
 from pwn.pwnurllib  import HTTPwn
+from pwn.ciic       import ciic
 
 _not_loaded = []
 
