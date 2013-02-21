@@ -1,0 +1,3 @@
+[submodule "lib/pycparser"]
+	path = lib/pycparser
+	url = git://bitbucket.org/eliben/pycparser.git
