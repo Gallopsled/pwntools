@@ -64,16 +64,21 @@ if sys.stderr.isatty() and not pwn.DEBUG:
 
     def _stop_spinner(marker = text.boldblue('[*]'), status = ''):
         global _spinner, _status
+
         if _spinner is not None:
             _lock.acquire()
+
             _spinner.running = False
-            _status = ''
             s = '\x1b[0K ' + marker + ' ' + _message
+            if status == None:
+                status = _status
+            _status = ''
             if status and _message:
                 s += ': ' + status
             elif status:
                 s += status
             _trace(s + '\n\x1b[?25h') # show cursor
+
             _lock.release()
         _spinner = None
 
