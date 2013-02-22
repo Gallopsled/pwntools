@@ -42,48 +42,59 @@ if _do_argv:
 DEBUG = int(DEBUG)
 
 # Promote to toplevel
-from pwn.consts     import *
-from pwn.thread     import Thread
-from pwn.log        import die, bug
-from pwn.util       import *
-from pwn.avoid      import *
-from pwn.binutils   import *
-from pwn.hashes     import *
-from pwn.listutil   import *
-from pwn.genutil    import *
-from pwn.memoize    import memoize
-from pwn.process    import process
-from pwn.remote     import remote
-from pwn.handler    import handler
-from pwn.context    import *
-from pwn.asm        import asm
-from pwn.useragents import randomua
-from pwn.splash     import splash
-from pwn.elf        import ELF
-from pwn.rop        import ROP
-from pwn.pwnurllib  import HTTPwn
-from pwn.ciic       import ciic
-
-_not_loaded = []
-
-def _err(s):
-    if DEBUG > 1:
-        pwn.log.warning('Could not load module `%s\':' % s)
-        traceback.print_exc()
-    else:
-        _not_loaded.append((s, traceback.extract_stack()))
-
 try:
-    import pwn.internal.init.cloud
-except:
-    _err('cloud')
+    from pwn.consts     import *
+    from pwn.thread     import Thread
+    from pwn.log        import die, bug
+    from pwn.util       import *
+    from pwn.avoid      import *
+    from pwn.binutils   import *
+    from pwn.hashes     import *
+    from pwn.listutil   import *
+    from pwn.genutil    import *
+    from pwn.memoize    import memoize
+    from pwn.process    import process
+    from pwn.remote     import remote
+    from pwn.handler    import handler
+    from pwn.context    import *
+    from pwn.asm        import asm
+    from pwn.useragents import randomua
+    from pwn.splash     import splash
+    from pwn.elf        import ELF
+    from pwn.rop        import ROP
+    from pwn.pwnurllib  import HTTPwn
+    from pwn.ciic       import ciic
 
-import pwn.nasm
-import pwn.shellcode
-import pwn.internal.init.session
-import pwn.sqli
-import pwn.rop
-import pwn.crypto
+    _not_loaded = []
+
+    def _err(s):
+        if DEBUG > 1:
+            pwn.log.warning('Could not load module `%s\':' % s)
+            traceback.print_exc()
+        else:
+            _not_loaded.append((s, traceback.extract_stack()))
+
+    try:
+        import pwn.internal.init.cloud
+    except:
+        _err('cloud')
+
+    import pwn.nasm
+    import pwn.shellcode
+    import pwn.internal.init.session
+    import pwn.sqli
+    import pwn.rop
+    import pwn.crypto
+except SyntaxError:
+    print "If you're happy and you know it, syntax error!"
+    print "Syntax error"
+    print
+    print "If you're happy and you know it, syntax error!"
+    print "Syntax error"
+    print
+    print "If you're happy and you know it, and you really want to show it,"
+    print "  if you're happy and you know it, syntax error!"
+    print "Syntax error"
 
 if len(_not_loaded) > 0:
     pwn.log.warning('Modules not loaded: ' + ', '.join(_m for _m, _t in _not_loaded))
