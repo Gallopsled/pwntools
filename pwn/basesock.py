@@ -85,6 +85,17 @@ class basesock:
             res += c
         return res
 
+    def clean_sock(self, timeout = 1.0):
+        if timeout < 0.001:
+            timeout = 0.001
+
+        try:
+            self.sock.settimeout(timeout)
+            while True:
+                self.sock.recv(10000)
+        except:
+            self.sock.settimeout(self.timeout)
+
     def sendafter(self, delim, dat):
         res = self.recvuntil(delim)
         self.send(dat)
@@ -101,7 +112,9 @@ class basesock:
             res.append(self.recvuntil('\n'))
         return ''.join(res)
 
-    def interactive(self, prompt = text.boldred('$') + ' '):
+    def interactive(self, prompt = text.boldred('$') + ' ', clean_sock = True):
+        if clean_sock:
+            self.clean_sock()
         log.info('Switching to interactive mode')
         import rlcompleter
         debug = self.debug
