@@ -43,7 +43,7 @@ class basechatter:
     def recv(self, numb = 4096):
         try:
             res = self._recv(numb)
-        except socket.timeout
+        except socket.timeout:
             return ''
         except IOError as e:
             if e.errno == errno.EAGAIN:
