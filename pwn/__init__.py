@@ -48,6 +48,7 @@ try:
     from pwn.thread     import Thread
     from pwn.util       import *
     from pwn.avoid      import *
+    from pwn.context    import *
     from pwn.binutils   import *
     from pwn.hashes     import *
     from pwn.listutil   import *
@@ -56,7 +57,6 @@ try:
     from pwn.process    import process
     from pwn.remote     import remote
     from pwn.handler    import handler
-    from pwn.context    import *
     from pwn.asm        import asm
     from pwn.useragents import randomua
     from pwn.splash     import splash

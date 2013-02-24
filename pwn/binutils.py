@@ -104,6 +104,24 @@ def u64b(x):
     """Unpacks a 8-byte string into an integer (big endian)"""
     return struct.unpack('>Q', x)[0]
 
+@pwn.need_context
+def p(x, arch = None):
+    """Packs an integer into a string based on the current context"""
+    if arch == 'amd64':
+        return p64(x)
+    elif arch == 'i386':
+        return p32(x)
+    pwn.die('Architecture not set in the context while calling p(%d)' % x)
+
+@pwn.need_context
+def u(x, arch = None):
+    """Unpacks a string into an integer based on the current context"""
+    if arch == 'amd64':
+        return u64(x)
+    elif arch == 'i386':
+        return u32(x)
+    pwn.die('Architecture not set in the context while calling u(%s)' % repr(x))
+
 def pack_size(f):
     if f == p8:   return "8"
     if f == p16:  return "16"
@@ -117,9 +135,10 @@ def pack_size(f):
 
     return ""
 
+@pwn.need_context
 def flat(*args, **kwargs):
     """Flattens the arguments into a string.
-Takes a single named argument 'func', which defaults to p32.
+Takes a single named argument 'func', which defaults to "p32" if no context is set and to "p" otherwise.
   - Strings are returned
   - Integers are converted using the 'func' argument.
   - Shellcode is assembled
@@ -134,7 +153,12 @@ Example:
     if _AssemblerBlock == None:
         from pwn.internal.shellcode_helper import AssemblerBlock as _AssemblerBlock
 
-    func = kwargs.get('func', p32)
+    if 'arch' in kwargs and kwargs['arch'] != None:
+        default_func = p
+    else:
+        default_func = p32
+
+    func = kwargs.get('func', default_func)
 
     obj = args[0] if len(args) == 1 else args
 

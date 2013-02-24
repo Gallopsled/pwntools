@@ -65,6 +65,13 @@ def with_context(**kwargs):
             kwargs[k] = None
     return kwargs
 
+def need_context(f):
+    @pwn.decoutils.ewraps(f)
+    def wrapper(*args, **kwargs):
+        with pwn.ExtraContext(kwargs) as c:
+            return f(*args, **pwn.decoutils.kwargs_remover(f, c, possible_contexts.keys()))
+    return wrapper
+
 class ExtraContext:
     def __init__(self, kwargs):
         global _context

@@ -18,7 +18,7 @@ class _Block:
 
         self.length   = _Length(self)
 
-    def __init__(self, func = pwn.p32):
+    def __init__(self, func = pwn.p):
         self._entries = []
         self._func = func
         self.id = _Block._block_count
@@ -117,7 +117,7 @@ class _Later(_Expr):
     def __repr__(self):
         return "%s[%s]" % (self._attr, pwn.pack_size(self._func))
 
-def block(func = pwn.p32):
+def block(func = pwn.p):
     return _Block(func)
 
 def expr(expr, func = None):
