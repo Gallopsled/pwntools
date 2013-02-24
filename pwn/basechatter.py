@@ -1,4 +1,5 @@
 import pwn, socket, time, sys, re, errno
+import errno
 from pwn import log, text
 
 class basechatter:
@@ -40,7 +41,14 @@ class basechatter:
         self.send(line + '\n')
 
     def recv(self, numb = 4096):
-        res = self._recv(numb)
+        try:
+            res = self._recv(numb)
+        except socket.timeout
+            return ''
+        except IOError as e:
+            if e.errno == errno.EAGAIN:
+                return ''
+            raise
         if self.debug:
             sys.stderr.write(res)
             sys.stderr.flush()

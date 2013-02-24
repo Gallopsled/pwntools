@@ -48,7 +48,11 @@ class process(basechatter):
 
         while True:
             r = ''
-            r = self.proc.stdout.read(numb)
+            try:
+                r = self.proc.stdout.read(numb)
+            except IOError as e:
+                if e.errno != 11:
+                    raise
 
             if r or time.time() > end_time:
                 break

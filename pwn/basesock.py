@@ -31,7 +31,4 @@ class basesock(basechatter):
                 self.sock.setblocking(1)
                 self.sock.settimeout(self.timeout)
 
-        try:
-            return self.sock.recv(numb)
-        except socket.timeout:
-            return ''
+        return self.sock.recv(numb)
