@@ -1,92 +1,56 @@
 import pwn, sys, time
 from pwn import log, text
 from subprocess import Popen, PIPE
+import fcntl, os
+from basechatter import basechatter
+import time
 
-class process:
+class process(basechatter):
     def __init__(self, cmd, *args, **kwargs):
+        timeout = kwargs.get('timeout', 'default')
         env = kwargs.get('env', {})
-        self.debug = pwn.DEBUG
+
+        basechatter.__init__(self, timeout)
+        self.proc = None
+
+        self.start(cmd, args, env)
+
+    def start(self, cmd, args, env):
+        if self.connected():
+            log.warning('Program "%s" already started' % cmd)
+            return
+        log.waitfor('Starting program "%s"' % cmd)
+
         self.proc = Popen(
                 tuple(cmd.split()) + args,
                 stdin=PIPE, stdout=PIPE, stderr=PIPE,
                 env = env,
                 bufsize = 0)
+        fd = self.proc.stdout.fileno()
+        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+        log.succeeded()
+
+    def connected(self):
+        return self.proc != None
 
     def close(self):
         if self.proc:
             self.proc.kill()
             self.proc = None
 
-    def send(self, dat):
+    def _send(self, dat):
         self.proc.stdin.write(dat)
         self.proc.stdin.flush()
 
-    def recv(self, numb = 1024):
-        res = self.proc.stdout.read(numb)
-        if self.debug:
-            sys.stdout.write(res)
-            sys.stdout.flush()
-        return res
+    def _recv(self, numb):
+        end_time = time.time() + self.timeout
 
-    def recvall(self):
-        res = []
         while True:
-            s = self.recv()
-            if not s: break
-            res.append(s)
-        return ''.join(res)
+            r = ''
+            r = self.proc.stdout.read(numb)
 
-    def recvn(self, numb):
-        res = []
-        n = 0
-        while n < numb:
-            c = self.recv(1)
-            if not c:
+            if r or time.time() > end_time:
                 break
-            res.append(c)
-            n += 1
-        return ''.join(res)
-
-    def recvuntil(self, delim):
-        d = list(delim)
-        res = []
-        while d:
-            c = self.recv(1)
-            if not c:
-                break
-            res.append(c)
-            if c == d[0]:
-                d.pop(0)
-            else:
-                d = list(delim)
-        return ''.join(res)
-
-    def recvline(self, lines = 1):
-        res = []
-        for _ in range(lines):
-            res.append(self.recvuntil('\n'))
-        return ''.join(res)
-
-    def interactive(self, prompt = text.boldred('$') + ' '):
-        log.info('Switching to interactive mode')
-        import rlcompleter
-        debug = self.debug
-        self.debug = False
-        running = True
-        def loop():
-            while running:
-                sys.stderr.write(self.proc.stdout.read(1))
-                sys.stderr.flush()
-        t = pwn.Thread(target = loop)
-        t.daemon = True
-        t.start()
-        while True:
-            try:
-                time.sleep(0.1)
-                self.send(raw_input(prompt) + '\n')
-            except (KeyboardInterrupt, EOFError):
-                sys.stderr.write('Interrupted\n')
-                running = False
-                t.join()
-                self.debug = debug
-                break
+            time.sleep(0.0001)
+        return r
