@@ -37,20 +37,29 @@ def nasm_raw(code, checked = True, return_none = False, optimize = 'x'):
 
 def nasm(target_arch, target_os, blocks, emit_asm, checked = True):
 
-    if target_arch != 'i386' or target_os not in ['linux', 'freebsd']:
+    if target_arch not in ['i386', 'amd64'] or target_os not in ['linux', 'freebsd']:
         pwn.die('I do not know how to assemble arch=' + str(arch) + ', os=' + str(os))
 
     code = []
 
     if target_arch == 'i386':
         code.append('bits 32')
+    elif target_arch == 'amd64':
+        code.append('bits 64')
 
     code.append('%include "macros/macros.asm"')
 
-    if target_os == 'linux':
-        code.append('%include "linux/32.asm"')
-    elif target_os == 'freebsd':
-        code.append('%include "freebsd/32.asm"')
+    if target_arch == 'i386':
+        if target_os == 'linux':
+            code.append('%include "linux/32.asm"')
+        elif target_os == 'freebsd':
+            code.append('%include "freebsd/32.asm"')
+    elif target_arch == 'amd64':
+        if target_os == 'linux':
+            code.append('%include "linux/64.asm"')
+        elif target_os == 'freebsd':
+            code.append('%include "freebsd/64.asm"')
+
 
     for n, b in enumerate(blocks.blocks):
         code.append('pwn_block%d:' % n)

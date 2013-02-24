@@ -7,7 +7,7 @@ def setresuidsh(src = 's', dst = 'res'):
     Sets the real, effective and/or saved UID, then spawns a shell.
     The source can be either the a number/register or the real, effective or saved UID.
 """
-    return setresuid(src, dst), sh(False)
+    return setresuid(src, dst), sh()
 
 @shellcode_reqs(hidden = True, arch='i386', os='linux')
 def _zero_optimized_linux(dst):

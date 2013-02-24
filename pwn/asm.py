@@ -2,7 +2,7 @@ import pwn, tempfile, subprocess, errno, os
 import pwn.internal.shellcode_helper as H
 
 def _asm_real(arch, os, blocks, emit_asm, checked = True):
-    if arch == 'i386' and os in ['linux', 'freebsd']:
+    if arch in ['i386', 'amd64'] and os in ['linux', 'freebsd']:
             return pwn.nasm.nasm(arch, os, blocks, emit_asm, checked)
     pwn.die('I do not know how to assemble arch=' + str(arch) + ', os=' + str(os))
 
