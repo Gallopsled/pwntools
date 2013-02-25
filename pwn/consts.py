@@ -1,5 +1,5 @@
 
-INCLUDE         = 'include'
+INCLUDE         = 'pwn/include'
 
 PWN_SUCCES      = 0
 PWN_UNAVAILABLE = 100
