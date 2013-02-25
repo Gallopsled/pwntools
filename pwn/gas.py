@@ -10,7 +10,7 @@ def _cmd(arch, src):
     cmd += ['-I', include, src]
     cmd += ['|', os.path.join(pwn.installpath, 'binutils', arch + '-as')]
     cmd += ['-o', src + '.out']
-    cmd += ['&&', os.path.join(pwn.installpath, 'binutils', arch + '-objcopy')]
+    cmd += ['&&', os.path.join(pwn.installpath, 'binutils', 'promisc-objcopy')]
     cmd += [src + '.out', '/dev/stdout', '-j.shellcode', '-Obinary']
     return ' '.join(cmd)
 
