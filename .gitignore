@@ -1,5 +1,6 @@
 *.o
 *.hi
 *.pyc
+*~
 *.pdf
 */auto/*
