@@ -1,9 +1,20 @@
-import md5, os, tempfile
+import os, tempfile
 from pwn import decoutils as _decoutils
-from pwn import log
+from pwn import log, md5sumhex
 from cPickle import load, dump
 
 __tempdir = os.path.join(tempfile.gettempdir(), 'pwn-memoize')
+
+if not os.path.exists(__tempdir):
+    try:
+        os.mkdir(__tempdir)
+    except:
+        log.warning('Could not create memoization dir: %s\n' % __tempdir)
+        __tempdir = None
+elif not os.path.isdir(__tempdir):
+    log.warning('Memoization path is not a dir: %s\n' % __tempdir)
+    __tempdir = None
+
 def memoize(*args, **kwargs):
     '''Function memoization decorator.
     Args:
@@ -45,7 +56,7 @@ def _internal_memoize(use_mem = True, use_file = True):
                         dict_miss = True
 
                 if t == None and use_file:
-                    digest = md5.md5('.'.join((f.__module__, f.__name__) + sig)).hexdigest()
+                    digest = md5sumhex('.'.join((f.__module__, f.__name__) + sig))
                     fname = os.path.join(__tempdir, digest)
                     try:
                         if os.path.exists(fname):
@@ -79,14 +90,4 @@ def _internal_memoize(use_mem = True, use_file = True):
                             pass
         return wrapper
     return real
-
-if not os.path.exists(__tempdir):
-    try:
-        os.mkdir(__tempdir)
-    except:
-        log.trace(' [-] Could not create memoization dir: %s\n' % __tempdir)
-        __tempdir = None
-elif not os.path.isdir(__tempdir):
-    log.trace(' [-] Memoization path is not a dir: %s\n' % __tempdir)
-    __tempdir = None
 
