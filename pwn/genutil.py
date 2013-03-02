@@ -1,4 +1,4 @@
-import string
+import string, pwn
 
 # Taken from http://en.wikipedia.org/wiki/De_Bruijn_sequence but changed to a generator
 def de_bruijn_generator(alphabet = string.ascii_lowercase, n = 4):
@@ -46,6 +46,8 @@ def de_bruijn_find(subseq, alphabet = string.ascii_lowercase, n = None):
     There exists better algorithms for this, but they depend on generating the De Bruijn sequence in another fashion. Somebody should look at it:
     http://www.sciencedirect.com/science/article/pii/S0012365X00001175
     """
+    if isinstance(subseq, int):
+        subseq = pwn.pint(subseq)
     if n == None:
         n = len(subseq)
     return gen_find(subseq, de_bruijn_generator(alphabet, n))
