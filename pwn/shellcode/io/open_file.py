@@ -17,10 +17,8 @@ def open_file(filepath, flags = 0, mode = 0, arch = None, os = None):
         elif os == 'freebsd':
             return pushstr(filepath), _open_file_freebsd_i386(flags, mode)
     elif arch == 'amd64':
-        if os == 'linux':
-            return pushstr(filepath), _open_file_linux_amd64(flags, mode)
-        elif os == 'freebsd':
-            return pushstr(filepath), _open_file_freebsd_amd64(flags, mode)
+        if os in ['linux', 'freebsd']:
+            return pushstr(filepath), _open_file_amd64(flags, mode)
     bug("OS/arch combination (%s, %s) is not supported for open_file" % (os, arch))
 
 def _open_file_linux_i386(flags, mode):
@@ -40,24 +38,6 @@ def _open_file_linux_i386(flags, mode):
 
     return out
 
-def _open_file_linux_amd64(flags, mode):
-    out = ''
-
-    out += """
-            mov rdi, rsp
-            push SYS64_open
-            pop rax
-            setfd esi, %d
-""" % flags
-
-    if (flags & 0o100) != 0:
-        out += """
-            setfd ecx, %d""" % mode
-
-    out += 'syscall'
-
-    return out
-
 def _open_file_freebsd_i386(flags, mode):
     out = ['mov ecx, esp']
 
@@ -73,7 +53,7 @@ def _open_file_freebsd_i386(flags, mode):
 
     return '\n'.join('    ' + s for s in out)
 
-def _open_file_freebsd_amd64(flags, mode):
+def _open_file_amd64(flags, mode):
     out = ''
 
     out += """

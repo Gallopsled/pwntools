@@ -1,7 +1,7 @@
 from pwn.internal.shellcode_helper import *
 
 @shellcode_reqs(arch='i386', os='linux')
-def read_stack(in_fd = 0, size = 255, allocate_stack = True):
+def read_stack(in_fd = 0, size = 255, allocate_stack = True, arch = None, os = None):
     """Args: [in_fd (imm/reg) = STD_IN] [size = 255] [allocate_stack = True]
 
     Reads to the stack.
