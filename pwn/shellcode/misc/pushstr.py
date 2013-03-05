@@ -38,7 +38,7 @@ def _pushstr_i386(string):
 
     string = string.ljust(align(4, len(string)), extend)
 
-    for s in [flat(s) for s in group(string, 4)]:
+    for s in group(string, 4)[::-1]:
         n = u32(s)
         sign = n - (2 * (n & 2**31))
 
@@ -63,7 +63,7 @@ def _pushstr_amd64(string):
 
     string = string.ljust(align(8, len(string)), extend)
 
-    for s in group(string, 8):
+    for s in group(string, 8)[::-1]:
         n = u64(s)
         sign = n - (2 * (n & 2**63))
 
@@ -89,7 +89,8 @@ def _pushstr_amd64(string):
                     out.append('push rax')
                 else:
                     a,b = xor_pair(s, avoid = '\x00')
-                    out.append('mov rax %s' % _hex(u64(a)))
-                    out.append('xor rax, %s ; %s' % (_hex(u64(b)), repr(s)))
+                    out.append('mov rax, %s' % _hex(u64(a)))
                     out.append('push rax')
+                    out.append('mov rax, %s ; %s' % (_hex(u64(b)), repr(s)))
+                    out.append('xor qword [rsp], rax')
     return out
