@@ -4,7 +4,7 @@ import collections
 from fractions import gcd
 
 import util
-import frequencies
+import freq
 
 #################################
 # GENERIC MONOALPHABETIC CIPHER #
@@ -18,25 +18,25 @@ def decrypt(ciphertext, dictionary):
     inverse = {v: k for k,v in dictionary.items()}
     return encrypt(ciphertext, inverse)
 
-def crack(ciphertext, frequencies=frequencies.english):
+def crack(ciphertext, frequencies=freq.english):
     pass
 
-def genericCrack(ciphertext, candidates, frequencies=frequencies.english):
+def genericCrack(ciphertext, candidates, frequencies=freq.english):
     distances = []
     for candidate in candidates:
         trial = encrypt(ciphertext, candidate)
-        freq = frequencies.text([c for c in trial if c in candidate.keys()])
-        distances.append(Utilities.squaredDifferences(freq, frequencies))
+        candidate_freq = freq.text([c for c in trial if c in candidate.keys()])
+        distances.append(util.squaredDifferences(candidate_freq, frequencies))
     guess = distances.index(min(distances))
     return (candidates[guess], encrypt(ciphertext, candidates[guess]))
 
-def crackShift(ciphertext, alphabet=string.uppercase, frequencies=frequencies.english):
+def crackShift(ciphertext, alphabet=string.uppercase, frequencies=freq.english):
     candidates = [shiftDict(i, alphabet) for i in range(len(alphabet))]
     (dictionary, plaintext) = genericCrack(ciphertext, candidates, frequencies)
     shift = (key for key,value in dictionary.items() if value == alphabet[0]).next()
     return (alphabet.index(shift), plaintext)
 
-def crackAffine(ciphertext, alphabet=string.uppercase, frequencies=frequencies.english):
+def crackAffine(ciphertext, alphabet=string.uppercase, frequencies=freq.english):
     n = len(alphabet)
     invertible = [i for i in range(n) if gcd(i,n) == 1]
     keys = [(a,b) for a in invertible for b in range(n)]
@@ -58,3 +58,9 @@ def affineDict(key, alphabet=string.uppercase):
 def atbashDict(alphabet=string.uppercase):
     n = len(alphabet)
     return affineDict((n - 1, n - 1), alphabet)
+
+def encryptShift(plaintext, key, alphabet=string.uppercase):
+    return encrypt(plaintext, shiftDict(key, alphabet))
+
+def decryptAffine(ciphertext, key, alphabet=string.uppercase):
+    return decrypt(ciphertext, affineDict(key, alphabet))
