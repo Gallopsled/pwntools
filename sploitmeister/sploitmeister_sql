@@ -1,0 +1,107 @@
+drop database IF EXISTS sploitmeister;
+create database sploitmeister;
+use sploitmeister;
+
+create table services (
+       id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+       name VARCHAR(100)
+);
+
+create table exploits (
+       id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+       created TIMESTAMP DEFAULT NOW(),
+       service_id INT NOT NULL REFERENCES services(id),
+       name VARCHAR(100) NOT NULL,
+       author VARCHAR(100)
+);
+
+create table hosts (
+       id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+       name VARCHAR(100) NOT NULL,
+       comment VARCHAR(100)
+);
+
+create table job_status (
+       id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+       created TIMESTAMP DEFAULT NOW(),
+       service_id INT NOT NULL REFERENCES services(id),
+       host_id INT NOT NULL REFERENCES hosts(id),
+       status ENUM("started", "error", "pass", "ok", "disable", "enable") DEFAULT "started",
+       exploit_id INT REFERENCES exploits(id)
+);
+
+create table log (
+       id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+       created TIMESTAMP DEFAULT NOW(),
+       job_id INT NOT NULL REFERENCES job_status(id),
+       text TEXT
+);
+
+create table flag (
+       id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+       created TIMESTAMP DEFAULT NOW(),
+       job_id INT NOT NULL REFERENCES job_status(id),
+       flag VARCHAR(256)
+);
+
+CREATE UNIQUE INDEX services_idx ON services(name);
+CREATE UNIQUE INDEX exploits_idx ON exploits(service_id,name);
+CREATE UNIQUE INDEX hosts_idx    ON hosts(name);
+CREATE INDEX job_status_idx1     ON job_status(created);
+CREATE INDEX job_status_idx2     ON job_status(service_id,host_id);
+CREATE INDEX job_status_idx3     ON job_status(exploit_id);
+CREATE INDEX log_idx1            ON log(created);
+CREATE INDEX log_idx2            ON log(job_id);
+CREATE INDEX flag_idx1           ON flag(created);
+CREATE INDEX flag_idx2           ON flag(job_id);
+CREATE INDEX flag_idx3           ON flag(flag);
+
+DROP USER sploitmeister@localhost;
+CREATE USER sploitmeister@localhost IDENTIFIED BY 'hamster1';
+GRANT ALL PRIVILEGES ON sploitmeister.* TO sploitmeister@localhost;
+
+
+INSERT INTO hosts (name) VALUES ("10.0.0.1"), ("10.0.0.2"), ("10.0.0.3"), ("10.0.0.4");
+INSERT INTO services (name) VALUES ("service1"), ("service2");
+
+
+INSERT INTO job_status (service_id, host_id)
+    SELECT services.id, hosts.id
+    FROM services, hosts
+    ORDER BY IFNULL(
+        (
+            SELECT created
+            FROM job_status
+            WHERE job_status.service_id = services.id AND
+                  job_status.host_id = hosts.id
+            ORDER BY created DESC
+            LIMIT 1
+        ),
+        0
+    ) ASC
+    LIMIT 1;
+
+SELECT services.id as service_id,
+       services.name as service_name,
+       hosts.id as host_id,
+       hosts.name as host_name,
+       job_status.id as job_id
+FROM services, hosts, job_status
+WHERE job_status.id = LAST_INSERT_ID() AND
+      job_status.service_id = services.id AND
+      job_status.host_id = hosts.id;
+
+
+SELECT services.id as service_id, hosts.id as host_id,  IFNULL(
+    (
+        SELECT created
+        FROM job_status
+        WHERE job_status.service_id = services.id AND
+              job_status.host_id = hosts.id
+        ORDER BY created DESC
+        LIMIT 1
+    ),
+    0
+) AS last_time
+FROM services, hosts
+ORDER BY last_time ASC;
