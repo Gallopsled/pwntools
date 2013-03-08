@@ -66,21 +66,45 @@ def totient(p,q):
     """Eulers totient function"""
     return (p-1)*(q-1)
 
-def egcd(a, b):
+def egcd(b, p):
     """Extended greatest common denominator function"""
-    if a == 0:
-        return (b, 0, 1)
-    else:
-        g, y, x = egcd(b % a, a)
-        return (g, x - (b // a) * y, y)
+    u, u1 = 1, 0
+    v, v1 = 0, 1
+    while b:
+        q = a // b
+        u, u1 = u1, u - q * u1
+        v, v1 = v1, v - q * v1
+        a, b = b, a - q * b
+    return a, u, v
+
+def gcd(b, p):
+    """Greatest common denominator (Euclids algorithm)"""
+    return egcd(b, p)[0]
 
 def modinv(a, m):
-    """Modular multiplicative inverse, i.e. aa^-1 = 1 (mod m)"""
-    g, x, y = egcd(a, m)
-    if g != 1:
-        raise Exception('modular inverse does not exist')
-    else:
-        return x % m
+    """Modular multiplicative inverse, i.e. a^-1 = 1 (mod m)"""
+    a, u, v = egcd(a, m)
+    if a <> 1:
+        raise Exception('No inverse: %d (mod %d)' % (b, p))
+    return u
+
+def crt(a, n):
+    """Solve Chinese remainder theorem, eg. determine x in
+    a[0] = x       ( n[0] )
+    ...
+    a[-1] = x      ( n[-1] )
+
+    Elements in n must be pairwise co-prime"""
+    M = reduce(operator.mul, lm)
+    # print M
+    lM = [M/mi for mi in lm]
+    ly = map(invmod, lM, lm)
+    laMy = map((lambda ai, Mi, yi : ai*Mi*yi), la, lM, ly)
+    return sum(laMy) % M
+
+def reste_chinois(a, n):
+    """Alias for crt"""
+    return crt(a, n)
 
 def fast_exponentiation(a, p, n):
     """A fast way to calculate a**p % n"""
