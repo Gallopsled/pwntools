@@ -66,16 +66,13 @@ def totient(p,q):
     """Eulers totient function"""
     return (p-1)*(q-1)
 
-def egcd(b, p):
+def egcd(a, b):
     """Extended greatest common denominator function"""
-    u, u1 = 1, 0
-    v, v1 = 0, 1
-    while b:
-        q = a // b
-        u, u1 = u1, u - q * u1
-        v, v1 = v1, v - q * v1
-        a, b = b, a - q * b
-    return a, u, v
+    if a == 0:
+        return (b, 0, 1)
+    else:
+        g, y, x = egcd(b % a, a)
+        return (g, x - (b // a) * y, y)
 
 def gcd(b, p):
     """Greatest common denominator (Euclids algorithm)"""
