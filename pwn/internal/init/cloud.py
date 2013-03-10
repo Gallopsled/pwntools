@@ -83,7 +83,7 @@ class _Cloud(object):
                     host,
                     username = user,
                     port = port,
-                    key_filename = os.path.join(pwn.installpath, 'dat/ssh/pwn'),
+                    key_filename = os.path.join(pwn.installpath, 'pwn/dat/ssh/pwn'),
                     look_for_keys = False,
                     compress = True,
                     timeout = 10,

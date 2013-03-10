@@ -103,13 +103,34 @@ def egcd(a, b):
         g, y, x = egcd(b % a, a)
         return (g, x - (b // a) * y, y)
 
+def gcd(b, p):
+    """Greatest common denominator (Euclids algorithm)"""
+    return egcd(b, p)[0]
+
 def modinv(a, m):
-    """Modular multiplicative inverse, i.e. aa^-1 = 1 (mod m)"""
-    g, x, y = egcd(a, m)
-    if g != 1:
-        raise Exception('modular inverse does not exist')
-    else:
-        return x % m
+    """Modular multiplicative inverse, i.e. a^-1 = 1 (mod m)"""
+    a, u, v = egcd(a, m)
+    if a <> 1:
+        raise Exception('No inverse: %d (mod %d)' % (b, p))
+    return u
+
+def crt(a, n):
+    """Solve Chinese remainder theorem, eg. determine x in
+    a[0] = x       ( n[0] )
+    ...
+    a[-1] = x      ( n[-1] )
+
+    Elements in n must be pairwise co-prime"""
+    M = reduce(operator.mul, lm)
+    # print M
+    lM = [M/mi for mi in lm]
+    ly = map(invmod, lM, lm)
+    laMy = map((lambda ai, Mi, yi : ai*Mi*yi), la, lM, ly)
+    return sum(laMy) % M
+
+def reste_chinois(a, n):
+    """Alias for crt"""
+    return crt(a, n)
 
 def fast_exponentiation(a, p, n):
     """A fast way to calculate a**p % n"""

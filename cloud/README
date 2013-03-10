@@ -1,0 +1,4 @@
+step 1. run `python registry_server.py -m tcp`
+step 2. run `python server.py`
+step 3. ???
+step 4. profit!

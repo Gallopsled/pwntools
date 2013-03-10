@@ -1,3 +1,3 @@
-[submodule "lib/pycparser"]
-	path = lib/pycparser
-	url = git://github.com/albertz/PyCParser.git
+[submodule "lib/rpyc"]
+	path = lib/rpyc
+	url = https://github.com/tomerfiliba/rpyc.git

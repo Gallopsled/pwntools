@@ -38,7 +38,7 @@ def nasm_raw(code, checked = True, return_none = False, optimize = 'x'):
 def nasm(target_arch, target_os, blocks, emit_asm, checked = True):
 
     if target_arch not in ['i386', 'amd64'] or target_os not in ['linux', 'freebsd']:
-        pwn.die('I do not know how to assemble arch=' + str(arch) + ', os=' + str(os))
+        pwn.die('I do not know how to assemble arch=' + str(target_arch) + ', os=' + str(target_os))
 
     code = []
 

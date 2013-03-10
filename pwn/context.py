@@ -9,7 +9,7 @@ _saved = []
 # Possible context values
 possible_contexts = {
         'os': ['linux', 'freebsd'],
-        'arch': ['i386', 'amd64'],
+        'arch': ['i386', 'amd64', 'alpha', 'arm', 'thumb', 'cris', 'ia64', 'm64k', 'mips', 'powerpc', 'vax'],
         'network': ['ipv4', 'ipv6']
 }
 

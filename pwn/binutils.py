@@ -394,3 +394,30 @@ def random64():
     """Returns a random number which fits inside 8 byte, while avoiding the bytes specified using the avoid module."""
     return u64(randoms(8))
 
+def rol(n, k, size = None):
+    """Returns ((n >> k) | (n << (size - k))) truncated to the right number of bits.
+
+    Size defaults to 32 for numbers and 8*len(n) for strings."""
+
+    if isinstance(n, str):
+        repack = len(n)
+        size = size or (8*len(n))
+        n = uint(n)
+    else:
+        repack = False
+        size = size or 32
+
+    k = ((k % size) + size) % size
+    n = (n >> k) | (n << (size - k))
+    n &= (1 << size) - 1
+
+    if repack:
+        return pint(n).ljust(repack, '\x00')
+    else:
+        return n
+
+def ror(n, k, size = None):
+    """Returns ((n << k) | (n >> (size - k))) truncated to the right number of bits.
+
+    Size defaults to 32 for numbers and 8*len(n) for strings."""
+    return rol(n, -k, size)

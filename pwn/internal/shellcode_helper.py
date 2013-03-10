@@ -93,10 +93,11 @@ class AssemblerContainer(AssemblerBlock):
 
 def shellcode_wrapper(f, args, kwargs, avoider):
     kwargs = pwn.with_context(**kwargs)
+    kwargs = decoutils.kwargs_remover(f, kwargs, pwn.possible_contexts.keys() + ['raw'])
     if avoider:
-        return pwn.avoider(f)(*args, **decoutils.kwargs_remover(f, kwargs, pwn.possible_contexts.keys()))
+        return pwn.avoider(f)(*args, **kwargs)
     else:
-        return f(*args, **decoutils.kwargs_remover(f, kwargs, pwn.possible_contexts.keys()))
+        return f(*args, **kwargs)
 
 def shellcode_reqs(blob = False, hidden = False, avoider = False, **supported_context):
     '''A decorator for shellcode functions, which registers the function
@@ -130,7 +131,9 @@ def shellcode_reqs(blob = False, hidden = False, avoider = False, **supported_co
                     if kwargs[k] not in vs:
                         pwn.die('Invalid context for ' + f.func_name + ': ' + k + '=' + str(kwargs[k]) + ' is not supported')
                 r = shellcode_wrapper(f, args, kwargs, avoider)
-                if isinstance(r, AssemblerBlock):
+                if kwargs.get('raw'):
+                    return r
+                elif isinstance(r, AssemblerBlock):
                     return r
                 elif isinstance(r, (tuple, list)):
                     kwargs['cast'] = 'blob' if blob else 'text'

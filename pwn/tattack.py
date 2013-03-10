@@ -1,6 +1,6 @@
 import pwn, os
 
-__timeattackbin = os.path.join(pwn.installpath, 'binaries/timeattack')
+__timeattackbin = os.path.join(pwn.installpath, 'pwn/binaries/timeattack')
 
 def simulate(proc, exe, argv, inputfield, inputs):
     proc.send('%s\0' % exe)

@@ -7,7 +7,8 @@ from socket import htons, inet_aton, inet_ntoa, gethostbyname
 from os import system
 
 # Install path
-installpath = os.path.dirname(__file__)
+installpath = os.path.dirname(os.path.realpath(__file__))
+installpath = os.path.realpath(os.path.join(installpath, '..'))
 
 # Argument parsing
 TRACE = True
@@ -68,6 +69,7 @@ try:
     import pwn.internal.init.cloud
     import pwn.internal.init.session
     import pwn.nasm
+    import pwn.gas
     import pwn.shellcode
     import pwn.sqli
     import pwn.rop
