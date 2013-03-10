@@ -32,7 +32,7 @@ def strand_scores(strands, alphabet=string.uppercase):
         scores.append( (score, strand) )
     return scores
 
-def key_period(guesses, ic_target=util.ic_english, alphabet=string.uppercase, prune = False):
+def key_period(guesses, ic_target=util.ic_english, alphabet=string.uppercase, prune = False, raw_score = False):
     """
     Score guesses on the key period of a ciphertext based on the distance between their
     index of coincidence and a target value. The distance is calculated from the mean
@@ -49,6 +49,7 @@ def key_period(guesses, ic_target=util.ic_english, alphabet=string.uppercase, pr
                   symbols not in the alphabet will be ignored.
         prune: a boolean specifying if the results should be filtered to only contain results
                within 10% of the target index of coincidence.
+        raw_score: do not calculate distance, instead return the raw index of coincidence
 
     Returns:
         a list of fitness scores of the form (length, mean_score).
@@ -56,7 +57,8 @@ def key_period(guesses, ic_target=util.ic_english, alphabet=string.uppercase, pr
     fitness = []
     for (length, strands) in guesses:
         scores = strand_scores(strands, alphabet)
-        fitness.append( (length, abs(ic_target - mean([score for score,_ in scores]))) )
+        if not raw_score: fitness.append( (length, abs(ic_target - mean([score for score,_ in scores]))) )
+        else: fitness.append( (length, mean([score for score,_ in scores])) )
 
     max_distance = ic_target / 10.0
     if prune: return filter(lambda (length, score): score < max_distance , fitness)
@@ -85,14 +87,14 @@ def graph_key_period(ciphertext, splitFunction, limit = None, ic_target=util.ic_
 
     filtered = filter(lambda c: c in string.letters, ciphertext)
     guesses = [splitFunction(filtered, period) for period in range(1, limit)]
-    fitness = key_period(guesses, ic_target)
+    fitness = key_period(guesses, ic_target, alphabet, raw_score=True)
 
     ic_deviation = ic_target * 0.10
     ic_upper = ic_target + ic_deviation
     ic_lower = ic_target - ic_deviation
 
     periods = [period for period, _ in fitness]
-    scores = [score + ic_target for _, score in fitness]
+    scores = [score for _, score in fitness]
     colors = ['red' if score > ic_lower and score < ic_upper  else 'gray' for _, score in fitness]
 
     fig = plt.figure()
@@ -109,8 +111,9 @@ def graph_key_period(ciphertext, splitFunction, limit = None, ic_target=util.ic_
         plt.text(rect.get_x() + rect.get_width()/2.0, 1.02 * rect.get_height(), "%.3f" % scores[i], ha="center")
 
     # Draw IC target lines line
-    plt.axhline(ic_upper, color='gray', linestyle='--', zorder=-1)
-    plt.axhline(ic_lower, color='gray', linestyle='--', zorder=-1)
+    plt.axhline(ic_upper, color='lightgray', linestyle='--', zorder=-1)
+    plt.axhline(ic_target, color='gray', linestyle='--', zorder=-1)
+    plt.axhline(ic_lower, color='lightgray', linestyle='--', zorder=-1)
 
     # Set the legend color for above cutoff values
     # to red, and make legend transparent
