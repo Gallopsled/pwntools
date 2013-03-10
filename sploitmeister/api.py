@@ -78,24 +78,57 @@ class Api(object):
                                             sqlalchemy.Column('priority', sqlalchemy.types.Integer, unique=True, nullable=False)
                                             )
 
+
+
     def addConfig(self, config):
-        ins = self.configTable.insert()
-        ins.execute(config)
+        ''' type(config) == dict
+valid fields:
+'flag_regexp' : regular expression matching valid flag for current ctf
+'flag_submitter' : executable script responsible for submitting the flags to flag server
+'cooldown' : default cooldown for attacks
+'batch_size' : amount of attacks given each worker
+'''
+        ins = self._configTable.insert()
+        res = ins.execute(config)
+        if res:
+            rowid = res.lastrowid
+            res.close()
+            return rowid
+        return False
 
     def getConfig(self):
-        column = self.configTable.c
-        select = self.configTable.select()
+        ''' Returns the configuration
+'''
+        column = self._configTable.c
+        select = self._configTable.select()
         result = select.execute()
         row    = result.fetchone()
         return row
 
+
     def addExploit(self, config):
-        ins = self.exploitTable.insert()
-        ins.execute(config)
+        ''' type(config) == dict
+fields:
+'data' : exploit payload in a format executable by the workers
+'author' : author(s) of the exploit
+'ts' : time when exploit was submitted
+'name' : name of the exploit
+'version' : version of the exploit
+
+'''
+        ins = self._exploitTable.insert()
+        res = ins.execute(config)
+        if res:
+            rowid = res.lastrowid
+            res.close()
+            return rowid
+        return False
 
     def getExploits(self, amount=10):
-        column = self.exploitTable.c
-        select = self.exploitTable.select()
+        ''' Returns 'amount' (default: 10) exploits
+'''
+        column = self._exploitTable.c
+        select = self._exploitTable.select()
         select = select.limit(amount)
         select = select.order_by(sqlalchemy.desc(column.ts))
         result = select.execute()
@@ -105,12 +138,23 @@ class Api(object):
 
 
     def addService(self, config):
-        ins = self.serviceTable.insert()
-        ins.execute(config)
+        '''type(config) == dict
+fields:
+'name' : name of service
+'''
+        ins = self._serviceTable.insert()
+        res = ins.execute(config)
+        if res:
+            rowid = res.lastrowid
+            res.close()
+            return rowid
+        return False
 
     def getServices(self, amount=10):
-        column = self.serviceTable.c
-        select = self.serviceTable.select()
+        ''' Returns 'amount' (default: 10) services
+'''
+        column = self._serviceTable.c
+        select = self._serviceTable.select()
         select = select.limit(amount)
         result = select.execute()
         rows   = result.fetchall()
@@ -119,27 +163,52 @@ class Api(object):
 
 
     def addFlag(self, config):
-        ins = self.flagTable.insert()
-        ins.execute(config)
+        '''type(config) == dict
+fields:
+'flag' : the flag hash as a string
+'ts' : timestamp of when flag was stolen
+'status' : status of flag (delivered/failed/pending)
+'attack_id' : id of which attack stole the flag
+'''
+        ins = self._flagTable.insert()
+        res = ins.execute(config)
+        if res:
+            rowid = res.lastrowid
+            res.close()
+            return rowid
+        return False
 
     def getFlags(self, amount=10):
-        column = self.flagTable.c
-        select = self.flagTable.select()
+        ''' Returns 'amount' (default: 10) flags
+'''
+        column = self._flagTable.c
+        select = self._flagTable.select()
         select = select.limit(amount)
         result = select.execute()
         rows   = result.fetchall()
         result.close()
         return rows
-
 
 
     def addHost(self, config):
-        ins = self.hostTable.insert()
-        ins.execute(config)
+        '''type(config) == dict
+fields:
+'ip' : ip address of host
+'desc' : description of host
+'''
+        ins = self._hostTable.insert()
+        res = ins.execute(config)
+        if res:
+            rowid = res.lastrowid
+            res.close()
+            return rowid
+        return False
 
     def getHosts(self, amount=10):
-        column = self.hostTable.c
-        select = self.hostTable.select()
+        ''' Returns 'amount' (default: 10) hosts
+'''
+        column = self._hostTable.c
+        select = self._hostTable.select()
         select = select.limit(amount)
         result = select.execute()
         rows   = result.fetchall()
@@ -147,56 +216,116 @@ class Api(object):
         return rows
 
 
-
     def addAttack(self, config):
-        ins = self.attackTable.insert()
-        ins.execute(config)
+        '''type(config) == dict
+fields:
+'e_id' : exploit id
+'h_id' : host id
+'s_id' : service id
+'cooldown' : minimum frequency of executions (s) (optional)
+'last_run' : time of when attack was last executed
+'active' : bool to describe if attack is currently active or deactive
+'priority' : priority (higher is lower prio)
+'''
+        if not config.has_key('cooldown'):
+            config = self.getConfig()
+            if not config:
+                cooldown = 60
+            else:
+                cooldown = config[3]
+            config.update({'cooldown' : cooldown})
 
-    def getAttacks(self, amount=None):
+        ins = self._attackTable.insert()
+        res = ins.execute(config)
+        if res:
+            rowid = res.lastrowid
+            res.close()
+            return rowid
+        return False
+
+    def getAttacks(self, amount=None, get_all=False):
+        ''' yields 'amount' (default: 10) attacks to be executed.
+Each attack will get last_run field updated with current gmtime.
+Only active attacks are returned unless get_all is True.
+'''
         if not amount:
             config = self.getConfig()
             if not config:
                 amount = 10
             else:
-                amount = config[-1]
+                amount = config[4]
 
-        column = self.attackTable.c
-        select = self.attackTable.select()
+        column = self._attackTable.c
+        select = self._attackTable.select()
+        if not get_all:
+            select = select.where(column.active == True)
+
         select = select.limit(amount)
         select = select.order_by(sqlalchemy.desc(column.last_run))
         result = select.execute()
         rows   = result.fetchall()
+
+        new_last_run = strftime("%Y-%m-%d %X", gmtime())
+        ids = [row[0] for row in rows]
+
+        for a_id in ids:
+            up = self._attackTable.update()
+            up = up.where(column.id == a_id)
+            up = up.values(last_run = new_last_run)
+            up.execute()
+
         result.close()
         return rows
 
     def promoteAttack(self, a_id, promote_level=None):
+        ''' Promotes the priority (or sets priority level if promote_level is set) of attack with id `a_id`
+'''
         try:
             if not isinstance(promote_level, int):
-                up = self.attackTable.update()
-                up = up.where(self.attackTable.c.id==a_id)
-                up = up.values(priority=self.attackTable.c.priority-1)
+                up = self._attackTable.update()
+                up = up.where(self._attackTable.c.id == a_id)
+                up = up.values(priority = self._attackTable.c.priority - 1)
             else:
-                up = self.attackTable.update()
-                up = up.where(self.attackTable.c.id==a_id)
-                up = up.values(priority=promote_level)
+                up = self._attackTable.update()
+                up = up.where(self._attackTable.c.id == a_id)
+                up = up.values(priority = promote_level)
+            up.execute()
         except:
             log.error("Failed demoting attack with id: %d" % a_id)
 
 
     def demoteAttack(self, a_id, promote_level=None):
+        ''' Demotes priority (or sets priority level if promote_level is set) of attack with id `a_id`
+'''
         try:
             if not isinstance(promote_level, int):
-                up = self.attackTable.update()
-                up = up.where(self.attackTable.c.id==a_id)
-                up = up.values(priority=self.attackTable.c.priority+1)
+                up = self._attackTable.update()
+                up = up.where(self._attackTable.c.id == a_id)
+                up = up.values(priority = self._attackTable.c.priority + 1)
             else:
-                up = self.attackTable.update()
-                up = up.where(self.attackTable.c.id==a_id)
-                up = up.values(priority=promote_level)
+                up = self._attackTable.update()
+                up = up.where(self._attackTable.c.id == a_id)
+                up = up.values(priority = promote_level)
+            up.execute()
         except:
             log.error("Failed demoting attack with id: %d" % a_id)
 
+    def disableAttack(self, a_id):
+        ''' Sets `active` column to `False` for attack with id `a_id`
+'''
+        up = self._attackTable.update()
+        up = up.where(self._attackTable.c.id == a_id)
+        up = up.values(active = False)
+        up.execute()
+
+    def enableAttack(self, a_id):
+        ''' Sets `active` column to `True` for attack with id `a_id`
+'''
+
+        up = self._attackTable.update()
+        up = up.where(self._attackTable.c.id == a_id)
+        up = up.values(active = True)
+        up.execute()
+
     def getBatch(self, amount=None):
         return self.getAttacks(amount)
-
-
