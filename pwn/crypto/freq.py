@@ -48,12 +48,12 @@ def uniform(alphabet=string.uppercase):
 def text(string, alphabet=string.uppercase):
     """
     Calculate the frequency distribution of a piece of text over
-    a specified alphabet. All symbols not present in the alphabet
-    will be ignored.
+    a specified alphabet.
 
     Args:
         string: the text string to calculate the frequency distribution of
         alphabet: the alphabet to use when calculating the frequency distribution.
+                  symbols not in the alphabet will be ignored.
 
     Returns:
         the frequency distribution for the text string over the target alphabet.
@@ -65,14 +65,17 @@ def text(string, alphabet=string.uppercase):
     for c in alphabet: freq[c] /= n
     return freq
 
-def count(string):
+def count(string, alphabet=string.uppercase):
     """
     Count the number of occurrences of the different symbols present in a string.
 
     Args:
         string: the text to count symbols in.
+        alphabet: the alphabet to use when calculating the frequency distribution.
+                  symbols not in the alphabet will be ignored.
 
     Returns:
         a count of the different symbols in the text.
     """
+    string = filter(lambda c: c in alphabet, string)
     return collections.Counter(string)

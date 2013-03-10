@@ -7,7 +7,7 @@ import gmpy
 from functools import wraps
 from itertools import *
 
-import frequencies
+import freq
 
 # The expected index of coincidence value for English text
 ic_english = 0.065
@@ -29,7 +29,7 @@ def index_of_coincidence(frequencies, n):
     pairs = n * (n - 1)
     return float(combinations) / float(pairs) if pairs > 0 else 0
 
-def expected_ic(frequencies):
+def expected_ic(frequencies=freq.english):
     """
     Calculate the expected index of coincidence for a text having
     the specified frequency distribution.
@@ -43,11 +43,11 @@ def expected_ic(frequencies):
     """
     return sum([f * f for f in frequencies.values()])
 
-def squared_differences(frequencies, expected):
+def squared_differences(frequencies, expected=freq.english):
     pairs = zip(frequencies.values(), expected.values())
     return sum([(f - e) ** 2 for f,e in pairs])
 
-def chi_squared(counts, length, expected=frequencies.english):
+def chi_squared(counts, length, expected=freq.english):
     expectedcount = {c: e * length for c,e in expected.items()}
     pairs = zip(counts.values(), expected.values())
     return sum([((c - e) ** 2) / float(e) for c,e in pairs])

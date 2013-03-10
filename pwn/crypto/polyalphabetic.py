@@ -7,42 +7,92 @@ import matplotlib.pyplot as plt
 
 import util
 import freq
-import monoalphabetic
+import monoalphabetic as mono
 
 #####################################
 # GENERAL CALCULATION OF KEY PERIOD #
 #####################################
 
-def strandScores(strands, ic_target=0.06):
+def strand_scores(strands, alphabet=string.uppercase):
+    """
+    Calculate the index of coincidence of several texts.
+
+    Args:
+        strands: a list of the texts to calculate scores for.
+        alphabet: the alphabet of symbols to use when calculating the index of coincidence.
+                  symbols not in the alphabet will be ignored.
+
+    Returns:
+        a list of tuples of the form (score, strand).
+    """
     scores = []
     for strand in strands:
-        score = util.indexOfCoincidence(freq.count(strand), len(strand))
+        significant_length = len(filter(lambda c: c in alphabet, strand))
+        score = util.index_of_coincidence(freq.count(strand, alphabet), significant_length)
         scores.append( (score, strand) )
     return scores
 
-def keyPeriod(guesses, ic_target=0.06, prune = False):
+def key_period(guesses, ic_target=util.ic_english, alphabet=string.uppercase, prune = False):
+    """
+    Score guesses on the key period of a ciphertext based on the distance between their
+    index of coincidence and a target value. The distance is calculated from the mean
+    of the scores of the individual text strands.
+
+    Lower is better!
+
+    Args:
+        guesses: a list of guesses of the form (period_guess, [strands]).
+                 where [strands] is a list containing the ciphertext split into period_guess
+                 texts where the symbols of one text are encrypted under the same key.
+        ic_target: the target index of coincidence used to assign a fitness score to the guesses.
+        alphabet: the alphabet of symbols to use when calculating the index of coincidence.
+                  symbols not in the alphabet will be ignored.
+        prune: a boolean specifying if the results should be filtered to only contain results
+               within 10% of the target index of coincidence.
+
+    Returns:
+        a list of fitness scores of the form (length, mean_score).
+    """
     fitness = []
     for (length, strands) in guesses:
-        scores = strandScores(strands, ic_target)
-        fitness.append( (length, mean([score for score,_ in scores])) )
+        scores = strand_scores(strands, alphabet)
+        fitness.append( (length, abs(ic_target - mean([score for score,_ in scores]))) )
 
-    if prune: return filter(lambda (length, score): score < ic_target / 10, fitness)
+    max_distance = ic_target / 10.0
+    if prune: return filter(lambda (length, score): score < max_distance , fitness)
     else: return fitness
 
-def graphKeyPeriod(ciphertext, splitFunction, limit = None, ic_target=0.065):
+def graph_key_period(ciphertext, splitFunction, limit = None, ic_target=util.ic_english, alphabet=string.uppercase):
+    """
+    Draw a graph of the index of coincidence scores of different key periods
+    relative to a target index of coincidence.
+
+    Args:
+        ciphertext: the ciphertext to analyse.
+        splitFunction: the function used to split the ciphertext into strands.
+                       example: polyalphabetic.split_vigenere
+        limit: user specified limit for key period guesses.
+               if this is not given a sane default will be calculated based on the ciphertext.
+        ic_target: the target index of coincidence used to assign a fitness score to the guesses.
+        alphabet: the alphabet of symbols to use when calculating the index of coincidence.
+                  symbols not in the alphabet will be ignored.
+
+    Returns:
+        draws a graph to the screen instead of returning anything.
+    """
     if limit == None: limit = min((len(ciphertext) / 4) + 1, 20)
     else: limit = limit + 1
 
     filtered = filter(lambda c: c in string.letters, ciphertext)
     guesses = [splitFunction(filtered, period) for period in range(1, limit)]
-    fitness = keyPeriod(guesses, ic_target)
+    fitness = key_period(guesses, ic_target)
 
     ic_deviation = ic_target * 0.10
     ic_upper = ic_target + ic_deviation
     ic_lower = ic_target - ic_deviation
 
     periods = [period for period, _ in fitness]
-    scores = [score for _, score in fitness]
+    scores = [score + ic_target for _, score in fitness]
     colors = ['red' if score > ic_lower and score < ic_upper  else 'gray' for _, score in fitness]
 
     fig = plt.figure()
@@ -81,7 +131,7 @@ def encrypt(plaintext, key, cipher, alphabet=string.uppercase):
     ciphers = []
     for i in range(len(strands)):
         shift = alphabet.index(key[i])
-        ciphers.append( monoalphabetic.encrypt(strands[i], monoalphabetic.shiftDict(shift, alphabet)) )
+        ciphers.append( mono.encrypt_substitution(strands[i], mono.shift_dict(shift, alphabet)) )
     return interleave(ciphers, len(plaintext))
 
 def decrypt(ciphertext, key, cipher, alphabet=string.uppercase):
@@ -90,33 +140,38 @@ def decrypt(ciphertext, key, cipher, alphabet=string.uppercase):
     ciphers = []
     for i in range(len(strands)):
         shift = alphabet.index(key[i])
-        ciphers.append( monoalphabetic.decrypt(strands[i], monoalphabetic.shiftDict(shift, alphabet)) )
+        ciphers.append( mono.decrypt_substitution(strands[i], mono.shift_dict(shift, alphabet)) )
     return interleave(ciphers, len(ciphertext))
 
 ###################
 # VIGENERE CIPHER #
 ###################
 
-def splitVigenere(ciphertext, keylength):
+def split_vigenere(ciphertext, keylength):
     return (keylength, [ciphertext[i::keylength] for i in range(keylength)])
 
-def interleaveVigenere(strands, length):
+def interleave_vigenere(strands, length):
     return flat([[strand[n:n+1] for strand in strands] for n in range(length)])
 
-vigenere = (splitVigenere, interleaveVigenere)
+vigenere_cipher = (split_vigenere, interleave_vigenere)
 
-def crackVigenere(ciphertext, ic_target=0.065, alphabet=string.uppercase, frequencies=freq.english):
-    limit = int(len(ciphertext) / (len(alphabet) * 1.47)) # Unicity distance of english, TODO: Be able to change language
-    guesses = [splitVigenere(ciphertext, period) for period in range(1, limit)]
-    possible = keyPeriod(guesses, ic_target)
+def crack_vigenere(ciphertext, known_period=None, ic_target=util.ic_english, alphabet=string.uppercase, frequencies=freq.english):
+    ciphertext = filter(lambda c: c in alphabet, ciphertext)
+    if known_period == None:
+        limit = int(len(ciphertext) / (len(alphabet) * 1.47)) # Unicity distance of english, TODO: Be able to change language
+        guesses = [split_vigenere(ciphertext, period) for period in range(1, limit)]
+        possible = key_period(guesses, ic_target, alphabet)
+    else: possible = [(known_period, 0)]
+
     results = []
     for (period, score) in possible:
         key = ""
-        (length, ciphers) = splitVigenere(ciphertext, period)
+        (length, ciphers) = split_vigenere(ciphertext, period)
         for i in range(len(ciphers)):
-            (k,m) = monoalphabetic.crackShift(ciphers[i], alphabet, frequencies)
+            (k,m) = mono.crack_shift(ciphers[i], alphabet, frequencies)
             key += alphabet[k]
             ciphers[i] = m
-        result = (key, interleaveVigenere(ciphers, len(ciphertext)))
+        result = (key, interleave_vigenere(ciphers, len(ciphertext)))
         results.append(result)
-    return results
+    if len(results) == 1: return results[0]
+    else: return results
