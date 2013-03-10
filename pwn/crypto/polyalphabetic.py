@@ -13,33 +13,37 @@ import monoalphabetic
 # GENERAL CALCULATION OF KEY PERIOD #
 #####################################
 
-def strandScores(strands, cutoff=0.06):
+def strandScores(strands, ic_target=0.06):
     scores = []
     for strand in strands:
         score = util.indexOfCoincidence(freq.count(strand), len(strand))
         scores.append( (score, strand) )
     return scores
 
-def keyPeriod(guesses, cutoff=0.06):
+def keyPeriod(guesses, ic_target=0.06, prune = False):
     fitness = []
     for (length, strands) in guesses:
-        scores = strandScores(strands, cutoff)
+        scores = strandScores(strands, ic_target)
         fitness.append( (length, mean([score for score,_ in scores])) )
 
-    if cutoff == None: return fitness
-    else: return filter(lambda (length, score): score > cutoff, fitness)
+    if prune: return filter(lambda (length, score): score < ic_target / 10, fitness)
+    else: return fitness
 
-def graphKeyPeriod(ciphertext, splitFunction, limit = None, cutoff=0.06):
-    if limit == None: limit = min((len(ciphertext) / 2) + 1, 20)
+def graphKeyPeriod(ciphertext, splitFunction, limit = None, ic_target=0.065):
+    if limit == None: limit = min((len(ciphertext) / 4) + 1, 20)
     else: limit = limit + 1
 
     filtered = filter(lambda c: c in string.letters, ciphertext)
     guesses = [splitFunction(filtered, period) for period in range(1, limit)]
-    fitness = keyPeriod(guesses, None)
+    fitness = keyPeriod(guesses, ic_target)
+
+    ic_deviation = ic_target * 0.10
+    ic_upper = ic_target + ic_deviation
+    ic_lower = ic_target - ic_deviation
 
     periods = [period for period, _ in fitness]
     scores = [score for _, score in fitness]
-    colors = ['red' if score > cutoff else 'gray' for _, score in fitness]
+    colors = ['red' if score > ic_lower and score < ic_upper  else 'gray' for _, score in fitness]
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -48,7 +52,15 @@ def graphKeyPeriod(ciphertext, splitFunction, limit = None, cutoff=0.06):
     ax.set_ylabel("Index of coincidence")
     ax.set_xlabel("Key period")
     ax.set_xticks(periods)
-    leg = ax.legend( rects, ("Below " + str(cutoff), "Above " + str(cutoff)))
+    leg = ax.legend( rects, ("Far from " + str(ic_target), "Close to " + str(ic_target)), loc='best' )
+
+    # Label bars with value
+    for i, rect in enumerate(rects):
+        plt.text(rect.get_x() + rect.get_width()/2.0, 1.02 * rect.get_height(), "%.3f" % scores[i], ha="center")
+
+    # Draw IC target lines line
+    plt.axhline(ic_upper, color='gray', linestyle='--', zorder=-1)
+    plt.axhline(ic_lower, color='gray', linestyle='--', zorder=-1)
 
     # Set the legend color for above cutoff values
     # to red, and make legend transparent
@@ -93,10 +105,10 @@ def interleaveVigenere(strands, length):
 
 vigenere = (splitVigenere, interleaveVigenere)
 
-def crackVigenere(ciphertext, cutoff=0.06, alphabet=string.uppercase, frequencies=freq.english):
-    limit = min((len(ciphertext) / 2) + 1, 20)
+def crackVigenere(ciphertext, ic_target=0.065, alphabet=string.uppercase, frequencies=freq.english):
+    limit = int(len(ciphertext) / (len(alphabet) * 1.47)) # Unicity distance of english, TODO: Be able to change language
     guesses = [splitVigenere(ciphertext, period) for period in range(1, limit)]
-    possible = keyPeriod(guesses, cutoff)
+    possible = keyPeriod(guesses, ic_target)
     results = []
     for (period, score) in possible:
         key = ""

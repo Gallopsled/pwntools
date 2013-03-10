@@ -2,6 +2,7 @@ import string
 import collections
 from itertools import *
 
+# The expected frequency distribution for English text
 english = {
     'A' : 0.082,
     'B' : 0.015,
@@ -32,15 +33,46 @@ english = {
 }
 
 def uniform(alphabet=string.uppercase):
+    """
+    Generate a uniform frequency distribution table for an alphabet.
+
+    Args:
+        alphabet: the alphabet to generate the frequency distribution for.
+
+    Returns:
+        a uniform frequency distribution over the alphabet.
+    """
     n = len(alphabet)
     return dict(zip(alphabet, [1.0 / n] * n))
 
 def text(string, alphabet=string.uppercase):
+    """
+    Calculate the frequency distribution of a piece of text over
+    a specified alphabet. All symbols not present in the alphabet
+    will be ignored.
+
+    Args:
+        string: the text string to calculate the frequency distribution of
+        alphabet: the alphabet to use when calculating the frequency distribution.
+
+    Returns:
+        the frequency distribution for the text string over the target alphabet.
+    """
     n = len(alphabet)
     freq = collections.defaultdict(float)
-    for c in string: freq[c] += 1.0
+    for c in string:
+        if c in alphabet: freq[c] += 1.0
     for c in alphabet: freq[c] /= n
     return freq
 
 def count(string):
+    """
+    Count the number of occurrences of the different symbols present in a string.
+
+    Args:
+        string: the text to count symbols in.
+
+    Returns:
+        a count of the different symbols in the text.
+    """
     return collections.Counter(string)
