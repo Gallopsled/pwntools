@@ -1,6 +1,7 @@
 
 import sqlalchemy
 from pwn import log
+import datetime
 
 class Api(object):
     def __init__(self, db_name, db_host, db_port, db_username=None, db_password=None):
@@ -39,7 +40,7 @@ class Api(object):
                                              sqlalchemy.Column('id', sqlalchemy.types.Integer, primary_key=True, autoincrement=True),
                                              sqlalchemy.Column('data', sqlalchemy.types.BLOB, nullable=False),
                                              sqlalchemy.Column('author', sqlalchemy.types.String(60), nullable=False),
-                                             sqlalchemy.Column('ts', sqlalchemy.types.DateTime, nullable=False),
+                                             sqlalchemy.Column('created', sqlalchemy.types.DateTime, default=datetime.datetime.now(), nullable=False),
                                              sqlalchemy.Column('name', sqlalchemy.types.String(100), nullable=False),
                                              sqlalchemy.Column('version', sqlalchemy.types.String(20), nullable=False)
                                              )
@@ -61,22 +62,31 @@ class Api(object):
         self.flagTable = sqlalchemy.Table('flags', self.metadata,
                                           sqlalchemy.Column('id', sqlalchemy.types.Integer, primary_key=True, autoincrement=True),
                                           sqlalchemy.Column('flag', sqlalchemy.types.String(100), nullable=False),
-                                          sqlalchemy.Column('ts', sqlalchemy.types.DateTime, nullable=False),
-                                          sqlalchemy.Column('status', sqlalchemy.types.String(20), nullable=False),
+                                          sqlalchemy.Column('created', sqlalchemy.types.DateTime, default=datetime.datetime.now(), nullable=False),
+                                          sqlalchemy.Column('status', sqlalchemy.types.Enum("delivered", "failed", "pending"), default="pending", nullable=False),
                                           sqlalchemy.Column('attack_id', sqlalchemy.ForeignKey('attacks.a_id'))
                                           )
 
     def _setupAttackTable(self):
         self.attackTable = sqlalchemy.Table('attacks', self.metadata,
-                                            sqlalchemy.Column('a_id', sqlalchemy.types.Integer, primary_key=True, autoincrement=True),
-                                            sqlalchemy.Column('e_id', sqlalchemy.ForeignKey('exploits.id')),
-                                            sqlalchemy.Column('h_id', sqlalchemy.ForeignKey('hosts.id')),
-                                            sqlalchemy.Column('s_id', sqlalchemy.ForeignKey('services.id')),
+                                            sqlalchemy.Column('id', sqlalchemy.types.Integer, primary_key=True, autoincrement=True),
+                                            sqlalchemy.Column('exploit_id', sqlalchemy.ForeignKey('exploits.id')),
+                                            sqlalchemy.Column('host_id', sqlalchemy.ForeignKey('hosts.id')),
+                                            sqlalchemy.Column('service_id', sqlalchemy.ForeignKey('services.id')),
                                             sqlalchemy.Column('cooldown', sqlalchemy.types.Integer, nullable=False),
+                                            sqlalchemy.Column('created', sqlalchemy.types.DateTime, default=datetime.datetime.now(), nullable=False),
                                             sqlalchemy.Column('last_run', sqlalchemy.types.DateTime, nullable=False),
-                                            sqlalchemy.Column('active', sqlalchemy.types.Boolean, nullable=False),
+                                            sqlalchemy.Column('status', sqlalchemy.types.Enum("started", "error", "pass", "ok", "disable", "enable"), default="started", nullable=False),
                                             sqlalchemy.Column('priority', sqlalchemy.types.Integer, unique=True, nullable=False)
                                             )
+
+    def _setupLogTable(self):
+        self.hostTable = sqlalchemy.Table('log', self.metadata,
+                                          sqlalchemy.Column('id', sqlalchemy.types.Integer, primary_key=True, autoincrement=True),
+                                          sqlalchemy.Column('created', sqlalchemy.types.DateTime, default=datetime.datetime.now(), nullable=False),
+                                          sqlalchemy.Column('attack_id', sqlalchemy.ForeignKey('attacks.id')),
+                                          sqlalchemy.Column('text', sqlalchemy.types.Text, nullable=True)
+                                          )
 
 
 
@@ -111,7 +121,7 @@ valid fields:
 fields:
 'data' : exploit payload in a format executable by the workers
 'author' : author(s) of the exploit
-'ts' : time when exploit was submitted
+'created' : time when exploit was submitted
 'name' : name of the exploit
 'version' : version of the exploit
 
@@ -166,7 +176,7 @@ fields:
         '''type(config) == dict
 fields:
 'flag' : the flag hash as a string
-'ts' : timestamp of when flag was stolen
+'created' : timestamp of when flag was stolen
 'status' : status of flag (delivered/failed/pending)
 'attack_id' : id of which attack stole the flag
 '''
@@ -219,12 +229,13 @@ fields:
     def addAttack(self, config):
         '''type(config) == dict
 fields:
-'e_id' : exploit id
-'h_id' : host id
-'s_id' : service id
+'exploit_id' : exploit id
+'host_id' : host id
+'service_id' : service id
 'cooldown' : minimum frequency of executions (s) (optional)
+'created' : time of when attack was created
 'last_run' : time of when attack was last executed
-'active' : bool to describe if attack is currently active or deactive
+'active' : the status of current attack (started (default), error, pass, ok, disable, enable)
 'priority' : priority (higher is lower prio)
 '''
         if not config.has_key('cooldown'):
@@ -315,16 +326,15 @@ Only active attacks are returned unless get_all is True.
 '''
         up = self._attackTable.update()
         up = up.where(self._attackTable.c.id == a_id)
-        up = up.values(active = False)
+        up = up.values(active = "disable")
         up.execute()
 
     def enableAttack(self, a_id):
         ''' Sets `active` column to `True` for attack with id `a_id`
 '''
-
         up = self._attackTable.update()
         up = up.where(self._attackTable.c.id == a_id)
-        up = up.values(active = True)
+        up = up.values(active = "started")
         up.execute()
 
     def getBatch(self, amount=None):
