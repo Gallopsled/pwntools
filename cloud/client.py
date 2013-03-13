@@ -1,4 +1,5 @@
 from pwn import *
+import rpyc
 from rpyc.utils.registry import TCPRegistryClient
 import socket
 
