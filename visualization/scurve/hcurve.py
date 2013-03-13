@@ -59,7 +59,7 @@ class Hcurve:
             # Which of the four sub-triangles of this triangle are we in?
             x = 4*i/tsize
             f = 1 if i+1 == d else 0
-            if x == 0: return self.cor(d, i, n/2) 
+            if x == 0: return self.cor(d, i, n/2)
             if x == 1: return self.cor(d, tsize/2 - 1 - i, n/2) - 0
             if x == 2: return n/2 - self.cor(d, 3 * tsize/4 - 1 - i, n/2) - 1
             if x == 3: return n/2 + self.cor(d, i - 3 * tsize/4, n/2) - 0
