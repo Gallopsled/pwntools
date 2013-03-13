@@ -25,9 +25,9 @@ def parseColor(c):
         Parse an HTML-style color specification
     """
     if len(c) == 6:
-        r = int(c[0:2], 16)/255.0
-        g = int(c[2:4], 16)/255.0
-        b = int(c[4:6], 16)/255.0
+        r = int(c[0:2], 16)#/255.0
+        g = int(c[2:4], 16)#/255.0
+        b = int(c[4:6], 16)#/255.0
         return [r, g, b]
     elif len(c) == 3:
         return c
