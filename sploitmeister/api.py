@@ -24,6 +24,7 @@ class Api(object):
         self._setupFlagTable()
         self._setupAttackTable()
         self._setupConfigTable()
+        self._setupLogTable()
         self.metadata.create_all()
 
     def _setupConfigTable(self):
@@ -64,7 +65,7 @@ class Api(object):
                                           sqlalchemy.Column('flag', sqlalchemy.types.String(100), nullable=False),
                                           sqlalchemy.Column('created', sqlalchemy.types.DateTime, default=datetime.datetime.now(), nullable=False),
                                           sqlalchemy.Column('status', sqlalchemy.types.Enum("delivered", "failed", "pending"), default="pending", nullable=False),
-                                          sqlalchemy.Column('attack_id', sqlalchemy.ForeignKey('attacks.a_id'))
+                                          sqlalchemy.Column('attack_id', sqlalchemy.ForeignKey('attacks.id'))
                                           )
 
     def _setupAttackTable(self):
