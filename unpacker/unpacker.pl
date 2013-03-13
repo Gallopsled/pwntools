@@ -54,8 +54,6 @@ sub main
     main(@out_files);
   }
 
-  exit();
-
 }
 
 sub decode
@@ -74,30 +72,25 @@ sub decode
   #   Unpack the file to unpacked/$n/
   #   Add the used tool[s] to dependencies (use apt package names)
   switch($type) {
-    case /Zip archive/      { unpacker($file, "zip", "unzip");  }
-    case /RAR archive/      { unpacker($file, "rar", "unrar", "e");  }
-    case /gzip compressed/  { unpacker($file, "gz", "gunzip");  }
-    case /tar archive/      { unpacker($file, "tar", "tar", "xf");  }
-    case /XZ compressed/    { unpacker($file, "xz", "unxz");  }
-    case /bzip2 compressed/ { unpacker($file, "bz2", "bunzip2");  }
-    case /7-zip archive/    { unpacker($file, "7z", "7z", "e");  }
-    case /LZMA compressed/  { unpacker($file, "lzma", "unlzma");  }
-    case /lzop compressed/  { unpacker($file, "lzop", "lzop", "-d");  }
-    case /rzip compressed/  { unpacker($file, "rz", "rzip", "-d");  }
-    case /uuencoded/        { unpacker($file, "uu", "uudecode"); }
-    case /ARJ archive data/ { unpacker($file, "arj", "arj", "e"); }
-    case /ARC archive data/ { unpacker($file, "arc", "arc", "e"); }
-    case /LHarc/            { unpacker($file, "lzh", "lha", "e"); }
-    case /shell archive/    { unpacker($file, "shar", "unshar"); }
-    case /xar archive/      { unpacker($file, "xar", "7z", "e"); }
-    case /ACE archive data/ { unpacker($file, "", "")}
-    else                    { say "Not supported: $type"; $not_supported = 1; }
-  }
-
-
-  # Jump out if archive isn't recognized
-  if ($not_supported) {
-    return;
+    case /Zip archive/       { unpacker($file, "zip", "unzip");  }
+    case /RAR archive/       { unpacker($file, "rar", "unrar", "e");  }
+    case /gzip compressed/   { unpacker($file, "gz", "gunzip");  }
+    case /tar archive/       { unpacker($file, "tar", "tar", "xf");  }
+    case /XZ compressed/     { unpacker($file, "xz", "unxz");  }
+    case /bzip2 compressed/  { unpacker($file, "bz2", "bunzip2");  }
+    case /7-zip archive/     { unpacker($file, "7z", "7z", "e");  }
+    case /LZMA compressed/   { unpacker($file, "lzma", "unlzma");  }
+    case /lzop compressed/   { unpacker($file, "lzop", "lzop", "-d");  }
+    case /rzip compressed/   { unpacker($file, "rz", "rzip", "-d");  }
+    case /uuencoded/         { unpacker($file, "uu", "uudecode"); }
+    case /ARJ archive data/  { unpacker($file, "arj", "arj", "e"); }
+    case /ARC archive data/  { unpacker($file, "arc", "arc", "e"); }
+    case /LHarc/             { unpacker($file, "lzh", "lha", "e"); }
+    case /shell archive/     { unpacker($file, "shar", "unshar"); }
+    case /xar archive/       { unpacker($file, "xar", "7z", "e"); }
+    case /ACE archive data/  { unpacker($file, "ace", "unace", "e")}
+    case /Microsoft Cabinet/ { unpacker($file, "cab", "cabextract")}
+    else                     { say "Not supported: $type"; return; }
   }
 
   # Return all unpacked files and increment $n
@@ -129,4 +122,5 @@ sub unpacker {
 
 chdir(getcwd());
 main(@ARGV);
+`rmdir unpacked/tmp`;
 say "Done!";

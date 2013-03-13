@@ -1,1 +1,11 @@
 unzip
+p7zip-full
+lzop
+arj
+rzip
+arc
+unrar
+lha
+sharutils
+unace
+cabextract
