@@ -2,11 +2,17 @@ import pygame, sys
 from PIL import Image
 pygame.init()
 
+GRID_SIZE = 32 # bits/pixels?
+
+def snap_it(pos):
+    newpos = round(pos[0] / GRID_SIZE) * GRID_SIZE, round(pos[1] / GRID_SIZE) * GRID_SIZE
+    return newpos
+
 def displayImage(screen, px, topleft, prior):
     # ensure that the rect always has positive width, height
     x, y = topleft
-    width =  pygame.mouse.get_pos()[0] - topleft[0]
-    height = pygame.mouse.get_pos()[1] - topleft[1]
+    width, height = snap_it((pygame.mouse.get_pos()[0] - topleft[0], pygame.mouse.get_pos()[1] - topleft[1]))
+
     if width < 0:
         x += width
         width = abs(width)
@@ -43,36 +49,45 @@ def setup(path):
 def mainLoop(screen, px):
     topleft = bottomright = prior = None
     n=0
-    while n!=1:
+    while 1:
+        stopit = False
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONUP:
                 if not topleft:
                     topleft = event.pos
                 else:
                     bottomright = event.pos
-                    n=1
+                    stopit = True
+                    topleft = snap_it(topleft)
+                    bottomright = snap_it(bottomright)
+                    print "topleft: (%s, %s)" % (topleft[0], topleft[1])
+                    print "bottomright: (%s, %s)" % (bottomright[0], bottomright[1])
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_s:
+                    if prior:
+                        print "saving coordinates: topleft x: %s, topleft y:%s, width: %s, height: %s" % prior
+                        print "topleft: %s, %s" % (prior[0], prior[1])
+                        print "bottomright: %s, %s" % (prior[2] + prior[0], prior[3] + prior[1])
         if topleft:
             prior = displayImage(screen, px, topleft, prior)
-    return ( topleft + bottomright )
+        if stopit:
+            topleft = bottomright = None
+    return
 
 if __name__ == "__main__":
     input_loc = 'output.png'
     output_loc = 'outtest.png'
     screen, px = setup(input_loc)
-    while True:
-        try:
-            left, upper, right, lower = mainLoop(screen, px)
-            print "Found something in boundary box: (%s, %s, %s, %s)" % (left, upper, right, lower)
-        except KeyboardInterrupt:
-            print "got a keyboard interrupt, putting myself to sleep"
-            break
+    try:
+        mainLoop(screen, px)
+    except KeyboardInterrupt:
+        print "got a keyboard interrupt... dying"
+        exit(0)
+
 
     # left the following code in case we want to save it out somehow... nice to have
     # ensure output rectangle always has positive width and height
-    # if right < left:
-    #     left, right = right, left
-    # if lower < upper:
-    #     lower, upper = upper, lower
+
     # im = Image.open(input_loc)
     # im = im.crop(( left, upper, right, lower))
     # pygame.display.quit()
