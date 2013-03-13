@@ -79,7 +79,7 @@ class Hcurve:
             if x == 1: return self.xcor(tsize/2 - 1 - i, n/2)
             if x == 2: return n/2 - self.xcor(3 * tsize/4 - 1 - i, n/2) - 1
             if x == 3: return n/2 + self.xcor(i - 3 * tsize/4, n/2)
-                
+
     def ycor(self, i, n):
         tsize = n**self.dimension/2
         if i < 2:
