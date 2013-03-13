@@ -2,16 +2,23 @@ import pygame, sys
 from PIL import Image
 pygame.init()
 
-GRID_SIZE = 32 # bits/pixels?
+GRID_SIZE_X = 32 # bytes == pixels?
+GRID_SIZE_Y = 32
+BG_COLOR = (0,0,0)
+
 
 def snap_it(pos):
-    newpos = round(pos[0] / GRID_SIZE) * GRID_SIZE, round(pos[1] / GRID_SIZE) * GRID_SIZE
+    newpos = round(pos[0] / GRID_SIZE_X) * GRID_SIZE_X, round(pos[1] / GRID_SIZE_Y) * GRID_SIZE_Y
     return newpos
 
 def displayImage(screen, px, topleft, prior):
     # ensure that the rect always has positive width, height
     x, y = topleft
-    width, height = snap_it((pygame.mouse.get_pos()[0] - topleft[0], pygame.mouse.get_pos()[1] - topleft[1]))
+    mouse_pos = pygame.mouse.get_pos()
+    width, height = snap_it((mouse_pos[0] - topleft[0], mouse_pos[1] - topleft[1]))
+    # if height not in [0, 1]:
+    #     width = px.get_rect()[3]
+    #     x = 0
 
     if width < 0:
         x += width
@@ -39,8 +46,22 @@ def displayImage(screen, px, topleft, prior):
     # return current box extents
     return (x, y, width, height)
 
+def move(pos,scale,px,screen):
+    x, y = pos
+    #print pos,x
+    rect = px.get_rect()
+    screen.fill(BG_COLOR)
+    print rect.width/scale
+    print rect.height/scale
+    print px
+    px = pygame.transform.scale(px, [rect.width/scale, rect.height/scale])
+    screen.blit(px, (rect[0]-x, rect[1]-y))
+    pygame.display.flip()
+    #px.rect.topleft = pr.rect.topleft[0] - x,
+
 def setup(path):
     px = pygame.image.load(path)
+    screen = pygame.display.set_mode( px.get_rect()[2:] )
     screen = pygame.display.set_mode( px.get_rect()[2:] )
     screen.blit(px, px.get_rect())
     pygame.display.flip()
@@ -49,25 +70,25 @@ def setup(path):
 def mainLoop(screen, px):
     topleft = bottomright = prior = None
     n=0
+    scale = 1
+    pos = [0,0]
     while 1:
         stopit = False
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONUP:
                 if not topleft:
-                    topleft = event.pos
+                    topleft = snap_it(event.pos)
                 else:
                     bottomright = event.pos
                     stopit = True
-                    topleft = snap_it(topleft)
-                    bottomright = snap_it(bottomright)
-                    print "topleft: (%s, %s)" % (topleft[0], topleft[1])
-                    print "bottomright: (%s, %s)" % (bottomright[0], bottomright[1])
+
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_s:
                     if prior:
-                        print "saving coordinates: topleft x: %s, topleft y:%s, width: %s, height: %s" % prior
+                        print "--saving coordinates-- topleft: (%s,%s), width: %s, height: %s" % prior
                         print "topleft: %s, %s" % (prior[0], prior[1])
                         print "bottomright: %s, %s" % (prior[2] + prior[0], prior[3] + prior[1])
+
         if topleft:
             prior = displayImage(screen, px, topleft, prior)
         if stopit:

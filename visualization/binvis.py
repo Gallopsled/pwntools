@@ -222,5 +222,5 @@ def main():
         drawmap_square(options.map, options.size, csource, dst, prog)
     prog.clear()
 
-
-main()
+if __name__ == "__main__":
+    main()
