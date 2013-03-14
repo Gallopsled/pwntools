@@ -74,20 +74,44 @@ def mainLoop(screen, px):
     pos = [0,0]
     while 1:
         stopit = False
-        for event in pygame.event.get():
-            if event.type == pygame.MOUSEBUTTONUP:
-                if not topleft:
-                    topleft = snap_it(event.pos)
-                else:
-                    bottomright = event.pos
-                    stopit = True
+        event = pygame.event.wait() # just get a single event, idle until it comes... this lowered %CPU from around 80-100% to around 1-10%
+        if event.type == pygame.MOUSEBUTTONUP:
+            if not topleft:
+                topleft = snap_it(event.pos)
+            else:
+                bottomright = event.pos
+                stopit = True
 
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_s:
-                    if prior:
-                        print "--saving coordinates-- topleft: (%s,%s), width: %s, height: %s" % prior
-                        print "topleft: %s, %s" % (prior[0], prior[1])
-                        print "bottomright: %s, %s" % (prior[2] + prior[0], prior[3] + prior[1])
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_s:
+                if prior:
+                    print "--saving coordinates-- topleft: (%s,%s), width: %s, height: %s" % prior
+                    print "topleft: %s, %s" % (prior[0], prior[1])
+                    print "bottomright: %s, %s" % (prior[2] + prior[0], prior[3] + prior[1])
+            if event.key == pygame.K_d:
+                mods = pygame.key.get_mods()
+                if mods & pygame.KMOD_CTRL:
+                    print "ctrl-d :D"
+
+        # for event in pygame.event.get():
+        #     if event.type == pygame.MOUSEBUTTONUP:
+        #         if not topleft:
+        #             topleft = snap_it(event.pos)
+        #         else:
+        #             bottomright = event.pos
+        #             stopit = True
+
+        #     if event.type == pygame.KEYDOWN:
+        #         if event.key == pygame.K_s:
+        #             if prior:
+        #                 print "--saving coordinates-- topleft: (%s,%s), width: %s, height: %s" % prior
+        #                 print "topleft: %s, %s" % (prior[0], prior[1])
+        #                 print "bottomright: %s, %s" % (prior[2] + prior[0], prior[3] + prior[1])
+        #         if event.key == pygame.K_d:
+        #             mods = pygame.key.get_mods()
+        #             if mods & pygame.KMOD_CTRL:
+        #                 print "ctrl-d :D"
+
 
         if topleft:
             prior = displayImage(screen, px, topleft, prior)
