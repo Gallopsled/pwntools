@@ -1,0 +1,11 @@
+Harden: web-service hardening tools
+===================================
+
+This is a collection of web-service hardening tools. The goal
+of the project is to enable quick and easy hardening of all services
+that must be defended during a CTF.
+
+There is a lot to be done here!
+    - Add python hardening (amnesia)
+    - Ruby hardening
+    - NodeJS hardening

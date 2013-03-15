@@ -1,0 +1,14 @@
+PHP hardening
+=============
+
+Automatic hardening of PHP-services is currently done by:
+
+    - Patching the php.ini file to set sane defaults
+        - Turning safe mode on
+        - Limiting the directories that allow execution
+        - Restricting includes (also remote ones)
+        - Disable all functions that are not used by the service
+        - Preventing all error messages
+        - Setting httponly on cookies
+
+    - Automatically add PHPIDS before any script
