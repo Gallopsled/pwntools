@@ -18,10 +18,10 @@ echo "export PYTHONPATH=$PWD/lib:\$PYTHONPATH" >> $(getent passwd $SUDO_USER | c
 
 echo "Installing packages"
 if [ -f /etc/debian_version ]; then
-    DEPS="python-crypto python-paramiko python-sqlalchemy libdistorm64-dev python-gmpy"
+    DEPS="python-crypto python-paramiko python-sqlalchemy libdistorm64-dev python-gmpy python-imaging"
     yes | sudo apt-get install ${DEPS}
 elif [ -f /etc/arch-release ]; then
-    DEPS="python2-crypto python2-paramiko python2-sqlalchemy"
+    DEPS="python2-crypto python2-paramiko python2-sqlalchemy python2-imaging"
     yes | sudo pacman -S ${DEPS}
 fi
 echo "All DONE"

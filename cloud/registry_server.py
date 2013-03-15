@@ -9,7 +9,7 @@ from optparse import OptionParser
 from rpyc.utils.registry import REGISTRY_PORT, DEFAULT_PRUNING_TIMEOUT
 from rpyc.utils.registry import UDPRegistryServer, TCPRegistryServer
 from rpyc.lib import setup_logger
-
+import logging
 
 parser = OptionParser()
 parser.add_option("-m", "--mode", action="store", dest="mode", metavar="MODE",
@@ -24,6 +24,9 @@ parser.add_option("-t", "--timeout", action="store", dest="pruning_timeout",
     type="int", default=DEFAULT_PRUNING_TIMEOUT, help="sets a custom pruning timeout")
 
 def main():
+    logging.basicConfig(level=logging.INFO)
+    log = logging.getLogger('CloudServer')
+
     options, args = parser.parse_args()
     if args:
         raise ValueError("does not take positional arguments: %r" % (args,))
@@ -33,10 +36,10 @@ def main():
 
     if options.mode.lower() == "udp":
         server = UDPRegistryServer(port = options.port,
-            pruning_timeout = options.pruning_timeout)
+            pruning_timeout = options.pruning_timeout, logger = log)
     elif options.mode.lower() == "tcp":
         server = TCPRegistryServer(port = options.port,
-            pruning_timeout = options.pruning_timeout)
+            pruning_timeout = options.pruning_timeout, logger = log)
     else:
         raise ValueError("invalid mode %r" % (options.mode,))
 
