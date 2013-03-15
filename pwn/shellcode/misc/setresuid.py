@@ -1,6 +1,8 @@
 from pwn.internal.shellcode_helper import *
 import ast
 
+from ..io.sh import sh
+
 @shellcode_reqs(arch='i386', os='linux')
 def setresuidsh(src = 's', dst = 'res'):
     """Args: [src(imm/reg/r/e/s) = 's'], [dst(r/e/s/combi) = 'res']
