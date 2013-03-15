@@ -1,5 +1,5 @@
 import sys
-from pwn import die, ELF, u8, p32, p64, randoms, findall
+from pwn import die, ELF, u8, p32, p64, randoms, findall, group
 from collections import defaultdict
 
 global _currently_loaded
@@ -201,6 +201,12 @@ class ROP:
     def __getitem__(self, x):
         return self._resolve(x)
 
+    def chain(self, *args):
+        args = group(args, 2)
+        for f, a in args:
+            self.call(f, a)
+        return self.generate()
+
 # alias
 class load(ROP): pass
 
@@ -223,3 +229,7 @@ def migrate(*args):
 def generate():
     _ensure_loaded()
     return _currently_loaded.generate()
+
+def chain(*args):
+    _ensure_loaded()
+    return _currently_loaded.chain(*args)
