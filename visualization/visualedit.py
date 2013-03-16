@@ -75,6 +75,7 @@ def mainLoop(screen, px):
     while 1:
         stopit = False
         for event in pygame.event.get():
+
             if event.type == pygame.MOUSEBUTTONUP:
                 if not topleft:
                     topleft = snap_it(event.pos)
