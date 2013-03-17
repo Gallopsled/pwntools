@@ -12,6 +12,7 @@ class process(basechatter):
 
         basechatter.__init__(self, timeout)
         self.proc = None
+        self.stdout = None
 
         self.start(cmd, args, env)
 
@@ -26,8 +27,8 @@ class process(basechatter):
                 stdin=PIPE, stdout=PIPE, stderr=PIPE,
                 env = env,
                 bufsize = 0)
-        fd = self.proc.stdout.fileno()
-        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+        self.stdout = self.proc.stdout.fileno()
+        fl = fcntl.fcntl(self.stdout, fcntl.F_GETFL)
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
         log.succeeded()
 
@@ -58,3 +59,6 @@ class process(basechatter):
                 break
             time.sleep(0.0001)
         return r
+
+    def fileno(self):
+        return self.stdout.fileno()
