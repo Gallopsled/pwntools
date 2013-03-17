@@ -4,45 +4,56 @@ use sploitmeister;
 
 create table services (
        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-       name VARCHAR(100)
+       name VARCHAR(100) NOT NULL
 );
 
 create table exploits (
        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-       created TIMESTAMP DEFAULT NOW(),
+       created TIMESTAMP NOT NULL DEFAULT NOW(),
        service_id INT NOT NULL REFERENCES services(id),
        name VARCHAR(100) NOT NULL,
-       author VARCHAR(100)
+       author VARCHAR(100) NULL
 );
 
 create table hosts (
        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
        name VARCHAR(100) NOT NULL,
-       comment VARCHAR(100)
+       comment VARCHAR(100) NULL
 );
 
 create table job_status (
        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-       created TIMESTAMP DEFAULT NOW(),
+       created TIMESTAMP NOT NULL DEFAULT NOW(),
        service_id INT NOT NULL REFERENCES services(id),
        host_id INT NOT NULL REFERENCES hosts(id),
-       status ENUM("started", "error", "pass", "ok", "disable", "enable") DEFAULT "started",
-       exploit_id INT REFERENCES exploits(id)
+       status ENUM("started", "error", "pass", "ok", "disable", "enable") NOT NULL DEFAULT "started",
+       exploit_id INT NULL REFERENCES exploits(id)
 );
+
 
 create table log (
        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-       created TIMESTAMP DEFAULT NOW(),
+       created TIMESTAMP NOT NULL DEFAULT NOW(),
        job_id INT NOT NULL REFERENCES job_status(id),
-       text TEXT
+       text TEXT NOT NULL
 );
 
-create table flag (
+create table flags (
        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-       created TIMESTAMP DEFAULT NOW(),
+       created TIMESTAMP NOT NULL DEFAULT NOW(),
        job_id INT NOT NULL REFERENCES job_status(id),
-       flag VARCHAR(256)
+       service_id INT NOT NULL REFERENCES services(id),
+       flag VARCHAR(256) NOT NULL
 );
+
+create table flag_status (
+       id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+       created TIMESTAMP NOT NULL DEFAULT NOW(),
+       flag_id INT NOT NULL REFERENCES flags(id),
+       status ENUM("started", "invalid", "delivered", "error") NOT NULL DEFAULT "started",
+       comment VARCHAR(1024) NULL
+);
+
 
 CREATE UNIQUE INDEX services_idx ON services(name);
 CREATE UNIQUE INDEX exploits_idx ON exploits(service_id,name);
@@ -55,6 +66,71 @@ CREATE INDEX log_idx2            ON log(job_id);
 CREATE INDEX flag_idx1           ON flag(created);
 CREATE INDEX flag_idx2           ON flag(job_id);
 CREATE INDEX flag_idx3           ON flag(flag);
+CREATE INDEX flag_status_idx1    ON flag_status(flag_id);
+CREATE INDEX flag_status_idx2    ON flag_status(created);
+
+CREATE VIEW service_hosts AS
+       SELECT services.id as service_id,
+              hosts.id as host_id,
+              services.name as service_name,
+              hosts.name as host_name
+       FROM services, hosts;
+
+CREATE VIEW service_hosts_status AS
+       SELECT service_hosts.*,
+              IFNULL((
+                SELECT GROUP_CONCAT(job_status.status)
+                FROM job_status
+                WHERE job_status.service_id = service_hosts.service_id AND
+                      job_status.host_id    = service_hosts.host_id
+                ORDER BY created DESC
+                LIMIT 3
+              ), "not run") as last_statuses,
+              IFNULL((
+                SELECT job_status.created
+                FROM job_status
+                WHERE job_status.service_id = service_hosts.service_id AND
+                      job_status.host_id    = service_hosts.host_id
+                ORDER BY created DESC
+                LIMIT 1
+              ), 0) as created
+       FROM service_hosts;
+
+CREATE VIEW next_task AS
+       SELECT service_id, host_id
+       FROM service_hosts_status
+       WHERE last_statuses NOT LIKE 'disabled,%' AND
+             last_statuses != 'error,error,error'
+       ORDER BY created
+       LIMIT 1;
+
+CREATE VIEW outstanding_flags AS
+       SELECT *
+       FROM flags
+       WHERE flag_status.flag_id = flags.id AND
+             status NOT IN ("delivered", "invalid") AND
+             created > NOW() - INTERVAL 15 MINUTE;
+
+
+-- CREATE VIEW last_job_status_helper2 AS
+--        SELECT service_id, host_id, MAX(created) as created
+--        FROM job_status
+--        GROUP BY service_id, host_id;
+
+-- CREATE VIEW last_job_status_helper AS
+--        SELECT job_status.*
+--        FROM job_status NATURAL JOIN last_job_status_helper2;
+
+-- CREATE VIEW last_job_status AS
+--        SELECT job.*,
+--               services.name AS service_name,
+--               hosts.name as host_name
+--        FROM last_job_status_helper as job,
+--             services,
+--             hosts
+--        WHERE job.service_id = services.id AND
+--              job.host_id = hosts.id;
+
 
 DROP USER sploitmeister@localhost;
 CREATE USER sploitmeister@localhost IDENTIFIED BY 'hamster1';
@@ -65,43 +141,44 @@ INSERT INTO hosts (name) VALUES ("10.0.0.1"), ("10.0.0.2"), ("10.0.0.3"), ("10.0
 INSERT INTO services (name) VALUES ("service1"), ("service2");
 
 
-INSERT INTO job_status (service_id, host_id)
-    SELECT services.id, hosts.id
-    FROM services, hosts
-    ORDER BY IFNULL(
-        (
-            SELECT created
-            FROM job_status
-            WHERE job_status.service_id = services.id AND
-                  job_status.host_id = hosts.id
-            ORDER BY created DESC
-            LIMIT 1
-        ),
-        0
-    ) ASC
-    LIMIT 1;
 
-SELECT services.id as service_id,
-       services.name as service_name,
-       hosts.id as host_id,
-       hosts.name as host_name,
-       job_status.id as job_id
-FROM services, hosts, job_status
-WHERE job_status.id = LAST_INSERT_ID() AND
-      job_status.service_id = services.id AND
-      job_status.host_id = hosts.id;
-
-
-SELECT services.id as service_id, hosts.id as host_id,  IFNULL(
-    (
-        SELECT created
-        FROM job_status
-        WHERE job_status.service_id = services.id AND
-              job_status.host_id = hosts.id
-        ORDER BY created DESC
-        LIMIT 1
-    ),
-    0
-) AS last_time
-FROM services, hosts
-ORDER BY last_time ASC;
+-- INSERT INTO job_status (service_id, host_id)
+--     SELECT services.id, hosts.id
+--     FROM services, hosts
+--     ORDER BY IFNULL(
+--         (
+--             SELECT created
+--             FROM job_status
+--             WHERE job_status.service_id = services.id AND
+--                   job_status.host_id = hosts.id
+--             ORDER BY created DESC
+--             LIMIT 1
+--         ),
+--         0
+--     ) ASC
+--     LIMIT 1;
+--
+-- SELECT services.id as service_id,
+--        services.name as service_name,
+--        hosts.id as host_id,
+--        hosts.name as host_name,
+--        job_status.id as job_id
+-- FROM services, hosts, job_status
+-- WHERE job_status.id = LAST_INSERT_ID() AND
+--       job_status.service_id = services.id AND
+--       job_status.host_id = hosts.id;
+--
+--
+-- SELECT services.id as service_id, hosts.id as host_id,  IFNULL(
+--     (
+--         SELECT created
+--         FROM job_status
+--         WHERE job_status.service_id = services.id AND
+--               job_status.host_id = hosts.id
+--         ORDER BY created DESC
+--         LIMIT 1
+--     ),
+--     0
+-- ) AS last_time
+-- FROM services, hosts
+-- ORDER BY last_time ASC;
