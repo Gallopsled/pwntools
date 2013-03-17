@@ -1,0 +1,26 @@
+# Hide all information from the web server
+Options +FollowSymLinks All -Indexes
+ServerSignature Off
+
+# Disable the PHP easter egg
+RewriteCond %{QUERY_STRING} \=PHP[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} [NC]
+RewriteRule .* - [F,L]
+
+# Deny bogus graphic exploits
+RewriteCond %{HTTP:Content-Disposition} \.php [NC]
+RewriteCond %{HTTP:Content-Type} image/.+ [NC]
+RewriteRule .* - [F,NS,L]
+
+# Deny common tools used for exploits
+# Could backfire! (organizer may use them)
+RewriteCond %{HTTP_USER_AGENT} curl [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} wget [NC,OR]
+#RewriteCond %{HTTP_USER_AGENT} pycurl [NC,OR]
+#RewriteCond %{HTTP_USER_AGENT} python [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} sqlmap [NC,OR]
+RewriteRule .* - [F,L]
+
+<files .htaccess>
+order allow,deny
+deny from all
+</files>

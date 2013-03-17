@@ -1,0 +1,226 @@
+#!/usr/bin/python
+
+# SEMI-AUTOMATIC HARDENING OF PHP APPLICATIONS
+# FOR USE WHEN HOTPATCHING CTF SERVICES
+#
+# Several functions stolen from pwnlib and
+# permanently pasted here, to keep the script
+# independent of anything but standard python
+# libraries (it must run on host machines).
+
+import re
+import sys
+import shutil
+import os.path
+import fnmatch
+import ConfigParser
+
+from os import stat
+from pwd import getpwuid
+from hashlib import md5
+
+######################################################################
+# HELPERS                                                            #
+######################################################################
+
+def incorrect_permissions(file_path):
+    file_owner = getpwuid(stat(file_path).st_uid).pw_name
+    print "Unable to open the file '%s' with the current permissions." % file_path
+    print "Please rerun the script with the permission of the user '%s':" % file_owner
+    print "    sudo -u %s %s" % (file_owner, " ".join(sys.argv))
+    exit(-1)
+
+def locate(pattern, root=os.curdir):
+    for path, dirs, files in os.walk(os.path.abspath(root)):
+        for filename in fnmatch.filter(files, pattern):
+            yield os.path.join(path, filename)
+
+def prompt(s, default = ''):
+    r = raw_input(' [?] ' + s)
+    if r: return r
+    return default
+
+######################################################################
+# GLOBAL SERVER HARDENING                                            #
+######################################################################
+# Patches the php.ini configuration file to apply security settings  #
+# for all php scripts running on the server. Asks the user before    #
+# applying any settings that might break the functionality of the    #
+# services.                                                          #
+######################################################################
+
+DEFAULT_INI_LOCATION = "/etc/php5/apache2/php.ini"
+DEFAULT_WEB_ROOT = "/var/www"
+
+def function_ini():
+    if len(sys.argv) > 2: file_path = sys.argv[2]
+    else: file_path = DEFAULT_INI_LOCATION
+
+    ini = ConfigParser.RawConfigParser()
+    ini.read(file_path)
+
+    with open(file_path + ".backup", "wb") as f:
+        ini.write(f)
+
+    print "FIXING SYSTEM-WIDE PHP SETTINGS"
+
+    # Automatically apply safe fixes
+    ini.set("PHP", "expose_php", "Off")
+    ini.set("PHP", "display_errors", "Off")
+    ini.set("PHP", "display_startup_errors", "Off")
+    ini.set("PHP", "log_errors", "On")
+    ini.set("PHP" , "safe_mode", "On")
+    ini.set("PHP" , "safe_mode_gid", "On")
+
+    # If the app needs this you are screwed
+    # Start rewriting code!
+    answer = prompt("Need register_globals and magic quotes? (n): ", "n")
+    setting = "On" if answer == "y" or answer == "yes" else "Off"
+    ini.set("PHP" , "register_globals", setting)
+    ini.set("PHP" , "magic_quotes_gpc", setting)
+
+    # Stop file inclusion vulns
+    answer = prompt("Need to include remote files? (n): ", "n")
+    setting = "On" if answer == "y" or answer == "yes" else "Off"
+    ini.set("PHP" , "allow_url_fopen", setting)
+    ini.set("PHP" , "allow_url_include", setting)
+
+    # File uploading is dangerous
+    answer = prompt("Need to upload files? (n): ", "n")
+    setting = "On" if answer == "y" or answer == "yes" else "Off"
+    ini.set("PHP" , "file_uploads", setting)
+
+    # Fixing cookies
+    answer = prompt("Need to read cookies using javascript? (n): ", "n")
+    setting = "0" if answer == "y" or answer == "yes" else "1"
+    ini.set("Session" , "session.cookie_httponly", setting)
+
+    # Limit everything to webroot
+    answer = prompt("Need to go outside the web root? (n): ", "n")
+    answer = True if answer == "y" or answer == "yes" else False
+    if not answer:
+        web_root = prompt("Web root directory? (%s): " % DEFAULT_WEB_ROOT, DEFAULT_WEB_ROOT)
+        ini.set("PHP" , "safe_mode_include_dir", os.path.abspath(web_root))
+        ini.set("PHP" , "safe_mode_exec_dir", os.path.abspath(web_root))
+        ini.set("PHP" , "open_basedir", os.path.abspath(web_root))
+
+    # Disable functions
+    answer = prompt("Disable unsafe functions that are not called? (y): ", "y")
+    answer = True if answer == "y" or answer == "yes" else False
+    if answer:
+        disabled_functions = [s.strip() for s in ini.get("PHP", "disable_functions").split(",")]
+        disabled_functions = filter(lambda f: f != "", disabled_functions)
+
+        unwanted_functions = [s.strip() for s in open("unwanted_functions", "rb").read().strip().split("\n")]
+
+        # TODO: Refine naive search for functions calls
+        fun_call = re.compile(r"([a-zA-Z0-9_]+)[ ]?\(")
+
+        fun_calls = []
+        for script in locate("*.php"):
+            with open(script, "rb") as f:
+                fun_calls += fun_call.findall(f.read())
+
+        remove_functions = set(unwanted_functions + disabled_functions) - set(fun_calls)
+        ini.set("PHP", "disable_functions", ",".join(remove_functions))
+
+    with open(file_path, "wb") as f:
+        ini.write(f)
+
+    print """
+YOU SHOULD NOW DO THE FOLLOWING
+ 1. sudo apt-get install php5-suhosin
+    (or http://www.hardened-php.net/suhosin/how_to_install_or_upgrade.html)
+ 2. /etc/init.d/apache2 restart"""
+
+######################################################################
+# INDIVIDUAL SERVICE HARDENING                                       #
+######################################################################
+# Patches the apache configuration to secure an individual service.  #
+# The configuration is done in httpd.conf or similar, to stop        #
+# someone from overwriting .htaccess files. If you really want it,   #
+# it can drop such files instead.                                    #
+######################################################################
+
+#TODO: Directory * AllowOverride All
+#TODO: Option to drop .htaccess files
+#TODO: Less naive updating of conf files
+
+DEFAULT_CONF_LOCATION = "/etc/apache2/conf.d/harden-php"
+DEFAULT_CONF_LOCATION = "httpd.conf"
+
+def function_service():
+    if len(sys.argv) > 2: directory_path = sys.argv[2]
+    else: directory_path = "./"
+
+    if not os.path.isdir(directory_path):
+        print "'%s' is not a directory." % directory_path
+        exit(-1)
+
+    settings = ""
+
+    htaccess_service = open("htaccess_service", "rb").read() \
+                        .replace("$MD5$", md5(os.path.abspath(directory_path)).hexdigest()) \
+                        .replace("$DIR$", os.path.abspath(directory_path)) \
+                        .replace("$SETTINGS$", settings)
+
+    with open(DEFAULT_CONF_LOCATION, "ab") as conf:
+        conf.write(htaccess_service)
+
+    print """YOU SHOULD NOW DO THE FOLLOWING
+ 1. Check the file '%s' to ensure it is sane
+ 2. /etc/init.d/apache2 restart""" % DEFAULT_CONF_LOCATION
+
+######################################################################
+# UPLOAD DIRECTORY HARDENING                                         #
+######################################################################
+
+def function_upload():
+    if len(sys.argv) > 2: directory_path = sys.argv[2]
+    else: directory_path = "./"
+
+    if not os.path.isdir(directory_path):
+        print "'%s' is not a directory." % directory_path
+        exit(-1)
+
+    htaccess_upload = open("htaccess_upload", "rb").read() \
+                        .replace("$MD5$", md5(os.path.abspath(directory_path)).hexdigest()) \
+                        .replace("$DIR$", os.path.abspath(directory_path))
+
+    with open(DEFAULT_CONF_LOCATION, "ab") as conf:
+        conf.write(htaccess_upload)
+
+    print """YOU SHOULD NOW DO THE FOLLOWING
+ 1. Check the file '%s' to ensure it is sane
+ 2. /etc/init.d/apache2 restart""" % DEFAULT_CONF_LOCATION
+
+######################################################################
+# DROP IDS SYSTEM AND PREPEND IT TO ALL SCRIPTS                      #
+######################################################################
+
+def function_ids():
+    print "TODO: Implement IDS dropping"
+
+######################################################################
+# MAIN APPLICATION                                                   #
+######################################################################
+
+def usage():
+    print """Usage: {0} ini <file>     - harden php.ini
+       {0} service <dir>  - consider directory a service root
+       {0} upload <dir>   - consider directory an upload directory
+       {0} ids <dir>      - drop an IDS system and prepend it to all scripts""".format(sys.argv[0])
+    exit(-1)
+
+def main ():
+    if len(sys.argv) < 2:
+        usage()
+
+    if   sys.argv[1] == "ini":     function_ini()
+    elif sys.argv[1] == "service": function_service()
+    elif sys.argv[1] == "upload":  function_upload()
+    elif sys.argv[1] == "ids":     function_ids()
+    else: usage()
+
+if __name__ == "__main__":
+    main()
