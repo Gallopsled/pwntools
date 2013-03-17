@@ -42,21 +42,21 @@ print """
 3.1 Encrypt the message \"peanut\" using the Shift cipher with key k = 5
 """
 
-print "Solution: '%s'" % mono.encryptShift("peanut", 5, string.lowercase)
+print "Solution: '%s'" % mono.encrypt_shift("peanut", 5, string.lowercase)
 
 print """
 3.2 Decrypt the ciphertext \"PIZUU\" which was encrypted using the Affine
 cipher with key k = (3, 13)
 """
 
-print "Solution: '%s'" % mono.decryptAffine("PIZUU", (3, 13))
+print "Solution: '%s'" % mono.decrypt_affine("PIZUU", (3, 13))
 
 print """
 3.3 Consider the ciphertext \"JZMISBPQA\" encrypted using the Shift cipher.
 Find the English plaintext and the key.
 """
 
-(key, plaintext) = mono.crackShift("JZMISBPQA")
+(key, plaintext) = mono.crack_shift("JZMISBPQA")
 print "Solution: '%s' using key k = %d" % (plaintext, key)
 
 print """
@@ -73,7 +73,7 @@ print """
 cipher. Find the English plaintext and the key.
 """
 
-print "Solution: '%s' using the key (, ) #TODO# Return better values" % mono.crackAffine("FDWAVWEJFWXFOUDWJW")[1]
+print "Solution: '%s' using the key (, ) #TODO# Return better values" % mono.crack_affine("FDWAVWEJFWXFOUDWJW")[1]
 
 print """
 3.6 [...] Consider the following Vigenere ciphertext: \"EHVXZXAMXPVVZVVJEHVVZGZFEHVZZUJWEHVFEHVQOIJSAPVSCEU\".
