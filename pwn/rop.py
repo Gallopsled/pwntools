@@ -233,3 +233,7 @@ def generate():
 def chain(*args):
     _ensure_loaded()
     return _currently_loaded.chain(*args)
+
+def flush():
+    _ensure_loaded()
+    return _currently_loaded.flush()

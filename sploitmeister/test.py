@@ -5,21 +5,7 @@ con = MySQLdb.Connection(host='localhost', user='sploitmeister', passwd='hamster
 
 def get_job():
     con.query('''
-    INSERT INTO job_status (service_id, host_id)
-        SELECT services.id, hosts.id
-        FROM services, hosts
-        ORDER BY IFNULL(
-            (
-                SELECT created
-                FROM job_status
-                WHERE job_status.service_id = services.id AND
-                      job_status.host_id = hosts.id
-                ORDER BY created DESC
-                LIMIT 1
-            ),
-            0
-        ) ASC
-        LIMIT 1;
+        INSERT INTO job_status (service_id, host_id) SELECT * FROM next_task;
     ''')
     con.query('''
     SELECT services.id as service_id,
