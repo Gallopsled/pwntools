@@ -27,9 +27,10 @@ class process(basechatter):
                 stdin=PIPE, stdout=PIPE, stderr=PIPE,
                 env = env,
                 bufsize = 0)
-        self.stdout = self.proc.stdout.fileno()
-        fl = fcntl.fcntl(self.stdout, fcntl.F_GETFL)
+        fd = self.proc.stdout.fileno()
+        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+        self.stdout = fd
         log.succeeded()
 
     def connected(self):
