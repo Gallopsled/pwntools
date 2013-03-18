@@ -208,7 +208,7 @@ class basechatter:
         except IOError:
             running[0] = False
             t.join()
-            write('\nConnection closed\n')
+            write('Connection closed\n')
         self.debug = debug
         self.settimeout(timeout)
 
