@@ -136,7 +136,16 @@ if __name__ == '__main__':
                     if context[k] not in vs:
                         isgood = False
                         break
-                tags = ' '.join(sorted(pwn.concat_all(supported.values())))
+                tags = []
+                for cat, vals in supported.items():
+                    if cat not in ['os', 'arch']:
+                        tags += [' '.join(sorted(vals))]
+
+                if 'os' in supported:
+                    tags += [' '.join(sorted(supported['os']))]
+                if 'arch' in supported:
+                    tags += [' '.join(sorted(supported['arch']))]
+                tags = ' | '.join(tags)
                 if isgood:
                     good[name] = tags
                 else:

@@ -47,9 +47,18 @@ def _write_stack_linux_i386(out_fd, size):
 
 def _write_stack_freebsd_i386(out_fd, size):
     out  = ['mov ecx, esp']
-    out += [pushstr(p32(size), null=False, raw=True)]
+
+    if isinstance(size, int):
+        out += [pushstr(p32(size), null=False, raw=True)]
+    else:
+        out += ["setfd ebx, %s" % size,
+                "push ebx"]
     out += ['push ecx']
-    out += [pushstr(p32(out_fd), null=False, raw=True)]
+    if isinstance(out_fd, int):
+        out += [pushstr(p32(out_fd), null=False, raw=True)]
+    else:
+        out += ["setfd ebx, %s" % out_fd,
+                "push ebx"]
     out += ['push SYS_write']
     out += ['pop eax']
     out += ['push eax']

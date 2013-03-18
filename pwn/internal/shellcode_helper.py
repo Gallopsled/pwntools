@@ -113,10 +113,6 @@ def shellcode_reqs(blob = False, hidden = False, avoider = False, **supported_co
     '''
 
     for k, vs in supported_context.items():
-        if k in pwn.possible_contexts:
-            # We support it all (yay), so don't say so explicitly
-            if set(vs) == set(pwn.possible_contexts[k]):
-                del supported_context[k]
         if not isinstance(vs, list):
             vs = supported_context[k] = [vs]
         for v in vs:
@@ -159,3 +155,14 @@ def arg_fixup(s):
         pass
     return s
 
+def no_support(name, os, arch):
+    bug("OS/arch combination (%s, %s) is not supported for %s" % (os, arch, name))
+
+def indent_shellcode(shellcode):
+    if isinstance(shellcode, list):
+        shellcode = '\n'.join(shellcode)
+
+    shellcode = [s.strip() for s in shellcode.split('\n')]
+    shellcode = [('    ' + s if s and s[-1] != ':' else s) for s in shellcode]
+
+    return '\n'.join(shellcode)
