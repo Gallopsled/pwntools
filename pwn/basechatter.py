@@ -146,6 +146,10 @@ class basechatter:
                     write('\nConnection closed by remote host\n')
                     running[0] = False
                     break
+                except IOError:
+                    write('\nBroken pipe\n')
+                    running[0] = False
+                    break
                 now = time.time()
                 lines = data.split('\n')
                 if len(lines) == 1:
