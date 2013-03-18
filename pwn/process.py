@@ -62,4 +62,4 @@ class process(basechatter):
         return r
 
     def fileno(self):
-        return self.stdout.fileno()
+        return self.stdout
