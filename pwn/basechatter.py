@@ -143,7 +143,7 @@ class basechatter:
                 try:
                     data = self.recv()
                 except EOFError:
-                    write('\nConnection closed by remote host\n')
+                    write('\nConnection closed\n')
                     running[0] = False
                     break
                 now = time.time()
@@ -205,6 +205,10 @@ class basechatter:
                 write('\nInterrupted\n')
             else:
                 t.join()
+        except IOError:
+            running[0] = False
+            t.join()
+            write('Connection closed\n')
         self.debug = debug
         self.settimeout(timeout)
 
