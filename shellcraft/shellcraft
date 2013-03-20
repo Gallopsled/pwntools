@@ -97,6 +97,11 @@ if __name__ == '__main__':
                    type = int,
                    help = 'Prepend nopsled',
                    )
+    p.add_argument('--tty',
+                   action = 'store_true',
+                   help = 'Force tty-behaviour, even if stdout is not a tty',
+                   )
+
     args = p.parse_args()
 
     pwn.context(*default_context) # 'reset' to defaults
@@ -104,7 +109,7 @@ if __name__ == '__main__':
         pwn.context(*args.context) # overwrite one or more options
 
     if args.list:
-        if sys.stdout.isatty():
+        if sys.stdout.isatty() or args.tty:
             _height, width = os.popen('stty size', 'r').read().split()
             width = int(width)
             cs = [r, g, b]
