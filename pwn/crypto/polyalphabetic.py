@@ -1,6 +1,6 @@
 import heapq
 import string
-from pwn import flat
+from pwn import flat, log
 from math import ceil
 from numpy import mean
 import matplotlib.pyplot as plt
@@ -64,7 +64,21 @@ def key_period(guesses, ic_target=util.ic_english, alphabet=string.uppercase, pr
     if prune: return filter(lambda (length, score): score < max_distance , fitness)
     else: return fitness
 
-def graph_key_period(ciphertext, splitFunction, limit = None, ic_target=util.ic_english, alphabet=string.uppercase):
+def choose_alphabet(ciphertext, alphabet):
+    if alphabet is None:
+        log.info('Trying to guess alphabet')
+        ct = filter(lambda c: c in string.letters, ciphertext)
+        if ct.isupper():
+            log.success('Using uppercase letters')
+            alphabet = string.uppercase
+        elif ct.islower():
+            log.success('Using lowercase letters')
+            alphabet = string.lowercase
+    if alphabet is None:
+        raise TypeError('no alphabet')
+    return alphabet
+
+def graph_key_period(ciphertext, splitFunction, limit = None, ic_target=util.ic_english, alphabet=None):
     """
     Draw a graph of the index of coincidence scores of different key periods
     relative to a target index of coincidence.
@@ -82,6 +96,8 @@ def graph_key_period(ciphertext, splitFunction, limit = None, ic_target=util.ic_
     Returns:
         draws a graph to the screen instead of returning anything.
     """
+    alphabet = choose_alphabet(ciphertext, alphabet)
+
     if limit == None: limit = min((len(ciphertext) / 4) + 1, 20)
     else: limit = limit + 1
 
@@ -158,23 +174,40 @@ def interleave_vigenere(strands, length):
 
 vigenere_cipher = (split_vigenere, interleave_vigenere)
 
-def crack_vigenere(ciphertext, known_period=None, ic_target=util.ic_english, alphabet=string.uppercase, frequencies=freq.english):
-    ciphertext = filter(lambda c: c in alphabet, ciphertext)
+def crack_vigenere(ciphertext, known_period=None, ic_target=util.ic_english, alphabet=None, frequencies=freq.english):
+    alphabet = choose_alphabet(ciphertext, alphabet)
+
+    ct = filter(lambda c: c in alphabet, ciphertext)
+
     if known_period == None:
-        limit = int(len(ciphertext) / (len(alphabet) * 1.47)) # Unicity distance of english, TODO: Be able to change language
-        guesses = [split_vigenere(ciphertext, period) for period in range(1, limit)]
+        limit = int(len(ct) / (len(alphabet) * 1.47)) # Unicity distance of english, TODO: Be able to change language
+        guesses = [split_vigenere(ct, period) for period in range(1, limit)]
         possible = key_period(guesses, ic_target, alphabet)
     else: possible = [(known_period, 0)]
 
     results = []
     for (period, score) in possible:
         key = ""
-        (length, ciphers) = split_vigenere(ciphertext, period)
+        (length, ciphers) = split_vigenere(ct, period)
         for i in range(len(ciphers)):
             (k,m) = mono.crack_shift(ciphers[i], alphabet, frequencies)
             key += alphabet[k]
             ciphers[i] = m
-        result = (key, interleave_vigenere(ciphers, len(ciphertext)))
-        results.append(result)
-    if len(results) == 1: return results[0]
-    else: return results
+        result = (key, interleave_vigenere(ciphers, len(ct)))
+        results.append((score, result))
+
+    def fixup((score, (key, pt))):
+        out = ''
+        j = 0
+        for i in range(len(ciphertext)):
+            if ciphertext[i] in alphabet:
+                out += pt[j]
+                j += 1
+            else:
+                out += ciphertext[i]
+        return (score, (key, out))
+
+    results = map(fixup, results)
+
+    if len(results) == 1: return results[0][1]
+    else: return [x[1] for x in sorted(results)]
