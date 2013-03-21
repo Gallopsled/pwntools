@@ -116,8 +116,12 @@ def factor_pollard_rho(N):
     else: return None
 
 def factor(N):
-    """Factor using the currently best implemented factoring algorithm"""
-    return factor_pollard_rho(N)
+    """Try to factor a number by running through all factoring algorithms"""
+    algos = [fermat_factor, factor_pollard_rho]
+    for alg in algos:
+        try: return alg(N)
+        except TimeoutError: continue
+    return None
 
 def totient(p,q):
     """Eulers totient function"""
