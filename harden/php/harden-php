@@ -41,7 +41,7 @@ def prompt(s, default = ''):
     return default
 
 ######################################################################
-# GLOBAL SERVER HARDENING                                            #
+# SYSTEM-WIDE HARDENING                                              #
 ######################################################################
 # Patches the php.ini configuration file to apply security settings  #
 # for all php scripts running on the server. Asks the user before    #
@@ -50,7 +50,11 @@ def prompt(s, default = ''):
 ######################################################################
 
 DEFAULT_INI_LOCATION = "/etc/php5/apache2/php.ini"
+DEFAULT_CONF_LOCATION = "/etc/apache2/conf.d/harden-php"
 DEFAULT_WEB_ROOT = "/var/www"
+STATUS_HIDER = "lethe.php"
+
+DEFAULT_CONF_LOCATION = "httpd.conf"
 
 def function_ini():
     if len(sys.argv) > 2: file_path = sys.argv[2]
@@ -95,11 +99,22 @@ def function_ini():
     setting = "0" if answer == "y" or answer == "yes" else "1"
     ini.set("Session" , "session.cookie_httponly", setting)
 
+    web_root = prompt("Web root directory? (%s): " % DEFAULT_WEB_ROOT, DEFAULT_WEB_ROOT)
+
+    # Apply a nice global htaccess
+    # about:inducebrowsercrashforrealz
+    htaccess_global = open("htaccess_global", "rb").read() \
+                        .replace("$MD5$", md5(os.path.abspath(web_root)).hexdigest()) \
+                        .replace("$DIR$", os.path.abspath(web_root)) \
+                        .replace("$OKAY$", os.path.abspath(os.path.join(web_root, STATUS_HIDER)))
+
+    with open(DEFAULT_CONF_LOCATION, "ab") as conf:
+        conf.write(htaccess_global)
+
     # Limit everything to webroot
     answer = prompt("Need to go outside the web root? (n): ", "n")
     answer = True if answer == "y" or answer == "yes" else False
     if not answer:
-        web_root = prompt("Web root directory? (%s): " % DEFAULT_WEB_ROOT, DEFAULT_WEB_ROOT)
         ini.set("PHP" , "safe_mode_include_dir", os.path.abspath(web_root))
         ini.set("PHP" , "safe_mode_exec_dir", os.path.abspath(web_root))
         ini.set("PHP" , "open_basedir", os.path.abspath(web_root))
@@ -145,9 +160,6 @@ YOU SHOULD NOW DO THE FOLLOWING
 #TODO: Directory * AllowOverride All
 #TODO: Option to drop .htaccess files
 #TODO: Less naive updating of conf files
-
-DEFAULT_CONF_LOCATION = "/etc/apache2/conf.d/harden-php"
-DEFAULT_CONF_LOCATION = "httpd.conf"
 
 def function_service():
     if len(sys.argv) > 2: directory_path = sys.argv[2]

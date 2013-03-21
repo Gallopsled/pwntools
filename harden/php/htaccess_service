@@ -1,7 +1,7 @@
 
-#START#$MD5$#START#
+#START$MD5$
 <Directory $DIR$>
 AllowOverride None
 $SETTINGS$
 </Directory>
-#END#$MD5$#END#
+#END$MD5$
