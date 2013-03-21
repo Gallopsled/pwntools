@@ -1,7 +1,11 @@
 
 #START$MD5$
 <Directory $DIR$>
-AllowOverride None
-$SETTINGS$
+    AllowOverride None
+    php_admin_value open_basedir $DIR$
+    php_admin_value safe_mode_exec_dir $DIR$
+    php_admin_value safe_mode_include_dir $DIR$
+
+    $SETTINGS$
 </Directory>
 #END$MD5$

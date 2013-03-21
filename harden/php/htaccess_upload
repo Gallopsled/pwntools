@@ -1,9 +1,16 @@
 
 #START$MD5$
 <Directory $DIR$>
-AllowOverride None
-AddHandler cgi-script .php .pl .py .jsp .asp .htm .html .shtml .sh .cgi .*
-Options -ExecCGI
-php_flag engine off
+    AllowOverride None
+    php_admin_value open_basedir $DIR$
+    php_admin_value safe_mode_exec_dir $DIR$
+    php_admin_value safe_mode_include_dir $DIR$
+
+    RemoveHandler .huehuehue
+    RemoveHandler .php
+    RemoveType .php
+
+    Options -ExecCGI
+    php_flag engine off
 </Directory>
 #END$MD5$
