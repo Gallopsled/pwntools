@@ -12,6 +12,7 @@ class process(basechatter):
 
         basechatter.__init__(self, timeout)
         self.proc = None
+        self.stdout = None
 
         self.start(cmd, args, env)
 
@@ -29,6 +30,7 @@ class process(basechatter):
         fd = self.proc.stdout.fileno()
         fl = fcntl.fcntl(fd, fcntl.F_GETFL)
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+        self.stdout = fd
         log.succeeded()
 
     def connected(self):
@@ -58,3 +60,6 @@ class process(basechatter):
                 break
             time.sleep(0.0001)
         return r
+
+    def fileno(self):
+        return self.stdout

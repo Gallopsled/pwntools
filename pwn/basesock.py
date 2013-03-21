@@ -32,3 +32,6 @@ class basesock(basechatter):
                 self.sock.settimeout(self.timeout)
 
         return self.sock.recv(numb)
+
+    def fileno(self):
+        return self.sock.fileno()

@@ -1,6 +1,6 @@
 import pwn, socket, time, sys, re, errno
-import errno
-from pwn import log, text
+from pwn import log, text, Thread
+from select import select
 
 class basechatter:
     def connected(self):
@@ -19,6 +19,12 @@ class basechatter:
         In the event that further communication is impossible (such as a closed socket) a suitable exception should be raised.
         '''
         pwn.bug('This should be implemented in the sub-class')
+
+    def fileno(self):
+        pwn.bug('This should be implemented in the sub-class')
+
+    def can_recv(self, timeout = 0):
+        return select([self], [], [], timeout) == ([self], [], [])
 
     def __init__(self, timeout = 'default', fatal_exceptions = True):
         self.debug = pwn.DEBUG
@@ -104,7 +110,8 @@ class basechatter:
             res.append(self.recvuntil('\n'))
         return ''.join(res)
 
-    def interactive(self, prompt = text.boldred('$') + ' ', clean_sock = True):
+    def interactive(self, prompt = text.boldred('$') + ' ', clean_sock = True,
+                    flush_timeout = None):
         if clean_sock:
             self.clean_sock()
         log.info('Switching to interactive mode')
@@ -113,25 +120,97 @@ class basechatter:
         timeout = self.timeout
         self.debug = False
         self.settimeout(0.1)
-        running = True
+
+        def write(s):
+            sys.stdout.write(s)
+        def save():
+            write('\x1b[s')
+        def restore():
+            write('\x1b[u')
+        def reprompt():
+            write(prompt)
+            write(rlcompleter.readline.get_line_buffer())
+            sys.stdout.flush()
+
+        running = [True] # the old by-ref trick
         def loop():
-            while running:
-                sys.stderr.write(self.recv(4096))
-                sys.stderr.flush()
-        t = pwn.Thread(target = loop)
+            buf = ''
+            buft = time.time()
+            newline = True
+            while running[0]:
+                if not self.can_recv(0.1):
+                    continue
+                try:
+                    data = self.recv()
+                except EOFError:
+                    write('\nConnection closed\n')
+                    running[0] = False
+                    break
+                now = time.time()
+                lines = data.split('\n')
+                if len(lines) == 1:
+                    buf += lines[0]
+                    if buf == '':
+                        continue
+                    # 1. if the readline buffer is empty there is no position to
+                    #    remember
+                    # 2. if we are not just after a newline we already fucked
+                    #    the readline buffer up
+                    # 3. if the timeout is reached, screw it we'll fuck the
+                    #    readline buffer up in exchange for some output
+                    if rlcompleter.readline.get_line_buffer() == '' or \
+                      not newline or \
+                      (flush_timeout <> None and now - buft >= flush_timeout):
+                        if newline:
+                            write('\x1b[1G')
+                        else:
+                            restore()
+                        write(buf)
+                        save()
+                        reprompt()
+                        buf = ''
+                        buft = now
+                        newline = False
+                else:
+                    lines[0] = buf + lines[0]
+                    if newline:
+                        save()
+                        write('\x1b[1G\x1b[J')
+                    else:
+                        restore()
+                        write('\x1b[J')
+                    for line in lines[:-1]:
+                        write(line + '\n')
+                    buf = lines[-1]
+                    buft = now
+                    reprompt()
+                    if newline:
+                        restore()
+                    newline = True
+
+        save()
+        t = Thread(target = loop)
         t.daemon = True
         t.start()
-        while True:
-            try:
-                time.sleep(0.1)
+        try:
+            while True:
                 self.send(raw_input(prompt) + '\n')
-            except (KeyboardInterrupt, EOFError):
-                sys.stderr.write('Interrupted\n')
-                running = False
+                if not running[0]:
+                    t.join()
+                    break
+        except KeyboardInterrupt:
+            if running[0]:
+                running[0] = False
                 t.join()
-                self.debug = debug
-                self.settimeout(timeout)
-                break
+                write('\nInterrupted\n')
+            else:
+                t.join()
+        except IOError:
+            running[0] = False
+            t.join()
+            write('Connection closed\n')
+        self.debug = debug
+        self.settimeout(timeout)
 
     def recvall(self):
         log.waitfor('Recieving all data')

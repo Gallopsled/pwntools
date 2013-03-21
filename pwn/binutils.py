@@ -14,7 +14,7 @@ def pint(x):
     return out
 
 def pintb(x):
-    '''Packs an integer into a string as long as needed, big endian'''
+    '''Packs an integer into a string as long as needed, endian'''
     out = []
     while True:
         b = x & 0xff
@@ -134,6 +134,11 @@ def pack_size(f):
     if f == p64b: return "64b"
 
     return ""
+
+packs_big_endian      = {64: p64b, 32: p32b, 16: p16b, 8: p8b, 'any': pintb}
+packs_little_endian   = {64: p64,  32: p32,  16: p16,  8: p8,  'any': pint}
+unpacks_big_endian    = {64: u64b, 32: u32b, 16: u16b, 8: u8b, 'any': uintb}
+unpacks_little_endian = {64: u64,  32: u32,  16: u16,  8: u8,  'any': uint}
 
 @pwn.need_context
 def flat(*args, **kwargs):
