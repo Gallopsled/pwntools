@@ -7,6 +7,10 @@ import gmpy
 from functools import wraps
 from itertools import *
 from random import seed, randint
+from sympy.solvers import solve
+from sympy.core import numbers
+from sympy import Symbol
+from fractions import Fraction
 
 import freq
 
@@ -75,9 +79,8 @@ def timeout(seconds=10, error_message=""):
 
     return decorator
 
-# Number theory
 @timeout(10)
-def fermat_factor(N):
+def factor_fermat(N):
     """
     Guess at a and hope that a^2 - N = b^2,
     which is the case if p and q is "too close".
@@ -117,7 +120,7 @@ def factor_pollard_rho(N):
 
 def factor(N):
     """Try to factor a number by running through all factoring algorithms"""
-    algos = [fermat_factor, factor_pollard_rho]
+    algos = [factor_fermat, factor_pollard_rho]
     for alg in algos:
         try: return alg(N)
         except TimeoutError: continue
@@ -176,3 +179,47 @@ def fast_exponentiation(a, p, n):
         result = ((a ** rem) * result ** 2) % n
     return result
 
+def gcd_step(a, b):
+    """
+    Performs a single step of the gcd algorithm.
+    Example: gcd_step(1071, 462) == (2, 147) because 1071 == 2 * 462 + 147.
+    """
+    if a < b:
+        return (0, b)
+
+    res = 0
+    while a >= b:
+        a -= b
+        res += 1
+    return (res, a)
+
+def continued_fractions(a, b, limit = -1):
+    """
+    Calculates continued fraction representation of a/b up to limit accuracy.
+    """
+    continued_fractions = []
+    if b < a:
+        continued_fractions.append(0)
+
+    while True:
+        (integer, rest) = gcd_step(a,b)
+        continued_fractions.append(integer)
+
+        if rest == 0 or limit == 0:
+            break
+        elif limit > 0:
+            limit -= 1
+        else:
+            a = b
+            b = rest
+    return continued_fractions
+
+def calculate_fraction(fs):
+    """
+    Calculate fraction from continued fraction list.
+    Might need result.limit_denominator() for best results.
+    """
+    if len(fs) == 1:
+        return Fraction(fs[0])
+    else:
+        return Fraction(fs[0] + 1. / calculate_fraction(fs[1:]))
