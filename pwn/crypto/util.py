@@ -6,6 +6,7 @@ import string, collections, os, signal
 import gmpy
 from functools import wraps
 from itertools import *
+from random import seed, randint
 
 import freq
 
@@ -90,6 +91,33 @@ def fermat_factor(N):
     factor1 = a - gmpy.sqrt(b2)
     factor2 = a + gmpy.sqrt(b2)
     return (int(factor1.digits()),int(factor2.digits()))
+
+@timeout(10)
+def factor_pollard_rho(N):
+    """
+    Pollard's rho algorithm for factoring numbers,
+    implemented using Brent's cycle finding algorithm.
+    """
+    i = 1
+    power = 2
+    x = y = 2
+    d = 1
+
+    while d == 1:
+        i += 1
+        x = (x * x + 2) % N
+        d = gcd(abs(x - y), N)
+
+        if i == power:
+            y = x
+            power *= 2
+
+    if d != N: return (d, N // d) # Whaat?
+    else: return None
+
+def factor(N):
+    """Factor using the currently best implemented factoring algorithm"""
+    return factor_pollard_rho(N)
 
 def totient(p,q):
     """Eulers totient function"""
