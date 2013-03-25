@@ -105,7 +105,7 @@ def mainLoop(screen, px):
 
 if __name__ == "__main__":
     if len(sys.argv) <> 2:
-        print "usage: <program> <intput_filename>"
+        print "usage: %s <intput_filename>" % __file__
         exit(0)
     else:
         input_loc = sys.argv[1]
