@@ -21,7 +21,8 @@ if [ -f /etc/debian_version ]; then
     DEPS="python-crypto python-paramiko python-sqlalchemy libdistorm64-dev python-gmpy python-imaging"
     yes | sudo apt-get install ${DEPS}
 elif [ -f /etc/arch-release ]; then
-    DEPS="python2-crypto python2-paramiko python2-sqlalchemy python2-imaging"
+    DEPS="python2-crypto python2-paramiko python2-sqlalchemy python2-imaging 
+python2-sympy"
     yes | sudo pacman -S ${DEPS}
 fi
 echo "All DONE"
