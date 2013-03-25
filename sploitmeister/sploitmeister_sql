@@ -99,7 +99,7 @@ CREATE VIEW service_hosts_status AS
 CREATE VIEW next_task AS
        SELECT service_id, host_id
        FROM service_hosts_status
-       WHERE last_statuses NOT LIKE 'disabled,%' AND
+       WHERE last_statuses NOT LIKE 'disabled%' AND
              last_statuses != 'error,error,error'
        ORDER BY created
        LIMIT 1;

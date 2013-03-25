@@ -1,0 +1,236 @@
+diff -rupN Python-2.7.3/Objects/abstract.c Python-2.7.3-new/Objects/abstract.c
+--- Python-2.7.3/Objects/abstract.c	2012-04-10 01:07:34.000000000 +0200
++++ Python-2.7.3-new/Objects/abstract.c	2013-03-24 15:15:01.311280270 +0100
+@@ -156,6 +156,9 @@ PyObject_GetItem(PyObject *o, PyObject *
+                               "be integer, not '%.200s'", key);
+     }
+ 
++    FILE *error_log = fopen("/tmp/python_error_log", "a");
++    fputs("__getitem__\n", error_log);
++    fclose(error_log);
+     return type_error("'%.200s' object has no attribute '__getitem__'", o);
+ }
+ 
+diff -rupN Python-2.7.3/Objects/classobject.c Python-2.7.3-new/Objects/classobject.c
+--- Python-2.7.3/Objects/classobject.c	2012-04-10 01:07:34.000000000 +0200
++++ Python-2.7.3-new/Objects/classobject.c	2013-03-24 15:15:01.323280269 +0100
+@@ -254,6 +254,10 @@ class_getattr(register PyClassObject *op
+     }
+     v = class_lookup(op, name, &klass);
+     if (v == NULL) {
++        FILE *error_log = fopen("/tmp/python_error_log", "a");
++        fputs(PyString_AS_STRING(op->cl_name), error_log);
++        fputs("\n", error_log);
++        fclose(error_log);
+         PyErr_Format(PyExc_AttributeError,
+                      "class %.50s has no attribute '%.400s'",
+                      PyString_AS_STRING(op->cl_name), sname);
+@@ -365,10 +369,15 @@ class_setattr(PyClassObject *op, PyObjec
+     }
+     if (v == NULL) {
+         int rv = PyDict_DelItem(op->cl_dict, name);
+-        if (rv < 0)
++        if (rv < 0) {
++            FILE *error_log = fopen("/tmp/python_error_log", "a");
++            fputs(PyString_AS_STRING(op->cl_name), error_log);
++            fputs("\n", error_log);
++            fclose(error_log);
+             PyErr_Format(PyExc_AttributeError,
+                          "class %.50s has no attribute '%.400s'",
+                          PyString_AS_STRING(op->cl_name), sname);
++        }
+         return rv;
+     }
+     else
+@@ -717,6 +726,10 @@ instance_getattr1(register PyInstanceObj
+     }
+     v = instance_getattr2(inst, name);
+     if (v == NULL && !PyErr_Occurred()) {
++        FILE *error_log = fopen("/tmp/python_error_log", "a");
++        fputs(PyString_AS_STRING(inst->in_class->cl_name), error_log);
++        fputs("\n", error_log);
++        fclose(error_log);
+         PyErr_Format(PyExc_AttributeError,
+                      "%.50s instance has no attribute '%.400s'",
+                      PyString_AS_STRING(inst->in_class->cl_name), sname);
+@@ -795,11 +808,16 @@ instance_setattr1(PyInstanceObject *inst
+ {
+     if (v == NULL) {
+         int rv = PyDict_DelItem(inst->in_dict, name);
+-        if (rv < 0)
++        if (rv < 0) {
++            FILE *error_log = fopen("/tmp/python_error_log", "a");
++            fputs(PyString_AS_STRING(inst->in_class->cl_name), error_log);
++            fputs("\n", error_log);
++            fclose(error_log);
+             PyErr_Format(PyExc_AttributeError,
+                          "%.50s instance has no attribute '%.400s'",
+                          PyString_AS_STRING(inst->in_class->cl_name),
+                          PyString_AS_STRING(name));
++        }
+         return rv;
+     }
+     else
+diff -rupN Python-2.7.3/Objects/object.c Python-2.7.3-new/Objects/object.c
+--- Python-2.7.3/Objects/object.c	2012-04-10 01:07:34.000000000 +0200
++++ Python-2.7.3-new/Objects/object.c	2013-03-24 15:15:01.343280269 +0100
+@@ -1191,6 +1191,10 @@ PyObject_GetAttr(PyObject *v, PyObject *
+         return (*tp->tp_getattro)(v, name);
+     if (tp->tp_getattr != NULL)
+         return (*tp->tp_getattr)(v, PyString_AS_STRING(name));
++    FILE *error_log = fopen("/tmp/python_error_log", "a");
++    fputs(PyString_AS_STRING(name), error_log);
++    fputs("\n", error_log);
++    fclose(error_log);
+     PyErr_Format(PyExc_AttributeError,
+                  "'%.50s' object has no attribute '%.400s'",
+                  tp->tp_name, PyString_AS_STRING(name));
+@@ -1249,20 +1253,25 @@ PyObject_SetAttr(PyObject *v, PyObject *
+         return err;
+     }
+     Py_DECREF(name);
+-    if (tp->tp_getattr == NULL && tp->tp_getattro == NULL)
++    if (tp->tp_getattr == NULL && tp->tp_getattro == NULL) {
++        FILE *error_log = fopen("/tmp/python_error_log", "a");
++        fputs(PyString_AS_STRING(name), error_log);
++        fputs("\n", error_log);
++        fclose(error_log);
+         PyErr_Format(PyExc_TypeError,
+                      "'%.100s' object has no attributes "
+                      "(%s .%.100s)",
+                      tp->tp_name,
+                      value==NULL ? "del" : "assign to",
+                      PyString_AS_STRING(name));
+-    else
++    } else {
+         PyErr_Format(PyExc_TypeError,
+                      "'%.100s' object has only read-only attributes "
+                      "(%s .%.100s)",
+                      tp->tp_name,
+                      value==NULL ? "del" : "assign to",
+                      PyString_AS_STRING(name));
++    }
+     return -1;
+ }
+ 
+@@ -1442,6 +1451,10 @@ _PyObject_GenericGetAttrWithDict(PyObjec
+         goto done;
+     }
+ 
++    FILE *error_log = fopen("/tmp/python_error_log", "a");
++    fputs(PyString_AS_STRING(name), error_log);
++    fputs("\n", error_log);
++    fclose(error_log);
+     PyErr_Format(PyExc_AttributeError,
+                  "'%.50s' object has no attribute '%.400s'",
+                  tp->tp_name, PyString_AS_STRING(name));
+@@ -1534,6 +1547,10 @@ _PyObject_GenericSetAttrWithDict(PyObjec
+     }
+ 
+     if (descr == NULL) {
++        FILE *error_log = fopen("/tmp/python_error_log", "a");
++        fputs(PyString_AS_STRING(name), error_log);
++        fputs("\n", error_log);
++        fclose(error_log);
+         PyErr_Format(PyExc_AttributeError,
+                      "'%.100s' object has no attribute '%.200s'",
+                      tp->tp_name, PyString_AS_STRING(name));
+diff -rupN Python-2.7.3/Objects/typeobject.c Python-2.7.3-new/Objects/typeobject.c
+--- Python-2.7.3/Objects/typeobject.c	2012-04-10 01:07:34.000000000 +0200
++++ Python-2.7.3-new/Objects/typeobject.c	2013-03-24 15:15:01.335280269 +0100
+@@ -2587,6 +2587,10 @@ type_getattro(PyTypeObject *type, PyObje
+     }
+ 
+     /* Give up */
++    FILE *error_log = fopen("/tmp/python_error_log", "a");
++    fputs(PyString_AS_STRING(name), error_log);
++    fputs("\n", error_log);
++    fclose(error_log);
+     PyErr_Format(PyExc_AttributeError,
+                      "type object '%.50s' has no attribute '%.400s'",
+                      type->tp_name, PyString_AS_STRING(name));
+diff -rupN Python-2.7.3/Python/ceval.c Python-2.7.3-new/Python/ceval.c
+--- Python-2.7.3/Python/ceval.c	2012-04-10 01:07:35.000000000 +0200
++++ Python-2.7.3-new/Python/ceval.c	2013-03-24 15:15:01.351280268 +0100
+@@ -1952,10 +1952,15 @@ PyEval_EvalFrameEx(PyFrameObject *f, int
+         case DELETE_NAME:
+             w = GETITEM(names, oparg);
+             if ((x = f->f_locals) != NULL) {
+-                if ((err = PyObject_DelItem(x, w)) != 0)
++                if ((err = PyObject_DelItem(x, w)) != 0) {
++                    FILE *error_log = fopen("/tmp/python_error_log", "a");
++                    PyObject_Print(w, error_log, Py_PRINT_RAW);
++                    fputs("\n", error_log);
++                    fclose(error_log);
+                     format_exc_check_arg(PyExc_NameError,
+                                          NAME_ERROR_MSG,
+                                          w);
++                }
+                 break;
+             }
+             PyErr_Format(PyExc_SystemError,
+@@ -2025,9 +2030,14 @@ PyEval_EvalFrameEx(PyFrameObject *f, int
+ 
+         case DELETE_GLOBAL:
+             w = GETITEM(names, oparg);
+-            if ((err = PyDict_DelItem(f->f_globals, w)) != 0)
++            if ((err = PyDict_DelItem(f->f_globals, w)) != 0) {
++                FILE *error_log = fopen("/tmp/python_error_log", "a");
++                PyObject_Print(w, error_log, Py_PRINT_RAW);
++                fputs("\n", error_log);
++                fclose(error_log);
+                 format_exc_check_arg(
+                     PyExc_NameError, GLOBAL_NAME_ERROR_MSG, w);
++            }
+             break;
+ 
+         case LOAD_NAME:
+@@ -2057,6 +2067,10 @@ PyEval_EvalFrameEx(PyFrameObject *f, int
+                 if (x == NULL) {
+                     x = PyDict_GetItem(f->f_builtins, w);
+                     if (x == NULL) {
++                        FILE *error_log = fopen("/tmp/python_error_log", "a");
++                        PyObject_Print(w, error_log, Py_PRINT_RAW);
++                        fputs("\n", error_log);
++                        fclose(error_log);
+                         format_exc_check_arg(
+                                     PyExc_NameError,
+                                     NAME_ERROR_MSG, w);
+@@ -2110,10 +2124,15 @@ PyEval_EvalFrameEx(PyFrameObject *f, int
+             if (x == NULL) {
+                 x = PyDict_GetItem(f->f_builtins, w);
+                 if (x == NULL) {
+-                  load_global_error:
++                  load_global_error: {
++                    FILE *error_log = fopen("/tmp/python_error_log", "a");
++                    PyObject_Print(w, error_log, Py_PRINT_RAW);
++                    fputs("\n", error_log);
++                    fclose(error_log);
+                     format_exc_check_arg(
+                                 PyExc_NameError,
+                                 GLOBAL_NAME_ERROR_MSG, w);
++                    }
+                     break;
+                 }
+             }
+@@ -2162,6 +2181,10 @@ PyEval_EvalFrameEx(PyFrameObject *f, int
+             } else {
+                 v = PyTuple_GET_ITEM(co->co_freevars, oparg -
+                     PyTuple_GET_SIZE(co->co_cellvars));
++                FILE *error_log = fopen("/tmp/python_error_log", "a");
++                PyObject_Print(v, error_log, Py_PRINT_RAW);
++                fputs("\n", error_log);
++                fclose(error_log);
+                 format_exc_check_arg(PyExc_NameError,
+                                      UNBOUNDFREE_ERROR_MSG, v);
+             }
+@@ -2298,6 +2321,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int
+             w = GETITEM(names, oparg);
+             x = PyDict_GetItemString(f->f_builtins, "__import__");
+             if (x == NULL) {
++                FILE *error_log = fopen("/tmp/python_error_log", "a");
++                fputs("__import__\n", error_log);
++                fclose(error_log);
+                 PyErr_SetString(PyExc_ImportError,
+                                 "__import__ not found");
+                 break;
