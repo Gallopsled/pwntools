@@ -4,12 +4,11 @@ import sys
 #import scurve
 import hilbert_api as hapi
 
-class Curve(object):
+class HilbertCurve(object):
     def __init__(self, filename, curve='hilbert'):
         self.filename   = filename
         self.file_bytes = open(self.filename, 'rb').read()
         self.hb_map     = hapi.Hilbert(len(self.file_bytes))
-#        self.hb_map     = scurve.fromSize('hilbert', 2, 256**2)
         # should eventually take several kinds of curves
 
     def _hb_index(self, (x,y)):
@@ -35,12 +34,8 @@ class Curve(object):
             ret_bytes.append(self.file_bytes[self._hb_index(idx)])
         return ret_bytes
 
-# def usage():
-#     print "Usage: %s <file_to_visualize>" % __file__
-
-
-# if __name__ == "__main__":
-#     if len(sys.argv) <> 2:
-#         usage()
-#     else:
-#         main(sys.argv[1])
+    def get_hilbert_block(self, (x,y), order):
+        ''' return the complete hilbert sub-block of order `order`,
+spanning coordinate set (x,y).
+'''
+        pass
