@@ -52,9 +52,8 @@ def prompt(s, default = ''):
 DEFAULT_INI_LOCATION = "/etc/php5/apache2/php.ini"
 DEFAULT_CONF_LOCATION = "/etc/apache2/conf.d/harden-php"
 DEFAULT_WEB_ROOT = "/var/www"
-STATUS_HIDER = "lethe.php"
-
-DEFAULT_CONF_LOCATION = "httpd.conf"
+STATUS_HIDER = "okay.huehuehue"
+MY_LOCATION = os.path.dirname(__file__)
 
 def function_ini():
     if len(sys.argv) > 2: file_path = sys.argv[2]
@@ -90,8 +89,13 @@ def function_ini():
     ini.set("PHP" , "allow_url_include", setting)
 
     # File uploading is dangerous
-    answer = prompt("Need to upload files? (n): ", "n")
-    setting = "On" if answer == "y" or answer == "yes" else "Off"
+    setting = None
+    while setting == None:
+        answer = prompt("Need to upload files? (y/n): ", "")
+        if answer == "y" or answer == "yes":
+            setting = "On"
+        elif answer == "n" or answer == "no":
+            setting = "Off"
     ini.set("PHP" , "file_uploads", setting)
 
     # Fixing cookies
@@ -103,13 +107,16 @@ def function_ini():
 
     # Apply a nice global htaccess
     # about:inducebrowsercrashforrealz
-    htaccess_global = open("htaccess_global", "rb").read() \
+    htaccess_global = open(os.path.join(MY_LOCATION, "htaccess_global"), "rb").read() \
                         .replace("$MD5$", md5(os.path.abspath(web_root)).hexdigest()) \
                         .replace("$DIR$", os.path.abspath(web_root)) \
-                        .replace("$OKAY$", os.path.abspath(os.path.join(web_root, STATUS_HIDER)))
+                        .replace("$OKAY$", STATUS_HIDER)
 
     with open(DEFAULT_CONF_LOCATION, "ab") as conf:
         conf.write(htaccess_global)
+
+    # Drop the OKAY file
+    shutil.copyfile(os.path.join(MY_LOCATION, STATUS_HIDER), os.path.join(DEFAULT_WEB_ROOT, STATUS_HIDER))
 
     # Limit everything to webroot
     answer = prompt("Need to go outside the web root? (n): ", "n")
@@ -126,13 +133,13 @@ def function_ini():
         disabled_functions = [s.strip() for s in ini.get("PHP", "disable_functions").split(",")]
         disabled_functions = filter(lambda f: f != "", disabled_functions)
 
-        unwanted_functions = [s.strip() for s in open("unwanted_functions", "rb").read().strip().split("\n")]
+        unwanted_functions = [s.strip() for s in open(os.path.join(MY_LOCATION, "unwanted_functions"), "rb").read().strip().split("\n")]
 
         # TODO: Refine naive search for functions calls
         fun_call = re.compile(r"([a-zA-Z0-9_]+)[ ]?\(")
 
         fun_calls = []
-        for script in locate("*.php"):
+        for script in locate(MY_LOCATION + "/*.php"):
             with open(script, "rb") as f:
                 fun_calls += fun_call.findall(f.read())
 
@@ -146,7 +153,8 @@ def function_ini():
 YOU SHOULD NOW DO THE FOLLOWING
  1. sudo apt-get install php5-suhosin
     (or http://www.hardened-php.net/suhosin/how_to_install_or_upgrade.html)
- 2. /etc/init.d/apache2 restart"""
+ 2. Check the file '%s' to ensure it is sane
+ 3. /etc/init.d/apache2 restart"""
 
 ######################################################################
 # INDIVIDUAL SERVICE HARDENING                                       #
@@ -156,10 +164,6 @@ YOU SHOULD NOW DO THE FOLLOWING
 # someone from overwriting .htaccess files. If you really want it,   #
 # it can drop such files instead.                                    #
 ######################################################################
-
-#TODO: Directory * AllowOverride All
-#TODO: Option to drop .htaccess files
-#TODO: Less naive updating of conf files
 
 def function_service():
     if len(sys.argv) > 2: directory_path = sys.argv[2]
@@ -171,7 +175,7 @@ def function_service():
 
     settings = ""
 
-    htaccess_service = open("htaccess_service", "rb").read() \
+    htaccess_service = open(os.path.join(MY_LOCATION, "htaccess_service"), "rb").read() \
                         .replace("$MD5$", md5(os.path.abspath(directory_path)).hexdigest()) \
                         .replace("$DIR$", os.path.abspath(directory_path)) \
                         .replace("$SETTINGS$", settings)
@@ -195,7 +199,7 @@ def function_upload():
         print "'%s' is not a directory." % directory_path
         exit(-1)
 
-    htaccess_upload = open("htaccess_upload", "rb").read() \
+    htaccess_upload = open(os.path.join(MY_LOCATION, "htaccess_upload"), "rb").read() \
                         .replace("$MD5$", md5(os.path.abspath(directory_path)).hexdigest()) \
                         .replace("$DIR$", os.path.abspath(directory_path))
 

@@ -1,0 +1,7 @@
+<?php
+
+// Everything is OK, move along!
+header("HTTP/1.0 200 OK");
+die();
+
+?>
