@@ -60,13 +60,13 @@ class Visual(object):
         log.waitfor("Building square Hilbert image in memory")
         d = open(self.target).read()
         csource = ColorHilbert(d, None)
-        self.c, self.cd = drawmap_square('hilbert', 256, csource)
+        self.image, self.cd = drawmap_square('hilbert', 256, csource)
         log.succeeded()
 
         # pygame.init()
 
 
-    def mainLoop(self, screen, px):
+    def mainLoop(self): # , screen, px    ):
         SNAP_TO_GRID_TOPLEFT = SNAP_TO_GRID_BOTTOMRIGHT = SELECTION = None
         n=0
         scale = 1
@@ -79,7 +79,7 @@ class Visual(object):
                 mods = pygame.key.get_mods()
                 if mods & pygame.KMOD_CTRL: # CTRL-LeftClick -> snap to grid selection
                     if not SNAP_TO_GRID_TOPLEFT:
-                        SNAP_TO_GRID_TOPLEFT = snap_it(event.pos)
+                        SNAP_TO_GRID_TOPLEFT = self.snap_it(event.pos)
                     else:
                         SNAP_TO_GRID_BOTTOMRIGHT = event.pos
                         SNAP_TO_GRID_STOPIT = True
@@ -98,41 +98,39 @@ class Visual(object):
                         print "ctrl-d :D"
 
             if SNAP_TO_GRID_TOPLEFT:
-                SELECTION = displayImage(screen, px, SNAP_TO_GRID_TOPLEFT, SELECTION)
+                SELECTION = self.displayImage(SNAP_TO_GRID_TOPLEFT, SELECTION)
             if SNAP_TO_GRID_STOPIT:
                 SNAP_TO_GRID_TOPLEFT = SNAP_TO_GRID_BOTTOMRIGHT = None
         return
 
 
-    @staticmethod
-    def setup(path):
-        px = pygame.image.load(path)
-        screen = pygame.display.set_mode( px.get_rect()[2:] )
-        screen.blit(px, px.get_rect())
-        pygame.display.flip()
-        return screen, px
+    # @staticmethod
+    # def setup(path):
+    #     px = pygame.image.load(path)
+    #     screen = pygame.display.set_mode( px.get_rect()[2:] )
+    #     screen.blit(px, px.get_rect())
+    #     pygame.display.flip()
+    #     return screen, px
 
-    @staticmethod
-    def alt_setup(image):
+    def alt_setup(self):
         ''' alternative setup method, working with an image from memory (PIL.image) instead of loading from a file.
 '''
-        mode = image.mode
-        size = image.size
-        data = image.tostring()
+        mode = self.image.mode
+        size = self.image.size
+        data = self.image.tostring()
         assert mode in "RGB", "RGBA"
-        px = pygame.image.fromstring(data, size, mode)
-        screen = pygame.display.set_mode( px.get_rect()[2:] )
-        screen.blit(px, px.get_rect())
+        self.px = pygame.image.fromstring(data, size, mode)
+        self.screen = pygame.display.set_mode( self.px.get_rect()[2:] )
+        self.screen.blit(self.px, self.px.get_rect())
         pygame.display.flip()
-        return screen, px
+        # return screen, px
 
 
-    @staticmethod
-    def displayImage(screen, px, topleft, prior):
+    def displayImage(self, topleft, prior):
         # ensure that the rect always has positive width, height
         x, y = topleft
         mouse_pos = pygame.mouse.get_pos()
-        width, height = snap_it((mouse_pos[0] - topleft[0], mouse_pos[1] - topleft[1]))
+        width, height = self.snap_it((mouse_pos[0] - topleft[0], mouse_pos[1] - topleft[1]))
         # if height not in [0, 1]:
         #     width = px.get_rect()[3]
         #     x = 0
@@ -152,18 +150,17 @@ class Visual(object):
             return current
 
         # draw transparent box and blit it onto canvas
-        screen.blit(px, px.get_rect())
+        self.screen.blit(self.px, self.px.get_rect())
         im = pygame.Surface((width, height))
         im.fill((128, 128, 128))
         pygame.draw.rect(im, (32, 32, 32), im.get_rect(), 1)
         im.set_alpha(128)
-        screen.blit(im, (x, y))
+        self.screen.blit(im, (x, y))
         pygame.display.flip()
 
         # return current box extents
         return (x, y, width, height)
 
-    @staticmethod
-    def snap_it(pos):
+    def snap_it(self, pos):
         newpos = round(pos[0] / GRID_SIZE_X) * GRID_SIZE_X, round(pos[1] / GRID_SIZE_Y) * GRID_SIZE_Y
         return newpos
