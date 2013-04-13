@@ -222,9 +222,9 @@ def main():
         drawmap_square(options.map, options.size, csource, dst, prog)
     prog.clear()
 
-#if __name__ == "__main__":
-#    main()
-#    csource = ColorHilbert(data, 'none')
+if __name__ == "__main__":
+   main()
+   # csource = ColorHilbert(data, 'none')
 
-csource = ColorHilbert('', None)
+# csource = ColorHilbert('', None)
 

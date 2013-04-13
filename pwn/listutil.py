@@ -84,6 +84,14 @@ def combinations(*args):
 
     return recurse(args)
 
+def powerset(lst, include_empty = True, proper = False):
+    res = []
+    n = len(lst)
+    fr = 0 if include_empty else 1
+    to = 2**n - 1 if proper else 2**n
+    for i in xrange(fr, to):
+        yield [lst[j] for j in range(n) if 2**j & i]
+
 def ordlist(s):
     return [ord(c) for c in s]
 
@@ -138,3 +146,11 @@ def findall(haystack, needle):
         return __single_search(haystack, needle[0])
     else:
         return __kmp_search(haystack, needle)
+
+def listify(*args):
+    '''Creates lists from all arguments, and returns concatenation'''
+    return sum((list(x) if hasattr(x, '__iter__') else [x] for x in args), [])
+
+def tuplify(*args):
+    '''Creates tuples from all arguments, and returns concatenation'''
+    return sum((tuple(x) if hasattr(x, '__iter__') else (x,) for x in args), ())
