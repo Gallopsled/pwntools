@@ -141,6 +141,7 @@ class ROP:
         target = self._resolve(target)
         args = map(self._resolve, tuplify(args))
         self._chain.append(('call', (target, pivot, args)))
+        return self
 
     def raw(self, *words):
         self._chain.append(('raw', words))
@@ -226,6 +227,9 @@ class ROP:
     def __str__(self):
         return self.generate()
 
+    def __flat__(self):
+        return self.generate()
+
     def __repr__(self):
         return str(self)
 
@@ -242,7 +246,7 @@ class ROP:
         args = group(args, 2)
         for f, a in args:
             self.call(f, a)
-        return self.generate()
+        return self
 
 # alias
 class load(ROP): pass
