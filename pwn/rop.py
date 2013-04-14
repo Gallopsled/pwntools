@@ -5,8 +5,6 @@ from collections import defaultdict
 global _currently_loaded
 _currently_loaded = None
 
-_RAW, _CALL = range(2)
-
 class ROP:
     def __init__(self, file, garbage = 0xdeadbeef):
         global _currently_loaded
@@ -122,6 +120,7 @@ class ROP:
 
     def migrate(self, sp, bp = None):
         self._chain.append('migrate', (sp, bp))
+        return self
 
     def set_frame(self, addr):
         if self.elf.elfclass == 'ELF32':
@@ -145,6 +144,7 @@ class ROP:
 
     def raw(self, *words):
         self._chain.append(('raw', words))
+        return self
 
     def generate(self):
         if self.elf.elfclass == 'ELF32':
@@ -166,7 +166,7 @@ class ROP:
     def _generate32(self):
         out = []
         chain = self._chain
-        self.chain = []
+        self._chain = []
         p = p32
         def garbage():
             return self._garbage(4)
@@ -243,8 +243,11 @@ class ROP:
         return self._resolve(x)
 
     def chain(self, *args):
+        if len(args) % 2 <> 0:
+            args = args + ((),)
         args = group(args, 2)
         for f, a in args:
+            print f, a
             self.call(f, a)
         return self
 
@@ -257,15 +260,15 @@ def _ensure_loaded():
 
 def call(*args):
     _ensure_loaded()
-    _currently_loaded.call(*args)
+    return _currently_loaded.call(*args)
 
-def word(*args):
+def raw(*args):
     _ensure_loaded()
-    _currently_loaded.word(*args)
+    return _currently_loaded.raw(*args)
 
 def migrate(*args):
     _ensure_loaded()
-    _currently_loaded.migrate(*args)
+    return _currently_loaded.migrate(*args)
 
 def generate():
     _ensure_loaded()
