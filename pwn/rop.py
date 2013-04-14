@@ -247,7 +247,6 @@ class ROP:
             args = args + ((),)
         args = group(args, 2)
         for f, a in args:
-            print f, a
             self.call(f, a)
         return self
 
