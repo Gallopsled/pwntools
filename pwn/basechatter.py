@@ -198,7 +198,7 @@ class basechatter:
                 if not running[0]:
                     t.join()
                     break
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, EOFError):
             if running[0]:
                 running[0] = False
                 t.join()
