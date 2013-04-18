@@ -93,15 +93,17 @@ class basechatter:
         return res
 
     def sendafter(self, delim, *dat):
+        """ Wait for delim, then send *dat"""
         dat = pwn.flat(dat)
         res = self.recvuntil(delim)
         self.send(dat)
         return res
 
-    def sendwhen(self, *dat, **kwargs):
+    def sendthen(self, delim, *dat):
+        """ Send *dat, then wait for delim"""
         dat = pwn.flat(dat)
-        res = self.recvuntil(**kwargs)
         self.send(dat)
+        res = self.recvuntil(delim)
         return res
 
     def recvline(self, lines = 1):
