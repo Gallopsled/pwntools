@@ -62,8 +62,12 @@ class Visual(object):
         csource = ColorHilbert(d, None)
         self.image, self.cd = drawmap_square('hilbert', 256, csource)
         log.succeeded()
-
         # pygame.init()
+
+
+    def doit(self):
+        self.setup()
+        self.mainLoop()
 
 
     def mainLoop(self): # , screen, px    ):
@@ -112,8 +116,8 @@ class Visual(object):
     #     pygame.display.flip()
     #     return screen, px
 
-    def alt_setup(self):
-        ''' alternative setup method, working with an image from memory (PIL.image) instead of loading from a file.
+    def setup(self):
+        ''' sets up the pygame screen, working with an image from memory (PIL.image) instead of loading from a file.
 '''
         mode = self.image.mode
         size = self.image.size
