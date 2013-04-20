@@ -230,7 +230,7 @@ class ROP:
                 gp = gp[0]
                 gl = gl[0]
                 if ebp is None:
-                    out += [p(gp), p(esp) - 4, p(gl)]
+                    out += [p(gp), p(esp-4), p(gl)]
                 else:
                     out += [p(gp), p(esp), p(gl)]
                     self.raw(p(ebp))
