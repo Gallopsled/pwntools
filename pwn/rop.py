@@ -195,7 +195,7 @@ class ROP:
                     elif issndlast and chain[i + 1][0] == 'call' and \
                       len(chain[i + 1][1][2]) == 0:
                         # the last target has no arguments, so go straight to it
-                        out.append(p(chain[i + 1][0]))
+                        out.append(p(chain[i + 1][1][0]))
                         out += pargs(args)
                         break
                     else:
