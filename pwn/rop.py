@@ -50,6 +50,15 @@ class ROP:
             addr = sec['addr']
             yield (data, addr)
 
+
+    def _non_writable_sections(self):
+        for name, sec in self.elf.sections.items():
+            if 'W' in sec['flags']: continue
+            data = self.elf.section(name)
+            addr = sec['addr']
+            yield (data, addr)
+
+
     def _load32_popret(self):
         addesp = '\x83\xc4'
         popr = map(chr, [0x58, 0x59, 0x5a, 0x5b, 0x5d, 0x5e, 0x5f])
@@ -147,7 +156,7 @@ class ROP:
         return self
 
     def search(self, byte):
-        for data, addr in self._exec_sections():
+        for data, addr in self._non_writable_sections():
             if byte in data:
                 return data.find(byte) + addr
 
