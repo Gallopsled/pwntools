@@ -146,6 +146,11 @@ class ROP:
         self._chain.append(('raw', words))
         return self
 
+    def search(self, byte):
+        for data, addr in self._exec_sections():
+            if byte in data:
+                return data.find(byte) + addr
+
     def generate(self):
         if self.elf.elfclass == 'ELF32':
             return self._generate32()
