@@ -93,15 +93,17 @@ class basechatter:
         return res
 
     def sendafter(self, delim, *dat):
+        """ Wait for delim, then send *dat"""
         dat = pwn.flat(dat)
         res = self.recvuntil(delim)
         self.send(dat)
         return res
 
-    def sendwhen(self, *dat, **kwargs):
+    def sendthen(self, delim, *dat):
+        """ Send *dat, then wait for delim"""
         dat = pwn.flat(dat)
-        res = self.recvuntil(**kwargs)
         self.send(dat)
+        res = self.recvuntil(delim)
         return res
 
     def recvline(self, lines = 1):
@@ -198,7 +200,7 @@ class basechatter:
                 if not running[0]:
                     t.join()
                     break
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, EOFError):
             if running[0]:
                 running[0] = False
                 t.join()
