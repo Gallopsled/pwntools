@@ -193,7 +193,7 @@ class ROP:
             islast = i == len(chain) - 1
             issndlast = i == len(chain) - 2
             if type == 'raw':
-                out.append(pargs(link))
+                out += pargs(link)
             elif type == 'call':
                 target, pivot, args = link
                 out.append(p(target))
