@@ -128,7 +128,7 @@ class ROP:
             return (pivot, size)
 
     def migrate(self, sp, bp = None):
-        self._chain.append('migrate', (sp, bp))
+        self._chain.append(('migrate', (sp, bp)))
         return self
 
     def set_frame(self, addr):
