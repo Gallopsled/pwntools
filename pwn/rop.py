@@ -157,8 +157,8 @@ class ROP:
 
     def search(self, byte):
         for data, addr in self._non_writable_sections():
-            if byte in data:
-                return data.find(byte) + addr
+            if addr and byte in data:
+                yield data.find(byte) + addr
 
     def generate(self):
         if self.elf.elfclass == 'ELF32':
