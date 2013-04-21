@@ -92,9 +92,9 @@ class ROP:
         ls = []
         ps = []
         for data, addr in self._exec_sections():
-            idxs = findall(data, popebp)
-            ls += map(lambda i: i + addr, idxs)
             idxs = findall(data, leave)
+            ls += map(lambda i: i + addr, idxs)
+            idxs = findall(data, popebp)
             ps += map(lambda i: i + addr, idxs)
         self._gadgets['leave'] = ls
         self._gadgets['popebp'] = ps
