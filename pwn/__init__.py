@@ -53,6 +53,7 @@ try:
     from pwn.binutils   import *
     from pwn.hashes     import *
     from pwn.listutil   import *
+    from pwn.iterextra  import *
     from pwn.genutil    import *
     from pwn.memoize    import memoize
     from pwn.process    import process
@@ -74,6 +75,7 @@ try:
     import pwn.sqli
     import pwn.rop
     import pwn.crypto
+    import pwn.spn
 except SyntaxError:
     print "If you're happy and you know it, syntax error!"
     print "Syntax error"
