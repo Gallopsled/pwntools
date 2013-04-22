@@ -50,6 +50,15 @@ class ROP:
             addr = sec['addr']
             yield (data, addr)
 
+
+    def _non_writable_sections(self):
+        for name, sec in self.elf.sections.items():
+            if 'W' in sec['flags']: continue
+            data = self.elf.section(name)
+            addr = sec['addr']
+            yield (data, addr)
+
+
     def _load32_popret(self):
         addesp = '\x83\xc4'
         popr = map(chr, [0x58, 0x59, 0x5a, 0x5b, 0x5d, 0x5e, 0x5f])
@@ -83,9 +92,9 @@ class ROP:
         ls = []
         ps = []
         for data, addr in self._exec_sections():
-            idxs = findall(data, popebp)
-            ls += map(lambda i: i + addr, idxs)
             idxs = findall(data, leave)
+            ls += map(lambda i: i + addr, idxs)
+            idxs = findall(data, popebp)
             ps += map(lambda i: i + addr, idxs)
         self._gadgets['leave'] = ls
         self._gadgets['popebp'] = ps
@@ -119,7 +128,7 @@ class ROP:
             return (pivot, size)
 
     def migrate(self, sp, bp = None):
-        self._chain.append('migrate', (sp, bp))
+        self._chain.append(('migrate', (sp, bp)))
         return self
 
     def set_frame(self, addr):
@@ -145,6 +154,11 @@ class ROP:
     def raw(self, *words):
         self._chain.append(('raw', words))
         return self
+
+    def search(self, byte):
+        for data, addr in self._non_writable_sections():
+            if addr and byte in data:
+                yield data.find(byte) + addr
 
     def generate(self):
         if self.elf.elfclass == 'ELF32':
@@ -179,7 +193,7 @@ class ROP:
             islast = i == len(chain) - 1
             issndlast = i == len(chain) - 2
             if type == 'raw':
-                out.append(pargs(link))
+                out += pargs(link)
             elif type == 'call':
                 target, pivot, args = link
                 out.append(p(target))
@@ -190,7 +204,7 @@ class ROP:
                     elif issndlast and chain[i + 1][0] == 'call' and \
                       len(chain[i + 1][1][2]) == 0:
                         # the last target has no arguments, so go straight to it
-                        out.append(p(chain[i + 1][0]))
+                        out.append(p(chain[i + 1][1][0]))
                         out += pargs(args)
                         break
                     else:
@@ -216,7 +230,7 @@ class ROP:
                 gp = gp[0]
                 gl = gl[0]
                 if ebp is None:
-                    out += [p(gp), p(esp) - 4, p(gl)]
+                    out += [p(gp), p(esp-4), p(gl)]
                 else:
                     out += [p(gp), p(esp), p(gl)]
                     self.raw(p(ebp))

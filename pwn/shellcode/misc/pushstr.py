@@ -69,7 +69,7 @@ def _pushstr_amd64(string):
 
         if n == 0:
             out.append('push 1 ; %s' % (repr(s)))
-            out.append('dec byte [esp]')
+            out.append('dec byte [rsp]')
         elif -128 <= sign < 128:
             out.append('push %s ; %s' % (_hex(n), repr(s)))
         else:

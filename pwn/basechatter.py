@@ -93,15 +93,17 @@ class basechatter:
         return res
 
     def sendafter(self, delim, *dat):
+        """ Wait for delim, then send *dat"""
         dat = pwn.flat(dat)
         res = self.recvuntil(delim)
         self.send(dat)
         return res
 
-    def sendwhen(self, *dat, **kwargs):
+    def sendthen(self, delim, *dat):
+        """ Send *dat, then wait for delim"""
         dat = pwn.flat(dat)
-        res = self.recvuntil(**kwargs)
         self.send(dat)
+        res = self.recvuntil(delim)
         return res
 
     def recvline(self, lines = 1):
@@ -110,12 +112,12 @@ class basechatter:
             res.append(self.recvuntil('\n'))
         return ''.join(res)
 
-    def interactive(self, prompt = text.boldred('$') + ' ', clean_sock = True,
+    def interactive(self, prompt = '\001' + text.boldred('$') + '\002 ', clean_sock = True,
                     flush_timeout = None):
         if clean_sock:
             self.clean_sock()
         log.info('Switching to interactive mode')
-        import rlcompleter
+        import readline
         debug = self.debug
         timeout = self.timeout
         self.debug = False
@@ -129,7 +131,7 @@ class basechatter:
             write('\x1b[u')
         def reprompt():
             write(prompt)
-            write(rlcompleter.readline.get_line_buffer())
+            write(readline.get_line_buffer())
             sys.stdout.flush()
 
         running = [True] # the old by-ref trick
@@ -158,7 +160,7 @@ class basechatter:
                     #    the readline buffer up
                     # 3. if the timeout is reached, screw it we'll fuck the
                     #    readline buffer up in exchange for some output
-                    if rlcompleter.readline.get_line_buffer() == '' or \
+                    if readline.get_line_buffer() == '' or \
                       not newline or \
                       (flush_timeout <> None and now - buft >= flush_timeout):
                         if newline:
