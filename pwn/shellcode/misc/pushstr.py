@@ -38,7 +38,7 @@ def _pushstr_i386(string):
 
     string = string.ljust(align(4, len(string)), extend)
 
-    for s in group(string, 4)[::-1]:
+    for s in group(4, string)[::-1]:
         n = u32(s)
         sign = n - (2 * (n & 2**31))
 
@@ -63,7 +63,7 @@ def _pushstr_amd64(string):
 
     string = string.ljust(align(8, len(string)), extend)
 
-    for s in group(string, 8)[::-1]:
+    for s in group(8, string)[::-1]:
         n = u64(s)
         sign = n - (2 * (n & 2**63))
 

@@ -23,7 +23,7 @@ def xor_additive_feedback(code, unclobber, bufreg, avoid):
             encoded = []
             keyblock = key
             okkey = True
-            for block in group(code, 4):
+            for block in group(4, code):
                 block = ''.join(block)
                 oblock = xor(block, keyblock)
                 keyblock = p32((u32(block) + u32(keyblock)) % (1 << 32))

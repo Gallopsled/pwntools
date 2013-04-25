@@ -259,7 +259,7 @@ class ROP:
     def chain(self, *args):
         if len(args) % 2 <> 0:
             args = args + ((),)
-        args = group(args, 2)
+        args = group(2, args)
         for f, a in args:
             self.call(f, a)
         return self
