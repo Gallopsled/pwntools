@@ -15,9 +15,9 @@ def fork(parent, child = None, os = None, arch = None):
 
 def _fork_amd64(parent, child):
     code = """
-    push byte SYS_fork
+    push byte SYS64_fork
     pop rax
-    int 0x80
+    syscall
     test rax, rax
     jne %s
 """ % parent
