@@ -53,7 +53,7 @@ try:
     from pwn.binutils   import *
     from pwn.hashes     import *
     from pwn.listutil   import *
-    from pwn.iterextra  import *
+    from pwn.iterutil   import *
     from pwn.genutil    import *
     from pwn.memoize    import memoize
     from pwn.process    import process
