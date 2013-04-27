@@ -1,4 +1,4 @@
-import struct, sys, subprocess, re, pwn
+import struct, sys, subprocess, re, pwn, time
 from pwn import log, text
 
 # align
@@ -75,3 +75,23 @@ def read(path):
 def write(path, data):
     with open(path, 'w') as f:
         f.write(data)
+
+def bash(cmd, timeout = None, return_stderr = False):
+    p = subprocess.Popen(['/bin/bash', '-c', cmd],
+                         stdin  = subprocess.PIPE,
+                         stdout = subprocess.PIPE,
+                         stderr = subprocess.PIPE)
+    if timeout is None:
+        o, e = p.communicate()
+    else:
+        t = time.time()
+        while time.time() - t < timeout:
+            time.sleep(0.01)
+            if p.poll() is not None:
+                break
+        if p.returncode is None:
+            p.kill()
+        o, e = p.communicate()
+    if return_stderr:
+        return o, e
+    return o
