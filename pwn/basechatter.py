@@ -112,7 +112,7 @@ class basechatter:
             res.append(self.recvuntil('\n'))
         return ''.join(res)
 
-    def interactive(self, prompt = '\001' + text.boldred('$') + '\002 ', clean_sock = True,
+    def interactive(self, prompt = text.boldred('$') + ' ', clean_sock = True,
                     flush_timeout = None):
         if clean_sock:
             self.clean_sock()
