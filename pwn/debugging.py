@@ -9,7 +9,10 @@ def attach_gdb_to_pid(pid, execute = None, execute_file = None):
         pwn.die(e.strerror + ': ' + e.filename)
     if pwn.proc_tracer(pid) is not None:
         pwn.die('Program (pid: %d) is already being debugged' % pid)
-    term = subprocess.check_output(['/usr/bin/which', 'x-terminal-emulator']).strip()
+    try:
+        term = subprocess.check_output(['/usr/bin/which', 'x-terminal-emulator']).strip()
+    except subprocess.CalledProcessError:
+        term = ''
     if term == '':
         term = os.getenv('COLORTERM') or os.getenv('TERM')
         if term is None:
