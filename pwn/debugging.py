@@ -9,10 +9,12 @@ def attach_gdb_to_pid(pid, execute = None, execute_file = None):
         pwn.die(e.strerror + ': ' + e.filename)
     if pwn.proc_tracer(pid) is not None:
         pwn.die('Program (pid: %d) is already being debugged' % pid)
-    term = os.getenv('COLORTERM') or os.getenv('TERM')
-    if term is None:
-        pwn.die('No environment variable named (COLOR)TERM')
-    term = subprocess.check_output(['/usr/bin/which', term]).strip()
+    term = subprocess.check_output(['/usr/bin/which', 'x-terminal-emulator']).strip()
+    if term == '':
+        term = os.getenv('COLORTERM') or os.getenv('TERM')
+        if term is None:
+            pwn.die('No environment variable named (COLOR)TERM')
+        term = subprocess.check_output(['/usr/bin/which', term]).strip()
     termpid = os.fork()
     if termpid == 0:
         argv = [term, '-e', 'gdb "%s" %d' % (prog, pid)]
