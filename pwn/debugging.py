@@ -48,4 +48,11 @@ def attach_gdb(prog, execute = None, execute_file = None):
         else:
             pid = max(pids, key = pwn.proc_starttime)
             pwn.log.info('Attaching to youngest child (PID: %d) of %d children' % (pid, len(pids)))
+    elif isinstance(prog, str):
+        pids = pid
+        if len(pids) == 0:
+            pwn.die('No such process')
+        pid = max(pid, key = pwn.proc_starttime)
+        if len(pids) > 1:
+            pwn.log.info('Attaching to youngest process (PID: %d) of %d' % (pid, len(pids)))
     attach_gdb_to_pid(pid, execute = execute, execute_file = execute_file)
