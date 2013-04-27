@@ -27,15 +27,7 @@ def pidof(prog):
         return proc_pid_by_name(prog)
 
 def all_pids():
-    pids = []
-    for pid in os.listdir('/proc'):
-        if not pid.isdigit():
-            continue
-        pid = int(pid)
-        if pid < 1000:
-            continue
-        pids.append(pid)
-    return pids
+    return [int(pid) for pid in os.listdir('/proc') if pid.isdigit()]
 
 def proc_status(pid):
     out = {}
