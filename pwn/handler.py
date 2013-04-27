@@ -36,7 +36,7 @@ class handler(basesock):
         self.listensock.settimeout(self.timeout)
         try:
             self.sock, self.target = self.listensock.accept()
-        except e:
+        except Exception as e:
             log.failed('Got exception: %s' % e)
             raise
         log.succeeded('Got connection from %s:%d' % self.target)
