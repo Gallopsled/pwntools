@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+import sys
+import pwn
+pwn.context('i386')
+
+def _usage ():
+    print 'Usage: %s (<filename>|-)' % sys.argv[0]
+    print '       [--printable] [(-a|--avoid) <str>] [(-o|--only) str] [(-u|--unclobber) regs]'
+    # print '       [(-g|--getpc) <file>] [(-m|--method) ...]'
+    # print '       [(-m|--method) ...]'
+    exit(0)
+
+regnames = ['eax', 'al', 'ax', 'es', 'ecx', 'cl', 'cx', 'cs', 'edx', 'dl', 'dx',
+            'ss', 'ebx', 'bl', 'bx', 'ds', 'esp', 'ah', 'sp', 'fs', 'ebp', 'ch',
+            'bp', 'gs', 'esi', 'dh', 'si', 'edi', 'bh', 'di', 'stack']
+
+if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        _usage()
+    i = 1
+    avoid = ''
+    only = ''.join(chr(x) for x in range(256))
+    infd = None
+    unclobber = []
+    length = None
+    while i < len(sys.argv):
+        arg = sys.argv[i]
+        if arg in ['-a', '--avoid']:
+            try:
+                avoid = sys.argv[i + 1]
+            except:
+                print 'no bytes to avoid given'
+                _usage()
+            i += 2
+            continue
+        if arg in ['-o', '--only']:
+            try:
+                only = sys.argv[i + 1]
+            except:
+                print 'no bytes to only use given'
+                _usage()
+            i += 2
+            continue
+        if arg in ['-u', '--unclobber']:
+            i += 1
+            while i < len(sys.argv):
+                reg = sys.argv[i].lower()
+                if reg in regnames:
+                    unclobber.append(reg)
+                    i += 1
+                else:
+                    break
+            if unclobber == [] and i == len(sys.argv):
+                print 'no unclobberable registers given'
+                _usage()
+            continue
+        if arg in ['-p', '--printable']:
+            avoid += ''.join(map(chr, range(0, 0x20) + range(0x7f, 0x100)))
+            i += 1
+            continue
+        try:
+            if infd <> None:
+                print 'what do you mean by "%s"?' % arg
+                _usage()
+            elif arg <> '-':
+                infd = open(arg)
+            else:
+                infd = sys.stdin
+        except IOError:
+            print 'could not open "%s" for reading' % arg
+            _usage()
+        i += 1
+
+    avoid = avoid.decode('string_escape')
+    only = only.decode('string_escape')
+
+    try:
+        shellcode = infd.read()
+        infd.close()
+        encoded = pwn.asm(pwn.shellcode.scramble(shellcode, avoid = avoid, only = only, unclobber = unclobber))
+        sys.stdout.write(encoded)
+    except Exception, e:
+        print e

@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+import pwn, sys, argparse, string
+from pwn import de_bruijn, de_bruijn_find
+
+if __name__ == "__main__":
+    p = argparse.ArgumentParser(description="Cyclic pattern creator/finder")
+    p.add_argument('-a', '--alphabet',
+                   metavar = '<alphabet>',
+                   default = string.ascii_lowercase,
+                   help = 'The alphabet to use in the cyclic pattern',
+                   )
+    p.add_argument('-l', '--large-alphabet',
+                   action = 'store_true',
+                   help = 'Use a large alphabet (digits, letters, punctuation)',
+                   )
+    p.add_argument('-o', '--offset',
+                   action = 'store_true',
+                   help = 'Find offset of substring in cyclic pattern (given as hex (0x...), integer or string)',
+                   )
+    p.add_argument('patsize',
+                   metavar = '<pattern|size>',
+                   help = 'Depending on the -o flag, 1) the desired size of the created pattern, or 2) the subpattern to find the offset of',
+                   )
+
+    args = p.parse_args()
+
+    if args.large_alphabet:
+        alph = string.digits + string.ascii_letters + string.punctuation
+    else:
+        alph = args.alphabet
+
+    if args.offset:
+        pat = args.patsize
+        if pat.startswith('0x'):
+            pat = pwn.p32(int(pat[2:], 16) & 0xffffffff)
+        elif pat.isdigit():
+            pat = pwn.p32(int(pat, 10) & 0xffffffff)
+        else:
+            pat = pat[:4]
+        if len(pat) < 4:
+            pwn.die('Subpattern must be 4 bytes')
+        offset = de_bruijn_find(pat, alph)
+        if offset == -1:
+            pwn.log.fail('Given pattern does not exist in cyclic pattern')
+        else:
+            print offset
+    else:
+        print de_bruijn(int(args.patsize))

@@ -1,0 +1,13 @@
+_shellcraft()
+{
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local codez=$(shellcraft -l)
+    if [ $COMP_CWORD -eq 1 ]; then
+        COMPREPLY=($(compgen -W "${codez}" $cur))
+    else
+        COMPREPLY=($(compgen -W "$(ls)" "$cur" ))
+    fi
+}
+
+#Assign the auto-completion function _get for our command get.
+complete -F _shellcraft shellcraft

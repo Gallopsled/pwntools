@@ -1,0 +1,5 @@
+== INSTALL
+  Place `shellcraft` in your PATH.
+
+== BASH COMPLETION
+  Copy `bash_completion.d/shellcraft` to `/etc/bash_completion.d/`.

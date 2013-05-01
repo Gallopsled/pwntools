@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+import sys
+from pwn.useragents import randomua
+
+
+if __name__ == "__main__":
+   if len(sys.argv) == 2:
+      if sys.argv[1] in ['-h', '--help']:
+         print 'No help, live with it'
+         exit(1)
+      else:
+         print randomua(sys.argv[1])
+   else:
+      print randomua()

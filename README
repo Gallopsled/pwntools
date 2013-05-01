@@ -1,0 +1,4 @@
+ 1. Add the `lib' directory to your PYTHONPATH and possible the `bin' directory to your PATH
+ 2. Whine on #pwnies on freenode.net when stuff doesn't work
+
+ Alternatively: try to run install.sh

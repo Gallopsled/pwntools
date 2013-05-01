@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+import pwn, sys, hashlib
+import pwn.log as log
+
+if len(sys.argv) > 2:
+    pwn.trace('Usage: ' + sys.argv[0] + ' [filename]\n')
+    pwn.die()
+
+PIPED = len(sys.argv) == 1
+BLOCK = 4096
+
+try:
+    h = pwn.handler(port = 1337, timeout = None)
+except Exception as e:
+    pwn.die('Unable to bind to port 1337', e)
+
+try:
+    f = open(sys.argv[1], 'w') if not PIPED else sys.stdout
+except Exception as e:
+    pwn.die('Unable to open file ' + sys.argv[1], e)
+
+try:
+    h.wait_for_connection()
+except Exception as e:
+    pwn.die('Error while waiting for connection', e)
+
+numb = h.recv(8)
+if len(numb) < 8:
+    log.failure('Could not recieve size')
+    pwn.die()
+numb = pwn.u64(numb)
+
+m = hashlib.md5()
+log.waitfor('Recieving data')
+i = 0
+while not f.closed and i < numb:
+    d = h.recv(min(BLOCK, numb - i))
+    if not d:
+        break
+    i += len(d)
+    log.status('%s/%s (%d%%)' % (pwn.size(i), pwn.size(numb), 100 * i / numb))
+    m.update(d)
+    if f.isatty():
+        # we might have a spinner running, so clear line first
+        f.write('\x1b[0G\x1b[2K' + d)
+    else:
+        f.write(d)
+
+f.flush() # Make sure that stdout is flushed before writing to stderr
+
+if i < numb:
+    log.failed('Only recieved %s of %s' % (pwn.size(i), pwn.size(numb)))
+else:
+    log.succeeded()
+
+digest = m.digest()
+h.send(digest)
+
+pwn.log.info('The MD5 hex-digest was: ' + pwn.enhex(digest))
