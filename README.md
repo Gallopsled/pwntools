@@ -2,7 +2,6 @@ This is the CTF framework used by pwnies in every CTF.
 
 Most code is inside the pwn folder, which is typically used as:
 
-    :::python
     from pwn import *
     context('i386', 'linux')
 
