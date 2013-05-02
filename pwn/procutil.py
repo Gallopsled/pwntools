@@ -1,28 +1,41 @@
-import pwn, subprocess, os, time
+import pwn, subprocess, os, time, socket, re
 
 def pidof(prog):
+    '''Get PID, depending on type:
+    string  : pids of all processes matching name
+    process : singleton list of process\'s pid
+    remote  : list of remote and local pid (remote pid first, None if remote process
+              is not running locally)'''
     if   isinstance(prog, pwn.remote):
-        host, port = prog.sock.getpeername()
-        local = ['127.0.0.1', '0.0.0.0', '::']
-        netstat = subprocess.check_output(['netstat', '-nlptw'],
-                                          stderr=subprocess.PIPE)
-        for line in netstat.split('\n'):
-            if not line.startswith('tcp'):
-                continue
-            fields = line.split()
-            lhost, lport = fields[3].rsplit(':', 1)
-            lport = int(lport)
-            try:
-                pid, name = fields[-1].split('/', 1)
-            except:
-                continue
-            if lport <> port:
-                continue
-            if lhost == host or (lhost in local and host in local):
-                return int(pid)
-        pwn.die('Could not find remote process (%s:%d) on this machine' % (host, port))
+        def toaddr((host, port)):
+            return '%08X:%04X' % (pwn.u32(socket.inet_aton(host)), port)
+        def getpid(loc, rem):
+            loc = toaddr(loc)
+            rem = toaddr(rem)
+            inode = 0
+            with open('/proc/net/tcp') as fd:
+                for line in fd:
+                    line = line.split()
+                    if line[1] == loc and line[2] == rem:
+                        inode = line[9]
+            if inode == 0:
+                return []
+            for pid in all_pids():
+                try:
+                    for fd in os.listdir('/proc/%d/fd' % pid):
+                        fd = os.readlink('/proc/%d/fd/%s' % (pid, fd))
+                        m = re.match('socket:\[(\d+)\]', fd)
+                        if m:
+                            this_inode = m.group(1)
+                            if this_inode == inode:
+                                return pid
+                except:
+                    pass
+        sock = prog.sock.getsockname()
+        peer = prog.sock.getpeername()
+        return [getpid(peer, sock), getpid(sock, peer)]
     elif isinstance(prog, pwn.process):
-        return prog.proc.pid
+        return [prog.proc.pid]
     else:
         return proc_pid_by_name(prog)
 

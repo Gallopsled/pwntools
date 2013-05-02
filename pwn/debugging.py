@@ -36,23 +36,15 @@ def attach_gdb_to_pid(pid, execute = None, execute_file = None):
         pwn.wait_for_debugger(pid)
 
 def attach_gdb(prog, execute = None, execute_file = None):
-    pid = pwn.pidof(prog)
+    pids = pwn.pidof(prog)
     if isinstance(prog, pwn.remote):
-        pwn.log.info('Looking up children of server (PID: %d)' % pid)
-        pids = pwn.proc_children(pid)
-        if len(pids) == 0:
-            pwn.log.warning('No child processes -- attaching to the server')
-        elif len(pids) == 1:
-            pid = pids[0]
-            pwn.log.info('Attaching to child (PID: %d)' % pid)
-        else:
-            pid = max(pids, key = pwn.proc_starttime)
-            pwn.log.info('Attaching to youngest child (PID: %d) of %d children' % (pid, len(pids)))
+        pid = pids[0]
+        if pid is None:
+            pwn.die('Could not find remote process (%s:%d) on this machine' % prog.sock.getpeername())
     elif isinstance(prog, str):
-        pids = pid
-        if len(pids) == 0:
+        if pids == []:
             pwn.die('No such process')
-        pid = max(pid, key = pwn.proc_starttime)
+        pid = max(pids, key = pwn.proc_starttime)
         if len(pids) > 1:
             pwn.log.info('Attaching to youngest process (PID: %d) of %d' % (pid, len(pids)))
     attach_gdb_to_pid(pid, execute = execute, execute_file = execute_file)
