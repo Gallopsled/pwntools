@@ -1,2 +1,3 @@
 gadgets: Main.hs
-	ghc -O2 Main.hs -o gadgets
+	mkdir -p bin
+	ghc -O2 Main.hs -o bin/gadgets
