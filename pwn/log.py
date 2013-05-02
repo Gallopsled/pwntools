@@ -26,6 +26,7 @@ if sys.stderr.isatty() and not pwn.DEBUG:
             threading.Thread.__init__(self)
             self.running = True
             self.i = 0
+            self.numlines = 0
             self.spinner = random.choice([
                     ['|', '/', '-', '\\'],
                     ['q', 'p', 'b', 'd'],
@@ -40,24 +41,52 @@ if sys.stderr.isatty() and not pwn.DEBUG:
                     ['<', '<', '∧', '∧', '>', '>', 'v', 'v']
             ])
 
-        def update(self):
-            s = '\x1b[s ' + text.boldblue('[' + self.spinner[self.i] + ']') + ' ' + _message
-            if _status and _message:
-                s += ': ' + _status
-            elif status:
-                s += _status
-            _trace(s + '\x1b[u')
+        def format(self, marker, status):
+            s = '\x1b[J ' + marker + ' ' + _message
+            if status and _message:
+                s += ': '
+            lines = status.split('\n')
+            lines += [''] * (self.numlines - len(lines) - 1)
+            if len(lines) > 1:
+                pref = '\n       '
+                s += pref
+                s += pref.join(lines)
+                self.numlines = len(lines) + 1
+            else:
+                s += status
+            return s
+
+        def update(self, only_spin = False):
+            _lock.acquire()
+            marker = text.boldblue('[' + self.spinner[self.i] + ']')
+            if only_spin:
+                _trace('\x1b[s ' + marker + '\x1b[u')
+            else:
+                s = self.format(marker, _status)
+                if self.numlines <= 1:
+                    s += '\x1b[G'
+                else:
+                    s += '\x1b[%dF' % (self.numlines - 1)
+                _trace(s)
+            _lock.release()
+
+        def finish(self, marker, status):
+            if not status:
+                _trace(' ' + marker + '\x1b[%dE\n' % self.numlines)
+            elif '\n' not in status:
+                _trace('\x1b[K ' + marker + ' ' + _message + ': ' + status + \
+                       '\x1b[%dE\n' % self.numlines)
+            else:
+                _trace(self.format(marker, status) + '\n')
+            _trace('\x1b[?25h')
 
         def run(self):
-
+            global _marker
             _trace('\x1b[?25l') # hide curser
             while True:
-                _lock.acquire()
                 if self.running:
-                    self.update()
-                    _lock.release()
+                    self.update(True)
                 else:
-                    _lock.release()
                     break
                 self.i = (self.i + 1) % len(self.spinner)
                 time.sleep(0.1)
@@ -65,28 +94,17 @@ if sys.stderr.isatty() and not pwn.DEBUG:
     def _stop_spinner(marker = text.boldblue('[*]'), status = ''):
         global _spinner, _status
 
-        if _spinner is not None:
-            _lock.acquire()
+        if _spinner is None:
+            return
 
-            _spinner.running = False
-            s = '\x1b[0K ' + marker + ' ' + _message
-            if status == None:
-                status = _status
-            _status = ''
-            if status and _message:
-                s += ': ' + status
-            elif status:
-                s += status
-            _trace(s + '\n\x1b[?25h') # show cursor
-
-            _lock.release()
+        _spinner.running = False
+        _spinner.join()
+        _spinner.finish(marker, status)
         _spinner = None
 
     def _hook(*args):
         global _spinner
-        if _spinner is not None:
-            _spinner.running = False
-            _spinner = None
+        _stop_spinner('')
         _trace(' ' + text.boldyellow('[!]') + ' Anything is possible when your exploit smells like x86 and not a lady\n')
         _trace(' ' + text.boldyellow('[!]') + ' I\'m on a pwnie!\n\x1b[?25h\x1b[0m')
 
@@ -94,8 +112,7 @@ if sys.stderr.isatty() and not pwn.DEBUG:
 
     def _start_spinner():
         global _spinner
-        if _spinner is not None:
-            _stop_spinner()
+        _stop_spinner()
         _spinner = _Spinner()
         _spinner.update()
         _spinner.daemon = True
@@ -121,10 +138,9 @@ if sys.stderr.isatty() and not pwn.DEBUG:
         if _spinner is None:
             raise Exception('waitfor has not been called')
         _lock.acquire()
-        _trace('\x1b[%dG\x1b[0K\x1b[0G' % (len(_message) + len(_status) + 8))
         _status = s
-        _spinner.update()
         _lock.release()
+        _spinner.update()
 
     def succeeded(s = 'Done'):
         _stop_spinner(text.boldgreen('[+]'), s)
