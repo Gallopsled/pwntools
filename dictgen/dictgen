@@ -1,0 +1,94 @@
+#!/usr/bin/env python
+import sys, os, warnings
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+
+DEFAULT_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+DEFAULT_ALPHABET_SHORT = 'a-zA-Z0-9'
+DEFAULT_SYMBOLS = '-/?!'
+
+if __name__ == "__main__":
+    try:
+        p = ArgumentParser(description='Generate dictionary',
+                           formatter_class=ArgumentDefaultsHelpFormatter)
+        p.add_argument('-o', '--output',
+                       default='STD_OUT',
+                       metavar='<file>',
+                       help='Output')
+        p.add_argument('input',
+                       default='STD_IN',
+                       nargs='*',
+                       metavar='<file>',
+                       help='Input(s)')
+        p.add_argument('-a', '--alphabet',
+                       default=DEFAULT_ALPHABET_SHORT,
+                       metavar='<string>',
+                       help='Alphabet')
+        p.add_argument('-s', '--symbols',
+                       default=DEFAULT_SYMBOLS,
+                       metavar='<string>',
+                       help='Symbols.  Will be treated as alphabet *and* non-alphabet characters, i.e. "twenty-three" results in the dictionary "twenty, three, twenty-three"')
+        args = p.parse_args()
+        if args.alphabet == DEFAULT_ALPHABET_SHORT:
+            alph = DEFAULT_ALPHABET
+        else:
+            alph = args.alphabet
+        symb = args.symbols
+        out = args.output
+        if args.input == 'STD_IN':
+            args.input = ['/dev/stdin']
+        d = set()
+        w = []
+        start = True
+        def add ():
+            global d, w
+            for word in w:
+                d.add(''.join(word))
+        for f in args.input:
+            try:
+                src = open(f)
+            except IOError as (_, e):
+                print 'Could not open "%s": %s' % (out, e)
+                dst.close()
+                exit(0)
+            while True:
+                c = src.read(1)
+                if c == '':
+                    src.close()
+                    break
+                if c in alph:
+                    for word in w:
+                        word.append(c)
+                    if start:
+                        w.append([c])
+                    start = False
+                else:
+                    add()
+                    if c in symb:
+                        for word in w:
+                            word.append(c)
+                    else:
+                        w = []
+                    start = True
+            add()
+            w = []
+
+        if out == 'STD_OUT':
+            dst = sys.stdout
+        else:
+            try:
+                dst = open(out, 'w')
+            except IOError as (_, e):
+                print 'Could not open "%s": %s' % (out, e)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    try:
+                        fn = os.tmpnam()
+                        dst = open(fn, 'w')
+                        print '(Writing output to "%s" instead.)' % fn
+                    except:
+                        exit(0)
+        for word in d:
+            dst.write(word)
+            dst.write('\n')
+    except KeyboardInterrupt:
+        print ''
