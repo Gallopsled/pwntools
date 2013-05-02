@@ -24,7 +24,12 @@ We also have the following tools, not dependent on the pwnlib:
 
 * `asm`/`disasm`: Small wrapper for nasm
 * binutils directory: Assemblers and disassemblers for various architectures
+* `bytes`: Extract the raw bytes from various textual representations
+* `crop`: Cut out rectangular portions of text
 * `demo32`/`demo64`: Tool for testing shellcode
+* `dictgen`: Generate dictionaries from input corpora
+* `gadgets`: Find ROP gadgets
+* `mags`: Run `file` at all offsets
 
 All of these tools are symlinked to the bin folder.
 
