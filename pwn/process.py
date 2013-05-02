@@ -7,10 +7,11 @@ import time
 
 class process(basechatter):
     def __init__(self, cmd, *args, **kwargs):
-        timeout = kwargs.get('timeout', 'default')
         env = kwargs.get('env', {})
-
+        timeout = kwargs.get('timeout', 'default')
+        silent = kwargs.get('silent', False)
         basechatter.__init__(self, timeout)
+        self.silent = silent
         self.proc = None
         self.stdout = None
 
@@ -20,7 +21,8 @@ class process(basechatter):
         if self.connected():
             log.warning('Program "%s" already started' % cmd)
             return
-        log.waitfor('Starting program "%s"' % cmd)
+        if not self.silent:
+            log.waitfor('Starting program "%s"' % cmd)
 
         self.proc = Popen(
                 tuple(cmd.split()) + args,
@@ -31,7 +33,8 @@ class process(basechatter):
         fl = fcntl.fcntl(fd, fcntl.F_GETFL)
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
         self.stdout = fd
-        log.succeeded()
+        if not self.silent:
+            log.succeeded()
 
     def connected(self):
         return self.proc != None

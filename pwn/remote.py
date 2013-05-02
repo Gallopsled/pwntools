@@ -3,7 +3,10 @@ from pwn import log
 from basesock import basesock
 
 class remote(basesock):
-    def __init__(self, host, port = 1337, fam = None, typ = socket.SOCK_STREAM, proto = 0, timeout = 'default'):
+    def __init__(self, host, port = 1337,
+                 fam = None, typ = socket.SOCK_STREAM,
+                 proto = 0, timeout = 'default',
+                 silent = False):
         basesock.__init__(self, timeout)
         port = int(port)
         self.target = (host, port)
@@ -17,16 +20,19 @@ class remote(basesock):
         self.sock = None
         self.lhost = None
         self.lport = None
+        self.silent = silent
         self.connect()
 
     def connect(self):
         if self.connected():
             log.warning('Already connected to %s on port %d' % self.target)
             return
-        log.waitfor('Opening connection to %s on port %d' % self.target)
+        if not self.silent:
+            log.waitfor('Opening connection to %s on port %d' % self.target)
         self.sock = socket.socket(self.family, self.type, self.proto)
         self.sock.settimeout(self.timeout)
         self.sock.connect(self.target)
         self.lhost = self.sock.getsockname()[0]
         self.lport = self.sock.getsockname()[1]
-        log.succeeded()
+        if not self.silent:
+            log.succeeded()
