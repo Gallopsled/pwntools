@@ -89,13 +89,16 @@ fun main (radix, unsigned, plain, groupsize, endian, bendian, src, dst) =
             do whitespace
              ; ds <- many $ Lex.lexeme hex
              ; eof
-             ; return (
-               if List.all (List.all (fn d => d = 0 orelse d = 1)) ds
-               then go 8 2 ds
-               else go 2 16 ds
-               )
+             ; if length ds <> 1 then
+                   fail
+               else
+                   return (
+                   if List.all (fn d => d = 0 orelse d = 1) $ hd ds
+                   then go 8 2 ds
+                   else go 2 16 ds
+                   )
             end
-          | _ => impossible "main.goPlain"
+          | _ => fail
         end
 
       fun goAuto () =
