@@ -1,0 +1,10 @@
+local
+$(SML_LIB)/basis/basis.mlb
+../mylib/MyLib.mlb
+in
+Log.sig
+Log.sml
+
+%pre main.sml
+%pre go.sml
+end
