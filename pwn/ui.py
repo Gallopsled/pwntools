@@ -33,7 +33,11 @@ if sys.stdin.isatty() and sys.stdout.isatty():
         pos = 0 if default is None else len(str(default))
         max_pos = pos
         offset = len(prompt) + 6
+
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
         try:
+            tty.setraw(sys.stdin.fileno())
             while True:
                 width, _ = get_term_size()
                 s = '\x1b[G\x1b[K [?] %s' % prompt
@@ -44,82 +48,77 @@ if sys.stdin.isatty() and sys.stdout.isatty():
                     s = linefmt % (i + 1, opt)
                     if i + 1 == choice:
                         s = text.cyanbg(s.ljust(width))
-                    sys.stdout.write('\n\x1b[K' + s)
+                    sys.stdout.write('\r\n\x1b[K' + s)
                 sys.stdout.write('\x1b[%dF\x1b[%dC' % (len(opts), offset + pos))
 
-                fd = sys.stdin.fileno()
-                old_settings = termios.tcgetattr(fd)
-                try:
-                    tty.setraw(sys.stdin.fileno())
+                ch = pwn.u8(sys.stdin.read(1))
+                if   ch == 3: # ^C
+                    raise KeyboardInterrupt
+                elif ch == 4: # ^D
+                    raise EOFError
+                elif ch == 127: # Backspace
+                    if pos > 0:
+                        s = str(choice)
+                        s = s[:pos-1] + s[pos:]
+                        if s:
+                            choice = int(s)
+                            pos -= 1
+                            max_pos -= 1
+                        else:
+                            choice = None
+                            pos = 0
+                            max_pos = 0
+                elif ch in range(48, 58): # 0 - 9
+                    n = ch - 48
+                    s = str(choice or '')
+                    n = int(s[:pos] + str(n) + s[pos:])
+                    if n >= 1 and n <= len(opts):
+                        choice = n
+                        pos += 1
+                        max_pos += 1
+                elif ch == 13: # Enter
+                    break
+                elif ch == 27:
                     ch = pwn.u8(sys.stdin.read(1))
-                    if   ch == 3: # ^C
-                        raise KeyboardInterrupt
-                    elif ch == 4: # ^D
-                        raise EOFError
-                    elif ch == 127: # Backspace
-                        if pos > 0:
+                    if ch <> 91: continue
+                    ch = pwn.u8(sys.stdin.read(1))
+                    if   ch == 68: # Left
+                        pos = max(pos - 1, 0)
+                    elif ch == 67: # Right
+                        pos = min(pos + 1, max_pos)
+                    elif ch == 65: # Up
+                        if choice is None:
+                            choice = 1
+                            pos = 1
+                            max_pos = pos
+                        if choice > 1:
+                            choice -= 1
+                            pos = len(str(choice))
+                            max_pos = pos
+                    elif ch == 66: # Down
+                        if choice is None:
+                            choice = len(opts)
+                            pos = len(str(choice))
+                            max_pos = pos
+                        if choice < len(opts):
+                            choice += 1
+                            pos = len(str(choice))
+                            max_pos = pos
+                    elif ch == 51: # Delete
+                        ch = pwn.u8(sys.stdin.read(1))
+                        if ch <> 126: continue
+                        if pos < max_pos:
                             s = str(choice)
-                            s = s[:pos-1] + s[pos:]
+                            s = s[:pos] + s[pos+1:]
                             if s:
                                 choice = int(s)
-                                pos -= 1
                                 max_pos -= 1
                             else:
                                 choice = None
                                 pos = 0
                                 max_pos = 0
-                    elif ch in range(48, 58): # 0 - 9
-                        n = ch - 48
-                        s = str(choice or '')
-                        n = int(s[:pos] + str(n) + s[pos:])
-                        if n >= 1 and n <= len(opts):
-                            choice = n
-                            pos += 1
-                            max_pos += 1
-                    elif ch == 13: # Enter
-                        break
-                    elif ch == 27:
-                        ch = pwn.u8(sys.stdin.read(1))
-                        if ch <> 91: continue
-                        ch = pwn.u8(sys.stdin.read(1))
-                        if   ch == 68: # Left
-                            pos = max(pos - 1, 0)
-                        elif ch == 67: # Right
-                            pos = min(pos + 1, max_pos)
-                        elif ch == 65: # Up
-                            if choice is None:
-                                choice = 1
-                                pos = 1
-                                max_pos = pos
-                            if choice > 1:
-                                choice -= 1
-                                pos = len(str(choice))
-                                max_pos = pos
-                        elif ch == 66: # Down
-                            if choice is None:
-                                choice = len(opts)
-                                pos = len(str(choice))
-                                max_pos = pos
-                            if choice < len(opts):
-                                choice += 1
-                                pos = len(str(choice))
-                                max_pos = pos
-                        elif ch == 51: # Delete
-                            ch = pwn.u8(sys.stdin.read(1))
-                            if ch <> 126: continue
-                            if pos < max_pos:
-                                s = str(choice)
-                                s = s[:pos] + s[pos+1:]
-                                if s:
-                                    choice = int(s)
-                                    max_pos -= 1
-                                else:
-                                    choice = None
-                                    pos = 0
-                                    max_pos = 0
-                finally:
-                    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
             sys.stdout.write('\x1b[%dB\n' % len(opts))
         return choice
 
