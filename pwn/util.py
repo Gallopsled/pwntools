@@ -1,5 +1,4 @@
 import struct, sys, subprocess, re, pwn, time
-from pwn import log, text
 
 # align
 def align_up(alignment, x):
@@ -28,22 +27,6 @@ def get_interfaces():
     return [i for i in ifs if i[0] != 'lo']
 
 # Stuff
-def pause(n = None):
-    """Waits for either user input or a specific number of seconds."""
-    try:
-        if n is None:
-            log.info('Paused (press enter to continue)')
-            raw_input('')
-        else:
-            log.waitfor('Continueing in')
-            for i in range(n, 0, -1):
-                log.status('%d... ' % i)
-                pwn.sleep(1)
-            log.succeeded('Now')
-    except KeyboardInterrupt:
-        log.warning('Interrupted')
-        sys.exit(1)
-
 def size(n, abbriv = 'B', si = False):
     """Convert number to human readable form"""
     base = 1000.0 if si else 1024.0
@@ -61,12 +44,6 @@ def size(n, abbriv = 'B', si = False):
             return '%s%s%s' % (num, suffix, abbriv)
 
     return '%.2fP%s' % (n, abbriv)
-
-def prompt(s, default = ''):
-    """Prompts the user for input"""
-    r = raw_input(' ' + text.bold('[?]') + ' ' + s)
-    if r: return r
-    return default
 
 def read(path):
     with open(path) as f:
