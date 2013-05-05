@@ -48,6 +48,8 @@ if sys.stderr.isatty() and not pwn.DEBUG:
             lines = status.split('\n')
             lines += [''] * (self.numlines - len(lines) - 1)
             if len(lines) > 1:
+                if lines[0] == '':
+                    lines = lines[1:]
                 pref = '\n       '
                 s += pref
                 s += pref.join(lines)
@@ -142,6 +144,15 @@ if sys.stderr.isatty() and not pwn.DEBUG:
         _lock.release()
         _spinner.update()
 
+    def status_append(s):
+        global _status
+        if _spinner is None:
+            raise Exception('waitfor has not been called')
+        _lock.acquire()
+        _status += s
+        _lock.release()
+        _spinner.update()
+
     def succeeded(s = 'Done'):
         _stop_spinner(text.boldgreen('[+]'), s)
 
@@ -163,6 +174,9 @@ else:
         trace(''.join([' ', text.boldblue('[*]'), ' ', s, '...\n']))
 
     def status(s):
+        pass
+
+    def status_append(s):
         pass
 
     def succeeded(s = 'Done'):

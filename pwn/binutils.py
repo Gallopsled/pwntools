@@ -176,17 +176,15 @@ Example:
     else:
         return "".join(flat(o, func=func) for o in obj)
 
-def dehex(s):
-    """Hex-decodes a string"""
-    return s.decode('hex')
-
 def unhex(s):
     """Hex-decodes a string"""
     return s.decode('hex')
 
-def enhex(s):
-    """Hex-encodes a string"""
-    return s.encode('hex')
+def enhex(x):
+    """Hex-encodes a string or integer"""
+    if isinstance(x, int):
+        x = pint(x)
+    return x.encode('hex')
 
 def urlencode(s):
     """urlencodes a string"""
