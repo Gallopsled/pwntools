@@ -40,7 +40,7 @@ if sys.stdin.isatty() and sys.stdout.isatty():
             tty.setraw(sys.stdin.fileno())
             while True:
                 width, _ = get_term_size()
-                s = '\x1b[G\x1b[K [?] %s' % prompt
+                s = '\x1b[G\x1b[K ' + text.bold('[?]') + ' %s' % prompt
                 if choice:
                     s += ' %d' % choice
                 sys.stdout.write(s)
