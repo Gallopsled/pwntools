@@ -22,10 +22,11 @@ tmpname = tmp.name
 tmp.write('[BITS %d]\n' % args.bits)
 
 if len(args.lines) > 0:
-    tmp.write('\n'.join(args.lines))
+    data = '\n'.join(args.lines)
 else:
-    tmp.write(sys.stdin.read())
+    data = sys.stdin.read()
 
+tmp.write(data.replace(';', '\n'))
 tmp.flush()
 
 try:
