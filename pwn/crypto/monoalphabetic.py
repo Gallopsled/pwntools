@@ -180,7 +180,7 @@ def _atbash_dict(alphabet=string.uppercase):
         a dictionary ready for use with the encrypt_substitution method.
     """
     n = len(alphabet)
-    return affine_dict((n - 1, n - 1), alphabet)
+    return _affine_dict((n - 1, n - 1), alphabet)
 
 def encrypt_atbash(plaintext, alphabet=string.uppercase):
     """
@@ -232,7 +232,7 @@ def _shift_dict(shift=3, alphabet=string.uppercase):
     Returns:
         a dictionary ready for use with the encrypt_substitution method.
     """
-    return affine_dict((1,shift), alphabet)
+    return _affine_dict((1,shift), alphabet)
 
 def encrypt_shift(plaintext, key, alphabet=string.uppercase):
     """
@@ -256,7 +256,7 @@ def decrypt_shift(ciphertext, key, alphabet=string.uppercase):
         alphabet: the alphabet of symbols that the cipher is defined over.
                   symbols not in the alphabet will be ignored.
     """
-    return decrypt_substitution(plaintext, _shift_dict(key, alphabet))
+    return decrypt_substitution(ciphertext, _shift_dict(key, alphabet))
 
 def crack_shift(ciphertext, alphabet=string.uppercase, frequencies=freq.english):
     """

@@ -150,7 +150,7 @@ def encrypt(plaintext, key, cipher, alphabet=string.uppercase):
     ciphers = []
     for i in range(len(strands)):
         shift = alphabet.index(key[i])
-        ciphers.append( mono.encrypt_substitution(strands[i], mono.shift_dict(shift, alphabet)) )
+        ciphers.append( mono.encrypt_substitution(strands[i], mono._shift_dict(shift, alphabet)) )
     return interleave(ciphers, len(plaintext))
 
 def decrypt(ciphertext, key, cipher, alphabet=string.uppercase):
@@ -159,7 +159,7 @@ def decrypt(ciphertext, key, cipher, alphabet=string.uppercase):
     ciphers = []
     for i in range(len(strands)):
         shift = alphabet.index(key[i])
-        ciphers.append( mono.decrypt_substitution(strands[i], mono.shift_dict(shift, alphabet)) )
+        ciphers.append( mono.decrypt_substitution(strands[i], mono._shift_dict(shift, alphabet)) )
     return interleave(ciphers, len(ciphertext))
 
 ###################
