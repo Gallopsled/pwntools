@@ -1,4 +1,4 @@
-import pwn, os, subprocess, tempfile, time
+import pwn, os, tempfile, time
 
 def attach_gdb_to_pid(pid, execute = None, execute_file = None):
     if execute is not None and execute_file is not None:
@@ -9,15 +9,12 @@ def attach_gdb_to_pid(pid, execute = None, execute_file = None):
         pwn.die(e.strerror + ': ' + e.filename)
     if pwn.proc_tracer(pid) is not None:
         pwn.die('Program (pid: %d) is already being debugged' % pid)
-    try:
-        term = subprocess.check_output(['/usr/bin/which', 'x-terminal-emulator']).strip()
-    except subprocess.CalledProcessError:
-        term = ''
-    if term == '':
+    term = pwn.which('x-terminal-emulator')
+    if term is None:
         term = os.getenv('COLORTERM') or os.getenv('TERM')
         if term is None:
             pwn.die('No environment variable named (COLOR)TERM')
-        term = subprocess.check_output(['/usr/bin/which', term]).strip()
+        term = pwn.which(term)
     termpid = os.fork()
     if termpid == 0:
         argv = [term, '-e', 'gdb "%s" %d' % (prog, pid)]
