@@ -171,3 +171,10 @@ def lexicographic(alphabet):
     for n in count():
         for e in product(alphabet, repeat = n):
             yield e
+
+def chained(f):
+    def wrapper(*args, **kwargs):
+        for xs in f(*args, **kwargs):
+            for x in xs:
+                yield x
+    return wrapper
