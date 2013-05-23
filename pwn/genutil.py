@@ -1,76 +1,85 @@
-import string, pwn
+import string, pwn, math
 
-# Taken from http://en.wikipedia.org/wiki/De_Bruijn_sequence but changed to a generator
-def de_bruijn_generator(alphabet = string.ascii_lowercase, n = 4):
-    """Generator for a De Bruijn Sequence for the given alphabet and subsequences of length n.
-
-    The yielded result contains len(alphabet)**n elements"""
-    k = len(alphabet)
-    a = [0] * k * n
-    def db(t, p):
-        if t > n:
-            if n % p == 0:
-                for j in range(1, p + 1):
-                    yield alphabet[a[j]]
+class DeBruijn:
+    def __init__(self, alphabet = string.lowercase, n = 4, size = -1):
+        # If alphabet not defined, or if too small, use the smallest possible.
+        if not alphabet:
+            alphabet = ''.join(
+                [x for x in string.letters
+                 + string.digits + string.punctuation
+                 if not x in string.whitespace])
+            i = int(math.ceil(size**(1./n)))
+            self.alphabet = alphabet[:i]
         else:
-            a[t] = a[t - p]
-            for c in db(t + 1, p):
-                yield c
+            self.alphabet = alphabet
 
-            for j in range(a[t - p] + 1, k):
-                a[t] = j
-                for c in db(t + 1, t):
+        if size > len(self.alphabet)**n:
+            pwn.die('Size too great for alphabet.')
+        
+        self.n = n
+        self.size = size
+
+    # Taken from http://en.wikipedia.org/wiki/De_Bruijn_sequence but changed to a generator
+    def _generator(self):
+        """Generator for a De Bruijn Sequence for the given alphabet and subsequences of length n.
+
+        The yielded result contains len(alphabet)**n elements"""
+        k = len(self.alphabet)
+        a = [0] * k * self.n
+        def db(t, p):
+            if t > self.n:
+                if self.n % p == 0:
+                    for j in range(1, p + 1):
+                        yield self.alphabet[a[j]]
+            else:
+                a[t] = a[t - p]
+                for c in db(t + 1, p):
                     yield c
 
-    return db(1,1)
+                for j in range(a[t - p] + 1, k):
+                    a[t] = j
+                    for c in db(t + 1, t):
+                        yield c
 
-def de_bruijn(length = -1, alphabet = string.ascii_lowercase, n = 4, join = True):
-    """Returns the first length elements in the a De Bruijn Sequence for the given alphabet and subsequences of length n. If length is negative, then return the entire sequence. If join is True, then the sequence is joined into a string, otherwise a generator is returned."""
-    if length < 0 or length >= len(alphabet)**n:
-        helper = lambda length: de_bruijn_generator(alphabet, n)
-    else:
-        def helper(length):
-            for c in de_bruijn_generator(alphabet, n):
-                if length > 0:
-                    length -= 1
-                    yield c
-                else:
-                    return
-    if join:
-        return ''.join(helper(length))
-    return list(helper(length))
+        return db(1,1)
 
-def de_bruijn_find(subseq, alphabet = string.ascii_lowercase, n = None):
-    """Returns the index for the subsequence of a De Bruijn Sequence for the given alphabet and subsequences of length n. If not specified, n will default to len(subseq).
+    def sequence(self, join = True):
+        """Returns the first length elements in the a De Bruijn Sequence for the given alphabet and subsequences of length n. If length is negative, then return the entire sequence. If join is True, then the sequence is joined into a string, otherwise a generator is returned."""
+        if self.size < 0:
+            helper = lambda size: self._generator()
+        else:
+            def helper(length):
+                for c in self._generator():
+                    if length > 0:
+                        length -= 1
+                        yield c
+                    else:
+                        return
+        if join:
+            return ''.join(helper(self.size))
+        return list(helper(self.size))
 
-    There exists better algorithms for this, but they depend on generating the De Bruijn sequence in another fashion. Somebody should look at it:
-    http://www.sciencedirect.com/science/article/pii/S0012365X00001175
-    """
-    if isinstance(subseq, int):
-        subseq = pwn.pint(subseq)
-    if n == None:
-        n = len(subseq)
-    return gen_find(subseq, de_bruijn_generator(alphabet, n))
+    def find(self, subseq):
+        """Returns the index for the subsequence of a De Bruijn Sequence for the given alphabet and subsequences of length n. If not specified, n will default to len(subseq).
 
-def de_bruijn_large(length = -1, n = 4, join = True):
-    """Same as de_bruijn but with a larger alphabet. Gives a up to 74 MB unique subsequences."""
-    return de_bruijn(length, string.digits + string.ascii_letters + string.punctuation, n, join)
+        There exists better algorithms for this, but they depend on generating the De Bruijn sequence in another fashion. Somebody should look at it:
+        http://www.sciencedirect.com/science/article/pii/S0012365X00001175
+        """
+        if isinstance(subseq, int):
+            subseq = pwn.pint(subseq)
+        return self.gen_find(subseq, self._generator())
 
-def de_bruijn_large_find(subseq, n = None):
-    """Same as de_bruijn_find but with a larger alphabet."""
-    return de_bruijn_find(subseq, string.digits + string.ascii_letters + string.punctuation, n)
+    def gen_find(self, subseq, generator):
+        """Returns the first position of subseq in the generator or -1 if there is no such position."""
+        subseq = list(subseq)
+        pos = 0
+        saved = []
 
-def gen_find(subseq, generator):
-    """Returns the first position of subseq in the generator or -1 if there is no such position."""
-    subseq = list(subseq)
-    pos = 0
-    saved = []
-
-    for c in generator:
-        saved.append(c)
-        if len(saved) > len(subseq):
-            saved.pop(0)
-            pos += 1
-        if saved == subseq:
-            return pos
-    return -1
+        for c in generator:
+            saved.append(c)
+            if len(saved) > len(subseq):
+                saved.pop(0)
+                pos += 1
+            if saved == subseq:
+                return pos
+        return -1

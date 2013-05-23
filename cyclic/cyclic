@@ -1,31 +1,37 @@
 #!/usr/bin/env python
 import pwn, sys, argparse, string
-from pwn import de_bruijn, de_bruijn_find
+from pwn import DeBruijn
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Cyclic pattern creator/finder")
     p.add_argument(
         '-a', '--alphabet',
         metavar = '<alphabet>',
-        default = string.ascii_lowercase,
-        help = 'The alphabet to use in the cyclic pattern',
+        default = string.lowercase,
+        help = 'The alphabet to use in the cyclic pattern.',
         )
     p.add_argument(
-        '-l', '--large-alphabet',
+        '-x', '--no-alphabet',
         action = 'store_true',
-        help = 'Use a large alphabet (digits, letters, punctuation)',
+        help = 'Use the smallest possible alphabet. The biggest alphabet '
+        'consists of all printable characters not including whitespace.',
         )
     p.add_argument(
         '-o', '--offset',
         action = 'store_true',
         help = 'Find offset of substring in cyclic pattern (given as hex '
-               '(0x...), integer or string)',
+               '(0x...), integer (0d...) or string)',
         )
     p.add_argument(
         '-n', '--length',
         type = int,
         default = 4,
-        help = 'Length of subsequence',
+        help = 'Length of subsequence.',
+        )
+    p.add_argument(
+        '-p', '--print-alphabet',
+        action = 'store_true',
+        help = 'Print the alphabet used. Useful if run with --no-alphabet (-x).',
         )
     p.add_argument(
         'patsize',
@@ -36,21 +42,28 @@ if __name__ == "__main__":
 
     args = p.parse_args()
 
-    if args.large_alphabet:
-        alph = string.digits + string.ascii_letters + string.punctuation
-    else:
-        alph = args.alphabet
+    if args.no_alphabet:
+        if args.offset:
+            pwn.die('Invalid combination of arguments.')
+        args.alphabet = None
 
     if args.offset:
+        db = DeBruijn(args.alphabet, args.length)
+    else:
+        db = DeBruijn(args.alphabet, args.length, int(args.patsize))
+
+    if args.print_alphabet:
+        pwn.log.info('Alphabet used: %s' % db.alphabet)
+    elif args.offset:
         pat = args.patsize
 
-        if [x for x in pat if x not in alph]:
+        if args.alphabet and [x for x in pat if x not in args.alphabet]:
             pwn.die('Pattern contains characters outside selected alphabet. '
-                    'Current alphabet is "%s".' % alph)
+                    'Current alphabet is "%s".' % db.alphabet)
 
         if pat.startswith('0x'):
             pat = pwn.p32(int(pat[2:], 16) & 0xffffffff)
-        elif pat.isdigit():
+        elif pat.startswith('0d'):
             pat = pwn.p32(int(pat, 10) & 0xffffffff)
         else:
             pat = pat[:args.length]
@@ -59,10 +72,12 @@ if __name__ == "__main__":
             pwn.die('Subpattern must be %i bytes' % args.length)
 
         pwn.log.waitfor('Looking for pattern "%s"' % pat)
-        offset = de_bruijn_find(pat, alph, n = args.length)
+        offset = db.find(pat)
         if offset == -1:
             pwn.log.failed('given pattern does not exist in cyclic pattern')
         else:
             pwn.log.succeeded('found at ' + str(offset))
     else:
-        print de_bruijn(int(args.patsize), n = args.length)
+        print db.sequence(int(args.patsize))
+    
+
