@@ -76,8 +76,11 @@ if sys.stderr.isatty() and not pwn.DEBUG:
             if not status:
                 _trace(' ' + marker + '\x1b[%dE\n' % self.numlines)
             elif '\n' not in status:
-                _trace('\x1b[K ' + marker + ' ' + _message + ': ' + status + \
-                       '\x1b[%dE\n' % self.numlines)
+                s = '\x1b[K ' + marker + ' ' + _message + ': ' + status
+                if self.numlines > 1:
+                    s += '\x1b[%dE' % (self.numlines - 1)
+                s += '\n'
+                _trace(s)
             else:
                 _trace(self.format(marker, status) + '\n')
             _trace('\x1b[?25h')
