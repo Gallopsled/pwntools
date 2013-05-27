@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+import pwn, sys, argparse, string
+
+if __name__ == "__main__":
+    p = argparse.ArgumentParser(description="ELF binary patcher")
+    p.add_argument('-o',
+                   metavar = '<file>',
+                   default = None,
+                   help = 'The output file',
+                   )
+    p.add_argument('file',
+                   metavar = '<file>',
+                   help = 'ELF file to patch',
+                   )
+    p.add_argument('addr',
+                   metavar = '<address>',
+                   help = 'Address to patch at',
+                   )
+    p.add_argument('repl',
+                   metavar = '<replacement>',
+                   help = 'Replacement (hex-encoded)',
+                   )
+
+    args = p.parse_args()
+
+    elf = pwn.ELF(args.file)
+    try:
+        if args.addr.startswith('0x'):
+            addr = int(args.addr, 16)
+        else:
+            addr = int(args.addr, 10)
+    except:
+        print 'Error: wrong address format'
+        sys.exit(1)
+
+    elf.write(addr, args.repl.decode('hex'))
+
+    if args.o:
+        elf.save(args.o)
+    else:
+        sys.stdout.write(elf.get_data())
