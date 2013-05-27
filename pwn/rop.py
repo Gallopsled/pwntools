@@ -1,9 +1,6 @@
 import sys, random
-from pwn import die, ELF, u8, p32, p64, pint, findall, group, tuplify
+from pwn import die, elf, ELF, u8, p32, p64, pint, findall, group, tuplify
 from collections import defaultdict
-
-global _currently_loaded
-_currently_loaded = None
 
 class ROP:
     def __init__(self, file, garbage = 0xdeadbeef):
@@ -15,7 +12,8 @@ class ROP:
 
         self.garbage = tuplify(garbage)
 
-        # bring addresses of sections, symbols, plt and got to this object
+        # bring segments, sections, symbols, plt and got to this object
+        self.segments = self.elf.segments
         self.sections = dict()
         for k, v in self.elf.sections.items():
             self.sections[k] = v['addr']
@@ -25,39 +23,28 @@ class ROP:
         self.plt = self.elf.plt
         self.got = self.elf.got
 
-        # promote to top-level
-        g = globals()
-        g['sections'] = self.sections
-        g['symbols'] = self.symbols
-        g['plt'] = self.plt
-        g['got'] = self.got
-
         self._chain = []
         self._gadgets = {}
         self._load_gadgets()
 
-        _currently_loaded = self
+    def load_library(self, file, addr, relative_to = None):
+        syms = {}
+        for k, v in elf.symbols(file).items():
+            if '@@' in k:
+                k = k[:k.find('@@')]
+            syms[k] = v
+        offset = addr
+        if relative_to:
+            if relative_to not in syms:
+                die('Could not load library relative to "%s" -- no such symbol', relative_to)
+            offset -= syms[relative_to]['addr']
+        for k, v in syms.items():
+            self.symbols[k] = v['addr'] + offset
 
     def _load_gadgets(self):
         if self.elf.elfclass == 'ELF32':
             self._load32_popret()
             self._load32_migrate()
-
-    def _exec_sections(self):
-        for name, sec in self.elf.sections.items():
-            if 'X' not in sec['flags']: continue
-            data = self.elf.section(name)
-            addr = sec['addr']
-            yield (data, addr)
-
-
-    def _non_writable_sections(self):
-        for name, sec in self.elf.sections.items():
-            if 'W' in sec['flags']: continue
-            data = self.elf.section(name)
-            addr = sec['addr']
-            yield (data, addr)
-
 
     def _load32_popret(self):
         addesp = '\x83\xc4'
@@ -65,7 +52,7 @@ class ROP:
         popa = '\x61'
         ret  = '\xc3'
         poprets = defaultdict(list)
-        for data, addr in self._exec_sections():
+        for data, addr in self.elf.executable_segments():
             i = 0
             while True:
                 i = data.find(ret, i)
@@ -91,7 +78,7 @@ class ROP:
         popebp = '\x5d\xc3'
         ls = []
         ps = []
-        for data, addr in self._exec_sections():
+        for data, addr in self.elf.executable_segments():
             idxs = findall(data, leave)
             ls += map(lambda i: i + addr, idxs)
             idxs = findall(data, popebp)
@@ -102,7 +89,7 @@ class ROP:
     def _resolve(self, x):
         if x is None or isinstance(x, int):
             return x
-        for y in [self.plt, self.symbols, self.sections]:
+        for y in [self.symbols, self.plt, self.sections]:
             if x in y:
                 return y[x]
         die('Could not resolve `%s\'' % x)
@@ -154,11 +141,6 @@ class ROP:
     def raw(self, *words):
         self._chain.append(('raw', words))
         return self
-
-    def search(self, byte):
-        for data, addr in self._non_writable_sections():
-            if addr and byte in data:
-                yield data.find(byte) + addr
 
     def generate(self):
         if self.elf.elfclass == 'ELF32':
@@ -263,35 +245,3 @@ class ROP:
         for f, a in args:
             self.call(f, a)
         return self
-
-# alias
-class load(ROP): pass
-
-def _ensure_loaded():
-    if _currently_loaded is None:
-        die('No file loaded for ROP\'ing')
-
-def call(*args):
-    _ensure_loaded()
-    return _currently_loaded.call(*args)
-
-def raw(*args):
-    _ensure_loaded()
-    return _currently_loaded.raw(*args)
-
-def migrate(*args):
-    _ensure_loaded()
-    return _currently_loaded.migrate(*args)
-
-def generate():
-    _ensure_loaded()
-    return _currently_loaded.generate()
-
-def chain(*args):
-    _ensure_loaded()
-    return _currently_loaded.chain(*args)
-
-def flush():
-    '''Alias for generate'''
-    _ensure_loaded()
-    return _currently_loaded.flush()
