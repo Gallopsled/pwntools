@@ -51,3 +51,12 @@ def ewraps(wrapped):
         semi_fixed.__dict__['signature_added'] = True
         return semi_fixed
     return deco
+
+# Copied from Eli Bendersky's blog:
+# http://eli.thegreenplace.net/2009/08/29/co-routines-as-an-alternative-to-state-machines/
+def coroutine(func):
+    def start(*args,**kwargs):
+        cr = func(*args,**kwargs)
+        cr.next()
+        return cr
+    return start

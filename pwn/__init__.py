@@ -55,6 +55,7 @@ try:
     from pwn.listutil   import *
     from pwn.iterutil   import *
     from pwn.genutil    import *
+    from pwn.decoutils  import coroutine
     from pwn.procutil   import *
     from pwn.debugging  import *
     from pwn.memoize    import memoize
