@@ -18,10 +18,10 @@ echo "export PYTHONPATH=$PWD/lib:\$PYTHONPATH" >> $(getent passwd $SUDO_USER | c
 
 echo "Installing packages"
 if [ -f /etc/debian_version ]; then
-    DEPS="python-crypto python-gmpy python-sympy"
+    DEPS="python-crypto python-gmpy python-matplotlib python-sympy"
     yes | apt-get install ${DEPS}
 elif [ -f /etc/arch-release ]; then
-    DEPS="python2-crypto python2-sympy"
+    DEPS="python2-crypto python2-matplotlib python2-sympy"
     yes | pacman -S ${DEPS}
 fi
 echo "All DONE"
