@@ -112,10 +112,7 @@ class basechatter:
             res.append(self.recvuntil('\n'))
         return ''.join(res)
 
-    def interactive(self, prompt = text.boldred('$') + ' ', clean_sock = True,
-                    flush_timeout = None):
-        if clean_sock:
-            self.clean_sock()
+    def interactive(self, prompt = text.boldred('$') + ' ', flush_timeout = None):
         log.info('Switching to interactive mode')
         import readline
         debug = self.debug
@@ -214,7 +211,7 @@ class basechatter:
         self.debug = debug
         self.settimeout(timeout)
 
-    def recvall(self):
+    def recvall(self, close = True):
         log.waitfor('Recieving all data')
         r = []
         l = 0
@@ -224,7 +221,9 @@ class basechatter:
             r.append(s)
             l += len(s)
             log.status(pwn.size(l))
-        self.close()
+        log.succeeded()
+        if close:
+            self.close()
         return ''.join(r)
 
     def clean_sock(self):

@@ -60,6 +60,7 @@ try:
     from pwn.debugging  import *
     from pwn.memoize    import memoize
     from pwn.process    import process
+    from pwn.ssh        import ssh    
     from pwn.remote     import remote
     from pwn.handler    import handler
     from pwn.asm        import asm
