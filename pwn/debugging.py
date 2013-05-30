@@ -34,7 +34,7 @@ def attach_gdb_to_pid(pid, execute = None, execute_file = None):
 
 def attach_gdb(prog, execute = None, execute_file = None):
     pids = pwn.pidof(prog)
-    if isinstance(prog, pwn.remote):
+    if isinstance(prog, pwn.remote) or isinstance(prog, pwn.process):
         pid = pids[0]
         if pid is None:
             pwn.die('Could not find remote process (%s:%d) on this machine' % prog.sock.getpeername())
