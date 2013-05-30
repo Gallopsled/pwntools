@@ -1,5 +1,5 @@
 import sys, random
-from pwn import die, elf, ELF, u8, p32, p64, pint, findall, group, tuplify
+from pwn import die, elf, ELF, u8, p32, p64, pint, findall, group, tuplify, flat
 from collections import defaultdict
 
 class ROP:
@@ -25,6 +25,7 @@ class ROP:
 
         self._chain = []
         self._gadgets = {}
+        self._load_addr = None
         self._load_gadgets()
 
     def load_library(self, file, addr, relative_to = None):
@@ -40,6 +41,12 @@ class ROP:
             offset -= syms[relative_to]['addr']
         for k, v in syms.items():
             self.symbols[k] = v['addr'] + offset
+
+    def add_symbol(self, symbol, addr):
+        self.symbols[symbol] = addr
+
+    def set_load_addr(self, addr):
+        self._load_addr = addr
 
     def _load_gadgets(self):
         if self.elf.elfclass == 'ELF32':
@@ -115,6 +122,7 @@ class ROP:
             return (pivot, size)
 
     def migrate(self, sp, bp = None):
+        self._load_addr = sp
         self._chain.append(('migrate', (sp, bp)))
         return self
 
@@ -134,23 +142,20 @@ class ROP:
     def call(self, target, args = (), pivot = None):
         '''Irrelevant arguments should be marked by a None'''
         target = self._resolve(target)
-        args = map(self._resolve, tuplify(args))
-        self._chain.append(('call', (target, pivot, args)))
+        self._chain.append(('call', (target, pivot, tuplify(args))))
         return self
 
     def raw(self, *words):
         self._chain.append(('raw', words))
         return self
 
-    def generate(self):
+    def flush(self, loaded_at = None):
+        if loaded_at is not None:
+            self._load_addr = loaded_at
         if self.elf.elfclass == 'ELF32':
             return self._generate32()
         else:
             die('Only 32bit ELF supported')
-
-    def flush(self):
-        '''Alias for generate'''
-        return self.generate()
 
     def _garbage(self, n):
         out = ''
@@ -166,9 +171,32 @@ class ROP:
         p = p32
         def garbage():
             return self._garbage(4)
+
+        payload = []
+        offset = [0]
+
         def pargs(args):
-            args = map(lambda a: garbage() if a is None else p(a), args)
-            return args
+            out = []
+            for a in args:
+                if   a is None:
+                    out.append(garbage())
+                elif isinstance(a, int):
+                    out.append(p(a))
+                elif hasattr(a, '__iter__'):
+                    packed = pargs(a)
+                    payload.extend(packed)
+                    out.append(offset[0])
+                    for a in packed:
+                        if isinstance(a, int):
+                            offset[0] += 4
+                        else:
+                            offset[0] += len(a)
+                else:
+                    a = flat(a)
+                    payload.append(a)
+                    out.append(offset[0])
+                    offset[0] += len(a)
+            return out
 
         for i in range(len(chain)):
             type, link = chain[i]
@@ -215,16 +243,26 @@ class ROP:
                     out += [p(gp), p(esp-4), p(gl)]
                 else:
                     out += [p(gp), p(esp), p(gl)]
-                    self.raw(p(ebp))
+                    self.raw(ebp)
             else:
                 die('Unknown ROP-link type')
+        offset = len(out) * 4
+        out_ = out + payload
+        out = []
+        for o in out_:
+            if isinstance(o, int):
+                if self._load_addr is None:
+                    die('Load address of ROP chain not known; can\'t use structures')
+                out.append(p(offset + o + self._load_addr))
+            else:
+                out.append(o)
         return ''.join(out)
 
     def __str__(self):
-        return self.generate()
+        return self.flush()
 
     def __flat__(self):
-        return self.generate()
+        return self.flush()
 
     def __repr__(self):
         return str(self)
