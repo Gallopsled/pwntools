@@ -122,6 +122,19 @@ if sys.stdin.isatty() and sys.stdout.isatty():
             sys.stdout.write('\x1b[%dB\n' % len(opts))
         return choice
 
+    def _restore_at_exit():
+        import atexit
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        def restore():
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+            # This turns on the cursor
+            sys.stdout.write('\x1b[?25h')
+            sys.stdout.flush()
+        atexit.register(restore)
+    _restore_at_exit()
+
 else:
     def get_term_size():
         return 80, 24
