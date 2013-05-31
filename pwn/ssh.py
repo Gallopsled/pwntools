@@ -193,6 +193,11 @@ class ssh(basechatter):
                         break
                 elif sys.stdin.fileno() in reads:
                     dat = sys.stdin.read(1)
+
+                    # Break if ctrl+] is hit
+                    if dat == '\x1d':
+                        break
+
                     self.send(dat)
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
