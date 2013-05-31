@@ -48,6 +48,7 @@ try:
     from pwn.log        import die, bug
     from pwn.thread     import Thread
     from pwn.util       import *
+    from pwn.ui         import raw_input, pause, prompt, options, yesno
     from pwn.avoid      import *
     from pwn.context    import *
     from pwn.binutils   import *
