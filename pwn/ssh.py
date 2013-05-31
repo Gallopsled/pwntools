@@ -181,9 +181,9 @@ class ssh(basechatter):
 
         try:
             while True:
-                reads, _, _ = select([sys.stdin.fileno(), self.channel.fileno()], [], [], 100)
+                reads, _, _ = select([sys.stdin.fileno(), self.channel.fileno()], [], [], 0.05)
 
-                if self.channel.recv_ready():
+                while self.channel.recv_ready():
                     dat = self.recv()
                     sys.stdout.write(dat)
                     sys.stdout.flush()
@@ -201,3 +201,4 @@ class ssh(basechatter):
                     self.send(dat)
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        print
