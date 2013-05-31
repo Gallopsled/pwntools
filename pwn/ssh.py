@@ -1,19 +1,10 @@
-import pwn, sys, time, os
+import pwn, sys, time, os, tty, termios
 from pwn import log, text
 from subprocess import Popen, PIPE
 from basechatter import basechatter
 import time
 import paramiko
-
-# TODO TODO TODO: br0ns fix when merging with ui branch
-import fcntl, struct, sys, termios, tty
-def get_term_size():
-    fd = os.open(os.ctermid(), os.O_RDONLY)
-    height, width = struct.unpack('hh', fcntl.ioctl(fd, termios.TIOCGWINSZ, '1234'))
-    os.close(fd)
-    return width, height
-
-pwn.get_term_size = get_term_size
+from select import select
 
 class WarnPolicy(paramiko.MissingHostKeyPolicy):
     def __init__(self):
@@ -113,7 +104,7 @@ class ssh(basechatter):
             log.warning('SSH connection to "%s" already have an active channel' % self.host)
             return
 
-        width, height = get_term_size()
+        width, height = pwn.get_term_size()
 
         self.channel = self.transport.open_session()
         self.channel.get_pty('vt100', width, height)
@@ -150,7 +141,9 @@ class ssh(basechatter):
             self.channel = None
 
     def _send(self, dat):
-        self.channel.sendall(dat)
+        while dat:
+            n = self.channel.send(dat)
+            dat = dat[n:]
 
     def _recv(self, numb):
         end_time = time.time() + self.timeout
@@ -182,4 +175,24 @@ class ssh(basechatter):
         return self.channel.fileno()
 
     def interactive(self, prompt = ''):
-        basechatter.interactive(self, prompt)
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        tty.setraw(fd)
+
+        try:
+            while True:
+                reads, _, _ = select([sys.stdin.fileno(), self.channel.fileno()], [], [], 100)
+
+                if self.channel.recv_ready():
+                    dat = self.recv()
+                    sys.stdout.write(dat)
+                    sys.stdout.flush()
+
+                if self.channel.exit_status_ready():
+                    if not self.channel.recv_ready():
+                        break
+                elif sys.stdin.fileno() in reads:
+                    dat = sys.stdin.read(1)
+                    self.send(dat)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
