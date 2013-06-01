@@ -377,7 +377,7 @@ class ssh:
             dat = ''
             s = self.run('cat "$(echo %s|base64 -d)"' % pwn.b64(remote), silent = True)
             while s.connected():
-                update(dat, 0)
+                update(len(dat), 0)
                 dat += s.recv()
             pwn.write(local, dat)
         if not self.silent:
