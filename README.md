@@ -15,7 +15,6 @@ However we have made command-line frontends for much of the functionality
 inside the pwnlib. These are:
 
 * `cyclic`: De Bruijn sequence generator and lookup tool
-* `hex`/`unhex`: Command line tools for doing common hexing/unhexing operations
 * `nops`: Tool for generating random nopsleds.
 * `peek`/`poke`: Simple tool for sending files over a LAN
 * `randomua`: Returns a random user agent
@@ -25,12 +24,13 @@ inside the pwnlib. These are:
 We also have the following tools, not dependent on the pwnlib:
 
 * `asm`/`disasm`: Small wrapper for nasm
-* binutils directory: Assemblers and disassemblers for various architectures
+*  binutils directory: Assemblers and disassemblers for various architectures
 * `bytes`: Extract the raw bytes from various textual representations
 * `crop`: Cut out rectangular portions of text
 * `demo32`/`demo64`: Tool for testing shellcode
 * `dictgen`: Generate dictionaries from input corpora
 * `gadgets`: Find ROP gadgets
+* `hex`/`unhex`: Command line tools for doing common hexing/unhexing operations
 * `mags`: Run `file` at all offsets
 
 All of these tools are symlinked to the bin folder.
