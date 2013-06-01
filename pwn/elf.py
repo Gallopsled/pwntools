@@ -39,6 +39,7 @@ class ELF:
         self.symbols = {}
         self.plt = {}
         self.got = {}
+        self.libs = {}
         self.elfclass = None
         self._file_data = None
         self.execstack = False
@@ -52,6 +53,7 @@ class ELF:
         self._load_segments()
         self._load_sections()
         self._load_symbols()
+        self._load_libs()
         # this is a nasty hack until we get our pure python elf parser
         # we'll just have to live without PLT and GOT info for PICs until then
         if not re.match('\.so(\.\d+)?$', file):
@@ -124,6 +126,19 @@ class ELF:
 
     def _load_symbols(self):
         self.symbols = symbols(self._file)
+
+    def _load_libs(self):
+        dat = ''
+        try:
+            dat = check_output(['ldd', self._file])
+        except CalledProcessError:
+            pass
+
+        self.libs = parse_ldd_output(dat)
+        
+    def extra_libs(self, libs):
+        for v, k in libs.items():
+            self.libs[v] = k
 
     # this is crazy slow -- include this feature in the all-python ELF parser
     def _load_plt_got(self):
@@ -250,3 +265,29 @@ class ELF:
     def get_data(self):
         self._load_data()
         return ''.join(self._file_data)
+
+def parse_ldd_output(dat):
+    expr = re.compile(r'(?:([^ ]+) => )?([^(]+)?(?: \(0x[0-9a-f]+\))?$')
+    res = {}
+
+    for line in dat.strip().split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+        parsed = expr.search(line)
+        if not parsed:
+            log.warning('Could not parse line: "%s"' % line)
+        name, resolved = parsed.groups()
+        if name == None:
+            if re.search('/ld-[^/]*$', resolved):
+                name = 'ld'
+            elif re.search('^linux', resolved):
+                name = 'linux'
+            else:
+                log.warning('Could not parse line: "%s"' % line)
+                continue
+
+        res[name] = resolved
+        if name.startswith('libc.so.'):
+            res['libc'] = resolved
+    return res

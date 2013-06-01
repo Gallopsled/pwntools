@@ -1,4 +1,4 @@
-import sys, random
+import sys, random, os, subprocess, pwn
 from pwn import die, elf, ELF, u8, p32, p64, pint, findall, group, tuplify, flat
 from collections import defaultdict
 
@@ -26,10 +26,21 @@ class ROP:
         self._chain = []
         self._gadgets = {}
         self._load_addr = None
+        self._next_load_addr = None
         self._load_gadgets()
+
+    def extra_libs(self, libs):
+        self.elf.extra_libs(libs)
 
     def load_library(self, file, addr, relative_to = None):
         syms = {}
+        
+        if not os.path.exists(file):
+            if file in self.elf.libs:
+                file = self.elf.libs[file]
+            else:
+                die('Could not load library, file %s does not exist.' % file)
+
         for k, v in elf.symbols(file).items():
             if '@@' in k:
                 k = k[:k.find('@@')]
@@ -122,7 +133,7 @@ class ROP:
             return (pivot, size)
 
     def migrate(self, sp, bp = None):
-        self._load_addr = sp
+        self._next_load_addr = sp
         self._chain.append(('migrate', (sp, bp)))
         return self
 
@@ -192,6 +203,8 @@ class ROP:
                         else:
                             offset[0] += len(a)
                 else:
+                    if isinstance(a, str):
+                        a += '\x00'
                     a = flat(a)
                     payload.append(a)
                     out.append(offset[0])
@@ -256,6 +269,8 @@ class ROP:
                 out.append(p(offset + o + self._load_addr))
             else:
                 out.append(o)
+        self._load_addr = self._next_load_addr
+        self._next_load_addr = None
         return ''.join(out)
 
     def __str__(self):

@@ -67,7 +67,7 @@ try:
     from pwn.asm        import asm
     from pwn.useragents import randomua
     from pwn.splash     import splash
-    from pwn.elf        import ELF
+    from pwn.elf        import ELF, parse_ldd_output
     from pwn.rop        import ROP
     from pwn.ciic       import ciic
 
