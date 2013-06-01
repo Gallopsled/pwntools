@@ -72,11 +72,15 @@ class ssh_channel(basechatter):
             r = ''
             if not self.connected():
                 break
-            if self._channel.exit_status_ready() and not self._channel.recv_ready():
-                self.close()
-                break
             try:
                 r = self._channel.recv(numb)
+                if r == '':
+                    for n in range(100):
+                        if self._channel.exit_status_ready():
+                            break
+                        time.sleep(0.02)
+                    self.close()
+                    break
             except IOError as e:
                 if e.errno != 11:
                     raise
@@ -132,7 +136,7 @@ class ssh_channel(basechatter):
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
 class ssh:
-    def __init__(self, host, user = None, password = None, port = None, silent = False, key = None, keyfile = None, proxy_command = None, proxy_sock = None, timeout = 'default'):
+    def __init__(self, host, user = None, password = None, port = None, silent = False, key = None, keyfile = None, proxy_command = None, proxy_sock = None, supports_sftp = True, timeout = 'default'):
         '''Creates a new ssh connection.
 
         Most argumnts are self-explanatory and unnecessary in most cases.
@@ -173,6 +177,7 @@ class ssh:
 
         self._proxy_command = proxy_command
         self._proxy_sock = proxy_sock
+        self._supports_sftp = supports_sftp
 
         # This is an ugly hack to use the same semantics for
         # the timeout as is done for basechatter
@@ -342,8 +347,9 @@ class ssh:
             return False
 
     def _initialize_sftp(self):
-        if self._sftp == None:
-            self._sftp = self._client.open_sftp()
+        if self._supports_sftp:
+            if self._sftp == None:
+                self._sftp = self._client.open_sftp()
 
         self._cachedir = os.path.join(tempfile.gettempdir(), 'pwn-ssh-cache')
 
@@ -355,19 +361,27 @@ class ssh:
 
     def _download_raw(self, remote, local):
         self._initialize_sftp()
+        total, _ = self.run_simple('wc -c "$(echo %s|base64 -d)"' % pwn.b64(remote))
+        total = pwn.size(int(total.split()[0]))
 
         if not self.silent:
             log.waitfor('Downloading %s' % remote)
 
-        def update(has, total):
+        def update(has, _total):
             if not self.silent:
-                log.status("%s/%s" % (pwn.size(has), pwn.size(total)))
+                log.status("%s/%s" % (pwn.size(has), total))
 
-        self._sftp.get(remote, local, update)
-
+        if self._supports_sftp:
+            self._sftp.get(remote, local, update)
+        else:
+            dat = ''
+            s = self.run('cat "$(echo %s|base64 -d)"' % pwn.b64(remote), silent = True)
+            while s.connected():
+                update(dat, 0)
+                dat += s.recv()
+            pwn.write(local, dat)
         if not self.silent:
             log.succeeded()
-
     def _download_to_cache(self, remote):
         self._initialize_sftp()
         fingerprint = self._get_fingerprint(remote)
@@ -479,9 +493,17 @@ class ssh:
             remote = os.path.normpath(local)
             remote = os.path.basename(remote)
 
-        if raw == None:
-            self._sftp.put(local, remote)
+        if self._supports_sftp:
+            if raw == None:
+                self._sftp.put(local, remote)
+            else:
+                f = self._sftp.open(remote, 'wb')
+                f.write(raw)
+                f.close()
         else:
-            f = self._sftp.open(remote, 'wb')
-            f.write(raw)
-            f.close()
+            if raw == None:
+                raw = pwn.read(local)
+            s = self.run('cat>"$(echo %s|base64 -d)"' % pwn.b64(remote), silent = True)
+            s.send(raw)
+            s._channel.shutdown_write()
+            s.recvall()
