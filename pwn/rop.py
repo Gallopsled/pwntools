@@ -34,7 +34,7 @@ class ROP:
 
     def load_library(self, file, addr, relative_to = None):
         syms = {}
-        
+
         if not os.path.exists(file):
             if file in self.elf.libs:
                 file = self.elf.libs[file]

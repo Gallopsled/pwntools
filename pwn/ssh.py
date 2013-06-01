@@ -15,7 +15,7 @@ class WarnPolicy(paramiko.MissingHostKeyPolicy):
 class ssh_channel(basechatter):
     def __init__(self, parent, process = None, silent = None, tty = True):
         self.parent = parent
-        self.tty = tty
+        self._tty = tty
         self._channel = None
         self.exit_status = None
         if silent == None:
@@ -32,7 +32,7 @@ class ssh_channel(basechatter):
             log.waitfor('Opening new channel: "%s"' % (process or 'shell'))
 
         self._channel = self.parent._transport.open_session()
-        if self.tty:
+        if self._tty:
             width, height = pwn.get_term_size()
             self._channel.get_pty('vt100', width, height)
         self._channel.settimeout(self.timeout)
@@ -98,7 +98,7 @@ class ssh_channel(basechatter):
 
     def interactive(self, prompt = text.boldred('$') + ' '):
         '''Turns the channel into an interactive session (that is, it connects stdin and stdout to the channel).'''
-        if not self.tty:
+        if not self._tty:
             basechatter.interactive(self, prompt)
             return
 
@@ -134,9 +134,9 @@ class ssh_channel(basechatter):
 class ssh:
     def __init__(self, host, user = None, password = None, port = None, silent = False, key = None, keyfile = None, proxy_command = None, proxy_sock = None, timeout = 'default'):
         '''Creates a new ssh connection.
-        
+
         Most argumnts are self-explanatory and unnecessary in most cases.
-        
+
         In addition to the specified arguments, it also tries to act like the
         command line tool would. This means that it parses ~/.ssh/config to
         some extent, uses ~/.ssh/known_hosts to validate the connection and
@@ -201,9 +201,9 @@ class ssh:
         if auth:
             auth_ = auth.split(':', 1)
             if len(auth_) == 1:
-                self.user = auth_[0]
+                self._user = auth_[0]
             else:
-                self.user, self.password = auth_
+                self._user, self._password = auth_
 
         # Parse the optional port
         host_ = host_.split(':', 1)
@@ -224,7 +224,6 @@ class ssh:
             return
         if not self.silent:
             log.waitfor('Starting SSH connection to "%s"' % self.host)
-
 
         conf = paramiko.SSHConfig()
         conf.parse(open(os.path.expanduser('~/.ssh/config')))
@@ -378,7 +377,7 @@ class ssh:
             local += datetime.strftime('-%Y-%m-d-%H:%M:%S')
             local = os.path.join(self._cachedir, local)
 
-            self.download_raw(remote, local)
+            self._download_raw(remote, local)
             return local
 
         local = self._get_cachefile(fingerprint)
@@ -396,13 +395,13 @@ class ssh:
 
     def download(self, remote, local = None, raw = False):
         '''Downloads a file from the remote server.
-        
+
         The file is cached in /tmp/pwn-ssh-cache using a hash of the file, so
         calling the function twice has little overhead.
 
         Set raw to True, if you want the data returned instead of saved to a
         file.
-        
+
         If local is None and the data is to be saved, then the local filename
         is inferred from the remote.'''
 
@@ -418,7 +417,7 @@ class ssh:
 
     def libs(self, remote, dir = None, rop = None):
         '''Downloads the libraries referred to by a file.
-        
+
         This is done by running ldd on the remote server, parsing the output
         and downloading the relevant files.
 
@@ -470,7 +469,7 @@ class ssh:
 
         If remote is set to None, then the remote filename is inferred from the
         local filename.
-        
+
         If raw is None, then the file specified by local is uploaded.
         Otherwise the data in the raw variable is uploaded instead.'''
 

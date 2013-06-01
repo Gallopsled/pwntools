@@ -135,7 +135,7 @@ class ELF:
             pass
 
         self.libs = parse_ldd_output(dat)
-        
+
     def extra_libs(self, libs):
         for v, k in libs.items():
             self.libs[v] = k
