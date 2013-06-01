@@ -5,7 +5,7 @@ from basechatter import basechatter
 from select import select
 
 class WarnPolicy(paramiko.MissingHostKeyPolicy):
-    '''Policy for what happens when an unknown ssh-fingerprint is encountered''' 
+    '''Policy for what happens when an unknown ssh-fingerprint is encountered'''
     def __init__(self):
         self.do_warning = False
 
@@ -237,7 +237,11 @@ class ssh:
                 log.warning('Could not parse line: "%s"' % line)
             name, resolved = parsed.groups()
             if name == None:
-                name = 'ld'
+                if re.match('/ld-[^/]*', resolved):
+                    name = 'ld'
+                else:
+                    log.warning('Could not parse line: "%s"' % line)
+                    continue
 
             res[name] = resolved
             if name.startswith('libc.so.'):
