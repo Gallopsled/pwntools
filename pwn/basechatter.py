@@ -228,7 +228,7 @@ class basechatter:
             log.succeeded()
         return ''.join(r)
 
-    def clean_sock(self):
+    def clean(self):
         tmp_timeout = self.timeout
         self.settimeout(0.1)
 
