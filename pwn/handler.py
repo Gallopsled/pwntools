@@ -4,7 +4,7 @@ from basesock import basesock
 
 class handler(basesock):
     def __init__(self, port = 0, fam = socket.AF_INET, typ = socket.SOCK_STREAM, proto = 0, timeout = 'default'):
-        basesock.__init__(self, timeout)
+        basesock.__init__(self, timeout, silent)
         self.family = fam
         self.type = typ
         self.proto = proto
@@ -21,22 +21,27 @@ class handler(basesock):
         self.listensock.bind(('', self.port))
         self.port = self.listensock.getsockname()[1]
         self.listensock.listen(10)
-        log.info('Handler is waiting for connection on {%s}:%d' % (', '.join(i[1] for i in pwn.get_interfaces()), self.port))
+        if not self.silent:
+            log.info('Handler is waiting for connection on {%s}:%d' % (', '.join(i[1] for i in pwn.get_interfaces()), self.port))
 
     def close(self):
         basesock.close(self)
         if self.listensock:
             self.listensock.close()
             self.listensock = None
-            log.info('Stopped handler on port %d' % self.port)
+            if not self.silent:
+                log.info('Stopped handler on port %d' % self.port)
 
     def wait_for_connection(self):
-        log.waitfor('Waiting for connection on port %d' % self.port)
+        if not self.silent:
+            log.waitfor('Waiting for connection on port %d' % self.port)
 
         self.listensock.settimeout(self.timeout)
         try:
             self.sock, self.target = self.listensock.accept()
         except Exception as e:
-            log.failed('Got exception: %s' % e)
+            if not self.silent:
+                log.failed('Got exception: %s' % e)
             raise
-        log.succeeded('Got connection from %s:%d' % self.target)
+        if not self.silent:
+            log.succeeded('Got connection from %s:%d' % self.target)

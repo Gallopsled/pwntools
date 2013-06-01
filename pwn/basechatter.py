@@ -26,10 +26,10 @@ class basechatter:
     def can_recv(self, timeout = 0):
         return select([self], [], [], timeout) == ([self], [], [])
 
-    def __init__(self, timeout = 'default', fatal_exceptions = True):
+    def __init__(self, timeout = 'default', silent = False):
         self.debug = pwn.DEBUG
+        self.silent = silent
         self.settimeout(timeout)
-        self.fatal_exceptions = fatal_exceptions
 
     def settimeout(self, n):
         if n == 'default':
@@ -113,7 +113,8 @@ class basechatter:
         return ''.join(res)
 
     def interactive(self, prompt = text.boldred('$') + ' ', flush_timeout = None):
-        log.info('Switching to interactive mode')
+        if not self.silent:
+            log.info('Switching to interactive mode')
         import readline
         debug = self.debug
         timeout = self.timeout
@@ -211,8 +212,9 @@ class basechatter:
         self.debug = debug
         self.settimeout(timeout)
 
-    def recvall(self, close = True):
-        log.waitfor('Recieving all data')
+    def recvall(self):
+        if not self.silent:
+            log.waitfor('Recieving all data')
         r = []
         l = 0
         while True:
@@ -220,10 +222,10 @@ class basechatter:
             if s == '': break
             r.append(s)
             l += len(s)
-            log.status(pwn.size(l))
-        log.succeeded()
-        if close:
-            self.close()
+            if not self.silent:
+                log.status(pwn.size(l))
+        if not self.silent:
+            log.succeeded()
         return ''.join(r)
 
     def clean_sock(self):

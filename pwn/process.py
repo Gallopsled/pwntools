@@ -10,8 +10,7 @@ class process(basechatter):
         env = kwargs.get('env', {})
         timeout = kwargs.get('timeout', 'default')
         silent = kwargs.get('silent', False)
-        basechatter.__init__(self, timeout)
-        self.silent = silent
+        basechatter.__init__(self, timeout, silent)
         self.proc = None
         self.stdout = None
 

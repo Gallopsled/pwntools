@@ -3,8 +3,8 @@ from basechatter import basechatter
 from pwn import log, text
 
 class basesock(basechatter):
-    def __init__(self, timeout = 'default'):
-        basechatter.__init__(self, timeout)
+    def __init__(self, timeout = 'default', silent = False):
+        basechatter.__init__(self, timeout, silent)
         self.current_timeout = None
 
     def connected(self):
