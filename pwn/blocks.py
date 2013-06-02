@@ -19,7 +19,22 @@ class name:
             return b
 
 def _sympy_eval(s):
-    s = s.subs(Block.symbols)
+    def fix(s):
+        s_list = set([s])
+        for n in range(100):
+            s = s.subs(Block.symbols)
+            if s.is_integer:
+                break
+            if s in s_list:
+                break
+            if repr(s) > 200:
+                pwn.die('The expression "%s" is misbehaving' % repr(s))
+            s_list.add(s)
+        return s
+
+    # Calculate a fixed point by replacing variables
+    # Normally a single try should do it, but it can't hurt! :)
+    s = fix(s)
 
     if not s.is_integer:
         # Perhaps somebody forgot to call update_all_symbols
@@ -38,7 +53,7 @@ def _sympy_eval(s):
         if not ok:
             Block.symbols = saved
         else:
-            s = s.subs(Block.symbols)
+            s = fix(s)
 
     # The will cause an exception in case of unresolved symbols
     return int(s)
