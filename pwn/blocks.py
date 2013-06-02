@@ -1,127 +1,165 @@
-import pwn
+import pwn, sympy, re
 
-class _Block:
+def _is_sympy(o):
+    '''Returns True, if o is a sympy object. Implemented using an ugly hack.'''
+    return type(o).__module__.startswith('sympy.')
+
+class name:
+    def __init__(self, name):
+        self.name = name
+
+    def __rlshift__(self, other):
+        if isinstance(other, Block):
+            other.set_name(self.name)
+            return other
+        else:
+            b = Block(other, name = self.name)
+            if hasattr(other, 'wordsize'):
+                b.wordsize = other.wordsize
+            return b
+
+def _sympy_eval(s):
+    s = s.subs(Block.symbols)
+
+    if not s.is_integer:
+        # Perhaps somebody forgot to call update_all_symbols
+        # Lets try it for them
+        saved = Block.symbols
+        update_all_symbols()
+
+        # Lets see if the old symbols table contained anything
+        # that is not available anymore. If that is the case,
+        # then we back away and don't touch it
+        ok = True
+        for k in saved:
+            if k not in Block.symbols:
+                ok = False
+
+        if not ok:
+            Block.symbols = saved
+        else:
+            s = s.subs(Block.symbols)
+
+    # The will cause an exception in case of unresolved symbols
+    return int(s)
+
+class Block:
     _block_count = 0
+    _roots = {}
+    symbols = {}
+    def __init__(self, content = None, wordsize = 4, name = None):
+        self._content = []
+        self.wordsize = wordsize
+        self.parent = None
+        if name:
+            self.name = name
+        else:
+            self.name = "block%d" % Block._block_count
+            Block._block_count += 1
+        if self.name in Block._roots:
+            pwn.die('A root block with the name "%s" already exicsts' % self.name)
+        Block._roots[self.name] = self
+        for o in pwn.concat_all([content]) if content != None else []:
+            self._add(o)
 
-    def _setup_lengths(self):
-        self.length8  = _Length(self, pwn.p8)
-        self.length16 = _Length(self, pwn.p16)
-        self.length32 = _Length(self, pwn.p32)
-        self.length64 = _Length(self, pwn.p64)
-        self.length64 = _Length(self, pwn.p64)
+    def set_name(self, name):
+        if name == self.name:
+            return
 
-        self.length8b  = _Length(self, pwn.p8b)
-        self.length16b = _Length(self, pwn.p16b)
-        self.length32b = _Length(self, pwn.p32b)
-        self.length64b = _Length(self, pwn.p64b)
-        self.length64b = _Length(self, pwn.p64b)
-
-        self.length   = _Length(self)
-
-    def __init__(self, func = pwn.p):
-        self._entries = []
-        self._func = func
-        self.id = _Block._block_count
-        _Block._block_count += 1
-        self._setup_lengths()
+        if self.name in Block._roots:
+            if name in Block._roots:
+                pwn.die('A root block with the name "%s" already exicsts' % self.name)
+            del Block._roots[self.name]
+            Block._roots[name] = self
+        self.name = name
 
     def __iadd__(self, other):
         for o in pwn.concat_all([other]):
-            if isinstance(o, _Later):
-                o._block = self
-            self._entries.append(o)
+            self._content.append(o)
+
         return self
 
-    def _get_func(self, o):
-        if hasattr(o, '_func') and o._func:
-            return o._func
-        return self._func
+    def _add(self, other):
+        if isinstance(other, Block):
+            other._set_parent(self)
+        self._content.append(other)
+
+    def _set_parent(self, other):
+        if self.parent != None:
+            pwn.die('Trying to set parent of "%s" to "%s", but parent was already "%s"' % (self, other, self.parent))
+        self.parent = other
+        del Block._roots[self.name]
 
     def __flat__(self):
-        out = ''
-
-        for e in self._entries:
-            if isinstance(e, _Expr):
-                out += self._get_func(e)(e.force())
-            else:
-                out += pwn.flat(e, func=self._func)
-        return out
-
-    def __len__(self):
-        l = 0
-
-        for e in self._entries:
-            if isinstance(e, int):
-                l += len(self._func(0))
-            elif isinstance(e, _Expr):
-                l += len(self._get_func(e)(0))
-            else:
-                l += len(e)
-        return l
-
-    def _repr_helper(self, contained):
-        if self in contained:
-            return "Block%d" % self.id
-
-        contained = contained.union({self})
         out = []
 
-        for o in self._entries:
-            if isinstance(o, _Block):
-                out.append(o._repr_helper(contained))
-            elif isinstance(o, _Length):
-                out.append("%s(%s)" % (o._name(), o._block._repr_helper(contained)))
+        def helper(o):
+            if _is_sympy(o):
+                return pwn.packs_little_endian[self.wordsize * 8](_sympy_eval(o))
             else:
-                out.append(repr(o))
+                return pwn.flat(o, func = pwn.packs_little_endian[self.wordsize * 8])
 
-        return "Block%d { %s }" % (self.id, ", ".join(out))
+        return ''.join(helper(o) for o in self._content)
 
-    def __repr__(self):
-        return self._repr_helper(set())
+    def __len__(self):
+        res = 0
 
-class _Expr:
-    def __init__(self, expr, func = None):
-        self._expr = expr
-        self._func = func
+        for o in self._content:
+            if isinstance(o, int) or _is_sympy(o):
+                res += self.wordsize
+            elif hasattr(o, '__len__'):
+                res += len(o)
+            else:
+                res += len(pwn.flat(o)) 
 
-    def force(self):
-        return self._expr()
-
-    def __repr__(self):
-        return "*expression[%s]*" % pwn.pack_size(self._func)
-
-class _Length(_Expr):
-    def __init__(self, block, func = None):
-        self._expr = lambda: len(block)
-        self._block = block
-        self._func = func
-
-    def _name(self):
-        return "len[%s]" % pwn.pack_size(self._func)
+        return res
 
     def __repr__(self):
-        return "%s(%s)" % (self._name(), repr(self._block))
+        if re.match('^block[0-9]+$', self.name):
+            res = '{ %s }'
+        else:
+            res = '%s { %%s } ' % self.name
 
-class _Later(_Expr):
-    def __init__(self, attr, func = None):
-        self._attr = attr
-        self._func = func
+        return res % ', '.join(repr(o) for o in self._content)
 
-    def _expr(self):
-        if not hasattr(self, "_block"):
-            raise Exception("You have not yet added the later expression to a block")
-        if not hasattr(self._block, self._attr):
-            raise Exception("You have not yet set the '%s' attribute!" % self._attr)
-        return getattr(self._block, self._attr)
+    def update_symbols(self, offset = 0, base = None):
+        Block.symbols[self.name + '_offset_start'] = offset
+        if base:
+            Block.symbols[self.name + '_addr_start'] = base + offset
+        
+        for o in self._content:
+            if isinstance(o, Block):
+                offset = o.update_symbols(offset, base)
+            elif isinstance(o, int) or _is_sympy(o):
+                offset += self.wordsize
+            elif hasattr(o, '__len__'):
+                offset += len(o)
+            else:
+                offset += len(pwn.flat(o)) 
+        if base:
+            Block.symbols[self.name + '_addr_end'] = base + offset
+        Block.symbols[self.name + '_offset_end']   = offset
+        Block.symbols[self.name + '_size']  = Block.symbols[self.name + '_offset_end'] - Block.symbols[self.name + '_offset_start']
 
-    def __repr__(self):
-        return "%s[%s]" % (self._attr, pwn.pack_size(self._func))
+        return offset
 
-def block(func = pwn.p):
-    return _Block(func)
+def sizeof(n):
+    return sympy.Symbol(n + '_size')
 
-def expr(expr, func = None):
-    return _Expr(expr, func)
+def addr(n):
+    return sympy.Symbol(n + '_addr_start')
 
-def later(attr, func = None):
-    return _Later(attr, func)
+def addr_end(n):
+    return sympy.Symbol(n + '_addr_end')
+
+def offset(n):
+    return sympy.Symbol(n + '_offset_start')
+
+def offset_end(n):
+    return sympy.Symbol(n + '_offset_end')
+
+def update_all_symbols(known_bases = None):
+    known_bases = known_bases or {}
+    Block.symbols = {}
+    for k, b in Block._roots.items():
+        b.update_symbols(base = known_bases.get(k, None)) 
