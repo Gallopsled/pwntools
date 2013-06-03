@@ -29,6 +29,15 @@ class ROP:
         self._next_load_addr = None
         self._load_gadgets()
 
+
+    def mprotect(self, addr):
+        self.call('mprotect', (addr & ~4095, 4096, 7))
+        self.call('mprotect', ((addr+4096) & ~4095, 4096, 7))
+
+    def bss(self, offset=0):
+        return self.sections['.bss'] + offset
+
+
     def extra_libs(self, libs):
         self.elf.extra_libs(libs)
 
