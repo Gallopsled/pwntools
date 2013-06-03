@@ -28,6 +28,7 @@ if sys.stderr.isatty() and not pwn.DEBUG:
             self.i = 0
             self.numlines = 0
             self.spinner = random.choice([
+                    ['o.......','.o......','..o.....','...o....','....o...','.....o..','......o.','.......o'],
                     ['|', '/', '-', '\\'],
                     ['q', 'p', 'b', 'd'],
                     ['.', 'o', 'O', '0', '*', ' ', ' ', ' '],
