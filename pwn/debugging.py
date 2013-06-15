@@ -45,3 +45,4 @@ def attach_gdb(prog, exec = None, exec_file = None):
         if len(pids) > 1:
             pwn.log.info('Attaching to youngest process (PID: %d) of %d' % (pid, len(pids)))
     attach_gdb_to_pid(pid, execute = execute, execute_file = execute_file)
+    return pid
