@@ -4,3 +4,4 @@
         %include "linux/network.asm"
         %include "linux/signal.asm"
         %include "linux/socketcall.asm"
+        %include "linux/ptrace.asm"
