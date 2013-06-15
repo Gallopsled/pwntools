@@ -15,29 +15,29 @@
 
   %define PTRACE_SYSCALL      24
 
-  /* 0x4200-0x4300 are reserved for architecture-independent additions.  */
+  ;; 0x4200-0x4300 are reserved for architecture-independent additions.
   %define PTRACE_SETOPTIONS 0x4200
   %define PTRACE_GETEVENTMSG  0x4201
   %define PTRACE_GETSIGINFO 0x4202
   %define PTRACE_SETSIGINFO 0x4203
 
-  /*
-   * Generic ptrace interface that exports the architecture specific regsets
-   * using the corresponding NT_* types (which are also used in the core dump).
-   * Please note that the NT_PRSTATUS note type in a core dump contains a full
-   * 'struct elf_prstatus'. But the user_regset for NT_PRSTATUS contains just the
-   * elf_gregset_t that is the pr_reg field of 'struct elf_prstatus'. For all the
-   * other user_regset flavors, the user_regset layout and the ELF core dump note
-   * payload are exactly the same layout.
-   *
-   * This interface usage is as follows:
-   *  struct iovec iov = { buf, len};
-   *
-   *  ret = ptrace(PTRACE_GETREGSET/PTRACE_SETREGSET, pid, NT_XXX_TYPE, &iov);
-   *
-   * On the successful completion, iov.len will be updated by the kernel,
-   * specifying how much the kernel has written/read to/from the user's iov.buf.
-   */
+  ;;
+  ;; Generic ptrace interface that exports the architecture specific regsets
+  ;; using the corresponding NT_* types (which are also used in the core dump).
+  ;; Please note that the NT_PRSTATUS note type in a core dump contains a full
+  ;; 'struct elf_prstatus'. But the user_regset for NT_PRSTATUS contains just the
+  ;; elf_gregset_t that is the pr_reg field of 'struct elf_prstatus'. For all the
+  ;; other user_regset flavors, the user_regset layout and the ELF core dump note
+  ;; payload are exactly the same layout.
+  ;;
+  ;; This interface usage is as follows:
+  ;;  struct iovec iov = { buf, len};
+  ;;
+  ;;  ret = ptrace(PTRACE_GETREGSET/PTRACE_SETREGSET, pid, NT_XXX_TYPE, &iov);
+  ;;
+  ;; On the successful completion, iov.len will be updated by the kernel,
+  ;; specifying how much the kernel has written/read to/from the user's iov.buf.
+  ;;
   %define PTRACE_GETREGSET  0x4204
   %define PTRACE_SETREGSET  0x4205
 
@@ -45,7 +45,7 @@
   %define PTRACE_INTERRUPT  0x4207
   %define PTRACE_LISTEN   0x4208
 
-  /* Wait extended result codes for the above trace options.  */
+  ;; Wait extended result codes for the above trace options.
   %define PTRACE_EVENT_FORK 1
   %define PTRACE_EVENT_VFORK  2
   %define PTRACE_EVENT_CLONE  3
@@ -53,5 +53,5 @@
   %define PTRACE_EVENT_VFORK_DONE 5
   %define PTRACE_EVENT_EXIT 6
   %define PTRACE_EVENT_SECCOMP  7
-  /* Extended result codes which enabled by means other than options.  */
+  ;; Extended result codes which enabled by means other than options.
   %define PTRACE_EVENT_STOP 128
