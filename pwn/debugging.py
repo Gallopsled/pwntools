@@ -1,6 +1,6 @@
 import pwn, os, tempfile, time
 
-def attach_gdb_to_pid(pid, execute = None, execute_file = None):
+def attach_gdb_to_pid(pid, exec = None, exec_file = None):
     if execute is not None and execute_file is not None:
         pwn.die('Both execute and execute_file can\'t be set')
     try:
@@ -32,7 +32,7 @@ def attach_gdb_to_pid(pid, execute = None, execute_file = None):
     else:
         pwn.wait_for_debugger(pid)
 
-def attach_gdb(prog, execute = None, execute_file = None):
+def attach_gdb(prog, exec = None, exec_file = None):
     pids = pwn.pidof(prog)
     if isinstance(prog, pwn.remote) or isinstance(prog, pwn.process):
         pid = pids[0]
