@@ -15,6 +15,9 @@
 
   %define PTRACE_SYSCALL      24
 
+  %define PTRACE_GETREGS       12
+  %define PTRACE_SETREGS       13
+
   ;; 0x4200-0x4300 are reserved for architecture-independent additions.
   %define PTRACE_SETOPTIONS 0x4200
   %define PTRACE_GETEVENTMSG  0x4201
