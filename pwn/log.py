@@ -132,9 +132,10 @@ if sys.stderr.isatty() and not pwn.DEBUG:
         _debug(s)
 
     def waitfor(s):
-        global _message
+        global _message, _status
         if _spinner is not None:
             raise Exception('waitfor has already been called')
+        _status = ''
         _message = s
         _start_spinner()
 
