@@ -1,4 +1,4 @@
-import functools, inspect
+import functools, inspect, leak
 
 def kwargs_remover(f, kwargs, check_list = None, clone = True):
     '''Removes all the keys from a kwargs-list, that a given function does not understand.
@@ -60,3 +60,8 @@ def coroutine(func):
         cr.next()
         return cr
     return start
+
+
+def memleaker(func):
+    '''Create an information leak object.'''
+    return leak.MemLeak(func)

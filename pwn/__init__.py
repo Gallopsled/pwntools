@@ -56,7 +56,7 @@ try:
     from pwn.listutil   import *
     from pwn.iterutil   import *
     from pwn.genutil    import *
-    from pwn.decoutils  import coroutine
+    from pwn.decoutils  import coroutine, memleaker
     from pwn.procutil   import *
     from pwn.debugging  import *
     from pwn.memoize    import memoize
@@ -70,6 +70,7 @@ try:
     from pwn.elf        import ELF, parse_ldd_output
     from pwn.rop        import ROP
     from pwn.ciic       import ciic
+    from leak           import MemLeak
 
     import pwn.internal.init.session
     import pwn.nasm
