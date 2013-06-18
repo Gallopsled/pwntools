@@ -108,6 +108,14 @@ class basechatter:
         res = self.recvuntil(delim)
         return res
 
+    def sendlinethen(self, *args):
+        ''' Like sendthen, but appends a newline'''
+        return self.sendthen(*args)
+
+    def sendlineafter(self, *args):
+        ''' Like sendafter, but appends a newline'''
+        return self.sendafter(*args)
+
     def recvline(self, lines = 1):
         res = []
         for _ in range(lines):
