@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import sys, time, random, pwn
+import sys, pwn
 from pwn.internal.excepthook import addexcepthook
 import pwn.text as text
-import threading
 
 def _trace(s):
     if pwn.TRACE:
@@ -16,6 +15,7 @@ def _debug(s):
         sys.stderr.flush()
 
 if sys.stderr.isatty() and not pwn.DEBUG:
+    import threading
     _spinner = None
     _message = ''
     _status = ''
@@ -23,6 +23,7 @@ if sys.stderr.isatty() and not pwn.DEBUG:
 
     class _Spinner(threading.Thread):
         def __init__(self):
+            import random
             threading.Thread.__init__(self)
             self.running = True
             self.i = 0
@@ -96,7 +97,7 @@ if sys.stderr.isatty() and not pwn.DEBUG:
                 else:
                     break
                 self.i = (self.i + 1) % len(self.spinner)
-                time.sleep(0.1)
+                pwn.sleep(0.1)
 
     def _stop_spinner(marker = text.boldblue('[*]'), status = ''):
         global _spinner, _status

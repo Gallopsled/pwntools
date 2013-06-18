@@ -1,4 +1,4 @@
-import traceback, sys
+import sys
 
 __excepthooks__ = set()
 
@@ -9,6 +9,7 @@ def addexcepthook(hook):
     __excepthooks__.add(hook)
 
 def __excepthook__(*args):
+    import traceback
     # The spinner might still be running, but due to pythons
     # global interpreter lock, this is not a problem.
     sys.stderr.write('\n\n')

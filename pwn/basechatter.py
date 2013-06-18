@@ -1,6 +1,4 @@
-import pwn, socket, time, sys, re, errno
-from pwn import log, text, Thread
-from select import select
+import pwn
 
 class basechatter:
     def connected(self):
@@ -24,7 +22,8 @@ class basechatter:
         pwn.bug('This should be implemented in the sub-class')
 
     def can_recv(self, timeout = 0):
-        return select([self], [], [], timeout) == ([self], [], [])
+        import select
+        return select.select([self], [], [], timeout) == ([self], [], [])
 
     def __init__(self, timeout = 'default', silent = False):
         self.debug = pwn.DEBUG
@@ -47,11 +46,13 @@ class basechatter:
         self.send(line + '\n')
 
     def recv(self, numb = 4096):
+        import socket, sys
         try:
             res = self._recv(numb)
         except socket.timeout:
             return ''
         except IOError as e:
+            import errno
             if e.errno == errno.EAGAIN:
                 return ''
             raise
@@ -73,6 +74,7 @@ class basechatter:
 
     def recvuntil(self, delim = None, **kwargs):
         if 'regex' in kwargs:
+            import re
             expr = re.compile(kwargs['regex'], re.DOTALL)
             pred = lambda s: expr.match(s)
         elif 'pred' in kwargs:
@@ -112,10 +114,10 @@ class basechatter:
             res.append(self.recvuntil('\n'))
         return ''.join(res)
 
-    def interactive(self, prompt = text.boldred('$') + ' ', flush_timeout = None):
+    def interactive(self, prompt = pwn.text.boldred('$') + ' ', flush_timeout = None):
         if not self.silent:
-            log.info('Switching to interactive mode')
-        import readline
+            pwn.log.info('Switching to interactive mode')
+        import readline, sys
         debug = self.debug
         timeout = self.timeout
         self.debug = False
@@ -134,6 +136,7 @@ class basechatter:
 
         running = [True] # the old by-ref trick
         def loop():
+            import time
             buf = ''
             buft = time.time()
             newline = True
@@ -189,7 +192,7 @@ class basechatter:
                     newline = True
 
         save()
-        t = Thread(target = loop)
+        t = pwn.Thread(target = loop)
         t.daemon = True
         t.start()
         try:
@@ -214,7 +217,7 @@ class basechatter:
 
     def recvall(self):
         if not self.silent:
-            log.waitfor('Recieving all data')
+            pwn.log.waitfor('Recieving all data')
         r = []
         l = 0
         while True:
@@ -223,9 +226,9 @@ class basechatter:
             r.append(s)
             l += len(s)
             if not self.silent:
-                log.status(pwn.size(l))
+                pwn.log.status(pwn.size(l))
         if not self.silent:
-            log.succeeded()
+            pwn.log.succeeded()
         return ''.join(r)
 
     def clean(self):

@@ -1,5 +1,4 @@
-import signal
-from pwn import log
+import pwn
 from util import *
 
 def int2bytes(n):
@@ -42,6 +41,9 @@ def wieners_attack(n, e):
     Implements wieners attack on RSA.
     Based on http://wwwusers.di.uniroma1.it/~parisi/Risorse/Wiener_Attack.pdf
     """
+    from sympy.solvers import solve
+    from sympy.core import numbers
+    from sympy import Symbol
     fractions = continued_fractions(n, e)
     for i in range(2, len(fractions)):
         frac = calculate_fraction(fractions[:i]).limit_denominator()
@@ -56,32 +58,32 @@ def crack_rsa(n,e = None,c = None):
     """
     Tries all currently implemented attacks on RSA key.
     """
-    log.info("Cracking RSA key")
+    pwn.log.info("Cracking RSA key")
 
     # Wieners attack
     if e != None:
-        log.waitfor("Trying Wiener's attack")
+        pwn.log.waitfor("Trying Wiener's attack")
         res = wieners_attack(n,e)
         if res != None:
-            log.succeeded("success!")
-            log.success("Factors: %d %d" % res)
+            pwn.log.succeeded("success!")
+            pwn.log.success("Factors: %d %d" % res)
             return
     else:
-        log.failed()
+        pwn.log.failed()
 
     # Factor
-    log.waitfor("Trying to factor...")
+    pwn.log.waitfor("Trying to factor...")
     res = factor(n)
     if res != None:
         p, q = res
-        log.succeeded("success!")
-        log.success("Factors: %d %d" % (p, q))
+        pwn.log.succeeded("success!")
+        pwn.log.success("Factors: %d %d" % (p, q))
         if e != None:
             d = calculate_private_key(p,q,e)
-            log.success("d = %d" % d)
+            pwn.log.success("d = %d" % d)
             if c != None:
-                log.info("Possible message: %s" % int2bytes(decrypt(c,d,n)))
+                pwn.log.info("Possible message: %s" % int2bytes(decrypt(c,d,n)))
         return
     else:
-        log.failed("failed")
+        pwn.log.failed("failed")
 

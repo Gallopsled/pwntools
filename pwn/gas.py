@@ -1,8 +1,7 @@
-import pwn, tempfile, subprocess, errno, os
-import pwn.internal.shellcode_helper as H
-import os.path
+import pwn
 
 def _cmd(arch, src):
+    import os.path
     cmd = ["cpp"]
     if pwn.DEBUG:
         cmd += ['-D', 'DEBUG']
@@ -14,9 +13,9 @@ def _cmd(arch, src):
     cmd += [src + '.out', '/dev/stdout', '-j.shellcode', '-Obinary']
     return ' '.join(cmd)
 
-#@pwn.memoize
+@pwn.memoize
 def gas_raw(arch, code, checked = True, return_none = False):
-
+    import tempfile, subprocess, errno
     with tempfile.NamedTemporaryFile(prefix='pwn', suffix='.asm') as tmp:
         tmp.write(code)
         tmp.flush()
@@ -48,7 +47,7 @@ def header(target_arch, target_os):
     return []
 
 def gas(target_arch, target_os, blocks, emit_asm, checked = True):
-
+    import pwn.internal.shellcode_helper as H
     code =  ['.section .shellcode,"ax"']
     code += ['#include <%s/%s.h>' % (target_arch, target_os)]
     code += header(target_arch, target_os)
@@ -63,13 +62,13 @@ def gas(target_arch, target_os, blocks, emit_asm, checked = True):
         elif isinstance(b, H.AssemblerBlob):
             code.append('.byte ' + ', '.join('0x%02x' % ord(c) for c in b.blob))
         else:
-            die("Trying to assemble something that is not an assembler block")
+            pwn.die("Trying to assemble something that is not an assembler block")
 
     code = '\n'.join(code)
 
     if emit_asm:
         return \
             ';;; Assemble with:\n;;;  %s\n' % \
-            _cmd('<file>') + code
+            _cmd(target_arch, '<file>') + code
     else:
         return gas_raw(target_arch, code, checked)

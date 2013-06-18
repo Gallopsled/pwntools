@@ -64,7 +64,9 @@ findtag:
     inc bp
     mov ecx, esi
     pushad
-    mov bl, SYS_socketcall_recv
+    push SYS_socketcall_recv-1
+    pop ebx
+    inc ebx
     int 0x80
     popad
     pop edi

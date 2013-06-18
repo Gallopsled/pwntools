@@ -3,8 +3,6 @@ import os, traceback
 
 # Useful re-exports
 from time import sleep
-from socket import htons, inet_aton, inet_ntoa, gethostbyname
-from os import system
 
 # Install path
 installpath = os.path.dirname(os.path.realpath(__file__))

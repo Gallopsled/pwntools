@@ -3,16 +3,9 @@ Utilities for working with monoalphabetic ciphers.
 Includes tools for cracking several well-known ciphers.
 """
 
-import sys
-import heapq
 import string
-import random
-import operator
-import collections
-from fractions import gcd
 
-from pwn import log
-
+import pwn
 import util
 import freq
 import ngram
@@ -51,18 +44,19 @@ def decrypt_substitution(ciphertext, dictionary):
     return encrypt_substitution(ciphertext, inverse)
 
 def crack_substitution(ciphertext, num_starts=20, num_iterations=3000, frequencies=freq.english, show_status=True):
+    import random, heapq, sys
     global_best_dict = {}
     global_best_score = sys.float_info.max
 
     mixed_alphabet = list(string.uppercase)
 
-    if show_status: log.waitfor("Cracking cipher")
+    if show_status: pwn.log.waitfor("Cracking cipher")
     for i in range(num_starts):
         local_scores = []
 
         random.shuffle(mixed_alphabet)
         new_dict = {k:v for (k,v) in zip(string.uppercase, mixed_alphabet)}
-        new_score = -1 * ngram.log_p(ciphertext.lower(), ngram.english_freq[3], 3)
+        new_score = -1 * ngram.log_p(ciphertext.lower(), ngram.english_freq(3), 3)
 
         heapq.heappush(local_scores, (new_score, new_dict))
 
@@ -76,7 +70,7 @@ def crack_substitution(ciphertext, num_starts=20, num_iterations=3000, frequenci
             new_dict[c1], new_dict[c2] = new_dict[c2], new_dict[c1]
 
             trial = encrypt_substitution(ciphertext, new_dict)
-            new_score = -1 * ngram.log_p(trial.lower(), ngram.english_freq[3], 3)
+            new_score = -1 * ngram.log_p(trial.lower(), ngram.english_freq(3), 3)
 
             heapq.heappush(local_scores, (new_score, new_dict))
 
@@ -159,6 +153,7 @@ def crack_affine(ciphertext, alphabet=string.uppercase, frequencies=freq.english
         #TODO: Return a tuple with the key, format (key, plaintext)
         the plaintext of the broken cipher.
     """
+    from fractions import gcd
     n = len(alphabet)
     invertible = [i for i in range(n) if gcd(i,n) == 1]
     keys = [(a,b) for a in invertible for b in range(n)]

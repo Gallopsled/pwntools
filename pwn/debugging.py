@@ -1,6 +1,7 @@
-import pwn, os, tempfile, time
+import pwn
 
 def attach_gdb_to_pid(pid, execute = None, execute_file = None):
+    import os, tempfile
     if execute is not None and execute_file is not None:
         pwn.die('Both execute and execute_file can\'t be set')
     try:

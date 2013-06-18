@@ -2,15 +2,8 @@
 Collection of various utility functions for cryptoanalysis.
 """
 
-import string, collections, os, signal
-import gmpy
 from functools import wraps
 from itertools import *
-from random import seed, randint
-from sympy.solvers import solve
-from sympy.core import numbers
-from sympy import Symbol
-from fractions import Fraction
 
 import freq
 
@@ -67,6 +60,7 @@ def timeout(seconds=10, error_message=""):
             raise TimeoutError(error_message)
 
         def wrapper(*args, **kwargs):
+            import signal
             signal.signal(signal.SIGALRM, _handle_timeout)
             signal.alarm(seconds)
             try:
@@ -85,6 +79,7 @@ def factor_fermat(N):
     Guess at a and hope that a^2 - N = b^2,
     which is the case if p and q is "too close".
     """
+    import gmpy
     a  = gmpy.sqrt(N)
     b2 = a*a - N
     while not gmpy.is_square(gmpy.mpz(b2)):
@@ -219,6 +214,7 @@ def calculate_fraction(fs):
     Calculate fraction from continued fraction list.
     Might need result.limit_denominator() for best results.
     """
+    from fractions import Fraction
     if len(fs) == 1:
         return Fraction(fs[0])
     else:

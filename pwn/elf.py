@@ -1,22 +1,21 @@
-import os, sys, re
-from subprocess import *
-from pwn import die, findall, chained
-from pwn.log import waitfor, succeeded, status
+import pwn
 
 # readelf/objdump binaries
 _READELF = '/usr/bin/readelf'
 _OBJDUMP = '/usr/bin/objdump'
 def check(f):
+    import os
     if not (os.access(f, os.X_OK) and os.path.isfile(f)):
-        die('Executable %s needed for readelf.py, please install binutils' % f)
+        pwn.die('Executable %s needed for readelf.py, please install binutils' % f)
 check(_READELF)
 check(_OBJDUMP)
 
 def symbols(file):
+    import re, subprocess
     symbols = {}
     # -s : symbol table
     cmd = [_READELF, '-s', file]
-    out = Popen(cmd, stdout=PIPE).communicate()[0]
+    out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
     field = '\s+(\S+)'
     lines = re.findall('^\s+\d+:' + field * 7 + '$', out, re.MULTILINE)
 
@@ -33,7 +32,8 @@ def symbols(file):
 class ELF:
     '''A parsed ELF file'''
     def __init__(self, file):
-        waitfor('Loading ELF file `%s\'' % os.path.basename(file))
+        import os, re
+        pwn.log.waitfor('Loading ELF file `%s\'' % os.path.basename(file))
         self.segments = []
         self.sections = {}
         self.symbols = {}
@@ -45,7 +45,7 @@ class ELF:
         self.execstack = False
 
         if not (os.access(file, os.R_OK) and os.path.isfile(file)):
-            die('File %s is not readable or does not exist' % file)
+            pwn.die('File %s is not readable or does not exist' % file)
 
         self._file = file
 
@@ -62,20 +62,22 @@ class ELF:
             except:
                 pass
         if self.execstack:
-            status('\nStack is executable!')
-        succeeded()
+            pwn.log.status('\nStack is executable!')
+        pwn.log.succeeded()
 
     def _load_elfclass(self):
         # -h : ELF header
+        import re, subprocess
         cmd = [_READELF, '-h', self._file]
-        out = Popen(cmd, stdout=PIPE).communicate()[0]
+        out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
         self.elfclass = re.findall('Class:\s*(.*$)', out, re.MULTILINE)[0]
 
     def _load_segments(self):
         # -W : Wide output
         # -l : Program headers
+        import re, subprocess
         cmd = [_READELF, '-W', '-l', self._file]
-        out = Popen(cmd, stdout=PIPE).communicate()[0]
+        out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
         hexint = '(0x[0-9a-f]+)'
         numfield = '\s+' + hexint
         flgfield = '\s+([RWE ]{3})'
@@ -106,8 +108,9 @@ class ELF:
     def _load_sections(self):
         # -W : Wide output
         # -S : Section headers
+        import re, subprocess
         cmd = [_READELF, '-W', '-S', self._file]
-        out = Popen(cmd, stdout=PIPE).communicate()[0]
+        out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
         field = '\s+(\S+)'
         posint = '[123456789]\d*'
         flags = '\s+([WAXMSILGTExOop]*)'
@@ -128,10 +131,11 @@ class ELF:
         self.symbols = symbols(self._file)
 
     def _load_libs(self):
+        import subprocess
         dat = ''
         try:
-            dat = check_output(['ldd', self._file])
-        except CalledProcessError:
+            dat = subprocess.check_output(['ldd', self._file])
+        except subprocess.CalledProcessError:
             pass
 
         self.libs = parse_ldd_output(dat)
@@ -142,8 +146,9 @@ class ELF:
 
     # this is crazy slow -- include this feature in the all-python ELF parser
     def _load_plt_got(self):
+        import re, subprocess
         cmd = [_OBJDUMP, '-d', self._file]
-        out = Popen(cmd, stdout=PIPE).communicate()[0]
+        out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
         got32 = '[^j]*jmp\s+\*0x(\S+)'
         got64 = '[^#]*#\s+(\S+)'
         lines = re.findall('([a-fA-F0-9]+)\s+<([^@<]+)@plt>:(%s|%s)' % (got32, got64), out)
@@ -166,11 +171,11 @@ class ELF:
             size = sym['size']
             data = self.read(addr, size)
             if data is None:
-                die('Symbol %s does not live in any section' % name)
+                pwn.die('Symbol %s does not live in any section' % name)
             else:
                 return data
         else:
-            die('No symbol named %s' % name)
+            pwn.die('No symbol named %s' % name)
 
     def section(self, name):
         if name in self.sections:
@@ -180,7 +185,7 @@ class ELF:
             size = sec['size']
             return ''.join(self._file_data[offset:offset + size])
         else:
-            die('No section named %s' % name)
+            pwn.die('No section named %s' % name)
 
     def _filter_segments(self, flg, negate = False):
         self._load_data()
@@ -229,7 +234,7 @@ class ELF:
                 if numb == 0:
                     break
 
-    @chained
+    @pwn.chained
     def search(self, s, non_writable = False):
         self._load_data()
         for seg in self.segments:
@@ -237,16 +242,17 @@ class ELF:
             off = seg['offset']
             siz = seg['filesiz']
             dat = self._file_data[off : off + siz]
-            yield map(lambda i: i + seg['virtaddr'], findall(dat, list(s)))
+            yield map(lambda i: i + seg['virtaddr'], pwn.findall(dat, list(s)))
 
     def replace(self, s, repl, non_writable = False, padding = '\x90'):
+        import types
         self._load_data()
         for seg in self.segments:
             if 'W' in seg['flg'] and non_writable: continue
             off = seg['offset']
             siz = seg['filesiz']
             dat = self._file_data[off : off + siz]
-            for idx in findall(dat, list(s)):
+            for idx in pwn.findall(dat, list(s)):
                 addr = idx + seg['virtaddr']
                 if isinstance(repl, types.FunctionType):
                     rep = repl(addr, s)
@@ -267,6 +273,7 @@ class ELF:
         return ''.join(self._file_data)
 
 def parse_ldd_output(dat):
+    import re
     expr = re.compile(r'(?:([^ ]+) => )?([^(]+)?(?: \(0x[0-9a-f]+\))?$')
     res = {}
 
@@ -276,7 +283,7 @@ def parse_ldd_output(dat):
             continue
         parsed = expr.search(line)
         if not parsed:
-            log.warning('Could not parse line: "%s"' % line)
+            pwn.log.warning('Could not parse line: "%s"' % line)
         name, resolved = parsed.groups()
         if name == None:
             if re.search('/ld-[^/]*$', resolved):
@@ -284,7 +291,7 @@ def parse_ldd_output(dat):
             elif re.search('^linux', resolved):
                 name = 'linux'
             else:
-                log.warning('Could not parse line: "%s"' % line)
+                pwn.log.warning('Could not parse line: "%s"' % line)
                 continue
 
         res[name] = resolved

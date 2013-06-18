@@ -1,4 +1,4 @@
-import pwn, math, inspect
+import pwn
 
 def _tobits(s):
     return pwn.bits(s, endian = 'little')
@@ -60,6 +60,7 @@ def differential_table(sbox):
 
 class SBoxes:
     def __init__ (self, *boxes):
+        import math
         if isinstance(boxes[0], int):
             rep = boxes[0]
             boxes = list(boxes[1:])
@@ -128,6 +129,7 @@ class KMixXor(KMix):
 
 class SPN:
     def __init__ (self, *layers, **kwargs):
+        import inspect
         self.blocksize = kwargs.get('blocksize', None)
         layers = list(layers)
         for l in layers:

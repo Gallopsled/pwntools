@@ -1,6 +1,5 @@
-import pwn, socket, time, sys, re, errno
+import pwn
 from basechatter import basechatter
-from pwn import log, text
 
 class basesock(basechatter):
     def __init__(self, timeout = 'default', silent = False):
@@ -14,7 +13,7 @@ class basesock(basechatter):
         if self.sock:
             self.sock.close()
             self.sock = None
-            log.info('Closed connection to %s on port %d' % self.target)
+            pwn.log.info('Closed connection to %s on port %d' % self.target)
 
     def _send(self, dat):
         l = len(dat)

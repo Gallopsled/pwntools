@@ -125,7 +125,7 @@ class Block:
             elif hasattr(o, '__len__'):
                 res += len(o)
             else:
-                res += len(pwn.flat(o)) 
+                res += len(pwn.flat(o))
 
         return res
 
@@ -141,7 +141,7 @@ class Block:
         Block.symbols[self.name + '_offset_start'] = offset
         if base:
             Block.symbols[self.name + '_addr_start'] = base + offset
-        
+
         for o in self._content:
             if isinstance(o, Block):
                 offset = o.update_symbols(offset, base)
@@ -150,7 +150,7 @@ class Block:
             elif hasattr(o, '__len__'):
                 offset += len(o)
             else:
-                offset += len(pwn.flat(o)) 
+                offset += len(pwn.flat(o))
         if base:
             Block.symbols[self.name + '_addr_end'] = base + offset
         Block.symbols[self.name + '_offset_end']   = offset
@@ -177,4 +177,4 @@ def update_all_symbols(known_bases = None):
     known_bases = known_bases or {}
     Block.symbols = {}
     for k, b in Block._roots.items():
-        b.update_symbols(base = known_bases.get(k, None)) 
+        b.update_symbols(base = known_bases.get(k, None))

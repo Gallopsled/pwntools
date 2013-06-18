@@ -7,7 +7,7 @@ from pwn.shellcode import nop_pad, connectback
 import re
 context('linux', 'i386', 'ipv4')
 
-sock = remote('localhost', 1337, timeout = 1)
+sock = remote('localhost', 1337, timeout = 5)
 sock.recvuntil('Your output to my input? Do your best!\n')
 
 attach_gdb(sock, execute = '''

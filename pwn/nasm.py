@@ -1,7 +1,7 @@
-import pwn, tempfile, subprocess, errno, os
-import pwn.internal.shellcode_helper as H
+import pwn
 
 def _cmd(src, optimize = 'x'):
+    import os.path
     cmd = ['nasm']
     if pwn.DEBUG:
         cmd += ['-D', 'DEBUG']
@@ -11,7 +11,7 @@ def _cmd(src, optimize = 'x'):
 
 @pwn.memoize
 def nasm_raw(code, checked = True, return_none = False, optimize = 'x'):
-
+    import tempfile, subprocess, errno
     with tempfile.NamedTemporaryFile(prefix='pwn', suffix='.asm') as tmp:
         tmp.write(code)
         tmp.flush()
@@ -36,6 +36,7 @@ def nasm_raw(code, checked = True, return_none = False, optimize = 'x'):
         return p.stdout.read()
 
 def nasm(target_arch, target_os, blocks, emit_asm, checked = True):
+    import pwn.internal.shellcode_helper as H
 
     if target_arch not in ['i386', 'amd64'] or target_os not in ['linux', 'freebsd']:
         pwn.die('I do not know how to assemble arch=' + str(target_arch) + ', os=' + str(target_os))
@@ -68,7 +69,7 @@ def nasm(target_arch, target_os, blocks, emit_asm, checked = True):
         elif isinstance(b, H.AssemblerBlob):
             code.append('db ' + ', '.join('0x%02x' % ord(c) for c in b.blob))
         else:
-            die("Trying to assemble something that is not an assembler block")
+            pwn.die("Trying to assemble something that is not an assembler block")
 
     code = '\n'.join(code)
 

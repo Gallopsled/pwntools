@@ -1,4 +1,4 @@
-import struct, re, base64, random, pwn
+import pwn
 _AssemblerBlock = None
 
 # conversion functions
@@ -42,66 +42,82 @@ def uintb(x):
 
 def p8(x):
     """Packs an integer into a 1-byte string"""
+    import struct
     return struct.pack('<B', x & 0xff)
 
 def p8b(x):
     """Packs an integer into a 1-byte string"""
+    import struct
     return struct.pack('>B', x & 0xff)
 
 def p16(x):
     """Packs an integer into a 2-byte string (little endian)"""
+    import struct
     return struct.pack('<H', x & 0xffff)
 
 def p16b(x):
     """Packs an integer into a 2-byte string (big endian)"""
+    import struct
     return struct.pack('>H', x & 0xffff)
 
 def p32(x):
     """Packs an integer into a 4-byte string (little endian)"""
+    import struct
     return struct.pack('<I', x & 0xffffffff)
 
 def p32b(x):
     """Packs an integer into a 4-byte string (big endian)"""
+    import struct
     return struct.pack('>I', x & 0xffffffff)
 
 def p64(x):
     """Packs an integer into a 8-byte string (little endian)"""
+    import struct
     return struct.pack('<Q', x & 0xffffffffffffffff)
 
 def p64b(x):
     """Packs an integer into a 8-byte string (big endian)"""
+    import struct
     return struct.pack('>Q', x & 0xffffffffffffffff)
 
 def u8(x):
     """Unpacks a 1-byte string into an integer"""
+    import struct
     return struct.unpack('<B', x)[0]
 
 def u8b(x):
     """Unpacks a 1-byte string into an integer"""
+    import struct
     return struct.unpack('>B', x)[0]
 
 def u16(x):
     """Unpacks a 2-byte string into an integer (little endian)"""
+    import struct
     return struct.unpack('<H', x)[0]
 
 def u16b(x):
     """Unpacks a 2-byte string into an integer (big endian)"""
+    import struct
     return struct.unpack('>H', x)[0]
 
 def u32(x):
     """Unpacks a 4-byte string into an integer (little endian)"""
+    import struct
     return struct.unpack('<I', x)[0]
 
 def u32b(x):
     """Unpacks a 4-byte string into an integer (big endian)"""
+    import struct
     return struct.unpack('>I', x)[0]
 
 def u64(x):
     """Unpacks a 8-byte string into an integer (little endian)"""
+    import struct
     return struct.unpack('<Q', x)[0]
 
 def u64b(x):
     """Unpacks a 8-byte string into an integer (big endian)"""
+    import struct
     return struct.unpack('>Q', x)[0]
 
 @pwn.need_context
@@ -192,6 +208,7 @@ def urlencode(s):
 
 def urldecode(s, ignore_invalid = False):
     """urldecodes a string"""
+    import re
     res = ''
     n = 0
     while n < len(s):
@@ -209,8 +226,6 @@ def urldecode(s, ignore_invalid = False):
             else:
                 raise Exception("Invalid input to urldecode")
     return res
-
-
 
 def bits(s, **kwargs):
     types = {bool:     'bool',
@@ -307,12 +322,14 @@ def unbits(s, endian = 'big'):
     return ''.join(out)
 
 def b64(s):
+    import base64
     return base64.b64encode(s)
 
 def b64e(s):
     return b64(s)
 
 def b64d(s):
+    import base64
     return base64.b64decode(s)
 
 # misc binary functions
@@ -375,6 +392,7 @@ def xor_pair(data):
 def randoms(count):
     """Args: count
     Returns a number of random bytes, while avoiding the bytes specified using the avoid module."""
+    import random
     return ''.join(random.choice(pwn.get_only()) for n in range(count))
 
 @pwn.avoider

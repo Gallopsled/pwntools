@@ -1,9 +1,5 @@
-import pwn, sys, time
-from pwn import log, text
-from subprocess import Popen, PIPE
-import fcntl, os
+import pwn
 from basechatter import basechatter
-import time
 
 class process(basechatter):
     def __init__(self, cmd, *args, **kwargs):
@@ -17,15 +13,16 @@ class process(basechatter):
         self.start(cmd, args, env)
 
     def start(self, cmd, args, env):
+        import subprocess, fcntl, os
         if self.connected():
-            log.warning('Program "%s" already started' % cmd)
+            pwn.log.warning('Program "%s" already started' % cmd)
             return
         if not self.silent:
-            log.waitfor('Starting program "%s"' % cmd)
+            pwn.log.waitfor('Starting program "%s"' % cmd)
 
-        self.proc = Popen(
+        self.proc = subprocess.Popen(
                 tuple(cmd.split()) + args,
-                stdin=PIPE, stdout=PIPE, stderr=PIPE,
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                 env = env,
                 bufsize = 0)
         fd = self.proc.stdout.fileno()
@@ -33,7 +30,7 @@ class process(basechatter):
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
         self.stdout = fd
         if not self.silent:
-            log.succeeded()
+            pwn.log.succeeded()
 
     def connected(self):
         return self.proc != None
@@ -48,6 +45,7 @@ class process(basechatter):
         self.proc.stdin.flush()
 
     def _recv(self, numb):
+        import time
         end_time = time.time() + self.timeout
 
         while True:

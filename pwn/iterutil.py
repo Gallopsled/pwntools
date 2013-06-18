@@ -10,6 +10,7 @@ def tabulate(function, start=0):
 
 def consume(iterator, n):
     "Advance the iterator n-steps ahead. If n is none, consume entirely."
+    import collections
     # Use functions that consume iterators at C speed.
     if n is None:
         # feed the entire iterator into a zero-length deque
@@ -38,6 +39,7 @@ def ncycles(iterable, n):
     return chain.from_iterable(repeat(tuple(iterable), n))
 
 def dotproduct(vec1, vec2):
+    import operator
     return sum(imap(operator.mul, vec1, vec2))
 
 def flatten(listOfLists):
@@ -104,7 +106,8 @@ def unique_justseen(iterable, key=None):
     "List unique elements, preserving order. Remember only the element just seen."
     # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
     # unique_justseen('ABBCcAD', str.lower) --> A B C A D
-    return imap(next, imap(itemgetter(1), groupby(iterable, key)))
+    import operator
+    return imap(next, imap(operator.itemgetter(1), groupby(iterable, key)))
 
 def iter_except(func, exception, first=None):
     """ Call a function repeatedly until an exception is raised.
@@ -132,17 +135,20 @@ def iter_except(func, exception, first=None):
 
 def random_product(*args, **kwds):
     "Random selection from itertools.product(*args, **kwds)"
+    import random
     pools = map(tuple, args) * kwds.get('repeat', 1)
     return tuple(random.choice(pool) for pool in pools)
 
 def random_permutation(iterable, r=None):
     "Random selection from itertools.permutations(iterable, r)"
+    import random
     pool = tuple(iterable)
     r = len(pool) if r is None else r
     return tuple(random.sample(pool, r))
 
 def random_combination(iterable, r):
     "Random selection from itertools.combinations(iterable, r)"
+    import random
     pool = tuple(iterable)
     n = len(pool)
     indices = sorted(random.sample(xrange(n), r))
@@ -150,6 +156,7 @@ def random_combination(iterable, r):
 
 def random_combination_with_replacement(iterable, r):
     "Random selection from itertools.combinations_with_replacement(iterable, r)"
+    import random
     pool = tuple(iterable)
     n = len(pool)
     indices = sorted(random.randrange(n) for i in xrange(r))

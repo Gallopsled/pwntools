@@ -1,9 +1,5 @@
-import heapq
 import string
-from pwn import flat, log
-from math import ceil
-from numpy import mean
-import matplotlib.pyplot as plt
+import pwn
 
 import util
 import freq
@@ -54,6 +50,7 @@ def key_period(guesses, ic_target=util.ic_english, alphabet=string.uppercase, pr
     Returns:
         a list of fitness scores of the form (length, mean_score).
     """
+    from numpy import mean
     fitness = []
     for (length, strands) in guesses:
         scores = strand_scores(strands, alphabet)
@@ -66,13 +63,13 @@ def key_period(guesses, ic_target=util.ic_english, alphabet=string.uppercase, pr
 
 def choose_alphabet(ciphertext, alphabet):
     if alphabet is None:
-        log.info('Trying to guess alphabet')
+        pwn.log.info('Trying to guess alphabet')
         ct = filter(lambda c: c in string.letters, ciphertext)
         if ct.isupper():
-            log.success('Using uppercase letters')
+            pwn.log.success('Using uppercase letters')
             alphabet = string.uppercase
         elif ct.islower():
-            log.success('Using lowercase letters')
+            pwn.log.success('Using lowercase letters')
             alphabet = string.lowercase
     if alphabet is None:
         raise TypeError('no alphabet')
@@ -96,6 +93,7 @@ def graph_key_period(ciphertext, splitFunction, limit = None, ic_target=util.ic_
     Returns:
         draws a graph to the screen instead of returning anything.
     """
+    import matplotlib.pyplot as plt
     alphabet = choose_alphabet(ciphertext, alphabet)
 
     if limit == None: limit = min((len(ciphertext) / 4) + 1, 20)
@@ -170,7 +168,7 @@ def split_vigenere(ciphertext, keylength):
     return (keylength, [ciphertext[i::keylength] for i in range(keylength)])
 
 def interleave_vigenere(strands, length):
-    return flat([[strand[n:n+1] for strand in strands] for n in range(length)])
+    return pwn.flat([[strand[n:n+1] for strand in strands] for n in range(length)])
 
 vigenere_cipher = (split_vigenere, interleave_vigenere)
 

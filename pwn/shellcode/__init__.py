@@ -13,4 +13,3 @@ for k, v in globals().items():
     elif k.startswith('_') and not k.startswith('__'):
         del globals()[k]
 del k, v, module_type
-

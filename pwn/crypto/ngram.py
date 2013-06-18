@@ -1,16 +1,15 @@
 from math import sqrt, log10
-from os import path
+import os.path
+import pwn
 
-from pwn import read
+@pwn.memoize(use_file = False)
+def english_freq(i):
+    resource_dir = os.path.dirname(__file__)
+    ngram_file = os.path.join(resource_dir, "count_%dl.txt")
 
-resource_dir = path.dirname(__file__)
-ngram_file = path.join(resource_dir, "count_%dl.txt")
-
-english_freq = {}
-for i in [2,3]:
-    data = read(ngram_file % (i)).split()
+    data = pwn.read(ngram_file % (i)).split()
     total = sum(map(int, data[1::2])) * 1.
-    english_freq[i] = dict(zip(data[0::2], [int(x) / total for x in data[1::2]]))
+    return dict(zip(data[0::2], [int(x) / total for x in data[1::2]]))
 
 def generate_ngram(text, n=3):
     """

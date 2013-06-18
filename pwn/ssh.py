@@ -1,16 +1,5 @@
-import pwn, sys, time, os, tty, termios, paramiko, re, tempfile, datetime, shutil, socket, getpass
-from pwn import log, text
-from subprocess import Popen, PIPE
+import pwn, os
 from basechatter import basechatter
-from select import select
-
-class WarnPolicy(paramiko.MissingHostKeyPolicy):
-    '''Policy for what happens when an unknown ssh-fingerprint is encountered'''
-    def __init__(self):
-        self.do_warning = False
-
-    def missing_host_key(self, client, hostname, key):
-        self.do_warning = True
 
 class ssh_channel(basechatter):
     def __init__(self, parent, process = None, silent = None, tty = True):
@@ -25,11 +14,11 @@ class ssh_channel(basechatter):
 
     def _connect(self, process = None):
         if self.connected():
-            log.warning('SSH channel is already connected')
+            pwn.log.warning('SSH channel is already connected')
             return
 
         if not self.silent:
-            log.waitfor('Opening new channel: "%s"' % (process or 'shell'))
+            pwn.log.waitfor('Opening new channel: "%s"' % (process or 'shell'))
 
         self._channel = self.parent._transport.open_session()
         if self._tty:
@@ -46,7 +35,7 @@ class ssh_channel(basechatter):
             self._channel.invoke_shell()
 
         if not self.silent:
-            log.succeeded()
+            pwn.log.succeeded()
 
     def connected(self):
         '''Returns True if the channel is connected.'''
@@ -66,6 +55,7 @@ class ssh_channel(basechatter):
             dat = dat[n:]
 
     def _recv(self, numb):
+        import time, socket
         end_time = time.time() + self.timeout
 
         while True:
@@ -100,8 +90,9 @@ class ssh_channel(basechatter):
         '''Returns True if the channel is ready to recieve (the timeout is ignored).'''
         return self._channel.recv_ready()
 
-    def interactive(self, prompt = text.boldred('$') + ' '):
+    def interactive(self, prompt = pwn.text.boldred('$') + ' '):
         '''Turns the channel into an interactive session (that is, it connects stdin and stdout to the channel).'''
+        import sys, tty, termios, select
         if not self._tty:
             basechatter.interactive(self, prompt)
             return
@@ -112,7 +103,7 @@ class ssh_channel(basechatter):
 
         try:
             while True:
-                reads, _, _ = select([sys.stdin.fileno(), self._channel.fileno()], [], [], 0.05)
+                reads, _, _ = select.select([sys.stdin.fileno(), self._channel.fileno()], [], [], 0.05)
 
                 while self._channel.recv_ready():
                     dat = self.recv()
@@ -224,11 +215,20 @@ class ssh:
             self._port = int(port)
 
     def _connect(self):
+        import paramiko, getpass
+        class WarnPolicy(paramiko.MissingHostKeyPolicy):
+            '''Policy for what happens when an unknown ssh-fingerprint is encountered'''
+            def __init__(self):
+                self.do_warning = False
+
+            def missing_host_key(self, client, hostname, key):
+                self.do_warning = True
+
         if self.connected():
-            log.warning('SSH connection to "%s" already started' % self.host)
+            pwn.log.warning('SSH connection to "%s" already started' % self.host)
             return
         if not self.silent:
-            log.waitfor('Starting SSH connection to "%s"' % self.host)
+            pwn.log.waitfor('Starting SSH connection to "%s"' % self.host)
 
         conf = paramiko.SSHConfig()
         conf.parse(open(os.path.expanduser('~/.ssh/config')))
@@ -264,16 +264,16 @@ class ssh:
             self._client.connect(self.host, self._port, self._user, self._password, self._key, self._keyfiles, self.timeout, compress = True, sock = self._proxy_sock)
         else:
             if has_proxy:
-                log.warning('This version of paramiko does not support proxies. Ignoring the specified proxy.')
+                pwn.log.warning('This version of paramiko does not support proxies. Ignoring the specified proxy.')
             self._client.connect(self.host, self._port, self._user, self._password, self._key, self._keyfiles, self.timeout, compress = True)
 
         self._transport = self._client.get_transport()
 
         if not self.silent:
-            log.succeeded()
+            pwn.log.succeeded()
 
             if p.do_warning:
-                log.warning('SSH key could not be validated')
+                pwn.log.warning('SSH key could not be validated')
 
 
     def shell(self, silent = None, tty = True):
@@ -304,7 +304,7 @@ class ssh:
         '''Return a dictionary of the libraries used by a remote file.'''
         dat, status = self.run_simple('ldd "$(echo %s|base64 -d)"' % pwn.b64(remote))
         if status != 0:
-            log.warning('Unable to find libraries for "%s"' % remote)
+            pwn.log.warning('Unable to find libraries for "%s"' % remote)
             return {}
 
         return pwn.parse_ldd_output(dat)
@@ -330,8 +330,8 @@ class ssh:
     def _verify_local_fingerprint(self, fingerprint):
         if not isinstance(fingerprint, str) or \
            len(fingerprint) not in [32, 40, 64] or \
-           re.match('[^a-f0-9]', fingerprint):
-            log.warning('Invalid fingerprint "%s"' % fingerprint)
+           not set(fingerprint).issubset('abcdef0123456789'):
+            pwn.log.warning('Invalid fingerprint "%s"' % fingerprint)
             return False
 
         local = self._get_cachefile(fingerprint)
@@ -347,6 +347,7 @@ class ssh:
             return False
 
     def _initialize_sftp(self):
+        import tempfile
         if self._supports_sftp:
             if self._sftp == None:
                 self._sftp = self._client.open_sftp()
@@ -365,11 +366,11 @@ class ssh:
         total = pwn.size(int(total.split()[0]))
 
         if not self.silent:
-            log.waitfor('Downloading %s' % remote)
+            pwn.log.waitfor('Downloading %s' % remote)
 
         def update(has, _total):
             if not self.silent:
-                log.status("%s/%s" % (pwn.size(has), total))
+                pwn.log.status("%s/%s" % (pwn.size(has), total))
 
         if self._supports_sftp:
             self._sftp.get(remote, local, update)
@@ -381,14 +382,15 @@ class ssh:
                 dat += s.recv()
             pwn.write(local, dat)
         if not self.silent:
-            log.succeeded()
+            pwn.log.succeeded()
     def _download_to_cache(self, remote):
         self._initialize_sftp()
         fingerprint = self._get_fingerprint(remote)
         if fingerprint == None:
+            import time
             local = os.path.normpath(remote)
             local = os.path.basename(local)
-            local += datetime.strftime('-%Y-%m-d-%H:%M:%S')
+            local += time.strftime('-%Y-%m-d-%H:%M:%S')
             local = os.path.join(self._cachedir, local)
 
             self._download_raw(remote, local)
@@ -398,7 +400,7 @@ class ssh:
 
         if self._verify_local_fingerprint(fingerprint):
             if not self.silent:
-                log.success('Found %s in ssh cache' % remote)
+                pwn.log.success('Found %s in ssh cache' % remote)
         else:
             self._download_raw(remote, local)
 
@@ -418,6 +420,7 @@ class ssh:
 
         If local is None and the data is to be saved, then the local filename
         is inferred from the remote.'''
+        import shutil
 
         local_tmp = self._download_to_cache(remote)
 

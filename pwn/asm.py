@@ -1,5 +1,4 @@
-import pwn, tempfile, subprocess, errno, os
-import pwn.internal.shellcode_helper as H
+import pwn
 
 def _asm_real(arch, os, blocks, emit_asm, checked = True):
     if arch in ['i386', 'amd64']:
@@ -8,6 +7,7 @@ def _asm_real(arch, os, blocks, emit_asm, checked = True):
         return pwn.gas.gas(arch, os, blocks, emit_asm, checked)
 
 def asm(*blocks, **kwargs):
+    import pwn.internal.shellcode_helper as H
     blocks = H.AssemblerContainer(*blocks, os=kwargs.get('os'), arch=kwargs.get('arch'), cast = 'text')
     emit_asm = kwargs.get('emit_asm', False)
 

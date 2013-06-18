@@ -1,5 +1,4 @@
-import pwn, os, struct, sys
-from pwn import log, text
+import pwn, sys
 
 _raw_input = raw_input
 try:
@@ -15,7 +14,7 @@ except:
         return _raw_input(prompt)
 
 if sys.stdin.isatty() and sys.stdout.isatty():
-    import fcntl, sys, termios, tty
+    import fcntl, sys, termios, tty, struct, os
     def get_term_size():
         fd = os.open(os.ctermid(), os.O_RDONLY)
         height, width = struct.unpack('hh', fcntl.ioctl(fd, termios.TIOCGWINSZ, '1234'))
@@ -40,14 +39,14 @@ if sys.stdin.isatty() and sys.stdout.isatty():
             tty.setraw(sys.stdin.fileno())
             while True:
                 width, _ = get_term_size()
-                s = '\x1b[G\x1b[K ' + text.bold('[?]') + ' %s' % prompt
+                s = '\x1b[G\x1b[K ' + pwn.text.bold('[?]') + ' %s' % prompt
                 if choice:
                     s += ' %d' % choice
                 sys.stdout.write(s)
                 for i, opt in enumerate(opts):
                     s = linefmt % (i + 1, opt)
                     if i + 1 == choice:
-                        s = text.cyanbg(s.ljust(width))
+                        s = pwn.text.cyanbg(s.ljust(width))
                     sys.stdout.write('\r\n\x1b[K' + s)
                 sys.stdout.write('\x1b[%dF\x1b[%dC' % (len(opts), offset + pos))
 
@@ -164,28 +163,28 @@ def pause(n = None):
     """Waits for either user input or a specific number of seconds."""
     try:
         if n is None:
-            log.info('Paused (press enter to continue)')
+            pwn.log.info('Paused (press enter to continue)')
             raw_input('')
         else:
-            log.waitfor('Continueing in')
+            pwn.log.waitfor('Continueing in')
             for i in range(n, 0, -1):
-                log.status('%d... ' % i)
+                pwn.log.status('%d... ' % i)
                 pwn.sleep(1)
-            log.succeeded('Now')
+            pwn.log.succeeded('Now')
     except KeyboardInterrupt:
-        log.warning('Interrupted')
+        pwn.log.warning('Interrupted')
         sys.exit(1)
 
 def prompt(s, default = '', suggestion = ''):
     """Prompts the user for input"""
-    s = ' ' + text.bold('[?]') + ' ' + s + ' '
+    s = ' ' + pwn.text.bold('[?]') + ' ' + s + ' '
     if default:
         s += '[%s] ' % default
     return raw_input(s, suggestion) or default
 
 def yesno(s, default = None):
     """Prompt the user for an yes/no answer"""
-    s = ' ' + text.bold('[?]') + ' ' + s + ' '
+    s = ' ' + pwn.text.bold('[?]') + ' ' + s + ' '
     while True:
         if   default == True:
             x = raw_input(s + '[Y/n] ') or 'y'

@@ -1,32 +1,39 @@
-from pwn import memoize, log, md5sumhex
-from ctypes import CDLL
-from subprocess import Popen, PIPE
-import tempfile, os, sys
+import pwn
 
-__tempdir = os.path.join(tempfile.gettempdir(), 'pwn-ciic')
+def _tempdir():
+    global _tempdir
+    import tempfile, os
+    __tempdir = os.path.join(tempfile.gettempdir(), 'pwn-ciic')
+
+    if not os.path.exists(__tempdir):
+        try:
+            os.mkdir(__tempdir)
+        except:
+            pwn.log.failure('Could not create memoization dir: %s\n' % __tempdir)
+            __tempdir = None
+    elif not os.path.isdir(__tempdir):
+        pwn.log.failure('Memoization path is not a dir: %s\n' % __tempdir)
+        __tempdir = None
+
+    def _tempdir():
+        return __tempdir
+    return __tempdir
+
 __cache = {}
 
-if not os.path.exists(__tempdir):
-    try:
-        os.mkdir(__tempdir)
-    except:
-        log.failure('Could not create memoization dir: %s\n' % __tempdir)
-        __tempdir = None
-elif not os.path.isdir(__tempdir):
-    log.failure('Memoization path is not a dir: %s\n' % __tempdir)
-    __tempdir = None
-
 def _compile(code, werror, flags, libs):
-    digest = md5sumhex(code + str(werror) + str(flags) + str(libs))
+    from ctypes import CDLL
+    import subprocess, sys, os
+    digest = pwn.md5sumhex(code + str(werror) + str(flags) + str(libs))
     if digest in __cache:
         return __cache[digest]
-    sopath = os.path.join(__tempdir, digest + '.so')
+    sopath = os.path.join(_tempdir(), digest + '.so')
     try:
         if os.path.exists(sopath):
-            return CDDL(sopath)
+            return CDLL(sopath)
     except:
         pass
-    cpath = os.path.join(__tempdir, digest + '.c')
+    cpath = os.path.join(_tempdir(), digest + '.c')
     with open(cpath, 'w') as f:
         f.write(code)
     flags += ['-fPIC', '-shared', '-O3', '-march=native', '-mtune=native',
@@ -34,16 +41,16 @@ def _compile(code, werror, flags, libs):
     if werror:
         flags.append('-Werror')
     cmd = ['gcc'] + flags + ['-o', sopath, cpath] + libs
-    p = Popen(cmd, stderr = PIPE)
+    p = subprocess.Popen(cmd, stderr = subprocess.PIPE)
     _, s = p.communicate()
     s = s.replace(cpath + ':', '').replace(cpath, '')
     if p.returncode <> 0:
-        log.error('GCC error (%s):' % cpath)
-        log.trace(s)
+        pwn.log.error('GCC error (%s):' % cpath)
+        pwn.log.trace(s)
         sys.exit(p.returncode)
     elif s <> '':
-        log.warning('GCC warning (%s):' % cpath)
-        log.trace(s)
+        pwn.log.warning('GCC warning (%s):' % cpath)
+        pwn.log.trace(s)
     return CDLL(sopath)
 
 def ciic(code, werror = True, flags = [], libs = []):
