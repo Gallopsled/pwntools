@@ -101,6 +101,13 @@ class basechatter:
         self.send(dat)
         return res
 
+    def sendlineafter(self, *args):
+        ''' Like sendafter, but appends a newline'''
+        dat = pwn.flat(dat)
+        res = self.recvuntil(delim)
+        self.send(dat + '\n')
+        return res
+
     def sendthen(self, delim, *dat):
         """ Send *dat, then wait for delim"""
         dat = pwn.flat(dat)
@@ -110,11 +117,10 @@ class basechatter:
 
     def sendlinethen(self, *args):
         ''' Like sendthen, but appends a newline'''
-        return self.sendthen(*args)
-
-    def sendlineafter(self, *args):
-        ''' Like sendafter, but appends a newline'''
-        return self.sendafter(*args)
+        dat = pwn.flat(dat)
+        self.send(dat + '\n')
+        res = self.recvuntil(delim)
+        return res
 
     def recvline(self, lines = 1):
         res = []
