@@ -26,7 +26,8 @@ class MemLeak:
             self.cache[addr + n] = ord(b)
         return self.cache[addr]
 
-    def b (self, addr):
+    def b (self, addr, offset = 0):
+        addr += offset
         x = self._leak(addr)
         if x is not None:
             return x
@@ -42,21 +43,24 @@ class MemLeak:
                 return self.cache[addr]
         return None
 
-    def h (self, addr):
+    def h (self, addr, offset = 0):
+        addr += offset * 2
         b1 = self.b(addr)
         b2 = self.b(addr + 1)
         if None in [b1, b2]:
             return None
         return b1 + (b2 << 8)
 
-    def d (self, addr):
+    def d (self, addr, offset = 0):
+        addr += offset * 4
         h1 = self.h(addr)
         h2 = self.h(addr + 2)
         if None in [h1, h2]:
             return None
         return h1 + (h2 << 16)
 
-    def q (self, addr):
+    def q (self, addr, offset = 0):
+        addr += offset * 8
         d1 = self.d(addr)
         d2 = self.d(addr + 4)
         if None in [d1, d2]:
