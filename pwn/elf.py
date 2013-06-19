@@ -279,7 +279,7 @@ class ELF:
         self._load_data()
         return ''.join(self._data)
 
-def laod (path):
+def load (path):
     import os
     path = os.path.realpath(path)
     if path in ELF._ELF__cache:
