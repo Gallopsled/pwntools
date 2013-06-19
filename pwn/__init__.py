@@ -67,6 +67,7 @@ try:
     from pwn.splash     import splash
     from pwn.elf        import ELF, parse_ldd_output
     from pwn.rop        import ROP
+    from pwn.dynelf     import DynELF
     from pwn.ciic       import ciic
     from pwn.memleak    import MemLeak
 
@@ -76,7 +77,6 @@ try:
     import pwn.shellcode
     import pwn.sqli
     import pwn.elf
-    import pwn.rop
     import pwn.crypto
     import pwn.spn
 except SyntaxError:
