@@ -68,13 +68,14 @@ try:
     from pwn.elf        import ELF, parse_ldd_output
     from pwn.rop        import ROP
     from pwn.ciic       import ciic
-    from leak           import MemLeak
+    from pwn.memleak    import MemLeak
 
     import pwn.internal.init.session
     import pwn.nasm
     import pwn.gas
     import pwn.shellcode
     import pwn.sqli
+    import pwn.elf
     import pwn.rop
     import pwn.crypto
     import pwn.spn

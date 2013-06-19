@@ -31,9 +31,15 @@ def symbols(file):
 
 class ELF:
     '''A parsed ELF file'''
-    def __init__(self, file):
+
+    __cache = {}
+    def __init__(self, path):
         import os, re
-        pwn.log.waitfor('Loading ELF file `%s\'' % os.path.basename(file))
+        path = os.path.realpath(path)
+        if path in ELF.__cache:
+            pwn.log.warning('Loaded "%s" again; use "elf.load(...)" to avoid this' \
+                            % os.path.basename(path))
+        pwn.log.waitfor('Loading ELF file `%s\'' % os.path.basename(path))
         self.segments = []
         self.sections = {}
         self.symbols = {}
@@ -41,13 +47,13 @@ class ELF:
         self.got = {}
         self.libs = {}
         self.elfclass = None
-        self._file_data = None
+        self._data = None
         self.execstack = False
 
-        if not (os.access(file, os.R_OK) and os.path.isfile(file)):
-            pwn.die('File %s is not readable or does not exist' % file)
+        if not (os.access(path, os.R_OK) and os.path.isfile(path)):
+            pwn.die('File %s is not readable or does not exist' % path)
 
-        self._file = file
+        self._path = path
 
         self._load_elfclass()
         self._load_segments()
@@ -56,7 +62,7 @@ class ELF:
         self._load_libs()
         # this is a nasty hack until we get our pure python elf parser
         # we'll just have to live without PLT and GOT info for PICs until then
-        if not re.match('\.so(\.\d+)?$', file):
+        if not re.match('\.so(\.\d+)?$', path):
             try:
                 self._load_plt_got()
             except:
@@ -64,11 +70,12 @@ class ELF:
         if self.execstack:
             pwn.log.status('\nStack is executable!')
         pwn.log.succeeded()
+        ELF.__cache[path] = self
 
     def _load_elfclass(self):
         # -h : ELF header
         import re, subprocess
-        cmd = [_READELF, '-h', self._file]
+        cmd = [_READELF, '-h', self._path]
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
         self.elfclass = re.findall('Class:\s*(.*$)', out, re.MULTILINE)[0]
 
@@ -76,7 +83,7 @@ class ELF:
         # -W : Wide output
         # -l : Program headers
         import re, subprocess
-        cmd = [_READELF, '-W', '-l', self._file]
+        cmd = [_READELF, '-W', '-l', self._path]
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
         hexint = '(0x[0-9a-f]+)'
         numfield = '\s+' + hexint
@@ -109,7 +116,7 @@ class ELF:
         # -W : Wide output
         # -S : Section headers
         import re, subprocess
-        cmd = [_READELF, '-W', '-S', self._file]
+        cmd = [_READELF, '-W', '-S', self._path]
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
         field = '\s+(\S+)'
         posint = '[123456789]\d*'
@@ -128,13 +135,13 @@ class ELF:
                                    }
 
     def _load_symbols(self):
-        self.symbols = symbols(self._file)
+        self.symbols = symbols(self._path)
 
     def _load_libs(self):
         import subprocess
         dat = ''
         try:
-            dat = subprocess.check_output(['ldd', self._file])
+            dat = subprocess.check_output(['ldd', self._path])
         except subprocess.CalledProcessError:
             pass
 
@@ -147,7 +154,7 @@ class ELF:
     # this is crazy slow -- include this feature in the all-python ELF parser
     def _load_plt_got(self):
         import re, subprocess
-        cmd = [_OBJDUMP, '-d', self._file]
+        cmd = [_OBJDUMP, '-d', self._path]
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
         got32 = '[^j]*jmp\s+\*0x(\S+)'
         got64 = '[^#]*#\s+(\S+)'
@@ -160,9 +167,9 @@ class ELF:
             self.got[name] = gotaddr
 
     def _load_data(self):
-        if self._file_data is None:
-            with open(self._file, 'r') as f:
-                self._file_data = list(f.read())
+        if self._data is None:
+            with open(self._path, 'r') as f:
+                self._data = list(f.read())
 
     def read_symbol(self, name):
         if name in self.symbols:
@@ -183,7 +190,7 @@ class ELF:
             sec = self.sections[name]
             offset = sec['offset']
             size = sec['size']
-            return ''.join(self._file_data[offset:offset + size])
+            return ''.join(self._data[offset:offset + size])
         else:
             pwn.die('No section named %s' % name)
 
@@ -194,7 +201,7 @@ class ELF:
                 off = seg['offset']
                 siz = seg['filesiz']
                 addr = seg['virtaddr']
-                yield (''.join(self._file_data[off : off + siz]), addr)
+                yield (''.join(self._data[off : off + siz]), addr)
 
     def executable_segments(self):
         return self._filter_segments('E', False)
@@ -211,7 +218,7 @@ class ELF:
             if seg['virtaddr'] + seg['filesiz'] > addr:
                 n = min(numb, seg['virtaddr'] + seg['filesiz'] - addr)
                 off = seg['offset'] + addr - seg['virtaddr']
-                out += self._file_data[off:off + n]
+                out += self._data[off:off + n]
                 numb -= n
                 addr += n
                 if numb == 0:
@@ -227,7 +234,7 @@ class ELF:
             if seg['virtaddr'] + seg['filesiz'] > addr:
                 n = min(numb, seg['virtaddr'] + seg['filesiz'] - addr)
                 off = seg['offset'] + addr - seg['virtaddr']
-                self._file_data[off:off + n] = repl[:n]
+                self._data[off:off + n] = repl[:n]
                 repl = repl[n:]
                 numb -= n
                 addr += n
@@ -241,7 +248,7 @@ class ELF:
             if 'W' in seg['flg'] and non_writable: continue
             off = seg['offset']
             siz = seg['filesiz']
-            dat = self._file_data[off : off + siz]
+            dat = self._data[off : off + siz]
             yield map(lambda i: i + seg['virtaddr'], pwn.findall(dat, list(s)))
 
     def replace(self, s, repl, non_writable = False, padding = '\x90'):
@@ -251,7 +258,7 @@ class ELF:
             if 'W' in seg['flg'] and non_writable: continue
             off = seg['offset']
             siz = seg['filesiz']
-            dat = self._file_data[off : off + siz]
+            dat = self._data[off : off + siz]
             for idx in pwn.findall(dat, list(s)):
                 addr = idx + seg['virtaddr']
                 if isinstance(repl, types.FunctionType):
@@ -262,7 +269,7 @@ class ELF:
                 rep = rep.ljust(len(s), padding)
                 if len(rep) > len(s):
                     pwn.die('Replacement is larger than the replaced')
-                self._file_data[off + idx : off + idx + len(s)] = rep
+                self._data[off + idx : off + idx + len(s)] = rep
 
     def save(self, path):
         with open(path, 'w') as fd:
@@ -270,7 +277,14 @@ class ELF:
 
     def get_data(self):
         self._load_data()
-        return ''.join(self._file_data)
+        return ''.join(self._data)
+
+def laod (path):
+    import os
+    path = os.path.realpath(path)
+    if path in ELF._ELF__cache:
+        return ELF._ELF__cache[path]
+    return ELF(path)
 
 def parse_ldd_output(dat):
     import re
