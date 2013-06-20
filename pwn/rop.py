@@ -26,6 +26,11 @@ class ROP:
         self._next_load_addr = None
         self._load_gadgets()
 
+    def __getattr__(self, name):
+        def func(*args):
+            self.call(name, args)
+        return func
+
     def mprotect(self, addr):
         self.call('mprotect', (addr & ~4095, 4096, 7))
         self.call('mprotect', ((addr+4096) & ~4095, 4096, 7))
