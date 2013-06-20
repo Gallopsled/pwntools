@@ -78,7 +78,6 @@ try:
     import pwn.sqli
     import pwn.elf
     import pwn.crypto
-    import pwn.spn
 except SyntaxError:
     print "If you're happy and you know it, syntax error!"
     print "Syntax error"
