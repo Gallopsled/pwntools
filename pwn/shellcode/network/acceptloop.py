@@ -55,7 +55,7 @@ acceptloop:
         test eax, eax
         jnz .parent
         pop ebp
-.parent
+.parent:
         push eax
         push SYS_close
         pop eax
@@ -106,7 +106,7 @@ acceptloop:
         mov bl, byte SYS_socketcall_listen
         int 0x80
 
-.loop
+.loop:
         ;; accept(sock, NULL, NULL)
         push edx
         push esi                ; sock

@@ -1,14 +1,26 @@
 #!/usr/bin/python
+import argparse, tempfile, sys, subprocess, os, pwn
 
-import argparse, tempfile, sys, subprocess, os
+default_context = ['linux', 'i386']
 
 parser = argparse.ArgumentParser()
 parser.add_argument('lines', metavar='line', nargs='*', help='Lines to assemble. If none are supplied, use stdin')
-parser.add_argument("-b", "--bits", help="The assembly mode", choices=[16,32,64], default=32, type=int)
 parser.add_argument("-f", "--format", help="Output format (defaults to hex for ttys, otherwise raw)", choices=['raw', 'hex'])
 parser.add_argument("-o", metavar='file', help="Output file (defaults to stdout)", type=argparse.FileType('w'), default=sys.stdout)
-parser.add_argument("-O", metavar='level', help="Optimization options to pass to nasm", choices = ['0', '1', 'x'], default='x')
+parser.add_argument('-c', '--context',
+               metavar = '<opt>',
+               choices = pwn.concat_all(pwn.possible_contexts.values()),
+               action = 'append',
+               help = 'The environment the shellcode will run in (default: %s), choose from %s' % \
+               (' '.join(default_context),
+                '; '.join('%s: %s' % (k, ', '.join(v for v in vs)) for k, vs in pwn.possible_contexts.items())),
+               )
+
 args = parser.parse_args()
+
+pwn.context(*default_context) # 'reset' to defaults
+if args.context:
+    pwn.context(*args.context) # overwrite one or more options
 
 if args.format == None:
     if args.o.isatty():
@@ -16,40 +28,16 @@ if args.format == None:
     else:
         args.format = 'raw'
 
-tmp = tempfile.NamedTemporaryFile(suffix='.asm')
-tmpname = tmp.name
-
-tmp.write('[BITS %d]\n' % args.bits)
-
 if len(args.lines) > 0:
     data = '\n'.join(args.lines)
 else:
     data = sys.stdin.read()
 
-tmp.write(data.replace(';', '\n'))
-tmp.flush()
+output = pwn.asm(data.replace(';', '\n'))
 
-try:
-    retval = subprocess.call(['nasm', '-O' + args.O, '-o', tmpname + '.out', tmpname], stdout=sys.stderr, stderr=sys.stderr)
-    tmp.close()
-
-    if retval != 0:
-        sys.exit(retval)
-
-    with open(tmpname + '.out') as f:
-        output = f.read()
-
-    if args.format == 'raw':
-        args.o.write(output)
-    elif args.format == 'hex':
-        args.o.write(output.encode('hex') + '\n')
-    else:
-        raise Exception("Unknown output format") # This really shouldn't happen
-
-    args.o.flush()
-
-finally:
-    try:
-        os.unlink(tmpname + '.out')
-    except:
-        pass
+if args.format == 'raw':
+    args.o.write(output)
+elif args.format == 'hex':
+    args.o.write(output.encode('hex') + '\n')
+else:
+    raise Exception("Unknown output format") # This really shouldn't happen

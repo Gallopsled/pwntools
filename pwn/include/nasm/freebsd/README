@@ -1,4 +1,0 @@
-Most of these were generated with something similar to:
-    cat fcntl.h | grep -e '^[[:space:]]*#define[[:space:]]\+[^[:space:]]\+[[:space:]]\+' -e '^[[:space:]]*/\*[[:space:]]*[^[:space:]]' | sed 's/^#define/%define/' | expand
-
-hey were then trimmed and formatted manually.

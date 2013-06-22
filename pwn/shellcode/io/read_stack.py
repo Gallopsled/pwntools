@@ -3,7 +3,7 @@ from ..misc.pushstr import pushstr
 
 @shellcode_reqs(arch=['i386', 'amd64'], os=['linux', 'freebsd'])
 def read_stack(in_fd = 0, size = 255, allocate_stack = True, arch = None, os = None):
-    """Args: [in_fd (imm/reg) = STD_IN] [size = 255] [allocate_stack = True]
+    """Args: [in_fd (imm/reg) = STDIN_FILENO] [size = 255] [allocate_stack = True]
 
     Reads to the stack.
 
@@ -26,11 +26,11 @@ def read_stack(in_fd = 0, size = 255, allocate_stack = True, arch = None, os = N
 
 def _read_stack_linux_i386(in_fd, size, allocate_stack):
     out = """
-            setfd ebx, %s
+            """ + pwn.shellcode.mov('ebx', in_fd, raw = True) + """
             push SYS_read
             pop eax
             cdq
-            mov dl, %s""" % (in_fd, size)
+            mov dl, %s""" % size
 
     if allocate_stack:
         out += """
@@ -43,7 +43,7 @@ def _read_stack_linux_i386(in_fd, size, allocate_stack):
     return out
 
 def _read_stack_freebsd_i386(in_fd, size, allocate_stack):
-    out = ["setfd ebp, %s" % in_fd,
+    out = [pwn.shellcode.mov('ebp', in_fd, raw = True),
            "push SYS_read",
            "pop eax",
            pushstr(p32(size), null = False, raw = True),
@@ -71,7 +71,7 @@ def _read_stack_amd64(in_fd, size, allocate_stack):
         out += ["sub rsp, rdx"]
 
     out += ['mov rsi, rsp',
-            'push SYS64_read',
+            'push SYS_read',
             'pop rax',
             'syscall']
 

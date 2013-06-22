@@ -23,7 +23,7 @@ def i386_to_amd64(os = None):
         [bits 32]
         push %s
         call $+4
-.helper
+.helper:
         db 0xc0
         add dword [esp], .end - .helper
         jmp far [esp]

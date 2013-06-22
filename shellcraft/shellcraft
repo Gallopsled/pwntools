@@ -76,9 +76,9 @@ if __name__ == '__main__':
                    )
     p.add_argument('-f', '--format',
                    metavar = '<format>',
-                   choices = ['r', 's', 'c', 'h', 'a'],
+                   choices = ['r', 's', 'c', 'h', 'a', 'p'],
                    default = 'r',
-                   help = 'Choose from {r}aw (default), {s}tring, {c}-style array, {h}ex string, {a}ssembly code',
+                   help = 'Choose from {r}aw (default), {s}tring, {c}-style array, {h}ex string, {a}ssembly code, {p}reprocssed code',
                    )
     p.add_argument('--trap-before',
                    action = 'store_true',
@@ -192,7 +192,10 @@ if __name__ == '__main__':
     code = wrapped(*args.args)
 
     if args.format == 'a':
-        print pwn.asm(code, emit_asm = True)
+        print pwn.asm(code, emit_asm = 2)
+        exit()
+    if args.format == 'p':
+        print pwn.asm(code, emit_asm = 1)
         exit()
 
     if args.nopsled:

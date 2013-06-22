@@ -2,7 +2,7 @@ from pwn.internal.shellcode_helper import *
 
 @shellcode_reqs(arch='i386', os='linux')
 def getdents(in_fd = 0, size = 255, allocate_stack = True):
-    """Args: [in_fd (imm/reg) = STD_IN] [size = 255] [allocate_stack = True]
+    """Args: [in_fd (imm/reg) = STDIN_FILENO] [size = 255] [allocate_stack = True]
 
     Reads to the stack from a directory.
 
@@ -12,11 +12,11 @@ def getdents(in_fd = 0, size = 255, allocate_stack = True):
     """
 
     out = """
-            setfd ebx, %s
+            """ + pwn.shellcode.mov('ebx', in_fd, raw = True) + """
             xor eax, eax
             mov al, SYS_getdents
             cdq
-            mov dl, %s""" % (in_fd, size)
+            mov dl, %s""" % size
 
     if allocate_stack:
         out += """

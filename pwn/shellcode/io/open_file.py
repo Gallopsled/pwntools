@@ -26,13 +26,13 @@ def _open_file_linux_i386(flags, mode):
 
     out += """
     mov ebx, esp
-    setfd ecx, %d
+    """ + pwn.shellcode.mov('ecx', flags, raw = True) + """
     push SYS_open
-    pop eax""" % flags
+    pop eax"""
 
     if (flags & 0o100) != 0:
         out += """
-    setfd edx, %d""" % mode
+    """ + pwn.shellcode.mov('edx', mode, raw = True)
 
     out += '\n    int 0x80'
 
@@ -58,15 +58,15 @@ def _open_file_amd64(flags, mode):
 
     out += """
             mov rdi, rsp
-            push SYS64_open
+            push SYS_open
             pop rax
-            setfd esi, %d
-""" % flags
+            """ + pwn.shellcode.mov('esi', flags, raw = True)
 
     if (flags & 0o100) != 0:
         out += """
-            setfd edx, %d""" % mode
+            """ + pwn.shellcode.mov('edx', mode, raw = True)
 
-    out += 'syscall'
+    out += """
+            syscall"""
 
     return out

@@ -103,7 +103,7 @@ def _connect_amd64(host, port, os):
         sock = pwn.asm('dw AF_INET << 8, %d' % htons(port)) + p32(ip(host))
 
     return '''
-            push SYS64_socket
+            push SYS_socket
             pop rax
             push AF_INET
             pop rdi
@@ -117,7 +117,7 @@ def _connect_amd64(host, port, os):
             mov rsi, rsp
             push 16
             pop rdx
-            push SYS64_connect
+            push SYS_connect
             pop rax
             syscall
 '''

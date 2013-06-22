@@ -62,7 +62,7 @@ try:
     from pwn.ssh        import ssh
     from pwn.remote     import remote
     from pwn.handler    import handler
-    from pwn.asm        import asm
+    from pwn.asm        import asm, disasm
     from pwn.useragents import randomua
     from pwn.splash     import splash
     from pwn.elf        import ELF, parse_ldd_output
@@ -72,8 +72,6 @@ try:
     from pwn.memleak    import MemLeak
 
     import pwn.internal.init.session
-    import pwn.nasm
-    import pwn.gas
     import pwn.shellcode
     import pwn.sqli
     import pwn.elf

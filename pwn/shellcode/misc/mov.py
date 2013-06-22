@@ -31,8 +31,8 @@ def _fix_regs(regs, in_sizes):
             sizes[r] = s
 
         for n, r in enumerate(l):
-            bigger[r] = l[:n]
-            smaller[r] = l[n+1:]
+            bigger[r] = [r_ for r_ in l if sizes[r_] > sizes[r] or r == r_]
+            smaller[r] = [r_ for r_ in l if sizes[r_] < sizes[r]]
 
     return pwn.concat(regs), sizes, bigger, smaller
 
@@ -60,7 +60,7 @@ def _mov_i386(dest, src, stack_allowed, recursion_depth):
         srcp = packs_little_endian[sizes[dest]](src)
 
         if src == 0:
-            return 'xor %s, %s' % (bigger[dest][0], bigger[dest][0])
+            return 'xor %s, %s' % (dest, dest)
 
         if '\x00' not in srcp and '\n' not in srcp:
             return 'mov %s, 0x%x' % (dest, src)
@@ -123,7 +123,10 @@ def _mov_amd64(dest, src, stack_allowed, recursion_depth):
         srcp = packs_little_endian[sizes[dest]](src)
 
         if src == 0:
-            return 'xor %s, %s' % (bigger[dest][0], bigger[dest][0])
+            if sizes[dest] == 64:
+                return 'xor %s, %s' % (smaller[dest][0], smaller[dest][0])
+            else:
+                return 'xor %s, %s' % (dest, dest)
 
         if '\x00' not in srcp and '\n' not in srcp:
             return 'mov %s, 0x%x' % (dest, src)

@@ -6,7 +6,7 @@ from write_stack import write_stack
 
 @shellcode_reqs(arch=['i386', 'amd64'], os=['linux', 'freebsd'])
 def cat(filepath, out_fd = 1, use_sendfile = False, os = None, arch = None):
-    """Args: filepath, [out_fd (imm/reg) = STD_OUT] [use_sendfile]
+    """Args: filepath, [out_fd (imm/reg) = STDOUT_FILENO] [use_sendfile]
 
     Opens a file and writes it to the specified file descriptor.
 

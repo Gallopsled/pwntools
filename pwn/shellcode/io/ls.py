@@ -5,7 +5,7 @@ from getdents import getdents
 
 @shellcode_reqs(arch='i386', os='linux')
 def ls(filepath, out_fd = 1):
-    """Args: filepath, [out_fd (imm/reg) = STD_OUT]
+    """Args: filepath, [out_fd (imm/reg) = STDOUT_FILENO]
 
     Opens a directory and writes its content to the specified file descriptor.
     """

@@ -17,7 +17,7 @@ def exit(returncode = None, arch = None, os = None):
     bug("OS/arch combination (%s, %s) is not supported for exit" % (os, arch))
 
 def _exit_amd64(returncode, os):
-    out = ["push byte SYS64_exit",
+    out = ["push SYS_exit",
            "pop rax"]
 
     if returncode != None:
@@ -37,7 +37,7 @@ def _exit_amd64(returncode, os):
             else:
                 out += ['push %s' % str(returncode)]
             out += ['push rax']
-    out += ['int 0x80']
+    out += ['syscall']
 
     return '\n'.join('    ' + s for s in out)
 
@@ -45,21 +45,21 @@ def _exit_amd64(returncode, os):
 def _exit_i386(returncode, os):
     if returncode == None:
         return """
-            push byte SYS_exit
+            push SYS_exit
             pop eax
             int 0x80
             """
 
     if os == 'linux':
         return """
-            setfd ebx, %s
-            push byte SYS_exit
+            """ + pwn.shellcode.mov('ebx', returncode, raw = True) + """
+            push SYS_exit
             pop eax
-            int 0x80""" % str(returncode)
+            int 0x80"""
     elif os == 'freebsd':
         if str(returncode) == "0":
             return """
-                push byte SYS_exit
+                push SYS_exit
                 pop eax
                 cdq
                 push edx
@@ -68,7 +68,7 @@ def _exit_i386(returncode, os):
         else:
             return """
                 push %s
-                push byte SYS_exit
+                push SYS_exit
                 pop eax
                 push eax
                 int 0x80""" % str(returncode)
