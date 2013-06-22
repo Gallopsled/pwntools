@@ -91,7 +91,10 @@ def _asm(target_arch, target_os, blocks, emit_asm = 0, keep_tmp = False):
             if isinstance(b, H.AssemblerText):
                 code.append('\n'.join('    '*(not line.strip().endswith(':')) + line.strip() for line in b.text.strip().split('\n')))
             elif isinstance(b, H.AssemblerBlob):
-                code.append('.byte ' + ', '.join('0x%02x' % ord(c) for c in b.blob))
+                if target_arch in ['i386', 'amd64']:
+                    code.append('db ' + ', '.join('0x%02x' % ord(c) for c in b.blob))
+                else:
+                    code.append('.byte ' + ', '.join('0x%02x' % ord(c) for c in b.blob))
             else:
                 raise Exception("Trying to assemble something that is not an assembler block")
 
