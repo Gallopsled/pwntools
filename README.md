@@ -15,6 +15,7 @@ However we have made command-line frontends for much of the functionality
 inside the pwnlib. These are:
 
 * `asm`/`disasm`: Small wrapper for nasm
+* `clookup`: Tool for looking up constants (such as SYS_open) on various os/architecture combinations.
 * `cyclic`: De Bruijn sequence generator and lookup tool
 * `nops`: Tool for generating random nopsleds.
 * `peek`/`poke`: Simple tool for sending files over a LAN

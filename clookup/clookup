@@ -1,0 +1,28 @@
+#!/usr/bin/python
+import argparse, pwn, string
+
+default_context = ['linux', 'i386']
+
+parser = argparse.ArgumentParser()
+parser.add_argument('constants', metavar='constants', nargs='*', help='Constants to look up')
+parser.add_argument('-e', '--evaluate',
+               action = 'store_true',
+               help = 'Try to evaluate the expression',
+               )
+
+parser.add_argument('-c', '--context',
+               metavar = '<opt>',
+               choices = pwn.concat_all(pwn.possible_contexts.values()),
+               action = 'append',
+               help = 'The environment the shellcode will run in (default: %s), choose from %s' % \
+               (' '.join(default_context),
+                '; '.join('%s: %s' % (k, ', '.join(v for v in vs)) for k, vs in pwn.possible_contexts.items())),
+               )
+
+args = parser.parse_args()
+
+pwn.context(*default_context) # 'reset' to defaults
+if args.context:
+    pwn.context(*args.context) # overwrite one or more options
+
+print '\n'.join(map(str, pwn.clookup(args.constants, eval = args.evaluate)))

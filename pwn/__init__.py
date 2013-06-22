@@ -70,6 +70,8 @@ try:
     from pwn.dynelf     import DynELF
     from pwn.ciic       import ciic
     from pwn.memleak    import MemLeak
+    from pwn.safeeval   import expr_eval, const_eval
+    from pwn.clookup    import clookup
 
     import pwn.internal.init.session
     import pwn.shellcode
