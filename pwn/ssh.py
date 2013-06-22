@@ -151,7 +151,13 @@ class ssh:
 
         NOTE: The proxy_command and proxy_sock arguments and the ProxyCommand
         option in ~/.ssh/config is only available if a fairly new version of
-        paramiko is used.'''
+        paramiko is used.
+
+        NOTE: If using Ubuntu, make sure you have a key other than
+        id_ecdsa, as paramiko currently has no support for ECDSA:
+        https://github.com/paramiko/paramiko/pull/152 . Ubuntu
+        defaults to ECDSA, and the error messages are fairly
+        non-descriptive.'''
         # Save arguments
         self._user = user
         self._password = password
@@ -231,7 +237,12 @@ class ssh:
             pwn.log.waitfor('Starting SSH connection to "%s"' % self.host)
 
         conf = paramiko.SSHConfig()
-        conf.parse(open(os.path.expanduser('~/.ssh/config')))
+        try:
+            with open(os.path.expanduser('~/.ssh/config')) as sshconfig:
+                conf.parse(sshconfig)
+        except IOError:
+            pass
+
         conf = conf.lookup(self.host)
 
         if not conf:
