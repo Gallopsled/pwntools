@@ -13,8 +13,21 @@ def asm(*blocks, **kwargs):
         else:
             return data
 
+    code_blocks = []
+    for n, b in enumerate(blocks.blocks):
+        code_blocks.append('pwn_block%d:' % n)
+        if isinstance(b, H.AssemblerText):
+            code_blocks.append('\n'.join('    '*(not line.strip().endswith(':')) + line.strip() for line in b.text.strip().split('\n')))
+        elif isinstance(b, H.AssemblerBlob):
+            if target_arch in ['i386', 'amd64']:
+                code_blocks.append('db ' + ', '.join('0x%02x' % ord(c) for c in b.blob))
+            else:
+                code_blocks.append('.byte ' + ', '.join('0x%02x' % ord(c) for c in b.blob))
+        else:
+            raise Exception("Trying to assemble something that is not an assembler block")
+
     system = pwn.with_context(os = blocks.os, arch = blocks.arch)
-    return _asm(system['arch'], system['os'], blocks, emit_asm, keep_tmp)
+    return _asm(system['arch'], system['os'], code_blocks, emit_asm, keep_tmp)
 
 @pwn.need_context
 def disasm(data, arch = None, keep_tmp = False):
@@ -42,7 +55,7 @@ def _run(cmd):
         raise Exception(err)
 
 @pwn.memoize
-def _asm(target_arch, target_os, blocks, emit_asm = 0, keep_tmp = False):
+def _asm(target_arch, target_os, code_blocks, emit_asm = 0, keep_tmp = False):
     import pwn.internal.shellcode_helper as H
     import os.path, tempfile, subprocess, string, shutil
 
@@ -86,18 +99,7 @@ def _asm(target_arch, target_os, blocks, emit_asm = 0, keep_tmp = False):
         elif target_arch == 'amd64':
             code += ['bits 64']
 
-        for n, b in enumerate(blocks.blocks):
-            code.append('pwn_block%d:' % n)
-            if isinstance(b, H.AssemblerText):
-                code.append('\n'.join('    '*(not line.strip().endswith(':')) + line.strip() for line in b.text.strip().split('\n')))
-            elif isinstance(b, H.AssemblerBlob):
-                if target_arch in ['i386', 'amd64']:
-                    code.append('db ' + ', '.join('0x%02x' % ord(c) for c in b.blob))
-                else:
-                    code.append('.byte ' + ', '.join('0x%02x' % ord(c) for c in b.blob))
-            else:
-                raise Exception("Trying to assemble something that is not an assembler block")
-
+        code += code_blocks
         code = '\n'.join(code)
 
         if target_arch in ['i386', 'amd64']:
