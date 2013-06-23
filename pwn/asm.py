@@ -201,6 +201,21 @@ def _disasm(data, target_arch, keep_tmp = False):
             bfdname = 'elf32-littlearm'
             bfdarch = 'arm'
             extra = ['--prefix-symbol=$t.']
+        elif target_arch == 'mips':
+            bfdname = 'elf32-bigmips'
+        elif target_arch == 'alpha':
+            bfdname = 'elf64-alpha'
+        elif target_arch == 'cris':
+            bfdname = 'elf32-cris'
+        elif target_arch == 'ia64':
+            bfdname = 'elf64-ia64-little'
+            bfdarch = 'ia64-elf64'
+        elif target_arch == 'm68k':
+            bfdname = 'elf32-m68k'
+        elif target_arch == 'powerpc':
+            bfdname = 'elf32-powerpc'
+        elif target_arch == 'vax':
+            bfdname = 'elf32-vax'
 
         if target_arch in ['i386', 'amd64']:
             objcopy = ['objcopy']
