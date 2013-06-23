@@ -18,7 +18,7 @@ def asm(*blocks, **kwargs):
 
 @pwn.need_context
 def disasm(data, arch = None, keep_tmp = False):
-    return pwn._disasm(data, arch, keep_tmp)
+    return _disasm(data, arch, keep_tmp)
 
 def _run(cmd):
     import subprocess, errno
