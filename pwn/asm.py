@@ -221,7 +221,7 @@ def _disasm(data, target_arch, keep_tmp = False):
 
         if target_arch in ['i386', 'amd64']:
             objcopy = ['objcopy']
-            objdump = ['objdump']
+            objdump = ['objdump', '-Mintel']
         else:
             objcopy = [os.path.join(pwn.installpath, 'binutils', 'promisc-objcopy')]
             objdump = [os.path.join(pwn.installpath, 'binutils', 'promisc-objdump')]
@@ -243,7 +243,7 @@ def _disasm(data, target_arch, keep_tmp = False):
         if len(output1) != 2:
             raise Exception('Something went wrong with objdump:\n\n%s' % output0)
         else:
-            return output1[1].strip()
+            return output1[1].strip('\n')
     finally:
         if not keep_tmp:
             try:
