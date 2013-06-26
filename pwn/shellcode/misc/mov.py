@@ -14,6 +14,9 @@ def mov(dest, src, stack_allowed = True, arch = None):
     src = arg_fixup(src)
     allowed = pwn.get_only()
 
+    if src == dest:
+        return "// setting %s to %s, but this is a no-op" % (dest, src)
+
     if arch == 'i386':
         return _mov_i386(dest, src, stack_allowed)
     elif arch == 'amd64':
