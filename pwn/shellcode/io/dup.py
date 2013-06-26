@@ -10,10 +10,12 @@ def dupsh(sock = 'ebp', os = None):
     else:
         bug('OS was neither linux nor freebsd')
 
-@shellcode_reqs(arch=['i386', 'amd64'], os=['linux', 'freebsd'])
+@shellcode_reqs(arch=['i386', 'amd64', 'arm'], os=['linux', 'freebsd'])
 def dup(sock = 'ebp', os = None, arch = None):
     """Args: [sock (imm/reg) = ebp]
     Duplicates sock to stdin, stdout and stderr."""
+
+    sock = arg_fixup(sock)
 
     if arch == 'i386':
         if os == 'freebsd':
@@ -23,6 +25,8 @@ def dup(sock = 'ebp', os = None, arch = None):
     elif arch == 'amd64':
         if os in ['linux', 'freebsd']:
             return _dup_amd64(sock)
+    elif arch == 'arm' and os == 'linux':
+        return _dup_linux_arm(sock)
 
     bug('OS/arch combination (%s,%s) is not supported for dup' % (os, arch))
 
@@ -58,20 +62,9 @@ dup:
 """
 
 def _dup_amd64(sock):
-    sock = arg_fixup(sock)
-
-    if sock in ['ebp', 'rbp']:
-        setup = ''
-    elif sock == 0:
-        setup = 'xor ebp, ebp'
-    elif isinstance(sock, int):
-        setup = 'push %d\n        pop rbp' % sock
-    else:
-        setup = 'mov ebp, %s' % str(sock)
-
     return """
 dup:
-        %s
+        """ + pwn.shellcode.mov('ebp', sock, raw = True) + """
         push 3
 .loop:
         mov edi, ebp
@@ -83,4 +76,16 @@ dup:
         pop rax
         syscall
         jmp .loop
-.after:""" % setup
+.after:"""
+
+def _dup_linux_arm(sock):
+    return '\n'.join([
+            pwn.shellcode.mov('r9', sock, raw = True),
+            pwn.shellcode.mov('r8', 2, raw = True),
+            'dup_helper:',
+            'mov r0, r9',
+            'mov r1, r8',
+            'svc SYS_dup2',
+            'adds r8, #-1',
+            'bpl dup_helper'])
+
