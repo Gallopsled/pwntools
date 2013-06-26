@@ -85,7 +85,7 @@ def _open_file_linux_arm(filepath, flags, mode):
             'adr r0, filepath',
             'svc SYS_open',
             'b after_open',
-            'filepath: .byte %s // %s' % (', '.join(hex(ord(c)) for c in filepath), filepath),
+            'filepath: .byte %s // %s' % (', '.join(hex(ord(c)) for c in filepath + '\x00'), filepath),
             '.align 2',
             'after_open:']
 
