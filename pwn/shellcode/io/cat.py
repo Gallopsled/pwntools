@@ -4,7 +4,7 @@ from sendfile import sendfile
 from read_stack import read_stack
 from write_stack import write_stack
 
-@shellcode_reqs(arch=['i386', 'amd64'], os=['linux', 'freebsd'])
+@shellcode_reqs(arch=['i386', 'amd64', 'arm'], os=['linux', 'freebsd'])
 def cat(filepath, out_fd = 1, use_sendfile = False, os = None, arch = None):
     """Args: filepath, [out_fd (imm/reg) = STDOUT_FILENO] [use_sendfile]
 
@@ -20,6 +20,8 @@ def cat(filepath, out_fd = 1, use_sendfile = False, os = None, arch = None):
     elif arch == 'amd64':
         if os in ['linux', 'freebsd']:
             return _cat_amd64(filepath, out_fd, use_sendfile)
+    elif arch == 'arm' and os == 'linux':
+        return _cat_linux_arm(filepath, out_fd)
 
     no_support('cat', os, arch)
 
@@ -44,3 +46,11 @@ def _cat_amd64(filepath, out_fd, use_sendfile):
                "test eax, eax\njle cat_helper2",
                write_stack(out_fd, 'rax'),
                "jmp cat_helper1\ncat_helper2:")
+
+def _cat_linux_arm(filepath, out_fd):
+    return (open_file(filepath),
+            'mov r8, r0\ncat_helper1:',
+            read_stack('r8', 48, False),
+            'cmp r0, #0\nble cat_helper2',
+            write_stack(out_fd, 'r0'),
+            'b cat_helper1\ncat_helper2:')

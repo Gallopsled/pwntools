@@ -4,7 +4,7 @@ from ..misc.pushstr import pushstr
 def _mov(reg, val):
     return pwn.shellcode.mov(reg, val, raw = True).strip()
 
-@shellcode_reqs(arch=['i386', 'amd64'], os=['linux', 'freebsd'])
+@shellcode_reqs(arch=['i386', 'amd64', 'arm'], os=['linux', 'freebsd'])
 def write_stack(out_fd = 1, size = 127, arch = None, os = None):
     """Args: [out_fd (imm/reg) = STDOUT_FILENO] [size(imm/reg) = 255]
 
@@ -22,6 +22,8 @@ def write_stack(out_fd = 1, size = 127, arch = None, os = None):
     elif arch == 'amd64':
         if os in ['linux', 'freebsd']:
             return _write_stack_amd64(out_fd, size)
+    elif arch == 'arm' and os == 'linux':
+        return _write_stack_linux_arm(out_fd, size)
 
     bug('OS/arch combination (%s, %s) is not supported for write_stack' % (os, arch))
 
@@ -81,3 +83,10 @@ def _write_stack_amd64(out_fd, size):
         push SYS_write
         pop rax
         syscall""" % (str(out_fd), str(size))
+
+def _write_stack_linux_arm(out_fd, size):
+    return '\n'.join([
+            pwn.shellcode.mov('r2', size, raw = True),
+            pwn.shellcode.mov('r0', out_fd, raw = True),
+            'mov r1, sp',
+            'svc SYS_write'])
