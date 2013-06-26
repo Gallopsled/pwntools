@@ -183,7 +183,7 @@ def _mov_arm(dst, src):
         shift1 = 0
         while (0x03 << shift1) & n == 0:
             shift1 += 2
-        
+
         shift2 = shift1 + 8
 
         while (0x03 << shift2) & n == 0:

@@ -33,7 +33,7 @@ def _get_opcodes(codeobj):
             i += 3
         else:
             i += 1
-    return opcodes        
+    return opcodes
 
 def test_expr(expr, allowed_codes):
     """test_expr(expr) -> codeobj
@@ -82,7 +82,7 @@ def expr_eval(expr):
     Safe Python expression evaluation
 
     Evaluates a string that contains an expression that only
-    uses Python constants. This can be used to e.g. evaluate 
+    uses Python constants. This can be used to e.g. evaluate
     a numerical expression from an untrusted source.
 
     >>> expr_eval("1+2")
