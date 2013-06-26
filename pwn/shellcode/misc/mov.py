@@ -2,8 +2,8 @@ from pwn.internal.shellcode_helper import *
 import pwn
 import string
 
-@shellcode_reqs(arch=['i386', 'amd64'])
-def mov(dest, src, stack_allowed = True, recursion_depth = 1, arch = None):
+@shellcode_reqs(arch=['i386', 'amd64', 'arm'])
+def mov(dest, src, stack_allowed = True, arch = None):
     """Does a mov into the dest while newlines and null characters.
 
     The src can be be an immediate or another register.
@@ -15,9 +15,11 @@ def mov(dest, src, stack_allowed = True, recursion_depth = 1, arch = None):
     allowed = pwn.get_only()
 
     if arch == 'i386':
-        return _mov_i386(dest, src, stack_allowed, recursion_depth)
+        return _mov_i386(dest, src, stack_allowed)
     elif arch == 'amd64':
-        return _mov_amd64(dest, src, stack_allowed, recursion_depth)
+        return _mov_amd64(dest, src, stack_allowed)
+    elif arch == 'arm':
+        return _mov_arm(dest, src)
 
     no_support('mov', 'any', arch)
 
@@ -37,7 +39,7 @@ def _fix_regs(regs, in_sizes):
     return pwn.concat(regs), sizes, bigger, smaller
 
 
-def _mov_i386(dest, src, stack_allowed, recursion_depth):
+def _mov_i386(dest, src, stack_allowed):
     regs = [['eax', 'ax', 'al', 'ah'],
             ['ebx', 'bx', 'bl', 'bh'],
             ['ecx', 'cx', 'cl', 'ch'],
@@ -92,7 +94,7 @@ def _mov_i386(dest, src, stack_allowed, recursion_depth):
 
     bug('%s is neither a register nor an immediate' % src)
 
-def _mov_amd64(dest, src, stack_allowed, recursion_depth):
+def _mov_amd64(dest, src, stack_allowed):
     regs = [['rax', 'eax', 'ax', 'al'],
             ['rbx', 'ebx', 'bx', 'bl'],
             ['rcx', 'ecx', 'cx', 'cl'],
@@ -161,3 +163,40 @@ def _mov_amd64(dest, src, stack_allowed, recursion_depth):
             bug('Register %s could not be moved into %s' % (src, dest))
 
     bug('%s is neither a register nor an immediate' % src)
+
+def _mov_arm(dst, src):
+    import string
+
+    if not isinstance(src, int):
+        return "mov %s, %s" % (dst, src)
+
+    if len(asm("ldr %s, =%d" % (dst, src))) == 4:
+        return "ldr %s, =%d" % (dst, src)
+
+    srcu =  src & 0xffffffff
+    srcn = ~src & 0xffffffff
+
+    for n, op in zip([srcu, srcn], ['mov', 'mvn']):
+        shift1 = 0
+        while (0x03 << shift1) & n == 0:
+            shift1 += 2
+        
+        shift2 = shift1 + 8
+
+        while (0x03 << shift2) & n == 0:
+            shift2 += 2
+
+        if n == (n & (0xff << shift1)) + (n & (0xff << shift2)):
+            return '\n'.join([
+                "// mov %s, #%d" % (dst, src),
+                "%s %s, #%d" % (op,    dst, (n & (0xff << shift1))),
+                "%s %s, #%d" % ("eor", dst, (n & (0xff << shift2)))
+            ])
+
+    id = pwn.randoms(32, only = string.ascii_lowercase)
+
+    return '\n'.join([
+        "ldr %s, %s" % (dst, id),
+        "b %s_after" % id,
+        "%s: .word %d" % (id, src),
+        "%s_after:" % id])
