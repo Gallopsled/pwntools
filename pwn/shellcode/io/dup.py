@@ -1,7 +1,7 @@
 from pwn.internal.shellcode_helper import *
 from sh import sh
 
-@shellcode_reqs(arch=['i386', 'amd64'], os=['linux', 'freebsd'])
+@shellcode_reqs(arch=['i386', 'amd64', 'arm'], os=['linux', 'freebsd'])
 def dupsh(sock = 'ebp', os = None):
     """Args: [sock (imm/reg) = ebp]
     Duplicates sock to stdin, stdout and stderr and spawns a shell."""
