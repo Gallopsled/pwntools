@@ -36,7 +36,7 @@ def size(n, abbriv = 'B', si = False):
     for suffix in ['K', 'M', 'G', 'T']:
         n /= base
         if n <= base:
-            num = '%.2f' % n
+            num = '%.02f' % n
             while num[-1] == '0':
                 num = num[:-1]
             if num[-1] == '.':
