@@ -43,7 +43,7 @@ class DynELF:
             pwn.log.status('Leaking %s' % s)
 
         status('link_map')
-        link_map = leak.q(gotplt + 8)
+        link_map = leak.q(gotplt, 1)
 
         status('%s load address' % lib)
         cur = link_map
