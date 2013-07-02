@@ -42,7 +42,6 @@ DEBUG = int(DEBUG)
 
 # Promote to toplevel
 try:
-    from pwn.consts     import *
     from pwn.log        import die, bug
     from pwn.thread     import Thread
     from pwn.util       import *

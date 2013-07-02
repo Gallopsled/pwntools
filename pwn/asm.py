@@ -75,7 +75,7 @@ def _asm(target_arch, target_os, code_blocks, emit_asm = 0, keep_tmp = False):
             cpp += ['-D', 'DEBUG']
 
         if target_os != None:
-            include = os.path.join(pwn.installpath, pwn.INCLUDE, target_os)
+            include = os.path.join(pwn.installpath, 'pwn', 'include', target_os)
             cpp += ['-I', include]
 
         if target_os == 'linux':
