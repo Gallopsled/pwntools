@@ -43,7 +43,7 @@ class MemLeak:
                 return self.cache[addr]
         return None
 
-    def h (self, addr, ndx = 0):
+    def w (self, addr, ndx = 0):
         addr += ndx * 2
         b1 = self.b(addr)
         b2 = self.b(addr + 1)
@@ -53,11 +53,11 @@ class MemLeak:
 
     def d (self, addr, ndx = 0):
         addr += ndx * 4
-        h1 = self.h(addr)
-        h2 = self.h(addr + 2)
-        if None in [h1, h2]:
+        w1 = self.w(addr)
+        w2 = self.w(addr + 2)
+        if None in [w1, w2]:
             return None
-        return h1 + (h2 << 16)
+        return w1 + (w2 << 16)
 
     def q (self, addr, ndx = 0):
         addr += ndx * 8
@@ -77,11 +77,52 @@ class MemLeak:
             addr += 1
         return out
 
-    def raw (self, addr, numb):
-        return [self.b(addr + i) for i in range(numb)]
-
     def n (self, addr, numb):
         xs = self.raw(addr, numb)
         if None in xs:
             return None
         return ''.join(chr(x) for x in xs)
+
+    def __getitem__ (self, addr):
+        return self.b(addr)
+
+    def __setitem__ (self, addr, val):
+        if isinstance(val, int):
+            if val == 0:
+                self.cache[addr] = 0
+            else:
+                n = 0
+                while val:
+                    self.cache[addr + n] = val & 0xff
+                    val >>= 8
+                    n += 1
+        elif isinstance(val, str):
+            for n, c in enumerate(val):
+                self.cache[addr + n] = c
+        else:
+            raise TypeError
+
+    def __delitem__ (self, addr):
+        del self.cache[addr]
+
+    def setb (self, addr, val, ndx = 0):
+        addr += ndx
+        self[addr] = val & 0xff
+
+    def setw (self, addr, val, ndx = 0):
+        addr += ndx * 2
+        self.setb(addr, val)
+        self.setb(addr + 1, val >> 8)
+
+    def setd (self, addr, val, ndx = 0):
+        addr += ndx * 4
+        self.setw(addr, val)
+        self.setw(addr + 2, val >> 16)
+
+    def setq (self, addr, val, ndx = 0):
+        addr += ndx * 8
+        self.setd(addr, val)
+        self.setd(addr + 4, val >> 32)
+
+    def sets (self, addr, val):
+        self[addr] = val + '\x00'
