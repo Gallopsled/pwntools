@@ -1,6 +1,7 @@
 import pwn
 
 def fmtstring(towrite, buf_offset, writesize = 1, pre_written = 0, use_posix_extension = True):
+    out = ''
     if not (1 <= writesize <= 4):
         pwn.die('fmtstring: writesize has to be between 1-4')
     if not isinstance(towrite,dict):
@@ -8,7 +9,7 @@ def fmtstring(towrite, buf_offset, writesize = 1, pre_written = 0, use_posix_ext
 
     for address in towrite.keys():
         data = towrite[address]
-        out = pwn.flat(address + n * writesize for n in range(len(data)))
+        out += pwn.flat(address + n * writesize for n in range(len(data)))
     if '%' in out:
         pwn.die('I do not know how to handle addresses with "%" in them')
     if '\x00' in out:
