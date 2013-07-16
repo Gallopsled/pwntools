@@ -303,6 +303,9 @@ class ROP:
     def __getitem__(self, x):
         return self._resolve(x)
 
+    def __dir__(self):
+        return dir(type(self)) + list(self.__dict__)
+
     def chain(self, *args):
         if len(args) % 2 <> 0:
             args = args + ((),)
