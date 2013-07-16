@@ -71,6 +71,7 @@ try:
     from pwn.memleak    import MemLeak
     from pwn.safeeval   import expr_eval, const_eval
     from pwn.clookup    import clookup
+    from pwn.fmtstring  import *
 
     import pwn.internal.init.session
     import pwn.shellcode
