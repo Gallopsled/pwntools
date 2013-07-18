@@ -37,13 +37,13 @@ def size(n, abbriv = 'B', si = False):
         n /= base
         if n <= base:
             num = '%.02f' % n
-            while num[-1] == '0':
-                num = num[:-1]
-            if num[-1] == '.':
-                num = num[:-1]
+            # while num[-1] == '0':
+            #     num = num[:-1]
+            # if num[-1] == '.':
+            #     num = num[:-1]
             return '%s%s%s' % (num, suffix, abbriv)
 
-    return '%.2fP%s' % (n, abbriv)
+    return '%.02fP%s' % (n, abbriv)
 
 def read(path):
     with open(path) as f:
