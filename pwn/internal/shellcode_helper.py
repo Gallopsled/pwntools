@@ -155,7 +155,7 @@ def arg_fixup(s):
     except:
         pass
     try:
-        s2 = pwn.clookup(s)
+        s2 = pwn.clookup(s, eval = True)
         if isinstance(s2, list) and len(s2) == 1 and isinstance(s2[0], int):
             return s2[0]
     except:
