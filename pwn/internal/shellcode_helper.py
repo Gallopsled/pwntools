@@ -154,6 +154,12 @@ def arg_fixup(s):
             return s2
     except:
         pass
+    try:
+        s2 = pwn.clookup(s)
+        if isinstance(s2, list) and len(s2) == 1 and isinstance(s2[0], int):
+            return s2[0]
+    except:
+        pass
     return s
 
 def no_support(name, os, arch):
