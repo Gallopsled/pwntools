@@ -2,7 +2,7 @@ from pwn.internal.shellcode_helper import *
 import pwn
 import string
 
-@shellcode_reqs(arch=['i386', 'amd64', 'arm'])
+@shellcode_reqs(arch=['i386', 'amd64', 'arm', 'thumb'])
 def mov(dest, src, stack_allowed = True, arch = None):
     """Does a mov into the dest while newlines and null characters.
 
@@ -11,6 +11,8 @@ def mov(dest, src, stack_allowed = True, arch = None):
     If the stack is not allowed to be used, set stack_allowed to False.
     """
 
+    comment = '// Set %s = %s\n' % (dest, src)
+
     src = arg_fixup(src)
     allowed = pwn.get_only()
 
@@ -18,11 +20,13 @@ def mov(dest, src, stack_allowed = True, arch = None):
         return "// setting %s to %s, but this is a no-op" % (dest, src)
 
     if arch == 'i386':
-        return _mov_i386(dest, src, stack_allowed)
+        return comment + _mov_i386(dest, src, stack_allowed)
     elif arch == 'amd64':
-        return _mov_amd64(dest, src, stack_allowed)
+        return comment + _mov_amd64(dest, src, stack_allowed)
     elif arch == 'arm':
-        return _mov_arm(dest, src)
+        return comment + _mov_arm(dest, src)
+    elif arch == 'thumb':
+        return comment + _mov_thumb(dest, src)
 
     no_support('mov', 'any', arch)
 
@@ -195,6 +199,51 @@ def _mov_arm(dst, src):
                 "%s %s, #%d" % (op,    dst, (n & (0xff << shift1))),
                 "%s %s, #%d" % ("eor", dst, (n & (0xff << shift2)))
             ])
+
+    id = pwn.randoms(32, only = string.ascii_lowercase)
+
+    return '\n'.join([
+        "ldr %s, %s" % (dst, id),
+        "b %s_after" % id,
+        "%s: .word %d" % (id, src),
+        "%s_after:" % id])
+
+def _mov_thumb(dst, src):
+    if not isinstance(src, int):
+        return "mov %s, %s" % (dst, src)
+
+    srcu = src & 0xffffffff
+    srcs = srcu - 2 * (srcu & 0x80000000)
+
+    if srcu == 0:
+        return 'eor %s, %s' % (dst, dst)
+
+    if srcu < 256:
+        return 'mov %s, #%d' % (dst, src)
+
+    if -256 < srcs < 0:
+        return 'eor %s, %s\nsub %s, #%d' % (dst, dst, dst, -srcs)
+
+    shift1 = 0
+    while (1 << shift1) & src == 0:
+        shift1 += 1
+
+    if (0xff << shift1) & src == src:
+        return 'mov %s, #%d\nlsl %s, #%d' % (dst, src >> shift1, dst, shift1)
+
+    shift2 = 8
+    while (1 << shift2) & src == 0:
+        shift2 += 1
+
+    if ((0xff << shift2) | 0xff) & src == src:
+        return 'mov %s, #%d\nlsl %s, #%d\nadd %s, #%d' % (dst, src >> shift2, dst, shift2, dst, src & 0xff)
+
+    shift3 = shift1 + 8
+    while (1 << shift3) & src == 0:
+        shift3 += 1
+
+    if ((0xff << shift1) | (0xff << shift3)) & src == src:
+        return 'mov %s, #%d\nlsl %s, #%d\nadd %s, #%d\nlsl %s, #%d' % (dst, src >> shift3, dst, shift3 - shift1, dst, (src >> shift1) & 0xff, dst, shift1)
 
     id = pwn.randoms(32, only = string.ascii_lowercase)
 
