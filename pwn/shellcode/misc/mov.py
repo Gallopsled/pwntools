@@ -229,7 +229,10 @@ def _mov_thumb(dst, src):
         shift1 += 1
 
     if (0xff << shift1) & src == src:
+        if shift1 < 4:
+            return 'mov %s, #%d\nlsl %s, #4\nlsr %s, #%d' % (dst, src >> shift1, dst, dst, 4-shift1)
         return 'mov %s, #%d\nlsl %s, #%d' % (dst, src >> shift1, dst, shift1)
+
 
     shift2 = 8
     while (1 << shift2) & src == 0:
@@ -247,8 +250,17 @@ def _mov_thumb(dst, src):
 
     id = pwn.randoms(32, only = string.ascii_lowercase)
 
+    if (src & 0xFF000000 == 0x0):
+        src = src | 0xFF000000
+
+        extra = ''.join([
+        "lsl %s, #8" % dst,
+        "lsr %s, #8" % dst,
+        ])
+
     return '\n'.join([
         "ldr %s, %s" % (dst, id),
         "b %s_after" % id,
         "%s: .word %d" % (id, src),
-        "%s_after:" % id])
+        "%s_after:" % id,
+				extra])
