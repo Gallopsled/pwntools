@@ -209,13 +209,25 @@ def continued_fractions(a, b, limit = -1):
             b = rest
     return continued_fractions
 
-def calculate_fraction(fs):
+def calculate_fraction(fs, base = 0):
     """
     Calculate fraction from continued fraction list.
     Might need result.limit_denominator() for best results.
     """
     from fractions import Fraction
-    if len(fs) == 1:
-        return Fraction(fs[0])
-    else:
-        return Fraction(fs[0] + 1. / calculate_fraction(fs[1:]))
+    import collections
+
+
+    if fs == []:
+        return base
+
+    p = collections.deque([1, base],maxlen = 3)
+    q = collections.deque([0, 1], maxlen = 3)
+
+    for a_n in fs:
+        p_n = a_n * p[1] + p.popleft()
+        p.append(p_n)
+        q_n = a_n * q[1] + q.popleft()
+        q.append(q_n)
+
+    return Fraction(p.pop(), q.pop())
