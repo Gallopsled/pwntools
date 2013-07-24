@@ -228,6 +228,21 @@ def urldecode(s, ignore_invalid = False):
     return res
 
 def bits(s, endian = 'big', zero = None, one = None, type = None):
+    '''Converts the argument into a string of binary sequence 
+       or a binary integer list
+
+       Arguments:
+         - s: The sequence which should be parsed.
+         - endian(optional): The binary endian, default 'big'.
+         - zero(optional): The byte representing a 0bit, required if
+            one is defined.
+         - one(optional): The byte representing a 1bit, required if
+            zero is defined.
+         - Type(optional): A string representing the input type, can be
+            'bool' or 'str', defaults to integer if not defined.
+
+       Returns a string of 1s and 0s if type = 'str', else a list 
+         of bits. '''
     types = {bool:     'bool',
              'bool':   'bool',
              str:      'str',
@@ -313,13 +328,16 @@ def unbits(s, endian = 'big'):
     return ''.join(out)
 
 def b64(s):
+    '''Base64 encodes a string'''
     import base64
     return base64.b64encode(s)
 
 def b64e(s):
+    '''Base64 encncodes a string'''
     return b64(s)
 
 def b64d(s):
+    '''Base64 decodes a string'''
     import base64
     return base64.b64decode(s)
 
