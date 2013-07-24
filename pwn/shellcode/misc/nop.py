@@ -2,7 +2,7 @@ from pwn.internal.shellcode_helper import shellcode_reqs
 
 @shellcode_reqs(arch = ['i386', 'amd64', 'arm', 'thumb', 'mips'])
 def nop(arch = None):
-    """Returns a breakpoint instruction for debugging."""
+    """Returns a no operation instruction."""
 
     if arch in ['i386', 'amd64']:
         return 'nop'
