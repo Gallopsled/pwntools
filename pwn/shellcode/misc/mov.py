@@ -249,7 +249,6 @@ def _mov_thumb(dst, src):
 
     id = pwn.randoms(32, only = string.ascii_lowercase)
 
-<<<<<<< HEAD
     if (src & 0xFF000000 == 0x0):
         src = src | 0xFF000000
 
@@ -258,15 +257,9 @@ def _mov_thumb(dst, src):
         "lsr %s, #8" % dst,
         ])
 
-=======
->>>>>>> upstream/master
     return '\n'.join([
         "ldr %s, %s" % (dst, id),
         "b %s_after" % id,
         "%s: .word %d" % (id, src),
-<<<<<<< HEAD
         "%s_after:" % id,
-				extra])
-=======
-        "%s_after:" % id])
->>>>>>> upstream/master
+		extra])
