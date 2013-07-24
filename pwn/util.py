@@ -46,14 +46,17 @@ def size(n, abbriv = 'B', si = False):
     return '%.02fP%s' % (n, abbriv)
 
 def read(path):
+    """Open file, return content."""
     with open(path) as f:
         return f.read()
 
 def write(path, data):
+    """Create new file or truncate existing to zero length and write data."""
     with open(path, 'w') as f:
         f.write(data)
 
 def bash(cmd, timeout = None, return_stderr = False):
+    """Execute cmd and return stdout and stderr in a tuple """
     import subprocess, time
     p = subprocess.Popen(['/bin/bash', '-c', cmd],
                          stdin  = subprocess.PIPE,
