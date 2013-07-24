@@ -19,6 +19,7 @@ _banner = '''  .:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.
 _lines = _banner.split('\n')
 
 def splash():
+    """Put this at the beginning of your exploit to create the illusion that your sploit is enterprisey and top notch quality"""
     log.trace('\x1b[G\x1b[?25l')
     for c in range(8):
         for line in _lines:
