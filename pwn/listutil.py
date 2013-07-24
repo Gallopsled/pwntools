@@ -61,9 +61,11 @@ def concat_all(*args):
     return res
 
 def ordlist(s):
+    """Turns a string into a list of the corresponding ascii values."""
     return [ord(c) for c in s]
 
 def unordlist(cs):
+    """Takes a list of ascii values and returns the corresponding string"""
     return pwn.flat(cs, func=pwn.p8)
 
 def __kmp_table(W):
