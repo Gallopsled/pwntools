@@ -252,3 +252,7 @@ class basechatter:
         while self.recv(10000) != '':
             pass
         self.settimeout(tmp_timeout)
+
+    def attach_gdb(self, execute = None):
+        pwn.attach_gdb(self, execute)
+
