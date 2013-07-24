@@ -31,6 +31,7 @@ class basechatter:
         self.settimeout(timeout)
 
     def settimeout(self, n):
+        '''Sets the timeout for the socket.'''
         if n == 'default':
             n = 2.0
         elif n == None:
@@ -38,14 +39,17 @@ class basechatter:
         self.timeout = n
 
     def send(self, *dat):
+        '''Sends data to the socket.'''
         dat = pwn.flat(dat)
         self._send(dat)
 
     def sendline(self, *line):
+        '''Sends data to the socket appended with a newline.'''
         line = pwn.flat(line)
         self.send(line + '\n')
 
     def recv(self, numb = 4096):
+        '''Receives up to numb bytes of data from the socket. It returns as soon as data is available.'''
         import socket, sys
         try:
             res = self._recv(numb)
@@ -62,6 +66,7 @@ class basechatter:
         return res
 
     def recvn(self, numb):
+        '''Receives exactly numb bytes of data from the socket, unless the socket is closed in which case it returns.'''
         res = []
         n = 0
         while n < numb:
@@ -72,16 +77,15 @@ class basechatter:
             n += 1
         return ''.join(res)
 
-    def recvuntil(self, delim = None, **kwargs):
-        if 'regex' in kwargs:
+    def recvuntil(self, delim = None, regex = None, pred = None):
+        '''Receives data from the socket until  numb bytes of data from the socket, unless the socket is closed in which case it returns.'''
+        if regex != None:
             import re
-            expr = re.compile(kwargs['regex'], re.DOTALL)
+            expr = re.compile('regex', re.DOTALL)
             pred = lambda s: expr.match(s)
-        elif 'pred' in kwargs:
-            pred = kwargs['pred']
         elif delim != None:
             pred = lambda s: s.endswith(delim)
-        else:
+        elif pred == None:
             pwn.die('recvuntil called without delim, regex or pred')
 
         res = ''
@@ -123,12 +127,16 @@ class basechatter:
         return res
 
     def recvline(self, lines = 1):
+        ''' Receives one or more lines from the socket. '''
         res = []
         for _ in range(lines):
             res.append(self.recvuntil('\n'))
         return ''.join(res)
 
     def interactive(self, prompt = pwn.text.boldred('$') + ' ', flush_timeout = None):
+        ''' 'Connects' a socket to stdin/stdout. Very effective if combined with the findpeersh shellcode.
+        
+        It can optionally have a prompt, which it tries to print out when output has not been seen for a while. '''
         if not self.silent:
             pwn.log.info('Switching to interactive mode')
         import readline, sys
@@ -230,6 +238,7 @@ class basechatter:
         self.settimeout(timeout)
 
     def recvall(self):
+        ''' Receives data until a socket is closed. '''
         if not self.silent:
             pwn.log.waitfor('Recieving all data')
         r = []
@@ -246,6 +255,7 @@ class basechatter:
         return ''.join(r)
 
     def clean(self):
+        ''' Removes all the buffered data from a socket. '''
         tmp_timeout = self.timeout
         self.settimeout(0.1)
 
@@ -254,5 +264,8 @@ class basechatter:
         self.settimeout(tmp_timeout)
 
     def attach_gdb(self, execute = None):
+        ''' Tries to find the program in the other end of a socket (if it is a local program).
+        
+        It then creates a new gdb session in a new terminal windows, which is then connected to the program in the other end.'''
         pwn.attach_gdb(self, execute)
 
