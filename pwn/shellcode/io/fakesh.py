@@ -2,6 +2,8 @@ from pwn.internal.shellcode_helper import *
 
 @shellcode_reqs(arch='i386', os='linux')
 def fakesh():
+    """Spawns a fake shell. Prints a 'sh-4.1$ ' prompt and ignores input."""
+
     return """
         ;; Clear eax, ebx, edx
         xor ebx, ebx
