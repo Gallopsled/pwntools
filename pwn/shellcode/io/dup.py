@@ -2,7 +2,7 @@ from pwn.internal.shellcode_helper import *
 from sh import sh
 
 @shellcode_reqs(arch=['i386', 'amd64', 'arm', 'thumb'], os=['linux', 'freebsd'])
-def dupsh(sock = False, os = None):
+def dupsh(sock = None, os = None):
     """Args: [sock (imm/reg) = ebp]
     Duplicates sock to stdin, stdout and stderr and spawns a shell."""
     if os in ['freebsd', 'linux']:
@@ -11,15 +11,14 @@ def dupsh(sock = False, os = None):
         bug('OS was neither linux nor freebsd')
 
 @shellcode_reqs(arch=['i386', 'amd64', 'arm', 'thumb'], os=['linux', 'freebsd'])
-def dup(sock = False, os = None, arch = None):
+def dup(sock = None, os = None, arch = None):
     """Args: [sock (imm/reg) = ebp]
     Duplicates sock to stdin, stdout and stderr."""
 
-    if sock == False:
-        if arch in ['i386']:
-            sock = 'ebp'
-        elif arch in ['thumb']:
-            sock = 'r6'
+    if arch in ['thumb', 'arm']:
+        sock = 'r6'
+    else:
+        sock = 'ebp'
     
     sock = arg_fixup(sock)
 
@@ -105,7 +104,6 @@ def _dup_linux_thumb(sock):
     out+= mov('r7', 'SYS_dup2')
     out+= """
     loop:
-		/* expect r6 to contain fd - should be fixed*/
         mov r0, %(sock)s
         sub r1, #1
         svc 1
