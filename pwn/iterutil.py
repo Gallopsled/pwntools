@@ -39,6 +39,7 @@ def ncycles(iterable, n):
     return chain.from_iterable(repeat(tuple(iterable), n))
 
 def dotproduct(vec1, vec2):
+    """Returns the dot product of two vectors."""
     import operator
     return sum(imap(operator.mul, vec1, vec2))
 
