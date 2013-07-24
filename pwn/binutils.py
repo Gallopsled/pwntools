@@ -227,7 +227,7 @@ def urldecode(s, ignore_invalid = False):
                 raise Exception("Invalid input to urldecode")
     return res
 
-def bits(s, **kwargs):
+def bits(s, endian = 'big', zero = None, one = None, type = None):
     types = {bool:     'bool',
              'bool':   'bool',
              str:      'str',
@@ -236,11 +236,6 @@ def bits(s, **kwargs):
              int:      'int',
              'int':    'int',
              None:     None}
-
-    endian = kwargs.get('endian', 'big')
-    zero   = kwargs.get('zero', None)
-    one    = kwargs.get('one', None)
-    type   = kwargs.get('type', None)
 
     try:
         type = types[type]
@@ -283,11 +278,7 @@ def bits(s, **kwargs):
     else:
         return out
 
-def bits_str(s, **kwargs):
-    endian = kwargs.get('endian', 'big')
-    zero   = kwargs.get('zero', "0")
-    one    = kwargs.get('one', "1")
-
+def bits_str(s, endian = 'big', zero = '0', one = '1'):
     return ''.join(bits(s, zero=zero, one=one, endian=endian))
 
 def unbits(s, endian = 'big'):
