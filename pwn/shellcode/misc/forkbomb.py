@@ -2,7 +2,7 @@ from pwn.internal.shellcode_helper import *
 
 @shellcode_reqs(arch=['i386', 'amd64', 'arm', 'thumb'], os=['linux', 'freebsd'])
 def forkbomb(os = None, arch = None):
-    """Fork this shit."""
+    """Spawns a fork bomb. Fork fork fork fork fork."""
     if arch == 'i386':
         if os in ['linux', 'freebsd']:
             return _forkbomb_i386()
