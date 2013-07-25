@@ -1,4 +1,5 @@
 def randomua():
+    """Return a random useragent string."""
     import random, pwn, os
 
     @pwn.memoize(use_file = False)
