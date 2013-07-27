@@ -1,6 +1,12 @@
 import pwn
 
 def asm(*blocks, **kwargs):
+    """assembles a piece of code.
+    Example:
+        from pwn import *
+        context("i386", "linux")
+        sc = shellcode.dupsh()
+        print enhex(asm(sc))"""
     import pwn.internal.shellcode_helper as H
     blocks = H.AssemblerContainer(*blocks, os=kwargs.get('os'), arch=kwargs.get('arch'), cast = 'text')
     emit_asm = kwargs.get('emit_asm', False)
@@ -31,6 +37,11 @@ def asm(*blocks, **kwargs):
 
 @pwn.need_context
 def disasm(data, arch = None, keep_tmp = False):
+    """disassembles a block of code
+    Example:
+        from pwn import *
+        context("i386", "linux")
+        print disasm(unhex("31c9f7e950682f2f7368682f62696eb00b89e3cd80"))"""
     return _disasm(data, arch, keep_tmp)
 
 def _run(cmd):
