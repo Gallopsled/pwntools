@@ -228,7 +228,7 @@ def urldecode(s, ignore_invalid = False):
     return res
 
 def bits(s, endian = 'big', zero = None, one = None, type = None):
-    '''Converts the argument into a string of binary sequence 
+    '''Converts the argument into a string of binary sequence
        or a binary integer list
 
        Arguments:
@@ -241,7 +241,7 @@ def bits(s, endian = 'big', zero = None, one = None, type = None):
          - Type(optional): A string representing the input type, can be
             'bool' or 'str', defaults to integer if not defined.
 
-       Returns a string of 1s and 0s if type = 'str', else a list 
+       Returns a string of 1s and 0s if type = 'str', else a list
          of bits. '''
     types = {bool:     'bool',
              'bool':   'bool',
@@ -427,7 +427,12 @@ def random64():
 def ror(n, k, size = None):
     """Returns ((n >> k) | (n << (size - k))) truncated to the right number of bits.
 
-    Size defaults to 32 for numbers and 8*len(n) for strings."""
+    Size defaults to 32 for numbers and 8*len(n) for strings.
+
+    Lists and tupples are rotated as you would expect."""
+
+    if all(hasattr(n, x) for x in ['__add__', '__getslice__', '__len__']):
+        return n[(-k) % len(n):] + n[:(-k) % len(n)]
 
     if isinstance(n, str):
         repack = len(n)
@@ -449,5 +454,7 @@ def ror(n, k, size = None):
 def rol(n, k, size = None):
     """Returns ((n << k) | (n >> (size - k))) truncated to the right number of bits.
 
-    Size defaults to 32 for numbers and 8*len(n) for strings."""
+    Size defaults to 32 for numbers and 8*len(n) for strings.
+
+    Lists and tupples are rotated as you would expect."""
     return ror(n, -k, size)
