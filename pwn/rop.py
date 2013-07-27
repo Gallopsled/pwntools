@@ -1,6 +1,14 @@
 import pwn
 
 class ROP:
+    """class that construct a ROP chain.
+    Example:
+        from pwn import *
+        r = ROP("path/to/binary")
+        r.call("recv", [4, r.bss(100), 100, 0]) #recieve 100 bytes of shellcode to .bss + 100
+        r.mprotect(r.bss(100)) #mark it executable
+        r.call(r.bss(100), []) #run it!
+        print enhex(str(r))"""
     def __init__(self, path, garbage = 0xdeadbeef):
         if isinstance(path, pwn.ELF):
             self.elf = path
@@ -32,10 +40,12 @@ class ROP:
         return func
 
     def mprotect(self, addr):
+        """does all the stuff that you want mprotect to do, but can't remember how to do(marks address executable)"""
         self.call('mprotect', (addr & ~4095, 4096, 7))
         self.call('mprotect', ((addr+4096) & ~4095, 4096, 7))
 
     def bss(self, offset=0):
+        """returns the address of .bss+offset. Get place to store data"""
         return self.sections['.bss'] + offset
 
     def extra_libs(self, libs):
