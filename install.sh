@@ -21,7 +21,10 @@ if [ -f /etc/debian_version ]; then
     DEPS="python-crypto python-gmpy python-matplotlib python-sympy python-argparse python-paramiko"
     yes | apt-get install ${DEPS}
 elif [ -f /etc/arch-release ]; then
-    DEPS="python2-crypto python2-matplotlib python2-sympy python2-argparse"
+    AUR="python2-argparse python2-gmpy"
+    DEPS="python2-crypto python2-matplotlib python2-sympy python2-paramiko"
     yes | pacman -S ${DEPS}
+    echo "ATTENTION! You also need to install the following packages from AUR:"
+    echo $AUR
 fi
 echo "All DONE"
