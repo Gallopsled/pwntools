@@ -346,15 +346,38 @@ def xor(*args, **kwargs):
     """Flattens its arguments and then xors them together.
 If the end of a string is reached, it wraps around in the string.
 
+Converts the output to a string or a list or tuple of ints or chrs
+depending on the first input.
+
 Arguments:
   - func: The function to use with flat. Defaults to p8.
   - cut: How long a string should be returned.
-         Can be either 'min'/'max'/'left'/'right' or a number."""
+         Can be either 'min'/'max'/'left'/'right' or a number.
+  - flat: Ignore type of first argument and flatten output in all
+          cases. Defaults to False."""
+
+    if len(args) == 0:
+        return []
 
     cut = kwargs.get('cut', 'max')
     func = kwargs.get('func', p8)
+    doflat = kwargs.get('flat', False)
 
-    strs = [map(ord, flat(s, func=func)) for s in args]
+    def output(xs):
+        if doflat:
+            return ''.join(chr(x) for x in xs)
+        for con in list, tuple:
+            if type(args[0]) == con:
+                if all(type(x) == int for x in args[0]):
+                    return con(xs)
+                else:
+                    return con(chr(x) for x in xs)
+        return ''.join(chr(x) for x in xs)
+
+    strs = filter(len, [map(ord, flat(s, func=func)) for s in args])
+
+    if strs == []:
+        return output([])
 
     if isinstance(cut, int):
         l = cut
@@ -370,9 +393,9 @@ Arguments:
         raise Exception("Not a valid cut argument")
 
     def get(n):
-        return chr(reduce(lambda x, y: x ^ y, [s[n % len(s)] for s in strs]))
+        return reduce(lambda x, y: x ^ y, [s[n % len(s)] for s in strs])
 
-    return ''.join(get(n) for n in range(l))
+    return output(get(n) for n in range(l))
 
 @pwn.avoider
 def xor_pair(data):
