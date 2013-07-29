@@ -126,7 +126,7 @@ class ROP:
         self._gadgets['popebp'] = ps
 
     def _resolve(self, x):
-        if x is None or isinstance(x, int):
+        if x is None or pwn.isint(x):
             return x
         for y in [self.symbols, self.plt, self.sections]:
             if x in y:
@@ -213,14 +213,14 @@ class ROP:
             for a in args:
                 if   a is None:
                     out.append(garbage())
-                elif isinstance(a, int):
+                elif pwn.isint(a):
                     out.append(p(a))
                 elif hasattr(a, '__iter__'):
                     packed = pargs(a)
                     payload.extend(packed)
                     out.append(offset[0])
                     for a in packed:
-                        if isinstance(a, int):
+                        if pwn.isint(a):
                             offset[0] += 4
                         else:
                             offset[0] += len(a)
@@ -285,7 +285,7 @@ class ROP:
         out_ = out + payload
         out = []
         for o in out_:
-            if isinstance(o, int):
+            if pwn.isint(o):
                 if self._load_addr is None:
                     pwn.die('Load address of ROP chain not known; can\'t use structures')
                 out.append(p(offset + o + self._load_addr))

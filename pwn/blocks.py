@@ -120,7 +120,7 @@ class Block:
         res = 0
 
         for o in self._content:
-            if isinstance(o, int) or _is_sympy(o):
+            if pwn.isint(o) or _is_sympy(o):
                 res += self.wordsize
             elif hasattr(o, '__len__'):
                 res += len(o)
@@ -145,7 +145,7 @@ class Block:
         for o in self._content:
             if isinstance(o, Block):
                 offset = o.update_symbols(offset, base)
-            elif isinstance(o, int) or _is_sympy(o):
+            elif pwn.isint(o) or _is_sympy(o):
                 offset += self.wordsize
             elif hasattr(o, '__len__'):
                 offset += len(o)

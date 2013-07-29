@@ -150,13 +150,13 @@ def arg_fixup(s):
     try:
         import ast
         s2 = ast.literal_eval(s)
-        if isinstance(s2, int):
+        if pwn.isint(s2):
             return s2
     except:
         pass
     try:
         s2 = pwn.clookup(s, eval = True)
-        if isinstance(s2, list) and len(s2) == 1 and isinstance(s2[0], int):
+        if isinstance(s2, list) and len(s2) == 1 and pwn.isint(s2[0]):
             return s2[0]
     except:
         pass

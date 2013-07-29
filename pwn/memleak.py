@@ -87,7 +87,7 @@ class MemLeak:
         return self.b(addr)
 
     def __setitem__ (self, addr, val):
-        if isinstance(val, int):
+        if pwn.isint(val):
             if val == 0:
                 self.cache[addr] = 0
             else:

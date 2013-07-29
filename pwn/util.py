@@ -76,3 +76,6 @@ def bash(cmd, timeout = None, return_stderr = False):
     if return_stderr:
         return o, e
     return o
+
+def isint(n):
+    return isinstance(n, (int, long))

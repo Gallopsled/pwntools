@@ -185,7 +185,7 @@ Example:
 
     if isinstance(obj, str):
         return obj
-    elif isinstance(obj, int):
+    elif pwn.isint(obj):
         return func(obj)
     elif hasattr(obj, '__flat__'):
         return obj.__flat__()
@@ -198,7 +198,7 @@ def unhex(s):
 
 def enhex(x):
     """Hex-encodes a string or integer"""
-    if isinstance(x, int):
+    if pwn.isint(x):
         x = pint(x)
     return x.encode('hex')
 
@@ -275,18 +275,29 @@ def bits(s, endian = 'big', zero = None, one = None, type = None):
             one = 1
 
     out = []
-    for c in s:
-        b = ord(c)
-        byte = []
-        for _ in range(8):
-            byte.append(one if b & 1 else zero)
-            b >>= 1
-        if endian == 'little':
-            out += byte
-        elif endian == 'big':
-            out += byte[::-1]
-        else:
-            pwn.die('Wat (endian style)')
+    if isinstance(s, str):
+        for c in s:
+            b = ord(c)
+            byte = []
+            for _ in range(8):
+                byte.append(one if b & 1 else zero)
+                b >>= 1
+            if endian == 'little':
+                out += byte
+            elif endian == 'big':
+                out += byte[::-1]
+            else:
+                pwn.die('Wat (endian style)')
+    elif pwn.isint(s):
+        while s:
+            bit, s = one if s & 1 else zero, s >> 1
+            if endian == 'little':
+                out.append(bit)
+            else:
+                out.insert(0, bit)
+    else:
+        print `s`
+        pwn.die("Wat (bits does not support this type)")
 
     if type == 'str':
         return ''.join(out)
@@ -379,7 +390,7 @@ Arguments:
     if strs == []:
         return output([])
 
-    if isinstance(cut, int):
+    if pwn.isint(cut):
         l = cut
     elif cut == 'left':
         l = len(strs[0])

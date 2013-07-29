@@ -46,7 +46,7 @@ def de_bruijn_find(subseq, alphabet = string.ascii_lowercase, n = None):
     There exists better algorithms for this, but they depend on generating the De Bruijn sequence in another fashion. Somebody should look at it:
     http://www.sciencedirect.com/science/article/pii/S0012365X00001175
     """
-    if isinstance(subseq, int):
+    if pwn.isint(subseq):
         subseq = pwn.pint(subseq)
     if n == None:
         n = len(subseq)
