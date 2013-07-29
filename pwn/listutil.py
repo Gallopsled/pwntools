@@ -60,9 +60,9 @@ def concat_all(*args):
 
     return res
 
-def ordlist(s):
+def ordlist(s, size = 1):
     """Turns a string into a list of the corresponding ascii values."""
-    return [ord(c) for c in s]
+    return [pwn.uint(c) for c in group(size, s)]
 
 def unordlist(cs):
     """Takes a list of ascii values and returns the corresponding string"""
