@@ -34,10 +34,12 @@ class ROP:
         self._next_load_addr = None
         self._load_gadgets()
 
-    # def __getattr__(self, name):
-    #     def func(*args):
-    #         self.call(name, args)
-    #     return func
+    def __getattr__(self, name):
+        def func(*args):
+            self.call(name, args)
+        if self._resolve(name):
+            return func
+
 
     def mprotect(self, addr):
         """does all the stuff that you want mprotect to do, but can't remember how to do(marks address executable)"""
@@ -131,6 +133,7 @@ class ROP:
         for y in [self.symbols, self.plt, self.sections]:
             if x in y:
                 return y[x]
+        return False
         # pwn.die('Could not resolve `%s\'' % x)
 
     def _pivot(self, args):
@@ -302,7 +305,7 @@ class ROP:
         return self.flush()
 
     def __repr__(self):
-        return str(self)
+        return "<ROP instance on file: %s>" % self.elf._path #str(self)
 
     def __add__(self, other):
         return str(self) + str(other)
