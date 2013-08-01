@@ -378,8 +378,8 @@ Arguments:
         if doflat:
             return ''.join(chr(x) for x in xs)
         for con in list, tuple:
-            if type(args[0]) == con:
-                if all(type(x) == int for x in args[0]):
+            if isinstance(args[0], con):
+                if all(pwn.isint(x) for x in args[0]):
                     return con(xs)
                 else:
                     return con(chr(x) for x in xs)

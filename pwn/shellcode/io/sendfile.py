@@ -40,7 +40,7 @@ def _sendfile_linux_amd64(in_fd, out_fd):
 
     if out_fd == 0:
         out += ['xor rdi, rdi']
-    elif isinstance(out_fd, int):
+    elif pwn.isint(out_fd):
         out += [pushstr(p64(out_fd), null = False, raw = True),
                 'pop rdi']
     else:
@@ -48,7 +48,7 @@ def _sendfile_linux_amd64(in_fd, out_fd):
 
     if in_fd == 0:
         out += ['xor rsi, rsi']
-    elif isinstance(in_fd, int):
+    elif pwn.isint(in_fd):
         out += [pushstr(p64(in_fd), null = False, raw = True),
                 'pop rsi']
     else:
@@ -84,7 +84,7 @@ def _sendfile_freebsd_amd64(in_fd, out_fd):
 
     if in_fd == 0:
         out += ['xor rdi, rdi']
-    elif isinstance(in_fd, int):
+    elif pwn.isint(in_fd):
         out += [pushstr(p64(in_fd), null = False, raw = True),
                 'pop rdi']
     else:
@@ -92,7 +92,7 @@ def _sendfile_freebsd_amd64(in_fd, out_fd):
 
     if out_fd == 0:
         out += ['xor rsi, rsi']
-    elif isinstance(out_fd, int):
+    elif pwn.isint(out_fd):
         out += [pushstr(p64(out_fd), null = False, raw = True),
                 'pop rsi']
     else:

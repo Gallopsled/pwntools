@@ -24,7 +24,7 @@ def _exit_amd64(returncode, os):
         if os == 'linux':
             if returncode == 0:
                 out += ['xor ebx, ebx']
-            elif isinstance(returncode, int):
+            elif pwn.isint(returncode):
                 out += [pushstr(p32(returncode), null = False, raw = True),
                         'pop rbx']
             else:
@@ -32,7 +32,7 @@ def _exit_amd64(returncode, os):
         elif os == 'freebsd':
             if returncode == 0:
                 out += ['cdq', 'push rdx']
-            elif isinstance(returncode, int):
+            elif pwn.isint(returncode):
                 out += [pushstr(p32(returncode), null = False, raw = True)]
             else:
                 out += ['push %s' % str(returncode)]

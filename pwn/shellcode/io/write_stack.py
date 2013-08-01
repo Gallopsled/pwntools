@@ -33,7 +33,7 @@ def _write_stack_linux_i386(out_fd, size):
     out = """
             """ + _mov('ebx', out_fd)
 
-    if isinstance(size, int):
+    if pwn.isint(size):
         out += """
             push SYS_write
             pop eax
@@ -54,13 +54,13 @@ def _write_stack_linux_i386(out_fd, size):
 def _write_stack_freebsd_i386(out_fd, size):
     out  = ['mov ecx, esp']
 
-    if isinstance(size, int):
+    if pwn.isint(size):
         out += [pushstr(p32(size), null=False, raw=True)]
     else:
         out += [_mov('ebx', size),
                 "push ebx"]
     out += ['push ecx']
-    if isinstance(out_fd, int):
+    if pwn.isint(out_fd):
         out += [pushstr(p32(out_fd), null=False, raw=True)]
     else:
         out += [_mov('ebx', out_fd),

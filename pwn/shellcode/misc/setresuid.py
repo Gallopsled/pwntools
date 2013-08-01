@@ -102,7 +102,7 @@ def _linux_setresuid(src, dst):
         p('mov al, SYS_getresuid')
         p('int 0x80')
         p('pop %s' % lookup[dst[0]])
-    elif isinstance(src, int) and -128 <= src <= 127:
+    elif pwn.isint(src) and -128 <= src <= 127:
         p('push %s' % src)
         p('pop %s' % lookup[dst[0]])
     else:

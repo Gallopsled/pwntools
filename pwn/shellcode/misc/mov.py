@@ -62,7 +62,7 @@ def _mov_i386(dest, src, stack_allowed):
     if dest not in all_regs:
         bug('%s is not a register' % str(dest))
 
-    if isinstance(src, int):
+    if pwn.isint(src):
         if src >= 2**sizes[dest] or src < -(2**(sizes[dest]-1)):
             pwn.log.warning('Number 0x%x does not fit into %s' % (src, dest))
 
@@ -125,7 +125,7 @@ def _mov_amd64(dest, src, stack_allowed):
     if dest not in all_regs:
         bug('%s is not a register' % str(dest))
 
-    if isinstance(src, int):
+    if pwn.isint(src):
         if src >= 2**sizes[dest] or src < -(2**(sizes[dest]-1)):
             pwn.log.warning('Number 0x%x does not fit into %s' % (src, dest))
 
@@ -174,7 +174,7 @@ def _mov_amd64(dest, src, stack_allowed):
 def _mov_arm(dst, src):
     import string
 
-    if not isinstance(src, int):
+    if not pwn.isint(src):
         return "mov %s, %s" % (dst, src)
 
     if len(asm("ldr %s, =%d" % (dst, src))) == 4:
@@ -209,7 +209,7 @@ def _mov_arm(dst, src):
         "%s_after:" % id])
 
 def _mov_thumb(dst, src):
-    if not isinstance(src, int):
+    if not pwn.isint(src):
         return "mov %s, %s" % (dst, src)
 
     srcu = src & 0xffffffff
