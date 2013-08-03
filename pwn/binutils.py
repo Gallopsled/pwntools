@@ -465,13 +465,12 @@ def ror(n, k, size = None):
 
     Lists and tupples are rotated as you would expect."""
 
-    if all(hasattr(n, x) for x in ['__add__', '__getslice__', '__len__']):
-        return n[(-k) % len(n):] + n[:(-k) % len(n)]
-
     if isinstance(n, str):
         repack = len(n)
         size = size or (8*len(n))
         n = uint(n)
+    elif all(hasattr(n, x) for x in ['__add__', '__getslice__', '__len__']):
+        return n[(-k) % len(n):] + n[:(-k) % len(n)]
     else:
         repack = False
         size = size or 32
