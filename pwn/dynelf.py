@@ -23,7 +23,97 @@ class DynELF:
             return self._lookup64(symb, lib)
 
     def _lookup32 (self, symb, lib):
-        pwn.log.bug('Unimplemented')
+        #This implementation finds plt.got using the leak
+        #...is that good enough?
+        base = self.base
+        leak = self.leak
+        def b(addr):
+            return leak.b(addr)
+        def d(addr):
+            return leak.d(addr)
+        def s(addr):
+            return leak.s(addr)
+        
+        phead = base + leak.d(base + 28)
+        htype = d(phead)
+        #Search for PT_DYNAMIC
+        while not htype == 2:
+            phead += 32
+            htype = d(phead)
+        dynamic = d(phead + 8)
+        tag = d(dynamic)
+
+        #Search for DT_PLTGOT
+        while not tag == 3:
+            if tag == 0:
+                #DT_NULL found...no plt.got :-(
+                return None
+            dynamic += 8
+            tag = d(dynamic)
+        pltgot = d(dynamic + 4)
+        linkmap = d(pltgot + 4)
+
+        #Find named library
+        nameaddr = d(linkmap + 4)
+        name = s(nameaddr)
+        while not lib in name:
+            linkmap = d(linkmap + 12)
+            if linkmap == 0:
+                #No such library
+                return None
+            nameaddr = d(linkmap + 4)
+            name = s(nameaddr)
+        libbase = d(linkmap)
+        dynamic = d(linkmap + 8)
+
+        #Find hashes, string table and symbol table
+        gnuhsh = None
+        strtab = None
+        symtab = None
+        while None in [gnuhsh, strtab, symtab]:
+            tag = d(dynamic)
+            if tag == 4:
+                gnuhsh = d(dynamic + 4)
+            elif tag == 5:
+                strtab = d(dynamic + 4)
+            elif tag == 6:
+                symtab = d(dynamic + 4)
+            dynamic += 8
+
+        #Everything set up for resolving
+        nbuckets = d(gnuhsh)
+        bucketaddr = gnuhsh + 8
+        def hash(symbol):
+            h = 0
+            g = 0
+            for c in symbol:
+                h = (h << 4) + ord(c)
+                g = h & 0xf0000000
+                h ^= (g >> 24)
+                h &= ~g
+            return h & 0xffffffff
+
+        def bucket_index(idx):
+            return d(bucketaddr + (idx % nbuckets) * 4)
+
+        def chain_index(idx):
+            chain_address = gnuhsh + 8 + nbuckets * 4
+            return d(chain_address + idx * 4)
+
+        h = hash(symb)
+        idx = bucket_index(h)
+        while idx:
+            sym = symtab + (idx * 16)
+            symtype = b(sym + 12) & 0xf
+            if symtype == 2:
+                #Function type symbol
+                name = s(strtab + d(sym))
+                if name == symb:
+                    #Bingo
+                    return libbase + d(sym + 4)
+            idx = chain_index(idx)
+            
+        return None
 
     def _lookup64 (self, symb, lib):
         base = self.base
