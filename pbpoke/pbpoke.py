@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pwn import b64, read
+from pwn import b64, read, unhex
 import json, sys
 
 class Encryption:
@@ -54,14 +54,15 @@ if __name__ == '__main__':
     from Crypto.Util import number
     import requests
 
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 2 or 3 < len(sys.argv):
         print('- Indirect and encrypted poke through pastebins -')
-        print('Usage: %s filename password' % sys.argv[0])
+        print('Usage: %s password [filename]' % sys.argv[0])
         sys.exit(1)
 
-    filename = sys.argv[1]
-    password = sys.argv[2]
-    data = read(filename)
+    password = sys.argv[1]
+    filename = sys.argv[2] if len(sys.argv) == 3 else None
+
+    data = read(filename) if filename is not None else sys.stdin.read()
 
     cipher = Encryption(password)
     upload_data = b64(cipher.encrypt(data))
