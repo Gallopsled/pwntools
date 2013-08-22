@@ -7,7 +7,7 @@ class Encryption:
         from Crypto.Hash import HMAC, SHA256
         from Crypto.Protocol.KDF import PBKDF2
 
-        raw_key = PBKDF2(password, 'DANGERZONE', count=10000) # ONLY HMAC-SHA1
+        raw_key = PBKDF2(password, 'DANGERZONE', count=1000000) # ONLY HMAC-SHA1
         key_parts = HMAC.new(raw_key, msg='keys', digestmod=SHA256).digest()
         self.enc_key = key_parts[:16]
         self.mac_key = key_parts[16:]
