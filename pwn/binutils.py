@@ -93,32 +93,32 @@ def u8b(x):
 def u16(x):
     """Unpacks a 2-byte string into an integer (little endian)"""
     import struct
-    return struct.unpack('<H', x)[0]
+    return struct.unpack('<H', x.ljust(2, '\x00'))[0]
 
 def u16b(x):
     """Unpacks a 2-byte string into an integer (big endian)"""
     import struct
-    return struct.unpack('>H', x)[0]
+    return struct.unpack('>H', x.rjust(2, '\x00'))[0]
 
 def u32(x):
     """Unpacks a 4-byte string into an integer (little endian)"""
     import struct
-    return struct.unpack('<I', x)[0]
+    return struct.unpack('<I', x.ljust(4, '\x00'))[0]
 
 def u32b(x):
     """Unpacks a 4-byte string into an integer (big endian)"""
     import struct
-    return struct.unpack('>I', x)[0]
+    return struct.unpack('>I', x.rjust(4, '\x00'))[0]
 
 def u64(x):
     """Unpacks a 8-byte string into an integer (little endian)"""
     import struct
-    return struct.unpack('<Q', x)[0]
+    return struct.unpack('<Q', x.ljust(8, '\x00'))[0]
 
 def u64b(x):
     """Unpacks a 8-byte string into an integer (big endian)"""
     import struct
-    return struct.unpack('>Q', x)[0]
+    return struct.unpack('>Q', x.rjust(8, '\x00'))[0]
 
 @pwn.need_context
 def p(x, arch = None):
@@ -227,7 +227,7 @@ def urldecode(s, ignore_invalid = False):
                 raise Exception("Invalid input to urldecode")
     return res
 
-def bits(s, endian = 'big', zero = None, one = None, type = None):
+def bits(s, endian = 'big', zero = None, one = None, type = None, size = None):
     '''Converts the argument into a string of binary sequence
        or a binary integer list
 
@@ -238,8 +238,9 @@ def bits(s, endian = 'big', zero = None, one = None, type = None):
             one is defined.
          - one(optional): The byte representing a 1bit, required if
             zero is defined.
-         - Type(optional): A string representing the input type, can be
+         - type(optional): A string representing the input type, can be
             'bool' or 'str', defaults to integer if not defined.
+         - size: Number of bits to output, None for minimum number of bits.
 
        Returns a string of 1s and 0s if type = 'str', else a list
          of bits. '''
@@ -299,13 +300,26 @@ def bits(s, endian = 'big', zero = None, one = None, type = None):
         print `s`
         pwn.die("Wat (bits does not support this type)")
 
+    if size is not None:
+        if len(out) < size:
+            tail = [zero] * (size - len(out))
+            if endian == 'little':
+                out += tail
+            else:
+                out = tail + out
+        else:
+            if endian == 'little':
+                out = out[:size]
+            else:
+                out = out[-size:]
+
     if type == 'str':
         return ''.join(out)
     else:
         return out
 
-def bits_str(s, endian = 'big', zero = '0', one = '1'):
-    return ''.join(bits(s, zero=zero, one=one, endian=endian))
+def bits_str(s, endian = 'big', zero = '0', one = '1', size = None):
+    return ''.join(bits(s, zero=zero, one=one, endian=endian, size=size))
 
 def unbits(s, endian = 'big'):
     out = []
