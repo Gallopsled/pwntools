@@ -125,5 +125,5 @@ def coroutine(func):
 
 def memleaker(func):
     '''Create an information leak object.'''
-    import leak
-    return leak.MemLeak(func)
+    import memleak
+    return memleak.MemLeak(func)
