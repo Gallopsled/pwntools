@@ -26,6 +26,9 @@ class MemLeak:
             self.cache[addr + n] = ord(b)
         return self.cache[addr]
 
+    def raw (self, addr, numb):
+        return [self._leak(addr + i) for i in range(numb)]
+
     def b (self, addr, ndx = 0):
         addr += ndx
         x = self._leak(addr)
