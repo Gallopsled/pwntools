@@ -102,7 +102,7 @@ class MemLeak:
                     n += 1
         elif isinstance(val, str):
             for n, c in enumerate(val):
-                self.cache[addr + n] = c
+                self.cache[addr + n] = ord(c)
         else:
             raise TypeError
 
