@@ -33,7 +33,7 @@ class DynELF:
             return leak.d(addr)
         def s(addr):
             return leak.s(addr)
-        
+
         phead = base + leak.d(base + 28)
         htype = d(phead)
         #Search for PT_DYNAMIC
@@ -112,7 +112,7 @@ class DynELF:
                     #Bingo
                     return libbase + d(sym + 4)
             idx = chain_index(idx)
-            
+
         return None
 
     def _lookup64 (self, symb, lib):
@@ -175,6 +175,12 @@ class DynELF:
                 gnuhsh = leak.q(cur, 1)
             cur += 16
 
+        # with glibc the pointers are relocated whereas with f.x. uclibc they
+        # are not
+        if libbase > strtab:
+            strtab += libbase
+            symtab += libbase
+            gnuhsh += libbase
         status('.gnu.hash parms')
         nbuckets = leak.d(gnuhsh)
         symndx = leak.d(gnuhsh, 1)
