@@ -15,10 +15,11 @@ def dup(sock = None, os = None, arch = None):
     """Args: [sock (imm/reg) = ebp]
     Duplicates sock to stdin, stdout and stderr."""
 
-    if arch in ['thumb', 'arm']:
-        sock = 'r6'
-    else:
-        sock = 'ebp'
+    if sock == None:
+        if arch in ['thumb', 'arm']:
+            sock = 'r6'
+        else:
+            sock = 'ebp'
     
     sock = arg_fixup(sock)
 
