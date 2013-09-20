@@ -88,7 +88,10 @@ class ROP:
 
     def _load32_popret(self):
         from collections import defaultdict
-        addesp = '\x83\xc4'
+        leaesp_byte = '\x8d\x64\x24'
+        leaesp_word = '\x8d\xa4\x24'
+        addesp_byte = '\x83\xc4'
+        addesp_word = '\x81\xc4'
         popr = map(chr, [0x58, 0x59, 0x5a, 0x5b, 0x5d, 0x5e, 0x5f])
         popa = '\x61'
         ret  = '\xc3'
@@ -107,8 +110,20 @@ class ROP:
                         s.append((off - 1, size + 1))
                     if data[off - 1] == popa:
                         s.append((off - 1, size + 7))
-                    if data[off - 3:off - 1] == addesp:
+                    if data[off - 3:off - 1] == addesp_byte:
                         x = pwn.u8(data[off - 1])
+                        if x % 4 == 0 and x < 128:
+                            s.append((off - 3, size + x // 4))
+                    if data[off - 6:off - 1] == addesp_word:
+                        x = pwn.u32(data[off - 4])
+                        if x % 4 == 0:
+                            s.append((off - 3, size + x // 4))
+                    if data[off - 4:off - 1] == leaesp_byte:
+                        x = pwn.u8(data[off - 1])
+                        if x % 4 == 0 and x < 128:
+                            s.append((off - 3, size + x // 4))
+                    if data[off - 7:off - 1] == leaesp_word:
+                        x = pwn.u32(data[off - 4])
                         if x % 4 == 0:
                             s.append((off - 3, size + x // 4))
                 i += 1
