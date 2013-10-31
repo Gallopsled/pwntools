@@ -54,10 +54,10 @@ if __name__ == '__main__':
                    )
     p.add_argument('-c', '--context',
                    metavar = '<opt>',
-                   choices = pwn.concat_all(pwn.possible_contexts.values()),
+                   # choices = pwn.concat_all(pwn.possible_contexts.values()),
                    action = 'append',
                    help = 'The environment the shellcode will run in (default: %s), choose from %s' % \
-                   (' '.join(default_context),
+                   (','.join(default_context),
                     '; '.join('%s: %s' % (k, ', '.join(v for v in vs)) for k, vs in pwn.possible_contexts.items())),
                    )
     p.add_argument('-?', '--show',
@@ -76,9 +76,14 @@ if __name__ == '__main__':
                    )
     p.add_argument('-f', '--format',
                    metavar = '<format>',
-                   choices = ['r', 's', 'c', 'h', 'a', 'p'],
-                   default = 'r',
-                   help = 'Choose from {r}aw (default), {s}tring, {c}-style array, {h}ex string, {a}ssembly code, {p}reprocssed code',
+                   choices = ['r', 'raw',
+                              's', 'str', 'string',
+                              'c',
+                              'h', 'hex',
+                              'a', 'asm', 'assembly',
+                              'p'],
+                   default = 'hex',
+                   help = 'Output format (default: hex), choose from {r}aw, {s}tring, {c}-style array, {h}ex string, {a}ssembly code, {p}reprocssed code',
                    )
     p.add_argument('--trap-before',
                    action = 'store_true',
@@ -101,12 +106,19 @@ if __name__ == '__main__':
                    action = 'store_true',
                    help = 'Force tty-behaviour, even if stdout is not a tty',
                    )
+    p.add_argument('--list-unsupported',
+                   action = 'store_true',
+                   help = 'List shellcodes not supported by the chosen context',
+                   )
 
     args = p.parse_args()
 
     pwn.context(*default_context) # 'reset' to defaults
     if args.context:
-        pwn.context(*args.context) # overwrite one or more options
+        ctx = []
+        for c in args.context:
+            ctx += c.split(',')
+        pwn.context(*ctx) # overwrite one or more options
 
     if args.list:
         if sys.stdout.isatty() or args.tty:
@@ -158,7 +170,7 @@ if __name__ == '__main__':
             print '   Choose from %d sexy shellcodes!' % len(good)
             for name, tags in sorted(good.items()):
                 printone(name, tags)
-            if bad:
+            if bad and args.list_unsupported:
                 print '  === ' + r('NOT SUPPORTED BY CHOSEN CONTEXT') + ' ==='
                 for name, tags in sorted(bad.items()):
                     printone(name, tags)
@@ -191,7 +203,7 @@ if __name__ == '__main__':
 
     code = wrapped(*args.args)
 
-    if args.format == 'a':
+    if args.format in ['a', 'asm', 'assembly']:
         print pwn.asm(code, emit_asm = 2)
         exit()
     if args.format == 'p':
@@ -209,11 +221,11 @@ if __name__ == '__main__':
 
     code = pwn.asm(code)
 
-    if args.format == 's':
+    if args.format in ['s', 'str', 'string']:
         code = _string(code)
     elif args.format == 'c':
         code = _carray(code)
-    elif args.format == 'h':
+    elif args.format in ['h', 'hex']:
         code = _hex(code)
 
     sys.stdout.write(code)
