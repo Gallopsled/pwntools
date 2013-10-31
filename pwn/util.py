@@ -47,11 +47,29 @@ def size(n, abbriv = 'B', si = False):
 
 def read(path):
     """Open file, return content."""
-    with open(path) as f:
-        return f.read()
+    import os.path
+    path = os.path.expanduser(os.path.expandvars(path))
+    with open(path) as fd:
+        return fd.read()
 
-def write(path, data):
+def write(path, data, create_dir = False):
     """Create new file or truncate existing to zero length and write data."""
+    import os.path
+    path = os.path.expanduser(os.path.expandvars(path))
+    if create_dir:
+        import os
+        path = os.path.realpath(path)
+        ds = path.split('/')
+        f = ds.pop()
+        p = '/'
+        while True:
+            try:
+                d = ds.pop(0)
+            except:
+                break
+            p = os.path.join(p, d)
+            if not os.path.exists(p):
+                os.mkdir(p)
     with open(path, 'w') as f:
         f.write(data)
 
