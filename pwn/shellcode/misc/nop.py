@@ -1,6 +1,6 @@
 from pwn.internal.shellcode_helper import shellcode_reqs
 
-@shellcode_reqs(arch = ['i386', 'amd64', 'arm', 'thumb', 'mips'])
+@shellcode_reqs(arch = ['i386', 'amd64', 'arm', 'thumb', 'mips', 'mipsel'])
 def nop(arch = None):
     """Returns a no operation instruction."""
 
@@ -8,5 +8,5 @@ def nop(arch = None):
         return 'nop'
     elif arch in ['arm', 'thumb']:
         return 'orr r4, r4, r4'
-    elif arch in ['mips']:
+    elif arch in ['mips', 'mipsel']:
         return 'or $ra, $ra, $ra'

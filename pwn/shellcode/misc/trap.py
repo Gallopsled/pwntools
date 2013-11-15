@@ -1,6 +1,6 @@
 from pwn.internal.shellcode_helper import shellcode_reqs
 
-@shellcode_reqs(arch = ['i386', 'amd64', 'arm', 'thumb', 'mips'])
+@shellcode_reqs(arch = ['i386', 'amd64', 'arm', 'thumb', 'mips', 'mipsel'])
 def trap(arch = None):
     """Returns a breakpoint instruction for debugging."""
 
@@ -8,5 +8,5 @@ def trap(arch = None):
         return 'int3'
     elif arch in ['arm', 'thumb']:
         return 'bkpt'
-    elif arch in ['mips']:
+    elif arch in ['mips', 'mipsel']:
         return 'break 2'

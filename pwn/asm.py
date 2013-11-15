@@ -100,6 +100,7 @@ def _asm(target_arch, target_os, code_blocks, emit_asm = 0, keep_tmp = False):
         if target_arch not in ['i386', 'amd64']:
             code += ['.section .shellcode,"ax"']
 
+        asm_extra = []
         if target_arch == 'arm':
             code += ['.arm']
         elif target_arch == 'thumb':
@@ -109,15 +110,23 @@ def _asm(target_arch, target_os, code_blocks, emit_asm = 0, keep_tmp = False):
             code += ['bits 32']
         elif target_arch == 'amd64':
             code += ['bits 64']
+        elif target_arch in ['mips', 'mipsel']:
+            code += ['.set mips2']
+            code += ['.set noreorder']
+            if target_arch == 'mips':
+                asm_extra += ['--EB']
+            else:
+                asm_extra += ['--EL']
+            target_arch = 'mips'
 
         code += code_blocks
         code = '\n'.join(code)
 
         if target_arch in ['i386', 'amd64']:
-            assembler = ['nasm', '-Ox']
+            assembler = ['nasm', '-Ox'] + asm_extra
             objcopy = ['objcopy']
         else:
-            assembler = [os.path.join(pwn.installpath, 'binutils', target_arch + '-as')]
+            assembler = [os.path.join(pwn.installpath, 'binutils', target_arch + '-as')] + asm_extra
             if not os.path.isfile(assembler[0]):
                 raise Exception('Could not find the gnu assembler for this architecture: %s' % target_arch)
             objcopy = [os.path.join(pwn.installpath, 'binutils', 'promisc-objcopy')]
@@ -216,6 +225,8 @@ def _disasm(data, target_arch, keep_tmp = False):
             extra = ['--prefix-symbol=$t.']
         elif target_arch == 'mips':
             bfdname = 'elf32-bigmips'
+        elif target_arch == 'mipsel':
+            bfdname = 'elf32-littlemips'
         elif target_arch == 'alpha':
             bfdname = 'elf64-alpha'
         elif target_arch == 'cris':

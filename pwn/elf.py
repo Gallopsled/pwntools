@@ -299,10 +299,13 @@ def parse_ldd_output(dat):
         if not parsed:
             pwn.log.warning('Could not parse line: "%s"' % line)
         name, resolved = parsed.groups()
+        if re.search('/ld-[^/]*$', resolved):
+            if name != None:
+                resolved = name
+            name = 'ld'
+
         if name == None:
-            if re.search('/ld-[^/]*$', resolved):
-                name = 'ld'
-            elif re.search('^linux', resolved):
+            if re.search('^linux', resolved):
                 name = 'linux'
             else:
                 pwn.log.warning('Could not parse line: "%s"' % line)
