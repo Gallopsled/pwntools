@@ -505,3 +505,56 @@ def rol(n, k, size = None):
 
     Lists and tupples are rotated as you would expect."""
     return ror(n, -k, size)
+
+def hexdump(s):
+    out = []
+    linefmt = '%08x  ' + ('%02x ' * 8 + ' ') * 2 + '|%s|'
+    last = None
+    skip = False
+    for n in range(0, len(s) - 15, 16):
+        blck = s[n:n+16]
+        if blck == last:
+            skip = True
+            last = blck
+            continue
+        elif skip:
+            skip = False
+            out.append('*')
+        txt = ''.join(c if c >= ' ' and c <= '~' else '.' for c in blck)
+        out.append(linefmt % (n,
+                              ord(blck[0]),
+                              ord(blck[1]),
+                              ord(blck[2]),
+                              ord(blck[3]),
+                              ord(blck[4]),
+                              ord(blck[5]),
+                              ord(blck[6]),
+                              ord(blck[7]),
+                              ord(blck[8]),
+                              ord(blck[9]),
+                              ord(blck[10]),
+                              ord(blck[11]),
+                              ord(blck[12]),
+                              ord(blck[13]),
+                              ord(blck[14]),
+                              ord(blck[15]),
+                              txt
+                              )
+                )
+        last = blck
+    n += 16
+    blck = s[n:]
+    if skip:
+        out.append('*')
+    if blck:
+        line = '%08x  ' % n
+        for i, c in enumerate(blck):
+            if i == 8:
+                line += ' '
+            line += '%02x ' % ord(c)
+        line = line.ljust(8 + 2 + 3 * 16 + 2)
+        line += '|%s|' % ''.join(c if c >= ' ' and c <= '~' else '.' for c in blck)
+        out.append(line)
+    elif skip:
+        out.append('%08x  ' % n)
+    return '\n'.join(out)
