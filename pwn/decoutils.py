@@ -127,3 +127,27 @@ def memleaker(func):
     '''Create an information leak object.'''
     import memleak
     return memleak.MemLeak(func)
+
+class TimeoutError(Exception):
+    pass
+
+# Timeout decorator
+def timeout(seconds=10, error_message=""):
+    def decorator(func):
+        import functools
+        def _handle_timeout(signum, frame):
+            raise TimeoutError(error_message)
+
+        def wrapper(*args, **kwargs):
+            import signal
+            signal.signal(signal.SIGALRM, _handle_timeout)
+            signal.alarm(seconds)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                signal.alarm(0)
+            return result
+
+        return functools.wraps(func)(wrapper)
+
+    return decorator
