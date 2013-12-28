@@ -15,6 +15,11 @@ class basesock(basechatter):
             self.sock = None
             pwn.log.info('Closed connection to %s on port %d' % self.target)
 
+    def eof(self):
+        import socket
+        if self.sock:
+            self.sock.shutdown(socket.SHUT_WR)
+
     def _send(self, dat):
         l = len(dat)
         i = 0
