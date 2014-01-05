@@ -8,13 +8,14 @@ def gnu_hash(s):
     return h & 0xffffffff
 
 class DynELF:
-    def __init__(self, path, leak, base = None):
+    def __init__(self, path, leak, base = None, PIE = False):
         if isinstance(path, pwn.ELF):
             self.elf = path
         else:
             self.elf = pwn.elf.load(path)
         self.leak = leak
         self.base = base
+        self.PIE = PIE
 
     def lookup (self, symb, lib = 'libc'):
         if self.elf.elfclass == 'ELF32':
@@ -34,15 +35,21 @@ class DynELF:
         def s(addr):
             return leak.s(addr)
 
+        pwn.log.waitfor('Resolving "%s"' % symb)
+        def status(s):
+            pwn.log.status('Leaking %s' % s)
+
+        status('program headers')
         phead = base + leak.d(base + 28)
         htype = d(phead)
         #Search for PT_DYNAMIC
         while not htype == 2:
             phead += 32
             htype = d(phead)
-        dynamic = d(phead + 8)
+        dynamic = d(phead + 8) + (self.base * self.PIE)
         tag = d(dynamic)
 
+        status('dynamic section')
         #Search for DT_PLTGOT
         while not tag == 3:
             if tag == 0:
@@ -53,6 +60,8 @@ class DynELF:
         pltgot = d(dynamic + 4)
         linkmap = d(pltgot + 4)
 
+
+        status('linkmap')
         #Find named library
         nameaddr = d(linkmap + 4)
         name = s(nameaddr)
@@ -66,6 +75,7 @@ class DynELF:
         libbase = d(linkmap)
         dynamic = d(linkmap + 8)
 
+        status('.gnu.hash, .strtab and .symtab offsets')
         #Find hashes, string table and symbol table
         gnuhsh = None
         strtab = None
@@ -100,6 +110,7 @@ class DynELF:
             chain_address = gnuhsh + 8 + nbuckets * 4
             return d(chain_address + idx * 4)
 
+        status('hashmap')
         h = hash(symb)
         idx = bucket_index(h)
         while idx:
@@ -110,9 +121,11 @@ class DynELF:
                 name = s(strtab + d(sym))
                 if name == symb:
                     #Bingo
+                    pwn.log.succeeded()
                     return libbase + d(sym + 4)
             idx = chain_index(idx)
 
+        pwn.log.failed()
         return None
 
     def _lookup64 (self, symb, lib):
