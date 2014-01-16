@@ -24,10 +24,10 @@ class DynELF:
             return self._lookup64(symb, lib)
 
     def _lookup32 (self, symb, lib):
-        #This implementation finds plt.got using the leak
-        #...is that good enough?
         base = self.base
         leak = self.leak
+        gotoff = self.elf.sections['.got.plt']['addr']
+
         def b(addr):
             return leak.b(addr)
         def d(addr):
@@ -39,27 +39,8 @@ class DynELF:
         def status(s):
             pwn.log.status('Leaking %s' % s)
 
-        status('program headers')
-        phead = base + leak.d(base + 28)
-        htype = d(phead)
-        #Search for PT_DYNAMIC
-        while not htype == 2:
-            phead += 32
-            htype = d(phead)
-        dynamic = d(phead + 8) + (self.base * self.PIE)
-        tag = d(dynamic)
-
-        status('dynamic section')
-        #Search for DT_PLTGOT
-        while not tag == 3:
-            if tag == 0:
-                #DT_NULL found...no plt.got :-(
-                return None
-            dynamic += 8
-            tag = d(dynamic)
-        pltgot = d(dynamic + 4)
+        pltgot = base + gotoff
         linkmap = d(pltgot + 4)
-
 
         status('linkmap')
         #Find named library
