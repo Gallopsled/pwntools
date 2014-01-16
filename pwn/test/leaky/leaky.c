@@ -11,6 +11,8 @@
 #include <signal.h>
 #include <stdio.h>
 
+int find_me();
+
 int main(int argc, char const *argv[]);
  
 static int create_server(unsigned short port) {
@@ -81,7 +83,7 @@ int main(int argc, char const *argv[]) {
                     close(server);
                     handle_client(client);
                     close(client);
-                    exit(0);
+                    exit(find_me());
                 }
             }
         }
