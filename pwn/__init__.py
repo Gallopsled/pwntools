@@ -90,9 +90,6 @@ except SyntaxError:
     print "Syntax error"
     raise
 
-# Make pwn.fucking work as pwn by itself
-import pwn as fucking
-
 # Clean up namespace by deleting imported modules and local variable
 module_type = os.__class__
 for k, v in globals().items():
