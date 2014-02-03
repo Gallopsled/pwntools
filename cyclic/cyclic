@@ -45,4 +45,9 @@ if __name__ == "__main__":
         else:
             print offset
     else:
-        print de_bruijn(int(args.patsize))
+        want   = int(args.patsize)
+        result = de_bruijn(want, alphabet=alph)
+        got    = len(result)
+        if got < want:
+            pwn.log.warning("Alphabet too small (max length = %i)" % got)
+        print result
