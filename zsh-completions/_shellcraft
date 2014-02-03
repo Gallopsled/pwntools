@@ -1,0 +1,61 @@
+#compdef shellcraft
+#            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+#                    Version 2, December 2004
+#
+# Copyright (C) 2004 Sam Hocevar <sam@hocevar.net>
+#
+# Everyone is permitted to copy and distribute verbatim or modified
+# copies of this license document, and changing it is allowed as long
+# as the name is changed.
+#
+#            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+#   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+#
+#  0. You just DO WHAT THE FUCK YOU WANT TO.
+# ------------------------------------------------------------------------------
+# Description
+# -----------
+#
+#  Completion script for shellcraft
+#
+# ------------------------------------------------------------------------------
+# Authors
+# -------
+#
+#  * Zach Riggle (https://github.com/zachriggle)
+#
+# ------------------------------------------------------------------------------
+local curcontext="$curcontext" state line ret=1
+local shellcodes formats contexts
+
+shellcodes="($(shellcraft -l))"
+contexts='(i386 amd64 alpha arm thumb cris ia64 m68k mips mipsel powerpc vax linux freebsd ipv4 ipv6)'
+format_opts='((r\:raw\ bytes raw\:raw\ bytes s\:string str\:string string\:string c\:c\ source h\:hex\ ascii hex\:hex\ ascii a\:assembly asm\:assembly assembly\:assembly p\:preprocessed))'
+
+#
+# General syntax is
+#
+# (excluded)--flag+[description]:name:(arguments)
+#
+# excluded  Flags which can't be used if this flag is used
+# --flag    Flag
+# +         Specify to allow this flag to be repeated
+# [desc]    Description
+# name      Name of selection type
+#
+_arguments -s -S \
+    '(- :)'{--help,-h}'[show this help message and exit]' \
+    '(-)--show[show documentation for specified shellcode]' \
+    '(--out -o)'{--out,-o}'[output file]:file:_files' \
+    '(- -*)'{--list,-l}'[list all the tasty shellodes]' \
+    '*'{--context,-c}"+[environment the shellcode will be run in]:context:$contexts" \
+    '(--trap-before)--trap-before[insert breakpoint before code]' \
+    '(--trap-after)--trap-after[insert breakpoint after code]' \
+    '(--loop )--loop[insert infinite loop after code]' \
+    '(--nopsled)--nopsled[prepend nopsled of n characters]:nop bytes:(1 2 3 4)' \
+    '(--tty )--tty[force tty-behavior even if output is not a tty]' \
+    '(--list-unsupported )--list-unsupported[list shellcodes not supported by the chosen context]' \
+    '(--format -f)'{--format,-f}"[output format]:output format:$format_opts" \
+    ":shellcode:$shellcodes"
+
+return 0

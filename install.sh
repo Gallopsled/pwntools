@@ -27,4 +27,8 @@ elif [ -f /etc/arch-release ]; then
     echo "ATTENTION! You also need to install the following packages from AUR:"
     echo $AUR
 fi
+
+# Install ZSH completions
+grep -q zsh <<<$SHELL && zsh zsh-completions/install.zsh
+
 echo "All DONE"

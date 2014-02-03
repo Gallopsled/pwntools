@@ -1,0 +1,40 @@
+#compdef scramble
+#            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+#                    Version 2, December 2004
+#
+# Copyright (C) 2004 Sam Hocevar <sam@hocevar.net>
+#
+# Everyone is permitted to copy and distribute verbatim or modified
+# copies of this license document, and changing it is allowed as long
+# as the name is changed.
+#
+#            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+#   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+#
+#  0. You just DO WHAT THE FUCK YOU WANT TO.
+# ------------------------------------------------------------------------------
+# Description
+# -----------
+#
+#  Completion script for scramble
+#
+# ------------------------------------------------------------------------------
+# Authors
+# -------
+#
+#  * Zach Riggle (https://github.com/zachriggle)
+#
+# ------------------------------------------------------------------------------
+local registers
+
+registers='(eax al ax es ecx cl cx cs edx dl dx ss ebx bl bx ds esp ah sp fs ebp ch bp gs esi dh si edi bh di stack)'
+
+_arguments -s -S \
+    '(- :)'{--help,-h}'[show this help message and exit]' \
+    '(--avoid -a)'{--avoid,-a}'[characters to avoid]:characters to avoid:(abc "\x00")' \
+    '(--only -o)'{--only,-o}'[characters to include]:characters to include:(abcdef "\x00\x01\x02")' \
+    '(--printable -p)'{--printable,-p}'[printable characters]' \
+    '*'{--unclobber,-u}"[registers not to clobber]:register name:${registers}" \
+    ":shellcode blob to scramble or - for stdin:_files"
+
+return 0
