@@ -35,6 +35,7 @@ _arguments -s -S \
     '(--only -o)'{--only,-o}'[characters to include]:characters to include:(abcdef "\x00\x01\x02")' \
     '(--printable -p)'{--printable,-p}'[printable characters]' \
     '*'{--unclobber,-u}"[registers not to clobber]:register name:${registers}" \
+    '-[read from stdin]' \
     ":shellcode blob to scramble or - for stdin:_files"
 
 return 0
