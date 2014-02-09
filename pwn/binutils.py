@@ -506,55 +506,46 @@ def rol(n, k, size = None):
     Lists and tupples are rotated as you would expect."""
     return ror(n, -k, size)
 
-def hexdump(s):
-    out = []
-    linefmt = '%08x  ' + ('%02x ' * 8 + ' ') * 2 + '|%s|'
-    last = None
-    skip = False
-    for n in range(0, len(s) - 15, 16):
-        blck = s[n:n+16]
-        if blck == last:
-            skip = True
-            last = blck
+def chunks(l, n):
+    """ Yield successive n-sized chunks from l. """
+    for i in xrange(0, len(l), n):
+        yield l[i:i+n]
+
+def isprint(c):
+    """Return true if a character is printable"""
+    return len(c)+2 == len(repr(c))
+
+def hexdump(s, width=16, skip=True):
+    lines       = []
+    last_unique = ''
+    byte_width  = len('00 ')
+    column_sep  = '  '
+
+    for line,chunk in enumerate(chunks(s,width)):
+        # If this chunk is the same as the last unique chunk,
+        # use a '*' instead.
+        if skip and (last_unique == chunk):
+            if lines[-1] != '*':
+                lines.append('*')
             continue
-        elif skip:
-            skip = False
-            out.append('*')
-        txt = ''.join(c if c >= ' ' and c <= '~' else '.' for c in blck)
-        out.append(linefmt % (n,
-                              ord(blck[0]),
-                              ord(blck[1]),
-                              ord(blck[2]),
-                              ord(blck[3]),
-                              ord(blck[4]),
-                              ord(blck[5]),
-                              ord(blck[6]),
-                              ord(blck[7]),
-                              ord(blck[8]),
-                              ord(blck[9]),
-                              ord(blck[10]),
-                              ord(blck[11]),
-                              ord(blck[12]),
-                              ord(blck[13]),
-                              ord(blck[14]),
-                              ord(blck[15]),
-                              txt
-                              )
-                )
-        last = blck
-    n += 16
-    blck = s[n:]
-    if skip:
-        out.append('*')
-    if blck:
-        line = '%08x  ' % n
-        for i, c in enumerate(blck):
-            if i == 8:
-                line += ' '
-            line += '%02x ' % ord(c)
-        line = line.ljust(8 + 2 + 3 * 16 + 2)
-        line += '|%s|' % ''.join(c if c >= ' ' and c <= '~' else '.' for c in blck)
-        out.append(line)
-    elif skip:
-        out.append('%08x  ' % n)
-    return '\n'.join(out)
+
+        # Chunk is unique, save for next iteration
+        last_unique = chunk
+
+        # Cenerate contents for line
+        offset    = line*width
+        hexbytes  = ''.join('%02x ' % ord(b) for b in chunk)
+        printable = ''.join(b if isprint(b) else '.' for b in chunk)
+
+        # Insert column break in middle, for even-width lines
+        middle = (width/2)*byte_width
+        if len(hexbytes) > middle:
+            hexbytes = hexbytes[:middle] + column_sep + hexbytes[middle:]
+
+        # Create format string with appropriate length, insert contents
+        # and pad to appropriate width
+        format_string = '%%08x  %%-%is |%%s|' % (len(column_sep)+(width*byte_width))
+        lines.append(format_string % (offset, hexbytes, printable))
+
+    lines.append("%08x" % len(s))
+    return '\n'.join(lines)
