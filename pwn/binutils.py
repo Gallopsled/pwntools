@@ -352,6 +352,12 @@ def unbits(s, endian = 'big'):
 
     return ''.join(out)
 
+def bitflip(v):
+    return ''.join([unbits(bits(c, endian = 'little')) for c in v])
+
+def bitflip_int(v, width):
+    return int(bits_str(v).rjust(width, '0')[::-1], 2)
+
 def b64(s):
     '''Base64 encodes a string'''
     import base64

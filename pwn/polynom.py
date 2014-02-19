@@ -156,7 +156,7 @@ class BitPolynom:
     @_fix
     def __rlshift__(self, other):
         return BitPolynom(other.n >> self.n)
-    
+
     def degree(self):
         return max(0, self.n.bit_length()-1)
 
@@ -187,7 +187,7 @@ class BitPolynom:
 
 def crc(data, polynom, width, init, refin, refout, xorout):
     """A generic CRC-sum function.
-    
+
     This is suitable to use with:
     http://reveng.sourceforge.net/crc-catalogue/all.htm
 
@@ -205,7 +205,7 @@ def crc(data, polynom, width, init, refin, refout, xorout):
 
     polynom = to_polynom(polynom) | (1 << width)
     if polynom.degree() != width:
-        raise ValueError("Polynomial is too large for that with")
+        raise ValueError("Polynomial is too large for that width")
 
     init   &= (1 << width)-1
     xorout &= (1 << width)-1
