@@ -221,8 +221,6 @@ def crc(data, polynom, width, init, refin, refout, xorout):
         p = BitPolynom(pwn.uintb(data))
     p = p << width
     p ^= init << inlen
-    print hex(p.n)
-    print hex(polynom.n)
     p  = p % polynom
     res = p.n
     if refout:
