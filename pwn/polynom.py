@@ -229,10 +229,76 @@ def crc(data, polynom, width, init, refin, refout, xorout):
 
     return res
 
-def crc32(data):
-    """Standard CRC-32 checksum."""
-    return crc(data, 0x04c11db7, 32, 0xffffffff, True, True, 0xffffffff)
+def make_crc(name, polynom, width, init, refin, refout, xorout, extra_doc = None):
+    def inner(data):
+        return crc(data, polynom, width, init, refin, refout, xorout)
+    inner.func_name = 'crc_' + name
+    inner.__name__  = 'crc_' + name
 
-def crc_a(data):
-    """The checksum used in e.g. MIFARE readers."""
-    return crc(data, 0x1021, 16, 0xc6c6, True, True, 0)
+    if extra_doc:
+        extra_doc = '\n\n    ' + extra_doc
+
+    inner.__doc__   = """Calculates the %s checksum.
+
+    This is simply the generic crc function the arguments:
+    polynom = 0x%x
+    width   = %d
+    init    = 0x%x
+    refin   = %s
+    refout  = %s
+    xorout  = 0x%x
+%s""" % (name, polynom, width, init, refin, refout, xorout, extra_doc)
+
+    return inner
+
+crc32 = make_crc('crc32', 0x04c11db7, 32, 0xffffffff, True, True, 0xffffffff, 'This is the most commonly used CRC sum.')
+crc_a = make_crc('crc_a', 0x04c11db7, 32, 0xffffffff, True, True, 0xffffffff, 'This is the CRC sum used for e.g. MIFARE cards.')
+
+@pwn.memoize(use_file = False)
+def all_crcs():
+    """Generates a dictionary of all the known CRC formats from:
+    http://reveng.sourceforge.net/crc-catalogue/all.htm"""
+    import os, re
+    data = pwn.read(os.path.join(pwn.installpath, 'data', 'crcsums'))
+    out = {}
+    def fixup(s):
+        if s == 'true':
+            return True
+        elif s == 'false':
+            return False
+        elif s.startswith('"'):
+            assert re.match('"[^"]+"', s)
+            return s[1:-1]
+        elif s.startswith('0x'):
+            assert re.match('0x[0-9a-fA-F]+', s)
+            return int(s[2:], 16)
+        else:
+            assert re.match('[0-9]+', s)
+            return int(s, 10)
+
+    data = [l for l in data.strip().split('\n') if l and l[0] != '#']
+    assert len(data) % 2 == 0
+    for ref, l in pwn.group(2, data):
+        cur = {}
+        cur['link'] = 'http://reveng.sourceforge.net/crc-catalogue/all.htm#' + ref
+        for key in ['width', 'poly', 'init', 'refin', 'refout', 'xorout', 'check', 'name']:
+            cur[key] = fixup(re.findall('%s=(\S+)' % key, l)[0])
+        cur['impl'] = make_crc(cur['name'], cur['poly'], cur['width'], cur['init'], cur['refin'], cur['refout'], cur['xorout'], 'See also: ' + cur['link'])
+        assert cur['impl']('123456789') == cur['check']
+        assert cur['name'] not in out
+        out[cur['name']] = cur
+    return out
+
+@pwn.memoize
+def find_crc_function(data, checksum):
+    """Finds a specific CRC function from a set of data and its checksum."""
+    candidates = []
+    for v in all_crcs().values():
+        if v['impl'](data) == checksum:
+            candidates.append(v)
+    if len(candidates) > 1:
+        print ("Not enough data to decide which CRC-sum it was. It could be any of:" + ''.join('\n    ' + c['name'] for c in candidates))
+    elif len(candidates) == 0:
+        print "None of my CRC-sum implementations match this data."
+    else:
+        return candidates[0]

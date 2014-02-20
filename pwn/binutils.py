@@ -70,6 +70,14 @@ def p32b(x):
     import struct
     return struct.pack('>I', x & 0xffffffff)
 
+def p48(n):
+    """Packs an integer into a 6-byte string (little endian)"""
+    return p16(n) + p32(n >> 16) 
+
+def p48b(n):
+    """Packs an integer into a 6-byte string (big endian)"""
+    return p32b(n >> 16) + p16b(n)
+
 def p64(x):
     """Packs an integer into a 8-byte string (little endian)"""
     import struct
@@ -109,6 +117,16 @@ def u32b(x):
     """Unpacks a 4-byte string into an integer (big endian)"""
     import struct
     return struct.unpack('>I', x.rjust(4, '\x00'))[0]
+
+def u48(x):
+    """Unpacks a 6-byte string into an integer (little endian)"""
+    x = x.ljust(6, '\x00')
+    return u16(x[:2]) + (u32(x[2:]) << 16)
+
+def u48b(x):
+    """Unpacks a 6-byte string into an integer (big endian)"""
+    x = x.rjust(6, '\x00')
+    return u16b(x[4:]) + (u32b(x[:4]) << 16)
 
 def u64(x):
     """Unpacks a 8-byte string into an integer (little endian)"""
