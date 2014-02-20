@@ -160,19 +160,6 @@ class BitPolynom:
     def degree(self):
         return max(0, self.n.bit_length()-1)
 
-    def maxcoeff(self):
-        if self.n == 0:
-            return 0
-        else:
-            return 1 << self.degree()
-
-    def coeffs(self):
-        out = []
-        for n in range(self.degree(), -1, -1):
-            if self.n & (1 << n):
-                out.append(n)
-        return out
-
     def __repr__(self):
         if self.n == 0:
             return '0'
@@ -229,14 +216,11 @@ def crc(data, polynom, width, init, refin, refout, xorout):
 
     return res
 
-def make_crc(name, polynom, width, init, refin, refout, xorout, extra_doc = None):
+def make_crc(name, polynom, width, init, refin, refout, xorout, extra_doc = ''):
     def inner(data):
         return crc(data, polynom, width, init, refin, refout, xorout)
     inner.func_name = 'crc_' + name
     inner.__name__  = 'crc_' + name
-
-    if extra_doc:
-        extra_doc = '\n\n    ' + extra_doc
 
     inner.__doc__   = """Calculates the %s checksum.
 
@@ -247,7 +231,8 @@ def make_crc(name, polynom, width, init, refin, refout, xorout, extra_doc = None
     refin   = %s
     refout  = %s
     xorout  = 0x%x
-%s""" % (name, polynom, width, init, refin, refout, xorout, extra_doc)
+
+    %s""" % (name, polynom, width, init, refin, refout, xorout, extra_doc)
 
     return inner
 
