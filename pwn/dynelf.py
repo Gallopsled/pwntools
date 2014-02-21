@@ -179,7 +179,6 @@ class DynELF:
         nbuckets = leak.d(gnuhsh)
         symndx = leak.d(gnuhsh, 1)
         maskwords = leak.d(gnuhsh, 2)
-        shift2 = leak.d(gnuhsh, 3)
 
         buckets = gnuhsh + 16 + 8 * maskwords
         chains = buckets + 4 * nbuckets
