@@ -94,9 +94,6 @@ class DynELF:
                     return libbase + leak.d(sym, 1)
             idx = leak.d(chain, idx)
 
-        pwn.log.failed()
-        return None
-
     def _lookup64 (self, symb, lib):
         base = self.base
         leak = self.leak
@@ -170,8 +167,25 @@ class DynELF:
             hshtab += libbase
 
         if hshtag == 4:
-            #SYSV hash
-            pass
+            status('.hash parms')
+            nbuckets = leak.d(hshtab)
+            bucketaddr = hshtab + 8
+            chain = hshtab + 8 + nbuckets * 4
+
+            status('hashmap')
+            h = sysv_hash(symb) % nbuckets
+            idx = leak.d(bucketaddr, h)
+            while idx:
+                sym = symtab + (idx * 24)
+                symtype = leak.b(sym + 4) & 0xf
+                if symtype == 2:
+                    #Function type symbol
+                    name = leak.s(strtab + leak.d(sym))
+                    if name == symb:
+                        #Bingo
+                        pwn.log.succeeded()
+                        return libbase + leak.q(sym, 1)
+                idx = leak.d(chain, idx)
         else:
             status('.gnu.hash parms')
             nbuckets = leak.d(hshtab)
