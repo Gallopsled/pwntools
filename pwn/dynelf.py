@@ -197,12 +197,16 @@ class DynELF:
         while True:
             hsh2 = leak.d(chain + (i * 4))
             if hsh == (hsh2 & ~1):
-                break
+                #Hash matches, but this may be a collision
+                #Check symbol name too.
+                sym = symtab + 24 * (ndx + i)
+                name = leak.s(strtab + leak.d(sym))
+                if name == symb:
+                    break
             if hsh2 & 1:
                 pwn.log.failed('No hash')
                 return None
             i += 1
-        sym = symtab + 24 * (ndx + i)
         status('symbol offset')
         offset = leak.q(sym, 1)
         pwn.log.succeeded()
