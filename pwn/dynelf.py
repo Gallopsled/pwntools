@@ -38,33 +38,26 @@ class DynELF:
         leak = self.leak
         gotoff = self.elf.sections['.got.plt']['addr']
 
-        def b(addr):
-            return leak.b(addr)
-        def d(addr):
-            return leak.d(addr)
-        def s(addr):
-            return leak.s(addr)
-
         pwn.log.waitfor('Resolving "%s"' % symb)
         def status(s):
             pwn.log.status('Leaking %s' % s)
 
         pltgot = base + gotoff
-        linkmap = d(pltgot + 4)
+        linkmap = leak.d(pltgot, 1)
 
         status('linkmap')
         #Find named library
-        nameaddr = d(linkmap + 4)
-        name = s(nameaddr)
+        nameaddr = leak.d(linkmap, 1)
+        name = leak.s(nameaddr)
         while not lib in name:
-            linkmap = d(linkmap + 12)
+            linkmap = leak.d(linkmap + 12)
             if linkmap == 0:
                 #No such library
                 return None
-            nameaddr = d(linkmap + 4)
-            name = s(nameaddr)
-        libbase = d(linkmap)
-        dynamic = d(linkmap + 8)
+            nameaddr = leak.d(linkmap, 1)
+            name = leak.s(nameaddr)
+        libbase = leak.d(linkmap, 0)
+        dynamic = leak.d(linkmap, 2)
 
         status('.gnu.hash, .strtab and .symtab offsets')
         #Find hashes, string table and symbol table
@@ -72,17 +65,17 @@ class DynELF:
         strtab = None
         symtab = None
         while None in [hshtab, strtab, symtab]:
-            tag = d(dynamic)
+            tag = leak.d(dynamic)
             if tag == 4:
-                hshtab = d(dynamic + 4)
+                hshtab = leak.d(dynamic, 1)
             elif tag == 5:
-                strtab = d(dynamic + 4)
+                strtab = leak.d(dynamic, 1)
             elif tag == 6:
-                symtab = d(dynamic + 4)
+                symtab = leak.d(dynamic, 1)
             dynamic += 8
 
         #Everything set up for resolving
-        nbuckets = d(hshtab)
+        nbuckets = leak.d(hshtab)
         bucketaddr = hshtab + 8
         chain = hshtab + 8 + nbuckets * 4
 
@@ -91,14 +84,14 @@ class DynELF:
         idx = leak.d(bucketaddr, h)
         while idx:
             sym = symtab + (idx * 16)
-            symtype = b(sym + 12) & 0xf
+            symtype = leak.b(sym + 12) & 0xf
             if symtype == 2:
                 #Function type symbol
-                name = s(strtab + d(sym))
+                name = leak.s(strtab + leak.d(sym))
                 if name == symb:
                     #Bingo
                     pwn.log.succeeded()
-                    return libbase + d(sym + 4)
+                    return libbase + leak.d(sym, 1)
             idx = leak.d(chain, idx)
 
         pwn.log.failed()
