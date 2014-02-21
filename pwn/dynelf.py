@@ -1,5 +1,15 @@
 import pwn
 
+def sysv_hash(symbol):
+    h = 0
+    g = 0
+    for c in symbol:
+        h = (h << 4) + ord(c)
+        g = h & 0xf0000000
+        h ^= (g >> 24)
+        h &= ~g
+    return h & 0xffffffff
+
 def gnu_hash(s):
     h = 0
     h = 5381
@@ -58,13 +68,13 @@ class DynELF:
 
         status('.gnu.hash, .strtab and .symtab offsets')
         #Find hashes, string table and symbol table
-        gnuhsh = None
+        hshtab = None
         strtab = None
         symtab = None
-        while None in [gnuhsh, strtab, symtab]:
+        while None in [hshtab, strtab, symtab]:
             tag = d(dynamic)
             if tag == 4:
-                gnuhsh = d(dynamic + 4)
+                hshtab = d(dynamic + 4)
             elif tag == 5:
                 strtab = d(dynamic + 4)
             elif tag == 6:
@@ -72,28 +82,13 @@ class DynELF:
             dynamic += 8
 
         #Everything set up for resolving
-        nbuckets = d(gnuhsh)
-        bucketaddr = gnuhsh + 8
-        def hash(symbol):
-            h = 0
-            g = 0
-            for c in symbol:
-                h = (h << 4) + ord(c)
-                g = h & 0xf0000000
-                h ^= (g >> 24)
-                h &= ~g
-            return h & 0xffffffff
-
-        def bucket_index(idx):
-            return d(bucketaddr + (idx % nbuckets) * 4)
-
-        def chain_index(idx):
-            chain_address = gnuhsh + 8 + nbuckets * 4
-            return d(chain_address + idx * 4)
+        nbuckets = d(hshtab)
+        bucketaddr = hshtab + 8
+        chain = hshtab + 8 + nbuckets * 4
 
         status('hashmap')
-        h = hash(symb)
-        idx = bucket_index(h)
+        h = sysv_hash(symb) % nbuckets
+        idx = leak.d(bucketaddr, h)
         while idx:
             sym = symtab + (idx * 16)
             symtype = b(sym + 12) & 0xf
@@ -104,7 +99,7 @@ class DynELF:
                     #Bingo
                     pwn.log.succeeded()
                     return libbase + d(sym + 4)
-            idx = chain_index(idx)
+            idx = leak.d(chain, idx)
 
         pwn.log.failed()
         return None
@@ -154,19 +149,24 @@ class DynELF:
         dynoff = leak.q(cur + 16)
         dyn = libbase + dynoff
 
-        status('.gnu.hash, .strtab and .symtab offsets')
+        status('.gnu.hash/.hash, .strtab and .symtab offsets')
         cur = dyn
-        gnuhsh = None
+        hshtag = None
+        hshtab = None
         strtab = None
         symtab = None
-        while None in [gnuhsh, strtab, symtab]:
+        while None in [hshtab, strtab, symtab]:
             tag = leak.q(cur)
-            if   tag == 5:
+            if   tag == 4:
+                hshtab = leak.q(cur, 1)
+                hshtag = tag
+            elif tag == 5:
                 strtab = leak.q(cur, 1)
             elif tag == 6:
                 symtab = leak.q(cur, 1)
             elif tag == 0x6ffffef5:
-                gnuhsh = leak.q(cur, 1)
+                hshtab = leak.q(cur, 1)
+                hshtag = tag
             cur += 16
 
         # with glibc the pointers are relocated whereas with f.x. uclibc they
@@ -174,40 +174,45 @@ class DynELF:
         if libbase > strtab:
             strtab += libbase
             symtab += libbase
-            gnuhsh += libbase
-        status('.gnu.hash parms')
-        nbuckets = leak.d(gnuhsh)
-        symndx = leak.d(gnuhsh, 1)
-        maskwords = leak.d(gnuhsh, 2)
+            hshtab += libbase
 
-        buckets = gnuhsh + 16 + 8 * maskwords
-        chains = buckets + 4 * nbuckets
+        if hshtag == 4:
+            #SYSV hash
+            pass
+        else:
+            status('.gnu.hash parms')
+            nbuckets = leak.d(hshtab)
+            symndx = leak.d(hshtab, 1)
+            maskwords = leak.d(hshtab, 2)
 
-        status('hash chain index')
-        hsh = gnu_hash(symb)
-        bucket = hsh % nbuckets
-        ndx = leak.d(buckets, bucket)
-        chain = chains + 4 * (ndx - symndx)
-        if ndx == 0:
-            pwn.log.failed('Empty chain')
-            return None
-        status('hash chain')
-        i = 0
-        hsh &= ~1
-        while True:
-            hsh2 = leak.d(chain + (i * 4))
-            if hsh == (hsh2 & ~1):
-                #Hash matches, but this may be a collision
-                #Check symbol name too.
-                sym = symtab + 24 * (ndx + i)
-                name = leak.s(strtab + leak.d(sym))
-                if name == symb:
-                    break
-            if hsh2 & 1:
-                pwn.log.failed('No hash')
+            buckets = hshtab + 16 + 8 * maskwords
+            chains = buckets + 4 * nbuckets
+
+            status('hash chain index')
+            hsh = gnu_hash(symb)
+            bucket = hsh % nbuckets
+            ndx = leak.d(buckets, bucket)
+            chain = chains + 4 * (ndx - symndx)
+            if ndx == 0:
+                pwn.log.failed('Empty chain')
                 return None
-            i += 1
-        status('symbol offset')
-        offset = leak.q(sym, 1)
-        pwn.log.succeeded()
-        return offset + libbase
+            status('hash chain')
+            i = 0
+            hsh &= ~1
+            while True:
+                hsh2 = leak.d(chain + (i * 4))
+                if hsh == (hsh2 & ~1):
+                    #Hash matches, but this may be a collision
+                    #Check symbol name too.
+                    sym = symtab + 24 * (ndx + i)
+                    name = leak.s(strtab + leak.d(sym))
+                    if name == symb:
+                        break
+                if hsh2 & 1:
+                    pwn.log.failed('No hash')
+                    return None
+                i += 1
+            status('symbol offset')
+            offset = leak.q(sym, 1)
+            pwn.log.succeeded()
+            return offset + libbase
