@@ -50,7 +50,6 @@ class DynELF:
         def status(s):
             pwn.log.status('Leaking %s' % s)
 
-
         status('link_map')
         link_map = leak.d(gotplt, 1)
 
@@ -63,42 +62,57 @@ class DynELF:
                 break
             cur = leak.d(cur + 12)
         libbase = leak.d(cur)
-        dynamic = leak.d(cur, 2)
+        dyn = leak.d(cur, 2)
 
         status('.gnu.hash, .strtab and .symtab offsets')
-        #Find hashes, string table and symbol table
+        cur = dyn
+        hshtag = None
         hshtab = None
         strtab = None
         symtab = None
         while None in [hshtab, strtab, symtab]:
-            tag = leak.d(dynamic)
+            tag = leak.d(dyn)
             if tag == 4:
-                hshtab = leak.d(dynamic, 1)
+                hshtab = leak.d(dyn, 1)
+                hshtag = tag
             elif tag == 5:
-                strtab = leak.d(dynamic, 1)
+                strtab = leak.d(dyn, 1)
             elif tag == 6:
-                symtab = leak.d(dynamic, 1)
-            dynamic += 8
+                symtab = leak.d(dyn, 1)
+            elif tag == 0x6ffffef5:
+                hshtab = leak.d(cur, 1)
+                hshtag = tag
+            dyn += 8
 
-        #Everything set up for resolving
-        nbuckets = leak.d(hshtab)
-        bucketaddr = hshtab + 8
-        chain = hshtab + 8 + nbuckets * 4
+        # with glibc the pointers are relocated whereas with f.x. uclibc they
+        # are not
+        if libbase > strtab:
+            strtab += libbase
+            symtab += libbase
+            hshtab += libbase
 
-        status('hashmap')
-        h = sysv_hash(symb) % nbuckets
-        idx = leak.d(bucketaddr, h)
-        while idx:
-            sym = symtab + (idx * 16)
-            symtype = leak.b(sym + 12) & 0xf
-            if symtype == 2:
-                #Function type symbol
-                name = leak.s(strtab + leak.d(sym))
-                if name == symb:
-                    #Bingo
-                    pwn.log.succeeded()
-                    return libbase + leak.d(sym, 1)
-            idx = leak.d(chain, idx)
+        if hshtag == 4:
+            status('.hash parms')
+            nbuckets = leak.d(hshtab)
+            bucketaddr = hshtab + 8
+            chain = hshtab + 8 + nbuckets * 4
+
+            status('hashmap')
+            h = sysv_hash(symb) % nbuckets
+            idx = leak.d(bucketaddr, h)
+            while idx:
+                sym = symtab + (idx * 16)
+                symtype = leak.b(sym + 12) & 0xf
+                if symtype == 2:
+                    #Function type symbol
+                    name = leak.s(strtab + leak.d(sym))
+                    if name == symb:
+                        #Bingo
+                        pwn.log.succeeded()
+                        return libbase + leak.d(sym, 1)
+                idx = leak.d(chain, idx)
+        else:
+            pass
 
     def _lookup64 (self, symb, lib):
         base = self.base
