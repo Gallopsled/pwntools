@@ -129,21 +129,7 @@ class DynELF:
                 break
             cur = leak.q(cur + 24)
         libbase = leak.q(cur)
-
-        status('program headers offset')
-        e_phoff = leak.q(libbase + 32)
-        e_ph = libbase + e_phoff
-
-        status('.dynamic section offset')
-        cur = e_ph
-        while True:
-            typ = leak.d(cur)
-            if typ == 2:
-                break
-            cur += 7 * 8
-
-        dynoff = leak.q(cur + 16)
-        dyn = libbase + dynoff
+        dyn = leak.q(cur, 2)
 
         status('.gnu.hash/.hash, .strtab and .symtab offsets')
         cur = dyn
