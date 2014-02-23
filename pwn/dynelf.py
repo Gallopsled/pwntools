@@ -37,27 +37,33 @@ class DynELF:
         base = self.base
         leak = self.leak
         gotoff = self.elf.sections['.got.plt']['addr']
+        if base is None:
+            pass
+            # XXX: Read base address
+            # else:
+            #     pwn.log.die('Position independent ELF needs a base address')
+        else:
+            gotplt = base + gotoff
 
         pwn.log.waitfor('Resolving "%s"' % symb)
+
         def status(s):
             pwn.log.status('Leaking %s' % s)
 
-        pltgot = base + gotoff
-        linkmap = leak.d(pltgot, 1)
 
-        status('linkmap')
-        #Find named library
-        nameaddr = leak.d(linkmap, 1)
-        name = leak.s(nameaddr)
-        while not lib in name:
-            linkmap = leak.d(linkmap + 12)
-            if linkmap == 0:
-                #No such library
-                return None
-            nameaddr = leak.d(linkmap, 1)
-            name = leak.s(nameaddr)
-        libbase = leak.d(linkmap, 0)
-        dynamic = leak.d(linkmap, 2)
+        status('link_map')
+        link_map = leak.d(gotplt, 1)
+
+        status('%s load address' % lib)
+        cur = link_map
+        while True:
+            addr = leak.d(cur + 4)
+            name = leak.s(addr)
+            if lib in name:
+                break
+            cur = leak.d(cur + 12)
+        libbase = leak.d(cur)
+        dynamic = leak.d(cur, 2)
 
         status('.gnu.hash, .strtab and .symtab offsets')
         #Find hashes, string table and symbol table
