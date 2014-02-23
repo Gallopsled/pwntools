@@ -80,7 +80,7 @@ class DynELF:
             elif tag == 6:
                 symtab = leak.d(dyn, 1)
             elif tag == 0x6ffffef5:
-                hshtab = leak.d(cur, 1)
+                hshtab = leak.d(dyn, 1)
                 hshtag = tag
             dyn += 8
 
@@ -112,7 +112,42 @@ class DynELF:
                         return libbase + leak.d(sym, 1)
                 idx = leak.d(chain, idx)
         else:
-            pass
+            status('.gnu.hash parms')
+            nbuckets = leak.d(hshtab)
+            symndx = leak.d(hshtab, 1)
+            maskwords = leak.d(hshtab, 2)
+
+            buckets = hshtab + 16 + 4 * maskwords
+            chains = buckets + 4 * nbuckets
+
+            status('hash chain index')
+            hsh = gnu_hash(symb)
+            bucket = hsh % nbuckets
+            ndx = leak.d(buckets, bucket)
+            chain = chains + 4 * (ndx - symndx)
+            if ndx == 0:
+                pwn.log.failed('Empty chain')
+                return None
+            status('hash chain')
+            i = 0
+            hsh &= ~1
+            while True:
+                hsh2 = leak.d(chain + (i * 4))
+                if hsh == (hsh2 & ~1):
+                    #Hash matches, but this may be a collision
+                    #Check symbol name too.
+                    sym = symtab + 16 * (ndx + i)
+                    name = leak.s(strtab + leak.d(sym))
+                    if name == symb:
+                        break
+                if hsh2 & 1:
+                    pwn.log.failed('No hash')
+                    return None
+                i += 1
+            status('symbol offset')
+            offset = leak.d(sym, 1)
+            pwn.log.succeeded()
+            return offset + libbase
 
     def _lookup64 (self, symb, lib):
         base = self.base
