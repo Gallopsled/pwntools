@@ -1,5 +1,6 @@
 import pwn
 
+@pwn.need_context
 def asm(*blocks, **kwargs):
     """assembles a piece of code.
     Example:
@@ -25,7 +26,7 @@ def asm(*blocks, **kwargs):
         if isinstance(b, H.AssemblerText):
             code_blocks.append('\n'.join('    '*(not line.strip().endswith(':')) + line.strip() for line in b.text.strip().split('\n')))
         elif isinstance(b, H.AssemblerBlob):
-            if target_arch in ['i386', 'amd64']:
+            if blocks.arch in ['i386', 'amd64']:
                 code_blocks.append('db ' + ', '.join('0x%02x' % ord(c) for c in b.blob))
             else:
                 code_blocks.append('.byte ' + ', '.join('0x%02x' % ord(c) for c in b.blob))
