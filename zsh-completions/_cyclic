@@ -1,0 +1,36 @@
+#compdef cyclic
+#            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+#                    Version 2, December 2004
+#
+# Copyright (C) 2004 Sam Hocevar <sam@hocevar.net>
+#
+# Everyone is permitted to copy and distribute verbatim or modified
+# copies of this license document, and changing it is allowed as long
+# as the name is changed.
+#
+#            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+#   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+#
+#  0. You just DO WHAT THE FUCK YOU WANT TO.
+# ------------------------------------------------------------------------------
+# Description
+# -----------
+#
+#  Completion script for cyclic
+#
+# ------------------------------------------------------------------------------
+# Authors
+# -------
+#
+#  * Zach Riggle (https://github.com/zachriggle)
+#
+# ------------------------------------------------------------------------------
+
+_arguments -s -S \
+    '(- :)'{--help,-h}'[show this help message and exit]' \
+    '(--alphabet -a)'{--alphabet,-a}'[alphabet to use in the cyclic pattern]:alphabet:(a ab abc abcd)' \
+    '(--large-alphabet -l)'{--large-alphabet,-l}'[Use a large alphabet (digits, letters, punctuation)]' \
+    '(--offset -o)'{--offset,-o}'[Find offset of substring in cyclic (as 0xXxx, int, or string)]:Offset in hex or int:(0x1234 1234)' \
+    ":pattern or size:"
+
+return 0

@@ -1,0 +1,36 @@
+#compdef elfpatch
+#            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+#                    Version 2, December 2004
+#
+# Copyright (C) 2004 Sam Hocevar <sam@hocevar.net>
+#
+# Everyone is permitted to copy and distribute verbatim or modified
+# copies of this license document, and changing it is allowed as long
+# as the name is changed.
+#
+#            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+#   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+#
+#  0. You just DO WHAT THE FUCK YOU WANT TO.
+# ------------------------------------------------------------------------------
+# Description
+# -----------
+#
+#  Completion script for elfpatch
+#
+# ------------------------------------------------------------------------------
+# Authors
+# -------
+#
+#  * Zach Riggle (https://github.com/zachriggle)
+#
+# ------------------------------------------------------------------------------
+
+_arguments -s -S \
+    '(- :)'{--help,-h}'[show this help message and exit]' \
+    '(--out -o)'{--out,-o}'[output file]:output file:_files' \
+    "1:file to patch:_files" \
+    "2:address to patch:(1234 0x1234)" \
+    "3:hex-encoded replacement:(deadbeef aaaaaaaa)"
+
+return 0

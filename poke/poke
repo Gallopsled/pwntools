@@ -3,8 +3,8 @@ import pwn, sys, hashlib, os, socket, errno
 import pwn.log as log
 
 if len(sys.argv) not in [2,3]:
-    pwn.trace('Usage: ' + sys.argv[0] + ' host [filename]\n')
-    pwn.die()
+    print('Usage: ' + sys.argv[0] + ' host [filename]\n')
+    sys.exit()
 
 PIPED = len(sys.argv) == 2
 BLOCK = 4096

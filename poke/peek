@@ -3,8 +3,8 @@ import pwn, sys, hashlib
 import pwn.log as log
 
 if len(sys.argv) > 2:
-    pwn.trace('Usage: ' + sys.argv[0] + ' [filename]\n')
-    pwn.die()
+    print('Usage: ' + sys.argv[0] + ' [filename]\n')
+    sys.exit()
 
 PIPED = len(sys.argv) == 1
 BLOCK = 4096
