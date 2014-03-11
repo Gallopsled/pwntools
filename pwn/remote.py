@@ -7,7 +7,7 @@ class remote(basesock):
                  proto = 0, timeout = 'default',
                  silent = False):
         import socket
-        basesock.__init__(self, timeout)
+        basesock.__init__(self, timeout, silent = silent)
         port = int(port)
         self.target = (host, port)
         if fam is None:
@@ -20,7 +20,6 @@ class remote(basesock):
         self.sock = None
         self.lhost = None
         self.lport = None
-        self.silent = silent
         self.connect()
 
     def connect(self):
