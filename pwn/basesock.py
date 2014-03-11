@@ -13,7 +13,8 @@ class basesock(basechatter):
         if self.sock:
             self.sock.close()
             self.sock = None
-            pwn.log.info('Closed connection to %s on port %d' % self.target)
+            if not self.silent:
+                pwn.log.info('Closed connection to %s on port %d' % self.target)
 
     def eof(self):
         import socket
