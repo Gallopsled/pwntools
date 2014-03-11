@@ -27,7 +27,7 @@ class DynELF:
         self.base = base
         self.PIE = PIE
 
-    def lookup (self, symb, lib = 'libc'):
+    def lookup (self, symb = None, lib = 'libc'):
         if self.elf.elfclass == 'ELF32':
             return self._lookup32(symb, lib)
         if self.elf.elfclass == 'ELF64':
@@ -43,7 +43,10 @@ class DynELF:
             # else:
             #     pwn.log.die('Position independent ELF needs a base address')
         else:
-            gotplt = base + gotoff
+            if gotoff > base:
+                gotplt = gotoff
+            else:
+                gotplt = base + gotoff
 
         pwn.log.waitfor('Resolving "%s"' % symb)
 
@@ -62,6 +65,8 @@ class DynELF:
                 break
             cur = leak.d(cur + 12)
         libbase = leak.d(cur)
+        if symb is None:
+            return libbase
         dyn = leak.d(cur, 2)
 
         status('.gnu.hash, .strtab and .symtab offsets')
@@ -178,6 +183,8 @@ class DynELF:
                 break
             cur = leak.q(cur + 24)
         libbase = leak.q(cur)
+        if symb is None:
+            return libbase
         dyn = leak.q(cur, 2)
 
         status('.gnu.hash/.hash, .strtab and .symtab offsets')
