@@ -1,14 +1,18 @@
 import pwn
 
+class _FuncOrConst(int):
+    def __call__ (self, *args):
+        self._func(args)
+
 class ROP:
-    """class that construct a ROP chain.
+    '''class that construct a ROP chain.
     Example:
         from pwn import *
-        r = ROP("path/to/binary")
-        r.call("recv", [4, r.bss(100), 100, 0]) #recieve 100 bytes of shellcode to .bss + 100
+        r = ROP('path/to/binary')
+        r.call('recv', [4, r.bss(100), 100, 0]) #recieve 100 bytes of shellcode to .bss + 100
         r.mprotect(r.bss(100)) #mark it executable
         r.call(r.bss(100), []) #run it!
-        print enhex(str(r))"""
+        print enhex(str(r))'''
     def __init__(self, path, garbage = 0xdeadbeef):
         if isinstance(path, pwn.ELF):
             self.elf = path
@@ -30,30 +34,68 @@ class ROP:
 
         self._chain = []
         self._gadgets = {}
+        self._gadget_cache = {}
         self._load_addr = None
         self._next_load_addr = None
         self._load_gadgets()
 
     def __getattr__(self, name):
-        def func(*args):
+        def func(args):
             self.call(name, args)
-        if self._resolve(name):
-            return func
+        x = _FuncOrConst(self._resolve(name))
+        x._func = func
+        return x
 
+    def gadget(self, what, avoid = ''):
+        if what in self._gadget_cache:
+            return self._gadget_cache[(what, avoid)]
+        gs = []
+        err = 'Unknown gadget type: "%s"' % what
+        if   what == 'ret':
+            gs = self._gadgets.get('popret', {}).get(0, [])
+        elif what == 'leave':
+            gs = self._gadgets.get('leave', [])
+        elif what == 'popebp':
+            gs = self._gadgets.get('popebp', [])
+        elif what.startswith('pop'):
+            if what.startswith('popret'):
+                offset = what[6:]
+            else:
+                if what[-3:] == 'ret':
+                    what = what[:-3]
+                offset = what[3:]
+            if offset.isdigit():
+                offset = int(offset)
+            elif offset == '':
+                offset = 1
+            else:
+                pwn.die(err)
+            gs = self._gadgets.get('popret', {}).get(offset, [])
+        else:
+            pwn.die(err)
+        for g in gs:
+            gstr = pwn.pint(g)
+            if all(c not in gstr for c in avoid):
+                self._gadget_cache[(avoid, what)] = g
+                return g
 
-    def mprotect(self, addr):
-        """does all the stuff that you want mprotect to do, but can't remember how to do(marks address executable)"""
-        self.call('mprotect', (addr & ~4095, 4096, 7))
-        self.call('mprotect', ((addr+4096) & ~4095, 4096, 7))
+    def mprotect(self, addr, numb = 4096):
+        '''does all the stuff that you want mprotect to do, but can't remember how to do
+(i.e. marks address executable, and takes care of page alignment)'''
+        # align addr down to nearest page boundary and adjust numb accordingly
+        numb += addr | 4095
+        addr = addr & ~4095
+        self.call('mprotect', (addr, numb, 7))
 
     def bss(self, offset=0):
-        """returns the address of .bss+offset. Get place to store data"""
+        '''returns the address of .bss+offset. Get place to store data'''
         return self.sections['.bss'] + offset
 
     def extra_libs(self, libs):
         self.elf.extra_libs(libs)
 
     def load_library(self, file, addr, relative_to = None):
+        '''loads a library at an absolute address or relative to a known symbol'''
         import os
         syms = {}
 
@@ -172,6 +214,11 @@ class ROP:
             return (pivot, size)
 
     def migrate(self, sp, bp = None):
+        '''migrate from the current ROP chain to another one.  Great for staged ROP'ing.
+        Must be the last item in a chain. Example:
+           rop = ROP('...')
+           rop.read(5, rop.data_buf, 0x1000)
+           rop.migrate(rop.data_buf)'''
         self._next_load_addr = sp
         self._chain.append(('migrate', (sp, bp)))
         return self
@@ -286,12 +333,10 @@ class ROP:
                 if not islast:
                     pwn.die('Migrate must be last link in chain')
                 esp, ebp = link
-                gp = self._gadgets['popebp']
-                gl = self._gadgets['leave']
-                if len(gp) == 0 and len(gl) == 0:
+                gp = self.gadget('popebp')
+                gl = self.gadget('leave')
+                if not gp or not gl:
                     pwn.die('Could not find set-EBP and leave gadgets needed to migrate')
-                gp = gp[0]
-                gl = gl[0]
                 if ebp is None:
                     out += [p(gp), p(esp-4), p(gl)]
                 else:
@@ -327,9 +372,6 @@ class ROP:
 
     def __radd__(self, other):
         return str(other) + str(self)
-
-    def __getitem__(self, x):
-        return self._resolve(x)
 
     def __dir__(self):
         return dir(type(self)) + list(self.__dict__)
