@@ -28,6 +28,9 @@ class DynELF:
         self.PIE = PIE
 
     def bases(self):
+        '''Resolve base addresses of all loaded libraries.
+        Return a dictionary mapping library path to its base address.
+        '''
         if self.elf.elfclass == 'ELF32':
             return self._bases32()
         if self.elf.elfclass == 'ELF64':
