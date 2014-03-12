@@ -27,11 +27,69 @@ class DynELF:
         self.base = base
         self.PIE = PIE
 
+    def bases(self):
+        '''Resolve base addresses of all loaded libraries.
+        Return a dictionary mapping library path to its base address.
+        '''
+        if self.elf.elfclass == 'ELF32':
+            return self._bases32()
+        if self.elf.elfclass == 'ELF64':
+            return self._bases64()
+
     def lookup (self, symb = None, lib = 'libc'):
         if self.elf.elfclass == 'ELF32':
             return self._lookup32(symb, lib)
         if self.elf.elfclass == 'ELF64':
             return self._lookup64(symb, lib)
+
+    def _bases32(self):
+        bases = { }
+        base = self.base
+        leak = self.leak
+        gotoff = self.elf.sections['.got.plt']['addr']
+        if base is None:
+            pass
+            # XXX: Read base address
+            # else:
+            #     pwn.log.die('Position independent ELF needs a base address')
+        else:
+            if gotoff > base:
+                gotplt = gotoff
+            else:
+                gotplt = base + gotoff
+
+        link_map = leak.d(gotplt, 1)
+
+        cur = link_map
+        while cur:
+            addr = leak.d(cur + 4)
+            name = leak.s(addr)
+            bases[name] = leak.d(cur)
+            cur = leak.d(cur + 12)
+        return bases
+
+    def _bases64(self):
+        bases = { }
+        base = self.base
+        leak = self.leak
+        gotoff = self.elf.sections['.got.plt']['addr']
+        if base is None:
+            pass
+            # XXX: Read base address
+            # else:
+            #     pwn.log.die('Position independent ELF needs a base address')
+        else:
+            gotplt = base + gotoff
+
+        link_map = leak.q(gotplt, 1)
+
+        cur = link_map
+        while cur:
+            addr = leak.q(cur + 8)
+            name = leak.s(addr)
+            bases[name] = leak.q(cur)
+            cur = leak.q(cur + 24)
+        return bases
 
     def _lookup32 (self, symb, lib):
         base = self.base
