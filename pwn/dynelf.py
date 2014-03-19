@@ -23,6 +23,11 @@ class DynELF:
             self.elf = path
         else:
             self.elf = pwn.elf.load(path)
+        if base == None and not PIE:
+            for segment in self.elf.segments:
+                if segment['type'] == 'LOAD' and segment['offset'] == 0:
+                    base = segment['virtaddr']
+                    break
         self.leak = leak
         self.base = base
         self.PIE = PIE
