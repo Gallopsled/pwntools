@@ -1,4 +1,5 @@
 import pwn
+from string import punctuation, digits, letters
 _AssemblerBlock = None
 
 # conversion functions
@@ -539,11 +540,27 @@ def isprint(c):
     """Return true if a character is printable"""
     return len(c)+2 == len(repr(c))
 
-def hexdump(s, width=16, skip=True):
+HEXII = punctuation + digits + letters
+
+def hexii(s, width=16, skip=True, hexii=True):
+    return hexdump(s, width, skip, hexii)
+
+def hexiichar(c):
+    if c in HEXII:      return ".%c " % c
+    elif c == '\0':     return "   "
+    elif c == '\xff':   return "## "
+    else:               return "%02x " % ord(c)
+
+def hexdump(s, width=16, skip=True, hexii=False):
     lines       = []
     last_unique = ''
     byte_width  = len('00 ')
     column_sep  = '  '
+    line_fmt    = '%%(offset)08x  %%(hexbytes)-%is |%%(printable)s|' % (len(column_sep)+(width*byte_width))
+
+    if hexii:
+        column_sep = ''
+        line_fmt   = '%%(offset)08x  %%(hexbytes)-%is|' % (len(column_sep)+(width*byte_width))
 
     for line,chunk in enumerate(chunks(s,width)):
         # If this chunk is the same as the last unique chunk,
@@ -558,18 +575,19 @@ def hexdump(s, width=16, skip=True):
 
         # Cenerate contents for line
         offset    = line*width
-        hexbytes  = ''.join('%02x ' % ord(b) for b in chunk)
-        printable = ''.join(b if isprint(b) else '.' for b in chunk)
+        if not hexii:
+            hexbytes  = ''.join('%02x ' % ord(b) for b in chunk)
+            printable = ''.join(b if isprint(b) else '.' for b in chunk)
+        else:
+            hexbytes  = ''.join(hexiichar(b) for b in chunk) 
+            printable = ''
 
         # Insert column break in middle, for even-width lines
         middle = (width/2)*byte_width
         if len(hexbytes) > middle:
             hexbytes = hexbytes[:middle] + column_sep + hexbytes[middle:]
 
-        # Create format string with appropriate length, insert contents
-        # and pad to appropriate width
-        format_string = '%%08x  %%-%is |%%s|' % (len(column_sep)+(width*byte_width))
-        lines.append(format_string % (offset, hexbytes, printable))
+        lines.append(line_fmt % locals())
 
     lines.append("%08x" % len(s))
     return '\n'.join(lines)
