@@ -86,7 +86,7 @@ __BEGIN_DECLS
 #define SS   16
 #define FRAME_SIZE 17
 
-/* this struct defines the way the registers are stored on the 
+/* this struct defines the way the registers are stored on the
    stack during a system call. */
 
 struct pt_regs {
@@ -261,7 +261,7 @@ typedef union
 typedef struct
 {
 	uint32_t   fpc;
-	freg_t  fprs[NUM_FPRS];              
+	freg_t  fprs[NUM_FPRS];
 } s390_fp_regs;
 
 #define FPC_EXCEPTION_MASK      0xF8000000
@@ -278,7 +278,7 @@ typedef struct
 	uint32_t orig_gpr2;
 } s390_regs;
 
-struct pt_regs 
+struct pt_regs
 {
 	psw_t psw;
 	uint32_t gprs[NUM_GPRS];
@@ -366,7 +366,7 @@ typedef struct
 	union {
 		per_lowcore_words words;
 		per_lowcore_bits  bits;
-	} lowcore; 
+	} lowcore;
 } per_struct __attribute__((__packed__));
 
 typedef struct
@@ -404,7 +404,7 @@ typedef struct
 	addr_t           lowaddr;
 	addr_t           hiaddr;
 	ptprot_flags     prot;
-} ptprot_area;                     
+} ptprot_area;
 
 /* Sequence of bytes for breakpoint illegal instruction.  */
 #define S390_BREAKPOINT     {0x0,0x1}
@@ -429,7 +429,7 @@ struct user_regs_struct
 	 * watchpoints. This is the way intel does it.
 	 */
 	per_struct per_info;
-	addr_t  ieee_instruction_pointer; 
+	addr_t  ieee_instruction_pointer;
 	/* Used to give failing instruction back to user for ieee exceptions */
 };
 
@@ -733,10 +733,10 @@ struct pt_regs {
 	unsigned long cr_ipsr;		/* interrupted task's psr */
 	unsigned long cr_iip;		/* interrupted task's instruction pointer */
 	unsigned long cr_ifs;		/* interrupted task's function state */
-	unsigned long ar_unat;		/* interrupted task's NaT register (preserved) */ 
+	unsigned long ar_unat;		/* interrupted task's NaT register (preserved) */
 	unsigned long ar_pfs;		/* prev function state  */
 	unsigned long ar_rsc;		/* RSE configuration */
-	unsigned long ar_rnat;		/* RSE NaT */ 
+	unsigned long ar_rnat;		/* RSE NaT */
 	unsigned long ar_bspstore;	/* RSE bspstore */
 	unsigned long pr;		/* 64 predicate registers (1 bit each) */
 	unsigned long b6;		/* scratch */
@@ -779,7 +779,7 @@ struct pt_regs {
 };
 
 struct switch_stack {
-	unsigned long caller_unat;	/* user NaT collection register (preserved) */ 
+	unsigned long caller_unat;	/* user NaT collection register (preserved) */
 	unsigned long ar_fpsr;		/* floating-point status register */
 
 	struct ia64_fpreg f2;		/* preserved */
@@ -825,7 +825,7 @@ struct switch_stack {
 	unsigned long ar_pfs;		/* previous function state */
 	unsigned long ar_lc;		/* loop counter (preserved) */
 	unsigned long ar_unat;		/* NaT bits for r4-r7 */
-	unsigned long ar_rnat;		/* RSE NaT collection register */ 
+	unsigned long ar_rnat;		/* RSE NaT collection register */
 	unsigned long ar_bspstore;	/* RSE dirty base (preserved) */
 	unsigned long pr;		/* 64 predicate registers (1 bit each) */
 };

@@ -90,7 +90,7 @@ fun update m (k, v) =
       | _ => raise Fail "RedBlackOrderedMapFn.insert: Impossible"
     end
 
-fun delete 
+fun delete
 end
 
 (* Insert if key is not in map *)

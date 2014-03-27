@@ -73,7 +73,7 @@ def p32b(x):
 
 def p48(n):
     """Packs an integer into a 6-byte string (little endian)"""
-    return p16(n) + p32(n >> 16) 
+    return p16(n) + p32(n >> 16)
 
 def p48b(n):
     """Packs an integer into a 6-byte string (big endian)"""

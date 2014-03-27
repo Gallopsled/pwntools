@@ -65,6 +65,6 @@ fun gen lvl vec =
             val syms' = concat symss
             fun one (n, sym) = foldl (fn ((n', sym'), a) =>
                                          if contains sym sym' then
-                                           a + 
+                                           a +
 end
 end

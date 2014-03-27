@@ -307,7 +307,7 @@
 #define __NR_timerfd_gettime	321
 
 
-/* 
+/*
  * There are some system calls that are not present on 64 bit, some
  * have a different name although they do the same (e.g. __NR_chown32
  * is __NR_chown on 64 bit).

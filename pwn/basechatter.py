@@ -135,7 +135,7 @@ class basechatter:
 
     def interactive(self, prompt = pwn.text.boldred('$') + ' ', flush_timeout = None):
         ''' 'Connects' a socket to stdin/stdout. Very effective if combined with the findpeersh shellcode.
-        
+
         It can optionally have a prompt, which it tries to print out when output has not been seen for a while. '''
         if not self.silent:
             pwn.log.info('Switching to interactive mode')
@@ -265,7 +265,7 @@ class basechatter:
 
     def attach_gdb(self, execute = None):
         ''' Tries to find the program in the other end of a socket (if it is a local program).
-        
+
         It then creates a new gdb session in a new terminal windows, which is then connected to the program in the other end.'''
         pwn.attach_gdb(self, execute)
 

@@ -49,7 +49,7 @@ def leaker(port):
         if d is None or len(d) == 0:
             raise 'Peer closed connection'
         return d
-    return l 
+    return l
 
 def find_module(modules, module):
     for m in modules:

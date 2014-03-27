@@ -54,20 +54,20 @@ def _findpeerremote_linux_thumb():
 
         /* Make some room on the stack */
         push {r0, r2, r3, r4}
-        
+
         mov r4, sp
 
       twice:
-        
+
         mov r5, sp
 
         mov r0, r6
         mov r1, sp
         push {r7}
         mov r2, sp
-        
+
         sub sp, #32
-        
+
         svc 1
 
         ldrh r3, [r5]
@@ -76,9 +76,9 @@ def _findpeerremote_linux_thumb():
 
         sub r7, #1
         cmp r4, r5
-        
+
         beq twice
-        
+
         mov r0, #8
 
       cmploop:
@@ -91,7 +91,7 @@ def _findpeerremote_linux_thumb():
         add r4, #4
         add r5, #4
         lsr r0, #1
-       
+
         beq findpeer
 
         b cmploop

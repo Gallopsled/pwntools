@@ -9,7 +9,7 @@ struct _fpstate {
 	__u16	twd;	/* Note this is not the same as the 32bit/x87/FSAVE twd */
 	__u16	fop;
 	__u64	rip;
-	__u64	rdp; 
+	__u64	rdp;
 	__u32	mxcsr;
 	__u32	mxcsr_mask;
 	__u32	st_space[32];	/* 8*16 bytes for each FP-reg */
@@ -17,7 +17,7 @@ struct _fpstate {
 	__u32	reserved2[24];
 };
 
-struct sigcontext { 
+struct sigcontext {
 	unsigned long r8;
 	unsigned long r9;
 	unsigned long r10;

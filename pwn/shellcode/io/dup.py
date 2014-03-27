@@ -20,7 +20,7 @@ def dup(sock = None, os = None, arch = None):
             sock = 'r6'
         else:
             sock = 'ebp'
-    
+
     sock = arg_fixup(sock)
 
     if arch == 'i386':

@@ -162,7 +162,7 @@
 #define __NR_osf_fstatfs	161
 
 #define __NR_osf_asynch_daemon	163	/* not implemented */
-#define __NR_osf_getfh		164	/* not implemented */	
+#define __NR_osf_getfh		164	/* not implemented */
 #define __NR_osf_getdomainname	165
 #define __NR_setdomainname	166
 

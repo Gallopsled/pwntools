@@ -35,7 +35,7 @@ def _connect_linux_thumb(host, port):
 		out = mov('r0', 'AF_INET')
 		out+= mov('r1', 'SOCK_STREAM')
 		out+= mov('r2', 0)
-		out+= mov('r7', '281') # Implement SYS_SOCKET 
+		out+= mov('r7', '281') # Implement SYS_SOCKET
 
 		out+= """
 					svc 1
@@ -44,7 +44,7 @@ def _connect_linux_thumb(host, port):
 
 		out+= mov('r2', 16)
 		out+= mov('r3', 'AF_INET')
-		
+
 		out+= mov('r6', 'r0')
 
 		out+= """
@@ -63,7 +63,7 @@ def _connect_linux_thumb(host, port):
 					""" % {'host': ip(host),
 								 'port': htons(port)}
 		return out
-					
+
 def _connect_linux_i386(host, port):
     return """
             ;; Connect to %(hostname)s on %(portnum)d

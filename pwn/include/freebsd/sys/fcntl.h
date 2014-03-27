@@ -244,7 +244,7 @@ typedef	__pid_t		pid_t;
 #define	F_UNLCK		2		/* unlock */
 #define	F_WRLCK		3		/* exclusive or write lock */
 #if __BSD_VISIBLE
-#define	F_UNLCKSYS	4		/* purge locks for a given system ID */ 
+#define	F_UNLCKSYS	4		/* purge locks for a given system ID */
 #define	F_CANCEL	5		/* cancel an async lock request */
 #endif
 #ifdef _KERNEL
