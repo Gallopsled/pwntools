@@ -18,14 +18,21 @@ def gnu_hash(s):
     return h & 0xffffffff
 
 class DynELF:
-    def __init__(self, path, leak, base = None, PIE = False):
+    def __init__(self, path, leak, base = None):
         if isinstance(path, pwn.ELF):
             self.elf = path
         else:
             self.elf = pwn.elf.load(path)
         self.leak = leak
+        self.PIE = (self.elf.elftype == 'DYN')
         self.base = base
-        self.PIE = PIE
+        if self.PIE is False and self.base is None:
+            if self.elf.elfclass == 'ELF32':
+                self.base = 0x08048000
+            else:
+                self.base = 0x400000
+        if self.base is None:
+            pwn.log.die('Position independent ELF needs a base address')
 
     def bases(self):
         '''Resolve base addresses of all loaded libraries.

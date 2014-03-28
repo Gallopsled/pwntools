@@ -63,7 +63,7 @@ def resolve_in_program_pid(program, pid, port):
 
     offsets = symbol_offsets(leaky_module[0])
     l = pwn.MemLeak(leaker(port))
-    elf = pwn.DynELF(program, l, main_module[1], 1)
+    elf = pwn.DynELF(program, l, main_module[1])
 
     actual_address = offsets['find_me'] + leaky_module[1]
     resolved_address = elf.lookup('find_me', 'libleaky')

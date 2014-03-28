@@ -47,6 +47,7 @@ class ELF:
         self.got = {}
         self.libs = {}
         self.elfclass = None
+        self.elftype = None
         self._data = None
         self.execstack = False
 
@@ -78,6 +79,7 @@ class ELF:
         cmd = [_READELF, '-h', self._path]
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
         self.elfclass = re.findall('Class:\s*(.*$)', out, re.MULTILINE)[0]
+        self.elftype = re.findall('Type:\s*(.*$)', out, re.MULTILINE)[0].split(' ')[0]
 
     def _load_segments(self):
         # -W : Wide output
