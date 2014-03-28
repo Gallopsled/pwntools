@@ -27,10 +27,7 @@ class DynELF:
         self.PIE = (self.elf.elftype == 'DYN')
         self.base = base
         if self.PIE is False and self.base is None:
-            if self.elf.elfclass == 'ELF32':
-                self.base = 0x08048000
-            else:
-                self.base = 0x400000
+            self.base = filter(lambda x: x['type'] == 'LOAD' and 'E' in x['flg'], e.segments)[0]['virtaddr']
         if self.base is None:
             pwn.log.die('Position independent ELF needs a base address')
 
