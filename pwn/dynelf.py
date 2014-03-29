@@ -18,7 +18,7 @@ def gnu_hash(s):
     return h & 0xffffffff
 
 class DynELF:
-    def __init__(self, path, leak, base = None, PIE = False):
+    def __init__(self, path, leak, base = None):
         if isinstance(path, pwn.ELF):
             self.elf = path
         else:
@@ -29,8 +29,12 @@ class DynELF:
                     base = segment['virtaddr']
                     break
         self.leak = leak
+        self.PIE = (self.elf.elftype == 'DYN')
         self.base = base
-        self.PIE = PIE
+        if self.PIE is False and self.base is None:
+            self.base = filter(lambda x: x['type'] == 'LOAD' and 'E' in x['flg'], e.segments)[0]['virtaddr']
+        if self.base is None:
+            pwn.log.die('Position independent ELF needs a base address')
 
     def bases(self):
         '''Resolve base addresses of all loaded libraries.
