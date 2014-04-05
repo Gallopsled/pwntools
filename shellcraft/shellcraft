@@ -23,7 +23,7 @@ def _string(s):
     out = []
     for c in s:
         co = ord(c)
-        if co >= 0x20 and co <= 0x7e:
+        if co >= 0x20 and co <= 0x7e and c not in '/$\'"`':
             out.append(c)
         else:
             out.append('\\x%02x' % co)
