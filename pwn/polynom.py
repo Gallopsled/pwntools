@@ -239,6 +239,13 @@ def make_crc(name, polynom, width, init, refin, refout, xorout, extra_doc = ''):
 crc32 = make_crc('crc32', 0x04c11db7, 32, 0xffffffff, True, True, 0xffffffff, 'This is the most commonly used CRC sum.')
 crc_a = make_crc('crc_a', 0x04c11db7, 32, 0xffffffff, True, True, 0xffffffff, 'This is the CRC sum used for e.g. MIFARE cards.')
 
+def cksum(data):
+    l = len(data)
+    while l:
+        data += p8(l & 0xff)
+        l >>= 8
+    return crc(data, 0x04c11db7, 32, 0, False, False, 0xffffffff)
+
 @pwn.memoize(use_file = False)
 def all_crcs():
     """Generates a dictionary of all the known CRC formats from:
