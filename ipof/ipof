@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if [ -z "$1" ]; then
+  echo Usage: ipof interface
+else
+  ip addr show "$1" | sed -n -r 's@^ *inet ([^ ]*)/.*@\1@p'
+fi
