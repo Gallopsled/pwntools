@@ -61,6 +61,16 @@ def p16b(x):
     import struct
     return struct.pack('>H', x & 0xffff)
 
+def p24(x):
+    """Packs an integer into a 3-byte string (little endian)"""
+    import struct
+    return struct.pack('<HB', x & 0xffff, x >> 16)
+
+def p24b(x):
+    """Packs an integer into a 3-byte string (big endian)"""
+    import struct
+    return struct.pack('>BH', x >> 16, x & 0xffff)
+
 def p32(x):
     """Packs an integer into a 4-byte string (little endian)"""
     import struct
@@ -579,7 +589,7 @@ def hexdump(s, width=16, skip=True, hexii=False):
             hexbytes  = ''.join('%02x ' % ord(b) for b in chunk)
             printable = ''.join(b if isprint(b) else '.' for b in chunk)
         else:
-            hexbytes  = ''.join(hexiichar(b) for b in chunk) 
+            hexbytes  = ''.join(hexiichar(b) for b in chunk)
             printable = ''
 
         # Insert column break in middle, for even-width lines
