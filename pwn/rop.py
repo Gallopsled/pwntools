@@ -190,7 +190,7 @@ class ROP:
         for y in [self.symbols, self.plt, self.sections]:
             if x in y:
                 return y[x]
-        return False
+        return self.sections.get('.' + x, False)
         # pwn.die('Could not resolve `%s\'' % x)
 
     def _pivot(self, args):
@@ -371,7 +371,15 @@ class ROP:
         return str(self) + str(other)
 
     def __radd__(self, other):
-        return str(other) + str(self)
+        return str(other) + self.flush()
+
+    def __coerce__ (self, other):
+        if pwn.isint(other) and self._load_addr:
+            return (self._load_addr, other)
+        elif isinstance(other, str):
+            return (self.flush(), other)
+        else:
+            pwn.die('Could not coerce ROP.  Other value was: %r' % other)
 
     def __dir__(self):
         return dir(type(self)) + list(self.__dict__)
