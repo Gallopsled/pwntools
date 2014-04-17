@@ -25,7 +25,8 @@ def memoize(*args, **kwargs):
     use_file (default True):  Cache results in files under /tmp/pwn-memoize.
 
     Used with no arguments is the same as setting mem = True and file = True.'''
-    if len(args) == 1 and kwargs == {}:
+    import types
+    if len(args) == 1 and kwargs == {} and isinstance(args[0], types.FunctionType):
         return _internal_memoize()(args[0])
     else:
         return _internal_memoize(*args, **kwargs)
