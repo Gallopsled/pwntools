@@ -81,9 +81,10 @@ if __name__ == '__main__':
                               'c',
                               'h', 'hex',
                               'a', 'asm', 'assembly',
-                              'p'],
+                              'p',
+                              'i', 'hexii'],
                    default = 'hex',
-                   help = 'Output format (default: hex), choose from {r}aw, {s}tring, {c}-style array, {h}ex string, {a}ssembly code, {p}reprocssed code',
+                   help = 'Output format (default: hex), choose from {r}aw, {s}tring, {c}-style array, {h}ex string, hex{i}i, {a}ssembly code, {p}reprocssed code',
                    )
     p.add_argument('--trap-before',
                    action = 'store_true',
@@ -227,5 +228,7 @@ if __name__ == '__main__':
         code = _carray(code)
     elif args.format in ['h', 'hex']:
         code = _hex(code)
+    elif args.format in ['i', 'hexii']:
+        code = pwn.hexii(code) + '\n'
 
     sys.stdout.write(code)
