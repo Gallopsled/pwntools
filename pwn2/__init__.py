@@ -99,6 +99,40 @@ del closure
 
 if not __libmode__:
     # ok, so we are not in lib-mode; add non-lib functionality
-    from nonlib import *
-    # promote all names in pwn.lib
+    from nonlib.toplevel import *
+    # make sure `toplevel' didn't overwrite any names (by re-overwriting them!)
     from lib import *
+
+    # look for special args in argv
+    def closure():
+        import sys
+        if not hasattr(sys, 'argv'):
+            return
+        import string, collections
+        global args
+        args = collections.defaultdict(str)
+        def isident (s):
+            first = string.uppercase + '_'
+            body = string.digits + first
+            if not s:
+                return False
+            if s[0] not in first:
+                return False
+            if not all(c in body for c in s[1:]):
+                return False
+            return True
+        for arg in sys.argv[:]:
+            if   arg == 'DEBUG':
+                sys.argv.remove(arg)
+                log.level = log.DEBUG
+            elif arg == 'NOINFO':
+                sys.argv.remove(arg)
+                log.level = log.ERROR
+            elif arg.find('=') > 0:
+                k, v = arg.split('=', 1)
+                if not isident(k):
+                    continue
+                sys.argv.remove(arg)
+                args[k] = v
+    closure()
+    del closure

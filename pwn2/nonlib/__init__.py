@@ -5,6 +5,3 @@ __pwn__.__libmode__ = False
 import term
 __pwn__.__hasterm__ = term.available
 import stdin
-
-# promote to top-level
-from toplevel import *

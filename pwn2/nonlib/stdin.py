@@ -20,6 +20,8 @@ if term.available:
     import atexit
     atexit.register(write_history)
 
+    # XXX: interface for auto-completion etc., plox
+
     def readline (size = None):
         from ..lib import text
         cursor = text.on_blue

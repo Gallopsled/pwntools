@@ -1,2 +1,0 @@
-TAB_WIDTH       =  2
-MAX_INDENTATION = 40
