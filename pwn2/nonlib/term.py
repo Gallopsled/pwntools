@@ -14,9 +14,10 @@ on_winch = []
 # if stdout and stderr are both TTY's then we assume it's the same one
 # if we're running in a REPL all our fancy input/output magic will probably
 # break something :'(
-import sys, pwn2
+import sys
+import pwn2 as __pwn__
 fd = None
-if not pwn2.hasrepl:
+if not __pwn__.__hasrepl__:
     for f in [sys.stderr, sys.stdout]:
         if f.isatty():
             fd = f

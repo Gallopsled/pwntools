@@ -14,9 +14,10 @@
 # '---------'---------'--------'--------'--------'----------'-------'------'
 #
 # fancy*:
-#   In this mode log functions return a handle if `handle = True' is given.
-#   This handle can be used to update the text at a later point.  The handle
-#   returned from `waitfor' can also be used to update the status text
+#   In this mode log functions at or below level INFO react to the same
+#   arguments as `term.output'.  In particular a handle is returned which can be
+#   used to update the text at a later point.  The handle returned from
+#   `waitfor' can also be used to update the status text.
 #
 # exc*:
 #   In this mode the `error' function will not generate any output, but rather
@@ -26,11 +27,12 @@
 
 __all__ = ['trace', 'debug', 'info', 'warning', 'failure', 'success',
            'indented', 'output', 'error', 'bug', 'die', 'waitfor', 'status',
-           'done_success', 'done_failure', 'inc_indent', 'dec_indent',
+           'done_success', 'done_failure', 'loglevel', 'DEBUG', 'INFO', 'ERROR',
+           'SILENT',
            ]
 
-import pwn2, text
-from config import MAX_INDENTATION, TAB_WIDTH
+import text, threading, sys
+import pwn2 as __pwn__
 
 # log-levels
 DEBUG  = 10  # trace, debug
@@ -39,110 +41,125 @@ INFO   = 20  # info, (warning,) failure, success, indented, output, waitfor,
 ERROR  = 30  # error, stub, bug, fatal, die
 SILENT = 100 # <nothing>
 
-indentation = 0
+# per-thread log-level
+levels = {}
+level = ERROR if __pwn__.__libmode__ else INFO
 
-def inc_indent (amount = TAB_WIDTH):
-    global indentation
-    indentation = min(MAX_INDENTATION, indentation + TAB_WIDTH)
+def set_level (level):
+    tid = threading.current_thread().ident
+    levels[tid] = level
 
-def dec_indent (amount = TAB_WIDTH):
-    global indentation
-    indentation = max(0, indentation - TAB_WIDTH)
+def get_level ():
+    tid = threading.current_thread().ident
+    return levels.get(tid, level)
 
-# XXX: not thread-safe!
-class indent:
-    def __init__ (self, offset):
-        self.offset = offset
-    def __enter__ (self):
-        global indentation
-        indentation += self.offset
-    def __exit__ (self, *args):
-        global indentation
-        indentation -= self.offset
+def has_level (level):
+    return get_level() <= level
 
 class loglevel:
     def __init__ (self, new_level):
         self.old_level = level
         self.new_level = new_level
     def __enter__ (self):
-        global level
-        level = self.new_level
+        set_level(self.new_level)
     def __exit__ (self, *args):
-        global level
-        level = self.old_level
+        set_level(self.old_level)
 
-if pwn2.hasterm:
+class DummyHandle:
+    def update (self, _s):
+        pass
+    def freeze (self):
+        pass
+    def delete (self):
+        pass
+dummy_handle = DummyHandle()
+
+if __pwn__.__hasterm__:
     from ..nonlib import term
-    def put (s, indent = None):
-        if indent is None:
-            indent = indentation
-        term.output(s, frozen = True, indent = indent)
+    OutputHandle = term.Handle
+    def put (s = '', frozen = True, float = False, priority = 10, indent = 0):
+        return term.output(str(s), frozen = frozen, float = float,
+                           priority = priority, indent = indent)
 
     def flush ():
         pass
+
 else:
-    import sys
-    def put (s, indent = None):
-        if indent is None:
-            indent = indentation
-        sys.stderr.write(' ' * indentation + s)
+    def put (s = '', frozen = None, float = None, priority = None, indent = 0):
+        sys.stderr.write(' ' * indent + s)
+        return dummy_handle
 
     def flush ():
         sys.stderr.flush()
 
 # these functions are the same in all modes
-def trace (s):
-    if level <= DEBUG:
-        put(s, 0)
-        flush()
+def trace (s = ''):
+    if has_level(INFO):
+        return put(s, frozen, float, priority, indent)
+    else:
+        return dummy_handle
 
-def anotate (a, s, l, indent = None):
-    if level <= l:
-        put('[%s] %s\n' % (a, s), indent)
+def anotate (a, s, l, frozen = True, float = False, priority = 10, indent = 0):
+    if has_level(l):
+        put('[%s] ' % a, frozen, float, priority, indent)
+        h = put(s, frozen, float, priority, indent + 4)
+        put('\n', frozen, float, priority)
+        return h
+    else:
+        return dummy_handle
 
-def debug (s):
-    anotate(text.bold_red('DEBUG'), s, DEBUG)
+def debug (s = '', frozen = True, float = False, priority = 10, indent = 0):
+    return anotate(text.bold_red('DEBUG'), s, DEBUG,
+                   frozen, float, priority, indent)
 
-def info (s):
-    anotate(text.bold_blue('*'), s, INFO)
+def info (s = '', frozen = True, float = False, priority = 10, indent = 0):
+    return anotate(text.bold_blue('*'), s, INFO,
+                   frozen, float, priority, indent)
 
-if pwn2.libmode:
+if __pwn__.__libmode__:
     import warnings
-    def warning (s):
+    def warning (s = '', frozen = True, float = False, priority = 10, indent = 0):
         warnings.warn(s, stacklevel = 2)
 else:
-    def warning (s):
-        if level <= INFO:
-            put('[!] %s\n' % s)
+    def warning (s = '', frozen = True, float = False, priority = 10, indent = 0):
+        return anotate(text.bold_yello('!'), s, INFO,
+                       frozen, float, priority, indent)
 
-def failure (s):
-    anotate(text.bold_red('-'), s, INFO)
+def failure (s = '', frozen = True, float = False, priority = 10, indent = 0):
+    return anotate(text.bold_red('-'), s, INFO,
+                   frozen, float, priority, indent)
 
-def success (s):
-    anotate(text.bold_green('+'), s, INFO)
+def success (s = '', frozen = True, float = False, priority = 10, indent = 0):
+    return anotate(text.bold_green('+'), s, INFO,
+                   frozen, float, priority, indent)
 
-def indented (s):
-    if level <= INFO:
-        put(' ' * 4 + '%s\n')
+def indented (s = '', frozen = True, float = False, priority = 10, indent = 0):
+    if has_level(INFO):
+        h = put(s, frozen, float, priority, indent + 4)
+        put('\n', frozen, float, priority)
+        return h
+    else:
+        return dummy_handle
 
-def output (s):
-    if level <= INFO:
-        put(s)
-        flush(s)
+def output (s = '', frozen = True, float = False, priority = 10, indent = 0):
+    if has_level(INFO):
+        return put(s, frozen, float, priority, indent)
+    else:
+        return dummy_handle
 
-if pwn2.libmode:
+if __pwn__.__libmode__:
     import exception
-    def error (s, exit_code = None):
+    def error (s = '', exit_code = None):
         if sys.exc_type not in [None, KeyboardInterrupt]:
             reason = sys.exc_info()
         else:
             reason = None
         raise exception.PwnlibException(s, reason, exit_code)
 else:
-    def error (s, exit_code = -1):
-        anotate(text.on_red('ERROR'), s, ERROR, 0)
-        if level <= INFO and sys.exc_type not in [None, KeyboardInterrupt]:
-            put('The exception was:\n', 0)
+    def error (s = '', exit_code = -1):
+        anotate(text.on_red('ERROR'), s, ERROR)
+        if has_level(INFO) and sys.exc_type not in [None, KeyboardInterrupt]:
+            put('The exception was:\n')
             import traceback
             traceback.print_exc()
         sys.exit(exit_code)
@@ -150,36 +167,34 @@ else:
 def die (s):
     error (s)
 
-def fatal (s, exit_code = -1):
-    anotate(text.on_red('FATAL'), s, ERROR, 0)
-    if level <= ERROR and sys.exc_type not in [None, KeyboardInterrupt]:
-        put('The exception was:\n', 0)
+def fatal (s = '', exit_code = -1):
+    anotate(text.on_red('FATAL'), s, ERROR)
+    if has_level(ERROR) and sys.exc_type not in [None, KeyboardInterrupt]:
+        put('The exception was:\n')
         import traceback
         traceback.print_exc()
     sys.exit(exit_code)
 
-def bug (s, exit_code = -1):
-    anotate(text.on_red('BUG (this should not happen)'), s, ERROR, 0)
-    if level <= ERROR and sys.exc_type not in [None, KeyboardInterrupt]:
-        put('The exception was:\n', 0)
+def bug (s = '', exit_code = -1):
+    anotate(text.on_red('BUG (this should not happen)'), s, ERROR)
+    if has_level(ERROR) and sys.exc_type not in [None, KeyboardInterrupt]:
+        put('The exception was:\n')
         import traceback
         traceback.print_exc()
     sys.exit(exit_code)
 
 def stub (s = '', exit_code = -1):
-    if level <= ERROR:
+    if has_level(ERROR):
         import traceback
         filename, lineno, fname, _line = \
             traceback.extract_stack(limit = 2)[0]
         put('Unimplemented function: %s in file "%s", line %d\n' %
-            (fname, filename, lineno), 0)
+            (fname, filename, lineno))
         if s:
-            put('%s\n' % s, 0)
+            put('%s\n' % s)
     sys.exit(exit_code)
 
-if pwn2.libmode or pwn2.hasrepl or not pwn2.hasterm:
-    level = ERROR if pwn2.libmode else INFO
-
+if __pwn__.__libmode__ or __pwn__.__hasrepl__ or not __pwn__.__hasterm__:
     class Handle:
         def __init__ (self, msg):
             info('%s...' % msg)
@@ -193,9 +208,7 @@ if pwn2.libmode or pwn2.hasrepl or not pwn2.hasterm:
             dec_indent()
             failure('%s: %s' % (self.msg, s))
 else:
-    # default level in nonlib-mode
-    level = INFO
-    import threading, time
+    import time
     from ..nonlib import term
 
     class Spinner(threading.Thread):
@@ -232,24 +245,25 @@ else:
 
     class Handle:
         def __init__ (self, msg):
+            self.hasmsg = msg <> ''
             put('[')
             self.spinner = Spinner(['/', '-', '\\', '|'])
-            put('] %s' % msg, 0)
+            put('] %s' % msg)
             self.stat = term.output()
-            put('\n', 0)
+            put('\n')
         def status (self, s):
-            if s:
+            if self.hasmsg and s:
                 s = ': ' + s
             self.stat.update(s)
         def success (self, s = 'Done'):
-            if s:
+            if self.hasmsg and s:
                 s = ': ' + s
             self.spinner.stop(text.bold_green('+'))
             self.stat.update(s)
             self.stat.freeze()
             dec_indent()
         def failure (self, s = 'FAILED!'):
-            if s:
+            if self.hasmsg and s:
                 s = ': ' + s
             self.spinner.stop(text.bold_red('-'))
             self.stat.update(s)

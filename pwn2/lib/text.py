@@ -1,7 +1,8 @@
-import types, sys, pwn2
+import types, sys
+import pwn2 as __pwn__
 
 # somewhat arbitrary to look at stderr, but that's what the log module uses
-if pwn2.hasterm or sys.stderr.isatty():
+if __pwn__.__hasterm__ or sys.stderr.isatty():
     class Module(types.ModuleType):
         def __init__ (self):
             import curses, os

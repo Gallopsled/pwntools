@@ -1,22 +1,22 @@
 # decide if we should behave like a lib (import pwn.lib / from pwn import lib)
 # or not (import pwn / from pwn import *)
-libmode = True
+__libmode__ = True
 
 # if we're running in a REPL we need to know that, because overwriting sys.stdin
 # will probably mess something up
-hasrepl = False
+__hasrepl__ = False
 
 # this will be set iff we're *not* in lib-mode *and* sys.stdout or sys.stderr is
-# a TTY
-hasterm = False
+# a TTY.  This variable can be set from `pwn.nonlib.term'.
+__hasterm__ = False
 def closure ():
-    global libmode, hasrepl
+    global __libmode__, __hasrepl__
     import sys
 
     mods = sys.modules.keys()
     for repl in ['IPython', 'bpython', 'dreampielib']:
         if repl in mods:
-            hasrepl = True
+            __hasrepl__ = True
 
     # raise exception to set sys.exc_info so we can unwind the call stack
     try:
@@ -37,7 +37,7 @@ def closure ():
 
         # if we're in the REPL we need to know that because it does not rely on
         # sys.stdin.readline for user input
-        hasrepl = filename == '<stdin>'
+        __hasrepl__ = filename == '<stdin>'
 
         # lets try to dissamble the code that imported us
         code = frame.f_code.co_code
@@ -65,7 +65,7 @@ def closure ():
                     else:
                         what = None
                     if mod == __name__:
-                        libmode = what == 'lib'
+                        __libmode__ = what == 'lib'
                         break
                 if op >= opcode.HAVE_ARGUMENT:
                     i += 2
@@ -89,7 +89,7 @@ def closure ():
                 mod = line[i + 1]
                 what = None
             if mod == __name__:
-                libmode = what == 'lib'
+                __libmode__ = what == 'lib'
         except:
             # my code parsing fu is not strong enough
             return
@@ -97,7 +97,7 @@ def closure ():
 closure()
 del closure
 
-if not libmode:
+if not __libmode__:
     # ok, so we are not in lib-mode; add non-lib functionality
     from nonlib import *
     # promote all names in pwn.lib

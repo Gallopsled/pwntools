@@ -2,6 +2,8 @@ import pwn2.nonlib.term
 from pwn2.nonlib.term import *
 import time, os, sys, threading
 
+from pwn2.lib.log import *
+
 try:
     # output(os.urandom(10))
     # print 'foo'
@@ -40,10 +42,11 @@ try:
     t.daemon = True
     t.start()
     i = 0
-    numlines = output()
+    # numlines = output()
+    numlines = info(frozen = False)
     while True:
         s = ''
-        numlines.update('You have written %d lines\n' % i)
+        numlines.update('You have written %d lines' % i)
         i += 1
         s = raw_input('> ')
         output('you wrote: ')
