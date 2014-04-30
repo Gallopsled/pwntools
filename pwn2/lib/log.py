@@ -202,10 +202,8 @@ if __pwn__.__libmode__ or __pwn__.__hasrepl__ or not __pwn__.__hasterm__:
         def status (self, _):
             pass
         def success (self, s = 'Done'):
-            dec_indent()
             success('%s: %s' % (self.msg, s))
         def failure (self, s = 'FAILED!'):
-            dec_indent()
             failure('%s: %s' % (self.msg, s))
 else:
     import time
@@ -261,19 +259,16 @@ else:
             self.spinner.stop(text.bold_green('+'))
             self.stat.update(s)
             self.stat.freeze()
-            dec_indent()
         def failure (self, s = 'FAILED!'):
             if self.hasmsg and s:
                 s = ': ' + s
             self.spinner.stop(text.bold_red('-'))
             self.stat.update(s)
             self.stat.freeze()
-            dec_indent()
 
 handle_stack = []
 def waitfor (msg, status = ''):
     h = Handle(msg)
-    inc_indent()
     if status:
         h.status(status)
     handle_stack.append(h)
