@@ -196,12 +196,12 @@ def stub (s = '', exit_code = -1):
 
 if __pwn__.__libmode__ or __pwn__.__hasrepl__ or not __pwn__.__hasterm__:
     class Handle:
-        def __init__ (self, msg):
+        def __init__ (self, msg, _spinner):
             info('%s...' % msg)
             self.msg = msg
         def status (self, _):
             pass
-        def success (self, s = 'Done'):
+        def success (self, s = 'OK'):
             success('%s: %s' % (self.msg, s))
         def failure (self, s = 'FAILED!'):
             failure('%s: %s' % (self.msg, s))
@@ -242,10 +242,13 @@ else:
                 self.handle.freeze()
 
     class Handle:
-        def __init__ (self, msg):
+        def __init__ (self, msg, spinner):
             self.hasmsg = msg <> ''
             put('[')
-            self.spinner = Spinner(['/', '-', '\\', '|'])
+            if spinner is None:
+                import random, spinners
+                spinner = random.choice(spinners.spinners)
+            self.spinner = Spinner(spinner)
             put('] %s' % msg)
             self.stat = term.output()
             put('\n')
@@ -253,7 +256,7 @@ else:
             if self.hasmsg and s:
                 s = ': ' + s
             self.stat.update(s)
-        def success (self, s = 'Done'):
+        def success (self, s = 'OK'):
             if self.hasmsg and s:
                 s = ': ' + s
             self.spinner.stop(text.bold_green('+'))
@@ -267,8 +270,8 @@ else:
             self.stat.freeze()
 
 handle_stack = []
-def waitfor (msg, status = ''):
-    h = Handle(msg)
+def waitfor (msg, status = '', spinner = None):
+    h = Handle(msg, spinner)
     if status:
         h.status(status)
     handle_stack.append(h)
