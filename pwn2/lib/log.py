@@ -43,7 +43,7 @@ SILENT = 100 # <nothing>
 
 # per-thread log-level
 levels = {}
-level = ERROR if __pwn__.__libmode__ else INFO
+default_level = ERROR if __pwn__.__libmode__ else INFO
 
 def set_level (level):
     tid = threading.current_thread().ident
@@ -51,14 +51,14 @@ def set_level (level):
 
 def get_level ():
     tid = threading.current_thread().ident
-    return levels.get(tid, level)
+    return levels.get(tid, default_level)
 
 def has_level (level):
     return get_level() <= level
 
 class loglevel:
     def __init__ (self, new_level):
-        self.old_level = level
+        self.old_level = get_level()
         self.new_level = new_level
     def __enter__ (self):
         set_level(self.new_level)
