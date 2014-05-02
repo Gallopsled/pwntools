@@ -14,7 +14,12 @@ class Module(types.ModuleType):
         return self.__all__
 
     def __getattr__ (self, mod):
-        return __import__('pwn2.lib.%s' % mod)
+        import sys
+        modstr = 'pwn2.lib.%s' % mod
+        __import__(modstr)
+        modobj = sys.modules[modstr]
+        setattr(self, mod, modobj)
+        return modobj
 
 if __name__ <> '__main__':
     sys.modules[__name__] = Module()
