@@ -85,8 +85,20 @@ if __pwn__.__hasterm__:
         pass
 
 else:
+    last_was_nl = True
     def put (s = '', frozen = None, float = None, priority = None, indent = 0):
-        sys.stderr.write(' ' * indent + s)
+        global last_was_nl
+        s = str(s)
+        if not s:
+            return dummy_handle
+        if last_was_nl:
+            sys.stderr.write(' ' * indent)
+            last_was_nl = False
+        if s[-1] == '\n':
+            last_was_nl = True
+        if indent:
+            s = s[:-1].replace('\n', '\n' + ' ' * indent) + s[-1]
+        sys.stderr.write(s)
         return dummy_handle
 
     def flush ():
