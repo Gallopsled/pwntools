@@ -16,6 +16,7 @@ if term.available:
     handle = None
     search_idx = None
     search_results = []
+    startup_hook = None
 
     def clear ():
         global buffer_left, buffer_right, history_idx, search_idx
@@ -260,6 +261,8 @@ if term.available:
         eof = False
         handle = term.output()
         clear()
+        if startup_hook:
+            startup_hook()
         try:
             while True:
                 try:
