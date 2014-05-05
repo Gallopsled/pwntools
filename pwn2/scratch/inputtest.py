@@ -23,5 +23,21 @@
 
 import pwn2
 
+def foo (_):
+    print 'foooooo'
+
+def bar ():
+    print
+
+def baz (_):
+    import sys
+    sys.exit()
+
+pwn2.nonlib.readline.startup_hook = bar
+pwn2.nonlib.readline.keymap.register({
+    'C-x C-a': foo,
+    'C-x C-s': baz,
+    })
+
 while True:
     print raw_input('> ')
