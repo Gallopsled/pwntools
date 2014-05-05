@@ -1,6 +1,6 @@
 __all__ = ['log']
 
-import types, sys
+import types, sys, exception
 
 # lazy module loader
 class Module(types.ModuleType):
@@ -9,9 +9,10 @@ class Module(types.ModuleType):
         self.__name__ = __name__
         self.__path__ = __path__
         self.__all__ = __all__
+        self.PwnlibException = exception.PwnlibException
 
     def __dir__ (self):
-        return self.__all__
+        return self.__all__ + ['PwnlibException']
 
     def __getattr__ (self, mod):
         import sys

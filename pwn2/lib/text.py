@@ -5,13 +5,11 @@ import pwn2 as __pwn__
 if __pwn__.__hasterm__ or sys.stderr.isatty():
     class Module(types.ModuleType):
         def __init__ (self):
-            import curses, os
+            import os, termcap
             self.__file__ = __file__
             self.__name__ = __name__
-            self._capcache = {}
-            self._curses = curses
-            curses.setupterm()
-            self.num_colors = self._cap('colors')
+            self._tc = termcap
+            self.num_colors = self._tc.get('colors')
             self.has_bright = self.num_colors >= 16
             self.has_gray = self.has_bright
             self._colors = {
@@ -26,26 +24,18 @@ if __pwn__.__hasterm__ or sys.stderr.isatty():
                 }
             self._reset = '\x1b[m'
             self._attributes = {}
-            for d in ['italic', 'bold', 'underline']:
-                s = self._cap(d)
-                if s:
-                    self._attributes[d] = s
-
-        def _cap (self, c):
-            s = self._capcache.get(c)
-            if s:
-                return s
-            s = self._curses.tigetstr(c) or ''
-            self._capcache[c] = s
-            return s
+            for x, y in [('italic'   , 'sitm'),
+                         ('bold'     , 'bold'),
+                         ('underline', 'smul'),
+                         ('reverse'  , 'rev')]:
+                s = self._tc.get(y)
+                self._attributes[x] = s
 
         def _fg_color (self, c):
-            return self._curses.tparm(self._cap('setaf') or self._cap('setf'),
-                                      c)
+            return self._tc.get('setaf', c) or self._tc.get('setf', c)
 
         def _bg_color (self, c):
-            return self._curses.tparm(self._cap('setab') or self._cap('setb'),
-                                      c)
+            return self._tc.get('setab', c) or self._tc.get('setb', c)
 
         def _decorator (self, name, init):
             def f (s):
@@ -56,7 +46,7 @@ if __pwn__.__hasterm__ or sys.stderr.isatty():
         def __getattr__ (self, desc):
             ds = desc.replace('gray', 'bright_black').split('_')
             init = ''
-            while True:
+            while ds:
                 d = ds[0]
                 try:
                     init += self._attributes[d]
@@ -71,7 +61,6 @@ if __pwn__.__hasterm__ or sys.stderr.isatty():
                     if self.has_bright:
                         bright = 8
                 return self._colors[c] + bright
-
             if ds:
                 if ds[0] == 'on':
                     ds.pop(0)

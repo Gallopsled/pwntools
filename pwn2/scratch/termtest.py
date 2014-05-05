@@ -31,9 +31,9 @@ try:
 
     # print 'fooxxx\x1b[2Dbar', 'baz'
 
-    from pwn2.nonlib.stdin import readline
+    from pwn2.nonlib.readline import readline
 
-    clock = output(float = True)
+    clock = output(float = True, frozen = False)
     def loop():
         while True:
             clock.update('\n' + time.asctime(time.localtime()) + '\n')

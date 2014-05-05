@@ -32,6 +32,7 @@ if fd:
     available = True
     import atexit, struct, fcntl, re, signal, threading
     from termios import *
+    from ..lib import termcap
     settings = None
 
     def update_position ():
@@ -152,22 +153,10 @@ if fd:
     def flush ():
         fd.flush()
 
-    # terminal capabilities
-    import curses
-    curses.setupterm()
-    capcache = {}
-    def cap (c):
-        s = capcache.get(c)
-        if s:
-            return s
-        s = curses.tigetstr(c) or ''
-        capcache[c] = s
-        return s
-
     def do (c, *args):
-        c = cap(c)
-        if c:
-            put(curses.tparm(c, *args))
+        s = termcap.get(c, *args)
+        if s:
+            put(s)
 
     def goto ((r, c)):
         do('cup', r - scroll + height - 1, c)

@@ -1,13 +1,11 @@
-import select, sys, string, os, errno
+__all__ = ['getch', 'getraw', 'get', 'unget']
+
+import select, sys, string, os, errno, termcap
 from keyconsts import *
 
 _fd = sys.stdin.fileno()
 
-def _debug (s):
-    if DEBUG:
-        sys.stderr.write(s + '\n')
-
-def _getch (timeout = 0):
+def getch (timeout = 0):
     while True:
         try:
             rfds, _wfds, _xfds = select.select([_fd], [], [], timeout)
@@ -24,12 +22,12 @@ def _getch (timeout = 0):
 def getraw (timeout = None):
     '''Get list of raw key codes corresponding to zero or more key presses'''
     cs = []
-    c = _getch(timeout)
+    c = getch(timeout)
     while c <> None: # timeout
         cs.append(c)
         if c == None: # EOF
             break
-        c = _getch()
+        c = getch()
     return cs
 
 class Key:
@@ -105,20 +103,9 @@ def _name_to_key (fname):
         return None
     return k
 
-import curses
-curses.setupterm()
-capcache = {}
-def cap (c):
-    s = capcache.get(c)
-    if s:
-        return s
-    s = curses.tigetstr(c) or ''
-    capcache[c] = s
-    return s
-
 _ti_table = []
 for fname, name in zip(STRFNAMES, STRNAMES):
-    seq = cap(name)
+    seq = termcap.get(name)
     if not seq:
         continue
     k = _name_to_key(fname)

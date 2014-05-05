@@ -23,4 +23,5 @@
 
 import pwn2
 
-print raw_input()
+while True:
+    print raw_input('> ')
