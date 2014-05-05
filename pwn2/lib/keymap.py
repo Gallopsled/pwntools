@@ -124,7 +124,7 @@ class Keymap:
                 return
             t = self._top
             for m in ms[:-1]:
-                if m not in t:
+                if m not in t or not isinstance(t[m], dict):
                     t[m] = {}
                 t = t[m]
             m = ms[-1]
