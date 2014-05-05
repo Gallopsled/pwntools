@@ -17,13 +17,12 @@ if term.available:
     search_idx = None
     search_results = []
 
-    def clear (do_redisplay = True):
+    def clear ():
         global buffer_left, buffer_right, history_idx, search_idx
         buffer_left, buffer_right = [], []
         history_idx = None
         search_idx = None
-        if do_redisplay:
-            redisplay()
+        redisplay()
 
     def redisplay ():
         if handle:
@@ -39,7 +38,7 @@ if term.available:
                     idx, i, j = search_results[search_idx]
                     buf = history[idx]
                     a, b, c = buf[:i], buf[i:j], buf[j:]
-                    s = ''.join(a) + text.bold(''.join(b)) + ''.join(c)
+                    s = ''.join(a) + text.bold_green(''.join(b)) + ''.join(c)
                 else:
                     s = text.white_on_red(''.join(buffer_left))
                 handle.update('(search) ' + s)
@@ -60,7 +59,8 @@ if term.available:
     def cancel_search (*_):
         global search_idx
         if search_idx is not None:
-            clear()
+            search_idx = None
+            redisplay()
 
     def commit_search ():
         global search_idx
@@ -90,9 +90,10 @@ if term.available:
                     break
 
     def search_history (*_):
-        global search_idx
+        global buffer_left, buffer_right, history_idx, search_idx
         if search_idx is None:
-            clear(False)
+            buffer_left, buffer_right = buffer_left + buffer_right, []
+            history_idx = None
             search_idx = 0
             update_search_results()
         else:
