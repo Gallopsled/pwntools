@@ -34,7 +34,7 @@ if readline.available:
             i += 1
             return left[i:]
 
-        def _update_result (self, w):
+        def _update (self, w):
             if w == self._cur_word:
                 return
             self._cur_word = w
@@ -42,18 +42,16 @@ if readline.available:
 
         def complete (self, buffer_left, buffer_right):
             w = self._get_word(buffer_left)
-            self._update_result(w)
+            self._update(w)
             if len(self._completions) == 1:
                 c = self._completions[0]
                 if len(c) > len(w):
                     return (buffer_left + self._completions[0][len(w):],
                             buffer_right)
-                else:
-                    return (buffer_left, buffer_right)
 
         def suggest (self, buffer_left, _buffer_right):
             w = self._get_word(buffer_left)
-            self._update_result(w)
+            self._update(w)
             return self._completions
 
         def complete_word (self, word):
@@ -82,3 +80,51 @@ if readline.available:
                 return [lpf]
             else:
                 return cs
+
+    import os
+    class PathCompleter(Completer):
+        def __init__ (self, mask = '*', only_dirs = False):
+            self.mask = mask
+            self.only_dirs = only_dirs
+            self._cur_prefix = None
+
+        def _update (self, prefix):
+            if prefix == self._cur_prefix:
+                return
+            self._completions = []
+            if os.path.isabs(prefix):
+                path = prefix
+            else:
+                path = os.path.join('.', prefix)
+            if os.path.isdir(path) and prefix and prefix[-1] <> '/':
+                self._completions = [prefix]
+                return
+            dirname = os.path.dirname(path)
+            basename = os.path.basename(path)
+            if os.path.isdir(dirname):
+                try:
+                    names = os.listdir(dirname)
+                except:
+                    return
+                names = [n for n in names if n.startswith(basename)]
+                dirname = os.path.dirname(prefix)
+                self._completions = [os.path.join(dirname, n) for n in names]
+
+        def complete (self, buffer_left, buffer_right):
+            self._update(buffer_left)
+            if len(self._completions) == 1:
+                c = self._completions[0]
+                if os.path.isdir(c):
+                    c += '/'
+                return (c, buffer_right)
+
+        def suggest (self, buffer_left, buffer_right):
+            self._update(buffer_left)
+            out = []
+            for c in self._completions:
+                b = os.path.basename(c)
+                if os.path.isdir(c):
+                    out.append(b + '/')
+                else:
+                    out.append(b)
+            return out

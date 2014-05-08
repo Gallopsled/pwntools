@@ -20,6 +20,9 @@ if term.available:
     startup_hook = None
     shutdown_hook = None
 
+    delims = ' /;:.\\'
+
+    show_completion = True
     complete_hook = None
     suggest_hook = None
     show_suggestions_hook = None
@@ -35,8 +38,8 @@ if term.available:
             suggest_hook = completer.suggest
 
     def show_suggestions_default_hook (prompt_handle, suggestions):
-        s = ''
         if suggestions:
+            s = ''
             l = max(map(len, suggestions))
             columns = term.width // (l + 1)
             column_width = term.width // columns
@@ -46,7 +49,9 @@ if term.available:
                     l = j + k
                     if l < len(suggestions):
                         s += fmt % suggestions[l]
-        s += '\n'
+                s += '\n'
+        else:
+            s = '\n'
         if prompt_handle.is_floating:
             term.output(s, frozen = True)
         else:
@@ -77,10 +82,19 @@ if term.available:
     def redisplay ():
         if buffer_handle:
             if search_idx is None:
+                s = None
                 if buffer_right:
                     s = buffer_left + cursor(buffer_right[0]) + buffer_right[1:]
-                else:
-                    s = buffer_left + cursor(' ')
+                elif show_completion and complete_hook:
+                    ret = complete_hook(buffer_left, buffer_right)
+                    if ret:
+                        c = ret[0][len(buffer_left):]
+                        if c:
+                            s = buffer_left + \
+                              text.underline(cursor(c[0])) + \
+                              text.underline(c[1:])
+
+                s = s or buffer_left + cursor(' ')
                 buffer_handle.update(s)
             else:
                 if search_results <> []:
@@ -248,7 +262,7 @@ if term.available:
         flag = False
         while buffer_left:
             c = buffer_left[-1]
-            if c[0] == ' ':
+            if c[0] in delims:
                 if flag:
                     break
             else:
@@ -262,7 +276,7 @@ if term.available:
         flag = False
         while buffer_left:
             c = buffer_left[-1]
-            if c[0] == ' ':
+            if c[0] in delims:
                 if flag:
                     break
             else:
@@ -277,7 +291,7 @@ if term.available:
         flag = False
         while buffer_right:
             c = buffer_right[0]
-            if c[0] == ' ':
+            if c[0] in delims:
                 if flag:
                     break
             else:

@@ -1,11 +1,13 @@
 import pwn2
 
-c = pwn2.nonlib.completer.LongestPrefixCompleter([
+c1 = pwn2.nonlib.completer.LongestPrefixCompleter([
     'foobar',
     'foobaz',
     'fooquux',
     ])
 
-with c:
+c2 = pwn2.nonlib.completer.PathCompleter()
+
+with c2:
     s = pwn2.nonlib.readline.readline(prompt = '> ')
     print 'You wrote', s
