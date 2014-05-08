@@ -9,7 +9,7 @@ if term.available:
     from ..lib import text, key
     cursor = text.reverse
 
-    buffer_left, buffer_right = [], []
+    buffer_left, buffer_right = u'', u''
     saved_buffer = None
     history = []
     history_idx = None
@@ -69,7 +69,7 @@ if term.available:
 
     def clear ():
         global buffer_left, buffer_right, history_idx, search_idx
-        buffer_left, buffer_right = [], []
+        buffer_left, buffer_right = u'', u''
         history_idx = None
         search_idx = None
         redisplay()
@@ -78,19 +78,18 @@ if term.available:
         if buffer_handle:
             if search_idx is None:
                 if buffer_right:
-                    s = ''.join(buffer_left) + cursor(buffer_right[0]) + \
-                        ''.join(buffer_right[1:])
+                    s = buffer_left + cursor(buffer_right[0]) + buffer_right[1:]
                 else:
-                    s = ''.join(buffer_left) + cursor(' ')
+                    s = buffer_left + cursor(' ')
                 buffer_handle.update(s)
             else:
                 if search_results <> []:
                     idx, i, j = search_results[search_idx]
                     buf = history[idx]
                     a, b, c = buf[:i], buf[i:j], buf[j:]
-                    s = ''.join(a) + text.bold_green(''.join(b)) + ''.join(c)
+                    s = a + text.bold_green(b) + c
                 else:
-                    s = text.white_on_red(''.join(buffer_left))
+                    s = text.white_on_red(buffer_left)
                 buffer_handle.update('(search) ' + s)
 
     def self_insert (trace):
@@ -98,12 +97,13 @@ if term.available:
             return
         k = trace[0]
         if k.type == key.TYPE_UNICODE and k.mods == key.MOD_NONE:
+            # print type(k.code), `k.code`
             insert_char(k.code)
 
     def set_buffer (left, right):
         global buffer_left, buffer_right
-        buffer_left = left
-        buffer_right = right
+        buffer_left = unicode(left)
+        buffer_right = unicode(right)
         redisplay()
 
     def cancel_search (*_):
@@ -129,7 +129,7 @@ if term.available:
             hidx = None
         search_results = []
         search_idx = 0
-        if buffer_left == []:
+        if not buffer_left:
             return
         for idx, h in enumerate(history):
             for i in range(0, len(h) - len(buffer_left) + 1):
@@ -142,7 +142,7 @@ if term.available:
     def search_history (*_):
         global buffer_left, buffer_right, history_idx, search_idx
         if search_idx is None:
-            buffer_left, buffer_right = buffer_left + buffer_right, []
+            buffer_left, buffer_right = buffer_left + buffer_right, u''
             history_idx = None
             search_idx = 0
             update_search_results()
@@ -176,23 +176,27 @@ if term.available:
             set_buffer(history[history_idx][::], [])
 
     def backward_char (*_):
+        global buffer_left, buffer_right
         commit_search()
         if buffer_left:
-            buffer_right.insert(0, buffer_left.pop())
+            buffer_right = buffer_left[-1] + buffer_right
+            buffer_left = buffer_left[:-1]
         redisplay()
 
     def forward_char (*_):
+        global buffer_left, buffer_right
         commit_search()
         if buffer_right:
-            buffer_left.append(buffer_right.pop(0))
+            buffer_left += buffer_right[0]
+            buffer_right = buffer_right[1:]
         redisplay()
 
     def insert_char (c):
-        global history_idx, saved_buffer
+        global history_idx, saved_buffer, buffer_left
         if history_idx is not None:
             history_idx = None
             saved_buffer = None
-        buffer_left.append(c)
+        buffer_left += c
         update_search_results()
         redisplay()
 
@@ -213,7 +217,7 @@ if term.available:
             raise KeyboardInterrupt
 
     def control_d (*_):
-        if buffer_left or buffer_left:
+        if buffer_left or buffer_right:
             return
         global eof
         eof = True
@@ -232,12 +236,14 @@ if term.available:
             redisplay()
 
     def delete_char_backward (*_):
+        global buffer_left
         if buffer_left:
-            buffer_left.pop()
+            buffer_left = buffer_left[:-1]
             update_search_results()
             redisplay()
 
     def kill_word_backward (*_):
+        global buffer_left
         commit_search()
         flag = False
         while buffer_left:
@@ -247,10 +253,11 @@ if term.available:
                     break
             else:
                 flag = True
-            buffer_left.pop()
+            buffer_left = buffer_left[:-1]
         redisplay()
 
     def backward_word (*_):
+        global buffer_left, buffer_right
         commit_search()
         flag = False
         while buffer_left:
@@ -260,10 +267,12 @@ if term.available:
                     break
             else:
                 flag = True
-            buffer_right.insert(0, buffer_left.pop())
+            buffer_right = buffer_left[-1] + buffer_right
+            buffer_left = buffer_left[:-1]
         redisplay()
 
     def forward_word (*_):
+        global buffer_left, buffer_right
         commit_search()
         flag = False
         while buffer_right:
@@ -273,16 +282,17 @@ if term.available:
                     break
             else:
                 flag = True
-            buffer_left.append(buffer_right.pop(0))
+            buffer_left += buffer_right[0]
+            buffer_right = buffer_right[1:]
         redisplay()
 
     def go_beginning (*_):
         commit_search()
-        set_buffer([], buffer_left + buffer_right)
+        set_buffer(u'', buffer_left + buffer_right)
 
     def go_end (*_):
         commit_search()
-        set_buffer(buffer_left + buffer_right, [])
+        set_buffer(buffer_left + buffer_right, u'')
 
     keymap = Keymap({
         '<nomatch>'   : self_insert,
@@ -332,11 +342,11 @@ if term.available:
                         buffer = buffer_left + buffer_right
                         if buffer:
                             history.insert(0, buffer)
-                        return ''.join(buffer) + '\n'
+                        return buffer + '\n'
                 except KeyboardInterrupt:
                     control_c()
         finally:
-            line = ''.join(buffer_left + buffer_right) + '\n'
+            line = buffer_left + buffer_right + '\n'
             buffer_handle.update(line)
             buffer_handle.freeze()
             buffer_handle = None

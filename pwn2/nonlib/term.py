@@ -233,6 +233,8 @@ if fd:
             return offset + n
 
     def parse (s):
+        if isinstance(s, unicode):
+            s = s.encode('utf8')
         out = []
         buf = map(ord, s)
         i = 0

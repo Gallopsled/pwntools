@@ -28,8 +28,7 @@ if readline.available:
         def _get_word (self, left):
             i = len(left) - 1
             while i >= 0:
-                # XXX: fix when we port to unicode
-                if left[i][0] in self.delims:
+                if left[i] in self.delims:
                     break
                 i -= 1
             i += 1
@@ -39,7 +38,7 @@ if readline.available:
             if w == self._cur_word:
                 return
             self._cur_word = w
-            self._completions = self.complete_word(''.join(w)) # XXX: unicode!
+            self._completions = self.complete_word(w)
 
         def complete (self, buffer_left, buffer_right):
             w = self._get_word(buffer_left)
@@ -47,7 +46,7 @@ if readline.available:
             if len(self._completions) == 1:
                 c = self._completions[0]
                 if len(c) > len(w):
-                    return (buffer_left + list(self._completions[0][len(w):]),
+                    return (buffer_left + self._completions[0][len(w):],
                             buffer_right)
                 else:
                     return (buffer_left, buffer_right)

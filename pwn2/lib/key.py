@@ -185,7 +185,7 @@ def _csi_ss3 (cmd, args):
     return k
 
 def _csi_u (cmd, args):
-    k = Key(TYPE_UNICODE, args[0])
+    k = Key(TYPE_UNICODE, unichr(args[0]))
     if len(args) > 1 and args[1]:
         k.mods |= args[1] - 1
     return k
@@ -259,7 +259,7 @@ def _peekkey_csi (offset):
     ret = _parse_csi(offset)
     if not ret:
         _cbuf = _cbuf[offset:]
-        return Key(TYPE_UNICODE, '[', MOD_ALT)
+        return Key(TYPE_UNICODE, u'[', MOD_ALT)
     cmd, args, numb = ret
     # print cmd, args, '\r'
     _cbuf = _cbuf[numb:]
@@ -279,7 +279,7 @@ def _peekkey_csi (offset):
 def _peekkey_ss3 (offset):
     global _cbuf
     if len(_cbuf) <= offset:
-        return Key(TYPE_UNICODE, 'O', MOD_ALT)
+        return Key(TYPE_UNICODE, u'O', MOD_ALT)
     cmd = _cbuf[offset]
     if cmd < 0x40 or cmd >= 0x80:
         return
@@ -339,19 +339,19 @@ def _peek_simple ():
             else:
                 k = Key(TYPE_UNICODE)
                 if   c0 == 0:
-                    k.code = ' '
+                    k.code = u' '
                 elif chr(c0 + 0x40) in string.uppercase:
-                    k.code = chr(c0 + 0x60)
+                    k.code = unichr(c0 + 0x60)
                 else:
-                    k.code = chr(c0 + 0x40)
+                    k.code = unichr(c0 + 0x40)
                 k.mods |= MOD_CTRL
         elif c0 == 0x7f:
             # print 'del\r'
             k = Key(TYPE_KEYSYM, KEY_DEL)
         elif c0 >= 0x20 and c0 < 0x80:
-            k = Key(TYPE_UNICODE, chr(c0))
+            k = Key(TYPE_UNICODE, unichr(c0))
         else:
-            k = Key(TYPE_UNICODE, chr(c0 - 0x40), MOD_CTRL | MOD_ALT)
+            k = Key(TYPE_UNICODE, unichr(c0 - 0x40), MOD_CTRL | MOD_ALT)
     else: # utf8
         n = 0
         if   c0 & 0b11100000 == 0b11000000:
@@ -366,7 +366,7 @@ def _peek_simple ():
             n = 6
         if n:
             c = [c0] + _cbuf[:n - 1]
-            k = Key(TYPE_UNICODE, ''.join(chr(b) for b in c))
+            k = Key(TYPE_UNICODE, ''.join(chr(b) for b in c).decode('utf8'))
             _cbuf = _cbuf[n - 1:]
         else:
             k = Key(TYPE_UNKNOWN, _cbuf)
