@@ -1,4 +1,4 @@
-import types, sys, term
+import term
 
 available = False
 
@@ -13,10 +13,59 @@ if term.available:
     saved_buffer = None
     history = []
     history_idx = None
-    handle = None
+    prompt_handle = None
+    buffer_handle = None
     search_idx = None
     search_results = []
     startup_hook = None
+    shutdown_hook = None
+
+    complete_hook = None
+    suggest_hook = None
+    show_suggestions_hook = None
+    suggestions = []
+
+    def set_completer (completer):
+        global complete_hook, suggest_hook
+        if completer is None:
+            complete_hook = None
+            suggest_hook = None
+        else:
+            complete_hook = completer.complete
+            suggest_hook = completer.suggest
+
+    def show_suggestions_default_hook (prompt_handle, suggestions):
+        s = ''
+        if suggestions:
+            l = max(map(len, suggestions))
+            columns = term.width // (l + 1)
+            column_width = term.width // columns
+            fmt = '%%-%ds' % column_width
+            for j in range(0, len(suggestions), columns):
+                for k in range(columns):
+                    l = j + k
+                    if l < len(suggestions):
+                        s += fmt % suggestions[l]
+        s += '\n'
+        if prompt_handle.is_floating:
+            term.output(s, frozen = True)
+        else:
+            term.output(s, frozen = True, before = prompt_handle)
+    show_suggestions_hook = show_suggestions_default_hook
+
+    def show_suggestions (*_):
+        h = prompt_handle or buffer_handle
+        if h and suggest_hook:
+            ret = suggest_hook(buffer_left, buffer_right)
+            if ret:
+                cb = show_suggestions_hook or show_suggestions_default_hook
+                cb(h, ret)
+
+    def auto_complete (*_):
+        if complete_hook:
+            ret = complete_hook(buffer_left, buffer_right)
+            if ret:
+                set_buffer(*ret)
 
     def clear ():
         global buffer_left, buffer_right, history_idx, search_idx
@@ -26,14 +75,14 @@ if term.available:
         redisplay()
 
     def redisplay ():
-        if handle:
+        if buffer_handle:
             if search_idx is None:
                 if buffer_right:
                     s = ''.join(buffer_left) + cursor(buffer_right[0]) + \
                         ''.join(buffer_right[1:])
                 else:
                     s = ''.join(buffer_left) + cursor(' ')
-                handle.update(s)
+                buffer_handle.update(s)
             else:
                 if search_results <> []:
                     idx, i, j = search_results[search_idx]
@@ -42,7 +91,7 @@ if term.available:
                     s = ''.join(a) + text.bold_green(''.join(b)) + ''.join(c)
                 else:
                     s = text.white_on_red(''.join(buffer_left))
-                handle.update('(search) ' + s)
+                buffer_handle.update('(search) ' + s)
 
     def self_insert (trace):
         if len(trace) <> 1:
@@ -236,7 +285,7 @@ if term.available:
         set_buffer(buffer_left + buffer_right, [])
 
     keymap = Keymap({
-        'nomatch'     : self_insert,
+        '<nomatch>'   : self_insert,
         '<up>'        : history_prev,
         '<down>'      : history_next,
         '<left>'      : backward_char,
@@ -246,20 +295,30 @@ if term.available:
         '<enter>'     : submit,
         'C-<left>'    : backward_word,
         'C-<right>'   : forward_word,
+        'M-<left>'    : backward_word,
+        'M-<right>'   : forward_word,
         'C-c'         : control_c,
         'C-d'         : control_d,
         'C-k'         : kill_to_end,
         'C-w'         : kill_word_backward,
+        '<backspace>' : kill_word_backward,
+        'M-<del>'     : kill_word_backward,
         'C-r'         : search_history,
         '<escape>'    : cancel_search,
         'C-a'         : go_beginning,
         'C-e'         : go_end,
+        '<tab>'       : auto_complete,
+        '<tab> <tab>' : show_suggestions,
         })
 
-    def readline (size = None):
-        global handle, eof
+    def readline (size = None, prompt = ''):
+        global buffer_handle, prompt_handle, eof
         eof = False
-        handle = term.output()
+        if prompt:
+            prompt_handle = term.output(prompt)
+        else:
+            prompt_handle = None
+        buffer_handle = term.output()
         clear()
         if startup_hook:
             startup_hook()
@@ -278,9 +337,11 @@ if term.available:
                     control_c()
         finally:
             line = ''.join(buffer_left + buffer_right) + '\n'
-            handle.update(line)
-            handle.freeze()
-            handle = None
+            buffer_handle.update(line)
+            buffer_handle.freeze()
+            buffer_handle = None
+            if shutdown_hook:
+                shutdown_hook()
 
     class Wrapper:
         def __init__ (self, fd):

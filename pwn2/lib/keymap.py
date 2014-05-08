@@ -1,4 +1,4 @@
-__all__ = ['Keymap', 'KEYMAP_AGAIN', 'KEYMAP_MATCH', 'KEYMAP_NOMATCH']
+__all__ = ['Keymap']
 
 import key, types, struct
 
@@ -37,16 +37,22 @@ class Matcher:
         self._hash = h | (m << 6) | (t << 7)
 
     def __call__ (self, k):
-        return all([k.type == self._type,
-                    k.code == self._code,
-                    k.mods == self._mods,
-                    ])
+        if isinstance(k, key.Key):
+            return all([k.type == self._type,
+                        k.code == self._code,
+                        k.mods == self._mods,
+                        ])
 
     def __eq__ (self, other):
-        return all([other._type == self._type,
-                    other._code == self._code,
-                    other._mods == self._mods,
-                    ])
+        if   isinstance(other, Matcher):
+            return all([other._type == self._type,
+                        other._code == self._code,
+                        other._mods == self._mods,
+                        ])
+        elif isinstance(other, key.Key):
+            return self.__call__(other)
+        else:
+            return False
 
     def __hash__ (self):
         return self._hash
@@ -54,11 +60,12 @@ class Matcher:
     def __str__ (self):
         return self._desc
 
-KEYMAP_AGAIN, KEYMAP_MATCH, KEYMAP_NOMATCH = range(3)
-
 class Keymap:
-    def __init__ (self, bindings, on_nomatch = None):
+    def __init__ (self, bindings, on_match = None, on_nomatch = None,
+                  on_key = None):
+        self._on_match = on_match
         self._on_nomatch = on_nomatch
+        self._on_key = on_key
         self._top = {}
         self._cur = self._top
         self.trace = []
@@ -83,67 +90,79 @@ class Keymap:
 
     def send (self, k):
         self.trace.append(k)
-        # we're in a submap
-        if isinstance(self._cur, Keymap):
-            ret = self._cur.send(k)
-            if ret == KEYMAP_NOMATCH and self._on_nomatch:
-                self._on_nomatch(self.trace)
-            if ret <> KEYMAP_AGAIN:
-                self.reset()
-            return ret
-        # not in a submap
-        for m, t in self._cur.items():
+        if self._on_key:
+            self._on_key(self.trace)
+        match = False
+        for m, (t, cbs) in self._cur.items():
             if m(k):
-                if isinstance(t, tuple):
-                    v, = t
-                    if isinstance(v, types.FunctionType):
-                        v(self.trace)
-                    elif isinstance(v, Keymap):
-                        self._cur = v
-                        return KEYMAP_AGAIN
-                    self.reset()
-                    return KEYMAP_MATCH
-                else:
-                    self._cur = t
-                    return KEYMAP_AGAIN
-        if self._on_nomatch:
+                self._cur = t
+                if cbs:
+                    match = True
+                    if self._on_match:
+                        self._on_match(self.trace)
+                    for cb in cbs:
+                        cb(self.trace)
+        if not match and self._on_nomatch:
             self._on_nomatch(self.trace)
-        self.reset()
-        return KEYMAP_NOMATCH
+        tr = self.trace
+        if len(self._cur) == 0 or not match:
+            self.reset()
+        if len(tr) > 1 and not match:
+            self.send(k)
 
-    def register (self, desc, v = None):
+    def register (self, desc, cb = None):
         if isinstance(desc, dict):
-            if 'nomatch' in desc:
-                self.on_nomatch(desc['nomatch'])
-                del desc['nomatch']
             for k, v in desc.items():
                 self.register(k, v)
         else:
-            ms = map(Matcher, desc.split(' '))
-            if not ms:
-                return
-            t = self._top
-            for m in ms[:-1]:
-                if m not in t or not isinstance(t[m], dict):
-                    t[m] = {}
-                t = t[m]
-            m = ms[-1]
-            t[m] = (v, )
+            if   desc == '<match>':
+                self.on_match(cb)
+            elif desc == '<nomatch>':
+                self.on_nomatch(cb)
+            elif desc == '<any>':
+                self.on_key(cb)
+            else:
+                ms = map(Matcher, desc.split(' '))
+                if not ms:
+                    return
+                t = self._top
+                for m in ms:
+                    if m not in t:
+                        t[m] = ({}, [])
+                    t, cbs = t[m]
+                cbs.append(cb)
 
-    def unregister (self, desc):
+    def unregister (self, desc, cb = None):
         ms = map(Matcher, desc.split(' '))
         if not ms:
             return
         t = self._top
-        for m in ms[:-1]:
+        bt = []
+        cbs = None
+        for m in ms:
             if m not in t:
                 return
-            if len(t) == 1:
-                del t[m]
-                return
-        m = ms[-1]
-        if m in t:
+            bt.append((t, cbs))
+            t, cbs = t[m]
+        if cb and cb in cbs:
+            cbs.remove(cb)
+        else:
+            while True:
+                try:
+                    cbs.pop()
+                except IndexError:
+                    break
+        # delete empty branch by backtracking
+        while not t and not cbs:
+            m = ms.pop()
+            t, cbs = bt.pop()
             del t[m]
+
+    def on_match (self, cb):
+        self._on_match = cb
 
     def on_nomatch (self, cb):
         self._on_nomatch = cb
+
+    def on_key (self, cb):
+        self._on_key = cb

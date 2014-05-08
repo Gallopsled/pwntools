@@ -168,8 +168,9 @@ if fd:
         pass
 
     class Handle:
-        def __init__ (self, cell):
+        def __init__ (self, cell, is_floating):
             self.h = id(cell)
+            self.is_floating = is_floating
         def update (self, s):
             update(self.h, s)
         def freeze (self):
@@ -416,22 +417,33 @@ if fd:
 
     lock = threading.Lock()
     def output (s = '', float = False, priority = 10, frozen = False,
-                indent = 0):
+                indent = 0, before = None, after = None):
         with lock:
-            if float:
+            rel = before or after
+            if rel:
+                i, _ = find_cell(rel.h)
+                is_floating = rel.is_floating
+                if before:
+                    i -= 1
+            elif float and priority:
+                is_floating = True
                 float = priority
+                for i in reversed(range(len(cells))):
+                    if cells[i].float <= float:
+                        break
+            else:
+                is_floating = False
+                i = len(cells) - 1
+            # put('xx %d\n' % i)
             cell = Cell()
             cell.content = parse(s)
             cell.frozen = frozen
             cell.float = float
             cell.indent = indent
-            for i in reversed(range(len(cells))):
-                if cells[i].float <= float:
-                    break
             cell.start = cells[i].end
             i += 1
             cells.insert(i, cell)
-            h = Handle(cell)
+            h = Handle(cell, is_floating)
             if s == '':
                 cell.end = cell.start
                 return h
@@ -452,7 +464,7 @@ if fd:
     def discard_frozen ():
         # we assume that no cell will shrink very much and that noone has space
         # for more than MAX_TERM_HEIGHT lines in their terminal
-        while len(cells) > 1 and scroll - cells[0].start[0] > MAX_TERM_HEIGHT:
+        while len(cells) > 1 and scroll - cells[0].end[0] > MAX_TERM_HEIGHT:
             c = cells.pop(0)
             del c # trigger GC maybe, kthxbai
 

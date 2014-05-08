@@ -23,8 +23,12 @@
 
 import pwn2
 
+h = pwn2.nonlib.term.output('yolo\n')
+i = 0
 def foo (_):
-    print 'foooooo'
+    global i
+    i += 1
+    pwn2.nonlib.term.output('foooooo%d\n' % i, frozen = True, before = h)
 
 def bar ():
     print
