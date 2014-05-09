@@ -6,7 +6,7 @@ c1 = pwn2.nonlib.completer.LongestPrefixCompleter([
     'fooquux',
     ])
 
-c2 = pwn2.nonlib.completer.PathCompleter()
+c2 = pwn2.nonlib.completer.PathCompleter(mask = '*.py')
 
 with c2:
     s = pwn2.nonlib.readline.readline(prompt = '> ')

@@ -80,7 +80,12 @@ if readline.available:
     import os
     class PathCompleter(Completer):
         def __init__ (self, mask = '*', only_dirs = False):
-            self.mask = mask
+            if mask <> '*':
+                import re
+                mask = mask.replace('.', '\\.').replace('*', '.*')
+                self.mask = re.compile('^' + mask + '$')
+            else:
+                self.mask = None
             self.only_dirs = only_dirs
             self._cur_prefix = None
 
@@ -104,7 +109,14 @@ if readline.available:
                     return
                 names = [n for n in names if n.startswith(basename)]
                 dirname = os.path.dirname(prefix)
-                self._completions = [os.path.join(dirname, n) for n in names]
+                cs = [os.path.join(dirname, n) for n in names]
+                if self.only_dirs:
+                    cs = [c for c in cs if os.path.isdir(c)]
+                if self.mask:
+                    cs = [c for c in cs if \
+                          self.mask.match(os.path.basename(c)) or \
+                          os.path.isdir(c)]
+                self._completions = cs
 
         def complete (self, buffer_left, buffer_right):
             self._update(buffer_left)
