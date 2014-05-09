@@ -64,7 +64,7 @@ if term.available:
                 ret = complete_hook(buffer_left, buffer_right)
                 if ret:
                     tabs = 0
-                    set_buffer(*ret)
+                    insert_text(ret)
         else:
             show_suggestions = not show_suggestions
             redisplay()
@@ -103,11 +103,9 @@ if term.available:
                 elif show_completion and complete_hook:
                     ret = complete_hook(buffer_left, buffer_right)
                     if ret:
-                        c = ret[0][len(buffer_left):]
-                        if c:
-                            s = buffer_left + \
-                              text.underline(cursor(c[0])) + \
-                              text.underline(c[1:])
+                        s = buffer_left + \
+                          text.underline(cursor(ret[0])) + \
+                          text.underline(ret[1:])
                 s = s or buffer_left + cursor(' ')
                 buffer_handle.update(s)
             else:
@@ -125,7 +123,7 @@ if term.available:
             return
         k = trace[0]
         if k.type == key.TYPE_UNICODE and k.mods == key.MOD_NONE:
-            insert_char(k.code)
+            insert_text(k.code)
 
     def set_buffer (left, right):
         global buffer_left, buffer_right
@@ -219,12 +217,12 @@ if term.available:
             buffer_right = buffer_right[1:]
         redisplay()
 
-    def insert_char (c):
+    def insert_text (s):
         global history_idx, saved_buffer, buffer_left
         if history_idx is not None:
             history_idx = None
             saved_buffer = None
-        buffer_left += c
+        buffer_left += s
         update_search_results()
         redisplay()
 

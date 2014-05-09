@@ -42,8 +42,7 @@ if readline.available:
             if len(self._completions) == 1:
                 c = self._completions[0]
                 if len(c) > len(w):
-                    return (buffer_left + self._completions[0][len(w):],
-                            buffer_right)
+                    return c[len(w):]
 
         def suggest (self, buffer_left, _buffer_right):
             w = self._get_word(buffer_left)
@@ -136,7 +135,7 @@ if readline.available:
                     break
                 lcp += ch
             if len(lcp) > len(buffer_left):
-                return (lcp, buffer_right)
+                return lcp[len(buffer_left):]
 
         def suggest (self, buffer_left, buffer_right):
             self._update(buffer_left)
