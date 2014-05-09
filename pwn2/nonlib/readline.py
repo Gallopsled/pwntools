@@ -59,7 +59,10 @@ if term.available:
 
     def auto_complete (*_):
         global show_suggestions, tabs
-        if tabs == 1:
+        if search_idx is not None:
+            commit_search()
+            tabs = 0
+        elif tabs == 1:
             if complete_hook:
                 ret = complete_hook(buffer_left, buffer_right)
                 if ret:
@@ -140,7 +143,7 @@ if term.available:
     def commit_search ():
         global search_idx
         if search_idx is not None:
-            set_buffer(history[search_results[search_idx][0]][::], [])
+            set_buffer(history[search_results[search_idx][0]], u'')
             search_idx = None
             redisplay()
 
@@ -172,7 +175,7 @@ if term.available:
             history_idx = None
             search_idx = 0
             update_search_results()
-        else:
+        elif search_results:
             search_idx = (search_idx + 1) % len(search_results)
         redisplay()
 
@@ -186,7 +189,7 @@ if term.available:
             history_idx = -1
         if history_idx < len(history) - 1:
             history_idx += 1
-            set_buffer(history[history_idx][::], [])
+            set_buffer(history[history_idx], u'')
 
     def history_next (*_):
         global history_idx, saved_buffer
@@ -199,7 +202,7 @@ if term.available:
             saved_buffer = None
         else:
             history_idx -= 1
-            set_buffer(history[history_idx][::], [])
+            set_buffer(history[history_idx], u'')
 
     def backward_char (*_):
         global buffer_left, buffer_right
@@ -227,7 +230,10 @@ if term.available:
         redisplay()
 
     def submit (*_):
-        keymap.stop()
+        if search_idx is not None:
+            commit_search()
+        else:
+            keymap.stop()
 
     def control_c (*_):
         global history_idx, saved_buffer
