@@ -15,6 +15,7 @@ if term.available:
     history_idx = None
     prompt_handle = None
     buffer_handle = None
+    suggest_handle = None
     search_idx = None
     search_results = []
     startup_hook = None
@@ -23,10 +24,12 @@ if term.available:
     delims = ' /;:.\\'
 
     show_completion = True
+    show_suggestions = False
+
     complete_hook = None
     suggest_hook = None
-    show_suggestions_hook = None
-    suggestions = []
+
+    tabs = 0
 
     def set_completer (completer):
         global complete_hook, suggest_hook
@@ -37,7 +40,7 @@ if term.available:
             complete_hook = completer.complete
             suggest_hook = completer.suggest
 
-    def show_suggestions_default_hook (prompt_handle, suggestions):
+    def fmt_suggestions (suggestions):
         if suggestions:
             s = ''
             l = max(map(len, suggestions))
@@ -52,25 +55,26 @@ if term.available:
                 s += '\n'
         else:
             s = '\n'
-        if prompt_handle.is_floating:
-            term.output(s, frozen = True)
-        else:
-            term.output(s, frozen = True, before = prompt_handle)
-    show_suggestions_hook = show_suggestions_default_hook
-
-    def show_suggestions (*_):
-        h = prompt_handle or buffer_handle
-        if h and suggest_hook:
-            ret = suggest_hook(buffer_left, buffer_right)
-            if ret:
-                cb = show_suggestions_hook or show_suggestions_default_hook
-                cb(h, ret)
+        return s
 
     def auto_complete (*_):
-        if complete_hook:
-            ret = complete_hook(buffer_left, buffer_right)
-            if ret:
-                set_buffer(*ret)
+        global show_suggestions
+        if tabs == 1:
+            if complete_hook:
+                ret = complete_hook(buffer_left, buffer_right)
+                if ret:
+                    set_buffer(*ret)
+        else:
+            show_suggestions = tabs % 2 == 0
+            redisplay()
+
+    def handle_keypress (trace):
+        global tabs, show_suggestions
+        k = trace[-1]
+        if k == '<tab>':
+            tabs += 1
+        else:
+            tabs = 0
 
     def clear ():
         global buffer_left, buffer_right, history_idx, search_idx
@@ -80,7 +84,17 @@ if term.available:
         redisplay()
 
     def redisplay ():
+        global suggest_handle
         if buffer_handle:
+            if show_suggestions and suggest_hook:
+                suggestions = suggest_hook(buffer_left, buffer_right)
+                if suggest_handle is None:
+                    h = prompt_handle or buffer_handle
+                    suggest_handle = term.output(before = h)
+                s = fmt_suggestions(suggestions)
+                suggest_handle.update(s)
+            elif suggest_handle:
+                suggest_handle.update('')
             if search_idx is None:
                 s = None
                 if buffer_right:
@@ -93,7 +107,6 @@ if term.available:
                             s = buffer_left + \
                               text.underline(cursor(c[0])) + \
                               text.underline(c[1:])
-
                 s = s or buffer_left + cursor(' ')
                 buffer_handle.update(s)
             else:
@@ -111,7 +124,6 @@ if term.available:
             return
         k = trace[0]
         if k.type == key.TYPE_UNICODE and k.mods == key.MOD_NONE:
-            # print type(k.code), `k.code`
             insert_char(k.code)
 
     def set_buffer (left, right):
@@ -134,9 +146,10 @@ if term.available:
             redisplay()
 
     def update_search_results ():
-        global search_results, search_idx
+        global search_results, search_idx, show_suggestions
         if search_idx is None:
             return
+        show_suggestions = False
         if search_results:
             hidx = search_results[search_idx][0]
         else:
@@ -332,17 +345,18 @@ if term.available:
         'C-a'         : go_beginning,
         'C-e'         : go_end,
         '<tab>'       : auto_complete,
-        '<tab> <tab>' : show_suggestions,
+        '<any>'       : handle_keypress,
         })
 
     def readline (size = None, prompt = ''):
-        global buffer_handle, prompt_handle, eof
+        global buffer_handle, prompt_handle, suggest_handle, eof
         eof = False
         if prompt:
             prompt_handle = term.output(prompt)
         else:
             prompt_handle = None
         buffer_handle = term.output()
+        suggest_handle = None
         clear()
         if startup_hook:
             startup_hook()
@@ -364,6 +378,11 @@ if term.available:
             buffer_handle.update(line)
             buffer_handle.freeze()
             buffer_handle = None
+            prompt_handle.freeze()
+            prompt_handle = None
+            if suggest_handle:
+                suggest_handle.freeze()
+                suggest_handle = None
             if shutdown_hook:
                 shutdown_hook()
 

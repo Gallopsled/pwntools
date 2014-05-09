@@ -67,6 +67,20 @@ class Key:
     def __repr__ (self):
         return self.__str__()
 
+    def __eq__ (self, other):
+        from keymap import Matcher
+        if   isinstance(other, (unicode, str)):
+            return Matcher(other)(self)
+        elif isinstance(other, Matcher):
+            return other(self)
+        elif isinstance(other, Key):
+            return all([self.type == other.type,
+                        self.code == other.code,
+                        self.mods == other.mods,
+                        ])
+        else:
+            return False
+
 _cbuf = []
 _kbuf = []
 

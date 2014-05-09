@@ -10,14 +10,10 @@ if readline.available:
         def __enter__ (self):
             self._saved_complete_hook = readline.complete_hook
             self._saved_suggest_hook = readline.suggest_hook
-            self._saved_show_suggestions_hook = readline.show_suggestions_hook
             readline.set_completer(self)
-            if hasattr(self, 'show_suggestions'):
-                readline.show_suggestions_hook = self.show_suggestions
         def __exit__ (self, *args):
             readline.complete_hook = self._saved_complete_hook
             readline.suggest_hook = self._saved_suggest_hook
-            readline.show_suggestions = self._saved_show_suggestions_hook
 
     class WordCompleter(Completer):
         def __init__ (self, delims = None):
@@ -68,16 +64,16 @@ if readline.available:
             cs = [w for w in self.words if w.startswith(word)]
             if cs == []:
                 return cs
-            lpf = word
+            lcp = word
             shortest = min(map(len, cs))
-            while len(lpf) < shortest:
-                i = len(lpf)
+            while len(lcp) < shortest:
+                i = len(lcp)
                 ch = cs[0][i]
                 if any(c[i] <> ch for c in cs[1:]):
                     break
-                lpf += ch
-            if len(lpf) > len(word):
-                return [lpf]
+                lcp += ch
+            if len(lcp) > len(word):
+                return [lcp]
             else:
                 return cs
 
@@ -112,11 +108,23 @@ if readline.available:
 
         def complete (self, buffer_left, buffer_right):
             self._update(buffer_left)
-            if len(self._completions) == 1:
-                c = self._completions[0]
+            cs = []
+            for c in self._completions:
                 if os.path.isdir(c):
                     c += '/'
-                return (c, buffer_right)
+                cs.append(c)
+            if not cs:
+                return
+            lcp = buffer_left
+            shortest = min(map(len, cs))
+            while len(lcp) < shortest:
+                i = len(lcp)
+                ch = cs[0][i]
+                if any(c[i] <> ch for c in cs[1:]):
+                    break
+                lcp += ch
+            if len(lcp) > len(buffer_right):
+                return (lcp, buffer_right)
 
         def suggest (self, buffer_left, buffer_right):
             self._update(buffer_left)
@@ -124,7 +132,6 @@ if readline.available:
             for c in self._completions:
                 b = os.path.basename(c)
                 if os.path.isdir(c):
-                    out.append(b + '/')
-                else:
-                    out.append(b)
+                    b += '/'
+                out.append(b)
             return out
