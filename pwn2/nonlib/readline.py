@@ -65,7 +65,7 @@ if term.available:
                 if ret:
                     set_buffer(*ret)
         else:
-            show_suggestions = tabs % 2 == 0
+            show_suggestions = not show_suggestions
             redisplay()
 
     def handle_keypress (trace):
