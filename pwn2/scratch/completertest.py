@@ -9,5 +9,6 @@ c1 = pwn2.nonlib.completer.LongestPrefixCompleter([
 c2 = pwn2.nonlib.completer.PathCompleter(mask = '*.py')
 
 with c2:
-    s = pwn2.nonlib.readline.readline(prompt = '> ')
-    print 'You wrote', s
+    while True:
+        s = pwn2.nonlib.readline.readline(prompt = '> ')
+        print 'You wrote', s
