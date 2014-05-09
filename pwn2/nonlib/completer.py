@@ -135,7 +135,7 @@ if readline.available:
                 if any(c[i] <> ch for c in cs[1:]):
                     break
                 lcp += ch
-            if len(lcp) > len(buffer_right):
+            if len(lcp) > len(buffer_left):
                 return (lcp, buffer_right)
 
         def suggest (self, buffer_left, buffer_right):
