@@ -83,12 +83,12 @@ def closure ():
         try:
             i = line.index('import')
             if i >= 2 and line[i - 2] == 'from':
-                mod = line[i - 1]
+                mods = [line[i - 1]]
                 what = line[i + 1]
             else:
-                mod = line[i + 1]
+                mods = [mod.strip(',') for mod in line[i + 1:]]
                 what = None
-            if mod == __name__:
+            if __name__ in mods:
                 __libmode__ = what == 'lib'
         except:
             # my code parsing fu is not strong enough
