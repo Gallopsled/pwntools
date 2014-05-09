@@ -58,11 +58,12 @@ if term.available:
         return s
 
     def auto_complete (*_):
-        global show_suggestions
+        global show_suggestions, tabs
         if tabs == 1:
             if complete_hook:
                 ret = complete_hook(buffer_left, buffer_right)
                 if ret:
+                    tabs = 0
                     set_buffer(*ret)
         else:
             show_suggestions = not show_suggestions
