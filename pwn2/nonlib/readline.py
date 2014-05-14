@@ -354,7 +354,9 @@ if term.available:
         })
 
     def readline (size = None, prompt = ''):
-        global buffer_handle, prompt_handle, suggest_handle, eof
+        global buffer_handle, prompt_handle, suggest_handle, eof, \
+            show_suggestions
+        show_suggestions = False
         eof = False
         if prompt:
             prompt_handle = term.output(prompt)
