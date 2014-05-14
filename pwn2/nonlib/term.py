@@ -34,6 +34,7 @@ if fd:
     from termios import *
     from ..lib import termcap
     settings = None
+    _graphics_mode = False
 
     def update_position ():
         global cursor_row, cursor_col
@@ -233,6 +234,7 @@ if fd:
             return offset + n
 
     def parse (s):
+        global _graphics_mode
         if isinstance(s, unicode):
             s = s.encode('utf8')
         out = []
@@ -251,12 +253,28 @@ if fd:
                 if j:
                     x = (STR, [''.join(map(chr, buf[i : j]))])
                     i = j
-            elif c == 0x1b and len(buf) > i + 1 and buf[i + 1] == 0x5b:
-                ret = parse_csi(buf, i + 2)
-                if ret:
-                    cmd, args, j = ret
-                    x = (CSI, (cmd, args, ''.join(map(chr, buf[i : j]))))
-                    i = j
+            elif c == 0x1b and len(buf) > i + 1:
+                c1 = buf[i + 1]
+                if   c1 == ord('['):
+                    ret = parse_csi(buf, i + 2)
+                    if ret:
+                        cmd, args, j = ret
+                        x = (CSI, (cmd, args, ''.join(map(chr, buf[i : j]))))
+                        i = j
+                elif c1 in map(ord, '()'): # select G0 or G1
+                    i += 3
+                    continue
+                elif c1 in map(ord, '>='): # set numeric/application keypad mode
+                    i += 2
+                    continue
+                elif c1 == ord('P'):
+                    _graphics_mode = True
+                    i += 2
+                    continue
+                elif c1 == ord('\\'):
+                    _graphics_mode = False
+                    i += 2
+                    continue
             elif c == 0x01:
                 x = (SOH, None)
                 i += 1
@@ -279,6 +297,8 @@ if fd:
                 else:
                     x = (CR, None)
                     i += 1
+            if _graphics_mode:
+                continue
             if x is None:
                 x = (STR, [c for c in '\\x%02x' % c])
                 i += 1
@@ -290,7 +310,7 @@ if fd:
 
     saved_cursor = None
     # XXX: render cells that is half-way on the screen
-    def render_cell (cell):
+    def render_cell (cell, clear_after = False):
         global scroll, saved_cursor
         row, col = cell.start
         row = row - scroll + height - 1
@@ -369,7 +389,7 @@ if fd:
                         if saved_cursor:
                             row, col = saved_cursor
             elif t == CRLF:
-                if col <= width - 1:
+                if clear_after and col <= width - 1:
                     put('\x1b[K') # clear line
                 put('\r\n')
                 col = 0
@@ -392,7 +412,7 @@ if fd:
         row = row + scroll - height + 1
         cell.end = (row, col)
 
-    def render_from (i, force = False):
+    def render_from (i, force = False, clear_after = False):
         e = None
         goto(cells[i].start)
         for c in cells[i:]:
@@ -401,9 +421,9 @@ if fd:
                 break
             elif e:
                 c.start = e
-            render_cell(c)
+            render_cell(c, clear_after = clear_after)
             e = c.end
-        if e[0] < scroll or e[1] < width - 1:
+        if clear_after and (e[0] < scroll or e[1] < width - 1):
             put('\x1b[J')
         flush()
 
@@ -478,7 +498,7 @@ if fd:
                 return
             if not c.frozen and c.content <> s:
                 c.content = parse(s)
-                render_from(i)
+                render_from(i, clear_after = True)
 
     def freeze (h):
         try:
