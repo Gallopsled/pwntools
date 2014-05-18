@@ -11,7 +11,7 @@ class remote(basesock):
                  proto = 0, timeout = 'default',
                  silent = False, logfile = None):
         import socket
-        basesock.__init__(self, timeout, silent = silent)
+        basesock.__init__(self, timeout, silent = silent,logfile = logfile)
         port = int(port)
         self.target = (host, port)
         if fam is None:
@@ -47,7 +47,7 @@ class remote(basesock):
         if self.logfile:
             # Set up logging
             import pwnpcap
-            self.logger = pwnpcap.pwnpcap(self.sock.getsockname()[0],self.sock.getpeername()[0],dstport = self.target[1],filename = self.logfile,silent=self.silent)
+            self.logger = pwnpcap.pwnpcap(self.sock.getsockname()[0],self.sock.getpeername()[0],srcport = self.sock.getsockname()[1], dstport = self.sock.getpeername()[1],filename = self.logfile,silent=self.silent)
 
         if not self.silent:
             pwn.log.succeeded()

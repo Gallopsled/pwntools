@@ -2,9 +2,10 @@ import pwn
 from basechatter import basechatter
 
 class basesock(basechatter):
-    def __init__(self, timeout = 'default', silent = False):
+    def __init__(self, timeout = 'default', silent = False, logfile = None):
         basechatter.__init__(self, timeout, silent)
         self.current_timeout = None
+        self.logfile = logfile
 
     def connected(self):
         return self.sock != None
