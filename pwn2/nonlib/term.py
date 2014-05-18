@@ -435,7 +435,7 @@ if fd:
         # XXX: remove this line when render_cell is fixed
         if cells[i].start[0] - scroll + height < 0:
             i += 1
-        render_from(i, force = True)
+        render_from(i, force = True, clear_after = True)
 
     lock = threading.Lock()
     def output (s = '', float = False, priority = 10, frozen = False,
