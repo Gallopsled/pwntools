@@ -2,9 +2,14 @@ import pwn, os
 from basechatter import basechatter
 
 class ssh_channel(basechatter):
-    def __init__(self, parent, process = None, silent = None, tty = True):
+    """
+        SSH Channel instance to execute a process
+    """
+    def __init__(self, parent, process = None, silent = None, tty = True, logfile = None, logger = None):
         self.parent = parent
         self._tty = tty
+        self.logfile = logfile
+        self.logger = logger
         self._channel = None
         self.exit_status = None
         if silent == None:
@@ -31,6 +36,8 @@ class ssh_channel(basechatter):
 
         if process:
             self._channel.exec_command(process)
+            if self.logfile:
+                self.logger.send_pack(process)
         else:
             self._channel.invoke_shell()
 
@@ -53,6 +60,9 @@ class ssh_channel(basechatter):
         while dat:
             n = self._channel.send(dat)
             dat = dat[n:]
+
+        if self.logfile:
+            self.logger.send_pack(dat)
 
     def _recv(self, numb):
         import time, socket
@@ -80,6 +90,10 @@ class ssh_channel(basechatter):
             if r or time.time() > end_time:
                 break
             time.sleep(0.0001)
+
+        if self.logfile:
+            self.logger.recv_pack(r)
+
         return r
 
     def fileno(self):
@@ -127,7 +141,7 @@ class ssh_channel(basechatter):
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
 class ssh:
-    def __init__(self, host, user = None, password = None, port = None, silent = False, key = None, keyfile = None, proxy_command = None, proxy_sock = None, supports_sftp = True, timeout = 'default'):
+    def __init__(self, host, user = None, password = None, port = None, silent = False, key = None, keyfile = None, proxy_command = None, proxy_sock = None, supports_sftp = True, timeout = 'default', logfile = None):
         '''Creates a new ssh connection.
 
         Most argumnts are self-explanatory and unnecessary in most cases.
@@ -164,6 +178,8 @@ class ssh:
         self._port = port
         self._key = key
         self.silent = silent
+        self.logfile = logfile
+        self.logger = None
         self._keyfiles = ['id_rsa', 'id_dsa']
 
         if keyfile:
@@ -285,15 +301,20 @@ class ssh:
 
             if p.do_warning:
                 pwn.log.warning('SSH key could not be validated')
+        if self.logfile:
+            # Set up logging
+            import pwnpcap,socket
+            self.logger = pwnpcap.pwnpcap(socket.gethostbyaddr(self.host)[2][0],'127.0.0.1',dstport = self._port, filename = self.logfile, silent=self.silent)
+
 
 
     def shell(self, silent = None, tty = True):
         '''Open a new channel with a shell inside.'''
-        return ssh_channel(self, silent = silent, tty = tty)
+        return ssh_channel(self, silent = silent, tty = tty, logfile = self.logfile, logger = self.logger)
 
     def run(self, process, silent = None, tty = False):
         '''Open a new channel with a specific process inside.'''
-        return ssh_channel(self, process, silent, tty = tty)
+        return ssh_channel(self, process, silent, tty = tty, logfile = self.logfile, logger = self.logger)
 
     def run_simple(self, process, tty = False):
         '''Run a command on the remote server and return a tuple with (data, exit_status).'''

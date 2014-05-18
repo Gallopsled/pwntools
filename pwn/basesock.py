@@ -27,6 +27,9 @@ class basesock(basechatter):
         while l > i:
             i += self.sock.send(dat[i:])
 
+        if self.logfile:
+            self.logger.send_pack(dat)
+
     def _recv(self, numb):
         if self.current_timeout != self.timeout:
             self.current_timeout = self.timeout
@@ -36,7 +39,12 @@ class basesock(basechatter):
                 self.sock.setblocking(1)
                 self.sock.settimeout(self.timeout)
 
-        return self.sock.recv(numb)
+        res = self.sock.recv(numb)
+
+        if self.logfile:
+            self.logger.recv_pack(res)
+
+        return res
 
     def fileno(self):
         return self.sock.fileno()
