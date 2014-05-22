@@ -44,17 +44,12 @@ DEBUG = int(DEBUG)
 try:
     from pwn.log        import die, bug
     from pwn.thread     import Thread
-    from pwn.util       import *
     from pwn.ui         import *
-    from pwn.avoid      import *
     from pwn.context    import *
-    from pwn.binutils   import *
+    from pwn.text       import *
     from pwn.hashes     import *
-    from pwn.listutil   import *
-    from pwn.iterutil   import *
-    from pwn.genutil    import *
-    from pwn.decoutils  import coroutine, memleaker
-    from pwn.procutil   import *
+    from pwn.util       import *
+    from pwn.de_bruijn  import *
     from pwn.debugging  import *
     from pwn.memoize    import memoize
     from pwn.process    import process

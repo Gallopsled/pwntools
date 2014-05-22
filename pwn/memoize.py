@@ -44,7 +44,7 @@ def _internal_memoize(use_mem = True, use_file = True):
 
         cache = {}
 
-        @pwn.decoutils.ewraps(f)
+        @pwn.util.decorator.ewraps(f)
         def wrapper(*args, **kwargs):
             import os
             from cPickle import load, dump

@@ -31,7 +31,7 @@ def to_polynom(arg):
         raise TypeError
 
 def _fix(f):
-    @pwn.decoutils.ewraps(f)
+    @pwn.util.decorator.ewraps(f)
     def wrapper(self, other):
         return f(self, to_polynom(other))
     return wrapper

@@ -93,7 +93,7 @@ class AssemblerContainer(AssemblerBlock):
 
 def shellcode_wrapper(f, args, kwargs, avoider):
     kwargs = pwn.with_context(**kwargs)
-    kwargs = pwn.decoutils.kwargs_remover(f, kwargs, pwn.possible_contexts.keys() + ['raw'])
+    kwargs = pwn.util.decorator.kwargs_remover(f, kwargs, pwn.possible_contexts.keys() + ['raw'])
     if avoider:
         return pwn.avoider(f)(*args, **kwargs)
     else:
@@ -120,7 +120,7 @@ def shellcode_reqs(blob = False, hidden = False, avoider = False, **supported_co
 
     def deco(f):
         f.supported_context = supported_context
-        @pwn.decoutils.ewraps(f)
+        @pwn.util.decorator.ewraps(f)
         def wrapper(*args, **kwargs):
             with pwn.ExtraContext(kwargs) as kwargs:
                 for k, vs in supported_context.items():

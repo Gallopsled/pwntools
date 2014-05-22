@@ -66,10 +66,10 @@ def with_context(**kwargs):
     return kwargs
 
 def need_context(f):
-    @pwn.decoutils.ewraps(f)
+    @pwn.util.decorator.ewraps(f)
     def wrapper(*args, **kwargs):
         with pwn.ExtraContext(kwargs) as c:
-            return f(*args, **pwn.decoutils.kwargs_remover(f, c, possible_contexts.keys()))
+            return f(*args, **pwn.util.decorator.kwargs_remover(f, c, possible_contexts.keys()))
     return wrapper
 
 class ExtraContext:

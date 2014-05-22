@@ -149,23 +149,43 @@ def u64b(x):
     import struct
     return struct.unpack('>Q', x.rjust(8, '\x00'))[0]
 
-@pwn.need_context
-def p(x, arch = None):
+def p(x):
     """Packs an integer into a string based on the current context"""
-    if arch == 'amd64':
-        return p64(x)
-    elif arch == 'i386':
-        return p32(x)
-    pwn.die('Architecture not set in the context while calling p(%d)' % x)
+    word_size = context.word_size
 
-@pwn.need_context
-def u(x, arch = None):
+    if   word_size == 1:
+        return p8(x)
+    elif word_size == 2:
+        return p16(x)
+    elif word_size == 3:
+        return p24(x)
+    elif word_size == 4:
+        return p32(x)
+    elif word_size == 6:
+        return p48(x)
+    elif word_size == 8:
+        return p64(x)
+    else:
+        log.error('Unknown wordsize from context: {0}'.format(word_size))
+
+def u(x):
     """Unpacks a string into an integer based on the current context"""
-    if arch == 'amd64':
-        return u64(x)
-    elif arch == 'i386':
+    word_size = context.word_size
+
+    if   word_size == 1:
+        return u8(x)
+    elif word_size == 2:
+        return u16(x)
+    elif word_size == 3:
+        return u24(x)
+    elif word_size == 4:
         return u32(x)
-    pwn.die('Architecture not set in the context while calling u(%s)' % repr(x))
+    elif word_size == 6:
+        return u48(x)
+    elif word_size == 8:
+        return u64(x)
+    else:
+        log.error('Unknown wordsize from context: {0}'.format(word_size))
 
 def pack_size(f):
     if f == p8:   return "8"
@@ -185,41 +205,41 @@ packs_little_endian   = {64: p64,  32: p32,  16: p16,  8: p8,  'any': pint}
 unpacks_big_endian    = {64: u64b, 32: u32b, 16: u16b, 8: u8b, 'any': uintb}
 unpacks_little_endian = {64: u64,  32: u32,  16: u16,  8: u8,  'any': uint}
 
-@pwn.need_context
-def flat(*args, **kwargs):
-    """Flattens the arguments into a string.
-Takes a single named argument 'func', which defaults to "p32" if no context is set and to "p" otherwise.
-  - Strings are returned
-  - Integers are converted using the 'func' argument.
-  - Shellcode is assembled
-  - Enumerables (such as lists) traversed recursivly and the concatenated.
-
-Example:
-  - flat(5, "hello", [[6, "bar"], "baz"]) == '\\x05\\x00\\x00\\x00hello\\x06\\x00\\x00\\x00barbaz'
-"""
-
-    global _AssemblerBlock
-
-    if _AssemblerBlock == None:
-        from pwn.internal.shellcode_helper import AssemblerBlock as _AssemblerBlock
-
-    if 'arch' in kwargs and kwargs['arch'] != None:
-        default_func = p
-    else:
-        default_func = p32
-
-    func = kwargs.get('func', default_func)
-
-    obj = args[0] if len(args) == 1 else args
-
-    if isinstance(obj, str):
-        return obj
-    elif pwn.isint(obj):
-        return func(obj)
-    elif hasattr(obj, '__flat__'):
-        return obj.__flat__()
-    else:
-        return "".join(flat(o, func=func) for o in obj)
+# XXX: FIX PLOX
+#def flat(*args, **kwargs):
+#    """Flattens the arguments into a string.
+#Takes a single named argument 'func', which defaults to "p32" if no context is set and to "p" otherwise.
+#  - Strings are returned
+#  - Integers are converted using the 'func' argument.
+#  - Shellcode is assembled
+#  - Enumerables (such as lists) traversed recursivly and the concatenated.
+#
+#Example:
+#  - flat(5, "hello", [[6, "bar"], "baz"]) == '\\x05\\x00\\x00\\x00hello\\x06\\x00\\x00\\x00barbaz'
+#"""
+#
+#    global _AssemblerBlock
+#
+#    if _AssemblerBlock == None:
+#        from pwn.internal.shellcode_helper import AssemblerBlock as _AssemblerBlock
+#
+#    if 'arch' in kwargs and kwargs['arch'] != None:
+#        default_func = p
+#    else:
+#        default_func = p32
+#
+#    func = kwargs.get('func', default_func)
+#
+#    obj = args[0] if len(args) == 1 else args
+#
+#    if isinstance(obj, str):
+#        return obj
+#    elif pwn.isint(obj):
+#        return func(obj)
+#    elif hasattr(obj, '__flat__'):
+#        return obj.__flat__()
+#    else:
+#        return "".join(flat(o, func=func) for o in obj)
 
 def unhex(s):
     """Hex-decodes a string"""
@@ -457,7 +477,6 @@ Arguments:
 
     return output(get(n) for n in range(l))
 
-@pwn.avoider
 def xor_pair(data):
     """Args: data
     Finds two pieces of data that will xor together into the argument, while avoiding
@@ -480,29 +499,28 @@ def xor_pair(data):
 
     return (res1, res2)
 
-@pwn.avoider
+
 def randoms(count):
     """Args: count
     Returns a number of random bytes, while avoiding the bytes specified using the avoid module."""
     import random
     return ''.join(random.choice(pwn.get_only()) for n in range(count))
 
-@pwn.avoider
+
 def random8():
     """Returns a random number which fits inside 1 byte, while avoiding the bytes specified using the avoid module."""
     return u8(randoms(1))
 
-@pwn.avoider
+
 def random16():
     """Returns a random number which fits inside 2 byte, while avoiding the bytes specified using the avoid module."""
     return u16(randoms(2))
 
-@pwn.avoider
+
 def random32():
     """Returns a random number which fits inside 4 byte, while avoiding the bytes specified using the avoid module."""
     return u32(randoms(4))
 
-@pwn.avoider
 def random64():
     """Returns a random number which fits inside 8 byte, while avoiding the bytes specified using the avoid module."""
     return u64(randoms(8))
