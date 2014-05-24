@@ -385,8 +385,9 @@ if term.available:
             buffer_handle.update(line)
             buffer_handle.freeze()
             buffer_handle = None
-            prompt_handle.freeze()
-            prompt_handle = None
+            if prompt_handle:
+                prompt_handle.freeze()
+                prompt_handle = None
             if suggest_handle:
                 suggest_handle.freeze()
                 suggest_handle = None
