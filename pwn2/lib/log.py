@@ -31,7 +31,8 @@ __all__ = ['trace', 'debug', 'info', 'warning', 'failure', 'success',
            'SILENT',
            ]
 
-import text, threading, sys
+import threading, sys
+import text
 import pwn2 as __pwn__
 
 # log-levels
@@ -43,27 +44,45 @@ SILENT = 100 # <nothing>
 
 # per-thread log-level
 levels = {}
-default_level = ERROR if __pwn__.__libmode__ else INFO
 
 def set_level (level):
+    import context
+    context['log_level'] = level
+
+def set_thread_level (level):
     tid = threading.current_thread().ident
-    levels[tid] = level
+    if level is None:
+        del levels[tid]
+    else:
+        levels[tid] = level
 
 def get_level ():
     tid = threading.current_thread().ident
-    return levels.get(tid, default_level)
+    if tid in levels:
+        return levels[tid]
+    else:
+        import context
+        lvl = context['log_level']
+        if lvl is None:
+            return ERROR
+        return {'debug' : DEBUG,
+                'info'  : INFO,
+                'error' : ERROR,
+                'silent': SILENT,
+                }[lvl]
 
 def has_level (level):
     return get_level() <= level
 
 class loglevel:
     def __init__ (self, new_level):
-        self.old_level = get_level()
+        tid = threading.current_thread().ident
+        self.old_level = levels.get(tid)
         self.new_level = new_level
     def __enter__ (self):
-        set_level(self.new_level)
+        set_thread_level(self.new_level)
     def __exit__ (self, *args):
-        set_level(self.old_level)
+        set_thread_level(self.old_level)
 
 class DummyHandle:
     def update (self, _s):

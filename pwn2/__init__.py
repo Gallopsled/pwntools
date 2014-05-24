@@ -103,6 +103,9 @@ if not __libmode__:
     # make sure `toplevel' didn't overwrite any names (by re-overwriting them!)
     from lib import *
 
+    # default log level in non-lib mode
+    context['log_level'] = 'info'
+
     # look for special args in argv
     def closure():
         import sys
@@ -124,10 +127,10 @@ if not __libmode__:
         for arg in sys.argv[:]:
             if   arg == 'DEBUG':
                 sys.argv.remove(arg)
-                log.level = log.DEBUG
+                context['log_level'] = 'debug'
             elif arg == 'NOINFO':
                 sys.argv.remove(arg)
-                log.level = log.ERROR
+                context['log_level'] = 'silent'
             elif arg.find('=') > 0:
                 k, v = arg.split('=', 1)
                 if not isident(k):
