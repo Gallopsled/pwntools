@@ -46,11 +46,15 @@ class DynELF:
         if self.elf.elfclass == 'ELF64':
             return self._lookup64(symb, lib)
 
+    def _gotoff(self):
+        sections = self.elf.sections
+        return (sections['.got.plt'] if '.got.plt' in sections else sections['.got'])['addr']
+
     def _bases32(self):
         bases = { }
         base = self.base
         leak = self.leak
-        gotoff = self.elf.sections['.got.plt']['addr']
+        gotoff = self._gotoff()
         if base is None:
             pass
             # XXX: Read base address
@@ -76,7 +80,7 @@ class DynELF:
         bases = { }
         base = self.base
         leak = self.leak
-        gotoff = self.elf.sections['.got.plt']['addr']
+        gotoff = self._gotoff()
         if base is None:
             pass
             # XXX: Read base address
@@ -98,7 +102,7 @@ class DynELF:
     def _lookup32 (self, symb, lib):
         base = self.base
         leak = self.leak
-        gotoff = self.elf.sections['.got.plt']['addr']
+        gotoff = self._gotoff()
         if base is None:
             pass
             # XXX: Read base address
@@ -219,7 +223,7 @@ class DynELF:
     def _lookup64 (self, symb, lib):
         base = self.base
         leak = self.leak
-        gotoff = self.elf.sections['.got.plt']['addr']
+        gotoff = self._gotoff()
         if base is None:
             pass
             # XXX: Read base address
