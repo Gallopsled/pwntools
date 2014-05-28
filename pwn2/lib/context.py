@@ -1,4 +1,4 @@
-import types, sys
+import types, sys, log, threading
 
 template = {
     'arch':
@@ -33,6 +33,35 @@ defaults = {
 
 }
 
+def error (s):
+    # the log module fetches the current log-level from this module, so we
+    # need to be specific to not get recursive imports
+    with log.loglevel(log.ERROR):
+        log.error(s)
+
+def update_ctx (ctx, kwargs):
+    for k, v in kwargs.items():
+        validate(k, v)
+        ctx[k] = v
+
+def validate_key (key):
+    if key not in template:
+        error('unknown context variable: %s' % key)
+
+def validate (key, val):
+    validate_key(key)
+    valid = template[key]
+    if isinstance(valid, types.TypeType):
+        if not isinstance(val, valid):
+            error('invalid context variable: %s (should be %s)' %
+                  (val, valid)
+                  )
+    else:
+        if not val in valid:
+            error('invalid context variable: %s (should be one of %s)' %
+                  (val, ', '.join(map(str, valid)))
+                  )
+
 class Local:
     def __init__ (self, tls):
         self.tls = tls
@@ -43,61 +72,22 @@ class Local:
 
 class Module(types.ModuleType):
     def __init__ (self):
-        # XXX: why are relative imports broken in the other functions?
-        import log
-        self._log = log
-        self.__file__ = __file__
-        self.__name__ = __name__
-        self.__package__ = __package__
-        self.__all__ = []
-        self._template = template
-        self._defaults = defaults
-        self._ctx = {}
-        self._ctxs = {}
-        self._Local = Local
-
-    def _error (self, s):
-        log = self._log
-        # the log module fetches the current log-level from this module, so we
-        # need to be specific to not get recursive imports
-        with log.loglevel(log.ERROR):
-            log.error(s)
-
-    def _update_ctx (self, ctx, kwargs):
-        for k, v in kwargs.items():
-            self._validate(k, v)
-            ctx[k] = v
-
-    def _validate_key (self, key):
-        if key not in self._template:
-            self._error('unknown context variable: %s' % key)
-
-    def _validate (self, key, val):
-        import types
-        self._validate_key(key)
-        valid = self._template[key]
-        if isinstance(valid, types.TypeType):
-            if not isinstance(val, valid):
-                self._error('invalid context variable: %s (should be %s)' %
-                      (val, valid)
-                      )
-        else:
-            if not val in valid:
-                self._error(
-                    'invalid context variable: %s (should be one of %s)' %
-                    (val, ', '.join(map(str, valid)))
-                    )
+        types.ModuleType.__init__(self, __name__)
+        self.__dict__['__file__'] = __file__
+        self.__dict__['__package__'] = __package__
+        self.__dict__['__all__'] = []
+        self.__dict__['_ctx'] = {}
+        self.__dict__['_ctxs'] = {}
 
     def __call__ (self, **kwargs):
-        self._update_ctx(self._ctx, kwargs)
+        update_ctx(self._ctx, kwargs)
 
-    def __setitem__ (self, key, val):
-        self._validate(key, val)
+    def __setattr__ (self, key, val):
+        validate(key, val)
         self._ctx[key] = val
 
-    def __getitem__ (self, key):
-        import threading
-        self._validate_key(key)
+    def __getattr__ (self, key):
+        validate_key(key)
         tid = threading.current_thread().ident
         tls = self._ctxs.get(tid, [])
         for ctx in reversed(tls):
@@ -105,16 +95,16 @@ class Module(types.ModuleType):
                 return ctx[key]
         if key in self._ctx:
             return self._ctx[key]
-        return self._defaults.get(key)
+        return defaults.get(key)
 
-    def __delitem__ (self, key):
-        self._validate_key(key)
+    def __delattr__ (self, key):
+        validate_key(key)
         del self._ctx[key]
 
     def local (self, **kwargs):
-        import threading
+        '''Set context local to current with-block in current thread'''
         ctx = {}
-        self._update_ctx(ctx, kwargs)
+        update_ctx(ctx, kwargs)
         tid = threading.current_thread().ident
         if tid in self._ctxs:
             tls = self._ctxs[tid]
@@ -122,18 +112,23 @@ class Module(types.ModuleType):
             tls = []
             self._ctxs[tid] = tls
         tls.append(ctx)
-        return self._Local(tls)
+        return Local(tls)
+
+    def dict (self):
+        '''Return the current context as a dictionary'''
+        return {k: self.__getattr__(k) for k in template.keys()}
 
     def __str__ (self):
-        import threading
         tid = threading.current_thread().ident
         s = ''
         if tid in self._ctxs:
             s = 'Context for thread-%d:\n' % tid
         s = 'Context:\n'
-        for k in self._template.keys():
-            s += '  %s:\n    %s\n' % (k, self.__getitem__(k))
+        for k in template.keys():
+            s += '  %s:\n    %s\n' % (k, self.__getattr__(k))
         return s[:-1]
 
 if __name__ <> '__main__':
+    # prevent this scope from being GC'ed
+    tether = sys.modules[__name__]
     sys.modules[__name__] = Module()

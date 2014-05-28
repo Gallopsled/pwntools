@@ -32,7 +32,7 @@ __all__ = ['trace', 'debug', 'info', 'warning', 'failure', 'success',
            ]
 
 import threading, sys
-import text
+import text, context
 import pwn2 as __pwn__
 
 # log-levels
@@ -46,8 +46,7 @@ SILENT = 100 # <nothing>
 levels = {}
 
 def set_level (level):
-    import context
-    context['log_level'] = level
+    context.log_level = level
 
 def set_thread_level (level):
     tid = threading.current_thread().ident
@@ -61,8 +60,7 @@ def get_level ():
     if tid in levels:
         return levels[tid]
     else:
-        import context
-        lvl = context['log_level']
+        lvl = context.log_level
         if lvl is None:
             return ERROR
         return {'debug' : DEBUG,

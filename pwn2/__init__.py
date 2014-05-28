@@ -104,7 +104,7 @@ if not __libmode__:
     from lib import *
 
     # default log level in non-lib mode
-    context['log_level'] = 'info'
+    context.log_level = 'info'
 
     # look for special args in argv
     def closure():
@@ -127,10 +127,10 @@ if not __libmode__:
         for arg in sys.argv[:]:
             if   arg == 'DEBUG':
                 sys.argv.remove(arg)
-                context['log_level'] = 'debug'
+                context.log_level = 'debug'
             elif arg == 'NOINFO':
                 sys.argv.remove(arg)
-                context['log_level'] = 'silent'
+                context.log_level = 'silent'
             elif arg.find('=') > 0:
                 k, v = arg.split('=', 1)
                 if not isident(k):
