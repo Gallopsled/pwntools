@@ -182,8 +182,8 @@ defaults are available in :mod:`pwn2.lib.context.defaults`.
          >>> print context.arch
          i386
 
-   .. autofunction:: pwn2.lib.context.local
-   .. autofunction:: pwn2.lib.context.reset_local
+   .. automethod:: pwn2.lib.context.local
+   .. automethod:: pwn2.lib.context.reset_local
 
 :mod:`pwn2.lib.context.defaults`
 --------------------------------
