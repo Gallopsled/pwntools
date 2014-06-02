@@ -1,6 +1,7 @@
-import types, sys, log, threading
+import types, sys, threading
 
-template = {
+# If these are updated, remember to update the documentation
+possible = {
     'arch':
        ('i386', 'amd64', 'arm', 'armel', 'armeb', 'ppc'),
 
@@ -10,7 +11,7 @@ template = {
     'os':
        ('linux', 'freebsd'),
 
-    'target':
+    'target_binary':
        types.StringType,
 
     'target_host':
@@ -30,105 +31,161 @@ template = {
 }
 
 defaults = {
-
+    'endianness': 'little'
 }
 
-def error (s):
-    # the log module fetches the current log-level from this module, so we
-    # need to be specific to not get recursive imports
-    with log.loglevel(log.ERROR):
-        log.error(s)
+def validate(args):
+    out = {}
 
-def update_ctx (ctx, kwargs):
-    for k, v in kwargs.items():
-        validate(k, v)
-        ctx[k] = v
+    for key, value in args.items():
+        if key not in possible:
+            raise AttributeError('Cannot access context-key %s' % key)
 
-def validate_key (key):
-    if key not in template:
-        error('unknown context variable: %s' % key)
+        verify = possible[key]
 
-def validate (key, val):
-    validate_key(key)
-    valid = template[key]
-    if isinstance(valid, types.TypeType):
-        if not isinstance(val, valid):
-            error('invalid context variable: %s (should be %s)' %
-                  (val, valid)
-                  )
-    else:
-        if not val in valid:
-            error('invalid context variable: %s (should be one of %s)' %
-                  (val, ', '.join(map(str, valid)))
-                  )
-
-class Local:
-    def __init__ (self, tls):
-        self.tls = tls
-    def __enter__ (self):
-        pass
-    def __exit__ (self, *args):
-        self.tls.pop()
-
-class Module(types.ModuleType):
-    def __init__ (self):
-        types.ModuleType.__init__(self, __name__)
-        self.__dict__['__file__'] = __file__
-        self.__dict__['__package__'] = __package__
-        self.__dict__['__all__'] = []
-        self.__dict__['_ctx'] = {}
-        self.__dict__['_ctxs'] = {}
-
-    def __call__ (self, **kwargs):
-        update_ctx(self._ctx, kwargs)
-
-    def __setattr__ (self, key, val):
-        validate(key, val)
-        self._ctx[key] = val
-
-    def __getattr__ (self, key):
-        validate_key(key)
-        tid = threading.current_thread().ident
-        tls = self._ctxs.get(tid, [])
-        for ctx in reversed(tls):
-            if key in ctx:
-                return ctx[key]
-        if key in self._ctx:
-            return self._ctx[key]
-        return defaults.get(key)
-
-    def __delattr__ (self, key):
-        validate_key(key)
-        del self._ctx[key]
-
-    def local (self, **kwargs):
-        '''Set context local to current with-block in current thread'''
-        ctx = {}
-        update_ctx(ctx, kwargs)
-        tid = threading.current_thread().ident
-        if tid in self._ctxs:
-            tls = self._ctxs[tid]
+        if isinstance(verify, types.FunctionType):
+            out.update(verify(key, value))
         else:
-            tls = []
-            self._ctxs[tid] = tls
-        tls.append(ctx)
-        return Local(tls)
+            # You can always set it to None
+            if value != None:
+                if isinstance(verify, types.TypeType):
+                    if type(value) != verify:
+                        raise AttributeError('Cannot set context-key %s to %s, it is not of type %s' % (key, repr(value), verify.__name__))
 
-    def dict (self):
-        '''Return the current context as a dictionary'''
-        return {k: self.__getattr__(k) for k in template.keys()}
+                elif not value in verify:
+                    raise AttributeError('Cannot set context-key %s to %s, it is not in the list of allowed values' % (key, repr(value)))
+            out[key] = value
+    return out
 
-    def __str__ (self):
-        tid = threading.current_thread().ident
-        s = ''
-        if tid in self._ctxs:
-            s = 'Context for thread-%d:\n' % tid
-        s = 'Context:\n'
-        for k in template.keys():
-            s += '  %s:\n    %s\n' % (k, self.__getattr__(k))
-        return s[:-1]
+
+def validate_one(key, value = None):
+    return validate({key: value})
+
+
+def thread_id():
+    return threading.current_thread().ident
+
+
+class Local(object):
+    def __init__(self, args):
+        self.args = args
+
+    def __enter__(self):
+        self.saved = context._get_thread_ctx().copy()
+        context._get_thread_ctx().update(self.args)
+
+    def __exit__(self, *args):
+        context._set_thread_ctx(self.saved)
+
+
+class DefaultsModule(types.ModuleType):
+    '''The module for the global defaults for the context variables.'''
+
+    def __init__(self):
+        super(DefaultsModule, self).__init__(__name__ + '.defaults')
+        sys.modules[self.__name__] = self
+        self.__dict__.update({
+            '__all__'     : [],
+            '__doc__'     : DefaultsModule.__doc__,
+            '__file__'    : __file__,
+            '__package__' : __package__,
+            '_possible'   : possible
+        })
+
+        self.__dict__.update(defaults)
+
+    def __call__(self, **kwargs):
+        self.__dict__.update(validate(kwargs))
+
+    def __getattr__(self, key):
+        validate_one(key)
+        return self.__dict__.get(key)
+
+    def __setattr__(self, key, val):
+        self.__dict__.update(validate_one(key, val))
+
+    def __dir__(self):
+        res = set(self.__dict__.keys())
+        res = res.union(possible.keys())
+        return sorted(res)
+
+
+class MainModule(types.ModuleType):
+    '''The module for thread-local context variables.'''
+
+    def __init__(self):
+        super(MainModule, self).__init__(__name__)
+        sys.modules[self.__name__] = self
+        self.__dict__.update({
+            '__all__'     : ['defaults', 'local', 'reset_local'],
+            '__doc__'     : MainModule.__doc__,
+            '__file__'    : __file__,
+            '__package__' : __package__,
+            'defaults'    : DefaultsModule(),
+            '_possible'   : possible,
+            '_ctxs'       : {}
+        })
+
+    def __call__(self, **kwargs):
+        for k, v in kwargs.items():
+            self.__setattr__(k, v)
+
+    def __getattr__(self, key):
+        validate_one(key)
+        if key in self._get_thread_ctx():
+            return self._get_thread_ctx()[key]
+        return self.defaults.__getattr__(key)
+
+    def __setattr__(self, key, val):
+        self._get_thread_ctx().update(validate_one(key, val))
+
+    def __dir__(self):
+        res = set(self.__dict__.keys())
+        res = res.union(possible.keys())
+        return sorted(res)
+
+    def _get_thread_ctx(self):
+        return self._ctxs.setdefault(thread_id(), {})
+
+    def _set_thread_ctx(self, ctx):
+        self._ctxs[thread_id()] = ctx
+
+    def local(self, **kwargs):
+        '''Return a `context manager <https://docs.python.org/2/reference/compound_stmts.html#the-with-statement>`_.
+
+        Upon entering this context manager will save current thread-local
+        environment and create a new identical one. On exit, it will restore
+        the original environment.
+
+        As a convenience, it also accepts a number of kwarg-style arguments for
+        settings variables in the newly created environment.
+
+        Example:
+
+        .. doctest:: text_context_local
+
+           >>> print context.arch
+           None
+           >>> with context.local(arch = 'i386'):
+           ...     print context.arch
+           ...     context.arch = 'arm'
+           ...     print context.arch
+           i386
+           arm
+           >>> print context.arch
+           None
+
+Return an object to be used as the argument for a ``with`` statement.'''
+
+        return Local(validate(kwargs))
+
+    def reset_local(self):
+        '''Completely clears the current thread-local context, thus making the
+        value from :mod:`pwn2.lib.context.defaults` "shine through".'''
+        self._ctxs[thread_id()] = {}
+
 
 if __name__ <> '__main__':
     # prevent this scope from being GC'ed
     tether = sys.modules[__name__]
-    sys.modules[__name__] = Module()
+    context = MainModule()

@@ -1,0 +1,4 @@
+Shellcraft
+==========
+
+Shellcraft module foo.

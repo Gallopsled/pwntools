@@ -4,7 +4,7 @@ import curses
 curses.setupterm()
 
 cache = {}
-def get (cap, *args):
+def get(cap, *args):
     s = cache.get(cap)
     if not s:
         s = curses.tigetstr(cap) or ''

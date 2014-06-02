@@ -5,7 +5,7 @@ from keyconsts import *
 
 _fd = sys.stdin.fileno()
 
-def getch (timeout = 0):
+def getch(timeout = 0):
     while True:
         try:
             rfds, _wfds, _xfds = select.select([_fd], [], [], timeout)
@@ -19,7 +19,7 @@ def getch (timeout = 0):
                 continue
             raise
 
-def getraw (timeout = None):
+def getraw(timeout = None):
     '''Get list of raw key codes corresponding to zero or more key presses'''
     cs = []
     c = getch(timeout)
@@ -31,13 +31,13 @@ def getraw (timeout = None):
     return cs
 
 class Key:
-    def __init__ (self, type, code = None, mods = MOD_NONE):
+    def __init__(self, type, code = None, mods = MOD_NONE):
         self.type = type
         self.code = code
         self.mods = mods
         self._str = None
 
-    def __str__ (self):
+    def __str__(self):
         if self._str:
             return self._str
         if   self.type == TYPE_UNICODE:
@@ -64,10 +64,10 @@ class Key:
         self._str = s
         return s
 
-    def __repr__ (self):
+    def __repr__(self):
         return self.__str__()
 
-    def __eq__ (self, other):
+    def __eq__(self, other):
         from keymap import Matcher
         if   isinstance(other, (unicode, str)):
             return Matcher(other)(self)
@@ -84,14 +84,14 @@ class Key:
 _cbuf = []
 _kbuf = []
 
-def _read (timeout = 0):
+def _read(timeout = 0):
     _cbuf.extend(getraw(timeout))
 
-def _peek ():
+def _peek():
     if _cbuf:
         return _peek_ti() or _peek_csi() or _peek_simple()
 
-def get (timeout = None):
+def get(timeout = None):
     if _kbuf:
         return _kbuf.pop(0)
     k = _peek()
@@ -100,11 +100,11 @@ def get (timeout = None):
     _read(timeout)
     return _peek()
 
-def unget (k):
+def unget(k):
     _kbuf.append(k)
 
 # terminfo
-def _name_to_key (fname):
+def _name_to_key(fname):
     if   fname in FUNCSYMS:
         k = Key(TYPE_KEYSYM, *FUNCSYMS[fname])
     elif fname[0] == 'f' and fname[1:].isdigit():
@@ -126,7 +126,7 @@ for fname, name in zip(STRFNAMES, STRNAMES):
     if k:
         _ti_table.append((map(ord, seq), k))
 
-def _peek_ti ():
+def _peek_ti():
     global _cbuf
     # print 'ti', _cbuf, '\r'
     # XXX: Faster lookup, plox
@@ -136,7 +136,7 @@ def _peek_ti ():
             return key
 
 # csi
-def _parse_csi (offset):
+def _parse_csi(offset):
     i = offset
     while i < len(_cbuf):
         c = _cbuf[i]
@@ -176,7 +176,7 @@ def _parse_csi (offset):
 
     return cmd, args, end + 1
 
-def _csi_func (cmd, args):
+def _csi_func(cmd, args):
     k = Key(TYPE_UNKNOWN)
     if len(args) > 1 and args[1]:
         k.mods |= args[1] - 1
@@ -191,20 +191,20 @@ def _csi_func (cmd, args):
         k.code = f[1]
         return k
 
-def _csi_ss3 (cmd, args):
+def _csi_ss3(cmd, args):
     t, c = _csi_ss3s[chr(cmd[0])]
     k = Key(t, c)
     if len(args) > 1 and args[1]:
         k.mods |= args[1] - 1
     return k
 
-def _csi_u (cmd, args):
+def _csi_u(cmd, args):
     k = Key(TYPE_UNICODE, unichr(args[0]))
     if len(args) > 1 and args[1]:
         k.mods |= args[1] - 1
     return k
 
-def _csi_R (cmd, args):
+def _csi_R(cmd, args):
     if cmd[0] == ord('R') and cmd[1] == ord('?'):
         if len(args) < 2:
             return
@@ -268,7 +268,7 @@ _csi_funcs = {
     34: (TYPE_FUNCTION, 20),
     }
 
-def _peekkey_csi (offset):
+def _peekkey_csi(offset):
     global _cbuf
     ret = _parse_csi(offset)
     if not ret:
@@ -290,7 +290,7 @@ def _peekkey_csi (offset):
     else:
         return Key(TYPE_UNKNOWN_CSI, (cmd, args))
 
-def _peekkey_ss3 (offset):
+def _peekkey_ss3(offset):
     global _cbuf
     if len(_cbuf) <= offset:
         return Key(TYPE_UNICODE, u'O', MOD_ALT)
@@ -309,7 +309,7 @@ def _peekkey_ss3 (offset):
         else:
             return Key(t, c)
 
-def _peek_csi ():
+def _peek_csi():
     global _cbuf
     # print 'csi', _cbuf, '\r'
     c0 = _cbuf[0]
@@ -324,7 +324,7 @@ def _peek_csi ():
     elif c0 == 0x9b:
         return _peekkey_csi(1)
 
-def _peek_simple ():
+def _peek_simple():
     global _cbuf
     # print 'simple', _cbuf, '\r'
     if not _cbuf:

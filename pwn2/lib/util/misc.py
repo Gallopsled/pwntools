@@ -14,7 +14,7 @@ def align(alignment, x):
     return align_up(alignment, x)
 
 # network utils
-def ip (host):
+def ip(host):
     """Resolve host and return IP as four byte string"""
     import socket, struct
     return struct.unpack('I', socket.inet_aton(socket.gethostbyname(host)))[0]

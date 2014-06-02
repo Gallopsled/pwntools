@@ -3,7 +3,7 @@ __all__ = ['Keymap']
 import key, types, struct
 
 class Matcher:
-    def __init__ (self, desc):
+    def __init__(self, desc):
         self._desc = desc
         desc = desc.split('-')
         mods = desc[:-1]
@@ -36,14 +36,14 @@ class Matcher:
         self._mods = m
         self._hash = h | (m << 6) | (t << 7)
 
-    def __call__ (self, k):
+    def __call__(self, k):
         if isinstance(k, key.Key):
             return all([k.type == self._type,
                         k.code == self._code,
                         k.mods == self._mods,
                         ])
 
-    def __eq__ (self, other):
+    def __eq__(self, other):
         if   isinstance(other, Matcher):
             return all([other._type == self._type,
                         other._code == self._code,
@@ -54,14 +54,14 @@ class Matcher:
         else:
             return False
 
-    def __hash__ (self):
+    def __hash__(self):
         return self._hash
 
-    def __str__ (self):
+    def __str__(self):
         return self._desc
 
 class Keymap:
-    def __init__ (self, bindings, on_match = None, on_nomatch = None,
+    def __init__(self, bindings, on_match = None, on_nomatch = None,
                   on_key = None):
         self._on_match = on_match
         self._on_nomatch = on_nomatch
@@ -71,24 +71,24 @@ class Keymap:
         self.trace = []
         self.register(bindings)
 
-    def handle_input (self):
+    def handle_input(self):
         import key
         self._doread = True
         while self._doread:
             self.send(key.get())
 
-    def stop (self):
+    def stop(self):
         self._doread = False
 
     @property
-    def currently_entered (self):
+    def currently_entered(self):
         return ' '.join(map(str, self.trace))
 
-    def reset (self):
+    def reset(self):
         self._cur = self._top
         self.trace = []
 
-    def send (self, k):
+    def send(self, k):
         self.trace.append(k)
         if self._on_key:
             self._on_key(self.trace)
@@ -110,7 +110,7 @@ class Keymap:
         if len(tr) > 1 and not match:
             self.send(k)
 
-    def register (self, desc, cb = None):
+    def register(self, desc, cb = None):
         if isinstance(desc, dict):
             for k, v in desc.items():
                 self.register(k, v)
@@ -132,7 +132,7 @@ class Keymap:
                     t, cbs = t[m]
                 cbs.append(cb)
 
-    def unregister (self, desc, cb = None):
+    def unregister(self, desc, cb = None):
         ms = map(Matcher, desc.split(' '))
         if not ms:
             return
@@ -158,11 +158,11 @@ class Keymap:
             t, cbs = bt.pop()
             del t[m]
 
-    def on_match (self, cb):
+    def on_match(self, cb):
         self._on_match = cb
 
-    def on_nomatch (self, cb):
+    def on_nomatch(self, cb):
         self._on_nomatch = cb
 
-    def on_key (self, cb):
+    def on_key(self, cb):
         self._on_key = cb

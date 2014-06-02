@@ -4,7 +4,7 @@ import pwn2 as __pwn__
 # somewhat arbitrary to look at stderr, but that's what the log module uses
 if __pwn__.__hasterm__ or sys.stderr.isatty():
     class Module(types.ModuleType):
-        def __init__ (self):
+        def __init__(self):
             import os, termcap
             self.__file__ = __file__
             self.__name__ = __name__
@@ -31,19 +31,19 @@ if __pwn__.__hasterm__ or sys.stderr.isatty():
                 s = self._tc.get(y)
                 self._attributes[x] = s
 
-        def _fg_color (self, c):
+        def _fg_color(self, c):
             return self._tc.get('setaf', c) or self._tc.get('setf', c)
 
-        def _bg_color (self, c):
+        def _bg_color(self, c):
             return self._tc.get('setab', c) or self._tc.get('setb', c)
 
-        def _decorator (self, name, init):
-            def f (s):
+        def _decorator(self, name, init):
+            def f(s):
                 return init + s + self._reset
             setattr(self, name, f)
             return f
 
-        def __getattr__ (self, desc):
+        def __getattr__(self, desc):
             ds = desc.replace('gray', 'bright_black').split('_')
             init = ''
             while ds:
@@ -76,12 +76,12 @@ if __pwn__.__hasterm__ or sys.stderr.isatty():
             return self.__getattr__(desc)
 else:
     class Module(types.ModuleType):
-        def __init__ (self):
+        def __init__(self):
             self.num_colors = 0
             self.has_bright = False
             self.has_gray = False
 
-        def __getattr__ (self, _):
+        def __getattr__(self, _):
             return lambda x: x
 
 if __name__ <> '__main__':
