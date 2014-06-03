@@ -15,12 +15,14 @@ class module(ModuleType):
         # Save the shellcode directory
         self._dir = directory
 
+        # Find the absolute path of the directory
+        absdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', directory)
+
         # Create a dictionary of submodules
         self._submodules = {}
-        for name in os.listdir(directory):
-            path = os.path.join(directory, name)
-            if os.path.isdir(path):
-                self._submodules[name] = module(self.__name__ + '.' + name, path)
+        for name in os.listdir(absdir):
+            if os.path.isdir(os.path.join(absdir, name)):
+                self._submodules[name] = module(self.__name__ + '.' + name, os.path.join(directory, name))
 
         # Also put them into top level
         self.__dict__.update(self._submodules)
@@ -28,7 +30,7 @@ class module(ModuleType):
         # Get the shellcodes and __doc__ from the directory
         self._shellcodes = {}
         try:
-            m = imp.load_module('__init__', *imp.find_module('__init__', [directory]))
+            m = imp.load_module('__init__', *imp.find_module('__init__', [absdir]))
             self.__doc__     = m.__doc__
             self._shellcodes = m.shellcodes
         except Exception:
@@ -83,4 +85,4 @@ class module(ModuleType):
 old_module = sys.modules[__name__]
 
 # Create the module structure
-module(__name__, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'))
+module(__name__, '')
