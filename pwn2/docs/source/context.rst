@@ -151,7 +151,6 @@ defaults are available in :mod:`pwn2.lib.context.defaults`.
 
       The amount of output desired from the :mod:`pwn2.lib.log` module.
 
-
       Allowed values:
 
       * ``debug``
@@ -159,40 +158,14 @@ defaults are available in :mod:`pwn2.lib.context.defaults`.
       * ``error``
       * ``silent``
 
-      Sets the current architecture.
-
-   .. function:: pwn2.lib.context(**kwargs)
-
-      Convenience function, which is shorthand for setting multiple variables at
-      once, such that::
-
-        context(a = b, c = d, ...)
-
-      is equivalent to::
-
-        context.a = b
-        context.c = d
-        ...
-
-      Example usage:
-
-      .. doctest:: test_context
-
-         >>> context(arch = 'i386', os = 'linux')
-         >>> print context.arch
-         i386
-
-   .. automethod:: pwn2.lib.context.local
-   .. automethod:: pwn2.lib.context.reset_local
+   .. autofunction:: pwn2.lib.context.__call__(**kwargs)
+   .. autofunction:: pwn2.lib.context.local(**kwargs)
+   .. autofunction:: pwn2.lib.context.reset_local()
 
 :mod:`pwn2.lib.context.defaults`
 --------------------------------
 
 .. automodule:: pwn2.lib.context.defaults
-
-   The following variables are all the global default equivalents of the
-   variables found in the :mod:`pwn2.lib.context` module. They can be read or
-   written directly:
 
    .. data:: arch
    .. data:: net
@@ -203,3 +176,13 @@ defaults are available in :mod:`pwn2.lib.context.defaults`.
    .. data:: endianness
    .. data:: word_size
    .. data:: log_level
+
+      These variable are the the global default equivalents of the variables found
+      in the :mod:`pwn2.lib.context` module. They work almost exactly the same,
+      except for the fact that they are the global defaults, instead of the
+      thread-local verions.
+
+
+   .. autofunction:: pwn2.lib.context.defaults.__call__(**kwargs)
+
+
