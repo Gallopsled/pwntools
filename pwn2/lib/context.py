@@ -157,7 +157,7 @@ class MainModule(types.ModuleType):
           **kwargs: Variables to be assigned in the new environment.
 
         Returns:
-          context manager: Context manager for managed the old and new environment.
+          Context manager for managing the old and new environment.
 
         Examples:
 

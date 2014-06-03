@@ -3,3 +3,9 @@
 
 .. automodule:: pwn2.lib.shellcraft.i386
    :members:
+
+.. automodule:: pwn2.lib.shellcraft.i386.linux
+   :members:
+
+.. automodule:: pwn2.lib.shellcraft.i386.freebsd
+   :members:

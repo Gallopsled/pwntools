@@ -1,4 +1,4 @@
-__all__ = ['log', 'context']
+__all__ = ['log', 'context', 'shellcraft']
 
 import types, sys, exception
 

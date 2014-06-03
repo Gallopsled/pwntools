@@ -1,11 +1,9 @@
 from types import ModuleType
-import sys, os
-
-context = []
+import sys, os, imp
 
 class module(ModuleType):
-    def __init__(self, name = '.', submodules = (), shellcodes = {}):
-        super(module, self).__init__((__name__ + '.' + name).strip('.'))
+    def __init__(self, name, directory):
+        super(module, self).__init__(name)
 
         # Insert nice properties
         self.__dict__.update({
@@ -14,19 +12,27 @@ class module(ModuleType):
             '__path__':    __path__,
         })
 
-        # The relative directory to look up shellcodes in
-        self._dir = os.path.join('.', *name.split('.'))
+        # Save the shellcode directory
+        self._dir = directory
 
         # Create a dictionary of submodules
         self._submodules = {}
-        for m in submodules:
-            self._submodules[m.__name__.split('.')[-1]] = m
+        for name in os.listdir(directory):
+            path = os.path.join(directory, name)
+            if os.path.isdir(path):
+                self._submodules[name] = module(self.__name__ + '.' + name, path)
 
         # Also put them into top level
         self.__dict__.update(self._submodules)
 
-        # Save the submodules
-        self._shellcodes  = shellcodes
+        # Get the shellcodes and __doc__ from the directory
+        self._shellcodes = {}
+        try:
+            m = imp.load_module('__init__', *imp.find_module('__init__', [directory]))
+            self.__doc__     = m.__doc__
+            self._shellcodes = m.shellcodes
+        except Exception:
+            pass
 
         # These are exported
         self.__all__ = self._shellcodes.keys() + self._submodules.keys()
@@ -62,8 +68,9 @@ class module(ModuleType):
         return result
 
     def _context_modules(self):
+        from pwn2.lib import context
         for k, m in self._submodules.items():
-            if k in context:
+            if k in [context.arch, context.os, context.net]:
                 yield m
 
     def __shellcodes__(self):
@@ -75,11 +82,5 @@ class module(ModuleType):
 # To prevent garbage collection
 old_module = sys.modules[__name__]
 
-module(submodules = (
-    module('i386', shellcodes = {
-        'pushstr':    'pushstr.asm',
-        'breakpoint': 'misc.asm',
-        'infloop':    'misc.asm',
-        'nop':        'misc.asm',
-    }),
-))
+# Create the module structure
+module(__name__, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'))
