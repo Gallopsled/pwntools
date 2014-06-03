@@ -1,12 +1,16 @@
-<%page args="string, exact = False"/>
+<%page args="string, append_null = True"/>
 <%docstring>
-    Pushes a string onto the stack without using
-    null bytes or newline characters.
+Pushes a string onto the stack without using
+null bytes or newline characters.
+
+Args:
+  string (str): The string to push.
+  append_null (bool): Whether to append a single NULL-byte before pushing.
 </%docstring>
 
 <%
-    if not exact:
-        string = string.rstrip('\x00') + '\x00'
+    if append_null:
+        string += '\x00'
     if not string:
         return
 

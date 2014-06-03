@@ -1,0 +1,5 @@
+:mod:`pwn2.lib.shellcraft.i386`
+===============================
+
+.. automodule:: pwn2.lib.shellcraft.i386
+   :members:

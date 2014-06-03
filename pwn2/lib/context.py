@@ -6,7 +6,7 @@ possible = {
        ('i386', 'amd64', 'arm', 'armel', 'armeb', 'ppc'),
 
     'net':
-       ('ipv4', 'ipv6'),
+       ('tcp4', 'tcp6'),
 
     'os':
        ('linux', 'freebsd'),

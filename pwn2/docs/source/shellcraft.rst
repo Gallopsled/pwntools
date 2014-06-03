@@ -1,4 +1,19 @@
-Shellcraft
-==========
+:mod:`pwn2.lib.shellcraft` --- Shellcode generation
+===================================================
 
-Shellcraft module foo.
+Shellcraft module foo. HALLO
+
+Available shellcodes
+--------------------
+
+.. toctree::
+   :glob:
+
+   shellcraft/*
+
+Writing shellcode
+-----------------
+
+Foo bar
+
+

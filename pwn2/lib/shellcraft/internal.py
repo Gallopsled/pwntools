@@ -18,10 +18,17 @@ def init_mako():
     MAGIC = '__pwn_docstring__'
     loaded = {}
 
+    import pwn2.lib.shellcraft
+    imports = ', '.join(pwn2.lib.shellcraft._submodules.keys())
+
     lookup = TemplateLookup(
         directories      = [relpath('templates')],
         module_directory = relpath('pycs'),
-        imports          = ['import pwn']
+        imports          = [
+            'from pwn2.lib.shellcraft import ' + imports,
+            'from pwn2.lib import shellcraft',
+            'import pwn2.lib'
+        ]
     )
 
     class pwn_docstring(Tag):
@@ -49,10 +56,37 @@ def init_mako():
             method = getattr(visitor, "visitCode", lambda x: x)
             method(self)
 
+def docstring_trim(docstring):
+    """This was taken from http://legacy.python.org/dev/peps/pep-0257/"""
+    import sys
+    if not docstring:
+        return ''
+    # Convert tabs to spaces (following the normal Python rules)
+    # and split into a list of lines:
+    lines = docstring.expandtabs().splitlines()
+    # Determine minimum indentation (first line doesn't count):
+    indent = sys.maxint
+    for line in lines[1:]:
+        stripped = line.lstrip()
+        if stripped:
+            indent = min(indent, len(line) - len(stripped))
+    # Remove indentation (first line is special):
+    trimmed = [lines[0].strip()]
+    if indent < sys.maxint:
+        for line in lines[1:]:
+            trimmed.append(line[indent:].rstrip())
+    # Strip off trailing and leading blank lines:
+    while trimmed and not trimmed[-1]:
+        trimmed.pop()
+    while trimmed and not trimmed[0]:
+        trimmed.pop(0)
+    # Return a single string:
+    return '\n'.join(trimmed)
+
 def get_pwn_docstring(func):
     for c in func.func_code.co_consts:
         if isinstance(c, (str, unicode)) and c.startswith(MAGIC):
-            return c[len(MAGIC):]
+            return docstring_trim(c[len(MAGIC):]) + '\n\nReturns:\n    str: The desired code.'
     return ''
 
 def lookup_template(filename):
@@ -103,6 +137,7 @@ def wrap(renderer):
     def %s(%s):
         %s
         s = renderer(%s).split('\\n')
+        s = [l.rstrip() for l in s]
         while s and not s[-1]: s.pop()
         while s and not s[0]:  s.pop(0)
         return '\\n'.join(s)
