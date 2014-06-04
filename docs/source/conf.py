@@ -31,7 +31,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.todo',
     'sphinxcontrib.napoleon',
-    'pwn2.lib.pwnsphinx',
+    'pwnlib.internal.dochelper',
 ]
 
 # Add any paths that contain templates here, relative to this directory.

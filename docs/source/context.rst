@@ -1,11 +1,11 @@
 .. testsetup:: *
 
-   import pwn2.lib
-   from pwn2.lib import context
+   import pwnlib
+   from pwnlib import context
    context.reset_local()
 
 
-:mod:`pwn2.lib.context` --- Setting runtime variables
+:mod:`pwnlib.context` --- Setting runtime variables
 =====================================================
 
 The purpose of this module is to store runtime configuration of pwntools, such
@@ -30,8 +30,8 @@ default. You are able to read or write each version separately. If you try to
 read from the thread-local version, and no value is found, then the global
 default is checked.
 
-The thread-local version is available in :mod:`pwn2.lib.context` and the global
-defaults are available in :mod:`pwn2.lib.context.defaults`.
+The thread-local version is available in :mod:`pwnlib.context` and the global
+defaults are available in :mod:`pwnlib.context.defaults`.
 
 .. note::
 
@@ -39,10 +39,10 @@ defaults are available in :mod:`pwn2.lib.context.defaults`.
    but do not know of a way to hook thread creation.
 
 
-:mod:`pwn2.lib.context`
+:mod:`pwnlib.context`
 -----------------------
 
-.. automodule:: pwn2.lib.context
+.. automodule:: pwnlib.context
 
    The following variables are all thread-local variables. They can be read or
    written directly:
@@ -67,9 +67,10 @@ defaults are available in :mod:`pwn2.lib.context.defaults`.
    If writen to, the value will be saved only in the thread-local storage.
 
    .. exec::
-      import pwn2.lib, pwn2.lib.internal
+      import pwnlib
+      from pwnlib.internal.dochelper import docstring_trim
       def prop(s):
-          print pwn2.lib.internal.docstring_trim(getattr(pwn2.lib.context.defaults.__class__, s).__doc__)
+          print docstring_trim(getattr(pwnlib.context.defaults.__class__, s).__doc__)
 
 
    .. autodata:: arch
@@ -100,14 +101,14 @@ defaults are available in :mod:`pwn2.lib.context.defaults`.
    .. data:: log_level
 
 
-   .. autofunction:: pwn2.lib.context.__call__(**kwargs)
-   .. autofunction:: pwn2.lib.context.local(**kwargs)
-   .. autofunction:: pwn2.lib.context.reset_local()
+   .. autofunction:: pwnlib.context.__call__(**kwargs)
+   .. autofunction:: pwnlib.context.local(**kwargs)
+   .. autofunction:: pwnlib.context.reset_local()
 
-:mod:`pwn2.lib.context.defaults`
+:mod:`pwnlib.context.defaults`
 --------------------------------
 
-.. automodule:: pwn2.lib.context.defaults
+.. automodule:: pwnlib.context.defaults
 
    .. autodata:: arch
    .. data:: net
@@ -120,11 +121,11 @@ defaults are available in :mod:`pwn2.lib.context.defaults`.
    .. data:: log_level
 
       These variable are the the global default equivalents of the variables found
-      in the :mod:`pwn2.lib.context` module. They work almost exactly the same,
+      in the :mod:`pwnlib.context` module. They work almost exactly the same,
       except for the fact that they are the global defaults, instead of the
       thread-local verions.
 
 
-   .. autofunction:: pwn2.lib.context.defaults.__call__(**kwargs)
+   .. autofunction:: pwnlib.context.defaults.__call__(**kwargs)
 
 

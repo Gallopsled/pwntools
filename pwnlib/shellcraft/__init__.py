@@ -70,7 +70,7 @@ class module(ModuleType):
         return result
 
     def _context_modules(self):
-        from pwn2.lib import context
+        from pwnlib import context
         for k, m in self._submodules.items():
             if k in [context.arch, context.os, context.net]:
                 yield m

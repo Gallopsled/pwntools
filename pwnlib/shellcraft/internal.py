@@ -2,7 +2,7 @@ from mako.lookup import TemplateLookup
 from mako.parsetree import Tag, Text
 from mako import ast
 from os.path import dirname, abspath, join
-import pwn2.lib.internal
+from pwnlib.internal.dochelper import docstring_trim
 
 __all__ = ['make_function']
 
@@ -19,16 +19,16 @@ def init_mako():
     MAGIC = '__pwn_docstring__'
     loaded = {}
 
-    import pwn2.lib.shellcraft
-    imports = ', '.join(pwn2.lib.shellcraft._submodules.keys())
+    import pwnlib.shellcraft
+    imports = ', '.join(pwnlib.shellcraft._submodules.keys())
 
     lookup = TemplateLookup(
         directories      = [relpath('templates')],
         module_directory = relpath('pycs'),
         imports          = [
-            'from pwn2.lib.shellcraft import ' + imports,
-            'from pwn2.lib import shellcraft',
-            'import pwn2.lib'
+            'from pwnlib.shellcraft import ' + imports,
+            'from pwnlib import shellcraft',
+            'import pwnlib'
         ]
     )
 
@@ -60,7 +60,7 @@ def init_mako():
 def get_pwn_docstring(func):
     for c in func.func_code.co_consts:
         if isinstance(c, (str, unicode)) and c.startswith(MAGIC):
-            return pwn2.lib.internal.docstring_trim(c[len(MAGIC):]) + '\n\nReturns:\n    str: The desired code.'
+            return docstring_trim(c[len(MAGIC):]) + '\n\nReturns:\n    str: The desired code.'
     return ''
 
 def lookup_template(filename):

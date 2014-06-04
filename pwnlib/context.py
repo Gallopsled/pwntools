@@ -92,7 +92,6 @@ class ContextModule(types.ModuleType):
         else:
             raise AttributeError('Cannot set context-key arch, as the value %s did not validate' % repr(value))
 
-    @property
     @_validator
     def net(self, value):
         """Variable for the current network-stack. This is not currently useful,
