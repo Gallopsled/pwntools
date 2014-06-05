@@ -87,7 +87,7 @@ class ContextModule(types.ModuleType):
 
         if value == 'arm':
             return 'armel'
-        elif value in (None, 'i386', 'amd64', 'armel', 'armeb', 'ppc', 'mips'):
+        elif value in ('i386', 'amd64', 'armel', 'armeb', 'ppc', 'mips'):
             return value
         else:
             raise AttributeError('Cannot set context-key arch, as the value %s did not validate' % repr(value))
@@ -105,7 +105,7 @@ class ContextModule(types.ModuleType):
 
         * ``tcp4`` (TCP over IPv4)
         * ``tcp6`` (TCP over IPv6)"""
-        return value in (None, 'tcp4', 'tcp6')
+        return value in ('tcp4', 'tcp6')
 
     @_validator
     def os(self, value):
@@ -116,7 +116,7 @@ class ContextModule(types.ModuleType):
 
         * ``linux``
         * ``freebsd``"""
-        return value in (None, 'linux', 'freebsd')
+        return value in ('linux', 'freebsd')
 
     @_validator
     def target_binary(self, value):
@@ -129,7 +129,7 @@ class ContextModule(types.ModuleType):
 
         Allowed values are any string."""
 
-        return value == None or type(value) == types.StringType
+        return type(value) == types.StringType
 
     @_validator
     def target_host(self, value):
@@ -137,7 +137,7 @@ class ContextModule(types.ModuleType):
         creating sockets.
 
         Allowed values are any string."""
-        return value == None or type(value) == types.StringType
+        return type(value) == types.StringType
 
     @_validator
     def target_port(self, value):
@@ -145,7 +145,7 @@ class ContextModule(types.ModuleType):
         sockets.
 
         Allowed values are any numbers in [0, 65535]."""
-        return value == None or (type(value) in [types.IntType, types.LongType] and 0 <= value <= 65535)
+        return type(value) in [types.IntType, types.LongType] and 0 <= value <= 65535
 
     @_validator
     def endianness(self, value):
@@ -161,7 +161,23 @@ class ContextModule(types.ModuleType):
         * ``little``
         * ``big``"""
 
-        return value in (None, 'big', 'little')
+        return value in ('big', 'little')
+
+    @_validator
+    def sign(self, value):
+        """The default endianness used for e.g. the ``p32`` function. Defaults
+        to ``little``.
+
+        .. todo::
+
+           Fix reference.
+
+        Allowed values:
+
+        * ``little``
+        * ``big``"""
+
+        return value in ('unsigned', 'signed')
 
     @_validator
     def word_size(self, value):
@@ -175,7 +191,7 @@ class ContextModule(types.ModuleType):
         * ``32``
         * ``64``"""
 
-        return value == None or type(value) not in [types.IntType, types.LongType]
+        return type(value) not in [types.IntType, types.LongType]
 
     @_updater
     def log_level(self, value):
