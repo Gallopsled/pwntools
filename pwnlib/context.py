@@ -165,8 +165,8 @@ class ContextModule(types.ModuleType):
 
     @_validator
     def sign(self, value):
-        """The default endianness used for e.g. the ``p32`` function. Defaults
-        to ``little``.
+        """The default signedness used for e.g. the ``p32`` function. Defaults
+        to ``unsigned``.
 
         .. todo::
 
@@ -174,8 +174,8 @@ class ContextModule(types.ModuleType):
 
         Allowed values:
 
-        * ``little``
-        * ``big``"""
+        * ``unsigned``
+        * ``signed``"""
 
         return value in ('unsigned', 'signed')
 
