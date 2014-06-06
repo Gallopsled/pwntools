@@ -27,7 +27,7 @@ def init_mako():
         module_directory = relpath('pycs'),
         imports          = [
             'from pwnlib.shellcraft import ' + imports,
-            'from pwnlib import shellcraft',
+            'from pwnlib import shellcraft, util',
             'import pwnlib'
         ]
     )
