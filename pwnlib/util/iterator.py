@@ -203,8 +203,8 @@ def bruteforce(function, alphabet, length, condition=None, method='upto', start=
         start: a tuple (i,N) which splits the search space up into N pieces
                and starts at piece i.
     """
-    import pwn.log as log
 
+# TODO: Fix pwn reference
     total_iterations = len(alphabet) ** length
     cur_iteration = 0
 

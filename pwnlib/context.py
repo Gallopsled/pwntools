@@ -64,7 +64,7 @@ class ContextModule(types.ModuleType):
         })
 
     def __call__(self, **kwargs):
-        """This function is the global equivalent of :func:`pwn2.lib.context.__call__`.
+        """This function is the global equivalent of :func:`pwnlib.context.__call__`.
 
         Args:
           **kwargs: Variables to be assigned in the environment."""
@@ -75,7 +75,7 @@ class ContextModule(types.ModuleType):
     @_updater
     def arch(self, value):
         """Variable for the current architecture. This is useful e.g. to make
-        :mod:`pwn2.lib.shellcraft` easier to use. Allowed values:
+        :mod:`pwnlib.shellcraft` easier to use. Allowed values:
 
         * ``i386``
         * ``amd64``
@@ -195,7 +195,7 @@ class ContextModule(types.ModuleType):
 
     @_updater
     def log_level(self, value):
-        """The amount of output desired from the :mod:`pwn2.lib.log` module.
+        """The amount of output desired from the :mod:`pwnlib.log` module.
 
         Allowed values:
 
@@ -303,7 +303,7 @@ class MainModule(types.ModuleType):
 
     def reset_local(self):
         '''Completely clears the current thread-local context, thus making the
-        value from :mod:`pwn2.lib.context.defaults` "shine through".'''
+        value from :mod:`pwnlib.context.defaults` "shine through".'''
         ctx = self._thread_ctx()
         for k in dir(ctx):
             if k[0] == '_' and k[:2] != '__':

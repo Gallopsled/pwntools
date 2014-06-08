@@ -1,19 +1,5 @@
-import pwn, os
-
-def which(name, flags = os.X_OK, find_all = False):
-    out = []
-    try:
-        path = os.environ['PATH']
-    except KeyError:
-        pwn.die('No PATH environment variable')
-    for p in path.split(os.pathsep):
-        p = os.path.join(p, name)
-        if os.access(p, flags):
-            out.append(p)
-    if find_all:
-        return out
-    else:
-        return out[0] if out else None
+import os
+# TODO: Fix pwn references
 
 def pidof(prog):
     '''Get PID, depending on type:

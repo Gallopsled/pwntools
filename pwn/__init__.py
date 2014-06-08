@@ -1,6 +1,8 @@
-from pwnlib.ctf import *
 from pwnlib import *
 import pwnlib
+import sys
+print >> sys.stdout, "LOLOLOL"
+print >> sys.stderr, "LOLOLOL"
 
 pwnlib.term.take_ownership()
 

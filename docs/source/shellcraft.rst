@@ -1,5 +1,5 @@
-:mod:`pwn2.lib.shellcraft` --- Shellcode generation
-===================================================
+:mod:`pwnlib.shellcraft` --- Shellcode generation
+=================================================
 
 Shellcraft module foo. HALLO
 

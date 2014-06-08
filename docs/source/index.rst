@@ -5,11 +5,12 @@ Contents:
 
 .. toctree::
    :maxdepth: 3
+   :glob:
 
    intro
    context
    shellcraft
-
+   util/*
 
 Indices and tables
 ==================

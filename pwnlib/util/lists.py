@@ -1,5 +1,3 @@
-import pwn
-
 def partition(lst, f, save_keys = False):
     """parition([1,2,3,4,5], lambda x: x&1) => [[1,3,5], [2,4]]
 
@@ -62,10 +60,12 @@ def concat_all(*args):
 
 def ordlist(s, size = 1):
     """Turns a string into a list of the corresponding ascii values."""
+# TODO: Fix pwn reference
     return [pwn.uint(c) for c in group(size, s)]
 
 def unordlist(cs):
     """Takes a list of ascii values and returns the corresponding string"""
+# TODO: Fix pwn reference
     return pwn.flat(cs, func=pwn.p8)
 
 def __kmp_table(W):
@@ -116,11 +116,3 @@ def findall(haystack, needle):
         return __single_search(haystack, needle[0])
     else:
         return __kmp_search(haystack, needle)
-
-def listify(*args):
-    '''Creates lists from all arguments, and returns concatenation'''
-    return sum((list(x) if hasattr(x, '__iter__') else [x] for x in args), [])
-
-def tuplify(*args):
-    '''Creates tuples from all arguments, and returns concatenation'''
-    return sum((tuple(x) if hasattr(x, '__iter__') else (x,) for x in args), ())
