@@ -28,6 +28,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
+    'sphinx.ext.linkcode',
     'sphinx.ext.autosummary',
     'sphinx.ext.todo',
     'sphinxcontrib.napoleon',
@@ -247,3 +248,41 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
+
+def linkcode_resolve(domain, info):
+    if domain != 'py':
+        return None
+    if not info['module']:
+        return None
+
+    import importlib, inspect
+    mod = importlib.import_module(info['module'])
+    val = getattr(mod, info['fullname'], None)
+
+    # Special case for shellcraft
+    if info['module'].startswith('pwnlib.shellcraft.'):
+        filename = 'pwnlib/shellcraft/templates/%s' % val.__relpath__
+
+    # Special case for context
+    elif info['module'].startswith('pwnlib.context') and not info['fullname'].startswith('_'):
+        filename = info['module'].replace('.', '/') + '.py'
+
+        import pwnlib.context.defaults
+        val = getattr(pwnlib.context.defaults.__class__, info['fullname'], None)
+        try:
+            lines, first = inspect.getsourcelines(val.fget.__inner__)
+            filename += '#L%d-%d' % (first, first + len(lines) - 1)
+            print 'YES'
+        except (IOError, AttributeError):
+            pass
+
+    # Case for everything else
+    else:
+        filename = info['module'].replace('.', '/') + '.py'
+        if val:
+            try:
+                lines, first = inspect.getsourcelines(val)
+                filename += '#L%d-%d' % (first, first + len(lines) - 1)
+            except IOError:
+                pass
+    return "https://github.com/pwnies/pwntools/blob/pwn2/%s" % filename

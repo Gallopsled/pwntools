@@ -118,5 +118,7 @@ def wrap(renderer):
     return %s
 ''' % (key, args, repr(get_pwn_docstring(inner)), args_used, key)
 
-    return wrap(renderer)
+    res = wrap(renderer)
+    res.__relpath__ = path 
 
+    return res

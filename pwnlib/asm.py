@@ -1,5 +1,7 @@
 from pwnlib import context
 
+__all__ = ['asm', 'disasm']
+
 def asm(shellcode, arch=None, os=None):
     """assembles a piece of code, represented as a multi-line string.
 

@@ -34,8 +34,9 @@ def _updater(updater, name = None, doc = None):
     def setter(self, val):
         setattr(self, '_' + name, updater(self, val))
 
-    return property(getter, setter, doc = doc)
-
+    res = property(getter, setter, doc = doc)
+    res.fget.__inner__ = updater
+    return res
 
 def _validator(validator, name = None, doc = None):
     name = name or validator.func_name
@@ -47,7 +48,9 @@ def _validator(validator, name = None, doc = None):
         else:
             raise AttributeError('Cannot set context-key %s to %s, did not validate' % (name, val))
 
-    return _updater(updater, name, doc)
+    res = _updater(updater, name, doc)
+    res.fget.__inner__ = validator
+    return res
 
 def properties():
     keys = [k for k in dir(ContextModule) if k[0] != '_']
