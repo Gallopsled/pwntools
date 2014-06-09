@@ -1,6 +1,15 @@
 from pwnlib import *
 import pwnlib
 import sys
+
+# Promote useful stuff to toplevel
+from pwnlib.asm import asm, disasm
+from pwnlib.util.binary import *
+from pwnlib.util.iterator import *
+from pwnlib.util.misc import *
+from pwnlib.util.packing import *
+from pwnlib.util.proc import *
+
 print >> sys.stdout, "LOLOLOL"
 print >> sys.stderr, "LOLOLOL"
 
