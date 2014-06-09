@@ -10,9 +10,6 @@ from pwnlib.util.misc import *
 from pwnlib.util.packing import *
 from pwnlib.util.proc import *
 
-print >> sys.stdout, "LOLOLOL"
-print >> sys.stderr, "LOLOLOL"
-
 pwnlib.term.take_ownership()
 
 # default log level in non-lib mode
