@@ -1,13 +1,9 @@
-from string import punctuation, digits, letters
-
 def unhex(s):
     """Hex-decodes a string"""
     return s.decode('hex')
 
 def enhex(x):
     """Hex-encodes a string or integer"""
-    if pwn.isint(x):
-        x = pint(x)
     return x.encode('hex')
 
 def urlencode(s):
@@ -166,14 +162,10 @@ def bitflip(v):
 def bitflip_int(v, width):
     return int(bits_str(v).rjust(width, '0')[::-1], 2)
 
-def b64(s):
+def b64e(s):
     '''Base64 encodes a string'''
     import base64
     return base64.b64encode(s)
-
-def b64e(s):
-    '''Base64 encncodes a string'''
-    return b64(s)
 
 def b64d(s):
     '''Base64 decodes a string'''
@@ -236,11 +228,11 @@ Arguments:
 
     return output(get(n) for n in range(l))
 
-def xor_pair(data, avoid = '\x00\n'):
+def xor_pair(data, avoid=''):
     """Args: data
     Finds two pieces of data that will xor together into the argument, while avoiding
-    the bytes specified using the avoid module."""
-    only = [chr(c) for c in range(256) if chr(c) not in avoid]
+    the bytes specified using the avoid argument."""
+    only = pwn.get_only()
 
     data = ''.join(data)
 
@@ -259,7 +251,7 @@ def xor_pair(data, avoid = '\x00\n'):
     return (res1, res2)
 
 
-def randoms(count):
+def randoms(count, avoid):
     """Args: count
     Returns a number of random bytes, while avoiding the bytes specified using the avoid module."""
     import random
@@ -327,12 +319,13 @@ def isprint(c):
     """Return true if a character is printable"""
     return len(c)+2 == len(repr(c))
 
-HEXII = punctuation + digits + letters
 
 def hexii(s, width=16, skip=True, hexii=True):
     return hexdump(s, width, skip, hexii)
 
 def hexiichar(c):
+    from string import punctuation, digits, letters
+    HEXII = punctuation + digits + letters
     if c in HEXII:      return ".%c " % c
     elif c == '\0':     return "   "
     elif c == '\xff':   return "## "
