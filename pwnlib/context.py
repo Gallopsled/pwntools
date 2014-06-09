@@ -34,8 +34,9 @@ def _updater(updater, name = None, doc = None):
     def setter(self, val):
         setattr(self, '_' + name, updater(self, val))
 
+    # Setting _inner is a slight hack only used to get better documentation
     res = property(getter, setter, doc = doc)
-    res.fget.__inner__ = updater
+    res.fget._inner = updater
     return res
 
 def _validator(validator, name = None, doc = None):
@@ -48,8 +49,9 @@ def _validator(validator, name = None, doc = None):
         else:
             raise AttributeError('Cannot set context-key %s to %s, did not validate' % (name, val))
 
+    # Setting _inner is a slight hack only used to get better documentation
     res = _updater(updater, name, doc)
-    res.fget.__inner__ = validator
+    res.fget._inner = validator
     return res
 
 def properties():

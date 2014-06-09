@@ -106,6 +106,10 @@ def make_function(key, directory, filename):
     args      = ', '.join(args)
     args_used = ', '.join(args_used)
 
+    # This is a slight hack to get the right signature for the function
+    # It would be possible to simply create an (*args, **kwargs) wrapper,
+    # but what would not have the right signature.
+    # While we are at it, we insert the docstring too
     exec '''
 def wrap(renderer):
     def %s(%s):
@@ -118,7 +122,8 @@ def wrap(renderer):
     return %s
 ''' % (key, args, repr(get_pwn_docstring(inner)), args_used, key)
 
+    # Setting _relpath is a slight hack only used to get better documentation
     res = wrap(renderer)
-    res.__relpath__ = path 
+    res._relpath = path
 
     return res

@@ -255,30 +255,29 @@ def linkcode_resolve(domain, info):
     if not info['module']:
         return None
 
-    import importlib, inspect
+    import importlib, inspect, types
     mod = importlib.import_module(info['module'])
     val = getattr(mod, info['fullname'], None)
 
     # Special case for shellcraft
     if info['module'].startswith('pwnlib.shellcraft.'):
-        filename = 'pwnlib/shellcraft/templates/%s' % val.__relpath__
-
-    # Special case for context
-    elif info['module'].startswith('pwnlib.context') and not info['fullname'].startswith('_'):
-        filename = info['module'].replace('.', '/') + '.py'
-
-        import pwnlib.context.defaults
-        val = getattr(pwnlib.context.defaults.__class__, info['fullname'], None)
-        try:
-            lines, first = inspect.getsourcelines(val.fget.__inner__)
-            filename += '#L%d-%d' % (first, first + len(lines) - 1)
-            print 'YES'
-        except (IOError, AttributeError):
-            pass
+        filename = 'pwnlib/shellcraft/templates/%s' % val._relpath
 
     # Case for everything else
     else:
         filename = info['module'].replace('.', '/') + '.py'
+
+        # Fixup for context properties
+        if info['module'].startswith('pwnlib.context'):
+            filename = 'pwnlib/context.py'
+
+            if not isinstance(val, (types.FunctionType, types.MethodType)):
+                import pwnlib.context.defaults
+                val = getattr(pwnlib.context.defaults.__class__, info['fullname'], None)
+                if isinstance(val, property):
+                    val = val.fget
+                    val = getattr(val, '_inner', val)
+
         if val:
             try:
                 lines, first = inspect.getsourcelines(val)
