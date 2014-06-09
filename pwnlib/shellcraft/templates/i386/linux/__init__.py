@@ -2,5 +2,6 @@
 
 shellcodes = {
     'i386_to_amd64' : 'i386_to_amd64.asm',
-    'mprotect_all'  : 'mprotect_all.asm'
+    'mprotect_all'  : 'mprotect_all.asm',
+    'sh'            : 'sh.asm'
 }

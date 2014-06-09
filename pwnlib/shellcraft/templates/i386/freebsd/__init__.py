@@ -2,4 +2,5 @@
 
 shellcodes = {
     'i386_to_amd64': 'i386_to_amd64.asm'
+    'sh': 'sh.asm'
 }
