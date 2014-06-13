@@ -68,6 +68,11 @@ def grouper(n, iterable, fillvalue=None):
     args = [iter(iterable)] * n
     return izip_longest(fillvalue=fillvalue, *args)
 
+def group(n, string, fillvalue=None):
+    string = string + fillvalue*(-len(string) % n)
+    for i in range(0, len(string), n):
+        yield string[i:i+n]
+
 def roundrobin(*iterables):
     "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
     # Recipe credited to George Sakkis

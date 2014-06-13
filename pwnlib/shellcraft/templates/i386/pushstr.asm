@@ -18,13 +18,11 @@ Args:
         extend = '\xff'
     else:
         extend = '\x00'
-
-    string = string.ljust(util.align(4, len(string)), extend)
 %>
 
-% for s in util.group(4, string)[::-1]:
+% for s in list(util.iterator.group(4, string, extend))[::-1]:
 <%
-    sign = util.u32ls(s)
+    sign = util.packing.u32ls(s)
 %>\
     % if sign == 0:
         push 1
@@ -34,7 +32,7 @@ Args:
     % elif '\x00' not in s and '\n' not in s:
         push `${repr(s)[1:-1]}`
     % else:
-<% a,b = util.xor_pair(s, avoid = '\x00\n') %>\
+<% a,b = util.binary.xor_pair(s, avoid = '\x00\n') %>\
         push `${repr(a)[1:-1]}`
         xor dword [esp], `${repr(b)[1:-1]}` ; ${repr(s)}
     % endif
