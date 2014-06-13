@@ -2,7 +2,7 @@ from mako.lookup import TemplateLookup
 from mako.parsetree import Tag, Text
 from mako import ast
 from os.path import dirname, abspath, join
-from pwnlib.internal.dochelper import docstring_trim
+from inspect import cleandoc
 
 __all__ = ['make_function']
 
@@ -32,6 +32,9 @@ def init_mako():
         ]
     )
 
+    # The purpose of this definition is to create a new Tag.
+    # The Tag has a metaclass, which saves this definition even
+    # though to do not use it here.
     class pwn_docstring(Tag):
         __keyword__ = 'docstring'
 
@@ -56,12 +59,6 @@ def init_mako():
         def accept_visitor(self, visitor):
             method = getattr(visitor, "visitCode", lambda x: x)
             method(self)
-
-# def get_pwn_docstring(func):
-#     for c in func.func_code.co_consts:
-#         if isinstance(c, (str, unicode)) and c.startswith(MAGIC):
-#             return (c[len(MAGIC):]) + '\n\nReturns:\n    str: The desired code.'
-#     return ''
 
 def lookup_template(filename):
     init_mako()
@@ -113,7 +110,7 @@ def wrap(template):
         while s and not s[0]:  s.pop(0)
         return '\\n'.join(s)
     return %s
-''' % (key, args, repr(docstring_trim(template.module.__doc__)), args_used, key)
+''' % (key, args, repr(cleandoc(template.module.__doc__)), args_used, key)
 
     # Setting _relpath is a slight hack only used to get better documentation
     res = wrap(template)

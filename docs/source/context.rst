@@ -16,14 +16,14 @@
 
    .. exec::
       import pwnlib
-      from pwnlib.internal.dochelper import docstring_trim
+      from inspect import cleandoc
       mod = pwnlib.context.defaults.__class__
       for key in sorted(dir(mod)):
           val = getattr(mod, key)
           if isinstance(val, property):
               print ".. data:: " + key
               print ""
-              print docstring_trim(val.__doc__)
+              print cleandoc(val.__doc__)
               print ""
 
    .. autofunction:: pwnlib.context.__call__(**kwargs)
@@ -37,7 +37,6 @@
 
    .. exec::
       import pwnlib
-      from pwnlib.internal.dochelper import docstring_trim
       mod = pwnlib.context.defaults.__class__
       for key in sorted(dir(mod)):
           val = getattr(mod, key)
