@@ -19,16 +19,16 @@ def init_mako():
     MAGIC = '__pwn_docstring__'
     loaded = {}
 
-    import pwnlib.shellcraft
-    imports = ', '.join(pwnlib.shellcraft._submodules.keys())
+    import pwnlib.shellcraft, pwnlib.util
+    shellcraft_imports = ', '.join(pwnlib.shellcraft._submodules.keys())
+    util_imports       = ', '.join(pwnlib.util.__all__)
 
     lookup = TemplateLookup(
         directories      = [relpath('templates')],
         module_directory = relpath('pycs'),
         imports          = [
-            'from pwnlib.shellcraft import ' + imports,
-            'from pwnlib import shellcraft, util',
-            'import pwnlib'
+            'from pwnlib.shellcraft import ' + shellcraft_imports,
+            'from pwnlib.util       import ' + util_imports,
         ]
     )
 
@@ -37,7 +37,7 @@ def init_mako():
 
         def __init__(self, *args, **kwargs):
             super(pwn_docstring, self).__init__('docstring', (), (), (), (), **kwargs)
-            self.ismodule = False
+            self.ismodule = True
 
         @property
         def text(self):
@@ -47,7 +47,7 @@ def init_mako():
 
             docstring = children[0].content
 
-            return '%s = %s' % (MAGIC, repr(MAGIC + docstring))
+            return '__doc__ = %s' % repr(docstring)
 
         @property
         def code(self):
@@ -57,11 +57,11 @@ def init_mako():
             method = getattr(visitor, "visitCode", lambda x: x)
             method(self)
 
-def get_pwn_docstring(func):
-    for c in func.func_code.co_consts:
-        if isinstance(c, (str, unicode)) and c.startswith(MAGIC):
-            return docstring_trim(c[len(MAGIC):]) + '\n\nReturns:\n    str: The desired code.'
-    return ''
+# def get_pwn_docstring(func):
+#     for c in func.func_code.co_consts:
+#         if isinstance(c, (str, unicode)) and c.startswith(MAGIC):
+#             return (c[len(MAGIC):]) + '\n\nReturns:\n    str: The desired code.'
+#     return ''
 
 def lookup_template(filename):
     init_mako()
@@ -71,19 +71,12 @@ def lookup_template(filename):
 
     return loaded[filename]
 
-def make_function(key, directory, filename):
-    path = join(directory, filename)
+def make_function(key, directory):
+    path     = join(directory, key + '.asm')
     template = lookup_template(path)
 
-    if key + '.asm' == filename:
-        renderer = template.render
-        inner    = template.module.render_body
-    else:
-        renderer = template.get_def(key).render
-        inner = getattr(template.module, 'render_' + key)
-
     import inspect
-    args, varargs, keywords, defaults = inspect.getargspec(inner)
+    args, varargs, keywords, defaults = inspect.getargspec(template.module.render_body)
 
     defaults = defaults or []
 
@@ -111,19 +104,19 @@ def make_function(key, directory, filename):
     # but what would not have the right signature.
     # While we are at it, we insert the docstring too
     exec '''
-def wrap(renderer):
+def wrap(template):
     def %s(%s):
         %s
-        s = renderer(%s).split('\\n')
+        s = template.render(%s).split('\\n')
         s = [l.rstrip() for l in s]
         while s and not s[-1]: s.pop()
         while s and not s[0]:  s.pop(0)
         return '\\n'.join(s)
     return %s
-''' % (key, args, repr(get_pwn_docstring(inner)), args_used, key)
+''' % (key, args, repr(docstring_trim(template.module.__doc__)), args_used, key)
 
     # Setting _relpath is a slight hack only used to get better documentation
-    res = wrap(renderer)
+    res = wrap(template)
     res._relpath = path
 
     return res

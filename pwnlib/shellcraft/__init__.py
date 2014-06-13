@@ -1,5 +1,5 @@
 from types import ModuleType
-import sys, os, imp
+import sys, os, glob
 
 class module(ModuleType):
     def __init__(self, name, directory):
@@ -28,16 +28,18 @@ class module(ModuleType):
         self.__dict__.update(self._submodules)
 
         # Get the shellcodes and __doc__ from the directory
-        self._shellcodes = {}
+        self._shellcodes = []
         try:
-            m = imp.load_module('__init__', *imp.find_module('__init__', [absdir]))
-            self.__doc__     = m.__doc__
-            self._shellcodes = m.shellcodes
-        except Exception:
+            with open(os.path.join(absdir, '__doc__')) as fd:
+                self.__doc__ = fd.read()
+            for f in glob.glob(os.path.join(absdir, '*')):
+                f, ext = os.path.splitext(os.path.basename(f))
+                self._shellcodes.append(f)
+        except IOError:
             pass
 
         # These are exported
-        self.__all__ = self._shellcodes.keys() + self._submodules.keys()
+        self.__all__ = self._shellcodes + self._submodules.keys()
 
         # Insert into the module list
         sys.modules[self.__name__] = self
@@ -46,7 +48,7 @@ class module(ModuleType):
         # This function lazy-loads the shellcodes
         if key in self._shellcodes:
             import internal
-            real = internal.make_function(key, self._dir, self._shellcodes[key])
+            real = internal.make_function(key, self._dir)
             setattr(self, key, real)
             return real
 
@@ -76,7 +78,7 @@ class module(ModuleType):
                 yield m
 
     def __shellcodes__(self):
-        result = list(self._shellcodes.keys())
+        result = self._shellcodes[:]
         for m in self._context_modules():
             result.extend(m.__shellcodes__())
         return result

@@ -1,10 +1,11 @@
 <%docstring>Returns code to switch from i386 to amd64 mode.</%docstring>
+<% helper, end = common.label("helper"), common.label("end") %>
 [bits 32]
-    push 0x33
+    push 0x33 ; This is the segment we want to go to
     call $+4
-${common.label("helper")}:
+${helper}:
     db 0xc0
-    add dword [esp], ${common.label("end")} - ${common.lastlabel("helper")}
+    add dword [esp], ${end} - ${helper}
     jmp far [esp]
-${common.lastlabel("end")}:
+${end}:
 [bits 64]

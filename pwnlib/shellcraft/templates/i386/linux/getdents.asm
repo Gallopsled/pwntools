@@ -6,12 +6,10 @@ Args:
     size (int): Buffer size.
     allocate_stack (bool): allocate 'size' bytes on the stack.
 
-    You can optioanlly shave a few bytes not allocating the stack space.
+You can optioanlly shave a few bytes not allocating the stack space.
 
-    Leaves the size read in eax.
+The size read is left in eax.
 </%docstring>
-
-${common.label("getdents")}: 
   ${i386.mov('ebx', in_fd)}
   xor eax, eax
   mov al, SYS_getdents

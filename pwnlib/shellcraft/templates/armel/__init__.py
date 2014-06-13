@@ -1,4 +1,0 @@
-'''Shellcraft module containing generic ARM little endian shellcodes.'''
-
-shellcodes = {
-}

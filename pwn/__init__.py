@@ -10,6 +10,7 @@ from pwnlib.util.misc       import *
 from pwnlib.util.packing    import *
 from pwnlib.util.proc       import *
 
+# Put the terminal in raw mode
 pwnlib.term.take_ownership()
 
 # default log level in non-lib mode
