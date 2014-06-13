@@ -3,9 +3,6 @@
 
 Shellcraft module foo. HALLO
 
-Available shellcodes
---------------------
-
 .. toctree::
    :glob:
 

@@ -1,5 +1,17 @@
 import types, sys, threading
 
+# These attributes are set on the defaults module after it have been constructed
+# If you change any of these values, remember to update the docstring.
+defaults = {
+    'endianness': 'little',
+    'sign': 'unsigned',
+    'word_size': 32,
+    '__doc__': '''The global default-version of :mod:`pwnlib.context`.
+
+For at description see :mod:`pwnlib.context`. This is the global defaults, that
+act as a "base" for the thread-local values.
+'''}
+
 class Local(object):
     def __init__(self, args):
         self.args = args
@@ -77,25 +89,20 @@ class ContextModule(types.ModuleType):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-    @_updater
+    @_validator
     def arch(self, value):
         """Variable for the current architecture. This is useful e.g. to make
         :mod:`pwnlib.shellcraft` easier to use. Allowed values:
 
         * ``i386``
         * ``amd64``
-        * ``arm`` (alias for armel)
         * ``armel``
         * ``armeb``
         * ``ppc``
         * ``mips``"""
 
-        if value == 'arm':
-            return 'armel'
-        elif value in ('i386', 'amd64', 'armel', 'armeb', 'ppc', 'mips'):
+        if value in ('i386', 'amd64', 'armel', 'armeb', 'ppc', 'mips'):
             return value
-        else:
-            raise AttributeError('Cannot set context-key arch, as the value %s did not validate' % repr(value))
 
     @_validator
     def net(self, value):
@@ -154,12 +161,8 @@ class ContextModule(types.ModuleType):
 
     @_validator
     def endianness(self, value):
-        """The default endianness used for e.g. the ``p32`` function. Defaults
+        """The default endianness used for e.g. the :func:`pwnlib.util.packing.pack` function. Defaults
         to ``little``.
-
-        .. todo::
-
-           Fix reference.
 
         Allowed values:
 
@@ -170,12 +173,8 @@ class ContextModule(types.ModuleType):
 
     @_validator
     def sign(self, value):
-        """The default signedness used for e.g. the ``p32`` function. Defaults
+        """The default signedness used for e.g. the :func:`pwnlib.util.packing.pack` function. Defaults
         to ``unsigned``.
-
-        .. todo::
-
-           Fix reference.
 
         Allowed values:
 
@@ -186,7 +185,7 @@ class ContextModule(types.ModuleType):
 
     @_validator
     def word_size(self, value):
-        """The default word size used for e.g. the ``flat`` function. Defaults
+        """The default word size used for e.g. the :func:`pwnlib.util.packing.pack` function. Defaults
         to ``32``.
 
         Allowed values:
@@ -196,7 +195,7 @@ class ContextModule(types.ModuleType):
         * ``32``
         * ``64``"""
 
-        return type(value) not in [types.IntType, types.LongType]
+        return type(value) in [types.IntType, types.LongType]
 
     @_updater
     def log_level(self, value):
@@ -219,7 +218,46 @@ class ContextModule(types.ModuleType):
 
 
 class MainModule(types.ModuleType):
-    '''The module for thread-local context variables.'''
+    '''The module for thread-local context variables.
+
+The purpose of this module is to store runtime configuration of pwntools, such
+as the level of logging or the default architecture for shellcode.
+
+It is implemented as a restricted dictionary, with a predefined number of
+keys and with each key having restrictions of which values it will allow.
+
+The values are available both in a thread-local version and as a global
+default. You are able to read or write each version separately. If you try to
+read from the thread-local version, and no value is found, then the global
+default is checked.
+
+The module :mod:`pwnlib.context` is for accessing the thread-local version, while
+the global defaults are available in :mod:`pwnlib.context.defaults`.
+
+.. note::
+
+   Ideally, we would want to clone the thread-local context on thread creation,
+   but do not know of a way to hook thread creation.
+
+The variables in this module can be read or written directly. If you try to
+write an invalid value, an exception is thrown:
+
+.. doctest:: test_context_example
+
+   >>> print context.arch
+   None
+   >>> context.arch = 'i386'
+   >>> print context.arch
+   i386
+   >>> context.arch = 'mill'
+   Traceback (most recent call last):
+       ...
+   AttributeError: Cannot set context-key arch, as the value 'mill' did not validate
+
+A read can never throw an exception. If there is no result in the thread-local
+dictionary, the global dictionary is queried. If it has no results either, ``None``
+is returned.
+'''
 
     def __init__(self):
         super(MainModule, self).__init__(__name__)
@@ -233,6 +271,8 @@ class MainModule(types.ModuleType):
             '_ctxs'       : {}
         })
         sys.modules[self.__name__ + '.defaults'] = self.defaults
+        for k, v in defaults.items():
+            setattr(self.defaults, k, v)
 
     def __call__(self, **kwargs):
         """Convenience function, which is shorthand for setting multiple

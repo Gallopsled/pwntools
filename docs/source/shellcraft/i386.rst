@@ -1,5 +1,5 @@
-:mod:`pwnlib.shellcraft.i386`
-=============================
+:mod:`pwnlib.shellcraft.i386` --- Shellcode for Intel 80386
+===========================================================
 
 .. automodule:: pwnlib.shellcraft.i386
    :members:

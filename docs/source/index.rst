@@ -11,6 +11,7 @@ Contents:
    context
    shellcraft
    util/*
+   term
 
 Indices and tables
 ==================
