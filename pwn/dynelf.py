@@ -11,7 +11,6 @@ def sysv_hash(symbol):
     return h & 0xffffffff
 
 def gnu_hash(s):
-    h = 0
     h = 5381
     for c in s:
         h = h * 33 + ord(c)
@@ -27,7 +26,7 @@ class DynELF:
         self.PIE = (self.elf.elftype == 'DYN')
         self.base = base
         if self.PIE is False and self.base is None:
-            self.base = filter(lambda x: x['type'] == 'LOAD' and 'E' in x['flg'], e.segments)[0]['virtaddr']
+            self.base = filter(lambda x: x['type'] == 'LOAD' and 'E' in x['flg'], self.elf.segments)[0]['virtaddr']
         if self.base is None:
             pwn.log.die('Position independent ELF needs a base address')
 
@@ -87,7 +86,10 @@ class DynELF:
             # else:
             #     pwn.log.die('Position independent ELF needs a base address')
         else:
-            gotplt = base + gotoff
+            if gotoff > base:
+                gotplt = gotoff
+            else:
+                gotplt = base + gotoff
 
         link_map = leak.q(gotplt, 1)
 
@@ -230,7 +232,10 @@ class DynELF:
             # else:
             #     pwn.log.die('Position independent ELF needs a base address')
         else:
-            gotplt = base + gotoff
+            if gotoff > base:
+                gotplt = gotoff
+            else:
+                gotplt = base + gotoff
 
         pwn.log.waitfor('Resolving "%s"' % symb)
 
