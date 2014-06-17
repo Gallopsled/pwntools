@@ -14,13 +14,13 @@ libleaky_gnu_arm.so: leakylib.c
 	$(CC) -shared -fPIC -Xlinker --hash-style=gnu -o $@ $^
 
 l_pie_sysv_arm: leaky.c libleaky_sysv_arm.so
-	$(CC) -pie -fPIC -Xlinker --hash-style=sysv -o $@ $^ -L . -lleaky_sysv_64
+	$(CC) -pie -fPIC -Xlinker --hash-style=sysv -o $@ $^ -L . -lleaky_sysv_arm
 l_pie_gnu_arm: leaky.c libleaky_gnu_arm.so
-	$(CC) -pie -fPIC -Xlinker --hash-style=gnu -o $@ $^ -L . -lleaky_gnu_64
+	$(CC) -pie -fPIC -Xlinker --hash-style=gnu -o $@ $^ -L . -lleaky_gnu_arm
 l_sysv_arm: leaky.c libleaky_sysv_arm.so
-	$(CC) -Xlinker --hash-style=sysv -o $@ $^ -L . -lleaky_sysv_64
+	$(CC) -Xlinker --hash-style=sysv -o $@ $^ -L . -lleaky_sysv_arm
 l_gnu_arm: leaky.c libleaky_gnu_arm.so
-	$(CC) -Xlinker --hash-style=gnu -o $@ $^ -L . -lleaky_gnu_64
+	$(CC) -Xlinker --hash-style=gnu -o $@ $^ -L . -lleaky_gnu_arm
 
 
 
