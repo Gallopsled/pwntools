@@ -1,5 +1,7 @@
 #!/bin/bash
 
+make
+
 for file in l_*; do
     class=$(readelf -h ${file} | grep Class: | awk '{print $2}')
     load_address=$(printf "%d\n" $(readelf -l ${file} | grep LOAD | head -n 1 | awk '{print $3}'))
