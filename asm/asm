@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import argparse, tempfile, sys, subprocess, os, pwn
 
 default_context = ['linux', 'i386']
