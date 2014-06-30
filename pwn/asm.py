@@ -199,7 +199,6 @@ def _asm(target_arch, target_os, code_blocks, emit_asm = 0, keep_tmp = False):
             except:
                 pass
 
-@pwn.memoize
 def _disasm(data, target_arch, keep_tmp = False):
     import os.path, tempfile, subprocess, shutil
 
