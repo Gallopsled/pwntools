@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+import pwn, sys, argparse, string
+from subprocess import check_output
+p = argparse.ArgumentParser(description="ELF disassembly dumper")
+p.add_argument('file',
+               metavar = '<file>',
+               help = 'ELF file to patch',
+               )
+args = p.parse_args()
+elf  = pwn.ELF(args.file, silent=True)
+
+for name, data in elf.sections.items():
+  if 'X' not in data['flags']: continue
+
+  file_off = data['offset']
+  mem_off  = data['addr']
+  print check_output(['objdump',
+                      '--file-offsets',
+                      '--disassemble',
+                      '--demangle',
+                      '--section', name,
+                      '--wide',
+                      '--adjust-vma', str(file_off - mem_off),
+                      args.file])
