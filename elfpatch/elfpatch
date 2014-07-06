@@ -35,7 +35,11 @@ if __name__ == "__main__":
 
     elf.write(addr, args.repl.decode('hex'))
 
+    if args.o is None and sys.stdout.isatty():
+        args.o = args.file + '.output'
+
     if args.o:
+        print "Saved patched file to %s" % args.o
         elf.save(args.o)
     else:
         sys.stdout.write(elf.get_data())
