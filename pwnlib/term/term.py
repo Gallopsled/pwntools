@@ -99,9 +99,6 @@ def init():
             self._fd = fd
         def write(self, s):
             output(s, frozen = True)
-        def close(self):
-            put('close\n')
-            pass
         def __getattr__(self, k):
             return self._fd.__getattribute__(k)
     if sys.stdout.isatty():
