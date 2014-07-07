@@ -7,11 +7,11 @@ import completer, key, readline, termcap, text
 initialized = False
 
 def can_init():
-    """This function returns True iff stderr is a tty and we are not inside a
+    """This function returns True iff stdout is a tty and we are not inside a
     REPL."""
 
     import sys
-    if not sys.stderr.isatty():
+    if not sys.stdout.isatty():
         return False
 
     # Check fancy REPLs

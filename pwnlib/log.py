@@ -28,18 +28,18 @@ def put(s = '', frozen = True, float = False, priority = 10, indent = 0):
         if not s:
             return _dummy_handle
         if last_was_nl:
-            sys.stderr.write(' ' * indent)
+            sys.stdout.write(' ' * indent)
             last_was_nl = False
         if s[-1] == '\n':
             last_was_nl = True
         if indent:
             s = s[:-1].replace('\n', '\n' + ' ' * indent) + s[-1]
-        sys.stderr.write(s)
+        sys.stdout.write(s)
         return _dummy_handle
 
 def flush():
     if not term.initialized:
-        sys.stderr.flush()
+        sys.stdout.flush()
 
 # these functions are the same in all modes
 def trace(s = ''):

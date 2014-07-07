@@ -1,7 +1,7 @@
 import types, sys
 
-# somewhat arbitrary to look at stderr, but that's what the log module uses
-if sys.stderr.isatty():
+# somewhat arbitrary to look at stdout, but that's what the log module uses
+if sys.stdout.isatty():
     class Module(types.ModuleType):
         def __init__(self):
             import os, termcap
