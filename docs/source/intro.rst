@@ -43,7 +43,7 @@ side-effects by default. That is the purpose of this module. If you do an ``from
 pwn import *``, you will get all functionality of the :mod:``pwnlib`` imported
 to your top-level scope, and also a few conveniences such as:
 
-* Calling :func:`pwnlib.term.take_ownership` to put your terminal in raw mode
+* Calling :func:`pwnlib.term.init` to put your terminal in raw mode
   and implementing functionality to make it look like it is not.
 * Setting the :data:`pwnlib.context.log_level` to `"info"`.
 * Parsing :data:`sys.argv`.

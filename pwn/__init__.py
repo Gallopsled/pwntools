@@ -11,7 +11,7 @@ from pwnlib.util.packing    import *
 from pwnlib.util.proc       import *
 
 # Put the terminal in raw mode
-pwnlib.term.take_ownership()
+pwnlib.term.init()
 
 # default log level in non-lib mode
 context.log_level = 'info'

@@ -20,7 +20,7 @@ SILENT = 100 # <nothing>
 last_was_nl = True
 def put(s = '', frozen = True, float = False, priority = 10, indent = 0):
     global last_was_nl
-    if term.owns_terminal:
+    if term.initialized:
         return term.output(str(s), frozen = frozen, float = float,
                            priority = priority, indent = indent)
     else:
@@ -38,7 +38,7 @@ def put(s = '', frozen = True, float = False, priority = 10, indent = 0):
         return _dummy_handle
 
 def flush():
-    if not term.owns_terminal:
+    if not term.initialized:
         sys.stderr.flush()
 
 # these functions are the same in all modes
@@ -66,7 +66,7 @@ def info(s = '', frozen = True, float = False, priority = 10, indent = 0):
                    frozen, float, priority, indent)
 
 def warning(s = '', frozen = True, float = False, priority = 10, indent = 0):
-    if term.owns_terminal:
+    if term.initialized:
         return anotate(text.bold_yello('!'), s, INFO,
                        frozen, float, priority, indent)
     else:
@@ -96,7 +96,7 @@ def output(s = '', frozen = True, float = False, priority = 10, indent = 0):
         return _dummy_handle
 
 def error(s = '', exit_code = -1):
-    if term.owns_terminal:
+    if term.initialized:
         anotate(text.on_red('ERROR'), s, ERROR)
         if context.log_level <= INFO and sys.exc_type not in [None, KeyboardInterrupt]:
             put('The exception was:\n')
@@ -226,7 +226,7 @@ class _TermHandle(_Handle):
 
 handle_stack = []
 def waitfor(msg, status = '', spinner = None):
-    if term.owns_terminal:
+    if term.initialized:
         h = _TermHandle(msg, spinner)
     else:
         h = _SimpleHandle(msg, spinner)

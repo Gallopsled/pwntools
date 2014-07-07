@@ -1,8 +1,12 @@
-from term import output
+# promote to this module
+from term import output, width, height
+from key import get as getkey
+from keymap import Keymap
+import completer, key, readline, termcap, text
 
-owns_terminal = False
+initialized = False
 
-def can_take_ownership():
+def can_init():
     """This function returns True iff stderr is a tty and we are not inside a
     REPL."""
 
@@ -32,16 +36,21 @@ def can_take_ownership():
     return True
 
 
-def take_ownership():
-    global owns_terminal, output
+def init():
+    global initialized
 
-    if owns_terminal:
+    if initialized:
         return
 
-    if not can_take_ownership():
+    if not can_init():
         return
 
     import term, readline
     term.init()
+    def update_geometry():
+        global height, width
+        height = term.height
+        width = term.width
+    term.on_winch.append(update_geometry)
     readline.init()
-    owns_terminal = True
+    initialized = True
