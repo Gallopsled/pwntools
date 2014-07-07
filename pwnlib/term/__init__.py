@@ -2,7 +2,7 @@
 from term import output, width, height
 from key import get as getkey
 from keymap import Keymap
-import completer, key, readline, termcap, text
+import key, readline, termcap, text
 
 initialized = False
 

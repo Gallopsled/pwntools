@@ -1,4 +1,5 @@
 from pwnlib                 import *
+from pwnlib                 import term
 from pwnlib.asm             import *
 from pwnlib.util.binary     import *
 from pwnlib.util.iterator   import *

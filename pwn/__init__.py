@@ -3,7 +3,7 @@ import sys
 from toplevel import *
 
 # Put the terminal in raw mode
-pwnlib.term.init()
+term.init()
 
 # default log level in non-lib mode
 context.log_level = 'info'
