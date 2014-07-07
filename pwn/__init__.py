@@ -1,14 +1,6 @@
 # Promote useful stuff to toplevel
 import sys
-import pwnlib
-from pwnlib                 import *
-from pwnlib.asm             import *
-from pwnlib.util.binary     import *
-from pwnlib.util.iterator   import *
-from pwnlib.util.lists      import *
-from pwnlib.util.misc       import *
-from pwnlib.util.packing    import *
-from pwnlib.util.proc       import *
+from toplevel import *
 
 # Put the terminal in raw mode
 pwnlib.term.init()
