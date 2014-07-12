@@ -2,7 +2,7 @@ from pwnlib import context
 
 __all__ = ['asm', 'disasm']
 
-def asm(shellcode, arch=None, os=None):
+def asm(shellcode, arch=None):
     """assembles a piece of code, represented as a multi-line string.
 
     Used for shellcode on architecture 'arch' for operating system 'os'.
@@ -25,14 +25,18 @@ def asm(shellcode, arch=None, os=None):
         return os.path.join(tmpdir, s)
     try:
         code = []
+        asm_extra = []
 
         if arch not in ['i386', 'amd64']:
             code += ['.section .shellcode,"ax"']
 
-        asm_extra = []
         if arch == 'arm':
+            code += ['.syntax unified']
+            code += ['.arch armv7-a']
             code += ['.arm']
         elif arch == 'thumb':
+            code += ['.syntax unified']
+            code += ['.arch armv7-a']
             code += ['.thumb']
             arch = 'arm'
         elif arch == 'i386':
