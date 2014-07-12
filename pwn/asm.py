@@ -66,7 +66,6 @@ def _run(cmd):
             err += 'It had this on stdout:\n%s\n' % stderr
         raise Exception(err)
 
-@pwn.memoize
 def _asm(target_arch, target_os, code_blocks, emit_asm = 0, keep_tmp = False):
     import pwn.internal.shellcode_helper as H
     import os.path, tempfile, subprocess, string, shutil
@@ -199,7 +198,6 @@ def _asm(target_arch, target_os, code_blocks, emit_asm = 0, keep_tmp = False):
             except:
                 pass
 
-@pwn.memoize
 def _disasm(data, target_arch, keep_tmp = False):
     import os.path, tempfile, subprocess, shutil
 
