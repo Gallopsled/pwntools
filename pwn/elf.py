@@ -33,13 +33,14 @@ class ELF:
     '''A parsed ELF file'''
 
     __cache = {}
-    def __init__(self, path):
+    def __init__(self, path, silent=False):
         import os, re
         path = os.path.realpath(path)
         if path in ELF.__cache:
             pwn.log.warning('Loaded "%s" again; use "elf.load(...)" to avoid this' \
                             % os.path.basename(path))
-        pwn.log.waitfor('Loading ELF file `%s\'' % os.path.basename(path))
+        if not silent:
+            pwn.log.waitfor('Loading ELF file `%s\'' % os.path.basename(path))
         self.segments = []
         self.sections = {}
         self.symbols = {}
