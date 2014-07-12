@@ -257,7 +257,7 @@ class ssh:
             self._proxy_command = None
 
         if 'identityfile' in conf:
-            self._keyfiles.insert(0, conf['identityfile'])
+            self._keyfiles = conf['identityfile'] + self._keyfiles
 
         self._keyfiles = [os.path.expanduser(k) for k in self._keyfiles]
         self._keyfiles = [k for k in self._keyfiles if os.path.exists(k)]
