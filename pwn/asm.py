@@ -102,8 +102,12 @@ def _asm(target_arch, target_os, code_blocks, emit_asm = 0, keep_tmp = False):
 
         asm_extra = []
         if target_arch == 'arm':
+            code += ['.syntax unified']
+            code += ['.arch armv7-a']
             code += ['.arm']
         elif target_arch == 'thumb':
+            code += ['.syntax unified']
+            code += ['.arch armv7-a']
             code += ['.thumb']
             target_arch = 'arm'
         elif target_arch == 'i386':
