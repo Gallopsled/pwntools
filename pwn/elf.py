@@ -291,15 +291,19 @@ def load (path):
 def parse_ldd_output(dat):
     import re
     expr = re.compile(r'(?:([^ ]+) => )?([^(]+)?(?: \(0x[0-9a-f]+\))?$')
+    bsd  = re.compile(r'^\S+:$')
     res = {}
 
     for line in dat.strip().split('\n'):
         line = line.strip()
-        if not line:
-            continue
+        if not line:        continue
+        if bsd.match(line): continue
+
         parsed = expr.search(line)
         if not parsed:
-            pwn.log.warning('Could not parse line: "%s"' % line)
+            pwn.log.warning('Skipping unparseable "ldd" line: "%s"' % line)
+            continue
+
         name, resolved = parsed.groups()
         if resolved and re.search('/ld-[^/]*$', resolved):
             if name != None:
@@ -310,7 +314,7 @@ def parse_ldd_output(dat):
             if re.search('^linux', resolved):
                 name = 'linux'
             else:
-                pwn.log.warning('Could not parse line: "%s"' % line)
+                pwn.log.warning('Skipping unparseable library name: "%s"' % line)
                 continue
 
         res[name] = resolved
