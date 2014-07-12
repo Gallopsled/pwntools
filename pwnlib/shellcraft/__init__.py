@@ -58,7 +58,7 @@ class module(ModuleType):
             except AttributeError as e:
                 pass
 
-        raise AttributeError
+        raise AttributeError("'module' object has no attribute '%s'" % key)
 
     def __dir__(self):
         # This function lists the available submodules, available shellcodes

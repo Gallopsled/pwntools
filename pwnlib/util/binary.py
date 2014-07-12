@@ -1,3 +1,8 @@
+import re, base64, random, string
+
+# From the util directory
+import packing, lists
+
 def unhex(s):
     """Hex-decodes a string"""
     return s.decode('hex')
@@ -12,7 +17,6 @@ def urlencode(s):
 
 def urldecode(s, ignore_invalid = False):
     """urldecodes a string"""
-    import re
     res = ''
     n = 0
     while n < len(s):
@@ -123,7 +127,7 @@ def bits(s, endian = 'big', zero = None, one = None, type = None, size = None):
         return out
 
 def bits_str(s, endian = 'big', zero = '0', one = '1', size = None):
-    return ''.join(bits(s, zero=zero, one=one, endian=endian, size=size))
+    return ''.join(bits(s, zero = zero, one = one, endian = endian, size = size))
 
 def unbits(s, endian = 'big'):
     out = []
@@ -164,75 +168,64 @@ def bitflip_int(v, width):
 
 def b64e(s):
     '''Base64 encodes a string'''
-    import base64
     return base64.b64encode(s)
 
 def b64d(s):
     '''Base64 decodes a string'''
-    import base64
     return base64.b64decode(s)
 
 # misc binary functions
 def xor(*args, **kwargs):
-    """Flattens its arguments and then xors them together.
-If the end of a string is reached, it wraps around in the string.
+    """Flattens its arguments using :func:`pwnlib.util.packing.flat`
+and then xors them together. If the end of a string is reached, it wraps
+around in the string.
 
-Converts the output to a string or a list or tuple of ints or chrs
-depending on the first input.
-
-Arguments:
-  - func: The function to use with flat. Defaults to p8.
-  - cut: How long a string should be returned.
+Args:
+    *data: The arguments to be xor'ed together.
+    cut: How long a string should be returned.
          Can be either 'min'/'max'/'left'/'right' or a number.
-  - flat: Ignore type of first argument and flatten output in all
-          cases. Defaults to False."""
+
+Returns:
+    The string of the arguments xor'ed together.
+"""
+
+    cut = kwargs.pop('cut', 'max')
+
+    if len(kwargs):
+        raise TypeError("xor() got an unexpected keyword argument '%s'" % kwargs.pop()[0])
 
     if len(args) == 0:
-        return []
+        raise ValueError("Must have something to xor")
 
-    cut = kwargs.get('cut', 'max')
-    func = kwargs.get('func', p8)
-    doflat = kwargs.get('flat', False)
-
-    def output(xs):
-        if doflat:
-            return ''.join(chr(x) for x in xs)
-        for con in list, tuple:
-            if isinstance(args[0], con):
-                if all(pwn.isint(x) for x in args[0]):
-                    return con(xs)
-                else:
-                    return con(chr(x) for x in xs)
-        return ''.join(chr(x) for x in xs)
-
-    strs = filter(len, [map(ord, flat(s, func=func)) for s in args])
+    strs = [packing.flat(s, word_size = 8, sign = 'unsigned', endianness = 'little') for s in args]
+    strs = [[ord(c) for c in s] for s in strs if s != '']
 
     if strs == []:
-        return output([])
+        return ''
 
-    if pwn.isint(cut):
-        l = cut
+    if isinstance(cut, (int, long)):
+        cut = cut
     elif cut == 'left':
-        l = len(strs[0])
+        cut = len(strs[0])
     elif cut == 'right':
-        l = len(strs[-1])
+        cut = len(strs[-1])
     elif cut == 'min':
-        l = min(map(len, strs))
+        cut = min(map(len, strs))
     elif cut == 'max':
-        l = max(map(len, strs))
+        cut = max(map(len, strs))
     else:
-        raise Exception("Not a valid cut argument")
+        raise ValueError("Not a valid argument for 'cut'")
 
     def get(n):
-        return reduce(lambda x, y: x ^ y, [s[n % len(s)] for s in strs])
+        return chr(reduce(lambda x, y: x ^ y, [s[n % len(s)] for s in strs]))
 
-    return output(get(n) for n in range(l))
+    return ''.join(get(n) for n in range(cut))
 
-def xor_pair(data, avoid=''):
+def xor_pair(data, avoid = ''):
     """Args: data
     Finds two pieces of data that will xor together into the argument, while avoiding
     the bytes specified using the avoid argument."""
-    only = pwn.get_only()
+    only = [chr(c) for c in range(256) if chr(c) not in avoid]
 
     data = ''.join(data)
 
@@ -254,7 +247,6 @@ def xor_pair(data, avoid=''):
 def randoms(count, avoid):
     """Args: count
     Returns a number of random bytes, while avoiding the bytes specified using the avoid module."""
-    import random
     return ''.join(random.choice(pwn.get_only()) for n in range(count))
 
 
@@ -320,18 +312,17 @@ def isprint(c):
     return len(c)+2 == len(repr(c))
 
 
-def hexii(s, width=16, skip=True, hexii=True):
+def hexii(s, width = 16, skip = True, hexii = True):
     return hexdump(s, width, skip, hexii)
 
 def hexiichar(c):
-    from string import punctuation, digits, letters
-    HEXII = punctuation + digits + letters
+    HEXII = string.punctuation + string.digits + string.letters
     if c in HEXII:      return ".%c " % c
     elif c == '\0':     return "   "
     elif c == '\xff':   return "## "
     else:               return "%02x " % ord(c)
 
-def hexdump(s, width=16, skip=True, hexii=False):
+def hexdump(s, width = 16, skip = True, hexii = False):
     lines       = []
     last_unique = ''
     byte_width  = len('00 ')

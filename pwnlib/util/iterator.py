@@ -4,7 +4,7 @@ def take(n, iterable):
     "Return first n items of the iterable as a list"
     return list(islice(iterable, n))
 
-def tabulate(function, start=0):
+def tabulate(function, start = 0):
     "Return function(0), function(1), ..."
     return imap(function, count(start))
 
@@ -14,16 +14,16 @@ def consume(iterator, n):
     # Use functions that consume iterators at C speed.
     if n is None:
         # feed the entire iterator into a zero-length deque
-        collections.deque(iterator, maxlen=0)
+        collections.deque(iterator, maxlen = 0)
     else:
         # advance to the empty slice starting at position n
         next(islice(iterator, n, n), None)
 
-def nth(iterable, n, default=None):
+def nth(iterable, n, default = None):
     "Returns the nth item or a default value"
     return next(islice(iterable, n, None), default)
 
-def quantify(iterable, pred=bool):
+def quantify(iterable, pred = bool):
     "Count how many times the predicate is true"
     return sum(imap(pred, iterable))
 
@@ -47,7 +47,7 @@ def flatten(listOfLists):
     "Flatten one level of nesting"
     return chain.from_iterable(listOfLists)
 
-def repeatfunc(func, times=None, *args):
+def repeatfunc(func, times = None, *args):
     """Repeat calls to func with specified arguments.
 
     Example:  repeatfunc(random.random)
@@ -62,13 +62,13 @@ def pairwise(iterable):
     next(b, None)
     return izip(a, b)
 
-def grouper(n, iterable, fillvalue=None):
+def grouper(n, iterable, fillvalue = None):
     "Collect data into fixed-length chunks or blocks"
     # grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx
     args = [iter(iterable)] * n
-    return izip_longest(fillvalue=fillvalue, *args)
+    return izip_longest(fillvalue = fillvalue, *args)
 
-def group(n, string, fillvalue=None):
+def group(n, string, fillvalue = None):
     string = string + fillvalue*(-len(string) % n)
     for i in range(0, len(string), n):
         yield string[i:i+n]
@@ -91,7 +91,7 @@ def powerset(iterable):
     s = list(iterable)
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
-def unique_everseen(iterable, key=None):
+def unique_everseen(iterable, key = None):
     "List unique elements, preserving order. Remember all elements ever seen."
     # unique_everseen('AAAABBBCCDAABBB') --> A B C D
     # unique_everseen('ABBCcAD', str.lower) --> A B C D
@@ -108,14 +108,14 @@ def unique_everseen(iterable, key=None):
                 seen_add(k)
                 yield element
 
-def unique_justseen(iterable, key=None):
+def unique_justseen(iterable, key = None):
     "List unique elements, preserving order. Remember only the element just seen."
     # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
     # unique_justseen('ABBCcAD', str.lower) --> A B C A D
     import operator
     return imap(next, imap(operator.itemgetter(1), groupby(iterable, key)))
 
-def iter_except(func, exception, first=None):
+def iter_except(func, exception, first = None):
     """ Call a function repeatedly until an exception is raised.
 
     Converts a call-until-exception interface to an iterator interface.
@@ -145,7 +145,7 @@ def random_product(*args, **kwds):
     pools = map(tuple, args) * kwds.get('repeat', 1)
     return tuple(random.choice(pool) for pool in pools)
 
-def random_permutation(iterable, r=None):
+def random_permutation(iterable, r = None):
     "Random selection from itertools.permutations(iterable, r)"
     import random
     pool = tuple(iterable)

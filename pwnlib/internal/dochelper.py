@@ -22,7 +22,7 @@ class ExecDirective(Directive):
         try:
             exec('\n'.join(self.content), globals())
             text = sys.stdout.getvalue()
-            lines = statemachine.string2lines(text, tab_width, convert_whitespace=True)
+            lines = statemachine.string2lines(text, tab_width, convert_whitespace = True)
             self.state_machine.insert_input(lines, source)
             return []
         except Exception:

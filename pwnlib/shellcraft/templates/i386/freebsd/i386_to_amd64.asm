@@ -1,3 +1,4 @@
+<% from pwnlib.shellcraft import common %>
 <%docstring>Returns code to switch from i386 to amd64 mode.</%docstring>
 <% helper, end = common.label("helper"), common.label("end") %>
 [bits 32]

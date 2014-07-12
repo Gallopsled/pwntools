@@ -1,3 +1,4 @@
+<% from pwnlib.shellcraft import common %>
 <%page args="clear_ebx = True, fix_null = False"/>
 <%docstring>Calls mprotect(page, 4096, PROT_READ | PROT_WRITE | PROT_EXEC) for every page.
 
@@ -7,7 +8,7 @@ Args:
   clear_ebx(bool): If this is set to False, then the shellcode will assume that ebx has already been zeroed.
   fix_null(bool): If this is set to True, then the NULL-page will also be mprotected at the cost of slightly larger shellcode
 </%docstring>
-<% loop = common.label("mprotect_loop") %>
+<% label = common.label("mprotect_loop") %>
 
 %if clear_ebx:
     xor ebx, ebx
@@ -15,7 +16,7 @@ Args:
 %if fix_null:
     xor ecx, ecx
 %endif
-%{loop}:
+${label}:
     push PROT_READ | PROT_WRITE | PROT_EXEC
     pop edx
     push SYS_mprotect
@@ -24,4 +25,4 @@ Args:
     xor ecx, ecx
     mov ch, 0x10
     add ebx, ecx
-    jnz %{loop}
+    jnz ${label}

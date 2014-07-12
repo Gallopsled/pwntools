@@ -20,15 +20,40 @@ def partition(lst, f, save_keys = False):
     else:
         return d.values()
 
-def group(n, lst, discard_underfull = False):
-    """Split sequence into subsequences of given size.  Optionally discard or
-    include last subsequence if it is underfull
+def group(n, lst, underfull_action = 'ignore', fill_value = None):
+    """Split sequence into subsequences of given size. If the values cannot be
+    evenly distributed among into groups, then the last group will either be
+    returned as is, thrown out or padded with the value specified in fill_value.
+
+    Args:
+        n (int): The size of resulting groups
+        lst: The list, tuple or string to group
+        underfull_action (str): The action to take in case of an underfull group at the end. Possible values are 'ignore', 'drop' or 'fill'.
+        fill_value: The value to fill into an underfull remaining group.
+
+    Returns:
+        A list containing the grouped values.
     """
+
     out = []
     for i in range(0, len(lst), n):
         out.append(lst[i:i+n])
-    if discard_underfull and len(out[-1]) < n:
-        out.pop()
+
+    if out and len(out[-1]) < n:
+        if underfull_action == 'ignore':
+            pass
+        elif underfull_action == 'drop':
+            out.pop()
+        elif underfull_action == 'fill':
+            if isinstance(out[-1], tuple):
+                out[-1] = out[-1] + (fill_value,) * (n - len(out[-1]))
+            elif isinstance(out[-1], list):
+                out[-1] = out[-1] + [fill_value] * (n - len(out[-1]))
+            else:
+                out[-1] = out[-1] + fill_value * (n - len(out[-1]))
+        else:
+            raise ValueError("underfull_action must be either 'ignore', 'drop' or 'fill'")
+
     return out
 
 def concat(l):
@@ -66,7 +91,7 @@ def ordlist(s, size = 1):
 def unordlist(cs):
     """Takes a list of ascii values and returns the corresponding string"""
 # TODO: Fix pwn reference
-    return pwn.flat(cs, func=pwn.p8)
+    return pwn.flat(cs, func = pwn.p8)
 
 def __kmp_table(W):
     pos = 1

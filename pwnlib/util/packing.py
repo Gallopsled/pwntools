@@ -1,7 +1,7 @@
 from pwnlib import context
 import struct
 
-def pack(number, word_size=None, endianness=None, sign=None):
+def pack(number, word_size = None, endianness = None, sign = None):
     """Packs arbitrary-sized integer.
 
     Word-size, endianness and signedness is done according to context.
@@ -61,7 +61,7 @@ def pack(number, word_size=None, endianness=None, sign=None):
         raise ValueError("endianness must be either 'little' or 'big'")
 
 
-def unpack(data, word_size=None, endianness=None, sign=None):
+def unpack(data, word_size = None, endianness = None, sign = None):
     """Packs arbitrary-sized integer.
 
     Word-size, endianness and signedness is done according to context.
@@ -117,7 +117,7 @@ def unpack(data, word_size=None, endianness=None, sign=None):
         raise ValueError("sign must be either 'signed' or 'unsigned'")
 
 
-def p8(number, endianness=None, sign=None):
+def p8(number, endianness = None, sign = None):
     """Packs 8-bit integer.
     Endianness and signedness is done according to context.
 
@@ -138,7 +138,7 @@ def p8(number, endianness=None, sign=None):
             ("big",    "unsigned"): p8bu}[endianness, sign](number)
 
 
-def p16(number, endianness=None, sign=None):
+def p16(number, endianness = None, sign = None):
     """Packs 16-bit integer.
     Endianness and signedness is done according to context.
 
@@ -159,7 +159,7 @@ def p16(number, endianness=None, sign=None):
             ("big",    "unsigned"): p16bu}[endianness, sign](number)
 
 
-def p32(number, endianness=None, sign=None):
+def p32(number, endianness = None, sign = None):
     """Packs 32-bit integer.
     Endianness and signedness is done according to context.
 
@@ -180,7 +180,7 @@ def p32(number, endianness=None, sign=None):
             ("big",    "unsigned"): p32bu}[endianness, sign](number)
 
 
-def p64(number, endianness=None, sign=None):
+def p64(number, endianness = None, sign = None):
     """Packs 64-bit integer.
     Endianness and signedness is done according to context.
 
@@ -201,7 +201,7 @@ def p64(number, endianness=None, sign=None):
             ("big",    "unsigned"): p64bu}[endianness, sign](number)
 
 
-def u8(data, endianness=None, sign=None):
+def u8(data, endianness = None, sign = None):
     """Unpacks 8-bit integer.
     Endianness and signedness is done according to context.
 
@@ -222,7 +222,7 @@ def u8(data, endianness=None, sign=None):
             ("big",    "unsigned"): u8bu}[endianness, sign](data)
 
 
-def u16(data, endianness=None, sign=None):
+def u16(data, endianness = None, sign = None):
     """Unpacks 16-bit integer.
     Endianness and signedness is done according to context.
 
@@ -243,7 +243,7 @@ def u16(data, endianness=None, sign=None):
             ("big",    "unsigned"): u16bu}[endianness, sign](data)
 
 
-def u32(data, endianness=None, sign=None):
+def u32(data, endianness = None, sign = None):
     """Unpacks 32-bit integer.
     Endianness and signedness is done according to context.
 
@@ -264,7 +264,7 @@ def u32(data, endianness=None, sign=None):
             ("big",    "unsigned"): u32bu}[endianness, sign](data)
 
 
-def u64(data, endianness=None, sign=None):
+def u64(data, endianness = None, sign = None):
     """Unpacks 64-bit integer.
     Endianness and signedness is done according to context.
 

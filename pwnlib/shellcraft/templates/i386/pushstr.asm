@@ -1,3 +1,4 @@
+<% from pwnlib.util import lists, packing, binary %>
 <%page args="string, append_null = True"/>
 <%docstring>
 Pushes a string onto the stack without using
@@ -20,20 +21,20 @@ Args:
         extend = '\x00'
 %>
 
-% for s in list(util.iterator.group(4, string, extend))[::-1]:
+% for s in lists.group(4, string, 'fill', extend)[::-1]:
 <%
-    sign = util.packing.u32ls(s)
+    sign = packing.u32ls(s)
 %>\
-    % if sign == 0:
-        push 1
-        dec byte [esp] ; ${repr(s)}
-    % elif -128 <= sign < 128:
-        push ${hex(sign)} ; ${repr(s)}
-    % elif '\x00' not in s and '\n' not in s:
-        push `${repr(s)[1:-1]}`
-    % else:
-<% a,b = util.binary.xor_pair(s, avoid = '\x00\n') %>\
-        push `${repr(a)[1:-1]}`
-        xor dword [esp], `${repr(b)[1:-1]}` ; ${repr(s)}
-    % endif
+% if sign == 0:
+    push 1
+    dec byte [esp] ; ${repr(s)}
+% elif -128 <= sign < 128:
+    push ${hex(sign)} ; ${repr(s)}
+% elif '\x00' not in s and '\n' not in s:
+    push `${repr(s)[1:-1]}`
+% else:
+<% a,b = binary.xor_pair(s, avoid = '\x00\n') %>\
+    push `${repr(a)[1:-1]}`
+    xor dword [esp], `${repr(b)[1:-1]}` ; ${repr(s)}
+% endif
 % endfor

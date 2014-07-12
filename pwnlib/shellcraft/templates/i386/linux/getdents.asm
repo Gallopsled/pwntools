@@ -1,3 +1,4 @@
+<% from pwnlib.shellcraft import i386 %>
 <%page args="in_fd=0, size=255, allocate_stack=True"/>
 <%docstring> Reads to the stack from a directory.
 

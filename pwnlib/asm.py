@@ -2,7 +2,7 @@ from pwnlib import context
 
 __all__ = ['asm', 'disasm']
 
-def asm(shellcode, arch=None):
+def asm(shellcode, arch = None):
     """assembles a piece of code, represented as a multi-line string.
 
     Used for shellcode on architecture 'arch' for operating system 'os'.
@@ -170,7 +170,7 @@ def _run(cmd):
     import subprocess, errno
     from pwnlib import log
     try:
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
         stdout, stderr = p.communicate()
         exitcode = p.wait()
     except OSError, e:

@@ -22,7 +22,7 @@ def ip(host):
 def get_interfaces():
     """Gets all (interface, IPv4) of the local system."""
     import subprocess, re
-    d = subprocess.check_output('ip -4 -o addr', shell=True)
+    d = subprocess.check_output('ip -4 -o addr', shell = True)
     ifs = re.findall(r'^\S+:\s+(\S+)\s+inet\s+([^\s/]+)', d, re.MULTILINE)
     return [i for i in ifs if i[0] != 'lo']
 

@@ -25,11 +25,7 @@ def init_mako():
 
     lookup = TemplateLookup(
         directories      = [relpath('templates')],
-        module_directory = relpath('pycs'),
-        imports          = [
-            'from pwnlib.shellcraft import ' + shellcraft_imports,
-            'from pwnlib.util       import ' + util_imports,
-        ]
+        module_directory = relpath('pycs')
     )
 
     # The purpose of this definition is to create a new Tag.
