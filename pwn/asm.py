@@ -149,7 +149,7 @@ def _asm(target_arch, target_os, code_blocks, emit_asm = 0, keep_tmp = False):
             return '\n'.join(output)
 
         pwn.write(path('step1'), code)
-        _run(cpp + [path('step1'), path('step2')])
+        _run(cpp + [path('step1'), '-o', path('step2')])
         code = pwn.read(path('step2'))
 
         _code = code.split('\n' + magic + '\n')
