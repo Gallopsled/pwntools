@@ -36,10 +36,7 @@ _TYPE_EXCEPTION = 1
 
 def _internal_memoize(use_mem = True, use_file = True):
     def real(f):
-        if use_mem == False and use_file == False:
-            return f
-
-        if use_mem == False or _tempdir() == None:
+        if use_mem == False and (use_file == False or _tempdir() == None):
             return f
 
         cache = {}
