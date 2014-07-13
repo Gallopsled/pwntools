@@ -26,15 +26,15 @@ import pwnlib.term.readline
 
 h = pwn.term.output('yolo\n')
 i = 0
-def foo (_):
+def foo(_):
     global i
     i += 1
     pwn.term.output('foooooo%d\n' % i, frozen = True, before = h)
 
-def bar ():
+def bar():
     print
 
-def baz (_):
+def baz(_):
     import sys
     sys.exit()
 

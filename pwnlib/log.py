@@ -112,7 +112,7 @@ def error(s = '', exit_code = -1):
         raise exception.PwnlibException(s, reason, exit_code)
 
 def die(s):
-    error (s)
+    error(s)
 
 def fatal(s = '', exit_code = -1):
     anotate(text.on_red('FATAL'), s, ERROR)

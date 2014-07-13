@@ -2,25 +2,25 @@ import readline
 from .. import log
 
 class Completer:
-    def complete (self, _left, _right):
+    def complete(self, _left, _right):
         log.stub()
-    def suggest (self, _left, _right):
+    def suggest(self, _left, _right):
         log.stub()
-    def __enter__ (self):
+    def __enter__(self):
         self._saved_complete_hook = readline.complete_hook
         self._saved_suggest_hook = readline.suggest_hook
         readline.set_completer(self)
-    def __exit__ (self, *args):
+    def __exit__(self, *args):
         readline.complete_hook = self._saved_complete_hook
         readline.suggest_hook = self._saved_suggest_hook
 
 class WordCompleter(Completer):
-    def __init__ (self, delims = None):
+    def __init__(self, delims = None):
         self.delims = delims or ' \t\n`!@#$^&*()=+[{]}\\|;:\'",<>?'
         self._cur_word = None
         self._completions = []
 
-    def _get_word (self, left):
+    def _get_word(self, left):
         i = len(left) - 1
         while i >= 0:
             if left[i] in self.delims:
@@ -29,13 +29,13 @@ class WordCompleter(Completer):
         i += 1
         return left[i:]
 
-    def _update (self, w):
+    def _update(self, w):
         if w == self._cur_word:
             return
         self._cur_word = w
         self._completions = self.complete_word(w)
 
-    def complete (self, buffer_left, buffer_right):
+    def complete(self, buffer_left, buffer_right):
         w = self._get_word(buffer_left)
         self._update(w)
         if len(self._completions) == 1:
@@ -43,20 +43,20 @@ class WordCompleter(Completer):
             if len(c) > len(w):
                 return c[len(w):]
 
-    def suggest (self, buffer_left, _buffer_right):
+    def suggest(self, buffer_left, _buffer_right):
         w = self._get_word(buffer_left)
         self._update(w)
         return self._completions
 
-    def complete_word (self, word):
+    def complete_word(self, word):
         log.stub()
 
 class LongestPrefixCompleter(WordCompleter):
-    def __init__ (self, words = [], delims = None):
+    def __init__(self, words = [], delims = None):
         WordCompleter.__init__(self, delims)
         self.words = words
 
-    def complete_word (self, word):
+    def complete_word(self, word):
         if not word:
             return []
         cs = [w for w in self.words if w.startswith(word)]
@@ -77,7 +77,7 @@ class LongestPrefixCompleter(WordCompleter):
 
 import os
 class PathCompleter(Completer):
-    def __init__ (self, mask = '*', only_dirs = False):
+    def __init__(self, mask = '*', only_dirs = False):
         if mask <> '*':
             import re
             mask = mask.replace('.', '\\.').replace('*', '.*')
@@ -87,7 +87,7 @@ class PathCompleter(Completer):
         self.only_dirs = only_dirs
         self._cur_prefix = None
 
-    def _update (self, prefix):
+    def _update(self, prefix):
         if prefix == self._cur_prefix:
             return
         self._completions = []
@@ -116,7 +116,7 @@ class PathCompleter(Completer):
                       os.path.isdir(c)]
             self._completions = cs
 
-    def complete (self, buffer_left, buffer_right):
+    def complete(self, buffer_left, buffer_right):
         self._update(buffer_left)
         cs = []
         for c in self._completions:
@@ -136,7 +136,7 @@ class PathCompleter(Completer):
         if len(lcp) > len(buffer_left):
             return lcp[len(buffer_left):]
 
-    def suggest (self, buffer_left, buffer_right):
+    def suggest(self, buffer_left, buffer_right):
         self._update(buffer_left)
         out = []
         for c in self._completions:

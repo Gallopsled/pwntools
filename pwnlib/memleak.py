@@ -10,13 +10,13 @@ class MemLeak:
     byte is recovered as a side-effect.
 
     """
-    def __init__ (self, f, search_range = 20, reraise = True):
+    def __init__(self, f, search_range = 20, reraise = True):
         self.cache = {}
         self.leak = f
         self.search_range = search_range
         self.reraise = reraise
 
-    def _leak (self, addr):
+    def _leak(self, addr):
         if addr in self.cache:
             return self.cache[addr]
         try:
@@ -35,11 +35,11 @@ class MemLeak:
             self.cache[addr + n] = ord(b)
         return self.cache[addr]
 
-    def raw (self, addr, numb):
+    def raw(self, addr, numb):
         """Leak numb bytes at addr"""
         return [self._leak(addr + i) for i in range(numb)]
 
-    def b (self, addr, ndx = 0):
+    def b(self, addr, ndx = 0):
         """Leak byte at addr"""
         addr += ndx
         x = self._leak(addr)
@@ -57,7 +57,7 @@ class MemLeak:
                 return self.cache[addr]
         return None
 
-    def w (self, addr, ndx = 0):
+    def w(self, addr, ndx = 0):
         """Leak word at addr"""
         addr += ndx * 2
         b1 = self.b(addr)
@@ -66,7 +66,7 @@ class MemLeak:
             return None
         return b1 + (b2 << 8)
 
-    def d (self, addr, ndx = 0):
+    def d(self, addr, ndx = 0):
         """Leak dword at addr"""
         addr += ndx * 4
         w1 = self.w(addr)
@@ -75,7 +75,7 @@ class MemLeak:
             return None
         return w1 + (w2 << 16)
 
-    def q (self, addr, ndx = 0):
+    def q(self, addr, ndx = 0):
         """Leak qword at addr"""
         addr += ndx * 8
         d1 = self.d(addr)
@@ -84,7 +84,7 @@ class MemLeak:
             return None
         return d1 + (d2 << 32)
 
-    def s (self, addr):
+    def s(self, addr):
         """Leak bytes at addr until failure or a nullbyte is found"""
         out = ''
         while True:
@@ -95,7 +95,7 @@ class MemLeak:
             addr += 1
         return out
 
-    def n (self, addr, numb):
+    def n(self, addr, numb):
         """Leak numb bytes at addr.
 
         returns a string with the leaked bytes, will return None if any are missing
@@ -105,10 +105,10 @@ class MemLeak:
             return None
         return ''.join(chr(x) for x in xs)
 
-    def __getitem__ (self, addr):
+    def __getitem__(self, addr):
         return self.b(addr)
 
-    def __setitem__ (self, addr, val):
+    def __setitem__(self, addr, val):
         if isinstance(val, (int, long)):
             if val == 0:
                 self.cache[addr] = 0
@@ -124,32 +124,32 @@ class MemLeak:
         else:
             raise TypeError
 
-    def __delitem__ (self, addr):
+    def __delitem__(self, addr):
         del self.cache[addr]
 
-    def setb (self, addr, val, ndx = 0):
+    def setb(self, addr, val, ndx = 0):
         """Set byte at addr to val"""
         addr += ndx
         self[addr] = val & 0xff
 
-    def setw (self, addr, val, ndx = 0):
+    def setw(self, addr, val, ndx = 0):
         """Set word at addr to val"""
         addr += ndx * 2
         self.setb(addr, val)
         self.setb(addr + 1, val >> 8)
 
-    def setd (self, addr, val, ndx = 0):
+    def setd(self, addr, val, ndx = 0):
         """Set dword at addr to val"""
         addr += ndx * 4
         self.setw(addr, val)
         self.setw(addr + 2, val >> 16)
 
-    def setq (self, addr, val, ndx = 0):
+    def setq(self, addr, val, ndx = 0):
         """Set qword at addr to val"""
         addr += ndx * 8
         self.setd(addr, val)
         self.setd(addr + 4, val >> 32)
 
-    def sets (self, addr, val):
+    def sets(self, addr, val):
         """Set known string at addr, which will be null-terminated"""
         self[addr] = val + '\x00'

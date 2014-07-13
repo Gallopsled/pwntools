@@ -16,7 +16,7 @@ def closure():
     import string, collections
     global args
     args = collections.defaultdict(str)
-    def isident (s):
+    def isident(s):
         first = string.uppercase + '_'
         body = string.digits + first
         if not s:
