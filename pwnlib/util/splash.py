@@ -34,7 +34,7 @@ def splash():
             text.yellow, text.green,   text.cyan
         ]
 
-        h = log.indented('', frozen = False)
+        h = log.indented('\n', frozen = False)
         lines = _banner.lstrip('\n')
         ndx = 0
         while sys:
