@@ -13,7 +13,7 @@ works as they normally do, except 1+1=0 (or it is equivalently by doing the
 calculation (mod 2)).
 
 We choose a numerical representation of polynomials because it is efficient
-(and because it is what the rest of the world uses.
+(and because it is what the rest of the world uses).
 
 So for instance we represent x**4 + x + 1 as 0b10011.
 
