@@ -92,7 +92,7 @@ def expr_eval(expr):
     >>> expr_eval("__import__('sys').modules")
     Traceback (most recent call last):
     ...
-    ValueError: opcode STORE_MAP not allowed
+    ValueError: opcode LOAD_NAME not allowed
     """
 
     c = test_expr(expr, _expr_codes)
