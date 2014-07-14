@@ -1,20 +1,28 @@
+import collections
+
 def partition(lst, f, save_keys = False):
-    """parition([1,2,3,4,5], lambda x: x&1) => [[1,3,5], [2,4]]
+    """Partitions an iterable into sublists using a function to specify which
+    group they belong to.
 
-    Partitions a list into sublists using a function to specify which group they belong to.
+    It works by calling `f` on every element and saving the results into
+    an :class:`collections.OrderedDict`.
 
-    If you want to save the output from the function, set save_keys to True, to return a dictionary instead of a list.
+    Args:
+      lst: The iterable to partition
+      f(function): The function to use as the partitioner.
+      save_keys(bool): Set this to True, if you want the OrderedDict
+                       returned instead of just the values
+
+    Example:
+      >>> partition([1,2,3,4,5], lambda x: x&1)
+      [[1, 3, 5], [2, 4]]
     """
-    d = {}
+    d = collections.OrderedDict()
 
     for l in lst:
         c = f(l)
-        s = d.get(c)
-
-        if s == None:
-            d[c] = [l]
-        else:
-            s.append(l)
+        s = d.setdefault(c, [])
+        s.append(l)
     if save_keys:
         return d
     else:
@@ -26,14 +34,38 @@ def group(n, lst, underfull_action = 'ignore', fill_value = None):
     returned as is, thrown out or padded with the value specified in fill_value.
 
     Args:
-        n (int): The size of resulting groups
-        lst: The list, tuple or string to group
-        underfull_action (str): The action to take in case of an underfull group at the end. Possible values are 'ignore', 'drop' or 'fill'.
-        fill_value: The value to fill into an underfull remaining group.
+      n (int): The size of resulting groups
+      lst: The list, tuple or string to group
+      underfull_action (str): The action to take in case of an underfull group at the end. Possible values are 'ignore', 'drop' or 'fill'.
+      fill_value: The value to fill into an underfull remaining group.
 
     Returns:
-        A list containing the grouped values.
+      A list containing the grouped values.
+
+    Example:
+      >>> group(3, "ABCDEFG")
+      ['ABC', 'DEF', 'G']
+      >>> group(3, 'ABCDEFG', 'drop')
+      ['ABC', 'DEF']
+      >>> group(3, 'ABCDEFG', 'fill', 'Z')
+      ['ABC', 'DEF', 'GZZ']
+      >>> group(3, list('ABCDEFG'), 'fill')
+      [['A', 'B', 'C'], ['D', 'E', 'F'], ['G', None, None]]
     """
+
+    if underfull_action not in ['ignore', 'drop', 'fill']:
+        raise ValueError("group(): underfull_action must be either 'ignore', 'drop' or 'fill'")
+
+    if underfull_action == 'fill':
+        if isinstance(lst, tuple):
+            fill_value = (fill_value,)
+        elif isinstance(lst, list):
+            fill_value = [fill_value]
+        elif isinstance(lst, (str, unicode)):
+            if not isinstance(fill_value, (str, unicode)):
+                raise ValueError("group(): cannot fill a string with a non-string")
+        else:
+            raise ValueError("group(): 'lst' must be either a tuple, list or string")
 
     out = []
     for i in range(0, len(lst), n):
@@ -44,22 +76,19 @@ def group(n, lst, underfull_action = 'ignore', fill_value = None):
             pass
         elif underfull_action == 'drop':
             out.pop()
-        elif underfull_action == 'fill':
-            if isinstance(out[-1], tuple):
-                out[-1] = out[-1] + (fill_value,) * (n - len(out[-1]))
-            elif isinstance(out[-1], list):
-                out[-1] = out[-1] + [fill_value] * (n - len(out[-1]))
-            else:
-                out[-1] = out[-1] + fill_value * (n - len(out[-1]))
         else:
-            raise ValueError("underfull_action must be either 'ignore', 'drop' or 'fill'")
+            out[-1] = out[-1] + fill_value * (n - len(out[-1]))
 
     return out
 
 def concat(l):
-    """concat([[1,2], [3]]) => [1,2,3]
+    """Concats a list of lists into a list.
 
-    Concats a list of lists into a list.
+    Example:
+
+      >>> concat([[1, 2], [3]])
+      [1, 2, 3]
+
     """
 
     res = []
@@ -69,13 +98,18 @@ def concat(l):
     return res
 
 def concat_all(*args):
-    """concat_all([1,[2,3]], [[[[4,5,6]]]]) => [1,2,3,4,5,6]
+    """Concats all the arguments together.
 
-    Concats all the arguments together.
+    Example:
+       >>> concat_all(0, [1, (2, 3)], [([[4, 5, 6]])])
+       [0, 1, 2, 3, 4, 5, 6]
     """
 
-    if len(args) != 1: return concat_all(list(args))
-    if not (isinstance(args[0], list) or isinstance(args[0], tuple)): return [args[0]]
+    if len(args) != 1:
+        return concat_all(list(args))
+
+    if not isinstance(args[0], (tuple, list)):
+        return [args[0]]
 
     res = []
     for k in args[0]:
@@ -83,61 +117,20 @@ def concat_all(*args):
 
     return res
 
-def ordlist(s, size = 1):
-    """Turns a string into a list of the corresponding ascii values."""
-# TODO: Fix pwn reference
-    return [pwn.uint(c) for c in group(size, s)]
+def ordlist(s):
+    """Turns a string into a list of the corresponding ascii values.
+
+    Example:
+      >>> ordlist("hello")
+      [104, 101, 108, 108, 111]
+    """
+    return map(ord, s)
 
 def unordlist(cs):
-    """Takes a list of ascii values and returns the corresponding string"""
-# TODO: Fix pwn reference
-    return pwn.flat(cs, func = pwn.p8)
+    """Takes a list of ascii values and returns the corresponding string.
 
-def __kmp_table(W):
-    pos = 1
-    cnd = 0
-    T = []
-    T.append(-1)
-    T.append(0)
-    while pos < len(W):
-        if W[pos] == W[cnd]:
-            cnd += 1
-            pos += 1
-            T.append(cnd)
-        elif cnd > 0:
-            cnd = T[cnd]
-        else:
-            pos += 1
-            T.append(0)
-    return T
-
-def __kmp_search(S, W):
-    m = 0
-    i = 0
-    T = __kmp_table(W)
-    while m + i < len(S):
-        if S[m + i] == W[i]:
-            i += 1
-            if i == len(W):
-                yield m
-                m += i - T[i]
-                i = max(T[i], 0)
-        else:
-            m += i - T[i]
-            i = max(T[i], 0)
-
-def __single_search(S, w):
-    for i in xrange(len(S)):
-        if S[i] == w:
-            yield i
-
-def findall(haystack, needle):
-    '''Find all occurences of needle in haystack
-
-    Uses the Knuth-Morris-Pratt algorithm'''
-    if type(haystack) <> type(needle):
-        needle = [needle]
-    if len(needle) == 1:
-        return __single_search(haystack, needle[0])
-    else:
-        return __kmp_search(haystack, needle)
+    Example:
+      >>> unordlist([104, 101, 108, 108, 111])
+      'hello'
+    """
+    return ''.join(chr(c) for c in cs)
