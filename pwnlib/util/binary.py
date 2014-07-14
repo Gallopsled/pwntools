@@ -4,19 +4,43 @@ import re, base64, random, string
 import packing, lists
 
 def unhex(s):
-    """Hex-decodes a string"""
+    """Hex-decodes a string.
+
+    Example:
+
+      >>> unhex("74657374")
+      'test'
+"""
     return s.decode('hex')
 
 def enhex(x):
-    """Hex-encodes a string or integer"""
+    """Hex-encodes a string.
+
+    Example:
+
+      >>> enhex("test")
+      '74657374'
+"""
     return x.encode('hex')
 
 def urlencode(s):
-    """urlencodes a string"""
+    """URL-encodes a string.
+
+    Example:
+
+      >>> urlencode("test")
+      '%74%65%73%74'
+"""
     return ''.join(['%%%02x' % ord(c) for c in s])
 
 def urldecode(s, ignore_invalid = False):
-    """urldecodes a string"""
+    """URL-decodes a string.
+
+    Example:
+
+      >>> urldecode("test%20%41")
+      'test A'
+"""
     res = ''
     n = 0
     while n < len(s):
@@ -35,53 +59,38 @@ def urldecode(s, ignore_invalid = False):
                 raise Exception("Invalid input to urldecode")
     return res
 
-def bits(s, endian = 'big', zero = None, one = None, type = None, size = None):
-    '''Converts the argument into a string of binary sequence
-       or a binary integer list
+def bits(s, endian = 'big', zero = 0, one = 1):
+    """Converts the argument a list of bits.
 
-       Arguments:
-         - s: The sequence which should be parsed.
-         - endian(optional): The binary endian, default 'big'.
-         - zero(optional): The byte representing a 0bit, required if
-            one is defined.
-         - one(optional): The byte representing a 1bit, required if
-            zero is defined.
-         - type(optional): A string representing the input type, can be
-            'bool' or 'str', defaults to integer if not defined.
-         - size: Number of bits to output, None for minimum number of bits.
+       Args:
+         s: A string or number to be converted into bits.
+         endian (str): The binary endian, default 'big'.
+         zero: The representing a 0-bit.
+         one: The representing a 1-bit.
 
-       Returns a string of 1s and 0s if type = 'str', else a list
-         of bits. '''
-    types = {bool:     'bool',
-             'bool':   'bool',
-             str:      'str',
-             'str':    'str',
-             'string': 'str',
-             int:      'int',
-             'int':    'int',
-             None:     None}
+       Returns:
+         A list consisting of the values specified in `zero` and `one`.
 
-    try:
-        type = types[type]
-    except:
-        pwn.die("Wat. Unknown type %s" % str(type))
+       Examples:
 
-    if zero != None or one != None:
-        if zero == None or one == None:
-            pwn.die("Wat. You cannot specify just a zero or a one in bits")
+         >>> bits(511, zero = "+", one = "-")
+         ['+', '+', '+', '+', '+', '+', '+', '-', '-', '-', '-', '-', '-', '-', '-', '-']
+         >>> sum(bits("test"))
+         17
+"""
 
-        if type != None:
-            pwn.die("You cannot specify both a type and (zero, one)")
+
+    if endian not in ['little', 'big']:
+        raise ValueError("bits(): 'endian' must be either 'little' or 'big'")
     else:
-        if type == 'bool':
-            zero = False
-            one = True
-        elif type == 'str':
-            zero = "0"
-            one = "1"
-        else:
-            zero = 0
-            one = 1
+        little = endian == 'little'
+
+    if (zero == None) != (one == None):
+        raise ValueError("bits(): You cannot specify one of 'zero' or 'one' without the other")
+
+    if zero == None:
+        zero = 0
+        one = 1
 
     out = []
     if isinstance(s, str):
@@ -91,107 +100,121 @@ def bits(s, endian = 'big', zero = None, one = None, type = None, size = None):
             for _ in range(8):
                 byte.append(one if b & 1 else zero)
                 b >>= 1
-            if endian == 'little':
+            if little:
                 out += byte
-            elif endian == 'big':
-                out += byte[::-1]
             else:
-                pwn.die('Wat (endian style)')
-    elif pwn.isint(s):
+                out += byte[::-1]
+    elif isinstance(s, (int, long)):
         while s:
             bit, s = one if s & 1 else zero, s >> 1
-            if endian == 'little':
-                out.append(bit)
-            else:
-                out.insert(0, bit)
+            out.append(bit)
+        while len(out) % 8:
+            out.append(zero)
+        if not little:
+            out = out[::-1]
     else:
-        print `s`
-        pwn.die("Wat (bits does not support this type)")
+        raise ValueError("bits(): 's' must be either a string or a number")
 
-    if size is not None:
-        if len(out) < size:
-            tail = [zero] * (size - len(out))
-            if endian == 'little':
-                out += tail
-            else:
-                out = tail + out
-        else:
-            if endian == 'little':
-                out = out[:size]
-            else:
-                out = out[-size:]
+    return out
 
-    if type == 'str':
-        return ''.join(out)
-    else:
-        return out
+def bits_str(s, endian = 'big', zero = '0', one = '1'):
+    """A wrapper around :func:`bits`, which converts the output into a string.
 
-def bits_str(s, endian = 'big', zero = '0', one = '1', size = None):
-    return ''.join(bits(s, zero = zero, one = one, endian = endian, size = size))
+    Examples:
+
+       >>> bits_str(511)
+       '0000000111111111'
+       >>> bits_str("bits_str", endian = "little")
+       '0100011010010110001011101100111011111010110011100010111001001110'
+"""
+    return ''.join(bits(s, endian, zero, one))
 
 def unbits(s, endian = 'big'):
-    out = []
+    """Converts an iterable of bits into a string.
 
-    state = {'cur': ''}
-    count = 0
+    Args:
+       s: Iterable of bits
+       endian (str):  The string "little" or "big", which specifies the bits endianness.
 
-    def flush():
-        cur = state['cur'].ljust(8, '0')
-        state['cur'] = ''
-        if endian == 'little':
-            out.append(chr(int(cur[::-1], 2)))
-        elif endian == 'big':
-            out.append(chr(int(cur, 2)))
-        else:
-            pwn.die('Wat (endian style)')
+    Returns:
+       A string of the decoded bits.
+
+    Example:
+       >>> unbits([1])
+       '\\x80'
+       >>> unbits([1], endian = 'little')
+       '\\x01'
+       >>> unbits(bits('hello'), endian = 'little')
+       '\\x16\\xa666\\xf6'
+    """
+    if endian == 'little':
+        u = lambda s: chr(int(s[::-1], 2))
+    elif endian == 'big':
+        u = lambda s: chr(int(s, 2))
+    else:
+        raise ValueError("unbits(): 'endian' must be either 'little' or 'big'")
+
+    out = ''
+    cur = ''
 
     for c in s:
-        if c not in ['0', '1', 0, 1, True, False]:
-            pwn.die('Unbits called with a funky argument')
+        if c in ['1', 1, True]:
+            cur += '1'
+        elif c in ['0', 0, False]:
+            cur += '0'
+        else:
+            raise ValueError("unbits(): cannot decode the value '%s' into a bit" % `c`)
 
-        state['cur'] += '1' if c in ['1', 1, True] else '0'
-        count += 1
-
-        if count == 8:
-            count = 0
-            flush()
-    if count:
-        flush()
+        if len(cur) == 8:
+            out += u(cur)
+            cur = ''
+    if cur:
+        out += u(cur.ljust(8, '0'))
 
     return ''.join(out)
 
-def bitflip(v):
-    return ''.join([unbits(bits(c, endian = 'little')) for c in v])
-
-def bitflip_int(v, width):
-    return int(bits_str(v).rjust(width, '0')[::-1], 2)
-
 def b64e(s):
-    '''Base64 encodes a string'''
+    """Base64 encodes a string
+
+    Example:
+
+       >>> b64e("test")
+       'dGVzdA=='
+       """
     return base64.b64encode(s)
 
 def b64d(s):
-    '''Base64 decodes a string'''
+    """Base64 decodes a string
+
+    Example:
+
+       >>> b64d('dGVzdA==')
+       'test'
+    """
     return base64.b64decode(s)
 
 # misc binary functions
 def xor(*args, **kwargs):
-    """Flattens its arguments using :func:`pwnlib.util.packing.flat`
-and then xors them together. If the end of a string is reached, it wraps
-around in the string.
+    """Flattens its arguments using :func:`pwnlib.util.packing.flat` and
+    then xors them together. If the end of a string is reached, it wraps
+    around in the string.
 
-Args:
-    *data: The arguments to be xor'ed together.
-    cut: How long a string should be returned.
-         Can be either 'min'/'max'/'left'/'right' or a number.
+    Args:
+       *data: The arguments to be xor'ed together.
+       cut: How long a string should be returned.
+            Can be either 'min'/'max'/'left'/'right' or a number.
 
-Returns:
-    The string of the arguments xor'ed together.
+    Returns:
+       The string of the arguments xor'ed together.
+
+    Example:
+       >>> xor('lol', 'hello', 42)
+       '. ***'
 """
 
     cut = kwargs.pop('cut', 'max')
 
-    if len(kwargs):
+    if kwargs != {}:
         raise TypeError("xor() got an unexpected keyword argument '%s'" % kwargs.pop()[0])
 
     if len(args) == 0:
@@ -221,101 +244,122 @@ Returns:
 
     return ''.join(get(n) for n in range(cut))
 
-def xor_pair(data, avoid = ''):
-    """Args: data
-    Finds two pieces of data that will xor together into the argument, while avoiding
-    the bytes specified using the avoid argument."""
-    only = [chr(c) for c in range(256) if chr(c) not in avoid]
+_default_alphabet = ''.join(chr(n) for n in range(256) if n not in [0, 0xa])
 
-    data = ''.join(data)
+def xor_pair(data, alphabet = None):
+    """Finds two strings that will xor into a given string, while only
+    using a given alphabet.
+
+    Args:
+      data (str): The desired string.
+      alphabet: The alphabet of allowed characters. Defaults to all characters except nulls and newlines.
+
+    Returns:
+      Two strings which will xor to the given string. If no such two strings exist, then None is returned.
+
+    Example:
+
+      >>> xor_pair("test")
+      ('\\x01\\x01\\x01\\x01', 'udru')
+"""
+
+    alphabet = alphabet or _default_alphabet
 
     res1 = ''
     res2 = ''
 
     for c1 in data:
-        for c2 in only:
-            if xor(c1, c2) in only:
+        for c2 in alphabet:
+            c3 = chr(ord(c1) ^ ord(c2))
+            if c3 in alphabet:
                 res1 += c2
-                res2 += xor(c1, c2)
+                res2 += c3
                 break
         else:
             return None
 
-    return (res1, res2)
+    return res1, res2
 
 
-def randoms(count, avoid):
-    """Args: count
-    Returns a number of random bytes, while avoiding the bytes specified using the avoid module."""
-    return ''.join(random.choice(pwn.get_only()) for n in range(count))
+def randoms(count, alphabet = None):
+    """Returns a random string of a given length using only the specified alphabet.
+
+    Args:
+      count (int): The length of the desired string.
+      alphabet: The alphabet of allowed characters. Defaults to all characters except nulls and newlines.
+
+    Returns:
+      A random string."""
+
+    return ''.join(random.sample(alphabet or _default_alphabet, count))
 
 
-def random8():
-    """Returns a random number which fits inside 1 byte, while avoiding the bytes specified using the avoid module."""
-    return u8(randoms(1))
+def rol(n, k, size = 32):
+    """Returns a rotation by `k` of `n`.
 
+    When `n` is a number, then means ``((n << k) | (n >> (size - k)))`` truncated to `size` bits.
 
-def random16():
-    """Returns a random number which fits inside 2 byte, while avoiding the bytes specified using the avoid module."""
-    return u16(randoms(2))
+    When `n` is a list, tuple or string, this is ``n[k % len(n):] + n[:k % len(n)]``.
 
+    Args:
+      n: The value to rotate.
+      k(int): The rotation amount. Can be a positive or negative number.
+      size(int): If `n` is a number, then this is the assumed bitsize of `n`.
 
-def random32():
-    """Returns a random number which fits inside 4 byte, while avoiding the bytes specified using the avoid module."""
-    return u32(randoms(4))
+    Example:
 
-def random64():
-    """Returns a random number which fits inside 8 byte, while avoiding the bytes specified using the avoid module."""
-    return u64(randoms(8))
+      >>> rol('abcdefg', 2)
+      'cdefgab'
+      >>> rol('abcdefg', -2)
+      'fgabcde'
+      >>> hex(rol(0x86, 3, 8))
+      '0x34'
+      >>> hex(rol(0x86, -3, 8))
+      '0xd0'
+"""
 
-def ror(n, k, size = None):
-    """Returns ((n >> k) | (n << (size - k))) truncated to the right number of bits.
+    if not isinstance(size, (int, long)) or size <= 0:
+        raise ValueError("rol(): 'size' must be a strictly positive integer")
 
-    Size defaults to 32 for numbers and 8*len(n) for strings.
+    if not isinstance(k, (int, long)):
+        raise ValueError("rol(): 'k' must be an integer")
 
-    Lists and tupples are rotated as you would expect."""
+    if isinstance(n, (str, unicode, list, tuple)):
+        return n[k % len(n):] + n[:k % len(n)]
+    elif isinstance(n, (int, long)):
+        k = k % size
+        n = (n << k) | (n >> (size - k))
+        n &= (1 << size) - 1
 
-    if isinstance(n, str):
-        repack = len(n)
-        size = size or (8*len(n))
-        n = uint(n)
-    elif all(hasattr(n, x) for x in ['__add__', '__getslice__', '__len__']):
-        return n[(-k) % len(n):] + n[:(-k) % len(n)]
-    else:
-        repack = False
-        size = size or 32
-
-    k = ((k % size) + size) % size
-    n = (n >> k) | (n << (size - k))
-    n &= (1 << size) - 1
-
-    if repack:
-        return pint(n).ljust(repack, '\x00')
-    else:
         return n
+    else:
+        raise ValueError("rol(): 'n' must be an integer, string, list or tuple")
 
-def rol(n, k, size = None):
-    """Returns ((n << k) | (n >> (size - k))) truncated to the right number of bits.
+def ror(n, k, size = 32):
+    """A simple wrapper around :func:`rol`, which negates the values of `k`."""
 
-    Size defaults to 32 for numbers and 8*len(n) for strings.
-
-    Lists and tupples are rotated as you would expect."""
     return ror(n, -k, size)
 
-def chunks(l, n):
-    """ Yield successive n-sized chunks from l. """
-    for i in xrange(0, len(l), n):
-        yield l[i:i+n]
-
 def isprint(c):
-    """Return true if a character is printable"""
-    return len(c)+2 == len(repr(c))
+    """Return True if a character is printable"""
+    return c in string.ascii_letters + string.digts + string.punctuation
 
 
-def hexii(s, width = 16, skip = True, hexii = True):
-    return hexdump(s, width, skip, hexii)
+def hexii(s, width = 16, skip = True):
+    """Return a HEXII-dump of a string.
 
-def hexiichar(c):
+    Args:
+      s(str): The string to dump
+      width(int): The number of characters per line
+      skip(bool): Should repeated lines be replaced by a "*"
+
+    Returns:
+      A HEXII-dump in the form of a string.
+"""
+
+    return hexdump(s, width, skip, True)
+
+def _hexiichar(c):
     HEXII = string.punctuation + string.digits + string.letters
     if c in HEXII:      return ".%c " % c
     elif c == '\0':     return "   "
@@ -323,6 +367,17 @@ def hexiichar(c):
     else:               return "%02x " % ord(c)
 
 def hexdump(s, width = 16, skip = True, hexii = False):
+    """Return a hexdump-dump of a string.
+
+    Args:
+      s(str): The string to dump
+      width(int): The number of characters per line
+      skip(bool): Set to True, if repeated lines should be replaced by a "*"
+      hexii(bool): Set to True, if a hexii-dump should be returned instead of a hexdump.
+
+    Returns:
+      A hexdump-dump in the form of a string.
+"""
     lines       = []
     last_unique = ''
     byte_width  = len('00 ')
@@ -333,7 +388,7 @@ def hexdump(s, width = 16, skip = True, hexii = False):
         column_sep = ''
         line_fmt   = '%%(offset)08x  %%(hexbytes)-%is|' % (len(column_sep)+(width*byte_width))
 
-    for line,chunk in enumerate(chunks(s,width)):
+    for line, chunk in enumerate(lists.group(width, s)):
         # If this chunk is the same as the last unique chunk,
         # use a '*' instead.
         if skip and (last_unique == chunk):
@@ -350,7 +405,7 @@ def hexdump(s, width = 16, skip = True, hexii = False):
             hexbytes  = ''.join('%02x ' % ord(b) for b in chunk)
             printable = ''.join(b if isprint(b) else '.' for b in chunk)
         else:
-            hexbytes  = ''.join(hexiichar(b) for b in chunk)
+            hexbytes  = ''.join(_hexiichar(b) for b in chunk)
             printable = ''
 
         # Insert column break in middle, for even-width lines

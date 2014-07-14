@@ -324,7 +324,7 @@ class _Waiter(object):
             _waiter_stack.remove(self)
 
 
-class SimpleWaiter(_Waiter):
+class _SimpleWaiter(_Waiter):
     def __init__(self, msg, _spinner):
         info('%s...' % msg)
         self.msg = msg
@@ -376,7 +376,7 @@ class _Spinner(threading.Thread):
             self.handle.freeze()
 
 
-class TermWaiter(_Waiter):
+class _TermWaiter(_Waiter):
     def __init__(self, msg, spinner):
         self.hasmsg = msg <> ''
         _put('[')
@@ -388,12 +388,12 @@ class TermWaiter(_Waiter):
         self.stat = term.output()
         _put('\n')
 
-    def _status(self, s):
+    def status(self, s):
         if self.hasmsg and s:
             s = ': ' + s
         self.stat.update(s)
 
-    def _success(self, s = 'OK'):
+    def success(self, s = 'OK'):
         if self.hasmsg and s:
             s = ': ' + s
         self.spinner.stop(text.bold_green('+'))
@@ -401,7 +401,7 @@ class TermWaiter(_Waiter):
         self.stat.freeze()
         self._remove()
 
-    def _failure(self, s = 'FAILED!'):
+    def failure(self, s = 'FAILED!'):
         if self.hasmsg and s:
             s = ': ' + s
         self.spinner.stop(text.bold_red('-'))
@@ -432,7 +432,7 @@ def waitfor(msg, status = '', spinner = None):
         h = _SimpleWaiter(msg, spinner)
     if status:
         h.status(status)
-    _handle_stack.append(h)
+    _waiter_stack.append(h)
     return h
 
 
@@ -443,42 +443,42 @@ def status(s = '', waiter = None):
       s (str): The status message.
       waiter: An optional waiter to update. If none is supplied, the last created one is used.
 """
-    if handle == None and _handle_stack:
-        handle = _handle_stack[-1]
+    if waiter == None and _waiter_stack:
+        waiter = _waiter_stack[-1]
 
-    if handle == None:
+    if waiter == None:
         error('Not waiting for anything')
 
-    handle._status(s)
+    waiter.status(s)
 
 
-def done_success(s = 'Done', handle = None):
+def done_success(s = 'Done', waiter = None):
     """Updates the status-text of a waiter-object, and then sets it to completed in a successful manner.
 
     Args:
       s (str): The status message.
       waiter: An optional waiter to update. If none is supplied, the last created one is used.
 """
-    if handle == None and _handle_stack:
-        handle = _handle_stack[-1]
+    if waiter == None and _waiter_stack:
+        waiter = _waiter_stack[-1]
 
-    if handle == None:
+    if waiter == None:
         error('Not waiting for anything')
 
-    handle._success(s)
+    waiter.success(s)
 
 
-def done_failure(s = 'FAILED!', handle = None):
+def done_failure(s = 'FAILED!', waiter = None):
     """Updates the status-text of a waiter-object, and then sets it to completed in a failed manner.
 
     Args:
       s (str): The status message.
       waiter: An optional waiter to update. If none is supplied, the last created one is used.
 """
-    if handle == None and _handle_stack:
-        handle = _handle_stack[-1]
+    if waiter == None and _waiter_stack:
+        waiter = _waiter_stack[-1]
 
-    if handle == None:
+    if waiter == None:
         error('Not waiting for anything')
 
-    handle._failure(s)
+    waiter.failure(s)

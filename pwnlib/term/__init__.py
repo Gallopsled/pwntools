@@ -4,6 +4,7 @@ from key import get as getkey
 from keymap import Keymap
 import key, readline, termcap, text
 
+#: This is True exactly when we have taken over the terminal using :func:`init`.
 term_mode = False
 
 def can_init():
@@ -12,6 +13,10 @@ def can_init():
 
     import sys
     if not sys.stdout.isatty():
+        return False
+
+    # Check for python -i
+    if sys.flags.interactive:
         return False
 
     # Check fancy REPLs
@@ -37,6 +42,12 @@ def can_init():
 
 
 def init():
+    """Calling this function will take over the terminal (if :func:`can_init`
+    returns True) until the current python interpreter is closed.
+
+    It is on our TODO, to create a function to "give back" the terminal without
+    closing the interpreter."""
+
     global term_mode
 
     if term_mode:

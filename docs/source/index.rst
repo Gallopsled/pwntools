@@ -15,6 +15,7 @@ Contents:
    memleak
    shellcraft
    term
+   ui
    util/*
 
 Indices and tables
