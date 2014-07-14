@@ -201,20 +201,21 @@ class ContextModule(types.ModuleType):
     def log_level(self, value):
         """The amount of output desired from the :mod:`pwnlib.log` module.
 
-        Allowed values:
+        Allowed values are any numbers or a string.
 
-        * ``debug``
-        * ``info``
-        * ``error``
-        * ``silent``"""
+        If a string is given, we uppercase the string and lookup it up in the log module.
 
-        if value in ('debug', 'info', 'error', 'silent'):
-            import log
-            return getattr(log, value.upper())
-        elif type(value) in [types.IntType, types.LongType] or value == None:
+        E.g if ``'debug'`` is specified, then the result is ``10``, as :data:`pwnlib.log.DEBUG` is ``10``.
+"""
+
+        if type(value) in [types.IntType, types.LongType] or value == None:
             return value
-        else:
-            raise AttributeError('Cannot set context-key log_level, as the value %s did not validate' % repr(value))
+        elif type(value) == types.StringType:
+            import log
+            if hasattr(log, value.upper()):
+                return getattr(log, value.upper())
+
+        raise AttributeError('Cannot set context-key log_level, as the value %s did not validate' % repr(value))
 
 
 class MainModule(types.ModuleType):
@@ -242,7 +243,7 @@ the global defaults are available in :mod:`pwnlib.context.defaults`.
 The variables in this module can be read or written directly. If you try to
 write an invalid value, an exception is thrown:
 
-.. doctest:: test_context_example
+.. doctest:: context_example
 
    >>> print context.arch
    None
@@ -253,6 +254,21 @@ write an invalid value, an exception is thrown:
    Traceback (most recent call last):
        ...
    AttributeError: Cannot set context-key arch, as the value 'mill' did not validate
+
+For a few variables, a slight translation occur when you try to set the variable.
+An example of this is :data:`pwnlib.context.log_level`:
+
+.. doctest:: context_log_level
+
+   >>> context.log_level = 33
+   >>> print context.log_level
+   33
+   >>> context.log_level = 'debug'
+   >>> print context.log_level
+   10
+
+In this case the translation is done by looking up the string in :mod:`pwnlib.log`,
+so the result happens because :data:`pwnlib.log.DEBUG` is ``10``.
 
 A read can never throw an exception. If there is no result in the thread-local
 dictionary, the global dictionary is queried. If it has no results either, ``None``
@@ -293,7 +309,7 @@ is returned.
 
         Examples:
 
-          .. doctest:: test_context
+          .. doctest:: context
 
              >>> context(arch = 'i386', os = 'linux')
              >>> print context.arch
@@ -330,7 +346,7 @@ is returned.
 
         Examples:
 
-          .. doctest:: text_context_local
+          .. doctest:: context_local
 
              >>> print context.arch
              None

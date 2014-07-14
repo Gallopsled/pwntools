@@ -3,13 +3,8 @@ from pwnlib import context
 __all__ = ['asm', 'disasm']
 
 def asm(shellcode, arch = None):
-    """assembles a piece of code, represented as a multi-line string.
+    """Assembles a piece of code, represented as a multi-line string."""
 
-    Used for shellcode on architecture 'arch' for operating system 'os'.
-    Example:
-        context("i386", "linux", "tcp4")
-        sc = shellcraft.dupsh()
-        print enhex(asm(sc))"""
     import tempfile, subprocess, os.path, shutil
     from pwnlib.util.misc import read, write
 
@@ -17,7 +12,7 @@ def asm(shellcode, arch = None):
     if arch == None and context.arch:
         arch = context.arch
     else:
-        raise Exception('You need to set the architecture with context')
+        raise ValueError("asm() needs to get 'arch' through an argument or the context")
 
     #TODO: constants module should be used to lookup constants
     tmpdir = tempfile.mkdtemp(prefix = 'pwn-asm-')
@@ -79,24 +74,21 @@ def asm(shellcode, arch = None):
 
         return read(path('step3'))
     finally:
-            try:
-                shutil.rmtree(tmpdir)
-            except:
-                pass
+        try:
+            shutil.rmtree(tmpdir)
+        except:
+            pass
 
-def disasm(data, arch = None, keep_tmp = False):
-    """disassembles a block of code
-    Example:
-        import pwn
-        pwn.context("i386", "linux")
-        print disasm(unhex("31c9f7e950682f2f7368682f62696eb00b89e3cd80"))"""
+def disasm(data, arch = None):
+    """Disassembles a binary piece of shellcode into assembler."""
+
     import os.path, tempfile, subprocess, shutil
     from pwnlib.util.misc import write
     # Lookup in context if not found
     if arch == None and context.arch:
         arch = context.arch
     else:
-        raise Exception('You need to set the architecture with context')
+        raise ValueError("disasm() needs to get 'arch' through an argument or the context")
 
     tmpdir = tempfile.mkdtemp(prefix = 'pwn-disasm-')
     def path(s):
@@ -160,11 +152,10 @@ def disasm(data, arch = None, keep_tmp = False):
         else:
             return output1[1].strip('\n')
     finally:
-        if not keep_tmp:
-            try:
-                shutil.rmtree(tmpdir)
-            except:
-                pass
+        try:
+            shutil.rmtree(tmpdir)
+        except:
+            pass
 
 def _run(cmd):
     import subprocess, errno

@@ -1,1 +1,1 @@
-__all__ = ['asm', 'context', 'exception', 'log', 'memleak', 'shellcraft', 'util']
+__all__ = ['asm', 'context', 'exception', 'log', 'memleak', 'shellcraft', 'term', 'util']

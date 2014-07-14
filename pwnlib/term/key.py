@@ -117,23 +117,28 @@ def _name_to_key(fname):
         return None
     return k
 
-_ti_table = []
-for fname, name in zip(STRFNAMES, STRNAMES):
-    seq = termcap.get(name)
-    if not seq:
-        continue
-    k = _name_to_key(fname)
-    if k:
-        _ti_table.append((map(ord, seq), k))
+_ti_table = None
 
 def _peek_ti():
     global _cbuf
-    # print 'ti', _cbuf, '\r'
+    if _ti_table == None:
+        _init_ti_table()
     # XXX: Faster lookup, plox
     for seq, key in _ti_table:
         if _cbuf[:len(seq)] == seq:
             _cbuf = _cbuf[len(seq):]
             return key
+
+def _init_ti_table():
+    global _ti_table
+    _ti_table = []
+    for fname, name in zip(STRFNAMES, STRNAMES):
+        seq = termcap.get(name)
+        if not seq:
+            continue
+        k = _name_to_key(fname)
+        if k:
+            _ti_table.append((map(ord, seq), k))
 
 # csi
 def _parse_csi(offset):

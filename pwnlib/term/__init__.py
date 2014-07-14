@@ -1,10 +1,10 @@
-# promote to this module
+# global variables set when calling init
 from term import output, width, height
 from key import get as getkey
 from keymap import Keymap
 import key, readline, termcap, text
 
-initialized = False
+term_mode = False
 
 def can_init():
     """This function returns True iff stdout is a tty and we are not inside a
@@ -37,15 +37,15 @@ def can_init():
 
 
 def init():
-    global initialized
+    global term_mode
 
-    if initialized:
+    if term_mode:
         return
 
     if not can_init():
         return
 
-    import term, readline
+    import term
     term.init()
     def update_geometry():
         global height, width
@@ -53,4 +53,4 @@ def init():
         width = term.width
     term.on_winch.append(update_geometry)
     readline.init()
-    initialized = True
+    term_mode = True

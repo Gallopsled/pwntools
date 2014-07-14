@@ -8,10 +8,14 @@ Contents:
    :glob:
 
    intro
+   asm
    context
+   exception
+   log
+   memleak
    shellcraft
-   util/*
    term
+   util/*
 
 Indices and tables
 ==================
@@ -19,4 +23,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

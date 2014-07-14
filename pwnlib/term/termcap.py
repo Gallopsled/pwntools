@@ -1,10 +1,9 @@
 __all__ = ['get']
 
-import curses
-curses.setupterm()
-
-cache = {}
+cache = None
 def get(cap, *args):
+    if cache == None:
+        init()
     s = cache.get(cap)
     if not s:
         s = curses.tigetstr(cap) or ''
@@ -13,3 +12,10 @@ def get(cap, *args):
         return curses.tparm(s, *args)
     else:
         return s
+
+def init():
+    global curses, cache
+    import curses
+    curses.setupterm()
+
+    cache = {}

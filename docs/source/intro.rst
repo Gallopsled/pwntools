@@ -16,8 +16,8 @@ To make this possible, we decided to have two different modules. :mod:`pwnlib`
 would be our nice, clean python module, while :mod:`pwn` would be used during
 CTFs.
 
-:mod:`pwnlib`
-----------
+:mod:`pwnlib` --- Normal python library
+---------------------------------------
 
 .. module:: pwnlib
 
@@ -33,19 +33,21 @@ Though there are a few exceptions (such as :mod:`pwnlib.shellcraft`), that does
 not quite fit the goals of being simple and clean, but they can still be
 imported without implicit side-effects.
 
-:mod:`pwn`
-----------
+:mod:`pwn` --- Toolbox optimized for CTFs
+-----------------------------------------
 
 .. module:: pwn
 
 As stated, we would also like to have the ability to get a lot of these
-side-effects by default. That is the purpose of this module. If you do an ``from
-pwn import *``, you will get all functionality of the :mod:``pwnlib`` imported
-to your top-level scope, and also a few conveniences such as:
+side-effects by default. That is the purpose of this module. It does
+the following:
 
-* Calling :func:`pwnlib.term.init` to put your terminal in raw mode
+* Imports everything from the toplevel :mod:`pwnlib` along with
+  functions from a lot of submodules. This means that if you do
+  ``import pwn`` or ``from pwn import *``, you will access to
+  everything you need to write an exploit.
+* Calls :func:`pwnlib.term.init` to put your terminal in raw mode
   and implementing functionality to make it look like it is not.
 * Setting the :data:`pwnlib.context.log_level` to `"info"`.
-* Parsing :data:`sys.argv`.
-
-Lalal, pwntools is nice.
+* Tries to parse some of the values in :data:`sys.argv` and every
+  value it succeeds in parsing it removes.

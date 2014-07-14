@@ -1,8 +1,6 @@
 .. testsetup:: *
 
-   import pwnlib
    from pwnlib import context
-   context.reset_local()
 
 
 :mod:`pwnlib.context` --- Setting runtime variables
@@ -26,6 +24,7 @@
               print cleandoc(val.__doc__)
               print ""
 
+
    .. autofunction:: pwnlib.context.__call__(**kwargs)
    .. autofunction:: pwnlib.context.local(**kwargs)
    .. autofunction:: pwnlib.context.reset_local()
@@ -48,7 +47,3 @@
 
 
    .. autofunction:: pwnlib.context.defaults.__call__(**kwargs)
-
-
-
-   :mod:`pwn.pwn`

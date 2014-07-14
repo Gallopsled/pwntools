@@ -26,17 +26,24 @@ sys.path.insert(0, os.path.abspath('../..'))
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
+    'pwnlib.internal.dochelper',
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
     'sphinx.ext.linkcode',
     'sphinx.ext.autosummary',
     'sphinx.ext.todo',
+    'sphinx.ext.intersphinx',
     'sphinxcontrib.napoleon',
-    'pwnlib.internal.dochelper',
 ]
 
+doctest_global_setup = '''
+import pwnlib
+pwnlib.context.reset_local()
+'''
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
+
+doctest_test_doctest_blocks = True
 
 # The suffix of source filenames.
 source_suffix = '.rst'
@@ -195,6 +202,8 @@ latex_documents = [
    u'Gallopsled et al', 'manual'),
 ]
 
+intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None)}
+
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
 #latex_logo = None
@@ -278,7 +287,7 @@ def linkcode_resolve(domain, info):
                     val = val.fget
                     val = getattr(val, '_inner', val)
 
-        if val:
+        if isinstance(val, (types.ModuleType, types.ClassType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType)):
             try:
                 lines, first = inspect.getsourcelines(val)
                 filename += '#L%d-%d' % (first, first + len(lines) - 1)

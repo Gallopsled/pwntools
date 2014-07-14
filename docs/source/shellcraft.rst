@@ -1,6 +1,8 @@
 :mod:`pwnlib.shellcraft` --- Shellcode generation
 =================================================
 
+.. module:: pwnlib.shellcraft
+
 Shellcraft module foo. HALLO
 
 .. toctree::
@@ -12,5 +14,3 @@ Writing shellcode
 -----------------
 
 Foo bar
-
-
