@@ -1,7 +1,9 @@
 import collections
 
 def partition(lst, f, save_keys = False):
-    """Partitions an iterable into sublists using a function to specify which
+    """partition(lst, f, save_keys = False) -> list
+
+    Partitions an iterable into sublists using a function to specify which
     group they belong to.
 
     It works by calling `f` on every element and saving the results into
@@ -29,7 +31,9 @@ def partition(lst, f, save_keys = False):
         return d.values()
 
 def group(n, lst, underfull_action = 'ignore', fill_value = None):
-    """Split sequence into subsequences of given size. If the values cannot be
+    """group(n, lst, underfull_action = 'ignore', fill_value = None) -> list
+
+    Split sequence into subsequences of given size. If the values cannot be
     evenly distributed among into groups, then the last group will either be
     returned as is, thrown out or padded with the value specified in fill_value.
 
@@ -82,7 +86,9 @@ def group(n, lst, underfull_action = 'ignore', fill_value = None):
     return out
 
 def concat(l):
-    """Concats a list of lists into a list.
+    """concat(l) -> list
+
+    Concats a list of lists into a list.
 
     Example:
 
@@ -98,7 +104,9 @@ def concat(l):
     return res
 
 def concat_all(*args):
-    """Concats all the arguments together.
+    """concat_all(*args) -> list
+
+    Concats all the arguments together.
 
     Example:
        >>> concat_all(0, [1, (2, 3)], [([[4, 5, 6]])])
@@ -118,7 +126,9 @@ def concat_all(*args):
     return res
 
 def ordlist(s):
-    """Turns a string into a list of the corresponding ascii values.
+    """ordlist(s) -> list
+
+    Turns a string into a list of the corresponding ascii values.
 
     Example:
       >>> ordlist("hello")
@@ -127,7 +137,9 @@ def ordlist(s):
     return map(ord, s)
 
 def unordlist(cs):
-    """Takes a list of ascii values and returns the corresponding string.
+    """unordlist(cs) -> str
+
+    Takes a list of ascii values and returns the corresponding string.
 
     Example:
       >>> unordlist([104, 101, 108, 108, 111])

@@ -32,7 +32,7 @@ extensions = [
     'sphinx.ext.linkcode',
     'sphinx.ext.autosummary',
     'sphinx.ext.todo',
-    'sphinx.ext.intersphinx',
+    # 'sphinx.ext.intersphinx',
     'sphinxcontrib.napoleon',
 ]
 
@@ -40,6 +40,9 @@ doctest_global_setup = '''
 import pwnlib
 pwnlib.context.reset_local()
 '''
+
+autodoc_member_order = 'bysource'
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

@@ -1,54 +1,101 @@
-# align
-def align_up(alignment, x):
-    """Rounds x up to nearest multiple of the alignment."""
-    a = alignment
-    return ((x + a - 1) // a) * a
+import socket
+
+def align(alignment, x):
+    """align(alignment, x) -> int
+
+    Rounds `x` up to nearest multiple of the `alignment`.
+
+    Example:
+      >>> [align(5, n) for n in range(15)]
+      [0, 5, 5, 5, 5, 5, 10, 10, 10, 10, 10, 15, 15, 15, 15]
+    """
+    return ((x + alignment - 1) // alignment) * alignment
+
 
 def align_down(alignment, x):
-    """Rounds x down to nearest multiple of the alignment."""
+    """align_down(alignment, x) -> int
+
+    Rounds `x` down to nearest multiple of the `alignment`.
+
+    Example:
+        >>> [align_down(5, n) for n in range(15)]
+        [0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 10, 10, 10, 10, 10]
+    """
     a = alignment
     return (x // a) * a
 
-def align(alignment, x):
-    """Rounds x up to nearest multiple of the alignment."""
-    return align_up(alignment, x)
 
-# network utils
-def ip(host):
-    """Resolve host and return IP as four byte string"""
-    import socket, struct
-    return struct.unpack('I', socket.inet_aton(socket.gethostbyname(host)))[0]
+def binary_ip(host):
+    """binary_ip(host) -> str
+
+    Resolve host and return IP as four byte string.
+
+    Example:
+        >>> binary_ip("127.0.0.1")
+        '\\x7f\\x00\\x00\\x01'
+    """
+    return socket.inet_aton(socket.gethostbyname(host))
+
 
 def get_interfaces():
-    """Gets all (interface, IPv4) of the local system."""
+    """get_interfaces() -> list
+
+    Gets all (interface, IPv4) of the local system."""
     import subprocess, re
     d = subprocess.check_output('ip -4 -o addr', shell = True)
     ifs = re.findall(r'^\S+:\s+(\S+)\s+inet\s+([^\s/]+)', d, re.MULTILINE)
     return [i for i in ifs if i[0] != 'lo']
 
-# Stuff
+
 def size(n, abbriv = 'B', si = False):
-    """Convert number to human readable form"""
+    """size(n, abbriv = 'B', si = False) -> str
+
+    Convert the length of a bytestream to human readable form.
+
+    Args:
+      n(int): The length to convert to human readable form.
+      abbriv(str):
+
+    Example:
+        >>> size(451)
+        '451B'
+        >>> size(1000)
+        '1000B'
+        >>> size(1024)
+        '1.00KB'
+        >>> size(1024, si = True)
+        '1.02KB'
+        >>> [size(1024 ** n) for n in range(7)]
+        ['1B', '1.00KB', '1.00MB', '1.00GB', '1.00TB', '1.00PB', '1024.00PB']
+    """
     base = 1000.0 if si else 1024.0
     if n < base:
         return '%d%s' % (n, abbriv)
 
     for suffix in ['K', 'M', 'G', 'T']:
         n /= base
-        if n <= base:
-            num = '%.02f' % n
-            return '%s%s%s' % (num, suffix, abbriv)
+        if n < base:
+            return '%.02f%s%s' % (n, suffix, abbriv)
 
-    return '%.02fP%s' % (n, abbriv)
+    return '%.02fP%s' % (n / base, abbriv)
+
 
 def read(path):
-    """Open file, return content."""
+    """read(path) -> str
+
+    Open file, return content.
+
+    Examples:
+        >>> read('pwnlib/util/misc.py').split('\\n')[0]
+        'import socket'
+    """
     import os.path
     path = os.path.expanduser(os.path.expandvars(path))
     with open(path) as fd:
         return fd.read()
 
-def write(path, data, create_dir = False):
+
+def write(path, data = '', create_dir = False):
     """Create new file or truncate existing to zero length and write data."""
     import os.path
     path = os.path.expanduser(os.path.expandvars(path))

@@ -79,7 +79,9 @@ def _anotate(a, s, l, frozen = True, float = False, priority = 10, indent = 0):
 
 
 def trace(s = '', frozen = True, float = False, priority = 10, indent = 0):
-    '''Outputs the given string with loglevel :data:`DEBUG`.
+    '''trace(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
+
+    Outputs the given string with loglevel :data:`DEBUG`.
 
     Args:
       s (str): String to output.
@@ -98,7 +100,9 @@ def trace(s = '', frozen = True, float = False, priority = 10, indent = 0):
 
 
 def debug(s = '', frozen = True, float = False, priority = 10, indent = 0):
-    '''Outputs the given string with loglevel :data:`DEBUG` along with a header.
+    '''debug(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
+
+    Outputs the given string with loglevel :data:`DEBUG` along with a header.
 
     Args:
       s (str): String to output.
@@ -115,7 +119,9 @@ def debug(s = '', frozen = True, float = False, priority = 10, indent = 0):
 
 
 def output(s = '', frozen = True, float = False, priority = 10, indent = 0):
-    '''Outputs the given string with loglevel :data:`INFO`.
+    '''output(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
+
+    Outputs the given string with loglevel :data:`INFO`.
 
     Args:
       s (str): String to output.
@@ -134,7 +140,9 @@ def output(s = '', frozen = True, float = False, priority = 10, indent = 0):
 
 
 def info(s = '', frozen = True, float = False, priority = 10, indent = 0):
-    '''Outputs the given string with loglevel :data:`INFO` along with a header.
+    '''info(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
+
+    Outputs the given string with loglevel :data:`INFO` along with a header.
 
     Args:
       s (str): String to output.
@@ -151,7 +159,9 @@ def info(s = '', frozen = True, float = False, priority = 10, indent = 0):
 
 
 def success(s = '', frozen = True, float = False, priority = 10, indent = 0):
-    '''Outputs the given string with loglevel :data:`INFO` along with a header.
+    '''success(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
+
+    Outputs the given string with loglevel :data:`INFO` along with a header.
 
     Args:
       s (str): String to output.
@@ -168,7 +178,9 @@ def success(s = '', frozen = True, float = False, priority = 10, indent = 0):
 
 
 def failure(s = '', frozen = True, float = False, priority = 10, indent = 0):
-    '''Outputs the given string with loglevel :data:`INFO` along with a header.
+    '''failure(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
+
+    Outputs the given string with loglevel :data:`INFO` along with a header.
 
     Args:
       s (str): String to output.
@@ -185,7 +197,9 @@ def failure(s = '', frozen = True, float = False, priority = 10, indent = 0):
 
 
 def warning(s = '', frozen = True, float = False, priority = 10, indent = 0):
-    '''If in :data:`pwnlib.term.term_mode`, then outputs the given string
+    '''warning(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
+
+    If in :data:`pwnlib.term.term_mode`, then outputs the given string
     with loglevel :data:`INFO` along with a header. Otherwise calls :func:`warnings.warn`.
 
     Args:
@@ -208,7 +222,9 @@ def warning(s = '', frozen = True, float = False, priority = 10, indent = 0):
 
 
 def indented(s = '', frozen = True, float = False, priority = 10, indent = 0):
-    '''Indents the given string, then outputs it with loglevel :data:`INFO`.
+    '''indented(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
+
+    Indents the given string, then outputs it with loglevel :data:`INFO`.
 
     Args:
       s (str): String to output.
@@ -411,7 +427,9 @@ class _TermWaiter(_Waiter):
 
 
 def waitfor(msg, status = '', spinner = None):
-    """Starts a new progress indicator which includes a spinner
+    """waitfor(msg, status = '', spinner = None) -> waiter
+
+    Starts a new progress indicator which includes a spinner
     if :data:`pwnlib.term.term_mode` is enabled.
 
     Args:

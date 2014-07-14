@@ -84,7 +84,7 @@ class ContextModule(types.ModuleType):
         """This function is the global equivalent of :func:`pwnlib.context.__call__`.
 
         Args:
-          **kwargs: Variables to be assigned in the environment."""
+          kwargs: Variables to be assigned in the environment."""
 
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -305,7 +305,7 @@ is returned.
             ...
 
         Args:
-          **kwargs: Variables to be assigned in the environment.
+          kwargs: Variables to be assigned in the environment.
 
         Examples:
 
@@ -339,7 +339,7 @@ is returned.
         settings variables in the newly created environment.
 
         Args:
-          **kwargs: Variables to be assigned in the new environment.
+          kwargs: Variables to be assigned in the new environment.
 
         Returns:
           Context manager for managing the old and new environment.

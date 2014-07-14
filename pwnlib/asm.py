@@ -1,12 +1,14 @@
-from pwnlib import context
+import context, log
 
 __all__ = ['asm', 'disasm']
 
 def asm(shellcode, arch = None):
-    """Assembles a piece of code, represented as a multi-line string."""
+    """asm(code, arch = None) -> assembled
+
+    Assembles a piece of code, represented as a multi-line string."""
 
     import tempfile, subprocess, os.path, shutil
-    from pwnlib.util.misc import read, write
+    from util.misc import read, write
 
     # Lookup in context if not found
     if arch == None and context.arch:
@@ -80,10 +82,12 @@ def asm(shellcode, arch = None):
             pass
 
 def disasm(data, arch = None):
-    """Disassembles a binary piece of shellcode into assembler."""
+    """disasm(code, arch = None) -> disassembled
+
+    Disassembles a binary piece of shellcode into assembler."""
 
     import os.path, tempfile, subprocess, shutil
-    from pwnlib.util.misc import write
+    from util.misc import write
     # Lookup in context if not found
     if arch == None and context.arch:
         arch = context.arch
@@ -159,7 +163,6 @@ def disasm(data, arch = None):
 
 def _run(cmd):
     import subprocess, errno
-    from pwnlib import log
     try:
         p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
         stdout, stderr = p.communicate()

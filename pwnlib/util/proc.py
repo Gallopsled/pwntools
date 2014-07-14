@@ -1,46 +1,46 @@
 import os
-# TODO: Fix pwn references
+# TODO: Fix documentation
 
-def pidof(prog):
-    '''Get PID, depending on type:
-    string  : pids of all processes matching name
-    process : singleton list of process\'s pid
-    remote  : list of remote and local pid (remote pid first, None if remote process
-              is not running locally)'''
-    if   isinstance(prog, pwn.remote):
-        def toaddr((host, port)):
-            import socket
-            return '%08X:%04X' % (pwn.u32(socket.inet_aton(host)), port)
-        def getpid(loc, rem):
-            import re
-            loc = toaddr(loc)
-            rem = toaddr(rem)
-            inode = 0
-            with open('/proc/net/tcp') as fd:
-                for line in fd:
-                    line = line.split()
-                    if line[1] == loc and line[2] == rem:
-                        inode = line[9]
-            if inode == 0:
-                return []
-            for pid in all_pids():
-                try:
-                    for fd in os.listdir('/proc/%d/fd' % pid):
-                        fd = os.readlink('/proc/%d/fd/%s' % (pid, fd))
-                        m = re.match('socket:\[(\d+)\]', fd)
-                        if m:
-                            this_inode = m.group(1)
-                            if this_inode == inode:
-                                return pid
-                except:
-                    pass
-        sock = prog.sock.getsockname()
-        peer = prog.sock.getpeername()
-        return [getpid(peer, sock), getpid(sock, peer)]
-    elif isinstance(prog, pwn.process):
-        return [prog.proc.pid]
-    else:
-        return proc_pid_by_name(prog)
+# def pidof(prog):
+#     '''Get a PID. It behaves differently based on , depending on type:
+#     string  : pids of all processes matching name
+#     process : singleton list of process\'s pid
+#     remote  : list of remote and local pid (remote pid first, None if remote process
+#               is not running locally)'''
+#     if   isinstance(prog, pwn.remote):
+#         def toaddr((host, port)):
+#             import socket
+#             return '%08X:%04X' % (pwn.u32(socket.inet_aton(host)), port)
+#         def getpid(loc, rem):
+#             import re
+#             loc = toaddr(loc)
+#             rem = toaddr(rem)
+#             inode = 0
+#             with open('/proc/net/tcp') as fd:
+#                 for line in fd:
+#                     line = line.split()
+#                     if line[1] == loc and line[2] == rem:
+#                         inode = line[9]
+#             if inode == 0:
+#                 return []
+#             for pid in all_pids():
+#                 try:
+#                     for fd in os.listdir('/proc/%d/fd' % pid):
+#                         fd = os.readlink('/proc/%d/fd/%s' % (pid, fd))
+#                         m = re.match('socket:\[(\d+)\]', fd)
+#                         if m:
+#                             this_inode = m.group(1)
+#                             if this_inode == inode:
+#                                 return pid
+#                 except:
+#                     pass
+#         sock = prog.sock.getsockname()
+#         peer = prog.sock.getpeername()
+#         return [getpid(peer, sock), getpid(sock, peer)]
+#     elif isinstance(prog, pwn.process):
+#         return [prog.proc.pid]
+#     else:
+#         return proc_pid_by_name(prog)
 
 def all_pids():
     return [int(pid) for pid in os.listdir('/proc') if pid.isdigit()]
@@ -91,14 +91,14 @@ def proc_exe(pid):
 def proc_stat(pid):
     with open('/proc/%d/stat' % pid) as fd:
         s = fd.read()
-        # filenames can have ( and ) in them, dammit
-        i = s.find('(')
-        j = s.rfind(')')
-        name = s[i+1:j]
-        s = s[:i] + 'x' + s[j+1:]
-        xs = s.split()
-        xs[1] = name
-        return xs
+    # filenames can have ( and ) in them, dammit
+    i = s.find('(')
+    j = s.rfind(')')
+    name = s[i+1:j]
+    s = s[:i] + 'x' + s[j+1:]
+    xs = s.split()
+    xs[1] = name
+    return xs
 
 def proc_starttime(pid):
     return int(proc_stat(pid)[21])

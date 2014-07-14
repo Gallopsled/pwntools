@@ -4,7 +4,9 @@ import re, base64, random, string
 import packing, lists
 
 def unhex(s):
-    """Hex-decodes a string.
+    """unhex(s) -> str
+
+    Hex-decodes a string.
 
     Example:
 
@@ -14,7 +16,9 @@ def unhex(s):
     return s.decode('hex')
 
 def enhex(x):
-    """Hex-encodes a string.
+    """enhex(x) -> str
+
+    Hex-encodes a string.
 
     Example:
 
@@ -24,7 +28,9 @@ def enhex(x):
     return x.encode('hex')
 
 def urlencode(s):
-    """URL-encodes a string.
+    """urlencode(s) -> str
+
+    URL-encodes a string.
 
     Example:
 
@@ -34,12 +40,20 @@ def urlencode(s):
     return ''.join(['%%%02x' % ord(c) for c in s])
 
 def urldecode(s, ignore_invalid = False):
-    """URL-decodes a string.
+    """urldecode(s, ignore_invalid = False) -> str
+
+    URL-decodes a string.
 
     Example:
 
       >>> urldecode("test%20%41")
       'test A'
+      >>> urldecode("%qq")
+      Traceback (most recent call last):
+          ...
+      ValueError: Invalid input to urldecode
+      >>> urldecode("%qq", ignore_invalid = True)
+      '%qq'
 """
     res = ''
     n = 0
@@ -56,27 +70,29 @@ def urldecode(s, ignore_invalid = False):
                 res += '%'
                 n += 1
             else:
-                raise Exception("Invalid input to urldecode")
+                raise ValueError("Invalid input to urldecode")
     return res
 
 def bits(s, endian = 'big', zero = 0, one = 1):
-    """Converts the argument a list of bits.
+    """bits(s, endian = 'big', zero = 0, one = 1) -> list
 
-       Args:
-         s: A string or number to be converted into bits.
-         endian (str): The binary endian, default 'big'.
-         zero: The representing a 0-bit.
-         one: The representing a 1-bit.
+    Converts the argument a list of bits.
 
-       Returns:
-         A list consisting of the values specified in `zero` and `one`.
+    Args:
+      s: A string or number to be converted into bits.
+      endian (str): The binary endian, default 'big'.
+      zero: The representing a 0-bit.
+      one: The representing a 1-bit.
 
-       Examples:
+    Returns:
+      A list consisting of the values specified in `zero` and `one`.
 
-         >>> bits(511, zero = "+", one = "-")
-         ['+', '+', '+', '+', '+', '+', '+', '-', '-', '-', '-', '-', '-', '-', '-', '-']
-         >>> sum(bits("test"))
-         17
+    Examples:
+
+      >>> bits(511, zero = "+", one = "-")
+      ['+', '+', '+', '+', '+', '+', '+', '-', '-', '-', '-', '-', '-', '-', '-', '-']
+      >>> sum(bits("test"))
+      17
 """
 
 
@@ -84,13 +100,6 @@ def bits(s, endian = 'big', zero = 0, one = 1):
         raise ValueError("bits(): 'endian' must be either 'little' or 'big'")
     else:
         little = endian == 'little'
-
-    if (zero == None) != (one == None):
-        raise ValueError("bits(): You cannot specify one of 'zero' or 'one' without the other")
-
-    if zero == None:
-        zero = 0
-        one = 1
 
     out = []
     if isinstance(s, str):
@@ -118,7 +127,9 @@ def bits(s, endian = 'big', zero = 0, one = 1):
     return out
 
 def bits_str(s, endian = 'big', zero = '0', one = '1'):
-    """A wrapper around :func:`bits`, which converts the output into a string.
+    """bits_str(s, endian = 'big', zero = '0', one = '1') -> str
+
+    A wrapper around :func:`bits`, which converts the output into a string.
 
     Examples:
 
@@ -130,7 +141,9 @@ def bits_str(s, endian = 'big', zero = '0', one = '1'):
     return ''.join(bits(s, endian, zero, one))
 
 def unbits(s, endian = 'big'):
-    """Converts an iterable of bits into a string.
+    """unbits(s, endian = 'big') -> str
+
+    Converts an iterable of bits into a string.
 
     Args:
        s: Iterable of bits
@@ -174,7 +187,9 @@ def unbits(s, endian = 'big'):
     return ''.join(out)
 
 def b64e(s):
-    """Base64 encodes a string
+    """b64e(s) -> str
+
+    Base64 encodes a string
 
     Example:
 
@@ -184,7 +199,9 @@ def b64e(s):
     return base64.b64encode(s)
 
 def b64d(s):
-    """Base64 decodes a string
+    """b64d(s) -> str
+
+    Base64 decodes a string
 
     Example:
 
@@ -195,12 +212,14 @@ def b64d(s):
 
 # misc binary functions
 def xor(*args, **kwargs):
-    """Flattens its arguments using :func:`pwnlib.util.packing.flat` and
+    """xor(*args, cut = 'max') -> str
+
+    Flattens its arguments using :func:`pwnlib.util.packing.flat` and
     then xors them together. If the end of a string is reached, it wraps
     around in the string.
 
     Args:
-       *data: The arguments to be xor'ed together.
+       args: The arguments to be xor'ed together.
        cut: How long a string should be returned.
             Can be either 'min'/'max'/'left'/'right' or a number.
 
@@ -247,7 +266,9 @@ def xor(*args, **kwargs):
 _default_alphabet = ''.join(chr(n) for n in range(256) if n not in [0, 0xa])
 
 def xor_pair(data, alphabet = None):
-    """Finds two strings that will xor into a given string, while only
+    """xor_pair(data, alphabet = None) -> None or (str, str)
+
+    Finds two strings that will xor into a given string, while only
     using a given alphabet.
 
     Args:
@@ -282,7 +303,9 @@ def xor_pair(data, alphabet = None):
 
 
 def randoms(count, alphabet = None):
-    """Returns a random string of a given length using only the specified alphabet.
+    """randoms(count, alphabet = None) -> str
+
+    Returns a random string of a given length using only the specified alphabet.
 
     Args:
       count (int): The length of the desired string.
@@ -341,12 +364,16 @@ def ror(n, k, size = 32):
     return ror(n, -k, size)
 
 def isprint(c):
-    """Return True if a character is printable"""
+    """isprint(c) -> bool
+
+    Return True if a character is printable"""
     return c in string.ascii_letters + string.digts + string.punctuation
 
 
 def hexii(s, width = 16, skip = True):
-    """Return a HEXII-dump of a string.
+    """hexii(s, width = 16, skip = True) -> str
+
+    Return a HEXII-dump of a string.
 
     Args:
       s(str): The string to dump
@@ -367,7 +394,9 @@ def _hexiichar(c):
     else:               return "%02x " % ord(c)
 
 def hexdump(s, width = 16, skip = True, hexii = False):
-    """Return a hexdump-dump of a string.
+    """hexdump(s, width = 16, skip = True, hexii = False) -> str
+
+    Return a hexdump-dump of a string.
 
     Args:
       s(str): The string to dump

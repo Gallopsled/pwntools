@@ -1,4 +1,4 @@
-from pwnlib import log
+import log
 
 class MemLeak:
     """MemLeak is a caching and heuristic tool for exploiting memory leaks.
@@ -71,7 +71,9 @@ class MemLeak:
         return [self._leak(addr + i) for i in range(numb)]
 
     def b(self, addr, ndx = 0):
-        """Leak byte at ``((uint8_t*) addr)[ndx]``"""
+        """b(addr, ndx = 0) -> byte
+
+        Leak byte at ``((uint8_t*) addr)[ndx]``"""
         addr += ndx
         x = self._leak(addr)
         if x is not None:
@@ -90,7 +92,9 @@ class MemLeak:
         return None
 
     def w(self, addr, ndx = 0):
-        """Leak word at ``((uint16_t*) addr)[ndx]``"""
+        """w(addr, ndx = 0) -> word
+
+        Leak word at ``((uint16_t*) addr)[ndx]``"""
         addr += ndx * 2
         b1 = self.b(addr)
         b2 = self.b(addr + 1)
@@ -99,7 +103,9 @@ class MemLeak:
         return b1 + (b2 << 8)
 
     def d(self, addr, ndx = 0):
-        """Leak dword at ``((uint32_t*) addr)[ndx]``"""
+        """d(addr, ndx = 0) -> dword
+
+        Leak dword at ``((uint32_t*) addr)[ndx]``"""
         addr += ndx * 4
         w1 = self.w(addr)
         w2 = self.w(addr + 2)
@@ -108,7 +114,9 @@ class MemLeak:
         return w1 + (w2 << 16)
 
     def q(self, addr, ndx = 0):
-        """Leak qword at ``((uint64_t*) addr)[ndx]``"""
+        """q(addr, ndx = 0) -> qword
+
+        Leak qword at ``((uint64_t*) addr)[ndx]``"""
         addr += ndx * 8
         d1 = self.d(addr)
         d2 = self.d(addr + 4)
@@ -117,7 +125,9 @@ class MemLeak:
         return d1 + (d2 << 32)
 
     def s(self, addr):
-        """Leak bytes at `addr` until failure or a nullbyte is found"""
+        """s(addr, ndx = 0) -> str
+
+        Leak bytes at `addr` until failure or a nullbyte is found"""
         out = ''
         while True:
             x = self.b(addr)
@@ -128,7 +138,9 @@ class MemLeak:
         return out
 
     def n(self, addr, numb):
-        """Leak `numb` bytes at `addr`.
+        """n(addr, ndx = 0) -> str
+
+        Leak `numb` bytes at `addr`.
 
         Returns:
           A string with the leaked bytes, will return `None` if any are missing
@@ -139,13 +151,17 @@ class MemLeak:
         return ''.join(chr(x) for x in xs)
 
     def clearb(self, addr, ndx = 0):
-        """Clears byte at ``((uint8_t*)addr)[ndx]`` from the cache and
+        """clearb(addr, ndx = 0) -> byte
+
+        Clears byte at ``((uint8_t*)addr)[ndx]`` from the cache and
         returns the removed value or `None` if the address was not completely set."""
         addr += ndx
         return self.cache.pop(addr, None)
 
     def clearw(self, addr, ndx = 0):
-        """Clears word at ``((uint16_t*)addr)[ndx]`` from the cache and
+        """clearw(addr, ndx = 0) -> word
+
+        Clears word at ``((uint16_t*)addr)[ndx]`` from the cache and
         returns the removed value or `None` if the address was not completely set."""
         addr += ndx * 2
         b1 = self.clearb(addr)
@@ -155,7 +171,9 @@ class MemLeak:
         return b1 + (b2 << 8)
 
     def cleard(self, addr, ndx = 0):
-        """Clears dword at ``((uint32_t*)addr)[ndx]`` from the cache and
+        """cleard(addr, ndx = 0) -> dword
+
+        Clears dword at ``((uint32_t*)addr)[ndx]`` from the cache and
         returns the removed value or `None` if the address was not completely set."""
         addr += ndx * 4
         b1 = self.clearw(addr)
@@ -165,7 +183,9 @@ class MemLeak:
         return b1 + (b2 << 16)
 
     def clearq(self, addr, ndx = 0):
-        """Clears qword at ``((uint64_t*)addr)[ndx]`` from the cache and
+        """clearq(addr, ndx = 0) -> qword
+
+        Clears qword at ``((uint64_t*)addr)[ndx]`` from the cache and
         returns the removed value or `None` if the address was not completely set."""
         addr += ndx * 8
         b1 = self.cleard(addr)

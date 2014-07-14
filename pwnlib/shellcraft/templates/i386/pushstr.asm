@@ -1,4 +1,4 @@
-<% from pwnlib.util import lists, packing, binary %>
+<% from pwnlib.util import lists, packing, fiddling %>
 <%page args="string, append_null = True"/>
 <%docstring>
 Pushes a string onto the stack without using
@@ -33,7 +33,7 @@ Args:
 % elif '\x00' not in s and '\n' not in s:
     push `${repr(s)[1:-1]}`
 % else:
-<% a,b = binary.xor_pair(s, avoid = '\x00\n') %>\
+<% a,b = fiddling.xor_pair(s, avoid = '\x00\n') %>\
     push `${repr(a)[1:-1]}`
     xor dword [esp], `${repr(b)[1:-1]}` ; ${repr(s)}
 % endif

@@ -1,4 +1,4 @@
-from pwnlib import log, term
+import log, term
 import sys, time
 
 def options(prompt, opts, default = None):
