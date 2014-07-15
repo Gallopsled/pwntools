@@ -14,5 +14,5 @@ from pwnlib.util.packing    import *
 from pwnlib.util.proc       import *
 from pwnlib.util.splash     import *
 
-# Promote these modules, so that "from pwn import *" will still let you access them directly
-import pwn, re, time, sys, os
+# Promote these modules, so that "from pwn import *" will let you access them
+import pwn, re, time, sys, os, string, threading, subprocess 
