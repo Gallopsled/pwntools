@@ -1,1 +1,1 @@
-__all__ = ['fiddling', 'lists', 'misc', 'packing', 'proc', 'safeeval']
+__all__ = ['fiddling', 'hashes', 'lists', 'misc', 'packing', 'proc', 'safeeval']

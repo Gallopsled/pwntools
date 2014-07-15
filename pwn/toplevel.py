@@ -5,6 +5,7 @@ from pwnlib                 import *
 from pwnlib.asm             import *
 from pwnlib.ui              import *
 from pwnlib.util.fiddling   import *
+from pwnlib.util.hashes     import *
 from pwnlib.util.lists      import *
 from pwnlib.util.misc       import *
 from pwnlib.util.packing    import *
