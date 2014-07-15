@@ -17,16 +17,7 @@ echo "Adding PWNLib to \$PYTHONPATH in .bashrc"
 echo "export PYTHONPATH=$PWD/lib:\$PYTHONPATH" >> $(getent passwd $SUDO_USER | cut -d: -f6)/.bashrc
 
 echo "Installing packages"
-if [ -f /etc/debian_version ]; then
-    DEPS="python-argparse python-paramiko"
-    yes | apt-get install ${DEPS}
-elif [ -f /etc/arch-release ]; then
-    AUR="python2-argparse"
-    DEPS="python2-paramiko"
-    yes | pacman -S ${DEPS}
-    echo "ATTENTION! You also need to install the following packages from AUR:"
-    echo $AUR
-fi
+pip install -r requirements.txt
 
 # Install ZSH completions
 grep -q zsh <<<$SHELL && zsh zsh-completions/install.zsh

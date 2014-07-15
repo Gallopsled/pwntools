@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 from distutils.core import setup
 import os, glob, time
+from os.path import realpath, relpath, exists
 
-package_name = "pwntools"
-package_dir  = "pwntools"
+package_name = "pwn"
+package_dir  = "pwn"
 package_description = """
 This is the CTF framework used by pwnies in every CTF.
 """.strip()
@@ -39,41 +40,45 @@ for dirpath, dirnames, filenames in os.walk(package_dir):
     elif filenames:
         data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
 
-scripts = [
-    'asm/asm',
-    # 'bytes/bin/bytes',
-    'clookup/clookup',
-    # 'crop/bin/crop',
-    'cyclic/cyclic',
-    'demo/demo32',
-    'demo/demo64',
-    'dictgen/dictgen',
-    'asm/disasm',
-    'elfpatch/elfpatch',
-    # 'gadgets/bin/gadgets',
-    'hex/hex',
-    # 'mags/bin/mags',
-    'pbpoke/pbpoke.py',
-    'pbpoke/pbpeek.py',
-    'poke/poke',
-    'poke/peek',
-    'randomua/randomua',
-    'scramble/scramble',
-    'shellcraft/shellcraft',
-    'hex/unhex',
-]
 
-setup(
+scripts = ['asm/asm',
+           'asm/disasm',
+           'clookup/clookup',
+           'cyclic/cyclic',
+           'demo/demo32',
+           'demo/demo64',
+           'dictgen/dictgen',
+           'elfpatch/elfpatch',
+           'hex/hex',
+           'hex/unhex',
+           'ipof/ipof',
+           'nops/nops',
+           'pbpoke/pbpeek.py',
+           'pbpoke/pbpoke.py',
+           'pltfixup/pltfixup',
+           'pltlist/pltlist',
+           'poke/peek',
+           'poke/poke',
+           'randomua/randomua',
+           'scramble/scramble',
+           'shellcraft/shellcraft',]
+
+if 1:
+    setup(
     name            = package_name,
     version         = time.strftime('%Y.%m.%d'),
     description     = package_description,
     packages        = packages,
+    package_data    = {
+        'pwn': ['include/**/*.h', 'include/*/*/*.h', 'include/*/*/*/*.h']
+    },
+    exclude_package_data  = {'bin':''},
     license         = "MIT",
     author          = "pwnies",
     author_email    = "#gallopsled @ freenode.net",
-    url             = "https://github.com/pwnies/pwntools",
+    url             = "https://github.com/zachriggle/pwntools",
     scripts         = scripts,
-    download_url    = "https://github.com/pwnies/pwntools/tarball/master",
+    download_url    = "https://github.com/zachriggle/pwntools/tarball/master",
     requires        = ['paramiko','argparse'],
     classifiers     = [
         'Topic :: Security',
