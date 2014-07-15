@@ -63,7 +63,7 @@ def _put(s = '', frozen = True, float = False, priority = 10, indent = 0):
             _last_was_nl = True
         if indent:
             s = s[:-1].replace('\n', '\n' + ' ' * indent) + s[-1]
-        sys.stdout.write(s)
+        sys.stderr.write(s)
         return _dummy_handle
 
 
