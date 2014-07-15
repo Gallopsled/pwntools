@@ -184,6 +184,53 @@ def unbits(s, endian = 'big'):
 
     return ''.join(out)
 
+
+def bitswap(s):
+    """bitswap(s) -> str
+
+    Reverses the bits in every byte of a given string.
+
+    Example:
+      >>> bitswap("1234")
+      '\\x8cL\\xcc,'
+"""
+
+    out = []
+
+    for c in s:
+        out.append(unbits(bits_str(c)[::-1]))
+
+    return ''.join(out)
+
+def bitswap_int(n, width):
+    """bitswap_int(n) -> int
+
+    Reverses the bits of a numbers and returns the result as a new number.
+
+    Args:
+      n (int): The number to swap.
+      width (int): The width of the integer
+
+    Examples:
+      >>> hex(bitswap_int(0x1234, 8))
+      '0x2c'
+      >>> hex(bitswap_int(0x1234, 16))
+      '0x2c48'
+      >>> hex(bitswap_int(0x1234, 24))
+      '0x2c4800'
+      >>> hex(bitswap_int(0x1234, 25))
+      '0x589000'
+"""
+    # Make n fit inside the width
+    n &= (1 << width) - 1
+
+    # Convert into bits
+    s = bits_str(n, endian = 'little').ljust(width, '0')[:width]
+
+    # Convert back
+    return int(s, 2)
+
+
 def b64e(s):
     """b64e(s) -> str
 

@@ -10,13 +10,17 @@ def pack(number, word_size = None, endianness = None, sign = None):
 
     Word-size, endianness and signedness is done according to context.
 
+    `word_size` can be any positive number or the string "all". Choosing the
+    string "all" will output a string long enough to contain all the significant
+    bits and thus be decodable by :func:`unpack`.
+
     `word_size` can be any positive number. The output will contain word_size/8
     rounded up number of bytes. If word_size is not a multiple of 8, it will be
     padded with zeroes up to a byte boundary.
 
     Args:
         number (int): Number to convert
-        word_size (int): Word size of the converted integer
+        word_size (int): Word size of the converted integer or the string 'all'.
         endianness (str): Endianness of the converted integer ("little"/"big")
         sign (str): Signedness of the converted integer ("unsigned"/"signed")
 
@@ -36,6 +40,12 @@ def pack(number, word_size = None, endianness = None, sign = None):
         ValueError: pack(): number does not fit within word_size
         >>> pack(0x814243, 25, 'big', 'signed')
         '\\x00\\x81BC'
+        >>> pack(-1, 'all', 'little', 'signed')
+        '\\xff'
+        >>> pack(-256, 'all', 'big', 'signed')
+        '\\xff\\x00'
+        >>> pack(0x0102030405, 'all', 'little', 'signed')
+        '\\x05\\x04\\x03\\x02\\x01'
 """
 
     # Lookup in context if not found
@@ -43,20 +53,33 @@ def pack(number, word_size = None, endianness = None, sign = None):
     endianness = endianness or context.endianness
     sign       = sign       or context.sign
 
+    if sign not in ['signed', 'unsigned']:
+        raise ValueError("pack(): sign must be either 'signed' or 'unsigned'")
+
+    if endianness not in ['little', 'big']:
+        raise ValueError("pack(): endianness must be either 'little' or 'big'")
+
     # Verify that word_size make sense
-    if not isinstance(word_size, (int, long)) or word_size <= 0:
-        raise ValueError("pack(): word_size must be a positive integer")
+    if word_size == 'all':
+        if number == 0:
+            word_size = 8
+        elif number > 0:
+            word_size = ((number.bit_length() - 1) | 7) + 1
+        else:
+            if sign == 'unsigned':
+                raise ValueError("pack(): number does not fit within word_size")
+            word_size = ((number + 1).bit_length() | 7) + 1
+    elif not isinstance(word_size, (int, long)) or word_size <= 0:
+        raise ValueError("pack(): word_size must be a positive integer or the string 'all'")
 
     if sign == 'signed':
         limit = 1 << (word_size-1)
         if not (-limit <= number < limit):
             raise ValueError("pack(): number does not fit within word_size")
-    elif sign == 'unsigned':
+    else:
         limit = 1 << word_size
         if not (0 <= number < limit):
             raise ValueError("pack(): number does not fit within word_size")
-    else:
-        raise ValueError("pack(): sign must be either 'signed' or 'unsigned'")
 
     # Normalize number and size now that we have verified them
     # From now on we can treat positive and negative numbers the same
@@ -71,10 +94,8 @@ def pack(number, word_size = None, endianness = None, sign = None):
 
     if endianness == 'little':
         return ''.join(out)
-    elif endianness == 'big':
-        return ''.join(reversed(out))
     else:
-        raise ValueError("pack(): endianness must be either 'little' or 'big'")
+        return ''.join(reversed(out))
 
 
 def unpack(data, word_size = None, endianness = None, sign = None):
@@ -84,12 +105,15 @@ def unpack(data, word_size = None, endianness = None, sign = None):
 
     Word-size, endianness and signedness is done according to context.
 
-    `word_size` can be any positive number. If `word_size` is not a multiple of 8,
-    then the bits used for padding are discarded.
+    `word_size` can be any positive number or the string "all". Choosing the
+    string "all" is equivalent to ``len(data)*8``.
+
+    If `word_size` is not a multiple of 8, then the bits used for padding
+    are discarded.
 
     Args:
         number (int): String to convert
-        word_size (int): Word size of the converted integer
+        word_size (int): Word size of the converted integer or the string "all".
         endianness (str): Endianness of the converted integer ("little"/"big")
         sign (str): Signedness of the converted integer ("unsigned"/"signed")
 
@@ -97,14 +121,18 @@ def unpack(data, word_size = None, endianness = None, sign = None):
         The unpacked number.
 
     Examples:
-        >>> hex(unpack('\\xaa\\x55', 16, 'little', sign = 'unsigned'))
+        >>> hex(unpack('\\xaa\\x55', 16, 'little', 'unsigned'))
         '0x55aa'
-        >>> hex(unpack('\\xaa\\x55', 16, 'big', sign = 'unsigned'))
+        >>> hex(unpack('\\xaa\\x55', 16, 'big', 'unsigned'))
         '0xaa55'
-        >>> hex(unpack('\\xaa\\x55', 16, 'big', sign = 'signed'))
+        >>> hex(unpack('\\xaa\\x55', 16, 'big', 'signed'))
         '-0x55ab'
-        >>> hex(unpack('\\xaa\\x55', 15, 'big', sign = 'signed'))
+        >>> hex(unpack('\\xaa\\x55', 15, 'big', 'signed'))
         '0x2a55'
+        >>> hex(unpack('\\xff\\x02\\x03', 'all', 'little', 'signed'))
+        '0x302ff'
+        >>> hex(unpack('\\xff\\x02\\x03', 'all', 'big', 'signed'))
+        '-0xfdfd'
     """
 
     # Lookup in context if not found
@@ -113,8 +141,10 @@ def unpack(data, word_size = None, endianness = None, sign = None):
     sign       = sign       or context.sign
 
     # Verify that word_size make sense
-    if not isinstance(word_size, (int, long)) or word_size <= 0:
-        raise ValueError("unpack(): word_size must be a positive integer")
+    if word_size == 'all':
+        word_size = len(data) * 8
+    elif not isinstance(word_size, (int, long)) or word_size <= 0:
+        raise ValueError("unpack(): word_size must be a positive integer or the string 'all'")
 
     byte_size = (word_size + 7) / 8
 
@@ -348,7 +378,7 @@ def _u8lu(data):
 
 
 def _u8ls(data):
-    return struct.unpack("<s", data)[0]
+    return struct.unpack("<b", data)[0]
 
 
 def _u8bu(data):
@@ -356,7 +386,7 @@ def _u8bu(data):
 
 
 def _u8bs(data):
-    return struct.unpack(">s", data)[0]
+    return struct.unpack(">b", data)[0]
 
 
 def _u16lu(data):
@@ -481,7 +511,7 @@ def make_packer(word_size = None, endianness = None, sign = None):
     faster to call this function, since it will then use a specialized version.
 
     Args:
-        word_size (int): The word size to be baked into the returned packer.
+        word_size (int): The word size to be baked into the returned packer or the string all.
         endianness (str): The endianness to be baked into the returned packer. ("little"/"big")
         sign (str): The signness to be baked into the returned packer. ("unsigned"/"signed")
 
@@ -577,7 +607,7 @@ def make_unpacker(word_size = None, endianness = None, sign = None):
     endianness = endianness or context.endianness
     sign       = sign       or context.sign
 
-    if not isinstance(word_size, (int, long)) and word_size > 0:
+    if not (word_size == 'all' or isinstance(word_size, (int, long)) and word_size > 0):
         raise ValueError("make_unpacker(): word_size needs to be a positive integer")
 
     if endianness not in ['little', 'big']:
