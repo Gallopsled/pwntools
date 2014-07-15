@@ -4,6 +4,8 @@ from pwnlib                 import *
 # Promote functions from these modules to toplevel
 from pwnlib.asm             import *
 from pwnlib.ui              import *
+from pwnlib.util            import crc
+from pwnlib.util.cyclic     import *
 from pwnlib.util.fiddling   import *
 from pwnlib.util.hashes     import *
 from pwnlib.util.lists      import *
