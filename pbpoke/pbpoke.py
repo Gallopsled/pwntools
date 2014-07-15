@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 from pwn import b64, read, unhex
 import json, sys
 

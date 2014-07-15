@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 import argparse, sys, pwn, os
 from pwn.internal.shellcode_helper import registered as shellcodes
 default_context = ['linux', 'i386', 'ipv4']
