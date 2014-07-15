@@ -8,7 +8,6 @@ def asm(shellcode, arch = None):
     Assembles a piece of code, represented as a multi-line string."""
 
     import tempfile, subprocess, os.path, shutil
-    from util.misc import read, write
 
     # Lookup in context if not found
     if arch == None and context.arch:
@@ -61,11 +60,14 @@ def asm(shellcode, arch = None):
             objcopy = [os.path.join(pwn.installpath, 'binutils', 'promisc-objcopy')]
         objcopy += ['-j.shellcode', '-Obinary']
 
-        write(path('step1'), code)
+        with open(path('step1'), 'w') as fd:
+            fd.write(code)
+
         _run(assembler + ['-o', path('step2'), path('step1')])
 
         if arch in ['i386', 'amd64']:
-            return read(path('step2'))
+            with open(path('step2')) as fd:
+                return fd.read()
 
         # Sanity check for seeing if the output has relocations
         relocs = subprocess.check_output(['readelf', '-r', path('step2')]).strip()
@@ -74,7 +76,8 @@ def asm(shellcode, arch = None):
 
         _run(objcopy + [path('step2'), path('step3')])
 
-        return read(path('step3'))
+        with open(path('step3')) as fd:
+            return fd.read()
     finally:
         try:
             shutil.rmtree(tmpdir)
@@ -87,7 +90,6 @@ def disasm(data, arch = None):
     Disassembles a binary piece of shellcode into assembler."""
 
     import os.path, tempfile, subprocess, shutil
-    from util.misc import write
     # Lookup in context if not found
     if arch == None and context.arch:
         arch = context.arch
@@ -146,7 +148,8 @@ def disasm(data, arch = None):
 
         objdump += ['-d']
 
-        write(path('step1'), data)
+        with open(path('step1'), 'w') as fd:
+            fd.write(data)
         _run(objcopy + extra + [path('step1'), path('step2')])
 
         output0 = subprocess.check_output(objdump + [path('step2')])
