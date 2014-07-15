@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+from binascii import unhexlify
+import sys, re
+
+try:
+    if len(sys.argv) == 1:
+        s = sys.stdin.read()
+        s = re.sub(r'\s', '', s)
+        sys.stdout.write(unhexlify(s))
+    else:
+        sys.stdout.write(unhexlify(' '.join(sys.argv[1:])))
+except TypeError, e:
+    sys.stderr.write(str(e) + '\n')
