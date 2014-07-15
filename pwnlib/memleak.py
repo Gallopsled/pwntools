@@ -1,4 +1,4 @@
-import log
+from . import log
 
 class MemLeak:
     """MemLeak is a caching and heuristic tool for exploiting memory leaks.

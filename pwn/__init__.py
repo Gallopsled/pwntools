@@ -1,6 +1,6 @@
 # Promote useful stuff to toplevel
 import sys
-from toplevel import *
+from .toplevel import *
 
 # Put the terminal in raw mode
 term.init()

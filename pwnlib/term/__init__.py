@@ -1,8 +1,8 @@
 # global variables set when calling init
-from term import output, width, height
-from key import get as getkey
-from keymap import Keymap
-import key, readline, termcap, text
+from .term import output, width, height
+from .key import get as getkey
+from .keymap import Keymap
+from . import key, readline, termcap, text
 
 #: This is True exactly when we have taken over the terminal using :func:`init`.
 term_mode = False
@@ -56,7 +56,7 @@ def init():
     if not can_init():
         return
 
-    import term
+    from . import term
     term.init()
     def update_geometry():
         global height, width

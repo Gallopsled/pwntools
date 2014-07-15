@@ -1,14 +1,15 @@
 import types, sys
+from . import termcap
 
 # somewhat arbitrary to look at stdout, but that's what the log module uses
 if sys.stdout.isatty():
     class Module(types.ModuleType):
         def __init__(self):
-            import os, termcap
+            import os
+            from . import termcap
             self.__file__ = __file__
             self.__name__ = __name__
-            self._tc = termcap
-            self.num_colors = self._tc.get('colors')
+            self.num_colors = termcap.get('colors', default = 8)
             self.has_bright = self.num_colors >= 16
             self.has_gray = self.has_bright
             self._colors = {
@@ -27,14 +28,14 @@ if sys.stdout.isatty():
                          ('bold'     , 'bold'),
                          ('underline', 'smul'),
                          ('reverse'  , 'rev')]:
-                s = self._tc.get(y)
+                s = termcap.get(y)
                 self._attributes[x] = s
 
         def _fg_color(self, c):
-            return self._tc.get('setaf', c) or self._tc.get('setf', c)
+            return termcap.get('setaf', c) or self._tc.get('setf', c)
 
         def _bg_color(self, c):
-            return self._tc.get('setab', c) or self._tc.get('setb', c)
+            return termcap.get('setab', c) or self._tc.get('setb', c)
 
         def _decorator(self, name, init):
             def f(s):
@@ -50,7 +51,7 @@ if sys.stdout.isatty():
                 try:
                     init += self._attributes[d]
                     ds.pop(0)
-                except:
+                except KeyError:
                     break
             def c():
                 bright = 0
@@ -83,5 +84,5 @@ else:
         def __getattr__(self, _):
             return lambda x: x
 
-if __name__ <> '__main__':
-    sys.modules[__name__] = Module()
+tether = sys.modules[__name__]
+sys.modules[__name__] = Module()

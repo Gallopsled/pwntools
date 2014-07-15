@@ -1,7 +1,8 @@
 __all__ = ['getch', 'getraw', 'get', 'unget']
 
-import select, sys, string, os, errno, termcap
-from keyconsts import *
+import select, sys, string, os, errno
+from . import termcap
+from .keyconsts import *
 
 _fd = sys.stdin.fileno()
 
@@ -23,7 +24,7 @@ def getraw(timeout = None):
     '''Get list of raw key codes corresponding to zero or more key presses'''
     cs = []
     c = getch(timeout)
-    while c <> None: # timeout
+    while c != None: # timeout
         cs.append(c)
         if c == None: # EOF
             break

@@ -1,4 +1,4 @@
-import log, term
+from . import log, term
 import sys, time
 
 def options(prompt, opts, default = None):

@@ -30,9 +30,8 @@ __all__ = [
 ]
 
 import threading, sys, time
-import term
-import term.text as text
-import context
+from . import term, context
+from .term import text
 
 #: Loglevel which includes almost everything.
 DEBUG  = 10
@@ -394,7 +393,7 @@ class _Spinner(threading.Thread):
 
 class _TermWaiter(_Waiter):
     def __init__(self, msg, spinner):
-        self.hasmsg = msg <> ''
+        self.hasmsg = msg != ''
         _put('[')
         if spinner is None:
             import random, term.spinners as spinners

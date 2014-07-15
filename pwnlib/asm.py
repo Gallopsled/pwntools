@@ -1,4 +1,4 @@
-import context, log
+from . import context, log
 
 __all__ = ['asm', 'disasm']
 
@@ -167,7 +167,7 @@ def _run(cmd):
         p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
         stdout, stderr = p.communicate()
         exitcode = p.wait()
-    except OSError, e:
+    except OSError as e:
         if e.errno == errno.ENOENT:
             log.die('%s is not installed' % cmd[0])
         else:

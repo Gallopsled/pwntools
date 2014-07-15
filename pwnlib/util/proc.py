@@ -69,7 +69,7 @@ def proc_children(ppid):
 
 def proc_ancestors(pid):
     pids = []
-    while pid <> 0:
+    while pid != 0:
         pids.append(pid)
         pid = proc_parent(pid)
     return pids

@@ -26,22 +26,16 @@ class Local(object):
         context._thread_ctx().__dict__.update(self.saved)
 
 def _updater(updater, name = None, doc = None):
-    name = name or updater.func_name
+    name = name or updater.__name__
     doc  = doc  or updater.__doc__
 
     def getter(self):
-        try:
-            if hasattr(self, '_' + name):
-                return getattr(self, '_' + name)
-            elif self.defaults:
-                return getattr(self.defaults, name)
-            else:
-                return None
-        except BaseException as e:
-            print >> sys.stderr, `e`
-            print >> sys.stderr, `e`
-            print >> sys.stderr, `e`
-            raise
+        if hasattr(self, '_' + name):
+            return getattr(self, '_' + name)
+        elif self.defaults:
+            return getattr(self.defaults, name)
+        else:
+            return None
 
     def setter(self, val):
         setattr(self, '_' + name, updater(self, val))
@@ -52,7 +46,7 @@ def _updater(updater, name = None, doc = None):
     return res
 
 def _validator(validator, name = None, doc = None):
-    name = name or validator.func_name
+    name = name or validator.__name__
     doc  = doc  or validator.__doc__
 
     def updater(self, val):
@@ -208,10 +202,10 @@ class ContextModule(types.ModuleType):
         E.g if ``'debug'`` is specified, then the result is ``10``, as :data:`pwnlib.log.DEBUG` is ``10``.
 """
 
-        if type(value) in [types.IntType, types.LongType] or value == None:
+        if type(value) in [types.IntType, types.LongType, types.NoneType]:
             return value
         elif type(value) == types.StringType:
-            import log
+            from . import log
             if hasattr(log, value.upper()):
                 return getattr(log, value.upper())
 
@@ -375,7 +369,6 @@ is returned.
         return sorted(res)
 
 
-if __name__ <> '__main__':
-    # prevent this scope from being GC'ed
-    tether = sys.modules[__name__]
-    context = MainModule()
+# prevent this scope from being GC'ed
+tether = sys.modules[__name__]
+context = MainModule()

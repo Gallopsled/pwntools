@@ -1,6 +1,7 @@
 __all__ = ['Keymap']
 
-import key, types, struct
+import types, struct
+from . import key
 
 class Matcher:
     def __init__(self, desc):
@@ -20,7 +21,7 @@ class Matcher:
         if   len(k) == 1:
             t = key.TYPE_UNICODE
             c = k
-            h = struct.unpack('Q', k.ljust(8))[0]
+            h = ord(k)
         elif k[0] == '<' and k in key.KEY_NAMES_REVERSE:
             t = key.TYPE_KEYSYM
             c = key.KEY_NAMES_REVERSE[k]

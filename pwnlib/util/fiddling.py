@@ -1,7 +1,5 @@
 import re, base64, random, string
-
-# From the util directory
-import packing, lists
+from . import packing, lists
 
 def unhex(s):
     """unhex(s) -> str
@@ -176,7 +174,7 @@ def unbits(s, endian = 'big'):
         elif c in ['0', 0, False]:
             cur += '0'
         else:
-            raise ValueError("unbits(): cannot decode the value '%s' into a bit" % `c`)
+            raise ValueError("unbits(): cannot decode the value %s into a bit" % repr(c))
 
         if len(cur) == 8:
             out += u(cur)

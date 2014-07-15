@@ -12,7 +12,7 @@ on_winch = []
 
 import sys, atexit, struct, fcntl, re, signal, threading, os
 from termios import *
-import termcap
+from . import termcap
 settings = None
 _graphics_mode = False
 
@@ -468,7 +468,7 @@ def update(h, s):
             i, c = find_cell(h)
         except KeyError:
             return
-        if not c.frozen and c.content <> s:
+        if not c.frozen and c.content != s:
             c.content = parse(s)
             render_from(i, clear_after = True)
 
