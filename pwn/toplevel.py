@@ -13,8 +13,8 @@ from pwnlib.util.misc       import *
 from pwnlib.util.packing    import *
 from pwnlib.util.proc       import *
 from pwnlib.util.splash     import *
-from pwnlib.pipes.remote    import *
-from pwnlib.pipes.listen    import *
+from pwnlib.tubes.remote    import *
+from pwnlib.tubes.listen    import *
 
 # Promote these modules, so that "from pwn import *" will let you access them
 import pwn, re, time, sys, os, string, threading, subprocess

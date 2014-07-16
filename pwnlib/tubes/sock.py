@@ -1,8 +1,8 @@
 import socket, errno
-from .pipe import pipe
+from .tube import tube
 from .. import log
 
-class sock(pipe):
+class sock(tube):
     """Methods available exclusively to sockets."""
 
     def __init__(self, timeout, log_level):
@@ -22,17 +22,41 @@ class sock(pipe):
         if direction == "out":
             if not self.closed["out"]:
                 self.closed["out"] = True
-                self.sock.shutdown(socket.SHUT_WR)
+                try:
+                    self.sock.shutdown(socket.SHUT_WR)
+                except socket.error as e:
+                    if e.errno == errno.ENOTCONN:
+                        pass
+                    else:
+                        raise
 
         if direction == "in":
             if not self.closed["in"]:
                 self.closed["in"] = True
-                self.sock.shutdown(socket.SHUT_RD)
+                try:
+                    self.sock.shutdown(socket.SHUT_RD)
+                except socket.error as e:
+                    if e.errno == errno.ENOTCONN:
+                        pass
+                    else:
+                        raise
 
         if False not in self.closed.values():
             self.close()
 
-    # Implementation of the methods required for pipe
+    # Overwritten for better usability
+    def recvall(self):
+        """recvall() -> str
+
+        Receives data until the socket is closed.
+        """
+
+        if self.type == socket.SOCK_STREAM:
+            return super(listen, self).recvall()
+        else:
+            log.error("UDP sockets does not supports recvall")
+
+    # Implementation of the methods required for tube
     def recv_raw(self, numb):
         if self.closed["in"]:
             raise EOFError
@@ -97,7 +121,7 @@ class sock(pipe):
         self.sock = None
         self.closed["in"]  = True
         self.closed["out"] = True
-        log.info('Closed connection to %s on port %d' % self.target, self.log_level)
+        log.info('Closed connection to %s on port %d' % (self.rhost, self.rport), self.log_level)
 
     def fileno(self):
         if not self.sock:

@@ -151,7 +151,7 @@ class ContextModule(types.ModuleType):
 
     @_validator
     def timeout(self, value):
-        """The default timeout used by e.g. :class:`pwnlib.pipes.ssh`.
+        """The default timeout used by e.g. :class:`pwnlib.tubes.ssh`.
 
         Defaults to None, meaning no timeout.
 

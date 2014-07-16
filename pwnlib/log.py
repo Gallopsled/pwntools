@@ -78,7 +78,7 @@ def _anotate(l, a, string, frozen = True, float = False, priority = 10, indent =
 
 def _good_exc():
     exc = sys.exc_info()
-    if not exc or exc[0] not in [None, KeyboardInterrupt]:
+    if not exc or exc[0] in [None, KeyboardInterrupt]:
         return None
     else:
         return exc

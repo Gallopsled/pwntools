@@ -7,16 +7,13 @@ class listen(sock):
     both IPv4 and IPv6.
 
     The returned object supports all the methods from
-    :class:`pwnlib.pipes.sock` and :class:`pwnlib.pipes.pipe`.
-
-    UDP servers are only partially supported, as the methods in those classes
-    are not using :meth:`socket.socket.sendto` or :meth:`socket.socket.recvfrom`.
+    :class:`pwnlib.tubes.sock` and :class:`pwnlib.tubes.tube`.
 
     Args:
       port(int): The port to connect to.
       bindaddr(str): The address to bind to.
-      fam(str): The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
-      typ(str): The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
+      fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
+      typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
       timeout: A positive number, None or the string "default".
     """
 
@@ -53,6 +50,9 @@ class listen(sock):
         for res in socket.getaddrinfo(bindaddr, port, fam, typ, 0, socket.AI_PASSIVE):
             self.family, self.type, self.proto, self.canonname, self.sockaddr = res
 
+            if self.type not in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
+                continue
+
             h.status("Trying %s" % self.sockaddr[0])
             listen_sock = socket.socket(self.family, self.type, self.proto)
             listen_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -66,20 +66,22 @@ class listen(sock):
             log.error("Could not bind to %s on port %d" % (bindaddr, port))
 
         h.success()
-        if self.type == socket.SOCK_DGRAM:
-            self.sock = listen_sock
-        else:
-            listen_sock.listen(1)
 
-            h = log.waitfor('Waiting for incomming connection')
-
-            try:
-                self.sock, _ = listen_sock.accept()
-                listen_sock.close()
-                self.settimeout(self.timeout)
-            except socket.error:
-                h.failure()
-                log.error("Socket failure while waiting for connection")
-            h.success()
+        h = log.waitfor('Waiting')
+        try:
+            if self.type == socket.SOCK_STREAM:
+                listen_sock.listen(1)
+                self.sock, self.rhost = listen_sock.accept()
+                listen_sock.close() 
+            else:
+                self.sock = listen_sock
+                self.buffer, self.rhost = self.sock.recvfrom(1)
+                self.sock.connect(self.rhost)
+            self.settimeout(self.timeout)
+        except socket.error:
+            h.failure()
+            log.error("Socket failure while waiting for connection")
 
         self.lhost, self.lport = self.sock.getsockname()[:2]
+        self.rhost, self.rport = self.rhost[:2]
+        h.success('Got connection from %s on port %d' % (self.rhost, self.rport))

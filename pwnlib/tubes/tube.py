@@ -15,8 +15,8 @@ def _fix_timeout(timeout, default):
     else:
         log.error("timeout must be either a number, None or the string 'default'")
 
-class pipe(object):
-    """Container of all the pipe functions common to both sockets, TTYs and SSH connetions."""
+class tube(object):
+    """Container of all the tube functions common to both sockets, TTYs and SSH connetions."""
 
     def __init__(self, timeout, log_level):
         self.buffer          = ''
@@ -30,19 +30,15 @@ class pipe(object):
 
         Receives up to `numb` bytes of data from the socket.
         If a timeout occurs while waiting, it will return None.
-        If the connection has been closed for receiving, :exc:`exceptions.EOFError`
-        will be raised.
-
+        If the connection has been closed for receiving,
+        :exc:`exceptions.EOFError` will be raised.
 
         If the string "default" is given as the timeout, then
         the timeout set by the constructor or :func:`settimeout`
         will be used. If None is given, then there will be no timeout.
 
-        It returns as soon as data is available.
-
-        Args:
-          numb(int): The maximum number of bytes to return.
-          timeout: A positive number, None or the string "default".
+        It will also print a debug message with log level
+        :data:`pwnlib.log.DEBUG` about the received data.
         """
 
         # If there is already data, go with that
@@ -69,26 +65,22 @@ class pipe(object):
         evaluates to True.
 
         If a timeout occurs while waiting, it will return None, and any
-        received bytes will be saved for later. This means that if you get
-        any bytes, then you are guaranteed that the predicate returned True.
+        received bytes will be saved for later. It will never return
+        partial data, which did not make the predicate become True.
 
         If the connection has been closed for receiving,
         :exc:`exceptions.EOFError` will be raised.
 
-        Note that any data received before the occurence of an exception,
-        will be saved for use by a later receive. This means that
-        even if you get an :exc:`exceptions.EOFError`, you might in rare
-        cases be able to do a receive anyways.
+        .. note::
+
+           Note that any data received before the occurence of an exception,
+           will be saved for use by a later receive. This means that
+           even if you get an :exc:`exceptions.EOFError`, you might in rare
+           cases be able to do a receive anyways.
 
         If the string "default" is given as the timeout, then
         the timeout set by the constructor or :func:`settimeout`
         will be used. If None is given, then there will be no timeout.
-
-        It returns as soon as data is available.
-
-        Args:
-          numb(int): The maximum number of bytes to return.
-          timeout: A positive number, None or the string "default".
         """
 
         res = ''
@@ -113,10 +105,6 @@ class pipe(object):
 
         Wrapper around :func:`recvpred`, which will return after `numb`
         bytes are available.
-
-        Args:
-          numb(int): The number of bytes to receive
-          timeout: A positive number, None or the string "default".
         """
 
         return self.recvpred(lambda buf: len(buf) >= numb, timeout)
@@ -126,10 +114,6 @@ class pipe(object):
 
         Wrapper around :func:`recvpred`, which will return when the string
         ends with the given delimiter.
-
-        Args:
-          delim(str): A string which the received data should end with.
-          timeout: A positive number, None or the string "default".
         """
 
         return self.recvpred(lambda buf: buf.endswith(delim), timeout)
@@ -137,12 +121,8 @@ class pipe(object):
     def recvline(self, lines = 1, timeout = 'default'):
         """recvline(self, lines = 1, timeout = 'default') -> str
 
-        Wrapper around :func:`recvpred`, which will return when `lines`
-        newlines have been found.
-
-        Args:
-          lines(int): The number of lines to return.
-          timeout: A positive number, None or the string "default".
+        Wrapper around :func:`recvpred`, which will return then the buffer
+        contains ``lines`` number of newlines.
         """
 
         return recvpred(lambda buf: buf.count('\n') == lines, timeout)
@@ -153,11 +133,8 @@ class pipe(object):
         Wrapper around :func:`recvpred`, which will return when a regex
         matches the string in the buffer.
 
-        Args:
-          regex: The regex to match. Can be either a string or a regex object.
-          exact: If this is True, then the :func:`re.RegexObject.match` is
-                 used. Otherwise :func:`re.RegexObject.search` is used.
-          timeout: A positive number, None or the string "default".
+        By default :func:`re.RegexObject.search` is used, but if `exact` is
+        set to True, then :func:`re.RegexObject.match` will be used instead.
         """
 
         if isinstance(regex, (str, unicode)):
@@ -202,9 +179,6 @@ class pipe(object):
 
         If it is not possible to send anymore because of a closed
         connection, it raises and :exc:`exceptions.EOFError`.
-
-        Args:
-          data(str): Data to send.
         """
 
         for line in re.findall('(?:.*\n)|(?:.+$)', data):
@@ -214,8 +188,7 @@ class pipe(object):
     def sendline(self, line):
         """sendline(data)
 
-        Sends data followed by a newline character using the
-        :func:`send` function.
+        Shorthand for ``send(data + '\\n')``.
         """
 
         self.send(line + '\n')
@@ -327,9 +300,6 @@ class pipe(object):
         Set the timeout for receiving operations. If the string "default"
         is given, then :data:`context.timeout` will be used. If None is given,
         then there will be no timeout.
-
-        Args:
-          timeout: A positive number, None or the string "default".
         """
 
         self.timeout = _fix_timeout(timeout, context.timeout)
@@ -355,7 +325,7 @@ class pipe(object):
         Should not be called directly. Sends data to the socket.
 
         Should return :exc:`exceptions.EOFError`, if it is unable to send any
-        more, because of a close pipe.
+        more, because of a close tube.
         """
 
         log.bug('Should be implemented by a subclass.')

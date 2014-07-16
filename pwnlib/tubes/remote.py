@@ -7,13 +7,13 @@ class remote(sock):
     both IPv4 and IPv6.
 
     The returned object supports all the methods from
-    :class:`pwnlib.pipes.sock` and :class:`pwnlib.pipes.pipe`.
+    :class:`pwnlib.tubes.sock` and :class:`pwnlib.tubes.tube`.
 
     Args:
       host(str): The host to connect to.
       port(int): The port to connect to.
-      fam(str): The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
-      typ(str): The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
+      fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
+      typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
       timeout: A positive number, None or the string "default".
     """
 
@@ -23,8 +23,9 @@ class remote(sock):
                  log_level = log.INFO):
         super(remote, self).__init__(timeout, log_level)
 
-        port = int(port)
-        self.target = (host, port)
+        self.rport = int(port)
+        self.rhost = host
+
 
         if fam == 'any':
             fam = socket.AF_UNSPEC
@@ -46,16 +47,19 @@ class remote(sock):
         else:
             log.error("remote(): type %s is not supported" % repr(typ))
 
-        h = log.waitfor('Opening connection to %s on port %d' % self.target)
+        h = log.waitfor('Opening connection to %s on port %d' % (self.rhost, self.rport))
 
-        for res in socket.getaddrinfo(host, port, fam, typ, 0, socket.AI_PASSIVE):
-            self.family, self.type, self.proto, self.canonname, self.sockaddr = res
+        for res in socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE):
+            self.family, self.type, self.proto, canonname, sockaddr = res
+
+            if self.type not in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
+                continue
 
             h.status("Trying %s" % self.sockaddr[0])
             self.sock = socket.socket(self.family, self.type, self.proto)
             self.settimeout(self.timeout)
             try:
-                self.sock.connect(self.sockaddr)
+                self.sock.connect(sockaddr)
                 self.lhost, self.lport = self.sock.getsockname()[:2]
                 break
             except socket.error:
