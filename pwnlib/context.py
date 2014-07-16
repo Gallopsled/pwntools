@@ -157,7 +157,7 @@ class ContextModule(types.ModuleType):
 
         Allowed values are any strictly positive number or None."""
 
-        return type(value) in [types.IntType, types.LongType, types.FloatType] and value > 0
+        return type(value) in [types.IntType, types.LongType, types.FloatType] and value >= 0
 
     @_validator
     def word_size(self, value):
