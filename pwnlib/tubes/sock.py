@@ -52,7 +52,7 @@ class sock(tube):
         """
 
         if self.type == socket.SOCK_STREAM:
-            return super(listen, self).recvall()
+            return super(sock, self).recvall()
         else:
             log.error("UDP sockets does not supports recvall")
 

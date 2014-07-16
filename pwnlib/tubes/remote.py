@@ -55,7 +55,7 @@ class remote(sock):
             if self.type not in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
                 continue
 
-            h.status("Trying %s" % self.sockaddr[0])
+            h.status("Trying %s" % sockaddr[0])
             self.sock = socket.socket(self.family, self.type, self.proto)
             self.settimeout(self.timeout)
             try:
@@ -66,5 +66,5 @@ class remote(sock):
                 pass
         else:
             h.failure()
-            log.error("Could not connect to %s on port %d" % self.target)
+            log.error("Could not connect to %s on port %d" % (self.rhost, self.rport))
         h.success()
