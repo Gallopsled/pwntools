@@ -14,7 +14,7 @@ arguments, see :func:`pwnlib.term.output`.
 
 __all__ = [
     # Constants
-    # 'DEBUG', 'INFO', 'ERROR', 'SILENT',
+    'DEBUG', 'INFO', 'ERROR', 'SILENT',
 
     # loglevel == DEBUG
     'trace', 'debug',
@@ -47,43 +47,43 @@ SILENT = 100
 
 
 _last_was_nl = True
-def _put(s = '', frozen = True, float = False, priority = 10, indent = 0):
+def _put(l, string = '', frozen = True, float = False, priority = 10, indent = 0):
     global _last_was_nl
-    if term.term_mode:
-        return term.output(str(s), frozen = frozen, float = float,
+    if context.log_level > l:
+        return _dummy_handle
+    elif term.term_mode:
+        return term.output(str(string), frozen = frozen, float = float,
                            priority = priority, indent = indent)
     else:
-        s = str(s)
-        if not s:
+        string = str(string)
+        if not string:
             return _dummy_handle
         if _last_was_nl:
             sys.stdout.write(' ' * indent)
             _last_was_nl = False
-        if s[-1] == '\n':
+        if string[-1] == '\n':
             _last_was_nl = True
         if indent:
-            s = s[:-1].replace('\n', '\n' + ' ' * indent) + s[-1]
-        sys.stderr.write(s)
+            string = string[:-1].replace('\n', '\n' + ' ' * indent) + string[-1]
+        sys.stderr.write(string)
         return _dummy_handle
 
 
-def _anotate(a, s, l, frozen = True, float = False, priority = 10, indent = 0):
-    if context.log_level <= l:
-        _put('[%s] ' % a, frozen, float, priority, indent)
-        h = _put(s, frozen, float, priority, indent + 4)
-        _put('\n', frozen, float, priority)
-        return h
-    else:
-        return _dummy_handle
+def _anotate(l, a, string, frozen = True, float = False, priority = 10, indent = 0):
+    _put(l, '[%s] ' % a, frozen, float, priority, indent)
+    h = _put(l, string, frozen, float, priority, indent + 4)
+    _put(l, '\n', frozen, float, priority)
+    return h
 
 
-def trace(s = '', frozen = True, float = False, priority = 10, indent = 0):
-    '''trace(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
+def trace(string = '', log_level = DEBUG, frozen = True, float = False, priority = 10, indent = 0):
+    '''trace(string = '', log_level = DEBUG, frozen = True, float = False, priority = 10, indent = 0) -> handle
 
-    Outputs the given string with loglevel :data:`DEBUG`.
+    Outputs the given string with the default loglevel :data:`DEBUG`.
 
     Args:
-      s (str): String to output.
+      string (str): String to output.
+      log_level(int): The log level to output the text to.
       frozen (bool): If this is True, then the return handle will ignore updates.
       float (bool): If this is True, then the text will be floating.
       priority (int): If the text is floating, then this it its priority.
@@ -92,19 +92,17 @@ def trace(s = '', frozen = True, float = False, priority = 10, indent = 0):
     Returns:
       A handle to the text, so it can be updated later.
 '''
-    if context.log_level <= DEBUG:
-        return _put(s, frozen, float, priority, indent)
-    else:
-        return _dummy_handle
+    return _put(log_level, string, frozen, float, priority, indent)
 
 
-def debug(s = '', frozen = True, float = False, priority = 10, indent = 0):
-    '''debug(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
+def debug(string = '', log_level = DEBUG, frozen = True, float = False, priority = 10, indent = 0):
+    '''debug(string = '', log_level = DEBUG, frozen = True, float = False, priority = 10, indent = 0) -> handle
 
-    Outputs the given string with loglevel :data:`DEBUG` along with a header.
+    Outputs the given string with the default loglevel :data:`DEBUG` along with a header.
 
     Args:
-      s (str): String to output.
+      string (str): String to output.
+      log_level(int): The log level to output the text to.
       frozen (bool): If this is True, then the return handle will ignore updates.
       float (bool): If this is True, then the text will be floating.
       priority (int): If the text is floating, then this it its priority.
@@ -113,17 +111,18 @@ def debug(s = '', frozen = True, float = False, priority = 10, indent = 0):
     Returns:
       A handle to the text, so it can be updated later.
 '''
-    return _anotate(text.bold_red('DEBUG'), s, DEBUG,
+    return _anotate(log_level, text.bold_red('DEBUG'), string,
                     frozen, float, priority, indent)
 
 
-def output(s = '', frozen = True, float = False, priority = 10, indent = 0):
-    '''output(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
+def output(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0):
+    '''output(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0) -> handle
 
-    Outputs the given string with loglevel :data:`INFO`.
+    Outputs the given string with the default loglevel :data:`INFO`.
 
     Args:
-      s (str): String to output.
+      string (str): String to output.
+      log_level(int): The log level to output the text to.
       frozen (bool): If this is True, then the return handle will ignore updates.
       float (bool): If this is True, then the text will be floating.
       priority (int): If the text is floating, then this it its priority.
@@ -132,19 +131,17 @@ def output(s = '', frozen = True, float = False, priority = 10, indent = 0):
     Returns:
       A handle to the text, so it can be updated later.
 '''
-    if context.log_level <= INFO:
-        return _put(s, frozen, float, priority, indent)
-    else:
-        return _dummy_handle
+    return _put(log_level, string, frozen, float, priority, indent)
 
 
-def info(s = '', frozen = True, float = False, priority = 10, indent = 0):
-    '''info(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
+def info(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0):
+    '''info(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0) -> handle
 
-    Outputs the given string with loglevel :data:`INFO` along with a header.
+    Outputs the given string with the default loglevel :data:`INFO` along with a header.
 
     Args:
       s (str): String to output.
+      log_level(int): The log level to output the text to.
       frozen (bool): If this is True, then the return handle will ignore updates.
       float (bool): If this is True, then the text will be floating.
       priority (int): If the text is floating, then this it its priority.
@@ -153,33 +150,14 @@ def info(s = '', frozen = True, float = False, priority = 10, indent = 0):
     Returns:
       A handle to the text, so it can be updated later.
 '''
-    return _anotate(text.bold_blue('*'), s, INFO,
+    return _anotate(log_level, text.bold_blue('*'), string,
                     frozen, float, priority, indent)
 
 
-def success(s = '', frozen = True, float = False, priority = 10, indent = 0):
-    '''success(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
+def success(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0):
+    '''success(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0) -> handle
 
-    Outputs the given string with loglevel :data:`INFO` along with a header.
-
-    Args:
-      s (str): String to output.
-      frozen (bool): If this is True, then the return handle will ignore updates.
-      float (bool): If this is True, then the text will be floating.
-      priority (int): If the text is floating, then this it its priority.
-      indent (int): The indentation of the text.
-
-    Returns:
-      A handle to the text, so it can be updated later.
-'''
-    return _anotate(text.bold_green('+'), s, INFO,
-                    frozen, float, priority, indent)
-
-
-def failure(s = '', frozen = True, float = False, priority = 10, indent = 0):
-    '''failure(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
-
-    Outputs the given string with loglevel :data:`INFO` along with a header.
+    Outputs the given string with the default loglevel :data:`INFO` along with a header.
 
     Args:
       s (str): String to output.
@@ -191,18 +169,40 @@ def failure(s = '', frozen = True, float = False, priority = 10, indent = 0):
     Returns:
       A handle to the text, so it can be updated later.
 '''
-    return _anotate(text.bold_red('-'), s, INFO,
+    return _anotate(log_level, text.bold_green('+'), string,
                     frozen, float, priority, indent)
 
 
-def warning(s = '', frozen = True, float = False, priority = 10, indent = 0):
+def failure(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0):
+    '''failure(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0) -> handle
+
+    Outputs the given string with the default loglevel :data:`INFO` along with a header.
+
+    Args:
+      string (str): String to output.
+      log_level(int): The log level to output the text to.
+      frozen (bool): If this is True, then the return handle will ignore updates.
+      float (bool): If this is True, then the text will be floating.
+      priority (int): If the text is floating, then this it its priority.
+      indent (int): The indentation of the text.
+
+    Returns:
+      A handle to the text, so it can be updated later.
+'''
+    return _anotate(log_level, text.bold_red('-'), string,
+                    frozen, float, priority, indent)
+
+
+def warning(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0):
     '''warning(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
 
     If in :data:`pwnlib.term.term_mode`, then outputs the given string
-    with loglevel :data:`INFO` along with a header. Otherwise calls :func:`warnings.warn`.
+    with the default loglevel :data:`INFO` along with a header. Otherwise
+    calls :func:`warnings.warn`.
 
     Args:
-      s (str): String to output.
+      string (str): String to output.
+      log_level(int): The log level to output the text to.
       frozen (bool): If this is True, then the return handle will ignore updates.
       float (bool): If this is True, then the text will be floating.
       priority (int): If the text is floating, then this it its priority.
@@ -212,21 +212,22 @@ def warning(s = '', frozen = True, float = False, priority = 10, indent = 0):
       A handle to the text, so it can be updated later.
 '''
     if term.term_mode:
-        return _anotate(text.bold_yello('!'), s, INFO,
+        return _anotate(log_level, text.bold_yello('!'), string,
                         frozen, float, priority, indent)
     else:
         import warnings
-        warnings.warn(s, stacklevel = 2)
+        warnings.warn(string, stacklevel = 2)
         return _dummy_handle
 
 
-def indented(s = '', frozen = True, float = False, priority = 10, indent = 0):
+def indented(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0):
     '''indented(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
 
     Indents the given string, then outputs it with loglevel :data:`INFO`.
 
     Args:
-      s (str): String to output.
+      string (str): String to output.
+      log_level(int): The log level to output the text to.
       frozen (bool): If this is True, then the return handle will ignore updates.
       float (bool): If this is True, then the text will be floating.
       priority (int): If the text is floating, then this it its priority.
@@ -235,33 +236,30 @@ def indented(s = '', frozen = True, float = False, priority = 10, indent = 0):
     Returns:
       A handle to the text, so it can be updated later.
 '''
-    if context.log_level <= INFO:
-        h = _put(s, frozen, float, priority, indent + 4)
-        _put('\n', frozen, float, priority)
-        return h
-    else:
-        return _dummy_handle
+    h = _put(log_level, string, frozen, float, priority, indent + 4)
+    _put(log_level, '\n', frozen, float, priority)
+    return h
 
 
-def error(s = '', exit_code = -1):
+def error(string = '', exit_code = -1):
     '''If in :data:`pwnlib.term.term_mode`, then:
 
-    * Outputs the given string with loglevel ERROR along with a header.
+    * Outputs the given string with loglevel :data:`ERROR` along with a header.
     * Outputs a call trace with loglevel :data:`INFO`
     * Exits
 
     Otherwise it raises a :exc:`pwnlib.exceptions.PwnlibException`.
 
     Args:
-      s (str): The error message.
+      string (str): The error message.
       exit_code (int): The return code to exit with.
 '''
     if term.term_mode:
-        _anotate(text.on_red('ERROR'), s, ERROR)
-        if context.log_level <= INFO and sys.exc_type not in [None, KeyboardInterrupt]:
-            _put('The exception was:\n')
+        _anotate(ERROR, text.on_red('ERROR'), string)
+        if sys.exc_type not in [None, KeyboardInterrupt]:
             import traceback
-            traceback.print_exc()
+            _put(INFO, 'The exception was:\n')
+            _put(INFO, traceback.format_exc())
         sys.exit(exit_code)
     else:
         import exception
@@ -269,59 +267,63 @@ def error(s = '', exit_code = -1):
             reason = sys.exc_info()
         else:
             reason = None
-        raise exception.PwnlibException(s, reason, exit_code)
+        raise exception.PwnlibException(string, reason, exit_code)
 
 
-def bug(s = '', exit_code = -1):
-    '''Outputs the given string with loglevel :data:`ERROR` along with a header and a traceback. It then exits with the given exit code.
+def bug(string = '', exit_code = -1, log_level = ERROR):
+    '''Outputs the given string with the default loglevel :data:`ERROR` along
+    with a header and a traceback. It then exits with the given exit code.
 
     Args:
-      s (str): The error message.
+      string (str): The error message.
       exit_code (int): The return code to exit with.
+      log_level(int): The log level to output the text to.
 '''
-    _anotate(text.on_red('BUG (this should not happen)'), s, ERROR)
-    if context.log_level <= ERROR and sys.exc_type not in [None, KeyboardInterrupt]:
-        _put('The exception was:\n')
+    _anotate(log_level, text.on_red('BUG (this should not happen)'), string)
+    if sys.exc_type not in [None, KeyboardInterrupt]:
         import traceback
-        traceback.print_exc()
+        _put(log_level, 'The exception was:\n')
+        _put(log_level, traceback.format_exc())
     sys.exit(exit_code)
 
 
-def fatal(s = '', exit_code = -1):
-    '''Outputs the given string with loglevel :data:`ERROR` along with a header and a traceback. It then exits with the given exit code.
+def fatal(string = '', exit_code = -1, log_level = ERROR):
+    '''Outputs the given string with the default loglevel :data:`ERROR` along
+    with a header and a traceback. It then exits with the given exit code.
 
     Args:
-      s (str): The error message.
+      string (str): The error message.
       exit_code (int): The return code to exit with.
+      log_level(int): The log level to output the text to.
 '''
-    _anotate(text.on_red('FATAL'), s, ERROR)
-    if context.log_level <= ERROR and sys.exc_type not in [None, KeyboardInterrupt]:
-        _put('The exception was:\n')
+    _anotate(log_level, text.on_red('FATAL'), string)
+    if sys.exc_type not in [None, KeyboardInterrupt]:
         import traceback
-        traceback.print_exc()
+        _put(log_level, 'The exception was:\n')
+        _put(log_level, traceback.format_exc())
     sys.exit(exit_code)
 
 
-def stub(s = '', exit_code = -1):
-    '''Outputs the given string with loglevel :data:`ERROR` along with a header and information about the unimplemented function.
+def stub(string = '', exit_code = -1, log_level = ERROR):
+    '''Outputs the given string with the default loglevel :data:`ERROR` along
+    with a header and information about the unimplemented function.
 
     Args:
       s (str): The error message.
       exit_code (int): The return code to exit with.
+      log_level(int): The log level to output the text to.
 '''
-    if context.log_level <= ERROR:
-        import traceback
-        filename, lineno, fname, _line = \
-            traceback.extract_stack(limit = 2)[0]
-        _put('Unimplemented function: %s in file "%s", line %d\n' %
-            (fname, filename, lineno))
-        if s:
-            _put('%s\n' % s)
+    import traceback
+    filename, lineno, fname, _line = traceback.extract_stack(limit = 2)[0]
+    _put(log_level, 'Unimplemented function: %s in file "%s", line %d\n' %
+         (fname, filename, lineno))
+    if string:
+        _put(log_level, '%s\n' % string)
     sys.exit(exit_code)
 
 
 class _DummyHandle:
-    def update(self, _s):
+    def update(self, _string):
         pass
 
     def freeze(self):
@@ -340,31 +342,32 @@ class _Waiter(object):
 
 
 class _SimpleWaiter(_Waiter):
-    def __init__(self, msg, _spinner):
-        info('%s...' % msg)
+    def __init__(self, msg, _spinner, log_level):
+        self.log_level = log_level
+        info('%s...' % msg, log_level = self.log_level)
         self.msg = msg
 
     def status(self, _):
         pass
 
-    def success(self, s = 'OK'):
-        success('%s: %s' % (self.msg, s))
+    def success(self, string = 'OK'):
+        success('%s: %s' % (self.msg, string), log_level = self.log_level)
         self._remove()
 
-    def failure(self, s = 'FAILED!'):
-        failure('%s: %s' % (self.msg, s))
+    def failure(self, string = 'FAILED!'):
+        failure('%s: %s' % (self.msg, string), log_level = self.log_level)
         self._remove()
 
 
 class _Spinner(threading.Thread):
-    def __init__(self, spinner):
+    def __init__(self, spinner, log_level):
         threading.Thread.__init__(self)
         self.spinner = spinner
         self.idx = 0
         self.daemon = True
         import sys as _sys
         self.sys = _sys
-        self.handle = term.output()
+        self.handle = _put(log_level, '', frozen = False)
         self.lock = threading.Lock()
         self.start()
 
@@ -384,52 +387,53 @@ class _Spinner(threading.Thread):
             self.idx = (self.idx + 1) % len(self.spinner)
             time.sleep(0.1)
 
-    def stop(self, s):
+    def stop(self, string):
         self.running = False
         with self.lock:
-            self.handle.update(s)
+            self.handle.update(string)
             self.handle.freeze()
 
 
 class _TermWaiter(_Waiter):
-    def __init__(self, msg, spinner):
+    def __init__(self, msg, spinner, log_level):
         self.hasmsg = msg != ''
-        _put('[')
+        _put(log_level, '[')
         if spinner is None:
             import random, term.spinners as spinners
             spinner = random.choice(spinners.spinners)
-        self.spinner = _Spinner(spinner)
-        _put('] %s' % msg)
-        self.stat = term.output()
-        _put('\n')
+        self.spinner = _Spinner(spinner, log_level)
+        _put(log_level, '] %s' % msg)
+        self.stat = _put(log_level, '', frozen = False)
+        _put(log_level, '\n')
 
-    def status(self, s):
-        if self.hasmsg and s:
-            s = ': ' + s
-        self.stat.update(s)
+    def status(self, string):
+        if self.hasmsg and string:
+            string = ': ' + string
+        self.stat.update(string)
 
-    def success(self, s = 'OK'):
-        if self.hasmsg and s:
-            s = ': ' + s
+    def success(self, string = 'OK'):
+        if self.hasmsg and string:
+            string = ': ' + string
         self.spinner.stop(text.bold_green('+'))
-        self.stat.update(s)
+        self.stat.update(string)
         self.stat.freeze()
         self._remove()
 
-    def failure(self, s = 'FAILED!'):
-        if self.hasmsg and s:
-            s = ': ' + s
+    def failure(self, string = 'FAILED!'):
+        if self.hasmsg and string:
+            string = ': ' + string
         self.spinner.stop(text.bold_red('-'))
-        self.stat.update(s)
+        self.stat.update(string)
         self.stat.freeze()
         self._remove()
 
 
-def waitfor(msg, status = '', spinner = None):
+def waitfor(msg, status = '', spinner = None, log_level = INFO):
     """waitfor(msg, status = '', spinner = None) -> waiter
 
     Starts a new progress indicator which includes a spinner
-    if :data:`pwnlib.term.term_mode` is enabled.
+    if :data:`pwnlib.term.term_mode` is enabled. By default it
+    outputs to loglevel :data:`INFO`.
 
     Args:
       msg (str): The message of the spinner.
@@ -438,26 +442,27 @@ def waitfor(msg, status = '', spinner = None):
          If a list is supplied, then a either element of the list
          is shown in order, with an update occuring every 0.1 second.
          Otherwise a random spinner is chosen.
+      log_level(int): The log level to output the text to.
 
     Returns:
       A waiter-object that can be updated using :func:`status`, :func:`done_success` or :func:`done_failure`.
 """
 
     if term.term_mode:
-        h = _TermWaiter(msg, spinner)
+        h = _TermWaiter(msg, spinner, log_level)
     else:
-        h = _SimpleWaiter(msg, spinner)
+        h = _SimpleWaiter(msg, spinner, log_level)
     if status:
         h.status(status)
     _waiter_stack.append(h)
     return h
 
 
-def status(s = '', waiter = None):
+def status(string = '', waiter = None):
     """Updates the status-text of waiter-object without completing it.
 
     Args:
-      s (str): The status message.
+      string (str): The status message.
       waiter: An optional waiter to update. If none is supplied, the last created one is used.
 """
     if waiter == None and _waiter_stack:
@@ -466,14 +471,14 @@ def status(s = '', waiter = None):
     if waiter == None:
         error('Not waiting for anything')
 
-    waiter.status(s)
+    waiter.status(string)
 
 
-def done_success(s = 'Done', waiter = None):
+def done_success(string = 'Done', waiter = None):
     """Updates the status-text of a waiter-object, and then sets it to completed in a successful manner.
 
     Args:
-      s (str): The status message.
+      string (str): The status message.
       waiter: An optional waiter to update. If none is supplied, the last created one is used.
 """
     if waiter == None and _waiter_stack:
@@ -482,14 +487,14 @@ def done_success(s = 'Done', waiter = None):
     if waiter == None:
         error('Not waiting for anything')
 
-    waiter.success(s)
+    waiter.success(string)
 
 
 def done_failure(s = 'FAILED!', waiter = None):
     """Updates the status-text of a waiter-object, and then sets it to completed in a failed manner.
 
     Args:
-      s (str): The status message.
+      string (str): The status message.
       waiter: An optional waiter to update. If none is supplied, the last created one is used.
 """
     if waiter == None and _waiter_stack:
@@ -498,4 +503,4 @@ def done_failure(s = 'FAILED!', waiter = None):
     if waiter == None:
         error('Not waiting for anything')
 
-    waiter.failure(s)
+    waiter.failure(string)

@@ -125,35 +125,6 @@ class ContextModule(types.ModuleType):
         return value in ('linux', 'freebsd')
 
     @_validator
-    def target_binary(self, value):
-        """The target binary currently being worked on. This is useful for
-        instance in the ROP module.
-
-        .. todo::
-
-           Update documentation with a reference.
-
-        Allowed values are any string."""
-
-        return type(value) == types.StringType
-
-    @_validator
-    def target_host(self, value):
-        """The remote hostname/ip address currently being targeted. Used when
-        creating sockets.
-
-        Allowed values are any string."""
-        return type(value) == types.StringType
-
-    @_validator
-    def target_port(self, value):
-        """The remote host port currently being targeted. Used when creating
-        sockets.
-
-        Allowed values are any numbers in [0, 65535]."""
-        return type(value) in [types.IntType, types.LongType] and 0 <= value <= 65535
-
-    @_validator
     def endianness(self, value):
         """The default endianness used for e.g. the :func:`pwnlib.util.packing.pack` function. Defaults
         to ``little``.
@@ -178,18 +149,23 @@ class ContextModule(types.ModuleType):
         return value in ('unsigned', 'signed')
 
     @_validator
+    def timeout(self, value):
+        """The default timeout used by e.g. :class:`pwnlib.pipes.ssh`.
+
+        Defaults to None, meaning no timeout.
+
+        Allowed values are any strictly positive number or None."""
+
+        return type(value) in [types.IntType, types.LongType, types.FloatType] and value > 0
+
+    @_validator
     def word_size(self, value):
         """The default word size used for e.g. the :func:`pwnlib.util.packing.pack` function. Defaults
         to ``32``.
 
-        Allowed values:
+        Allowed values are any strictly positive number."""
 
-        * ``8``
-        * ``16``
-        * ``32``
-        * ``64``"""
-
-        return type(value) in [types.IntType, types.LongType]
+        return type(value) in [types.IntType, types.LongType] and value > 0
 
     @_updater
     def log_level(self, value):
