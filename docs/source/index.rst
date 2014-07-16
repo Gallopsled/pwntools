@@ -13,6 +13,7 @@ Contents:
    exception
    log
    memleak
+   pipes
    shellcraft
    term
    ui
