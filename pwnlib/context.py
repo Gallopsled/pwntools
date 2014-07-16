@@ -6,6 +6,7 @@ defaults = {
     'endianness': 'little',
     'sign': 'unsigned',
     'word_size': 32,
+    'log_level': 'error',
     '__doc__': '''The global default-version of :mod:`pwnlib.context`.
 
 For at description see :mod:`pwnlib.context`. This is the global defaults, that
