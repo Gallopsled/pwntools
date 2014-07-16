@@ -347,16 +347,16 @@ keymap = Keymap({
     '<any>'       : handle_keypress,
     })
 
-def readline(size = None, prompt = ''):
+def readline(size = None, prompt = '', float = False, priority = 10):
     global buffer_handle, prompt_handle, suggest_handle, eof, \
         show_suggestions
     show_suggestions = False
     eof = False
     if prompt:
-        prompt_handle = term.output(prompt)
+        prompt_handle = term.output(prompt, float = float, priority = priority)
     else:
         prompt_handle = None
-    buffer_handle = term.output()
+    buffer_handle = term.output(float = float, priority = priority)
     suggest_handle = None
     clear()
     if startup_hook:
