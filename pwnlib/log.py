@@ -30,7 +30,7 @@ __all__ = [
 ]
 
 import threading, sys, time
-from . import term, context
+from . import term
 from .term import text
 
 #: Loglevel which includes almost everything.
@@ -47,9 +47,10 @@ SILENT = 100
 
 
 _last_was_nl = True
-def _put(l, string = '', frozen = True, float = False, priority = 10, indent = 0):
+def _put(log_level, string = '', frozen = True, float = False, priority = 10, indent = 0):
     global _last_was_nl
-    if context.log_level > l:
+    from . import context
+    if context.log_level > log_level:
         return _dummy_handle
     elif term.term_mode:
         return term.output(str(string), frozen = frozen, float = float,
@@ -75,6 +76,12 @@ def _anotate(l, a, string, frozen = True, float = False, priority = 10, indent =
     _put(l, '\n', frozen, float, priority)
     return h
 
+def _good_exc():
+    exc = sys.exc_info()
+    if not exc or exc[0] not in [None, KeyboardInterrupt]:
+        return None
+    else:
+        return exc
 
 def trace(string = '', log_level = DEBUG, frozen = True, float = False, priority = 10, indent = 0):
     '''trace(string = '', log_level = DEBUG, frozen = True, float = False, priority = 10, indent = 0) -> handle
@@ -256,17 +263,14 @@ def error(string = '', exit_code = -1):
 '''
     if term.term_mode:
         _anotate(ERROR, text.on_red('ERROR'), string)
-        if sys.exc_type not in [None, KeyboardInterrupt]:
+        if _good_exc():
             import traceback
             _put(INFO, 'The exception was:\n')
             _put(INFO, traceback.format_exc())
         sys.exit(exit_code)
     else:
         import exception
-        if sys.exc_type not in [None, KeyboardInterrupt]:
-            reason = sys.exc_info()
-        else:
-            reason = None
+        reason = _good_exc()
         raise exception.PwnlibException(string, reason, exit_code)
 
 
@@ -280,7 +284,7 @@ def bug(string = '', exit_code = -1, log_level = ERROR):
       log_level(int): The log level to output the text to.
 '''
     _anotate(log_level, text.on_red('BUG (this should not happen)'), string)
-    if sys.exc_type not in [None, KeyboardInterrupt]:
+    if _good_exc():
         import traceback
         _put(log_level, 'The exception was:\n')
         _put(log_level, traceback.format_exc())
@@ -297,7 +301,7 @@ def fatal(string = '', exit_code = -1, log_level = ERROR):
       log_level(int): The log level to output the text to.
 '''
     _anotate(log_level, text.on_red('FATAL'), string)
-    if sys.exc_type not in [None, KeyboardInterrupt]:
+    if _good_exc():
         import traceback
         _put(log_level, 'The exception was:\n')
         _put(log_level, traceback.format_exc())
@@ -340,6 +344,15 @@ class _Waiter(object):
         while self in _waiter_stack:
             _waiter_stack.remove(self)
 
+class _DummyWaiter(_Waiter):
+    def status(self, _):
+        pass
+
+    def success(self, string = 'OK'):
+        pass
+
+    def failure(self, string = 'FAILED!'):
+        pass
 
 class _SimpleWaiter(_Waiter):
     def __init__(self, msg, _spinner, log_level):
@@ -448,12 +461,18 @@ def waitfor(msg, status = '', spinner = None, log_level = INFO):
       A waiter-object that can be updated using :func:`status`, :func:`done_success` or :func:`done_failure`.
 """
 
+    from . import context
+    if context.log_level > log_level:
+        return _dummy_handle
+
     if term.term_mode:
         h = _TermWaiter(msg, spinner, log_level)
     else:
         h = _SimpleWaiter(msg, spinner, log_level)
+
     if status:
         h.status(status)
+
     _waiter_stack.append(h)
     return h
 
