@@ -1,11 +1,5 @@
 #!/usr/bin/env python2
-import sys, os, argparse, string, time
-
-# Add make sure we can import stuff
-curdir, _ = os.path.split(__file__)
-path = os.path.abspath(os.path.join(curdir, '..'))
-sys.path.insert(0, path)
-
+import argparse, string
 from pwnlib.util import cyclic, packing
 from pwnlib import log
 
