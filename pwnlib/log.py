@@ -463,7 +463,7 @@ def waitfor(msg, status = '', spinner = None, log_level = INFO):
 
     from . import context
     if context.log_level > log_level:
-        h = _Dummy_Waiter()
+        h = _DummyWaiter()
     elif term.term_mode:
         h = _TermWaiter(msg, spinner, log_level)
     else:
