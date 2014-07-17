@@ -1,82 +1,224 @@
 from . import context, log
+import tempfile, subprocess, os, shutil, tempfile, errno
+from os import path
 
-__all__ = ['asm', 'disasm']
+__all__ = ['asm', 'cpp', 'disasm']
 
-def asm(shellcode, arch = None):
-    """asm(code, arch = None) -> assembled
+_basedir = path.join(path.split(__file__)[0], '..')
+_bindir  = path.join(_basedir, 'binutils')
+_incdir  = path.join(_basedir, 'data', 'includes')
 
-    Assembles a piece of code, represented as a multi-line string."""
+def _assembler(arch):
+    assemblers = {
+        'i386'   : ['nasm', '-Ox'],
+        'amd64'  : ['nasm', '-Ox'],
+        'thumb'  : [path.join(_bindir, 'arm-as')],
+        'mips'   : [path.join(_bindir, 'mips-as' ), '--EB'],
+        'mipsel' : [path.join(_bindir, 'mips-as' ), '--EL'],
+    }
 
-    import tempfile, subprocess, os.path, shutil
-
-    # Lookup in context if not found
-    if arch == None and context.arch:
-        arch = context.arch
+    if arch in assemblers:
+        return assemblers[arch]
     else:
+        return [path.join(_bindir, arch + '-as')]
+
+
+def _objcopy(arch):
+    if arch in ['i386', 'amd64']:
+        return 'objcopy'
+    else:
+        return path.join(_bindir, 'objcopy')
+
+
+def _objdump(arch):
+    if arch in ['i386', 'amd64']:
+        return ['objdump', '-Mintel']
+    else:
+        return [path.join(_bindir, 'objdump')]
+
+
+def _include_header(arch, os):
+    if os == 'freebsd':
+        return '#include <freebsd.h>\n'
+    elif os == 'linux' and arch:
+        return '#include <linux/%s.h>\n' % arch
+    else:
+        return ''
+
+
+def _arch_header(arch):
+    headers = {
+        'i386'  : ['bits 32'],
+        'amd64' : ['bits 64'],
+        'arm'   : [
+            '.section .shellcode,"ax"',
+            '.syntax unified',
+            '.arch armv7-a',
+            '.arm'
+        ],
+        'thumb' : [
+            '.section .shellcode,"ax"',
+            '.syntax unified',
+            '.arch armv7-a',
+            '.thumb'
+        ],
+        'mips'  : [
+            '.section .shellcode,"ax"',
+            '.set mips2',
+            '.set noreorder',
+        ],
+        'mipsel'  : [
+            '.section .shellcode,"ax"',
+            '.set mips2',
+            '.set noreorder',
+        ],
+    }
+
+    if arch in headers:
+        return '\n'.join(headers[arch]) + '\n'
+    else:
+        return ''
+
+def _bfdname(arch):
+    bfdnames = {
+        'i386'    : 'elf32-i386',
+        'amd64'   : 'elf64-x86-64',
+        'arm'     : 'elf32-littlearm',
+        'thumb'   : 'elf32-littlearm',
+        'mips'    : 'elf32-bigmips',
+        'mipsel'  : 'elf32-littlemips',
+        'alpha'   : 'elf64-alpha',
+        'cris'    : 'elf32-cris',
+        'ia64'    : 'elf64-ia64-little',
+        'm68k'    : 'elf32-m68k',
+        'powerpc' : 'elf32-powerpc',
+        'vax'     : 'elf32-vax',
+    }
+
+    if arch in bfdnames:
+        return bfdnames[arch]
+    else:
+        log.error("Cannot find bfd name for architecture %s" % repr(arch))
+
+
+def _bfdarch(arch):
+    if arch == 'amd64':
+        return 'i386:x86-64'
+    elif arch == 'thumb':
+        return 'arm'
+    elif arch == 'ia64':
+        return 'ia64-elf64'
+    else:
+        return arch
+
+
+def _run(cmd, stdin = None):
+    try:
+        p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate(stdin)
+        exitcode = p.wait()
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            log.error('Could not run %s the program' % repr(cmd[0]))
+        else:
+            raise
+
+    if (exitcode, stderr) != (0, ''):
+        msg = 'There was an error running %s:\n' % repr(cmd[0])
+        if exitcode != 0:
+            msg += 'It had the exitcode %d.\n' % exitcode
+        if stderr != '':
+            msg += 'It had this on stdout:\n%s\n' % stderr
+        log.error(msg)
+
+
+    return stdout
+
+def cpp(shellcode, arch = None, os = None):
+    """cpp(shellcode, arch = None, os = None) -> str
+
+    Runs CPP over the given shellcode.
+
+    The output will always contain exactly one newline at the end.
+
+    Examples:
+      >>> cpp("testing: SYS_setresuid")
+      'testing: SYS_setresuid\\n'
+      >>> cpp("mov al, SYS_setresuid", arch = "i386", os = "linux")
+      'mov al, 164\\n'
+      >>> cpp("weee SYS_setresuid", arch = "arm", os = "linux")
+      'weee (0x900000+164)\\n'
+      >>> cpp("SYS_setresuid", arch = "thumb", os = "linux")
+      '(0+164)\\n'
+      >>> cpp("SYS_setresuid", os = "freebsd")
+      '311\\n'
+    """
+
+    arch = arch or context.arch
+    os   = os   or context.os
+    code = _include_header(arch, os) + shellcode
+    cpp  = ['cpp', '-nostdinc', '-undef', '-P', '-I' + _incdir, '/dev/stdin']
+    return _run(cpp, code).strip('\n').rstrip() + '\n'
+
+
+def asm(shellcode, arch = None, os = None):
+    """asm(code, arch = None, os = None) -> str
+
+    Runs CPP over a given shellcode and then assembles it into bytes.
+
+    To see which architectures or operating systems are supported,
+    look in :mod:`pwnlib.contex`.
+
+    To support all these architecture, we bundle the GNU assembler
+    and objcopy with pwntools.
+
+    Args:
+      shellcode(str): Assembler code to assemble.
+      arch: A supported architecture or None. In case of None,
+            :data:`pwnlib.context.arch` will be used.
+      os: A supported operating system or None. In case of None,
+          :data:`pwnlib.context.os` will be used.
+
+    Examples:
+      >>> asm("mov eax, SYS_select", arch = 'i386', os = 'freebsd').encode('hex')
+      'b85d000000'
+      >>> asm("mov rax, SYS_select", arch = 'amd64', os = 'linux').encode('hex')
+      'b817000000'
+      >>> asm("ldr r0, =SYS_select", arch = 'arm', os = 'linux').encode('hex')
+      '04001fe552009000'
+    """
+
+    arch = arch or context.arch
+    os   = os   or context.os
+    if not arch:
         raise ValueError("asm() needs to get 'arch' through an argument or the context")
 
-    #TODO: constants module should be used to lookup constants
-    tmpdir = tempfile.mkdtemp(prefix = 'pwn-asm-')
-    def path(s):
-        return os.path.join(tmpdir, s)
+    tmpdir  = tempfile.mkdtemp(prefix = 'pwn-asm-')
+    def tmp(s):
+        return path.join(tmpdir, s)
+
+    assembler = _assembler(arch)
+    objcopy   = [_objcopy(arch), '-j.shellcode', '-Obinary']
+    code      = _arch_header(arch) + cpp(shellcode, arch, os)
+
     try:
-        code = []
-        asm_extra = []
-
-        if arch not in ['i386', 'amd64']:
-            code += ['.section .shellcode,"ax"']
-
-        if arch == 'arm':
-            code += ['.syntax unified']
-            code += ['.arch armv7-a']
-            code += ['.arm']
-        elif arch == 'thumb':
-            code += ['.syntax unified']
-            code += ['.arch armv7-a']
-            code += ['.thumb']
-            arch = 'arm'
-        elif arch == 'i386':
-            code += ['bits 32']
-        elif arch == 'amd64':
-            code += ['bits 64']
-        elif arch in ['mips', 'mipsel']:
-            code += ['.set mips2']
-            code += ['.set noreorder']
-            if arch == 'mips':
-                asm_extra += ['--EB']
-            else:
-                asm_extra += ['--EL']
-            arch = 'mips'
-
-        code = '\n'.join(code) + shellcode
-
-        if arch in ['i386', 'amd64']:
-            assembler = ['nasm', '-Ox'] + asm_extra
-            objcopy = ['objcopy']
-        else:
-            assembler = [os.path.join(pwn.installpath, 'binutils', arch + '-as')] + asm_extra
-            if not os.path.isfile(assembler[0]):
-                raise Exception('Could not find the gnu assembler for this architecture: %s' % arch)
-            objcopy = [os.path.join(pwn.installpath, 'binutils', 'promisc-objcopy')]
-        objcopy += ['-j.shellcode', '-Obinary']
-
-        with open(path('step1'), 'w') as fd:
+        with open(tmp('step1'), 'w') as fd:
             fd.write(code)
 
-        _run(assembler + ['-o', path('step2'), path('step1')])
+        _run(assembler + ['-o', tmp('step2'), tmp('step1')])
 
         if arch in ['i386', 'amd64']:
-            with open(path('step2')) as fd:
+            with open(tmp('step2')) as fd:
                 return fd.read()
 
         # Sanity check for seeing if the output has relocations
-        relocs = subprocess.check_output(['readelf', '-r', path('step2')]).strip()
+        relocs = subprocess.check_output(['readelf', '-r', tmp('step2')]).strip()
         if len(relocs.split('\n')) > 1:
             raise Exception('There were relocations in the shellcode:\n\n%s' % relocs)
 
-        _run(objcopy + [path('step2'), path('step3')])
+        _run(objcopy + [tmp('step2'), tmp('step3')])
 
-        with open(path('step3')) as fd:
+        with open(tmp('step3')) as fd:
             return fd.read()
     finally:
         try:
@@ -85,102 +227,71 @@ def asm(shellcode, arch = None):
             pass
 
 def disasm(data, arch = None):
-    """disasm(code, arch = None) -> disassembled
+    """disasm(data, arch = None) -> str
 
-    Disassembles a binary piece of shellcode into assembler."""
+    Disassembles a bytestring into human readable assembler.
 
-    import os.path, tempfile, subprocess, shutil
-    # Lookup in context if not found
-    if arch == None and context.arch:
-        arch = context.arch
-    else:
-        raise ValueError("disasm() needs to get 'arch' through an argument or the context")
+    To see which architectures are supported,
+    look in :mod:`pwnlib.contex`.
+
+    To support all these architecture, we bundle the GNU objcopy
+    and objdump with pwntools.
+
+    Args:
+      data(str): Bytestring to disassemble.
+      arch: A supported architecture or None. In case of None,
+            :data:`pwnlib.context.arch` will be used.
+
+    Examples:
+      >>> print disasm('b85d000000'.decode('hex'), arch = 'i386')
+         0:   b8 5d 00 00 00          mov    eax,0x5d
+      >>> print disasm('b817000000'.decode('hex'), arch = 'amd64')
+         0:   b8 17 00 00 00          mov    eax,0x17
+      >>> print disasm('04001fe552009000'.decode('hex'), arch = 'arm')
+         0:   e51f0004        ldr     r0, [pc, #-4]   ; 0x4
+         4:   00900052        addseq  r0, r0, r2, asr r0
+      >>> print disasm('4ff00500'.decode('hex'), arch = 'thumb')
+         0:   f04f 0005       mov.w   r0, #5
+    """
+
+    arch = arch or context.arch
+    if not arch:
+        raise ValueError("asm() needs to get 'arch' through an argument or the context")
 
     tmpdir = tempfile.mkdtemp(prefix = 'pwn-disasm-')
-    def path(s):
-        return os.path.join(tmpdir, s)
+    def tmp(s):
+        return path.join(tmpdir, s)
+
+    bfdarch = _bfdarch(arch)
+    bfdname = _bfdname(arch)
+    objdump = _objdump(arch) + ['-d']
+    objcopy = [
+        _objcopy(arch),
+        '-I', 'binary',
+        '-O', bfdname,
+        '-B', bfdarch,
+        '--set-section-flags', '.data=code',
+        '--rename-section', '.data=.text',
+    ]
+
+    if arch == 'thumb':
+        objcopy += ['--prefix-symbol=$t.']
+    else:
+        objcopy += ['-w', '-N', '*']
+
     try:
-        bfdarch = arch
-        extra = ['-w', '-N', '*']
-
-        if arch == 'i386':
-            bfdname = 'elf32-i386'
-        elif arch == 'amd64':
-            bfdname = 'elf64-x86-64'
-            bfdarch = 'i386:x86-64'
-        elif arch == 'arm':
-            bfdname = 'elf32-littlearm'
-        elif arch == 'thumb':
-            bfdname = 'elf32-littlearm'
-            bfdarch = 'arm'
-            extra = ['--prefix-symbol=$t.']
-        elif arch == 'mips':
-            bfdname = 'elf32-bigmips'
-        elif arch == 'mipsel':
-            bfdname = 'elf32-littlemips'
-        elif arch == 'alpha':
-            bfdname = 'elf64-alpha'
-        elif arch == 'cris':
-            bfdname = 'elf32-cris'
-        elif arch == 'ia64':
-            bfdname = 'elf64-ia64-little'
-            bfdarch = 'ia64-elf64'
-        elif arch == 'm68k':
-            bfdname = 'elf32-m68k'
-        elif arch == 'powerpc':
-            bfdname = 'elf32-powerpc'
-        elif arch == 'vax':
-            bfdname = 'elf32-vax'
-
-        if arch in ['i386', 'amd64']:
-            objcopy = ['objcopy']
-            objdump = ['objdump', '-Mintel']
-        else:
-            objcopy = [os.path.join(pwn.installpath, 'binutils', 'promisc-objcopy')]
-            objdump = [os.path.join(pwn.installpath, 'binutils', 'promisc-objdump')]
-
-        objcopy += ['-I', 'binary',
-                    '-O', bfdname,
-                    '-B', bfdarch,
-                    '--set-section-flags', '.data=code',
-                    '--rename-section', '.data=.text',
-                    ]
-
-        objdump += ['-d']
-
-        with open(path('step1'), 'w') as fd:
+        with open(tmp('step1'), 'w') as fd:
             fd.write(data)
-        _run(objcopy + extra + [path('step1'), path('step2')])
+        _run(objcopy + [tmp('step1'), tmp('step2')])
 
-        output0 = subprocess.check_output(objdump + [path('step2')])
+        output0 = subprocess.check_output(objdump + [tmp('step2')])
         output1 = output0.split('<.text>:\n')
         if len(output1) != 2:
             raise Exception('Something went wrong with objdump:\n\n%s' % output0)
         else:
-            return output1[1].strip('\n')
+            return output1[1].strip('\n').rstrip().expandtabs()
     finally:
         try:
             shutil.rmtree(tmpdir)
         except:
             pass
-
-def _run(cmd):
-    import subprocess, errno
-    try:
-        p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-        stdout, stderr = p.communicate()
-        exitcode = p.wait()
-    except OSError as e:
-        if e.errno == errno.ENOENT:
-            log.die('%s is not installed' % cmd[0])
-        else:
-            raise
-    if exitcode != 0 or stdout != '' or stderr != '':
-        err = 'There was a problem running %s.\n' % ' '.join(cmd)
-        if exitcode != 0:
-            err += 'It had the exitcode %d.\n' % exitcode
-        if stdout != '':
-            err += 'It had this on stdout:\n%s\n' % stdout
-        if stderr != '':
-            err += 'It had this on stdout:\n%s\n' % stderr
-        raise Exception(err)

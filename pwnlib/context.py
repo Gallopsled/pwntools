@@ -89,14 +89,18 @@ class ContextModule(types.ModuleType):
         """Variable for the current architecture. This is useful e.g. to make
         :mod:`pwnlib.shellcraft` easier to use. Allowed values:
 
-        * ``i386``
+        * ``alpha``
         * ``amd64``
-        * ``armel``
+        * ``arm``
         * ``armeb``
-        * ``ppc``
-        * ``mips``"""
+        * ``cris``
+        * ``i386``
+        * ``m68k``
+        * ``mips``
+        * ``mipsel``
+        * ``powerpc``"""
 
-        if value in ('i386', 'amd64', 'armel', 'armeb', 'ppc', 'mips'):
+        if value in ('alpha', 'amd64', 'arm', 'armeb', 'cris', 'i386', 'm68k', 'mips', 'mipsel', 'powerpc'):
             return value
 
     @_validator
