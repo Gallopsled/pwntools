@@ -75,7 +75,7 @@ class listen(sock):
                 listen_sock.close() 
             else:
                 self.sock = listen_sock
-                self.buffer, self.rhost = self.sock.recvfrom(1)
+                self.buffer, self.rhost = self.sock.recvfrom(4096)
                 self.sock.connect(self.rhost)
             self.settimeout(self.timeout)
         except socket.error:
