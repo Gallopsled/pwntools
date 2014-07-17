@@ -157,7 +157,7 @@ def cpp(shellcode, arch = None, os = None):
     arch = arch or context.arch
     os   = os   or context.os
     code = _include_header(arch, os) + shellcode
-    cpp  = ['cpp', '-nostdinc', '-undef', '-P', '-I' + _incdir, '/dev/stdin']
+    cpp  = ['cpp', '-C', '-nostdinc', '-undef', '-P', '-I' + _incdir, '/dev/stdin']
     return _run(cpp, code).strip('\n').rstrip() + '\n'
 
 

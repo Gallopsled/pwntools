@@ -74,7 +74,7 @@ class module(ModuleType):
     def _context_modules(self):
         from .. import context
         for k, m in self._submodules.items():
-            if k in [context.arch, context.os, context.net]:
+            if k in [context.arch, context.os]:
                 yield m
 
     def __shellcodes__(self):

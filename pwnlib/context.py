@@ -79,6 +79,7 @@ class ContextModule(types.ModuleType):
             '__all__'     : [],
             '__file__'    : __file__,
             '__package__' : __package__,
+            '_possible'   : _possible
         })
 
     def __call__(self, **kwargs):
@@ -254,7 +255,6 @@ is returned.
             '__package__' : __package__,
             'defaults'    : ContextModule(),
             '_ctxs'       : {},
-            '_possible'   : _possible
         })
         sys.modules[self.__name__ + '.defaults'] = self.defaults
         for k, v in defaults.items():

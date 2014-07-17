@@ -23,7 +23,7 @@ Args:
 
 % for s in lists.group(4, string, 'fill', extend)[::-1]:
 <%
-    sign = packing.u32ls(s)
+    sign = packing.u32(s, 'little', 'unsigned')
 %>\
 % if sign == 0:
     push 1
