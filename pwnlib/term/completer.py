@@ -1,11 +1,10 @@
 import readline
-from .. import log
 
 class Completer:
     def complete(self, _left, _right):
-        log.stub()
+        raise Exception("unimplemented")
     def suggest(self, _left, _right):
-        log.stub()
+        raise Exception("unimplemented")
     def __enter__(self):
         self._saved_complete_hook = readline.complete_hook
         self._saved_suggest_hook = readline.suggest_hook
@@ -49,7 +48,7 @@ class WordCompleter(Completer):
         return self._completions
 
     def complete_word(self, word):
-        log.stub()
+        raise Exception("unimplemented")
 
 class LongestPrefixCompleter(WordCompleter):
     def __init__(self, words = [], delims = None):
