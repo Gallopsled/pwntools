@@ -1,8 +1,6 @@
-import term
-
 import sys
-from keymap import Keymap
-import text, key
+from . import term, text, key
+from .keymap import Keymap
 cursor = text.reverse
 
 buffer_left, buffer_right = u'', u''
@@ -108,7 +106,7 @@ def redisplay():
             s = s or buffer_left + cursor(' ')
             buffer_handle.update(s)
         else:
-            if search_results <> []:
+            if search_results != []:
                 idx, i, j = search_results[search_idx]
                 buf = history[idx]
                 a, b, c = buf[:i], buf[i:j], buf[j:]
@@ -118,7 +116,7 @@ def redisplay():
             buffer_handle.update('(search) ' + s)
 
 def self_insert(trace):
-    if len(trace) <> 1:
+    if len(trace) != 1:
         return
     k = trace[0]
     if k.type == key.TYPE_UNICODE and k.mods == key.MOD_NONE:
@@ -349,16 +347,16 @@ keymap = Keymap({
     '<any>'       : handle_keypress,
     })
 
-def readline(size = None, prompt = ''):
+def readline(size = None, prompt = '', float = False, priority = 10):
     global buffer_handle, prompt_handle, suggest_handle, eof, \
         show_suggestions
     show_suggestions = False
     eof = False
     if prompt:
-        prompt_handle = term.output(prompt)
+        prompt_handle = term.output(prompt, float = float, priority = priority)
     else:
         prompt_handle = None
-    buffer_handle = term.output()
+    buffer_handle = term.output(float = float, priority = priority)
     suggest_handle = None
     clear()
     if startup_hook:

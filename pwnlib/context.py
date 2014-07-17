@@ -6,6 +6,7 @@ defaults = {
     'endianness': 'little',
     'sign': 'unsigned',
     'word_size': 32,
+    'log_level': 'error',
     '__doc__': '''The global default-version of :mod:`pwnlib.context`.
 
 For at description see :mod:`pwnlib.context`. This is the global defaults, that
@@ -26,22 +27,16 @@ class Local(object):
         context._thread_ctx().__dict__.update(self.saved)
 
 def _updater(updater, name = None, doc = None):
-    name = name or updater.func_name
+    name = name or updater.__name__
     doc  = doc  or updater.__doc__
 
     def getter(self):
-        try:
-            if hasattr(self, '_' + name):
-                return getattr(self, '_' + name)
-            elif self.defaults:
-                return getattr(self.defaults, name)
-            else:
-                return None
-        except BaseException as e:
-            print >> sys.stderr, `e`
-            print >> sys.stderr, `e`
-            print >> sys.stderr, `e`
-            raise
+        if hasattr(self, '_' + name):
+            return getattr(self, '_' + name)
+        elif self.defaults:
+            return getattr(self.defaults, name)
+        else:
+            return None
 
     def setter(self, val):
         setattr(self, '_' + name, updater(self, val))
@@ -52,7 +47,7 @@ def _updater(updater, name = None, doc = None):
     return res
 
 def _validator(validator, name = None, doc = None):
-    name = name or validator.func_name
+    name = name or validator.__name__
     doc  = doc  or validator.__doc__
 
     def updater(self, val):
@@ -84,7 +79,7 @@ class ContextModule(types.ModuleType):
         """This function is the global equivalent of :func:`pwnlib.context.__call__`.
 
         Args:
-          **kwargs: Variables to be assigned in the environment."""
+          kwargs: Variables to be assigned in the environment."""
 
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -131,35 +126,6 @@ class ContextModule(types.ModuleType):
         return value in ('linux', 'freebsd')
 
     @_validator
-    def target_binary(self, value):
-        """The target binary currently being worked on. This is useful for
-        instance in the ROP module.
-
-        .. todo::
-
-           Update documentation with a reference.
-
-        Allowed values are any string."""
-
-        return type(value) == types.StringType
-
-    @_validator
-    def target_host(self, value):
-        """The remote hostname/ip address currently being targeted. Used when
-        creating sockets.
-
-        Allowed values are any string."""
-        return type(value) == types.StringType
-
-    @_validator
-    def target_port(self, value):
-        """The remote host port currently being targeted. Used when creating
-        sockets.
-
-        Allowed values are any numbers in [0, 65535]."""
-        return type(value) in [types.IntType, types.LongType] and 0 <= value <= 65535
-
-    @_validator
     def endianness(self, value):
         """The default endianness used for e.g. the :func:`pwnlib.util.packing.pack` function. Defaults
         to ``little``.
@@ -184,18 +150,23 @@ class ContextModule(types.ModuleType):
         return value in ('unsigned', 'signed')
 
     @_validator
+    def timeout(self, value):
+        """The default timeout used by e.g. :class:`pwnlib.tubes.ssh`.
+
+        Defaults to None, meaning no timeout.
+
+        Allowed values are any strictly positive number or None."""
+
+        return type(value) in [types.IntType, types.LongType, types.FloatType] and value >= 0
+
+    @_validator
     def word_size(self, value):
         """The default word size used for e.g. the :func:`pwnlib.util.packing.pack` function. Defaults
         to ``32``.
 
-        Allowed values:
+        Allowed values are any strictly positive number."""
 
-        * ``8``
-        * ``16``
-        * ``32``
-        * ``64``"""
-
-        return type(value) in [types.IntType, types.LongType]
+        return type(value) in [types.IntType, types.LongType] and value > 0
 
     @_updater
     def log_level(self, value):
@@ -208,10 +179,10 @@ class ContextModule(types.ModuleType):
         E.g if ``'debug'`` is specified, then the result is ``10``, as :data:`pwnlib.log.DEBUG` is ``10``.
 """
 
-        if type(value) in [types.IntType, types.LongType] or value == None:
+        if type(value) in [types.IntType, types.LongType, types.NoneType]:
             return value
         elif type(value) == types.StringType:
-            import log
+            from . import log
             if hasattr(log, value.upper()):
                 return getattr(log, value.upper())
 
@@ -305,7 +276,7 @@ is returned.
             ...
 
         Args:
-          **kwargs: Variables to be assigned in the environment.
+          kwargs: Variables to be assigned in the environment.
 
         Examples:
 
@@ -339,7 +310,7 @@ is returned.
         settings variables in the newly created environment.
 
         Args:
-          **kwargs: Variables to be assigned in the new environment.
+          kwargs: Variables to be assigned in the new environment.
 
         Returns:
           Context manager for managing the old and new environment.
@@ -375,7 +346,6 @@ is returned.
         return sorted(res)
 
 
-if __name__ <> '__main__':
-    # prevent this scope from being GC'ed
-    tether = sys.modules[__name__]
-    context = MainModule()
+# prevent this scope from being GC'ed
+tether = sys.modules[__name__]
+context = MainModule()

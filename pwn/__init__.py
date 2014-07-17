@@ -1,12 +1,12 @@
 # Promote useful stuff to toplevel
 import sys
-from toplevel import *
+from .toplevel import *
 
 # Put the terminal in raw mode
 term.init()
 
 # default log level in non-lib mode
-context.log_level = 'info'
+context.defaults.log_level = 'info'
 
 # look for special args in argv
 def closure():

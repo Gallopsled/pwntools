@@ -19,10 +19,6 @@ def init_mako():
     MAGIC = '__pwn_docstring__'
     loaded = {}
 
-    import pwnlib.shellcraft, pwnlib.util
-    shellcraft_imports = ', '.join(pwnlib.shellcraft._submodules.keys())
-    util_imports       = ', '.join(pwnlib.util.__all__)
-
     lookup = TemplateLookup(
         directories      = [relpath('templates')],
         module_directory = relpath('pycs')

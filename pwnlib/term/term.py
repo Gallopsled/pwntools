@@ -12,7 +12,7 @@ on_winch = []
 
 import sys, atexit, struct, fcntl, re, signal, threading, os
 from termios import *
-import termcap
+from . import termcap
 settings = None
 _graphics_mode = False
 
@@ -428,6 +428,8 @@ def output(s = '', float = False, priority = 10, frozen = False,
         else:
             is_floating = False
             i = len(cells) - 1
+            while cells[i].float and i > 0:
+                i -= 1
         # put('xx %d\n' % i)
         cell = Cell()
         cell.content = parse(s)
@@ -443,10 +445,10 @@ def output(s = '', float = False, priority = 10, frozen = False,
             return h
         # the invariant is that the cursor is placed after the last cell
         if i == len(cells) - 1:
-            render_cell(cell)
+            render_cell(cell, clear_after = True)
             flush()
         else:
-            render_from(i)
+            render_from(i, clear_after = True)
         return h
 
 def find_cell(h):
@@ -468,7 +470,7 @@ def update(h, s):
             i, c = find_cell(h)
         except KeyError:
             return
-        if not c.frozen and c.content <> s:
+        if not c.frozen and c.content != s:
             c.content = parse(s)
             render_from(i, clear_after = True)
 

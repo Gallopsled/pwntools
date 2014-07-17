@@ -1,1 +1,1 @@
-__all__ = ['binary', 'iterator', 'lists', 'misc', 'packing', 'proc']
+__all__ = ['fiddling', 'hashes', 'lists', 'misc', 'packing', 'proc', 'safeeval']

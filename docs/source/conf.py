@@ -40,6 +40,9 @@ doctest_global_setup = '''
 import pwnlib
 pwnlib.context.reset_local()
 '''
+
+autodoc_member_order = 'bysource'
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -266,7 +269,13 @@ def linkcode_resolve(domain, info):
 
     import importlib, inspect, types
     mod = importlib.import_module(info['module'])
-    val = getattr(mod, info['fullname'], None)
+
+    # Try to find the value
+    val = mod
+    for k in info['fullname'].split('.'):
+        val = getattr(val, k, None)
+        if val == None:
+            break
 
     # Special case for shellcraft
     if info['module'].startswith('pwnlib.shellcraft.'):

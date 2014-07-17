@@ -13,8 +13,10 @@ Contents:
    exception
    log
    memleak
+   tubes
    shellcraft
    term
+   ui
    util/*
 
 Indices and tables
