@@ -1,7 +1,7 @@
 #define __i386__
-#include <common.h>
-#include <linuxnet.h>
 #include <i386/syscalls.h>
+#include <linuxnet.h>
+#include <common.h>
 
 #define SYS_socketcall_socket SYS_SOCKET
 #define SYS_socketcall_bind SYS_BIND

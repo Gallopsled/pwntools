@@ -12,7 +12,7 @@ mkdir -p "$headers/linux" "$python/linux" "$headers/linux"
 
 for arch in $ARCHS; do
   echo $arch
-  swig -Ilinux -Ilinux/diet -includeall -E linux/$arch.h | egrep "^%constant" | ./load_constants.py $python/linux/$arch.py $headers/linux/$arch.h
+  swig -Ilinux -Ilinux -Ilinux/diet -includeall -E linux/$arch.h | egrep "^%constant" | ./load_constants.py $python/linux/$arch.py $headers/linux/$arch.h
 done
 
 swig -Ifreebsd -includeall -E freebsd/common.h | egrep "^%constant" | ./load_constants.py $python/freebsd.py $headers/freebsd.h
