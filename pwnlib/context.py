@@ -13,6 +13,12 @@ For at description see :mod:`pwnlib.context`. This is the global defaults, that
 act as a "base" for the thread-local values.
 '''}
 
+# These are the possiblities for arch and os
+_possible = {
+    'arch': ('alpha', 'amd64', 'arm', 'armeb', 'cris', 'i386', 'm68k', 'mips', 'mipsel', 'powerpc', 'thumb'),
+    'os': ('linux', 'freebsd')
+}
+
 class Local(object):
     def __init__(self, args):
         self.args = args
@@ -98,9 +104,11 @@ class ContextModule(types.ModuleType):
         * ``m68k``
         * ``mips``
         * ``mipsel``
-        * ``powerpc``"""
+        * ``powerpc``
+        * ``thumb``
+        """
 
-        if value in ('alpha', 'amd64', 'arm', 'armeb', 'cris', 'i386', 'm68k', 'mips', 'mipsel', 'powerpc'):
+        if value in self._possible['arch']:
             return value
 
     @_validator
@@ -112,7 +120,8 @@ class ContextModule(types.ModuleType):
 
         * ``linux``
         * ``freebsd``"""
-        return value in ('linux', 'freebsd')
+        if value in self._possible['os']:
+            return value
 
     @_validator
     def endianness(self, value):
@@ -244,7 +253,8 @@ is returned.
             '__file__'    : __file__,
             '__package__' : __package__,
             'defaults'    : ContextModule(),
-            '_ctxs'       : {}
+            '_ctxs'       : {},
+            '_possible'   : _possible
         })
         sys.modules[self.__name__ + '.defaults'] = self.defaults
         for k, v in defaults.items():
