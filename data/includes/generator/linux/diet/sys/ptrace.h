@@ -25,7 +25,7 @@ __BEGIN_DECLS
 #define PTRACE_SYSCALL		  24
 
 /* 0x4200-0x4300 are reserved for architecture-independent additions.  */
-/*#define PTRACE_SETOPTIONS	0x4200*/
+/* #define PTRACE_SETOPTIONS	0x4200 */
 #define PTRACE_GETEVENTMSG	0x4201
 #define PTRACE_GETSIGINFO	0x4202
 #define PTRACE_SETSIGINFO	0x4203
