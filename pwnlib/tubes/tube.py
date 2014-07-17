@@ -163,6 +163,9 @@ class tube(object):
             except EOFError:
                 break
 
+            if s == None:
+                continue
+
             r.append(s)
             l += len(s)
             h.status(misc.size(l))
@@ -287,10 +290,10 @@ class tube(object):
         while self.recv(10000, timeout = 0.05) != None:
             pass
 
-    def can_recv(self):
-        """can_recv() -> bool
+    def can_recv(self, timeout = 0):
+        """can_recv(timeout = 0) -> bool
 
-        Returns True, if there is data available."""
+        Returns True, if there is data available within `timeout` seconds."""
 
         return bool(self.buffer or self.can_recv_raw(timeout))
 
@@ -368,7 +371,7 @@ class tube(object):
     def fileno(self):
         """fileno() -> int
 
-        Returns the file number for the socket.
+        Returns the file number used for reading.
         """
 
         log.bug('Should be implemented by a subclass.')

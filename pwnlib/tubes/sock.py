@@ -103,8 +103,8 @@ class sock(tube):
             self.sock.setblocking(1)
             self.sock.settimeout(timeout)
 
-    def can_recv_raw(self):
-        if not self.sock:
+    def can_recv_raw(self, timeout):
+        if not self.sock or self.closed["in"]:
             return False
 
         import select
