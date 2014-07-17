@@ -24,6 +24,17 @@
          :members: shutdown
          :show-inheritance:
 
+   Processes
+   ---------
+
+   .. automodule:: pwnlib.tubes.process
+
+      .. autoclass:: pwnlib.tubes.process.process(args, shell = False, executable = None, env = None, timeout = 'default', log_level = INFO)
+         :members: kill, shutdown, poll, communicate
+         :show-inheritance:
+
+
+
    Common functionality
    --------------------
 

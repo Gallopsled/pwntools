@@ -15,6 +15,7 @@ from pwnlib.util.proc       import *
 from pwnlib.util.splash     import *
 from pwnlib.tubes.remote    import *
 from pwnlib.tubes.listen    import *
+from pwnlib.tubes.process   import *
 
 # Promote these modules, so that "from pwn import *" will let you access them
 import pwn, re, time, sys, os, string, threading, subprocess
