@@ -104,21 +104,6 @@ class ContextModule(types.ModuleType):
             return value
 
     @_validator
-    def net(self, value):
-        """Variable for the current network-stack. This is not currently useful,
-        as we only support IPv4, but we'll get there eventually...
-
-        .. todo::
-
-           Update documentation when this changes.
-
-        Allowed values:
-
-        * ``tcp4`` (TCP over IPv4)
-        * ``tcp6`` (TCP over IPv6)"""
-        return value in ('tcp4', 'tcp6')
-
-    @_validator
     def os(self, value):
         """Variable for the current operating system. This is useful e.g. for
         choosing the right constants for syscall numbers.
