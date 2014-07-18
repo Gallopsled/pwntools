@@ -1,10 +1,10 @@
-from .. import log
+from .. import log, log_levels
 from .tube import tube
 import subprocess, fcntl, os
 
 class process(tube):
     def __init__(self, args, shell = False, executable = None, env = None,
-                 timeout = 'default', log_level = log.INFO):
+                 timeout = 'default', log_level = log_levels.INFO):
         super(process, self).__init__(timeout, log_level)
 
         if executable:
@@ -112,7 +112,7 @@ class process(tube):
         try:
             self.proc.stdin.write(data)
             self.proc.stdin.flush()
-        except IOError as e:
+        except IOError:
             raise EOFError
 
     def settimeout_raw(self, timeout):
@@ -136,8 +136,8 @@ class process(tube):
             try:
                 self.proc.kill()
                 self.stop_noticed = True
-                log.info('Stopped program %s' % repr(self.target))
-            except OSError as e:
+                log.info('Stopped program %s' % repr(self.program))
+            except OSError: 
                 pass
 
 

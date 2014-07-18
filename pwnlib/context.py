@@ -1,4 +1,5 @@
 import types, sys, threading
+from . import log_levels
 
 # These attributes are set on the defaults module after it have been constructed
 # If you change any of these values, remember to update the docstring.
@@ -188,15 +189,14 @@ class ContextModule(types.ModuleType):
         up in the log module.
 
         E.g if ``'debug'`` is specified, then the result is ``10``, as
-        :data:`pwnlib.log.DEBUG` is ``10``.
+        :data:`pwnlib.log_levels.DEBUG` is ``10``.
 """
 
         if type(value) in [types.IntType, types.LongType, types.NoneType]:
             return value
         elif type(value) == types.StringType:
-            from . import log
-            if hasattr(log, value.upper()):
-                return getattr(log, value.upper())
+            if hasattr(log_levels, value.upper()):
+                return getattr(log_levels, value.upper())
 
         raise AttributeError(
             'Cannot set context-key log_level, ' +
@@ -254,7 +254,7 @@ variable. An example of this is :data:`pwnlib.context.log_level`:
    10
 
 In this case the translation is done by looking up the string in
-:mod:`pwnlib.log`, so the result happens because :data:`pwnlib.log.DEBUG`
+:mod:`pwnlib.log`, so the result happens because :data:`pwnlib.log_levels.DEBUG`
 is ``10``.
 
 A read can never throw an exception. If there is no result in the thread-local

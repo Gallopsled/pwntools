@@ -1,7 +1,7 @@
 __all__ = [
-    'fiddling', 'hashes', 'lists', 'misc',
-    'packing', 'proc', 'safeeval'
+    'crc', 'cyclic', 'fiddling', 'hashes', 'lists',
+    'misc', 'packing', 'proc', 'safeeval'
 ]
 
-from . import fiddling, hashes, lists, misc
-from . import packing, proc, safeeval
+from . import crc, cyclic, fiddling, hashes, lists
+from . import misc, packing, proc, safeeval

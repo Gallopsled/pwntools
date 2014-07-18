@@ -1,6 +1,6 @@
 from .sock import sock
-from .. import log
-import socket, sys
+from .. import log, log_levels
+import socket
 
 class remote(sock):
     """Creates a TCP or UDP-connection to a remote host. It supports
@@ -20,7 +20,7 @@ class remote(sock):
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
                  timeout = 'default',
-                 log_level = log.INFO):
+                 log_level = log_levels.INFO):
         super(remote, self).__init__(timeout, log_level)
 
         self.rport = int(port)

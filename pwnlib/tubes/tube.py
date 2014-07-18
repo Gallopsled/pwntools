@@ -1,4 +1,4 @@
-from .. import log, context, term
+from .. import log, log_levels, context, term
 from ..util import misc
 import re, threading, sys
 
@@ -19,9 +19,10 @@ class tube(object):
     """Container of all the tube functions common to both sockets, TTYs and SSH connetions."""
 
     def __init__(self, timeout, log_level):
+        from ..util import packing
         self.buffer          = ''
         self.log_level       = log_level
-        self.debug_log_level = min(log.DEBUG, log_level)
+        self.debug_log_level = min(log_levels.DEBUG, log_level)
         self.timeout         = _fix_timeout(timeout, context.timeout)
 
     # Functions based on functions from subclasses
@@ -38,7 +39,7 @@ class tube(object):
         will be used. If None is given, then there will be no timeout.
 
         It will also print a debug message with log level
-        :data:`pwnlib.log.DEBUG` about the received data.
+        :data:`pwnlib.log_levels.DEBUG` about the received data.
         """
 
         # If there is already data, go with that
@@ -125,7 +126,7 @@ class tube(object):
         contains ``lines`` number of newlines.
         """
 
-        return recvpred(lambda buf: buf.count('\n') == lines, timeout)
+        return self.recvpred(lambda buf: buf.count('\n') == lines, timeout)
 
     def recvregex(self, regex, exact = False, timeout = 'default'):
         """recvregex(self, regex, exact = False, timeout = 'default') -> str
@@ -178,7 +179,7 @@ class tube(object):
         """send(data)
 
         Sends data. Will also print a debug message with
-        log level :data:`pwnlib.log.DEBUG` about it.
+        log level :data:`pwnlib.log_levels.DEBUG` about it.
 
         If it is not possible to send anymore because of a closed
         connection, it raises and :exc:`exceptions.EOFError`.
@@ -227,7 +228,7 @@ class tube(object):
 
         A combination of ``sendline(data)`` and ``recvuntil(delim, timeout)``."""
 
-        self.send(dat + '\n')
+        self.send(data + '\n')
         return self.recvuntil(delim)
 
     def interactive(self, prompt = term.text.bold_red('$') + ' '):
@@ -342,12 +343,12 @@ class tube(object):
 
         log.bug('Should be implemented by a subclass.')
 
-    def can_recv_raw(self):
-        """can_recv_raw() -> bool
+    def can_recv_raw(self, timeout):
+        """can_recv_raw(timeout) -> bool
 
         Should not be called directly. Returns True, if
-        there is data available, but ignores the buffer
-        on the object.
+        there is data available within the timeout, but
+        ignores the buffer on the object.
         """
 
         log.bug('Should be implemented by a subclass.')
