@@ -20,14 +20,14 @@ def symbols(path):
     # -s : symbol table
     cmd = [_READELF, '-s', path]
     out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
-    field = '\s+(\S+)'
-    cond_field = '(\s+\S+)?'
-    lines = re.findall('^\s+\d+:' + field * 7 + cond_field + '$', out, re.MULTILINE)
+    field = r'\s+(\S+)'
+    cond_field = r'(\s+\S+)?'
+    lines = re.findall(r'^\s+\d+:' + field * 7 + cond_field + '$', out, re.MULTILINE)
 
     for addr, size, type, _bind, _vis, _ndx, name, _foo in lines:
         addr = int(addr, 16)
         size = int(size, 10)
-        if addr <> 0 and name <> '':
+        if addr != 0 and name != '':
             symbols[name] = {'addr': addr,
                              'size': size,
                              'type': type,
@@ -69,7 +69,7 @@ class ELF:
         self._load_libs()
         # this is a nasty hack until we get our pure python elf parser
         # we'll just have to live without PLT and GOT info for PICs until then
-        if not re.match('\.so(\.\d+)?$', path):
+        if not re.match(r'\.so(\.\d+)?$', path):
             try:
                 self._load_plt_got()
             except:
@@ -83,8 +83,8 @@ class ELF:
         # -h : ELF header
         cmd = [_READELF, '-h', self._path]
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
-        self.elfclass = re.findall('Class:\s*(.*$)', out, re.MULTILINE)[0]
-        self.elftype = re.findall('Type:\s*(.*$)', out, re.MULTILINE)[0].split(' ')[0]
+        self.elfclass = re.findall(r'Class:\s*(.*$)', out, re.MULTILINE)[0]
+        self.elftype = re.findall(r'Type:\s*(.*$)', out, re.MULTILINE)[0].split(' ')[0]
 
     def _load_segments(self):
         # -W : Wide output
@@ -92,9 +92,9 @@ class ELF:
         cmd = [_READELF, '-W', '-l', self._path]
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
         hexint = '(0x[0-9a-f]+)'
-        numfield = '\s+' + hexint
-        flgfield = '\s+([RWE ]{3})'
-        lines = re.findall('^\s+([A-Z_]+)' + numfield * 5 + flgfield + numfield,
+        numfield = r'\s+' + hexint
+        flgfield = r'\s+([RWE ]{3})'
+        lines = re.findall(r'^\s+([A-Z_]+)' + numfield * 5 + flgfield + numfield,
                            out, re.MULTILINE)
 
         for type, off, vaddr, paddr, filesiz, memsiz, flg, align in lines:
@@ -123,10 +123,10 @@ class ELF:
         # -S : Section headers
         cmd = [_READELF, '-W', '-S', self._path]
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
-        field = '\s+(\S+)'
-        posint = '[123456789]\d*'
-        flags = '\s+([WAXMSILGTExOop]*)'
-        lines = re.findall('^\s+\[\s*' + posint + '\]' + field * 6 + flags,
+        field = r'\s+(\S+)'
+        posint = r'[123456789]\d*'
+        flags = r'\s+([WAXMSILGTExOop]*)'
+        lines = re.findall(r'^\s+\[\s*' + posint + r'\]' + field * 6 + flags,
                            out, re.MULTILINE)
 
         for name, _type, addr, off, size, _es, flgs in lines:
@@ -159,9 +159,9 @@ class ELF:
     def _load_plt_got(self):
         cmd = [_OBJDUMP, '-d', self._path]
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
-        got32 = '[^j]*jmp\s+\*0x(\S+)'
-        got64 = '[^#]*#\s+(\S+)'
-        lines = re.findall('([a-fA-F0-9]+)\s+<([^@<]+)@plt>:(%s|%s)' % (got32, got64), out)
+        got32 = r'[^j]*jmp\s+\*0x(\S+)'
+        got64 = r'[^#]*#\s+(\S+)'
+        lines = re.findall(r'([a-fA-F0-9]+)\s+<([^@<]+)@plt>:(%s|%s)' % (got32, got64), out)
 
         for addr, name, _, gotaddr32, gotaddr64 in lines:
             addr = int(addr, 16)
@@ -280,14 +280,14 @@ class ELF:
         self._load_data()
         return ''.join(self._data)
 
-def load (path):
+def load(path):
     """load(path) -> ELF object
 
     Load an ELF file.
     """
     path = os.path.realpath(path)
-    if path in ELF._ELF__cache:
-        return ELF._ELF__cache[path]
+    if path in ELF.__cache:
+        return ELF.__cache[path]
     return ELF(path)
 
 def parse_ldd_output(data):
