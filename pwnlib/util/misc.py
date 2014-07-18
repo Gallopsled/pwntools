@@ -105,11 +105,8 @@ def write(path, data = '', create_dir = False):
         ds = path.split('/')
         f = ds.pop()
         p = '/'
-        while True:
-            try:
-                d = ds.pop(0)
-            except:
-                break
+        while d:
+            d = ds.pop(0)
             p = os.path.join(p, d)
             if not os.path.exists(p):
                 os.mkdir(p)

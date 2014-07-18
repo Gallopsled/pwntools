@@ -137,7 +137,7 @@ class process(tube):
                 self.proc.kill()
                 self.stop_noticed = True
                 log.info('Stopped program %s' % repr(self.program))
-            except OSError: 
+            except OSError:
                 pass
 
 

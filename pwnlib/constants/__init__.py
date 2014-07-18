@@ -92,7 +92,7 @@ class const(ModuleType):
         return result
 
 # To prevent garbage collection
-old_module = sys.modules[__name__]
+tether = sys.modules[__name__]
 
 # Create the module structure
 module(__name__)

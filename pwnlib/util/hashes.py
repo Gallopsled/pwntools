@@ -8,7 +8,8 @@ for _algo in hashlib.algorithms:
             fd = open(p)
             while True:
                 s = fd.read(4096)
-                if not s: break
+                if not s:
+                    break
                 h.update(s)
             fd.close()
             return h

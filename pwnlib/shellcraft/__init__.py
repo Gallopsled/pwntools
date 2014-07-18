@@ -1,5 +1,6 @@
 from types import ModuleType
 import sys, os, glob
+from . import internal
 
 class module(ModuleType):
     def __init__(self, name, directory):
@@ -33,7 +34,7 @@ class module(ModuleType):
             with open(os.path.join(absdir, '__doc__')) as fd:
                 self.__doc__ = fd.read()
             for f in glob.glob(os.path.join(absdir, '*')):
-                f, ext = os.path.splitext(os.path.basename(f))
+                f, _ext = os.path.splitext(os.path.basename(f))
                 self._shellcodes.append(f)
         except IOError:
             pass
@@ -47,7 +48,6 @@ class module(ModuleType):
     def __getattr__(self, key):
         # This function lazy-loads the shellcodes
         if key in self._shellcodes:
-            import internal
             real = internal.make_function(key, self._dir)
             setattr(self, key, real)
             return real
@@ -55,7 +55,7 @@ class module(ModuleType):
         for m in self._context_modules():
             try:
                 return getattr(m, key)
-            except AttributeError as e:
+            except AttributeError:
                 pass
 
         raise AttributeError("'module' object has no attribute '%s'" % key)
@@ -84,7 +84,7 @@ class module(ModuleType):
         return result
 
 # To prevent garbage collection
-old_module = sys.modules[__name__]
+tether = sys.modules[__name__]
 
 # Create the module structure
 module(__name__, '')

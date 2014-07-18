@@ -74,11 +74,11 @@ def pack(number, word_size = None, endianness = None, sign = None):
 
     if sign == 'signed':
         limit = 1 << (word_size-1)
-        if not (-limit <= number < limit):
+        if not -limit <= number < limit:
             raise ValueError("pack(): number does not fit within word_size")
     else:
         limit = 1 << word_size
-        if not (0 <= number < limit):
+        if not 0 <= number < limit:
             raise ValueError("pack(): number does not fit within word_size")
 
     # Normalize number and size now that we have verified them

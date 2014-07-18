@@ -297,9 +297,9 @@ def xor(*args, **kwargs):
     elif cut == 'right':
         cut = len(strs[-1])
     elif cut == 'min':
-        cut = min(map(len, strs))
+        cut = min(len(s) for s in strs)
     elif cut == 'max':
-        cut = max(map(len, strs))
+        cut = max(len(s) for s in strs)
     else:
         raise ValueError("Not a valid argument for 'cut'")
 

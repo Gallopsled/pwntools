@@ -43,15 +43,15 @@ def test_expr(expr, allowed_codes):
     return the compiled code object. Otherwise raise a ValueError
     """
     import dis
-    allowed_codes = map(dis.opmap.__getitem__, allowed_codes)
+    allowed_codes = [dis.opmap[c] for c in allowed_codes]
     try:
         c = compile(expr, "", "eval")
     except:
-        raise ValueError, "%s is not a valid expression" % expr
+        raise ValueError("%s is not a valid expression" % expr)
     codes = _get_opcodes(c)
     for code in codes:
         if code not in allowed_codes:
-            raise ValueError, "opcode %s not allowed" % dis.opname[code]
+            raise ValueError("opcode %s not allowed" % dis.opname[code])
     return c
 
 def const_eval(expr):

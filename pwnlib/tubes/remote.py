@@ -50,7 +50,7 @@ class remote(sock):
         h = log.waitfor('Opening connection to %s on port %d' % (self.rhost, self.rport))
 
         for res in socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE):
-            self.family, self.type, self.proto, canonname, sockaddr = res
+            self.family, self.type, self.proto, _canonname, sockaddr = res
 
             if self.type not in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
                 continue

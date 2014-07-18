@@ -118,7 +118,7 @@ class BitPolynom:
     def __rshift__(self, other):
         return BitPolynom(int(self) >> int(other))
 
-    def __rlshift__(self, other):
+    def __rrshift__(self, other):
         return BitPolynom(int(other) >> int(self))
 
     def degree(self):
@@ -210,7 +210,8 @@ class Module(types.ModuleType):
 
         return res
 
-    def _make_crc(self, name, polynom, width, init, refin, refout, xorout, check, extra_doc = ''):
+    @staticmethod
+    def _make_crc(name, polynom, width, init, refin, refout, xorout, check, extra_doc = ''):
         def inner(data):
             return crc.generic_crc(data, polynom, width, init, refin, refout, xorout)
         inner.func_name = 'crc_' + name
@@ -291,7 +292,7 @@ class Module(types.ModuleType):
             cur = {}
             cur['link'] = 'http://reveng.sourceforge.net/crc-catalogue/all.htm#' + ref
             for key in ['width', 'poly', 'init', 'refin', 'refout', 'xorout', 'check', 'name']:
-                cur[key] = fixup(re.findall('%s=(\S+)' % key, l)[0])
+                cur[key] = fixup(re.findall(r'%s=(\S+)' % key, l)[0])
 
             cur['name'] = cur['name'].lower().replace('/', '_').replace('-', '_')
             assert cur['name'] not in out

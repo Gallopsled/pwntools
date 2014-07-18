@@ -19,7 +19,6 @@ class tube(object):
     """Container of all the tube functions common to both sockets, TTYs and SSH connetions."""
 
     def __init__(self, timeout, log_level):
-        from ..util import packing
         self.buffer          = ''
         self.log_level       = log_level
         self.debug_log_level = min(log_levels.DEBUG, log_level)
