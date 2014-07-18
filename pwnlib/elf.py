@@ -1,10 +1,11 @@
 from . import log
+from .util import lists
+import re, subprocess, os, types
 
 # readelf/objdump binaries
 _READELF = '/usr/bin/readelf'
 _OBJDUMP = '/usr/bin/objdump'
 def _check(f):
-    import os
     if not (os.access(f, os.X_OK) and os.path.isfile(f)):
         log.error('Executable %s needed for readelf.py, please install binutils' % f)
 _check(_READELF)
@@ -15,7 +16,6 @@ def symbols(path):
 
     Returns a dictionary with all symbols in the given file
     """
-    import re, subprocess
     symbols = {}
     # -s : symbol table
     cmd = [_READELF, '-s', path]
@@ -41,7 +41,6 @@ class ELF:
 
     __cache = {}
     def __init__(self, path):
-        import os, re
         path = os.path.realpath(path)
         if path in ELF.__cache:
             log.warning('Loaded "%s" again; use "elf.load(...)" to avoid this' \
@@ -82,7 +81,6 @@ class ELF:
 
     def _load_elfclass(self):
         # -h : ELF header
-        import re, subprocess
         cmd = [_READELF, '-h', self._path]
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
         self.elfclass = re.findall('Class:\s*(.*$)', out, re.MULTILINE)[0]
@@ -91,7 +89,6 @@ class ELF:
     def _load_segments(self):
         # -W : Wide output
         # -l : Program headers
-        import re, subprocess
         cmd = [_READELF, '-W', '-l', self._path]
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
         hexint = '(0x[0-9a-f]+)'
@@ -124,7 +121,6 @@ class ELF:
     def _load_sections(self):
         # -W : Wide output
         # -S : Section headers
-        import re, subprocess
         cmd = [_READELF, '-W', '-S', self._path]
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
         field = '\s+(\S+)'
@@ -147,7 +143,6 @@ class ELF:
         self.symbols = symbols(self._path)
 
     def _load_libs(self):
-        import subprocess
         dat = ''
         try:
             dat = subprocess.check_output(['ldd', self._path])
@@ -162,7 +157,6 @@ class ELF:
 
     # this is crazy slow -- include this feature in the all-python ELF parser
     def _load_plt_got(self):
-        import re, subprocess
         cmd = [_OBJDUMP, '-d', self._path]
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
         got32 = '[^j]*jmp\s+\*0x(\S+)'
@@ -251,25 +245,22 @@ class ELF:
                     break
 
     def search(self, s, non_writable = False):
-        from pwnlib.util.lists import findall
         self._load_data()
         for seg in self.segments:
             if 'W' in seg['flg'] and non_writable: continue
             off = seg['offset']
             siz = seg['filesiz']
             dat = self._data[off : off + siz]
-            yield map(lambda i: i + seg['virtaddr'], findall(dat, list(s)))
+            yield map(lambda i: i + seg['virtaddr'], lists.findall(dat, list(s)))
 
     def replace(self, s, repl, non_writable = False, padding = '\x90'):
-        from pwnlib.util.lists import findall
-        import types
         self._load_data()
         for seg in self.segments:
             if 'W' in seg['flg'] and non_writable: continue
             off = seg['offset']
             siz = seg['filesiz']
             dat = self._data[off : off + siz]
-            for idx in findall(dat, list(s)):
+            for idx in lists.findall(dat, list(s)):
                 addr = idx + seg['virtaddr']
                 if isinstance(repl, types.FunctionType):
                     rep = repl(addr, s)
@@ -294,14 +285,12 @@ def load (path):
 
     Load an ELF file.
     """
-    import os
     path = os.path.realpath(path)
     if path in ELF._ELF__cache:
         return ELF._ELF__cache[path]
     return ELF(path)
 
 def parse_ldd_output(data):
-    import re
     expr = re.compile(r'(?:([^ ]+) => )?([^(]+)?(?: \(0x[0-9a-f]+\))?$')
     res = {}
 

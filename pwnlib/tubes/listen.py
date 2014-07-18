@@ -1,8 +1,8 @@
-from .sock import sock
+from . import sock
 from .. import log, log_levels
 import socket
 
-class listen(sock):
+class listen(sock.sock):
     """Creates an TCP or UDP-socket to receive data on. It supports
     both IPv4 and IPv6.
 

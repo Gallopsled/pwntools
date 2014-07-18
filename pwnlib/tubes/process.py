@@ -1,8 +1,8 @@
 from .. import log, log_levels
-from .tube import tube
+from . import tube
 import subprocess, fcntl, os
 
-class process(tube):
+class process(tube.tube):
     def __init__(self, args, shell = False, executable = None, env = None,
                  timeout = 'default', log_level = log_levels.INFO):
         super(process, self).__init__(timeout, log_level)

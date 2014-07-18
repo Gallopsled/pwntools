@@ -17,7 +17,7 @@ for l in data:
 
     key = m.group(1)
     val = m.group(2)
-    
+
     # Handle weird special cases from C syntax
     if val.endswith('UL'):
         val = val[:-2]

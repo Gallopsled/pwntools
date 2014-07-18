@@ -12,7 +12,7 @@ the crc32-sum of ``'A'*40000``.
 An obvious optimization would be to actually generate some lookup-tables.
 """
 
-from . import fiddling, packing, misc, lists
+from . import fiddling, packing
 import sys, types
 
 class BitPolynom:
@@ -269,7 +269,9 @@ class Module(types.ModuleType):
 
         import os, re
         curdir, _ = os.path.split(__file__)
-        data = misc.read(os.path.join(curdir, '..', '..', 'data', 'crcsums.txt'))
+        path = os.path.join(curdir, '..', '..', 'data', 'crcsums.txt')
+        with open(path) as fd:
+            data = fd.read()
         out = {}
         def fixup(s):
             if s == 'true':
@@ -286,9 +288,12 @@ class Module(types.ModuleType):
                 assert re.match('[0-9]+', s)
                 return int(s, 10)
 
-        data = [l for l in data.strip().split('\n') if l and l[0] != '#']
-        assert len(data) % 2 == 0
-        for ref, l in lists.group(2, data):
+        for l in data.strip().split('\n'):
+            if not l or l[0] == '#':
+                continue
+
+            ref, l = l.split(' ', 1)
+
             cur = {}
             cur['link'] = 'http://reveng.sourceforge.net/crc-catalogue/all.htm#' + ref
             for key in ['width', 'poly', 'init', 'refin', 'refout', 'xorout', 'check', 'name']:

@@ -21,4 +21,4 @@ from pwnlib.elf             import ELF, load
 from pwnlib.dynelf          import DynELF
 
 # Promote these modules, so that "from pwn import *" will let you access them
-import pwn, re, time, sys, os, string, threading, subprocess
+import pwn, pwnlib, re, time, sys, os, string, threading, subprocess, struct

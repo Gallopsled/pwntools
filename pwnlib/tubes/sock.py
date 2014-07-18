@@ -1,8 +1,8 @@
 import socket, errno
-from .tube import tube
+from . import tube
 from .. import log
 
-class sock(tube):
+class sock(tube.tube):
     """Methods available exclusively to sockets."""
 
     def __init__(self, timeout, log_level):
