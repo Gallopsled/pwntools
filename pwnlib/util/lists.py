@@ -201,7 +201,7 @@ def findall(haystack, needle):
                 yield i
 
 
-    if type(haystack) <> type(needle):
+    if type(haystack) != type(needle):
         needle = [needle]
     if len(needle) == 1:
         return __single_search(haystack, needle[0])

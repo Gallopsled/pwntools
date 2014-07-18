@@ -412,7 +412,7 @@ def isprint(c):
     """isprint(c) -> bool
 
     Return True if a character is printable"""
-    return c in string.ascii_letters + string.digts + string.punctuation
+    return c in string.ascii_letters + string.digits + string.punctuation
 
 
 def hexii(s, width = 16, skip = True):
@@ -433,10 +433,14 @@ def hexii(s, width = 16, skip = True):
 
 def _hexiichar(c):
     HEXII = string.punctuation + string.digits + string.letters
-    if c in HEXII:      return ".%c " % c
-    elif c == '\0':     return "   "
-    elif c == '\xff':   return "## "
-    else:               return "%02x " % ord(c)
+    if c in HEXII:
+        return ".%c " % c
+    elif c == '\0':
+        return "   "
+    elif c == '\xff':
+        return "## "
+    else:
+        return "%02x " % ord(c)
 
 def hexdump(s, width = 16, skip = True, hexii = False):
     """hexdump(s, width = 16, skip = True, hexii = False) -> str

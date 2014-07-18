@@ -1,4 +1,5 @@
 __all__ = ['get']
+import curses
 
 cache = None
 def get(cap, *args, **kwargs):
@@ -19,8 +20,7 @@ def get(cap, *args, **kwargs):
         return s
 
 def init():
-    global curses, cache
-    import curses
+    global cache
     curses.setupterm()
 
     cache = {}

@@ -1,8 +1,12 @@
-# global variables set when calling init
-from .term import output, width, height
-from .key import get as getkey
-from .keymap import Keymap
-from . import key, readline, termcap, text
+from . import key, readline, termcap, text, keymap, term
+import sys
+
+# Re-exports (XXX: Are these needed?)
+output = term.output
+width =  term.width
+height = term.height
+getkey = key.get
+Keymap = keymap.Keymap
 
 #: This is True exactly when we have taken over the terminal using :func:`init`.
 term_mode = False
@@ -11,7 +15,6 @@ def can_init():
     """This function returns True iff stdout is a tty and we are not inside a
     REPL."""
 
-    import sys
     if not sys.stdout.isatty():
         return False
 
@@ -56,7 +59,6 @@ def init():
     if not can_init():
         return
 
-    from . import term
     term.init()
     def update_geometry():
         global height, width

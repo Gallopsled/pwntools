@@ -1,6 +1,7 @@
 import sys
 from . import term, text, key
-from .keymap import Keymap
+from . import keymap as km
+from . import keyconsts as kc
 cursor = text.reverse
 
 buffer_left, buffer_right = u'', u''
@@ -119,7 +120,7 @@ def self_insert(trace):
     if len(trace) != 1:
         return
     k = trace[0]
-    if k.type == key.TYPE_UNICODE and k.mods == key.MOD_NONE:
+    if k.type == kc.TYPE_UNICODE and k.mods == kc.MOD_NONE:
         insert_text(k.code)
 
 def set_buffer(left, right):
@@ -258,7 +259,7 @@ def kill_to_end(*_):
 def delete_char_forward(*_):
     commit_search()
     if buffer_right:
-        buffer_right.pop(0)
+        buffer_right = buffer_right[1:]
         redisplay()
 
 def delete_char_backward(*_):
@@ -320,7 +321,7 @@ def go_end(*_):
     commit_search()
     set_buffer(buffer_left + buffer_right, u'')
 
-keymap = Keymap({
+keymap = km.Keymap({
     '<nomatch>'   : self_insert,
     '<up>'        : history_prev,
     '<down>'      : history_next,

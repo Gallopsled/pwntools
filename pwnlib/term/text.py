@@ -5,8 +5,6 @@ from . import termcap
 if sys.stdout.isatty():
     class Module(types.ModuleType):
         def __init__(self):
-            import os
-            from . import termcap
             self.__file__ = __file__
             self.__name__ = __name__
             self.num_colors = termcap.get('colors', default = 8)

@@ -1,7 +1,6 @@
 __all__ = ['Keymap']
 
-import types, struct
-from . import key
+from . import keyconsts as kc
 
 class Matcher:
     def __init__(self, desc):
@@ -11,23 +10,23 @@ class Matcher:
         k = desc[-1]
         if k == '<space>':
             k = ' '
-        m = key.MOD_NONE
+        m = kc.MOD_NONE
         if 'S' in mods:
-            m |= key.MOD_SHIFT
+            m |= kc.MOD_SHIFT
         if 'M' in mods:
-            m |= key.MOD_ALT
+            m |= kc.MOD_ALT
         if 'C' in mods:
-            m |= key.MOD_CTRL
+            m |= kc.MOD_CTRL
         if   len(k) == 1:
-            t = key.TYPE_UNICODE
+            t = kc.TYPE_UNICODE
             c = k
             h = ord(k)
-        elif k[0] == '<' and k in key.KEY_NAMES_REVERSE:
-            t = key.TYPE_KEYSYM
-            c = key.KEY_NAMES_REVERSE[k]
+        elif k[0] == '<' and k in kc.KEY_NAMES_REVERSE:
+            t = kc.TYPE_KEYSYM
+            c = kc.KEY_NAMES_REVERSE[k]
             h = c
         elif k[:2] == '<f' and k[-1] == '>' and k[2:-1].isdigit():
-            t = key.TYPE_FUNCTION
+            t = kc.TYPE_FUNCTION
             c = int(k[2:-1])
             h = c
         else:
@@ -38,6 +37,7 @@ class Matcher:
         self._hash = h | (m << 6) | (t << 7)
 
     def __call__(self, k):
+        from . import key
         if isinstance(k, key.Key):
             return all([k.type == self._type,
                         k.code == self._code,
@@ -45,6 +45,7 @@ class Matcher:
                         ])
 
     def __eq__(self, other):
+        from . import key
         if   isinstance(other, Matcher):
             return all([other._type == self._type,
                         other._code == self._code,
@@ -73,7 +74,7 @@ class Keymap:
         self.register(bindings)
 
     def handle_input(self):
-        import key
+        from . import key
         self._doread = True
         while self._doread:
             self.send(key.get())

@@ -10,8 +10,7 @@ height = 25
 # list of callbacks triggered on SIGWINCH
 on_winch = []
 
-import sys, atexit, struct, fcntl, re, signal, threading, os
-from termios import *
+import sys, atexit, struct, fcntl, re, signal, threading, os, termios, traceback
 from . import termcap
 settings = None
 _graphics_mode = False
@@ -20,7 +19,7 @@ fd = sys.stdout
 
 def update_geometry():
     global width, height
-    hw = fcntl.ioctl(fd.fileno(), TIOCGWINSZ, '1234')
+    hw = fcntl.ioctl(fd.fileno(), termios.TIOCGWINSZ, '1234')
     height, width = struct.unpack('hh', hw)
 
 def handler_sigwinch(signum, stack):
@@ -43,8 +42,8 @@ def setupterm():
     do('civis') # disable cursor
     do('smkx') # keypad mode
     if not settings:
-        settings = tcgetattr(fd.fileno())
-    mode = tcgetattr(fd.fileno())
+        settings = termios.tcgetattr(fd.fileno())
+    mode = termios.tcgetattr(fd.fileno())
     IFLAG = 0
     OFLAG = 1
     CFLAG = 2
@@ -52,18 +51,18 @@ def setupterm():
     ISPEED = 4
     OSPEED = 5
     CC = 6
-    mode[IFLAG] = mode[IFLAG] & ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
-    mode[OFLAG] = mode[OFLAG] & ~(OPOST)
-    mode[CFLAG] = mode[CFLAG] & ~(CSIZE | PARENB)
-    mode[CFLAG] = mode[CFLAG] | CS8
-    mode[LFLAG] = mode[LFLAG] & ~(ECHO | ICANON | IEXTEN)
-    mode[CC][VMIN] = 1
-    mode[CC][VTIME] = 0
-    tcsetattr(fd, TCSAFLUSH, mode)
+    mode[IFLAG] = mode[IFLAG] & ~(termios.BRKINT | termios.ICRNL | termios.INPCK | termios.ISTRIP | termios.IXON)
+    mode[OFLAG] = mode[OFLAG] & ~(termios.OPOST)
+    mode[CFLAG] = mode[CFLAG] & ~(termios.CSIZE | termios.PARENB)
+    mode[CFLAG] = mode[CFLAG] | termios.CS8
+    mode[LFLAG] = mode[LFLAG] & ~(termios.ECHO | termios.ICANON | termios.IEXTEN)
+    mode[CC][termios.VMIN] = 1
+    mode[CC][termios.VTIME] = 0
+    termios.tcsetattr(fd, termios.TCSAFLUSH, mode)
 
 def resetterm():
     if settings:
-        tcsetattr(fd.fileno(), TCSADRAIN, settings)
+        termios.tcsetattr(fd.fileno(), termios.TCSADRAIN, settings)
     do('cnorm')
     do('rmkx')
     fd.write(' \x08') # XXX: i don't know why this is needed...
@@ -83,7 +82,7 @@ def init():
         s += c
         if c == 'R':
             break
-    row, col = re.findall('\x1b\[(\d*);(\d*)R', s)[0]
+    row, col = re.findall('\x1b' + r'\[(\d*);(\d*)R', s)[0]
     row = int(row) - height
     col = int(col) - 1
     cell = Cell()
@@ -113,7 +112,6 @@ def init():
         if orig_hook:
             orig_hook(*args)
         else:
-            import traceback
             traceback.print_exception(*args)
         # this is a bit esoteric
         # look here for details: http://stackoverflow.com/questions

@@ -1,4 +1,5 @@
-import readline
+from . import readline
+import re
 
 class Completer:
     def complete(self, _left, _right):
@@ -51,7 +52,8 @@ class WordCompleter(Completer):
         raise Exception("unimplemented")
 
 class LongestPrefixCompleter(WordCompleter):
-    def __init__(self, words = [], delims = None):
+    def __init__(self, words = None, delims = None):
+        words = words or []
         WordCompleter.__init__(self, delims)
         self.words = words
 
@@ -66,7 +68,7 @@ class LongestPrefixCompleter(WordCompleter):
         while len(lcp) < shortest:
             i = len(lcp)
             ch = cs[0][i]
-            if any(c[i] <> ch for c in cs[1:]):
+            if any(c[i] != ch for c in cs[1:]):
                 break
             lcp += ch
         if len(lcp) > len(word):
@@ -77,8 +79,7 @@ class LongestPrefixCompleter(WordCompleter):
 import os
 class PathCompleter(Completer):
     def __init__(self, mask = '*', only_dirs = False):
-        if mask <> '*':
-            import re
+        if mask != '*':
             mask = mask.replace('.', '\\.').replace('*', '.*')
             self.mask = re.compile('^' + mask + '$')
         else:
@@ -94,7 +95,7 @@ class PathCompleter(Completer):
             path = prefix
         else:
             path = os.path.join('.', prefix)
-        if os.path.isdir(path) and prefix and prefix[-1] <> '/':
+        if os.path.isdir(path) and prefix and prefix[-1] != '/':
             self._completions = [prefix]
             return
         dirname = os.path.dirname(path)
@@ -129,7 +130,7 @@ class PathCompleter(Completer):
         while len(lcp) < shortest:
             i = len(lcp)
             ch = cs[0][i]
-            if any(c[i] <> ch for c in cs[1:]):
+            if any(c[i] != ch for c in cs[1:]):
                 break
             lcp += ch
         if len(lcp) > len(buffer_left):

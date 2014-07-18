@@ -220,7 +220,7 @@ class tube(object):
         A combination of ``send(data)`` and ``recvuntil(delim, timeout)``."""
 
         self.send(data)
-        return self.recvuntil(delim)
+        return self.recvuntil(delim, timeout)
 
     def sendlinethen(self, delim, data, timeout = 'default'):
         """sendlinethen(self, delim, data, timeout = 'default') -> str
@@ -228,7 +228,7 @@ class tube(object):
         A combination of ``sendline(data)`` and ``recvuntil(delim, timeout)``."""
 
         self.send(data + '\n')
-        return self.recvuntil(delim)
+        return self.recvuntil(delim, timeout)
 
     def interactive(self, prompt = term.text.bold_red('$') + ' '):
         """interactive(self, prompt = pwnlib.term.text.bold_red('$') + ' ')
