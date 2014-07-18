@@ -6,17 +6,17 @@ from pwnlib import asm, context
 parser = argparse.ArgumentParser()
 parser.add_argument(
     'hex',
-    metavar='hex',
-    nargs='*',
-    help='Hex-string to disasemble. If none are supplied, then it uses stdin in non-hex mode.'
+    metavar = 'hex',
+    nargs = '*',
+    help = 'Hex-string to disasemble. If none are supplied, then it uses stdin in non-hex mode.'
 )
 
 parser.add_argument(
     '-c', '--context',
     metavar = '<opt>',
-    choices = context._possible['arch'],
+    choices = context.__possible__['arch'],
     default = 'i386',
-    help = 'The architecture of the shellcode (default: i386), choose from:\n%s' % ', '.join(context._possible['arch'])
+    help = 'The architecture of the shellcode (default: i386), choose from:\n%s' % ', '.join(context.__possible__['arch'])
 )
 
 args = parser.parse_args()
