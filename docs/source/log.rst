@@ -1,10 +1,11 @@
-:mod:`pwnlib.log` --- Logging functions
-====================================================
+:mod:`pwnlib.log` and   --- Logging stuff
+=================================================================
 
 .. automodule:: pwnlib.log
    :members:
 
-   .. autodata:: DEBUG
-   .. autodata:: INFO
-   .. autodata:: ERROR
-   .. autodata:: SILENT
+:mod:`pwnlib.log_levels` --- Possible log levels
+------------------------------------------------
+
+.. automodule:: pwnlib.log_levels
+   :members:
