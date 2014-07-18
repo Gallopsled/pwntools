@@ -11,3 +11,5 @@ that specific kind of tube.
 """
 
 __all__ = ['tube', 'sock', 'remote', 'listen', 'process']
+
+from . import tube, sock, remote, listen, process
