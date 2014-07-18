@@ -16,6 +16,9 @@ from pwnlib.util.splash     import *
 from pwnlib.tubes.remote    import *
 from pwnlib.tubes.listen    import *
 from pwnlib.tubes.process   import *
+from pwnlib.memleak         import MemLeak
+from pwnlib.elf             import ELF, load
+from pwnlib.dynelf          import DynELF
 
 # Promote these modules, so that "from pwn import *" will let you access them
 import pwn, re, time, sys, os, string, threading, subprocess
