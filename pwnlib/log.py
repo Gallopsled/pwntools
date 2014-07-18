@@ -13,9 +13,6 @@ arguments, see :func:`pwnlib.term.output`.
 """
 
 __all__ = [
-    # Constants
-    'DEBUG', 'INFO', 'ERROR', 'SILENT',
-
     # loglevel == DEBUG
     'trace', 'debug',
 
@@ -29,27 +26,13 @@ __all__ = [
     'waitfor', 'status', 'done_success', 'done_failure',
 ]
 
-import threading, sys, time
-from . import term
-from .term import text
-
-#: Loglevel which includes almost everything.
-DEBUG  = 10
-
-#: Loglevel which includes most information, but not e.g. calls to :func:`trace`.
-INFO   = 20
-
-#: Loglevel which only includes errors.
-ERROR  = 30
-
-#: Will supress all normal logging output.
-SILENT = 100
-
+import threading, sys, time, random
+from . import term, log_levels, context
+from .term import text, spinners
 
 _last_was_nl = True
 def _put(log_level, string = '', frozen = True, float = False, priority = 10, indent = 0):
     global _last_was_nl
-    from . import context
     if context.log_level > log_level:
         return _dummy_handle
     elif term.term_mode:
@@ -83,10 +66,10 @@ def _good_exc():
     else:
         return exc
 
-def trace(string = '', log_level = DEBUG, frozen = True, float = False, priority = 10, indent = 0):
+def trace(string = '', log_level = log_levels.DEBUG, frozen = True, float = False, priority = 10, indent = 0):
     '''trace(string = '', log_level = DEBUG, frozen = True, float = False, priority = 10, indent = 0) -> handle
 
-    Outputs the given string with the default loglevel :data:`DEBUG`.
+    Outputs the given string with the default loglevel :data:`pwnlib.log_levels.DEBUG`.
 
     Args:
       string (str): String to output.
@@ -102,10 +85,10 @@ def trace(string = '', log_level = DEBUG, frozen = True, float = False, priority
     return _put(log_level, string, frozen, float, priority, indent)
 
 
-def debug(string = '', log_level = DEBUG, frozen = True, float = False, priority = 10, indent = 0):
+def debug(string = '', log_level = log_levels.DEBUG, frozen = True, float = False, priority = 10, indent = 0):
     '''debug(string = '', log_level = DEBUG, frozen = True, float = False, priority = 10, indent = 0) -> handle
 
-    Outputs the given string with the default loglevel :data:`DEBUG` along with a header.
+    Outputs the given string with the default loglevel :data:`pwnlib.log_levels.DEBUG` along with a header.
 
     Args:
       string (str): String to output.
@@ -122,10 +105,10 @@ def debug(string = '', log_level = DEBUG, frozen = True, float = False, priority
                     frozen, float, priority, indent)
 
 
-def output(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0):
+def output(string = '', log_level = log_levels.INFO, frozen = True, float = False, priority = 10, indent = 0):
     '''output(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0) -> handle
 
-    Outputs the given string with the default loglevel :data:`INFO`.
+    Outputs the given string with the default loglevel :data:`pwnlib.log_levels.INFO`.
 
     Args:
       string (str): String to output.
@@ -141,10 +124,10 @@ def output(string = '', log_level = INFO, frozen = True, float = False, priority
     return _put(log_level, string, frozen, float, priority, indent)
 
 
-def info(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0):
+def info(string = '', log_level = log_levels.INFO, frozen = True, float = False, priority = 10, indent = 0):
     '''info(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0) -> handle
 
-    Outputs the given string with the default loglevel :data:`INFO` along with a header.
+    Outputs the given string with the default loglevel :data:`pwnlib.log_levels.INFO` along with a header.
 
     Args:
       s (str): String to output.
@@ -161,10 +144,10 @@ def info(string = '', log_level = INFO, frozen = True, float = False, priority =
                     frozen, float, priority, indent)
 
 
-def success(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0):
+def success(string = '', log_level = log_levels.INFO, frozen = True, float = False, priority = 10, indent = 0):
     '''success(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0) -> handle
 
-    Outputs the given string with the default loglevel :data:`INFO` along with a header.
+    Outputs the given string with the default loglevel :data:`pwnlib.log_levels.INFO` along with a header.
 
     Args:
       s (str): String to output.
@@ -180,10 +163,10 @@ def success(string = '', log_level = INFO, frozen = True, float = False, priorit
                     frozen, float, priority, indent)
 
 
-def failure(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0):
+def failure(string = '', log_level = log_levels.INFO, frozen = True, float = False, priority = 10, indent = 0):
     '''failure(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0) -> handle
 
-    Outputs the given string with the default loglevel :data:`INFO` along with a header.
+    Outputs the given string with the default loglevel :data:`pwnlib.log_levels.INFO` along with a header.
 
     Args:
       string (str): String to output.
@@ -200,11 +183,11 @@ def failure(string = '', log_level = INFO, frozen = True, float = False, priorit
                     frozen, float, priority, indent)
 
 
-def warning(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0):
+def warning(string = '', log_level = log_levels.INFO, frozen = True, float = False, priority = 10, indent = 0):
     '''warning(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
 
     If in :data:`pwnlib.term.term_mode`, then outputs the given string
-    with the default loglevel :data:`INFO` along with a header. Otherwise
+    with the default loglevel :data:`pwnlib.log_levels.INFO` along with a header. Otherwise
     calls :func:`warnings.warn`.
 
     Args:
@@ -227,10 +210,10 @@ def warning(string = '', log_level = INFO, frozen = True, float = False, priorit
         return _dummy_handle
 
 
-def indented(string = '', log_level = INFO, frozen = True, float = False, priority = 10, indent = 0):
+def indented(string = '', log_level = log_levels.INFO, frozen = True, float = False, priority = 10, indent = 0):
     '''indented(string, frozen = True, float = False, priority = 10, indent = 0) -> handle
 
-    Indents the given string, then outputs it with loglevel :data:`INFO`.
+    Indents the given string, then outputs it with loglevel :data:`pwnlib.log_levels.INFO`.
 
     Args:
       string (str): String to output.
@@ -251,8 +234,8 @@ def indented(string = '', log_level = INFO, frozen = True, float = False, priori
 def error(string = '', exit_code = -1):
     '''If in :data:`pwnlib.term.term_mode`, then:
 
-    * Outputs the given string with loglevel :data:`ERROR` along with a header.
-    * Outputs a call trace with loglevel :data:`INFO`
+    * Outputs the given string with loglevel :data:`pwnlig.log_levels.ERROR` along with a header.
+    * Outputs a call trace with loglevel :data:`pwnlib.log_levels.INFO`
     * Exits
 
     Otherwise it raises a :exc:`pwnlib.exceptions.PwnlibException`.
@@ -262,20 +245,20 @@ def error(string = '', exit_code = -1):
       exit_code (int): The return code to exit with.
 '''
     if term.term_mode:
-        _anotate(ERROR, text.on_red('ERROR'), string)
+        _anotate(log_levels.ERROR, text.on_red('ERROR'), string)
         if _good_exc():
             import traceback
-            _put(INFO, 'The exception was:\n')
-            _put(INFO, traceback.format_exc())
+            _put(log_levels.INFO, 'The exception was:\n')
+            _put(log_levels.INFO, traceback.format_exc())
         sys.exit(exit_code)
     else:
-        import exception
+        from . import exception
         reason = _good_exc()
         raise exception.PwnlibException(string, reason, exit_code)
 
 
-def bug(string = '', exit_code = -1, log_level = ERROR):
-    '''Outputs the given string with the default loglevel :data:`ERROR` along
+def bug(string = '', exit_code = -1, log_level = log_levels.ERROR):
+    '''Outputs the given string with the default loglevel :data:`pwnlig.log_levels.ERROR` along
     with a header and a traceback. It then exits with the given exit code.
 
     Args:
@@ -291,8 +274,8 @@ def bug(string = '', exit_code = -1, log_level = ERROR):
     sys.exit(exit_code)
 
 
-def fatal(string = '', exit_code = -1, log_level = ERROR):
-    '''Outputs the given string with the default loglevel :data:`ERROR` along
+def fatal(string = '', exit_code = -1, log_level = log_levels.ERROR):
+    '''Outputs the given string with the default loglevel :data:`pwnlig.log_levels.ERROR` along
     with a header and a traceback. It then exits with the given exit code.
 
     Args:
@@ -308,8 +291,8 @@ def fatal(string = '', exit_code = -1, log_level = ERROR):
     sys.exit(exit_code)
 
 
-def stub(string = '', exit_code = -1, log_level = ERROR):
-    '''Outputs the given string with the default loglevel :data:`ERROR` along
+def stub(string = '', exit_code = -1, log_level = log_levels.ERROR):
+    '''Outputs the given string with the default loglevel :data:`pwnlig.log_levels.ERROR` along
     with a header and information about the unimplemented function.
 
     Args:
@@ -378,14 +361,13 @@ class _Spinner(threading.Thread):
         self.spinner = spinner
         self.idx = 0
         self.daemon = True
-        import sys as _sys
-        self.sys = _sys
+        self.sys = sys
         self.handle = _put(log_level, '', frozen = False)
         self.lock = threading.Lock()
+        self.running = True
         self.start()
 
     def run(self):
-        self.running = True
         while True:
             # interpreter shutdown
             if not self.sys:
@@ -412,7 +394,6 @@ class _TermWaiter(_Waiter):
         self.hasmsg = msg != ''
         _put(log_level, '[')
         if spinner is None:
-            import random, term.spinners as spinners
             spinner = random.choice(spinners.spinners)
         self.spinner = _Spinner(spinner, log_level)
         _put(log_level, '] %s' % msg)
@@ -441,12 +422,12 @@ class _TermWaiter(_Waiter):
         self._remove()
 
 
-def waitfor(msg, status = '', spinner = None, log_level = INFO):
+def waitfor(msg, status = '', spinner = None, log_level = log_levels.INFO):
     """waitfor(msg, status = '', spinner = None) -> waiter
 
     Starts a new progress indicator which includes a spinner
     if :data:`pwnlib.term.term_mode` is enabled. By default it
-    outputs to loglevel :data:`INFO`.
+    outputs to loglevel :data:`pwnlib.log_levels.INFO`.
 
     Args:
       msg (str): The message of the spinner.
@@ -461,7 +442,6 @@ def waitfor(msg, status = '', spinner = None, log_level = INFO):
       A waiter-object that can be updated using :func:`status`, :func:`done_success` or :func:`done_failure`.
 """
 
-    from . import context
     if context.log_level > log_level:
         h = _DummyWaiter()
     elif term.term_mode:
@@ -508,7 +488,7 @@ def done_success(string = 'Done', waiter = None):
     waiter.success(string)
 
 
-def done_failure(s = 'FAILED!', waiter = None):
+def done_failure(string = 'FAILED!', waiter = None):
     """Updates the status-text of a waiter-object, and then sets it to completed in a failed manner.
 
     Args:

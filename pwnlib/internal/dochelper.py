@@ -14,7 +14,7 @@ class ExecDirective(Directive):
     has_content = True
 
     def run(self):
-        oldStdout, sys.stdout = sys.stdout, StringIO()
+        old_stdout, sys.stdout = sys.stdout, StringIO()
 
         tab_width = self.options.get('tab-width', self.state.document.settings.tab_width)
         source = self.state_machine.input_lines.source(self.lineno - self.state_machine.input_offset - 1)
@@ -28,7 +28,7 @@ class ExecDirective(Directive):
         except Exception:
             return [nodes.error(None, nodes.paragraph(text = "Unable to execute python code at %s:%d:" % (basename(source), self.lineno)), nodes.paragraph(text = str(sys.exc_info()[1])))]
         finally:
-            sys.stdout = oldStdout
+            sys.stdout = old_stdout
 
 def setup(app):
     app.add_directive('exec', ExecDirective)

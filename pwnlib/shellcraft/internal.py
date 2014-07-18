@@ -10,14 +10,13 @@ def relpath(path):
     curdir = dirname(abspath(__file__))
     return join(curdir, path)
 
+loaded = {}
+lookup = None
 def init_mako():
-    global MAGIC, lookup, loaded
+    global lookup
 
-    if 'MAGIC' in globals():
+    if lookup != None:
         return
-
-    MAGIC = '__pwn_docstring__'
-    loaded = {}
 
     lookup = TemplateLookup(
         directories      = [relpath('templates')],

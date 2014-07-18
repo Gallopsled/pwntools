@@ -1,6 +1,6 @@
 from .sock import sock
-from .. import log
-import socket, sys, time
+from .. import log, log_levels
+import socket
 
 class listen(sock):
     """Creates an TCP or UDP-socket to receive data on. It supports
@@ -20,7 +20,7 @@ class listen(sock):
     def __init__(self, port, bindaddr = "0.0.0.0",
                  fam = "any", typ = "tcp",
                  timeout = 'default',
-                 log_level = log.INFO):
+                 log_level = log_levels.INFO):
         super(listen, self).__init__(timeout, log_level)
 
         port = int(port)
@@ -72,7 +72,7 @@ class listen(sock):
             if self.type == socket.SOCK_STREAM:
                 listen_sock.listen(1)
                 self.sock, self.rhost = listen_sock.accept()
-                listen_sock.close() 
+                listen_sock.close()
             else:
                 self.sock = listen_sock
                 self.buffer, self.rhost = self.sock.recvfrom(4096)

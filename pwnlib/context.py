@@ -1,4 +1,5 @@
 import types, sys, threading
+from . import log_levels
 
 # These attributes are set on the defaults module after it have been constructed
 # If you change any of these values, remember to update the docstring.
@@ -14,8 +15,12 @@ act as a "base" for the thread-local values.
 '''}
 
 # These are the possiblities for arch and os
-_possible = {
-    'arch': ('alpha', 'amd64', 'arm', 'armeb', 'cris', 'i386', 'm68k', 'mips', 'mipsel', 'powerpc', 'thumb'),
+__possible__ = {
+    'arch': (
+        'alpha', 'amd64', 'arm', 'armeb',
+        'cris', 'i386', 'm68k', 'mips',
+        'mipsel', 'powerpc', 'thumb'
+    ),
     'os': ('linux', 'freebsd')
 }
 
@@ -60,7 +65,10 @@ def _validator(validator, name = None, doc = None):
         if val == None or validator(self, val):
             return val
         else:
-            raise AttributeError('Cannot set context-key %s to %s, did not validate' % (name, val))
+            raise AttributeError(
+                'Cannot set context-key %s to %s, did not validate' % \
+                  (name, val)
+            )
 
     # Setting _inner is a slight hack only used to get better documentation
     res = _updater(updater, name, doc)
@@ -74,16 +82,17 @@ def properties():
 class ContextModule(types.ModuleType):
     def __init__(self, defaults = None):
         super(ContextModule, self).__init__(__name__)
-        self.defaults = defaults
+        self.defaults     = defaults
+        self.__possible__ = __possible__
         self.__dict__.update({
             '__all__'     : [],
             '__file__'    : __file__,
             '__package__' : __package__,
-            '_possible'   : _possible
         })
 
     def __call__(self, **kwargs):
-        """This function is the global equivalent of :func:`pwnlib.context.__call__`.
+        """This function is the global equivalent of
+        :func:`pwnlib.context.__call__`.
 
         Args:
           kwargs: Variables to be assigned in the environment."""
@@ -109,7 +118,7 @@ class ContextModule(types.ModuleType):
         * ``thumb``
         """
 
-        if value in self._possible['arch']:
+        if value in self.__possible__['arch']:
             return value
 
     @_validator
@@ -121,13 +130,14 @@ class ContextModule(types.ModuleType):
 
         * ``linux``
         * ``freebsd``"""
-        if value in self._possible['os']:
+
+        if value in self.__possible__['os']:
             return value
 
     @_validator
     def endianness(self, value):
-        """The default endianness used for e.g. the :func:`pwnlib.util.packing.pack` function. Defaults
-        to ``little``.
+        """The default endianness used for e.g. the
+        :func:`pwnlib.util.packing.pack` function. Defaults to ``little``.
 
         Allowed values:
 
@@ -138,8 +148,8 @@ class ContextModule(types.ModuleType):
 
     @_validator
     def sign(self, value):
-        """The default signedness used for e.g. the :func:`pwnlib.util.packing.pack` function. Defaults
-        to ``unsigned``.
+        """The default signedness used for e.g. the
+        :func:`pwnlib.util.packing.pack` function. Defaults to ``unsigned``.
 
         Allowed values:
 
@@ -156,12 +166,14 @@ class ContextModule(types.ModuleType):
 
         Allowed values are any strictly positive number or None."""
 
-        return type(value) in [types.IntType, types.LongType, types.FloatType] and value >= 0
+        return type(value) in [types.IntType,
+                               types.LongType,
+                               types.FloatType] and value >= 0
 
     @_validator
     def word_size(self, value):
-        """The default word size used for e.g. the :func:`pwnlib.util.packing.pack` function. Defaults
-        to ``32``.
+        """The default word size used for e.g. the
+        :func:`pwnlib.util.packing.pack` function. Defaults to ``32``.
 
         Allowed values are any strictly positive number."""
 
@@ -173,19 +185,23 @@ class ContextModule(types.ModuleType):
 
         Allowed values are any numbers or a string.
 
-        If a string is given, we uppercase the string and lookup it up in the log module.
+        If a string is given, we uppercase the string and lookup it
+        up in the log module.
 
-        E.g if ``'debug'`` is specified, then the result is ``10``, as :data:`pwnlib.log.DEBUG` is ``10``.
+        E.g if ``'debug'`` is specified, then the result is ``10``, as
+        :data:`pwnlib.log_levels.DEBUG` is ``10``.
 """
 
         if type(value) in [types.IntType, types.LongType, types.NoneType]:
             return value
         elif type(value) == types.StringType:
-            from . import log
-            if hasattr(log, value.upper()):
-                return getattr(log, value.upper())
+            if hasattr(log_levels, value.upper()):
+                return getattr(log_levels, value.upper())
 
-        raise AttributeError('Cannot set context-key log_level, as the value %s did not validate' % repr(value))
+        raise AttributeError(
+            'Cannot set context-key log_level, ' +
+            'as the value %s did not validate' % repr(value)
+        )
 
 
 class MainModule(types.ModuleType):
@@ -202,8 +218,8 @@ default. You are able to read or write each version separately. If you try to
 read from the thread-local version, and no value is found, then the global
 default is checked.
 
-The module :mod:`pwnlib.context` is for accessing the thread-local version, while
-the global defaults are available in :mod:`pwnlib.context.defaults`.
+The module :mod:`pwnlib.context` is for accessing the thread-local version,
+while the global defaults are available in :mod:`pwnlib.context.defaults`.
 
 .. note::
 
@@ -225,8 +241,8 @@ write an invalid value, an exception is thrown:
        ...
    AttributeError: Cannot set context-key arch, as the value 'mill' did not validate
 
-For a few variables, a slight translation occur when you try to set the variable.
-An example of this is :data:`pwnlib.context.log_level`:
+For a few variables, a slight translation occur when you try to set the
+variable. An example of this is :data:`pwnlib.context.log_level`:
 
 .. doctest:: context_log_level
 
@@ -237,12 +253,13 @@ An example of this is :data:`pwnlib.context.log_level`:
    >>> print context.log_level
    10
 
-In this case the translation is done by looking up the string in :mod:`pwnlib.log`,
-so the result happens because :data:`pwnlib.log.DEBUG` is ``10``.
+In this case the translation is done by looking up the string in
+:mod:`pwnlib.log`, so the result happens because :data:`pwnlib.log_levels.DEBUG`
+is ``10``.
 
 A read can never throw an exception. If there is no result in the thread-local
-dictionary, the global dictionary is queried. If it has no results either, ``None``
-is returned.
+dictionary, the global dictionary is queried. If it has no results either,
+``None`` is returned.
 '''
 
     def __init__(self):
@@ -290,7 +307,9 @@ is returned.
             setattr(self, k, v)
 
     def _thread_ctx(self):
-        return self._ctxs.setdefault(threading.current_thread().ident, ContextModule(self.defaults))
+        return self._ctxs.setdefault(
+            threading.current_thread().ident, ContextModule(self.defaults)
+        )
 
     def __getattr__(self, key):
         return getattr(self._thread_ctx(), key)

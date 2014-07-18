@@ -25,11 +25,11 @@ parser.add_argument(
 parser.add_argument(
     '-c', '--context',
     metavar = '<opt>',
-    choices = context._possible['os'] + context._possible['arch'],
+    choices = context.__possible__['os'] + context.__possible__['arch'],
     default = [],
     action = 'append',
     help = 'The os/architecture the shellcode will run in (default: linux/i386), choose from: %s' % \
-      ', '.join(context._possible['os'] + context._possible['arch'])
+      ', '.join(context.__possible__['os'] + context.__possible__['arch'])
 )
 
 args = parser.parse_args()
@@ -37,7 +37,7 @@ arch = 'i386'
 os = 'linux'
 
 for c in args.context:
-    if c in context._possible['os']:
+    if c in context.__possible__['os']:
         os = c
     else:
         arch = c

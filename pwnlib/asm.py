@@ -1,5 +1,5 @@
 from . import context, log
-import tempfile, subprocess, os, shutil, tempfile, errno
+import tempfile, subprocess, shutil, tempfile, errno
 from os import path
 
 __all__ = ['asm', 'cpp', 'disasm']
@@ -114,9 +114,14 @@ def _bfdarch(arch):
 
 def _run(cmd, stdin = None):
     try:
-        p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = p.communicate(stdin)
-        exitcode = p.wait()
+        proc = subprocess.Popen(
+            cmd,
+            stdin  = subprocess.PIPE,
+            stdout = subprocess.PIPE,
+            stderr = subprocess.PIPE
+        )
+        stdout, stderr = proc.communicate(stdin)
+        exitcode = proc.wait()
     except OSError as e:
         if e.errno == errno.ENOENT:
             log.error('Could not run %s the program' % repr(cmd[0]))
@@ -157,8 +162,16 @@ def cpp(shellcode, arch = None, os = None):
     arch = arch or context.arch
     os   = os   or context.os
     code = _include_header(arch, os) + shellcode
-    cpp  = ['cpp', '-C', '-nostdinc', '-undef', '-P', '-I' + _incdir, '/dev/stdin']
-    return _run(cpp, code).strip('\n').rstrip() + '\n'
+    cmd  = [
+        'cpp',
+        '-C',
+        '-nostdinc',
+        '-undef',
+        '-P',
+        '-I' + _incdir,
+        '/dev/stdin'
+    ]
+    return _run(cmd, code).strip('\n').rstrip() + '\n'
 
 
 def asm(shellcode, arch = None, os = None):
@@ -180,22 +193,24 @@ def asm(shellcode, arch = None, os = None):
           :data:`pwnlib.context.os` will be used.
 
     Examples:
-      >>> asm("mov eax, SYS_select", arch = 'i386', os = 'freebsd').encode('hex')
-      'b85d000000'
-      >>> asm("mov rax, SYS_select", arch = 'amd64', os = 'linux').encode('hex')
-      'b817000000'
-      >>> asm("ldr r0, =SYS_select", arch = 'arm', os = 'linux').encode('hex')
-      '04001fe552009000'
+      >>> asm("mov eax, SYS_select", arch = 'i386', os = 'freebsd')
+      '\\xb8]\\x00\\x00\\x00'
+      >>> asm("mov rax, SYS_select", arch = 'amd64', os = 'linux')
+      '\\xb8\\x17\\x00\\x00\\x00'
+      >>> asm("ldr r0, =SYS_select", arch = 'arm', os = 'linux')
+      '\\x04\\x00\\x1f\\xe5R\\x00\\x90\\x00'
     """
 
     arch = arch or context.arch
     os   = os   or context.os
     if not arch:
-        raise ValueError("asm() needs to get 'arch' through an argument or the context")
+        raise ValueError(
+            "asm() needs to get 'arch' through an argument or the context"
+        )
 
     tmpdir  = tempfile.mkdtemp(prefix = 'pwn-asm-')
-    def tmp(s):
-        return path.join(tmpdir, s)
+    def tmp(name):
+        return path.join(tmpdir, name)
 
     assembler = _assembler(arch)
     objcopy   = [_objcopy(arch), '-j.shellcode', '-Obinary']
@@ -212,19 +227,20 @@ def asm(shellcode, arch = None, os = None):
                 return fd.read()
 
         # Sanity check for seeing if the output has relocations
-        relocs = subprocess.check_output(['readelf', '-r', tmp('step2')]).strip()
+        relocs = subprocess.check_output(
+            ['readelf', '-r', tmp('step2')]
+        ).strip()
         if len(relocs.split('\n')) > 1:
-            raise Exception('There were relocations in the shellcode:\n\n%s' % relocs)
+            raise Exception(
+                'There were relocations in the shellcode:\n\n%s' % relocs
+            )
 
         _run(objcopy + [tmp('step2'), tmp('step3')])
 
         with open(tmp('step3')) as fd:
             return fd.read()
     finally:
-        try:
-            shutil.rmtree(tmpdir)
-        except:
-            pass
+        shutil.rmtree(tmpdir)
 
 def disasm(data, arch = None):
     """disasm(data, arch = None) -> str
@@ -256,11 +272,13 @@ def disasm(data, arch = None):
 
     arch = arch or context.arch
     if not arch:
-        raise ValueError("asm() needs to get 'arch' through an argument or the context")
+        raise ValueError(
+            "asm() needs to get 'arch' through an argument or the context"
+        )
 
     tmpdir = tempfile.mkdtemp(prefix = 'pwn-disasm-')
-    def tmp(s):
-        return path.join(tmpdir, s)
+    def tmp(name):
+        return path.join(tmpdir, name)
 
     bfdarch = _bfdarch(arch)
     bfdname = _bfdname(arch)
@@ -287,11 +305,10 @@ def disasm(data, arch = None):
         output0 = subprocess.check_output(objdump + [tmp('step2')])
         output1 = output0.split('<.text>:\n')
         if len(output1) != 2:
-            raise Exception('Something went wrong with objdump:\n\n%s' % output0)
+            raise IOError(
+                'Something went wrong with objdump:\n\n%s' % output0
+            )
         else:
             return output1[1].strip('\n').rstrip().expandtabs()
     finally:
-        try:
-            shutil.rmtree(tmpdir)
-        except:
-            pass
+        shutil.rmtree(tmpdir)
