@@ -4,7 +4,7 @@ class _FuncOrConst(int):
     def __call__ (self, *args):
         self._func(args)
 
-class ROP:
+class ROP(object):
     '''class that construct a ROP chain.
     Example:
         from pwn import *
@@ -117,6 +117,17 @@ class ROP:
         for k, v in syms.items():
             self.symbols[k] = v['addr'] + offset
 
+    def dump(self):
+        chain = self._generate32(reset=False)
+        last  = 0
+        for i in xrange(0, len(chain), 4):
+            data = chain[i:i+4]
+            addr = pwn.u32(data)
+            try:    sym = next(k for k,v in self.symbols.items() if v==addr)
+            except: sym = ''
+            print "%08x: %08x %s" % (i, addr, sym or '')
+            last = addr
+
     def add_symbol(self, symbol, addr):
         self.symbols[symbol] = addr
 
@@ -211,6 +222,7 @@ class ROP:
                     size += i + 1
                     break
         if pivot is not None:
+            self.symbols['stackfix %i slots' % size] = pivot
             return (pivot, size)
 
     def migrate(self, sp, bp = None):
@@ -262,10 +274,13 @@ class ROP:
             out += x if isinstance(x, str) else pwn.pint(x)
         return out[:n]
 
-    def _generate32(self):
+    def _generate32(self, reset=True):
         out = []
         chain = self._chain
-        self._chain = []
+
+        if reset:
+            self._chain = []
+
         p = pwn.p32
         def garbage():
             return self._garbage(4)
