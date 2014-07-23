@@ -18,7 +18,7 @@ class ssh_channel(basechatter):
             return
 
         if not self.silent:
-            pwn.log.waitfor('Opening new channel: "%s"' % (process or 'shell'))
+            pwn.log.waitfor('Opening new channel: %r' % (process or 'shell'))
 
         self._channel = self.parent._transport.open_session()
         if self._tty:
