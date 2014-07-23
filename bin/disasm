@@ -1,7 +1,8 @@
 #!/usr/bin/env python2
 
-import argparse, sys, re
+import argparse, sys
 from pwnlib import asm, context
+from string import whitespace, hexdigits
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -23,8 +24,8 @@ args = parser.parse_args()
 
 if len(args.hex) > 0:
     dat = ''.join(args.hex)
-    dat = re.sub(r'\s*', '', dat)
-    if re.match('[^a-fA-F0-9]', dat):
+    dat = dat.translate(None, whitespace)
+    if not set(hexdigits) >= set(dat):
         print "This is not a hex string"
         exit(-1)
     dat = dat.decode('hex')
