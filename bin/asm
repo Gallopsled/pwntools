@@ -1,7 +1,9 @@
 #!/usr/bin/env python2
 
 import argparse, sys
-from pwnlib import context, asm
+from pwnlib.asm           import asm
+from pwnlib.context       import __possible__ as contexts
+from pwnlib.util.fiddling import enhex
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -13,10 +15,10 @@ parser.add_argument(
 parser.add_argument(
     "-f", "--format",
     help="Output format (defaults to hex for ttys, otherwise raw)",
-    choices=['raw', 'hex']
+    choices=['raw', 'hex', 'string']
 )
 parser.add_argument(
-    "-o",
+    "-o","--output",
     metavar='file',
     help="Output file (defaults to stdout)",
     type=argparse.FileType('w'),
@@ -25,37 +27,24 @@ parser.add_argument(
 parser.add_argument(
     '-c', '--context',
     metavar = '<opt>',
-    choices = context.__possible__['os'] + context.__possible__['arch'],
-    default = [],
+    choices = contexts['os'] + contexts['arch'],
+    default = ['i386','linux'],
     action = 'append',
     help = 'The os/architecture the shellcode will run in (default: linux/i386), choose from: %s' % \
-      ', '.join(context.__possible__['os'] + context.__possible__['arch'])
+      ', '.join(contexts['os'] + contexts['arch'])
 )
 
-args = parser.parse_args()
-arch = 'i386'
-os = 'linux'
+args   = parser.parse_args()
+tty    = args.output.isatty()
 
-for c in args.context:
-    if c in context.__possible__['os']:
-        os = c
-    else:
-        arch = c
+arch   = (set(contexts['arch']) & set(args.context)).pop()
+os     = (set(contexts['os'])   & set(args.context)).pop()
+data   = '\n'.join(args.lines) or sys.stdin.read()
+output = asm(data.replace(';', '\n'), arch = arch, os = os)
+fmt    = args.format or ('hex' if tty else 'raw')
+formatters = {'r':str, 'h':enhex, 's':repr}
 
-if args.format == None:
-    if args.o.isatty():
-        args.format = 'hex'
-    else:
-        args.format = 'raw'
+args.output.write(formatters[fmt[0]](output))
 
-if len(args.lines) > 0:
-    data = '\n'.join(args.lines)
-else:
-    data = sys.stdin.read()
-
-output = asm.asm(data.replace(';', '\n'), arch = arch, os = os)
-
-if args.format == 'raw':
-    args.o.write(output)
-else:
-    args.o.write(output.encode('hex') + '\n')
+if tty and fmt is not 'raw':
+    args.output.write('\n')
