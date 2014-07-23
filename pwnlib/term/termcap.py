@@ -6,7 +6,7 @@ def get(cap, *args, **kwargs):
     default = kwargs.pop('default', '')
 
     if kwargs != {}:
-        raise TypeError("get(): No such argument %s" % repr(kwargs.popitem()[0]))
+        raise TypeError("get(): No such argument %r" % kwargs.popitem()[0])
 
     if cache == None:
         init()

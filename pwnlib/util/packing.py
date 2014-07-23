@@ -685,6 +685,6 @@ def flat(*args, **kwargs):
     sign       = kwargs.pop('sign', None)
 
     if kwargs != {}:
-        raise TypeError("flat() does not support argument %s" % repr(kwargs.popitem()[0]))
+        raise TypeError("flat() does not support argument %r" % kwargs.popitem()[0])
 
     return _flat(args, make_packer(word_size, endianness, sign))

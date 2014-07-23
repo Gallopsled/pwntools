@@ -154,7 +154,7 @@ class Module(types.ModuleType):
 
         info = crcs.get(attr, None)
         if not info:
-            raise AttributeError("'module' object has no attribute %s" % repr(attr))
+            raise AttributeError("'module' object has no attribute %r" % attr)
 
         func = self._make_crc(info['name'], info['poly'], info['width'], info['init'], info['refin'], info['refout'], info['xorout'], info['check'], 'See also: ' + info['link'])
 

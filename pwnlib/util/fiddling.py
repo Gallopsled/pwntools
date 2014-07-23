@@ -174,7 +174,7 @@ def unbits(s, endian = 'big'):
         elif c in ['0', 0, False]:
             cur += '0'
         else:
-            raise ValueError("unbits(): cannot decode the value %s into a bit" % repr(c))
+            raise ValueError("unbits(): cannot decode the value %r into a bit" % c)
 
         if len(cur) == 8:
             out += u(cur)

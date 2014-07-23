@@ -98,7 +98,7 @@ def _bfdname(arch):
     if arch in bfdnames:
         return bfdnames[arch]
     else:
-        log.error("Cannot find bfd name for architecture %s" % repr(arch))
+        log.error("Cannot find bfd name for architecture %r" % arch)
 
 
 def _bfdarch(arch):
@@ -124,7 +124,7 @@ def _run(cmd, stdin = None):
         exitcode = proc.wait()
     except OSError as e:
         if e.errno == errno.ENOENT:
-            log.error('Could not run %s the program' % repr(cmd[0]))
+            log.error('Could not run %r the program' % cmd[0])
         else:
             raise
 

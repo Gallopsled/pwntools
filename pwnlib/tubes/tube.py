@@ -54,7 +54,7 @@ class tube(object):
 
         if data:
             for line in re.findall('(?:.*\n)|(?:.+$)', data):
-                log.debug('Received: %s' % repr(line), log_level = self.debug_log_level)
+                log.debug('Received: %r' % line, log_level = self.debug_log_level)
 
         return data
 
@@ -185,7 +185,7 @@ class tube(object):
         """
 
         for line in re.findall('(?:.*\n)|(?:.+$)', data):
-            log.debug('Send: %s' % repr(line), log_level = self.debug_log_level)
+            log.debug('Send: %r' % line, log_level = self.debug_log_level)
         self.send_raw(data)
 
     def sendline(self, line):

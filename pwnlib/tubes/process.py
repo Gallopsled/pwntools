@@ -14,7 +14,7 @@ class process(tube.tube):
         elif isinstance(args, (list, tuple)):
             self.program = args[0]
         else:
-            log.error("process(): Do not understand the arguments %s" % repr(args))
+            log.error("process(): Do not understand the arguments %r" % args)
 
         self.proc = subprocess.Popen(
             args, shell = shell, executable = executable, env = env,
@@ -28,7 +28,7 @@ class process(tube.tube):
         fl = fcntl.fcntl(fd, fcntl.F_GETFL)
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
-        log.success("Started program %s" % repr(self.program))
+        log.success("Started program %r" % self.program)
 
     def kill(self):
         """kill()
@@ -66,7 +66,7 @@ class process(tube.tube):
         poll = self.proc.poll()
         if poll != None and not self.stop_noticed:
             self.stop_noticed = True
-            log.info("Program %s stopped with exit code %d" % (repr(self.program), poll))
+            log.info("Program %r stopped with exit code %d" % (self.program, poll))
 
         return poll
 
@@ -136,7 +136,7 @@ class process(tube.tube):
             try:
                 self.proc.kill()
                 self.stop_noticed = True
-                log.info('Stopped program %s' % repr(self.program))
+                log.info('Stopped program %r' % self.program)
             except OSError:
                 pass
 

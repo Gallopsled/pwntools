@@ -200,7 +200,7 @@ class ContextModule(types.ModuleType):
 
         raise AttributeError(
             'Cannot set context-key log_level, ' +
-            'as the value %s did not validate' % repr(value)
+            'as the value %r did not validate' % value
         )
 
 

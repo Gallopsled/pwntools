@@ -41,7 +41,7 @@ def init_mako():
 
             docstring = children[0].content
 
-            return '__doc__ = %s' % repr(docstring)
+            return '__doc__ = %r' % docstring
 
         @property
         def code(self):
@@ -74,7 +74,7 @@ def make_function(key, directory):
     args_used = args[:]
 
     for n, default in enumerate(defaults, len(args) - len(defaults)):
-        args[n] = '%s = %s' % (args[n], repr(default))
+        args[n] = '%s = %r' % (args[n], default)
 
     if varargs:
         args.append('*' + varargs)
@@ -94,14 +94,14 @@ def make_function(key, directory):
     exec '''
 def wrap(template):
     def %s(%s):
-        %s
+        %r
         s = template.render(%s).split('\\n')
         s = [l.rstrip() for l in s]
         while s and not s[-1]: s.pop()
         while s and not s[0]:  s.pop(0)
         return '\\n'.join(s)
     return %s
-''' % (key, args, repr(cleandoc(template.module.__doc__)), args_used, key)
+''' % (key, args, cleandoc(template.module.__doc__), args_used, key)
 
     # Setting _relpath is a slight hack only used to get better documentation
     res = wrap(template)

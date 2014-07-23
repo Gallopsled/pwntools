@@ -36,7 +36,7 @@ class remote(sock.sock):
         elif isinstance(fam, (int, long)):
             pass
         else:
-            log.error("remote(): family %s is not supported" % repr(fam))
+            log.error("remote(): family %r is not supported" % fam)
 
         if typ == "tcp":
             typ = socket.SOCK_STREAM
@@ -45,7 +45,7 @@ class remote(sock.sock):
         elif isinstance(typ, (int, long)):
             pass
         else:
-            log.error("remote(): type %s is not supported" % repr(typ))
+            log.error("remote(): type %r is not supported" % typ)
 
         h = log.waitfor('Opening connection to %s on port %d' % (self.rhost, self.rport))
 
