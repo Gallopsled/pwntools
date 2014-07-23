@@ -1,6 +1,7 @@
 from types import ModuleType
-import sys, os, glob
+import sys, os, glob, re
 from . import internal
+from .. import context
 
 class module(ModuleType):
     def __init__(self, name, directory):
@@ -21,26 +22,22 @@ class module(ModuleType):
 
         # Create a dictionary of submodules
         self._submodules = {}
+        self._shellcodes = {}
         for name in os.listdir(absdir):
-            if os.path.isdir(os.path.join(absdir, name)):
+            path = os.path.join(absdir, name)
+            if os.path.isdir(path):
                 self._submodules[name] = module(self.__name__ + '.' + name, os.path.join(directory, name))
+            elif os.path.isfile(path) and name != '__doc__':
+                funcname, _ext = os.path.splitext(name)
+                if not re.match('^[a-zA-Z][a-zA-Z0-9_]*$', name):
+                    raise ValueError("found illegal filename, %r" % name)
+                self._shellcodes[funcname] = name
 
-        # Also put them into top level
+        # Put the submodules into toplevel
         self.__dict__.update(self._submodules)
 
-        # Get the shellcodes and __doc__ from the directory
-        self._shellcodes = []
-        try:
-            with open(os.path.join(absdir, '__doc__')) as fd:
-                self.__doc__ = fd.read()
-            for f in glob.glob(os.path.join(absdir, '*')):
-                f, _ext = os.path.splitext(os.path.basename(f))
-                self._shellcodes.append(f)
-        except IOError:
-            pass
-
         # These are exported
-        self.__all__ = self._shellcodes + self._submodules.keys()
+        self.__all__ = sorted(self._shellcodes.keys() + self._submodules.keys())
 
         # Insert into the module list
         sys.modules[self.__name__] = self
@@ -48,7 +45,7 @@ class module(ModuleType):
     def __getattr__(self, key):
         # This function lazy-loads the shellcodes
         if key in self._shellcodes:
-            real = internal.make_function(key, self._dir)
+            real = internal.make_function(key, self._shellcodes[key], self._dir)
             setattr(self, key, real)
             return real
 
@@ -72,13 +69,12 @@ class module(ModuleType):
         return result
 
     def _context_modules(self):
-        from .. import context
         for k, m in self._submodules.items():
             if k in [context.arch, context.os]:
                 yield m
 
     def __shellcodes__(self):
-        result = self._shellcodes[:]
+        result = self._shellcodes.keys()
         for m in self._context_modules():
             result.extend(m.__shellcodes__())
         return result

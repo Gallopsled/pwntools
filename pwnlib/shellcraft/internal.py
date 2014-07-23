@@ -1,14 +1,14 @@
 from mako.lookup import TemplateLookup
 from mako.parsetree import Tag, Text
 from mako import ast
-from os.path import dirname, abspath, join
 from inspect import cleandoc
+import re, os.path
 
 __all__ = ['make_function']
 
 def relpath(path):
-    curdir = dirname(abspath(__file__))
-    return join(curdir, path)
+    curdir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(curdir, path)
 
 loaded = {}
 lookup = None
@@ -59,9 +59,9 @@ def lookup_template(filename):
 
     return loaded[filename]
 
-def make_function(key, directory):
-    path     = join(directory, key + '.asm')
-    template = lookup_template(path)
+def make_function(funcname, filename, directory):
+    path       = os.path.join(directory, filename)
+    template   = lookup_template(path)
 
     import inspect
     args, varargs, keywords, defaults = inspect.getargspec(template.module.render_body)
@@ -101,7 +101,7 @@ def wrap(template):
         while s and not s[0]:  s.pop(0)
         return '\\n'.join(s)
     return %s
-''' % (key, args, cleandoc(template.module.__doc__), args_used, key)
+''' % (funcname, args, cleandoc(template.module.__doc__), args_used, funcname)
 
     # Setting _relpath is a slight hack only used to get better documentation
     res = wrap(template)
