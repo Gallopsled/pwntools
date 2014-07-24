@@ -100,7 +100,7 @@ def wrap(template):
         while s and not s[0]:  s.pop(0)
         return '\\n'.join(s)
     return %s
-''' % (funcname, args, inspect.cleandoc(template.module.__doc__), args_used, funcname)
+''' % (funcname, args, inspect.cleandoc(template.module.__doc__ or ''), args_used, funcname)
 
     # Setting _relpath is a slight hack only used to get better documentation
     res = wrap(template)

@@ -309,16 +309,17 @@ def xor(*args, **kwargs):
     return ''.join(get(n) for n in range(cut))
 
 _default_alphabet = ''.join(chr(n) for n in range(256) if n not in [0, 0xa])
+_default_avoid = '\x00\n'
 
-def xor_pair(data, alphabet = None):
-    """xor_pair(data, alphabet = None) -> None or (str, str)
+def xor_pair(data, avoid = None):
+    """xor_pair(data, avoid = None) -> None or (str, str)
 
     Finds two strings that will xor into a given string, while only
     using a given alphabet.
 
     Args:
       data (str): The desired string.
-      alphabet: The alphabet of allowed characters. Defaults to all characters except nulls and newlines.
+      avoid: The list of disallowed characters. Defaults to nulls and newlines.
 
     Returns:
       Two strings which will xor to the given string. If no such two strings exist, then None is returned.
@@ -329,7 +330,8 @@ def xor_pair(data, alphabet = None):
       ('\\x01\\x01\\x01\\x01', 'udru')
 """
 
-    alphabet = alphabet or _default_alphabet
+    avoid = avoid or _default_avoid
+    alphabet = ''.join(chr(n) for n in range(256) if chr(n) not in avoid)
 
     res1 = ''
     res2 = ''
