@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 import argparse, sys, os, types
 import pwnlib
-from pwnlib import asm, log
+from pwnlib import asm, log, util
 from pwnlib.context import __possible__ as contexts
 import pwnlib.term.text as text
 
@@ -34,7 +34,7 @@ def _string(s):
 def _carray(s):
     out = []
     for c in s:
-        out.append('0x' + pwn.enhex(c))
+        out.append('0x' + util.fiddling.enhex(c))
     return '{' + ', '.join(out) + '};\n'
 
 def _hex(s):
