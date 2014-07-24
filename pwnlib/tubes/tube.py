@@ -59,7 +59,7 @@ class tube(object):
         return data
 
     def recvpred(self, pred, timeout = 'default'):
-        """recvpred(self, pref, timeout = 'default') -> str
+        """recvpred(self, pred, timeout = 'default') -> str
 
         Receives one byte at a time from the socket, until ``pred(bytes)``
         evaluates to True.
@@ -89,7 +89,7 @@ class tube(object):
             while pred(res):
                 cur = self.recv(1, timeout)
 
-                if cur != None:
+                if cur == None:
                     self.buffer = res + self.buffer
                     return None
 
