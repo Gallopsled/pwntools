@@ -1,4 +1,4 @@
-import socket
+import socket, subprocess, re, os
 
 def align(alignment, x):
     """align(alignment, x) -> int
@@ -41,7 +41,6 @@ def get_interfaces():
     """get_interfaces() -> list
 
     Gets all (interface, IPv4) of the local system."""
-    import subprocess, re
     d = subprocess.check_output('ip -4 -o addr', shell = True)
     ifs = re.findall(r'^\S+:\s+(\S+)\s+inet\s+([^\s/]+)', d, re.MULTILINE)
     return [i for i in ifs if i[0] != 'lo']
@@ -87,9 +86,8 @@ def read(path):
 
     Examples:
         >>> read('pwnlib/util/misc.py').split('\\n')[0]
-        'import socket'
+        'import socket, subprocess, re, os'
     """
-    import os.path
     path = os.path.expanduser(os.path.expandvars(path))
     with open(path) as fd:
         return fd.read()
@@ -97,10 +95,8 @@ def read(path):
 
 def write(path, data = '', create_dir = False):
     """Create new file or truncate existing to zero length and write data."""
-    import os.path
     path = os.path.expanduser(os.path.expandvars(path))
     if create_dir:
-        import os
         path = os.path.realpath(path)
         ds = path.split('/')
         f = ds.pop()

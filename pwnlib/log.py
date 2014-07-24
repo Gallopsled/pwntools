@@ -26,8 +26,8 @@ __all__ = [
     'waitfor', 'status', 'done_success', 'done_failure',
 ]
 
-import threading, sys, time, random
-from . import term, log_levels, context
+import threading, sys, time, random, warnings, traceback
+from . import term, log_levels, context, exception
 from .term import text, spinners
 
 _last_was_nl = True
@@ -205,7 +205,6 @@ def warning(string = '', log_level = log_levels.INFO, frozen = True, float = Fal
         return _anotate(log_level, text.bold_yello('!'), string,
                         frozen, float, priority, indent)
     else:
-        import warnings
         warnings.warn(string, stacklevel = 2)
         return _dummy_handle
 
@@ -238,7 +237,7 @@ def error(string = '', exit_code = -1):
     * Outputs a call trace with loglevel :data:`pwnlib.log_levels.INFO`
     * Exits
 
-    Otherwise it raises a :exc:`pwnlib.exceptions.PwnlibException`.
+    Otherwise it raises a :exc:`pwnlib.exception.PwnlibException`.
 
     Args:
       string (str): The error message.
@@ -247,12 +246,10 @@ def error(string = '', exit_code = -1):
     if term.term_mode:
         _anotate(log_levels.ERROR, text.on_red('ERROR'), string)
         if _good_exc():
-            import traceback
             _put(log_levels.INFO, 'The exception was:\n')
             _put(log_levels.INFO, traceback.format_exc())
         sys.exit(exit_code)
     else:
-        from . import exception
         reason = _good_exc()
         raise exception.PwnlibException(string, reason, exit_code)
 
@@ -268,7 +265,6 @@ def bug(string = '', exit_code = -1, log_level = log_levels.ERROR):
 '''
     _anotate(log_level, text.on_red('BUG (this should not happen)'), string)
     if _good_exc():
-        import traceback
         _put(log_level, 'The exception was:\n')
         _put(log_level, traceback.format_exc())
     sys.exit(exit_code)
@@ -285,7 +281,6 @@ def fatal(string = '', exit_code = -1, log_level = log_levels.ERROR):
 '''
     _anotate(log_level, text.on_red('FATAL'), string)
     if _good_exc():
-        import traceback
         _put(log_level, 'The exception was:\n')
         _put(log_level, traceback.format_exc())
     sys.exit(exit_code)
@@ -300,7 +295,6 @@ def stub(string = '', exit_code = -1, log_level = log_levels.ERROR):
       exit_code (int): The return code to exit with.
       log_level(int): The log level to output the text to.
 '''
-    import traceback
     filename, lineno, fname, _line = traceback.extract_stack(limit = 2)[0]
     _put(log_level, 'Unimplemented function: %s in file "%s", line %d\n' %
          (fname, filename, lineno))

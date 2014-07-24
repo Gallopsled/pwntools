@@ -1,5 +1,9 @@
 """Silly module mostly meant as an easter-egg."""
 
+from .. import term, log
+from ..term import text
+# import sys, time, threading
+
 _banner = r'''
   .:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:.
   )     _____                         _    _                            )
@@ -21,13 +25,7 @@ def splash():
     """Put this at the beginning of your exploit to create the illusion that
     your sploit is enterprisey and top notch quality"""
 
-    from .. import term
-    import time, threading
-
     def updater():
-        import sys
-        from .. import log
-        from ..term import text
 
         colors = [
             text.blue,   text.magenta, text.red,

@@ -1,6 +1,6 @@
 from .. import log, log_levels
 from . import tube
-import subprocess, fcntl, os
+import subprocess, fcntl, os, select
 
 class process(tube.tube):
     def __init__(self, args, shell = False, executable = None, env = None,
@@ -119,7 +119,6 @@ class process(tube.tube):
         pass
 
     def can_recv_raw(self, timeout):
-        import select
         if timeout == None:
             return select.select([self.proc.stdout], [], []) == ([self.proc.stdout], [], [])
         else:

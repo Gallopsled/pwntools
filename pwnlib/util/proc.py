@@ -1,4 +1,4 @@
-import os
+import os, time
 # TODO: Fix documentation
 
 # def pidof(prog):
@@ -104,6 +104,5 @@ def proc_starttime(pid):
     return int(proc_stat(pid)[21])
 
 def wait_for_debugger(pid):
-    import time
     while proc_tracer(pid) is None:
         time.sleep(0.01)

@@ -1,7 +1,3 @@
-from mako.lookup import TemplateLookup
-from mako.parsetree import Tag, Text
-from mako import ast
-from inspect import cleandoc
 import re, os.path
 
 __all__ = ['make_function']
@@ -14,6 +10,9 @@ loaded = {}
 lookup = None
 def init_mako():
     global lookup
+    from mako.lookup import TemplateLookup
+    from mako.parsetree import Tag, Text
+    from mako import ast
 
     if lookup != None:
         return
@@ -60,10 +59,10 @@ def lookup_template(filename):
     return loaded[filename]
 
 def make_function(funcname, filename, directory):
+    import inspect
     path       = os.path.join(directory, filename)
     template   = lookup_template(path)
 
-    import inspect
     args, varargs, keywords, defaults = inspect.getargspec(template.module.render_body)
 
     defaults = defaults or []
@@ -101,7 +100,7 @@ def wrap(template):
         while s and not s[0]:  s.pop(0)
         return '\\n'.join(s)
     return %s
-''' % (funcname, args, cleandoc(template.module.__doc__), args_used, funcname)
+''' % (funcname, args, inspect.cleandoc(template.module.__doc__), args_used, funcname)
 
     # Setting _relpath is a slight hack only used to get better documentation
     res = wrap(template)

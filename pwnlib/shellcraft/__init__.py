@@ -1,5 +1,5 @@
 from types import ModuleType
-import sys, os, glob, re
+import sys, os, re
 from . import internal
 from .. import context
 
@@ -17,8 +17,12 @@ class module(ModuleType):
         # Save the shellcode directory
         self._dir = directory
 
+        # Insert into the module list
+        sys.modules[self.__name__] = self
+
+    def __lazyinit__(self):
         # Find the absolute path of the directory
-        absdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', directory)
+        absdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', self._dir)
 
         # Create a dictionary of submodules
         self._submodules = {}
@@ -26,7 +30,7 @@ class module(ModuleType):
         for name in os.listdir(absdir):
             path = os.path.join(absdir, name)
             if os.path.isdir(path):
-                self._submodules[name] = module(self.__name__ + '.' + name, os.path.join(directory, name))
+                self._submodules[name] = module(self.__name__ + '.' + name, os.path.join(self._dir, name))
             elif os.path.isfile(path) and name != '__doc__':
                 funcname, _ext = os.path.splitext(name)
                 if not re.match('^[a-zA-Z][a-zA-Z0-9_]*$', funcname):
@@ -39,10 +43,16 @@ class module(ModuleType):
         # These are exported
         self.__all__ = sorted(self._shellcodes.keys() + self._submodules.keys())
 
-        # Insert into the module list
-        sys.modules[self.__name__] = self
+        # Make sure this is not called again
+        self.__lazyinit__ = None
 
     def __getattr__(self, key):
+        self.__lazyinit__ and self.__lazyinit__()
+
+        # Maybe the lazyinit added it
+        if key in self.__dict__:
+            return self.__dict__[key]
+
         # This function lazy-loads the shellcodes
         if key in self._shellcodes:
             real = internal.make_function(key, self._shellcodes[key], self._dir)
@@ -61,6 +71,8 @@ class module(ModuleType):
         # This function lists the available submodules, available shellcodes
         # and potentially shellcodes available in submodules that should be
         # avilable because of the context
+        self.__lazyinit__ and self.__lazyinit__()
+
         result = list(self._submodules.keys())
         result.extend(('__file__', '__package__', '__path__',
                        '__all__',  '__name__'))
@@ -69,11 +81,13 @@ class module(ModuleType):
         return result
 
     def _context_modules(self):
+        self.__lazyinit__ and self.__lazyinit__()
         for k, m in self._submodules.items():
             if k in [context.arch, context.os]:
                 yield m
 
     def __shellcodes__(self):
+        self.__lazyinit__ and self.__lazyinit__()
         result = self._shellcodes.keys()
         for m in self._context_modules():
             result.extend(m.__shellcodes__())

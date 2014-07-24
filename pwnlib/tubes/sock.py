@@ -1,4 +1,4 @@
-import socket, errno
+import socket, errno, select
 from . import tube
 from .. import log
 
@@ -107,7 +107,6 @@ class sock(tube.tube):
         if not self.sock or self.closed["in"]:
             return False
 
-        import select
         return select.select([self.sock], [], [], timeout) == ([self.sock], [], [])
 
     def connected(self):

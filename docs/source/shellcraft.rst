@@ -1,9 +1,7 @@
 :mod:`pwnlib.shellcraft` --- Shellcode generation
 =================================================
 
-.. module:: pwnlib.shellcraft
-
-Shellcraft module foo. HALLO
+.. automodule:: pwnlib.shellcraft
 
 .. toctree::
    :glob:

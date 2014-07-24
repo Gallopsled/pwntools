@@ -13,7 +13,7 @@ An obvious optimization would be to actually generate some lookup-tables.
 """
 
 from . import fiddling, packing
-import sys, types
+import os, re, sys, types
 
 class BitPolynom:
     def __init__(self, n):
@@ -267,7 +267,6 @@ class Module(types.ModuleType):
         if self._cached_crcs:
             return self._cached_crcs
 
-        import os, re
         curdir, _ = os.path.split(__file__)
         path = os.path.join(curdir, '..', '..', 'data', 'crcsums.txt')
         with open(path) as fd:

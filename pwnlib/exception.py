@@ -1,4 +1,5 @@
 __all__ = ['PwnlibException']
+import traceback, sys
 
 class PwnlibException(Exception):
     '''Exception thrown by the pwnlib thrown by :func:`pwnlib.log.error`
@@ -15,7 +16,6 @@ class PwnlibException(Exception):
 
     def __repr__(self):
         s = 'PwnlibException: %s' % self.message
-        import traceback, sys
         if self.reason:
             s += '\nReason:\n'
             s += ''.join(traceback.format_exception(*self.reason))
