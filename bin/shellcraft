@@ -133,9 +133,9 @@ defargs = len(func.func_defaults or ())
 reqargs = func.func_code.co_argcount - defargs
 if len(args.args) < reqargs:
     if defargs > 0:
-        log.fatal('%s takes at least %d arguments' % (path, reqargs))
+        log.fatal('%s takes at least %d arguments' % (args.shellcode, reqargs))
     else:
-        log.fatal('%s takes exactly %d arguments' % (path, reqargs))
+        log.fatal('%s takes exactly %d arguments' % (args.shellcode, reqargs))
 
 # Captain uglyness saves the day!
 for i in range(len(args.args)):
