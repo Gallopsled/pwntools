@@ -1,5 +1,6 @@
 import re, base64, random, string
 from . import packing, lists
+from .. import context
 
 def unhex(s):
     """unhex(s) -> str
@@ -364,17 +365,17 @@ def randoms(count, alphabet = None):
     return ''.join(random.sample(alphabet or _default_alphabet, count))
 
 
-def rol(n, k, size = 32):
+def rol(n, k, word_size = None):
     """Returns a rotation by `k` of `n`.
 
-    When `n` is a number, then means ``((n << k) | (n >> (size - k)))`` truncated to `size` bits.
+    When `n` is a number, then means ``((n << k) | (n >> (word_size - k)))`` truncated to `word_size` bits.
 
     When `n` is a list, tuple or string, this is ``n[k % len(n):] + n[:k % len(n)]``.
 
     Args:
       n: The value to rotate.
       k(int): The rotation amount. Can be a positive or negative number.
-      size(int): If `n` is a number, then this is the assumed bitsize of `n`.
+      word_size(int): If `n` is a number, then this is the assumed bitsize of `n`.  Defaults to :data:`pwnlib.context.word_size` if `None` .
 
     Example:
 
@@ -388,8 +389,10 @@ def rol(n, k, size = 32):
       '0xd0'
 """
 
-    if not isinstance(size, (int, long)) or size <= 0:
-        raise ValueError("rol(): 'size' must be a strictly positive integer")
+    word_size = word_size or context.word_size
+
+    if not isinstance(word_size, (int, long)) or word_size <= 0:
+        raise ValueError("rol(): 'word_size' must be a strictly positive integer")
 
     if not isinstance(k, (int, long)):
         raise ValueError("rol(): 'k' must be an integer")
@@ -397,9 +400,9 @@ def rol(n, k, size = 32):
     if isinstance(n, (str, unicode, list, tuple)):
         return n[k % len(n):] + n[:k % len(n)]
     elif isinstance(n, (int, long)):
-        k = k % size
-        n = (n << k) | (n >> (size - k))
-        n &= (1 << size) - 1
+        k = k % word_size
+        n = (n << k) | (n >> (word_size - k))
+        n &= (1 << word_size) - 1
 
         return n
     else:
