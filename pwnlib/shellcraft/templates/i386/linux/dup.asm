@@ -2,7 +2,7 @@
 <%page args="sock = None, os=None"/>
 <%docstring>
 Args: [sock (imm/reg) = ebp]
-    Duplicates sock to stdin, stdout and stderr and spawns a shell
+    Duplicates sock to stdin, stdout and stderr
 </%docstring>
 <% dup = common.label("dup") 
 looplabel = common.label("loop")

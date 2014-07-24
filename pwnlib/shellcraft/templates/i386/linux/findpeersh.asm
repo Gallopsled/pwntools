@@ -10,5 +10,5 @@ Args: port (defaults to any)
 
 ${linux.findpeer(port)}
 
-${linux.sh()}
+${linux.dupsh("esi")}
 
