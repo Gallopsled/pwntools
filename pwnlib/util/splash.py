@@ -2,7 +2,7 @@
 
 from .. import term, log
 from ..term import text
-# import sys, time, threading
+import sys, time, threading
 
 _banner = r'''
   .:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:.
