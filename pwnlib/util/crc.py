@@ -268,7 +268,7 @@ class Module(types.ModuleType):
             return self._cached_crcs
 
         curdir, _ = os.path.split(__file__)
-        path = os.path.join(curdir, '..', '..', 'data', 'crcsums.txt')
+        path = os.path.join(curdir, '..', 'data', 'crcsums.txt')
         with open(path) as fd:
             data = fd.read()
         out = {}
