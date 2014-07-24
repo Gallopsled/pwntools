@@ -408,10 +408,10 @@ def rol(n, k, word_size = None):
     else:
         raise ValueError("rol(): 'n' must be an integer, string, list or tuple")
 
-def ror(n, k, size = 32):
+def ror(n, k, word_size = None):
     """A simple wrapper around :func:`rol`, which negates the values of `k`."""
 
-    return ror(n, -k, size)
+    return ror(n, -k, word_size)
 
 def isprint(c):
     """isprint(c) -> bool
