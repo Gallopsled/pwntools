@@ -1,5 +1,5 @@
 from . import log, term
-import time
+import time, types
 
 def options(prompt, opts, default = None):
     """Presents the user with a prompt (typically in the
@@ -14,7 +14,7 @@ def options(prompt, opts, default = None):
       The users choice in the form of an integer.
 """
 
-    if not isinstance(default, (int, long)):
+    if not isinstance(default, (int, long, types.NoneType)):
         raise ValueError('options(): default must be a number or None')
 
     # XXX: Make this work nicer when in term mode

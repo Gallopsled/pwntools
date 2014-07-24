@@ -45,7 +45,7 @@ class listen(sock.sock):
         else:
             log.error("remote(): type %r is not supported" % typ)
 
-        h = log.waitfor('Trying to bind to %s on port %d' % (bindaddr, port))
+        h = log.waitfor('Trying to bind to %s on port %d' % (bindaddr, port), log_level = self.log_level)
 
         for res in socket.getaddrinfo(bindaddr, port, fam, typ, 0, socket.AI_PASSIVE):
             self.family, self.type, self.proto, self.canonname, self.sockaddr = res
@@ -67,7 +67,7 @@ class listen(sock.sock):
 
         h.success()
 
-        h = log.waitfor('Waiting')
+        h = log.waitfor('Waiting', log_level = self.log_level)
         try:
             if self.type == socket.SOCK_STREAM:
                 listen_sock.listen(1)

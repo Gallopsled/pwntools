@@ -47,7 +47,7 @@ class remote(sock.sock):
         else:
             log.error("remote(): type %r is not supported" % typ)
 
-        h = log.waitfor('Opening connection to %s on port %d' % (self.rhost, self.rport))
+        h = log.waitfor('Opening connection to %s on port %d' % (self.rhost, self.rport), log_level = self.log_level)
 
         for res in socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE):
             self.family, self.type, self.proto, _canonname, sockaddr = res

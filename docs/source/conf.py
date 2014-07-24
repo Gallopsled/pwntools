@@ -32,9 +32,14 @@ extensions = [
     'sphinx.ext.linkcode',
     'sphinx.ext.autosummary',
     'sphinx.ext.todo',
-#    'sphinx.ext.intersphinx',
-    'sphinxcontrib.napoleon',
+    'sphinx.ext.intersphinx',
 ]
+
+try:
+    import sphinxcontrib.napoleon
+    extensions.append('sphinxcontrib.napoleon')
+except ImportError:
+    pass
 
 doctest_global_setup = '''
 import pwnlib
@@ -302,4 +307,4 @@ def linkcode_resolve(domain, info):
                 filename += '#L%d-%d' % (first, first + len(lines) - 1)
             except IOError:
                 pass
-    return "https://github.com/pwnies/pwntools/blob/pwn2/%s" % filename
+    return "https://github.com/pwnies/pwntools/blob/master/%s" % filename

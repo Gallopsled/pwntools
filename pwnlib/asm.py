@@ -4,8 +4,8 @@ from os import path
 
 __all__ = ['asm', 'cpp', 'disasm']
 
-_basedir = path.join(path.split(__file__)[0], '..')
-_bindir  = path.join(_basedir, 'binutils')
+_basedir = path.split(__file__)[0]
+_bindir  = path.join(_basedir, 'data', 'binutils')
 _incdir  = path.join(_basedir, 'data', 'includes')
 
 def _assembler(arch):

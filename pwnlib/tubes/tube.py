@@ -268,16 +268,20 @@ class tube(object):
         t.daemon = True
         t.start()
 
-        while go[0]:
-            data = term.readline.readline(prompt = prompt, float = True)
-            if data:
-                try:
-                    self.send(data)
-                except EOFError:
+        try:
+            while go[0]:
+                data = term.readline.readline(prompt = prompt, float = True)
+                if data:
+                    try:
+                        self.send(data)
+                    except EOFError:
+                        go[0] = False
+                        log.info('Got EOF while sending in interactive',
+                                 log_level = self.log_level)
+                else:
                     go[0] = False
-                    log.info('Got EOF while sending in interactive', log_level = self.log_level)
-            else:
-                go[0] = False
+        except KeyboardInterrupt:
+            log.info('Interrupted')
 
         # Restore
         self.debug_log_level = debug_log_level
