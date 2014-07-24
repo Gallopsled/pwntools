@@ -28,7 +28,7 @@ class process(tube.tube):
         fl = fcntl.fcntl(fd, fcntl.F_GETFL)
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
-        log.success("Started program %r" % self.program)
+        log.success("Started program %r" % self.program, log_level = self.log_level)
 
     def kill(self):
         """kill()
@@ -66,7 +66,7 @@ class process(tube.tube):
         poll = self.proc.poll()
         if poll != None and not self.stop_noticed:
             self.stop_noticed = True
-            log.info("Program %r stopped with exit code %d" % (self.program, poll))
+            log.info("Program %r stopped with exit code %d" % (self.program, poll), log_level = self.log_level)
 
         return poll
 
@@ -135,7 +135,7 @@ class process(tube.tube):
             try:
                 self.proc.kill()
                 self.stop_noticed = True
-                log.info('Stopped program %r' % self.program)
+                log.info('Stopped program %r' % self.program, log_level = self.log_level)
             except OSError:
                 pass
 

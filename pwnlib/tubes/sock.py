@@ -120,7 +120,7 @@ class sock(tube.tube):
         self.sock = None
         self.closed["in"]  = True
         self.closed["out"] = True
-        log.info('Closed connection to %s on port %d' % (self.rhost, self.rport), self.log_level)
+        log.info('Closed connection to %s on port %d' % (self.rhost, self.rport), log_level = self.log_level)
 
     def fileno(self):
         if not self.sock:
