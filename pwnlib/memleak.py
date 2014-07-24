@@ -125,7 +125,7 @@ class MemLeak:
         return d1 + (d2 << 32)
 
     def s(self, addr):
-        """s(addr, ndx = 0) -> str
+        """s(addr) -> str
 
         Leak bytes at `addr` until failure or a nullbyte is found"""
         out = ''
