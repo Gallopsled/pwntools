@@ -86,7 +86,7 @@ class tube(object):
         res = ''
 
         try:
-            while pred(res):
+            while not pred(res):
                 cur = self.recv(1, timeout)
 
                 if cur == None:
