@@ -126,6 +126,21 @@ class ssh_channel(basechatter):
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
+    def __enter__(self):
+        """Permit use of 'with' to control scoping and closing sessions.
+        This is necessary as sometimes there are limits on the number of open channels.
+
+        >>> with ssh('user@localhost',silent=True).run('bash') as s:
+        ...     s.sendline('echo helloworld')
+        ...     print 'helloworld' in s.recvall()
+        ...
+        True
+        """
+        return self
+    def __exit__(self, type, value, traceback):
+        """Handles closing for 'with' statement"""
+        self.close()
+
 class ssh:
     def __init__(self, host, user = None, password = None, port = None, silent = False, key = None, keyfile = None, proxy_command = None, proxy_sock = None, supports_sftp = True, timeout = 'default'):
         '''Creates a new ssh connection.
@@ -290,6 +305,39 @@ class ssh:
     def shell(self, silent = None, tty = True):
         '''Open a new channel with a shell inside.'''
         return ssh_channel(self, silent = silent, tty = tty)
+
+
+    def __getitem__(self, attr):
+        """Permits indexed access to run commands over SSH
+
+        >>> s = ssh('user@localhost',silent=True)
+        >>> print s['echo hello']
+        hello
+        """
+        return self.__getattr__(attr)()
+
+    def __getattr__(self, attr):
+        """Permits member access to run commands over SSH
+
+        >>> s = ssh('user@localhost',silent=True)
+        >>> print s.echo('hello')
+        hello
+        >>> print s.ls('gimme \x41\x41\x41\x41')
+        ls: cannot access gimme: No such file or directory
+        ls: cannot access AAAA: No such file or directory
+        >>> print s.echo(['huh','yay','args'])
+        huh yay args
+        """
+        if attr in self.__dict__ or attr.startswith('__'):
+            raise AttributeError
+
+        def runner(*args):
+            if args and not isinstance(args[0], basestring):
+                args = ' '.join('$%r' % arg for arg in args[0])
+            else:
+                args = ' '.join(args)
+            return self.run(attr + ' ' + args).recvall().strip()
+        return runner
 
     def run(self, process, silent = None, tty = False):
         '''Open a new channel with a specific process inside.'''
