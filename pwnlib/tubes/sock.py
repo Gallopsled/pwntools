@@ -72,7 +72,7 @@ class sock(tube.tube):
                 self.shutdown("in")
                 raise EOFError
             elif e.errno == errno.EINTR:
-                return None
+                return ''
             else:
                 raise
 
