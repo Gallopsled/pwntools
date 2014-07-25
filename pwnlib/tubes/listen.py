@@ -1,6 +1,6 @@
 from . import sock
 from .. import log, log_levels
-import socket
+import socket, errno
 
 class listen(sock.sock):
     """Creates an TCP or UDP-socket to receive data on. It supports
@@ -68,19 +68,23 @@ class listen(sock.sock):
         h.success()
 
         h = log.waitfor('Waiting', log_level = self.log_level)
-        try:
-            if self.type == socket.SOCK_STREAM:
-                listen_sock.listen(1)
-                self.sock, self.rhost = listen_sock.accept()
-                listen_sock.close()
-            else:
-                self.sock = listen_sock
-                self.buffer, self.rhost = self.sock.recvfrom(4096)
-                self.sock.connect(self.rhost)
-            self.settimeout(self.timeout)
-        except socket.error:
-            h.failure()
-            log.error("Socket failure while waiting for connection")
+        while True:
+            try:
+                if self.type == socket.SOCK_STREAM:
+                    listen_sock.listen(1)
+                    self.sock, self.rhost = listen_sock.accept()
+                    listen_sock.close()
+                else:
+                    self.sock = listen_sock
+                    self.buffer, self.rhost = self.sock.recvfrom(4096)
+                    self.sock.connect(self.rhost)
+                self.settimeout(self.timeout)
+            except socket.error as e:
+                if e.errno == errno.EINTR:
+                    continue
+                h.failure()
+                log.error("Socket failure while waiting for connection")
+                break
 
         self.lhost, self.lport = self.sock.getsockname()[:2]
         self.rhost, self.rport = self.rhost[:2]

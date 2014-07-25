@@ -71,6 +71,8 @@ class sock(tube.tube):
             elif e.errno == errno.ECONNREFUSED:
                 self.shutdown("in")
                 raise EOFError
+            elif e.errno == errno.EINTR:
+                return None
             else:
                 raise
 
