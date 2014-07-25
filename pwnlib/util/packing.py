@@ -173,6 +173,53 @@ def unpack(data, word_size = None, endianness = None, sign = None):
         raise ValueError("unpack(): sign must be either 'signed' or 'unsigned'")
 
 
+def unpack_many(data, word_size = None, endianness = None, sign = None):
+    """unpack(data, word_size = None, endianness = None, sign = None) -> int list
+
+    Splits `data` into groups of ``word_size//8`` bytes and calls :func:`unpack` on each group.  Returns a list of the results.
+
+    `word_size` must be a multiple of `8` or the string "all".  In the latter case a singleton list will always be returned.
+
+    Args
+        number (int): String to convert
+        word_size (int): Word size of the converted integers or the string "all".
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+
+    Returns:
+        The unpacked numbers.
+
+    Examples:
+        >>> map(hex, unpack_many('\\xaa\\x55\\xcc\\x33', 16, 'little', 'unsigned'))
+        ['0x55aa', '0x33cc']
+        >>> map(hex, unpack_many('\\xaa\\x55\\xcc\\x33', 16, 'big', 'unsigned'))
+        ['0xaa55', '0xcc33']
+        >>> map(hex, unpack_many('\\xaa\\x55\\xcc\\x33', 16, 'big', 'signed'))
+        ['-0x55ab', '-0x33cd']
+        >>> map(hex, unpack_many('\\xff\\x02\\x03', 'all', 'little', 'signed'))
+        ['0x302ff']
+        >>> map(hex, unpack_many('\\xff\\x02\\x03', 'all', 'big', 'signed'))
+        ['-0xfdfd']
+    """
+
+    # Lookup in context if None
+    word_size  = word_size  or context.word_size
+
+    if word_size == 'all':
+        return [unpack(data, word_size, endianness, sign)]
+
+    # Currently we only group on byte boundaries
+    if word_size % 8 != 0:
+        raise ValueError("unpack_many(): word_size must be a multiple of 8")
+
+    out = []
+    n = word_size // 8
+    for i in range(0, len(data), n):
+        out.append(unpack(data[i:i+n], word_size, endianness, sign))
+
+    return out
+
+
 def p8(number, endianness = None, sign = None):
     """p8(number, endianness = None, sign = None) -> str
 
