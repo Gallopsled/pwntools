@@ -23,9 +23,17 @@ We also have the following tools, not dependent on the pwnlib:
 *  binutils directory: Assemblers and disassemblers for various architectures
 * `hex`/`unhex`: Command line tools for doing common hexing/unhexing operations
 
+# Documentation
+Our documentation is available on
+
 # Installation
-To install it, just update your `PYTHONPATH` and `PATH` variables. Alternatively
-you can run `python setup.py install`.
+Pwntools is available as a pip package. You can install it by running
+`pip install pwntools`.
+
+Alternatively if you prefer to have the latest version in git, you can
+simply clone this repository, run `pip install -r requirements.txt`
+and entries in your `PATH` and `PYTHONPATH` variables. The script
+`install_local.sh` will help you do so, in case you are using bash.
 
 # Contact
 If you have any questions not worthy of a bug report, feel free to join us
