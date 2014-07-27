@@ -1,0 +1,7 @@
+The file __init__.py is covered by the same license as the majority of this
+project, that is an MIT license.
+
+The remaining files of this directory and all subdirectories are covered
+by the terms decribed in the file:
+
+pwnlib/data/includes/LICENSE.txt

@@ -1,4 +1,9 @@
+# This file was generated using the command:
 # curl -s 'http://reveng.sourceforge.net/crc-catalogue/all.htm#crc.legend' | sed -nr -e 's@<H3><A NAME="(crc\.cat[^"]*).*@\1@p' -e 's@.*<CODE>(width.*)</CODE>.*@\1@p' | sed '$!N;s/\n/ /' > crcsums.txt
+#
+# At the time of download, that page was available under the GPLv3 license, which can found here:
+# https://www.gnu.org/licenses/gpl.html
+#
 crc.cat-bits.3 width=3  poly=0x3  init=0x7  refin=true  refout=true  xorout=0x0  check=0x6  name="CRC-3/ROHC"
 crc.cat-bits.4 width=4  poly=0x3  init=0x0  refin=true  refout=true  xorout=0x0  check=0x7  name="CRC-4/ITU"
 crc.cat-bits.5 width=5  poly=0x09  init=0x09  refin=false  refout=false  xorout=0x00  check=0x00  name="CRC-5/EPC"
