@@ -3,8 +3,7 @@ import re, os.path
 __all__ = ['make_function']
 
 def relpath(path):
-    curdir = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(curdir, path)
+    return
 
 loaded = {}
 lookup = None
@@ -17,9 +16,10 @@ def init_mako():
     if lookup != None:
         return
 
+    curdir = os.path.dirname(os.path.abspath(__file__))
     lookup = TemplateLookup(
-        directories      = [relpath('templates')],
-        module_directory = relpath('pycs')
+        directories      = [os.path.join(curdir, 'templates')],
+        module_directory = os.path.expanduser('~/.pwntools-cache/mako')
     )
 
     # The purpose of this definition is to create a new Tag.
