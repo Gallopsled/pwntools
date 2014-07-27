@@ -37,8 +37,11 @@ parser.add_argument(
 args   = parser.parse_args()
 tty    = args.output.isatty()
 
-arch   = (set(contexts['arch']) & set(args.context)).pop()
-os     = (set(contexts['os'])   & set(args.context)).pop()
+for arch in args.context[::-1]:
+    if arch in contexts['arch']: break
+for os in args.context[::-1]:
+    if os in contexts['os']: break
+
 data   = '\n'.join(args.lines) or sys.stdin.read()
 output = asm(data.replace(';', '\n'), arch = arch, os = os)
 fmt    = args.format or ('hex' if tty else 'raw')
