@@ -1,6 +1,6 @@
 from types import ModuleType
 import importlib, sys
-from .. import context
+from ... import context
 
 class module(ModuleType):
     def __init__(self, submodules):
@@ -20,15 +20,15 @@ class module(ModuleType):
             setattr(self, key, mod)
             return mod
 
-        if context.os in self.__all__:
-            return getattr(getattr(self, context.os), key)
+        if context.arch in self.__all__:
+            return getattr(getattr(self, context.arch), key)
 
         raise AttributeError("'module' object has no attribute '%s'" % key)
 
     def __dir__(self):
         result = list(self.__all__)
-        if context.os in self.__all__:
-            result.extend(dir(getattr(self, context.os)))
+        if context.arch in self.__all__:
+            result.extend(dir(getattr(self, context.arch)))
 
 
         return result
@@ -37,4 +37,4 @@ class module(ModuleType):
 tether = sys.modules[__name__]
 
 # Create the module structure
-sys.modules[__name__] = module(['linux', 'freebsd'])
+sys.modules[__name__] = module(['amd64', 'arm', 'i386', 'mips', 'thumb'])

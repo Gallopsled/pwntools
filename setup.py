@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
-import os, sys
+import os, sys, glob
 
 templates = []
 for dirpath, dirnames, filenames in os.walk(os.path.join('pwnlib', 'shellcraft', 'templates')):
@@ -19,14 +19,7 @@ setup(
             'data/includes/*/*.h',
         ] + templates
     },
-    scripts              = [
-        'bin/asm',
-        'bin/cyclic',
-        'bin/disasm',
-        'bin/hex',
-        'bin/shellcraft',
-        'bin/unhex',
-    ],
+    scripts              = glob.glob("bin/*"),
     description          = "This is the CTF framework used by Gallopsled in every CTF.",
     author               = "Gallopsled et al.",
     author_email         = "#gallopsled @ freenode.net",
