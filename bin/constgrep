@@ -56,39 +56,49 @@ p.add_argument(
 
 args = p.parse_args()
 
+# Find the architecture and os from the list of contexts
 for arch in args.context[::-1]:
     if arch in contexts['arch']: break
 for os in args.context[::-1]:
     if os in contexts['os']: break
 
 if args.exact:
+    # This is the simple case
     print asm.cpp(args.exact, os = os, arch = arch).strip()
 else:
+    # New we search in the right module.
+    # But first: We find the right module
     if os == 'freebsd':
         mod = constants.freebsd
     else:
         mod = getattr(getattr(constants, os), arch)
 
+    # Compile the given regex, for optimized lookup
     if args.case_insensitive:
         matcher = re.compile(args.regex, re.IGNORECASE)
     else:
         matcher = re.compile(args.regex)
 
+    # Evaluate the given constant
     if args.constant:
         constant = safeeval.expr_eval(args.constant)
     else:
         constant = None
 
+    # The found matching constants and the length of the longest string
     out    = []
     maxlen = 0
 
     for k in dir(mod):
+        # No python stuff
         if k.endswith('__') and k.startswith('__'):
             continue
 
+        # Run the regex
         if not matcher.search(k):
             continue
 
+        # Check the constant
         if constant != None:
             val = getattr(mod, k)
             if args.mask_mode:
@@ -98,17 +108,21 @@ else:
                 if constant != val:
                     continue
 
+        # Append it
         out.append((getattr(mod, k), k))
         maxlen = max(len(k), maxlen)
 
+    # Output all matching constants
     for _, k in sorted(out):
         print '#define %s %s' % (k.ljust(maxlen), asm.cpp(k, os = os, arch = arch).strip())
 
-    if constant != None and args.mask_mode:
+    # If we are in match_mode, then try to find a combination of
+    # constants that yield the exact given value
+    # We do not want to find combinations using the value 0.
+    if not (constant == None or constant == 0) and args.mask_mode:
         mask = constant
         good = []
-        if mask != 0:
-            out = [(v, k) for v, k in out if v != 0]
+        out = [(v, k) for v, k in out if v != 0]
 
         while mask and out:
             cur = out.pop()
