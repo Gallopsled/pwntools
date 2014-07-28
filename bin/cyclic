@@ -3,7 +3,10 @@ import argparse, string
 from pwnlib.util import cyclic, packing
 from pwnlib import log
 
-parser = argparse.ArgumentParser(description="Cyclic pattern creator/finder")
+parser = argparse.ArgumentParser(
+    description = "Cyclic pattern creator/finder"
+)
+
 parser.add_argument(
     '-a', '--alphabet',
     metavar = 'alphabet',
@@ -21,16 +24,11 @@ parser.add_argument(
 
 group = parser.add_mutually_exclusive_group(required = True)
 group.add_argument(
-    '-l', '--lookup',
+    '-l', '-o', '--offset', '--lookup',
     metavar = '<lookup value>',
     help = 'Do a lookup instead printing the alphabet',
 )
-group.add_argument(
-    '-o', '--offset',
-    metavar = '<lookup value>',
-    help = 'Do a lookup instead printing the alphabet',
-    dest = 'lookup'
-)
+
 group.add_argument(
     'count',
     type = int,

@@ -4,7 +4,10 @@ import argparse, sys
 from pwnlib import asm, context
 from string import whitespace, hexdigits
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(
+    description = 'Disassemble bytes into text format'
+)
+
 parser.add_argument(
     'hex',
     metavar = 'hex',
