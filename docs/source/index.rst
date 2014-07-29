@@ -9,7 +9,9 @@ Contents:
 
    intro
    asm
+   constants
    context
+   dynelf
    exception
    log
    memleak

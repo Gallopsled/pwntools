@@ -1,6 +1,8 @@
 <% from pwnlib.shellcraft import common %>
 <%page args="cookie = 0x7afceb58"/>
 <%docstring>
+    stackhunter(cookie = 0x7afceb58)
+
     Returns an an egghunter, which searches from esp and upwards
     for a cookie. However to save bytes, it only looks at a single
     4-byte alignment. Use the function stackhunter_helper to

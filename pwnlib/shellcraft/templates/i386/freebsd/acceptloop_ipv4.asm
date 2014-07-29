@@ -1,18 +1,16 @@
 <% from pwnlib.shellcraft import common %>
 <% from socket import htons %>
-<%page args="port, os = None"/>
+<%page args="port"/>
 <%docstring>
     Args: port
     Waits for a connection.  Leaves socket in EBP.
-    os is either linux or freebsd. ipv4 only
+    ipv4 only
 
 </%docstring>
 <% acceptloop = common.label("acceptloop") 
 accept = common.label("accept")
 parent = common.label("parent")
 %>
-
-
 
 ${acceptloop}:
         ;; Listens for and accepts a connection on ${int(port)}d forever

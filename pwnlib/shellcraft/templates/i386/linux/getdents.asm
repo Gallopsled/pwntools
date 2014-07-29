@@ -1,9 +1,9 @@
 <% from pwnlib.shellcraft import i386 %>
-<%page args="in_fd=0, size=255, allocate_stack=True"/>
+<%page args="in_fd = 'ebp', size = 255, allocate_stack = True"/>
 <%docstring> Reads to the stack from a directory.
 
 Args:
-    in_fd (int/str): Directory to be read from. Defaults to `STDIN_FILENO`.
+    in_fd (int/str): File descriptor to be read from.
     size (int): Buffer size.
     allocate_stack (bool): allocate 'size' bytes on the stack.
 

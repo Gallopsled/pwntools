@@ -17,18 +17,23 @@ class module(ModuleType):
         # Save the shellcode directory
         self._dir = directory
 
+        # Find the absolute path of the directory
+        self._absdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', self._dir)
+
+        # Get the docstring
+        with open(os.path.join(self._absdir, "__doc__")) as fd:
+            self.__doc__ = fd.read()
+
         # Insert into the module list
         sys.modules[self.__name__] = self
 
     def __lazyinit__(self):
-        # Find the absolute path of the directory
-        absdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', self._dir)
 
         # Create a dictionary of submodules
         self._submodules = {}
         self._shellcodes = {}
-        for name in os.listdir(absdir):
-            path = os.path.join(absdir, name)
+        for name in os.listdir(self._absdir):
+            path = os.path.join(self._absdir, name)
             if os.path.isdir(path):
                 self._submodules[name] = module(self.__name__ + '.' + name, os.path.join(self._dir, name))
             elif os.path.isfile(path) and name != '__doc__':

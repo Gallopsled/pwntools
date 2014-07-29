@@ -1,6 +1,6 @@
 <% from pwnlib.shellcraft import common %>
 <% from socket import htons %>
-<%page args="port = None, os = None"/>
+<%page args="port = None"/>
 <%docstring>
 Args: port (defaults to any port)
     Finds a socket, which is connected to the specified port.
@@ -12,16 +12,12 @@ looplabel = common.label("loop")
 
 %>
 
-
-
-
 ${findpeer}:
     push -1
     push SYS_socketcall_getpeername
     mov ebp, esp
     pop ebx
     pop esi
-
 
 ${looplabel}:
     push SYS_socketcall
@@ -34,7 +30,7 @@ ${looplabel}:
     pushad
 
     int 0x80
-% if port==None:
+% if port == None:
     test eax, eax
     popad
     pop edx
@@ -45,9 +41,4 @@ ${looplabel}:
     shr eax, 16
     cmp ax, ${htons(int(port))}
     jne ${looplabel}
-
-
-
 %endif
-
-
