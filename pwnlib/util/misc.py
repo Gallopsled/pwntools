@@ -38,15 +38,6 @@ def binary_ip(host):
     return socket.inet_aton(socket.gethostbyname(host))
 
 
-def get_interfaces():
-    """get_interfaces() -> list
-
-    Gets all (interface, IPv4) of the local system."""
-    d = subprocess.check_output('ip -4 -o addr', shell = True)
-    ifs = re.findall(r'^\S+:\s+(\S+)\s+inet\s+([^\s/]+)', d, re.MULTILINE)
-    return [i for i in ifs if i[0] != 'lo']
-
-
 def size(n, abbriv = 'B', si = False):
     """size(n, abbriv = 'B', si = False) -> str
 
