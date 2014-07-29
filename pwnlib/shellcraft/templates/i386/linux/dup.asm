@@ -1,16 +1,13 @@
 <% from pwnlib.shellcraft import common %>
-<%page args="sock = None, os=None"/>
+<%page args="sock = 'ebp'"/>
 <%docstring>
 Args: [sock (imm/reg) = ebp]
     Duplicates sock to stdin, stdout and stderr
 </%docstring>
-<% dup = common.label("dup") 
-looplabel = common.label("loop")
+<%
+  dup       = common.label("dup") 
+  looplabel = common.label("loop")
 %>
-
-
-
-
 ${dup}:
         mov ebx, ${sock}
         push 3
@@ -22,4 +19,3 @@ ${looplabel}:
         pop eax
         int 0x80
         jnz ${looplabel}
-
