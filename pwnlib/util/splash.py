@@ -29,15 +29,21 @@ def splash():
 
         colors = [
             text.blue,   text.magenta, text.red,
-            text.yellow, text.green,   text.cyan
+            text.yellow, text.green,   text.cyan,
         ]
 
-        h = log.indented('\n', frozen = False)
-        lines = _banner.lstrip('\n')
+        lines = _banner.strip('\n').split('\n')
+
+        hs = [log.indented('', frozen = False) for _ in range(len(lines))]
         ndx = 0
-        while sys:
-            h.update(colors[ndx](lines))
-            ndx = (ndx + 1) % len(colors)
+        import sys as _sys
+        while _sys:
+            for i, (l, h) in enumerate(zip(lines, hs)):
+                l = ''.join(colors[((ndx + i + j) / 3) % len(colors)](l[j]) \
+                            for j in range(len(l))
+                            )
+                h.update(l)
+            ndx += 1
             time.sleep(0.15)
 
     if term.term_mode:
