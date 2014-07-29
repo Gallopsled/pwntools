@@ -78,7 +78,7 @@ def read(path):
 
     Examples:
         >>> read('pwnlib/util/misc.py').split('\\n')[0]
-        'import socket, subprocess, re, os'
+        'import socket, subprocess, re, os, stat'
     """
     path = os.path.expanduser(os.path.expandvars(path))
     with open(path) as fd:

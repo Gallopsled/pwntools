@@ -7,10 +7,13 @@ for dirpath, dirnames, filenames in os.walk(os.path.join('pwnlib', 'shellcraft',
     for f in filenames:
         templates.append(os.path.relpath(os.path.join(dirpath, f), 'pwnlib'))
 
+with open('VERSION') as fd:
+    version = fd.read().strip()
+
 setup(
     name                 = 'pwntools',
     packages             = find_packages(),
-    version              = '2.1.0',
+    version              = version,
     package_data         = {
         'pwnlib': [
             'data/crcsums.txt',
@@ -23,8 +26,8 @@ setup(
     description          = "This is the CTF framework used by Gallopsled in every CTF.",
     author               = "Gallopsled et al.",
     author_email         = "#gallopsled @ freenode.net",
-    url                  = 'https://github.com/pwnies/pwntools/', # use the URL to the github repo
-    download_url         = "https://github.com/pwnies/pwntools/tarball/master",
+    url                  = 'https://github.com/pwnies/pwntools/',
+    download_url         = "https://github.com/pwnies/pwntools/tarball/%s" % version,
     install_requires     = ['paramiko','argparse', 'mako'],
     license              = "MIT",
     classifiers          = [

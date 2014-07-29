@@ -1,6 +1,6 @@
 # Introduction
 
-This is the CTF framework used by pwnies in every CTF.
+This is the CTF framework used by Gallopsled in every CTF.
 
 Most code is inside the pwnlib folder with some functionality inside pwn or bin. It is typically used as:
 
