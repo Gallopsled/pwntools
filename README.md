@@ -24,7 +24,7 @@ We also have the following tools, not dependent on the pwnlib:
 * `hex`/`unhex`: Command line tools for doing common hexing/unhexing operations
 
 # Documentation
-Our documentation is available on
+Our documentation is available on http://pwntools.readthedocs.org/
 
 # Installation
 Pwntools is available as a pip package. You can install it by running
