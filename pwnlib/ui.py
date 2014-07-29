@@ -51,4 +51,4 @@ def pause(n = None):
             time.sleep(1)
         log.done_success('Done', h)
     else:
-        raise ValueError('options(): n must be a number or None')
+        raise ValueError('pause(): n must be a number or None')
