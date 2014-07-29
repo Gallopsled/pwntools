@@ -1,4 +1,5 @@
-import socket, subprocess, re, os
+import socket, subprocess, re, os, stat
+from .. import log
 
 def align(alignment, x):
     """align(alignment, x) -> int
@@ -108,3 +109,46 @@ def write(path, data = '', create_dir = False):
                 os.mkdir(p)
     with open(path, 'w') as f:
         f.write(data)
+
+def which(name, all = False):
+    """which(name, flags = os.X_OK, find_all = False) -> str or str set
+
+    Works as the system command ``which``; searches $PATH for ``name`` and returns a full path if found.
+
+    If `find_all` is `True` the set of all found locations is returned, else the first occurence or `None` is returned.
+
+    Args:
+      - `name` (str): The file to search for.
+      - `all` (bool):  Whether to return all locations where `name` was found.
+
+    Returns:
+      - If `all` is `True` the set of all locations where `name` was found, else the first location or `None` if not found.
+
+    Example:
+      >>> which('sh')
+      '/bin/sh'
+"""
+    isroot = os.getuid() == 0
+    out = set()
+    try:
+        path = os.environ['PATH']
+    except KeyError:
+        log.error('Environment variable $PATH is not set')
+    for p in path.split(os.pathsep):
+        p = os.path.join(p, name)
+        if os.access(p, os.X_OK):
+            st = os.stat(p)
+            if not stat.S_ISREG(st.st_mode):
+                continue
+            # work around this issue: http://bugs.python.org/issue9311
+            if isroot and not \
+              st.st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH):
+              continue
+            if all:
+                out.add(p)
+            else:
+                return p
+    if all:
+        return out
+    else:
+        return None
