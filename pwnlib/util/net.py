@@ -1,6 +1,6 @@
 import ctypes, ctypes.util, socket
 
-__all__ = ['getifaddrs', 'interfaces']
+__all__ = ['getifaddrs', 'interfaces', 'interfaces4', 'interfaces6']
 
 # /usr/src/linux-headers-3.12-1-common/include/uapi/linux/socket.h
 sa_family_t = ctypes.c_ushort
