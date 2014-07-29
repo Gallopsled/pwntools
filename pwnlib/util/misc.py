@@ -118,11 +118,11 @@ def which(name, all = False):
     If `find_all` is `True` the set of all found locations is returned, else the first occurence or `None` is returned.
 
     Args:
-      - `name` (str): The file to search for.
-      - `all` (bool):  Whether to return all locations where `name` was found.
+      `name` (str): The file to search for.
+      `all` (bool):  Whether to return all locations where `name` was found.
 
     Returns:
-      - If `all` is `True` the set of all locations where `name` was found, else the first location or `None` if not found.
+      If `all` is `True` the set of all locations where `name` was found, else the first location or `None` if not found.
 
     Example:
       >>> which('sh')
