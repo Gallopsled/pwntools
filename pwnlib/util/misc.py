@@ -102,18 +102,21 @@ def write(path, data = '', create_dir = False):
         f.write(data)
 
 def which(name, all = False):
-    """which(name, flags = os.X_OK, find_all = False) -> str or str set
+    """which(name, flags = os.X_OK, all = False) -> str or str set
 
-    Works as the system command ``which``; searches $PATH for ``name`` and returns a full path if found.
+    Works as the system command ``which``; searches $PATH for ``name`` and
+    returns a full path if found.
 
-    If `find_all` is `True` the set of all found locations is returned, else the first occurence or `None` is returned.
+    If `all` is :const:`True` the set of all found locations is returned, else
+    the first occurence or :const:`None` is returned.
 
     Args:
       `name` (str): The file to search for.
       `all` (bool):  Whether to return all locations where `name` was found.
 
     Returns:
-      If `all` is `True` the set of all locations where `name` was found, else the first location or `None` if not found.
+      If `all` is :const:`True` the set of all locations where `name` was found,
+      else the first location or :const:`None` if not found.
 
     Example:
       >>> which('sh')
