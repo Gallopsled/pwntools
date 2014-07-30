@@ -95,7 +95,10 @@ def wrap(template):
         s = [l.rstrip() for l in s]
         while s and not s[-1]: s.pop()
         while s and not s[0]:  s.pop(0)
-        return '\\n'.join(s)
+        s = '\\n'.join(s)
+        while '\\n\\n\\n' in s:
+            s = s.replace('\\n\\n\\n', '\\n\\n')
+        return s
     return %s
 ''' % (funcname, args, inspect.cleandoc(template.module.__doc__ or ''), args_used, funcname)
 
