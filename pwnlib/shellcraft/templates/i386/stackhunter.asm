@@ -11,29 +11,16 @@
     The default cookie has been chosen, because it makes it possible
     to shave a single byte, but other cookies can be used too.
 </%docstring>
-
 <% stackhunter = common.label("stackhunter") %>
-
-
 %if (cookie & 0xffffff) == 0xfceb58:
 ${stackhunter}:
     cmp dword eax, ${hex(cookie)}
     jne ${stackhunter}+1
     jmp esp
-
 %else:
 ${stackhunter}:
     pop eax
     cmp dword eax, ${hex(cookie)}
     jne ${stackhunter}
     jmp esp
-
-    
 %endif
-
-
-
-
-
-
-

@@ -5,9 +5,8 @@
     Args: port
     Waits for a connection.  Leaves socket in EBP.
     ipv4 only
-
 </%docstring>
-<% acceptloop = common.label("acceptloop") 
+<% acceptloop = common.label("acceptloop")
 accept = common.label("accept")
 parent = common.label("parent")
 %>
@@ -70,9 +69,3 @@ ${parent}:
         pop ecx
         test ecx, ecx
         jnz ${accept}
-
-
-
-
-
-

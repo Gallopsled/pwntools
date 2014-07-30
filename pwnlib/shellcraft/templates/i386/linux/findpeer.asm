@@ -6,12 +6,10 @@ Args: port (defaults to any port)
     Finds a socket, which is connected to the specified port.
     Leaves socket in ESI.
 </%docstring>
-<% 
-findpeer = common.label("findpeer") 
-looplabel = common.label("loop")
-
+<%
+  findpeer = common.label("findpeer")
+  looplabel = common.label("loop")
 %>
-
 ${findpeer}:
     push -1
     push SYS_socketcall_getpeername

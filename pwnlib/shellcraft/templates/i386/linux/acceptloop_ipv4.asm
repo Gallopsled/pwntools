@@ -5,13 +5,10 @@
     Args: port
     Waits for a connection.  Leaves socket in EBP.
     ipv4 only
-
 </%docstring>
-<% acceptloop = common.label("acceptloop") 
+<% acceptloop = common.label("acceptloop")
 looplabel = common.label("loop")
 %>
-
-
 
 ${acceptloop}:
         ;; Listens for and accepts a connection on ${int(port)}d forever
@@ -75,6 +72,3 @@ ${looplabel}:
 
         test edi, edi
         jnz ${looplabel}
-
-
-
