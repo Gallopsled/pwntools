@@ -2,6 +2,7 @@
 
 from .. import term, log
 from ..term import text
+from . import lists
 import sys, time, threading
 
 _banner = r'''
@@ -28,9 +29,16 @@ def splash():
     def updater():
 
         colors = [
-            text.blue,   text.magenta, text.red,
-            text.yellow, text.green,   text.cyan,
+            text.blue   , text.bold_blue   ,
+            text.magenta, text.bold_magenta,
+            text.red    , text.bold_red    ,
+            text.yellow , text.bold_yellow ,
+            text.green  , text.bold_green  ,
+            text.cyan   , text.bold_cyan   ,
         ]
+        ncolors = len(colors)
+        def getcolor(n):
+            return colors[(n / 4) % len(colors)]
 
         lines = _banner.strip('\n').split('\n')
 
@@ -39,10 +47,18 @@ def splash():
         import sys as _sys
         while _sys:
             for i, (l, h) in enumerate(zip(lines, hs)):
-                l = ''.join(colors[((ndx + i + j) / 3) % len(colors)](l[j]) \
-                            for j in range(len(l))
-                            )
-                h.update(l)
+                cur = ''
+                buf = ''
+                col = getcolor(ndx + i)
+                for j in range(len(l)):
+                    buf += l[j]
+                    ncol = getcolor(ndx + i + j)
+                    if col != ncol:
+                        cur += col(buf)
+                        col = ncol
+                        buf = ''
+                cur += col(buf)
+                h.update(cur)
             ndx += 1
             time.sleep(0.15)
 
