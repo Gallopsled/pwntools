@@ -8,3 +8,4 @@
 build
 MANIFEST
 dist
+pwntools.egg-info
