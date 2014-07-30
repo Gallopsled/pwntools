@@ -307,4 +307,4 @@ def linkcode_resolve(domain, info):
                 filename += '#L%d-%d' % (first, first + len(lines) - 1)
             except IOError:
                 pass
-    return "https://github.com/pwnies/pwntools/blob/%s/%s" % (release, filename)
+    return "https://github.com/Gallopsled/pwntools/blob/%s/%s" % (release, filename)

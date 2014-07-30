@@ -26,8 +26,8 @@ setup(
     description          = "This is the CTF framework used by Gallopsled in every CTF.",
     author               = "Gallopsled et al.",
     author_email         = "#gallopsled @ freenode.net",
-    url                  = 'https://github.com/pwnies/pwntools/',
-    download_url         = "https://github.com/pwnies/pwntools/tarball/%s" % version,
+    url                  = 'https://github.com/Gallopsled/pwntools/',
+    download_url         = "https://github.com/Gallopsled/pwntools/tarball/%s" % version,
     install_requires     = ['paramiko','argparse', 'mako'],
     license              = "MIT",
     classifiers          = [
