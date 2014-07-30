@@ -1,4 +1,4 @@
-"""The pwnlib is not a big truck! It's a serious of tubes!
+"""The pwnlib is not a big truck! It's a series of tubes!
 
 This is our library for talking to sockets, processes, ssh connections etc.
 Our goal is to be able to use the same API for e.g. remote TCP servers, local
