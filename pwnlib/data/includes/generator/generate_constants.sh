@@ -4,11 +4,13 @@ pushd linux
 ARCHS="$(ls *.h | sed 's/.h$//' | grep -v -e common -e syscall_map)"
 popd
 
-python="../../../pwnlib/constants"
+python="../../../constants"
 headers="../"
 
-rm -rf "$python/linux" "$headers/linux"
-mkdir -p "$headers/linux" "$python/linux" "$headers/linux"
+rm -rf "$headers/linux" "$headers/freebsd.h"
+mkdir -p "$headers/linux"
+find "$python" -type f \( -name '*.py' -o -name '*.pyc' \) -not -name "__init__.py" -delete
+find "$python" -type d -empty -delete
 
 for arch in $ARCHS; do
   echo $arch
