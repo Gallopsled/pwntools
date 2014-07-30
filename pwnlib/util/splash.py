@@ -54,7 +54,7 @@ def splash():
                     buf += l[j]
                     ncol = getcolor(ndx + i + j)
                     if col != ncol:
-                        cur += col(buf)
+                        cur += buf if buf.isspace() else col(buf)
                         col = ncol
                         buf = ''
                 cur += col(buf)
