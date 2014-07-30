@@ -16,10 +16,10 @@ However we have made command-line frontends for some of the functionality
 inside the pwnlib. These are:
 
 * `asm`/`disasm`: Small wrapper for various assemblers
-* `cyclic`: De Bruijn sequence generator and lookup tool
 * `constgrep`: Tool for finding constants defined in header files
-* `shellcraft`: Frontend to our shellcode
+* `cyclic`: De Bruijn sequence generator and lookup tool
 * `hex`/`unhex`: Command line tools for doing common hexing/unhexing operations
+* `shellcraft`: Frontend to our shellcode
 
 # Documentation
 Our documentation is available on http://pwntools.readthedocs.org/
