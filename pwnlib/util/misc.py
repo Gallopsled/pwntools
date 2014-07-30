@@ -146,3 +146,33 @@ def which(name, all = False):
         return out
     else:
         return None
+
+def run_in_new_terminal(command, terminal = None):
+    """run_in_new_terminal(command, terminal = None) -> None
+
+    Run a command in a new terminal.
+
+    Args:
+      command (str): The command to run.
+      terminal (str): Which terminal to use, if set to :const:`None` pick from
+      ``$TERM``, ``$COLORTERM`` or ``x-terminal-emulator`` in that order.
+
+    Returns:
+      None
+"""
+    if terminal:
+        term = which(terminal)
+    else:
+        terminal = os.getenv('TERM') or os.getenv('COLORTERM')
+        if not terminal:
+            term = which('x-terminal-emulator')
+            if not term:
+                log.error('could not find a terminal, make sure $TERM or $COLORTERM is set or that "x-terminal-emulator" is in your $PATH')
+        term = which(terminal)
+    if not term:
+        log.error('could not find terminal: %s' % terminal)
+    termpid = os.fork()
+    if termpid == 0:
+        argv = [term, '-e', command]
+        os.execv(argv[0], argv)
+        os._exit(1)
