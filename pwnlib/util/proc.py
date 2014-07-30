@@ -22,47 +22,75 @@ def pidof(target):
       A list of found PIDs.
 """
     if   isinstance(target, tubes.remote.remote):
-        # XXX: handle IPv6
-        def toaddr((host, port)):
-            return '%08X:%04X' % \
-                (struct.unpack('<I', socket.inet_aton(host))[0], port)
-        sock = toaddr(target.sock.getsockname())
-        peer = toaddr(target.sock.getpeername())
+        def toaddr(sockaddr, family):
+            host = sockaddr[0]
+            port = sockaddr[1]
+            host = socket.inet_pton(family, host)
+            if   family == socket.AF_INET:
+                host = '%08X' % struct.unpack('<I', host)
+            elif family == socket.AF_INET6:
+                host = '%08X%08X%08X%08X' % struct.unpack('<IIII', host)
+            return '%s:%04X' % (host, port)
+
+        sock = toaddr(target.sock.getsockname(), target.sock.family)
+        peer = toaddr(target.sock.getpeername(), target.sock.family)
 
         # find inode of 'local addr -> remote addr' socket
         inode = None
-        with open('/proc/net/tcp') as fd:
-            for line in fd:
-                line = line.split()
-                loc = line[1]
-                rem = line[2]
-                if loc == peer and rem == sock:
-                    inode = line[9]
-                    break
+        for f in ['tcp', 'tcp6']:
+            with open('/proc/net/%s' % f) as fd:
+                # skip the first line with the column names
+                fd.readline()
+                for line in fd:
+                    line = line.split()
+                    loc = line[1]
+                    rem = line[2]
+                    st = int(line[3], 16)
+                    if st != 1: # TCP_ESTABLISHED, see include/net/tcp_states.h
+                        continue
+                    if loc == peer and rem == sock:
+                        inode = int(line[9])
+                        break
+            if inode:
+                break
         if not inode:
             return []
 
         # find the process who owns this socket
-        for pid in all_pids():
-            try:
-                for fd in os.listdir('/proc/%d/fd' % pid):
-                    try:
-                        fd = os.readlink('/proc/%d/fd/%s' % (pid, fd))
-                    except OSError:
-                        continue
-                    m = re.match('socket:\[(\d+)\]', fd)
-                    if m and m.group(1) == inode:
-                        return [pid]
-            except OSError:
-                pass
-
-        return [pid]
+        pid = pid_by_inode(inode)
+        return [pid] if pid else None
 
     elif isinstance(target, tubes.process.process):
         return [target.proc.pid]
 
     else:
         return pid_by_name(target)
+
+def pid_by_inode(inode):
+    """pid_by_inode(inode) -> int or None
+
+    Find the process who owns a given inode
+
+    Args:
+      inode (int): The inode to look for.
+
+    Returns:
+      The PID of the process who owns `inode`, or :const:`None` if it wasn't
+      found.
+"""
+    inode = str(inode)
+    for pid in all_pids():
+        try:
+            for fd in os.listdir('/proc/%d/fd' % pid):
+                try:
+                    fd = os.readlink('/proc/%d/fd/%s' % (pid, fd))
+                except OSError:
+                    continue
+                m = re.match('socket:\[(\d+)\]', fd)
+                if m and m.group(1) == inode:
+                    return pid
+        except OSError:
+            pass
 
 def all_pids():
     """all_pids() -> int list
@@ -108,13 +136,14 @@ def pid_by_name(name):
       name (str): Name of program.
 
     Returns:
-      List of PIDs matching `name`.
+      List of PIDs matching `name` sorted by lifetime, youngest to oldest.
 
     Example:
       >>> pid_by_name('init')
       [1]
 """
-    return [pid for pid in all_pids() if status(pid)['Name'] == name]
+    return sorted([pid for pid in all_pids() if status(pid)['Name'] == name],
+                  key = starttime, reverse = True)
 
 def name(pid):
     """name(pid) -> str
@@ -230,6 +259,30 @@ def exe(pid):
       The path of the binary of the process. I.e. what ``/proc/<pid>/exe`` points to.
 """
     return os.readlink('/proc/%d/exe' % pid)
+
+def cwd(pid):
+    """cwd(pid) -> str
+
+    Args:
+      pid (int): PID of the process.
+
+    Returns:
+      The path of the process's current working directory. I.e. what
+      ``/proc/<pid>/cwd`` points to.
+"""
+    return os.readlink('/proc/%d/cwd' % pid)
+
+def cmdline(pid):
+    """cmdline(pid) -> str list
+
+    Args:
+      pid (int): PID of the process.
+
+    Returns:
+      A list of the fields in ``/proc/<pid>/cmdline``.
+"""
+    with open('/proc/%d/cmdline' % pid, 'r') as fd:
+        return fd.read().rstrip('\x00').split('\x00')
 
 def stat(pid):
     """stat(pid) -> str list
