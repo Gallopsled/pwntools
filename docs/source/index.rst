@@ -13,6 +13,7 @@ Contents:
    context
    dynelf
    exception
+   gdb
    log
    memleak
    tubes
