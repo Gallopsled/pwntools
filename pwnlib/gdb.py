@@ -25,6 +25,9 @@ def attach(target, execute = None, exe = None, arch = None):
       exe (str): The path of the target binary.
       arch (str): Architechture of the target binary.  If `exe` known GDB will
       detect the architechture automatically (if it is supported).
+
+    Returns:
+      :const:`None`
 """
     # if execute is a file object, then read it; we probably need to run some
     # more gdb script anyway
