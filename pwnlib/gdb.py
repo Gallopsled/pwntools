@@ -4,6 +4,28 @@ from .util import misc, proc
 from . import tubes
 
 def attach(target, execute = None, exe = None, arch = None):
+    """attach(target, execute = None, exe = None, arch = None) -> None
+
+    Start GDB in a new terminal and attach to `target`.
+    :func:`pwnlib.util.proc.pidof` is used to find the PID of `target` except
+    when `target` is a ``(host, port)``-pair.  In that case `target` is assumed
+    to be a GDB server.
+
+    If it is running locally and `exe` is not given we will try to find the path
+    of the target binary from parsing the command line of the program running
+    the GDB server (e.g. qemu or gdbserver).  Notice that if the PID is known
+    (when `target` is not a GDB server) `exe` will be read from
+    ``/proc/<pid>/exe``.
+
+    If `gdb-multiarch` is installed we use that or 'gdb' otherwise.
+
+    Args:
+      target: The target to attach to.
+      execute (str or file): GDB script to run after attaching.
+      exe (str): The path of the target binary.
+      arch (str): Architechture of the target binary.  If `exe` known GDB will
+      detect the architechture automatically (if it is supported).
+"""
     # if execute is a file object, then read it; we probably need to run some
     # more gdb script anyway
     if execute:
@@ -30,7 +52,7 @@ def attach(target, execute = None, exe = None, arch = None):
         pid = pids[0]
         log.info('attaching you youngest process "%s" (PID = %d)' %
                  (target, pid))
-    elif isinstance(target, tubes.remote.remote):
+    elif isinstance(target, tubes.sock.sock):
         pids = proc.pidof(target)
         if not pids:
             log.error('could not find remote process (%s:%d) on this machine' %
@@ -89,7 +111,7 @@ def attach(target, execute = None, exe = None, arch = None):
                 exe = proc.cmdline(spid)[-1]
                 return os.path.join(proc.cwd(spid), exe)
 
-        exe = findexe()
+        exe = exe or findexe()
 
     else:
         log.error("don't know how to attach to target: %r" % target)
@@ -111,6 +133,8 @@ def attach(target, execute = None, exe = None, arch = None):
         log.error('no gdb installed')
 
     if exe:
+        if not os.path.isfile(exe):
+            log.error('no such file: %s' % exe)
         cmd += ' "%s"' % exe
 
     if pid:
@@ -125,6 +149,5 @@ def attach(target, execute = None, exe = None, arch = None):
         tmp.close()
         cmd += ' -x "%s" ; rm "%s"' % (tmp.name, tmp.name)
 
-    print cmd
-
+    log.info('running in new terminal: %s' % cmd)
     misc.run_in_new_terminal(cmd)
