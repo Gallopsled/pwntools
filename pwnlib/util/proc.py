@@ -11,7 +11,7 @@ def pidof(target):
 
      - :class:`pwnlib.tubes.process.process`: singleton list of the PID of `target`.
 
-     - :class:`pwnlib.tubes.remote.remote`: singleton list of the PID at the remote end of `target` if it is running on the host.  Otherwise an empty list.
+     - :class:`pwnlib.tubes.sock.sock`: singleton list of the PID at the remote end of `target` if it is running on the host.  Otherwise an empty list.
 
     *WARNING*: At this time only IPv4 is supported.
 
@@ -21,7 +21,7 @@ def pidof(target):
     Returns:
       A list of found PIDs.
 """
-    if   isinstance(target, tubes.remote.remote):
+    if   isinstance(target, tubes.sock.sock):
         def toaddr(sockaddr, family):
             host = sockaddr[0]
             port = sockaddr[1]
