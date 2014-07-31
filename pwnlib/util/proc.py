@@ -13,8 +13,6 @@ def pidof(target):
 
      - :class:`pwnlib.tubes.sock.sock`: singleton list of the PID at the remote end of `target` if it is running on the host.  Otherwise an empty list.
 
-    *WARNING*: At this time only IPv4 is supported.
-
     Args:
       target(object):  The target whoose PID(s) to find.
 
