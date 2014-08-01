@@ -48,9 +48,10 @@ class tube(object):
             return res
 
         timeout       = _fix_timeout(timeout, self.timeout)
-        self.settimeout_raw(timeout)
+        old_timeout   = self.timeout
+        self.settimeout(timeout)
         data = self.recv_raw(numb)
-        self.settimeout_raw(self.timeout)
+        self.settimeout(old_timeout)
 
         if data:
             for line in re.findall('(?:.*\n)|(?:.+$)', data):
