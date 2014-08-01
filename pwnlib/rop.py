@@ -18,7 +18,14 @@ class ROP(object):
         self.__load()
 
     def resolve(self, resolvable):
-        """Resolves a symbol to an address"""
+        """Resolves a symbol to an address
+
+        Args:
+            resolvable(str,int): Thing to convert into an address
+
+        Returns:
+            int containing address of 'resolvable', or None
+        """
         if isinstance(resolvable, str):
             for elf in self.elfs:
                 try:    return elf.symbols[resolvable]
@@ -31,6 +38,13 @@ class ROP(object):
         """Inverts 'resolve'.  Given an address, it attempts to find a symbol
         for it in the loaded ELF files.  If none is found, it searches all
         known gadgets, and returns the disassembly
+
+        Args:
+            value(int): Address to look up
+
+        Returns:
+            String containing the symbol name for the address, disassembly for a gadget
+            (if there's one at that address), or an empty string.
         """
         for elf in self.elfs:
             try:    return next(name for name,addr in elf.symbols.items() if addr == value)
@@ -40,10 +54,17 @@ class ROP(object):
         return ''
 
     def chain(self, clear=True):
-        """Build the ROP chain"""
+        """Build the ROP chain
+
+        Args:
+            clear(bool): Reset the ROP chain after building it (legacy emulation)
+
+        Returns:
+            str containging raw ROP bytes
+        """
         self.cache = {}
         raw   = ''
-        chain = list(self._chain)
+        chain = [dict(d) for d in self._chain]
 
         if len(chain) == 0:
             return ''
@@ -107,8 +128,18 @@ class ROP(object):
         return result
 
     def call(self, resolvable, arguments=()):
-        """Add a call to the ROP chain"""
-        stackfix_need = len(arguments) * self.align
+        """Add a call to the ROP chain
+
+        Args:
+            resolvable(str,int): Value which can be looked up via 'resolve', or is already an integer.
+            arguments(list): List of arguments which can be passed to pack().
+        """
+        addr = self.resolve(resolvable)
+
+        if addr is None:
+            raise Exception("Could not resolve %r" % resolvable)
+
+        stackfix_need = (1+len(arguments)) * self.align
         stackfix_addr = 0
         stackfix_size = 0
 
@@ -122,7 +153,7 @@ class ROP(object):
             raise Exception("Could not find gadget to clean up stack for call %r %r" % (resolvable,arguments))
 
         d = {'orig':    resolvable,
-             'addr':    self.resolve(resolvable),
+             'addr':    addr,
              'args':    arguments,
              'retaddr': stackfix_addr,
              'retsize': stackfix_size,
@@ -131,11 +162,15 @@ class ROP(object):
         self._chain.append(d)
 
     def raw(self, data):
-        """Add raw bytes to the ROP chain"""
+        """Add raw bytes to the ROP chain
+
+        Args:
+            data(str): Raw sequence of bytes to add to the ROP chain
+        """
         self._chain.append(data)
 
     def __str__(self):
-        """Retrieve the raw bytes of the ROP chain"""
+        """Returns: Raw bytes of the ROP chain"""
         return self.chain(False)
 
     def __load(self):
@@ -211,6 +246,8 @@ class ROP(object):
                 elif ret.match(insn):
                     sp_move += self.align
 
+            # Permit duplicates, because blacklisting bytes in the gadget
+            # addresses may result in us needing the dupes.
             self.gadgets[addr] = {'insns': insns, 'regs': regs, 'move': sp_move}
 
             # Don't use 'pop ebp' for pivots
