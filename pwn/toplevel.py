@@ -7,6 +7,7 @@ from pwnlib.dynelf          import DynELF
 from pwnlib.elf             import ELF, load
 from pwnlib.log_levels      import *
 from pwnlib.memleak         import MemLeak
+from pwnlib.rop             import ROP
 from pwnlib.tubes.listen    import *
 from pwnlib.tubes.process   import *
 from pwnlib.tubes.remote    import *
