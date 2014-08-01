@@ -31,7 +31,7 @@ class ssh_channel(sock.sock):
 
         self.sock = parent.transport.open_session()
         if tty:
-            self.sock.get_pty('vt100', term.width, term.height)
+            self.sock.get_pty('xterm', term.width, term.height)
 
             def resizer():
                 if self.sock:

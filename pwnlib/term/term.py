@@ -156,7 +156,7 @@ class Handle:
     def delete(self):
         delete(self.h)
 
-STR, CSI, CRLF, BS, CR, SOH, STX = range(7)
+STR, CSI, CRLF, BS, CR, SOH, STX, OOB = range(8)
 def parse_csi(buf, offset):
     i = offset
     while i < len(buf):
@@ -238,6 +238,11 @@ def parse(s):
                     cmd, args, j = ret
                     x = (CSI, (cmd, args, ''.join(map(chr, buf[i : j]))))
                     i = j
+            elif c1 == ord(']'):
+                j = s.index('\x07', i)
+                if j > 0:
+                    x = (OOB, s[i:j + 1])
+                    i = j + 1
             elif c1 in map(ord, '()'): # select G0 or G1
                 i += 3
                 continue
@@ -381,6 +386,8 @@ def render_cell(cell, clear_after = False):
             put('\x01')
         elif t == STX:
             put('\x02')
+        elif t == OOB:
+            put(x)
         if row >= height:
             d = row - height + 1
             scroll += d
