@@ -121,6 +121,10 @@ class ELF(ELFFile):
         """Returns: list of all segments which are writeable"""
         return [s for s in self.segments if s.header.p_flags & P_FLAGS.PF_W]
 
+    @property
+    def non_writable_segments(self):
+        """Returns: list of all segments which are NOT writeable"""
+        return [s for s in self.segments if not (s.header.p_flags & P_FLAGS.PF_W)]
 
     def _populate_libraries(self, processlike=None):
         self.libs = ldd(self.path, processlike)
@@ -295,6 +299,38 @@ class ELF(ELFFile):
             self.stream.seek(old)
 
         return None
+
+    def save(self, path):
+        """Save the ELF to a file
+
+        >>> bash = ELF('/bin/bash')
+        >>> bash.save('/tmp/bash_copy')
+        >>> copy = file('/tmp/bash_copy')
+        >>> bash = file('/bin/bash')
+        >>> bash.read() == copy.read()
+        True
+        """
+        old = self.stream.tell()
+
+        with open(path,'wb+') as fd:
+            self.stream.seek(0)
+            fd.write(self.get_data())
+
+        self.stream.seek(old)
+
+    def get_data(self):
+        """Retrieve the raw data from the ELF file.
+
+        >>> bash = ELF('/bin/bash')
+        >>> fd   = open('/bin/bash')
+        >>> bash.get_data() == fd.read()
+        True
+        """
+        old = self.stream.tell()
+        self.stream.seek(0)
+        data = self.stream.read(self.stream.size())
+        self.stream.seek(old)
+        return data
 
 
 
