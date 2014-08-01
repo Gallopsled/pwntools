@@ -339,7 +339,7 @@ def render_cell(cell, clear_after = False):
                     col = 0
                 elif c == ord('G'):
                     n = n or 1
-                    col = min(width - 1, n)
+                    col = min(width - 1, n - 1)
                 elif c == ord('H') or c == ord('f'):
                     n = n or 1
                     m = m or 1
