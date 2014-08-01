@@ -37,6 +37,11 @@ class ELF(ELFFile):
 
         self._address  = min(filter(bool, (s.header.p_vaddr for s in self.segments)))
 
+        for seg in self.executable_segments:
+            if seg.header.p_type == 'PT_GNU_STACK':
+                self.execstack = True
+                pwnlib.log.info('Stack is executable!')
+
     @property
     def elfclass(self):
         """ELF class (32 or 64).
