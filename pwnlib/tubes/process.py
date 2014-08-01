@@ -62,13 +62,12 @@ class process(tube.tube):
         Poll the exit code of the process. Will return None, if the
         process has not yet finished and the exit code otherwise.
         """
-
-        poll = self.proc.poll()
-        if poll != None and not self.stop_noticed:
+        self.proc.poll()
+        if self.proc.returncode != None and not self.stop_noticed:
             self.stop_noticed = True
-            log.info("Program %r stopped with exit code %d" % (self.program, poll), log_level = self.log_level)
+            log.info("Program %r stopped with exit code %d" % (self.program, self.proc.returncode), log_level = self.log_level)
 
-        return poll
+        return self.proc.returncode
 
     def communicate(self, stdin = None):
         """communicate(stdin = None) -> str
