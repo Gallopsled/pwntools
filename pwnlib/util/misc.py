@@ -1,4 +1,4 @@
-import socket, subprocess, re, os, stat
+import socket, subprocess, re, os, stat, errno
 from .. import log
 
 def align(alignment, x):
@@ -78,7 +78,7 @@ def read(path):
 
     Examples:
         >>> read('pwnlib/util/misc.py').split('\\n')[0]
-        'import socket, subprocess, re, os, stat'
+        'import socket, subprocess, re, os, stat, errno'
     """
     path = os.path.expanduser(os.path.expandvars(path))
     with open(path) as fd:
@@ -176,3 +176,46 @@ def run_in_new_terminal(command, terminal = None):
         argv = [term, '-e', command]
         os.execv(argv[0], argv)
         os._exit(1)
+
+def parse_ldd_output(data):
+    """Parses the output from the command ldd into a dictionary of
+    ``libary_name => path``."""
+
+    expr = re.compile(r'(?:([^ ]+) => )?([^(]+)?(?: \(0x[0-9a-f]+\))?$')
+    res = {}
+
+    for line in data.strip().split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+        parsed = expr.search(line)
+        if not parsed:
+            log.warning('Could not parse line: "%s"' % line)
+        name, resolved = parsed.groups()
+        if resolved and re.search('/ld-[^/]*$', resolved):
+            if name != None:
+                resolved = name
+            name = 'ld'
+
+        if name == None:
+            if re.search('^linux', resolved):
+                name = 'linux'
+            else:
+                log.warning('Could not parse line: "%s"' % line)
+                continue
+
+        res[name] = resolved
+        if name.startswith('libc.so.'):
+            res['libc'] = resolved
+    return res
+
+def mkdir_p(path):
+    """Emulates the behavior of ``mkdir -p``."""
+
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise

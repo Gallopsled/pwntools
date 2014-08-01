@@ -64,6 +64,7 @@ def init():
         global height, width
         height = term.height
         width = term.width
+    update_geometry()
     term.on_winch.append(update_geometry)
     readline.init()
     term_mode = True

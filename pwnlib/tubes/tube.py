@@ -380,3 +380,14 @@ class tube(object):
         """
 
         log.bug('Should be implemented by a subclass.')
+
+    def shutdown(self, direction = "out"):
+        """shutdown(direction = "out")
+
+        Calls shutdown on the socket, and thus closing it for either reading or writing.
+
+        Args:
+          direction(str): Either the string "in" or "out".
+        """
+
+        log.bug('Should be implemented by a subclass.')

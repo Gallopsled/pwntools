@@ -9,41 +9,6 @@ class sock(tube.tube):
         super(sock, self).__init__(timeout, log_level)
         self.closed = {"in": False, "out": False}
 
-    # Functions only available on sock
-    def shutdown(self, direction = "out"):
-        """shutdown(direction = "out")
-
-        Calls shutdown on the socket, and thus closing it for either reading or writing.
-
-        Args:
-          direction(str): Either the string "in" or "out".
-        """
-
-        if direction == "out":
-            if not self.closed["out"]:
-                self.closed["out"] = True
-                try:
-                    self.sock.shutdown(socket.SHUT_WR)
-                except socket.error as e:
-                    if e.errno == errno.ENOTCONN:
-                        pass
-                    else:
-                        raise
-
-        if direction == "in":
-            if not self.closed["in"]:
-                self.closed["in"] = True
-                try:
-                    self.sock.shutdown(socket.SHUT_RD)
-                except socket.error as e:
-                    if e.errno == errno.ENOTCONN:
-                        pass
-                    else:
-                        raise
-
-        if False not in self.closed.values():
-            self.close()
-
     # Overwritten for better usability
     def recvall(self):
         """recvall() -> str
@@ -51,30 +16,33 @@ class sock(tube.tube):
         Receives data until the socket is closed.
         """
 
-        if self.type == socket.SOCK_STREAM:
-            return super(sock, self).recvall()
-        else:
+        if hasattr(self, 'type') and self.type == socket.SOCK_DGRAM:
             log.error("UDP sockets does not supports recvall")
+        else:
+            return super(sock, self).recvall()
 
-    # Implementation of the methods required for tube
     def recv_raw(self, numb):
         if self.closed["in"]:
             raise EOFError
 
-        try:
-            data = self.sock.recv(numb)
-        except socket.timeout:
-            return None
-        except socket.error as e:
-            if e.errno == errno.EAGAIN:
+        go = True
+        while go:
+            go = False
+
+            try:
+                data = self.sock.recv(numb)
+            except socket.timeout:
                 return None
-            elif e.errno == errno.ECONNREFUSED:
-                self.shutdown("in")
-                raise EOFError
-            elif e.errno == errno.EINTR:
-                return ''
-            else:
-                raise
+            except IOError as e:
+                if e.errno == errno.EAGAIN:
+                    return None
+                elif e.errno == errno.ECONNREFUSED:
+                    self.shutdown("in")
+                    raise EOFError
+                elif e.errno == errno.EINTR:
+                    go = True
+                else:
+                    raise
 
         if data == '':
             self.shutdown("in")
@@ -89,6 +57,12 @@ class sock(tube.tube):
         try:
             self.sock.sendall(data)
         except socket.error as e:
+            if e.message == 'Socket is closed':
+                self.shutdown("out")
+                raise EOFError
+            else:
+                raise
+        except IOError as e:
             if e.errno in [errno.EPIPE, errno.ECONNRESET, errno.ECONNREFUSED]:
                 self.shutdown("out")
                 raise EOFError
@@ -122,10 +96,40 @@ class sock(tube.tube):
         self.sock = None
         self.closed["in"]  = True
         self.closed["out"] = True
-        log.info('Closed connection to %s on port %d' % (self.rhost, self.rport), log_level = self.log_level)
+        self._close_msg()
+
+    def _close_msg(self):
+        log.info('Closed connection to %s port %d' % (self.rhost, self.rport), log_level = self.log_level)
 
     def fileno(self):
         if not self.sock:
             log.error("A closed socket does not have a file number")
 
         return self.sock.fileno()
+
+    def shutdown(self, direction = "out"):
+        if self.closed[direction]:
+            return
+
+        self.closed[direction] = True
+
+        if direction == "out":
+            try:
+                self.sock.shutdown(socket.SHUT_WR)
+            except IOError as e:
+                if e.errno == errno.ENOTCONN:
+                    pass
+                else:
+                    raise
+
+        if direction == "in":
+            try:
+                self.sock.shutdown(socket.SHUT_RD)
+            except IOError as e:
+                if e.errno == errno.ENOTCONN:
+                    pass
+                else:
+                    raise
+
+        if False not in self.closed.values():
+            self.close()

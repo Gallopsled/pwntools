@@ -21,7 +21,6 @@
    .. automodule:: pwnlib.tubes.sock
 
       .. autoclass:: pwnlib.tubes.sock.sock()
-         :members: shutdown
          :show-inheritance:
 
    Processes
@@ -30,9 +29,20 @@
    .. automodule:: pwnlib.tubes.process
 
       .. autoclass:: pwnlib.tubes.process.process(args, shell = False, executable = None, env = None, timeout = 'default', log_level = INFO)
-         :members: kill, shutdown, poll, communicate
+         :members: kill, poll, communicate
          :show-inheritance:
 
+   SSH
+   ---
+
+   .. automodule:: pwnlib.tubes.ssh
+
+      .. autoclass:: pwnlib.tubes.ssh.ssh(user, host, port = 22, password = None, key = None, keyfile = None, proxy_command = None, proxy_sock = None, timeout = 'default', log_level = INFO)
+         :members:
+
+      .. autoclass:: pwnlib.tubes.ssh.ssh_channel()
+         :members: kill, poll, interactive
+         :show-inheritance:
 
 
    Common functionality

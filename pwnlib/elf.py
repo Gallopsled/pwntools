@@ -1,5 +1,5 @@
 from . import log
-from .util import lists
+from .util import lists, misc
 import re, subprocess, os, types
 
 # readelf/objdump binaries
@@ -149,7 +149,7 @@ class ELF:
         except subprocess.CalledProcessError:
             pass
 
-        self.libs = parse_ldd_output(dat)
+        self.libs = misc.parse_ldd_output(dat)
 
     def extra_libs(self, libs):
         for v, k in libs.items():
@@ -289,32 +289,3 @@ def load(path):
     if path in ELF.__cache:
         return ELF.__cache[path]
     return ELF(path)
-
-def parse_ldd_output(data):
-    expr = re.compile(r'(?:([^ ]+) => )?([^(]+)?(?: \(0x[0-9a-f]+\))?$')
-    res = {}
-
-    for line in data.strip().split('\n'):
-        line = line.strip()
-        if not line:
-            continue
-        parsed = expr.search(line)
-        if not parsed:
-            log.warning('Could not parse line: "%s"' % line)
-        name, resolved = parsed.groups()
-        if resolved and re.search('/ld-[^/]*$', resolved):
-            if name != None:
-                resolved = name
-            name = 'ld'
-
-        if name == None:
-            if re.search('^linux', resolved):
-                name = 'linux'
-            else:
-                log.warning('Could not parse line: "%s"' % line)
-                continue
-
-        res[name] = resolved
-        if name.startswith('libc.so.'):
-            res['libc'] = resolved
-    return res

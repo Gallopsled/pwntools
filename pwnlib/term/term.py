@@ -17,6 +17,12 @@ _graphics_mode = False
 
 fd = sys.stdout
 
+def show_cursor():
+    do('cnorm')
+
+def hide_cursor():
+    do('civis')
+
 def update_geometry():
     global width, height
     hw = fcntl.ioctl(fd.fileno(), termios.TIOCGWINSZ, '1234')
@@ -39,7 +45,7 @@ def handler_sigcont(signum, stack):
 def setupterm():
     global settings
     update_geometry()
-    do('civis') # disable cursor
+    hide_cursor()
     do('smkx') # keypad mode
     if not settings:
         settings = termios.tcgetattr(fd.fileno())
@@ -63,7 +69,7 @@ def setupterm():
 def resetterm():
     if settings:
         termios.tcsetattr(fd.fileno(), termios.TCSADRAIN, settings)
-    do('cnorm')
+    show_cursor()
     do('rmkx')
     fd.write(' \x08') # XXX: i don't know why this is needed...
                       #      only necessary when suspending the process

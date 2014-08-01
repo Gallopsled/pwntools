@@ -38,24 +38,6 @@ class process(tube.tube):
 
         self.close()
 
-    def shutdown(self, direction = "out"):
-        """shutdown(direction = "out")
-
-        Closes one of the file descriptors to the process.
-
-        Args:
-          direction(str): Either the string "in" or "out".
-        """
-
-        if direction == "out":
-            self.proc.stdin.close()
-
-        if direction == "in":
-            self.proc.stdout.close()
-
-        if False not in [self.proc.stdin.closed, self.proc.stdout.closed]:
-            self.close()
-
     def poll(self):
         """poll() -> int
 
@@ -144,3 +126,13 @@ class process(tube.tube):
             log.error("A stopped program does not have a file number")
 
         return self.proc.stdout.fileno()
+
+    def shutdown(self, direction = "out"):
+        if direction == "out":
+            self.proc.stdin.close()
+
+        if direction == "in":
+            self.proc.stdout.close()
+
+        if False not in [self.proc.stdin.closed, self.proc.stdout.closed]:
+            self.close()
