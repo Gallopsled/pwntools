@@ -115,7 +115,7 @@ class process(tube.tube):
             raise EOFError
 
     def settimeout_raw(self, timeout):
-        pass
+        self.timeout = timeout
 
     def can_recv_raw(self, timeout):
         if timeout == None:
