@@ -1,3 +1,4 @@
 paramiko
 argparse
 mako
+pyelftools
