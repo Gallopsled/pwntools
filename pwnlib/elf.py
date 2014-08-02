@@ -1,3 +1,5 @@
+"""Exposes functionality for manipulating ELF files
+"""
 import pwnlib
 import mmap
 from os.path import abspath
@@ -19,6 +21,22 @@ class ELF(ELFFile):
     :ivar plt:      Dictionary of {name: address} for all functions in the PLT
     :ivar got:      Dictionary of {name: address} for all function pointers in the GOT
     :ivar libs:     Dictionary of {path: address} for each shared object required to load the ELF
+
+    Example:
+
+    .. code-block:: python
+
+       bash = ELF('/bin/bash')
+       hex(bash.symbols['read'])
+       # 0x41dac0
+       hex(bash.plt['read'])
+       # 0x41dac0
+       u32(bash.read(bash.got['read'], 4))
+       # 0x41dac6
+       print disasm(bash.read(bash.plt['read'],16), arch='amd64')
+       # 0:   ff 25 1a 18 2d 00       jmp    QWORD PTR [rip+0x2d181a]        # 0x2d1820
+       # 6:   68 59 00 00 00          push   0x59
+       # b:   e9 50 fa ff ff          jmp    0xfffffffffffffa60
     """
     def __init__(self, path):
         # elftools uses the backing file for all reads and writes
@@ -46,8 +64,8 @@ class ELF(ELFFile):
     def elfclass(self):
         """ELF class (32 or 64).
 
-        note::
-            Set during ELFFile._identify_file
+        .. note::
+            Set during ``ELFFile._identify_file``
         """
         return self._elfclass
 
@@ -132,9 +150,22 @@ class ELF(ELFFile):
         return [s for s in self.segments if not (s.header.p_flags & P_FLAGS.PF_W)]
 
     def _populate_libraries(self, processlike=None):
+        """
+        >>> from os.path import exists
+        >>> bash = ELF('/bin/bash')
+        >>> all(map(exists, bash.libs.keys()))
+        True
+        >>> any(map(lambda x: 'libc' in x, bash.libs.keys()))
+        True
+        """
         self.libs = ldd(self.path, processlike)
 
     def _populate_symbols(self):
+        """
+        >>> bash = ELF('/bin/bash')
+        >>> bash.symbols['_start'] == bash.header.e_entry
+        True
+        """
         # By default, have 'symbols' include everything in the PLT.
         #
         # This way, elf.symbols['write'] will be a valid address to call
@@ -152,6 +183,23 @@ class ELF(ELFFile):
                 self.symbols[symbol.name] = symbol.entry.st_value
 
     def _populate_got_plt(self):
+        """Loads the GOT and the PLT symbols and addresses.
+
+        The following doctest checks the valitidy of the addresses.
+        This assumes that each GOT entry points to its PLT entry,
+        usually +6 bytes but could be anywhere within 0-16 bytes.
+
+        >>> from pwnlib.util.packing import unpack
+        >>> bash = ELF('/bin/bash')
+        >>> def validate_got_plt(sym):
+        ...     got      = bash.got[sym]
+        ...     plt      = bash.plt[sym]
+        ...     got_addr = unpack(bash.read(got, bash.elfclass/8), bash.elfclass)
+        ...     return got_addr in range(plt,plt+0x10)
+        ...
+        >>> all(map(validate_got_plt, bash.got.keys()))
+        True
+        """
         plt = self.get_section_by_name('.plt')
         got = self.get_section_by_name('.got')
 
@@ -164,13 +212,17 @@ class ELF(ELFFile):
         self.got = {}
         self.plt = {}
 
+        # Populate the GOT
         for rel in rel_plt.iter_relocations():
             sym_idx  = rel.entry.r_info_sym
             symbol   = sym_rel_plt.get_symbol(sym_idx)
             name     = symbol.name
 
             self.got[name] = rel.entry.r_offset
-            self.plt[name] = plt.header.sh_addr + sym_idx*plt.header.sh_addralign
+
+        # Based on the ordering of the GOT symbols, populate the PLT
+        for i,(addr,name) in enumerate(sorted((addr,name) for name, addr in self.got.items())):
+            self.plt[name] = plt.header.sh_addr + (i+1)*plt.header.sh_addralign
 
     def search(self, s, non_writable = False):
         """Search the ELF's virtual address space for the specified string.
@@ -350,17 +402,15 @@ def ldd(path, tube=None):
             Exists to allow compatibility with ssh.run.
 
     Example:
-        > ldd('/bin/bash')
-        {'/lib/x86_64-linux-gnu/libc.so.6': 139641095565312,
-         '/lib/x86_64-linux-gnu/libdl.so.2': 139641099526144,
-         '/lib/x86_64-linux-gnu/libtinfo.so.5': 139641101639680}
+        >>> ldd('/bin/bash').keys()
+        ['/lib/x86_64-linux-gnu/libc.so.6', '/lib/x86_64-linux-gnu/libtinfo.so.5', '/lib/x86_64-linux-gnu/libdl.so.2']
     """
     import re
     expr = re.compile(r'\s(\S?/\S+)\s+\((0x.+)\)')
     libs = {}
 
     if tube is None:
-        from pwnlib.tubes.process import process
+        from tubes.process import process
         tube = process
 
     output = tube([path],env={'LD_TRACE_LOADED_OBJECTS':'1'}).recvall().strip().splitlines()
