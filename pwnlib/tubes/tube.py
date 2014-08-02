@@ -148,10 +148,14 @@ class tube(object):
 
         return self.recvpred(pred, timeout)
 
-    def recvall(self):
+    def recvall(self, breakOnNone=False):
         """recvall() -> str
 
         Receives data until the socket is closed.
+
+        Args:
+            breakOnNone(bool): Return early if a full timeout period passes during which
+                no additional data arrives.
         """
 
         h = log.waitfor('Recieving all data', log_level = self.log_level)
@@ -165,7 +169,10 @@ class tube(object):
                 break
 
             if s == None:
-                continue
+                if breakOnNone:
+                    break
+                else:
+                    continue
 
             r.append(s)
             l += len(s)
@@ -287,12 +294,17 @@ class tube(object):
         # Restore
         self.debug_log_level = debug_log_level
 
-    def clean(self):
+    def clean(self, timeout = 0.05):
         """clean()
 
         Removes all the buffered data from a socket. It does this by calling
-        :func:`recv()` until a timeout occurs."""
-        while self.recv(10000, timeout = 0.05) != None:
+        :func:`recv()` until a timeout occurs.
+
+        Args:
+            timeout(float): Amount of time which must pass between the arrival of data
+                before this routine returns.
+        """
+        while self.recv(10000, timeout = timeout) != None:
             pass
 
     def can_recv(self, timeout = 0):
