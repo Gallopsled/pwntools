@@ -148,10 +148,34 @@ class tube(object):
 
         return self.recvpred(pred, timeout)
 
+    def recvrepeat(self, timeout = 'default'):
+        """recvrepeat()
+
+        Receives data until a timeout or EOF is reached."""
+
+        timeout = _fix_timouet(timeout, self.timeout)
+
+        if timeout == None:
+            timeout = 0.1
+
+        r = []
+        while True:
+            try:
+                s = self.recv(10000, timeout = timeout)
+            except EOFError:
+                break
+
+            if s == None:
+                break
+
+            r.append(s)
+
+        return ''.join(r)
+
     def recvall(self):
         """recvall() -> str
 
-        Receives data until the socket is closed.
+        Receives data until EOF is reached.
         """
 
         h = log.waitfor('Recieving all data', log_level = self.log_level)
@@ -287,13 +311,14 @@ class tube(object):
         # Restore
         self.debug_log_level = debug_log_level
 
-    def clean(self):
-        """clean()
+    def clean(self, timeout = 0.05):
+        """clean(timeout = 0.05)
 
-        Removes all the buffered data from a socket. It does this by calling
-        :func:`recv()` until a timeout occurs."""
-        while self.recv(10000, timeout = 0.05) != None:
-            pass
+        Removes all the buffered data from a socket by calling
+        :meth:`pwnlib.tubes.tube.tube.recv` with a low timeout until it fails.
+        """
+
+        self.recvrepeat(timeout = timeout)
 
     def can_recv(self, timeout = 0):
         """can_recv(timeout = 0) -> bool
