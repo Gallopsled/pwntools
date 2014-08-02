@@ -12,6 +12,7 @@ Contents:
    constants
    context
    dynelf
+   elf
    exception
    gdb
    log

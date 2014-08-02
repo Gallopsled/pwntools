@@ -373,7 +373,7 @@ dictionary, the global dictionary is queried. If it has no results either,
         value from :mod:`pwnlib.context.defaults` "shine through".'''
         ctx = self._thread_ctx()
         for k in dir(ctx):
-            if k[0] == '_' and k[:2] != '__':
+            if k[0] == '_' and k[:2] != '__' and hasattr(ctx, k):
                 delattr(ctx, k)
 
     def __dir__(self):
