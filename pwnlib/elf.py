@@ -1,291 +1,368 @@
 from . import log
-from .util import lists, misc
-import re, subprocess, os, types
+import mmap, subprocess
+from os.path import abspath
+from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import Section, SymbolTableSection
+from elftools.elf.relocation import RelocationSection
+from elftools.elf.descriptions import describe_ei_class, describe_e_type
+from elftools.elf.constants import P_FLAGS
 
-# readelf/objdump binaries
-_READELF = '/usr/bin/readelf'
-_OBJDUMP = '/usr/bin/objdump'
-def _check(f):
-    if not (os.access(f, os.X_OK) and os.path.isfile(f)):
-        log.error('Executable %s needed for readelf.py, please install binutils' % f)
-_check(_READELF)
-_check(_OBJDUMP)
+def load(*args, **kwargs):
+    """Compatibility wrapper for pwntools v1"""
+    return ELF(*args, **kwargs)
 
-def symbols(path):
-    """symbols(path) -> dict
+class ELF(ELFFile):
+    """Encapsulates information about an ELF file.
 
-    Returns a dictionary with all symbols in the given file
+    :ivar path: Path to the binary on disk
+    :ivar symbols:  Dictionary of {name: address} for all symbols in the ELF
+    :ivar plt:      Dictionary of {name: address} for all functions in the PLT
+    :ivar got:      Dictionary of {name: address} for all function pointers in the GOT
+    :ivar libs:     Dictionary of {path: address} for each shared object required to load the ELF
     """
-    symbols = {}
-    # -s : symbol table
-    cmd = [_READELF, '-s', path]
-    out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
-    field = r'\s+(\S+)'
-    cond_field = r'(\s+\S+)?'
-    lines = re.findall(r'^\s+\d+:' + field * 7 + cond_field + '$', out, re.MULTILINE)
-
-    for addr, size, type, _bind, _vis, _ndx, name, _foo in lines:
-        addr = int(addr, 16)
-        size = int(size, 10)
-        if addr != 0 and name != '':
-            symbols[name] = {'addr': addr,
-                             'size': size,
-                             'type': type,
-                             }
-    return symbols
-
-class ELF:
-    """A parsed ELF file.
-
-    The parser is very much a temporary one, until a better one is written."""
-
-    __cache = {}
     def __init__(self, path):
-        path = os.path.realpath(path)
-        if path in ELF.__cache:
-            log.warning('Loaded "%s" again; use "elf.load(...)" to avoid this' \
-                            % os.path.basename(path))
-        log.waitfor('Loading ELF file `%s\'' % os.path.basename(path))
-        self.segments = []
-        self.sections = {}
-        self.symbols = {}
-        self.plt = {}
-        self.got = {}
-        self.libs = {}
-        self.elfclass = None
-        self.elftype = None
-        self._data = None
-        self.execstack = False
+        # elftools uses the backing file for all reads and writes
+        # in order to permit writing without being able to write to disk,
+        # mmap() the file.
+        self.file = open(path,'rb')
+        self.mmap = mmap.mmap(self.file.fileno(), 0, access=mmap.ACCESS_COPY)
 
-        if not (os.access(path, os.R_OK) and os.path.isfile(path)):
-            log.error('File %s is not readable or does not exist' % path)
+        super(ELF,self).__init__(self.mmap)
 
-        self._path = path
+        self.path     = abspath(path)
 
-        self._load_elfclass()
-        self._load_segments()
-        self._load_sections()
-        self._load_symbols()
-        self._load_libs()
-        # this is a nasty hack until we get our pure python elf parser
-        # we'll just have to live without PLT and GOT info for PICs until then
-        if not re.match(r'\.so(\.\d+)?$', path):
-            try:
-                self._load_plt_got()
-            except:
-                pass
-        if self.execstack:
-            log.status('\nStack is executable!')
-        log.done_success()
-        ELF.__cache[path] = self
+        self._populate_got_plt()
+        self._populate_symbols()
+        self._populate_libraries()
 
-    def _load_elfclass(self):
-        # -h : ELF header
-        cmd = [_READELF, '-h', self._path]
-        out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
-        self.elfclass = re.findall(r'Class:\s*(.*$)', out, re.MULTILINE)[0]
-        self.elftype = re.findall(r'Type:\s*(.*$)', out, re.MULTILINE)[0].split(' ')[0]
+        self._address  = min(filter(bool, (s.header.p_vaddr for s in self.segments)))
 
-    def _load_segments(self):
-        # -W : Wide output
-        # -l : Program headers
-        cmd = [_READELF, '-W', '-l', self._path]
-        out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
-        hexint = '(0x[0-9a-f]+)'
-        numfield = r'\s+' + hexint
-        flgfield = r'\s+([RWE ]{3})'
-        lines = re.findall(r'^\s+([A-Z_]+)' + numfield * 5 + flgfield + numfield,
-                           out, re.MULTILINE)
-
-        for type, off, vaddr, paddr, filesiz, memsiz, flg, align in lines:
-            off = int(off, 16)
-            vaddr = int(vaddr, 16)
-            paddr = int(paddr, 16)
-            filesiz = int(filesiz, 16)
-            memsiz = int(memsiz, 16)
-            flg = flg.replace(' ', '')
-            align = int(align, 16)
-            self.segments.append({'type'    : type,
-                                  'offset'  : off,
-                                  'virtaddr': vaddr,
-                                  'physaddr': paddr,
-                                  'filesiz' : filesiz,
-                                  'memsiz'  : memsiz,
-                                  'flg'     : flg,
-                                  'align'   : align,
-                                  })
-            if type == 'GNU_STACK' and 'E' in flg:
+        for seg in self.executable_segments:
+            if seg.header.p_type == 'PT_GNU_STACK':
                 self.execstack = True
-        self.segments.sort(key = lambda x: x['virtaddr'])
+                log.info('Stack is executable!')
 
-    def _load_sections(self):
-        # -W : Wide output
-        # -S : Section headers
-        cmd = [_READELF, '-W', '-S', self._path]
-        out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
-        field = r'\s+(\S+)'
-        posint = r'[123456789]\d*'
-        flags = r'\s+([WAXMSILGTExOop]*)'
-        lines = re.findall(r'^\s+\[\s*' + posint + r'\]' + field * 6 + flags,
-                           out, re.MULTILINE)
+    @property
+    def elfclass(self):
+        """ELF class (32 or 64).
 
-        for name, _type, addr, off, size, _es, flgs in lines:
-            addr = int(addr, 16)
-            off = int(off, 16)
-            size = int(size, 16)
-            self.sections[name] = {'addr'  : addr,
-                                   'offset': off,
-                                   'size'  : size,
-                                   'flags' : flgs,
-                                   }
+        note::
+            Set during ELFFile._identify_file
+        """
+        return self._elfclass
 
-    def _load_symbols(self):
-        self.symbols = symbols(self._path)
+    @elfclass.setter
+    def elfclass(self, newvalue):
+        self._elfclass = newvalue
 
-    def _load_libs(self):
-        dat = ''
-        try:
-            dat = subprocess.check_output(['ldd', self._path])
-        except subprocess.CalledProcessError:
-            pass
+    @property
+    def elftype(self):
+        """ELF type (EXEC, DYN, etc)"""
+        return describe_e_type(self.header.e_type).split()[0]
 
-        self.libs = misc.parse_ldd_output(dat)
+    @property
+    def segments(self):
+        """A list of all segments in the ELF"""
+        return list(self.iter_segments())
 
-    def extra_libs(self, libs):
-        for v, k in libs.items():
-            self.libs[v] = k
+    @property
+    def sections(self):
+        """A list of all sections in the ELF"""
+        return list(self.iter_sections())
 
-    # this is crazy slow -- include this feature in the all-python ELF parser
-    def _load_plt_got(self):
-        cmd = [_OBJDUMP, '-d', self._path]
-        out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
-        got32 = r'[^j]*jmp\s+\*0x(\S+)'
-        got64 = r'[^#]*#\s+(\S+)'
-        lines = re.findall(r'([a-fA-F0-9]+)\s+<([^@<]+)@plt>:(%s|%s)' % (got32, got64), out)
+    @property
+    def dwarf(self):
+        """DWARF info for the elf"""
+        return self.get_dwarf_info()
 
-        for addr, name, _, gotaddr32, gotaddr64 in lines:
-            addr = int(addr, 16)
-            gotaddr = int(gotaddr32 or gotaddr64, 16)
-            self.plt[name] = addr
-            self.got[name] = gotaddr
+    @property
+    def address(self):
+        """Address of the lowest segment loaded in the ELF.
+        When updated, cascades updates to segment vaddrs, section addrs, symbols, plt, and got.
 
-    def _load_data(self):
-        if self._data is None:
-            with open(self._path, 'r') as f:
-                self._data = list(f.read())
+        >>> bash = ELF('/bin/sh')
+        >>> old = bash.symbols['read']
+        >>> bash.address += 0x1000
+        >>> bash.symbols['read'] == old + 0x1000
+        True
+        """
+        return self._address
 
-    def read_symbol(self, name):
-        if name in self.symbols:
-            sym = self.symbols[name]
-            addr = sym['addr']
-            size = sym['size']
-            data = self.read(addr, size)
-            if data is None:
-                log.error('Symbol %s does not live in any section' % name)
-            else:
-                return data
-        else:
-            log.error('No symbol named %s' % name)
+    @address.setter
+    def address(self, new):
+        delta     = new-self._address
+        update    = lambda x: x+delta
+
+        for segment in self.segments:
+            segment.header.p_vaddr += delta
+
+        for section in self.sections:
+            section.header.sh_addr += delta
+
+        self.symbols = {k:update(v) for k,v in self.symbols.items()}
+        self.plt     = {k:update(v) for k,v in self.plt.items()}
+        self.got     = {k:update(v) for k,v in self.got.items()}
+
+        self._address = update(self.address)
 
     def section(self, name):
-        if name in self.sections:
-            self._load_data()
-            sec = self.sections[name]
-            offset = sec['offset']
-            size = sec['size']
-            return ''.join(self._data[offset:offset + size])
-        else:
-            log.error('No section named %s' % name)
+        """Gets data for the named section
 
-    def _filter_segments(self, flg, negate = False):
-        self._load_data()
-        for seg in self.segments:
-            if (flg in seg['flg']) ^ negate:
-                off = seg['offset']
-                siz = seg['filesiz']
-                addr = seg['virtaddr']
-                yield (''.join(self._data[off : off + siz]), addr)
+        Args:
+            name(str): Name of the section
 
+        Returns:
+            String containing the bytes for that section
+        """
+        return self.get_section_by_name(name).data()
+
+    @property
     def executable_segments(self):
-        return self._filter_segments('E', False)
+        """Returns: list of all segments which are executable."""
+        return [s for s in self.segments if s.header.p_flags & P_FLAGS.PF_X]
 
+    @property
+    def writable_segments(self):
+        """Returns: list of all segments which are writeable"""
+        return [s for s in self.segments if s.header.p_flags & P_FLAGS.PF_W]
+
+    @property
     def non_writable_segments(self):
-        return self._filter_segments('W', True)
+        """Returns: list of all segments which are NOT writeable"""
+        return [s for s in self.segments if not (s.header.p_flags & P_FLAGS.PF_W)]
 
-    def read(self, addr, numb):
-        self._load_data()
-        out = []
-        for seg in self.segments:
-            if seg['virtaddr'] > addr:
-                return
-            if seg['virtaddr'] + seg['filesiz'] > addr:
-                n = min(numb, seg['virtaddr'] + seg['filesiz'] - addr)
-                off = seg['offset'] + addr - seg['virtaddr']
-                out += self._data[off:off + n]
-                numb -= n
-                addr += n
-                if numb == 0:
-                    break
-        return ''.join(out)
+    def _populate_libraries(self, processlike=None):
+        self.libs = ldd(self.path, processlike)
 
-    def write(self, addr, repl):
-        self._load_data()
-        numb = len(repl)
-        for seg in self.segments:
-            if seg['virtaddr'] > addr:
-                return
-            if seg['virtaddr'] + seg['filesiz'] > addr:
-                n = min(numb, seg['virtaddr'] + seg['filesiz'] - addr)
-                off = seg['offset'] + addr - seg['virtaddr']
-                self._data[off:off + n] = repl[:n]
-                repl = repl[n:]
-                numb -= n
-                addr += n
-                if numb == 0:
-                    break
+    def _populate_symbols(self):
+        # By default, have 'symbols' include everything in the PLT.
+        #
+        # This way, elf.symbols['write'] will be a valid address to call
+        # for write().
+        self.symbols = dict(self.plt)
+
+        for section in self.sections:
+            if not isinstance(section, SymbolTableSection):
+                continue
+
+            for symbol in section.iter_symbols():
+                if not symbol.entry.st_value:
+                    continue
+
+                self.symbols[symbol.name] = symbol.entry.st_value
+
+    def _populate_got_plt(self):
+        plt = self.get_section_by_name('.plt')
+        got = self.get_section_by_name('.got')
+
+        # Find the relocation section for PLT
+        rel_plt = next(s for s in self.sections if s.header.sh_info == self.sections.index(plt))
+
+        # Find the symbols for the relocation section
+        sym_rel_plt = self.sections[rel_plt.header.sh_link]
+
+        self.got = {}
+        self.plt = {}
+
+        for rel in rel_plt.iter_relocations():
+            sym_idx  = rel.entry.r_info_sym
+            symbol   = sym_rel_plt.get_symbol(sym_idx)
+            name     = symbol.name
+
+            self.got[name] = rel.entry.r_offset
+            self.plt[name] = plt.header.sh_addr + sym_idx*plt.header.sh_addralign
 
     def search(self, s, non_writable = False):
-        self._load_data()
-        for seg in self.segments:
-            if 'W' in seg['flg'] and non_writable: continue
-            off = seg['offset']
-            siz = seg['filesiz']
-            dat = self._data[off : off + siz]
-            yield map(lambda i: i + seg['virtaddr'], lists.findall(dat, list(s)))
+        """Search the ELF's virtual address space for the specified string.
 
-    def replace(self, s, repl, non_writable = False, padding = '\x90'):
-        self._load_data()
-        for seg in self.segments:
-            if 'W' in seg['flg'] and non_writable: continue
-            off = seg['offset']
-            siz = seg['filesiz']
-            dat = self._data[off : off + siz]
-            for idx in lists.findall(dat, list(s)):
-                addr = idx + seg['virtaddr']
-                if isinstance(repl, types.FunctionType):
-                    rep = repl(addr, s)
-                else:
-                    rep = repl
-                if rep is None: continue
-                rep = rep.ljust(len(s), padding)
-                if len(rep) > len(s):
-                    log.error('Replacement is larger than the replaced')
-                self._data[off + idx : off + idx + len(s)] = rep
+        Args:
+            s(str): String to search for
+            non_writable(bool): Search non-writable sections
+
+        Returns:
+            An iterator for each virtual address that matches
+
+        Examples:
+            >>> bash = ELF('/bin/bash')
+            >>> bash.address + 1 == next(bash.search('ELF',True))
+            True
+        """
+
+        if non_writable:    segments = self.segments
+        else:               segments = self.writable_segments
+
+        for seg in segments:
+            addr   = seg.header.p_vaddr
+            data   = seg.data()
+            offset = 0
+            while True:
+                offset = data.find(s, offset)
+                if offset == -1:
+                    break
+                yield addr + offset
+                offset += 1
+
+    def offset_to_vaddr(self, offset):
+        """Translates the specified offset to a virtual address.
+
+        Args:
+            offset(int): Offset to translate
+
+        Returns:
+            Virtual address which corresponds to the file offset, or None
+
+        Examples:
+            >>> bash = ELF('/bin/bash')
+            >>> bash.address == bash.offset_to_vaddr(0)
+            True
+        """
+        for segment in self.segments:
+            begin = segment.header.p_offset
+            size  = segment.header.p_filesz
+            end   = begin + size
+            if begin <= offset and offset <= end:
+                delta = offset - begin
+                return segment.header.p_vaddr + delta
+        return None
+
+
+    def vaddr_to_offset(self, address):
+        """Translates the specified virtual address to a file address
+
+        Args:
+            address(int): Virtual address to translate
+
+        Returns:
+            Offset within the ELF file which corresponds to the address,
+            or None.
+
+        Examples:
+            >>> bash = ELF('/bin/bash')
+            >>> 0 == bash.vaddr_to_offset(bash.address)
+            True
+        """
+        for segment in self.segments:
+            begin = segment.header.p_vaddr
+            size  = segment.header.p_memsz
+            end   = begin + size
+            if begin <= address and address <= end:
+                delta = address - begin
+                return segment.header.p_offset + delta
+        return None
+
+    def read(self, address, count):
+        """Read data from the specified virtual address
+
+        Args:
+            address(int): Virtual address to read
+            count(int): Number of bytes to read
+
+        Returns:
+            A string of bytes, or None
+
+        Examples:
+          >>> bash = ELF('/bin/bash')
+          >>> bash.read(bash.address+1, 3)
+          'ELF'
+        """
+        offset = self.vaddr_to_offset(address)
+
+        if offset is not None:
+            old = self.stream.tell()
+            self.stream.seek(offset)
+            data = self.stream.read(count)
+            self.stream.seek(old)
+            return data
+
+        return None
+
+    def write(self, address, data):
+        """Writes data to the specified virtual address
+
+        Args:
+            address(int): Virtual address to write
+            data(str): Bytes to write
+
+        Note::
+            This routine does not check the bounds on the write to ensure
+            that it stays in the same segment.
+
+        Examples:
+          >>> bash = ELF('/bin/bash')
+          >>> bash.read(bash.address+1, 3)
+          'ELF'
+          >>> bash.write(bash.address, "HELO")
+          >>> bash.read(bash.address, 4)
+          'HELO'
+        """
+        offset = self.vaddr_to_offset(address)
+
+        if offset is not None:
+            old = self.stream.tell()
+            self.stream.seek(offset)
+            self.stream.write(data)
+            self.stream.seek(old)
+
+        return None
 
     def save(self, path):
-        with open(path, 'w') as fd:
+        """Save the ELF to a file
+
+        >>> bash = ELF('/bin/bash')
+        >>> bash.save('/tmp/bash_copy')
+        >>> copy = file('/tmp/bash_copy')
+        >>> bash = file('/bin/bash')
+        >>> bash.read() == copy.read()
+        True
+        """
+        old = self.stream.tell()
+
+        with open(path,'wb+') as fd:
+            self.stream.seek(0)
             fd.write(self.get_data())
 
+        self.stream.seek(old)
+
     def get_data(self):
-        self._load_data()
-        return ''.join(self._data)
+        """Retrieve the raw data from the ELF file.
 
-def load(path):
-    """load(path) -> ELF object
+        >>> bash = ELF('/bin/bash')
+        >>> fd   = open('/bin/bash')
+        >>> bash.get_data() == fd.read()
+        True
+        """
+        old = self.stream.tell()
+        self.stream.seek(0)
+        data = self.stream.read(self.stream.size())
+        self.stream.seek(old)
+        return data
 
-    Load an ELF file.
+
+
+def ldd(path):
+    """Effectively runs 'ldd' on the specified binary, captures the output,
+    and parses it.  Returns a dictionary of {path: address} for
+    each library required by the specified binary.
+
+    Args:
+      path(str): Path to the binary
+
+    Example:
+        > ldd('/bin/bash')
+        {'/lib/x86_64-linux-gnu/libc.so.6': 139641095565312,
+         '/lib/x86_64-linux-gnu/libdl.so.2': 139641099526144,
+         '/lib/x86_64-linux-gnu/libtinfo.so.5': 139641101639680}
     """
-    path = os.path.realpath(path)
-    if path in ELF.__cache:
-        return ELF.__cache[path]
-    return ELF(path)
+    import re
+    expr = re.compile(r'\s(\S?/\S+)\s+\((0x.+)\)')
+    libs = {}
+
+    output = subprocess.check_output([path], env={'LD_TRACE_LOADED_OBJECTS':'1'}).strip().splitlines()
+    output = map(str.strip, output)
+    output = map(expr.search, output)
+
+    for match in filter(None, output):
+        lib, addr = match.groups()
+        libs[lib] = int(addr,16)
+
+    return libs
