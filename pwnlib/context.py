@@ -21,6 +21,8 @@ __possible__ = {
         'cris', 'i386', 'm68k', 'mips',
         'mipsel', 'powerpc', 'thumb'
     ),
+    'arch32': ('arm', 'armeb', 'cris', 'i386', 'm68k', 'mips', 'mipsel', 'thumb'),
+    'arch64': ('alpha', 'amd64'),
     'os': ('linux', 'freebsd')
 }
 
@@ -116,9 +118,15 @@ class ContextModule(types.ModuleType):
         * ``mipsel``
         * ``powerpc``
         * ``thumb``
+
+        Setting this will also update :data:`pwnlib.context.word_size`.
         """
 
         if value in self.__possible__['arch']:
+            if value in self.__possible__['arch32']:
+                self.word_size = 32
+            elif value in self.__possible__['arch64']:
+                self.word_size = 64
             return value
 
     @_validator
@@ -202,6 +210,12 @@ class ContextModule(types.ModuleType):
             'Cannot set context-key log_level, ' +
             'as the value %r did not validate' % value
         )
+
+    def __dir__(self):
+        res = set(dir(super(ContextModule, self))) | set(properties().keys())
+        if self.defaults:
+            res |= set(dir(self.defaults))
+        return sorted(res)
 
 
 class MainModule(types.ModuleType):
@@ -317,6 +331,9 @@ dictionary, the global dictionary is queried. If it has no results either,
     def __setattr__(self, key, value):
         setattr(self._thread_ctx(), key, value)
 
+    def __dir__(self):
+        return dir(self._thread_ctx())
+
     def local(self, **kwargs):
         '''Create a new thread-local context.
 
@@ -360,9 +377,8 @@ dictionary, the global dictionary is queried. If it has no results either,
                 delattr(ctx, k)
 
     def __dir__(self):
-        res = set(self.__dict__.keys()) | set(dir(self.defaults))
+        res = set(dir(super(MainModule, self))) | set(dir(self._thread_ctx()))
         return sorted(res)
-
 
 # prevent this scope from being GC'ed
 tether = sys.modules[__name__]
