@@ -1,6 +1,7 @@
 """Exposes functionality for manipulating ELF files
 """
 from . import log
+from .util.misc import ldd
 import mmap, subprocess
 from os.path import abspath
 from elftools.elf.elffile import ELFFile
@@ -389,31 +390,3 @@ class ELF(ELFFile):
         data = self.stream.read(self.stream.size())
         self.stream.seek(old)
         return data
-
-
-
-def ldd(path):
-    """Effectively runs 'ldd' on the specified binary, captures the output,
-    and parses it.  Returns a dictionary of {path: address} for
-    each library required by the specified binary.
-
-    Args:
-      path(str): Path to the binary
-
-    Example:
-        >>> ldd('/bin/bash').keys()
-        ['/lib/x86_64-linux-gnu/libc.so.6', '/lib/x86_64-linux-gnu/libtinfo.so.5', '/lib/x86_64-linux-gnu/libdl.so.2']
-    """
-    import re
-    expr = re.compile(r'\s(\S?/\S+)\s+\((0x.+)\)')
-    libs = {}
-
-    output = subprocess.check_output([path], env={'LD_TRACE_LOADED_OBJECTS':'1'}).strip().splitlines()
-    output = map(str.strip, output)
-    output = map(expr.search, output)
-
-    for match in filter(None, output):
-        lib, addr = match.groups()
-        libs[lib] = int(addr,16)
-
-    return libs

@@ -231,7 +231,7 @@ class ssh(object):
         """
         return self.run(None, tty, timeout, log_level)
 
-    def run(self, process, tty = False, timeout = 'default', log_level = 'default'):
+    def run(self, process, tty = False, timeout = 'default', log_level = 'default', env={}):
         """run(process, tty = False, timeout = 'default', log_level = 'default') -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
@@ -243,6 +243,10 @@ class ssh(object):
             log_level = self.log_level
 
         timeout = tube._fix_timeout(timeout, self.timeout)
+
+        if process and env:
+            env      = ' '.join('%s=%s' % (name,value) for name,value in env.items())
+            process  = ' '.join([env, process])
 
         return ssh_channel(self, process, tty, timeout, log_level)
 
@@ -272,12 +276,13 @@ class ssh(object):
 
     def _libs_remote(self, remote):
         """Return a dictionary of the libraries used by a remote file."""
-        data, status = self.run_to_end('ldd ' + _raw_sh_string(remote))
-        if status != 0:
+        result = misc.ldd(remote, self.run)
+
+        if len(result) == 0:
             log.failure('Unable to find libraries for %r' % remote)
             return {}
 
-        return misc.parse_ldd_output(data)
+        return result
 
     def _get_fingerprint(self, remote):
         arg = _raw_sh_string(remote)
@@ -435,21 +440,18 @@ class ssh(object):
 
         seen = set()
 
-        for lib, remote in libs.items():
-            if not remote or lib == 'linux':
-                continue
-
-            local = os.path.realpath(os.path.join(directory, '.' + os.path.sep + remote))
+        for lib, addr in libs.items():
+            local = os.path.realpath(os.path.join(directory, '.' + os.path.sep + lib))
             if not local.startswith(directory):
-                log.warning('This seems fishy: %r' % remote)
+                log.warning('This seems fishy: %r' % lib)
                 continue
 
             misc.mkdir_p(os.path.dirname(local))
 
-            if remote not in seen:
-                self.download_file(remote, local)
-                seen.add(remote)
-            res[lib] = local
+            if lib not in seen:
+                self.download_file(lib, local)
+                seen.add(lib)
+            res[local] = addr
 
         return res
 

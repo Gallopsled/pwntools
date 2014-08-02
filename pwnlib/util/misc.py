@@ -170,37 +170,38 @@ def run_in_new_terminal(command, terminal = None):
         os.execv(argv[0], argv)
         os._exit(1)
 
-def parse_ldd_output(data):
-    """Parses the output from the command ldd into a dictionary of
-    ``libary_name => path``."""
+def ldd(path, tube=None):
+    """Runs 'ldd' on the specified binary, captures the output,
+    and parses it.  Returns a dictionary of {path: address} for
+    each library required by the specified binary.
 
-    expr = re.compile(r'(?:([^ ]+) => )?([^(]+)?(?: \(0x[0-9a-f]+\))?$')
-    res = {}
+    Args:
+      path(str): Path to the binary
 
-    for line in data.strip().split('\n'):
-        line = line.strip()
-        if not line:
-            continue
-        parsed = expr.search(line)
-        if not parsed:
-            log.warning('Could not parse line: "%s"' % line)
-        name, resolved = parsed.groups()
-        if resolved and re.search('/ld-[^/]*$', resolved):
-            if name != None:
-                resolved = name
-            name = 'ld'
+    Example:
+        >>> ldd('/bin/bash').keys()
+        ['/lib/x86_64-linux-gnu/libc.so.6', '/lib/x86_64-linux-gnu/libtinfo.so.5', '/lib/x86_64-linux-gnu/libdl.so.2']
+    """
+    import re
+    expr = re.compile(r'\s(\S?/\S+)\s+\((0x.+)\)')
+    libs = {}
 
-        if name == None:
-            if re.search('^linux', resolved):
-                name = 'linux'
-            else:
-                log.warning('Could not parse line: "%s"' % line)
-                continue
+    if tube is None:
+        from ..tubes.process import process
+        tube = process(['ldd', path])
+    else:
+        tube = tube('ldd %s' % path)
 
-        res[name] = resolved
-        if name.startswith('libc.so.'):
-            res['libc'] = resolved
-    return res
+
+    output = tube.recvall().strip().splitlines()
+    output = map(str.strip, output)
+    output = map(expr.search, output)
+
+    for match in filter(None, output):
+        lib, addr = match.groups()
+        libs[lib] = int(addr,16)
+
+    return libs
 
 def mkdir_p(path):
     """Emulates the behavior of ``mkdir -p``."""
