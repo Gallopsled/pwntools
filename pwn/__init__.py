@@ -30,7 +30,7 @@ def closure():
         if   arg == 'DEBUG':
             sys.argv.remove(arg)
             context.log_level = 'debug'
-        elif arg == 'NOINFO':
+        elif arg == 'SILENT':
             sys.argv.remove(arg)
             context.log_level = 'silent'
         elif arg.find('=') > 0:
