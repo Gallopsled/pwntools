@@ -173,6 +173,7 @@ class ssh(object):
         self.timeout         = tube._fix_timeout(timeout, context.timeout)
         self.log_level       = log_level
         self._cachedir       = os.path.join(tempfile.gettempdir(), 'pwntools-ssh-cache')
+        self._wd             = None
         misc.mkdir_p(self._cachedir)
 
         keyfiles = [keyfile] if keyfile else []
@@ -227,6 +228,9 @@ class ssh(object):
             log_level = self.log_level
 
         timeout = tube._fix_timeout(timeout, self.timeout)
+
+        if process and self._wd:
+            process = "cd %r; %s" % (self._wd, process)
 
         return ssh_channel(self, process, tty, timeout, log_level)
 
@@ -365,6 +369,9 @@ class ssh(object):
         if not local:
             local = os.path.basename(os.path.normpath(remote))
 
+        if self._wd and os.path.basename(remote) == remote:
+            remote = os.path.join(self._wd, remote)
+
         local_tmp = self._download_to_cache(remote)
         shutil.copy2(local_tmp, local)
 
@@ -394,10 +401,16 @@ class ssh(object):
             remote = os.path.normpath(filename)
             remote = os.path.basename(remote)
 
+            if self._wd:
+                remote = os.path.join(self._wd, remote)
+
         with open(filename) as fd:
             data = fd.read()
 
+        log.info("Uploading %r to %r" % (filename,remote))
         self.upload_data(data, remote)
+
+        return remote
 
     def libs(self, remote, directory = None):
         """Downloads the libraries referred to by a file.
@@ -447,3 +460,37 @@ class ssh(object):
         s = self.shell()
         s.interactive()
         s.close()
+
+    def set_working_directory(self, wd=None):
+        """Sets the working directory in which future commands will
+        be run (via ssh.run) and to which files will be uploaded/downloaded
+        from if no path is provided
+
+        Args:
+            wd(string): Working directory.  Default is to auto-generate a directory
+                based on the result of running 'mktemp -d' on the remote machine.
+        """
+        old_wd = self._wd
+        status = 0
+
+        if not wd:
+            with context.local(log_level = 1000):
+                wd, status = self.run_to_end('mktemp -d')
+            wd = wd.strip()
+
+        if status:
+            log.failure("Could not generate a temporary directory")
+            return
+
+        with context.local(log_level = 1000):
+            self._wd  = wd
+            _, status = self.run_to_end('ls %r' % wd)
+
+        if status:
+            log.failure("%r does not appear to exist" % wd)
+            self._wd = old_wd
+        else:
+            self._wd = wd
+
+        log.info("Working directory: %r" % wd)
+        return self._wd
