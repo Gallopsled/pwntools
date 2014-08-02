@@ -26,7 +26,7 @@ class tube(object):
 
     # Functions based on functions from subclasses
     def recv(self, numb = 4096, timeout = 'default'):
-        """recv(self, numb = 4096, timeout = 'default') -> str
+        """recv(numb = 4096, timeout = 'default') -> str
 
         Receives up to `numb` bytes of data from the socket.
         If a timeout occurs while waiting, it will return None.
@@ -60,7 +60,7 @@ class tube(object):
         return data
 
     def recvpred(self, pred, timeout = 'default'):
-        """recvpred(self, pred, timeout = 'default') -> str
+        """recvpred(pred, timeout = 'default') -> str
 
         Receives one byte at a time from the socket, until ``pred(bytes)``
         evaluates to True.
@@ -102,7 +102,7 @@ class tube(object):
         return res
 
     def recvn(self, numb, timeout = 'default'):
-        """recvn(self, numb, timeout = 'default') -> str
+        """recvn(numb, timeout = 'default') -> str
 
         Wrapper around :func:`recvpred`, which will return after `numb`
         bytes are available.
@@ -111,7 +111,7 @@ class tube(object):
         return self.recvpred(lambda buf: len(buf) >= numb, timeout)
 
     def recvuntil(self, delim, timeout = 'default'):
-        """recvuntil(self, delim, timeout = 'default') -> str
+        """recvuntil(delim, timeout = 'default') -> str
 
         Wrapper around :func:`recvpred`, which will return when the string
         ends with the given delimiter.
@@ -120,7 +120,7 @@ class tube(object):
         return self.recvpred(lambda buf: buf.endswith(delim), timeout)
 
     def recvline(self, lines = 1, timeout = 'default'):
-        """recvline(self, lines = 1, timeout = 'default') -> str
+        """recvline(lines = 1, timeout = 'default') -> str
 
         Wrapper around :func:`recvpred`, which will return then the buffer
         contains ``lines`` number of newlines.
@@ -129,7 +129,7 @@ class tube(object):
         return self.recvpred(lambda buf: buf.count('\n') == lines, timeout)
 
     def recvregex(self, regex, exact = False, timeout = 'default'):
-        """recvregex(self, regex, exact = False, timeout = 'default') -> str
+        """recvregex(regex, exact = False, timeout = 'default') -> str
 
         Wrapper around :func:`recvpred`, which will return when a regex
         matches the string in the buffer.
@@ -198,7 +198,7 @@ class tube(object):
         self.send(line + '\n')
 
     def sendafter(self, delim, data, timeout = 'default'):
-        """sendafter(self, delim, data, timeout = 'default') -> str
+        """sendafter(delim, data, timeout = 'default') -> str
 
         A combination of ``recvuntil(delim, timeout)`` and ``send(data)``."""
 
@@ -207,7 +207,7 @@ class tube(object):
         return res
 
     def sendlineafter(self, delim, data, timeout = 'default'):
-        """sendlineafter(self, delim, data, timeout = 'default') -> str
+        """sendlineafter(delim, data, timeout = 'default') -> str
 
         A combination of ``recvuntil(delim, timeout)`` and ``sendline(data)``."""
 
@@ -216,7 +216,7 @@ class tube(object):
         return res
 
     def sendthen(self, delim, data, timeout = 'default'):
-        """sendthen(self, delim, data, timeout = 'default') -> str
+        """sendthen(delim, data, timeout = 'default') -> str
 
         A combination of ``send(data)`` and ``recvuntil(delim, timeout)``."""
 
@@ -224,7 +224,7 @@ class tube(object):
         return self.recvuntil(delim, timeout)
 
     def sendlinethen(self, delim, data, timeout = 'default'):
-        """sendlinethen(self, delim, data, timeout = 'default') -> str
+        """sendlinethen(delim, data, timeout = 'default') -> str
 
         A combination of ``sendline(data)`` and ``recvuntil(delim, timeout)``."""
 
@@ -232,7 +232,7 @@ class tube(object):
         return self.recvuntil(delim, timeout)
 
     def interactive(self, prompt = term.text.bold_red('$') + ' '):
-        """interactive(self, prompt = pwnlib.term.text.bold_red('$') + ' ')
+        """interactive(prompt = pwnlib.term.text.bold_red('$') + ' ')
 
         Does simultaneous reading and writing to the socket. In principle this just
         connects the socket to standard in and standard out, but in practice this

@@ -26,11 +26,12 @@ class ssh_channel(sock.sock):
 
         self.returncode = None
         self.host = parent.host
+        self.tty  = tty
 
         h = log.waitfor('Opening new channel: %r' % (process or 'shell'), log_level = self.log_level)
 
         self.sock = parent.transport.open_session()
-        if tty:
+        if self.tty:
             self.sock.get_pty('xterm', term.width, term.height)
 
             def resizer():
@@ -84,16 +85,21 @@ class ssh_channel(sock.sock):
             time.sleep(0.05)
         return False
 
-    def interactive(self, prompt = None):
-        """interactive()
+    def interactive(self, prompt = term.text.bold_red('$') + ' '):
+        """interactive(prompt = pwnlib.term.text.bold_red('$') + ' ')
 
-        Does mostly the same as :meth:`pwnlib.tubes.tube.tube.interactive`,
-        however SSH will typically supply it's own prompt. We also
-        have a few SSH-specific hacks that will ideally be removed
+        If not in TTY-mode, this does exactly the same as
+        meth:`pwnlib.tubes.tube.tube.interactive`, otherwise
+        it does mostly the same.
+
+        An SSH connection in TTY-mode will typically supply its own prompt,
+        thus the prompt argument is ignored in this case.
+        We also have a few SSH-specific hacks that will ideally be removed
         once the :mod:`pwnlib.term` is more mature.
-
-        The prompt argument is ignored.
         """
+
+        if not self.tty:
+            return super(ssh_channel, self).interactive(prompt)
 
         if not term.term_mode:
             log.error("interactive() is not possible outside term_mode")
