@@ -15,7 +15,7 @@ class ssh_channel(sock.sock):
         h = log.waitfor('Opening new channel: %r' % (process or 'shell'), log_level = self.log_level)
 
         if process and wd:
-            process = "cd %r; %s" % (wd, process)
+            process = "cd %r 2>/dev/null >/dev/null; %s" % (wd, process)
 
         self.sock = parent.transport.open_session()
         if self.tty:
