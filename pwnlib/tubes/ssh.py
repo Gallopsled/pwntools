@@ -236,7 +236,7 @@ class ssh(object):
         return self.run(None, tty, timeout, log_level)
 
     def run(self, process, tty = False, timeout = 'default', log_level = 'default', wd = 'default'):
-        """run(process, tty = False, timeout = 'default', log_level = 'default', wd = None) -> ssh_channel
+        """run(process, tty = False, timeout = 'default', log_level = 'default', wd = 'default') -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
         then a TTY is requested on the remote server.
