@@ -5,7 +5,7 @@ from . import sock, tube
 
 
 class ssh_channel(sock.sock):
-    def __init__(self, parent, process = None, tty = False, timeout = 'default', log_level = log_levels.INFO):
+    def __init__(self, parent, process = None, tty = False, timeout = 'default', log_level = log_levels.INFO, wd=None):
         super(ssh_channel, self).__init__(timeout, log_level)
 
         self.returncode = None
@@ -13,6 +13,9 @@ class ssh_channel(sock.sock):
         self.tty  = tty
 
         h = log.waitfor('Opening new channel: %r' % (process or 'shell'), log_level = self.log_level)
+
+        if process and wd:
+            process = "cd %r; %s" % (wd, process)
 
         self.sock = parent.transport.open_session()
         if self.tty:
@@ -228,9 +231,6 @@ class ssh(object):
             log_level = self.log_level
 
         timeout = tube._fix_timeout(timeout, self.timeout)
-
-        if process and self._wd:
-            process = "cd %r; %s" % (self._wd, process)
 
         return ssh_channel(self, process, tty, timeout, log_level)
 
