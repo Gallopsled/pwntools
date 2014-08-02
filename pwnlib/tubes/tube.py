@@ -373,9 +373,12 @@ class tube(object):
         self.connect_input(other)
         return other
 
-    def __rshift(self, other):
+    def __rshift__(self, other):
         self.connect_output(other)
         return other
+
+    def __ne__(self, other):
+        self << other << self
 
     def wait(self):
         """Waits until the socket is closed."""
