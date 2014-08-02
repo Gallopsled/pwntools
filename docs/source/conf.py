@@ -263,9 +263,11 @@ texinfo_documents = [
 
 branch = release
 try:
-    print >> sys.stderr, subprocess.check_output('git describe --tags', shell = True)
+    git_branch = subprocess.check_output('git describe --tags', shell = True)
+    if '-' in git_branch:
+        branch = 'master'
 except (IOError, OSError) as e:
-    print >> sys.stderr, ":("
+    pass
 
 def linkcode_resolve(domain, info):
     if domain != 'py':
