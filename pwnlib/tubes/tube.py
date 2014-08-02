@@ -153,7 +153,7 @@ class tube(object):
 
         Receives data until a timeout or EOF is reached."""
 
-        timeout = _fix_timouet(timeout, self.timeout)
+        timeout = _fix_timeout(timeout, self.timeout)
 
         if timeout == None:
             timeout = 0.1
