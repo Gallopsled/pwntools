@@ -1,4 +1,4 @@
-import socket, re, os, stat, errno
+import socket, re, os, stat, errno, string, base64
 from .. import log
 
 def align(alignment, x):
@@ -78,7 +78,7 @@ def read(path):
 
     Examples:
         >>> read('pwnlib/util/misc.py').split('\\n')[0]
-        'import socket, re, os, stat, errno'
+        'import socket, re, os, stat, errno, string, base64'
     """
     path = os.path.expanduser(os.path.expandvars(path))
     with open(path) as fd:
@@ -212,3 +212,47 @@ def mkdir_p(path):
             pass
         else:
             raise
+
+def sh_string(s):
+    """Outputs a string in a format that will be understood by /bin/sh.
+
+    If the string does not contain any bad characters, it will simply be
+    returned, possibly with quotes. If it contains bad characters, it will
+    be escaped in a way which is compatible with most known systems.
+
+    Examples:
+
+        >>> print sh_string('foobar')
+        foobar
+        >>> print sh_string('foo bar')
+        'foo bar'
+        >>> print sh_string("foo'bar")
+        "foo'bar"
+        >>> print sh_string("foo\\\\bar")
+        'foo\\bar'
+        >>> print sh_string("foo\\x01'bar")
+        "$( (echo Zm9vXCdiYXI=|(base64 -d||openssl enc -d -base64)||echo -en 'foo\\x5c\\x27bar') 2>/dev/null)"
+        >>> print subprocess.check_output("echo -n " + sh_string("foo\\\\'bar"), shell = True)
+        foo\\'bar
+    """
+
+    very_good = set(string.ascii_letters + string.digits)
+    good      = (very_good | set(string.punctuation + ' ')) - set("'")
+    alt_good  = (very_good | set(string.punctuation + ' ')) - set('"\\!$`')
+
+    if all(c in very_good for c in s):
+        return s
+    elif all(c in good for c in s):
+        return "'%s'" % s
+    elif all(c in alt_good for c in s):
+        return '"%s"' % s
+    else:
+        fixed = ''
+        for c in s:
+            if c == '\\':
+                fixed += '\\\\'
+            elif c in good:
+                fixed += c
+            else:
+                fixed += '\\x%02x' % ord(c)
+        return '"$( (echo %s|(base64 -d||openssl enc -d -base64)||echo -en \'%s\') 2>/dev/null)"' % (base64.b64encode(s), fixed)
