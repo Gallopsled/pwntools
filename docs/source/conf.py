@@ -33,13 +33,8 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.todo',
     'sphinx.ext.intersphinx',
+    'sphinxcontrib.napoleon'
 ]
-
-try:
-    import sphinxcontrib.napoleon
-    extensions.append('sphinxcontrib.napoleon')
-except ImportError:
-    pass
 
 doctest_global_setup = '''
 import pwnlib
