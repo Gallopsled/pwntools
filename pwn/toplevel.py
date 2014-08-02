@@ -10,6 +10,7 @@ from pwnlib.memleak         import MemLeak
 from pwnlib.tubes.listen    import *
 from pwnlib.tubes.process   import *
 from pwnlib.tubes.remote    import *
+from pwnlib.tubes.ssh       import *
 from pwnlib.ui              import *
 from pwnlib.util            import crc, net, proc
 from pwnlib.util.cyclic     import *
