@@ -489,7 +489,6 @@ class ssh(object):
             wd(string): Working directory.  Default is to auto-generate a directory
                 based on the result of running 'mktemp -d' on the remote machine.
         """
-        old_wd = self._wd
         status = 0
 
         if not wd:
@@ -507,9 +506,7 @@ class ssh(object):
 
         if status:
             log.failure("%r does not appear to exist" % wd)
-            self._wd = old_wd
-        else:
-            self._wd = wd
 
         log.info("Working directory: %r" % wd)
+        self._wd = wd
         return self._wd
