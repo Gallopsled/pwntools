@@ -24,7 +24,7 @@ def gnu_hash(s):
         h = h * 33 + ord(c)
     return h & 0xffffffff
 
-class DynELF:
+class DynELF(object):
     """DynELF is a tool for finding symbol addresses by leaking data from the .dynsym section.
 
     Args:
@@ -45,7 +45,10 @@ class DynELF:
         self.PIE = (self.elf.elftype == 'DYN')
         self.base = base
         if self.PIE is False and self.base is None:
-            self.base = filter(lambda x: x['type'] == 'LOAD' and 'E' in x['flg'], self.elf.segments)[0]['virtaddr']
+            for x in self.elf.segments:
+                if x['type'] == 'LOAD' and 'E' in x['flg']:
+                    self.base = x['virtaddr']
+                    break
         if self.base is None:
             log.error('Position independent ELF needs a base address')
 

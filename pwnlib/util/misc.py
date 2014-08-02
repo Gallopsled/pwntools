@@ -1,4 +1,4 @@
-import socket, subprocess, re, os, stat, errno
+import socket, re, os, stat, errno
 from .. import log
 
 def align(alignment, x):
@@ -78,7 +78,7 @@ def read(path):
 
     Examples:
         >>> read('pwnlib/util/misc.py').split('\\n')[0]
-        'import socket, subprocess, re, os, stat, errno'
+        'import socket, re, os, stat, errno'
     """
     path = os.path.expanduser(os.path.expandvars(path))
     with open(path) as fd:
@@ -90,14 +90,7 @@ def write(path, data = '', create_dir = False):
     path = os.path.expanduser(os.path.expandvars(path))
     if create_dir:
         path = os.path.realpath(path)
-        ds = path.split('/')
-        f = ds.pop()
-        p = '/'
-        while d:
-            d = ds.pop(0)
-            p = os.path.join(p, d)
-            if not os.path.exists(p):
-                os.mkdir(p)
+        mkdir_p(os.path.dirname(path))
     with open(path, 'w') as f:
         f.write(data)
 
@@ -137,7 +130,7 @@ def which(name, all = False):
             # work around this issue: http://bugs.python.org/issue9311
             if isroot and not \
               st.st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH):
-              continue
+                continue
             if all:
                 out.add(p)
             else:

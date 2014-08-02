@@ -1,6 +1,6 @@
 from . import log
 
-class MemLeak:
+class MemLeak(object):
     """MemLeak is a caching and heuristic tool for exploiting memory leaks.
 
     It can be used as a decorator, around functions of the form:

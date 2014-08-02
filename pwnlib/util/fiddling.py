@@ -496,7 +496,7 @@ def hexdump(s, width = 16, skip = True, hexii = False):
         if len(hexbytes) > middle:
             hexbytes = hexbytes[:middle] + column_sep + hexbytes[middle:]
 
-        lines.append(line_fmt % locals())
+        lines.append(line_fmt % {'offset': offset, 'hexbytes': hexbytes, 'printable': printable})
 
     lines.append("%08x" % len(s))
     return '\n'.join(lines)

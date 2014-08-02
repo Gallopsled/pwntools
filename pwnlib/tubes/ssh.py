@@ -84,13 +84,16 @@ class ssh_channel(sock.sock):
             time.sleep(0.05)
         return False
 
-    def interactive(self):
+    def interactive(self, prompt = None):
         """interactive()
 
         Does mostly the same as :meth:`pwnlib.tubes.tube.tube.interactive`,
         however SSH will typically supply it's own prompt. We also
         have a few SSH-specific hacks that will ideally be removed
-        once the :mod:`pwnlib.term` is more mature."""
+        once the :mod:`pwnlib.term` is more mature.
+
+        The prompt argument is ignored.
+        """
 
         if not term.term_mode:
             log.error("interactive() is not possible outside term_mode")

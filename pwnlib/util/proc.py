@@ -1,5 +1,4 @@
-import os, time, socket, re, struct
-from . import packing
+import os, time, socket, re, struct, errno
 from .. import tubes
 
 def pidof(target):
@@ -84,7 +83,7 @@ def pid_by_inode(inode):
                     fd = os.readlink('/proc/%d/fd/%s' % (pid, fd))
                 except OSError:
                     continue
-                m = re.match('socket:\[(\d+)\]', fd)
+                m = re.match(r'socket:\[(\d+)\]', fd)
                 if m and m.group(1) == inode:
                     return pid
         except OSError:
@@ -121,7 +120,7 @@ def status(pid):
                 val = line[i + 2:-1] # initial :\t and trailing \n
                 out[key] = val
     except OSError as e:
-        if e.errno == errno.NOENT:
+        if e.errno == errno.ENOENT:
             raise ValueError('No process with PID %d' % pid)
         else:
             raise

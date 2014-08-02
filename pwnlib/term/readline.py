@@ -348,9 +348,13 @@ keymap = km.Keymap({
     '<any>'       : handle_keypress,
     })
 
-def readline(size = None, prompt = '', float = False, priority = 10):
+def readline(_size = None, prompt = '', float = False, priority = 10):
+    # The argument  _size is unused, but is there for compatibility
+    # with the existing readline
+
     global buffer_handle, prompt_handle, suggest_handle, eof, \
         show_suggestions
+
     show_suggestions = False
     eof = False
     if prompt:

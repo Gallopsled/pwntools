@@ -1,4 +1,4 @@
-import os, socket, struct, tempfile
+import os, tempfile
 from . import log
 from .util import misc, proc
 from . import tubes

@@ -1,9 +1,6 @@
-import re, os.path
+import os
 
 __all__ = ['make_function']
-
-def relpath(path):
-    return
 
 loaded = {}
 lookup = None

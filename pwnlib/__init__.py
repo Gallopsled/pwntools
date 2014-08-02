@@ -9,4 +9,4 @@ from . import elf, exception, gdb, log_levels
 from . import log, memleak, shellcraft, term
 from . import tubes, ui, util
 
-from version import __version__
+from .version import __version__

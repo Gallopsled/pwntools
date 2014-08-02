@@ -4,9 +4,8 @@ from . import log
 import mmap, subprocess
 from os.path import abspath
 from elftools.elf.elffile import ELFFile
-from elftools.elf.sections import Section, SymbolTableSection
-from elftools.elf.relocation import RelocationSection
-from elftools.elf.descriptions import describe_ei_class, describe_e_type
+from elftools.elf.sections import SymbolTableSection
+from elftools.elf.descriptions import describe_e_type
 from elftools.elf.constants import P_FLAGS
 
 def load(*args, **kwargs):
@@ -147,7 +146,7 @@ class ELF(ELFFile):
     @property
     def non_writable_segments(self):
         """Returns: list of all segments which are NOT writeable"""
-        return [s for s in self.segments if not (s.header.p_flags & P_FLAGS.PF_W)]
+        return [s for s in self.segments if not s.header.p_flags & P_FLAGS.PF_W]
 
     def _populate_libraries(self):
         """
@@ -240,8 +239,10 @@ class ELF(ELFFile):
             True
         """
 
-        if non_writable:    segments = self.segments
-        else:               segments = self.writable_segments
+        if non_writable:
+            segments = self.segments
+        else:
+            segments = self.writable_segments
 
         for seg in segments:
             addr   = seg.header.p_vaddr

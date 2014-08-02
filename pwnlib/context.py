@@ -331,9 +331,6 @@ dictionary, the global dictionary is queried. If it has no results either,
     def __setattr__(self, key, value):
         setattr(self._thread_ctx(), key, value)
 
-    def __dir__(self):
-        return dir(self._thread_ctx())
-
     def local(self, **kwargs):
         '''Create a new thread-local context.
 

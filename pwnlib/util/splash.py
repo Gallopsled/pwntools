@@ -2,8 +2,7 @@
 
 from .. import term, log
 from ..term import text
-from . import lists
-import sys, time, threading
+import time, threading
 
 _banner = r'''
   .:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:.
@@ -36,7 +35,6 @@ def splash():
             text.green  , text.bold_green  ,
             text.cyan   , text.bold_cyan   ,
         ]
-        ncolors = len(colors)
         def getcolor(n):
             return colors[(n / 4) % len(colors)]
 

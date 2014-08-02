@@ -15,7 +15,7 @@ An obvious optimization would be to actually generate some lookup-tables.
 from . import fiddling, packing
 import os, re, sys, types
 
-class BitPolynom:
+class BitPolynom(object):
     def __init__(self, n):
         if not isinstance(n, (int, long)):
             raise TypeError("Polynomial must be called with an integer or a list")

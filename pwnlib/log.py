@@ -303,7 +303,7 @@ def stub(string = '', exit_code = -1, log_level = log_levels.ERROR):
     sys.exit(exit_code)
 
 
-class _DummyHandle:
+class _DummyHandle(object):
     def update(self, _string):
         pass
 
