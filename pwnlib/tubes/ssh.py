@@ -235,8 +235,8 @@ class ssh(object):
         """
         return self.run(None, tty, timeout, log_level)
 
-    def run(self, process, tty = False, timeout = 'default', log_level = 'default'):
-        """run(process, tty = False, timeout = 'default', log_level = 'default') -> ssh_channel
+    def run(self, process, tty = False, timeout = 'default', log_level = 'default', wd = 'default'):
+        """run(process, tty = False, timeout = 'default', log_level = 'default', wd = None) -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
         then a TTY is requested on the remote server.
@@ -248,16 +248,19 @@ class ssh(object):
 
         timeout = tube._fix_timeout(timeout, self.timeout)
 
-        return ssh_channel(self, process, tty, timeout, log_level)
+        if wd == 'default':
+            wd = self._wd
 
-    def run_to_end(self, process, tty = False):
+        return ssh_channel(self, process, tty, timeout, log_level, wd)
+
+    def run_to_end(self, process, tty = False, wd = 'default'):
         """run_to_end(self, process, tty = False, timeout = 'default') -> str
 
         Run a command on the remote server and return a tuple with
         (data, exit_status). If `tty` is True, then the command is run inside
         a TTY on the remote server."""
 
-        c = self.run(process, tty, None, 0)
+        c = self.run(process, tty, None, 0, wd)
         data = c.recvall()
         retcode = c.poll()
         c.close()
@@ -491,7 +494,7 @@ class ssh(object):
 
         if not wd:
             with context.local(log_level = 1000):
-                wd, status = self.run_to_end('mktemp -d')
+                wd, status = self.run_to_end('mktemp -d', wd=None)
             wd = wd.strip()
 
         if status:
@@ -500,7 +503,7 @@ class ssh(object):
 
         with context.local(log_level = 1000):
             self._wd  = wd
-            _, status = self.run_to_end('ls %r' % wd)
+            _, status = self.run_to_end('ls %r' % wd, wd=None)
 
         if status:
             log.failure("%r does not appear to exist" % wd)
