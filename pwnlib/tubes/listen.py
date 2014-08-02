@@ -79,6 +79,7 @@ class listen(sock.sock):
                     self.buffer, self.rhost = self.sock.recvfrom(4096)
                     self.sock.connect(self.rhost)
                 self.settimeout(self.timeout)
+                break
             except socket.error as e:
                 if e.errno == errno.EINTR:
                     continue

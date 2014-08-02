@@ -1,6 +1,6 @@
 from .. import log, log_levels, context, term
 from ..util import misc
-import re, threading, sys
+import re, threading, sys, time
 
 def _fix_timeout(timeout, default):
     if timeout == 'default':
@@ -319,6 +319,69 @@ class tube(object):
         """
 
         self.recvrepeat(timeout = timeout)
+
+    def connect_input(self, other):
+        """connect_input(other)
+
+        Connects the input of this tube to the output of another tube object."""
+
+        def pump():
+            import sys as _sys
+            while True:
+                try:
+                    data = other.recv(timeout = None)
+                except EOFError:
+                    break
+
+                if not _sys:
+                    return
+
+                if data == None:
+                    continue
+
+                try:
+                    self.send(data)
+                except EOFError:
+                    break
+
+                if not _sys:
+                    return
+
+            self.shutdown("out")
+            other.shutdown("in")
+
+        t = threading.Thread(target = pump)
+        t.daemon = True
+        t.start()
+
+    def connect_output(self, other):
+        """connect_output(other)
+
+        Connects the output of this tube to the input of another tube object."""
+
+        other.connect_input(self)
+
+    def connect_both(self, other):
+        """connect_both(other)
+
+        Connects the both ends of this tube object with the writing end another tube object."""
+
+        self.connect_input(other)
+        self.connect_output(other)
+
+    def __lshift__(self, other):
+        self.connect_input(other)
+        return other
+
+    def __rshift(self, other):
+        self.connect_output(other)
+        return other
+
+    def wait(self):
+        """Waits until the socket is closed."""
+
+        while self.connected():
+            time.sleep(0.05)
 
     def can_recv(self, timeout = 0):
         """can_recv(timeout = 0) -> bool
