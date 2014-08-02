@@ -11,7 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import sys, os, subprocess
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -261,6 +261,12 @@ texinfo_documents = [
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
 
+branch = release
+try:
+    print >> sys.stderr, subprocess.check_output('git describe --tags', shell = True)
+except (IOError, OSError) as e:
+    print >> sys.stderr, ":("
+
 def linkcode_resolve(domain, info):
     if domain != 'py':
         return None
@@ -302,4 +308,5 @@ def linkcode_resolve(domain, info):
                 filename += '#L%d-%d' % (first, first + len(lines) - 1)
             except IOError:
                 pass
-    return "https://github.com/Gallopsled/pwntools/blob/%s/%s" % (release, filename)
+
+    return "https://github.com/Gallopsled/pwntools/blob/%s/%s" % (branch, filename)
