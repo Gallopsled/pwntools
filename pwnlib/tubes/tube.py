@@ -320,6 +320,16 @@ class tube(object):
 
         self.recvrepeat(timeout = timeout)
 
+    def clean_and_log(self, timeout = 0.05):
+        """clean_and_log(timeout = 0.05)
+
+        Works exactly as :meth:`pwnlib.tubes.tube.tube.clean`, but logs recieved
+        data with :meth:`pwnlib.log.info`.
+        """
+
+        log.info('Cleaning tube (fileno = %d):' % self.fileno())
+        log.indented(self.recvrepeat(timeout = timeout))
+
     def connect_input(self, other):
         """connect_input(other)
 
