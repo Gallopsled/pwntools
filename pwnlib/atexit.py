@@ -22,6 +22,19 @@ def register(func, *args, **kwargs):
     arguments `kwargs`, i.e. ``func(*args, **kwargs)``.
 
     If `func` is already registered then `args` and `kwargs` will be updated.
+
+    This function can be used as a decorator::
+
+      def f():
+        ...
+      atexit.register(f)
+
+    is equivalent to this::
+
+      @atexit.register
+      def f():
+        ...
+
     """
     _handlers[func] = (args, kwargs)
     return func
