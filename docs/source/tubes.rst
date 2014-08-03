@@ -44,6 +44,11 @@
          :members: kill, poll, interactive
          :show-inheritance:
 
+      .. autoclass:: pwnlib.tubes.ssh.ssh_connecter()
+         :show-inheritance:
+
+      .. autoclass:: pwnlib.tubes.ssh.ssh_listener()
+         :show-inheritance:
 
    Common functionality
    --------------------

@@ -300,7 +300,7 @@ class ssh(object):
         Connects to a host through an SSH connection. This is equivalent to
         using the ``-L`` flag on ``ssh``.
 
-        Returns an :clas::`pwnlib.tubes.ssh.ssh_connecter` object."""
+        Returns a :class:`pwnlib.tubes.ssh.ssh_connecter` object."""
 
         return ssh_connecter(self, host, port, timeout, log_level)
 
@@ -310,7 +310,7 @@ class ssh(object):
         Listens remotely through an SSH connection. This is equivalent to
         using the ``-R`` flag on ``ssh``.
 
-        Returns an :clas::`pwnlib.tubes.ssh.ssh_listener` object."""
+        Returns a :class:`pwnlib.tubes.ssh.ssh_listener` object."""
 
         return ssh_listener(self, bind_address, port, timeout, log_level)
 
