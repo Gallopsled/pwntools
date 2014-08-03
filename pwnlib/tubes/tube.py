@@ -377,7 +377,7 @@ class tube(object):
     def connect_both(self, other):
         """connect_both(other)
 
-        Connects the both ends of this tube object with the writing end another tube object."""
+        Connects the both ends of this tube object with another tube object."""
 
         self.connect_input(other)
         self.connect_output(other)
