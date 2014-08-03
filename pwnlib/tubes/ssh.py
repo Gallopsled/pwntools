@@ -222,8 +222,7 @@ class ssh_listener(sock.sock):
                 self._accepter.join(timeout = 0.1)
             return self.sock
         else:
-            super(listen, self).__getattr__(key)
-
+            raise getattr(super(ssh_listener, self), key)
 
 
 class ssh(object):

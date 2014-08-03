@@ -107,4 +107,4 @@ class listen(sock.sock):
                 self._accepter.join(timeout = 0.1)
             return self.sock
         else:
-            super(listen, self).__getattr__(key)
+            return getattr(super(listen, self), key)
