@@ -223,33 +223,42 @@ class ELF(ELFFile):
         for i,(addr,name) in enumerate(sorted((addr,name) for name, addr in self.got.items())):
             self.plt[name] = plt.header.sh_addr + (i+1)*plt.header.sh_addralign
 
-    def search(self, s, non_writable = False):
-        """Search the ELF's virtual address space for the specified string.
+    def search(self, needle, writable = False):
+        """search(needle, writable = False) -> str generator
+
+        Search the ELF's virtual address space for the specified string.
 
         Args:
-            s(str): String to search for
-            non_writable(bool): Search non-writable sections
+            needle(str): String to search for.
+            writable(bool): Search only writable sections.
 
         Returns:
-            An iterator for each virtual address that matches
+            An iterator for each virtual address that matches.
 
         Examples:
             >>> bash = ELF('/bin/bash')
-            >>> bash.address + 1 == next(bash.search('ELF',True))
+            >>> bash.address + 1 == next(bash.search('ELF'))
+            True
+
+            >>> sh = ELF('/bin/sh')
+            >>> # /bin/sh should only depend on libc
+            >>> libc = ELF(sh.libs.keys()[0])
+            >>> # this string should be in there because of system(3)
+            >>> len(list(libc.search('/bin/sh'))) > 0
             True
         """
 
-        if non_writable:
-            segments = self.segments
-        else:
+        if writable:
             segments = self.writable_segments
+        else:
+            segments = self.segments
 
         for seg in segments:
             addr   = seg.header.p_vaddr
             data   = seg.data()
             offset = 0
             while True:
-                offset = data.find(s, offset)
+                offset = data.find(needle, offset)
                 if offset == -1:
                     break
                 yield addr + offset
