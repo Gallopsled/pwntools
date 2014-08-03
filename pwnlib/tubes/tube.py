@@ -327,8 +327,9 @@ class tube(object):
         data with :meth:`pwnlib.log.info`.
         """
 
-        log.info('Cleaning tube (fileno = %d):' % self.fileno())
-        log.indented(self.recvrepeat(timeout = timeout))
+        if self.connected():
+            log.info('Cleaning tube (fileno = %d):' % self.fileno())
+            log.indented(self.recvrepeat(timeout = timeout))
 
     def connect_input(self, other):
         """connect_input(other)
