@@ -5,7 +5,7 @@ from . import sock, tube
 
 
 class ssh_channel(sock.sock):
-    def __init__(self, parent, process = None, tty = False, timeout = 'default', log_level = log_levels.INFO, wd=None):
+    def __init__(self, parent, process = None, tty = False, wd = None, timeout = 'default', log_level = log_levels.INFO):
         super(ssh_channel, self).__init__(timeout, log_level)
 
         self.returncode = None
@@ -15,7 +15,7 @@ class ssh_channel(sock.sock):
         h = log.waitfor('Opening new channel: %r' % (process or 'shell'), log_level = self.log_level)
 
         if process and wd:
-            process = "cd %r 2>/dev/null >/dev/null; %s" % (wd, process)
+            process = "cd %s 2>/dev/null >/dev/null; %s" % (misc.sh_string(wd), process)
 
         self.sock = parent.transport.open_session()
         if self.tty:
@@ -217,9 +217,9 @@ class ssh(object):
 
         Return a :class:`pwnlib.tubes.ssh.ssh_channel` object.
         """
-        return self.run(None, tty, timeout, log_level)
+        return self.run(None, tty, None, timeout, log_level)
 
-    def run(self, process, tty = False, timeout = 'default', log_level = 'default', wd = 'default'):
+    def run(self, process, tty = False, wd = 'default', timeout = 'default', log_level = 'default'):
         """run(process, tty = False, timeout = 'default', log_level = 'default', wd = 'default') -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
@@ -235,7 +235,7 @@ class ssh(object):
         if wd == 'default':
             wd = self._wd
 
-        return ssh_channel(self, process, tty, timeout, log_level, wd)
+        return ssh_channel(self, process, tty, wd, timeout, log_level)
 
     def run_to_end(self, process, tty = False, wd = 'default'):
         """run_to_end(self, process, tty = False, timeout = 'default') -> str
@@ -244,7 +244,7 @@ class ssh(object):
         (data, exit_status). If `tty` is True, then the command is run inside
         a TTY on the remote server."""
 
-        c = self.run(process, tty, None, 0, wd)
+        c = self.run(process, tty, wd, None, 0)
         data = c.recvall()
         retcode = c.poll()
         c.close()
@@ -464,7 +464,7 @@ class ssh(object):
         s.interactive()
         s.close()
 
-    def set_working_directory(self, wd=None):
+    def set_working_directory(self, wd = None):
         """Sets the working directory in which future commands will
         be run (via ssh.run) and to which files will be uploaded/downloaded
         from if no path is provided
@@ -476,20 +476,18 @@ class ssh(object):
         status = 0
 
         if not wd:
-            with context.local(log_level = 1000):
-                wd, status = self.run_to_end('mktemp -d', wd=None)
+            wd, status = self.run_to_end('mktemp -d', wd = None)
             wd = wd.strip()
 
         if status:
             log.failure("Could not generate a temporary directory")
             return
 
-        with context.local(log_level = 1000):
-            self._wd  = wd
-            _, status = self.run_to_end('ls %r' % wd, wd=None)
+        _, status = self.run_to_end('ls ' + misc.sh_string(wd), wd = None)
 
         if status:
             log.failure("%r does not appear to exist" % wd)
+            return
 
         log.info("Working directory: %r" % wd)
         self._wd = wd
