@@ -406,7 +406,7 @@ class ssh(object):
             log.failure('Unable to find libraries for %r' % remote)
             return {}
 
-        return result
+        return misc.parse_ldd_output(data)
 
     def _get_fingerprint(self, remote):
         arg = misc.sh_string(remote)
