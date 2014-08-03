@@ -170,37 +170,35 @@ def run_in_new_terminal(command, terminal = None):
         os.execv(argv[0], argv)
         os._exit(1)
 
-def parse_ldd_output(data):
-    """Parses the output from the command ldd into a dictionary of
-    ``libary_name => path``."""
+def parse_ldd_output(output):
+    """Parses the output from a run of 'ldd' on a binary.
+    Returns a dictionary of {path: address} for
+    each library required by the specified binary.
 
-    expr = re.compile(r'(?:([^ ]+) => )?([^(]+)?(?: \(0x[0-9a-f]+\))?$')
-    res = {}
+    Args:
+      output(str): The output to parse
 
-    for line in data.strip().split('\n'):
-        line = line.strip()
-        if not line:
+    Example:
+        >>> parse_ldd_output('''
+	...     linux-vdso.so.1 =>  (0x00007fffbf5fe000)
+	...     libtinfo.so.5 => /lib/x86_64-linux-gnu/libtinfo.so.5 (0x00007fe28117f000)
+	...     libdl.so.2 => /lib/x86_64-linux-gnu/libdl.so.2 (0x00007fe280f7b000)
+	...     libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007fe280bb4000)
+	...     /lib64/ld-linux-x86-64.so.2 (0x00007fe2813dd000)
+        ... ''')
+        ['/lib/x86_64-linux-gnu/libtinfo.so.5', '/lib/x86_64-linux-gnu/libdl.so.2', '/lib/x86_64-linux-gnu/libc.so.6', '/lib64/ld-linux-x86-64.so.2']
+    """
+    expr = re.compile(r'\s(\S?/\S+)\s+\((0x.+)\)')
+    libs = {}
+
+    for s in output.split('\n'):
+        match = expr.search(s)
+        if not match:
             continue
-        parsed = expr.search(line)
-        if not parsed:
-            log.warning('Could not parse line: "%s"' % line)
-        name, resolved = parsed.groups()
-        if resolved and re.search('/ld-[^/]*$', resolved):
-            if name != None:
-                resolved = name
-            name = 'ld'
+        lib, addr = match.groups()
+        libs[lib] = int(addr, 16)
 
-        if name == None:
-            if re.search('^linux', resolved):
-                name = 'linux'
-            else:
-                log.warning('Could not parse line: "%s"' % line)
-                continue
-
-        res[name] = resolved
-        if name.startswith('libc.so.'):
-            res['libc'] = resolved
-    return res
+    return libs
 
 def mkdir_p(path):
     """Emulates the behavior of ``mkdir -p``."""
