@@ -1,9 +1,12 @@
-import pwn
+"""
+"Easteregg"
+"""
 
-pwn.splash()
-pwn.pause()
+from pwn import *
 
-h = pwn.log.waitfor("Inputting:")
+splash()
+
+h = log.waitfor("You wrote", status = "--")
 
 while True:
     l = raw_input('> ')

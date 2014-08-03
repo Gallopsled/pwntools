@@ -1,3 +1,7 @@
+"""
+Example showing the interface to `pwnlib.asm.asm` and `pwnlib.shellcraft`.
+"""
+
 from pwn import *
 context(arch='i386', os='linux', net='tcp4')
 
