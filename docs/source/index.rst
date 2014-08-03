@@ -9,6 +9,8 @@ Contents:
 
    intro
    asm
+   atexception
+   atexit
    constants
    context
    dynelf
