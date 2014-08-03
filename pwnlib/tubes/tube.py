@@ -184,7 +184,7 @@ class tube(object):
         r = []
         while True:
             try:
-                s = self.recv(timeout = None)
+                s = self.recv(timeout = 0.1)
             except EOFError:
                 break
 
@@ -307,6 +307,9 @@ class tube(object):
                     go[0] = False
         except KeyboardInterrupt:
             log.info('Interrupted')
+
+        while t.is_alive():
+            t.join(timeout = 0.1)
 
         # Restore
         self.debug_log_level = debug_log_level

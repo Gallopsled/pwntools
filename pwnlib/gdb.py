@@ -1,4 +1,4 @@
-import os, tempfile
+import os, tempfile, random
 from . import log
 from .util import misc, proc
 from . import tubes
@@ -154,3 +154,23 @@ def attach(target, execute = None, exe = None, arch = None):
 
     log.info('running in new terminal: %s' % cmd)
     misc.run_in_new_terminal(cmd)
+
+
+def ssh_gdb(ssh, process, execute = None, arch = None, **kwargs):
+    port = random.randint(10000, 65000)
+
+    if isinstance(process, (list, tuple)):
+        exe = process[0]
+        process = ["gdbserver", "127.0.0.1:%d" % port] + process
+    else:
+        exe = process
+        process = "gdbserver 127.0.0.1:%d %s" % (port, process)
+
+    local_exe = os.path.basename(exe)
+
+    ssh.download_file(exe, local_exe)
+    c = ssh.run(process, **kwargs)
+    l = tubes.listen.listen(port)
+    attach(('127.0.0.1', port), execute, local_exe, arch)
+    l.wait_for_connection() <> ssh.connect_remote('127.0.0.1', port)
+    return c

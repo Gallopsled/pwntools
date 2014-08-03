@@ -141,7 +141,8 @@ class ssh_channel(sock.sock):
                     log.info('Got EOF while sending in interactive',
                              log_level = self.log_level)
 
-        t.join()
+        while t.is_alive():
+            t.join(timeout = 0.1)
 
         # Restore
         self.debug_log_level = debug_log_level
@@ -175,7 +176,7 @@ class ssh_connecter(sock.sock):
         h.success()
 
     def _close_msg(self):
-        log.info("Closed remote connection to %s:%d via SSH connection to %s" % (self.fhost, self.fport, self.host))
+        log.info("Closed remote connection to %s:%d via SSH connection to %s" % (self.rhost, self.rport, self.host))
 
 
 class ssh_listener(sock.sock):
@@ -423,7 +424,7 @@ class ssh(object):
         if fingerprint == None:
             local = os.path.normpath(remote)
             local = os.path.basename(local)
-            local += time.strftime('-%Y-%m-d-%H:%M:%S')
+            local += time.strftime('-%Y-%m-%d-%H:%M:%S')
             local = os.path.join(self._cachedir, local)
 
             self._download_raw(remote, local)
