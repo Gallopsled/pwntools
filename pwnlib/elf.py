@@ -1,8 +1,8 @@
 """Exposes functionality for manipulating ELF files
 """
 from . import log
-import mmap, subprocess
-from os.path import abspath
+from .util import misc
+import mmap, subprocess, os
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.descriptions import describe_e_type
@@ -46,7 +46,7 @@ class ELF(ELFFile):
 
         super(ELF,self).__init__(self.mmap)
 
-        self.path     = abspath(path)
+        self.path     = os.path.abspath(path)
 
         self._populate_got_plt()
         self._populate_symbols()
@@ -157,7 +157,8 @@ class ELF(ELFFile):
         >>> any(map(lambda x: 'libc' in x, bash.libs.keys()))
         True
         """
-        self.libs = ldd(self.path)
+        data = subprocess.check_output(['ldd', self.path])
+        self.libs = misc.parse_ldd_output(data)
 
     def _populate_symbols(self):
         """
@@ -398,31 +399,3 @@ class ELF(ELFFile):
         data = self.stream.read(self.stream.size())
         self.stream.seek(old)
         return data
-
-
-
-def ldd(path):
-    """Effectively runs 'ldd' on the specified binary, captures the output,
-    and parses it.  Returns a dictionary of {path: address} for
-    each library required by the specified binary.
-
-    Args:
-      path(str): Path to the binary
-
-    Example:
-        >>> ldd('/bin/bash').keys()
-        ['/lib/x86_64-linux-gnu/libc.so.6', '/lib/x86_64-linux-gnu/libtinfo.so.5', '/lib/x86_64-linux-gnu/libdl.so.2']
-    """
-    import re
-    expr = re.compile(r'\s(\S?/\S+)\s+\((0x.+)\)')
-    libs = {}
-
-    output = subprocess.check_output([path], env={'LD_TRACE_LOADED_OBJECTS':'1'}).strip().splitlines()
-    output = map(str.strip, output)
-    output = map(expr.search, output)
-
-    for match in filter(None, output):
-        lib, addr = match.groups()
-        libs[lib] = int(addr,16)
-
-    return libs
