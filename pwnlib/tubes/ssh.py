@@ -154,6 +154,50 @@ class ssh_channel(sock.sock):
         log.info('Closed SSH channel with %s' % self.host, log_level = self.log_level)
 
 
+class ssh_connecter(sock.sock):
+    def __init__(self, parent, host, port, timeout = 'default', log_level = log_levels.INFO):
+        super(ssh_connecter, self).__init__(timeout, log_level)
+
+        self.host  = parent.host
+        self.rhost = host
+        self.rport = port
+
+        h = log.waitfor('Connecting to %s:%d via SSH to %s' % (self.rhost, self.rport, self.host), log_level = self.log_level)
+        try:
+            self.sock = parent.transport.open_channel('direct-tcpip', (host, port), ('127.0.0.1', 0))
+        except:
+            h.failed()
+            raise
+
+        h.success()
+
+    def _close_msg(self):
+        log.info("Closed remote connection to %s:%d via SSH connection to %s" % (self.fhost, self.fport, self.host))
+
+
+class ssh_listener(sock.sock):
+    def __init__(self, parent, bind_address, port, timeout = 'default', log_level = log_levels.INFO):
+        super(ssh_listener, self).__init__(timeout, log_level)
+
+        self.host = parent.host
+        self.port = port
+
+        h = log.waitfor('Waiting on port %d via SSH to %s' % (self.port, self.host), log_level = self.log_level)
+        try:
+            parent.transport.request_port_forward(bind_address, self.port)
+            self.sock = parent.transport.accept()
+            parent.transport.cancel_port_forward(bind_address, self.port)
+        except:
+            h.failure()
+            raise
+
+        self.rhost, self.rport = self.sock.origin_addr
+        h.success('Got connection from %s:%d' % (self.rhost, self.rport))
+
+    def _close_msg(self):
+        log.info("Closed remote connection to %s:%d via SSH listener on port %d via %s" % (self.rhost, self.rport, self.port, self.host))
+
+
 class ssh(object):
     def __init__(self, user, host, port = 22, password = None, key = None, keyfile = None, proxy_command = None, proxy_sock = None, timeout = 'default', log_level = log_levels.INFO):
         """Creates a new ssh connection.
@@ -238,7 +282,7 @@ class ssh(object):
         return ssh_channel(self, process, tty, wd, timeout, log_level)
 
     def run_to_end(self, process, tty = False, wd = 'default'):
-        """run_to_end(self, process, tty = False, timeout = 'default') -> str
+        """run_to_end(process, tty = False, timeout = 'default') -> str
 
         Run a command on the remote server and return a tuple with
         (data, exit_status). If `tty` is True, then the command is run inside
@@ -249,6 +293,26 @@ class ssh(object):
         retcode = c.poll()
         c.close()
         return data, retcode
+
+    def connect_remote(self, host, port, timeout = 'default', log_level = 'default'):
+        """connect_remote(host, port, timeout = 'default', log_level = 'default') -> ssh_connecter
+
+        Connects to a host through an SSH connection. This is equivalent to
+        using the ``-L`` flag on ``ssh``.
+
+        Returns an :clas::`pwnlib.tubes.ssh.ssh_connecter` object."""
+
+        return ssh_connecter(self, host, port, timeout, log_level)
+
+    def listen_remote(self, port, bind_address = '', timeout = 'default', log_level = 'default'):
+        """listen_remote(port, bind_address = '', timeout = 'default', log_level = 'default') -> ssh_connecter
+
+        Listens remotely through an SSH connection. This is equivalent to
+        using the ``-R`` flag on ``ssh``.
+
+        Returns an :clas::`pwnlib.tubes.ssh.ssh_listener` object."""
+
+        return ssh_listener(self, bind_address, port, timeout, log_level)
 
     def connected(self):
         """Returns True if we are connected."""
