@@ -25,6 +25,7 @@ def register(func, *args, **kwargs):
     If `func` is already registered then `args` and `kwargs` will be updated.
     """
     _handlers[func] = (args, kwargs)
+    return func
 
 def unregister(func):
     """unregister(func)
