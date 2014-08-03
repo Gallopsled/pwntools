@@ -56,14 +56,9 @@ class sock(tube.tube):
 
         try:
             self.sock.sendall(data)
-        except socket.error as e:
-            if e.message == 'Socket is closed':
-                self.shutdown("out")
-                raise EOFError
-            else:
-                raise
         except IOError as e:
-            if e.errno in [errno.EPIPE, errno.ECONNRESET, errno.ECONNREFUSED]:
+            eof_numbers = [errno.EPIPE, errno.ECONNRESET, errno.ECONNREFUSED]
+            if e.message == 'Socket is closed' or e.errno in eof_numbers:
                 self.shutdown("out")
                 raise EOFError
             else:
@@ -85,17 +80,26 @@ class sock(tube.tube):
 
         return select.select([self.sock], [], [], timeout) == ([self.sock], [], [])
 
-    def connected(self):
-        return self.sock != None
+    def connected(self, direction = 'any'):
+        if direction == 'any':
+            return self.sock != None
+        elif direction == 'in':
+            return not self.closed['in']
+        elif direction == 'out':
+            return not self.closed['out']
 
     def close(self):
         if not self.sock:
             return
 
+        # Call shutdown without triggering another call to close
+        self.closed['hack'] = False
+        self.shutdown('in')
+        self.shutdown('out')
+        del self.closed['hack']
+
         self.sock.close()
         self.sock = None
-        self.closed["in"]  = True
-        self.closed["out"] = True
         self._close_msg()
 
     def _close_msg(self):

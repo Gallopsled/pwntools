@@ -105,8 +105,13 @@ class process(tube.tube):
         else:
             return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
 
-    def connected(self):
-        return self.poll() == None
+    def connected(self, direction = 'any'):
+        if direction == 'any':
+            return self.poll() == None
+        elif direction == 'out':
+            return not self.proc.stdout.closed
+        elif direction == 'in':
+            return not self.proc.stdin.closed
 
     def close(self):
         # First check if we are already dead

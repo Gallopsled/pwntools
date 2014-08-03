@@ -328,8 +328,11 @@ class tube(object):
         def pump():
             import sys as _sys
             while True:
+                if not (self.connected('out') and other.connected('in')):
+                    break
+
                 try:
-                    data = other.recv(timeout = None)
+                    data = other.recv(timeout = 0.05)
                 except EOFError:
                     break
 
@@ -373,7 +376,7 @@ class tube(object):
         self.connect_input(other)
         return other
 
-    def __rshift(self, other):
+    def __rshift__(self, other):
         self.connect_output(other)
         return other
 
@@ -445,10 +448,13 @@ class tube(object):
 
         log.bug('Should be implemented by a subclass.')
 
-    def connected(self):
-        """connected() -> bool
+    def connected(self, direction = 'any'):
+        """connected(direction = 'any') -> bool
 
-        Returns True if the socket is connected.
+        Returns True if the socket is connected in the specified direction.
+
+        Args:
+          direction(str): Can be the string 'any', 'in' or 'out'.
         """
 
         log.bug('Should be implemented by a subclass.')
