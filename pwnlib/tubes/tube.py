@@ -394,7 +394,7 @@ class tube(object):
     def __ne__(self, other):
         self << other << self
 
-    def wait(self):
+    def wait_for_close(self):
         """Waits until the socket is closed."""
 
         while self.connected():

@@ -81,8 +81,11 @@ class sock(tube.tube):
         return select.select([self.sock], [], [], timeout) == ([self.sock], [], [])
 
     def connected(self, direction = 'any'):
+        if not self.sock:
+            return False
+
         if direction == 'any':
-            return self.sock != None
+            return True
         elif direction == 'in':
             return not self.closed['in']
         elif direction == 'out':

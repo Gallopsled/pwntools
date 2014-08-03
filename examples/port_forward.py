@@ -6,6 +6,6 @@ that `<>` is just a shorthand.
 from pwn import *
 
 while True:
-    listen(1337) <> remote('google.com', 80)
+    listen(1337).wait_for_connection() <> remote('google.com', 80)
 
 # now point your browser (or curl(1)) to http://localhost:1337

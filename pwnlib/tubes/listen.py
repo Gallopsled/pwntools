@@ -1,6 +1,6 @@
 from . import sock
 from .. import log, log_levels
-import socket, errno
+import socket, errno, threading
 
 class listen(sock.sock):
     """Creates an TCP or UDP-socket to receive data on. It supports
@@ -56,11 +56,10 @@ class listen(sock.sock):
             h.status("Trying %s" % self.sockaddr[0])
             listen_sock = socket.socket(self.family, self.type, self.proto)
             listen_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            try:
-                listen_sock.bind(self.sockaddr)
-                break
-            except socket.error:
-                pass
+            listen_sock.bind(self.sockaddr)
+            if self.type == socket.SOCK_STREAM:
+                listen_sock.listen(1)
+            break
         else:
             h.failure()
             log.error("Could not bind to %s on port %d" % (bindaddr, port))
@@ -68,25 +67,44 @@ class listen(sock.sock):
         h.success()
 
         h = log.waitfor('Waiting', log_level = self.log_level)
-        while True:
-            try:
-                if self.type == socket.SOCK_STREAM:
-                    listen_sock.listen(1)
-                    self.sock, self.rhost = listen_sock.accept()
-                    listen_sock.close()
-                else:
-                    self.sock = listen_sock
-                    self.buffer, self.rhost = self.sock.recvfrom(4096)
-                    self.sock.connect(self.rhost)
-                self.settimeout(self.timeout)
-                break
-            except socket.error as e:
-                if e.errno == errno.EINTR:
-                    continue
-                h.failure()
-                log.error("Socket failure while waiting for connection")
-                break
 
-        self.lhost, self.lport = self.sock.getsockname()[:2]
-        self.rhost, self.rport = self.rhost[:2]
-        h.success('Got connection from %s on port %d' % (self.rhost, self.rport))
+        def accepter():
+            while True:
+                try:
+                    if self.type == socket.SOCK_STREAM:
+                        self.sock, self.rhost = listen_sock.accept()
+                        listen_sock.close()
+                    else:
+                        self.buffer, self.rhost = listen_sock.recvfrom(4096)
+                        listen_sock.connect(self.rhost)
+                        self.sock = listen_sock
+                    self.settimeout(self.timeout)
+                    break
+                except socket.error as e:
+                    if e.errno == errno.EINTR:
+                        continue
+                    h.failure()
+                    log.error("Socket failure while waiting for connection")
+                    self.sock = None
+                    return
+
+            self.lhost, self.lport = self.sock.getsockname()[:2]
+            self.rhost, self.rport = self.rhost[:2]
+            h.success('Got connection from %s on port %d' % (self.rhost, self.rport))
+
+        self._accepter = threading.Thread(target = accepter)
+        self._accepter.daemon = True
+        self._accepter.start()
+
+    def wait_for_connection(self):
+        """Blocks until a connection has been established."""
+        self.sock
+        return self
+
+    def __getattr__(self, key):
+        if key == 'sock':
+            while self._accepter.is_alive():
+                self._accepter.join(timeout = 0.1)
+            return self.sock
+        else:
+            super(listen, self).__getattr__(key)

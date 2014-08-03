@@ -14,6 +14,9 @@ class ssh_channel(sock.sock):
 
         h = log.waitfor('Opening new channel: %r' % (process or 'shell'), log_level = self.log_level)
 
+        if isinstance(process, (list, tuple)):
+            process = ' '.join(misc.sh_string(s) for s in process)
+
         if process and wd:
             process = "cd %s 2>/dev/null >/dev/null; %s" % (misc.sh_string(wd), process)
 
@@ -185,17 +188,41 @@ class ssh_listener(sock.sock):
         h = log.waitfor('Waiting on port %d via SSH to %s' % (self.port, self.host), log_level = self.log_level)
         try:
             parent.transport.request_port_forward(bind_address, self.port)
-            self.sock = parent.transport.accept()
-            parent.transport.cancel_port_forward(bind_address, self.port)
         except:
-            h.failure()
+            h.failure('Failed create a port forwarding')
             raise
 
-        self.rhost, self.rport = self.sock.origin_addr
-        h.success('Got connection from %s:%d' % (self.rhost, self.rport))
+        def accepter():
+            try:
+                self.sock = parent.transport.accept()
+                parent.transport.cancel_port_forward(bind_address, self.port)
+            except:
+                self.sock = None
+                h.failure('Failed to get a connection')
+                return
+
+            self.rhost, self.rport = self.sock.origin_addr
+            h.success('Got connection from %s:%d' % (self.rhost, self.rport))
+
+        self._accepter = threading.Thread(target = accepter)
+        self._accepter.daemon = True
+        self._accepter.start()
 
     def _close_msg(self):
         log.info("Closed remote connection to %s:%d via SSH listener on port %d via %s" % (self.rhost, self.rport, self.port, self.host))
+
+    def wait_for_connection(self):
+        """Blocks until a connection has been established."""
+        self.sock
+
+    def __getattr__(self, key):
+        if key == 'sock':
+            while self._acceptor.is_alive():
+                self._accepter.join(timeout = 0.1)
+            return self.sock
+        else:
+            super(listen, self).__getattr__(key)
+
 
 
 class ssh(object):
