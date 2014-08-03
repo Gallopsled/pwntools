@@ -250,7 +250,7 @@ class ssh(object):
         self._wd             = None
         misc.mkdir_p(self._cachedir)
 
-        keyfiles = [keyfile] if keyfile else []
+        keyfiles = [os.path.expanduser(keyfile)] if keyfile else []
 
         h = log.waitfor('Connecting to %s on port %d' % (host, port), log_level = self.log_level)
         self.client = paramiko.SSHClient()

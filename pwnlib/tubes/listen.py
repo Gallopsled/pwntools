@@ -57,6 +57,7 @@ class listen(sock.sock):
             listen_sock = socket.socket(self.family, self.type, self.proto)
             listen_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             listen_sock.bind(self.sockaddr)
+            self.lhost, self.lport = listen_sock.getsockname()[:2]
             if self.type == socket.SOCK_STREAM:
                 listen_sock.listen(1)
             break
@@ -72,10 +73,10 @@ class listen(sock.sock):
             while True:
                 try:
                     if self.type == socket.SOCK_STREAM:
-                        self.sock, self.rhost = listen_sock.accept()
+                        self.sock, rhost = listen_sock.accept()
                         listen_sock.close()
                     else:
-                        self.buffer, self.rhost = listen_sock.recvfrom(4096)
+                        self.buffer, rhost = listen_sock.recvfrom(4096)
                         listen_sock.connect(self.rhost)
                         self.sock = listen_sock
                     self.settimeout(self.timeout)
@@ -88,8 +89,7 @@ class listen(sock.sock):
                     self.sock = None
                     return
 
-            self.lhost, self.lport = self.sock.getsockname()[:2]
-            self.rhost, self.rport = self.rhost[:2]
+            self.rhost, self.rport = rhost[:2]
             h.success('Got connection from %s on port %d' % (self.rhost, self.rport))
 
         self._accepter = threading.Thread(target = accepter)
