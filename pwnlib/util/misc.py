@@ -230,22 +230,33 @@ def sh_string(s):
         "foo'bar"
         >>> print sh_string("foo\\\\bar")
         'foo\\bar'
+        >>> print sh_string("foo\\\\'bar")
+        "foo\\\\'bar"
         >>> print sh_string("foo\\x01'bar")
-        "$( (echo Zm9vXCdiYXI=|(base64 -d||openssl enc -d -base64)||echo -en 'foo\\x5c\\x27bar') 2>/dev/null)"
+        "$( (echo Zm9vASdiYXI=|(base64 -d||openssl enc -d -base64)||echo -en 'foo\\x01\\x27bar') 2>/dev/null)"
         >>> print subprocess.check_output("echo -n " + sh_string("foo\\\\'bar"), shell = True)
         foo\\'bar
     """
 
     very_good = set(string.ascii_letters + string.digits)
     good      = (very_good | set(string.punctuation + ' ')) - set("'")
-    alt_good  = (very_good | set(string.punctuation + ' ')) - set('"\\!$`')
+    alt_good  = (very_good | set(string.punctuation + ' ')) - set('!')
+
+    if '\x00' in s:
+        log.error("sh_string(): Cannot create a null-byte")
 
     if all(c in very_good for c in s):
         return s
     elif all(c in good for c in s):
         return "'%s'" % s
     elif all(c in alt_good for c in s):
-        return '"%s"' % s
+        fixed = ''
+        for c in s:
+            if c in '"\\$`':
+                fixed += '\\' + c
+            else:
+                fixed += c
+        return '"%s"' % fixed
     else:
         fixed = ''
         for c in s:
