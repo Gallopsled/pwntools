@@ -380,6 +380,9 @@ class tube(object):
         self.connect_output(other)
         return other
 
+    def __ne__(self, other):
+        self << other << self
+
     def wait(self):
         """Waits until the socket is closed."""
 
