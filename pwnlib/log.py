@@ -30,6 +30,7 @@ import threading, sys, time, random, warnings, traceback
 from . import term, log_levels, context, exception
 from .term import text, spinners
 
+_lock = threading.Lock()
 _last_was_nl = True
 def _put(log_level, string = '', frozen = True, float = False, priority = 10, indent = 0):
     global _last_was_nl
@@ -43,7 +44,7 @@ def _put(log_level, string = '', frozen = True, float = False, priority = 10, in
         if not string:
             return _dummy_handle
         if _last_was_nl:
-            sys.stdout.write(' ' * indent)
+            string = ' ' * indent + string
             _last_was_nl = False
         if string[-1] == '\n':
             _last_was_nl = True
@@ -54,10 +55,11 @@ def _put(log_level, string = '', frozen = True, float = False, priority = 10, in
 
 
 def _anotate(l, a, string, frozen = True, float = False, priority = 10, indent = 0):
-    _put(l, '[%s] ' % a, frozen, float, priority, indent)
-    h = _put(l, string, frozen, float, priority, indent + 4)
-    _put(l, '\n', frozen, float, priority)
-    return h
+    with _lock:
+        _put(l, '[%s] ' % a, frozen, float, priority, indent)
+        h = _put(l, string, frozen, float, priority, indent + 4)
+        _put(l, '\n', frozen, float, priority)
+        return h
 
 def _good_exc():
     exc = sys.exc_info()
@@ -225,9 +227,10 @@ def indented(string = '', log_level = log_levels.INFO, frozen = True, float = Fa
     Returns:
       A handle to the text, so it can be updated later.
 '''
-    h = _put(log_level, string, frozen, float, priority, indent + 4)
-    _put(log_level, '\n', frozen, float, priority)
-    return h
+    with _lock:
+        h = _put(log_level, string, frozen, float, priority, indent + 4)
+        _put(log_level, '\n', frozen, float, priority)
+        return h
 
 
 def error(string = '', exit_code = -1):
@@ -246,8 +249,9 @@ def error(string = '', exit_code = -1):
     if term.term_mode:
         _anotate(log_levels.ERROR, text.on_red('ERROR'), string)
         if _good_exc():
-            _put(log_levels.INFO, 'The exception was:\n')
-            _put(log_levels.INFO, traceback.format_exc())
+            with _lock:
+                _put(log_levels.INFO, 'The exception was:\n')
+                _put(log_levels.INFO, traceback.format_exc())
         sys.exit(exit_code)
     else:
         reason = _good_exc()
@@ -265,8 +269,9 @@ def bug(string = '', exit_code = -1, log_level = log_levels.ERROR):
 '''
     _anotate(log_level, text.on_red('BUG (this should not happen)'), string)
     if _good_exc():
-        _put(log_level, 'The exception was:\n')
-        _put(log_level, traceback.format_exc())
+        with _lock:
+            _put(log_level, 'The exception was:\n')
+            _put(log_level, traceback.format_exc())
     sys.exit(exit_code)
 
 
@@ -281,8 +286,9 @@ def fatal(string = '', exit_code = -1, log_level = log_levels.ERROR):
 '''
     _anotate(log_level, text.on_red('FATAL'), string)
     if _good_exc():
-        _put(log_level, 'The exception was:\n')
-        _put(log_level, traceback.format_exc())
+        with _lock:
+            _put(log_level, 'The exception was:\n')
+            _put(log_level, traceback.format_exc())
     sys.exit(exit_code)
 
 
@@ -295,12 +301,13 @@ def stub(string = '', exit_code = -1, log_level = log_levels.ERROR):
       exit_code (int): The return code to exit with.
       log_level(int): The log level to output the text to.
 '''
-    filename, lineno, fname, _line = traceback.extract_stack(limit = 2)[0]
-    _put(log_level, 'Unimplemented function: %s in file "%s", line %d\n' %
-         (fname, filename, lineno))
-    if string:
-        _put(log_level, '%s\n' % string)
-    sys.exit(exit_code)
+    with _lock:
+        filename, lineno, fname, _line = traceback.extract_stack(limit = 2)[0]
+        _put(log_level, 'Unimplemented function: %s in file "%s", line %d\n' %
+             (fname, filename, lineno))
+        if string:
+            _put(log_level, '%s\n' % string)
+        sys.exit(exit_code)
 
 
 class _DummyHandle(object):
@@ -385,14 +392,15 @@ class _Spinner(threading.Thread):
 
 class _TermWaiter(_Waiter):
     def __init__(self, msg, spinner, log_level):
-        self.hasmsg = msg != ''
-        _put(log_level, '[')
-        if spinner is None:
-            spinner = random.choice(spinners.spinners)
-        self.spinner = _Spinner(spinner, log_level)
-        _put(log_level, '] %s' % msg)
-        self.stat = _put(log_level, '', frozen = False)
-        _put(log_level, '\n')
+        with _lock:
+            self.hasmsg = msg != ''
+            _put(log_level, '[')
+            if spinner is None:
+                spinner = random.choice(spinners.spinners)
+            self.spinner = _Spinner(spinner, log_level)
+            _put(log_level, '] %s' % msg)
+            self.stat = _put(log_level, '', frozen = False)
+            _put(log_level, '\n')
 
     def status(self, string):
         if self.hasmsg and string:
