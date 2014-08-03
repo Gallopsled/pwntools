@@ -371,20 +371,12 @@ class ssh(object):
             raise AttributeError
 
         def runner(*args):
-            if len(args) == 1:
-                arg = args[0]
-                # arg is string
-                if not hasattr(arg, '__iter__'):
-                    args = [arg]
-                # arg is list or tuple
-                if hasattr(arg, '__iter__'):
-                    args = list(arg)
+            if len(args) == 1 and isinstance(args[0], (list, tuple)):
+                command = [attr] + args[0]
             else:
-                # args are all strings
-                args = list(args)
+                command = ' '.join((attr,) + args)
 
-            command = ' '.join([attr] + args)
-            return self.run(command).recvall().strip()
+            return self.run_to_end(command)[0].strip()
         return runner
 
     def connected(self):

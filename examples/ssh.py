@@ -1,3 +1,7 @@
+"""
+Example showing how to use the ssh class.
+"""
+
 #!/usr/bin/env python
 from pwn import *
 
@@ -17,16 +21,12 @@ print tube.recvall()
 shell.set_working_directory()
 log.info("pwd: %s" % shell.pwd())
 
-# Show upload-and-execute
-with file('example.c','w+') as f:
-    f.write("""
+shell.upload_data("""
 #include <stdio.h>
 int main() {
     return printf("Hello, world");
 }
-""")
-    f.close()
-    shell.upload_file(f.name)
+""", 'example.c')
 
 shell.gcc(['example.c','-o','example'])
 
