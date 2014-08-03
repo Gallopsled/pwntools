@@ -157,7 +157,7 @@ class ELF(ELFFile):
         >>> any(map(lambda x: 'libc' in x, bash.libs.keys()))
         True
         """
-        data = subprocess.check_output(['ldd', self.path])
+        data = subprocess.check_output('ulimit -s unlimited; ldd ' + misc.sh_string(self.path), shell = True)
         self.libs = misc.parse_ldd_output(data)
 
     def _populate_symbols(self):

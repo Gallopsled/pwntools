@@ -401,7 +401,7 @@ class ssh(object):
 
     def _libs_remote(self, remote):
         """Return a dictionary of the libraries used by a remote file."""
-        data, status = self.run_to_end('ldd ' + misc.sh_string(remote))
+        data, status = self.run_to_end('ulimit -s unlimited; ldd ' + misc.sh_string(remote))
         if status != 0:
             log.failure('Unable to find libraries for %r' % remote)
             return {}
