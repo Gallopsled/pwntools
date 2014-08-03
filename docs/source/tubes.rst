@@ -1,3 +1,7 @@
+.. testsetup:: *
+
+   from pwnlib.tubes.ssh import *
+
 :mod:`pwnlib.tubes` --- Talking to the World!
 =============================================
 

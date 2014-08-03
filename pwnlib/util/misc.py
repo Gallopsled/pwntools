@@ -179,14 +179,14 @@ def parse_ldd_output(output):
       output(str): The output to parse
 
     Example:
-        >>> parse_ldd_output('''
+        >>> sorted(parse_ldd_output('''
 	...     linux-vdso.so.1 =>  (0x00007fffbf5fe000)
 	...     libtinfo.so.5 => /lib/x86_64-linux-gnu/libtinfo.so.5 (0x00007fe28117f000)
 	...     libdl.so.2 => /lib/x86_64-linux-gnu/libdl.so.2 (0x00007fe280f7b000)
 	...     libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007fe280bb4000)
 	...     /lib64/ld-linux-x86-64.so.2 (0x00007fe2813dd000)
-        ... ''')
-        ['/lib/x86_64-linux-gnu/libtinfo.so.5', '/lib/x86_64-linux-gnu/libdl.so.2', '/lib/x86_64-linux-gnu/libc.so.6', '/lib64/ld-linux-x86-64.so.2']
+        ... ''').keys())
+        ['/lib/x86_64-linux-gnu/libc.so.6', '/lib/x86_64-linux-gnu/libdl.so.2', '/lib/x86_64-linux-gnu/libtinfo.so.5', '/lib64/ld-linux-x86-64.so.2']
     """
     expr = re.compile(r'\s(\S?/\S+)\s+\((0x.+)\)')
     libs = {}
