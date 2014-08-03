@@ -341,6 +341,44 @@ class ssh(object):
 
         return ssh_listener(self, bind_address, port, timeout, log_level)
 
+    def __getitem__(self, attr):
+        """Permits indexed access to run commands over SSH
+
+        >>> s = ssh(host='bandit.labs.overthewire.org',
+        ...         user='bandit0',
+        ...         password='bandit0',
+        ...         log_level=0)
+        >>> s['echo hello']
+        'hello'
+        """
+        return self.__getattr__(attr)()
+
+    def __getattr__(self, attr):
+        """Permits member access to run commands over SSH
+
+        >>> s = ssh(host='bandit.labs.overthewire.org',
+        ...         user='bandit0',
+        ...         password='bandit0',
+        ...         log_level=0)
+        >>> s.echo('hello')
+        'hello'
+        >>> s.whoami()
+        'bandit0'
+        >>> s.echo(['huh','yay','args'])
+        'huh yay args'
+        """
+        if attr in self.__dict__ or attr.startswith('__'):
+            raise AttributeError
+
+        def runner(*args):
+            if len(args) == 1 and isinstance(args[0], (list, tuple)):
+                command = [attr] + args[0]
+            else:
+                command = ' '.join((attr,) + args)
+
+            return self.run_to_end(command)[0].strip()
+        return runner
+
     def connected(self):
         """Returns True if we are connected."""
         return self.client != None
