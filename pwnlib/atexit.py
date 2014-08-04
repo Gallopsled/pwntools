@@ -8,7 +8,7 @@ This module also fixes a the issue that exceptions raised by an exit handler is
 printed twice when the standard :mod:`atexit` is used.
 """
 
-import sys, atexit, traceback
+import sys, traceback
 
 __all__ = ['register', 'unregister']
 
@@ -68,7 +68,7 @@ def _run_handlers():
             typ, val, tb = sys.exc_info()
             traceback.print_exception(typ, val, tb.tb_next)
 
-# as we have imported `atexit` this should be set, but better be safe than sorry
+# if there's already an exitfunc registered be sure to run that too
 if hasattr(sys, "exitfunc"):
     register(sys.exitfunc)
 
