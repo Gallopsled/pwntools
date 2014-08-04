@@ -1,4 +1,4 @@
-import os, tempfile, re
+import os, tempfile, re, shlex
 from . import log
 from .util import misc, proc
 from . import tubes, elf
@@ -185,7 +185,7 @@ def ssh_gdb(ssh, process, execute = None, arch = None, **kwargs):
     l.wait_for_connection() <> ssh.connect_remote('127.0.0.1', gdbport)
     return c
 
-def find_module_addresses(ssh, binary, ulimit=False):
+def find_module_addresses(binary, ssh=None, ulimit=False):
     """
     Cheat to find modules by using GDB.
 
@@ -217,8 +217,8 @@ def find_module_addresses(ssh, binary, ulimit=False):
     - Fixing up the base address
 
     Args:
-        ssh(pwnlib.tubes.ssh.ssh): SSH connection through which to load the libraries.
         binary(str): Path to the binary on the remote server
+        ssh(pwnlib.tubes.ssh.ssh): SSH connection through which to load the libraries.
         ulimit(bool): Set to ``True`` to run "ulimit -s unlimited" before GDB.
 
     Returns:
@@ -230,7 +230,18 @@ def find_module_addresses(ssh, binary, ulimit=False):
     #
     # Download all of the remote libraries
     #
-    local_libs = ssh.libs(binary)
+    if ssh:
+        runner     = ssh.run
+        local_bin  = ssh.download_file(binary)
+        local_elf  = elf.ELF(os.path.basename(binary))
+        local_libs = ssh.libs(binary)
+
+    else:
+        runner     = lambda x: tubes.process.process(shlex.split(x))
+        local_elf  = elf.ELF(binary)
+        local_libs = local_elf.libs
+
+    entry      = local_elf.header.e_entry
 
     #
     # Get the addresses from GDB
@@ -240,14 +251,15 @@ def find_module_addresses(ssh, binary, ulimit=False):
     expr = re.compile(r'(0x\S+)[^/]+(.*)')
 
     if ulimit:
-        cmd = 'ulimit -s unlimited; ' + cmd
+        cmd = 'sh -c "(ulimit -s unlimited; %s)"' % cmd
 
-    with ssh.run(cmd) as gdb:
+    with runner(cmd) as gdb:
         gdb.send("""
         set prompt
         set disable-randomization off
-        start
-        """)
+        break *%#x
+        run
+        """ % entry)
         gdb.clean(2)
         gdb.sendline('info sharedlibrary')
         lines = gdb.recvrepeat(2)
@@ -267,7 +279,11 @@ def find_module_addresses(ssh, binary, ulimit=False):
 
     for remote_path,text_address in sorted(libs.items()):
         # Match up the local copy to the remote path
-        path     = next(p for p in local_libs.keys() if remote_path in p)
+        try:
+            path     = next(p for p in local_libs.keys() if remote_path in p)
+        except StopIteration:
+            print "Skipping %r" % remote_path
+            continue
 
         # Load it
         lib      = elf.ELF(path)
