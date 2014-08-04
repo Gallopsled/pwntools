@@ -119,6 +119,7 @@ class ROP(object):
         self._chain = []
 
     def flush(self):
+        """Return the ROP chain and clear it."""
         f = self.chain()
         self.clear()
         return f
