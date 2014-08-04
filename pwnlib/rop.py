@@ -118,7 +118,10 @@ class ROP(object):
         """Clear the ROP chain"""
         self._chain = []
 
-    flush = clear # alias
+    def flush(self):
+        f = self.chain()
+        self.clear()
+        return f
 
     def dump(self):
         """Dump the ROP chain in an easy-to-read manner"""
