@@ -165,7 +165,6 @@ class ssh_channel(sock.sock):
     def _close_msg(self):
         log.info('Closed SSH channel with %s' % self.host, log_level = self.log_level)
 
-
 class ssh_connecter(sock.sock):
     def __init__(self, parent, host, port, timeout = 'default', log_level = log_levels.INFO):
         super(ssh_connecter, self).__init__(timeout, log_level)
