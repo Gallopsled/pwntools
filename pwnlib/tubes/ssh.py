@@ -377,14 +377,13 @@ class ssh(object):
         """
         bad_attrs = [
             'trait_names',          # ipython tab-complete
-            '_getAttributeNames',   # ipython tab-complete
             'download',             # frequent typo
             'upload',               # frequent typo
         ]
 
         if attr in self.__dict__ \
         or attr in bad_attrs \
-        or attr.startswith('__'):
+        or attr.startswith('_'):
             raise AttributeError
 
         def runner(*args):
