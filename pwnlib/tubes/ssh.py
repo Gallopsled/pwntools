@@ -385,7 +385,7 @@ class ssh(object):
             else:
                 command = ' '.join((attr,) + args)
 
-            return self.run(command, log_level=self.log_level).recvall().strip()
+            return self.run(command).recvall().strip()
         return runner
 
     def connected(self):
