@@ -165,23 +165,6 @@ class ssh_channel(sock.sock):
     def _close_msg(self):
         log.info('Closed SSH channel with %s' % self.host, log_level = self.log_level)
 
-    def __enter__(self):
-        """Permit use of 'with' to control scoping and closing sessions.
-
-        >>> shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0')
-        >>> with shell.run('bash') as s:
-        ...     s.sendline('echo helloworld; exit;')
-        ...     print 'helloworld' in s.recvall()
-        ...
-        True
-        """
-        return self
-
-    def __exit__(self, type, value, traceback):
-        """Handles closing for 'with' statement"""
-        self.close()
-
-
 class ssh_connecter(sock.sock):
     def __init__(self, parent, host, port, timeout = 'default', log_level = log_levels.INFO):
         super(ssh_connecter, self).__init__(timeout, log_level)
