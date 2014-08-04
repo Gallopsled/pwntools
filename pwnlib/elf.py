@@ -311,8 +311,8 @@ class ELF(ELFFile):
             if begin <= address and address <= end:
                 delta = address - begin
                 return segment.header.p_offset + delta
-            else:
-                log.warning("Address %#x does not exist in %s" % (address, self.file.name))
+
+        log.warning("Address %#x does not exist in %s" % (address, self.file.name))
         return None
 
     def read(self, address, count):
