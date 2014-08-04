@@ -1,7 +1,7 @@
 import os, tempfile, re
 from . import log
 from .util import misc, proc
-from . import tubes
+from . import tubes, elf
 
 def attach(target, execute = None, exe = None, arch = None):
     """attach(target, execute = None, exe = None, arch = None) -> None
@@ -184,3 +184,99 @@ def ssh_gdb(ssh, process, execute = None, arch = None, **kwargs):
     attach(('127.0.0.1', forwardport), execute, local_exe, arch)
     l.wait_for_connection() <> ssh.connect_remote('127.0.0.1', gdbport)
     return c
+
+def find_module_addresses(ssh, binary, ulimit=False):
+    """
+    Cheat to find modules by using GDB.
+
+    We can't use /proc/$pid/map since some servers forbid it.
+    This breaks 'info proc' in GDB, but 'info sharedlibrary' still works.
+    Additionally, 'info sharedlibrary' works on FreeBSD, which may not have
+    procfs enabled or accessible.
+
+    The output looks like this:
+
+        info proc mapping
+        process 13961
+        warning: unable to open /proc file '/proc/13961/maps'
+
+        info sharedlibrary
+        From        To          Syms Read   Shared Object Library
+        0xf7fdc820  0xf7ff505f  Yes (*)     /lib/ld-linux.so.2
+        0xf7fbb650  0xf7fc79f8  Yes         /lib32/libpthread.so.0
+        0xf7e26f10  0xf7f5b51c  Yes (*)     /lib32/libc.so.6
+        (*): Shared library is missing debugging information.
+
+    However, do not that these are the addresses of the '.text' segments.
+    You need to adjust for the base of the image.
+
+    This routine automates the entire process of:
+    - Downloading the binaries from the remote server
+    - Scraping GDB for the information
+    - Loading each library into an ELF
+    - Fixing up the base address
+
+    Args:
+        ssh(pwnlib.tubes.ssh.ssh): SSH connection through which to load the libraries.
+        binary(str): Path to the binary on the remote server
+        ulimit(bool): Set to ``True`` to run "ulimit -s unlimited" before GDB.
+
+    Returns:
+        A list of pwnlib.elf.ELF objects, with correct base addresses.
+
+    Example:
+
+    """
+    #
+    # Download all of the remote libraries
+    #
+    local_libs = ssh.libs(binary)
+
+    #
+    # Get the addresses from GDB
+    #
+    libs = {}
+    cmd  = "gdb --args %s" % (binary)
+    expr = re.compile(r'(0x\S+)[^/]+(.*)')
+
+    if ulimit:
+        cmd = 'ulimit -s unlimited; ' + cmd
+
+    with ssh.run(cmd) as gdb:
+        gdb.send("""
+        set prompt
+        set disable-randomization off
+        start
+        """)
+        gdb.clean(2)
+        gdb.sendline('info sharedlibrary')
+        lines = gdb.recvrepeat(2)
+
+        for line in lines.splitlines():
+            m = expr.match(line)
+            if m:
+                libs[m.group(2)] = int(m.group(1),16)
+        gdb.sendline('kill')
+        gdb.sendline('y')
+        gdb.sendline('quit')
+
+    #
+    # Fix up all of the addresses against the .text address
+    #
+    rv = []
+
+    for remote_path,text_address in sorted(libs.items()):
+        # Match up the local copy to the remote path
+        path     = next(p for p in local_libs.keys() if remote_path in p)
+
+        # Load it
+        lib      = elf.ELF(path)
+
+        # Find its text segment
+        text     = lib.get_section_by_name('.text')
+
+        # Fix the address
+        lib.address = text_address - text.header.sh_addr
+        rv.append(lib)
+
+    return rv
