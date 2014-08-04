@@ -242,7 +242,7 @@ def asm(shellcode, arch = None, os = None):
     finally:
         shutil.rmtree(tmpdir)
 
-def disasm(data, arch = None):
+def disasm(data, arch = None, vma = 0):
     """disasm(data, arch = None) -> str
 
     Disassembles a bytestring into human readable assembler.
@@ -257,6 +257,7 @@ def disasm(data, arch = None):
       data(str): Bytestring to disassemble.
       arch: A supported architecture or None. In case of None,
             :data:`pwnlib.context.arch` will be used.
+      vma(int): Passed through to the --adjust-vma argument of objdump
 
     Examples:
       >>> print disasm('b85d000000'.decode('hex'), arch = 'i386')
@@ -282,7 +283,7 @@ def disasm(data, arch = None):
 
     bfdarch = _bfdarch(arch)
     bfdname = _bfdname(arch)
-    objdump = _objdump(arch) + ['-d']
+    objdump = _objdump(arch) + ['-d', '--adjust-vma', str(vma)]
     objcopy = [
         _objcopy(arch),
         '-I', 'binary',
