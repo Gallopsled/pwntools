@@ -1,6 +1,0 @@
-While these examples should all work, they are not very representative of
-the pwntools project.
-
-We have a plan to create a separate repository with examples, primarily
-exploits. Until we do so, we recommend new users to look at
-http://pwntools.readthedocs.org, as this is a better overview of our features.

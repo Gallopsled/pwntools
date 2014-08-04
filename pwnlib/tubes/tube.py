@@ -421,6 +421,22 @@ class tube(object):
         self.timeout = _fix_timeout(timeout, context.timeout)
         self.settimeout_raw(self.timeout)
 
+    def __enter__(self):
+        """Permit use of 'with' to control scoping and closing sessions.
+
+        >>> shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0')
+        >>> with shell.run('bash') as s:
+        ...     s.sendline('echo helloworld; exit;')
+        ...     print 'helloworld' in s.recvall()
+        ...
+        True
+        """
+        return self
+
+    def __exit__(self, type, value, traceback):
+        """Handles closing for 'with' statement"""
+        self.close()
+
     # The minimal interface to be implemented by a child
     def recv_raw(self, numb):
         """recv_raw(numb) -> str
@@ -502,19 +518,3 @@ class tube(object):
         """
 
         log.bug('Should be implemented by a subclass.')
-
-    def __enter__(self):
-        """Permit use of 'with' to control scoping and closing sessions.
-
-        >>> shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0')
-        >>> with shell.run('bash') as s:
-        ...     s.sendline('echo helloworld; exit;')
-        ...     print 'helloworld' in s.recvall()
-        ...
-        True
-        """
-        return self
-
-    def __exit__(self, type, value, traceback):
-        """Handles closing for 'with' statement"""
-        self.close()

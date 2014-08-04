@@ -1,7 +1,7 @@
 """
 When running in term-mode (import `pwn` rather than `pwnlib`, stdout is a TTY
 and not running in a REPL), we can do proper indentation where lines too long to
-fit on a screen are split into many individually indented lines.
+fit on a screen are split into multiple individually indented lines.
 
 Too see the difference try running with::
 

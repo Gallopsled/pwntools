@@ -56,7 +56,6 @@ class ELF(ELFFile):
             self._address = 0
         else:
             self._address = min(filter(bool, (s.header.p_vaddr for s in self.segments)))
-
         self.load_addr = self._address
 
         for seg in self.executable_segments:
@@ -165,7 +164,7 @@ class ELF(ELFFile):
         try:
             data = subprocess.check_output('ulimit -s unlimited; ldd ' + misc.sh_string(self.path), shell = True)
             self.libs = misc.parse_ldd_output(data)
-        except:
+        except subprocess.CalledProcessError:
             self.libs = {}
 
     def _populate_symbols(self):
@@ -422,7 +421,3 @@ class ELF(ELFFile):
         The resulting binary can be saved with ELF.save()
         """
         self.write(address, asm.asm(assembly))
-
-    def __repr__(self):
-        return "ELF(%r)" % self.path
-

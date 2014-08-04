@@ -267,7 +267,7 @@ def parse(s):
             x = (BS, None)
             i += 1
         elif c == 0x09:
-            x = (STR, '    ') # who the **** uses tabs anyway?
+            x = (STR, ['    ']) # who the **** uses tabs anyway?
             i += 1
         elif c == 0x0a:
             x = (CRLF, None)
