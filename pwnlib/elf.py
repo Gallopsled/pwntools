@@ -285,6 +285,9 @@ class ELF(ELFFile):
             >>> bash = ELF('/bin/bash')
             >>> bash.address == bash.offset_to_vaddr(0)
             True
+            >>> bash.address += 0x123456
+            >>> bash.address == bash.offset_to_vaddr(0)
+            True
         """
         for segment in self.segments:
             begin = segment.header.p_offset
@@ -292,7 +295,7 @@ class ELF(ELFFile):
             end   = begin + size
             if begin <= offset and offset <= end:
                 delta = offset - begin
-                return segment.header.p_vaddr + delta
+                return segment.header.p_vaddr + delta + (self.address - self.load_addr)
         return None
 
 
@@ -310,13 +313,18 @@ class ELF(ELFFile):
             >>> bash = ELF('/bin/bash')
             >>> 0 == bash.vaddr_to_offset(bash.address)
             True
+            >>> bash.address += 0x123456
+            >>> 0 == bash.vaddr_to_offset(bash.address)
+            True
         """
+        load_address = address - self.address + self.load_addr
+
         for segment in self.segments:
             begin = segment.header.p_vaddr
             size  = segment.header.p_memsz
             end   = begin + size
-            if begin <= address and address <= end:
-                delta = address - begin
+            if begin <= load_address and load_address <= end:
+                delta = load_address - begin
                 return segment.header.p_offset + delta
 
         log.warning("Address %#x does not exist in %s" % (address, self.file.name))
@@ -421,3 +429,7 @@ class ELF(ELFFile):
         The resulting binary can be saved with ELF.save()
         """
         self.write(address, asm.asm(assembly))
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
