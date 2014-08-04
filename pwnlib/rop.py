@@ -1,14 +1,13 @@
-import hashlib
-import os
-import ropgadget
-import sys
-import tempfile
+import hashlib, os, sys, tempfile
 
-from pwnlib import context, log
-from pwnlib.elf import ELF
-from pwnlib.util.packing import pack, unpack
-from pwnlib.util.lists import group
-from pwnlib.util.fiddling import enhex
+from . import context, log, elf
+from .util import packing, lists
+
+try:
+    import ropgadget
+    ok = True
+except ImportError:
+    ok = False
 
 class ROP(object):
     def __init__(self, elfs):
@@ -95,7 +94,7 @@ class ROP(object):
                 raw += link
 
             # Add the gadget address
-            raw += pack(link['addr'])
+            raw += packing.pack(link['addr'])
 
             # If there are no arguments, there's no need to fix the stack,
             # so continue to the next gadget.
@@ -103,11 +102,11 @@ class ROP(object):
                 continue
 
             # Add the return address to fix up the stack
-            raw += pack(link['retaddr'])
+            raw += packing.pack(link['retaddr'])
 
             # Add the arguments
             for arg in link['args']:
-                raw += pack(arg)
+                raw += packing.pack(arg)
 
             # Add any padding necessary
             raw += link['pad'] * 'X'
@@ -124,9 +123,9 @@ class ROP(object):
     def dump(self):
         """Dump the ROP chain in an easy-to-read manner"""
         result = []
-        for chunk in group(self.align, str(self)):
-            addr = unpack(chunk)
-            line = "%s %#16x %s" % (enhex(chunk), addr, self.unresolve(addr))
+        for chunk in lists.group(self.align, str(self)):
+            addr = packing.unpack(chunk)
+            line = "%s %#16x %s" % (chunk.encode('hex'), addr, self.unresolve(addr))
             result.append(line)
         return result
 
@@ -290,3 +289,7 @@ class ROP(object):
 
     def __repr__(self):
         return "ROP(%r)" % self.elfs
+
+if not ok:
+    def ROP(*args, **kwargs):
+        log.error("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
