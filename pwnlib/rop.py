@@ -34,7 +34,7 @@ class ROP(object):
             for elf in self.elfs:
                 try:    return elf.symbols[resolvable]
                 except: pass
-        if isinstance(resolvable, int):
+        if isinstance(resolvable, (int,long)):
             return resolvable
         return None
 
