@@ -1,6 +1,6 @@
 """Exposes functionality for manipulating ELF files
 """
-from . import log
+from . import log, asm
 from .util import misc
 import mmap, subprocess, os
 from elftools.elf.elffile import ELFFile
@@ -311,6 +311,8 @@ class ELF(ELFFile):
             if begin <= address and address <= end:
                 delta = address - begin
                 return segment.header.p_offset + delta
+            else:
+                log.warning("Address %#x does not exist in %s" % (address, self.file.name))
         return None
 
     def read(self, address, count):
@@ -399,3 +401,16 @@ class ELF(ELFFile):
         data = self.stream.read(self.stream.size())
         self.stream.seek(old)
         return data
+
+    def disasm(self, address, n_bytes):
+        """Returns a string of disassembled instructions at
+        the specified virtual memory address"""
+        return asm.disasm(self.read(address, n_bytes), vma=address)
+
+    def asm(self, address, assembly):
+        """Assembles the specified instructions and inserts them
+        into the ELF at the specified address.
+
+        The resulting binary can be saved with ELF.save()
+        """
+        self.write(address, asm.asm(assembly))
