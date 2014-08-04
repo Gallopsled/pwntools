@@ -164,7 +164,7 @@ class ELF(ELFFile):
         try:
             data = subprocess.check_output('ulimit -s unlimited; ldd ' + misc.sh_string(self.path), shell = True)
             self.libs = misc.parse_ldd_output(data)
-        except:
+        except subprocess.CalledProcessError:
             self.libs = {}
 
     def _populate_symbols(self):
