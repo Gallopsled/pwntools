@@ -15,6 +15,10 @@ class ROP(object):
         Args:
             elfs(list): List of pwnlib.elf.ELF objects for mining
         """
+        # Permit singular ROP(elf) vs ROP([elf])
+        if isinstance(elfs, elf.ELF):
+            elfs = [elfs]
+
         self.elfs  = elfs
         self.clear()
         self.align = context.word_size/8
