@@ -418,7 +418,7 @@ class ssh(object):
 
     def _get_fingerprint(self, remote):
         arg = misc.sh_string(remote)
-        cmd = '(sha256sum %s||sha1sum %s||md5sum %s) 2>/dev/null' % (arg, arg, arg)
+        cmd = '(sha256sum %s||sha1sum %s||md5sum %s||shasum %s) 2>/dev/null' % (arg, arg, arg, arg)
         data, status = self.run_to_end(cmd)
         if status == 0:
             return data.split()[0]
