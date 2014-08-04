@@ -375,7 +375,15 @@ class ssh(object):
         >>> s.echo(['huh','yay','args'])
         'huh yay args'
         """
-        if attr in self.__dict__ or attr.startswith('__'):
+        bad_attrs = [
+            'trait_names',          # ipython tab-complete
+            'download',             # frequent typo
+            'upload',               # frequent typo
+        ]
+
+        if attr in self.__dict__ \
+        or attr in bad_attrs \
+        or attr.startswith('_'):
             raise AttributeError
 
         def runner(*args):
