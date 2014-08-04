@@ -189,12 +189,14 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     """
     Cheat to find modules by using GDB.
 
-    We can't use /proc/$pid/map since some servers forbid it.
-    This breaks 'info proc' in GDB, but 'info sharedlibrary' still works.
-    Additionally, 'info sharedlibrary' works on FreeBSD, which may not have
+    We can't use ``/proc/$pid/map`` since some servers forbid it.
+    This breaks ``info proc`` in GDB, but ``info sharedlibrary`` still works.
+    Additionally, ``info sharedlibrary`` works on FreeBSD, which may not have
     procfs enabled or accessible.
 
     The output looks like this:
+
+    ::
 
         info proc mapping
         process 13961
@@ -211,14 +213,16 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     You need to adjust for the base of the image.
 
     This routine automates the entire process of:
-    - Downloading the binaries from the remote server
-    - Scraping GDB for the information
-    - Loading each library into an ELF
-    - Fixing up the base address
+
+    1. Downloading the binaries from the remote server
+    2. Scraping GDB for the information
+    3. Loading each library into an ELF
+    4. Fixing up the base address
 
     Args:
         binary(str): Path to the binary on the remote server
-        ssh(pwnlib.tubes.ssh.ssh): SSH connection through which to load the libraries.
+        ssh(pwnlib.tubes.tube): SSH connection through which to load the libraries.
+            If left as ``None``, will use a ``pwnlib.tubes.process.process``.
         ulimit(bool): Set to ``True`` to run "ulimit -s unlimited" before GDB.
 
     Returns:
