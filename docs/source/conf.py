@@ -38,11 +38,12 @@ extensions = [
 
 doctest_global_setup = '''
 import pwnlib
-pwnlib.context.reset_local()
-pwnlib.context.log_level = 'silent'
+pwnlib.context.context.reset_local()
+pwnlib.context.ContextType.defaults['log_level'] = 'ERROR'
+pwnlib.term.text.enabled = False
 '''
 
-autodoc_member_order = 'bysource'
+autodoc_member_order = 'alphabetical'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -53,7 +54,7 @@ doctest_test_doctest_blocks = True
 source_suffix = '.rst'
 
 # The encoding of source files.
-#source_encoding = 'utf-8-sig'
+source_encoding = 'utf-8-sig'
 
 # The master toctree document.
 master_doc = 'index'
@@ -266,7 +267,7 @@ branch = release
 try:
     git_branch = subprocess.check_output('git describe --tags', shell = True)
     if '-' in git_branch:
-        branch = 'master'
+        branch = subprocess.check_output('git rev-parse HEAD', shell = True).strip()[:10]
 except (IOError, OSError) as e:
     pass
 
@@ -293,17 +294,6 @@ def linkcode_resolve(domain, info):
     # Case for everything else
     else:
         filename = info['module'].replace('.', '/') + '.py'
-
-        # Fixup for context properties
-        if info['module'].startswith('pwnlib.context'):
-            filename = 'pwnlib/context.py'
-
-            if not isinstance(val, (types.FunctionType, types.MethodType)):
-                import pwnlib.context.defaults
-                val = getattr(pwnlib.context.defaults.__class__, info['fullname'], None)
-                if isinstance(val, property):
-                    val = val.fget
-                    val = getattr(val, '_inner', val)
 
         if isinstance(val, (types.ModuleType, types.ClassType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType)):
             try:

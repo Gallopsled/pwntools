@@ -1,6 +1,7 @@
 """Exposes functionality for manipulating ELF files
 """
-from . import log, asm
+from .log import *
+from .asm import asm, disasm
 from .util import misc
 import mmap, subprocess, os
 from elftools.elf.elffile import ELFFile
@@ -68,7 +69,10 @@ class ELF(ELFFile):
         for seg in self.executable_segments:
             if seg.header.p_type == 'PT_GNU_STACK':
                 self.execstack = True
-                log.info('Stack is executable!')
+                info('Stack is executable!')
+
+    def __repr__(self):
+        return "ELF(%r)" % self.path
 
     @property
     def elfclass(self):
@@ -358,7 +362,7 @@ class ELF(ELFFile):
                 delta = load_address - begin
                 return segment.header.p_offset + delta
 
-        log.warning("Address %#x does not exist in %s" % (address, self.file.name))
+        warning("Address %#x does not exist in %s" % (address, self.file.name))
         return None
 
     def read(self, address, count):
@@ -451,7 +455,7 @@ class ELF(ELFFile):
     def disasm(self, address, n_bytes):
         """Returns a string of disassembled instructions at
         the specified virtual memory address"""
-        return asm.disasm(self.read(address, n_bytes), vma=address)
+        return disasm(self.read(address, n_bytes), vma=address)
 
     def asm(self, address, assembly):
         """Assembles the specified instructions and inserts them
@@ -459,7 +463,7 @@ class ELF(ELFFile):
 
         The resulting binary can be saved with ELF.save()
         """
-        binary = asm.asm(('org %#x\n' % address) + assembly)
+        binary = asm(assembly, vma=address)
         self.write(address, binary)
 
     def bss(self, offset=0):
@@ -467,3 +471,6 @@ class ELF(ELFFile):
         orig_bss = self.get_section_by_name('.bss').header.sh_addr
         curr_bss = orig_bss - self.load_addr + self.address
         return curr_bss + offset
+
+    def __repr__(self):
+        return "ELF(%r)" % self.path

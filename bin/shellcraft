@@ -2,8 +2,8 @@
 import argparse, sys, os, types
 import pwnlib
 from pwnlib import asm, log, util
-from pwnlib.context import __possible__ as contexts
 import pwnlib.term.text as text
+from pwnlib.context import context
 
 r = text.red
 g = text.green
@@ -154,9 +154,9 @@ for i, val in enumerate(args.args):
 # And he strikes again!
 os = arch = None
 for k in args.shellcode.split('.')[:-1]:
-    if k in contexts['arch']:
+    if k in context.architectures:
         arch = k
-    elif k in contexts['os']:
+    elif k in context.oses:
         os = k
 
 code = func(*args.args)

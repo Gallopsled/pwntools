@@ -1,53 +1,174 @@
-Introduction to pwntools
+.. testsetup:: *
+
+   from pwn import *
+
+Getting Started
 ========================
 
-Historically pwntools was used as a sort of exploit-writing DSL. Simply doing
-``from pwn import *`` in a previous version of pwntools would bring all sorts of
-nice side-effects.
+To get your feet wet with pwntools, let's first go through a few examples.
 
-When redesigning pwntools for 2.0, we noticed two contrary goals:
+When writing exploits, pwntools generally follows the "kitchen sink" approach.
 
-* We would like to have a "normal" python module structure, to allow other
-  people to faster get familiar with how pwntools works.
-* We would like to have even more side-effects, especially by putting the
-  terminal in raw-mode.
+    >>> from pwn import *
 
-To make this possible, we decided to have two different modules. :mod:`pwnlib`
-would be our nice, clean python module, while :mod:`pwn` would be used during
-CTFs.
+This imports a lot of functionality into the global namespace.  You can now
+assemble, disassemble, pack, unpack, and many other things with a single function.
 
-:mod:`pwnlib` --- Normal python library
----------------------------------------
+Let's start with a few common examples.
 
-.. module:: pwnlib
 
-This module is our "clean" python-code. As a rule, we do not think that
-importing :mod:`pwnlib` or any of the submodules should have any significant
-side-effects (besides e.g. caching).
+Making Connections
+------------------
 
-For the most part, you will also only get the bits you import. You for instance
-not get access to :mod:`pwnlib.util.packing` simply by doing ``import
-pwnlib.util``.
+You need to talk to the challenge binary in order to pwn it, right?
+pwntools makes this stupid simple with its :mod:`pwnlib.tubes` module.
 
-Though there are a few exceptions (such as :mod:`pwnlib.shellcraft`), that does
-not quite fit the goals of being simple and clean, but they can still be
-imported without implicit side-effects.
+This exposes a standard interface to talk to processes, sockets, serial ports,
+and all manner of things, along with some nifty helpers for common tasks.
+For example, remote connections via :mod:`pwnlib.tubes.remote`.
 
-:mod:`pwn` --- Toolbox optimized for CTFs
------------------------------------------
+    >>> conn = remote('ftp.debian.org',21)
+    >>> conn.recvline()
+    '220 ftp.debian.org FTP server\r\n'
+    >>> conn.send('USER anonymous\r\n')
+    >>> conn.recvuntil(' ', drop=True)
+    '331'
+    >>> conn.recvline()
+    'Please specify the password.\r\n'
+    >>> conn.close()
 
-.. module:: pwn
+It's also easy to spin up a listener
 
-As stated, we would also like to have the ability to get a lot of these
-side-effects by default. That is the purpose of this module. It does
-the following:
+    >>> l = listen()
+    >>> r = remote('localhost', l.lport)
+    >>> c = l.wait_for_connection()
+    >>> r.send('hello')
+    >>> c.recv()
+    'hello'
 
-* Imports everything from the toplevel :mod:`pwnlib` along with
-  functions from a lot of submodules. This means that if you do
-  ``import pwn`` or ``from pwn import *``, you will access to
-  everything you need to write an exploit.
-* Calls :func:`pwnlib.term.init` to put your terminal in raw mode
-  and implementing functionality to make it look like it is not.
-* Setting the :data:`pwnlib.context.log_level` to `"info"`.
-* Tries to parse some of the values in :data:`sys.argv` and every
-  value it succeeds in parsing it removes.
+Interacting with processes is easy thanks to :mod:`pwnlib.tubes.process`.
+
+::
+
+    >>> sh = process('/bin/sh')
+    >>> sh.sendline('sleep 3; echo hello world;')
+    >>> sh.recvline(timeout=1)
+    ''
+    >>> sh.recvline(timeout=5)
+    'hello world\n'
+    >>> sh.close()
+
+Not only can you interact with processes programmatically, but you can
+actually **interact** with processes.
+
+    >>> sh.interactive() # doctest: +SKIP
+    $ whoami
+    user
+
+There's even an SSH module for when you've got to SSH into a box to perform
+a local/setuid exploit with :mod:`pwnlib.tubes.ssh`.  You can quickly spawn
+processes and grab the output, or spawn a process and interact iwth it like
+a ``process`` tube.
+
+::
+
+    >>> shell = ssh('bandit0', 'bandit.labs.overthewire.org', password='bandit0')
+    >>> shell['whoami']
+    'bandit0'
+    >>> shell.download_file('/etc/motd')
+    >>> sh = shell.run('sh')
+    >>> sh.sendline('sleep 3; echo hello world;') # doctest: +SKIP
+    >>> sh.recvline(timeout=1)
+    ''
+    >>> sh.recvline(timeout=5)
+    'hello world\n'
+    >>> shell.close()
+
+Packing Integers
+------------------
+
+A common task for exploit-writing is converting between integers as Python
+sees them, and their representation as a sequence of bytes.
+Usually folks resort to the built-in ``struct`` module.
+
+pwntools makes this easier with :mod:`pwnlib.util.packing`.  No more remembering
+unpacking codes, and littering your code with helper routines.
+
+    >>> import struct
+    >>> p32(0xdeadbeef) == struct.pack('I', 0xdeadbeef)
+    True
+    >>> leet = '37130000'.decode('hex')
+    >>> u32('abcd') == struct.unpack('I', 'abcd')[0]
+    True
+
+The packing/unpacking operations are defined for many common bit-widths.
+
+    >>> u8('A') == 0x41
+    True
+
+Assembly and Disassembly
+------------------------
+
+Never again will you need to run some already-assembled pile of shellcode
+from the internet!  The :mod:`pwnlib.asm` module is full of awesome.
+
+    >>> asm('mov eax, 0').encode('hex')
+    'b800000000'
+
+But if you do, it's easy to suss out!
+
+    >>> print disasm('6a0258cd80ebf9'.decode('hex'))
+       0:   6a 02                   push   0x2
+       2:   58                      pop    eax
+       3:   cd 80                   int    0x80
+       5:   eb f9                   jmp    0x0
+
+However, you shouldn't even need to write your own shellcode most of the
+time!  Pwntools comes with the :mod:`pwnlib.shellcraft` module, which is
+loaded with useful time-saving shellcodes.
+
+Let's say that we want to `setreuid(getuid(), getuid())` followed by `dup`ing
+file descriptor 4 to `stdin`, `stdout`, and `stderr`, and then pop a shell!
+
+    >>> asm(shellcraft.setreuid() + shellcraft.dupsh(4)).encode('hex')
+    '6a3158cd8089c389c16a4658cd806a045b6a0359496a3f58cd8075f831c9f7e96a01fe0c24682f2f7368682f62696eb00b89e3cd80'
+
+Misc Tools
+----------------------
+
+Never write another hexdump, thanks to :mod:`pwnlib.util.fiddling`.
+
+
+Find offsets in your buffer that cause a crash, thanks to :mod:`pwnlib.cyclic`.
+
+    >>> print cyclic(20)
+    aaaabaaacaaadaaaeaaa
+    >>> # Assume EIP = 0x62616166 ('faab') at crash time
+    >>> print cyclic_find('faab')
+    120
+
+ELF Manipulation
+-------------
+
+Stop hard-coding things!  Look them up at runtime with :mod:`pwnlib.elf`.
+
+    >>> e = ELF('/bin/cat')
+    >>> print hex(e.address) #doctest: +SKIP
+    0x400000
+    >>> print hex(e.symbols['write']) #doctest: +SKIP
+    0x401680
+    >>> print hex(e.got['write']) #doctest: +SKIP
+    0x60b070
+    >>> print hex(e.plt['write']) #doctest: +SKIP
+    0x401680
+
+You can even patch and save the files.
+
+    >>> e = ELF('/bin/cat')
+    >>> e.read(e.address+1, 3)
+    'ELF'
+    >>> e.asm(e.address, 'ret')
+    >>> e.save('/tmp/quiet-cat')
+    >>> disasm(file('/tmp/quiet-cat','rb').read(1))
+    '   0:   c3                      ret'
+

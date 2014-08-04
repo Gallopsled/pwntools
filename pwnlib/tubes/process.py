@@ -1,10 +1,11 @@
-from .. import log
-from . import tube
-import subprocess, fcntl, os, select
+from .tube import tube
+import subprocess, fcntl, os, select, logging
 
-class process(tube.tube):
+log = logging.getLogger(__name__)
+
+class process(tube):
     def __init__(self, args, shell = False, executable = None,
-                 cwd = None, env = None, timeout = 'default'):
+                 cwd = None, env = None, timeout = None):
         super(process, self).__init__(timeout)
 
         if executable:
@@ -30,6 +31,7 @@ class process(tube.tube):
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
         log.success("Started program %r" % self.program)
+        log.debug("...with arguments %r" % args)
 
     def kill(self):
         """kill()
@@ -66,29 +68,29 @@ class process(tube.tube):
         # dead, so we can write a message.
         self.poll()
 
-        if self.proc.stdout.closed:
+        if not self.connected_raw('recv'):
             raise EOFError
 
         if not self.can_recv_raw(self.timeout):
-            return None
+            return ''
 
         # This will only be reached if we either have data,
         # or we have reached an EOF. In either case, it
         # should be safe to read without expecting it to block.
         data = self.proc.stdout.read(numb)
 
-        if data == '':
-            self.proc.stdout.close()
+        if not data:
+            self.shutdown("recv")
             raise EOFError
-        else:
-            return data
+
+        return data
 
     def send_raw(self, data):
         # This is a slight hack. We try to notice if the process is
         # dead, so we can write a message.
         self.poll()
 
-        if self.proc.stdin.closed:
+        if not self.connected_raw('send'):
             raise EOFError
 
         try:
@@ -101,10 +103,25 @@ class process(tube.tube):
         pass
 
     def can_recv_raw(self, timeout):
-        if timeout == None:
-            return select.select([self.proc.stdout], [], []) == ([self.proc.stdout], [], [])
-        else:
+        if timeout > 2**31:
+            timeout = 2**31
+
+        if not self.connected_raw('recv'):
+            return False
+
+        try:
+            if timeout == None:
+                return select.select([self.proc.stdout], [], []) == ([self.proc.stdout], [], [])
+
             return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
+        except ValueError:
+            # Not sure why this isn't caught when testing self.proc.stdout.closed,
+            # but it's not.
+            #
+            #   File "/home/user/pwntools/pwnlib/tubes/process.py", line 112, in can_recv_raw
+            #     return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
+            # ValueError: I/O operation on closed file
+            raise EOFError
 
     def connected_raw(self, direction):
         if direction == 'any':

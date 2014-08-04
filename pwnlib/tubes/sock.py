@@ -1,8 +1,9 @@
-import socket, errno, select
-from . import tube
-from .. import log
+import socket, errno, select, logging
+from .tube import tube
 
-class sock(tube.tube):
+log = logging.getLogger(__name__)
+
+class sock(tube):
     """Methods available exclusively to sockets."""
 
     def __init__(self, timeout):
@@ -47,8 +48,8 @@ class sock(tube.tube):
         if data == '':
             self.shutdown("recv")
             raise EOFError
-        else:
-            return data
+
+        return data
 
     def send_raw(self, data):
         if self.closed["send"]:

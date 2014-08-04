@@ -1,8 +1,10 @@
-from . import sock
-from .. import log, thread
-import socket, errno, threading
+from .sock     import sock
+from ..context import context
+import socket, errno, threading, logging
 
-class listen(sock.sock):
+log = logging.getLogger(__name__)
+
+class listen(sock):
     """Creates an TCP or UDP-socket to receive data on. It supports
     both IPv4 and IPv6.
 
@@ -10,16 +12,16 @@ class listen(sock.sock):
     :class:`pwnlib.tubes.sock` and :class:`pwnlib.tubes.tube`.
 
     Args:
-      port(int): The port to connect to.
-      bindaddr(str): The address to bind to.
-      fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
-      typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
-      timeout: A positive number, None or the string "default".
+        port(int): The port to connect to.
+        bindaddr(str): The address to bind to.
+        fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
+        typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
+        timeout: A positive number, None or the string "default".
     """
 
-    def __init__(self, port, bindaddr = "0.0.0.0",
+    def __init__(self, port=0, bindaddr = "0.0.0.0",
                  fam = "any", typ = "tcp",
-                 timeout = 'default'):
+                 timeout = None):
         super(listen, self).__init__(timeout)
 
         port = int(port)
@@ -91,15 +93,17 @@ class listen(sock.sock):
             self.rhost, self.rport = rhost[:2]
             h.success('Got connection from %s on port %d' % (self.rhost, self.rport))
 
-        self._accepter = thread.Thread(target = accepter)
+        self._accepter = context.thread(target = accepter)
         self._accepter.daemon = True
         self._accepter.start()
 
     def spawn_process(self, *args, **kwargs):
         def accepter():
             self.wait_for_connection()
-            super(listen, self).spawn_process(*args, **kwargs)
-        t = thread.Thread(target = accepter)
+            p = super(listen, self).spawn_process(*args, **kwargs)
+            p.wait()
+            self.close()
+        t = context.thread(target = accepter)
         t.daemon = True
         t.start()
 

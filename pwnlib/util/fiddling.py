@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import re, base64, random, string
 from . import packing, lists
-from .. import context
-from ..term import text
+from ..context import context
+from ..term    import text
 
 def unhex(s):
     """unhex(s) -> str
@@ -287,7 +287,7 @@ def xor(*args, **kwargs):
     if len(args) == 0:
         raise ValueError("Must have something to xor")
 
-    strs = [packing.flat(s, word_size = 8, sign = 'unsigned', endianness = 'little') for s in args]
+    strs = [packing.flat(s, word_size = 8, sign = False, endianness = 'little') for s in args]
     strs = [[ord(c) for c in s] for s in strs if s != '']
 
     if strs == []:
@@ -450,11 +450,17 @@ def _hexiichar(c):
         return "%02x " % ord(c)
 
 default_style = {
-    'marker': text.gray if text.has_gray else text.blue,
+    'marker':       text.gray if text.has_gray else text.blue,
     'nonprintable': text.gray if text.has_gray else text.blue,
-    '00': text.red,
-    'ff': text.green,
-    }
+    '00':           text.red,
+    'ff':           text.green,
+}
+
+if 1 or not sys.stdout.isatty():
+  default_style = {
+    'marker': lambda x:x,
+    'nonprintable': lambda x:x,
+  }
 
 def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
                  style = {}, highlight = []):
@@ -497,7 +503,7 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
     else:
         def style_byte(b):
             hbyte = '%02x' % ord(b)
-            abyte = b if isprint(b) else '⋅'
+            abyte = b if isprint(b) else ' '
             if hbyte in style:
                 st = style[hbyte]
             elif isprint(b):

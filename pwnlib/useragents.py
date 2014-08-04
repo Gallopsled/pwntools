@@ -1,4 +1,6 @@
-
+"""
+Database of 22,000 user agent strings
+"""
 __all__ = ['getall', 'random']
 
 import os, random as randommod
@@ -23,16 +25,16 @@ def getall():
     Get all the user agents that we know about.
 
     Args:
-      None
+        None
 
     Returns:
-      A set of user agent strings.
+        A set of user agent strings.
 
     Examples:
-      >>> 'libcurl-agent/1.0' in getall()
-      True
-      >>> 'wget' in getall()
-      True
+        >>> 'libcurl-agent/1.0' in getall()
+        True
+        >>> 'wget' in getall()
+        True
     """
     return _load().copy()
 
@@ -42,9 +44,14 @@ def random():
     Get a random user agent string.
 
     Args:
-      None
+        None
 
     Returns:
-      A random user agent string selected from :func:`getall`.
+        A random user agent string selected from :func:`getall`.
+
+    >>> import random as randommod
+    >>> randommod.seed(1)
+    >>> random()
+    'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727; FDM)'
     """
     return randommod.choice(list(_load()))
