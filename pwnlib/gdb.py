@@ -230,6 +230,14 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
 
     Example:
 
+    >>> from pwn import *
+    >>> with context.local(log_level=9999):
+    ...     shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0')
+    ...     bash_libs = gdb.find_module_addresses('/bin/bash', shell)
+    >>> os.path.basename(bash_libs[0].path)
+    'libc.so.6'
+    >>> hex(bash_libs[0].symbols['system'])
+    '0x7ffff7634660'
     """
     #
     # Download all of the remote libraries
