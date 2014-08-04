@@ -39,7 +39,7 @@ setup(
     author_email         = "#gallopsled @ freenode.net",
     url                  = 'https://github.com/Gallopsled/pwntools/',
     download_url         = "https://github.com/Gallopsled/pwntools/tarball/%s" % version,
-    install_requires     = ['paramiko','argparse', 'mako', 'pyelftools'],
+    install_requires     = ['paramiko','argparse', 'mako', 'pyelftools', 'capstone', 'ropgadget'],
     license              = "Mostly MIT, some GPL/BSD, see LICENSE-pwntools.txt",
     classifiers          = [
         'Topic :: Security',

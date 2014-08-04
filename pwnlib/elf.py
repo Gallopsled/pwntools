@@ -53,6 +53,7 @@ class ELF(ELFFile):
         self._populate_libraries()
 
         self._address  = min(filter(bool, (s.header.p_vaddr for s in self.segments)))
+        self.load_addr = self._address
 
         for seg in self.executable_segments:
             if seg.header.p_type == 'PT_GNU_STACK':
