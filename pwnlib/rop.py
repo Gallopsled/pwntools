@@ -1,6 +1,10 @@
+import hashlib
+import os
 import ropgadget
 import sys
-from pwnlib import context
+import tempfile
+
+from pwnlib import context, log
 from pwnlib.elf import ELF
 from pwnlib.util.packing import pack, unpack
 from pwnlib.util.lists import group
@@ -62,7 +66,6 @@ class ROP(object):
         Returns:
             str containging raw ROP bytes
         """
-        self.cache = {}
         raw   = ''
         chain = [dict(d) for d in self._chain]
 
@@ -173,6 +176,29 @@ class ROP(object):
         """Returns: Raw bytes of the ROP chain"""
         return self.chain(False)
 
+    def __get_cachefile_name(self, elf):
+        basename = os.path.basename(elf.file.name)
+        md5sum   = hashlib.md5(elf.get_data()).hexdigest()
+
+        filename  = "%s-%s-%#x" % (basename, md5sum, elf.address)
+
+        cachedir  = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache')
+
+        if not os.path.exists(cachedir):
+            os.mkdir(cachedir)
+
+        return os.path.join(cachedir, filename)
+
+    def __cache_load(self, elf):
+        filename = self.__get_cachefile_name(elf)
+
+        if os.path.exists(filename):
+            log.info("Found gadgets for %r in cache %r" % (elf.file.name,filename))
+            return eval(file(filename).read())
+
+    def __cache_save(self, elf, data):
+        file(self.__get_cachefile_name(elf),'w+').write(repr(data))
+
     def __load(self):
         """Load all ROP gadgets for the selected ELF files"""
         #
@@ -211,18 +237,26 @@ class ROP(object):
         gadgets = {}
         try:
             for elf in self.elfs:
+                cache = self.__cache_load(elf)
+                if cache:
+                    gadgets.update(cache)
+                    continue
+
                 sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'add|pop|ret', '--nojop', '--nosys']
                 args = ropgadget.args.Args().getArgs()
                 core = ropgadget.core.Core(args)
                 core.do_binary(elf.path)
                 core.do_load(0)
 
+                elf_gadgets = {}
                 for gadget in core._Core__gadgets:
                     address = gadget['vaddr'] - elf.load_addr + elf.address
                     insns   = map(str.strip, gadget['gadget'].split(';'))
 
                     if all(map(valid, insns)):
-                        gadgets[address] = insns
+                        elf_gadgets[address] = insns
+                self.__cache_save(elf, elf_gadgets)
+                gadgets.update(elf_gadgets)
         finally:
             sys.argv = argv
 
