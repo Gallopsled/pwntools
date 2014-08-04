@@ -1,4 +1,4 @@
-import hashlib, os, sys, tempfile
+import hashlib, os, sys, tempfile, re
 
 from . import context, log, elf
 from .util import packing, lists
@@ -210,7 +210,6 @@ class ROP(object):
         # Currently, ROPgadget does not detect multi-byte "C2" ret.
         # https://github.com/JonathanSalwan/ROPgadget/issues/53
         #
-        import re
 
         pop = re.compile(r'^pop (.*)')
         add = re.compile(r'^add .sp, (\S+)$')
