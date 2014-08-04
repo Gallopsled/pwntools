@@ -209,15 +209,15 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         0xf7e26f10  0xf7f5b51c  Yes (*)     /lib32/libc.so.6
         (*): Shared library is missing debugging information.
 
-    However, do not that these are the addresses of the '.text' segments.
-    You need to adjust for the base of the image.
+    Note that the raw addresses provided by ``info sharedlibrary`` are actually
+    the address of the ``.text`` segment, not the image base address.
 
     This routine automates the entire process of:
 
     1. Downloading the binaries from the remote server
     2. Scraping GDB for the information
     3. Loading each library into an ELF
-    4. Fixing up the base address
+    4. Fixing up the base address vs. the ``.text`` segment address
 
     Args:
         binary(str): Path to the binary on the remote server
