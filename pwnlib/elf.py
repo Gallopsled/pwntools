@@ -419,3 +419,7 @@ class ELF(ELFFile):
         The resulting binary can be saved with ELF.save()
         """
         self.write(address, asm.asm(assembly))
+
+    def __repr__(self):
+        return "ELF(%r)" % self.path
+
