@@ -1,66 +1,7 @@
 __all__ = ['Keymap']
 
 from . import keyconsts as kc
-
-class Matcher:
-    def __init__(self, desc):
-        self._desc = desc
-        desc = desc.split('-')
-        mods = desc[:-1]
-        k = desc[-1]
-        if k == '<space>':
-            k = ' '
-        m = kc.MOD_NONE
-        if 'S' in mods:
-            m |= kc.MOD_SHIFT
-        if 'M' in mods:
-            m |= kc.MOD_ALT
-        if 'C' in mods:
-            m |= kc.MOD_CTRL
-        if   len(k) == 1:
-            t = kc.TYPE_UNICODE
-            c = k
-            h = ord(k)
-        elif k[0] == '<' and k in kc.KEY_NAMES_REVERSE:
-            t = kc.TYPE_KEYSYM
-            c = kc.KEY_NAMES_REVERSE[k]
-            h = c
-        elif k[:2] == '<f' and k[-1] == '>' and k[2:-1].isdigit():
-            t = kc.TYPE_FUNCTION
-            c = int(k[2:-1])
-            h = c
-        else:
-            raise ValueError('bad key description "%s"' % k)
-        self._type = t
-        self._code = c
-        self._mods = m
-        self._hash = h | (m << 6) | (t << 7)
-
-    def __call__(self, k):
-        from . import key
-        if isinstance(k, key.Key):
-            return all([k.type == self._type,
-                        k.code == self._code,
-                        k.mods == self._mods,
-                        ])
-
-    def __eq__(self, other):
-        from . import key
-        if   isinstance(other, Matcher):
-            return all([other._type == self._type,
-                        other._code == self._code,
-                        other._mods == self._mods,
-                        ])
-        elif isinstance(other, key.Key):
-            return self.__call__(other)
-        else:
-            return False
-
-    def __hash__(self):
-        return self._hash
-
-    def __str__(self):
-        return self._desc
+from . import key
 
 class Keymap:
     def __init__(self, bindings, on_match = None, on_nomatch = None,
@@ -74,7 +15,6 @@ class Keymap:
         self.register(bindings)
 
     def handle_input(self):
-        from . import key
         self._doread = True
         while self._doread:
             self.send(key.get())
@@ -124,7 +64,7 @@ class Keymap:
             elif desc == '<any>':
                 self.on_key(cb)
             else:
-                ms = map(Matcher, desc.split(' '))
+                ms = map(key.Matcher, desc.split(' '))
                 if not ms:
                     return
                 t = self._top
@@ -135,7 +75,7 @@ class Keymap:
                 cbs.append(cb)
 
     def unregister(self, desc, cb = None):
-        ms = map(Matcher, desc.split(' '))
+        ms = map(key.Matcher, desc.split(' '))
         if not ms:
             return
         t = self._top

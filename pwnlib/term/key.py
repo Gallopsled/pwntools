@@ -1,7 +1,7 @@
 __all__ = ['getch', 'getraw', 'get', 'unget']
 
 import select, sys, string, os, errno
-from . import termcap, keymap
+from . import termcap
 from . import keyconsts as kc
 
 _fd = sys.stdin.fileno()
@@ -30,6 +30,66 @@ def getraw(timeout = None):
             break
         c = getch()
     return cs
+
+class Matcher:
+    def __init__(self, desc):
+        self._desc = desc
+        desc = desc.split('-')
+        mods = desc[:-1]
+        k = desc[-1]
+        if k == '<space>':
+            k = ' '
+        m = kc.MOD_NONE
+        if 'S' in mods:
+            m |= kc.MOD_SHIFT
+        if 'M' in mods:
+            m |= kc.MOD_ALT
+        if 'C' in mods:
+            m |= kc.MOD_CTRL
+        if   len(k) == 1:
+            t = kc.TYPE_UNICODE
+            c = k
+            h = ord(k)
+        elif k[0] == '<' and k in kc.KEY_NAMES_REVERSE:
+            t = kc.TYPE_KEYSYM
+            c = kc.KEY_NAMES_REVERSE[k]
+            h = c
+        elif k[:2] == '<f' and k[-1] == '>' and k[2:-1].isdigit():
+            t = kc.TYPE_FUNCTION
+            c = int(k[2:-1])
+            h = c
+        else:
+            raise ValueError('bad key description "%s"' % k)
+        self._type = t
+        self._code = c
+        self._mods = m
+        self._hash = h | (m << 6) | (t << 7)
+
+    def __call__(self, k):
+        from . import key
+        if isinstance(k, key.Key):
+            return all([k.type == self._type,
+                        k.code == self._code,
+                        k.mods == self._mods,
+                        ])
+
+    def __eq__(self, other):
+        from . import key
+        if   isinstance(other, Matcher):
+            return all([other._type == self._type,
+                        other._code == self._code,
+                        other._mods == self._mods,
+                        ])
+        elif isinstance(other, key.Key):
+            return self.__call__(other)
+        else:
+            return False
+
+    def __hash__(self):
+        return self._hash
+
+    def __str__(self):
+        return self._desc
 
 class Key:
     def __init__(self, type, code = None, mods = kc.MOD_NONE):
@@ -70,8 +130,8 @@ class Key:
 
     def __eq__(self, other):
         if   isinstance(other, (unicode, str)):
-            return keymap.Matcher(other)(self)
-        elif isinstance(other, keymap.Matcher):
+            return Matcher(other)(self)
+        elif isinstance(other, Matcher):
             return other(self)
         elif isinstance(other, Key):
             return all([self.type == other.type,
