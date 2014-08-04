@@ -1,4 +1,4 @@
-import hashlib, os, sys, tempfile
+import hashlib, os, sys, tempfile, re
 
 from . import context, log, elf
 from .util import packing, lists
@@ -60,11 +60,8 @@ class ROP(object):
             return '; '.join(self.gadgets[value]['insns'])
         return ''
 
-    def chain(self, clear=True):
+    def chain(self):
         """Build the ROP chain
-
-        Args:
-            clear(bool): Reset the ROP chain after building it (legacy emulation)
 
         Returns:
             str containging raw ROP bytes
@@ -115,14 +112,17 @@ class ROP(object):
             # Add any padding necessary
             raw += link['pad'] * 'X'
 
-        if clear:
-            self.clear()
-
         return raw
 
     def clear(self):
         """Clear the ROP chain"""
         self._chain = []
+
+    def flush(self):
+        """Return the ROP chain and clear it."""
+        f = self.chain()
+        self.clear()
+        return f
 
     def dump(self):
         """Dump the ROP chain in an easy-to-read manner"""
@@ -177,7 +177,7 @@ class ROP(object):
 
     def __str__(self):
         """Returns: Raw bytes of the ROP chain"""
-        return self.chain(False)
+        return self.chain()
 
     def __get_cachefile_name(self, elf):
         basename = os.path.basename(elf.file.name)
@@ -214,7 +214,6 @@ class ROP(object):
         # Currently, ROPgadget does not detect multi-byte "C2" ret.
         # https://github.com/JonathanSalwan/ROPgadget/issues/53
         #
-        import re
 
         pop = re.compile(r'^pop (.*)')
         add = re.compile(r'^add .sp, (\S+)$')
@@ -333,6 +332,8 @@ class ROP(object):
 
     def __getattr__(self, attr):
         """Helper to make finding ROP gadets easier.
+        Also provides a shorthand for .call():
+            rop.function(args) ==> rop.call(function, args)
 
         >>> elf=ELF('/bin/bash')
         >>> rop=ROP([elf])
@@ -358,16 +359,30 @@ class ROP(object):
         or attr.startswith('_'):
             raise AttributeError
 
+        #
+        # Check for 'ret' or 'ret_X'
+        #
         if attr.startswith('ret'):
             count = 4
             if '_' in attr:
                 count = int(attr.split('_')[1])
 
             return self.search(move=count)
-        else:
+
+        #
+        # Check for a '_'-delimited list of registers
+        #
+        x86_suffixes = ['ax', 'bx', 'cx', 'dx', 'bp', 'sp', 'di', 'si',
+                        'r8', 'r9', '10', '11', '12', '13', '14', '15']
+        if all(map(lambda x: x[-2:] in x86_suffixes, attr.split('_'))):
             return self.search(regs=attr.split('_'))
 
-        return None
+        #
+        # Otherwise, assume it's a rop.call() shorthand
+        #
+        def call(*args):
+            return self.call(attr,args)
+        return call
 
 
 if not ok:
