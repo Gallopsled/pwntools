@@ -429,7 +429,3 @@ class ELF(ELFFile):
         The resulting binary can be saved with ELF.save()
         """
         self.write(address, asm.asm(assembly))
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
