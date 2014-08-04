@@ -399,3 +399,6 @@ class ELF(ELFFile):
         data = self.stream.read(self.stream.size())
         self.stream.seek(old)
         return data
+
+    def __repr__(self):
+        return "ELF(%r)" % self.path
