@@ -15,6 +15,10 @@ class ROP(object):
         Args:
             elfs(list): List of pwnlib.elf.ELF objects for mining
         """
+        # Permit singular ROP(elf) vs ROP([elf])
+        if isinstance(elfs, elf.ELF):
+            elfs = [elfs]
+
         self.elfs  = elfs
         self.clear()
         self.align = context.word_size/8
@@ -56,11 +60,8 @@ class ROP(object):
             return '; '.join(self.gadgets[value]['insns'])
         return ''
 
-    def chain(self, clear=True):
+    def chain(self):
         """Build the ROP chain
-
-        Args:
-            clear(bool): Reset the ROP chain after building it (legacy emulation)
 
         Returns:
             str containging raw ROP bytes
@@ -111,14 +112,17 @@ class ROP(object):
             # Add any padding necessary
             raw += link['pad'] * 'X'
 
-        if clear:
-            self.clear()
-
         return raw
 
     def clear(self):
         """Clear the ROP chain"""
         self._chain = []
+
+    def flush(self):
+        """Return the ROP chain and clear it."""
+        f = self.chain()
+        self.clear()
+        return f
 
     def dump(self):
         """Dump the ROP chain in an easy-to-read manner"""
@@ -173,7 +177,7 @@ class ROP(object):
 
     def __str__(self):
         """Returns: Raw bytes of the ROP chain"""
-        return self.chain(False)
+        return self.chain()
 
     def __get_cachefile_name(self, elf):
         basename = os.path.basename(elf.file.name)
@@ -282,12 +286,104 @@ class ROP(object):
             # addresses may result in us needing the dupes.
             self.gadgets[addr] = {'insns': insns, 'regs': regs, 'move': sp_move}
 
-            # Don't use 'pop ebp' for pivots
-            if 'rbp' not in regs and 'ebp' not in regs:
+            # Don't use 'pop ebp' or 'pop esp' for pivots
+            if not set(['rbp','ebp','rsp','esp']) & set(regs):
                 self.pivots[sp_move]  = addr
 
     def __repr__(self):
         return "ROP(%r)" % self.elfs
+
+    def search(self, move=0, regs=[]):
+        """Search for a gadget which matches the specified criteria.
+
+        Args:
+            move(int): Minimum number of bytes by which the stack
+                pointer is adjusted.
+            regs(list): List of registers which are popped off the stack.
+                Order matters, and no other operations are allowed unless
+                'move' is expressly set.
+
+        Returns:
+            A tuple of (address, info) in the same format as self.gadgets.items().
+        """
+        if regs and not move:
+            move = len(regs)*self.align
+
+        # Search for an exact match, save the closest match
+        closest = None
+        for a,i in self.gadgets.items():
+            # Regs match exactly, move is a minimum
+            if not (i['regs'] == regs and move <= i['move']):
+                continue
+
+            # Exact match
+            if move == i['move']:
+                return (a,i)
+
+            # Anything's closer than nothing
+            elif not closest:
+                closest = (a,i)
+
+            # Closer
+            elif i['move'] < closest[1]['move']:
+                closest = (a,i)
+
+        return closest
+
+    def __getattr__(self, attr):
+        """Helper to make finding ROP gadets easier.
+        Also provides a shorthand for .call():
+            rop.function(args) ==> rop.call(function, args)
+
+        >>> elf=ELF('/bin/bash')
+        >>> rop=ROP([elf])
+        >>> rop.rdi     == rop.search(regs=['rdi'])
+        True
+        >>> rop.r13_r14_r15_rbp == rop.search(regs=['r13','r14','r15','rbp'])
+        True
+        >>> rop.ret     == rop.search(move=rop.align)
+        True
+        >>> rop.ret_8   == rop.search(move=8)
+        True
+        >>> rop.ret     != None
+        True
+        """
+        bad_attrs = [
+            'trait_names',          # ipython tab-complete
+            'download',             # frequent typo
+            'upload',               # frequent typo
+        ]
+
+        if attr in self.__dict__ \
+        or attr in bad_attrs \
+        or attr.startswith('_'):
+            raise AttributeError
+
+        #
+        # Check for 'ret' or 'ret_X'
+        #
+        if attr.startswith('ret'):
+            count = 4
+            if '_' in attr:
+                count = int(attr.split('_')[1])
+
+            return self.search(move=count)
+
+        #
+        # Check for a '_'-delimited list of registers
+        #
+        x86_suffixes = ['ax', 'bx', 'cx', 'dx', 'bp', 'sp', 'di', 'si',
+                        'r8', 'r9', '10', '11', '12', '13', '14', '15']
+        if all(map(lambda x: x[-2:] in x86_suffixes, attr.split('_'))):
+            return self.search(regs=attr.split('_'))
+
+        #
+        # Otherwise, assume it's a rop.call() shorthand
+        #
+        def call(*args):
+            return self.call(attr,args)
+        return call
+
 
 if not ok:
     def ROP(*args, **kwargs):
