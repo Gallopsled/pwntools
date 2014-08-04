@@ -2,3 +2,5 @@ paramiko
 argparse
 mako
 pyelftools
+capstone
+ropgadget
