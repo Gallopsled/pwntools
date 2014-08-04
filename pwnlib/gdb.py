@@ -189,12 +189,14 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     """
     Cheat to find modules by using GDB.
 
-    We can't use /proc/$pid/map since some servers forbid it.
-    This breaks 'info proc' in GDB, but 'info sharedlibrary' still works.
-    Additionally, 'info sharedlibrary' works on FreeBSD, which may not have
+    We can't use ``/proc/$pid/map`` since some servers forbid it.
+    This breaks ``info proc`` in GDB, but ``info sharedlibrary`` still works.
+    Additionally, ``info sharedlibrary`` works on FreeBSD, which may not have
     procfs enabled or accessible.
 
     The output looks like this:
+
+    ::
 
         info proc mapping
         process 13961
@@ -207,18 +209,20 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         0xf7e26f10  0xf7f5b51c  Yes (*)     /lib32/libc.so.6
         (*): Shared library is missing debugging information.
 
-    However, do not that these are the addresses of the '.text' segments.
-    You need to adjust for the base of the image.
+    Note that the raw addresses provided by ``info sharedlibrary`` are actually
+    the address of the ``.text`` segment, not the image base address.
 
     This routine automates the entire process of:
-    - Downloading the binaries from the remote server
-    - Scraping GDB for the information
-    - Loading each library into an ELF
-    - Fixing up the base address
+
+    1. Downloading the binaries from the remote server
+    2. Scraping GDB for the information
+    3. Loading each library into an ELF
+    4. Fixing up the base address vs. the ``.text`` segment address
 
     Args:
         binary(str): Path to the binary on the remote server
-        ssh(pwnlib.tubes.ssh.ssh): SSH connection through which to load the libraries.
+        ssh(pwnlib.tubes.tube): SSH connection through which to load the libraries.
+            If left as ``None``, will use a ``pwnlib.tubes.process.process``.
         ulimit(bool): Set to ``True`` to run "ulimit -s unlimited" before GDB.
 
     Returns:
@@ -226,6 +230,14 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
 
     Example:
 
+    >>> from pwn import *
+    >>> with context.local(log_level=9999):
+    ...     shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0')
+    ...     bash_libs = gdb.find_module_addresses('/bin/bash', shell)
+    >>> os.path.basename(bash_libs[0].path)
+    'libc.so.6'
+    >>> hex(bash_libs[0].symbols['system'])
+    '0x7ffff7634660'
     """
     #
     # Download all of the remote libraries
