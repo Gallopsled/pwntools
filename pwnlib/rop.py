@@ -288,4 +288,5 @@ class ROP(object):
             if 'rbp' not in regs and 'ebp' not in regs:
                 self.pivots[sp_move]  = addr
 
-
+    def __repr__(self):
+        return "ROP(%r)" % self.elfs
