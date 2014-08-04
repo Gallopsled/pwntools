@@ -14,9 +14,8 @@ Just a lot of spinners!
 ```
 * `listen_uroboros.py`
 ```
-Another example showing interconnection of sockets.  This script will wait for
-three connections on port 1337, 1338, 1339, then connect them like a three-way
-Uroboros.
+An example showing interconnection of sockets.  This script will wait for three
+connections on port 1337, then connect them like a three-way Uroboros.
 ```
 * `readline_completers.py`
 ```
@@ -72,7 +71,7 @@ Try running this example with::
 ```
 When running in term-mode (import `pwn` rather than `pwnlib`, stdout is a TTY
 and not running in a REPL), we can do proper indentation where lines too long to
-fit on a screen are split into many individually indented lines.
+fit on a screen are split into multiple individually indented lines.
 
 Too see the difference try running with::
 
@@ -87,11 +86,4 @@ Also notice that `pause()` can react on any key when in `term_mode`.
 * `asm.py`
 ```
 Example showing the interface to `pwnlib.asm.asm` and `pwnlib.shellcraft`.
-```
-* `ctf/ropasaurusrex.py`
-```
-A solution to the challenge `ropasaurusrex` from Plaid CTF 2013.
-
-For a great write-up by SkullSecurity go here:
-  https://blog.skullsecurity.org/2013/ropasaurusrex-a-primer-on-return-oriented-programming
 ```
