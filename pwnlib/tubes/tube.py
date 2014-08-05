@@ -267,9 +267,6 @@ class tube(object):
         """
 
 
-        if not term.term_mode:
-            log.error("interactive() is not possible outside term_mode")
-
         log.info('Switching to interactive mode', log_level = self.log_level)
 
         # Save this to restore later
@@ -295,7 +292,11 @@ class tube(object):
 
         try:
             while go[0]:
-                data = term.readline.readline(prompt = prompt, float = True)
+                if term.term_mode:
+                    data = term.readline.readline(prompt = prompt, float = True)
+                else:
+                    data = sys.stdin.read(1)
+
                 if data:
                     try:
                         self.send(data)

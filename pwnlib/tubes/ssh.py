@@ -99,9 +99,6 @@ class ssh_channel(sock.sock):
         if not self.tty:
             return super(ssh_channel, self).interactive(prompt)
 
-        if not term.term_mode:
-            log.error("interactive() is not possible outside term_mode")
-
         log.info('Switching to interactive mode', log_level = self.log_level)
 
         # Save this to restore later
@@ -133,13 +130,18 @@ class ssh_channel(sock.sock):
         t.start()
 
         while go[0]:
-            try:
-                data = term.key.getraw(0.1)
-            except KeyboardInterrupt:
-                data = [3] # This is ctrl-c
-            except IOError:
-                if go[0]:
-                    raise
+            if term.term_mode:
+                try:
+                    data = term.key.getraw(0.1)
+                except KeyboardInterrupt:
+                    data = [3] # This is ctrl-c
+                except IOError:
+                    if go[0]:
+                        raise
+            else:
+                data = sys.stdin.read(1)
+                if not data:
+                    go[0] = False
 
             if data:
                 try:
