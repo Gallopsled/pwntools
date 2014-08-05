@@ -7,7 +7,7 @@ class sock(tube.tube):
 
     def __init__(self, timeout, log_level):
         super(sock, self).__init__(timeout, log_level)
-        self.closed = {"in": False, "out": False}
+        self.closed = {"recv": False, "send": False}
 
     # Overwritten for better usability
     def recvall(self):
@@ -22,7 +22,7 @@ class sock(tube.tube):
             return super(sock, self).recvall()
 
     def recv_raw(self, numb):
-        if self.closed["in"]:
+        if self.closed["recv"]:
             raise EOFError
 
         go = True
@@ -36,8 +36,8 @@ class sock(tube.tube):
             except IOError as e:
                 if e.errno == errno.EAGAIN:
                     return None
-                elif e.errno == errno.ECONNREFUSED:
-                    self.shutdown("in")
+                elif e.errno in [errno.ECONNREFUSED, errno.ECONNRESET]:
+                    self.shutdown("recv")
                     raise EOFError
                 elif e.errno == errno.EINTR:
                     go = True
@@ -45,13 +45,13 @@ class sock(tube.tube):
                     raise
 
         if data == '':
-            self.shutdown("in")
+            self.shutdown("recv")
             raise EOFError
         else:
             return data
 
     def send_raw(self, data):
-        if self.closed["out"]:
+        if self.closed["send"]:
             raise EOFError
 
         try:
@@ -59,7 +59,7 @@ class sock(tube.tube):
         except IOError as e:
             eof_numbers = [errno.EPIPE, errno.ECONNRESET, errno.ECONNREFUSED]
             if e.message == 'Socket is closed' or e.errno in eof_numbers:
-                self.shutdown("out")
+                self.shutdown("send")
                 raise EOFError
             else:
                 raise
@@ -75,21 +75,21 @@ class sock(tube.tube):
             self.sock.settimeout(timeout)
 
     def can_recv_raw(self, timeout):
-        if not self.sock or self.closed["in"]:
+        if not self.sock or self.closed["recv"]:
             return False
 
         return select.select([self.sock], [], [], timeout) == ([self.sock], [], [])
 
-    def connected(self, direction = 'any'):
+    def connected_raw(self, direction):
         if not self.sock:
             return False
 
         if direction == 'any':
             return True
-        elif direction == 'in':
-            return not self.closed['in']
-        elif direction == 'out':
-            return not self.closed['out']
+        elif direction == 'recv':
+            return not self.closed['recv']
+        elif direction == 'send':
+            return not self.closed['send']
 
     def close(self):
         if not self.sock:
@@ -97,8 +97,8 @@ class sock(tube.tube):
 
         # Call shutdown without triggering another call to close
         self.closed['hack'] = False
-        self.shutdown('in')
-        self.shutdown('out')
+        self.shutdown('recv')
+        self.shutdown('send')
         del self.closed['hack']
 
         self.sock.close()
@@ -114,13 +114,13 @@ class sock(tube.tube):
 
         return self.sock.fileno()
 
-    def shutdown(self, direction = "out"):
+    def shutdown_raw(self, direction):
         if self.closed[direction]:
             return
 
         self.closed[direction] = True
 
-        if direction == "out":
+        if direction == "send":
             try:
                 self.sock.shutdown(socket.SHUT_WR)
             except IOError as e:
@@ -129,7 +129,7 @@ class sock(tube.tube):
                 else:
                     raise
 
-        if direction == "in":
+        if direction == "recv":
             try:
                 self.sock.shutdown(socket.SHUT_RD)
             except IOError as e:

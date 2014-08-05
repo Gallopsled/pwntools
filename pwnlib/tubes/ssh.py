@@ -99,9 +99,6 @@ class ssh_channel(sock.sock):
         if not self.tty:
             return super(ssh_channel, self).interactive(prompt)
 
-        if not term.term_mode:
-            log.error("interactive() is not possible outside term_mode")
-
         log.info('Switching to interactive mode', log_level = self.log_level)
 
         # Save this to restore later
@@ -133,13 +130,18 @@ class ssh_channel(sock.sock):
         t.start()
 
         while go[0]:
-            try:
-                data = term.key.getraw(0.1)
-            except KeyboardInterrupt:
-                data = [3] # This is ctrl-c
-            except IOError:
-                if go[0]:
-                    raise
+            if term.term_mode:
+                try:
+                    data = term.key.getraw(0.1)
+                except KeyboardInterrupt:
+                    data = [3] # This is ctrl-c
+                except IOError:
+                    if go[0]:
+                        raise
+            else:
+                data = sys.stdin.read(1)
+                if not data:
+                    go[0] = False
 
             if data:
                 try:
@@ -162,6 +164,9 @@ class ssh_channel(sock.sock):
             term.term.on_winch.remove(self.resizer)
         super(ssh_channel, self).close()
 
+    def spawn_process(self, *args, **kwargs):
+        log.error("Cannot use spawn_process on an SSH channel.""")
+
     def _close_msg(self):
         log.info('Closed SSH channel with %s' % self.host, log_level = self.log_level)
 
@@ -181,6 +186,9 @@ class ssh_connecter(sock.sock):
             raise
 
         h.success()
+
+    def spawn_process(self, *args, **kwargs):
+        log.error("Cannot use spawn_process on an SSH channel.""")
 
     def _close_msg(self):
         log.info("Closed remote connection to %s:%d via SSH connection to %s" % (self.rhost, self.rport, self.host))
@@ -218,6 +226,9 @@ class ssh_listener(sock.sock):
 
     def _close_msg(self):
         log.info("Closed remote connection to %s:%d via SSH listener on port %d via %s" % (self.rhost, self.rport, self.port, self.host))
+
+    def spawn_process(self, *args, **kwargs):
+        log.error("Cannot use spawn_process on an SSH channel.""")
 
     def wait_for_connection(self):
         """Blocks until a connection has been established."""
@@ -352,11 +363,11 @@ class ssh(object):
     def __getitem__(self, attr):
         """Permits indexed access to run commands over SSH
 
-        >>> s = ssh(host='bandit.labs.overthewire.org',
+        >>> s = ssh(host='bandit.labs.overthewire.org', # doctest: +SKIP
         ...         user='bandit0',
         ...         password='bandit0',
         ...         log_level=0)
-        >>> s['echo hello']
+        >>> s['echo hello'] # doctest: +SKIP
         'hello'
         """
         return self.__getattr__(attr)()
@@ -364,15 +375,15 @@ class ssh(object):
     def __getattr__(self, attr):
         """Permits member access to run commands over SSH
 
-        >>> s = ssh(host='bandit.labs.overthewire.org',
+        >>> s = ssh(host='bandit.labs.overthewire.org', # doctest: +SKIP
         ...         user='bandit0',
         ...         password='bandit0',
         ...         log_level=0)
-        >>> s.echo('hello')
+        >>> s.echo('hello') # doctest: +SKIP
         'hello'
-        >>> s.whoami()
+        >>> s.whoami() # doctest: +SKIP
         'bandit0'
-        >>> s.echo(['huh','yay','args'])
+        >>> s.echo(['huh','yay','args']) # doctest: +SKIP
         'huh yay args'
         """
         bad_attrs = [
@@ -532,7 +543,7 @@ class ssh(object):
 
         s = self.run('cat>' + misc.sh_string(remote), log_level = 0)
         s.send(data)
-        s.shutdown('out')
+        s.shutdown('send')
         s.recvall()
         if s.poll() != 0:
             log.error("Could not upload file %r" % remote)

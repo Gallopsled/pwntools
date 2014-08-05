@@ -96,6 +96,14 @@ class listen(sock.sock):
         self._accepter.daemon = True
         self._accepter.start()
 
+    def spawn_process(self, *args, **kwargs):
+        def accepter():
+            self.wait_for_connection()
+            super(listen, self).spawn_process(*args, **kwargs)
+        t = threading.Thread(target = accepter)
+        t.daemon = True
+        t.start()
+
     def wait_for_connection(self):
         """Blocks until a connection has been established."""
         self.sock

@@ -430,6 +430,8 @@ class ELF(ELFFile):
         """
         self.write(address, asm.asm(assembly))
 
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
+    def bss(self, offset):
+        """Returns an index into the .bss segment"""
+        orig_bss = self.get_section_by_name('.bss').header.sh_addr
+        curr_bss = orig_bss - self.load_addr + self.address
+        return curr_bss + offset

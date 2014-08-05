@@ -3,7 +3,8 @@ from . import tube
 import subprocess, fcntl, os, select
 
 class process(tube.tube):
-    def __init__(self, args, shell = False, executable = None, env = None,
+    def __init__(self, args, shell = False, executable = None,
+                 cwd = None, env = None,
                  timeout = 'default', log_level = log_levels.INFO):
         super(process, self).__init__(timeout, log_level)
 
@@ -17,7 +18,8 @@ class process(tube.tube):
             log.error("process(): Do not understand the arguments %r" % args)
 
         self.proc = subprocess.Popen(
-            args, shell = shell, executable = executable, env = env,
+            args, shell = shell, executable = executable,
+            cwd = cwd, env = env,
             stdin = subprocess.PIPE, stdout = subprocess.PIPE,
             stderr = subprocess.STDOUT)
         self.stop_noticed = False
@@ -105,12 +107,12 @@ class process(tube.tube):
         else:
             return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
 
-    def connected(self, direction = 'any'):
+    def connected_raw(self, direction):
         if direction == 'any':
             return self.poll() == None
-        elif direction == 'out':
+        elif direction == 'send':
             return not self.proc.stdout.closed
-        elif direction == 'in':
+        elif direction == 'recv':
             return not self.proc.stdin.closed
 
     def close(self):
@@ -132,11 +134,11 @@ class process(tube.tube):
 
         return self.proc.stdout.fileno()
 
-    def shutdown(self, direction = "out"):
-        if direction == "out":
+    def shutdown_raw(self, direction):
+        if direction == "send":
             self.proc.stdin.close()
 
-        if direction == "in":
+        if direction == "recv":
             self.proc.stdout.close()
 
         if False not in [self.proc.stdin.closed, self.proc.stdout.closed]:

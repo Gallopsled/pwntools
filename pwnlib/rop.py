@@ -18,6 +18,8 @@ class ROP(object):
         # Permit singular ROP(elf) vs ROP([elf])
         if isinstance(elfs, elf.ELF):
             elfs = [elfs]
+        elif isinstance(elfs, (str, unicode)):
+            elfs = [elf.ELF(elfs)]
 
         self.elfs  = elfs
         self.clear()
@@ -286,8 +288,8 @@ class ROP(object):
             # addresses may result in us needing the dupes.
             self.gadgets[addr] = {'insns': insns, 'regs': regs, 'move': sp_move}
 
-            # Don't use 'pop ebp' or 'pop esp' for pivots
-            if not set(['rbp','ebp','rsp','esp']) & set(regs):
+            # Don't use 'pop esp' for pivots
+            if not set(['rsp','esp']) & set(regs):
                 self.pivots[sp_move]  = addr
 
     def __repr__(self):

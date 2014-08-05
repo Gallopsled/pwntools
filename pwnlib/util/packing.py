@@ -689,13 +689,21 @@ def make_unpacker(word_size = None, endianness = None, sign = None):
         return lambda number: unpack(number, word_size, endianness, sign)
 
 
-def _flat(args, packer):
+def _flat(args, preprocessor, packer):
     out = []
     for arg in args:
+
+        if not isinstance(arg, (list, tuple)):
+            arg_ = preprocessor(arg)
+            if arg_ != None:
+                arg = arg_
+
         if isinstance(arg, (list, tuple)):
-            out.append(_flat(arg, packer))
+            out.append(_flat(arg, preprocessor, packer))
         elif isinstance(arg, str):
             out.append(arg)
+        elif isinstance(arg, unicode):
+            out.append(arg.encode('utf8'))
         elif isinstance(arg, (int, long)):
             out.append(packer(arg))
         else:
@@ -704,7 +712,7 @@ def _flat(args, packer):
 
 
 def flat(*args, **kwargs):
-    """flat(*args, word_size = None, endianness = None, sign = None)
+    """flat(*args, preprocessor = None, word_size = None, endianness = None, sign = None)
 
     Flattens the arguments into a string.
 
@@ -718,6 +726,9 @@ def flat(*args, **kwargs):
 
     Args:
       args: Values to flatten
+      preprocessor (function): Gets called on every element to optionally
+         transform the element before flattening. If :const:`None` is
+         returned, then the original value is uded.
       word_size (int): Word size of the converted integer.
       endianness (str): Endianness of the converted integer ("little"/"big").
       sign (str): Signedness of the converted integer ("unsigned"/"signed")
@@ -725,13 +736,16 @@ def flat(*args, **kwargs):
     Examples:
       >>> flat(1, "test", [[["AB"]*2]*3], endianness = 'little', word_size = 16, sign = 'unsigned')
       '\\x01\\x00testABABABABABAB'
+      >>> flat([1, [2, 3]], preprocessor = lambda x: str(x+1))
+      '234'
 """
 
-    word_size  = kwargs.pop('word_size', None)
-    endianness = kwargs.pop('endianness', None)
-    sign       = kwargs.pop('sign', None)
+    preprocessor = kwargs.pop('preprocessor', lambda x: None)
+    word_size    = kwargs.pop('word_size', None)
+    endianness   = kwargs.pop('endianness', None)
+    sign         = kwargs.pop('sign', None)
 
     if kwargs != {}:
         raise TypeError("flat() does not support argument %r" % kwargs.popitem()[0])
 
-    return _flat(args, make_packer(word_size, endianness, sign))
+    return _flat(args, preprocessor, make_packer(word_size, endianness, sign))

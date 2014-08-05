@@ -1,6 +1,6 @@
 from .. import log, log_levels, context, term
 from ..util import misc
-import re, threading, sys, time
+import re, threading, sys, time, subprocess
 
 def _fix_timeout(timeout, default):
     if timeout == 'default':
@@ -28,7 +28,7 @@ class tube(object):
     def recv(self, numb = 4096, timeout = 'default'):
         """recv(numb = 4096, timeout = 'default') -> str
 
-        Receives up to `numb` bytes of data from the socket.
+        Receives up to `numb` bytes of data from the tube.
         If a timeout occurs while waiting, it will return None.
         If the connection has been closed for receiving,
         :exc:`exceptions.EOFError` will be raised.
@@ -62,7 +62,7 @@ class tube(object):
     def recvpred(self, pred, timeout = 'default'):
         """recvpred(pred, timeout = 'default') -> str
 
-        Receives one byte at a time from the socket, until ``pred(bytes)``
+        Receives one byte at a time from the tube, until ``pred(bytes)``
         evaluates to True.
 
         If a timeout occurs while waiting, it will return None, and any
@@ -258,17 +258,14 @@ class tube(object):
     def interactive(self, prompt = term.text.bold_red('$') + ' '):
         """interactive(prompt = pwnlib.term.text.bold_red('$') + ' ')
 
-        Does simultaneous reading and writing to the socket. In principle this just
-        connects the socket to standard in and standard out, but in practice this
+        Does simultaneous reading and writing to the tube. In principle this just
+        connects the tube to standard in and standard out, but in practice this
         is much more usable, since we are using :mod:`pwnlib.term` to print a
         floating prompt.
 
         Thus it only works in while in :data:`pwnlib.term.term_mode`.
         """
 
-
-        if not term.term_mode:
-            log.error("interactive() is not possible outside term_mode")
 
         log.info('Switching to interactive mode', log_level = self.log_level)
 
@@ -295,7 +292,11 @@ class tube(object):
 
         try:
             while go[0]:
-                data = term.readline.readline(prompt = prompt, float = True)
+                if term.term_mode:
+                    data = term.readline.readline(prompt = prompt, float = True)
+                else:
+                    data = sys.stdin.read(1)
+
                 if data:
                     try:
                         self.send(data)
@@ -317,7 +318,7 @@ class tube(object):
     def clean(self, timeout = 0.05):
         """clean(timeout = 0.05)
 
-        Removes all the buffered data from a socket by calling
+        Removes all the buffered data from a tube by calling
         :meth:`pwnlib.tubes.tube.tube.recv` with a low timeout until it fails.
         """
 
@@ -342,7 +343,7 @@ class tube(object):
         def pump():
             import sys as _sys
             while True:
-                if not (self.connected('out') and other.connected('in')):
+                if not (self.connected('send') and other.connected('recv')):
                     break
 
                 try:
@@ -364,8 +365,8 @@ class tube(object):
                 if not _sys:
                     return
 
-            self.shutdown("out")
-            other.shutdown("in")
+            self.shutdown('send')
+            other.shutdown('recv')
 
         t = threading.Thread(target = pump)
         t.daemon = True
@@ -386,6 +387,19 @@ class tube(object):
         self.connect_input(other)
         self.connect_output(other)
 
+    def spawn_process(self, *args, **kwargs):
+        """Spawns a new process having this tube as stdin, stdout and stderr.
+
+        Takes the same arguments as :class:`subprocess.Popen`."""
+
+        subprocess.Popen(
+            *args,
+            stdin = self.fileno(),
+            stdout = self.fileno(),
+            stderr = self.fileno(),
+            **kwargs
+        )
+
     def __lshift__(self, other):
         self.connect_input(other)
         return other
@@ -398,7 +412,7 @@ class tube(object):
         self << other << self
 
     def wait_for_close(self):
-        """Waits until the socket is closed."""
+        """Waits until the tube is closed."""
 
         while self.connected():
             time.sleep(0.05)
@@ -421,11 +435,55 @@ class tube(object):
         self.timeout = _fix_timeout(timeout, context.timeout)
         self.settimeout_raw(self.timeout)
 
+    def shutdown(self, direction = "send"):
+        """shutdown(direction = "send")
+
+        Closes the tube for futher reading or writing depending on `direction`.
+
+        Args:
+          direction(str): Which direction to close; "in", "read" or "recv"
+            closes the tube in the ingoing direction, "out", "write" or "send"
+            closes it in the outgoing direction.
+
+        Returns:
+          :const:`None`
+        """
+
+        if   direction in ('in', 'read', 'recv'):
+            direction = 'recv'
+        elif direction in ('out', 'write', 'send'):
+            direction = 'send'
+        else:
+            log.error('direction must be "in", "read" or "recv", or "out", "write" or "send"')
+
+        self.shutdown_raw(direction)
+
+    def connected(self, direction = 'any'):
+        """connected(direction = 'any') -> bool
+
+        Returns True if the tube is connected in the specified direction.
+
+        Args:
+          direction(str): Can be the string 'any', 'in', 'read', 'recv',
+                          'out', 'write', 'send'.
+        """
+
+        if   direction in ('in', 'read', 'recv'):
+            direction = 'recv'
+        elif direction in ('out', 'write', 'send'):
+            direction = 'send'
+        elif direction == 'any':
+            pass
+        else:
+            log.error('direction must be "any", "in", "read" or "recv", or "out", "write" or "send"')
+
+        return self.connected_raw(direction)
+
     def __enter__(self):
         """Permit use of 'with' to control scoping and closing sessions.
 
-        >>> shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0')
-        >>> with shell.run('bash') as s:
+        >>> shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0') # doctest: +SKIP
+        >>> with shell.run('bash') as s:  # doctest: +SKIP
         ...     s.sendline('echo helloworld; exit;')
         ...     print 'helloworld' in s.recvall()
         ...
@@ -454,7 +512,7 @@ class tube(object):
     def send_raw(self, data):
         """send_raw(data)
 
-        Should not be called directly. Sends data to the socket.
+        Should not be called directly. Sends data to the tube.
 
         Should return :exc:`exceptions.EOFError`, if it is unable to send any
         more, because of a close tube.
@@ -466,7 +524,7 @@ class tube(object):
         """settimeout_raw(timeout)
 
         Should not be called directly. Sets the timeout for
-        the socket.
+        the tube.
         """
 
         log.bug('Should be implemented by a subclass.')
@@ -481,13 +539,11 @@ class tube(object):
 
         log.bug('Should be implemented by a subclass.')
 
-    def connected(self, direction = 'any'):
+    def connected_raw(self, direction):
         """connected(direction = 'any') -> bool
 
-        Returns True if the socket is connected in the specified direction.
-
-        Args:
-          direction(str): Can be the string 'any', 'in' or 'out'.
+        Should not be called directly.  Returns True iff the
+        tube is connected in the given direction.
         """
 
         log.bug('Should be implemented by a subclass.')
@@ -495,7 +551,7 @@ class tube(object):
     def close(self):
         """close()
 
-        Closes the socket.
+        Closes the tube.
         """
 
         log.bug('Should be implemented by a subclass.')
@@ -508,13 +564,11 @@ class tube(object):
 
         log.bug('Should be implemented by a subclass.')
 
-    def shutdown(self, direction = "out"):
-        """shutdown(direction = "out")
+    def shutdown_raw(self, direction):
+        """shutdown_raw(direction)
 
-        Calls shutdown on the socket, and thus closing it for either reading or writing.
-
-        Args:
-          direction(str): Either the string "in" or "out".
+        Should not be called directly.  Closes the tube for further reading or
+        writing.
         """
 
         log.bug('Should be implemented by a subclass.')

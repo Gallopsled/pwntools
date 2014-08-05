@@ -13,7 +13,7 @@ from pwnlib.tubes.process   import *
 from pwnlib.tubes.remote    import *
 from pwnlib.tubes.ssh       import *
 from pwnlib.ui              import *
-from pwnlib.util            import crc, net, proc
+from pwnlib.util            import crc, net, proc, iters
 from pwnlib.util.cyclic     import *
 from pwnlib.util.fiddling   import *
 from pwnlib.util.hashes     import *
@@ -24,4 +24,7 @@ from pwnlib.util.proc       import pidof
 from pwnlib.util.splash     import *
 
 # Promote these modules, so that "from pwn import *" will let you access them
-import pwn, pwnlib, re, time, sys, os, string, threading, subprocess, struct
+import \
+    collections   , operator      , os            , pwn           , \
+    pwnlib        , re            , string        , struct        , \
+    subprocess    , sys           , threading     , time
