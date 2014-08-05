@@ -1,6 +1,6 @@
 .. testsetup:: *
 
-   import string
+   import string, operator
    from pwnlib.util.iters import *
 
 
