@@ -18,6 +18,8 @@ class ROP(object):
         # Permit singular ROP(elf) vs ROP([elf])
         if isinstance(elfs, elf.ELF):
             elfs = [elfs]
+        elif isinstance(elfs, (str, unicode)):
+            elfs = [elf.ELF(elfs)]
 
         self.elfs  = elfs
         self.clear()
