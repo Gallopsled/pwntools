@@ -36,7 +36,7 @@ class sock(tube.tube):
             except IOError as e:
                 if e.errno == errno.EAGAIN:
                     return None
-                elif e.errno == errno.ECONNREFUSED:
+                elif e.errno in [errno.ECONNREFUSED, errno.ECONNRESET]:
                     self.shutdown("in")
                     raise EOFError
                 elif e.errno == errno.EINTR:
