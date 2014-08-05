@@ -469,8 +469,8 @@ class tube(object):
     def __enter__(self):
         """Permit use of 'with' to control scoping and closing sessions.
 
-        >>> shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0')
-        >>> with shell.run('bash') as s:
+        >>> shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0') # doctest: +SKIP
+        >>> with shell.run('bash') as s:  # doctest: +SKIP
         ...     s.sendline('echo helloworld; exit;')
         ...     print 'helloworld' in s.recvall()
         ...
