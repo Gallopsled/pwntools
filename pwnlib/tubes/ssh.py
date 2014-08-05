@@ -354,11 +354,11 @@ class ssh(object):
     def __getitem__(self, attr):
         """Permits indexed access to run commands over SSH
 
-        >>> s = ssh(host='bandit.labs.overthewire.org',
+        >>> s = ssh(host='bandit.labs.overthewire.org', # doctest: +SKIP
         ...         user='bandit0',
         ...         password='bandit0',
         ...         log_level=0)
-        >>> s['echo hello']
+        >>> s['echo hello'] # doctest: +SKIP
         'hello'
         """
         return self.__getattr__(attr)()
@@ -366,15 +366,15 @@ class ssh(object):
     def __getattr__(self, attr):
         """Permits member access to run commands over SSH
 
-        >>> s = ssh(host='bandit.labs.overthewire.org',
+        >>> s = ssh(host='bandit.labs.overthewire.org', # doctest: +SKIP
         ...         user='bandit0',
         ...         password='bandit0',
         ...         log_level=0)
-        >>> s.echo('hello')
+        >>> s.echo('hello') # doctest: +SKIP
         'hello'
-        >>> s.whoami()
+        >>> s.whoami() # doctest: +SKIP
         'bandit0'
-        >>> s.echo(['huh','yay','args'])
+        >>> s.echo(['huh','yay','args']) # doctest: +SKIP
         'huh yay args'
         """
         bad_attrs = [
