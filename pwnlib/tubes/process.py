@@ -3,7 +3,8 @@ from . import tube
 import subprocess, fcntl, os, select
 
 class process(tube.tube):
-    def __init__(self, args, shell = False, executable = None, env = None,
+    def __init__(self, args, shell = False, executable = None,
+                 cwd = None, env = None,
                  timeout = 'default', log_level = log_levels.INFO):
         super(process, self).__init__(timeout, log_level)
 
@@ -17,7 +18,8 @@ class process(tube.tube):
             log.error("process(): Do not understand the arguments %r" % args)
 
         self.proc = subprocess.Popen(
-            args, shell = shell, executable = executable, env = env,
+            args, shell = shell, executable = executable,
+            cwd = cwd, env = env,
             stdin = subprocess.PIPE, stdout = subprocess.PIPE,
             stderr = subprocess.STDOUT)
         self.stop_noticed = False
