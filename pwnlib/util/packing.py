@@ -735,3 +735,40 @@ def flat(*args, **kwargs):
         raise TypeError("flat() does not support argument %r" % kwargs.popitem()[0])
 
     return _flat(args, make_packer(word_size, endianness, sign))
+
+
+def recursive_pack(x, word_size = None, endianness = None, sign = None):
+    """Recursively packs a list of values
+
+    * Given an integer, packs it into a word_size byte string.
+    * Given a string, NULL-terminates it and pads it with
+        NULL bytes until its length is aligned on word_size..
+    * Given a list or tuple, recurses over the elements, and
+        concatenates the results.
+
+    >>> print hexdump(recursive_pack([1,[2,[3,['This is interesting',0xdeadbeef]]]],64),8)
+    00000000  01 00 00 00   00 00 00 00  |........|
+    00000008  02 00 00 00   00 00 00 00  |........|
+    00000010  03 00 00 00   00 00 00 00  |........|
+    00000018  54 68 69 73   20 69 73 20  |This.is.|
+    00000020  69 6e 74 65   72 65 73 74  |interest|
+    00000028  69 6e 67 00   00 00 00 00  |ing.....|
+    00000030  ef be ad de   00 00 00 00  |........|
+    00000038
+    """
+    from . import lists
+
+    rv         = [ ]
+    word_size  = word_size  or context.word_size
+
+    if isinstance(x, (int,long)):
+        rv.append(pack(x, word_size, endianness, sign))
+    elif isinstance(x, str):
+        rv += lists.group(word_size/8, x, 'fill', '\x00')
+    elif isinstance(x, (list, tuple)):
+        for i in x:
+            rv.append(recursive_pack(i, word_size, endianness, sign))
+
+    return ''.join(rv)
+
+

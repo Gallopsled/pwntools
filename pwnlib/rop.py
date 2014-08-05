@@ -23,8 +23,21 @@ class ROP(object):
 
         self.elfs  = elfs
         self.clear()
-        self.align = context.word_size/8
+        self.align = max(e.elfclass for e in elfs)/8
+        self.address = 0
         self.__load()
+
+    def pack(self, x):
+        return packing.pack(x, word_size=8*self.align)
+
+    def unpack(self, x):
+        return packing.unpack(x, word_size=8*self.align)
+
+    def set_address(self, address):
+        """Set the address of the first byte in the ROP chain.
+        This is required to use absolute addressing (structs, strings, etc).
+        """
+        self.address = address
 
     def resolve(self, resolvable):
         """Resolves a symbol to an address
@@ -68,8 +81,35 @@ class ROP(object):
         Returns:
             str containging raw ROP bytes
         """
-        raw   = ''
-        chain = [dict(d) for d in self._chain]
+
+        #
+        # In order to support strings, structures, and absolute
+        # addressing, ROP chain generation happens in two stages.
+        #
+        # Stage 1:
+        #
+        # 1. All integers are converted into strings, replaced with
+        #    packed strings.
+        # 2. All non-integer values are deferred, and assigned an ID
+        #    and are stored as {ID: value} in 'deferred'.
+        # 3. The value from (1) or (2) is inserted into the list 'slots'.
+        #
+        # Stage 2:
+        #
+        # 1. With 'slots' fully populated, we can calculate the
+        #    complete length of the ROP chain.
+        # 2. Given that we have the base address of the chain,
+        #    and its full length, we can append raw data to the
+        #    end and perform absolute addressing.
+        # 3. Iterate through 'slots'.  Each time an ID is encountered,
+        #    replace it with a pointer to the end of the blob.
+        # 4. Append the raw data to the end of the blob.
+        #
+
+        slots    = []
+        deferred = {}
+        ID       = 0
+        chain    = [dict(d) for d in self._chain]
 
         if len(chain) == 0:
             return ''
@@ -91,13 +131,12 @@ class ROP(object):
             chain[-2]['pad']     = 0
             del chain[-1]
 
-
+        #
+        # Stage 1
+        #
         for link in chain:
-            if isinstance(link, str):
-                raw += link
-
             # Add the gadget address
-            raw += packing.pack(link['addr'])
+            slots.append( self.pack(link['addr']) )
 
             # If there are no arguments, there's no need to fix the stack,
             # so continue to the next gadget.
@@ -105,20 +144,51 @@ class ROP(object):
                 continue
 
             # Add the return address to fix up the stack
-            raw += packing.pack(link['retaddr'])
+            slots.append(self.pack(link['retaddr']))
 
             # Add the arguments
             for arg in link['args']:
-                raw += packing.pack(arg)
+                if isinstance(arg, (int,long)):
+                    slots.append(self.pack(arg))
+                    continue
+
+                if not self.address:
+                    log.error("Cannot perform absolute addressing without a base address")
+
+                deferred[ID] = arg
+                slots.append(ID)
+                ID += 1
 
             # Add any padding necessary
-            raw += link['pad'] * 'X'
+            for i in range(0, link['pad'], self.align):
+                slots.append(self.align * 'X')
 
-        return raw
+        #
+        # Stage 2
+        #
+        base   = self.address
+        length = len(slots) * self.align
+        raw    = '$' * (length % self.align)
+
+        for i, slot in enumerate(list(slots)):
+            if not isinstance(slot, (int,long)):
+                continue
+
+            # Replace the ID placeholder with an absolute address
+            address  = base + length + len(raw)
+            slots[i] = self.pack(address)
+
+            # Extract the packed data for absolute references.
+            # Append the data.
+            packed = packing.recursive_pack(deferred[slot], self.align*8)
+            raw += packed
+
+        return ''.join(slots) + raw
 
     def clear(self):
         """Clear the ROP chain"""
         self._chain = []
+        self.address = 0
 
     def flush(self):
         """Return the ROP chain and clear it."""
@@ -129,10 +199,15 @@ class ROP(object):
     def dump(self):
         """Dump the ROP chain in an easy-to-read manner"""
         result = []
-        for chunk in lists.group(self.align, str(self)):
-            addr = packing.unpack(chunk)
-            line = "%s %#16x %s" % (chunk.encode('hex'), addr, self.unresolve(addr))
+
+        for i, chunk in enumerate(lists.group(self.align, str(self))):
+            as_int = self.unpack(chunk)
+            line   = "%04x: %s %#16x %s" % (self.address+(i*self.align),
+                                            chunk.encode('hex'),
+                                            as_int,
+                                            self.unresolve(as_int))
             result.append(line)
+
         return result
 
     def call(self, resolvable, arguments=()):
@@ -141,6 +216,8 @@ class ROP(object):
         Args:
             resolvable(str,int): Value which can be looked up via 'resolve', or is already an integer.
             arguments(list): List of arguments which can be passed to pack().
+                Alternately, packed structures and strings can be provided if
+                an address is delcared.  See ``ROP.set_address``.
         """
         addr = self.resolve(resolvable)
 
@@ -169,13 +246,27 @@ class ROP(object):
 
         self._chain.append(d)
 
-    def raw(self, data):
-        """Add raw bytes to the ROP chain
+    def raw(self, data, fill='\x00'):
+        """Add raw bytes to the ROP chain.
+
+        Note: This is really just a wrapper for ``ROP.call()``.
 
         Args:
-            data(str): Raw sequence of bytes to add to the ROP chain
+            data(str): Raw sequence of bytes to add to the ROP chain.
+            fill(str): Padding string to use if ``data`` is not of an even
+                length modulo the pointer width.
         """
-        self._chain.append(data)
+        for d in lists.group(self.align, data, 'fill', '\x00'):
+            self.call(self.unpack(d))
+
+    def migrate(self, sp):
+        """Explicitly set $sp, by using a ``leave; ret`` gadget"""
+        pop_bp_ret,_ = self.ebp or self.rbp
+        self.call(pop_bp_ret)
+        self.call(sp)
+
+        leave,_      = self.leave
+        self.call(leave)
 
     def __str__(self):
         """Returns: Raw bytes of the ROP chain"""
@@ -209,6 +300,7 @@ class ROP(object):
         #
         # We accept only instructions that look like these.
         #
+        # - leave
         # - pop reg
         # - add $sp, value
         # - ret
@@ -217,9 +309,10 @@ class ROP(object):
         # https://github.com/JonathanSalwan/ROPgadget/issues/53
         #
 
-        pop = re.compile(r'^pop (.*)')
-        add = re.compile(r'^add .sp, (\S+)$')
-        ret = re.compile(r'^ret$')
+        pop   = re.compile(r'^pop (.*)')
+        add   = re.compile(r'^add .sp, (\S+)$')
+        ret   = re.compile(r'^ret$')
+        leave = re.compile(r'^leave$')
 
         #
         # Validation routine
@@ -231,7 +324,7 @@ class ROP(object):
         # >>> valid('add esp, 0x24')
         # True
         #
-        valid = lambda insn: any(map(lambda pattern: pattern.match(insn), [pop,add,ret]))
+        valid = lambda insn: any(map(lambda pattern: pattern.match(insn), [pop,add,ret,leave]))
 
         #
         # Currently, ropgadget.args.Args() doesn't take any arguments, and pulls
@@ -246,7 +339,8 @@ class ROP(object):
                     gadgets.update(cache)
                     continue
 
-                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'add|pop|ret', '--nojop', '--nosys']
+                log.info("Loading gadgets for %r @ %#x" % (elf.path, elf.address))
+                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'add|pop|leave|ret', '--nojop', '--nosys']
                 args = ropgadget.args.Args().getArgs()
                 core = ropgadget.core.Core(args)
                 core.do_binary(elf.path)
@@ -254,6 +348,7 @@ class ROP(object):
 
                 elf_gadgets = {}
                 for gadget in core._Core__gadgets:
+
                     address = gadget['vaddr'] - elf.load_addr + elf.address
                     insns   = map(str.strip, gadget['gadget'].split(';'))
 
@@ -272,6 +367,8 @@ class ROP(object):
         self.gadgets = {}
         self.pivots  = {}
 
+        frame_regs = ['ebp','esp'] if self.align == 4 else ['rbp','rsp']
+
         for addr,insns in gadgets.items():
             sp_move = 0
             regs = []
@@ -283,6 +380,18 @@ class ROP(object):
                     sp_move += int(add.match(insn).group(1), 16)
                 elif ret.match(insn):
                     sp_move += self.align
+                elif leave.match(insn):
+                    #
+                    # HACK: Since this modifies ESP directly, this should
+                    #       never be returned as a 'normal' ROP gadget that
+                    #       simply 'increments' the stack.
+                    #
+                    #       As such, the 'move' is set to a very large value,
+                    #       to prevent .search() from returning it unless $sp
+                    #       is specified as a register.
+                    #
+                    sp_move += 9999999999
+                    regs    += frame_regs
 
             # Permit duplicates, because blacklisting bytes in the gadget
             # addresses may result in us needing the dupes.
@@ -291,6 +400,12 @@ class ROP(object):
             # Don't use 'pop ebp' or 'pop esp' for pivots
             if not set(['rbp','ebp','rsp','esp']) & set(regs):
                 self.pivots[sp_move]  = addr
+
+        #
+        # HACK: Set up a special '.leave' helper.  This is so that
+        #       I don't have to rewrite __getattr__ to support this.
+        #
+        self.leave = self.search(regs=frame_regs)
 
     def __repr__(self):
         return "ROP(%r)" % self.elfs
