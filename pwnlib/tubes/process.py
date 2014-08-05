@@ -132,7 +132,7 @@ class process(tube.tube):
 
         return self.proc.stdout.fileno()
 
-    def shutdown(self, direction = "out"):
+    def shutdown_raw(self, direction):
         if direction == "out":
             self.proc.stdin.close()
 

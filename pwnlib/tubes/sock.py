@@ -114,7 +114,7 @@ class sock(tube.tube):
 
         return self.sock.fileno()
 
-    def shutdown(self, direction = "out"):
+    def shutdown_raw(self, direction):
         if self.closed[direction]:
             return
 

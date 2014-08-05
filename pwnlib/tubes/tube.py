@@ -422,6 +422,29 @@ class tube(object):
         self.timeout = _fix_timeout(timeout, context.timeout)
         self.settimeout_raw(self.timeout)
 
+    def shutdown(self, direction = "send"):
+        """shutdown(direction = "send")
+
+        Closes the tube for futher reading or writing depending on `direction`.
+
+        Args:
+          direction(str): Which direction to close; "in", "read" or "recv"
+            closes the tube in the ingoing direction, "out", "write" or "send"
+            closes it in the outgoing direction.
+
+        Returns:
+          :const:`None`
+        """
+
+        if   direction in ('in', 'read', 'recv'):
+            direction = 'in'
+        elif direction in ('out', 'write', 'send'):
+            direction = 'out'
+        else:
+            log.error('direction must be "in", "read" or "recv", or "out", "write" or "send"')
+
+        self.shutdown_raw(direction)
+
     def __enter__(self):
         """Permit use of 'with' to control scoping and closing sessions.
 
@@ -509,13 +532,11 @@ class tube(object):
 
         log.bug('Should be implemented by a subclass.')
 
-    def shutdown(self, direction = "out"):
-        """shutdown(direction = "out")
+    def shutdown_raw(self, direction):
+        """shutdown_raw(direction)
 
-        Calls shutdown on the socket, and thus closing it for either reading or writing.
-
-        Args:
-          direction(str): Either the string "in" or "out".
+        Should not be called directly.  Closes the tube for further reading or
+        writing.
         """
 
         log.bug('Should be implemented by a subclass.')
