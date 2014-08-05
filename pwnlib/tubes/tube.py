@@ -28,7 +28,7 @@ class tube(object):
     def recv(self, numb = 4096, timeout = 'default'):
         """recv(numb = 4096, timeout = 'default') -> str
 
-        Receives up to `numb` bytes of data from the socket.
+        Receives up to `numb` bytes of data from the tube.
         If a timeout occurs while waiting, it will return None.
         If the connection has been closed for receiving,
         :exc:`exceptions.EOFError` will be raised.
@@ -62,7 +62,7 @@ class tube(object):
     def recvpred(self, pred, timeout = 'default'):
         """recvpred(pred, timeout = 'default') -> str
 
-        Receives one byte at a time from the socket, until ``pred(bytes)``
+        Receives one byte at a time from the tube, until ``pred(bytes)``
         evaluates to True.
 
         If a timeout occurs while waiting, it will return None, and any
@@ -258,8 +258,8 @@ class tube(object):
     def interactive(self, prompt = term.text.bold_red('$') + ' '):
         """interactive(prompt = pwnlib.term.text.bold_red('$') + ' ')
 
-        Does simultaneous reading and writing to the socket. In principle this just
-        connects the socket to standard in and standard out, but in practice this
+        Does simultaneous reading and writing to the tube. In principle this just
+        connects the tube to standard in and standard out, but in practice this
         is much more usable, since we are using :mod:`pwnlib.term` to print a
         floating prompt.
 
@@ -318,7 +318,7 @@ class tube(object):
     def clean(self, timeout = 0.05):
         """clean(timeout = 0.05)
 
-        Removes all the buffered data from a socket by calling
+        Removes all the buffered data from a tube by calling
         :meth:`pwnlib.tubes.tube.tube.recv` with a low timeout until it fails.
         """
 
@@ -343,7 +343,7 @@ class tube(object):
         def pump():
             import sys as _sys
             while True:
-                if not (self.connected('out') and other.connected('in')):
+                if not (self.connected('send') and other.connected('recv')):
                     break
 
                 try:
@@ -365,8 +365,8 @@ class tube(object):
                 if not _sys:
                     return
 
-            self.shutdown("out")
-            other.shutdown("in")
+            self.shutdown('send')
+            other.shutdown('recv')
 
         t = threading.Thread(target = pump)
         t.daemon = True
@@ -399,7 +399,7 @@ class tube(object):
         self << other << self
 
     def wait_for_close(self):
-        """Waits until the socket is closed."""
+        """Waits until the tube is closed."""
 
         while self.connected():
             time.sleep(0.05)
@@ -437,13 +437,34 @@ class tube(object):
         """
 
         if   direction in ('in', 'read', 'recv'):
-            direction = 'in'
+            direction = 'recv'
         elif direction in ('out', 'write', 'send'):
-            direction = 'out'
+            direction = 'send'
         else:
             log.error('direction must be "in", "read" or "recv", or "out", "write" or "send"')
 
         self.shutdown_raw(direction)
+
+    def connected(self, direction = 'any'):
+        """connected(direction = 'any') -> bool
+
+        Returns True if the tube is connected in the specified direction.
+
+        Args:
+          direction(str): Can be the string 'any', 'in', 'read', 'recv',
+                          'out', 'write', 'send'.
+        """
+
+        if   direction in ('in', 'read', 'recv'):
+            direction = 'recv'
+        elif direction in ('out', 'write', 'send'):
+            direction = 'send'
+        elif direction == 'any':
+            pass
+        else:
+            log.error('direction must be "any", "in", "read" or "recv", or "out", "write" or "send"')
+
+        return self.connected_raw(direction)
 
     def __enter__(self):
         """Permit use of 'with' to control scoping and closing sessions.
@@ -478,7 +499,7 @@ class tube(object):
     def send_raw(self, data):
         """send_raw(data)
 
-        Should not be called directly. Sends data to the socket.
+        Should not be called directly. Sends data to the tube.
 
         Should return :exc:`exceptions.EOFError`, if it is unable to send any
         more, because of a close tube.
@@ -490,7 +511,7 @@ class tube(object):
         """settimeout_raw(timeout)
 
         Should not be called directly. Sets the timeout for
-        the socket.
+        the tube.
         """
 
         log.bug('Should be implemented by a subclass.')
@@ -505,13 +526,11 @@ class tube(object):
 
         log.bug('Should be implemented by a subclass.')
 
-    def connected(self, direction = 'any'):
+    def connected_raw(self, direction):
         """connected(direction = 'any') -> bool
 
-        Returns True if the socket is connected in the specified direction.
-
-        Args:
-          direction(str): Can be the string 'any', 'in' or 'out'.
+        Should not be called directly.  Returns True iff the
+        tube is connected in the given direction.
         """
 
         log.bug('Should be implemented by a subclass.')
@@ -519,7 +538,7 @@ class tube(object):
     def close(self):
         """close()
 
-        Closes the socket.
+        Closes the tube.
         """
 
         log.bug('Should be implemented by a subclass.')

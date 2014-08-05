@@ -107,12 +107,12 @@ class process(tube.tube):
         else:
             return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
 
-    def connected(self, direction = 'any'):
+    def connected_raw(self, direction):
         if direction == 'any':
             return self.poll() == None
-        elif direction == 'out':
+        elif direction == 'send':
             return not self.proc.stdout.closed
-        elif direction == 'in':
+        elif direction == 'recv':
             return not self.proc.stdin.closed
 
     def close(self):
@@ -135,10 +135,10 @@ class process(tube.tube):
         return self.proc.stdout.fileno()
 
     def shutdown_raw(self, direction):
-        if direction == "out":
+        if direction == "send":
             self.proc.stdin.close()
 
-        if direction == "in":
+        if direction == "recv":
             self.proc.stdout.close()
 
         if False not in [self.proc.stdin.closed, self.proc.stdout.closed]:

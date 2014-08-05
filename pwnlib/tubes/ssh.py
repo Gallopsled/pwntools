@@ -534,7 +534,7 @@ class ssh(object):
 
         s = self.run('cat>' + misc.sh_string(remote), log_level = 0)
         s.send(data)
-        s.shutdown('out')
+        s.shutdown('send')
         s.recvall()
         if s.poll() != 0:
             log.error("Could not upload file %r" % remote)
