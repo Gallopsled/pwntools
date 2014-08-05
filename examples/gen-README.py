@@ -32,7 +32,7 @@ def append_example(_arg, top, names):
         except ValueError:
             log.warning('  Docstring is weird')
             continue
-        doc = util.safeeval.const_eval(data[0:i + 3])
+        doc = util.safeeval.const(data[0:i + 3])
         out += '* `%s`\n' % path
         out += '```%s```\n' % doc
 

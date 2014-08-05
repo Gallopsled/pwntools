@@ -54,8 +54,8 @@ def test_expr(expr, allowed_codes):
             raise ValueError("opcode %s not allowed" % dis.opname[code])
     return c
 
-def const_eval(expr):
-    """const_eval(expression) -> value
+def const(expr):
+    """const(expression) -> value
 
     Safe Python constant evaluation
 
@@ -63,11 +63,11 @@ def const_eval(expr):
     a Python constant. Strings that are not valid Python expressions
     or that contain other code besides the constant raise ValueError.
 
-    >>> const_eval("10")
+    >>> const("10")
     10
-    >>> const_eval("[1,2, (3,4), {'foo':'bar'}]")
+    >>> const("[1,2, (3,4), {'foo':'bar'}]")
     [1, 2, (3, 4), {'foo': 'bar'}]
-    >>> const_eval("[1]+[2]")
+    >>> const("[1]+[2]")
     Traceback (most recent call last):
     ...
     ValueError: opcode BINARY_ADD not allowed
@@ -76,8 +76,8 @@ def const_eval(expr):
     c = test_expr(expr, _const_codes)
     return eval(c)
 
-def expr_eval(expr):
-    """expr_eval(expression) -> value
+def expr(expr):
+    """expr(expression) -> value
 
     Safe Python expression evaluation
 
@@ -85,11 +85,11 @@ def expr_eval(expr):
     uses Python constants. This can be used to e.g. evaluate
     a numerical expression from an untrusted source.
 
-    >>> expr_eval("1+2")
+    >>> expr("1+2")
     3
-    >>> expr_eval("[1,2]*2")
+    >>> expr("[1,2]*2")
     [1, 2, 1, 2]
-    >>> expr_eval("__import__('sys').modules")
+    >>> expr("__import__('sys').modules")
     Traceback (most recent call last):
     ...
     ValueError: opcode LOAD_NAME not allowed

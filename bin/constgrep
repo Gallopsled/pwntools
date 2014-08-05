@@ -81,7 +81,7 @@ else:
 
     # Evaluate the given constant
     if args.constant:
-        constant = safeeval.expr_eval(args.constant)
+        constant = safeeval.expr(args.constant)
     else:
         constant = None
 
