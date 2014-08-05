@@ -156,12 +156,7 @@ def run_in_new_terminal(command, terminal = None):
     if terminal:
         term = which(terminal)
     else:
-        terminal = os.getenv('TERM') or os.getenv('COLORTERM')
-        if not terminal:
-            term = which('x-terminal-emulator')
-            if not term:
-                log.error('could not find a terminal, make sure $TERM or $COLORTERM is set or that "x-terminal-emulator" is in your $PATH')
-        term = which(terminal)
+        term = which('x-terminal-emulator')
     if not term:
         log.error('could not find terminal: %s' % terminal)
     termpid = os.fork()
@@ -180,11 +175,11 @@ def parse_ldd_output(output):
 
     Example:
         >>> sorted(parse_ldd_output('''
-	...     linux-vdso.so.1 =>  (0x00007fffbf5fe000)
-	...     libtinfo.so.5 => /lib/x86_64-linux-gnu/libtinfo.so.5 (0x00007fe28117f000)
-	...     libdl.so.2 => /lib/x86_64-linux-gnu/libdl.so.2 (0x00007fe280f7b000)
-	...     libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007fe280bb4000)
-	...     /lib64/ld-linux-x86-64.so.2 (0x00007fe2813dd000)
+        ...     linux-vdso.so.1 =>  (0x00007fffbf5fe000)
+        ...     libtinfo.so.5 => /lib/x86_64-linux-gnu/libtinfo.so.5 (0x00007fe28117f000)
+        ...     libdl.so.2 => /lib/x86_64-linux-gnu/libdl.so.2 (0x00007fe280f7b000)
+        ...     libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007fe280bb4000)
+        ...     /lib64/ld-linux-x86-64.so.2 (0x00007fe2813dd000)
         ... ''').keys())
         ['/lib/x86_64-linux-gnu/libc.so.6', '/lib/x86_64-linux-gnu/libdl.so.2', '/lib/x86_64-linux-gnu/libtinfo.so.5', '/lib64/ld-linux-x86-64.so.2']
     """
