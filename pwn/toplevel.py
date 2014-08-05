@@ -13,7 +13,7 @@ from pwnlib.tubes.process   import *
 from pwnlib.tubes.remote    import *
 from pwnlib.tubes.ssh       import *
 from pwnlib.ui              import *
-from pwnlib.util            import crc, net, proc
+from pwnlib.util            import crc, net, proc, iters
 from pwnlib.util.cyclic     import *
 from pwnlib.util.fiddling   import *
 from pwnlib.util.hashes     import *
