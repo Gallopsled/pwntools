@@ -696,6 +696,8 @@ def _flat(args, packer):
             out.append(_flat(arg, packer))
         elif isinstance(arg, str):
             out.append(arg)
+        elif isinstance(arg, unicode):
+            out.append(arg.encode('utf8'))
         elif isinstance(arg, (int, long)):
             out.append(packer(arg))
         else:
