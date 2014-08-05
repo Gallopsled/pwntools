@@ -161,6 +161,9 @@ def run_in_new_terminal(command, terminal = None):
         log.error('could not find terminal: %s' % terminal)
     termpid = os.fork()
     if termpid == 0:
+        os.close(0)
+        os.close(1)
+        os.close(2)
         argv = [term, '-e', command]
         os.execv(argv[0], argv)
         os._exit(1)
