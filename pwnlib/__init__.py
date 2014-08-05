@@ -3,7 +3,7 @@ __all__ = [
     'context'     , 'dynelf'      , 'elf'         , 'exception'   ,
     'gdb'         , 'log_levels'  , 'log'         , 'memleak'     ,
     'rop'         , 'shellcraft'  , 'term'        , 'tubes'       ,
-    'ui'          , 'util'
+    'ui'          , 'useragents'  , 'util'
 ]
 
 
@@ -12,6 +12,6 @@ from . import \
     context       , dynelf        , elf           , exception     , \
     gdb           , log_levels    , log           , memleak       , \
     rop           , shellcraft    , term          , tubes         , \
-    ui            , util
+    ui            , useragents    , util
 
 from .version import __version__
