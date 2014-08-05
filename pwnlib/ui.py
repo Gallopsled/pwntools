@@ -64,12 +64,15 @@ def more(text):
     Returns:
       :const:`None`
     """
-    lines = text.split('\n')
-    h = log.output(term.text.reverse('(more)'), float = True, frozen = False)
-    step = term.height - 1
-    for i in range(0, len(lines), step):
-        for l in lines[i:i + step]:
-            print l
-        if i + step < len(lines):
-            term.key.get()
-    h.delete()
+    if term.term_mode:
+        lines = text.split('\n')
+        h = log.output(term.text.reverse('(more)'), float = True, frozen = False)
+        step = term.height - 1
+        for i in range(0, len(lines), step):
+            for l in lines[i:i + step]:
+                print l
+            if i + step < len(lines):
+                term.key.get()
+        h.delete()
+    else:
+        print text
