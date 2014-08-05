@@ -24,4 +24,7 @@ from pwnlib.util.proc       import pidof
 from pwnlib.util.splash     import *
 
 # Promote these modules, so that "from pwn import *" will let you access them
-import pwn, pwnlib, re, time, sys, os, string, threading, subprocess, struct
+import \
+    collections   , operator      , os            , pwn           , \
+    pwnlib        , re            , string        , struct        , \
+    subprocess    , sys           , threading     , time
