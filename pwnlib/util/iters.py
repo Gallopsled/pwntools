@@ -2,9 +2,59 @@
 This module includes and extends the standard module :mod:`itertools`.
 """
 
+__all__ = [
+    'bruteforce'                             ,
+    'chained'                                ,
+    'consume'                                ,
+    'cyclen'                                 ,
+    'dotproduct'                             ,
+    'flatten'                                ,
+    'group'                                  ,
+    'iter_except'                            ,
+    'lexicographic'                          ,
+    'lookahead'                              ,
+    'nth'                                    ,
+    'pad'                                    ,
+    'pairwise'                               ,
+    'powerset'                               ,
+    'quantify'                               ,
+    'random_combination'                     ,
+    'random_combination_with_replacement'    ,
+    'random_permutation'                     ,
+    'random_product'                         ,
+    'repeat_func'                            ,
+    'roundrobin'                             ,
+    'tabulate'                               ,
+    'take'                                   ,
+    'unique_everseen'                        ,
+    'unique_justseen'                        ,
+    'unique_window'                          ,
+    # these are re-exported from itertools
+    'chain'                                  ,
+    'combinations'                           ,
+    'combinations_with_replacement'          ,
+    'compress'                               ,
+    'count'                                  ,
+    'cycle'                                  ,
+    'dropwhile'                              ,
+    'groupby'                                ,
+    'ifilter'                                ,
+    'ifilterfalse'                           ,
+    'imap'                                   ,
+    'islice'                                 ,
+    'izip'                                   ,
+    'izip_longest'                           ,
+    'permutations'                           ,
+    'product'                                ,
+    'repeat'                                 ,
+    'starmap'                                ,
+    'takewhile'                              ,
+    'tee'
+]
+
 from .. import log
 from itertools import *
-import collections, operator, random, copy
+import itertools, collections, operator, random, copy
 
 def take(n, iterable):
     """take(n, iterable) -> list
