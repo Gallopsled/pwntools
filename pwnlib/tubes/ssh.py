@@ -541,6 +541,11 @@ class ssh(object):
           data(str): The data to upload.
           remote(str): The filename to upload it to."""
 
+        # If 'remote' is just a filename, upload it
+        # into the working directory if it's set.
+        if self._wd and os.path.basename(remote) == remote:
+            remote = os.path.join(self._wd, remote)
+
         s = self.run('cat>' + misc.sh_string(remote), log_level = 0)
         s.send(data)
         s.shutdown('send')
