@@ -3,5 +3,5 @@ __all__ = [
     'misc', 'net', 'packing', 'proc', 'safeeval'
 ]
 
-from . import crc, cyclic, fiddling, hashes, lists
-from . import misc, net, packing, proc, safeeval
+from . import crc, cyclic, fiddling, hashes, iters
+from . import lists, misc, net, packing, proc, safeeval
