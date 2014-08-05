@@ -164,6 +164,9 @@ class ssh_channel(sock.sock):
             term.term.on_winch.remove(self.resizer)
         super(ssh_channel, self).close()
 
+    def spawn_process(self, *args, **kwargs):
+        log.error("Cannot use spawn_process on an SSH channel.""")
+
     def _close_msg(self):
         log.info('Closed SSH channel with %s' % self.host, log_level = self.log_level)
 
@@ -183,6 +186,9 @@ class ssh_connecter(sock.sock):
             raise
 
         h.success()
+
+    def spawn_process(self, *args, **kwargs):
+        log.error("Cannot use spawn_process on an SSH channel.""")
 
     def _close_msg(self):
         log.info("Closed remote connection to %s:%d via SSH connection to %s" % (self.rhost, self.rport, self.host))
@@ -220,6 +226,9 @@ class ssh_listener(sock.sock):
 
     def _close_msg(self):
         log.info("Closed remote connection to %s:%d via SSH listener on port %d via %s" % (self.rhost, self.rport, self.port, self.host))
+
+    def spawn_process(self, *args, **kwargs):
+        log.error("Cannot use spawn_process on an SSH channel.""")
 
     def wait_for_connection(self):
         """Blocks until a connection has been established."""

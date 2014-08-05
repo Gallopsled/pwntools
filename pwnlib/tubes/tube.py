@@ -1,6 +1,6 @@
 from .. import log, log_levels, context, term
 from ..util import misc
-import re, threading, sys, time
+import re, threading, sys, time, subprocess
 
 def _fix_timeout(timeout, default):
     if timeout == 'default':
@@ -386,6 +386,19 @@ class tube(object):
 
         self.connect_input(other)
         self.connect_output(other)
+
+    def spawn_process(self, *args, **kwargs):
+        """Spawns a new process having this tube as stdin, stdout and stderr.
+
+        Takes the same arguments as :class:`subprocess.Popen`."""
+
+        subprocess.Popen(
+            *args,
+            stdin = self.fileno(),
+            stdout = self.fileno(),
+            stderr = self.fileno(),
+            **kwargs
+        )
 
     def __lshift__(self, other):
         self.connect_input(other)
