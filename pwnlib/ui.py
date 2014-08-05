@@ -52,3 +52,24 @@ def pause(n = None):
         log.done_success('Done', h)
     else:
         raise ValueError('pause(): n must be a number or None')
+
+def more(text):
+    """more(text)
+
+    Shows text like the command line tool ``more``.
+
+    Args:
+      text(str):  The text to show.
+
+    Returns:
+      :const:`None`
+    """
+    lines = text.split('\n')
+    h = log.output(term.text.reverse('(more)'), float = True, frozen = False)
+    step = term.height - 1
+    for i in range(0, len(lines), step):
+        for l in lines[i:i + step]:
+            print l
+        if i + step < len(lines):
+            term.key.get()
+    h.delete()
