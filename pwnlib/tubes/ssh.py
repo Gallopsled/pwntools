@@ -14,7 +14,7 @@ class ssh_channel(sock.sock):
 
         env = env or {}
 
-        h = log.waitfor('Opening new channel: %r' % (process or 'shell'), log_level = self.log_level)
+        h = log.waitfor('Opening new channel: %r' % ((process,) or 'shell'), log_level = self.log_level)
 
         if isinstance(process, (list, tuple)):
             process = ' '.join(misc.sh_string(s) for s in process)
