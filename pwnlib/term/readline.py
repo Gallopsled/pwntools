@@ -257,6 +257,7 @@ def kill_to_end(*_):
     redisplay()
 
 def delete_char_forward(*_):
+    global buffer_right
     commit_search()
     if buffer_right:
         buffer_right = buffer_right[1:]
