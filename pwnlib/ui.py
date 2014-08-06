@@ -20,7 +20,7 @@ def options(prompt, opts, default = None):
     # XXX: Make this work nicer when in term mode
 
     if term.term_mode:
-        linefmt = '%' + str(len(str(len(opts)))) + 'd) %s'
+        numfmt = '%' + str(len(str(len(opts)))) + 'd) '
         print ' [?] ' + prompt
         hs = []
         space = '       '
@@ -28,7 +28,9 @@ def options(prompt, opts, default = None):
         cur = default
         for i, opt in enumerate(opts):
             h = log.output(arrow if i == cur else space, frozen = False)
-            print linefmt % (i + 1, opt)
+            num = numfmt % (i + 1)
+            log.output(num)
+            log.output(opt + '\n', indent = len(num) + len(space))
             hs.append(h)
         ds = ''
         prev = 0
