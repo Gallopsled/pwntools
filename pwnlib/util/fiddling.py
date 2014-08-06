@@ -447,7 +447,7 @@ def _hexiichar(c):
     else:
         return "%02x " % ord(c)
 
-def hexdump(s, width = 16, skip = True, hexii = False):
+def hexdump(s, width = 16, skip = True, hexii = False, begin = 0):
     """hexdump(s, width = 16, skip = True, hexii = False) -> str
 
     Return a hexdump-dump of a string.
@@ -457,6 +457,7 @@ def hexdump(s, width = 16, skip = True, hexii = False):
       width(int): The number of characters per line
       skip(bool): Set to True, if repeated lines should be replaced by a "*"
       hexii(bool): Set to True, if a hexii-dump should be returned instead of a hexdump.
+      begin(int):  Offset of the first byte to print in the left column
 
     Returns:
       A hexdump-dump in the form of a string.
@@ -483,7 +484,7 @@ def hexdump(s, width = 16, skip = True, hexii = False):
         last_unique = chunk
 
         # Cenerate contents for line
-        offset    = line*width
+        offset    = begin+line*width
         if not hexii:
             hexbytes  = ''.join('%02x ' % ord(b) for b in chunk)
             printable = ''.join(b if isprint(b) else '.' for b in chunk)
