@@ -1,4 +1,6 @@
-# Introduction
+# pwntools - CTF toolkit
+[![PyPI](http://img.shields.io/pypi/v/pwntools.svg)](https://pypi.python.org/pypi/pwntools/)
+[![Gittip](http://img.shields.io/gittip/gallopsled.svg)](https://www.gittip.com/gallopsled/)
 
 This is the CTF framework used by Gallopsled in every CTF.
 
