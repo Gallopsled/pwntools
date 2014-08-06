@@ -623,6 +623,10 @@ class ssh(object):
         :meth:`pwnlib.tubes.ssh.ssh_channel.interactive` on it."""
 
         s = self.shell()
+
+        if self._wd:
+            s.sendline('cd %r' % self._wd)
+
         s.interactive()
         s.close()
 
