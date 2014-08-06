@@ -343,9 +343,13 @@ class _SimpleWaiter(_Waiter):
         self.log_level = log_level
         info('%s...' % msg, log_level = self.log_level)
         self.msg = msg
+        self.last_update = 0
 
-    def status(self, _):
-        pass
+    def status(self, string):
+        t = time.time()
+        if self.last_update + 1 <= t:
+            self.last_update = t
+            info('%s: %s' % (self.msg, string), log_level = self.log_level)
 
     def success(self, string = 'OK'):
         success('%s: %s' % (self.msg, string), log_level = self.log_level)

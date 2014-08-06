@@ -48,6 +48,10 @@ Solution:
 ```
 Example showing how to use the ssh class.
 ```
+* `options.py`
+```
+Example showing `pwnlib.ui.options()`
+```
 * `remote_gdb_debugging.py`
 ```
 Simple example showing how to use the remote

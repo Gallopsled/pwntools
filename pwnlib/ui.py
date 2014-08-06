@@ -19,20 +19,73 @@ def options(prompt, opts, default = None):
 
     # XXX: Make this work nicer when in term mode
 
-    linefmt = '       %' + str(len(str(len(opts)))) + 'd) %s'
-    while True:
+    if term.term_mode:
+        linefmt = '%' + str(len(str(len(opts)))) + 'd) %s'
         print ' [?] ' + prompt
+        hs = []
+        space = '       '
+        arrow = term.text.bold_green('    => ')
+        cur = default
         for i, opt in enumerate(opts):
+            h = log.output(arrow if i == cur else space, frozen = False)
             print linefmt % (i + 1, opt)
-        s = '     Choice '
-        if default:
-            s += '[%s] ' % str(default)
-        try:
-            x = int(raw_input(s) or default)
-        except (ValueError, TypeError):
-            continue
-        if x >= 1 and x <= len(opts):
-            return x
+            hs.append(h)
+        ds = ''
+        prev = 0
+        while True:
+            prev = cur
+            was_digit = False
+            k = term.key.get()
+            if   k == '<up>':
+                if cur is None:
+                    cur = 0
+                else:
+                    cur = max(0, cur - 1)
+            elif k == '<down>':
+                if cur is None:
+                    cur = 0
+                else:
+                    cur = min(len(opts) - 1, cur + 1)
+            elif k == 'C-<up>':
+                cur = 0
+            elif k == 'C-<down>':
+                cur = len(opts) - 1
+            elif k in ('<enter>', '<right>'):
+                if cur is not None:
+                    return cur
+            elif k in tuple('1234567890'):
+                was_digit = True
+                d = str(k)
+                n = int(ds + d)
+                if n > 0 and n <= len(opts):
+                    ds += d
+                elif d != '0':
+                    ds = d
+                n = int(ds)
+                cur = n - 1
+
+            if prev != cur:
+                if prev is not None:
+                    hs[prev].update(space)
+                if was_digit:
+                    hs[cur].update(term.text.bold_green('%5s> ' % ds))
+                else:
+                    hs[cur].update(arrow)
+    else:
+        linefmt =       '       %' + str(len(str(len(opts)))) + 'd) %s'
+        while True:
+            print ' [?] ' + prompt
+            for i, opt in enumerate(opts):
+                print linefmt % (i + 1, opt)
+            s = '     Choice '
+            if default:
+                s += '[%s] ' % str(default)
+            try:
+                x = int(raw_input(s) or default)
+            except (ValueError, TypeError):
+                continue
+            if x >= 1 and x <= len(opts):
+                return x
 
 def pause(n = None):
     """Waits for either user input or a specific number of seconds."""
@@ -52,3 +105,27 @@ def pause(n = None):
         log.done_success('Done', h)
     else:
         raise ValueError('pause(): n must be a number or None')
+
+def more(text):
+    """more(text)
+
+    Shows text like the command line tool ``more``.
+
+    Args:
+      text(str):  The text to show.
+
+    Returns:
+      :const:`None`
+    """
+    if term.term_mode:
+        lines = text.split('\n')
+        h = log.output(term.text.reverse('(more)'), float = True, frozen = False)
+        step = term.height - 1
+        for i in range(0, len(lines), step):
+            for l in lines[i:i + step]:
+                print l
+            if i + step < len(lines):
+                term.key.get()
+        h.delete()
+    else:
+        print text
