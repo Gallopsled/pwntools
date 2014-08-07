@@ -239,10 +239,21 @@ def parse(s):
                     x = (CSI, (cmd, args, ''.join(map(chr, buf[i : j]))))
                     i = j
             elif c1 == ord(']'):
-                j = s.index('\x07', i)
-                if j > 0:
-                    x = (OOB, s[i:j + 1])
-                    i = j + 1
+                # XXX: this is a dirty hack:
+                #  we still need to do our homework on this one, but what we do
+                #  here is supporting setting the terminal title and updating
+                #  the color map.  we promise to do it properly in the next
+                #  iteration of this terminal emulation/compatibility layer
+                #  related: http://unix.stackexchange.com/questions/5936/can-i-set-my-local-machines-terminal-colors-to-use-those-of-the-machine-i-ssh-i
+                try:
+                    j = s.index('\x07', i)
+                except:
+                    try:
+                        j = s.index('\x1b\\', i)
+                    except:
+                        j = 1
+                x = (OOB, s[i:j + 1])
+                i = j + 1
             elif c1 in map(ord, '()'): # select G0 or G1
                 i += 3
                 continue
