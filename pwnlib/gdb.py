@@ -154,7 +154,10 @@ def attach(target, execute = None, exe = None, arch = None):
 
     log.info('running in new terminal: %s' % cmd)
     misc.run_in_new_terminal(cmd)
-
+    if pid:
+        log.waitfor('Waiting for debugger')
+        proc.wait_for_debugger(pid)
+        log.done_success()
 
 def ssh_gdb(ssh, process, execute = None, arch = None, **kwargs):
     if isinstance(process, (list, tuple)):
