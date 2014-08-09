@@ -428,7 +428,8 @@ class ELF(ELFFile):
 
         The resulting binary can be saved with ELF.save()
         """
-        self.write(address, asm.asm(assembly))
+        binary = asm.asm(('org %#x\n' % address) + assembly)
+        self.write(address, binary)
 
     def bss(self, offset):
         """Returns an index into the .bss segment"""
