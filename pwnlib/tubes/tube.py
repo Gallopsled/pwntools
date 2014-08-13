@@ -204,10 +204,12 @@ class tube(object):
             if len(data) > delimslen:
                 i = len(data) - delimslen + 1
 
-    def recvlines(self, numlines, timeout = 'default'):
-        """recvlines(numlines) -> str list
+    def recvlines(self, numlines, keepends = False, timeout = 'default'):
+        """recvlines(numlines, keepends = False) -> str list
 
         Recieve `numlines` lines.  The lines are returned as a list.
+
+        Line breaks are not included unless `keepends` is set to :const:`True`.
         """
         data = []
         for _ in xrange(numlines):
@@ -220,19 +222,25 @@ class tube(object):
                 self.buffer.extend(data)
                 raise
             data.append(res)
-        return data
 
-    def recvline(self, delims = None, timeout = 'default'):
-        """recvline(delims = None) -> str
+        if keepends:
+            return data
+
+        return [line[:-1] for line in data]
+
+    def recvline(self, delims = None, keepend = False, timeout = 'default'):
+        """recvline(delims = None, keepend = False) -> str
 
         If `delims` is :const:`None`, then recieve and return exactly one line.
         Otherwise, keep recieving lines until one is found which contains at
         least of `delims`.  The last line recieved will be returned.
 
         As a shorthand, ``delim`` may be used instead of ``(delim, )``.
+
+        Only includes the line break if `keepend` is set to :const:`True`.
         """
         if delims == None:
-            res = self.recvlines(1)
+            res = self.recvlines(1, keepends = keepend)
             if res == None:
                 return None
             return res[0]
@@ -253,13 +261,19 @@ class tube(object):
             if any(delim in res for delim in delims):
                 break
             data.append(res)
-        return res
 
-    def recvline_pred(self, pred, timeout = 'default'):
-        """recvline_pred(pred) -> str
+        if keepend:
+            return res
+
+        return res[:-1]
+
+    def recvline_pred(self, pred, keepend = False, timeout = 'default'):
+        """recvline_pred(pred, keepend = False) -> str
 
         Keep recieving lines until one, ``line``, is found such that
         ``bool(pred(line)) == True``.  Returns the last line recieved.
+
+        Only includes the line break if `keepend` is set to :const:`True`.
         """
 
         data = []
@@ -275,15 +289,21 @@ class tube(object):
                 self.buffer.extend(data)
                 raise
             data.append(res)
-        return res
 
-    def recvline_startswith(self, delims, timeout = 'default'):
-        """recvline_startswith(delims) -> str
+        if keepend:
+            return res
+
+        return res[:-1]
+
+    def recvline_startswith(self, delims, keepend = False, timeout = 'default'):
+        """recvline_startswith(delims, keepend = False) -> str
 
         Keep recieving lines until one is found that starts with one of
         `delims`.  Returns the last line recieved.
 
         As a shorthand, ``delim`` may be used instead of ``(delim, )``.
+
+        Only includes the line break if `keepend` is set to :const:`True`.
         """
 
         if not hasattr(delims, '__iter__'):
@@ -302,15 +322,21 @@ class tube(object):
             if any(res.startswith(delim) for delim in delims):
                 break
             data.append(res)
-        return res
 
-    def recvline_endswith(self, delims, timeout = 'default'):
-        """recvline_endswith(delims) -> str
+        if keepend:
+            return res
+
+        return res[:-1]
+
+    def recvline_endswith(self, delims, keepend = False, timeout = 'default'):
+        """recvline_endswith(delims, keepend = False) -> str
 
         Keep recieving lines until one is found that ends with one of `delims`.
         Returns the last line recieved.
 
         As a shorthand, ``delim`` may be used instead of ``(delim, )``.
+
+        Only includes the line break if `keepend` is set to :const:`True`.
         """
 
         if not hasattr(delims, '__iter__'):
@@ -329,7 +355,11 @@ class tube(object):
             if any(res.endswith(delim) for delim in delims):
                 break
             data.append(res)
-        return res
+
+        if keepend:
+            return res
+
+        return res[:-1]
 
     def recvregex(self, regex, exact = False, timeout = 'default'):
         """recvregex(regex, exact = False, timeout = 'default') -> str
@@ -351,8 +381,10 @@ class tube(object):
 
         return self.recvpred(pred, timeout = timeout)
 
-    def recvline_regex(self, regex, exact = False, timeout = 'default'):
-        """recvregex(regex, exact = False, timeout = 'default') -> str
+    def recvline_regex(self, regex, exact = False, keepend = False,
+                       eout = 'default'):
+        """recvregex(regex, exact = False, keepend = False,
+                     timeout = 'default') -> str
 
         Wrapper around :func:`recvline_pred`, which will return when a regex
         matches a line.
@@ -369,7 +401,7 @@ class tube(object):
         else:
             pred = regex.search
 
-        return self.recvline_pred(pred, timeout = timeout)
+        return self.recvline_pred(pred, keepend = keepend, timeout = timeout)
 
     def recvrepeat(self, timeout = 'default'):
         """recvrepeat()
