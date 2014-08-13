@@ -5,8 +5,8 @@ from .. import log
 class sock(tube.tube):
     """Methods available exclusively to sockets."""
 
-    def __init__(self, timeout, log_level):
-        super(sock, self).__init__(timeout, log_level)
+    def __init__(self, timeout):
+        super(sock, self).__init__(timeout)
         self.closed = {"recv": False, "send": False}
 
     # Overwritten for better usability
@@ -106,7 +106,7 @@ class sock(tube.tube):
         self._close_msg()
 
     def _close_msg(self):
-        log.info('Closed connection to %s port %d' % (self.rhost, self.rport), log_level = self.log_level)
+        log.info('Closed connection to %s port %d' % (self.rhost, self.rport))
 
     def fileno(self):
         if not self.sock:

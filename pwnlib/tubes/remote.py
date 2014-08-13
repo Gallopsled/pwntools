@@ -1,5 +1,5 @@
 from . import sock
-from .. import log, log_levels
+from .. import log
 import socket
 
 class remote(sock.sock):
@@ -19,9 +19,8 @@ class remote(sock.sock):
 
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
-                 timeout = 'default',
-                 log_level = log_levels.INFO):
-        super(remote, self).__init__(timeout, log_level)
+                 timeout = 'default'):
+        super(remote, self).__init__(timeout)
 
         self.rport = int(port)
         self.rhost = host
@@ -47,7 +46,7 @@ class remote(sock.sock):
         else:
             log.error("remote(): type %r is not supported" % typ)
 
-        h = log.waitfor('Opening connection to %s on port %d' % (self.rhost, self.rport), log_level = self.log_level)
+        h = log.waitfor('Opening connection to %s on port %d' % (self.rhost, self.rport))
 
         for res in socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE):
             self.family, self.type, self.proto, _canonname, sockaddr = res

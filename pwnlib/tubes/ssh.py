@@ -1,12 +1,12 @@
 import os, string, base64, paramiko, time, tempfile, threading, sys, shutil, re
-from .. import term, log_levels, log, context
+from .. import term, log, context
 from ..util import hashes, misc
 from . import sock, tube
 
 
 class ssh_channel(sock.sock):
-    def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = 'default', log_level = log_levels.INFO):
-        super(ssh_channel, self).__init__(timeout, log_level)
+    def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = 'default'):
+        super(ssh_channel, self).__init__(timeout)
 
         # keep the parent from being garbage collected in some cases
         self.parent = parent
@@ -17,7 +17,7 @@ class ssh_channel(sock.sock):
 
         env = env or {}
 
-        h = log.waitfor('Opening new channel: %r' % ((process,) or 'shell'), log_level = self.log_level)
+        h = log.waitfor('Opening new channel: %r' % ((process,) or 'shell'))
 
         if isinstance(process, (list, tuple)):
             process = ' '.join(misc.sh_string(s) for s in process)
@@ -102,11 +102,7 @@ class ssh_channel(sock.sock):
         if not self.tty:
             return super(ssh_channel, self).interactive(prompt)
 
-        log.info('Switching to interactive mode', log_level = self.log_level)
-
-        # Save this to restore later
-        debug_log_level = self.debug_log_level
-        self.debug_log_level = 0
+        log.info('Switching to interactive mode')
 
         # We would like a cursor, please!
         term.term.show_cursor()
@@ -124,7 +120,7 @@ class ssh_channel(sock.sock):
                     sys.stdout.write(cur)
                     sys.stdout.flush()
                 except EOFError:
-                    log.info('Got EOF while reading in interactive', log_level = self.log_level)
+                    log.info('Got EOF while reading in interactive')
                     go[0] = False
                     break
 
@@ -151,14 +147,12 @@ class ssh_channel(sock.sock):
                     self.send(''.join(chr(c) for c in data))
                 except EOFError:
                     go[0] = False
-                    log.info('Got EOF while sending in interactive',
-                             log_level = self.log_level)
+                    log.info('Got EOF while sending in interactive')
 
         while t.is_alive():
             t.join(timeout = 0.1)
 
         # Restore
-        self.debug_log_level = debug_log_level
         term.term.hide_cursor()
 
     def close(self):
@@ -171,11 +165,11 @@ class ssh_channel(sock.sock):
         log.error("Cannot use spawn_process on an SSH channel.""")
 
     def _close_msg(self):
-        log.info('Closed SSH channel with %s' % self.host, log_level = self.log_level)
+        log.info('Closed SSH channel with %s' % self.host)
 
 class ssh_connecter(sock.sock):
-    def __init__(self, parent, host, port, timeout = 'default', log_level = log_levels.INFO):
-        super(ssh_connecter, self).__init__(timeout, log_level)
+    def __init__(self, parent, host, port, timeout = 'default'):
+        super(ssh_connecter, self).__init__(timeout)
 
         # keep the parent from being garbage collected in some cases
         self.parent = parent
@@ -184,7 +178,7 @@ class ssh_connecter(sock.sock):
         self.rhost = host
         self.rport = port
 
-        h = log.waitfor('Connecting to %s:%d via SSH to %s' % (self.rhost, self.rport, self.host), log_level = self.log_level)
+        h = log.waitfor('Connecting to %s:%d via SSH to %s' % (self.rhost, self.rport, self.host))
         try:
             self.sock = parent.transport.open_channel('direct-tcpip', (host, port), ('127.0.0.1', 0))
         except:
@@ -201,8 +195,8 @@ class ssh_connecter(sock.sock):
 
 
 class ssh_listener(sock.sock):
-    def __init__(self, parent, bind_address, port, timeout = 'default', log_level = log_levels.INFO):
-        super(ssh_listener, self).__init__(timeout, log_level)
+    def __init__(self, parent, bind_address, port, timeout = 'default'):
+        super(ssh_listener, self).__init__(timeout)
 
         # keep the parent from being garbage collected in some cases
         self.parent = parent
@@ -210,7 +204,7 @@ class ssh_listener(sock.sock):
         self.host = parent.host
         self.port = port
 
-        h = log.waitfor('Waiting on port %d via SSH to %s' % (self.port, self.host), log_level = self.log_level)
+        h = log.waitfor('Waiting on port %d via SSH to %s' % (self.port, self.host))
         try:
             parent.transport.request_port_forward(bind_address, self.port)
         except:
@@ -254,7 +248,7 @@ class ssh_listener(sock.sock):
 
 
 class ssh(object):
-    def __init__(self, user, host, port = 22, password = None, key = None, keyfile = None, proxy_command = None, proxy_sock = None, timeout = 'default', log_level = log_levels.INFO):
+    def __init__(self, user, host, port = 22, password = None, key = None, keyfile = None, proxy_command = None, proxy_sock = None, timeout = 'default'):
         """Creates a new ssh connection.
 
         Args:
@@ -273,14 +267,13 @@ class ssh(object):
         self.host            = host
         self.port            = port
         self.timeout         = tube._fix_timeout(timeout, context.timeout)
-        self.log_level       = log_level
         self._cachedir       = os.path.join(tempfile.gettempdir(), 'pwntools-ssh-cache')
         self._wd             = None
         misc.mkdir_p(self._cachedir)
 
         keyfiles = [os.path.expanduser(keyfile)] if keyfile else []
 
-        h = log.waitfor('Connecting to %s on port %d' % (host, port), log_level = self.log_level)
+        h = log.waitfor('Connecting to %s on port %d' % (host, port))
         self.client = paramiko.SSHClient()
 
         class IgnorePolicy(paramiko.MissingHostKeyPolicy):
@@ -308,33 +301,30 @@ class ssh(object):
 
         h.success()
 
-    def shell(self, tty = True, timeout = 'default', log_level = 'default'):
-        """shell(tty = False, timeout = 'default', log_level = 'default') -> ssh_channel
+    def shell(self, tty = True, timeout = 'default'):
+        """shell(tty = False, timeout = 'default') -> ssh_channel
 
         Open a new channel with a shell inside. If `tty` is True, then a TTY
         is requested on the remote server.
 
         Return a :class:`pwnlib.tubes.ssh.ssh_channel` object.
         """
-        return self.run(None, tty, timeout = timeout, log_level = log_level)
+        return self.run(None, tty, timeout = timeout)
 
-    def run(self, process, tty = False, wd = 'default', env = None, timeout = 'default', log_level = 'default'):
-        """run(process, tty = False, wd = 'default', env = None, timeout = 'default', log_level = 'default') -> ssh_channel
+    def run(self, process, tty = False, wd = 'default', env = None, timeout = 'default'):
+        """run(process, tty = False, wd = 'default', env = None, timeout = 'default') -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
         then a TTY is requested on the remote server.
 
         Return a :class:`pwnlib.tubes.ssh.ssh_channel` object."""
 
-        if log_level == 'default':
-            log_level = self.log_level
-
         timeout = tube._fix_timeout(timeout, self.timeout)
 
         if wd == 'default':
             wd = self._wd
 
-        return ssh_channel(self, process, tty, wd, env, timeout, log_level)
+        return ssh_channel(self, process, tty, wd, env, timeout)
 
     def run_to_end(self, process, tty = False, wd = 'default', env = None):
         """run_to_end(process, tty = False, timeout = 'default', env = None) -> str
@@ -343,39 +333,39 @@ class ssh(object):
         (data, exit_status). If `tty` is True, then the command is run inside
         a TTY on the remote server."""
 
-        c = self.run(process, tty, wd = wd, timeout = None, log_level = 0)
-        data = c.recvall()
-        retcode = c.poll()
-        c.close()
-        return data, retcode
+        with context.local(log_level = 'silent'):
+            c = self.run(process, tty, wd = wd, timeout = None)
+            data = c.recvall()
+            retcode = c.poll()
+            c.close()
+            return data, retcode
 
-    def connect_remote(self, host, port, timeout = 'default', log_level = 'default'):
-        """connect_remote(host, port, timeout = 'default', log_level = 'default') -> ssh_connecter
+    def connect_remote(self, host, port, timeout = 'default'):
+        """connect_remote(host, port, timeout = 'default') -> ssh_connecter
 
         Connects to a host through an SSH connection. This is equivalent to
         using the ``-L`` flag on ``ssh``.
 
         Returns a :class:`pwnlib.tubes.ssh.ssh_connecter` object."""
 
-        return ssh_connecter(self, host, port, timeout, log_level)
+        return ssh_connecter(self, host, port, timeout)
 
-    def listen_remote(self, port, bind_address = '', timeout = 'default', log_level = 'default'):
-        """listen_remote(port, bind_address = '', timeout = 'default', log_level = 'default') -> ssh_connecter
+    def listen_remote(self, port, bind_address = '', timeout = 'default'):
+        """listen_remote(port, bind_address = '', timeout = 'default') -> ssh_connecter
 
         Listens remotely through an SSH connection. This is equivalent to
         using the ``-R`` flag on ``ssh``.
 
         Returns a :class:`pwnlib.tubes.ssh.ssh_listener` object."""
 
-        return ssh_listener(self, bind_address, port, timeout, log_level)
+        return ssh_listener(self, bind_address, port, timeout)
 
     def __getitem__(self, attr):
         """Permits indexed access to run commands over SSH
 
         >>> s = ssh(host='bandit.labs.overthewire.org', # doctest: +SKIP
         ...         user='bandit0',
-        ...         password='bandit0',
-        ...         log_level=0)
+        ...         password='bandit0')
         >>> s['echo hello'] # doctest: +SKIP
         'hello'
         """
@@ -386,8 +376,7 @@ class ssh(object):
 
         >>> s = ssh(host='bandit.labs.overthewire.org', # doctest: +SKIP
         ...         user='bandit0',
-        ...         password='bandit0',
-        ...         log_level=0)
+        ...         password='bandit0')
         >>> s.echo('hello') # doctest: +SKIP
         'hello'
         >>> s.whoami() # doctest: +SKIP
@@ -424,7 +413,7 @@ class ssh(object):
         if self.client:
             self.client.close()
             self.client = None
-            log.info("Closed connection to %r" % self.host, log_level = self.log_level)
+            log.info("Closed connection to %r" % self.host)
 
     def _libs_remote(self, remote):
         """Return a dictionary of the libraries used by a remote file."""
@@ -470,12 +459,13 @@ class ssh(object):
         total, _ = self.run_to_end('wc -c ' + misc.sh_string(remote))
         total = misc.size(int(total.split()[0]))
 
-        h = log.waitfor('Downloading %r' % remote, log_level = self.log_level)
+        h = log.waitfor('Downloading %r' % remote)
 
         def update(has):
             h.status("%s/%s" % (misc.size(has), total))
 
-        c = self.run('cat ' + misc.sh_string(remote), log_level = 0)
+        with context.local(log_level = 'silent'):
+            c = self.run('cat ' + misc.sh_string(remote))
         data = ''
 
         while True:
@@ -506,7 +496,7 @@ class ssh(object):
         local = self._get_cachefile(fingerprint)
 
         if self._verify_local_fingerprint(fingerprint):
-            log.success('Found %r in ssh cache' % remote, log_level = self.log_level)
+            log.success('Found %r in ssh cache' % remote)
         else:
             self._download_raw(remote, local)
 
@@ -550,12 +540,13 @@ class ssh(object):
           data(str): The data to upload.
           remote(str): The filename to upload it to."""
 
-        s = self.run('cat>' + misc.sh_string(remote), log_level = 0)
-        s.send(data)
-        s.shutdown('send')
-        s.recvall()
-        if s.poll() != 0:
-            log.error("Could not upload file %r" % remote)
+        with context.local(log_level = 'silent'):
+            s = self.run('cat>' + misc.sh_string(remote))
+            s.send(data)
+            s.shutdown('send')
+            s.recvall()
+            if s.poll() != 0:
+                log.error("Could not upload file %r" % remote)
 
     def upload_file(self, filename, remote = None):
         """Uploads a file to the remote server.

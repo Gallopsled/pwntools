@@ -1,4 +1,4 @@
-from .. import log, log_levels, term
+from .. import log, term
 from . import tube
 import serial, time, threading, sys
 
@@ -8,8 +8,8 @@ class serialtube(tube.tube):
             convert_newlines = True,
             bytesize = 8, parity='N', stopbits=1, xonxoff = False,
             rtscts = False, dsrdtr = False,
-            timeout = 'default', log_level = log_levels.INFO):
-        super(serialtube, self).__init__(timeout, log_level)
+            timeout = 'default'):
+        super(serialtube, self).__init__(timeout)
 
         self.convert_newlines = convert_newlines
         self.conn = serial.Serial(
@@ -75,59 +75,54 @@ class serialtube(tube.tube):
         self.close()
 
     def interactive(self, prompt = term.text.bold_red('$') + ' '):
-        log.info('Switching to interactive mode', log_level = self.log_level)
+        log.info('Switching to interactive mode')
 
-        # Save this to restore later
-        debug_log_level = self.debug_log_level
-        self.debug_log_level = 0
+        with context.local(log_level = 'info'):
+            # We would like a cursor, please!
+            term.term.show_cursor()
 
-        # We would like a cursor, please!
-        term.term.show_cursor()
+            go = [True]
+            def recv_thread(go):
+                while go[0]:
+                    try:
+                        cur = self.recv(timeout = 0.05)
+                        if cur == None:
+                            continue
+                        elif cur == '\a':
+                            # Ugly hack until term unstands bell characters
+                            continue
+                        sys.stdout.write(cur)
+                        sys.stdout.flush()
+                    except EOFError:
+                        log.info('Got EOF while reading in interactive')
+                        go[0] = False
+                        break
 
-        go = [True]
-        def recv_thread(go):
+            t = threading.Thread(target = recv_thread, args = (go,))
+            t.daemon = True
+            t.start()
+
             while go[0]:
-                try:
-                    cur = self.recv(timeout = 0.05)
-                    if cur == None:
-                        continue
-                    elif cur == '\a':
-                        # Ugly hack until term unstands bell characters
-                        continue
-                    sys.stdout.write(cur)
-                    sys.stdout.flush()
-                except EOFError:
-                    log.info('Got EOF while reading in interactive', log_level = self.log_level)
-                    go[0] = False
-                    break
+                if term.term_mode:
+                    try:
+                        data = term.key.getraw(0.1)
+                    except IOError:
+                        if go[0]:
+                            raise
+                else:
+                    data = sys.stdin.read(1)
+                    if not data:
+                        go[0] = False
 
-        t = threading.Thread(target = recv_thread, args = (go,))
-        t.daemon = True
-        t.start()
+                if data:
+                    try:
+                        self.send(''.join(chr(c) for c in data))
+                    except EOFError:
+                        go[0] = False
+                        log.info('Got EOF while sending in interactive')
 
-        while go[0]:
-            if term.term_mode:
-                try:
-                    data = term.key.getraw(0.1)
-                except IOError:
-                    if go[0]:
-                        raise
-            else:
-                data = sys.stdin.read(1)
-                if not data:
-                    go[0] = False
+            while t.is_alive():
+                t.join(timeout = 0.1)
 
-            if data:
-                try:
-                    self.send(''.join(chr(c) for c in data))
-                except EOFError:
-                    go[0] = False
-                    log.info('Got EOF while sending in interactive',
-                             log_level = self.log_level)
-
-        while t.is_alive():
-            t.join(timeout = 0.1)
-
-        # Restore
-        self.debug_log_level = debug_log_level
-        term.term.hide_cursor()
+            # Restore
+            term.term.hide_cursor()
