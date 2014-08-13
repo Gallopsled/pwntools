@@ -240,7 +240,7 @@ class tube(object):
         Only includes the line break if `keepend` is set to :const:`True`.
         """
         if delims == None:
-            res = self.recvlines(1, keepends = keepend)
+            res = self.recvlines(1, keepends = keepend, timeout = timeout)
             if res == None:
                 return None
             return res[0]
