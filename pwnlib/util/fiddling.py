@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 import re, base64, random, string
 from . import packing, lists
 from .. import context
+from ..term import text
 
 def unhex(s):
     """unhex(s) -> str
@@ -447,7 +449,14 @@ def _hexiichar(c):
     else:
         return "%02x " % ord(c)
 
-def hexdump(s, width = 16, skip = True, hexii = False, begin = 0):
+default_style = {
+    'marker': text.gray if text.has_gray else text.blue,
+    'nonprintable': text.gray if text.has_gray else text.blue,
+    '00': text.red,
+    'ff': text.green
+    }
+
+def hexdump(s, width = 16, skip = True, hexii = False, begin = 0, style = {}):
     """hexdump(s, width = 16, skip = True, hexii = False) -> str
 
     Return a hexdump-dump of a string.
@@ -462,15 +471,21 @@ def hexdump(s, width = 16, skip = True, hexii = False, begin = 0):
     Returns:
       A hexdump-dump in the form of a string.
 """
+    _style = style
+    style = default_style.copy()
+    style.update(_style)
+
     lines       = []
     last_unique = ''
     byte_width  = len('00 ')
     column_sep  = '  '
-    line_fmt    = '%%(offset)08x  %%(hexbytes)-%is |%%(printable)s|' % (len(column_sep)+(width*byte_width))
+    line_fmt    = '%%(offset)08x  %%(hexbytes)-%is │%%(printable)s│' % (len(column_sep)+(width*byte_width))
+    spacer      = ' '
+    marker      = (style.get('marker') or (lambda s:s))('│')
 
     if hexii:
         column_sep = ''
-        line_fmt   = '%%(offset)08x  %%(hexbytes)-%is|' % (len(column_sep)+(width*byte_width))
+        line_fmt   = '%%(offset)08x  %%(hexbytes)-%is│' % (len(column_sep)+(width*byte_width))
 
     for line, chunk in enumerate(lists.group(width, s)):
         # If this chunk is the same as the last unique chunk,
@@ -485,17 +500,37 @@ def hexdump(s, width = 16, skip = True, hexii = False, begin = 0):
 
         # Cenerate contents for line
         offset    = begin+line*width
-        if not hexii:
-            hexbytes  = ''.join('%02x ' % ord(b) for b in chunk)
-            printable = ''.join(b if isprint(b) else '.' for b in chunk)
-        else:
-            hexbytes  = ''.join(_hexiichar(b) for b in chunk)
-            printable = ''
+        hexbytes = ''
+        printable = ''
+        for i, b in enumerate(chunk):
+            hbyte = ''
+            abyte = ''
+            if not hexii:
+                hbyte = '%02x' % ord(b)
+                abyte = b if isprint(b) else '⋅'
+                if hbyte in style:
+                    st = style[hbyte]
+                elif isprint(b):
+                    st = style.get('printable')
+                else:
+                    st = style.get('nonprintable')
 
-        # Insert column break in middle, for even-width lines
-        middle = (width/2)*byte_width
-        if len(hexbytes) > middle:
-            hexbytes = hexbytes[:middle] + column_sep + hexbytes[middle:]
+                if st:
+                    hbyte = st(hbyte)
+                    abyte = st(abyte)
+
+            else:
+                hbyte = _hexiichar(b)
+            if i % 4 == 3 and i < width - 1:
+                hbyte += spacer
+                abyte += marker
+
+            hexbytes += hbyte + ' '
+            printable += abyte
+
+        if i + 1 < width:
+            delta = width - i - 1
+            hexbytes += ' ' * (byte_width * delta + (delta - 1) // 4)
 
         lines.append(line_fmt % {'offset': offset, 'hexbytes': hexbytes, 'printable': printable})
 
