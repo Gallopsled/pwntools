@@ -18,10 +18,8 @@ def _fix_timeout(timeout, default):
 class tube(object):
     """Container of all the tube functions common to both sockets, TTYs and SSH connetions."""
 
-    def __init__(self, timeout, log_level):
+    def __init__(self, timeout):
         self.buffer          = []
-        self.log_level       = log_level
-        self.debug_log_level = min(log_levels.DEBUG, log_level)
         self.timeout         = _fix_timeout(timeout, context.timeout)
 
     # Functions based on functions from subclasses
@@ -86,9 +84,9 @@ class tube(object):
                 log.debug('Timed out')
                 return None
             else:
-                if context.log_level <= self.debug_log_level:
+                if context.log_level <= log_levels.DEBUG:
                     for line in data.splitlines(True):
-                        log.debug('Received: %r' % line, log_level = self.debug_log_level)
+                        log.debug('Received: %r' % line)
 
         if len(data) > numb:
             self.buffer.append(data[numb:])
@@ -434,7 +432,7 @@ class tube(object):
         Receives data until EOF is reached.
         """
 
-        h = log.waitfor('Recieving all data', log_level = self.log_level)
+        h = log.waitfor('Recieving all data')
 
         l = 0
         r = []
@@ -465,8 +463,9 @@ class tube(object):
         connection, it raises and :exc:`exceptions.EOFError`.
         """
 
-        for line in re.findall('(?:.*\n)|(?:.+$)', data):
-            log.debug('Send: %r' % line, log_level = self.debug_log_level)
+        if context.log_level <= log_levels.DEBUG:
+            for line in data.splitlines(True):
+                log.debug('Received: %r' % line)
         self.send_raw(data)
 
     def sendline(self, line):
@@ -522,54 +521,46 @@ class tube(object):
         Thus it only works in while in :data:`pwnlib.term.term_mode`.
         """
 
+        with context.local(log_level = 'info'):
+            log.info('Switching to interactive mode')
 
-        log.info('Switching to interactive mode', log_level = self.log_level)
-
-        # Save this to restore later
-        debug_log_level = self.debug_log_level
-        self.debug_log_level = 0
-
-        go = [True]
-        def recv_thread(go):
-            while go[0]:
-                try:
-                    cur = self.recv(timeout = 0.05)
-                    if cur == None:
-                        continue
-                    sys.stdout.write(cur)
-                    sys.stdout.flush()
-                except EOFError:
-                    log.info('Got EOF while reading in interactive', log_level = self.log_level)
-                    break
-
-        t = threading.Thread(target = recv_thread, args = (go,))
-        t.daemon = True
-        t.start()
-
-        try:
-            while go[0]:
-                if term.term_mode:
-                    data = term.readline.readline(prompt = prompt, float = True)
-                else:
-                    data = sys.stdin.read(1)
-
-                if data:
+            go = [True]
+            def recv_thread(go):
+                while go[0]:
                     try:
-                        self.send(data)
+                        cur = self.recv(timeout = 0.05)
+                        if cur == None:
+                            continue
+                        sys.stdout.write(cur)
+                        sys.stdout.flush()
                     except EOFError:
+                        log.info('Got EOF while reading in interactive')
+                        break
+
+            t = threading.Thread(target = recv_thread, args = (go,))
+            t.daemon = True
+            t.start()
+
+            try:
+                while go[0]:
+                    if term.term_mode:
+                        data = term.readline.readline(prompt = prompt, float = True)
+                    else:
+                        data = sys.stdin.read(1)
+
+                    if data:
+                        try:
+                            self.send(data)
+                        except EOFError:
+                            go[0] = False
+                            log.info('Got EOF while sending in interactive')
+                    else:
                         go[0] = False
-                        log.info('Got EOF while sending in interactive',
-                                 log_level = self.log_level)
-                else:
-                    go[0] = False
-        except KeyboardInterrupt:
-            log.info('Interrupted')
+            except KeyboardInterrupt:
+                log.info('Interrupted')
 
-        while t.is_alive():
-            t.join(timeout = 0.1)
-
-        # Restore
-        self.debug_log_level = debug_log_level
+            while t.is_alive():
+                t.join(timeout = 0.1)
 
     def clean(self, timeout = 0.05):
         """clean(timeout = 0.05)
