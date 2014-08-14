@@ -453,11 +453,13 @@ default_style = {
     'marker': text.gray if text.has_gray else text.blue,
     'nonprintable': text.gray if text.has_gray else text.blue,
     '00': text.red,
-    'ff': text.green
+    'ff': text.green,
     }
 
-def hexdump(s, width = 16, skip = True, hexii = False, begin = 0, style = {}):
-    """hexdump(s, width = 16, skip = True, hexii = False) -> str
+def hexdump(s, width = 16, skip = True, hexii = False, begin = 0, style = {},
+            highlight = []):
+    """hexdump(s, width = 16, skip = True, hexii = False, begin = 0, style = {},
+               highlight = []) -> str
 
     Return a hexdump-dump of a string.
 
@@ -467,10 +469,16 @@ def hexdump(s, width = 16, skip = True, hexii = False, begin = 0, style = {}):
       skip(bool): Set to True, if repeated lines should be replaced by a "*"
       hexii(bool): Set to True, if a hexii-dump should be returned instead of a hexdump.
       begin(int):  Offset of the first byte to print in the left column
+      style(dict): Color scheme to use.
+      highlight(iterable): Byte values to highlight.
 
     Returns:
       A hexdump-dump in the form of a string.
 """
+    for b in highlight:
+        if isinstance(b, str):
+            b = ord(b)
+        style['%02x' % b] = text.white_on_red
     _style = style
     style = default_style.copy()
     style.update(_style)
