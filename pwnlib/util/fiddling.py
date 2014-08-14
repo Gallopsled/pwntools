@@ -542,5 +542,5 @@ def hexdump(s, width = 16, skip = True, hexii = False, begin = 0, style = {},
 
         lines.append(line_fmt % {'offset': offset, 'hexbytes': hexbytes, 'printable': printable})
 
-    lines.append("%08x" % len(s))
+    lines.append("%08x" % (len(s) + begin))
     return '\n'.join(lines)
