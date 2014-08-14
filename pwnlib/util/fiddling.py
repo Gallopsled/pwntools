@@ -456,12 +456,12 @@ default_style = {
     'ff': text.green,
     }
 
-def hexdump(s, width = 16, skip = True, hexii = False, begin = 0, style = {},
-            highlight = []):
-    """hexdump(s, width = 16, skip = True, hexii = False, begin = 0, style = {},
-               highlight = []) -> str
+def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
+                 style = {}, highlight = []):
+    """hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
+                    style = {}, highlight = []) -> str generator
 
-    Return a hexdump-dump of a string.
+    Return a hexdump-dump of a string as a generator of lines.
 
     Args:
       s(str): The string to dump
@@ -499,12 +499,14 @@ def hexdump(s, width = 16, skip = True, hexii = False, begin = 0, style = {},
         # If this chunk is the same as the last unique chunk,
         # use a '*' instead.
         if skip and (last_unique == chunk):
-            if lines[-1] != '*':
-                lines.append('*')
+            if not skipping:
+                yield '*'
+                skipping = True
             continue
 
         # Chunk is unique, save for next iteration
         last_unique = chunk
+        skipping = False
 
         # Cenerate contents for line
         offset    = begin+line*width
@@ -540,7 +542,12 @@ def hexdump(s, width = 16, skip = True, hexii = False, begin = 0, style = {},
             delta = width - i - 1
             hexbytes += ' ' * (byte_width * delta + (delta - 1) // 4)
 
-        lines.append(line_fmt % {'offset': offset, 'hexbytes': hexbytes, 'printable': printable})
+        line = line_fmt % {'offset': offset, 'hexbytes': hexbytes, 'printable': printable}
+        yield line
 
-    lines.append("%08x" % (len(s) + begin))
-    return '\n'.join(lines)
+    line = "%08x" % (len(s) + begin)
+    yield line
+
+def hexdump(s, width = 16, skip = True, hexii = False, begin = 0,
+            style = {}, highlight = []):
+    return '\n'.join(hexdump_iter(s, width, skip, hexii, begin, style, highlight))
