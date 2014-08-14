@@ -76,4 +76,4 @@ if args.highlight:
         for h in hs.split(','):
             hl.append(asint(h))
 
-print hexdump(data, width, highlight = hl, begin = offset)
+print hexdump(data, width, highlight = hl, begin = offset + skip)
