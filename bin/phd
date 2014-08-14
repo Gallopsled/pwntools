@@ -76,5 +76,8 @@ if args.highlight:
         for h in hs.split(','):
             hl.append(asint(h))
 
-for line in hexdump_iter(data, width, highlight = hl, begin = offset + skip):
-    print line
+try:
+    for line in hexdump_iter(data, width, highlight = hl, begin = offset + skip):
+        print line
+except (KeyboardInterrupt, IOError):
+    pass
