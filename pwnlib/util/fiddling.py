@@ -494,6 +494,21 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
     if hexii:
         column_sep = ''
         line_fmt   = '%%(offset)08x  %%(hexbytes)-%is│' % (len(column_sep)+(width*byte_width))
+    else:
+        def style_byte(b):
+            hbyte = '%02x' % ord(b)
+            abyte = b if isprint(b) else '⋅'
+            if hbyte in style:
+                st = style[hbyte]
+            elif isprint(b):
+                st = style.get('printable')
+            else:
+                st = style.get('nonprintable')
+            if st:
+                hbyte = st(hbyte)
+                abyte = st(abyte)
+            return hbyte, abyte
+        cache = [style_byte(chr(b)) for b in range(256)]
 
     for line, chunk in enumerate(lists.group(width, s)):
         # If this chunk is the same as the last unique chunk,
@@ -513,24 +528,11 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
         hexbytes = ''
         printable = ''
         for i, b in enumerate(chunk):
-            hbyte = ''
-            abyte = ''
             if not hexii:
-                hbyte = '%02x' % ord(b)
-                abyte = b if isprint(b) else '⋅'
-                if hbyte in style:
-                    st = style[hbyte]
-                elif isprint(b):
-                    st = style.get('printable')
-                else:
-                    st = style.get('nonprintable')
-
-                if st:
-                    hbyte = st(hbyte)
-                    abyte = st(abyte)
-
+                hbyte, abyte = cache[ord(b)]
             else:
-                hbyte = _hexiichar(b)
+                hbyte, abyte = _hexiichar(b), ''
+
             if i % 4 == 3 and i < width - 1:
                 hbyte += spacer
                 abyte += marker
