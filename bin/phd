@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
 import argparse, sys, os
+import pwnlib.term.text as text
 from pwnlib.util.fiddling import hexdump_iter
 
 parser = argparse.ArgumentParser(
@@ -46,6 +47,14 @@ parser.add_argument(
     default='0',
 )
 
+parser.add_argument(
+    "--color",
+    nargs='?',
+    help="Colorize the output.  When 'auto' output is colorized exactly when stdout is a TTY.  Default is 'auto'.",
+    choices = ('always', 'never', 'auto'),
+    default='auto',
+)
+
 def asint(s):
     if   s.startswith('0x'):
         return int(s, 16)
@@ -61,6 +70,10 @@ width  = asint(args.width)
 skip   = asint(args.skip)
 count  = asint(args.count)
 offset = asint(args.offset)
+
+# if `--color` has no argument it is `None`
+color = args.color or 'always'
+text.when = color
 
 if skip:
     if infile == sys.stdin:
