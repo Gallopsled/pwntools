@@ -210,14 +210,17 @@ class ELF(ELFFile):
         plt = self.get_section_by_name('.plt')
         got = self.get_section_by_name('.got')
 
+        self.got = {}
+        self.plt = {}
+
+        if not plt:
+            return
+
         # Find the relocation section for PLT
         rel_plt = next(s for s in self.sections if s.header.sh_info == self.sections.index(plt))
 
         # Find the symbols for the relocation section
         sym_rel_plt = self.sections[rel_plt.header.sh_link]
-
-        self.got = {}
-        self.plt = {}
 
         # Populate the GOT
         for rel in rel_plt.iter_relocations():
