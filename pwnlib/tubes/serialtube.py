@@ -18,31 +18,41 @@ class serialtube(tube.tube):
             bytesize = 8,
             parity = 'N',
             stopbits = 1,
-            timeout = 0.001,
+            timeout = 0,
             xonxoff = False,
             rtscts = False,
-            writeTimeout = 0.001,
+            writeTimeout = None,
             dsrdtr = False,
-            interCharTimeout = 0.001
+            interCharTimeout = 0
         )
 
     # Implementation of the methods required for tube
     def recv_raw(self, numb):
+        if not self.conn:
+            raise EOFError
+
         if self.timeout == None:
-            end = time.time() + 100000000
+            end = float('inf')
         else:
             end = time.time() + self.timeout
 
-        while end > time.time():
+        while True:
             data = self.conn.read(numb)
             if data:
                 return data
+
+            delta = end - time.time()
+            if delta <= 0:
+                break
             else:
-                time.sleep(0.1)
+                time.sleep(min(delta, 0.1))
 
         return None
 
     def send_raw(self, data):
+        if not self.conn:
+            raise EOFError
+
         if self.convert_newlines:
             data = data.replace('\n', '\r\n')
 
@@ -55,10 +65,14 @@ class serialtube(tube.tube):
         pass
 
     def can_recv_raw(self, timeout):
-        return self.conn.inWaiting() > 0
+        end = time.time()
+        while time.time() < end:
+            if self.conn.inWaiting():
+                return True
+        return False
 
     def connected_raw(self, direction):
-        return True
+        return self.conn != None
 
     def close(self):
         if self.conn:
