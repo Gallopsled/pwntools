@@ -138,9 +138,11 @@ if len(args.args) < reqargs:
         log.fatal('%s takes exactly %d arguments' % (args.shellcode, reqargs))
 
 # Captain uglyness saves the day!
-for i in range(len(args.args)):
-    if args.args[i] in ['False', 'false']:
-        args.args[i] = False
+for i, val in enumerate(args.args):
+    try:
+        args.args[i] = util.safeeval.expr(val)
+    except ValueError:
+        pass
 
 # And he strikes again!
 os = arch = None
