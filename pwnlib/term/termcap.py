@@ -12,7 +12,16 @@ def get(cap, *args, **kwargs):
         init()
     s = cache.get(cap)
     if not s:
-        s = curses.tigetstr(cap) or default
+        s = curses.tigetstr(cap)
+        if s == None:
+            s = curses.tigetnum(cap)
+            if s == -2:
+                s = curses.tigetflag(cap)
+                if s == -1:
+                    # default to empty string so tparm doesn't fail
+                    s = ''
+                else:
+                    s = bool(s)
         cache[cap] = s
     if args:
         return curses.tparm(s, *args)

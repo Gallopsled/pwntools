@@ -1,12 +1,11 @@
-from .. import log, log_levels
+from .. import log
 from . import tube
 import subprocess, fcntl, os, select
 
 class process(tube.tube):
     def __init__(self, args, shell = False, executable = None,
-                 cwd = None, env = None,
-                 timeout = 'default', log_level = log_levels.INFO):
-        super(process, self).__init__(timeout, log_level)
+                 cwd = None, env = None, timeout = 'default'):
+        super(process, self).__init__(timeout)
 
         if executable:
             self.program = executable
@@ -30,7 +29,7 @@ class process(tube.tube):
         fl = fcntl.fcntl(fd, fcntl.F_GETFL)
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
-        log.success("Started program %r" % self.program, log_level = self.log_level)
+        log.success("Started program %r" % self.program)
 
     def kill(self):
         """kill()
@@ -49,7 +48,7 @@ class process(tube.tube):
         self.proc.poll()
         if self.proc.returncode != None and not self.stop_noticed:
             self.stop_noticed = True
-            log.info("Program %r stopped with exit code %d" % (self.program, self.proc.returncode), log_level = self.log_level)
+            log.info("Program %r stopped with exit code %d" % (self.program, self.proc.returncode))
 
         return self.proc.returncode
 
@@ -123,7 +122,7 @@ class process(tube.tube):
             try:
                 self.proc.kill()
                 self.stop_noticed = True
-                log.info('Stopped program %r' % self.program, log_level = self.log_level)
+                log.info('Stopped program %r' % self.program)
             except OSError:
                 pass
 

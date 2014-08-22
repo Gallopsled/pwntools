@@ -26,7 +26,16 @@ def hide_cursor():
 def update_geometry():
     global width, height
     hw = fcntl.ioctl(fd.fileno(), termios.TIOCGWINSZ, '1234')
-    height, width = struct.unpack('hh', hw)
+    h, w = struct.unpack('hh', hw)
+    # if the window shrunk and theres still free space at the bottom move
+    # everything down
+    if h < height and scroll == 0:
+        if cells and cells[-1].end[0] < 0:
+            delta = min(height - h, 1 - cells[-1].end[0])
+            for cell in cells:
+                cell.end = (cell.end[0] + delta, cell.end[1])
+                cell.start = (cell.start[0] + delta, cell.start[1])
+    height, width = h, w
 
 def handler_sigwinch(signum, stack):
     update_geometry()
@@ -142,7 +151,7 @@ def goto((r, c)):
 cells = []
 scroll = 0
 
-class Cell:
+class Cell(object):
     pass
 
 class Handle:
@@ -239,10 +248,21 @@ def parse(s):
                     x = (CSI, (cmd, args, ''.join(map(chr, buf[i : j]))))
                     i = j
             elif c1 == ord(']'):
-                j = s.index('\x07', i)
-                if j > 0:
-                    x = (OOB, s[i:j + 1])
-                    i = j + 1
+                # XXX: this is a dirty hack:
+                #  we still need to do our homework on this one, but what we do
+                #  here is supporting setting the terminal title and updating
+                #  the color map.  we promise to do it properly in the next
+                #  iteration of this terminal emulation/compatibility layer
+                #  related: http://unix.stackexchange.com/questions/5936/can-i-set-my-local-machines-terminal-colors-to-use-those-of-the-machine-i-ssh-i
+                try:
+                    j = s.index('\x07', i)
+                except:
+                    try:
+                        j = s.index('\x1b\\', i)
+                    except:
+                        j = 1
+                x = (OOB, s[i:j + 1])
+                i = j + 1
             elif c1 in map(ord, '()'): # select G0 or G1
                 i += 3
                 continue
@@ -397,6 +417,10 @@ def render_cell(cell, clear_after = False):
 
 def render_from(i, force = False, clear_after = False):
     e = None
+    # `i` should always be a valid cell, but in case i f***ed up somewhere, I'll
+    # check it and just do nothing if something went wrong.
+    if i < 0 or i >= len(cells):
+        return
     goto(cells[i].start)
     for c in cells[i:]:
         if not force and c.start == e:
@@ -416,7 +440,7 @@ def redraw():
         if row - scroll + height - 1 < 0:
             break
     # XXX: remove this line when render_cell is fixed
-    if cells[i].start[0] - scroll + height < 0:
+    if cells[i].start[0] - scroll + height <= 0:
         i += 1
     render_from(i, force = True, clear_after = True)
 

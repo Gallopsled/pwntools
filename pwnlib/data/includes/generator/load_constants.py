@@ -1,5 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 import sys, string, os, re
+from pwnlib.util import safeeval
 
 python = open(sys.argv[1], "w")
 header = open(sys.argv[2], "w")
@@ -25,4 +26,7 @@ for l in data:
         val = val[:-1]
 
     print >> python, "%s = %s" % (key, val)
-    print >> header, "#define %s %s" % (key, val)
+    if re.match(r'^0[0-9]', val) or re.match(r'[^0-9a-fA-Fx]0[0-9]', val):
+        print >> header, "#define %s %s" % (key, hex(safeeval.expr(val)))
+    else:
+        print >> header, "#define %s %s" % (key, val)

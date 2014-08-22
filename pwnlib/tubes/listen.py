@@ -1,5 +1,5 @@
 from . import sock
-from .. import log, log_levels
+from .. import log
 import socket, errno, threading
 
 class listen(sock.sock):
@@ -19,9 +19,8 @@ class listen(sock.sock):
 
     def __init__(self, port, bindaddr = "0.0.0.0",
                  fam = "any", typ = "tcp",
-                 timeout = 'default',
-                 log_level = log_levels.INFO):
-        super(listen, self).__init__(timeout, log_level)
+                 timeout = 'default'):
+        super(listen, self).__init__(timeout)
 
         port = int(port)
 
@@ -45,7 +44,7 @@ class listen(sock.sock):
         else:
             log.error("remote(): type %r is not supported" % typ)
 
-        h = log.waitfor('Trying to bind to %s on port %d' % (bindaddr, port), log_level = self.log_level)
+        h = log.waitfor('Trying to bind to %s on port %d' % (bindaddr, port))
 
         for res in socket.getaddrinfo(bindaddr, port, fam, typ, 0, socket.AI_PASSIVE):
             self.family, self.type, self.proto, self.canonname, self.sockaddr = res
@@ -67,7 +66,7 @@ class listen(sock.sock):
 
         h.success()
 
-        h = log.waitfor('Waiting', log_level = self.log_level)
+        h = log.waitfor('Waiting')
 
         def accepter():
             while True:

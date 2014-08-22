@@ -48,6 +48,18 @@ Solution:
 ```
 Example showing how to use the ssh class.
 ```
+* `text.py`
+```
+Example showing how to use `pwnlib.term.text`.
+
+Try running with::
+
+  $ TERM=xterm python text.py
+
+and::
+
+  $ TERM=xterm-256color python text.py
+```
 * `options.py`
 ```
 Example showing `pwnlib.ui.options()`
