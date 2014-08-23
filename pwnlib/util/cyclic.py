@@ -96,8 +96,8 @@ def cyclic_find(subseq, alphabet = string.ascii_lowercase, n = None):
       >>> cyclic_find(cyclic(1000)[514:518])
       514
     """
-    if not all(map(alphabet.__contains__, subseq)):
-      return -1
+    if any(c not in alphabet for c in subseq):
+        return -1
 
     if isinstance(subseq, (int, long)):
         width = n * 8 or 'all'
