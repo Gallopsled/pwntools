@@ -65,7 +65,10 @@ class ssh_channel(sock.sock):
 
         self.close()
 
-    def poll(self):
+    def wait(self):
+        return self.poll(block=True)
+
+    def poll(self, block=False):
         """poll() -> int
 
         Poll the exit code of the process. Will return None, if the
@@ -73,7 +76,7 @@ class ssh_channel(sock.sock):
         """
 
         if self.returncode == None:
-            if self.sock and self.sock.exit_status_ready():
+            if block or (self.sock and self.sock.exit_status_ready()):
                 self.returncode = self.sock.recv_exit_status()
 
         return self.returncode
@@ -336,7 +339,7 @@ class ssh(object):
         with context.local(log_level = 'silent'):
             c = self.run(process, tty, wd = wd, timeout = None)
             data = c.recvall()
-            retcode = c.poll()
+            retcode = c.wait()
             c.close()
             return data, retcode
 
@@ -475,8 +478,8 @@ class ssh(object):
                 break
             update(len(data))
 
-        if c.poll() != 0:
-            h.failure('Could not download file %r' % remote)
+        if c.wait() != 0:
+            h.failure('Could not download file %r (%r)' % (remote, result))
         else:
             with open(local, 'w') as fd:
                 fd.write(data)
@@ -545,7 +548,7 @@ class ssh(object):
             s.send(data)
             s.shutdown('send')
             s.recvall()
-            if s.poll() != 0:
+            if s.wait() != 0:
                 log.error("Could not upload file %r" % remote)
 
     def upload_file(self, filename, remote = None):
