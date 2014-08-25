@@ -5,3 +5,7 @@
 *.pdf
 */auto/*
 */bin/*
+build
+MANIFEST
+dist
+pwntools.egg-info

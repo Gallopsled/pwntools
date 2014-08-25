@@ -1,0 +1,14 @@
+These files all come from the GNU Binutils package.
+
+The source code is available here:
+https://www.gnu.org/software/binutils/
+
+We have made no alterations to the software, except
+for changing the build-system slightly to allow the
+creating of a disassembler with a horrifically large
+number of supported architectures.
+
+The binaries are to the best of our knowledge redistributable
+under GPL, which is available here:
+
+https://www.gnu.org/licenses/gpl.html

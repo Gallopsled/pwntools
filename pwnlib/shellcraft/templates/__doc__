@@ -1,0 +1,15 @@
+The shellcode module.
+
+This module contains functions for generating shellcode.
+
+It is organized first by architecture and then by operating system.
+
+Example:
+
+    >>> print shellcraft.i386.nop()
+        nop
+    >>> print shellcraft.i386.linux.sh()
+        ;; Clear eax, ecx, edx
+        xor ecx, ecx
+        imul ecx
+    ...

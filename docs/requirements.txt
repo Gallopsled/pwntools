@@ -1,0 +1,5 @@
+paramiko
+argparse
+mako
+pyelftools
+sphinxcontrib-napoleon

@@ -1,68 +1,42 @@
-# Introduction
+# pwntools - CTF toolkit
+[![Docs latest](https://readthedocs.org/projects/pwntools/badge/)](http://pwntools.readthedocs.org/en/latest)
+[![Docs 2.1.3](https://readthedocs.org/projects/pwntools/badge/?version=2.1.3)](http://pwntools.readthedocs.org/en/2.1.3)
+[![PyPI](http://img.shields.io/pypi/v/pwntools.svg)](https://pypi.python.org/pypi/pwntools/)
+[![Gittip](http://img.shields.io/gittip/gallopsled.svg)](https://www.gittip.com/gallopsled/)
 
-This is the CTF framework used by pwnies in every CTF.
+This is the CTF framework used by Gallopsled in every CTF.
 
-Most code is inside the pwn folder, which is typically used as:
+Most code is inside the pwnlib folder with some functionality inside pwn or
+bin. It is typically used as:
 
 ```python
 from pwn import *
-context('i386', 'linux')
+context(arch = 'i386', os = 'linux')
 
 # EXPLOIT HERE
 ```
 
-However we have made command-line frontends for much of the functionality
+However we have made command-line frontends for some of the functionality
 inside the pwnlib. These are:
 
-* `asm`/`disasm`: Small wrapper for nasm
-* `clookup`: Tool for looking up constants (such as SYS_open) on various os/architecture combinations.
+* `asm`/`disasm`: Small wrapper for various assemblers
+* `constgrep`: Tool for finding constants defined in header files
 * `cyclic`: De Bruijn sequence generator and lookup tool
-* `nops`: Tool for generating random nopsleds.
-* `peek`/`poke`: Simple tool for sending files over a LAN
-* `randomua`: Returns a random user agent
-* `scramble`: Shellcode packer
+* `hex`/`unhex`: Command line tools for doing common hexing/unhexing operations
 * `shellcraft`: Frontend to our shellcode
 
-We also have the following tools, not dependent on the pwnlib:
-
-*  binutils directory: Assemblers and disassemblers for various architectures
-* `bytes`: Extract the raw bytes from various textual representations
-* `crop`: Cut out rectangular portions of text
-* `demo32`/`demo64`: Tool for testing shellcode
-* `dictgen`: Generate dictionaries from input corpora
-* `gadgets`: Find ROP gadgets
-* `hex`/`unhex`: Command line tools for doing common hexing/unhexing operations
-* `mags`: Run `file` at all offsets
-
-All of these tools are symlinked to the bin folder.
+# Documentation
+Our documentation is available on http://pwntools.readthedocs.org/
 
 # Installation
-To install it, just update your `PYTHONPATH` and `PATH` variables. Alternatively
-you can run `install.sh`.
+Pwntools is available as a pip package. You can install it by running
+`pip install pwntools`.
 
-## Dependencies
-
-### Python libraries
-```
-crypto
-gmpy
-sympy
-matplotlib
-```
-
-### Haskell libraries
-The following libraries may be installed using `cabal`.
-
-```
-disassembler
-elf
-```
-
-### All of the above
-`apt-get install cabal-install python-sympy python-matplotlib
-python-gmpy python-crypto && cabal
-update && cabal install disassembler elf`
+Alternatively if you prefer to have the latest version in git, you can
+simply clone this repository, run `pip install -r requirements.txt`
+and add entries in your `PATH` and `PYTHONPATH` variables. The script
+`install_local.sh` will help you do so, in case you are using bash.
 
 # Contact
 If you have any questions not worthy of a bug report, feel free to join us
-at `#zomg_pwnies` on Freenode and ask away.
+at `#gallopsled` on Freenode and ask away.
