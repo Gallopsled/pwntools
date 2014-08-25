@@ -24,75 +24,205 @@ def gnu_hash(s):
         h = h * 33 + ord(c)
     return h & 0xffffffff
 
-class DynELF(object):
-    """DynELF is a tool for finding symbol addresses by leaking data from the .dynsym section.
+class DynELF:
+    @classmethod
+    def for_one_lib_only(cls, leak, ptr):
+        '''Instantiates and returns a DynELF instance from an arbitrary pointer into a loaded library that can
+           resolve symbols in that library only. Can be used for dynamically loaded libraries where the link_map is
+           not stable
+        '''
+        #We need the module base address
+        base = cls.find_base(leak, ptr)
 
-    Args:
-        path (filename/ELF object): the ELF file
-        leak (MemLeak object): a memory leak for the ELF file
-        base (int): base address for the binary
-    """
-    def __init__(self, path, leak, base = None):
+        #Now find out elf class
+        elfclass = ('ELF32' if leak.b(base + 4) == 1 else 'ELF64')
+
+        return cls(leak, elfclass, libbase = base)
+
+    @classmethod
+    def from_lib_ptr(cls, leak, ptr):
+        '''Instantiates and returns a DynELF instance from an arbitrary pointer into a loaded library.
+        '''
+        #We need the module base address
+        base = cls.find_base(leak, ptr)
+
+        #Now find out elf class
+        elfclass = ('ELF32' if leak.b(base + 4) == 1 else 'ELF64')
+
+        #Now find link_map
+        link_map = cls._find_linkmap32(leak, base) if elfclass == 'ELF32' else cls._find_linkmap64(leak, base)
+
+        #And we have everything we need
+        return cls(leak, elfclass, link_map = link_map)
+
+    @staticmethod
+    def find_base(leak, ptr):
+        '''Given a pointer into a library find that librarys base address.'''
+        page_mask = ~(4096 - 1)
+
+        #First find base
+        while True:
+            ptr &= page_mask
+            if leak.d(ptr) == 0x464c457f:
+                break
+            ptr -= 1
+        return ptr
+
+    @classmethod
+    def _find_dynamic32(cls, leak, base):
+        #First find PT_DYNAMIC
+        phead = base + leak.d(base + 28)
+        while True:
+            phtype = leak.d(phead)
+            #Check if program header tyep is PT_DYNAMIC
+            if phtype == 2:
+                break
+            #Skip to next
+            phead += 32
+
+        #Found dynamic
+        dynamic = leak.d(phead + 8)
+
+        #Sometimes this is an offset instead of an address
+        if dynamic < base:
+            dynamic += base
+        return dynamic
+
+    @classmethod
+    def _find_linkmap32(cls, leak, base):
+        dynamic = cls._find_dynamic32(leak, base)
+
+        #Found dynamic section, now find PLTGOT
+        while True:
+            dtype = leak.d(dynamic)
+            if dtype == 0:
+                raise 'Could not find PLTGOT'
+            elif dtype == 3:
+                break
+            #Skip to next
+            dynamic += 8
+
+        pltgot = leak.d(dynamic + 4)
+        return leak.d(pltgot + 4)
+
+    @classmethod
+    def _find_dynamic64(cls, leak, base):
+        #First find PT_DYNAMIC
+        phead = base + leak.d(base + 32)
+        while True:
+            phtype = leak.d(phead)
+            #Check if program header tyep is PT_DYNAMIC
+            if phtype == 2:
+                break
+            #Skip to next
+            phead += 56
+
+        #Now find PLTGOT
+        dynamic = leak.q(phead + 16)
+        #Sometimes this is an offset instead of an address
+        if dynamic < base:
+            dynamic += base
+        return dynamic
+
+
+    @classmethod
+    def _find_linkmap64(cls, leak, base):
+        dynamic = cls._find_dynamic64(leak, base)
+        #Found dynamic section, now find PLTGOT
+        while True:
+            dtype = leak.d(dynamic)
+            if dtype == 0:
+                raise 'Could not find PLTGOT'
+            elif dtype == 3:
+                break
+            #Skip to next
+            dynamic += 16
+
+        pltgot = leak.q(dynamic + 8)
+        return leak.q(pltgot + 8)
+
+    @classmethod
+    def from_elf(cls, leak, path, base = None):
+        '''Get an instance of DynELF initialized from a local ELF file.
+           If you have used the constructor previously this method is the one you want.
+        '''
         if isinstance(path, elf.ELF):
-            self.elf = path
+            elf = path
         else:
-            self.elf = elf.load(path)
-        if isinstance(leak, memleak.MemLeak):
-            self.leak = leak
-        else:
-            log.error('Leak must be a MemLeak object')
+            elf = elf.load(path)
 
-        self.PIE = (self.elf.elftype == 'DYN')
-        self.base = base
-        if self.PIE is False and self.base is None:
-            self.base = filter(lambda x: x['type'] == 'LOAD' and 'E' in x['flg'], self.elf.segments)[0]['virtaddr']
-            for x in self.elf.segments:
-                if x['type'] == 'LOAD' and 'E' in x['flg']:
-                    self.base = x['virtaddr']
-                    break
-        if self.base is None:
-            log.error('Position independent ELF needs a base address')
+        PIE = (elf.elftype == 'DYN')
+
+        #On non position independent executables the base address can be read off the elf.
+        if PIE is False and base is None:
+            base = filter(lambda x: x['type'] == 'LOAD' and 'E' in x['flg'], elf.segments)[0]['virtaddr']
+
+        #At this point we should have a base address
+        if base is None:
+            log.die('Position independent ELF needs a base address')
+
+        gotoff = (elf.sections['.got.plt'] if '.got.plt' in elf.sections else elf.sections['.got'])['addr']
+        #Sometimes the address is absolute, other times it's an offset relative to the base.
+        #Detect which.
+        if gotoff > base:
+            gotplt = gotoff
+        else:
+            gotplt = base + gotoff
+        
+        #Now get address of linkmap
+        if elf.elfclass == 'ELF32':
+            link_map = leak.d(gotplt, 1)
+        else:
+            link_map = leak.q(gotplt, 1)
+
+        #We have what we need.
+        return cls(leak, elf.elfclass, link_map = link_map)
+
+    def __init__(self, leak, elfclass, link_map = None, libbase = None):
+        '''Instantiates a DynELF object. You should not use this directly but rather use one of the
+           factory methods: for_one_lib_only(), from_lib_ptr() or from_elf()
+        '''
+        self.leak = leak
+        self.elfclass = elfclass
+        self.link_map = link_map
+        self.libbase = libbase
+        if self.link_map is None and self.libbase is None:
+            log.die('Either link_map or libbase needs to be specified')
 
     def bases(self):
-        """Resolve base addresses of all loaded libraries.
+        '''Resolve base addresses of all loaded libraries.
 
         Return a dictionary mapping library path to its base address.
-        """
-        if self.elf.elfclass == 'ELF32':
+        '''
+        if self.elfclass == 'ELF32':
             return self._bases32()
-        if self.elf.elfclass == 'ELF64':
+        if self.elfclass == 'ELF64':
             return self._bases64()
 
     def lookup (self, symb = None, lib = 'libc'):
         """Find the address of symbol, which is found in lib"""
-        if self.elf.elfclass == 'ELF32':
-            return self._lookup32(symb, lib)
-        if self.elf.elfclass == 'ELF64':
-            return self._lookup64(symb, lib)
+        log.waitfor('Resolving "%s"' % symb)
 
-    def _gotoff(self):
-        sections = self.elf.sections
-        return (sections['.got.plt'] if '.got.plt' in sections else sections['.got'])['addr']
+        if not self.link_map is None:
+            if self.elfclass == 'ELF32':
+                return self._lookup32(symb, lib)
+            if self.elfclass == 'ELF64':
+                return self._lookup64(symb, lib)
+        else:
+            leak = self.leak
+            base = self.libbase
+            if self.elfclass == 'ELF32':
+                dynamic = DynELF._find_dynamic32(leak, base)
+                return self._lookup_in32(symb, base, dynamic)
+            else:
+                dynamic = DynELF._find_dynamic64(leak, base)
+                return self._lookup_in64(symb, base, dynamic)
 
     def _bases32(self):
         bases = { }
-        base = self.base
         leak = self.leak
-        gotoff = self._gotoff()
-        if base is None:
-            pass
-            # XXX: Read base address
-            # else:
-            #     log.error('Position independent ELF needs a base address')
-        else:
-            if gotoff > base:
-                gotplt = gotoff
-            else:
-                gotplt = base + gotoff
 
-        link_map = leak.d(gotplt, 1)
-
-        cur = link_map
+        cur = self.link_map
         while cur:
             addr = leak.d(cur + 4)
             name = leak.s(addr)
@@ -102,23 +232,9 @@ class DynELF(object):
 
     def _bases64(self):
         bases = { }
-        base = self.base
         leak = self.leak
-        gotoff = self._gotoff()
-        if base is None:
-            pass
-            # XXX: Read base address
-            # else:
-            #     log.error('Position independent ELF needs a base address')
-        else:
-            if gotoff > base:
-                gotplt = gotoff
-            else:
-                gotplt = base + gotoff
 
-        link_map = leak.q(gotplt, 1)
-
-        cur = link_map
+        cur = self.link_map
         while cur:
             addr = leak.q(cur + 8)
             name = leak.s(addr)
@@ -127,30 +243,13 @@ class DynELF(object):
         return bases
 
     def _lookup32 (self, symb, lib):
-        base = self.base
         leak = self.leak
-        gotoff = self._gotoff()
-        if base is None:
-            pass
-            # XXX: Read base address
-            # else:
-            #     log.error('Position independent ELF needs a base address')
-        else:
-            if gotoff > base:
-                gotplt = gotoff
-            else:
-                gotplt = base + gotoff
-
-        log.waitfor('Resolving "%s"' % symb)
 
         def status(s):
             log.status('Leaking %s' % s)
 
-        status('link_map')
-        link_map = leak.d(gotplt, 1)
-
         status('%s load address' % lib)
-        cur = link_map
+        cur = self.link_map
         while True:
             addr = leak.d(cur + 4)
             name = leak.s(addr)
@@ -160,27 +259,33 @@ class DynELF(object):
         libbase = leak.d(cur)
         if symb is None:
             return libbase
-        dyn = leak.d(cur, 2)
+        dynamic = leak.d(cur, 2)
 
-        status('.gnu.hash, .strtab and .symtab offsets')
-        cur = dyn
+        return self._lookup_in32(symb, libbase, dynamic)
+
+    def _lookup_in32(self, symb, libbase, dynamic):
+        leak = self.leak
+        def status(s):
+            log.status('Leaking %s' % s)
+
+        status('.gnu.hash/.hash, .strtab and .symtab offsets')
         hshtag = None
         hshtab = None
         strtab = None
         symtab = None
         while None in [hshtab, strtab, symtab]:
-            tag = leak.d(dyn)
+            tag = leak.d(dynamic)
             if tag == 4:
-                hshtab = leak.d(dyn, 1)
+                hshtab = leak.d(dynamic, 1)
                 hshtag = tag
             elif tag == 5:
-                strtab = leak.d(dyn, 1)
+                strtab = leak.d(dynamic, 1)
             elif tag == 6:
-                symtab = leak.d(dyn, 1)
+                symtab = leak.d(dynamic, 1)
             elif tag == 0x6ffffef5:
-                hshtab = leak.d(dyn, 1)
+                hshtab = leak.d(dynamic, 1)
                 hshtag = tag
-            dyn += 8
+            dynamic += 8
 
         # with glibc the pointers are relocated whereas with f.x. uclibc they
         # are not
@@ -206,7 +311,7 @@ class DynELF(object):
                     name = leak.s(strtab + leak.d(sym))
                     if name == symb:
                         #Bingo
-                        log.done_success()
+                        log.succeeded()
                         return libbase + leak.d(sym, 1)
                 idx = leak.d(chain, idx)
         else:
@@ -224,7 +329,7 @@ class DynELF(object):
             ndx = leak.d(buckets, bucket)
             chain = chains + 4 * (ndx - symndx)
             if ndx == 0:
-                log.done_failure('Empty chain')
+                log.failed('Empty chain')
                 return None
             status('hash chain')
             i = 0
@@ -239,39 +344,22 @@ class DynELF(object):
                     if name == symb:
                         break
                 if hsh2 & 1:
-                    log.done_failure('No hash')
+                    log.failed('No hash')
                     return None
                 i += 1
             status('symbol offset')
             offset = leak.d(sym, 1)
-            log.done_success()
+            log.succeeded()
             return offset + libbase
 
     def _lookup64 (self, symb, lib):
-        base = self.base
         leak = self.leak
-        gotoff = self._gotoff()
-        if base is None:
-            pass
-            # XXX: Read base address
-            # else:
-            #     log.error('Position independent ELF needs a base address')
-        else:
-            if gotoff > base:
-                gotplt = gotoff
-            else:
-                gotplt = base + gotoff
-
-        log.waitfor('Resolving "%s"' % symb)
 
         def status(s):
             log.status('Leaking %s' % s)
 
-        status('link_map')
-        link_map = leak.q(gotplt, 1)
-
         status('%s load address' % lib)
-        cur = link_map
+        cur = self.link_map
         while True:
             addr = leak.q(cur + 8)
             name = leak.s(addr)
@@ -281,27 +369,33 @@ class DynELF(object):
         libbase = leak.q(cur)
         if symb is None:
             return libbase
-        dyn = leak.q(cur, 2)
+        dynamic = leak.q(cur, 2)
+
+        return self._lookup_in64(symb, libbase, dynamic)
+
+    def _lookup_in64(self, symb, libbase, dynamic):
+        leak = self.leak
+        def status(s):
+            log.status('Leaking %s' % s)
 
         status('.gnu.hash/.hash, .strtab and .symtab offsets')
-        cur = dyn
         hshtag = None
         hshtab = None
         strtab = None
         symtab = None
         while None in [hshtab, strtab, symtab]:
-            tag = leak.q(cur)
+            tag = leak.q(dynamic)
             if   tag == 4:
-                hshtab = leak.q(cur, 1)
+                hshtab = leak.q(dynamic, 1)
                 hshtag = tag
             elif tag == 5:
-                strtab = leak.q(cur, 1)
+                strtab = leak.q(dynamic, 1)
             elif tag == 6:
-                symtab = leak.q(cur, 1)
+                symtab = leak.q(dynamic, 1)
             elif tag == 0x6ffffef5:
-                hshtab = leak.q(cur, 1)
+                hshtab = leak.q(dynamic, 1)
                 hshtag = tag
-            cur += 16
+            dynamic += 16
 
         # with glibc the pointers are relocated whereas with f.x. uclibc they
         # are not
@@ -327,7 +421,7 @@ class DynELF(object):
                     name = leak.s(strtab + leak.d(sym))
                     if name == symb:
                         #Bingo
-                        log.done_success()
+                        log.succeeded()
                         return libbase + leak.q(sym, 1)
                 idx = leak.d(chain, idx)
         else:
@@ -345,7 +439,7 @@ class DynELF(object):
             ndx = leak.d(buckets, bucket)
             chain = chains + 4 * (ndx - symndx)
             if ndx == 0:
-                log.done_failure('Empty chain')
+                log.failed('Empty chain')
                 return None
             status('hash chain')
             i = 0
@@ -360,10 +454,10 @@ class DynELF(object):
                     if name == symb:
                         break
                 if hsh2 & 1:
-                    log.done_failure('No hash')
+                    log.failed('No hash')
                     return None
                 i += 1
             status('symbol offset')
             offset = leak.q(sym, 1)
-            log.done_success()
+            log.succeeded()
             return offset + libbase
