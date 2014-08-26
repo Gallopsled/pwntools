@@ -326,7 +326,6 @@ def render_cell(cell, clear_after = False):
                 if col >= width:
                     col = 0
                     row += 1
-                    put('\r\n')
                 if col < indent:
                     put(' ' * (indent - col))
                     col = indent
