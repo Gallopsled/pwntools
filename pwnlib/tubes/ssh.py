@@ -188,6 +188,10 @@ class ssh_connecter(sock.sock):
             h.failure()
             raise
 
+        sockname = self.sock.get_transport().sock.getsockname()
+        self.lhost = sockname[0]
+        self.lport = sockname[1]
+
         h.success()
 
     def spawn_process(self, *args, **kwargs):
