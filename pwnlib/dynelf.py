@@ -25,6 +25,8 @@ def gnu_hash(s):
     return h & 0xffffffff
 
 class DynELF:
+    '''DynELF knows how to resolve symbols in remote processes via an infoleak/memleak vulnerability.
+    '''
     @classmethod
     def for_one_lib_only(cls, leak, ptr):
         '''Instantiates and returns a DynELF instance from an arbitrary pointer into a loaded library that can
@@ -60,7 +62,6 @@ class DynELF:
         '''Given a pointer into a library find that librarys base address.'''
         page_mask = ~(4096 - 1)
 
-        #First find base
         while True:
             ptr &= page_mask
             if leak.d(ptr) == 0x464c457f:
