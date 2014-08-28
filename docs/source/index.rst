@@ -20,6 +20,7 @@ Contents:
    log
    memleak
    replacements
+   rop
    shellcraft
    tubes
    term
