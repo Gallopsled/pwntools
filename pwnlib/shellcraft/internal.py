@@ -91,11 +91,18 @@ def make_function(funcname, filename, directory):
 def wrap(template):
     def %s(%s):
         %r
-        s = template.render(%s).split('\\n')
-        s = [l.rstrip() for l in s]
-        while s and not s[-1]: s.pop()
-        while s and not s[0]:  s.pop(0)
-        s = '\\n'.join(s)
+        lines = template.render(%s).split('\\n')
+        for i in xrange(len(lines)):
+            line = lines[i]
+            line = line.rstrip()
+            if line.endswith(':'):
+                line = line.lstrip()
+            elif line.startswith('    '):
+                 line = '    ' + line.lstrip()
+            lines[i] = line
+        while lines and not lines[-1]: lines.pop()
+        while lines and not lines[0]:  lines.pop(0)
+        s = '\\n'.join(lines)
         while '\\n\\n\\n' in s:
             s = s.replace('\\n\\n\\n', '\\n\\n')
         return s
