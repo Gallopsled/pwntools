@@ -399,9 +399,19 @@ class ROP(object):
 
         #
         # Currently, ropgadget.args.Args() doesn't take any arguments, and pulls
-        # only from sys.argv.  Preserve it through this call.
+        # only from sys.argv.  Preserve it through this call.  We also
+        # monkey-patch sys.stdout to suppress output from ropgadget.
         #
         argv    = sys.argv
+        stdout  = sys.stdout
+        class Wrapper:
+            def __init__(self, fd):
+                self._fd = fd
+            def write(self, s):
+                pass
+            def __getattr__(self, k):
+                return self._fd.__getattribute__(k)
+        sys.stdout = Wrapper(sys.stdout)
         gadgets = {}
         try:
             for elf in self.elfs:
@@ -428,7 +438,8 @@ class ROP(object):
                 self.__cache_save(elf, elf_gadgets)
                 gadgets.update(elf_gadgets)
         finally:
-            sys.argv = argv
+            sys.argv   = argv
+            sys.stdout = stdout
 
 
         #
