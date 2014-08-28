@@ -157,8 +157,8 @@ class tube(object):
             data.append(res)
 
         if numb < n:
-            delta = n - numb
             s = data.pop()
+            delta = len(s) - (n - numb)
             self.buffer.append(s[delta:])
             data.append(s[:delta])
 
