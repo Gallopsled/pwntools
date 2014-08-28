@@ -118,7 +118,7 @@ class process(tube.tube):
         # First check if we are already dead
         self.poll()
 
-        if self.stop_noticed:
+        if not self.stop_noticed:
             try:
                 self.proc.kill()
                 self.stop_noticed = True
