@@ -2,7 +2,7 @@
 <% from pwnlib.shellcraft.thumb import mov %>
 <%page args="sock = 'r6'"/>
 <%docstring>
-Args: [sock (imm/reg) = ebp]
+Args: [sock (imm/reg) = r6]
     Duplicates sock to stdin, stdout and stderr
 </%docstring>
 <%
