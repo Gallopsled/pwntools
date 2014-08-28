@@ -531,8 +531,11 @@ class ROP(object):
 
     def __getattr__(self, attr):
         """Helper to make finding ROP gadets easier.
+
         Also provides a shorthand for .call():
+            ```
             rop.function(args) ==> rop.call(function, args)
+            ```
 
         >>> elf=ELF('/bin/bash')
         >>> rop=ROP([elf])
