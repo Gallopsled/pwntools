@@ -1,3 +1,5 @@
+"""Return Oriented Programming
+"""
 import hashlib, os, sys, tempfile, re
 
 from . import context, log, elf
@@ -5,11 +7,28 @@ from .util import packing, lists
 
 try:
     import ropgadget
-    ok = True
+    __ok = True
 except ImportError:
-    ok = False
+    __ok = False
 
 class ROP(object):
+    """Class which simplifies the generation of ROP-chains.
+
+    Example:
+
+    .. code-block:: python
+
+       elf = ELF('ropasaurusrex')
+       rop = ROP(elf)
+       rop.read(0, elf.bss(0x80))
+       rop.dump()
+       # ['0x0000:        0x80482fc (read)',
+       #  '0x0004:       0xdeadbeef',
+       #  '0x0008:              0x0',
+       #  '0x000c:        0x80496a8']
+       str(rop)
+       # '\\xfc\\x82\\x04\\x08\\xef\\xbe\\xad\\xde\\x00\\x00\\x00\\x00\\xa8\\x96\\x04\\x08'
+    """
     def __init__(self, elfs, base = None):
         """
         Args:
@@ -554,6 +573,6 @@ class ROP(object):
         return call
 
 
-if not ok:
+if not __ok:
     def ROP(*args, **kwargs):
         log.error("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
