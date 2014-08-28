@@ -1,5 +1,5 @@
 # Get all the modules from pwnlib
-from pwnlib                 import *
+from pwnlib                  import *
 
 # Promote functions from these modules to toplevel
 from pwnlib.asm              import *
@@ -7,6 +7,7 @@ from pwnlib.dynelf           import DynELF
 from pwnlib.elf              import ELF, load
 from pwnlib.log_levels       import *
 from pwnlib.memleak          import MemLeak
+from pwnlib.replacements     import *
 from pwnlib.rop              import ROP
 from pwnlib.tubes.listen     import *
 from pwnlib.tubes.process    import *
