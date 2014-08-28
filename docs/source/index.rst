@@ -19,8 +19,9 @@ Contents:
    gdb
    log
    memleak
-   tubes
+   replacements
    shellcraft
+   tubes
    term
    ui
    util/*
