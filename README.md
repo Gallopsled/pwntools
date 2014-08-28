@@ -6,8 +6,8 @@
 
 This is the CTF framework used by Gallopsled in every CTF.
 
-Most code is inside the pwnlib folder with some functionality inside pwn or
-bin. It is typically used as:
+Most code is inside the `pwnlib` folder with some functionality inside `pwn` or
+`bin`. It is typically used as:
 
 ```python
 from pwn import *
@@ -17,16 +17,17 @@ context(arch = 'i386', os = 'linux')
 ```
 
 However we have made command-line frontends for some of the functionality
-inside the pwnlib. These are:
+in `pwnlib`. These are:
 
-* `asm`/`disasm`: Small wrapper for various assemblers
-* `constgrep`: Tool for finding constants defined in header files
-* `cyclic`: De Bruijn sequence generator and lookup tool
-* `hex`/`unhex`: Command line tools for doing common hexing/unhexing operations
-* `shellcraft`: Frontend to our shellcode
+* `asm`/`disasm`: Small wrapper for various assemblers.
+* `constgrep`: Tool for finding constants defined in header files.
+* `cyclic`: De Bruijn sequence generator and lookup tool.
+* `hex`/`unhex`: Command line tools for doing common hexing/unhexing operations.
+* `shellcraft`: Frontend to our shellcode.
+* `phd`: Replacement for `hexdump` with colors.
 
 # Documentation
-Our documentation is available on http://pwntools.readthedocs.org/
+Our documentation is available at http://pwntools.readthedocs.org/
 
 # Installation
 Pwntools is available as a pip package. You can install it by running
