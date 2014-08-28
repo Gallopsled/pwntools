@@ -146,7 +146,7 @@ class ROP(object):
                 if best_pivot == None:
                     log.error("Could not find gadget to clean up stack for call %r %r" % (addr, args))
 
-                chain.append([addr, [best_pivot], args, best_size/4 - len(args)])
+                chain.append([addr, [best_pivot], args, best_size/4 - len(args) - 1])
 
         # Stage 2
         # If the last call has arguments, there is no need
@@ -327,10 +327,10 @@ class ROP(object):
         pop_bp = self.rbp or self.ebp
         leave  = self.leave
 
-        if pop_sp:
+        if pop_sp and len(pop_sp[1]['regs']) == 1:
             self.raw(pop_sp[0])
             self.raw(next_base)
-        elif pop_bp and leave:
+        elif pop_bp and leave and len(pop_bp[1]['regs']) == 1:
             self.raw(pop_bp[0])
             self.raw(next_base-4)
             self.raw(leave[0])
