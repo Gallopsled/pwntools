@@ -58,7 +58,7 @@
           add ${dst}, #${(src >> shift1) & 0xff}
           lsl ${dst}, #${shift1}
         %else:
-            <% 
+            <%
               id = common.label("value")
               extra = ''
               if (src & 0xff000000 == 0):
