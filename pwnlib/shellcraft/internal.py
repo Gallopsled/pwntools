@@ -95,7 +95,9 @@ def wrap(template):
         for i in xrange(len(lines)):
             line = lines[i]
             line = line.rstrip()
-            if line.find(':') >= 0 and line.lstrip()[0].isalnum():
+            def islabelchar(c):
+                return c.isalnum() or c == '.' or c == '_'
+            if line.find(':') >= 0 and islabelchar(line.lstrip()[0]):
                 line = line.lstrip()
             elif line.startswith(' '):
                  line = '    ' + line.lstrip()
