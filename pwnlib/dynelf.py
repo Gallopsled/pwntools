@@ -75,7 +75,7 @@ class DynELF:
         phead = base + leak.d(base + 28)
         while True:
             phtype = leak.d(phead)
-            #Check if program header tyep is PT_DYNAMIC
+            #Check if program header type is PT_DYNAMIC
             if phtype == 2:
                 break
             #Skip to next
@@ -112,7 +112,7 @@ class DynELF:
         phead = base + leak.d(base + 32)
         while True:
             phtype = leak.d(phead)
-            #Check if program header tyep is PT_DYNAMIC
+            #Check if program header type is PT_DYNAMIC
             if phtype == 2:
                 break
             #Skip to next
