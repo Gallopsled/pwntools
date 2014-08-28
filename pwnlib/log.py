@@ -50,7 +50,7 @@ def _put(log_level, string = '', frozen = True, float = False, priority = 10, in
             _last_was_nl = True
         if indent:
             string = string[:-1].replace('\n', '\n' + ' ' * indent) + string[-1]
-        sys.stdout.write(string)
+        sys.stderr.write(string)
         return _dummy_handle
 
 

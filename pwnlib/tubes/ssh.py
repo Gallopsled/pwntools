@@ -247,7 +247,7 @@ class ssh_listener(sock.sock):
 
     def __getattr__(self, key):
         if key == 'sock':
-            while self._acceptor.is_alive():
+            while self._accepter.is_alive():
                 self._accepter.join(timeout = 0.1)
             return self.sock
         else:

@@ -117,6 +117,8 @@ def init():
             return self._fd.__getattribute__(k)
     if sys.stdout.isatty():
         sys.stdout = Wrapper(sys.stdout)
+    if sys.stderr.isatty():
+        sys.stderr = Wrapper(sys.stderr)
     # freeze all cells if an exception is thrown
     orig_hook = sys.excepthook
     def hook(*args):
@@ -326,7 +328,6 @@ def render_cell(cell, clear_after = False):
                 if col >= width:
                     col = 0
                     row += 1
-                    put('\r\n')
                 if col < indent:
                     put(' ' * (indent - col))
                     col = indent
