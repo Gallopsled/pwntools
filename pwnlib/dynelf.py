@@ -169,7 +169,7 @@ class DynELF:
             gotplt = gotoff
         else:
             gotplt = base + gotoff
-        
+
         #Now get address of linkmap
         if e.elfclass == 32:
             link_map = leak.d(gotplt, 1)
