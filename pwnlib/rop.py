@@ -162,7 +162,7 @@ class ROP(object):
         if len(chain) > 1 and not chain[-1][2] and chain[-2][2]:
             # This optimization does not work if a raw string is on the stack
             if not isinstance(chain[-1][0], (str, unicode)):
-                chain[-2][1] = chain[-1][0]
+                chain[-2][1] = [chain[-1][0]]
                 chain[-2][3] = 0
                 chain.pop()
 
