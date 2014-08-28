@@ -95,7 +95,7 @@ def wrap(template):
         for i in xrange(len(lines)):
             line = lines[i]
             line = line.rstrip()
-            if line.find(':') >= 0:
+            if line.find(':') >= 0 and not line.lstrip().startswith(';'):
                 line = line.lstrip()
             elif line.startswith(' '):
                  line = '    ' + line.lstrip()
