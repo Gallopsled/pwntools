@@ -63,7 +63,7 @@
               extra = ''
               if (src & 0xff000000 == 0):
                   src = src | 0xff000000
-                  extra = '\n'.join([
+                  extra = '\n '.join([
                     "lsl %s, #8" % dst,
                     "lsr %s, #8" % dst
                   ])
