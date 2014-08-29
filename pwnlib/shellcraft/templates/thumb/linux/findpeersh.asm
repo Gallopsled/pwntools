@@ -4,7 +4,7 @@
     findpeersh(port)
 
     Finds a connected socket. If port is specified it is checked
-    if against the peer port. A dup2 shell is spawned on it.
+    against the peer port. A dup2 shell is spawned on it.
 </%docstring>
 ${findpeer(port)}
 ${dupsh()}

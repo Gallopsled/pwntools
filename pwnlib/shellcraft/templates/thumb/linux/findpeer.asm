@@ -6,7 +6,7 @@
     findpeer(port)
 
     Finds a connected socket. If port is specified it is checked
-    if against the peer port. Resulting socket is left in r6.
+    against the peer port. Resulting socket is left in r6.
 </%docstring>
 findpeer:
     /* File descriptor in r6 */
