@@ -10,11 +10,11 @@ Args: [sock (imm/reg) = r6]
   looplabel = common.label("loop")
 %>
 ${dup}:
-        ${mov('r1', 3)}
+        ${mov('r1', 2)}
         ${mov('r7', 'SYS_dup2')}
 
 ${looplabel}:
         ${mov('r0', sock)}
-        sub r1, #1
         svc 1
-        bne ${looplabel}
+        subs r1, #1
+        bpl ${looplabel}
