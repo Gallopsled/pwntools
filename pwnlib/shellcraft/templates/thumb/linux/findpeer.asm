@@ -55,7 +55,7 @@ compare_port:
     lsr r1, #16
 
     /* Put the port (${port}) to search for into r1 */
-    ${mov('r1', htons(int(port)))}
+    ${mov('r2', htons(int(port)))}
 
     /* Is it the one we have been searching for? */
     cmp r1, r2
