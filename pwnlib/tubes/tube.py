@@ -157,8 +157,8 @@ class tube(object):
             data.append(res)
 
         if numb < n:
-            delta = n - numb
             s = data.pop()
+            delta = len(s) - (n - numb)
             self.buffer.append(s[delta:])
             data.append(s[:delta])
 
@@ -521,46 +521,45 @@ class tube(object):
         Thus it only works in while in :data:`pwnlib.term.term_mode`.
         """
 
-        with context.local(log_level = 'info'):
-            log.info('Switching to interactive mode')
+        log.info('Switching to interactive mode')
 
-            go = [True]
-            def recv_thread(go):
-                while go[0]:
+        go = [True]
+        def recv_thread(go):
+            while go[0]:
+                try:
+                    cur = self.recv(timeout = 0.05)
+                    if cur == None:
+                        continue
+                    sys.stdout.write(cur)
+                    sys.stdout.flush()
+                except EOFError:
+                    log.info('Got EOF while reading in interactive')
+                    break
+
+        t = threading.Thread(target = recv_thread, args = (go,))
+        t.daemon = True
+        t.start()
+
+        try:
+            while go[0]:
+                if term.term_mode:
+                    data = term.readline.readline(prompt = prompt, float = True)
+                else:
+                    data = sys.stdin.read(1)
+
+                if data:
                     try:
-                        cur = self.recv(timeout = 0.05)
-                        if cur == None:
-                            continue
-                        sys.stdout.write(cur)
-                        sys.stdout.flush()
+                        self.send(data)
                     except EOFError:
-                        log.info('Got EOF while reading in interactive')
-                        break
-
-            t = threading.Thread(target = recv_thread, args = (go,))
-            t.daemon = True
-            t.start()
-
-            try:
-                while go[0]:
-                    if term.term_mode:
-                        data = term.readline.readline(prompt = prompt, float = True)
-                    else:
-                        data = sys.stdin.read(1)
-
-                    if data:
-                        try:
-                            self.send(data)
-                        except EOFError:
-                            go[0] = False
-                            log.info('Got EOF while sending in interactive')
-                    else:
                         go[0] = False
-            except KeyboardInterrupt:
-                log.info('Interrupted')
+                        log.info('Got EOF while sending in interactive')
+                else:
+                    go[0] = False
+        except KeyboardInterrupt:
+            log.info('Interrupted')
 
-            while t.is_alive():
-                t.join(timeout = 0.1)
+        while t.is_alive():
+            t.join(timeout = 0.1)
 
     def clean(self, timeout = 0.05):
         """clean(timeout = 0.05)

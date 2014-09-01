@@ -1,3 +1,5 @@
+"""Return Oriented Programming
+"""
 import hashlib, os, sys, tempfile, re
 
 from . import context, log, elf
@@ -5,11 +7,28 @@ from .util import packing, lists
 
 try:
     import ropgadget
-    ok = True
+    __ok = True
 except ImportError:
-    ok = False
+    __ok = False
 
 class ROP(object):
+    """Class which simplifies the generation of ROP-chains.
+
+    Example:
+
+    .. code-block:: python
+
+       elf = ELF('ropasaurusrex')
+       rop = ROP(elf)
+       rop.read(0, elf.bss(0x80))
+       rop.dump()
+       # ['0x0000:        0x80482fc (read)',
+       #  '0x0004:       0xdeadbeef',
+       #  '0x0008:              0x0',
+       #  '0x000c:        0x80496a8']
+       str(rop)
+       # '\\xfc\\x82\\x04\\x08\\xef\\xbe\\xad\\xde\\x00\\x00\\x00\\x00\\xa8\\x96\\x04\\x08'
+    """
     def __init__(self, elfs, base = None):
         """
         Args:
@@ -127,7 +146,7 @@ class ROP(object):
                 if best_pivot == None:
                     log.error("Could not find gadget to clean up stack for call %r %r" % (addr, args))
 
-                chain.append([addr, [best_pivot], args, best_size/4 - len(args)])
+                chain.append([addr, [best_pivot], args, best_size/4 - len(args) - 1])
 
         # Stage 2
         # If the last call has arguments, there is no need
@@ -143,7 +162,7 @@ class ROP(object):
         if len(chain) > 1 and not chain[-1][2] and chain[-2][2]:
             # This optimization does not work if a raw string is on the stack
             if not isinstance(chain[-1][0], (str, unicode)):
-                chain[-2][1] = chain[-1][0]
+                chain[-2][1] = [chain[-1][0]]
                 chain[-2][3] = 0
                 chain.pop()
 
@@ -308,10 +327,10 @@ class ROP(object):
         pop_bp = self.rbp or self.ebp
         leave  = self.leave
 
-        if pop_sp:
+        if pop_sp and len(pop_sp[1]['regs']) == 1:
             self.raw(pop_sp[0])
             self.raw(next_base)
-        elif pop_bp and leave:
+        elif pop_bp and leave and len(pop_bp[1]['regs']) == 1:
             self.raw(pop_bp[0])
             self.raw(next_base-4)
             self.raw(leave[0])
@@ -380,9 +399,19 @@ class ROP(object):
 
         #
         # Currently, ropgadget.args.Args() doesn't take any arguments, and pulls
-        # only from sys.argv.  Preserve it through this call.
+        # only from sys.argv.  Preserve it through this call.  We also
+        # monkey-patch sys.stdout to suppress output from ropgadget.
         #
         argv    = sys.argv
+        stdout  = sys.stdout
+        class Wrapper:
+            def __init__(self, fd):
+                self._fd = fd
+            def write(self, s):
+                pass
+            def __getattr__(self, k):
+                return self._fd.__getattribute__(k)
+        sys.stdout = Wrapper(sys.stdout)
         gadgets = {}
         try:
             for elf in self.elfs:
@@ -409,7 +438,8 @@ class ROP(object):
                 self.__cache_save(elf, elf_gadgets)
                 gadgets.update(elf_gadgets)
         finally:
-            sys.argv = argv
+            sys.argv   = argv
+            sys.stdout = stdout
 
 
         #
@@ -457,58 +487,73 @@ class ROP(object):
         # HACK: Set up a special '.leave' helper.  This is so that
         #       I don't have to rewrite __getattr__ to support this.
         #
-        self.leave = self.search(regs=frame_regs)
+        leave = self.search(regs = frame_regs, order = 'regs')
+        if leave[1]['regs'] != frame_regs:
+            leave = None
+        self.leave = leave
 
     def __repr__(self):
         return "ROP(%r)" % self.elfs
 
-    def search(self, move=0, regs=[]):
+    def search(self, move = 0, regs = [], order = 'size'):
         """Search for a gadget which matches the specified criteria.
 
         Args:
             move(int): Minimum number of bytes by which the stack
                 pointer is adjusted.
-            regs(list): List of registers which are popped off the stack.
-                Order matters, and no other operations are allowed unless
-                'move' is expressly set.
+            regs(list): Minimum list of registers which are popped off the
+                stack.
+            order(str): Either the string 'size' or 'regs'. Decides how to
+                order multiple gadgets the fulfill the requirements.
+
+        The search will try to minimize the number of bytes popped more than
+        requested, the number of registers touched besides the requested and
+        the address.
+
+        If ``order == 'size'``, then gadgets are compared lexicographically
+        by ``(total_moves, total_regs, addr)``, otherwise by ``(total_regs, total_moves, addr)``.
 
         Returns:
             A tuple of (address, info) in the same format as self.gadgets.items().
         """
-        if regs and not move:
-            move = len(regs)*self.align
+
+        regs = set(regs)
 
         # Search for an exact match, save the closest match
         closest = None
+        closest_val = (float('inf'), float('inf'), float('inf'))
         for a,i in self.gadgets.items():
-            # Regs match exactly, move is a minimum
-            if not (i['regs'] == regs and move <= i['move']):
+            cur_regs = set(i['regs'])
+            if regs == cur_regs and move == i['move']:
+                return (a, i)
+
+            if not (regs.issubset(cur_regs) and move <= i['move']):
                 continue
 
-            # Exact match
-            if move == i['move']:
-                return (a,i)
+            if order == 'size':
+                cur = (i['move'], len(i['regs']), a)
+            else:
+                cur = (len(i['regs']), i['move'], a)
 
-            # Anything's closer than nothing
-            elif not closest:
-                closest = (a,i)
-
-            # Closer
-            elif i['move'] < closest[1]['move']:
-                closest = (a,i)
+            if cur < closest_val:
+                closest = (a, i)
+                closest_val = cur
 
         return closest
 
     def __getattr__(self, attr):
         """Helper to make finding ROP gadets easier.
+
         Also provides a shorthand for .call():
+            ```
             rop.function(args) ==> rop.call(function, args)
+            ```
 
         >>> elf=ELF('/bin/bash')
         >>> rop=ROP([elf])
-        >>> rop.rdi     == rop.search(regs=['rdi'])
+        >>> rop.rdi     == rop.search(regs=['rdi'], order = 'regs')
         True
-        >>> rop.r13_r14_r15_rbp == rop.search(regs=['r13','r14','r15','rbp'])
+        >>> rop.r13_r14_r15_rbp == rop.search(regs=['r13','r14','r15','rbp'], order = 'regs')
         True
         >>> rop.ret     == rop.search(move=rop.align)
         True
@@ -544,7 +589,7 @@ class ROP(object):
         x86_suffixes = ['ax', 'bx', 'cx', 'dx', 'bp', 'sp', 'di', 'si',
                         'r8', 'r9', '10', '11', '12', '13', '14', '15']
         if all(map(lambda x: x[-2:] in x86_suffixes, attr.split('_'))):
-            return self.search(regs=attr.split('_'))
+            return self.search(regs = attr.split('_'), order = 'regs')
 
         #
         # Otherwise, assume it's a rop.call() shorthand
@@ -554,6 +599,6 @@ class ROP(object):
         return call
 
 
-if not ok:
+if not __ok:
     def ROP(*args, **kwargs):
         log.error("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")

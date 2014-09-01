@@ -91,52 +91,51 @@ class serialtube(tube.tube):
     def interactive(self, prompt = term.text.bold_red('$') + ' '):
         log.info('Switching to interactive mode')
 
-        with context.local(log_level = 'info'):
-            # We would like a cursor, please!
-            term.term.show_cursor()
+        # We would like a cursor, please!
+        term.term.show_cursor()
 
-            go = [True]
-            def recv_thread(go):
-                while go[0]:
-                    try:
-                        cur = self.recv(timeout = 0.05)
-                        if cur == None:
-                            continue
-                        elif cur == '\a':
-                            # Ugly hack until term unstands bell characters
-                            continue
-                        sys.stdout.write(cur)
-                        sys.stdout.flush()
-                    except EOFError:
-                        log.info('Got EOF while reading in interactive')
-                        go[0] = False
-                        break
-
-            t = threading.Thread(target = recv_thread, args = (go,))
-            t.daemon = True
-            t.start()
-
+        go = [True]
+        def recv_thread(go):
             while go[0]:
-                if term.term_mode:
-                    try:
-                        data = term.key.getraw(0.1)
-                    except IOError:
-                        if go[0]:
-                            raise
-                else:
-                    data = sys.stdin.read(1)
-                    if not data:
-                        go[0] = False
+                try:
+                    cur = self.recv(timeout = 0.05)
+                    if cur == None:
+                        continue
+                    elif cur == '\a':
+                        # Ugly hack until term unstands bell characters
+                        continue
+                    sys.stdout.write(cur)
+                    sys.stdout.flush()
+                except EOFError:
+                    log.info('Got EOF while reading in interactive')
+                    go[0] = False
+                    break
 
-                if data:
-                    try:
-                        self.send(''.join(chr(c) for c in data))
-                    except EOFError:
-                        go[0] = False
-                        log.info('Got EOF while sending in interactive')
+        t = threading.Thread(target = recv_thread, args = (go,))
+        t.daemon = True
+        t.start()
 
-            while t.is_alive():
-                t.join(timeout = 0.1)
+        while go[0]:
+            if term.term_mode:
+                try:
+                    data = term.key.getraw(0.1)
+                except IOError:
+                    if go[0]:
+                        raise
+            else:
+                data = sys.stdin.read(1)
+                if not data:
+                    go[0] = False
 
-            # Restore
-            term.term.hide_cursor()
+            if data:
+                try:
+                    self.send(''.join(chr(c) for c in data))
+                except EOFError:
+                    go[0] = False
+                    log.info('Got EOF while sending in interactive')
+
+        while t.is_alive():
+            t.join(timeout = 0.1)
+
+        # Restore
+        term.term.hide_cursor()

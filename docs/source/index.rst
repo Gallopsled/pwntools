@@ -19,8 +19,10 @@ Contents:
    gdb
    log
    memleak
-   tubes
+   replacements
+   rop
    shellcraft
+   tubes
    term
    ui
    util/*
