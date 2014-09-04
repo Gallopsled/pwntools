@@ -12,8 +12,8 @@ sizes = (
 )
 
 
-def wget(url, save=None):
-    """wget(url, save=None) -> str
+def wget(url, save=None, timeout=5):
+    """wget(url, save=None, timeout=5) -> str
 
     Downloads a file via HTTP/HTTPS.
 
@@ -21,6 +21,7 @@ def wget(url, save=None):
       url (str): URL to download
       save (str or bool): Name to save as.  Any truthy value
             will auto-generate a name based on the URL.
+      timeout (int): Timeout, in seconds
 
     Example:
 
@@ -32,7 +33,7 @@ def wget(url, save=None):
       >>> result == file('robots.txt').read()
       True
     """
-    response = urllib2.urlopen(url);
+    response = urllib2.urlopen(url, timeout=timeout);
 
     if response.code != 200:
         log.error("Got code %s" % response.code)
@@ -59,11 +60,6 @@ def wget(url, save=None):
         chunks_so_far += 1
         log.status('%s / %s %s' % (chunks_so_far, total_chunks, size_name))
         chunk = response.read(chunk_size)
-
-    # Check that we got it all before the connection closed
-    if len(total_data) != total_size:
-        log.done_failure('Did not receive all data')
-        return
 
     # Save to the target file if provided
     if save:
