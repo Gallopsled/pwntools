@@ -18,7 +18,7 @@
 %>
 egghunter:
     eor r1, r1, r1
-    mov r2, r1
+    mvn r2, r1
 
     /* Put egg in r3 */
     ${mov('r3', egg)}
