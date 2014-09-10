@@ -1,8 +1,8 @@
 import os, string, base64, paramiko, time, tempfile, threading, sys, shutil, re
 from .. import term, log, context
 from ..util import hashes, misc
-from . import sock, tube, process
-
+from . import sock, tube
+from .process import process
 
 class ssh_channel(sock.sock):
     def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = 'default'):
@@ -555,7 +555,7 @@ class ssh(object):
         log.info("Downloading %r to %r" % (local,remote))
 
         source = self.run(['sh', '-c', 'tar -C %s -czf- %s' % (local_wd, local)])
-        sink   = process.process(['sh', '-c', 'tar -C %s -xzf-' % remote])
+        sink   = process(['sh', '-c', 'tar -C %s -xzf-' % remote])
 
         source >> sink
 
@@ -613,7 +613,7 @@ class ssh(object):
 
         log.info("Uploading %r to %r" % (local,remote))
 
-        source  = process.process(['sh', '-c', 'tar -C %s -czf- %s' % (local_wd, local)])
+        source  = process(['sh', '-c', 'tar -C %s -czf- %s' % (local_wd, local)])
         sink    = self.run(['sh', '-c', 'tar -C %s -xzf-' % remote])
 
         source <> sink
