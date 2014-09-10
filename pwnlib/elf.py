@@ -243,7 +243,7 @@ class ELF(ELFFile):
         multiplier = None
 
         # Map architecture: offset, multiplier
-        offset, multiplier = {
+        header_size, entry_size = {
             'x86':   (0x10, 0x10),
             'amd64': (0x10, 0x10),
             'arm':   (0x14, 0xC)
@@ -252,7 +252,7 @@ class ELF(ELFFile):
 
         # Based on the ordering of the GOT symbols, populate the PLT
         for i,(addr,name) in enumerate(sorted((addr,name) for name, addr in self.got.items())):
-            self.plt[name] = plt.header.sh_addr + offset +  i*multiplier
+            self.plt[name] = plt.header.sh_addr + header_size + i*entry_size
 
     def search(self, needle, writable = False):
         """search(needle, writable = False) -> str generator
