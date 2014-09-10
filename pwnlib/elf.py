@@ -48,6 +48,13 @@ class ELF(ELFFile):
 
         self.path     = os.path.abspath(path)
 
+
+        # Fix difference between elftools and pwntools
+        self.arch = self.get_machine_arch().lower()
+        if self.arch == 'x64':
+            self.arch = 'amd64'
+
+
         self._populate_got_plt()
         self._populate_symbols()
         self._populate_libraries()
@@ -113,12 +120,6 @@ class ELF(ELFFile):
     def address(self, new):
         delta     = new-self._address
         update    = lambda x: x+delta
-
-        for segment in self.segments:
-            segment.header.p_vaddr += delta
-
-        for section in self.sections:
-            section.header.sh_addr += delta
 
         self.symbols = {k:update(v) for k,v in self.symbols.items()}
         self.plt     = {k:update(v) for k,v in self.plt.items()}
@@ -189,6 +190,17 @@ class ELF(ELFFile):
 
                 self.symbols[symbol.name] = symbol.entry.st_value
 
+        # Add 'plt.foo' and 'got.foo' to the symbols for entries,
+        # iff there is no symbol for that address
+        for sym, addr in self.plt.items():
+            if addr not in self.symbols.values():
+                self.symbols['plt.%s' % sym] = addr
+
+        for sym, addr in self.got.items():
+            if addr not in self.symbols.values():
+                self.symbols['got.%s' % sym] = addr
+
+
     def _populate_got_plt(self):
         """Loads the GOT and the PLT symbols and addresses.
 
@@ -230,9 +242,22 @@ class ELF(ELFFile):
 
             self.got[name] = rel.entry.r_offset
 
+        # Depending on the architecture, the beginning of the .plt will differ
+        # in size, and each entry in the .plt will also differ in size.
+        offset     = None
+        multiplier = None
+
+        # Map architecture: offset, multiplier
+        header_size, entry_size = {
+            'x86':   (0x10, 0x10),
+            'amd64': (0x10, 0x10),
+            'arm':   (0x14, 0xC)
+        }[self.arch]
+
+
         # Based on the ordering of the GOT symbols, populate the PLT
         for i,(addr,name) in enumerate(sorted((addr,name) for name, addr in self.got.items())):
-            self.plt[name] = plt.header.sh_addr + (i+1)*plt.header.sh_addralign
+            self.plt[name] = plt.header.sh_addr + header_size + i*entry_size
 
     def search(self, needle, writable = False):
         """search(needle, writable = False) -> str generator
@@ -258,6 +283,7 @@ class ELF(ELFFile):
             >>> len(list(libc.search('/bin/sh'))) > 0
             True
         """
+        load_address_fixup = (self.address - self.load_addr)
 
         if writable:
             segments = self.writable_segments
@@ -272,7 +298,7 @@ class ELF(ELFFile):
                 offset = data.find(needle, offset)
                 if offset == -1:
                     break
-                yield addr + offset
+                yield (addr + offset + load_address_fixup)
                 offset += 1
 
     def offset_to_vaddr(self, offset):
@@ -292,13 +318,15 @@ class ELF(ELFFile):
             >>> bash.address == bash.offset_to_vaddr(0)
             True
         """
+        load_address_fixup = (self.address - self.load_addr)
+
         for segment in self.segments:
             begin = segment.header.p_offset
             size  = segment.header.p_filesz
             end   = begin + size
             if begin <= offset and offset <= end:
                 delta = offset - begin
-                return segment.header.p_vaddr + delta + (self.address - self.load_addr)
+                return segment.header.p_vaddr + delta + load_address_fixup
         return None
 
 
@@ -434,7 +462,7 @@ class ELF(ELFFile):
         binary = asm.asm(('org %#x\n' % address) + assembly)
         self.write(address, binary)
 
-    def bss(self, offset):
+    def bss(self, offset=0):
         """Returns an index into the .bss segment"""
         orig_bss = self.get_section_by_name('.bss').header.sh_addr
         curr_bss = orig_bss - self.load_addr + self.address
