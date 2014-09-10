@@ -1,7 +1,7 @@
 import os, string, base64, paramiko, time, tempfile, threading, sys, shutil, re
 from .. import term, log, context
 from ..util import hashes, misc
-from . import sock, tube
+from . import sock, tube, process
 
 
 class ssh_channel(sock.sock):
@@ -540,6 +540,27 @@ class ssh(object):
         local_tmp = self._download_to_cache(remote)
         shutil.copy2(local_tmp, local)
 
+    def download_dir(self, local, remote=None):
+        """Recursively uploads a directory onto the remote server
+
+        Args:
+            local: Local directory
+            remote: Remote directory
+        """
+        remote   = remote or '.'
+
+        local_wd = os.path.dirname(local) or self._wd
+        local    = os.path.basename(local)
+
+        log.info("Downloading %r to %r" % (local,remote))
+
+        source = self.run(['sh', '-c', 'tar -C %s -czf- %s' % (local_wd, local)])
+        sink   = process.process(['sh', '-c', 'tar -C %s -xzf-' % remote])
+
+        source >> sink
+
+        sink.wait_for_close()
+
     def upload_data(self, data, remote):
         """Uploads some data into a file on the remote server.
 
@@ -577,6 +598,27 @@ class ssh(object):
         self.upload_data(data, remote)
 
         return misc.parse_ldd_output(remote)
+
+    def upload_dir(self, local, remote=None):
+        """Recursively uploads a directory onto the remote server
+
+        Args:
+            local: Local directory
+            remote: Remote directory
+        """
+        remote   = remote or self._wd
+
+        local_wd = os.path.dirname(local)
+        local    = os.path.basename(local)
+
+        log.info("Uploading %r to %r" % (local,remote))
+
+        source  = process.process(['sh', '-c', 'tar -C %s -czf- %s' % (local_wd, local)])
+        sink    = self.run(['sh', '-c', 'tar -C %s -xzf-' % remote])
+
+        source <> sink
+
+        sink.wait_for_close()
 
     def libs(self, remote, directory = None):
         """Downloads the libraries referred to by a file.
