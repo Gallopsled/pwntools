@@ -52,5 +52,4 @@ next_byte:
     bne next_byte
 
 egg_found:
-    add r2, r2, #0x08
-    bx  r2
+    add pc, r2, #0x08
