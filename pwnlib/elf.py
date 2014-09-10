@@ -48,6 +48,13 @@ class ELF(ELFFile):
 
         self.path     = os.path.abspath(path)
 
+
+        # Fix difference between elftools and pwntools
+        self.arch = self.get_machine_arch().lower()
+        if self.arch == 'x64':
+            self.arch = 'amd64'
+
+
         self._populate_got_plt()
         self._populate_symbols()
         self._populate_libraries()
@@ -230,9 +237,22 @@ class ELF(ELFFile):
 
             self.got[name] = rel.entry.r_offset
 
+        # Depending on the architecture, the beginning of the .plt will differ
+        # in size, and each entry in the .plt will also differ in size.
+        offset     = None
+        multiplier = None
+
+        # Map architecture: offset, multiplier
+        header_size, entry_size = {
+            'x86':   (0x10, 0x10),
+            'amd64': (0x10, 0x10),
+            'arm':   (0x14, 0xC)
+        }[self.arch]
+
+
         # Based on the ordering of the GOT symbols, populate the PLT
         for i,(addr,name) in enumerate(sorted((addr,name) for name, addr in self.got.items())):
-            self.plt[name] = plt.header.sh_addr + (i+1)*plt.header.sh_addralign
+            self.plt[name] = plt.header.sh_addr + header_size + i*entry_size
 
     def search(self, needle, writable = False):
         """search(needle, writable = False) -> str generator
