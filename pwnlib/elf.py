@@ -196,6 +196,17 @@ class ELF(ELFFile):
 
                 self.symbols[symbol.name] = symbol.entry.st_value
 
+        # Add 'plt.foo' and 'got.foo' to the symbols for entries,
+        # iff there is no symbol for that address
+        for sym, addr in self.plt.items():
+            if addr not in self.symbols.values():
+                self.symbols['plt.%s' % sym] = addr
+
+        for sym, addr in self.got.items():
+            if addr not in self.symbols.values():
+                self.symbols['got.%s' % sym] = addr
+
+
     def _populate_got_plt(self):
         """Loads the GOT and the PLT symbols and addresses.
 
