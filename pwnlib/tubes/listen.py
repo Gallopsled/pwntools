@@ -66,7 +66,7 @@ class listen(sock.sock):
 
         h.success()
 
-        h = log.waitfor('Waiting')
+        h = log.waitfor('Waiting for connections on %s:%s' % (self.lhost, self.lport))
 
         def accepter():
             while True:
