@@ -114,12 +114,6 @@ class ELF(ELFFile):
         delta     = new-self._address
         update    = lambda x: x+delta
 
-        for segment in self.segments:
-            segment.header.p_vaddr += delta
-
-        for section in self.sections:
-            section.header.sh_addr += delta
-
         self.symbols = {k:update(v) for k,v in self.symbols.items()}
         self.plt     = {k:update(v) for k,v in self.plt.items()}
         self.got     = {k:update(v) for k,v in self.got.items()}
@@ -258,6 +252,7 @@ class ELF(ELFFile):
             >>> len(list(libc.search('/bin/sh'))) > 0
             True
         """
+        load_address_fixup = (self.address - self.load_addr)
 
         if writable:
             segments = self.writable_segments
@@ -272,7 +267,7 @@ class ELF(ELFFile):
                 offset = data.find(needle, offset)
                 if offset == -1:
                     break
-                yield addr + offset
+                yield (addr + offset + load_address_fixup)
                 offset += 1
 
     def offset_to_vaddr(self, offset):
@@ -292,13 +287,15 @@ class ELF(ELFFile):
             >>> bash.address == bash.offset_to_vaddr(0)
             True
         """
+        load_address_fixup = (self.address - self.load_addr)
+
         for segment in self.segments:
             begin = segment.header.p_offset
             size  = segment.header.p_filesz
             end   = begin + size
             if begin <= offset and offset <= end:
                 delta = offset - begin
-                return segment.header.p_vaddr + delta + (self.address - self.load_addr)
+                return segment.header.p_vaddr + delta + load_address_fixup
         return None
 
 
