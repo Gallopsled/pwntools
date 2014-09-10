@@ -24,6 +24,7 @@ from pwnlib.util.misc        import *
 from pwnlib.util.packing     import *
 from pwnlib.util.proc        import pidof
 from pwnlib.util.splash      import *
+from pwnlib.util.web         import wget
 
 # Promote these modules, so that "from pwn import *" will let you access them
 import \
