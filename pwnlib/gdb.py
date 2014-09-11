@@ -37,6 +37,8 @@ def debug(args, exe=None, execute=None, ssh=None):
         remote   = ssh.connect_remote('127.0.0.1', port)
         listener = tubes.listen.listen(0)
         port     = listener.lport
+    elif not exe:
+        exe = misc.which(args[0])
 
     result = attach(('127.0.0.1', port), exe=exe)
 
