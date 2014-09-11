@@ -1,7 +1,49 @@
-import os, tempfile, re, shlex
+import os, tempfile, re, shlex, subprocess
 from . import log
 from .util import misc, proc
 from . import tubes, elf
+
+def debug(args, exe=None, execute=None, ssh=None):
+    """debug(args) -> tuple
+
+    Launch a GDB server with the specified command line,
+    and launches GDB to attach to it.
+
+    Args:
+        args: Same args as passed to pwnlib.tubes.process
+        ssh: Remote ssh session to use to launch the process.
+          Automatically sets up port forwarding so that gdb runs locally.
+
+    Returns
+        A tuple containing two `pwnlib.tube`s.
+        - stdin/stdout of the launched process
+        - stdin/stdout of GDB
+    """
+    args      = ['gdbserver', 'localhost:0'] + args
+
+    if not ssh: gdbserver = tubes.process.process(args)
+    if ssh:     gdbserver = ssh.run(args)
+
+    # Process /bin/bash created; pid = 14366
+    # Listening on port 34816
+    process_created = gdbserver.recvline()
+    listening_on    = gdbserver.recvline()
+
+    port     = int(listening_on.split()[-1])
+
+    listener = remote = None
+
+    if ssh:
+        remote   = ssh.connect_remote('127.0.0.1', port)
+        listener = tubes.listen.listen(0)
+        port     = listener.lport
+
+    result = attach(('127.0.0.1', port), exe=exe)
+
+    if ssh:
+        remote <> listener.wait_for_connection()
+
+    return result
 
 def attach(target, execute = None, exe = None, arch = None):
     """attach(target, execute = None, exe = None, arch = None) -> None
@@ -251,7 +293,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         local_libs = ssh.libs(binary)
 
     else:
-        runner     = lambda x: tubes.process.process(shlex.split(x))
+        runner     = tubes.process.process
         local_elf  = elf.ELF(binary)
         local_libs = local_elf.libs
 
@@ -266,6 +308,8 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
 
     if ulimit:
         cmd = 'sh -c "(ulimit -s unlimited; %s)"' % cmd
+
+    cmd = shlex.split(cmd)
 
     with runner(cmd) as gdb:
         gdb.send("""
