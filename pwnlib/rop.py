@@ -360,7 +360,7 @@ class ROP(object):
         filename = self.__get_cachefile_name(elf)
 
         if os.path.exists(filename):
-            log.info("Found gadgets for %r in cache %r" % (elf.file.name,filename))
+            log.info("Found cached gadgets for %r" % (elf.file.name))
             return eval(file(filename).read())
 
     def __cache_save(self, elf, data):
