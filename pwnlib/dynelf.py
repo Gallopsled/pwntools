@@ -313,7 +313,7 @@ class DynELF:
                     if name == symb:
                         #Bingo
                         addr = libbase + leak.d(sym, 1)
-                        log.success("Found %s at 0x%x" % (name, addr))
+                        log.done_success("Found %s at 0x%x" % (name, addr))
                         return addr
                 idx = leak.d(chain, idx)
         else:
@@ -352,7 +352,7 @@ class DynELF:
             status('symbol offset')
             offset = leak.d(sym, 1)
             addr = offset + libbase
-            log.success('Found %s at 0x%x' % (name, addr))
+            log.done_success('Found %s at 0x%x' % (name, addr))
             return addr
 
     def _lookup64 (self, symb, lib):
@@ -425,7 +425,7 @@ class DynELF:
                     if name == symb:
                         #Bingo
                         addr = libbase + leak.q(sym, 1)
-                        log.success("Found %s at 0x%x" % (name, addr))
+                        log.done_success("Found %s at 0x%x" % (name, addr))
                         return addr
                 idx = leak.d(chain, idx)
         else:
@@ -464,5 +464,5 @@ class DynELF:
             status('symbol offset')
             offset = leak.q(sym, 1)
             addr = offset + libbase
-            log.success('Found %s at 0x%x' % (name, addr))
+            log.done_success('Found %s at 0x%x' % (name, addr))
             return addr
