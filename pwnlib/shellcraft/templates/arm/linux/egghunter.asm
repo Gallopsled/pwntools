@@ -3,7 +3,7 @@
 <% from pwnlib import constants %>
 <%page args="egg, start_address = 0, double_check = True"/>
 <%docstring>
-    egghunter(egg, start_address)
+    egghunter(egg, start_address = 0, double_check = True)
 
     Searches for an egg, which is either a four byte integer
     or a four byte string. The egg must appear twice in a row
