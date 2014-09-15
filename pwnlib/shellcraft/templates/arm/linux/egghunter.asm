@@ -1,12 +1,13 @@
 <% from pwnlib.shellcraft.arm import mov %>
 <% from pwnlib.util.packing import unpack %>
 <% from pwnlib import constants %>
-<%page args="egg, start_address = 0"/>
+<%page args="egg, start_address = 0, double_check = True"/>
 <%docstring>
-    egghunter(egg, start_address)
+    egghunter(egg, start_address = 0, double_check = True)
 
     Searches for an egg, which is either a four byte integer
-    or a four byte string. The egg must appear twice in a row.
+    or a four byte string. The egg must appear twice in a row
+    if double_check is True.
     When the egg has been found the egghunter branches to the
     address following it.
     If start_address has been specified search will start on the
@@ -36,7 +37,11 @@ next_page:
 next_byte:
     add r2, r2, #0x01
 
+%if double_check:
     add r0, r2, #0x07
+%else:
+    add r0, r2, #0x03
+%endif
     mov r7, #0x21
     swi #0
 
@@ -44,12 +49,22 @@ next_byte:
     cmn r0, #${constants.linux.arm.EFAULT}
     beq next_page
 
+%if double_check:
     ldm r2, {r4, r5}
+%else:
+    ldm r2, {r4}
+%endif
 
     cmp r4, r3
     bne next_byte
+%if double_check:
     cmp r5, r3
     bne next_byte
+%endif
 
 egg_found:
+%if double_check:
     add pc, r2, #0x08
+%else:
+    add pc, r2, #0x04
+%endif
