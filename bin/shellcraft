@@ -172,4 +172,7 @@ elif args.format in ['h', 'hex']:
 elif args.format in ['i', 'hexii']:
     code = pwnlib.util.fiddling.hexii(code) + '\n'
 
+if not sys.stdin.isatty():
+    sys.stdout.write(sys.stdin.read())
+
 sys.stdout.write(code)
