@@ -465,7 +465,7 @@ class tube(object):
 
         if context.log_level <= log_levels.DEBUG:
             for line in data.splitlines(True):
-                log.debug('Received: %r' % line)
+                log.debug('Send:     %r' % line)
         self.send_raw(data)
 
     def sendline(self, line):
