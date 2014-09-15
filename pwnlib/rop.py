@@ -280,7 +280,7 @@ class ROP(object):
 
             result.append(line)
 
-        return result
+        return '\n'.join(result)
 
     def call(self, resolvable, arguments=()):
         """Add a call to the ROP chain
