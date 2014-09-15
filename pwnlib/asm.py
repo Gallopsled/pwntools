@@ -208,37 +208,41 @@ def asm(shellcode, arch = None, os = None):
             "asm() needs to get 'arch' through an argument or the context"
         )
 
-    tmpdir  = tempfile.mkdtemp(prefix = 'pwn-asm-')
-    def tmp(name):
-        return path.join(tmpdir, name)
-
     assembler = _assembler(arch)
     objcopy   = [_objcopy(arch), '-j.shellcode', '-Obinary']
     code      = _arch_header(arch) + cpp(shellcode, arch, os)
 
+
+    tmpdir    = tempfile.mkdtemp(prefix = 'pwn-asm-')
+    step1     = path.join(tmpdir, 'step1')
+    step2     = path.join(tmpdir, 'step2')
+    step3     = path.join(tmpdir, 'step3')
+
     try:
-        with open(tmp('step1'), 'w') as fd:
+        with open(step1, 'w') as fd:
             fd.write(code)
 
-        _run(assembler + ['-o', tmp('step2'), tmp('step1')])
+        _run(assembler + ['-o', step2, step1])
 
         if arch in ['i386', 'amd64']:
-            with open(tmp('step2')) as fd:
+            with open(step2) as fd:
                 return fd.read()
 
         # Sanity check for seeing if the output has relocations
         relocs = subprocess.check_output(
-            ['readelf', '-r', tmp('step2')]
+            ['readelf', '-r', step2]
         ).strip()
         if len(relocs.split('\n')) > 1:
             raise Exception(
                 'There were relocations in the shellcode:\n\n%s' % relocs
             )
 
-        _run(objcopy + [tmp('step2'), tmp('step3')])
+        _run(objcopy + [step2, step3])
 
-        with open(tmp('step3')) as fd:
+        with open(step3) as fd:
             return fd.read()
+    except:
+        log.error("An error occurred while assembling:\n%s" % code)
     finally:
         shutil.rmtree(tmpdir)
 
@@ -278,8 +282,8 @@ def disasm(data, arch = None, vma = 0):
         )
 
     tmpdir = tempfile.mkdtemp(prefix = 'pwn-disasm-')
-    def tmp(name):
-        return path.join(tmpdir, name)
+    step1     = path.join(tmpdir, 'step1')
+    step2     = path.join(tmpdir, 'step2')
 
     bfdarch = _bfdarch(arch)
     bfdname = _bfdname(arch)
@@ -299,11 +303,11 @@ def disasm(data, arch = None, vma = 0):
         objcopy += ['-w', '-N', '*']
 
     try:
-        with open(tmp('step1'), 'w') as fd:
+        with open(step1, 'w') as fd:
             fd.write(data)
-        _run(objcopy + [tmp('step1'), tmp('step2')])
+        _run(objcopy + [step1, step2])
 
-        output0 = subprocess.check_output(objdump + [tmp('step2')])
+        output0 = subprocess.check_output(objdump + [step2])
         output1 = output0.split('<.text>:\n')
         if len(output1) != 2:
             raise IOError(
