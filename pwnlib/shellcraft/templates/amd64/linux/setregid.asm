@@ -1,4 +1,3 @@
-<% from pwnlib.shellcraft import amd64 %>
 <%page args="gid = 'egid'"/>
 <%docstring>
 Args: [gid (imm/reg) = egid]
