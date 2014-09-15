@@ -1,6 +1,6 @@
 from .. import log, log_levels, context, term
 from ..util import misc
-import re, threading, sys, time, subprocess
+import re, threading, sys, time, subprocess, atexit
 
 def _fix_timeout(timeout, default):
     if timeout == 'default':
@@ -21,6 +21,8 @@ class tube(object):
     def __init__(self, timeout):
         self.buffer          = []
         self.timeout         = _fix_timeout(timeout, context.timeout)
+
+        atexit.register(self.close)
 
     # Functions based on functions from subclasses
     def recv(self, numb = 4096, timeout = 'default'):
