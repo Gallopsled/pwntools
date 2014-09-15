@@ -21,8 +21,17 @@ def debug(args, exe=None, execute=None, ssh=None):
     """
     args      = ['gdbserver', 'localhost:0'] + args
 
-    if not ssh: gdbserver = tubes.process.process(args)
-    if ssh:     gdbserver = ssh.run(args)
+    if not ssh:
+        execute = tubes.process.process
+    if ssh:
+        execute = ssh.run
+        which     = ssh.which
+
+    # Make sure gdbserver is installed
+    if not which('gdbserver'):
+        log.error("gdbserver is not installed")
+
+    gdbserver = execute(args)
 
     # Process /bin/bash created; pid = 14366
     # Listening on port 34816
