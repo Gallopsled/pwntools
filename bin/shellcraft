@@ -84,12 +84,19 @@ p.add_argument(
                'h', 'hex',
                'a', 'asm', 'assembly',
                'p',
-               'i', 'hexii'],
-    default = 'hex',
+               'i', 'hexii',
+               'default'],
+    default = 'default',
     help = 'Output format (default: hex), choose from {r}aw, {s}tring, {c}-style array, {h}ex string, hex{i}i, {a}ssembly code, {p}reprocssed code',
 )
 
 args = p.parse_args()
+
+if args.format == 'default':
+    if sys.stdout.isatty():
+        args.format = 'hex'
+    else:
+        args.format = 'raw'
 
 def get_tree(path, val, result):
     if path:
