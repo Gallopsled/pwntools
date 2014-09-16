@@ -7,9 +7,8 @@ from .util import packing, lists
 
 try:
     import ropgadget
-    __ok = True
 except ImportError:
-    __ok = False
+    ropgadget = None
 
 class ROP(object):
     """Class which simplifies the generation of ROP-chains.
@@ -34,6 +33,10 @@ class ROP(object):
         Args:
             elfs(list): List of pwnlib.elf.ELF objects for mining
         """
+
+        if not ropgadget:
+            log.error("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
+
         # Permit singular ROP(elf) vs ROP([elf])
         if isinstance(elfs, elf.ELF):
             elfs = [elfs]
@@ -597,8 +600,3 @@ class ROP(object):
         def call(*args):
             return self.call(attr,args)
         return call
-
-
-if not __ok:
-    def ROP(*args, **kwargs):
-        log.error("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
