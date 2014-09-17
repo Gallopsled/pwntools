@@ -82,7 +82,6 @@ class tube(object):
                 self.settimeout(old_timeout)
 
             if data == None:
-                log.debug('Timed out')
                 return None
             else:
                 if context.log_level <= log_levels.DEBUG:
