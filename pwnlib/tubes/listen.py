@@ -1,5 +1,5 @@
 from . import sock
-from .. import log
+from .. import log, thread
 import socket, errno, threading
 
 class listen(sock.sock):
@@ -91,7 +91,7 @@ class listen(sock.sock):
             self.rhost, self.rport = rhost[:2]
             h.success('Got connection from %s on port %d' % (self.rhost, self.rport))
 
-        self._accepter = threading.Thread(target = accepter)
+        self._accepter = thread.Thread(target = accepter)
         self._accepter.daemon = True
         self._accepter.start()
 
@@ -99,7 +99,7 @@ class listen(sock.sock):
         def accepter():
             self.wait_for_connection()
             super(listen, self).spawn_process(*args, **kwargs)
-        t = threading.Thread(target = accepter)
+        t = thread.Thread(target = accepter)
         t.daemon = True
         t.start()
 

@@ -27,7 +27,7 @@ __all__ = [
 ]
 
 import threading, sys, time, random, warnings, traceback
-from . import term, log_levels, context, exception
+from . import term, log_levels, context, exception, thread
 from .term import text, spinners
 
 _lock = threading.Lock()
@@ -360,9 +360,9 @@ class _SimpleWaiter(_Waiter):
         self._remove()
 
 
-class _Spinner(threading.Thread):
+class _Spinner(thread.Thread):
     def __init__(self, spinner, log_level):
-        threading.Thread.__init__(self)
+        super(_Spinner, self).__init__()
         self.spinner = spinner
         self.idx = 0
         self.daemon = True

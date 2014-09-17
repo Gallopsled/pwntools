@@ -9,6 +9,7 @@ from pwnlib.log_levels       import *
 from pwnlib.memleak          import MemLeak
 from pwnlib.replacements     import *
 from pwnlib.rop              import ROP
+from pwnlib.thread           import Thread
 from pwnlib.tubes.listen     import *
 from pwnlib.tubes.process    import *
 from pwnlib.tubes.remote     import *

@@ -1,4 +1,4 @@
-from .. import log, log_levels, context, term, atexit
+from .. import log, log_levels, context, term, atexit, thread
 from ..util import misc
 import re, threading, sys, time, subprocess
 
@@ -537,7 +537,7 @@ class tube(object):
                     log.info('Got EOF while reading in interactive')
                     break
 
-        t = threading.Thread(target = recv_thread, args = (go,))
+        t = thread.Thread(target = recv_thread, args = (go,))
         t.daemon = True
         t.start()
 
@@ -615,7 +615,7 @@ class tube(object):
             self.shutdown('send')
             other.shutdown('recv')
 
-        t = threading.Thread(target = pump)
+        t = thread.Thread(target = pump)
         t.daemon = True
         t.start()
 
