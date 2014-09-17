@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-import argparse, string
+import argparse, string, sys
 from pwnlib.util import cyclic, packing
 from pwnlib import log
 
@@ -67,4 +67,8 @@ else:
     got    = len(result)
     if got < want:
         log.failure("Alphabet too small (max length = %i)" % got)
-    print result
+
+    sys.stdout.write(result)
+
+    if sys.stdout.isatty():
+        sys.stdout.write('\n')
