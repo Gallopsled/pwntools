@@ -1,5 +1,5 @@
 import os, string, base64, paramiko, time, tempfile, threading, sys, shutil, re
-from .. import term, log, context
+from .. import term, log, context, thread
 from ..util import hashes, misc
 from . import sock, tube
 from .process import process
@@ -127,7 +127,7 @@ class ssh_channel(sock.sock):
                     go[0] = False
                     break
 
-        t = threading.Thread(target = recv_thread, args = (go,))
+        t = thread.Thread(target = recv_thread, args = (go,))
         t.daemon = True
         t.start()
 
@@ -230,7 +230,7 @@ class ssh_listener(sock.sock):
             self.rhost, self.rport = self.sock.origin_addr
             h.success('Got connection from %s:%d' % (self.rhost, self.rport))
 
-        self._accepter = threading.Thread(target = accepter)
+        self._accepter = thread.Thread(target = accepter)
         self._accepter.daemon = True
         self._accepter.start()
 
