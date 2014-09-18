@@ -451,6 +451,7 @@ class tube(object):
             h.status(misc.size(l))
 
         h.success()
+        self.close()
 
         return ''.join(r)
 
