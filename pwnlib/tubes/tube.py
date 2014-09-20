@@ -381,7 +381,7 @@ class tube(object):
         return self.recvpred(pred, timeout = timeout)
 
     def recvline_regex(self, regex, exact = False, keepend = False,
-                       eout = 'default'):
+                       timeout = 'default'):
         """recvregex(regex, exact = False, keepend = False,
                      timeout = 'default') -> str
 
