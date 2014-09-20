@@ -197,7 +197,8 @@ class tube(object):
                 if j > -1:
                     j += len(delim)
                     data, rest = data[:j], data[j:]
-                    self.buffer.append(rest)
+                    if rest:
+                        self.buffer.append(rest)
                     return data
             if len(data) > delimslen:
                 i = len(data) - delimslen + 1
