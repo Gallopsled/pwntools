@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 from setuptools import setup, find_packages
 from distutils.util import convert_path
 from distutils.command.install import INSTALL_SCHEMES
