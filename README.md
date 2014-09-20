@@ -31,10 +31,10 @@ Our documentation is available at http://pwntools.readthedocs.org/
 
 # Installation
 Pwntools is available as a pip package. You can install it by running
-`pip install pwntools`.
+`pip2 install pwntools`.
 
 Alternatively if you prefer to have the latest version in git, you can
-simply clone this repository, run `pip install -r requirements.txt`
+simply clone this repository, run `pip2 install -r requirements.txt`
 and add entries in your `PATH` and `PYTHONPATH` variables. The script
 `install_local.sh` will help you do so, in case you are using bash.
 
