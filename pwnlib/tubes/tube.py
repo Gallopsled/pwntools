@@ -173,35 +173,16 @@ class tube(object):
         As a shorthand, ``delim`` may be used instead of ``(delim, )``.
         """
 
-        if not hasattr(delims, '__iter__'):
-            delims = (delims,)
+        if not isinstance(delims, (tuple, list)):
+            delims = [delims]
 
-        delimslen = max(len(delim) for delim in delims)
-
-        data = ''
-        i = 0
-        while True:
-
-            try:
-                res = self._recv(timeout = timeout)
-                if res == None:
-                    self.buffer.append(data)
-                    return None
-            except:
-                self.buffer.append(data)
-                raise
-
-            data += res
-
+        def predicate(data):
             for delim in delims:
-                j = data.find(delim, i)
-                if j > -1:
-                    j += len(delim)
-                    data, rest = data[:j], data[j:]
-                    self.buffer.append(rest)
-                    return data
-            if len(data) > delimslen:
-                i = len(data) - delimslen + 1
+                if data.endswith(delim):
+                    return True
+            return False
+
+        return self.recvpred(predicate)
 
     def recvlines(self, numlines, keepends = False, timeout = 'default'):
         """recvlines(numlines, keepends = False) -> str list
