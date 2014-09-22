@@ -1,8 +1,8 @@
 <% from pwnlib.shellcraft import common %>
 <%page args="ReadFile, GetStdHandle, Size = '0x1000', Target = '0'"/>
 <%docstring>
-Fucked read because I'm too lazy to do GetProcAddress.
-    ReadFile, GetStdHandle, Size = '0x1000', Target = '0'
+Calls ReadFile(GetStdHandle(STD_INPUT_HANDLE), Target, Size, ...)
+    By default, 'Target' will be the address that comes after this stage.
 </%docstring>
 
 
