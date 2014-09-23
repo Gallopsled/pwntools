@@ -268,10 +268,9 @@ def bug(string = '', exit_code = -1, log_level = log_levels.ERROR):
       log_level(int): The log level to output the text to.
 '''
     _anotate(log_level, text.on_red('BUG (this should not happen)'), string)
-    if _good_exc():
-        with _lock:
-            _put(log_level, 'The exception was:\n')
-            _put(log_level, traceback.format_exc())
+    with _lock:
+        _put(log_level, 'The exception was:\n')
+        _put(log_level, ''.join(traceback.format_stack()))
     sys.exit(exit_code)
 
 
