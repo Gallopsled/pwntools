@@ -18,7 +18,7 @@ def _fix_timeout(timeout, default):
 class tube(object):
     """Container of all the tube functions common to both sockets, TTYs and SSH connetions."""
 
-    def __init__(self, timeout):
+    def __init__(self, timeout='default'):
         self.buffer          = []
         self.timeout         = _fix_timeout(timeout, context.timeout)
         atexit.register(self.close)
