@@ -29,6 +29,8 @@ in `pwnlib`. These are:
 # Documentation
 Our documentation is available at http://pwntools.readthedocs.org/
 
+To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/Gallopsled/pwntools-write-ups).
+
 # Installation
 Pwntools is available as a pip package. You can install it by running
 `pip2 install pwntools`.
