@@ -32,13 +32,33 @@ Our documentation is available at http://pwntools.readthedocs.org/
 To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/Gallopsled/pwntools-write-ups).
 
 # Installation
-Pwntools is available as a pip package. You can install it by running
-`pip2 install pwntools`.
 
-Alternatively if you prefer to have the latest version in git, you can
-simply clone this repository, run `pip2 install -r requirements.txt`
-and add entries in your `PATH` and `PYTHONPATH` variables. The script
-`install_local.sh` will help you do so, in case you are using bash.
+Pwntools is available as a pip package. You can install it and dependencies with a single command:
+
+```sh
+pip2 install pwntools
+```
+
+Alternatively if you prefer to use the latest version from the repository:
+
+```sh
+git clone https://github.com/Gallopsled/pwntools
+cd pwntools
+pip2 install -r requirements.txt
+PWN=$(realpath .)
+export PATH="$PWN/bin:$PATH"
+export PYTHONPATH="$PWN:$PYTHONPATH"
+```
+
+If you want to make these settings permanent:
+
+```sh
+>>~/.bashrc cat <<EOF
+# Set up path for Pwntools
+export PATH="$PWN/bin:\$PATH"
+export PYTHONPATH="$PWN:\$PYTHONPATH"
+EOF
+```
 
 # Contact
 If you have any questions not worthy of a bug report, feel free to join us
