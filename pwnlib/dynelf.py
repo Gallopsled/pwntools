@@ -153,14 +153,11 @@ class DynELF:
             e = elf.load(path)
 
         PIE = (e.elftype == 'DYN')
-
-        #On non position independent executables the base address can be read off the elf.
-        if PIE is False and base is None:
-            base = filter(lambda x: x['p_type'] == 'PT_LOAD' and (x.header.p_flags & 1), e.segments)[0]['p_vaddr']
-
-        #At this point we should have a base address
-        if base is None:
+        
+        if base is None and PIE and e.address == e.load_addr:
             log.die('Position independent ELF needs a base address')
+        
+        base = base or e.address
 
         gotoff = filter(lambda x: x.name == '.got.plt', e.sections)[0].header['sh_addr']
         #Sometimes the address is absolute, other times it's an offset relative to the base.
