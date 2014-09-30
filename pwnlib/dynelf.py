@@ -160,7 +160,7 @@ class DynELF:
 
         #At this point we should have a base address
         if base is None:
-            log.die('Position independent ELF needs a base address')
+            log.fatal('Position independent ELF needs a base address')
 
         gotoff = filter(lambda x: x.name == '.got.plt', e.sections)[0].header['sh_addr']
         #Sometimes the address is absolute, other times it's an offset relative to the base.
@@ -188,7 +188,7 @@ class DynELF:
         self.link_map = link_map
         self.libbase = libbase
         if self.link_map is None and self.libbase is None:
-            log.die('Either link_map or libbase needs to be specified')
+            log.fatal('Either link_map or libbase needs to be specified')
 
     def bases(self):
         '''Resolve base addresses of all loaded libraries.
