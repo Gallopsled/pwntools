@@ -36,7 +36,7 @@ To get you started, we've provided some example solutions for past CTF challenge
 Pwntools is available as a pip package. You can install it and dependencies with a single command:
 
 ```sh
-pip2 install pwntools
+pip install pwntools
 ```
 
 Alternatively if you prefer to use the latest version from the repository:
@@ -44,7 +44,7 @@ Alternatively if you prefer to use the latest version from the repository:
 ```sh
 git clone https://github.com/Gallopsled/pwntools
 cd pwntools
-pip2 install -r requirements.txt
+pip install -r requirements.txt
 PWN=$(realpath .)
 export PATH="$PWN/bin:$PATH"
 export PYTHONPATH="$PWN:$PYTHONPATH"
