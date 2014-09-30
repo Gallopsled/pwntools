@@ -1,5 +1,5 @@
 #!/bin/sh
-sudo pip install -r requirements.txt
+sudo pip2 install -r requirements.txt
 
 echo "================================================"
 echo "Now please put this directory in your PYTHONPATH"

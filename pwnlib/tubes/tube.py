@@ -18,7 +18,7 @@ def _fix_timeout(timeout, default):
 class tube(object):
     """Container of all the tube functions common to both sockets, TTYs and SSH connetions."""
 
-    def __init__(self, timeout):
+    def __init__(self, timeout='default'):
         self.buffer          = []
         self.timeout         = _fix_timeout(timeout, context.timeout)
         atexit.register(self.close)
@@ -197,7 +197,8 @@ class tube(object):
                 if j > -1:
                     j += len(delim)
                     data, rest = data[:j], data[j:]
-                    self.buffer.append(rest)
+                    if rest:
+                        self.buffer.append(rest)
                     return data
             if len(data) > delimslen:
                 i = len(data) - delimslen + 1
@@ -380,7 +381,7 @@ class tube(object):
         return self.recvpred(pred, timeout = timeout)
 
     def recvline_regex(self, regex, exact = False, keepend = False,
-                       eout = 'default'):
+                       timeout = 'default'):
         """recvregex(regex, exact = False, keepend = False,
                      timeout = 'default') -> str
 
@@ -450,6 +451,7 @@ class tube(object):
             h.status(misc.size(l))
 
         h.success()
+        self.close()
 
         return ''.join(r)
 

@@ -52,12 +52,15 @@ def pack(number, word_size = None, endianness = None, sign = None):
     word_size  = word_size  or context.word_size
     endianness = endianness or context.endianness
     sign       = sign       or context.sign
+    
+    if not isinstance(number, (int,long)):
+        raise ValueError("pack(): number must be of type (int,long) (got %r)" % type(number))
 
     if sign not in ['signed', 'unsigned']:
-        raise ValueError("pack(): sign must be either 'signed' or 'unsigned'")
+        raise ValueError("pack(): sign must be either 'signed' or 'unsigned' (got %r)" % sign)
 
     if endianness not in ['little', 'big']:
-        raise ValueError("pack(): endianness must be either 'little' or 'big'")
+        raise ValueError("pack(): endianness must be either 'little' or 'big' (got %r)" % endianness)
 
     # Verify that word_size make sense
     if word_size == 'all':
