@@ -1,4 +1,4 @@
-from .. import log, term
+from .. import log, term, thread
 from . import tube
 import serial, time, threading, sys
 
@@ -111,7 +111,7 @@ class serialtube(tube.tube):
                     go[0] = False
                     break
 
-        t = threading.Thread(target = recv_thread, args = (go,))
+        t = thread.Thread(target = recv_thread, args = (go,))
         t.daemon = True
         t.start()
 

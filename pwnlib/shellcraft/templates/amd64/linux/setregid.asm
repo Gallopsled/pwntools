@@ -7,16 +7,16 @@ Args: [gid (imm/reg) = egid]
 % if gid == 'egid':
     ;; getegid
     push SYS_getegid
-    pop eax
+    pop rax
     int 0x80
 % else:
     push ${gid}
-    pop eax
+    pop rax
 % endif
 
-    ;; setregid(eax, eax)
-    mov ebx, eax
-    mov ecx, eax
+    ;; setregid(rax, rax)
+    mov rbx, rax
+    mov rcx, rax
     push SYS_setregid
-    pop eax
+    pop rax
     int 0x80

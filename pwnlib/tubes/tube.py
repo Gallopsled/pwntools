@@ -1,4 +1,4 @@
-from .. import log, log_levels, context, term
+from .. import log, log_levels, context, term, atexit, thread
 from ..util import misc
 import re, threading, sys, time, subprocess
 
@@ -18,9 +18,10 @@ def _fix_timeout(timeout, default):
 class tube(object):
     """Container of all the tube functions common to both sockets, TTYs and SSH connetions."""
 
-    def __init__(self, timeout):
+    def __init__(self, timeout='default'):
         self.buffer          = []
         self.timeout         = _fix_timeout(timeout, context.timeout)
+        atexit.register(self.close)
 
     # Functions based on functions from subclasses
     def recv(self, numb = 4096, timeout = 'default'):
@@ -81,7 +82,6 @@ class tube(object):
                 self.settimeout(old_timeout)
 
             if data == None:
-                log.debug('Timed out')
                 return None
             else:
                 if context.log_level <= log_levels.DEBUG:
@@ -197,7 +197,8 @@ class tube(object):
                 if j > -1:
                     j += len(delim)
                     data, rest = data[:j], data[j:]
-                    self.buffer.append(rest)
+                    if rest:
+                        self.buffer.append(rest)
                     return data
             if len(data) > delimslen:
                 i = len(data) - delimslen + 1
@@ -380,7 +381,7 @@ class tube(object):
         return self.recvpred(pred, timeout = timeout)
 
     def recvline_regex(self, regex, exact = False, keepend = False,
-                       eout = 'default'):
+                       timeout = 'default'):
         """recvregex(regex, exact = False, keepend = False,
                      timeout = 'default') -> str
 
@@ -450,6 +451,7 @@ class tube(object):
             h.status(misc.size(l))
 
         h.success()
+        self.close()
 
         return ''.join(r)
 
@@ -465,7 +467,7 @@ class tube(object):
 
         if context.log_level <= log_levels.DEBUG:
             for line in data.splitlines(True):
-                log.debug('Received: %r' % line)
+                log.debug('Send:     %r' % line)
         self.send_raw(data)
 
     def sendline(self, line):
@@ -536,7 +538,7 @@ class tube(object):
                     log.info('Got EOF while reading in interactive')
                     break
 
-        t = threading.Thread(target = recv_thread, args = (go,))
+        t = thread.Thread(target = recv_thread, args = (go,))
         t.daemon = True
         t.start()
 
@@ -614,7 +616,7 @@ class tube(object):
             self.shutdown('send')
             other.shutdown('recv')
 
-        t = threading.Thread(target = pump)
+        t = thread.Thread(target = pump)
         t.daemon = True
         t.start()
 

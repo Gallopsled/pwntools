@@ -2,7 +2,6 @@
 Example showing how to use the ssh class.
 """
 
-#!/usr/bin/env python
 from pwn import *
 
 shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0')

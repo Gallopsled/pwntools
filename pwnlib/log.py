@@ -27,7 +27,7 @@ __all__ = [
 ]
 
 import threading, sys, time, random, warnings, traceback
-from . import term, log_levels, context, exception
+from . import term, log_levels, context, exception, thread
 from .term import text, spinners
 
 _lock = threading.Lock()
@@ -268,10 +268,9 @@ def bug(string = '', exit_code = -1, log_level = log_levels.ERROR):
       log_level(int): The log level to output the text to.
 '''
     _anotate(log_level, text.on_red('BUG (this should not happen)'), string)
-    if _good_exc():
-        with _lock:
-            _put(log_level, 'The exception was:\n')
-            _put(log_level, traceback.format_exc())
+    with _lock:
+        _put(log_level, 'The exception was:\n')
+        _put(log_level, ''.join(traceback.format_stack()))
     sys.exit(exit_code)
 
 
@@ -360,9 +359,9 @@ class _SimpleWaiter(_Waiter):
         self._remove()
 
 
-class _Spinner(threading.Thread):
+class _Spinner(thread.Thread):
     def __init__(self, spinner, log_level):
-        threading.Thread.__init__(self)
+        super(_Spinner, self).__init__()
         self.spinner = spinner
         self.idx = 0
         self.daemon = True

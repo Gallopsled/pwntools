@@ -7,16 +7,16 @@ Args: [uid (imm/reg) = euid]
 % if uid == 'euid':
     ;; geteuid
     push SYS_geteuid
-    pop eax
+    pop rax
     int 0x80
 % else:
     push ${uid}
-    pop eax
+    pop rax
 % endif
 
-    ;; setreuid(eax, eax)
-    mov ebx, eax
-    mov ecx, eax
+    ;; setreuid(rax, rax)
+    mov rbx, rax
+    mov rcx, rax
     push SYS_setreuid
-    pop eax
+    pop rax
     int 0x80
