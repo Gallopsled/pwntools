@@ -6,6 +6,7 @@
     listen(port,network)
 
     Listens on a TCP port, accept a client and leave his socket in r6.
+    Port is the TCP port to listen on, network is either 'ipv4' or 'ipv6'.
 </%docstring>
     /* First create listening socket */
     ${mov('r7', constants.linux.thumb.SYS_socket)}
