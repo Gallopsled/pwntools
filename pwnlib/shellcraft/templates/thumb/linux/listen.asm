@@ -5,7 +5,7 @@
 <%docstring>
     listen(port,network)
 
-    Listens on a TCP port.
+    Listens on a TCP port, accept a client and leave his socket in r6.
 </%docstring>
     /* First create listening socket */
     ${mov('r7', constants.linux.thumb.SYS_socket)}
@@ -83,7 +83,6 @@
     /* r7 = SYS_accept = 285 */
     /* r7 is already = 284 so just add one */
     add r7, #1
-
     svc 1
 
     /* Move accepted socket to r6 */
