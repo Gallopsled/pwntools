@@ -47,7 +47,7 @@
     push {r1, r2, r3}
     
     /* Then port = %d */
-    ${mov('r1', (htons(port) << 16) + constants.linux.thumb.AF_INET)}
+    ${mov('r1', (htons(port) << 16) + constants.linux.thumb.AF_INET6)}
     push {r1, r2, r3}
 
     /* Address of sockaddr_in6 into r1 */
