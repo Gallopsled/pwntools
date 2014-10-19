@@ -1,4 +1,5 @@
 from . import log
+from .util.packing import unpack
 
 class MemLeak(object):
     """MemLeak is a caching and heuristic tool for exploiting memory leaks.
@@ -56,7 +57,7 @@ class MemLeak(object):
             if address in self.cache:
                 continue
 
-            # Cache miss
+            # Cache miss, get the data from the leaker
             data = None
             try:
                 data = self.leak(addr)
@@ -64,14 +65,22 @@ class MemLeak(object):
                 if self.reraise:
                     raise
 
-                # We could not find this particular byte, search backwardd
-                # to see if another request will satisfy it
-                for address in range(address-self.search_range, address):
-                    data = self._leak(address, 1)
-            else:
-                # Fill cache for as many bytes as we received
-                for i,byte in enumerate(data):
-                    self.cache[address+i] = byte
+            # We could not leak this particular byte, search backwardd
+            # to see if another request will satisfy it
+            if not data:
+                for i in range(1, self.search_range):
+                    data = self._leak(address-i, i)
+                    if data:
+                        break
+
+            # Could not receive any data, even overlapped with previous
+            # requests.
+            if not data:
+                return None
+
+            # Fill cache for as many bytes as we received
+            for i,byte in enumerate(data):
+                self.cache[address+i] = byte
 
         # Ensure everything is in the cache
         if not all(a in cache for a in addresses):
@@ -84,60 +93,50 @@ class MemLeak(object):
         """raw(addr, numb) -> list
 
         Leak `numb` bytes at `addr`"""
-        return [self._leak(addr + i) for i in range(numb)]
+        return map(self._leak, range(addr, addr+i))
 
     def b(self, addr, ndx = 0):
         """b(addr, ndx = 0) -> int
 
         Leak byte at ``((uint8_t*) addr)[ndx]``"""
         addr += ndx
-        return self._leak(addr)
+        data = self._leak(addr, 1)
+        return None if not data else unpack('all', data)
 
     def w(self, addr, ndx = 0):
         """w(addr, ndx = 0) -> int
 
         Leak word at ``((uint16_t*) addr)[ndx]``"""
         addr += ndx * 2
-        b1 = self.b(addr)
-        b2 = self.b(addr + 1)
-        if None in [b1, b2]:
-            return None
-        return b1 + (b2 << 8)
+        data = self._leak(addr, 2)
+        return None if not data else unpack('all', data)
 
     def d(self, addr, ndx = 0):
         """d(addr, ndx = 0) -> int
 
         Leak dword at ``((uint32_t*) addr)[ndx]``"""
         addr += ndx * 4
-        w1 = self.w(addr)
-        w2 = self.w(addr + 2)
-        if None in [w1, w2]:
-            return None
-        return w1 + (w2 << 16)
+        data = self._leak(addr, 4)
+        return None if not data else unpack('all', data)
 
     def q(self, addr, ndx = 0):
         """q(addr, ndx = 0) -> int
 
         Leak qword at ``((uint64_t*) addr)[ndx]``"""
         addr += ndx * 8
-        d1 = self.d(addr)
-        d2 = self.d(addr + 4)
-        if None in [d1, d2]:
-            return None
-        return d1 + (d2 << 32)
+        data = self._leak(addr, 8)
+        return None if not data else unpack('all', data)
 
     def s(self, addr):
         """s(addr) -> str
 
         Leak bytes at `addr` until failure or a nullbyte is found"""
-        out = ''
-        while True:
-            x = self.b(addr)
-            if x in [0, None]:
-                break
-            out += chr(x)
+
+        # This relies on the behavior of _leak to fill the cache
+        orig = addr
+        while self.b(addr):
             addr += 1
-        return out
+        return self._leak(orig, addr-orig)
 
     def n(self, addr, numb):
         """n(addr, ndx = 0) -> str
@@ -147,54 +146,55 @@ class MemLeak(object):
         Returns:
           A string with the leaked bytes, will return `None` if any are missing
         """
-        xs = self.raw(addr, numb)
-        if None in xs:
-            return None
-        return ''.join(chr(x) for x in xs)
+        return self._leak(addr, numb) or None
 
     def clearb(self, addr, ndx = 0):
         """clearb(addr, ndx = 0) -> byte
 
         Clears byte at ``((uint8_t*)addr)[ndx]`` from the cache and
         returns the removed value or `None` if the address was not completely set."""
-        addr += ndx
-        return self.cache.pop(addr, None)
+        size  = 1
+        addr += ndx * size
+        data  = self.cache.pop(addr, None)
+        return None if data is None else unpack('all', ''.join(data))
 
     def clearw(self, addr, ndx = 0):
         """clearw(addr, ndx = 0) -> word
 
         Clears word at ``((uint16_t*)addr)[ndx]`` from the cache and
         returns the removed value or `None` if the address was not completely set."""
-        addr += ndx * 2
-        b1 = self.clearb(addr)
-        b2 = self.clearb(addr + 1)
-        if None in [b1, b2]:
-            return None
-        return b1 + (b2 << 8)
+        size   = 2
+        addr  += ndx * size
+        data   = map(self.clearb, range(addr, addr+size))
+        return None if None in data else unpack(''.join(data), word_size='all')
 
     def cleard(self, addr, ndx = 0):
         """cleard(addr, ndx = 0) -> dword
 
         Clears dword at ``((uint32_t*)addr)[ndx]`` from the cache and
         returns the removed value or `None` if the address was not completely set."""
-        addr += ndx * 4
-        b1 = self.clearw(addr)
-        b2 = self.clearw(addr + 2)
-        if None in [b1, b2]:
-            return None
-        return b1 + (b2 << 16)
+        size   = 4
+        addr  += ndx * size
+        data   = map(self.clearb, range(addr, addr+size))
+        return None if None in data else unpack(''.join(data), word_size='all')
 
     def clearq(self, addr, ndx = 0):
         """clearq(addr, ndx = 0) -> qword
 
         Clears qword at ``((uint64_t*)addr)[ndx]`` from the cache and
-        returns the removed value or `None` if the address was not completely set."""
-        addr += ndx * 8
-        b1 = self.cleard(addr)
-        b2 = self.cleard(addr + 4)
-        if None in [b1, b2]:
-            return None
-        return b1 + (b2 << 32)
+        returns the removed value or `None` if the address was not completely set.
+
+        >>> c = MemLeak(lambda addr: '')
+        >>> c.cache = {x:'x' for x in range(0x100, 0x108)}
+        >>> c.clearq(0x100)
+        >>> c.cache == {}
+        True
+
+        """
+        size   = 8
+        addr  += ndx * size
+        data   = map(self.clearb, range(addr, addr+size))
+        return None if None in data else unpack(''.join(data), word_size='all')
 
     def setb(self, addr, val, ndx = 0):
         """Sets byte at ``((uint8_t*)addr)[ndx]`` to `val` in the cache."""
