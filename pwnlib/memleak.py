@@ -42,56 +42,59 @@ class MemLeak(object):
          '0x464c457f'
     """
     def __init__(self, f, search_range = 20, reraise = True):
-        self.cache = {}
         self.leak = f
         self.search_range = search_range
         self.reraise = reraise
 
-    def _leak(self, addr):
-        if addr in self.cache:
-            return self.cache[addr]
-        try:
-            x = self.leak(addr)
-        except Exception as e:
-            if self.reraise:
-                raise
+        # Map of address: byte for all bytes received
+        self.cache = {}
+
+    def _leak(self, addr, n):
+        addresses = [addr+i for i in xrange(n)]
+        for address in addresses:
+            # Cache hit
+            if address in self.cache:
+                continue
+
+            # Cache miss
+            data = None
+            try:
+                data = self.leak(addr)
+            except Exception as e:
+                if self.reraise:
+                    raise
+
+                # We could not find this particular byte, search backwardd
+                # to see if another request will satisfy it
+                for address in range(address-self.search_range, address):
+                    data = self._leak(address, 1)
             else:
-                log.warning('Information leak callback raised an exception: %s' % e.message)
-                x = None
-        if x is None:
-            self.cache[addr] = None
+                # Fill cache for as many bytes as we received
+                for i,byte in enumerate(data):
+                    self.cache[address+i] = byte
+
+        # Ensure everything is in the cache
+        if not all(a in cache for a in addresses):
             return None
-        for n, b in enumerate(x):
-            self.cache[addr + n] = ord(b)
-        return self.cache[addr]
+
+        # Cache is filled, satisfy the request
+        return ''.join(self.cache[addr+i] for i in xrange(n))
 
     def raw(self, addr, numb):
-        """Leak `numb` bytes at `addr`"""
+        """raw(addr, numb) -> list
+
+        Leak `numb` bytes at `addr`"""
         return [self._leak(addr + i) for i in range(numb)]
 
     def b(self, addr, ndx = 0):
-        """b(addr, ndx = 0) -> byte
+        """b(addr, ndx = 0) -> int
 
         Leak byte at ``((uint8_t*) addr)[ndx]``"""
         addr += ndx
-        x = self._leak(addr)
-        if x is not None:
-            return x
-        # Heuristic: Search around the address hoping to get this byte as a side
-        # effect
-        for i in range(-self.search_range, 0):
-            self._leak(addr + i)
-            if addr in self.cache:
-                return self.cache[addr]
-
-        for i in range(1, self.search_range + 1):
-            self._leak(addr + i)
-            if addr in self.cache:
-                return self.cache[addr]
-        return None
+        return self._leak(addr)
 
     def w(self, addr, ndx = 0):
-        """w(addr, ndx = 0) -> word
+        """w(addr, ndx = 0) -> int
 
         Leak word at ``((uint16_t*) addr)[ndx]``"""
         addr += ndx * 2
@@ -102,7 +105,7 @@ class MemLeak(object):
         return b1 + (b2 << 8)
 
     def d(self, addr, ndx = 0):
-        """d(addr, ndx = 0) -> dword
+        """d(addr, ndx = 0) -> int
 
         Leak dword at ``((uint32_t*) addr)[ndx]``"""
         addr += ndx * 4
@@ -113,7 +116,7 @@ class MemLeak(object):
         return w1 + (w2 << 16)
 
     def q(self, addr, ndx = 0):
-        """q(addr, ndx = 0) -> qword
+        """q(addr, ndx = 0) -> int
 
         Leak qword at ``((uint64_t*) addr)[ndx]``"""
         addr += ndx * 8
