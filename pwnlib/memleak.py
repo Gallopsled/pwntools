@@ -125,7 +125,7 @@ class MemLeak(object):
 
             >>> import string
             >>> data = string.ascii_lowercase
-            >>> l = MemLeak(lambda a: data[a:a+4], reraise=False)
+            >>> l = MemLeak(lambda a: data[a:a+2], reraise=False)
             >>> l.b(0) == ord('a')
             True
             >>> l.b(25) == ord('z')
@@ -163,7 +163,7 @@ class MemLeak(object):
 
             >>> import string
             >>> data = string.ascii_lowercase
-            >>> l = MemLeak(lambda a: data[a:a+4], reraise=False)
+            >>> l = MemLeak(lambda a: data[a:a+8], reraise=False)
             >>> l.d(0) == unpack('abcd', 32)
             True
             >>> l.d(22) == unpack('wxyz', 32)
@@ -182,7 +182,7 @@ class MemLeak(object):
 
             >>> import string
             >>> data = string.ascii_lowercase
-            >>> l = MemLeak(lambda a: data[a:a+4], reraise=False)
+            >>> l = MemLeak(lambda a: data[a:a+16], reraise=False)
             >>> l.q(0) == unpack('abcdefgh', 64)
             True
             >>> l.q(18) == unpack('stuvwxyz', 64)
