@@ -264,6 +264,13 @@ class DynELF(object):
         self._bases   = {}
         self._dyn     = []
 
+
+    def success(self, msg):
+        if not self.waitfor:
+            log.success(msg)
+        else:
+            self.waitfor.success(msg)
+
     def status(self, msg):
         if not self.waitfor:
             log.info(msg)
@@ -371,7 +378,7 @@ class DynELF(object):
 
         libbase = leak(cur, LinkMap.l_addr)
 
-        log.success("Resolved library at %#x" % libbase)
+        self.status("Resolved library at %#x" % libbase)
 
         if symb is None:
             return libbase
@@ -462,7 +469,7 @@ class DynELF(object):
                 if name == symb:
                     #Bingo
                     addr = libbase + leak(sym, Sym.st_value)
-                    log.success("Found %s at 0x%x" % (name, addr))
+                    self.success("Found %s at 0x%x" % (name, addr))
                     return addr
 
             # The name did not match what we were looking for, or we assume
@@ -541,7 +548,7 @@ class DynELF(object):
                     # No collision, get offset and calculate address
                     offset = leak(sym, Sym.st_value)
                     addr   = offset + libbase
-                    log.success('Found %s at 0x%x' % (name, addr))
+                    self.success('Found %s at 0x%x' % (name, addr))
                     return addr
 
             # Collision or no match, continue to the next item
