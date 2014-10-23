@@ -1,4 +1,5 @@
 from . import log
+from .util.packing import pack,unpack
 
 class MemLeak(object):
     """MemLeak is a caching and heuristic tool for exploiting memory leaks.
@@ -46,6 +47,33 @@ class MemLeak(object):
         self.leak = f
         self.search_range = search_range
         self.reraise = reraise
+
+    def __call__(self, address, obj):
+        """call(address, field) => int or str
+
+        Leak an entire structure, or structure field.
+
+        Arguments:
+            address(int): Base address to calculate offsets from
+            field(obj): Instance of a ctypes field or Structure
+
+        Return Value:
+            The type of the return value will be dictated by
+            the type of ``field``.
+        """
+        if isinstance(obj, type):
+            data = self.n(address, ctypes.sizeof(obj))
+            return obj.from_buffer_copy(data)
+        elif isinstance(obj, (int, long)):
+            return self.n(address, obj)
+        else:
+            size   = obj.size
+            offset = obj.offset
+            data   = self.n(address + offset, size)
+
+            if size in (1,2,4,8):
+                return unpack(data, size*8)
+            return data
 
     def _leak(self, addr):
         if addr in self.cache:

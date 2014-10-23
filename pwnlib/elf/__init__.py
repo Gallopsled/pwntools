@@ -1,12 +1,15 @@
 """Exposes functionality for manipulating ELF files
 """
-from . import log, asm
-from .util import misc
+from .datatypes import *
+from .. import log, asm
+from ..util import misc
 import mmap, subprocess, os
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.constants import P_FLAGS
+
+__all__ = ['load', 'ELF'] + sorted(filter(lambda x: not x.startswith('_'), datatypes.__dict__.keys()))
 
 def load(*args, **kwargs):
     """Compatibility wrapper for pwntools v1"""
