@@ -763,6 +763,9 @@ class tube(Timeout):
 
         If ``timeout`` is zero, only cached data will be cleared.
 
+        Note: If timeout is set to zero, the underlying network is
+        not actually polled; only the internal buffer is cleared.
+
         Examples:
 
             >>> t = tube()
