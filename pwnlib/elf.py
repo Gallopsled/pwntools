@@ -6,7 +6,7 @@ import mmap, subprocess, os
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.descriptions import describe_e_type
-from elftools.elf.constants import P_FLAGS
+from elftools.elf.constants import P_FLAGS, SHN_INDICES
 
 def load(*args, **kwargs):
     """Compatibility wrapper for pwntools v1"""
@@ -231,16 +231,17 @@ class ELF(ELFFile):
         # Find the relocation section for PLT
         rel_plt = next(s for s in self.sections if s.header.sh_info == self.sections.index(plt))
 
-        # Find the symbols for the relocation section
-        sym_rel_plt = self.sections[rel_plt.header.sh_link]
+        if rel_plt.header.sh_link != SHN_INDICES.SHN_UNDEF:
+            # Find the symbols for the relocation section
+            sym_rel_plt = self.sections[rel_plt.header.sh_link]
 
-        # Populate the GOT
-        for rel in rel_plt.iter_relocations():
-            sym_idx  = rel.entry.r_info_sym
-            symbol   = sym_rel_plt.get_symbol(sym_idx)
-            name     = symbol.name
+            # Populate the GOT
+            for rel in rel_plt.iter_relocations():
+                sym_idx  = rel.entry.r_info_sym
+                symbol   = sym_rel_plt.get_symbol(sym_idx)
+                name     = symbol.name
 
-            self.got[name] = rel.entry.r_offset
+                self.got[name] = rel.entry.r_offset
 
         # Depending on the architecture, the beginning of the .plt will differ
         # in size, and each entry in the .plt will also differ in size.
