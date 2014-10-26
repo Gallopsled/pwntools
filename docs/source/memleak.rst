@@ -1,3 +1,7 @@
+.. testsetup:: *
+
+   from pwnlib.memleak import *
+
 :mod:`pwnlib.memleak` --- Helper class for leaking memory
 =========================================================
 
