@@ -1,13 +1,19 @@
 """Exposes functionality for manipulating ELF files
 """
-from .log import *
-from .asm import asm, disasm
-from .util import misc
-import mmap, subprocess, os
+from .datatypes import *
+from .. import log, asm
+from ..asm import asm, disasm
+from ..util import misc
+
+import mmap, subprocess, os, logging
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.constants import P_FLAGS
+
+log = logging.getLogger(__name__)
+
+__all__ = ['load', 'ELF'] + sorted(filter(lambda x: not x.startswith('_'), datatypes.__dict__.keys()))
 
 def load(*args, **kwargs):
     """Compatibility wrapper for pwntools v1"""
@@ -69,7 +75,7 @@ class ELF(ELFFile):
         for seg in self.executable_segments:
             if seg.header.p_type == 'PT_GNU_STACK':
                 self.execstack = True
-                info('Stack is executable!')
+                log.info('Stack is executable!')
 
     def __repr__(self):
         return "ELF(%r)" % self.path
@@ -362,7 +368,7 @@ class ELF(ELFFile):
                 delta = load_address - begin
                 return segment.header.p_offset + delta
 
-        warning("Address %#x does not exist in %s" % (address, self.file.name))
+        log.warning("Address %#x does not exist in %s" % (address, self.file.name))
         return None
 
     def read(self, address, count):
