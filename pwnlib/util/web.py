@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import os, tempfile, urllib2
-from .. import log
+import os, tempfile, urllib2, logging
+log = logging.getLogger(__name__)
 
 # Using powers of ten instead of two,
 # since that's what bandwidth is measured in.
@@ -26,10 +26,10 @@ def wget(url, save=None, timeout=5):
     Example:
 
       >>> url    = 'http://httpbin.org/robots.txt'
-      >>> with context.local(log_level='silent'): result = wget(url)
+      >>> with context.local(log_level='ERROR'): result = wget(url)
       >>> result
       'User-agent: *\nDisallow: /deny\n'
-      >>> with context.local(log_level='silent'): wget(url, True)
+      >>> with context.local(log_level='ERROR'): wget(url, True)
       >>> result == file('robots.txt').read()
       True
     """

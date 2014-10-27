@@ -2,9 +2,6 @@
 import sys
 from .toplevel import *
 
-# default log level in non-lib mode
-context.defaults.log_level = 'info'
-
 # look for special args in argv
 def closure():
     term_mode = True
@@ -43,7 +40,7 @@ def closure():
                 context.log_level = 'debug'
         elif k == 'SILENT':
             if asbool(v):
-                context.log_level = 'silent'
+                context.log_level = 'ERROR'
         elif k == 'NOTERM':
             if asbool(v):
                 term_mode = False
@@ -58,7 +55,7 @@ def closure():
             context.log_level = 'debug'
         elif arg == 'SILENT':
             sys.argv.remove(arg)
-            context.log_level = 'silent'
+            context.log_level = 'ERROR'
         elif arg == 'NOTERM':
             term_mode = False
         elif arg.find('=') > 0:

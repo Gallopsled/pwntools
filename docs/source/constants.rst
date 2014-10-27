@@ -1,6 +1,7 @@
 .. testsetup:: *
 
-   from pwnlib import context, constants
+   from pwnlib import constants
+   from pwnlib.context import context
 
 :mod:`pwnlib.constants` --- Easy access to header file constants
 ================================================================

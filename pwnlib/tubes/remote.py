@@ -1,8 +1,9 @@
-from . import sock
-from .. import log
-import socket
+from .sock import sock
+import socket, logging
 
-class remote(sock.sock):
+log = logging.getLogger(__name__)
+
+class remote(sock):
     """Creates a TCP or UDP-connection to a remote host. It supports
     both IPv4 and IPv6.
 
@@ -10,16 +11,16 @@ class remote(sock.sock):
     :class:`pwnlib.tubes.sock` and :class:`pwnlib.tubes.tube`.
 
     Args:
-      host(str): The host to connect to.
-      port(int): The port to connect to.
-      fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
-      typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
-      timeout: A positive number, None or the string "default".
+        host(str): The host to connect to.
+        port(int): The port to connect to.
+        fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
+        typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
+        timeout: A positive number, None or the string "default".
     """
 
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
-                 timeout = 'default'):
+                 timeout = None):
         super(remote, self).__init__(timeout)
 
         self.rport = int(port)

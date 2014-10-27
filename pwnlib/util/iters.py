@@ -52,9 +52,9 @@ __all__ = [
     'tee'
 ]
 
-from .. import log
 from itertools import *
-import itertools, collections, operator, random, copy
+import itertools, collections, operator, random, copy, logging
+log = logging.getLogger(__name__)
 
 def take(n, iterable):
     """take(n, iterable) -> list

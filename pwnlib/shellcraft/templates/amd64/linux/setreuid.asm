@@ -5,7 +5,7 @@ Args: [uid (imm/reg) = euid]
 </%docstring>
 
 % if uid == 'euid':
-    ;; geteuid
+    /*  geteuid */
     push SYS_geteuid
     pop rax
     int 0x80
@@ -14,7 +14,7 @@ Args: [uid (imm/reg) = euid]
     pop rax
 % endif
 
-    ;; setreuid(rax, rax)
+    /*  setreuid(rax, rax) */
     mov rbx, rax
     mov rcx, rax
     push SYS_setreuid

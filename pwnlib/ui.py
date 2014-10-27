@@ -1,5 +1,7 @@
-from . import log, term
-import time, types
+from . import term
+import time, types, logging
+
+log = logging.getLogger(__name__)
 
 def options(prompt, opts, default = None):
     """Presents the user with a prompt (typically in the
@@ -112,6 +114,8 @@ def more(text):
     """more(text)
 
     Shows text like the command line tool ``more``.
+
+    It not in term_mode, just prints the data to the screen.
 
     Args:
       text(str):  The text to show.

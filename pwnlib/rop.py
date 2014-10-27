@@ -2,8 +2,10 @@
 """
 import hashlib, os, sys, tempfile, re
 
-from . import context, log, elf
-from .util import packing, lists
+from .context import context
+from .log     import *
+from .elf     import ELF
+from .util    import packing, lists
 
 try:
     import ropgadget
@@ -35,13 +37,13 @@ class ROP(object):
         """
 
         if not ropgadget:
-            log.error("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
+            error("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
 
         # Permit singular ROP(elf) vs ROP([elf])
-        if isinstance(elfs, elf.ELF):
+        if isinstance(elfs, ELF):
             elfs = [elfs]
         elif isinstance(elfs, (str, unicode)):
-            elfs = [elf.ELF(elfs)]
+            elfs = [ELF(elfs)]
 
         self.elfs  = elfs
         self._chain = []
@@ -111,7 +113,7 @@ class ROP(object):
                 l.append(self._output_struct(v, output))
             return (next_index,)
         else:
-            log.error("ROP: Cannot flatten value %r" % value)
+            error("ROP: Cannot flatten value %r" % value)
 
     def _build_x86(self):
         # Stage 1:
@@ -147,7 +149,7 @@ class ROP(object):
                         break
 
                 if best_pivot == None:
-                    log.error("Could not find gadget to clean up stack for call %r %r" % (addr, args))
+                    error("Could not find gadget to clean up stack for call %r %r" % (addr, args))
 
                 chain.append([addr, [best_pivot], args, best_size/4 - len(args) - 1])
 
@@ -202,7 +204,7 @@ class ROP(object):
         # Use the architecture specific builder to get a [[str/ints/refs]]
         meth = '_build_' + self.elfs[0].get_machine_arch()
         if not hasattr(self, meth):
-            log.error("Cannot build rop for architecture %r" % self.elfs[0].get_machine_arch())
+            error("Cannot build rop for architecture %r" % self.elfs[0].get_machine_arch())
         rop = getattr(self, meth)()
 
         # Stage 1
@@ -235,11 +237,11 @@ class ROP(object):
                         out.append((addr, addrs[v[0]], True))
                         addr += self.align
                     elif base != None:
-                        log.bug("ROP: References unknown structure index")
+                        bug("ROP: References unknown structure index")
                     else:
-                        log.error("ROP: Cannot use structures without a base address")
+                        error("ROP: Cannot use structures without a base address")
                 else:
-                    log.bug("ROP: Unexpected value: %r" % v)
+                    bug("ROP: Unexpected value: %r" % v)
 
         return out
 
@@ -279,7 +281,7 @@ class ROP(object):
                         (' (%s)' % ref) if ref else ''
                     )
             else:
-                log.bug("ROP: ROP.build returned an unexpected value %r" % value)
+                bug("ROP: ROP.build returned an unexpected value %r" % value)
 
             result.append(line)
 
@@ -296,12 +298,12 @@ class ROP(object):
                 structures of strings or integers can be provided.
         """
         if self.migrated:
-            log.error("Cannot append to a migrated chain")
+            error("Cannot append to a migrated chain")
 
         addr = self.resolve(resolvable)
 
         if addr is None:
-            log.error("Could not resolve %r" % resolvable)
+            error("Could not resolve %r" % resolvable)
 
         self._chain.append((addr, arguments))
 
@@ -316,7 +318,7 @@ class ROP(object):
         """
 
         if self.migrated:
-            log.error("Cannot append to a migrated chain")
+            error("Cannot append to a migrated chain")
 
         self._chain.append((value, ()))
 
@@ -338,7 +340,7 @@ class ROP(object):
             self.raw(next_base-4)
             self.raw(leave[0])
         else:
-            log.error("Cannot find the gadgets to migrate")
+            error("Cannot find the gadgets to migrate")
 
         self.migrated = True
 
@@ -363,7 +365,7 @@ class ROP(object):
         filename = self.__get_cachefile_name(elf)
 
         if os.path.exists(filename):
-            log.info("Found cached gadgets for %r" % (elf.file.name))
+            info("Found cached gadgets for %r" % (elf.file.name))
             return eval(file(filename).read())
 
     def __cache_save(self, elf, data):
@@ -423,7 +425,7 @@ class ROP(object):
                     gadgets.update(cache)
                     continue
 
-                log.info("Loading gadgets for %r @ %#x" % (elf.path, elf.address))
+                info("Loading gadgets for %r @ %#x" % (elf.path, elf.address))
                 sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'add|pop|leave|ret', '--nojop', '--nosys']
                 args = ropgadget.args.Args().getArgs()
                 core = ropgadget.core.Core(args)

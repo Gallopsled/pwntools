@@ -12,7 +12,8 @@ the crc32-sum of ``'A'*40000``.
 An obvious optimization would be to actually generate some lookup-tables.
 """
 
-from . import fiddling, packing
+from .. import fiddling, packing
+from .  import known
 import os, re, sys, types
 
 class BitPolynom(object):
@@ -136,7 +137,6 @@ class BitPolynom(object):
             out.append("1")
         return ' + '.join(out)
 
-
 class Module(types.ModuleType):
     def __init__(self):
         super(Module, self).__init__(__name__)
@@ -147,7 +147,7 @@ class Module(types.ModuleType):
         })
 
     def __getattr__(self, attr):
-        crcs = crc._all_crcs()
+        crcs = known.all_crcs
 
         if attr == '__all__':
             return ['generic_crc', 'cksum', 'find_crc_function'] + sorted(crcs.keys())
@@ -175,14 +175,14 @@ class Module(types.ModuleType):
         The "check" value in the document is the CRC-sum of the string "123456789".
 
         Args:
-          data(str):    The data to calculate the CRC-sum of. This should either be a string or a list of bits.
-          polynom(int): The polynomial to use.
-          init(int):    If the CRC-sum was calculated in hardware, then this would b
+            data(str):    The data to calculate the CRC-sum of. This should either be a string or a list of bits.
+            polynom(int): The polynomial to use.
+            init(int):    If the CRC-sum was calculated in hardware, then this would b
                         the initial value of the checksum register.
-          refin(bool):  Should the input bytes be reflected?
-          refout(bool): Should the checksum be reflected?
-          xorout(int):  The value to xor the checksum with before outputting
-"""
+            refin(bool):  Should the input bytes be reflected?
+            refout(bool): Should the checksum be reflected?
+            xorout(int):  The value to xor the checksum with before outputting
+        """
 
         polynom = BitPolynom(int(polynom)) | (1 << width)
         if polynom.degree() != width:
@@ -199,7 +199,7 @@ class Module(types.ModuleType):
             inlen = len(data)*8
             if refin:
                 data = fiddling.bitswap(data)
-            p = BitPolynom(packing.unpack(data, 'all', 'big', 'unsigned'))
+            p = BitPolynom(packing.unpack(data, 'all', 'big', False))
         p = p << width
         p ^= init << inlen
         p  = p % polynom
@@ -233,11 +233,11 @@ class Module(types.ModuleType):
         %s
 
         Args:
-          data(str): The data to checksum.
+            data(str): The data to checksum.
 
         Example:
-          >>> print %s('123456789')
-          %d
+            >>> print %s('123456789')
+            %d
     """ % (name, name, polynom, width, init, refin, refout, xorout, extra_doc, name, check)
 
         return inner
@@ -252,73 +252,28 @@ class Module(types.ModuleType):
             data(str): The data to checksum.
 
         Example:
-          >>> print cksum('123456789')
-          930766865
-"""
+            >>> print cksum('123456789')
+            930766865
+        """
 
         l = len(data)
-        data += packing.pack(l, 'all', 'little', 'unsigned')
+        data += packing.pack(l, 'all', 'little', False)
         return crc.crc_32_posix(data)
-
-    def _all_crcs(self):
-        """Generates a dictionary of all the known CRC formats from:
-        http://reveng.sourceforge.net/crc-catalogue/all.htm"""
-
-        if self._cached_crcs:
-            return self._cached_crcs
-
-        curdir, _ = os.path.split(__file__)
-        path = os.path.join(curdir, '..', 'data', 'crcsums.txt')
-        with open(path) as fd:
-            data = fd.read()
-        out = {}
-        def fixup(s):
-            if s == 'true':
-                return True
-            elif s == 'false':
-                return False
-            elif s.startswith('"'):
-                assert re.match('"[^"]+"', s)
-                return s[1:-1]
-            elif s.startswith('0x'):
-                assert re.match('0x[0-9a-fA-F]+', s)
-                return int(s[2:], 16)
-            else:
-                assert re.match('[0-9]+', s)
-                return int(s, 10)
-
-        for l in data.strip().split('\n'):
-            if not l or l[0] == '#':
-                continue
-
-            ref, l = l.split(' ', 1)
-
-            cur = {}
-            cur['link'] = 'http://reveng.sourceforge.net/crc-catalogue/all.htm#' + ref
-            for key in ['width', 'poly', 'init', 'refin', 'refout', 'xorout', 'check', 'name']:
-                cur[key] = fixup(re.findall(r'%s=(\S+)' % key, l)[0])
-
-            cur['name'] = cur['name'].lower().replace('/', '_').replace('-', '_')
-            assert cur['name'] not in out
-            out[cur['name']] = cur
-
-        self._cached_crcs = out
-        return out
 
     @staticmethod
     def find_crc_function(data, checksum):
-        """Finds all known CRCs function that hashes a piece of data into a specific
+        """Finds all known CRC functions that hashes a piece of data into a specific
         checksum. It does this by trying all known CRC functions one after the other.
 
         Args:
-          data(str): Data for which the checksum is known.
+            data(str): Data for which the checksum is known.
 
         Example:
-          >>> find_crc_function('test', 46197)
-          [<function crc_crc_16_dnp at ...>]
+            >>> find_crc_function('test', 46197)
+            [<function crc_crc_16_dnp at ...>]
         """
         candidates = []
-        for v in crc._all_crcs().keys():
+        for v in known.all_crcs.keys():
             func = getattr(crc, v)
             if func(data) == checksum:
                 candidates.append(func)

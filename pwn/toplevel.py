@@ -3,18 +3,19 @@ from pwnlib                  import *
 
 # Promote functions from these modules to toplevel
 from pwnlib.asm              import *
+from pwnlib.context          import context
 from pwnlib.dynelf           import DynELF
 from pwnlib.elf              import ELF, load
-from pwnlib.log_levels       import *
 from pwnlib.memleak          import MemLeak
 from pwnlib.replacements     import *
 from pwnlib.rop              import ROP
-from pwnlib.thread           import Thread
-from pwnlib.tubes.listen     import *
-from pwnlib.tubes.process    import *
-from pwnlib.tubes.remote     import *
-from pwnlib.tubes.serialtube import *
-from pwnlib.tubes.ssh        import *
+from pwnlib.tubes.listen     import listen
+from pwnlib.tubes.process    import process
+from pwnlib.tubes.remote     import remote
+from pwnlib.tubes.serialtube import serialtube
+from pwnlib.tubes.ssh        import ssh
+from pwnlib.tubes.timeout    import Timeout
+from pwnlib.tubes.tube       import tube
 from pwnlib.ui               import *
 from pwnlib.util             import crc, net, proc, iters
 from pwnlib.util.cyclic      import *
@@ -31,4 +32,5 @@ from pwnlib.util.web         import wget
 import \
     collections   , operator      , os            , pwn           , \
     pwnlib        , re            , string        , struct        , \
-    subprocess    , sys           , threading     , time
+    subprocess    , sys           , threading     , time          , \
+    tempfile

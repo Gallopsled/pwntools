@@ -159,6 +159,7 @@ class DynELF:
             base = filter(lambda x: x['p_type'] == 'PT_LOAD' and (x.header.p_flags & 1), e.segments)[0]['p_vaddr']
 
         #At this point we should have a base address
+        base = base or e.address
         if base is None:
             log.die('Position independent ELF needs a base address')
 

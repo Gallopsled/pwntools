@@ -2,15 +2,15 @@
 <%docstring>Execute /bin/sh</%docstring>
 
 
-    ;; Clear eax, ecx, edx
+    /*  Clear eax, ecx, edx */
     xor eax, eax
     push eax
 
-    ;; Push '/bin//sh'
+    /*  Push '/bin//sh' */
 ${i386.pushstr("/bin//sh")}
     mov ecx, esp
 
-    ;; execve("/bin//sh", {junk, 0}, {0});
+    /*  execve("/bin//sh", {junk, 0}, {0}); */
     push eax
     push esp
     push esp

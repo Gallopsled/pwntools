@@ -94,7 +94,6 @@ def wrap(template):
         lines = template.render(%s).split('\\n')
         for i in xrange(len(lines)):
             line = lines[i]
-            line = line.rstrip()
             def islabelchar(c):
                 return c.isalnum() or c == '.' or c == '_'
             if ':' in line and islabelchar(line.lstrip()[0]):

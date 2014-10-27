@@ -6,7 +6,7 @@ def pidof(target):
 
     Get PID(s) of `target`.  The returned PID(s) depends on the type of `target`:
 
-     - :class:`str`: PIDs of all processing mathing `target`.
+     - :class:`str`: PIDs of all processes with a name matching `target`.
 
      - :class:`pwnlib.tubes.process.process`: singleton list of the PID of `target`.
 
@@ -17,7 +17,7 @@ def pidof(target):
 
     Returns:
       A list of found PIDs.
-"""
+    """
     if   isinstance(target, tubes.sock.sock):
         def toaddr(sockaddr, family):
             host = sockaddr[0]
@@ -74,7 +74,7 @@ def pid_by_inode(inode):
     Returns:
       The PID of the process who owns `inode`, or :const:`None` if it wasn't
       found.
-"""
+    """
     inode = str(inode)
     for pid in all_pids():
         try:
@@ -97,7 +97,7 @@ def all_pids():
 
     Returns:
       List of the PIDs of all processes on the system
-"""
+    """
     return [int(pid) for pid in os.listdir('/proc') if pid.isdigit()]
 
 def status(pid):
@@ -110,7 +110,7 @@ def status(pid):
 
     Returns:
       The contents of ``/proc/<pid>/status`` as a dictionary.
-"""
+    """
     out = {}
     try:
         with open('/proc/%d/status' % pid) as fd:
@@ -136,11 +136,20 @@ def pid_by_name(name):
       List of PIDs matching `name` sorted by lifetime, youngest to oldest.
 
     Example:
-      >>> pid_by_name('init')
-      [1]
-"""
-    return sorted([pid for pid in all_pids() if status(pid)['Name'] == name],
-                  key = starttime, reverse = True)
+      >>> 1 in pid_by_name('init')
+      True
+    """
+    # Note that a comprehension will work, but
+    # if any pid exists during the all_pids() call
+    # and exits before status(pid), it will throw an error
+    rv = []
+    for pid in all_pids():
+        try:
+          if status(pid)['Name'] == name:
+            rv.append(pid)
+        except:
+          pass
+    return rv
 
 def name(pid):
     """name(pid) -> str
@@ -154,7 +163,7 @@ def name(pid):
     Example:
       >>> name(1)
       'init'
-"""
+    """
     return status(pid)['Name']
 
 def parent(pid):
@@ -165,7 +174,7 @@ def parent(pid):
 
     Returns:
       Parent PID as listed in ``/proc/<pid>/status`` under ``PPid``.
-"""
+    """
     return int(status(pid)['PPid'])
 
 def children(ppid):
@@ -176,7 +185,7 @@ def children(ppid):
 
     Returns:
       List of PIDs of whoose parent process is `pid`.
-"""
+    """
     return [pid for pid in all_pids() if parent(pid) == ppid]
 
 def ancestors(pid):
@@ -187,7 +196,7 @@ def ancestors(pid):
 
     Returns:
       List of PIDs of whoose parent process is `pid` or an ancestor of `pid`.
-"""
+    """
     pids = []
     while pid != 0:
         pids.append(pid)
@@ -202,7 +211,7 @@ def descendants(pid):
 
     Returns:
       Dictionary mapping the PID of each child of `pid` to it's descendants.
-"""
+    """
     allpids = all_pids()
     ppids = {}
     def _parent(pid):
@@ -227,7 +236,7 @@ def tracer(pid):
     Example:
       >>> tracer(os.getpid()) is None
       True
-"""
+    """
     tpid = int(status(pid)['TracerPid'])
     return tpid if tpid > 0 else None
 
@@ -243,7 +252,7 @@ def state(pid):
     Example:
       >>> state(os.getpid())
       'R (running)'
-"""
+    """
     return status(pid)['State']
 
 def exe(pid):
@@ -254,7 +263,7 @@ def exe(pid):
 
     Returns:
       The path of the binary of the process. I.e. what ``/proc/<pid>/exe`` points to.
-"""
+    """
     return os.readlink('/proc/%d/exe' % pid)
 
 def cwd(pid):
@@ -266,7 +275,7 @@ def cwd(pid):
     Returns:
       The path of the process's current working directory. I.e. what
       ``/proc/<pid>/cwd`` points to.
-"""
+    """
     return os.readlink('/proc/%d/cwd' % pid)
 
 def cmdline(pid):
@@ -277,7 +286,7 @@ def cmdline(pid):
 
     Returns:
       A list of the fields in ``/proc/<pid>/cmdline``.
-"""
+    """
     with open('/proc/%d/cmdline' % pid, 'r') as fd:
         return fd.read().rstrip('\x00').split('\x00')
 
@@ -289,7 +298,7 @@ def stat(pid):
 
     Returns:
       A list of the values in ``/proc/<pid>/stat``, with the exception that ``(`` and ``)`` has been removed from around the process name.
-"""
+    """
     with open('/proc/%d/stat' % pid) as fd:
         s = fd.read()
     # filenames can have ( and ) in them, dammit
@@ -306,7 +315,7 @@ def starttime(pid):
 
     Returns:
       The time (in seconds) the process started after system boot
-"""
+    """
     return float(stat(pid)[21]) / os.sysconf(os.sysconf_names['SC_CLK_TCK'])
 
 def wait_for_debugger(pid):
@@ -319,6 +328,6 @@ def wait_for_debugger(pid):
 
     Returns:
       None
-"""
+    """
     while tracer(pid) is None:
         time.sleep(0.01)

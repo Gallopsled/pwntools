@@ -1,7 +1,8 @@
-import os, tempfile, re, shlex, subprocess
-from . import log
+import os, tempfile, re, shlex, subprocess, logging
 from .util import misc, proc
 from . import tubes, elf
+
+log = logging.getLogger(__name__)
 
 def debug(args, exe=None, execute=None, ssh=None):
     """debug(args) -> tuple

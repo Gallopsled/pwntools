@@ -34,7 +34,7 @@ Example:
 """
 from types import ModuleType
 import importlib, sys
-from .. import context
+from ..context import context
 
 class module(ModuleType):
     def __init__(self, submodules):

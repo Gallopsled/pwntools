@@ -101,7 +101,7 @@ def cyclic_find(subseq, alphabet = string.ascii_lowercase, n = None):
 
     if isinstance(subseq, (int, long)):
         width = n * 8 or 'all'
-        subseq = packing.pack(subseq, width, 'little', 'unsigned')
+        subseq = packing.pack(subseq, width, 'little', False)
 
     n = n or len(subseq)
 

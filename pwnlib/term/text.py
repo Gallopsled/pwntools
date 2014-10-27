@@ -49,7 +49,7 @@ class Module(types.ModuleType):
 
     @when.setter
     def when(self, val):
-        self._enabled = eval_when(val)
+        self.enabled = eval_when(val)
 
     def _fg_color(self, c):
         return termcap.get('setaf', c) or self._tc.get('setf', c)
@@ -65,7 +65,7 @@ class Module(types.ModuleType):
                 else:
                     return s
             else:
-                if self._enabled:
+                if self.enabled:
                     return init + s + self._reset
                 else:
                     return s

@@ -8,6 +8,7 @@ Args: [sock (imm/reg) = ebp]
   dup       = common.label("dup")
   looplabel = common.label("loop")
 %>
+
 ${dup}:
         push ${sock}
         pop ebx
