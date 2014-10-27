@@ -138,6 +138,8 @@ def pid_by_name(name):
     Example:
       >>> 1 in pid_by_name('init')
       True
+      >>> os.getpid() in pid_by_name(name(os.getpid()))
+      True
     """
     # Note that a comprehension will work, but
     # if any pid exists during the all_pids() call
