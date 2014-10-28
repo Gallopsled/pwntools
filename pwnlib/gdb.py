@@ -23,9 +23,10 @@ def debug(args, exe=None, execute=None, ssh=None):
 
     if not ssh:
         execute = tubes.process.process
+        which   = misc.which
     if ssh:
         execute = ssh.run
-        which     = ssh.which
+        which   = ssh.which
 
     # Make sure gdbserver is installed
     if not which('gdbserver'):
