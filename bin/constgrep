@@ -3,7 +3,8 @@
 import argparse, sys, os, types, re
 from pwnlib import asm, util, constants
 from pwnlib.util import safeeval
-from pwnlib.context import __possible__ as contexts
+# from pwnlib.context import __possible__ as contexts
+from pwnlib.context import context
 
 p = argparse.ArgumentParser(
     description = "Looking up constants from header files.\n\nExample: constgrep -c freebsd -m  ^PROT_ '3 + 4'",
@@ -47,7 +48,7 @@ p.add_argument(
 p.add_argument(
     '-c', '--context',
     metavar = '<opt>',
-    choices = contexts['os'] + contexts['arch'],
+    choices = context.oses + list(context.architectures),
     default = ['i386','linux'],
     action = 'append',
     help = 'The os/architecture to find constants for (default: linux/i386), choose from: %s' % \
@@ -58,9 +59,9 @@ args = p.parse_args()
 
 # Find the architecture and os from the list of contexts
 for arch in args.context[::-1]:
-    if arch in contexts['arch']: break
+    if arch in context.architectures: break
 for os in args.context[::-1]:
-    if os in contexts['os']: break
+    if os in context.oses: break
 
 if args.exact:
     # This is the simple case
