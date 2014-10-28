@@ -4,7 +4,7 @@ from .util import misc, proc
 from . import tubes, elf
 
 def debug(args, exe=None, execute=None, ssh=None):
-    """debug(args) -> tuple
+    """debug(args) -> tube
 
     Launch a GDB server with the specified command line,
     and launches GDB to attach to it.
@@ -14,10 +14,8 @@ def debug(args, exe=None, execute=None, ssh=None):
         ssh: Remote ssh session to use to launch the process.
           Automatically sets up port forwarding so that gdb runs locally.
 
-    Returns
-        A tuple containing two `pwnlib.tube`s.
-        - stdin/stdout of the launched process
-        - stdin/stdout of GDB
+    Returns:
+        A tube connected to the target process
     """
     args      = ['gdbserver', 'localhost:0'] + args
 
@@ -55,7 +53,7 @@ def debug(args, exe=None, execute=None, ssh=None):
     if ssh:
         remote <> listener.wait_for_connection()
 
-    return result
+    return gdbserver
 
 def attach(target, execute = None, exe = None, arch = None):
     """attach(target, execute = None, exe = None, arch = None) -> None
