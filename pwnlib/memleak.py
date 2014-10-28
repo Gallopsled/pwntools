@@ -64,6 +64,7 @@ class MemLeak(object):
         size   = obj.size
         offset = obj.offset
         data   = self.n(address + offset, size)
+        return unpack(data, size*8)
 
     def _leak(self, addr):
         if addr in self.cache:

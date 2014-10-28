@@ -1,7 +1,7 @@
 from . import log
 from .elf     import *
 from .memleak import MemLeak
-from .context import context
+from .        import context
 
 from elftools.elf.enums import ENUM_D_TAG
 
