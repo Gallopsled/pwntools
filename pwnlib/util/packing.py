@@ -52,7 +52,7 @@ def pack(number, word_size = None, endianness = None, sign = None):
     word_size  = word_size  or context.word_size
     endianness = endianness or context.endianness
     sign       = sign       or context.sign
-    
+
     if not isinstance(number, (int,long)):
         raise ValueError("pack(): number must be of type (int,long) (got %r)" % type(number))
 
