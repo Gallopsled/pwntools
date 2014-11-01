@@ -127,9 +127,9 @@ class process(tube):
         if direction == 'any':
             return self.poll() == None
         elif direction == 'send':
-            return not self.proc.stdout.closed
-        elif direction == 'recv':
             return not self.proc.stdin.closed
+        elif direction == 'recv':
+            return not self.proc.stdout.closed
 
     def close(self):
         # First check if we are already dead
