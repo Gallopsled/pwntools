@@ -4,6 +4,36 @@ import subprocess, fcntl, os, select, logging
 log = logging.getLogger(__name__)
 
 class process(tube):
+    r"""
+    Implements a tube which talks to a process on stdin/stdout/stderr.
+
+    Examples:
+
+        >>> from pwnlib.context import context
+        >>> context.log_level='error'
+        >>> p = process('/usr/bin/python2')
+        >>> p.sendline("print 'Hello world'")
+        >>> p.sendline("print 'Wow, such data'");
+        >>> '' == p.recv(timeout=0.01)
+        True
+        >>> p.shutdown('send')
+        >>> p.proc.stdin.closed
+        True
+        >>> p.connected('send')
+        False
+        >>> p.recvline()
+        'Hello world\n'
+        >>> p.recvuntil(',')
+        'Wow,'
+        >>> p.recvregex('.*data')
+        ' such data'
+        >>> p.recv()
+        '\n'
+        >>> p.recv() # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+        ...
+        EOFError
+    """
     def __init__(self, args, shell = False, executable = None,
                  cwd = None, env = None, timeout = None):
         super(process, self).__init__(timeout)
