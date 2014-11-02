@@ -69,6 +69,8 @@ from .context import context, Thread
 from .term    import spinners, text
 from .        import term
 
+
+
 class Logger(logging.getLoggerClass()):
     """
     Specialization of ``logging.Logger`` which uses
@@ -117,6 +119,7 @@ class Logger(logging.getLoggerClass()):
 
     def warn(self, m, *a, **kw):
         return self.__log(logging.WARN, m, a, kw, text.bold_yellow('!'))
+
     def info(self, m, *a, **kw):
         return self.__log(logging.INFO, m, a, kw, text.bold_blue('*'))
 
@@ -128,6 +131,21 @@ class Logger(logging.getLoggerClass()):
 
     def debug(self, m, *a, **kw):
         return self.__log(logging.DEBUG, m, a, kw, text.bold_red('DEBUG'), True)
+
+    def info_once(self, m, *a, **kw):
+        if m not in self.one_time_infos:
+            self.one_time_infos.append(m)
+            self.info(m, *a, **kw)
+
+    def warn_once(self, m, *a, **kw):
+        if m not in self.one_time_warnings:
+            self.one_time_warnings.append(m)
+            self.warn(m, *a, **kw)
+
+    def error_once(self, m, *a, **kw):
+        if m not in self.one_time_errors:
+            self.one_time_errors.append(m)
+            self.error(m, *a, **kw)
 
     def progress(self, *args, **kwargs):
         """
@@ -143,6 +161,11 @@ class Logger(logging.getLoggerClass()):
     status = info
     waitfor = progress
     warning = warn
+
+    one_time_infos    = []
+    one_time_warnings = []
+    one_time_errors   = []
+
 
 
 
