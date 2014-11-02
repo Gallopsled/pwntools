@@ -1,7 +1,8 @@
 #!/usr/bin/env python2
 
 import argparse, sys
-from pwnlib import asm, context
+from pwnlib import asm
+from pwnlib.context import context
 from string import whitespace, hexdigits
 
 parser = argparse.ArgumentParser(
@@ -18,9 +19,9 @@ parser.add_argument(
 parser.add_argument(
     '-c', '--context',
     metavar = '<opt>',
-    choices = context.__possible__['arch'],
+    choices = context.architectures,
     default = 'i386',
-    help = 'The architecture of the shellcode (default: i386), choose from:\n%s' % ', '.join(context.__possible__['arch'])
+    help = 'The architecture of the shellcode (default: i386), choose from:\n%s' % ', '.join(context.architectures)
 )
 
 args = parser.parse_args()

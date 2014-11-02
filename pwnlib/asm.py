@@ -79,10 +79,10 @@ def _assembler():
         'arm'    : [gas, E],
         'aarch64': [gas, E],
         'mips'   : [gas, E],
-        'powerpc': [gas, '-m%s' % context.endianness]
+        'powerpc': [gas, '-m%s' % context.endianness],
     }
 
-    return assemblers[context.arch]
+    return assemblers.get(context.arch, [gas])
 
 
 def _objcopy():
@@ -96,17 +96,20 @@ def _objdump():
 
     return path
 
-
 def _include_header():
     os   = context.os
     arch = context.arch
 
     if os == 'freebsd':
-        return '#include <freebsd.h>\n'
+        include = 'freebsd.h'
     elif os == 'linux':
-        return '#include <linux/%s.h>\n' % arch
-    else:
-        return ''
+        include = 'linux/%s.h' % arch
+
+    if not include or not path.exists(path.join(_incdir, include)):
+        log.warn_once("Could not find include path for %s-%s" % (arch,os))
+        return '\n'
+
+    return '#include <%s>\n' % include
 
 
 def _arch_header():
@@ -124,10 +127,7 @@ def _arch_header():
                    '.set noreorder'],
     }
 
-    if context.arch in headers:
-        return '\n'.join(prefix + headers[context.arch]) + '\n'
-    else:
-        return ''
+    return '\n'.join(prefix + headers.get(context.arch, [])) + '\n'
 
 def _bfdname():
     arch = context.arch
@@ -303,7 +303,7 @@ def asm(shellcode, vma = 0, **kwargs):
             log.error("An error occurred while assembling:\n%s" % code)
             raise
         else:
-            shutil.rmtree(tmpdir)
+            pass #shutil.rmtree(tmpdir)
 
 
 def disasm(data, vma = 0, **kwargs):
@@ -378,4 +378,4 @@ def disasm(data, vma = 0, **kwargs):
         except:
             raise
         else:
-            shutil.rmtree(tmpdir)
+            pass # shutil.rmtree(tmpdir)
