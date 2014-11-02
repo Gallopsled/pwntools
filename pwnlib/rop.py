@@ -1,11 +1,13 @@
 """Return Oriented Programming
 """
 import hashlib, os, sys, tempfile, re
+import logging
 
 from .context import context
-from .log     import *
 from .elf     import ELF
 from .util    import packing, lists
+
+log = logging.getLogger(__name__)
 
 try:
     import ropgadget
@@ -37,7 +39,7 @@ class ROP(object):
         """
 
         if not ropgadget:
-            error("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
+            log.error("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
 
         # Permit singular ROP(elf) vs ROP([elf])
         if isinstance(elfs, ELF):
@@ -113,7 +115,7 @@ class ROP(object):
                 l.append(self._output_struct(v, output))
             return (next_index,)
         else:
-            error("ROP: Cannot flatten value %r" % value)
+            log.error("ROP: Cannot flatten value %r" % value)
 
     def _build_x86(self):
         # Stage 1:
@@ -149,7 +151,7 @@ class ROP(object):
                         break
 
                 if best_pivot == None:
-                    error("Could not find gadget to clean up stack for call %r %r" % (addr, args))
+                    log.error("Could not find gadget to clean up stack for call %r %r" % (addr, args))
 
                 chain.append([addr, [best_pivot], args, best_size/4 - len(args) - 1])
 
@@ -204,7 +206,7 @@ class ROP(object):
         # Use the architecture specific builder to get a [[str/ints/refs]]
         meth = '_build_' + self.elfs[0].get_machine_arch()
         if not hasattr(self, meth):
-            error("Cannot build rop for architecture %r" % self.elfs[0].get_machine_arch())
+            log.error("Cannot build rop for architecture %r" % self.elfs[0].get_machine_arch())
         rop = getattr(self, meth)()
 
         # Stage 1
@@ -239,7 +241,7 @@ class ROP(object):
                     elif base != None:
                         bug("ROP: References unknown structure index")
                     else:
-                        error("ROP: Cannot use structures without a base address")
+                        log.error("ROP: Cannot use structures without a base address")
                 else:
                     bug("ROP: Unexpected value: %r" % v)
 
@@ -298,12 +300,12 @@ class ROP(object):
                 structures of strings or integers can be provided.
         """
         if self.migrated:
-            error("Cannot append to a migrated chain")
+            log.error("Cannot append to a migrated chain")
 
         addr = self.resolve(resolvable)
 
         if addr is None:
-            error("Could not resolve %r" % resolvable)
+            log.error("Could not resolve %r" % resolvable)
 
         self._chain.append((addr, arguments))
 
@@ -318,7 +320,7 @@ class ROP(object):
         """
 
         if self.migrated:
-            error("Cannot append to a migrated chain")
+            log.error("Cannot append to a migrated chain")
 
         self._chain.append((value, ()))
 
@@ -340,7 +342,7 @@ class ROP(object):
             self.raw(next_base-4)
             self.raw(leave[0])
         else:
-            error("Cannot find the gadgets to migrate")
+            log.error("Cannot find the gadgets to migrate")
 
         self.migrated = True
 
@@ -365,7 +367,7 @@ class ROP(object):
         filename = self.__get_cachefile_name(elf)
 
         if os.path.exists(filename):
-            info("Found cached gadgets for %r" % (elf.file.name))
+            log.info_once("Loaded cached gadgets for %r @ %#x" % (elf.file.name, elf.address))
             return eval(file(filename).read())
 
     def __cache_save(self, elf, data):
@@ -416,35 +418,38 @@ class ROP(object):
                 pass
             def __getattr__(self, k):
                 return self._fd.__getattribute__(k)
-        sys.stdout = Wrapper(sys.stdout)
         gadgets = {}
-        try:
-            for elf in self.elfs:
-                cache = self.__cache_load(elf)
-                if cache:
-                    gadgets.update(cache)
-                    continue
 
-                info("Loading gadgets for %r @ %#x" % (elf.path, elf.address))
+        for elf in self.elfs:
+            cache = self.__cache_load(elf)
+            if cache:
+                gadgets.update(cache)
+                continue
+
+            log.info_once("Loading gadgets for %r @ %#x" % (elf.path, elf.address))
+
+            try:
+                sys.stdout = Wrapper(sys.stdout)
+
                 sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'add|pop|leave|ret', '--nojop', '--nosys']
                 args = ropgadget.args.Args().getArgs()
                 core = ropgadget.core.Core(args)
                 core.do_binary(elf.path)
                 core.do_load(0)
+            finally:
+                sys.argv   = argv
+                sys.stdout = stdout
 
-                elf_gadgets = {}
-                for gadget in core._Core__gadgets:
+            elf_gadgets = {}
+            for gadget in core._Core__gadgets:
 
-                    address = gadget['vaddr'] - elf.load_addr + elf.address
-                    insns   = [g.strip() for g in gadget['gadget'].split(';')]
+                address = gadget['vaddr'] - elf.load_addr + elf.address
+                insns   = [g.strip() for g in gadget['gadget'].split(';')]
 
-                    if all(map(valid, insns)):
-                        elf_gadgets[address] = insns
-                self.__cache_save(elf, elf_gadgets)
-                gadgets.update(elf_gadgets)
-        finally:
-            sys.argv   = argv
-            sys.stdout = stdout
+                if all(map(valid, insns)):
+                    elf_gadgets[address] = insns
+            self.__cache_save(elf, elf_gadgets)
+            gadgets.update(elf_gadgets)
 
 
         #
