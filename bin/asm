@@ -2,7 +2,7 @@
 
 import argparse, sys
 from pwnlib.asm           import asm
-from pwnlib.context       import __possible__ as contexts
+from pwnlib.context       import context
 from pwnlib.util.fiddling import enhex
 
 parser = argparse.ArgumentParser(
@@ -33,20 +33,20 @@ parser.add_argument(
 parser.add_argument(
     '-c', '--context',
     metavar = '<opt>',
-    choices = contexts['os'] + contexts['arch'],
+    choices = context.oses + list(context.architectures),
     default = ['i386','linux'],
     action = 'append',
     help = 'The os/architecture the shellcode will run in (default: linux/i386), choose from: %s' % \
-      ', '.join(contexts['os'] + contexts['arch'])
+      ', '.join(sorted(context.oses + list(context.architectures)))
 )
 
 args   = parser.parse_args()
 tty    = args.output.isatty()
 
 for arch in args.context[::-1]:
-    if arch in contexts['arch']: break
+    if arch in context.architectures: break
 for os in args.context[::-1]:
-    if os in contexts['os']: break
+    if os in context.oses: break
 
 data   = '\n'.join(args.lines) or sys.stdin.read()
 output = asm(data.replace(';', '\n'), arch = arch, os = os)
