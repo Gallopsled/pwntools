@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import tempfile, subprocess, shutil, tempfile, errno, logging
+import tempfile, subprocess, shutil, tempfile, errno, logging, platform
 from os import path, environ
 from glob import glob
 from . import log
@@ -38,20 +38,30 @@ def _find(util, **kwargs):
         arch = context.arch
         bits = context.bits
 
-        # Fix up pwntools vs Debian triplet naming
-        arch = {
-            'thumb': 'arm',
-            'i386':  'x86_64',
-            'amd64': 'x86_64',
-        }.get(arch, arch)
+        # Fix up pwntools vs Debian triplet naming, and account
+        # for 'thumb' being its own pwntools architecture.
+        arches = {
+            'thumb':  ['arm',    'aarch64'],
+            'i386':   ['x86_64', 'i386'],
+            'amd64':  ['x86_64', 'i386'],
+        }.get(arch, [arch])
 
-        # e.g. aarch64*-as
-        pattern = '%s*-%s' % (arch,util)
+        # If one of the candidate architectures matches the native
+        # architecture, use that as a last resort.
+        if platform.machine() in arches:
+            arches.insert(0,None)
 
-        for dir in environ['PATH'].split(':'):
-            res = glob(path.join(dir, pattern))
-            if res:
-                return res[0]
+        for arch in arches:
+            # e.g. objdump
+            if arch is None: pattern = util
+
+            # e.g. aarch64-linux-gnu-objdump
+            else:       pattern = '%s*-%s' % (arch,util)
+
+            for dir in environ['PATH'].split(':'):
+                res = glob(path.join(dir, pattern))
+                if res:
+                    return res[0]
 
         locals()['context'] = context
         log.error("""
@@ -75,11 +85,22 @@ def _assembler():
     assemblers = {
         'i386'   : [gas, '--32'],
         'amd64'  : [gas, '--64'],
+
+        # Most architectures accept -EL or -EB
         'thumb'  : [gas, '-thumb', E],
         'arm'    : [gas, E],
         'aarch64': [gas, E],
         'mips'   : [gas, E],
-        'powerpc': [gas, '-m%s' % context.endianness],
+        'mips64' : [gas, E],
+        'sparc':   [gas, E],
+        'sparc64': [gas, E],
+
+        # Powerpc wants -mbig or -mlittle
+        'powerpc':   [gas, '-m%s' % context.endianness],
+        'powerpc64': [gas, '-m%s' % context.endianness],
+
+        # ia64 only accepts -mbe or -mle
+        'ia64':    [gas, '-m%ce' % context.endianness[0]]
     }
 
     return assemblers.get(context.arch, [gas])
@@ -106,7 +127,7 @@ def _include_header():
         include = 'linux/%s.h' % arch
 
     if not include or not path.exists(path.join(_incdir, include)):
-        log.warn_once("Could not find include path for %s-%s" % (arch,os))
+        log.warn_once("Could not find system include headers for %s-%s" % (arch,os))
         return '\n'
 
     return '#include <%s>\n' % include

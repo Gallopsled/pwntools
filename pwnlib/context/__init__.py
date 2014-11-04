@@ -304,6 +304,7 @@ class ContextType(object):
 
     big_32    = {'endian': 'big', 'bits': 32}
     big_64    = {'endian': 'big', 'bits': 64}
+    little_8  = {'endian': 'little', 'bits': 8}
     little_16 = {'endian': 'little', 'bits': 16}
     little_32 = {'endian': 'little', 'bits': 32}
     little_64 = {'endian': 'little', 'bits': 64}
@@ -315,10 +316,12 @@ class ContextType(object):
     architectures = _longest({
         'aarch64':   little_64,
         'alpha':     little_64,
+        'avr':       little_8,
         'amd64':     little_64,
         'arm':       little_32,
         'cris':      little_32,
         'i386':      little_32,
+        'ia64':      big_64,
         'm68k':      big_32,
         'mips':      little_32,
         'mips64':    little_64,
@@ -326,7 +329,10 @@ class ContextType(object):
         'powerpc':   big_32,
         'powerpc64': big_64,
         's390':      big_32,
+        'sparc':     big_32,
+        'sparc64':   big_64,
         'thumb':     little_32,
+        'vax':       little_32,
     })
 
     #: Valid values for :attr:`endian`
