@@ -83,6 +83,16 @@ def attach(target, execute = None, exe = None, arch = None):
     Returns:
       :const:`None`
 """
+    # if ptrace_scope is set and we're not root, we cannot attach to a running process
+    try:
+        ptrace_scope = open('/proc/sys/kernel/yama/ptrace_scope').read().strip()
+        if ptrace_scope != '0' and os.geteuid() != 0:
+            msg =  'Disable ptrace_scope to attach to running processes.\n'
+            msg += 'More info: http://askubuntu.com/q/41629'
+            log.warning(msg)
+    except IOError:
+        pass
+
     # if execute is a file object, then read it; we probably need to run some
     # more gdb script anyway
     if execute:
