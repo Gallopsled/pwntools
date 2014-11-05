@@ -145,12 +145,8 @@ def run_in_new_terminal(command, terminal = None, args = None):
 
     Run a command in a new terminal.
 
-    If X11 is detected, the terminal selected will be one of the following,
-    in order of preference:
-
-    - ``$TERM``
-    - ``$COLORTERM``
-    - ``x-terminal-emulator``
+    If X11 is detected, the terminal will be launched with
+    ``x-terminal-emulator``.
 
     If X11 is not detected, a new tmux pane is opened if possible.
 
@@ -165,17 +161,12 @@ def run_in_new_terminal(command, terminal = None, args = None):
 
     if not terminal:
         if 'XAUTHORITY' in os.environ:
-            X11_Preference = map(os.path.expandvars, ['$TERM', '$COLORTERM', 'x-terminal-emulator'])
-            X11_Skip       = ['screen-256color']
-            X11_Choice     = next(t for t in X11_Preference if t and t not in X11_Skip)
-
-            terminal = X11_Choice
+            terminal = 'x-terminal-emulator'
             args     = ['-e']
 
-        else:
-            if 'TMUX' in os.environ:
-                terminal = 'tmux'
-                args     = ['splitw']
+        elif 'TMUX' in os.environ:
+            terminal = 'tmux'
+            args     = ['splitw']
 
     if not terminal:
         log.error('could not find terminal: %s' % terminal)
