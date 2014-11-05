@@ -114,6 +114,21 @@ class DynELF(object):
         if elf:
             self._find_linkmap_assisted(elf)
 
+    @classmethod
+    def for_one_lib_only(cls, leak, ptr):
+        return cls(leak, ptr)
+
+    @classmethod
+    def from_lib_ptr(cls, leak, ptr):
+        return cls(leak, ptr)
+
+    @staticmethod
+    def find_base(leak, ptr):
+        """Given a :class:`pwnlib.memleak.MemLeak` object and a pointer into a
+        library, find its base address.
+        """
+        return DynELF(leak, ptr).libbase
+
     @property
     def elfclass(self):
         """32 or 64"""
@@ -174,15 +189,6 @@ class DynELF(object):
         # Find the linkmap using the helper pointers
         self._find_linkmap(pltgot, debug)
         self.success('Done')
-
-
-    @staticmethod
-    def find_base(leak, ptr):
-        """Given a :class:`pwnlib.memleak.MemLeak` object and a pointer into a
-        library, find its base address.
-        """
-        e = DynELF(leak, ptr)
-        return e.libbase
 
     def _find_base(self, ptr):
         page_size = 0x1000
