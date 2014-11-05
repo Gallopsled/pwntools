@@ -1,7 +1,6 @@
 """Exposes functionality for manipulating ELF files
 """
 from .datatypes import *
-from .. import log, asm
 from ..asm import asm, disasm
 from ..util import misc
 

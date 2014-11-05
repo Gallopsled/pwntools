@@ -313,5 +313,13 @@ class GNU_HASH(ctypes.Structure):
                 ('maskwords', Elf32_Word),
                 ('shift2',    Elf32_Word)]
 
+class Elf32_r_debug(ctypes.Structure):
+    _fields_ = [('r_version', Elf32_Word),
+                ('r_map', Elf32_Addr)]
+
+class Elf64_r_debug(ctypes.Structure):
+    _fields_ = [('r_version', Elf32_Word),
+                ('r_map', Elf64_Addr)]
+
 constants.DT_GNU_HASH = 0x6ffffef5
 constants.STN_UNDEF   = 0

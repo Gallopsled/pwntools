@@ -52,33 +52,23 @@ class MemLeak(object):
         # Map of address: byte for all bytes received
         self.cache = {}
 
-    def __call__(self, address, obj):
+    def field(self, address, obj):
         """call(address, field) => int or str
 
         Leak an entire structure, or structure field.
 
         Arguments:
             address(int): Base address to calculate offsets from
-            field(obj): Instance of a ctypes field or Structure
+            field(obj):   Instance of a ctypes field
 
         Return Value:
             The type of the return value will be dictated by
             the type of ``field``.
         """
-        if isinstance(obj, type):
-            data = self.n(address, ctypes.sizeof(obj))
-            return obj.from_buffer_copy(data)
-        elif isinstance(obj, (int, long)):
-            return self.n(address, obj)
-        else:
-            size   = obj.size
-            offset = obj.offset
-            data   = self.n(address + offset, size)
-
-            if size in (1,2,4,8):
-                return unpack(data, size*8)
-            return data
-
+        size   = obj.size
+        offset = obj.offset
+        data   = self.n(address + offset, size)
+        return unpack(data, size*8)
 
     def _leak(self, addr, n, recurse=True):
         """_leak(addr, n) => str
