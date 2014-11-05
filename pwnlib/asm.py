@@ -87,7 +87,7 @@ def _assembler():
         'amd64'  : [gas, '--64'],
 
         # Most architectures accept -EL or -EB
-        'thumb'  : [gas, '-thumb', E],
+        'thumb'  : [gas, '-mthumb', E],
         'arm'    : [gas, E],
         'aarch64': [gas, E],
         'mips'   : [gas, E],
