@@ -159,7 +159,6 @@ class DynELF(object):
         """Uses an ELF file to assist in finding the link_map.
         """
         if isinstance(path, ELF):
-            base = path.address
             path = path.path
 
         # Load a fresh copy of the ELF
