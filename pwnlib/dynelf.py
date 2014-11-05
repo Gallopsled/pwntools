@@ -86,7 +86,7 @@ class DynELF(object):
     .. _link map:  https://google.com
     '''
 
-    def __init__(self, leak, pointer, elf=None):
+    def __init__(self, leak, pointer=None, elf=None):
         '''
         Instantiates an object which can resolve symbols in a running binary
         given a :class:`pwnlib.memleak.MemLeak` leaker and a pointer inside
@@ -94,7 +94,7 @@ class DynELF(object):
 
         Arguments:
             leak(MemLeak): Instance of pwnlib.memleak.MemLeak for leaking memory
-            pointer(int):  A pointer into the library
+            pointer(int):  A pointer into a loaded ELF file
             elf(str,ELF):  Path to the ELF file on disk, or a loaded :class:`pwnlib.elf.ELF`.
         '''
         self._elfclass = None
@@ -103,8 +103,13 @@ class DynELF(object):
         self._bases    = {}
         self._dynamic  = None
 
+        if not (pointer or (elf and elf.address)):
+            log.error("Must specify either a pointer into a module and/or an ELF file with a valid base address")
+
+        pointer = pointer or elf.address
+
         self.leak    = leak
-        self.libbase = self._find_base(pointer)
+        self.libbase = self._find_base(pointer or elf.address)
 
         if elf:
             self._find_linkmap_assisted(elf)
@@ -139,7 +144,7 @@ class DynELF(object):
         """Uses an ELF file to assist in finding the link_map.
         """
         if isinstance(path, ELF):
-            base = base or path.address
+            base = path.address
             path = path.path
 
         # Load a fresh copy of the ELF
