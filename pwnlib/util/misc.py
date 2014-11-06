@@ -44,7 +44,7 @@ def size(n, abbriv = 'B', si = False):
     Convert the length of a bytestream to human readable form.
 
     Args:
-      n(int): The length to convert to human readable form.
+      n(int,str): The length to convert to human readable form
       abbriv(str):
 
     Example:
@@ -59,6 +59,9 @@ def size(n, abbriv = 'B', si = False):
         >>> [size(1024 ** n) for n in range(7)]
         ['1B', '1.00KB', '1.00MB', '1.00GB', '1.00TB', '1.00PB', '1024.00PB']
     """
+    if isinstance(n, str):
+        n = len(n)
+
     base = 1000.0 if si else 1024.0
     if n < base:
         return '%d%s' % (n, abbriv)
