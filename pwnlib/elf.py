@@ -71,6 +71,13 @@ class ELF(ELFFile):
                 log.info('Stack is executable!')
 
     @property
+    def entry(self):
+        """Entry point to the ELF"""
+        return self.address + (self.header.e_entry - self.load_addr)
+    entrypoint = entry
+    start      = entry
+
+    @property
     def elfclass(self):
         """ELF class (32 or 64).
 
