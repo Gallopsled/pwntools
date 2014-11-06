@@ -140,31 +140,44 @@ def which(name, all = False):
     else:
         return None
 
-def run_in_new_terminal(command, terminal = None):
+def run_in_new_terminal(command, terminal = None, args = None):
     """run_in_new_terminal(command, terminal = None) -> None
 
     Run a command in a new terminal.
 
+    If X11 is detected, the terminal will be launched with
+    ``x-terminal-emulator``.
+
+    If X11 is not detected, a new tmux pane is opened if possible.
+
     Args:
       command (str): The command to run.
-      terminal (str): Which terminal to use, if set to :const:`None` pick from
-      ``$TERM``, ``$COLORTERM`` or ``x-terminal-emulator`` in that order.
+      terminal (str): Which terminal to use.
+      args (list): Arguments to pass to the terminal
 
     Returns:
       None
-"""
-    if terminal:
-        term = which(terminal)
-    else:
-        term = which('x-terminal-emulator')
-    if not term:
+    """
+
+    if not terminal:
+        if 'XAUTHORITY' in os.environ:
+            terminal = 'x-terminal-emulator'
+            args     = ['-e']
+
+        elif 'TMUX' in os.environ:
+            terminal = 'tmux'
+            args     = ['splitw']
+
+    if not terminal:
         log.error('could not find terminal: %s' % terminal)
-    termpid = os.fork()
-    if termpid == 0:
+
+    argv    = [which(terminal)] + args + [command]
+    log.debug("Launching a new terminal: %r" % argv)
+
+    if os.fork() == 0:
         os.close(0)
         os.close(1)
         os.close(2)
-        argv = [term, '-e', command]
         os.execv(argv[0], argv)
         os._exit(1)
 
