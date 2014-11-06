@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-import os, tempfile, urllib2
+import os, tempfile
+from requests import *
 from .. import log
 
 # Using powers of ten instead of two,
@@ -8,11 +9,11 @@ sizes = (
     (10**9, 'gB'),
     (10**6, 'mB'),
     (10**3, 'kB'),
-    (1,     'B')
+    (1,     'bytes')
 )
 
 
-def wget(url, save=None, timeout=5):
+def wget(url, save=None, timeout=5, **kwargs):
     """wget(url, save=None, timeout=5) -> str
 
     Downloads a file via HTTP/HTTPS.
@@ -33,15 +34,14 @@ def wget(url, save=None, timeout=5):
       >>> result == file('robots.txt').read()
       True
     """
-    response = urllib2.urlopen(url, timeout=timeout);
+    response = get(url, stream=True, **kwargs)
 
-    if response.code != 200:
-        log.error("Got code %s" % response.code)
+    if not response.ok:
+        log.error("Got code %s" % response.status_code)
         return
 
     log.waitfor("Downloading '%s'" % url)
-    total_size = response.info().getheader('Content-Length').strip()
-    total_size = int(total_size)
+    total_size = int(response.headers.get('content-length',0))
 
     # Find out the next largest size we can represent as
     for chunk_size, size_name in sizes:
@@ -54,12 +54,13 @@ def wget(url, save=None, timeout=5):
     total_data    = ''
 
     # Loop until we have all of the data
-    chunk = response.read(chunk_size)
-    while chunk:
+    for chunk in response.iter_content(chunk_size = chunk_size):
         total_data += chunk
         chunks_so_far += 1
-        log.status('%s / %s %s' % (chunks_so_far, total_chunks, size_name))
-        chunk = response.read(chunk_size)
+        if total_chunks:
+            log.status('%s / %s %s' % (chunks_so_far, total_chunks, size_name))
+        else:
+            log.status('%s %s' % (chunks_so_far, size_name))
 
     # Save to the target file if provided
     if save:
@@ -68,9 +69,9 @@ def wget(url, save=None, timeout=5):
             save = save or NamedTemporaryFile(dir='.', delete=False).name
         with file(save,'wb+') as f:
             f.write(total_data)
-            log.done_success('Saved data to %r' % f.name)
+            log.done_success('Saved %s %s to %r' % (chunks_so_far, size_name, f.name))
     else:
-        log.done_success()
+        log.done_success('%s %s' % (chunks_so_far, size_name))
 
     return total_data
 
