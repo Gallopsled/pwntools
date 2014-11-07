@@ -64,7 +64,7 @@ __all__ = [
     'waitfor', 'progress'
 ]
 
-import logging, re, threading, sys, random
+import logging, re, threading, sys, random, time
 from .context import context, Thread
 from .term    import spinners, text
 from .        import term
@@ -360,14 +360,17 @@ class TermHandler(logging.Handler):
         self.spinner.daemon = True
         self.spinner.start()
         self._handle = term.output('')
+        self.last    = time.time()
 
     def emit(self, record):
         if getattr(record, 'pwnlib_stop', False):
             self.stop.set()
             self.spinner.join()
 
-        msg = self.format(record)
-        self._handle.update(msg + '\n')
+        if time.time() - self.last > 0.1:
+            msg = self.format(record)
+            self._handle.update(msg + '\n')
+            self.last = time.time()
 
     def spin(self, handle):
         state  = 0
