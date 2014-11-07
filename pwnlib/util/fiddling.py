@@ -465,7 +465,7 @@ if 1 or not sys.stdout.isatty():
 
 
 def sequential_lines(a,b):
-    if len(a) != len(b):
+    if len(a) != len(b) or len(a) < 4:
         return False
 
     all_chars = sorted(set(a+b))
