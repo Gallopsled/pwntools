@@ -491,7 +491,7 @@ class ROP(object):
         #       I don't have to rewrite __getattr__ to support this.
         #
         leave = self.search(regs = frame_regs, order = 'regs')
-        if leave[1]['regs'] != frame_regs:
+        if leave and leave[1]['regs'] != frame_regs:
             leave = None
         self.leave = leave
 
