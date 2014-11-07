@@ -89,7 +89,8 @@ class Logger(logging.getLoggerClass()):
     """
     def __init__(self, *args, **kwargs):
         super(Logger, self).__init__(*args, **kwargs)
-        self.msg_prefix = ''
+        self.msg_prefix  = ''
+        self.status_last = 0
 
     def getEffectiveLevel(self):
         normLevel = super(Logger, self).getEffectiveLevel()
@@ -158,9 +159,17 @@ class Logger(logging.getLoggerClass()):
     done_success = success
     indent = indented
     output = info
-    status = info
     waitfor = progress
     warning = warn
+
+    def status(self, m, *a, **kw):
+        """
+        Status may be called in a tight loop, so it needs a delay
+        """
+        now = time.time()
+        if (now - self.status_last) > 0.1:
+            self.status_last = now
+            return self.info(m, *a, **kw)
 
     one_time_infos    = []
     one_time_warnings = []
@@ -360,17 +369,21 @@ class TermHandler(logging.Handler):
         self.spinner.daemon = True
         self.spinner.start()
         self._handle = term.output('')
-        self.last    = time.time()
+        self.last    = 0
 
     def emit(self, record):
-        if getattr(record, 'pwnlib_stop', False):
+        final = getattr(record, 'pwnlib_stop', False)
+
+        if final:
             self.stop.set()
             self.spinner.join()
 
-        if time.time() - self.last > 0.1:
+        now = time.time()
+
+        if final or (now - self.last > 0.1):
             msg = self.format(record)
             self._handle.update(msg + '\n')
-            self.last = time.time()
+            self.last = now
 
     def spin(self, handle):
         state  = 0
