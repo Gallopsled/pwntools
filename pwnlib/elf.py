@@ -1,7 +1,7 @@
 """Exposes functionality for manipulating ELF files
 """
-from . import log, asm
-from .util import misc
+from . import log, asm, term
+from .util import misc, proc
 import mmap, subprocess, os
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
@@ -65,10 +65,8 @@ class ELF(ELFFile):
             self._address = min(filter(bool, (s.header.p_vaddr for s in self.segments)))
         self.load_addr = self._address
 
-        for seg in self.executable_segments:
-            if seg.header.p_type == 'PT_GNU_STACK':
-                self.execstack = True
-                log.info('Stack is executable!')
+        if self.execstack:
+            log.info('Stack is executable!')
 
     @property
     def elfclass(self):
@@ -468,3 +466,113 @@ class ELF(ELFFile):
         orig_bss = self.get_section_by_name('.bss').header.sh_addr
         curr_bss = orig_bss - self.load_addr + self.address
         return curr_bss + offset
+
+    def dynamic_by_tag(self, tag):
+        dt      = None
+        dynamic = self.get_section_by_name('.dynamic')
+
+        if not dynamic:
+            return None
+
+        try:
+            dt = next(t for t in dynamic.iter_tags() if tag == t.entry.d_tag)
+        except StopIteration:
+            pass
+
+        return dt
+
+    def dynamic_string(self, offset):
+        dt_strtab = self.dynamic_by_tag('DT_STRTAB')
+
+        if not dt_strtab:
+            return None
+
+        address   = dt_strtab.entry.d_ptr + offset
+        string    = ''
+        while '\x00' not in string:
+            string  += self.read(address, 1)
+            address += 1
+        return string.rstrip('\x00')
+
+
+    @property
+    def relro(self):
+        if self.dynamic_by_tag('DT_BIND_NOW'):
+            return "Full"
+
+        if any('GNU_RELRO' in s.header.p_type for s in self.segments):
+            return "Partial"
+        return None
+
+    @property
+    def nx(self):
+        return not any('GNU_STACK' in seg.header.p_type for seg in self.executable_segments)
+    execstack = nx
+
+    @property
+    def canary(self):
+        return '__stack_chk_fail' in self.symbols
+
+    @property
+    def packed(self):
+        return 'UPX!' in self.get_data()
+
+    @property
+    def pie(self):
+        return self.elftype == 'DYN'
+
+    @property
+    def rpath(self):
+        dt_rpath = self.dynamic_by_tag('DT_RPATH')
+
+        if not dt_rpath:
+            return None
+
+        return self.dynamic_string(dt_rpath.entry.d_ptr)
+
+    @property
+    def runpath(self):
+        dt_runpath = self.dynamic_by_tag('DT_RUNPATH')
+
+        if not dt_runpath:
+            return None
+
+        return self.dynamic_string(dt_rpath.entry.d_ptr)
+
+    def checksec(self, banner=True):
+        red    = term.text.red
+        green  = term.text.green
+        yellow = term.text.yellow
+
+        res = [
+            "RELRO:".ljust(15) + {
+                'Full':    green("Full RELRO"),
+                'Partial': yellow("Partial RELRO"),
+                None:      red("No RELRO")
+            }[self.relro],
+            "Stack Canary:".ljust(15) + {
+                True:  green("Canary found"),
+                False: red("No canary found")
+            }[self.canary],
+            "NX:".ljust(15) + {
+                True:  green("NX enabled"),
+                False: red("NX disabled"),
+            }[self.nx],
+            "PIE:".ljust(15) + {
+                True: green("PIE enabled"),
+                False: red("No PIE")
+            }[self.pie],
+            "RPATH:".ljust(15) + {
+                False:  green("No RPATH"),
+                True:   red(repr(self.rpath))
+            }.get(bool(self.rpath)),
+            "RUNPATH:".ljust(15) + {
+                False:  green("No RUNPATH"),
+                True:   red(repr(self.runpath))
+            }.get(bool(self.runpath))
+        ]
+
+        if self.packed:
+            res.append('Packer:'.ljust(15) + red("Packed with UPX"))
+
+        return '\n'.join(res)
