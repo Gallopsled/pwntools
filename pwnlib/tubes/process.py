@@ -48,7 +48,9 @@ class process(tube):
         else:
             log.error("process(): Do not understand the arguments %r" % args)
 
-        if os.path.exists(self.program) and not os.access(self.program, os.X_OK):
+        # If we specify something not in $PATH, but which exists as a non-executable
+        # file then give an error message.
+        if not which(self.program) and os.path.exists(self.program) and not os.access(self.program, os.X_OK):
             log.error('%r is not set to executable (chmod +x %s)' % (self.program, self.program))
 
         self.proc = subprocess.Popen(
