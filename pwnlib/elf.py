@@ -507,7 +507,10 @@ class ELF(ELFFile):
     @property
     def nx(self):
         return not any('GNU_STACK' in seg.header.p_type for seg in self.executable_segments)
-    execstack = nx
+
+    @property
+    def execstack(self):
+        return not self.nx
 
     @property
     def canary(self):
