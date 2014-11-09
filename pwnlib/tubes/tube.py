@@ -216,7 +216,7 @@ class tube(Timeout):
         # It will be pasted together at the end if a
         # timeout does not occur, or put into the tube buffer.
         with self.countdown(timeout):
-            while len(self.buffer) < numb:
+            while self.timeout and len(self.buffer) < numb:
                 self._fillbuffer()
 
         return self.buffer.get(numb)
