@@ -23,7 +23,7 @@ __possible__ = {
     ),
     'arch32': ('arm', 'armeb', 'cris', 'i386', 'm68k', 'mips', 'mipsel', 'thumb'),
     'arch64': ('alpha', 'amd64'),
-    'os': ('linux', 'freebsd')
+    'os': ('linux', 'freebsd', 'windows')
 }
 
 class Local(object):
