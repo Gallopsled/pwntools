@@ -523,6 +523,7 @@ class ELF(ELFFile):
     @property
     def pie(self):
         return self.elftype == 'DYN'
+    aslr=pie
 
     @property
     def rpath(self):
