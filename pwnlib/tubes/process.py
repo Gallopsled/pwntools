@@ -1,4 +1,5 @@
 from .tube import tube
+from ..util.misc import which
 import subprocess, fcntl, os, select, logging
 
 log = logging.getLogger(__name__)
@@ -46,6 +47,9 @@ class process(tube):
             self.program = args[0]
         else:
             log.error("process(): Do not understand the arguments %r" % args)
+
+        if os.path.exists(self.program) and not os.access(self.program, os.X_OK):
+            log.error('%r is not set to executable (chmod +x %s)' % (self.program, self.program))
 
         self.proc = subprocess.Popen(
             args, shell = shell, executable = executable,
