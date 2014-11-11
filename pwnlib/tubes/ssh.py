@@ -121,9 +121,9 @@ class ssh_channel(sock):
         # We would like a cursor, please!
         term.term.show_cursor()
 
-        go = [True]
-        def recv_thread(go):
-            while go[0]:
+        event = threading.Event()
+        def recv_thread(event):
+            while not event.is_set():
                 try:
                     cur = self.recv(timeout = 0.05)
                     if cur == None:
@@ -135,32 +135,32 @@ class ssh_channel(sock):
                     sys.stdout.flush()
                 except EOFError:
                     log.info('Got EOF while reading in interactive')
-                    go[0] = False
+                    event.set()
                     break
 
         t = context.thread(target = recv_thread, args = (go,))
         t.daemon = True
         t.start()
 
-        while go[0]:
+        while not event.is_set():
             if term.term_mode:
                 try:
                     data = term.key.getraw(0.1)
                 except KeyboardInterrupt:
                     data = [3] # This is ctrl-c
                 except IOError:
-                    if go[0]:
+                    if not event.is_set():
                         raise
             else:
-                data = sys.stdin.read(1)
+                data = [ord(sys.stdin.read(1))]
                 if not data:
-                    go[0] = False
+                    event.set()
 
             if data:
                 try:
                     self.send(''.join(chr(c) for c in data))
                 except EOFError:
-                    go[0] = False
+                    event.set()
                     log.info('Got EOF while sending in interactive')
 
         while t.is_alive():
