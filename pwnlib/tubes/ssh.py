@@ -141,7 +141,7 @@ class ssh_channel(sock.sock):
                     if go[0]:
                         raise
             else:
-                data = sys.stdin.read(1)
+                data = [ord(sys.stdin.read(1))]
                 if not data:
                     go[0] = False
 
