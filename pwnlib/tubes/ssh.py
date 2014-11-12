@@ -1,4 +1,4 @@
-import os, string, base64, paramiko, time, tempfile, sys, shutil, re, logging
+import os, string, base64, paramiko, time, tempfile, sys, shutil, re, logging, threading
 
 from .. import term
 from ..context import context
@@ -138,7 +138,7 @@ class ssh_channel(sock):
                     event.set()
                     break
 
-        t = context.thread(target = recv_thread, args = (go,))
+        t = context.thread(target = recv_thread, args = (event,))
         t.daemon = True
         t.start()
 
