@@ -152,9 +152,11 @@ class ssh_channel(sock):
                     if not event.is_set():
                         raise
             else:
-                data = [ord(sys.stdin.read(1))]
+                data = sys.stdin.read(1)
                 if not data:
                     event.set()
+                else:
+                    data = [ord(data)]
 
             if data:
                 try:
