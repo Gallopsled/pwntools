@@ -127,7 +127,7 @@ class ssh_channel(sock.sock):
                     event.set()
                     break
 
-        t = thread.Thread(target = recv_thread, args = (go,))
+        t = thread.Thread(target = recv_thread, args = (event,))
         t.daemon = True
         t.start()
 
@@ -141,9 +141,11 @@ class ssh_channel(sock.sock):
                     if not event.is_set():
                         raise
             else:
-                data = [ord(sys.stdin.read(1))]
+                data = sys.stdin.read(1)
                 if not data:
                     event.set()
+                else:
+                    data = [ord(data)]
 
             if data:
                 try:
