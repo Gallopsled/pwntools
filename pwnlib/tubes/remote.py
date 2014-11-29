@@ -1,5 +1,6 @@
 from .sock import sock
 import socket, logging
+import ssl as _ssl
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ class remote(sock):
 
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
-                 timeout = None):
+                 timeout = None, ssl=False):
         super(remote, self).__init__(timeout)
 
         self.rport = int(port)
@@ -64,7 +65,12 @@ class remote(sock):
                 break
             except socket.error:
                 pass
+
         else:
             h.failure()
             log.error("Could not connect to %s on port %d" % (self.rhost, self.rport))
+
+        if ssl:
+            self.sock = _ssl.wrap_socket(self.sock)
+
         h.success()
