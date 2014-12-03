@@ -387,7 +387,7 @@ class ROP(object):
         # https://github.com/JonathanSalwan/ROPgadget/issues/53
         #
 
-        pop   = re.compile(r'^pop (.*)')
+        pop   = re.compile(r'^pop (.{3})')
         add   = re.compile(r'^add .sp, (\S+)$')
         ret   = re.compile(r'^ret$')
         leave = re.compile(r'^leave$')
