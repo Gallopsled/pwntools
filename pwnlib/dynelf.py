@@ -43,20 +43,20 @@ class DynELF(object):
         Resolving Functions:
 
             In all ELFs which export symbols for importing by other libraries,
-            (e.g. ``libc``) there are a series of tables which give exported
+            (e.g. ``libc.so``) there are a series of tables which give exported
             symbol names, exported symbol addresses, and the ``hash`` of those
             exported symbols.  By applying a hash function to the name of the
             desired symbol (e.g., ``'printf'``), it can be located in the hash
             table.  Its location in the hash table provides an index into the
             string name table (strtab_), and the symbol address (symtab_).
 
-            Assuming we have the base address of ``libc``, the way to resolve
+            Assuming we have the base address of ``libc.so``, the way to resolve
             the address of ``printf`` is to locate the ``symtab``, ``strtab``,
             and hash table. The string ``"printf"`` is hashed according to the
             style of the hash table (SYSV_ or GNU_), and the hash table is
             walked until a matching entry is located. We can verify an exact
             match by checking the string table, and then get the offset into
-            ``libc`` from the ``symtab``.
+            ``libc.so`` from the ``symtab``.
 
         Resolving Library Addresses:
 
@@ -438,7 +438,7 @@ class DynELF(object):
         Looks up information about a loaded library via the link map.
 
         Arguments:
-            libname(str):  Name of the library to resolve, or a substring (e.g. 'libc')
+            libname(str):  Name of the library to resolve, or a substring (e.g. 'libc.so')
 
         Returns:
             A DynELF instance for the loaded library, or None.
