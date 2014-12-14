@@ -2,6 +2,7 @@
 
    from pwnlib.tubes.tube import tube
    from pwnlib.tubes.ssh import *
+   from pwnlib.tubes.remote import remote
 
 :mod:`pwnlib.tubes` --- Talking to the World!
 =============================================

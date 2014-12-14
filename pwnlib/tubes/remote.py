@@ -19,6 +19,25 @@ class remote(sock):
         timeout: A positive number, None or the string "default".
         ssl(bool): Wrap the socket with SSL
         sock(socket): Socket to inherit, rather than connecting
+
+    Examples:
+
+        >>> r = remote('google.com', 443, ssl=True)
+        >>> r.send('GET /' + '\\r\\n'*2)
+        >>> r.recvn(4)
+        'HTTP'
+        >>> r = remote('127.0.0.1', 1)
+        Traceback (most recent call last):
+        ...
+        Exception: Could not connect to 127.0.0.1 on port 1
+        >>> import socket
+        >>> s = socket.socket()
+        >>> s.connect(('google.com', 80))
+        >>> s.send('GET /' + '\\r\\n'*2)
+        9
+        >>> r = remote.fromsocket(s)
+        >>> r.recvn(4)
+        'HTTP'
     """
 
     def __init__(self, host, port,

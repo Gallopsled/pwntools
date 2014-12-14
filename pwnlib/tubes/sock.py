@@ -93,7 +93,7 @@ class sock(tube):
             return not self.closed['send']
 
     def close(self):
-        if not self.sock:
+        if not getattr(self, 'sock', None):
             return
 
         # Call shutdown without triggering another call to close
