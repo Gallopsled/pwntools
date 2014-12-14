@@ -31,10 +31,10 @@ Args:
 % elif -128 <= sign < 128:
     push ${hex(sign)} ; ${repr(s)}
 % elif '\x00' not in s and '\n' not in s:
-    push `${repr(s)[1:-1]}`
+    push '${repr(s)[1:-1]}'
 % else:
 <% a,b = fiddling.xor_pair(s, avoid = '\x00\n') %>\
-    push `${repr(a)[1:-1]}`
-    xor dword [esp], `${repr(b)[1:-1]}` ; ${repr(s)}
+    push '${repr(a)[1:-1]}'
+    xor dword [esp], '${repr(b)[1:-1]}' ; ${repr(s)}
 % endif
 % endfor

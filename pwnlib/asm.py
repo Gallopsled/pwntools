@@ -10,8 +10,8 @@ _incdir  = path.join(_basedir, 'data', 'includes')
 
 def _assembler(arch):
     assemblers = {
-        'i386'   : ['nasm', '-Ox'],
-        'amd64'  : ['nasm', '-Ox'],
+        'i386'   : ['nasm', '-O3', '-felf'],
+        'amd64'  : ['nasm', '-O3', '-felf64'],
         'thumb'  : [path.join(_bindir, 'arm-as')],
         'mips'   : [path.join(_bindir, 'mips-as' ), '--EB'],
         'mipsel' : [path.join(_bindir, 'mips-as' ), '--EL'],
@@ -241,8 +241,8 @@ def asm(shellcode, arch = None, os = None):
 
         with open(step3) as fd:
             return fd.read()
-    except:
-        log.error("An error occurred while assembling:\n%s" % code)
+    except Exception as e:
+        log.error("An error occurred while assembling:\n%s\nError:\n%s" % (code, e))
     finally:
         shutil.rmtree(tmpdir)
 
