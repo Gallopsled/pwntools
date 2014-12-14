@@ -203,6 +203,35 @@ class tube(object):
             if len(data) > delimslen:
                 i = len(data) - delimslen + 1
 
+    def recvbefore(self, delims, timeout = 'default'):
+        """recvbefore(delims, timeout = 'default') -> str
+
+        Continue recieving until the recieved data ends with one of `delims`,
+        the match is not returned
+
+        As a shorthand, ``delim`` may be used instead of ``(delim, )``.
+        """
+        res = self.recvuntil(delims, timeout)
+
+        print "got res", res
+
+        if res == None:
+            return None
+
+        if not hasattr(delims, '__iter__'):
+            delims = (delims,)
+
+        str_len = len(res)
+
+        for delim in delims:
+            print 'Checking', delim
+            delim_len = len(delim)
+            print 'Against', res[:-delim_len]
+            if res[-delim_len:] == delim:
+                print "Found delim", delim
+                print "Returning", res[:-delim_len]
+                return res[:-delim_len]
+
     def recvlines(self, numlines, keepends = False, timeout = 'default'):
         """recvlines(numlines, keepends = False) -> str list
 
