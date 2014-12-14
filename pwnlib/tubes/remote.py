@@ -17,36 +17,70 @@ class remote(sock):
         fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
         typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
         timeout: A positive number, None or the string "default".
+        ssl(bool): Wrap the socket with SSL
+        sock(socket): Socket to inherit, rather than connecting
     """
 
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
-                 timeout = None, ssl=False):
+                 timeout = None, ssl=False, sock=None):
         super(remote, self).__init__(timeout)
 
-        self.rport = int(port)
-        self.rhost = host
+        self.rport  = int(port)
+        self.rhost  = host
+
+        if sock:
+            self.family = sock.family
+            self.type   = sock.type
+            self.proto  = sock.proto
+            self.sock   = sock
+
+        else:
+            typ = self._get_type(typ)
+            fam = self._get_family(fam)
+            self.sock   = self._connect(fam, typ)
+
+        if self.sock:
+            self.settimeout(self.timeout)
+            self.lhost, self.lport = self.sock.getsockname()[:2]
+
+            if ssl:
+                self.sock = _ssl.wrap_socket(self.sock)
 
 
-        if fam == 'any':
-            fam = socket.AF_UNSPEC
-        elif fam == 4 or fam.lower() in ['ipv4', 'ip4', 'v4', '4']:
-            fam = socket.AF_INET
-        elif fam == 6 or fam.lower() in ['ipv6', 'ip6', 'v6', '6']:
-            fam = socket.AF_INET6
-        elif isinstance(fam, (int, long)):
+    @staticmethod
+    def _get_family(fam):
+
+        if isinstance(fam, (int, long)):
             pass
+        elif fam == 'any':
+            fam = socket.AF_UNSPEC
+        elif fam.lower() in ['ipv4', 'ip4', 'v4', '4']:
+            fam = socket.AF_INET
+        elif fam.lower() in ['ipv6', 'ip6', 'v6', '6']:
+            fam = socket.AF_INET6
         else:
             log.error("remote(): family %r is not supported" % fam)
 
-        if typ == "tcp":
+        return fam
+
+    @staticmethod
+    def _get_type(typ):
+
+        if isinstance(typ, (int, long)):
+            pass
+        elif typ == "tcp":
             typ = socket.SOCK_STREAM
         elif typ == "udp":
             typ = socket.SOCK_DGRAM
-        elif isinstance(typ, (int, long)):
-            pass
         else:
             log.error("remote(): type %r is not supported" % typ)
+
+        return typ
+
+    def _connect(self, fam, typ):
+        sock    = None
+        timeout = self.timeout
 
         h = log.waitfor('Opening connection to %s on port %d' % (self.rhost, self.rport))
 
@@ -57,20 +91,31 @@ class remote(sock):
                 continue
 
             h.status("Trying %s" % sockaddr[0])
-            self.sock = socket.socket(self.family, self.type, self.proto)
-            self.settimeout(self.timeout)
+
+            sock = socket.socket(self.family, self.type, self.proto)
+
+            if timeout != None and timeout <= 0:
+                sock.setblocking(0)
+            else:
+                sock.setblocking(1)
+                sock.settimeout(timeout)
+
             try:
-                self.sock.connect(sockaddr)
-                self.lhost, self.lport = self.sock.getsockname()[:2]
+                sock.connect(sockaddr)
                 break
             except socket.error:
                 pass
-
         else:
             h.failure()
             log.error("Could not connect to %s on port %d" % (self.rhost, self.rport))
 
-        if ssl:
-            self.sock = _ssl.wrap_socket(self.sock)
-
         h.success()
+        return sock
+
+
+
+    @classmethod
+    def fromsocket(cls, socket):
+        s = socket
+        host, port = s.getpeername()
+        return remote(host, port, fam=s.family, typ=s.type, sock=s)
