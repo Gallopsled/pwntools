@@ -264,11 +264,16 @@ texinfo_documents = [
 #texinfo_show_urls = 'footnote'
 
 branch = release
+
 try:
     git_branch = subprocess.check_output('git describe --tags', shell = True)
+except subprocess.CalledProcessError:
+    git_branch = '-'
+
+try:
     if '-' in git_branch:
         branch = subprocess.check_output('git rev-parse HEAD', shell = True).strip()[:10]
-except (IOError, OSError) as e:
+except subprocess.CalledProcessError:
     pass
 
 def linkcode_resolve(domain, info):
