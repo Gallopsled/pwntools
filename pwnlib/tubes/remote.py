@@ -116,6 +116,16 @@ class remote(sock):
 
     @classmethod
     def fromsocket(cls, socket):
+        """
+        Helper method to wrap a standard python socket.socket with the
+        tube APIs.
+
+        Arguments:
+            socket: Instance of socket.socket
+
+        Returns:
+            Instance of pwnlib.tubes.remote.remote.
+        """
         s = socket
         host, port = s.getpeername()
         return remote(host, port, fam=s.family, typ=s.type, sock=s)
