@@ -368,15 +368,20 @@ class DynELF(object):
     def lookup (self, symb = None, lib = None):
         """lookup(symb = None, lib = None) -> int
 
-        Find the address of symbol, which is found in lib (or the current library)
+        Find the address of ``symbol``, which is found in ``lib``.
 
         Arguments:
             symb(str): Named routine to look up
-            lib(str): Optional, external library to resolve the routine from.
+            lib(str): Substring to match for the library name.
+              If omitted, the current library is searched.
+              If set to ``'libc'``, ``'libc.so'`` is assumed.
 
         Returns:
-            Address of the named routine, or ``None``.
+            Address of the named symbol, or ``None``.
         """
+
+        if lib == 'libc':
+            lib = 'libc.so'
 
         #
         # Get a pretty name for the symbol to show the user
