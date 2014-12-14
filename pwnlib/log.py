@@ -116,7 +116,8 @@ class Logger(logging.getLoggerClass()):
         return self.__log(level, m, a, kw)
 
     def error(self, m, *a, **kw):
-        return self.__log(logging.ERROR, m, a, kw, text.on_red('ERROR'))
+        self.__log(logging.ERROR, m, a, kw, text.on_red('ERROR'))
+        raise Exception(m)
 
     def warn(self, m, *a, **kw):
         return self.__log(logging.WARN, m, a, kw, text.bold_yellow('!'))
