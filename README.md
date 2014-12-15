@@ -28,7 +28,7 @@ in `pwnlib`. These are:
 * `phd`: Replacement for `hexdump` with colors.
 
 # Documentation
-Our documentation is available at http://pwntools.readthedocs.org/
+Our documentation is available at http://docs.pwntools.com
 
 To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/Gallopsled/pwntools-write-ups).
 
@@ -48,7 +48,7 @@ In order to get the most out of `pwntools`, you should have the following system
 [i386]: http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_i386.deb
 [amd64]: http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_amd64.deb
 
-## Released Version
+## Released Versionr
 
 Pwntools is available as a pip package. It reqiures Python 2.7, and one of its dependences requires the Python headers.
 
