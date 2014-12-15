@@ -52,16 +52,18 @@ def _find(util, **kwargs):
             arches.insert(0,None)
 
         for arch in arches:
-            # e.g. objdump
-            if arch is None: pattern = util
+            # hack for homebrew-installed binutils on mac
+            for gutil in [util, 'g'+util]:
+                # e.g. objdump
+                if arch is None: pattern = gutil
 
-            # e.g. aarch64-linux-gnu-objdump
-            else:       pattern = '%s*-%s' % (arch,util)
+                # e.g. aarch64-linux-gnu-objdump
+                else:       pattern = '%s*-%s' % (arch,gutil)
 
-            for dir in environ['PATH'].split(':'):
-                res = glob(path.join(dir, pattern))
-                if res:
-                    return res[0]
+                for dir in environ['PATH'].split(':'):
+                    res = glob(path.join(dir, pattern))
+                    if res:
+                        return res[0]
 
         locals()['context'] = context
         log.error("""
