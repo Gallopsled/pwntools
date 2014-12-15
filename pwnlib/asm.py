@@ -53,7 +53,7 @@ def _find(util, **kwargs):
 
         for arch in arches:
             # hack for homebrew-installed binutils on mac
-            for gutil in [util, 'g'+util]:
+            for gutil in ['g'+util, util]:
                 # e.g. objdump
                 if arch is None: pattern = gutil
 
@@ -84,9 +84,11 @@ def _assembler():
         'little': '-EL'
     }[context.endianness]
 
+    linux = (platform.system() == 'Linux')
+
     assemblers = {
-        'i386'   : [gas, '--32'],
-        'amd64'  : [gas, '--64'],
+        'i386'   : [gas, '--32'] if linux else [gas, '-arch', 'i386'],
+        'amd64'  : [gas, '--64'] if linux else [gas, '-arch', 'x86_64'],
 
         # Most architectures accept -EL or -EB
         'thumb'  : [gas, '-mthumb', E],
@@ -289,8 +291,10 @@ def asm(shellcode, vma = 0, **kwargs):
     """
 
     with context.local(**kwargs):
+        linux = (platform.system() == 'Linux')
+
         assembler = _assembler()
-        objcopy   = _objcopy() + ['-j.shellcode', '-Obinary']
+        objcopy   = _objcopy() + ['-j.shellcode' if linux else '-jLC_SEGMENT..shellcode."ax"', '-Obinary']
         code      = '.org %#x\n' % vma
         code      += _arch_header()
         code      += cpp(shellcode)
@@ -308,14 +312,15 @@ def asm(shellcode, vma = 0, **kwargs):
 
             _run(assembler + ['-o', step2, step1])
 
-            # Sanity check for seeing if the output has relocations
-            relocs = subprocess.check_output(
-                [_find('readelf'), '-r', step2]
-            ).strip()
-            if len(relocs.split('\n')) > 1:
-                raise Exception(
-                    'There were relocations in the shellcode:\n\n%s' % relocs
-                )
+            if file(step2,'rb').read(4) == '\x7fELF':
+                # Sanity check for seeing if the output has relocations
+                relocs = subprocess.check_output(
+                    [_find('readelf'), '-r', step2]
+                ).strip()
+                if len(relocs.split('\n')) > 1:
+                    raise Exception(
+                        'There were relocations in the shellcode:\n\n%s' % relocs
+                    )
 
             _run(objcopy + [step2, step3])
 
@@ -372,7 +377,7 @@ def disasm(data, vma = 0, **kwargs):
 
         bfdarch = _bfdarch()
         bfdname = _bfdname()
-        objdump = _objdump() + ['-d', '--adjust-vma', str(vma)]
+        objdump = _objdump() + ['-d', '--adjust-vma', str(vma), '-b', bfdname]
         objcopy = _objcopy() + [
             '-I', 'binary',
             '-O', bfdname,
