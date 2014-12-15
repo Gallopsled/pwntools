@@ -43,7 +43,7 @@ apt-get install python python-dev
 ```
 
 ```sh
-pip2 install pwntools
+pip install pwntools
 ```
 
 ## Latest Version
@@ -53,7 +53,7 @@ Alternatively if you prefer to use the latest version from the repository:
 ```sh
 git clone https://github.com/Gallopsled/pwntools
 cd pwntools
-pip2 install -r requirements.txt
+pip install -r requirements.txt
 PWN=$(realpath .)
 export PATH="$PWN/bin:$PATH"
 export PYTHONPATH="$PWN:$PYTHONPATH"
