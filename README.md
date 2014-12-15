@@ -34,6 +34,8 @@ To get you started, we've provided some example solutions for past CTF challenge
 
 # Installation
 
+pwntools is best supported on Ubuntu 12.04 and 14.04, but most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).
+
 ## Prerequisites
 
 In order to get the most out of `pwntools`, you should have the following system libraries installed.
@@ -51,11 +53,11 @@ In order to get the most out of `pwntools`, you should have the following system
 Pwntools is available as a pip package. It reqiures Python 2.7, and one of its dependences requires the Python headers.
 
 ```sh
-apt-get install python python-dev
+apt-get install python2.7 python2.7-dev python-pip
 ```
 
 ```sh
-pip2 install pwntools
+pip install pwntools
 ```
 
 ## Latest Version
