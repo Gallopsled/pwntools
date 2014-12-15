@@ -52,9 +52,9 @@ Alternatively if you prefer to use the latest version from the repository:
 
 ```sh
 git clone https://github.com/Gallopsled/pwntools
-cd pwntools
+PWN=$(realpath pwntools)
+cd $PWN
 pip2 install -r requirements.txt
-PWN=$(realpath .)
 export PATH="$PWN/bin:$PATH"
 export PYTHONPATH="$PWN:$PYTHONPATH"
 ```
