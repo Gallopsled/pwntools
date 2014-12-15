@@ -6,7 +6,7 @@ branches:
     - master
 install:
   - sudo apt-get update
-  - sudo apt-get intsall software-properties-common
+  - sudo apt-get install software-properties-common
   - wget -nc http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_amd64.deb
   - sudo dpkg -i *.deb
   - pip install -r requirements.txt
