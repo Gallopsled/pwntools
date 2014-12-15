@@ -38,7 +38,7 @@ def splash():
         def getcolor(n):
             return colors[(n / 4) % len(colors)]
 
-        lines = ['    ' + line for line in _banner.strip('\n').split('\n')]
+        lines = ['    ' + line + '\n' for line in _banner.strip('\n').split('\n')]
 
         hs = [term.output('', frozen = False) for _ in range(len(lines))]
         ndx = 0
