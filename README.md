@@ -54,9 +54,6 @@ Pwntools is available as a pip package. It reqiures Python 2.7, and one of its d
 
 ```sh
 apt-get install python2.7 python2.7-dev python-pip
-```
-
-```sh
 pip install pwntools
 ```
 
