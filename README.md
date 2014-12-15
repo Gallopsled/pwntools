@@ -34,11 +34,19 @@ To get you started, we've provided some example solutions for past CTF challenge
 
 # Installation
 
-Pwntools is available as a pip package. You can install it and dependencies with a single command:
+## Released Version
+
+Pwntools is available as a pip package. It reqiures Python 2.7, and one of its dependences requires the Python headers.
+
+```sh
+apt-get install python python-dev
+```
 
 ```sh
 pip2 install pwntools
 ```
+
+## Latest Version
 
 Alternatively if you prefer to use the latest version from the repository:
 
