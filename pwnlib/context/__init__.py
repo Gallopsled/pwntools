@@ -783,17 +783,6 @@ class ContextType(object):
         return bool(signed)
 
     @_validator
-    def term_mode(self, value):
-        """
-        Determines whether fancy terminal mode is enabled.
-
-        Automatically set by :mod:`pwnlib.term` if fancy terminal can be used.
-
-        Set to ``False`` to disable.
-        """
-        return bool(value)
-
-    @_validator
     def timeout(self, value):
         """
         Default amount of time to wait for a blocking operation before it times out,
