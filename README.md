@@ -34,6 +34,18 @@ To get you started, we've provided some example solutions for past CTF challenge
 
 # Installation
 
+## Prerequisites
+
+In order to get the most out of `pwntools`, you should have the following system libraries installed.
+
+- binutils for your target architecture ([Ubuntu][ppa])
+- [libcapstone 2.1][capstone] (Ubuntu [i386][i386] [amd64][amd64])
+
+[capstone]: http://www.capstone-engine.org
+[ppa]: https://launchpad.net/~pwntools/+archive/ubuntu/binutils
+[i386]: http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_i386.deb
+[amd64]: http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_amd64.deb
+
 ## Released Version
 
 Pwntools is available as a pip package. It reqiures Python 2.7, and one of its dependences requires the Python headers.
