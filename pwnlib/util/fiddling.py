@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re, base64, random, string
 from . import packing, lists
+from .cyclic import cyclic_find
 from ..context import context
 from ..term    import text
 
@@ -462,6 +463,27 @@ if 1 or not sys.stdout.isatty():
     'nonprintable': lambda x:x,
   }
 
+
+def sequential_lines(a,b):
+    if len(a) != len(b) or len(a) < 4:
+        return False
+
+    all_chars = sorted(set(a+b))
+
+    alphabet = ''
+    if all(a in string.lowercase for a in all_chars):
+        alphabet = string.lowercase
+    if all(a in string.uppercase for a in all_chars):
+        alphabet = string.uppercase
+
+    # Check each set of four
+    for i in range(0, len(a)-3):
+        A = cyclic_find(a[i:i+4], alphabet)
+        B = cyclic_find(b[i:i+4], alphabet)
+        if A+len(a) != B:
+            return False
+    return True
+
 def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
                  style = {}, highlight = []):
     """hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
@@ -489,6 +511,7 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
     style = default_style.copy()
     style.update(_style)
 
+    skipping    = False
     lines       = []
     last_unique = ''
     byte_width  = len('00 ')
@@ -519,7 +542,8 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
     for line, chunk in enumerate(lists.group(width, s)):
         # If this chunk is the same as the last unique chunk,
         # use a '*' instead.
-        if skip and (last_unique == chunk):
+        if skip and (last_unique == chunk or sequential_lines(last_unique, chunk)):
+            last_unique = chunk
             if not skipping:
                 yield '*'
                 skipping = True
