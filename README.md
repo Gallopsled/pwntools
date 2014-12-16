@@ -48,7 +48,7 @@ In order to get the most out of `pwntools`, you should have the following system
 [i386]: http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_i386.deb
 [amd64]: http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_amd64.deb
 
-## Released Versionr
+## Released Version
 
 Pwntools is available as a pip package. It reqiures Python 2.7, and one of its dependences requires the Python headers.
 
