@@ -1,4 +1,44 @@
 # -*- coding: utf-8 -*-
+r"""
+Utilities for assembling and disassembling code.
+
+Architecture Selection
+------------------------
+
+    Architecture, endianness, and word size are selected by using :mod:`pwnlib.context`.
+
+    Any parameters which can be specified to ``context`` can also be specified as
+    keyword arguments to either :func:`asm` or :func:`disasm`.
+
+Assembly
+------------------------
+
+    To assemble code, simply invoke :func:`asm` on the code to assemble.
+
+        >>> asm('mov eax, 0')
+        '\xb8\x00\x00\x00\x00'
+
+    Additionally, you can use constants as defined in the :mod:`pwnlib.constants`
+    module.
+
+        >>> asm('mov eax, SYS_execve')
+        '\xb8\x0b\x00\x00\x00'
+
+    Finally, :func:`asm` is used to assemble shellcode provided by ``pwntools``
+    in the :mod:`shellcraft` module.
+
+        >>> asm(shellcraft.sh())
+        '1\xc9\xf7\xe9j\x01\xfe\x0c$h//shh/bin\xb0\x0b\x89\xe3\xcd\x80'
+
+Disassembly
+------------------------
+
+    To disassemble code, simply invoke :func:`disasm` on the bytes to disassemble.
+
+    >>> disasm('\xb8\x0b\x00\x00\x00')
+    '   0:   b8 0b 00 00 00          mov    eax,0xb'
+
+"""
 import tempfile, subprocess, shutil, tempfile, errno, logging, platform
 from os import path, environ
 from glob import glob
@@ -7,32 +47,31 @@ from .context import context
 
 log = logging.getLogger(__name__)
 
-__all__ = ['asm', 'cpp', 'disasm']
+__all__ = ['asm', 'cpp', 'disasm', 'which']
 
 _basedir = path.split(__file__)[0]
 _bindir  = path.join(_basedir, 'data', 'binutils')
 _incdir  = path.join(_basedir, 'data', 'includes')
 
-def _find(util, **kwargs):
+def which(util, **kwargs):
     """
     Finds a binutils in the PATH somewhere.
     Expects that the utility is prefixed with the architecture name.
 
     Examples:
 
-        .. doctest::
-
-            >>> _find('as', arch='i386') #doctest: +ELLIPSIS
-            '/usr/bin/x86_64-...-as'
-            >>> _find('as', arch='arm') #doctest: +ELLIPSIS
-            '/usr/bin/arm-...-as'
-            >>> _find('as', arch='arm64') #doctest: +ELLIPSIS
-            '/usr/bin/aarch64-...-as'
-            >>> _find('as', arch='powerpc', bits=64) #doctest: +ELLIPSIS
-            ...
-            Traceback (most recent call last):
-            ...
-            Exception: Could not find 'as' installed for ContextType(arch = 'powerpc', bits = 64)
+        >>> import platform
+        >>> which('as', arch=platform.machine())
+        '/usr/bin/as'
+        >>> which('as', arch='arm') #doctest: +ELLIPSIS
+        '/usr/bin/arm-...-as'
+        >>> which('as', arch='powerpc') #doctest: +ELLIPSIS
+        '/usr/bin/powerpc...-as'
+        >>> which('as', arch='msp430') #doctest: +SKIP
+        ...
+        Traceback (most recent call last):
+        ...
+        Exception: Could not find 'as' installed for ContextType(arch = 'msp430')
     """
     with context.local(**kwargs):
         arch = context.arch
@@ -82,7 +121,7 @@ However, pwntools makes packages available for all architectures:
         raise Exception('Could not find %(util)r installed for %(context)s' % locals())
 
 def _assembler():
-    gas = _find('as')
+    gas = which('as')
 
     E = {
         'big':    '-EB',
@@ -116,10 +155,10 @@ def _assembler():
 
 
 def _objcopy():
-    return [_find('objcopy')]
+    return [which('objcopy')]
 
 def _objdump():
-    path = [_find('objdump')]
+    path = [which('objdump')]
 
     if context.arch in ('i386', 'amd64'):
         path += ['-Mintel']
@@ -324,7 +363,7 @@ def asm(shellcode, vma = 0, **kwargs):
             if file(step2,'rb').read(4) == '\x7fELF':
                 # Sanity check for seeing if the output has relocations
                 relocs = subprocess.check_output(
-                    [_find('readelf'), '-r', step2]
+                    [which('readelf'), '-r', step2]
                 ).strip()
                 if len(relocs.split('\n')) > 1:
                     raise Exception(

@@ -2,7 +2,7 @@
 from pwnlib                  import *
 
 # Promote functions from these modules to toplevel
-from pwnlib.asm              import *
+from pwnlib.asm              import asm, disasm, cpp
 from pwnlib.context          import context
 from pwnlib.dynelf           import DynELF
 from pwnlib.elf              import ELF, load
