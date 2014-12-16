@@ -51,7 +51,8 @@ def _find(util, **kwargs):
         machine = platform.machine()
         try:
             with context.local(arch = machine):
-                arches.insert(0,None)
+                if context.arch in arches:
+                    arches.insert(0,None)
         except:
             log.warn_once("Your local binutils won't be used because architecture %r is not supported." % machine)
 
