@@ -2,7 +2,7 @@
 
    from pwn import *
 
-Global Namespace
+``from pwn import *``
 ========================
 
 The most common way that you'll see pwntools used is

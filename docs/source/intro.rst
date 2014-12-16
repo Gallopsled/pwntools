@@ -14,7 +14,7 @@ When writing exploits, pwntools generally follows the "kitchen sink" approach.
 This imports a lot of functionality into the global namespace.  You can now
 assemble, disassemble, pack, unpack, and many other things with a single function.
 
-Let's start with a few common examples.
+A full list of everything that is imported is available on :doc:`globals`.
 
 
 Making Connections
@@ -106,6 +106,52 @@ The packing/unpacking operations are defined for many common bit-widths.
     >>> u8('A') == 0x41
     True
 
+Setting the Target Architecture and OS
+--------------------------------------
+
+The target architecture can generally be specified as an argument to the routine that requires it.
+
+    >>> asm('nop')
+    '\x90'
+    >>> asm('nop', arch='arm')
+    '\x00\xf0 \xe3'
+
+However, it can also be set once in the global ``context``.  The operating system, word size, and endianness can also be set here.
+
+    >>> context.arch      = 'i386'
+    >>> context.os        = 'linux'
+    >>> context.endian    = 'little'
+    >>> context.word_size = 32
+
+Additionally, you can use a shorthand to set all of the values at once.
+
+    >>> asm('nop')
+    '\x90'
+    >>> context(arch='arm', os='linux', endian='big', word_size=32)
+    >>> asm('nop')
+    '\xe3 \xf0\x00'
+
+.. doctest::
+   :hide:
+
+    >>> context.clear()
+
+Setting Logging Verbosity
+-------------------------
+
+You can control the verbosity of the standard pwntools logging via ``context``.
+
+For example, setting
+
+    >>> context.log_level = 'debug'
+
+Will cause all of the data sent and received by a ``tube`` to be printed to the screen.
+
+.. doctest::
+   :hide:
+
+    >>> context.clear()
+
 Assembly and Disassembly
 ------------------------
 
@@ -132,6 +178,7 @@ file descriptor 4 to `stdin`, `stdout`, and `stderr`, and then pop a shell!
 
     >>> asm(shellcraft.setreuid() + shellcraft.dupsh(4)).encode('hex')
     '6a3158cd8089c389c16a4658cd806a045b6a0359496a3f58cd8075f831c9f7e96a01fe0c24682f2f7368682f62696eb00b89e3cd80'
+
 
 Misc Tools
 ----------------------
