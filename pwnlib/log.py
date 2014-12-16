@@ -34,9 +34,8 @@ The verbosity of logging can be most easily controlled by setting
 
 Pwnlib Developers
 -----------------
-A module-specific logger can be imported into the module via
+A module-specific logger can be imported into the module via::
 
-::
     log = logging.getLogger(__name__)
 
 This provides an easy way to filter logging programmatically
@@ -44,7 +43,7 @@ or via a configuration file for debugging.
 
 There's no need to expressly import this ``log`` module.
 
-When using ``waitfor``/``progress``, you should use the ``with``
+When using ``progress``, you should use the ``with``
 keyword to manage scoping, to ensure the spinner stops if an
 exception is thrown.
 """
@@ -73,19 +72,23 @@ from .        import term
 
 class Logger(logging.getLoggerClass()):
     """
-    Specialization of ``logging.Logger`` which uses
+    Specialization of :py:class:`logging.Logger` which uses
     ``pwnlib.context.context.log_level`` to infer verbosity.
 
     Also adds some ``pwnlib`` flavor via:
 
-    * ``success``
-    * ``failure``
-    * ``indented``
+    * :meth:`progress`
+    * :meth:`success`
+    * :meth:`failure`
+    * :meth:`indented`
 
-    Additionally adds ``pwnlib``-specific information for coloring and indentation.
+    Adds ``pwnlib``-specific information for coloring and indentation to
+    the log records passed to the :py:class:`logging.Formatter`.
 
-    Finally, it permits prepending a string to each message, by means of
-    :attr:`msg_prefix`.  This is leveraged for progress messages.
+    Internal:
+
+        Permits prepending a string to each message, by means of
+        :attr:`msg_prefix`.  This is leveraged for progress messages.
     """
     def __init__(self, *args, **kwargs):
         super(Logger, self).__init__(*args, **kwargs)
@@ -113,46 +116,93 @@ class Logger(logging.getLoggerClass()):
         super(Logger,self).log(level, self.msg_prefix + msg, *args, **kwargs)
 
     def indented(self, m, level=logging.INFO, *a, **kw):
+        """indented(message, level=logging.INFO)
+
+        Log an info message without the line prefix.
+
+        Arguments:
+            level(int): Alternate log level at which to set the indented message.
+        """
         return self.__log(level, m, a, kw)
 
     def error(self, m, *a, **kw):
+        """error(message)
+
+        Logs an error message, and raises an ``Exception``.
+        """
         self.__log(logging.ERROR, m, a, kw, text.on_red('ERROR'))
         raise Exception(m)
 
     def warn(self, m, *a, **kw):
+        """warn(message)
+
+        Logs a warning message.
+        """
         return self.__log(logging.WARN, m, a, kw, text.bold_yellow('!'))
 
     def info(self, m, *a, **kw):
+        """info(message)
+
+        Logs an info message.
+        """
         return self.__log(logging.INFO, m, a, kw, text.bold_blue('*'))
 
     def success(self, m='Done', *a, **kw):
+        """success(message)
+
+        Logs a success message.
+        If the Logger is animated, the animation is stopped.
+        """
         return self.__log(logging.INFO, m, a, kw, text.bold_green('+'), True)
 
     def failure(self, m='Failed', *a, **kw):
+        """failure(message)
+
+        Logs a failure message.
+        If the Logger is animated, the animation is stopped.
+        """
         return self.__log(logging.INFO, m, a, kw, text.bold_red('-'), True)
 
     def debug(self, m, *a, **kw):
+        """debug(message)
+
+        Logs a debug message.
+        """
         return self.__log(logging.DEBUG, m, a, kw, text.bold_red('DEBUG'), True)
 
     def info_once(self, m, *a, **kw):
+        """info_once(message)
+
+        Logs an info message.  The same message is never printed again.
+        """
         if m not in self.one_time_infos:
             self.one_time_infos.append(m)
             self.info(m, *a, **kw)
 
     def warn_once(self, m, *a, **kw):
+        """warn_once(message)
+
+        Logs a warning message.  The same message is never printed again.
+        """
         if m not in self.one_time_warnings:
             self.one_time_warnings.append(m)
             self.warn(m, *a, **kw)
 
-    def error_once(self, m, *a, **kw):
-        if m not in self.one_time_errors:
-            self.one_time_errors.append(m)
-            self.error(m, *a, **kw)
-
     def progress(self, *args, **kwargs):
-        """
-        Wrapper around :func:`progress` to enable legacy compatibility with invoking
-        ``log.waitfor``.
+        """progress(self) -> Logger
+
+        Creates a :class:`Logger` with a progress animation, which can be stopped
+        via :meth:`success`, and :meth:`failure`.
+
+        The ``Logger`` returned is also a scope manager.  Using scope managers
+        ensures that the animation is stopped, even if an exception is thrown.
+
+        ::
+            with log.progress('Trying something...') as p:
+                for i in range(10):
+                    p.status("At %i" % i)
+                    time.sleep(0.5)
+                x = 1/0
         """
         return progress(*args, **kwargs)
 
@@ -164,8 +214,10 @@ class Logger(logging.getLoggerClass()):
     warning = warn
 
     def status(self, m, *a, **kw):
-        """
-        Status may be called in a tight loop, so it needs a delay
+        """status(message)
+
+        Logs an info message.
+        If the Logger is animated, the animated line is updated.
         """
         now = time.time()
         if (now - self.status_last) > 0.1:
