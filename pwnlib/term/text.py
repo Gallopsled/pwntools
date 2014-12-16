@@ -1,4 +1,4 @@
-import types, sys, functools
+import types, sys, functools, os
 from . import termcap
 
 def eval_when(when):
@@ -73,6 +73,10 @@ class Module(types.ModuleType):
         return functools.partial(f, self)
 
     def __getattr__(self, desc):
+
+        if 'PWNLIB_NOTERM' in os.environ:
+            return lambda x: x
+
         ds = desc.replace('gray', 'bright_black').split('_')
         init = ''
         while ds:

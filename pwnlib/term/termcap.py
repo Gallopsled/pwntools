@@ -1,9 +1,12 @@
 __all__ = ['get']
-import curses
+import os, curses
 
 cache = None
 def get(cap, *args, **kwargs):
     default = kwargs.pop('default', '')
+
+    if 'PWNLIB_NOTERM' in os.environ:
+        return ''
 
     if kwargs != {}:
         raise TypeError("get(): No such argument %r" % kwargs.popitem()[0])
@@ -30,6 +33,8 @@ def get(cap, *args, **kwargs):
 
 def init():
     global cache
-    curses.setupterm()
+
+    if 'PWNLIB_NOTERM' not in os.environ:
+        curses.setupterm()
 
     cache = {}
