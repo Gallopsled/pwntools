@@ -16,4 +16,7 @@ install:
   - pip install -r docs/requirements.txt
   - pip install .
   - python -c 'from pwn import *; print pwnlib.term.term_mode' NOTERM
+  - python -c 'from pwn import *; print pwnlib.term.term_mode' NOTERM
+  - python -c 'from pwn import *; print pwnlib.term.term_mode' NOTERM
+  - python -c 'from pwn import *; print pwnlib.term.term_mode' NOTERM
 script: make -C docs doctest
