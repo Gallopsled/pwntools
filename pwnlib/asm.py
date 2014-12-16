@@ -48,11 +48,12 @@ def _find(util, **kwargs):
 
         # If one of the candidate architectures matches the native
         # architecture, use that as a last resort.
+        machine = platform.machine()
         try:
-            with context.local(arch = platform.machine()):
+            with context.local(arch = machine):
                 arches.insert(0,None)
         except:
-            pass
+            log.warn_once("Your local binutils won't be used because architecture %r is not supported." % machine)
 
         for arch in arches:
             # hack for homebrew-installed binutils on mac
