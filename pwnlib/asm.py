@@ -40,11 +40,11 @@ def _find(util, **kwargs):
 
         # Fix up pwntools vs Debian triplet naming, and account
         # for 'thumb' being its own pwntools architecture.
-        arches = {
+        arches = [arch] + {
             'thumb':  ['arm',    'aarch64'],
-            'i386':   ['x86_64', 'i386', 'amd64'],
-            'amd64':  ['x86_64', 'i386', 'amd64'],
-        }.get(arch, [arch])
+            'i386':   ['x86_64', 'amd64'],
+            'amd64':  ['x86_64', 'i386'],
+        }.get(arch, [])
 
         # If one of the candidate architectures matches the native
         # architecture, use that as a last resort.
