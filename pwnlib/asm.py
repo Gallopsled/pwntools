@@ -84,11 +84,11 @@ def _assembler():
         'little': '-EL'
     }[context.endianness]
 
-    linux = (platform.system() == 'Linux')
+    osx = (platform.system() == 'Darwin')
 
     assemblers = {
-        'i386'   : [gas, '--32'] if linux else [gas, '-arch', 'i386'],
-        'amd64'  : [gas, '--64'] if linux else [gas, '-arch', 'x86_64'],
+        'i386'   : [gas, '--32'] if not osx else [gas, '-arch', 'i386'],
+        'amd64'  : [gas, '--64'] if not osx else [gas, '-arch', 'x86_64'],
 
         # Most architectures accept -EL or -EB
         'thumb'  : [gas, '-mthumb', E],
@@ -295,10 +295,10 @@ def asm(shellcode, vma = 0, **kwargs):
     """
 
     with context.local(**kwargs):
-        linux = (platform.system() == 'Linux')
+        osx = (platform.system() == 'Darwin')
 
         assembler = _assembler()
-        objcopy   = _objcopy() + ['-j.shellcode' if linux else '-jLC_SEGMENT..shellcode."ax"', '-Obinary']
+        objcopy   = _objcopy() + ['-j.shellcode' if not osx else '-jLC_SEGMENT..shellcode."ax"', '-Obinary']
         code      = '.org %#x\n' % vma
         code      += _arch_header()
         code      += cpp(shellcode)
