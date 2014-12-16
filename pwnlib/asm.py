@@ -48,8 +48,11 @@ def _find(util, **kwargs):
 
         # If one of the candidate architectures matches the native
         # architecture, use that as a last resort.
-        if platform.machine() in arches:
-            arches.insert(0,None)
+        try:
+            with context.local(arch = platform.machine()):
+                arches.insert(0,None)
+        except:
+            pass
 
         for arch in arches:
             # hack for homebrew-installed binutils on mac
