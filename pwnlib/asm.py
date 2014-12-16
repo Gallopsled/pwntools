@@ -228,7 +228,9 @@ def cpp(shellcode, **kwargs):
 
     Arguments:
         shellcode(str): Shellcode to preprocess
-        ...: Any arguments/properties that can be set on ``context``
+
+    Kwargs:
+        Any arguments/properties that can be set on ``context``
 
     Examples:
 
@@ -274,7 +276,9 @@ def asm(shellcode, vma = 0, **kwargs):
     Args:
       shellcode(str): Assembler code to assemble.
       vma(int):       Virtual memory address of the beginning of assembly
-      ...: Any arguments/properties that can be set on ``context``
+
+    Kwargs:
+        Any arguments/properties that can be set on ``context``
 
     Examples:
 
@@ -348,7 +352,9 @@ def disasm(data, vma = 0, **kwargs):
     Args:
       data(str): Bytestring to disassemble.
       vma(int): Passed through to the --adjust-vma argument of objdump
-      ...: Any arguments/properties that can be set on ``context``
+
+    Kwargs:
+      Any arguments/properties that can be set on ``context``
 
     Examples:
 

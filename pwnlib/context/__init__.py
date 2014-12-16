@@ -169,12 +169,12 @@ class Thread(threading.Thread):
         >>> print context.arch
         arm
         >>> # Note that a context-aware Thread receives a copy of the context
-        >>> t = Thread(target=p)
+        >>> t = pwnlib.context.Thread(target=p)
         >>> _=(t.start(), t.join())
         arm
         mips
         >>> # Again, the main thread is unchanged
-        >>> context.arch
+        >>> print context.arch
         arm
 
     Implementation Details:
@@ -882,5 +882,11 @@ class ContextType(object):
         self.bits = value
 
 
-
+#: Global ``context`` object, used to store commonly-used pwntools settings.
+#: In most cases, the context is used to infer default variables values.
+#: For example, :meth:`pwnlib.asm.asm` can take an ``os`` parameter as a
+#: keyword argument.  If it is not supplied, the ``os`` specified by
+#: ``context`` is used instead.
+#: Consider it a shorthand to passing ``os=`` and ``arch=`` to every single
+#: function call.
 context = ContextType()

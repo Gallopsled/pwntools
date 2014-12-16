@@ -15,6 +15,7 @@ Getting Started
    about
    install
    intro
+   globals
 
 
 Module Index
