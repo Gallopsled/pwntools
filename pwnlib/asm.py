@@ -71,7 +71,7 @@ def _find(util, **kwargs):
                         return res[0]
 
         locals()['context'] = context
-        log.error("""
+        log.warning("""
 Could not find %(util)r installed for %(context)s
 Try installing binutils for this architecture.
 For Debian/Ubuntu, some packages are avilable from the maintainers:
