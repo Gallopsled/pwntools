@@ -69,3 +69,5 @@ def closure():
         term.init()
 closure()
 del closure
+
+log = logging.getLogger('pwnlib.exploit')
