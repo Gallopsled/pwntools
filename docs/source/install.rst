@@ -13,12 +13,12 @@ following system libraries installed.
 
 -  binutils for your target architecture (`Ubuntu`_)
 -  `libcapstone 2.1`_ (Ubuntu `i386`_ `amd64`_)
+- Python development headers (``python-dev``)
 
 Released Version
 -----------------
 
-Pwntools is available as a pip package. It reqiures Python 2.7, and one
-of its dependences requires the Python headers.
+Pwntools is available as a ``pip`` package.
 
 .. code:: sh
 
@@ -54,6 +54,4 @@ If you want to make these settings permanent:
 .. _libcapstone 2.1: http://www.capstone-engine.org
 .. _i386: http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_i386.deb
 .. _amd64: http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_amd64.deb
-N:\$PYTHONPATH"
-EOF
 ```

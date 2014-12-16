@@ -42,6 +42,7 @@ In order to get the most out of `pwntools`, you should have the following system
 
 - binutils for your target architecture ([Ubuntu][ppa])
 - [libcapstone 2.1][capstone] (Ubuntu [i386][i386] [amd64][amd64])
+- Python development headers (`python-dev`)
 
 [capstone]: http://www.capstone-engine.org
 [ppa]: https://launchpad.net/~pwntools/+archive/ubuntu/binutils
@@ -50,7 +51,7 @@ In order to get the most out of `pwntools`, you should have the following system
 
 ## Released Version
 
-Pwntools is available as a pip package. It reqiures Python 2.7, and one of its dependences requires the Python headers.
+Pwntools is available as a `pip` packag for easy installation.
 
 ```sh
 apt-get install python2.7 python2.7-dev python-pip
