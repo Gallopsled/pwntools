@@ -42,8 +42,8 @@ def _find(util, **kwargs):
         # for 'thumb' being its own pwntools architecture.
         arches = {
             'thumb':  ['arm',    'aarch64'],
-            'i386':   ['x86_64', 'i386'],
-            'amd64':  ['x86_64', 'i386'],
+            'i386':   ['x86_64', 'i386', 'amd64'],
+            'amd64':  ['x86_64', 'i386', 'amd64'],
         }.get(arch, [arch])
 
         # If one of the candidate architectures matches the native
