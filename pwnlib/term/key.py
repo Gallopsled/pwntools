@@ -4,7 +4,8 @@ import select, sys, string, os, errno
 from . import termcap
 from . import keyconsts as kc
 
-_fd = sys.stdin.fileno()
+try:    _fd = sys.stdin.fileno()
+except: _fd = file('/dev/null', 'r').fileno()
 
 def getch(timeout = 0):
     while True:
