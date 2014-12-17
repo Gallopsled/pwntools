@@ -5,6 +5,7 @@
 *.pdf
 */auto/*
 */bin/*
+docs/build
 build
 MANIFEST
 dist
