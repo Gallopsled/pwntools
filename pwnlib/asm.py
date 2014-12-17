@@ -236,7 +236,6 @@ def _bfdarch():
     return arch
 
 def _run(cmd, stdin = None):
-    import subprocess
     log.debug(subprocess.list2cmdline(cmd))
     try:
         proc = subprocess.Popen(

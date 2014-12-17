@@ -123,7 +123,7 @@ class MemLeak(object):
         """raw(addr, numb) -> list
 
         Leak `numb` bytes at `addr`"""
-        return map(self._leak, range(addr, addr+i))
+        return map(self._leak, range(addr, addr+numb))
 
 
     def _b(self, addr, ndx, size):

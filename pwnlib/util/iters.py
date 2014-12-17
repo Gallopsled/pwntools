@@ -636,7 +636,6 @@ def random_combination_with_replacement(iterable, r):
       >>> random_combination_with_replacement(range(10), r = 2) in i
       True
     """
-    import random
     pool = tuple(iterable)
     n = len(pool)
     indices = sorted(random.randrange(n) for i in xrange(r))

@@ -505,7 +505,7 @@ class ROP(object):
     def __repr__(self):
         return "ROP(%r)" % self.elfs
 
-    def search(self, move = 0, regs = [], order = 'size'):
+    def search(self, move = 0, regs = None, order = 'size'):
         """Search for a gadget which matches the specified criteria.
 
         Args:
@@ -527,7 +527,7 @@ class ROP(object):
             A tuple of (address, info) in the same format as self.gadgets.items().
         """
 
-        regs = set(regs)
+        regs = set(regs or [])
 
         # Search for an exact match, save the closest match
         closest = None

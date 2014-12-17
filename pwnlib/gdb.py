@@ -49,7 +49,7 @@ def debug(args, exe=None, execute=None, ssh=None):
     elif not exe:
         exe = misc.which(args[0])
 
-    result = attach(('127.0.0.1', port), exe=exe)
+    attach(('127.0.0.1', port), exe=exe)
 
     if ssh:
         remote <> listener.wait_for_connection()

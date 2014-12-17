@@ -1,5 +1,4 @@
 # Promote useful stuff to toplevel
-import sys
 from .toplevel import *
 
 # look for special args in argv

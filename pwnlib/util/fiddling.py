@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import re, base64, random, string
+import re, base64, random, string, sys
 from . import packing, lists
 from .cyclic import cyclic_find
 from ..context import context
@@ -485,7 +485,7 @@ def sequential_lines(a,b):
     return True
 
 def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
-                 style = {}, highlight = []):
+                 style = None, highlight = None):
     """hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
                     style = {}, highlight = []) -> str generator
 
@@ -503,6 +503,9 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
     Returns:
       A hexdump-dump in the form of a string.
 """
+    style     = style or {}
+    highlight = highlight or []
+
     for b in highlight:
         if isinstance(b, str):
             b = ord(b)
@@ -581,5 +584,5 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
     yield line
 
 def hexdump(s, width = 16, skip = True, hexii = False, begin = 0,
-            style = {}, highlight = []):
+            style = None, highlight = None):
     return '\n'.join(hexdump_iter(s, width, skip, hexii, begin, style, highlight))

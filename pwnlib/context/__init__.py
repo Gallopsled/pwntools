@@ -97,7 +97,7 @@ class _DictStack(object):
     # Required for keyword expansion operator ** to work
     def keys(self):                 return self._current.keys()
     def values(self):               return self._current.values()
-    def items():                    return self._current.items()
+    def items(self):                return self._current.items()
 
 
 class _Tls_DictStack(threading.local, _DictStack):

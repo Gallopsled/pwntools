@@ -497,7 +497,8 @@ class ssh(object):
                     break
                 update(len(data))
 
-            if c.wait() != 0:
+            result = c.wait()
+            if result != 0:
                 h.failure('Could not download file %r (%r)' % (remote, result))
             else:
                 with open(local, 'w') as fd:

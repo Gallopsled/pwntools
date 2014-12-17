@@ -541,10 +541,10 @@ class DynELF(object):
         chain      = bucketaddr + (nbuckets * 4)
 
         self.status('hashmap')
-        h = sysv_hash(symb) % nbuckets
+        hsh = sysv_hash(symb) % nbuckets
 
         # Get the index out of the bucket for the hash we computed
-        idx = leak.d(bucketaddr, h)
+        idx = leak.d(bucketaddr, hsh)
 
         while idx != constants.STN_UNDEF:
             # Look up the symbol corresponding to the specified index
