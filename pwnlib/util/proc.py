@@ -1,7 +1,16 @@
-import os, time, socket, re, struct, errno, psutil, logging
+import os, time, socket, re, struct, errno, logging
 from .. import tubes
 
+try:
+    import psutil
+    _ok_import = True
+except ImportError:
+    _ok_import = False
+
 log = logging.getLogger(__name__)
+
+if _ok_import:
+    all_pids = psutil.pids
 
 def pidof(target):
     """pidof(target) -> int list
@@ -36,34 +45,6 @@ def pidof(target):
 
     else:
          return pid_by_name(target)
-
-all_pids = psutil.pids
-
-def status(pid):
-    """status(pid) -> dict
-
-    Get the status of a process.
-
-    Args:
-        pid (int): PID of the process.
-
-    Returns:
-        The contents of ``/proc/<pid>/status`` as a dictionary.
-    """
-    out = {}
-    try:
-         with open('/proc/%d/status' % pid) as fd:
-             for line in fd:
-                 i = line.index(':')
-                 key = line[:i]
-                 val = line[i + 2:-1] # initial :\t and trailing \n
-                 out[key] = val
-    except OSError as e:
-         if e.errno == errno.ENOENT:
-             raise ValueError('No process with PID %d' % pid)
-         else:
-             raise
-    return out
 
 def pid_by_name(name):
     """pid_by_name(name) -> int list
@@ -170,37 +151,6 @@ def descendants(pid):
          return {pid: _loop(pid) for pid in _children(ppid)}
     return _loop(pid)
 
-def tracer(pid):
-    """tracer(pid) -> int
-
-    Args:
-        pid (int): PID of the process.
-
-    Returns:
-        PID of the process tracing `pid`, or None if no `pid` is not being traced.
-
-    Example:
-        >>> tracer(os.getpid()) is None
-        True
-    """
-    tpid = int(status(pid)['TracerPid'])
-    return tpid if tpid > 0 else None
-
-def state(pid):
-    """state(pid) -> str
-
-    Args:
-        pid (int): PID of the process.
-
-    Returns:
-        State of the process as listed in ``/proc/<pid>/status``.  See `proc(5)` for details.
-
-    Example:
-        >>> state(os.getpid())
-        'R (running)'
-    """
-    return status(pid)['State']
-
 def exe(pid):
     """exe(pid) -> str
 
@@ -263,6 +213,63 @@ def starttime(pid):
     """
     return psutil.Process(pid).create_time() - psutil.boot_time()
 
+def status(pid):
+    """status(pid) -> dict
+
+    Get the status of a process.
+
+    Args:
+        pid (int): PID of the process.
+
+    Returns:
+        The contents of ``/proc/<pid>/status`` as a dictionary.
+    """
+    out = {}
+    try:
+        with open('/proc/%d/status' % pid) as fd:
+            for line in fd:
+                i = line.index(':')
+                key = line[:i]
+                val = line[i + 2:-1] # initial :\t and trailing \n
+                out[key] = val
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            raise ValueError('No process with PID %d' % pid)
+        else:
+            raise
+    return out
+
+def tracer(pid):
+    """tracer(pid) -> int
+
+    Args:
+        pid (int): PID of the process.
+
+    Returns:
+        PID of the process tracing `pid`, or None if no `pid` is not being traced.
+
+    Example:
+        >>> tracer(os.getpid()) is None
+        True
+    """
+    tpid = int(status(pid)['TracerPid'])
+    return tpid if tpid > 0 else None
+
+def state(pid):
+    """state(pid) -> str
+
+    Args:
+        pid (int): PID of the process.
+
+    Returns:
+        State of the process as listed in ``/proc/<pid>/status``.  See `proc(5)` for details.
+
+    Example:
+        >>> state(os.getpid())
+        'R (running)'
+    """
+    return status(pid)['State']
+
 def wait_for_debugger(pid):
     """wait_for_debugger(pid) -> None
 
@@ -277,6 +284,59 @@ def wait_for_debugger(pid):
     w = log.waitfor('Waiting for debugger')
 
     while tracer(pid) is None:
-         time.sleep(0.01)
+        time.sleep(0.01)
 
     w.done_success()
+
+if not _ok_import:
+    def _make_stub(func):
+        func.__doc__ = 'Stubbed out function, because psutil is not available.'
+        return func
+
+    @_make_stub
+    def all_pids():
+        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
+
+    @_make_stub
+    def pidof(target):
+        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
+
+    @_make_stub
+    def pid_by_name(name):
+        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
+
+    @_make_stub
+    def name(pid):
+        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
+
+    @_make_stub
+    def parent(pid):
+        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
+
+    @_make_stub
+    def children(ppid):
+        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
+
+    @_make_stub
+    def ancestors(pid):
+        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
+
+    @_make_stub
+    def decendants(pid):
+        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
+
+    @_make_stub
+    def exe(pid):
+        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
+
+    @_make_stub
+    def cwd(pid):
+        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
+
+    @_make_stub
+    def cmdline(pid):
+        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
+
+    @_make_stub
+    def starttime(pid):
+        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
