@@ -52,10 +52,10 @@ class Module(types.ModuleType):
         self.enabled = eval_when(val)
 
     def _fg_color(self, c):
-        return termcap.get('setaf', c) or self._tc.get('setf', c)
+        return termcap.get('setaf', c) or termcap.get('setf', c)
 
     def _bg_color(self, c):
-        return termcap.get('setab', c) or self._tc.get('setb', c)
+        return termcap.get('setab', c) or tarmcap.get('setb', c)
 
     def _decorator(self, desc, init):
         def f(self, s, when = None):
@@ -73,7 +73,6 @@ class Module(types.ModuleType):
         return functools.partial(f, self)
 
     def __getattr__(self, desc):
-
         if 'PWNLIB_NOTERM' in os.environ:
             return lambda x: x
 

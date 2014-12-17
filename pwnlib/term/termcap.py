@@ -26,7 +26,8 @@ def get(cap, *args, **kwargs):
                 else:
                     s = bool(s)
         cache[cap] = s
-    if args:
+    # if `s' is not set `curses.tparm' will throw an error if given arguments
+    if args and s:
         return curses.tparm(s, *args)
     else:
         return s
