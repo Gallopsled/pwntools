@@ -202,14 +202,15 @@ def parse_ldd_output(output):
         ... ''').keys())
         ['/lib/x86_64-linux-gnu/libc.so.6', '/lib/x86_64-linux-gnu/libdl.so.2', '/lib/x86_64-linux-gnu/libtinfo.so.5', '/lib64/ld-linux-x86-64.so.2']
     """
-    expr = re.compile(r'\s(\S?/\S+)\s+\((0x.+)\)')
+    expr_linux   = re.compile(r'\s(?P<lib>\S?/\S+)\s+\((?P<addr>0x.+)\)')
+    expr_openbsd = re.compile(r'^\s+(?P<addr>[0-9a-f]+)\s+[0-9a-f]+\s+\S+\s+[01]\s+[0-9]+\s+[0-9]+\s+(?P<lib>\S+)$')
     libs = {}
 
     for s in output.split('\n'):
-        match = expr.search(s)
+        match = expr_linux.search(s) or expr_openbsd.search(s)
         if not match:
             continue
-        lib, addr = match.groups()
+        lib, addr = match.group('lib'), match.group('addr')
         libs[lib] = int(addr, 16)
 
     return libs

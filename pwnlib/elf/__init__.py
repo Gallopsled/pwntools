@@ -294,9 +294,10 @@ class ELF(ELFFile):
 
             >>> sh = ELF(which('bash'))
             >>> # /bin/sh should only depend on libc
-            >>> libc = ELF(sh.libs.keys()[0])
+            >>> libc_path = [key for key in sh.libs.keys() if 'libc' in key][0]
+            >>> libc = ELF(libc_path)
             >>> # this string should be in there because of system(3)
-            >>> len(list(libc.search(which('bash')))) > 0
+            >>> len(list(libc.search('/bin/sh'))) > 0
             True
         """
         load_address_fixup = (self.address - self.load_addr)
