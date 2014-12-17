@@ -366,21 +366,18 @@ def asm(shellcode, vma = 0, **kwargs):
                     [which('readelf'), '-r', step2]
                 ).strip()
                 if len(relocs.split('\n')) > 1:
-                    raise Exception(
-                        'There were relocations in the shellcode:\n\n%s' % relocs
-                    )
+                    log.error('Shellcode contains relocations:\n%s' % relocs)
 
             _run(objcopy + [step2, step3])
 
             with open(step3) as fd:
-                return fd.read()
+                result = fd.read()
+                shutil.rmtree(tmpdir)
+                return result
 
         except:
             log.error("An error occurred while assembling:\n%s" % code)
             raise
-        else:
-            shutil.rmtree(tmpdir)
-
 
 def disasm(data, vma = 0, **kwargs):
     """disasm(data, ...) -> str
@@ -441,19 +438,17 @@ def disasm(data, vma = 0, **kwargs):
         else:
             objcopy += ['-w', '-N', '*']
 
-        try:
-            with open(step1, 'w') as fd:
-                fd.write(data)
+        with open(step1, 'w') as fd:
+            fd.write(data)
 
-            res = _run(objcopy + [step1, step2])
+        res = _run(objcopy + [step1, step2])
 
-            output0 = subprocess.check_output(objdump + [step2])
-            output1 = output0.split('<.text>:\n')
-            if len(output1) != 2:
-                raise IOError('Something went wrong with objdump:\n\n%s' % output0)
-            else:
-                return output1[1].strip('\n').rstrip().expandtabs()
-        except:
-            raise
-        else:
-            shutil.rmtree(tmpdir)
+        output0 = subprocess.check_output(objdump + [step2])
+        output1 = output0.split('<.text>:\n')
+
+        if len(output1) != 2:
+            log.error('Could not find .text in objdump output:\n%s' % output0)
+
+        shutil.rmtree(tmpdir)
+
+        return output1[1].strip('\n').rstrip().expandtabs()
