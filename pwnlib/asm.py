@@ -375,7 +375,7 @@ def asm(shellcode, vma = 0, **kwargs):
                 result = fd.read()
 
         except:
-            log.error("An error occurred while assembling:\n%s" % code)
+            log.exception("An error occurred while assembling:\n%s" % code)
         else:
             shutil.rmtree(tmpdir)
             return result
@@ -456,7 +456,7 @@ def disasm(data, vma = 0, **kwargs):
 
             result = output1[1].strip('\n').rstrip().expandtabs()
         except:
-            log.error("An error occurred while disassembling:\n%s" % data)
+            log.exception("An error occurred while disassembling:\n%s" % data)
         else:
             shutil.rmtree(tmpdir)
             return result

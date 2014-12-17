@@ -125,12 +125,20 @@ class Logger(logging.getLoggerClass()):
         """
         return self.__log(level, m, a, kw)
 
+    def exception(self, m, e=None, *a, **kw):
+        """exception(exception, message)
+
+        Log an exception with additional error message.
+        """
+        self.__log(logging.ERROR, m, a, kw, text.on_red('ERROR'), True)
+        raise e or sys.exc_info()[1]
+
     def error(self, m, *a, **kw):
         """error(message)
 
         Logs an error message, and raises an ``Exception``.
         """
-        self.__log(logging.ERROR, m, a, kw, text.on_red('ERROR'))
+        self.__log(logging.ERROR, m, a, kw, text.on_red('ERROR'), True)
         raise Exception(m)
 
     def warn(self, m, *a, **kw):
