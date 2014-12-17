@@ -239,11 +239,11 @@ class ROP(object):
                         out.append((addr, addrs[v[0]], True))
                         addr += self.align
                     elif base != None:
-                        bug("ROP: References unknown structure index")
+                        log.error("ROP: References unknown structure index")
                     else:
                         log.error("ROP: Cannot use structures without a base address")
                 else:
-                    bug("ROP: Unexpected value: %r" % v)
+                    log.error("ROP: Unexpected value: %r" % v)
 
         return out
 
@@ -283,7 +283,7 @@ class ROP(object):
                         (' (%s)' % ref) if ref else ''
                     )
             else:
-                bug("ROP: ROP.build returned an unexpected value %r" % value)
+                log.error("ROP: ROP.build returned an unexpected value %r" % value)
 
             result.append(line)
 
