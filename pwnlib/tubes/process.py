@@ -12,7 +12,7 @@ class process(tube):
 
         >>> from pwnlib.context import context
         >>> context.log_level='error'
-        >>> p = process('/usr/bin/python2')
+        >>> p = process(which('python2'))
         >>> p.sendline("print 'Hello world'")
         >>> p.sendline("print 'Wow, such data'");
         >>> '' == p.recv(timeout=0.01)

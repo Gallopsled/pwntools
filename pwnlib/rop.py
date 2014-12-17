@@ -559,7 +559,7 @@ class ROP(object):
             rop.function(args) ==> rop.call(function, args)
             ```
 
-        >>> elf=ELF('/bin/bash')
+        >>> elf=ELF(which('bash'))
         >>> rop=ROP([elf])
         >>> rop.rdi     == rop.search(regs=['rdi'], order = 'regs')
         True

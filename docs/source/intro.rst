@@ -195,7 +195,7 @@ Find offsets in your buffer that cause a crash, thanks to :mod:`pwnlib.cyclic`.
     120
 
 ELF Manipulation
--------------
+----------------
 
 Stop hard-coding things!  Look them up at runtime with :mod:`pwnlib.elf`.
 

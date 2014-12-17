@@ -32,7 +32,7 @@ class ELF(ELFFile):
 
     .. code-block:: python
 
-       bash = ELF('/bin/bash')
+       bash = ELF(which('bash'))
        hex(bash.symbols['read'])
        # 0x41dac0
        hex(bash.plt['read'])
@@ -123,7 +123,7 @@ class ELF(ELFFile):
         """Address of the lowest segment loaded in the ELF.
         When updated, cascades updates to segment vaddrs, section addrs, symbols, plt, and got.
 
-        >>> bash = ELF('/bin/sh')
+        >>> bash = ELF(which('bash'))
         >>> old = bash.symbols['read']
         >>> bash.address += 0x1000
         >>> bash.symbols['read'] == old + 0x1000
@@ -171,7 +171,7 @@ class ELF(ELFFile):
     def _populate_libraries(self):
         """
         >>> from os.path import exists
-        >>> bash = ELF('/bin/bash')
+        >>> bash = ELF(which('bash'))
         >>> all(map(exists, bash.libs.keys()))
         True
         >>> any(map(lambda x: 'libc' in x, bash.libs.keys()))
@@ -185,7 +185,7 @@ class ELF(ELFFile):
 
     def _populate_symbols(self):
         """
-        >>> bash = ELF('/bin/bash')
+        >>> bash = ELF(which('bash'))
         >>> bash.symbols['_start'] == bash.header.e_entry
         True
         """
@@ -224,7 +224,7 @@ class ELF(ELFFile):
         usually +6 bytes but could be anywhere within 0-16 bytes.
 
         >>> from pwnlib.util.packing import unpack
-        >>> bash = ELF('/bin/bash')
+        >>> bash = ELF(which('bash'))
         >>> def validate_got_plt(sym):
         ...     got      = bash.got[sym]
         ...     plt      = bash.plt[sym]
@@ -288,15 +288,15 @@ class ELF(ELFFile):
             An iterator for each virtual address that matches.
 
         Examples:
-            >>> bash = ELF('/bin/bash')
+            >>> bash = ELF(which('bash'))
             >>> bash.address + 1 == next(bash.search('ELF'))
             True
 
-            >>> sh = ELF('/bin/sh')
+            >>> sh = ELF(which('bash'))
             >>> # /bin/sh should only depend on libc
             >>> libc = ELF(sh.libs.keys()[0])
             >>> # this string should be in there because of system(3)
-            >>> len(list(libc.search('/bin/sh'))) > 0
+            >>> len(list(libc.search(which('bash')))) > 0
             True
         """
         load_address_fixup = (self.address - self.load_addr)
@@ -327,7 +327,7 @@ class ELF(ELFFile):
             Virtual address which corresponds to the file offset, or None
 
         Examples:
-            >>> bash = ELF('/bin/bash')
+            >>> bash = ELF(which('bash'))
             >>> bash.address == bash.offset_to_vaddr(0)
             True
             >>> bash.address += 0x123456
@@ -357,7 +357,7 @@ class ELF(ELFFile):
             or None.
 
         Examples:
-            >>> bash = ELF('/bin/bash')
+            >>> bash = ELF(which('bash'))
             >>> 0 == bash.vaddr_to_offset(bash.address)
             True
             >>> bash.address += 0x123456
@@ -388,7 +388,7 @@ class ELF(ELFFile):
             A string of bytes, or None
 
         Examples:
-          >>> bash = ELF('/bin/bash')
+          >>> bash = ELF(which('bash'))
           >>> bash.read(bash.address+1, 3)
           'ELF'
         """
@@ -415,7 +415,7 @@ class ELF(ELFFile):
             that it stays in the same segment.
 
         Examples:
-          >>> bash = ELF('/bin/bash')
+          >>> bash = ELF(which('bash'))
           >>> bash.read(bash.address+1, 3)
           'ELF'
           >>> bash.write(bash.address, "HELO")
@@ -435,10 +435,10 @@ class ELF(ELFFile):
     def save(self, path):
         """Save the ELF to a file
 
-        >>> bash = ELF('/bin/bash')
+        >>> bash = ELF(which('bash'))
         >>> bash.save('/tmp/bash_copy')
         >>> copy = file('/tmp/bash_copy')
-        >>> bash = file('/bin/bash')
+        >>> bash = file(which('bash'))
         >>> bash.read() == copy.read()
         True
         """
@@ -453,8 +453,8 @@ class ELF(ELFFile):
     def get_data(self):
         """Retrieve the raw data from the ELF file.
 
-        >>> bash = ELF('/bin/bash')
-        >>> fd   = open('/bin/bash')
+        >>> bash = ELF(which('bash'))
+        >>> fd   = open(which('bash'))
         >>> bash.get_data() == fd.read()
         True
         """
