@@ -337,6 +337,7 @@ def asm(shellcode, vma = 0, **kwargs):
             >>> asm("ldr r0, =SYS_select", arch = 'arm', os = 'linux', bits=32)
             '\x04\x00\x1f\xe5R\x00\x90\x00'
     """
+    result = ''
 
     with context.local(**kwargs):
         osx = (platform.system() == 'Darwin')
@@ -366,21 +367,18 @@ def asm(shellcode, vma = 0, **kwargs):
                     [which('readelf'), '-r', step2]
                 ).strip()
                 if len(relocs.split('\n')) > 1:
-                    raise Exception(
-                        'There were relocations in the shellcode:\n\n%s' % relocs
-                    )
+                    log.error('Shellcode contains relocations:\n%s' % relocs)
 
             _run(objcopy + [step2, step3])
 
             with open(step3) as fd:
-                return fd.read()
+                result = fd.read()
 
         except:
             log.error("An error occurred while assembling:\n%s" % code)
-            raise
         else:
             shutil.rmtree(tmpdir)
-
+            return result
 
 def disasm(data, vma = 0, **kwargs):
     """disasm(data, ...) -> str
@@ -416,6 +414,7 @@ def disasm(data, vma = 0, **kwargs):
           >>> print disasm('4ff00500'.decode('hex'), arch = 'thumb', bits=32)
              0:   f04f 0005       mov.w   r0, #5
     """
+    result = ''
 
     with context.local(**kwargs):
         arch   = context.arch
@@ -442,6 +441,7 @@ def disasm(data, vma = 0, **kwargs):
             objcopy += ['-w', '-N', '*']
 
         try:
+
             with open(step1, 'w') as fd:
                 fd.write(data)
 
@@ -449,11 +449,15 @@ def disasm(data, vma = 0, **kwargs):
 
             output0 = subprocess.check_output(objdump + [step2])
             output1 = output0.split('<.text>:\n')
+
             if len(output1) != 2:
-                raise IOError('Something went wrong with objdump:\n\n%s' % output0)
-            else:
-                return output1[1].strip('\n').rstrip().expandtabs()
+                log.error('Could not find .text in objdump output:\n%s' % output0)
+
+
+            result = output1[1].strip('\n').rstrip().expandtabs()
         except:
-            raise
+            log.error("An error occurred while disassembling:\n%s" % data)
         else:
             shutil.rmtree(tmpdir)
+            return result
+
