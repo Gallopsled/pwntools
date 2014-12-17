@@ -322,7 +322,7 @@ if not _ok_import:
         log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
 
     @_make_stub
-    def decendants(pid):
+    def descendants(pid):
         log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
 
     @_make_stub
