@@ -337,6 +337,7 @@ def asm(shellcode, vma = 0, **kwargs):
             >>> asm("ldr r0, =SYS_select", arch = 'arm', os = 'linux', bits=32)
             '\x04\x00\x1f\xe5R\x00\x90\x00'
     """
+    result = ''
 
     with context.local(**kwargs):
         osx = (platform.system() == 'Darwin')
@@ -372,12 +373,12 @@ def asm(shellcode, vma = 0, **kwargs):
 
             with open(step3) as fd:
                 result = fd.read()
-                shutil.rmtree(tmpdir)
-                return result
 
         except:
             log.error("An error occurred while assembling:\n%s" % code)
-            raise
+        else:
+            shutil.rmtree(tmpdir)
+            return result
 
 def disasm(data, vma = 0, **kwargs):
     """disasm(data, ...) -> str
@@ -413,6 +414,7 @@ def disasm(data, vma = 0, **kwargs):
           >>> print disasm('4ff00500'.decode('hex'), arch = 'thumb', bits=32)
              0:   f04f 0005       mov.w   r0, #5
     """
+    result = ''
 
     with context.local(**kwargs):
         arch   = context.arch
@@ -438,17 +440,24 @@ def disasm(data, vma = 0, **kwargs):
         else:
             objcopy += ['-w', '-N', '*']
 
-        with open(step1, 'w') as fd:
-            fd.write(data)
+        try:
 
-        res = _run(objcopy + [step1, step2])
+            with open(step1, 'w') as fd:
+                fd.write(data)
 
-        output0 = subprocess.check_output(objdump + [step2])
-        output1 = output0.split('<.text>:\n')
+            res = _run(objcopy + [step1, step2])
 
-        if len(output1) != 2:
-            log.error('Could not find .text in objdump output:\n%s' % output0)
+            output0 = subprocess.check_output(objdump + [step2])
+            output1 = output0.split('<.text>:\n')
 
-        shutil.rmtree(tmpdir)
+            if len(output1) != 2:
+                log.error('Could not find .text in objdump output:\n%s' % output0)
 
-        return output1[1].strip('\n').rstrip().expandtabs()
+
+            result = output1[1].strip('\n').rstrip().expandtabs()
+        except:
+            log.error("An error occurred while disassembling:\n%s" % data)
+        else:
+            shutil.rmtree(tmpdir)
+            return result
+
