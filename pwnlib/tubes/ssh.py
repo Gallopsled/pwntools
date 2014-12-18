@@ -438,7 +438,9 @@ class ssh(object):
 
     def _libs_remote(self, remote):
         """Return a dictionary of the libraries used by a remote file."""
-        data, status = self.run_to_end('ulimit -s unlimited; ldd ' + misc.sh_string(remote))
+        cmd = '(ulimit -s unlimited; ldd %s > /dev/null && (LD_TRACE_LOADED_OBJECTS=1 %s || ldd %s)) 2>/dev/null'
+        arg = misc.sh_string(remote)
+        data, status = self.run_to_end(cmd % (arg, arg, arg))
         if status != 0:
             log.failure('Unable to find libraries for %r' % remote)
             return {}
@@ -593,11 +595,11 @@ class ssh(object):
                 log.error("Could not upload file %r" % remote)
 
     def upload_file(self, filename, remote = None):
-        """Uploads a file to the remote server.
+        """Uploads a file to the remote server. Returns the remote filename.
 
         Args:
-        remote(str): The local filename to download
-        local(str): The remote filename to save it to. Default is to infer it from the local filename."""
+        filename(str): The local filename to download
+        remote(str): The remote filename to save it to. Default is to infer it from the local filename."""
 
 
         if remote == None:
@@ -613,7 +615,7 @@ class ssh(object):
         log.info("Uploading %r to %r" % (filename,remote))
         self.upload_data(data, remote)
 
-        return misc.parse_ldd_output(remote)
+        return remote
 
     def upload_dir(self, local, remote=None):
         """Recursively uploads a directory onto the remote server
