@@ -8,25 +8,23 @@ http://pwntools.readthedocs.org, as this is a better overview of our features.
 
 In no particular order the docstrings for each example:
 
-* `spinners.py`
+* `args.py`
 ```
-Just a lot of spinners!
+When not in lib-mode (import `pwn` rather than `pwnlib`) we parse the
+commandline for variables definitions.  A variable definition has the form::
+
+  <var>=<val>
+
+where ``<var>`` contains only uppercase letters, digits and underscores and
+doesn't start with a digit.
+
+Try running this example with::
+
+  $ python args.py RHOST=localhost RPORT=1337
 ```
-* `listen_uroboros.py`
+* `asm.py`
 ```
-An example showing interconnection of sockets.  This script will wait for three
-connections on port 1337, then connect them like a three-way Uroboros.
-```
-* `readline_completers.py`
-```
-Example showing pwnlib's readline implementation and a few completers.  This
-part of pwnlib will probably see some major changes soon, but we wanted to show
-off some proof-of-concepts.
-```
-* `port_forward.py`
-```
-A very simple port forwarder using `pwnlib.tubes.tube.connect_both()`.  Notice
-that `<>` is just a shorthand.
+Example showing the interface to `pwnlib.asm.asm` and `pwnlib.shellcraft`.
 ```
 * `clean_and_log.py`
 ```
@@ -39,6 +37,51 @@ top-level exception, no flag, and angry team members.
 Solution:
  1. Always run wireshark or tcpdump.  Always.
  2. Register <your socket>.clean or <your socket>.clean_and_log to run at exit.
+```
+* `indented.py`
+```
+When running in term-mode (import `pwn` rather than `pwnlib`, stdout is a TTY
+and not running in a REPL), we can do proper indentation where lines too long to
+fit on a screen are split into multiple individually indented lines.
+
+Too see the difference try running with::
+
+  $ python indented.py
+
+and
+
+  $ python -i indented.py
+
+Also notice that `pause()` can react on any key when in `term_mode`.
+```
+* `listen_uroboros.py`
+```
+An example showing interconnection of sockets.  This script will wait for three
+connections on port 1337, then connect them like a three-way Uroboros.
+```
+* `options.py`
+```
+Example showing `pwnlib.ui.options()`
+```
+* `port_forward.py`
+```
+A very simple port forwarder using `pwnlib.tubes.tube.connect_both()`.  Notice
+that `<>` is just a shorthand.
+```
+* `readline_completers.py`
+```
+Example showing pwnlib's readline implementation and a few completers.  This
+part of pwnlib will probably see some major changes soon, but we wanted to show
+off some proof-of-concepts.
+```
+* `remote_gdb_debugging.py`
+```
+Simple example showing how to use the remote
+gdb debugging features available in pwntools.
+```
+* `spinners.py`
+```
+Just a lot of spinners!
 ```
 * `splash.py`
 ```
@@ -60,46 +103,7 @@ and::
 
   $ TERM=xterm-256color python text.py
 ```
-* `options.py`
+* `remote.py`
 ```
-Example showing `pwnlib.ui.options()`
-```
-* `remote_gdb_debugging.py`
-```
-Simple example showing how to use the remote
-gdb debugging features available in pwntools.
-```
-* `args.py`
-```
-When not in lib-mode (import `pwn` rather than `pwnlib`) we parse the
-commandline for variables definitions.  A variable definition has the form::
-
-  <var>=<val>
-
-where ``<var>`` contains only uppercase letters, digits and underscores and
-doesn't start with a digit.
-
-Try running this example with::
-
-  $ python args.py RHOST=localhost RPORT=1337
-```
-* `indented.py`
-```
-When running in term-mode (import `pwn` rather than `pwnlib`, stdout is a TTY
-and not running in a REPL), we can do proper indentation where lines too long to
-fit on a screen are split into multiple individually indented lines.
-
-Too see the difference try running with::
-
-  $ python indented.py
-
-and
-
-  $ python -i indented.py
-
-Also notice that `pause()` can react on any key when in `term_mode`.
-```
-* `asm.py`
-```
-Example showing the interface to `pwnlib.asm.asm` and `pwnlib.shellcraft`.
+Example showing how to use the remote class.
 ```
