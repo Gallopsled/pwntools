@@ -47,13 +47,13 @@ from .context import context
 
 log = logging.getLogger(__name__)
 
-__all__ = ['asm', 'cpp', 'disasm', 'which']
+__all__ = ['asm', 'cpp', 'disasm', 'which_binutils']
 
 _basedir = path.split(__file__)[0]
 _bindir  = path.join(_basedir, 'data', 'binutils')
 _incdir  = path.join(_basedir, 'data', 'includes')
 
-def which(util, **kwargs):
+def which_binutils(util, **kwargs):
     """
     Finds a binutils in the PATH somewhere.
     Expects that the utility is prefixed with the architecture name.
@@ -61,13 +61,13 @@ def which(util, **kwargs):
     Examples:
 
         >>> import platform
-        >>> which('as', arch=platform.machine())
-        '/usr/bin/as'
-        >>> which('as', arch='arm') #doctest: +ELLIPSIS
-        '/usr/bin/arm-...-as'
-        >>> which('as', arch='powerpc') #doctest: +ELLIPSIS
-        '/usr/bin/powerpc...-as'
-        >>> which('as', arch='msp430') #doctest: +SKIP
+        >>> which_binutils('as', arch=platform.machine())
+        '.../bin/as'
+        >>> which_binutils('as', arch='arm') #doctest: +ELLIPSIS
+        '.../bin/arm-...-as'
+        >>> which_binutils('as', arch='powerpc') #doctest: +ELLIPSIS
+        '.../bin/powerpc...-as'
+        >>> which_binutils('as', arch='msp430') #doctest: +SKIP
         ...
         Traceback (most recent call last):
         ...
@@ -121,7 +121,7 @@ However, pwntools makes packages available for all architectures:
         raise Exception('Could not find %(util)r installed for %(context)s' % locals())
 
 def _assembler():
-    gas = which('as')
+    gas = which_binutils('as')
 
     E = {
         'big':    '-EB',
@@ -155,10 +155,10 @@ def _assembler():
 
 
 def _objcopy():
-    return [which('objcopy')]
+    return [which_binutils('objcopy')]
 
 def _objdump():
-    path = [which('objdump')]
+    path = [which_binutils('objdump')]
 
     if context.arch in ('i386', 'amd64'):
         path += ['-Mintel']
@@ -363,7 +363,7 @@ def asm(shellcode, vma = 0, **kwargs):
             if file(step2,'rb').read(4) == '\x7fELF':
                 # Sanity check for seeing if the output has relocations
                 relocs = subprocess.check_output(
-                    [which('readelf'), '-r', step2]
+                    [which_binutils('readelf'), '-r', step2]
                 ).strip()
                 if len(relocs.split('\n')) > 1:
                     log.error('Shellcode contains relocations:\n%s' % relocs)
