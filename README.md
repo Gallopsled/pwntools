@@ -60,7 +60,17 @@ pip install pwntools
 
 ## Latest Version
 
-Alternatively if you prefer to use the latest version from the repository:
+You can also use the version from github.
+
+```sh
+git clone https://github.com/Gallopsled/pwntools
+cd pwntools
+python setup.py install
+```
+
+# Contribution
+
+If you'd like to hack on pwntools, this is how we set things up:
 
 ```sh
 git clone https://github.com/Gallopsled/pwntools
