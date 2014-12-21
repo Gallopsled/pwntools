@@ -514,7 +514,7 @@ def unique_window(iterable, window, key = None):
             seen_add(k)
 
 def iter_except(func, exception):
-    """iter_except(func, exception, first = None)
+    """iter_except(func, exception)
 
     Calls `func` repeatedly until an exception is raised.  Works like the
     build-in :func:`iter` but uses an exception instead of a sentinel to signal
@@ -576,7 +576,7 @@ def random_product(*args, **kwargs):
     return tuple(random.choice(pool) for pool in pools)
 
 def random_permutation(iterable, r = None):
-    """random_product(iterable, r = 1) -> tuple
+    """random_product(iterable, r = None) -> tuple
 
     Args:
       iterable:  An iterable.
@@ -597,7 +597,7 @@ def random_permutation(iterable, r = None):
     return tuple(random.sample(pool, r))
 
 def random_combination(iterable, r):
-    """random_combination(iterable, r = 1) -> tuple
+    """random_combination(iterable, r) -> tuple
 
     Args:
       iterable:  An iterable.
@@ -618,7 +618,7 @@ def random_combination(iterable, r):
     return tuple(pool[i] for i in indices)
 
 def random_combination_with_replacement(iterable, r):
-    """random_combination(iterable, r = 1) -> tuple
+    """random_combination(iterable, r) -> tuple
 
     Args:
       iterable:  An iterable.
