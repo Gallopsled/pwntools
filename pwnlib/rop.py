@@ -9,11 +9,6 @@ from .util    import packing, lists
 
 log = logging.getLogger(__name__)
 
-try:
-    import ropgadget
-except ImportError:
-    ropgadget = None
-
 class ROP(object):
     """Class which simplifies the generation of ROP-chains.
 
@@ -38,7 +33,9 @@ class ROP(object):
             elfs(list): List of pwnlib.elf.ELF objects for mining
         """
 
-        if not ropgadget:
+        try:
+            import ropgadget
+        except ImportError:
             log.error("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
 
         # Permit singular ROP(elf) vs ROP([elf])
