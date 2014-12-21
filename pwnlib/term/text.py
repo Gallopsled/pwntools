@@ -55,7 +55,7 @@ class Module(types.ModuleType):
         return termcap.get('setaf', c) or termcap.get('setf', c)
 
     def _bg_color(self, c):
-        return termcap.get('setab', c) or tarmcap.get('setb', c)
+        return termcap.get('setab', c) or termcap.get('setb', c)
 
     def _decorator(self, desc, init):
         def f(self, s, when = None):

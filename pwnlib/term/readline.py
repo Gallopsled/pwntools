@@ -68,7 +68,7 @@ def auto_complete(*_):
         redisplay()
 
 def handle_keypress(trace):
-    global tabs, show_suggestions
+    global tabs
     k = trace[-1]
     if k == '<tab>':
         tabs += 1
@@ -83,7 +83,6 @@ def clear():
     redisplay()
 
 def redisplay():
-    global suggest_handle
     if buffer_handle:
         if show_suggestions and suggest_hook:
             suggestions = suggest_hook(buffer_left, buffer_right)
