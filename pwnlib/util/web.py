@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os, tempfile, logging
-from requests import *
 from .misc import size
 log = logging.getLogger(__name__)
 
@@ -25,6 +24,8 @@ def wget(url, save=None, timeout=5, **kwargs):
       >>> result == file('robots.txt').read()
       True
     """
+    from requests import *
+
     with log.progress("Downloading '%s'" % url) as w:
         w.status("Making request...")
 
