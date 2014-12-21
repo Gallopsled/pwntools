@@ -116,6 +116,6 @@ class listen(sock):
         if key == 'sock':
             while self._accepter.is_alive():
                 self._accepter.join(timeout = 0.1)
-            return self.sock
+            return getattr(self, 'sock', None)
         else:
             return getattr(super(listen, self), key)
