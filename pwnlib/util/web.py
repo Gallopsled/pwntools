@@ -59,7 +59,7 @@ def wget(url, save=None, timeout=5, **kwargs):
         if save:
             if not isinstance(save, (str, unicode)):
                 save = os.path.basename(url)
-                save = save or NamedTemporaryFile(dir='.', delete=False).name
+                save = save or tempfile.NamedTemporaryFile(dir='.', delete=False).name
             with file(save,'wb+') as f:
                 f.write(total_data)
                 w.success('Saved %r (%s)' % (f.name, size(total_data)))
