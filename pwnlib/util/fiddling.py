@@ -365,7 +365,8 @@ def randoms(count, alphabet = None):
     Returns:
       A random string."""
 
-    return ''.join(random.sample(alphabet or _default_alphabet, count))
+    alphabet = alphabet or _default_alphabet
+    return ''.join(random.choice(alphabet) for _ in xrange(count))
 
 
 def rol(n, k, word_size = None):
