@@ -428,6 +428,10 @@ class ROP(object):
             try:
                 sys.stdout = Wrapper(sys.stdout)
 
+                try:
+                    import ropgadget
+                except ImportError:
+                    log.error("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
                 sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'add|pop|leave|ret', '--nojop', '--nosys']
                 args = ropgadget.args.Args().getArgs()
                 core = ropgadget.core.Core(args)
