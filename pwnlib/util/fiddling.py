@@ -457,7 +457,7 @@ default_style = {
     'ff':           text.green,
 }
 
-if 1 or not sys.stdout.isatty():
+if not sys.stdout.isatty():
   default_style = {
     'marker': lambda x:x,
     'nonprintable': lambda x:x,
