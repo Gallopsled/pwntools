@@ -29,7 +29,7 @@ class remote(sock):
         >>> r = remote('127.0.0.1', 1)
         Traceback (most recent call last):
         ...
-        Exception: Could not connect to 127.0.0.1 on port 1
+        PwnlibException: Could not connect to 127.0.0.1 on port 1
         >>> import socket
         >>> s = socket.socket()
         >>> s.connect(('google.com', 80))
