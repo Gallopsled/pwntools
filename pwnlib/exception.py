@@ -2,9 +2,7 @@ __all__ = ['PwnlibException']
 import traceback, sys
 
 class PwnlibException(Exception):
-    '''Exception thrown by the pwnlib thrown by :func:`pwnlib.log.error`
-    (we are in :data:`pwnlib.term.term_mode`, in which case the
-    function will simply exit).
+    '''Exception thrown by :func:`pwnlib.log.error`.
 
     Pwnlib functions that encounters unrecoverable errors should call the
     :func:`pwnlib.log.error` function instead of throwing this exception directly.'''

@@ -86,7 +86,7 @@ class listen(sock):
                     if e.errno == errno.EINTR:
                         continue
                     h.failure()
-                    log.error("Socket failure while waiting for connection")
+                    log.exception("Socket failure while waiting for connection")
                     self.sock = None
                     return
 
