@@ -312,11 +312,8 @@ def xor(*args, **kwargs):
 
     return ''.join(get(n) for n in range(cut))
 
-_default_alphabet = ''.join(chr(n) for n in range(256) if n not in [0, 0xa])
-_default_avoid = '\x00\n'
-
-def xor_pair(data, avoid = None):
-    """xor_pair(data, avoid = None) -> None or (str, str)
+def xor_pair(data, avoid = '\x00\n'):
+    """xor_pair(data, avoid = '\\x00\\n') -> None or (str, str)
 
     Finds two strings that will xor into a given string, while only
     using a given alphabet.
@@ -334,7 +331,6 @@ def xor_pair(data, avoid = None):
       ('\\x01\\x01\\x01\\x01', 'udru')
 """
 
-    avoid = avoid or _default_avoid
     alphabet = ''.join(chr(n) for n in range(256) if chr(n) not in avoid)
 
     res1 = ''
@@ -353,19 +349,24 @@ def xor_pair(data, avoid = None):
     return res1, res2
 
 
-def randoms(count, alphabet = None):
-    """randoms(count, alphabet = None) -> str
+def randoms(count, alphabet = string.lowercase):
+    """randoms(count, alphabet = string.lowercase) -> str
 
     Returns a random string of a given length using only the specified alphabet.
 
     Args:
       count (int): The length of the desired string.
-      alphabet: The alphabet of allowed characters. Defaults to all characters except nulls and newlines.
+      alphabet: The alphabet of allowed characters. Defaults to all lowercase characters.
 
     Returns:
-      A random string."""
+      A random string.
 
-    alphabet = alphabet or _default_alphabet
+    Example:
+
+      >>> randoms(10) #doctest: +SKIP
+      'evafjilupm'
+"""
+
     return ''.join(random.choice(alphabet) for _ in xrange(count))
 
 
