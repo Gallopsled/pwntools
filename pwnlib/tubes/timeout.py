@@ -44,8 +44,10 @@ class Timeout(object):
 
     """
     def __init__(self, timeout=None):
-        self._timeout = timeout
+        with context.local(timeout=timeout):
+            self._timeout = context.timeout
         self._start   = 0
+
 
     @property
     def timeout(self):

@@ -296,7 +296,7 @@ class ContextType(object):
         'newline': '\n',
         'os': 'linux',
         'signed': False,
-        'timeout': 1.0,
+        'timeout': float('inf'),
     }
 
     #: Valid values for :meth:`pwnlib.context.ContextType.os`
@@ -439,6 +439,8 @@ class ContextType(object):
 
             >>> context.clear()
             >>> context.timeout = 1
+            >>> context.timeout == 1
+            True
             >>> print context.timeout
             1.0
             >>> with context.local(timeout = 2):
@@ -470,7 +472,7 @@ class ContextType(object):
             >>> # Default value
             >>> del context.timeout
             >>> print context.timeout
-            1.0
+            inf
             >>> # Inside of a scope, use clear
             >>> context.timeout = 2
             >>> with context.local():
@@ -478,14 +480,14 @@ class ContextType(object):
             ...     context.clear()
             ...     print context.timeout
             2.0
-            1.0
+            inf
             >>> # Outer scope is unaffected
             >>> print context.timeout
             2.0
             >>> # It can also be used in the global scope
             >>> context.clear()
             >>> print context.timeout
-            1.0
+            inf
         """
         self._tls._current.clear()
 
@@ -788,22 +790,33 @@ class ContextType(object):
         Default amount of time to wait for a blocking operation before it times out,
         specified in seconds.
 
-        The default value is ``1``.
+        The default value is to have an infinite timeout.
 
         Any floating point value is accepted, as well as the special
         string ``'inf'`` which implies that a timeout can never occur.
 
         Examples:
 
-            >>> context.timeout == 1
+            >>> # Default value
+            >>> context.clear()
+            >>> context.timeout == float('inf')
             True
+            >>> # Ten seconds
+            >>> context.timeout = 10
+            >>> # Shortcut for 'inf'
             >>> context.timeout = 'inf'
-            >>> context.timeout > 2**256
+            >>> context.timeout == float('inf')
             True
             >>> context.timeout - 30
             inf
         """
         value = float(value)
+
+        # OSX does not permit setting socket timeouts to 2**22.
+        # Assume that if we receive a timeout of 2**21 or greater,
+        # that the value is effectively infinite.
+        if value > 2*21:
+            value = float('inf')
 
         if value < 0:
             raise AttributeError("timeout must not be negative (%r)" % value)
