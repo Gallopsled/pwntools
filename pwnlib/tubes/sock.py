@@ -69,11 +69,13 @@ class sock(tube):
         if not self.sock:
             return
 
-        if timeout != None and timeout <= 0:
-            self.sock.setblocking(0)
-        else:
-            self.sock.setblocking(1)
-            self.sock.settimeout(timeout)
+        # OSX behaves oddly with timeouts of 2**22 or greater.
+        # Change it so that this is 'infinite'
+        if timeout > 2**21:
+            timeout = 2**21
+
+        self.sock.setblocking(1)
+        self.sock.settimeout(timeout)
 
     def can_recv_raw(self, timeout):
         if not self.sock or self.closed["recv"]:
