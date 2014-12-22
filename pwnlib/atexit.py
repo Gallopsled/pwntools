@@ -8,10 +8,13 @@ This module also fixes a the issue that exceptions raised by an exit handler is
 printed twice when the standard :mod:`atexit` is used.
 """
 
-import sys, traceback
+import sys, traceback, threading, types
+from .context import context
 
 __all__ = ['register', 'unregister']
 
+_lock = threading.Lock()
+_ident = 0
 _handlers = {}
 
 def register(func, *args, **kwargs):
@@ -19,47 +22,62 @@ def register(func, *args, **kwargs):
 
     Registers a function to be called when an unhandled exception occurs.  The
     function will be called with positional arguments `args` and keyword
-    arguments `kwargs`, i.e. ``func(*args, **kwargs)``.
+    arguments `kwargs`, i.e. ``func(*args, **kwargs)``.  The current `context`
+    is recorded and will be the one used when the handler is run.
 
-    If `func` is already registered then `args` and `kwargs` will be updated.
+    E.g. to suppress logging output from an exit-handler one could write::
+
+      with context.local(log_level = 'error'):
+        atexit.register(handler)
+
+    An identifier is returned which can be used to unregister the exit-handler.
 
     This function can be used as a decorator::
 
-      def f():
-        ...
-      atexit.register(f)
-
-    is equivalent to this::
-
       @atexit.register
-      def f():
+      def handler():
         ...
 
-    """
-    _handlers[func] = (args, kwargs)
-    return func
+    Notice however that this will bind ``handler`` to the identifier and not the
+    actual exit-handler.  The exit-handler can then be unregistered with::
 
-def unregister(func):
-    """unregister(func)
+      atexit.unregister(handler)
 
-    Remove `func` from the collection of registered functions.  If `func` isn't
-    registered this is a no-op.
+    This function is thread safe.
+
     """
-    if func in _handlers:
-        del _handlers[func]
+    global _ident
+    with _lock:
+        ident = _ident
+        _ident += 1
+    _handlers[ident] = (func, args, kwargs, vars(context))
+    return ident
+
+def unregister(ident):
+    """unregister(ident)
+
+    Remove the exit-handler identified by `ident` from the list of registered
+    handlers.  If `ident` isn't registered this is a no-op.
+    """
+    if ident in _handlers:
+        del _handlers[ident]
 
 def _run_handlers():
     """_run_handlers()
 
-    Run registered exit handlers.  The order is arbitrary.
+    Run registered exit-handlers.  They run in the reverse order of which they
+    were registered.
 
     If a handler raises an exception, it will be printed but nothing else
     happens, i.e. other handlers will be run and `sys.excepthook` will not be
     called for that reason.
     """
-    for func, (args, kwargs) in _handlers.items():
+    context.clear()
+    for _ident, (func, args, kwargs, ctx) in \
+        sorted(_handlers.items(), reverse = True):
         try:
-            func(*args, **kwargs)
+            with context.local(**ctx):
+                func(*args, **kwargs)
         except SystemExit:
             pass
         except:
