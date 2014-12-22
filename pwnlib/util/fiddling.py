@@ -459,13 +459,6 @@ default_style = {
     'ff':           text.green,
 }
 
-if not sys.stdout.isatty():
-  default_style = {
-    'marker': lambda x:x,
-    'nonprintable': lambda x:x,
-  }
-
-
 def sequential_lines(a,b):
     if len(a) != len(b) or len(a) < 4:
         return False
