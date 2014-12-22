@@ -1,4 +1,4 @@
-import os, string, base64, paramiko, time, tempfile, sys, shutil, re, logging, threading
+import os, string, base64, time, tempfile, sys, shutil, re, logging, threading
 
 from .. import term
 from ..context import context
@@ -297,6 +297,7 @@ class ssh(object):
 
         msg = 'Connecting to %s on port %d' % (host, port)
         with log.waitfor(msg) as h:
+            import paramiko
             self.client = paramiko.SSHClient()
 
             class IgnorePolicy(paramiko.MissingHostKeyPolicy):

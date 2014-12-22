@@ -4,7 +4,7 @@
 Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
-import types, sys, threading, re, collections, string, logging, collections
+import types, sys, threading, re, collections, string, logging
 
 class _defaultdict(dict):
     """
