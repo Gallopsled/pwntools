@@ -24,12 +24,12 @@ def wget(url, save=None, timeout=5, **kwargs):
       >>> result == file('robots.txt').read()
       True
     """
-    from requests import *
+    import requests
 
     with log.progress("Downloading '%s'" % url) as w:
         w.status("Making request...")
 
-        response = get(url, stream=True, **kwargs)
+        response = requests.get(url, stream=True, **kwargs)
 
         if not response.ok:
             w.failure("Got code %s" % response.status_code)
