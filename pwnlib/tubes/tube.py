@@ -273,7 +273,7 @@ class tube(Timeout):
             delims = (delims,)
 
         def escape_regex_special(sz):
-            specials = '\\/.*+?|()[]{}'
+            specials = '\\/.*+?|()[]{}^$'
             for s in specials:
                 sz = sz.replace(s, '\\' + s)
             return sz
