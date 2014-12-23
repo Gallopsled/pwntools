@@ -20,10 +20,10 @@ _handlers = {}
 def register(func, *args, **kwargs):
     """register(func, *args, **kwargs)
 
-    Registers a function to be called when an unhandled exception occurs.  The
-    function will be called with positional arguments `args` and keyword
-    arguments `kwargs`, i.e. ``func(*args, **kwargs)``.  The current `context`
-    is recorded and will be the one used when the handler is run.
+    Registers a function to be called on program termination.  The function will
+    be called with positional arguments `args` and keyword arguments `kwargs`,
+    i.e. ``func(*args, **kwargs)``.  The current `context` is recorded and will
+    be the one used when the handler is run.
 
     E.g. to suppress logging output from an exit-handler one could write::
 
