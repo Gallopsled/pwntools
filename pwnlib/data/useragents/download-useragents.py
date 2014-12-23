@@ -4,10 +4,15 @@ Script for downloading lists of user agent strings
 """
 
 from bs4 import BeautifulSoup
-import re, urllib
+import re, urllib, os
 from pwn import *
 
 uas = set()
+if os.path.isfile('useragents.txt'):
+    with open('useragents.txt') as fd:
+        for line in fd:
+            if line:
+                uas.add(line.rstrip())
 
 def getxml(url):
     f = urllib.urlopen(url)
