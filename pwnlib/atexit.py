@@ -8,7 +8,7 @@ This module also fixes a the issue that exceptions raised by an exit handler is
 printed twice when the standard :mod:`atexit` is used.
 """
 
-import sys, traceback, threading, types
+import sys, traceback, threading
 from .context import context
 
 __all__ = ['register', 'unregister']
