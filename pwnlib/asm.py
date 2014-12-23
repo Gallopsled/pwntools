@@ -92,7 +92,7 @@ def which_binutils(util, **kwargs):
             with context.local(arch = machine):
                 if context.arch in arches:
                     arches.insert(0,None)
-        except:
+        except AttributeError:
             log.warn_once("Your local binutils won't be used because architecture %r is not supported." % machine)
 
         for arch in arches:
@@ -248,7 +248,7 @@ def _run(cmd, stdin = None):
         exitcode = proc.wait()
     except OSError as e:
         if e.errno == errno.ENOENT:
-            log.error('Could not run %r the program' % cmd[0])
+            log.exception('Could not run %r the program' % cmd[0])
         else:
             raise
 
@@ -451,7 +451,6 @@ def disasm(data, vma = 0, **kwargs):
 
             if len(output1) != 2:
                 log.error('Could not find .text in objdump output:\n%s' % output0)
-
 
             result = output1[1].strip('\n').rstrip().expandtabs()
         except:

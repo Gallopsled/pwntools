@@ -46,7 +46,7 @@ def test_expr(expr, allowed_codes):
     allowed_codes = [dis.opmap[c] for c in allowed_codes]
     try:
         c = compile(expr, "", "eval")
-    except:
+    except SyntaxError:
         raise ValueError("%s is not a valid expression" % expr)
     codes = _get_opcodes(c)
     for code in codes:

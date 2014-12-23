@@ -123,7 +123,7 @@ def which(name, all = False):
     try:
         path = os.environ['PATH']
     except KeyError:
-        log.error('Environment variable $PATH is not set')
+        log.exception('Environment variable $PATH is not set')
     for p in path.split(os.pathsep):
         p = os.path.join(p, name)
         if os.access(p, os.X_OK):

@@ -6,6 +6,7 @@ from pwnlib.asm              import asm, disasm, cpp
 from pwnlib.context          import context
 from pwnlib.dynelf           import DynELF
 from pwnlib.elf              import ELF, load
+from pwnlib.exception        import PwnlibException
 from pwnlib.memleak          import MemLeak
 from pwnlib.replacements     import *
 from pwnlib.rop              import ROP

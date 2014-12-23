@@ -64,9 +64,10 @@ __all__ = [
 ]
 
 import logging, re, threading, sys, random, time
-from .context import context, Thread
-from .term    import spinners, text
-from .        import term
+from .context   import context, Thread
+from .exception import PwnlibException
+from .term      import spinners, text
+from .          import term
 
 
 
@@ -125,21 +126,25 @@ class Logger(logging.getLoggerClass()):
         """
         return self.__log(level, m, a, kw)
 
-    def exception(self, m, e=None, *a, **kw):
-        """exception(exception, message)
+    def exception(self, m, *a, **kw):
+        """exception(message)
 
-        Log an exception with additional error message.
+        To be called from an exception handler.
+
+        Logs an error message, then re-raises the current exception.
         """
         self.__log(logging.ERROR, m, a, kw, text.on_red('ERROR'), True)
-        raise e or sys.exc_info()[1]
+        raise
 
     def error(self, m, *a, **kw):
         """error(message)
 
-        Logs an error message, and raises an ``Exception``.
+        To be called outside an exception handler.
+
+        Logs an error message, then raises a ``PwnlibException``.
         """
         self.__log(logging.ERROR, m, a, kw, text.on_red('ERROR'), True)
-        raise Exception(m)
+        raise PwnlibException(m)
 
     def warn(self, m, *a, **kw):
         """warn(message)

@@ -36,7 +36,7 @@ class ROP(object):
         try:
             import ropgadget
         except ImportError:
-            log.error("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
+            log.exception("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
 
         # Permit singular ROP(elf) vs ROP([elf])
         if isinstance(elfs, ELF):
