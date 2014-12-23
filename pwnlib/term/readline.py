@@ -83,6 +83,7 @@ def clear():
     redisplay()
 
 def redisplay():
+    global suggest_handle
     if buffer_handle:
         if show_suggestions and suggest_hook:
             suggestions = suggest_hook(buffer_left, buffer_right)
