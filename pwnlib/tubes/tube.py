@@ -594,7 +594,10 @@ class tube(Timeout):
             'd'
         """
 
-        while self._fillbuffer(timeout=timeout):
+        try:
+            while self._fillbuffer(timeout=timeout):
+                pass
+        except EOFError:
             pass
 
         return self.buffer.get()
