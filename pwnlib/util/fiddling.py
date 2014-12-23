@@ -422,7 +422,7 @@ def isprint(c):
     """isprint(c) -> bool
 
     Return True if a character is printable"""
-    return c in string.ascii_letters + string.digits + string.punctuation
+    return c in string.ascii_letters + string.digits + string.punctuation + ' '
 
 
 def hexii(s, width = 16, skip = True):
@@ -524,7 +524,7 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
     else:
         def style_byte(b):
             hbyte = '%02x' % ord(b)
-            abyte = b if isprint(b) else ' '
+            abyte = b if isprint(b) else '·'
             if hbyte in style:
                 st = style[hbyte]
             elif isprint(b):
