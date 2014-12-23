@@ -1,3 +1,6 @@
+"""
+Functions for computing various hashes of files and strings.
+"""
 import hashlib
 
 for _algo in hashlib.algorithms:
