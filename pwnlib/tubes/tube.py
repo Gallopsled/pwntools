@@ -453,6 +453,18 @@ class tube(Timeout):
 
         return ''
 
+    def recvline_contains(self, delims, keep = False, timeout = None):
+        """
+        Receive lines until one line is found which contains
+        """
+        if isinstance(delims, (str,unicode)):
+            delims = (delims,)
+
+        def pred(line):
+            return any(d in line for d in delims)
+
+        return self.recvline_pred(pred, keep, timeout)
+
     def recvline_startswith(self, delims, keep = False, timeout = None):
         r"""recvline_startswith(delims, keep = False, timeout = None) -> str
 
