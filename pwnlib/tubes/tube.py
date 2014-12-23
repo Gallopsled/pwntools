@@ -272,6 +272,9 @@ class tube(Timeout):
         if not hasattr(delims, '__iter__'):
             delims = (delims,)
 
+        # Find the longest delimiter so we only search the tail end
+        longest = max(map(len, delims))
+
         def escape_regex_special(sz):
             specials = '\\/.*+?|()[]{}'
             for s in specials:
@@ -284,6 +287,7 @@ class tube(Timeout):
 
         with self.countdown(timeout):
             while self.timeout:
+                search_start = max(0, len(data) - longest)
                 try:
                     res = self.recv()
                 except:
@@ -296,7 +300,7 @@ class tube(Timeout):
                     self.unrecv(data)
                     return ''
 
-                match = expr.search(data)
+                match = expr.search(data[search_start:])
                 if match:
                     # Re-queue evrything after the match
                     self.unrecv(data[match.end():])
