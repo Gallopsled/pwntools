@@ -26,8 +26,8 @@ class tube(Timeout):
         atexit.register(self.close)
 
     # Functions based on functions from subclasses
-    def recv(self, numb = 2**20, timeout = None):
-        r"""recv(numb = 2**31, timeout = None) -> str
+    def recv(self, numb = 4096, timeout = None):
+        r"""recv(numb = 4096, timeout = None) -> str
 
         Receives up to `numb` bytes of data from the tube, and returns
         as soon as any quantity of data is available.
@@ -109,7 +109,7 @@ class tube(Timeout):
         data = ''
 
         with self.countdown(timeout):
-            data = self.recv_raw(2**20)
+            data = self.recv_raw(4096)
 
         if data and log.isEnabledFor(logging.DEBUG):
             log.debug('Received %#x bytes:' % len(data))
@@ -126,8 +126,8 @@ class tube(Timeout):
         return data
 
 
-    def _recv(self, numb = 2**20, timeout = None):
-        """_recv(numb = 2**20, timeout = None) -> str
+    def _recv(self, numb = 4096, timeout = None):
+        """_recv(numb = 4096, timeout = None) -> str
 
         Recieves one chunk of from the internal buffer or from the OS if the
         buffer is empty.
