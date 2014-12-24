@@ -1,3 +1,53 @@
+"""
+Resolve symbols in loaded, dynamically-linked ELF binaries.
+Given a function which can leak data at an arbitrary address,
+any symbol in any loaded library can be resolved.
+
+Example
+^^^^^^^^
+
+::
+
+    # Assume a process or remote connection
+    p = process('./pwnme')
+
+    # Declare a function that takes a single address, and
+    # leaks at least one byte at that address.
+    def leak(address):
+        data = p.read(address, 4)
+        log.debug("%#x => %s" % (address, (data or '').encode('hex')))
+        return data
+
+    # For the sake of this example, let's say that we
+    # have any of these pointers.  One is a pointer into
+    # the target binary, the other two are pointers into libc
+    main   = 0xfeedf4ce
+    libc   = 0xdeadb000
+    system = 0xdeadbeef
+
+    # With our leaker, and a pointer into our target binary,
+    # we can resolve the address of anything.
+    #
+    # We do not actually need to have a copy of the target
+    # binary for this to work.
+    d = DynELF(leak, main)
+    assert d.lookup(None,     'libc') == libc
+    assert d.lookup('system', 'libc') == system
+
+    # However, if we *do* have a copy of the target binary,
+    # we can speed up some of the steps.
+    d = DynELF(leak, main, elf=ELF('./pwnme'))
+    assert d.lookup(None,     'libc') == libc
+    assert d.lookup('system', 'libc') == system
+
+    # Alternately, we can resolve symbols inside another library,
+    # given a pointer into it.
+    d = DynELF(leak, libc + 0x1234)
+    assert d.lookup('system')      == system
+
+DynELF
+==========
+"""
 from .elf     import *
 from .memleak import MemLeak
 from .context import context
@@ -107,6 +157,9 @@ class DynELF(object):
             log.error("Must specify either a pointer into a module and/or an ELF file with a valid base address")
 
         pointer = pointer or elf.address
+
+        if not isinstance(leak, MemLeak):
+            leak = MemLeak(leak)
 
         self.leak    = leak
         self.libbase = self._find_base(pointer or elf.address)
