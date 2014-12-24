@@ -272,18 +272,16 @@ class tube(Timeout):
         if not hasattr(delims, '__iter__'):
             delims = (delims,)
 
-        def escape_regex_special(sz):
-            specials = '\\/.*+?|()[]{}^$'
-            for s in specials:
-                sz = sz.replace(s, '\\' + s)
-            return sz
+        # Longest delimiter for tracking purposes
+        longest = max(map(len, delims))
 
-        delims = map(escape_regex_special, delims)
-        expr   = re.compile('(%s)' % '|'.join(delims))
+        # Cumulative data to search
         data   = ''
 
         with self.countdown(timeout):
-            while self.timeout:
+            while True:
+                find_start = max(0, len(data) - longest)
+
                 try:
                     res = self.recv()
                 except:
@@ -296,15 +294,37 @@ class tube(Timeout):
                     self.unrecv(data)
                     return ''
 
-                match = expr.search(data)
-                if match:
-                    # Re-queue evrything after the match
-                    self.unrecv(data[match.end():])
+                # Test all of the delimiters
+                indices  = [data.find(delim, find_start) for delim in delims]
 
-                    # If we're dropping the match, return everything up to start
-                    if drop:
-                        return data[:match.start()]
-                    return data[:match.end()]
+                if not any(i >= 0 for i in indices):
+                    continue
+
+                # Find the best match, as determined by the shortest starting position.
+                #
+                # data:   "abcdefgh"
+                # delims: "h", "ab", "a"
+                # start --> 0
+                start = min(i for i in indices if i >= 0)
+
+                # In the order provided by the user, find the first delimiter
+                # which starts at that index and matched.
+                #
+                # data:   "abcdefgh"
+                # delims: "h", "ab", "a"
+                # delim --> "ab"
+                delim = next(d for i,d in enumerate(delims) if indices[i] == start)
+
+                # Find the end of the match
+                end = start + len(delim)
+
+                # Re-queue evreything after the match
+                self.unrecv(data[end:])
+
+                # If we're dropping the match, return everything up to start
+                if drop:
+                    return data[:start]
+                return data[:end]
 
         return ''
 
