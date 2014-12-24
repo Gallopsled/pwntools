@@ -108,7 +108,7 @@ class tube(Timeout):
         """
         data = ''
 
-        with self.countdown(timeout):
+        with self.local(timeout):
             data = self.recv_raw(4096)
 
         if data and log.isEnabledFor(logging.DEBUG):
@@ -216,8 +216,8 @@ class tube(Timeout):
         # It will be pasted together at the end if a
         # timeout does not occur, or put into the tube buffer.
         with self.countdown(timeout):
-            while self.timeout and len(self.buffer) < numb:
-                self._fillbuffer()
+            while len(self.buffer) < numb and self._fillbuffer():
+                pass
 
         return self.buffer.get(numb)
 
@@ -453,7 +453,7 @@ class tube(Timeout):
         tmpbuf = Buffer()
         line   = ''
         with self.countdown(timeout):
-            while self.timeout:
+            while True:
                 try:
                     line = self.recvline(keep=True)
                 except:
@@ -628,8 +628,6 @@ class tube(Timeout):
         with log.waitfor('Recieving all data') as h:
             l = len(self.buffer)
             with self.local('inf'):
-                data = 'yay truthy strings'
-
                 try:
                     while self._fillbuffer():
                         h.status(misc.size(len(self.buffer)))

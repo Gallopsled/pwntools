@@ -120,7 +120,7 @@ class Buffer(Exception):
             self.data.insert(0, data)
             self.size += len(data)
 
-    def get(self, want=None):
+    def get(self, want=float('inf')):
         """
         Retrieves bytes from the buffer.
 
@@ -141,7 +141,7 @@ class Buffer(Exception):
             'elloworld'
         """
         # Fast path, get all of the data
-        if want >= self.size or want is None:
+        if want >= self.size:
             data   = ''.join(self.data)
             self.size = 0
             self.data = []

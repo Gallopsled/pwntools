@@ -5,7 +5,7 @@ from ..context import context
 
 class _DummyContextClass(object):
     def __enter__(self):        pass
-    def __exit__(self,*a,**kw): pass
+    def __exit__(self,*a): pass
 
 _DummyContext = _DummyContextClass()
 
@@ -17,8 +17,8 @@ class _countdown_handler(object):
         self.saved = (self.obj._timeout, self.obj._start)
         self.obj._start  = time.time()
         if self.timeout is not None:
-            self.obj.timeout = timeout # leverage validation
-    def __exit__(self, *args, **kwargs):
+            self.obj.timeout = self.timeout # leverage validation
+    def __exit__(self, *a):
         (self.obj._timeout, self.obj._start) = self.saved
 
 class _local_handler(object):
@@ -29,9 +29,11 @@ class _local_handler(object):
         self.saved = (self.obj._timeout, self.obj._start)
         self.obj._start  = 0
         if self.timeout is not None:
-            self.obj.timeout = timeout # leverage validation
-    def __exit__(self, *args, **kwargs):
+            self.obj.timeout = self.timeout # leverage validation
+        self.obj.timeout_change()
+    def __exit__(self, *a):
         (self.obj._timeout, self.obj._start) = self.saved
+        self.obj.timeout_change()
 
 
 
@@ -89,12 +91,13 @@ class Timeout(object):
         Subject to the same rules and restrictions as ``context.timeout``.
         """
         if self._timeout is None:
-            timeout = context.timeout
-        else:
-            timeout = self._timeout
+            log.error("This shouldn't happen.  Tell Zach.")
 
-        if self._start:
-            timeout -= (time.time() - self._start)
+        timeout = self._timeout
+        start   = self._start
+
+        if start:
+            timeout -= (time.time() - start)
 
         if timeout < 0:
             return 0
@@ -145,5 +148,4 @@ class Timeout(object):
         """
         if timeout is None:
             return _DummyContext
-
         return _local_handler(self, timeout)
