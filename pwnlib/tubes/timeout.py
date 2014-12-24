@@ -3,6 +3,38 @@
 import time
 from ..context import context
 
+class _DummyContextClass(object):
+    def __enter__(self):        pass
+    def __exit__(self,*a,**kw): pass
+
+_DummyContext = _DummyContextClass()
+
+class _countdown_handler(object):
+    def __init__(self, obj, timeout):
+        self.obj     = obj
+        self.timeout = timeout
+    def __enter__(self):
+        self.saved = (self.obj._timeout, self.obj._start)
+        self.obj._start  = time.time()
+        if self.timeout is not None:
+            self.obj.timeout = timeout # leverage validation
+    def __exit__(self, *args, **kwargs):
+        (self.obj._timeout, self.obj._start) = self.saved
+
+class _local_handler(object):
+    def __init__(self, obj, timeout):
+        self.obj     = obj
+        self.timeout = timeout
+    def __enter__(self):
+        self.saved = (self.obj._timeout, self.obj._start)
+        self.obj._start  = 0
+        if self.timeout is not None:
+            self.obj.timeout = timeout # leverage validation
+    def __exit__(self, *args, **kwargs):
+        (self.obj._timeout, self.obj._start) = self.saved
+
+
+
 class Timeout(object):
     """
     Implements a basic class which has a timeout, and support for
@@ -102,35 +134,16 @@ class Timeout(object):
             the ``timeout`` property to ``context.timeout`` if the
             former was not set.
         """
-        class countdown_handler(object):
-            def __init__(self, obj, timeout):
-                self.obj     = obj
-                self.timeout = timeout
-            def __enter__(self):
-                self.saved = (self.obj._timeout, self.obj._start)
-                self.obj._start  = time.time()
-                if self.timeout is not None:
-                    self.obj.timeout = timeout # leverage validation
-            def __exit__(self, *args, **kwargs):
-                (self.obj._timeout, self.obj._start) = self.saved
-
-        return countdown_handler(self, timeout)
+        if timeout is None and self.timeout >= context.forever:
+            return _DummyContext
+        return _countdown_handler(self, timeout)
 
     def local(self, timeout = None):
         """
         Scoped timeout setter.  Sets the timeout within the scope,
         and restores it when leaving the scope.
         """
-        class local_handler(object):
-            def __init__(self, obj, timeout):
-                self.obj     = obj
-                self.timeout = timeout
-            def __enter__(self):
-                self.saved = (self.obj._timeout, self.obj._start)
-                self.obj._start  = 0
-                if self.timeout is not None:
-                    self.obj.timeout = timeout # leverage validation
-            def __exit__(self, *args, **kwargs):
-                (self.obj._timeout, self.obj._start) = self.saved
+        if timeout is None:
+            return _DummyContext
 
-        return local_handler(self, timeout)
+        return _local_handler(self, timeout)

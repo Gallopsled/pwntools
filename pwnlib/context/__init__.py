@@ -287,6 +287,11 @@ class ContextType(object):
     #
     __slots__ = '_tls',
 
+    #: OSX does not permit setting socket timeouts to 2**22.
+    #: Assume that if we receive a timeout of 2**21 or greater,
+    #: that the value is effectively infinite.
+    forever = 2**21
+
     #: Default values for :class:`pwnlib.context.ContextType`
     defaults = {
         'arch': 'i386',
@@ -296,7 +301,7 @@ class ContextType(object):
         'newline': '\n',
         'os': 'linux',
         'signed': False,
-        'timeout': float('inf'),
+        'timeout': forever,
     }
 
     #: Valid values for :meth:`pwnlib.context.ContextType.os`
@@ -810,13 +815,7 @@ class ContextType(object):
             >>> context.timeout - 30
             inf
         """
-        value = float(value)
-
-        # OSX does not permit setting socket timeouts to 2**22.
-        # Assume that if we receive a timeout of 2**21 or greater,
-        # that the value is effectively infinite.
-        if value > 2*21:
-            value = float('inf')
+        value = min(float(value), self.forever)
 
         if value < 0:
             raise AttributeError("timeout must not be negative (%r)" % value)
