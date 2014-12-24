@@ -1018,7 +1018,6 @@ class tube(Timeout):
         """
 
         self.timeout = timeout
-        self.settimeout_raw(self.timeout)
 
 
     shutdown_directions = {
