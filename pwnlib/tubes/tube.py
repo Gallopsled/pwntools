@@ -216,7 +216,7 @@ class tube(Timeout):
         # It will be pasted together at the end if a
         # timeout does not occur, or put into the tube buffer.
         with self.countdown(timeout):
-            while len(self.buffer) < numb and self._fillbuffer():
+            while self.timeout and len(self.buffer) < numb and self._fillbuffer():
                 pass
 
         return self.buffer.get(numb)
@@ -279,7 +279,7 @@ class tube(Timeout):
         data   = ''
 
         with self.countdown(timeout):
-            while True:
+            while self.timeout:
                 find_start = max(0, len(data) - longest)
 
                 try:
@@ -453,7 +453,7 @@ class tube(Timeout):
         tmpbuf = Buffer()
         line   = ''
         with self.countdown(timeout):
-            while True:
+            while self.timeout:
                 try:
                     line = self.recvline(keep=True)
                 except:
