@@ -1,4 +1,5 @@
 import socket, re, os, stat, errno, string, base64, logging
+from . import lists
 log = logging.getLogger(__name__)
 
 def align(alignment, x):
@@ -280,3 +281,48 @@ def sh_string(s):
             else:
                 fixed += '\\x%02x' % ord(c)
         return '"$( (echo %s|(base64 -d||openssl enc -d -base64)||echo -en \'%s\') 2>/dev/null)"' % (base64.b64encode(s), fixed)
+
+def register_sizes(regs, in_sizes):
+    """Create dictionaries over register sizes and relations
+
+    Given a list of lists of overlapping register names (e.g. ['eax','ax','al','ah']) and a list of input sizes,
+    it returns the following:
+      * all_regs    : list of all valid registers
+      * sizes[reg]  : the size of reg in bits
+      * bigger[reg] : list of overlapping registers bigger than reg
+      * smaller[reg]: list of overlapping registers smaller than reg
+
+    Used in i386/AMD64 shellcode, e.g. the mov-shellcode.
+
+    Example:
+        >>> regs = [['eax', 'ax', 'al', 'ah'],['ebx', 'bx', 'bl', 'bh'],
+        ... ['ecx', 'cx', 'cl', 'ch'],
+        ... ['edx', 'dx', 'dl', 'dh'],
+        ... ['edi', 'di'],
+        ... ['esi', 'si'],
+        ... ['ebp', 'bp'],
+        ... ['esp', 'sp'],
+        ... ]
+        >>> all_regs, sizes, bigger, smaller = register_sizes(regs, [32, 16, 8, 8])
+        >>> all_regs
+        ['eax', 'ax', 'al', 'ah', 'ebx', 'bx', 'bl', 'bh', 'ecx', 'cx', 'cl', 'ch', 'edx', 'dx', 'dl', 'dh', 'edi', 'di', 'esi', 'si', 'ebp', 'bp', 'esp', 'sp']
+        >>> sizes
+        {'ch': 8, 'cl': 8, 'ah': 8, 'edi': 32, 'al': 8, 'cx': 16, 'ebp': 32, 'ax': 16, 'edx': 32, 'ebx': 32, 'esp': 32, 'esi': 32, 'dl': 8, 'dh': 8, 'di': 16, 'bl': 8, 'bh': 8, 'eax': 32, 'bp': 16, 'dx': 16, 'bx': 16, 'ecx': 32, 'sp': 16, 'si': 16}
+        >>> bigger
+        {'ch': ['ecx', 'cx', 'ch'], 'cl': ['ecx', 'cx', 'cl'], 'ah': ['eax', 'ax', 'ah'], 'edi': ['edi'], 'al': ['eax', 'ax', 'al'], 'cx': ['ecx', 'cx'], 'ebp': ['ebp'], 'ax': ['eax', 'ax'], 'edx': ['edx'], 'ebx': ['ebx'], 'esp': ['esp'], 'esi': ['esi'], 'dl': ['edx', 'dx', 'dl'], 'dh': ['edx', 'dx', 'dh'], 'di': ['edi', 'di'], 'bl': ['ebx', 'bx', 'bl'], 'bh': ['ebx', 'bx', 'bh'], 'eax': ['eax'], 'bp': ['ebp', 'bp'], 'dx': ['edx', 'dx'], 'bx': ['ebx', 'bx'], 'ecx': ['ecx'], 'sp': ['esp', 'sp'], 'si': ['esi', 'si']}
+        >>> smaller
+        {'ch': [], 'cl': [], 'ah': [], 'edi': ['di'], 'al': [], 'cx': ['cl', 'ch'], 'ebp': ['bp'], 'ax': ['al', 'ah'], 'edx': ['dx', 'dl', 'dh'], 'ebx': ['bx', 'bl', 'bh'], 'esp': ['sp'], 'esi': ['si'], 'dl': [], 'dh': [], 'di': [], 'bl': [], 'bh': [], 'eax': ['ax', 'al', 'ah'], 'bp': [], 'dx': ['dl', 'dh'], 'bx': ['bl', 'bh'], 'ecx': ['cx', 'cl', 'ch'], 'sp': [], 'si': []}
+    """
+    sizes = {}
+    bigger = {}
+    smaller = {}
+
+    for l in regs:
+        for r, s in zip(l, in_sizes):
+            sizes[r] = s
+
+        for r in l:
+            bigger[r] = [r_ for r_ in l if sizes[r_] > sizes[r] or r == r_]
+            smaller[r] = [r_ for r_ in l if sizes[r_] < sizes[r]]
+
+    return lists.concat(regs), sizes, bigger, smaller
