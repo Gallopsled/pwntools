@@ -321,7 +321,7 @@ def register_sizes(regs, in_sizes):
         for r, s in zip(l, in_sizes):
             sizes[r] = s
 
-        for n, r in enumerate(l):
+        for r in l:
             bigger[r] = [r_ for r_ in l if sizes[r_] > sizes[r] or r == r_]
             smaller[r] = [r_ for r_ in l if sizes[r_] < sizes[r]]
 
