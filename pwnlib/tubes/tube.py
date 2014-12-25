@@ -276,55 +276,39 @@ class tube(Timeout):
         longest = max(map(len, delims))
 
         # Cumulative data to search
-        data   = ''
+        data = []
+        top = ''
 
         with self.countdown(timeout):
             while self.timeout:
-                find_start = max(0, len(data) - longest)
-
                 try:
                     res = self.recv()
                 except:
-                    self.unrecv(data)
+                    self.unrecv(''.join(data) + top)
                     raise
 
-                if res:
-                    data += res
                 if not res:
-                    self.unrecv(data)
+                    self.unrecv(''.join(data) + top)
                     return ''
 
-                # Test all of the delimiters
-                indices  = [data.find(delim, find_start) for delim in delims]
-
-                if not any(i >= 0 for i in indices):
-                    continue
-
-                # Find the best match, as determined by the shortest starting position.
-                #
-                # data:   "abcdefgh"
-                # delims: "h", "ab", "a"
-                # start --> 0
-                start = min(i for i in indices if i >= 0)
-
-                # In the order provided by the user, find the first delimiter
-                # which starts at that index and matched.
-                #
-                # data:   "abcdefgh"
-                # delims: "h", "ab", "a"
-                # delim --> "ab"
-                delim = next(d for i,d in enumerate(delims) if indices[i] == start)
-
-                # Find the end of the match
-                end = start + len(delim)
-
-                # Re-queue evreything after the match
-                self.unrecv(data[end:])
-
-                # If we're dropping the match, return everything up to start
-                if drop:
-                    return data[:start]
-                return data[:end]
+                top += res
+                start = len(top)
+                for d in delims:
+                    j = top.find(d)
+                    if start > j > -1:
+                        start = j
+                        end = j + len(d)
+                if start < len(top):
+                    self.unrecv(top[end:])
+                    if drop:
+                        top = top[:start]
+                    else:
+                        top = top[:end]
+                    return ''.join(data) + top
+                if len(top) > longest:
+                    i = -longest - 1
+                    data.append(top[:i])
+                    top = top[i:]
 
         return ''
 
