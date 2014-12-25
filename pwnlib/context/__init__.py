@@ -471,28 +471,19 @@ class ContextType(object):
     def clear(self):
         """
         Clears the contents of the context.
+        All values are set to their defaults.
 
         Examples:
 
             >>> # Default value
-            >>> del context.timeout
-            >>> print context.timeout
-            inf
-            >>> # Inside of a scope, use clear
-            >>> context.timeout = 2
-            >>> with context.local():
-            ...     print context.timeout
-            ...     context.clear()
-            ...     print context.timeout
-            2.0
-            inf
-            >>> # Outer scope is unaffected
-            >>> print context.timeout
-            2.0
-            >>> # It can also be used in the global scope
+            >>> context.arch == 'i386'
+            True
+            >>> context.arch = 'arm'
+            >>> context.arch == 'i386'
+            False
             >>> context.clear()
-            >>> print context.timeout
-            inf
+            >>> context.arch == 'i386'
+            True
         """
         self._tls._current.clear()
 
@@ -799,21 +790,6 @@ class ContextType(object):
 
         Any floating point value is accepted, as well as the special
         string ``'inf'`` which implies that a timeout can never occur.
-
-        Examples:
-
-            >>> # Default value
-            >>> context.clear()
-            >>> context.timeout == float('inf')
-            True
-            >>> # Ten seconds
-            >>> context.timeout = 10
-            >>> # Shortcut for 'inf'
-            >>> context.timeout = 'inf'
-            >>> context.timeout == float('inf')
-            True
-            >>> context.timeout - 30
-            inf
         """
         value = min(float(value), self.forever)
 

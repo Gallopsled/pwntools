@@ -1,5 +1,6 @@
 from .tube import tube
 from ..util.misc import which
+from ..context import context
 import subprocess, fcntl, os, select, logging
 
 log = logging.getLogger(__name__)
