@@ -457,6 +457,31 @@ class tube(Timeout):
 
         return ''
 
+    def recvline_contains(self, items, keep = False, timeout = None):
+        r"""
+        Receive lines until one line is found which contains at least
+        one of `items`.
+
+        Arguments:
+            items(str,tuple): List of strings to search for, or a single string.
+            keep(bool): Return lines with newlines if ``True``
+            timeout(int): Timeout, in seconds
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: "Hello\nWorld\nXylophone\n"
+            >>> t.recvline_contains('r')
+            'World'
+        """
+        if isinstance(items, (str,unicode)):
+            delims = (items,)
+
+        def pred(line):
+            return any(d in line for d in items)
+
+        return self.recvline_pred(pred, keep, timeout)
+
     def recvline_startswith(self, delims, keep = False, timeout = None):
         r"""recvline_startswith(delims, keep = False, timeout = None) -> str
 
