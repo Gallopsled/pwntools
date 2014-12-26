@@ -1,6 +1,11 @@
 .. testsetup:: *
 
    from pwn import *
+   old = context.defaults.copy()
+
+.. testcleanup:: *
+
+    context.defaults.copy = old
 
 Command Line Tools
 ========================

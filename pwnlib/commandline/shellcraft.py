@@ -79,31 +79,37 @@ p.add_argument(
 )
 
 
+class NoDefaultContextValues(object):
+    def __enter__(self):
+        self.old = context.defaults.copy()
+        context.defaults['os'] = None
+        context.defaults['arch'] = None
+    def __exit__(self, *a):
+        context.defaults.update(self.old)
+
+
+
 def get_tree(path, val, result):
-    if path:
-        path += '.'
+    with NoDefaultContextValues():
+        if path:
+            path += '.'
 
-    if path.startswith('common.'):
-        return
+        if path.startswith('common.'):
+            return
 
-    mods = []
+        mods = []
 
-    for k in sorted(dir(val)):
-        if k and k[0] != '_':
-            cur = getattr(val, k)
-            if isinstance(cur, types.ModuleType):
-                mods.append((path + k, cur))
-            else:
-                result.append((path + k, cur))
+        for k in sorted(dir(val)):
+            if k and k[0] != '_':
+                cur = getattr(val, k)
+                if isinstance(cur, types.ModuleType):
+                    mods.append((path + k, cur))
+                else:
+                    result.append((path + k, cur))
 
-    for path, val in mods:
-        get_tree(path, val, result)
-    return result
-
-
-# Get rid of weird duplicates caused by default OS and Arch
-context.defaults['os'] = None
-context.defaults['arch'] = None
+        for path, val in mods:
+            get_tree(path, val, result)
+        return result
 
 # Enumearte all of the shellcode names
 all_shellcodes = get_tree('', pwnlib.shellcraft, [])
