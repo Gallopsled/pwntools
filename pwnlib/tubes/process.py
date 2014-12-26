@@ -1,5 +1,6 @@
 from .tube import tube
 from ..util.misc import which
+from ..context import context
 import subprocess, fcntl, os, select, logging
 
 log = logging.getLogger(__name__)
@@ -139,8 +140,8 @@ class process(tube):
         pass
 
     def can_recv_raw(self, timeout):
-        if timeout > 2**31:
-            timeout = 2**31
+        if timeout > context.forever:
+            timeout = context.forever
 
         if not self.connected_raw('recv'):
             return False

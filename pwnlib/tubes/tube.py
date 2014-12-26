@@ -26,8 +26,8 @@ class tube(Timeout):
         atexit.register(self.close)
 
     # Functions based on functions from subclasses
-    def recv(self, numb = 2**20, timeout = None):
-        r"""recv(numb = 2**31, timeout = None) -> str
+    def recv(self, numb = 4096, timeout = None):
+        r"""recv(numb = 4096, timeout = None) -> str
 
         Receives up to `numb` bytes of data from the tube, and returns
         as soon as any quantity of data is available.
@@ -108,8 +108,8 @@ class tube(Timeout):
         """
         data = ''
 
-        with self.countdown(timeout):
-            data = self.recv_raw(2**20)
+        with self.local(timeout):
+            data = self.recv_raw(4096)
 
         if data and log.isEnabledFor(logging.DEBUG):
             log.debug('Received %#x bytes:' % len(data))
@@ -126,8 +126,8 @@ class tube(Timeout):
         return data
 
 
-    def _recv(self, numb = 2**20, timeout = None):
-        """_recv(numb = 2**20, timeout = None) -> str
+    def _recv(self, numb = 4096, timeout = None):
+        """_recv(numb = 4096, timeout = None) -> str
 
         Recieves one chunk of from the internal buffer or from the OS if the
         buffer is empty.
@@ -216,8 +216,8 @@ class tube(Timeout):
         # It will be pasted together at the end if a
         # timeout does not occur, or put into the tube buffer.
         with self.countdown(timeout):
-            while self.timeout and len(self.buffer) < numb:
-                self._fillbuffer()
+            while self.timeout and len(self.buffer) < numb and self._fillbuffer():
+                pass
 
         return self.buffer.get(numb)
 
@@ -272,39 +272,43 @@ class tube(Timeout):
         if not hasattr(delims, '__iter__'):
             delims = (delims,)
 
-        def escape_regex_special(sz):
-            specials = '\\/.*+?|()[]{}^$'
-            for s in specials:
-                sz = sz.replace(s, '\\' + s)
-            return sz
+        # Longest delimiter for tracking purposes
+        longest = max(map(len, delims))
 
-        delims = map(escape_regex_special, delims)
-        expr   = re.compile('(%s)' % '|'.join(delims))
-        data   = ''
+        # Cumulative data to search
+        data = []
+        top = ''
 
         with self.countdown(timeout):
             while self.timeout:
                 try:
                     res = self.recv()
                 except:
-                    self.unrecv(data)
+                    self.unrecv(''.join(data) + top)
                     raise
 
-                if res:
-                    data += res
                 if not res:
-                    self.unrecv(data)
+                    self.unrecv(''.join(data) + top)
                     return ''
 
-                match = expr.search(data)
-                if match:
-                    # Re-queue evrything after the match
-                    self.unrecv(data[match.end():])
-
-                    # If we're dropping the match, return everything up to start
+                top += res
+                start = len(top)
+                for d in delims:
+                    j = top.find(d)
+                    if start > j > -1:
+                        start = j
+                        end = j + len(d)
+                if start < len(top):
+                    self.unrecv(top[end:])
                     if drop:
-                        return data[:match.start()]
-                    return data[:match.end()]
+                        top = top[:start]
+                    else:
+                        top = top[:end]
+                    return ''.join(data) + top
+                if len(top) > longest:
+                    i = -longest - 1
+                    data.append(top[:i])
+                    top = top[i:]
 
         return ''
 
@@ -611,8 +615,6 @@ class tube(Timeout):
         with log.waitfor('Recieving all data') as h:
             l = len(self.buffer)
             with self.local('inf'):
-                data = 'yay truthy strings'
-
                 try:
                     while self._fillbuffer():
                         h.status(misc.size(len(self.buffer)))
@@ -1003,7 +1005,6 @@ class tube(Timeout):
         """
 
         self.timeout = timeout
-        self.settimeout_raw(self.timeout)
 
 
     shutdown_directions = {

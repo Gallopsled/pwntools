@@ -1,5 +1,6 @@
 import socket, errno, select, logging
 from .tube import tube
+from ..context import context
 
 log = logging.getLogger(__name__)
 
@@ -26,12 +27,10 @@ class sock(tube):
         if self.closed["recv"]:
             raise EOFError
 
-        go = True
-        while go:
-            go = False
-
+        while True:
             try:
                 data = self.sock.recv(numb)
+                break
             except socket.timeout:
                 return None
             except IOError as e:
@@ -41,7 +40,7 @@ class sock(tube):
                     self.shutdown("recv")
                     raise EOFError
                 elif e.errno == errno.EINTR:
-                    go = True
+                    continue
                 else:
                     raise
 
@@ -71,10 +70,9 @@ class sock(tube):
 
         # OSX behaves oddly with timeouts of 2**22 or greater.
         # Change it so that this is 'infinite'
-        if timeout > 2**21:
-            timeout = 2**21
+        if timeout >= context.forever:
+            timeout = None
 
-        self.sock.setblocking(1)
         self.sock.settimeout(timeout)
 
     def can_recv_raw(self, timeout):

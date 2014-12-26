@@ -5,7 +5,7 @@ import ssl as _ssl
 log = logging.getLogger(__name__)
 
 class remote(sock):
-    """Creates a TCP or UDP-connection to a remote host. It supports
+    r"""Creates a TCP or UDP-connection to a remote host. It supports
     both IPv4 and IPv6.
 
     The returned object supports all the methods from
@@ -23,7 +23,7 @@ class remote(sock):
     Examples:
 
         >>> r = remote('google.com', 443, ssl=True)
-        >>> r.send('GET /' + '\\r\\n'*2)
+        >>> r.send('GET /\r\n\r\n')
         >>> r.recvn(4)
         'HTTP'
         >>> r = remote('127.0.0.1', 1)
@@ -33,7 +33,7 @@ class remote(sock):
         >>> import socket
         >>> s = socket.socket()
         >>> s.connect(('google.com', 80))
-        >>> s.send('GET /' + '\\r\\n'*2)
+        >>> s.send('GET /' + '\r\n'*2)
         9
         >>> r = remote.fromsocket(s)
         >>> r.recvn(4)
