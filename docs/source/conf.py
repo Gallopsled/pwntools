@@ -31,8 +31,10 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.linkcode',
     'sphinx.ext.autosummary',
+    'sphinx.ext.coverage',
     'sphinx.ext.todo',
     'sphinx.ext.intersphinx',
+    'sphinxcontrib.autoprogram',
     'sphinxcontrib.napoleon'
 ]
 
@@ -207,7 +209,8 @@ latex_documents = [
    u'Gallopsled et al', 'manual'),
 ]
 
-intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None)}
+intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None),
+                       'paramiko': ('http://paramiko-docs.readthedocs.org/en/1.15/', None)}
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.

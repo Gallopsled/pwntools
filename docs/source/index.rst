@@ -16,6 +16,7 @@ Getting Started
    install
    intro
    globals
+   commandline
 
 
 Module Index

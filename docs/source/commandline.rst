@@ -1,0 +1,43 @@
+.. testsetup:: *
+
+   from pwn import *
+
+Command Line Tools
+========================
+
+pwntools comes with a handful of useful command-line utilities which serve as wrappers for some of the internal functionality.
+
+.. toctree::
+
+.. autoprogram:: pwnlib.commandline.asm:parser
+   :prog: asm
+
+   Foo bar baz
+
+.. autoprogram:: pwnlib.commandline.constgrep:p
+   :prog: constgrep
+
+.. autoprogram:: pwnlib.commandline.cyclic:parser
+   :prog: cyclic
+
+.. autoprogram:: pwnlib.commandline.disasm:parser
+   :prog: disasm
+
+.. autoprogram:: pwnlib.commandline.elfdiff:p
+   :prog: elfdiff
+
+.. autoprogram:: pwnlib.commandline.elfpatch:p
+   :prog: elfpatch
+
+.. autoprogram:: pwnlib.commandline.hex:parser
+   :prog: hex
+
+.. autoprogram:: pwnlib.commandline.phd:parser
+   :prog: phd
+
+.. autoprogram:: pwnlib.commandline.shellcraft:p
+   :prog: shellcraft
+
+.. autoprogram:: pwnlib.commandline.unhex:parser
+   :prog: unhex
+
