@@ -63,34 +63,37 @@ def asint(s):
     else:
         return int(s, 10)
 
-args = parser.parse_args()
+def main():
+    args = parser.parse_args()
 
-infile = args.file
-width  = asint(args.width)
-skip   = asint(args.skip)
-count  = asint(args.count)
-offset = asint(args.offset)
+    infile = args.file
+    width  = asint(args.width)
+    skip   = asint(args.skip)
+    count  = asint(args.count)
+    offset = asint(args.offset)
 
-# if `--color` has no argument it is `None`
-color = args.color or 'always'
-text.when = color
+    # if `--color` has no argument it is `None`
+    color = args.color or 'always'
+    text.when = color
 
-if skip:
-    if infile == sys.stdin:
-        infile.read(skip)
-    else:
-        infile.seek(skip, os.SEEK_CUR)
+    if skip:
+        if infile == sys.stdin:
+            infile.read(skip)
+        else:
+            infile.seek(skip, os.SEEK_CUR)
 
-data = infile.read(count)
+    data = infile.read(count)
 
-hl = []
-if args.highlight:
-    for hs in args.highlight:
-        for h in hs.split(','):
-            hl.append(asint(h))
+    hl = []
+    if args.highlight:
+        for hs in args.highlight:
+            for h in hs.split(','):
+                hl.append(asint(h))
 
-try:
-    for line in hexdump_iter(data, width, highlight = hl, begin = offset + skip):
-        print line
-except (KeyboardInterrupt, IOError):
-    pass
+    try:
+        for line in hexdump_iter(data, width, highlight = hl, begin = offset + skip):
+            print line
+    except (KeyboardInterrupt, IOError):
+        pass
+
+if __name__ == '__main__': main()

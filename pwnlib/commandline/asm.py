@@ -40,20 +40,23 @@ parser.add_argument(
       ', '.join(sorted(context.oses + list(context.architectures)))
 )
 
-args   = parser.parse_args()
-tty    = args.output.isatty()
+def main():
+    args   = parser.parse_args()
+    tty    = args.output.isatty()
 
-for arch in args.context[::-1]:
-    if arch in context.architectures: break
-for os in args.context[::-1]:
-    if os in context.oses: break
+    for arch in args.context[::-1]:
+        if arch in context.architectures: break
+    for os in args.context[::-1]:
+        if os in context.oses: break
 
-data   = '\n'.join(args.lines) or sys.stdin.read()
-output = asm(data.replace(';', '\n'), arch = arch, os = os)
-fmt    = args.format or ('hex' if tty else 'raw')
-formatters = {'r':str, 'h':enhex, 's':repr}
+    data   = '\n'.join(args.lines) or sys.stdin.read()
+    output = asm(data.replace(';', '\n'), arch = arch, os = os)
+    fmt    = args.format or ('hex' if tty else 'raw')
+    formatters = {'r':str, 'h':enhex, 's':repr}
 
-args.output.write(formatters[fmt[0]](output))
+    args.output.write(formatters[fmt[0]](output))
 
-if tty and fmt is not 'raw':
-    args.output.write('\n')
+    if tty and fmt is not 'raw':
+        args.output.write('\n')
+
+if __name__ == '__main__': main()

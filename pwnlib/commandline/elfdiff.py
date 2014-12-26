@@ -19,6 +19,9 @@ def diff(a,b):
 p = ArgumentParser()
 p.add_argument('a')
 p.add_argument('b')
-a = p.parse_args()
 
-print diff(dump(a.a), dump(a.b))
+def main():
+    a = p.parse_args()
+    print diff(dump(a.a), dump(a.b))
+
+if __name__ == '__main__': main()

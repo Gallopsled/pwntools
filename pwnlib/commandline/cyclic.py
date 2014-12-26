@@ -37,38 +37,41 @@ group.add_argument(
     help = 'Number of characters to print'
 )
 
-args = parser.parse_args()
-alphabet = args.alphabet
-subsize  = args.length
+def main():
+    args = parser.parse_args()
+    alphabet = args.alphabet
+    subsize  = args.length
 
-if args.lookup:
-    pat = args.lookup
+    if args.lookup:
+        pat = args.lookup
 
-    if pat.startswith('0x'):
-        pat = packing.pack(int(pat[2:], 16), subsize*8, 'little', 'unsigned')
-    elif pat.isdigit():
-        pat = packing.pack(int(pat, 10), subsize*8, 'little', 'unsigned')
+        if pat.startswith('0x'):
+            pat = packing.pack(int(pat[2:], 16), subsize*8, 'little', 'unsigned')
+        elif pat.isdigit():
+            pat = packing.pack(int(pat, 10), subsize*8, 'little', 'unsigned')
 
-    if len(pat) != 4:
-        log.fatal('Subpattern must be 4 bytes', 1)
+        if len(pat) != 4:
+            log.fatal('Subpattern must be 4 bytes', 1)
 
-    if not all(c in alphabet for c in pat):
-        log.fatal('Pattern contains characters not present in the alphabet', 1)
+        if not all(c in alphabet for c in pat):
+            log.fatal('Pattern contains characters not present in the alphabet', 1)
 
-    offset = cyclic.cyclic_find(pat, alphabet, subsize)
+        offset = cyclic.cyclic_find(pat, alphabet, subsize)
 
-    if offset == -1:
-        log.fatal('Given pattern does not exist in cyclic pattern', 1)
+        if offset == -1:
+            log.fatal('Given pattern does not exist in cyclic pattern', 1)
+        else:
+            print offset
     else:
-        print offset
-else:
-    want   = args.count
-    result = cyclic.cyclic(want, alphabet, subsize)
-    got    = len(result)
-    if got < want:
-        log.failure("Alphabet too small (max length = %i)" % got)
+        want   = args.count
+        result = cyclic.cyclic(want, alphabet, subsize)
+        got    = len(result)
+        if got < want:
+            log.failure("Alphabet too small (max length = %i)" % got)
 
-    sys.stdout.write(result)
+        sys.stdout.write(result)
 
-    if sys.stdout.isatty():
-        sys.stdout.write('\n')
+        if sys.stdout.isatty():
+            sys.stdout.write('\n')
+
+if __name__ == '__main__': main()

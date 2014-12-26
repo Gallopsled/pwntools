@@ -1,11 +1,22 @@
 #!/usr/bin/env python2
-import sys
+import sys, argparse
 from string import whitespace
-try:
-    if len(sys.argv) == 1:
-        s = sys.stdin.read().translate(None, whitespace)
-        sys.stdout.write(s.decode('hex'))
-    else:
-        sys.stdout.write(''.join(sys.argv[1:]).decode('hex'))
-except TypeError, e:
-    sys.stderr.write(str(e) + '\n')
+
+parser = argparse.ArgumentParser(description='''
+Decodes hex-encoded data provided on the command line or via stdin.
+''')
+parser.add_argument('hex', nargs='*',
+    help='Hex bytes to decode')
+
+def main():
+    args = parser.parse_args()
+    try:
+        if not args.hex:
+            s = sys.stdin.read().translate(None, whitespace)
+            sys.stdout.write(s.decode('hex'))
+        else:
+            sys.stdout.write(''.join(sys.argv[1:]).decode('hex'))
+    except TypeError, e:
+        sys.stderr.write(str(e) + '\n')
+
+if __name__ == '__main__': main()

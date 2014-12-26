@@ -24,16 +24,19 @@ parser.add_argument(
     help = 'The architecture of the shellcode (default: i386), choose from:\n%s' % ', '.join(context.architectures)
 )
 
-args = parser.parse_args()
+def main():
+    args = parser.parse_args()
 
-if len(args.hex) > 0:
-    dat = ''.join(args.hex)
-    dat = dat.translate(None, whitespace)
-    if not set(hexdigits) >= set(dat):
-        print "This is not a hex string"
-        exit(-1)
-    dat = dat.decode('hex')
-else:
-    dat = sys.stdin.read()
+    if len(args.hex) > 0:
+        dat = ''.join(args.hex)
+        dat = dat.translate(None, whitespace)
+        if not set(hexdigits) >= set(dat):
+            print "This is not a hex string"
+            exit(-1)
+        dat = dat.decode('hex')
+    else:
+        dat = sys.stdin.read()
 
-print asm.disasm(dat, arch = args.context)
+    print asm.disasm(dat, arch = args.context)
+
+if __name__ == '__main__': main()
