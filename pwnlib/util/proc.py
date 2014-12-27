@@ -281,12 +281,10 @@ def wait_for_debugger(pid):
     Returns:
         None
     """
-    w = log.waitfor('Waiting for debugger')
-
-    while tracer(pid) is None:
-        time.sleep(0.01)
-
-    w.done_success()
+    with log.waitfor('Waiting for debugger') as l:
+        while tracer(pid) is None:
+            time.sleep(0.01)
+        l.success()
 
 if not _ok_import:
     def _make_stub(func):
