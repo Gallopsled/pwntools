@@ -102,11 +102,11 @@ def pause(n = None):
             log.info('Paused (press enter to continue)')
             raw_input('')
     elif isinstance(n, (int, long)):
-        h = log.waitfor("Waiting")
-        for i in range(n, 0, -1):
-            log.status('%d... ' % i)
-            time.sleep(1)
-        log.done_success('Done', h)
+        with log.waitfor("Waiting") as l:
+            for i in range(n, 0, -1):
+                log.status('%d... ' % i)
+                time.sleep(1)
+            l.success()
     else:
         raise ValueError('pause(): n must be a number or None')
 
