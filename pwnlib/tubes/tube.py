@@ -21,9 +21,6 @@ class tube(Timeout):
     newline = '\n'
 
     def __init__(self, timeout = default):
-        # assert type(self) == tube
-
-        # assert isinstance(self, tube), (id(type(self)), id(tube))
         super(tube, self).__init__(timeout)
         self.buffer          = Buffer()
         atexit.register(self.close)
