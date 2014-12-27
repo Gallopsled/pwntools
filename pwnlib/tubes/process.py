@@ -11,7 +11,6 @@ class process(tube):
 
     Examples:
 
-        >>> from pwnlib.context import context
         >>> context.log_level='error'
         >>> p = process(which('python2'))
         >>> p.sendline("print 'Hello world'")

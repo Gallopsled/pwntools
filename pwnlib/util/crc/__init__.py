@@ -13,8 +13,8 @@ An obvious optimization would be to actually generate some lookup-tables.
 """
 
 from .. import fiddling, packing
-from .  import known
-import os, re, sys, types
+from . import known
+import sys, types
 
 class BitPolynom(object):
     def __init__(self, n):

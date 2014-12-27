@@ -1,6 +1,5 @@
 __all__ = ['Keymap']
 
-from . import keyconsts as kc
 from . import key
 
 class Keymap:

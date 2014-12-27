@@ -4,7 +4,7 @@
 Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
-import types, sys, threading, re, collections, string, logging
+import threading, collections, string, logging
 
 class _defaultdict(dict):
     """
@@ -143,9 +143,15 @@ def _validator(validator):
 
 class Thread(threading.Thread):
     """
-    ContextType-aware thread.  For convenience and avoiding confusion with
-    :class:`threading.Thread`, this object can be instantiated via
-    :func:`pwnlib.context.thread`.
+    Instantiates a context-aware thread, which inherit its context
+    when it is instantiated.
+
+    Threads created by using the namtive :class`threading`.Thread` will have a
+    clean (default) context.
+
+    Regardless of the mechanism used to create any thread, the context
+    is de-coupled from the parent thread, so changes do not cascade
+    to child or parent.
 
     Saves a copy of the context when instantiated (at ``__init__``)
     and updates the new thread's context before passing control
@@ -486,29 +492,6 @@ class ContextType(object):
             True
         """
         self._tls._current.clear()
-
-    def thread(self, *args, **kwargs):
-        """thread(*args, **kwargs) -> Thread object
-        Instantiates a context-aware thread, which inherit its context
-        when it is instantiated.
-
-        Threads created in any other manner will have a clean (default)
-        context.
-
-        Regardless of the mechanism used to create any thread, the context
-        is de-coupled from the parent thread, so changes do not cascade
-        to child or parent.
-
-        Arguments:
-
-            The same arguments are used as :class:`threading.Thread`.
-
-        Examples:
-
-            See the documentation for :class:`pwnlib.context.Thread` for
-            examples.
-        """
-        return Thread(*args, **kwargs)
 
     @_validator
     def arch(self, arch):

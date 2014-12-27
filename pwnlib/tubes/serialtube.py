@@ -1,7 +1,6 @@
-from .. import log, term
-from ..context import context
+from .. import context, log, term
 from . import tube
-import serial, time, threading, sys
+import serial, time, sys
 
 class serialtube(tube.tube):
     def __init__(

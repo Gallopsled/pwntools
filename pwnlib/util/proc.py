@@ -1,4 +1,4 @@
-import os, time, socket, re, struct, errno, logging
+import time, errno, logging
 from .. import tubes
 
 try:

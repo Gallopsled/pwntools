@@ -1,9 +1,8 @@
 #!/usr/bin/env python2
 
 import argparse, sys
-import pwnlib
 from pwnlib.elf import ELF
-from pwnlib.util.fiddling import unhex,enhex
+from pwnlib.util.fiddling import unhex
 p = argparse.ArgumentParser()
 p.add_argument('elf',help="File to patch")
 p.add_argument('offset',help="Offset to patch in virtual address (hex encoded)")
