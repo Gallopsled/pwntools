@@ -830,7 +830,7 @@ class tube(Timeout):
             >>> t.fileno        = lambda: 1234
             >>> t.clean_and_log() #doctest: +ELLIPSIS
             [...] Cleaning tube (fileno = 1234):
-                hooray_data
+                'hooray_data'
             >>> context.clear()
         """
 
