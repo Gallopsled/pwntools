@@ -514,9 +514,12 @@ def waitfor(msg, status = '', log_level = logging.INFO):
         l.addHandler(h)
         l.propagate = False
 
-        def stop(*a):
+        def stop(exc_typ, exc_val, exc_tb):
             if not h.stop.isSet():
-                l.failure('Done, did not provide status')
+                if exc_typ is None:
+                    l.success()
+                else:
+                    l.failure()
                 h.stop.set()
         _monkeypatch(l, lambda *a: l, stop)
     else:
