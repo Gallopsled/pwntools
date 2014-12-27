@@ -522,7 +522,8 @@ class tube(Timeout):
                 >>> t.recvline_startswith('Wo')
                 'World'
         """
-        if not hasattr(delims, '__iter__'):
+        # Convert string into singleton tupple
+        if isinstance(delims, (str, unicode)):
             delims = (delims,)
 
         return self.recvline_pred(lambda line: any(map(line.startswith, delims)),
@@ -553,7 +554,8 @@ class tube(Timeout):
                 >>> t.recvline_endswith('oodle')
                 'Kaboodle'
         """
-        if not hasattr(delims, '__iter__'):
+        # Convert string into singleton tupple
+        if isinstance(delims, (str, unicode)):
             delims = (delims,)
 
         delims = tuple(delim + self.newline for delim in delims)
