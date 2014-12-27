@@ -10,12 +10,12 @@ from pwnlib.exception        import PwnlibException
 from pwnlib.memleak          import MemLeak
 from pwnlib.replacements     import *
 from pwnlib.rop              import ROP
+from pwnlib.timeout          import Timeout
 from pwnlib.tubes.listen     import listen
 from pwnlib.tubes.process    import process
 from pwnlib.tubes.remote     import remote
 from pwnlib.tubes.serialtube import serialtube
 from pwnlib.tubes.ssh        import ssh
-from pwnlib.tubes.timeout    import Timeout
 from pwnlib.tubes.tube       import tube
 from pwnlib.ui               import *
 from pwnlib.util             import crc, net, proc, iters
