@@ -271,9 +271,11 @@ class ContextType(object):
         >>> with context.local(arch = 'i386'):
         ...   nop()
         90
+        >>> from pwnlib.context import Thread as PwnThread
+        >>> from threading      import Thread as NormalThread
         >>> with context.local(arch = 'mips'):
-        ...     pwnthread = context.thread(target=nop)
-        ...     thread = threading.Thread(target=nop)
+        ...     pwnthread = PwnThread(target=nop)
+        ...     thread    = NormalThread(target=nop)
         >>> # Normal thread uses the default value for arch, 'i386'
         >>> _=(thread.start(), thread.join())
         90
