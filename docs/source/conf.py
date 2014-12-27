@@ -40,7 +40,7 @@ doctest_global_setup = '''
 import pwnlib
 pwnlib.context.context.reset_local()
 pwnlib.context.ContextType.defaults['log_level'] = 'ERROR'
-pwnlib.term.text.enabled = False
+pwnlib.term.text.when = 'never'
 '''
 
 autodoc_member_order = 'alphabetical'

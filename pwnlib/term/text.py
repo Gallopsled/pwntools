@@ -49,7 +49,7 @@ class Module(types.ModuleType):
 
     @when.setter
     def when(self, val):
-        self.enabled = eval_when(val)
+        self._when = eval_when(val)
 
     def _fg_color(self, c):
         return termcap.get('setaf', c) or termcap.get('setf', c)
@@ -65,7 +65,7 @@ class Module(types.ModuleType):
                 else:
                     return s
             else:
-                if self.enabled:
+                if self.when:
                     return init + s + self._reset
                 else:
                     return s
@@ -73,9 +73,6 @@ class Module(types.ModuleType):
         return functools.partial(f, self)
 
     def __getattr__(self, desc):
-        if 'PWNLIB_NOTERM' in os.environ:
-            return lambda x: x
-
         ds = desc.replace('gray', 'bright_black').split('_')
         init = ''
         while ds:
