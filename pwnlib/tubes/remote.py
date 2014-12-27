@@ -118,7 +118,6 @@ class remote(sock):
                 sock.setblocking(0)
             else:
                 sock.setblocking(1)
-                print `timeout`, type(timeout)
                 sock.settimeout(timeout)
 
             try:
