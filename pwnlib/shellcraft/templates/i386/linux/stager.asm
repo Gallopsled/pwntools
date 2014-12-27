@@ -1,4 +1,5 @@
 <% from pwnlib.shellcraft import common %>
+<% from pwnlib.shellcraft import i386 %>
 <% from pwnlib.shellcraft.i386 import linux %>
 <%docstring>
 Recives a fixed sized payload into a mmaped buffer
@@ -21,7 +22,7 @@ ${stager}:
     xor eax, eax
     mov al, SYS_mmap2
     xor ebx, ebx
-    mov ecx, ${size}
+    ${i386.mov("ecx", size)}
     push ecx
     xor edx, edx
     mov dl, 7
