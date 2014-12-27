@@ -830,13 +830,18 @@ class tube(Timeout):
             >>> t.fileno        = lambda: 1234
             >>> t.clean_and_log() #doctest: +ELLIPSIS
             [...] Cleaning tube (fileno = 1234):
-                hooray_data
+                'hooray_data'
             >>> context.clear()
         """
 
         if self.connected():
             log.info('Cleaning tube (fileno = %d):' % self.fileno())
-            log.indented(self.recvrepeat(timeout = timeout))
+            data = self.recvrepeat(timeout = timeout)
+            if all(c in string.printable for c in data):
+                for line in data.splitlines(True):
+                    log.indented(repr(line))
+            else:
+                log.indented(fiddling.hexdump(data))
 
     def connect_input(self, other):
         """connect_input(other)
