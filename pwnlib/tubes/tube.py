@@ -475,7 +475,7 @@ class tube(Timeout):
             'World'
         """
         if isinstance(items, (str,unicode)):
-            delims = (items,)
+            items = (items,)
 
         def pred(line):
             return any(d in line for d in items)
