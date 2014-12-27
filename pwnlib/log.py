@@ -219,8 +219,6 @@ class Logger(logging.getLoggerClass()):
         """
         return progress(*args, **kwargs)
 
-    done_failure = failure
-    done_success = success
     indent = indented
     output = info
     waitfor = progress
@@ -383,8 +381,6 @@ success  = logger.success
 failure  = logger.failure
 output   = logger.output
 debug    = logger.debug
-done_success = logger.done_success
-done_failure = logger.done_failure
 
 
 #
