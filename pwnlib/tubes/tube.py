@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from .buffer import Buffer
-from .timeout import Timeout
+from ..timeout import Timeout
 from .. import context, term, atexit
 from ..util import misc, fiddling
 from ..context import context
@@ -17,7 +17,7 @@ class tube(Timeout):
     #: and related functions.
     newline = '\n'
 
-    def __init__(self, timeout=None):
+    def __init__(self, timeout = Timeout.default):
         # assert type(self) == tube
 
         # assert isinstance(self, tube), (id(type(self)), id(tube))
@@ -26,8 +26,8 @@ class tube(Timeout):
         atexit.register(self.close)
 
     # Functions based on functions from subclasses
-    def recv(self, numb = 4096, timeout = None):
-        r"""recv(numb = 4096, timeout = None) -> str
+    def recv(self, numb = 4096, timeout = Timeout.default):
+        r"""recv(numb = 4096, timeout = Timeout.default) -> str
 
         Receives up to `numb` bytes of data from the tube, and returns
         as soon as any quantity of data is available.
@@ -52,12 +52,10 @@ class tube(Timeout):
             >>> t.unrecv('Woohoo')
             >>> t.recv() == 'Woohoo'
             True
-            >>> context.log_level = 'debug'
-            >>> _ = t.recv() # doctest: +ELLIPSIS
+            >>> with context.local(log_level='debug'):
+            ...    _ = t.recv() # doctest: +ELLIPSIS
             [...] Received 0xc bytes:
                 'Hello, world'
-            >>> context.clear()
-
         """
         return self._recv(numb, timeout) or ''
 
@@ -85,8 +83,8 @@ class tube(Timeout):
         """
         self.buffer.unget(data)
 
-    def _fillbuffer(self, timeout = None):
-        """_fillbuffer(timeout = None)
+    def _fillbuffer(self, timeout = Timeout.default):
+        """_fillbuffer(timeout = Timeout.default)
 
         Fills the internal buffer from the pipe, by calling
         :meth:`recv_raw` exactly once.
@@ -126,8 +124,8 @@ class tube(Timeout):
         return data
 
 
-    def _recv(self, numb = 4096, timeout = None):
-        """_recv(numb = 4096, timeout = None) -> str
+    def _recv(self, numb = 4096, timeout = Timeout.default):
+        """_recv(numb = 4096, timeout = Timeout.default) -> str
 
         Recieves one chunk of from the internal buffer or from the OS if the
         buffer is empty.
@@ -141,8 +139,8 @@ class tube(Timeout):
 
         return self.buffer.get(numb)
 
-    def recvpred(self, pred, timeout = None):
-        """recvpred(pred, timeout = None) -> str
+    def recvpred(self, pred, timeout = Timeout.default):
+        """recvpred(pred, timeout = Timeout.default) -> str
 
         Receives one byte at a time from the tube, until ``pred(bytes)``
         evaluates to True.
@@ -180,8 +178,8 @@ class tube(Timeout):
 
         return data
 
-    def recvn(self, numb, timeout = None):
-        """recvn(numb, timeout = None) -> str
+    def recvn(self, numb, timeout = Timeout.default):
+        """recvn(numb, timeout = Timeout.default) -> str
 
         Recieves exactly `n` bytes.
 
@@ -221,8 +219,8 @@ class tube(Timeout):
 
         return self.buffer.get(numb)
 
-    def recvuntil(self, delims, drop=False, timeout = None):
-        """recvuntil(delims, timeout = None) -> str
+    def recvuntil(self, delims, drop=False, timeout = Timeout.default):
+        """recvuntil(delims, timeout = Timeout.default) -> str
 
         Recieve data until one of `delims` is encountered.
 
@@ -312,8 +310,8 @@ class tube(Timeout):
 
         return ''
 
-    def recvlines(self, numlines, keep = False, timeout = None):
-        r"""recvlines(numlines, keep = False, timeout = None) -> str list
+    def recvlines(self, numlines, keep = False, timeout = Timeout.default):
+        r"""recvlines(numlines, keep = False, timeout = Timeout.default) -> str list
 
         Recieve up to ``numlines`` lines.
 
@@ -371,7 +369,7 @@ class tube(Timeout):
 
         return lines
 
-    def recvline(self, keep = True, timeout = None):
+    def recvline(self, keep = True, timeout = Timeout.default):
         r"""recvline(keep = True) -> str
 
         Receive a single line from the tube.
@@ -407,7 +405,7 @@ class tube(Timeout):
         """
         return self.recvuntil(self.newline, drop = not keep, timeout = timeout)
 
-    def recvline_pred(self, pred, keep = False, timeout = None):
+    def recvline_pred(self, pred, keep = False, timeout = Timeout.default):
         r"""recvline_pred(pred, keep = False) -> str
 
         Receive data until ``pred(line)`` returns a truthy value.
@@ -457,7 +455,7 @@ class tube(Timeout):
 
         return ''
 
-    def recvline_contains(self, items, keep = False, timeout = None):
+    def recvline_contains(self, items, keep = False, timeout = Timeout.default):
         r"""
         Receive lines until one line is found which contains at least
         one of `items`.
@@ -491,8 +489,8 @@ class tube(Timeout):
 
         return self.recvline_pred(pred, keep, timeout)
 
-    def recvline_startswith(self, delims, keep = False, timeout = None):
-        r"""recvline_startswith(delims, keep = False, timeout = None) -> str
+    def recvline_startswith(self, delims, keep = False, timeout = Timeout.default):
+        r"""recvline_startswith(delims, keep = False, timeout = Timeout.default) -> str
 
         Keep recieving lines until one is found that starts with one of
         `delims`.  Returns the last line recieved.
@@ -528,8 +526,8 @@ class tube(Timeout):
                                   keep=keep,
                                   timeout=timeout)
 
-    def recvline_endswith(self, delims, keep = False, timeout = None):
-        r"""recvline_endswith(delims, keep = False, timeout = None) -> str
+    def recvline_endswith(self, delims, keep = False, timeout = Timeout.default):
+        r"""recvline_endswith(delims, keep = False, timeout = Timeout.default) -> str
 
         Keep recieving lines until one is found that starts with one of
         `delims`.  Returns the last line recieved.
@@ -561,8 +559,8 @@ class tube(Timeout):
                                   keep=keep,
                                   timeout=timeout)
 
-    def recvregex(self, regex, exact = False, timeout = None):
-        """recvregex(regex, exact = False, timeout = None) -> str
+    def recvregex(self, regex, exact = False, timeout = Timeout.default):
+        """recvregex(regex, exact = False, timeout = Timeout.default) -> str
 
         Wrapper around :func:`recvpred`, which will return when a regex
         matches the string in the buffer.
@@ -584,9 +582,8 @@ class tube(Timeout):
 
         return self.recvpred(pred, timeout = timeout)
 
-    def recvline_regex(self, regex, exact = False, keep = False, timeout = None):
-        """recvregex(regex, exact = False, keep = False,
-                     timeout = None) -> str
+    def recvline_regex(self, regex, exact = False, keep = False, timeout = Timeout.default):
+        """recvregex(regex, exact = False, keep = False, timeout = Timeout.default) -> str
 
         Wrapper around :func:`recvline_pred`, which will return when a regex
         matches a line.
@@ -608,7 +605,7 @@ class tube(Timeout):
 
         return self.recvline_pred(pred, keep = keep, timeout = timeout)
 
-    def recvrepeat(self, timeout = None):
+    def recvrepeat(self, timeout = Timeout.default):
         """recvrepeat()
 
         Receives data until a timeout or EOF is reached.
@@ -647,7 +644,8 @@ class tube(Timeout):
         """
 
         with log.waitfor('Recieving all data') as h:
-            with self.local('inf'):
+            l = len(self.buffer)
+            with self.local(Timeout.forever):
                 try:
                     while True:
                         l = misc.size(len(self.buffer))
@@ -709,8 +707,8 @@ class tube(Timeout):
 
         self.send(line + self.newline)
 
-    def sendafter(self, delim, data, timeout = None):
-        """sendafter(delim, data, timeout = None) -> str
+    def sendafter(self, delim, data, timeout = Timeout.default):
+        """sendafter(delim, data, timeout = Timeout.default) -> str
 
         A combination of ``recvuntil(delim, timeout)`` and ``send(data)``.
         """
@@ -719,8 +717,8 @@ class tube(Timeout):
         self.send(data)
         return res
 
-    def sendlineafter(self, delim, data, timeout = None):
-        """sendlineafter(delim, data, timeout = None) -> str
+    def sendlineafter(self, delim, data, timeout = Timeout.default):
+        """sendlineafter(delim, data, timeout = Timeout.default) -> str
 
         A combination of ``recvuntil(delim, timeout)`` and ``sendline(data)``."""
 
@@ -728,16 +726,16 @@ class tube(Timeout):
         self.sendline(data)
         return res
 
-    def sendthen(self, delim, data, timeout = None):
-        """sendthen(delim, data, timeout = None) -> str
+    def sendthen(self, delim, data, timeout = Timeout.default):
+        """sendthen(delim, data, timeout = Timeout.default) -> str
 
         A combination of ``send(data)`` and ``recvuntil(delim, timeout)``."""
 
         self.send(data)
         return self.recvuntil(delim, timeout)
 
-    def sendlinethen(self, delim, data, timeout = None):
-        """sendlinethen(delim, data, timeout = None) -> str
+    def sendlinethen(self, delim, data, timeout = Timeout.default):
+        """sendlinethen(delim, data, timeout = Timeout.default) -> str
 
         A combination of ``sendline(data)`` and ``recvuntil(delim, timeout)``."""
 

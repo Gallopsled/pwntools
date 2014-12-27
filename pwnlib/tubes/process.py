@@ -140,9 +140,6 @@ class process(tube):
         pass
 
     def can_recv_raw(self, timeout):
-        if timeout > context.forever:
-            timeout = context.forever
-
         if not self.connected_raw('recv'):
             return False
 
