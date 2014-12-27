@@ -31,7 +31,6 @@ from pwnlib.util.web         import *
 
 # Promote these modules, so that "from pwn import *" will let you access them
 import \
-    collections   , operator      , os            , pwn           , \
-    pwnlib        , re            , string        , struct        , \
-    subprocess    , sys           , threading     , time          , \
-    tempfile
+    collections   , operator      , os            , pwnlib        , \
+    re            , string        , struct        , subprocess    , \
+    sys           , threading     , time          , tempfile
