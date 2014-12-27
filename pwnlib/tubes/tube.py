@@ -3,7 +3,6 @@ from .buffer import Buffer
 from ..timeout import Timeout
 from .. import context, term, atexit
 from ..util import misc, fiddling
-from ..context import context
 import re, threading, sys, time, subprocess, logging, string
 
 log = logging.getLogger(__name__)
@@ -769,7 +768,7 @@ class tube(Timeout):
                     log.info('Got EOF while reading in interactive')
                     break
 
-        t = context.thread(target = recv_thread)
+        t = context.Thread(target = recv_thread)
         t.daemon = True
         t.start()
 
@@ -906,7 +905,7 @@ class tube(Timeout):
             self.shutdown('send')
             other.shutdown('recv')
 
-        t = context.thread(target = pump)
+        t = context.Thread(target = pump)
         t.daemon = True
         t.start()
 

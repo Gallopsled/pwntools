@@ -46,15 +46,15 @@ Example
     assert d.lookup('system')      == system
 
 DynELF
-==========
 """
-from .elf     import *
+from . import elf
+from .elf     import ELF, constants
 from .memleak import MemLeak
 from .context import context
 
 from elftools.elf.enums import ENUM_D_TAG
 
-import os, logging
+import os, logging, ctypes
 
 log    = logging.getLogger(__name__)
 sizeof = ctypes.sizeof
@@ -186,7 +186,7 @@ class DynELF(object):
     def elfclass(self):
         """32 or 64"""
         if not self._elfclass:
-            elfclass = self.leak.field(self.libbase, Elf_eident.EI_CLASS)
+            elfclass = self.leak.field(self.libbase, elf.Elf_eident.EI_CLASS)
             self._elfclass =  {constants.ELFCLASS32: 32,
                               constants.ELFCLASS64: 64}[elfclass]
         return self._elfclass
@@ -275,8 +275,8 @@ class DynELF(object):
         base  = self.libbase
 
         #First find PT_DYNAMIC
-        Ehdr  = {32: Elf32_Ehdr, 64: Elf64_Ehdr}[self.elfclass]
-        Phdr  = {32: Elf32_Phdr, 64: Elf64_Phdr}[self.elfclass]
+        Ehdr  = {32: elf.Elf32_Ehdr, 64: elf.Elf64_Ehdr}[self.elfclass]
+        Phdr  = {32: elf.Elf32_Phdr, 64: elf.Elf64_Phdr}[self.elfclass]
 
         self.status("PT_DYNAMIC")
 
@@ -321,7 +321,7 @@ class DynELF(object):
         dynamic = self.dynamic
         name    = lambda tag: next(k for k,v in ENUM_D_TAG.items() if v == tag)
 
-        Dyn = {32: Elf32_Dyn,    64: Elf64_Dyn}     [self.elfclass]
+        Dyn = {32: elf.Elf32_Dyn,    64: elf.Elf64_Dyn}     [self.elfclass]
 
         # Found the _DYNAMIC program header, now find PLTGOT entry in it
         # An entry with a DT_NULL tag marks the end of the DYNAMIC array.
@@ -363,8 +363,8 @@ class DynELF(object):
         """
         w = self.waitfor("Finding linkmap")
 
-        Got     = {32: Elf_i386_GOT, 64: Elf_x86_64_GOT}[self.elfclass]
-        r_debug = {32: Elf32_r_debug, 64: Elf64_r_debug}[self.elfclass]
+        Got     = {32: elf.Elf_i386_GOT, 64: elf.Elf_x86_64_GOT}[self.elfclass]
+        r_debug = {32: elf.Elf32_r_debug, 64: elf.Elf64_r_debug}[self.elfclass]
 
         result = None
         pltgot = pltgot or self._find_dt(constants.DT_PLTGOT)
@@ -477,7 +477,7 @@ class DynELF(object):
         '''
         if not self._bases:
             leak    = self.leak
-            LinkMap = {32: Elf32_Link_Map, 64: Elf64_Link_Map}[self.elfclass]
+            LinkMap = {32: elf.Elf32_Link_Map, 64: elf.Elf64_Link_Map}[self.elfclass]
 
             cur = self.link_map
             while cur:
@@ -503,7 +503,7 @@ class DynELF(object):
         """
         cur     = self.link_map
         leak    = self.leak
-        LinkMap = {32: Elf32_Link_Map, 64: Elf64_Link_Map}[self.elfclass]
+        LinkMap = {32: elf.Elf32_Link_Map, 64: elf.Elf64_Link_Map}[self.elfclass]
 
         while cur:
             self.status("link_map entry %#x" % cur)
@@ -533,7 +533,7 @@ class DynELF(object):
     def _lookup(self, symb):
         """Performs the actual symbol lookup within one ELF file."""
         leak = self.leak
-        Dyn  = {32: Elf32_Dyn, 64: Elf64_Dyn}[self.elfclass]
+        Dyn  = {32: elf.Elf32_Dyn, 64: elf.Elf64_Dyn}[self.elfclass]
         name = lambda tag: next(k for k,v in ENUM_D_TAG.items() if v == tag)
 
         self.status('.gnu.hash/.hash, .strtab and .symtab offsets')
@@ -587,10 +587,10 @@ class DynELF(object):
         """
         self.status('.hash parms')
         leak       = self.leak
-        Sym        = {32: Elf32_Sym, 64: Elf64_Sym}[self.elfclass]
+        Sym        = {32: elf.Elf32_Sym, 64: elf.Elf64_Sym}[self.elfclass]
 
-        nbuckets   = leak.field(hshtab, Elf_HashTable.nbuckets)
-        bucketaddr = hshtab + sizeof(Elf_HashTable)
+        nbuckets   = leak.field(hshtab, elf.Elf_HashTable.nbuckets)
+        bucketaddr = hshtab + sizeof(elf.Elf_HashTable)
         chain      = bucketaddr + (nbuckets * 4)
 
         self.status('hashmap')
@@ -640,22 +640,22 @@ class DynELF(object):
         """
         self.status('.gnu.hash parms')
         leak = self.leak
-        Sym  = {32: Elf32_Sym, 64: Elf64_Sym}[self.elfclass]
+        Sym  = {32: elf.Elf32_Sym, 64: elf.Elf64_Sym}[self.elfclass]
 
         # The number of hash buckets (hash % nbuckets)
-        nbuckets  = leak.field(hshtab, GNU_HASH.nbuckets)
+        nbuckets  = leak.field(hshtab, elf.GNU_HASH.nbuckets)
 
         # Index of the first accessible symbol in the hash table
         # Numbering doesn't start at zero, it starts at symndx
-        symndx    = leak.field(hshtab, GNU_HASH.symndx)
+        symndx    = leak.field(hshtab, elf.GNU_HASH.symndx)
 
         # Number of things in the bloom filter.
         # We don't care about the contents, but we have to skip over it.
-        maskwords = leak.field(hshtab, GNU_HASH.maskwords)
+        maskwords = leak.field(hshtab, elf.GNU_HASH.maskwords)
 
         # Skip over the bloom filter to get to the buckets
         elfword = self.elfclass / 8
-        buckets = hshtab + sizeof(GNU_HASH) + (elfword * maskwords)
+        buckets = hshtab + sizeof(elf.GNU_HASH) + (elfword * maskwords)
 
         # The chains come after the buckets
         chains  = buckets + (4 * nbuckets)

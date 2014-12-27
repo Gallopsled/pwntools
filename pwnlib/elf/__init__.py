@@ -3,7 +3,7 @@
 from ..term import text
 from .datatypes import *
 from ..asm import asm, disasm
-from ..util import misc, proc
+from ..util import misc
 
 import mmap, subprocess, os, logging
 from elftools.elf.elffile import ELFFile

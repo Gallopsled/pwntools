@@ -427,7 +427,7 @@ class TermHandler(logging.Handler):
         """
         super(TermHandler, self).__init__(*args, **kwargs)
         self.stop    = threading.Event()
-        self.spinner = context.thread(target=self.spin, args=[term.output('')])
+        self.spinner = Thread(target=self.spin, args=[term.output('')])
         self.spinner.daemon = True
         self.spinner.start()
         self._handle = term.output('')

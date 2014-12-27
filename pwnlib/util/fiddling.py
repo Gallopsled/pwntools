@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import re, base64, random, string, sys
+import re, base64, random, string
 from . import packing, lists
 from .cyclic import cyclic_find
 from ..context import context

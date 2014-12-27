@@ -1,9 +1,9 @@
-import os, string, base64, time, tempfile, sys, shutil, re, logging, threading
+import os, time, tempfile, sys, shutil, re, logging, threading
 
 from .. import term
 from ..context import context
 from ..util import hashes, misc
-from .sock    import sock
+from .sock import sock
 from .process import process
 from ..timeout import Timeout
 
@@ -139,7 +139,7 @@ class ssh_channel(sock):
                     event.set()
                     break
 
-        t = context.thread(target = recv_thread, args = (event,))
+        t = context.Thread(target = recv_thread, args = (event,))
         t.daemon = True
         t.start()
 
@@ -246,7 +246,7 @@ class ssh_listener(sock):
             self.rhost, self.rport = self.sock.origin_addr
             h.success('Got connection from %s:%d' % (self.rhost, self.rport))
 
-        self._accepter = context.thread(target = accepter)
+        self._accepter = context.Thread(target = accepter)
         self._accepter.daemon = True
         self._accepter.start()
 
@@ -491,7 +491,7 @@ class ssh(Timeout):
             def update(has):
                 h.status("%s/%s" % (misc.size(has), total))
 
-            with context.local(log_level = 'ERROR'):
+            with context.context.local(log_level = 'ERROR'):
                 c = self.run('cat ' + misc.sh_string(remote))
             data = ''
 
@@ -589,7 +589,7 @@ class ssh(Timeout):
           data(str): The data to upload.
           remote(str): The filename to upload it to."""
 
-        with context.local(log_level = 'ERROR'):
+        with context.context.local(log_level = 'ERROR'):
             s = self.run('cat>' + misc.sh_string(remote))
             s.send(data)
             s.shutdown('send')

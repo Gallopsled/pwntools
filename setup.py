@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 from distutils.util import convert_path
 from distutils.command.install import INSTALL_SCHEMES
-import os, sys, glob
+import os, glob
 
 # Get all template files
 templates = []
