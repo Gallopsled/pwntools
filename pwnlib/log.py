@@ -451,10 +451,12 @@ class TermHandler(logging.Handler):
         state  = 0
         states = random.choice(spinners.spinners)
 
-        while not self.stop.wait(0.1):
+        while True:
             handle.update('[' + text.bold_blue(states[state]) + '] ')
             state += 1
             state %= len(states)
+            if self.stop.wait(0.1):
+                break
         handle.update('')
 
 def _monkeypatch(obj, enter, exit):
