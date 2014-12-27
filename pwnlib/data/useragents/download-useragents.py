@@ -20,41 +20,40 @@ def getxml(url):
     f.close()
     return xml
 
-log.waitfor('Fetching from from http://www.useragentstring.com')
-html = getxml('http://www.useragentstring.com/pages/All/')
-soup = BeautifulSoup(html)
-log.done_success()
+with log.waitfor('Fetching from from http://www.useragentstring.com') as l:
+    html = getxml('http://www.useragentstring.com/pages/All/')
+    soup = BeautifulSoup(html)
+    l.success()
 
-log.waitfor('Parsing list')
-liste = soup.select('#liste a')
-for a in liste:
-    href = a.get('href')
-    if not href or href[0] != '/':
-        continue
-    m = re.match('More (.+) user agents strings -->>', a.string)
-    if m:
-        target = m.group(1)
-        log.waitfor('Fetching additional user agents for %s' % target)
-        html = getxml('http://www.useragentstring.com' + href)
-        soup = BeautifulSoup(html)
-        subliste = soup.select('#liste a')
-        for a in subliste:
-            ua = a.string.strip()
-            try:
-                ua = ua.decode('utf-8')
-            except UnicodeEncodeError:
-                continue
-            uas.add(ua)
-        log.done_success()
-    else:
-        uas.add(a.string.strip())
-log.done_success()
+with log.waitfor('Parsing list') as l:
+    liste = soup.select('#liste a')
+    for a in liste:
+        href = a.get('href')
+        if not href or href[0] != '/':
+            continue
+        m = re.match('More (.+) user agents strings -->>', a.string)
+        if m:
+            target = m.group(1)
+            with log.waitfor('Fetching additional user agents for %s' % target) as l:
+                html = getxml('http://www.useragentstring.com' + href)
+                soup = BeautifulSoup(html)
+                subliste = soup.select('#liste a')
+                for a in subliste:
+                    ua = a.string.strip()
+                    try:
+                        ua = ua.decode('utf-8')
+                    except UnicodeEncodeError:
+                        continue
+                    uas.add(ua)
+                l.success()
+        else:
+            uas.add(a.string.strip())
+    l.success()
 
-
-log.waitfor('Fetching from from http://techpatterns.com')
-xml = getxml('http://techpatterns.com/downloads/firefox/useragentswitcher.xml')
-soup = BeautifulSoup(xml)
-log.done_success()
+with log.waitfor('Fetching from from http://techpatterns.com') as l:
+    xml = getxml('http://techpatterns.com/downloads/firefox/useragentswitcher.xml')
+    soup = BeautifulSoup(xml)
+    l.success()
 
 def loop(xml):
     for item in xml:
@@ -64,27 +63,25 @@ def loop(xml):
         elif item.name == 'useragent':
             uas.add(item['useragent'].strip())
 
-log.waitfor('Parsing list')
-loop(soup.body.useragentswitcher)
-log.done_success()
+with log.waitfor('Parsing list') as l:
+    loop(soup.body.useragentswitcher)
+    l.success()
 
+with log.waitfor('Fetching from from http://www.user-agents.org') as l:
+    xml = getxml('http://www.user-agents.org/allagents.xml')
+    soup = BeautifulSoup(xml)
+    l.success()
 
-log.waitfor('Fetching from from http://www.user-agents.org')
-
-xml = getxml('http://www.user-agents.org/allagents.xml')
-soup = BeautifulSoup(xml)
-log.done_success()
-
-log.waitfor('Parsing list')
-for item in soup.body.__getattr__('user-agents'):
-    if item.name == 'user-agent':
-        ua = item.select('string')[0].string.strip()
-        try:
-            ua = ua.decode('utf-8')
-        except UnicodeEncodeError:
-            continue
-        uas.add(ua)
-log.done_success()
+with log.waitfor('Parsing list') as l:
+    for item in soup.body.__getattr__('user-agents'):
+        if item.name == 'user-agent':
+            ua = item.select('string')[0].string.strip()
+            try:
+                ua = ua.decode('utf-8')
+            except UnicodeEncodeError:
+                continue
+            uas.add(ua)
+    l.success()
 
 log.info('Fetched %d user agents' % len(uas))
 
