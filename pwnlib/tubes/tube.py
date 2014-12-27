@@ -269,8 +269,8 @@ class tube(Timeout):
                 'Hello'
 
         """
-        # Convert string into list of characters
-        if not hasattr(delims, '__iter__'):
+        # Convert string into singleton tupple
+        if isinstance(delims, (str, unicode)):
             delims = (delims,)
 
         # Longest delimiter for tracking purposes
