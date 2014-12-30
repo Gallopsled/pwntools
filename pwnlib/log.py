@@ -431,7 +431,6 @@ class TermHandler(logging.Handler):
         self.spinner.daemon = True
         self.spinner.start()
         self._handle = term.output('')
-        self.last    = 0
 
     def emit(self, record):
         final = getattr(record, 'pwnlib_stop', False)
@@ -440,12 +439,8 @@ class TermHandler(logging.Handler):
             self.stop.set()
             self.spinner.join()
 
-        now = time.time()
-
-        if final or (now - self.last > 0.1):
-            msg = self.format(record)
-            self._handle.update(msg + '\n')
-            self.last = now
+        msg = self.format(record)
+        self._handle.update(msg + '\n')
 
     def spin(self, handle):
         state  = 0
