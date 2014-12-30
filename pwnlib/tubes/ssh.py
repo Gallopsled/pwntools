@@ -1,6 +1,7 @@
 import os, time, tempfile, sys, shutil, re, logging, threading
 
-from .. import term, context
+from .. import term
+from ..context import context
 from ..util import hashes, misc
 from .sock import sock
 from .process import process
@@ -354,7 +355,7 @@ class ssh(object):
         (data, exit_status). If `tty` is True, then the command is run inside
         a TTY on the remote server."""
 
-        with context.context.local(log_level = 'ERROR'):
+        with context.local(log_level = 'ERROR'):
             c = self.run(process, tty, wd = wd, timeout = None)
             data = c.recvall()
             retcode = c.wait()
@@ -488,7 +489,7 @@ class ssh(object):
             def update(has):
                 h.status("%s/%s" % (misc.size(has), total))
 
-            with context.context.local(log_level = 'ERROR'):
+            with context.local(log_level = 'ERROR'):
                 c = self.run('cat ' + misc.sh_string(remote))
             data = ''
 
@@ -586,7 +587,7 @@ class ssh(object):
           data(str): The data to upload.
           remote(str): The filename to upload it to."""
 
-        with context.context.local(log_level = 'ERROR'):
+        with context.local(log_level = 'ERROR'):
             s = self.run('cat>' + misc.sh_string(remote))
             s.send(data)
             s.shutdown('send')
