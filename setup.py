@@ -20,6 +20,19 @@ version = ns['__version__']
 for scheme in INSTALL_SCHEMES.values():
     scheme['data'] = scheme['purelib']
 
+# Find all of the console scripts
+console_scripts = []
+for filename in glob.glob('pwnlib/commandline/*'):
+    filename = os.path.basename(filename)
+    filename, ext = os.path.splitext(filename)
+
+    if ext != '.py' or '__init__' in filename:
+        continue
+
+    script = '%s=pwnlib.commandline.%s:main' % (filename, filename)
+    console_scripts.append(script)
+
+
 setup(
     name                 = 'pwntools',
     packages             = find_packages(),
@@ -33,6 +46,7 @@ setup(
             'data/includes/*/*.h',
         ] + templates,
     },
+    entry_points = {'console_scripts': console_scripts},
     scripts              = glob.glob("bin/*"),
     description          = "This is the CTF framework used by Gallopsled in every CTF.",
     author               = "Gallopsled et al.",
