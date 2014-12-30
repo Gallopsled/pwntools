@@ -473,6 +473,15 @@ class tube(Timeout):
             >>> t.recv_raw = lambda n: "Hello\nWorld\nXylophone\n"
             >>> t.recvline_contains('r')
             'World'
+            >>> f = lambda n: "cat dog bird\napple pear orange\nbicycle car train\n"
+            >>> t = tube()
+            >>> t.recv_raw = f
+            >>> t.recvline_contains('pear')
+            'apple pear orange'
+            >>> t = tube()
+            >>> t.recv_raw = f
+            >>> t.recvline_contains(('car', 'train'))
+            'bicycle car train'
         """
         if isinstance(items, (str,unicode)):
             items = (items,)
