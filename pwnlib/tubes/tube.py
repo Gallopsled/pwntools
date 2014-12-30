@@ -638,15 +638,16 @@ class tube(Timeout):
         """
 
         with log.waitfor('Recieving all data') as h:
-            l = len(self.buffer)
             with self.local('inf'):
                 try:
-                    while self._fillbuffer():
-                        h.status(misc.size(len(self.buffer)))
+                    while True:
+                        l = misc.size(len(self.buffer))
+                        h.status(l)
+                        if not self._fillbuffer():
+                            break
                 except EOFError:
                     pass
-
-        h.success("Done (%s)" % misc.size(l))
+            h.success("Done (%s)" % l)
         self.close()
 
         return self.buffer.get()
