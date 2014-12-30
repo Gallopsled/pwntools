@@ -4,16 +4,16 @@ from subprocess import check_output, CalledProcessError
 from tempfile import NamedTemporaryFile
 
 def dump(x):
-	n = NamedTemporaryFile(delete=False)
-	o = check_output(['objdump','-d','-x','-s',x])
-	n.write(o)
-	n.flush()
-	return n.name
+    n = NamedTemporaryFile(delete=False)
+    o = check_output(['objdump','-d','-x','-s',x])
+    n.write(o)
+    n.flush()
+    return n.name
 
 def diff(a,b):
-	try: return check_output(['diff',a,b])
-	except CalledProcessError as e:
-		return e.output
+    try: return check_output(['diff',a,b])
+    except CalledProcessError as e:
+        return e.output
 
 
 p = ArgumentParser()

@@ -14,7 +14,7 @@ def main():
     a = p.parse_args()
 
     if not a.offset.startswith('0x'):
-    	a.offset = '0x' + a.offset
+        a.offset = '0x' + a.offset
 
     offset = int(a.offset, 16)
     bytes  = unhex(a.bytes)
