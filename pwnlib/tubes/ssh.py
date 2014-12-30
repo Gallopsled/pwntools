@@ -491,7 +491,7 @@ class ssh(Timeout):
             def update(has):
                 h.status("%s/%s" % (misc.size(has), total))
 
-            with context.context.local(log_level = 'ERROR'):
+            with context.local(log_level = 'ERROR'):
                 c = self.run('cat ' + misc.sh_string(remote))
             data = ''
 
@@ -589,7 +589,7 @@ class ssh(Timeout):
           data(str): The data to upload.
           remote(str): The filename to upload it to."""
 
-        with context.context.local(log_level = 'ERROR'):
+        with context.local(log_level = 'ERROR'):
             s = self.run('cat>' + misc.sh_string(remote))
             s.send(data)
             s.shutdown('send')

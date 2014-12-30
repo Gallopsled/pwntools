@@ -845,6 +845,9 @@ class ContextType(object):
     def word_size(self, value):
         self.bits = value
 
+    thread = Thread
+    Thread = Thread
+
 
 #: Global ``context`` object, used to store commonly-used pwntools settings.
 #: In most cases, the context is used to infer default variables values.
