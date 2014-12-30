@@ -116,9 +116,9 @@ class tube(Timeout):
 
             if all(c in string.printable for c in data):
                 for line in data.splitlines(True):
-                    log.indented(repr(line), level=logging.DEBUG)
+                    log.indented(repr(line), level = logging.DEBUG)
             else:
-                log.indented(fiddling.hexdump(data))
+                log.indented(fiddling.hexdump(data), level = logging.DEBUG)
 
         if data:
             self.buffer.add(data)
@@ -685,9 +685,9 @@ class tube(Timeout):
             log.debug('Sent %#x bytes:' % len(data))
             if all(c in string.printable for c in data):
                 for line in data.splitlines(True):
-                    log.indented(repr(line), level=logging.DEBUG)
+                    log.indented(repr(line), level = logging.DEBUG)
             else:
-                log.indented(fiddling.hexdump(data))
+                log.indented(fiddling.hexdump(data), level = logging.DEBUG)
         self.send_raw(data)
 
     def sendline(self, line):
