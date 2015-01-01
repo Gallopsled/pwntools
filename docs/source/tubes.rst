@@ -15,13 +15,13 @@
 
    .. automodule:: pwnlib.tubes.remote
 
-      .. autoclass:: pwnlib.tubes.remote.remote(host, port, fam = None, typ = None, proto = 0, timeout = 'default', log_level = INFO)
+      .. autoclass:: pwnlib.tubes.remote.remote
          :members:
          :show-inheritance:
 
    .. automodule:: pwnlib.tubes.listen
 
-      .. autoclass:: pwnlib.tubes.listen.listen(port, bindaddr = "0.0.0.0", fam = "any", typ = "tcp", timeout = 'default', log_level = INFO)
+      .. autoclass:: pwnlib.tubes.listen.listen
          :members:
          :show-inheritance:
 
@@ -35,7 +35,7 @@
 
    .. automodule:: pwnlib.tubes.process
 
-      .. autoclass:: pwnlib.tubes.process.process(args, shell = False, executable = None, env = None, timeout = 'default', log_level = INFO)
+      .. autoclass:: pwnlib.tubes.process.process
          :members: kill, poll, communicate
          :show-inheritance:
 
@@ -44,7 +44,7 @@
 
    .. automodule:: pwnlib.tubes.ssh
 
-      .. autoclass:: pwnlib.tubes.ssh.ssh(user, host, port = 22, password = None, key = None, keyfile = None, proxy_command = None, proxy_sock = None, timeout = 'default', log_level = INFO)
+      .. autoclass:: pwnlib.tubes.ssh.ssh
          :members:
 
       .. autoclass:: pwnlib.tubes.ssh.ssh_channel()

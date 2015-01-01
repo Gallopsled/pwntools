@@ -6,6 +6,7 @@ branches:
     - master
 install:
   - source .travis_install.sh
+  - source .travis_ssh_setup.sh
   - python -c 'from pwn import *; print pwnlib.term.term_mode' NOTERM
   - python -c 'from pwn import *; print pwnlib.term.term_mode' NOTERM
   - python -c 'from pwn import *; print pwnlib.term.term_mode' NOTERM

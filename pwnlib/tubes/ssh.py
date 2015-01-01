@@ -224,23 +224,24 @@ class ssh_listener(sock):
         self.parent = parent
 
         self.host = parent.host
-        self.port = port
 
-        msg = 'Waiting on port %d via SSH to %s' % (self.port, self.host)
-        h   = log.waitfor(msg)
         try:
-            parent.transport.request_port_forward(bind_address, self.port)
+            self.port = parent.transport.request_port_forward(bind_address, port)
+
         except:
             h.failure('Failed create a port forwarding')
             raise
 
         def accepter():
+            msg = 'Waiting on port %d via SSH to %s' % (self.port, self.host)
+            h   = log.waitfor(msg)
             try:
                 self.sock = parent.transport.accept()
                 parent.transport.cancel_port_forward(bind_address, self.port)
             except:
                 self.sock = None
-                h.failure('Failed to get a connection')
+                h.failure()
+                log.exception('Failed to get a connection')
                 return
 
             self.rhost, self.rport = self.sock.origin_addr
@@ -334,16 +335,37 @@ class ssh(Timeout):
         is requested on the remote server.
 
         Return a :class:`pwnlib.tubes.ssh.ssh_channel` object.
+
+        Examples:
+            >>> s = ssh(host='localhost',
+            ...         user='demouser',
+            ...         password='demopass')
+            >>> sh = s.shell()
+            >>> sh.sendline('echo Hello; exit')
+            >>> 'Hello' in sh.recvall()
+            True
         """
         return self.run(None, tty, timeout = timeout)
 
     def run(self, process, tty = False, wd = None, env = None, timeout = Timeout.default):
-        """run(process, tty = False, wd = None, env = None, timeout = Timeout.default) -> ssh_channel
+        r"""run(process, tty = False, wd = None, env = None, timeout = Timeout.default) -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
         then a TTY is requested on the remote server.
 
-        Return a :class:`pwnlib.tubes.ssh.ssh_channel` object."""
+        Return a :class:`pwnlib.tubes.ssh.ssh_channel` object.
+
+        Examples:
+            >>> s = ssh(host='localhost',
+            ...         user='demouser',
+            ...         password='demopass')
+            >>> py = s.run('python -i')
+            >>> py.clean()
+            >>> py.sendline('print 2+2')
+            >>> py.sendline('exit')
+            >>> py.recvline()
+            '4\n'
+        """
 
         if wd is None:
             wd = self._wd
@@ -351,11 +373,19 @@ class ssh(Timeout):
         return ssh_channel(self, process, tty, wd, env, timeout)
 
     def run_to_end(self, process, tty = False, wd = None, env = None):
-        """run_to_end(process, tty = False, timeout = Timeout.default, env = None) -> str
+        r"""run_to_end(process, tty = False, timeout = Timeout.default, env = None) -> str
 
         Run a command on the remote server and return a tuple with
         (data, exit_status). If `tty` is True, then the command is run inside
-        a TTY on the remote server."""
+        a TTY on the remote server.
+
+        Examples:
+            >>> s = ssh(host='localhost',
+            ...         user='demouser',
+            ...         password='demopass')
+            >>> s.run_to_end('echo Hello; exit 17')
+            ('Hello\n', 17)
+            """
 
         with context.local(log_level = 'ERROR'):
             c = self.run(process, tty, wd = wd, timeout = Timeout.default)
@@ -365,48 +395,92 @@ class ssh(Timeout):
             return data, retcode
 
     def connect_remote(self, host, port, timeout = Timeout.default):
-        """connect_remote(host, port, timeout = Timeout.default) -> ssh_connecter
+        r"""connect_remote(host, port, timeout = Timeout.default) -> ssh_connecter
 
         Connects to a host through an SSH connection. This is equivalent to
         using the ``-L`` flag on ``ssh``.
 
-        Returns a :class:`pwnlib.tubes.ssh.ssh_connecter` object."""
+        Returns a :class:`pwnlib.tubes.ssh.ssh_connecter` object.
+
+        Examples:
+            >>> from pwn import *
+            >>> s = ssh(host='localhost',
+            ...         user='demouser',
+            ...         password='demopass')
+            >>> l = listen()
+            >>> a = s.connect_remote('localhost', l.lport)
+            >>> b = l.wait_for_connection()
+            >>> a.sendline('Hello')
+            >>> b.recvline()
+            'Hello\n'
+        """
 
         return ssh_connecter(self, host, port, timeout)
 
-    def listen_remote(self, port, bind_address = '', timeout = Timeout.default):
-        """listen_remote(port, bind_address = '', timeout = Timeout.default) -> ssh_connecter
+    def listen_remote(self, port = 0, bind_address = '', timeout = Timeout.default):
+        r"""listen_remote(port = 0, bind_address = '', timeout = Timeout.default) -> ssh_connecter
 
         Listens remotely through an SSH connection. This is equivalent to
         using the ``-R`` flag on ``ssh``.
 
-        Returns a :class:`pwnlib.tubes.ssh.ssh_listener` object."""
+        Returns a :class:`pwnlib.tubes.ssh.ssh_listener` object.
+
+        Examples:
+
+            >>> from pwn import *
+            >>> s = ssh(host='localhost',
+            ...         user='demouser',
+            ...         password='demopass')
+            >>> l = s.listen_remote()
+            >>> a = remote('localhost', l.port)
+            >>> b = l.wait_for_connection()
+            >>> a.sendline('Hello')
+            >>> b.recvline()
+            'Hello\n'
+        """
 
         return ssh_listener(self, bind_address, port, timeout)
 
     def __getitem__(self, attr):
         """Permits indexed access to run commands over SSH
 
-        >>> s = ssh(host='bandit.labs.overthewire.org', # doctest: +SKIP
-        ...         user='bandit0',
-        ...         password='bandit0')
-        >>> s['echo hello'] # doctest: +SKIP
-        'hello'
+        Examples:
+
+            >>> s = ssh(host='localhost',
+            ...         user='demouser',
+            ...         password='demopass')
+            >>> s['echo hello']
+            'hello'
+        """
+        return self.__getattr__(attr)()
+
+    def __call__(self, attr):
+        """Permits function-style access to run commands over SSH
+
+        Examples:
+
+            >>> s = ssh(host='localhost',
+            ...         user='demouser',
+            ...         password='demopass')
+            >>> s('echo hello')
+            'hello'
         """
         return self.__getattr__(attr)()
 
     def __getattr__(self, attr):
         """Permits member access to run commands over SSH
 
-        >>> s = ssh(host='bandit.labs.overthewire.org', # doctest: +SKIP
-        ...         user='bandit0',
-        ...         password='bandit0')
-        >>> s.echo('hello') # doctest: +SKIP
-        'hello'
-        >>> s.whoami() # doctest: +SKIP
-        'bandit0'
-        >>> s.echo(['huh','yay','args']) # doctest: +SKIP
-        'huh yay args'
+        Examples:
+
+            >>> s = ssh(host='localhost',
+            ...         user='demouser',
+            ...         password='demopass')
+            >>> s.echo('hello')
+            'hello'
+            >>> s.whoami()
+            'demouser'
+            >>> s.echo(['huh','yay','args'])
+            'huh yay args'
         """
         bad_attrs = [
             'trait_names',          # ipython tab-complete
@@ -429,8 +503,20 @@ class ssh(Timeout):
         return runner
 
     def connected(self):
-        """Returns True if we are connected."""
-        return self.client != None
+        """Returns True if we are connected.
+
+        Example:
+
+            >>> s = ssh(host='localhost',
+            ...         user='demouser',
+            ...         password='demopass')
+            >>> s.connected()
+            True
+            >>> s.close()
+            >>> not s.connected()
+            True
+        """
+        return self.client and self.client.get_transport().is_active()
 
     def close(self):
         """Close the connection."""
@@ -537,7 +623,18 @@ class ssh(Timeout):
         """Downloads a file from the remote server and returns it as a string.
 
         Args:
-          remote(str): The remote filename to download."""
+          remote(str): The remote filename to download.
+
+
+        Examples:
+            >>> s = ssh(host='localhost',
+            ...         user='demouser',
+            ...         password='demopass')
+            >>> with file('/tmp/bar','w+') as f:
+            ...     f.write('Hello, world')
+            >>> s.download_data('/tmp/bar')
+            'Hello, world'
+        """
 
         with open(self._download_to_cache(remote)) as fd:
             return fd.read()
@@ -587,7 +684,16 @@ class ssh(Timeout):
 
         Args:
           data(str): The data to upload.
-          remote(str): The filename to upload it to."""
+          remote(str): The filename to upload it to.
+
+        Examoles:
+            >>> s = ssh(host='localhost',
+            ...         user='demouser',
+            ...         password='demopass')
+            >>> s.upload_data('Hello, world', '/tmp/foo')
+            >>> file('/tmp/foo').read()
+            'Hello, world'
+        """
 
         with context.local(log_level = 'ERROR'):
             s = self.run('cat>' + misc.sh_string(remote))
@@ -699,6 +805,16 @@ class ssh(Timeout):
         Args:
             wd(string): Working directory.  Default is to auto-generate a directory
                 based on the result of running 'mktemp -d' on the remote machine.
+
+        Examples:
+            >>> s = ssh(host='localhost',
+            ...         user='demouser',
+            ...         password='demopass')
+            >>> cwd = s.set_working_directory()
+            >>> s.ls()
+            ''
+            >>> s.pwd() == cwd
+            True
         """
         status = 0
 
