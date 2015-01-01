@@ -1,7 +1,7 @@
 from .sock     import sock
 from ..timeout import Timeout
 from ..context import context
-import socket, errno, threading, logging
+import socket, errno, logging
 
 log = logging.getLogger(__name__)
 
@@ -94,7 +94,7 @@ class listen(sock):
             self.rhost, self.rport = rhost[:2]
             h.success('Got connection from %s on port %d' % (self.rhost, self.rport))
 
-        self._accepter = context.thread(target = accepter)
+        self._accepter = context.Thread(target = accepter)
         self._accepter.daemon = True
         self._accepter.start()
 
@@ -104,7 +104,7 @@ class listen(sock):
             p = super(listen, self).spawn_process(*args, **kwargs)
             p.wait()
             self.close()
-        t = context.thread(target = accepter)
+        t = context.Thread(target = accepter)
         t.daemon = True
         t.start()
 

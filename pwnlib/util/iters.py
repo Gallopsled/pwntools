@@ -53,7 +53,7 @@ __all__ = [
 ]
 
 from itertools import *
-import itertools, collections, operator, random, copy, logging
+import collections, operator, random, copy, logging
 log = logging.getLogger(__name__)
 
 def take(n, iterable):

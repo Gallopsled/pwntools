@@ -3,9 +3,8 @@
 import hashlib, os, sys, tempfile, re
 import logging
 
-from .context import context
 from .elf     import ELF
-from .util    import packing, lists
+from .util    import packing
 
 log = logging.getLogger(__name__)
 

@@ -1,4 +1,4 @@
-from . import key, readline, termcap, text, keymap, term
+from . import key, readline, text, termcap, keymap, term
 import sys
 
 # Re-exports (XXX: Are these needed?)

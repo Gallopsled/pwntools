@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-import sys, string, os, re
+import sys, re
 from pwnlib.util import safeeval
 
 python = open(sys.argv[1], "w")

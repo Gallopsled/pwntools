@@ -1,5 +1,5 @@
 import sys
-from . import term, text, key
+from . import term, text
 from . import keymap as km
 from . import keyconsts as kc
 cursor = text.reverse

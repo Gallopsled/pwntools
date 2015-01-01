@@ -3,7 +3,7 @@ from pwnlib                  import *
 
 # Promote functions from these modules to toplevel
 from pwnlib.asm              import asm, disasm, cpp
-from pwnlib.context          import context
+from pwnlib.context          import context, Thread
 from pwnlib.dynelf           import DynELF
 from pwnlib.elf              import ELF, load
 from pwnlib.exception        import PwnlibException
@@ -31,7 +31,6 @@ from pwnlib.util.web         import *
 
 # Promote these modules, so that "from pwn import *" will let you access them
 import \
-    collections   , operator      , os            , pwn           , \
-    pwnlib        , re            , string        , struct        , \
-    subprocess    , sys           , threading     , time          , \
-    tempfile
+    collections   , operator      , os            , pwnlib        , \
+    re            , string        , struct        , subprocess    , \
+    sys           , threading     , time          , tempfile

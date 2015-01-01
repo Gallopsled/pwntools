@@ -67,21 +67,19 @@ class Matcher:
         self._hash = h | (m << 6) | (t << 7)
 
     def __call__(self, k):
-        from . import key
-        if isinstance(k, key.Key):
+        if isinstance(k, Key):
             return all([k.type == self._type,
                         k.code == self._code,
                         k.mods == self._mods,
                         ])
 
     def __eq__(self, other):
-        from . import key
         if   isinstance(other, Matcher):
             return all([other._type == self._type,
                         other._code == self._code,
                         other._mods == self._mods,
                         ])
-        elif isinstance(other, key.Key):
+        elif isinstance(other, Key):
             return self.__call__(other)
         else:
             return False

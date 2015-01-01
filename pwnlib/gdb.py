@@ -1,4 +1,4 @@
-import os, tempfile, re, shlex, subprocess, logging
+import os, tempfile, re, shlex, logging
 from .util import misc, proc
 from . import tubes, elf
 
