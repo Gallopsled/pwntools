@@ -65,7 +65,7 @@ class sock(tube):
                 raise
 
     def settimeout_raw(self, timeout):
-        if hasattr(self, 'sock', False) and self.sock:
+        if hasattr(self, 'sock') and self.sock:
             self.sock.settimeout(timeout)
 
     def can_recv_raw(self, timeout):
