@@ -18,7 +18,7 @@ from pwnlib.tubes.ssh        import ssh
 from pwnlib.tubes.timeout    import Timeout
 from pwnlib.tubes.tube       import tube
 from pwnlib.ui               import *
-from pwnlib.util             import crc, net, proc, iters
+from pwnlib.util             import crc, net, proc, iters, safeeval
 from pwnlib.util.cyclic      import *
 from pwnlib.util.fiddling    import *
 from pwnlib.util.hashes      import *
