@@ -245,15 +245,15 @@ class tube(Timeout):
                 >>> t.recv_raw = lambda n: "Hello World!"
                 >>> t.recvuntil(' ')
                 'Hello '
-                >>> t.clean(0)
+                >>> _=t.clean(0)
                 >>> # Matches on 'o' in 'Hello'
                 >>> t.recvuntil(tuple(' Wor'))
                 'Hello'
-                >>> t.clean(0)
+                >>> _=t.clean(0)
                 >>> # Matches expressly full string
                 >>> t.recvuntil(' Wor')
                 'Hello Wor'
-                >>> t.clean(0)
+                >>> _=t.clean(0)
                 >>> # Matches on full string, drops match
                 >>> t.recvuntil(' Wor', drop=True)
                 'Hello'
@@ -814,13 +814,17 @@ class tube(Timeout):
             >>> t = tube()
             >>> t.unrecv('clean me up')
             >>> t.clean(0)
+            'clean me up'
             >>> len(t.buffer)
             0
         """
+        if timeout == 0:
+            return self.buffer.get()
+
         return self.recvrepeat(timeout)
 
     def clean_and_log(self, timeout = 0.05):
-        """clean_and_log(timeout = 0.05)
+        r"""clean_and_log(timeout = 0.05)
 
         Works exactly as :meth:`pwnlib.tubes.tube.tube.clean`, but logs recieved
         data with :meth:`pwnlib.log.info`.
@@ -831,7 +835,7 @@ class tube(Timeout):
 
         Examples:
 
-            >>> def recv(n, data=['', 'hooray_data\x00']):
+            >>> def recv(n, data=['', 'hooray_data']):
             ...     while data: return data.pop()
             >>> t = tube()
             >>> t.recv_raw      = recv
@@ -839,10 +843,9 @@ class tube(Timeout):
             >>> t.fileno        = lambda: 1234
             >>> with context.local(log_level='info'):
             ...     data = t.clean_and_log() #doctest: +ELLIPSIS
-            00000000  68 6f 6f 72  61 79 5f 64  61 74 61 00               │hoor│ay_d│ata·││
-            0000000c
+                'hooray_data'
             >>> data
-            'hooray_data\x00'
+            'hooray_data'
             >>> context.clear()
         """
         data = self.clean(timeout)

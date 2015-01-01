@@ -360,7 +360,7 @@ class ssh(Timeout):
             ...         user='demouser',
             ...         password='demopass')
             >>> py = s.run('python -i')
-            >>> py.clean()
+            >>> _ = py.recvuntil('>>> ') #doctest
             >>> py.sendline('print 2+2')
             >>> py.sendline('exit')
             >>> py.recvline()
