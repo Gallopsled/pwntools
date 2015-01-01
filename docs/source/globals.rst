@@ -76,6 +76,9 @@ This is a quick list of most of the objects and routines imported, in rough orde
     - Routines for querying about processes
 - ``pause``
     - It's the new ``getch``
+- ``safeeval``
+    - :mod:`pwnlib.util.safeeval`
+    - Functions for safely evalutaing python code without nasty side-effects.
 
 These are all pretty self explanatory, but are useful to have in the global namespace.
 
