@@ -5,6 +5,7 @@ from ..context import context
 from ..util import hashes, misc
 from .sock    import sock
 from .process import process
+from ..timeout import Timeout
 
 log = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ h.setFormatter(logging.Formatter())
 paramiko_log.addHandler(h)
 
 class ssh_channel(sock):
-    def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = None):
+    def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = Timeout.default):
         super(ssh_channel, self).__init__(timeout)
 
         # keep the parent from being garbage collected in some cases
@@ -184,7 +185,7 @@ class ssh_channel(sock):
         log.info('Closed SSH channel with %s' % self.host)
 
 class ssh_connecter(sock):
-    def __init__(self, parent, host, port, timeout = None):
+    def __init__(self, parent, host, port, timeout = Timeout.default):
         super(ssh_connecter, self).__init__(timeout)
 
         # keep the parent from being garbage collected in some cases
@@ -216,7 +217,7 @@ class ssh_connecter(sock):
 
 
 class ssh_listener(sock):
-    def __init__(self, parent, bind_address, port, timeout = None):
+    def __init__(self, parent, bind_address, port, timeout = Timeout.default):
         super(ssh_listener, self).__init__(timeout)
 
         # keep the parent from being garbage collected in some cases
@@ -270,7 +271,7 @@ class ssh_listener(sock):
 
 
 class ssh(object):
-    def __init__(self, user, host, port = 22, password = None, key = None, keyfile = None, proxy_command = None, proxy_sock = None, timeout = None):
+    def __init__(self, user, host, port = 22, password = None, key = None, keyfile = None, proxy_command = None, proxy_sock = None, timeout = Timeout.default):
         """Creates a new ssh connection.
 
         Args:
@@ -325,8 +326,8 @@ class ssh(object):
 
             h.success()
 
-    def shell(self, tty = True, timeout = None):
-        """shell(tty = False, timeout = None) -> ssh_channel
+    def shell(self, tty = True, timeout = Timeout.default):
+        """shell(tty = False, timeout = Timeout.default) -> ssh_channel
 
         Open a new channel with a shell inside. If `tty` is True, then a TTY
         is requested on the remote server.
@@ -335,8 +336,8 @@ class ssh(object):
         """
         return self.run(None, tty, timeout = timeout)
 
-    def run(self, process, tty = False, wd = None, env = None, timeout = None):
-        """run(process, tty = False, wd = None, env = None, timeout = None) -> ssh_channel
+    def run(self, process, tty = False, wd = None, env = None, timeout = Timeout.default):
+        """run(process, tty = False, wd = None, env = None, timeout = Timeout.default) -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
         then a TTY is requested on the remote server.
@@ -349,21 +350,21 @@ class ssh(object):
         return ssh_channel(self, process, tty, wd, env, timeout)
 
     def run_to_end(self, process, tty = False, wd = None, env = None):
-        """run_to_end(process, tty = False, timeout = None, env = None) -> str
+        """run_to_end(process, tty = False, timeout = Timeout.default, env = None) -> str
 
         Run a command on the remote server and return a tuple with
         (data, exit_status). If `tty` is True, then the command is run inside
         a TTY on the remote server."""
 
         with context.local(log_level = 'ERROR'):
-            c = self.run(process, tty, wd = wd, timeout = None)
+            c = self.run(process, tty, wd = wd, timeout = Timeout.default)
             data = c.recvall()
             retcode = c.wait()
             c.close()
             return data, retcode
 
-    def connect_remote(self, host, port, timeout = None):
-        """connect_remote(host, port, timeout = None) -> ssh_connecter
+    def connect_remote(self, host, port, timeout = Timeout.default):
+        """connect_remote(host, port, timeout = Timeout.default) -> ssh_connecter
 
         Connects to a host through an SSH connection. This is equivalent to
         using the ``-L`` flag on ``ssh``.
@@ -372,8 +373,8 @@ class ssh(object):
 
         return ssh_connecter(self, host, port, timeout)
 
-    def listen_remote(self, port, bind_address = '', timeout = None):
-        """listen_remote(port, bind_address = '', timeout = None) -> ssh_connecter
+    def listen_remote(self, port, bind_address = '', timeout = Timeout.default):
+        """listen_remote(port, bind_address = '', timeout = Timeout.default) -> ssh_connecter
 
         Listens remotely through an SSH connection. This is equivalent to
         using the ``-R`` flag on ``ssh``.

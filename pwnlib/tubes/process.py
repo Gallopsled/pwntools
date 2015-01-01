@@ -1,4 +1,5 @@
 from .tube import tube
+from ..timeout import Timeout
 from ..util.misc import which
 from ..context import context
 import subprocess, fcntl, os, select, logging
@@ -37,7 +38,7 @@ class process(tube):
         EOFError
     """
     def __init__(self, args, shell = False, executable = None,
-                 cwd = None, env = None, timeout = None):
+                 cwd = None, env = None, timeout = Timeout.default):
         super(process, self).__init__(timeout)
 
         if executable:

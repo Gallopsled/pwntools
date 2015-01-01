@@ -1,4 +1,5 @@
 from .sock import sock
+from ..timeout import Timeout
 import socket, logging
 import ssl as _ssl
 
@@ -42,7 +43,7 @@ class remote(sock):
 
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
-                 timeout = None, ssl=False, sock=None):
+                 timeout = Timeout.default, ssl=False, sock=None):
         super(remote, self).__init__(timeout)
 
         self.rport  = int(port)
