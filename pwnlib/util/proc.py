@@ -56,8 +56,6 @@ def pid_by_name(name):
         List of PIDs matching `name` sorted by lifetime, youngest to oldest.
 
     Example:
-        >>> 1 in pid_by_name('init')
-        True
         >>> os.getpid() in pid_by_name(name(os.getpid()))
         True
     """
@@ -83,8 +81,8 @@ def name(pid):
         Name of process as listed in ``/proc/<pid>/status``.
 
     Example:
-        >>> name(1)
-        'init'
+        >>> name(os.getpid()) == os.path.basename(sys.argv[0])
+        True
     """
     return psutil.Process(pid).name()
 
