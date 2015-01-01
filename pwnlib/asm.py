@@ -342,7 +342,7 @@ def asm(shellcode, vma = 0, **kwargs):
         osx = (platform.system() == 'Darwin')
 
         assembler = _assembler()
-        objcopy   = _objcopy() + ['-j.shellcode' if not osx else '-jLC_SEGMENT..shellcode."ax"', '-Obinary']
+        objcopy   = _objcopy() + ['-j', '.shellcode' if not osx else '*.shellcode*', '-Obinary']
         code      = '.org %#x\n' % vma
         code      += _arch_header()
         code      += cpp(shellcode)
