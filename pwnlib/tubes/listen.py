@@ -1,4 +1,5 @@
 from .sock     import sock
+from ..timeout import Timeout
 from ..context import context
 import socket, errno, threading, logging
 
@@ -16,12 +17,12 @@ class listen(sock):
         bindaddr(str): The address to bind to.
         fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
         typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
-        timeout: A positive number, None or the string "default".
+        timeout: A positive number, None
     """
 
     def __init__(self, port=0, bindaddr = "0.0.0.0",
                  fam = "any", typ = "tcp",
-                 timeout = None):
+                 timeout = Timeout.default):
         super(listen, self).__init__(timeout)
 
         port = int(port)
