@@ -18,7 +18,7 @@ class sock(tube):
         Receives data until the socket is closed.
         """
 
-        if hasattr(self, 'type') and self.type == socket.SOCK_DGRAM:
+        if getattr(self, 'type', None) == socket.SOCK_DGRAM:
             log.error("UDP sockets does not supports recvall")
         else:
             return super(sock, self).recvall()
@@ -65,15 +65,8 @@ class sock(tube):
                 raise
 
     def settimeout_raw(self, timeout):
-        if not self.sock:
-            return
-
-        # OSX behaves oddly with timeouts of 2**22 or greater.
-        # Change it so that this is 'infinite'
-        if timeout >= context.forever:
-            timeout = None
-
-        self.sock.settimeout(timeout)
+        if getattr(self, 'sock', None):
+            self.sock.settimeout(timeout)
 
     def can_recv_raw(self, timeout):
         if not self.sock or self.closed["recv"]:

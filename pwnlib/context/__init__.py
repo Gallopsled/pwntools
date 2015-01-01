@@ -5,6 +5,7 @@ Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
 import types, sys, threading, re, collections, string, logging
+from ..timeout import Timeout
 
 class _defaultdict(dict):
     """
@@ -287,11 +288,6 @@ class ContextType(object):
     #
     __slots__ = '_tls',
 
-    #: OSX does not permit setting socket timeouts to 2**22.
-    #: Assume that if we receive a timeout of 2**21 or greater,
-    #: that the value is effectively infinite.
-    forever = 2**21
-
     #: Default values for :class:`pwnlib.context.ContextType`
     defaults = {
         'arch': 'i386',
@@ -301,7 +297,7 @@ class ContextType(object):
         'newline': '\n',
         'os': 'linux',
         'signed': False,
-        'timeout': forever,
+        'timeout': Timeout.maximum,
     }
 
     #: Valid values for :meth:`pwnlib.context.ContextType.os`
@@ -781,22 +777,17 @@ class ContextType(object):
         return bool(signed)
 
     @_validator
-    def timeout(self, value):
+    def timeout(self, value=Timeout.default):
         """
         Default amount of time to wait for a blocking operation before it times out,
         specified in seconds.
 
         The default value is to have an infinite timeout.
 
-        Any floating point value is accepted, as well as the special
-        string ``'inf'`` which implies that a timeout can never occur.
+        See :class:`pwnlib.timeout.Timeout` for additional information on
+        valid values.
         """
-        value = min(float(value), self.forever)
-
-        if value < 0:
-            raise AttributeError("timeout must not be negative (%r)" % value)
-        return value
-
+        return Timeout(value).timeout
 
     #*************************************************************************
     #                               ALIASES
