@@ -270,7 +270,7 @@ class ssh_listener(sock):
             return getattr(super(ssh_listener, self), key)
 
 
-class ssh(object):
+class ssh(Timeout):
     def __init__(self, user, host, port = 22, password = None, key = None, keyfile = None, proxy_command = None, proxy_sock = None, timeout = Timeout.default):
         """Creates a new ssh connection.
 
@@ -286,10 +286,11 @@ class ssh(object):
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used."""
+        super(ssh, self).__init__(timeout)
+
 
         self.host            = host
         self.port            = port
-        self.timeout         = timeout
         self._cachedir       = os.path.join(tempfile.gettempdir(), 'pwntools-ssh-cache')
         self._wd             = None
         misc.mkdir_p(self._cachedir)
