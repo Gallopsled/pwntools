@@ -144,10 +144,12 @@ def _validator(validator):
 
 class Thread(threading.Thread):
     """
-    Instantiates a context-aware thread, which inherit its context
-    when it is instantiated.
+    Instantiates a context-aware thread, which inherit its context when it is
+    instantiated. The class can be accessed both on the context module as
+    `pwnlib.context.Thread` and on the context singleton object inside the
+    context module as `pwnlib.context.context.Thread`.
 
-    Threads created by using the namtive :class`threading`.Thread` will have a
+    Threads created by using the native :class`threading`.Thread` will have a
     clean (default) context.
 
     Regardless of the mechanism used to create any thread, the context
@@ -845,7 +847,6 @@ class ContextType(object):
     def word_size(self, value):
         self.bits = value
 
-    thread = Thread
     Thread = Thread
 
 
