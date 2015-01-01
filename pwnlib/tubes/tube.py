@@ -805,6 +805,10 @@ class tube(Timeout):
         Note: If timeout is set to zero, the underlying network is
         not actually polled; only the internal buffer is cleared.
 
+        Returns:
+
+            All data received
+
         Examples:
 
             >>> t = tube()
@@ -813,14 +817,7 @@ class tube(Timeout):
             >>> len(t.buffer)
             0
         """
-
-        # Clear the internal buffer early, so that _recv()
-        # does not loop over it and concatenate unnecessarily.
-        self.buffer.get()
-
-        data = 'demo'
-        while timeout and data:
-            data = self.recv(timeout = timeout)
+        return self.recvrepeat(timeout)
 
     def clean_and_log(self, timeout = 0.05):
         """clean_and_log(timeout = 0.05)
@@ -828,29 +825,35 @@ class tube(Timeout):
         Works exactly as :meth:`pwnlib.tubes.tube.tube.clean`, but logs recieved
         data with :meth:`pwnlib.log.info`.
 
+        Returns:
+
+            All data received
+
         Examples:
 
-            >>> def recv(n, data=['', 'hooray_data']):
+            >>> def recv(n, data=['', 'hooray_data\x00']):
             ...     while data: return data.pop()
-            >>> context.log_level = 'info'
             >>> t = tube()
             >>> t.recv_raw      = recv
             >>> t.connected_raw = lambda d: True
             >>> t.fileno        = lambda: 1234
-            >>> t.clean_and_log() #doctest: +ELLIPSIS
-            [...] Cleaning tube (fileno = 1234):
-                'hooray_data'
+            >>> with context.local(log_level='info'):
+            ...     data = t.clean_and_log() #doctest: +ELLIPSIS
+            00000000  68 6f 6f 72  61 79 5f 64  61 74 61 00               │hoor│ay_d│ata·││
+            0000000c
+            >>> data
+            'hooray_data\x00'
             >>> context.clear()
         """
+        data = self.clean(timeout)
 
-        if self.connected():
-            log.info('Cleaning tube (fileno = %d):' % self.fileno())
-            data = self.recvrepeat(timeout = timeout)
-            if all(c in string.printable for c in data):
-                for line in data.splitlines(True):
-                    log.indented(repr(line))
-            else:
-                log.indented(fiddling.hexdump(data))
+        if all(c in string.printable for c in data):
+            for line in data.splitlines(True):
+                log.indented(repr(line))
+        else:
+            log.indented(fiddling.hexdump(data))
+
+        return data
 
     def connect_input(self, other):
         """connect_input(other)
