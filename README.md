@@ -7,14 +7,14 @@
 
 This is the CTF framework used by Gallopsled in every CTF.
 
-Most code is inside the `pwnlib` folder with some functionality inside `pwn` or
-`bin`. It is typically used as:
-
 ```python
 from pwn import *
 context(arch = 'i386', os = 'linux')
 
-# EXPLOIT HERE
+r = remote('exploitme.example.com', 31337)
+# EXPLOIT CODE GOES HERE
+r.send(asm(shellcraft.sh()))
+r.interactive()
 ```
 
 However we have made command-line frontends for some of the functionality
@@ -28,7 +28,7 @@ in `pwnlib`. These are:
 * `phd`: Replacement for `hexdump` with colors.
 
 # Documentation
-Our documentation is available at http://docs.pwntools.com
+Our documentation is available at [docs.pwntools.com](http://docs.pwntools.com/en/latest/)
 
 To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/Gallopsled/pwntools-write-ups).
 
@@ -36,60 +36,18 @@ To get you started, we've provided some example solutions for past CTF challenge
 
 pwntools is best supported on Ubuntu 12.04 and 14.04, but most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).
 
-## Prerequisites
-
-In order to get the most out of `pwntools`, you should have the following system libraries installed.
-
-- binutils for your target architecture ([Ubuntu][ppa])
-- [libcapstone 2.1][capstone] (Ubuntu [i386][i386] [amd64][amd64])
-- Python development headers (`python-dev`)
-
-[capstone]: http://www.capstone-engine.org
-[ppa]: https://launchpad.net/~pwntools/+archive/ubuntu/binutils
-[i386]: http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_i386.deb
-[amd64]: http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_amd64.deb
-
-## Released Version
-
-Pwntools is available as a `pip` packag for easy installation.
+Most of the functionality of pwntools is self-contained and Python-only.  You should be able to get running quickly with
 
 ```sh
-apt-get install python2.7 python2.7-dev python-pip
 pip install pwntools
 ```
 
-## Latest Version
+However, some of the features (ROP generation and assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](http://docs.pwntools.com/en/latest/install.html).
 
-You can also use the version from github.
-
-```sh
-git clone https://github.com/Gallopsled/pwntools
-cd pwntools
-python setup.py install
-```
 
 # Contribution
 
-If you'd like to hack on pwntools, this is how we set things up:
-
-```sh
-git clone https://github.com/Gallopsled/pwntools
-PWN=$(realpath pwntools)
-cd $PWN
-pip2 install -r requirements.txt
-export PATH="$PWN/bin:$PATH"
-export PYTHONPATH="$PWN:$PYTHONPATH"
-```
-
-If you want to make these settings permanent:
-
-```sh
->>~/.bashrc cat <<EOF
-# Set up path for Pwntools
-export PATH="$PWN/bin:\$PATH"
-export PYTHONPATH="$PWN:\$PYTHONPATH"
-EOF
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 # Contact
 If you have any questions not worthy of a [bug report](https://github.com/Gallopsled/pwntools/issues), feel free to join us
