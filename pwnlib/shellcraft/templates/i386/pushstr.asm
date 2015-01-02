@@ -33,8 +33,13 @@ Args:
 % elif '\x00' not in word and '\n' not in word:
     push ${hex(sign)} /*  ${repr(word)} */
 % else:
-<% a,b = fiddling.xor_pair(word, avoid = '\x00\n') %>
-    push '${repr(a)[1:-1]}'
-    xor dword [esp], `${repr(b)[1:-1]}` /*  ${repr(word)} */
+<%
+    a,b = fiddling.xor_pair(word, avoid = '\x00\n')
+    a   = packing.u32(a, 'little', False)
+    b   = packing.u32(b, 'little', False)
+%>
+    /* push ${repr(word)} */
+    push ${hex(a)}
+    xor dword ptr [esp], ${hex(b)}
 % endif
 % endfor
