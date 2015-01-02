@@ -50,7 +50,6 @@ log = logging.getLogger(__name__)
 __all__ = ['asm', 'cpp', 'disasm', 'which_binutils']
 
 _basedir = path.split(__file__)[0]
-_bindir  = path.join(_basedir, 'data', 'binutils')
 _incdir  = path.join(_basedir, 'data', 'includes')
 
 def which_binutils(util, **kwargs):
