@@ -245,15 +245,15 @@ class tube(Timeout):
                 >>> t.recv_raw = lambda n: "Hello World!"
                 >>> t.recvuntil(' ')
                 'Hello '
-                >>> t.clean(0)
+                >>> _=t.clean(0)
                 >>> # Matches on 'o' in 'Hello'
                 >>> t.recvuntil(tuple(' Wor'))
                 'Hello'
-                >>> t.clean(0)
+                >>> _=t.clean(0)
                 >>> # Matches expressly full string
                 >>> t.recvuntil(' Wor')
                 'Hello Wor'
-                >>> t.clean(0)
+                >>> _=t.clean(0)
                 >>> # Matches on full string, drops match
                 >>> t.recvuntil(' Wor', drop=True)
                 'Hello'
@@ -805,52 +805,58 @@ class tube(Timeout):
         Note: If timeout is set to zero, the underlying network is
         not actually polled; only the internal buffer is cleared.
 
+        Returns:
+
+            All data received
+
         Examples:
 
             >>> t = tube()
             >>> t.unrecv('clean me up')
             >>> t.clean(0)
+            'clean me up'
             >>> len(t.buffer)
             0
         """
+        if timeout == 0:
+            return self.buffer.get()
 
-        # Clear the internal buffer early, so that _recv()
-        # does not loop over it and concatenate unnecessarily.
-        self.buffer.get()
-
-        data = 'demo'
-        while timeout and data:
-            data = self.recv(timeout = timeout)
+        return self.recvrepeat(timeout)
 
     def clean_and_log(self, timeout = 0.05):
-        """clean_and_log(timeout = 0.05)
+        r"""clean_and_log(timeout = 0.05)
 
         Works exactly as :meth:`pwnlib.tubes.tube.tube.clean`, but logs recieved
         data with :meth:`pwnlib.log.info`.
+
+        Returns:
+
+            All data received
 
         Examples:
 
             >>> def recv(n, data=['', 'hooray_data']):
             ...     while data: return data.pop()
-            >>> context.log_level = 'info'
             >>> t = tube()
             >>> t.recv_raw      = recv
             >>> t.connected_raw = lambda d: True
             >>> t.fileno        = lambda: 1234
-            >>> t.clean_and_log() #doctest: +ELLIPSIS
-            [...] Cleaning tube (fileno = 1234):
+            >>> with context.local(log_level='info'):
+            ...     data = t.clean_and_log() #doctest: +ELLIPSIS
                 'hooray_data'
+            >>> data
+            'hooray_data'
             >>> context.clear()
         """
+        data = self.clean(timeout)
 
-        if self.connected():
-            log.info('Cleaning tube (fileno = %d):' % self.fileno())
-            data = self.recvrepeat(timeout = timeout)
-            if all(c in string.printable for c in data):
-                for line in data.splitlines(True):
-                    log.indented(repr(line))
-            else:
-                log.indented(fiddling.hexdump(data))
+        if all(c in string.printable for c in data):
+            for line in data.splitlines(True):
+                log.indented(repr(line))
+        else:
+            log.indented(fiddling.hexdump(data))
+
+        return data
 
     def connect_input(self, other):
         """connect_input(other)
