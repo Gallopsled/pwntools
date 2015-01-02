@@ -364,7 +364,7 @@ class tube(Timeout):
                     break
 
         if not keep:
-            lines = [line.rstrip('\n') for line in lines]
+            lines = [line.rstrip(self.newline) for line in lines]
 
         return lines
 
