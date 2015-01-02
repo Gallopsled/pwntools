@@ -207,13 +207,21 @@ class tube(Timeout):
                 >>> # The remaining data is buffered
                 >>> t.recv() == data[1:]
                 True
+                >>> t.recv_raw = lambda *a: time.sleep(0.01) or 'a'
+                >>> t.recvn(10, timeout=0.05)
+                ''
+                >>> t.recvn(10, timeout=0.05)
+                'aaaaaaaaaa'
         """
         # Keep track of how much data has been received
         # It will be pasted together at the end if a
         # timeout does not occur, or put into the tube buffer.
         with self.countdown(timeout):
-            while self.countdown_active() and len(self.buffer) < numb and self._fillbuffer():
+            while self.countdown_active() and len(self.buffer) < numb and self._fillbuffer(self.timeout):
                 pass
+
+        if len(self.buffer) < numb:
+            return ''
 
         return self.buffer.get(numb)
 
@@ -278,7 +286,7 @@ class tube(Timeout):
         with self.countdown(timeout):
             while self.countdown_active():
                 try:
-                    res = self.recv()
+                    res = self.recv(timeout=self.timeout)
                 except:
                     self.unrecv(''.join(data) + top)
                     raise
