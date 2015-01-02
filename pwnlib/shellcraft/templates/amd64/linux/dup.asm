@@ -1,4 +1,4 @@
-<% from pwnlib.shellcraft import common %>
+<% from pwnlib.shellcraft import common, amd64 %>
 <%page args="sock = 'rbp'"/>
 <%docstring>
 Args: [sock (imm/reg) = rbp]
@@ -12,20 +12,16 @@ Args: [sock (imm/reg) = rbp]
 
 
 ${dup}:
-    % if sock != "rbp":
-        push ${sock}
-        pop rbp
-    % endif
+    ${amd64.mov('rbp', sock)}
 
-        push 3
+    push 3
 ${looplabel}:
-        mov rdi, rbp
-        pop rsi
-        dec rsi
-        js ${after}
-        push rsi
-        push SYS_dup2
-        pop rax
-        syscall
-        jmp ${looplabel}
+    pop rsi
+    dec rsi
+    js ${after}
+    push rsi
+
+    ${amd64.syscall('SYS_dup2', 'rbp', 'rsi')}
+
+    jmp ${looplabel}
 ${after}:

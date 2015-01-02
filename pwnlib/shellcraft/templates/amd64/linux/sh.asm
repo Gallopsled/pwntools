@@ -12,7 +12,4 @@
     push rax
 
     /*  Call execve("/bin//sh", 0, 0) */
-    mov rdi, rsp
-    push SYS_execve
-    pop rax
-    syscall
+    ${amd64.syscall('SYS_execve', 'rsp', 0, 'rdx')}

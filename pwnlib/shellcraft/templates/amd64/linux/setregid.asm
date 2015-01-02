@@ -1,3 +1,4 @@
+<% from pwnlib.shellcraft import amd64 %>
 <%page args="gid = 'egid'"/>
 <%docstring>
 Args: [gid (imm/reg) = egid]
@@ -6,19 +7,10 @@ Args: [gid (imm/reg) = egid]
 
 % if gid == 'egid':
     /*  getegid */
-    push SYS_getegid
-    pop rax
-    int 0x80
+    ${amd64.syscall('SYS_getegid')}
+    ${amd64.mov('rdi', 'rax')}
 % else:
-    push ${gid}
-    pop rax
+    ${amd64.mov('rdi', gid)}
 % endif
 
-    /*  setregid(rax, rax) */
-    mov rbx, rax
-    mov rcx, rax
-    push SYS_setregid
-    pop rax
-    int 0x80
-
-    /* eof */
+    ${amd64.syscall('SYS_setregid', 'rdi', 'rdi')}

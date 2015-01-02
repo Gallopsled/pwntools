@@ -15,6 +15,9 @@ Args:
     if not string:
         return
 
+    def okay(s):
+        return '\n' not in s and '\0' not in s
+
     if ord(string[-1]) >= 128:
         extend = '\xff'
     else:
@@ -23,18 +26,20 @@ Args:
 
 % for word in lists.group(4, string, 'fill', extend)[::-1]:
 <%
-    sign = packing.u32(word, 'little', 'unsigned')
+    sign = packing.u32(word, 'little', 'signed')
 %>
-% if sign == 0:
-    push 1
+% if sign in [0, 0xa]:
+    push ${sign + 1}
     dec byte ptr [esp] /*  ${repr(word)} */
-% elif '\x00' not in word and '\n' not in word:
+% elif -0x80 <= sign <= 0x7f and okay(word[0]):
+    push ${hex(sign)} /*  ${repr(word)} */
+% elif okay(word):
     push ${hex(sign)} /*  ${repr(word)} */
 % else:
 <%
     a,b = fiddling.xor_pair(word, avoid = '\x00\n')
-    a   = packing.u32(a, 'little', False)
-    b   = packing.u32(b, 'little', False)
+    a   = packing.u32(a, 'little', 'unsigned')
+    b   = packing.u32(b, 'little', 'unsigned')
 %>
     /* push ${repr(word)} */
     push ${hex(a)}

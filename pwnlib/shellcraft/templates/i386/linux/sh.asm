@@ -9,7 +9,4 @@
 ${i386.pushstr('/bin//sh')}
 
     /*  Call execve("/bin//sh", 0, 0) */
-    mov al, SYS_execve
-    mov ebx, esp
-    int 0x80
-
+${i386.syscall('SYS_execve', 'esp', 'ecx', 'edx')}
