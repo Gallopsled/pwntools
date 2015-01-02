@@ -1,3 +1,7 @@
+.. testsetup:: *
+
+   from pwn import *
+
 :mod:`pwnlib.shellcraft.amd64` --- Shellcode for AMD64
 ===========================================================
 

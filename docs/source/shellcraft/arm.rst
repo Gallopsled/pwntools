@@ -1,3 +1,7 @@
+.. testsetup:: *
+
+   from pwn import *
+
 :mod:`pwnlib.shellcraft.arm` --- Shellcode for ARM
 ===========================================================
 
