@@ -11,19 +11,21 @@ Prerequisites
 In order to get the most out of ``pwntools``, you should have the
 following system libraries installed.
 
--  binutils for your target architecture (`Ubuntu`_)
--  `libcapstone 2.1`_ (Ubuntu `i386`_ `amd64`_)
-- Python development headers (``python-dev``)
+.. toctree::
+   :maxdepth: 3
+   :glob:
+
+   install/*
 
 Released Version
 -----------------
 
 Pwntools is available as a ``pip`` package.
 
-.. code:: sh
+.. code-block:: bash
 
-    apt-get install python2.7 python2.7-dev python-pip
-    pip install pwntools
+    $ apt-get install python2.7 python2.7-dev python-pip
+    $ pip install pwntools
 
 Latest Version
 --------------
@@ -31,27 +33,14 @@ Latest Version
 Alternatively if you prefer to use the latest version from the
 repository:
 
-.. code:: sh
+.. code-block:: bash
 
-    git clone https://github.com/Gallopsled/pwntools
-    PWN=$(realpath pwntools)
-    cd $PWN
-    pip2 install -r requirements.txt
-    export PATH="$PWN/bin:$PATH"
-    export PYTHONPATH="$PWN:$PYTHONPATH"
-
-If you want to make these settings permanent:
-
-.. code:: sh
-
-    >>~/.bashrc cat <<EOF
-    # Set up path for Pwntools
-    export PATH="$PWN/bin:\$PATH"
-    export PYTHONPATH="$PWN:\$PYTHONPATH"
-    EOF
+    $ git clone https://github.com/Gallopsled/pwntools
+    $ cd pwntools
+    $ pip install -e .
 
 .. _Ubuntu: https://launchpad.net/~pwntools/+archive/ubuntu/binutils
 .. _libcapstone 2.1: http://www.capstone-engine.org
 .. _i386: http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_i386.deb
 .. _amd64: http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_amd64.deb
-```
+
