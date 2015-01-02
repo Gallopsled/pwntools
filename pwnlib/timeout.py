@@ -160,7 +160,7 @@ class Timeout(object):
         return value
 
     def countdown_active(self):
-        return self._stop < time.time()
+        return (self._stop == 0) or (self._stop < time.time())
 
     def timeout_change(self):
         """
