@@ -1,10 +1,16 @@
 language: python
 python:
   - "2.7"
+cache:
+  - apt: true
+  - directories:
+    - .pip_cache
 branches:
   only:
     - master
 install:
+  - export PIP_USE_MIRRORS=true
+  - export PIP_DOWNLOAD_CACHE=.pip_cache
   - source .travis_install.sh
   - source .travis_ssh_setup.sh
   - python -c 'from pwn import *; print pwnlib.term.term_mode' NOTERM
