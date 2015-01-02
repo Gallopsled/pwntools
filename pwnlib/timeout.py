@@ -50,6 +50,9 @@ class _local_handler(object):
         self.obj._stop    = self.old_stop
         self.obj.timeout_change()
 
+class TimeoutDefault(object):
+    def __repr__(self): return "pwnlib.timeout.Timeout.default"
+    def __str__(self): return "<default timeout>"
 
 class Timeout(object):
     """
@@ -102,7 +105,7 @@ class Timeout(object):
 
 
     #: Value indicating that the timeout should not be changed
-    default = object()
+    default = TimeoutDefault()
 
     #: Value indicating that a timeout should not ever occur
     forever = None
