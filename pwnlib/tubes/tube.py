@@ -309,8 +309,8 @@ class tube(Timeout):
 
         return ''
 
-    def recvlines(self, numlines, keep = False, timeout = default):
-        r"""recvlines(numlines, keep = False, timeout = default) -> str list
+    def recvlines(self, numlines, keepends = False, timeout = default):
+        r"""recvlines(numlines, keepends = False, timeout = default) -> str list
 
         Recieve up to ``numlines`` lines.
 
@@ -322,7 +322,7 @@ class tube(Timeout):
 
         Arguments:
             numlines(int): Maximum number of lines to receive
-            keep(bool): Keep newlines at the end of each line (``False``).
+            keepends(bool): Keep newlines at the end of each line (``False``).
             timeout(int): Maximum timeout
 
         Raises:
@@ -350,10 +350,10 @@ class tube(Timeout):
         with self.countdown(timeout):
             for _ in xrange(numlines):
                 try:
-                    # We must set 'keep' to True here so that we can
+                    # We must set 'keepends' to True here so that we can
                     # restore the original, unmodified data to the buffer
                     # in the event of a timeout.
-                    res = self.recvline(keep=True, timeout=timeout)
+                    res = self.recvline(keepends=True, timeout=timeout)
                 except:
                     self.unrecv(''.join(lines))
                     raise
@@ -363,13 +363,13 @@ class tube(Timeout):
                 else:
                     break
 
-        if not keep:
+        if not keepends:
             lines = [line.rstrip(self.newline) for line in lines]
 
         return lines
 
-    def recvline(self, keep = True, timeout = default):
-        r"""recvline(keep = True) -> str
+    def recvline(self, keepends = True, timeout = default):
+        r"""recvline(keepends = True) -> str
 
         Receive a single line from the tube.
 
@@ -380,7 +380,7 @@ class tube(Timeout):
         all data is buffered and an empty string (``''``) is returned.
 
         Arguments:
-            keep(bool): Keep the line ending (``True``).
+            keepends(bool): Keep the line ending (``True``).
             timeout(int): Timeout
 
         Return:
@@ -396,16 +396,16 @@ class tube(Timeout):
             'Foo\n'
             >>> t.recvline()
             'Bar\r\n'
-            >>> t.recvline(keep = False)
+            >>> t.recvline(keepends = False)
             'Baz'
             >>> t.newline = '\r\n'
-            >>> t.recvline(keep = False)
+            >>> t.recvline(keepends = False)
             'Foo\nBar'
         """
-        return self.recvuntil(self.newline, drop = not keep, timeout = timeout)
+        return self.recvuntil(self.newline, drop = not keepends, timeout = timeout)
 
-    def recvline_pred(self, pred, keep = False, timeout = default):
-        r"""recvline_pred(pred, keep = False) -> str
+    def recvline_pred(self, pred, keepends = False, timeout = default):
+        r"""recvline_pred(pred, keepends = False) -> str
 
         Receive data until ``pred(line)`` returns a truthy value.
         Drop all other data.
@@ -425,7 +425,7 @@ class tube(Timeout):
                 >>> t.recv_raw = lambda n: "Foo\nBar\nBaz\n"
                 >>> t.recvline_pred(lambda line: line == "Bar\n")
                 'Bar'
-                >>> t.recvline_pred(lambda line: line == "Bar\n", keep=True)
+                >>> t.recvline_pred(lambda line: line == "Bar\n", keepends=True)
                 'Bar\n'
                 >>> t.recvline_pred(lambda line: line == 'Nope!', timeout=0.1)
                 ''
@@ -436,7 +436,7 @@ class tube(Timeout):
         with self.countdown(timeout):
             while self.countdown_active():
                 try:
-                    line = self.recvline(keep=True)
+                    line = self.recvline(keepends=True)
                 except:
                     self.buffer.add(tmpbuf)
                     raise
@@ -446,7 +446,7 @@ class tube(Timeout):
                     return ''
 
                 if pred(line):
-                    if not keep:
+                    if not keepends:
                         line = line[:-len(self.newline)]
                     return line
                 else:
@@ -454,14 +454,14 @@ class tube(Timeout):
 
         return ''
 
-    def recvline_contains(self, items, keep = False, timeout = default):
+    def recvline_contains(self, items, keepends = False, timeout = default):
         r"""
         Receive lines until one line is found which contains at least
         one of `items`.
 
         Arguments:
             items(str,tuple): List of strings to search for, or a single string.
-            keep(bool): Return lines with newlines if ``True``
+            keepends(bool): Return lines with newlines if ``True``
             timeout(int): Timeout, in seconds
 
         Examples:
@@ -486,10 +486,10 @@ class tube(Timeout):
         def pred(line):
             return any(d in line for d in items)
 
-        return self.recvline_pred(pred, keep, timeout)
+        return self.recvline_pred(pred, keepends, timeout)
 
-    def recvline_startswith(self, delims, keep = False, timeout = default):
-        r"""recvline_startswith(delims, keep = False, timeout = default) -> str
+    def recvline_startswith(self, delims, keepends = False, timeout = default):
+        r"""recvline_startswith(delims, keepends = False, timeout = default) -> str
 
         Keep recieving lines until one is found that starts with one of
         `delims`.  Returns the last line recieved.
@@ -499,7 +499,7 @@ class tube(Timeout):
 
         Arguments:
             delims(str,tuple): List of strings to search for, or string of single characters
-            keep(bool): Return lines with newlines if ``True``
+            keepends(bool): Return lines with newlines if ``True``
             timeout(int): Timeout, in seconds
 
         Returns:
@@ -523,11 +523,11 @@ class tube(Timeout):
             delims = (delims,)
 
         return self.recvline_pred(lambda line: any(map(line.startswith, delims)),
-                                  keep=keep,
+                                  keepends=keepends,
                                   timeout=timeout)
 
-    def recvline_endswith(self, delims, keep = False, timeout = default):
-        r"""recvline_endswith(delims, keep = False, timeout = default) -> str
+    def recvline_endswith(self, delims, keepends = False, timeout = default):
+        r"""recvline_endswith(delims, keepends = False, timeout = default) -> str
 
         Keep recieving lines until one is found that starts with one of
         `delims`.  Returns the last line recieved.
@@ -557,7 +557,7 @@ class tube(Timeout):
         delims = tuple(delim + self.newline for delim in delims)
 
         return self.recvline_pred(lambda line: any(map(line.endswith, delims)),
-                                  keep=keep,
+                                  keepends=keepends,
                                   timeout=timeout)
 
     def recvregex(self, regex, exact = False, timeout = default):
@@ -583,8 +583,8 @@ class tube(Timeout):
 
         return self.recvpred(pred, timeout = timeout)
 
-    def recvline_regex(self, regex, exact = False, keep = False, timeout = default):
-        """recvregex(regex, exact = False, keep = False, timeout = default) -> str
+    def recvline_regex(self, regex, exact = False, keepends = False, timeout = default):
+        """recvregex(regex, exact = False, keepends = False, timeout = default) -> str
 
         Wrapper around :func:`recvline_pred`, which will return when a regex
         matches a line.
@@ -604,7 +604,7 @@ class tube(Timeout):
         else:
             pred = regex.search
 
-        return self.recvline_pred(pred, keep = keep, timeout = timeout)
+        return self.recvline_pred(pred, keepends = keepends, timeout = timeout)
 
     def recvrepeat(self, timeout = default):
         """recvrepeat()
