@@ -29,7 +29,7 @@ Args:
     push 1
     dec byte ptr [esp] /*  ${repr(word)} */
 % elif -128 <= sign < 128:
-    pushb ${hex(sign)} /*  ${repr(word)} */
+    push ${hex(sign)} /*  ${repr(word)} */
 % elif '\x00' not in word and '\n' not in word:
     push ${hex(sign)} /*  ${repr(word)} */
 % else:
