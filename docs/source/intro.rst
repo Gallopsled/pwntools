@@ -177,7 +177,7 @@ Let's say that we want to `setreuid(getuid(), getuid())` followed by `dup`ing
 file descriptor 4 to `stdin`, `stdout`, and `stderr`, and then pop a shell!
 
     >>> asm(shellcraft.setreuid() + shellcraft.dupsh(4)).encode('hex')
-    '6a3158cd8089c389c16a4658cd806a045b6a0359496a3f58cd8075f831c9f7e96a01fe0c24682f2f7368682f62696eb00b89e3cd80'
+    '6a3158cd8089c389c16a4658cd806a045b6a0359496a3f58cd8075f831c9f7e96a01fe0c24682f2f7368682f62696e89e36a0b58cd80'
 
 
 Misc Tools
