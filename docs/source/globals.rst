@@ -69,10 +69,10 @@ This is a quick list of most of the objects and routines imported, in rough orde
     - :mod:`pwnlib.util.fiddling`
     - Useful utilities for generating random data from a given alphabet, or simplifying math operations that usually require masking off with `0xffffffff` or calling `ord` and `chr` an ugly number of times
 - ``net``
-    - :mod:`pwnlib.net`
+    - :mod:`pwnlib.util.net`
     - Routines for querying about network interfaces
 - ``proc``
-    - :mod:`pwnlib.proc`
+    - :mod:`pwnlib.util.proc`
     - Routines for querying about processes
 - ``pause``
     - It's the new ``getch``
