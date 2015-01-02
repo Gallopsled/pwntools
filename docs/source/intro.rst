@@ -28,8 +28,8 @@ and all manner of things, along with some nifty helpers for common tasks.
 For example, remote connections via :mod:`pwnlib.tubes.remote`.
 
     >>> conn = remote('ftp.debian.org',21)
-    >>> conn.recvline()
-    '220 ftp.debian.org FTP server\r\n'
+    >>> conn.recvline() # doctest: +ELLIPSIS
+    '220 ...'
     >>> conn.send('USER anonymous\r\n')
     >>> conn.recvuntil(' ', drop=True)
     '331'
