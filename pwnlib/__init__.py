@@ -12,7 +12,8 @@ from . import \
                     dynelf        , elf           , exception     , \
     gdb                           , log           , memleak       , \
     replacements  , rop           , shellcraft    , term          , \
-    tubes         , ui            , useragents    , util
+    tubes         , ui            , useragents    , util,           \
+    pep237
 
 # from .context import context
 from .version import __version__
