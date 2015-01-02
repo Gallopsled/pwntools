@@ -1,6 +1,5 @@
 import socket, errno, select, logging
 from .tube import tube
-from ..context import context
 
 log = logging.getLogger(__name__)
 

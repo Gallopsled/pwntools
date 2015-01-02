@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 
-import argparse, sys, os, types, re
-from pwnlib import asm, util, constants
+import argparse, os, re
+from pwnlib import asm, constants
 from pwnlib.util import safeeval
 # from pwnlib.context import __possible__ as contexts
 from pwnlib.context import context

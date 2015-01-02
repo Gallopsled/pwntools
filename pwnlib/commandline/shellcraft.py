@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 import argparse, sys, os, types
 import pwnlib
-from pwnlib import asm, log, util
+from pwnlib import log, util
 import pwnlib.term.text as text
 from pwnlib.context import context
 

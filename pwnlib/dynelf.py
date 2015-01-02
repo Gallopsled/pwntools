@@ -54,7 +54,7 @@ from .context import context
 
 from elftools.elf.enums import ENUM_D_TAG
 
-import os, logging, ctypes
+import logging, ctypes
 
 log    = logging.getLogger(__name__)
 sizeof = ctypes.sizeof

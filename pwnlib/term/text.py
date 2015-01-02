@@ -1,4 +1,4 @@
-import types, sys, functools, os
+import types, sys, functools
 from . import termcap
 
 def eval_when(when):
