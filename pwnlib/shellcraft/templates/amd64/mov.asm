@@ -80,9 +80,9 @@ all_regs, sizes, bigger, smaller = misc.register_sizes(regs, [64, 32, 16, 8, 8])
         /* Trivial case */
     % elif sizes[dest] == sizes[src]:
         mov ${dest}, ${src}
-    elif sizes[dest] == 64 and sizes[src] == 32:
+    % elif sizes[dest] == 64 and sizes[src] == 32:
         mov ${smaller[dest][0]}, ${src}
-    elif sizes[dest] > sizes[src]:
+    % elif sizes[dest] > sizes[src]:
         movzx ${dest}, ${src}
     % else:
         <% done = False %>
