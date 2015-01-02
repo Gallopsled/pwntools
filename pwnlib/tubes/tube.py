@@ -208,7 +208,6 @@ class tube(Timeout):
                 >>> t.recv() == data[1:]
                 True
         """
-
         # Keep track of how much data has been received
         # It will be pasted together at the end if a
         # timeout does not occur, or put into the tube buffer.
