@@ -1,6 +1,5 @@
 <% from pwnlib.util import lists, packing, fiddling %>
-<% import sys %>
-<%page args="string, append_null = True"/>
+<%page args="string, append_null = True, avoid='\x00\n'"/>
 <%docstring>
 Pushes a string onto the stack without using
 null bytes or newline characters.
@@ -8,6 +7,7 @@ null bytes or newline characters.
 Args:
   string (str): The string to push.
   append_null (bool): Whether to append a single NULL-byte before pushing.
+  avoid (str): Bytes to avoid
 </%docstring>
 
 <%
@@ -17,7 +17,7 @@ Args:
         return
 
     def okay(s):
-        return '\n' not in s and '\0' not in s
+        return not any(bad in s for bad in avoid)
 
     if ord(string[-1]) >= 128:
         extend = '\xff'
@@ -42,7 +42,7 @@ Args:
     push rax
 % else:
 <%
-    a,b = fiddling.xor_pair(word, avoid = '\x00\n')
+    a,b = fiddling.xor_pair(word, avoid = avoid)
     a   = packing.u64(a, 'little', 'unsigned')
     b   = packing.u64(b, 'little', 'unsigned')
 %>
