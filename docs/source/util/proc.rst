@@ -1,7 +1,7 @@
 .. testsetup:: *
 
    from pwnlib.util.proc import *
-   import os
+   import os, sys
 
 
 :mod:`pwnlib.util.proc` --- Working with ``/proc/``
