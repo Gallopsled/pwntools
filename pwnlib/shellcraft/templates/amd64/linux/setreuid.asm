@@ -1,3 +1,4 @@
+<% from pwnlib.shellcraft import amd64 %>
 <%page args="uid = 'euid'"/>
 <%docstring>
 Args: [uid (imm/reg) = euid]
@@ -6,17 +7,10 @@ Args: [uid (imm/reg) = euid]
 
 % if uid == 'euid':
     /*  geteuid */
-    push SYS_geteuid
-    pop rax
-    int 0x80
+    ${amd64.syscall('SYS_geteuid')}
+    ${amd64.mov('rdi', 'rax')}
 % else:
-    push ${uid}
-    pop rax
+    ${amd64.mov('rdi', uid)}
 % endif
 
-    /*  setreuid(rax, rax) */
-    mov rbx, rax
-    mov rcx, rax
-    push SYS_setreuid
-    pop rax
-    int 0x80
+    ${amd64.syscall('SYS_setreuid', 'rdi', 'rdi')}

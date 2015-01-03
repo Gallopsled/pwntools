@@ -77,7 +77,7 @@ all_regs, sizes, bigger, smaller = misc.register_sizes(regs, [64, 32, 16, 8, 8])
 
 % elif src in all_regs:
     % if src == dest or src in bigger[dest] or src in smaller[dest]:
-        /* Trivial case */
+        /* moving ${src} into ${dest}, but this is a no-op */
     % elif sizes[dest] == sizes[src]:
         mov ${dest}, ${src}
     % elif sizes[dest] == 64 and sizes[src] == 32:

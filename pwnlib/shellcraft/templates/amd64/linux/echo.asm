@@ -4,8 +4,4 @@
 <%docstring>Writes a string to a file descriptor</%docstring>
 
 ${amd64.pushstr(string, append_null = False)}
-${amd64.mov('rax', SYS_write)}
-${amd64.mov('rdi', sock)}
-${amd64.mov('rsi', 'rsp')}
-${amd64.mov('rdx', len(string))}
-    syscall
+${amd64.syscall('SYS_write', sock, 'rsp', len(string))}

@@ -1,3 +1,4 @@
+<% from pwnlib.shellcraft import i386 %>
 <% from pwnlib.shellcraft import common %>
 <%page args="sock = 'ebp'"/>
 <%docstring>
@@ -10,14 +11,10 @@ Args: [sock (imm/reg) = ebp]
 %>
 
 ${dup}:
-        push ${sock}
-        pop ebx
-        push 3
-        pop ecx
-
+    ${i386.mov('ebx', sock)}
+    ${i386.mov('ecx', 3)}
 ${looplabel}:
-        dec ecx
-        push SYS_dup2
-        pop eax
-        int 0x80
-        jnz ${looplabel}
+    dec ecx
+
+    ${i386.linux.syscall('SYS_dup2', 'ebx', 'ecx')}
+    jnz ${looplabel}

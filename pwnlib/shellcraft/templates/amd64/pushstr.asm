@@ -1,5 +1,4 @@
 <% from pwnlib.util import lists, packing, fiddling %>
-<% import sys %>
 <%page args="string, append_null = True"/>
 <%docstring>
 Pushes a string onto the stack without using

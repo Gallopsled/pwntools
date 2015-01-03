@@ -6,19 +6,11 @@ Args: [gid (imm/reg) = egid]
 
 % if gid == 'egid':
     /*  getegid */
-    push SYS_getegid
-    pop eax
-    int 0x80
+    ${i386.linux.syscall('SYS_getegid')}
+    ${i386.mov('ebx', 'eax')}
 % else:
-    push ${gid}
-    pop eax
+    ${i386.mov('ebx', gid)}
 % endif
 
     /*  setregid(eax, eax) */
-    mov ebx, eax
-    mov ecx, eax
-    push SYS_setregid
-    pop eax
-    int 0x80
-
-    /* eof */
+    ${i386.syscall('SYS_setregid', 'ebx', 'ebx')}
