@@ -346,24 +346,35 @@ class ssh(Timeout):
 
             h.success()
 
-    def shell(self, tty = True, timeout = Timeout.default):
-        """shell(tty = False, timeout = Timeout.default) -> ssh_channel
+    def __enter__(self, *a):
+        return self
 
-        Open a new channel with a shell inside. If `tty` is True, then a TTY
-        is requested on the remote server.
+    def __exit__(self, *a, **kw):
+        self.close()
 
-        Return a :class:`pwnlib.tubes.ssh.ssh_channel` object.
+    def shell(self, shell = None, tty = True, timeout = Timeout.default):
+        """shell(shell = None, tty = False, timeout = Timeout.default) -> ssh_channel
+
+        Open a new channel with a shell inside.
+
+        Arguments:
+            shell(str): Path to the shell program to run.
+                If ``None``, uses the default shell for the logged in user.
+            tty(bool): If ``True``, then a TTY is requested on the remote server.
+
+        Returns:
+            Return a :class:`pwnlib.tubes.ssh.ssh_channel` object.
 
         Examples:
-            >>> s = ssh(host='localhost',
+            >>> with ssh(host='localhost',
             ...         user='demouser',
-            ...         password='demopass')
-            >>> sh = s.shell()
-            >>> sh.sendline('echo Hello; exit')
-            >>> 'Hello' in sh.recvall()
+            ...         password='demopass') as s:
+            ...    sh = s.shell('/bin/sh')
+            ...    sh.sendline('echo Hello; exit')
+            ...    print 'Hello' in sh.recvall()
             True
         """
-        return self.run(None, tty, timeout = timeout)
+        return self.run(shell, tty, timeout = timeout)
 
     def run(self, process, tty = False, wd = None, env = None, timeout = Timeout.default):
         r"""run(process, tty = False, wd = None, env = None, timeout = Timeout.default) -> ssh_channel
@@ -374,14 +385,14 @@ class ssh(Timeout):
         Return a :class:`pwnlib.tubes.ssh.ssh_channel` object.
 
         Examples:
-            >>> s = ssh(host='localhost',
+            >>> with ssh(host='localhost',
             ...         user='demouser',
-            ...         password='demopass')
-            >>> py = s.run('python -i')
-            >>> _ = py.recvuntil('>>> ') #doctest
-            >>> py.sendline('print 2+2')
-            >>> py.sendline('exit')
-            >>> py.recvline()
+            ...         password='demopass') as s:
+            ...     py = s.run('python -i')
+            ...     _ = py.recvuntil('>>> ')
+            ...     py.sendline('print 2+2')
+            ...     py.sendline('exit')
+            ...     print repr(py.recvline())
             '4\n'
         """
 
@@ -398,10 +409,10 @@ class ssh(Timeout):
         a TTY on the remote server.
 
         Examples:
-            >>> s = ssh(host='localhost',
+            >>> with ssh(host='localhost',
             ...         user='demouser',
-            ...         password='demopass')
-            >>> s.run_to_end('echo Hello; exit 17')
+            ...         password='demopass') as s:
+            ...     print s.run_to_end('echo Hello; exit 17')
             ('Hello\n', 17)
             """
 
@@ -422,14 +433,14 @@ class ssh(Timeout):
 
         Examples:
             >>> from pwn import *
-            >>> s = ssh(host='localhost',
-            ...         user='demouser',
-            ...         password='demopass')
             >>> l = listen()
-            >>> a = s.connect_remote('localhost', l.lport)
-            >>> b = l.wait_for_connection()
-            >>> a.sendline('Hello')
-            >>> b.recvline()
+            >>> with ssh(host='localhost',
+            ...         user='demouser',
+            ...         password='demopass') as s:
+            ...     a = s.connect_remote('localhost', l.lport)
+            ...     b = l.wait_for_connection()
+            ...     a.sendline('Hello')
+            ...     print repr(b.recvline())
             'Hello\n'
         """
 
@@ -446,14 +457,14 @@ class ssh(Timeout):
         Examples:
 
             >>> from pwn import *
-            >>> s = ssh(host='localhost',
+            >>> with ssh(host='localhost',
             ...         user='demouser',
-            ...         password='demopass')
-            >>> l = s.listen_remote()
-            >>> a = remote('localhost', l.port)
-            >>> b = l.wait_for_connection()
-            >>> a.sendline('Hello')
-            >>> b.recvline()
+            ...         password='demopass') as s:
+            ...     l = s.listen_remote()
+            ...     a = remote('localhost', l.port)
+            ...     b = l.wait_for_connection()
+            ...     a.sendline('Hello')
+            ...     print repr(b.recvline())
             'Hello\n'
         """
 
@@ -464,11 +475,11 @@ class ssh(Timeout):
 
         Examples:
 
-            >>> s = ssh(host='localhost',
+            >>> with ssh(host='localhost',
             ...         user='demouser',
-            ...         password='demopass')
-            >>> s['echo hello']
-            'hello'
+            ...         password='demopass') as s:
+            ...     print s['echo hello']
+            hello
         """
         return self.__getattr__(attr)()
 
@@ -477,10 +488,10 @@ class ssh(Timeout):
 
         Examples:
 
-            >>> s = ssh(host='localhost',
+            >>> with ssh(host='localhost',
             ...         user='demouser',
-            ...         password='demopass')
-            >>> s('echo hello')
+            ...         password='demopass') as s:
+            ...     print repr(s('echo hello'))
             'hello'
         """
         return self.__getattr__(attr)()
@@ -490,15 +501,15 @@ class ssh(Timeout):
 
         Examples:
 
-            >>> s = ssh(host='localhost',
+            >>> with ssh(host='localhost',
             ...         user='demouser',
-            ...         password='demopass')
-            >>> s.echo('hello')
-            'hello'
-            >>> s.whoami()
-            'demouser'
-            >>> s.echo(['huh','yay','args'])
-            'huh yay args'
+            ...         password='demopass') as s:
+            ...     print s.echo('hello')
+            ...     print s.whoami()
+            ...     print s.echo(['huh','yay','args'])
+            hello
+            demouser
+            huh yay args
         """
         bad_attrs = [
             'trait_names',          # ipython tab-complete
@@ -525,16 +536,16 @@ class ssh(Timeout):
 
         Example:
 
-            >>> s = ssh(host='localhost',
+            >>> with ssh(host='localhost',
             ...         user='demouser',
-            ...         password='demopass')
-            >>> s.connected()
+            ...         password='demopass') as s:
+            ...     print s.connected()
+            ...     s.close()
+            ...     print s.connected()
             True
-            >>> s.close()
-            >>> not s.connected()
-            True
+            False
         """
-        return self.client and self.client.get_transport().is_active()
+        return bool(self.client and self.client.get_transport().is_active())
 
     def close(self):
         """Close the connection."""
@@ -645,13 +656,13 @@ class ssh(Timeout):
 
 
         Examples:
-            >>> s = ssh(host='localhost',
-            ...         user='demouser',
-            ...         password='demopass')
             >>> with file('/tmp/bar','w+') as f:
             ...     f.write('Hello, world')
-            >>> s.download_data('/tmp/bar')
-            'Hello, world'
+            >>> with ssh(host='localhost',
+            ...         user='demouser',
+            ...         password='demopass') as s:
+            ...         print s.download_data('/tmp/bar')
+            Hello, world
         """
 
         with open(self._download_to_cache(remote)) as fd:
@@ -705,12 +716,12 @@ class ssh(Timeout):
           remote(str): The filename to upload it to.
 
         Examoles:
-            >>> s = ssh(host='localhost',
+            >>> with ssh(host='localhost',
             ...         user='demouser',
-            ...         password='demopass')
-            >>> s.upload_data('Hello, world', '/tmp/foo')
-            >>> file('/tmp/foo').read()
-            'Hello, world'
+            ...         password='demopass') as s:
+            ...     s.upload_data('Hello, world', '/tmp/foo')
+            ...     print file('/tmp/foo').read()
+            Hello, world
         """
 
         with context.local(log_level = 'ERROR'):
@@ -800,17 +811,17 @@ class ssh(Timeout):
 
         return res
 
-    def interactive(self):
+    def interactive(self, shell=None):
         """Create an interactive session.
 
         This is a simple wrapper for creating a new
         :class:`pwnlib.tubes.ssh.ssh_channel` object and calling
         :meth:`pwnlib.tubes.ssh.ssh_channel.interactive` on it."""
 
-        s = self.shell()
+        s = self.shell(shell)
 
         if self._wd:
-            s.sendline('cd %r' % self._wd)
+            s.sendline('cd ' + misc.sh_string(self._wd))
 
         s.interactive()
         s.close()
@@ -825,13 +836,13 @@ class ssh(Timeout):
                 based on the result of running 'mktemp -d' on the remote machine.
 
         Examples:
-            >>> s = ssh(host='localhost',
+            >>> with ssh(host='localhost',
             ...         user='demouser',
-            ...         password='demopass')
-            >>> cwd = s.set_working_directory()
-            >>> s.ls()
-            ''
-            >>> s.pwd() == cwd
+            ...         password='demopass') as s:
+            ...     cwd = s.set_working_directory()
+            ...     print '' == s.ls()
+            ...     print s.pwd() == cwd
+            True
             True
         """
         status = 0
