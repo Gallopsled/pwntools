@@ -111,11 +111,8 @@ def which_binutils(util, **kwargs):
         locals()['context'] = context
         log.warning("""
 Could not find %(util)r installed for %(context)s
-Try installing binutils for this architecture.
-For Debian/Ubuntu, some packages are avilable from the maintainers:
-    $ apt-cache search binutils
-However, pwntools makes packages available for all architectures:
-    https://launchpad.net/~pwntools/+archive/ubuntu/binutils
+Try installing binutils for this architecture:
+    http://docs.pwntools.com/en/latest/install/binutils.html
 """.strip() % locals())
         raise Exception('Could not find %(util)r installed for %(context)s' % locals())
 
