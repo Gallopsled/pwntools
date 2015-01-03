@@ -6,7 +6,12 @@ Pushes a value onto the stack without using
 null bytes or newline characters.
 
 Args:
-  value (int): The string to push.
+  value (int,str): The value or register to push
 </%docstring>
 
+% if isinstance(value, (int,long)):
 ${amd64.pushstr(packing.pack(value, 'all'), False)}
+% else:
+push ${value}
+% endif
+
