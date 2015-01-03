@@ -19,8 +19,6 @@ def options(prompt, opts, default = None):
     if not isinstance(default, (int, long, types.NoneType)):
         raise ValueError('options(): default must be a number or None')
 
-    # XXX: Make this work nicer when in term mode
-
     if term.term_mode:
         numfmt = '%' + str(len(str(len(opts)))) + 'd) '
         print ' [?] ' + prompt
@@ -29,10 +27,10 @@ def options(prompt, opts, default = None):
         arrow = term.text.bold_green('    => ')
         cur = default
         for i, opt in enumerate(opts):
-            h = log.output(arrow if i == cur else space, frozen = False)
+            h = term.output(arrow if i == cur else space, frozen = False)
             num = numfmt % (i + 1)
-            log.output(num)
-            log.output(opt + '\n', indent = len(num) + len(space))
+            term.output(num)
+            term.output(opt + '\n', indent = len(num) + len(space))
             hs.append(h)
         ds = ''
         prev = 0
@@ -125,7 +123,7 @@ def more(text):
     """
     if term.term_mode:
         lines = text.split('\n')
-        h = log.output(term.text.reverse('(more)'), float = True, frozen = False)
+        h = term.output(term.text.reverse('(more)'), float = True, frozen = False)
         step = term.height - 1
         for i in range(0, len(lines), step):
             for l in lines[i:i + step]:
