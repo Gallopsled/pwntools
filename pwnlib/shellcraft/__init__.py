@@ -102,4 +102,22 @@ class module(ModuleType):
 tether = sys.modules[__name__]
 
 # Create the module structure
-module(__name__, '')
+shellcraft = module(__name__, '')
+
+class LazyImporter:
+    def find_module(self, fullname, path):
+        if not fullname.startswith('pwnlib.shellcraft.'):
+            return None
+
+        parts = fullname.split('.')[2:]
+        cur = shellcraft
+        for part in parts:
+            cur = getattr(cur, part, None)
+            if not isinstance(cur, ModuleType):
+                return None
+
+        return self
+
+    def load_module(self, fullname):
+        return sys.modules[fullname]
+sys.meta_path.append(LazyImporter())
