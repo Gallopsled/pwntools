@@ -71,8 +71,18 @@ all_regs, sizes, bigger, smaller = misc.register_sizes(regs, [64, 32, 16, 8, 8])
         a = hex(packing.unpack(a, sizes[dest]))
         b = hex(packing.unpack(b, sizes[dest]))
         %>
-        mov ${dest}, ${a}
-        xor ${dest}, ${b}
+        % if sizes[dest] != 64:
+          mov ${dest}, ${a}
+          xor ${dest}, ${b}
+        % elif stack_allowed:
+          mov ${dest}, ${a}
+          push ${dest}
+          mov ${dest}, ${b}
+          xor [rsp], ${dest}
+          pop ${dest}
+        % else:
+          <% log.error("Cannot put %s into '%s' without using stack." % (hex(src), dest)) %>
+        % endif
     % endif
 
 % elif src in all_regs:
