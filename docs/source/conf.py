@@ -43,6 +43,7 @@ import pwnlib
 pwnlib.context.context.reset_local()
 pwnlib.context.ContextType.defaults['log_level'] = 'ERROR'
 pwnlib.term.text.when = 'never'
+
 '''
 
 autodoc_member_order = 'alphabetical'
@@ -311,3 +312,12 @@ def linkcode_resolve(domain, info):
                 pass
 
     return "https://github.com/Gallopsled/pwntools/blob/%s/%s" % (branch, filename)
+
+
+#
+# Work around #317
+#
+import pwnlib
+pwnlib.shellcraft.arm
+pwnlib.shellcraft.thumb
+pwnlib.shellcraft.amd64
