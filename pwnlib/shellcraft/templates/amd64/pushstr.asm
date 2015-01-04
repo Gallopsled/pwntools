@@ -22,28 +22,35 @@ Args:
     else:
         extend = '\x00'
 %>\
+    /* push ${repr(string)} */
 % for word in lists.group(8, string, 'fill', extend)[::-1]:
 <%
     sign = packing.u64(word, 'little', 'signed')
 %>\
 % if sign in [0, 0xa]:
     push ${sign + 1}
-    dec byte ptr [rsp] /*  ${repr(word)} */
+    dec byte ptr [rsp]
 % elif -0x80 <= sign <= 0x7f and okay(word[0]):
-    push ${hex(sign)} /*  ${repr(word)} */
+    push ${hex(sign)}
 % elif -0x80000000 <= sign <= 0x7fffffff and okay(word[:4]):
-    push ${hex(sign)} /*  ${repr(word)} */
+    push ${hex(sign)}
 % elif okay(word):
-    /* push ${repr(word)} */
     mov rax, ${hex(sign)}
     push rax
+% elif word[4:] == '\x00\x00\x00\x00':
+<%
+    a,b = fiddling.xor_pair(word[:4], avoid = '\x00\n')
+    a   = packing.u32(a, 'little', 'unsigned')
+    b   = packing.u32(b, 'little', 'unsigned')
+%>\
+    push ${hex(a)}
+    xor dword ptr [rsp], ${hex(b)}
 % else:
 <%
     a,b = fiddling.xor_pair(word, avoid = '\x00\n')
     a   = packing.u64(a, 'little', 'unsigned')
     b   = packing.u64(b, 'little', 'unsigned')
 %>\
-    /* push ${repr(word)} */
     mov rax, ${hex(a)}
     push rax
     mov rax, ${hex(b)}
