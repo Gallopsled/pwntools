@@ -101,7 +101,7 @@ def which_binutils(util, **kwargs):
                 if arch is None: pattern = gutil
 
                 # e.g. aarch64-linux-gnu-objdump
-                else:       pattern = '%s*-%s' % (arch,gutil)
+                else:       pattern = '%s*linux*-%s' % (arch,gutil)
 
                 for dir in environ['PATH'].split(':'):
                     res = glob(path.join(dir, pattern))
