@@ -1,17 +1,24 @@
 import os
+from collections import defaultdict
 
 __all__ = ['make_function']
 
 loaded = {}
 lookup = None
 def init_mako():
-    global lookup
+    global lookup, render_global
     from mako.lookup import TemplateLookup
     from mako.parsetree import Tag, Text
     from mako import ast
+    import threading
 
     if lookup != None:
         return
+
+    class IsInside(threading.local):
+        is_inside = False
+
+    render_global = IsInside()
 
     curdir = os.path.dirname(os.path.abspath(__file__))
     lookup = TemplateLookup(
@@ -88,10 +95,12 @@ def make_function(funcname, filename, directory):
     # but what would not have the right signature.
     # While we are at it, we insert the docstring too
     exec '''
-def wrap(template):
+def wrap(template, render_global):
     def %s(%s):
         %r
+        is_inside, render_global.is_inside = render_global.is_inside, True
         lines = template.render(%s).split('\\n')
+        render_global.is_inside = is_inside
         for i in xrange(len(lines)):
             line = lines[i]
             def islabelchar(c):
@@ -106,12 +115,16 @@ def wrap(template):
         s = '\\n'.join(lines)
         while '\\n\\n\\n' in s:
             s = s.replace('\\n\\n\\n', '\\n\\n')
-        return s
+
+        if is_inside:
+            return s
+        else:
+            return s + '\\n'
     return %s
 ''' % (funcname, args, inspect.cleandoc(template.module.__doc__ or ''), args_used, funcname)
 
     # Setting _relpath is a slight hack only used to get better documentation
-    res = wrap(template)
+    res = wrap(template, render_global)
     res._relpath = path
 
     return res
