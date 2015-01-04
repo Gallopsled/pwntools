@@ -10,7 +10,7 @@ Args:
 </%docstring>
 
 % if isinstance(value, (int,long)):
-${amd64.pushstr(packing.pack(value, 'all'), False)}
+${amd64.pushstr(packing.pack(value, 64), False)}
 % else:
 push ${value}
 % endif

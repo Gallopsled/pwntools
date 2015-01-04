@@ -10,7 +10,7 @@ Args:
 </%docstring>
 
 % if isinstance(value, (int,long)):
-${i386.pushstr(packing.pack(value, 'all'), False)}
+${i386.pushstr(packing.pack(value, 32), False)}
 % else:
 push ${value}
 % endif
