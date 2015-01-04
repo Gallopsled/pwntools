@@ -1,3 +1,4 @@
+<% from pwnlib.shellcraft import i386 %>
 <%page args="uid = 'euid'"/>
 <%docstring>
 Args: [uid (imm/reg) = euid]
@@ -6,19 +7,11 @@ Args: [uid (imm/reg) = euid]
 
 % if uid == 'euid':
     /*  geteuid */
-    push SYS_geteuid
-    pop eax
-    int 0x80
+    ${i386.linux.syscall('SYS_geteuid')}
+    ${i386.mov('ebx', 'eax')}
 % else:
-    push ${uid}
-    pop eax
+    ${i386.mov('ebx', uid)}
 % endif
 
     /*  setreuid(eax, eax) */
-    mov ebx, eax
-    mov ecx, eax
-    push SYS_setreuid
-    pop eax
-    int 0x80
-
-    /* fin */
+    ${i386.syscall('SYS_setreuid', 'ebx', 'ebx')}
