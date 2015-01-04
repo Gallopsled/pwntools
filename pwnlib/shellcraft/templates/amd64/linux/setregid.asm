@@ -7,10 +7,10 @@ Args: [gid (imm/reg) = egid]
 
 % if gid == 'egid':
     /*  getegid */
-    ${amd64.syscall('SYS_getegid')}
+    ${amd64.linux.syscall('SYS_getegid')}
     ${amd64.mov('rdi', 'rax')}
 % else:
     ${amd64.mov('rdi', gid)}
 % endif
 
-    ${amd64.syscall('SYS_setregid', 'rdi', 'rdi')}
+    ${amd64.linux.syscall('SYS_setregid', 'rdi', 'rdi')}
