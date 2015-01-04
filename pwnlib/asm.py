@@ -28,7 +28,7 @@ Assembly
     in the :mod:`shellcraft` module.
 
         >>> asm(shellcraft.sh())
-        'j\x0bX\x99Rh//shh/bin\x89\xe31\xc9\xcd\x80'
+        'jhh///sh/bin\x89\xe31\xc9j\x0bX\x99\xcd\x80'
 
 Disassembly
 ------------------------
