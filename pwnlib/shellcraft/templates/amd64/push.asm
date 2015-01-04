@@ -1,6 +1,6 @@
 <% from pwnlib.util import packing %>
 <% from pwnlib.shellcraft import amd64 %>
-<%page args="value, append_null = True"/>
+<%page args="value"/>
 <%docstring>
 Pushes a value onto the stack without using
 null bytes or newline characters.
@@ -10,7 +10,7 @@ Args:
 </%docstring>
 
 % if isinstance(value, (int,long)):
-${amd64.pushstr(packing.pack(value, 64), False)}
+${amd64.pushstr(packing.pack(value, 64, 'little', True), False)}
 % else:
 push ${value}
 % endif

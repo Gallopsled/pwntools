@@ -1,6 +1,6 @@
 <% from pwnlib.util import packing %>
 <% from pwnlib.shellcraft import i386 %>
-<%page args="value, append_null = True"/>
+<%page args="value"/>
 <%docstring>
 Pushes a value onto the stack without using
 null bytes or newline characters.
@@ -10,7 +10,7 @@ Args:
 </%docstring>
 
 % if isinstance(value, (int,long)):
-${i386.pushstr(packing.pack(value, 32), False)}
+${i386.pushstr(packing.pack(value, 32, 'little', True), False)}
 % else:
 push ${value}
 % endif
