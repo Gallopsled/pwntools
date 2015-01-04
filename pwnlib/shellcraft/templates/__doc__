@@ -6,7 +6,7 @@ It is organized first by architecture and then by operating system.
 
 Example:
 
-    >>> print shellcraft.i386.nop()
+    >>> print shellcraft.i386.nop().strip('\n')
         nop
     >>> print shellcraft.i386.linux.sh()
         /* push '/bin///sh\x00' */
