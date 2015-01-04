@@ -97,8 +97,17 @@ class Logger(logging.getLoggerClass()):
         self.status_last = 0
 
     def getEffectiveLevel(self):
-        normLevel = super(Logger, self).getEffectiveLevel()
-        return min(normLevel, context.log_level)
+        # this is a copy of the `logging` modules `getEffectiveLevel` except
+        # that if we are the pwnlib root logger (named 'pwnlib') we return the
+        # log-level set in the current context
+        logger = self
+        while logger:
+            if logger.name == 'pwnlib':
+                return context.log_level
+            if logger.level:
+                return logger.level
+            logger = logger.parent
+        return logging.NOTSET
 
     def __log(self, level, msg, args, kwargs, symbol='', stop=False):
         """
