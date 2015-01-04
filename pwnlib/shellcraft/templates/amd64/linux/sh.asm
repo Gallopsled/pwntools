@@ -12,4 +12,4 @@
     push rax
 
     /*  Call execve("/bin//sh", 0, 0) */
-    ${amd64.syscall('SYS_execve', 'rsp', 0, 'rdx')}
+    ${amd64.linux.syscall('SYS_execve', 'rsp', 0, 'rdx')}

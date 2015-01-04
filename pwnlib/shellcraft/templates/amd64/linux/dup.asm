@@ -21,7 +21,7 @@ ${looplabel}:
     js ${after}
     push rsi
 
-    ${amd64.syscall('SYS_dup2', 'rbp', 'rsi')}
+    ${amd64.linux.syscall('SYS_dup2', 'rbp', 'rsi')}
 
     jmp ${looplabel}
 ${after}:

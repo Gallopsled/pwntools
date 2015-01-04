@@ -7,10 +7,10 @@ Args: [uid (imm/reg) = euid]
 
 % if uid == 'euid':
     /*  geteuid */
-    ${amd64.syscall('SYS_geteuid')}
+    ${amd64.linux.syscall('SYS_geteuid')}
     ${amd64.mov('rdi', 'rax')}
 % else:
     ${amd64.mov('rdi', uid)}
 % endif
 
-    ${amd64.syscall('SYS_setreuid', 'rdi', 'rdi')}
+    ${amd64.linux.syscall('SYS_setreuid', 'rdi', 'rdi')}

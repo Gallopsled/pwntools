@@ -13,4 +13,4 @@ Args: [gid (imm/reg) = egid]
 % endif
 
     /*  setregid(eax, eax) */
-    ${i386.syscall('SYS_setregid', 'ebx', 'ebx')}
+    ${i386.linux.syscall('SYS_setregid', 'ebx', 'ebx')}
