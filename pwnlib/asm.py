@@ -90,7 +90,7 @@ def which_binutils(util, **kwargs):
         try:
             with context.local(arch = machine):
                 if context.arch in arches:
-                    arches.insert(0,None)
+                    arches.append(None)
         except AttributeError:
             log.warn_once("Your local binutils won't be used because architecture %r is not supported." % machine)
 
