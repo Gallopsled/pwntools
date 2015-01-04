@@ -4,6 +4,43 @@
 Pushes a string onto the stack without using
 null bytes or newline characters.
 
+Example:
+
+    >>> print shellcraft.i386.pushstr('')
+        /* push '\x00' */
+        push 1
+        dec byte ptr [esp]
+    >>> print shellcraft.i386.pushstr('a')
+        /* push 'a\x00' */
+        push 0x61
+    >>> print shellcraft.i386.pushstr('aa')
+        /* push 'aa\x00' */
+        push 0x1010101
+        xor dword ptr [esp], 0x1016060
+    >>> print shellcraft.i386.pushstr('aaa')
+        /* push 'aaa\x00' */
+        push 0x1010101
+        xor dword ptr [esp], 0x1606060
+    >>> print shellcraft.i386.pushstr('aaaa')
+        /* push 'aaaa\x00' */
+        push 1
+        dec byte ptr [esp]
+        push 0x61616161
+    >>> print shellcraft.i386.pushstr('aaaaa')
+        /* push 'aaaaa\x00' */
+        push 0x61
+        push 0x61616161
+    >>> print shellcraft.i386.pushstr('aaaa', append_null = False)
+        /* push 'aaaa' */
+        push 0x61616161
+    >>> print shellcraft.i386.pushstr('\xc3')
+        /* push '\xc3\x00' */
+        push 0x1010101
+        xor dword ptr [esp], 0x10101c2
+    >>> print shellcraft.i386.pushstr('\xc3', append_null = False)
+        /* push '\xc3' */
+        push 0x...c3
+
 Args:
   string (str): The string to push.
   append_null (bool): Whether to append a single NULL-byte before pushing.
@@ -37,6 +74,9 @@ Examples:
         extend = '\xff'
     else:
         extend = '\x00'
+
+    def pretty(n):
+        return hex(n & (2 ** 32 - 1))
 %>\
     /* push ${repr(string)} */
 % for word in lists.group(4, string, 'fill', extend)[::-1]:
@@ -47,16 +87,16 @@ Examples:
     push ${sign + 1}
     dec byte ptr [esp]
 % elif -0x80 <= sign <= 0x7f and okay(word[0]):
-    push ${hex(sign)}
+    push ${pretty(sign)}
 % elif okay(word):
-    push ${hex(sign)}
+    push ${pretty(sign)}
 % else:
 <%
     a,b = fiddling.xor_pair(word, avoid = '\x00\n')
     a   = packing.u32(a, 'little', 'unsigned')
     b   = packing.u32(b, 'little', 'unsigned')
 %>\
-    push ${hex(a)}
-    xor dword ptr [esp], ${hex(b)}
+    push ${pretty(a)}
+    xor dword ptr [esp], ${pretty(b)}
 % endif
 % endfor

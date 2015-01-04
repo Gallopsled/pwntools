@@ -1,18 +1,62 @@
 <% from pwnlib.shellcraft import amd64 %>\
 <% from pwnlib.constants.linux import amd64 as constants %>\
-<%page args="syscall, arg0 = None, arg1 = None, arg2 = None, arg3 = None, arg4 = None, arg5 = None"/>
+<%page args="syscall = None, arg0 = None, arg1 = None, arg2 = None, arg3 = None, arg4 = None, arg5 = None"/>
 <%docstring>
 Args: [syscall_number, *args]
     Does a syscall
+
+Example:
+
+        >>> print pwnlib.shellcraft.amd64.linux.syscall('SYS_execve', 1, 'rsp', 2, 0)
+            /* call execve(1, 'rsp', 2, 0) */
+            push 0x1
+            pop rdi
+            mov rsi, rsp
+            push 0x2
+            pop rdx
+            xor r10d, r10d
+            push 0x3b
+            pop rax
+            syscall
+        >>> print pwnlib.shellcraft.amd64.linux.syscall('SYS_execve', 2, 1, 0, -1)
+            /* call execve(2, 1, 0, -1) */
+            push 0x2
+            pop rdi
+            push 0x1
+            pop rsi
+            push -1
+            pop r10
+            push 0x3b
+            pop rax
+            cdq /* Set rdx to 0, rax is known to be positive */
+            syscall
+        >>> print pwnlib.shellcraft.amd64.linux.syscall()
+            /* call syscall() */
+            syscall
+        >>> print pwnlib.shellcraft.amd64.linux.syscall('rax', 'rdi', 'rsi')
+            /* call syscall('rax', 'rdi', 'rsi') */
+            /* moving rdi into rdi, but this is a no-op */
+            /* moving rsi into rsi, but this is a no-op */
+            /* moving rax into rax, but this is a no-op */
+            syscall
+        >>> print pwnlib.shellcraft.amd64.linux.syscall('rbp', None, None, 1)
+            /* call syscall('rbp', ?, ?, 1) */
+            push 0x1
+            pop rdx
+            mov rax, rbp
+            syscall
 </%docstring>
 <%
   append_cdq = False
-  if isinstance(syscall, (str, unicde)) and syscall.startswith('SYS_'):
+  if isinstance(syscall, (str, unicode)) and syscall.startswith('SYS_'):
       syscall_repr = syscall[4:] + "(%s)"
       args = []
   else:
       syscall_repr = 'syscall(%s)'
-      args = [repr(syscall)]
+      if syscall == None:
+          args = ['?']
+      else:
+          args = [repr(syscall)]
 
   for arg in [arg0, arg1, arg2, arg3, arg4, arg5]:
       if arg == None:
