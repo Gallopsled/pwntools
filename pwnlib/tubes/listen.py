@@ -123,3 +123,10 @@ class listen(sock):
                 return None
         else:
             return getattr(super(listen, self), key)
+
+    def close(self):
+        # since `close` is scheduled to run on exit we must check that we got
+        # a connection or the program will hang in the `join` call above
+        if self._accepter.is_alive():
+            return
+        super(listen, self).close()
