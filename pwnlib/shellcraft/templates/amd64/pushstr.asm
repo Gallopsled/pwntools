@@ -6,39 +6,50 @@ null bytes or newline characters.
 
 Example:
 
-    >>> print shellcraft.amd64.pushstr('')
+    >>> print shellcraft.amd64.pushstr('').rstrip()
         /* push '\x00' */
         push 1
         dec byte ptr [rsp]
-    >>> print shellcraft.amd64.pushstr('a')
+    >>> print shellcraft.amd64.pushstr('a').rstrip()
         /* push 'a\x00' */
         push 0x61
-    >>> print shellcraft.amd64.pushstr('aa')
+    >>> print shellcraft.amd64.pushstr('aa').rstrip()
         /* push 'aa\x00' */
         push 0x...
         xor dword ptr [rsp], 0x...
-    >>> print shellcraft.amd64.pushstr('aaa')
+    >>> print shellcraft.amd64.pushstr('aaa').rstrip()
         /* push 'aaa\x00' */
         push 0x...
         xor dword ptr [rsp], 0x...
-    >>> print shellcraft.amd64.pushstr('aaaa')
+    >>> print shellcraft.amd64.pushstr('aaaa').rstrip()
         /* push 'aaaa\x00' */
         push 0x61616161
-    >>> print shellcraft.amd64.pushstr('aaa\xc3')
+    >>> print shellcraft.amd64.pushstr('aaa\xc3').rstrip()
         /* push 'aaa\xc3\x00' */
         push 0x...
         xor dword ptr [rsp], 0x...
-    >>> print shellcraft.amd64.pushstr('aaa\xc3', append_null = False)
+    >>> print shellcraft.amd64.pushstr('aaa\xc3', append_null = False).rstrip()
         /* push 'aaa\xc3' */
         push 0x...
-    >>> print shellcraft.amd64.pushstr('\xc3')
+    >>> print shellcraft.amd64.pushstr('\xc3').rstrip()
         /* push '\xc3\x00' */
         push 0x...
         xor dword ptr [rsp], 0x...
-    >>> print shellcraft.amd64.pushstr('\xc3', append_null = False)
+    >>> print shellcraft.amd64.pushstr('\xc3', append_null = False).rstrip()
         /* push '\xc3' */
         push 0x...c3
-
+    >>> with context.local():
+    ...    context.arch = 'amd64'
+    ...    print enhex(asm(shellcraft.pushstr("/bin/sh")))
+    48b801010101010101015048b82e63686f2e72690148310424
+    >>> with context.local():
+    ...    context.arch = 'amd64'
+    ...    print enhex(asm(shellcraft.pushstr("")))
+    6a01fe0c24
+    >>> with context.local():
+    ...    context.arch = 'amd64'
+    ...    print enhex(asm(shellcraft.pushstr("\x00", False)))
+    6a01fe0c24
 
 Args:
   string (str): The string to push.

@@ -6,47 +6,40 @@ null bytes or newline characters.
 
 Example:
 
-    >>> print shellcraft.i386.pushstr('')
+    >>> print shellcraft.i386.pushstr('').rstrip()
         /* push '\x00' */
         push 1
         dec byte ptr [esp]
-    >>> print shellcraft.i386.pushstr('a')
+    >>> print shellcraft.i386.pushstr('a').rstrip()
         /* push 'a\x00' */
         push 0x61
-    >>> print shellcraft.i386.pushstr('aa')
+    >>> print shellcraft.i386.pushstr('aa').rstrip()
         /* push 'aa\x00' */
         push 0x1010101
         xor dword ptr [esp], 0x1016060
-    >>> print shellcraft.i386.pushstr('aaa')
+    >>> print shellcraft.i386.pushstr('aaa').rstrip()
         /* push 'aaa\x00' */
         push 0x1010101
         xor dword ptr [esp], 0x1606060
-    >>> print shellcraft.i386.pushstr('aaaa')
+    >>> print shellcraft.i386.pushstr('aaaa').rstrip()
         /* push 'aaaa\x00' */
         push 1
         dec byte ptr [esp]
         push 0x61616161
-    >>> print shellcraft.i386.pushstr('aaaaa')
+    >>> print shellcraft.i386.pushstr('aaaaa').rstrip()
         /* push 'aaaaa\x00' */
         push 0x61
         push 0x61616161
-    >>> print shellcraft.i386.pushstr('aaaa', append_null = False)
+    >>> print shellcraft.i386.pushstr('aaaa', append_null = False).rstrip()
         /* push 'aaaa' */
         push 0x61616161
-    >>> print shellcraft.i386.pushstr('\xc3')
+    >>> print shellcraft.i386.pushstr('\xc3').rstrip()
         /* push '\xc3\x00' */
         push 0x1010101
         xor dword ptr [esp], 0x10101c2
-    >>> print shellcraft.i386.pushstr('\xc3', append_null = False)
+    >>> print shellcraft.i386.pushstr('\xc3', append_null = False).rstrip()
         /* push '\xc3' */
         push 0x...c3
-
-Args:
-  string (str): The string to push.
-  append_null (bool): Whether to append a single NULL-byte before pushing.
-
-Examples:
-
     >>> with context.local():
     ...    context.arch = 'i386'
     ...    print enhex(asm(shellcraft.pushstr("/bin/sh")))
@@ -60,6 +53,9 @@ Examples:
     ...    print enhex(asm(shellcraft.pushstr("\x00", False)))
     6a01fe0c24
 
+Args:
+  string (str): The string to push.
+  append_null (bool): Whether to append a single NULL-byte before pushing.
 </%docstring>
 <%
     if append_null:
