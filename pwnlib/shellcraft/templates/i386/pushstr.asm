@@ -7,6 +7,22 @@ null bytes or newline characters.
 Args:
   string (str): The string to push.
   append_null (bool): Whether to append a single NULL-byte before pushing.
+
+Examples:
+
+    >>> with context.local():
+    ...    context.arch = 'i386'
+    ...    print enhex(asm(shellcraft.pushstr("/bin/sh")))
+    68010101018134242e726901682f62696e
+    >>> with context.local():
+    ...    context.arch = 'i386'
+    ...    print enhex(asm(shellcraft.pushstr("")))
+    6a01fe0c24
+    >>> with context.local():
+    ...    context.arch = 'i386'
+    ...    print enhex(asm(shellcraft.pushstr("\x00", False)))
+    6a01fe0c24
+
 </%docstring>
 <%
     if append_null:
