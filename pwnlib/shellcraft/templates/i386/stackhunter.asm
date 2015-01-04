@@ -14,13 +14,13 @@
 <% stackhunter = common.label("stackhunter") %>
 %if (cookie & 0xffffff) == 0xfceb58:
 ${stackhunter}:
-    cmp dword eax, ${hex(cookie)}
+    cmp eax, ${hex(cookie)}
     jne ${stackhunter}+1
     jmp esp
 %else:
 ${stackhunter}:
     pop eax
-    cmp dword eax, ${hex(cookie)}
+    cmp eax, ${hex(cookie)}
     jne ${stackhunter}
     jmp esp
 %endif
