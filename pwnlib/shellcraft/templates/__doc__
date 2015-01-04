@@ -9,7 +9,8 @@ Example:
     >>> print shellcraft.i386.nop()
         nop
     >>> print shellcraft.i386.linux.sh()
-        /*  Clear eax, ecx, edx */
-        xor ecx, ecx
-        imul ecx
+        /* Set syscall number, clear edx */
+        push 11
+        pop eax
+        cdq
     ...
