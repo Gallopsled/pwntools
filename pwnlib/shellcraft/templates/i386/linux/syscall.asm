@@ -1,6 +1,6 @@
 <% from pwnlib.shellcraft import i386 %>\
 <% from pwnlib.constants.linux import i386 as constants %>\
-<%page args="syscall, arg0 = None, arg1 = None, arg2 = None, arg3 = None, arg4 = None"/>
+<%page args="syscall, arg0 = None, arg1 = None, arg2 = None, arg3 = None, arg4 = None, arg5 = None"/>
 <%docstring>
 Args: [syscall_number, *args]
     Does a syscall
@@ -14,7 +14,7 @@ Args: [syscall_number, *args]
       syscall_repr = 'syscall(%s)'
       args = [repr(syscall)]
 
-  for arg in [arg0, arg1, arg2, arg3, arg4]:
+  for arg in [arg0, arg1, arg2, arg3, arg4, arg5]:
       if arg == None:
           args.append('?')
       else:
@@ -24,7 +24,7 @@ Args: [syscall_number, *args]
   syscall_repr = syscall_repr % ', '.join(args)
 %>\
     /* call ${syscall_repr} */
-% for dst, src in zip(['ebx', 'ecx', 'edx', 'esi', 'edi', 'eax'], [arg0, arg1, arg2, arg3, arg4, syscall]):
+% for dst, src in zip(['ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp', 'eax'], [arg0, arg1, arg2, arg3, arg4, arg5, syscall]):
   % if dst == 'edx' and src == 0:
     <% append_cdq = True %>\
   % elif src != None:
