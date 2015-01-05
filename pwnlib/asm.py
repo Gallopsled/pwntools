@@ -112,7 +112,7 @@ def which_binutils(util, **kwargs):
         log.warning("""
 Could not find %(util)r installed for %(context)s
 Try installing binutils for this architecture:
-    http://docs.pwntools.com/en/latest/install/binutils.html
+    https://pwntools.readthedocs.org/en/latest/install/binutils.html
 """.strip() % locals())
         raise Exception('Could not find %(util)r installed for %(context)s' % locals())
 
