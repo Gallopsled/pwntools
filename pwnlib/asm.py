@@ -90,7 +90,7 @@ def which_binutils(util, **kwargs):
         try:
             with context.local(arch = machine):
                 if context.arch in arches:
-                    arches.insert(0,None)
+                    arches.append(None)
         except AttributeError:
             log.warn_once("Your local binutils won't be used because architecture %r is not supported." % machine)
 
@@ -101,7 +101,7 @@ def which_binutils(util, **kwargs):
                 if arch is None: pattern = gutil
 
                 # e.g. aarch64-linux-gnu-objdump
-                else:       pattern = '%s*-%s' % (arch,gutil)
+                else:       pattern = '%s*linux*-%s' % (arch,gutil)
 
                 for dir in environ['PATH'].split(':'):
                     res = glob(path.join(dir, pattern))
@@ -124,11 +124,9 @@ def _assembler():
         'little': '-EL'
     }[context.endianness]
 
-    osx = (platform.system() == 'Darwin')
-
     assemblers = {
-        'i386'   : [gas, '--32'] if not osx else [gas, '-arch', 'i386'],
-        'amd64'  : [gas, '--64'] if not osx else [gas, '-arch', 'x86_64'],
+        'i386'   : [gas, '--32'],
+        'amd64'  : [gas, '--64'],
 
         # Most architectures accept -EL or -EB
         'thumb'  : [gas, '-mthumb', E],
@@ -148,7 +146,6 @@ def _assembler():
     }
 
     return assemblers.get(context.arch, [gas])
-
 
 def _objcopy():
     return [which_binutils('objcopy')]
@@ -335,10 +332,8 @@ def asm(shellcode, vma = 0, **kwargs):
     result = ''
 
     with context.local(**kwargs):
-        osx = (platform.system() == 'Darwin')
-
         assembler = _assembler()
-        objcopy   = _objcopy() + ['-j', '.shellcode' if not osx else '*.shellcode*', '-Obinary']
+        objcopy   = _objcopy() + ['-j', '.shellcode', '-Obinary']
         code      = '.org %#x\n' % vma
         code      += _arch_header()
         code      += cpp(shellcode)

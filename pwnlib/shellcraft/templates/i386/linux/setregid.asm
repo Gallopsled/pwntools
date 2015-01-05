@@ -1,3 +1,4 @@
+<% from pwnlib.shellcraft import i386 %>
 <%page args="gid = 'egid'"/>
 <%docstring>
 Args: [gid (imm/reg) = egid]
