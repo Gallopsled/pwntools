@@ -39,7 +39,8 @@ Disassembly
     '   0:   b8 0b 00 00 00          mov    eax,0xb'
 
 """
-import tempfile, subprocess, shutil, tempfile, errno, logging, platform
+import tempfile, subprocess, shutil, tempfile, errno, logging, platform, re
+from collections import defaultdict
 from os import path, environ
 from glob import glob
 from . import log
@@ -116,6 +117,8 @@ Try installing binutils for this architecture:
 """.strip() % locals())
         raise Exception('Could not find %(util)r installed for %(context)s' % locals())
 
+checked_assembler_version = defaultdict(lambda: False)
+
 def _assembler():
     gas = which_binutils('as')
 
@@ -145,7 +148,20 @@ def _assembler():
         'ia64':    [gas, '-m%ce' % context.endianness[0]]
     }
 
-    return assemblers.get(context.arch, [gas])
+    assembler = assemblers.get(context.arch, gas)
+
+    if not checked_assembler_version[gas]:
+        checked_assembler_version[gas] = True
+        result = subprocess.check_output([gas, '-v','/dev/null'],
+                                         stderr=subprocess.STDOUT)
+        version = re.search(r' (\d\.\d+)', result).group(1)
+        if version < '2.19':
+            log.warn_once('Your binutils version is too old and may not work!\n'  + \
+                'Try updating with: https://pwntools.readthedocs.org/en/latest/install/binutils.html\n' + \
+                'Reported Version: %r' % result.strip())
+
+
+    return assembler
 
 def _objcopy():
     return [which_binutils('objcopy')]
