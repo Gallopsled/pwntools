@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 from distutils.util import convert_path
 from distutils.command.install import INSTALL_SCHEMES
-import os, glob
+import os, glob, platform
 
 # Get all template files
 templates = []
@@ -32,6 +32,12 @@ for filename in glob.glob('pwnlib/commandline/*'):
     script = '%s=pwnlib.commandline.%s:main' % (filename, filename)
     console_scripts.append(script)
 
+install_requires     = ['paramiko','argparse', 'mako', 'pyelftools',
+                        'capstone==2.1', 'ropgadget', 'pyserial', 'requests']
+
+# This is a hack until somebody ports psutil to OpenBSD
+if platform.system() != 'OpenBSD':
+    install_requires.append('psutil')
 
 setup(
     name                 = 'pwntools',
@@ -53,8 +59,7 @@ setup(
     author_email         = "#gallopsled @ freenode.net",
     url                  = 'https://github.com/Gallopsled/pwntools/',
     download_url         = "https://github.com/Gallopsled/pwntools/tarball/%s" % version,
-    install_requires     = ['paramiko','argparse', 'mako', 'pyelftools',
-                            'capstone==2.1', 'ropgadget', 'pyserial', 'requests', 'psutil'],
+    install_requires     = install_requires,
     license              = "Mostly MIT, some GPL/BSD, see LICENSE-pwntools.txt",
     classifiers          = [
         'Topic :: Security',
