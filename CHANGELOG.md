@@ -3,7 +3,7 @@
 This changelog only includes added major features and changes. Bugfixes and
 minor changes are omitted.
 
-## 2.2.0 - 2014-08-28 (pre)
+## 2.2.0
 
 This was a large release with a lot of bugfixes and changes. Only the most significant
 are mentioned here.
@@ -16,3 +16,11 @@ are mentioned here.
 - Added a serial tube
 - Huge performance gains in the buffering for tubes
 - Re-added user agents
+- Begun using Travis CI with lots of test
+- Removed bundled binutils in favor of documenting how to build them yourselves
+- Added support for port forwarding though our SSH module
+- Added dependency for capstone and ropgadget
+- Added a lots of shellcodes
+- Stuff we forgot
+- Lots of documentation fixes
+- Lots of bugfixes
