@@ -13,7 +13,7 @@ Github has a great guide for contributing to open source projects:
 
 ## Pwntools Specifics
 
-In general, we like to keep things documented.  You should add documentation to any new functionality, and update it for any changed functionality.  Our docstrings use the [Google Style Python Docstrings](http://sphinxcontrib-napoleon.readthedocs.org/en/latest/example_google.html#example-google).
+In general, we like to keep things documented.  You should add documentation to any new functionality, and update it for any changed functionality.  Our docstrings use the [Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.org/en/latest/example_google.html#example-google).
 
 After you have documentation, you should add a [doctest](https://docs.python.org/2/library/doctest.html).
 

@@ -128,9 +128,9 @@ class DynELF(object):
 
     .. _symtab:    https://refspecs.linuxbase.org/elf/gabi4+/ch4.symtab.html
     .. _strtab:    https://refspecs.linuxbase.org/elf/gabi4+/ch4.strtab.html
-    .. _.got.plt:  http://refspecs.linuxbase.org/LSB_3.1.1/LSB-Core-generic/LSB-Core-generic/specialsections.html
+    .. _.got.plt:  https://refspecs.linuxbase.org/LSB_3.1.1/LSB-Core-generic/LSB-Core-generic/specialsections.html
     .. _DYNAMIC:   http://www.sco.com/developers/gabi/latest/ch5.dynamic.html#dynamic_section
-    .. _SYSV:      http://refspecs.linuxbase.org/elf/gabi4+/ch5.dynamic.html#hash
+    .. _SYSV:      https://refspecs.linuxbase.org/elf/gabi4+/ch5.dynamic.html#hash
     .. _GNU:       https://blogs.oracle.com/ali/entry/gnu_hash_elf_sections
     .. _DT_DEBUG:  https://reverseengineering.stackexchange.com/questions/6525/elf-link-map-when-linked-as-relro
     .. _link map:  https://google.com
@@ -573,7 +573,7 @@ class DynELF(object):
         Internal Documentation:
             See the ELF manual for more information.  Search for the phrase
             "A hash table of Elf32_Word objects supports symbol table access", or see:
-            http://docs.oracle.com/cd/E19504-01/802-6319/6ia12qkfo/index.html#chapter6-48031
+            https://docs.oracle.com/cd/E19504-01/802-6319/6ia12qkfo/index.html#chapter6-48031
 
             struct Elf_Hash {
                 uint32_t nbucket;

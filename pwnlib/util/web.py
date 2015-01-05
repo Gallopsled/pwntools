@@ -16,7 +16,7 @@ def wget(url, save=None, timeout=5, **kwargs):
 
     Example:
 
-      >>> url    = 'http://httpbin.org/robots.txt'
+      >>> url    = 'https://httpbin.org/robots.txt'
       >>> with context.local(log_level='ERROR'):
       ...     result = wget(url)
       >>> result

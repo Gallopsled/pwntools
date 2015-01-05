@@ -210,8 +210,8 @@ latex_documents = [
    u'Gallopsled et al', 'manual'),
 ]
 
-intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None),
-                       'paramiko': ('http://paramiko-docs.readthedocs.org/en/1.15/', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None),
+                       'paramiko': ('https://paramiko-docs.readthedocs.org/en/1.15/', None)}
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
