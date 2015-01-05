@@ -309,23 +309,6 @@ class PrefixIndentFormatter(logging.Formatter):
         return msg
 
 
-##
-# This following snippet probably belongs in pwnlib.term.text, but someone
-# decided that it should be a magic module, so I don't want to mess with it.
-##
-
-# Matches ANSI escape codes
-ansi_escape = re.compile(r'\x1b[^m]*m')
-
-def ansilen(sz):
-    """
-    Length helper which does not count ANSI escape codes.
-
-    Regex stolen from stackoverflow.com/q/14693701
-    """
-    return len(ansi_escape.sub('', sz))
-
-
 #
 # Note that ``Logger`` inherits from ``logging.getLoggerClass()``,
 # and always invokes the parent class's routines to enrich the data.
