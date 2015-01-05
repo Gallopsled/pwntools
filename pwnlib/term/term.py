@@ -131,8 +131,7 @@ def init():
         else:
             traceback.print_exception(*args)
         # this is a bit esoteric
-        # look here for details: http://stackoverflow.com/questions
-        # /12790328/how-to-silence-sys-excepthook-is-missing-error
+        # look here for details: https://stackoverflow.com/questions/12790328/how-to-silence-sys-excepthook-is-missing-error
         if fd.fileno() == 2:
             os.close(fd.fileno())
     sys.excepthook = hook
@@ -255,7 +254,7 @@ def parse(s):
                 #  here is supporting setting the terminal title and updating
                 #  the color map.  we promise to do it properly in the next
                 #  iteration of this terminal emulation/compatibility layer
-                #  related: http://unix.stackexchange.com/questions/5936/can-i-set-my-local-machines-terminal-colors-to-use-those-of-the-machine-i-ssh-i
+                #  related: https://unix.stackexchange.com/questions/5936/can-i-set-my-local-machines-terminal-colors-to-use-those-of-the-machine-i-ssh-i
                 try:
                     j = s.index('\x07', i)
                 except:

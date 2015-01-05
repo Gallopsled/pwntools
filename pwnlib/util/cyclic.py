@@ -1,7 +1,7 @@
 import string
 from . import packing
 
-# Taken from http://en.wikipedia.org/wiki/De_Bruijn_sequence but changed to a generator
+# Taken from https://en.wikipedia.org/wiki/De_Bruijn_sequence but changed to a generator
 def de_bruijn(alphabet = string.ascii_lowercase, n = 4):
     """de_bruijn(alphabet = string.ascii_lowercase, n = 4) -> generator
 
@@ -81,7 +81,7 @@ def cyclic_find(subseq, alphabet = string.ascii_lowercase, n = None):
        There exists better algorithms for this, but they depend on generating
        the De Bruijn sequence in another fashion. Somebody should look at it:
 
-       http://www.sciencedirect.com/science/article/pii/S0012365X00001175
+       https://www.sciencedirect.com/science/article/pii/S0012365X00001175
 
     Args:
       subseq: The subsequence to look for. This can either be a string, a list

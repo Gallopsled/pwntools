@@ -274,8 +274,8 @@ class Elf64_Link_Map(ctypes.Structure):
 #
 # https://chromium.googlesource.com/chromiumos/third_party/glibc/+/master/sysdeps/x86/dl-machine.h
 # https://chromium.googlesource.com/chromiumos/third_party/glibc/+/master/sysdeps/x86_64/dl-machine.h
-# http://fossies.org/dox/glibc-2.20/aarch64_2dl-machine_8h_source.html#l00074
-# http://fossies.org/dox/glibc-2.20/powerpc32_2dl-machine_8c_source.html#l00203
+# https://fossies.org/dox/glibc-2.20/aarch64_2dl-machine_8h_source.html#l00074
+# https://fossies.org/dox/glibc-2.20/powerpc32_2dl-machine_8c_source.html#l00203
 #
 # For now, these are defined for x86 and x64
 #

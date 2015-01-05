@@ -131,7 +131,7 @@ def which(name, all = False):
             st = os.stat(p)
             if not stat.S_ISREG(st.st_mode):
                 continue
-            # work around this issue: http://bugs.python.org/issue9311
+            # work around this issue: https://bugs.python.org/issue9311
             if isroot and not \
               st.st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH):
                 continue
