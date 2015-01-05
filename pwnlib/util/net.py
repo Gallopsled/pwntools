@@ -70,7 +70,7 @@ def getifaddrs():
 
     A wrapper for libc's ``getifaddrs``.
 
-    Args:
+    Arguments:
       None
 
     Returns:
@@ -117,7 +117,7 @@ def getifaddrs():
 def interfaces(all = False):
     """interfaces(all = False) -> dict
 
-    Args:
+    Arguments:
       all (bool): Whether to include interfaces with not associated address.
       Default: :const:`False`.
 
@@ -146,7 +146,7 @@ def interfaces4(all = False):
     As :func:`interfaces` but only includes IPv4 addresses and the lists in the
     dictionary only contains the addresses not the family.
 
-    Args:
+    Arguments:
       all (bool): Whether to include interfaces with not associated address.
       Default: :const:`False`.
 
@@ -167,7 +167,7 @@ def interfaces6(all = False):
     As :func:`interfaces` but only includes IPv6 addresses and the lists in the
     dictionary only contains the addresses not the family.
 
-    Args:
+    Arguments:
       all (bool): Whether to include interfaces with not associated address.
       Default: :const:`False`.
 

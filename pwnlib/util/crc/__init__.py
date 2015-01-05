@@ -174,7 +174,7 @@ class Module(types.ModuleType):
 
         The "check" value in the document is the CRC-sum of the string "123456789".
 
-        Args:
+        Arguments:
             data(str):    The data to calculate the CRC-sum of. This should either be a string or a list of bits.
             polynom(int): The polynomial to use.
             init(int):    If the CRC-sum was calculated in hardware, then this would b
@@ -232,7 +232,7 @@ class Module(types.ModuleType):
 
         %s
 
-        Args:
+        Arguments:
             data(str): The data to checksum.
 
         Example:
@@ -248,7 +248,7 @@ class Module(types.ModuleType):
 
         Calculates the same checksum as returned by the UNIX-tool ``cksum``.
 
-        Args:
+        Arguments:
             data(str): The data to checksum.
 
         Example:
@@ -265,7 +265,7 @@ class Module(types.ModuleType):
         """Finds all known CRC functions that hashes a piece of data into a specific
         checksum. It does this by trying all known CRC functions one after the other.
 
-        Args:
+        Arguments:
             data(str): Data for which the checksum is known.
 
         Example:

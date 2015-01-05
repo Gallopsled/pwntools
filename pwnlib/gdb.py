@@ -10,7 +10,7 @@ def debug(args, exe=None, execute=None, ssh=None):
     Launch a GDB server with the specified command line,
     and launches GDB to attach to it.
 
-    Args:
+    Arguments:
         args: Same args as passed to pwnlib.tubes.process
         ssh: Remote ssh session to use to launch the process.
           Automatically sets up port forwarding so that gdb runs locally.
@@ -72,7 +72,7 @@ def attach(target, execute = None, exe = None, arch = None):
 
     If `gdb-multiarch` is installed we use that or 'gdb' otherwise.
 
-    Args:
+    Arguments:
       target: The target to attach to.
       execute (str or file): GDB script to run after attaching.
       exe (str): The path of the target binary.
@@ -283,7 +283,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     3. Loading each library into an ELF
     4. Fixing up the base address vs. the ``.text`` segment address
 
-    Args:
+    Arguments:
         binary(str): Path to the binary on the remote server
         ssh(pwnlib.tubes.tube): SSH connection through which to load the libraries.
             If left as ``None``, will use a ``pwnlib.tubes.process.process``.

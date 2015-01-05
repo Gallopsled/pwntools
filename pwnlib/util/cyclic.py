@@ -10,7 +10,7 @@ def de_bruijn(alphabet = string.ascii_lowercase, n = 4):
 
     The returned generator will yield up to ``len(alphabet)**n`` elements.
 
-    Args:
+    Arguments:
       alphabet: List or string to generate the sequence over.
       n(int): The length of subsequences that should be unique.
 """
@@ -42,7 +42,7 @@ def cyclic(length = None, alphabet = string.ascii_lowercase, n = 4):
     If the given alphabet is a string, a string is returned from this function. Otherwise
     a list is returned.
 
-    Args:
+    Arguments:
       length: The desired length of the list or None if the entire sequence is desired.
       alphabet: List or string to generate the sequence over.
       n(int): The length of subsequences that should be unique.
@@ -83,7 +83,7 @@ def cyclic_find(subseq, alphabet = string.ascii_lowercase, n = None):
 
        https://www.sciencedirect.com/science/article/pii/S0012365X00001175
 
-    Args:
+    Arguments:
       subseq: The subsequence to look for. This can either be a string, a list
               or an integer. If an integer is provided it will be packed as a
               little endian integer.

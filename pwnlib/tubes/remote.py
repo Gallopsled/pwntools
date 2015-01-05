@@ -12,7 +12,7 @@ class remote(sock):
     The returned object supports all the methods from
     :class:`pwnlib.tubes.sock` and :class:`pwnlib.tubes.tube`.
 
-    Args:
+    Arguments:
         host(str): The host to connect to.
         port(int): The port to connect to.
         fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.

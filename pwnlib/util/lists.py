@@ -9,7 +9,7 @@ def partition(lst, f, save_keys = False):
     It works by calling `f` on every element and saving the results into
     an :class:`collections.OrderedDict`.
 
-    Args:
+    Arguments:
       lst: The iterable to partition
       f(function): The function to use as the partitioner.
       save_keys(bool): Set this to True, if you want the OrderedDict
@@ -37,7 +37,7 @@ def group(n, lst, underfull_action = 'ignore', fill_value = None):
     evenly distributed among into groups, then the last group will either be
     returned as is, thrown out or padded with the value specified in fill_value.
 
-    Args:
+    Arguments:
       n (int): The size of resulting groups
       lst: The list, tuple or string to group
       underfull_action (str): The action to take in case of an underfull group at the end. Possible values are 'ignore', 'drop' or 'fill'.

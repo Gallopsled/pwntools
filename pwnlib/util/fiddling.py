@@ -80,7 +80,7 @@ def bits(s, endian = 'big', zero = 0, one = 1):
 
     Converts the argument a list of bits.
 
-    Args:
+    Arguments:
       s: A string or number to be converted into bits.
       endian (str): The binary endian, default 'big'.
       zero: The representing a 0-bit.
@@ -147,7 +147,7 @@ def unbits(s, endian = 'big'):
 
     Converts an iterable of bits into a string.
 
-    Args:
+    Arguments:
        s: Iterable of bits
        endian (str):  The string "little" or "big", which specifies the bits endianness.
 
@@ -211,7 +211,7 @@ def bitswap_int(n, width):
 
     Reverses the bits of a numbers and returns the result as a new number.
 
-    Args:
+    Arguments:
       n (int): The number to swap.
       width (int): The width of the integer
 
@@ -267,7 +267,7 @@ def xor(*args, **kwargs):
     then xors them together. If the end of a string is reached, it wraps
     around in the string.
 
-    Args:
+    Arguments:
        args: The arguments to be xor'ed together.
        cut: How long a string should be returned.
             Can be either 'min'/'max'/'left'/'right' or a number.
@@ -318,7 +318,7 @@ def xor_pair(data, avoid = '\x00\n'):
     Finds two strings that will xor into a given string, while only
     using a given alphabet.
 
-    Args:
+    Arguments:
       data (str): The desired string.
       avoid: The list of disallowed characters. Defaults to nulls and newlines.
 
@@ -354,7 +354,7 @@ def randoms(count, alphabet = string.lowercase):
 
     Returns a random string of a given length using only the specified alphabet.
 
-    Args:
+    Arguments:
       count (int): The length of the desired string.
       alphabet: The alphabet of allowed characters. Defaults to all lowercase characters.
 
@@ -377,7 +377,7 @@ def rol(n, k, word_size = None):
 
     When `n` is a list, tuple or string, this is ``n[k % len(n):] + n[:k % len(n)]``.
 
-    Args:
+    Arguments:
       n: The value to rotate.
       k(int): The rotation amount. Can be a positive or negative number.
       word_size(int): If `n` is a number, then this is the assumed bitsize of `n`.  Defaults to :data:`pwnlib.context.word_size` if `None` .
@@ -430,7 +430,7 @@ def hexii(s, width = 16, skip = True):
 
     Return a HEXII-dump of a string.
 
-    Args:
+    Arguments:
       s(str): The string to dump
       width(int): The number of characters per line
       skip(bool): Should repeated lines be replaced by a "*"
@@ -486,7 +486,7 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
 
     Return a hexdump-dump of a string as a generator of lines.
 
-    Args:
+    Arguments:
       s(str): The string to dump
       width(int): The number of characters per line
       skip(bool): Set to True, if repeated lines should be replaced by a "*"

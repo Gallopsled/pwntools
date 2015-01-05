@@ -413,7 +413,7 @@ class ContextType(object):
 
             context.update({'os': 'linux', 'arch': 'arm'})
 
-        Args:
+        Arguments:
           kwargs: Variables to be assigned in the environment.
 
         Examples:
@@ -440,7 +440,7 @@ class ContextType(object):
 
         For more information, see the example below or PEP 343.
 
-        Args:
+        Arguments:
           kwargs: Variables to be assigned in the new environment.
 
         Returns:

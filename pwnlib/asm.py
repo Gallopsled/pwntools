@@ -309,7 +309,7 @@ def asm(shellcode, vma = 0, **kwargs):
     To support all these architecture, we bundle the GNU assembler
     and objcopy with pwntools.
 
-    Args:
+    Arguments:
       shellcode(str): Assembler code to assemble.
       vma(int):       Virtual memory address of the beginning of assembly
 
@@ -381,7 +381,7 @@ def disasm(data, vma = 0, **kwargs):
     To support all these architecture, we bundle the GNU objcopy
     and objdump with pwntools.
 
-    Args:
+    Arguments:
       data(str): Bytestring to disassemble.
       vma(int): Passed through to the --adjust-vma argument of objdump
 

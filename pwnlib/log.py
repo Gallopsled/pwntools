@@ -476,7 +476,7 @@ def waitfor(msg, status = '', log_level = logging.INFO):
     Starts a new progress logger which includes a spinner
     if :data:`pwnlib.term.term_mode` is enabled.
 
-    Args:
+    Arguments:
       msg (str): The message of the spinner.
       status (str): The initial status of the spinner.
 

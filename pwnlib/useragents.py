@@ -24,7 +24,7 @@ def getall():
 
     Get all the user agents that we know about.
 
-    Args:
+    Arguments:
         None
 
     Returns:
@@ -43,7 +43,7 @@ def random():
 
     Get a random user agent string.
 
-    Args:
+    Arguments:
         None
 
     Returns:

@@ -44,7 +44,7 @@ def size(n, abbriv = 'B', si = False):
 
     Convert the length of a bytestream to human readable form.
 
-    Args:
+    Arguments:
       n(int,str): The length to convert to human readable form
       abbriv(str):
 
@@ -107,7 +107,7 @@ def which(name, all = False):
     If `all` is :const:`True` the set of all found locations is returned, else
     the first occurence or :const:`None` is returned.
 
-    Args:
+    Arguments:
       `name` (str): The file to search for.
       `all` (bool):  Whether to return all locations where `name` was found.
 
@@ -154,7 +154,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
 
     If X11 is not detected, a new tmux pane is opened if possible.
 
-    Args:
+    Arguments:
       command (str): The command to run.
       terminal (str): Which terminal to use.
       args (list): Arguments to pass to the terminal
@@ -190,7 +190,7 @@ def parse_ldd_output(output):
     Returns a dictionary of {path: address} for
     each library required by the specified binary.
 
-    Args:
+    Arguments:
       output(str): The output to parse
 
     Example:

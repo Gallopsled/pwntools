@@ -62,7 +62,7 @@ def take(n, iterable):
     Returns first `n` elements of `iterable`.  If `iterable` is a iterator it
     will be advanced.
 
-    Args:
+    Arguments:
       n(int):  Number of elements to take.
       iterable:  An iterable.
 
@@ -86,7 +86,7 @@ def take(n, iterable):
 def tabulate(func, start = 0):
     """tabulate(func, start = 0) -> iterator
 
-    Args:
+    Arguments:
       func(function):  The function to tabulate over.
       start(int):  Number to start on.
 
@@ -107,7 +107,7 @@ def consume(n, iterator):
     Advance the iterator `n` steps ahead. If `n is :const:`None`, consume
     everything.
 
-    Args:
+    Arguments:
       n(int):  Number of elements to consume.
       iterator(iterator):  An iterator.
 
@@ -138,7 +138,7 @@ def nth(n, iterable, default = None):
     Returns the element at index `n` in `iterable`.  If `iterable` is a
     iterator it will be advanced.
 
-    Args:
+    Arguments:
       n(int):  Index of the element to return.
       iterable:  An iterable.
       default(objext):  A default value.
@@ -165,7 +165,7 @@ def quantify(iterable, pred = bool):
 
     Count how many times the predicate `pred` is :const:`True`.
 
-    Args:
+    Arguments:
       iterable:  An iterable.
       pred:  A function that given an element from `iterable` returns either
       :const:`True` or :const:`False`.
@@ -188,7 +188,7 @@ def pad(iterable, value = None):
     Pad an `iterable` with `value`, i.e. returns an iterator whoose elements are
     first the elements of `iterable` then `value` indefinitely.
 
-    Args:
+    Arguments:
       iterable:  An iterable.
       value:  The value to pad with.
 
@@ -214,7 +214,7 @@ def cyclen(n, iterable):
 
     Repeats the elements of `iterable` `n` times.
 
-    Args:
+    Arguments:
       n(int):  The number of times to repeat `iterable`.
       iterable:  An iterable.
 
@@ -235,7 +235,7 @@ def dotproduct(x, y):
 
     Computes the dot product of `x` and `y`.
 
-    Args:
+    Arguments:
       x(iterable):  An iterable.
       x(iterable):  An iterable.
 
@@ -256,7 +256,7 @@ def flatten(xss):
     returns an iterator whoose elements is the concatenation of the elements of
     `xss`.
 
-    Args:
+    Arguments:
       xss:  An iterable of iterables.
 
     Returns:
@@ -279,7 +279,7 @@ def repeat_func(func, *args, **kwargs):
     will be computed using only functions from :mod:`itertools` which are very
     fast.
 
-    Args:
+    Arguments:
       func(function):  The function to call.
       args:  Positional arguments.
       kwargs:  Keyword arguments.
@@ -318,7 +318,7 @@ def repeat_func(func, *args, **kwargs):
 def pairwise(iterable):
     """pairwise(iterable) -> iterator
 
-    Args:
+    Arguments:
       iterable:  An iterable.
 
     Returns:
@@ -342,7 +342,7 @@ def group(n, iterable, fill_value = None):
     Similar to :func:`pwnlib.util.lists.group`, but returns an iterator and uses
     :mod:`itertools` fast build-in functions.
 
-    Args:
+    Arguments:
       n(int):  The group size.
       iterable:  An iterable.
       fill_value:  The value to fill into the remaining slots of the last group
@@ -367,7 +367,7 @@ def roundrobin(*iterables):
 
     Take elements from `iterables` in a round-robin fashion.
 
-    Args:
+    Arguments:
       *iterables:  One or more iterables.
 
     Returns:
@@ -396,7 +396,7 @@ def powerset(iterable, include_empty = True):
 
     The powerset of an iterable.
 
-    Args:
+    Arguments:
       iterable:  An iterable.
       include_empty(bool):  Whether to include the empty set.
 
@@ -423,7 +423,7 @@ def unique_everseen(iterable, key = None):
     element that will be rememberes is ``key(elm)``.  Otherwise ``elm`` is
     remembered.
 
-    Args:
+    Arguments:
       iterable:  An iterable.
       key:  A function to map over each element in `iterable` before remembering
         it.  Setting to :const:`None` is equivalent to the identity function.
@@ -458,7 +458,7 @@ def unique_justseen(iterable, key = None):
     the element that will be rememberes is ``key(elm)``.  Otherwise ``elm`` is
     remembered.
 
-    Args:
+    Arguments:
       iterable:  An iterable.
       key:  A function to map over each element in `iterable` before remembering
         it.  Setting to :const:`None` is equivalent to the identity function.
@@ -482,7 +482,7 @@ def unique_window(iterable, window, key = None):
     in `iterable` the element that will be rememberes is ``key(elm)``.
     Otherwise ``elm`` is remembered.
 
-    Args:
+    Arguments:
       iterable:  An iterable.
       window(int):  The number of elements to remember.
       key:  A function to map over each element in `iterable` before remembering
@@ -520,7 +520,7 @@ def iter_except(func, exception):
     build-in :func:`iter` but uses an exception instead of a sentinel to signal
     the end.
 
-    Args:
+    Arguments:
       func:  The function to call.
       exception(exception):  The exception that signals the end.  Other
         exceptions will not be caught.
@@ -552,7 +552,7 @@ def iter_except(func, exception):
 def random_product(*args, **kwargs):
     """random_product(*args, repeat = 1) -> tuple
 
-    Args:
+    Arguments:
       args:  One or more iterables
       repeat(int):  Number of times to repeat `args`.
 
@@ -578,7 +578,7 @@ def random_product(*args, **kwargs):
 def random_permutation(iterable, r = None):
     """random_product(iterable, r = None) -> tuple
 
-    Args:
+    Arguments:
       iterable:  An iterable.
       r(int):  Size of the permutation.  If :const:`None` select all elements in
         `iterable`.
@@ -599,7 +599,7 @@ def random_permutation(iterable, r = None):
 def random_combination(iterable, r):
     """random_combination(iterable, r) -> tuple
 
-    Args:
+    Arguments:
       iterable:  An iterable.
       r(int):  Size of the combination.
 
@@ -620,7 +620,7 @@ def random_combination(iterable, r):
 def random_combination_with_replacement(iterable, r):
     """random_combination(iterable, r) -> tuple
 
-    Args:
+    Arguments:
       iterable:  An iterable.
       r(int):  Size of the combination.
 
@@ -647,7 +647,7 @@ def lookahead(n, iterable):
     Inspects the upcoming element at index `n` without advancing the iterator.
     Raises ``IndexError`` if `iterable` has too few elements.
 
-    Args:
+    Arguments:
       n(int):  Index of the element to return.
       iterable:  An iterable.
 
@@ -678,7 +678,7 @@ def lexicographic(alphabet):
     The words with symbols in `alphabet`, in lexicographic order (determined by
     the order of `alphabet`).
 
-    Args:
+    Arguments:
       alphabet:  The alphabet to draw symbols from.
 
     Returns:
@@ -698,7 +698,7 @@ def chained(func):
 
     A decorator chaining the results of `func`.  Useful for generators.
 
-    Args:
+    Arguments:
       func(function):  The function being decorated.
 
     Returns:
@@ -730,7 +730,7 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None):
     The argument `start` can be used to split the search space, which is useful
     if multiple CPU cores are available.
 
-    Args:
+    Arguments:
       func(function):  The function to bruteforce.
       alphabet:  The alphabet to draw symbols from.
       length:  Longest string to try.

@@ -7,7 +7,7 @@ def options(prompt, opts, default = None):
     """Presents the user with a prompt (typically in the
     form of a question) and a number of options.
 
-    Args:
+    Arguments:
       prompt (str): The prompt to show
       opts (list): The options to show to the user
       default: The default option to choose
@@ -115,7 +115,7 @@ def more(text):
 
     It not in term_mode, just prints the data to the screen.
 
-    Args:
+    Arguments:
       text(str):  The text to show.
 
     Returns:
