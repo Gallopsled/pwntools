@@ -1,8 +1,8 @@
 # pwntools - CTF toolkit
-[![Docs latest](https://readthedocs.org/projects/pwntools/badge/)](http://pwntools.readthedocs.org/en/latest)
-[![Docs 2.1.3](https://readthedocs.org/projects/pwntools/badge/?version=2.1.3)](http://pwntools.readthedocs.org/en/2.1.3)
-[![PyPI](http://img.shields.io/pypi/v/pwntools.svg)](https://pypi.python.org/pypi/pwntools/)
-[![Gittip](http://img.shields.io/gittip/gallopsled.svg)](https://www.gittip.com/gallopsled/)
+[![Docs latest](https://readthedocs.org/projects/pwntools/badge/)](https://pwntools.readthedocs.org/en/latest)
+[![Docs 2.1.3](https://readthedocs.org/projects/pwntools/badge/?version=2.1.3)](https://pwntools.readthedocs.org/en/2.1.3)
+[![PyPI](https://img.shields.io/pypi/v/pwntools.svg)](https://pypi.python.org/pypi/pwntools/)
+[![Gittip](https://img.shields.io/gittip/gallopsled.svg)](https://www.gittip.com/gallopsled/)
 [![Travis](https://travis-ci.org/Gallopsled/pwntools.svg)](https://travis-ci.org/Gallopsled/pwntools)
 
 This is the CTF framework used by Gallopsled in every CTF.
@@ -28,7 +28,7 @@ in `pwnlib`. These are:
 * `phd`: Replacement for `hexdump` with colors.
 
 # Documentation
-Our documentation is available at [docs.pwntools.com](http://docs.pwntools.com/en/latest/)
+Our documentation is available at [pwntools.readthedocs.org](https://pwntools.readthedocs.org/en/latest/)
 
 To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/Gallopsled/pwntools-write-ups).
 
@@ -42,7 +42,7 @@ Most of the functionality of pwntools is self-contained and Python-only.  You sh
 pip install pwntools
 ```
 
-However, some of the features (ROP generation and assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](http://docs.pwntools.com/en/latest/install.html).
+However, some of the features (ROP generation and assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://pwntools.readthedocs.org/en/latest/install.html).
 
 
 # Contribution

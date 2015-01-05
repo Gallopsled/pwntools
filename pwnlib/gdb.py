@@ -87,7 +87,7 @@ def attach(target, execute = None, exe = None, arch = None):
         ptrace_scope = open('/proc/sys/kernel/yama/ptrace_scope').read().strip()
         if ptrace_scope != '0' and os.geteuid() != 0:
             msg =  'Disable ptrace_scope to attach to running processes.\n'
-            msg += 'More info: http://askubuntu.com/q/41629'
+            msg += 'More info: https://askubuntu.com/q/41629'
             log.warning(msg)
     except IOError:
         pass
