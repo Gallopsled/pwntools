@@ -1,6 +1,6 @@
 # pwntools - CTF toolkit
 [![Docs latest](https://readthedocs.org/projects/pwntools/badge/)](https://pwntools.readthedocs.org/en/latest)
-[![Docs 2.1.3](https://readthedocs.org/projects/pwntools/badge/?version=2.1.3)](https://pwntools.readthedocs.org/en/2.1.3)
+[![Docs 2.2.0](https://readthedocs.org/projects/pwntools/badge/?version=2.2.0)](https://pwntools.readthedocs.org/en/2.2.0)
 [![PyPI](https://img.shields.io/pypi/v/pwntools.svg)](https://pypi.python.org/pypi/pwntools/)
 [![Gittip](https://img.shields.io/gittip/gallopsled.svg)](https://www.gittip.com/gallopsled/)
 [![Travis](https://travis-ci.org/Gallopsled/pwntools.svg)](https://travis-ci.org/Gallopsled/pwntools)
