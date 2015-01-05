@@ -7,6 +7,8 @@ installed. We've made this process as smooth as we can.
 
 In these examples, replace ``$ARCH`` with your target architecture (e.g., arm, mips64, vax, etc.).
 
+Building `binutils` from source takes about 60 seconds on a modern 8-core machine.
+
 Ubuntu
 ^^^^^^^^^^^^^^^^
 First, add our `Personal Package Archive repository <http://binutils.pwntools.com>`__.
