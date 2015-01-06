@@ -331,6 +331,7 @@ keymap = km.Keymap({
     '<del>'       : delete_char_backward,
     '<delete>'    : delete_char_forward,
     '<enter>'     : submit,
+    'C-j'         : submit,
     'C-<left>'    : backward_word,
     'C-<right>'   : forward_word,
     'M-<left>'    : backward_word,
@@ -370,7 +371,11 @@ def readline(_size = None, prompt = '', float = False, priority = 10):
     try:
         while True:
             try:
-                keymap.handle_input()
+                try:
+                    keymap.handle_input()
+                except EOFError:
+                    if len(buffer_left + buffer_right) == 0:
+                        return ''
                 if eof:
                     return ''
                 else:

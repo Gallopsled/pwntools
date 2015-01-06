@@ -30,6 +30,8 @@ class Keymap:
         self.trace = []
 
     def send(self, k):
+        if k is None:
+            raise EOFError
         self.trace.append(k)
         if self._on_key:
             self._on_key(self.trace)
