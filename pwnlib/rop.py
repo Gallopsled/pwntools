@@ -257,7 +257,7 @@ class ROP(object):
         rop = []
         roppart = []
         for (func_addr, args) in self._chain[::-1]:
-            regs_dict = dict(zip(["r1", "r2", "r3", "r4"], args))
+            regs_dict = dict(zip(["r0", "r1", "r2", "r3"], args))
             if return_addr:
                 regs_dict["lr"] = return_addr
             return_addr, roppart = self._set_regs_arm(regs_dict, func_addr)
