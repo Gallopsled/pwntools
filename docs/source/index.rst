@@ -42,9 +42,11 @@ Each of the ``pwntools`` modules is documented here.
    replacements
    rop
    shellcraft
+   shellcraft/*
    term
    timeout
    tubes
+   tubes/*
    ui
    useragents
    util/*
