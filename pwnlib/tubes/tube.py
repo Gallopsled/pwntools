@@ -1285,8 +1285,6 @@ class tube(Timeout):
     def readrepeat(self, *a, **kw): return self.recvrepeat(*a, **kw)
     #: Alias for :meth:`recvall`
     def readall(self, *a, **kw): return self.recvall(*a, **kw)
-    #: Alias for :meth:`recv_thread`
-    def read_thread(self, *a, **kw): return self.recv_thread(*a, **kw)
 
     #: Alias for :meth:`send`
     def write(self, *a, **kw): return self.send(*a, **kw)
