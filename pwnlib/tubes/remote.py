@@ -6,17 +6,13 @@ import ssl as _ssl
 log = logging.getLogger(__name__)
 
 class remote(sock):
-    r"""Creates a TCP or UDP-connection to a remote host. It supports
-    both IPv4 and IPv6.
-
-    The returned object supports all the methods from
-    :class:`pwnlib.tubes.sock` and :class:`pwnlib.tubes.tube`.
+    r"""Creates a connection to a remote host.
 
     Args:
         host(str): The host to connect to.
         port(int): The port to connect to.
-        fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
-        typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
+        family: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
+        type: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
         timeout: A positive number, None or the string "default".
         ssl(bool): Wrap the socket with SSL
         sock(socket): Socket to inherit, rather than connecting
@@ -31,121 +27,41 @@ class remote(sock):
         Traceback (most recent call last):
         ...
         PwnlibException: Could not connect to 127.0.0.1 on port 1
-        >>> import socket
-        >>> s = socket.socket()
-        >>> s.connect(('google.com', 80))
-        >>> s.send('GET /' + '\r\n'*2)
-        9
-        >>> r = remote.fromsocket(s)
-        >>> r.recvn(4)
-        'HTTP'
     """
 
     def __init__(self, host, port,
-                 fam = "any", typ = "tcp",
-                 timeout = Timeout.default, ssl=False, sock=None):
-        super(remote, self).__init__(timeout)
+                 family  = sock.default_family,
+                 type    = sock.default_type,
+                 timeout = Timeout.default,
+                 ssl     = sock.default_ssl):
 
-        self.rport  = int(port)
-        self.rhost  = host
+        # We need a Timeout object before calling super.__init__,
+        # in order to turn 'timeout' into an integer value.
+        tmp_timeout = Timeout(timeout)
 
-        if sock:
-            self.family = sock.family
-            self.type   = sock.type
-            self.proto  = sock.proto
-            self.sock   = sock
+        msg = 'Opening connection to %s on port %d' % (host, port)
 
-        else:
-            typ = self._get_type(typ)
-            fam = self._get_family(fam)
-            self.sock   = self._connect(fam, typ)
+        with log.waitfor(msg) as h:
+            family = self.get_family(family)
+            type = self.get_type(type)
 
-        if self.sock:
-            self.settimeout(self.timeout)
-            self.lhost, self.lport = self.sock.getsockname()[:2]
+            for res in socket.getaddrinfo(host, port, family, type, 0, socket.AI_PASSIVE):
+                f, t, p, _canonname, sockaddr = res
 
-            if ssl:
-                self.sock = _ssl.wrap_socket(self.sock)
+                if t not in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
+                    continue
 
+                h.status("Trying %s" % sockaddr[0])
 
-    @staticmethod
-    def _get_family(fam):
-
-        if isinstance(fam, (int, long)):
-            pass
-        elif fam == 'any':
-            fam = socket.AF_UNSPEC
-        elif fam.lower() in ['ipv4', 'ip4', 'v4', '4']:
-            fam = socket.AF_INET
-        elif fam.lower() in ['ipv6', 'ip6', 'v6', '6']:
-            fam = socket.AF_INET6
-        else:
-            log.error("remote(): family %r is not supported" % fam)
-
-        return fam
-
-    @staticmethod
-    def _get_type(typ):
-
-        if isinstance(typ, (int, long)):
-            pass
-        elif typ == "tcp":
-            typ = socket.SOCK_STREAM
-        elif typ == "udp":
-            typ = socket.SOCK_DGRAM
-        else:
-            log.error("remote(): type %r is not supported" % typ)
-
-        return typ
-
-    def _connect(self, fam, typ):
-        sock    = None
-        timeout = self.timeout
-
-        h = log.waitfor('Opening connection to %s on port %d' % (self.rhost, self.rport))
-
-        for res in socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE):
-            self.family, self.type, self.proto, _canonname, sockaddr = res
-
-            if self.type not in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
-                continue
-
-            h.status("Trying %s" % sockaddr[0])
-
-            sock = socket.socket(self.family, self.type, self.proto)
-
-            if timeout != None and timeout <= 0:
-                sock.setblocking(0)
+                try:
+                    sock = socket.socket(f, t, p)
+                    sock.settimeout(tmp_timeout.timeout)
+                    sock.connect(sockaddr)
+                    break
+                except socket.error:
+                    pass
             else:
-                sock.setblocking(1)
-                sock.settimeout(timeout)
+                log.error("Could not connect to %s on port %d" % (host, port))
+                return
 
-            try:
-                sock.connect(sockaddr)
-                break
-            except socket.error:
-                pass
-        else:
-            h.failure()
-            log.error("Could not connect to %s on port %d" % (self.rhost, self.rport))
-
-        h.success()
-        return sock
-
-
-
-    @classmethod
-    def fromsocket(cls, socket):
-        """
-        Helper method to wrap a standard python socket.socket with the
-        tube APIs.
-
-        Arguments:
-            socket: Instance of socket.socket
-
-        Returns:
-            Instance of pwnlib.tubes.remote.remote.
-        """
-        s = socket
-        host, port = s.getpeername()
-        return remote(host, port, fam=s.family, typ=s.type, sock=s)
+        super(remote, self).__init__(socket=sock, timeout=timeout, ssl=ssl)
