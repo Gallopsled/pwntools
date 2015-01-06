@@ -1,69 +1,30 @@
 .. testsetup:: *
 
-   from pwnlib.tubes.tube import tube
-   from pwnlib.tubes.ssh import *
-   from pwnlib.tubes.remote import remote
-   from pwnlib.util.misc import which
-   from pwnlib.context import context
+   from pwn import *
 
 :mod:`pwnlib.tubes` --- Talking to the World!
 =============================================
 
 .. automodule:: pwnlib.tubes
 
-   Sockets
-   -------
 
-   .. automodule:: pwnlib.tubes.remote
+Types of Tubes
+-------------------
 
-      .. autoclass:: pwnlib.tubes.remote.remote
-         :members:
-         :show-inheritance:
+.. toctree::
+    :maxdepth: 3
+    :glob:
 
-   .. automodule:: pwnlib.tubes.listen
+    tubes/*
 
-      .. autoclass:: pwnlib.tubes.listen.listen
-         :members:
-         :show-inheritance:
 
-   .. automodule:: pwnlib.tubes.sock
+:mod:`pwnlib.tubes.tube` --- Common Functionality
+-------------------------------------------------
 
-      .. autoclass:: pwnlib.tubes.sock.sock()
-         :show-inheritance:
 
-   Processes
-   ---------
+.. automodule:: pwnlib.tubes.tube
 
-   .. automodule:: pwnlib.tubes.process
-
-      .. autoclass:: pwnlib.tubes.process.process
-         :members: kill, poll, communicate
-         :show-inheritance:
-
-   SSH
-   ---
-
-   .. automodule:: pwnlib.tubes.ssh
-
-      .. autoclass:: pwnlib.tubes.ssh.ssh
-         :members:
-
-      .. autoclass:: pwnlib.tubes.ssh.ssh_channel()
-         :members: kill, poll, interactive
-         :show-inheritance:
-
-      .. autoclass:: pwnlib.tubes.ssh.ssh_connecter()
-         :show-inheritance:
-
-      .. autoclass:: pwnlib.tubes.ssh.ssh_listener()
-         :show-inheritance:
-
-   Common functionality
-   --------------------
-
-   .. automodule:: pwnlib.tubes.tube
-
-      .. autoclass:: pwnlib.tubes.tube.tube()
-         :members:
-         :exclude-members: recv_raw, send_raw, settimeout_raw,
-                           can_recv_raw
+  .. autoclass:: pwnlib.tubes.tube.tube()
+     :members:
+     :exclude-members: recv_raw, send_raw, settimeout_raw,
+                       can_recv_raw
