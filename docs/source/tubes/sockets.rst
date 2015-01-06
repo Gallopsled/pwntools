@@ -5,6 +5,13 @@
 :mod:`pwnlib.tubes.sock` --- Sockets
 ===========================================================
 
+
+.. automodule:: pwnlib.tubes.sock
+
+   .. autoclass:: pwnlib.tubes.sock.sock()
+      :show-inheritance:
+
+
 .. automodule:: pwnlib.tubes.remote
 
    .. autoclass:: pwnlib.tubes.remote.remote
@@ -15,9 +22,4 @@
 
    .. autoclass:: pwnlib.tubes.listen.listen
       :members:
-      :show-inheritance:
-
-.. automodule:: pwnlib.tubes.sock
-
-   .. autoclass:: pwnlib.tubes.sock.sock()
       :show-inheritance:
