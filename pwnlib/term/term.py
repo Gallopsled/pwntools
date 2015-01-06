@@ -91,9 +91,10 @@ def init():
     signal.signal(signal.SIGCONT, handler_sigcont)
     # we start with one empty cell at the current cursor position
     put('\x1b[6n')
+    fd.flush()
     s = ''
     while True:
-        c = sys.stdin.read(1)
+        c = os.read(fd.fileno(), 1)
         s += c
         if c == 'R':
             break
