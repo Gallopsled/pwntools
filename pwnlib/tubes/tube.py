@@ -1076,7 +1076,7 @@ class tube(Timeout):
 
         Closes the tube for futher reading or writing depending on `direction`.
 
-        Args:
+        Arguments:
           direction(str): Which direction to close; "in", "read" or "recv"
             closes the tube in the ingoing direction, "out", "write" or "send"
             closes it in the outgoing direction.
@@ -1113,7 +1113,7 @@ class tube(Timeout):
 
         Returns True if the tube is connected in the specified direction.
 
-        Args:
+        Arguments:
           direction(str): Can be the string 'any', 'in', 'read', 'recv',
                           'out', 'write', 'send'.
 

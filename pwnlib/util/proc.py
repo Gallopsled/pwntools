@@ -25,7 +25,7 @@ def pidof(target):
         remote end of `target` if it is running on the host.  Otherwise an
         empty list.
 
-    Args:
+    Arguments:
         target(object):  The target whose PID(s) to find.
 
     Returns:
@@ -49,7 +49,7 @@ def pidof(target):
 def pid_by_name(name):
     """pid_by_name(name) -> int list
 
-    Args:
+    Arguments:
         name (str): Name of program.
 
     Returns:
@@ -74,7 +74,7 @@ def pid_by_name(name):
 def name(pid):
     """name(pid) -> str
 
-    Args:
+    Arguments:
         pid (int): PID of the process.
 
     Returns:
@@ -89,7 +89,7 @@ def name(pid):
 def parent(pid):
     """parent(pid) -> int
 
-    Args:
+    Arguments:
         pid (int): PID of the process.
 
     Returns:
@@ -104,7 +104,7 @@ def parent(pid):
 def children(ppid):
     """children(ppid) -> int list
 
-    Args:
+    Arguments:
         pid (int): PID of the process.
 
     Returns:
@@ -115,7 +115,7 @@ def children(ppid):
 def ancestors(pid):
     """ancestors(pid) -> int list
 
-    Args:
+    Arguments:
         pid (int): PID of the process.
 
     Returns:
@@ -130,7 +130,7 @@ def ancestors(pid):
 def descendants(pid):
     """descendants(pid) -> dict
 
-    Args:
+    Arguments:
         pid (int): PID of the process.
 
     Returns:
@@ -152,7 +152,7 @@ def descendants(pid):
 def exe(pid):
     """exe(pid) -> str
 
-    Args:
+    Arguments:
         pid (int): PID of the process.
 
     Returns:
@@ -163,7 +163,7 @@ def exe(pid):
 def cwd(pid):
     """cwd(pid) -> str
 
-    Args:
+    Arguments:
         pid (int): PID of the process.
 
     Returns:
@@ -175,7 +175,7 @@ def cwd(pid):
 def cmdline(pid):
     """cmdline(pid) -> str list
 
-    Args:
+    Arguments:
         pid (int): PID of the process.
 
     Returns:
@@ -186,7 +186,7 @@ def cmdline(pid):
 def stat(pid):
     """stat(pid) -> str list
 
-    Args:
+    Arguments:
         pid (int): PID of the process.
 
     Returns:
@@ -203,7 +203,7 @@ def stat(pid):
 def starttime(pid):
     """starttime(pid) -> float
 
-    Args:
+    Arguments:
         pid (int): PID of the process.
 
     Returns:
@@ -216,7 +216,7 @@ def status(pid):
 
     Get the status of a process.
 
-    Args:
+    Arguments:
         pid (int): PID of the process.
 
     Returns:
@@ -240,7 +240,7 @@ def status(pid):
 def tracer(pid):
     """tracer(pid) -> int
 
-    Args:
+    Arguments:
         pid (int): PID of the process.
 
     Returns:
@@ -256,7 +256,7 @@ def tracer(pid):
 def state(pid):
     """state(pid) -> str
 
-    Args:
+    Arguments:
         pid (int): PID of the process.
 
     Returns:
@@ -273,7 +273,7 @@ def wait_for_debugger(pid):
 
     Sleeps until the process with PID `pid` is being traced.
 
-    Args:
+    Arguments:
         pid (int): PID of the process.
 
     Returns:

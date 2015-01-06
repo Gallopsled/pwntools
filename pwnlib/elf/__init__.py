@@ -145,7 +145,7 @@ class ELF(ELFFile):
     def section(self, name):
         """Gets data for the named section
 
-        Args:
+        Arguments:
             name(str): Name of the section
 
         Returns:
@@ -283,7 +283,7 @@ class ELF(ELFFile):
 
         Search the ELF's virtual address space for the specified string.
 
-        Args:
+        Arguments:
             needle(str): String to search for.
             writable(bool): Search only writable sections.
 
@@ -324,7 +324,7 @@ class ELF(ELFFile):
     def offset_to_vaddr(self, offset):
         """Translates the specified offset to a virtual address.
 
-        Args:
+        Arguments:
             offset(int): Offset to translate
 
         Returns:
@@ -353,7 +353,7 @@ class ELF(ELFFile):
     def vaddr_to_offset(self, address):
         """Translates the specified virtual address to a file address
 
-        Args:
+        Arguments:
             address(int): Virtual address to translate
 
         Returns:
@@ -384,7 +384,7 @@ class ELF(ELFFile):
     def read(self, address, count):
         """Read data from the specified virtual address
 
-        Args:
+        Arguments:
             address(int): Virtual address to read
             count(int): Number of bytes to read
 
@@ -410,7 +410,7 @@ class ELF(ELFFile):
     def write(self, address, data):
         """Writes data to the specified virtual address
 
-        Args:
+        Arguments:
             address(int): Virtual address to write
             data(str): Bytes to write
 

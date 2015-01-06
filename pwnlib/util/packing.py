@@ -51,7 +51,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
     rounded up number of bytes. If word_size is not a multiple of 8, it will be
     padded with zeroes up to a byte boundary.
 
-    Args:
+    Arguments:
         number (int): Number to convert
         word_size (int): Word size of the converted integer or the string 'all'.
         endianness (str): Endianness of the converted integer ("little"/"big")
@@ -147,7 +147,7 @@ def unpack(data, word_size = None, endianness = None, sign = None, **kwargs):
     If `word_size` is not a multiple of 8, then the bits used for padding
     are discarded.
 
-    Args:
+    Arguments:
         number (int): String to convert
         word_size (int): Word size of the converted integer or the string "all".
         endianness (str): Endianness of the converted integer ("little"/"big")
@@ -347,7 +347,7 @@ def make_packer(word_size = None, endianness = None, sign = None, **kwargs):
     ``pack(data, w, e, s)``. If word_size is one of 8, 16, 32 or 64, it is however
     faster to call this function, since it will then use a specialized version.
 
-    Args:
+    Arguments:
         word_size (int): The word size to be baked into the returned packer or the string all.
         endianness (str): The endianness to be baked into the returned packer. ("little"/"big")
         sign (str): The signness to be baked into the returned packer. ("unsigned"/"signed")
@@ -408,7 +408,7 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
     ``unpack(data, w, e, s)``. If word_size is one of 8, 16, 32 or 64, it is however
     faster to call this function, since it will then use a specialized version.
 
-    Args:
+    Arguments:
         word_size (int): The word size to be baked into the returned packer.
         endianness (str): The endianness to be baked into the returned packer. ("little"/"big")
         sign (str): The signness to be baked into the returned packer. ("unsigned"/"signed")
@@ -498,7 +498,7 @@ def flat(*args, **kwargs):
     The three kwargs `word_size`, `endianness` and `sign` will default to using
     values in :mod:`pwnlib.context` if not specified as an argument.
 
-    Args:
+    Arguments:
       args: Values to flatten
       preprocessor (function): Gets called on every element to optionally
          transform the element before flattening. If :const:`None` is

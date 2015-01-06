@@ -293,7 +293,7 @@ class ssh(Timeout):
     def __init__(self, user, host, port = 22, password = None, key = None, keyfile = None, proxy_command = None, proxy_sock = None, timeout = Timeout.default):
         """Creates a new ssh connection.
 
-        Args:
+        Arguments:
           user(str): The username to log in with
           host(str): The hostname to connect to
           port(int): The port to connect to
@@ -651,7 +651,7 @@ class ssh(Timeout):
     def download_data(self, remote):
         """Downloads a file from the remote server and returns it as a string.
 
-        Args:
+        Arguments:
           remote(str): The remote filename to download.
 
 
@@ -674,7 +674,7 @@ class ssh(Timeout):
         The file is cached in /tmp/pwntools-ssh-cache using a hash of the file, so
         calling the function twice has little overhead.
 
-        Args:
+        Arguments:
           remote(str): The remote filename to download
           local(str): The local filename to save it to. Default is to infer it from the remote filename."""
 
@@ -690,7 +690,7 @@ class ssh(Timeout):
     def download_dir(self, local, remote=None):
         """Recursively uploads a directory onto the remote server
 
-        Args:
+        Arguments:
             local: Local directory
             remote: Remote directory
         """
@@ -711,7 +711,7 @@ class ssh(Timeout):
     def upload_data(self, data, remote):
         """Uploads some data into a file on the remote server.
 
-        Args:
+        Arguments:
           data(str): The data to upload.
           remote(str): The filename to upload it to.
 
@@ -735,7 +735,7 @@ class ssh(Timeout):
     def upload_file(self, filename, remote = None):
         """Uploads a file to the remote server. Returns the remote filename.
 
-        Args:
+        Arguments:
         filename(str): The local filename to download
         remote(str): The remote filename to save it to. Default is to infer it from the local filename."""
 
@@ -758,7 +758,7 @@ class ssh(Timeout):
     def upload_dir(self, local, remote=None):
         """Recursively uploads a directory onto the remote server
 
-        Args:
+        Arguments:
             local: Local directory
             remote: Remote directory
         """
@@ -831,7 +831,7 @@ class ssh(Timeout):
         be run (via ssh.run) and to which files will be uploaded/downloaded
         from if no path is provided
 
-        Args:
+        Arguments:
             wd(string): Working directory.  Default is to auto-generate a directory
                 based on the result of running 'mktemp -d' on the remote machine.
 

@@ -17,7 +17,7 @@ class MemLeak(object):
     cannot be recovered, it will try to leak nearby bytes in the hope that the
     byte is recovered as a side-effect.
 
-    Args:
+    Arguments:
         f (function): The leaker function.
         search_range (int): How many bytes to search backwards in case an address does not work.
         reraise (bool): Whether to reraise call :func:`pwnlib.log.warning` in case the leaker function throws an exception.

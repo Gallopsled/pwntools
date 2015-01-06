@@ -28,7 +28,7 @@ class ROP(object):
     """
     def __init__(self, elfs, base = None):
         """
-        Args:
+        Arguments:
             elfs(list): List of pwnlib.elf.ELF objects for mining
         """
 
@@ -53,7 +53,7 @@ class ROP(object):
     def resolve(self, resolvable):
         """Resolves a symbol to an address
 
-        Args:
+        Arguments:
             resolvable(str,int): Thing to convert into an address
 
         Returns:
@@ -72,7 +72,7 @@ class ROP(object):
         for it in the loaded ELF files.  If none is found, it searches all
         known gadgets, and returns the disassembly
 
-        Args:
+        Arguments:
             value(int): Address to look up
 
         Returns:
@@ -191,7 +191,7 @@ class ROP(object):
 
         If there is no base available, then the returned addresses are indexed from 0.
 
-        Args:
+        Arguments:
           base(int): The base address to build the rop-chain from. Defaults to
                      self.base.
         """
@@ -288,7 +288,7 @@ class ROP(object):
     def call(self, resolvable, arguments=()):
         """Add a call to the ROP chain
 
-        Args:
+        Arguments:
             resolvable(str,int): Value which can be looked up via 'resolve',
                 or is already an integer.
             arguments(list): List of arguments which can be passed to pack().
@@ -311,7 +311,7 @@ class ROP(object):
         If your architecture requires aligned values, then make
         sure that any given string is aligned!
 
-        Args:
+        Arguments:
             data(int/str): The raw value to put onto the rop chain.
         """
 
@@ -508,7 +508,7 @@ class ROP(object):
     def search(self, move = 0, regs = None, order = 'size'):
         """Search for a gadget which matches the specified criteria.
 
-        Args:
+        Arguments:
             move(int): Minimum number of bytes by which the stack
                 pointer is adjusted.
             regs(list): Minimum list of registers which are popped off the

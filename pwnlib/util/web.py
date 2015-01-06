@@ -8,7 +8,7 @@ def wget(url, save=None, timeout=5, **kwargs):
 
     Downloads a file via HTTP/HTTPS.
 
-    Args:
+    Arguments:
       url (str): URL to download
       save (str or bool): Name to save as.  Any truthy value
             will auto-generate a name based on the URL.
