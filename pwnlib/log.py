@@ -262,7 +262,7 @@ class Logger(object):
                     time.sleep(0.5)
                 x = 1/0
         """
-        level = kwargs.get('level', logging.INFO)
+        level = kwargs.pop('level', logging.INFO)
         return Progress(self, message, status, level, args, kwargs)
     waitfor = progress
 
@@ -275,7 +275,7 @@ class Logger(object):
             level(int): Alternate log level at which to set the indented
                         message.  Defaults to `logging.INFO`.
         """
-        level = kwargs.get('level', logging.INFO)
+        level = kwargs.pop('level', logging.INFO)
         self._log(level, message, args, kwargs, 'indented')
 
     def success(self, message, *args, **kwargs):
