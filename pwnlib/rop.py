@@ -1,6 +1,7 @@
 """Return Oriented Programming
 """
 import hashlib, os, sys, tempfile, re
+import capstone
 
 from .elf     import ELF
 from .util    import packing
@@ -48,7 +49,10 @@ class ROP(object):
         self.base = base
         self.align = max(e.elfclass for e in elfs)/8
         self.migrated = False
-        self.__load()
+        meth = '_load_' + self.elfs[0].get_machine_arch()
+        if not hasattr(self, meth):
+            log.error("Cannot load rop gadgets for architecture %r" % self.elfs[0].get_machine_arch())
+        getattr(self, meth)()
 
     def resolve(self, resolvable):
         """Resolves a symbol to an address
@@ -243,6 +247,26 @@ class ROP(object):
 
         return out
 
+    def _build_ARM(self):
+        """Builds the ropchain for arm.
+        Structures are currently not suported
+        """
+
+        return_addr = None
+        regs = set()
+        rop = []
+        roppart = []
+        for (func_addr, args) in self._chain[::-1]:
+            regs_dict = dict(zip(["r1", "r2", "r3", "r4"], args))
+            if return_addr:
+                regs_dict["lr"] = return_addr
+            return_addr, roppart = self._set_regs_arm(regs_dict, func_addr)
+            rop = roppart + rop
+        rop = [return_addr] + rop
+        return map(lambda e: (e,), rop)
+
+
+
     def chain(self):
         """Build the ROP chain
 
@@ -369,7 +393,7 @@ class ROP(object):
     def __cache_save(self, elf, data):
         file(self.__get_cachefile_name(elf),'w+').write(repr(data))
 
-    def __load(self):
+    def _load_x86(self):
         """Load all ROP gadgets for the selected ELF files"""
         #
         # We accept only instructions that look like these.
@@ -501,6 +525,79 @@ class ROP(object):
         if leave and leave[1]['regs'] != frame_regs:
             leave = None
         self.leave = leave
+
+    def _load_ARM(self):
+        """Load gadgets for arm and thumb.
+        currently we are only using pop gadgets,
+        and only searching the first elf image
+        """
+        elf = self.elfs[0]
+        gadgets = {}
+        md = capstone.Cs(capstone.CS_ARCH_ARM, capstone.CS_MODE_ARM)
+        md.skipdata = True
+        for seg in elf.executable_segments:
+            if seg.header.p_type != 'PT_LOAD': continue
+            print seg
+            md.mode = capstone.CS_MODE_ARM
+            for inst in md.disasm(seg.data(), seg.header.p_vaddr):
+                if inst.mnemonic == "pop":
+                    regs = inst.op_str[1:-1].split(",")
+                    regs = map(lambda reg: reg.strip(), regs)
+                    insns = ["pop %s" % inst.op_str]
+                    if "pc" in regs:
+                        gadgets[inst.address] = {"insns": insns, "regs": regs, "move": 4*len(regs)}
+            md.mode = capstone.CS_MODE_THUMB
+            for inst in md.disasm(seg.data(), seg.header.p_vaddr):
+                if inst.mnemonic == "pop":
+                    regs = inst.op_str[1:-1].split(",")
+                    regs = map(lambda reg: reg.strip(), regs)
+                    insns = ["pop %s" % inst.op_str]
+                    if "pc" in regs:
+                        gadgets[inst.address+1] = {"insns": insns, "regs": regs, "move": 4*len(regs)}
+        self.gadgets = gadgets
+        return gadgets
+
+    def _find_best_gadget(self, regs):
+        """Helper function for _set_regs.
+        Finds the 'best' gadget, which currently means the first gadget
+        with most registres we want to set
+        """
+        def gadget_score(gadget):
+            return len(set(gadget["regs"]) & regs)
+        #must contain 1 reg we want set.
+        gadgets = ((a,g) for (a,g) in self.gadgets.items() if len(set(g["regs"]) & regs) > 0)
+        gadget = max(gadgets, key = lambda (a, g): gadget_score(g))
+        return gadget
+
+    def _set_regs_arm(self, regs_dict, return_addr):
+        """Generates a rop chain that sets the regsitres from regs_dict
+        and return to return_addr when it is done
+        """
+        ropchain = []
+        regs = set(regs_dict.keys())
+        old_regs = None
+
+        while regs and regs != old_regs:
+            addr, inst = self._find_best_gadget(regs)
+            ropchain.append((self.base or 0)+addr)
+            ropchain += [regs_dict.get(reg, "$$$$") for reg in inst["regs"][:-1]]
+            old_regs = set(regs)
+            regs -= set(inst["regs"])
+
+        ropchain += [return_addr]
+        if regs:
+            log.error("Could not set regs: %r", regs)
+        return ropchain[0], ropchain[1:]
+
+
+    @property
+    def can_set(self):
+        """For arm mode only:
+        Which registres we can set.
+        """
+        l = []
+        map(lambda gad: l.extend(gad["regs"]), self.gadgets)
+        return set(l)
 
     def __repr__(self):
         return "ROP(%r)" % self.elfs
