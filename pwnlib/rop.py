@@ -540,7 +540,6 @@ class ROP(object):
         md.skipdata = True
         for seg in elf.executable_segments:
             if seg.header.p_type != 'PT_LOAD': continue
-            print seg
             md.mode = capstone.CS_MODE_ARM
             for inst in md.disasm(seg.data(), seg.header.p_vaddr):
                 if inst.mnemonic == "pop":
