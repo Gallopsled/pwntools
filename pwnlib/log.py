@@ -110,7 +110,7 @@ from .term      import spinners, text
 from .          import term
 
 # list of prefixes to use for the different message types.  note that the `text`
-# module won't add any escape codes if `sys.stdout.isatty()` is `False`
+# module won't add any escape codes if `sys.stderr.isatty()` is `False`
 _msgtype_prefixes = {
     'status'       : text.magenta('x'),
     'success'      : text.bold_green('+'),

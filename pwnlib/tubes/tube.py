@@ -770,8 +770,8 @@ class tube(Timeout):
                 try:
                     cur = self.recv(timeout = 0.05)
                     if cur:
-                        sys.stdout.write(cur)
-                        sys.stdout.flush()
+                        sys.stderr.write(cur)
+                        sys.stderr.flush()
                 except EOFError:
                     log.info('Got EOF while reading in interactive')
                     break

@@ -12,10 +12,12 @@ Keymap = keymap.Keymap
 term_mode = False
 
 def can_init():
-    """This function returns True iff stdout is a tty and we are not inside a
-    REPL."""
+    """This function returns True iff stderr is a TTY and we are not inside a
+    REPL.  Iff this function returns `True`, a call to :meth:`init` will let
+    ``pwnlib`` manage the terminal.
+    """
 
-    if not sys.stdout.isatty():
+    if not sys.stderr.isatty():
         return False
 
     # Check for python -i
@@ -45,11 +47,12 @@ def can_init():
 
 
 def init():
-    """Calling this function will take over the terminal (if :func:`can_init`
+    """Calling this function will take over the terminal (iff :func:`can_init`
     returns True) until the current python interpreter is closed.
 
     It is on our TODO, to create a function to "give back" the terminal without
-    closing the interpreter."""
+    closing the interpreter.
+    """
 
     global term_mode
 
