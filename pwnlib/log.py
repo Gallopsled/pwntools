@@ -381,6 +381,27 @@ class Logger(object):
         """
         return self._logger.isEnabledFor(level)
 
+    def setLevel(self, level):
+        """setLevel(level)
+
+        Set the logging level for the underlying logger.
+        """
+        self._logger.setLevel(level)
+
+    def addHandler(self, handler):
+        """addHandler(handler)
+
+        Add the specified handler to the underlying logger.
+        """
+        self._logger.addHandler(handler)
+
+    def removeHandler(self, handler):
+        """removeHandler(handler)
+
+        Remove the specified handler from the underlying logger.
+        """
+        self._logger.removeHandler(handler)
+
 class Handler(logging.StreamHandler):
     """
     A custom handler class.  This class will report whatever `context.log_level`
