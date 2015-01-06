@@ -393,6 +393,9 @@ class ROP(object):
     def __cache_save(self, elf, data):
         file(self.__get_cachefile_name(elf),'w+').write(repr(data))
 
+    def _load_x64(self):
+        self._load_x86()
+
     def _load_x86(self):
         """Load all ROP gadgets for the selected ELF files"""
         #
