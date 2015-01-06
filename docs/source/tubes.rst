@@ -1,10 +1,6 @@
 .. testsetup:: *
 
-   from pwnlib.tubes.tube import tube
-   from pwnlib.tubes.ssh import *
-   from pwnlib.tubes.remote import remote
-   from pwnlib.util.misc import which
-   from pwnlib.context import context
+    from pwn import *
 
 :mod:`pwnlib.tubes` --- Talking to the World!
 =============================================
