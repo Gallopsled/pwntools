@@ -51,12 +51,13 @@ from . import elf
 from .elf     import ELF, constants
 from .memleak import MemLeak
 from .context import context
+from .log     import getLogger
 
 from elftools.elf.enums import ENUM_D_TAG
 
-import logging, ctypes
+import ctypes
 
-log    = logging.getLogger(__name__)
+log    = getLogger(__name__)
 sizeof = ctypes.sizeof
 
 def sysv_hash(symbol):

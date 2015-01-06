@@ -1,7 +1,7 @@
 <% from pwnlib.util import lists, packing, fiddling, misc %>\
 <%
-import logging
-log = logging.getLogger('pwnlib.shellcraft')
+from pwnlib.log import getLogger
+log = getLogger('pwnlib.shellcraft')
 %>\
 <%page args="dest, src, stack_allowed = True"/>
 <%docstring>

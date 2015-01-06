@@ -6,8 +6,9 @@ from ..util import hashes, misc
 from .sock import sock
 from .process import process
 from ..timeout import Timeout
+from ..log import getLogger
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 # Kill the warning line:
 # No handlers could be found for logger "paramiko.transport"

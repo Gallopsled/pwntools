@@ -1,8 +1,9 @@
-import os, tempfile, re, shlex, logging
+import os, tempfile, re, shlex
 from .util import misc, proc
 from . import tubes, elf
+from .log import getLogger
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 def debug(args, exe=None, execute=None, ssh=None):
     """debug(args) -> tube

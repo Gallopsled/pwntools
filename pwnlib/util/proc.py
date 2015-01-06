@@ -1,5 +1,6 @@
-import time, errno, logging
+import time, errno
 from .. import tubes
+from ..log import getLogger
 
 try:
     import psutil
@@ -7,7 +8,7 @@ try:
 except ImportError:
     _ok_import = False
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 if _ok_import:
     all_pids = psutil.pids

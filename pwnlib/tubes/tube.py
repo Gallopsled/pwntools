@@ -3,9 +3,10 @@ from .buffer import Buffer
 from ..timeout import Timeout
 from .. import context, term, atexit
 from ..util import misc, fiddling
+from ..log import getLogger
 import re, threading, sys, time, subprocess, logging, string
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 class tube(Timeout):
     """

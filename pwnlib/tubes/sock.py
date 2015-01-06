@@ -1,7 +1,8 @@
-import socket, errno, select, logging
+import socket, errno, select
 from .tube import tube
+from ..log import getLogger
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 class sock(tube):
     """Methods available exclusively to sockets."""

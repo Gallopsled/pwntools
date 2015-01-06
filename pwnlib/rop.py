@@ -1,12 +1,12 @@
 """Return Oriented Programming
 """
 import hashlib, os, sys, tempfile, re
-import logging
 
 from .elf     import ELF
 from .util    import packing
+from .log     import getLogger
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 class ROP(object):
     """Class which simplifies the generation of ROP-chains.

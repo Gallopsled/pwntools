@@ -39,13 +39,13 @@ Disassembly
     '   0:   b8 0b 00 00 00          mov    eax,0xb'
 
 """
-import tempfile, subprocess, shutil, tempfile, errno, logging, platform
+import tempfile, subprocess, shutil, tempfile, errno, platform
 from os import path, environ
 from glob import glob
-from . import log
+from .log import getLogger
 from .context import context
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 __all__ = ['asm', 'cpp', 'disasm', 'which_binutils']
 
@@ -449,4 +449,3 @@ def disasm(data, vma = 0, **kwargs):
         else:
             shutil.rmtree(tmpdir)
             return result
-

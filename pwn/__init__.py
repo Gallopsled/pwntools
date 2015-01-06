@@ -71,4 +71,4 @@ def closure():
 closure()
 del closure
 
-log = logging.getLogger('pwnlib.exploit')
+log = getLogger('pwnlib.exploit')
