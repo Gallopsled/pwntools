@@ -2,6 +2,10 @@
 
    from pwn import *
 
+   # redirect logging to `sys.stdout`
+   import pwnlib.log
+   pwnlib.log._console.stream = sys.stdout
+
 :mod:`pwnlib.tubes` --- Talking to the World!
 =============================================
 
