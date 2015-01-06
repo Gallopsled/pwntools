@@ -1256,3 +1256,47 @@ class tube(Timeout):
         """
 
         raise NotImplementedError()
+
+    #: Alias for :meth:`recv`
+    def read(self, *a, **kw): return self.recv(*a, **kw)
+    #: Alias for :meth:`recvpred`
+    def readpred(self, *a, **kw): return self.recvpred(*a, **kw)
+    #: Alias for :meth:`recvn`
+    def readn(self, *a, **kw): return self.recvn(*a, **kw)
+    #: Alias for :meth:`recvuntil`
+    def readuntil(self, *a, **kw): return self.recvuntil(*a, **kw)
+    #: Alias for :meth:`recvlines`
+    def readlines(self, *a, **kw): return self.recvlines(*a, **kw)
+    #: Alias for :meth:`recvline`
+    def readline(self, *a, **kw): return self.recvline(*a, **kw)
+    #: Alias for :meth:`recvline_pred`
+    def readline_pred(self, *a, **kw): return self.recvline_pred(*a, **kw)
+    #: Alias for :meth:`recvline_contains`
+    def readline_contains(self, *a, **kw): return self.recvline_contains(*a, **kw)
+    #: Alias for :meth:`recvline_startswith`
+    def readline_startswith(self, *a, **kw): return self.recvline_startswith(*a, **kw)
+    #: Alias for :meth:`recvline_endswith`
+    def readline_endswith(self, *a, **kw): return self.recvline_endswith(*a, **kw)
+    #: Alias for :meth:`recvregex`
+    def readregex(self, *a, **kw): return self.recvregex(*a, **kw)
+    #: Alias for :meth:`recvline_regex`
+    def readline_regex(self, *a, **kw): return self.recvline_regex(*a, **kw)
+    #: Alias for :meth:`recvrepeat`
+    def readrepeat(self, *a, **kw): return self.recvrepeat(*a, **kw)
+    #: Alias for :meth:`recvall`
+    def readall(self, *a, **kw): return self.recvall(*a, **kw)
+    #: Alias for :meth:`recv_thread`
+    def read_thread(self, *a, **kw): return self.recv_thread(*a, **kw)
+
+    #: Alias for :meth:`send`
+    def write(self, *a, **kw): return self.send(*a, **kw)
+    #: Alias for :meth:`sendline`
+    def writeline(self, *a, **kw): return self.sendline(*a, **kw)
+    #: Alias for :meth:`sendafter`
+    def writeafter(self, *a, **kw): return self.sendafter(*a, **kw)
+    #: Alias for :meth:`sendlineafter`
+    def writelineafter(self, *a, **kw): return self.sendlineafter(*a, **kw)
+    #: Alias for :meth:`sendthen`
+    def writethen(self, *a, **kw): return self.sendthen(*a, **kw)
+    #: Alias for :meth:`sendlinethen`
+    def writelinethen(self, *a, **kw): return self.sendlinethen(*a, **kw)
