@@ -3,9 +3,10 @@ from .buffer import Buffer
 from ..timeout import Timeout
 from .. import context, term, atexit
 from ..util import misc, fiddling
+from ..log import getLogger
 import re, threading, sys, time, subprocess, logging, string
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 class tube(Timeout):
     """
@@ -769,8 +770,8 @@ class tube(Timeout):
                 try:
                     cur = self.recv(timeout = 0.05)
                     if cur:
-                        sys.stdout.write(cur)
-                        sys.stdout.flush()
+                        sys.stderr.write(cur)
+                        sys.stderr.flush()
                 except EOFError:
                     log.info('Got EOF while reading in interactive')
                     break

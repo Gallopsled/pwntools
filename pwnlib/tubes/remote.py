@@ -1,9 +1,10 @@
 from .sock import sock
 from ..timeout import Timeout
-import socket, logging
+from ..log import getLogger
+import socket
 import ssl as _ssl
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 class remote(sock):
     r"""Creates a TCP or UDP-connection to a remote host. It supports

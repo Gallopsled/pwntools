@@ -2,9 +2,10 @@ from .tube import tube
 from ..timeout import Timeout
 from ..util.misc import which
 from ..context import context
-import subprocess, fcntl, os, select, logging
+from ..log import getLogger
+import subprocess, fcntl, os, select
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 class process(tube):
     r"""

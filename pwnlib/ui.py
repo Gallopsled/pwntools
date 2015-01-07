@@ -1,7 +1,8 @@
 from . import term
-import time, types, logging
+from .log import getLogger
+import time, types
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 def options(prompt, opts, default = None):
     """Presents the user with a prompt (typically in the

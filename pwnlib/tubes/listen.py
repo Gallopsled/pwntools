@@ -1,9 +1,10 @@
 from .sock     import sock
 from ..timeout import Timeout
 from ..context import context
-import socket, errno, logging
+from ..log     import getLogger
+import socket, errno
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 class listen(sock):
     """Creates an TCP or UDP-socket to receive data on. It supports

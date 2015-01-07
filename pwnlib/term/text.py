@@ -9,7 +9,7 @@ def eval_when(when):
         elif when == 'never':
             return False
         elif when == 'auto':
-            return sys.stdout.isatty()
+            return sys.stderr.isatty()
         else:
             return when.isatty()
     else:

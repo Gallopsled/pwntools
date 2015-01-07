@@ -6,8 +6,9 @@ from ..util import hashes, misc
 from .sock import sock
 from .process import process
 from ..timeout import Timeout
+from ..log import getLogger
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 # Kill the warning line:
 # No handlers could be found for logger "paramiko.transport"
@@ -150,8 +151,8 @@ class ssh_channel(sock):
                     elif cur == '\a':
                         # Ugly hack until term unstands bell characters
                         continue
-                    sys.stdout.write(cur)
-                    sys.stdout.flush()
+                    sys.stderr.write(cur)
+                    sys.stderr.flush()
                 except EOFError:
                     log.info('Got EOF while reading in interactive')
                     event.set()

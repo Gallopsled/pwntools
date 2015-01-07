@@ -7,6 +7,7 @@ from pwnlib.context          import context, Thread
 from pwnlib.dynelf           import DynELF
 from pwnlib.elf              import ELF, load
 from pwnlib.exception        import PwnlibException
+from pwnlib.log              import getLogger
 from pwnlib.memleak          import MemLeak
 from pwnlib.replacements     import *
 from pwnlib.rop              import ROP

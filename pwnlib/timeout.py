@@ -3,10 +3,8 @@
 """
 Timeout encapsulation, complete with countdowns and scope managers.
 """
-import time, logging
+import time
 import pwnlib
-
-log = logging.getLogger(__name__)
 
 class _DummyContextClass(object):
     def __enter__(self):   pass
@@ -153,7 +151,7 @@ class Timeout(object):
             value = float(value)
 
             if value is value < 0:
-                log.error("Timeout cannot be negative")
+                raise AttributeError("timeout: Timeout cannot be negative")
 
             if value > self.maximum:
                 value = self.maximum

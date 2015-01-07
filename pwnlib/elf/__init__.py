@@ -4,14 +4,15 @@ from ..term import text
 from .datatypes import *
 from ..asm import asm, disasm
 from ..util import misc
+from ..log import getLogger
 
-import mmap, subprocess, os, logging
+import mmap, subprocess, os
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.constants import P_FLAGS, SHN_INDICES
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 __all__ = ['load', 'ELF'] + sorted(filter(lambda x: not x.startswith('_'), datatypes.__dict__.keys()))
 
@@ -604,4 +605,3 @@ class ELF(ELFFile):
             res.append('Packer:'.ljust(15) + red("Packed with UPX"))
 
         return '\n'.join(res)
-
