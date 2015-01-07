@@ -1,9 +1,10 @@
 # pwntools - CTF toolkit
 [![Docs latest](https://readthedocs.org/projects/pwntools/badge/)](https://pwntools.readthedocs.org/en/latest)
 [![Docs 2.2.0](https://readthedocs.org/projects/pwntools/badge/?version=2.2.0)](https://pwntools.readthedocs.org/en/2.2.0)
-[![PyPI](https://img.shields.io/pypi/v/pwntools.svg)](https://pypi.python.org/pypi/pwntools/)
-[![Gittip](https://img.shields.io/gittip/gallopsled.svg)](https://www.gittip.com/gallopsled/)
+[![PyPI](https://img.shields.io/pypi/v/pwntools.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
+[![Gittip](https://img.shields.io/gittip/gallopsled.svg?style=flat)](https://www.gittip.com/gallopsled/)
 [![Travis](https://travis-ci.org/Gallopsled/pwntools.svg)](https://travis-ci.org/Gallopsled/pwntools)
+[![Twitter](https://img.shields.io/badge/twitter-Gallopsled-4099FF.svg?style=flat)](https://twitter.com/Gallopsled)
 
 This is the CTF framework used by Gallopsled in every CTF.
 
