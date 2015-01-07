@@ -1,4 +1,3 @@
-import sys
 from . import term, text
 from . import keymap as km
 from . import keyconsts as kc
@@ -350,7 +349,7 @@ keymap = km.Keymap({
     '<any>'       : handle_keypress,
     })
 
-def readline(_size = None, prompt = '', float = False, priority = 10):
+def readline(_size = None, prompt = '', float = True, priority = 10):
     # The argument  _size is unused, but is there for compatibility
     # with the existing readline
 
@@ -399,13 +398,44 @@ def readline(_size = None, prompt = '', float = False, priority = 10):
         if shutdown_hook:
             shutdown_hook()
 
-class Wrapper:
-    def __init__(self, fd):
-        self._fd = fd
-    def readline(self, size = None):
-        return readline(size)
-    def __getattr__(self, k):
-        return self._fd.__getattribute__(k)
-
 def init():
+    # defer imports until initialization
+    import sys, __builtin__
+    from ..util import safeeval
+
+    class Wrapper:
+        def __init__(self, fd):
+            self._fd = fd
+        def readline(self, size = None):
+            return readline(size)
+        def __getattr__(self, k):
+            return self._fd.__getattribute__(k)
     sys.stdin = Wrapper(sys.stdin)
+
+    def raw_input(prompt = '', float = True):
+        """raw_input(prompt = '', float = True)
+
+        Replacement for the built-in `raw_input` using ``pwnlib``s readline
+        implementation.
+
+        Arguments:
+            prompt(str): The prompt to show to the user.
+            float(bool): If set to `True`, prompt and input will float to the
+                         bottom of the screen when `term.term_mode` is enabled.
+        """
+        return readline(None, prompt, float)
+    __builtin__.raw_input = raw_input
+
+    def input(prompt = '', float = True):
+        """input(prompt = '', float = True)
+
+        Replacement for the built-in `input` using ``pwnlib``s readline
+        implementation, and `pwnlib.util.safeeval.expr` instead of `eval` (!).
+
+        Arguments:
+            prompt(str): The prompt to show to the user.
+            float(bool): If set to `True`, prompt and input will float to the
+                         bottom of the screen when `term.term_mode` is enabled.
+        """
+        return safeeval.const(readline(None, prompt, float))
+    __builtin__.input = input
