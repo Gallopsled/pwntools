@@ -38,7 +38,8 @@ class process(tube):
         EOFError
     """
     def __init__(self, args, shell = False, executable = None,
-                 cwd = None, env = None, timeout = Timeout.default):
+                 cwd = None, env = None, timeout = Timeout.default,
+                 stderr_debug = False):
         super(process, self).__init__(timeout)
 
         if executable:
@@ -59,7 +60,7 @@ class process(tube):
             args, shell = shell, executable = executable,
             cwd = cwd, env = env,
             stdin = subprocess.PIPE, stdout = subprocess.PIPE,
-            stderr = subprocess.STDOUT)
+            stderr = subprocess.PIPE if stderr_debug else subprocess.STDOUT)
         self.stop_noticed = False
 
         # Set in non-blocking mode so that a call to call recv(1000) will
@@ -70,6 +71,20 @@ class process(tube):
 
         log.success("Started program %r" % self.program)
         log.debug("...with arguments %r" % args)
+
+        def printer():
+            try:
+                while True:
+                    line = self.proc.stderr.readline()
+                    if line: log.debug(line.rstrip())
+                    else: break
+            except:
+                pass
+
+        if stderr_debug:
+            t = context.Thread(target=printer)
+            t.daemon = True
+            t.start()
 
     def kill(self):
         """kill()
