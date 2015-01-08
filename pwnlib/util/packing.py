@@ -480,6 +480,8 @@ def _flat(args, preprocessor, packer):
             out.append(arg.encode('utf8'))
         elif isinstance(arg, (int, long)):
             out.append(packer(arg))
+        elif isinstance(arg, bytearray):
+            out.append(str(arg))
         else:
             raise ValueError("flat(): Flat does not support values of type %s" % type(arg))
     return ''.join(out)

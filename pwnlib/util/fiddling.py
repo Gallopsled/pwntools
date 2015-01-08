@@ -580,4 +580,5 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
 
 def hexdump(s, width = 16, skip = True, hexii = False, begin = 0,
             style = None, highlight = None):
+    s = packing.flat(s)
     return '\n'.join(hexdump_iter(s, width, skip, hexii, begin, style, highlight))
