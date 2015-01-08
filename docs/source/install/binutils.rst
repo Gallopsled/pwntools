@@ -15,7 +15,7 @@ First, add our `Personal Package Archive repository <http://binutils.pwntools.co
 
     $ apt-get install software-properties-common
     $ apt-add-repository ppa:pwntools/binutils
-    $ apt-get updatez
+    $ apt-get update
 
 Then, install the binutils for your architecture.
 
