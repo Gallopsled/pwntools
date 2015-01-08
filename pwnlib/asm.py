@@ -148,7 +148,7 @@ def _assembler():
         'ia64':    [gas, '-m%ce' % context.endianness[0]]
     }
 
-    assembler = assemblers.get(context.arch, gas)
+    assembler = assemblers.get(context.arch, [gas])
 
     if not checked_assembler_version[gas]:
         checked_assembler_version[gas] = True
