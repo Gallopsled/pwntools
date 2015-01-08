@@ -102,8 +102,7 @@ def closure():
         fmt = '%(asctime)s:%(levelname)s:%(name)s:%(message)s'
         formatter = logging.Formatter(fmt, dfmt)
         handler.setFormatter(formatter)
-        logger = logging.getLogger('pwnlib')
-        logger.addHandler(handler)
+        logging.root.addHandler(handler)
     # put the terminal in rawmode unless NOTERM was specified
     if term_mode:
         term.init()
