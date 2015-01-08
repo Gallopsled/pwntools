@@ -437,17 +437,6 @@ class Handler(logging.StreamHandler):
 
     An instance of this handler is added to the ``'pwnlib'`` logger.
     """
-    @property
-    def level(self):
-        """
-        The current log level; always equal to :data:`context.log_level`.
-        Setting this property is a no-op.
-        """
-        return context.log_level
-
-    @level.setter
-    def level(self, _):
-        pass
 
     def emit(self, record):
         """
@@ -605,8 +594,7 @@ def closure():
     def setter(self, level):
         self._level = level
     def getter(self):
-        return self._level or min(context.log_level, logging.INFO,
-                                  self.parent.getEffectiveLevel())
+        return context.log_level
     prop = property(
         getter,
         setter,
