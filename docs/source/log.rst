@@ -1,7 +1,21 @@
-:mod:`pwnlib.log` and   --- Logging stuff
-=================================================================
+:mod:`pwnlib.log` --- Logging stuff
+===================================
 
 .. automodule:: pwnlib.log
+   :members: getLogger
+
+.. autoclass:: pwnlib.log.Progress
+   :members:
+   :member-order: bysource
 
 .. autoclass:: pwnlib.log.Logger
-   :members: debug, info, warn, error, progress, success, failure, indented, info_once, warn_once
+   :members:
+   :member-order: bysource
+
+.. autoclass:: pwnlib.log.Handler
+   :members:
+   :member-order: bysource
+
+.. autoclass:: pwnlib.log.Formatter
+   :members:
+   :member-order: bysource
