@@ -459,26 +459,6 @@ default_style = {
     'ff':           text.green,
 }
 
-def sequential_lines(a,b):
-    if len(a) != len(b) or len(a) < 4:
-        return False
-
-    all_chars = sorted(set(a+b))
-
-    alphabet = ''
-    if all(a in string.lowercase for a in all_chars):
-        alphabet = string.lowercase
-    if all(a in string.uppercase for a in all_chars):
-        alphabet = string.uppercase
-
-    # Check each set of four
-    for i in range(0, len(a)-3):
-        A = cyclic_find(a[i:i+4], alphabet)
-        B = cyclic_find(b[i:i+4], alphabet)
-        if A+len(a) != B:
-            return False
-    return True
-
 def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
                  style = None, highlight = None):
     """hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
