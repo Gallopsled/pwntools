@@ -540,7 +540,7 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
     for line, chunk in enumerate(lists.group(width, s)):
         # If this chunk is the same as the last unique chunk,
         # use a '*' instead.
-        if skip and (last_unique == chunk or sequential_lines(last_unique, chunk)):
+        if skip and last_unique == chunk:
             last_unique = chunk
             if not skipping:
                 yield '*'
