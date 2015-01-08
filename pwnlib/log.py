@@ -569,7 +569,8 @@ def closure():
     def setter(self, level):
         self._level = level
     def getter(self):
-        return self._level or min(context.log_level, logging.INFO)
+        return self._level or min(context.log_level, logging.INFO,
+                                  self.parent.getEffectiveLevel())
     prop = property(
         getter,
         setter,
