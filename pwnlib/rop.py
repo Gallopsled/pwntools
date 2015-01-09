@@ -547,7 +547,7 @@ class ROP(object):
                     regs = map(lambda reg: reg.strip(), regs)
                     insns = ["pop %s" % inst.op_str]
                     if "pc" in regs:
-                        gadgets[inst.address] = {"insns": insns, "regs": regs, "move": 4*len(regs)}
+                        gadgets[inst.address] = {"insns": insns, "regs": regs, "move": 4*len(regs), "type": "pop"}
             md.mode = capstone.CS_MODE_THUMB
             for inst in md.disasm(seg.data(), seg.header.p_vaddr):
                 if inst.mnemonic == "pop":
@@ -555,11 +555,53 @@ class ROP(object):
                     regs = map(lambda reg: reg.strip(), regs)
                     insns = ["pop %s" % inst.op_str]
                     if "pc" in regs:
-                        gadgets[inst.address+1] = {"insns": insns, "regs": regs, "move": 4*len(regs)}
+                        gadgets[inst.address+1] = {"insns": insns, "regs": regs, "move": 4*len(regs), "type": "pop"}
         self.gadgets = gadgets
-        return gadgets
+        self.movs = {}
+        for addr, gad in self.gadgets.items():
+            if addr & 1 == 0:
+                #arm
+                md.mode = capstone.CS_MODE_ARM
+                prev_addr = addr - 4
+                prev = elf.read(prev_addr, 4)
+                try:
+                    inst = md.disasm(prev, prev_addr).next()
+                    if inst.mnemonic.startswith("mov"):
+                        to_reg, from_reg = [reg.strip() for reg in inst.op_str.split(",")]
+                        insns = ["mov %s, %s" % (to_reg, from_reg)] + gad["insns"]
+                        self.movs[prev_addr+1] = {
+                                "insns": insns,
+                                "mov_to": to_reg,
+                                "mov_from": from_reg,
+                                "move": gad["move"],
+                                "regs": gad["regs"],
+                                "type": "mov;pop"}
+                except StopIteration:
+                    pass
 
-    def _find_best_gadget(self, regs):
+            else:
+                #thumb
+                md.mode = capstone.CS_MODE_THUMB
+                prev_addr = addr - 3
+                prev = elf.read(prev_addr, 2)
+                try:
+                    inst = md.disasm(prev, prev_addr).next()
+                    if inst.mnemonic.startswith("mov"):
+                        to_reg, from_reg = [reg.strip() for reg in inst.op_str.split(",")]
+                        insns = ["mov %s, %s" % (to_reg, from_reg)] + gad["insns"]
+                        self.movs[prev_addr+1] = {
+                                "insns": insns,
+                                "mov_to": to_reg,
+                                "mov_from": from_reg,
+                                "move": gad["move"],
+                                "regs": gad["regs"],
+                                "type": "mov;pop"}
+                except StopIteration:
+                    pass
+        self.gadgets.update(self.movs)
+        return gadgets, self.movs
+
+    def _find_best_pop_gadget(self, regs):
         """Helper function for _set_regs.
         Finds the 'best' gadget, which currently means the first gadget
         with most registres we want to set
@@ -567,9 +609,23 @@ class ROP(object):
         def gadget_score(gadget):
             return len(set(gadget["regs"]) & regs)
         #must contain 1 reg we want set.
-        gadgets = ((a,g) for (a,g) in self.gadgets.items() if len(set(g["regs"]) & regs) > 0)
+        gadgets = filter(lambda (a,g): len(set(g["regs"]) & regs) > 0
+                and g["type"] == "pop",
+            self.gadgets.items())
+        print gadgets
         gadget = max(gadgets, key = lambda (a, g): gadget_score(g))
         return gadget
+
+    def _find_best_mov_gadget(self, reg):
+        def gadget_score(gadget):
+            return len(gadget["regs"])
+        gadgets = filter(lambda (a,g): g["mov_from"] in self.can_pop
+                and g["mov_to"] == reg
+                and g["type"] == "mov;pop",
+            self.movs.items())
+        gadget = min(gadgets, key = lambda (a, g): gadget_score(g))
+        return gadget
+
 
     def _set_regs_arm(self, regs_dict, return_addr):
         """Generates a rop chain that sets the regsitres from regs_dict
@@ -579,9 +635,21 @@ class ROP(object):
         regs = set(regs_dict.keys())
         old_regs = None
 
+        for cant_pop in (regs - self.can_pop):
+            if cant_pop in self.can_mov:
+                mov_addr, mov_gad = self._find_best_mov_gadget(cant_pop)
+                pop_addr, pop_gad = self._find_best_pop_gadget(set([mov_gad["mov_from"]]))
+                ropchain.append(pop_addr)
+                pop_regs_dict = {mov_gad["mov_from"]: regs_dict[cant_pop]}
+                ropchain += [pop_regs_dict.get(reg, "$$$$") for reg in pop_gad["regs"][:-1]]
+                ropchain.append(mov_addr)
+                ropchain += [regs_dict.get(reg, "$$$$") for reg in mov_gad["regs"][:-1]]
+                regs.discard(cant_pop)
+
+
         while regs and regs != old_regs:
-            addr, inst = self._find_best_gadget(regs)
-            ropchain.append((self.base or 0)+addr)
+            addr, inst = self._find_best_pop_gadget(regs)
+            ropchain.append(addr)
             ropchain += [regs_dict.get(reg, "$$$$") for reg in inst["regs"][:-1]]
             old_regs = set(regs)
             regs -= set(inst["regs"])
@@ -593,12 +661,21 @@ class ROP(object):
 
 
     @property
-    def can_set(self):
+    def can_pop(self):
         """For arm mode only:
         Which registres we can set.
         """
         l = []
-        map(lambda gad: l.extend(gad["regs"]), self.gadgets)
+        for gad in self.gadgets.values():
+            l.extend(gad["regs"])
+        return set(l)
+
+    @property
+    def can_mov(self):
+        l = []
+        for gad in self.movs.values():
+            #if gad["mov_from"] is self.can_pop:
+            l.append(gad["mov_to"])
         return set(l)
 
     def __repr__(self):
