@@ -612,7 +612,6 @@ class ROP(object):
         gadgets = filter(lambda (a,g): len(set(g["regs"]) & regs) > 0
                 and g["type"] == "pop",
             self.gadgets.items())
-        print gadgets
         gadget = max(gadgets, key = lambda (a, g): gadget_score(g))
         return gadget
 
