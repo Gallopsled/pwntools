@@ -589,25 +589,13 @@ _console.setFormatter(Formatter())
 # Since properties are looked up on an instance's class we need to monkey patch
 # the whole class...
 rootlogger = logging.getLogger('pwnlib')
-def closure():
-    import types
-    def setter(self, level):
-        self._level = level
-    def getter(self):
-        return context.log_level
-    prop = property(
-        getter,
-        setter,
-        None,
-        None
-    )
-    cls = rootlogger.__class__
-    cls = type(cls.__name__, (cls,), {})
-    cls.level = prop
-    rootlogger.__class__ = cls
-closure()
-del closure
-rootlogger.level = logging.NOTSET
+
+class RootLogger(rootlogger.__class__):
+    @property
+    def level(self):
+        return min(context.log_level, self.parent.getEffectiveLevel())
+
+rootlogger.__class__ = RootLogger
 rootlogger.addHandler(_console)
 rootlogger = Logger(rootlogger)
 _loggers['pwnlib'] = rootlogger
