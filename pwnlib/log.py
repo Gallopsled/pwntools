@@ -542,7 +542,7 @@ class Formatter(logging.Formatter):
 
         msg = prefix + msg
         msg = self.nlindent.join(msg.splitlines())
-        return msg
+        return msg % record.__dict__
 
 # we keep a dictionary of loggers such that multiple calls to `getLogger` with
 # the same name will return the same logger
