@@ -152,7 +152,7 @@ def _assembler():
 
     if not checked_assembler_version[gas]:
         checked_assembler_version[gas] = True
-        result = subprocess.check_output([gas, '-v','/dev/null'],
+        result = subprocess.check_output([gas, '--version','/dev/null'],
                                          stderr=subprocess.STDOUT)
         version = re.search(r' (\d\.\d+)', result).group(1)
         if version < '2.19':
