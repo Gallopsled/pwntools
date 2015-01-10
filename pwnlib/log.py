@@ -437,17 +437,6 @@ class Handler(logging.StreamHandler):
 
     An instance of this handler is added to the ``'pwnlib'`` logger.
     """
-    @property
-    def level(self):
-        """
-        The current log level; always equal to :data:`context.log_level`.
-        Setting this property is a no-op.
-        """
-        return context.log_level
-
-    @level.setter
-    def level(self, _):
-        pass
 
     def emit(self, record):
         """
@@ -553,7 +542,7 @@ class Formatter(logging.Formatter):
 
         msg = prefix + msg
         msg = self.nlindent.join(msg.splitlines())
-        return msg
+        return msg % record.__dict__
 
 # we keep a dictionary of loggers such that multiple calls to `getLogger` with
 # the same name will return the same logger
@@ -600,26 +589,13 @@ _console.setFormatter(Formatter())
 # Since properties are looked up on an instance's class we need to monkey patch
 # the whole class...
 rootlogger = logging.getLogger('pwnlib')
-def closure():
-    import types
-    def setter(self, level):
-        self._level = level
-    def getter(self):
-        return self._level or min(context.log_level, logging.INFO,
-                                  self.parent.getEffectiveLevel())
-    prop = property(
-        getter,
-        setter,
-        None,
-        None
-    )
-    cls = rootlogger.__class__
-    cls = type(cls.__name__, (cls,), {})
-    cls.level = prop
-    rootlogger.__class__ = cls
-closure()
-del closure
-rootlogger.level = logging.NOTSET
+
+class RootLogger(rootlogger.__class__):
+    @property
+    def level(self):
+        return min(context.log_level, self.parent.getEffectiveLevel())
+
+rootlogger.__class__ = RootLogger
 rootlogger.addHandler(_console)
 rootlogger = Logger(rootlogger)
 _loggers['pwnlib'] = rootlogger
