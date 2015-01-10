@@ -558,7 +558,8 @@ def getLogger(name):
     return _loggers[name]
 
 #
-# By default, everything will log to the console.
+# The root 'pwnlib' logger is declared here.  To change the target of all
+# 'pwntools'-specific logging, only this logger needs to be changed.
 #
 # Logging cascades upward through the heirarchy,
 # so the only point that should ever need to be
@@ -568,23 +569,5 @@ def getLogger(name):
 #     map(rootlogger.removeHandler, rootlogger.handlers)
 #     logger.addHandler(myCoolPitchingHandler)
 #
-#
-_console = Handler()
-_console.setFormatter(Formatter())
 
-#
-# The root 'pwnlib' logger is declared here, and attached to the
-# console.  To change the target of all 'pwntools'-specific
-# logging, only this logger needs to be changed.
-#
-# As explained at the top of this file we monkey patch the logger such that its
-# log level will be `logging.DEBUG` or `logging.INFO` depending on
-# `context.log_level`, if not set explicitly.
-#
-# Since properties are looked up on an instance's class we need to monkey patch
-# the whole class...
-rootlogger = logging.getLogger('pwnlib')
-rootlogger.setLevel(logging.DEBUG)
-rootlogger.addHandler(_console)
-rootlogger = Logger(rootlogger)
-_loggers['pwnlib'] = rootlogger
+rootlogger = getLogger('pwnlib')
