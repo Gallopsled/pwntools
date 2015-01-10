@@ -164,7 +164,41 @@ def main():
         func = vals[0][1]
 
     if args.show:
-        print func.__doc__
+        # remove doctests
+        doc = []
+        in_doctest = False
+        block_indent = None
+        caption = None
+        for i, line in enumerate(func.__doc__.splitlines()):
+            if line.lstrip().startswith('>>>'):
+                # this line starts a doctest
+                in_doctest = True
+                if caption:
+                    # delete back up to the caption
+                    doc = doc[:caption - i]
+                    caption = None
+            elif line == '':
+                # skip blank lines
+                pass
+            elif in_doctest:
+                # indentation marks the end of a doctest
+                indent = len(line) - len(line.lstrip())
+                if block_indent is None:
+                    block_indent = indent
+                elif indent < block_indent:
+                    in_doctest = False
+                    block_indent = None
+            elif line.endswith(':'):
+                # save index of caption
+                caption = i
+            else:
+                # this is not blank space and we're not in a doctest, so the
+                # previous caption (if any) was not for a doctest
+                caption = None
+
+            if not in_doctest:
+                doc.append(line)
+        print '\n'.join(doc).rstrip()
         exit()
 
     defargs = len(func.func_defaults or ())
