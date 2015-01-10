@@ -93,25 +93,7 @@ logger.
 """
 
 __all__ = [
-    'getLogger'
-
-    # loglevel == DEBUG
-    'debug',
-
-    # loglevel == INFO
-    'info', 'success', 'failure', 'indented',
-
-    # loglevel == WARNING
-    'warning', 'warn'
-
-    # loglevel == ERROR
-    'error', 'exception',
-
-    # loglevel == CRITICAL
-    'bug', 'fatal',
-
-    # spinner-functions (default is loglevel == INFO)
-    'waitfor', 'progress'
+    'getLogger', 'rootlogger'
 ]
 
 import logging, re, threading, sys, random, time
@@ -388,10 +370,6 @@ class Logger(object):
         """
         self._log(logging.CRITICAL, message, args, kwargs, 'critical')
 
-    def fatal(self, *args, **kwargs):
-        """Alias for :meth:`critical`."""
-        return self.critical(*args, **kwargs)
-
     def log(self, level, message, *args, **kwargs):
         """log(level, message, *args, **kwargs)
 
@@ -608,45 +586,3 @@ rootlogger.setLevel(logging.DEBUG)
 rootlogger.addHandler(_console)
 rootlogger = Logger(rootlogger)
 _loggers['pwnlib'] = rootlogger
-
-#
-# Handle legacy log levels which really should be exceptions
-#
-def bug(msg):       raise Exception(msg)
-def fatal(msg):     raise SystemExit(msg)
-
-#
-# Handle legacy log invocation on the 'log' module itself.
-# These are so that things don't break.
-#
-# The correct way to perform logging moving forward for an
-# exploit is:
-#
-#     #!/usr/bin/env python
-#     from pwn import *
-#     context(...)
-#     log = log.getLogger('pwnlib.exploit.name')
-#     log.info("Hello, world!")
-#
-# And for all internal pwnlib modules, replace:
-#
-#     from . import log
-#
-# With
-#
-#     from .log import getLogger
-#     log = getLogger(__name__) # => 'pwnlib.tubes.ssh'
-#
-progress  = rootlogger.progress
-waitfor   = rootlogger.waitfor
-indented  = rootlogger.indented
-success   = rootlogger.success
-failure   = rootlogger.failure
-debug     = rootlogger.debug
-info      = rootlogger.info
-warning   = rootlogger.warning
-warn      = rootlogger.warn
-error     = rootlogger.error
-exception = rootlogger.exception
-critical  = rootlogger.critical
-fatal     = rootlogger.fatal
