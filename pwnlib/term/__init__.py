@@ -71,8 +71,4 @@ def init():
     term.on_winch.append(update_geometry)
     readline.init()
 
-    # the logging module has an old reference to sys.stderr, so lets update that
-    from ..log import _console
-    _console.stream = sys.stderr
-
     term_mode = True

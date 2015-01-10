@@ -106,6 +106,15 @@ def closure():
     # put the terminal in rawmode unless NOTERM was specified
     if term_mode:
         term.init()
+    # install a log handler and turn logging all the way up
+    import pwnlib.log as log
+    import logging
+    log.rootlogger.setLevel(logging.DEBUG)
+    handler = log.Handler()
+    formatter = log.Formatter()
+    handler.setFormatter(formatter)
+    log.rootlogger.addHandler(handler)
+
 closure()
 del closure
 
