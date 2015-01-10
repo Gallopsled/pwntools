@@ -32,6 +32,17 @@ from pwnlib.util.web         import *
 
 # Promote these modules, so that "from pwn import *" will let you access them
 import \
-    collections   , operator      , os            , pwnlib        , \
-    re            , string        , struct        , subprocess    , \
-    sys           , threading     , time          , tempfile
+    collections   , math          , operator      , os            , \
+    pwnlib        , re            , string        , struct        , \
+    subprocess    , sys           , threading     , time          , \
+    tempfile
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
