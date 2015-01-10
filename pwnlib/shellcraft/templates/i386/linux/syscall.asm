@@ -45,6 +45,21 @@ Example:
             pop edx
             mov eax, ebp
             int 0x80
+        >>> print pwnlib.shellcraft.i386.linux.syscall('SYS_mmap2', 0, 0x1000, 7, 0x22, -1, 0).rstrip()
+            /* call mmap2(0, 4096, 7, 34, -1, 0) */
+            xor ebx, ebx
+            mov ecx, 0x1010101
+            xor ecx, 0x1011101
+            push 0x7
+            pop edx
+            push 0x22
+            pop esi
+            push -1
+            pop edi
+            xor ebp, ebp
+            mov eax, 0x1010101
+            xor eax, 0x10101c1
+            int 0x80
 </%docstring>
 <%
   append_cdq = False
