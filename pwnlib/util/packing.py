@@ -81,11 +81,17 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         >>> pack(0x0102030405, 'all', 'little', True)
         '\\x05\\x04\\x03\\x02\\x01'
 """
+    kwargs.setdefault('endianness', endianness)
+    kwargs.setdefault('sign', sign)
+
+    if word_size != 'all':
+        kwargs.setdefault('word_size', word_size)
+
     with context.local(**kwargs):
         # Lookup in context if not found
-        word_size  = word_size  or context.word_size
-        endianness = endianness or context.endianness
-        sign       = sign       or context.sign
+        word_size  = 'all' if word_size == 'all' else context.word_size
+        endianness = context.endianness
+        sign       = context.sign
 
         if not isinstance(number, (int,long)):
             raise ValueError("pack(): number must be of type (int,long) (got %r)" % type(number))
