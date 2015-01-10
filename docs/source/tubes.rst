@@ -3,8 +3,8 @@
    from pwn import *
 
    # redirect logging to `sys.stdout`
-   import pwnlib.log
-   pwnlib.log._console.stream = sys.stdout
+   import logging
+   logging.getLogger('pwnlib').handlers[0].stream = sys.stdout
 
 :mod:`pwnlib.tubes` --- Talking to the World!
 =============================================
