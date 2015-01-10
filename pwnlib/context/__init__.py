@@ -673,6 +673,10 @@ class ContextType(object):
         """
         Sets the verbosity of ``pwntools`` logging mechanism.
 
+        More specifically it controls the filtering of messages that happens
+        inside the handler for logging to the screen. So if you want e.g. log
+        all messages to a file, then this attribute makes no difference to you.
+
         Valid values are specified by the standard Python ``logging`` module.
 
         Default value is set to ``INFO``.

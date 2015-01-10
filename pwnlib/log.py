@@ -32,6 +32,10 @@ The verbosity of logging can be most easily controlled by setting
     context.log_level = 'error'
     log.info("Now you don't")
 
+The purpose of this attribute is to control what gets printed to the screen,
+not what gets emitted. This means that you can put all logging events into
+a log file, while only wanting to see a small subset of them on your screen.
+
 Pwnlib Developers
 -----------------
 A module-specific logger can be imported into the module via::
@@ -56,12 +60,12 @@ formatter is installed for it.  The handler determines its logging level from
 
 Ideally :data:`context.log_level` should only affect which records will be
 emitted by the handler such that e.g. logging to a file will not be changed by
-it.  But for performance reasons it is not feasible to set the logging level of
-the pwnlib root logger to :const:`logging.DEBUG`.  Therefore, when its log level
-is not explicitly set, the root logger is monkey patched to report a log level
-of :const:`logging.DEBUG` when :data:`context.log_level` is set to ``'DEBUG'``
-and :const:`logging.INFO` otherwise.  This behavior is overridden if its log
-level is set explicitly.
+it. But for performance reasons it is not feasible log everything in the normal
+case. In particular there are tight loops inside :mod:`pwnlib.tubes.tube`, which
+we would like to be able to debug, but if we are not debugging them, they should
+not spit out messages (even to a log file). For this reason there are a few places
+inside pwnlib, that will not even emit a record without :data:`context.log_level`
+being set to `logging.DEBUG` or below.
 
 Log records created by ``Progress`` and ``Logger`` objects will set
 ``'pwnlib_msgtype'`` on the ``extra`` field to signal which kind of message was
