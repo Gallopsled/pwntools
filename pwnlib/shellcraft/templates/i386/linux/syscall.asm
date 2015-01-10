@@ -1,6 +1,6 @@
 <% from pwnlib.shellcraft import i386 %>\
 <% from pwnlib.constants.linux import i386 as constants %>\
-<%page args="syscall = None, arg0 = None, arg1 = None, arg2 = None, arg3 = None, arg4 = None"/>
+<%page args="syscall = None, arg0 = None, arg1 = None, arg2 = None, arg3 = None, arg4 = None, arg5 = None"/>
 <%docstring>
 Args: [syscall_number, *args]
     Does a syscall
@@ -45,6 +45,21 @@ Example:
             pop edx
             mov eax, ebp
             int 0x80
+        >>> print pwnlib.shellcraft.i386.linux.syscall('SYS_mmap2', 0, 0x1000, 7, 0x22, -1, 0).rstrip()
+            /* call mmap2(0, 4096, 7, 34, -1, 0) */
+            xor ebx, ebx
+            mov ecx, 0x1010101
+            xor ecx, 0x1011101
+            push 0x7
+            pop edx
+            push 0x22
+            pop esi
+            push -1
+            pop edi
+            xor ebp, ebp
+            mov eax, 0x1010101
+            xor eax, 0x10101c1
+            int 0x80
 </%docstring>
 <%
   append_cdq = False
@@ -58,7 +73,7 @@ Example:
       else:
           args = [repr(syscall)]
 
-  for arg in [arg0, arg1, arg2, arg3, arg4]:
+  for arg in [arg0, arg1, arg2, arg3, arg4, arg5]:
       if arg == None:
           args.append('?')
       else:
@@ -68,7 +83,7 @@ Example:
   syscall_repr = syscall_repr % ', '.join(args)
 %>\
     /* call ${syscall_repr} */
-% for dst, src in zip(['ebx', 'ecx', 'edx', 'esi', 'edi', 'eax'], [arg0, arg1, arg2, arg3, arg4, syscall]):
+% for dst, src in zip(['ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp', 'eax'], [arg0, arg1, arg2, arg3, arg4, arg5, syscall]):
   % if dst == 'edx' and src == 0:
     <% append_cdq = True %>\
   % elif src != None:
