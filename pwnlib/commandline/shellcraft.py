@@ -198,7 +198,7 @@ def main():
 
             if not in_doctest:
                 doc.append(line)
-        print '\n'.join(doc)
+        print '\n'.join(doc).rstrip()
         exit()
 
     defargs = len(func.func_defaults or ())
