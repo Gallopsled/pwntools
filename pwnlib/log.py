@@ -105,17 +105,17 @@ from .          import term
 # list of prefixes to use for the different message types.  note that the `text`
 # module won't add any escape codes if `sys.stderr.isatty()` is `False`
 _msgtype_prefixes = {
-    'status'       : text.magenta('x'),
-    'success'      : text.bold_green('+'),
-    'failure'      : text.bold_red('-'),
-    'debug'        : text.bold_red('DEBUG'),
-    'info'         : text.bold_blue('*'),
-    'warning'      : text.bold_yellow('!'),
-    'error'        : text.on_red('ERROR'),
-    'exception'    : text.on_red('ERROR'),
-    'critical'     : text.on_red('CRITICAL'),
-    'info_once'    : text.bold_blue('*'),
-    'warning_once' : text.bold_yellow('!'),
+    'status'       : (text.magenta, 'x'),
+    'success'      : (text.bold_green, '+'),
+    'failure'      : (text.bold_red, '-'),
+    'debug'        : (text.bold_red, 'DEBUG'),
+    'info'         : (text.bold_blue, '*'),
+    'warning'      : (text.bold_yellow, '!'),
+    'error'        : (text.on_red, 'ERROR'),
+    'exception'    : (text.on_red, 'ERROR'),
+    'critical'     : (text.on_red, 'CRITICAL'),
+    'info_once'    : (text.bold_blue, '*'),
+    'warning_once' : (text.bold_yellow, '!'),
     }
 
 # the text decoration to use for spinners.  the spinners themselves can be found
@@ -482,7 +482,8 @@ class Handler(logging.StreamHandler):
         if msgtype != 'status':
             progress._stop_event.set()
             progress._spinner_thread.join()
-            prefix = '[%s] ' % _msgtype_prefixes[msgtype]
+            style, symb = _msgtype_prefixes[msgtype]
+            prefix = '[%s] ' % style(symb)
             progress._spinner_handle.update(prefix)
 
 class Formatter(logging.Formatter):
@@ -522,7 +523,8 @@ class Formatter(logging.Formatter):
             return msg
 
         if msgtype in _msgtype_prefixes:
-            prefix = '[%s] ' % _msgtype_prefixes[msgtype]
+            style, symb = _msgtype_prefixes[msgtype]
+            prefix = '[%s] ' % style(symb)
         elif msgtype == 'indented':
             prefix = self.indent
         elif msgtype == 'animated':
