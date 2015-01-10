@@ -32,6 +32,10 @@ The verbosity of logging can be most easily controlled by setting
     context.log_level = 'error'
     log.info("Now you don't")
 
+The purpose of this attribute is to control what gets printed to the screen,
+not what gets emitted. This means that you can put all logging events into
+a log file, while only wanting to see a small subset of them on your screen.
+
 Pwnlib Developers
 -----------------
 A module-specific logger can be imported into the module via::
@@ -56,12 +60,12 @@ formatter is installed for it.  The handler determines its logging level from
 
 Ideally :data:`context.log_level` should only affect which records will be
 emitted by the handler such that e.g. logging to a file will not be changed by
-it.  But for performance reasons it is not feasible to set the logging level of
-the pwnlib root logger to :const:`logging.DEBUG`.  Therefore, when its log level
-is not explicitly set, the root logger is monkey patched to report a log level
-of :const:`logging.DEBUG` when :data:`context.log_level` is set to ``'DEBUG'``
-and :const:`logging.INFO` otherwise.  This behavior is overridden if its log
-level is set explicitly.
+it. But for performance reasons it is not feasible log everything in the normal
+case. In particular there are tight loops inside :mod:`pwnlib.tubes.tube`, which
+we would like to be able to debug, but if we are not debugging them, they should
+not spit out messages (even to a log file). For this reason there are a few places
+inside pwnlib, that will not even emit a record without :data:`context.log_level`
+being set to `logging.DEBUG` or below.
 
 Log records created by ``Progress`` and ``Logger`` objects will set
 ``'pwnlib_msgtype'`` on the ``extra`` field to signal which kind of message was
@@ -89,25 +93,7 @@ logger.
 """
 
 __all__ = [
-    'getLogger'
-
-    # loglevel == DEBUG
-    'debug',
-
-    # loglevel == INFO
-    'info', 'success', 'failure', 'indented',
-
-    # loglevel == WARNING
-    'warning', 'warn'
-
-    # loglevel == ERROR
-    'error', 'exception',
-
-    # loglevel == CRITICAL
-    'bug', 'fatal',
-
-    # spinner-functions (default is loglevel == INFO)
-    'waitfor', 'progress'
+    'getLogger', 'rootlogger'
 ]
 
 import logging, re, threading, sys, random, time
@@ -384,10 +370,6 @@ class Logger(object):
         """
         self._log(logging.CRITICAL, message, args, kwargs, 'critical')
 
-    def fatal(self, *args, **kwargs):
-        """Alias for :meth:`critical`."""
-        return self.critical(*args, **kwargs)
-
     def log(self, level, message, *args, **kwargs):
         """log(level, message, *args, **kwargs)
 
@@ -600,68 +582,7 @@ _console.setFormatter(Formatter())
 # Since properties are looked up on an instance's class we need to monkey patch
 # the whole class...
 rootlogger = logging.getLogger('pwnlib')
-def closure():
-    import types
-    def setter(self, level):
-        self._level = level
-    def getter(self):
-        return self._level or min(context.log_level, logging.INFO,
-                                  self.parent.getEffectiveLevel())
-    prop = property(
-        getter,
-        setter,
-        None,
-        None
-    )
-    cls = rootlogger.__class__
-    cls = type(cls.__name__, (cls,), {})
-    cls.level = prop
-    rootlogger.__class__ = cls
-closure()
-del closure
-rootlogger.level = logging.NOTSET
+rootlogger.setLevel(logging.DEBUG)
 rootlogger.addHandler(_console)
 rootlogger = Logger(rootlogger)
 _loggers['pwnlib'] = rootlogger
-
-#
-# Handle legacy log levels which really should be exceptions
-#
-def bug(msg):       raise Exception(msg)
-def fatal(msg):     raise SystemExit(msg)
-
-#
-# Handle legacy log invocation on the 'log' module itself.
-# These are so that things don't break.
-#
-# The correct way to perform logging moving forward for an
-# exploit is:
-#
-#     #!/usr/bin/env python
-#     from pwn import *
-#     context(...)
-#     log = log.getLogger('pwnlib.exploit.name')
-#     log.info("Hello, world!")
-#
-# And for all internal pwnlib modules, replace:
-#
-#     from . import log
-#
-# With
-#
-#     from .log import getLogger
-#     log = getLogger(__name__) # => 'pwnlib.tubes.ssh'
-#
-progress  = rootlogger.progress
-waitfor   = rootlogger.waitfor
-indented  = rootlogger.indented
-success   = rootlogger.success
-failure   = rootlogger.failure
-debug     = rootlogger.debug
-info      = rootlogger.info
-warning   = rootlogger.warning
-warn      = rootlogger.warn
-error     = rootlogger.error
-exception = rootlogger.exception
-critical  = rootlogger.critical
-fatal     = rootlogger.fatal

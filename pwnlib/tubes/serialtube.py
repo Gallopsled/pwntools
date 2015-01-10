@@ -1,6 +1,9 @@
-from .. import context, log, term
+from .. import context, term
+from ..log import getLogger
 from . import tube
 import serial, time, sys
+
+log = getLogger(__name__)
 
 class serialtube(tube.tube):
     def __init__(

@@ -1,7 +1,9 @@
 #!/usr/bin/env python2
 import argparse, string, sys
 from pwnlib.util import cyclic, packing
-from pwnlib import log
+from pwnlib.log import getLogger
+
+log = getLogger('pwnlib.commandline.cyclic')
 
 parser = argparse.ArgumentParser(
     description = "Cyclic pattern creator/finder"
@@ -51,15 +53,18 @@ def main():
             pat = packing.pack(int(pat, 10), subsize*8, 'little', 'unsigned')
 
         if len(pat) != 4:
-            log.fatal('Subpattern must be 4 bytes', 1)
+            log.critical('Subpattern must be 4 bytes')
+            sys.exit(1)
 
         if not all(c in alphabet for c in pat):
-            log.fatal('Pattern contains characters not present in the alphabet', 1)
+            log.critical('Pattern contains characters not present in the alphabet')
+            sys.exit(1)
 
         offset = cyclic.cyclic_find(pat, alphabet, subsize)
 
         if offset == -1:
-            log.fatal('Given pattern does not exist in cyclic pattern', 1)
+            log.critical('Given pattern does not exist in cyclic pattern')
+            sys.exit(1)
         else:
             print offset
     else:

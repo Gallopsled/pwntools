@@ -1,9 +1,11 @@
 #!/usr/bin/env python2
 import argparse, sys, os, types
 import pwnlib
-from pwnlib import log, util
+from pwnlib import util
 import pwnlib.term.text as text
 from pwnlib.context import context
+from pwnlib.log import getLogger
+log = getLogger('pwnlib.commandline.shellcraft')
 
 r = text.red
 g = text.green
@@ -152,7 +154,8 @@ def main():
         vals = [(k, val) for k, val in vals if k.startswith(args.shellcode + '.') or k == args.shellcode]
 
     if len(vals) == 0:
-        log.fatal("Cannot find subtree by the name of %r" % args.shellcode)
+        log.critical("Cannot find subtree by the name of %r" % args.shellcode)
+        sys.exit(1)
     elif len(vals) > 1:
         for k, _ in vals:
             print k
@@ -168,9 +171,11 @@ def main():
     reqargs = func.func_code.co_argcount - defargs
     if len(args.args) < reqargs:
         if defargs > 0:
-            log.fatal('%s takes at least %d arguments' % (args.shellcode, reqargs))
+            log.critical('%s takes at least %d arguments' % (args.shellcode, reqargs))
+            sys.exit(1)
         else:
-            log.fatal('%s takes exactly %d arguments' % (args.shellcode, reqargs))
+            log.critical('%s takes exactly %d arguments' % (args.shellcode, reqargs))
+            sys.exit(1)
 
     # Captain uglyness saves the day!
     for i, val in enumerate(args.args):
