@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from .buffer import Buffer
 from ..timeout import Timeout
-from .. import context, term, atexit
+from ..context import context
+from .. import term, atexit
 from ..util import misc, fiddling
 from ..log import getLogger
 import re, threading, sys, time, subprocess, logging, string
@@ -109,7 +110,7 @@ class tube(Timeout):
         with self.local(timeout):
             data = self.recv_raw(4096)
 
-        if data and log.isEnabledFor(logging.DEBUG):
+        if data and context.log_level <= logging.DEBUG:
             log.debug('Received %#x bytes:' % len(data))
 
             if all(c in string.printable for c in data):
@@ -688,7 +689,7 @@ class tube(Timeout):
             'hello'
         """
 
-        if log.isEnabledFor(logging.DEBUG):
+        if context.log_level <= logging.DEBUG:
             log.debug('Sent %#x bytes:' % len(data))
             if all(c in string.printable for c in data):
                 for line in data.splitlines(True):
