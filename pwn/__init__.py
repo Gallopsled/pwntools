@@ -106,8 +106,6 @@ def closure():
     # put the terminal in rawmode unless NOTERM was specified
     if term_mode:
         term.init()
-    else:
-        term.text.when = 'never'
 closure()
 del closure
 
