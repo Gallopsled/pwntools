@@ -81,6 +81,10 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         >>> pack(0x0102030405, 'all', 'little', True)
         '\\x05\\x04\\x03\\x02\\x01'
 """
+
+    if sign is None and number < 0:
+        number = -number
+
     with context.local(**kwargs):
         # Lookup in context if not found
         word_size  = word_size  or context.word_size
