@@ -108,6 +108,7 @@ def closure():
         term.init()
     # install a log handler and turn logging all the way up
     import pwnlib.log as log
+    import logging
     log.rootlogger.setLevel(logging.DEBUG)
     handler = log.Handler()
     formatter = log.Formatter()
