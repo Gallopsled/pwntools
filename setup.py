@@ -43,7 +43,13 @@ setup(
     name                 = 'pwntools',
     packages             = find_packages(),
     version              = version,
-    data_files           = [('', ['LICENSE-pwntools.txt'])],
+    data_files           = [('',
+                             ['LICENSE-pwntools.txt',
+                             ]),
+                            ('/etc/bash_completion.d',
+                             ['extra/bash_completion.d/shellcraft',
+                             ])
+                            ],
     package_data         = {
         'pwnlib': [
             'data/crcsums.txt',
