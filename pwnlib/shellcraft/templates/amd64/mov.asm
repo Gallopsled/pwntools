@@ -39,9 +39,24 @@ Example:
     >>> print shellcraft.amd64.mov('eax', 1).rstrip()
         push 0x1
         pop rax
+    >>> print shellcraft.amd64.mov('rax', 0xc0).rstrip()
+        xor eax, eax
+        mov al, 0xc0
+    >>> print shellcraft.amd64.mov('rax', 0xc000).rstrip()
+        xor eax, eax
+        mov ah, 0xc0
+    >>> print shellcraft.amd64.mov('rax', 0xc0c0).rstrip()
+        xor eax, eax
+        mov ax, 0xc0c0
     >>> print shellcraft.amd64.mov('rax', 0xdead00ff).rstrip()
         mov eax, 0x1010101
         xor eax, 0xdfac01fe
+    >>> print shellcraft.amd64.mov('ah', 'al').rstrip()
+        mov ah, al
+    >>> print shellcraft.amd64.mov('ah', 'r8').rstrip()
+    Traceback (most recent call last):
+    ...
+    PwnlibException: The amd64 instruction set does not support moving from r8 to ah
     >>> print shellcraft.amd64.mov('rax', 0x11dead00ff).rstrip()
         mov rax, 0x101010101010101
         push rax
@@ -66,10 +81,10 @@ Args:
   stack_allowed (bool): Can the stack be used?
 </%docstring>
 <%
-regs = [['rax', 'eax', 'ax', 'al'],
-        ['rbx', 'ebx', 'bx', 'bl'],
-        ['rcx', 'ecx', 'cx', 'cl'],
-        ['rdx', 'edx', 'dx', 'dl'],
+regs = [['rax', 'eax', 'ax', 'ah', 'al'],
+        ['rbx', 'ebx', 'bx', 'bh', 'bl'],
+        ['rcx', 'ecx', 'cx', 'ch', 'cl'],
+        ['rdx', 'edx', 'dx', 'dh', 'dl'],
         ['rdi', 'edi', 'di', 'dil'],
         ['rsi', 'esi', 'si', 'sil'],
         ['rbp', 'ebp', 'bp', 'bpl'],
@@ -92,7 +107,7 @@ def pretty(n):
     else:
       return hex(n)
 
-all_regs, sizes, bigger, smaller = misc.register_sizes(regs, [64, 32, 16, 8])
+all_regs, sizes, bigger, smaller = misc.register_sizes(regs, [64, 32, 16, 8, 8])
 
 
 if isinstance(src, (str, unicode)):
@@ -105,7 +120,6 @@ if isinstance(src, (str, unicode)):
                 src = constants.eval(src)
             except:
                 log.error("Could not figure out the value of %r" % src)
-                return
 
 dest_orig = dest
 %>
@@ -142,6 +156,15 @@ dest_orig = dest
     % elif stack_allowed and sizes[dest] in [32, 64] and -2**31 <= srcs < 2**31 and okay(srcp[:4]):
         push ${pretty(srcs)}
         pop ${dest if sizes[dest] == 64 else bigger[dest][0]}
+    % elif 0 <= srcu < 2**8 and okay(srcp[0]) and sizes[smaller[dest][-1]] == 8:
+        xor ${dest}, ${dest}
+        mov ${smaller[dest][-1]}, ${pretty(srcu)}
+    % elif srcu == srcu & 0xff00 and okay(srcp[1]) and sizes[smaller[dest][-2]] == 8:
+        xor ${dest}, ${dest}
+        mov ${smaller[dest][-2]}, ${pretty(srcu >> 8)}
+    % elif 0 <= srcu < 2**16 and okay(srcp[:2]) and sizes[smaller[dest][0]] == 16:
+        xor ${dest}, ${dest}
+        mov ${smaller[dest][0]}, ${pretty(src)}
     % else:
         <%
         a,b = fiddling.xor_pair(srcp, avoid = '\x00\n')
@@ -167,6 +190,21 @@ dest_orig = dest
       # of rax will be set to 0. We exploit this fact here
       if sizes[dest] == 64 and sizes[src] != 64:
           dest = smaller[dest][0]
+
+      def rex_mode(reg):
+          # This returns a number with two bits
+          # The first bit is set, if the register can be used with a REX-mode
+          # The seond bit is set, if the register can be used without a REX-prefix
+          res = 0
+          if reg[-1] != 'h':
+              res |= 1
+
+          if reg[0] != 'r' and reg not in ['dil', 'sil', 'bpl', 'spl']:
+              res |= 2
+
+          return res
+      if rex_mode(src) & rex_mode(dest) == 0:
+          log.error('The amd64 instruction set does not support moving from %s to %s' % (src, dest))
     %>\
     % if src == dest or src in bigger[dest] or src in smaller[dest]:
         /* moving ${src} into ${dest_orig}, but this is a no-op */
@@ -175,10 +213,10 @@ dest_orig = dest
     % elif sizes[dest] > sizes[src]:
         movzx ${dest}, ${src}
     % else:
-        % for r in smaller[src]:
+        % for r in reversed(smaller[src]):
             % if sizes[r] == sizes[dest]:
                 mov ${dest}, ${r}
-                <% break %>\
+                <% return %>\
             % endif
         % endfor
     % endif

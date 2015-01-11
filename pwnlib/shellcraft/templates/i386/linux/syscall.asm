@@ -56,8 +56,8 @@ Example:
         ...               -1, 0).rstrip()
             /* call mmap2(0, 4096, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
             xor ebx, ebx
-            mov ecx, 0x1010101
-            xor ecx, 0x1011101
+            xor ecx, ecx
+            mov ch, 0x10
             push 0x7
             pop edx
             push 0x22
@@ -65,8 +65,8 @@ Example:
             push -1
             pop edi
             xor ebp, ebp
-            mov eax, 0x1010101
-            xor eax, 0x10101c1
+            xor eax, eax
+            mov al, 0xc0
             int 0x80
 </%docstring>
 <%
