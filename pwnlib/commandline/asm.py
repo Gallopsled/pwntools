@@ -5,6 +5,9 @@ from pwnlib.asm           import asm
 from pwnlib.context       import context
 from pwnlib.util.fiddling import enhex
 
+import pwnlib.log
+pwnlib.log.install_default_handler()
+
 parser = argparse.ArgumentParser(
     description = 'Assemble shellcode into bytes'
 )

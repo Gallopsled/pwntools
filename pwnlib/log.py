@@ -93,7 +93,7 @@ logger.
 """
 
 __all__ = [
-    'getLogger', 'rootlogger'
+    'getLogger', 'install_default_handler', 'rootlogger'
 ]
 
 import logging, re, threading, sys, random, time
@@ -571,3 +571,15 @@ def getLogger(name):
 #
 
 rootlogger = getLogger('pwnlib')
+
+def install_default_handler():
+    '''install_default_handler()
+
+    Instantiates a :class:`Handler` and :class:`Formatter` and installs them for
+    the ``pwnlib`` root logger.  This function is automatically called from when
+    importing :mod:`pwn`.
+    '''
+    handler = Handler()
+    formatter = Formatter()
+    handler.setFormatter(formatter)
+    rootlogger.addHandler(handler)

@@ -1,7 +1,8 @@
 #!/usr/bin/env python2
 import argparse, string, sys
 from pwnlib.util import cyclic, packing
-from pwnlib.log import getLogger
+from pwnlib.log import getLogger, install_default_handler
+install_default_handler()
 
 log = getLogger('pwnlib.commandline.cyclic')
 

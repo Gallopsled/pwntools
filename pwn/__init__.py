@@ -110,10 +110,7 @@ def closure():
     import pwnlib.log as log
     import logging
     log.rootlogger.setLevel(logging.DEBUG)
-    handler = log.Handler()
-    formatter = log.Formatter()
-    handler.setFormatter(formatter)
-    log.rootlogger.addHandler(handler)
+    log.install_default_handler()
 
 closure()
 del closure

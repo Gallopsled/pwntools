@@ -2,7 +2,7 @@
 ===================================
 
 .. automodule:: pwnlib.log
-   :members: getLogger
+   :members: getLogger, install_default_handler, rootlogger
 
 .. autoclass:: pwnlib.log.Progress
    :members:

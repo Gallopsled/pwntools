@@ -4,7 +4,9 @@ import pwnlib
 from pwnlib import util
 import pwnlib.term.text as text
 from pwnlib.context import context
-from pwnlib.log import getLogger
+from pwnlib.log import getLogger, install_default_handler
+install_default_handler()
+
 log = getLogger('pwnlib.commandline.shellcraft')
 
 r = text.red
