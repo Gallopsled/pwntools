@@ -22,41 +22,48 @@ on the value of `context.os`.
 
 Example:
 
-   >>> print shellcraft.i386.mov('eax','ebx').rstrip()
-       mov eax, ebx
-   >>> print shellcraft.i386.mov('eax', 0).rstrip()
-       xor eax, eax
-   >>> print shellcraft.i386.mov('ax', 0).rstrip()
-       xor ax, ax
-   >>> print shellcraft.i386.mov('ax', 17).rstrip()
-       push 0x11
-       pop ax
-       inc esp
-       inc esp
-   >>> print shellcraft.i386.mov('al', 'ax').rstrip()
-       /* moving ax into al, but this is a no-op */
-   >>> print shellcraft.i386.mov('bl', 'ax').rstrip()
-       mov bl, al
-   >>> print shellcraft.i386.mov('ax', 'bl').rstrip()
-       movzx ax, bl
-   >>> print shellcraft.i386.mov('eax', 1).rstrip()
-       push 0x1
-       pop eax
-   >>> print shellcraft.i386.mov('eax', 0xdead00ff).rstrip()
-       mov eax, 0x1010101
-       xor eax, 0xdfac01fe
-   >>> with context.local(os = 'linux'):
-   ...     print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
-       push 0xb
-       pop eax
-   >>> with context.local(os = 'freebsd'):
-   ...     print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
-       push 0x3b
-       pop eax
-   >>> with context.local(os = 'linux'):
-   ...     print shellcraft.i386.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
-       push 0x7
-       pop eax
+    >>> print shellcraft.i386.mov('eax','ebx').rstrip()
+        mov eax, ebx
+    >>> print shellcraft.i386.mov('eax', 0).rstrip()
+        xor eax, eax
+    >>> print shellcraft.i386.mov('ax', 0).rstrip()
+        xor ax, ax
+    >>> print shellcraft.i386.mov('ax', 17).rstrip()
+        xor ax, ax
+        mov al, 0x11
+    >>> print shellcraft.i386.mov('al', 'ax').rstrip()
+        /* moving ax into al, but this is a no-op */
+    >>> print shellcraft.i386.mov('bl', 'ax').rstrip()
+        mov bl, al
+    >>> print shellcraft.i386.mov('ax', 'bl').rstrip()
+        movzx ax, bl
+    >>> print shellcraft.i386.mov('eax', 1).rstrip()
+        push 0x1
+        pop eax
+    >>> print shellcraft.i386.mov('eax', 0xdead00ff).rstrip()
+        mov eax, 0x1010101
+        xor eax, 0xdfac01fe
+    >>> print shellcraft.i386.mov('eax', 0xc0).rstrip()
+        xor eax, eax
+        mov al, 0xc0
+    >>> print shellcraft.i386.mov('eax', 0xc000).rstrip()
+        xor eax, eax
+        mov ah, 0xc0
+    >>> print shellcraft.i386.mov('eax', 0xc0c0).rstrip()
+        xor eax, eax
+        mov ax, 0xc0c0
+    >>> with context.local(os = 'linux'):
+    ...     print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
+        push 0xb
+        pop eax
+    >>> with context.local(os = 'freebsd'):
+    ...     print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
+        push 0x3b
+        pop eax
+    >>> with context.local(os = 'linux'):
+    ...     print shellcraft.i386.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
+        push 0x7
+        pop eax
 
 Args:
   dest (str): The destination register.
@@ -64,10 +71,10 @@ Args:
   stack_allowed (bool): Can the stack be used?
 </%docstring>
 <%
-regs = [['eax', 'ax', 'al', 'ah'],
-        ['ebx', 'bx', 'bl', 'bh'],
-        ['ecx', 'cx', 'cl', 'ch'],
-        ['edx', 'dx', 'dl', 'dh'],
+regs = [['eax', 'ax', 'ah', 'al'],
+        ['ebx', 'bx', 'bh', 'bl'],
+        ['ecx', 'cx', 'ch', 'cl'],
+        ['edx', 'dx', 'dh', 'dl'],
         ['edi', 'di'],
         ['esi', 'si'],
         ['ebp', 'bp'],
@@ -122,15 +129,16 @@ if isinstance(src, (str, unicode)):
         push ${pretty(srcs)}
         pop ${dest}
     % elif okay(srcp):
-        mov ${dest}, ${hex(src)}
-    % elif stack_allowed and sizes[dest] == 16 and -128 <= srcs <= 127 and okay(srcp[0]):
-        push ${pretty(srcs)}
-        pop ${dest}
-        inc esp
-        inc esp
-    % elif stack_allowed and sizes[dest] == 32 and okay(srcp):
-        push ${srcs}
-        pop ${dest}
+        mov ${dest}, ${pretty(src)}
+    % elif 0 <= srcu < 2**8 and okay(srcp[0]) and sizes[smaller[dest][-1]] == 8:
+        xor ${dest}, ${dest}
+        mov ${smaller[dest][-1]}, ${pretty(srcu)}
+    % elif srcu == srcu & 0xff00 and okay(srcp[1]) and sizes[smaller[dest][-2]] == 8:
+        xor ${dest}, ${dest}
+        mov ${smaller[dest][-2]}, ${pretty(srcu >> 8)}
+    % elif 0 <= srcu < 2**16 and okay(srcp[:2]) and sizes[smaller[dest][0]] == 16:
+        xor ${dest}, ${dest}
+        mov ${smaller[dest][0]}, ${pretty(src)}
     % else:
         <%
         a,b = fiddling.xor_pair(srcp, avoid = '\x00\n')
@@ -149,7 +157,7 @@ if isinstance(src, (str, unicode)):
         movzx ${dest}, ${src}
     % else:
         <% done = False %>\
-        % for r in smaller[src]:
+        % for r in reversed(smaller[src]):
             % if sizes[r] == sizes[dest]:
                 mov ${dest}, ${r}
                 <% done = True %>\
