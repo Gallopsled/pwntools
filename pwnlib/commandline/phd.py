@@ -1,8 +1,10 @@
 #!/usr/bin/env python2
-
 import argparse, sys, os
 import pwnlib.term.text as text
 from pwnlib.util.fiddling import hexdump_iter
+
+import pwnlib.log
+pwnlib.log.install_default_handler()
 
 parser = argparse.ArgumentParser(
     description = 'Pwnlib HexDump'

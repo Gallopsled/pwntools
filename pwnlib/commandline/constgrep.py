@@ -3,8 +3,10 @@
 import argparse, os, re
 from pwnlib import asm, constants
 from pwnlib.util import safeeval
-# from pwnlib.context import __possible__ as contexts
 from pwnlib.context import context
+
+import pwnlib.log
+pwnlib.log.install_default_handler()
 
 p = argparse.ArgumentParser(
     description = "Looking up constants from header files.\n\nExample: constgrep -c freebsd -m  ^PROT_ '3 + 4'",
