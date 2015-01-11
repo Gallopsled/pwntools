@@ -1,8 +1,10 @@
-<% from pwnlib.util import lists, packing, fiddling, misc %>\
 <%
-from pwnlib.log import getLogger
-log = getLogger('pwnlib.shellcraft')
-%>\
+  from pwnlib.util import lists, packing, fiddling, misc
+  from pwnlib import constants
+  from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
+  from pwnlib.log import getLogger
+  log = getLogger('pwnlib.shellcraft.amd64.mov')
+%>
 <%page args="dest, src, stack_allowed = True"/>
 <%docstring>
 Move src into dest without newlines and null bytes.
@@ -12,6 +14,11 @@ zero-extended to fit inside the larger register.
 
 If the src is a register larger than the dest, then only some of the bits will
 be used.
+
+If src is a string that is not a register, then it will locally set
+`context.arch` to `'amd64'` and use :func:`pwnlib.constants.eval` to evaluate the
+string. Note that this means that this shellcode can change behavior depending
+on the value of `context.os`.
 
 Example:
 
@@ -41,6 +48,17 @@ Example:
         mov rax, 0x1010110dfac01fe
         xor [rsp], rax
         pop rax
+   >>> with context.local(os = 'linux'):
+   ...     print shellcraft.amd64.mov('eax', 'SYS_read').rstrip()
+       xor eax, eax
+   >>> with context.local(os = 'freebsd'):
+   ...     print shellcraft.amd64.mov('eax', 'SYS_read').rstrip()
+       push 0x3
+       pop rax
+   >>> with context.local(os = 'linux'):
+   ...     print shellcraft.amd64.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
+       push 0x7
+       pop rax
 
 Args:
   dest (str): The destination register.
@@ -75,8 +93,22 @@ def pretty(n):
       return hex(n)
 
 all_regs, sizes, bigger, smaller = misc.register_sizes(regs, [64, 32, 16, 8])
+
+
+if isinstance(src, (str, unicode)):
+    src = src.strip()
+    if src.lower() in all_regs:
+        src = src.lower()
+    else:
+        with ctx.local(arch = 'amd64'):
+            try:
+                src = constants.eval(src)
+            except:
+                log.error("Could not figure out the value of %r" % src)
+                return
+
 dest_orig = dest
-%>\
+%>
 % if dest not in all_regs:
     <% log.error('%s is not a register' % str(dest_orig)) %>\
 % elif isinstance(src, (int, long)):

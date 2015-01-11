@@ -1,5 +1,4 @@
 <% from pwnlib.shellcraft import amd64 %>
-<% from pwnlib.constants.linux.amd64 import SYS_write %>
 <%page args="string, sock = 'rbp'"/>
 <%docstring>Writes a string to a file descriptor</%docstring>
 

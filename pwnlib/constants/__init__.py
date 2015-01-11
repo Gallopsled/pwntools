@@ -35,6 +35,7 @@ Example:
 from types import ModuleType
 import importlib, sys
 from ..context import context
+from ..util import safeeval
 
 class module(ModuleType):
     def __init__(self, submodules):
@@ -48,6 +49,8 @@ class module(ModuleType):
             '__path__':    __path__,
             '__all__':     submodules,
         })
+
+        self._env_store = {}
 
     def __getattr__(self, key):
         if key in self.__all__:
@@ -65,8 +68,29 @@ class module(ModuleType):
         if context.os in self.__all__:
             result.extend(dir(getattr(self, context.os)))
 
-
         return result
+
+    def eval(self, string):
+        """eval(string) -> value
+
+        Evaluates a string in the context of values of this module.
+
+        Example:
+
+            >>> with context.local(arch = 'i386', os = 'linux'):
+            ...    print constants.eval('SYS_execve + PROT_WRITE')
+            13
+            >>> with context.local(arch = 'amd64', os = 'linux'):
+            ...    print constants.eval('SYS_execve + PROT_WRITE')
+            61
+            >>> with context.local(arch = 'amd64', os = 'linux'):
+            ...    print constants.eval('SYS_execve + PROT_WRITE')
+            61
+        """
+        key = context.os, context.arch
+        if key not in self._env_store:
+            self._env_store[key] = {key: getattr(self, key) for key in dir(self) if not key.endswith('__')}
+        return safeeval.values(string, self._env_store[key])
 
 # To prevent garbage collection
 tether = sys.modules[__name__]

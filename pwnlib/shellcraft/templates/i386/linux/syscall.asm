@@ -1,9 +1,13 @@
-<% from pwnlib.shellcraft import i386 %>\
-<% from pwnlib.constants.linux import i386 as constants %>\
+<%
+  from pwnlib.shellcraft import i386
+  from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
+%>
 <%page args="syscall = None, arg0 = None, arg1 = None, arg2 = None, arg3 = None, arg4 = None, arg5 = None"/>
 <%docstring>
-Args: [syscall_number, *args]
+Args: [syscall_number, \*args]
     Does a syscall
+
+Any of the arguments can be expressions to be evaluated by :func:`pwnlib.constants.eval`.
 
 Example:
 
@@ -45,8 +49,12 @@ Example:
             pop edx
             mov eax, ebp
             int 0x80
-        >>> print pwnlib.shellcraft.i386.linux.syscall('SYS_mmap2', 0, 0x1000, 7, 0x22, -1, 0).rstrip()
-            /* call mmap2(0, 4096, 7, 34, -1, 0) */
+        >>> print pwnlib.shellcraft.i386.linux.syscall(
+        ...               'SYS_mmap2', 0, 0x1000,
+        ...               'PROT_READ | PROT_WRITE | PROT_EXEC',
+        ...               'MAP_PRIVATE | MAP_ANONYMOUS',
+        ...               -1, 0).rstrip()
+            /* call mmap2(0, 4096, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
             xor ebx, ebx
             mov ecx, 0x1010101
             xor ecx, 0x1011101
@@ -87,11 +95,7 @@ Example:
   % if dst == 'edx' and src == 0:
     <% append_cdq = True %>\
   % elif src != None:
-    <%
-      if isinstance(src, (str, unicode)):
-          src = getattr(constants, src, src)
-    %>\
-    ${i386.mov(dst, src)}
+    ${i386.linux.mov(dst, src)}
   % endif
 % endfor
 % if append_cdq:

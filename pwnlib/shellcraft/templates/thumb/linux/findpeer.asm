@@ -1,5 +1,4 @@
-<% from pwnlib.shellcraft.thumb import mov %>
-<% from pwnlib import constants %>
+<% from pwnlib.shellcraft.thumb.linux import mov %>
 <% from socket import htons %>
 <%page args="port = None"/>
 <%docstring>
@@ -20,7 +19,7 @@ next_socket:
     /* Next file descriptor */
     add r6, #1
 
-    ${mov('r7', constants.linux.thumb.SYS_getpeername)}
+    ${mov('r7', 'SYS_getpeername')}
 
     /* Reset stack */
     mov sp, lr
