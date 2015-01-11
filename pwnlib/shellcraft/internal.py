@@ -15,8 +15,21 @@ def init_mako():
     if lookup != None:
         return
 
+    class IsInsideManager:
+        def __init__(self, parent):
+            self.parent = parent
+        def __enter__(self):
+            self.oldval = self.parent.is_inside
+            self.parent.is_inside = True
+            return self.oldval
+        def __exit__(self, *args):
+            self.parent.is_inside = self.oldval
+
     class IsInside(threading.local):
         is_inside = False
+
+        def go_inside(self):
+            return IsInsideManager(self)
 
     render_global = IsInside()
 
@@ -98,9 +111,8 @@ def make_function(funcname, filename, directory):
 def wrap(template, render_global):
     def %s(%s):
         %r
-        is_inside, render_global.is_inside = render_global.is_inside, True
-        lines = template.render(%s).split('\\n')
-        render_global.is_inside = is_inside
+        with render_global.go_inside() as was_inside:
+            lines = template.render(%s).split('\\n')
         for i in xrange(len(lines)):
             line = lines[i]
             def islabelchar(c):
@@ -116,7 +128,7 @@ def wrap(template, render_global):
         while '\\n\\n\\n' in s:
             s = s.replace('\\n\\n\\n', '\\n\\n')
 
-        if is_inside:
+        if was_inside:
             return s
         else:
             return s + '\\n'
