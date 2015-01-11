@@ -50,6 +50,8 @@ class module(ModuleType):
             '__all__':     submodules,
         })
 
+        self._env_store = {}
+
     def __getattr__(self, key):
         if key in self.__all__:
             mod = importlib.import_module('.' + key, __package__)
@@ -85,8 +87,10 @@ class module(ModuleType):
             ...    print constants.eval('SYS_execve + PROT_WRITE')
             61
         """
-        env = {key: getattr(self, key) for key in dir(self) if not key.endswith('__')}
-        return safeeval.values(string, env)
+        key = context.os, context.arch
+        if key not in self._env_store:
+            self._env_store[key] = {key: getattr(self, key) for key in dir(self) if not key.endswith('__')}
+        return safeeval.values(string, self._env_store[key])
 
 # To prevent garbage collection
 tether = sys.modules[__name__]
