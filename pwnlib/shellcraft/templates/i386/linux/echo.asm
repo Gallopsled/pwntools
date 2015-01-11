@@ -1,5 +1,4 @@
 <% from pwnlib.shellcraft import i386 %>
-<% from pwnlib.constants.linux.i386 import SYS_write %>
 <%page args="string, sock = 'ebp'"/>
 <%docstring>Writes a string to a file descriptor</%docstring>
 

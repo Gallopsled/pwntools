@@ -1,6 +1,6 @@
 <%
   from pwnlib.util import packing
-  from pwnlib.shellcraft import amd64
+  from pwnlib.shellcraft import thumb
   from pwnlib import constants
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
   import re
@@ -10,7 +10,7 @@
 Pushes a value onto the stack without using
 null bytes or newline characters.
 
-If src is a string, then we try to evaluate with `context.arch = 'amd64'` using
+If src is a string, then we try to evaluate with `context.arch = 'thumb'` using
 :func:`pwnlib.constants.eval` before determining how to push it. Note that this
 means that this shellcode can change behavior depending on the value of
 `context.os`.
@@ -20,33 +20,36 @@ Args:
 
 Example:
 
-    >>> print pwnlib.shellcraft.amd64.push(0).rstrip()
+    >>> print pwnlib.shellcraft.thumb.push(0).rstrip()
         /* push 0 */
-        push 0x1
-        dec byte ptr [rsp]
-    >>> print pwnlib.shellcraft.amd64.push(1).rstrip()
+        eor r1, r1
+        push {r1}
+    >>> print pwnlib.shellcraft.thumb.push(1).rstrip()
         /* push 1 */
-        push 0x1
-    >>> print pwnlib.shellcraft.amd64.push(256).rstrip()
+        mov r1, #1
+        push {r1}
+    >>> print pwnlib.shellcraft.thumb.push(256).rstrip()
         /* push 256 */
-        push 0x1010201
-        xor dword ptr [rsp], 0x1010301
+        mov r1, #1
+        lsl r1, #8
+        push {r1}
     >>> with context.local(os = 'linux'):
-    ...     print pwnlib.shellcraft.amd64.push('SYS_write').rstrip()
-        /* push 'SYS_write' */
-        push 0x1
+    ...     print pwnlib.shellcraft.thumb.push('SYS_execve').rstrip()
+        /* push 'SYS_execve' */
+        mov r1, #11
+        push {r1}
     >>> with context.local(os = 'freebsd'):
-    ...     print pwnlib.shellcraft.amd64.push('SYS_write').rstrip()
-        /* push 'SYS_write' */
-        push 0x4
-
+    ...     print pwnlib.shellcraft.thumb.push('SYS_execve').rstrip()
+        /* push 'SYS_execve' */
+        mov r1, #59
+        push {r1}
 </%docstring>
 
 <%
   value_orig = value
   if isinstance(value, (str, unicode)):
     try:
-      with ctx.local(arch = 'amd64'):
+      with ctx.local(arch = 'thumb'):
         value = constants.eval(value)
     except (ValueError, AttributeError):
       pass
@@ -54,7 +57,7 @@ Example:
 
 % if isinstance(value, (int,long)):
     /* push ${repr(value_orig)} */
-    ${re.sub(r'^\s*/.*\n', '', amd64.pushstr(packing.pack(value, 64, 'little', True), False), 1)}
+    ${re.sub(r'^\s*/.*\n', '', thumb.pushstr(packing.pack(value, 32, 'little', True), False), 1)}
 % else:
     push ${value}
 % endif

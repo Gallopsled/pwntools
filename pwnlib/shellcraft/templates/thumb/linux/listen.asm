@@ -1,5 +1,4 @@
-<% from pwnlib.shellcraft.thumb import mov %>
-<% from pwnlib import constants %>
+<% from pwnlib.shellcraft.thumb.linux import mov %>
 <% from socket import htons %>
 <%page args="port, network='ipv4'"/>
 <%docstring>
@@ -9,13 +8,13 @@
     Port is the TCP port to listen on, network is either 'ipv4' or 'ipv6'.
 </%docstring>
     /* First create listening socket */
-    ${mov('r7', constants.linux.thumb.SYS_socket)}
+    ${mov('r7', 'SYS_socket')}
 %if network == 'ipv4':
-    ${mov('r0', constants.linux.thumb.AF_INET)}
+    ${mov('r0', 'AF_INET')}
 %else:
-    ${mov('r0', constants.linux.thumb.AF_INET6)}
+    ${mov('r0', 'AF_INET6')}
 %endif
-    ${mov('r1', constants.linux.thumb.SOCK_STREAM)}
+    ${mov('r1', 'SOCK_STREAM')}
     eor r2, r2
     svc 1
 
@@ -26,7 +25,7 @@
     /* Build sockaddr_in structure */
     /* r2 is zero == INADDR_ANY */
     /* Put port and address family into r1 */
-    ${mov('r1', ((htons(port) << 16) + constants.linux.thumb.AF_INET))}
+    ${mov('r1', 'AF_INET | (%d << 16)' % htons(port))}
     push {r1, r2}
 
     /* Address of sockaddr_in into r1 */
@@ -48,7 +47,7 @@
     push {r1, r2, r3}
     
     /* Then port = %d */
-    ${mov('r1', (htons(port) << 16) + constants.linux.thumb.AF_INET6)}
+    ${mov('r1', 'AF_INET6 | (%d << 16)' % htons(port))}
     push {r1, r2, r3}
 
     /* Address of sockaddr_in6 into r1 */

@@ -1,8 +1,10 @@
-<% from pwnlib.util import lists, packing, fiddling, misc %>\
 <%
-from pwnlib.log import getLogger
-log = getLogger('pwnlib.shellcraft')
-%>\
+  from pwnlib.util import lists, packing, fiddling, misc
+  from pwnlib import constants
+  from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
+  from pwnlib.log import getLogger
+  log = getLogger('pwnlib.shellcraft.i386.mov')
+%>
 <%page args="dest, src, stack_allowed = True"/>
 <%docstring>
 Move src into dest without newlines and null bytes.
@@ -12,6 +14,11 @@ zero-extended to fit inside the larger register.
 
 If the src is a register larger than the dest, then only some of the bits will
 be used.
+
+If src is a string that is not a register, then it will locally set
+`context.arch` to `'i386'` and use :func:`pwnlib.constants.eval` to evaluate the
+string. Note that this means that this shellcode can change behavior depending
+on the value of `context.os`.
 
 Example:
 
@@ -38,7 +45,18 @@ Example:
    >>> print shellcraft.i386.mov('eax', 0xdead00ff).rstrip()
        mov eax, 0x1010101
        xor eax, 0xdfac01fe
-
+   >>> with context.local(os = 'linux'):
+   ...     print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
+       push 0xb
+       pop eax
+   >>> with context.local(os = 'freebsd'):
+   ...     print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
+       push 0x3b
+       pop eax
+   >>> with context.local(os = 'linux'):
+   ...     print shellcraft.i386.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
+       push 0x7
+       pop eax
 
 Args:
   dest (str): The destination register.
@@ -61,18 +79,31 @@ def okay(s):
 
 def pretty(n):
     if n < 0:
-      return str(n)
+        return str(n)
     else:
-      return hex(n)
+        return hex(n)
 
 all_regs, sizes, bigger, smaller = misc.register_sizes(regs, [32, 16, 8, 8])
-%>\
+
+if isinstance(src, (str, unicode)):
+    src = src.strip()
+    if src.lower() in all_regs:
+        src = src.lower()
+    else:
+        with ctx.local(arch = 'i386'):
+            try:
+                src = constants.eval(src)
+            except (AttributeError, ValueError):
+                log.error("Could not figure out the value of %r" % src)
+                return
+%>
 % if dest not in all_regs:
    <% log.error('%s is not a register' % str(dest)) %>\
 % elif isinstance(src, (int, long)):
     <%
      if src >= 2**sizes[dest] or src < -(2**(sizes[dest]-1)):
          log.error('Number 0x%x does not fit into %s' % (src, dest))
+         return
 
      # Calculate the unsigned and signed versions
      srcu = src & (2 ** sizes[dest] - 1)

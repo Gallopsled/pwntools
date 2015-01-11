@@ -1,5 +1,7 @@
-<% from pwnlib.shellcraft.thumb import mov %>
-<% from pwnlib.util import lists, packing %>\
+<%
+  from pwnlib.shellcraft import thumb
+  from pwnlib.util import lists, packing
+%>
 <%page args="string, append_null = True"/>
 <%docstring>
 Pushes a string onto the stack without using
@@ -32,8 +34,7 @@ Examples:
 
 %>\
     /* push ${repr(string)} */
-
 % for word in lists.group(4, string, 'fill', '\x00')[::-1]:
-    ${mov('r1', packing.unpack(word))}
+    ${thumb.mov('r1', packing.unpack(word))}
     push {r1}
 % endfor

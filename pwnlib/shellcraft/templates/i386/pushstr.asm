@@ -8,7 +8,7 @@ Example:
 
     >>> print shellcraft.i386.pushstr('').rstrip()
         /* push '\x00' */
-        push 1
+        push 0x1
         dec byte ptr [esp]
     >>> print shellcraft.i386.pushstr('a').rstrip()
         /* push 'a\x00' */
@@ -23,7 +23,7 @@ Example:
         xor dword ptr [esp], 0x1606060
     >>> print shellcraft.i386.pushstr('aaaa').rstrip()
         /* push 'aaaa\x00' */
-        push 1
+        push 0x1
         dec byte ptr [esp]
         push 0x61616161
     >>> print shellcraft.i386.pushstr('aaaaa').rstrip()
@@ -80,7 +80,7 @@ Args:
     sign = packing.u32(word, 'little', 'signed')
 %>\
 % if sign in [0, 0xa]:
-    push ${sign + 1}
+    push ${pretty(sign + 1)}
     dec byte ptr [esp]
 % elif -0x80 <= sign <= 0x7f and okay(word[0]):
     push ${pretty(sign)}

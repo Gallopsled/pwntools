@@ -8,7 +8,7 @@ Example:
 
     >>> print shellcraft.amd64.pushstr('').rstrip()
         /* push '\x00' */
-        push 1
+        push 0x1
         dec byte ptr [rsp]
     >>> print shellcraft.amd64.pushstr('a').rstrip()
         /* push 'a\x00' */
@@ -78,7 +78,7 @@ Args:
     sign = packing.u64(word, 'little', 'signed')
 %>\
 % if sign in [0, 0xa]:
-    push ${sign + 1}
+    push ${pretty(sign + 1)}
     dec byte ptr [rsp]
 % elif -0x80 <= sign <= 0x7f and okay(word[0]):
     push ${pretty(sign)}

@@ -1,9 +1,13 @@
-<% from pwnlib.shellcraft import amd64 %>\
-<% from pwnlib.constants.linux import amd64 as constants %>\
+<%
+  from pwnlib.shellcraft import amd64
+  from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
+%>
 <%page args="syscall = None, arg0 = None, arg1 = None, arg2 = None, arg3 = None, arg4 = None, arg5 = None"/>
 <%docstring>
-Args: [syscall_number, *args]
+Args: [syscall_number, \*args]
     Does a syscall
+
+Any of the arguments can be expressions to be evaluated by :func:`pwnlib.constants.eval`.
 
 Example:
 
@@ -45,6 +49,26 @@ Example:
             pop rdx
             mov rax, rbp
             syscall
+        >>> print pwnlib.shellcraft.amd64.linux.syscall(
+        ...               'SYS_mmap', 0, 0x1000,
+        ...               'PROT_READ | PROT_WRITE | PROT_EXEC',
+        ...               'MAP_PRIVATE | MAP_ANONYMOUS',
+        ...               -1, 0).rstrip()
+            /* call mmap(0, 4096, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
+            xor edi, edi
+            mov esi, 0x1010101
+            xor esi, 0x1011101
+            push 0x7
+            pop rdx
+            push 0x22
+            pop r10
+            push -1
+            pop r8
+            xor r9d, r9d
+            push 0x9
+            pop rax
+            syscall
+
 </%docstring>
 <%
   append_cdq = False
@@ -72,11 +96,7 @@ Example:
   % if dst == 'rdx' and src == 0:
     <% append_cdq = True %>\
   % elif src != None:
-    <%
-      if isinstance(src, (str, unicode)):
-          src = getattr(constants, src, src)
-    %>\
-    ${amd64.mov(dst, src)}
+    ${amd64.linux.mov(dst, src)}
   % endif
 % endfor
 % if append_cdq:
