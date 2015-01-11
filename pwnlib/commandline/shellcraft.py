@@ -171,10 +171,14 @@ def main():
         in_doctest = False
         block_indent = None
         caption = None
-        for i, line in enumerate(func.__doc__.splitlines()):
+        lines = func.__doc__.splitlines()
+        i = 0
+        while i < len(lines):
+            line = lines[i]
             if line.lstrip().startswith('>>>'):
                 # this line starts a doctest
                 in_doctest = True
+                block_indent = None
                 if caption:
                     # delete back up to the caption
                     doc = doc[:caption - i]
@@ -186,10 +190,13 @@ def main():
                 # indentation marks the end of a doctest
                 indent = len(line) - len(line.lstrip())
                 if block_indent is None:
-                    block_indent = indent
+                    if not line.lstrip().startswith('...'):
+                        block_indent = indent
                 elif indent < block_indent:
                     in_doctest = False
                     block_indent = None
+                    # re-evalutate this line
+                    continue
             elif line.endswith(':'):
                 # save index of caption
                 caption = i
@@ -200,6 +207,7 @@ def main():
 
             if not in_doctest:
                 doc.append(line)
+            i += 1
         print '\n'.join(doc).rstrip()
         exit()
 
