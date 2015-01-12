@@ -101,7 +101,7 @@ added, to do this in an easy way.
 """
 
 __all__ = [
-    'getLogger', 'install_default_handler', 'rootlogger', 'console', 'ConsoleHandler'
+    'getLogger', 'getPerformanceLogger', 'install_default_handler', 'rootlogger', 'console', 'ConsoleHandler'
 ]
 
 import logging, re, threading, sys, random, time
@@ -592,6 +592,31 @@ def getLogger(name):
         # "proxy" class
         _loggers[name] = Logger(logging.getLogger(name))
     return _loggers[name]
+
+def getPerformanceLogger(name):
+    '''getPerformanceLogger(name) -> Logger
+
+    Serves the same function as :func:`getLogger`, except the returned loggers
+    will be patched, so that their level by default will be the same as
+    :data:`context.log_level`.
+    '''
+    logger = getLogger(name)
+    if not getattr(logger, "_pwnlib_initialized", False):
+        class LogWrapper(logger._logger.__class__):
+            @property
+            def level(self):
+                if self._level == 'context':
+                    return context.log_level
+                else:
+                    return self._level
+
+            @level.setter
+            def level(self, level):
+                self._level = level
+        logger._logger.__class__ = LogWrapper
+        logger._logger._level = 'context'
+        logger._pwnlib_initialized = True
+    return logger
 
 #
 # The root 'pwnlib' logger is declared here.  To change the target of all

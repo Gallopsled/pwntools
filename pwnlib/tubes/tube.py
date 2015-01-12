@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from .buffer import Buffer
 from ..timeout import Timeout
-from ..context import context
-from .. import term, atexit
+from .. import term, atexit, context
 from ..util import misc, fiddling
-from ..log import getLogger
+from ..log import getLogger, getPerformanceLogger
 import re, threading, sys, time, subprocess, logging, string
 
 log = getLogger(__name__)
+dumplog = getPerformanceLogger(__name__ + '.dump')
 
 class tube(Timeout):
     """
@@ -110,14 +110,14 @@ class tube(Timeout):
         with self.local(timeout):
             data = self.recv_raw(4096)
 
-        if data and context.log_level <= logging.DEBUG:
-            log.debug('Received %#x bytes:' % len(data))
+        if data and dumplog.isEnabledFor(logging.DEBUG):
+            dumplog.debug('Received %#x bytes:' % len(data))
 
             if all(c in string.printable for c in data):
                 for line in data.splitlines(True):
-                    log.indented(repr(line), level = logging.DEBUG)
+                    dumplog.indented(repr(line), level = logging.DEBUG)
             else:
-                log.indented(fiddling.hexdump(data), level = logging.DEBUG)
+                dumplog.indented(fiddling.hexdump(data), level = logging.DEBUG)
 
         if data:
             self.buffer.add(data)
@@ -689,7 +689,7 @@ class tube(Timeout):
             'hello'
         """
 
-        if context.log_level <= logging.DEBUG:
+        if dumplog.isEnabledFor(logging.DEBUG):
             log.debug('Sent %#x bytes:' % len(data))
             if all(c in string.printable for c in data):
                 for line in data.splitlines(True):
