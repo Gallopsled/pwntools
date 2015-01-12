@@ -723,17 +723,21 @@ class ContextType(object):
         Examples:
 
 
-            >>> context.log_file = '/dev/stdout'
-            ...
-            >>> log.debug('Hello!')
-            ...:DEBUG:...:Hello!
-            >>> with context.local(log_level='ERROR'):
+            >>> context.log_file = 'foo.txt' #doctest: +ELLIPSIS
+            >>> log.debug('Hello!') #doctest: +ELLIPSIS
+            >>> with context.local(log_level='ERROR'): #doctest: +ELLIPSIS
             ...     log.info('Hello again!')
-            ...:INFO:...:Hello again!
             >>> with context.local(log_file='bar.txt'):
             ...     log.debug('Hello from bar!')
-            >>> print file('bar.txt').readlines()[-1] #doctest: +ELLIPSIS
-            ...:DEBUG:...:Hello from bar!
+            >>> log.info('Hello from foo!')
+            >>> file('foo.txt').readlines()[-3] #doctest: +ELLIPSIS
+            '...:DEBUG:...:Hello!\n'
+            >>> file('foo.txt').readlines()[-2] #doctest: +ELLIPSIS
+            '...:INFO:...:Hello again!\n'
+            >>> file('foo.txt').readlines()[-1] #doctest: +ELLIPSIS
+            '...:INFO:...:Hello from foo!\n'
+            >>> file('bar.txt').readlines()[-1] #doctest: +ELLIPSIS
+            '...:DEBUG:...:Hello from bar!\n'
         """
         if isinstance(value, (str,unicode)):
             modes = ('w', 'wb', 'a', 'ab')
