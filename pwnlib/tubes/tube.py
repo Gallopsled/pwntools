@@ -4,12 +4,10 @@ from ..timeout import Timeout
 from ..context import context
 from .. import term, atexit
 from ..util import misc, fiddling
-from ..log import getLogger
+from ..log import Logger
 import re, threading, sys, time, subprocess, logging, string
 
-log = getLogger(__name__)
-
-class tube(Timeout):
+class tube(Timeout, Logger):
     """
     Container of all the tube functions common to sockets, TTYs and SSH connetions.
     """
@@ -21,8 +19,13 @@ class tube(Timeout):
     #: and related functions.
     newline = '\n'
 
-    def __init__(self, timeout = default):
+    def __init__(self, timeout = default, level = None):
         super(tube, self).__init__(timeout)
+
+        Logger.__init__(self, None)
+        if level is not None:
+            self.setLevel(level)
+
         self.buffer          = Buffer()
         atexit.register(self.close)
 
@@ -110,14 +113,14 @@ class tube(Timeout):
         with self.local(timeout):
             data = self.recv_raw(4096)
 
-        if data and context.log_level <= logging.DEBUG:
-            log.debug('Received %#x bytes:' % len(data))
+        if data and self.isEnabledFor(logging.DEBUG):
+            self.debug('Received %#x bytes:' % len(data))
 
             if all(c in string.printable for c in data):
                 for line in data.splitlines(True):
-                    log.indented(repr(line), level = logging.DEBUG)
+                    self.indented(repr(line), level = logging.DEBUG)
             else:
-                log.indented(fiddling.hexdump(data), level = logging.DEBUG)
+                self.indented(fiddling.hexdump(data), level = logging.DEBUG)
 
         if data:
             self.buffer.add(data)
@@ -653,7 +656,7 @@ class tube(Timeout):
         Receives data until EOF is reached.
         """
 
-        with log.waitfor('Recieving all data') as h:
+        with self.waitfor('Recieving all data') as h:
             l = len(self.buffer)
             with self.local(Timeout.forever):
                 try:
@@ -689,13 +692,13 @@ class tube(Timeout):
             'hello'
         """
 
-        if context.log_level <= logging.DEBUG:
-            log.debug('Sent %#x bytes:' % len(data))
+        if self.isEnabledFor(logging.DEBUG):
+            self.debug('Sent %#x bytes:' % len(data))
             if all(c in string.printable for c in data):
                 for line in data.splitlines(True):
-                    log.indented(repr(line), level = logging.DEBUG)
+                    self.indented(repr(line), level = logging.DEBUG)
             else:
-                log.indented(fiddling.hexdump(data), level = logging.DEBUG)
+                self.indented(fiddling.hexdump(data), level = logging.DEBUG)
         self.send_raw(data)
 
     def sendline(self, line):
@@ -763,7 +766,7 @@ class tube(Timeout):
         Thus it only works in while in :data:`pwnlib.term.term_mode`.
         """
 
-        log.info('Switching to interactive mode')
+        self.info('Switching to interactive mode')
 
         go = threading.Event()
         def recv_thread():
@@ -774,7 +777,7 @@ class tube(Timeout):
                         sys.stderr.write(cur)
                         sys.stderr.flush()
                 except EOFError:
-                    log.info('Got EOF while reading in interactive')
+                    self.info('Got EOF while reading in interactive')
                     break
 
         t = context.Thread(target = recv_thread)
@@ -793,11 +796,11 @@ class tube(Timeout):
                         self.send(data)
                     except EOFError:
                         go.set()
-                        log.info('Got EOF while sending in interactive')
+                        self.info('Got EOF while sending in interactive')
                 else:
                     go.set()
         except KeyboardInterrupt:
-            log.info('Interrupted')
+            self.info('Interrupted')
             go.set()
 
         while t.is_alive():
@@ -836,7 +839,7 @@ class tube(Timeout):
         r"""clean_and_log(timeout = 0.05)
 
         Works exactly as :meth:`pwnlib.tubes.tube.tube.clean`, but logs recieved
-        data with :meth:`pwnlib.log.info`.
+        data with :meth:`pwnlib.self.info`.
 
         Returns:
 
@@ -861,9 +864,9 @@ class tube(Timeout):
 
         if all(c in string.printable for c in data):
             for line in data.splitlines(True):
-                log.indented(repr(line))
+                self.indented(repr(line))
         else:
-            log.indented(fiddling.hexdump(data))
+            self.indented(fiddling.hexdump(data))
 
         return data
 

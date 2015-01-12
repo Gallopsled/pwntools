@@ -44,8 +44,8 @@ class remote(sock):
 
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
-                 timeout = Timeout.default, ssl=False, sock=None):
-        super(remote, self).__init__(timeout)
+                 timeout = Timeout.default, ssl=False, sock=None, level = None):
+        super(remote, self).__init__(timeout, level = level)
 
         self.rport  = int(port)
         self.rhost  = host
@@ -81,7 +81,7 @@ class remote(sock):
         elif fam.lower() in ['ipv6', 'ip6', 'v6', '6']:
             fam = socket.AF_INET6
         else:
-            log.error("remote(): family %r is not supported" % fam)
+            self.error("remote(): family %r is not supported" % fam)
 
         return fam
 
@@ -95,7 +95,7 @@ class remote(sock):
         elif typ == "udp":
             typ = socket.SOCK_DGRAM
         else:
-            log.error("remote(): type %r is not supported" % typ)
+            self.error("remote(): type %r is not supported" % typ)
 
         return typ
 
@@ -103,7 +103,7 @@ class remote(sock):
         sock    = None
         timeout = self.timeout
 
-        h = log.waitfor('Opening connection to %s on port %d' % (self.rhost, self.rport))
+        h = self.waitfor('Opening connection to %s on port %d' % (self.rhost, self.rport))
 
         for res in socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE):
             self.family, self.type, self.proto, _canonname, sockaddr = res
@@ -128,7 +128,7 @@ class remote(sock):
                 pass
         else:
             h.failure()
-            log.error("Could not connect to %s on port %d" % (self.rhost, self.rport))
+            self.error("Could not connect to %s on port %d" % (self.rhost, self.rport))
 
         h.success()
         return sock
