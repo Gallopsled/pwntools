@@ -572,7 +572,7 @@ def getLogger(name):
 
 rootlogger = getLogger('pwnlib')
 
-console = Handler()
+console   = Handler()
 formatter = Formatter()
 console.setFormatter(formatter)
 
@@ -583,4 +583,7 @@ def install_default_handler():
     the ``pwnlib`` root logger.  This function is automatically called from when
     importing :mod:`pwn`.
     '''
-    rootlogger.addHandler(console)
+    console.stream = sys.stderr
+    logger         = logging.getLogger('pwnlib')
+    if console not in logger.handlers:
+        logger.addHandler(console)
