@@ -45,6 +45,7 @@ pwnlib.context.ContextType.defaults['log_level'] = 'ERROR'
 pwnlib.term.text.when = 'never'
 pwnlib.log.install_default_handler()
 pwnlib.log.console.stream = sys.stdout
+pwnlib.log.rootlogger.setLevel(1)
 '''
 
 autodoc_member_order = 'alphabetical'

@@ -557,6 +557,24 @@ def getLogger(name):
         _loggers[name] = Logger(logging.getLogger(name))
     return _loggers[name]
 
+class LogfileHandler(logging.FileHandler):
+    def __init__(self):
+        super(LogfileHandler, self).__init__('', delay=1)
+    @property
+    def stream(self):
+        return context.log_file
+    @stream.setter
+    def stream(self, value):
+        pass
+    def handle(self, *a, **kw):
+        if self.stream.name is not None:
+            super(LogfileHandler, self).handle(*a, **kw)
+
+iso_8601 = '%Y-%m-%dT%H:%M:%S'
+fmt      = '%(asctime)s:%(levelname)s:%(name)s:%(message)s'
+log_file = LogfileHandler()
+log_file.setFormatter(logging.Formatter(fmt, iso_8601))
+
 #
 # The root 'pwnlib' logger is declared here.  To change the target of all
 # 'pwntools'-specific logging, only this logger needs to be changed.
@@ -585,5 +603,9 @@ def install_default_handler():
     '''
     console.stream = sys.stderr
     logger         = logging.getLogger('pwnlib')
+
     if console not in logger.handlers:
         logger.addHandler(console)
+        logger.addHandler(log_file)
+
+    logger.setLevel(1)
