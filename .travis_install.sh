@@ -2,7 +2,6 @@
 
 setup_linux()
 {
-    sudo apt-get update
     sudo apt-get install software-properties-common pwgen
     sudo apt-add-repository --yes ppa:pwntools/binutils
     sudo apt-get update
