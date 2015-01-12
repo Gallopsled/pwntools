@@ -449,8 +449,8 @@ class ConsoleHandler(logging.StreamHandler):
     @property
     def level(self):
         """
-        The current log level; always equal to :data:`context.log_level`.
-        Setting this property is a no-op.
+        The current log level; equal to :data:`context.log_level` by default,
+        but can be overwritten.
         """
         if self._level == 'context':
             return context.log_level
