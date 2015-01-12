@@ -109,7 +109,7 @@ def closure():
     # install a log handler and turn logging all the way up
     import pwnlib.log as log
     import logging
-    log.rootlogger.setLevel(logging.DEBUG)
+    log.rootlogger.setLevel(1)
     log.install_default_handler()
 
 closure()
