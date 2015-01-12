@@ -45,6 +45,15 @@ pwnlib.context.ContextType.defaults['log_level'] = 'ERROR'
 pwnlib.term.text.when = 'never'
 pwnlib.log.install_default_handler()
 pwnlib.log.console.stream = sys.stdout
+
+original_emit = pwnlib.log.log_file.emit
+
+def emit_and_flush(*a, **kw):
+    rv = original_emit(*a, **kw)
+    pwnlib.log.log_file.flush()
+    return rv
+
+pwnlib.log.log_file.emit = emit_and_flush
 '''
 
 autodoc_member_order = 'alphabetical'

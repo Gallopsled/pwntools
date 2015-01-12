@@ -2,7 +2,8 @@
 
    import pwnlib
    from   pwnlib.context import context
-   import threading, logging
+   import threading, logging, time
+   log = pwnlib.log.getLogger('pwnlib.context')
 
 
 :mod:`pwnlib.context` --- Setting runtime variables

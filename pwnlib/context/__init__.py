@@ -708,7 +708,7 @@ class ContextType(object):
 
     @_validator
     def log_file(self, value):
-        """
+        r"""
         Sets the target file for all logging output.
 
         Works in a similar fashion to :attr:`log_level`.
@@ -716,6 +716,20 @@ class ContextType(object):
         Examples:
 
             >>> context.log_file = 'foo.txt'
+            >>> log.debug('Hello!')
+            >>> file('foo.txt').readlines()[-1] #doctest: +ELLIPSIS
+            '...:DEBUG:...:Hello!\n'
+            >>> with context.local(log_level='ERROR'):
+            ...     log.info('Hello again!')
+            >>> file('foo.txt').readlines()[-1] #doctest: +ELLIPSIS
+            '...:INFO:...:Hello again!\n'
+            >>> with context.local(log_file='bar.txt'):
+            ...     log.debug('Hello from bar!')
+            >>> log.debug('Hello from foo!')
+            >>> file('foo.txt').readlines()[-1] #doctest: +ELLIPSIS
+            '...:DEBUG:...:Hello from foo!\n'
+            >>> file('bar.txt').readlines()[-1] #doctest: +ELLIPSIS
+            '...:DEBUG:...:Hello from bar!\n'
         """
         if isinstance(value, (str,unicode)):
             modes = ('w', 'wb', 'a', 'ab')
