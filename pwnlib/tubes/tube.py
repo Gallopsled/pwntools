@@ -665,7 +665,7 @@ class tube(Timeout):
                 except EOFError:
                     pass
             h.success("Done (%s)" % l)
-        self.close()
+        self.wait_for_close()
 
         return self.buffer.get()
 
