@@ -575,8 +575,6 @@ fmt      = '%(asctime)s:%(levelname)s:%(name)s:%(message)s'
 log_file = LogfileHandler()
 log_file.setFormatter(logging.Formatter(fmt, iso_8601))
 
-logging.root.setLevel(0)
-
 #
 # The root 'pwnlib' logger is declared here.  To change the target of all
 # 'pwntools'-specific logging, only this logger needs to be changed.
@@ -603,7 +601,6 @@ def install_default_handler():
     the ``pwnlib`` root logger.  This function is automatically called from when
     importing :mod:`pwn`.
     '''
-
     console.stream = sys.stderr
     logger         = logging.getLogger('pwnlib')
 
@@ -612,4 +609,3 @@ def install_default_handler():
         logger.addHandler(log_file)
 
     logger.setLevel(1)
-
