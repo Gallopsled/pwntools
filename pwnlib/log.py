@@ -566,6 +566,9 @@ class LogfileHandler(logging.FileHandler):
     @stream.setter
     def stream(self, value):
         pass
+    def handle(self, *a, **kw):
+        if self.stream.name != '/dev/null':
+            super(LogfileHandler, self).handle(*a, **kw)
 
 iso_8601 = '%Y-%m-%dT%H:%M:%S'
 fmt      = '%(asctime)s:%(levelname)s:%(name)s:%(message)s'
