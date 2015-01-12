@@ -23,8 +23,8 @@ class listen(sock):
 
     def __init__(self, port=0, bindaddr = "0.0.0.0",
                  fam = "any", typ = "tcp",
-                 timeout = Timeout.default):
-        super(listen, self).__init__(timeout)
+                 timeout = Timeout.default, level = None):
+        super(listen, self).__init__(timeout, level = level)
 
         port = int(port)
 
@@ -37,7 +37,7 @@ class listen(sock):
         elif isinstance(fam, (int, long)):
             pass
         else:
-            log.error("remote(): family %r is not supported" % fam)
+            self.error("remote(): family %r is not supported" % fam)
 
         if typ == "tcp":
             typ = socket.SOCK_STREAM
@@ -46,9 +46,9 @@ class listen(sock):
         elif isinstance(typ, (int, long)):
             pass
         else:
-            log.error("remote(): type %r is not supported" % typ)
+            self.error("remote(): type %r is not supported" % typ)
 
-        h = log.waitfor('Trying to bind to %s on port %d' % (bindaddr, port))
+        h = self.waitfor('Trying to bind to %s on port %d' % (bindaddr, port))
 
         for res in socket.getaddrinfo(bindaddr, port, fam, typ, 0, socket.AI_PASSIVE):
             self.family, self.type, self.proto, self.canonname, self.sockaddr = res
@@ -66,11 +66,11 @@ class listen(sock):
             break
         else:
             h.failure()
-            log.error("Could not bind to %s on port %d" % (bindaddr, port))
+            self.error("Could not bind to %s on port %d" % (bindaddr, port))
 
         h.success()
 
-        h = log.waitfor('Waiting for connections on %s:%s' % (self.lhost, self.lport))
+        h = self.waitfor('Waiting for connections on %s:%s' % (self.lhost, self.lport))
 
         def accepter():
             while True:
@@ -88,7 +88,7 @@ class listen(sock):
                     if e.errno == errno.EINTR:
                         continue
                     h.failure()
-                    log.exception("Socket failure while waiting for connection")
+                    self.exception("Socket failure while waiting for connection")
                     self.sock = None
                     return
 

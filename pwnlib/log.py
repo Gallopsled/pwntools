@@ -226,7 +226,11 @@ class Logger(object):
     _one_time_infos    = set()
     _one_time_warnings = set()
 
-    def __init__(self, logger):
+    def __init__(self, logger=None):
+        if logger is None:
+            logger_name = '%s.%s.%s' % (self.__module__, self.__class__.__name__, id(self))
+            logger = logging.getLogger(logger_name)
+
         self._logger = logger
 
     def _log(self, level, msg, args, kwargs, msgtype, progress = None):
@@ -390,7 +394,8 @@ class Logger(object):
 
         Set the logging level for the underlying logger.
         """
-        self._logger.setLevel(level)
+        with context.local(log_level=level):
+            self._logger.setLevel(context.log_level)
 
     def addHandler(self, handler):
         """addHandler(handler)

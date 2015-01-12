@@ -39,8 +39,8 @@ class process(tube):
     """
     def __init__(self, args, shell = False, executable = None,
                  cwd = None, env = None, timeout = Timeout.default,
-                 stderr_debug = False):
-        super(process, self).__init__(timeout)
+                 stderr_debug = False, level = None):
+        super(process, self).__init__(timeout, level = level)
 
         if executable:
             self.program = executable
@@ -49,12 +49,12 @@ class process(tube):
         elif isinstance(args, (list, tuple)):
             self.program = args[0]
         else:
-            log.error("process(): Do not understand the arguments %r" % args)
+            self.error("process(): Do not understand the arguments %r" % args)
 
         # If we specify something not in $PATH, but which exists as a non-executable
         # file then give an error message.
         if not which(self.program) and os.path.exists(self.program) and not os.access(self.program, os.X_OK):
-            log.error('%r is not set to executable (chmod +x %s)' % (self.program, self.program))
+            self.error('%r is not set to executable (chmod +x %s)' % (self.program, self.program))
 
         self.proc = subprocess.Popen(
             args, shell = shell, executable = executable,
@@ -69,14 +69,14 @@ class process(tube):
         fl = fcntl.fcntl(fd, fcntl.F_GETFL)
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
-        log.success("Started program %r" % self.program)
-        log.debug("...with arguments %r" % args)
+        self.success("Started program %r" % self.program)
+        self.debug("...with arguments %r" % args)
 
         def printer():
             try:
                 while True:
                     line = self.proc.stderr.readline()
-                    if line: log.debug(line.rstrip())
+                    if line: self.debug(line.rstrip())
                     else: break
             except:
                 pass
@@ -103,7 +103,7 @@ class process(tube):
         self.proc.poll()
         if self.proc.returncode != None and not self.stop_noticed:
             self.stop_noticed = True
-            log.info("Program %r stopped with exit code %d" % (self.program, self.proc.returncode))
+            self.info("Program %r stopped with exit code %d" % (self.program, self.proc.returncode))
 
         return self.proc.returncode
 
@@ -189,14 +189,14 @@ class process(tube):
             try:
                 self.proc.kill()
                 self.stop_noticed = True
-                log.info('Stopped program %r' % self.program)
+                self.info('Stopped program %r' % self.program)
             except OSError:
                 pass
 
 
     def fileno(self):
         if not self.connected():
-            log.error("A stopped program does not have a file number")
+            self.error("A stopped program does not have a file number")
 
         return self.proc.stdout.fileno()
 

@@ -6,9 +6,7 @@ from ..util import hashes, misc
 from .sock import sock
 from .process import process
 from ..timeout import Timeout
-from ..log import getLogger
-
-log = getLogger(__name__)
+from ..log import getLogger, Logger
 
 # Kill the warning line:
 # No handlers could be found for logger "paramiko.transport"
@@ -18,8 +16,8 @@ h.setFormatter(logging.Formatter())
 paramiko_log.addHandler(h)
 
 class ssh_channel(sock):
-    def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = Timeout.default):
-        super(ssh_channel, self).__init__(timeout)
+    def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = Timeout.default, level = None):
+        super(ssh_channel, self).__init__(timeout, level=level)
 
         # keep the parent from being garbage collected in some cases
         self.parent = parent
@@ -31,7 +29,7 @@ class ssh_channel(sock):
         env = env or {}
 
         msg = 'Opening new channel: %r' % ((process,) or 'shell')
-        with log.waitfor(msg) as h:
+        with self.waitfor(msg) as h:
             if isinstance(process, (list, tuple)):
                 process = ' '.join(misc.sh_string(s) for s in process)
 
@@ -41,7 +39,7 @@ class ssh_channel(sock):
             if process and env:
                 for name, value in env.items():
                     if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', name):
-                        log.error('run(): Invalid environment key $r' % name)
+                        self.error('run(): Invalid environment key $r' % name)
                     process = '%s=%s %s' % (name, misc.sh_string(value), process)
 
             self.sock = parent.transport.open_session()
@@ -136,7 +134,7 @@ class ssh_channel(sock):
         if not self.tty:
             return super(ssh_channel, self).interactive(prompt)
 
-        log.info('Switching to interactive mode')
+        self.info('Switching to interactive mode')
 
         # We would like a cursor, please!
         term.term.show_cursor()
@@ -154,7 +152,7 @@ class ssh_channel(sock):
                     sys.stderr.write(cur)
                     sys.stderr.flush()
                 except EOFError:
-                    log.info('Got EOF while reading in interactive')
+                    self.info('Got EOF while reading in interactive')
                     event.set()
                     break
 
@@ -183,7 +181,7 @@ class ssh_channel(sock):
                     self.send(''.join(chr(c) for c in data))
                 except EOFError:
                     event.set()
-                    log.info('Got EOF while sending in interactive')
+                    self.info('Got EOF while sending in interactive')
 
         while t.is_alive():
             t.join(timeout = 0.1)
@@ -198,14 +196,14 @@ class ssh_channel(sock):
         super(ssh_channel, self).close()
 
     def spawn_process(self, *args, **kwargs):
-        log.error("Cannot use spawn_process on an SSH channel.""")
+        self.error("Cannot use spawn_process on an SSH channel.""")
 
     def _close_msg(self):
-        log.info('Closed SSH channel with %s' % self.host)
+        self.info('Closed SSH channel with %s' % self.host)
 
 class ssh_connecter(sock):
-    def __init__(self, parent, host, port, timeout = Timeout.default):
-        super(ssh_connecter, self).__init__(timeout)
+    def __init__(self, parent, host, port, timeout = Timeout.default, level = None):
+        super(ssh_connecter, self).__init__(timeout, level = level)
 
         # keep the parent from being garbage collected in some cases
         self.parent = parent
@@ -215,7 +213,7 @@ class ssh_connecter(sock):
         self.rport = port
 
         msg = 'Connecting to %s:%d via SSH to %s' % (self.rhost, self.rport, self.host)
-        with log.waitfor(msg) as h:
+        with self.waitfor(msg) as h:
             try:
                 self.sock = parent.transport.open_channel('direct-tcpip', (host, port), ('127.0.0.1', 0))
             except:
@@ -229,15 +227,15 @@ class ssh_connecter(sock):
             h.success()
 
     def spawn_process(self, *args, **kwargs):
-        log.error("Cannot use spawn_process on an SSH channel.""")
+        self.error("Cannot use spawn_process on an SSH channel.""")
 
     def _close_msg(self):
-        log.info("Closed remote connection to %s:%d via SSH connection to %s" % (self.rhost, self.rport, self.host))
+        self.info("Closed remote connection to %s:%d via SSH connection to %s" % (self.rhost, self.rport, self.host))
 
 
 class ssh_listener(sock):
-    def __init__(self, parent, bind_address, port, timeout = Timeout.default):
-        super(ssh_listener, self).__init__(timeout)
+    def __init__(self, parent, bind_address, port, timeout = Timeout.default, level = None):
+        super(ssh_listener, self).__init__(timeout, level = level)
 
         # keep the parent from being garbage collected in some cases
         self.parent = parent
@@ -253,14 +251,14 @@ class ssh_listener(sock):
 
         def accepter():
             msg = 'Waiting on port %d via SSH to %s' % (self.port, self.host)
-            h   = log.waitfor(msg)
+            h   = self.waitfor(msg)
             try:
                 self.sock = parent.transport.accept()
                 parent.transport.cancel_port_forward(bind_address, self.port)
             except:
                 self.sock = None
                 h.failure()
-                log.exception('Failed to get a connection')
+                self.exception('Failed to get a connection')
                 return
 
             self.rhost, self.rport = self.sock.origin_addr
@@ -271,10 +269,10 @@ class ssh_listener(sock):
         self._accepter.start()
 
     def _close_msg(self):
-        log.info("Closed remote connection to %s:%d via SSH listener on port %d via %s" % (self.rhost, self.rport, self.port, self.host))
+        self.info("Closed remote connection to %s:%d via SSH listener on port %d via %s" % (self.rhost, self.rport, self.port, self.host))
 
     def spawn_process(self, *args, **kwargs):
-        log.error("Cannot use spawn_process on an SSH channel.""")
+        self.error("Cannot use spawn_process on an SSH channel.""")
 
     def wait_for_connection(self):
         """Blocks until a connection has been established."""
@@ -290,8 +288,8 @@ class ssh_listener(sock):
             return getattr(super(ssh_listener, self), key)
 
 
-class ssh(Timeout):
-    def __init__(self, user, host, port = 22, password = None, key = None, keyfile = None, proxy_command = None, proxy_sock = None, timeout = Timeout.default):
+class ssh(Timeout, Logger):
+    def __init__(self, user, host, port = 22, password = None, key = None, keyfile = None, proxy_command = None, proxy_sock = None, timeout = Timeout.default, level = None):
         """Creates a new ssh connection.
 
         Arguments:
@@ -308,6 +306,10 @@ class ssh(Timeout):
         fairly new version of paramiko is used."""
         super(ssh, self).__init__(timeout)
 
+        Logger.__init__(self)
+        if level is not None:
+            self.setLevel(level)
+
 
         self.host            = host
         self.port            = port
@@ -318,7 +320,7 @@ class ssh(Timeout):
         keyfiles = [os.path.expanduser(keyfile)] if keyfile else []
 
         msg = 'Connecting to %s on port %d' % (host, port)
-        with log.waitfor(msg) as h:
+        with self.waitfor(msg) as h:
             import paramiko
             self.client = paramiko.SSHClient()
 
@@ -332,10 +334,10 @@ class ssh(Timeout):
             has_proxy = (proxy_sock or proxy_command) and True
             if has_proxy:
                 if 'ProxyCommand' not in dir(paramiko):
-                    log.error('This version of paramiko does not support proxies.')
+                    self.error('This version of paramiko does not support proxies.')
 
                 if proxy_sock and proxy_command:
-                    log.error('Cannot have both a proxy command and a proxy sock')
+                    self.error('Cannot have both a proxy command and a proxy sock')
 
                 if proxy_command:
                     proxy_sock = paramiko.ProxyCommand(proxy_command)
@@ -553,7 +555,7 @@ class ssh(Timeout):
         if self.client:
             self.client.close()
             self.client = None
-            log.info("Closed connection to %r" % self.host)
+            self.info("Closed connection to %r" % self.host)
 
     def _libs_remote(self, remote):
         """Return a dictionary of the libraries used by a remote file."""
@@ -561,7 +563,7 @@ class ssh(Timeout):
         arg = misc.sh_string(remote)
         data, status = self.run_to_end(cmd % (arg, arg, arg))
         if status != 0:
-            log.failure('Unable to find libraries for %r' % remote)
+            self.failure('Unable to find libraries for %r' % remote)
             return {}
 
         return misc.parse_ldd_output(data)
@@ -582,7 +584,7 @@ class ssh(Timeout):
         if not isinstance(fingerprint, str) or \
            len(fingerprint) not in [32, 40, 64] or \
            not set(fingerprint).issubset('abcdef0123456789'):
-            log.failure('Invalid fingerprint %r' % fingerprint)
+            self.failure('Invalid fingerprint %r' % fingerprint)
             return False
 
         local = self._get_cachefile(fingerprint)
@@ -602,7 +604,7 @@ class ssh(Timeout):
         total = misc.size(int(total.split()[0]))
 
 
-        with log.waitfor('Downloading %r' % remote) as h:
+        with self.waitfor('Downloading %r' % remote) as h:
 
             def update(has):
                 h.status("%s/%s" % (misc.size(has), total))
@@ -640,12 +642,12 @@ class ssh(Timeout):
         local = self._get_cachefile(fingerprint)
 
         if self._verify_local_fingerprint(fingerprint):
-            log.success('Found %r in ssh cache' % remote)
+            self.success('Found %r in ssh cache' % remote)
         else:
             self._download_raw(remote, local)
 
             if not self._verify_local_fingerprint(fingerprint):
-                log.error('Could not download file %r' % remote)
+                self.error('Could not download file %r' % remote)
 
         return local
 
@@ -700,7 +702,7 @@ class ssh(Timeout):
         local_wd = os.path.dirname(local) or self._wd
         local    = os.path.basename(local)
 
-        log.info("Downloading %r to %r" % (local,remote))
+        self.info("Downloading %r to %r" % (local,remote))
 
         source = self.run(['sh', '-c', 'tar -C %s -czf- %s' % (local_wd, local)])
         sink   = process(['sh', '-c', 'tar -C %s -xzf-' % remote])
@@ -731,7 +733,7 @@ class ssh(Timeout):
             s.shutdown('send')
             s.recvall()
             if s.wait() != 0:
-                log.error("Could not upload file %r" % remote)
+                self.error("Could not upload file %r" % remote)
 
     def upload_file(self, filename, remote = None):
         """Uploads a file to the remote server. Returns the remote filename.
@@ -751,7 +753,7 @@ class ssh(Timeout):
         with open(filename) as fd:
             data = fd.read()
 
-        log.info("Uploading %r to %r" % (filename,remote))
+        self.info("Uploading %r to %r" % (filename,remote))
         self.upload_data(data, remote)
 
         return remote
@@ -768,7 +770,7 @@ class ssh(Timeout):
         local_wd = os.path.dirname(local)
         local    = os.path.basename(local)
 
-        log.info("Uploading %r to %r" % (local,remote))
+        self.info("Uploading %r to %r" % (local,remote))
 
         source  = process(['sh', '-c', 'tar -C %s -czf- %s' % (local_wd, local)])
         sink    = self.run(['sh', '-c', 'tar -C %s -xzf-' % remote])
@@ -800,7 +802,7 @@ class ssh(Timeout):
         for lib, addr in libs.items():
             local = os.path.realpath(os.path.join(directory, '.' + os.path.sep + lib))
             if not local.startswith(directory):
-                log.warning('This seems fishy: %r' % lib)
+                self.warning('This seems fishy: %r' % lib)
                 continue
 
             misc.mkdir_p(os.path.dirname(local))
@@ -853,15 +855,15 @@ class ssh(Timeout):
             wd = wd.strip()
 
         if status:
-            log.failure("Could not generate a temporary directory")
+            self.failure("Could not generate a temporary directory")
             return
 
         _, status = self.run_to_end('ls ' + misc.sh_string(wd), wd = None)
 
         if status:
-            log.failure("%r does not appear to exist" % wd)
+            self.failure("%r does not appear to exist" % wd)
             return
 
-        log.info("Working directory: %r" % wd)
+        self.info("Working directory: %r" % wd)
         self._wd = wd
         return self._wd
