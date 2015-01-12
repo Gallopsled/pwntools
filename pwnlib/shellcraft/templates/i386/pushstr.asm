@@ -4,6 +4,10 @@
 Pushes a string onto the stack without using
 null bytes or newline characters.
 
+Arguments:
+  string (str): The string to push.
+  append_null (bool): Whether to append a single NULL-byte before pushing.
+
 Example:
 
     >>> print shellcraft.i386.pushstr('').rstrip()
@@ -52,10 +56,6 @@ Example:
     ...    context.arch = 'i386'
     ...    print enhex(asm(shellcraft.pushstr("\x00", False)))
     6a01fe0c24
-
-Args:
-  string (str): The string to push.
-  append_null (bool): Whether to append a single NULL-byte before pushing.
 </%docstring>
 <%
     if append_null:

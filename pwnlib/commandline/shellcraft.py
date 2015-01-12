@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-import argparse, sys, os, types
+import argparse, sys, os, types, textwrap
 import pwnlib
 from pwnlib import util
 import pwnlib.term.text as text
@@ -166,49 +166,10 @@ def main():
         func = vals[0][1]
 
     if args.show:
-        # remove doctests
-        doc = []
-        in_doctest = False
-        block_indent = None
-        caption = None
-        lines = func.__doc__.splitlines()
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            if line.lstrip().startswith('>>>'):
-                # this line starts a doctest
-                in_doctest = True
-                block_indent = None
-                if caption:
-                    # delete back up to the caption
-                    doc = doc[:caption - i]
-                    caption = None
-            elif line == '':
-                # skip blank lines
-                pass
-            elif in_doctest:
-                # indentation marks the end of a doctest
-                indent = len(line) - len(line.lstrip())
-                if block_indent is None:
-                    if not line.lstrip().startswith('...'):
-                        block_indent = indent
-                elif indent < block_indent:
-                    in_doctest = False
-                    block_indent = None
-                    # re-evalutate this line
-                    continue
-            elif line.endswith(':'):
-                # save index of caption
-                caption = i
-            else:
-                # this is not blank space and we're not in a doctest, so the
-                # previous caption (if any) was not for a doctest
-                caption = None
-
-            if not in_doctest:
-                doc.append(line)
-            i += 1
-        print '\n'.join(doc).rstrip()
+        docstring = func.__doc__
+        docstring, examples = docstring.split('Example:')
+        docstring = textwrap.dedent(docstring)
+        print docstring.rstrip()
         exit()
 
     defargs = len(func.func_defaults or ())

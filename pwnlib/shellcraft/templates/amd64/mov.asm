@@ -20,6 +20,11 @@ If src is a string that is not a register, then it will locally set
 string. Note that this means that this shellcode can change behavior depending
 on the value of `context.os`.
 
+Arguments:
+  dest (str): The destination register.
+  src (str): Either the input register, or an immediate value.
+  stack_allowed (bool): Can the stack be used?
+
 Example:
 
     >>> print shellcraft.amd64.mov('eax','ebx').rstrip()
@@ -74,11 +79,6 @@ Example:
    ...     print shellcraft.amd64.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
        push 0x7
        pop rax
-
-Args:
-  dest (str): The destination register.
-  src (str): Either the input register, or an immediate value.
-  stack_allowed (bool): Can the stack be used?
 </%docstring>
 <%
 regs = [['rax', 'eax', 'ax', 'ah', 'al'],
