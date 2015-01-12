@@ -539,9 +539,6 @@ class Formatter(logging.Formatter):
         msg = self.nlindent.join(msg.splitlines())
         return msg
 
-# we keep a dictionary of loggers such that multiple calls to `getLogger` with
-# the same name will return the same logger
-_loggers = dict()
 def getLogger(name):
     '''getLogger(name) -> Logger
 
@@ -551,11 +548,7 @@ def getLogger(name):
     This function should be used instead of :func:`logging.getLogger` as we add
     some ``pwnlib`` flavor by wrapping it in a :class:`Logger`.
     '''
-    if name not in _loggers:
-        # if we don't have this logger create a new one and feed it through our
-        # "proxy" class
-        _loggers[name] = Logger(logging.getLogger(name))
-    return _loggers[name]
+    return Logger(logging.getLogger(name))
 
 #
 # The root 'pwnlib' logger is declared here.  To change the target of all
