@@ -11,7 +11,7 @@ Args:
   string (str): The string to push.
   append_null (bool): Whether to append a single NULL-byte before pushing.
 
-Examples:
+Example:
     >>>> with context.local():
     ...    context.arch = 'thumb'
     ...    print enhex(asm(shellcraft.pushstr('Hello\nWorld!', True)))
