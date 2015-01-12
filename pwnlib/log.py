@@ -419,18 +419,6 @@ class Handler(logging.StreamHandler):
 
     An instance of this handler is added to the ``'pwnlib'`` logger.
     """
-    @property
-    def level(self):
-        """
-        The current log level; always equal to :data:`context.log_level`.
-        Setting this property is a no-op.
-        """
-        return context.log_level
-
-    @level.setter
-    def level(self, _):
-        pass
-
     def emit(self, record):
         """
         Emit a log record or create/update an animated progress logger
@@ -569,8 +557,19 @@ def getLogger(name):
 #     map(rootlogger.removeHandler, rootlogger.handlers)
 #     logger.addHandler(myCoolPitchingHandler)
 #
+rootlogger = logging.getLogger('pwnlib')
 
-rootlogger = getLogger('pwnlib')
+class RootLogger(rootlogger.__class__):
+    @property
+    def level(self):
+        return min(context.log_level, self.parent.getEffectiveLevel())
+
+    @level.setter
+    def level(self, value):
+        pass
+
+rootlogger.__class__ = RootLogger
+rootlogger = Logger(rootlogger)
 
 console = Handler()
 formatter = Formatter()
