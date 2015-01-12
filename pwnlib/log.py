@@ -419,23 +419,25 @@ class Handler(logging.StreamHandler):
 
     An instance of this handler is added to the ``'pwnlib'`` logger.
     """
-    @property
-    def level(self):
-        """
-        The current log level; always equal to :data:`context.log_level`.
-        Setting this property is a no-op.
-        """
-        return context.log_level
-
-    @level.setter
-    def level(self, _):
-        pass
-
     def emit(self, record):
         """
         Emit a log record or create/update an animated progress logger
         depending on whether :data:`term.term_mode` is enabled.
         """
+        # We have set the root 'pwnlib' logger to have a logLevel of 1,
+        # when logging has been enabled via install_default_handler.
+        #
+        # If the level is 1, we should only process the record if
+        # context.log_level is less than the record's log level.
+        #
+        # If the level is not 1, somebody else expressly set the log
+        # level somewhere on the tree, and we should use that value.
+        level = logging.getLogger(record.name).getEffectiveLevel()
+        if level == 1:
+            level = context.log_level
+        if level > record.levelno:
+            return
+
         progress = getattr(record, 'pwnlib_progress', None)
 
         # if the record originates from a `Progress` object and term handling
@@ -584,6 +586,9 @@ def install_default_handler():
     importing :mod:`pwn`.
     '''
     console.stream = sys.stderr
+
     logger         = logging.getLogger('pwnlib')
+    logger.setLevel(1)
+
     if console not in logger.handlers:
         logger.addHandler(console)
