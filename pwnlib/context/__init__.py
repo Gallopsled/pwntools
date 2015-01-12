@@ -4,7 +4,7 @@
 Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
-import threading, collections, string, logging
+import threading, collections, string, logging, time, sys
 from ..timeout import Timeout
 
 class _defaultdict(dict):
@@ -304,6 +304,7 @@ class ContextType(object):
         'bits': 32,
         'endian': 'little',
         'log_level': logging.INFO,
+        'log_file': open('/dev/null', 'wb'),
         'newline': '\n',
         'os': 'linux',
         'signed': False,
@@ -705,6 +706,43 @@ class ContextType(object):
         permitted = sorted(level_names)
         raise AttributeError('log_level must be an integer or one of %r' % permitted)
 
+    @_validator
+    def log_file(self, value):
+        """
+        Sets the target file for all logging output.
+
+        Works in a similar fashion to :attr:`log_level`.
+
+        Examples:
+
+            >>> context.log_file = 'foo.txt'
+        """
+        if isinstance(value, (str,unicode)):
+            modes = ('w', 'wb', 'a', 'ab')
+            # check if mode was specified as "[value],[mode]"
+            if ',' not in value:
+                value += ',a'
+            filename, mode = value.rsplit(',', 1)
+            value = open(filename, mode)
+
+        elif not isinstance(value, (file)):
+            raise AttributeError('log_file must be a file')
+
+        iso_8601 = '%Y-%m-%dT%H:%M:%S'
+        lines = [
+            '=' * 78,
+            ' Started at %s ' % time.strftime(iso_8601),
+            ' sys.argv = [',
+            ]
+        for arg in sys.argv:
+            lines.append('   %r,' % arg)
+        lines.append(' ]')
+        lines.append('=' * 78)
+        for line in lines:
+            value.write('=%-78s=\n' % line)
+        value.flush()
+
+        return value
 
     @_validator
     def os(self, os):
@@ -729,8 +767,6 @@ class ContextType(object):
             raise AttributeError("os must be one of %r" % sorted(ContextType.oses))
 
         return os
-
-
 
     @_validator
     def signed(self, signed):
