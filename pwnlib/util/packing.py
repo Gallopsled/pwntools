@@ -80,7 +80,19 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         '\\xff\\x00'
         >>> pack(0x0102030405, 'all', 'little', True)
         '\\x05\\x04\\x03\\x02\\x01'
+        >>> pack(-1)
+        '\\xff\\xff\\xff\\xff'
+        >>> pack(2**32, word_size = 'wrap')
+        '\\x00\\x00\\x00\\x00'
 """
+    if sign is None and number < 0:
+        sign = True
+
+    if word_size == 'wrap':
+        word_size = None
+        with context.local(**kwargs):
+            number    = number & ((1 << context.bits)-1)
+
     kwargs.setdefault('endianness', endianness)
     kwargs.setdefault('sign', sign)
 
