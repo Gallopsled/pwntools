@@ -223,11 +223,12 @@ class Logger(object):
 
     Loggers instantiated with :func:`getLogger` will be of this class.
     """
-    _one_time_infos    = set()
-    _one_time_warnings = set()
-
     def __init__(self, logger):
         self._logger = logger
+
+        if not hasattr(logger, '_one_time_infos'):
+            logger._one_time_infos    = set()
+            logger._one_time_warnings = set()
 
     def _log(self, level, msg, args, kwargs, msgtype, progress = None):
         extra = kwargs.get('extra', {})
@@ -297,8 +298,8 @@ class Logger(object):
         Logs an info message.  The same message is never printed again.
         """
         m = message % args
-        if m not in self._one_time_infos:
-            self._one_time_infos.add(m)
+        if m not in self._logger._one_time_infos:
+            self._logger._one_time_infos.add(m)
             self._log(logging.INFO, message, args, kwargs, 'info_once')
 
     def warning_once(self, message, *args, **kwargs):
@@ -307,8 +308,8 @@ class Logger(object):
         Logs a warning message.  The same message is never printed again.
         """
         m = message % args
-        if m not in self._one_time_warnings:
-            self._one_time_warnings.add(m)
+        if m not in self._logger._one_time_warnings:
+            self._logger._one_time_warnings.add(m)
             self._log(logging.WARNING, message, args, kwargs, 'warning_once')
 
     def warn_once(self, *args, **kwargs):
