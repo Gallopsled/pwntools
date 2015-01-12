@@ -1,6 +1,8 @@
 # Promote useful stuff to toplevel
 from .toplevel import *
 
+log = getLogger('pwnlib.exploit')
+
 # look for special args in argv
 def closure():
     term_mode = True
@@ -66,53 +68,15 @@ def closure():
     if 'LOG_LEVEL' in args:
         context.log_level = args['LOG_LEVEL']
     if 'LOG_FILE' in args:
-        # install a file logger
-        import logging, time
-        modes = ('w', 'wb', 'a', 'ab')
-        filename = args['LOG_FILE']
-        mode = 'a'
-        # check if mode was specified as "[filename],[mode]"
-        if ',' in filename:
-            filename_, mode_ = filename.rsplit(',', 1)
-            if mode in modes:
-                filename = filename_
-                mode = mode_
-        # ISO 8601
-        dfmt = '%Y-%m-%dT%H:%M:%S'
-        # write a "header" to the file, which makes it easier to find the start
-        # of a session
-        with open(filename, mode) as fd:
-            lines = [
-                '=' * 78,
-                ' Started at %s ' % time.strftime(dfmt),
-                ' sys.argv = [',
-                ]
-            for arg in argv:
-                lines.append('   %r,' % arg)
-            lines.append(' ]')
-            lines.append('=' * 78)
-            for line in lines:
-                fd.write('=%s=\n' % line.ljust(78))
-        # if the mode was 'w' or 'wb' we need to change it to 'a'/'ab' now so
-        # the logging module wont overwrite the header
-        mode = mode.replace('w', 'a')
-        # create a formatter and a handler and install them for the pwnlib root
-        # logger (i.e. 'pwnlib')
-        handler = logging.FileHandler(filename, mode)
-        fmt = '%(asctime)s:%(levelname)s:%(name)s:%(message)s'
-        formatter = logging.Formatter(fmt, dfmt)
-        handler.setFormatter(formatter)
-        logging.root.addHandler(handler)
+        context.log_file = args['LOG_FILE']
     # put the terminal in rawmode unless NOTERM was specified
     if term_mode:
         term.init()
     # install a log handler and turn logging all the way up
     import pwnlib.log as log
     import logging
-    log.rootlogger.setLevel(logging.DEBUG)
+    log.rootlogger.setLevel(1)
     log.install_default_handler()
 
 closure()
 del closure
-
-log = getLogger('pwnlib.exploit')
