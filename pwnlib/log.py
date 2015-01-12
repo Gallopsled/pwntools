@@ -589,10 +589,8 @@ logging.root.setLevel(0)
 #     map(rootlogger.removeHandler, rootlogger.handlers)
 #     logger.addHandler(myCoolPitchingHandler)
 #
-logging.root.setLevel(0)
 
 rootlogger = getLogger('pwnlib')
-rootlogger.addHandler(log_file)
 
 console   = Handler()
 formatter = Formatter()
@@ -605,7 +603,13 @@ def install_default_handler():
     the ``pwnlib`` root logger.  This function is automatically called from when
     importing :mod:`pwn`.
     '''
+
     console.stream = sys.stderr
     logger         = logging.getLogger('pwnlib')
+
     if console not in logger.handlers:
         logger.addHandler(console)
+        logger.addHandler(log_file)
+
+    logger.setLevel(1)
+
