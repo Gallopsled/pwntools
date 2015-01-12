@@ -559,7 +559,7 @@ def getLogger(name):
 
 class LogfileHandler(logging.FileHandler):
     def __init__(self):
-        super(LogfileHandler, self).__init__('/dev/null')
+        super(LogfileHandler, self).__init__('', delay=1)
     @property
     def stream(self):
         return context.log_file
@@ -567,13 +567,15 @@ class LogfileHandler(logging.FileHandler):
     def stream(self, value):
         pass
     def handle(self, *a, **kw):
-        if self.stream.name != '/dev/null':
+        if self.stream.name is not None:
             super(LogfileHandler, self).handle(*a, **kw)
 
 iso_8601 = '%Y-%m-%dT%H:%M:%S'
 fmt      = '%(asctime)s:%(levelname)s:%(name)s:%(message)s'
 log_file = LogfileHandler()
 log_file.setFormatter(logging.Formatter(fmt, iso_8601))
+
+logging.root.setLevel(0)
 
 #
 # The root 'pwnlib' logger is declared here.  To change the target of all
@@ -587,6 +589,7 @@ log_file.setFormatter(logging.Formatter(fmt, iso_8601))
 #     map(rootlogger.removeHandler, rootlogger.handlers)
 #     logger.addHandler(myCoolPitchingHandler)
 #
+logging.root.setLevel(0)
 
 rootlogger = getLogger('pwnlib')
 rootlogger.addHandler(log_file)

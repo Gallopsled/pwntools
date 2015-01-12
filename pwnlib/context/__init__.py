@@ -7,6 +7,13 @@ contexts work properly and as expected.
 import threading, collections, string, logging, time, sys
 from ..timeout import Timeout
 
+class _devnull(object):
+    name = None
+    def write(self, *a, **kw): pass
+    def read(self, *a, **kw):  return ''
+    def flush(self, *a, **kw): pass
+    def close(self, *a, **kw): pass
+
 class _defaultdict(dict):
     """
     Dictionary which loads missing keys from another dictionary.
@@ -304,7 +311,7 @@ class ContextType(object):
         'bits': 32,
         'endian': 'little',
         'log_level': logging.INFO,
-        'log_file': open('/dev/null', 'wb'),
+        'log_file': _devnull(),
         'newline': '\n',
         'os': 'linux',
         'signed': False,
@@ -715,21 +722,18 @@ class ContextType(object):
 
         Examples:
 
-            >>> context.log_file = 'foo.txt'
+
+            >>> context.log_file = '/dev/stdout'
+            ...
             >>> log.debug('Hello!')
-            >>> file('foo.txt').readlines()[-1] #doctest: +ELLIPSIS
-            '...:DEBUG:...:Hello!\n'
+            ...:DEBUG:...:Hello!
             >>> with context.local(log_level='ERROR'):
             ...     log.info('Hello again!')
-            >>> file('foo.txt').readlines()[-1] #doctest: +ELLIPSIS
-            '...:INFO:...:Hello again!\n'
+            ...:INFO:...:Hello again!
             >>> with context.local(log_file='bar.txt'):
             ...     log.debug('Hello from bar!')
-            >>> log.debug('Hello from foo!')
-            >>> file('foo.txt').readlines()[-1] #doctest: +ELLIPSIS
-            '...:DEBUG:...:Hello from foo!\n'
-            >>> file('bar.txt').readlines()[-1] #doctest: +ELLIPSIS
-            '...:DEBUG:...:Hello from bar!\n'
+            >>> print file('bar.txt').readlines()[-1] #doctest: +ELLIPSIS
+            ...:DEBUG:...:Hello from bar!
         """
         if isinstance(value, (str,unicode)):
             modes = ('w', 'wb', 'a', 'ab')
@@ -755,7 +759,6 @@ class ContextType(object):
         for line in lines:
             value.write('=%-78s=\n' % line)
         value.flush()
-
         return value
 
     @_validator
