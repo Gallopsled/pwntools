@@ -589,7 +589,7 @@ log_file.setFormatter(logging.Formatter(fmt, iso_8601))
 #
 
 rootlogger = getLogger('pwnlib')
-rootlogger.addHandler(log_file)
+# rootlogger.addHandler(log_file)
 
 console   = Handler()
 formatter = Formatter()
