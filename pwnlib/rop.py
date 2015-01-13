@@ -535,7 +535,9 @@ class ROP(object):
         and only searching the first elf image
         """
         elf = self.elfs[0]
-        gadgets = {}
+        pops = {}
+        movs = {}
+        self.gadgets = {}
         md = capstone.Cs(capstone.CS_ARCH_ARM, capstone.CS_MODE_ARM)
         md.skipdata = True
         for seg in elf.executable_segments:
@@ -547,7 +549,7 @@ class ROP(object):
                     regs = map(lambda reg: reg.strip(), regs)
                     insns = ["pop %s" % inst.op_str]
                     if "pc" in regs:
-                        gadgets[inst.address] = {"insns": insns, "regs": regs, "move": 4*len(regs), "type": "pop"}
+                        pops[inst.address] = {"insns": insns, "regs": regs, "move": 4*len(regs), "type": "pop"}
             md.mode = capstone.CS_MODE_THUMB
             for inst in md.disasm(seg.data(), seg.header.p_vaddr):
                 if inst.mnemonic == "pop":
@@ -555,9 +557,8 @@ class ROP(object):
                     regs = map(lambda reg: reg.strip(), regs)
                     insns = ["pop %s" % inst.op_str]
                     if "pc" in regs:
-                        gadgets[inst.address+1] = {"insns": insns, "regs": regs, "move": 4*len(regs), "type": "pop"}
-        self.gadgets = gadgets
-        self.movs = {}
+                        pops[inst.address+1] = {"insns": insns, "regs": regs, "move": 4*len(regs), "type": "pop"}
+        self.gadgets.update(pops)
         for addr, gad in self.gadgets.items():
             if addr & 1 == 0:
                 #arm
@@ -569,7 +570,7 @@ class ROP(object):
                     if inst.mnemonic.startswith("mov"):
                         to_reg, from_reg = [reg.strip() for reg in inst.op_str.split(",")]
                         insns = ["mov %s, %s" % (to_reg, from_reg)] + gad["insns"]
-                        self.movs[prev_addr+1] = {
+                        movs[prev_addr+1] = {
                                 "insns": insns,
                                 "mov_to": to_reg,
                                 "mov_from": from_reg,
@@ -589,7 +590,7 @@ class ROP(object):
                     if inst.mnemonic.startswith("mov"):
                         to_reg, from_reg = [reg.strip() for reg in inst.op_str.split(",")]
                         insns = ["mov %s, %s" % (to_reg, from_reg)] + gad["insns"]
-                        self.movs[prev_addr+1] = {
+                        movs[prev_addr+1] = {
                                 "insns": insns,
                                 "mov_to": to_reg,
                                 "mov_from": from_reg,
@@ -598,8 +599,8 @@ class ROP(object):
                                 "type": "mov;pop"}
                 except StopIteration:
                     pass
-        self.gadgets.update(self.movs)
-        return gadgets, self.movs
+        self.gadgets.update(movs)
+        return pops, movs
 
     def _find_best_pop_gadget(self, regs):
         """Helper function for _set_regs.
@@ -609,8 +610,8 @@ class ROP(object):
         def gadget_score(gadget):
             return len(set(gadget["regs"]) & regs)
         #must contain 1 reg we want set.
-        gadgets = filter(lambda (a,g): len(set(g["regs"]) & regs) > 0
-                and g["type"] == "pop",
+        gadgets = filter(lambda (a,g): g["type"] == "pop" and
+                len(set(g["regs"]) & regs) > 0,
             self.gadgets.items())
         gadget = max(gadgets, key = lambda (a, g): gadget_score(g))
         return gadget
@@ -618,10 +619,10 @@ class ROP(object):
     def _find_best_mov_gadget(self, reg):
         def gadget_score(gadget):
             return len(gadget["regs"])
-        gadgets = filter(lambda (a,g): g["mov_from"] in self.can_pop
-                and g["mov_to"] == reg
-                and g["type"] == "mov;pop",
-            self.movs.items())
+        gadgets = filter(lambda (a,g): g["type"] == "mov;pop" and
+                g["mov_from"] in self.can_pop
+                and g["mov_to"] == reg,
+            self.gadgets.items())
         gadget = min(gadgets, key = lambda (a, g): gadget_score(g))
         return gadget
 
@@ -658,7 +659,6 @@ class ROP(object):
             log.error("Could not set regs: %r", regs)
         return ropchain[0], ropchain[1:]
 
-
     @property
     def can_pop(self):
         """For arm mode only:
@@ -666,15 +666,16 @@ class ROP(object):
         """
         l = []
         for gad in self.gadgets.values():
-            l.extend(gad["regs"])
+            if gad["type"] == "pop":
+                l.extend(gad["regs"])
         return set(l)
 
     @property
     def can_mov(self):
         l = []
-        for gad in self.movs.values():
-            #if gad["mov_from"] is self.can_pop:
-            l.append(gad["mov_to"])
+        for gad in self.gadgets.values():
+            if gad["type"] == "mov;pop" and gad["mov_from"] in self.can_pop:
+                l.append(gad["mov_to"])
         return set(l)
 
     def __repr__(self):
