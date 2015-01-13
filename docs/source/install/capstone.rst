@@ -15,7 +15,7 @@ Ubuntu
 .. code-block:: bash
 
     $ wget -nc http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_amd64.deb
-    $ apt-get install capstone-2.1.2_amd64.deb
+    $ sudo dpkg -i capstone-2.1.2_amd64.deb
 
 Mac OS X
 ^^^^^^^^^^^^^^^^
