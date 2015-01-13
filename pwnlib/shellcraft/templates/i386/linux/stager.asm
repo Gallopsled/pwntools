@@ -24,11 +24,11 @@ ${stager}:
 /* read/recv loop */
 ${looplabel}:
     ${i386.linux.syscall('SYS_read', 'ebx', 'ecx', 'edx')}
-    test eax, eax
 % if handle_error:
+    test eax, eax
     js ${errlabel}
-    sub edx, eax
 % endif
+    sub edx, eax
     add ecx, eax
     test edx, edx
     jne ${looplabel}
