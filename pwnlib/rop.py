@@ -4,7 +4,7 @@ import hashlib, os, sys, tempfile, re
 import capstone
 
 from .elf     import ELF
-from .util    import packing
+from .util    import packing, lists
 from .log     import getLogger
 
 log = getLogger(__name__)
@@ -415,6 +415,83 @@ class ROP(object):
         ret   = re.compile(r'^ret$')
         leave = re.compile(r'^leave$')
 
+        self.gadgets = {}
+        rets = {}
+        md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
+        md.detail = True
+        for elf in self.elfs:
+            for seg in elf.executable_segments:
+                gadgets = {}
+                if seg.header.p_type != 'PT_LOAD': continue
+                baseaddr = seg.header.p_vaddr
+                data = seg.data()
+                for ret_off in lists.findall(data, "\xc3"):
+                    rets[ret_off] = {"insns": ["ret"],
+                            "regs": [],
+                            "move": 4}
+                    
+                #for ret_off in lists.findall(data, "\xc2"):
+                #    adjust = packing.u16(seg.data()[ret_off+1:ret_off+3], "little", "unsigned")
+                #    rets[ret_off] = {"insns": ["ret %d" % adjust],
+                #            "regs": [],
+                #            "move": 4+adjust*4}
+                gadgets.update(rets)
+                for gad_addr, gad in rets.items():
+                    for back_off in range(10):
+                        gad_off = gad_addr-back_off
+                        if gad_off < 0: break
+                        gadget = {"insns": [], "regs": [], "move": 0}
+                        bad = False 
+                        for inst in md.disasm(data[gad_off:gad_addr+5], gad_off):
+                            inst_str = "%s %s" % (inst.mnemonic, inst.op_str)
+                            inst_str = inst_str.strip()
+                            gadget["insns"].append(inst_str)
+                            if inst.mnemonic == "ret":
+                                gadget["move"] += 4
+                                break
+                            elif inst.mnemonic == "pop":
+                                gadget["regs"].append(inst.op_str)
+                                gadget["move"] += 4
+                            elif inst.mnemonic == "add":    
+                                reg, val = map(lambda x:x.strip(), inst.op_str.split(","))
+                                if reg != "esp":
+                                    bad = True
+                                    break
+                                try:
+                                    val = int(val, 16)
+                                except ValueError:
+                                    bad = True
+                                    break
+                                gadget["move"] += val
+                            elif inst.mnemonic == "leave":
+                                gadget["move"] = 99999999999
+                            else:
+                                bad = True
+                                break
+                        try:
+                            if not gadget["insns"][-1].startswith("ret"):
+                                bad = True
+                        except IndexError:
+                            bad = True
+                        if not bad:
+                            gadgets[gad_off] = gadget
+
+                for gad_off, gad in gadgets.items():
+                    self.gadgets[baseaddr+gad_off] = gad 
+                
+        self.pivots = {}
+        for addr, gad in self.gadgets.items():
+            self.pivots[gad["move"]] = addr
+
+        #
+        # HACK: Set up a special '.leave' helper.  This is so that
+        #       I don't have to rewrite __getattr__ to support this.
+        #
+        leave = self.search(regs = frame_regs, order = 'regs')
+        if leave and leave[1]['regs'] != frame_regs:
+            leave = None
+        self.leave = leave
+
         #
         # Validation routine
         #
@@ -426,108 +503,6 @@ class ROP(object):
         # True
         #
         valid = lambda insn: any(map(lambda pattern: pattern.match(insn), [pop,add,ret,leave]))
-
-        #
-        # Currently, ropgadget.args.Args() doesn't take any arguments, and pulls
-        # only from sys.argv.  Preserve it through this call.  We also
-        # monkey-patch sys.stdout to suppress output from ropgadget.
-        #
-        argv    = sys.argv
-        stdout  = sys.stdout
-        class Wrapper:
-            def __init__(self, fd):
-                self._fd = fd
-            def write(self, s):
-                pass
-            def __getattr__(self, k):
-                return self._fd.__getattribute__(k)
-        gadgets = {}
-
-        for elf in self.elfs:
-            cache = self.__cache_load(elf)
-            if cache:
-                gadgets.update(cache)
-                continue
-
-            log.info_once("Loading gadgets for %r @ %#x" % (elf.path, elf.address))
-
-            try:
-                sys.stdout = Wrapper(sys.stdout)
-
-                try:
-                    import ropgadget
-                except ImportError:
-                    log.error("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
-                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'add|pop|leave|ret', '--nojop', '--nosys']
-                args = ropgadget.args.Args().getArgs()
-                core = ropgadget.core.Core(args)
-                core.do_binary(elf.path)
-                core.do_load(0)
-            finally:
-                sys.argv   = argv
-                sys.stdout = stdout
-
-            elf_gadgets = {}
-            for gadget in core._Core__gadgets:
-
-                address = gadget['vaddr'] - elf.load_addr + elf.address
-                insns   = [g.strip() for g in gadget['gadget'].split(';')]
-
-                if all(map(valid, insns)):
-                    elf_gadgets[address] = insns
-            self.__cache_save(elf, elf_gadgets)
-            gadgets.update(elf_gadgets)
-
-
-        #
-        # For each gadget we decided to keep, find out how much it moves the stack,
-        # and log which registers it modifies.
-        #
-        self.gadgets = {}
-        self.pivots  = {}
-
-        frame_regs = ['ebp','esp'] if self.align == 4 else ['rbp','rsp']
-
-        for addr,insns in gadgets.items():
-            sp_move = 0
-            regs = []
-            for insn in insns:
-                if pop.match(insn):
-                    regs.append(pop.match(insn).group(1))
-                    sp_move += self.align
-                elif add.match(insn):
-                    sp_move += int(add.match(insn).group(1), 16)
-                elif ret.match(insn):
-                    sp_move += self.align
-                elif leave.match(insn):
-                    #
-                    # HACK: Since this modifies ESP directly, this should
-                    #       never be returned as a 'normal' ROP gadget that
-                    #       simply 'increments' the stack.
-                    #
-                    #       As such, the 'move' is set to a very large value,
-                    #       to prevent .search() from returning it unless $sp
-                    #       is specified as a register.
-                    #
-                    sp_move += 9999999999
-                    regs    += frame_regs
-
-            # Permit duplicates, because blacklisting bytes in the gadget
-            # addresses may result in us needing the dupes.
-            self.gadgets[addr] = {'insns': insns, 'regs': regs, 'move': sp_move}
-
-            # Don't use 'pop esp' for pivots
-            if not set(['rsp','esp']) & set(regs):
-                self.pivots[sp_move]  = addr
-
-        #
-        # HACK: Set up a special '.leave' helper.  This is so that
-        #       I don't have to rewrite __getattr__ to support this.
-        #
-        leave = self.search(regs = frame_regs, order = 'regs')
-        if leave and leave[1]['regs'] != frame_regs:
-            leave = None
-        self.leave = leave
 
     def _load_ARM(self):
         """Load gadgets for arm and thumb.
