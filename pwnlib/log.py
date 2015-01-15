@@ -597,7 +597,7 @@ log_file.setFormatter(logging.Formatter(fmt, iso_8601))
 
 rootlogger = getLogger('pwnlib')
 
-console   = Handler()
+console   = Handler(sys.stdout)
 formatter = Formatter()
 console.setFormatter(formatter)
 
@@ -608,7 +608,7 @@ def install_default_handler():
     the ``pwnlib`` root logger.  This function is automatically called from when
     importing :mod:`pwn`.
     '''
-    console.stream = sys.stderr
+    console.stream = sys.stdout
 
     logger         = logging.getLogger('pwnlib')
 

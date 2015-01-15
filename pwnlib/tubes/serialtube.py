@@ -108,8 +108,8 @@ class serialtube(tube.tube):
                     elif cur == '\a':
                         # Ugly hack until term unstands bell characters
                         continue
-                    sys.stderr.write(cur)
-                    sys.stderr.flush()
+                    sys.stdout.write(cur)
+                    sys.stdout.flush()
                 except EOFError:
                     self.info('Got EOF while reading in interactive')
                     go[0] = False

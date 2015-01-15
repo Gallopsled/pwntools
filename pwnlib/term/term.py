@@ -15,7 +15,7 @@ from . import termcap
 settings = None
 _graphics_mode = False
 
-fd = sys.stderr
+fd = sys.stdout
 
 def show_cursor():
     do('cnorm')

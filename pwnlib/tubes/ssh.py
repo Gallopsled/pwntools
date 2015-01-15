@@ -149,8 +149,8 @@ class ssh_channel(sock):
                     elif cur == '\a':
                         # Ugly hack until term unstands bell characters
                         continue
-                    sys.stderr.write(cur)
-                    sys.stderr.flush()
+                    sys.stdout.write(cur)
+                    sys.stdout.flush()
                 except EOFError:
                     self.info('Got EOF while reading in interactive')
                     event.set()
