@@ -9,4 +9,4 @@ docs/build
 build
 MANIFEST
 dist
-pwntools.egg-info
+binjitsu.egg-info

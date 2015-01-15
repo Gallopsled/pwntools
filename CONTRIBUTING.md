@@ -11,7 +11,7 @@ Github has a great guide for contributing to open source projects:
 - [Making a Pull Request](https://guides.github.com/activities/forking/#making-a-pull-request)
 - [Huzzah!](https://guides.github.com/activities/forking/#huzzah)
 
-## Pwntools Specifics
+## binjitsu Specifics
 
 In general, we like to keep things documented.  You should add documentation to any new functionality, and update it for any changed functionality.  Our docstrings use the [Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.org/en/latest/example_google.html#example-google).
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# pwntools documentation build configuration file, created by
+# binjitsu documentation build configuration file, created by
 # sphinx-quickstart on Wed May 28 15:00:52 2014.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -65,8 +65,8 @@ source_encoding = 'utf-8-sig'
 master_doc = 'index'
 
 # General information about the project.
-project = u'pwntools'
-copyright = u'2014, Gallopsled et al'
+project = u'binjitsu'
+copyright = u'2015, Zach Riggle'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -189,7 +189,7 @@ html_static_path = []
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'pwntoolsdoc'
+htmlhelp_basename = 'binjitsudoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -208,8 +208,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'pwntools.tex', u'pwntools Documentation',
-   u'Gallopsled et al', 'manual'),
+  ('index', 'binjitsu.tex', u'binjitsu Documentation',
+   u'2015, Zach Riggle', 'manual'),
 ]
 
 intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None),
@@ -241,8 +241,8 @@ intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None),
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'pwntools', u'pwntools Documentation',
-     [u'Gallopsled et al'], 1)
+    ('index', 'binjitsu', u'binjitsu Documentation',
+     [u'2015, Zach Riggle'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -255,8 +255,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'pwntools', u'pwntools Documentation',
-   u'Gallopsled et al', 'pwntools', 'One line description of project.',
+  ('index', 'binjitsu', u'binjitsu Documentation',
+   u'', 'binjitsu', 'CTF exploit writing toolkit.',
    'Miscellaneous'),
 ]
 
@@ -313,4 +313,4 @@ def linkcode_resolve(domain, info):
             except IOError:
                 pass
 
-    return "https://github.com/Gallopsled/pwntools/blob/%s/%s" % (branch, filename)
+    return "https://github.com/binjitsu/binjitsu/blob/%s/%s" % (branch, filename)

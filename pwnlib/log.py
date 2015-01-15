@@ -1,6 +1,6 @@
 """
 Logging module for printing status during an exploit, and internally
-within ``pwntools``.
+within ``binjitsu``.
 
 Exploit Developers
 ------------------
@@ -584,7 +584,7 @@ log_file.setFormatter(logging.Formatter(fmt, iso_8601))
 
 #
 # The root 'pwnlib' logger is declared here.  To change the target of all
-# 'pwntools'-specific logging, only this logger needs to be changed.
+# 'binjitsu'-specific logging, only this logger needs to be changed.
 #
 # Logging cascades upward through the heirarchy,
 # so the only point that should ever need to be

@@ -1,12 +1,11 @@
-# pwntools - CTF toolkit
-[![Docs latest](https://readthedocs.org/projects/pwntools/badge/)](https://pwntools.readthedocs.org/en/latest)
-[![Docs 2.2.0](https://readthedocs.org/projects/pwntools/badge/?version=2.2.0)](https://pwntools.readthedocs.org/en/2.2.0)
-[![PyPI](https://img.shields.io/pypi/v/pwntools.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
-[![Gittip](https://img.shields.io/gittip/gallopsled.svg?style=flat)](https://www.gittip.com/gallopsled/)
-[![Travis](https://travis-ci.org/Gallopsled/pwntools.svg)](https://travis-ci.org/Gallopsled/pwntools)
-[![Twitter](https://img.shields.io/badge/twitter-Gallopsled-4099FF.svg?style=flat)](https://twitter.com/Gallopsled)
+# binjitsu - CTF toolkit
+[![Docs latest](https://readthedocs.org/projects/binjitsu/badge/)](https://binjitsu.readthedocs.org/en/latest)
+[![Docs 2.2.0](https://readthedocs.org/projects/binjitsu/badge/?version=2.2.0)](https://binjitsu.readthedocs.org/en/2.2.0)
+[![PyPI](https://img.shields.io/pypi/v/binjitsu.svg?style=flat)](https://pypi.python.org/pypi/binjitsu/)
+[![Travis](https://travis-ci.org/binjitsu/binjitsu.svg)](https://travis-ci.org/binjitsu/binjitsu)
+[![Twitter](https://img.shields.io/badge/twitter-ctfbinjitsu-4099FF.svg?style=flat)](https://twitter.com/ctfbinjitsu)
 
-This is the CTF framework used by Gallopsled in every CTF.
+binjitsu is a CTF framework and exploit development library. Written in Python, it is designed for rapid prototyping and development, and intended to make exploit writing as simple as possible.
 
 ```python
 from pwn import *
@@ -18,32 +17,26 @@ r.send(asm(shellcraft.sh()))
 r.interactive()
 ```
 
-However we have made command-line frontends for some of the functionality
-in `pwnlib`. These are:
+# Origin
 
-* `asm`/`disasm`: Small wrapper for various assemblers.
-* `constgrep`: Tool for finding constants defined in header files.
-* `cyclic`: De Bruijn sequence generator and lookup tool.
-* `hex`/`unhex`: Command line tools for doing common hexing/unhexing operations.
-* `shellcraft`: Frontend to our shellcode.
-* `phd`: Replacement for `hexdump` with colors.
+binjitsu is a fork of the [`pwntools`](https://github.com/Gallopsled/pwntools) project.  For the most part, it's a drop-in replacement, though I've added some functionality of my own which may not be available in the upstream release.
 
 # Documentation
-Our documentation is available at [pwntools.readthedocs.org](https://pwntools.readthedocs.org/en/latest/)
+Our documentation is available at [binjitsu.readthedocs.org](https://binjitsu.readthedocs.org/en/latest/)
 
-To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/Gallopsled/pwntools-write-ups).
+To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/binjitsu/binjitsu-write-ups).
 
 # Installation
 
-pwntools is best supported on Ubuntu 12.04 and 14.04, but most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).
+binjitsu is best supported on Ubuntu 12.04 and 14.04, but most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).
 
-Most of the functionality of pwntools is self-contained and Python-only.  You should be able to get running quickly with
+Most of the functionality of binjitsu is self-contained and Python-only.  You should be able to get running quickly with
 
 ```sh
-pip install pwntools
+pip install binjitsu
 ```
 
-However, some of the features (ROP generation and assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://pwntools.readthedocs.org/en/latest/install.html).
+However, some of the features (ROP generation and assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://binjitsu.readthedocs.org/en/latest/install.html).
 
 
 # Contribution
@@ -51,7 +44,7 @@ However, some of the features (ROP generation and assembling/disassembling forei
 See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 # Contact
-If you have any questions not worthy of a [bug report](https://github.com/Gallopsled/pwntools/issues), feel free to join us
-at [`#gallopsled` on Freenode](irc://irc.freenode.net/gallopsled) and ask away.
-Click [here](https://kiwiirc.com/client/irc.freenode.net/gallopsled) to connect.
+If you have any questions not worthy of a [bug report](https://github.com/binjitsu/binjitsu/issues), feel free to ping
+at [`ebeip90` on Freenode](irc://irc.freenode.net/pwning) and ask away.
+Click [here](https://kiwiirc.com/client/irc.freenode.net/pwning) to connect.
 

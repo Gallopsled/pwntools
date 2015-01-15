@@ -17,7 +17,7 @@ log = getLogger(__name__)
 __all__ = ['load', 'ELF'] + sorted(filter(lambda x: not x.startswith('_'), datatypes.__dict__.keys()))
 
 def load(*args, **kwargs):
-    """Compatibility wrapper for pwntools v1"""
+    """Compatibility wrapper for binjitsu v1"""
     return ELF(*args, **kwargs)
 
 class ELF(ELFFile):
@@ -57,7 +57,7 @@ class ELF(ELFFile):
         self.path     = os.path.abspath(path)
 
 
-        # Fix difference between elftools and pwntools
+        # Fix difference between elftools and binjitsu
         self.arch = self.get_machine_arch().lower()
         if self.arch == 'x64':
             self.arch = 'amd64'

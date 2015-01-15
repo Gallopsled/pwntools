@@ -1,17 +1,17 @@
-About pwntools
+About binjitsu
 ========================
 
 Whether you're using it to write exploits, or as part
 of another software project will dictate how you use it.
 
-Historically pwntools was used as a sort of exploit-writing DSL. Simply doing
-``from pwn import *`` in a previous version of pwntools would bring all sorts of
+Historically binjitsu was used as a sort of exploit-writing DSL. Simply doing
+``from pwn import *`` in a previous version of binjitsu would bring all sorts of
 nice side-effects.
 
-When redesigning pwntools for 2.0, we noticed two contrary goals:
+When redesigning binjitsu for 2.0, we noticed two contrary goals:
 
 * We would like to have a "normal" python module structure, to allow other
-  people to faster get familiar with how pwntools works.
+  people to faster get familiar with how binjitsu works.
 * We would like to have even more side-effects, especially by putting the
   terminal in raw-mode.
 

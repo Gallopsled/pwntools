@@ -168,7 +168,7 @@ class process(tube):
             # Not sure why this isn't caught when testing self.proc.stdout.closed,
             # but it's not.
             #
-            #   File "/home/user/pwntools/pwnlib/tubes/process.py", line 112, in can_recv_raw
+            #   File "/home/user/binjitsu/pwnlib/tubes/process.py", line 112, in can_recv_raw
             #     return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
             # ValueError: I/O operation on closed file
             raise EOFError

@@ -24,7 +24,7 @@ Assembly
         >>> asm('mov eax, SYS_execve')
         '\xb8\x0b\x00\x00\x00'
 
-    Finally, :func:`asm` is used to assemble shellcode provided by ``pwntools``
+    Finally, :func:`asm` is used to assemble shellcode provided by ``binjitsu``
     in the :mod:`shellcraft` module.
 
         >>> asm(shellcraft.sh())
@@ -77,8 +77,8 @@ def which_binutils(util, **kwargs):
         arch = context.arch
         bits = context.bits
 
-        # Fix up pwntools vs Debian triplet naming, and account
-        # for 'thumb' being its own pwntools architecture.
+        # Fix up binjitsu vs Debian triplet naming, and account
+        # for 'thumb' being its own binjitsu architecture.
         arches = [arch] + {
             'thumb':  ['arm',    'aarch64'],
             'i386':   ['x86_64', 'amd64'],
@@ -113,7 +113,7 @@ def which_binutils(util, **kwargs):
         log.warning("""
 Could not find %(util)r installed for %(context)s
 Try installing binutils for this architecture:
-    https://pwntools.readthedocs.org/en/latest/install/binutils.html
+    https://binjitsu.readthedocs.org/en/latest/install/binutils.html
 """.strip() % locals())
         raise Exception('Could not find %(util)r installed for %(context)s' % locals())
 
@@ -157,7 +157,7 @@ def _assembler():
         version = re.search(r' (\d\.\d+)', result).group(1)
         if version < '2.19':
             log.warn_once('Your binutils version is too old and may not work!\n'  + \
-                'Try updating with: https://pwntools.readthedocs.org/en/latest/install/binutils.html\n' + \
+                'Try updating with: https://binjitsu.readthedocs.org/en/latest/install/binutils.html\n' + \
                 'Reported Version: %r' % result.strip())
 
 
@@ -323,7 +323,7 @@ def asm(shellcode, vma = 0, **kwargs):
     look in :mod:`pwnlib.contex`.
 
     To support all these architecture, we bundle the GNU assembler
-    and objcopy with pwntools.
+    and objcopy with binjitsu.
 
     Arguments:
       shellcode(str): Assembler code to assemble.
@@ -395,7 +395,7 @@ def disasm(data, vma = 0, **kwargs):
     look in :mod:`pwnlib.contex`.
 
     To support all these architecture, we bundle the GNU objcopy
-    and objdump with pwntools.
+    and objdump with binjitsu.
 
     Arguments:
       data(str): Bytestring to disassemble.

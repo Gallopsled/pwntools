@@ -5,7 +5,7 @@
 ``from pwn import *``
 ========================
 
-The most common way that you'll see pwntools used is
+The most common way that you'll see binjitsu used is
 
     >>> from pwn import *
 
@@ -15,7 +15,7 @@ This is a quick list of most of the objects and routines imported, in rough orde
 
 - ``context``
     - :data:`pwnlib.context.context`
-    - Responsible for most of the pwntools convenience settings
+    - Responsible for most of the binjitsu convenience settings
     - Set `context.log_level = 'debug'` when troubleshooting your exploit
     - Scope-aware, so you can disable logging for a subsection of code via ``pwnlib.context.ContextType.local``
 - ``remote``, ``listen``, ``ssh``, ``process``
@@ -39,7 +39,7 @@ This is a quick list of most of the objects and routines imported, in rough orde
     - :mod:`pwnlib.asm`
     - Quickly turn assembly into some bytes, or vice-versa, without mucking about
     - Supports any architecture for which you have a binutils installed
-    - Over 20 different architectures have pre-built binaries at `ppa:pwntools/binutils <https://launchpad.net/~pwntools/+archive/ubuntu/binutils>`_.
+    - Over 20 different architectures have pre-built binaries at `ppa:binjitsu/binutils <https://launchpad.net/~binjitsu/+archive/ubuntu/binutils>`_.
 - ``shellcraft``
     - :mod:`pwnlib.shellcraft`
     - Library of shellcode ready to go

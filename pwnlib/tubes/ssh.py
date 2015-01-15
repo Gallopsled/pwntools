@@ -313,7 +313,7 @@ class ssh(Timeout, Logger):
 
         self.host            = host
         self.port            = port
-        self._cachedir       = os.path.join(tempfile.gettempdir(), 'pwntools-ssh-cache')
+        self._cachedir       = os.path.join(tempfile.gettempdir(), 'binjitsu-ssh-cache')
         self._wd             = None
         misc.mkdir_p(self._cachedir)
 
@@ -674,7 +674,7 @@ class ssh(Timeout, Logger):
     def download_file(self, remote, local = None):
         """Downloads a file from the remote server.
 
-        The file is cached in /tmp/pwntools-ssh-cache using a hash of the file, so
+        The file is cached in /tmp/binjitsu-ssh-cache using a hash of the file, so
         calling the function twice has little overhead.
 
         Arguments:

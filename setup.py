@@ -16,7 +16,7 @@ with open(convert_path('pwnlib/version.py')) as fd:
     exec fd.read() in ns
 version = ns['__version__']
 
-# This makes pwntools-LICENSE.txt appear with the package folders
+# This makes binjitsu-LICENSE.txt appear with the package folders
 for scheme in INSTALL_SCHEMES.values():
     scheme['data'] = scheme['purelib']
 
@@ -40,11 +40,11 @@ if platform.system() != 'OpenBSD':
     install_requires.append('psutil')
 
 setup(
-    name                 = 'pwntools',
+    name                 = 'binjitsu',
     packages             = find_packages(),
     version              = version,
     data_files           = [('',
-                             ['LICENSE-pwntools.txt',
+                             ['LICENSE-binjitsu.txt',
                              ]),
                             ('/etc/bash_completion.d',
                              ['extra/bash_completion.d/shellcraft',
@@ -60,13 +60,13 @@ setup(
     },
     entry_points = {'console_scripts': console_scripts},
     scripts              = glob.glob("bin/*"),
-    description          = "This is the CTF framework used by Gallopsled in every CTF.",
-    author               = "Gallopsled et al.",
-    author_email         = "#gallopsled @ freenode.net",
-    url                  = 'https://github.com/Gallopsled/pwntools/',
-    download_url         = "https://github.com/Gallopsled/pwntools/tarball/%s" % version,
+    description          = "CTF framework and exploit development library.",
+    author               = "Zach Riggle",
+    author_email         = "zachriggle@gmail.com",
+    url                  = 'https://github.com/binjitsu/binjitsu/',
+    download_url         = "https://github.com/binjitsu/binjitsu/tarball/%s" % version,
     install_requires     = install_requires,
-    license              = "Mostly MIT, some GPL/BSD, see LICENSE-pwntools.txt",
+    license              = "Mostly MIT, some GPL/BSD, see LICENSE-binjitsu.txt and LICENSE-pwntools.txt",
     classifiers          = [
         'Topic :: Security',
         'Environment :: Console',

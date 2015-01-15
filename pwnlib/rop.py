@@ -352,7 +352,7 @@ class ROP(object):
 
         filename  = "%s-%s-%#x" % (basename, md5sum, elf.address)
 
-        cachedir  = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache')
+        cachedir  = os.path.join(tempfile.gettempdir(), 'binjitsu-rop-cache')
 
         if not os.path.exists(cachedir):
             os.mkdir(cachedir)

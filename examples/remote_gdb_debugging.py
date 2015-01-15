@@ -1,6 +1,6 @@
 """
 Simple example showing how to use the remote
-gdb debugging features available in pwntools.
+gdb debugging features available in binjitsu.
 """
 
 from pwn import *
