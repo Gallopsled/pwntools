@@ -3,10 +3,10 @@
 setup_linux()
 {
     sudo apt-get install software-properties-common pwgen
-    sudo apt-add-repository --yes ppa:binjitsu/binutils
+    sudo apt-add-repository --yes ppa:pwntools/binutils
     sudo apt-get update
     sudo apt-get install binutils-arm-linux-gnu binutils-mips-linux-gnu binutils-powerpc-linux-gnu
-    wget -nc https://github.com/binjitsu/binjitsu-dependencies/raw/master/capstone-2.1.2_amd64.deb
+    wget -nc https://github.com/Gallopsled/pwntools-dependencies/raw/master/capstone-2.1.2_amd64.deb
     (echo "a30bcb58fd82d32b135eec978eaa22230c44e722 *capstone-2.1.2_amd64.deb" | sha1sum -c) || exit
     sudo dpkg -i *.deb
 }
