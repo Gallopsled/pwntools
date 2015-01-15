@@ -394,9 +394,9 @@ class ROP(object):
         file(self.__get_cachefile_name(elf),'w+').write(repr(data))
 
     def _load_x64(self):
-        self._load_x86()
+        self._load_x86(True)
 
-    def _load_x86(self):
+    def _load_x86(self, x64=False):
         """Load all ROP gadgets for the selected ELF files"""
         #
         # We accept only instructions that look like these.
@@ -405,10 +405,6 @@ class ROP(object):
         # - pop reg
         # - add $sp, value
         # - ret
-        #
-        # Currently, ROPgadget does not detect multi-byte "C2" ret.
-        # https://github.com/JonathanSalwan/ROPgadget/issues/53
-        #
 
         pop   = re.compile(r'^pop (.{3})')
         add   = re.compile(r'^add .sp, (\S+)$')
@@ -416,60 +412,49 @@ class ROP(object):
         leave = re.compile(r'^leave$')
 
         self.gadgets = {}
-        rets = {}
-        md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
-        md.detail = True
+        if x64:
+            mode = capstone.CS_MODE_64
+        else:
+            mode = capstone.CS_MODE_32
+        md = capstone.Cs(capstone.CS_ARCH_X86, mode)
+
         for elf in self.elfs:
             for seg in elf.executable_segments:
-                gadgets = {}
                 if seg.header.p_type != 'PT_LOAD': continue
+
+                gadgets = {}
                 baseaddr = seg.header.p_vaddr
                 data = seg.data()
+
                 for ret_off in lists.findall(data, "\xc3"):
-                    rets[ret_off] = {"insns": ["ret"],
-                            "regs": [],
-                            "move": 4}
-                    
-                #for ret_off in lists.findall(data, "\xc2"):
-                #    adjust = packing.u16(seg.data()[ret_off+1:ret_off+3], "little", "unsigned")
-                #    rets[ret_off] = {"insns": ["ret %d" % adjust],
-                #            "regs": [],
-                #            "move": 4+adjust*4}
-                gadgets.update(rets)
-                for gad_addr, gad in rets.items():
-                    for back_off in range(10):
-                        gad_off = gad_addr-back_off
+                    for back_off in range(16):
+                        gad_off = ret_off-back_off
                         if gad_off < 0: break
                         gadget = {"insns": [], "regs": [], "move": 0}
                         bad = False 
-                        for inst in md.disasm(data[gad_off:gad_addr+5], gad_off):
-                            inst_str = "%s %s" % (inst.mnemonic, inst.op_str)
-                            inst_str = inst_str.strip()
-                            gadget["insns"].append(inst_str)
-                            if inst.mnemonic == "ret":
+                        for inst in md.disasm(data[gad_off:ret_off+1], gad_off):
+                            inst = "%s %s" % (inst.mnemonic, inst.op_str)
+                            inst = inst.strip()
+                            gadget["insns"].append(inst)
+                            if ret.match(inst):
                                 gadget["move"] += 4
                                 break
-                            elif inst.mnemonic == "pop":
-                                gadget["regs"].append(inst.op_str)
+                            elif pop.match(inst):
+                                gadget["regs"].append(pop.match(inst).groups()[0])
                                 gadget["move"] += 4
-                            elif inst.mnemonic == "add":    
-                                reg, val = map(lambda x:x.strip(), inst.op_str.split(","))
-                                if reg != "esp":
-                                    bad = True
-                                    break
+                            elif add.match(inst):
                                 try:
-                                    val = int(val, 16)
+                                    gadget["move"] += int(add.match(inst).groups()[0], 16)
                                 except ValueError:
                                     bad = True
-                                    break
-                                gadget["move"] += val
-                            elif inst.mnemonic == "leave":
+                            elif leave.match(inst):
+                                #Hack: don't ever use this gadget, except when migrating.
                                 gadget["move"] = 99999999999
                             else:
                                 bad = True
                                 break
                         try:
-                            if not gadget["insns"][-1].startswith("ret"):
+                            if not gadget["insns"][-1] == "ret":
                                 bad = True
                         except IndexError:
                             bad = True
@@ -481,7 +466,8 @@ class ROP(object):
                 
         self.pivots = {}
         for addr, gad in self.gadgets.items():
-            self.pivots[gad["move"]] = addr
+            if not (set(["esp", "rsp"]) & set(gad["regs"])):
+                self.pivots[gad["move"]] = addr
 
         #
         # HACK: Set up a special '.leave' helper.  This is so that
@@ -491,18 +477,6 @@ class ROP(object):
         if leave and leave[1]['regs'] != ["ebp", "esp"]:
             leave = None
         self.leave = leave
-
-        #
-        # Validation routine
-        #
-        # >>> valid('pop eax')
-        # True
-        # >>> valid('add rax, 0x24')
-        # False
-        # >>> valid('add esp, 0x24')
-        # True
-        #
-        valid = lambda insn: any(map(lambda pattern: pattern.match(insn), [pop,add,ret,leave]))
 
     def _load_ARM(self):
         """Load gadgets for arm and thumb.
