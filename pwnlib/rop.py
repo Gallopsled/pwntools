@@ -437,11 +437,11 @@ class ROP(object):
                             inst = inst.strip()
                             gadget["insns"].append(inst)
                             if ret.match(inst):
-                                gadget["move"] += 4
+                                gadget["move"] += self.align
                                 break
                             elif pop.match(inst):
                                 gadget["regs"].append(pop.match(inst).groups()[0])
-                                gadget["move"] += 4
+                                gadget["move"] += self.align
                             elif add.match(inst):
                                 try:
                                     gadget["move"] += int(add.match(inst).groups()[0], 16)
@@ -712,7 +712,7 @@ class ROP(object):
         # Check for 'ret' or 'ret_X'
         #
         if attr.startswith('ret'):
-            count = 4
+            count = self.align
             if '_' in attr:
                 count = int(attr.split('_')[1])
 
