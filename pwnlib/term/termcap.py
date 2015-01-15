@@ -3,6 +3,9 @@ import os, curses
 
 cache = None
 def get(cap, *args, **kwargs):
+    try: sys.stdout.fileno()
+    except: return ''
+
     default = kwargs.pop('default', '')
 
     if 'PWNLIB_NOTERM' in os.environ:
@@ -34,8 +37,12 @@ def get(cap, *args, **kwargs):
 
 def init():
     global cache
+    cache = {}
+
+    try: sys.stdout.fileno()
+    except: return
+
 
     if 'PWNLIB_NOTERM' not in os.environ:
         curses.setupterm()
 
-    cache = {}
