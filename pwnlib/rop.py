@@ -33,11 +33,6 @@ class ROP(object):
             elfs(list): List of pwnlib.elf.ELF objects for mining
         """
 
-        try:
-            import ropgadget
-        except ImportError:
-            log.exception("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
-
         # Permit singular ROP(elf) vs ROP([elf])
         if isinstance(elfs, ELF):
             elfs = [elfs]
@@ -473,10 +468,11 @@ class ROP(object):
         # HACK: Set up a special '.leave' helper.  This is so that
         #       I don't have to rewrite __getattr__ to support this.
         #
-        leave = self.search(regs = ["ebp", "esp"], order = 'regs')
-        if leave and leave[1]['regs'] != ["ebp", "esp"]:
-            leave = None
-        self.leave = leave
+        self.leave = None
+        for addr, gad in self.gadgets.items():
+            if gad["insns"] == ["leave", "ret"]:
+                self.leave = leave
+                break
 
     def _load_ARM(self):
         """Load gadgets for arm and thumb.
