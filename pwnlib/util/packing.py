@@ -82,22 +82,15 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         '\\x05\\x04\\x03\\x02\\x01'
         >>> pack(-1)
         '\\xff\\xff\\xff\\xff'
-        >>> pack(2**32, word_size = 'wrap')
-        '\\x00\\x00\\x00\\x00'
 """
     if sign is None and number < 0:
         sign = True
 
-    if word_size == 'wrap':
-        word_size = None
-        with context.local(**kwargs):
-            number    = number & ((1 << context.bits)-1)
+    if word_size != 'all':
+        kwargs.setdefault('word_size', word_size)
 
     kwargs.setdefault('endianness', endianness)
     kwargs.setdefault('sign', sign)
-
-    if word_size != 'all':
-        kwargs.setdefault('word_size', word_size)
 
     with context.local(**kwargs):
         # Lookup in context if not found
@@ -210,24 +203,19 @@ def unpack(data, word_size = None, endianness = None, sign = None, **kwargs):
         number = 0
 
         if endianness == "little":
-            for c in reversed(data):
-                number = (number << 8) + ord(c)
-        elif endianness == "big":
-            for c in data:
-                number = (number << 8) + ord(c)
-        else:
-            raise ValueError("endianness must be either 'little' or 'big'")
+            data = reversed(data)
+        data = bytearray(data)
+
+        for c in data:
+            number = (number << 8) + c
 
         number = number & ((1 << word_size) - 1)
 
-        if sign == False:
+        if not sign:
             return number
-        elif sign == True:
-            signbit = number & (1 << (word_size-1))
-            return number - 2*signbit
-        else:
-            raise ValueError("unpack(): sign must be either True or False")
 
+        signbit = number & (1 << (word_size-1))
+        return number - 2*signbit
 
 def unpack_many(data, word_size = None, endianness = None, sign = None, **kwargs):
     """unpack(data, word_size = None, endianness = None, sign = None) -> int list
