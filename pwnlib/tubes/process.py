@@ -39,7 +39,7 @@ class process(tube):
     """
     def __init__(self, args, shell = False, executable = None,
                  cwd = None, env = None, timeout = Timeout.default,
-                 stderr_debug = False):
+                 stderr_debug = False, close_fds = True):
         super(process, self).__init__(timeout)
 
         if executable:
@@ -60,7 +60,8 @@ class process(tube):
             args, shell = shell, executable = executable,
             cwd = cwd, env = env,
             stdin = subprocess.PIPE, stdout = subprocess.PIPE,
-            stderr = subprocess.PIPE if stderr_debug else subprocess.STDOUT)
+            stderr = subprocess.PIPE if stderr_debug else subprocess.STDOUT,
+            close_fds = close_fds)
         self.stop_noticed = False
 
         # Set in non-blocking mode so that a call to call recv(1000) will
