@@ -1,9 +1,10 @@
 """Return Oriented Programming
 """
 import hashlib, os, sys, tempfile, re
+import capstone
 
 from .elf     import ELF
-from .util    import packing
+from .util    import packing, lists
 from .log     import getLogger
 
 log = getLogger(__name__)
@@ -32,11 +33,6 @@ class ROP(object):
             elfs(list): List of pwnlib.elf.ELF objects for mining
         """
 
-        try:
-            import ropgadget
-        except ImportError:
-            log.exception("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
-
         # Permit singular ROP(elf) vs ROP([elf])
         if isinstance(elfs, ELF):
             elfs = [elfs]
@@ -48,7 +44,10 @@ class ROP(object):
         self.base = base
         self.align = max(e.elfclass for e in elfs)/8
         self.migrated = False
-        self.__load()
+        meth = '_load_' + self.elfs[0].get_machine_arch()
+        if not hasattr(self, meth):
+            log.error("Cannot load rop gadgets for architecture %r" % self.elfs[0].get_machine_arch())
+        getattr(self, meth)()
 
     def resolve(self, resolvable):
         """Resolves a symbol to an address
@@ -243,6 +242,26 @@ class ROP(object):
 
         return out
 
+    def _build_ARM(self):
+        """Builds the ropchain for arm.
+        Structures are currently not suported
+        """
+
+        return_addr = None
+        regs = set()
+        rop = []
+        roppart = []
+        for (func_addr, args) in self._chain[::-1]:
+            regs_dict = dict(zip(["r0", "r1", "r2", "r3"], args))
+            if return_addr:
+                regs_dict["lr"] = return_addr
+            return_addr, roppart = self._set_regs_arm(regs_dict, func_addr)
+            rop = roppart + rop
+        rop = [return_addr] + rop
+        return map(lambda e: (e,), rop)
+
+
+
     def chain(self):
         """Build the ROP chain
 
@@ -369,7 +388,10 @@ class ROP(object):
     def __cache_save(self, elf, data):
         file(self.__get_cachefile_name(elf),'w+').write(repr(data))
 
-    def __load(self):
+    def _load_x64(self):
+        self._load_x86(True)
+
+    def _load_x86(self, x64=False):
         """Load all ROP gadgets for the selected ELF files"""
         #
         # We accept only instructions that look like these.
@@ -378,129 +400,228 @@ class ROP(object):
         # - pop reg
         # - add $sp, value
         # - ret
-        #
-        # Currently, ROPgadget does not detect multi-byte "C2" ret.
-        # https://github.com/JonathanSalwan/ROPgadget/issues/53
-        #
 
         pop   = re.compile(r'^pop (.{3})')
         add   = re.compile(r'^add .sp, (\S+)$')
         ret   = re.compile(r'^ret$')
         leave = re.compile(r'^leave$')
 
-        #
-        # Validation routine
-        #
-        # >>> valid('pop eax')
-        # True
-        # >>> valid('add rax, 0x24')
-        # False
-        # >>> valid('add esp, 0x24')
-        # True
-        #
-        valid = lambda insn: any(map(lambda pattern: pattern.match(insn), [pop,add,ret,leave]))
-
-        #
-        # Currently, ropgadget.args.Args() doesn't take any arguments, and pulls
-        # only from sys.argv.  Preserve it through this call.  We also
-        # monkey-patch sys.stdout to suppress output from ropgadget.
-        #
-        argv    = sys.argv
-        stdout  = sys.stdout
-        class Wrapper:
-            def __init__(self, fd):
-                self._fd = fd
-            def write(self, s):
-                pass
-            def __getattr__(self, k):
-                return self._fd.__getattribute__(k)
-        gadgets = {}
+        self.gadgets = {}
+        if x64:
+            mode = capstone.CS_MODE_64
+        else:
+            mode = capstone.CS_MODE_32
+        md = capstone.Cs(capstone.CS_ARCH_X86, mode)
 
         for elf in self.elfs:
-            cache = self.__cache_load(elf)
-            if cache:
-                gadgets.update(cache)
-                continue
+            for seg in elf.executable_segments:
+                if seg.header.p_type != 'PT_LOAD': continue
 
-            log.info_once("Loading gadgets for %r @ %#x" % (elf.path, elf.address))
+                gadgets = {}
+                baseaddr = seg.header.p_vaddr
+                data = seg.data()
 
-            try:
-                sys.stdout = Wrapper(sys.stdout)
+                for ret_off in lists.findall(data, "\xc3"):
+                    for back_off in range(16):
+                        gad_off = ret_off-back_off
+                        if gad_off < 0: break
+                        gadget = {"insns": [], "regs": [], "move": 0}
+                        bad = False 
+                        for inst in md.disasm(data[gad_off:ret_off+1], gad_off):
+                            inst = "%s %s" % (inst.mnemonic, inst.op_str)
+                            inst = inst.strip()
+                            gadget["insns"].append(inst)
+                            if ret.match(inst):
+                                gadget["move"] += self.align
+                                break
+                            elif pop.match(inst):
+                                gadget["regs"].append(pop.match(inst).groups()[0])
+                                gadget["move"] += self.align
+                            elif add.match(inst):
+                                try:
+                                    gadget["move"] += int(add.match(inst).groups()[0], 16)
+                                except ValueError:
+                                    bad = True
+                            elif leave.match(inst):
+                                #Hack: don't ever use this gadget, except when migrating.
+                                gadget["move"] = 99999999999
+                            else:
+                                bad = True
+                                break
+                        try:
+                            if not gadget["insns"][-1] == "ret":
+                                bad = True
+                        except IndexError:
+                            bad = True
+                        if not bad:
+                            gadgets[gad_off] = gadget
 
-                try:
-                    import ropgadget
-                except ImportError:
-                    log.error("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
-                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'add|pop|leave|ret', '--nojop', '--nosys']
-                args = ropgadget.args.Args().getArgs()
-                core = ropgadget.core.Core(args)
-                core.do_binary(elf.path)
-                core.do_load(0)
-            finally:
-                sys.argv   = argv
-                sys.stdout = stdout
-
-            elf_gadgets = {}
-            for gadget in core._Core__gadgets:
-
-                address = gadget['vaddr'] - elf.load_addr + elf.address
-                insns   = [g.strip() for g in gadget['gadget'].split(';')]
-
-                if all(map(valid, insns)):
-                    elf_gadgets[address] = insns
-            self.__cache_save(elf, elf_gadgets)
-            gadgets.update(elf_gadgets)
-
-
-        #
-        # For each gadget we decided to keep, find out how much it moves the stack,
-        # and log which registers it modifies.
-        #
-        self.gadgets = {}
-        self.pivots  = {}
-
-        frame_regs = ['ebp','esp'] if self.align == 4 else ['rbp','rsp']
-
-        for addr,insns in gadgets.items():
-            sp_move = 0
-            regs = []
-            for insn in insns:
-                if pop.match(insn):
-                    regs.append(pop.match(insn).group(1))
-                    sp_move += self.align
-                elif add.match(insn):
-                    sp_move += int(add.match(insn).group(1), 16)
-                elif ret.match(insn):
-                    sp_move += self.align
-                elif leave.match(insn):
-                    #
-                    # HACK: Since this modifies ESP directly, this should
-                    #       never be returned as a 'normal' ROP gadget that
-                    #       simply 'increments' the stack.
-                    #
-                    #       As such, the 'move' is set to a very large value,
-                    #       to prevent .search() from returning it unless $sp
-                    #       is specified as a register.
-                    #
-                    sp_move += 9999999999
-                    regs    += frame_regs
-
-            # Permit duplicates, because blacklisting bytes in the gadget
-            # addresses may result in us needing the dupes.
-            self.gadgets[addr] = {'insns': insns, 'regs': regs, 'move': sp_move}
-
-            # Don't use 'pop esp' for pivots
-            if not set(['rsp','esp']) & set(regs):
-                self.pivots[sp_move]  = addr
+                for gad_off, gad in gadgets.items():
+                    self.gadgets[baseaddr+gad_off] = gad 
+                
+        self.pivots = {}
+        for addr, gad in self.gadgets.items():
+            if not (set(["esp", "rsp"]) & set(gad["regs"])):
+                self.pivots[gad["move"]] = addr
 
         #
         # HACK: Set up a special '.leave' helper.  This is so that
         #       I don't have to rewrite __getattr__ to support this.
         #
-        leave = self.search(regs = frame_regs, order = 'regs')
-        if leave and leave[1]['regs'] != frame_regs:
-            leave = None
-        self.leave = leave
+        self.leave = None
+        for addr, gad in self.gadgets.items():
+            if gad["insns"] == ["leave", "ret"]:
+                self.leave = leave
+                break
+
+    def _load_ARM(self):
+        """Load gadgets for arm and thumb.
+        currently we are only using pop gadgets,
+        and only searching the first elf image
+        """
+        elf = self.elfs[0]
+        pops = {}
+        movs = {}
+        self.gadgets = {}
+        md = capstone.Cs(capstone.CS_ARCH_ARM, capstone.CS_MODE_ARM)
+        md.skipdata = True
+        for seg in elf.executable_segments:
+            if seg.header.p_type != 'PT_LOAD': continue
+            md.mode = capstone.CS_MODE_ARM
+            for inst in md.disasm(seg.data(), seg.header.p_vaddr):
+                if inst.mnemonic == "pop":
+                    regs = inst.op_str[1:-1].split(",")
+                    regs = map(lambda reg: reg.strip(), regs)
+                    insns = ["pop %s" % inst.op_str]
+                    if "pc" in regs:
+                        pops[inst.address] = {"insns": insns, "regs": regs, "move": 4*len(regs), "type": "pop"}
+            md.mode = capstone.CS_MODE_THUMB
+            for inst in md.disasm(seg.data(), seg.header.p_vaddr):
+                if inst.mnemonic == "pop":
+                    regs = inst.op_str[1:-1].split(",")
+                    regs = map(lambda reg: reg.strip(), regs)
+                    insns = ["pop %s" % inst.op_str]
+                    if "pc" in regs:
+                        pops[inst.address+1] = {"insns": insns, "regs": regs, "move": 4*len(regs), "type": "pop"}
+        self.gadgets.update(pops)
+        for addr, gad in self.gadgets.items():
+            if addr & 1 == 0:
+                #arm
+                md.mode = capstone.CS_MODE_ARM
+                prev_addr = addr - 4
+                prev = elf.read(prev_addr, 4)
+                try:
+                    inst = md.disasm(prev, prev_addr).next()
+                    if inst.mnemonic.startswith("mov"):
+                        to_reg, from_reg = [reg.strip() for reg in inst.op_str.split(",")]
+                        insns = ["mov %s, %s" % (to_reg, from_reg)] + gad["insns"]
+                        movs[prev_addr+1] = {
+                                "insns": insns,
+                                "mov_to": to_reg,
+                                "mov_from": from_reg,
+                                "move": gad["move"],
+                                "regs": gad["regs"],
+                                "type": "mov;pop"}
+                except StopIteration:
+                    pass
+
+            else:
+                #thumb
+                md.mode = capstone.CS_MODE_THUMB
+                prev_addr = addr - 3
+                prev = elf.read(prev_addr, 2)
+                try:
+                    inst = md.disasm(prev, prev_addr).next()
+                    if inst.mnemonic.startswith("mov"):
+                        to_reg, from_reg = [reg.strip() for reg in inst.op_str.split(",")]
+                        insns = ["mov %s, %s" % (to_reg, from_reg)] + gad["insns"]
+                        movs[prev_addr+1] = {
+                                "insns": insns,
+                                "mov_to": to_reg,
+                                "mov_from": from_reg,
+                                "move": gad["move"],
+                                "regs": gad["regs"],
+                                "type": "mov;pop"}
+                except StopIteration:
+                    pass
+        self.gadgets.update(movs)
+        return pops, movs
+
+    def _find_best_pop_gadget(self, regs):
+        """Helper function for _set_regs.
+        Finds the 'best' gadget, which currently means the first gadget
+        with most registres we want to set
+        """
+        def gadget_score(gadget):
+            return len(set(gadget["regs"]) & regs)
+        #must contain 1 reg we want set.
+        gadgets = filter(lambda (a,g): g["type"] == "pop" and
+                len(set(g["regs"]) & regs) > 0,
+            self.gadgets.items())
+        gadget = max(gadgets, key = lambda (a, g): gadget_score(g))
+        return gadget
+
+    def _find_best_mov_gadget(self, reg):
+        def gadget_score(gadget):
+            return len(gadget["regs"])
+        gadgets = filter(lambda (a,g): g["type"] == "mov;pop" and
+                g["mov_from"] in self.can_pop
+                and g["mov_to"] == reg,
+            self.gadgets.items())
+        gadget = min(gadgets, key = lambda (a, g): gadget_score(g))
+        return gadget
+
+
+    def _set_regs_arm(self, regs_dict, return_addr):
+        """Generates a rop chain that sets the regsitres from regs_dict
+        and return to return_addr when it is done
+        """
+        ropchain = []
+        regs = set(regs_dict.keys())
+        old_regs = None
+
+        for cant_pop in (regs - self.can_pop):
+            if cant_pop in self.can_mov:
+                mov_addr, mov_gad = self._find_best_mov_gadget(cant_pop)
+                pop_addr, pop_gad = self._find_best_pop_gadget(set([mov_gad["mov_from"]]))
+                ropchain.append(pop_addr)
+                pop_regs_dict = {mov_gad["mov_from"]: regs_dict[cant_pop]}
+                ropchain += [pop_regs_dict.get(reg, "$$$$") for reg in pop_gad["regs"][:-1]]
+                ropchain.append(mov_addr)
+                ropchain += [regs_dict.get(reg, "$$$$") for reg in mov_gad["regs"][:-1]]
+                regs.discard(cant_pop)
+
+
+        while regs and regs != old_regs:
+            addr, inst = self._find_best_pop_gadget(regs)
+            ropchain.append(addr)
+            ropchain += [regs_dict.get(reg, "$$$$") for reg in inst["regs"][:-1]]
+            old_regs = set(regs)
+            regs -= set(inst["regs"])
+
+        ropchain += [return_addr]
+        if regs:
+            log.error("Could not set regs: %r", regs)
+        return ropchain[0], ropchain[1:]
+
+    @property
+    def can_pop(self):
+        """For arm mode only:
+        Which registres we can set.
+        """
+        l = []
+        for gad in self.gadgets.values():
+            if gad["type"] == "pop":
+                l.extend(gad["regs"])
+        return set(l)
+
+    @property
+    def can_mov(self):
+        l = []
+        for gad in self.gadgets.values():
+            if gad["type"] == "mov;pop" and gad["mov_from"] in self.can_pop:
+                l.append(gad["mov_to"])
+        return set(l)
 
     def __repr__(self):
         return "ROP(%r)" % self.elfs
@@ -585,7 +706,7 @@ class ROP(object):
         # Check for 'ret' or 'ret_X'
         #
         if attr.startswith('ret'):
-            count = 4
+            count = self.align
             if '_' in attr:
                 count = int(attr.split('_')[1])
 
