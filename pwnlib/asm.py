@@ -215,7 +215,7 @@ def _bfdname():
         'amd64'   : 'elf64-x86-64',
         'arm'     : 'elf32-littlearm',
         'thumb'   : 'elf32-littlearm',
-        'mips'    : 'elf32-%smips' % context.endianness,
+        'mips'    : 'elf32-trad%smips' % context.endianness,
         'alpha'   : 'elf64-alpha',
         'cris'    : 'elf32-cris',
         'ia64'    : 'elf64-ia64-%s' % context.endianness,
