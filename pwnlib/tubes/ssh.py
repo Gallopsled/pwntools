@@ -327,7 +327,7 @@ class ssh(Timeout, Logger):
             ssh_config.parse(file(os.path.expanduser('~/.ssh/config')))
             host_config = ssh_config.lookup(host)
             if 'hostname' in host_config:
-                host = host_config['hostname']
+                self.host = host = host_config['hostname']
             if not keyfile and 'identityfile' in host_config:
                 keyfile = host_cofig['identityfile'][0]
         except:
@@ -451,10 +451,10 @@ class ssh(Timeout, Logger):
         Examples:
             >>> from pwn import *
             >>> l = listen()
-            >>> s =  ssh(host='localhost',
+            >>> s =  ssh(host='example.pwnme',
             ...         user='demouser',
             ...         password='demopass')
-            >>> a = s.connect_remote('localhost', l.lport)
+            >>> a = s.connect_remote(s.host, l.lport)
             >>> b = l.wait_for_connection()
             >>> a.sendline('Hello')
             >>> print repr(b.recvline())
@@ -474,11 +474,11 @@ class ssh(Timeout, Logger):
         Examples:
 
             >>> from pwn import *
-            >>> s =  ssh(host='localhost',
+            >>> s =  ssh(host='example.pwnme',
             ...         user='demouser',
             ...         password='demopass')
             >>> l = s.listen_remote()
-            >>> a = remote('localhost', l.port)
+            >>> a = remote(s.host, l.port)
             >>> b = l.wait_for_connection()
             >>> a.sendline('Hello')
             >>> print repr(b.recvline())
