@@ -23,24 +23,32 @@ Example:
    >>> print shellcraft.thumb.mov('r1', 0).rstrip()
        eor r1, r1
    >>> print shellcraft.thumb.mov('r1', 10).rstrip()
-       mov r1, #10
+       eor r1, r1
+       add r1, #0x9
+       add r1, #1
    >>> print shellcraft.thumb.mov('r1', 17).rstrip()
-       mov r1, #17
+       eor r1, r1
+       add r1, #0x11
    >>> print shellcraft.thumb.mov('r1', 'r1').rstrip()
        /* moving r1 into r1, but this is a no-op */
    >>> print shellcraft.thumb.mov('r1', 0xdead00ff).rstrip()
-       ldr r1, value_...
-       b value_..._after
-   value_...: .word 3735879935
-   value_..._after:
+       eor r1, r1
+       add r1, #0xde
+       lsl r1, #8
+       add r1, #0xad
+       lsl r1, #16
+       add r1, #0xff
    >>> with context.local(os = 'linux'):
    ...     print shellcraft.thumb.mov('r1', 'SYS_execve').rstrip()
-       mov r1, #11
+        eor r1, r1
+        add r1, #0xb
    >>> with context.local(os = 'freebsd'):
    ...     print shellcraft.thumb.mov('r1', 'SYS_execve').rstrip()
-       mov r1, #59
+        eor r1, r1
+        add r1, #0x3b
    >>> with context.local(os = 'linux'):
    ...     print shellcraft.thumb.mov('r1', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
+       eor r1, r1
        mov r1, #7
 
 </%docstring>
@@ -61,7 +69,7 @@ if isinstance(src, (str, unicode)):
                     return
                 except (NameError, TypeError):
                     pass
-    if isinstance(src, (str, unicode)):
+    if isinstance(src, (str, unicode)) and not src in all_regs:
         src = '\x00' * (4 - len(src_orig)) + src_orig
         src = packing.unpack(src, 32, 'little')
 
