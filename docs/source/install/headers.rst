@@ -1,5 +1,5 @@
 Python Development Headers
--------------
+-----------------------------
 
 Some of pwntools' Python dependencies require native extensions (for example, Paramiko requires PyCrypto).
 

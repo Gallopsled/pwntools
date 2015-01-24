@@ -18,13 +18,11 @@ def pidof(target):
 
     Get PID(s) of `target`.  The returned PID(s) depends on the type of `target`:
 
-        - :class:`str`: PIDs of all processes with a name matching `target`.
-
-        - :class:`pwnlib.tubes.process.process`: singleton list of the PID of `target`.
-
-        - :class:`pwnlib.tubes.sock.sock`: singleton list of the PID at the
-        remote end of `target` if it is running on the host.  Otherwise an
-        empty list.
+    - :class:`str`: PIDs of all processes with a name matching `target`.
+    - :class:`pwnlib.tubes.process.process`: singleton list of the PID of `target`.
+    - :class:`pwnlib.tubes.sock.sock`: singleton list of the PID at the
+      remote end of `target` if it is running on the host.  Otherwise an
+      empty list.
 
     Arguments:
         target(object):  The target whose PID(s) to find.

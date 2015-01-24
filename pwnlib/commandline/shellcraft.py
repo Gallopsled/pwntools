@@ -123,7 +123,7 @@ p.add_argument(
     'shellcode',
     nargs = '?',
     default = '',
-    metavar = '<shellcode>',
+    metavar = 'shellcode',
     help = 'The shellcode you want',
 )
 
@@ -133,7 +133,7 @@ p.epilog = 'Available shellcodes are:\n' + names
 p.add_argument(
     'args',
     nargs = '*',
-    metavar = '<arg>',
+    metavar = 'arg',
     default = (),
     help = 'Argument to the chosen shellcode',
 )
