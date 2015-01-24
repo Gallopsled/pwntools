@@ -31,13 +31,11 @@ Latest Version
 --------------
 
 Alternatively if you prefer to use the latest version from the
-repository:
+repository, pip can install directly from github.
 
 .. code-block:: bash
 
-    $ git clone https://github.com/Gallopsled/pwntools
-    $ cd pwntools
-    $ pip install -e .
+    $ pip install git+https://github.com/Gallopsled/pwntools#egg=pwntools
 
 .. _Ubuntu: https://launchpad.net/~pwntools/+archive/ubuntu/binutils
 .. _libcapstone 2.1: http://www.capstone-engine.org
