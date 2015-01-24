@@ -1,11 +1,12 @@
 <%
-  from pwnlib.shellcraft import common
+  from pwnlib.util import fiddling, packing
+  from pwnlib.shellcraft import common, thumb
   from pwnlib import constants
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
 %>
-<%page args="dst, src"/>
+<%page args="dst, src, scrap_register = 'r9'"/>
 <%docstring>
-    mov(dst, src)
+    mov(dst, src, scrap_register = 'r9')
 
     Returns THUMB code for moving the specified source value
     into the specified destination register.
@@ -47,16 +48,22 @@ Example:
 all_regs = ['r' + str(n) for n in range(16)] + ['sp', 'fp', 'pc', 'lr']
 src_orig = src
 if isinstance(src, (str, unicode)):
-    src = src.strip()
-    if src.lower() in all_regs:
-        src = src.lower()
-    else:
-        with ctx.local(arch = 'thumb'):
-            try:
-                src = constants.eval(src)
-            except (AttributeError, ValueError):
-                log.error("Could not figure out the value of %r" % src)
-                return
+    if not '\n' in src:
+        src = src.strip()
+        if src.lower() in all_regs:
+            src = src.lower()
+        else:
+            with ctx.local(arch = 'thumb'):
+                try:
+                    src = constants.eval(src)
+                except (AttributeError, ValueError):
+                    log.error("Could not figure out the value of %r" % src)
+                    return
+                except (NameError, TypeError):
+                    pass
+    if isinstance(src, (str, unicode)):
+        src = '\x00' * (4 - len(src_orig)) + src_orig
+        src = packing.unpack(src, 32, 'little')
 
 %>
 % if dst == src:
@@ -66,69 +73,49 @@ if isinstance(src, (str, unicode)):
 % else:
   <%
     srcu = src & 0xffffffff
-    srcs = srcu - 2 * (srcu & 0x80000000)
+    p = packing.pack(srcu, 32, 'little')
   %>\
   %if srcu == 0:
     eor ${dst}, ${dst}
-  %elif srcu < 256:
-    mov ${dst}, #${src}
-  %elif -256 < srcs < 0:
-    eor ${dst}, ${dst}
-    sub ${dst}, #${-srcs}
   %else:
+    eor ${dst}, ${dst}
     <%
-      shift1 = 0
-      while (1 << shift1) & src == 0:
-          shift1 += 1
+        to_shift = 0
+        count = 4
     %>\
-    %if (0xff << shift1) & src == src:
-      %if shift1 < 4:
-        mov ${dst}, #${src >> shift1}
-        lsl ${dst}, #4
-        lsr ${dst}, #{4 - shift1}
-      %else:
-        mov ${dst}, #${src >> shift1}
-        lsl ${dst}, #${shift1}
-      %endif
-    %else:
-      <%
-        shift2 = 8
-        while (1 << shift2) & src == 0:
-            shift2 += 1
-      %>\
-      %if ((0xff << shift2) | 0xff) & src == src:
-        mov ${dst}, #${src >> shift2}
-        lsl ${dst}, #${shift2}
-        add ${dst}, #${src & 0xff}
-      %else:
+    <% 
+        while (srcu >> 24) == 0:
+            count -= 1
+            srcu <<= 8
+    %>\
+    % while srcu > 0:
         <%
-          shift3 = shift1 + 8
-          while (1 << shift3) & src == 0:
-              shift3 += 1
+            count -= 1
+            bval = srcu >> 24
+            srcu = (srcu << 8) & 0xffffffff
+            if bval == 0:
+                to_shift += 8
         %>\
-        %if ((0xff << shift1) | (0xff << shift3)) & src == src:
-          mov ${dst}, #${src >> shift3}
-          lsl ${dst}, #${shift3 - shift1}
-          add ${dst}, #${(src >> shift1) & 0xff}
-          lsl ${dst}, #${shift1}
-        %else:
+        % if bval > 0:
+            % if to_shift:
+                lsl ${dst}, #${to_shift}
+                <%
+                    to_shift = 0
+                %>\
+            % endif
+            % if bval == ord('\n'):
+                add ${dst}, #0x${'%x' % (bval - 1)}
+                add ${dst}, #1
+            % else:
+                add ${dst}, #0x${'%x' % bval}
+            %endif
             <%
-              id = common.label("value")
-              extra = ''
-              if (src & 0xff000000 == 0):
-                  src = src | 0xff000000
-                  extra = '\n '.join([
-                    "lsl %s, #8" % dst,
-                    "lsr %s, #8" % dst
-                  ])
+                to_shift += 8
             %>\
-            ldr ${dst}, ${id}
-            b ${id}_after
-            ${id}: .word ${src}
-            ${id}_after:
-            ${extra}
         %endif
-      %endif
-    %endif
+    % endwhile
+    % if count > 0:
+        lsl ${dst}, #${count * 8}
+    % endif
   %endif
 %endif
