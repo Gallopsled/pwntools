@@ -4,9 +4,9 @@
   from pwnlib import constants
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
 %>
-<%page args="dst, src, scrap_register = 'r9'"/>
+<%page args="dst, src"/>
 <%docstring>
-    mov(dst, src, scrap_register = 'r9')
+    mov(dst, src)
 
     Returns THUMB code for moving the specified source value
     into the specified destination register.
