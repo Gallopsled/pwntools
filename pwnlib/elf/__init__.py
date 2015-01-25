@@ -20,6 +20,8 @@ def load(*args, **kwargs):
     """Compatibility wrapper for binjitsu v1"""
     return ELF(*args, **kwargs)
 
+# Monkey-patch some things inside elftools to make life easier
+
 class ELF(ELFFile):
     """Encapsulates information about an ELF file.
 
@@ -468,6 +470,10 @@ class ELF(ELFFile):
         data = self.stream.read(self.stream.size())
         self.stream.seek(old)
         return data
+
+    @property
+    def data(self):
+        return self.get_data()
 
     def disasm(self, address, n_bytes):
         """Returns a string of disassembled instructions at
