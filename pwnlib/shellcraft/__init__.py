@@ -110,6 +110,8 @@ class module(ModuleType):
             value = value.lstrip('.')
             templates.append(value)
 
+    templates = sorted(templates)
+
 
 # To prevent garbage collection
 tether = sys.modules[__name__]
