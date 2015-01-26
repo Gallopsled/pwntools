@@ -335,7 +335,7 @@ class ssh(Timeout, Logger):
 
 
         msg = 'Connecting to %s on port %d' % (host, port)
-        with log.waitfor(msg) as h:
+        with self.waitfor(msg) as h:
             self.client = paramiko.SSHClient()
 
             class IgnorePolicy(paramiko.MissingHostKeyPolicy):
