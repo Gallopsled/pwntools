@@ -18,12 +18,10 @@ def wget(url, save=None, timeout=5, **kwargs):
     Example:
 
       >>> url    = 'https://httpbin.org/robots.txt'
-      >>> with context.local(log_level='ERROR'):
-      ...     result = wget(url)
+      >>> result = wget(url)
       >>> result
       'User-agent: *\\nDisallow: /deny\\n'
-      >>> with context.local(log_level='ERROR'):
-      ...     _ = wget(url, True)
+      >>> result2 = wget(url, True)
       >>> result == file('robots.txt').read()
       True
     """
