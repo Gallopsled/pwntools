@@ -1,10 +1,6 @@
 #!/usr/bin/env python2
 import argparse, sys
-from pwnlib.elf import ELF
-from pwnlib.util.fiddling import unhex
-
-import pwnlib.log
-pwnlib.log.install_default_handler()
+from pwn import *
 
 p = argparse.ArgumentParser()
 p.add_argument('elf',help="File to patch")

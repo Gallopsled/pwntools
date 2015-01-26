@@ -1,11 +1,7 @@
 #!/usr/bin/env python2
 import argparse, sys
-from pwnlib import asm
-from pwnlib.context import context
-from string import whitespace, hexdigits
-
-import pwnlib.log
-pwnlib.log.install_default_handler()
+from pwn import *
+from .   import common
 
 parser = argparse.ArgumentParser(
     description = 'Disassemble bytes into text format'
@@ -21,10 +17,12 @@ parser.add_argument(
 parser.add_argument(
     '-c', '--context',
     metavar = '<opt>',
-    choices = context.architectures,
-    default = 'i386',
-    help = 'The architecture of the shellcode (default: i386), choose from:\n%s' % ', '.join(context.architectures)
+    action = 'append',
+    type   = common.context_arg,
+    choices = common.choices,
+    help = 'The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: %(choices)s'
 )
+
 
 def main():
     args = parser.parse_args()
@@ -39,6 +37,6 @@ def main():
     else:
         dat = sys.stdin.read()
 
-    print asm.disasm(dat, arch = args.context)
+    print asm.disasm(dat)
 
 if __name__ == '__main__': main()

@@ -1,15 +1,7 @@
 #!/usr/bin/env python2
 import argparse, sys, os, types
-import pwnlib
-from pwnlib import util
-import pwnlib.term.text as text
-from pwnlib import shellcraft
-from pwnlib.context import context
-from pwnlib.log import getLogger, install_default_handler
-install_default_handler()
-
-
-log = getLogger('pwnlib.commandline.shellcraft')
+from pwn import *
+from . import common
 
 r = text.red
 g = text.green
@@ -29,7 +21,6 @@ banner = '\n'.join(['  ' + r('____') + '  ' + g('_') + '          ' + r('_') + '
 # \___ \| '_ \ / _ \ | |/ __| '__/ _` | |_| __|
 #  ___) | | | |  __/ | | (__| | | (_| |  _| |_
 # |____/|_| |_|\___|_|_|\___|_|  \__,_|_|  \__|
-
 
 p = argparse.ArgumentParser(
     description = 'Microwave shellcode -- Easy, fast and delicious',
@@ -168,23 +159,17 @@ def main():
             pass
 
     # And he strikes again!
-    os = arch = None
-    for k in args.shellcode.split('.')[:-1]:
-        if k in context.architectures:
-            arch = k
-        elif k in context.oses:
-            os = k
-
+    map(common.context_arg, args.shellcode.split('.'))
     code = func(*args.args)
 
     if args.format in ['a', 'asm', 'assembly']:
         print code
         exit()
     if args.format == 'p':
-        print pwnlib.asm.cpp(code, arch = arch, os = os)
+        print cpp(code)
         exit()
 
-    code = pwnlib.asm.asm(code, arch = arch, os = os)
+    code = asm(code)
 
     if args.format in ['s', 'str', 'string']:
         code = repr(code) + '\n'
@@ -193,7 +178,7 @@ def main():
     elif args.format in ['h', 'hex']:
         code = pwnlib.util.fiddling.enhex(code) + '\n'
     elif args.format in ['i', 'hexii']:
-        code = pwnlib.util.fiddling.hexii(code) + '\n'
+        code = hexii(code) + '\n'
 
     if not sys.stdin.isatty():
         sys.stdout.write(sys.stdin.read())
