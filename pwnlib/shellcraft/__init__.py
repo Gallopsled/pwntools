@@ -98,6 +98,21 @@ class module(ModuleType):
             result.extend(m.__shellcodes__())
         return result
 
+    template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+    templates    = []
+
+    for root, subfolder, files in os.walk(template_dir):
+        for file in filter(lambda x: x.endswith('.asm'), files):
+            value = os.path.splitext(file)[0]
+            value = os.path.join(root, value)
+            value = value.replace(template_dir, '')
+            value = value.replace(os.path.sep, '.')
+            value = value.lstrip('.')
+            templates.append(value)
+
+    templates = sorted(templates)
+
+
 # To prevent garbage collection
 tether = sys.modules[__name__]
 
