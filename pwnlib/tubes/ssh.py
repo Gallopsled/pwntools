@@ -485,8 +485,8 @@ if can_execve:
 
         return python
 
-    def run(self, process, tty = False, wd = None, env = None, timeout = Timeout.default):
-        r"""run(process, tty = False, wd = None, env = None, timeout = Timeout.default) -> ssh_channel
+    def system(self, process, tty = False, wd = None, env = None, timeout = Timeout.default):
+        r"""system(process, tty = False, wd = None, env = None, timeout = Timeout.default) -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
         then a TTY is requested on the remote server.
@@ -509,6 +509,9 @@ if can_execve:
             wd = self._wd
 
         return ssh_channel(self, process, tty, wd, env, timeout)
+
+    #: Backward compatibility.  Use :meth:`system`
+    run = system
 
     def run_to_end(self, process, tty = False, wd = None, env = None):
         r"""run_to_end(process, tty = False, timeout = Timeout.default, env = None) -> str
