@@ -1,9 +1,6 @@
 language: python
 python:
   - "2.7"
-branches:
-  only:
-    - master
 install:
   - source .travis_install.sh
   - source .travis_ssh_setup.sh
