@@ -57,7 +57,7 @@ def main():
             log.critical('Pattern contains characters not present in the alphabet')
             sys.exit(1)
 
-        offset = cyclic.cyclic_find(pat, alphabet, subsize)
+        offset = cyclic_find(pat, alphabet, subsize)
 
         if offset == -1:
             log.critical('Given pattern does not exist in cyclic pattern')
@@ -66,7 +66,7 @@ def main():
             print offset
     else:
         want   = args.count
-        result = cyclic.cyclic(want, alphabet, subsize)
+        result = cyclic(want, alphabet, subsize)
         got    = len(result)
         if got < want:
             log.failure("Alphabet too small (max length = %i)" % got)

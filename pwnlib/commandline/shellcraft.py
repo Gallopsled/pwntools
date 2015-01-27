@@ -22,6 +22,7 @@ banner = '\n'.join(['  ' + r('____') + '  ' + g('_') + '          ' + r('_') + '
 #  ___) | | | |  __/ | | (__| | | (_| |  _| |_
 # |____/|_| |_|\___|_|_|\___|_|  \__,_|_|  \__|
 
+
 p = argparse.ArgumentParser(
     description = 'Microwave shellcode -- Easy, fast and delicious',
     formatter_class = argparse.RawDescriptionHelpFormatter,
@@ -56,6 +57,7 @@ p.add_argument(
     default = 'default',
     help = 'Output format (default: hex), choose from {r}aw, {s}tring, {c}-style array, {h}ex string, hex{i}i, {a}ssembly code, {p}reprocssed code',
 )
+
 
 p.add_argument(
     'shellcode',

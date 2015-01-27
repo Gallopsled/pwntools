@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-import argparse, sys
+import argparse, sys, string
 from pwn import *
 from .   import common
 
@@ -29,14 +29,14 @@ def main():
 
     if len(args.hex) > 0:
         dat = ''.join(args.hex)
-        dat = dat.translate(None, whitespace)
-        if not set(hexdigits) >= set(dat):
+        dat = dat.translate(None, string.whitespace)
+        if not set(string.hexdigits) >= set(dat):
             print "This is not a hex string"
             exit(-1)
         dat = dat.decode('hex')
     else:
         dat = sys.stdin.read()
 
-    print asm.disasm(dat)
+    print disasm(dat)
 
 if __name__ == '__main__': main()
