@@ -80,7 +80,7 @@ def _run_handlers():
                 func(*args, **kwargs)
         except SystemExit:
             pass
-        except:
+        except Exception:
             # extract the current exception and rewind the traceback to where it
             # originated
             typ, val, tb = sys.exc_info()

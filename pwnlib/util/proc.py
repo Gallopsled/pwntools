@@ -66,7 +66,7 @@ def pid_by_name(name):
          try:
              if p.exe() == name:
                  return True
-         except:
+         except Exception:
              pass
          return False
 
@@ -99,7 +99,7 @@ def parent(pid):
     """
     try:
          return psutil.Process(pid).parent().pid
-    except:
+    except Exception:
          return 0
 
 def children(ppid):

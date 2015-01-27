@@ -380,7 +380,7 @@ def asm(shellcode, vma = 0, **kwargs):
             with open(step3) as fd:
                 result = fd.read()
 
-        except:
+        except Exception:
             log.exception("An error occurred while assembling:\n%s" % code)
         else:
             shutil.rmtree(tmpdir)
@@ -460,7 +460,7 @@ def disasm(data, vma = 0, **kwargs):
                 log.error('Could not find .text in objdump output:\n%s' % output0)
 
             result = output1[1].strip('\n').rstrip().expandtabs()
-        except:
+        except Exception:
             log.exception("An error occurred while disassembling:\n%s" % data)
         else:
             shutil.rmtree(tmpdir)

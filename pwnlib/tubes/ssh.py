@@ -216,7 +216,7 @@ class ssh_connecter(sock):
         with self.waitfor(msg) as h:
             try:
                 self.sock = parent.transport.open_channel('direct-tcpip', (host, port), ('127.0.0.1', 0))
-            except:
+            except Exception:
                 h.failure()
                 raise
 
@@ -245,7 +245,7 @@ class ssh_listener(sock):
         try:
             self.port = parent.transport.request_port_forward(bind_address, port)
 
-        except:
+        except Exception:
             h.failure('Failed create a port forwarding')
             raise
 
@@ -255,7 +255,7 @@ class ssh_listener(sock):
             try:
                 self.sock = parent.transport.accept()
                 parent.transport.cancel_port_forward(bind_address, self.port)
-            except:
+            except Exception:
                 self.sock = None
                 h.failure()
                 self.exception('Failed to get a connection')
@@ -337,7 +337,7 @@ class ssh(Timeout, Logger):
                 self.host = host = host_config['hostname']
             if not keyfile and 'identityfile' in host_config:
                 keyfile = host_cofig['identityfile'][0]
-        except:
+        except Exception:
             pass
 
 

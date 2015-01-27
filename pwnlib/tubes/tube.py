@@ -170,7 +170,7 @@ class tube(Timeout, Logger):
             while not pred(data):
                 try:
                     res = self.recv(1)
-                except:
+                except Exception:
                     self.unrecv(data)
                     return ''
 
@@ -292,7 +292,7 @@ class tube(Timeout, Logger):
             while self.countdown_active():
                 try:
                     res = self.recv(timeout=self.timeout)
-                except:
+                except Exception:
                     self.unrecv(''.join(data) + top)
                     raise
 
@@ -366,7 +366,7 @@ class tube(Timeout, Logger):
                     # restore the original, unmodified data to the buffer
                     # in the event of a timeout.
                     res = self.recvline(keepends=True, timeout=timeout)
-                except:
+                except Exception:
                     self.unrecv(''.join(lines))
                     raise
 
@@ -449,7 +449,7 @@ class tube(Timeout, Logger):
             while self.countdown_active():
                 try:
                     line = self.recvline(keepends=True)
-                except:
+                except Exception:
                     self.buffer.add(tmpbuf)
                     raise
 

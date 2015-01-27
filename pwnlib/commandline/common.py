@@ -7,11 +7,11 @@ choices += list(context.endiannesses)
 
 def context_arg(arg):
     try: context.arch = arg
-    except: pass
+    except Exception: pass
     try: context.os = arg
-    except: pass
+    except Exception: pass
     try: context.bits = int(arg)
-    except: arg
+    except Exception: arg
     try: context.endian = arg
-    except: pass
+    except Exception: pass
     return arg

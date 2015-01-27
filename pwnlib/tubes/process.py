@@ -78,7 +78,7 @@ class process(tube):
                     line = self.proc.stderr.readline()
                     if line: self.debug(line.rstrip())
                     else: break
-            except:
+            except Exception:
                 pass
 
         if stderr_debug:
