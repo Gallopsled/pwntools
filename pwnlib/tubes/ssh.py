@@ -289,7 +289,9 @@ class ssh_listener(sock):
 
 
 class ssh(Timeout, Logger):
-    def __init__(self, user, host, port = 22, password = None, key = None, keyfile = None, proxy_command = None, proxy_sock = None, timeout = Timeout.default, level = None):
+    def __init__(self, user, host, port = 22, password = None, key = None,
+                 keyfile = None, proxy_command = None, proxy_sock = None,
+                 timeout = Timeout.default, level = None, cache = True):
         """Creates a new ssh connection.
 
         Arguments:
@@ -301,6 +303,9 @@ class ssh(Timeout, Logger):
           keyfile(str): Try to authenticate using this private key. The string should be a filename.
           proxy_command(str): Use this as a proxy command. It has approximately the same semantics as ProxyCommand from ssh(1).
           proxy_sock(str): Use this socket instead of connecting to the host.
+          timeout: Timeout, in seconds
+          level: Log level
+          cache: Cache downloaded files (by hash/size/timestamp)
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used."""
@@ -314,7 +319,9 @@ class ssh(Timeout, Logger):
         self.host            = host
         self.port            = port
         self._cachedir       = os.path.join(tempfile.gettempdir(), 'binjitsu-ssh-cache')
-        self._wd             = None
+        self.cwd             = None
+        self.cache           = cache
+
         misc.mkdir_p(self._cachedir)
 
         keyfiles = [os.path.expanduser(keyfile)] if keyfile else []
@@ -362,6 +369,11 @@ class ssh(Timeout, Logger):
             self.transport = self.client.get_transport()
 
             h.success()
+
+        try:
+            self.sftp = self.transport.open_sftp_client()
+        except Exception:
+            self.sftp = None
 
     def __enter__(self, *a):
         return self
@@ -422,7 +434,7 @@ class ssh(Timeout, Logger):
             'LOLOLOL\x00/proc/self/cmdline\x00'
         """
         if not args and not executable:
-            log.error("Must specify args or executable")
+            self.error("Must specify args or executable")
 
         if isinstance(args, (str, unicode)):
             args = [args]
@@ -462,8 +474,8 @@ if can_execve:
 
         execve_repr = "execve(%s, %s, %s)" % (executable, args, env or 'os.environ')
 
-        with log.progress('Opening new channel: %s' % execve_repr) as h:
-            log.debug("Executing binary with script:\n" + script)
+        with self.progress('Opening new channel: %s' % execve_repr) as h:
+            self.debug("Executing binary with script:\n" + script)
 
             with context.local(log_level='error'):
                 tmpfile = self.mktemp('-t', 'pwnlib-execve-XXXXXXXXXX')
@@ -477,9 +489,9 @@ if can_execve:
             result = safeeval.const(python.recvline())
 
             if result == 0:
-                log.error("%r does not exist or is not executable" % executable)
+                self.error("%r does not exist or is not executable" % executable)
             elif result == 2:
-                log.error("python is not installed on the remote system %r" % self.host)
+                self.error("python is not installed on the remote system %r" % self.host)
             elif result != 1:
                 h.failure()
 
@@ -506,9 +518,9 @@ if can_execve:
         """
 
         if wd is None:
-            wd = self._wd
+            wd = self.cwd
 
-        return ssh_channel(self, process, tty, wd, env, timeout)
+        return ssh_channel(self, process, tty, wd, env, timeout, level = self.level)
 
     #: Backward compatibility.  Use :meth:`system`
     run = system
@@ -556,7 +568,7 @@ if can_execve:
             'Hello\n'
         """
 
-        return ssh_connecter(self, host, port, timeout)
+        return ssh_connecter(self, host, port, timeout, level=self.level)
 
     def listen_remote(self, port = 0, bind_address = '', timeout = Timeout.default):
         r"""listen_remote(port = 0, bind_address = '', timeout = Timeout.default) -> ssh_connecter
@@ -580,7 +592,7 @@ if can_execve:
             'Hello\n'
         """
 
-        return ssh_listener(self, bind_address, port, timeout)
+        return ssh_listener(self, bind_address, port, timeout, level=self.level)
 
     def __getitem__(self, attr):
         """Permits indexed access to run commands over SSH
@@ -709,14 +721,22 @@ if can_execve:
             return False
 
     def _download_raw(self, remote, local):
-        total, _ = self.run_to_end('wc -c ' + misc.sh_string(remote))
-        total = misc.size(int(total.split()[0]))
-
-
         with self.waitfor('Downloading %r' % remote) as h:
 
-            def update(has):
-                h.status("%s/%s" % (misc.size(has), total))
+            def update(has, total):
+                h.status("%s/%s" % (misc.size(has), misc.size(total)))
+
+            if self.sftp:
+                self.sftp.get(remote, local, update)
+                return
+
+            total, exitcode = self.run_to_end('wc -c <' + misc.sh_string(remote))
+
+            if exitcode != 0:
+                h.failure("%r does not exist or is not accessible" % remote)
+                return
+
+            total = int(total)
 
             with context.local(log_level = 'ERROR'):
                 c = self.run('cat ' + misc.sh_string(remote))
@@ -727,15 +747,15 @@ if can_execve:
                     data += c.recv()
                 except EOFError:
                     break
-                update(len(data))
+                update(len(data), total)
 
             result = c.wait()
             if result != 0:
                 h.failure('Could not download file %r (%r)' % (remote, result))
-            else:
-                with open(local, 'w') as fd:
-                    fd.write(data)
-                h.success()
+                return
+
+            with open(local, 'w') as fd:
+                fd.write(data)
 
     def _download_to_cache(self, remote):
         fingerprint = self._get_fingerprint(remote)
@@ -750,7 +770,7 @@ if can_execve:
 
         local = self._get_cachefile(fingerprint)
 
-        if self._verify_local_fingerprint(fingerprint):
+        if self.cache and self._verify_local_fingerprint(fingerprint):
             self.success('Found %r in ssh cache' % remote)
         else:
             self._download_raw(remote, local)
@@ -776,7 +796,6 @@ if can_execve:
             >>> s.download_data('/tmp/bar')
             'Hello, world'
         """
-
         with open(self._download_to_cache(remote)) as fd:
             return fd.read()
 
@@ -793,8 +812,8 @@ if can_execve:
         if not local:
             local = os.path.basename(os.path.normpath(remote))
 
-        if self._wd and os.path.basename(remote) == remote:
-            remote = os.path.join(self._wd, remote)
+        if self.cwd and os.path.basename(remote) == remote:
+            remote = os.path.join(self.cwd, remote)
 
         local_tmp = self._download_to_cache(remote)
         shutil.copy2(local_tmp, local)
@@ -808,12 +827,12 @@ if can_execve:
         """
         remote   = remote or '.'
 
-        local_wd = os.path.dirname(local) or self._wd
+        localcwd = os.path.dirname(local) or self.cwd
         local    = os.path.basename(local)
 
         self.info("Downloading %r to %r" % (local,remote))
 
-        source = self.run(['sh', '-c', 'tar -C %s -czf- %s' % (local_wd, local)])
+        source = self.run(['sh', '-c', 'tar -C %s -czf- %s' % (localcwd, local)])
         sink   = process(['sh', '-c', 'tar -C %s -xzf-' % remote])
 
         source >> sink
@@ -835,6 +854,12 @@ if can_execve:
             >>> print file('/tmp/foo').read()
             Hello, world
         """
+        if self.sftp:
+            with tempfile.NamedTemporaryFile() as f:
+                f.write(data)
+                f.flush()
+                self.sftp.put(f.name, remote)
+                return
 
         with context.local(log_level = 'ERROR'):
             s = self.run('cat>' + misc.sh_string(remote))
@@ -856,8 +881,8 @@ if can_execve:
             remote = os.path.normpath(filename)
             remote = os.path.basename(remote)
 
-            if self._wd:
-                remote = os.path.join(self._wd, remote)
+            if self.cwd:
+                remote = os.path.join(self.cwd, remote)
 
         with open(filename) as fd:
             data = fd.read()
@@ -874,14 +899,14 @@ if can_execve:
             local: Local directory
             remote: Remote directory
         """
-        remote   = remote or self._wd
+        remote   = remote or self.cwd
 
-        local_wd = os.path.dirname(local)
+        localcwd = os.path.dirname(local)
         local    = os.path.basename(local)
 
         self.info("Uploading %r to %r" % (local,remote))
 
-        source  = process(['sh', '-c', 'tar -C %s -czf- %s' % (local_wd, local)])
+        source  = process(['sh', '-c', 'tar -C %s -czf- %s' % (localcwd, local)])
         sink    = self.run(['sh', '-c', 'tar -C %s -xzf-' % remote])
 
         source <> sink
@@ -932,8 +957,8 @@ if can_execve:
 
         s = self.shell(shell)
 
-        if self._wd:
-            s.sendline('cd ' + misc.sh_string(self._wd))
+        if self.cwd:
+            s.sendline('cd ' + misc.sh_string(self.cwd))
 
         s.interactive()
         s.close()
@@ -974,5 +999,5 @@ if can_execve:
             return
 
         self.info("Working directory: %r" % wd)
-        self._wd = wd
-        return self._wd
+        self.cwd = wd
+        return self.cwd
