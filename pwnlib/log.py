@@ -411,6 +411,14 @@ class Logger(object):
         """
         self._logger.removeHandler(handler)
 
+    @property
+    def level(self):
+        return self._logger.level
+    @level.setter
+    def level(self, value):
+        self._logger.level = value
+
+
 class Handler(logging.StreamHandler):
     """
     A custom handler class.  This class will report whatever
