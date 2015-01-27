@@ -960,7 +960,7 @@ if can_execve:
         status = 0
 
         if not wd:
-            wd, status = self.run_to_end('mktemp -d', wd = None)
+            wd, status = self.run_to_end('x=$(mktemp -d); chmod +x $x; echo $x', wd = None)
             wd = wd.strip()
 
         if status:
