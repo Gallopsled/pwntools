@@ -472,6 +472,8 @@ if can_execve:
     os.execve(exe, args, env)
 """ % (executable, args, env)
 
+        script = script.lstrip()
+
         execve_repr = "execve(%s, %s, %s)" % (executable, args, env or 'os.environ')
 
         with self.progress('Opening new channel: %s' % execve_repr) as h:
@@ -480,6 +482,7 @@ if can_execve:
             with context.local(log_level='error'):
                 tmpfile = self.mktemp('-t', 'pwnlib-execve-XXXXXXXXXX')
                 self.upload_data(script, tmpfile)
+                self.chmod('+x', tmpfile)
 
                 if not run:
                     return tmpfile
@@ -854,6 +857,10 @@ if can_execve:
             >>> print file('/tmp/foo').read()
             Hello, world
         """
+        # If a relative path was provided, prepend the cwd
+        if os.path.normpath(remote) == os.path.basename(remote):
+            remote = os.path.join(self.cwd, remote)
+
         if self.sftp:
             with tempfile.NamedTemporaryFile() as f:
                 f.write(data)
