@@ -446,7 +446,7 @@ class Handler(logging.StreamHandler):
         # If the level is not 1, somebody else expressly set the log
         # level somewhere on the tree, and we should use that value.
         level = logging.getLogger(record.name).getEffectiveLevel()
-        if level == 1:
+        if level == -1:
             level = context.log_level
         if level > record.levelno:
             return
@@ -624,4 +624,4 @@ def install_default_handler():
         logger.addHandler(console)
         logger.addHandler(log_file)
 
-    logger.setLevel(1)
+    logger.setLevel(-1)
