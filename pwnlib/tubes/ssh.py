@@ -42,6 +42,9 @@ class ssh_channel(sock):
                         self.error('run(): Invalid environment key $r' % name)
                     process = '%s=%s %s' % (name, misc.sh_string(value), process)
 
+            if process and tty:
+                process = 'stty raw; ' + process
+
             self.sock = parent.transport.open_session()
             if self.tty:
                 self.sock.get_pty('xterm', term.width, term.height)
@@ -216,8 +219,8 @@ class ssh_connecter(sock):
         with self.waitfor(msg) as h:
             try:
                 self.sock = parent.transport.open_channel('direct-tcpip', (host, port), ('127.0.0.1', 0))
-            except Exception:
-                h.failure()
+            except Exception as e:
+                self.exception(e.message)
                 raise
 
             sockname = self.sock.get_transport().sock.getsockname()
@@ -382,7 +385,7 @@ class ssh(Timeout, Logger):
         self.close()
 
     def shell(self, shell = None, tty = True, timeout = Timeout.default):
-        """shell(shell = None, tty = False, timeout = Timeout.default) -> ssh_channel
+        """shell(shell = None, tty = True, timeout = Timeout.default) -> ssh_channel
 
         Open a new channel with a shell inside.
 
@@ -405,7 +408,7 @@ class ssh(Timeout, Logger):
         """
         return self.run(shell, tty, timeout = timeout)
 
-    def process(self, args=[], executable=None, tty = False, cwd = None, env = None, timeout = Timeout.default, run = True):
+    def process(self, args=[], executable=None, tty = True, cwd = None, env = None, timeout = Timeout.default, run = True):
         r"""
         Executes a process on the remote server, in the same fashion
         as pwnlib.tubes.process.process.
@@ -465,8 +468,9 @@ if os.path.sep not in exe and not is_exe(exe):
 
 can_execve = is_exe(exe)
 
-sys.stdout.write(str(can_execve) + "\n")
-sys.stdout.flush()
+if sys.argv[-1] == 'check':
+    sys.stdout.write(str(can_execve) + "\n")
+    sys.stdout.flush()
 
 if can_execve:
     os.execve(exe, args, env)
@@ -487,7 +491,7 @@ if can_execve:
                 if not run:
                     return tmpfile
 
-                python = self.run('test -x "$(which python 2>&1)" && exec python %s; echo 2' % tmpfile)
+                python = self.run('test -x "$(which python 2>&1)" && exec python %s check; echo 2' % tmpfile)
 
             result = safeeval.const(python.recvline())
 
@@ -500,8 +504,8 @@ if can_execve:
 
         return python
 
-    def system(self, process, tty = False, wd = None, env = None, timeout = Timeout.default):
-        r"""system(process, tty = False, wd = None, env = None, timeout = Timeout.default) -> ssh_channel
+    def system(self, process, tty = True, wd = None, env = None, timeout = Timeout.default):
+        r"""system(process, tty = True, wd = None, env = None, timeout = Timeout.default) -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
         then a TTY is requested on the remote server.
@@ -795,9 +799,14 @@ if can_execve:
             ...     f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
             ...         user='demouser',
-            ...         password='demopass')
+            ...         password='demopass',
+            ...         cache=False)
             >>> s.download_data('/tmp/bar')
             'Hello, world'
+            >>> s.sftp = False
+            >>> s.download_data('/tmp/bar')
+            'Hello, world'
+
         """
         with open(self._download_to_cache(remote)) as fd:
             return fd.read()
@@ -855,6 +864,10 @@ if can_execve:
             ...         password='demopass')
             >>> s.upload_data('Hello, world', '/tmp/foo')
             >>> print file('/tmp/foo').read()
+            Hello, world
+            >>> s.sftp = False
+            >>> s.upload_data('Hello, world', '/tmp/bar')
+            >>> print file('/tmp/bar').read()
             Hello, world
         """
         # If a relative path was provided, prepend the cwd
@@ -996,7 +1009,7 @@ if can_execve:
             wd = wd.strip()
 
         if status:
-            self.failure("Could not generate a temporary directory")
+            self.failure("Could not generate a temporary directory\n%s" % wd)
             return
 
         _, status = self.run_to_end('ls ' + misc.sh_string(wd), wd = None)
