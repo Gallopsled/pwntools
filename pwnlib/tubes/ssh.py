@@ -728,7 +728,7 @@ class ssh(Timeout):
         """
 
         with context.local(log_level = 'ERROR'):
-            s = self.run('cat>' + misc.sh_string(remote))
+            s = self.run('cat>' + misc.sh_string(remote), tty=False)
             s.send(data)
             s.shutdown('send')
             s.recvall()
