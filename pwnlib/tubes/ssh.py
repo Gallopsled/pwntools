@@ -44,6 +44,9 @@ class ssh_channel(sock):
                         log.error('run(): Invalid environment key $r' % name)
                     process = '%s=%s %s' % (name, misc.sh_string(value), process)
 
+            if process and tty:
+                process = 'stty raw -ctlecho -echo; ' + process
+
             self.sock = parent.transport.open_session()
             if self.tty:
                 self.sock.get_pty('xterm', term.width, term.height)
@@ -218,9 +221,8 @@ class ssh_connecter(sock):
         with log.waitfor(msg) as h:
             try:
                 self.sock = parent.transport.open_channel('direct-tcpip', (host, port), ('127.0.0.1', 0))
-            except:
-                h.failure()
-                raise
+            except Exception as e:
+                self.exception(e.message)
 
             sockname = self.sock.get_transport().sock.getsockname()
             self.lhost = sockname[0]
@@ -354,7 +356,7 @@ class ssh(Timeout):
         self.close()
 
     def shell(self, shell = None, tty = True, timeout = Timeout.default):
-        """shell(shell = None, tty = False, timeout = Timeout.default) -> ssh_channel
+        """shell(shell = None, tty = True, timeout = Timeout.default) -> ssh_channel
 
         Open a new channel with a shell inside.
 
@@ -377,8 +379,8 @@ class ssh(Timeout):
         """
         return self.run(shell, tty, timeout = timeout)
 
-    def run(self, process, tty = False, wd = None, env = None, timeout = Timeout.default):
-        r"""run(process, tty = False, wd = None, env = None, timeout = Timeout.default) -> ssh_channel
+    def run(self, process, tty = True, wd = None, env = None, timeout = Timeout.default):
+        r"""run(process, tty = True, wd = None, env = None, timeout = Timeout.default) -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
         then a TTY is requested on the remote server.
@@ -726,7 +728,7 @@ class ssh(Timeout):
         """
 
         with context.local(log_level = 'ERROR'):
-            s = self.run('cat>' + misc.sh_string(remote))
+            s = self.run('cat>' + misc.sh_string(remote), tty=False)
             s.send(data)
             s.shutdown('send')
             s.recvall()
