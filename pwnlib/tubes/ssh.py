@@ -43,7 +43,7 @@ class ssh_channel(sock):
                     process = '%s=%s %s' % (name, misc.sh_string(value), process)
 
             if process and tty:
-                process = 'stty raw; ' + process
+                process = 'stty raw -ctlecho -echo; ' + process
 
             self.sock = parent.transport.open_session()
             if self.tty:
