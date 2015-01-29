@@ -75,8 +75,7 @@ class ELF(ELFFile):
             self._address = min(filter(bool, (s.header.p_vaddr for s in self.segments)))
         self.load_addr = self._address
 
-        if self.execstack:
-            log.info('Stack is executable!')
+        log.info("Security settings for %r:\n%s" % (path, self.checksec()))
 
     def __repr__(self):
         return "ELF(%r)" % self.path
