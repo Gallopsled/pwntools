@@ -856,20 +856,14 @@ class tube(Timeout):
             >>> t.fileno        = lambda: 1234
             >>> with context.local(log_level='info'):
             ...     data = t.clean_and_log() #doctest: +ELLIPSIS
+            [DEBUG] Received 0xb bytes:
                 'hooray_data'
             >>> data
             'hooray_data'
             >>> context.clear()
         """
-        data = self.clean(timeout)
-
-        if all(c in string.printable for c in data):
-            for line in data.splitlines(True):
-                log.indented(repr(line))
-        else:
-            log.indented(fiddling.hexdump(data))
-
-        return data
+        with context.context.local(log_level='debug'):
+            return self.clean(timeout)
 
     def connect_input(self, other):
         """connect_input(other)
