@@ -424,7 +424,7 @@ class ssh(Timeout, Logger):
             Requires Python on the remote server.
 
         Examples:
-            >>> s = ssh(host='localhost',
+            >>> s = ssh(host='example.pwnme',
             ...         user='demouser',
             ...         password='demopass')
             >>> sh = s.process('sh', env={'PS1':''})
