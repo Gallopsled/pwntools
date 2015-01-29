@@ -46,9 +46,6 @@ setup(
     data_files           = [('',
                              ['LICENSE-binjitsu.txt',
                              ]),
-                            ('/etc/bash_completion.d',
-                             ['extra/bash_completion.d/shellcraft',
-                             ])
                             ],
     package_data         = {
         'pwnlib': [
