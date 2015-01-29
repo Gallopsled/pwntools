@@ -15,6 +15,7 @@ __all__ = [
     'gdb',
     'log',
     'memleak',
+    'pep237',
     'replacements',
     'rop',
     'shellcraft',
