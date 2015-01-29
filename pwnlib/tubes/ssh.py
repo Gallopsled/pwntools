@@ -427,7 +427,7 @@ class ssh(Timeout, Logger):
             >>> s = ssh(host='localhost',
             ...         user='demouser',
             ...         password='demopass')
-            >>> sh = s.process('sh')
+            >>> sh = s.process('sh', tty=False)
             >>> sh.sendline('echo Hello; exit')
             >>> sh.recvall()
             'Hello\n'
