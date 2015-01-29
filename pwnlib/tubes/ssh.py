@@ -1,4 +1,4 @@
-import os, time, tempfile, sys, shutil, re, logging, threading
+import os, time, tempfile, sys, shutil, re, logging, threading, logging
 
 from .. import term
 from ..context import context
@@ -27,23 +27,27 @@ class ssh_channel(sock):
         self.tty  = tty
 
         env = env or {}
-
         msg = 'Opening new channel: %r' % ((process,) or 'shell')
+
+        if isinstance(process, (list, tuple)):
+            process = ' '.join(misc.sh_string(s) for s in process)
+
+        if process and wd:
+            process = "cd %s 2>/dev/null >/dev/null; %s" % (misc.sh_string(wd), process)
+
+        if process and env:
+            for name, value in env.items():
+                if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', name):
+                    self.error('run(): Invalid environment key $r' % name)
+                process = '%s=%s %s' % (name, misc.sh_string(value), process)
+
+        if process and tty:
+            process = 'stty raw -ctlecho -echo; ' + process
+
+        if process and self.isEnabledFor(logging.DEBUG):
+            msg = 'Opening new channel: %r' % ((process,) or 'shell')
+
         with self.waitfor(msg) as h:
-            if isinstance(process, (list, tuple)):
-                process = ' '.join(misc.sh_string(s) for s in process)
-
-            if process and wd:
-                process = "cd %s 2>/dev/null >/dev/null; %s" % (misc.sh_string(wd), process)
-
-            if process and env:
-                for name, value in env.items():
-                    if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', name):
-                        self.error('run(): Invalid environment key $r' % name)
-                    process = '%s=%s %s' % (name, misc.sh_string(value), process)
-
-            if process and tty:
-                process = 'stty raw -ctlecho -echo; ' + process
 
             self.sock = parent.transport.open_session()
             if self.tty:
