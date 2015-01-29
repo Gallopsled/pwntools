@@ -20,7 +20,7 @@ parser.add_argument(
     action = 'append',
     type   = common.context_arg,
     choices = common.choices,
-    help = 'The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: %(choices)s'
+    help = 'The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: %s' % common.choices,
 )
 
 
