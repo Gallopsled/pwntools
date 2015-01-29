@@ -440,10 +440,10 @@ class Handler(logging.StreamHandler):
         # We have set the root 'pwnlib' logger to have a logLevel of 1,
         # when logging has been enabled via install_default_handler.
         #
-        # If the level is 1, we should only process the record if
+        # If the level is -1, we should only process the record if
         # context.log_level is less than the record's log level.
         #
-        # If the level is not 1, somebody else expressly set the log
+        # If the level is not -1, somebody else expressly set the log
         # level somewhere on the tree, and we should use that value.
         level = logging.getLogger(record.name).getEffectiveLevel()
         if level == -1:
