@@ -427,7 +427,7 @@ class ssh(Timeout, Logger):
             >>> s = ssh(host='localhost',
             ...         user='demouser',
             ...         password='demopass')
-            >>> sh = s.process('sh', tty=False)
+            >>> sh = s.process('sh', env={'PS1':''})
             >>> sh.sendline('echo Hello; exit')
             >>> sh.recvall()
             'Hello\n'
@@ -866,12 +866,12 @@ if can_execve:
             >>> s =  ssh(host='example.pwnme',
             ...         user='demouser',
             ...         password='demopass')
-            >>> s.upload_data('Hello, world', '/tmp/foo')
-            >>> print file('/tmp/foo').read()
+            >>> s.upload_data('Hello, world', '/tmp/upload_foo')
+            >>> print file('/tmp/upload_foo').read()
             Hello, world
             >>> s.sftp = False
-            >>> s.upload_data('Hello, world', '/tmp/bar')
-            >>> print file('/tmp/bar').read()
+            >>> s.upload_data('Hello, world', '/tmp/upload_bar')
+            >>> print file('/tmp/upload_bar').read()
             Hello, world
         """
         # If a relative path was provided, prepend the cwd
