@@ -483,7 +483,7 @@ class ssh(Timeout, Logger):
         """
         return self.run(shell, tty, timeout = timeout)
 
-    def process(self, args=[], executable=None, tty = True, cwd = None, env = None, timeout = Timeout.default, run = True):
+    def process(self, argv=[], executable=None, tty = True, cwd = None, env = None, timeout = Timeout.default, run = True):
         r"""
         Executes a process on the remote server, in the same fashion
         as pwnlib.tubes.process.process.
@@ -511,19 +511,19 @@ class ssh(Timeout, Logger):
             >>> s.process(['LOLOLOL', '/proc/self/cmdline'], executable='cat').recvall()
             'LOLOLOL\x00/proc/self/cmdline\x00'
         """
-        if not args and not executable:
-            self.error("Must specify args or executable")
+        if not argv and not executable:
+            self.error("Must specify argv or executable")
 
-        if isinstance(args, (str, unicode)):
-            args = [args]
+        if isinstance(argv, (str, unicode)):
+            argv = [argv]
 
-        executable = executable or args[0]
+        executable = executable or argv[0]
 
         script = r"""
 #!/usr/bin/env python
 import os, sys
 exe   = %r
-args  = %r
+argv  = %r
 env   = %r
 
 if env is None:
@@ -557,12 +557,12 @@ if sys.argv[-1] == 'check':
         os.wait()
 
 if can_execve:
-    os.execve(exe, args, env)
-""" % (executable, args, env)
+    os.execve(exe, argv, env)
+""" % (executable, argv, env)
 
         script = script.lstrip()
 
-        execve_repr = "execve(%r, %s, %s)" % (executable, args, env or 'os.environ')
+        execve_repr = "execve(%r, %s, %s)" % (executable, argv, env or 'os.environ')
 
         with self.progress('Opening new channel: %s' % execve_repr) as h:
             self.debug("Executing binary with script:\n" + script)
@@ -587,7 +587,7 @@ if can_execve:
                 h.failure()
 
             python.pid  = safeeval.const(python.recvline())
-            python.argv = args
+            python.argv = argv
             python.exe  = executable
 
         return python
