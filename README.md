@@ -1,7 +1,5 @@
 # binjitsu - CTF toolkit
 [![Docs latest](https://readthedocs.org/projects/binjitsu/badge/)](https://binjitsu.readthedocs.org/en/latest)
-[![Docs 2.2.0](https://readthedocs.org/projects/binjitsu/badge/?version=2.2.0)](https://binjitsu.readthedocs.org/en/2.2.0)
-[![PyPI](https://img.shields.io/pypi/v/binjitsu.svg?style=flat)](https://pypi.python.org/pypi/binjitsu/)
 [![Travis](https://travis-ci.org/binjitsu/binjitsu.svg)](https://travis-ci.org/binjitsu/binjitsu)
 [![Twitter](https://img.shields.io/badge/twitter-ctfbinjitsu-4099FF.svg?style=flat)](https://twitter.com/ctfbinjitsu)
 
