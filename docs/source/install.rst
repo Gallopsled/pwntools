@@ -25,19 +25,7 @@ binjitsu is available as a ``pip`` package.
 .. code-block:: bash
 
     $ apt-get install python2.7 python2.7-dev python-pip
-    $ pip install binjitsu
-
-Latest Version
---------------
-
-Alternatively if you prefer to use the latest version from the
-repository:
-
-.. code-block:: bash
-
-    $ git clone https://github.com/binjitsu/binjitsu
-    $ cd binjitsu
-    $ pip install -e .
+    $ pip install git+https://github.com/binjitsu/binjitsu.git
 
 .. _Ubuntu: https://launchpad.net/~binjitsu/+archive/ubuntu/binutils
 .. _libcapstone 2.1: http://www.capstone-engine.org
