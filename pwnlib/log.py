@@ -387,7 +387,10 @@ class Logger(object):
 
         See if the underlying logger is enabled for the specified level.
         """
-        return self._logger.isEnabledFor(level)
+        level = self._logger.isEnabledFor(level)
+        if level == 1:
+            return context.log_level
+        return level
 
     def setLevel(self, level):
         """setLevel(level)
@@ -440,13 +443,13 @@ class Handler(logging.StreamHandler):
         # We have set the root 'pwnlib' logger to have a logLevel of 1,
         # when logging has been enabled via install_default_handler.
         #
-        # If the level is -1, we should only process the record if
+        # If the level is 1, we should only process the record if
         # context.log_level is less than the record's log level.
         #
-        # If the level is not -1, somebody else expressly set the log
+        # If the level is not 1, somebody else expressly set the log
         # level somewhere on the tree, and we should use that value.
         level = logging.getLogger(record.name).getEffectiveLevel()
-        if level == -1:
+        if level == 1:
             level = context.log_level
         if level > record.levelno:
             return
@@ -556,21 +559,8 @@ class Formatter(logging.Formatter):
 
 # we keep a dictionary of loggers such that multiple calls to `getLogger` with
 # the same name will return the same logger
-_loggers = dict()
 def getLogger(name):
-    '''getLogger(name) -> Logger
-
-    Retreives the logger named `name`.  If no such logger exists a new one will
-    be instantiated using :func:`logging.getLogger`.
-
-    This function should be used instead of :func:`logging.getLogger` as we add
-    some ``pwnlib`` flavor by wrapping it in a :class:`Logger`.
-    '''
-    if name not in _loggers:
-        # if we don't have this logger create a new one and feed it through our
-        # "proxy" class
-        _loggers[name] = Logger(logging.getLogger(name))
-    return _loggers[name]
+    return Logger(logging.getLogger(name))
 
 class LogfileHandler(logging.FileHandler):
     def __init__(self):
@@ -602,9 +592,7 @@ log_file.setFormatter(logging.Formatter(fmt, iso_8601))
 #     map(rootlogger.removeHandler, rootlogger.handlers)
 #     logger.addHandler(myCoolPitchingHandler)
 #
-
 rootlogger = getLogger('pwnlib')
-
 console   = Handler(sys.stdout)
 formatter = Formatter()
 console.setFormatter(formatter)
@@ -624,4 +612,4 @@ def install_default_handler():
         logger.addHandler(console)
         logger.addHandler(log_file)
 
-    logger.setLevel(-1)
+    logger.setLevel(1)
