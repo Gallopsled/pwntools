@@ -43,18 +43,30 @@ class process(tube):
         super(process, self).__init__(timeout, level = level)
 
         if executable:
-            self.program = executable
+            pass
         elif isinstance(args, (str, unicode)):
-            self.program = args
+            executable = args
+            args       = [args]
         elif isinstance(args, (list, tuple)):
-            self.program = args[0]
+            executable = args[0]
         else:
             self.error("process(): Do not understand the arguments %r" % args)
 
-        # If we specify something not in $PATH, but which exists as a non-executable
-        # file then give an error message.
-        if not which(self.program) and os.path.exists(self.program) and not os.access(self.program, os.X_OK):
-            self.error('%r is not set to executable (chmod +x %s)' % (self.program, self.program))
+        # Did we specify something not in $PATH?
+        if not which(executable):
+            # If we specified a path to a binary, make it absolute.
+            # This saves us the step of './binary'
+            if os.path.exists(executable) and os.access(executable, os.X_OK):
+                executable = os.path.abspath(executable)
+
+            # Otherwise, there's no binary to execute
+            else:
+                self.error('%r is not set to executable (chmod +x %r)' % (executable, executable))
+
+        self.args       = args
+        self.executable = self.program = executable
+        self.cwd        = cwd
+        self.env        = env
 
         self.proc = subprocess.Popen(
             args, shell = shell, executable = executable,

@@ -119,6 +119,25 @@ def attach(target, execute = None, exe = None, arch = None):
         pid = pids[0]
         log.info('attaching you youngest process "%s" (PID = %d)' %
                  (target, pid))
+    elif isinstance(target, tubes.ssh.ssh_channel):
+        if not target.pid:
+            log.error("PID unknown for channel")
+
+        shell = target.parent
+
+        tmpfile = shell.mktemp()
+        shell.upload_data(execute or '', tmpfile)
+
+        cmd = ['ssh', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
+        if shell.password:
+            cmd = ['sshpass', '-p', shell.password] + cmd
+        if shell.keyfile:
+            cmd += ['-i', shell.keyfile]
+        cmd += ['gdb %r %s -x "%s" ; rm "%s"' % (target.exe, target.pid, tmpfile, tmpfile)]
+
+        misc.run_in_new_terminal(' '.join(cmd))
+        return
+
     elif isinstance(target, tubes.sock.sock):
         pids = proc.pidof(target)
         if not pids:
@@ -179,7 +198,6 @@ def attach(target, execute = None, exe = None, arch = None):
                 return os.path.join(proc.cwd(spid), exe)
 
         exe = exe or findexe()
-
     else:
         log.error("don't know how to attach to target: %r" % target)
 

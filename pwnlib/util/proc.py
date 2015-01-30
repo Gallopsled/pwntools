@@ -32,7 +32,10 @@ def pidof(target):
     Returns:
         A list of found PIDs.
     """
-    if isinstance(target, tubes.sock.sock):
+    if isinstance(target, tubes.ssh.ssh_channel):
+        return [target.pid]
+
+    elif isinstance(target, tubes.sock.sock):
          local  = target.sock.getsockname()
          remote = target.sock.getpeername()
 

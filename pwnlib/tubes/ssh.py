@@ -16,7 +16,43 @@ h.setFormatter(logging.Formatter())
 paramiko_log.addHandler(h)
 
 class ssh_channel(sock):
-    def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = Timeout.default, level = None):
+
+    #: Parent :class:`ssh` object
+    parent = None
+
+    #: Remote host
+    host = None
+
+    #: Return code, or ``None`` if the process has not returned
+    #: Use :meth:`poll` to check.
+    returncode = None
+
+    #: ``True`` if a tty was allocated for this channel
+    tty = False
+
+    #: Environment specified for the remote process, or ``None``
+    #: if the default environment was used
+    env = None
+
+    #: Command specified for the constructor
+    process = None
+
+    #: Working directory
+    cwd = None
+
+    #: PID of the process
+    #: Only valid when instantiated through :meth:`ssh.process`
+    pid = None
+
+    #: Executable of the process
+    #: Only valid when instantiated through :meth:`ssh.process`
+    exe = None
+
+    #: Arguments passed to the process
+    #: Only valid when instantiated through :meth:`ssh.process`
+    argv = None
+
+    def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = Timeout.default, level = 0):
         super(ssh_channel, self).__init__(timeout, level=level)
 
         # keep the parent from being garbage collected in some cases
@@ -25,6 +61,9 @@ class ssh_channel(sock):
         self.returncode = None
         self.host = parent.host
         self.tty  = tty
+        self.env  = env
+        self.process = process
+        self.cwd  = wd
 
         env = env or {}
         msg = 'Opening new channel: %r' % ((process,) or 'shell')
@@ -296,6 +335,29 @@ class ssh_listener(sock):
 
 
 class ssh(Timeout, Logger):
+
+    #: Remote host name (``str``)
+    host = None
+
+    #: Remote port (``int``)
+    port = None
+
+    #: Working directory (``str``)
+    cwd = None
+
+    #: Enable caching of SSH downloads (``bool``)
+    cache = True
+
+    #: Paramiko SSHClient which backs this object
+    client = None
+
+    #: Paramiko SFTPClient object which is used for file transfers.
+    #: Set to ``None`` to disable ``sftp``.
+    sftp = None
+
+    #: PID of the remote ``sshd`` process servicing this connection.
+    pid = None
+
     def __init__(self, user, host, port = 22, password = None, key = None,
                  keyfile = None, proxy_command = None, proxy_sock = None,
                  timeout = Timeout.default, level = None, cache = True):
@@ -325,6 +387,10 @@ class ssh(Timeout, Logger):
 
         self.host            = host
         self.port            = port
+        self.user            = user
+        self.password        = password
+        self.key             = key
+        self.keyfile         = keyfile
         self._cachedir       = os.path.join(tempfile.gettempdir(), 'binjitsu-ssh-cache')
         self.cwd             = None
         self.cache           = cache
@@ -381,6 +447,11 @@ class ssh(Timeout, Logger):
             self.sftp = self.transport.open_sftp_client()
         except Exception:
             self.sftp = None
+
+
+        with context.local(log_level='error'):
+            self.pid = int(self.system('echo $PPID').recvall())
+
 
     def __enter__(self, *a):
         return self
@@ -472,9 +543,18 @@ if os.path.sep not in exe and not is_exe(exe):
 
 can_execve = is_exe(exe)
 
+if not can_execve:
+    sys.stderr.write("{} is not executable or does not exist".format(exe))
+    sys.exit(-1)
+
 if sys.argv[-1] == 'check':
-    sys.stdout.write(str(can_execve) + "\n")
-    sys.stdout.flush()
+    if 0 == os.fork():
+        sys.stdout.write(str(can_execve) + "\n")
+        sys.stdout.write(str(os.getppid()) + "\n")
+        sys.stdout.flush()
+        sys.exit(0)
+    else:
+        os.wait()
 
 if can_execve:
     os.execve(exe, args, env)
@@ -482,7 +562,7 @@ if can_execve:
 
         script = script.lstrip()
 
-        execve_repr = "execve(%s, %s, %s)" % (executable, args, env or 'os.environ')
+        execve_repr = "execve(%r, %s, %s)" % (executable, args, env or 'os.environ')
 
         with self.progress('Opening new channel: %s' % execve_repr) as h:
             self.debug("Executing binary with script:\n" + script)
@@ -505,6 +585,10 @@ if can_execve:
                 self.error("python is not installed on the remote system %r" % self.host)
             elif result != 1:
                 h.failure()
+
+            python.pid  = safeeval.const(python.recvline())
+            python.argv = args
+            python.exe  = executable
 
         return python
 
@@ -889,9 +973,11 @@ if can_execve:
             s = self.run('cat>' + misc.sh_string(remote), tty=False)
             s.send(data)
             s.shutdown('send')
-            s.recvall()
-            if s.wait() != 0:
-                self.error("Could not upload file %r" % remote)
+            data   = s.recvall()
+            result = s.wait()
+            if result != 0:
+                self.error("Could not upload file %r (%r)\n%s" % (remote, result, data))
+
 
     def upload_file(self, filename, remote = None):
         """Uploads a file to the remote server. Returns the remote filename.
