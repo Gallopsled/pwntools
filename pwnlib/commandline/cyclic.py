@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 import argparse, string, sys
-from   pwn import *
+from binjitsu import *
 
 parser = argparse.ArgumentParser(
     description = "Cyclic pattern creator/finder"
