@@ -536,6 +536,8 @@ class ELF(ELFFile):
 
     @property
     def nx(self):
+        if not any('GNU_STACK' in seg.header.p_type for seg in self.segments):
+            return False
         return not any('GNU_STACK' in seg.header.p_type for seg in self.executable_segments)
 
     @property
