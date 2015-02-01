@@ -794,7 +794,7 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None):
         if rest >= i:
             chunk_size += 1
 
-        consume(iterator, starting_point)
+        consume(starting_point, iterator)
         iterator = take(chunk_size, iterator)
         total_iterations = chunk_size
 
