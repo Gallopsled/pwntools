@@ -1,6 +1,6 @@
 .. testsetup:: *
 
-   from binjitsu import *
+   from pwn import *
 
 Getting Started
 ========================
@@ -9,7 +9,7 @@ To get your feet wet with binjitsu, let's first go through a few examples.
 
 When writing exploits, binjitsu generally follows the "kitchen sink" approach.
 
-    >>> from binjitsu import *
+    >>> from pwn import *
 
 This imports a lot of functionality into the global namespace.  You can now
 assemble, disassemble, pack, unpack, and many other things with a single function.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 
 import argparse, os, re
-from binjitsu import *
+from pwn import *
 from . import common
 
 p = argparse.ArgumentParser(

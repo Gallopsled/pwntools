@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 import argparse, sys
-from binjitsu import *
+from pwn import *
 
 p = argparse.ArgumentParser()
 p.add_argument('elf',help="File to patch")

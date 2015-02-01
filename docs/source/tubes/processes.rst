@@ -1,6 +1,6 @@
 .. testsetup:: *
 
-   from binjitsu import *
+   from pwn import *
 
 :mod:`pwnlib.tubes.process` --- Processes
 ===========================================================

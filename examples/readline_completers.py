@@ -4,7 +4,7 @@ part of pwnlib will probably see some major changes soon, but we wanted to show
 off some proof-of-concepts.
 """
 
-from binjitsu import *
+from pwn import *
 from pwnlib.term.completer import LongestPrefixCompleter, \
                                   PathCompleter
 

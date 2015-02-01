@@ -30,7 +30,7 @@ from pwnlib.util.proc        import pidof
 from pwnlib.util.splash      import *
 from pwnlib.util.web         import *
 
-# Promote these modules, so that "from binjitsu import *" will let you access them
+# Promote these modules, so that "from pwn import *" will let you access them
 import \
     collections   , math          , operator      , os            , \
     pwnlib        , re            , string        , struct        , \

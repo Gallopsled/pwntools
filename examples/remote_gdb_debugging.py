@@ -3,7 +3,7 @@ Simple example showing how to use the remote
 gdb debugging features available in binjitsu.
 """
 
-from binjitsu import *
+from pwn import *
 import getpass
 
 s = ssh(getpass.getuser(), '127.0.0.1', port = 22, keyfile = "~/.ssh/id_rsa")

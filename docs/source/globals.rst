@@ -1,13 +1,13 @@
 .. testsetup:: *
 
-   from binjitsu import *
+   from pwn import *
 
-``from binjitsu import *``
+``from pwn import *``
 ========================
 
 The most common way that you'll see binjitsu used is
 
-    >>> from binjitsu import *
+    >>> from pwn import *
 
 Which imports a bazillion things into the global namespace to make your life easier.
 

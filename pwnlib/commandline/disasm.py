@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 import argparse, sys, string
-from binjitsu import *
+from pwn import *
 from .   import common
 
 parser = argparse.ArgumentParser(

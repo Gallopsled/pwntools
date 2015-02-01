@@ -2,7 +2,7 @@
 Example showing how to use the ssh class.
 """
 
-from binjitsu import *
+from pwn import *
 
 shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0')
 

@@ -9,7 +9,7 @@ and::
 
   $ TERM=xterm-256color python text.py
 '''
-from binjitsu import *
+from pwn import *
 
 s = 'hello from binjitsu'
 print text.black_on_green(s)

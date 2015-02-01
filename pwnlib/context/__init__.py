@@ -245,7 +245,7 @@ class ContextType(object):
     Class for specifying information about the target machine.
     Intended for use as a pseudo-singleton through the global
     variable ``pwnlib.context.context``, available via
-    ``from binjitsu import *`` as ``context``.
+    ``from pwn import *`` as ``context``.
 
     The context is usually specified at the top of the Python file for clarity. ::
 

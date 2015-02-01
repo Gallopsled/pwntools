@@ -5,7 +5,7 @@ Script for downloading lists of user agent strings
 
 from bs4 import BeautifulSoup
 import re, urllib, os
-from binjitsu import *
+from pwn import *
 
 uas = set()
 if os.path.isfile('useragents.txt'):

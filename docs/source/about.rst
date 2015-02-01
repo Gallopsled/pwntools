@@ -5,7 +5,7 @@ Whether you're using it to write exploits, or as part
 of another software project will dictate how you use it.
 
 Historically binjitsu was used as a sort of exploit-writing DSL. Simply doing
-``from binjitsu import *`` in a previous version of binjitsu would bring all sorts of
+``from pwn import *`` in a previous version of binjitsu would bring all sorts of
 nice side-effects.
 
 When redesigning binjitsu for 2.0, we noticed two contrary goals:
@@ -30,7 +30,7 @@ the following:
 
 * Imports everything from the toplevel :mod:`pwnlib` along with
   functions from a lot of submodules. This means that if you do
-  ``import pwn`` or ``from binjitsu import *``, you will access to
+  ``import pwn`` or ``from pwn import *``, you will access to
   everything you need to write an exploit.
 * Calls :func:`pwnlib.term.init` to put your terminal in raw mode
   and implementing functionality to make it look like it is not.
