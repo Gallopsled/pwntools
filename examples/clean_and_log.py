@@ -10,7 +10,7 @@ Solution:
  2. Register <your socket>.clean or <your socket>.clean_and_log to run at exit.
 """
 
-from pwn import *
+from binjitsu import *
 
 os.system('''((
 echo prefix sometext ;

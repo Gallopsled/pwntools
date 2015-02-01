@@ -1,4 +1,4 @@
-from pwn import *
+from binjitsu import *
 
 choices = map(str, [16,32,64])
 choices += list(context.oses)

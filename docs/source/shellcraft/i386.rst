@@ -1,6 +1,6 @@
 .. testsetup:: *
 
-   from pwn import *
+   from binjitsu import *
 
 :mod:`pwnlib.shellcraft.i386` --- Shellcode for Intel 80386
 ===========================================================

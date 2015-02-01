@@ -2,7 +2,7 @@
 Script to generate README.md
 """
 
-from pwn import *
+from binjitsu import *
 
 out = '''# Examples
 While these examples should all work, they are not very representative of

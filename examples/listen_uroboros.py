@@ -3,7 +3,7 @@ An example showing interconnection of sockets.  This script will wait for three
 connections on port 1337, then connect them like a three-way Uroboros.
 """
 
-from pwn import *
+from binjitsu import *
 
 cs = [listen(1337).wait_for_connection() for _ in range(3)]
 

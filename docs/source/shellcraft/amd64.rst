@@ -1,6 +1,6 @@
 .. testsetup:: *
 
-   from pwn import *
+   from binjitsu import *
 
 :mod:`pwnlib.shellcraft.amd64` --- Shellcode for AMD64
 ===========================================================

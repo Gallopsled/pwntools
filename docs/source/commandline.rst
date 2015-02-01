@@ -1,6 +1,6 @@
 .. testsetup:: *
 
-   from pwn import *
+   from binjitsu import *
    old = context.defaults.copy()
 
 .. testcleanup:: *

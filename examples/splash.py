@@ -2,7 +2,7 @@
 "Easteregg"
 """
 
-from pwn import *
+from binjitsu import *
 
 splash()
 

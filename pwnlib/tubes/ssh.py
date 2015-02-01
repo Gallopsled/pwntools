@@ -651,7 +651,7 @@ if can_execve:
         Returns a :class:`pwnlib.tubes.ssh.ssh_connecter` object.
 
         Examples:
-            >>> from pwn import *
+            >>> from binjitsu import *
             >>> l = listen()
             >>> s =  ssh(host='example.pwnme',
             ...         user='demouser',
@@ -675,7 +675,7 @@ if can_execve:
 
         Examples:
 
-            >>> from pwn import *
+            >>> from binjitsu import *
             >>> s =  ssh(host='example.pwnme',
             ...         user='demouser',
             ...         password='demopass')

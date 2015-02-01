@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 import argparse, sys, os
-from pwn import *
+from binjitsu import *
 
 parser = argparse.ArgumentParser(
     description = 'Pwnlib HexDump'

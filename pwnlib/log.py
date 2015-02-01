@@ -4,7 +4,7 @@ within ``binjitsu``.
 
 Exploit Developers
 ------------------
-By using the standard ``from pwn import *``, an object named ``log`` will
+By using the standard ``from binjitsu import *``, an object named ``log`` will
 be inserted into the global namespace.  You can use this to print out
 status messages during exploitation.
 

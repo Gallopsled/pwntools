@@ -14,7 +14,7 @@ and
 Also notice that `pause()` can react on any key when in `term_mode`.
 """
 
-from pwn import *
+from binjitsu import *
 
 context.log_level = 'info'
 

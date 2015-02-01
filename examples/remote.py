@@ -2,7 +2,7 @@
 Example showing how to use the remote class.
 """
 
-from pwn import *
+from binjitsu import *
 
 sock = remote('127.0.0.1', 9001)
 

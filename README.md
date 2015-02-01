@@ -6,7 +6,7 @@
 binjitsu is a CTF framework and exploit development library. Written in Python, it is designed for rapid prototyping and development, and intended to make exploit writing as simple as possible.
 
 ```python
-from pwn import *
+from binjitsu import *
 context(arch = 'i386', os = 'linux')
 
 r = remote('exploitme.example.com', 31337)

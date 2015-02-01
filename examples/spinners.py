@@ -2,7 +2,7 @@
 Just a lot of spinners!
 """
 
-from pwn import *
+from binjitsu import *
 
 context.log_level = 0
 
