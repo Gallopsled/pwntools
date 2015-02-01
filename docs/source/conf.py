@@ -39,7 +39,9 @@ extensions = [
 ]
 
 doctest_global_setup = '''
-import pwnlib, sys
+import sys, os
+os.environ['PWNLIB_NOTERM'] = '1'
+import pwnlib
 pwnlib.context.context.reset_local()
 pwnlib.context.ContextType.defaults['log_level'] = 'ERROR'
 pwnlib.term.text.when = 'never'
