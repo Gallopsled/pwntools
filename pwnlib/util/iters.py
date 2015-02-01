@@ -739,7 +739,7 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None):
         try strings of length ``length`` and if 'downfrom' try strings of length
         ``length .. 1``.
       start: a tuple ``(i, N)`` which splits the search space up into `N` pieces
-        d starts at piece `i`.  :const:`None` is equivalent to ``(0, 1)``.
+        and starts at piece `i` (1..N). :const:`None` is equivalent to ``(1, 1)``.
 
     Returns:
       A string `s` such that ``func(s)`` returns :const:`True` or :const:`None`
