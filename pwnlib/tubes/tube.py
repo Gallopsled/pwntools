@@ -650,7 +650,7 @@ class tube(Timeout, Logger):
 
         return self.buffer.get()
 
-    def recvall(self):
+    def recvall(self, timeout=Timeout.forever):
         """recvall() -> str
 
         Receives data until EOF is reached.
@@ -658,7 +658,7 @@ class tube(Timeout, Logger):
 
         with self.waitfor('Recieving all data') as h:
             l = len(self.buffer)
-            with self.local(Timeout.forever):
+            with self.local(timeout):
                 try:
                     while True:
                         l = misc.size(len(self.buffer))

@@ -122,14 +122,15 @@ class ssh_channel(sock):
 
         self.close()
 
-    def recvall(self):
+    def recvall(self, timeout = sock.forever):
         # We subclass tubes.sock which sets self.sock to None.
         #
         # However, we need to wait for the return value to propagate,
         # which may not happen by the time .close() is called by tube.recvall()
         tmp_sock = self.sock
 
-        data = super(ssh_channel, self).recvall()
+        timeout = self.maximum if self.timeout is self.forever else self.timeout
+        data = super(ssh_channel, self).recvall(timeout)
 
         # Restore self.sock to be able to call wait()
         self.sock = tmp_sock
@@ -150,9 +151,11 @@ class ssh_channel(sock):
         process has not yet finished and the exit code otherwise.
         """
 
-        if self.returncode == None:
-            if self.sock and (block or self.sock.exit_status_ready()):
-                self.returncode = self.sock.recv_exit_status()
+        if self.returncode == None and self.sock \
+        and (block or self.sock.exit_status_ready()):
+            while not self.sock.status_event.is_set():
+                self.sock.status_event.wait(0.05)
+            self.returncode = self.sock.recv_exit_status()
 
         return self.returncode
 
