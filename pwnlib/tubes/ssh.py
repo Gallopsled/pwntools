@@ -1062,10 +1062,11 @@ if can_execve:
                 remote_tar = self.mktemp('--suffix=.tar.gz')
                 self.upload_file(local_tar, remote_tar)
 
-                untar = self.run('tar -C %s -xzf %s' % (remote, remote_tar))
+                untar = self.run('cd %s && tar -xzf %s' % (remote, remote_tar))
+                message = untar.recvrepeat(2)
 
                 if untar.wait() != 0:
-                    self.error("Could not untar %r on the remote end" % remote_tar)
+                    self.error("Could not untar %r on the remote end\n%s" % (remote_tar, message))
 
     def upload(self, file_or_directory, remote=None):
         if os.path.isfile(file_or_directory):
