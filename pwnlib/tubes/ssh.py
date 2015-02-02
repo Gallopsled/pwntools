@@ -1,4 +1,4 @@
-import os, time, tempfile, sys, shutil, re, logging, threading, logging, string
+import os, time, tempfile, sys, shutil, re, logging, threading, logging, string, tarfile
 
 from .. import term
 from ..context import context
@@ -1025,20 +1025,33 @@ if can_execve:
             local: Local directory
             remote: Remote directory
         """
-        local    = os.path.expanduser(local)
-        remote   = remote or self.cwd or '.'
 
-        localcwd = os.path.dirname(local)
-        local    = os.path.basename(local)
+        remote    = remote or self.cwd or '.'
 
-        self.info("Uploading %r to %r" % (local,remote))
+        local     = os.path.expanduser(local)
+        dirname   = os.path.dirname(local)
+        basename  = os.path.basename(local)
 
-        source  = process(['sh', '-c', 'tar -C %s -czf- %s' % (localcwd, local)])
-        sink    = self.run(['sh', '-c', 'tar -C %s -xzf-' % remote])
+        if not os.path.isdir(local):
+            self.error("%r is not a directory" % local)
 
-        source <> sink
+        msg = "Uploading %r to %r" % (basename,remote)
+        with self.waitfor(msg) as w:
+            # Generate a tarfile with everything inside of it
+            local_tar  = tempfile.mktemp()
+            with tarfile.open(local_tar, 'w:gz') as tar:
+                tar.add(local, basename)
 
-        sink.wait_for_close()
+            # Upload and extract it
+            with context.local(log_level='error'):
+                remote_tar = self.mktemp('--suffix=.tar.gz')
+                self.upload_file(local_tar, remote_tar)
+
+                untar = self.run('tar -C %s -xzf %s' % (remote, remote_tar))
+
+                if untar.wait() != 0:
+                    self.error("Could not untar %r on the remote end" % remote_tar)
+
 
     def libs(self, remote, directory = None):
         """Downloads the libraries referred to by a file.

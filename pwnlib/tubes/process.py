@@ -39,6 +39,9 @@ class process(tube):
     """
     def __init__(self, args, shell = False, executable = None,
                  cwd = None, env = None, timeout = Timeout.default,
+                 stdin  = subprocess.PIPE,
+                 stdout = subprocess.PIPE,
+                 stderr = None,
                  stderr_debug = False, level = None):
         super(process, self).__init__(timeout, level = level)
 
@@ -51,6 +54,14 @@ class process(tube):
             executable = args[0]
         else:
             self.error("process(): Do not understand the arguments %r" % args)
+
+        if stderr_debug:
+            if stderr is not None:
+                log.error("Cannot capture stderr and send it all to debug")
+            stderr = subprocess.PIPE
+        elif stderr is None:
+            stderr = subprocess.STDOUT
+
 
         # Did we specify something not in $PATH?
         if not which(executable):
@@ -71,8 +82,8 @@ class process(tube):
         self.proc = subprocess.Popen(
             args, shell = shell, executable = executable,
             cwd = cwd, env = env,
-            stdin = subprocess.PIPE, stdout = subprocess.PIPE,
-            stderr = subprocess.PIPE if stderr_debug else subprocess.STDOUT)
+            stdin = stdin, stdout = stdout,
+            stderr = stderr)
         self.stop_noticed = False
 
         # Set in non-blocking mode so that a call to call recv(1000) will
