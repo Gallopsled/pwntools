@@ -822,44 +822,42 @@ if can_execve:
             os.unlink(local)
             return False
 
-    def _download_raw(self, remote, local):
-        with self.waitfor('Downloading %r' % remote) as h:
+    def _download_raw(self, remote, local, h):
+        def update(has, total):
+            h.status("%s/%s" % (misc.size(has), misc.size(total)))
 
-            def update(has, total):
-                h.status("%s/%s" % (misc.size(has), misc.size(total)))
+        if self.sftp:
+            self.sftp.get(remote, local, update)
+            return
 
-            if self.sftp:
-                self.sftp.get(remote, local, update)
-                return
+        total, exitcode = self.run_to_end('wc -c <' + misc.sh_string(remote))
 
-            total, exitcode = self.run_to_end('wc -c <' + misc.sh_string(remote))
+        if exitcode != 0:
+            h.failure("%r does not exist or is not accessible" % remote)
+            return
 
-            if exitcode != 0:
-                h.failure("%r does not exist or is not accessible" % remote)
-                return
+        total = int(total)
 
-            total = int(total)
+        with context.local(log_level = 'ERROR'):
+            c = self.run('cat ' + misc.sh_string(remote))
+        data = ''
 
-            with context.local(log_level = 'ERROR'):
-                c = self.run('cat ' + misc.sh_string(remote))
-            data = ''
+        while True:
+            try:
+                data += c.recv()
+            except EOFError:
+                break
+            update(len(data), total)
 
-            while True:
-                try:
-                    data += c.recv()
-                except EOFError:
-                    break
-                update(len(data), total)
+        result = c.wait()
+        if result != 0:
+            h.failure('Could not download file %r (%r)' % (remote, result))
+            return
 
-            result = c.wait()
-            if result != 0:
-                h.failure('Could not download file %r (%r)' % (remote, result))
-                return
+        with open(local, 'w') as fd:
+            fd.write(data)
 
-            with open(local, 'w') as fd:
-                fd.write(data)
-
-    def _download_to_cache(self, remote):
+    def _download_to_cache(self, remote, p):
 
         with context.local(log_level='error'):
             remote = self.readlink('-f',remote)
@@ -871,18 +869,18 @@ if can_execve:
             local += time.strftime('-%Y-%m-%d-%H:%M:%S')
             local = os.path.join(self._cachedir, local)
 
-            self._download_raw(remote, local)
+            self._download_raw(remote, local, p)
             return local
 
         local = self._get_cachefile(fingerprint)
 
         if self.cache and self._verify_local_fingerprint(fingerprint):
-            self.success('Found %r in ssh cache' % remote)
+            p.success('Found %r in ssh cache' % remote)
         else:
-            self._download_raw(remote, local)
+            self._download_raw(remote, local, p)
 
             if not self._verify_local_fingerprint(fingerprint):
-                self.error('Could not download file %r' % remote)
+                p.failure('Could not download file %r' % remote)
 
         return local
 
@@ -907,8 +905,9 @@ if can_execve:
             'Hello, world'
 
         """
-        with open(self._download_to_cache(remote)) as fd:
-            return fd.read()
+        with self.progress('Downloading %r' % remote) as p:
+            with open(self._download_to_cache(remote, p)) as fd:
+                return fd.read()
 
     def download_file(self, remote, local = None):
         """Downloads a file from the remote server.
@@ -918,7 +917,9 @@ if can_execve:
 
         Arguments:
           remote(str): The remote filename to download
-          local(str): The local filename to save it to. Default is to infer it from the remote filename."""
+          local(str): The local filename to save it to. Default is to infer it from the remote filename.
+        """
+
 
         if not local:
             local = os.path.basename(os.path.normpath(remote))
@@ -926,10 +927,11 @@ if can_execve:
         if self.cwd and os.path.basename(remote) == remote:
             remote = os.path.join(self.cwd, remote)
 
-        local_tmp = self._download_to_cache(remote)
+        with self.progress('Downloading %r to %r' % (remote, local)) as p:
+            local_tmp = self._download_to_cache(remote, p)
 
         # Check to see if an identical copy of the file already exists
-        if os.path.exists(local) and hashes.sha256filehex(local_tmp) != hashes.sha256filehex(local):
+        if not os.path.exists(local) or hashes.sha256filehex(local_tmp) != hashes.sha256filehex(local):
             shutil.copy2(local_tmp, local)
 
     def download_dir(self, remote=None, local=None):
