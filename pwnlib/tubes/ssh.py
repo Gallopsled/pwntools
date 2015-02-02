@@ -1,4 +1,4 @@
-import os, time, tempfile, sys, shutil, re, logging, threading, logging, string
+import os, time, tempfile, sys, shutil, re, logging, threading, logging, string, tarfile
 
 from .. import term
 from ..context import context
@@ -735,8 +735,6 @@ if can_execve:
         """
         bad_attrs = [
             'trait_names',          # ipython tab-complete
-            'download',             # frequent typo
-            'upload',               # frequent typo
         ]
 
         if attr in self.__dict__ \
@@ -934,26 +932,43 @@ if can_execve:
         if os.path.exists(local) and hashes.sha256filehex(local_tmp) != hashes.sha256filehex(local):
             shutil.copy2(local_tmp, local)
 
-    def download_dir(self, local, remote=None):
+    def download_dir(self, remote=None, local=None):
         """Recursively uploads a directory onto the remote server
 
         Arguments:
             local: Local directory
             remote: Remote directory
         """
-        remote   = remote or '.'
+        remote   = remote or self.cwd or '.'
 
-        localcwd = os.path.dirname(local) or self.cwd
-        local    = os.path.basename(local)
 
-        self.info("Downloading %r to %r" % (local,remote))
+        if self.sftp:
+            remote = str(self.sftp.normalize(remote))
+        else:
+            with context.local(log_level='error'):
+                remote = self.system('readlink -f %s' % remote)
 
-        source = self.run(['sh', '-c', 'tar -C %s -czf- %s' % (localcwd, local)])
-        sink   = process(['sh', '-c', 'tar -C %s -xzf-' % remote])
+        dirname  = os.path.dirname(remote)
+        basename = os.path.basename(remote)
 
-        source >> sink
+        local    = local or '.'
+        local    = os.path.expanduser(local)
 
-        sink.wait_for_close()
+        self.info("Downloading %r to %r" % (basename,local))
+
+        with context.local(log_level='error'):
+            remote_tar = self.mktemp()
+            tar = self.system('tar -C %s -czf %s %s' % (dirname, remote_tar, basename))
+
+            if 0 != tar.wait():
+                log.error("Could not create remote tar")
+
+            local_tar = tempfile.NamedTemporaryFile(suffix='.tar.gz')
+            self.download_file(remote_tar, local_tar.name)
+
+            tar = tarfile.open(local_tar.name)
+            tar.extractall(local)
+
 
     def upload_data(self, data, remote):
         """Uploads some data into a file on the remote server.
@@ -1025,19 +1040,52 @@ if can_execve:
             local: Local directory
             remote: Remote directory
         """
-        remote   = remote or self.cwd
 
-        localcwd = os.path.dirname(local)
-        local    = os.path.basename(local)
+        remote    = remote or self.cwd or '.'
 
-        self.info("Uploading %r to %r" % (local,remote))
+        local     = os.path.expanduser(local)
+        dirname   = os.path.dirname(local)
+        basename  = os.path.basename(local)
 
-        source  = process(['sh', '-c', 'tar -C %s -czf- %s' % (localcwd, local)])
-        sink    = self.run(['sh', '-c', 'tar -C %s -xzf-' % remote])
+        if not os.path.isdir(local):
+            self.error("%r is not a directory" % local)
 
-        source <> sink
+        msg = "Uploading %r to %r" % (basename,remote)
+        with self.waitfor(msg) as w:
+            # Generate a tarfile with everything inside of it
+            local_tar  = tempfile.mktemp()
+            with tarfile.open(local_tar, 'w:gz') as tar:
+                tar.add(local, basename)
 
-        sink.wait_for_close()
+            # Upload and extract it
+            with context.local(log_level='error'):
+                remote_tar = self.mktemp('--suffix=.tar.gz')
+                self.upload_file(local_tar, remote_tar)
+
+                untar = self.run('cd %s && tar -xzf %s' % (remote, remote_tar))
+                message = untar.recvrepeat(2)
+
+                if untar.wait() != 0:
+                    self.error("Could not untar %r on the remote end\n%s" % (remote_tar, message))
+
+    def upload(self, file_or_directory, remote=None):
+        if os.path.isfile(file_or_directory):
+            return self.upload_file(file_or_directory, remote)
+
+        if os.path.isdir(file_or_directory):
+            return self.upload_dir(file_or_directory, remote)
+
+    def download(self, file_or_directory, remote=None):
+        if not self.sftp:
+            log.error("Cannot determine remote file type without SFTP")
+
+        if 0 == self.system('test -d %s' % file_or_directory).wait():
+            self.download_dir(file_or_directory, remote)
+        else:
+            self.download_file(file_or_directory, remote)
+
+    put = upload
+    get = download
 
     def libs(self, remote, directory = None):
         """Downloads the libraries referred to by a file.
