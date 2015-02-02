@@ -367,17 +367,17 @@ class ssh(Timeout, Logger):
         """Creates a new ssh connection.
 
         Arguments:
-          user(str): The username to log in with
-          host(str): The hostname to connect to
-          port(int): The port to connect to
-          password(str): Try to authenticate using this password
-          key(str): Try to authenticate using this private key. The string should be the actual private key.
-          keyfile(str): Try to authenticate using this private key. The string should be a filename.
-          proxy_command(str): Use this as a proxy command. It has approximately the same semantics as ProxyCommand from ssh(1).
-          proxy_sock(str): Use this socket instead of connecting to the host.
-          timeout: Timeout, in seconds
-          level: Log level
-          cache: Cache downloaded files (by hash/size/timestamp)
+            user(str): The username to log in with
+            host(str): The hostname to connect to
+            port(int): The port to connect to
+            password(str): Try to authenticate using this password
+            key(str): Try to authenticate using this private key. The string should be the actual private key.
+            keyfile(str): Try to authenticate using this private key. The string should be a filename.
+            proxy_command(str): Use this as a proxy command. It has approximately the same semantics as ProxyCommand from ssh(1).
+            proxy_sock(str): Use this socket instead of connecting to the host.
+            timeout: Timeout, in seconds
+            level: Log level
+            cache: Cache downloaded files (by hash/size/timestamp)
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used."""
@@ -888,7 +888,7 @@ if can_execve:
         """Downloads a file from the remote server and returns it as a string.
 
         Arguments:
-          remote(str): The remote filename to download.
+            remote(str): The remote filename to download.
 
 
         Examples:
@@ -916,8 +916,8 @@ if can_execve:
         calling the function twice has little overhead.
 
         Arguments:
-          remote(str): The remote filename to download
-          local(str): The local filename to save it to. Default is to infer it from the remote filename.
+            remote(str): The remote filename to download
+            local(str): The local filename to save it to. Default is to infer it from the remote filename.
         """
 
 
@@ -976,8 +976,8 @@ if can_execve:
         """Uploads some data into a file on the remote server.
 
         Arguments:
-          data(str): The data to upload.
-          remote(str): The filename to upload it to.
+            data(str): The data to upload.
+            remote(str): The filename to upload it to.
 
         Examoles:
             >>> s =  ssh(host='example.pwnme',
