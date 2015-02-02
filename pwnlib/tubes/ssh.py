@@ -1025,7 +1025,8 @@ if can_execve:
             local: Local directory
             remote: Remote directory
         """
-        remote   = remote or self.cwd
+        local    = os.path.expanduser(local)
+        remote   = remote or self.cwd or '.'
 
         localcwd = os.path.dirname(local)
         local    = os.path.basename(local)
