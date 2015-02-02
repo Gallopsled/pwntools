@@ -1052,6 +1052,14 @@ if can_execve:
                 if untar.wait() != 0:
                     self.error("Could not untar %r on the remote end" % remote_tar)
 
+    def upload(self, file_or_directory, remote=None):
+        if os.path.isfile(file_or_directory):
+            return self.upload_file(file_or_directory, remote)
+
+        if os.path.isdir(file_or_directory):
+            return self.upload_dir(file_or_directory, remote)
+
+    put = upload
 
     def libs(self, remote, directory = None):
         """Downloads the libraries referred to by a file.
