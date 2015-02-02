@@ -4,6 +4,7 @@ This module includes and extends the standard module :mod:`itertools`.
 
 __all__ = [
     'bruteforce'                             ,
+    'mbruteforce'                            ,
     'chained'                                ,
     'consume'                                ,
     'cyclen'                                 ,
@@ -54,7 +55,8 @@ __all__ = [
 
 from itertools import *
 from ..log import getLogger
-import collections, operator, random, copy
+from ..context import *
+import collections, operator, random, copy, multiprocessing, time
 log = getLogger(__name__)
 
 def take(n, iterable):
@@ -720,7 +722,7 @@ def chained(func):
                 yield x
     return wrapper
 
-def bruteforce(func, alphabet, length, method = 'upto', start = None):
+def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = None):
     """bruteforce(func, alphabet, length, method = 'upto', start = None)
 
     Bruteforce `func` to return :const:`True`.  `func` should take a string
@@ -794,21 +796,113 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None):
         if rest >= i:
             chunk_size += 1
 
-        consume(starting_point, iterator)
-        iterator = take(chunk_size, iterator)
         total_iterations = chunk_size
 
     h = log.waitfor('Bruteforcing')
     cur_iteration = 0
+    if start != None:
+        consume(i, iterator)
     for e in iterator:
         cur = ''.join(e)
         cur_iteration += 1
         if cur_iteration % 2000 == 0:
             progress = 100.0 * cur_iteration / total_iterations
             h.status('Trying "%s", %0.3f%%' % (cur, progress))
+            if databag:
+                databag["current_item"] = cur
+                databag["items_done"] = cur_iteration
+                databag["items_total"] = total_iterations
         res = func(cur)
         if res:
             h.success('Found key: "%s"' % cur)
             return cur
+        if start != None:
+            consume(N - 1, iterator)
 
     h.failure('No matches found')
+
+
+
+def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads = None):
+    """mbruteforce(func, alphabet, length, method = 'upto', start = None, threads = None)
+
+    Same functionality as bruteforce(), but multithreaded.
+
+    Arguments:
+      func, alphabet, length, method, start: same as for bruteforce()
+      threads: Amount of threads to spawn, default is the amount of cores.
+    """
+
+    def bruteforcewrap(func, alphabet, length, method, start, databag):
+        oldloglevel = context.log_level
+        context.log_level = 'critical'
+        res = bruteforce(func, alphabet, length, method=method, start=start, databag=databag)
+        context.log_level = oldloglevel
+        databag["result"] = res
+
+    if start == None:
+        start = (1, 1)
+
+    if threads == None:
+        try:
+            threads = multiprocessing.cpu_count()
+        except NotImplementedError:
+            threads = 1
+
+    h = log.waitfor('MBruteforcing')
+    processes = [None] * threads
+    shareddata = [None] * threads
+
+    (i2, N2) = start
+    totalchunks = threads * N2
+
+    for i in range(threads):
+        shareddata[i] = multiprocessing.Manager().dict()
+        shareddata[i]['result'] = None
+        shareddata[i]['current_item'] = ""
+        shareddata[i]['items_done'] = 0
+        shareddata[i]['items_total'] = 0
+
+        chunkid = (i2-1) + (i * N2) + 1
+
+        processes[i] = multiprocessing.Process(target=bruteforcewrap,
+                args=(func, alphabet, length, method, (chunkid, totalchunks), 
+                        shareddata[i]))
+        processes[i].start()
+
+    done = False
+
+    while not done:
+        # log status
+        current_item_list = ",".join(["\"%s\"" % x["current_item"] 
+                                for x in shareddata if x != None])
+        items_done = sum([x["items_done"] for x in shareddata if x != None])
+        items_total = sum([x["items_total"] for x in shareddata if x != None])
+
+        progress = 100.0 * items_done / items_total if items_total != 0 else 0.0
+
+        h.status('Trying %s -- %0.3f%%' % (current_item_list, progress))
+
+        # handle finished threads
+        for i in range(threads):
+            if processes[i] and processes[i].exitcode != None:
+                # thread has terminated
+                res = shareddata[i]["result"]
+                processes[i].join()
+                processes[i] = None
+
+                # if successful, kill all other threads and return success
+                if res != None:
+                    for i in range(threads):
+                        if processes[i] != None:
+                            processes[i].terminate()
+                            processes[i].join()
+                            processes[i] = None
+                    h.success('Found key: "%s"' % res)
+                    return res
+
+                if all([x == None for x in processes]):
+                    done = True
+        time.sleep(0.3)
+    h.failure('No matches found')
+
