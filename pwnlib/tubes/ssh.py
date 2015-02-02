@@ -1,4 +1,4 @@
-import os, time, tempfile, sys, shutil, re, logging, threading, logging
+import os, time, tempfile, sys, shutil, re, logging, threading, logging, string
 
 from .. import term
 from ..context import context
@@ -782,37 +782,43 @@ if can_execve:
         arg = misc.sh_string(remote)
         data, status = self.run_to_end(cmd % (arg, arg, arg))
         if status != 0:
-            self.failure('Unable to find libraries for %r' % remote)
+            self.error('Unable to find libraries for %r' % remote)
             return {}
 
         return misc.parse_ldd_output(data)
 
     def _get_fingerprint(self, remote):
         arg = misc.sh_string(remote)
-        cmd = '(sha256sum %s||sha1sum %s||md5sum %s||shasum %s) 2>/dev/null' % (arg, arg, arg, arg)
+        cmd = '(openssl sha256 || sha256 || sha256sum) 2>/dev/null < %s' % (arg)
         data, status = self.run_to_end(cmd)
-        if status == 0:
-            return data.split()[0]
-        else:
+
+        if status != 0:
             return None
+
+        # OpenSSL outputs in the format of...
+        # (stdin)= e3b0c4429...
+        data = data.replace('(stdin)= ','')
+
+        # sha256 and sha256sum outputs in the format of...
+        # e3b0c442...  -
+        data = data.replace('-','')
+
+        return data.strip()
 
     def _get_cachefile(self, fingerprint):
         return os.path.join(self._cachedir, fingerprint)
 
     def _verify_local_fingerprint(self, fingerprint):
-        if not isinstance(fingerprint, str) or \
-           len(fingerprint) not in [32, 40, 64] or \
-           not set(fingerprint).issubset('abcdef0123456789'):
-            self.failure('Invalid fingerprint %r' % fingerprint)
+        if not set(fingerprint).issubset(string.hexdigits) or \
+           len(fingerprint) != 64:
+            self.error('Invalid fingerprint %r' % fingerprint)
             return False
 
         local = self._get_cachefile(fingerprint)
         if not os.path.isfile(local):
             return False
 
-        func = {32: hashes.md5filehex, 40: hashes.sha1filehex, 64: hashes.sha256filehex}[len(fingerprint)]
-
-        if func(local) == fingerprint:
+        if hashes.sha256filehex(local) == fingerprint:
             return True
         else:
             os.unlink(local)
@@ -856,8 +862,12 @@ if can_execve:
                 fd.write(data)
 
     def _download_to_cache(self, remote):
+
+        with context.local(log_level='error'):
+            remote = self.readlink('-f',remote)
+
         fingerprint = self._get_fingerprint(remote)
-        if fingerprint == None:
+        if fingerprint is None:
             local = os.path.normpath(remote)
             local = os.path.basename(local)
             local += time.strftime('-%Y-%m-%d-%H:%M:%S')
@@ -919,7 +929,10 @@ if can_execve:
             remote = os.path.join(self.cwd, remote)
 
         local_tmp = self._download_to_cache(remote)
-        shutil.copy2(local_tmp, local)
+
+        # Check to see if an identical copy of the file already exists
+        if os.path.exists(local) and hashes.sha256filehex(local_tmp) != hashes.sha256filehex(local):
+            shutil.copy2(local_tmp, local)
 
     def download_dir(self, local, remote=None):
         """Recursively uploads a directory onto the remote server
@@ -1037,6 +1050,9 @@ if can_execve:
 
         libs = self._libs_remote(remote)
 
+        remote = self.readlink('-f',remote).strip()
+        libs[remote] = 0
+
         if directory == None:
             directory = self.host
 
@@ -1102,13 +1118,13 @@ if can_execve:
             wd = wd.strip()
 
         if status:
-            self.failure("Could not generate a temporary directory\n%s" % wd)
+            self.error("Could not generate a temporary directory\n%s" % wd)
             return
 
         _, status = self.run_to_end('ls ' + misc.sh_string(wd), wd = None)
 
         if status:
-            self.failure("%r does not appear to exist" % wd)
+            self.error("%r does not appear to exist" % wd)
             return
 
         self.info("Working directory: %r" % wd)
