@@ -387,10 +387,11 @@ class Logger(object):
 
         See if the underlying logger is enabled for the specified level.
         """
-        level = self._logger.isEnabledFor(level)
-        if level == 1:
-            return context.log_level
-        return level
+        effectiveLevel = self._logger.getEffectiveLevel()
+
+        if effectiveLevel == 1:
+            effectiveLevel = context.log_level
+        return effectiveLevel <= level
 
     def setLevel(self, level):
         """setLevel(level)
