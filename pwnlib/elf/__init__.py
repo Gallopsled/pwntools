@@ -75,7 +75,7 @@ class ELF(ELFFile):
             self._address = min(filter(bool, (s.header.p_vaddr for s in self.segments)))
         self.load_addr = self._address
 
-        log.info("Security settings for %r:\n%s" % (path, self.checksec()))
+        log.info_once("Security settings for %r:\n%s" % (os.path.basename(path), self.checksec()))
 
     def __repr__(self):
         return "ELF(%r)" % self.path
