@@ -24,6 +24,15 @@ parser.add_argument(
 )
 
 
+parser.add_argument(
+    "-a","--address",
+    metavar='address',
+    help="Base address",
+    type=str,
+    default='0'
+)
+
+
 def main():
     args = parser.parse_args()
 
@@ -37,6 +46,6 @@ def main():
     else:
         dat = sys.stdin.read()
 
-    print disasm(dat)
+    print disasm(dat, vma=safeeval.const(args.address))
 
 if __name__ == '__main__': main()
