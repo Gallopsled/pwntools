@@ -348,25 +348,32 @@ class ROP(object):
 
     def __get_cachefile_name(self, elf):
         basename = os.path.basename(elf.file.name)
-        md5sum   = hashlib.md5(elf.get_data()).hexdigest()
-
-        filename  = "%s-%s-%#x" % (basename, md5sum, elf.address)
-
+        sha256   = hashlib.sha256(elf.get_data()).hexdigest()
         cachedir  = os.path.join(tempfile.gettempdir(), 'binjitsu-rop-cache')
 
         if not os.path.exists(cachedir):
             os.mkdir(cachedir)
 
-        return os.path.join(cachedir, filename)
+        return os.path.join(cachedir, sha256)
 
     def __cache_load(self, elf):
         filename = self.__get_cachefile_name(elf)
 
-        if os.path.exists(filename):
-            log.info_once("Loaded cached gadgets for %r @ %#x" % (elf.file.name, elf.address))
-            return eval(file(filename).read())
+        if not os.path.exists(filename):
+            return None
+
+        log.info_once("Loaded cached gadgets for %r" % elf.file.name)
+        gadgets = eval(file(filename).read())
+
+        # Gadgets are saved with their 'original' load addresses.
+        gadgets = {k-elf.load_addr+elf.address:v for k,v in gadgets.items()}
+
+        return gadgets
 
     def __cache_save(self, elf, data):
+        # Gadgets need to be saved with their 'original' load addresses.
+        data = {k+elf.load_addr-elf.address:v for k,v in data.items()}
+
         file(self.__get_cachefile_name(elf),'w+').write(repr(data))
 
     def __load(self):
@@ -422,7 +429,7 @@ class ROP(object):
                 gadgets.update(cache)
                 continue
 
-            log.info_once("Loading gadgets for %r @ %#x" % (elf.path, elf.address))
+            log.info_once("Loading gadgets for %r" % elf.path)
 
             try:
                 sys.stdout = Wrapper(sys.stdout)
@@ -450,7 +457,6 @@ class ROP(object):
                     elf_gadgets[address] = insns
             self.__cache_save(elf, elf_gadgets)
             gadgets.update(elf_gadgets)
-
 
         #
         # For each gadget we decided to keep, find out how much it moves the stack,
