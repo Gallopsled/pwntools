@@ -36,6 +36,19 @@ class process(tube):
         Traceback (most recent call last):
         ...
         EOFError
+
+        >>> p = process('cat')
+        >>> d = open('/dev/urandom').read(4096)
+        >>> p.recv(timeout=0.1)
+        ''
+        >>> p.write(d)
+        >>> p.recvrepeat(0.1) == d
+        True
+        >>> p.recv(timeout=0.1)
+        ''
+        >>> p.shutdown('send')
+        >>> p.poll()
+        0
     """
     def __init__(self, args, shell = False, executable = None,
                  cwd = None, env = None, timeout = Timeout.default,
