@@ -3,7 +3,7 @@ from ..timeout import Timeout
 from ..util.misc import which
 from ..context import context
 from ..log import getLogger
-import subprocess, fcntl, os, select
+import subprocess, fcntl, os, select, pty, tty
 
 log = getLogger(__name__)
 
@@ -56,13 +56,23 @@ class process(tube):
         if not which(self.program) and os.path.exists(self.program) and not os.access(self.program, os.X_OK):
             log.error('%r is not set to executable (chmod +x %s)' % (self.program, self.program))
 
+        # Make a pty pair for stdout
+        master, slave = pty.openpty()
+
+        # Set master and slave to raw mode
+        tty.setraw(master)
+        tty.setraw(slave)
+
         self.proc = subprocess.Popen(
             args, shell = shell, executable = executable,
             cwd = cwd, env = env,
-            stdin = subprocess.PIPE, stdout = subprocess.PIPE,
-            stderr = subprocess.PIPE if stderr_debug else subprocess.STDOUT,
+            stdin = subprocess.PIPE, stdout = slave,
+            stderr = subprocess.PIPE if stderr_debug else slave,
             close_fds = close_fds)
         self.stop_noticed = False
+
+        self.proc.stdout = os.fdopen(master)
+        os.close(slave)
 
         # Set in non-blocking mode so that a call to call recv(1000) will
         # return as soon as a the first byte is available
