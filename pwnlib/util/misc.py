@@ -1,6 +1,14 @@
-import socket, re, os, stat, errno, string, base64
+import base64
+import errno
+import os
+import re
+import socket
+import stat
+import string
+
 from . import lists
 from ..log import getLogger
+
 log = getLogger(__name__)
 
 def align(alignment, x):
@@ -83,7 +91,7 @@ def read(path):
 
     Examples:
         >>> read('pwnlib/util/misc.py').split('\\n')[0]
-        'import socket, re, os, stat, errno, string, base64'
+        'import base64'
     """
     path = os.path.expanduser(os.path.expandvars(path))
     with open(path) as fd:

@@ -1,6 +1,9 @@
 #!/usr/bin/env python2
-import argparse, sys
+import argparse
+import sys
+
 from pwn import *
+
 from . import common
 
 parser = argparse.ArgumentParser(

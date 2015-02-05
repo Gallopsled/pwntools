@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
-import sys, argparse
+import argparse
+import sys
 
 parser = argparse.ArgumentParser(description='''
 Hex-encodes data provided on the command line or via stdin.

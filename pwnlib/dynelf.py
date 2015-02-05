@@ -47,15 +47,16 @@ Example
 
 DynELF
 """
-from . import elf
-from .elf     import ELF, constants
-from .memleak import MemLeak
-from .context import context
-from .log     import getLogger
+import ctypes
 
 from elftools.elf.enums import ENUM_D_TAG
 
-import ctypes
+from . import elf
+from .context import context
+from .elf import ELF
+from .elf import constants
+from .log import getLogger
+from .memleak import MemLeak
 
 log    = getLogger(__name__)
 sizeof = ctypes.sizeof

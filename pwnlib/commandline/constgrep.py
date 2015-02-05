@@ -1,7 +1,11 @@
 #!/usr/bin/env python2
 
-import argparse, os, re
+import argparse
+import os
+import re
+
 from pwn import *
+
 from . import common
 
 p = argparse.ArgumentParser(

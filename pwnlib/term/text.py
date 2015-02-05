@@ -1,5 +1,9 @@
-import types, sys, functools
+import functools
+import sys
+import types
+
 from . import termcap
+
 
 def eval_when(when):
     if isinstance(when, file) or \

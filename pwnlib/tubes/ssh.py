@@ -1,12 +1,24 @@
-import os, time, tempfile, sys, shutil, re, logging, threading, logging, string, tarfile
+import logging
+import os
+import re
+import shutil
+import string
+import sys
+import tarfile
+import tempfile
+import threading
+import time
 
 from .. import term
 from ..context import context
-from ..util import hashes, misc, safeeval
-from .sock import sock
-from .process import process
+from ..log import Logger
+from ..log import getLogger
 from ..timeout import Timeout
-from ..log import getLogger, Logger
+from ..util import hashes
+from ..util import misc
+from ..util import safeeval
+from .process import process
+from .sock import sock
 
 # Kill the warning line:
 # No handlers could be found for logger "paramiko.transport"

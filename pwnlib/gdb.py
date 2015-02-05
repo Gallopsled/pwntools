@@ -1,7 +1,13 @@
-import os, tempfile, re, shlex
-from .util import misc, proc
-from . import tubes, elf
+import os
+import re
+import shlex
+import tempfile
+
+from . import elf
+from . import tubes
 from .log import getLogger
+from .util import misc
+from .util import proc
 
 log = getLogger(__name__)
 

@@ -1,13 +1,15 @@
 import sys
 from os.path import basename
 
+from docutils import nodes
+from docutils import statemachine
+from sphinx.util.compat import Directive
+
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
 
-from sphinx.util.compat import Directive
-from docutils import nodes, statemachine
 
 class ExecDirective(Directive):
     """Execute the specified python code and insert the output into the document"""

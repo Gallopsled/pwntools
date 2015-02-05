@@ -1,7 +1,11 @@
+import os
+import re
+import sys
 from types import ModuleType
-import sys, os, re
+
 from . import internal
 from ..context import context
+
 
 class module(ModuleType):
     def __init__(self, name, directory):

@@ -1,7 +1,11 @@
 #!/usr/bin/env python2
-import argparse, sys, string
+import argparse
+import string
+import sys
+
 from pwn import *
-from .   import common
+
+from . import common
 
 parser = argparse.ArgumentParser(
     description = 'Disassemble bytes into text format'

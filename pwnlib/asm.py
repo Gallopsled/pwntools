@@ -39,12 +39,19 @@ Disassembly
     '   0:   b8 0b 00 00 00          mov    eax,0xb'
 
 """
-import tempfile, subprocess, shutil, tempfile, errno, platform, re
+import errno
+import platform
+import re
+import shutil
+import subprocess
+import tempfile
 from collections import defaultdict
-from os import path, environ
 from glob import glob
-from .log import getLogger
+from os import environ
+from os import path
+
 from .context import context
+from .log import getLogger
 
 log = getLogger(__name__)
 

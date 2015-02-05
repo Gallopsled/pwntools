@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
-import re, base64, random, string
-from . import packing, lists
-from .cyclic import cyclic_find
+import base64
+import random
+import re
+import string
+
+from . import lists
+from . import packing
 from ..context import context
-from ..term    import text
+from ..term import text
+from .cyclic import cyclic_find
+
 
 def unhex(s):
     r"""unhex(s) -> str

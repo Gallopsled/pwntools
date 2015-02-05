@@ -1,11 +1,21 @@
 # -*- coding: utf-8 -*-
-from .buffer import Buffer
-from ..timeout import Timeout
+import logging
+import re
+import string
+import subprocess
+import sys
+import threading
+import time
+
+from .. import atexit
+from .. import term
 from ..context import context
-from .. import term, atexit
-from ..util import misc, fiddling
 from ..log import Logger
-import re, threading, sys, time, subprocess, logging, string
+from ..timeout import Timeout
+from ..util import fiddling
+from ..util import misc
+from .buffer import Buffer
+
 
 class tube(Timeout, Logger):
     """

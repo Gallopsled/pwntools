@@ -1,6 +1,8 @@
+import time
+import types
+
 from . import term
 from .log import getLogger
-import time, types
 
 log = getLogger(__name__)
 

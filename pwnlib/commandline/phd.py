@@ -1,5 +1,8 @@
 #!/usr/bin/env python2
-import argparse, sys, os
+import argparse
+import os
+import sys
+
 from pwn import *
 
 parser = argparse.ArgumentParser(

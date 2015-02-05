@@ -3,7 +3,10 @@ Analogous to atexit, this module allows the programmer to register functions to
 be run if an unhandled exception occurs.
 """
 
-import sys, traceback, threading
+import sys
+import threading
+import traceback
+
 from .context import context
 
 __all__ = ['register', 'unregister']

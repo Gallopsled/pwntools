@@ -30,9 +30,11 @@ Examples:
     >>> with context.local(endian='big'): print repr(p(0x1ff))
     '\xff\x01'
 """
-from ..context import context
-import struct, sys
+import struct
+import sys
 from itertools import product
+
+from ..context import context
 
 mod = sys.modules[__name__]
 

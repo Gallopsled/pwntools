@@ -1,5 +1,7 @@
 __all__ = ['get']
-import os, curses, sys
+import curses
+import os
+import sys
 
 cache = None
 def get(cap, *args, **kwargs):

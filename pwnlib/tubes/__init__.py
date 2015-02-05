@@ -12,4 +12,10 @@ that specific kind of tube.
 
 __all__ = ['tube', 'sock', 'remote', 'listen', 'process', 'serialtube', 'ssh']
 
-from . import tube, sock, remote, listen, process, serialtube, ssh
+from . import listen
+from . import process
+from . import remote
+from . import serialtube
+from . import sock
+from . import ssh
+from . import tube

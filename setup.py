@@ -1,8 +1,12 @@
 #!/usr/bin/env python2
-from setuptools import setup, find_packages
-from distutils.util import convert_path
+import glob
+import os
+import platform
 from distutils.command.install import INSTALL_SCHEMES
-import os, glob, platform
+from distutils.util import convert_path
+
+from setuptools import find_packages
+from setuptools import setup
 
 # Get all template files
 templates = []

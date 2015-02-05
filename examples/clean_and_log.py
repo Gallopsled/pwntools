@@ -26,4 +26,3 @@ atexit.register(r.clean_and_log)
 while True:
     line = r.recvline()
     print re.findall('^prefix (\S+)$', line)[0]
-

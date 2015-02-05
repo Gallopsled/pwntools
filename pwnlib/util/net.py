@@ -1,4 +1,6 @@
-import ctypes, ctypes.util, socket
+import ctypes
+import ctypes.util
+import socket
 
 __all__ = ['getifaddrs', 'interfaces', 'interfaces4', 'interfaces6']
 

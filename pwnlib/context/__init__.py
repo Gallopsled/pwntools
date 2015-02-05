@@ -4,8 +4,15 @@
 Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
-import threading, collections, string, logging, time, sys
+import collections
+import logging
+import string
+import sys
+import threading
+import time
+
 from ..timeout import Timeout
+
 
 class _devnull(object):
     name = None

@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-import os, tempfile
-from .misc import size
+import os
+import tempfile
+
 from ..log import getLogger
+from .misc import size
+
 log = getLogger(__name__)
 
 def wget(url, save=None, timeout=5, **kwargs):

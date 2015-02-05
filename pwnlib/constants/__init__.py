@@ -32,10 +32,13 @@ Example:
     4
 
 """
+import importlib
+import sys
 from types import ModuleType
-import importlib, sys
+
 from ..context import context
 from ..util import safeeval
+
 
 class module(ModuleType):
     def __init__(self, submodules):

@@ -1,8 +1,10 @@
-from .sock     import sock
-from ..timeout import Timeout
+import errno
+import socket
+
 from ..context import context
-from ..log     import getLogger
-import socket, errno
+from ..log import getLogger
+from ..timeout import Timeout
+from .sock import sock
 
 log = getLogger(__name__)
 

@@ -1,10 +1,14 @@
 """Return Oriented Programming
 """
-import hashlib, os, sys, tempfile, re
+import hashlib
+import os
+import re
+import sys
+import tempfile
 
-from .elf     import ELF
-from .util    import packing
-from .log     import getLogger
+from .elf import ELF
+from .log import getLogger
+from .util import packing
 
 log = getLogger(__name__)
 

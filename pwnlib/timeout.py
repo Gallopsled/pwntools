@@ -4,7 +4,9 @@
 Timeout encapsulation, complete with countdowns and scope managers.
 """
 import time
+
 import pwnlib
+
 
 class _DummyContextClass(object):
     def __enter__(self):   pass

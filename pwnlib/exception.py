@@ -1,5 +1,7 @@
 __all__ = ['PwnlibException']
-import traceback, sys
+import sys
+import traceback
+
 
 class PwnlibException(Exception):
     '''Exception thrown by :func:`pwnlib.log.error`.

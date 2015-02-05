@@ -1,16 +1,21 @@
 """Exposes functionality for manipulating ELF files
 """
-from ..term import text
-from .datatypes import *
-from ..asm import asm, disasm
-from ..util import misc
-from ..log import getLogger
+import mmap
+import os
+import subprocess
 
-import mmap, subprocess, os
+from elftools.elf.constants import P_FLAGS
+from elftools.elf.constants import SHN_INDICES
+from elftools.elf.descriptions import describe_e_type
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
-from elftools.elf.descriptions import describe_e_type
-from elftools.elf.constants import P_FLAGS, SHN_INDICES
+
+from ..asm import asm
+from ..asm import disasm
+from ..log import getLogger
+from ..term import text
+from ..util import misc
+from .datatypes import *
 
 log = getLogger(__name__)
 

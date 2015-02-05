@@ -52,9 +52,14 @@ __all__ = [
     'tee'
 ]
 
+import collections
+import copy
+import operator
+import random
 from itertools import *
+
 from ..log import getLogger
-import collections, operator, random, copy
+
 log = getLogger(__name__)
 
 def take(n, iterable):

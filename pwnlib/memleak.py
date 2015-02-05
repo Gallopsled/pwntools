@@ -1,5 +1,7 @@
-from .util.packing import pack, unpack
 from .log import getLogger
+from .util.packing import pack
+from .util.packing import unpack
+
 log = getLogger(__name__)
 
 class MemLeak(object):

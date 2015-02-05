@@ -10,8 +10,19 @@ height = 25
 # list of callbacks triggered on SIGWINCH
 on_winch = []
 
-import sys, atexit, struct, fcntl, re, signal, threading, os, termios, traceback
+import atexit
+import fcntl
+import os
+import re
+import signal
+import struct
+import sys
+import termios
+import threading
+import traceback
+
 from . import termcap
+
 settings = None
 _graphics_mode = False
 
