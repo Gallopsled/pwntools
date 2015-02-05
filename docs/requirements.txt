@@ -4,3 +4,4 @@ mako
 pyelftools
 sphinxcontrib-napoleon
 sphinxcontrib-autoprogram
+isort
