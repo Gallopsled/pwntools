@@ -32,10 +32,7 @@ class ROP(object):
             elfs(list): List of pwnlib.elf.ELF objects for mining
         """
 
-        try:
-            import ropgadget
-        except ImportError:
-            log.exception("ROP is not supported without installing libcapstone. See http://www.capstone-engine.org/download.html")
+        import ropgadget
 
         # Permit singular ROP(elf) vs ROP([elf])
         if isinstance(elfs, ELF):
