@@ -3,7 +3,7 @@ from ..timeout import Timeout
 from ..util.misc import which
 from ..context import context
 from ..log import getLogger
-import subprocess, fcntl, os, select
+import subprocess, fcntl, os, select, pty, tty
 
 log = getLogger(__name__)
 
@@ -39,10 +39,12 @@ class process(tube):
     """
     def __init__(self, args, shell = False, executable = None,
                  cwd = None, env = None, timeout = Timeout.default,
-                 stdin  = subprocess.PIPE,
-                 stdout = subprocess.PIPE,
+                 stdin  = None,
+                 stdout = None,
                  stderr = None,
-                 stderr_debug = False, level = None):
+                 stderr_debug = False,
+                 level = None,
+                 close_fds = True):
         super(process, self).__init__(timeout, level = level)
 
         if executable:
@@ -54,14 +56,6 @@ class process(tube):
             executable = args[0]
         else:
             self.error("process(): Do not understand the arguments %r" % args)
-
-        if stderr_debug:
-            if stderr is not None:
-                log.error("Cannot capture stderr and send it all to debug")
-            stderr = subprocess.PIPE
-        elif stderr is None:
-            stderr = subprocess.STDOUT
-
 
         # Did we specify something not in $PATH?
         if not which(executable):
@@ -79,12 +73,38 @@ class process(tube):
         self.cwd        = cwd
         self.env        = env
 
+        master, slave   = None, None
+
+        if stdin is None:
+            stdin = subprocess.PIPE
+
+        if stdout is None:
+            # Make a pty pair for stdout
+            master, slave = pty.openpty()
+
+            # Set master and slave to raw mode
+            tty.setraw(master)
+            tty.setraw(slave)
+
+            stdout = slave
+
+        if stderr is None:
+            stderr = stdout
+        elif stderr_debug:
+            log.error("Cannot capture stderr and send it all to debug")
+
         self.proc = subprocess.Popen(
             args, shell = shell, executable = executable,
             cwd = cwd, env = env,
             stdin = stdin, stdout = stdout,
-            stderr = stderr)
+            stderr = stderr,
+            close_fds = close_fds)
+
         self.stop_noticed = False
+
+        if master and slave:
+            self.proc.stdout = os.fdopen(master)
+            os.close(slave)
 
         # Set in non-blocking mode so that a call to call recv(1000) will
         # return as soon as a the first byte is available
