@@ -3,7 +3,7 @@ from ..timeout import Timeout
 from ..util.misc import which
 from ..context import context
 from ..log import getLogger
-import subprocess, fcntl, os, select, pty, tty
+import subprocess, fcntl, os, select, pty, tty, errno
 
 log = getLogger(__name__)
 
@@ -98,7 +98,8 @@ class process(tube):
             cwd = cwd, env = env,
             stdin = stdin, stdout = stdout,
             stderr = stderr,
-            close_fds = close_fds)
+            close_fds = close_fds,
+            preexec_fn = os.setpgrp)
 
         self.stop_noticed = False
 
@@ -173,7 +174,12 @@ class process(tube):
         # This will only be reached if we either have data,
         # or we have reached an EOF. In either case, it
         # should be safe to read without expecting it to block.
-        data = self.proc.stdout.read(numb)
+        data = ''
+
+        try:
+            data = self.proc.stdout.read(numb)
+        except IOError as (err, strerror):
+            pass
 
         if not data:
             self.shutdown("recv")
