@@ -35,7 +35,7 @@ Most of the functionality of binjitsu is self-contained and Python-only.  You sh
 pip install --upgrade git+https://github.com/binjitsu/binjitsu
 ```
 
-However, some of the features (ROP generation and assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://binjitsu.readthedocs.org/en/latest/install.html).
+However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://binjitsu.readthedocs.org/en/latest/install.html).
 
 
 # Contribution
