@@ -420,6 +420,7 @@ class ssh(Timeout, Logger):
         msg = 'Connecting to %s on port %d' % (host, port)
         with self.waitfor(msg) as h:
             self.client = paramiko.SSHClient()
+            self.client.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
             has_proxy = (proxy_sock or proxy_command) and True
