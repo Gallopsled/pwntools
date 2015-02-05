@@ -22,6 +22,7 @@ def align(alignment, x):
     """
     return ((x + alignment - 1) // alignment) * alignment
 
+align_up = align
 
 def align_down(alignment, x):
     """align_down(alignment, x) -> int
