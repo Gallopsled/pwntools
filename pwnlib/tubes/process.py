@@ -47,6 +47,7 @@ class process(tube):
         >>> p.recv(timeout=0.1)
         ''
         >>> p.shutdown('send')
+        >>> p.wait_for_close()
         >>> p.poll()
         0
     """
