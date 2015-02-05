@@ -420,13 +420,7 @@ class ssh(Timeout, Logger):
         msg = 'Connecting to %s on port %d' % (host, port)
         with self.waitfor(msg) as h:
             self.client = paramiko.SSHClient()
-
-            class IgnorePolicy(paramiko.MissingHostKeyPolicy):
-                """Policy for what happens when an unknown ssh-fingerprint is encountered"""
-                def __init__(self):
-                    self.do_warning = False
-
-            self.client.set_missing_host_key_policy(IgnorePolicy())
+            self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
             has_proxy = (proxy_sock or proxy_command) and True
             if has_proxy:
