@@ -81,8 +81,12 @@ class process(tube):
         >>> p.poll()
         0
     """
-    def __init__(self, args, shell = False, executable = None,
-                 cwd = None, env = None, timeout = Timeout.default,
+    def __init__(self, args,
+                 shell = False,
+                 executable = None,
+                 cwd = None,
+                 env = None,
+                 timeout = Timeout.default,
                  stdin  = None,
                  stdout = None,
                  stderr = None,
@@ -91,6 +95,7 @@ class process(tube):
         super(process, self).__init__(timeout, level = level)
 
         executable, args, env = self._validate(cwd, executable, args, env)
+
         stdin, stdout, stderr, master = self._handles(stdin, stdout, stderr)
 
         self.executable = self.program = executable
