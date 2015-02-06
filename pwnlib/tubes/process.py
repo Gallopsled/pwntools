@@ -1,5 +1,6 @@
 import errno
 import fcntl
+import logging
 import os
 import pty
 import select
@@ -15,6 +16,28 @@ from .tube import tube
 log = getLogger(__name__)
 
 class process(tube):
+
+    #: `subprocess.Popen` object
+    proc = None
+
+    #: Full path to the executable
+    executable = None
+
+    #: Full path to the executable
+    program = None
+
+    #: Arguments passed on argv
+    args = None
+
+    #: Environment passed on envp
+    env = None
+
+    #: Directory the process was created in
+    cwd = None
+
+    #: Have we seen the process stop?
+    _stop_noticed = False
+
     r"""
     Implements a tube which talks to a process on stdin/stdout/stderr.
 
@@ -63,46 +86,140 @@ class process(tube):
                  stdin  = None,
                  stdout = None,
                  stderr = None,
-                 stderr_debug = False,
                  level = None,
                  close_fds = True):
         super(process, self).__init__(timeout, level = level)
 
-        if executable:
-            pass
-        elif isinstance(args, (str, unicode)):
-            executable = args
-            args       = [args]
-        elif isinstance(args, (list, tuple)):
-            executable = args[0]
-        else:
-            self.error("process(): Do not understand the arguments %r" % args)
+        executable, args, env = self._validate(cwd, executable, args, env)
+        stdin, stdout, stderr, master = self._handles(stdin, stdout, stderr)
 
-        # Did we specify something not in $PATH?
-        if not which(executable):
-            # If we specified a path to a binary, make it absolute.
-            # This saves us the step of './binary'
-            if os.path.exists(executable) and os.access(executable, os.X_OK):
-                executable = os.path.abspath(executable)
+        self.executable = self.program = executable
+        self.args       = args
+        self.env        = env
+        self.cwd        = cwd or os.path.curdir
 
-            # Otherwise, there's no binary to execute
-            else:
-                self.error('%r is not set to executable (chmod +x %r)' % (executable, executable))
+        message = "Starting program %r" % self.program
 
-        # Python doesn't like when an arg in argv contains '\x00'
-        # -> execve() arg 2 must contain only strings
-        self.args = list(args)
+        if self.isEnabledFor(logging.DEBUG):
+            if self.args != [self.executable]:
+                message += ' with arguments %r ' % self.args
+            if self.env  != os.environ:
+                message += ' with environment %r ' % self.env
 
-        for i, arg in enumerate(self.args):
+        with self.progress(message) as p:
+            self.indented("...with arguments %r" % args, level=10)
+            self.proc = subprocess.Popen(args = args,
+                                         shell = shell,
+                                         executable = executable,
+                                         cwd = cwd,
+                                         env = env,
+                                         stdin = stdin,
+                                         stdout = stdout,
+                                         stderr = stderr,
+                                         close_fds = close_fds,
+                                         preexec_fn = os.setpgrp)
+
+        if master:
+            self.proc.stdout = os.fdopen(master)
+            os.close(stdout)
+
+        # Set in non-blocking mode so that a call to call recv(1000) will
+        # return as soon as a the first byte is available
+        fd = self.proc.stdout.fileno()
+        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+
+    @staticmethod
+    def _validate(cwd, executable, args, env):
+        """
+        Perform extended validation on the executable path, argv, and envp.
+
+        Mostly to make Python happy, but also to prevent common pitfalls.
+        """
+
+        cwd = cwd or os.path.curdir
+
+        #
+        # Validate args
+        #
+        # - Must be a list/tuple of strings
+        # - Each string must not contain '\x00'
+        #
+        if isinstance(args, (str, unicode)):
+            args = [args]
+
+        if not all(isinstance(arg, (str, unicode)) for arg in args):
+            log.error("args must be strings: %r" % args)
+
+        # Create a duplicate so we can modify it
+        args = list(args or [])
+
+        for i, arg in enumerate(args):
             if '\x00' in arg[:-1]:
                 log.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
 
-            self.args[i] = arg.rstrip('\x00')
+            args[i] = arg.rstrip('\x00')
 
-        self.executable = self.program = executable
-        self.cwd        = cwd
-        self.env        = env
+        #
+        # Validate executable
+        #
+        # - Must be an absolute or relative path to the target executable
+        # - If not, attempt to resolve the name in $PATH
+        #
+        if not executable:
+            if not args:
+                log.error("Must specify args or executable")
+            executable = args[0]
 
+        # Do not change absolute paths to binaries
+        if executable.startswith(os.path.sep):
+            pass
+
+        # If there's no path component, it's in $PATH or relative to the
+        # target directory.
+        #
+        # For example, 'sh'
+        elif os.path.sep not in executable and which(executable):
+            executable = which(executable)
+
+        # Either there is a path component, or the binary is not in $PATH
+        # For example, 'foo/bar' or 'bar' with cwd=='foo'
+        else:
+            executable = os.path.join(cwd, executable)
+
+        if not os.path.exists(executable):
+            log.error("%r is does not exist")
+        if not os.path.isfile(executable):
+            log.error("%r is not a file")
+        if not os.access(executable, os.X_OK):
+            log.error("%r is not marked as executable (+x)")
+
+        #
+        # Validate environment
+        #
+        # - Must be a dictionary of {string:string}
+        # - No strings may contain '\x00'
+        #
+
+        # Create a duplicate so we can modify it safely
+        env = dict(env or os.environ)
+
+        for k,v in env.items():
+            if not isinstance(k, (str, unicode)):
+                log.error('Environment keys must be strings: %r' % k)
+            if not isinstance(k, (str, unicode)):
+                log.error('Environment values must be strings: %r=%r' % (k,v))
+            if '\x00' in k[:-1]:
+                log.error('Inappropriate nulls in env key: %r' % (k))
+            if '\x00' in v[:-1]:
+                log.error('Inappropriate nulls in env value: %r=%r' % (k, v))
+
+            env[k.rstrip('\x00')] = v.rstrip('\x00')
+
+        return executable, args, env
+
+    @staticmethod
+    def _handles(stdin, stdout, stderr):
         master, slave   = None, None
 
         if stdin is None:
@@ -120,45 +237,9 @@ class process(tube):
 
         if stderr is None:
             stderr = stdout
-        elif stderr_debug:
-            log.error("Cannot capture stderr and send it all to debug")
 
-        self.proc = subprocess.Popen(
-            args, shell = shell, executable = executable,
-            cwd = cwd, env = env,
-            stdin = stdin, stdout = stdout,
-            stderr = stderr,
-            close_fds = close_fds,
-            preexec_fn = os.setpgrp)
+        return stdin, stdout, stderr, master
 
-        self.stop_noticed = False
-
-        if master and slave:
-            self.proc.stdout = os.fdopen(master)
-            os.close(slave)
-
-        # Set in non-blocking mode so that a call to call recv(1000) will
-        # return as soon as a the first byte is available
-        fd = self.proc.stdout.fileno()
-        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
-
-        self.success("Started program %r" % self.program)
-        self.debug("...with arguments %r" % args)
-
-        def printer():
-            try:
-                while True:
-                    line = self.proc.stderr.readline()
-                    if line: self.debug(line.rstrip())
-                    else: break
-            except Exception:
-                pass
-
-        if stderr_debug:
-            t = context.Thread(target=printer)
-            t.daemon = True
-            t.start()
 
     def kill(self):
         """kill()
@@ -175,8 +256,8 @@ class process(tube):
         process has not yet finished and the exit code otherwise.
         """
         self.proc.poll()
-        if self.proc.returncode != None and not self.stop_noticed:
-            self.stop_noticed = True
+        if self.proc.returncode != None and not self._stop_noticed:
+            self._stop_noticed = True
             self.info("Program %r stopped with exit code %d" % (self.program, self.proc.returncode))
 
         return self.proc.returncode
@@ -261,13 +342,16 @@ class process(tube):
             return not self.proc.stdout.closed
 
     def close(self):
+        if self.proc is None:
+            return
+
         # First check if we are already dead
         self.poll()
 
-        if not self.stop_noticed:
+        if not self._stop_noticed:
             try:
                 self.proc.kill()
-                self.stop_noticed = True
+                self._stop_noticed = True
                 self.info('Stopped program %r' % self.program)
             except OSError:
                 pass
