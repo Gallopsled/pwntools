@@ -101,10 +101,8 @@ class process(tube):
         message = "Starting program %r" % self.program
 
         if self.isEnabledFor(logging.DEBUG):
-            if self.args != [self.executable]:
-                message += ' with arguments %r ' % self.args
-            if self.env  != os.environ:
-                message += ' with environment %r ' % self.env
+            if self.args != [self.executable]: message += ' argv=%r ' % self.args
+            if self.env  != os.environ:        message += ' env=%r ' % self.env
 
         with self.progress(message) as p:
             self.indented("...with arguments %r" % args, level=10)
@@ -188,7 +186,7 @@ class process(tube):
             executable = os.path.join(cwd, executable)
 
         if not os.path.exists(executable):
-            log.error("%r is does not exist")
+            log.error("%r does not exist")
         if not os.path.isfile(executable):
             log.error("%r is not a file")
         if not os.access(executable, os.X_OK):
