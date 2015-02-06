@@ -89,7 +89,16 @@ class process(tube):
             else:
                 self.error('%r is not set to executable (chmod +x %r)' % (executable, executable))
 
-        self.args       = args
+        # Python doesn't like when an arg in argv contains '\x00'
+        # -> execve() arg 2 must contain only strings
+        self.args = list(args)
+
+        for i, arg in enumerate(self.args):
+            if '\x00' in arg[:-1]:
+                log.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
+
+            self.args[i] = arg.rstrip('\x00')
+
         self.executable = self.program = executable
         self.cwd        = cwd
         self.env        = env

@@ -498,6 +498,12 @@ class ssh(Timeout, Logger):
         Executes a process on the remote server, in the same fashion
         as pwnlib.tubes.process.process.
 
+        To achieve this, a Python script is created to call ``os.execve``
+        with the appropriate arguments.
+
+        As an added bonus, the ``ssh_channel`` object returned has a
+        ``pid`` property for the process pid.
+
         Returns:
             A new SSH channel, or a path to the script if ``run=False``.
 
@@ -518,8 +524,11 @@ class ssh(Timeout, Logger):
             '/bin/readlink\n'
             >>> s.process(['LOLOLOL', '/proc/self/exe'], executable='readlink').recvall()
             '/bin/readlink\n'
-            >>> s.process(['LOLOLOL', '/proc/self/cmdline'], executable='cat').recvall()
+            >>> s.process(['LOLOLOL\x00', '/proc/self/cmdline'], executable='cat').recvall()
             'LOLOLOL\x00/proc/self/cmdline\x00'
+            >>> sh = s.process(executable='/bin/sh')
+            >>> sh.pid in pidof('sh')
+            True
         """
         if not argv and not executable:
             self.error("Must specify argv or executable")
@@ -527,7 +536,24 @@ class ssh(Timeout, Logger):
         if isinstance(argv, (str, unicode)):
             argv = [argv]
 
+        # Python doesn't like when an arg in argv contains '\x00'
+        # -> execve() arg 2 must contain only strings
+        for i, arg in enumerate(argv):
+            if '\x00' in arg[:-1]:
+                log.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
+            argv[i] = arg.rstrip('\x00')
+
         executable = executable or argv[0]
+
+        # Validate, since failures on the remote side will suck.
+        if not isinstance(executable, str):
+            log.error("executable / argv[0] must be a string: %r" % executable)
+        if not isinstance(argv, (list, tuple)):
+            log.error("argv must be a list or tuple: %r" % argv)
+        if env is not None and not isinstance(env, dict):
+            log.error("env must be a dict: %r") % env
+        if not all(isinstance(s, str) for s in argv):
+            log.error("argv must only contain strings: %r" % argv)
 
         script = r"""
 #!/usr/bin/env python
@@ -540,34 +566,28 @@ if env is None:
     env = os.environ
 
 def is_exe(path):
-    if os.path.isfile(path) and os.access(path, os.X_OK):
-        return 1
-    return 0
+    return os.path.isfile(path) and os.access(path, os.X_OK)
+
+PATH = os.environ['PATH'].split(os.pathsep)
 
 if os.path.sep not in exe and not is_exe(exe):
-    for path in os.environ['PATH'].split(os.pathsep):
+    for path in PATH:
         test_path = os.path.join(path, exe)
         if is_exe(test_path):
             exe = test_path
             break
 
-can_execve = is_exe(exe)
-
-if not can_execve:
-    sys.stderr.write("{} is not executable or does not exist".format(exe))
+if not is_exe(exe):
+    sys.stderr.write('0\n')
+    sys.stderr.write("{} is not executable or does not exist in {}".format(exe,PATH))
     sys.exit(-1)
 
 if sys.argv[-1] == 'check':
-    if 0 == os.fork():
-        sys.stdout.write(str(can_execve) + "\n")
-        sys.stdout.write(str(os.getppid()) + "\n")
-        sys.stdout.flush()
-        sys.exit(0)
-    else:
-        os.wait()
+    sys.stdout.write("1\n")
+    sys.stdout.write(str(os.getpid()) + "\n")
+    sys.stdout.flush()
 
-if can_execve:
-    os.execve(exe, argv, env)
+os.execve(exe, argv, env)
 """ % (executable, argv, env)
 
         script = script.lstrip()
@@ -589,12 +609,17 @@ if can_execve:
 
             result = safeeval.const(python.recvline())
 
+            # If an error occurred, try to grab as much output
+            # as we can.
+            if result != 1:
+                error_message = python.recvrepeat(timeout=1)
+
             if result == 0:
                 self.error("%r does not exist or is not executable" % executable)
             elif result == 2:
                 self.error("python is not installed on the remote system %r" % self.host)
             elif result != 1:
-                h.failure()
+                h.failure("something bad happened:\n%s" % error_message)
 
             python.pid  = safeeval.const(python.recvline())
             python.argv = argv
