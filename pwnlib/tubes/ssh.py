@@ -1179,6 +1179,13 @@ os.execve(exe, argv, env)
         be run (via ssh.run) and to which files will be uploaded/downloaded
         from if no path is provided
 
+        Note:
+            This uses ``mktemp -d`` under the covers, sets permissions
+            on the directory to ``0700``.  This means that setuid binaries
+            will **not** be able to access files created in this directory.
+
+            In order to work around this, we also ``chmod +x`` the directory.
+
         Arguments:
             wd(string): Working directory.  Default is to auto-generate a directory
                 based on the result of running 'mktemp -d' on the remote machine.
@@ -1196,18 +1203,17 @@ os.execve(exe, argv, env)
         status = 0
 
         if not wd:
-            wd, status = self.run_to_end('x=$(mktemp -d); chmod +x $x; echo $x', wd = None)
+            wd, status = self.run_to_end('x=$(mktemp -d) && cd $x && chmod +x . && echo $PWD', wd='.')
             wd = wd.strip()
 
-        if status:
-            self.error("Could not generate a temporary directory\n%s" % wd)
-            return
+            if status:
+                self.error("Could not generate a temporary directory\n%s" % wd)
 
-        _, status = self.run_to_end('ls ' + misc.sh_string(wd), wd = None)
+        else:
+            _, status = self.run_to_end('ls ' + misc.sh_string(wd), wd = '.')
 
-        if status:
-            self.error("%r does not appear to exist" % wd)
-            return
+            if status:
+                self.error("%r does not appear to exist" % wd)
 
         self.info("Working directory: %r" % wd)
         self.cwd = wd
