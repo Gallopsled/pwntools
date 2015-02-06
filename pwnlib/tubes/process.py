@@ -218,19 +218,29 @@ class process(tube):
 
     @staticmethod
     def _handles(stdin, stdout, stderr):
-        master, slave   = None, None
+        master = None
 
         if stdin is None:
             stdin = subprocess.PIPE
 
         if stdout is None:
-            # Make a pty pair for stdout
+            # Normally we could just use subprocess.PIPE and be happy.
+            # Unfortunately, this results in undesired behavior when
+            # printf() and similar functions buffer data instead of
+            # sending it directly.
+            #
+            # By opening a PTY for STDOUT, the libc routines will not
+            # buffer any data on STDOUT.
             master, slave = pty.openpty()
 
-            # Set master and slave to raw mode
+
+            # By making STDOUT a PTY, the OS will attempt to interpret
+            # terminal control codes.  We don't want this, we want all
+            # input passed exactly and perfectly to the process.
             tty.setraw(master)
             tty.setraw(slave)
 
+            # Pick one side of the pty to pass to the child
             stdout = slave
 
         if stderr is None:
