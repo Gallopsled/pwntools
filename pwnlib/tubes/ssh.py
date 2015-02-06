@@ -84,7 +84,7 @@ class ssh_channel(sock):
             process = ' '.join(misc.sh_string(s) for s in process)
 
         if process and wd:
-            process = "cd %s 2>/dev/null >/dev/null; %s" % (misc.sh_string(wd), process)
+            process = "cd %s >/dev/null 2>&1; %s" % (misc.sh_string(wd), process)
 
         if process and env:
             for name, value in env.items():
