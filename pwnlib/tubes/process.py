@@ -94,7 +94,8 @@ class process(tube):
                  close_fds = True):
         super(process, self).__init__(timeout, level = level)
 
-        executable, args, env = self._validate(cwd, executable, args, env)
+        if not shell:
+            executable, args, env = self._validate(cwd, executable, args, env)
 
         stdin, stdout, stderr, master = self._handles(stdin, stdout, stderr)
 
