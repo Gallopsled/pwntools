@@ -711,7 +711,7 @@ class tube(Timeout, Logger):
                 self.indented(fiddling.hexdump(data), level = logging.DEBUG)
         self.send_raw(data)
 
-    def sendline(self, line):
+    def sendline(self, line=''):
         r"""sendline(data)
 
         Shorthand for ``t.send(data + t.newline)``.
