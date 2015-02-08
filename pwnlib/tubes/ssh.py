@@ -477,7 +477,10 @@ class ssh(Timeout, Logger):
 
 
         with context.local(log_level='error'):
-            self.pid = int(self.system('echo $PPID').recvall())
+            try:
+                self.pid = int(self.system('echo $PPID').recv(timeout=1))
+            except Exception:
+                self.pid = None
 
 
     def __enter__(self, *a):
