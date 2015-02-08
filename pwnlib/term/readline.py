@@ -138,7 +138,7 @@ def cancel_search(*_):
 
 def commit_search():
     global search_idx
-    if search_idx is not None:
+    if search_idx is not None and search_results:
         set_buffer(history[search_results[search_idx][0]], u'')
         search_idx = None
         redisplay()
