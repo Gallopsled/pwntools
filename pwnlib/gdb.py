@@ -77,8 +77,8 @@ def attach(target, execute = None, exe = None, arch = None):
       target: The target to attach to.
       execute (str or file): GDB script to run after attaching.
       exe (str): The path of the target binary.
-      arch (str): Architechture of the target binary.  If `exe` known GDB will
-      detect the architechture automatically (if it is supported).
+      arch (str): Architecture of the target binary.  If `exe` known GDB will
+      detect the architecture automatically (if it is supported).
 
     Returns:
       :const:`None`
@@ -104,7 +104,7 @@ def attach(target, execute = None, exe = None, arch = None):
     # gdb script to run before `execute`
     pre = ''
     if arch:
-        pre += 'set architechture %s\n' % arch
+        pre += 'set architecture %s\n' % arch
 
     # let's see if we can find a pid to attach to
     pid = None
