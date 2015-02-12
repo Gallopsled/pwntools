@@ -342,6 +342,9 @@ def xor_pair(data, avoid = '\x00\n'):
         ('\\x01\\x01\\x01\\x01', 'udru')
     """
 
+    if isinstance(data, (int, long)):
+        data = packing.pack(data)
+
     alphabet = ''.join(chr(n) for n in range(256) if chr(n) not in avoid)
 
     res1 = ''
