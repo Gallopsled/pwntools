@@ -1,17 +1,40 @@
 import os
+import random
 import re
 import shlex
 import tempfile
 
 from . import elf
 from . import tubes
+from .asm import make_elf
+from .context import context
 from .log import getLogger
 from .util import misc
 from .util import proc
 
 log = getLogger(__name__)
 
-def debug(args, exe=None, execute=None, ssh=None):
+def debug_shellcode(data, execute=None, **kwargs):
+    """
+    Creates an ELF file, and launches it with GDB.
+
+    Arguments:
+        data(str): Assembled shellcode bytes
+        kwargs(dict): Arguments passed to context (e.g. arch='arm')
+
+    Returns:
+        A ``process`` tube connected to the shellcode on stdin/stdout/stderr.
+    """
+    with context.local(**kwargs):
+        tmp_elf  = tempfile.mktemp(prefix='pwn', suffix='.elf')
+        elf_data = make_elf(data)
+        with open(tmp_elf,'wb+') as f:
+            f.write(elf_data)
+            f.flush()
+        os.chmod(tmp_elf, 0777)
+        return debug(tmp_elf, execute=None, arch=context.arch)
+
+def debug(args, exe=None, execute=None, ssh=None, arch=None):
     """debug(args) -> tube
 
     Launch a GDB server with the specified command line,
@@ -25,7 +48,17 @@ def debug(args, exe=None, execute=None, ssh=None):
     Returns:
         A tube connected to the target process
     """
-    args      = ['gdbserver', 'localhost:0'] + args
+    if isinstance(args, (str, unicode)):
+        args = [args]
+
+    orig_args = args
+
+    if not arch:
+        args = ['gdbserver', 'localhost:0'] + args
+    else:
+        qemu_port = random.randint(1024, 65535)
+        qemu_arch = {'amd64':'x86_64'}.get(arch, arch)
+        args = ['qemu-%s-static' % qemu_arch, '-g', str(qemu_port)] + args
 
     if not ssh:
         execute = tubes.process.process
@@ -35,17 +68,21 @@ def debug(args, exe=None, execute=None, ssh=None):
         which   = ssh.which
 
     # Make sure gdbserver is installed
-    if not which('gdbserver'):
-        log.error("gdbserver is not installed")
+    if not which(args[0]):
+        log.error("%s is not installed" % args[0])
 
-    gdbserver = execute(args)
+    with context.local(log_level='debug'):
+        gdbserver = execute(args)
 
-    # Process /bin/bash created; pid = 14366
-    # Listening on port 34816
-    process_created = gdbserver.recvline()
-    listening_on    = gdbserver.recvline()
+    if not arch:
+        # Process /bin/bash created; pid = 14366
+        # Listening on port 34816
+        process_created = gdbserver.recvline()
+        listening_on    = gdbserver.recvline()
 
-    port     = int(listening_on.split()[-1])
+        port = int(listening_on.split()[-1])
+    else:
+        port = qemu_port
 
     listener = remote = None
 
@@ -54,9 +91,9 @@ def debug(args, exe=None, execute=None, ssh=None):
         listener = tubes.listen.listen(0)
         port     = listener.lport
     elif not exe:
-        exe = misc.which(args[0])
+        exe = misc.which(orig_args[0])
 
-    attach(('127.0.0.1', port), exe=exe)
+    attach(('127.0.0.1', port), exe=orig_args[0], arch=context.arch)
 
     if ssh:
         remote <> listener.wait_for_connection()
@@ -110,7 +147,7 @@ def attach(target, execute = None, exe = None, arch = None):
     # gdb script to run before `execute`
     pre = ''
     if arch:
-        pre += 'set architechture %s\n' % arch
+        pre += 'set architecture %s\n' % arch
 
     # let's see if we can find a pid to attach to
     pid = None
