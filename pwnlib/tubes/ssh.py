@@ -230,6 +230,9 @@ class ssh_channel(sock):
                 except IOError:
                     if not event.is_set():
                         raise
+                # Fix CR vs LF
+                if data == [ord('\r')]:
+                    data = [ord('\n')]
             else:
                 data = sys.stdin.read(1)
                 if not data:
