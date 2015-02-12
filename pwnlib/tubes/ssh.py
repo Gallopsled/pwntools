@@ -192,7 +192,11 @@ class ssh_channel(sock):
         once the :mod:`pwnlib.term` is more mature.
         """
 
-        if not self.tty:
+        # If we are only executing a regular old shell, we need to handle
+        # control codes (specifically Ctrl+C).
+        #
+        # Otherwise, we can just punt to the default implementation of interactive()
+        if self.process is not None:
             return super(ssh_channel, self).interactive(prompt)
 
         self.info('Switching to interactive mode')
@@ -230,9 +234,6 @@ class ssh_channel(sock):
                 except IOError:
                     if not event.is_set():
                         raise
-                # Fix CR vs LF
-                if data == [ord('\r')]:
-                    data = [ord('\n')]
             else:
                 data = sys.stdin.read(1)
                 if not data:
@@ -410,7 +411,7 @@ class ssh(Timeout, Logger):
         self.key             = key
         self.keyfile         = keyfile
         self._cachedir       = os.path.join(tempfile.gettempdir(), 'binjitsu-ssh-cache')
-        self.cwd             = None
+        self.cwd             = '.'
         self.cache           = cache
 
         misc.mkdir_p(self._cachedir)
