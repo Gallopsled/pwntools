@@ -588,6 +588,19 @@ class tube(Timeout):
             timeout(int): Timeout, in seconds
             greedy(bool): Receive data until a timeout occurs, then evaluate the
                 regular expression against all available data.
+
+        Examples:
+
+            >>> msg = "N=0000 C=1111\nN=2222 C=3333\n"
+            >>> data = list(msg)
+            >>> t = tube()
+            >>> t.recv_raw = lambda b: '' if not data else data.pop(0)
+            >>> t.recvregex('N=\d+ C=\d+')
+            'N=0000 C=1'
+            >>> t.clean(0)
+            >>> data = list(msg)
+            >>> t.recvregex('N=\d+ C=\d+', greedy=True)
+            'N=0000 C=1111'
         """
 
         if isinstance(regex, (str, unicode)):
