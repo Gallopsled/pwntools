@@ -3,6 +3,8 @@
   from pwnlib import constants
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
   from pwnlib.log import getLogger
+  from pwnlib.shellcraft import i386
+  from pwnlib.shellcraft.registers import get_register, is_register, bits_required
   log = getLogger('pwnlib.shellcraft.amd64.mov')
 %>
 <%page args="dest, src, stack_allowed = True"/>
@@ -30,10 +32,10 @@ Example:
         xor ax, ax
     >>> print shellcraft.amd64.mov('rax', 0).rstrip()
         xor eax, eax
+    >>> print shellcraft.amd64.mov('rdi', 'ax').rstrip()
+        movzx edi, ax
     >>> print shellcraft.amd64.mov('al', 'ax').rstrip()
         /* moving ax into al, but this is a no-op */
-    >>> print shellcraft.amd64.mov('bl', 'ax').rstrip()
-        mov bl, al
     >>> print shellcraft.amd64.mov('ax', 'bl').rstrip()
         movzx ax, bl
     >>> print shellcraft.amd64.mov('eax', 1).rstrip()
@@ -51,12 +53,6 @@ Example:
     >>> print shellcraft.amd64.mov('rax', 0xdead00ff).rstrip()
         mov eax, 0x1010101
         xor eax, 0xdfac01fe
-    >>> print shellcraft.amd64.mov('ah', 'al').rstrip()
-        mov ah, al
-    >>> print shellcraft.amd64.mov('ah', 'r8').rstrip()
-    Traceback (most recent call last):
-    ...
-    PwnlibException: The amd64 instruction set does not support moving from r8 to ah
     >>> print shellcraft.amd64.mov('rax', 0x11dead00ff).rstrip()
         mov rax, 0x101010101010101
         push rax
@@ -81,99 +77,133 @@ Args:
   stack_allowed (bool): Can the stack be used?
 </%docstring>
 <%
-regs = [['rax', 'eax', 'ax', 'ah', 'al'],
-        ['rbx', 'ebx', 'bx', 'bh', 'bl'],
-        ['rcx', 'ecx', 'cx', 'ch', 'cl'],
-        ['rdx', 'edx', 'dx', 'dh', 'dl'],
-        ['rdi', 'edi', 'di', 'dil'],
-        ['rsi', 'esi', 'si', 'sil'],
-        ['rbp', 'ebp', 'bp', 'bpl'],
-        ['rsp', 'esp', 'sp', 'spl'],
-        ['r8', 'r8d', 'r8w', 'r8b'],
-        ['r9', 'r9d', 'r9w', 'r9b'],
-        ['r10', 'r10d', 'r10w', 'r10b'],
-        ['r11', 'r11d', 'r11w', 'r11b'],
-        ['r12', 'r12d', 'r12w', 'r12b'],
-        ['r13', 'r13d', 'r13w', 'r13b'],
-        ['r14', 'r14d', 'r14w', 'r14b'],
-        ['r15', 'r15d', 'r15w', 'r15b']
-        ]
 def okay(s):
     return '\0' not in s and '\n' not in s
 
 def pretty(n):
     if n < 0:
-      return str(n)
+        return str(n)
     else:
-      return hex(n)
+        return hex(n)
 
-all_regs, sizes, bigger, smaller = misc.register_sizes(regs, [64, 32, 16, 8, 8])
+src_name = src
+if not isinstance(src, (str, tuple)):
+    src_name = pretty(src)
 
+if not get_register(dest):
+    log.error('%r is not a register' % dest)
 
-if isinstance(src, (str, unicode)):
-    src = src.strip()
-    if src.lower() in all_regs:
-        src = src.lower()
-    else:
-        with ctx.local(arch = 'amd64'):
-            try:
-                src = constants.eval(src)
-            except:
-                log.error("Could not figure out the value of %r" % src)
+dest = get_register(dest)
 
-dest_orig = dest
-%>
-% if dest not in all_regs:
-    <% log.error('%s is not a register' % str(dest_orig)) %>\
+if get_register(src):
+    src = get_register(src)
+
+    if dest.size < src.size and src.name not in dest.bigger:
+        log.error("cannot mov %s, %s: dddest is smaller than src" % (dest, src))
+
+    # Can't move between RAX and DIL for example.
+    if dest.rex_mode & src.rex_mode == 0:
+        log.error('The amd64 instruction set does not support moving from %s to %s' % (src, dest))
+
+    # Downgrade our register choice if possible.
+    # Opcodes for operating on 32-bit registers are always (?) shorter.
+    if dest.size == 64 and src.size <= 32:
+        dest = get_register(dest.native32)
+
+    src_size = src.size
+else:
+    with ctx.local(arch = 'amd64'):
+        src = constants.eval(src)
+
+    if not dest.fits(src):
+        log.error("cannot mov %s, %r: dest is smaller than src" % (dest, src))
+
+    src_size = bits_required(src)
+
+    if dest.size == 64 and src_size <= 32:
+        dest = get_register(dest.native32)
+
+    # Calculate the packed version
+    srcp = packing.pack(src, dest.size)
+
+    # Calculate the unsigned and signed versions
+    srcu = packing.unpack(srcp, dest.size, sign=False)
+    srcs = packing.unpack(srcp, dest.size, sign=True)
+
+%>\
+% if is_register(src):
+    % if src == dest:
+    /* moving ${src} into ${dest}, but this is a no-op */
+    % elif src.name in dest.bigger:
+    /* moving ${src} into ${dest}, but this is a no-op */
+    % elif dest.size > src.size:
+    movzx ${dest}, ${src}
+    % else:
+    mov ${dest}, ${src}
+    % endif
 % elif isinstance(src, (int, long)):
-    <%
-      if not (-2 ** (sizes[dest]-1) <= src < 2**sizes[dest]):
-          log.error('Number %s does not fit into %s' % (pretty(src), dest_orig))
-
-      # Calculate the unsigned and signed versions
-      srcu = src & (2 ** sizes[dest] - 1)
-      srcs = srcu - 2 * (srcu & (2 ** (sizes[dest] - 1)))
-
-      # micro-optimization: if you ever touch e.g. eax, then all the upper bits
-      # of rax will be set to 0. We exploit this fact here
-      if 0 <= src < 2 ** 32 and sizes[dest] == 64:
-          dest = smaller[dest][0]
-
-      # Calculate the packed version
-      srcp = packing.pack(srcu, sizes[dest], 'little', False)
-    %>\
+## Special case for zeroes
+## XORing the 32-bit register clears the high 32 bits as well
     % if src == 0:
         xor ${dest}, ${dest}
-    % elif src == 10 and stack_allowed and sizes[dest] == 32: # sizes[dest] == 64 not possible here
-        push 9
-        pop ${bigger[dest][0]}
+## Special case for *just* a newline
+    % elif stack_allowed and dest.size in (32,64) and src == 10:
+        push 9 /* mov ${dest}, '\n' */
+        pop ${dest.native64}
         inc ${dest}
-    % elif stack_allowed and sizes[dest] in [32, 64] and -2**7 <= srcs < 2**7 and okay(srcp[0]):
+## It's smaller to PUSH and POP small sign-extended values
+## than to directly move them into various registers,
+##
+## 6aff58           push -1; pop rax
+## 48c7c0ffffffff   mov rax, -1
+    % elif stack_allowed and dest.size in (32,64) and (-2**7 <= srcs < 2**7) and okay(srcp[:1]):
         push ${pretty(srcs)}
-        pop ${dest if sizes[dest] == 64 else bigger[dest][0]}
+        pop ${dest.native64}
+## Easy case, everybody is trivially happy
+## This implies that the register size and value are the same.
     % elif okay(srcp):
         mov ${dest}, ${pretty(src)}
-    % elif stack_allowed and sizes[dest] in [32, 64] and -2**31 <= srcs < 2**31 and okay(srcp[:4]):
+## We can push 32-bit values onto the stack and they are sign-extended.
+    % elif stack_allowed and dest.size in (32,64) and (-2**31 <= srcs < 2**31) and okay(srcp[:4]):
         push ${pretty(srcs)}
-        pop ${dest if sizes[dest] == 64 else bigger[dest][0]}
-    % elif 0 <= srcu < 2**8 and okay(srcp[0]) and sizes[smaller[dest][-1]] == 8:
+        pop ${dest.native64}
+## We can also leverage the sign-extension to our advantage.
+## For example, 0xdeadbeef is sign-extended to 0xffffffffdeadbeef.
+## Want EAX=0xdeadbeef, we don't care that RAX=0xfff...deadbeef.
+    % elif stack_allowed and dest.size == 32 and srcu << 2**32 and okay(srcp[:4]):
+        push ${pretty(srcs)}
+        pop ${dest.native64}
+## Target value is an 8-bit value, use a 8-bit mov
+    % elif srcu < 2**8 and okay(srcp[:1]):
+        xor ${dest.xor}, ${dest.xor}
+        mov ${dest.sizes[8]}, ${pretty(srcu)}
+## Target value is a 16-bit value with no data in the low 8 bits
+## means we can use the 'AH' style register.
+    % elif srcu == srcu & 0xff00 and okay(srcp[1]) and dest.ff00:
         xor ${dest}, ${dest}
-        mov ${smaller[dest][-1]}, ${pretty(srcu)}
-    % elif srcu == srcu & 0xff00 and okay(srcp[1]) and sizes[smaller[dest][-2]] == 8:
-        xor ${dest}, ${dest}
-        mov ${smaller[dest][-2]}, ${pretty(srcu >> 8)}
-    % elif 0 <= srcu < 2**16 and okay(srcp[:2]) and sizes[smaller[dest][0]] == 16:
-        xor ${dest}, ${dest}
-        mov ${smaller[dest][0]}, ${pretty(src)}
+        mov ${dest.ff00}, ${pretty(srcu >> 8)}
+## Target value is a 16-bit value, use a 16-bit mov
+    % elif srcu < 2**16 and okay(srcp[:2]):
+        xor ${dest.xor}, ${dest.xor}
+        mov ${dest.sizes[16]}, ${pretty(srcu)}
+## Target value is a 32-bit value, use a 32-bit mov.
+## Note that this is zero-extended rather than sign-extended (the 32-bit push above).
+    % elif srcu < 2**32 and okay(srcp[:4]):
+        mov ${dest.sizes[32]}, ${pretty(srcu)}
+## All else has failed.  Use some XOR magic to move things around.
     % else:
         <%
         a,b = fiddling.xor_pair(srcp, avoid = '\x00\n')
-        a = pretty(packing.unpack(a, sizes[dest], 'little', False))
-        b = pretty(packing.unpack(b, sizes[dest], 'little', False))
+        a = pretty(packing.unpack(a, dest.size, 'little', False))
+        b = pretty(packing.unpack(b, dest.size, 'little', False))
         %>\
-        % if sizes[dest] != 64:
+## There's no XOR REG, IMM64 but we can take the easy route
+## for smaller registers.
+        % if dest.size != 64:
           mov ${dest}, ${a}
           xor ${dest}, ${b}
+## However, we can PUSH IMM64 and then perform the XOR that
+## way at the top of the stack.
         % elif stack_allowed:
           mov ${dest}, ${a}
           push ${dest}
@@ -183,42 +213,6 @@ dest_orig = dest
         % else:
           <% log.error("Cannot put %s into '%s' without using stack." % (pretty(src), dest_orig)) %>\
         % endif
-    % endif
-% elif src in all_regs:
-    <%
-      # micro-optimization: if you ever touch e.g. eax, then all the upper bits
-      # of rax will be set to 0. We exploit this fact here
-      if sizes[dest] == 64 and sizes[src] != 64:
-          dest = smaller[dest][0]
-
-      def rex_mode(reg):
-          # This returns a number with two bits
-          # The first bit is set, if the register can be used with a REX-mode
-          # The seond bit is set, if the register can be used without a REX-prefix
-          res = 0
-          if reg[-1] != 'h':
-              res |= 1
-
-          if reg[0] != 'r' and reg not in ['dil', 'sil', 'bpl', 'spl']:
-              res |= 2
-
-          return res
-      if rex_mode(src) & rex_mode(dest) == 0:
-          log.error('The amd64 instruction set does not support moving from %s to %s' % (src, dest))
-    %>\
-    % if src == dest or src in bigger[dest] or src in smaller[dest]:
-        /* moving ${src} into ${dest_orig}, but this is a no-op */
-    % elif sizes[dest] == sizes[src]:
-        mov ${dest}, ${src}
-    % elif sizes[dest] > sizes[src]:
-        movzx ${dest}, ${src}
-    % else:
-        % for r in reversed(smaller[src]):
-            % if sizes[r] == sizes[dest]:
-                mov ${dest}, ${r}
-                <% return %>\
-            % endif
-        % endfor
     % endif
 % else:
     <% log.error('%s is neither a register nor an immediate' % src) %>\

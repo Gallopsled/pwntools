@@ -4,6 +4,7 @@ import sys
 from types import ModuleType
 
 from . import internal
+from .. import constants
 from ..context import context
 
 
@@ -115,6 +116,15 @@ class module(ModuleType):
             templates.append(value)
 
     templates = sorted(templates)
+
+    def eval(self, item):
+        if isinstance(item, (int,long)):
+            return item
+        return constants.eval(item)
+
+    import registers
+
+
 
 
 # To prevent garbage collection

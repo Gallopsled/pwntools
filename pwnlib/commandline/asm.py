@@ -1,10 +1,10 @@
 #!/usr/bin/env python2
 import argparse
 import sys
-
 from pwn import *
 
 from . import common
+
 
 parser = argparse.ArgumentParser(
     description = 'Assemble shellcode into bytes'
