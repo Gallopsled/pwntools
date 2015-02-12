@@ -415,8 +415,6 @@ class ssh(Timeout, Logger):
 
         misc.mkdir_p(self._cachedir)
 
-        keyfiles = [os.path.expanduser(keyfile)] if keyfile else []
-
         import paramiko
 
         # Make a basic attempt to parse the ssh_config file
@@ -427,10 +425,11 @@ class ssh(Timeout, Logger):
             if 'hostname' in host_config:
                 self.host = host = host_config['hostname']
             if not keyfile and 'identityfile' in host_config:
-                keyfile = host_cofig['identityfile'][0]
-        except Exception:
-            pass
+                keyfile = host_config['identityfile'][0]
+        except Exception as e:
+            log.debug("An error occurred while parsing ~/.ssh/config:\n%s" % e)
 
+        keyfiles = [os.path.expanduser(keyfile)] if keyfile else []
 
         msg = 'Connecting to %s on port %d' % (host, port)
         with self.waitfor(msg) as h:

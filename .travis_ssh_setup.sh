@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    echo "This script must be source'd"
-    exit
-fi
-
 #
 # Install a demo user for SSH purposes
 #
@@ -15,10 +10,6 @@ sudo useradd -m $U
 
 # Generate a new key so that we can log into it
 ssh-keygen -t rsa -f ~/.ssh/$U -N ''
-
-# Start ssh-agent so that the key is loaded, and paramiko can find it
-eval $(ssh-agent -s)
-ssh-add    ~/.ssh/$U
 
 # Load the public key into a memory for below
 pubkey=$(cat ~/.ssh/$U.pub)
