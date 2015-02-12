@@ -362,6 +362,24 @@ def make_elf(data, vma = None, strip=True, **kwargs):
     Arguments:
         data(str): Assembled code
         vma(int):  Load address for the ELF file
+
+    Examples:
+
+        This example creates an i386 ELF that just does
+        execve('/bin/sh',...).
+
+        >>> context.arch = 'i386'
+        >>> filename = tempfile.mktemp()
+        >>> bin_sh = '6a68682f2f2f73682f62696e89e331c96a0b5899cd80'.decode('hex')
+        >>> data = make_elf(bin_sh)
+        >>> with open(filename,'wb+') as f:
+        ...     f.write(data)
+        ...     f.flush()
+        >>> os.chmod(filename,0777)
+        >>> p = process(filename)
+        >>> p.sendline('echo Hello; exit')
+        >>> p.recvline()
+        'Hello\n'
     """
     with context.local(**kwargs):
         assembler = _assembler()
