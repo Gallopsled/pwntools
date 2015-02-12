@@ -16,7 +16,7 @@ First, add our `Personal Package Archive repository <http://binutils.binjitsu.co
 .. code-block:: bash
 
     $ apt-get install software-properties-common
-    $ apt-add-repository ppa:binjitsu/binutils
+    $ apt-add-repository ppa:pwntools/binutils
     $ apt-get update
 
 Then, install the binutils for your architecture.
