@@ -147,6 +147,9 @@ def attach(target, execute = None, exe = None, arch = None):
     # gdb script to run before `execute`
     pre = ''
     if arch:
+        if not misc.which('gdb-multiarch'):
+            log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n' \
+                '$ apt-get install gdb-multiarch')
         pre += 'set architecture %s\n' % arch
 
     # let's see if we can find a pid to attach to
