@@ -111,7 +111,6 @@ class process(tube):
             if self.env  != os.environ:        message += ' env=%r ' % self.env
 
         with self.progress(message) as p:
-            self.indented("...with arguments %r" % args, level=10)
             self.proc = subprocess.Popen(args = args,
                                          shell = shell,
                                          executable = executable,
