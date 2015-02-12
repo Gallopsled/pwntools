@@ -367,7 +367,7 @@ def make_elf(data, vma = None, strip=True, **kwargs):
         assembler = _assembler()
         linker    = _linker()
         code      = elf_template
-        code      += '\n'.join('.byte %#x' % c for c in bytearray(data))
+        code      += '.string "%s"' % ''.join('\\x%02x' % c for c in bytearray(data))
         code      += '\n'
 
         log.debug(code)
