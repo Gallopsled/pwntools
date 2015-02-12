@@ -14,9 +14,7 @@ import time
 
 import pwnlib
 from pwnlib import *
-from pwnlib.asm import asm
-from pwnlib.asm import cpp
-from pwnlib.asm import disasm
+from pwnlib.asm import *
 from pwnlib.context import Thread
 from pwnlib.context import context
 from pwnlib.dynelf import DynELF
