@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    echo "This script must be source'd"
+    exit
+fi
+
 #
 # Install a demo user for SSH purposes
 #
@@ -19,7 +24,7 @@ ssh-add    ~/.ssh/$U
 pubkey=$(cat ~/.ssh/$U.pub)
 
 # Set the authorized_keys entry to only permit login from localhost,
-# and only with 
+# and only with
 sudo -u $U mkdir $H/.ssh
 sudo -u $U tee $H/.ssh/authorized_keys <<EOF
 from="127.0.0.1" $pubkey
