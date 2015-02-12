@@ -1,4 +1,5 @@
 import errno
+import socket
 import time
 
 from .. import tubes
@@ -41,10 +42,20 @@ def pidof(target):
          local  = target.sock.getsockname()
          remote = target.sock.getpeername()
 
-         def match(p):
+         def match(c):
              return (c.raddr, c.laddr, c.status) == (local, remote, 'ESTABLISHED')
 
          return [c.pid for c in psutil.net_connections() if match(c)]
+
+    elif isinstance(target, tuple):
+        host, port = target
+
+        host = socket.gethostbyname(host)
+
+        def match(c):
+            return c.raddr == (host, port)
+
+        return [c.pid for c in psutil.net_connections() if match(c)]
 
     elif isinstance(target, tubes.process.process):
          return [target.proc.pid]
