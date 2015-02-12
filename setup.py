@@ -46,7 +46,7 @@ if platform.system() != 'OpenBSD':
 setup(
     name                 = 'binjitsu',
     packages             = find_packages(),
-    version              = '2.2.1,
+    version              = '2.2.1',
     data_files           = [('',
                              ['LICENSE-binjitsu.txt',
                              ]),
