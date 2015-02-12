@@ -569,7 +569,8 @@ class tube(Timeout):
                                   keepends=keepends,
                                   timeout=timeout)
 
-    def recvregex(self, regex, exact = False, timeout = default):
+
+    def recvregex(self, regex, exact = False, timeout = default, greedy = False):
         """recvregex(regex, exact = False, timeout = default) -> str
 
         Wrapper around :func:`recvpred`, which will return when a regex
@@ -580,6 +581,13 @@ class tube(Timeout):
 
         If the request is not satisfied before ``timeout`` seconds pass,
         all data is buffered and an empty string (``''``) is returned.
+
+        Arguments:
+            regex: Regular expression pattern, or compiled pattern
+            exact(bool): Must be an exact match (use re.match, instead of re.search).
+            timeout(int): Timeout, in seconds
+            greedy(bool): Receive data until a timeout occurs, then evaluate the
+                regular expression against all available data.
         """
 
         if isinstance(regex, (str, unicode)):
@@ -590,7 +598,25 @@ class tube(Timeout):
         else:
             pred = regex.search
 
+        # If we're doing a greedy match, just keep receiving until
+        # a timeout occurs, then return any data up to the end of
+        # the match.
+        if greedy:
+            while self._fillbuffer(timeout):
+                pass
+
+            data  = self.buffer.get()
+            match = pred(data)
+
+            if not match:
+                self.unrecv(data)
+                return ''
+
+            self.unrecv(data[match.end():])
+            return data[:match.end()]
+
         return self.recvpred(pred, timeout = timeout)
+
 
     def recvline_regex(self, regex, exact = False, keepends = False, timeout = default):
         """recvregex(regex, exact = False, keepends = False, timeout = default) -> str
