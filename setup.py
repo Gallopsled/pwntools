@@ -14,12 +14,6 @@ for dirpath, dirnames, filenames in os.walk(convert_path('pwnlib/shellcraft/temp
     for f in filenames:
         templates.append(os.path.relpath(os.path.join(dirpath, f), 'pwnlib'))
 
-# Get the version
-ns = {}
-with open(convert_path('pwnlib/version.py')) as fd:
-    exec fd.read() in ns
-version = ns['__version__']
-
 # This makes binjitsu-LICENSE.txt appear with the package folders
 for scheme in INSTALL_SCHEMES.values():
     scheme['data'] = scheme['purelib']
@@ -52,7 +46,7 @@ if platform.system() != 'OpenBSD':
 setup(
     name                 = 'binjitsu',
     packages             = find_packages(),
-    version              = version,
+    version              = 'master',
     data_files           = [('',
                              ['LICENSE-binjitsu.txt',
                              ]),
@@ -70,8 +64,8 @@ setup(
     description          = "CTF framework and exploit development library.",
     author               = "Zach Riggle",
     author_email         = "zachriggle@gmail.com",
-    url                  = 'https://github.com/binjitsu/binjitsu/',
-    download_url         = "https://github.com/binjitsu/binjitsu/tarball/%s" % version,
+    url                  = 'https://binjit.su',
+    download_url         = "https://binjit.su/tarball/master",
     install_requires     = install_requires,
     license              = "Mostly MIT, some GPL/BSD, see LICENSE-binjitsu.txt and LICENSE-pwntools.txt",
     classifiers          = [
