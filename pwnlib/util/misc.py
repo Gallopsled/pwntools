@@ -182,8 +182,8 @@ def run_in_new_terminal(command, terminal = None, args = None):
             terminal = 'tmux'
             args     = ['splitw']
 
-    if not terminal:
-        log.error('could not find terminal: %s' % terminal)
+        else:
+            log.error("Can't open new windows without X11 or tmux")
 
     argv    = [which(terminal)] + args + [command]
     log.debug("Launching a new terminal: %r" % argv)
