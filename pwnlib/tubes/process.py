@@ -15,6 +15,10 @@ from .tube import tube
 
 log = getLogger(__name__)
 
+PIPE = subprocess.PIPE
+STDOUT = subprocess.STDOUT
+PTY = object()
+
 class process(tube):
     r"""
     Spawns a new process, and wraps it with a tube for communication.
@@ -126,9 +130,9 @@ class process(tube):
                  cwd = None,
                  env = None,
                  timeout = Timeout.default,
-                 stdin  = None,
-                 stdout = None,
-                 stderr = None,
+                 stdin  = PIPE,
+                 stdout = PTY,
+                 stderr = STDOUT,
                  level = None,
                  close_fds = True,
                  preexec_fn = None):
@@ -270,10 +274,7 @@ class process(tube):
     def _handles(stdin, stdout, stderr):
         master = None
 
-        if stdin is None:
-            stdin = subprocess.PIPE
-
-        if stdout is None:
+        if stdout is PTY:
             # Normally we could just use subprocess.PIPE and be happy.
             # Unfortunately, this results in undesired behavior when
             # printf() and similar functions buffer data instead of
@@ -283,7 +284,6 @@ class process(tube):
             # buffer any data on STDOUT.
             master, slave = pty.openpty()
 
-
             # By making STDOUT a PTY, the OS will attempt to interpret
             # terminal control codes.  We don't want this, we want all
             # input passed exactly and perfectly to the process.
@@ -292,9 +292,6 @@ class process(tube):
 
             # Pick one side of the pty to pass to the child
             stdout = slave
-
-        if stderr is None:
-            stderr = stdout
 
         return stdin, stdout, stderr, master
 
