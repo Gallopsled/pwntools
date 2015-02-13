@@ -591,7 +591,7 @@ class tube(Timeout):
 
         Examples:
 
-            >>> msg = "N=0000 C=1111\nN=2222 C=3333\n"
+            >>> msg = "N=0000 C=1111\\nN=2222 C=3333\\n"
             >>> data = list(msg)
             >>> t = tube()
             >>> t.recv_raw = lambda b: '' if not data else data.pop(0)
