@@ -496,7 +496,7 @@ class ssh(Timeout, Logger):
         """
         return self.run(shell, tty, timeout = timeout)
 
-    def process(self, argv=[], executable=None, tty = True, cwd = None, env = None, timeout = Timeout.default, run = True,
+    def process(self, argv=None, executable=None, tty = True, cwd = None, env = None, timeout = Timeout.default, run = True,
                 stdin=None, stdout=None, stderr=None):
         r"""
         Executes a process on the remote server, in the same fashion
@@ -576,8 +576,13 @@ class ssh(Timeout, Logger):
         if not argv and not executable:
             self.error("Must specify argv or executable")
 
+        argv      = argv or []
+
         if isinstance(argv, (str, unicode)):
             argv = [argv]
+
+        if not isinstance(argv, (list, tuple)):
+            log.error('argv must be a list or tuple')
 
         # Python doesn't like when an arg in argv contains '\x00'
         # -> execve() arg 2 must contain only strings
