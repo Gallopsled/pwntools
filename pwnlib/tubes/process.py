@@ -16,28 +16,6 @@ from .tube import tube
 log = getLogger(__name__)
 
 class process(tube):
-
-    #: `subprocess.Popen` object
-    proc = None
-
-    #: Full path to the executable
-    executable = None
-
-    #: Full path to the executable
-    program = None
-
-    #: Arguments passed on argv
-    args = None
-
-    #: Environment passed on envp
-    env = None
-
-    #: Directory the process was created in
-    cwd = None
-
-    #: Have we seen the process stop?
-    _stop_noticed = False
-
     r"""
     Implements a tube which talks to a process on stdin/stdout/stderr.
 
@@ -80,8 +58,34 @@ class process(tube):
         >>> p.wait_for_close()
         >>> p.poll()
         0
+
+        >>> p = process('cat /dev/zero | head -c8', shell=True, stderr=open('/dev/null', 'w+'))
+        >>> p.recv()
+        '\x00\x00\x00\x00\x00\x00\x00\x00'
     """
-    def __init__(self, args,
+
+    #: `subprocess.Popen` object
+    proc = None
+
+    #: Full path to the executable
+    executable = None
+
+    #: Full path to the executable
+    program = None
+
+    #: Arguments passed on argv
+    argv = None
+
+    #: Environment passed on envp
+    env = None
+
+    #: Directory the process was created in
+    cwd = None
+
+    #: Have we seen the process stop?
+    _stop_noticed = False
+
+    def __init__(self, argv,
                  shell = False,
                  executable = None,
                  cwd = None,
@@ -92,26 +96,57 @@ class process(tube):
                  stderr = None,
                  level = None,
                  close_fds = True):
+        """
+        Spawns a new process, and wraps it with a tube for communication.
+
+        Arguments:
+            argv(list):
+                List of arguments to pass to the spawned process.
+            shell(bool):
+                Set to `True` to interpret `argv` as a string
+                to pass to the shell for interpretation instead of as argv.
+            executable(str):
+                Path to the binary to execute.  If ``None``, uses ``argv[0]``.
+                Cannot be used with ``shell``.
+            cwd(str):
+                Working directory.  Uses the current working directory by default.
+            env(dict):
+                Environment variables.  By default, inherits from Python's environment.
+            timeout(int):
+                Timeout to use on ``tube`` ``recv`` operations.
+            stdin(int):
+                File object or file descriptor number to use for ``stdin``.
+                By default, a pipe is used.
+            stdout(int):
+                File object or file descriptor number to use for ``stdout``.
+                By default, a pty is used.
+                May also be ``subprocess.PIPE`` to use a normal pipe.
+            stderr(int):
+                File object or file descriptor number to use for ``stderr``.
+                By default, ``stdout`` is used.
+                May also be ``subprocess.PIPE`` to use a separate pipe,
+                although the ``tube`` wrapper will not be able to read this data.
+        """
         super(process, self).__init__(timeout, level = level)
 
         if not shell:
-            executable, args, env = self._validate(cwd, executable, args, env)
+            executable, argv, env = self._validate(cwd, executable, argv, env)
 
         stdin, stdout, stderr, master = self._handles(stdin, stdout, stderr)
 
         self.executable = self.program = executable
-        self.args       = args
+        self.argv       = argv
         self.env        = env
         self.cwd        = cwd or os.path.curdir
 
         message = "Starting program %r" % self.program
 
         if self.isEnabledFor(logging.DEBUG):
-            if self.args != [self.executable]: message += ' argv=%r ' % self.args
+            if self.argv != [self.executable]: message += ' argv=%r ' % self.argv
             if self.env  != os.environ:        message += ' env=%r ' % self.env
 
         with self.progress(message) as p:
-            self.proc = subprocess.Popen(args = args,
+            self.proc = subprocess.Popen(args = argv,
                                          shell = shell,
                                          executable = executable,
                                          cwd = cwd,
@@ -133,7 +168,7 @@ class process(tube):
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
     @staticmethod
-    def _validate(cwd, executable, args, env):
+    def _validate(cwd, executable, argv, env):
         """
         Perform extended validation on the executable path, argv, and envp.
 
@@ -143,25 +178,25 @@ class process(tube):
         cwd = cwd or os.path.curdir
 
         #
-        # Validate args
+        # Validate argv
         #
         # - Must be a list/tuple of strings
         # - Each string must not contain '\x00'
         #
-        if isinstance(args, (str, unicode)):
-            args = [args]
+        if isinstance(argv, (str, unicode)):
+            argv = [argv]
 
-        if not all(isinstance(arg, (str, unicode)) for arg in args):
-            log.error("args must be strings: %r" % args)
+        if not all(isinstance(arg, (str, unicode)) for arg in argv):
+            log.error("argv must be strings: %r" % argv)
 
         # Create a duplicate so we can modify it
-        args = list(args or [])
+        argv = list(argv or [])
 
-        for i, arg in enumerate(args):
+        for i, arg in enumerate(argv):
             if '\x00' in arg[:-1]:
                 log.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
 
-            args[i] = arg.rstrip('\x00')
+            argv[i] = arg.rstrip('\x00')
 
         #
         # Validate executable
@@ -170,9 +205,9 @@ class process(tube):
         # - If not, attempt to resolve the name in $PATH
         #
         if not executable:
-            if not args:
-                log.error("Must specify args or executable")
-            executable = args[0]
+            if not argv:
+                log.error("Must specify argv or executable")
+            executable = argv[0]
 
         # Do not change absolute paths to binaries
         if executable.startswith(os.path.sep):
@@ -219,7 +254,7 @@ class process(tube):
 
             env[k.rstrip('\x00')] = v.rstrip('\x00')
 
-        return executable, args, env
+        return executable, argv, env
 
     @staticmethod
     def _handles(stdin, stdout, stderr):
