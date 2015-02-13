@@ -46,6 +46,8 @@ class process(tube):
             By default, ``stdout`` is used.
             May also be ``subprocess.PIPE`` to use a separate pipe,
             although the ``tube`` wrapper will not be able to read this data.
+        preexec_fn(callable):
+            Callable to invoke immediately before calling ``execve``.
 
     Examples:
 
@@ -123,7 +125,8 @@ class process(tube):
                  stdout = None,
                  stderr = None,
                  level = None,
-                 close_fds = True):
+                 close_fds = True,
+                 preexec_fn = None):
         super(process, self).__init__(timeout, level = level)
 
         if not shell:
@@ -135,6 +138,7 @@ class process(tube):
         self.argv       = argv
         self.env        = env
         self.cwd        = cwd or os.path.curdir
+        self.preexec_fn = preexec_fn
 
         message = "Starting program %r" % self.program
 
@@ -152,7 +156,7 @@ class process(tube):
                                          stdout = stdout,
                                          stderr = stderr,
                                          close_fds = close_fds,
-                                         preexec_fn = os.setpgrp)
+                                         preexec_fn = self.preexec_fn)
 
         if master:
             self.proc.stdout = os.fdopen(master)
@@ -163,6 +167,10 @@ class process(tube):
         fd = self.proc.stdout.fileno()
         fl = fcntl.fcntl(fd, fcntl.F_GETFL)
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+
+    def preexec_fn(self):
+        os.setpgrp()
+        self.preexec_fn and preexec_fn()
 
     @staticmethod
     def _validate(cwd, executable, argv, env):
