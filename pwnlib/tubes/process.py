@@ -232,7 +232,7 @@ class process(tube):
 
         # Either there is a path component, or the binary is not in $PATH
         # For example, 'foo/bar' or 'bar' with cwd=='foo'
-        else:
+        elif os.path.sep not in executable:
             executable = os.path.join(cwd, executable)
 
         if not os.path.exists(executable):
