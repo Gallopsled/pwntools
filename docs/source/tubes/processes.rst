@@ -8,5 +8,5 @@
 .. automodule:: pwnlib.tubes.process
 
   .. autoclass:: pwnlib.tubes.process.process
-     :members: kill, poll, communicate
+     :members:
      :show-inheritance:

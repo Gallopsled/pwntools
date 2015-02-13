@@ -17,7 +17,35 @@ log = getLogger(__name__)
 
 class process(tube):
     r"""
-    Implements a tube which talks to a process on stdin/stdout/stderr.
+    Spawns a new process, and wraps it with a tube for communication.
+
+    Arguments:
+        argv(list):
+            List of arguments to pass to the spawned process.
+        shell(bool):
+            Set to `True` to interpret `argv` as a string
+            to pass to the shell for interpretation instead of as argv.
+        executable(str):
+            Path to the binary to execute.  If ``None``, uses ``argv[0]``.
+            Cannot be used with ``shell``.
+        cwd(str):
+            Working directory.  Uses the current working directory by default.
+        env(dict):
+            Environment variables.  By default, inherits from Python's environment.
+        timeout(int):
+            Timeout to use on ``tube`` ``recv`` operations.
+        stdin(int):
+            File object or file descriptor number to use for ``stdin``.
+            By default, a pipe is used.
+        stdout(int):
+            File object or file descriptor number to use for ``stdout``.
+            By default, a pty is used.
+            May also be ``subprocess.PIPE`` to use a normal pipe.
+        stderr(int):
+            File object or file descriptor number to use for ``stderr``.
+            By default, ``stdout`` is used.
+            May also be ``subprocess.PIPE`` to use a separate pipe,
+            although the ``tube`` wrapper will not be able to read this data.
 
     Examples:
 
@@ -96,37 +124,6 @@ class process(tube):
                  stderr = None,
                  level = None,
                  close_fds = True):
-        """
-        Spawns a new process, and wraps it with a tube for communication.
-
-        Arguments:
-            argv(list):
-                List of arguments to pass to the spawned process.
-            shell(bool):
-                Set to `True` to interpret `argv` as a string
-                to pass to the shell for interpretation instead of as argv.
-            executable(str):
-                Path to the binary to execute.  If ``None``, uses ``argv[0]``.
-                Cannot be used with ``shell``.
-            cwd(str):
-                Working directory.  Uses the current working directory by default.
-            env(dict):
-                Environment variables.  By default, inherits from Python's environment.
-            timeout(int):
-                Timeout to use on ``tube`` ``recv`` operations.
-            stdin(int):
-                File object or file descriptor number to use for ``stdin``.
-                By default, a pipe is used.
-            stdout(int):
-                File object or file descriptor number to use for ``stdout``.
-                By default, a pty is used.
-                May also be ``subprocess.PIPE`` to use a normal pipe.
-            stderr(int):
-                File object or file descriptor number to use for ``stderr``.
-                By default, ``stdout`` is used.
-                May also be ``subprocess.PIPE`` to use a separate pipe,
-                although the ``tube`` wrapper will not be able to read this data.
-        """
         super(process, self).__init__(timeout, level = level)
 
         if not shell:
