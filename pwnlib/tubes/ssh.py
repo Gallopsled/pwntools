@@ -496,7 +496,8 @@ class ssh(Timeout, Logger):
         """
         return self.run(shell, tty, timeout = timeout)
 
-    def process(self, argv=[], executable=None, tty = True, cwd = None, env = None, timeout = Timeout.default, run = True):
+    def process(self, argv=[], executable=None, tty = True, cwd = None, env = None, timeout = Timeout.default, run = True,
+                stdin=None, stdout=None, stderr=None):
         r"""
         Executes a process on the remote server, in the same fashion
         as pwnlib.tubes.process.process.
@@ -507,8 +508,40 @@ class ssh(Timeout, Logger):
         As an added bonus, the ``ssh_channel`` object returned has a
         ``pid`` property for the process pid.
 
+        Arguments:
+            argv(list):
+                List of arguments to pass into the process
+            executable(str):
+                Path to the executable to run.
+                If ``None``, ``argv[0]`` is used.
+            tty(bool):
+                Request a `tty` from the server.  This usually fixes buffering problems
+                by causing `libc` to write data immediately rather than buffering it.
+                However, this disables interpretation of control codes (e.g. Ctrl+C)
+                and breaks `.shutdown`.
+            cwd(str):
+                Working directory.  If ``None``, uses the working directory specified
+                on :attr:`cwd` or set via :meth:`set_working_directory`.
+            env(dict):
+                Environment variables to set in the child.  If ``None``, inherits the
+                default environment.
+            timeout(int):
+                Timeout to set on the `tube` created to interact with the process.
+            run(bool):
+                Set to ``True`` to run the program (default).
+                If ``False``, returns the path to an executable Python script on the
+                remote server which, when executed, will do it.
+            stdin(int, str):
+                If an integer, replace stdin with the numbered file descriptor.
+                If a string, a open a file with the specified path and replace
+                stdin with its file descriptor.
+            stdout(int, str):
+                See ``stdin``.
+            stderr(int, str):
+                See ``stderr``.
+
         Returns:
-            A new SSH channel, or a path to the script if ``run=False``.
+            A new SSH channel, or a path to a script if ``run=False``.
 
         Notes:
             Requires Python on the remote server.
@@ -532,6 +565,13 @@ class ssh(Timeout, Logger):
             >>> sh = s.process(executable='/bin/sh')
             >>> sh.pid in pidof('sh')
             True
+            >>> s.process(['pwd'], cwd='/tmp').recvall()
+            '/tmp\n'
+            >>> p = s.process(['python','-c','import os; print os.read(2, 1024)'], stderr=0)
+            >>> p.send('hello')
+            >>> p.recv()
+            'hello\n'
+
         """
         if not argv and not executable:
             self.error("Must specify argv or executable")
@@ -547,6 +587,7 @@ class ssh(Timeout, Logger):
             argv[i] = arg.rstrip('\x00')
 
         executable = executable or argv[0]
+        cwd        = cwd or self.cwd or '.'
 
         # Validate, since failures on the remote side will suck.
         if not isinstance(executable, str):
@@ -564,6 +605,8 @@ import os, sys
 exe   = %r
 argv  = %r
 env   = %r
+
+os.chdir(%r)
 
 if env is None:
     env = os.environ
@@ -590,8 +633,17 @@ if sys.argv[-1] == 'check':
     sys.stdout.write(str(os.getpid()) + "\n")
     sys.stdout.flush()
 
+for fd, newfd in {0: %r, 1: %r, 2:%r}.items():
+    if newfd is None:
+        continue
+    os.close(fd)
+    if isinstance(newfd, str):
+        os.open(newfd, 'wb+')
+    elif isinstance(newfd, int):
+        os.dup(newfd)
+
 os.execve(exe, argv, env)
-""" % (executable, argv, env)
+""" % (executable, argv, env, cwd, stdin, stdout, stderr)
 
         script = script.lstrip()
 
@@ -1028,7 +1080,7 @@ os.execve(exe, argv, env)
         """
         # If a relative path was provided, prepend the cwd
         if os.path.normpath(remote) == os.path.basename(remote):
-            remote = os.path.join(self.cwd, remote)
+            remote = os.path.join(self.cwd or '.', remote)
 
         if self.sftp:
             with tempfile.NamedTemporaryFile() as f:
