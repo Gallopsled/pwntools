@@ -428,7 +428,7 @@ class ssh(Timeout, Logger):
             if not keyfile and 'identityfile' in host_config:
                 keyfile = host_config['identityfile'][0]
         except Exception as e:
-            log.debug("An error occurred while parsing ~/.ssh/config:\n%s" % e)
+            self.debug("An error occurred while parsing ~/.ssh/config:\n%s" % e)
 
         keyfiles = [os.path.expanduser(keyfile)] if keyfile else []
 
@@ -582,13 +582,13 @@ class ssh(Timeout, Logger):
             argv = [argv]
 
         if not isinstance(argv, (list, tuple)):
-            log.error('argv must be a list or tuple')
+            self.error('argv must be a list or tuple')
 
         # Python doesn't like when an arg in argv contains '\x00'
         # -> execve() arg 2 must contain only strings
         for i, arg in enumerate(argv):
             if '\x00' in arg[:-1]:
-                log.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
+                self.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
             argv[i] = arg.rstrip('\x00')
 
         executable = executable or argv[0]
@@ -596,13 +596,13 @@ class ssh(Timeout, Logger):
 
         # Validate, since failures on the remote side will suck.
         if not isinstance(executable, str):
-            log.error("executable / argv[0] must be a string: %r" % executable)
+            self.error("executable / argv[0] must be a string: %r" % executable)
         if not isinstance(argv, (list, tuple)):
-            log.error("argv must be a list or tuple: %r" % argv)
+            self.error("argv must be a list or tuple: %r" % argv)
         if env is not None and not isinstance(env, dict):
-            log.error("env must be a dict: %r") % env
+            self.error("env must be a dict: %r") % env
         if not all(isinstance(s, str) for s in argv):
-            log.error("argv must only contain strings: %r" % argv)
+            self.error("argv must only contain strings: %r" % argv)
 
         script = r"""
 #!/usr/bin/env python
@@ -1171,7 +1171,7 @@ os.execve(exe, argv, env)
 
     def download(self, file_or_directory, remote=None):
         if not self.sftp:
-            log.error("Cannot determine remote file type without SFTP")
+            self.error("Cannot determine remote file type without SFTP")
 
         if 0 == self.system('test -d %s' % file_or_directory).wait():
             self.download_dir(file_or_directory, remote)
