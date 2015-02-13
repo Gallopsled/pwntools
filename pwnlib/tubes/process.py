@@ -51,7 +51,6 @@ class process(tube):
 
     Examples:
 
-        >>> context.log_level='error'
         >>> p = process(which('python2'))
         >>> p.sendline("print 'Hello world'")
         >>> p.sendline("print 'Wow, such data'");
@@ -92,6 +91,12 @@ class process(tube):
         >>> p = process('cat /dev/zero | head -c8', shell=True, stderr=open('/dev/null', 'w+'))
         >>> p.recv()
         '\x00\x00\x00\x00\x00\x00\x00\x00'
+
+        >>> p = process(['python','-c','import os; print os.read(2,1024)'],
+        ...             preexec_fn = lambda: os.dup2(0,2))
+        >>> p.sendline('hello')
+        >>> p.recvline()
+        'hello\n'
     """
 
     #: `subprocess.Popen` object
