@@ -34,6 +34,18 @@ def debug_shellcode(data, execute=None, **kwargs):
         os.chmod(tmp_elf, 0777)
         return debug(tmp_elf, execute=None, arch=context.arch)
 
+def get_qemu_arch(arch):
+    if arch == 'mips' and context.endian == 'little':
+        return 'mipsel'
+    if arch == 'arm' and context.endian == 'big':
+        return 'armeb'
+    if arch == 'amd64':
+        return 'x86_64'
+
+    arch = arch.replace('powerpc', 'ppc')
+
+    return arch
+
 def debug(args, exe=None, execute=None, ssh=None, arch=None):
     """debug(args) -> tube
 
@@ -57,7 +69,7 @@ def debug(args, exe=None, execute=None, ssh=None, arch=None):
         args = ['gdbserver', 'localhost:0'] + args
     else:
         qemu_port = random.randint(1024, 65535)
-        qemu_arch = {'amd64':'x86_64'}.get(arch, arch)
+        qemu_arch = get_qemu_arch(arch)
         args = ['qemu-%s-static' % qemu_arch, '-g', str(qemu_port)] + args
 
     if not ssh:
@@ -100,6 +112,14 @@ def debug(args, exe=None, execute=None, ssh=None, arch=None):
 
     return gdbserver
 
+def get_gdb_arch(arch):
+    return {
+        'amd64': 'i386:x86-64',
+        'powerpc': 'powerpc:403',
+        'powerpc64': 'powerpc:e5500'
+    }.get(arch, arch)
+
+
 def attach(target, execute = None, exe = None, arch = None):
     """attach(target, execute = None, exe = None, arch = None) -> None
 
@@ -133,6 +153,7 @@ def attach(target, execute = None, exe = None, arch = None):
             msg =  'Disable ptrace_scope to attach to running processes.\n'
             msg += 'More info: https://askubuntu.com/q/41629'
             log.warning(msg)
+            return
     except IOError:
         pass
 
@@ -154,7 +175,8 @@ def attach(target, execute = None, exe = None, arch = None):
         if not misc.which('gdb-multiarch'):
             log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n' \
                 '$ apt-get install gdb-multiarch')
-        pre += 'set architecture %s\n' % arch
+        pre += 'set endian %s\n' % context.endian
+        pre += 'set architecture %s\n' % get_gdb_arch(arch)
 
     # let's see if we can find a pid to attach to
     pid = None
