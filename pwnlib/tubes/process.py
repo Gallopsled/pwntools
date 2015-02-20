@@ -240,11 +240,11 @@ class process(tube):
             executable = os.path.join(cwd, executable)
 
         if not os.path.exists(executable):
-            log.error("%r does not exist")
+            log.error("%r does not exist"  % executable)
         if not os.path.isfile(executable):
-            log.error("%r is not a file")
+            log.error("%r is not a file" % executable)
         if not os.access(executable, os.X_OK):
-            log.error("%r is not marked as executable (+x)")
+            log.error("%r is not marked as executable (+x)" % executable)
 
         #
         # Validate environment
