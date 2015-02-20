@@ -144,6 +144,10 @@ def attach(target, execute = None, exe = None, arch = None):
             execute = fd.read()
             fd.close()
 
+    # enable gdb.attach(p, 'continue')
+    if execute and not execute.endswith('\n'):
+        execute += '\n'
+
     # gdb script to run before `execute`
     pre = ''
     if arch:
