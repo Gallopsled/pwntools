@@ -369,6 +369,8 @@ def make_elf(data, vma = None, strip=True, **kwargs):
         execve('/bin/sh',...).
 
         >>> context.clear()
+        >>> context.arch = 'i386'
+        >>> context.bits = 32
         >>> filename = tempfile.mktemp()
         >>> bin_sh = '6a68682f2f2f73682f62696e89e331c96a0b5899cd80'.decode('hex')
         >>> data = make_elf(bin_sh)
