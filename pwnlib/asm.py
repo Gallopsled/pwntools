@@ -368,7 +368,7 @@ def make_elf(data, vma = None, strip=True, **kwargs):
         This example creates an i386 ELF that just does
         execve('/bin/sh',...).
 
-        >>> context.arch = 'i386'
+        >>> context.clear()
         >>> filename = tempfile.mktemp()
         >>> bin_sh = '6a68682f2f2f73682f62696e89e331c96a0b5899cd80'.decode('hex')
         >>> data = make_elf(bin_sh)

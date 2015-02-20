@@ -567,8 +567,6 @@ class ROP(object):
         True
         >>> rop.r13_r14_r15_rbp == rop.search(regs=['r13','r14','r15','rbp'], order = 'regs')
         True
-        >>> rop.ret     == rop.search(move=rop.align)
-        True
         >>> rop.ret_8   == rop.search(move=8)
         True
         >>> rop.ret     != None
