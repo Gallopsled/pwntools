@@ -1284,7 +1284,7 @@ os.execve(exe, argv, env)
             wd = wd.strip()
 
             if status:
-                self.error("Could not generate a temporary directory\n%s" % wd)
+                self.error("Could not generate a temporary directory (%i)\n%s" % (status, wd))
 
         else:
             _, status = self.run_to_end('ls ' + misc.sh_string(wd), wd = '.')
