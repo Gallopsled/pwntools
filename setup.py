@@ -51,6 +51,7 @@ if platform.system() != 'OpenBSD':
 PythonH = os.path.join(get_python_inc(), 'Python.h')
 if not os.path.exists(PythonH):
     print >> sys.stderr, "You must install the Python development headers!"
+    print >> sys.stderr, "$ apt-get install python-dev"
     sys.exit(-1)
 
 setup(
