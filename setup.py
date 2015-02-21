@@ -37,7 +37,8 @@ install_requires     = ['paramiko>=1.15.2',
                         'capstone',
                         'ropgadget>=5.3',
                         'pyserial>=2.7',
-                        'requests>=2.5.1']
+                        'requests>=2.5.1',
+                        'pip>=6.0.8']
 
 # This is a hack until somebody ports psutil to OpenBSD
 if platform.system() != 'OpenBSD':
@@ -54,6 +55,7 @@ setup(
     package_data         = {
         'pwnlib': [
             'data/crcsums.txt',
+            'data/useragents/useragents.txt',
             'data/binutils/*',
             'data/includes/*.h',
             'data/includes/*/*.h',
