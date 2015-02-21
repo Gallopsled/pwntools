@@ -95,6 +95,8 @@ class ssh_channel(sock):
         if process and tty:
             process = 'stty raw -ctlecho -echo; ' + process
 
+        # If this object is enabled for DEBUG-level logging, don't hide
+        # anything about the command that's actually executed.
         if process and self.isEnabledFor(logging.DEBUG):
             msg = 'Opening new channel: %r' % ((process,) or 'shell')
 
@@ -534,11 +536,12 @@ class ssh(Timeout, Logger):
             stdin(int, str):
                 If an integer, replace stdin with the numbered file descriptor.
                 If a string, a open a file with the specified path and replace
-                stdin with its file descriptor.
+                stdin with its file descriptor.  May also be one of ``sys.stdin``,
+                ``sys.stdout``, ``sys.stderr``.
             stdout(int, str):
                 See ``stdin``.
             stderr(int, str):
-                See ``stderr``.
+                See ``stdin``.
 
         Returns:
             A new SSH channel, or a path to a script if ``run=False``.
@@ -604,6 +607,11 @@ class ssh(Timeout, Logger):
         if not all(isinstance(s, str) for s in argv):
             self.error("argv must only contain strings: %r" % argv)
 
+        # Allow passing in sys.stdin/stdout/stderr objects
+        stdin  = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}.get(stdin, stdin)
+        stdout = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}.get(stdout, stdout)
+        stderr = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}.get(stderr, stderr)
+
         script = r"""
 #!/usr/bin/env python
 import os, sys
@@ -652,21 +660,24 @@ os.execve(exe, argv, env)
 
         script = script.lstrip()
 
+        self.debug("Created execve script:\n" + script)
+
+        if not run:
+            with context.local(log_level='error'):
+                tmpfile = self.mktemp('-t', 'pwnlib-execve-XXXXXXXXXX')
+                self.chmod('+x', tmpfile)
+
+            self.info("Uploading execve script to %r" % tmpfile)
+            self.upload_data(script, tmpfile)
+            return tmpfile
+
         execve_repr = "execve(%r, %s, %s)" % (executable, argv, env or 'os.environ')
 
         with self.progress('Opening new channel: %s' % execve_repr) as h:
-            self.debug("Executing binary with script:\n" + script)
 
+            script = misc.sh_string(script)
             with context.local(log_level='error'):
-                tmpfile = self.mktemp('-t', 'pwnlib-execve-XXXXXXXXXX')
-                self.upload_data(script, tmpfile)
-                self.chmod('+x', tmpfile)
-
-                if not run:
-                    return tmpfile
-
-                python = self.run('test -x "$(which python 2>&1)" && exec python %s check; echo 2' % tmpfile)
-
+                python = self.run('test -x "$(which python 2>&1)" && exec python -c %s check; echo 2' % script)
             result = safeeval.const(python.recvline())
 
             # If an error occurred, try to grab as much output
@@ -1055,7 +1066,7 @@ os.execve(exe, argv, env)
             tar = self.system('tar -C %s -czf %s %s' % (dirname, remote_tar, basename))
 
             if 0 != tar.wait():
-                log.error("Could not create remote tar")
+                self.error("Could not create remote tar")
 
             local_tar = tempfile.NamedTemporaryFile(suffix='.tar.gz')
             self.download_file(remote_tar, local_tar.name)
