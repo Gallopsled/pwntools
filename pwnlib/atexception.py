@@ -99,6 +99,7 @@ def _newhook(typ, val, tb):
     """
     if _oldhook:
         _oldhook(typ, val, tb)
-    _run_handlers()
+    if _run_handlers:
+        _run_handlers()
 
 sys.excepthook = _newhook
