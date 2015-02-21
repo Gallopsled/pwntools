@@ -2,7 +2,9 @@
 import glob
 import os
 import platform
+import sys
 from distutils.command.install import INSTALL_SCHEMES
+from distutils.sysconfig import get_python_inc
 from distutils.util import convert_path
 
 from setuptools import find_packages
@@ -44,6 +46,12 @@ install_requires     = ['paramiko>=1.15.2',
 # This is a hack until somebody ports psutil to OpenBSD
 if platform.system() != 'OpenBSD':
     install_requires.append('psutil>=2.1.3')
+
+# Check that the user has installed the Python development headers
+PythonH = os.path.join(get_python_inc(), 'Python.h')
+if not os.path.exists(PythonH):
+    print >> sys.stderr, "You must install the Python development headers!"
+    sys.exit(-1)
 
 setup(
     name                 = 'binjitsu',
