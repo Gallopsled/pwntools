@@ -186,9 +186,9 @@ def _linker():
 
     arguments = {
         'i386': ['-m', 'elf_i386'],
-    }
+    }.get(context.arch, [])
 
-    return ld + bfd + [E]
+    return ld + bfd + [E] + arguments
 
 def _objcopy():
     return [which_binutils('objcopy')]
