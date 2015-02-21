@@ -422,13 +422,16 @@ class ssh(Timeout, Logger):
 
         # Make a basic attempt to parse the ssh_config file
         try:
-            ssh_config = paramiko.SSHConfig()
-            ssh_config.parse(file(os.path.expanduser('~/.ssh/config')))
-            host_config = ssh_config.lookup(host)
-            if 'hostname' in host_config:
-                self.host = host = host_config['hostname']
-            if not keyfile and 'identityfile' in host_config:
-                keyfile = host_config['identityfile'][0]
+            config_file = os.path.expanduser('~/.ssh/config')
+
+            if os.path.exists(config_file):
+                ssh_config  = paramiko.SSHConfig()
+                ssh_config.parse(file(config_file))
+                host_config = ssh_config.lookup(host)
+                if 'hostname' in host_config:
+                    self.host = host = host_config['hostname']
+                if not keyfile and 'identityfile' in host_config:
+                    keyfile = host_config['identityfile'][0]
         except Exception as e:
             self.debug("An error occurred while parsing ~/.ssh/config:\n%s" % e)
 
@@ -437,8 +440,11 @@ class ssh(Timeout, Logger):
         msg = 'Connecting to %s on port %d' % (host, port)
         with self.waitfor(msg) as h:
             self.client = paramiko.SSHClient()
-            self.client.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+            known_hosts = os.path.expanduser('~/.ssh/known_hosts')
+            if os.path.exists(known_hosts):
+                self.client.load_host_keys(known_hosts)
 
             has_proxy = (proxy_sock or proxy_command) and True
             if has_proxy:
