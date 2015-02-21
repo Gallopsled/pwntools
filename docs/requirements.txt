@@ -5,3 +5,4 @@ pyelftools
 sphinxcontrib-napoleon
 sphinxcontrib-autoprogram
 isort
+tox
