@@ -100,7 +100,7 @@ class MemLeak(object):
             if not data and recurse:
                 for i in range(1, self.search_range):
                     data = self._leak(address-i, i, False)
-                    if data in self.cache:
+                    if address in self.cache:
                         break
                 else:
                     return None
