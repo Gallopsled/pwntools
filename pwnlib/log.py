@@ -101,7 +101,7 @@ added, to do this in an easy way.
 """
 
 __all__ = [
-    'getLogger', 'getPerformanceLogger', 'install_default_handler', 'rootlogger', 'console', 'ConsoleHandler'
+    'getLogger', 'getPerformanceLogger', 'install_default_handler', 'rootlogger', 'console', 'ConsoleHandler', 'Handler'
 ]
 
 import logging, re, threading, sys, random, time
