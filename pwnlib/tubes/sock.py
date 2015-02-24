@@ -12,7 +12,7 @@ class sock(tube):
         self.closed = {"recv": False, "send": False}
 
     # Overwritten for better usability
-    def recvall(self):
+    def recvall(self, timeout = tube.forever):
         """recvall() -> str
 
         Receives data until the socket is closed.
@@ -21,7 +21,7 @@ class sock(tube):
         if getattr(self, 'type', None) == socket.SOCK_DGRAM:
             log.error("UDP sockets does not supports recvall")
         else:
-            return super(sock, self).recvall()
+            return super(sock, self).recvall(timeout)
 
     def recv_raw(self, numb):
         if self.closed["recv"]:
