@@ -40,7 +40,3 @@ repository:
     $ pip install -e .
 
 .. _Ubuntu: https://launchpad.net/~pwntools/+archive/ubuntu/binutils
-.. _libcapstone 2.1: http://www.capstone-engine.org
-.. _i386: http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_i386.deb
-.. _amd64: http://www.capstone-engine.org/download/2.1.2/capstone-2.1.2_amd64.deb
-

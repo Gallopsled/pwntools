@@ -32,12 +32,18 @@ for filename in glob.glob('pwnlib/commandline/*'):
     script = '%s=pwnlib.commandline.%s:main' % (filename, filename)
     console_scripts.append(script)
 
-install_requires     = ['paramiko','argparse', 'mako', 'pyelftools',
-                        'capstone==2.1', 'ropgadget', 'pyserial', 'requests']
+install_requires     = ['paramiko>=1.15.2',
+                        'argparse',
+                        'mako>=1.0.0',
+                        'pyelftools>=0.2.3',
+                        'capstone',
+                        'ropgadget>=5.3',
+                        'pyserial>=2.7',
+                        'requests>=2.5.1']
 
 # This is a hack until somebody ports psutil to OpenBSD
 if platform.system() != 'OpenBSD':
-    install_requires.append('psutil')
+    install_requires.append('psutil>=2.1.3')
 
 setup(
     name                 = 'pwntools',
