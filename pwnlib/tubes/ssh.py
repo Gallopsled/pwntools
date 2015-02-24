@@ -101,8 +101,14 @@ class ssh_channel(sock):
             msg = 'Opening new channel: %r' % ((process,) or 'shell')
 
         with self.waitfor(msg) as h:
+            import paramiko
+            try:
+                self.sock = parent.transport.open_session()
+            except paramiko.ChannelException as e:
+                if e.args == (1, 'Administratively prohibited'):
+                    self.error("Too many sessions open! Use ssh_channel.close() or 'with'!")
+                raise e
 
-            self.sock = parent.transport.open_session()
             if self.tty:
                 self.sock.get_pty('xterm', term.width, term.height)
 
