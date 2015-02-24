@@ -3,7 +3,7 @@ from ..timeout import Timeout
 from ..util.misc import which
 from ..context import context
 from ..log import getLogger
-import subprocess, fcntl, os, select
+import subprocess, fcntl, os, select, pty, tty, errno
 
 log = getLogger(__name__)
 
@@ -36,6 +36,20 @@ class process(tube):
         Traceback (most recent call last):
         ...
         EOFError
+
+        >>> p = process('cat')
+        >>> d = open('/dev/urandom').read(4096)
+        >>> p.recv(timeout=0.1)
+        ''
+        >>> p.write(d)
+        >>> p.recvrepeat(0.1) == d
+        True
+        >>> p.recv(timeout=0.1)
+        ''
+        >>> p.shutdown('send')
+        >>> p.wait_for_close()
+        >>> p.poll()
+        0
     """
     def __init__(self, args, shell = False, executable = None,
                  cwd = None, env = None, timeout = Timeout.default,
@@ -56,13 +70,24 @@ class process(tube):
         if not which(self.program) and os.path.exists(self.program) and not os.access(self.program, os.X_OK):
             log.error('%r is not set to executable (chmod +x %s)' % (self.program, self.program))
 
+        # Make a pty pair for stdout
+        master, slave = pty.openpty()
+
+        # Set master and slave to raw mode
+        tty.setraw(master)
+        tty.setraw(slave)
+
         self.proc = subprocess.Popen(
             args, shell = shell, executable = executable,
             cwd = cwd, env = env,
-            stdin = subprocess.PIPE, stdout = subprocess.PIPE,
-            stderr = subprocess.PIPE if stderr_debug else subprocess.STDOUT,
-            close_fds = close_fds)
+            stdin = subprocess.PIPE, stdout = slave,
+            stderr = subprocess.PIPE if stderr_debug else slave,
+            close_fds = close_fds,
+            preexec_fn = os.setpgrp)
         self.stop_noticed = False
+
+        self.proc.stdout = os.fdopen(master)
+        os.close(slave)
 
         # Set in non-blocking mode so that a call to call recv(1000) will
         # return as soon as a the first byte is available
@@ -131,7 +156,12 @@ class process(tube):
         # This will only be reached if we either have data,
         # or we have reached an EOF. In either case, it
         # should be safe to read without expecting it to block.
-        data = self.proc.stdout.read(numb)
+        data = ''
+
+        try:
+            data = self.proc.stdout.read(numb)
+        except IOError as (err, strerror):
+            pass
 
         if not data:
             self.shutdown("recv")
