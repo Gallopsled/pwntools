@@ -591,12 +591,12 @@ class DynELF(object):
         leak       = self.leak
         Sym        = {32: elf.Elf32_Sym, 64: elf.Elf64_Sym}[self.elfclass]
 
-        nbuckets   = leak.field(hshtab, elf.Elf_HashTable.nbuckets)
+        nbucket   = leak.field(hshtab, elf.Elf_HashTable.nbucket)
         bucketaddr = hshtab + sizeof(elf.Elf_HashTable)
-        chain      = bucketaddr + (nbuckets * 4)
+        chain      = bucketaddr + (nbucket * 4)
 
         self.status('hashmap')
-        hsh = sysv_hash(symb) % nbuckets
+        hsh = sysv_hash(symb) % nbucket
 
         # Get the index out of the bucket for the hash we computed
         idx = leak.d(bucketaddr, hsh)
