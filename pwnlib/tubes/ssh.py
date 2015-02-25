@@ -394,13 +394,53 @@ class ssh(Timeout):
         """
         return self.run(shell, tty, timeout = timeout)
 
-    def process(self, args=[], executable=None, tty = False, cwd = None, env = None, timeout = Timeout.default, run = True):
+    def process(self, argv=None, executable=None, tty = True, cwd = None, env = None, timeout = Timeout.default, run = True,
+                stdin=None, stdout=None, stderr=None):
         r"""
         Executes a process on the remote server, in the same fashion
         as pwnlib.tubes.process.process.
 
+        To achieve this, a Python script is created to call ``os.execve``
+        with the appropriate arguments.
+
+        As an added bonus, the ``ssh_channel`` object returned has a
+        ``pid`` property for the process pid.
+
+        Arguments:
+            argv(list):
+                List of arguments to pass into the process
+            executable(str):
+                Path to the executable to run.
+                If ``None``, ``argv[0]`` is used.
+            tty(bool):
+                Request a `tty` from the server.  This usually fixes buffering problems
+                by causing `libc` to write data immediately rather than buffering it.
+                However, this disables interpretation of control codes (e.g. Ctrl+C)
+                and breaks `.shutdown`.
+            cwd(str):
+                Working directory.  If ``None``, uses the working directory specified
+                on :attr:`cwd` or set via :meth:`set_working_directory`.
+            env(dict):
+                Environment variables to set in the child.  If ``None``, inherits the
+                default environment.
+            timeout(int):
+                Timeout to set on the `tube` created to interact with the process.
+            run(bool):
+                Set to ``True`` to run the program (default).
+                If ``False``, returns the path to an executable Python script on the
+                remote server which, when executed, will do it.
+            stdin(int, str):
+                If an integer, replace stdin with the numbered file descriptor.
+                If a string, a open a file with the specified path and replace
+                stdin with its file descriptor.  May also be one of ``sys.stdin``,
+                ``sys.stdout``, ``sys.stderr``.
+            stdout(int, str):
+                See ``stdin``.
+            stderr(int, str):
+                See ``stdin``.
+
         Returns:
-            A new SSH channel, or a path to the script if ``run=False``.
+            A new SSH channel, or a path to a script if ``run=False``.
 
         Notes:
             Requires Python on the remote server.
@@ -409,7 +449,7 @@ class ssh(Timeout):
             >>> s = ssh(host='example.pwnme',
             ...         user='demouser',
             ...         password='demopass')
-            >>> sh = s.process('sh')
+            >>> sh = s.process('sh', env={'PS1':''})
             >>> sh.sendline('echo Hello; exit')
             >>> sh.recvall()
             'Hello\n'
@@ -419,70 +459,136 @@ class ssh(Timeout):
             '/bin/readlink\n'
             >>> s.process(['LOLOLOL', '/proc/self/exe'], executable='readlink').recvall()
             '/bin/readlink\n'
-            >>> s.process(['LOLOLOL', '/proc/self/cmdline'], executable='cat').recvall()
+            >>> s.process(['LOLOLOL\x00', '/proc/self/cmdline'], executable='cat').recvall()
             'LOLOLOL\x00/proc/self/cmdline\x00'
+            >>> sh = s.process(executable='/bin/sh')
+            >>> sh.pid in pidof('sh')
+            True
+            >>> s.process(['pwd'], cwd='/tmp').recvall()
+            '/tmp\n'
+            >>> p = s.process(['python','-c','import os; print os.read(2, 1024)'], stderr=0)
+            >>> p.send('hello')
+            >>> p.recv()
+            'hello\n'
+
         """
-        if not args and not executable:
-            log.error("Must specify args or executable")
+        if not argv and not executable:
+            log.error("Must specify argv or executable")
 
-        if isinstance(args, (str, unicode)):
-            args = [args]
+        argv      = argv or []
 
-        executable = executable or args[0]
+        if isinstance(argv, (str, unicode)):
+            argv = [argv]
+
+        if not isinstance(argv, (list, tuple)):
+            log.error("argv must be a list or tuple: %r" % argv)
+
+        # Python doesn't like when an arg in argv contains '\x00'
+        # -> execve() arg 2 must contain only strings
+        for i, arg in enumerate(argv):
+            if '\x00' in arg[:-1]:
+                log.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
+            argv[i] = arg.rstrip('\x00')
+
+        executable = executable or argv[0]
+        cwd        = cwd or self.cwd or '.'
+
+        # Validate, since failures on the remote side will suck.
+        if not isinstance(executable, str):
+            log.error("executable / argv[0] must be a string: %r" % executable)
+        if env is not None and not isinstance(env, dict):
+            log.error("env must be a dict: %r") % env
+        if not all(isinstance(s, str) for s in argv):
+            log.error("argv must only contain strings: %r" % argv)
+
+        # Allow passing in sys.stdin/stdout/stderr objects
+        stdin  = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}.get(stdin, stdin)
+        stdout = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}.get(stdout, stdout)
+        stderr = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}.get(stderr, stderr)
 
         script = r"""
 #!/usr/bin/env python
 import os, sys
 exe   = %r
-args  = %r
+argv  = %r
 env   = %r
+
+os.chdir(%r)
 
 if env is None:
     env = os.environ
 
 def is_exe(path):
-    if os.path.isfile(path) and os.access(path, os.X_OK):
-        return 1
-    return 0
+    return os.path.isfile(path) and os.access(path, os.X_OK)
+
+PATH = os.environ['PATH'].split(os.pathsep)
 
 if os.path.sep not in exe and not is_exe(exe):
-    for path in os.environ['PATH'].split(os.pathsep):
+    for path in PATH:
         test_path = os.path.join(path, exe)
         if is_exe(test_path):
             exe = test_path
             break
 
-can_execve = is_exe(exe)
+if not is_exe(exe):
+    sys.stderr.write('0\n')
+    sys.stderr.write("{} is not executable or does not exist in {}".format(exe,PATH))
+    sys.exit(-1)
 
-sys.stdout.write(str(can_execve) + "\n")
-sys.stdout.flush()
+if sys.argv[-1] == 'check':
+    sys.stdout.write("1\n")
+    sys.stdout.write(str(os.getpid()) + "\n")
+    sys.stdout.flush()
 
-if can_execve:
-    os.execve(exe, args, env)
-""" % (executable, args, env)
+for fd, newfd in {0: %r, 1: %r, 2:%r}.items():
+    if newfd is None:
+        continue
+    os.close(fd)
+    if isinstance(newfd, str):
+        os.open(newfd, 'wb+')
+    elif isinstance(newfd, int):
+        os.dup(newfd)
 
-        execve_repr = "execve(%s, %s, %s)" % (executable, args, env or 'os.environ')
+os.execve(exe, argv, env)
+""" % (executable, argv, env, cwd, stdin, stdout, stderr)
 
-        with log.progress('Opening new channel: %s' % execve_repr) as h:
-            log.debug("Executing binary with script:\n" + script)
+        script = script.lstrip()
 
+        log.debug("Created execve script:\n" + script)
+
+        if not run:
             with context.local(log_level='error'):
                 tmpfile = self.mktemp('-t', 'pwnlib-execve-XXXXXXXXXX')
-                self.upload_data(script, tmpfile)
+                self.chmod('+x', tmpfile)
 
-                if not run:
-                    return tmpfile
+            log.info("Uploading execve script to %r" % tmpfile)
+            self.upload_data(script, tmpfile)
+            return tmpfile
 
-                python = self.run('test -x "$(which python 2>&1)" && exec python %s; echo 2' % tmpfile)
+        execve_repr = "execve(%r, %s, %s)" % (executable, argv, env or 'os.environ')
 
+        with self.progress('Opening new channel: %s' % execve_repr) as h:
+
+            script = misc.sh_string(script)
+            with context.local(log_level='error'):
+                python = self.run('test -x "$(which python 2>&1)" && exec python -c %s check; echo 2' % script)
             result = safeeval.const(python.recvline())
+
+            # If an error occurred, try to grab as much output
+            # as we can.
+            if result != 1:
+                error_message = python.recvrepeat(timeout=1)
 
             if result == 0:
                 log.error("%r does not exist or is not executable" % executable)
             elif result == 2:
                 log.error("python is not installed on the remote system %r" % self.host)
             elif result != 1:
-                h.failure()
+                h.failure("something bad happened:\n%s" % error_message)
+
+            python.pid  = safeeval.const(python.recvline())
+            python.argv = argv
+            python.exe  = executable
 
         return python
 
