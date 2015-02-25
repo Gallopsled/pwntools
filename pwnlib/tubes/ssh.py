@@ -2,7 +2,7 @@ import os, time, tempfile, sys, shutil, re, logging, threading
 
 from .. import term
 from ..context import context
-from ..util import hashes, misc
+from ..util import hashes, misc, safeeval
 from .sock import sock
 from .process import process
 from ..timeout import Timeout
@@ -394,9 +394,100 @@ class ssh(Timeout):
         """
         return self.run(shell, tty, timeout = timeout)
 
+    def process(self, args=[], executable=None, tty = False, cwd = None, env = None, timeout = Timeout.default, run = True):
+        r"""
+        Executes a process on the remote server, in the same fashion
+        as pwnlib.tubes.process.process.
+
+        Returns:
+            A new SSH channel, or a path to the script if ``run=False``.
+
+        Notes:
+            Requires Python on the remote server.
+
+        Examples:
+            >>> s = ssh(host='example.pwnme',
+            ...         user='demouser',
+            ...         password='demopass')
+            >>> sh = s.process('sh')
+            >>> sh.sendline('echo Hello; exit')
+            >>> sh.recvall()
+            'Hello\n'
+            >>> s.process(['/bin/echo', '\xff']).recvall()
+            '\xff\n'
+            >>> s.process(['readlink', '/proc/self/exe']).recvall()
+            '/bin/readlink\n'
+            >>> s.process(['LOLOLOL', '/proc/self/exe'], executable='readlink').recvall()
+            '/bin/readlink\n'
+            >>> s.process(['LOLOLOL', '/proc/self/cmdline'], executable='cat').recvall()
+            'LOLOLOL\x00/proc/self/cmdline\x00'
+        """
+        if not args and not executable:
+            log.error("Must specify args or executable")
+
+        if isinstance(args, (str, unicode)):
+            args = [args]
+
+        executable = executable or args[0]
+
+        script = r"""
+#!/usr/bin/env python
+import os, sys
+exe   = %r
+args  = %r
+env   = %r
+
+if env is None:
+    env = os.environ
+
+def is_exe(path):
+    if os.path.isfile(path) and os.access(path, os.X_OK):
+        return 1
+    return 0
+
+if os.path.sep not in exe and not is_exe(exe):
+    for path in os.environ['PATH'].split(os.pathsep):
+        test_path = os.path.join(path, exe)
+        if is_exe(test_path):
+            exe = test_path
+            break
+
+can_execve = is_exe(exe)
+
+sys.stdout.write(str(can_execve) + "\n")
+sys.stdout.flush()
+
+if can_execve:
+    os.execve(exe, args, env)
+""" % (executable, args, env)
+
+        execve_repr = "execve(%s, %s, %s)" % (executable, args, env or 'os.environ')
+
+        with log.progress('Opening new channel: %s' % execve_repr) as h:
+            log.debug("Executing binary with script:\n" + script)
+
+            with context.local(log_level='error'):
+                tmpfile = self.mktemp('-t', 'pwnlib-execve-XXXXXXXXXX')
+                self.upload_data(script, tmpfile)
+
+                if not run:
+                    return tmpfile
+
+                python = self.run('test -x "$(which python 2>&1)" && exec python %s; echo 2' % tmpfile)
+
+            result = safeeval.const(python.recvline())
+
+            if result == 0:
+                log.error("%r does not exist or is not executable" % executable)
+            elif result == 2:
+                log.error("python is not installed on the remote system %r" % self.host)
+            elif result != 1:
+                h.failure()
+
+        return python
+
     def system(self, process, tty = False, wd = None, env = None, timeout = Timeout.default):
         r"""system(command, tty = False, wd = None, env = None, timeout = Timeout.default) -> ssh_channel
-
         Open a new channel with a specific process inside. If `tty` is True,
         then a TTY is requested on the remote server.
 
