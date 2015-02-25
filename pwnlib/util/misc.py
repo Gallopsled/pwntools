@@ -297,10 +297,11 @@ def register_sizes(regs, in_sizes):
 
     Given a list of lists of overlapping register names (e.g. ['eax','ax','al','ah']) and a list of input sizes,
     it returns the following:
-      * all_regs    : list of all valid registers
-      * sizes[reg]  : the size of reg in bits
-      * bigger[reg] : list of overlapping registers bigger than reg
-      * smaller[reg]: list of overlapping registers smaller than reg
+
+    * all_regs    : list of all valid registers
+    * sizes[reg]  : the size of reg in bits
+    * bigger[reg] : list of overlapping registers bigger than reg
+    * smaller[reg]: list of overlapping registers smaller than reg
 
     Used in i386/AMD64 shellcode, e.g. the mov-shellcode.
 

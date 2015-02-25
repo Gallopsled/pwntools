@@ -172,13 +172,13 @@ def quantify(iterable, pred = bool):
     Count how many times the predicate `pred` is :const:`True`.
 
     Arguments:
-      iterable:  An iterable.
-      pred:  A function that given an element from `iterable` returns either
-      :const:`True` or :const:`False`.
+        iterable:  An iterable.
+        pred:  A function that given an element from `iterable` returns either
+               ``True`` or ``False``.
 
     Returns:
       The number of elements in `iterable` for which `pred` returns
-      :const:`True`.
+      ``True``.
 
     Examples:
       >>> quantify([1, 2, 3, 4], lambda x: x % 2 == 0)

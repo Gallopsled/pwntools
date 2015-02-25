@@ -68,7 +68,7 @@ p.add_argument(
     'shellcode',
     nargs = '?',
     choices = shellcraft.templates,
-    metavar = '<shellcode>',
+    metavar = 'shellcode',
     help = 'The shellcode you want',
 )
 
@@ -77,7 +77,7 @@ p.epilog = 'Available shellcodes are:\n' + '\n'.join(shellcraft.templates)
 p.add_argument(
     'args',
     nargs = '*',
-    metavar = '<arg>',
+    metavar = 'arg',
     default = (),
     help = 'Argument to the chosen shellcode',
 )

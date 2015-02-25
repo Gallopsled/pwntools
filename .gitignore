@@ -2,6 +2,7 @@
 *.hi
 *.pyc
 *~
+*.swp
 *.pdf
 */auto/*
 */bin/*
