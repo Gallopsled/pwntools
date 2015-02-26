@@ -3,9 +3,11 @@ import argparse, sys, os, types
 import pwnlib
 from pwnlib import util
 import pwnlib.term.text as text
+from pwnlib import shellcraft
 from pwnlib.context import context
 from pwnlib.log import getLogger, install_default_handler
 install_default_handler()
+
 
 log = getLogger('pwnlib.commandline.shellcraft')
 
@@ -28,6 +30,7 @@ banner = '\n'.join(['  ' + r('____') + '  ' + g('_') + '          ' + r('_') + '
 #  ___) | | | |  __/ | | (__| | | (_| |  _| |_
 # |____/|_| |_|\___|_|_|\___|_|  \__,_|_|  \__|
 
+
 def _string(s):
     out = []
     for c in s:
@@ -38,14 +41,6 @@ def _string(s):
             out.append('\\x%02x' % co)
     return '"' + ''.join(out) + '"\n'
 
-def _carray(s):
-    out = []
-    for c in s:
-        out.append('0x' + util.fiddling.enhex(c))
-    return '{' + ', '.join(out) + '};\n'
-
-def _hex(s):
-    return pwnlib.util.fiddling.enhex(s) + '\n'
 
 p = argparse.ArgumentParser(
     description = 'Microwave shellcode -- Easy, fast and delicious',
@@ -82,53 +77,15 @@ p.add_argument(
     help = 'Output format (default: hex), choose from {r}aw, {s}tring, {c}-style array, {h}ex string, hex{i}i, {a}ssembly code, {p}reprocssed code',
 )
 
-
-class NoDefaultContextValues(object):
-    def __enter__(self):
-        self.old = context.defaults.copy()
-        context.defaults['os'] = None
-        context.defaults['arch'] = None
-    def __exit__(self, *a):
-        context.defaults.update(self.old)
-
-
-
-def get_tree(path, val, result):
-    with NoDefaultContextValues():
-        if path:
-            path += '.'
-
-        if path.startswith('common.'):
-            return
-
-        mods = []
-
-        for k in sorted(dir(val)):
-            if k and k[0] != '_':
-                cur = getattr(val, k)
-                if isinstance(cur, types.ModuleType):
-                    mods.append((path + k, cur))
-                else:
-                    result.append((path + k, cur))
-
-        for path, val in mods:
-            get_tree(path, val, result)
-        return result
-
-# Enumearte all of the shellcode names
-all_shellcodes = get_tree('', pwnlib.shellcraft, [])
-names = '\n'.join('    ' + sc[0] for sc in all_shellcodes)
-
 p.add_argument(
     'shellcode',
     nargs = '?',
-    default = '',
+    choices = shellcraft.templates,
     metavar = 'shellcode',
     help = 'The shellcode you want',
 )
 
-p.epilog = 'Available shellcodes are:\n' + names
-
+p.epilog = 'Available shellcodes are:\n' + '\n'.join(shellcraft.templates)
 
 p.add_argument(
     'args',
@@ -144,26 +101,19 @@ def main():
     p.description = banner + p.description
     args = p.parse_args()
 
+    if not args.shellcode:
+        print '\n'.join(shellcraft.templates)
+        exit()
+
     if args.format == 'default':
         if sys.stdout.isatty():
             args.format = 'hex'
         else:
             args.format = 'raw'
 
-
-    vals = get_tree('', pwnlib.shellcraft, [])
-    if args.shellcode:
-        vals = [(k, val) for k, val in vals if k.startswith(args.shellcode + '.') or k == args.shellcode]
-
-    if len(vals) == 0:
-        log.critical("Cannot find subtree by the name of %r" % args.shellcode)
-        sys.exit(1)
-    elif len(vals) > 1:
-        for k, _ in vals:
-            print k
-        exit()
-    else:
-        func = vals[0][1]
+    func = shellcraft
+    for attr in args.shellcode.split('.'):
+        func = getattr(func, attr)
 
     if args.show:
         # remove doctests
@@ -250,9 +200,9 @@ def main():
     if args.format in ['s', 'str', 'string']:
         code = _string(code)
     elif args.format == 'c':
-        code = _carray(code)
+        code = '{' + ', '.join(map(hex, bytearray(code))) + '}' + '\n'
     elif args.format in ['h', 'hex']:
-        code = _hex(code)
+        code = pwnlib.util.fiddling.enhex(code) + '\n'
     elif args.format in ['i', 'hexii']:
         code = pwnlib.util.fiddling.hexii(code) + '\n'
 
