@@ -7,7 +7,7 @@ from pwnlib.util.fiddling import randoms
 from pwnlib.memleak import MemLeak
 from pwnlib.log import getLogger
 
-log = getLogger("pwnlib.fmtstr")
+log = getLogger(__name__)
 
 class FmtStr(object):
     def __init__(self, execute_fmt, offset = None, padlen = 0, numbwritten = 0):
