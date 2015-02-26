@@ -30,3 +30,4 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 The Binjitsu logo, "Battle" by Simon Child, is licensed under CC BY 2.0.
+The original work is available here: http://thenounproject.com/term/battle/1991/
