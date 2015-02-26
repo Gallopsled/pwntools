@@ -37,7 +37,7 @@ class FmtStr(object):
         marker = cyclic(20)
         for off in range(1,1000):
             leak = self.leak_stack(off, marker)
-            leak = p32(leak)
+            leak = pack(leak)
 
             pad = cyclic_find(leak)
             if pad >= 0 and pad < 20:
@@ -54,7 +54,7 @@ class FmtStr(object):
         # unless it is leaked otherwise.
         if addr & 0xfff == 0: return "\x7f"
 
-        fmtstr = randoms(self.padlen) + p32(addr) + "START%%%d$sEND" % self.offset
+        fmtstr = randoms(self.padlen) + pack(addr) + "START%%%d$sEND" % self.offset
 
         leak = self.execute_fmt(fmtstr)
         leak = re.findall(r"START(.*)END", leak, re.MULTILINE | re.DOTALL)[0]
@@ -78,8 +78,7 @@ class FmtStr(object):
         n = self.numbwritten + len(fmtstr)
 
         for i, b in enumerate(bytes):
-            n %= 256
-            b -= n
+            b -= (n % 256)
             if b <= 0:
                 b += 256
             fmtstr += "%%%dc%%%d$hhn" % (b, self.offset + i)
