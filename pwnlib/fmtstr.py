@@ -50,9 +50,11 @@ class FmtStr(object):
         # Hack: elfheaders often start at offset 0 in a page,
         # but we often can't leak addresses containing null bytes,
         # and the page below elfheaders is often not mapped.
-        # Thus everything on a page boundry is a "\x7f"
+        # Thus the solution to this problem is to check if the next 3 bytes are
+        # "ELF" and if so we lie and leak "\x7f"
         # unless it is leaked otherwise.
-        if addr & 0xfff == 0: return "\x7f"
+        if addr & 0xfff == 0 and self.leaker._leak(addr+1, 3, False) == "ELF":
+            return "\x7f"
 
         fmtstr = randoms(self.padlen) + pack(addr) + "START%%%d$sEND" % self.offset
 
