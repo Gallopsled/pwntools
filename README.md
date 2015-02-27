@@ -32,6 +32,8 @@ binjitsu is best supported on Ubuntu 12.04 and 14.04, but most functionality sho
 Most of the functionality of binjitsu is self-contained and Python-only.  You should be able to get running quickly with
 
 ```sh
+apt-get update
+apt-get install python2.7 python-pip python-dev git
 pip install --upgrade git+https://github.com/binjitsu/binjitsu.git
 ```
 
