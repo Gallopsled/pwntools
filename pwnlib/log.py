@@ -236,7 +236,16 @@ class Logger(object):
 
     def __init__(self, logger=None):
         if logger is None:
-            logger_name = '%s.%s.%s' % (self.__module__, self.__class__.__name__, id(self))
+            # This is a minor hack to permit user-defined classes which inherit
+            # from a tube (which do not actually reside in the pwnlib library)
+            # to receive logging abilities that behave as they would expect from
+            # the resto f the library
+            module = self.__module__
+            if not module.startswith('pwnlib'):
+                module = 'pwnlib.' + module
+            # - end hack -
+
+            logger_name = '%s.%s.%s' % (module, self.__class__.__name__, id(self))
             logger = logging.getLogger(logger_name)
 
         self._logger = logger
