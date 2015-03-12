@@ -104,12 +104,8 @@ class ELF(ELFFile):
         self._describe()
 
     def _describe(self):
-        linked = 'dynamically' if (self.got or self.plt) else 'statically'
         log.info_once('\n'.join((repr(self.path),
-                                'Arch:          %s' % self.arch,
-                                'Bits:          %s' % self.bits,
-                                'Endian:        %s' % self.endian,
-                                'Linked:        %s' % linked,
+                                'Arch:          %s-%s-%s' % (self.arch, self.bits, self.endian),
                                 self.checksec())))
 
     def __repr__(self):
