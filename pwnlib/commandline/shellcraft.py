@@ -82,6 +82,13 @@ p.add_argument(
     help = 'Argument to the chosen shellcode',
 )
 
+p.add_argument(
+    '-d',
+    '--debug',
+    help='Debug the shellcode with GDB',
+    action='store_true'
+)
+
 def main():
     # Banner must be added here so that it doesn't appear in the autodoc
     # generation for command line tools
@@ -177,6 +184,12 @@ def main():
         exit()
 
     code = asm(code)
+
+    if args.debug:
+        arch = args.shellcode.split('.')[0]
+        proc = gdb.debug_shellcode(code, arch=arch)
+        proc.interactive()
+        sys.exit(0)
 
     if args.format in ['s', 'str', 'string']:
         code = '"' + repr(code)[1:-1].replace('"', '\\"')  + '"\n'
