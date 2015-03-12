@@ -104,10 +104,12 @@ class ELF(ELFFile):
         self._describe()
 
     def _describe(self):
+        linked = 'dynamically' if (self.got or self.plt) else 'statically'
         log.info_once('\n'.join((repr(self.path),
                                 'Arch:          %s' % self.arch,
                                 'Bits:          %s' % self.bits,
                                 'Endian:        %s' % self.endian,
+                                'Linked:        %s' % linked,
                                 self.checksec())))
 
     def __repr__(self):
@@ -630,16 +632,24 @@ class ELF(ELFFile):
             "PIE:".ljust(15) + {
                 True: green("PIE enabled"),
                 False: red("No PIE")
-            }[self.pie],
+            }[self.pie]
+        ]
+
+        if self.rpath:
+            res += [
             "RPATH:".ljust(15) + {
                 False:  green("No RPATH"),
                 True:   red(repr(self.rpath))
-            }.get(bool(self.rpath)),
+            }.get(bool(self.rpath))
+            ]
+
+        if self.runpath:
+            res += [
             "RUNPATH:".ljust(15) + {
                 False:  green("No RUNPATH"),
                 True:   red(repr(self.runpath))
             }.get(bool(self.runpath))
-        ]
+            ]
 
         if self.packed:
             res.append('Packer:'.ljust(15) + red("Packed with UPX"))
