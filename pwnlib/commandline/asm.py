@@ -40,6 +40,14 @@ parser.add_argument(
     help = 'The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: %s' % common.choices,
 )
 
+
+parser.add_argument(
+    '-d',
+    '--debug',
+    help='Debug the shellcode with GDB',
+    action='store_true'
+)
+
 def main():
     args   = parser.parse_args()
     tty    = args.output.isatty()
@@ -48,6 +56,11 @@ def main():
     output = asm(data.replace(';', '\n'))
     fmt    = args.format or ('hex' if tty else 'raw')
     formatters = {'r':str, 'h':enhex, 's':repr}
+
+    if args.debug:
+        proc = gdb.debug_shellcode(output, arch=context.arch)
+        proc.interactive()
+        sys.exit(0)
 
     args.output.write(formatters[fmt[0]](output))
 
