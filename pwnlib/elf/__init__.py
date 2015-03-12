@@ -28,6 +28,19 @@ def load(*args, **kwargs):
 # Monkey-patch some things inside elftools to make life easier
 
 class ELF(ELFFile):
+
+    #: Bit-ness of the file
+    bits = None
+
+    #: Architecture of the file
+    arch = None
+
+    #: Endianness of the file
+    endian = None
+
+    #: Path to the file
+    path = None
+
     """Encapsulates information about an ELF file.
 
     :ivar path: Path to the binary on disk
