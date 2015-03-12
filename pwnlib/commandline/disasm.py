@@ -20,7 +20,7 @@ parser.add_argument(
 
 parser.add_argument(
     '-c', '--context',
-    metavar = '<opt>',
+    metavar = 'arch_or_os',
     action = 'append',
     type   = common.context_arg,
     choices = common.choices,

@@ -33,7 +33,7 @@ parser.add_argument(
 
 parser.add_argument(
     '-c', '--context',
-    metavar = '<opt>',
+    metavar = 'context',
     action = 'append',
     type   = common.context_arg,
     choices = common.choices,

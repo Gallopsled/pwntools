@@ -42,7 +42,7 @@ p.add_argument(
 
 p.add_argument(
     '-o', '--out',
-    metavar = '<file>',
+    metavar = 'file',
     type = argparse.FileType('w'),
     default = sys.stdout,
     help = 'Output file (default: stdout)',
@@ -50,7 +50,7 @@ p.add_argument(
 
 p.add_argument(
     '-f', '--format',
-    metavar = '<format>',
+    metavar = 'format',
     choices = ['r', 'raw',
                's', 'str', 'string',
                'c',

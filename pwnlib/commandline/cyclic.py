@@ -28,7 +28,7 @@ group = parser.add_mutually_exclusive_group(required = True)
 group.add_argument(
     '-l', '-o', '--offset', '--lookup',
     dest = 'lookup',
-    metavar = '<lookup value>',
+    metavar = 'lookup_value',
     help = 'Do a lookup instead printing the alphabet',
 )
 

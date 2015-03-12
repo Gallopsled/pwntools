@@ -16,7 +16,7 @@ p = argparse.ArgumentParser(
 group = p.add_mutually_exclusive_group()
 group.add_argument(
     '-e', '--exact',
-    metavar = '<constant name>',
+    metavar = 'constant',
     # nargs = 1,
     default = None,
     help = 'Do an exact match for a constant instead of searching for a regex',
@@ -49,7 +49,7 @@ p.add_argument(
 
 p.add_argument(
     '-c', '--context',
-    metavar = '<opt>',
+    metavar = 'arch_or_os',
     action = 'append',
     type   = common.context_arg,
     choices = common.choices,
