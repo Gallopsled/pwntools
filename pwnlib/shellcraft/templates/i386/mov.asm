@@ -12,9 +12,6 @@ Move src into dest without newlines and null bytes.
 If the src is a register smaller than the dest, then it will be
 zero-extended to fit inside the larger register.
 
-If the src is a register larger than the dest, then only some of the bits will
-be used.
-
 If src is a string that is not a register, then it will locally set
 `context.arch` to `'i386'` and use :func:`pwnlib.constants.eval` to evaluate the
 string. Note that this means that this shellcode can change behavior depending
@@ -33,8 +30,6 @@ Example:
         mov al, 0x11
     >>> print shellcraft.i386.mov('al', 'ax').rstrip()
         /* moving ax into al, but this is a no-op */
-    >>> print shellcraft.i386.mov('bl', 'ax').rstrip()
-        mov bl, al
     >>> print shellcraft.i386.mov('ax', 'bl').rstrip()
         movzx ax, bl
     >>> print shellcraft.i386.mov('eax', 1).rstrip()
@@ -164,17 +159,7 @@ if isinstance(src, (str, unicode)):
     % elif sizes[dest] > sizes[src]:
         movzx ${dest}, ${src}
     % else:
-        <% done = False %>\
-        % for r in reversed(smaller[src]):
-            % if sizes[r] == sizes[dest]:
-                mov ${dest}, ${r}
-                <% done = True %>\
-                <% break %>\
-            % endif
-        % endfor
-        % if not done:
-            <% log.error('Register %s could not be moved into %s' % (src, dest)) %>\
-        % endif
+        <% log.error('Register %s could not be moved into %s' % (src, dest)) %>\
     % endif
 % else:
     <% log.error('%s is neither a register nor an immediate' % src) %>\
