@@ -773,7 +773,7 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
     if method == 'fixed':
         total_iterations = len(alphabet) ** length
     else:
-        total_iterations = len(alphabet) ** (length + 1) - 2
+        total_iterations = (len(alphabet) ** (length + 1) / (len(alphabet) - 1)) - 1
 
     if start is not None:
         i, N = start
