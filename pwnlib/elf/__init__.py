@@ -76,6 +76,8 @@ class ELF(ELFFile):
             'ELFDATA2MSB': 'big'
         }[self['e_ident']['EI_DATA']]
 
+        self.bits = self.elfclass
+
         self._populate_got_plt()
         self._populate_symbols()
         self._populate_libraries()
@@ -86,7 +88,14 @@ class ELF(ELFFile):
             self._address = min(filter(bool, (s.header.p_vaddr for s in self.segments)))
         self.load_addr = self._address
 
-        log.info_once("Security settings for %r:\n%s" % (os.path.basename(path), self.checksec()))
+        self._describe()
+
+    def _describe(self):
+        log.info_once('\n'.join((repr(self.path),
+                                'Arch:          %s' % self.arch,
+                                'Bits:          %s' % self.bits,
+                                'Endian:        %s' % self.endian,
+                                self.checksec())))
 
     def __repr__(self):
         return "ELF(%r)" % self.path
