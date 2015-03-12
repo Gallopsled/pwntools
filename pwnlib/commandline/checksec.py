@@ -20,9 +20,6 @@ parser.add_argument(
 def main():
     args   = parser.parse_args()
     for f in args.elf:
-        with context.local(log_level='error'):
-            e = ELF(f.name)
-        log.info("%s (%s-bit %s %s-endian)\n%s" %
-            (e.path, e.elfclass, e.arch, e.endian, e.checksec()))
+        e = ELF(f.name)
 
 if __name__ == '__main__': main()
