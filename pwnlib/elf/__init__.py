@@ -69,6 +69,12 @@ class ELF(ELFFile):
         if self.arch == 'x64':
             self.arch = 'amd64'
 
+        # Check endianness
+        self.endian = {
+            'ELFDATANONE': 'little',
+            'ELFDATA2LSB': 'little',
+            'ELFDATA2MSB': 'big'
+        }[self['e_ident']['EI_DATA']]
 
         self._populate_got_plt()
         self._populate_symbols()
