@@ -53,8 +53,8 @@ def main():
         elif pat.isdigit():
             pat = packing.pack(int(pat, 10), subsize*8, 'little', 'unsigned')
 
-        if len(pat) != 4:
-            log.critical('Subpattern must be 4 bytes')
+        if len(pat) != subsize:
+            log.critical('Subpattern must be %d bytes' % subsize)
             sys.exit(1)
 
         if not all(c in alphabet for c in pat):
