@@ -22,7 +22,7 @@ def main():
     for f in args.elf:
         with context.local(log_level='error'):
             e = ELF(f.name)
-        log.info("%s (%s-bit %s)\n%s" %
-            (e.path, e.elfclass, e.arch, e.checksec()))
+        log.info("%s (%s-bit %s %s-endian)\n%s" %
+            (e.path, e.elfclass, e.arch, e.endian, e.checksec()))
 
 if __name__ == '__main__': main()
