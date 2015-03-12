@@ -52,6 +52,11 @@ Example:
     >>> print shellcraft.i386.mov('eax', 0xc0c0).rstrip()
         xor eax, eax
         mov ax, 0xc0c0
+    >>> print shellcraft.i386.mov('edi', 0x300).rstrip()
+        mov edi, 0x1010101
+        xor edi, 0x1010201
+    >>> print shellcraft.i386.mov('di', 0x301).rstrip()
+        mov di, 0x301
     >>> with context.local(os = 'linux'):
     ...     print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
         push 0xb
@@ -89,6 +94,9 @@ def pretty(n):
         return str(n)
     else:
         return hex(n)
+
+def regular(reg):
+    return reg in ['eax','ebx','ecx','edx', 'ax', 'bx', 'cx', 'dx']
 
 all_regs, sizes, bigger, smaller = misc.register_sizes(regs, [32, 16, 8, 8])
 
@@ -130,13 +138,13 @@ if isinstance(src, (str, unicode)):
         pop ${dest}
     % elif okay(srcp):
         mov ${dest}, ${pretty(src)}
-    % elif 0 <= srcu < 2**8 and okay(srcp[0]) and sizes[smaller[dest][-1]] == 8:
+    % elif regular(dest) and 0 <= srcu < 2**8 and okay(srcp[0]) and sizes[smaller[dest][-1]] == 8:
         xor ${dest}, ${dest}
         mov ${smaller[dest][-1]}, ${pretty(srcu)}
-    % elif srcu == srcu & 0xff00 and okay(srcp[1]) and sizes[smaller[dest][-2]] == 8:
+    % elif regular(dest) and srcu == srcu & 0xff00 and okay(srcp[1]) and sizes[smaller[dest][-2]] == 8:
         xor ${dest}, ${dest}
         mov ${smaller[dest][-2]}, ${pretty(srcu >> 8)}
-    % elif 0 <= srcu < 2**16 and okay(srcp[:2]) and sizes[smaller[dest][0]] == 16:
+    % elif 0 <= srcu < 2**16 and okay(srcp[:2]) and (dest in ['di', 'si','bp', 'sp'] or sizes[smaller[dest][0]] == 16):
         xor ${dest}, ${dest}
         mov ${smaller[dest][0]}, ${pretty(src)}
     % else:
