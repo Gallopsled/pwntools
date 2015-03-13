@@ -128,6 +128,9 @@ else:
     srcu = packing.unpack(srcp, dest.size, sign=False)
     srcs = packing.unpack(srcp, dest.size, sign=True)
 
+    # Check to see if the value is negatable
+    negatable = not okay(packing.pack(src, 'all')) \
+                and okay(fiddling.xor(packing.pack(src, 'all'), '\xff'))
 %>\
 % if is_register(src):
     % if src == dest:
@@ -173,6 +176,10 @@ else:
     % elif 0 <= srcu < 2**16 and okay(srcp[:2]) and dest.sizes[16]:
         xor ${dest}, ${dest}
         mov ${dest.sizes[16]}, ${pretty(src)}
+## Special case for negatable values
+    %  elif negatable:
+        ${i386.mov(dest, (0 - src) & 0xffffffff)}
+        neg ${dest}
 ## We couldn't find a way to make things work out, so just do
 ## the XOR trick.
     % else:
