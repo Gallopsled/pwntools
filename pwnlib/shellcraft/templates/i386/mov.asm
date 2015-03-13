@@ -1,4 +1,5 @@
 <%
+  from pwnlib.shellcraft import i386
   from pwnlib.util import lists, packing, fiddling, misc
   from pwnlib import constants
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
@@ -144,8 +145,7 @@ else:
         xor ${dest}, ${dest}
 ## Special case for *just* a newline
     % elif stack_allowed and dest.size == 32 and src == 10:
-        push 9 /* mov ${dest}, '\n' */
-        pop ${dest}
+        ${i386.mov(dest, 9)}
         inc ${dest}
 ## Can we push/pop it?
 ## This is shorter than a `mov` and has a better (more ASCII) encoding.

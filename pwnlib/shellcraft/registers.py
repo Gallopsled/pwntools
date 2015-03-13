@@ -131,7 +131,7 @@ class Register(object):
         return self.name
 
     def __repr__(self):
-        return "Register(%r)" % self.namepyth
+        return "Register(%r)" % self.name
 
 intel = {}
 
@@ -140,6 +140,8 @@ for row in i386_ordered:
         intel[reg] = Register(reg, 64 >> i)
 
 def get_register(name):
+    if isinstance(name, Register):
+        return name
     return intel.get(name, None)
 
 def is_register(obj):
