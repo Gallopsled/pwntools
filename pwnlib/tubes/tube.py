@@ -2,7 +2,7 @@
 from .buffer import Buffer
 from ..timeout import Timeout
 from .. import term, atexit, context
-from ..util import misc, fiddling
+from ..util import misc, fiddling, packing
 from ..log import getLogger, getPerformanceLogger
 import re, threading, sys, time, subprocess, logging, string
 
@@ -1300,3 +1300,15 @@ class tube(Timeout):
     def writethen(self, *a, **kw): return self.sendthen(*a, **kw)
     #: Alias for :meth:`sendlinethen`
     def writelinethen(self, *a, **kw): return self.sendlinethen(*a, **kw)
+
+    def p64(self, *a, **kwdata):    return self.send(packing.p64(*a, **kw))
+    def p32(self, *a, **kw):        return self.send(packing.p32(*a, **kw))
+    def p16(self, *a, **kw):        return self.send(packing.p16(*a, **kw))
+    def p8(self, *a, **kw):         return self.send(packing.p8(*a, **kw))
+    def pack(self, *a, **kw):       return self.send(packing.pack(*a, **kw))
+
+    def u64(self, *a, **kw):        return packing.u64(self.recvn(8), *a, **kw)
+    def u32(self, *a, **kw):        return packing.u32(self.recvn(4), *a, **kw)
+    def u16(self, *a, **kw):        return packing.u16(self.recvn(2), *a, **kw)
+    def u8(self, *a, **kw):         return packing.u8(self.recvn(1), *a, **kw)
+    def unpack(self, *a, **kw):     return packing.unpack(self.recvn(context.bytes), *a, **kw)
