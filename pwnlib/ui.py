@@ -105,7 +105,7 @@ def pause(n = None):
     elif isinstance(n, (int, long)):
         with log.waitfor("Waiting") as l:
             for i in range(n, 0, -1):
-                log.status('%d... ' % i)
+                l.status('%d... ' % i)
                 time.sleep(1)
             l.success()
     else:
