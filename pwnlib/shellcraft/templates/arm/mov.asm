@@ -7,7 +7,11 @@
     into the specified destination register.
 </%docstring>
 %if not isinstance(src, (int, long)):
+    %if dst == src:
+    /* mov %{dest}, ${src} is a no-op */
+    %else:
     mov ${dst}, ${src}
+    %endif
 %else:
 /* Set ${dst} = ${src} = 0x${'%x' % src} */
   %if src == 0:
