@@ -1320,3 +1320,5 @@ class tube(Timeout, Logger):
     def u16(self, *a, **kw):        return packing.u16(self.recvn(2), *a, **kw)
     def u8(self, *a, **kw):         return packing.u8(self.recvn(1), *a, **kw)
     def unpack(self, *a, **kw):     return packing.unpack(self.recvn(context.bytes), *a, **kw)
+
+    def flat(self, *a, **kw):       return self.send(packing.flat(*a,**kw))
