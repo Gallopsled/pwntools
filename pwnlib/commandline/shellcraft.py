@@ -27,6 +27,15 @@ banner = '\n'.join(['  ' + r('____') + '  ' + g('_') + '          ' + r('_') + '
 #  ___) | | | |  __/ | | (__| | | (_| |  _| |_
 # |____/|_| |_|\___|_|_|\___|_|  \__,_|_|  \__|
 
+def _string(s):
+    out = []
+    for c in s:
+        co = ord(c)
+        if co >= 0x20 and co <= 0x7e and c not in '/$\'"`':
+            out.append(c)
+        else:
+            out.append('\\x%02x' % co)
+    return '"' + ''.join(out) + '"\n'
 
 p = argparse.ArgumentParser(
     description = 'Microwave shellcode -- Easy, fast and delicious',
@@ -62,7 +71,6 @@ p.add_argument(
     default = 'default',
     help = 'Output format (default: hex), choose from {r}aw, {s}tring, {c}-style array, {h}ex string, hex{i}i, {a}ssembly code, {p}reprocssed code',
 )
-
 
 p.add_argument(
     'shellcode',
@@ -192,7 +200,7 @@ def main():
         sys.exit(0)
 
     if args.format in ['s', 'str', 'string']:
-        code = '"' + repr(code)[1:-1].replace('"', '\\"')  + '"\n'
+        code = _string(code) + '"\n'
     elif args.format == 'c':
         code = '{' + ', '.join(map(hex, bytearray(code))) + '}' + '\n'
     elif args.format in ['h', 'hex']:

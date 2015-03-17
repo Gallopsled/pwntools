@@ -124,9 +124,6 @@ class module(ModuleType):
 
     import registers
 
-
-
-
 # To prevent garbage collection
 tether = sys.modules[__name__]
 

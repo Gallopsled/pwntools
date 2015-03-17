@@ -14,6 +14,7 @@ __all__ = [
     'dynelf',
     'elf',
     'exception',
+    'fmtstr',
     'gdb',
     'log',
     'memleak',
