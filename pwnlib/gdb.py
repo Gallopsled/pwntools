@@ -1,11 +1,52 @@
-import os, tempfile, re, shlex
-from .util import misc, proc
-from . import tubes, elf
+import os
+import random
+import re
+import shlex
+import tempfile
+
+from . import elf
+from . import tubes
+from .asm import make_elf
+from .context import context
 from .log import getLogger
+from .util import misc
+from .util import proc
 
 log = getLogger(__name__)
 
-def debug(args, exe=None, execute=None, ssh=None):
+def debug_shellcode(data, execute=None, **kwargs):
+    """
+    Creates an ELF file, and launches it with GDB.
+
+    Arguments:
+        data(str): Assembled shellcode bytes
+        kwargs(dict): Arguments passed to context (e.g. arch='arm')
+
+    Returns:
+        A ``process`` tube connected to the shellcode on stdin/stdout/stderr.
+    """
+    with context.local(**kwargs):
+        tmp_elf  = tempfile.mktemp(prefix='pwn', suffix='.elf')
+        elf_data = make_elf(data)
+        with open(tmp_elf,'wb+') as f:
+            f.write(elf_data)
+            f.flush()
+        os.chmod(tmp_elf, 0777)
+        return debug(tmp_elf, execute=None, arch=context.arch)
+
+def get_qemu_arch(arch):
+    if arch == 'mips' and context.endian == 'little':
+        return 'mipsel'
+    if arch == 'arm' and context.endian == 'big':
+        return 'armeb'
+    if arch == 'amd64':
+        return 'x86_64'
+
+    arch = arch.replace('powerpc', 'ppc')
+
+    return arch
+
+def debug(args, exe=None, execute=None, ssh=None, arch=None):
     """debug(args) -> tube
 
     Launch a GDB server with the specified command line,
@@ -19,7 +60,17 @@ def debug(args, exe=None, execute=None, ssh=None):
     Returns:
         A tube connected to the target process
     """
-    args      = ['gdbserver', 'localhost:0'] + args
+    if isinstance(args, (str, unicode)):
+        args = [args]
+
+    orig_args = args
+
+    if not arch:
+        args = ['gdbserver', 'localhost:0'] + args
+    else:
+        qemu_port = random.randint(1024, 65535)
+        qemu_arch = get_qemu_arch(arch)
+        args = ['qemu-%s-static' % qemu_arch, '-g', str(qemu_port)] + args
 
     if not ssh:
         execute = tubes.process.process
@@ -29,17 +80,21 @@ def debug(args, exe=None, execute=None, ssh=None):
         which   = ssh.which
 
     # Make sure gdbserver is installed
-    if not which('gdbserver'):
-        log.error("gdbserver is not installed")
+    if not which(args[0]):
+        log.error("%s is not installed" % args[0])
 
-    gdbserver = execute(args)
+    with context.local(log_level='debug'):
+        gdbserver = execute(args)
 
-    # Process /bin/bash created; pid = 14366
-    # Listening on port 34816
-    process_created = gdbserver.recvline()
-    listening_on    = gdbserver.recvline()
+    if not arch:
+        # Process /bin/bash created; pid = 14366
+        # Listening on port 34816
+        process_created = gdbserver.recvline()
+        listening_on    = gdbserver.recvline()
 
-    port     = int(listening_on.split()[-1])
+        port = int(listening_on.split()[-1])
+    else:
+        port = qemu_port
 
     listener = remote = None
 
@@ -48,14 +103,22 @@ def debug(args, exe=None, execute=None, ssh=None):
         listener = tubes.listen.listen(0)
         port     = listener.lport
     elif not exe:
-        exe = misc.which(args[0])
+        exe = misc.which(orig_args[0])
 
-    attach(('127.0.0.1', port), exe=exe)
+    attach(('127.0.0.1', port), exe=orig_args[0], arch=context.arch)
 
     if ssh:
         remote <> listener.wait_for_connection()
 
     return gdbserver
+
+def get_gdb_arch(arch):
+    return {
+        'amd64': 'i386:x86-64',
+        'powerpc': 'powerpc:403',
+        'powerpc64': 'powerpc:e5500'
+    }.get(arch, arch)
+
 
 def attach(target, execute = None, exe = None, arch = None):
     """attach(target, execute = None, exe = None, arch = None) -> None
@@ -77,8 +140,8 @@ def attach(target, execute = None, exe = None, arch = None):
       target: The target to attach to.
       execute (str or file): GDB script to run after attaching.
       exe (str): The path of the target binary.
-      arch (str): Architecture of the target binary.  If `exe` known GDB will
-      detect the architecture automatically (if it is supported).
+      arch (str): Architechture of the target binary.  If `exe` known GDB will
+      detect the architechture automatically (if it is supported).
 
     Returns:
       :const:`None`
@@ -90,6 +153,7 @@ def attach(target, execute = None, exe = None, arch = None):
             msg =  'Disable ptrace_scope to attach to running processes.\n'
             msg += 'More info: https://askubuntu.com/q/41629'
             log.warning(msg)
+            return
     except IOError:
         pass
 
@@ -101,10 +165,18 @@ def attach(target, execute = None, exe = None, arch = None):
             execute = fd.read()
             fd.close()
 
+    # enable gdb.attach(p, 'continue')
+    if execute and not execute.endswith('\n'):
+        execute += '\n'
+
     # gdb script to run before `execute`
     pre = ''
     if arch:
-        pre += 'set architecture %s\n' % arch
+        if not misc.which('gdb-multiarch'):
+            log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n' \
+                '$ apt-get install gdb-multiarch')
+        pre += 'set endian %s\n' % context.endian
+        pre += 'set architecture %s\n' % get_gdb_arch(arch)
 
     # let's see if we can find a pid to attach to
     pid = None
@@ -119,6 +191,25 @@ def attach(target, execute = None, exe = None, arch = None):
         pid = pids[0]
         log.info('attaching you youngest process "%s" (PID = %d)' %
                  (target, pid))
+    elif isinstance(target, tubes.ssh.ssh_channel):
+        if not target.pid:
+            log.error("PID unknown for channel")
+
+        shell = target.parent
+
+        tmpfile = shell.mktemp()
+        shell.upload_data(execute or '', tmpfile)
+
+        cmd = ['ssh', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
+        if shell.password:
+            cmd = ['sshpass', '-p', shell.password] + cmd
+        if shell.keyfile:
+            cmd += ['-i', shell.keyfile]
+        cmd += ['gdb %r %s -x "%s" ; rm "%s"' % (target.exe, target.pid, tmpfile, tmpfile)]
+
+        misc.run_in_new_terminal(' '.join(cmd))
+        return
+
     elif isinstance(target, tubes.sock.sock):
         pids = proc.pidof(target)
         if not pids:
@@ -179,7 +270,6 @@ def attach(target, execute = None, exe = None, arch = None):
                 return os.path.join(proc.cwd(spid), exe)
 
         exe = exe or findexe()
-
     else:
         log.error("don't know how to attach to target: %r" % target)
 
