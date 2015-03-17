@@ -1,12 +1,10 @@
 #!/usr/bin/env python2
+import argparse
+import sys
 
-import argparse, sys
-from pwnlib.asm           import asm
-from pwnlib.context       import context
-from pwnlib.util.fiddling import enhex
+from pwn import *
 
-import pwnlib.log
-pwnlib.log.install_default_handler()
+from . import common
 
 parser = argparse.ArgumentParser(
     description = 'Assemble shellcode into bytes'
@@ -35,27 +33,34 @@ parser.add_argument(
 
 parser.add_argument(
     '-c', '--context',
-    metavar = '<opt>',
-    choices = context.oses + list(context.architectures),
-    default = ['i386','linux'],
+    metavar = 'context',
     action = 'append',
-    help = 'The os/architecture the shellcode will run in (default: linux/i386), choose from: %s' % \
-      ', '.join(sorted(context.oses + list(context.architectures)))
+    type   = common.context_arg,
+    choices = common.choices,
+    help = 'The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: %s' % common.choices,
+)
+
+
+parser.add_argument(
+    '-d',
+    '--debug',
+    help='Debug the shellcode with GDB',
+    action='store_true'
 )
 
 def main():
     args   = parser.parse_args()
     tty    = args.output.isatty()
 
-    for arch in args.context[::-1]:
-        if arch in context.architectures: break
-    for os in args.context[::-1]:
-        if os in context.oses: break
-
     data   = '\n'.join(args.lines) or sys.stdin.read()
-    output = asm(data.replace(';', '\n'), arch = arch, os = os)
+    output = asm(data.replace(';', '\n'))
     fmt    = args.format or ('hex' if tty else 'raw')
     formatters = {'r':str, 'h':enhex, 's':repr}
+
+    if args.debug:
+        proc = gdb.debug_shellcode(output, arch=context.arch)
+        proc.interactive()
+        sys.exit(0)
 
     args.output.write(formatters[fmt[0]](output))
 
