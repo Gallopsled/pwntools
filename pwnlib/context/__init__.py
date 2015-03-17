@@ -13,7 +13,6 @@ import time
 
 from ..timeout import Timeout
 
-
 class _devnull(object):
     name = None
     def write(self, *a, **kw): pass
@@ -315,6 +314,7 @@ class ContextType(object):
     #: Default values for :class:`pwnlib.context.ContextType`
     defaults = {
         'arch': 'i386',
+        'binary': None,
         'bits': 32,
         'endian': 'little',
         'log_level': logging.INFO,
@@ -621,6 +621,35 @@ class ContextType(object):
             raise AttributeError("bits must be >= 0 (%r)" % bits)
 
         return bits
+
+    @_validator
+    def binary(self, binary):
+        """
+        Infer target architecture, bit-with, and endianness from a binary file.
+        Data type is a :class:`pwnlib.elf.ELF` object.
+
+        Examples:
+
+            >>> context.clear()
+            >>> context.arch, context.bits
+            ('i386', 32)
+            >>> context.binary = '/bin/bash'
+            >>> context.arch, context.bits
+            ('amd64', 64)
+            >>> context.binary
+            ELF('/bin/bash')
+
+        """
+        # Cyclic imports... sorry Idolf.
+        from ..elf     import ELF
+
+        e = ELF(binary)
+
+        self.arch   = e.arch
+        self.bits   = e.bits
+        self.endian = e.endian
+
+        return e
 
     @property
     def bytes(self):
