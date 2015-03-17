@@ -13,6 +13,7 @@ import time
 
 from ..timeout import Timeout
 
+
 class _devnull(object):
     name = None
     def write(self, *a, **kw): pass
