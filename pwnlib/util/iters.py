@@ -910,4 +910,3 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
                     done = True
         time.sleep(0.3)
     h.failure('No matches found')
-

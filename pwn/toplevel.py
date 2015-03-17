@@ -21,6 +21,7 @@ from pwnlib.dynelf import DynELF
 from pwnlib.elf import ELF
 from pwnlib.elf import load
 from pwnlib.exception import PwnlibException
+from pwnlib.fmtstr import FmtStr
 from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak
 from pwnlib.replacements import *
@@ -47,7 +48,6 @@ from pwnlib.util.packing import *
 from pwnlib.util.proc import pidof
 from pwnlib.util.splash import *
 from pwnlib.util.web import *
-from pwnlib.fmtstr           import FmtStr
 
 # Promote these modules, so that "from pwn import *" will let you access them
 
