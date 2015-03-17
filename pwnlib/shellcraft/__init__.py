@@ -1,7 +1,12 @@
+import os
+import re
+import sys
 from types import ModuleType
-import sys, os, re
+
 from . import internal
+from .. import constants
 from ..context import context
+
 
 class module(ModuleType):
     def __init__(self, name, directory):
@@ -112,6 +117,10 @@ class module(ModuleType):
 
     templates = sorted(templates)
 
+    def eval(self, item):
+        return constants.eval(item)
+
+    import registers
 
 # To prevent garbage collection
 tether = sys.modules[__name__]

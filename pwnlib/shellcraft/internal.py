@@ -75,6 +75,28 @@ def lookup_template(filename):
 
     return loaded[filename]
 
+def get_context_from_dirpath(directory):
+    """
+    >>> get_context_from_dirpath('common')
+    {}
+    >>> get_context_from_dirpath('i386')
+    {'arch': 'i386'}
+    >>> get_context_from_dirpath('amd64/linux') == {'arch': 'amd64', 'os': 'linux'}
+    True
+    """
+    A,O = os.path.split(directory)
+
+    if O == 'common':
+        O = None
+
+    if not A:
+        A,O = O,None
+
+    rv = {}
+    if O: rv['os']=O
+    if A: rv['arch']=A
+    return rv
+
 def make_function(funcname, filename, directory):
     import inspect
     path       = os.path.join(directory, filename)
@@ -100,19 +122,23 @@ def make_function(funcname, filename, directory):
         args.append('**' + keywords)
         args_used.append('**' + keywords)
 
+    docstring = inspect.cleandoc(template.module.__doc__ or '')
     args      = ', '.join(args)
     args_used = ', '.join(args_used)
+    local_ctx = get_context_from_dirpath(directory)
 
     # This is a slight hack to get the right signature for the function
     # It would be possible to simply create an (*args, **kwargs) wrapper,
     # but what would not have the right signature.
     # While we are at it, we insert the docstring too
-    exec '''
+    T = '''
 def wrap(template, render_global):
-    def %s(%s):
-        %r
+    import pwnlib
+    def %(funcname)s(%(args)s):
+        %(docstring)r
         with render_global.go_inside() as was_inside:
-            lines = template.render(%s).split('\\n')
+            with pwnlib.context.context.local(**%(local_ctx)s):
+                lines = template.render(%(args_used)s).split('\\n')
         for i in xrange(len(lines)):
             line = lines[i]
             def islabelchar(c):
@@ -132,8 +158,10 @@ def wrap(template, render_global):
             return s
         else:
             return s + '\\n'
-    return %s
-''' % (funcname, args, inspect.cleandoc(template.module.__doc__ or ''), args_used, funcname)
+    return %(funcname)s
+''' % locals()
+
+    exec T
 
     # Setting _relpath is a slight hack only used to get better documentation
     res = wrap(template, render_global)
