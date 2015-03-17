@@ -1,16 +1,21 @@
 """Exposes functionality for manipulating ELF files
 """
-from ..term import text
-from .datatypes import *
-from ..asm import asm, disasm
-from ..util import misc
-from ..log import getLogger
+import mmap
+import os
+import subprocess
 
-import mmap, subprocess, os
+from elftools.elf.constants import P_FLAGS
+from elftools.elf.constants import SHN_INDICES
+from elftools.elf.descriptions import describe_e_type
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
-from elftools.elf.descriptions import describe_e_type
-from elftools.elf.constants import P_FLAGS, SHN_INDICES
+
+from ..asm import asm
+from ..asm import disasm
+from ..log import getLogger
+from ..term import text
+from ..util import misc
+from .datatypes import *
 
 log = getLogger(__name__)
 
@@ -20,7 +25,22 @@ def load(*args, **kwargs):
     """Compatibility wrapper for pwntools v1"""
     return ELF(*args, **kwargs)
 
+# Monkey-patch some things inside elftools to make life easier
+
 class ELF(ELFFile):
+
+    #: Bit-ness of the file
+    bits = None
+
+    #: Architecture of the file
+    arch = None
+
+    #: Endianness of the file
+    endian = None
+
+    #: Path to the file
+    path = None
+
     """Encapsulates information about an ELF file.
 
     :ivar path: Path to the binary on disk
@@ -54,14 +74,17 @@ class ELF(ELFFile):
 
         super(ELF,self).__init__(self.mmap)
 
-        self.path     = os.path.abspath(path)
-
-
-        # Fix difference between elftools and pwntools
+        self.path = os.path.abspath(path)
         self.arch = self.get_machine_arch().lower()
-        if self.arch == 'x64':
-            self.arch = 'amd64'
 
+        # Check endianness
+        self.endian = {
+            'ELFDATANONE': 'little',
+            'ELFDATA2LSB': 'little',
+            'ELFDATA2MSB': 'big'
+        }[self['e_ident']['EI_DATA']]
+
+        self.bits = self.elfclass
 
         self._populate_got_plt()
         self._populate_symbols()
@@ -73,11 +96,27 @@ class ELF(ELFFile):
             self._address = min(filter(bool, (s.header.p_vaddr for s in self.segments)))
         self.load_addr = self._address
 
-        if self.execstack:
-            log.info('Stack is executable!')
+        self._describe()
+
+    def _describe(self):
+        log.info_once('\n'.join((repr(self.path),
+                                'Arch:          %s-%s-%s' % (self.arch, self.bits, self.endian),
+                                self.checksec())))
 
     def __repr__(self):
         return "ELF(%r)" % self.path
+
+    def get_machine_arch(self):
+        return {
+            'EM_X86_64': 'amd64',
+            'EM_386' :'i386',
+            'EM_486': 'i386',
+            'EM_ARM': 'arm',
+            'EM_AARCH64': 'aarch64',
+            'EM_MIPS': 'mips',
+            'EM_PPC': 'powerpc',
+            'EM_SPARC32PLUS': 'sparc'
+        }.get(self['e_machine'], self['e_machine'])
 
     @property
     def entry(self):
@@ -269,9 +308,10 @@ class ELF(ELFFile):
 
         # Map architecture: offset, multiplier
         header_size, entry_size = {
-            'x86':   (0x10, 0x10),
+            'i386':   (0x10, 0x10),
             'amd64': (0x10, 0x10),
-            'arm':   (0x14, 0xC)
+            'arm':   (0x14, 0xC),
+            'aarch64': (0x20, 0x20),
         }[self.arch]
 
 
@@ -469,6 +509,10 @@ class ELF(ELFFile):
         self.stream.seek(old)
         return data
 
+    @property
+    def data(self):
+        return self.get_data()
+
     def disasm(self, address, n_bytes):
         """Returns a string of disassembled instructions at
         the specified virtual memory address"""
@@ -592,16 +636,24 @@ class ELF(ELFFile):
             "PIE:".ljust(15) + {
                 True: green("PIE enabled"),
                 False: red("No PIE")
-            }[self.pie],
+            }[self.pie]
+        ]
+
+        if self.rpath:
+            res += [
             "RPATH:".ljust(15) + {
                 False:  green("No RPATH"),
                 True:   red(repr(self.rpath))
-            }.get(bool(self.rpath)),
+            }.get(bool(self.rpath))
+            ]
+
+        if self.runpath:
+            res += [
             "RUNPATH:".ljust(15) + {
                 False:  green("No RUNPATH"),
                 True:   red(repr(self.runpath))
             }.get(bool(self.runpath))
-        ]
+            ]
 
         if self.packed:
             res.append('Packer:'.ljust(15) + red("Packed with UPX"))
