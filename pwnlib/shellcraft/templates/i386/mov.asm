@@ -1,10 +1,8 @@
 <%
-  from pwnlib.shellcraft import i386
   from pwnlib.util import lists, packing, fiddling, misc
   from pwnlib import constants
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
   from pwnlib.log import getLogger
-  from pwnlib.shellcraft.registers import get_register, is_register, bits_required
   log = getLogger('pwnlib.shellcraft.i386.mov')
 %>
 <%page args="dest, src, stack_allowed = True"/>
@@ -33,47 +31,37 @@ Example:
     >>> print shellcraft.i386.mov('ax', 17).rstrip()
         xor ax, ax
         mov al, 0x11
-    >>> print shellcraft.i386.mov('edi', ord('\n')).rstrip()
-        push 9 /* mov edi, '\n' */
-        pop edi
-        inc edi
     >>> print shellcraft.i386.mov('al', 'ax').rstrip()
         /* moving ax into al, but this is a no-op */
-    >>> print shellcraft.i386.mov('al','ax').rstrip()
-        /* moving ax into al, but this is a no-op */
-    >>> print shellcraft.i386.mov('esp', 'esp').rstrip()
-        /* moving esp into esp, but this is a no-op */
+    >>> print shellcraft.i386.mov('bl', 'ax').rstrip()
+        mov bl, al
     >>> print shellcraft.i386.mov('ax', 'bl').rstrip()
         movzx ax, bl
     >>> print shellcraft.i386.mov('eax', 1).rstrip()
         push 0x1
         pop eax
-    >>> print shellcraft.i386.mov('eax', 1, stack_allowed=False).rstrip()
-        xor eax, eax
-        mov al, 0x1
     >>> print shellcraft.i386.mov('eax', 0xdead00ff).rstrip()
-        mov eax, 0x1010101 /* mov eax, 0xdead00ff */
+        mov eax, 0x1010101
         xor eax, 0xdfac01fe
     >>> print shellcraft.i386.mov('eax', 0xc0).rstrip()
         xor eax, eax
         mov al, 0xc0
     >>> print shellcraft.i386.mov('eax', 0xc000).rstrip()
-        xor eax, eax /* mov eax, 0xc000 */
+        xor eax, eax
         mov ah, 0xc0
-    >>> print shellcraft.i386.mov('edi', 0xc000).rstrip()
-        mov edi, 0x1010101 /* mov edi, 0xc000 */
-        xor edi, 0x101c101
     >>> print shellcraft.i386.mov('eax', 0xc0c0).rstrip()
         xor eax, eax
         mov ax, 0xc0c0
-    >>> print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
+    >>> with context.local(os = 'linux'):
+    ...     print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
         push 0xb
         pop eax
     >>> with context.local(os = 'freebsd'):
     ...     print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
         push 0x3b
         pop eax
-    >>> print shellcraft.i386.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
+    >>> with context.local(os = 'linux'):
+    ...     print shellcraft.i386.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
         push 0x7
         pop eax
 
@@ -83,6 +71,16 @@ Args:
   stack_allowed (bool): Can the stack be used?
 </%docstring>
 <%
+regs = [['eax', 'ax', 'ah', 'al'],
+        ['ebx', 'bx', 'bh', 'bl'],
+        ['ecx', 'cx', 'ch', 'cl'],
+        ['edx', 'dx', 'dh', 'dl'],
+        ['edi', 'di'],
+        ['esi', 'si'],
+        ['ebp', 'bp'],
+        ['esp', 'sp'],
+        ]
+
 def okay(s):
     return '\0' not in s and '\n' not in s
 
@@ -92,103 +90,84 @@ def pretty(n):
     else:
         return hex(n)
 
-src_name = src
-if not isinstance(src, (str, tuple)):
-    src_name = pretty(src)
+all_regs, sizes, bigger, smaller = misc.register_sizes(regs, [32, 16, 8, 8])
 
-if not get_register(dest):
-    log.error('%r is not a register' % dest)
-
-dest = get_register(dest)
-
-if dest.size > 32 or dest.is64bit:
-    log.error("cannot use %s on i386" % dest)
-
-if get_register(src):
-    src = get_register(src)
-
-    if src.is64bit:
-        log.error("cannot use %s on i386" % src)
-
-    if dest.size < src.size and src.name not in dest.bigger:
-        log.error("cannot mov %s, %s: dddest is smaller than src" % (dest, src))
-else:
-    with ctx.local(arch = 'i386'):
-        src = constants.eval(src)
-
-    if not dest.fits(src):
-        log.error("cannot mov %s, %r: dest is smaller than src" % (dest, src))
-
-    src_size = bits_required(src)
-
-    # Calculate the packed version
-    srcp = packing.pack(src, dest.size)
-
-    # Calculate the unsigned and signed versions
-    srcu = packing.unpack(srcp, dest.size, sign=False)
-    srcs = packing.unpack(srcp, dest.size, sign=True)
-
-    # Check to see if the value is negatable
-    negatable = not okay(packing.pack(src, 'all')) \
-                and okay(fiddling.xor(packing.pack(src, 'all'), '\xff'))
-%>\
-% if is_register(src):
-    % if src == dest:
-    /* moving ${src} into ${dest}, but this is a no-op */
-    % elif src.name in dest.bigger:
-    /* moving ${src} into ${dest}, but this is a no-op */
-    % elif dest.size > src.size:
-    movzx ${dest}, ${src}
-    % else:
-    mov ${dest}, ${src}
-    % endif
+if isinstance(src, (str, unicode)):
+    src = src.strip()
+    if src.lower() in all_regs:
+        src = src.lower()
+    else:
+        with ctx.local(arch = 'i386'):
+            try:
+                src = constants.eval(src)
+            except (AttributeError, ValueError):
+                log.error("Could not figure out the value of %r" % src)
+                return
+%>
+% if dest not in all_regs:
+   <% log.error('%s is not a register' % str(dest)) %>\
 % elif isinstance(src, (int, long)):
-## Special case for zeroes
+    <%
+     if src >= 2**sizes[dest] or src < -(2**(sizes[dest]-1)):
+         log.error('Number 0x%x does not fit into %s' % (src, dest))
+         return
+
+     # Calculate the unsigned and signed versions
+     srcu = src & (2 ** sizes[dest] - 1)
+     srcs = srcu - 2 * (srcu & (2 ** (sizes[dest] - 1)))
+
+     # Calculate the packed version
+     srcp = packing.pack(srcu, sizes[dest], 'little', False)
+    %>\
     % if src == 0:
         xor ${dest}, ${dest}
-## Special case for *just* a newline
-    % elif stack_allowed and dest.size == 32 and src == 10:
-        ${i386.mov(dest, 9)}
+    % elif src == 10 and stack_allowed and sizes[dest] == 32:
+        push 9
+        pop ${bigger[dest][0]}
         inc ${dest}
-## Can we push/pop it?
-## This is shorter than a `mov` and has a better (more ASCII) encoding.
-## Note there are two variants for PUSH IMM32 and PUSH IMM8
-    % elif stack_allowed and dest.size == 32 and okay(srcp):
-        push ${pretty(src)}
+    % elif stack_allowed and sizes[dest] == 32 and -128 <= srcs <= 127 and okay(srcp[0]):
+        push ${pretty(srcs)}
         pop ${dest}
-    % elif stack_allowed and dest.size == 32 and  -127 <= srcs < 128 and okay(srcp[0]):
-        push ${pretty(src)}
-        pop ${dest}
-## Easy case, everybody is happy
     % elif okay(srcp):
         mov ${dest}, ${pretty(src)}
-## If it's an IMM8, we can use the 8-bit register
-    % elif 0 <= srcu < 2**8 and okay(srcp[0]) and dest.sizes[8]:
+    % elif 0 <= srcu < 2**8 and okay(srcp[0]) and sizes[smaller[dest][-1]] == 8:
         xor ${dest}, ${dest}
-        mov ${dest.sizes[8]}, ${pretty(srcu)}
-## If it's an IMM16, but there's nothing in the lower 8 bits,
-## we can use the high-8-bits register.
-## However, we must check that it exists.
-    % elif srcu == (srcu & 0xff00) and okay(srcp[1]) and dest.ff00:
-        xor ${dest}, ${dest} /* mov ${dest}, ${pretty(src)} */
-        mov ${dest.ff00}, ${pretty(srcu >> 8)}
-## If it's an IMM16, use the 16-bit register
-    % elif 0 <= srcu < 2**16 and okay(srcp[:2]) and dest.sizes[16]:
+        mov ${smaller[dest][-1]}, ${pretty(srcu)}
+    % elif srcu == srcu & 0xff00 and okay(srcp[1]) and sizes[smaller[dest][-2]] == 8:
         xor ${dest}, ${dest}
-        mov ${dest.sizes[16]}, ${pretty(src)}
-## Special case for negatable values
-    %  elif negatable:
-        ${i386.mov(dest, (0 - src) & 0xffffffff)}
-        neg ${dest}
-## We couldn't find a way to make things work out, so just do
-## the XOR trick.
+        mov ${smaller[dest][-2]}, ${pretty(srcu >> 8)}
+    % elif 0 <= srcu < 2**16 and okay(srcp[:2]) and sizes[smaller[dest][0]] == 16:
+        xor ${dest}, ${dest}
+        mov ${smaller[dest][0]}, ${pretty(src)}
     % else:
         <%
         a,b = fiddling.xor_pair(srcp, avoid = '\x00\n')
-        a = hex(packing.unpack(a, dest.size))
-        b = hex(packing.unpack(b, dest.size))
+        a = hex(packing.unpack(a, sizes[dest]))
+        b = hex(packing.unpack(b, sizes[dest]))
         %>\
-        mov ${dest}, ${a} /* mov ${dest}, ${src_name} */
+        mov ${dest}, ${a}
         xor ${dest}, ${b}
     % endif
+% elif src in all_regs:
+    % if src == dest or src in bigger[dest] or src in smaller[dest]:
+        /* moving ${src} into ${dest}, but this is a no-op */
+    % elif sizes[dest] == sizes[src]:
+        mov ${dest}, ${src}
+    % elif sizes[dest] > sizes[src]:
+        movzx ${dest}, ${src}
+    % else:
+        <% done = False %>\
+        % for r in reversed(smaller[src]):
+            % if sizes[r] == sizes[dest]:
+                mov ${dest}, ${r}
+                <% done = True %>\
+                <% break %>\
+            % endif
+        % endfor
+        % if not done:
+            <% log.error('Register %s could not be moved into %s' % (src, dest)) %>\
+        % endif
+    % endif
+% else:
+    <% log.error('%s is neither a register nor an immediate' % src) %>\
 % endif
