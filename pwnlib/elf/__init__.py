@@ -22,7 +22,7 @@ log = getLogger(__name__)
 __all__ = ['load', 'ELF'] + sorted(filter(lambda x: not x.startswith('_'), datatypes.__dict__.keys()))
 
 def load(*args, **kwargs):
-    """Compatibility wrapper for binjitsu v1"""
+    """Compatibility wrapper for pwntools v1"""
     return ELF(*args, **kwargs)
 
 # Monkey-patch some things inside elftools to make life easier
@@ -74,13 +74,8 @@ class ELF(ELFFile):
 
         super(ELF,self).__init__(self.mmap)
 
-        self.path     = os.path.abspath(path)
-
-
-        # Fix difference between elftools and binjitsu
+        self.path = os.path.abspath(path)
         self.arch = self.get_machine_arch().lower()
-        if self.arch == 'x64':
-            self.arch = 'amd64'
 
         # Check endianness
         self.endian = {
@@ -110,6 +105,18 @@ class ELF(ELFFile):
 
     def __repr__(self):
         return "ELF(%r)" % self.path
+
+    def get_machine_arch(self):
+        return {
+            'EM_X86_64': 'amd64',
+            'EM_386' :'i386',
+            'EM_486': 'i386',
+            'EM_ARM': 'arm',
+            'EM_AARCH64': 'aarch64',
+            'EM_MIPS': 'mips',
+            'EM_PPC': 'powerpc',
+            'EM_SPARC32PLUS': 'sparc'
+        }.get(self['e_machine'], self['e_machine'])
 
     @property
     def entry(self):
@@ -301,9 +308,10 @@ class ELF(ELFFile):
 
         # Map architecture: offset, multiplier
         header_size, entry_size = {
-            'x86':   (0x10, 0x10),
+            'i386':   (0x10, 0x10),
             'amd64': (0x10, 0x10),
-            'arm':   (0x14, 0xC)
+            'arm':   (0x14, 0xC),
+            'aarch64': (0x20, 0x20),
         }[self.arch]
 
 
