@@ -8,6 +8,5 @@ install:
   - python -c 'from pwn import *; print pwnlib.term.term_mode' NOTERM
   - python -c 'from pwn import *; print pwnlib.term.term_mode' NOTERM
   - python -c 'from pwn import *; print pwnlib.term.term_mode' NOTERM
-  - isort --recursive --check .
 
 script: PWNLIB_NOTERM=1 make -C docs doctest
