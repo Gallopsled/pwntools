@@ -1,42 +1,41 @@
 <% from pwnlib.shellcraft import common %>
+<% from pwnlib.shellcraft import amd64 %>
 <% from socket import htons %>
 <%page args="port = None"/>
 <%docstring>
 Args: port (defaults to any port)
     Finds a socket, which is connected to the specified port.
-    Leaves socket in RSI.
+    Leaves socket in RDI.
 </%docstring>
 <%
   findpeer = common.label("findpeer")
   looplabel = common.label("loop")
 %>
+
 ${findpeer}:
-    push -1
-    push SYS_socketcall_getpeername
-    mov ebp, esp
-    pop ebx
-    pop esi
+    /* File descriptor in rdi */
+    ${amd64.mov('rdi', -1)}
+    /* struct sockaddr * in rsi */
+    lea rsi, [rsp+8]
 
 ${looplabel}:
-    push SYS_socketcall
-    pop eax
+    /* Next file descriptor */
+    inc rdi
+    /* See if it is a valid socket */
+    ${amd64.linux.syscall('SYS_getpeername', 'rdi', 'rsi', 'rsp')}
 
-    inc esi
-    lea ecx, [esp-32]
-
-    push 4
-    pushad
-
-    int 0x80
-% if port == None:
+    /* Was it successful? */
     test eax, eax
-    popad
-    pop edx
+
+    /* No? Try the next */
     jnz ${looplabel}
-% else:
-    popad
-    pop edx
-    shr eax, 16
+
+%if not port is None:
+    /* Check if port is right */
+    int3
+    lea rax, [rsp + 10]
+    mov ax, [rax]
     cmp ax, ${htons(int(port))}
     jne ${looplabel}
 %endif
+    /* Socket found, it is in RDI */
