@@ -101,6 +101,10 @@ class process(tube):
         >>> p.sendline('hello')
         >>> p.recvline()
         'hello\n'
+
+        >>> p = process(['python','-c','open("/dev/tty","wb").write("stack smashing detected")'])
+        >>> p.recv()
+        'stack smashing detected'
     """
 
     #: `subprocess.Popen` object
@@ -135,7 +139,7 @@ class process(tube):
                  stderr = STDOUT,
                  level = None,
                  close_fds = True,
-                 preexec_fn = None):
+                 preexec_fn = lambda: None):
         super(process, self).__init__(timeout, level = level)
 
         if not shell:
@@ -143,11 +147,11 @@ class process(tube):
 
         stdin, stdout, stderr, master = self._handles(stdin, stdout, stderr)
 
-        self.executable = self.program = executable
-        self.argv       = argv
-        self.env        = env
-        self.cwd        = cwd or os.path.curdir
-        self.preexec_fn = preexec_fn
+        self.executable   = self.program = executable
+        self.argv         = argv
+        self.env          = env
+        self.cwd          = cwd or os.path.curdir
+        self.preexec_user = preexec_fn
 
         message = "Starting program %r" % self.program
 
@@ -178,8 +182,8 @@ class process(tube):
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
     def preexec_fn(self):
-        os.setpgrp()
-        self.preexec_fn and preexec_fn()
+        self.__pty_make_controlling_tty(1)
+        self.preexec_user()
 
     @staticmethod
     def _validate(cwd, executable, argv, env):
@@ -427,3 +431,49 @@ class process(tube):
 
         if False not in [self.proc.stdin.closed, self.proc.stdout.closed]:
             self.close()
+
+    def __pty_make_controlling_tty(self, tty_fd):
+        '''This makes the pseudo-terminal the controlling tty. This should be
+        more portable than the pty.fork() function. Specifically, this should
+        work on Solaris. '''
+
+        child_name = os.ttyname(tty_fd)
+
+        # Disconnect from controlling tty. Harmless if not already connected.
+        try:
+            fd = os.open("/dev/tty", os.O_RDWR | os.O_NOCTTY)
+            if fd >= 0:
+                os.close(fd)
+        # which exception, shouldnt' we catch explicitly .. ?
+        except OSError:
+            # Already disconnected. This happens if running inside cron.
+            pass
+
+        os.setsid()
+
+        # Verify we are disconnected from controlling tty
+        # by attempting to open it again.
+        try:
+            fd = os.open("/dev/tty", os.O_RDWR | os.O_NOCTTY)
+            if fd >= 0:
+                os.close(fd)
+                raise Exception('Failed to disconnect from ' +
+                    'controlling tty. It is still possible to open /dev/tty.')
+        # which exception, shouldnt' we catch explicitly .. ?
+        except OSError:
+            # Good! We are disconnected from a controlling tty.
+            pass
+
+        # Verify we can open child pty.
+        fd = os.open(child_name, os.O_RDWR)
+        if fd < 0:
+            raise Exception("Could not open child pty, " + child_name)
+        else:
+            os.close(fd)
+
+        # Verify we now have a controlling tty.
+        fd = os.open("/dev/tty", os.O_WRONLY)
+        if fd < 0:
+            raise Exception("Could not open controlling tty, /dev/tty")
+        else:
+            os.close(fd)
