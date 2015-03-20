@@ -17,7 +17,8 @@ ${findpeer}:
     ${amd64.mov('rdi', -1)}
     /* struct sockaddr * in rsi */
     mov rsi, rsp
-    push 32
+    /* Size of address structure */
+    ${amd64.push(32)}
 
 ${looplabel}:
     /* Next file descriptor */
