@@ -37,4 +37,6 @@ class module(ModuleType):
 tether = sys.modules[__name__]
 
 # Create the module structure
-sys.modules[__name__] = module(['amd64', 'arm', 'i386', 'mips', 'thumb'])
+sys.modules[__name__] = module(['amd64', 'arm', 'i386', 'mips', 'thumb',
+                                'alpha', 'powerpc', 'powerpc64', 'sparc',
+                                'sparc64', 's390', 's390x', 'ia64'])
