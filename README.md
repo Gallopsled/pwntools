@@ -54,6 +54,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 # Contact
 If you have any questions not worthy of a [bug report](https://github.com/Gallopsled/pwntools/issues), feel free to join us
-at [`#gallopsled` on Freenode](irc://irc.freenode.net/gallopsled) and ask away.
-Click [here](https://kiwiirc.com/client/irc.freenode.net/gallopsled) to connect.
+at [`#pwntools` on Freenode](irc://irc.freenode.net/pwntools) and ask away.
+Click [here](https://kiwiirc.com/client/irc.freenode.net/pwntools) to connect.
 
