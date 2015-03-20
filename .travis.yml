@@ -4,6 +4,7 @@ cache:
     - pip
     - directories:
         - usr
+        - ~/virtualenv/python2.7.9/lib/python2.7/site-packages/
 python:
   - "2.7"
 before_install:
