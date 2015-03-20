@@ -7,18 +7,29 @@ local_deb_extract()
     rm -f *.tar.gz *deb*
 }
 
+get_binutils()
+{
+    BINUTILS_PREFIX='https://launchpad.net/~pwntools/+archive/ubuntu/binutils/+files/binutils-'
+    BINUTILS_SUFFIX='-linux-gnu_2.22-6ubuntu1.1cross0.11pwntools12~precise_amd64.deb'
+    local_deb_extract "${BINUTILS_PREFIX}${1}${BINUTILS_SUFFIX}"
+}
+
 setup_travis()
 {
-    local_deb_extract https://launchpad.net/~pwntools/+archive/ubuntu/binutils/+files/binutils-arm-linux-gnu_2.22-6ubuntu1.1cross0.11pwntools12~precise_amd64.deb
-    local_deb_extract https://launchpad.net/~pwntools/+archive/ubuntu/binutils/+files/binutils-mips-linux-gnu_2.22-6ubuntu1.1cross0.11pwntools12~precise_amd64.deb
-    local_deb_extract https://launchpad.net/~pwntools/+archive/ubuntu/binutils/+files/binutils-powerpc-linux-gnu_2.22-6ubuntu1.1cross0.11pwntools12~precise_amd64.deb
-    local_deb_extract http://launchpadlibrarian.net/96008040/binutils-multiarch_2.22-6ubuntu1_amd64.deb
     export PATH=$PWD/usr/bin:$PATH
     export LD_LIBRARY_PATH=$PWD/usr/lib
 
+    if [ ! -d usr/bin ]; 
+    then
+        which arm-linux-as     || get_binutils arm
+        which mips-linux-as    || get_binutils mips
+        which powerpc-linux-as || get_binutils powerpc
+        local_deb_extract http://mirrors.mit.edu/ubuntu/ubuntu/pool/universe/b/binutils/binutils-multiarch_2.22-6ubuntu1_amd64.deb
+    fi
+
     pushd usr/lib
-    ln -s libbfd-2.22-multiarch.so libbfd-2.22.so
-    ln -s libopcodes-2.22-multiarch.so libopcodes-2.22.so
+    ln -sf libbfd-2.22-multiarch.so libbfd-2.22.so
+    ln -sf libopcodes-2.22-multiarch.so libopcodes-2.22.so
     popd
 
     which arm-linux-gnu-as
@@ -48,6 +59,3 @@ elif [[ "$(uname)" == "Darwin" ]]; then
 elif [[ "$(uname)" == "Linux" ]]; then
     setup_linux
 fi
-
-pip install --upgrade -e .
-pip install -r docs/requirements.txt
