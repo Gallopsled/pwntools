@@ -25,6 +25,7 @@ setup_travis()
         which mips-linux-as    || get_binutils mips
         which powerpc-linux-as || get_binutils powerpc
         local_deb_extract http://mirrors.mit.edu/ubuntu/ubuntu/pool/universe/b/binutils/binutils-multiarch_2.22-6ubuntu1_amd64.deb
+        rm -rf usr/share
     fi
 
     pushd usr/lib
