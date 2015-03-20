@@ -504,7 +504,7 @@ class ssh(Timeout, Logger):
 
         Examples:
             >>> s =  ssh(host='example.pwnme',
-            ...         user='demouser',
+            ...         user='travis',
             ...         password='demopass')
             >>> sh = s.shell('/bin/sh')
             >>> sh.sendline('echo Hello; exit')
@@ -566,7 +566,7 @@ class ssh(Timeout, Logger):
 
         Examples:
             >>> s = ssh(host='example.pwnme',
-            ...         user='demouser',
+            ...         user='travis',
             ...         password='demopass')
             >>> sh = s.process('sh', env={'PS1':''})
             >>> sh.sendline('echo Hello; exit')
@@ -723,7 +723,7 @@ os.execve(exe, argv, env)
 
         Examples:
             >>> s =  ssh(host='example.pwnme',
-            ...         user='demouser',
+            ...         user='travis',
             ...         password='demopass')
             >>> py = s.run('python -i')
             >>> _ = py.recvuntil('>>> ')
@@ -750,7 +750,7 @@ os.execve(exe, argv, env)
 
         Examples:
             >>> s =  ssh(host='example.pwnme',
-            ...         user='demouser',
+            ...         user='travis',
             ...         password='demopass')
             >>> print s.run_to_end('echo Hello; exit 17')
             ('Hello\n', 17)
@@ -775,7 +775,7 @@ os.execve(exe, argv, env)
             >>> from pwn import *
             >>> l = listen()
             >>> s =  ssh(host='example.pwnme',
-            ...         user='demouser',
+            ...         user='travis',
             ...         password='demopass')
             >>> a = s.connect_remote(s.host, l.lport)
             >>> b = l.wait_for_connection()
@@ -798,7 +798,7 @@ os.execve(exe, argv, env)
 
             >>> from pwn import *
             >>> s =  ssh(host='example.pwnme',
-            ...         user='demouser',
+            ...         user='travis',
             ...         password='demopass')
             >>> l = s.listen_remote()
             >>> a = remote(s.host, l.port)
@@ -816,7 +816,7 @@ os.execve(exe, argv, env)
         Examples:
 
             >>> s =  ssh(host='example.pwnme',
-            ...         user='demouser',
+            ...         user='travis',
             ...         password='demopass')
             >>> print s['echo hello']
             hello
@@ -829,7 +829,7 @@ os.execve(exe, argv, env)
         Examples:
 
             >>> s =  ssh(host='example.pwnme',
-            ...         user='demouser',
+            ...         user='travis',
             ...         password='demopass')
             >>> print repr(s('echo hello'))
             'hello'
@@ -842,12 +842,12 @@ os.execve(exe, argv, env)
         Examples:
 
             >>> s =  ssh(host='example.pwnme',
-            ...         user='demouser',
+            ...         user='travis',
             ...         password='demopass')
             >>> s.echo('hello')
             'hello'
             >>> s.whoami()
-            'demouser'
+            'travis'
             >>> s.echo(['huh','yay','args'])
             'huh yay args'
         """
@@ -875,7 +875,7 @@ os.execve(exe, argv, env)
         Example:
 
             >>> s =  ssh(host='example.pwnme',
-            ...         user='demouser',
+            ...         user='travis',
             ...         password='demopass')
             >>> s.connected()
             True
@@ -1013,7 +1013,7 @@ os.execve(exe, argv, env)
             >>> with file('/tmp/bar','w+') as f:
             ...     f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
-            ...         user='demouser',
+            ...         user='travis',
             ...         password='demopass',
             ...         cache=False)
             >>> s.download_data('/tmp/bar')
@@ -1099,7 +1099,7 @@ os.execve(exe, argv, env)
 
         Examoles:
             >>> s =  ssh(host='example.pwnme',
-            ...         user='demouser',
+            ...         user='travis',
             ...         password='demopass')
             >>> s.upload_data('Hello, world', '/tmp/upload_foo')
             >>> print file('/tmp/upload_foo').read()
@@ -1278,7 +1278,7 @@ os.execve(exe, argv, env)
 
         Examples:
             >>> s =  ssh(host='example.pwnme',
-            ...         user='demouser',
+            ...         user='travis',
             ...         password='demopass')
             >>> cwd = s.set_working_directory()
             >>> s.ls()

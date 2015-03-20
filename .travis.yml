@@ -1,9 +1,10 @@
+sudo: false
 language: python
 python:
   - "2.7"
 install:
-  - source .travis_install.sh
   - source .travis_ssh_setup.sh
+  - source .travis_install.sh
   - python -c 'from pwn import *; print pwnlib.term.term_mode' NOTERM
   - python -c 'from pwn import *; print pwnlib.term.term_mode' NOTERM
   - python -c 'from pwn import *; print pwnlib.term.term_mode' NOTERM
