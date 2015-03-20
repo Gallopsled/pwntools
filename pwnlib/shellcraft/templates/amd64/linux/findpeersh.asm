@@ -9,5 +9,4 @@ Args: port (defaults to any)
 
 ${linux.findpeer(port)}
 
-${linux.dupsh("rsi")}
-
+${linux.dupsh("rdi")}

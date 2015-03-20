@@ -16,7 +16,8 @@ ${findpeer}:
     /* File descriptor in rdi */
     ${amd64.mov('rdi', -1)}
     /* struct sockaddr * in rsi */
-    lea rsi, [rsp+8]
+    mov rsi, rsp
+    push 32
 
 ${looplabel}:
     /* Next file descriptor */
@@ -32,7 +33,6 @@ ${looplabel}:
 
 %if not port is None:
     /* Check if port is right */
-    int3
     lea rax, [rsp + 10]
     mov ax, [rax]
     cmp ax, ${htons(int(port))}
