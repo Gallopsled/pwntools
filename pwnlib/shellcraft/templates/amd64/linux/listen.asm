@@ -17,7 +17,7 @@
     ${amd64.mov('rdx', 16)}
 %else:
     ${amd64.linux.syscall('SYS_socket', 'AF_INET6', 'SOCK_STREAM', 0)}
-    /* Build sockaddr_in structure */
+    /* Build sockaddr_in6 structure */
     push rdx
     push rdx
     ${amd64.mov('rdx', 'AF_INET6 | (%d << 16)' % htons(port))}
