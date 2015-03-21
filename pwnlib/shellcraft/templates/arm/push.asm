@@ -1,34 +1,16 @@
 <% from pwnlib import constants %>
 <% from pwnlib.util import lists, packing, fiddling %>
-<%page args="string, append_null = True"/>
+<% from pwnlib.shellcraft.arm import mov %>
+<%page args="word"/>
 <%docstring>
-Pushes a DWORD onto the stack.
+Pushes a 32-bit integer onto the stack.  Uses R7 as a temporary register.
 
 Args:
   word (int, str): The word to push
 </%docstring>
-<%
-# Try to get the absolute value of 'word' to determine if it can be pushed
-# Guess at register names
-word =
-
-with ctx.local(arch = 'amd64'):
-    try:
-        src = constants.eval(src)
-    except:
-        log.error("Could not figure out the value of %r" % src)
-
-if not isinstance(word, int):
-    try:
-        value =
-
-if isinstance(word, int):
-    if word <= 0xffff:
-        print "push %#x" % word
-    elif isinstance(word, int):
-    print push(word)
-
-%>
-
-${mov('r0',word)}
-push r0
+% if isinstance(word, int) and word < 0xffff:
+    push ${hex(word)}
+% else:
+    ${mov('r7',word)}
+    push {r7}
+% endif
