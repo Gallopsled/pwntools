@@ -39,10 +39,9 @@ ${looplabel}:
 
     /* Update remaining count and write-address */
     add r1, r1, r0
-    sub r5, r5, r0
+    subs r5, r5, r0
 
     /* Anything left to read */
-    cmp r5, #0
     bne ${looplabel}
 
     /* Jump to next stage */
