@@ -10,7 +10,6 @@
 <%
     stager = common.label("stager")
     looplabel = common.label("read_loop")
-    errlabel = common.label("error")
 %>
 ${stager}:
     /* Save socket */
