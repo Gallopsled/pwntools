@@ -40,7 +40,7 @@ setup_travis()
 
 setup_linux()
 {
-    sudo apt-get install -y software-properties-common pwgen
+    sudo apt-get install -y software-properties-common
     sudo apt-add-repository --yes ppa:pwntools/binutils
     sudo apt-get update
     sudo apt-get install binutils-arm-linux-gnu binutils-mips-linux-gnu binutils-powerpc-linux-gnu
