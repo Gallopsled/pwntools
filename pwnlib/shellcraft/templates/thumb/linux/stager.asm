@@ -45,5 +45,4 @@ ${looplabel}:
     bne ${looplabel}
 
     /* Jump to next stage */
-    ${thumb.mov('r0', 'r8')}
-    bx r0
+    bx r8
