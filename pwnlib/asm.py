@@ -92,6 +92,7 @@ def which_binutils(util, **kwargs):
         arches = [arch] + {
             'thumb':  ['arm',    'aarch64'],
             'i386':   ['x86_64', 'amd64'],
+            'i686':   ['x86_64', 'amd64'],
             'amd64':  ['x86_64', 'i386'],
         }.get(arch, [])
 
