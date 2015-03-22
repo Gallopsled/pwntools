@@ -52,9 +52,6 @@ setup(
     data_files           = [('',
                              ['LICENSE-pwntools.txt',
                              ]),
-                            ('/etc/bash_completion.d',
-                             ['extra/bash_completion.d/shellcraft',
-                             ])
                             ],
     package_data         = {
         'pwnlib': [
