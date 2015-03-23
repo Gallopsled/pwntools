@@ -99,6 +99,7 @@ def which_binutils(util, **kwargs):
         # If one of the candidate architectures matches the native
         # architecture, use that as a last resort.
         machine = platform.machine()
+        machine = 'i386' if machine == 'i686' else machine
         try:
             with context.local(arch = machine):
                 if context.arch in arches:
