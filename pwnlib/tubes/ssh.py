@@ -514,7 +514,7 @@ class ssh(Timeout, Logger):
         return self.run(shell, tty, timeout = timeout)
 
     def process(self, argv=None, executable=None, tty = True, cwd = None, env = None, timeout = Timeout.default, run = True,
-                stdin=None, stdout=None, stderr=None):
+                stdin=0, stdout=1, stderr=2):
         r"""
         Executes a process on the remote server, in the same fashion
         as pwnlib.tubes.process.process.
@@ -552,7 +552,7 @@ class ssh(Timeout, Logger):
                 If an integer, replace stdin with the numbered file descriptor.
                 If a string, a open a file with the specified path and replace
                 stdin with its file descriptor.  May also be one of ``sys.stdin``,
-                ``sys.stdout``, ``sys.stderr``.
+                ``sys.stdout``, ``sys.stderr``.  If ``None``, the file descriptor is closed.
             stdout(int, str):
                 See ``stdin``.
             stderr(int, str):
@@ -667,13 +667,12 @@ if sys.argv[-1] == 'check':
 
 for fd, newfd in {0: %r, 1: %r, 2:%r}.items():
     if newfd is None:
-        continue
-    os.close(fd)
-    if isinstance(newfd, str):
-        newfd = os.open(newfd, os.O_RDONLY if fd == 0 else (os.O_RDWR|os.O_CREAT))
-    if newfd != fd:
+        close(fd)
+    elif isinstance(newfd, str):
+        os.close(fd)
+        os.open(newfd, os.O_RDONLY if fd == 0 else (os.O_RDWR|os.O_CREAT))
+    elif isinstance(newfd, int) and newfd != fd:
         os.dup2(fd, newfd)
-        os.close(newfd)
 
 os.execve(exe, argv, env)
 """ % (executable, argv, env, cwd, stdin, stdout, stderr)
