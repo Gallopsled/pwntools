@@ -589,6 +589,10 @@ class ssh(Timeout, Logger):
             >>> p.send('hello')
             >>> p.recv()
             'hello\n'
+            >>> s.process(['/bin/echo', 'hello']).recvall()
+            'hello\n'
+            >>> s.process(['/bin/echo', 'hello'], stdout='/dev/null').recvall()
+            ''
 
         """
         if not argv and not executable:
@@ -666,9 +670,10 @@ for fd, newfd in {0: %r, 1: %r, 2:%r}.items():
         continue
     os.close(fd)
     if isinstance(newfd, str):
-        os.open(newfd, 'wb+')
-    elif isinstance(newfd, int):
-        os.dup(newfd)
+        newfd = os.open(newfd, os.O_RDONLY if fd == 0 else (os.O_RDWR|os.O_CREAT))
+    if newfd != fd:
+        os.dup2(fd, newfd)
+        os.close(newfd)
 
 os.execve(exe, argv, env)
 """ % (executable, argv, env, cwd, stdin, stdout, stderr)
