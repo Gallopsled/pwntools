@@ -27,7 +27,7 @@ To get you started, we've provided some example solutions for past CTF challenge
 
 # Installation
 
-binjitsu is best supported on Ubuntu 12.04 and 14.04, but most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).
+binjitsu is best supported on 64-bit Ubuntu 12.04 and 14.04, but most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).
 
 Most of the functionality of binjitsu is self-contained and Python-only.  You should be able to get running quickly with
 
