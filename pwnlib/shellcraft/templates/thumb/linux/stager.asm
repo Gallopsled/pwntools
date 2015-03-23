@@ -15,7 +15,6 @@ ${stager}:
     /* Save socket */
     ${thumb.mov('r6', sock)}
 
-    /* mmap(0, size, PROT_EXEC | PROT_WRITE | PROT_READ, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0) */
     ${arm.syscall('SYS_mmap2', 0, size, 'PROT_EXEC | PROT_WRITE | PROT_READ', 'MAP_ANONYMOUS | MAP_PRIVATE', -1, 0)}
 
     /* Save allocated memory address */
