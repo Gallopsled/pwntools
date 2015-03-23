@@ -170,7 +170,7 @@ else:
 ## We can also leverage the sign-extension to our advantage.
 ## For example, 0xdeadbeef is sign-extended to 0xffffffffdeadbeef.
 ## Want EAX=0xdeadbeef, we don't care that RAX=0xfff...deadbeef.
-    % elif stack_allowed and dest.size == 32 and srcu << 2**32 and okay(srcp[:4]):
+    % elif stack_allowed and dest.size == 32 and srcu < 2**32 and okay(srcp[:4]):
         push ${pretty(srcs)}
         pop ${dest.native64}
 ## Target value is an 8-bit value, use a 8-bit mov
