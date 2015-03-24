@@ -39,16 +39,26 @@ Disassembly
     '   0:   b8 0b 00 00 00          mov    eax,0xb'
 
 """
-import tempfile, subprocess, shutil, tempfile, errno, platform, re
+import errno
+import os
+import platform
+import re
+import shutil
+import string
+import subprocess
+import sys
+import tempfile
 from collections import defaultdict
-from os import path, environ
 from glob import glob
-from .log import getLogger
+from os import environ
+from os import path
+
 from .context import context
+from .log import getLogger
 
 log = getLogger(__name__)
 
-__all__ = ['asm', 'cpp', 'disasm', 'which_binutils']
+__all__ = ['asm', 'cpp', 'disasm', 'make_elf']
 
 _basedir = path.split(__file__)[0]
 _incdir  = path.join(_basedir, 'data', 'includes')
@@ -105,7 +115,7 @@ def which_binutils(util, **kwargs):
                 else:       pattern = '%s*linux*-%s' % (arch,gutil)
 
                 for dir in environ['PATH'].split(':'):
-                    res = glob(path.join(dir, pattern))
+                    res = sorted(glob(path.join(dir, pattern)))
                     if res:
                         return res[0]
 
@@ -127,22 +137,24 @@ def _assembler():
         'little': '-EL'
     }[context.endianness]
 
+    B = '-%s' % context.bits
+
     assemblers = {
-        'i386'   : [gas, '--32'],
-        'amd64'  : [gas, '--64'],
+        'i386'   : [gas, B],
+        'amd64'  : [gas, B],
 
         # Most architectures accept -EL or -EB
         'thumb'  : [gas, '-mthumb', E],
         'arm'    : [gas, E],
         'aarch64': [gas, E],
-        'mips'   : [gas, E],
-        'mips64' : [gas, E],
-        'sparc':   [gas, E],
-        'sparc64': [gas, E],
+        'mips'   : [gas, E, B],
+        'mips64' : [gas, E, B],
+        'sparc':   [gas, E, B],
+        'sparc64': [gas, E, B],
 
-        # Powerpc wants -mbig or -mlittle
-        'powerpc':   [gas, '-m%s' % context.endianness],
-        'powerpc64': [gas, '-m%s' % context.endianness],
+        # Powerpc wants -mbig or -mlittle, and -mppc32 or -mppc64
+        'powerpc':   [gas, '-m%s' % context.endianness, '-mppc%s' % context.bits],
+        'powerpc64': [gas, '-m%s' % context.endianness, '-mppc%s' % context.bits],
 
         # ia64 only accepts -mbe or -mle
         'ia64':    [gas, '-m%ce' % context.endianness[0]]
@@ -224,19 +236,25 @@ def _arch_header():
 
 def _bfdname():
     arch = context.arch
+    E    = context.endianness
 
     bfdnames = {
         'i386'    : 'elf32-i386',
+        'aarch64' : 'elf64-%saarch64' % E,
         'amd64'   : 'elf64-x86-64',
-        'arm'     : 'elf32-littlearm',
-        'thumb'   : 'elf32-littlearm',
-        'mips'    : 'elf32-trad%smips' % context.endianness,
+        'arm'     : 'elf32-%sarm' % E,
+        'thumb'   : 'elf32-%sarm' % E,
+        'mips'    : 'elf32-trad%smips' % E,
+        'mips64'  : 'elf64-trad%smips' % E,
         'alpha'   : 'elf64-alpha',
         'cris'    : 'elf32-cris',
-        'ia64'    : 'elf64-ia64-%s' % context.endianness,
+        'ia64'    : 'elf64-ia64-%s' % E,
         'm68k'    : 'elf32-m68k',
         'powerpc' : 'elf32-powerpc',
+        'powerpc64' : 'elf64-powerpc',
         'vax'     : 'elf32-vax',
+        'sparc'   : 'elf32-sparc',
+        'sparc64' : 'elf64-sparc',
     }
 
     if arch in bfdnames:
@@ -328,6 +346,79 @@ def cpp(shellcode, **kwargs):
         ]
         return _run(cmd, code).strip('\n').rstrip() + '\n'
 
+elf_template = '''
+.global _start
+.global __start
+.text
+_start:
+__start:
+'''
+
+def make_elf(data, vma = None, strip=True, **kwargs):
+    r"""
+    Builds an ELF file with the specified binary data as its
+    executable code.
+
+    Arguments:
+        data(str): Assembled code
+        vma(int):  Load address for the ELF file
+
+    Examples:
+
+        This example creates an i386 ELF that just does
+        execve('/bin/sh',...).
+
+        >>> context.clear()
+        >>> context.arch = 'i386'
+        >>> context.bits = 32
+        >>> filename = tempfile.mktemp()
+        >>> bin_sh = '6a68682f2f2f73682f62696e89e331c96a0b5899cd80'.decode('hex')
+        >>> data = make_elf(bin_sh)
+        >>> with open(filename,'wb+') as f:
+        ...     f.write(data)
+        ...     f.flush()
+        >>> os.chmod(filename,0777)
+        >>> p = process(filename)
+        >>> p.sendline('echo Hello; exit')
+        >>> p.recvline()
+        'Hello\n'
+    """
+    with context.local(**kwargs):
+        assembler = _assembler()
+        linker    = _linker()
+        code      = elf_template
+        code      += '.string "%s"' % ''.join('\\x%02x' % c for c in bytearray(data))
+        code      += '\n'
+
+        log.debug(code)
+
+        tmpdir    = tempfile.mkdtemp(prefix = 'pwn-asm-')
+        step1     = path.join(tmpdir, 'step1-asm')
+        step2     = path.join(tmpdir, 'step2-obj')
+        step3     = path.join(tmpdir, 'step3-elf')
+
+        try:
+            with open(step1, 'wb+') as f:
+                f.write(code)
+
+            _run(assembler + ['-o', step2, step1])
+
+            load_addr = []
+            if vma is not None:
+                load_addr = ['-Ttext-segment=%#x' % vma]
+
+            _run(linker    + load_addr + ['-N', '-o', step3, step2])
+
+            if strip:
+                _run([which_binutils('objcopy'), '-Sg', step3])
+                _run([which_binutils('strip'), '--strip-unneeded', step3])
+
+            with open(step3, 'r') as f:
+                return f.read()
+        except Exception:
+            log.exception("An error occurred while building an ELF:\n%s" % code)
+        else:
+            shutil.rmtree(tmpdir)
 
 def asm(shellcode, vma = 0, **kwargs):
     r"""asm(code, vma = 0, ...) -> str
@@ -407,7 +498,7 @@ def asm(shellcode, vma = 0, **kwargs):
             with open(step4) as fd:
                 result = fd.read()
 
-        except:
+        except Exception:
             log.exception("An error occurred while assembling:\n%s" % code)
         else:
             shutil.rmtree(tmpdir)
@@ -487,7 +578,7 @@ def disasm(data, vma = 0, **kwargs):
                 log.error('Could not find .text in objdump output:\n%s' % output0)
 
             result = output1[1].strip('\n').rstrip().expandtabs()
-        except:
+        except Exception:
             log.exception("An error occurred while disassembling:\n%s" % data)
         else:
             shutil.rmtree(tmpdir)
