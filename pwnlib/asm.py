@@ -163,6 +163,21 @@ def _assembler():
 
     return assembler
 
+def _linker():
+    ld  = [which_binutils('ld')]
+    bfd = ['--oformat=' + _bfdname()]
+
+    E = {
+        'big':    '-EB',
+        'little': '-EL'
+    }[context.endianness]
+
+    arguments = {
+        'i386': ['-m', 'elf_i386'],
+    }.get(context.arch, [])
+
+    return ld + bfd + [E] + arguments
+
 def _objcopy():
     return [which_binutils('objcopy')]
 
@@ -349,8 +364,9 @@ def asm(shellcode, vma = 0, **kwargs):
 
     with context.local(**kwargs):
         assembler = _assembler()
+        linker    = _linker()
         objcopy   = _objcopy() + ['-j', '.shellcode', '-Obinary']
-        code      = '.org %#x\n' % vma
+        code      = ''
         code      += _arch_header()
         code      += cpp(shellcode)
 
@@ -360,6 +376,7 @@ def asm(shellcode, vma = 0, **kwargs):
         step1     = path.join(tmpdir, 'step1')
         step2     = path.join(tmpdir, 'step2')
         step3     = path.join(tmpdir, 'step3')
+        step4     = path.join(tmpdir, 'step4')
 
         try:
             with open(step1, 'w') as fd:
@@ -367,17 +384,27 @@ def asm(shellcode, vma = 0, **kwargs):
 
             _run(assembler + ['-o', step2, step1])
 
-            if file(step2,'rb').read(4) == '\x7fELF':
+            if not vma:
+                shutil.copy(step2, step3)
+
+            if vma:
+                 _run(linker + ['--section-start=.shellcode=%#x' % vma,
+                                '--entry=%#x' % vma,
+                                '-o', step3, step2])
+
+            elif file(step2,'rb').read(4) == '\x7fELF':
                 # Sanity check for seeing if the output has relocations
                 relocs = subprocess.check_output(
                     [which_binutils('readelf'), '-r', step2]
                 ).strip()
                 if len(relocs.split('\n')) > 1:
                     log.error('Shellcode contains relocations:\n%s' % relocs)
+            else:
+                shutil.copy(step2, step3)
 
-            _run(objcopy + [step2, step3])
+            _run(objcopy + [step3, step4])
 
-            with open(step3) as fd:
+            with open(step4) as fd:
                 result = fd.read()
 
         except:
