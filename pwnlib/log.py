@@ -437,7 +437,8 @@ class Logger(object):
         return self._logger.level
     @level.setter
     def level(self, value):
-        self._logger.level = value
+        with context.local(log_level=value):
+            self._logger.level = context.log_level
 
 
 class Handler(logging.StreamHandler):
