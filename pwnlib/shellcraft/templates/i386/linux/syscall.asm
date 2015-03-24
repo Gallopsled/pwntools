@@ -56,7 +56,7 @@ Example:
         ...               -1, 0).rstrip()
             /* call mmap2(0, 4096, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
             xor ebx, ebx
-            xor ecx, ecx
+            xor ecx, ecx /* mov ecx, 0x1000 */
             mov ch, 0x10
             push 0x7
             pop edx
