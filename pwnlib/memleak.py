@@ -55,7 +55,7 @@ class MemLeak(object):
 
     def struct(self, address, struct):
         """struct(address, struct) => structure object
-        
+
         Leak an entire structure.
 
         Arguments:
@@ -71,7 +71,9 @@ class MemLeak(object):
         return obj
 
     def field(self, address, obj):
-        """call(address, field) a structure field.
+        """field(address, field) => a structure field.
+
+        Leak a field from a structure.
 
         Arguments:
             address(int): Base address to calculate offsets from
