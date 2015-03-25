@@ -32,6 +32,8 @@ To run the test suite, you should be running Ubuntu 12.04 or 14.04, and run the 
 ```sh
 bash .travis_install.sh
 bash .travis_ssh_setup.sh
+pip install -e .
+pip install -r docs/requirements.txt
 cd docs
 PWNLIB_NOTERM=1 make clean doctest
 ```
