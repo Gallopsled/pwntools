@@ -1,4 +1,7 @@
-<% from pwnlib.shellcraft import common %>
+<%
+  from pwnlib.shellcraft import common
+  from pwnlib.shellcraft import i386
+%>
 <%page args="clear_ebx = True, fix_null = False"/>
 <%docstring>Calls mprotect(page, 4096, PROT_READ | PROT_WRITE | PROT_EXEC) for every page.
 
@@ -17,12 +20,7 @@ Args:
     xor ecx, ecx
 %endif
 ${label}:
-    push PROT_READ | PROT_WRITE | PROT_EXEC
-    pop edx
-    push SYS_mprotect
-    pop eax
-    int 0x80
-    xor ecx, ecx
-    mov ch, 0x10
+    ${i386.linux.syscall('SYS_mprotect', 'ebx', 'ecx', 'PROT_READ | PROT_WRITE | PROT_EXEC')}
+    ${i386.linux.mov('ecx', 0x1000)}
     add ebx, ecx
     jnz ${label}
