@@ -184,6 +184,18 @@ def interfaces6(all = False):
     return out
 
 def sockaddr(host, port, network = 'ipv4'):
+    """sockaddr(host, port, network = 'ipv4') -> tuple
+
+    Creates a sockaddr_in or sockaddr_in6 memory buffer for use in shellcode.
+
+    Arguments:
+      host (str): Either an IP address or a hostname to be looked up.
+      port (int): TCP/UDP port.
+      network (str): Either 'ipv4' or 'ipv6'.
+
+    Returns:
+      A tuple containing the sockaddr buffer and the address family.
+"""
     address_family = {'ipv4':socket.AF_INET,'ipv6':socket.AF_INET6}[network]
     
     info = socket.getaddrinfo(host, None, address_family)
