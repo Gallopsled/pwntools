@@ -19,7 +19,7 @@ setup_travis()
     export PATH=$PWD/usr/bin:$PATH
     export LD_LIBRARY_PATH=$PWD/usr/lib
 
-    if [ ! -d usr/bin ]; 
+    if [ ! -d usr/bin ];
     then
         which arm-linux-as     || get_binutils arm
         which mips-linux-as    || get_binutils mips
@@ -40,7 +40,7 @@ setup_travis()
 
 setup_linux()
 {
-    sudo apt-get install -y software-properties-common
+    sudo apt-get install -y software-properties-common openssh-server
     sudo apt-add-repository --yes ppa:pwntools/binutils
     sudo apt-get update
     sudo apt-get install binutils-arm-linux-gnu binutils-mips-linux-gnu binutils-powerpc-linux-gnu
