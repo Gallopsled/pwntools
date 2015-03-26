@@ -1,5 +1,4 @@
 <% from pwnlib.shellcraft import amd64 %>
-<% import socket %>
 <% from pwnlib.util import packing %>
 
 <%page args="host, port, network = 'ipv4'"/>
