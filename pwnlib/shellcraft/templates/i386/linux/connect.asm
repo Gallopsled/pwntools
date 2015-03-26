@@ -1,5 +1,5 @@
 <% from pwnlib.shellcraft import i386 %>
-<% from pwnlib.util import packing %>
+<% from pwnlib.util.net import sockaddr %>
 
 <%page args="host, port, network = 'ipv4'"/>
 <%docstring>
@@ -8,7 +8,7 @@
     Leaves the connected socket in ebp
 </%docstring>
 <%
-    sockaddr, address_family = packing.sockaddr(host, port, network)
+    sockaddr, address_family = sockaddr(host, port, network)
 %>\
 
 /* open new socket */

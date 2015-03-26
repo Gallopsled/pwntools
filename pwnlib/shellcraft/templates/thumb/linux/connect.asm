@@ -1,5 +1,5 @@
 <% from pwnlib.shellcraft import thumb %>
-<% from pwnlib.util import packing %>
+<% from pwnlib.util.net import sockaddr %>
 <%page args="host, port, network='ipv4'"/>
 <%docstring>
     Connects to the host on the specified port.
@@ -7,7 +7,7 @@
     Leaves the connected socket in R6.
 </%docstring>
 <%
-    sockaddr, address_family = packing.sockaddr(host, port, network)
+    sockaddr, address_family = sockaddr(host, port, network)
 %>\
     /* First create socket */
     ${thumb.mov('r7', 'SYS_socket')}
