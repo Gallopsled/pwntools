@@ -33,8 +33,26 @@ Examples:
 from ..context import context
 import struct, sys
 from itertools import product
+import socket
 
 mod = sys.modules[__name__]
+
+def sockaddr(host, port, network = 'ipv4'):
+    address_family = {'ipv4':socket.AF_INET,'ipv6':socket.AF_INET6}[network]
+    
+    info = socket.getaddrinfo(host, None, address_family)
+    host = socket.inet_pton(address_family, info[0][4][0])
+    sockaddr  = p16(address_family)
+    sockaddr += p16(socket.htons(port))
+
+    if network == 'ipv4':
+        sockaddr += host
+        sockaddr = sockaddr.ljust(16, '\x00')
+    else:
+        sockaddr += p32(0)
+        sockaddr += host
+        sockaddr += p32(0)
+    return (sockaddr, address_family)
 
 def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
     """pack(number, word_size = None, endianness = None, sign = None, **kwargs) -> str
