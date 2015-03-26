@@ -54,7 +54,7 @@ Example:
 
 % if isinstance(value, (int,long)):
     /* push ${repr(value_orig)} */
-    ${re.sub(r'^\s*/.*\n', '', amd64.pushstr(packing.pack(value, 64, 'little', True), False), 1)}
+    ${re.sub(r'^\s*/.*\n', '', amd64.pushstr(packing.pack(value), False), 1)}
 % else:
     push ${value}
 % endif
