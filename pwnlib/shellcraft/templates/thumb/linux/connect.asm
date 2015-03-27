@@ -1,6 +1,5 @@
-<% from pwnlib.shellcraft import thumb, common %>
-<% import socket %>
-<% from pwnlib.util import packing %>
+<% from pwnlib.shellcraft import thumb %>
+<% from pwnlib.util.net import sockaddr %>
 <%page args="host, port, network='ipv4'"/>
 <%docstring>
     Connects to the host on the specified port.
@@ -8,23 +7,7 @@
     Leaves the connected socket in R6.
 </%docstring>
 <%
-    if network == 'ipv4':
-        address_family = socket.AF_INET
-    else:
-        address_family = socket.AF_INET6
-    
-    info = socket.getaddrinfo(host, None, address_family)
-    host = socket.inet_pton(address_family, info[0][4][0])
-    sockaddr  = packing.p16(address_family)
-    sockaddr += packing.p16(socket.htons(port))
-
-    if network == 'ipv4':
-        sockaddr += host
-        sockaddr += '\x00' * (16 - len(sockaddr))
-    else:
-        sockaddr += packing.p32(0)
-        sockaddr += host
-        sockaddr += packing.p32(0)
+    sockaddr, address_family = sockaddr(host, port, network)
 %>\
     /* First create socket */
     ${thumb.mov('r7', 'SYS_socket')}

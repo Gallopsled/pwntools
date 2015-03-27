@@ -1,13 +1,15 @@
-<% from pwnlib.shellcraft import common %>
 <% from pwnlib.shellcraft import i386 %>
-<% from socket import htons, inet_aton, gethostbyname %>
-<% from pwnlib.util import packing %>
+<% from pwnlib.util.net import sockaddr %>
 
-<%page args="host, port"/>
+<%page args="host, port, network = 'ipv4'"/>
 <%docstring>
     Connects to the host on the specified port.
+    Network is either 'ipv4' or 'ipv6'.
     Leaves the connected socket in ebp
 </%docstring>
+<%
+    sockaddr, address_family = sockaddr(host, port, network)
+%>\
 
 /* open new socket */
 push SYS_socketcall
@@ -17,21 +19,17 @@ pop ebx
 cdq
 push edx
 push ebx
-push AF_INET
+push ${address_family}
 mov ecx, esp
 int 0x80
 
 /* save opened socket */
 mov ebp, eax
 
-<% ip_addr = gethostbyname(str(host)) %>
-/* ${repr(host)} == ${ip_addr} */
-${i386.pushstr(inet_aton(ip_addr), False)}
+${i386.pushstr(sockaddr, False)}
 
-pushw ${htons(port)}
-pushw AF_INET
 mov ecx, esp
-push 0x10
+push ${len(sockaddr)}
 push ecx
 push eax
 mov ecx, esp
