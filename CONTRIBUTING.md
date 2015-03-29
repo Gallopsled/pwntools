@@ -1,6 +1,6 @@
 # Contributing
 
-We love pull requests!  
+We love pull requests
 To get started, <a href="https://www.clahub.com/agreements/binjitsu/binjitsu">sign the Contributor License Agreement</a>.
 
 Github has a great guide for contributing to open source projects:
