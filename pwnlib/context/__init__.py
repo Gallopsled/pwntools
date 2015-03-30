@@ -5,6 +5,7 @@ Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
 import collections
+import platform
 import logging
 import string
 import sys
@@ -508,6 +509,17 @@ class ContextType(object):
             True
         """
         self._tls._current.clear()
+
+    @property
+    def native(self):
+        arch = context.arch
+        with context.local(arch = platform.machine()):
+            platform_arch = context.arch
+
+            if arch in ('i386', 'amd64') and platform_arch in ('i386', 'amd64'):
+                return True
+
+            return arch == platform_arch
 
     @_validator
     def arch(self, arch):
