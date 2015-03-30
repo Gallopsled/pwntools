@@ -65,7 +65,7 @@ def debug(args, exe=None, execute=None, ssh=None, arch=None):
 
     orig_args = args
 
-    if not arch:
+    if not arch or context.native:
         args = ['gdbserver', 'localhost:0'] + args
     else:
         qemu_port = random.randint(1024, 65535)
@@ -86,7 +86,7 @@ def debug(args, exe=None, execute=None, ssh=None, arch=None):
     with context.local(log_level='debug'):
         gdbserver = execute(args)
 
-    if not arch:
+    if not arch or context.native:
         # Process /bin/bash created; pid = 14366
         # Listening on port 34816
         process_created = gdbserver.recvline()
@@ -118,6 +118,16 @@ def get_gdb_arch(arch):
         'powerpc': 'powerpc:403',
         'powerpc64': 'powerpc:e5500'
     }.get(arch, arch)
+
+
+def run_elf(*a, **kw):
+    e = make_elf(*a, **kw)
+    f = tempfile.mktemp()
+    with open(f, 'wb+') as F:
+        F.write(e)
+        F.flush()
+    os.chmod(f, 0777)
+    return tubes.process.process(f)
 
 
 def attach(target, execute = None, exe = None, arch = None):
