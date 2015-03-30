@@ -144,11 +144,24 @@ def get_register(name):
         return name
     return intel.get(name, None)
 
-def is_register(obj):
-    if isinstance(obj, Register):
-        return True
-    return get_register(obj)
 
+def is_register(sz):
+    sz = str(sz)
+    try:
+        sz = sz.lower()
+        return sz.lower() in {
+        'i386': i386,
+        'amd64': amd64,
+        'powerpc': powerpc,
+        'sparc': sparc,
+        'arm': arm,
+        'aarch64': arm,
+        'thumb': arm,
+        'mips': mips,
+        'mips64': mips
+        }[context.arch]
+    except:
+        return False
 
 def bits_required(value):
     bits  = 0
@@ -161,23 +174,6 @@ def bits_required(value):
         bits += 8
     return bits
 
-
-# def is_register(sz):
-#     try:
-#         sz = sz.lower()
-#         return sz.lower() in {
-#         'i386': i386,
-#         'amd64': amd64,
-#         'powerpc': powerpc,
-#         'sparc': sparc,
-#         'arm': arm,
-#         'aarch64': arm,
-#         'thumb': arm,
-#         'mips': mips,
-#         'mips64': mips
-#         }[context.arch]
-#     except:
-#         return False
 
 def register_size(reg):
     return sizes[reg]
