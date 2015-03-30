@@ -67,6 +67,7 @@ p.add_argument(
                'a', 'asm', 'assembly',
                'p',
                'i', 'hexii',
+               'e', 'elf',
                'default'],
     default = 'default',
     help = 'Output format (default: hex), choose from {r}aw, {s}tring, {c}-style array, {h}ex string, hex{i}i, {a}ssembly code, {p}reprocssed code',
@@ -97,6 +98,20 @@ p.add_argument(
     action='store_true'
 )
 
+p.add_argument(
+    '-b',
+    '--before',
+    help='Insert a debug trap before the code',
+    action='store_true'
+)
+
+p.add_argument(
+    '-a',
+    '--after',
+    help='Insert a debug trap after the code',
+    action='store_true'
+)
+
 def main():
     # Banner must be added here so that it doesn't appear in the autodoc
     # generation for command line tools
@@ -106,12 +121,6 @@ def main():
     if not args.shellcode:
         print '\n'.join(shellcraft.templates)
         exit()
-
-    if args.format == 'default':
-        if sys.stdout.isatty():
-            args.format = 'hex'
-        else:
-            args.format = 'raw'
 
     func = shellcraft
     for attr in args.shellcode.split('.'):
@@ -184,6 +193,13 @@ def main():
     map(common.context_arg, args.shellcode.split('.'))
     code = func(*args.args)
 
+
+    if args.before:
+        code = shellcraft.trap() + code
+    if args.after:
+        code = code + shellcraft.trap()
+
+
     if args.format in ['a', 'asm', 'assembly']:
         print code
         exit()
@@ -192,6 +208,16 @@ def main():
         exit()
 
     code = asm(code)
+
+    if args.format in ['e','elf']:
+        args.format = 'default'
+        code = make_elf(code)
+
+    if args.format == 'default':
+        if sys.stdout.isatty():
+            args.format = 'hex'
+        else:
+            args.format = 'raw'
 
     if args.debug:
         arch = args.shellcode.split('.')[0]
