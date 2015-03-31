@@ -110,6 +110,12 @@ def debug(args, execute=None, exe=None, ssh=None, arch=None):
     if ssh:
         remote <> listener.wait_for_connection()
 
+    # gdbserver outputs a message when a client connects
+    garbage = gdbserver.recvline(timeout=1)
+
+    if "Remote debugging from host" not in garbage:
+        gdbserver.unrecv(garbage)
+
     return gdbserver
 
 def get_gdb_arch(arch):
