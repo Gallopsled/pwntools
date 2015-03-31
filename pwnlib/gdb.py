@@ -73,10 +73,10 @@ def debug(args, exe=None, execute=None, ssh=None, arch=None):
         args = ['qemu-%s-static' % qemu_arch, '-g', str(qemu_port)] + args
 
     if not ssh:
-        execute = tubes.process.process
+        runner  = tubes.process.process
         which   = misc.which
     if ssh:
-        execute = ssh.run
+        runner  = ssh.run
         which   = ssh.which
 
     # Make sure gdbserver is installed
@@ -84,7 +84,7 @@ def debug(args, exe=None, execute=None, ssh=None, arch=None):
         log.error("%s is not installed" % args[0])
 
     with context.local(log_level='debug'):
-        gdbserver = execute(args)
+        gdbserver = runner(args)
 
     if not arch or context.native:
         # Process /bin/bash created; pid = 14366
@@ -105,7 +105,7 @@ def debug(args, exe=None, execute=None, ssh=None, arch=None):
     elif not exe:
         exe = misc.which(orig_args[0])
 
-    attach(('127.0.0.1', port), exe=orig_args[0], arch=context.arch)
+    attach(('127.0.0.1', port), exe=orig_args[0], execute=execute, arch=context.arch)
 
     if ssh:
         remote <> listener.wait_for_connection()
