@@ -46,7 +46,7 @@ def get_qemu_arch(arch):
 
     return arch
 
-def debug(args, exe=None, execute=None, ssh=None, arch=None):
+def debug(args, execute=None, exe=None, ssh=None, arch=None):
     """debug(args) -> tube
 
     Launch a GDB server with the specified command line,
