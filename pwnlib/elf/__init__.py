@@ -287,7 +287,15 @@ class ELF(ELFFile):
             return
 
         # Find the relocation section for PLT
-        rel_plt = next(s for s in self.sections if s.header.sh_info == self.sections.index(plt))
+        try:
+            rel_plt = next(s for s in self.sections if s.header.sh_info == self.sections.index(plt))
+        except StopIteration:
+            # Evidently whatever android-ndk uses to build binaries zeroes out sh_info for rel.plt
+            rel_plt = self.get_section_by_name('.rel.plt') or self.get_section_by_name('.rela.plt')
+
+        if not rel_plt:
+            log.warning("Couldn't find relocations against PLT to get symbols")
+            return
 
         if rel_plt.header.sh_link != SHN_INDICES.SHN_UNDEF:
             # Find the symbols for the relocation section
