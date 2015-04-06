@@ -332,7 +332,7 @@ class tube(Timeout, Logger):
 
         return ''
 
-    def recvlines(self, numlines, keepends = False, timeout = default):
+    def recvlines(self, numlines=2**20, keepends = False, timeout = default):
         r"""recvlines(numlines, keepends = False, timeout = default) -> str list
 
         Recieve up to ``numlines`` lines.
