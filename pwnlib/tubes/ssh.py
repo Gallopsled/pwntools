@@ -1,3 +1,4 @@
+import inspect
 import logging
 import os
 import re
@@ -8,6 +9,7 @@ import tarfile
 import tempfile
 import threading
 import time
+import types
 
 from .. import term
 from ..context import context
@@ -514,7 +516,7 @@ class ssh(Timeout, Logger):
         return self.run(shell, tty, timeout = timeout)
 
     def process(self, argv=None, executable=None, tty = True, cwd = None, env = None, timeout = Timeout.default, run = True,
-                stdin=0, stdout=1, stderr=2):
+                stdin=0, stdout=1, stderr=2, func=None):
         r"""
         Executes a process on the remote server, in the same fashion
         as pwnlib.tubes.process.process.
@@ -557,6 +559,8 @@ class ssh(Timeout, Logger):
                 See ``stdin``.
             stderr(int, str):
                 See ``stdin``.
+            ulimit(int):
+                Set the ulimit for the
 
         Returns:
             A new SSH channel, or a path to a script if ``run=False``.
@@ -631,14 +635,28 @@ class ssh(Timeout, Logger):
         stdout = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}.get(stdout, stdout)
         stderr = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}.get(stderr, stderr)
 
+        # Allow the user to provide a self-contained function to run
+        if func is None:
+            def func(): pass
+
+        func_src  = inspect.getsource(func).strip()
+        func_name = func.__name__
+
+        if not isinstance(func, types.FunctionType):
+            log.error("func must be a function")
+        if func_name == (lambda: 0).__name__:
+            log.error("Can't use lambdas")
+
+
+
         script = r"""
 #!/usr/bin/env python
 import os, sys
-exe   = %r
-argv  = %r
-env   = %r
+exe   = %(executable)r
+argv  = %(argv)r
+env   = %(env)r
 
-os.chdir(%r)
+os.chdir(%(cwd)r)
 
 if env is None:
     env = os.environ
@@ -665,7 +683,7 @@ if sys.argv[-1] == 'check':
     sys.stdout.write(str(os.getpid()) + "\n")
     sys.stdout.flush()
 
-for fd, newfd in {0: %r, 1: %r, 2:%r}.items():
+for fd, newfd in {0: %(stdin)r, 1: %(stdout)r, 2:%(stderr)r}.items():
     if newfd is None:
         close(fd)
     elif isinstance(newfd, str):
@@ -674,8 +692,11 @@ for fd, newfd in {0: %r, 1: %r, 2:%r}.items():
     elif isinstance(newfd, int) and newfd != fd:
         os.dup2(fd, newfd)
 
+%(func_src)s
+%(func_name)s()
+
 os.execve(exe, argv, env)
-""" % (executable, argv, env, cwd, stdin, stdout, stderr)
+""" % locals()
 
         script = script.lstrip()
 
