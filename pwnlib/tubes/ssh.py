@@ -516,7 +516,7 @@ class ssh(Timeout, Logger):
         return self.run(shell, tty, timeout = timeout)
 
     def process(self, argv=None, executable=None, tty = True, cwd = None, env = None, timeout = Timeout.default, run = True,
-                stdin=0, stdout=1, stderr=2, func=None):
+                stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=[]):
         r"""
         Executes a process on the remote server, in the same fashion
         as pwnlib.tubes.process.process.
@@ -636,11 +636,11 @@ class ssh(Timeout, Logger):
         stderr = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}.get(stderr, stderr)
 
         # Allow the user to provide a self-contained function to run
-        if func is None:
-            def func(): pass
-
+        def func(): pass
+        func      = preexec_fn or func
         func_src  = inspect.getsource(func).strip()
         func_name = func.__name__
+        func_args = preexec_args
 
         if not isinstance(func, types.FunctionType):
             log.error("func must be a function")
@@ -693,7 +693,7 @@ for fd, newfd in {0: %(stdin)r, 1: %(stdout)r, 2:%(stderr)r}.items():
         os.dup2(fd, newfd)
 
 %(func_src)s
-%(func_name)s()
+apply(%(func_name)s, %(func_args)r)
 
 os.execve(exe, argv, env)
 """ % locals()
