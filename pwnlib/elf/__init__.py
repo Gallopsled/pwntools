@@ -194,8 +194,20 @@ class ELF(ELFFile):
         return self.get_section_by_name(name).data()
 
     @property
+    def rwx_segments(self):
+        """Returns: list of all segments which are writeable and executable."""
+        if not self.nx:
+            return self.writable_segments
+
+        wx = P_FLAGS.PF_X | P_FLAGS.PF_W
+        return [s for s in self.segments if s.header.p_flags & wx == wx]
+
+    @property
     def executable_segments(self):
         """Returns: list of all segments which are executable."""
+        if not self.nx:
+            return list(self.segments)
+
         return [s for s in self.segments if s.header.p_flags & P_FLAGS.PF_X]
 
     @property
@@ -585,7 +597,10 @@ class ELF(ELFFile):
     def nx(self):
         if not any('GNU_STACK' in seg.header.p_type for seg in self.segments):
             return False
-        return not any('GNU_STACK' in seg.header.p_type for seg in self.executable_segments)
+
+        # Can't call self.executable_segments because of dependency loop.
+        exec_seg = [s for s in self.segments if s.header.p_flags & P_FLAGS.PF_X]
+        return not any('GNU_STACK' in seg.header.p_type for seg in exec_seg)
 
     @property
     def execstack(self):
@@ -647,21 +662,20 @@ class ELF(ELFFile):
             }[self.pie]
         ]
 
+        # Are there any RWX areas in the binary?
+        #
+        # This will occur if NX is disabled and *any* area is
+        # RW, or can expressly occur.
+        rwx = self.rwx_segments
+
+        if rwx:
+            res += [ "RWX:".ljust(15) + green("Has RWX segments") ]
+
         if self.rpath:
-            res += [
-            "RPATH:".ljust(15) + {
-                False:  green("No RPATH"),
-                True:   red(repr(self.rpath))
-            }.get(bool(self.rpath))
-            ]
+            res += [ "RPATH:".ljust(15) + red(repr(self.rpath)) ]
 
         if self.runpath:
-            res += [
-            "RUNPATH:".ljust(15) + {
-                False:  green("No RUNPATH"),
-                True:   red(repr(self.runpath))
-            }.get(bool(self.runpath))
-            ]
+            res += [ "RUNPATH:".ljust(15) + red(repr(self.runpath)) ]
 
         if self.packed:
             res.append('Packer:'.ljust(15) + red("Packed with UPX"))
