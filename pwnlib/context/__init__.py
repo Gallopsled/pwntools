@@ -656,13 +656,14 @@ class ContextType(object):
         # Cyclic imports... sorry Idolf.
         from ..elf     import ELF
 
-        e = ELF(binary)
+        if not isinstance(binary, ELF):
+            binary = ELF(binary)
 
-        self.arch   = e.arch
-        self.bits   = e.bits
-        self.endian = e.endian
+        self.arch   = binary.arch
+        self.bits   = binary.bits
+        self.endian = binary.endian
 
-        return e
+        return binary
 
     @property
     def bytes(self):
