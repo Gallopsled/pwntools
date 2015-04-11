@@ -20,7 +20,7 @@ parser.add_argument(
 parser.add_argument(
     "-f", "--format",
     help="Output format (defaults to hex for ttys, otherwise raw)",
-    choices=['raw', 'hex', 'string']
+    choices=['raw', 'hex', 'string', 'elf']
 )
 
 parser.add_argument(
@@ -62,7 +62,10 @@ def main():
         proc.interactive()
         sys.exit(0)
 
-    args.output.write(formatters[fmt[0]](output))
+    if fmt[0] == 'e':
+        sys.stdout.write(make_elf(output))
+    else:
+        args.output.write(formatters[fmt[0]](output))
 
     if tty and fmt is not 'raw':
         args.output.write('\n')
