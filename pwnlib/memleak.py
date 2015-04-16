@@ -1,6 +1,7 @@
-from .util.packing import pack, unpack
 from .log import getLogger
-from ctypes import sizeof
+from .util.packing import pack
+from .util.packing import unpack
+
 log = getLogger(__name__)
 
 class MemLeak(object):
@@ -55,13 +56,10 @@ class MemLeak(object):
 
     def struct(self, address, struct):
         """struct(address, struct) => structure object
-
         Leak an entire structure.
-
         Arguments:
             address(int):  Addess of structure in memory
             struct(class): A ctypes structure to be instantiated with leaked data
-
         Return Value:
             An instance of the provided struct class, with the leaked data decoded
         """
@@ -141,7 +139,7 @@ class MemLeak(object):
         """raw(addr, numb) -> list
 
         Leak `numb` bytes at `addr`"""
-        return map(self._leak, range(addr, addr+numb))
+        return map(lambda a: self._leak(a, 1), range(addr, addr+numb))
 
 
     def _b(self, addr, ndx, size):
