@@ -184,6 +184,8 @@ class ROP(object):
 
         return output
 
+    _build_i386 = _build_x86
+
     def build(self, base = None):
         """Build the ROP chain into a list (addr, int/string, bool), where the
         last value is True iff the value was an internal reference.
