@@ -1,18 +1,34 @@
+import importlib
+
+from .version import __version__
+
+version = __version__
+
 __all__ = [
-    'atexception' , 'atexit'      , 'asm'         , 'constants'   ,
-    'context'     , 'dynelf'      , 'elf'         , 'exception'   ,
-    'gdb'         , 'fmtstr'      , 'log'         , 'memleak'     ,
-    'replacements', 'rop'         , 'shellcraft'  , 'term'        ,
-    'tubes'       , 'ui'          , 'useragents'  , 'util'
+    'asm',
+    'atexception',
+    'atexit',
+    'commandline',
+    'constants',
+    'context',
+    'dynelf',
+    'elf',
+    'exception',
+    'fmtstr',
+    'gdb',
+    'libcdb',
+    'log',
+    'memleak',
+    'pep237',
+    'replacements',
+    'rop',
+    'shellcraft',
+    'term',
+    'tubes',
+    'ui',
+    'useragents',
+    'util'
 ]
 
-from . import \
-    atexception   , atexit        , asm           , constants     , \
-    fmtstr        , dynelf        , elf           , exception     , \
-    gdb                           , log           , memleak       , \
-    replacements  , rop           , shellcraft    , term          , \
-    tubes         , ui            , useragents    , util          , \
-    pep237
-
-# from .context import context
-from .version import __version__
+for module in __all__:
+    importlib.import_module('.%s' % module, 'pwnlib')
