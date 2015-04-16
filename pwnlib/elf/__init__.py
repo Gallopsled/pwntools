@@ -8,6 +8,8 @@ from elftools.elf.constants import P_FLAGS
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.elffile import ELFFile
+from elftools.elf.gnuversions import GNUVerDefSection
+from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 
 from ..asm import asm
@@ -300,7 +302,9 @@ class ELF(ELFFile):
 
         # Find the relocation section for PLT
         try:
-            rel_plt = next(s for s in self.sections if s.header.sh_info == self.sections.index(plt))
+            rel_plt = next(s for s in self.sections if
+                            s.header.sh_info == self.sections.index(plt) and
+                            isinstance(s, RelocationSection))
         except StopIteration:
             # Evidently whatever android-ndk uses to build binaries zeroes out sh_info for rel.plt
             rel_plt = self.get_section_by_name('.rel.plt') or self.get_section_by_name('.rela.plt')
@@ -332,7 +336,7 @@ class ELF(ELFFile):
             'amd64': (0x10, 0x10),
             'arm':   (0x14, 0xC),
             'aarch64': (0x20, 0x20),
-        }[self.arch]
+        }.get(self.arch, (0,0))
 
 
         # Based on the ordering of the GOT symbols, populate the PLT
@@ -668,8 +672,8 @@ class ELF(ELFFile):
         # RW, or can expressly occur.
         rwx = self.rwx_segments
 
-        if rwx:
-            res += [ "RWX:".ljust(15) + green("Has RWX segments") ]
+        if self.nx and rwx:
+            res += [ "RWX:".ljust(15) + red("Has RWX segments") ]
 
         if self.rpath:
             res += [ "RPATH:".ljust(15) + red(repr(self.rpath)) ]

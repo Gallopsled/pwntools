@@ -738,5 +738,5 @@ class DynELF(object):
 
         for offset in libcdb.get_build_id_offsets():
             address = libbase + offset
-            if self.leak.d(address + 0xC) == unpack("GNU\x00"):
+            if self.leak.d(address + 0xC) == unpack("GNU\x00", 32):
                 return enhex(''.join(self.leak.raw(address + 0x10, 20)))
