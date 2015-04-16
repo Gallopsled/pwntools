@@ -681,3 +681,11 @@ class ELF(ELFFile):
             res.append('Packer:'.ljust(15) + red("Packed with UPX"))
 
         return '\n'.join(res)
+
+    @property
+    def buildid(self):
+        section = self.get_section_by_name('.note.gnu.build-id')
+        if section:
+            return section.data()[16:]
+        return None
+
