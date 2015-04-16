@@ -16,6 +16,7 @@ __all__ = [
     'exception',
     'fmtstr',
     'gdb',
+    'libcdb',
     'log',
     'memleak',
     'pep237',

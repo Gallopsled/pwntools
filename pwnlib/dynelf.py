@@ -52,11 +52,16 @@ import ctypes
 from elftools.elf.enums import ENUM_D_TAG
 
 from . import elf
+from . import libcdb
 from .context import context
 from .elf import ELF
 from .elf import constants
 from .log import getLogger
 from .memleak import MemLeak
+from .util.fiddling import enhex
+from .util.packing import unpack
+from .util.web     import wget
+
 
 log    = getLogger(__name__)
 sizeof = ctypes.sizeof
@@ -461,8 +466,23 @@ class DynELF(object):
         #
         # If we are resolving a symbol in the library, find it.
         #
-        if symb: result = dynlib._lookup(symb)
-        else:    result = dynlib.libbase
+        if symb:
+            # Try a quick lookup by build ID
+            self.status("Trying lookup based on Build ID")
+            build_id = dynlib._lookup_build_id(lib=lib)
+            if build_id:
+                path = libcdb.search_by_build_id(build_id)
+                if path:
+                    with context.local(log_level='error'):
+                        e = ELF(path)
+                        e.address = dynlib.libbase
+                        result = e.symbols[symb]
+
+            if not result:
+                self.status("Trying remote lookup")
+                result = dynlib._lookup(symb)
+        else:
+            result = dynlib.libbase
 
         #
         # Did we win?
@@ -708,3 +728,15 @@ class DynELF(object):
         else:
             self.failure('Could not find a GNU hash that matched %#x' % hsh)
             return None
+
+    def _lookup_build_id(self, lib = None):
+
+        libbase = self.libbase
+
+        if lib is not None:
+            libbase = self.lookup(symb = None, lib = lib)
+
+        for offset in libcdb.get_build_id_offsets():
+            address = libbase + offset
+            if self.leak.d(address + 0xC) == unpack("GNU\x00"):
+                return enhex(''.join(self.leak.raw(address + 0x10, 20)))
