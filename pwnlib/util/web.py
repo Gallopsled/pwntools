@@ -33,7 +33,7 @@ def wget(url, save=None, timeout=5, **kwargs):
     with log.progress("Downloading '%s'" % url) as w:
         w.status("Making request...")
 
-        response = requests.get(url, stream=True, **kwargs)
+        response = requests.get(url, stream=True, timeout=timeout, **kwargs)
 
         if not response.ok:
             w.failure("Got code %s" % response.status_code)
