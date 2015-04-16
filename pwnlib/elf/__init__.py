@@ -117,7 +117,10 @@ class ELF(ELFFile):
             'EM_AARCH64': 'aarch64',
             'EM_MIPS': 'mips',
             'EM_PPC': 'powerpc',
-            'EM_SPARC32PLUS': 'sparc'
+            'EM_PPC64': 'powerpc64',
+            'EM_SPARC32PLUS': 'sparc',
+            'EM_SPARCV9': 'sparc64',
+            'EM_IA_64': 'ia64'
         }.get(self['e_machine'], self['e_machine'])
 
     @property
