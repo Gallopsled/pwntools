@@ -40,7 +40,7 @@ def search_by_build_id(hex_encoded_id):
     headers={'Accept':'application/vnd.github.v3.json'}
     data   = ""
     while not data.startswith('\x7fELF'):
-        data = wget(url, username=username, password=password, headers=headers)
+        data = wget(url, headers=headers)
 
         if data.startswith('..'):
             url = os.path.dirname(url) + '/'
