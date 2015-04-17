@@ -34,13 +34,15 @@ def search_by_build_id(hex_encoded_id):
 
     log.info("Downloading data from GitHub")
 
-    url_base = "https://raw.githubusercontent.com/zachriggle/libcdb/master/build_id/"
+    url_base = "https://gitlab.com/libcdb/libcdb/raw/master/hashes/build_id/"
     url      = urlparse.urljoin(url_base, hex_encoded_id)
 
-    headers={'Accept':'application/vnd.github.v3.json'}
     data   = ""
     while not data.startswith('\x7fELF'):
-        data = wget(url, headers=headers)
+        data = wget(url)
+
+        if not data:
+            return None
 
         if data.startswith('..'):
             url = os.path.dirname(url) + '/'
