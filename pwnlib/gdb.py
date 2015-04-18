@@ -66,7 +66,7 @@ def debug(args, execute=None, exe=None, ssh=None, arch=None):
     orig_args = args
 
     if not arch or context.native:
-        args = ['gdbserver', 'localhost:0'] + args
+        args = ['gdbserver', '--no-disable-randomization', 'localhost:0'] + args
     else:
         qemu_port = random.randint(1024, 65535)
         qemu_arch = get_qemu_arch(arch)
@@ -90,6 +90,7 @@ def debug(args, execute=None, exe=None, ssh=None, arch=None):
         # Process /bin/bash created; pid = 14366
         # Listening on port 34816
         process_created = gdbserver.recvline()
+        gdbserver.pid   = int(process_created.split()[-1], 0)
         listening_on    = gdbserver.recvline()
 
         port = int(listening_on.split()[-1])
