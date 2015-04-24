@@ -34,19 +34,19 @@ def debug_shellcode(data, execute=None, **kwargs):
         os.chmod(tmp_elf, 0777)
         return debug(tmp_elf, execute=None, arch=context.arch)
 
-def get_qemu_arch(arch):
-    if arch == 'mips' and context.endian == 'little':
-        return 'mipsel'
-    if arch == 'arm' and context.endian == 'big':
-        return 'armeb'
-    if arch == 'amd64':
-        return 'x86_64'
+def get_qemu_arch(**kw):
+    with context.local(**kw):
+        return {
+            ('amd64', 'little'):     'x86_64',
+            ('arm', 'big'):          'armeb',
+            ('mips', 'little'):      'mipsel',
+            ('mips64', 'little'):    'mips64el',
+            ('powerpc', 'big'):      'ppc',
+            ('powerpc64', 'big'):    'ppc64',
+            ('powerpc64', 'little'): 'ppc64le',
+        }.get((context.arch, context.endian), context.arch)
 
-    arch = arch.replace('powerpc', 'ppc')
-
-    return arch
-
-def debug(args, execute=None, exe=None, ssh=None, arch=None):
+def debug(args, execute=None, exe=None, ssh=None, **kwargs):
     """debug(args) -> tube
 
     Launch a GDB server with the specified command line,
@@ -65,66 +65,67 @@ def debug(args, execute=None, exe=None, ssh=None, arch=None):
 
     orig_args = args
 
-    if not arch or context.native:
-        args = ['gdbserver', '--no-disable-randomization', 'localhost:0'] + args
-    else:
-        qemu_port = random.randint(1024, 65535)
-        qemu_arch = get_qemu_arch(arch)
-        args = ['qemu-%s-static' % qemu_arch, '-g', str(qemu_port)] + args
+    with context.local(**kwargs):
+        if context.native:
+            args = ['gdbserver', '--no-disable-randomization', 'localhost:0'] + args
+        else:
+            qemu_port = random.randint(1024, 65535)
+            qemu_arch = get_qemu_arch()
+            args = ['qemu-%s-static' % qemu_arch, '-g', str(qemu_port)] + args
 
-    if not ssh:
-        runner  = tubes.process.process
-        which   = misc.which
-    if ssh:
-        runner  = ssh.run
-        which   = ssh.which
+        if not ssh:
+            runner  = tubes.process.process
+            which   = misc.which
+        if ssh:
+            runner  = ssh.run
+            which   = ssh.which
 
-    # Make sure gdbserver is installed
-    if not which(args[0]):
-        log.error("%s is not installed" % args[0])
+        # Make sure gdbserver is installed
+        if not which(args[0]):
+            log.error("%s is not installed" % args[0])
 
-    with context.local(log_level='debug'):
-        gdbserver = runner(args)
+        with context.local(log_level='debug'):
+            gdbserver = runner(args)
 
-    if not arch or context.native:
-        # Process /bin/bash created; pid = 14366
-        # Listening on port 34816
-        process_created = gdbserver.recvline()
-        gdbserver.pid   = int(process_created.split()[-1], 0)
-        listening_on    = gdbserver.recvline()
+        if context.native:
+            # Process /bin/bash created; pid = 14366
+            # Listening on port 34816
+            process_created = gdbserver.recvline()
+            gdbserver.pid   = int(process_created.split()[-1], 0)
+            listening_on    = gdbserver.recvline()
 
-        port = int(listening_on.split()[-1])
-    else:
-        port = qemu_port
+            port = int(listening_on.split()[-1])
+        else:
+            port = qemu_port
 
-    listener = remote = None
+        listener = remote = None
 
-    if ssh:
-        remote   = ssh.connect_remote('127.0.0.1', port)
-        listener = tubes.listen.listen(0)
-        port     = listener.lport
-    elif not exe:
-        exe = misc.which(orig_args[0])
+        if ssh:
+            remote   = ssh.connect_remote('127.0.0.1', port)
+            listener = tubes.listen.listen(0)
+            port     = listener.lport
+        elif not exe:
+            exe = misc.which(orig_args[0])
 
-    attach(('127.0.0.1', port), exe=orig_args[0], execute=execute, arch=context.arch)
+        attach(('127.0.0.1', port), exe=orig_args[0], execute=execute)
 
-    if ssh:
-        remote <> listener.wait_for_connection()
+        if ssh:
+            remote <> listener.wait_for_connection()
 
-    # gdbserver outputs a message when a client connects
-    garbage = gdbserver.recvline(timeout=1)
+        # gdbserver outputs a message when a client connects
+        garbage = gdbserver.recvline(timeout=1)
 
-    if "Remote debugging from host" not in garbage:
-        gdbserver.unrecv(garbage)
+        if "Remote debugging from host" not in garbage:
+            gdbserver.unrecv(garbage)
 
-    return gdbserver
+        return gdbserver
 
-def get_gdb_arch(arch):
+def get_gdb_arch():
     return {
         'amd64': 'i386:x86-64',
-        'powerpc': 'powerpc:403',
-        'powerpc64': 'powerpc:e5500'
-    }.get(arch, arch)
+        'powerpc': 'powerpc:common',
+        'powerpc64': 'powerpc:common64'
+    }.get(context.arch, context.arch)
 
 
 def run_elf(*a, **kw):
@@ -137,7 +138,7 @@ def run_elf(*a, **kw):
     return tubes.process.process(f)
 
 
-def attach(target, execute = None, exe = None, arch = None):
+def attach(target, execute = None, exe = None, **kwargs):
     """attach(target, execute = None, exe = None, arch = None) -> None
 
     Start GDB in a new terminal and attach to `target`.
@@ -163,170 +164,171 @@ def attach(target, execute = None, exe = None, arch = None):
     Returns:
       :const:`None`
 """
-    # if ptrace_scope is set and we're not root, we cannot attach to a running process
-    try:
-        ptrace_scope = open('/proc/sys/kernel/yama/ptrace_scope').read().strip()
-        if ptrace_scope != '0' and os.geteuid() != 0:
-            msg =  'Disable ptrace_scope to attach to running processes.\n'
-            msg += 'More info: https://askubuntu.com/q/41629'
-            log.warning(msg)
+    with context.local(**kwargs):
+        # if ptrace_scope is set and we're not root, we cannot attach to a running process
+        try:
+            ptrace_scope = open('/proc/sys/kernel/yama/ptrace_scope').read().strip()
+            if ptrace_scope != '0' and os.geteuid() != 0:
+                msg =  'Disable ptrace_scope to attach to running processes.\n'
+                msg += 'More info: https://askubuntu.com/q/41629'
+                log.warning(msg)
+                return
+        except IOError:
+            pass
+
+        # if execute is a file object, then read it; we probably need to run some
+        # more gdb script anyway
+        if execute:
+            if isinstance(execute, file):
+                fd = execute
+                execute = fd.read()
+                fd.close()
+
+        # enable gdb.attach(p, 'continue')
+        if execute and not execute.endswith('\n'):
+            execute += '\n'
+
+        # gdb script to run before `execute`
+        pre = ''
+        if not context.native:
+            if not misc.which('gdb-multiarch'):
+                log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n' \
+                    '$ apt-get install gdb-multiarch')
+            pre += 'set endian %s\n' % context.endian
+            pre += 'set architecture %s\n' % get_gdb_arch()
+
+        # let's see if we can find a pid to attach to
+        pid = None
+        if   isinstance(target, (int, long)):
+            # target is a pid, easy peasy
+            pid = target
+        elif isinstance(target, str):
+            # pidof picks the youngest process
+            pids = proc.pidof(target)
+            if not pids:
+                log.error('no such process: %s' % target)
+            pid = pids[0]
+            log.info('attaching you youngest process "%s" (PID = %d)' %
+                     (target, pid))
+        elif isinstance(target, tubes.ssh.ssh_channel):
+            if not target.pid:
+                log.error("PID unknown for channel")
+
+            shell = target.parent
+
+            tmpfile = shell.mktemp()
+            shell.upload_data(execute or '', tmpfile)
+
+            cmd = ['ssh', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
+            if shell.password:
+                cmd = ['sshpass', '-p', shell.password] + cmd
+            if shell.keyfile:
+                cmd += ['-i', shell.keyfile]
+            cmd += ['gdb %r %s -x "%s" ; rm "%s"' % (target.exe, target.pid, tmpfile, tmpfile)]
+
+            misc.run_in_new_terminal(' '.join(cmd))
             return
-    except IOError:
-        pass
 
-    # if execute is a file object, then read it; we probably need to run some
-    # more gdb script anyway
-    if execute:
-        if isinstance(execute, file):
-            fd = execute
-            execute = fd.read()
-            fd.close()
+        elif isinstance(target, tubes.sock.sock):
+            pids = proc.pidof(target)
+            if not pids:
+                log.error('could not find remote process (%s:%d) on this machine' %
+                          target.sock.getpeername())
+            pid = pids[0]
+        elif isinstance(target, tubes.process.process):
+            pid = proc.pidof(target)[0]
+        elif isinstance(target, tuple) and len(target) == 2:
+            host, port = target
+            pre += 'target remote %s:%d\n' % (host, port)
+            def findexe():
+                # hm no PID then, but wait! we might not be totally out of luck yet: if
+                # the gdbserver is running locally and we know the program who is
+                # hosting it (e.g qemu, gdbserver) we can figure out the `exe` from the
+                # command line
 
-    # enable gdb.attach(p, 'continue')
-    if execute and not execute.endswith('\n'):
-        execute += '\n'
+                # find inode of the listen socket
+                inode = None
 
-    # gdb script to run before `execute`
-    pre = ''
-    if arch:
-        if not misc.which('gdb-multiarch'):
-            log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n' \
-                '$ apt-get install gdb-multiarch')
-        pre += 'set endian %s\n' % context.endian
-        pre += 'set architecture %s\n' % get_gdb_arch(arch)
+                # XXX: do a proper check to see if we're hosting the server
+                if host not in ('localhost', '127.0.0.1', '0.0.0.0',
+                                '::1', 'ip6-localhost', '::'):
+                    return
 
-    # let's see if we can find a pid to attach to
-    pid = None
-    if   isinstance(target, (int, long)):
-        # target is a pid, easy peasy
-        pid = target
-    elif isinstance(target, str):
-        # pidof picks the youngest process
-        pids = proc.pidof(target)
-        if not pids:
-            log.error('no such process: %s' % target)
-        pid = pids[0]
-        log.info('attaching you youngest process "%s" (PID = %d)' %
-                 (target, pid))
-    elif isinstance(target, tubes.ssh.ssh_channel):
-        if not target.pid:
-            log.error("PID unknown for channel")
+                for f in ['tcp', 'tcp6']:
+                    with open('/proc/net/%s' % f) as fd:
+                        # skip the first line with the column names
+                        fd.readline()
+                        for line in fd:
+                            line = line.split()
+                            loc = line[1]
+                            lport = int(loc.split(':')[1], 16)
+                            st = int(line[3], 16)
+                            if st != 10: # TCP_LISTEN, see include/net/tcp_states.h
+                                continue
+                            if lport == port:
+                                inode = int(line[9])
+                                break
+                    if inode:
+                        break
 
-        shell = target.parent
+                # if we didn't find the inode, there's nothing we can do about it
+                if not inode:
+                    return
 
-        tmpfile = shell.mktemp()
-        shell.upload_data(execute or '', tmpfile)
+                # find the process who owns the socket
+                spid = proc.pid_by_inode(inode)
+                if not spid:
+                    return
 
-        cmd = ['ssh', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
-        if shell.password:
-            cmd = ['sshpass', '-p', shell.password] + cmd
-        if shell.keyfile:
-            cmd += ['-i', shell.keyfile]
-        cmd += ['gdb %r %s -x "%s" ; rm "%s"' % (target.exe, target.pid, tmpfile, tmpfile)]
+                # let's have a look at the server exe
+                sexe = proc.exe(spid)
+                name = os.path.basename(sexe)
+                # XXX: parse cmdline
+                if name.startswith('qemu-') or name.startswith('gdbserver'):
+                    exe = proc.cmdline(spid)[-1]
+                    return os.path.join(proc.cwd(spid), exe)
 
-        misc.run_in_new_terminal(' '.join(cmd))
-        return
+            exe = exe or findexe()
+        else:
+            log.error("don't know how to attach to target: %r" % target)
 
-    elif isinstance(target, tubes.sock.sock):
-        pids = proc.pidof(target)
-        if not pids:
-            log.error('could not find remote process (%s:%d) on this machine' %
-                      target.sock.getpeername())
-        pid = pids[0]
-    elif isinstance(target, tubes.process.process):
-        pid = proc.pidof(target)[0]
-    elif isinstance(target, tuple) and len(target) == 2:
-        host, port = target
-        pre += 'target remote %s:%d\n' % (host, port)
-        def findexe():
-            # hm no PID then, but wait! we might not be totally out of luck yet: if
-            # the gdbserver is running locally and we know the program who is
-            # hosting it (e.g qemu, gdbserver) we can figure out the `exe` from the
-            # command line
+        # if we have a pid but no exe, just look it up in /proc/
+        if pid and not exe:
+            exe = proc.exe(pid)
 
-            # find inode of the listen socket
-            inode = None
+        if not pid and not exe:
+            log.error('could not find target process')
 
-            # XXX: do a proper check to see if we're hosting the server
-            if host not in ('localhost', '127.0.0.1', '0.0.0.0',
-                            '::1', 'ip6-localhost', '::'):
-                return
+        cmd = None
+        for p in ('gdb-multiarch', 'gdb'):
+            if misc.which(p):
+                cmd = p
+                break
 
-            for f in ['tcp', 'tcp6']:
-                with open('/proc/net/%s' % f) as fd:
-                    # skip the first line with the column names
-                    fd.readline()
-                    for line in fd:
-                        line = line.split()
-                        loc = line[1]
-                        lport = int(loc.split(':')[1], 16)
-                        st = int(line[3], 16)
-                        if st != 10: # TCP_LISTEN, see include/net/tcp_states.h
-                            continue
-                        if lport == port:
-                            inode = int(line[9])
-                            break
-                if inode:
-                    break
+        if not cmd:
+            log.error('no gdb installed')
 
-            # if we didn't find the inode, there's nothing we can do about it
-            if not inode:
-                return
+        if exe:
+            if not os.path.isfile(exe):
+                log.error('no such file: %s' % exe)
+            cmd += ' "%s"' % exe
 
-            # find the process who owns the socket
-            spid = proc.pid_by_inode(inode)
-            if not spid:
-                return
+        if pid:
+            cmd += ' %d' % pid
 
-            # let's have a look at the server exe
-            sexe = proc.exe(spid)
-            name = os.path.basename(sexe)
-            # XXX: parse cmdline
-            if name.startswith('qemu-') or name.startswith('gdbserver'):
-                exe = proc.cmdline(spid)[-1]
-                return os.path.join(proc.cwd(spid), exe)
+        execute = pre + (execute or '')
 
-        exe = exe or findexe()
-    else:
-        log.error("don't know how to attach to target: %r" % target)
+        if execute:
+            tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.gdb',
+                                              delete = False)
+            tmp.write(execute)
+            tmp.close()
+            cmd += ' -x "%s" ; rm "%s"' % (tmp.name, tmp.name)
 
-    # if we have a pid but no exe, just look it up in /proc/
-    if pid and not exe:
-        exe = proc.exe(pid)
-
-    if not pid and not exe:
-        log.error('could not find target process')
-
-    cmd = None
-    for p in ('gdb-multiarch', 'gdb'):
-        if misc.which(p):
-            cmd = p
-            break
-
-    if not cmd:
-        log.error('no gdb installed')
-
-    if exe:
-        if not os.path.isfile(exe):
-            log.error('no such file: %s' % exe)
-        cmd += ' "%s"' % exe
-
-    if pid:
-        cmd += ' %d' % pid
-
-    execute = pre + (execute or '')
-
-    if execute:
-        tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.gdb',
-                                          delete = False)
-        tmp.write(execute)
-        tmp.close()
-        cmd += ' -x "%s" ; rm "%s"' % (tmp.name, tmp.name)
-
-    log.info('running in new terminal: %s' % cmd)
-    misc.run_in_new_terminal(cmd)
-    if pid:
-        proc.wait_for_debugger(pid)
+        log.info('running in new terminal: %s' % cmd)
+        misc.run_in_new_terminal(cmd)
+        if pid:
+            proc.wait_for_debugger(pid)
 
 def ssh_gdb(ssh, process, execute = None, arch = None, **kwargs):
     if isinstance(process, (list, tuple)):
