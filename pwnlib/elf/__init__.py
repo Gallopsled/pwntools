@@ -4,7 +4,7 @@ import mmap
 import os
 import subprocess
 
-from elftools.elf.constants import P_FLAGS
+from elftools.elf.constants import P_FLAGS, E_FLAGS
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.elffile import ELFFile
@@ -87,6 +87,10 @@ class ELF(ELFFile):
         }[self['e_ident']['EI_DATA']]
 
         self.bits = self.elfclass
+
+        if self.arch == 'mips':
+            if self.header['e_flags'] & E_FLAGS.EF_MIPS_ARCH_64: self.bits = 64
+            if self.header['e_flags'] & E_FLAGS.EF_MIPS_ARCH_64R2: self.bits = 64
 
         self._populate_got_plt()
         self._populate_symbols()
@@ -596,13 +600,13 @@ class ELF(ELFFile):
         if self.dynamic_by_tag('DT_BIND_NOW'):
             return "Full"
 
-        if any('GNU_RELRO' in s.header.p_type for s in self.segments):
+        if any('GNU_RELRO' in str(s.header.p_type) for s in self.segments):
             return "Partial"
         return None
 
     @property
     def nx(self):
-        if not any('GNU_STACK' in seg.header.p_type for seg in self.segments):
+        if not any('GNU_STACK' in str(seg.header.p_type) for seg in self.segments):
             return False
 
         # Can't call self.executable_segments because of dependency loop.
