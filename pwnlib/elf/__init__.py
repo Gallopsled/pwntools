@@ -102,7 +102,7 @@ class ELF(ELFFile):
 
     def _describe(self):
         log.info_once('\n'.join((repr(self.path),
-                                'Arch:          %s-%s-%s' % (self.arch, self.bits, self.endian),
+                                '%-10s%s-%s-%s' % ('Arch:', self.arch, self.bits, self.endian),
                                 self.checksec())))
 
     def __repr__(self):
@@ -650,20 +650,20 @@ class ELF(ELFFile):
         yellow = text.yellow
 
         res = [
-            "RELRO:".ljust(15) + {
+            "RELRO:".ljust(10) + {
                 'Full':    green("Full RELRO"),
                 'Partial': yellow("Partial RELRO"),
                 None:      red("No RELRO")
             }[self.relro],
-            "Stack Canary:".ljust(15) + {
+            "Stack:".ljust(10) + {
                 True:  green("Canary found"),
                 False: red("No canary found")
             }[self.canary],
-            "NX:".ljust(15) + {
+            "NX:".ljust(10) + {
                 True:  green("NX enabled"),
                 False: red("NX disabled"),
             }[self.nx],
-            "PIE:".ljust(15) + {
+            "PIE:".ljust(10) + {
                 True: green("PIE enabled"),
                 False: red("No PIE")
             }[self.pie]
@@ -676,16 +676,16 @@ class ELF(ELFFile):
         rwx = self.rwx_segments
 
         if self.nx and rwx:
-            res += [ "RWX:".ljust(15) + red("Has RWX segments") ]
+            res += [ "RWX:".ljust(10) + red("Has RWX segments") ]
 
         if self.rpath:
-            res += [ "RPATH:".ljust(15) + red(repr(self.rpath)) ]
+            res += [ "RPATH:".ljust(10) + red(repr(self.rpath)) ]
 
         if self.runpath:
-            res += [ "RUNPATH:".ljust(15) + red(repr(self.runpath)) ]
+            res += [ "RUNPATH:".ljust(10) + red(repr(self.runpath)) ]
 
         if self.packed:
-            res.append('Packer:'.ljust(15) + red("Packed with UPX"))
+            res.append('Packer:'.ljust(10) + red("Packed with UPX"))
 
         return '\n'.join(res)
 
