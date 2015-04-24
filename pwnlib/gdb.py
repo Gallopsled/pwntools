@@ -124,7 +124,8 @@ def get_gdb_arch():
     return {
         'amd64': 'i386:x86-64',
         'powerpc': 'powerpc:common',
-        'powerpc64': 'powerpc:common64'
+        'powerpc64': 'powerpc:common64',
+        'mips64': 'mips:isa64'
     }.get(context.arch, context.arch)
 
 
