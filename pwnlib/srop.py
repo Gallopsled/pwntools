@@ -1,8 +1,4 @@
 import struct
-import string
-
-caps = string.letters[26:]
-lower = string.letters[:26]
 
 registers_32 = ["gs",   "fs",  "es",  "ds",   "edi",  "esi", "ebp", "esp", "ebx",
         "edx",  "ecx", "eax", "JUNK", "JUNK", "eip", "cs",  "eflags",
