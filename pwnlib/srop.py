@@ -18,12 +18,31 @@ for pos, reg in enumerate(registers_64):
     reg_pos_mapping_x64[reg] = pos
 
 class SigreturnFrame(object):
+    r"""
+    Crafts a sigreturn frame with values that are loaded up into
+    registers.
+
+    Arguments:
+        arch(str):
+            The architecture. Currently ``x86`` and ``x64`` are
+            supported.
+
+    Examples:
+
+        >>> s = SigreturnFrame(arch="x64")
+        >>> frame.set_regvalue("rax", 0xa)
+        >>> frame.set_regvalue("rdi", 0x00601000)
+        >>> frame.set_regvalue("rsi", 0x1000)
+        >>> frame.set_regvalue("rdx", 0x7)
+        >>> sploit += frame.get_frame()
+    """
+
     def __init__(self, arch="x86"):
         self.arch  = arch
         self.frame = []
-        self.initialize_vals()
+        self._initialize_vals()
 
-    def initialize_vals(self):
+    def _initialize_vals(self):
         if self.arch == "x86":
             self._initialize_x86()
         elif self.arch == "x64":
@@ -43,6 +62,9 @@ class SigreturnFrame(object):
         self.set_regvalue("ss", 0x7b)
 
     def set_regvalue(self, reg, val):
+        """
+        Sets a specific ``reg`` to a ``val``
+        """
         if self.arch == "x86":
             self._set_regvalue_x86(reg, val)
         elif self.arch == "x64":
