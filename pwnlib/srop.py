@@ -1,9 +1,11 @@
 import struct
 
+# Reference : http://lxr.free-electrons.com/source/arch/x86/include/asm/sigcontext.h?v=2.6.28#L138
 registers_32 = ["gs",   "fs",  "es",  "ds",   "edi",  "esi", "ebp", "esp", "ebx",
-        "edx",  "ecx", "eax", "JUNK", "JUNK", "eip", "cs",  "eflags",
-        "JUNK", "ss",  "floa"]
+        "edx",  "ecx", "eax", "trapno", "err", "eip", "cs",  "eflags",
+        "esp_at_signal", "ss",  "fpstate"]
 
+# Reference : https://www.cs.vu.nl/~herbertb/papers/srop_sp14.pdf
 registers_64 = ["uc_flags", "&uc", "uc_stack.ss_sp", "uc_stack.ss_flags", "uc_stack.ss_size",
         "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "rdi", "rsi", "rbp",
         "rbx", "rdx", "rax", "rcx", "rsp", "rip", "eflags", "csgsfs", "err", "trapno",
