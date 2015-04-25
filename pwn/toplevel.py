@@ -26,6 +26,7 @@ from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak
 from pwnlib.replacements import *
 from pwnlib.rop import ROP
+from pwnlib.srop import SigreturnFrame
 from pwnlib.timeout import Timeout
 from pwnlib.tubes.listen import listen
 from pwnlib.tubes.process import process
