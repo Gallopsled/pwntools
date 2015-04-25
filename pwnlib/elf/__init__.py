@@ -89,8 +89,10 @@ class ELF(ELFFile):
         self.bits = self.elfclass
 
         if self.arch == 'mips':
-            if self.header['e_flags'] & E_FLAGS.EF_MIPS_ARCH_64: self.bits = 64
-            if self.header['e_flags'] & E_FLAGS.EF_MIPS_ARCH_64R2: self.bits = 64
+            if self.header['e_flags'] & E_FLAGS.EF_MIPS_ARCH_64 \
+            or self.header['e_flags'] & E_FLAGS.EF_MIPS_ARCH_64R2:
+                self.arch = 'mips64'
+                self.bits = 64
 
         self._populate_got_plt()
         self._populate_symbols()
