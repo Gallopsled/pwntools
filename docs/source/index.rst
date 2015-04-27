@@ -41,6 +41,7 @@ Each of the ``binjitsu`` modules is documented here.
    memleak
    replacements
    rop
+   srop
    shellcraft
    shellcraft/*
    term
