@@ -23,7 +23,7 @@ binjitsu is a fork of the [`pwntools`](https://github.com/Gallopsled/pwntools) p
 # Documentation
 Our documentation is available at [binjitsu.readthedocs.org](https://binjitsu.readthedocs.org/en/latest/)
 
-To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/binjitsu/binjitsu-write-ups).
+To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/binjitsu/examples).
 
 # Installation
 
