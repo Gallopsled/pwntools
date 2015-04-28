@@ -190,7 +190,7 @@ Find offsets in your buffer that cause a crash, thanks to :mod:`pwnlib.cyclic`.
 
     >>> print cyclic(20)
     aaaabaaacaaadaaaeaaa
-    >>> # Assume EIP = 0x62616166 ('faab') at crash time
+    >>> # Assume EIP = 0x62616166 ('faab' which is pack(0x62616166))  at crash time
     >>> print cyclic_find('faab')
     120
 
