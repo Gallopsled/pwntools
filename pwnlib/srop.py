@@ -98,6 +98,12 @@ class SigreturnFrame(object):
         value = pack(val)
         self.frame[index] = value
 
+    def get_stackpointer_index(self):
+        if self.arch == "i386":
+            return _registers_32.index("esp")
+        elif self.arch == "amd64":
+            return _registers_64.index("rsp")
+
     def get_frame(self):
         frame_contents = ''.join(self.frame)
         if self.arch == "i386":
