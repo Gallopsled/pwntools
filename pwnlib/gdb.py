@@ -44,6 +44,8 @@ def get_qemu_arch(**kw):
             ('powerpc', 'big'):      'ppc',
             ('powerpc64', 'big'):    'ppc64',
             ('powerpc64', 'little'): 'ppc64le',
+            ('thumb', 'little'):     'armel',
+            ('thumb', 'big'):        'arm',
         }.get((context.arch, context.endian), context.arch)
 
 def debug(args, execute=None, exe=None, ssh=None, **kwargs):
