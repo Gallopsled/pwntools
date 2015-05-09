@@ -53,6 +53,7 @@ from glob import glob
 from os import environ
 from os import path
 
+from . import shellcraft
 from .context import context
 from .log import getLogger
 
@@ -386,6 +387,13 @@ def make_elf(data, vma = None, strip=True, **kwargs):
         'Hello\n'
     """
     with context.local(**kwargs):
+        if context.arch == 'thumb':
+            to_thumb = asm(shellcraft.arm.to_thumb(), arch='arm')
+
+            if not data.startswith(to_thumb):
+                data = to_thumb + data
+
+
         assembler = _assembler()
         linker    = _linker()
         code      = elf_template
