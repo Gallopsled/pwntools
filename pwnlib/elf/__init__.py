@@ -693,6 +693,9 @@ class ELF(ELFFile):
         if self.packed:
             res.append('Packer:'.ljust(10) + red("Packed with UPX"))
 
+        if self.fortify:
+            res.append("FORTIFY:".ljust(10) + green("Enabled"))
+
         return '\n'.join(res)
 
     @property
@@ -702,3 +705,8 @@ class ELF(ELFFile):
             return section.data()[16:]
         return None
 
+    @property
+    def fortify(self):
+        if any(s.endswith('_chk') for s in self.plt):
+            return True
+        return False
