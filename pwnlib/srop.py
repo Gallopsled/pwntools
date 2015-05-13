@@ -4,24 +4,28 @@ from .log import getLogger
 
 log = getLogger(__name__)
 
+registers = {
 # Reference : http://lxr.free-electrons.com/source/arch/x86/include/asm/sigcontext.h?v=2.6.28#L138
-_registers_i386 = ["gs",   "fs",  "es",  "ds",   "edi",  "esi", "ebp", "esp", "ebx",
+    'i386': ["gs",   "fs",  "es",  "ds",   "edi",  "esi", "ebp", "esp", "ebx",
         "edx",  "ecx", "eax", "trapno", "err", "eip", "cs",  "eflags",
-        "esp_at_signal", "ss",  "fpstate"]
+        "esp_at_signal", "ss",  "fpstate"],
 
 # Reference : https://www.cs.vu.nl/~herbertb/papers/srop_sp14.pdf
-_registers_amd64 = ["uc_flags", "&uc", "uc_stack.ss_sp", "uc_stack.ss_flags", "uc_stack.ss_size",
+    'amd64': ["uc_flags", "&uc", "uc_stack.ss_sp", "uc_stack.ss_flags", "uc_stack.ss_size",
         "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "rdi", "rsi", "rbp",
         "rbx", "rdx", "rax", "rcx", "rsp", "rip", "eflags", "csgsfs", "err", "trapno",
         "oldmask", "cr2", "&fpstate", "__reserved", "sigmask"]
+}
 
-def get_registers(**kwargs):
-    global _registers_i386, _registers_amd64
-    registers = {"i386": _registers_i386, "amd64": _registers_amd64}
-    with context.local(**kwargs):
-        arch = context.arch
-        registers = {"i386": _registers_i386, "amd64": _registers_amd64}
-        return registers[arch]
+defaults = {
+    "i386" : {"cs": 0x73, "ss": 0x7b},
+    "amd64": {"csgsfs": 0x33}
+}
+
+stack_pointers = {
+    'i386': 'esp',
+    'amd64': 'rsp'
+}
 
 class SigreturnFrame(object):
     r"""
@@ -69,44 +73,23 @@ class SigreturnFrame(object):
         [0, 0, 0, 0, 0, 0, 0, 0, 6295552, 7, 4096, 125, 0, 0, 0, 115, 0, 0, 123, 0]
     """
 
-    def __init__(self, **kwargs):
-        self.frame = []
-        self._initialize_vals()
-
-    def _initialize_vals(self, **kwargs):
-        values_to_set = { "i386" : [("cs", 0x73), ("ss", 0x7b)],
-                          "amd64": [("csgsfs", 0x33)],
-                        }
-        registers = get_registers(**kwargs)
-        for i in xrange(len(registers)):
-            self.frame.append(pack(0x0))
-
-        with context.local(**kwargs):
-            for register, value in values_to_set[context.arch]:
-                self.set_regvalue(register, value)
+    def __init__(self, **kw):
+        with context.local(**kw):
+            self.arch  = context.arch
+            self.frame = {r:0 for r in registers[self.arch]}
+            self.frame.update(defaults[self.arch])
 
     def set_regvalue(self, reg, val, **kwargs):
         """
         Sets a specific ``reg`` to a ``val``
         """
-        registers = get_registers(**kwargs)
-        index = registers.index(reg)
-        value = pack(val)
-        self.frame[index] = value
+        self.frame[reg] = val
 
     def get_spindex(self, **kwargs):
-        with context.local(**kwargs):
-            stackptr = {"i386": "esp", "amd64": "rsp"}
-            registers = get_registers(**kwargs)
-            return registers.index(stackptr[context.arch])
+        return registers[self.arch].index(stack_pointers[self.arch])
 
     def get_frame(self, **kwargs):
         """
         Returns the SROP frame
         """
-        size = {"i386": 4, "amd64": 8}
-        frame_contents = ''.join(self.frame)
-        with context.local(**kwargs):
-            registers = get_registers(**kwargs)
-            assert len(frame_contents) == len(registers) * size[context.arch]
-        return frame_contents
+        return pack_many(**[self.frame[r] for r in registers[self.arch]])
