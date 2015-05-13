@@ -5,10 +5,16 @@ import os
 import re
 import sys
 import tempfile
+import collections
 
 from .elf import ELF
 from .log import getLogger
 from .util import packing
+
+from srop import SigreturnFrame, _registers_32, _registers_64
+from context import *
+from util.packing import *
+import constants
 
 log = getLogger(__name__)
 
@@ -29,6 +35,86 @@ class ROP(object):
        #  '0x000c:        0x80496a8']
        str(rop)
        # '\\xfc\\x82\\x04\\x08\\xef\\xbe\\xad\\xde\\x00\\x00\\x00\\x00\\xa8\\x96\\x04\\x08'
+
+    >>> context.arch = "i386"
+    >>> write('/tmp/rop_elf_x86', make_elf(asm('int 0x80; ret; add esp, 0x10; ret; pop eax; ret')))
+    >>> e = ELF('/tmp/rop_elf_x86')
+    >>> e.symbols['funcname'] = e.address + 0x1234
+    >>> r = ROP(e)
+    >>> r.funcname(1, 2)
+    >>> r.funcname(3)
+    >>> r.execve(4, 5, 6)
+    >>> print r.dump()
+    0x0000:        0x8049288 (funcname)
+    0x0004:        0x8048057 (add esp, 0x10; ret)
+    0x0008:              0x1
+    0x000c:              0x2
+    0x0010:           '$$$$'
+    0x0014:           '$$$$'
+    0x0018:        0x8049288 (funcname)
+    0x001c:        0x804805b (pop eax; ret)
+    0x0020:              0x3
+    0x0024:        0x804805b (pop eax; ret)
+    0x0028:             0x77
+    0x002c:        0x8048054 (int 0x80)
+    0x0030:              0x0 (gs)
+    0x0034:              0x0 (fs)
+    0x0038:              0x0 (es)
+    0x003c:              0x0 (ds)
+    0x0040:              0x0 (edi)
+    0x0044:              0x0 (esi)
+    0x0048:              0x0 (ebp)
+    0x004c:              0x0 (esp)
+    0x0050:              0x4 (ebx)
+    0x0054:              0x6 (edx)
+    0x0058:              0x5 (ecx)
+    0x005c:              0xb (eax)
+    0x0060:              0x0 (trapno)
+    0x0064:              0x0 (err)
+    0x0068:        0x8048054 (eip)
+    0x006c:             0x73 (cs)
+    0x0070:              0x0 (eflags)
+    0x0074:              0x0 (esp_at_signal)
+    0x0078:             0x7b (ss)
+    0x007c:              0x0 (fpstate)
+
+    >>> r = ROP(e, 0x8048000)
+    >>> r.funcname(1, 2)
+    >>> r.funcname(3)
+    >>> r.execve(4, 5, 6)
+    >>> print r.dump()
+    0x8048000:        0x8049288 (funcname)
+    0x8048004:        0x8048057 (add esp, 0x10; ret)
+    0x8048008:              0x1
+    0x804800c:              0x2
+    0x8048010:           '$$$$'
+    0x8048014:           '$$$$'
+    0x8048018:        0x8049288 (funcname)
+    0x804801c:        0x804805b (pop eax; ret)
+    0x8048020:              0x3
+    0x8048024:        0x804805b (pop eax; ret)
+    0x8048028:             0x77
+    0x804802c:        0x8048054 (int 0x80)
+    0x8048030:              0x0 (gs)
+    0x8048034:              0x0 (fs)
+    0x8048038:              0x0 (es)
+    0x804803c:              0x0 (ds)
+    0x8048040:              0x0 (edi)
+    0x8048044:              0x0 (esi)
+    0x8048048:              0x0 (ebp)
+    0x804804c:        0x8048080 (esp)
+    0x8048050:              0x4 (ebx)
+    0x8048054:              0x6 (edx)
+    0x8048058:              0x5 (ecx)
+    0x804805c:              0xb (eax)
+    0x8048060:              0x0 (trapno)
+    0x8048064:              0x0 (err)
+    0x8048068:        0x8048054 (eip)
+    0x804806c:             0x73 (cs)
+    0x8048070:              0x0 (eflags)
+    0x8048074:              0x0 (esp_at_signal)
+    0x8048078:             0x7b (ss)
+    0x804807c:              0x0 (fpstate)
     """
     def __init__(self, elfs, base = None):
         """
@@ -50,6 +136,14 @@ class ROP(object):
         self.align = max(e.elfclass for e in elfs)/8
         self.migrated = False
         self.__load()
+
+        # Used by dump() so that it knows where the SROP chain
+        # begins. Indicates an index into the result returned
+        # by self.build.
+        self.srop_start_index = -1
+
+        # Cached address of a syscall instruction
+        self._syscall_instruction = None
 
     def resolve(self, resolvable):
         """Resolves a symbol to an address
@@ -246,11 +340,12 @@ class ROP(object):
 
         return out
 
+
     def chain(self):
         """Build the ROP chain
 
         Returns:
-            str containging raw ROP bytes
+            str containing raw ROP bytes
         """
 
         return packing.flat(
@@ -262,31 +357,64 @@ class ROP(object):
         """Dump the ROP chain in an easy-to-read manner"""
         result = []
 
+        def _get_next_sropreg():
+            register_arch_mapping = {"i386": _registers_32, "amd64": _registers_64}
+            registers = register_arch_mapping[context.arch]
+            for eachreg in registers:
+                yield eachreg
+
+        nextreg = _get_next_sropreg()
         rop = self.build(self.base or 0)
         addrs = [addr for addr, value, was_ref in rop]
-        for addr, value, was_ref in rop:
-            if isinstance(value, str):
-                line   = "0x%04x: %16r" % (addr, value.rstrip('\x00'))
-            elif isinstance(value, (int, long)):
-                if was_ref:
-                    line = "0x%04x: %#16x (%+d)" % (
+        for pos, content in enumerate(rop):
+            addr, value, was_ref = content
+            if self.srop_start_index != -1 and pos >= self.srop_start_index:
+                assert isinstance(value, (int, long)) == True
+                line = "0x%04x: %#16x%s" % (
                         addr,
                         value,
-                        value - addr
-                    )
-                else:
-                    ref = self.unresolve(value)
-                    line = "0x%04x: %#16x%s" % (
-                        addr,
-                        value,
-                        (' (%s)' % ref) if ref else ''
-                    )
+                        (' (%s)' % next(nextreg))
+                        )
+
             else:
-                log.error("ROP: ROP.build returned an unexpected value %r" % value)
+                if isinstance(value, str):
+                    line   = "0x%04x: %16r" % (addr, value.rstrip('\x00'))
+                elif isinstance(value, (int, long)):
+                    if was_ref:
+                        line = "0x%04x: %#16x (%+d)" % (
+                            addr,
+                            value,
+                            value - addr
+                        )
+                    else:
+                        ref = self.unresolve(value)
+                        line = "0x%04x: %#16x%s" % (
+                            addr,
+                            value,
+                            (' (%s)' % ref) if ref else ''
+                        )
+                else:
+                    log.error("ROP: ROP.build returned an unexpected value %r" % value)
 
             result.append(line)
 
         return '\n'.join(result)
+
+    def _get_syscall_inst(self):
+        arch_syscall_mapping = {"i386" : ["int80", "sysenter"],
+                                "amd64": ["syscall"]}
+        instructions = arch_syscall_mapping[context.arch]
+
+        if self._syscall_instruction:
+            return self._syscall_instruction
+
+        for each_instruction in instructions:
+            try:
+                self._syscall_instruction = self.__getattr__(each_instruction).address
+                return self._syscall_instruction
+            except AttributeError, e:
+                log.info("Unable to find '%s' instruction" % each_instruction)
+        log.error("Unable to find any syscall instructions")
 
     def call(self, resolvable, arguments=()):
         """Add a call to the ROP chain
@@ -303,10 +431,84 @@ class ROP(object):
 
         addr = self.resolve(resolvable)
 
-        if addr is None:
-            log.error("Could not resolve %r" % resolvable)
+        if addr:
+            self._chain.append((addr, arguments))
+            return
 
-        self._chain.append((addr, arguments))
+        syscall_name = "SYS_" + resolvable.lower()
+        syscall_number = getattr(constants, syscall_name, None)
+
+        if syscall_number == None:
+            log.error("Could not resolve %r." % resolvable)
+
+        log.info("Could not resolve %r. Switching to SROP." % resolvable)
+        self.do_srop(syscall_number, arguments)
+
+
+    def do_srop(self, syscall_number, arguments):
+        sigreturn_syscalls = {"i386": (0x77, "eax"), "amd64": (0xf, "rax")}
+        sigreturn_number, register = sigreturn_syscalls[context.arch]
+
+        try:
+            pop_acc = self.search(regs=[register], order='regs').address
+        except TypeError, e:
+            log.error("No gadget to pop into %s found" % register)
+
+        SYSCALL_INST = self._get_syscall_inst()
+
+        # First, we need to pop the system call number of "sigreturn" into
+        # eax.
+        self.raw(pop_acc)
+        self.raw(sigreturn_number)
+
+        # Second, we call the syscall instruction to execute the "sigreturn"
+        # system call
+        self.raw(SYSCALL_INST)
+
+        # Third, we need to construct an SROP frame that calls the required
+        # system call
+        frame, sp_pos = self.get_sigreturnframe(syscall_number, arguments)
+        frame = unpack_many(frame)
+        self.srop_start_index = len(self.build())
+        for each in frame:
+            self.raw(each)
+
+        # If the base is specified, we can continue setting up our chain
+        # even after the SROP call
+        if self.base:
+            # Find where in self._chain we have the stack pointer
+            sp_index = len(self._chain) - len(frame) + sp_pos
+
+            # Find the new sp value that we need to store in the stack
+            # pointer
+            sizes = {"i386": 4, "amd64": 8}
+            size  = sizes[context.arch]
+            new_spval = self.base + (self.srop_start_index*size) + len(frame)*size
+
+            # Replace the sp value with the right address
+            self._chain[sp_index] = (new_spval, ())
+
+
+    def get_sigreturnframe(self, syscall_number, arguments):
+        registers_amd64 = ["rax", "rip", "rdi", "rsi", "rdx", "r10", "r8", "r9"]
+        registers_i386  = ["eax", "eip", "ebx", "ecx", "edx", "esi", "edi", "ebp"]
+
+        reg_arch_mapping = {"i386": registers_i386, "amd64": registers_amd64}
+
+        registers = reg_arch_mapping[context.arch]
+
+        SYSCALL_INST = self._get_syscall_inst()
+
+        s = SigreturnFrame(arch=context.arch)
+        s.set_regvalue(registers[0], syscall_number)
+        s.set_regvalue(registers[1], SYSCALL_INST)
+
+        for register, value in zip(registers[2:], arguments):
+            s.set_regvalue(register, value)
+
+        # Returns the frame and the position of the stack pointer on the SROP
+        # frame
+        return s.get_frame(), s.get_stackpointer_index()
 
     def raw(self, value):
         """Adds a raw integer or string to the ROP chain.
@@ -397,6 +599,9 @@ class ROP(object):
         add   = re.compile(r'^add .sp, (\S+)$')
         ret   = re.compile(r'^ret$')
         leave = re.compile(r'^leave$')
+        int80 = re.compile(r'int +0x80')
+        syscall = re.compile(r'^syscall$')
+        sysenter = re.compile(r'^sysenter$')
 
         #
         # Validation routine
@@ -408,7 +613,7 @@ class ROP(object):
         # >>> valid('add esp, 0x24')
         # True
         #
-        valid = lambda insn: any(map(lambda pattern: pattern.match(insn), [pop,add,ret,leave]))
+        valid = lambda insn: any(map(lambda pattern: pattern.match(insn), [pop,add,ret,leave,int80,syscall,sysenter]))
 
         #
         # Currently, ropgadget.args.Args() doesn't take any arguments, and pulls
@@ -438,7 +643,7 @@ class ROP(object):
                 sys.stdout = Wrapper(sys.stdout)
 
                 import ropgadget
-                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'add|pop|leave|ret', '--nojop', '--nosys']
+                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop']
                 args = ropgadget.args.Args().getArgs()
                 core = ropgadget.core.Core(args)
                 core.do_binary(elf.path)
@@ -504,7 +709,7 @@ class ROP(object):
         #       I don't have to rewrite __getattr__ to support this.
         #
         leave = self.search(regs = frame_regs, order = 'regs')
-        if leave and leave[1]['regs'] != frame_regs:
+        if leave and leave.details['regs'] != frame_regs:
             leave = None
         self.leave = leave
 
@@ -534,6 +739,7 @@ class ROP(object):
         """
 
         regs = set(regs or [])
+        gadget = collections.namedtuple('gadget', ['address', 'details'])
 
         # Search for an exact match, save the closest match
         closest = None
@@ -552,7 +758,7 @@ class ROP(object):
                 cur = (len(i['regs']), i['move'], a)
 
             if cur < closest_val:
-                closest = (a, i)
+                closest = gadget(address=a, details=i)
                 closest_val = cur
 
         return closest
@@ -574,6 +780,7 @@ class ROP(object):
         >>> rop.ret     != None
         True
         """
+        gadget = collections.namedtuple('gadget', ['address', 'details'])
         bad_attrs = [
             'trait_names',          # ipython tab-complete
             'download',             # frequent typo
@@ -594,6 +801,14 @@ class ROP(object):
                 count = int(attr.split('_')[1])
 
             return self.search(move=count)
+
+        elif attr in ["int80", "syscall", "sysenter"]:
+            mapping = {"int80": u"int 0x80", u"syscall": u"syscall",
+                       "sysenter": u"sysenter"}
+            for each in self.gadgets:
+                if self.gadgets[each]['insns'] == [mapping[attr]]:
+                    return gadget(each, self.gadgets[each])
+            return None
 
         #
         # Check for a '_'-delimited list of registers
