@@ -453,10 +453,11 @@ def _hexiichar(c):
         return "%02x " % ord(c)
 
 default_style = {
-    'marker':       text.gray if text.has_gray else text.blue,
+    'marker'      : text.gray if text.has_gray else text.blue,
     'nonprintable': text.gray if text.has_gray else text.blue,
-    '00':           text.red,
-    'ff':           text.green,
+    'highlight'   : text.white_on_red,
+    '00'          : text.red,
+    'ff'          : text.green,
 }
 
 def hexdump_iter(fd, width = 16, skip = True, hexii = False, begin = 0,
@@ -476,7 +477,11 @@ def hexdump_iter(fd, width = 16, skip = True, hexii = False, begin = 0,
                    hexdump.
       begin(int): Offset of the first byte to print in the left column
       style(dict): Color scheme to use.
-      highlight(iterable): Byte values to highlight.
+      highlight(iterable): Byte sequences to highlight.  A byte sequence is an
+                           iterable where each element is either a character or
+                           an integer, or `None` which means "any byte".  Output
+                           lines containing a match will have a "<" appended
+                           (hint: grep for "<$").
 
     Returns:
       A generator producing the hexdump-dump one line at a time.
@@ -485,10 +490,6 @@ def hexdump_iter(fd, width = 16, skip = True, hexii = False, begin = 0,
     style     = style or {}
     highlight = highlight or []
 
-    for b in highlight:
-        if isinstance(b, str):
-            b = ord(b)
-        style['%02x' % b] = text.white_on_red
     _style = style
     style = default_style.copy()
     style.update(_style)
@@ -519,52 +520,110 @@ def hexdump_iter(fd, width = 16, skip = True, hexii = False, begin = 0,
                 hbyte = st(hbyte)
                 abyte = st(abyte)
             return hbyte, abyte
-        cache = [style_byte(chr(b)) for b in range(256)]
+        def hl_byte(b):
+            hbyte = '%02x' % ord(b)
+            abyte = b if isprint(b) else '·'
+            st = style.get('highlight')
+            if st:
+                hbyte = st(hbyte)
+                abyte = st(abyte)
+            return hbyte, abyte
+        cache = {b: style_byte(b) for b in map(chr, range(256))}
 
-    numb = 0
+    if highlight:
+        def canon(bseq):
+            out = []
+            for b in bseq:
+                if isinstance(b, str):
+                    out += list(b)
+                elif isinstance(b, int):
+                    out.append(chr(b))
+                elif b == None:
+                    out.append(b)
+                else:
+                    log.error('Byte value must be a character, and integer or None')
+            return out
+        highlight = map(canon, highlight)
+        lookahead = max(map(len, highlight)) - 1
+        def match(needle, haystack):
+            for a, b in zip(needle, haystack):
+                if a == None:
+                    continue
+                if a != b:
+                    return False
+            return True
+
+    else:
+        lookahead = 0
+
+    data = fd.read(lookahead)
+    offset = begin
+
+    hlend = 0
     while True:
-        offset = begin + numb
-        chunk = fd.read(width)
+        data += fd.read(width)
+        chunk = data[:width]
+
         if chunk == '':
             break
-        numb += len(chunk)
+
         # If this chunk is the same as the last unique chunk,
         # use a '*' instead.
         if skip and last_unique == chunk:
-            last_unique = chunk
             if not skipping:
                 yield '*'
                 skipping = True
-            continue
+        else:
+            # Chunk is unique, save for next iteration
+            last_unique = chunk
+            skipping = False
 
-        # Chunk is unique, save for next iteration
-        last_unique = chunk
-        skipping = False
+            # Generate contents for line
+            hexbytes = ''
+            printable = ''
+            hlmatch = False
+            for i, b in enumerate(chunk):
+                if hexii:
+                    hbyte, abyte = _hexiichar(b), ''
+                else:
+                    do_hl = False
+                    if highlight:
+                        haystack = data[i:]
+                        pos = i + offset
+                        for needle in highlight:
+                            end = pos + len(needle)
+                            if end > hlend and match(needle, haystack):
+                                hlmatch = True
+                                hlend = end
+                        if pos < hlend:
+                            do_hl = True
+                    if do_hl:
+                        hbyte, abyte = hl_byte(b)
+                    else:
+                        hbyte, abyte = cache[b]
 
-        # Cenerate contents for line
-        hexbytes = ''
-        printable = ''
-        for i, b in enumerate(chunk):
-            if not hexii:
-                hbyte, abyte = cache[ord(b)]
-            else:
-                hbyte, abyte = _hexiichar(b), ''
+                if i % 4 == 3 and i < width - 1:
+                    hbyte += spacer
+                    abyte += marker
 
-            if i % 4 == 3 and i < width - 1:
-                hbyte += spacer
-                abyte += marker
+                hexbytes += hbyte + ' '
+                printable += abyte
 
-            hexbytes += hbyte + ' '
-            printable += abyte
+            if i + 1 < width:
+                delta = width - i - 1
+                hexbytes += ' ' * (byte_width * delta + (delta - 1) // 4)
 
-        if i + 1 < width:
-            delta = width - i - 1
-            hexbytes += ' ' * (byte_width * delta + (delta - 1) // 4)
+            line = line_fmt % {'offset': offset,
+                               'hexbytes': hexbytes,
+                               'printable': printable}
+            if hlmatch:
+                line += '<'
+            yield line
 
-        line = line_fmt % {'offset': offset, 'hexbytes': hexbytes, 'printable': printable}
-        yield line
+        data = data[width:]
+        offset += len(chunk)
 
-    line = "%08x" % (begin + numb)
+    line = "%08x" % offset
     yield line
 
 def hexdump(s, width = 16, skip = True, hexii = False, begin = 0,
@@ -582,7 +641,11 @@ def hexdump(s, width = 16, skip = True, hexii = False, begin = 0,
                    hexdump.
       begin(int):  Offset of the first byte to print in the left column
       style(dict): Color scheme to use.
-      highlight(iterable): Byte values to highlight.
+      highlight(iterable): Byte sequences to highlight.  A byte sequence is an
+                           iterable where each element is either a character or
+                           an integer, or `None` which means "any byte".  Output
+                           lines containing a match will have a "<" appended
+                           (hint: grep for "<$").
 
     Returns:
       A hexdump-dump in the form of a string.
