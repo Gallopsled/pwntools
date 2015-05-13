@@ -1,26 +1,36 @@
 from .util.packing import pack
+from .context import context
+from .log import getLogger
+
+log = getLogger(__name__)
 
 # Reference : http://lxr.free-electrons.com/source/arch/x86/include/asm/sigcontext.h?v=2.6.28#L138
-_registers_32 = ["gs",   "fs",  "es",  "ds",   "edi",  "esi", "ebp", "esp", "ebx",
+_registers_i386 = ["gs",   "fs",  "es",  "ds",   "edi",  "esi", "ebp", "esp", "ebx",
         "edx",  "ecx", "eax", "trapno", "err", "eip", "cs",  "eflags",
         "esp_at_signal", "ss",  "fpstate"]
 
 # Reference : https://www.cs.vu.nl/~herbertb/papers/srop_sp14.pdf
-_registers_64 = ["uc_flags", "&uc", "uc_stack.ss_sp", "uc_stack.ss_flags", "uc_stack.ss_size",
+_registers_amd64 = ["uc_flags", "&uc", "uc_stack.ss_sp", "uc_stack.ss_flags", "uc_stack.ss_size",
         "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "rdi", "rsi", "rbp",
         "rbx", "rdx", "rax", "rcx", "rsp", "rip", "eflags", "csgsfs", "err", "trapno",
         "oldmask", "cr2", "&fpstate", "__reserved", "sigmask"]
 
-_reg_pos_mapping = {
-        'amd64' : {},
-        'i386'  : {}
-        }
+def get_registers(**kwargs):
+    global _registers_i386, _registers_amd64
+    registers = {"i386": _registers_i386, "amd64": _registers_amd64}
+    with context.local(**kwargs):
+        arch = context.arch
+        registers = {"i386": _registers_i386, "amd64": _registers_amd64}
+        return registers[arch]
 
-for pos, reg in enumerate(_registers_32):
-    _reg_pos_mapping['i386'][reg] = pos
-
-for pos, reg in enumerate(_registers_64):
-    _reg_pos_mapping['amd64'][reg] = pos
+def get_regpos_mapping(**kwargs):
+    with context.local(**kwargs):
+        arch = context.arch
+        registers = get_registers(**kwargs)
+        mapping = {}
+        for pos, reg in enumerate(registers[arch]):
+            mapping[reg] = pos
+        return mapping
 
 class SigreturnFrame(object):
     r"""
@@ -68,46 +78,41 @@ class SigreturnFrame(object):
         [0, 0, 0, 0, 0, 0, 0, 0, 6295552, 7, 4096, 125, 0, 0, 0, 115, 0, 0, 123, 0]
     """
 
-    def __init__(self, arch="i386"):
-        self.arch  = arch
+    def __init__(self, **kwargs):
+        with context.local(**kwargs):
+            self.arch = context.arch
         self.frame = []
+        self._registers = get_registers(**kwargs)
+        self._registers = get_registers(**kwargs)
         self._initialize_vals()
 
     def _initialize_vals(self):
-        if self.arch == "i386":
-            self._initialize_i386()
-        elif self.arch == "amd64":
-            self._initialize_amd64()
-
-    def _initialize_amd64(self):
-        for i in range(len(_registers_64)):
+        values_to_set = { "i386" : [("cs", 0x73), ("ss", 0x7b)],
+                          "amd64": [("csgsfs", 0x33)],
+                        }
+        for i in xrange(len(self._registers)):
             self.frame.append(pack(0x0))
-        self.set_regvalue("csgsfs", 0x33)
 
-    def _initialize_i386(self):
-        for i in range(len(_registers_32)):
-            self.frame.append(pack(0x0))
-        self.set_regvalue("cs", 0x73)
-        self.set_regvalue("ss", 0x7b)
+        for register, value in values_to_set[self.arch]:
+            self.set_regvalue(register, value)
 
     def set_regvalue(self, reg, val):
         """
         Sets a specific ``reg`` to a ``val``
         """
-        index = _reg_pos_mapping[self.arch][reg]
+        index = self._registers.index(reg)
         value = pack(val)
         self.frame[index] = value
 
-    def get_stackpointer_index(self):
-        if self.arch == "i386":
-            return _registers_32.index("esp")
-        elif self.arch == "amd64":
-            return _registers_64.index("rsp")
+    def get_spindex(self):
+        stackptr = {"i386": "esp", "amd64": "rsp"}
+        return self._registers.index(stackptr[self.arch])
 
     def get_frame(self):
+        """
+        Returns the SROP frame
+        """
+        size = {"i386": 4, "amd64": 8}
         frame_contents = ''.join(self.frame)
-        if self.arch == "i386":
-            assert len(frame_contents) == len(_registers_32) * 4
-        elif self.arch == "amd64":
-            assert len(frame_contents) == len(_registers_64) * 8
+        assert len(frame_contents) == len(self._registers) * size[self.arch]
         return frame_contents
