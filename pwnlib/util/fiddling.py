@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import re, base64, random, string
+import re, base64, random, string, StringIO
 from . import packing, lists
 from .cyclic import cyclic_find
 from ..context import context
@@ -416,7 +416,7 @@ def rol(n, k, word_size = None):
 def ror(n, k, word_size = None):
     """A simple wrapper around :func:`rol`, which negates the values of `k`."""
 
-    return ror(n, -k, word_size)
+    return rol(n, -k, word_size)
 
 def isprint(c):
     """isprint(c) -> bool
@@ -459,25 +459,29 @@ default_style = {
     'ff':           text.green,
 }
 
-def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
-                 style = None, highlight = None):
+def hexdump_iter(fd, width = 16, skip = True, hexii = False, begin = 0,
+                 style = {}, highlight = []):
     """hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
                     style = {}, highlight = []) -> str generator
 
-    Return a hexdump-dump of a string as a generator of lines.
+    Return a hexdump-dump of a string as a generator of lines.  Unless you have
+    massive amounts of data you probably want to use :meth:`hexdump`.
 
     Arguments:
-      s(str): The string to dump
+      fd(file): File object to dump.  Use :meth:`StringIO.StringIO` or
+                :meth:`hexdump` to dump a string.
       width(int): The number of characters per line
       skip(bool): Set to True, if repeated lines should be replaced by a "*"
-      hexii(bool): Set to True, if a hexii-dump should be returned instead of a hexdump.
-      begin(int):  Offset of the first byte to print in the left column
+      hexii(bool): Set to True, if a hexii-dump should be returned instead of a
+                   hexdump.
+      begin(int): Offset of the first byte to print in the left column
       style(dict): Color scheme to use.
       highlight(iterable): Byte values to highlight.
 
     Returns:
-      A hexdump-dump in the form of a string.
-"""
+      A generator producing the hexdump-dump one line at a time.
+
+    """
     style     = style or {}
     highlight = highlight or []
 
@@ -517,7 +521,13 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
             return hbyte, abyte
         cache = [style_byte(chr(b)) for b in range(256)]
 
-    for line, chunk in enumerate(lists.group(width, s)):
+    numb = 0
+    while True:
+        offset = begin + numb
+        chunk = fd.read(width)
+        if chunk == '':
+            break
+        numb += len(chunk)
         # If this chunk is the same as the last unique chunk,
         # use a '*' instead.
         if skip and last_unique == chunk:
@@ -532,7 +542,6 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
         skipping = False
 
         # Cenerate contents for line
-        offset    = begin+line*width
         hexbytes = ''
         printable = ''
         for i, b in enumerate(chunk):
@@ -555,10 +564,34 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
         line = line_fmt % {'offset': offset, 'hexbytes': hexbytes, 'printable': printable}
         yield line
 
-    line = "%08x" % (len(s) + begin)
+    line = "%08x" % (begin + numb)
     yield line
 
 def hexdump(s, width = 16, skip = True, hexii = False, begin = 0,
-            style = None, highlight = None):
+            style = {}, highlight = []):
+    """hexdump(s, width = 16, skip = True, hexii = False, begin = 0,
+               style = {}, highlight = []) -> str generator
+
+    Return a hexdump-dump of a string as a generator of lines.
+
+    Arguments:
+      s(str): The data to hexdump.
+      width(int): The number of characters per line
+      skip(bool): Set to True, if repeated lines should be replaced by a "*"
+      hexii(bool): Set to True, if a hexii-dump should be returned instead of a
+                   hexdump.
+      begin(int):  Offset of the first byte to print in the left column
+      style(dict): Color scheme to use.
+      highlight(iterable): Byte values to highlight.
+
+    Returns:
+      A hexdump-dump in the form of a string.
+"""
     s = packing.flat(s)
-    return '\n'.join(hexdump_iter(s, width, skip, hexii, begin, style, highlight))
+    return '\n'.join(hexdump_iter(StringIO.StringIO(s),
+                                  width,
+                                  skip,
+                                  hexii,
+                                  begin,
+                                  style,
+                                  highlight))

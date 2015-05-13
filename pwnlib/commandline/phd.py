@@ -84,8 +84,6 @@ def main():
         else:
             infile.seek(skip, os.SEEK_CUR)
 
-    data = infile.read(count)
-
     hl = []
     if args.highlight:
         for hs in args.highlight:
@@ -93,7 +91,7 @@ def main():
                 hl.append(asint(h))
 
     try:
-        for line in hexdump_iter(data, width, highlight = hl, begin = offset + skip):
+        for line in hexdump_iter(infile, width, highlight = hl, begin = offset + skip):
             print line
     except (KeyboardInterrupt, IOError):
         pass
