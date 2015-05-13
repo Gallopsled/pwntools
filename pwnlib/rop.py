@@ -145,9 +145,6 @@ class ROP(object):
         # Cached address of a syscall instruction
         self._syscall_instruction = None
 
-        with context.local(**kwargs):
-            self.arch = context.arch
-
     def resolve(self, resolvable):
         """Resolves a symbol to an address
 
@@ -402,10 +399,12 @@ class ROP(object):
 
         return '\n'.join(result)
 
-    def _get_syscall_inst(self):
-        arch_syscall_mapping = {"i386" : ["int80", "sysenter"],
-                                "amd64": ["syscall"]}
-        instructions = arch_syscall_mapping[self.arch]
+    def _get_syscall_inst(self, **kwargs):
+        instructions = None
+        with context.local(**kwargs):
+            arch_syscall_mapping = {"i386" : ["int80", "sysenter"],
+                                    "amd64": ["syscall"]}
+            instructions = arch_syscall_mapping[context.arch]
 
         if self._syscall_instruction:
             return self._syscall_instruction
@@ -447,9 +446,11 @@ class ROP(object):
         self.do_srop(syscall_number, arguments)
 
 
-    def do_srop(self, syscall_number, arguments):
-        sigreturn_syscalls = {"i386": (0x77, "eax"), "amd64": (0xf, "rax")}
-        sigreturn_number, register = sigreturn_syscalls[self.arch]
+    def do_srop(self, syscall_number, arguments, **kwargs):
+        sigreturn_number, register = None, None
+        with context.local(**kwargs):
+            sigreturn_syscalls = {"i386": (0x77, "eax"), "amd64": (0xf, "rax")}
+            sigreturn_number, register = sigreturn_syscalls[context.arch]
 
         try:
             pop_acc = self.search(regs=[register], order='regs').address
@@ -483,34 +484,36 @@ class ROP(object):
 
             # Find the new sp value that we need to store in the stack
             # pointer
-            sizes = {"i386": 4, "amd64": 8}
-            size  = sizes[self.arch]
+            size = None
+            with context.local(**kwargs):
+                sizes = {"i386": 4, "amd64": 8}
+                size  = sizes[context.arch]
             new_spval = self.base + (self.srop_start_index*size) + len(frame)*size
 
             # Replace the sp value with the right address
             self._chain[sp_index] = (new_spval, ())
 
 
-    def get_sigreturnframe(self, syscall_number, arguments):
+    def get_sigreturnframe(self, syscall_number, arguments, **kwargs):
         argregisters_amd64 = ["rax", "rip", "rdi", "rsi", "rdx", "r10", "r8", "r9"]
         argregisters_i386  = ["eax", "eip", "ebx", "ecx", "edx", "esi", "edi", "ebp"]
 
-        reg_arch_mapping = {"i386": argregisters_i386, "amd64": argregisters_amd64}
+        with context.local(**kwargs):
+            reg_arch_mapping = {"i386": argregisters_i386, "amd64": argregisters_amd64}
+            registers = reg_arch_mapping[context.arch]
 
-        registers = reg_arch_mapping[self.arch]
+            SYSCALL_INST = self._get_syscall_inst()
 
-        SYSCALL_INST = self._get_syscall_inst()
+            s = SigreturnFrame()
+            s.set_regvalue(registers[0], syscall_number)
+            s.set_regvalue(registers[1], SYSCALL_INST)
 
-        s = SigreturnFrame(arch=self.arch)
-        s.set_regvalue(registers[0], syscall_number)
-        s.set_regvalue(registers[1], SYSCALL_INST)
+            for register, value in zip(registers[2:], arguments):
+                s.set_regvalue(register, value)
 
-        for register, value in zip(registers[2:], arguments):
-            s.set_regvalue(register, value)
-
-        # Returns the frame and the position of the stack pointer on the SROP
-        # frame
-        return s.get_frame(), s.get_spindex()
+            # Returns the frame and the position of the stack pointer on the SROP
+            # frame
+            return s.get_frame(), s.get_spindex()
 
     def raw(self, value):
         """Adds a raw integer or string to the ROP chain.

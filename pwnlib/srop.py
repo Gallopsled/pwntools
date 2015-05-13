@@ -70,21 +70,20 @@ class SigreturnFrame(object):
     """
 
     def __init__(self, **kwargs):
-        with context.local(**kwargs):
-            self.arch = context.arch
         self.frame = []
         self._registers = get_registers(**kwargs)
         self._initialize_vals()
 
-    def _initialize_vals(self):
+    def _initialize_vals(self, **kwargs):
         values_to_set = { "i386" : [("cs", 0x73), ("ss", 0x7b)],
                           "amd64": [("csgsfs", 0x33)],
                         }
         for i in xrange(len(self._registers)):
             self.frame.append(pack(0x0))
 
-        for register, value in values_to_set[self.arch]:
-            self.set_regvalue(register, value)
+        with context.local(**kwargs):
+            for register, value in values_to_set[context.arch]:
+                self.set_regvalue(register, value)
 
     def set_regvalue(self, reg, val):
         """
@@ -94,15 +93,17 @@ class SigreturnFrame(object):
         value = pack(val)
         self.frame[index] = value
 
-    def get_spindex(self):
-        stackptr = {"i386": "esp", "amd64": "rsp"}
-        return self._registers.index(stackptr[self.arch])
+    def get_spindex(self, **kwargs):
+        with context.local(**kwargs):
+            stackptr = {"i386": "esp", "amd64": "rsp"}
+            return self._registers.index(stackptr[context.arch])
 
-    def get_frame(self):
+    def get_frame(self, **kwargs):
         """
         Returns the SROP frame
         """
         size = {"i386": 4, "amd64": 8}
         frame_contents = ''.join(self.frame)
-        assert len(frame_contents) == len(self._registers) * size[self.arch]
+        with context.local(**kwargs):
+            assert len(frame_contents) == len(self._registers) * size[context.arch]
         return frame_contents
