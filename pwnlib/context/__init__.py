@@ -309,6 +309,7 @@ class ContextType(object):
         'os': 'linux',
         'signed': False,
         'timeout': Timeout.maximum,
+        'terminal': None,
     }
 
     #: Valid values for :meth:`pwnlib.context.ContextType.os`
@@ -809,6 +810,17 @@ class ContextType(object):
         valid values.
         """
         return Timeout(value).timeout
+
+    @_validator
+    def terminal(self, value):
+        """
+        Default terminal used by :meth:`pwnlib.util.misc.run_in_new_terminal`.
+        Can be a string or an iterable of strings.  In the latter case the first
+        entry is the terminal and the rest are default arguments.
+        """
+        if isinstance(value, (str, unicode)):
+            return [value]
+        return value
 
     #*************************************************************************
     #                               ALIASES
