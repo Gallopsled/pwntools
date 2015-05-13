@@ -194,8 +194,8 @@ else:
     % else:
         <%
         a,b = fiddling.xor_pair(srcp, avoid = '\x00\n')
-        a = pretty(packing.unpack(a, dest.size, 'little', False))
-        b = pretty(packing.unpack(b, dest.size, 'little', False))
+        a = pretty(packing.unpack(a, dest.size, endian='little', sign=False))
+        b = pretty(packing.unpack(b, dest.size, endian='little', sign=False))
         %>\
 ## There's no XOR REG, IMM64 but we can take the easy route
 ## for smaller registers.

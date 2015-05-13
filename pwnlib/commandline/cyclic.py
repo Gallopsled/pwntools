@@ -5,6 +5,8 @@ import sys
 
 from pwn import *
 
+from . import common
+
 parser = argparse.ArgumentParser(
     description = "Cyclic pattern creator/finder"
 )
@@ -22,6 +24,15 @@ parser.add_argument(
     default = 4,
     type = int,
     help = 'Size of the unique subsequences (defaults to 4).'
+)
+
+parser.add_argument(
+    '-c', '--context',
+    metavar = 'context',
+    action = 'append',
+    type   = common.context_arg,
+    choices = common.choices,
+    help = 'The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: %s' % common.choices,
 )
 
 group = parser.add_mutually_exclusive_group(required = True)
@@ -48,9 +59,9 @@ def main():
         pat = args.lookup
 
         if pat.startswith('0x'):
-            pat = packing.pack(int(pat[2:], 16), subsize*8, 'little', 'unsigned')
+            pat = packing.pack(int(pat[2:], 16), subsize*8)
         elif pat.isdigit():
-            pat = packing.pack(int(pat, 10), subsize*8, 'little', 'unsigned')
+            pat = packing.pack(int(pat, 10), subsize*8)
 
         if len(pat) != subsize:
             log.critical('Subpattern must be %d bytes' % subsize)

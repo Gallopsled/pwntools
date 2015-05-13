@@ -77,7 +77,7 @@ Args:
     /* push ${repr(string)} */
 % for word in lists.group(4, string, 'fill', extend)[::-1]:
 <%
-    sign = packing.u32(word, 'little', 'signed')
+    sign = packing.u32(word, endian='little', sign='signed')
 %>\
 % if sign in [0, 0xa]:
     push ${pretty(sign + 1)}
@@ -89,8 +89,8 @@ Args:
 % else:
 <%
     a,b = fiddling.xor_pair(word, avoid = '\x00\n')
-    a   = packing.u32(a, 'little', 'unsigned')
-    b   = packing.u32(b, 'little', 'unsigned')
+    a   = packing.u32(a, endian='little', sign='unsigned')
+    b   = packing.u32(b, endian='little', sign='unsigned')
 %>\
     push ${pretty(a)}
     xor dword ptr [esp], ${pretty(b)}

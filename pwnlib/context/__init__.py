@@ -5,8 +5,9 @@ Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
 import collections
-import platform
+import functools
 import logging
+import platform
 import string
 import sys
 import threading
@@ -969,3 +970,23 @@ class ContextType(object):
 #: Consider it a shorthand to passing ``os=`` and ``arch=`` to every single
 #: function call.
 context = ContextType()
+
+def LocalContext(function):
+    """
+    Wraps the specied function on a context.local() block, using kwargs.
+
+    Example:
+
+        >>> @LocalContext
+        ... def printArch():
+        ...     print(context.arch)
+        >>> printArch()
+        i386
+        >>> printArch(arch='arm')
+        arm
+    """
+    @functools.wraps(function)
+    def setter(*a, **kw):
+        with context.local(**{k:kw.pop(k) for k,v in kw.items() if isinstance(getattr(ContextType, k, None), property)}):
+            return function(*a, **kw)
+    return setter

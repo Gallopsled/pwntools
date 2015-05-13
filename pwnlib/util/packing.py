@@ -34,7 +34,7 @@ import struct
 import sys
 from itertools import product
 
-from ..context import context
+from ..context import context, LocalContext
 
 mod = sys.modules[__name__]
 
@@ -147,7 +147,8 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         else:
             return ''.join(reversed(out))
 
-def unpack(data, word_size = None, endianness = None, sign = None, **kwargs):
+@LocalContext
+def unpack(data, word_size = None):
     """unpack(data, word_size = None, endianness = None, sign = None, **kwargs) -> int
 
     Packs arbitrary-sized integer.
@@ -171,55 +172,55 @@ def unpack(data, word_size = None, endianness = None, sign = None, **kwargs):
         The unpacked number.
 
     Examples:
-        >>> hex(unpack('\\xaa\\x55', 16, 'little', False))
+        >>> hex(unpack('\\xaa\\x55', 16, endian='little', sign=False))
         '0x55aa'
-        >>> hex(unpack('\\xaa\\x55', 16, 'big', False))
+        >>> hex(unpack('\\xaa\\x55', 16, endian='big', sign=False))
         '0xaa55'
-        >>> hex(unpack('\\xaa\\x55', 16, 'big', True))
+        >>> hex(unpack('\\xaa\\x55', 16, endian='big', sign=True))
         '-0x55ab'
-        >>> hex(unpack('\\xaa\\x55', 15, 'big', True))
+        >>> hex(unpack('\\xaa\\x55', 15, endian='big', sign=True))
         '0x2a55'
-        >>> hex(unpack('\\xff\\x02\\x03', 'all', 'little', True))
+        >>> hex(unpack('\\xff\\x02\\x03', 'all', endian='little', sign=True))
         '0x302ff'
-        >>> hex(unpack('\\xff\\x02\\x03', 'all', 'big', True))
+        >>> hex(unpack('\\xff\\x02\\x03', 'all', endian='big', sign=True))
         '-0xfdfd'
     """
 
-    with context.local(**kwargs):
-        # Lookup in context if not found
-        word_size  = word_size  or context.word_size
-        endianness = endianness or context.endianness
-        sign       = sign       or context.sign
+    # Lookup in context if not found
+    word_size  = word_size  or context.word_size
+    endianness = context.endianness
+    sign       = context.sign
 
-        # Verify that word_size make sense
-        if word_size == 'all':
-            word_size = len(data) * 8
-        elif not isinstance(word_size, (int, long)) or word_size <= 0:
-            raise ValueError("unpack(): word_size must be a positive integer or the string 'all'")
+    # Verify that word_size make sense
+    if word_size == 'all':
+        word_size = len(data) * 8
+    elif not isinstance(word_size, (int, long)) or word_size <= 0:
+        raise ValueError("unpack(): word_size must be a positive integer or the string 'all'")
 
-        byte_size = (word_size + 7) / 8
+    byte_size = (word_size + 7) / 8
 
-        if byte_size != len(data):
-            raise ValueError("unpack(): data must have length %d, since word_size was %d" % (byte_size, word_size))
+    if byte_size != len(data):
+        raise ValueError("unpack(): data must have length %d, since word_size was %d" % (byte_size, word_size))
 
-        number = 0
+    number = 0
 
-        if endianness == "little":
-            data = reversed(data)
-        data = bytearray(data)
+    if endianness == "little":
+        data = reversed(data)
+    data = bytearray(data)
 
-        for c in data:
-            number = (number << 8) + c
+    for c in data:
+        number = (number << 8) + c
 
-        number = number & ((1 << word_size) - 1)
+    number = number & ((1 << word_size) - 1)
 
-        if not sign:
-            return number
+    if not sign:
+        return number
 
-        signbit = number & (1 << (word_size-1))
-        return number - 2*signbit
+    signbit = number & (1 << (word_size-1))
+    return number - 2*signbit
 
-def unpack_many(data, word_size = None, endianness = None, sign = None, **kwargs):
+@LocalContext
+def unpack_many(data, word_size = None):
     """unpack(data, word_size = None, endianness = None, sign = None) -> int list
 
     Splits `data` into groups of ``word_size//8`` bytes and calls :func:`unpack` on each group.  Returns a list of the results.
@@ -237,34 +238,36 @@ def unpack_many(data, word_size = None, endianness = None, sign = None, **kwargs
         The unpacked numbers.
 
     Examples:
-        >>> map(hex, unpack_many('\\xaa\\x55\\xcc\\x33', 16, 'little', False))
+        >>> map(hex, unpack_many('\\xaa\\x55\\xcc\\x33', 16, endian='little', sign=False))
         ['0x55aa', '0x33cc']
-        >>> map(hex, unpack_many('\\xaa\\x55\\xcc\\x33', 16, 'big', False))
+        >>> map(hex, unpack_many('\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=False))
         ['0xaa55', '0xcc33']
-        >>> map(hex, unpack_many('\\xaa\\x55\\xcc\\x33', 16, 'big', True))
+        >>> map(hex, unpack_many('\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=True))
         ['-0x55ab', '-0x33cd']
-        >>> map(hex, unpack_many('\\xff\\x02\\x03', 'all', 'little', True))
+        >>> map(hex, unpack_many('\\xff\\x02\\x03', 'all', endian='little', sign=True))
         ['0x302ff']
-        >>> map(hex, unpack_many('\\xff\\x02\\x03', 'all', 'big', True))
+        >>> map(hex, unpack_many('\\xff\\x02\\x03', 'all', endian='big', sign=True))
         ['-0xfdfd']
     """
-    with context.local(**kwargs):
-        # Lookup in context if None
-        word_size  = word_size  or context.word_size
+    # Lookup in context if None
+    word_size  = word_size  or context.word_size
+    endianness = context.endianness
+    sign       = context.sign
 
-        if word_size == 'all':
-            return [unpack(data, word_size, endianness, sign)]
+    if word_size == 'all':
+        return [unpack(data, word_size)]
 
-        # Currently we only group on byte boundaries
-        if word_size % 8 != 0:
-            raise ValueError("unpack_many(): word_size must be a multiple of 8")
+    # Currently we only group on byte boundaries
+    if word_size % 8 != 0:
+        raise ValueError("unpack_many(): word_size must be a multiple of 8")
 
-        out = []
-        n = word_size // 8
-        for i in range(0, len(data), n):
-            out.append(unpack(data[i:i+n], word_size, endianness, sign))
+    out = []
+    n = word_size // 8
+    for i in range(0, len(data), n):
+        out.append(unpack(data[i:i+n], word_size))
 
-        return out
+    return out
+
 
 
 #
@@ -313,14 +316,14 @@ def make_multi(op, size):
     bs = getattr(mod, "_%sbs" % (name))
     bu = getattr(mod, "_%sbu" % (name))
 
-    def routine(number, endianness=None, sign=None, **kwargs):
-        with context.local(endianness=endianness, sign=sign, **kwargs):
-            endian = context.endian
-            signed = context.signed
-            return {("little", True  ): ls,
-                    ("little", False):  lu,
-                    ("big",    True  ): bs,
-                    ("big",    False):  bu}[endian, signed](number)
+    @LocalContext
+    def routine(number):
+        endian = context.endian
+        signed = context.signed
+        return {("little", True  ): ls,
+                ("little", False):  lu,
+                ("big",    True  ): bs,
+                ("big",    False):  bu}[endian, signed](number)
 
     routine.__name__ = name
     routine.__doc__  = """
@@ -346,7 +349,8 @@ for op,size in product(ops, sizes):
     name, routine = make_multi(op,size)
     setattr(mod, name, routine)
 
-def make_packer(word_size = None, endianness = None, sign = None, **kwargs):
+@LocalContext
+def make_packer(word_size = None):
     """make_packer(word_size = None, endianness = None, sign = None) -> number → str
 
     Creates a packer by "freezing" the given arguments.
@@ -366,7 +370,7 @@ def make_packer(word_size = None, endianness = None, sign = None, **kwargs):
         of that number in a packed form.
 
     Examples:
-        >>> p = make_packer(32, 'little', 'unsigned')
+        >>> p = make_packer(32, endian='little', sign='unsigned')
         >>> p
         <function _p32lu at 0x...>
         >>> p(42)
@@ -375,39 +379,39 @@ def make_packer(word_size = None, endianness = None, sign = None, **kwargs):
         Traceback (most recent call last):
             ...
         error: integer out of range for 'I' format code
-        >>> make_packer(33, 'little', 'unsigned')
+        >>> make_packer(33, endian='little', sign='unsigned')
         <function <lambda> at 0x...>
 """
-    with context.local(endianness=endianness, sign=sign, **kwargs):
-        word_size  = word_size or context.word_size
-        endianness = context.endianness
-        sign       = context.sign
+    word_size  = word_size or context.word_size
+    endianness = context.endianness
+    sign       = context.sign
 
-        if word_size in [8, 16, 32, 64]:
-            endianness = 1 if endianness == 'big'    else 0
+    if word_size in [8, 16, 32, 64]:
+        endianness = 1 if endianness == 'big'    else 0
 
-            return {
-                (8, 0, 0):  _p8lu,
-                (8, 0, 1):  _p8ls,
-                (8, 1, 0):  _p8bu,
-                (8, 1, 1):  _p8bs,
-                (16, 0, 0): _p16lu,
-                (16, 0, 1): _p16ls,
-                (16, 1, 0): _p16bu,
-                (16, 1, 1): _p16bs,
-                (32, 0, 0): _p32lu,
-                (32, 0, 1): _p32ls,
-                (32, 1, 0): _p32bu,
-                (32, 1, 1): _p32bs,
-                (64, 0, 0): _p64lu,
-                (64, 0, 1): _p64ls,
-                (64, 1, 0): _p64bu,
-                (64, 1, 1): _p64bs,
-            }[word_size, endianness, sign]
-        else:
-            return lambda number: pack(number, word_size, endianness, sign)
+        return {
+            (8, 0, 0):  _p8lu,
+            (8, 0, 1):  _p8ls,
+            (8, 1, 0):  _p8bu,
+            (8, 1, 1):  _p8bs,
+            (16, 0, 0): _p16lu,
+            (16, 0, 1): _p16ls,
+            (16, 1, 0): _p16bu,
+            (16, 1, 1): _p16bs,
+            (32, 0, 0): _p32lu,
+            (32, 0, 1): _p32ls,
+            (32, 1, 0): _p32bu,
+            (32, 1, 1): _p32bs,
+            (64, 0, 0): _p64lu,
+            (64, 0, 1): _p64ls,
+            (64, 1, 0): _p64bu,
+            (64, 1, 1): _p64bs,
+        }[word_size, endianness, sign]
+    else:
+        return lambda number: pack(number, word_size, endianness, sign)
 
-def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
+@LocalContext
+def make_unpacker(word_size = None):
     """make_unpacker(word_size = None, endianness = None, sign = None,  **kwargs) -> str → number
 
     Creates a unpacker by "freezing" the given arguments.
@@ -427,7 +431,7 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
         of that string in an unpacked form.
 
     Examples:
-        >>> u = make_unpacker(32, 'little', 'unsigned')
+        >>> u = make_unpacker(32, endian='little', sign='unsigned')
         >>> u
         <function _u32lu at 0x...>
         >>> hex(u('/bin'))
@@ -436,38 +440,36 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
         Traceback (most recent call last):
             ...
         error: unpack requires a string argument of length 4
-        >>> make_unpacker(33, 'little', 'unsigned')
+        >>> make_unpacker(33, endian='little', sign='unsigned')
         <function <lambda> at 0x...>
 """
-    # Validate
-    with context.local(endianness=endianness, sign=sign, **kwargs):
-        word_size  = word_size or context.word_size
-        endianness = context.endianness
-        sign       = context.sign
+    word_size  = word_size or context.word_size
+    endianness = context.endianness
+    sign       = context.sign
 
-        if word_size in [8, 16, 32, 64]:
-            endianness = 1 if endianness == 'big'    else 0
+    if word_size in [8, 16, 32, 64]:
+        endianness = 1 if endianness == 'big'    else 0
 
-            return {
-                (8, 0, 0):  _u8lu,
-                (8, 0, 1):  _u8ls,
-                (8, 1, 0):  _u8bu,
-                (8, 1, 1):  _u8bs,
-                (16, 0, 0): _u16lu,
-                (16, 0, 1): _u16ls,
-                (16, 1, 0): _u16bu,
-                (16, 1, 1): _u16bs,
-                (32, 0, 0): _u32lu,
-                (32, 0, 1): _u32ls,
-                (32, 1, 0): _u32bu,
-                (32, 1, 1): _u32bs,
-                (64, 0, 0): _u64lu,
-                (64, 0, 1): _u64ls,
-                (64, 1, 0): _u64bu,
-                (64, 1, 1): _u64bs,
-            }[word_size, endianness, sign]
-        else:
-            return lambda number: unpack(number, word_size, endianness, sign)
+        return {
+            (8, 0, 0):  _u8lu,
+            (8, 0, 1):  _u8ls,
+            (8, 1, 0):  _u8bu,
+            (8, 1, 1):  _u8bs,
+            (16, 0, 0): _u16lu,
+            (16, 0, 1): _u16ls,
+            (16, 1, 0): _u16bu,
+            (16, 1, 1): _u16bs,
+            (32, 0, 0): _u32lu,
+            (32, 0, 1): _u32ls,
+            (32, 1, 0): _u32bu,
+            (32, 1, 1): _u32bs,
+            (64, 0, 0): _u64lu,
+            (64, 0, 1): _u64ls,
+            (64, 1, 0): _u64bu,
+            (64, 1, 1): _u64bs,
+        }[word_size, endianness, sign]
+    else:
+        return lambda number: unpack(number, word_size, endianness, sign)
 
 
 
@@ -532,4 +534,4 @@ def flat(*args, **kwargs):
     if kwargs != {}:
         raise TypeError("flat() does not support argument %r" % kwargs.popitem()[0])
 
-    return _flat(args, preprocessor, make_packer(word_size, endianness, sign))
+    return _flat(args, preprocessor, make_packer(word_size))
