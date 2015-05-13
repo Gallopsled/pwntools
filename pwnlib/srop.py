@@ -23,15 +23,6 @@ def get_registers(**kwargs):
         registers = {"i386": _registers_i386, "amd64": _registers_amd64}
         return registers[arch]
 
-def get_regpos_mapping(**kwargs):
-    with context.local(**kwargs):
-        arch = context.arch
-        registers = get_registers(**kwargs)
-        mapping = {}
-        for pos, reg in enumerate(registers[arch]):
-            mapping[reg] = pos
-        return mapping
-
 class SigreturnFrame(object):
     r"""
     Crafts a sigreturn frame with values that are loaded up into
@@ -82,7 +73,6 @@ class SigreturnFrame(object):
         with context.local(**kwargs):
             self.arch = context.arch
         self.frame = []
-        self._registers = get_registers(**kwargs)
         self._registers = get_registers(**kwargs)
         self._initialize_vals()
 
