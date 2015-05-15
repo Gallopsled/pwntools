@@ -480,7 +480,9 @@ def _flat(args, preprocessor, packer):
             if arg_ != None:
                 arg = arg_
 
-        if isinstance(arg, (list, tuple)):
+        if hasattr(arg, '__flat__'):
+            out.append(arg.__flat__())
+        elif isinstance(arg, (list, tuple)):
             out.append(_flat(arg, preprocessor, packer))
         elif isinstance(arg, str):
             out.append(arg)
