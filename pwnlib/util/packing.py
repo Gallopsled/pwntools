@@ -378,15 +378,13 @@ def make_packer(word_size = None, endianness = None, sign = None, **kwargs):
         >>> make_packer(33, 'little', 'unsigned')
         <function <lambda> at 0x...>
 """
-    with context.local(endianness=endianness, sign=sign, **kwargs):
-        word_size  = word_size or context.word_size
+    with context.local(word_size=word_size, endianness=endianness, sign=sign, **kwargs):
+        word_size  = context.word_size
         endianness = context.endianness
-        sign       = context.sign
+        sign       = sign if sign is None else context.sign
 
         if word_size in [8, 16, 32, 64]:
-            endianness = 1 if endianness == 'big'    else 0
-
-            return {
+            packer = {
                 (8, 0, 0):  _p8lu,
                 (8, 0, 1):  _p8ls,
                 (8, 1, 0):  _p8bu,
@@ -403,9 +401,12 @@ def make_packer(word_size = None, endianness = None, sign = None, **kwargs):
                 (64, 0, 1): _p64ls,
                 (64, 1, 0): _p64bu,
                 (64, 1, 1): _p64bs,
-            }[word_size, endianness, sign]
-        else:
-            return lambda number: pack(number, word_size, endianness, sign)
+            }.get((word_size, {'big': 1, 'little': 0}[endianness], sign), None)
+
+            if packer:
+                return packer
+
+        return lambda number: pack(number, word_size, endianness, sign)
 
 def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
     """make_unpacker(word_size = None, endianness = None, sign = None,  **kwargs) -> str → number
