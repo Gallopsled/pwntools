@@ -67,7 +67,7 @@ def debug(args, execute=None, exe=None, ssh=None, **kwargs):
 
     with context.local(**kwargs):
         if context.native:
-            args = ['gdbserver', '--no-disable-randomization', 'localhost:0'] + args
+            args = ['gdbserver',  'localhost:0'] + args
         else:
             qemu_port = random.randint(1024, 65535)
             qemu_arch = get_qemu_arch()
@@ -444,7 +444,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     with runner(cmd) as gdb:
         gdb.send("""
         set prompt
-        set disable-randomization off
+        set disable-randomization on
         break *%#x
         run
         """ % entry)

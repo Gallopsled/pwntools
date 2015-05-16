@@ -273,7 +273,7 @@ class ROP(object):
                     return name
 
         if value in self.gadgets:
-            return '; '.join(gadget.insns)
+            return '; '.join(self.gadgets[value].insns)
         return ''
 
     def generatePadding(self, offset, count):
@@ -342,7 +342,7 @@ class ROP(object):
             # broken down into pointer-width blobs.
             elif isinstance(slot, (str, unicode)):
                 stack.describe(self.describe(slot))
-                slot += self.generatePadding(len(slot) % context.bytes)
+                slot += self.generatePadding(stack.next, len(slot) % context.bytes)
 
                 for chunk in lists.group(context.bytes, slot):
                     stack.append(chunk)
@@ -731,7 +731,7 @@ class ROP(object):
                 self.pivots[sp_move] = addr
 
         leave = self.search(regs=frame_regs, order='regs')
-        if leave and leave.details['regs'] != frame_regs:
+        if leave and leave.regs != frame_regs:
             leave = None
         self.leave = leave
 
