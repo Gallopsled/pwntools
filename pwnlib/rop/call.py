@@ -2,7 +2,7 @@
 """Abstracting ROP calls
 """
 from ..util import packing
-
+from ..abi   import ABI
 class Unresolved(object):
     """
     Encapsulates logic for deferring evaluation of a value used
@@ -174,7 +174,10 @@ class AppendedArgument(Unresolved):
         return packing.flat(self.resolve())
 
     def __repr__(self):
-        return '%s(%r, %#x)' % (self.__class__.__name__, self.values, self.address)
+        if isinstance(self.address, int):
+            return '%s(%r, %#x)' % (self.__class__.__name__, self.values, self.address)
+        else:
+            return '%s(%r, %r)' % (self.__class__.__name__, self.values, self.address)
 
 
 class Call(object):
@@ -202,9 +205,9 @@ class Call(object):
 
     def __init__(self, name, target, args, abi=None):
         assert isinstance(name, str)
-        assert isinstance(target, int)
+        # assert isinstance(target, int)
         assert isinstance(args, (list, tuple))
-        self.abi = abi
+        self.abi  = abi or ABI.default()
         self.name = name
         self.target = target
         self.args = list(args)
@@ -213,18 +216,13 @@ class Call(object):
                 self.args[i] = AppendedArgument(arg)
 
     def __repr__(self):
-        return '%s(%r, %#x, %r)' % (self.__class__.__name__,
-         self.name,
-         self.target,
-         self.args)
+        fmt = "%#x" if isinstance(self.target, (int, long)) else "%r"
+        return '%s(%r, %s, %r)' % (self.__class__.__name__,
+                                    self.name,
+                                    fmt % self.target,
+                                    self.args)
 
-    def build(self, addr = None):
-        """
-        Convert the call into a ``list`` of objects, which can be
-        passed into ``pwnlib.util.packing.flat``.
+    def __str__(self):
+        fmt = "%#x" if isinstance(self.target, (int, long)) else "%r"
+        return '%s%s' % (self.name or fmt % self.target, tuple(self.args))
 
-        Arguments:
-            addr(int,None):
-                Stack address where this Call starts.
-        """
-        pass

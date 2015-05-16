@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-class Gadget(dict):
+class Gadget(object):
     """
     Describes a ROP gadget
     """
@@ -35,13 +35,31 @@ class Gadget(dict):
     #: Examples:
     #:      ret ==> 4
     #:      add esp, 0x10; ret ==> 0x14
-    sp_move = 0
+    move = 0
 
+    def __init__(self, address, insns, regs, move):
+        self.address = address
+        self.insns   = insns
+        self.regs    = regs
+        self.move    = move
+
+    __indices = ['address', 'details']
+
+    def __repr__(self):
+        return "%s(%#x, %r, %r, %#x)" % (self.__class__.__name__,
+                                         self.address,
+                                         self.insns,
+                                         self.regs,
+                                         self.move)
 
     def __getitem__(self, key):
         # Backward compatibility
+        if isinstance(key, int):
+            key = self.__indices[key]
         return getattr(self, key)
 
     def __setitem__(self, key, value):
         # Backward compatibility
+        if isinstance(key, int):
+            key = self.__indices[key]
         return setattr(self, key, value)

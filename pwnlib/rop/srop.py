@@ -97,7 +97,7 @@ class SigreturnFrame(dict):
 
     def __setitem__(self, item, value):
         if item not in self.registers:
-            log.error("Unknown register %r" % item)
+            log.error("Unknown register %r (not in %r)" % (item, self.registers))
         super(SigreturnFrame, self).__setitem__(item, value)
 
     def __setattr__(self, attr, value):
@@ -118,11 +118,12 @@ class SigreturnFrame(dict):
 
     @property
     def registers(self):
-        return ABI.syscall(self.arch).register_arguments
+        return registers[self.arch]
 
     @property
     def arguments(self):
-        return list(syscall_arguments[self.arch])
+        # Skip the register used to hold the syscall number
+        return ABI.syscall(self.arch).register_arguments[1:]
 
     @property
     def sp(self):
