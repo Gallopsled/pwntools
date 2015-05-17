@@ -471,6 +471,7 @@ class DynELF(object):
             self.status("Trying lookup based on Build ID")
             build_id = dynlib._lookup_build_id(lib=lib)
             if build_id:
+                log.info("Trying lookup based on Build ID: %s" % build_id)
                 path = libcdb.search_by_build_id(build_id)
                 if path:
                     with context.local(log_level='error'):
