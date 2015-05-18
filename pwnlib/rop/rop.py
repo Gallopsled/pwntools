@@ -467,11 +467,11 @@ class ROP(object):
         Returns:
             str containing raw ROP bytes
         """
-        return packing.flat([ value for addr, value, was_ref in self.build() ], word_size=8 * self.align)
+        return packing.flat(self.build(), word_size=8 * self.align)
 
     def dump(self):
         """Dump the ROP chain in an easy-to-read manner"""
-        raise NotImplementedError()
+        return self.build().dump()
 
     def call(self, resolvable, arguments = (), abi = None, **kwargs):
         """Add a call to the ROP chain
