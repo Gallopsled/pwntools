@@ -611,7 +611,6 @@ def fit(pieces, **kwargs):
     # insert data into output
     out = list(out)
     for k, v in sorted(pieces.items()):
-        print `k`, `v`
         while len(out) < k:
             out.append(filler.next())
         v = _flat([v], preprocessor, packer)
