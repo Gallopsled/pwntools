@@ -737,7 +737,7 @@ def exp(s, n):
       A generator of ``n``-tuples of elements in ``s``.
 
     Example:
-      >>> exp((0, 1), 3)
+      >>> list(exp((0, 1), 3))
       [(0, 0, 0),
        (0, 0, 1),
        (0, 1, 0),
