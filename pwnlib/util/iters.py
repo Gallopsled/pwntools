@@ -47,6 +47,7 @@ __all__ = [
     'izip_longest'                           ,
     'permutations'                           ,
     'product'                                ,
+    'exp'                                    ,
     'repeat'                                 ,
     'starmap'                                ,
     'takewhile'                              ,
@@ -722,7 +723,34 @@ def chained(func):
                 yield x
     return wrapper
 
+def exp(s, n):
+    """product(s, n)
+
+    Generalization of exponentiation to iterators.  The expression ``exp(s, n)``
+    is simply a shorthand notation for ``product(*[s]*n)``.
+
+    Arguments:
+      s(iterable): The iterable to exponentiate.
+      n(int): The exponent.
+
+    Returns:
+      A generator of ``n``-tuples of elements in ``s``.
+
+    Example:
+      >>> exp((0, 1), 3)
+      [(0, 0, 0),
+       (0, 0, 1),
+       (0, 1, 0),
+       (0, 1, 1),
+       (1, 0, 0),
+       (1, 0, 1),
+       (1, 1, 0),
+       (1, 1, 1)]
+    """
+    return product(*[s]*n)
+
 def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = None):
+
     """bruteforce(func, alphabet, length, method = 'upto', start = None)
 
     Bruteforce `func` to return :const:`True`.  `func` should take a string
@@ -866,7 +894,7 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
         chunkid = (i2-1) + (i * N2) + 1
 
         processes[i] = multiprocessing.Process(target=bruteforcewrap,
-                args=(func, alphabet, length, method, (chunkid, totalchunks), 
+                args=(func, alphabet, length, method, (chunkid, totalchunks),
                         shareddata[i]))
         processes[i].start()
 
@@ -874,7 +902,7 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
 
     while not done:
         # log status
-        current_item_list = ",".join(["\"%s\"" % x["current_item"] 
+        current_item_list = ",".join(["\"%s\"" % x["current_item"]
                                 for x in shareddata if x != None])
         items_done = sum([x["items_done"] for x in shareddata if x != None])
         items_total = sum([x["items_total"] for x in shareddata if x != None])
@@ -905,4 +933,3 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
                     done = True
         time.sleep(0.3)
     h.failure('No matches found')
-
