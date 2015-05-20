@@ -724,7 +724,7 @@ def chained(func):
     return wrapper
 
 def exp(s, n):
-    """product(s, n)
+    """exp(s, n)
 
     Generalization of exponentiation to iterators.  The expression ``exp(s, n)``
     is simply a shorthand notation for ``product(*[s]*n)``.
