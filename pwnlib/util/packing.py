@@ -565,15 +565,15 @@ def fit(pieces, **kwargs):
 
     Examples:
       >>> fit({12: 0x41414141,
-               24: 'Hello',
-              })
+      ...      24: 'Hello',
+      ...     })
       'aaaabaaacaaaAAAAdaaaeaaaHello'
       >>> fit({'caaa': ''})
       'aaaabaaa'
       >>> fit({12: 'XXXX'}, filler = 'AB', length = 20)
       'ABABABABABABXXXXABAB'
       >>> fit({ 8: [0x41414141, 0x42424242],
-               20: 'CCCC'})
+      ...      20: 'CCCC'})
       'aaaabaaaAAAABBBBcaaaCCCC'
 
     """
