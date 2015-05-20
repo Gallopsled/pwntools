@@ -9,6 +9,7 @@ __all__ = [
     'consume'                                ,
     'cyclen'                                 ,
     'dotproduct'                             ,
+    'exp'                                    ,
     'flatten'                                ,
     'group'                                  ,
     'iter_except'                            ,
@@ -47,7 +48,6 @@ __all__ = [
     'izip_longest'                           ,
     'permutations'                           ,
     'product'                                ,
-    'exp'                                    ,
     'repeat'                                 ,
     'starmap'                                ,
     'takewhile'                              ,
@@ -738,14 +738,7 @@ def exp(s, n):
 
     Example:
       >>> list(exp((0, 1), 3))
-      [(0, 0, 0),
-       (0, 0, 1),
-       (0, 1, 0),
-       (0, 1, 1),
-       (1, 0, 0),
-       (1, 0, 1),
-       (1, 1, 0),
-       (1, 1, 1)]
+      [(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1), (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)]
     """
     return product(*[s]*n)
 
