@@ -26,7 +26,7 @@ def search_by_build_id(hex_encoded_id):
 
     If it can't be found, return None.
     """
-    cache = cache_dir + hex_encoded_id
+    cache = cache_dir + '-libc.so.' + hex_encoded_id
 
     if os.path.exists(cache) and read(cache).startswith('\x7FELF'):
         log.info_once("Using cached data from %r" % cache)

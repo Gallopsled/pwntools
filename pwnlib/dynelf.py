@@ -425,6 +425,36 @@ class DynELF(object):
         else:
             self._waitfor.status(msg)
 
+    def libc(self):
+        """download(self, lib = None)
+
+        Leak the Build ID of the remote libc.so, download the file,
+        and load an ``ELF`` object with the correct base address.
+
+        Returns:
+            An ELF object, or None.
+        """
+        libc = 'libc.so'
+
+        with self.waitfor('Downloading libc'):
+            dynlib = self._dynamic_load_dynelf(libc)
+
+            self.status("Trying lookup based on Build ID")
+            build_id = dynlib._lookup_build_id(libc)
+
+            if not build_id:
+                return None
+
+            self.status("Trying lookup based on Build ID: %s" % build_id)
+            path = libcdb.search_by_build_id(build_id)
+
+            if not path:
+                return None
+
+            libc = ELF(path)
+            libc.address = dynlib.libbase
+            return libc
+
     def lookup (self, symb = None, lib = None):
         """lookup(symb = None, lib = None) -> int
 
