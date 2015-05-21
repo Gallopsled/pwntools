@@ -447,7 +447,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     with runner(cmd) as gdb:
         gdb.send("""
         set prompt
-        set disable-randomization off
+        set disable-randomization on
         break *%#x
         run
         """ % entry)

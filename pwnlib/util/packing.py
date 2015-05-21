@@ -349,8 +349,7 @@ for op,size in product(ops, sizes):
     name, routine = make_multi(op,size)
     setattr(mod, name, routine)
 
-@LocalContext
-def make_packer(word_size = None):
+def make_packer(word_size = None, sign = None, **kwargs):
     """make_packer(word_size = None, endianness = None, sign = None) -> number → str
 
     Creates a packer by "freezing" the given arguments.
@@ -382,36 +381,38 @@ def make_packer(word_size = None):
         >>> make_packer(33, endian='little', sign='unsigned')
         <function <lambda> at 0x...>
 """
-    word_size  = word_size or context.word_size
-    endianness = context.endianness
-    sign       = context.sign
+    with context.local(sign=sign, **kwargs):
+        word_size  = word_size or context.word_size
+        endianness = context.endianness
+        sign       = sign if sign is None else context.sign
 
-    if word_size in [8, 16, 32, 64]:
-        endianness = 1 if endianness == 'big'    else 0
+        if word_size in [8, 16, 32, 64]:
+            packer = {
+                (8, 0, 0):  _p8lu,
+                (8, 0, 1):  _p8ls,
+                (8, 1, 0):  _p8bu,
+                (8, 1, 1):  _p8bs,
+                (16, 0, 0): _p16lu,
+                (16, 0, 1): _p16ls,
+                (16, 1, 0): _p16bu,
+                (16, 1, 1): _p16bs,
+                (32, 0, 0): _p32lu,
+                (32, 0, 1): _p32ls,
+                (32, 1, 0): _p32bu,
+                (32, 1, 1): _p32bs,
+                (64, 0, 0): _p64lu,
+                (64, 0, 1): _p64ls,
+                (64, 1, 0): _p64bu,
+                (64, 1, 1): _p64bs,
+            }.get((word_size, {'big': 1, 'little': 0}[endianness], sign), None)
 
-        return {
-            (8, 0, 0):  _p8lu,
-            (8, 0, 1):  _p8ls,
-            (8, 1, 0):  _p8bu,
-            (8, 1, 1):  _p8bs,
-            (16, 0, 0): _p16lu,
-            (16, 0, 1): _p16ls,
-            (16, 1, 0): _p16bu,
-            (16, 1, 1): _p16bs,
-            (32, 0, 0): _p32lu,
-            (32, 0, 1): _p32ls,
-            (32, 1, 0): _p32bu,
-            (32, 1, 1): _p32bs,
-            (64, 0, 0): _p64lu,
-            (64, 0, 1): _p64ls,
-            (64, 1, 0): _p64bu,
-            (64, 1, 1): _p64bs,
-        }[word_size, endianness, sign]
-    else:
+            if packer:
+                return packer
+
         return lambda number: pack(number, word_size, endianness, sign)
 
 @LocalContext
-def make_unpacker(word_size = None):
+def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
     """make_unpacker(word_size = None, endianness = None, sign = None,  **kwargs) -> str → number
 
     Creates a unpacker by "freezing" the given arguments.
@@ -482,7 +483,9 @@ def _flat(args, preprocessor, packer):
             if arg_ != None:
                 arg = arg_
 
-        if isinstance(arg, (list, tuple)):
+        if hasattr(arg, '__flat__'):
+            out.append(arg.__flat__())
+        elif isinstance(arg, (list, tuple)):
             out.append(_flat(arg, preprocessor, packer))
         elif isinstance(arg, str):
             out.append(arg)
