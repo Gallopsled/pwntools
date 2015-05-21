@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-import argparse, sys, os
+import argparse, sys, os, re
 import pwnlib.term.text as text
 from pwnlib.util.fiddling import hexdump_iter
 
@@ -27,7 +27,9 @@ parser.add_argument(
 
 parser.add_argument(
     "-l", "--highlight",
-    help="Byte to highlight.",
+    help="Byte sequence to highlight.  Use '?' to match arbitrary bytes and "\
+         "'\\?' to match an actual question mark.  Use '\\xXX' for non-"\
+         "printable bytes.",
     nargs="*",
 )
 
@@ -84,16 +86,39 @@ def main():
         else:
             infile.seek(skip, os.SEEK_CUR)
 
-    data = infile.read(count)
-
-    hl = []
     if args.highlight:
-        for hs in args.highlight:
-            for h in hs.split(','):
-                hl.append(asint(h))
+        def canon(hl):
+            out = []
+            i = 0
+            while i < len(hl):
+                c = hl[i]
+                if c == '\\' and len(hl) > i + 1:
+                    c2 = hl[i + 1]
+                    if   c2 == 'x':
+                        try:
+                            b = chr(int(hl[i + 2: i + 4], 16))
+                        except:
+                            print 'Bad escape sequence:', hl[i:]
+                            sys.exit(1)
+                        out.append(b)
+                        i += 3
+                    elif c2 in '\\?':
+                        out.append(c2)
+                        i += 1
+                    else:
+                        out.append(c)
+                elif c == '?':
+                    out.append(None)
+                else:
+                    out.append(c)
+                i += 1
+            return out
+        highlight = map(canon, args.highlight)
+    else:
+        highlight = []
 
     try:
-        for line in hexdump_iter(data, width, highlight = hl, begin = offset + skip):
+        for line in hexdump_iter(infile, width, highlight = highlight, begin = offset + skip):
             print line
     except (KeyboardInterrupt, IOError):
         pass
