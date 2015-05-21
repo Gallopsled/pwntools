@@ -225,5 +225,11 @@ class Call(object):
 
     def __str__(self):
         fmt = "%#x" if isinstance(self.target, (int, long)) else "%r"
-        return '%s%s' % (self.name or fmt % self.target, tuple(self.args))
+        args = []
+        for arg in self.args:
+            if isinstance(arg, AppendedArgument) and len(arg.values) == 1:
+                args.extend(map(repr, arg.values))
+            else:
+                args.append(arg)
+        return '%s(%s)' % (self.name or fmt % self.target, ', '.join(map(str, args)))
 
