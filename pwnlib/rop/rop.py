@@ -226,7 +226,7 @@ class ROP(object):
             registers(dict): Dictionary of ``{register name: value}``
 
         Returns:
-            An OrderedDict of ``{register: sequence of gadgets}``.
+            An OrderedDict of ``{register: sequence of gadgets, values, etc.}``.
         """
         reg_order = collections.OrderedDict()
 
