@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Abstracting ROP calls
 """
+from ..context import context
 from ..util import packing
 from ..abi   import ABI
 class Unresolved(object):

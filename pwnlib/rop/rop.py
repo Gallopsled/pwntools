@@ -487,7 +487,11 @@ class ROP(object):
             log.error('Cannot append to a migrated chain')
 
         # If we can find a function with that name, just call it
-        addr = self.resolve(resolvable)
+        if isinstance(resolvable, str):
+            addr = self.resolve(resolvable)
+        else:
+            addr = resolvable
+            resolvable = ''
 
         if addr:
             self.raw(Call(resolvable, addr, arguments, abi))
@@ -572,14 +576,14 @@ class ROP(object):
             next_base = self.base
         pop_sp = self.rsp or self.esp
         pop_bp = self.rbp or self.ebp
-        leave = self.leave
-        if pop_sp and len(pop_sp[1]['regs']) == 1:
-            self.raw(pop_sp[0])
+        leave  = self.leave
+        if pop_sp and len(pop_sp.regs) == 1:
+            self.raw(pop_sp)
             self.raw(next_base)
-        elif pop_bp and leave and len(pop_bp[1]['regs']) == 1:
-            self.raw(pop_bp[0])
+        elif pop_bp and leave and len(pop_bp.regs) == 1:
+            self.raw(pop_bp)
             self.raw(next_base - 4)
-            self.raw(leave[0])
+            self.raw(leave)
         else:
             log.error('Cannot find the gadgets to migrate')
         self.migrated = True
