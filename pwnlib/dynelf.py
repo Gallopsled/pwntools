@@ -425,6 +425,46 @@ class DynELF(object):
         else:
             self._waitfor.status(msg)
 
+    def libc(self):
+        """libc(self) -> ELF
+
+        Leak the Build ID of the remote libc.so, download the file,
+        and load an ``ELF`` object with the correct base address.
+
+        Returns:
+            An ELF object, or None.
+        """
+        lib = 'libc.so'
+
+        with self.waitfor('Downloading libc'):
+            dynlib = self._dynamic_load_dynelf(lib)
+
+            self.status("Trying lookup based on Build ID")
+            build_id = dynlib._lookup_build_id(lib)
+
+            libbase = self.libbase
+
+            if lib is not None:
+                libbase = self.lookup(symb = None, lib = lib)
+
+            for offset in libcdb.get_build_id_offsets():
+                address = libbase + offset
+                if self.leak.d(address + 0xC) == unpack("GNU\x00", 32):
+                    return enhex(''.join(self.leak.raw(address + 0x10, 20)))
+
+            if not build_id:
+                return None
+
+            self.status("Trying lookup based on Build ID: %s" % build_id)
+            path = libcdb.search_by_build_id(build_id)
+
+            if not path:
+                return None
+
+            libc = ELF(path)
+            libc.address = dynlib.libbase
+            return libc
+
     def lookup (self, symb = None, lib = None):
         """lookup(symb = None, lib = None) -> int
 
@@ -466,23 +506,8 @@ class DynELF(object):
         #
         # If we are resolving a symbol in the library, find it.
         #
-        if symb:
-            # Try a quick lookup by build ID
-            self.status("Trying lookup based on Build ID")
-            build_id = dynlib._lookup_build_id(lib=lib)
-            if build_id:
-                path = libcdb.search_by_build_id(build_id)
-                if path:
-                    with context.local(log_level='error'):
-                        e = ELF(path)
-                        e.address = dynlib.libbase
-                        result = e.symbols[symb]
-
-            if not result:
-                self.status("Trying remote lookup")
-                result = dynlib._lookup(symb)
-        else:
-            result = dynlib.libbase
+        if symb: result = dynlib._lookup(symb)
+        else:    result = dynlib.libbase
 
         #
         # Did we win?
@@ -728,15 +753,3 @@ class DynELF(object):
         else:
             self.failure('Could not find a GNU hash that matched %#x' % hsh)
             return None
-
-    def _lookup_build_id(self, lib = None):
-
-        libbase = self.libbase
-
-        if lib is not None:
-            libbase = self.lookup(symb = None, lib = lib)
-
-        for offset in libcdb.get_build_id_offsets():
-            address = libbase + offset
-            if self.leak.d(address + 0xC) == unpack("GNU\x00"):
-                return enhex(''.join(self.leak.raw(address + 0x10, 20)))

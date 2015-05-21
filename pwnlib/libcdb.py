@@ -25,8 +25,15 @@ def search_by_build_id(hex_encoded_id):
     only the local system.
 
     If it can't be found, return None.
+
+    Arguments:
+        hex_encoded_id(str):
+            Hex-encoded Build ID (e.g. 'ABCDEF...') of the library
+
+    Returns:
+        Path to the downloaded library on disk, or ``None``.
     """
-    cache = cache_dir + hex_encoded_id
+    cache = cache_dir + '-libc.so.' + hex_encoded_id
 
     if os.path.exists(cache) and read(cache).startswith('\x7FELF'):
         log.info_once("Using cached data from %r" % cache)
