@@ -426,7 +426,7 @@ class DynELF(object):
             self._waitfor.status(msg)
 
     def libc(self):
-        """download(self, lib = None)
+        """libc(self) -> ELF
 
         Leak the Build ID of the remote libc.so, download the file,
         and load an ``ELF`` object with the correct base address.
