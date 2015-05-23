@@ -292,6 +292,23 @@ def sh_string(s):
                 fixed += '\\x%02x' % ord(c)
         return '"$( (echo %s|(base64 -d||openssl enc -d -base64)||echo -en \'%s\') 2>/dev/null)"' % (base64.b64encode(s), fixed)
 
+def dealarm_shell(tube):
+    """Given a tube which is a shell, dealarm it.
+    """
+    tube.clean()
+
+    tube.sendline('which python')
+    if tube.recvline.startswith('/'):
+        tube.sendline('exec python -c "import signal, os; signal.alarm(0); os.execl('$SHELL','')"')
+        return tube
+
+    tube.sendline('which perl')
+    if tube.recvline.startswith('/'):
+        tube.sendline('''exec perl -e 'alarm 0; exec $ENV{"SHELL"}'''')
+        return tube
+
+    return None
+
 def register_sizes(regs, in_sizes):
     """Create dictionaries over register sizes and relations
 
