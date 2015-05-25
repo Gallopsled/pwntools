@@ -60,8 +60,12 @@ class remote(sock):
         else:
             typ = self._get_type(typ)
             fam = self._get_family(fam)
-            self.sock   = self._connect(fam, typ)
-
+            try:
+                self.sock   = self._connect(fam, typ)
+            except socket.gaierror as e:
+                if e.errno != socket.EAI_NONAME:
+                    raise
+                log.error('Could not resolve hostname: %r' % host)
         if self.sock:
             self.settimeout(self.timeout)
             self.lhost, self.lport = self.sock.getsockname()[:2]
