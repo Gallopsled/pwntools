@@ -531,26 +531,28 @@ def flat(*args, **kwargs):
     return _flat(args, preprocessor, make_packer(word_size, endianness, sign))
 
 def fit(pieces, **kwargs):
-    """fit(pieces, filler = de_bruijn(), length = None, preprocessor = None,
-           word_size = None, endianness = None, sign = None) -> str
+    """fit(pieces, filler = de_bruijn(), length = None, preprocessor = None, word_size = None, endianness = None, sign = None) -> str
 
     Generates a string from a dictionary mapping offsets to data to place at
     that offset.
 
     For each key-value pair in `pieces`, the key is either an offset or a byte
-    sequence.  In the latter case, the offset will be the lowest index at wich
+    sequence.  In the latter case, the offset will be the lowest index at which
     the sequence occurs in `filler`.  See examples below.
 
     Each piece of data is passed to :meth:`flat` along with the keyword
     arguments `word_size`, `endianness` and `sign`.
 
     Space between pieces of data is filled out using the iterable `filler`.  The
-    `n`'th byte in the output will be byte at index `n % len(iterable)` byte in
-    `filler` if it has finite length or the byte at index `n` otherwise.
+    `n`'th byte in the output will be byte at index ``n % len(iterable)`` byte
+    in `filler` if it has finite length or the byte at index `n` otherwise.
 
     If `length` is given, the output will padded with bytes from `filler` to be
     this size.  If the output is longer than `length`, a :exception:`ValueError`
     exception is raised.
+
+    If entries in `pieces` overlap, a :exception:`ValueError` exception is
+    raised.
 
     Arguments:
       pieces: Offsets and values to output.
@@ -558,7 +560,7 @@ def fit(pieces, **kwargs):
       filler: Iterable to use for padding.
       preprocessor (function): Gets called on every element to optionally
          transform the element before flattening. If :const:`None` is
-         returned, then the original value is uded.
+         returned, then the original value is used.
       word_size (int): Word size of the converted integer.
       endianness (str): Endianness of the converted integer ("little"/"big").
       sign (str): Signedness of the converted integer (False/True)
@@ -610,7 +612,10 @@ def fit(pieces, **kwargs):
 
     # insert data into output
     out = list(out)
+    l = 0
     for k, v in sorted(pieces.items()):
+        if k < l:
+            raise ValueError("fit(): data at offset %d overlaps with previous data which ends at offset %d" % (k, l))
         while len(out) < k:
             out.append(filler.next())
         v = _flat([v], preprocessor, packer)
