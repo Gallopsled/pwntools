@@ -110,7 +110,7 @@ class ROP(object):
         else:
             log.error("ROP: Cannot flatten value %r" % value)
 
-    def _build_x86(self):
+    def _build_i386(self):
         # Stage 1:
         #   Convert every call in self._chain from a (addr, args) tuple
         #   into a (addr, pivot, args, pad) tuple.
@@ -179,6 +179,8 @@ class ROP(object):
                 outrop.append('$$$$')
 
         return output
+
+    _build_x86 = _build_i386
 
     def build(self, base = None):
         """Build the ROP chain into a list (addr, int/string, bool), where the

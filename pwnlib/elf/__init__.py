@@ -8,6 +8,8 @@ from elftools.elf.constants import P_FLAGS
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.elffile import ELFFile
+from elftools.elf.gnuversions import GNUVerDefSection
+from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 
 from ..asm import asm
@@ -115,7 +117,10 @@ class ELF(ELFFile):
             'EM_AARCH64': 'aarch64',
             'EM_MIPS': 'mips',
             'EM_PPC': 'powerpc',
-            'EM_SPARC32PLUS': 'sparc'
+            'EM_PPC64': 'powerpc64',
+            'EM_SPARC32PLUS': 'sparc',
+            'EM_SPARCV9': 'sparc64',
+            'EM_IA_64': 'ia64'
         }.get(self['e_machine'], self['e_machine'])
 
     @property
@@ -194,8 +199,20 @@ class ELF(ELFFile):
         return self.get_section_by_name(name).data()
 
     @property
+    def rwx_segments(self):
+        """Returns: list of all segments which are writeable and executable."""
+        if not self.nx:
+            return self.writable_segments
+
+        wx = P_FLAGS.PF_X | P_FLAGS.PF_W
+        return [s for s in self.segments if s.header.p_flags & wx == wx]
+
+    @property
     def executable_segments(self):
         """Returns: list of all segments which are executable."""
+        if not self.nx:
+            return list(self.segments)
+
         return [s for s in self.segments if s.header.p_flags & P_FLAGS.PF_X]
 
     @property
@@ -287,7 +304,17 @@ class ELF(ELFFile):
             return
 
         # Find the relocation section for PLT
-        rel_plt = next(s for s in self.sections if s.header.sh_info == self.sections.index(plt))
+        try:
+            rel_plt = next(s for s in self.sections if
+                            s.header.sh_info == self.sections.index(plt) and
+                            isinstance(s, RelocationSection))
+        except StopIteration:
+            # Evidently whatever android-ndk uses to build binaries zeroes out sh_info for rel.plt
+            rel_plt = self.get_section_by_name('.rel.plt') or self.get_section_by_name('.rela.plt')
+
+        if not rel_plt:
+            log.warning("Couldn't find relocations against PLT to get symbols")
+            return
 
         if rel_plt.header.sh_link != SHN_INDICES.SHN_UNDEF:
             # Find the symbols for the relocation section
@@ -312,7 +339,7 @@ class ELF(ELFFile):
             'amd64': (0x10, 0x10),
             'arm':   (0x14, 0xC),
             'aarch64': (0x20, 0x20),
-        }[self.arch]
+        }.get(self.arch, (0,0))
 
 
         # Based on the ordering of the GOT symbols, populate the PLT
@@ -577,7 +604,10 @@ class ELF(ELFFile):
     def nx(self):
         if not any('GNU_STACK' in seg.header.p_type for seg in self.segments):
             return False
-        return not any('GNU_STACK' in seg.header.p_type for seg in self.executable_segments)
+
+        # Can't call self.executable_segments because of dependency loop.
+        exec_seg = [s for s in self.segments if s.header.p_flags & P_FLAGS.PF_X]
+        return not any('GNU_STACK' in seg.header.p_type for seg in exec_seg)
 
     @property
     def execstack(self):
@@ -639,23 +669,30 @@ class ELF(ELFFile):
             }[self.pie]
         ]
 
+        # Are there any RWX areas in the binary?
+        #
+        # This will occur if NX is disabled and *any* area is
+        # RW, or can expressly occur.
+        rwx = self.rwx_segments
+
+        if self.nx and rwx:
+            res += [ "RWX:".ljust(15) + red("Has RWX segments") ]
+
         if self.rpath:
-            res += [
-            "RPATH:".ljust(15) + {
-                False:  green("No RPATH"),
-                True:   red(repr(self.rpath))
-            }.get(bool(self.rpath))
-            ]
+            res += [ "RPATH:".ljust(15) + red(repr(self.rpath)) ]
 
         if self.runpath:
-            res += [
-            "RUNPATH:".ljust(15) + {
-                False:  green("No RUNPATH"),
-                True:   red(repr(self.runpath))
-            }.get(bool(self.runpath))
-            ]
+            res += [ "RUNPATH:".ljust(15) + red(repr(self.runpath)) ]
 
         if self.packed:
             res.append('Packer:'.ljust(15) + red("Packed with UPX"))
 
         return '\n'.join(res)
+
+    @property
+    def buildid(self):
+        section = self.get_section_by_name('.note.gnu.build-id')
+        if section:
+            return section.data()[16:]
+        return None
+

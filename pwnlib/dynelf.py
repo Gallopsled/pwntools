@@ -47,15 +47,21 @@ Example
 
 DynELF
 """
-from . import elf
-from .elf     import ELF, constants
-from .memleak import MemLeak
-from .context import context
-from .log     import getLogger
+import ctypes
 
 from elftools.elf.enums import ENUM_D_TAG
 
-import ctypes
+from . import elf
+from . import libcdb
+from .context import context
+from .elf import ELF
+from .elf import constants
+from .log import getLogger
+from .memleak import MemLeak
+from .util.fiddling import enhex
+from .util.packing import unpack
+from .util.web     import wget
+
 
 log    = getLogger(__name__)
 sizeof = ctypes.sizeof
@@ -418,6 +424,46 @@ class DynELF(object):
             log.info(msg)
         else:
             self._waitfor.status(msg)
+
+    def libc(self):
+        """libc(self) -> ELF
+
+        Leak the Build ID of the remote libc.so, download the file,
+        and load an ``ELF`` object with the correct base address.
+
+        Returns:
+            An ELF object, or None.
+        """
+        lib = 'libc.so'
+
+        with self.waitfor('Downloading libc'):
+            dynlib = self._dynamic_load_dynelf(lib)
+
+            self.status("Trying lookup based on Build ID")
+            build_id = dynlib._lookup_build_id(lib)
+
+            libbase = self.libbase
+
+            if lib is not None:
+                libbase = self.lookup(symb = None, lib = lib)
+
+            for offset in libcdb.get_build_id_offsets():
+                address = libbase + offset
+                if self.leak.d(address + 0xC) == unpack("GNU\x00", 32):
+                    return enhex(''.join(self.leak.raw(address + 0x10, 20)))
+
+            if not build_id:
+                return None
+
+            self.status("Trying lookup based on Build ID: %s" % build_id)
+            path = libcdb.search_by_build_id(build_id)
+
+            if not path:
+                return None
+
+            libc = ELF(path)
+            libc.address = dynlib.libbase
+            return libc
 
     def lookup (self, symb = None, lib = None):
         """lookup(symb = None, lib = None) -> int
