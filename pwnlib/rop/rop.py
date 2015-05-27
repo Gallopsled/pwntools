@@ -357,6 +357,18 @@ class ROP(object):
                         stack.describe('%s = %s' % (register, description))
                     else:
                         stack.describe('%s' % (register))
+                    if register == srop.stack_pointers[context.arch]:
+                        if self.base:
+                            # This is where the esp is in the chain
+                            esp_address = stack.next
+
+                            # This is where the SROP frame ends
+                            regs = srop.registers[slot.arch]
+                            _abi = {"i386": abi.linux_i386_srop, "amd64": abi.linux_amd64_srop}[slot.arch]
+                            _size = _abi.arg_alignment
+                            srop_end_address = esp_address + (len(regs) - slot.get_spindex()) * _size
+                            value = srop_end_address
+
                     stack.append(value)
 
             elif isinstance(slot, Call):
