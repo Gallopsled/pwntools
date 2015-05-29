@@ -7,7 +7,7 @@ H=/home/$U
 
 USUDO()
 {
-if [ "$TRAVIS" ];
+if [[ "$USER" == "travis" ]];
 then
     $*
 else
@@ -16,7 +16,7 @@ fi
 }
 
 
-if [ "$TRAVIS" ];
+if [[ "$USER" == "travis" ]];
 then
     rm -f ~/.ssh/*
 else
