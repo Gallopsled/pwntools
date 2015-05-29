@@ -53,5 +53,5 @@ Host example.pwnme
     IdentityFile ~/.ssh/$U
 EOF
 
-ssh-keyscan -t rsa example.pwnme >>~/.ssh/known_hosts
+ssh-keyscan -vvv -t rsa example.pwnme >>~/.ssh/known_hosts
 ssh -o "StrictHostKeyChecking no" -vvvv travis@example.pwnme id
