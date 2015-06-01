@@ -50,7 +50,6 @@ class ELF(ELFFile):
     :ivar plt:      Dictionary of {name: address} for all functions in the PLT
     :ivar got:      Dictionary of {name: address} for all function pointers in the GOT
     :ivar libs:     Dictionary of {path: address} for each shared object required to load the ELF
-
     Example:
 
     .. code-block:: python
@@ -230,6 +229,13 @@ class ELF(ELFFile):
     def non_writable_segments(self):
         """Returns: list of all segments which are NOT writeable"""
         return [s for s in self.segments if not s.header.p_flags & P_FLAGS.PF_W]
+
+    @property
+    def libc(self):
+        for lib in self.libs:
+            if '/libc.so' in lib:
+                return ELF(lib)
+
 
     def _populate_libraries(self):
         """
