@@ -241,10 +241,10 @@ class ELF(ELFFile):
         True
         """
         try:
-            cmd = '(ulimit -s unlimited; ldd %s > /dev/null && (LD_TRACE_LOADED_OBJECTS=1 %s || ldd %s)) 2>/dev/null'
+            cmd = 'ulimit -s unlimited; LD_TRACE_LOADED_OBJECTS=1 LD_WARN=1 LD_BIND_NOW=1 %s 2>/dev/null'
             arg = misc.sh_string(self.path)
 
-            data = subprocess.check_output(cmd % (arg, arg, arg), shell = True)
+            data = subprocess.check_output(cmd % (arg), shell = True)
             self.libs = misc.parse_ldd_output(data)
         except subprocess.CalledProcessError:
             self.libs = {}
