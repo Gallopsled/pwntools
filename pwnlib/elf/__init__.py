@@ -14,9 +14,11 @@ from elftools.elf.sections import SymbolTableSection
 
 from ..asm import asm
 from ..asm import disasm
+from ..context import context
 from ..log import getLogger
 from ..term import text
 from ..util import misc
+from ..qemu import get_qemu_arch
 from .datatypes import *
 
 log = getLogger(__name__)
@@ -239,7 +241,7 @@ class ELF(ELFFile):
         Otherwise, returns ``None``.
         """
         for lib in self.libs:
-            if '/libc.so' in lib:
+            if '/libc.' in lib or '/libc-' in lib:
                 return ELF(lib)
 
 
@@ -257,7 +259,19 @@ class ELF(ELFFile):
             arg = misc.sh_string(self.path)
 
             data = subprocess.check_output(cmd % (arg), shell = True)
-            self.libs = misc.parse_ldd_output(data)
+            libs = misc.parse_ldd_output(data)
+
+            for lib in dict(libs):
+                if os.path.exists(lib):
+                    continue
+
+                qemu_lib = '/etc/qemu-binfmt/%s/%s' % (get_qemu_arch(arch=self.arch), lib)
+
+                if os.path.exists(qemu_lib):
+                    libs[os.path.realpath(qemu_lib)] = libs.pop(lib)
+
+            self.libs = libs
+
         except subprocess.CalledProcessError:
             self.libs = {}
 
