@@ -232,6 +232,12 @@ class ELF(ELFFile):
 
     @property
     def libc(self):
+        """If the ELF imports any libraries which contain 'libc.so',
+        and we can determine the appropriate path to it on the local
+        system, returns an ELF object pertaining to that libc.so.
+
+        Otherwise, returns ``None``.
+        """
         for lib in self.libs:
             if '/libc.so' in lib:
                 return ELF(lib)
