@@ -1,6 +1,7 @@
 """Return Oriented Programming
 """
 import hashlib, os, sys, tempfile, re
+import capstone
 
 from .elf     import ELF
 from .util    import packing
@@ -45,7 +46,10 @@ class ROP(object):
         self.base = base
         self.align = max(e.elfclass for e in elfs)/8
         self.migrated = False
-        self.__load()
+        meth = '_load_' + self.elfs[0].get_machine_arch()
+        if not hasattr(self, meth):
+            log.error("Cannot load rop gadgets for architecture %r" % self.elfs[0].get_machine_arch())
+        getattr(self, meth)()
 
     def resolve(self, resolvable):
         """Resolves a symbol to an address
@@ -242,6 +246,26 @@ class ROP(object):
 
         return out
 
+    def _build_ARM(self):
+        """Builds the ropchain for arm.
+        Structures are currently not suported
+        """
+
+        return_addr = None
+        regs = set()
+        rop = []
+        roppart = []
+        for (func_addr, args) in self._chain[::-1]:
+            regs_dict = dict(zip(["r0", "r1", "r2", "r3"], args))
+            if return_addr:
+                regs_dict["lr"] = return_addr
+            return_addr, roppart = self._set_regs_arm(regs_dict, func_addr)
+            rop = roppart + rop
+        rop = [return_addr] + rop
+        return map(lambda e: (e,), rop)
+
+
+
     def chain(self):
         """Build the ROP chain
 
@@ -368,7 +392,10 @@ class ROP(object):
     def __cache_save(self, elf, data):
         file(self.__get_cachefile_name(elf),'w+').write(repr(data))
 
-    def __load(self):
+    def _load_x64(self):
+        self._load_x86()
+
+    def _load_x86(self):
         """Load all ROP gadgets for the selected ELF files"""
         #
         # We accept only instructions that look like these.
@@ -500,6 +527,155 @@ class ROP(object):
         if leave and leave[1]['regs'] != frame_regs:
             leave = None
         self.leave = leave
+
+    def _load_ARM(self):
+        """Load gadgets for arm and thumb.
+        currently we are only using pop gadgets,
+        and only searching the first elf image
+        """
+        elf = self.elfs[0]
+        pops = {}
+        movs = {}
+        self.gadgets = {}
+        md = capstone.Cs(capstone.CS_ARCH_ARM, capstone.CS_MODE_ARM)
+        md.skipdata = True
+        for seg in elf.executable_segments:
+            if seg.header.p_type != 'PT_LOAD': continue
+            md.mode = capstone.CS_MODE_ARM
+            for inst in md.disasm(seg.data(), seg.header.p_vaddr):
+                if inst.mnemonic == "pop":
+                    regs = inst.op_str[1:-1].split(",")
+                    regs = map(lambda reg: reg.strip(), regs)
+                    insns = ["pop %s" % inst.op_str]
+                    if "pc" in regs:
+                        pops[inst.address] = {"insns": insns, "regs": regs, "move": 4*len(regs), "type": "pop"}
+            md.mode = capstone.CS_MODE_THUMB
+            for inst in md.disasm(seg.data(), seg.header.p_vaddr):
+                if inst.mnemonic == "pop":
+                    regs = inst.op_str[1:-1].split(",")
+                    regs = map(lambda reg: reg.strip(), regs)
+                    insns = ["pop %s" % inst.op_str]
+                    if "pc" in regs:
+                        pops[inst.address+1] = {"insns": insns, "regs": regs, "move": 4*len(regs), "type": "pop"}
+        self.gadgets.update(pops)
+        for addr, gad in self.gadgets.items():
+            if addr & 1 == 0:
+                #arm
+                md.mode = capstone.CS_MODE_ARM
+                prev_addr = addr - 4
+                prev = elf.read(prev_addr, 4)
+                try:
+                    inst = md.disasm(prev, prev_addr).next()
+                    if inst.mnemonic.startswith("mov"):
+                        to_reg, from_reg = [reg.strip() for reg in inst.op_str.split(",")]
+                        insns = ["mov %s, %s" % (to_reg, from_reg)] + gad["insns"]
+                        movs[prev_addr+1] = {
+                                "insns": insns,
+                                "mov_to": to_reg,
+                                "mov_from": from_reg,
+                                "move": gad["move"],
+                                "regs": gad["regs"],
+                                "type": "mov;pop"}
+                except StopIteration:
+                    pass
+
+            else:
+                #thumb
+                md.mode = capstone.CS_MODE_THUMB
+                prev_addr = addr - 3
+                prev = elf.read(prev_addr, 2)
+                try:
+                    inst = md.disasm(prev, prev_addr).next()
+                    if inst.mnemonic.startswith("mov"):
+                        to_reg, from_reg = [reg.strip() for reg in inst.op_str.split(",")]
+                        insns = ["mov %s, %s" % (to_reg, from_reg)] + gad["insns"]
+                        movs[prev_addr+1] = {
+                                "insns": insns,
+                                "mov_to": to_reg,
+                                "mov_from": from_reg,
+                                "move": gad["move"],
+                                "regs": gad["regs"],
+                                "type": "mov;pop"}
+                except StopIteration:
+                    pass
+        self.gadgets.update(movs)
+        return pops, movs
+
+    def _find_best_pop_gadget(self, regs):
+        """Helper function for _set_regs.
+        Finds the 'best' gadget, which currently means the first gadget
+        with most registres we want to set
+        """
+        def gadget_score(gadget):
+            return len(set(gadget["regs"]) & regs)
+        #must contain 1 reg we want set.
+        gadgets = filter(lambda (a,g): g["type"] == "pop" and
+                len(set(g["regs"]) & regs) > 0,
+            self.gadgets.items())
+        gadget = max(gadgets, key = lambda (a, g): gadget_score(g))
+        return gadget
+
+    def _find_best_mov_gadget(self, reg):
+        def gadget_score(gadget):
+            return len(gadget["regs"])
+        gadgets = filter(lambda (a,g): g["type"] == "mov;pop" and
+                g["mov_from"] in self.can_pop
+                and g["mov_to"] == reg,
+            self.gadgets.items())
+        gadget = min(gadgets, key = lambda (a, g): gadget_score(g))
+        return gadget
+
+
+    def _set_regs_arm(self, regs_dict, return_addr):
+        """Generates a rop chain that sets the regsitres from regs_dict
+        and return to return_addr when it is done
+        """
+        ropchain = []
+        regs = set(regs_dict.keys())
+        old_regs = None
+
+        for cant_pop in (regs - self.can_pop):
+            if cant_pop in self.can_mov:
+                mov_addr, mov_gad = self._find_best_mov_gadget(cant_pop)
+                pop_addr, pop_gad = self._find_best_pop_gadget(set([mov_gad["mov_from"]]))
+                ropchain.append(pop_addr)
+                pop_regs_dict = {mov_gad["mov_from"]: regs_dict[cant_pop]}
+                ropchain += [pop_regs_dict.get(reg, "$$$$") for reg in pop_gad["regs"][:-1]]
+                ropchain.append(mov_addr)
+                ropchain += [regs_dict.get(reg, "$$$$") for reg in mov_gad["regs"][:-1]]
+                regs.discard(cant_pop)
+
+
+        while regs and regs != old_regs:
+            addr, inst = self._find_best_pop_gadget(regs)
+            ropchain.append(addr)
+            ropchain += [regs_dict.get(reg, "$$$$") for reg in inst["regs"][:-1]]
+            old_regs = set(regs)
+            regs -= set(inst["regs"])
+
+        ropchain += [return_addr]
+        if regs:
+            log.error("Could not set regs: %r", regs)
+        return ropchain[0], ropchain[1:]
+
+    @property
+    def can_pop(self):
+        """For arm mode only:
+        Which registres we can set.
+        """
+        l = []
+        for gad in self.gadgets.values():
+            if gad["type"] == "pop":
+                l.extend(gad["regs"])
+        return set(l)
+
+    @property
+    def can_mov(self):
+        l = []
+        for gad in self.gadgets.values():
+            if gad["type"] == "mov;pop" and gad["mov_from"] in self.can_pop:
+                l.append(gad["mov_to"])
+        return set(l)
 
     def __repr__(self):
         return "ROP(%r)" % self.elfs
