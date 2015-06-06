@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+
+from collections import namedtuple
+
 from ..abi import ABI
 from ..context import context
 from ..log import getLogger
@@ -8,34 +11,34 @@ from ..util.packing import unpack_many
 
 log = getLogger(__name__)
 
+sropregs = namedtuple('sropregs', ['context', 'offsets'])
+
 registers = {
 # Reference : http://lxr.free-electrons.com/source/arch/x86/include/asm/sigcontext.h?v=2.6.28#L138
-    'i386': ["gs",   "fs",  "es",  "ds",   "edi",  "esi", "ebp", "esp", "ebx",
+    'i386': sropregs(["gs",   "fs",  "es",  "ds",   "edi",  "esi", "ebp", "esp", "ebx",
         "edx",  "ecx", "eax", "trapno", "err", "eip", "cs",  "eflags",
-        "esp_at_signal", "ss",  "fpstate"],
+        "esp_at_signal", "ss",  "fpstate"], {}),
 
 # Reference : https://www.cs.vu.nl/~herbertb/papers/srop_sp14.pdf
-    'amd64': ["uc_flags", "&uc", "uc_stack.ss_sp", "uc_stack.ss_flags", "uc_stack.ss_size",
+    'amd64': sropregs(["uc_flags", "&uc", "uc_stack.ss_sp", "uc_stack.ss_flags", "uc_stack.ss_size",
         "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "rdi", "rsi", "rbp",
         "rbx", "rdx", "rax", "rcx", "rsp", "rip", "eflags", "csgsfs", "err", "trapno",
-        "oldmask", "cr2", "&fpstate", "__reserved", "sigmask"],
+        "oldmask", "cr2", "&fpstate", "__reserved", "sigmask"], {}),
 
 # Reference : lxr.free-electrons.com/source/arch/arm/kernel/signal.c#L133
-    'arm' : ["uc_flags", "uc_link", "uc_stack.ss_sp", "uc_stack.ss_flags", "uc_stack.ss_size",
+    'arm' : sropregs(["uc_flags", "uc_link", "uc_stack.ss_sp", "uc_stack.ss_flags", "uc_stack.ss_size",
 		"trap_no", "error_code", "oldmask", "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
 		 "r8", "r9", "r10", "fp", "ip", "sp", "lr", "pc", "cpsr", "fault_address", "uc_sigmask",
-		 "__unused", "uc_regspace"]
+         "__unused", "uc_regspace"], {'base'  : 232,
+                                      'CRUNCH': (0x5065cf03, 0xa8),
+                                      'IWMMXT': (0x12ef842a, 0x98),
+                                      'VFPU'  : (0x56465001, 0x120)}),
 }
 
 defaults = {
     "i386" : {"cs": 0x73, "ss": 0x7b},
     "amd64": {"csgsfs": 0x33},
     "arm": {"trap_no": 0x6, "cpsr": 0x40000010}
-}
-
-offset_defaults = {
-    # VFPU_MAGIC, VFPU_SIZE = 0x56465001, 0x00000120
-    "arm" : {232: 0x56465001, 236: 0x00000120}
 }
 
 instruction_pointers = {
@@ -47,7 +50,7 @@ instruction_pointers = {
 stack_pointers = {
     'i386': 'esp',
     'amd64': 'rsp',
-    'arm': 'pc'
+    'arm': 'sp'
 }
 
 # # XXX Need to add support for Capstone in order to extract ARM and MIPS
@@ -112,6 +115,8 @@ class SigreturnFrame(dict):
     def __setitem__(self, item, value):
         if item not in self.registers:
             log.error("Unknown register %r (not in %r)" % (item, self.registers))
+        if self.arch == "arm" and item == "sp" and (value & 0x7):
+            log.error("ARM SP should be 8-bit aligned")
         super(SigreturnFrame, self).__setitem__(item, value)
 
     def __setattr__(self, attr, value):
@@ -125,16 +130,18 @@ class SigreturnFrame(dict):
 
     def __str__(self):
         with context.local(arch=self.arch):
-            objstr = flat(*[self[r] for r in self.registers])
-            objstr = self.fix_offsets(objstr)
-            return objstr
+            return flat(*[self[r] for r in self.registers])
 
     def __len__(self):
         return len(str(self))
 
     @property
     def registers(self):
-        return registers[self.arch]
+        return registers[self.arch].context
+
+    @property
+    def register_offsets(self):
+        return registers[self.arch].offsets
 
     @property
     def arguments(self):
@@ -169,15 +176,38 @@ class SigreturnFrame(dict):
     def syscall_register(self):
         return ABI.syscall(self.arch).syscall_register
 
-    def fix_offsets(self, objstr):
-        with context.local(arch=self.arch):
-            if context.arch in offset_defaults:
-                od = offset_defaults[context.arch]
-                for offset in sorted(od):
-                    if len(objstr) < offset:
-                        objstr += "A" * (offset - len(objstr))
-                    objstr += pack(od[offset])
-            return objstr
+    def fix_offsets(self, frcontents, namedoffsets):
+
+        # If there is no offset information for the architecture
+        # or if coprocessors are not specified, just return the
+        # frame contents.
+        offset_info = self.register_offsets
+        if not offset_info:
+            return frcontents
+        if not namedoffsets:
+            return frcontents
+
+        def _fixup(frcontents, offsetvals, base):
+            frcontents += "A" * (base - len(frcontents))
+            for magicval, size in offsetvals:
+                frcontents += flat([magicval, size])
+                if len(frcontents) < size:
+                    frcontents += "A" * (size - len(frcontents))
+            return frcontents
+
+        # Get the base offset where we start adding in co-processor
+        # information.
+        base = offset_info['base']
+        offsetvals = []
+        for key in namedoffsets:
+            key = key.upper()
+            try:
+                offsetvals.append((offset_info[key]))
+            except KeyError, e:
+                log.error("Named offset '%s' not supported" % key)
+
+        offsetvals.sort(key=lambda x: x[1])
+        return _fixup(frcontents, offsetvals, base)
 
     def set_regvalue(self, reg, val):
         """
@@ -188,8 +218,18 @@ class SigreturnFrame(dict):
     def get_spindex(self):
         return self.registers.index(stack_pointers[self.arch])
 
-    def get_frame(self):
+    def get_frame(self, namedoffsets=None):
         """
-        Returns the SROP frame
+        Returns the SROP frame. Use this function for the following
+        architectures if additional registers need to be specified
+        based on offsets.
+
+        For ARM architectures use this function in case coprocessors
+        need to be specified. Valid values for ARM coprocessors are
+        `vfpu`, `iwmmxt` and `crunch`.
+        eg:-
+            s.get_frame("vfpu")
         """
-        return str(self)
+        frcontents = str(self)
+        frcontents = self.fix_offsets(frcontents, namedoffsets)
+        return frcontents
