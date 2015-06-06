@@ -18,22 +18,36 @@ registers = {
     'amd64': ["uc_flags", "&uc", "uc_stack.ss_sp", "uc_stack.ss_flags", "uc_stack.ss_size",
         "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "rdi", "rsi", "rbp",
         "rbx", "rdx", "rax", "rcx", "rsp", "rip", "eflags", "csgsfs", "err", "trapno",
-        "oldmask", "cr2", "&fpstate", "__reserved", "sigmask"]
+        "oldmask", "cr2", "&fpstate", "__reserved", "sigmask"],
+
+# Reference : lxr.free-electrons.com/source/arch/arm/kernel/signal.c#L133
+    'arm' : ["uc_flags", "uc_link", "uc_stack.ss_sp", "uc_stack.ss_flags", "uc_stack.ss_size",
+		"trap_no", "error_code", "oldmask", "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+		 "r8", "r9", "r10", "fp", "ip", "sp", "lr", "pc", "cpsr", "fault_address", "uc_sigmask",
+		 "__unused", "uc_regspace"]
 }
 
 defaults = {
     "i386" : {"cs": 0x73, "ss": 0x7b},
-    "amd64": {"csgsfs": 0x33}
+    "amd64": {"csgsfs": 0x33},
+    "arm": {"trap_no": 0x6, "cpsr": 0x40000010}
+}
+
+offset_defaults = {
+    # VFPU_MAGIC, VFPU_SIZE = 0x56465001, 0x00000120
+    "arm" : {232: 0x56465001, 236: 0x00000120}
 }
 
 instruction_pointers = {
     'i386': 'eip',
-    'amd64': 'rip'
+    'amd64': 'rip',
+    'arm': 'pc'
 }
 
 stack_pointers = {
     'i386': 'esp',
-    'amd64': 'rsp'
+    'amd64': 'rsp',
+    'arm': 'pc'
 }
 
 # # XXX Need to add support for Capstone in order to extract ARM and MIPS
@@ -111,7 +125,9 @@ class SigreturnFrame(dict):
 
     def __str__(self):
         with context.local(arch=self.arch):
-            return flat(*[self[r] for r in self.registers])
+            objstr = flat(*[self[r] for r in self.registers])
+            objstr = self.fix_offsets(objstr)
+            return objstr
 
     def __len__(self):
         return len(str(self))
@@ -152,6 +168,16 @@ class SigreturnFrame(dict):
     @property
     def syscall_register(self):
         return ABI.syscall(self.arch).syscall_register
+
+    def fix_offsets(self, objstr):
+        with context.local(arch=self.arch):
+            if context.arch in offset_defaults:
+                od = offset_defaults[context.arch]
+                for offset in sorted(od):
+                    if len(objstr) < offset:
+                        objstr += "A" * (offset - len(objstr))
+                    objstr += pack(od[offset])
+            return objstr
 
     def set_regvalue(self, reg, val):
         """
