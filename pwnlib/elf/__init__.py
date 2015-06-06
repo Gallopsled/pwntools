@@ -14,9 +14,11 @@ from elftools.elf.sections import SymbolTableSection
 
 from ..asm import asm
 from ..asm import disasm
+from ..context import context
 from ..log import getLogger
 from ..term import text
 from ..util import misc
+from ..qemu import get_qemu_arch
 from .datatypes import *
 
 log = getLogger(__name__)
@@ -50,7 +52,6 @@ class ELF(ELFFile):
     :ivar plt:      Dictionary of {name: address} for all functions in the PLT
     :ivar got:      Dictionary of {name: address} for all function pointers in the GOT
     :ivar libs:     Dictionary of {path: address} for each shared object required to load the ELF
-
     Example:
 
     .. code-block:: python
@@ -231,6 +232,19 @@ class ELF(ELFFile):
         """Returns: list of all segments which are NOT writeable"""
         return [s for s in self.segments if not s.header.p_flags & P_FLAGS.PF_W]
 
+    @property
+    def libc(self):
+        """If the ELF imports any libraries which contain 'libc.so',
+        and we can determine the appropriate path to it on the local
+        system, returns an ELF object pertaining to that libc.so.
+
+        Otherwise, returns ``None``.
+        """
+        for lib in self.libs:
+            if '/libc.' in lib or '/libc-' in lib:
+                return ELF(lib)
+
+
     def _populate_libraries(self):
         """
         >>> from os.path import exists
@@ -241,11 +255,23 @@ class ELF(ELFFile):
         True
         """
         try:
-            cmd = '(ulimit -s unlimited; ldd %s > /dev/null && (LD_TRACE_LOADED_OBJECTS=1 %s || ldd %s)) 2>/dev/null'
+            cmd = 'ulimit -s unlimited; LD_TRACE_LOADED_OBJECTS=1 LD_WARN=1 LD_BIND_NOW=1 %s 2>/dev/null'
             arg = misc.sh_string(self.path)
 
-            data = subprocess.check_output(cmd % (arg, arg, arg), shell = True)
-            self.libs = misc.parse_ldd_output(data)
+            data = subprocess.check_output(cmd % (arg), shell = True)
+            libs = misc.parse_ldd_output(data)
+
+            for lib in dict(libs):
+                if os.path.exists(lib):
+                    continue
+
+                qemu_lib = '/etc/qemu-binfmt/%s/%s' % (get_qemu_arch(arch=self.arch), lib)
+
+                if os.path.exists(qemu_lib):
+                    libs[os.path.realpath(qemu_lib)] = libs.pop(lib)
+
+            self.libs = libs
+
         except subprocess.CalledProcessError:
             self.libs = {}
 

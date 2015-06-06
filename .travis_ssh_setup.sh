@@ -2,12 +2,16 @@
 #
 # Install a demo user for SSH purposes
 #
+# All of the "conditional sudo" is to do container-based builds on
+# Travis which are much, much faster.
+set -x
+
 U=travis
 H=/home/$U
 
 USUDO()
 {
-if [ "$TRAVIS" ];
+if [[ "$USER" == "travis" ]];
 then
     $*
 else
@@ -16,7 +20,7 @@ fi
 }
 
 
-if [ "$TRAVIS" ];
+if [[ "$USER" == "travis" ]];
 then
     rm -f ~/.ssh/*
 else
@@ -49,5 +53,5 @@ Host example.pwnme
     IdentityFile ~/.ssh/$U
 EOF
 
-ssh-keyscan -t rsa example.pwnme >>~/.ssh/known_hosts
-ssh -o "StrictHostKeyChecking no" -v travis@example.pwnme id
+ssh-keyscan -vvv -t rsa example.pwnme >>~/.ssh/known_hosts
+ssh -o "StrictHostKeyChecking no" -vvvv travis@example.pwnme id
