@@ -3,13 +3,21 @@
 The purpose of this module is to provide quick access to constants from
 different architectures and operating systems.
 
+The constants are wrapped by a convenience class that allows accessing
+the name of the constant, while performing all normal mathematical
+operations on it.
+
 Example:
 
-    >>> print constants.freebsd.SYS_stat
+    >>> str(constants.freebsd.SYS_stat)
+    'SYS_stat'
+    >>> int(constants.freebsd.SYS_stat)
     188
-    >>> print constants.linux.i386.SYS_stat
+    >>> hex(constants.freebsd.SYS_stat)
+    '0xbc'
+    >>> 0 | constants.linux.i386.SYS_stat
     106
-    >>> print constants.linux.amd64.SYS_stat
+    >>> 0 + constants.linux.amd64.SYS_stat
     4
 
 The submodule ``freebsd`` contains all constants for FreeBSD, while the
@@ -22,13 +30,13 @@ what happens in :mod:`pwnlib.shellcraft`.
 Example:
 
     >>> with context.local(os = 'freebsd'):
-    ...     print constants.SYS_stat
+    ...     print int(constants.SYS_stat)
     188
     >>> with context.local(os = 'linux', arch = 'i386'):
-    ...     print constants.SYS_stat
+    ...     print int(constants.SYS_stat)
     106
     >>> with context.local(os = 'linux', arch = 'amd64'):
-    ...     print constants.SYS_stat
+    ...     print int(constants.SYS_stat)
     4
 
 """
@@ -39,39 +47,71 @@ from types import ModuleType
 from ..context import context
 from ..util import safeeval
 
+class ConstantsModule(ModuleType):
+    """
+    ModuleType specialization in order to automatically
+    route queries down to the correct module based on the
+    current context arch / os.
 
-class module(ModuleType):
-    def __init__(self, submodules):
-        super(module, self).__init__(__name__)
+        >>> with context.local(arch = 'i386', os = 'linux'):
+        ...    print constants.SYS_execve + constants.PROT_WRITE
+        13
+        >>> with context.local(arch = 'amd64', os = 'linux'):
+        ...    print constants.SYS_execve + constants.PROT_WRITE
+        61
+        >>> with context.local(arch = 'amd64', os = 'linux'):
+        ...    print constants.SYS_execve + constants.PROT_WRITE
+        61
+        >>> False
+        True
 
-        # Insert nice properties
-        self.__dict__.update({
-            '__doc__':     __doc__,
-            '__file__':    __file__,
-            '__package__': __package__,
-            '__path__':    __path__,
-            '__all__':     submodules,
-        })
+    """
+    possible_submodules = set(context.oses) | set(context.architectures)
 
+    def __init__(self, name, module):
+        super(ConstantsModule, self).__init__(name)
+        self.__dict__.update(module.__dict__)
         self._env_store = {}
 
-    def __getattr__(self, key):
-        if key in self.__all__:
-            mod = importlib.import_module('.' + key, __package__)
-            setattr(self, key, mod)
-            return mod
+    def guess(self):
+        if context.os in self.__name__ and context.arch in self.__name__:
+            return self
 
-        if context.os in self.__all__:
-            return getattr(getattr(self, context.os), key)
-
-        raise AttributeError("'module' object has no attribute '%s'" % key)
+        mod = self
+        mod = getattr(mod, context.os, mod)
+        mod = getattr(mod, context.arch, mod)
+        return mod
 
     def __dir__(self):
-        result = list(self.__all__)
-        if context.os in self.__all__:
-            result.extend(dir(getattr(self, context.os)))
+        return self.__all__
 
-        return result
+    def __getattr__(self, key):
+        # Special case for __all__, we want to return the contextually
+        # relevant module.
+        if key == '__all__':
+            return self.guess().__dict__.keys()
+
+        # Special case for all other special properties which aren't defined
+        if key.endswith('__'):
+            raise AttributeError
+
+        # This code is only hit if the attribute doesn't already exist.
+        # Attempt to import a module by the specified name.
+        if key in self.possible_submodules:
+            try:
+                mod = importlib.import_module('.' + key, self.__name__)
+                mod = ConstantsModule(mod.__name__, mod)
+                setattr(self, key, mod)
+                sys.modules[mod.__name__] = mod
+                return mod
+            except ImportError:
+                pass
+        else:
+            mod = self.guess()
+            if hasattr(mod, key):
+                return getattr(mod, key)
+
+        raise AttributeError("'module' object has no attribute '%s'" % key)
 
     def eval(self, string):
         """eval(string) -> value
@@ -90,7 +130,7 @@ class module(ModuleType):
             ...    print constants.eval('SYS_execve + PROT_WRITE')
             61
         """
-        if isinstance(string, int):
+        if not isinstance(string, str):
             return string
 
         key = context.os, context.arch
@@ -99,8 +139,10 @@ class module(ModuleType):
 
         return safeeval.values(string, self._env_store[key])
 
+
 # To prevent garbage collection
 tether = sys.modules[__name__]
 
 # Create the module structure
-sys.modules[__name__] = module(['linux', 'freebsd'])
+sys.modules[__name__] = ConstantsModule(__name__, tether)
+
