@@ -1,5 +1,5 @@
 <%
-  from pwnlib.shellcraft import arm 
+  from pwnlib.shellcraft import arm
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
 %>
 
@@ -29,7 +29,7 @@ Example:
         /* call exit(0) */
         /* Set r0 = 0 = 0x0 */
         eor r0, r0
-        /* Set r7 = 9437185 = 0x900001 */
+        /* Set r7 = SYS_exit = 0x900001 */
         movw r7, #1
         movt r7, #144
         swi #0
