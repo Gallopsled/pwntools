@@ -11,7 +11,7 @@ Thin wrapper around :func:`pwnlib.shellcraft.thumb.mov`, which sets
 Example:
 
     >>> print pwnlib.shellcraft.thumb.linux.mov('r1', 'SYS_execve').rstrip()
-        mov r1, #11
+        mov r1, #SYS_execve
 
 </%docstring>
 
