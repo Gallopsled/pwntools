@@ -528,6 +528,8 @@ def disasm(data, vma = 0, byte = True, offset = True):
     Arguments:
       data(str): Bytestring to disassemble.
       vma(int): Passed through to the --adjust-vma argument of objdump
+      byte(bool): Include the hex-printed bytes in the disassembly
+      offset(bool): Include the virtual memory address in the disassembly
 
     Kwargs:
       Any arguments/properties that can be set on ``context``
