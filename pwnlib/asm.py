@@ -514,7 +514,7 @@ def asm(shellcode, vma = 0):
         return result
 
 @LocalContext
-def disasm(data, vma = 0):
+def disasm(data, vma = 0, byte = True, offset = True):
     """disasm(data, ...) -> str
 
     Disassembles a bytestring into human readable assembler.
@@ -538,6 +538,10 @@ def disasm(data, vma = 0):
 
           >>> print disasm('b85d000000'.decode('hex'), arch = 'i386')
              0:   b8 5d 00 00 00          mov    eax,0x5d
+          >>> print disasm('b85d000000'.decode('hex'), arch = 'i386', byte = 0)
+             0:   mov    eax,0x5d
+          >>> print disasm('b85d000000'.decode('hex'), arch = 'i386', byte = 0, offset = 0)
+             mov    eax,0x5d
           >>> print disasm('b817000000'.decode('hex'), arch = 'amd64')
              0:   b8 17 00 00 00          mov    eax,0x17
           >>> print disasm('48c7c017000000'.decode('hex'), arch = 'amd64')
@@ -547,6 +551,7 @@ def disasm(data, vma = 0):
              4:   00900052        addseq  r0, r0, r2, asr r0
           >>> print disasm('4ff00500'.decode('hex'), arch = 'thumb', bits=32)
              0:   f04f 0005       mov.w   r0, #5
+          >>>
     """
     result = ''
 
@@ -591,4 +596,20 @@ def disasm(data, vma = 0):
         log.exception("An error occurred while disassembling:\n%s" % data)
     else:
         shutil.rmtree(tmpdir)
-        return result
+
+
+    lines = []
+    pattern = '^( *[0-9a-f]+): *((?:[0-9a-f]+ )+) *(.*)'
+    for line in result.splitlines():
+        o, b, i = re.search(pattern, line).groups()
+
+        line = ''
+
+        if offset:
+            line += '%s:   ' % o
+        if byte:
+            line += '%-24s' % b
+        line += '%s\n' % i
+        lines.append(line)
+
+    return ''.join(lines)
