@@ -599,17 +599,17 @@ def disasm(data, vma = 0, byte = True, offset = True):
 
 
     lines = []
-    pattern = '^( *[0-9a-f]+): *((?:[0-9a-f]+ )+) *(.*)'
+    pattern = '^( *[0-9a-f]+: *)((?:[0-9a-f]+ )+ *)(.*)'
     for line in result.splitlines():
         o, b, i = re.search(pattern, line).groups()
 
         line = ''
 
         if offset:
-            line += '%s:   ' % o
+            line += o
         if byte:
-            line += '%-24s' % b
-        line += '%s\n' % i
+            line += b
+        line += i
         lines.append(line)
 
-    return ''.join(lines)
+    return '\n'.join(lines)
