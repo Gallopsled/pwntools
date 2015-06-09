@@ -541,7 +541,7 @@ def disasm(data, vma = 0, byte = True, offset = True):
           >>> print disasm('b85d000000'.decode('hex'), arch = 'i386', byte = 0)
              0:   mov    eax,0x5d
           >>> print disasm('b85d000000'.decode('hex'), arch = 'i386', byte = 0, offset = 0)
-             mov    eax,0x5d
+          mov    eax,0x5d
           >>> print disasm('b817000000'.decode('hex'), arch = 'amd64')
              0:   b8 17 00 00 00          mov    eax,0x17
           >>> print disasm('48c7c017000000'.decode('hex'), arch = 'amd64')
