@@ -1,8 +1,7 @@
-import ctypes
-import ctypes.util
-import socket
+import ctypes, ctypes.util, socket
+from packing import p16, p32
 
-__all__ = ['getifaddrs', 'interfaces', 'interfaces4', 'interfaces6']
+__all__ = ['getifaddrs', 'interfaces', 'interfaces4', 'interfaces6', 'sockaddr']
 
 # /usr/src/linux-headers-3.12-1-common/include/uapi/linux/socket.h
 sa_family_t = ctypes.c_ushort
@@ -183,3 +182,40 @@ def interfaces6(all = False):
         if addrs or all:
             out[name] = addrs
     return out
+
+def sockaddr(host, port, network = 'ipv4'):
+    """sockaddr(host, port, network = 'ipv4') -> (data, length, family)
+
+    Creates a sockaddr_in or sockaddr_in6 memory buffer for use in shellcode.
+
+    Arguments:
+      host (str): Either an IP address or a hostname to be looked up.
+      port (int): TCP/UDP port.
+      network (str): Either 'ipv4' or 'ipv6'.
+
+    Returns:
+      A tuple containing the sockaddr buffer, length, and the address family.
+"""
+    address_family = {'ipv4':socket.AF_INET,'ipv6':socket.AF_INET6}[network]
+
+    for family, _, _, _, ip in socket.getaddrinfo(host, None, address_family):
+        ip = ip[0]
+        if family == address_family:
+            break
+    else:
+        log.error("Could not find %s address for %r" % (network, host))
+
+    info = socket.getaddrinfo(host, None, address_family)
+    host = socket.inet_pton(address_family, ip)
+    sockaddr  = p16(address_family)
+    sockaddr += p16(socket.htons(port))
+    length    = 0
+
+    if network == 'ipv4':
+        sockaddr += host
+        length    = 16 # Save ten bytes by skipping two 'push 0'
+    else:
+        sockaddr += p32(0xffffffff) # Save three bytes 'push -1' vs 'push 0'
+        sockaddr += host
+        length    = len(sockaddr) + 4 # Save five bytes 'push 0'
+    return (sockaddr, length, address_family)
