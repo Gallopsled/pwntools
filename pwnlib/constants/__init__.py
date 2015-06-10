@@ -67,6 +67,8 @@ class ConstantsModule(ModuleType):
         True
 
     """
+    Constant = Constant
+
     possible_submodules = set(context.oses) | set(context.architectures)
 
     def __init__(self, name, module):
@@ -138,7 +140,7 @@ class ConstantsModule(ModuleType):
         if key not in self._env_store:
             self._env_store[key] = {key: getattr(self, key) for key in dir(self) if not key.endswith('__')}
 
-        return Constant(string, safeeval.values(string, self._env_store[key]))
+        return Constant('(%s)' % string, safeeval.values(string, self._env_store[key]))
 
 
 # To prevent garbage collection
