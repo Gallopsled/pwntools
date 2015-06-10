@@ -603,7 +603,11 @@ def disasm(data, vma = 0, byte = True, offset = True):
     lines = []
     pattern = '^( *[0-9a-f]+: *)((?:[0-9a-f]+ )+ *)(.*)'
     for line in result.splitlines():
-        o, b, i = re.search(pattern, line).groups()
+        try:
+            o, b, i = re.search(pattern, line).groups()
+        except:
+            lines.append(line)
+            continue
 
         line = ''
 
