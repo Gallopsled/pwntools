@@ -34,13 +34,13 @@ Example:
    value_..._after:
    >>> with context.local(os = 'linux'):
    ...     print shellcraft.thumb.mov('r1', 'SYS_execve').rstrip()
-       mov r1, #SYS_execve
+       mov r1, #(SYS_execve)
    >>> with context.local(os = 'freebsd'):
    ...     print shellcraft.thumb.mov('r1', 'SYS_execve').rstrip()
-       mov r1, #SYS_execve
+       mov r1, #(SYS_execve)
    >>> with context.local(os = 'linux'):
    ...     print shellcraft.thumb.mov('r1', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
-       mov r1, #7
+       mov r1, #(PROT_READ | PROT_WRITE | PROT_EXEC)
 
 </%docstring>
 <%
