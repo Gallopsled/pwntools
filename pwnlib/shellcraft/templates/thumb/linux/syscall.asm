@@ -15,23 +15,16 @@ Example:
 
     >>> print shellcraft.thumb.linux.syscall(11, 1, 'sp', 2, 0).rstrip()
         /* call syscall(11, 1, 'sp', 2, 0) */
-        /* Set r0 = 1 = 0x1 */
         mov r0, #1
         mov r1, sp
-        /* Set r2 = 2 = 0x2 */
         mov r2, #2
-        /* Set r3 = 0 = 0x0 */
         eor r3, r3
-        /* Set r7 = 11 = 0xb */
         mov r7, #11
         swi #0
     >>> print shellcraft.thumb.linux.syscall('SYS_exit', 0).rstrip()
         /* call exit(0) */
-        /* Set r0 = 0 = 0x0 */
         eor r0, r0
-        /* Set r7 = SYS_exit = 0x900001 */
-        movw r7, #1
-        movt r7, #144
+        mov r7, #SYS_exit
         swi #0
 </%docstring>
 <%
