@@ -122,14 +122,14 @@ class ConstantsModule(ModuleType):
         Example:
 
             >>> with context.local(arch = 'i386', os = 'linux'):
-            ...    print constants.eval('SYS_execve + PROT_WRITE')
-            13
+            ...    print 13 == constants.eval('SYS_execve + PROT_WRITE')
+            True
             >>> with context.local(arch = 'amd64', os = 'linux'):
-            ...    print constants.eval('SYS_execve + PROT_WRITE')
-            61
+            ...    print 61 == constants.eval('SYS_execve + PROT_WRITE')
+            True
             >>> with context.local(arch = 'amd64', os = 'linux'):
-            ...    print constants.eval('SYS_execve + PROT_WRITE')
-            61
+            ...    print 61 == constants.eval('SYS_execve + PROT_WRITE')
+            True
         """
         if not isinstance(string, str):
             return string
