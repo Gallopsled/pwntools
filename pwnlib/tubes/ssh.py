@@ -1010,7 +1010,7 @@ os.execve(exe, argv, env)
             >>> with file('/tmp/bar','w+') as f:
             ...     f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
-            ...         user='demouser',
+            ...         user='travis',
             ...         password='demopass',
             ...         cache=False)
             >>> s.download_data('/tmp/bar')
