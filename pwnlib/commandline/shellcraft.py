@@ -1,15 +1,12 @@
 #!/usr/bin/env python2
-import argparse, sys, os, types
-import pwnlib
-from pwnlib import util
-import pwnlib.term.text as text
-from pwnlib import shellcraft
-from pwnlib.context import context
-from pwnlib.log import getLogger, install_default_handler
-install_default_handler()
+import argparse
+import os
+import sys
+import types
 
+from pwn import *
 
-log = getLogger('pwnlib.commandline.shellcraft')
+from . import common
 
 r = text.red
 g = text.green
@@ -30,7 +27,6 @@ banner = '\n'.join(['  ' + r('____') + '  ' + g('_') + '          ' + r('_') + '
 #  ___) | | | |  __/ | | (__| | | (_| |  _| |_
 # |____/|_| |_|\___|_|_|\___|_|  \__,_|_|  \__|
 
-
 def _string(s):
     out = []
     for c in s:
@@ -40,7 +36,6 @@ def _string(s):
         else:
             out.append('\\x%02x' % co)
     return '"' + ''.join(out) + '"\n'
-
 
 p = argparse.ArgumentParser(
     description = 'Microwave shellcode -- Easy, fast and delicious',
@@ -56,7 +51,7 @@ p.add_argument(
 
 p.add_argument(
     '-o', '--out',
-    metavar = '<file>',
+    metavar = 'file',
     type = argparse.FileType('w'),
     default = sys.stdout,
     help = 'Output file (default: stdout)',
@@ -64,7 +59,7 @@ p.add_argument(
 
 p.add_argument(
     '-f', '--format',
-    metavar = '<format>',
+    metavar = 'format',
     choices = ['r', 'raw',
                's', 'str', 'string',
                'c',
@@ -93,6 +88,13 @@ p.add_argument(
     metavar = 'arg',
     default = (),
     help = 'Argument to the chosen shellcode',
+)
+
+p.add_argument(
+    '-d',
+    '--debug',
+    help='Debug the shellcode with GDB',
+    action='store_true'
 )
 
 def main():
@@ -179,23 +181,23 @@ def main():
             pass
 
     # And he strikes again!
-    os = arch = None
-    for k in args.shellcode.split('.')[:-1]:
-        if k in context.architectures:
-            arch = k
-        elif k in context.oses:
-            os = k
-
+    map(common.context_arg, args.shellcode.split('.'))
     code = func(*args.args)
 
     if args.format in ['a', 'asm', 'assembly']:
         print code
         exit()
     if args.format == 'p':
-        print pwnlib.asm.cpp(code, arch = arch, os = os)
+        print cpp(code)
         exit()
 
-    code = pwnlib.asm.asm(code, arch = arch, os = os)
+    code = asm(code)
+
+    if args.debug:
+        arch = args.shellcode.split('.')[0]
+        proc = gdb.debug_shellcode(code, arch=arch)
+        proc.interactive()
+        sys.exit(0)
 
     if args.format in ['s', 'str', 'string']:
         code = _string(code)
@@ -204,7 +206,7 @@ def main():
     elif args.format in ['h', 'hex']:
         code = pwnlib.util.fiddling.enhex(code) + '\n'
     elif args.format in ['i', 'hexii']:
-        code = pwnlib.util.fiddling.hexii(code) + '\n'
+        code = hexii(code) + '\n'
 
     if not sys.stdin.isatty():
         sys.stdout.write(sys.stdin.read())
