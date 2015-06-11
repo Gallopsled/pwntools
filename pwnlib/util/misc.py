@@ -77,8 +77,8 @@ def size(n, abbriv = 'B', si = False):
     return '%.02fP%s' % (n / base, abbriv)
 
 
-def read(path, n=-1):
-    """read(path, n=-1) -> str
+def read(path, count=-1, skip=0):
+    """read(path, count=-1, skip=0) -> str
 
     Open file, return content.
 
@@ -88,7 +88,9 @@ def read(path, n=-1):
     """
     path = os.path.expanduser(os.path.expandvars(path))
     with open(path) as fd:
-        return fd.read(n)
+        if skip:
+            fd.seek(skip)
+        return fd.read(count)
 
 
 def write(path, data = '', create_dir = False):
