@@ -93,13 +93,13 @@ def read(path, count=-1, skip=0):
         return fd.read(count)
 
 
-def write(path, data = '', create_dir = False):
+def write(path, data = '', create_dir = False, mode = 'w'):
     """Create new file or truncate existing to zero length and write data."""
     path = os.path.expanduser(os.path.expandvars(path))
     if create_dir:
         path = os.path.realpath(path)
         mkdir_p(os.path.dirname(path))
-    with open(path, 'w') as f:
+    with open(path, mode) as f:
         f.write(data)
 
 def which(name, all = False):
