@@ -1,4 +1,5 @@
 from pwnlib.constants.constant import Constant
+
 __NR_osf_syscall = Constant('__NR_osf_syscall',0)
 __NR_exit = Constant('__NR_exit',1)
 __NR_fork = Constant('__NR_fork',2)

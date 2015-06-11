@@ -1,4 +1,6 @@
-import time, errno
+import errno
+import time
+
 from .. import tubes
 from ..log import getLogger
 

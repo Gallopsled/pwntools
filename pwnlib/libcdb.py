@@ -7,13 +7,15 @@ import os
 import tempfile
 import urlparse
 
-from .context       import context
-from .elf           import ELF
-from .log           import getLogger
+from .context import context
+from .elf import ELF
+from .log import getLogger
+from .util.fiddling import b64d
+from .util.fiddling import hexdump
+from .util.misc import read
+from .util.misc import write
 from .util.safeeval import const
-from .util.web      import wget
-from .util.fiddling import b64d, hexdump
-from .util.misc     import read, write
+from .util.web import wget
 
 log = getLogger(__name__)
 

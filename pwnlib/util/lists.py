@@ -1,5 +1,6 @@
 import collections
 
+
 def partition(lst, f, save_keys = False):
     """partition(lst, f, save_keys = False) -> list
 
@@ -207,4 +208,3 @@ def findall(haystack, needle):
         return __single_search(haystack, needle[0])
     else:
         return __kmp_search(haystack, needle)
-

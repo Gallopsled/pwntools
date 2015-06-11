@@ -1,7 +1,9 @@
 #!/usr/bin/env python2
 from argparse import ArgumentParser
-from subprocess import check_output, CalledProcessError
+from subprocess import CalledProcessError
+from subprocess import check_output
 from tempfile import NamedTemporaryFile
+
 
 def dump(x):
     n = NamedTemporaryFile(delete=False)

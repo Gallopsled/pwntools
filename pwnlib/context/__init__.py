@@ -4,8 +4,13 @@
 Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
-import threading, collections, string, logging
+import collections
+import logging
+import string
+import threading
+
 from ..timeout import Timeout
+
 
 class _defaultdict(dict):
     """

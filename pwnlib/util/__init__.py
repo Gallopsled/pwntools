@@ -4,6 +4,15 @@ __all__ = [
     'web'
 ]
 
-from . import crc, cyclic, fiddling, hashes, iters
-from . import lists, misc, net, packing, proc, safeeval
+from . import crc
+from . import cyclic
+from . import fiddling
+from . import hashes
+from . import iters
+from . import lists
+from . import misc
+from . import net
+from . import packing
+from . import proc
+from . import safeeval
 from . import web

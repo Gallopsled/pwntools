@@ -3,7 +3,8 @@ Database of >22,000 user agent strings
 """
 __all__ = ['getall', 'random']
 
-import os, random as randommod
+import os
+import random as randommod
 
 _cache = None
 

@@ -1,5 +1,7 @@
 import string
+
 from . import packing
+
 
 # Taken from https://en.wikipedia.org/wiki/De_Bruijn_sequence but changed to a generator
 def de_bruijn(alphabet = string.ascii_lowercase, n = 4):

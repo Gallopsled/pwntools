@@ -1,8 +1,9 @@
-from .sock import sock
-from ..timeout import Timeout
-from ..log import getLogger
 import socket
 import ssl as _ssl
+
+from ..log import getLogger
+from ..timeout import Timeout
+from .sock import sock
 
 log = getLogger(__name__)
 

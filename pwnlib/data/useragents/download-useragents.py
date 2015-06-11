@@ -3,8 +3,12 @@
 Script for downloading lists of user agent strings
 """
 
+import os
+import re
+import urllib
+
 from bs4 import BeautifulSoup
-import re, urllib, os
+
 from pwn import *
 
 uas = set()

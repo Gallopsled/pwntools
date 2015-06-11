@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
-import sys, argparse
+import argparse
+import sys
 from string import whitespace
 
 parser = argparse.ArgumentParser(description='''

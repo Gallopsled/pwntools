@@ -1,11 +1,15 @@
 #!/usr/bin/env python2
 
-import argparse, os, re
-from pwnlib import asm, constants
-from pwnlib.util import safeeval
-from pwnlib.context import context
+import argparse
+import os
+import re
 
 import pwnlib.log
+from pwnlib import asm
+from pwnlib import constants
+from pwnlib.context import context
+from pwnlib.util import safeeval
+
 pwnlib.log.install_default_handler()
 
 p = argparse.ArgumentParser(

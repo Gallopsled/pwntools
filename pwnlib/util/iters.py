@@ -54,10 +54,17 @@ __all__ = [
     'tee'
 ]
 
+import collections
+import copy
+import multiprocessing
+import operator
+import random
+import time
 from itertools import *
-from ..log import getLogger
+
 from ..context import *
-import collections, operator, random, copy, multiprocessing, time
+from ..log import getLogger
+
 log = getLogger(__name__)
 
 def take(n, iterable):

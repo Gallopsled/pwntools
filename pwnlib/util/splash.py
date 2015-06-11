@@ -1,8 +1,11 @@
 """Silly module mostly meant as an easter-egg."""
 
+import threading
+import time
+
 from .. import term
 from ..term import text
-import time, threading
+
 
 _banner = r'''
   .:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:.

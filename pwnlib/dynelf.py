@@ -60,8 +60,7 @@ from .log import getLogger
 from .memleak import MemLeak
 from .util.fiddling import enhex
 from .util.packing import unpack
-from .util.web     import wget
-
+from .util.web import wget
 
 log    = getLogger(__name__)
 sizeof = ctypes.sizeof
