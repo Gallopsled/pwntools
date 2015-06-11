@@ -113,7 +113,9 @@ class tube(Timeout):
         if data and dumplog.isEnabledFor(logging.DEBUG):
             dumplog.debug('Received %#x bytes:' % len(data))
 
-            if all(c in string.printable for c in data):
+            if len(set(data)) == 1:
+                dumplog.indented('%r * %#x' % (data[0], len(data)))
+            elif all(c in string.printable for c in data):
                 for line in data.splitlines(True):
                     dumplog.indented(repr(line), level = logging.DEBUG)
             else:
@@ -691,7 +693,9 @@ class tube(Timeout):
 
         if dumplog.isEnabledFor(logging.DEBUG):
             log.debug('Sent %#x bytes:' % len(data))
-            if all(c in string.printable for c in data):
+            if len(set(data)) == 1:
+                dumplog.indented('%r * %#x' % (data[0], len(data)))
+            elif all(c in string.printable for c in data):
                 for line in data.splitlines(True):
                     log.indented(repr(line), level = logging.DEBUG)
             else:
