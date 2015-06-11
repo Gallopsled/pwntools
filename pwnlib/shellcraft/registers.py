@@ -15,6 +15,9 @@ mips += ['zero', 'at', 'gp', 'sp', 'ra']
 arm = map('r{}'.format, range(13))
 arm += ["sp", "lr", "pc", "cpsr"]
 
+aarch64 = map('x{}'.format, range(32))
+aarch64 += ["sp", "lr", "pc", "cpsr"]
+
 i386_baseregs = [ "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", "ip"]
 
 i386 = map('e{}'.format, i386_baseregs)
