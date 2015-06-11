@@ -1,9 +1,11 @@
 #!/usr/bin/env python2
-import argparse, sys
+import argparse
+import sys
+
+import pwnlib.log
 from pwnlib.elf import ELF
 from pwnlib.util.fiddling import unhex
 
-import pwnlib.log
 pwnlib.log.install_default_handler()
 
 p = argparse.ArgumentParser()

@@ -1,5 +1,8 @@
-from . import readline
+import os
 import re
+
+from . import readline
+
 
 class Completer:
     def complete(self, _left, _right):
@@ -76,7 +79,6 @@ class LongestPrefixCompleter(WordCompleter):
         else:
             return cs
 
-import os
 class PathCompleter(Completer):
     def __init__(self, mask = '*', only_dirs = False):
         if mask != '*':

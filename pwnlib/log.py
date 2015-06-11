@@ -104,11 +104,19 @@ __all__ = [
     'getLogger', 'getPerformanceLogger', 'install_default_handler', 'rootlogger', 'console', 'ConsoleHandler', 'Handler'
 ]
 
-import logging, re, threading, sys, random, time
-from .context   import context, Thread
+import logging
+import random
+import re
+import sys
+import threading
+import time
+
+from . import term
+from .context import Thread
+from .context import context
 from .exception import PwnlibException
-from .term      import spinners, text
-from .          import term
+from .term import spinners
+from .term import text
 
 # list of prefixes to use for the different message types.  note that the `text`
 # module won't add any escape codes if `sys.stderr.isatty()` is `False`

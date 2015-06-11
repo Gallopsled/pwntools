@@ -1,8 +1,13 @@
 __all__ = ['getch', 'getraw', 'get', 'unget']
 
-import select, sys, string, os, errno
-from . import termcap
+import errno
+import os
+import select
+import string
+import sys
+
 from . import keyconsts as kc
+from . import termcap
 
 try:    _fd = sys.stdin.fileno()
 except: _fd = file('/dev/null', 'r').fileno()

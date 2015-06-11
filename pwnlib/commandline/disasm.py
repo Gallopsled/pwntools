@@ -1,10 +1,13 @@
 #!/usr/bin/env python2
-import argparse, sys
-from pwnlib import asm
-from pwnlib.context import context
-from string import whitespace, hexdigits
+import argparse
+import sys
+from string import hexdigits
+from string import whitespace
 
 import pwnlib.log
+from pwnlib import asm
+from pwnlib.context import context
+
 pwnlib.log.install_default_handler()
 
 parser = argparse.ArgumentParser(

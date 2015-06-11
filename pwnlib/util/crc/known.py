@@ -1,4 +1,6 @@
-import os, re
+import os
+import re
+
 
 def generate(self):
     """Generates a dictionary of all the known CRC formats from:

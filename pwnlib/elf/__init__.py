@@ -695,4 +695,3 @@ class ELF(ELFFile):
         if section:
             return section.data()[16:]
         return None
-

@@ -1,6 +1,9 @@
-import socket, errno, select
-from .tube import tube
+import errno
+import select
+import socket
+
 from ..log import getLogger
+from .tube import tube
 
 log = getLogger(__name__)
 

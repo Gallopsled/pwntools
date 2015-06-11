@@ -47,6 +47,7 @@ from types import ModuleType
 from ..context import context
 from ..util import safeeval
 
+
 class ConstantsModule(ModuleType):
     """
     ModuleType specialization in order to automatically
@@ -145,4 +146,3 @@ tether = sys.modules[__name__]
 
 # Create the module structure
 sys.modules[__name__] = ConstantsModule(__name__, tether)
-

@@ -1,4 +1,5 @@
 from pwnlib.constants.constant import Constant
+
 __NR_Linux = Constant('__NR_Linux',4000)
 __NR_syscall = Constant('__NR_syscall',(4000 +   0))
 __NR_exit = Constant('__NR_exit',(4000 +   1))

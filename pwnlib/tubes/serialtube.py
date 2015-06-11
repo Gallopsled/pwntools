@@ -1,7 +1,12 @@
-from .. import context, term
-from ..log import getLogger
+import sys
+import time
+
+import serial
+
 from . import tube
-import serial, time, sys
+from .. import context
+from .. import term
+from ..log import getLogger
 
 log = getLogger(__name__)
 

@@ -1,4 +1,5 @@
 from pwnlib.constants.constant import Constant
+
 __NR_ni_syscall = Constant('__NR_ni_syscall',1024)
 __NR_exit = Constant('__NR_exit',1025)
 __NR_read = Constant('__NR_read',1026)

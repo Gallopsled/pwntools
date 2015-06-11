@@ -1,10 +1,22 @@
 # -*- coding: utf-8 -*-
-from .buffer import Buffer
+import logging
+import re
+import string
+import subprocess
+import sys
+import threading
+import time
+
+from .. import atexit
+from .. import context
+from .. import term
+from ..log import getLogger
+from ..log import getPerformanceLogger
 from ..timeout import Timeout
-from .. import term, atexit, context
-from ..util import misc, fiddling, packing
-from ..log import getLogger, getPerformanceLogger
-import re, threading, sys, time, subprocess, logging, string
+from ..util import fiddling
+from ..util import misc
+from ..util import packing
+from .buffer import Buffer
 
 log = getLogger(__name__)
 dumplog = getPerformanceLogger(__name__ + '.dump')

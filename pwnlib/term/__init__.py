@@ -1,5 +1,11 @@
-from . import key, readline, text, termcap, keymap, term
 import sys
+
+from . import key
+from . import keymap
+from . import readline
+from . import term
+from . import termcap
+from . import text
 
 # Re-exports (XXX: Are these needed?)
 output = term.output

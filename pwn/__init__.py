@@ -1,6 +1,7 @@
 # Promote useful stuff to toplevel
 from .toplevel import *
 
+
 # look for special args in argv
 def closure():
     term_mode = True
