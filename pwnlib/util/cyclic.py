@@ -97,7 +97,7 @@ def cyclic_find(subseq, alphabet = string.ascii_lowercase, n = None):
 
       >>> cyclic_find(cyclic(1000)[514:518])
       514
-      >>> cyclic_find(0x41414142)
+      >>> cyclic_find(0x61616162)
       4
     """
 
