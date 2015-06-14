@@ -76,9 +76,10 @@ class SigreturnFrame(dict):
 
     Examples:
 
-        >>> # Crafting a SigreturnFrame that calls mprotect on amd64
+        Crafting a SigreturnFrame that calls mprotect on amd64
+
         >>> s = SigreturnFrame(arch="amd64")
-        >>> unpack_many(str(s))
+        >>> unpack_many(str(s)) # doctest: +SKIP
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0L]
         >>> assert len(s) == 248
         >>> s.rax = 0xa
@@ -86,10 +87,11 @@ class SigreturnFrame(dict):
         >>> s.rsi = 0x1000
         >>> s.rdx = 0x7
         >>> assert len(str(s)) == 248
-        >>> unpack_many(str(s))
+        >>> unpack_many(str(s)) # doctest: +SKIP
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6295552, 4096, 0, 0, 7, 10, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0L]
 
-        >>> # Crafting a SigreturnFrame that calls mprotect on i386
+        Crafting a SigreturnFrame that calls mprotect on i386
+
         >>> s = SigreturnFrame(arch="i386")
         >>> unpack_many(str(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 115, 0, 0, 123, 0]
