@@ -22,6 +22,7 @@ __all__ = [
     'pep237',
     'replacements',
     'rop',
+    'runner',
     'shellcraft',
     'term',
     'tubes',
