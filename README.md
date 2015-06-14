@@ -1,6 +1,7 @@
 # binjitsu - CTF toolkit
 [![Docs latest](https://readthedocs.org/projects/binjitsu/badge/)](https://binjitsu.readthedocs.org/en/latest)
 [![Travis](https://travis-ci.org/binjitsu/binjitsu.svg?branch=master)](https://travis-ci.org/binjitsu/binjitsu)
+[![Shippable](https://img.shields.io/shippable/55687795edd7f2c05200bc0b/master.svg)](https://app.shippable.com/projects/55687795edd7f2c05200bc0b)
 [![Twitter](https://img.shields.io/badge/twitter-ctfbinjitsu-4099FF.svg?style=flat)](https://twitter.com/ctfbinjitsu)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](http://choosealicense.com/licenses/mit/)
 
