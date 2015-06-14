@@ -42,7 +42,6 @@ Each of the ``binjitsu`` modules is documented here.
    replacements
    rop
    rop/*
-   srop
    shellcraft
    shellcraft/*
    term

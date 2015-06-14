@@ -5,7 +5,7 @@
    import time
 
 :mod:`pwnlib.timeout` --- Timeout handling
-========================================
+============================================
 
 .. automodule:: pwnlib.timeout
    :members:
