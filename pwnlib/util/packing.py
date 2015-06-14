@@ -326,7 +326,7 @@ def make_multi(op, size):
                 ("big",    False):  bu}[endian, signed](number)
 
     routine.__name__ = name
-    routine.__doc__  = """%s%s(number) -> %s
+    routine.__doc__  = """%s%s(number, sign, endian, ...) -> %s
 
     %ss an %s-bit integer
 
