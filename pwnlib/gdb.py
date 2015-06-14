@@ -119,16 +119,6 @@ def get_gdb_arch():
     }.get(context.arch, context.arch)
 
 
-def run_elf(*a, **kw):
-    e = make_elf(*a, **kw)
-    f = tempfile.mktemp()
-    with open(f, 'wb+') as F:
-        F.write(e)
-        F.flush()
-    os.chmod(f, 0777)
-    return tubes.process.process(f)
-
-
 @LocalContext
 def attach(target, execute = None, exe = None):
     """attach(target, execute = None, exe = None, arch = None) -> None
