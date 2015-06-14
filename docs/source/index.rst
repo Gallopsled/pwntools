@@ -53,6 +53,11 @@ Each of the ``binjitsu`` modules is documented here.
    useragents
    util/*
 
+.. toctree::
+   :hidden:
+
+   testexample
+
 Indices and tables
 ==================
 
