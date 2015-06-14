@@ -2,6 +2,9 @@
 Module-level documentation would go here, along with a general description
 of the functionality.  You can also add module-level doctests.
 
+You can see what the documentation for this module will look like here:
+https://binjitsu.readthedocs.org/en/latest/testexample.html
+
 The tests for this module are run when the documentation is automatically-generated
 by Sphinx.  This particular module is invoked by an "automodule" directive, which
 imports everything in the module, or everything listed in ``__all__`` in the module.
