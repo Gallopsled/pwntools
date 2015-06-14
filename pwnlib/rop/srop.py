@@ -79,7 +79,7 @@ class SigreturnFrame(dict):
         >>> # Crafting a SigreturnFrame that calls mprotect on amd64
         >>> s = SigreturnFrame(arch="amd64")
         >>> unpack_many(str(s))
-        [0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 51L, 0L, 0L, 0L, 0L, 0L, 0L, 0L]
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0L]
         >>> assert len(s) == 248
         >>> s.rax = 0xa
         >>> s.rdi = 0x00601000
@@ -87,7 +87,7 @@ class SigreturnFrame(dict):
         >>> s.rdx = 0x7
         >>> assert len(str(s)) == 248
         >>> unpack_many(str(s))
-        [0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 6295552L, 4096L, 0L, 0L, 7L, 10L, 0L, 0L, 0L, 0L, 51L, 0L, 0L, 0L, 0L, 0L, 0L, 0L]
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6295552, 4096, 0, 0, 7, 10, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0L]
 
         >>> # Crafting a SigreturnFrame that calls mprotect on i386
         >>> s = SigreturnFrame(arch="i386")
@@ -189,8 +189,8 @@ class SigreturnFrame(dict):
 
         def _fixup(frcontents, offsetvals, base):
             frcontents += "A" * (base - len(frcontents))
-            for magicval, size in offsetvals:
-                frcontents += flat([magicval, size])
+            for magicva, size in offsetvals:
+                frcontents += flat([magicva, size])
                 if len(frcontents) < size:
                     frcontents += "A" * (size - len(frcontents))
             return frcontents
