@@ -987,6 +987,10 @@ def LocalContext(function):
     """
     @functools.wraps(function)
     def setter(*a, **kw):
+        # Fast path to skip adding a Context frame
+        if not kw:
+            return function(*a)
+
         with context.local(**{k:kw.pop(k) for k,v in kw.items() if isinstance(getattr(ContextType, k, None), property)}):
             return function(*a, **kw)
     return setter
