@@ -43,7 +43,7 @@ which documents the module.
 """
 
 def add(a, b):
-    '''add(a, b) => int
+    '''add(a, b) -> int
 
     Adds the numbers ``a`` and ``b``.
 
