@@ -1,11 +1,11 @@
 .. testsetup:: *
 
-   from pwnlib.srop import *
+   from pwnlib.rop.srop import *
    from pwnlib.context import *
    from pwnlib.util.packing import *
 
-:mod:`pwnlib.srop` --- Sigreturn Oriented Programming
+:mod:`pwnlib.rop.srop` --- Sigreturn Oriented Programming
 =====================================================
 
-.. automodule:: pwnlib.srop
+.. automodule:: pwnlib.rop.srop
    :members:
