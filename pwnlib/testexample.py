@@ -15,7 +15,7 @@ All of the syntax in this file is ReStructuredText.  You can find a
 
 Here's an example of a module-level doctest:
 
-    >>> add(3, add(2, add(1)))
+    >>> add(3, add(2, add(1, 0)))
     6
 
 If doctests are wrong / broken, you can disable them temporarily.
