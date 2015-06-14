@@ -12,9 +12,7 @@ from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 
-from ..asm import asm
-from ..asm import disasm
-from ..asm import make_elf_from_assembly
+from ..asm import *
 from ..context import context
 from ..log import getLogger
 from ..term import text
@@ -111,8 +109,14 @@ class ELF(ELFFile):
         self._describe()
 
     @staticmethod
-    def from_assembly(assembly, vma = 0x40000):
-        """Given an assembly listing, return a fully loaded ELF object.
+    def from_assembly(assembly, *a, **kw):
+        """Given an assembly listing, return a fully loaded ELF object
+        which contains that assembly at its entry point.
+
+        Arguments:
+
+            assembly(str): Assembly language listing
+            vma(int): Address of the entry point and the module's base address.
 
         Example:
 
@@ -123,7 +127,26 @@ class ELF(ELFFile):
             >>> e.disasm(e.symbols['foo'], 2)
             '  400001:       cd 80                   int    0x80'
         """
-        return ELF(make_elf_from_assembly(assembly))
+        return ELF(make_elf_from_assembly(assembly, *a, **kw))
+
+    @staticmethod
+    def from_bytes(bytes, *a, **kw):
+        """Given a sequence of bytes, return a fully loaded ELF object
+        which contains those bytes at its entry point.
+
+        Arguments:
+
+            bytes(str): Shellcode byte string
+            vma(int): Desired base address for the ELF.
+
+        Example:
+
+            >>> e = ELF.from_bytes('\x90\xcd\x80', vma=0xc000)
+            >>> print(e.disasm(e.entry, 3))
+                c054:       90                      nop
+                c055:       cd 80                   int    0x80
+        """
+        return ELF(make_elf(bytes, extract=False, *a, **kw))
 
     def _describe(self):
         log.info_once('\n'.join((repr(self.path),

@@ -375,7 +375,7 @@ def make_elf_from_assembly(assembly, vma = 0x400000):
     return path
 
 @LocalContext
-def make_elf(data, vma = None, strip=True):
+def make_elf(data, vma = None, strip=True, extract=True):
     r"""
     Builds an ELF file with the specified binary data as its
     executable code.
@@ -439,6 +439,10 @@ def make_elf(data, vma = None, strip=True):
         if strip:
             _run([which_binutils('objcopy'), '-Sg', step3])
             _run([which_binutils('strip'), '--strip-unneeded', step3])
+
+        if not extract:
+            os.chmod(step3, 0755)
+            return step3
 
         with open(step3, 'r') as f:
             return f.read()
