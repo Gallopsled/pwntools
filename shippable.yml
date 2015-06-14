@@ -1,5 +1,4 @@
 language: python
-cache: true
 python:
   - "2.7"
 before_install:
