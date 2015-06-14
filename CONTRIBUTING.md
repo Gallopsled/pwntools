@@ -25,15 +25,8 @@ Once you do the pull-request Travis CI will run the test-suite on it. Once it
 passes one of the core developers will look at your pull request, possibly
 comment on it and then hopefully merge it into master.
 
-## Test Suite
+## Automated Testing
 
-To run the test suite, you should be running Ubuntu 12.04 or 14.04, and run the following commands.  **Be aware** that this will add a user to your machine, and create a public key for SSH login!
+Pull requests against Binjitsu require at a minimum that no tests have been broken, and ideally each pull request will include new tests to ensure that all of the functionality works as intended.
 
-```sh
-bash .travis_install.sh
-bash .travis_ssh_setup.sh
-pip install -e .
-pip install -r docs/requirements.txt
-cd docs
-PWNLIB_NOTERM=1 make clean doctest
-```
+You can find more information on testing in [TESTING.md](TESITNG.md).
