@@ -909,3 +909,29 @@ class ContextType(object):
 #: Consider it a shorthand to passing ``os=`` and ``arch=`` to every single
 #: function call.
 context = ContextType()
+
+
+
+def LocalContext(function):
+    """
+    Wraps the specied function on a context.local() block, using kwargs.
+
+    Example:
+
+        >>> @LocalContext
+        ... def printArch():
+        ...     print(context.arch)
+        >>> printArch()
+        i386
+        >>> printArch(arch='arm')
+        arm
+    """
+    @functools.wraps(function)
+    def setter(*a, **kw):
+        # Fast path to skip adding a Context frame
+        if not kw:
+            return function(*a)
+
+        with context.local(**{k:kw.pop(k) for k,v in kw.items() if isinstance(getattr(ContextType, k, None), property)}):
+            return function(*a, **kw)
+    return setter
