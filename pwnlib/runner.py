@@ -58,7 +58,7 @@ def run_assembly_exitcode(assembly):
 
     Example:
 
-        >>> p = run_assembly_exitcode('mov ebx, 3; mov eax, SYS_exit; int 0x80;')
+        >>> run_assembly_exitcode('mov ebx, 3; mov eax, SYS_exit; int 0x80;')
         3
     """
     return run_shellcode_exitcode(asm(assembly))
@@ -76,7 +76,7 @@ def run_shellcode_exitcode(bytes):
     Example:
 
         >>> bytes = asm('mov ebx, 3; mov eax, SYS_exit; int 0x80;')
-        >>> p = run_shellcode_exitcode(bytes)
+        >>> run_shellcode_exitcode(bytes)
         3
     """
     p = run_shellcode(bytes)
