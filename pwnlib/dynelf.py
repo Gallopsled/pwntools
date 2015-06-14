@@ -141,6 +141,7 @@ class DynELF(object):
     .. _GNU:       https://blogs.oracle.com/ali/entry/gnu_hash_elf_sections
     .. _DT_DEBUG:  https://reverseengineering.stackexchange.com/questions/6525/elf-link-map-when-linked-as-relro
     .. _link map:  https://sourceware.org/git/?p=glibc.git;a=blob;f=elf/link.h;h=eaca8028e45a859ac280301a6e955a14eed1b887;hb=HEAD#l84
+    .. _DT_PLTGOT: http://refspecs.linuxfoundation.org/ELF/zSeries/lzsabi0_zSeries/x2251.html
     '''
 
     def __init__(self, leak, pointer=None, elf=None):
