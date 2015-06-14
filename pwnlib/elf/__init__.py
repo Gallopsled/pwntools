@@ -14,6 +14,7 @@ from elftools.elf.sections import SymbolTableSection
 
 from ..asm import asm
 from ..asm import disasm
+from ..asm import make_elf_from_assembly
 from ..context import context
 from ..log import getLogger
 from ..term import text
@@ -101,11 +102,28 @@ class ELF(ELFFile):
 
         if self.elftype == 'DYN':
             self._address = 0
+        elif not self.segments:
+            pass
         else:
             self._address = min(filter(bool, (s.header.p_vaddr for s in self.segments)))
         self.load_addr = self._address
 
         self._describe()
+
+    @staticmethod
+    def from_assembly(assembly, vma = 0x40000):
+        """Given an assembly listing, return a fully loaded ELF object.
+
+        Example:
+
+            >>> e = ELF.from_assembly('nop; foo: int 0x80', vma = 0x40000)
+            >>> e.symbols['foo'] = 0x400001
+            >>> e.disasm(e.entry, 1)
+            '  400000:       90                      nop'
+            >>> e.disasm(e.symbols['foo'], 2)
+            '  400001:       cd 80                   int    0x80'
+        """
+        return ELF(make_elf_from_assembly(assembly))
 
     def _describe(self):
         log.info_once('\n'.join((repr(self.path),
@@ -258,7 +276,7 @@ class ELF(ELFFile):
             cmd = 'ulimit -s unlimited; LD_TRACE_LOADED_OBJECTS=1 LD_WARN=1 LD_BIND_NOW=1 %s 2>/dev/null'
             arg = misc.sh_string(self.path)
 
-            data = subprocess.check_output(cmd % (arg), shell = True)
+            data = subprocess.check_output(cmd % (arg), shell = True, stderr = subprocess.STDOUT)
             libs = misc.parse_ldd_output(data)
 
             for lib in dict(libs):

@@ -357,6 +357,24 @@ __start:
 '''
 
 @LocalContext
+def make_elf_from_assembly(assembly, vma = 0x400000):
+    r"""
+    Builds an ELF file with the specified assembly as its
+    executable code.
+
+    Arguments:
+
+        assembly(str): Assembly
+
+    Returns:
+
+        The path to the assembled ELF.
+    """
+    path = asm(assembly, vma = vma, extract = False)
+    os.chmod(path, 0755)
+    return path
+
+@LocalContext
 def make_elf(data, vma = None, strip=True):
     r"""
     Builds an ELF file with the specified binary data as its
@@ -430,8 +448,8 @@ def make_elf(data, vma = None, strip=True):
         shutil.rmtree(tmpdir)
 
 @LocalContext
-def asm(shellcode, vma = 0):
-    r"""asm(code, vma = 0, ...) -> str
+def asm(shellcode, vma = 0, extract = True):
+    r"""asm(code, vma = 0, extract = True, ...) -> str
 
     Runs :func:`cpp` over a given shellcode and then assembles it into bytes.
 
@@ -444,6 +462,9 @@ def asm(shellcode, vma = 0):
     Arguments:
       shellcode(str): Assembler code to assemble.
       vma(int):       Virtual memory address of the beginning of assembly
+      extract(bool):  Extract the raw assembly bytes from the assembled
+                      file.  If ``False``, returns the path to an ELF file
+                      with the assembly embedded.
 
     Kwargs:
         Any arguments/properties that can be set on ``context``
@@ -484,6 +505,9 @@ def asm(shellcode, vma = 0):
 
         _run(assembler + ['-o', step2, step1])
 
+        if not vma and not extract:
+            vma = 0x400000
+
         if not vma:
             shutil.copy(step2, step3)
 
@@ -501,6 +525,9 @@ def asm(shellcode, vma = 0):
                 log.error('Shellcode contains relocations:\n%s' % relocs)
         else:
             shutil.copy(step2, step3)
+
+        if not extract:
+            return step3
 
         _run(objcopy + [step3, step4])
 
