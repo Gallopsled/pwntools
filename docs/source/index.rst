@@ -42,6 +42,7 @@ Each of the ``binjitsu`` modules is documented here.
    replacements
    rop
    rop/*
+   runner
    shellcraft
    shellcraft/*
    term
