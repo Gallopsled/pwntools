@@ -5,7 +5,7 @@
    from pwnlib.util.packing import *
 
 :mod:`pwnlib.rop.srop` --- Sigreturn Oriented Programming
-=====================================================
+==========================================================
 
 .. automodule:: pwnlib.rop.srop
    :members:
