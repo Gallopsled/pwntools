@@ -9,8 +9,8 @@ cache:
 python:
   - "2.7"
 before_install:
-  - source .travis_ssh_setup.sh
   - source .travis_install.sh
+  - source .travis_ssh_setup.sh
 install:
   - pip install -e .
   - pip install -r docs/requirements.txt
