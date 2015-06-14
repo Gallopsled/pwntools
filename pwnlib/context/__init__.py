@@ -492,10 +492,15 @@ class ContextType(object):
 
         return LocalContext()
 
-    def clear(self):
+    def clear(self, *a, **kw):
         """
         Clears the contents of the context.
         All values are set to their defaults.
+
+        Arguments:
+
+            a: Arguments passed to ``update``
+            kw: Arguments passed to ``update``
 
         Examples:
 
@@ -510,6 +515,9 @@ class ContextType(object):
             True
         """
         self._tls._current.clear()
+
+        if a or kw:
+            self.update(*a, **kw)
 
     @property
     def native(self):
