@@ -24,7 +24,7 @@ def run_assembly(assembly):
         3
 
     """
-    return run_shellcode(asm(bytes))
+    return run_shellcode(asm(assembly))
 
 @LocalContext
 def run_shellcode(bytes):
@@ -47,7 +47,7 @@ def run_shellcode(bytes):
     return process(f)
 
 @LocalContext
-def run_assembly_exitcode(bytes):
+def run_assembly_exitcode(assembly):
     """
     Given an assembly listing, assemble and execute it, and wait for
     the process to die.
@@ -61,7 +61,7 @@ def run_assembly_exitcode(bytes):
         >>> p = run_assembly_exitcode('mov ebx, 3; mov eax, SYS_exit; int 0x80;')
         3
     """
-    return run_shellcode_exitcode(asm(bytes))
+    return run_shellcode_exitcode(asm(assembly))
 
 @LocalContext
 def run_shellcode_exitcode(bytes):
