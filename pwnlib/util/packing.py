@@ -32,8 +32,8 @@ Examples:
 """
 import struct
 import sys
-from itertools import product
 
+from . import iters
 from ..context import context, LocalContext
 
 mod = sys.modules[__name__]
@@ -293,7 +293,7 @@ def make_single(op,size,end,sign):
 
     return name, routine
 
-for op,size,end,sign in product(ops, sizes, ends, signs):
+for op,size,end,sign in iters.product(ops, sizes, ends, signs):
     name, routine = make_single(op,size,end,sign)
     setattr(mod, name, routine)
 
@@ -344,7 +344,7 @@ def make_multi(op, size):
     return name, routine
 
 
-for op,size in product(ops, sizes):
+for op,size in iters.product(ops, sizes):
     name, routine = make_multi(op,size)
     setattr(mod, name, routine)
 
