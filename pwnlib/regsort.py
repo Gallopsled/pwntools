@@ -171,7 +171,7 @@ def regsort(in_out, all_regs, tmp = None, xchg = True):
         order is used.
 
         >>> regsort({'a': 1, 'b': 2}, R)
-        [('a', 1), ('b', 2)]
+        [('mov', 'a', 1), ('mov', 'b', 2)]
         >>> regsort({'a': 'b', 'b': 'a'}, R)
         [('xchg', 'a', 'b')]
         >>> regsort({'a': 'b', 'b': 'a'}, R, tmp='X') #doctest: +NORMALIZE_WHITESPACE
@@ -235,7 +235,7 @@ def regsort(in_out, all_regs, tmp = None, xchg = True):
     #
     # For example, {'eax': 1, 'ebx': 2, 'ecx': 'edx'}
     if not any(v in in_out for k,v in in_out.items()):
-        return [(k,in_out[k]) for k in sorted(in_out)]
+        return [('mov', k,in_out[k]) for k in sorted(in_out)]
 
     # Invert so we have a dependency graph.
     #
