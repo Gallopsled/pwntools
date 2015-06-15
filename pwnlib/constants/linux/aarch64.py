@@ -1,5 +1,4 @@
 from pwnlib.constants.constant import Constant
-
 __NR_io_setup = Constant('__NR_io_setup',0)
 __NR_io_destroy = Constant('__NR_io_destroy',1)
 __NR_io_submit = Constant('__NR_io_submit',2)
