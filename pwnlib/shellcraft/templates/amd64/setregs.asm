@@ -14,11 +14,11 @@ Args:
 
 Example:
 
-    >>> print shellcraft.setregs({'rax':1, 'rbx':'rax'}).strip()
+    >>> print shellcraft.setregs({'rax':1, 'rbx':'rax'}).rstrip()
         mov rbx, rax
         push 0x1
         pop rax
-    >>> print shellcraft.setregs({'rax':'rbx', 'rbx':'rax', 'rcx':'rbx'}).strip()
+    >>> print shellcraft.setregs({'rax':'rbx', 'rbx':'rax', 'rcx':'rbx'}).rstrip()
         mov rcx, rbx
         xchg rax, rbx
 
