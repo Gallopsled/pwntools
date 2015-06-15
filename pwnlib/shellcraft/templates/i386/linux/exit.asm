@@ -1,7 +1,7 @@
 <%
     from pwnlib.shellcraft.i386.linux import syscall
 %>
-<%page args="status = 'ebx'"/>
+<%page args="status = None"/>
 <%docstring>
 Invokes the syscall exit.  See 'man 2 exit' for more information.
 
@@ -10,7 +10,7 @@ Arguments:
 
 Doctest
 
-    >>> run_assembly_exitcode(shellcraft.i386.linux.exit(33))
+    >>> run_assembly_exitcode(shellcraft.exit(33))
     33
 
 </%docstring>

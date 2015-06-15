@@ -1,6 +1,7 @@
 .. testsetup:: *
 
    from pwn import *
+   context.clear(arch='amd64')
 
 :mod:`pwnlib.shellcraft.amd64` --- Shellcode for AMD64
 ===========================================================
