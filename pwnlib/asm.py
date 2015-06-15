@@ -59,7 +59,7 @@ from .log import getLogger
 
 log = getLogger(__name__)
 
-__all__ = ['asm', 'cpp', 'disasm', 'make_elf']
+__all__ = ['asm', 'cpp', 'disasm', 'make_elf', 'make_elf_from_assembly']
 
 _basedir = path.split(__file__)[0]
 _incdir  = path.join(_basedir, 'data', 'includes')

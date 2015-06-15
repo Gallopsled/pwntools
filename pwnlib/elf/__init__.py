@@ -18,6 +18,7 @@ from ..log import getLogger
 from ..term import text
 from ..util import misc
 from ..qemu import get_qemu_arch
+from ..tubes.process import process
 from .datatypes import *
 
 log = getLogger(__name__)
@@ -147,6 +148,9 @@ class ELF(ELFFile):
                 c055:       cd 80                   int    0x80
         """
         return ELF(make_elf(bytes, extract=False, *a, **kw))
+
+    def process(self, argv=[], *a, **kw):
+        return process([self.path] + argv, *a, **kw)
 
     def _describe(self):
         log.info_once('\n'.join((repr(self.path),

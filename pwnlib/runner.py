@@ -1,7 +1,7 @@
 import os
 import tempfile
 
-from .asm import asm, make_elf
+from .elf import ELF
 from .context import LocalContext
 from .tubes.process import process
 
@@ -24,7 +24,7 @@ def run_assembly(assembly):
         3
 
     """
-    return run_shellcode(asm(assembly))
+    return ELF.from_assembly(assembly).process()
 
 @LocalContext
 def run_shellcode(bytes):
@@ -38,13 +38,7 @@ def run_shellcode(bytes):
         >>> p.poll()
         3
     """
-    e = make_elf(bytes)
-    f = tempfile.mktemp()
-    with open(f, 'wb+') as F:
-        F.write(e)
-        F.flush()
-    os.chmod(f, 0755)
-    return process(f)
+    return ELF.from_bytes(bytes).process()
 
 @LocalContext
 def run_assembly_exitcode(assembly):
@@ -61,7 +55,9 @@ def run_assembly_exitcode(assembly):
         >>> run_assembly_exitcode('mov ebx, 3; mov eax, SYS_exit; int 0x80;')
         3
     """
-    return run_shellcode_exitcode(asm(assembly))
+    p = run_assembly(assembly)
+    p.wait_for_close()
+    return p.poll()
 
 @LocalContext
 def run_shellcode_exitcode(bytes):
