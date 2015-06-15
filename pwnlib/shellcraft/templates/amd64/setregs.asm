@@ -1,7 +1,7 @@
 <%
   from pwnlib.regsort import regsort
   from pwnlib.shellcraft import registers
-  from pwnlib.shellcraft.i386 import mov
+  from pwnlib.shellcraft.amd64 import mov
 %>
 <%page args="reg_context, stack_allowed = True"/>
 <%docstring>
@@ -14,18 +14,17 @@ Args:
 
 Example:
 
-    >>> print shellcraft.setregs({'eax':1, 'ebx':'eax'}).strip()
-        mov ebx, eax
+    >>> print shellcraft.setregs({'rax':1, 'rbx':'rax'}).strip()
+        mov rbx, rax
         push 0x1
-        pop eax
-    >>> print shellcraft.setregs({'eax':'ebx', 'ebx':'eax', 'ecx':'ebx'}).strip()
-        mov ecx, ebx
-        xchg eax, ebx
-
+        pop rax
+    >>> print shellcraft.setregs({'rax':'rbx', 'rbx':'rax', 'rcx':'rbx'}).strip()
+        mov rcx, rbx
+        xchg rax, rbx
 
 </%docstring>
 
-% for how, src, dst in regsort(reg_context, registers.i386):
+% for how, src, dst in regsort(reg_context, registers.amd64):
 % if how == 'xchg':
     xchg ${src}, ${dst}
 % else:
