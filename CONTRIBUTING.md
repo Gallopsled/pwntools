@@ -29,4 +29,4 @@ comment on it and then hopefully merge it into master.
 
 Pull requests against Binjitsu require at a minimum that no tests have been broken, and ideally each pull request will include new tests to ensure that all of the functionality works as intended.
 
-You can find more information on testing in [TESTING.md](TESITNG.md).
+You can find more information on testing in [TESTING.md](TESTING.md).
