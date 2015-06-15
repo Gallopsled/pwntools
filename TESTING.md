@@ -38,4 +38,4 @@ The module `pwnlib.testexample` exists to demonstrate how everything is tied tog
 
 These are both less easy to test, as they require actually executing code, or loading real binaries.  In order to make the process simpler, the `runner` library was created to wrap common tasks.  For an example of testing shellcode with these helpers, see [exit.asm](pwnlib/shellcraft/templates/i386/linux/exit.asm).
 
-Additionally, for loading ELF files on-the-fly, the helpers `ELF.from_bytes` and `ELF.from_assembly` are available.  
+Additionally, for loading ELF files on-the-fly, the helpers `ELF.from_bytes` and `ELF.from_assembly` are available.
