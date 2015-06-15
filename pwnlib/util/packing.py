@@ -539,8 +539,9 @@ def flat(*args, **kwargs):
     return _flat(args, preprocessor, make_packer(word_size))
 
 
+@LocalContext
 def fit(pieces, **kwargs):
-    """fit(pieces, filler = de_bruijn(), length = None, preprocessor = None, word_size = None, endianness = None, sign = None) -> str
+    """fit(pieces, filler = de_bruijn(), length = None, preprocessor = None) -> str
 
     Generates a string from a dictionary mapping offsets to data to place at
     that offset.
@@ -601,7 +602,7 @@ def fit(pieces, **kwargs):
     if kwargs != {}:
         raise TypeError("fit() does not support argument %r" % kwargs.popitem()[0])
 
-    packer = make_packer(word_size, endianness, sign)
+    packer = make_packer()
     filler = iters.cycle(filler)
     out = ''
 

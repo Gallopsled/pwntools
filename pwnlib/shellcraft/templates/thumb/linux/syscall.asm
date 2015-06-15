@@ -1,5 +1,5 @@
 <%
-  from pwnlib.shellcraft import thumb 
+  from pwnlib.shellcraft import thumb
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
 %>
 
@@ -24,7 +24,7 @@ Example:
     >>> print shellcraft.thumb.linux.syscall('SYS_exit', 0).rstrip()
         /* call exit(0) */
         eor r0, r0
-        mov r7, #SYS_exit
+        mov r7, #(SYS_exit)
         swi #0
 </%docstring>
 <%
