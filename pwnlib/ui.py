@@ -6,6 +6,58 @@ from .log import getLogger
 
 log = getLogger(__name__)
 
+def yesno(prompt, default = None):
+    """Presents the user with prompt (typically in the form of question) which
+    the user must answer yes or no.
+
+    Arguments:
+      prompt (str): The prompt to show
+      default: The default option;  `True` means "yes"
+
+    Returns:
+      `True` if the answer was "yes", `False` if "no"
+"""
+
+    if not isinstance(default, (bool, types.NoneType)):
+        raise ValueError('yesno(): default must be a boolean or None')
+
+    if term.term_mode:
+        term.output(' [?] %s [' % prompt)
+        yesfocus, yes = term.text.bold('Yes'), 'yes'
+        nofocus, no = term.text.bold('No'), 'no'
+        hy = term.output(yesfocus if default == True else yes)
+        term.output('/')
+        hn = term.output(nofocus if default == False else no)
+        term.output(']\n')
+        cur = default
+        while True:
+            k = term.key.get()
+            if   k in ('y', 'Y', '<left>') and cur != True:
+                cur = True
+                hy.update(yesfocus)
+                hn.update(no)
+            elif k in ('n', 'N', '<right>') and cur != False:
+                cur = False
+                hy.update(yes)
+                hn.update(nofocus)
+            elif k == '<enter>':
+                if cur is not None:
+                    return cur
+    else:
+        prompt = ' [?] %s [%s/%s] ' % (prompt,
+                                       'Yes' if default == True else 'yes',
+                                       'No' if default == False else 'no',
+                                       )
+        while True:
+            opt = raw_input(prompt).lower()
+            if opt == '' and default != None:
+                return default
+            elif opt in ('y','yes'):
+                return True
+            elif opt in ('n', 'no'):
+                return False
+            print 'Please answer yes or no'
+
 def options(prompt, opts, default = None):
     """Presents the user with a prompt (typically in the
     form of a question) and a number of options.

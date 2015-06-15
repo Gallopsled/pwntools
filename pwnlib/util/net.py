@@ -1,5 +1,9 @@
-import ctypes, ctypes.util, socket
-from packing import p16, p32
+import ctypes
+import ctypes.util
+import socket
+
+from packing import p16
+from packing import p32
 
 __all__ = ['getifaddrs', 'interfaces', 'interfaces4', 'interfaces6', 'sockaddr']
 

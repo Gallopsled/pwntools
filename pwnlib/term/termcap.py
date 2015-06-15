@@ -38,6 +38,10 @@ def init():
     global cache
 
     if 'PWNLIB_NOTERM' not in os.environ:
-        curses.setupterm()
+        # Fix for BPython
+        try:
+            curses.setupterm()
+        except:
+            pass
 
     cache = {}

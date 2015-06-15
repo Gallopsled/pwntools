@@ -9,7 +9,7 @@ headers="../"
 
 rm -rf "$headers/linux" "$headers/freebsd.h"
 mkdir -p "$headers/linux"
-find "$python" -type f \( -name '*.py' -o -name '*.pyc' \) -not -name "__init__.py" -delete
+find "$python" -type f \( -name '*.py' -o -name '*.pyc' \) -not -name "__init__.py"  -not -name 'constant.py' -delete
 find "$python" -type d -empty -delete
 
 for arch in $ARCHS; do

@@ -77,10 +77,6 @@ def setupterm():
     ISPEED = 4
     OSPEED = 5
     CC = 6
-    mode[IFLAG] = mode[IFLAG] & ~(termios.BRKINT | termios.ICRNL | termios.INPCK | termios.ISTRIP | termios.IXON)
-    mode[OFLAG] = mode[OFLAG] & ~(termios.OPOST)
-    mode[CFLAG] = mode[CFLAG] & ~(termios.CSIZE | termios.PARENB)
-    mode[CFLAG] = mode[CFLAG] | termios.CS8
     mode[LFLAG] = mode[LFLAG] & ~(termios.ECHO | termios.ICANON | termios.IEXTEN)
     mode[CC][termios.VMIN] = 1
     mode[CC][termios.VTIME] = 0
@@ -178,7 +174,7 @@ class Handle:
     def delete(self):
         delete(self.h)
 
-STR, CSI, CRLF, BS, CR, SOH, STX, OOB = range(8)
+STR, CSI, LF, BS, CR, SOH, STX, OOB = range(8)
 def parse_csi(buf, offset):
     i = offset
     while i < len(buf):
@@ -303,15 +299,11 @@ def parse(s):
             x = (STR, ['    ']) # who the **** uses tabs anyway?
             i += 1
         elif c == 0x0a:
-            x = (CRLF, None)
+            x = (LF, None)
             i += 1
         elif c == 0x0d:
-            if len(buf) > i + 1 and buf[i + 1] == 0x0a:
-                x = (CRLF, None)
-                i += 2
-            else:
-                x = (CR, None)
-                i += 1
+            x = (CR, None)
+            i += 1
         if _graphics_mode:
             continue
         if x is None:
@@ -401,10 +393,10 @@ def render_cell(cell, clear_after = False):
                 elif c == ord('u'):
                     if saved_cursor:
                         row, col = saved_cursor
-        elif t == CRLF:
+        elif t == LF:
             if clear_after and col <= width - 1:
                 put('\x1b[K') # clear line
-            put('\r\n')
+            put('\n')
             col = 0
             row += 1
         elif t == BS:

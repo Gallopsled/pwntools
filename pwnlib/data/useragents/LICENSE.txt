@@ -6,8 +6,8 @@ The user agent strings are downloaded from:
  - http://www.user-agents.org/
  - http://techpatterns.com/downloads/firefox/useragentswitcher.xml
 
-The latter list is part of the Firefox `User Agent Switcher' add-on which is
-released under GPL3.0.
+The latter list is part of the Firefox `User Agent Switcher' add-on and released
+under BSD 2 Clause.
 
 
 As mentioned elsewhere we are not lawyers and do not know the legal status of
