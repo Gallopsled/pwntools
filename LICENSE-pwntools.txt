@@ -1,5 +1,5 @@
 TL;DR version:
-   Everything in binjitsu is open source. Most is under an MIT license, but a
+   Everything in pwntools is open source. Most is under an MIT license, but a
    few pieces are under GPL or a BSD 2-clause licence.
 
 This license covers everything within this project, except for a few pieces
@@ -13,7 +13,7 @@ directories:
 - pwnlib/data/
 
 
-Copyright (c) 2013 Gallopsled
+Copyright (c) 2015 Gallopsled and Zach Riggle
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
