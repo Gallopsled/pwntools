@@ -13,7 +13,7 @@ from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 
 from ..asm import *
-from ..context import context
+from ..context import context, LocalContext
 from ..log import getLogger
 from ..term import text
 from ..util import misc
@@ -109,6 +109,7 @@ class ELF(ELFFile):
         self._describe()
 
     @staticmethod
+    @LocalContext
     def from_assembly(assembly, *a, **kw):
         """Given an assembly listing, return a fully loaded ELF object
         which contains that assembly at its entry point.
@@ -130,6 +131,7 @@ class ELF(ELFFile):
         return ELF(make_elf_from_assembly(assembly, *a, **kw))
 
     @staticmethod
+    @LocalContext
     def from_bytes(bytes, *a, **kw):
         """Given a sequence of bytes, return a fully loaded ELF object
         which contains those bytes at its entry point.
