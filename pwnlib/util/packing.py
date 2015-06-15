@@ -214,10 +214,10 @@ def unpack(data, word_size = None):
     number = number & ((1 << word_size) - 1)
 
     if not sign:
-        return number
+        return int(number)
 
     signbit = number & (1 << (word_size-1))
-    return number - 2*signbit
+    return int(number - 2*signbit)
 
 @LocalContext
 def unpack_many(data, word_size = None):
