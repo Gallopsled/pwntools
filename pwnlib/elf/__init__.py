@@ -100,8 +100,6 @@ class ELF(ELFFile):
 
         if self.elftype == 'DYN':
             self._address = 0
-        elif not self.segments:
-            pass
         else:
             self._address = min(filter(bool, (s.header.p_vaddr for s in self.segments)))
         self.load_addr = self._address
