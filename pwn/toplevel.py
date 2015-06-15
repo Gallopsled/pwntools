@@ -30,6 +30,7 @@ from pwnlib.exception import PwnlibException
 from pwnlib.fmtstr import FmtStr
 from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak
+from pwnlib.regsort import *
 from pwnlib.replacements import *
 from pwnlib.rop import ROP
 from pwnlib.timeout import Timeout
