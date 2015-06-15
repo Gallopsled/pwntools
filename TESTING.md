@@ -7,14 +7,14 @@ Binjitsu makes extensive use of unit tests and integration tests to ensure every
 
 To run the test suite, it is beste to use Ubuntu 12.04 or 14.04, and run the following commands.  **Be aware** that this will add a user to the machine, and create a public key for SSH login!
 
-``sh
+```sh
 bash .travis_install.sh
 bash .travis_ssh_setup.sh
 pip install -e .
 pip install -r docs/requirements.txt
 cd docs
 PWNLIB_NOTERM=1 make clean doctest
-``
+```
 
 ## New Tests
 
