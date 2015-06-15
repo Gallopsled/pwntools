@@ -1,5 +1,6 @@
 <%
   from pwnlib.shellcraft import i386
+  from pwnlib.constants import Constant
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
 %>
 <%page args="syscall = None, arg0 = None, arg1 = None, arg2 = None, arg3 = None, arg4 = None, arg5 = None"/>
@@ -71,8 +72,8 @@ Example:
 </%docstring>
 <%
   append_cdq = False
-  if isinstance(syscall, (str, unicode)) and syscall.startswith('SYS_'):
-      syscall_repr = syscall[4:] + "(%s)"
+  if isinstance(syscall, (str, unicode, Constant)) and str(syscall).startswith('SYS_'):
+      syscall_repr = str(syscall)[4:] + "(%s)"
       args = []
   else:
       syscall_repr = 'syscall(%s)'
