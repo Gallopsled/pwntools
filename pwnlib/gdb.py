@@ -4,6 +4,7 @@ import re
 import shlex
 import tempfile
 
+from . import atexit
 from . import elf
 from . import tubes
 from .asm import make_elf
@@ -33,6 +34,7 @@ def debug_shellcode(data, execute=None):
         f.write(elf_data)
         f.flush()
     os.chmod(tmp_elf, 0777)
+    atexit.register(lambda: os.unlink(tmp_elf))
     return debug(tmp_elf, execute=None, arch=context.arch)
 
 @LocalContext
@@ -304,6 +306,7 @@ def attach(target, execute = None, exe = None):
                                           delete = False)
         tmp.write(execute)
         tmp.close()
+        atexit.register(lambda: os.unlink(tmp.name))
         cmd += ' -x "%s" ; rm "%s"' % (tmp.name, tmp.name)
 
     log.info('running in new terminal: %s' % cmd)
