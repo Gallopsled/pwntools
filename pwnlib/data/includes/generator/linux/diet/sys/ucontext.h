@@ -116,7 +116,7 @@ struct ucontext {
 };
 
 #else
-#error NEED TO PORT <sys/sigcontext.h>!
+//#error NEED TO PORT <sys/sigcontext.h>!
 #endif
 
 typedef struct ucontext ucontext_t;
