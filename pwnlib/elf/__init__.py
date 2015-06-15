@@ -4,7 +4,7 @@ import mmap
 import os
 import subprocess
 
-from elftools.elf.constants import P_FLAGS
+from elftools.elf.constants import P_FLAGS, E_FLAGS
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.elffile import ELFFile
@@ -12,11 +12,13 @@ from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 
-from ..asm import asm
-from ..asm import disasm
+from ..asm import *
+from ..context import context, LocalContext
 from ..log import getLogger
 from ..term import text
 from ..util import misc
+from ..qemu import get_qemu_arch
+from ..tubes.process import process
 from .datatypes import *
 
 log = getLogger(__name__)
@@ -50,7 +52,6 @@ class ELF(ELFFile):
     :ivar plt:      Dictionary of {name: address} for all functions in the PLT
     :ivar got:      Dictionary of {name: address} for all function pointers in the GOT
     :ivar libs:     Dictionary of {path: address} for each shared object required to load the ELF
-
     Example:
 
     .. code-block:: python
@@ -88,6 +89,12 @@ class ELF(ELFFile):
 
         self.bits = self.elfclass
 
+        if self.arch == 'mips':
+            if self.header['e_flags'] & E_FLAGS.EF_MIPS_ARCH_64 \
+            or self.header['e_flags'] & E_FLAGS.EF_MIPS_ARCH_64R2:
+                self.arch = 'mips64'
+                self.bits = 64
+
         self._populate_got_plt()
         self._populate_symbols()
         self._populate_libraries()
@@ -100,9 +107,54 @@ class ELF(ELFFile):
 
         self._describe()
 
+    @staticmethod
+    @LocalContext
+    def from_assembly(assembly, *a, **kw):
+        """Given an assembly listing, return a fully loaded ELF object
+        which contains that assembly at its entry point.
+
+        Arguments:
+
+            assembly(str): Assembly language listing
+            vma(int): Address of the entry point and the module's base address.
+
+        Example:
+
+            >>> e = ELF.from_assembly('nop; foo: int 0x80', vma = 0x40000)
+            >>> e.symbols['foo'] = 0x400001
+            >>> e.disasm(e.entry, 1)
+            '  400000:       90                      nop'
+            >>> e.disasm(e.symbols['foo'], 2)
+            '  400001:       cd 80                   int    0x80'
+        """
+        return ELF(make_elf_from_assembly(assembly, *a, **kw))
+
+    @staticmethod
+    @LocalContext
+    def from_bytes(bytes, *a, **kw):
+        """Given a sequence of bytes, return a fully loaded ELF object
+        which contains those bytes at its entry point.
+
+        Arguments:
+
+            bytes(str): Shellcode byte string
+            vma(int): Desired base address for the ELF.
+
+        Example:
+
+            >>> e = ELF.from_bytes('\x90\xcd\x80', vma=0xc000)
+            >>> print(e.disasm(e.entry, 3))
+                c054:       90                      nop
+                c055:       cd 80                   int    0x80
+        """
+        return ELF(make_elf(bytes, extract=False, *a, **kw))
+
+    def process(self, argv=[], *a, **kw):
+        return process([self.path] + argv, *a, **kw)
+
     def _describe(self):
         log.info_once('\n'.join((repr(self.path),
-                                'Arch:          %s-%s-%s' % (self.arch, self.bits, self.endian),
+                                '%-10s%s-%s-%s' % ('Arch:', self.arch, self.bits, self.endian),
                                 self.checksec())))
 
     def __repr__(self):
@@ -225,6 +277,19 @@ class ELF(ELFFile):
         """Returns: list of all segments which are NOT writeable"""
         return [s for s in self.segments if not s.header.p_flags & P_FLAGS.PF_W]
 
+    @property
+    def libc(self):
+        """If the ELF imports any libraries which contain 'libc.so',
+        and we can determine the appropriate path to it on the local
+        system, returns an ELF object pertaining to that libc.so.
+
+        Otherwise, returns ``None``.
+        """
+        for lib in self.libs:
+            if '/libc.' in lib or '/libc-' in lib:
+                return ELF(lib)
+
+
     def _populate_libraries(self):
         """
         >>> from os.path import exists
@@ -235,11 +300,23 @@ class ELF(ELFFile):
         True
         """
         try:
-            cmd = '(ulimit -s unlimited; ldd %s > /dev/null && (LD_TRACE_LOADED_OBJECTS=1 %s || ldd %s)) 2>/dev/null'
+            cmd = 'ulimit -s unlimited; LD_TRACE_LOADED_OBJECTS=1 LD_WARN=1 LD_BIND_NOW=1 %s 2>/dev/null'
             arg = misc.sh_string(self.path)
 
-            data = subprocess.check_output(cmd % (arg, arg, arg), shell = True)
-            self.libs = misc.parse_ldd_output(data)
+            data = subprocess.check_output(cmd % (arg), shell = True, stderr = subprocess.STDOUT)
+            libs = misc.parse_ldd_output(data)
+
+            for lib in dict(libs):
+                if os.path.exists(lib):
+                    continue
+
+                qemu_lib = '/etc/qemu-binfmt/%s/%s' % (get_qemu_arch(arch=self.arch), lib)
+
+                if os.path.exists(qemu_lib):
+                    libs[os.path.realpath(qemu_lib)] = libs.pop(lib)
+
+            self.libs = libs
+
         except subprocess.CalledProcessError:
             self.libs = {}
 
@@ -596,13 +673,13 @@ class ELF(ELFFile):
         if self.dynamic_by_tag('DT_BIND_NOW'):
             return "Full"
 
-        if any('GNU_RELRO' in s.header.p_type for s in self.segments):
+        if any('GNU_RELRO' in str(s.header.p_type) for s in self.segments):
             return "Partial"
         return None
 
     @property
     def nx(self):
-        if not any('GNU_STACK' in seg.header.p_type for seg in self.segments):
+        if not any('GNU_STACK' in str(seg.header.p_type) for seg in self.segments):
             return False
 
         # Can't call self.executable_segments because of dependency loop.
@@ -650,20 +727,20 @@ class ELF(ELFFile):
         yellow = text.yellow
 
         res = [
-            "RELRO:".ljust(15) + {
+            "RELRO:".ljust(10) + {
                 'Full':    green("Full RELRO"),
                 'Partial': yellow("Partial RELRO"),
                 None:      red("No RELRO")
             }[self.relro],
-            "Stack Canary:".ljust(15) + {
+            "Stack:".ljust(10) + {
                 True:  green("Canary found"),
                 False: red("No canary found")
             }[self.canary],
-            "NX:".ljust(15) + {
+            "NX:".ljust(10) + {
                 True:  green("NX enabled"),
                 False: red("NX disabled"),
             }[self.nx],
-            "PIE:".ljust(15) + {
+            "PIE:".ljust(10) + {
                 True: green("PIE enabled"),
                 False: red("No PIE")
             }[self.pie]
@@ -676,16 +753,19 @@ class ELF(ELFFile):
         rwx = self.rwx_segments
 
         if self.nx and rwx:
-            res += [ "RWX:".ljust(15) + red("Has RWX segments") ]
+            res += [ "RWX:".ljust(10) + red("Has RWX segments") ]
 
         if self.rpath:
-            res += [ "RPATH:".ljust(15) + red(repr(self.rpath)) ]
+            res += [ "RPATH:".ljust(10) + red(repr(self.rpath)) ]
 
         if self.runpath:
-            res += [ "RUNPATH:".ljust(15) + red(repr(self.runpath)) ]
+            res += [ "RUNPATH:".ljust(10) + red(repr(self.runpath)) ]
 
         if self.packed:
-            res.append('Packer:'.ljust(15) + red("Packed with UPX"))
+            res.append('Packer:'.ljust(10) + red("Packed with UPX"))
+
+        if self.fortify:
+            res.append("FORTIFY:".ljust(10) + green("Enabled"))
 
         return '\n'.join(res)
 
@@ -695,3 +775,9 @@ class ELF(ELFFile):
         if section:
             return section.data()[16:]
         return None
+
+    @property
+    def fortify(self):
+        if any(s.endswith('_chk') for s in self.plt):
+            return True
+        return False
