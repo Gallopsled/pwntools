@@ -5,6 +5,7 @@ Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
 import collections
+import functools
 import logging
 import string
 import threading
