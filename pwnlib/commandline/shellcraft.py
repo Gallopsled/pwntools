@@ -112,6 +112,13 @@ p.add_argument(
     action='store_true'
 )
 
+p.add_argument(
+    '-r',
+    '--run',
+    help="Run output",
+    action='store_true'
+)
+
 def main():
     # Banner must be added here so that it doesn't appear in the autodoc
     # generation for command line tools
@@ -219,9 +226,15 @@ def main():
         else:
             args.format = 'raw'
 
+    arch = args.shellcode.split('.')[0]
+
     if args.debug:
-        arch = args.shellcode.split('.')[0]
         proc = gdb.debug_shellcode(code, arch=arch)
+        proc.interactive()
+        sys.exit(0)
+
+    if args.run:
+        proc = run_shellcode(code, arch=arch)
         proc.interactive()
         sys.exit(0)
 
