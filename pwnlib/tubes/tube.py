@@ -788,6 +788,7 @@ class tube(Timeout, Logger):
             while not go.isSet():
                 try:
                     cur = self.recv(timeout = 0.05)
+                    cur = cur.replace('\r\n', '\n')
                     if cur:
                         sys.stderr.write(cur)
                         sys.stderr.flush()
