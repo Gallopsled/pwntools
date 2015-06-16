@@ -48,17 +48,37 @@ parser.add_argument(
     action='store_true'
 )
 
+parser.add_argument(
+    '-i',
+    '--infile',
+    help="Specify input file",
+    default=sys.stdin,
+    type=file
+)
+
+parser.add_argument(
+    '-r',
+    '--run',
+    help="Run output",
+    action='store_true'
+)
+
 def main():
     args   = parser.parse_args()
     tty    = args.output.isatty()
 
-    data   = '\n'.join(args.lines) or sys.stdin.read()
+    data   = '\n'.join(args.lines) or args.infile.read()
     output = asm(data.replace(';', '\n'))
     fmt    = args.format or ('hex' if tty else 'raw')
     formatters = {'r':str, 'h':enhex, 's':repr}
 
     if args.debug:
         proc = gdb.debug_shellcode(output, arch=context.arch)
+        proc.interactive()
+        sys.exit(0)
+
+    if args.run:
+        proc = run_shellcode(output)
         proc.interactive()
         sys.exit(0)
 
