@@ -219,8 +219,8 @@ class ROP(object):
 
     @staticmethod
     @LocalContext
-    def from_blob(blob):
-        return ROP(ELF.from_bytes(blob))
+    def from_blob(blob, *a, **kw):
+        return ROP(ELF.from_bytes(blob, *a, **kw))
 
     def setRegisters(self, registers):
         """
