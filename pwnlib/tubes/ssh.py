@@ -219,6 +219,7 @@ class ssh_channel(sock):
             while not event.is_set():
                 try:
                     cur = self.recv(timeout = 0.05)
+                    cur = cur.replace('\r\n','\n')
                     if cur == None:
                         continue
                     elif cur == '\a':
