@@ -211,7 +211,7 @@ class SigreturnFrame(dict):
     @property
     def arguments(self):
         # Skip the register used to hold the syscall number
-        return ABI.syscall(self.arch).register_arguments[1:]
+        return ABI.syscall(arch=self.arch).register_arguments[1:]
 
     @property
     def sp(self):
@@ -239,7 +239,7 @@ class SigreturnFrame(dict):
 
     @property
     def syscall_register(self):
-        return ABI.syscall(self.arch).syscall_register
+        return ABI.syscall(arch=self.arch).syscall_register
 
     def fix_offsets(self, frcontents, namedoffsets):
 

