@@ -266,7 +266,7 @@ def unpack_many(data, word_size = None):
     for i in range(0, len(data), n):
         out.append(unpack(data[i:i+n], word_size))
 
-    return out
+    return list(map(int, out))
 
 
 

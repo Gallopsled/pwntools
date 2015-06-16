@@ -1,9 +1,63 @@
 # -*- coding: utf-8 -*-
+r"""
+Sigreturn ROP (SROP)
 
+Sigreturn is a syscall used to restore the entire register context
+from memory pointed at by ESP.
+
+We can leverage this during ROP to gain control of registers for which
+there are not convenient gadgets.  The main caveat is that *all* registers
+are set, including ESP and EIP (or their equivalents).  This means that
+in order to continue after using a sigreturn frame, the stack pointer
+must be set accordingly.
+
+i386 Example:
+
+    Let's just print a message out using SROP.
+
+    >>> message = "Hello, World"
+
+    First, we'll create our example binary.
+    It just reads some data onto the stack, and invokes
+    the ``sigreturn`` syscall.
+    We also make an ``int 0x80`` gadget available, followed
+    immediately by ``exit(0)``.
+
+    >>> context.clear(arch='i386')
+    >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, 'esp', 1024)
+    >>> assembly += 'sigreturn:' + shellcraft.sigreturn('esp')
+    >>> assembly += 'int3:'      + shellcraft.trap()
+    >>> assembly += 'syscall: '  + shellcraft.syscall()
+    >>> assembly += 'exit: '     + 'xor ebx, ebx; mov eax, 1; int 0x80;'
+    >>> assembly += 'message: '  + ('.asciz "%s"' % message)
+    >>> binary = ELF.from_assembly(assembly)
+
+    Let's construct our frame to have it invoke a ``write``
+    syscall, and dump the message to stdout.
+
+    >>> frame = SigreturnFrame(kernel='amd64')
+    >>> frame.eax = constants.SYS_write
+    >>> frame.ebx = constants.STDOUT_FILENO
+    >>> frame.ecx = binary.symbols['message']
+    >>> frame.edx = len(message)
+    >>> frame.esp = 0xdeadbeef
+    >>> frame.eip = binary.symbols['syscall']
+
+    Let's start the process, send the data, and check the message.
+
+    >>> p = process(binary.path)
+    >>> p.send(str(frame))
+    >>> p.recvall() == message
+    True
+    >>> p.wait_for_close()
+    >>> p.poll() == 0
+    True
+
+"""
 from collections import namedtuple
 
 from ..abi import ABI
-from ..context import context
+from ..context import context, LocalContext
 from ..log import getLogger
 from ..util.packing import flat
 from ..util.packing import pack
@@ -37,6 +91,7 @@ registers = {
 
 defaults = {
     "i386" : {"cs": 0x73, "ss": 0x7b},
+    "i386_on_amd64": {"cs": 0x23, "ss": 0x2b},
     "amd64": {"csgsfs": 0x33},
     "arm": {"trap_no": 0x6, "cpsr": 0x40000010}
 }
@@ -78,21 +133,23 @@ class SigreturnFrame(dict):
 
         Crafting a SigreturnFrame that calls mprotect on amd64
 
-        >>> s = SigreturnFrame(arch="amd64")
-        >>> unpack_many(str(s)) # doctest: +SKIP
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0L]
+        >>> context.clear(arch='amd64')
+        >>> s = SigreturnFrame()
+        >>> unpack_many(str(s))
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0]
         >>> assert len(s) == 248
         >>> s.rax = 0xa
         >>> s.rdi = 0x00601000
         >>> s.rsi = 0x1000
         >>> s.rdx = 0x7
         >>> assert len(str(s)) == 248
-        >>> unpack_many(str(s)) # doctest: +SKIP
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6295552, 4096, 0, 0, 7, 10, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0L]
+        >>> unpack_many(str(s))
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6295552, 4096, 0, 0, 7, 10, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0]
 
         Crafting a SigreturnFrame that calls mprotect on i386
 
-        >>> s = SigreturnFrame(arch="i386")
+        >>> context.clear(arch='i386')
+        >>> s = SigreturnFrame(kernel='i386')
         >>> unpack_many(str(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 115, 0, 0, 123, 0]
         >>> assert len(s) == 80
@@ -108,11 +165,17 @@ class SigreturnFrame(dict):
     arch = None
     frame = None
 
-    def __init__(self, **kw):
-        with context.local(**kw):
-            self.arch = context.arch
-            self.update({r:0 for r in self.registers})
-            self.update(defaults[self.arch])
+    @LocalContext
+    def __init__(self):
+        if context.kernel is None and context.arch == 'i386':
+            log.error("kernel architecture must be specified")
+
+        self.arch = context.arch
+        self.update({r:0 for r in self.registers})
+        self.update(defaults[self.arch])
+
+        if context.arch == 'i386' and context.kernel == 'amd64':
+            self.update(defaults['i386_on_amd64'])
 
     def __setitem__(self, item, value):
         if item not in self.registers:

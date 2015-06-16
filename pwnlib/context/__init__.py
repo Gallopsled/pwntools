@@ -320,6 +320,7 @@ class ContextType(object):
         'binary': None,
         'bits': 32,
         'endian': 'little',
+        'kernel': None,
         'log_level': logging.INFO,
         'log_file': _devnull(),
         'newline': '\n',
@@ -534,7 +535,7 @@ class ContextType(object):
     @_validator
     def arch(self, arch):
         """
-        Target machine architecture.
+        Target binary architecture.
 
         Allowed values are listed in :attr:`pwnlib.context.ContextType.architectures`.
 
@@ -618,6 +619,20 @@ class ContextType(object):
                 self._tls[k] = v
 
         return arch
+
+    @_validator
+    def kernel(self, arch):
+        """
+        Target machine's kernel architecture.
+
+        Usually, this is the same as ``arch``, except when
+        running a 32-bit binary on a 64-bit kernel (e.g. i386-on-amd64).
+
+        Even then, this doesn't matter much -- only when the the segment
+        registers need to be known
+        """
+        with context.local(arch=arch):
+            return context.arch
 
     @_validator
     def bits(self, bits):
