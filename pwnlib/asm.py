@@ -53,6 +53,7 @@ from glob import glob
 from os import environ
 from os import path
 
+from . import atexit
 from . import shellcraft
 from .context import context, LocalContext
 from .log import getLogger
@@ -396,6 +397,8 @@ def make_elf(data, vma = 0x10000000, strip=True, extract=True):
         >>> p.recvline()
         'Hello\n'
     """
+    retval = None
+
     if context.arch == 'thumb':
         to_thumb = asm(shellcraft.arm.to_thumb(), arch='arm')
 
@@ -435,14 +438,17 @@ def make_elf(data, vma = 0x10000000, strip=True, extract=True):
 
         if not extract:
             os.chmod(step3, 0755)
-            return step3
+            retval = step3
 
-        with open(step3, 'r') as f:
-            return f.read()
+        else:
+            with open(step3, 'r') as f:
+                retval = f.read()
     except Exception:
         log.exception("An error occurred while building an ELF:\n%s" % code)
     else:
-        shutil.rmtree(tmpdir)
+        atexit.register(lambda: shutil.rmtree(tmpdir))
+
+    return retval
 
 @LocalContext
 def asm(shellcode, vma = 0, extract = True):
@@ -534,8 +540,9 @@ def asm(shellcode, vma = 0, extract = True):
     except Exception:
         log.exception("An error occurred while assembling:\n%s" % code)
     else:
-        shutil.rmtree(tmpdir)
-        return result
+        atexit.register(lambda: shutil.rmtree(tmpdir))
+
+    return result
 
 @LocalContext
 def disasm(data, vma = 0, byte = True, offset = True):
@@ -621,7 +628,7 @@ def disasm(data, vma = 0, byte = True, offset = True):
     except Exception:
         log.exception("An error occurred while disassembling:\n%s" % data)
     else:
-        shutil.rmtree(tmpdir)
+        atexit.register(lambda: shutil.rmtree(tmpdir))
 
 
     lines = []
