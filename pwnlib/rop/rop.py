@@ -12,7 +12,7 @@ import tempfile
 from .. import abi
 from .. import constants
 
-from ..context import context
+from ..context import context, LocalContext
 from ..elf import ELF
 from ..log import getLogger
 from ..util import cyclic
@@ -216,6 +216,11 @@ class ROP(object):
         self.align = max((e.elfclass for e in elfs)) / 8
         self.migrated = False
         self.__load()
+
+    @staticmethod
+    @LocalContext
+    def from_blob(blob):
+        return ROP(ELF.from_bytes(blob))
 
     def setRegisters(self, registers):
         """
