@@ -119,6 +119,21 @@ p.add_argument(
     action='store_true'
 )
 
+p.add_argument(
+    '--color',
+    help="Color output",
+    action='store_true',
+    default=sys.stdout.isatty()
+)
+
+p.add_argument(
+    '--no-color',
+    help="Disable color output",
+    action='store_false',
+    dest='color'
+)
+
+
 def main():
     # Banner must be added here so that it doesn't appear in the autodoc
     # generation for command line tools
@@ -208,26 +223,12 @@ def main():
 
 
     if args.format in ['a', 'asm', 'assembly']:
-        if sys.stdout.isatty():
-            try:
-                from pygments import highlight
-                from pygments.formatters import TerminalFormatter
-                from pygments.lexers import GasLexer
-                from pygments.token import Comment, Number
+        if args.color:
+            from pygments import highlight
+            from pygments.formatters import TerminalFormatter
+            from pwnlib.lexer import PwntoolsLexer
 
-                # Remove existing '#' comment styles
-                for name in GasLexer.tokens:
-                    for token in GasLexer.tokens[name]:
-                        if token[0].startswith('#') and token[1] == Comment:
-                            GasLexer.tokens[name].remove(token)
-
-                GasLexer.tokens['whitespace'].append((r'/\*.*?\*/', Comment))
-                GasLexer.tokens['instruction-args'].append(('#' + GasLexer.number, Number.Integer))
-
-                code = highlight(code, GasLexer(), TerminalFormatter())
-
-            except:
-                pass
+            code = highlight(code, PwntoolsLexer(), TerminalFormatter())
 
         print code
         exit()

@@ -37,6 +37,21 @@ parser.add_argument(
 )
 
 
+parser.add_argument(
+    '--color',
+    help="Color output",
+    action='store_true',
+    default=sys.stdout.isatty()
+)
+
+parser.add_argument(
+    '--no-color',
+    help="Disable color output",
+    action='store_false',
+    dest='color'
+)
+
+
 def main():
     args = parser.parse_args()
 
@@ -51,28 +66,25 @@ def main():
         dat = sys.stdin.read()
 
 
-    if sys.stdout.isatty():
-        try:
-            from pygments import highlight
-            from pygments.formatters import TerminalFormatter
-            from pygments.lexers import GasLexer
+    if args.color:
+        from pygments import highlight
+        from pygments.formatters import TerminalFormatter
+        from pwnlib.lexer import PwntoolsLexer
 
-            offsets = disasm(dat, vma=safeeval.const(args.address), instructions=False, byte=False)
-            bytes   = disasm(dat, vma=safeeval.const(args.address), instructions=False, offset=False)
-            instrs  = disasm(dat, vma=safeeval.const(args.address), byte=False, offset=False)
-            instrs  = highlight(instrs, GasLexer(), TerminalFormatter())
+        offsets = disasm(dat, vma=safeeval.const(args.address), instructions=False, byte=False)
+        bytes   = disasm(dat, vma=safeeval.const(args.address), instructions=False, offset=False)
+        instrs  = disasm(dat, vma=safeeval.const(args.address), byte=False, offset=False)
+        # instrs  = highlight(instrs, PwntoolsLexer(), TerminalFormatter())
 
-            split = lambda x: x.splitlines()
-            for o,b,i in zip(*list(map(split, (offsets, bytes, instrs)))):
+        split = lambda x: x.splitlines()
+        for o,b,i in zip(*list(map(split, (offsets, bytes, instrs)))):
+            b = b.replace('00', text.red('00'))
+            b = b.replace('0a', text.red('0a'))
+            i = highlight(i.strip(), PwntoolsLexer(), TerminalFormatter()).strip()
+            i = i.replace(',',', ')
 
-                # Highlight NULLs and newlines
-                b = b.replace('00', text.red('00'))
-                b = b.replace('0a', text.red('0a'))
-
-                print o,b,i
-            return
-        except ImportError:
-            pass
+            print o,b,i
+        return
 
     print disasm(dat, vma=safeeval.const(args.address))
 
