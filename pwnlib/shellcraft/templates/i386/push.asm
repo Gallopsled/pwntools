@@ -2,7 +2,7 @@
   from pwnlib.util import packing
   from pwnlib.shellcraft import i386
   from pwnlib import constants
-  from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
+  from pwnlib.shellcraft.registers import get_register, is_register, bits_required
   import re
 %>
 <%page args="value"/>
@@ -42,21 +42,18 @@ Example:
 </%docstring>
 
 <%
-  value_orig = value
-  # There are no meaningful constants of length < 3.
-  # There are however constants such as EBP, which we would
-  # prefer to avoid.
-  if isinstance(value, (str, unicode)) and len(value) > 3:
+value_orig = value
+is_reg = get_register(value)
+
+if not is_reg and isinstance(value, (str, unicode)):
     try:
-      with ctx.local(arch = 'i386'):
         value = constants.eval(value)
     except (ValueError, AttributeError):
-      pass
+        pass
 %>
 
-% if isinstance(value, (int,long)):
-    /* push ${repr(value_orig)} */
-    ${re.sub(r'^\s*/.*\n', '', i386.pushstr(packing.pack(value), False), 1)}
-% else:
+% if is_reg:
     push ${value}
+% else:
+    ${i386.pushstr(value, False)}
 % endif

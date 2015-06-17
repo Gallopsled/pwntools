@@ -1,4 +1,6 @@
-<% from pwnlib.util import lists, packing, fiddling %>\
+<%
+    from pwnlib.util import lists, packing, fiddling
+%>
 <%page args="string, append_null = True"/>
 <%docstring>
 Pushes a string onto the stack without using
@@ -58,23 +60,32 @@ Args:
   append_null (bool): Whether to append a single NULL-byte before pushing.
 </%docstring>
 <%
-    if append_null:
-        string += '\x00'
-    if not string:
-        return
+original = string
+string   = packing.flat(string)
 
-    def okay(s):
-        return '\n' not in s and '\0' not in s
+if append_null:
+    string += '\x00'
+if not string:
+    return
 
-    if ord(string[-1]) >= 128:
-        extend = '\xff'
-    else:
-        extend = '\x00'
+def okay(s):
+    return '\n' not in s and '\0' not in s
 
-    def pretty(n):
-        return hex(n & (2 ** 32 - 1))
+if ord(string[-1]) >= 128:
+    extend = '\xff'
+else:
+    extend = '\x00'
+
+def orig_pretty(n):
+    if isinstance(n, int):
+        return '%s == %#x' % (n,n)
+    elif isinstance(n, str):
+        return repr(n)
+
+def pretty(n):
+    return hex(n & (2 ** 32 - 1))
 %>\
-    /* push ${repr(string)} */
+    /* push ${orig_pretty(original)} */
 % for word in lists.group(4, string, 'fill', extend)[::-1]:
 <%
     sign = packing.u32(word, endian='little', sign='signed')
