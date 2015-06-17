@@ -5,6 +5,14 @@
 <%page args="filename, fd=1"/>
 <%docstring>
 Opens a file and writes its contents to the specified file descriptor.
+
+Example:
+
+    >>> f = tempfile.mktemp()
+    >>> write(f, 'FLAG')
+    >>> run_assembly(shellcraft.i386.linux.cat(f)).recvall()
+    'FLAG'
+
 </%docstring>
 <%
 label = common.label("sendfile_loop")
