@@ -32,7 +32,7 @@ eax = reg_context.get('eax', None)
 edx = reg_context.get('edx', None)
 cdq = False
 
-if None not in (eax, edx) and eax > 0 and edx == 0:
+if isinstance(eax, int) and isinstance(edx, int) and eax >> 31 == edx:
     cdq = True
     reg_context.pop('edx')
 
