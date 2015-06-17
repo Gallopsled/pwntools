@@ -14,17 +14,33 @@ Args:
 
 Example:
 
-    >>> print shellcraft.setregs({'eax':1, 'ebx':'eax'}).rstrip()
+    >>> R = shellcraft.registers.i386
+    >>> print shellcraft.setregs({'eax':1, 'ebx':'eax'}, R).rstrip()
         mov ebx, eax
         push 0x1
         pop eax
-    >>> print shellcraft.setregs({'eax':'ebx', 'ebx':'eax', 'ecx':'ebx'}).rstrip()
+    >>> print shellcraft.setregs({'eax':'ebx', 'ebx':'eax', 'ecx':'ebx'}, R).rstrip()
         mov ecx, ebx
         xchg eax, ebx
 
 
 </%docstring>
+<%
+reg_context = {k:v for k,v in reg_context.items() if v is not None}
 
+eax = reg_context.get('eax', None)
+edx = reg_context.get('edx', None)
+cdq = False
+
+if None not in (eax, edx) and eax > 0 and edx == 0:
+    cdq = True
+    reg_context.pop('edx')
+
+sorted_regs = regsort(reg_context, registers.i386)
+%>
+% if not sorted_regs:
+  /* setregs noop */
+% else:
 % for how, src, dst in regsort(reg_context, registers.i386):
 % if how == 'xchg':
     xchg ${src}, ${dst}
@@ -32,3 +48,7 @@ Example:
     ${mov(src, dst)}
 % endif
 % endfor
+% if cdq:
+    cdq /* edx=0 */
+% endif
+% endif
