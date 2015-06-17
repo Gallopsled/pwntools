@@ -213,13 +213,21 @@ def main():
                 from pygments import highlight
                 from pygments.formatters import TerminalFormatter
                 from pygments.lexers import GasLexer
-                from pygments.token import Comment
+                from pygments.token import Comment, Number
+
+                # Remove existing '#' comment styles
+                for name in GasLexer.tokens:
+                    for token in GasLexer.tokens[name]:
+                        if token[0].startswith('#') and token[1] == Comment:
+                            print token
+                            GasLexer.tokens[name].remove(token)
 
                 GasLexer.tokens['whitespace'].append((r'/\*.*?\*/', Comment))
+                GasLexer.tokens['instruction-args'].append(('#' + GasLexer.number, Number.Integer))
 
                 code = highlight(code, GasLexer(), TerminalFormatter())
 
-            except ImportError:
+            except:
                 pass
 
         print code
