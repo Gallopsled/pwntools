@@ -36,6 +36,8 @@ class listen(sock):
             fam = socket.AF_INET
         elif fam == 6 or fam.lower() in ['ipv6', 'ip6', 'v6', '6']:
             fam = socket.AF_INET6
+            if bindaddr == '0.0.0.0':
+                bindaddr = '::'
         elif isinstance(fam, (int, long)):
             pass
         else:
@@ -118,8 +120,7 @@ class listen(sock):
 
     def __getattr__(self, key):
         if key == 'sock':
-            while self._accepter.is_alive():
-                self._accepter.join(timeout = 0.1)
+            self._accepter.join(timeout = self.timeout)
             if 'sock' in self.__dict__:
                 return self.sock
             else:
