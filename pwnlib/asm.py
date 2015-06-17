@@ -545,7 +545,7 @@ def asm(shellcode, vma = 0, extract = True):
     return result
 
 @LocalContext
-def disasm(data, vma = 0, byte = True, offset = True):
+def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
     """disasm(data, ...) -> str
 
     Disassembles a bytestring into human readable assembler.
@@ -646,7 +646,8 @@ def disasm(data, vma = 0, byte = True, offset = True):
             line += o
         if byte:
             line += b
-        line += i
+        if instructions:
+            line += i
         lines.append(line)
 
     return '\n'.join(lines)
