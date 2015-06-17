@@ -10,7 +10,7 @@
 <%page args="host, port, network = 'ipv4'"/>
 <%docstring>
 Connects to the host on the specified port.
-Leaves the connected socket in ebp
+Leaves the connected socket in edx
 
 Arguments:
     host(str): Remote IP address or hostname (as a dotted quad / string)
@@ -19,15 +19,19 @@ Arguments:
 
 Examples:
 
-    >>> with context.local(arch='i386', os='linux'):
-    ...     print enhex(asm(shellcraft.connect('localhost', 0x1000)))
-    ...     print enhex(asm(shellcraft.connect('localhost', 0x1000, 'ipv6')))
-    6a01fe0c246a016a026a015b89e16a665899cd8089c568010101028134247e01010368010101018134240301110189e16a1051556a035b89e16a6658cd80
-    6a01fe0c246a016a0bfe0c246a015b89e16a665899cd8089c56801010102813424010101036a01fe0c246a01fe0c246a01fe0c246aff68010101018134240b01110189e16a1c51556a035b89e16a6658cd80
+    >>> l = listen(timeout=1)
+    >>> assembly  = shellcraft.i386.linux.connect('localhost', l.lport)
+    >>> assembly += shellcraft.i386.pushstr('Hello')
+    >>> assembly += shellcraft.i386.linux.write('edx', 'esp', 5)
+    >>> run_assembly(assembly)
+    >>> l.wait_for_connection().recv()
+    'Hello'
 
-    Connects to the host on the specified port.
-    Network is either 'ipv4' or 'ipv6'.
-    Leaves the connected socket in ebp
+    >>> l = listen(fam='ipv6', timeout=1)
+    >>> assembly   = shellcraft.i386.linux.connect('localhost', l.lport, 'ipv6')
+    >>> run_assembly(assembly)
+    >>> assert l.wait_for_connection()
+
 </%docstring>
 <%
     sockaddr, length, address_family = sockaddr(host, port, network)
@@ -40,14 +44,14 @@ Examples:
     ${syscall(SYS_socketcall, SYS_socketcall_socket, 'esp', 0)}
 
 /* save opened socket */
-    mov ebp, eax
+    mov edx, eax
 
 /* push sockaddr, connect() */
     ${pushstr(sockaddr, False)}
     mov ecx, esp
     ${push(length)} /* socklen_t addrlen */
     push ecx    /* sockaddr *addr */
-    push ebp    /* sockfd */
+    push edx    /* sockfd */
     ${syscall(SYS_socketcall, SYS_socketcall_connect, 'esp')}
 
-/* Socket that is maybe connected is in ebp */
+/* Socket that is maybe connected is in edx */

@@ -1,7 +1,7 @@
 <%
   from pwnlib.shellcraft import i386
   from pwnlib.constants import Constant
-  from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
+  from pwnlib.abi import linux_i386_syscall as abi
 %>
 <%page args="syscall = None, arg0 = None, arg1 = None, arg2 = None, arg3 = None, arg4 = None, arg5 = None"/>
 <%docstring>
@@ -14,26 +14,26 @@ Example:
 
         >>> print pwnlib.shellcraft.i386.linux.syscall('SYS_execve', 1, 'esp', 2, 0).rstrip()
             /* call execve(1, 'esp', 2, 0) */
+            push (SYS_execve) /* 0xb */
+            pop eax
             push 0x1
             pop ebx
             mov ecx, esp
             push 0x2
             pop edx
             xor esi, esi
-            push 0xb
-            pop eax
             int 0x80
         >>> print pwnlib.shellcraft.i386.linux.syscall('SYS_execve', 2, 1, 0, 20).rstrip()
             /* call execve(2, 1, 0, 20) */
+            push (SYS_execve) /* 0xb */
+            pop eax
             push 0x2
             pop ebx
             push 0x1
             pop ecx
+            xor edx, edx
             push 0x14
             pop esi
-            push 0xb
-            pop eax
-            cdq /* Set edx to 0, eax is known to be positive */
             int 0x80
         >>> print pwnlib.shellcraft.i386.linux.syscall().rstrip()
             /* call syscall() */
@@ -90,16 +90,13 @@ Example:
   while args and args[-1] == '?':
       args.pop()
   syscall_repr = syscall_repr % ', '.join(args)
+
+  registers = abi.register_arguments
+  arguments = [syscall, arg0, arg1, arg2, arg3, arg4, arg5]
+  regctx    = dict(zip(registers, arguments))
 %>\
     /* call ${syscall_repr} */
-% for dst, src in zip(['ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp', 'eax'], [arg0, arg1, arg2, arg3, arg4, arg5, syscall]):
-  % if dst == 'edx' and src == 0:
-    <% append_cdq = True %>\
-  % elif src != None:
-    ${i386.linux.mov(dst, src)}
-  % endif
-% endfor
-% if append_cdq:
-    cdq /* Set edx to 0, eax is known to be positive */
-% endif
+%if any(arguments):
+    ${i386.setregs(regctx)}
+%endif
     int 0x80

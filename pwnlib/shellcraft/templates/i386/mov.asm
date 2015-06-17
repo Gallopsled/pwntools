@@ -1,7 +1,6 @@
 <%
   from pwnlib.util import lists, packing, fiddling, misc
-  from pwnlib import constants
-  from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
+  from pwnlib.constants import eval, Constant
   from pwnlib.log import getLogger
   from pwnlib.shellcraft.registers import get_register, is_register, bits_required
   log = getLogger('pwnlib.shellcraft.i386.mov')
@@ -66,14 +65,14 @@ Example:
         xor eax, eax
         mov ax, 0xc0c0
     >>> print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
-        push 0xb
+        push (SYS_execve) /* 0xb */
         pop eax
-    >>> with context.local(os = 'freebsd'):
+    >>> with context.local(os='freebsd'):
     ...     print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
-        push 0x3b
+        push (SYS_execve) /* 0x3b */
         pop eax
     >>> print shellcraft.i386.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
-        push 0x7
+        push (PROT_READ | PROT_WRITE | PROT_EXEC) /* 0x7 */
         pop eax
 
 Args:
@@ -86,7 +85,9 @@ def okay(s):
     return '\0' not in s and '\n' not in s
 
 def pretty(n):
-    if n < 0:
+    if isinstance(n, Constant):
+        return '%s /* %#x */' % (n,n)
+    elif n < 0:
         return str(n)
     else:
         return hex(n)
@@ -112,8 +113,7 @@ if get_register(src):
     if dest.size < src.size and src.name not in dest.bigger:
         log.error("cannot mov %s, %s: dddest is smaller than src" % (dest, src))
 else:
-    with ctx.local(arch = 'i386'):
-        src = constants.eval(src)
+    src = eval(src)
 
     if not dest.fits(src):
         log.error("cannot mov %s, %r: dest is smaller than src" % (dest, src))
