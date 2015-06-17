@@ -368,7 +368,7 @@ def make_elf_from_assembly(assembly, vma = 0x10000000):
     return path
 
 @LocalContext
-def make_elf(data, vma = 0x10000000, strip=True, extract=True):
+def make_elf(data, vma = None, strip=True, extract=True):
     r"""
     Builds an ELF file with the specified binary data as its
     executable code.
@@ -426,8 +426,9 @@ def make_elf(data, vma = 0x10000000, strip=True, extract=True):
         _run(assembler + ['-o', step2, step1])
 
         linker_options = []
-        linker_options += ['--section-start=.shellcode=%#x' % vma,
-                           '--entry=%#x' % vma]
+        if vma:
+            linker_options += ['--section-start=.shellcode=%#x' % vma,
+                               '--entry=%#x' % vma]
         linker_options += ['-o', step3, step2]
 
         _run(linker + linker_options)
