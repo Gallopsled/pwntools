@@ -219,7 +219,6 @@ def main():
                 for name in GasLexer.tokens:
                     for token in GasLexer.tokens[name]:
                         if token[0].startswith('#') and token[1] == Comment:
-                            print token
                             GasLexer.tokens[name].remove(token)
 
                 GasLexer.tokens['whitespace'].append((r'/\*.*?\*/', Comment))
