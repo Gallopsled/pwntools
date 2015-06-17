@@ -241,9 +241,10 @@ def main():
     if args.format in ['e','elf']:
         args.format = 'default'
         code = make_elf(code)
+        os.fchmod(args.out.fileno(), 0700)
 
     if args.format == 'default':
-        if sys.stdout.isatty():
+        if args.out.isatty():
             args.format = 'hex'
         else:
             args.format = 'raw'
@@ -270,8 +271,8 @@ def main():
         code = hexii(code) + '\n'
 
     if not sys.stdin.isatty():
-        sys.stdout.write(sys.stdin.read())
+        args.out.write(sys.stdin.read())
 
-    sys.stdout.write(code)
+    args.out.write(code)
 
 if __name__ == '__main__': main()
