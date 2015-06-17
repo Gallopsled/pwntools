@@ -1,0 +1,209 @@
+# [PackageDev] target_format: plist, ext: tmLanguage
+---
+name: Pwntools Mako ASM
+scopeName: source.pwntools
+fileTypes: ['.asm']
+uuid: 19bbf78d-4ad8-4385-bb20-5bde8df453bf
+
+patterns:
+- comment: x86 instruction
+  name: support.function.mnemonic.x86.all
+  match: \b(?i)(v)?(aaa|aad|aam|aas|adc|add|addpd|addps|addsd|addss|addsubpd|addsubps|aesdec|aesdeclast|aesenc|aesenclast|aesimc|aeskeygenassist|and|andpd|andps|andnpd|andnps|arpl|blendpd|bmi|blendps|blendvpd|blendvps|bound|bsf|bsr|bswap|bt|btc|btr|bts|cbw|cwde|cdqe|clc|cld|cflush|clts|cmc|cmov(n?e|ge?|ae?|le?|be?|n?o|n?z)|cmp|cmppd|cmpps|cmps|cnpsb|cmpsw|cmpsd|cmpsq|cmpss|cmpxchg|cmpxchg8b|cmpxchg16b|comisd|comiss|cpuid|crc32|cvtdq2pd|cvtdq2ps|cvtpd2dq|cvtpd2pi|cvtpd2ps|cvtpi2pd|cvtpi2ps|cvtps2dq|cvtps2pd|cvtps2pi|cvtsd2si|cvtsd2ss|cvts2sd|cvtsi2ss|cvtss2sd|cvtss2si|cvttpd2dq|cvtpd2pi|cvttps2dq|cvttps2pi|cvttps2dq|cvttps2pi|cvttsd2si|cvttss2si|cwd|cdq|cqo|daa|das|dec|div|divpd|divps|divsd|divss|dppd|dpps|emms|enter|extractps|f2xm1|fabs|fadd|faddp|fiadd|fbld|fbstp|fchs|fclex|fnclex|fcmov(n?e|ge?|ae?|le?|be?|n?o|n?z)|fcom|fcmop|fcompp|fcomi|fcomip|fucomi|fucomip|fcos|fdecstp|fdiv|fdivp|fidiv|fdivr|fdivrp|fidivr|ffree|ficom|ficomp|fild|fincstp|finit|fnint|fist|fistp|fisttp|fld|fld1|fldl2t|fldl2e|fldpi|fldlg2|fldln2|fldz|fldcw|fldenv|fmul|fmulp|fimul|fnop|fpatan|fprem|fprem1|fptan|frndint|frstor|fsave|fnsave|fscale|fsin|fsincos|fsqrt|fst|fstp|fstcw|fnstcw|fstenv|fnstenv|fsts(w?)|fnstsw|fsub|fsubp|fisub|fsubr|fsubrp|fisubr|ftst|fucom|fucomp|fucompp|fxam|fxch|fxrstor|fxsave|fxtract|fyl2x|fyl2xp1|haddpd|haddps|husbpd|hsubps|idiv|imul|in|inc|ins|insb|insw|insd|insertps|int|into|invd|invplg|invpcid|iret|iretd|iretq|lahf|lar|lddqu|ldmxcsr|lds|les|lfs|lgs|lss|lea|leave|lfence|lgdt|lidt|llgdt|lmsw|lock|lods|lodsb|lodsw|lodsd|lodsq|lsl|ltr|maskmovdqu|maskmovq|maxpd|maxps|maxsd|maxss|mfence|minpd|minps|minsd|minss|monitor|mov|movapd|movaps|movbe|movd|movq|movddup|movdqa|movdqu|movq2q|movhlps|movhpd|movhps|movlhps|movlpd|movlps|movmskpd|movmskps|movntdqa|movntdq|movnti|movntpd|movntps|movntq|movq|movq2dq|movs|movsb|movsw|movsd|movsq|movsd|movshdup|movsldup|movss|movsx|movsxd|movupd|movups|movzx|mpsadbw|mul|mulpd|mulps|mulsd|mulss|mwait|neg|not|or|orpd|orps|out|outs|outsb|outsw|outsd|pabsb|pabsw|pabsd|packsswb|packssdw|packusdw|packuswbpaddb|paddw|paddd|paddq|paddsb|paddsw|paddusb|paddusw|palignr|pand|pandn|pause|pavgb|pavgw|pblendvb|pblendw|pclmulqdq|pcmpeqb|pcmpeqw|pcmpeqd|pcmpeqq|pcmpestri|pcmpestrm|pcmptb|pcmptgw|pcmpgtd|pcmpgtq|pcmpistri|pcmpisrm|pdep|pext|pextrb|pextrd|pextrq|pextrw|phaddw|phaddd|phaddsw|phinposuw|phsubw|phsubd|phsubsw|pinsrb|pinsrd|pinsrq|pinsrw|pmaddubsw|pmadddwd|pmaxsb|pmaxsd|pmaxsw|pmaxsw|pmaxub|pmaxud|pmaxuw|pminsb|pminsd|pminsw|pminub|pminud|pminuw|pmovmskb|pmovsx|pmovzx|pmuldq|pmulhrsw|pmulhuw|pmulhw|pmulld|pmullw|pmuludw|pop|popa|popad|popcnt|popf|popfd|popfq|por|prefetch|psadbw|pshufb|pshufd|pshufhw|pshuflw|pshufw|psignb|psignw|psignd|pslldq|psllw|pslld|psllq|psraw|psrad|psrldq|psrlw|psrld|psrlq|psubb|psubw|psubd|psubq|psubsb|psubsw|psubusb|psubusw|test|ptest|punpckhbw|punpckhwd|punpckhdq|punpckhddq|punpcklbw|punpcklwd|punpckldq|punpckldqd|push|pusha|pushad|pushf|pushfd|pxor|prcl|rcr|rol|ror|rcpps|rcpss|rdfsbase|rdgsbase|rdmsr|rdpmc|rdrand|rdtsc|rdtscp|rep|repe|repz|repne|repnz|roundpd|roundps|roundsd|roundss|rsm|rsqrps|rsqrtss|sahf|sal|sar|shl|shr|sbb|scas|scasb|scasw|scasd|set(n?e|ge?|ae?|le?|be?|n?o|n?z)|sfence|sgdt|shld|shrd|shufpd|shufps|sidt|sldt|smsw|sqrtpd|sqrtps|sqrtsd|sqrtss|stc|std|stmxcsr|stos|stosb|stosw|stosd|stosq|str|sub|subpd|subps|subsd|subss|swapgs|syscall|sysenter|sysexit|sysret|teset|ucomisd|ucomiss|ud2|unpckhpd|unpckhps|unpcklpd|unpcklps|vbroadcast|vcvtph2ps|vcvtp2sph|verr|verw|vextractf128|vinsertf128|vmaskmov|vpermilpd|vpermilps|vperm2f128|vtestpd|vzeroall|vzeroupper|wait|fwait|wbinvd|wrfsbase|wrgsbase|wrmsr|xadd|xchg|xgetbv|xlat|xlatb|xor|xorpd|xorps|xrstor|xsave|xsaveopt|xsetbv|lzcnt|extrq|insertq|movntsd|movntss|vfmaddpd|vfmaddps|vfmaddsd|vfmaddss|vfmaddsubbpd|vfmaddsubps|vfmsubaddpd|vfmsubaddps|vfmsubpd|vfmsubps|vfmsubsd|vfnmaddpd|vfnmaddps|vfnmaddsd|vfnmaddss|vfnmsubpd|vfnmusbps|vfnmusbsd|vfnmusbss|vbroadcastss|vbroadcastsd|vbroadcastf128|vmaskmovps|vmaskmovpd|cvt|xor|cli|sti|hlt|nop|lock|wait|enter|leave|ret|loop(n?e|n?z)?|call|j(mp|n?e|n?ge?|n?ae?|le?|be?|n?o|n?z|n?c|n?p|n?b))\b
+- comment: ARM instruction
+  name: support.function.mnemonic.arm.arithmetic
+  match: >
+    (?x)\b((?i)
+    ( (bf(c|i)|(u|s)bfx|(u|s)xta?(h|b)?)
+      | (v(add|cvt|sub|mov|trn|cmp|div|qdmulh|mrs|mul|ld1|qadd|qshrun|st[1234]|addw|mull|mlal|rshrn|swp|qmovun)|qmovun)(\.([isup]?8|[isupf]?16|[isuf]?32|[isu]?64))*
+      | (mul|mla|mull|smlabb)
+      | (mov(w|t))
+      | rev(8|16)?
+      | (pld|adr|adrl|vswp)
+      | bkpt
+    )?(?-i))?\b
+- comment: ARM instruction
+  name: support.function.mnemonic.arm.memory
+  match: >
+    (?x)\b((?i)(
+            swi|svc|wfi|
+            dmb | clrex | dsb | isb |
+            v(ldr|str|push|pop) |
+            (push|pop) |
+            (st|ld)(
+                p |
+                    r(ex|s?(h|b)|d)? |
+                    m(
+                            (f|e)(d|a) |
+                            (d|i)(b|a)
+                    )?
+            ) |
+            b(l|x|lx|lr|r)? |
+            (i|e)?ret|
+            b\.(eq|ne|hs|cs|lo|cc|mi|pl|vs|vc|hi|ls|ge|lt|gt|le|al|nv)+ |
+            (c|t)?bn?z|
+    )+(ne|eq|cs|hs|cc|lo|mi|pl|vs|vc|hi|ls|lt|le|gt|ge|al)?(?-i))\b
+- comment: ARM instruction
+  name: meta.preprocessor.c.include
+  match: >
+    \b((?i)(def(b|w|s)|equ|(include|get)(\s+([a-zA-Z_]+[0-9a-zA-Z_]*|[0-9]+[a-zA-Z_]+[0-9a-zA-Z_]*?)\.s)?)?(?-i))\b
+- comment: ARM instruction
+  name: comment.nop
+  match: >
+    \b((?i)nop(ne|eq|cs|hs|cc|lo|mi|pl|vs|vc|hi|ls|lt|le|gt|ge|al)?(?-i))?\b
+- comment: Comment Block
+  begin: /\*
+  end: \*/
+  name: comment.block
+- comment: Directive
+  name: keyword.control.directive
+  match: \.(?i)(globl|global|macro|endm|purgem|if|elseif|else|endif|section|text|arm|align|balign|irp|rept|endr|req|unreq|error|short|func|endfunc|hidden|type|fpu|arch|code|altmacro|object_arch|word|int|string)(?-i)\b
+- comment: ARM register
+  name: storage.other.register.arm
+  match: \b((?i)\$?([xw][0-9]|[xw]1[0-9]||[xw]2[0-9]|[wx]30|wzr|xzr|wsp|fpsr|fpcr|[rcp]1[0-5]|[rcp][0-9]|a[1-4]|v[1-8]|sl|sb|fp|ip|sp|lr|(c|s)psr(_c)?|pc|[sd]3[0-1]|[sd][12][0-9]|[sd][0-9]|fpsid|fpscr|fpexc|q3[0-1]|q2[0-9]|q1[0-9]|q[0-9]|APSR_nzcv|sy)!?(?-i))?\b
+- comment: x86 register
+  name: storage.other.register.x86
+  match: \b((?i)(al|ah|ax|eax|rax|bl|bh|bx|ebx|rbx|cl|ch|cx|ecx|rcx|dl|dh|dx|edx|rdx|sil|si|esi|rsi|di|di|edi|rdi|bpl|bp|ebp|rbp|sp|esp|rsp|cs|ds|ss|es|fs|gs|ip|eip|rip|flags|eflags|rflags|r8|r9|r10|r11|r12|r13|r14|r15|r8d|r9d|r10d|r11d|r12d|r13d|r14d|r15d|r8w|r9w|r10w|r11w|r12w|r13w|r14w|r15w|r8l|r9l|r10l|r11l|r12l|r13l|r14l|r15l|st0|st1|st2|st3|st4|st5|st6|st7|mm0|mm1|mm2|mm3|mm4|mm5|mm6|mm7|xmm0|xmm1|xmm2|xmm3|xmm4|xmm5|xmm6|xmm7|xmm8|xmm9|xmm10|xmm11|xmm12|xmm13|xmm14|xmm15|xmm16|xmm17|xmm18|xmm19|xmm20|xmm21|xmm22|xmm23|xmm24|xmm25|xmm26|xmm27|xmm28|xmm29|xmm30|xmm31|ymm0|ymm1|ymm2|ymm3|ymm4|ymm5|ymm6|ymm7|ymm8|ymm9|ymm10|ymm11|ymm12|ymm13|ymm14|ymm15|ymm16|ymm17|ymm18|ymm19|ymm20|ymm21|ymm22|ymm23|ymm24|ymm25|ymm26|ymm27|ymm28|ymm29|ymm30|ymm31|zmm0|zmm1|zmm2|zmm3|zmm4|zmm5|zmm6|zmm7|zmm8|zmm9|zmm10|zmm11|zmm12|zmm13|zmm14|zmm15|zmm16|zmm17|zmm18|zmm19|zmm20|zmm21|zmm22|zmm23|zmm24|zmm25|zmm26|zmm27|zmm28|zmm29|zmm30|zmm31|cr0|cr2|cr3|cr4|gdtr|ldtr|idtr|dr0|dr1|dr2|dr3|dr4|dr5|dr6|dr7|msr)!?(?-i))?\b
+- comment: SPARC register
+  name: storage.other.register.sparc
+  match: \b((?i)\$?([gloi][0-9])!?(?-i))?\b
+- comment: MIPS register
+  name: storage.other.register.mips
+  match: \b((?i)\$?(r[0-3][0-9]|v[0-2]|a[0-4]|t[0-8]|s[0-9]|t([89]|10|k[0-2]))!?(?-i))?\b
+- comment: Numeric Hex
+  name: constant.numeric.hex
+  match: (\b|\s+)(\#)?-?(0x|&amp;)[0-9a-fA-F_]+\b
+- comment: Numeric Literal
+  name: constant.numeric.literal
+  match: (\b|\s+)\#-?[0-9a-zA-Z_]+\b
+- comment: Numeric Decimal
+  name: constant.numeric.dec
+  match: (\b|\s+)[0-9]+\b
+- comment: Label
+  name: entity.name.tag
+  match: ([\w${}]+[:])
+- comment: Inline Python
+  name: pwntools.raw.block.python
+  begin: (<%\s)
+  end: (%>)
+  beginCaptures:
+    '1': {name: 'keyword.control'}
+  endCaptures:
+    '1': {name: 'keyword.control'}
+  patterns:
+    - {include: source.python}
+- comment: Inline Docstring
+  begin: (<%(\S+)>)
+  end: (</%(\2)>)
+  beginCaptures:
+    '1': {name: 'keyword.control'}
+  endCaptures:
+    '1': {name: 'keyword.control'}
+  patterns:
+    - {include: comment.block}
+- comment: Mako Tag
+  name: source.mako.tag
+  begin: (<%\w+\s)
+  end: (/>)
+  beginCaptures:
+    '1': {name: 'keyword.control'}
+  endCaptures:
+    '1': {name: 'keyword.control'}
+  patterns:
+    - {include: comment.block}
+- comment: Mako Substitution
+  name: source.mako.expression
+  begin: (\${)
+  end: (})
+  beginCaptures:
+    '1': {name: 'keyword.control'}
+  endCaptures:
+    '1': {name: 'keyword.control'}
+  patterns:
+    - {include: source.python}
+- comment: Mako Comment
+  match: (^##(.*)$)
+  name: comment.line.mako
+- comment: Mako Directive
+  begin: ^\s*(%)(\s*((endfor)|(endif)|(endwhile)))?
+  end: $
+  beginCaptures:
+    '1': {name: 'keyword.control'}
+    '2': {name: 'keyword.control'}
+  patterns:
+    - {include: source.python}
+  name: source.doc.python.mako.controlline
+
+    #   <key>begin</key>
+    #   <string>^(#)</string>
+    #   <key>beginCaptures</key>
+    #   <dict>
+    #     <key>1</key>
+    #     <dict>
+    #       <key>name</key>
+    #       <string>keyword.control</string>
+    #     </dict>
+    #   </dict>
+    #   <key>end</key>
+    #   <string>$</string>
+    #   <key>name</key>
+    #   <string>source.python.mako.line</string>
+    #   <key>patterns</key>
+    #   <array>
+    #     <dict>
+    #       <key>include</key>
+    #       <string>comment.block</string>
+    #     </dict>
+    #   </array>
+    # </dict>
+
+      # <key>begin</key>
+      # <string>^\s*(%)(\s*((endfor)|(endif)|(endwhile)))?</string>
+      # <key>beginCaptures</key>
+      # <dict>
+      #   <key>1</key>
+      #   <dict>
+      #     <key>name</key>
+      #     <string>keyword.control</string>
+      #   </dict>
+      #   <key>2</key>
+      #   <dict>
+      #     <key>name</key>
+      #     <string>keyword.control</string>
+      #   </dict>
+      # </dict>
+
+
+      # <key>begin</key>
+      # <string>(&lt;%\s)</string>
+      # <key>captures</key>
+      # <dict>
+      #   <key>1</key>
+      #   <dict>
+      #     <key>name</key>
+      #     <string>keyword.control</string>
+      #   </dict>
+      # </dict>
+      # <key>end</key>
+      # <string>(%&gt;)</string>
+      # <key>name</key>
+      # <string>source.mako.substitution</string>
+      # <key>patterns</key>
+      # <array>
+      #   <dict>
+      #     <key>include</key>
+      #     <string>source.python</string>
+      #   </dict>
+      # </array>
+
+  # match: "(
+  #           (bf(c|i)|(u|s)bfx|(u|s)xta?(h|b)?) |
+  #           (v(add|cvt|sub|mov|trn|cmp|div|qdmulh|mrs|mul|ld1|qadd|qshrun|st[1234]|addw|mull|mlal|rshrn|swp|qmovun)|qmovun)(\.([isup]?8|[isupf]?16|[isuf]?32|[isu]?64))* |
+  #           (and|m(rs|sr)|eor|sub|rsb|add|adc|sbc|rsc|tst|teq|cmp|cmn|orr|mov|bic|mvn |
+  #                   (neg) |
+  #                   (lsr|lsl|ror|asr)
+  #           )s? |
+  #           (mul|mla|mull|smlabb) |
+  #           (mov(w|t)) |
+  #           rev(8|16)? |
+  #           (pld|adr|adrl|vswp)
+  #   )
