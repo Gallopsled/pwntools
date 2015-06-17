@@ -222,7 +222,7 @@ def _include_header():
 
 
 def _arch_header():
-    prefix  = ['.section .shellcode,"ax"']
+    prefix  = ['.section .shellcode,"ax"', '.global _start', '_start:']
     headers = {
         'i386'  :  ['.intel_syntax noprefix'],
         'amd64' :  ['.intel_syntax noprefix'],
@@ -508,16 +508,16 @@ def asm(shellcode, vma = 0, extract = True):
 
         _run(assembler + ['-o', step2, step1])
 
-        if not vma and not extract:
-            vma = 0x400000
-
         if not vma:
             shutil.copy(step2, step3)
 
-        if vma:
-             _run(linker + ['--section-start=.shellcode=%#x' % vma,
-                            '--entry=%#x' % vma,
-                            '-o', step3, step2])
+        if vma or not extract:
+            ldflags = ['-o', step3, step2]
+            if vma:
+                ldflags += ['--section-start=.shellcode=%#x' % vma,
+                            '--entry=%#x' % vm,]
+
+            _run(linker + ldflags)
 
         elif file(step2,'rb').read(4) == '\x7fELF':
             # Sanity check for seeing if the output has relocations

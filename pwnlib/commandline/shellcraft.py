@@ -236,12 +236,13 @@ def main():
         print cpp(code)
         exit()
 
-    code = asm(code)
 
     if args.format in ['e','elf']:
         args.format = 'default'
-        code = make_elf(code)
+        code = read(make_elf_from_assembly(code, vma=None))
         os.fchmod(args.out.fileno(), 0700)
+    else:
+        code = asm(code)
 
     if args.format == 'default':
         if args.out.isatty():
