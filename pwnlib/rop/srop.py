@@ -164,6 +164,7 @@ class SigreturnFrame(dict):
 
     arch = None
     frame = None
+    size  = 0
 
     @LocalContext
     def __init__(self):
@@ -172,6 +173,7 @@ class SigreturnFrame(dict):
 
         self.arch = context.arch
         self.update({r:0 for r in self.registers})
+        self.size = len(str(self))
         self.update(defaults[self.arch])
 
         if context.arch == 'i386' and context.kernel == 'amd64':
@@ -198,7 +200,7 @@ class SigreturnFrame(dict):
             return flat(*[self[r] for r in self.registers])
 
     def __len__(self):
-        return len(str(self))
+        return self.size
 
     @property
     def registers(self):
