@@ -2,7 +2,7 @@
 """
 Topographical sort
 """
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 from .log import getLogger
 
@@ -226,6 +226,21 @@ def regsort(in_out, all_regs, tmp = None, xchg = True):
     # For example, {'eax': 'eax'}
     in_out = {k:v for k,v in in_out.items() if k != v}
 
+    # Collapse constant values
+    #
+    # For eaxmple, {'eax': 0, 'ebx': 0} => {'eax': 0, 'ebx': 'eax'}
+    v_k = defaultdict(lambda: [])
+    for k,v in sorted(in_out.items()):
+        if v not in all_regs:
+            v_k[v].append(k)
+
+    post_mov = {}
+
+    for v,ks in sorted(v_k.items()):
+        for k in ks[1:]:
+            post_mov[k] = ks[0]
+            in_out.pop(k)
+
     # Check input
     if not all(k in all_regs for k in in_out):
         log.error("Unknown register! Know: %r.  Got: %r" % (all_regs, list(in_out)))
@@ -235,7 +250,12 @@ def regsort(in_out, all_regs, tmp = None, xchg = True):
     #
     # For example, {'eax': 1, 'ebx': 2, 'ecx': 'edx'}
     if not any(v in in_out for k,v in in_out.items()):
-        return [('mov', k,in_out[k]) for k in sorted(in_out)]
+        result = [('mov', k,in_out[k]) for k in sorted(in_out)]
+
+        for dreg, sreg in sorted(post_mov.items()):
+            result.append(('mov', dreg, sreg))
+
+        return result
 
     # Invert so we have a dependency graph.
     #
@@ -366,5 +386,8 @@ def regsort(in_out, all_regs, tmp = None, xchg = True):
     # Finally, set the temp register's final value
     if tmp and tmp in in_out:
         result.append(('mov', tmp, in_out[tmp]))
+
+    for dreg, sreg in sorted(post_mov.items()):
+        result.append(('mov', dreg, sreg))
 
     return result
