@@ -1,5 +1,6 @@
 <%
   from pwnlib.regsort import regsort
+  from pwnlib.constants import Constant, eval
   from pwnlib.shellcraft import registers
   from pwnlib.shellcraft.i386 import mov
 %>
@@ -31,6 +32,18 @@ reg_context = {k:v for k,v in reg_context.items() if v is not None}
 eax = reg_context.get('eax', None)
 edx = reg_context.get('edx', None)
 cdq = False
+
+if isinstance(eax, str):
+    try:
+        eax = eval(eax)
+    except NameError:
+        pass
+
+if isinstance(edx, str):
+    try:
+        edx = eval(edx)
+    except NameError:
+        pass
 
 if isinstance(eax, int) and isinstance(edx, int) and eax >> 31 == edx:
     cdq = True

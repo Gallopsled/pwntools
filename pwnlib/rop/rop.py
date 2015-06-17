@@ -131,7 +131,7 @@ Let's try it out!
 
     >>> p = process(binary.path)
     >>> p.send(raw_rop)
-    >>> print p.recvall(timeout=1)
+    >>> print p.recvall(timeout=5)
     The flag
 
 ROP + Sigreturn
@@ -193,8 +193,9 @@ Let's try it out!
 
     >>> p = process(binary.path)
     >>> p.send(str(rop))
+    >>> time.sleep(1)
     >>> p.sendline('echo hello; exit')
-    >>> p.recvline(timeout=1)
+    >>> p.recvline()
     'hello\n'
 """
 import collections

@@ -65,6 +65,9 @@ string   = packing.flat(string)
 
 if append_null:
     string += '\x00'
+    if isinstance(original, str):
+        original += '\x00'
+
 if not string:
     return
 

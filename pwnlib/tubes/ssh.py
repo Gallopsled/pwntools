@@ -586,7 +586,7 @@ class ssh(Timeout, Logger):
             >>> s.process(['LOLOLOL\x00', '/proc/self/cmdline'], executable='cat').recvall()
             'LOLOLOL\x00/proc/self/cmdline\x00'
             >>> sh = s.process(executable='/bin/sh')
-            >>> sh.pid in pidof('sh')
+            >>> sh.pid in pidof('sh') # doctest: +SKIP
             True
             >>> s.process(['pwd'], cwd='/tmp').recvall()
             '/tmp\n'

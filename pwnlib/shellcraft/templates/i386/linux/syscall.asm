@@ -31,24 +31,22 @@ Example:
             pop ebx
             push 0x1
             pop ecx
-            xor edx, edx
             push 0x14
             pop esi
+            cdq /* edx=0 */
             int 0x80
         >>> print pwnlib.shellcraft.i386.linux.syscall().rstrip()
             /* call syscall() */
             int 0x80
         >>> print pwnlib.shellcraft.i386.linux.syscall('eax', 'ebx', 'ecx').rstrip()
             /* call syscall('eax', 'ebx', 'ecx') */
-            /* moving ebx into ebx, but this is a no-op */
-            /* moving ecx into ecx, but this is a no-op */
-            /* moving eax into eax, but this is a no-op */
+            /* setregs noop */
             int 0x80
         >>> print pwnlib.shellcraft.i386.linux.syscall('ebp', None, None, 1).rstrip()
             /* call syscall('ebp', ?, ?, 1) */
+            mov eax, ebp
             push 0x1
             pop edx
-            mov eax, ebp
             int 0x80
         >>> print pwnlib.shellcraft.i386.linux.syscall(
         ...               'SYS_mmap2', 0, 0x1000,
@@ -56,18 +54,18 @@ Example:
         ...               'MAP_PRIVATE | MAP_ANONYMOUS',
         ...               -1, 0).rstrip()
             /* call mmap2(0, 4096, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
+            xor eax, eax
+            mov al, 0xc0
+            xor ebp, ebp
             xor ebx, ebx
             xor ecx, ecx /* mov ecx, 0x1000 */
             mov ch, 0x10
-            push 0x7
-            pop edx
-            push 0x22
-            pop esi
             push -1
             pop edi
-            xor ebp, ebp
-            xor eax, eax
-            mov al, 0xc0
+            push (PROT_READ | PROT_WRITE | PROT_EXEC) /* 0x7 */
+            pop edx
+            push (MAP_PRIVATE | MAP_ANONYMOUS) /* 0x22 */
+            pop esi
             int 0x80
 </%docstring>
 <%

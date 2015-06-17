@@ -11,7 +11,7 @@ Thin wrapper around :func:`pwnlib.shellcraft.i386.push`, which sets
 Example:
 
     >>> print pwnlib.shellcraft.i386.linux.push('SYS_execve').rstrip()
-        /* push 'SYS_execve' */
+        /* push (SYS_execve) == 0xb */
         push 0xb
 
 </%docstring>

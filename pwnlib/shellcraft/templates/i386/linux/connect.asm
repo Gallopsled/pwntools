@@ -23,13 +23,13 @@ Examples:
     >>> assembly  = shellcraft.i386.linux.connect('localhost', l.lport)
     >>> assembly += shellcraft.i386.pushstr('Hello')
     >>> assembly += shellcraft.i386.linux.write('edx', 'esp', 5)
-    >>> run_assembly(assembly)
+    >>> p = run_assembly(assembly)
     >>> l.wait_for_connection().recv()
     'Hello'
 
     >>> l = listen(fam='ipv6', timeout=1)
     >>> assembly   = shellcraft.i386.linux.connect('localhost', l.lport, 'ipv6')
-    >>> run_assembly(assembly)
+    >>> p = run_assembly(assembly)
     >>> assert l.wait_for_connection()
 
 </%docstring>

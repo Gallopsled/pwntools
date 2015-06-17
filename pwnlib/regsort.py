@@ -231,7 +231,7 @@ def regsort(in_out, all_regs, tmp = None, xchg = True):
     # For eaxmple, {'eax': 0, 'ebx': 0} => {'eax': 0, 'ebx': 'eax'}
     v_k = defaultdict(lambda: [])
     for k,v in sorted(in_out.items()):
-        if v not in all_regs:
+        if v not in all_regs and v != 0:
             v_k[v].append(k)
 
     post_mov = {}
