@@ -41,7 +41,8 @@ install_requires     = ['paramiko>=1.15.2',
                         'pyserial>=2.7',
                         'requests>=2.5.1',
                         'pip>=6.0.8',
-                        'tox>=1.8.1']
+                        'tox>=1.8.1',
+                        'pygments>=2.0']
 
 # This is a hack until somebody ports psutil to OpenBSD
 if platform.system() != 'OpenBSD':
