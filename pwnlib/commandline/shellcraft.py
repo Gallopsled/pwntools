@@ -208,6 +208,20 @@ def main():
 
 
     if args.format in ['a', 'asm', 'assembly']:
+        if sys.stdout.isatty():
+            try:
+                from pygments import highlight
+                from pygments.formatters import TerminalFormatter
+                from pygments.lexers import GasLexer
+                from pygments.token import Comment
+
+                GasLexer.tokens['whitespace'].append((r'/\*.*?\*/', Comment))
+
+                code = highlight(code, GasLexer(), TerminalFormatter())
+
+            except ImportError:
+                pass
+
         print code
         exit()
     if args.format == 'p':

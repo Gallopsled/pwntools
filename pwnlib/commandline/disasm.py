@@ -50,6 +50,30 @@ def main():
     else:
         dat = sys.stdin.read()
 
+
+    if sys.stdout.isatty():
+        try:
+            from pygments import highlight
+            from pygments.formatters import TerminalFormatter
+            from pygments.lexers import GasLexer
+
+            offsets = disasm(dat, vma=safeeval.const(args.address), instructions=False, byte=False)
+            bytes   = disasm(dat, vma=safeeval.const(args.address), instructions=False, offset=False)
+            instrs  = disasm(dat, vma=safeeval.const(args.address), byte=False, offset=False)
+            instrs  = highlight(instrs, GasLexer(), TerminalFormatter())
+
+            split = lambda x: x.splitlines()
+            for o,b,i in zip(*list(map(split, (offsets, bytes, instrs)))):
+
+                # Highlight NULLs and newlines
+                b = b.replace('00', text.red('00'))
+                b = b.replace('0a', text.red('0a'))
+
+                print o,b,i
+            return
+        except ImportError:
+            pass
+
     print disasm(dat, vma=safeeval.const(args.address))
 
 if __name__ == '__main__': main()
