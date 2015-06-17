@@ -83,7 +83,8 @@ def main():
         sys.exit(0)
 
     if fmt[0] == 'e':
-        sys.stdout.write(make_elf(output))
+        args.output.write(make_elf(output))
+        os.fchmod(args.output.fileno(), 0700)
     else:
         args.output.write(formatters[fmt[0]](output))
 
