@@ -515,7 +515,7 @@ def asm(shellcode, vma = 0, extract = True):
             ldflags = ['-o', step3, step2]
             if vma:
                 ldflags += ['--section-start=.shellcode=%#x' % vma,
-                            '--entry=%#x' % vm,]
+                            '--entry=%#x' % vma]
 
             _run(linker + ldflags)
 
