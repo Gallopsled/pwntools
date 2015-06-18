@@ -50,14 +50,14 @@ Example:
         xor eax, eax
         mov al, 0x1
     >>> print shellcraft.i386.mov('eax', 0xdead00ff).rstrip()
-        mov eax, 0x2152ff01
-        neg eax /* 3735879935 == 0xdead00ff */
+        mov eax, -0xdead00ff
+        neg eax
     >>> print shellcraft.i386.mov('eax', 0xc0).rstrip()
         xor eax, eax
         mov al, 0xc0
     >>> print shellcraft.i386.mov('edi', 0xc0).rstrip()
-        mov edi, 0xffffff40
-        neg edi /* 192 == 0xc0 */
+        mov edi, -0xc0
+        neg edi
     >>> print shellcraft.i386.mov('eax', 0xc000).rstrip()
         xor eax, eax /* mov eax, 0xc000 */
         mov ah, 0xc0
@@ -190,8 +190,8 @@ else:
         mov ${dest.sizes[16]}, ${pretty(src)}
 ## A few more tricks to try...
     % elif okay(srcp_neg):
-        mov ${dest}, ${pretty(srcu_neg)}
-        neg ${dest} /* ${src} == ${"%#x" % src} */
+        mov ${dest}, -${pretty(src)}
+        neg ${dest}
     %elif okay(srcp_not):
         mov ${dest}, ${pretty(srcu_not)}
         not ${dest} /* ${src} == ${"%#x" % src} */
