@@ -62,14 +62,14 @@ Example:
         xor eax, eax /* mov eax, 0xc000 */
         mov ah, 0xc0
     >>> print shellcraft.i386.mov('eax', 0xffc000).rstrip()
-        mov eax, 0x1010101 /* mov eax, 0xffc000 */
-        xor eax, 0x1fec101
+        mov eax, 0x1010101
+        xor eax, 0x1010101 ^ 0xffc000
     >>> print shellcraft.i386.mov('edi', 0xc000).rstrip()
         mov edi, (-1) ^ 0xc000
         not edi
     >>> print shellcraft.i386.mov('edi', 0xf500).rstrip()
-        mov edi, 0x1010101 /* mov edi, 0xf500 */
-        xor edi, 0x101f401
+        mov edi, 0x1010101
+        xor edi, 0x1010101 ^ 0xf500
     >>> print shellcraft.i386.mov('eax', 0xc0c0).rstrip()
         xor eax, eax
         mov ax, 0xc0c0
@@ -203,7 +203,7 @@ else:
         a = hex(packing.unpack(a, dest.size))
         b = hex(packing.unpack(b, dest.size))
         %>\
-        mov ${dest}, ${a} /* mov ${dest}, ${src_name} */
-        xor ${dest}, ${b}
+        mov ${dest}, ${a}
+        xor ${dest}, ${a} ^ ${pretty(src)}
     % endif
 % endif
