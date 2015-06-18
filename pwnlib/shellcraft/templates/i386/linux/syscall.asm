@@ -58,8 +58,8 @@ Example:
             mov al, 0xc0
             xor ebp, ebp
             xor ebx, ebx
-            xor ecx, ecx /* mov ecx, 0x1000 */
-            mov ch, 0x10
+            xor ecx, ecx
+            mov ch, 0x1000 >> 8
             push -1
             pop edi
             push (PROT_READ | PROT_WRITE | PROT_EXEC) /* 0x7 */

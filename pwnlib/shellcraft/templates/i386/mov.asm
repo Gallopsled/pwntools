@@ -59,8 +59,8 @@ Example:
         mov edi, -0xc0
         neg edi
     >>> print shellcraft.i386.mov('eax', 0xc000).rstrip()
-        xor eax, eax /* mov eax, 0xc000 */
-        mov ah, 0xc0
+        xor eax, eax
+        mov ah, 0xc000 >> 8
     >>> print shellcraft.i386.mov('eax', 0xffc000).rstrip()
         mov eax, 0x1010101
         xor eax, 0x1010101 ^ 0xffc000
@@ -182,8 +182,8 @@ else:
 ## we can use the high-8-bits register.
 ## However, we must check that it exists.
     % elif srcu == (srcu & 0xff00) and okay(srcp[1]) and dest.ff00:
-        xor ${dest}, ${dest} /* mov ${dest}, ${pretty(src)} */
-        mov ${dest.ff00}, ${pretty(srcu >> 8)}
+        xor ${dest}, ${dest}
+        mov ${dest.ff00}, ${pretty(src)} >> 8
 ## If it's an IMM16, use the 16-bit register
     % elif 0 <= srcu < 2**16 and okay(srcp[:2]) and dest.sizes[16]:
         xor ${dest}, ${dest}
