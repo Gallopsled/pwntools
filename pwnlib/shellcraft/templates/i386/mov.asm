@@ -65,8 +65,8 @@ Example:
         mov eax, 0x1010101 /* mov eax, 0xffc000 */
         xor eax, 0x1fec101
     >>> print shellcraft.i386.mov('edi', 0xc000).rstrip()
-        mov edi, 0xffff3fff
-        not edi /* 49152 == 0xc000 */
+        mov edi, (-1) ^ 0xc000
+        not edi
     >>> print shellcraft.i386.mov('edi', 0xf500).rstrip()
         mov edi, 0x1010101 /* mov edi, 0xf500 */
         xor edi, 0x101f401
@@ -193,8 +193,8 @@ else:
         mov ${dest}, -${pretty(src)}
         neg ${dest}
     %elif okay(srcp_not):
-        mov ${dest}, ${pretty(srcu_not)}
-        not ${dest} /* ${src} == ${"%#x" % src} */
+        mov ${dest}, (-1) ^ ${pretty(src)}
+        not ${dest}
 ## We couldn't find a way to make things work out, so just do
 ## the XOR trick.
     % else:
