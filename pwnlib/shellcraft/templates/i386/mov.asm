@@ -50,17 +50,26 @@ Example:
         xor eax, eax
         mov al, 0x1
     >>> print shellcraft.i386.mov('eax', 0xdead00ff).rstrip()
-        mov eax, 0x1010101 /* mov eax, 0xdead00ff */
-        xor eax, 0xdfac01fe
+        mov eax, 0x2152ff01
+        neg eax /* 3735879935 == 0xdead00ff */
     >>> print shellcraft.i386.mov('eax', 0xc0).rstrip()
         xor eax, eax
         mov al, 0xc0
+    >>> print shellcraft.i386.mov('edi', 0xc0).rstrip()
+        mov edi, 0xffffff40
+        neg edi /* 192 == 0xc0 */
     >>> print shellcraft.i386.mov('eax', 0xc000).rstrip()
         xor eax, eax /* mov eax, 0xc000 */
         mov ah, 0xc0
+    >>> print shellcraft.i386.mov('eax', 0xffc000).rstrip()
+        mov eax, 0x1010101 /* mov eax, 0xffc000 */
+        xor eax, 0x1fec101
     >>> print shellcraft.i386.mov('edi', 0xc000).rstrip()
-        mov edi, 0x1010101 /* mov edi, 0xc000 */
-        xor edi, 0x101c101
+        mov edi, 0xffff3fff
+        not edi /* 49152 == 0xc000 */
+    >>> print shellcraft.i386.mov('edi', 0xf500).rstrip()
+        mov edi, 0x1010101 /* mov edi, 0xf500 */
+        xor edi, 0x101f401
     >>> print shellcraft.i386.mov('eax', 0xc0c0).rstrip()
         xor eax, eax
         mov ax, 0xc0c0
@@ -166,7 +175,7 @@ else:
     % elif okay(srcp):
         mov ${dest}, ${pretty(src)}
 ## If it's an IMM8, we can use the 8-bit register
-    % elif 0 <= srcu < 2**8 and okay(srcp[0]) and dest.sizes[8]:
+    % elif 0 <= srcu < 2**8 and okay(srcp[0]) and dest.sizes.get(8, 0):
         xor ${dest}, ${dest}
         mov ${dest.sizes[8]}, ${pretty(srcu)}
 ## If it's an IMM16, but there's nothing in the lower 8 bits,
