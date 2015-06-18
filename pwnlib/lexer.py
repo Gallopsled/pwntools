@@ -62,7 +62,7 @@ class PwntoolsLexer(RegexLexer):
                          Punctuation, Number.Integer, Punctuation)),
 
             # Fun things
-            (r'([\]\[]|BYTE|DWORD|PTR|\+|\-|}|{)', Text),
+            (r'([\]\[]|BYTE|DWORD|PTR|\+|\-|}|{|\^|>>|<<|&)', Text),
 
             # Address constants
             (identifier, Name.Constant),
