@@ -121,12 +121,18 @@ else:
     src_size = bits_required(src)
 
     # Calculate the packed version
-    srcp = packing.pack(src & ((1<<32)-1), dest.size)
+    mask = ((1<<32)-1)
+    masked = src & mask
+    srcp = packing.pack(masked, dest.size)
 
     # Calculate the unsigned and signed versions
     srcu = packing.unpack(srcp, dest.size, sign=False)
     srcs = packing.unpack(srcp, dest.size, sign=True)
 
+    srcp_not = packing.pack(fiddling.bnot(masked))
+    srcp_neg = packing.pack(fiddling.negate(masked))
+    srcu_not = packing.unpack(srcp_not)
+    srcu_neg = packing.unpack(srcp_neg)
 %>\
 % if is_register(src):
     % if src == dest:
@@ -173,6 +179,13 @@ else:
     % elif 0 <= srcu < 2**16 and okay(srcp[:2]) and dest.sizes[16]:
         xor ${dest}, ${dest}
         mov ${dest.sizes[16]}, ${pretty(src)}
+## A few more tricks to try...
+    % elif okay(srcp_neg):
+        mov ${dest}, ${pretty(srcu_neg)}
+        neg ${dest} /* ${src} == ${"%#x" % src} */
+    %elif okay(srcp_not):
+        mov ${dest}, ${pretty(srcu_not)}
+        not ${dest} /* ${src} == ${"%#x" % src} */
 ## We couldn't find a way to make things work out, so just do
 ## the XOR trick.
     % else:

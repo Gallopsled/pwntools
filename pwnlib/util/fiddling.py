@@ -576,3 +576,21 @@ def hexdump(s, width = 16, skip = True, hexii = False, begin = 0,
             style = None, highlight = None):
     s = packing.flat(s)
     return '\n'.join(hexdump_iter(s, width, skip, hexii, begin, style, highlight))
+
+def negate(value, width = None):
+    """
+    Returns the two's complement of 'value'.
+    """
+    if width is None:
+        width = context.bits
+    mask = ((1<<width)-1)
+    return ((mask+1) - value) & mask
+
+def bnot(value, width=None):
+    """
+    Returns the binary inverse of 'value'.
+    """
+    if width is None:
+        width = context.bits
+    mask = ((1<<width)-1)
+    return mask ^ value

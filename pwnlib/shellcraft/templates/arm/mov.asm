@@ -4,6 +4,7 @@
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
   from pwnlib.log import getLogger
   from pwnlib.shellcraft.registers import arm as regs
+  from pwnlib.util.fiddling import negate, bnot
   log = getLogger('pwnlib.shellcraft.arm.mov')
 %>
 <%page args="dst, src"/>
@@ -50,6 +51,8 @@ if not src in regs:
     eor ${dst}, ${dst}
   %elif src & 0xffff0000 == 0:
     mov ${dst}, #${src}
+  %elif src & 0xffffff00 == 0xffffff00:
+    mvn ${dst}, #${bnot(src) & 0xff}
   %else:
     movw ${dst}, #${src & 0xffff}
     movt ${dst}, #${src >> 16}
