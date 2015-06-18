@@ -94,7 +94,7 @@ Example:
   regctx    = dict(zip(registers, arguments))
 %>\
     /* call ${syscall_repr} */
-%if any(arguments):
+%if any(a is not None for a in arguments):
     ${i386.setregs(regctx)}
 %endif
     int 0x80
