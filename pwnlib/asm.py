@@ -28,7 +28,7 @@ Assembly
     in the :mod:`shellcraft` module.
 
         >>> asm(shellcraft.sh())
-        'jhh///sh/bin\x89\xe31\xc9j\x0bX\x99\xcd\x80'
+        'jhh///sh/binj\x0bX\x89\xe31\xc9\x99\xcd\x80'
 
 Disassembly
 ------------------------
@@ -53,17 +53,20 @@ from glob import glob
 from os import environ
 from os import path
 
-from .context import context
+from . import atexit
+from . import shellcraft
+from .context import context, LocalContext
 from .log import getLogger
 
 log = getLogger(__name__)
 
-__all__ = ['asm', 'cpp', 'disasm', 'make_elf']
+__all__ = ['asm', 'cpp', 'disasm', 'make_elf', 'make_elf_from_assembly']
 
 _basedir = path.split(__file__)[0]
 _incdir  = path.join(_basedir, 'data', 'includes')
 
-def which_binutils(util, **kwargs):
+@LocalContext
+def which_binutils(util):
     """
     Finds a binutils in the PATH somewhere.
     Expects that the utility is prefixed with the architecture name.
@@ -83,49 +86,50 @@ def which_binutils(util, **kwargs):
         ...
         Exception: Could not find 'as' installed for ContextType(arch = 'msp430')
     """
-    with context.local(**kwargs):
-        arch = context.arch
-        bits = context.bits
+    arch = context.arch
+    bits = context.bits
 
-        # Fix up pwntools vs Debian triplet naming, and account
-        # for 'thumb' being its own pwntools architecture.
-        arches = [arch] + {
-            'thumb':  ['arm',    'aarch64'],
-            'i386':   ['x86_64', 'amd64'],
-            'amd64':  ['x86_64', 'i386'],
-        }.get(arch, [])
+    # Fix up pwntools vs Debian triplet naming, and account
+    # for 'thumb' being its own pwntools architecture.
+    arches = [arch] + {
+        'thumb':  ['arm',    'aarch64'],
+        'i386':   ['x86_64', 'amd64'],
+        'i686':   ['x86_64', 'amd64'],
+        'amd64':  ['x86_64', 'i386'],
+    }.get(arch, [])
 
-        # If one of the candidate architectures matches the native
-        # architecture, use that as a last resort.
-        machine = platform.machine()
-        try:
-            with context.local(arch = machine):
-                if context.arch in arches:
-                    arches.append(None)
-        except AttributeError:
-            log.warn_once("Your local binutils won't be used because architecture %r is not supported." % machine)
+    # If one of the candidate architectures matches the native
+    # architecture, use that as a last resort.
+    machine = platform.machine()
+    machine = 'i386' if machine == 'i686' else machine
+    try:
+        with context.local(arch = machine):
+            if context.arch in arches:
+                arches.append(None)
+    except AttributeError:
+        log.warn_once("Your local binutils won't be used because architecture %r is not supported." % machine)
 
-        for arch in arches:
-            # hack for homebrew-installed binutils on mac
-            for gutil in ['g'+util, util]:
-                # e.g. objdump
-                if arch is None: pattern = gutil
+    for arch in arches:
+        # hack for homebrew-installed binutils on mac
+        for gutil in ['g'+util, util]:
+            # e.g. objdump
+            if arch is None: pattern = gutil
 
-                # e.g. aarch64-linux-gnu-objdump
-                else:       pattern = '%s*linux*-%s' % (arch,gutil)
+            # e.g. aarch64-linux-gnu-objdump
+            else:       pattern = '%s*linux*-%s' % (arch,gutil)
 
-                for dir in environ['PATH'].split(':'):
-                    res = sorted(glob(path.join(dir, pattern)))
-                    if res:
-                        return res[0]
+            for dir in environ['PATH'].split(':'):
+                res = sorted(glob(path.join(dir, pattern)))
+                if res:
+                    return res[0]
 
-        locals()['context'] = context
-        log.warning("""
+    locals()['context'] = context
+    log.warning("""
 Could not find %(util)r installed for %(context)s
 Try installing binutils for this architecture:
-    https://pwntools.readthedocs.org/en/latest/install/binutils.html
+https://pwntools.readthedocs.org/en/latest/install/binutils.html
 """.strip() % locals())
-        raise Exception('Could not find %(util)r installed for %(context)s' % locals())
+    raise Exception('Could not find %(util)r installed for %(context)s' % locals())
 
 checked_assembler_version = defaultdict(lambda: False)
 
@@ -218,7 +222,11 @@ def _include_header():
 
 
 def _arch_header():
-    prefix  = ['.section .shellcode,"ax"']
+    prefix  = ['.section .shellcode,"awx"',
+                '.global _start',
+                '.global __start',
+                '_start:',
+                '__start:']
     headers = {
         'i386'  :  ['.intel_syntax noprefix'],
         'amd64' :  ['.intel_syntax noprefix'],
@@ -304,7 +312,8 @@ def _run(cmd, stdin = None):
 
     return stdout
 
-def cpp(shellcode, **kwargs):
+@LocalContext
+def cpp(shellcode):
     r"""cpp(shellcode, ...) -> str
 
     Runs CPP over the given shellcode.
@@ -330,31 +339,40 @@ def cpp(shellcode, **kwargs):
             >>> cpp("SYS_setresuid", os = "freebsd")
             '311\n'
     """
+    arch = context.arch
+    os   = context.os
+    code = _include_header() + shellcode
+    cmd  = [
+        'cpp',
+        '-C',
+        '-nostdinc',
+        '-undef',
+        '-P',
+        '-I' + _incdir,
+        '/dev/stdin'
+    ]
+    return _run(cmd, code).strip('\n').rstrip() + '\n'
 
-    with context.local(**kwargs):
-        arch = context.arch
-        os   = context.os
-        code = _include_header() + shellcode
-        cmd  = [
-            'cpp',
-            '-C',
-            '-nostdinc',
-            '-undef',
-            '-P',
-            '-I' + _incdir,
-            '/dev/stdin'
-        ]
-        return _run(cmd, code).strip('\n').rstrip() + '\n'
+@LocalContext
+def make_elf_from_assembly(assembly, vma = 0x10000000):
+    r"""
+    Builds an ELF file with the specified assembly as its
+    executable code.
 
-elf_template = '''
-.global _start
-.global __start
-.text
-_start:
-__start:
-'''
+    Arguments:
 
-def make_elf(data, vma = None, strip=True, **kwargs):
+        assembly(str): Assembly
+
+    Returns:
+
+        The path to the assembled ELF.
+    """
+    path = asm(assembly, vma = vma, extract = False)
+    os.chmod(path, 0755)
+    return path
+
+@LocalContext
+def make_elf(data, vma = None, strip=True, extract=True):
     r"""
     Builds an ELF file with the specified binary data as its
     executable code.
@@ -383,45 +401,63 @@ def make_elf(data, vma = None, strip=True, **kwargs):
         >>> p.recvline()
         'Hello\n'
     """
-    with context.local(**kwargs):
-        assembler = _assembler()
-        linker    = _linker()
-        code      = elf_template
-        code      += '.string "%s"' % ''.join('\\x%02x' % c for c in bytearray(data))
-        code      += '\n'
+    retval = None
 
-        log.debug(code)
+    if context.arch == 'thumb':
+        to_thumb = asm(shellcraft.arm.to_thumb(), arch='arm')
 
-        tmpdir    = tempfile.mkdtemp(prefix = 'pwn-asm-')
-        step1     = path.join(tmpdir, 'step1-asm')
-        step2     = path.join(tmpdir, 'step2-obj')
-        step3     = path.join(tmpdir, 'step3-elf')
+        if not data.startswith(to_thumb):
+            data = to_thumb + data
 
-        try:
-            with open(step1, 'wb+') as f:
-                f.write(code)
 
-            _run(assembler + ['-o', step2, step1])
+    assembler = _assembler()
+    linker    = _linker()
+    code      = _arch_header()
+    code      += '.string "%s"' % ''.join('\\x%02x' % c for c in bytearray(data))
+    code      += '\n'
 
-            load_addr = []
-            if vma is not None:
-                load_addr = ['-Ttext-segment=%#x' % vma]
+    log.debug("Building ELF:\n" + code)
 
-            _run(linker    + load_addr + ['-N', '-o', step3, step2])
+    tmpdir    = tempfile.mkdtemp(prefix = 'pwn-asm-')
+    step1     = path.join(tmpdir, 'step1-asm')
+    step2     = path.join(tmpdir, 'step2-obj')
+    step3     = path.join(tmpdir, 'step3-elf')
 
-            if strip:
-                _run([which_binutils('objcopy'), '-Sg', step3])
-                _run([which_binutils('strip'), '--strip-unneeded', step3])
+    try:
+        with open(step1, 'wb+') as f:
+            f.write(code)
 
-            with open(step3, 'r') as f:
-                return f.read()
-        except Exception:
-            log.exception("An error occurred while building an ELF:\n%s" % code)
+        _run(assembler + ['-o', step2, step1])
+
+        linker_options = ['-z', 'execstack']
+        if vma:
+            linker_options += ['--section-start=.shellcode=%#x' % vma,
+                               '--entry=%#x' % vma]
+        linker_options += ['-o', step3, step2]
+
+        _run(linker + linker_options)
+
+        if strip:
+            _run([which_binutils('objcopy'), '-Sg', step3])
+            _run([which_binutils('strip'), '--strip-unneeded', step3])
+
+        if not extract:
+            os.chmod(step3, 0755)
+            retval = step3
+
         else:
-            shutil.rmtree(tmpdir)
+            with open(step3, 'r') as f:
+                retval = f.read()
+    except Exception:
+        log.exception("An error occurred while building an ELF:\n%s" % code)
+    else:
+        atexit.register(lambda: shutil.rmtree(tmpdir))
 
-def asm(shellcode, vma = 0, **kwargs):
-    r"""asm(code, vma = 0, ...) -> str
+    return retval
+
+@LocalContext
+def asm(shellcode, vma = 0, extract = True):
+    r"""asm(code, vma = 0, extract = True, ...) -> str
 
     Runs :func:`cpp` over a given shellcode and then assembles it into bytes.
 
@@ -434,6 +470,9 @@ def asm(shellcode, vma = 0, **kwargs):
     Arguments:
       shellcode(str): Assembler code to assemble.
       vma(int):       Virtual memory address of the beginning of assembly
+      extract(bool):  Extract the raw assembly bytes from the assembled
+                      file.  If ``False``, returns the path to an ELF file
+                      with the assembly embedded.
 
     Kwargs:
         Any arguments/properties that can be set on ``context``
@@ -453,58 +492,65 @@ def asm(shellcode, vma = 0, **kwargs):
     """
     result = ''
 
-    with context.local(**kwargs):
-        assembler = _assembler()
-        linker    = _linker()
-        objcopy   = _objcopy() + ['-j', '.shellcode', '-Obinary']
-        code      = ''
-        code      += _arch_header()
-        code      += cpp(shellcode)
+    assembler = _assembler()
+    linker    = _linker()
+    objcopy   = _objcopy() + ['-j', '.shellcode', '-Obinary']
+    code      = ''
+    code      += _arch_header()
+    code      += cpp(shellcode)
 
-        log.debug('Assembling\n%s' % code)
+    log.debug('Assembling\n%s' % code)
 
-        tmpdir    = tempfile.mkdtemp(prefix = 'pwn-asm-')
-        step1     = path.join(tmpdir, 'step1')
-        step2     = path.join(tmpdir, 'step2')
-        step3     = path.join(tmpdir, 'step3')
-        step4     = path.join(tmpdir, 'step4')
+    tmpdir    = tempfile.mkdtemp(prefix = 'pwn-asm-')
+    step1     = path.join(tmpdir, 'step1')
+    step2     = path.join(tmpdir, 'step2')
+    step3     = path.join(tmpdir, 'step3')
+    step4     = path.join(tmpdir, 'step4')
 
-        try:
-            with open(step1, 'w') as fd:
-                fd.write(code)
+    try:
+        with open(step1, 'w') as fd:
+            fd.write(code)
 
-            _run(assembler + ['-o', step2, step1])
+        _run(assembler + ['-o', step2, step1])
 
-            if not vma:
-                shutil.copy(step2, step3)
+        if not vma:
+            shutil.copy(step2, step3)
 
+        if vma or not extract:
+            ldflags = ['-z', 'execstack', '-o', step3, step2]
             if vma:
-                 _run(linker + ['--section-start=.shellcode=%#x' % vma,
-                                '--entry=%#x' % vma,
-                                '-o', step3, step2])
+                ldflags += ['--section-start=.shellcode=%#x' % vma,
+                            '--entry=%#x' % vma]
 
-            elif file(step2,'rb').read(4) == '\x7fELF':
-                # Sanity check for seeing if the output has relocations
-                relocs = subprocess.check_output(
-                    [which_binutils('readelf'), '-r', step2]
-                ).strip()
-                if len(relocs.split('\n')) > 1:
-                    log.error('Shellcode contains relocations:\n%s' % relocs)
-            else:
-                shutil.copy(step2, step3)
+            _run(linker + ldflags)
 
-            _run(objcopy + [step3, step4])
-
-            with open(step4) as fd:
-                result = fd.read()
-
-        except Exception:
-            log.exception("An error occurred while assembling:\n%s" % code)
+        elif file(step2,'rb').read(4) == '\x7fELF':
+            # Sanity check for seeing if the output has relocations
+            relocs = subprocess.check_output(
+                [which_binutils('readelf'), '-r', step2]
+            ).strip()
+            if extract and len(relocs.split('\n')) > 1:
+                log.error('Shellcode contains relocations:\n%s' % relocs)
         else:
-            shutil.rmtree(tmpdir)
-            return result
+            shutil.copy(step2, step3)
 
-def disasm(data, vma = 0, byte = True, offset = True, **kwargs):
+        if not extract:
+            return step3
+
+        _run(objcopy + [step3, step4])
+
+        with open(step4) as fd:
+            result = fd.read()
+
+    except Exception:
+        log.exception("An error occurred while assembling:\n%s" % code)
+    else:
+        atexit.register(lambda: shutil.rmtree(tmpdir))
+
+    return result
+
+@LocalContext
+def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
     """disasm(data, ...) -> str
 
     Disassembles a bytestring into human readable assembler.
@@ -547,53 +593,57 @@ def disasm(data, vma = 0, byte = True, offset = True, **kwargs):
     """
     result = ''
 
-    with context.local(**kwargs):
-        arch   = context.arch
-        os     = context.os
+    arch   = context.arch
+    os     = context.os
 
-        tmpdir = tempfile.mkdtemp(prefix = 'pwn-disasm-')
-        step1  = path.join(tmpdir, 'step1')
-        step2  = path.join(tmpdir, 'step2')
+    tmpdir = tempfile.mkdtemp(prefix = 'pwn-disasm-')
+    step1  = path.join(tmpdir, 'step1')
+    step2  = path.join(tmpdir, 'step2')
 
-        bfdarch = _bfdarch()
-        bfdname = _bfdname()
-        objdump = _objdump() + ['-d', '--adjust-vma', str(vma), '-b', bfdname]
-        objcopy = _objcopy() + [
-            '-I', 'binary',
-            '-O', bfdname,
-            '-B', bfdarch,
-            '--set-section-flags', '.data=code',
-            '--rename-section', '.data=.text',
-        ]
+    bfdarch = _bfdarch()
+    bfdname = _bfdname()
+    objdump = _objdump() + ['-d', '--adjust-vma', str(vma), '-b', bfdname]
+    objcopy = _objcopy() + [
+        '-I', 'binary',
+        '-O', bfdname,
+        '-B', bfdarch,
+        '--set-section-flags', '.data=code',
+        '--rename-section', '.data=.text',
+    ]
 
-        if arch == 'thumb':
-            objcopy += ['--prefix-symbol=$t.']
-        else:
-            objcopy += ['-w', '-N', '*']
+    if arch == 'thumb':
+        objcopy += ['--prefix-symbol=$t.']
+    else:
+        objcopy += ['-w', '-N', '*']
 
-        try:
+    try:
 
-            with open(step1, 'w') as fd:
-                fd.write(data)
+        with open(step1, 'w') as fd:
+            fd.write(data)
 
-            res = _run(objcopy + [step1, step2])
+        res = _run(objcopy + [step1, step2])
 
-            output0 = subprocess.check_output(objdump + [step2])
-            output1 = output0.split('<.text>:\n')
+        output0 = subprocess.check_output(objdump + [step2])
+        output1 = output0.split('<.text>:\n')
 
-            if len(output1) != 2:
-                log.error('Could not find .text in objdump output:\n%s' % output0)
+        if len(output1) != 2:
+            log.error('Could not find .text in objdump output:\n%s' % output0)
 
-            result = output1[1].strip('\n').rstrip().expandtabs()
-        except Exception:
-            log.exception("An error occurred while disassembling:\n%s" % data)
-        else:
-            shutil.rmtree(tmpdir)
+        result = output1[1].strip('\n').rstrip().expandtabs()
+    except Exception:
+        log.exception("An error occurred while disassembling:\n%s" % data)
+    else:
+        atexit.register(lambda: shutil.rmtree(tmpdir))
+
 
     lines = []
     pattern = '^( *[0-9a-f]+: *)((?:[0-9a-f]+ )+ *)(.*)'
     for line in result.splitlines():
-        o, b, i = re.search(pattern, line).groups()
+        try:
+            o, b, i = re.search(pattern, line).groups()
+        except:
+            lines.append(line)
+            continue
 
         line = ''
 
@@ -601,7 +651,8 @@ def disasm(data, vma = 0, byte = True, offset = True, **kwargs):
             line += o
         if byte:
             line += b
-        line += i
+        if instructions:
+            line += i
         lines.append(line)
 
     return '\n'.join(lines)
