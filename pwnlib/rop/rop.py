@@ -82,12 +82,6 @@ onto the stack, and returns.
 
 Let's provide some simple gadgets:
 
-    >>> assembly += 'jmp_esp: jmp esp\n'
-    >>> assembly += 'pop_eax: pop eax; ret\n'
-    >>> assembly += 'pop_ebx: pop ebx; ret\n'
-    >>> assembly += 'pop_ecx: pop ecx; ret\n'
-    >>> assembly += 'pop_edx: pop edx; ret\n'
-    >>> assembly += 'syscall: int 0x80; ret\n'
     >>> assembly += 'add_esp: add esp, 0x10; ret\n'
 
 And perhaps a nice "write" function.
@@ -112,20 +106,20 @@ Finally, let's build our ROP stack
     >>> rop.write(c.STDOUT_FILENO, binary.symbols['flag'], 8)
     >>> rop.exit()
     >>> print rop.dump()
-    0x0000:       0x1000001f write(STDOUT_FILENO, 268435507, 8)
-    0x0004:       0x1000001b <adjust: add esp, 0x10; ret>
+    0x0000:       0x10000012 write(STDOUT_FILENO, 268435494, 8)
+    0x0004:       0x1000000e <adjust: add esp, 0x10; ret>
     0x0008:              0x1 arg0
-    0x000c:       0x10000033 flag
+    0x000c:       0x10000026 flag
     0x0010:              0x8 arg2
     0x0014:           'faaa' <pad>
-    0x0018:       0x1000003c exit()
+    0x0018:       0x1000002f exit()
     0x001c:           'haaa' <pad>
 
 The raw data from the ROP stack is available via `str`.
 
     >>> raw_rop = str(rop)
     >>> print enhex(raw_rop)
-    1f0000101b000010010000003300001008000000666161613c00001068616161
+    120000100e000010010000002600001008000000666161612f00001068616161
 
 Let's try it out!
 
