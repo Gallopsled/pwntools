@@ -51,7 +51,7 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
     Arguments:
 
         raw_bytes(str): Sequence of shellcode bytes to encode.
-        avoid(str):     Sequence of bytes, or byte sequences, to avoid.
+        avoid(str):     Bytes to avoid
         expr(str):      Regular expression which matches bad characters.
         force(bool):    Force re-encoding of the shellcode, even if it
                         doesn't contain any bytes in ``avoid``.
@@ -112,7 +112,7 @@ def null(raw_bytes, *a, **kw):
     """null(raw_bytes) -> str
 
     Encode the shellcode ``raw_bytes`` such that it does not
-    contain any bytes in avoid *or* any NULL bytes.
+    contain any NULL bytes.
 
     Accepts the same arguments as :func:`encode`.
     """
@@ -123,7 +123,7 @@ def line(raw_bytes, *a, **kw):
     """line(raw_bytes) -> str
 
     Encode the shellcode ``raw_bytes`` such that it does not
-    contain any bytes in avoid *or* any NULL bytes or whitespace.
+    contain any NULL bytes or whitespace.
 
     Accepts the same arguments as :func:`encode`.
     """
@@ -144,8 +144,8 @@ def alphanumeric(raw_bytes, *a, **kw):
 def printable(raw_bytes, *a, **kw):
     """printable(raw_bytes) -> str
 
-    Encode the shellcode ``raw_bytes`` such that it does not
-    contain any bytes except for [A-Za-z0-9].
+    Encode the shellcode ``raw_bytes`` such that it only contains
+    non-space printable bytes.
 
     Accepts the same arguments as :func:`encode`.
     """
