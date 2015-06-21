@@ -222,7 +222,11 @@ def _include_header():
 
 
 def _arch_header():
-    prefix  = ['.section .shellcode,"awx"', '.global _start', '_start:']
+    prefix  = ['.section .shellcode,"awx"',
+                '.global _start',
+                '.global __start',
+                '_start:',
+                '__start:']
     headers = {
         'i386'  :  ['.intel_syntax noprefix'],
         'amd64' :  ['.intel_syntax noprefix'],
