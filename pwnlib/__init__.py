@@ -12,6 +12,7 @@ __all__ = [
     'constants',
     'context',
     'dynelf',
+    'encoders',
     'elf',
     'exception',
     'fmtstr',
