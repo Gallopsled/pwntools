@@ -142,7 +142,7 @@ def alphanumeric(raw_bytes, *a, **kw):
 
 @LocalContext
 def printable(raw_bytes, *a, **kw):
-    """alphanumeric(raw_bytes) -> str
+    """printable(raw_bytes) -> str
 
     Encode the shellcode ``raw_bytes`` such that it does not
     contain any bytes except for [A-Za-z0-9].
