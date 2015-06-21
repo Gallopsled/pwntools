@@ -222,7 +222,7 @@ def _include_header():
 
 
 def _arch_header():
-    prefix  = ['.section .shellcode,"ax"', '.global _start', '_start:']
+    prefix  = ['.section .shellcode,"awx"', '.global _start', '_start:']
     headers = {
         'i386'  :  ['.intel_syntax noprefix'],
         'amd64' :  ['.intel_syntax noprefix'],
@@ -425,7 +425,7 @@ def make_elf(data, vma = None, strip=True, extract=True):
 
         _run(assembler + ['-o', step2, step1])
 
-        linker_options = []
+        linker_options = ['-z', 'execstack']
         if vma:
             linker_options += ['--section-start=.shellcode=%#x' % vma,
                                '--entry=%#x' % vma]
@@ -513,7 +513,7 @@ def asm(shellcode, vma = 0, extract = True):
             shutil.copy(step2, step3)
 
         if vma or not extract:
-            ldflags = ['-o', step3, step2]
+            ldflags = ['-z', 'execstack', '-o', step3, step2]
             if vma:
                 ldflags += ['--section-start=.shellcode=%#x' % vma,
                             '--entry=%#x' % vma]
