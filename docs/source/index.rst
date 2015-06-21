@@ -34,6 +34,7 @@ Each of the ``pwntools`` modules is documented here.
    constants
    context
    dynelf
+   encoders
    elf
    exception
    gdb
