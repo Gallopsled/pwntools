@@ -20,3 +20,6 @@
 
 .. automodule:: pwnlib.encoders.i386
    :members:
+
+.. automodule:: pwnlib.encoders.i386.xor
+   :members:
