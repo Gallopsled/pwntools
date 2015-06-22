@@ -56,7 +56,7 @@ setup_osx()
 if [[ "$USER" == "travis" ]]; then
     setup_travis
 elif [[ "$USER" == "shippable" ]]; then
-    sudo apt-get install openssh-server
+    sudo apt-get install openssh-server gcc-multilib
     sudo /usr/sbin/sshd -f /etc/ssh/sshd_config &
     setup_travis
 elif [[ "$(uname)" == "Darwin" ]]; then

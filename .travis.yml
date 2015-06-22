@@ -1,5 +1,9 @@
 sudo: false
 language: python
+addons:
+  apt:
+    packages:
+    - gcc-multilib
 cache:
     - pip
     - directories:
