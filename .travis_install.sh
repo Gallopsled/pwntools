@@ -40,7 +40,7 @@ setup_travis()
 
 setup_linux()
 {
-    sudo apt-get install -y software-properties-common openssh-server install libncurses5-dev libncursesw5-dev
+    sudo apt-get install -y software-properties-common openssh-server libncurses5-dev libncursesw5-dev
     sudo apt-add-repository --yes ppa:pwntools/binutils
     sudo apt-get update
     sudo apt-get install binutils-arm-linux-gnu binutils-mips-linux-gnu binutils-powerpc-linux-gnu
