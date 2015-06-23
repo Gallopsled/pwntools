@@ -29,12 +29,14 @@ class listen(sock):
         super(listen, self).__init__(timeout, level = level)
 
         port = int(port)
+        fam  = {socket.AF_INET: 'ipv4',
+                socket.AF_INET6: 'ipv6'}.get(fam, fam)
 
         if fam == 'any':
             fam = socket.AF_UNSPEC
-        elif fam == 4 or fam.lower() in ['ipv4', 'ip4', 'v4', '4']:
+        elif fam.lower() in ['ipv4', 'ip4', 'v4', '4']:
             fam = socket.AF_INET
-        elif fam == 6 or fam.lower() in ['ipv6', 'ip6', 'v6', '6']:
+        elif fam.lower() in ['ipv6', 'ip6', 'v6', '6']:
             fam = socket.AF_INET6
             if bindaddr == '0.0.0.0':
                 bindaddr = '::'
