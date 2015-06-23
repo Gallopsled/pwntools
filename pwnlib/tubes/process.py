@@ -57,7 +57,7 @@ class process(tube):
 
     Examples:
 
-        >>> p = process(which('python2'))
+        >>> p = process('python2')
         >>> p.sendline("print 'Hello world'")
         >>> p.sendline("print 'Wow, such data'");
         >>> '' == p.recv(timeout=0.01)
