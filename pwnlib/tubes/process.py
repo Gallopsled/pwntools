@@ -108,7 +108,7 @@ class process(tube):
         >>> process(stack_smashing).recvall()
         'stack smashing detected'
 
-        >>> process(stack_smashing, stdout=subprocess.PIPE).recvall()
+        >>> process(stack_smashing, stdout=subprocess.PIPE).recvall() # doctest: +SKIP
         ''
 
         >>> process('echo hello 1>&2', shell=True).recvall()
