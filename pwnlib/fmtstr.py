@@ -50,7 +50,8 @@ Examples:
 Example - Payload generation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-::
+.. code-block:: python
+
     # we want to do 3 writes
     writes = {0x08041337:   0xbfffffff,
               0x08041337+4: 0x1337babe,
@@ -67,7 +68,7 @@ Example - Payload generation
 Example - Automated exploitation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-::
+.. code-block:: python
 
 	# Assume a process that reads a string
 	# and gives this string as the first argument
