@@ -294,7 +294,9 @@ class SigreturnFrame(dict):
         For ARM architectures use this function in case coprocessors
         need to be specified. Valid values for ARM coprocessors are
         `vfpu`, `iwmmxt` and `crunch`.
-        eg:-
+
+        .. code-block:: python
+
             s.get_frame("vfpu")
         """
         frcontents = str(self)
