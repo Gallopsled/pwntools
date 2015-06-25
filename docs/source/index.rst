@@ -37,6 +37,7 @@ Each of the ``binjitsu`` modules is documented here.
    encoders
    elf
    exception
+   fmtstr
    gdb
    log
    memleak
