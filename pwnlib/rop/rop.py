@@ -547,7 +547,8 @@ class ROP(object):
                 if slot.sp in (0, None) and self.base:
                     slot.sp = stack.next + len(slot)
 
-                for register in slot.registers:
+                registers = [slot.registers[i] for i in sorted(slot.registers.keys())]
+                for register in registers:
                     value       = slot[register]
                     description = self.describe(value)
                     if description:
