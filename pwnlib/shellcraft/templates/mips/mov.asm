@@ -55,7 +55,7 @@ Args:
             /* Verified to not generate nul bytes */
             ori ${dst}, $zero, ${src}
         %endif
-    %elif not 0 in [src & 0xff000000, src & 0xff0000, src & 0xff00, src & 0xff]:
+    %elif not '\x00' in packing.pack(src, 32):
         /* Verified to not generate nul bytes */
         li ${dst}, ${src}
     %else:
