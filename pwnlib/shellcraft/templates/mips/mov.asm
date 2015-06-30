@@ -33,17 +33,17 @@ Args:
     %endif
 %else:
     %if src == 0:
-        /* Verified to work for everything except dst=zero */
+        /* Verified to work for everything */
         slti ${dst}, $zero, -1
     %elif src == 1:
-        /* Verified to work for everything except dst=zero */
+        /* Verified to work for everything */
         slti ${dst}, $zero, 0x0101
     %elif src == -1:
-        /* Verified to work for everything except dst=zero */
+        /* Verified to work for everything */
         addi ${dst}, $zero, -1
     %elif src < 0x10000:
         %if src & 0xff00 == 0 or src & 0x00ff == 0:
-            /* Verified to work for everything except dst=zero */
+            /* Verified to work for everything */
             <%
                 a, b = fiddling.xor_pair(packing.pack(src, 16), avoid = '\x00\n')
                 a = hex(packing.unpack(a, 16))
@@ -52,7 +52,7 @@ Args:
             ori ${dst}, $zero, ${a}
             xori ${dst}, ${dst}, ${b}
         %else:
-            /* Verified to work for everything except dst=zero */
+            /* Verified to work for everything */
             ori ${dst}, $zero, ${src}
         %endif
     %else:
