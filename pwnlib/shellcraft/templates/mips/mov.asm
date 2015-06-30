@@ -55,7 +55,15 @@ Args:
             /* Verified to not generate nul bytes */
             ori ${dst}, $zero, ${src}
         %endif
+    %elif not 0 in [src & 0xff000000, src & 0xff0000, src & 0xff00, src & 0xff]:
+        /* Verified to not generate nul bytes */
+        li ${dst}, ${src}
     %else:
-        /* TODO */
+        /* Verified to not generate nul bytes */
+        ${mips.mov(dst, src >> 16)}
+        sh ${dst}, -2($sp)
+        ${mips.mov(dst, src & 0xffff)}
+        sh ${dst}, -4($sp)
+        lw ${dst}, -4($sp)
     %endif
 %endif
