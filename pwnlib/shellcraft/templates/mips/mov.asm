@@ -41,20 +41,9 @@ Args:
     %elif src == -1:
         /* Verified to work for everything except dst=zero */
         addi ${dst}, $zero, -1
-    %elif src > 0xffff:
-        %if (src & 0xff000000 == 0) or (src & 0xff0000 == 0):
-            ;Find out what to do with ${"0x%x" % src}
-        %else:
-            lui ${dst}, ${src >> 16}
-        %endif
-
-        <%
-            src &= 0xffff
-        %>\
-    %endif
-
-    %if src > 0:
-        %if (src & 0xff00 == 0) or (src & 0xff == 0):
+    %elif src < 0x10000:
+        %if src & 0xff00 == 0 or src & 0x00ff == 0:
+            /* Verified to work for everything except dst=zero */
             <%
                 a, b = fiddling.xor_pair(packing.pack(src, 16), avoid = '\x00\n')
                 a = hex(packing.unpack(a, 16))
@@ -65,6 +54,12 @@ Args:
         %else:
             /* Verified to work for everything except dst=zero */
             ori ${dst}, $zero, ${src}
+        %endif
+    %else:
+        %if (src & 0xff000000 == 0) or (src & 0xff0000 == 0):
+            ;Find out what to do with ${"0x%x" % src}
+        %else:
+            lui ${dst}, ${src >> 16}
         %endif
     %endif
 %endif
