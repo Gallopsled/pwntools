@@ -27,23 +27,23 @@ Args:
     %if dst == src:
         /* move ${dst}, ${src} is a no-op */
     %else:
-        /* Verified to work for everything */
+        /* Verified to not generate nul bytes */
         sw ${src}, -4($sp)
         lw ${dst}, -4($sp)
     %endif
 %else:
     %if src == 0:
-        /* Verified to work for everything */
+        /* Verified to not generate nul bytes */
         slti ${dst}, $zero, -1
     %elif src == 1:
-        /* Verified to work for everything */
+        /* Verified to not generate nul bytes */
         slti ${dst}, $zero, 0x0101
     %elif src == -1:
-        /* Verified to work for everything */
+        /* Verified to not generate nul bytes */
         addi ${dst}, $zero, -1
     %elif src < 0x10000:
         %if src & 0xff00 == 0 or src & 0x00ff == 0:
-            /* Verified to work for everything */
+            /* Verified to not generate nul bytes */
             <%
                 a, b = fiddling.xor_pair(packing.pack(src, 16), avoid = '\x00\n')
                 a = hex(packing.unpack(a, 16))
@@ -52,14 +52,10 @@ Args:
             ori ${dst}, $zero, ${a}
             xori ${dst}, ${dst}, ${b}
         %else:
-            /* Verified to work for everything */
+            /* Verified to not generate nul bytes */
             ori ${dst}, $zero, ${src}
         %endif
     %else:
-        %if (src & 0xff000000 == 0) or (src & 0xff0000 == 0):
-            ;Find out what to do with ${"0x%x" % src}
-        %else:
-            lui ${dst}, ${src >> 16}
-        %endif
+        /* TODO */
     %endif
 %endif
