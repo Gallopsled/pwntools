@@ -32,8 +32,10 @@ Args:
     %endif
 %else:
     %if src == 0:
+        /* Verified to work for everything except dst=zero */
         slti ${dst}, $zero, -1
     %elif src == -1:
+        /* Verified to work for everything except dst=zero */
         addi ${dst}, $zero, -1
     %elif src > 0xffff:
         %if (src & 0xff000000 == 0) or (src & 0xff0000 == 0):
@@ -57,6 +59,7 @@ Args:
             ori ${dst}, $zero, ${a}
             xori ${dst}, ${dst}, ${b}
         %else:
+            /* Verified to work for everything except dst=zero */
             ori ${dst}, $zero, ${src}
         %endif
     %endif
