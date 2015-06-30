@@ -35,6 +35,9 @@ Args:
     %if src == 0:
         /* Verified to work for everything except dst=zero */
         slti ${dst}, $zero, -1
+    %elif src == 1:
+        /* Verified to work for everything except dst=zero */
+        slti ${dst}, $zero, 0x0101
     %elif src == -1:
         /* Verified to work for everything except dst=zero */
         addi ${dst}, $zero, -1
