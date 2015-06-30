@@ -27,6 +27,7 @@ Args:
     %if dst == src:
         /* move ${dst}, ${src} is a no-op */
     %else:
+        /* Verified to work for everything */
         sw ${src}, -4($sp)
         lw ${dst}, -4($sp)
     %endif
