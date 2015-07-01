@@ -10,6 +10,8 @@
 <%docstring>
 Move src into dest.
 
+This might modify the four bytes before the stack pointer.
+
 Args:
   dest (str): The destination register.
   src (str): Either the input register, or an immediate value.
@@ -18,8 +20,8 @@ Args:
 if not dst in regs:
     log.error('%r is not a register' % str(dst))
     
-#if not src in regs:
-#    src = constants.eval(src)
+if not src in regs:
+    src = constants.eval(src)
 
 %>
 .set noat
@@ -42,7 +44,7 @@ if not dst in regs:
         /* Verified to not generate nul bytes */
         addi ${dst}, $zero, -1
     %elif src < 0x10000:
-        %if src & 0xff00 == 0 or src & 0x00ff == 0:
+        %if '\x00' in packing.pack(src, 16) or '\n' in packing.pack(src, 16):
             /* Verified to not generate nul bytes */
             <%
                 a, b = fiddling.xor_pair(packing.pack(src, 16), avoid = '\x00\n')
