@@ -57,7 +57,8 @@ if not dst in regs:
         %endif
     %elif not '\x00' in packing.pack(src, 32):
         /* Verified to not generate nul bytes */
-        li ${dst}, ${src}
+        lui ${dst}, ${src >> 16}
+        ori ${dst}, ${dst}, ${src & 0xffff}
     %else:
         /* Verified to not generate nul bytes */
         ${mips.mov(dst, src >> 16)}
