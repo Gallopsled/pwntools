@@ -57,7 +57,7 @@ if not src in regs:
             /* Verified to not generate nul bytes */
             ori ${dst}, $zero, ${src}
         %endif
-    %elif not '\x00' in packing.pack(src, 32):
+    %elif not '\x00' in packing.pack(src, 32) or '\n' in packing.pack(src, 32):
         /* Verified to not generate nul bytes */
         lui ${dst}, ${src >> 16}
         ori ${dst}, ${dst}, ${src & 0xffff}
