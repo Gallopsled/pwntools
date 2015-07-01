@@ -3,14 +3,14 @@ import re
 from ..context import context
 from ..util.misc import register_sizes
 
-mips =  map('r{}'.format, range(32))
-mips += map('v{}'.format, range(2))
-mips += map('a{}'.format, range(4))
-mips += map('t{}'.format, range(8))
-mips += map('s{}'.format, range(9))
-mips += map('t{}'.format, range(8,10))
-mips += map('k{}'.format, range(2))
-mips += ['zero', 'at', 'gp', 'sp', 'ra']
+mips =  map('${}'.format, range(32))
+mips += map('$v{}'.format, range(2))
+mips += map('$a{}'.format, range(4))
+mips += map('$t{}'.format, range(8))
+mips += map('$s{}'.format, range(9))
+mips += map('$t{}'.format, range(8,10))
+mips += map('$k{}'.format, range(2))
+mips += ['$zero', '$at', '$gp', '$sp', '$ra']
 
 arm = map('r{}'.format, range(13))
 arm += ["sp", "lr", "pc", "cpsr"]

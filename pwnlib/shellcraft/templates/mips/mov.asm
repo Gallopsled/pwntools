@@ -2,7 +2,7 @@
   from pwnlib.util import packing, fiddling
   from pwnlib import constants
   from pwnlib.log import getLogger
-  from pwnlib.shellcraft.registers import arm as regs
+  from pwnlib.shellcraft.registers import mips as regs
   from pwnlib.shellcraft import mips
   log = getLogger('pwnlib.shellcraft.arm.mov')
 %>
@@ -15,9 +15,9 @@ Args:
   src (str): Either the input register, or an immediate value.
 </%docstring>
 <%
-#if not dst in regs:
-#    log.error('%r is not a register' % str(dst))
-#    
+if not dst in regs:
+    log.error('%r is not a register' % str(dst))
+    
 #if not src in regs:
 #    src = constants.eval(src)
 
