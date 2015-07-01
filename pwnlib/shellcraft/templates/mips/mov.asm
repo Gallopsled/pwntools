@@ -62,9 +62,9 @@ if not dst in regs:
     %else:
         /* Verified to not generate nul bytes */
         ${mips.mov(dst, src >> 16)}
-        sh ${dst}, -2($sp)
-        ${mips.mov(dst, src & 0xffff)}
         sh ${dst}, -4($sp)
+        ${mips.mov(dst, src & 0xffff)}
+        sh ${dst}, -2($sp)
         lw ${dst}, -4($sp)
     %endif
 %endif
