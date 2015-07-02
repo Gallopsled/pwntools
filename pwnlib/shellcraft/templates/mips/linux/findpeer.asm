@@ -17,8 +17,8 @@ findpeer:
 
 next_socket:
     /* Next file descriptor */
-    /* FIXME: Generates nul bytes */
-    add $s0, $s0, 1
+    ${mov('$at', 1)}
+    add $s0, $s0, $at
 
     /* Restore stack */
     ${mov('$sp', '$s1')}
@@ -41,4 +41,5 @@ next_socket:
     syscall 0x42424
 
     bne $v0, $zero, next_socket
-    nop
+    /* Have a nop */
+    ori $zero, $a1, 0xffff
