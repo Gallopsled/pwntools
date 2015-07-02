@@ -20,9 +20,6 @@ next_socket:
     ${mov('$at', 1)}
     add $s0, $s0, $at
 
-    /* Restore stack */
-    ${mov('$sp', '$s1')}
-
     /* First argument is file descriptor */
     ${mov('$a0', '$s0')}
 
@@ -31,11 +28,8 @@ next_socket:
 
     /* Third argument is pointer to size */
     add $a2, $sp, -20
-
-    /* Make room on stack - inet addr structure is 16 bytes and size of addr is four bytes */
-    /* First four bytes will be the size of the address, the remaining 16 bytes will be */
-    /* the address structure */
-    add $sp, $sp, -20
+    ${mov('$at', 16)}
+    sw $at, -20($sp)
     
     ${mov('$v0', 'SYS_getpeername')}
     syscall 0x42424
@@ -43,3 +37,12 @@ next_socket:
     bne $v0, $zero, next_socket
     /* Have a nop */
     ori $zero, $a1, 0xffff
+% if not port is None:
+
+compare_port:
+    /* Read port number into $t0 */
+    lhu $t0, -14($sp)
+    /* Port to search for into $at */
+    ${mov('$at', port)}
+    bne $t0, $at, next_socket
+% endif
