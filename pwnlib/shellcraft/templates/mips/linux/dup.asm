@@ -4,7 +4,7 @@
 %>\
 <%page args="sock = '$s0'"/>
 <%docstring>
-Args: [sock (imm/reg) = r6]
+Args: [sock (imm/reg) = s0]
     Duplicates sock to stdin, stdout and stderr
 </%docstring>
 <%
@@ -12,8 +12,8 @@ Args: [sock (imm/reg) = r6]
   looplabel = common.label("loop")
 %>
 ${dup}:
-        ${mips.mov('$s0', -1)}
         ${mips.mov('$a0', sock)}
+        ${mips.mov('$s0', -1)}
         ${mips.mov('$a1', 2)}
 
 ${looplabel}:
