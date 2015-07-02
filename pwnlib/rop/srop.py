@@ -25,7 +25,7 @@ i386 Example:
 
     >>> context.clear(arch='i386')
     >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, 'esp', 1024)
-    >>> assembly += 'sigreturn:' + shellcraft.sigreturn('esp')
+    >>> assembly += 'sigreturn:' + shellcraft.sigreturn()
     >>> assembly += 'int3:'      + shellcraft.trap()
     >>> assembly += 'syscall: '  + shellcraft.syscall()
     >>> assembly += 'exit: '     + 'xor ebx, ebx; mov eax, 1; int 0x80;'
@@ -47,12 +47,38 @@ i386 Example:
 
     >>> p = process(binary.path)
     >>> p.send(str(frame))
-    >>> p.recvall() == message
+    >>> p.recvn(len(message)) == message
     True
     >>> p.wait_for_close()
     >>> p.poll() == 0
     True
 
+amd64 Example:
+
+    >>> message = "Hello, World"
+    >>> context.clear()
+    >>> context.arch = "amd64"
+    >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, 'rsp', 1024)
+    >>> assembly += 'sigreturn:' + shellcraft.sigreturn()
+    >>> assembly += 'int3:'      + shellcraft.trap()
+    >>> assembly += 'syscall: '  + shellcraft.syscall()
+    >>> assembly += 'exit: '     + 'xor rdi, rdi; mov rax, 60; syscall;'
+    >>> assembly += 'message: '  + ('.asciz "%s"' % message)
+    >>> binary = ELF.from_assembly(assembly)
+    >>> frame = SigreturnFrame()
+    >>> frame.rax = constants.SYS_write
+    >>> frame.rdi = constants.STDOUT_FILENO
+    >>> frame.rsi = binary.symbols['message']
+    >>> frame.rdx = len(message)
+    >>> frame.rsp = 0xdeadbeef
+    >>> frame.rip = binary.symbols['syscall']
+    >>> p = process(binary.path)
+    >>> p.send(str(frame))
+    >>> p.recvn(len(message)) == message
+    True
+    >>> p.wait_for_close()
+    >>> p.poll() == 0
+    True
 """
 from collections import namedtuple
 
