@@ -23,6 +23,9 @@ if not dst in regs:
 if not src in regs:
     src = constants.eval(src)
 
+def okay(s):
+    return not ('\x00' in s or '\n' in s)
+
 %>
 .set noat
 %if not isinstance(src, (int, long)):
@@ -40,7 +43,9 @@ if not src in regs:
     %elif src == -1:
         addi ${dst}, $zero, -1
     %elif src < 0x10000:
-        %if '\x00' in packing.pack(src, 16) or '\n' in packing.pack(src, 16):
+        %if okay(packing.pack(src, 16)):
+            ori ${dst}, $zero, ${src}
+        %else:
             <%
                 a, b = fiddling.xor_pair(packing.pack(src, 16), avoid = '\x00\n')
                 a = hex(packing.unpack(a, 16))
@@ -48,10 +53,8 @@ if not src in regs:
             %>\
             ori ${dst}, $zero, ${a}
             xori ${dst}, ${dst}, ${b}
-        %else:
-            ori ${dst}, $zero, ${src}
         %endif
-    %elif not '\x00' in packing.pack(src, 32) or '\n' in packing.pack(src, 32):
+    %elif okay(packing.pack(src, 32)):
         lui ${dst}, ${src >> 16}
         ori ${dst}, ${dst}, ${src & 0xffff}
     %else:
