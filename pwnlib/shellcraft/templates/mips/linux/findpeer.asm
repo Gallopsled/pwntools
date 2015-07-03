@@ -1,4 +1,4 @@
-<% from pwnlib.shellcraft.mips import mov %>
+<% from pwnlib.shellcraft.mips import mov, nop %>
 <% from socket import htons %>
 <%page args="port = None"/>
 <%docstring>
@@ -36,7 +36,7 @@ next_socket:
 
     bne $v0, $zero, next_socket
     /* Have a nop */
-    ori $zero, $a1, 0xffff
+    ${nop()}
 % if not port is None:
 
 compare_port:
