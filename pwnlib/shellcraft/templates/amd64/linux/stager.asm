@@ -16,12 +16,12 @@ Args:
 %>
 ${stager}:
     push ${sock}
+    push ${size}
     ${amd64.linux.syscall('SYS_mmap', 0, size, 'PROT_EXEC | PROT_WRITE | PROT_READ', 'MAP_ANONYMOUS | MAP_PRIVATE', -1, 0)}
     mov rsi, rax
+    pop rdx
     pop rdi /* sock */
     push rsi /* save for: pop eax; call eax later */
-
-    ${amd64.mov("rdx", size)}
 
 /* read loop */
 ${looplabel}:
