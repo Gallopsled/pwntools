@@ -53,4 +53,4 @@ Example:
     ${thumb.mov(dst, src)}
   % endif
 % endfor
-  swi #0
+  swi #1
