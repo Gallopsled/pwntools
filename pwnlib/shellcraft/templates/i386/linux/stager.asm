@@ -15,11 +15,12 @@ Args:
 %>
 ${stager}:
     push ${sock}
+    push ${size}
     ${i386.linux.syscall('SYS_mmap2', 0, size, 'PROT_EXEC | PROT_WRITE | PROT_READ', 'MAP_ANON | MAP_PRIVATE', -1, 0)}
     mov ecx, eax
+    pop edx /* size */
     pop ebx /* sock */
     push ecx /* save for: pop eax; call eax later */
-    ${i386.mov("edx", size)}
 
 /* read/recv loop */
 ${looplabel}:

