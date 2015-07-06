@@ -188,7 +188,7 @@ def interfaces6(all = False):
     return out
 
 def sockaddr(host, port, network = 'ipv4'):
-    """sockaddr(host, port, network = 'ipv4') -> tuple
+    """sockaddr(host, port, network = 'ipv4') -> (data, length, family)
 
     Creates a sockaddr_in or sockaddr_in6 memory buffer for use in shellcode.
 
@@ -198,20 +198,28 @@ def sockaddr(host, port, network = 'ipv4'):
       network (str): Either 'ipv4' or 'ipv6'.
 
     Returns:
-      A tuple containing the sockaddr buffer and the address family.
+      A tuple containing the sockaddr buffer, length, and the address family.
 """
     address_family = {'ipv4':socket.AF_INET,'ipv6':socket.AF_INET6}[network]
-    
+
+    for family, _, _, _, ip in socket.getaddrinfo(host, None, address_family):
+        ip = ip[0]
+        if family == address_family:
+            break
+    else:
+        log.error("Could not find %s address for %r" % (network, host))
+
     info = socket.getaddrinfo(host, None, address_family)
-    host = socket.inet_pton(address_family, info[0][4][0])
+    host = socket.inet_pton(address_family, ip)
     sockaddr  = p16(address_family)
     sockaddr += p16(socket.htons(port))
+    length    = 0
 
     if network == 'ipv4':
         sockaddr += host
-        sockaddr = sockaddr.ljust(16, '\x00')
+        length    = 16 # Save ten bytes by skipping two 'push 0'
     else:
-        sockaddr += p32(0)
+        sockaddr += p32(0xffffffff) # Save three bytes 'push -1' vs 'push 0'
         sockaddr += host
-        sockaddr += p32(0)
-    return (sockaddr, address_family)
+        length    = len(sockaddr) + 4 # Save five bytes 'push 0'
+    return (sockaddr, length, address_family)
