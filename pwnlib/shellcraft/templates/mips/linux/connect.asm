@@ -9,7 +9,6 @@
     Leaves the connected socket in $s0.
 </%docstring>
 <%
-    #FIXME: Port needs to be reversed...not here but in pwnlib/util/net.py
     sockaddr, addr_len, address_family = sockaddr(host, port, network)
 %>\
     /* First create socket */
