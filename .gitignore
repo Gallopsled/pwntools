@@ -3,6 +3,7 @@
 *.pyc
 *~
 *.swp
+.ropeproject
 *.pdf
 */auto/*
 */bin/*

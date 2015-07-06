@@ -32,19 +32,6 @@ def load(*args, **kwargs):
 # Monkey-patch some things inside elftools to make life easier
 
 class ELF(ELFFile):
-
-    #: Bit-ness of the file
-    bits = None
-
-    #: Architecture of the file
-    arch = None
-
-    #: Endianness of the file
-    endian = None
-
-    #: Path to the file
-    path = None
-
     """Encapsulates information about an ELF file.
 
     :ivar path: Path to the binary on disk
@@ -77,16 +64,19 @@ class ELF(ELFFile):
 
         super(ELF,self).__init__(self.mmap)
 
+        #: Path to the file
         self.path = os.path.abspath(path)
+        #: Architecture of the file
         self.arch = self.get_machine_arch().lower()
 
-        # Check endianness
+        #: Endianness of the file
         self.endian = {
             'ELFDATANONE': 'little',
             'ELFDATA2LSB': 'little',
             'ELFDATA2MSB': 'big'
         }[self['e_ident']['EI_DATA']]
 
+        #: Bit-ness of the file
         self.bits = self.elfclass
 
         if self.arch == 'mips':
