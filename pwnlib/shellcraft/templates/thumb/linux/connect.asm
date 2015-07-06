@@ -7,7 +7,7 @@
     Leaves the connected socket in R6.
 </%docstring>
 <%
-    sockaddr, address_family = sockaddr(host, port, network)
+    sockaddr, addr_len, address_family = sockaddr(host, port, network)
 %>\
     /* First create socket */
     ${thumb.mov('r7', 'SYS_socket')}
@@ -26,5 +26,5 @@
     ${thumb.mov('r7', 'SYS_connect')}
     ${thumb.mov('r0', 'r6')}
     ${thumb.mov('r1', 'sp')}
-    ${thumb.mov('r2', len(sockaddr))}
+    ${thumb.mov('r2', addr_len)}
     svc 1
