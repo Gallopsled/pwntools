@@ -8,7 +8,7 @@
     Leaves the connected socket in rbp.
 </%docstring>
 <%
-    sockaddr, address_family = sockaddr(host, port, network)
+    sockaddr, addr_len, address_family = sockaddr(host, port, network)
 %>\
     /* open new socket */
     ${amd64.linux.syscall('SYS_socket', address_family, 'SOCK_STREAM', 0)}
@@ -20,4 +20,4 @@
     ${amd64.pushstr(sockaddr, False)}
     
     /* Connect the socket */
-    ${amd64.linux.syscall('SYS_connect', 'rbp', 'rsp', len(sockaddr))}
+    ${amd64.linux.syscall('SYS_connect', 'rbp', 'rsp', addr_len)}
