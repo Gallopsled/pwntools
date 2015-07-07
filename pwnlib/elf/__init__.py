@@ -110,7 +110,7 @@ class ELF(ELFFile):
 
         Example:
 
-            >>> e = ELF.from_assembly('nop; foo: int 0x80', vma = 0x40000)
+            >>> e = ELF.from_assembly('nop; foo: int 0x80', vma = 0x400000)
             >>> e.symbols['foo'] = 0x400001
             >>> e.disasm(e.entry, 1)
             '  400000:       90                      nop'
@@ -122,7 +122,7 @@ class ELF(ELFFile):
     @staticmethod
     @LocalContext
     def from_bytes(bytes, *a, **kw):
-        """Given a sequence of bytes, return a fully loaded ELF object
+        r"""Given a sequence of bytes, return a fully loaded ELF object
         which contains those bytes at its entry point.
 
         Arguments:
@@ -134,8 +134,8 @@ class ELF(ELFFile):
 
             >>> e = ELF.from_bytes('\x90\xcd\x80', vma=0xc000)
             >>> print(e.disasm(e.entry, 3))
-                c054:       90                      nop
-                c055:       cd 80                   int    0x80
+                c000:       90                      nop
+                c001:       cd 80                   int    0x80
         """
         return ELF(make_elf(bytes, extract=False, *a, **kw))
 
