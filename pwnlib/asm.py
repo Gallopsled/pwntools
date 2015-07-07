@@ -520,7 +520,9 @@ def asm(shellcode, vma = 0, extract = True):
             ldflags = ['-z', 'execstack', '-o', step3, step2]
             if vma:
                 ldflags += ['--section-start=.shellcode=%#x' % vma,
-                            '--entry=%#x' % vma]
+                            '--entry=%#x' % vma,
+                            '-z', 'max-page-size=4096',
+                            '-z', 'common-page-size=4096']
 
             _run(linker + ldflags)
 
