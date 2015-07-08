@@ -1,7 +1,4 @@
-<% 
-    from pwnlib.shellcraft import mips
-    from pwnlib.util.net import sockaddr
-%>
+<% from pwnlib.shellcraft import mips %>
 <%page args="path, dst = '$s0'"/>
 <%docstring>
 Args: [path, dst (imm/reg) = $s0 ]
