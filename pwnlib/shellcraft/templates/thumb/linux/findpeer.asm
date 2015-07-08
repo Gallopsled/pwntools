@@ -41,15 +41,14 @@ next_socket:
     /* Now issue system call */
     svc 1
 
-    /* If the syscall returned -1 this was a bad socket */
+    /* If the syscall returned negative this was a bad socket */
     /* so move on to the next one */
-    /* Testing on r0 has nul bytes but moving to r1 achieves the same */
-    cmp r0, #0
-    bne next_socket
+    adds r0, #1
+    ble next_socket
 %if not port is None:
 
 compare_port:
-    /* Read the port into r0 */
+    /* Read the port into r1 */
     ldr r1, [sp, #4]
     lsr r1, #16
 
