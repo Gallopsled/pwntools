@@ -27,7 +27,7 @@ Args: [path, dst (imm/reg) = $s0 ]
     lw $sp, -8($sp)
 
     /* Load file size */
-    lw $a3, -206 + 64($sp)
+    lw $a3, -206 + 60($sp)
 
     ${mips.syscall('SYS_sendfile', '$s0', '$s1', 0, '$a3')}
 
