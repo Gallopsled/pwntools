@@ -183,13 +183,16 @@ class process(tube):
             # and binfmt is not installed (e.g. when running on
             # Travis CI), re-try with qemu-XXX if we get an
             # 'Exec format error'.
-            prefixes = [[]]
+            prefixes = [([], executable)]
+            executables = [executable]
             exception = None
 
-            try:    prefixes.append([get_qemu_user()])
+            try:
+                qemu = get_qemu_user()
+                prefixes.append(([qemu], qemu))
             except: pass
 
-            for prefix in prefixes:
+            for prefix, executable in prefixes:
                 try:
                     self.proc = subprocess.Popen(args = prefix + argv,
                                                  shell = shell,
