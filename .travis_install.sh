@@ -3,8 +3,8 @@ local_deb_extract()
 {
     wget $1
     ar vx *.deb
-    tar xvf data.tar.gz
-    rm -f *.tar.gz *deb*
+    tar xvf data.tar.*
+    rm -f *.tar.* *deb*
 }
 
 get_binutils()
@@ -14,6 +14,13 @@ get_binutils()
     local_deb_extract "${BINUTILS_PREFIX}${1}${BINUTILS_SUFFIX}"
 }
 
+get_qemu()
+{
+    echo "Installing qemu"
+    QEMU_URL='https://launchpadlibrarian.net/187478490/qemu-user-static_2.1%2Bdfsg-4ubuntu6_amd64.deb'
+    local_deb_extract "$QEMU_URL"
+}
+
 setup_travis()
 {
     export PATH=$PWD/usr/bin:$PATH
@@ -21,12 +28,21 @@ setup_travis()
 
     if [ ! -d usr/bin ];
     then
+        # Install our custom binutils
         which arm-linux-as     || get_binutils arm
         which mips-linux-as    || get_binutils mips
         which powerpc-linux-as || get_binutils powerpc
+
+        # Install the multiarch binutils
         local_deb_extract http://mirrors.mit.edu/ubuntu/ubuntu/pool/universe/b/binutils/binutils-multiarch_2.22-6ubuntu1_amd64.deb
-        rm -rf usr/share
     fi
+
+    if ! which qemu-arm-static; then
+        get_qemu
+    fi
+
+    # Get rid of files we don't want cached
+    rm -rf usr/share
 
     pushd usr/lib
     ln -sf libbfd-2.22-multiarch.so libbfd-2.22.so

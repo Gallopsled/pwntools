@@ -9,6 +9,7 @@ import tty
 
 from ..context import context
 from ..log import getLogger
+from ..qemu import get_qemu_user
 from ..timeout import Timeout
 from ..util.misc import which
 from .tube import tube
@@ -157,6 +158,9 @@ class process(tube):
         if not shell:
             executable, argv, env = self._validate(cwd, executable, argv, env)
 
+        if isinstance(argv, (str, unicode)):
+            argv = [argv]
+
         self.pty          = (stdout == PTY)
 
         stdin, stdout, stderr, master = self._handles(stdin, stdout, stderr)
@@ -174,16 +178,38 @@ class process(tube):
             if self.env  != os.environ:        message += ' env=%r ' % self.env
 
         with self.progress(message) as p:
-            self.proc = subprocess.Popen(args = argv,
-                                         shell = shell,
-                                         executable = executable,
-                                         cwd = cwd,
-                                         env = env,
-                                         stdin = stdin,
-                                         stdout = stdout,
-                                         stderr = stderr,
-                                         close_fds = close_fds,
-                                         preexec_fn = self.preexec_fn)
+
+            # In the event the binary is a foreign architecture,
+            # and binfmt is not installed (e.g. when running on
+            # Travis CI), re-try with qemu-XXX if we get an
+            # 'Exec format error'.
+            prefixes = [[]]
+            exception = None
+
+            try:    prefixes.append([get_qemu_user()])
+            except: pass
+
+            for prefix in prefixes:
+                try:
+                    self.proc = subprocess.Popen(args = prefix + argv,
+                                                 shell = shell,
+                                                 executable = executable,
+                                                 cwd = cwd,
+                                                 env = env,
+                                                 stdin = stdin,
+                                                 stdout = stdout,
+                                                 stderr = stderr,
+                                                 close_fds = close_fds,
+                                                 preexec_fn = self.preexec_fn)
+                    break
+                except OSError as exception:
+                    if exception.errno != errno.ENOEXEC:
+                        raise
+            else:
+                try:
+                    raise exception
+                except:
+                    log.exception(str(prefixes))
 
         if master:
             self.proc.stdout = os.fdopen(master)

@@ -7,12 +7,12 @@ import tempfile
 from . import atexit
 from . import elf
 from . import tubes
-from .asm import make_elf
+from .asm import make_elf, _bfdname
 from .context import context, LocalContext
 from .log import getLogger
 from .util import misc
 from .util import proc
-from .qemu import get_qemu_arch
+from .qemu import get_qemu_user
 
 log = getLogger(__name__)
 
@@ -61,8 +61,7 @@ def debug(args, execute=None, exe=None, ssh=None):
         args = ['gdbserver', '--no-disable-randomization', 'localhost:0'] + args
     else:
         qemu_port = random.randint(1024, 65535)
-        qemu_arch = get_qemu_arch()
-        args = ['qemu-%s-static' % qemu_arch, '-g', str(qemu_port)] + args
+        args = [get_qemu_user(), '-g', str(qemu_port)] + args
 
     if not ssh:
         runner  = tubes.process.process
@@ -179,6 +178,7 @@ def attach(target, execute = None, exe = None):
                 '$ apt-get install gdb-multiarch')
         pre += 'set endian %s\n' % context.endian
         pre += 'set architecture %s\n' % get_gdb_arch()
+        # pre += 'set gnutarget ' + _bfdname() + '\n'
 
     # let's see if we can find a pid to attach to
     pid = None

@@ -23,6 +23,10 @@ def run_assembly(assembly):
         >>> p.poll()
         3
 
+        >>> p = run_assembly('mov r0, #12; mov r7, #1; svc #0', arch='arm')
+        >>> p.wait_for_close()
+        >>> p.poll()
+        12
     """
     return ELF.from_assembly(assembly).process()
 
@@ -37,6 +41,12 @@ def run_shellcode(bytes):
         >>> p.wait_for_close()
         >>> p.poll()
         3
+
+        >>> bytes = asm('mov r0, #12; mov r7, #1; svc #0', arch='arm')
+        >>> p = run_shellcode(bytes, arch='arm')
+        >>> p.wait_for_close()
+        >>> p.poll()
+        12
     """
     return ELF.from_bytes(bytes).process()
 
