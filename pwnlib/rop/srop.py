@@ -79,7 +79,61 @@ amd64 Example:
     >>> p.wait_for_close()
     >>> p.poll() == 0
     True
+
+Mips Example:
+
+    >>> context.clear()
+    >>> context.arch = "mips"
+    >>> context.endian = "big"
+    >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, 'sp', 1024)
+    >>> assembly += 'sigreturn:' + shellcraft.sigreturn()
+    >>> assembly += 'syscall: '  + shellcraft.syscall()
+    >>> assembly += 'exit: '     + 'xor $a0, $a0, $a0; li $v0, 0xfa1; syscall;'
+    >>> assembly += 'message: '  + ('.asciz "%s"' % message)
+    >>> binary = ELF.from_assembly(assembly)
+    >>> frame = SigreturnFrame()
+    >>> frame.v0 = 0xfa4
+    >>> frame.a0 = constants.STDOUT_FILENO
+    >>> frame.a1 = binary.symbols['message']
+    >>> frame.a2 = len(message)
+    >>> frame.sp = 0xdead0000
+    >>> frame.pc = binary.symbols['syscall']
+    >>> p = process(binary.path)
+    >>> p.send(str(frame))
+    >>> p.recvn(len(message)) == message
+    True
+    >>> p.wait_for_close()
+    >>> p.poll() == 0
+    True
+
+Mipsel Example:
+
+    >>> context.clear()
+    >>> context.arch = "mips"
+    >>> context.endian = "little"
+    >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, 'sp', 1024)
+    >>> assembly += 'sigreturn:' + shellcraft.sigreturn()
+    >>> assembly += 'syscall: '  + shellcraft.syscall()
+    >>> assembly += 'exit: '     + 'xor $a0, $a0, $a0; li $v0, 0xfa1; syscall;'
+    >>> assembly += 'message: '  + ('.asciz "%s"' % message)
+    >>> binary = ELF.from_assembly(assembly)
+    >>> frame = SigreturnFrame()
+    >>> frame.v0 = 0xfa4
+    >>> frame.a0 = constants.STDOUT_FILENO
+    >>> frame.a1 = binary.symbols['message']
+    >>> frame.a2 = len(message)
+    >>> frame.sp = 0xdead0000
+    >>> frame.pc = binary.symbols['syscall']
+    >>> p = process(binary.path)
+    >>> p.send(str(frame))
+    >>> p.recvn(len(message)) == message
+    True
+    >>> p.wait_for_close()
+    >>> p.poll() == 0
+    True
+
 """
+
 from collections import namedtuple
 
 from ..abi import ABI
@@ -142,14 +196,16 @@ instruction_pointers = {
     'i386': 'eip',
     'amd64': 'rip',
     'arm': 'pc',
-    'mips': 'pc'
+    'mips': 'pc',
+    'aarch64': 'pc',
 }
 
 stack_pointers = {
     'i386': 'esp',
     'amd64': 'rsp',
     'arm': 'sp',
-    'mips': 'sp'
+    'mips': 'sp',
+    'aarch64': 'sp',
 }
 
 # # XXX Need to add support for Capstone in order to extract ARM and MIPS
