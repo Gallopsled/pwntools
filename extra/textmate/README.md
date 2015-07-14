@@ -2,6 +2,8 @@
 
 This should work for TextMate and anything that's compatible (e.g. Sublime Text).
 
+![screenshot](screenshot.png)
+
 ## Installation
 
 ### Sublime Text
