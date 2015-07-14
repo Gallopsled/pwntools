@@ -15,3 +15,5 @@ These folders are located at the paths shown below.  Replace `2` with `3` if you
 - OS X: `~/Library/Application Support/Sublime Text 2`
 - Windows: `%APPDATA%\Sublime Text 2`
 - Linux: `~/.config/sublime-text-2`
+
+Open a `.asm` file, and choose `View > Syntax > Open All ... > Pwntools ...`.
