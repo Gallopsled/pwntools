@@ -101,8 +101,10 @@ Mips Example:
     >>> p = process(binary.path)
     >>> p.send(str(frame))
     >>> p.recvn(len(message)) == message
+    True
     >>> p.wait_for_close()
     >>> p.poll() == 0
+    True
 
 Mipsel Example:
 
@@ -125,8 +127,10 @@ Mipsel Example:
     >>> p = process(binary.path)
     >>> p.send(str(frame))
     >>> p.recvn(len(message)) == message
+    True
     >>> p.wait_for_close()
     >>> p.poll() == 0
+    True
 
 """
 
