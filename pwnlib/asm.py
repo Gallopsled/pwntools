@@ -333,7 +333,7 @@ def cpp(shellcode):
             >>> cpp("mov al, SYS_setresuid", arch = "i386", os = "linux")
             'mov al, 164\n'
             >>> cpp("weee SYS_setresuid", arch = "arm", os = "linux")
-            'weee (0x900000+164)\n'
+            'weee (0+164)\n'
             >>> cpp("SYS_setresuid", arch = "thumb", os = "linux")
             '(0+164)\n'
             >>> cpp("SYS_setresuid", os = "freebsd")
@@ -488,7 +488,7 @@ def asm(shellcode, vma = 0, extract = True):
             >>> asm("mov rax, SYS_select", arch = 'amd64', os = 'linux')
             'H\xc7\xc0\x17\x00\x00\x00'
             >>> asm("ldr r0, =SYS_select", arch = 'arm', os = 'linux', bits=32)
-            '\x04\x00\x1f\xe5R\x00\x90\x00'
+            'R\x00\xa0\xe3'
     """
     result = ''
 
