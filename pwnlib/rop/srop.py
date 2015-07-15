@@ -55,7 +55,6 @@ i386 Example:
 
 amd64 Example:
 
-    >>> message = "Hello, World"
     >>> context.clear()
     >>> context.arch = "amd64"
     >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, 'rsp', 1024)
@@ -72,6 +71,32 @@ amd64 Example:
     >>> frame.rdx = len(message)
     >>> frame.rsp = 0xdeadbeef
     >>> frame.rip = binary.symbols['syscall']
+    >>> p = process(binary.path)
+    >>> p.send(str(frame))
+    >>> p.recvn(len(message)) == message
+    True
+    >>> p.wait_for_close()
+    >>> p.poll() == 0
+    True
+
+arm Example:
+
+    >>> context.clear()
+    >>> context.arch = "arm"
+    >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, 'sp', 1024)
+    >>> assembly += 'sigreturn:' + shellcraft.sigreturn()
+    >>> assembly += 'int3:'      + shellcraft.trap()
+    >>> assembly += 'syscall: '  + shellcraft.syscall()
+    >>> assembly += 'exit: '     + 'eor r0, r0; mov r7, 0x1; swi #0;'
+    >>> assembly += 'message: '  + ('.asciz "%s"' % message)
+    >>> binary = ELF.from_assembly(assembly)
+    >>> frame = SigreturnFrame()
+    >>> frame.r7 = constants.SYS_write
+    >>> frame.r0 = constants.STDOUT_FILENO
+    >>> frame.r1 = binary.symbols['message']
+    >>> frame.r2 = len(message)
+    >>> frame.sp = 0xdead0000
+    >>> frame.pc = binary.symbols['syscall']
     >>> p = process(binary.path)
     >>> p.send(str(frame))
     >>> p.recvn(len(message)) == message
