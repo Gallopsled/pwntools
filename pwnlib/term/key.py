@@ -417,7 +417,7 @@ def _peek_simple():
                 k = Key(kc.TYPE_KEYSYM, kc.KEY_BACKSPACE)
             elif c0 == 9:
                 k = Key(kc.TYPE_KEYSYM, kc.KEY_TAB)
-            elif c0 == 13:
+            elif c0 in (10, 13):
                 k = Key(kc.TYPE_KEYSYM, kc.KEY_ENTER)
             else:
                 k = Key(kc.TYPE_UNICODE)
