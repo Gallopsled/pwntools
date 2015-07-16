@@ -92,11 +92,9 @@ class sock(tube):
         if not getattr(self, 'sock', None):
             return
 
-        # Call shutdown without triggering another call to close
-        self.closed['hack'] = False
-        self.shutdown('recv')
-        self.shutdown('send')
-        del self.closed['hack']
+        # Mark as closed in both directions
+        self.closed['send'] = True
+        self.closed['recv'] = True
 
         self.sock.close()
         self.sock = None
