@@ -32,6 +32,7 @@ setup_travis()
         which arm-linux-as     || get_binutils arm
         which mips-linux-as    || get_binutils mips
         which powerpc-linux-as || get_binutils powerpc
+        which aarch64-linux-as || get_binutils aarch64
 
         # Install the multiarch binutils
         local_deb_extract http://mirrors.mit.edu/ubuntu/ubuntu/pool/universe/b/binutils/binutils-multiarch_2.22-6ubuntu1_amd64.deb
@@ -52,6 +53,7 @@ setup_travis()
     which arm-linux-gnu-as
     which mips-linux-gnu-as
     which powerpc-linux-gnu-as
+    which aarch64-linux-gnu-as
 }
 
 setup_linux()
