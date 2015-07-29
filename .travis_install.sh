@@ -17,7 +17,7 @@ get_binutils()
 get_qemu()
 {
     echo "Installing qemu"
-    QEMU_URL='https://launchpadlibrarian.net/187478490/qemu-user-static_2.1%2Bdfsg-4ubuntu6_amd64.deb'
+    QEMU_URL='http://mirrors.kernel.org/ubuntu/pool/universe/q/qemu/qemu-user-static_2.3+dfsg-5ubuntu3_amd64.deb'
     local_deb_extract "$QEMU_URL"
 }
 
