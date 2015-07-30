@@ -77,6 +77,6 @@ OSes, ``binutils`` is simple to build by hand.
     MAKE=gmake
     hash gmake || MAKE=make
 
-    $MAKE -j
+    $MAKE -j clean all
     sudo $MAKE install
 
