@@ -58,8 +58,6 @@ OSes, ``binutils`` is simple to build by hand.
     gpg --keyserver keys.gnupg.net --recv-keys 4AE55E93
     gpg --verify binutils-$V.tar.gz.sig
 
-    rm -rf binutils-*
-
     tar xf binutils-$V.tar.gz
 
     mkdir binutils-build
