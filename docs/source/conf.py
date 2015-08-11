@@ -45,9 +45,11 @@ extensions = [
 doctest_global_setup = '''
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
+os.environ['PWNLIB_RANDOMIZE'] = '0'
 import pwnlib
 pwnlib.context.context.reset_local()
 pwnlib.context.ContextType.defaults['log_level'] = 'ERROR'
+pwnlib.context.ContextType.defaults['randomize'] = False
 pwnlib.term.text.when = 'never'
 pwnlib.log.install_default_handler()
 pwnlib.log.rootlogger.setLevel(1)

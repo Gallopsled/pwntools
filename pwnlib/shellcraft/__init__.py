@@ -5,6 +5,7 @@ from types import ModuleType
 
 from . import internal
 from .. import constants
+from ..util import packing
 from ..context import context
 
 
@@ -31,6 +32,10 @@ class module(ModuleType):
 
         # Insert into the module list
         sys.modules[self.__name__] = self
+
+    def _get_source(self, template):
+        assert template in self.templates
+        return os.path.join(self._absdir, *template.split('.')) + '.asm'
 
     def __lazyinit__(self):
 
@@ -121,6 +126,24 @@ class module(ModuleType):
         if isinstance(item, (int,long)):
             return item
         return constants.eval(item)
+
+    def pretty(self, n, comment=True):
+        if isinstance(n, str):
+            return repr(n)
+        if not isinstance(n, int):
+            return n
+        if isinstance(n, constants.Constant):
+            if comment: return '%s /* %s */' % (n,self.pretty(int(n)))
+            else:       return '%s (%s)'     % (n,self.pretty(int(n)))
+        elif abs(n) < 10:
+            return str(n)
+        else:
+            return hex(n)
+
+    def okay(self, s, *a, **kw):
+        if isinstance(s, int):
+            s = packing.pack(s, *a, **kw)
+        return '\0' not in s and '\n' not in s
 
     import registers
 

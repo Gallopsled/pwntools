@@ -1,10 +1,6 @@
-<% from pwnlib.shellcraft import common %>
-<% from pwnlib.shellcraft.i386 import push, pushstr %>
-<% from pwnlib.shellcraft.i386.linux import syscall %>
-<% from pwnlib.constants import SOCK_STREAM, AF_INET, SYS_socketcall, SYS_socketcall_socket, SYS_socketcall_connect %>
-<% from socket import htons, inet_aton, gethostbyname %>
-<% from pwnlib.util import packing %>
-<% from pwnlib.shellcraft import i386 %>
+<% from pwnlib.shellcraft.i386 import pushstr %>
+<% from pwnlib.shellcraft.i386.linux import socket, socketcall %>
+<% from pwnlib.constants import SYS_socketcall_connect %>
 <% from pwnlib.util.net import sockaddr %>
 
 <%page args="host, port, network = 'ipv4'"/>
@@ -19,7 +15,7 @@ Arguments:
 
 Examples:
 
-    >>> l = listen(timeout=1)
+    >>> l = listen(timeout=5)
     >>> assembly  = shellcraft.i386.linux.connect('localhost', l.lport)
     >>> assembly += shellcraft.i386.pushstr('Hello')
     >>> assembly += shellcraft.i386.linux.write('edx', 'esp', 5)
@@ -27,8 +23,8 @@ Examples:
     >>> l.wait_for_connection().recv()
     'Hello'
 
-    >>> l = listen(fam='ipv6', timeout=1)
-    >>> assembly   = shellcraft.i386.linux.connect('localhost', l.lport, 'ipv6')
+    >>> l = listen(fam='ipv6', timeout=5)
+    >>> assembly   = shellcraft.i386.linux.connect('ip6-localhost', l.lport, 'ipv6')
     >>> p = run_assembly(assembly)
     >>> assert l.wait_for_connection()
 
@@ -37,21 +33,13 @@ Examples:
     sockaddr, length, address_family = sockaddr(host, port, network)
 %>\
 
-/* open new socket */
-    ${push(0)}
-    ${push(SOCK_STREAM)}
-    ${push(address_family)}
-    ${syscall(SYS_socketcall, SYS_socketcall_socket, 'esp', 0)}
-
-/* save opened socket */
+/* open new socket, save it */
+    ${socket(network)}
     mov edx, eax
 
 /* push sockaddr, connect() */
     ${pushstr(sockaddr, False)}
     mov ecx, esp
-    ${push(length)} /* socklen_t addrlen */
-    push ecx    /* sockaddr *addr */
-    push edx    /* sockfd */
-    ${syscall(SYS_socketcall, SYS_socketcall_connect, 'esp')}
+    ${socketcall(SYS_socketcall_connect, 'edx', 'ecx', length)}
 
 /* Socket that is maybe connected is in edx */

@@ -208,11 +208,15 @@ def _objdump():
 def _include_header():
     os   = context.os
     arch = context.arch
+    include = ''
 
     if os == 'freebsd':
         include = 'freebsd.h'
     elif os == 'linux':
         include = 'linux/%s.h' % arch
+    elif os == 'cgc':
+        include = 'cgc/%s.h' % arch
+
 
     if not include or not path.exists(path.join(_incdir, include)):
         log.warn_once("Could not find system include headers for %s-%s" % (arch,os))
@@ -237,7 +241,8 @@ def _arch_header():
                    '.arch armv7-a',
                    '.thumb'],
         'mips'  : ['.set mips2',
-                   '.set noreorder'],
+                   '.set noreorder',
+                   ],
     }
 
     return '\n'.join(prefix + headers.get(context.arch, [])) + '\n'
@@ -354,7 +359,7 @@ def cpp(shellcode):
     return _run(cmd, code).strip('\n').rstrip() + '\n'
 
 @LocalContext
-def make_elf_from_assembly(assembly, vma = 0x10000000):
+def make_elf_from_assembly(assembly, vma = 0x10000000, extract=False):
     r"""
     Builds an ELF file with the specified assembly as its
     executable code.
@@ -362,12 +367,22 @@ def make_elf_from_assembly(assembly, vma = 0x10000000):
     Arguments:
 
         assembly(str): Assembly
+        vma(int): Load address of the binary
+        extract(bool): Whether to return the data extracted from the file created,
+                       or the path to it.
 
     Returns:
 
-        The path to the assembled ELF.
+        The path to the assembled ELF (extract=False), or the data
+        of the assembled ELF.
     """
-    path = asm(assembly, vma = vma, extract = False)
+    if context.arch == 'thumb':
+        to_thumb = shellcraft.arm.to_thumb()
+
+        if not assembly.startswith(to_thumb):
+            assembly = to_thumb + assembly
+
+    path = asm(assembly, vma = vma, extract = extract)
     os.chmod(path, 0755)
     return path
 
@@ -413,7 +428,7 @@ def make_elf(data, vma = None, strip=True, extract=True):
     assembler = _assembler()
     linker    = _linker()
     code      = _arch_header()
-    code      += '.string "%s"' % ''.join('\\x%02x' % c for c in bytearray(data))
+    code      += '.string "%s"' % ''.join('\\x%02x' % ord(c) for c in data)
     code      += '\n'
 
     log.debug("Building ELF:\n" + code)
@@ -487,7 +502,7 @@ def asm(shellcode, vma = 0, extract = True):
             '\xb8\x17\x00\x00\x00'
             >>> asm("mov rax, SYS_select", arch = 'amd64', os = 'linux')
             'H\xc7\xc0\x17\x00\x00\x00'
-            >>> asm("ldr r0, =SYS_select", arch = 'arm', os = 'linux', bits=32)
+            >>> asm("mov r0, #SYS_select", arch = 'arm', os = 'linux', bits=32)
             'R\x00\xa0\xe3'
     """
     result = ''
@@ -545,7 +560,8 @@ def asm(shellcode, vma = 0, extract = True):
             result = fd.read()
 
     except Exception:
-        log.exception("An error occurred while assembling:\n%s" % code)
+        lines = '\n'.join('%4i: %s' % (i+1,line) for (i,line) in enumerate(code.splitlines()))
+        log.exception("An error occurred while assembling:\n%s" % lines)
     else:
         atexit.register(lambda: shutil.rmtree(tmpdir))
 

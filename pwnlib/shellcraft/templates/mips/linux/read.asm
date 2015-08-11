@@ -1,6 +1,6 @@
 
 <%
-from pwnlib.shellcraft.mips.linux import syscall
+    from pwnlib.shellcraft.mips.linux import syscall
 %>
 <%page args="fd, buf, nbytes"/>
 <%docstring>

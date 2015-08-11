@@ -495,6 +495,10 @@ class DynELF(object):
         if lib: dynlib = self._dynamic_load_dynelf(lib)
         else:   dynlib = self
 
+        if dynlib is None:
+            log.failure("Could not find %r" % lib)
+            return None
+
         #
         # If we are resolving a symbol in the library, find it.
         #
@@ -502,6 +506,7 @@ class DynELF(object):
             # Try a quick lookup by build ID
             self.status("Trying lookup based on Build ID")
             build_id = dynlib._lookup_build_id(lib=lib)
+            result   = None
             if build_id:
                 log.info("Trying lookup based on Build ID: %s" % build_id)
                 path = libcdb.search_by_build_id(build_id)
@@ -768,6 +773,9 @@ class DynELF(object):
 
         if lib is not None:
             libbase = self.lookup(symb = None, lib = lib)
+
+        if not libbase:
+            return None
 
         for offset in libcdb.get_build_id_offsets():
             address = libbase + offset

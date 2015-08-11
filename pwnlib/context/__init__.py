@@ -7,6 +7,7 @@ contexts work properly and as expected.
 import collections
 import functools
 import logging
+import os
 import platform
 import string
 import sys
@@ -323,6 +324,7 @@ class ContextType(object):
         'kernel': None,
         'log_level': logging.INFO,
         'log_file': _devnull(),
+        'randomize': False,
         'newline': '\n',
         'os': 'linux',
         'signed': False,
@@ -331,7 +333,7 @@ class ContextType(object):
     }
 
     #: Valid values for :meth:`pwnlib.context.ContextType.os`
-    oses = sorted(('linux','freebsd','windows'))
+    oses = sorted(('linux','freebsd','windows','cgc'))
 
     big_32    = {'endian': 'big', 'bits': 32}
     big_64    = {'endian': 'big', 'bits': 64}
@@ -493,6 +495,10 @@ class ContextType(object):
                 self._tls.pop()
 
         return LocalContext()
+
+    @property
+    def silent(self):
+        return self.local(log_level='error')
 
     def clear(self, *a, **kw):
         """
@@ -865,6 +871,13 @@ class ContextType(object):
         return os
 
     @_validator
+    def randomize(self, r):
+        """
+        Global flag that lots of things should be randomized.
+        """
+        return bool(r)
+
+    @_validator
     def signed(self, signed):
         """
         Signed-ness for packing operation when it's not explicitly set.
@@ -922,6 +935,11 @@ class ContextType(object):
         if isinstance(value, (str, unicode)):
             return [value]
         return value
+
+    @property
+    def abi(self):
+        return self._abi
+
 
     #*************************************************************************
     #                               ALIASES

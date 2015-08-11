@@ -113,6 +113,28 @@ p.add_argument(
 )
 
 p.add_argument(
+    '-v', '--avoid',
+    action='append',
+    help = 'Encode the shellcode to avoid the listed bytes'
+)
+
+p.add_argument(
+    '-n', '--newline',
+    dest='avoid',
+    action='append_const',
+    const='\n',
+    help = 'Encode the shellcode to avoid newlines'
+)
+
+p.add_argument(
+    '-z', '--zero',
+    dest='avoid',
+    action='append_const',
+    const='\x00',
+    help = 'Encode the shellcode to avoid NULL bytes'
+)
+
+p.add_argument(
     '-r',
     '--run',
     help="Run output",
@@ -133,6 +155,27 @@ p.add_argument(
     dest='color'
 )
 
+p.add_argument(
+    '--syscalls',
+    help="List syscalls",
+    action='store_true'
+)
+
+p.add_argument(
+    '--address',
+    help="Load address",
+    default=None
+)
+
+def get_template(name):
+    func = shellcraft
+    for attr in name.split('.'):
+        func = getattr(func, attr)
+    return func
+
+def is_not_a_syscall_template(name):
+    template_src = shellcraft._get_source(name)
+    return 'man 2' not in read(template_src)
 
 def main():
     # Banner must be added here so that it doesn't appear in the autodoc
@@ -141,12 +184,15 @@ def main():
     args = p.parse_args()
 
     if not args.shellcode:
-        print '\n'.join(shellcraft.templates)
+        templates = shellcraft.templates
+
+        if not args.syscalls:
+            templates = filter(is_not_a_syscall_template, templates)
+
+        print '\n'.join(templates)
         exit()
 
-    func = shellcraft
-    for attr in args.shellcode.split('.'):
-        func = getattr(func, attr)
+    func = get_template(args.shellcode)
 
     if args.show:
         # remove doctests
@@ -236,13 +282,27 @@ def main():
         print cpp(code)
         exit()
 
+    assembly = code
+
+    vma = args.address
+    if vma:
+        vma = eval(vma)
 
     if args.format in ['e','elf']:
         args.format = 'default'
-        code = read(make_elf_from_assembly(code, vma=None))
-        os.fchmod(args.out.fileno(), 0700)
+        try: os.fchmod(args.out.fileno(), 0700)
+        except OSError: pass
+
+
+        if not args.avoid:
+            code = read(make_elf_from_assembly(assembly, vma=vma))
+        else:
+            code = asm(assembly)
+            code = encode(code, args.avoid)
+            code = make_elf(code, vma=vma)
+            # code = read(make_elf(encode(asm(code), args.avoid)))
     else:
-        code = asm(code)
+        code = encode(asm(assembly), args.avoid)
 
     if args.format == 'default':
         if args.out.isatty():
@@ -253,7 +313,10 @@ def main():
     arch = args.shellcode.split('.')[0]
 
     if args.debug:
-        proc = gdb.debug_shellcode(code, arch=arch)
+        if not args.avoid:
+            proc = gdb.debug_assembly(assembly, arch=arch, vma=vma)
+        else:
+            proc = gdb.debug_shellcode(code, arch=arch, vma=vma)
         proc.interactive()
         sys.exit(0)
 

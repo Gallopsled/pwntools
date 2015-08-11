@@ -7,6 +7,6 @@ Args: [sock (imm/reg) = ebp]
 </%docstring>
 
 
-${linux.dup(sock)}
+${linux.dupio(sock)}
 
 ${linux.sh()}

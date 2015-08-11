@@ -1,0 +1,53 @@
+import argparse
+
+from pwn import *
+
+from . import common
+
+p = argparse.ArgumentParser(
+    description = 'Strip binaries for CTF usage',
+    formatter_class = argparse.RawDescriptionHelpFormatter,
+)
+
+g = p.add_argument_group("actions")
+g.add_argument('-b', '--build-id', help="Strip build ID", action='store_true')
+g.add_argument('-p', '--patch', metavar='FUNCTION', help="Patch function", action='append')
+p.add_argument('-o', '--output', type=file, default=sys.stdout)
+p.add_argument('file', type=file)
+
+def main():
+    args = p.parse_args()
+
+    if not (args.patch or args.build_id):
+        sys.stderr.write("Must specify at least one action\n")
+        sys.stderr.write(p.format_usage())
+        sys.exit(0)
+
+    elf = ELF(args.file.name)
+    context.clear(arch=elf.arch)
+
+    if args.build_id:
+        for offset in pwnlib.libcdb.get_build_id_offsets():
+            data = elf.read(elf.address + offset + 0xC, 4)
+            if data == 'GNU\x00':
+                elf.write(elf.address + offset + 0x10, read('/dev/urandom', 20))
+
+    for function in args.patch:
+        if function not in elf.symbols:
+            log.error("Could not find function %r" % function)
+
+        trap = asm(shellcraft.trap())
+        offset = elf.symbols[function]
+
+        elf.write(elf.address + offset, trap)
+
+    result = elf.data
+
+    if args.output.isatty():
+        result = enhex(result)
+
+    args.output.write(result)
+
+
+if __name__ == '__main__':
+    main()

@@ -7,9 +7,11 @@ import string
 from . import lists
 from . import packing
 from ..context import context
+from ..log import getLogger
 from ..term import text
 from .cyclic import cyclic_find
 
+log = getLogger(__name__)
 
 def unhex(s):
     r"""unhex(s) -> str
@@ -107,7 +109,8 @@ def bits(s, endian = 'big', zero = 0, one = 1):
         >>> sum(bits("test"))
         17
     """
-
+    if s < 0:
+        s = s & ((1<<context.bits)-1)
 
     if endian not in ['little', 'big']:
         raise ValueError("bits(): 'endian' must be either 'little' or 'big'")
@@ -345,12 +348,14 @@ def xor_pair(data, avoid = '\x00\n'):
     if isinstance(data, (int, long)):
         data = packing.pack(data)
 
-    alphabet = ''.join(chr(n) for n in range(256) if chr(n) not in avoid)
+    alphabet = list(chr(n) for n in range(256) if chr(n) not in avoid)
 
     res1 = ''
     res2 = ''
 
     for c1 in data:
+        if context.randomize:
+            random.shuffle(alphabet)
         for c2 in alphabet:
             c3 = chr(ord(c1) ^ ord(c2))
             if c3 in alphabet:
@@ -362,6 +367,53 @@ def xor_pair(data, avoid = '\x00\n'):
 
     return res1, res2
 
+def xor_key(data, avoid='\x00\n', size=None):
+    r"""xor_key(data, size=None, avoid='\x00\n') -> None or (int, str)
+
+    Finds a ``size``-width value that can be XORed with a string
+    to produce ``data``, while neither the XOR value or XOR string
+    contain any bytes in ``avoid``.
+
+    Arguments:
+        data (str): The desired string.
+        avoid: The list of disallowed characters. Defaults to nulls and newlines.
+        size (int): Size of the desired output value, default is word size.
+
+    Returns:
+        A tuple containing two strings; the XOR key and the XOR string.
+        If no such pair exists, None is returned.
+
+    Example:
+
+        >>> xor_key("Hello, world")
+        ('\x01\x01\x01\x01', 'Idmmn-!vnsme')
+    """
+    size = size or context.bytes
+
+    if len(data) % size:
+        log.error("Data must be padded to size for xor_key")
+
+    words    = lists.group(size, data)
+    columns  = [''] * size
+    for word in words:
+        for i,byte in enumerate(word):
+            columns[i] += byte
+
+    alphabet = list(chr(n) for n in range(256) if chr(n) not in avoid)
+
+    result = ''
+
+    for column in columns:
+        if context.randomize:
+            random.shuffle(alphabet)
+        for c2 in alphabet:
+            if all(chr(ord(c)^ord(c2)) in alphabet for c in column):
+                result += c2
+                break
+        else:
+            return None
+
+    return result, xor(data, result)
 
 def randoms(count, alphabet = string.lowercase):
     """randoms(count, alphabet = string.lowercase) -> str
@@ -470,6 +522,7 @@ default_style = {
     'marker':       text.gray if text.has_gray else text.blue,
     'nonprintable': text.gray if text.has_gray else text.blue,
     '00':           text.red,
+    '0a':           text.red,
     'ff':           text.green,
 }
 

@@ -21,6 +21,7 @@ from pwnlib.dynelf import DynELF
 from pwnlib.encoders import *
 from pwnlib.elf import ELF
 from pwnlib.elf import load
+from pwnlib.encoders import *
 from pwnlib.exception import PwnlibException
 from pwnlib.fmtstr import FmtStr, fmtstr_payload
 from pwnlib.log import getLogger
@@ -44,6 +45,7 @@ from pwnlib.util import proc
 from pwnlib.util import safeeval
 from pwnlib.util.cyclic import *
 from pwnlib.util.fiddling import *
+from pwnlib.util.getdents import *
 from pwnlib.util.hashes import *
 from pwnlib.util.lists import *
 from pwnlib.util.misc import *

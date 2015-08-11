@@ -34,6 +34,8 @@ class ABI(object):
         (32, 'i386', 'linux'):  linux_i386,
         (64, 'amd64', 'linux'): linux_amd64,
         (32, 'arm', 'linux'):   linux_arm,
+        (32, 'thumb', 'linux'):   linux_arm,
+        (32, 'mips', 'linux'):   linux_mips,
         (32, 'i386', 'windows'):  windows_i386,
         (64, 'amd64', 'windows'): windows_amd64,
         }[(context.bits, context.arch, context.os)]
@@ -45,6 +47,8 @@ class ABI(object):
         (32, 'i386', 'linux'):  linux_i386_syscall,
         (64, 'amd64', 'linux'): linux_amd64_syscall,
         (32, 'arm', 'linux'):   linux_arm_syscall,
+        (32, 'thumb', 'linux'):   linux_arm_syscall,
+        (32, 'mips', 'linux'):   linux_mips_syscall,
         }[(context.bits, context.arch, context.os)]
 
     @staticmethod
@@ -54,6 +58,7 @@ class ABI(object):
         (32, 'i386', 'linux'):  linux_i386_sigreturn,
         (64, 'amd64', 'linux'): linux_amd64_sigreturn,
         (32, 'arm', 'linux'):   linux_arm_sigreturn,
+        (32, 'thumb', 'linux'):   linux_arm_sigreturn,
         }[(context.bits, context.arch, context.os)]
 
 class SyscallABI(ABI):
@@ -77,10 +82,14 @@ class SigreturnABI(SyscallABI):
 linux_i386   = ABI([], 4, 0)
 linux_amd64  = ABI(['rdi','rsi','rdx','rcx','r8','r9'], 8, 0)
 linux_arm    = ABI(['r0', 'r1', 'r2', 'r3'], 8, 0)
+linux_aarch64 = ABI(['x0', 'x1', 'x2', 'x3'], 16, 0)
+linux_mips  = ABI(['$a0','$a1','$a2','$a3'], 4, 0)
 
 linux_i386_syscall = SyscallABI(['eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp'], 4, 0)
 linux_amd64_syscall = SyscallABI(['rax','rdi', 'rsi', 'rdx', 'r10', 'r8', 'r9'],   8, 0)
 linux_arm_syscall   = SyscallABI(['r7', 'r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6'], 4, 0)
+linux_aarch64_syscall   = SyscallABI(['x8', 'x0', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6'], 16, 0)
+linux_mips_syscall  = ABI(['$v0', '$a0','$a1','$a2','$a3'], 4, 0)
 
 linux_i386_sigreturn = SigreturnABI(['eax'], 4, 0)
 linux_amd64_sigreturn = SigreturnABI(['rax'], 4, 0)
@@ -93,101 +102,3 @@ windows_amd64 = ABI(['rcx','rdx','r8','r9'], 32, 32)
 linux_i386_srop = ABI(['eax'], 4, 0)
 linux_amd64_srop = ABI(['rax'], 4, 0)
 linux_arm_srop = ABI(['r7'], 4, 0)
-
-
-''' === OLD CODE ===
-class AbiCall(Call):
-    """
-    Encapsulates ABI-specific information about a function call, which is
-    to be executed with ROP.
-    """
-    #: Mapping of registers to the values to which they should be set, before
-    #: $pc is set to ``addr``.
-    registers = {}
-
-    #: List of values which must appear in-order on the stack, including all
-    #: padding required by the ABI (e.g. Windows x64 requires a minimum of 32 bytes)
-    stack = []
-
-    def __new__(cls, *a, **kw):
-        # Allow explicit creation of subclasses
-        if cls != AbiCall:
-            return super(AbiCall, cls).__new__(cls, *a, **kw)
-
-        # Do not allow explicit creation of AbiCall.
-        # Default to the best choice.
-        abis = {
-            ('i386',32,'linux'): x86LinuxAbiCall,
-            ('amd64',64,'linux'): amd64LinuxAbiCall,
-            ('arm',32,'linux'): armLinuxAbiCall
-        }
-
-        key = (context.arch, context.bits, context.os)
-
-        if key not in abis:
-            log.error("Don't know how to make ROP calls for %r" % (key,))
-
-        return super(AbiCall, cls).__new__(abis[key], *a, **kw)
-
-    def __init__(self, name, target, args):
-        super(AbiCall, self).__init__(name, target, args)
-        self.registers = {}
-        self.stack     = []
-
-        self.build()
-
-
-class StackAdjustingAbiCall(AbiCall):
-    """
-    Encapsulates information about a calling convention which
-    may capture arguments on the stack, and as such the stack
-    pointer must be adjusted in order to continue ROP execution.
-
-    This functionality is separated out from the normal ABI call
-    so that optimizations can be performed on the last call in
-    the stack if there are no arguments.
-    """
-    def build(self, addr = None):
-        self.stack.append(StackAdjustment())
-
-class x86LinuxAbiCall(StackAdjustingAbiCall):
-    def build(self, addr = None):
-        super(x86LinuxAbiCall, self).build()
-
-        self.stack.extend(self.args)
-
-class amd64LinuxAbiCall(StackAdjustingAbiCall):
-    def build(self, addr = None):
-        super(amd64LinuxAbiCall, self).build()
-
-        registers = ['rdi','rsi','rdx','rcx','r8','r9']
-
-        for reg, arg in zip(registers, self.args):
-            self.registers[reg] = arg
-
-        self.stack.extend(self.args[len(registers):])
-
-class armLinuxAbiCall(StackAdjustingAbiCall):
-    def build(self, addr = None):
-        super(armLinuxAbiCall, self).build()
-
-        registers = ['r0','r1','r2','r3']
-        args      = list(self.args)
-
-        for reg, arg in zip(registers, args):
-            self.registers[reg] = arg
-
-        self.stack.extend(self.args[len(registers):])
-
-class x86SysretCall(x86LinuxAbiCall):
-    def build(self, addr = None):
-        super(x86SysretCall, self).build()
-        self.stack = list(self.args)
-        self.regs  = {'eax': constants.i386.SYS_sigreturn}
-
-class x64SysretCall(AbiCall):
-    def build(self, addr = None):
-        super(x64SysretCall, self).build()
-        self.stack = list(self.args)
-        self.regs  = {'rax': constants.amd64.SYS_sigreturn}
-'''

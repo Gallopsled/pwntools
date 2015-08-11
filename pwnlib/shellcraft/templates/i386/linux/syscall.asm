@@ -1,5 +1,5 @@
 <%
-  from pwnlib.shellcraft import i386
+  from pwnlib.shellcraft import i386, pretty
   from pwnlib.constants import Constant
   from pwnlib.abi import linux_i386_syscall as abi
 %>
@@ -16,20 +16,20 @@ Example:
             /* call execve(1, 'esp', 2, 0) */
             push (SYS_execve) /* 0xb */
             pop eax
-            push 0x1
+            push 1
             pop ebx
             mov ecx, esp
-            push 0x2
+            push 2
             pop edx
             xor esi, esi
             int 0x80
         >>> print pwnlib.shellcraft.i386.linux.syscall('SYS_execve', 2, 1, 0, 20).rstrip()
-            /* call execve(2, 1, 0, 20) */
+            /* call execve(2, 1, 0, 0x14) */
             push (SYS_execve) /* 0xb */
             pop eax
-            push 0x2
+            push 2
             pop ebx
-            push 0x1
+            push 1
             pop ecx
             push 0x14
             pop esi
@@ -45,7 +45,7 @@ Example:
         >>> print pwnlib.shellcraft.i386.linux.syscall('ebp', None, None, 1).rstrip()
             /* call syscall('ebp', ?, ?, 1) */
             mov eax, ebp
-            push 0x1
+            push 1
             pop edx
             int 0x80
         >>> print pwnlib.shellcraft.i386.linux.syscall(
@@ -53,7 +53,7 @@ Example:
         ...               'PROT_READ | PROT_WRITE | PROT_EXEC',
         ...               'MAP_PRIVATE | MAP_ANONYMOUS',
         ...               -1, 0).rstrip()
-            /* call mmap2(0, 4096, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
+            /* call mmap2(0, 0x1000, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
             xor eax, eax
             mov al, 0xc0
             xor ebp, ebp
@@ -62,7 +62,7 @@ Example:
             mov ch, 0x1000 >> 8
             push -1
             pop edi
-            push (PROT_READ | PROT_WRITE | PROT_EXEC) /* 0x7 */
+            push (PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
             pop edx
             push (MAP_PRIVATE | MAP_ANONYMOUS) /* 0x22 */
             pop esi
@@ -84,7 +84,7 @@ Example:
       if arg == None:
           args.append('?')
       else:
-          args.append(repr(arg))
+          args.append(pretty(arg, False))
   while args and args[-1] == '?':
       args.pop()
   syscall_repr = syscall_repr % ', '.join(args)

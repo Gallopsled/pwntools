@@ -7,7 +7,7 @@ import tempfile
 from . import atexit
 from . import elf
 from . import tubes
-from .asm import make_elf, _bfdname
+from .asm import make_elf, make_elf_from_assembly, _bfdname
 from .context import context, LocalContext
 from .log import getLogger
 from .util import misc
@@ -17,7 +17,21 @@ from .qemu import get_qemu_user
 log = getLogger(__name__)
 
 @LocalContext
-def debug_shellcode(data, execute=None):
+def debug_assembly(asm, execute=None, vma=None):
+    """
+    Creates an ELF file, and launches it with GDB.
+
+    This is identical to debug_shellcode, except that
+    any defined symbols are available in GDB, and it
+    saves you the explicit call to asm().
+    """
+    tmp_elf = make_elf_from_assembly(asm, vma=vma, extract=False)
+    os.chmod(tmp_elf, 0777)
+    atexit.register(lambda: os.unlink(tmp_elf))
+    return debug(tmp_elf, execute=None, arch=context.arch)
+
+@LocalContext
+def debug_shellcode(data, execute=None, vma=None):
     """
     Creates an ELF file, and launches it with GDB.
 
@@ -28,11 +42,9 @@ def debug_shellcode(data, execute=None):
     Returns:
         A ``process`` tube connected to the shellcode on stdin/stdout/stderr.
     """
-    tmp_elf  = tempfile.mktemp(prefix='pwn', suffix='.elf')
-    elf_data = make_elf(data)
-    with open(tmp_elf,'wb+') as f:
-        f.write(elf_data)
-        f.flush()
+    if isinstance(data, unicode):
+        log.error("Shellcode is cannot be unicode.  Did you mean debug_assembly?")
+    tmp_elf = make_elf(data, extract=False, vma=vma)
     os.chmod(tmp_elf, 0777)
     atexit.register(lambda: os.unlink(tmp_elf))
     return debug(tmp_elf, execute=None, arch=context.arch)

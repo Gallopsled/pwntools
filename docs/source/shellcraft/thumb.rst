@@ -1,7 +1,7 @@
 .. testsetup:: *
 
    from pwn import *
-   context.clear(arch='arm')
+   context.clear(arch='thumb')
 
 :mod:`pwnlib.shellcraft.thumb` --- Shellcode for Thumb Mode
 ===========================================================

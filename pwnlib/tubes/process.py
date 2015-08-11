@@ -352,12 +352,18 @@ class process(tube):
 
         self.close()
 
-    def poll(self):
-        """poll() -> int
+    def poll(self, block = False):
+        """poll(block = False) -> int
+
+        Arguments:
+            block(bool): Wait for the process to exit
 
         Poll the exit code of the process. Will return None, if the
         process has not yet finished and the exit code otherwise.
         """
+        if block:
+            self.wait_for_close()
+
         self.proc.poll()
         if self.proc.returncode != None and not self._stop_noticed:
             self._stop_noticed = True

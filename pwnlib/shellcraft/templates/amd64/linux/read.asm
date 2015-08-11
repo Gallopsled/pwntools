@@ -1,15 +1,8 @@
-
-<%
-    from pwnlib.shellcraft.amd64.linux import syscall
-%>
-<%page args="fd, buf, nbytes"/>
+<% from pwnlib.shellcraft import amd64 %>
+<%page args="fd=0, buffer='rsp', count=8"/>
 <%docstring>
-Invokes the syscall read.  See 'man 2 read' for more information.
-
-Arguments:
-    fd(int): fd
-    buf(void): buf
-    nbytes(size_t): nbytes
+Reads data from the file descriptor into the provided buffer.
+This is a one-shot and does not fill the request.
 </%docstring>
 
-    ${syscall('SYS_read', fd, buf, nbytes)}
+    ${amd64.linux.syscall('SYS_read', fd, buffer, count)}

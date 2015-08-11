@@ -161,10 +161,23 @@ def wrap(template, render_global):
     return %(funcname)s
 ''' % locals()
 
-    exec T
+    exec T in locals()
 
     # Setting _relpath is a slight hack only used to get better documentation
     res = wrap(template, render_global)
     res._relpath = path
+    res.__module__ = 'pwnlib.shellcraft.' + os.path.dirname(path).replace('/','.')
+
+    import sys, inspect, functools
+
+    @functools.wraps(res)
+    def function(*a):
+        return sys.modules[res.__module__].function(res.__name__, res, *a)
+    @functools.wraps(res)
+    def call(*a):
+        return sys.modules[res.__module__].call(res.__name__, *a)
+
+    res.function = function
+    res.call     = call
 
     return res

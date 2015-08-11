@@ -228,8 +228,8 @@ class tube(Timeout, Logger):
                 >>> t.recv_raw = lambda *a: time.sleep(0.01) or 'a'
                 >>> t.recvn(10, timeout=0.05)
                 ''
-                >>> t.recvn(10, timeout=0.05)
-                'aaaaaaaaaa'
+                >>> t.recvn(10, timeout=0.06) # doctest: +ELLIPSIS
+                'aaaaaa...'
         """
         # Keep track of how much data has been received
         # It will be pasted together at the end if a

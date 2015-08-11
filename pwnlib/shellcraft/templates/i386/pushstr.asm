@@ -1,5 +1,6 @@
 <%
     from pwnlib.util import lists, packing, fiddling
+    from pwnlib.shellcraft import pretty, okay
 %>
 <%page args="string, append_null = True"/>
 <%docstring>
@@ -10,7 +11,7 @@ Example:
 
     >>> print shellcraft.i386.pushstr('').rstrip()
         /* push '\x00' */
-        push 0x1
+        push 1
         dec byte ptr [esp]
     >>> print shellcraft.i386.pushstr('a').rstrip()
         /* push 'a\x00' */
@@ -25,7 +26,7 @@ Example:
         xor dword ptr [esp], 0x1606060
     >>> print shellcraft.i386.pushstr('aaaa').rstrip()
         /* push 'aaaa\x00' */
-        push 0x1
+        push 1
         dec byte ptr [esp]
         push 0x61616161
     >>> print shellcraft.i386.pushstr('aaaaa').rstrip()
@@ -41,7 +42,7 @@ Example:
         xor dword ptr [esp], 0x10101c2
     >>> print shellcraft.i386.pushstr('\xc3', append_null = False).rstrip()
         /* push '\xc3' */
-        push 0x...c3
+        push -0x3d
     >>> with context.local():
     ...    context.arch = 'i386'
     ...    print enhex(asm(shellcraft.pushstr("/bin/sh")))
@@ -71,24 +72,12 @@ if append_null:
 if not string:
     return
 
-def okay(s):
-    return '\n' not in s and '\0' not in s
-
 if ord(string[-1]) >= 128:
     extend = '\xff'
 else:
     extend = '\x00'
-
-def orig_pretty(n):
-    if isinstance(n, int):
-        return '%s == %#x' % (n,n)
-    elif isinstance(n, str):
-        return repr(n)
-
-def pretty(n):
-    return hex(n & (2 ** 32 - 1))
 %>\
-    /* push ${orig_pretty(original)} */
+    /* push ${pretty(original, False)} */
 % for word in lists.group(4, string, 'fill', extend)[::-1]:
 <%
     sign = packing.u32(word, endian='little', sign='signed')

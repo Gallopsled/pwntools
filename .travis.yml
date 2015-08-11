@@ -4,6 +4,7 @@ addons:
   apt:
     packages:
     - gcc-multilib
+    - gcc-4.6-arm-linux-gnueabihf
 cache:
     - pip
     - directories:

@@ -1,6 +1,6 @@
 <%
+  from pwnlib.shellcraft import eval, pretty, okay
   from pwnlib.util import lists, packing, fiddling, misc
-  from pwnlib.constants import eval, Constant
   from pwnlib.log import getLogger
   from pwnlib.shellcraft.registers import get_register, is_register, bits_required
   log = getLogger('pwnlib.shellcraft.i386.mov')
@@ -19,6 +19,11 @@ If src is a string that is not a register, then it will locally set
 `context.arch` to `'i386'` and use :func:`pwnlib.constants.eval` to evaluate the
 string. Note that this means that this shellcode can change behavior depending
 on the value of `context.os`.
+
+Args:
+  dest (str): The destination register.
+  src (str): Either the input register, or an immediate value.
+  stack_allowed (bool): Can the stack be used?
 
 Example:
 
@@ -44,11 +49,11 @@ Example:
     >>> print shellcraft.i386.mov('ax', 'bl').rstrip()
         movzx ax, bl
     >>> print shellcraft.i386.mov('eax', 1).rstrip()
-        push 0x1
+        push 1
         pop eax
     >>> print shellcraft.i386.mov('eax', 1, stack_allowed=False).rstrip()
         xor eax, eax
-        mov al, 0x1
+        mov al, 1
     >>> print shellcraft.i386.mov('eax', 0xdead00ff).rstrip()
         mov eax, -0xdead00ff
         neg eax
@@ -81,26 +86,10 @@ Example:
         push (SYS_execve) /* 0x3b */
         pop eax
     >>> print shellcraft.i386.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
-        push (PROT_READ | PROT_WRITE | PROT_EXEC) /* 0x7 */
+        push (PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
         pop eax
-
-Args:
-  dest (str): The destination register.
-  src (str): Either the input register, or an immediate value.
-  stack_allowed (bool): Can the stack be used?
 </%docstring>
 <%
-def okay(s):
-    return '\0' not in s and '\n' not in s
-
-def pretty(n):
-    if isinstance(n, Constant):
-        return '%s /* %#x */' % (n,n)
-    elif n < 0:
-        return str(n)
-    else:
-        return hex(n)
-
 src_name = src
 if not isinstance(src, (str, tuple)):
     src_name = pretty(src)

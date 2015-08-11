@@ -110,14 +110,14 @@ Mips Example:
     >>> context.clear()
     >>> context.arch = "mips"
     >>> context.endian = "big"
-    >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, 'sp', 1024)
+    >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, '$sp', 1024)
     >>> assembly += 'sigreturn:' + shellcraft.sigreturn()
     >>> assembly += 'syscall: '  + shellcraft.syscall()
-    >>> assembly += 'exit: '     + 'xor $a0, $a0, $a0; li $v0, 0xfa1; syscall;'
+    >>> assembly += 'exit: '     + shellcraft.exit(0)
     >>> assembly += 'message: '  + ('.asciz "%s"' % message)
     >>> binary = ELF.from_assembly(assembly)
     >>> frame = SigreturnFrame()
-    >>> frame.v0 = 0xfa4
+    >>> frame.v0 = constants.SYS_write
     >>> frame.a0 = constants.STDOUT_FILENO
     >>> frame.a1 = binary.symbols['message']
     >>> frame.a2 = len(message)
@@ -136,14 +136,14 @@ Mipsel Example:
     >>> context.clear()
     >>> context.arch = "mips"
     >>> context.endian = "little"
-    >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, 'sp', 1024)
+    >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, '$sp', 1024)
     >>> assembly += 'sigreturn:' + shellcraft.sigreturn()
     >>> assembly += 'syscall: '  + shellcraft.syscall()
-    >>> assembly += 'exit: '     + 'xor $a0, $a0, $a0; li $v0, 0xfa1; syscall;'
+    >>> assembly += 'exit: '     + shellcraft.exit(0)
     >>> assembly += 'message: '  + ('.asciz "%s"' % message)
     >>> binary = ELF.from_assembly(assembly)
     >>> frame = SigreturnFrame()
-    >>> frame.v0 = 0xfa4
+    >>> frame.v0 = constants.SYS_write
     >>> frame.a0 = constants.STDOUT_FILENO
     >>> frame.a1 = binary.symbols['message']
     >>> frame.a2 = len(message)
