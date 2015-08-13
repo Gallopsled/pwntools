@@ -23,7 +23,8 @@ Example:
         swi #1
     >>> print shellcraft.thumb.linux.syscall('SYS_exit', 0).rstrip()
         /* call exit(0) */
-        eor r0, r0
+        movs r0, 1
+        subs r0, 1
         mov r7, #SYS_exit
         swi #1
 </%docstring>
