@@ -21,9 +21,13 @@ from ..qemu import get_qemu_arch
 from ..tubes.process import process
 from .datatypes import *
 
+from collections import namedtuple
+
 log = getLogger(__name__)
 
 __all__ = ['load', 'ELF'] + sorted(filter(lambda x: not x.startswith('_'), datatypes.__dict__.keys()))
+
+Function = namedtuple('Function', 'address size')
 
 def load(*args, **kwargs):
     """Compatibility wrapper for pwntools v1"""
@@ -88,6 +92,7 @@ class ELF(ELFFile):
         self._populate_got_plt()
         self._populate_symbols()
         self._populate_libraries()
+        self._populate_functions()
 
         if self.elftype == 'DYN':
             self._address = 0
@@ -313,6 +318,26 @@ class ELF(ELFFile):
 
         except subprocess.CalledProcessError:
             self.libs = {}
+
+    def _populate_functions(self):
+        """Builds a dict of 'functions' (i.e. symbols of type 'STT_FUNC')
+        by function name that map to a tuple consisting of the func address and size
+        in bytes.
+        """
+        self.functions = dict()
+        for sec in self.sections:
+            if not isinstance(sec, SymbolTableSection):
+                continue
+
+            for sym in sec.iter_symbols():
+                # Avoid duplicates
+                if self.functions.has_key(sym.name):
+                    continue
+                if sym.entry.st_info['type'] == 'STT_FUNC' and sym.entry.st_size != 0:
+                    name = sym.name
+                    addr = self.symbols[sym.name]
+                    size = sym.entry.st_size
+                    self.functions[name] = Function(addr, size)
 
     def _populate_symbols(self):
         """
@@ -614,7 +639,11 @@ class ELF(ELFFile):
     def disasm(self, address, n_bytes):
         """Returns a string of disassembled instructions at
         the specified virtual memory address"""
-        return disasm(self.read(address, n_bytes), vma=address)
+        arch = self.arch
+        if self.arch == 'arm' and address & 1:
+            arch = 'thumb'
+            address -= 1
+        return disasm(self.read(address, n_bytes), vma=address, arch=arch)
 
     def asm(self, address, assembly):
         """Assembles the specified instructions and inserts them
