@@ -20,12 +20,13 @@ Example:
         mov r2, #2
         eor r3, r3
         mov r7, #11
-        swi #0
+        swi #1
     >>> print shellcraft.thumb.linux.syscall('SYS_exit', 0).rstrip()
         /* call exit(0) */
-        eor r0, r0
+        movs r0, 1
+        subs r0, 1
         mov r7, #SYS_exit
-        swi #0
+        swi #1
 </%docstring>
 <%
   if isinstance(syscall, (str, unicode)) and syscall.startswith('SYS_'):
@@ -53,4 +54,4 @@ Example:
     ${thumb.mov(dst, src)}
   % endif
 % endfor
-  swi #0
+  swi #1

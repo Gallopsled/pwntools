@@ -2,6 +2,7 @@ import ctypes
 import ctypes.util
 import socket
 
+from packing import pack
 from packing import p16
 from packing import p32
 
@@ -212,7 +213,7 @@ def sockaddr(host, port, network = 'ipv4'):
     info = socket.getaddrinfo(host, None, address_family)
     host = socket.inet_pton(address_family, ip)
     sockaddr  = p16(address_family)
-    sockaddr += p16(socket.htons(port))
+    sockaddr += pack(port, word_size = 16, endianness = 'big') #Port should be big endian = network byte order
     length    = 0
 
     if network == 'ipv4':

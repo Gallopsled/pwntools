@@ -1,5 +1,5 @@
 <% from pwnlib.shellcraft import common %>
-<% from pwnlib.shellcraft.i386 import linux %>
+<% from pwnlib.shellcraft.thumb import linux %>
 <%docstring>
 Findpeer recvsize stager
 Args:
@@ -8,5 +8,5 @@ Args:
 <%page args="port = None"/>
 
 ${linux.findpeer(port)}
-${linux.recvsize('esi', 'ecx')}
-${linux.stager('ebx', 'ecx')}
+${linux.recvsize('r6', 'r1')}
+${linux.stager('r6', 'r1')}

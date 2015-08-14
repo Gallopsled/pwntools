@@ -69,7 +69,12 @@ if isinstance(src, (str, unicode)):
     srcs = srcu - 2 * (srcu & 0x80000000)
   %>\
   %if srcu == 0:
-    eor ${dst}, ${dst}
+    %if dst == 'r0':
+        movs r0, 1
+        subs r0, 1
+    %else:
+        eor ${dst}, ${dst}
+    %endif
   %elif srcu < 256:
     mov ${dst}, #${src}
   %elif -256 < srcs < 0:
