@@ -302,7 +302,7 @@ class process(tube):
         #
 
         # Create a duplicate so we can modify it safely
-        env = dict(env or os.environ)
+        env = dict(os.environ if env is None else env)
 
         for k,v in env.items():
             if not isinstance(k, (str, unicode)):
