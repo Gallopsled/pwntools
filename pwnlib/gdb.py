@@ -97,7 +97,7 @@ def debug(args, execute=None, exe=None, ssh=None):
     elif not exe:
         exe = misc.which(orig_args[0])
 
-    attach(('127.0.0.1', port), exe=orig_args[0], execute=execute)
+    attach(('127.0.0.1', port), exe=orig_args[0], execute=execute, need_ptrace_scope = False)
 
     if ssh:
         remote <> listener.wait_for_connection()
@@ -121,7 +121,7 @@ def get_gdb_arch():
 
 
 @LocalContext
-def attach(target, execute = None, exe = None):
+def attach(target, execute = None, exe = None, need_ptrace_scope = True):
     """attach(target, execute = None, exe = None, arch = None) -> None
 
     Start GDB in a new terminal and attach to `target`.
@@ -150,7 +150,7 @@ def attach(target, execute = None, exe = None):
     # if ptrace_scope is set and we're not root, we cannot attach to a running process
     try:
         ptrace_scope = open('/proc/sys/kernel/yama/ptrace_scope').read().strip()
-        if ptrace_scope != '0' and os.geteuid() != 0:
+        if need_ptrace_scope and ptrace_scope != '0' and os.geteuid() != 0:
             msg =  'Disable ptrace_scope to attach to running processes.\n'
             msg += 'More info: https://askubuntu.com/q/41629'
             log.warning(msg)
