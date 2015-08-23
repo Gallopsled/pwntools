@@ -16,7 +16,7 @@ from ..asm import *
 from ..context import context, LocalContext
 from ..log import getLogger
 from ..term import text
-from ..util import misc
+from ..util import misc, packing
 from ..qemu import get_qemu_arch
 from ..tubes.process import process
 from .datatypes import *
@@ -804,3 +804,17 @@ class ELF(ELFFile):
         if any(s.endswith('_chk') for s in self.plt):
             return True
         return False
+
+    def p64(self,  address, data, *a, **kw):    return self.write(address, packing.p64(data, *a, **kw))
+    def p32(self,  address, data, *a, **kw):    return self.write(address, packing.p32(data, *a, **kw))
+    def p16(self,  address, data, *a, **kw):    return self.write(address, packing.p16(data, *a, **kw))
+    def p8(self,   address, data, *a, **kw):    return self.write(address, packing.p8(data, *a, **kw))
+    def pack(self, address, data, *a, **kw):    return self.write(address, packing.pack(data, *a, **kw))
+
+    def u64(self,    address, *a, **kw):        return packing.u64(self.read(address, 8), *a, **kw)
+    def u32(self,    address, *a, **kw):        return packing.u32(self.read(address, 4), *a, **kw)
+    def u16(self,    address, *a, **kw):        return packing.u16(self.read(address, 2), *a, **kw)
+    def u8(self,     address, *a, **kw):        return packing.u8(self.read(address, 1), *a, **kw)
+    def unpack(self, address, *a, **kw):        return packing.unpack(self.read(address, context.bytes), *a, **kw)
+
+    def flat(self, *a, **kw):       return self.send(packing.flat(*a,**kw))
