@@ -109,6 +109,7 @@ class listen(sock):
     def spawn_process(self, *args, **kwargs):
         def accepter():
             self.wait_for_connection()
+            self.sock.setblocking(1)
             p = super(listen, self).spawn_process(*args, **kwargs)
             p.wait()
             self.close()
