@@ -85,9 +85,10 @@ class listen(sock):
                         self.sock, rhost = listen_sock.accept()
                         listen_sock.close()
                     else:
-                        self.buffer, rhost = listen_sock.recvfrom(4096)
+                        data, rhost = listen_sock.recvfrom(4096)
                         listen_sock.connect(rhost)
                         self.sock = listen_sock
+                        self.unrecv(data)
                     self.settimeout(self.timeout)
                     break
                 except socket.error as e:
