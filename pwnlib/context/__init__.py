@@ -604,7 +604,7 @@ class ContextType(object):
 
         # Attempt to perform convenience and legacy compatibility
         # transformations.
-        transform = {'x86':'i386', 'ppc': 'powerpc', 'x86_64': 'amd64'}
+        transform = {'x86':'i386', 'ppc': 'powerpc', 'x86_64': 'amd64', 'i686': 'i386'}
         for k, v in transform.items():
             if arch.startswith(k):
                 arch = arch.replace(k,v,1)
