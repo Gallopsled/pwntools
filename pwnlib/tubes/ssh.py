@@ -618,6 +618,15 @@ class ssh(Timeout, Logger):
                 self.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
             argv[i] = arg.rstrip('\x00')
 
+        # Python also doesn't like when envp contains '\x00'
+        if env and hasattr(env, 'items'):
+            for k, v in env.items():
+                if '\x00' in k[:-1]:
+                    self.error('Inappropriate nulls in environment key %r' % (i, k))
+                if '\x00' in v[:-1]:
+                    self.error('Inappropriate nulls in environment value %r=%r' % (k, v))
+                env[k.rstrip('\x00')] = v.rstrip('\x00')
+
         executable = executable or argv[0]
         cwd        = cwd or self.cwd or '.'
 
@@ -651,8 +660,9 @@ class ssh(Timeout, Logger):
 
 
         script = r"""
-#!/usr/bin/env python
+#!/usr/bin/env python2
 import os, sys
+from collections import OrderedDict
 exe   = %(executable)r
 argv  = %(argv)r
 env   = %(env)r
@@ -665,7 +675,7 @@ if env is None:
 def is_exe(path):
     return os.path.isfile(path) and os.access(path, os.X_OK)
 
-PATH = os.environ['PATH'].split(os.pathsep)
+PATH = os.environ.get('PATH','').split(os.pathsep)
 
 if os.path.sep not in exe and not is_exe(exe):
     for path in PATH:

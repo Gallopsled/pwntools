@@ -16,6 +16,14 @@ r.send(asm(shellcraft.sh()))
 r.interactive()
 ```
 
+# Try It Now!
+
+You can now do a live demo of Binjitsu, [right in your browser](http://demo.binjit.su).  Alternately, you can SSH to the same host, and log in as user `zerocool` with [this private key][key] (password `i_promise_not_to_be_evil`).
+
+It will drop you into a clean, Docker-ized container.  There is nothing of value on the VPS, so please don't be evil.
+
+[key]: https://gist.githubusercontent.com/zachriggle/efa2e0080ae6de2e8344/raw/4b503e9db54f009d97477d03d4ba5678471f8ff0/id_rsa
+
 # Origin
 
 binjitsu is a fork of the [`pwntools`](https://github.com/Gallopsled/pwntools) project.  For the most part, it's a drop-in replacement, though I've added some functionality of my own which may not be available in the upstream release.

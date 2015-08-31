@@ -38,7 +38,7 @@ def debug_shellcode(data, execute=None):
     return debug(tmp_elf, execute=None, arch=context.arch)
 
 @LocalContext
-def debug(args, execute=None, exe=None, ssh=None):
+def debug(args, execute=None, exe=None, ssh=None, env=None):
     """debug(args) -> tube
 
     Launch a GDB server with the specified command line,
@@ -52,13 +52,16 @@ def debug(args, execute=None, exe=None, ssh=None):
     Returns:
         A tube connected to the target process
     """
+    if env is None:
+        env = os.environ
+
     if isinstance(args, (str, unicode)):
         args = [args]
 
     orig_args = args
 
     if context.native:
-        args = ['gdbserver', '--no-disable-randomization', 'localhost:0'] + args
+        args = [which('gdbserver'), '--no-disable-randomization', 'localhost:0'] + args
     else:
         qemu_port = random.randint(1024, 65535)
         args = [get_qemu_user(), '-g', str(qemu_port)] + args
@@ -75,7 +78,7 @@ def debug(args, execute=None, exe=None, ssh=None):
         log.error("%s is not installed" % args[0])
 
     with context.local(log_level='debug'):
-        gdbserver = runner(args)
+        gdbserver = runner(args, executable=exe, env=env)
 
     if context.native:
         # Process /bin/bash created; pid = 14366
