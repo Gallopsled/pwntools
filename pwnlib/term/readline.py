@@ -50,7 +50,7 @@ def fmt_suggestions(suggestions):
                     s += fmt % suggestions[l]
             s += '\n'
     else:
-        s = '\n'
+        s = '(no completions)\n'
     return s
 
 def auto_complete(*_):
