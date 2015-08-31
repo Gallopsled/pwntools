@@ -456,6 +456,7 @@ def output(s = '', float = False, priority = 10, frozen = False,
         if rel:
             i, _ = find_cell(rel.h)
             is_floating = rel.is_floating
+            float = cells[i].float
             if before:
                 i -= 1
         elif float and priority:
