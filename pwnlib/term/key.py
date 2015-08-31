@@ -89,6 +89,9 @@ class Matcher:
         else:
             return False
 
+    def __neq__(self, other):
+        return not self == other
+
     def __hash__(self):
         return self._hash
 
