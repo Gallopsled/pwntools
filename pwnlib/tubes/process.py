@@ -435,6 +435,9 @@ class process(tube):
             #     return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
             # ValueError: I/O operation on closed file
             raise EOFError
+        except select.error as v:
+            if v[0] == errno.EINTR:
+                return False
 
     def connected_raw(self, direction):
         if direction == 'any':
