@@ -92,7 +92,7 @@ class ssh_channel(sock):
             for name, value in env.items():
                 if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', name):
                     self.error('run(): Invalid environment key $r' % name)
-                process = '%s=%s %s' % (name, misc.sh_string(value), process)
+                process = 'export %s=%s; %s' % (name, misc.sh_string(value), process)
 
         if process and tty:
             process = 'stty raw -ctlecho -echo; ' + process
