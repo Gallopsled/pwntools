@@ -470,6 +470,7 @@ class DynELF(object):
         Returns:
             Address of the named symbol, or ``None``.
         """
+        result = None
 
         if lib == 'libc':
             lib = 'libc.so'
