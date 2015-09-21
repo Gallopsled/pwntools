@@ -58,10 +58,10 @@ def main():
     if args.lookup:
         pat = args.lookup
 
-        if pat.startswith('0x'):
-            pat = packing.pack(int(pat[2:], 16), subsize*8)
-        elif pat.isdigit():
-            pat = packing.pack(int(pat, 10), subsize*8)
+        try:
+            pat = packing.pack(int(pat, 0), subsize*8)
+        except ValueError:
+            pass
 
         if len(pat) != subsize:
             log.critical('Subpattern must be %d bytes' % subsize)
