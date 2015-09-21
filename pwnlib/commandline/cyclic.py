@@ -55,9 +55,9 @@ def main():
         pat = args.lookup
 
         if pat.startswith('0x'):
-            pat = packing.pack(int(pat[2:], 16), subsize*8, 'little', 'unsigned')
+            pat = packing.pack(int(pat[2:], 16), subsize*8, 'little', False)
         elif pat.isdigit():
-            pat = packing.pack(int(pat, 10), subsize*8, 'little', 'unsigned')
+            pat = packing.pack(int(pat, 10), subsize*8, 'little', False)
 
         if len(pat) != subsize:
             log.critical('Subpattern must be %d bytes' % subsize)
