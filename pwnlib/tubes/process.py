@@ -406,9 +406,18 @@ class process(tube):
         # First check if we are already dead
         self.poll()
 
+        #close file descriptors
+        if self.proc.stdin is not None:
+            self.proc.stdin.close()
+        if self.proc.stderr is not None:
+            self.proc.stderr.close()
+        if self.proc.stdout is not None:
+            self.proc.stdout.close()
+
         if not self._stop_noticed:
             try:
                 self.proc.kill()
+                self.proc.wait() #avoid leaving zombies around
                 self._stop_noticed = True
                 log.info('Stopped program %r' % self.program)
             except OSError:
