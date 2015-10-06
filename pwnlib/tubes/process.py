@@ -455,17 +455,14 @@ class process(tube):
         self.poll()
 
         #close file descriptors
-        if self.proc.stdin is not None:
-            self.proc.stdin.close()
-        if self.proc.stderr is not None:
-            self.proc.stderr.close()
-        if self.proc.stdout is not None:
-            self.proc.stdout.close()
+        for fd in [self.proc.stdin, self.proc.stdout, self.proc.stderr]:
+            if fd is not None:
+                fd.close()
 
         if not self._stop_noticed:
             try:
                 self.proc.kill()
-                self.proc.wait() #avoid leaving zombies around
+                self.proc.wait()
                 self._stop_noticed = True
                 self.info('Stopped program %r' % self.program)
             except OSError:
