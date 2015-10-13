@@ -543,7 +543,7 @@ class ELF(ELFFile):
     def disasm(self, address, n_bytes):
         """Returns a string of disassembled instructions at
         the specified virtual memory address"""
-        return disasm(self.read(address, n_bytes), vma=address)
+        return disasm(self.read(address, n_bytes), vma=address, arch=self.arch)
 
     def asm(self, address, assembly):
         """Assembles the specified instructions and inserts them
