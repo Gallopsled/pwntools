@@ -33,7 +33,9 @@ def load(*args, **kwargs):
     """Compatibility wrapper for pwntools v1"""
     return ELF(*args, **kwargs)
 
-# Monkey-patch some things inside elftools to make life easier
+class dotdict(dict):
+    def __getattr__(self, name):
+        return self[name]
 
 class ELF(ELFFile):
     """Encapsulates information about an ELF file.
@@ -223,14 +225,18 @@ class ELF(ELFFile):
         """
         return self._address
 
+    @property
+    def sym(self):
+        return self.symbols
+
     @address.setter
     def address(self, new):
         delta     = new-self._address
         update    = lambda x: x+delta
 
-        self.symbols = {k:update(v) for k,v in self.symbols.items()}
-        self.plt     = {k:update(v) for k,v in self.plt.items()}
-        self.got     = {k:update(v) for k,v in self.got.items()}
+        self.symbols = dotdict({k:update(v) for k,v in self.symbols.items()})
+        self.plt     = dotdict({k:update(v) for k,v in self.plt.items()})
+        self.got     = dotdict({k:update(v) for k,v in self.got.items()})
 
         self._address = update(self.address)
 
@@ -349,7 +355,7 @@ class ELF(ELFFile):
         #
         # This way, elf.symbols['write'] will be a valid address to call
         # for write().
-        self.symbols = dict(self.plt)
+        self.symbols = dotdict(self.plt)
 
         for section in self.sections:
             if not isinstance(section, SymbolTableSection):
