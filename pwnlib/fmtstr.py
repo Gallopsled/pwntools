@@ -188,7 +188,7 @@ class FmtStr(object):
     returns.
 
     If the `offset` parameter is not given, then try to find the right
-    offset by leaking stack datas.
+    offset by leaking stack data.
 
     Arguments:
             execute_fmt(function): function to call for communicate with the vulnerable process
