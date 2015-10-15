@@ -187,7 +187,7 @@ class FmtStr(object):
     send to the vulnerable process and must return the process
     returns.
 
-    If the `offset` parameter is not given, he try to find the right
+    If the `offset` parameter is not given, then try to find the right
     offset by leaking stack datas.
 
     Arguments:
