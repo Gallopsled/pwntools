@@ -11,7 +11,7 @@ nice side-effects.
 When redesigning pwntools for 2.0, we noticed two contrary goals:
 
 * We would like to have a "normal" python module structure, to allow other
-  people to faster get familiar with how pwntools works.
+  people to familiarize themselves with pwntools quickly.
 * We would like to have even more side-effects, especially by putting the
   terminal in raw-mode.
 
