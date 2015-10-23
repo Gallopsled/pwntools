@@ -30,10 +30,10 @@ the following:
 
 * Imports everything from the toplevel :mod:`pwnlib` along with
   functions from a lot of submodules. This means that if you do
-  ``import pwn`` or ``from pwn import *``, you will access to
+  ``import pwn`` or ``from pwn import *``, you will have access to
   everything you need to write an exploit.
 * Calls :func:`pwnlib.term.init` to put your terminal in raw mode
-  and implementing functionality to make it look like it is not.
+  and implements functionality to make it appear like it isn't.
 * Setting the :data:`pwnlib.context.log_level` to `"info"`.
 * Tries to parse some of the values in :data:`sys.argv` and every
   value it succeeds in parsing it removes.
