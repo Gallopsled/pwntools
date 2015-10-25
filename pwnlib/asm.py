@@ -208,9 +208,7 @@ def _objdump():
 def _include_header():
     os   = context.os
     arch = context.arch
-    include = ''
-
-    include = os.path.join(os, arch + '.h')
+    include = '%s/%s.h' % (os, arch)
 
     if not include or not path.exists(path.join(_incdir, include)):
         log.warn_once("Could not find system include headers for %s-%s" % (arch,os))
