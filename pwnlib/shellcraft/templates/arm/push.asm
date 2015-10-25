@@ -15,9 +15,5 @@ Args:
         Register to use as a temporary register.  R7 is used by default.
 
 </%docstring>
-% if isinstance(word, int) and 0 < word < 0xffff:
-    push ${hex(word)}
-% else:
     ${mov(register,word)}
     push {${register}}
-% endif
