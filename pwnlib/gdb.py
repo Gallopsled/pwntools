@@ -72,15 +72,20 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
 
     orig_args = args
 
-    if not ssh:
-        runner  = tubes.process.process
-        which   = misc.which
     if ssh:
         runner  = ssh.run
         which   = ssh.which
+    else:
+        runner  = tubes.process.process
+        which   = misc.which
 
     if ssh or context.native:
-        args = [which('gdbserver'), '--no-disable-randomization', 'localhost:0'] + args
+        gdbserver = which('gdbserver')
+
+        if not gdbserver:
+            log.error("gdbserver is not installed")
+
+        args = [gdbserver, '--no-disable-randomization', 'localhost:0'] + args
     else:
         qemu_port = random.randint(1024, 65535)
         args = [get_qemu_user(), '-g', str(qemu_port)] + args
