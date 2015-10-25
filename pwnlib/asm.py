@@ -210,13 +210,7 @@ def _include_header():
     arch = context.arch
     include = ''
 
-    if os == 'freebsd':
-        include = 'freebsd.h'
-    elif os == 'linux':
-        include = 'linux/%s.h' % arch
-    elif os == 'cgc':
-        include = 'cgc/%s.h' % arch
-
+    include = os.path.join(os, arch + '.h')
 
     if not include or not path.exists(path.join(_incdir, include)):
         log.warn_once("Could not find system include headers for %s-%s" % (arch,os))
