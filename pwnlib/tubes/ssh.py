@@ -1290,7 +1290,7 @@ os.execve(exe, argv, env)
 
         s = self.shell(shell)
 
-        if self.cwd:
+        if self.cwd != '.':
             s.sendline('cd ' + misc.sh_string(self.cwd))
 
         s.interactive()
