@@ -1,4 +1,42 @@
 #!/usr/bin/env bash
+local_deb_extract()
+{
+    wget $1
+    ar vx *.deb
+    tar xvf data.tar.gz
+    rm -f *.tar.gz *deb*
+}
+
+get_binutils()
+{
+    BINUTILS_PREFIX='https://launchpad.net/~pwntools/+archive/ubuntu/binutils/+files/binutils-'
+    BINUTILS_SUFFIX='-linux-gnu_2.22-6ubuntu1.1cross0.11pwntools12~precise_amd64.deb'
+    local_deb_extract "${BINUTILS_PREFIX}${1}${BINUTILS_SUFFIX}"
+}
+
+setup_travis()
+{
+    export PATH=$PWD/usr/bin:$PATH
+    export LD_LIBRARY_PATH=$PWD/usr/lib
+
+    if [ ! -d usr/bin ]; 
+    then
+        which arm-linux-as     || get_binutils arm
+        which mips-linux-as    || get_binutils mips
+        which powerpc-linux-as || get_binutils powerpc
+        local_deb_extract http://mirrors.mit.edu/ubuntu/ubuntu/pool/universe/b/binutils/binutils-multiarch_2.22-6ubuntu1_amd64.deb
+        rm -rf usr/share
+    fi
+
+    pushd usr/lib
+    ln -sf libbfd-2.22-multiarch.so libbfd-2.22.so
+    ln -sf libopcodes-2.22-multiarch.so libopcodes-2.22.so
+    popd
+
+    which arm-linux-gnu-as
+    which mips-linux-gnu-as
+    which powerpc-linux-gnu-as
+}
 
 setup_linux()
 {
@@ -6,9 +44,6 @@ setup_linux()
     sudo apt-add-repository --yes ppa:pwntools/binutils
     sudo apt-get update
     sudo apt-get install binutils-arm-linux-gnu binutils-mips-linux-gnu binutils-powerpc-linux-gnu
-    wget -nc https://github.com/Gallopsled/pwntools-dependencies/raw/master/capstone-2.1.2_amd64.deb
-    (echo "a30bcb58fd82d32b135eec978eaa22230c44e722 *capstone-2.1.2_amd64.deb" | sha1sum -c) || exit
-    sudo dpkg -i *.deb
 }
 
 setup_osx()
@@ -18,18 +53,10 @@ setup_osx()
     brew install capstone
 }
 
-case $(uname) in
-Darwin) setup_osx   ;;
-Linux)  setup_linux ;;
-esac
-
-# We want to avoid isntalling Capstone 3.0.1 as it
-# incurs a big penalty to Travis CI build speeds by
-# building libcapstone.so on-the-fly.
-#
-# To avoid this, we should pre-install capstone==2.1
-pip install capstone==2.1
-
-pip install -r requirements.txt
-pip install -r docs/requirements.txt
-pip install -e .
+if [[ "$TRAVIS" ]]; then
+    setup_travis
+elif [[ "$(uname)" == "Darwin" ]]; then
+    setup_osx
+elif [[ "$(uname)" == "Linux" ]]; then
+    setup_linux
+fi
