@@ -333,7 +333,7 @@ class ContextType(object):
     }
 
     #: Valid values for :meth:`pwnlib.context.ContextType.os`
-    oses = sorted(('linux','freebsd','windows','cgc'))
+    oses = sorted(('linux','freebsd','windows','cgc','android'))
 
     big_32    = {'endian': 'big', 'bits': 32}
     big_64    = {'endian': 'big', 'bits': 64}
@@ -718,7 +718,6 @@ class ContextType(object):
     @bytes.setter
     def bytes(self, value):
         self.bits = value*8
-
 
     @_validator
     def endian(self, endianness):
