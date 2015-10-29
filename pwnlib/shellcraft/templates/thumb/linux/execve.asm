@@ -4,6 +4,16 @@
 %>
 <%docstring>
 Execute a different process.
+
+    >>> path = '/bin/sh'
+    >>> argv = ['sh', '-c', 'echo Hello, $NAME; exit $STATUS']
+    >>> envp = {'NAME': 'zerocool', 'STATUS': 3}
+    >>> sc = shellcraft.arm.linux.execve(path, argv, envp)
+    >>> io = run_assembly(sc)
+    >>> io.recvall()
+    'Hello, zerocool\n'
+    >>> io.poll(True)
+    3
 </%docstring>
 <%page args="path = '/bin///sh', argv=[], envp={}"/>
 <%
