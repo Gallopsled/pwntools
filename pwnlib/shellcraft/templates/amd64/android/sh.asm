@@ -8,4 +8,4 @@ Execute a different process.
     'Hello\n'
 
 </%docstring>
-${amd64.linux.execve('/system/bin//sh', 0, 0)}
+${amd64.linux.execve('/system/bin//sh', ['sh'], 0)}
