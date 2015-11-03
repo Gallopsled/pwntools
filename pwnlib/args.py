@@ -9,7 +9,7 @@ import sys
 from .context import context
 from . import term
 
-term_mode  = False
+term_mode  = True
 args       = collections.defaultdict(str)
 env_prefix = 'PWNLIB_'
 
