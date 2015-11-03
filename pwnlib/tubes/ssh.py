@@ -628,7 +628,7 @@ class ssh(Timeout, Logger):
                 env[k.rstrip('\x00')] = v.rstrip('\x00')
 
         executable = executable or argv[0]
-        cwd        = cwd or self.cwd or '.'
+        cwd        = cwd or self.cwd
 
         # Validate, since failures on the remote side will suck.
         if not isinstance(executable, str):
@@ -1078,7 +1078,7 @@ os.execve(exe, argv, env)
         if not local:
             local = os.path.basename(os.path.normpath(remote))
 
-        if self.cwd and os.path.basename(remote) == remote:
+        if os.path.basename(remote) == remote:
             remote = os.path.join(self.cwd, remote)
 
         with self.progress('Downloading %r to %r' % (remote, local)) as p:
@@ -1095,7 +1095,7 @@ os.execve(exe, argv, env)
             local: Local directory
             remote: Remote directory
         """
-        remote   = remote or self.cwd or '.'
+        remote   = remote or self.cwd
 
 
         if self.sftp:
@@ -1147,7 +1147,7 @@ os.execve(exe, argv, env)
         """
         # If a relative path was provided, prepend the cwd
         if os.path.normpath(remote) == os.path.basename(remote):
-            remote = os.path.join(self.cwd or '.', remote)
+            remote = os.path.join(self.cwd, remote)
 
         if self.sftp:
             with tempfile.NamedTemporaryFile() as f:
@@ -1177,9 +1177,7 @@ os.execve(exe, argv, env)
         if remote == None:
             remote = os.path.normpath(filename)
             remote = os.path.basename(remote)
-
-            if self.cwd:
-                remote = os.path.join(self.cwd, remote)
+            remote = os.path.join(self.cwd, remote)
 
         with open(filename) as fd:
             data = fd.read()
@@ -1197,7 +1195,7 @@ os.execve(exe, argv, env)
             remote: Remote directory
         """
 
-        remote    = remote or self.cwd or '.'
+        remote    = remote or self.cwd
 
         local     = os.path.expanduser(local)
         dirname   = os.path.dirname(local)
