@@ -1030,6 +1030,8 @@ class tube(Timeout):
         while self.connected():
             time.sleep(0.05)
 
+    wait = wait_for_close
+
     def can_recv(self, timeout = 0):
         """can_recv(timeout = 0) -> bool
 
