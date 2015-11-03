@@ -77,7 +77,7 @@ class ssh_channel(sock):
         self.tty  = tty
         self.env  = env
         self.process = process
-        self.cwd  = wd
+        self.cwd  = wd or '.'
 
         env = env or {}
         msg = 'Opening new channel: %r' % ((process,) or 'shell')
