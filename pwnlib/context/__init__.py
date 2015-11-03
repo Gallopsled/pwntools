@@ -845,6 +845,10 @@ class ContextType(object):
         value.flush()
         return value
 
+    @property
+    def mask(self):
+        return (1 << self.bits) - 1
+
     @_validator
     def os(self, os):
         """
