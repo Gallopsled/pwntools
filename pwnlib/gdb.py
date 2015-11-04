@@ -74,7 +74,7 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
 
     if ssh:
         runner  = ssh.run
-        which   = ssh.which
+        which   = lambda it: ssh.run('export PATH=$PATH:.; which %s' % it)
     else:
         runner  = tubes.process.process
         which   = misc.which
