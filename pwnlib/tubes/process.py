@@ -43,18 +43,32 @@ class process(tube):
             Timeout to use on ``tube`` ``recv`` operations.
         stdin(int):
             File object or file descriptor number to use for ``stdin``.
-            By default, a pipe is used.
+            By default, a pipe is used.  A pty can be used instead by setting
+            this to ``process.PTY``.  This will cause programs to behave in an
+            interactive manner (e.g.., ``python`` will show a ``>>>`` prompt).
+            If the application reads from ``/dev/tty`` directly, use a pty.
         stdout(int):
             File object or file descriptor number to use for ``stdout``.
-            By default, a pty is used.
+            By default, a pty is used so that any stdout buffering by libc
+            routines is disabled.
             May also be ``subprocess.PIPE`` to use a normal pipe.
         stderr(int):
             File object or file descriptor number to use for ``stderr``.
             By default, ``stdout`` is used.
             May also be ``subprocess.PIPE`` to use a separate pipe,
             although the ``tube`` wrapper will not be able to read this data.
+        close_fds(bool):
+            Close all open file descriptors except stdin, stdout, stderr.
+            By default, ``True`` is used.
         preexec_fn(callable):
             Callable to invoke immediately before calling ``execve``.
+        raw(bool):
+            Set the created pty to raw mode (i.e. disable echo and control
+            characters).  ``True`` by default.  If no pty is created, this
+            has no effect.
+
+    Attributes:
+        proc(subprocess)
 
     Examples:
 
@@ -110,8 +124,16 @@ class process(tube):
         'stack smashing detected'
 
         >>> PIPE=subprocess.PIPE
-        >>> process(stack_smashing, stdout=PIPE, stderr=PIPE).recvall()
+        >>> process(stack_smashing, stdout=PIPE).recvall()
         ''
+
+        >>> getpass = ['python','-c','import getpass; print getpass.getpass("XXX")']
+        >>> p = process(getpass, stdin=process.PTY)
+        >>> p.recv()
+        'XXX'
+        >>> p.sendline('hunter2')
+        >>> p.recvall()
+        '\nhunter2\n'
 
         >>> process('echo hello 1>&2', shell=True).recvall()
         'hello\n'
@@ -120,23 +142,7 @@ class process(tube):
         ''
     """
 
-    #: `subprocess.Popen` object
-    proc = None
-
-    #: Full path to the executable
-    executable = None
-
-    #: Full path to the executable
-    program = None
-
-    #: Arguments passed on argv
-    argv = None
-
-    #: Environment passed on envp
-    env = None
-
-    #: Directory the process was created in
-    cwd = None
+    PTY = PTY
 
     #: Have we seen the process stop?
     _stop_noticed = False
@@ -152,24 +158,49 @@ class process(tube):
                  stderr = STDOUT,
                  level = None,
                  close_fds = True,
-                 preexec_fn = lambda: None):
+                 preexec_fn = lambda: None,
+                 raw = True):
         super(process, self).__init__(timeout, level = level)
 
         if not shell:
             executable, argv, env = self._validate(cwd, executable, argv, env)
 
+        # Permit invocation as process('sh') and process(['sh'])
         if isinstance(argv, (str, unicode)):
             argv = [argv]
 
-        self.pty          = (stdout == PTY)
+        # Avoid the need to have to deal with the STDOUT magic value.
+        if stderr is STDOUT:
+            stderr = stdout
 
-        stdin, stdout, stderr, master = self._handles(stdin, stdout, stderr)
+        # Determine which descriptors will be attached to a new PTY
+        orig_handles = handles = (stdin, stdout, stderr)
 
-        self.executable   = self.program = executable
-        self.argv         = argv
-        self.env          = env
+        #: Which file descriptor is the controlling TTY
+        self.pty          = handles.index(PTY) if PTY in handles else None
+
+        #: Whether the controlling TTY is set to raw mode
+        self.raw          = raw
+
+        # Create the PTY if necessary
+        handles, master, slave = self._handles(*handles)
+
+        #: Full path to the executable
+        self.executable = executable
+
+        #: Arguments passed on argv
+        self.argv = argv
+
+        #: Environment passed on envp
+        self.env = os.environ if env is None else env
+
+        #: Directory the process was created in
         self.cwd          = cwd or os.path.curdir
-        self.preexec_user = preexec_fn
+
+        self.preexec_fn = preexec_fn
+
+        #: `subprocess.Popen` object
+        self.proc = None
 
         message = "Starting program %r" % self.program
 
@@ -199,11 +230,11 @@ class process(tube):
                                                  executable = executable,
                                                  cwd = cwd,
                                                  env = env,
-                                                 stdin = stdin,
-                                                 stdout = stdout,
-                                                 stderr = stderr,
+                                                 stdin = handles[0],
+                                                 stdout = handles[1],
+                                                 stderr = handles[2],
                                                  close_fds = close_fds,
-                                                 preexec_fn = self.preexec_fn)
+                                                 preexec_fn = self.__preexec_fn)
                     break
                 except OSError as exception:
                     if exception.errno != errno.ENOEXEC:
@@ -214,9 +245,16 @@ class process(tube):
                 except:
                     log.exception(str(prefixes))
 
-        if master:
-            self.proc.stdout = os.fdopen(master)
-            os.close(stdout)
+        if self.pty is not None:
+            if orig_handles[0] is PTY:
+                self.proc.stdin = os.fdopen(os.dup(master), 'r+')
+            if orig_handles[1] is PTY:
+                self.proc.stdout = os.fdopen(os.dup(master), 'r+')
+            if orig_handles[2] is PTY:
+                self.proc.stderr = os.fdopen(os.dup(master), 'r+')
+
+            os.close(master)
+            os.close(slave)
 
         # Set in non-blocking mode so that a call to call recv(1000) will
         # return as soon as a the first byte is available
@@ -224,10 +262,21 @@ class process(tube):
         fl = fcntl.fcntl(fd, fcntl.F_GETFL)
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
-    def preexec_fn(self):
-        if self.pty:
-            self.__pty_make_controlling_tty(1)
-        self.preexec_user()
+    def __preexec_fn(self):
+        """
+        Routine executed in the child process before invoking execve().
+
+        Handles setting the controlling TTY as well as invoking the user-
+        supplied preexec_fn.
+        """
+        if self.pty is not None:
+            self.__pty_make_controlling_tty(self.pty)
+        self.preexec_fn()
+
+    @property
+    def program(self):
+        """Alias for ``executable``, for backward compatibility"""
+        return self.executable
 
     @staticmethod
     def _validate(cwd, executable, argv, env):
@@ -318,11 +367,10 @@ class process(tube):
 
         return executable, argv, env
 
-    @staticmethod
-    def _handles(stdin, stdout, stderr):
-        master = None
+    def _handles(self, stdin, stdout, stderr):
+        master = slave = None
 
-        if stdout is PTY:
+        if self.pty is not None:
             # Normally we could just use subprocess.PIPE and be happy.
             # Unfortunately, this results in undesired behavior when
             # printf() and similar functions buffer data instead of
@@ -332,17 +380,31 @@ class process(tube):
             # buffer any data on STDOUT.
             master, slave = pty.openpty()
 
-            # By making STDOUT a PTY, the OS will attempt to interpret
-            # terminal control codes.  We don't want this, we want all
-            # input passed exactly and perfectly to the process.
-            tty.setraw(master)
-            tty.setraw(slave)
+            if self.raw:
+                # By giving the child process a controlling TTY,
+                # the OS will attempt to interpret terminal control codes
+                # like backspace and Ctrl+C.
+                #
+                # If we don't want this, we set it to raw mode.
+                tty.setraw(master)
+                tty.setraw(slave)
 
-            # Pick one side of the pty to pass to the child
-            stdout = slave
+            if stdin is PTY:
+                stdin = slave
+            if stdout is PTY:
+                stdout = slave
+            if stderr is PTY:
+                stderr = slave
 
-        return stdin, stdout, stderr, master
+        return (stdin, stdout, stderr), master, slave
 
+    def __getattr__(self, attr):
+        """Permit pass-through access to the underlying process object for
+        fields like ``pid`` and ``stdin``.
+        """
+        if hasattr(self.proc, attr):
+            return getattr(self.proc, attr)
+        raise AttributeError("'process' object has no attribute '%s'" % attr)
 
     def kill(self):
         """kill()
