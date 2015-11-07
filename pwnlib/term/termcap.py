@@ -3,13 +3,12 @@ import curses
 import os
 import sys
 
-did_init = False
 cache = None
 
 def get(cap, *args, **kwargs):
     default = kwargs.pop('default', '')
 
-    if 'PWNLIB_NOTERM' in os.environ or not did_init:
+    if 'PWNLIB_NOTERM' in os.environ:
         return ''
 
     if kwargs != {}:
@@ -38,13 +37,11 @@ def get(cap, *args, **kwargs):
 
 def init():
     global cache
-    global did_init
 
     if 'PWNLIB_NOTERM' not in os.environ:
         # Fix for BPython
         try:
             curses.setupterm()
-            did_init = True
         except:
             pass
 
