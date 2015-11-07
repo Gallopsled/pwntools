@@ -177,7 +177,7 @@ class process(tube):
             stderr = stdout
 
         # Determine which descriptors will be attached to a new PTY
-        orig_handles = handles = (stdin, stdout, stderr)
+        handles = (stdin, stdout, stderr)
 
         #: Which file descriptor is the controlling TTY
         self.pty          = handles.index(PTY) if PTY in handles else None
@@ -186,7 +186,7 @@ class process(tube):
         self.raw          = raw
 
         # Create the PTY if necessary
-        handles, master, slave = self._handles(*handles)
+        stdin, stdout, stderr, master, slave = self._handles(*handles)
 
         #: Full path to the executable
         self.executable = executable
@@ -230,9 +230,9 @@ class process(tube):
                                                  executable = executable,
                                                  cwd = cwd,
                                                  env = env,
-                                                 stdin = handles[0],
-                                                 stdout = handles[1],
-                                                 stderr = handles[2],
+                                                 stdin = stdin,
+                                                 stdout = stdout,
+                                                 stderr = stderr,
                                                  close_fds = close_fds,
                                                  preexec_fn = self.__preexec_fn)
                     break
@@ -246,11 +246,11 @@ class process(tube):
                     log.exception(str(prefixes))
 
         if self.pty is not None:
-            if orig_handles[0] is PTY:
+            if stdin is slave:
                 self.proc.stdin = os.fdopen(os.dup(master), 'r+')
-            if orig_handles[1] is PTY:
+            if stdout is slave:
                 self.proc.stdout = os.fdopen(os.dup(master), 'r+')
-            if orig_handles[2] is PTY:
+            if stderr is slave:
                 self.proc.stderr = os.fdopen(os.dup(master), 'r+')
 
             os.close(master)
@@ -396,7 +396,7 @@ class process(tube):
             if stderr is PTY:
                 stderr = slave
 
-        return (stdin, stdout, stderr), master, slave
+        return stdin, stdout, stderr, master, slave
 
     def __getattr__(self, attr):
         """Permit pass-through access to the underlying process object for
