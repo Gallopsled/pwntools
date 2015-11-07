@@ -162,6 +162,9 @@ class process(tube):
                  raw = True):
         super(process, self).__init__(timeout, level = level)
 
+        #: `subprocess.Popen` object
+        self.proc = None
+
         if not shell:
             executable, argv, env = self._validate(cwd, executable, argv, env)
 
@@ -198,9 +201,6 @@ class process(tube):
         self.cwd          = cwd or os.path.curdir
 
         self.preexec_fn = preexec_fn
-
-        #: `subprocess.Popen` object
-        self.proc = None
 
         message = "Starting program %r" % self.program
 
