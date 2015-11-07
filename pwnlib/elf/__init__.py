@@ -45,21 +45,22 @@ class ELF(ELFFile):
     :ivar plt:      Dictionary of {name: address} for all functions in the PLT
     :ivar got:      Dictionary of {name: address} for all function pointers in the GOT
     :ivar libs:     Dictionary of {path: address} for each shared object required to load the ELF
+
     Example:
 
-    .. code-block:: python
+        .. code-block:: python
 
-       bash = ELF(which('bash'))
-       hex(bash.symbols['read'])
-       # 0x41dac0
-       hex(bash.plt['read'])
-       # 0x41dac0
-       u32(bash.read(bash.got['read'], 4))
-       # 0x41dac6
-       print disasm(bash.read(bash.plt['read'],16), arch='amd64')
-       # 0:   ff 25 1a 18 2d 00       jmp    QWORD PTR [rip+0x2d181a]        # 0x2d1820
-       # 6:   68 59 00 00 00          push   0x59
-       # b:   e9 50 fa ff ff          jmp    0xfffffffffffffa60
+           bash = ELF(which('bash'))
+           hex(bash.symbols['read'])
+           # 0x41dac0
+           hex(bash.plt['read'])
+           # 0x41dac0
+           u32(bash.read(bash.got['read'], 4))
+           # 0x41dac6
+           print disasm(bash.read(bash.plt['read'],16), arch='amd64')
+           # 0:   ff 25 1a 18 2d 00       jmp    QWORD PTR [rip+0x2d181a]        # 0x2d1820
+           # 6:   68 59 00 00 00          push   0x59
+           # b:   e9 50 fa ff ff          jmp    0xfffffffffffffa60
     """
     def __init__(self, path):
         # elftools uses the backing file for all reads and writes

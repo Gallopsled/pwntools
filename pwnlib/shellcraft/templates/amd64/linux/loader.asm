@@ -12,52 +12,6 @@ Loads a statically-linked ELF into memory and transfers control.
 
 Arguments:
     address(int): Address of the ELF as a register or integer.
-
-Example:
-
-::
-    from pwn import *
-    context.arch='amd64'
-    c    = constants
-    p    = process(['gcc','-m64','-static','-Wl,-Ttext-segment=0x20000000','-xc','-'])
-    p.send('''
-    #include <stdio.h>
-    int main() {
-        printf("Hello, %s!\\n", "world");
-        return 123;
-    }
-    ''')
-    p.shutdown('send')
-    p.recv()
-    assert p.poll(1) == 0
-    e    = ELF('a.out')
-    data = read('a.out')
-
-    # Read the length first
-    sc = shellcraft.read(0, 'rsp', 8)
-    sc += '''
-    pop rsi /* rsi = length */
-    mov rcx, rsi
-    /* page-align rcx */
-    shr rcx, 12
-    inc rcx
-    shl rcx, 12
-    /* save rsi for later */
-    push rsi
-    '''
-    sc += shellcraft.mmap(0, 'rcx', c.PROT_READ|c.PROT_WRITE, c.MAP_PRIVATE|c.MAP_ANONYMOUS, -1, 0)
-    sc += 'pop rsi\n'   # get saved RSI
-    sc += 'push rax\n'  # save memory address for loader
-    sc += shellcraft.readn(0, 'rax', 'rsi')
-    sc += 'pop rax\n'
-    sc += shellcraft.loader('rax')
-
-    p = run_assembly(sc)
-    p.pack(len(data))
-    p.send(data)
-    assert p.recvline() == 'Hello, world!\n'
-    assert p.poll(1)    == 123
-
 </%docstring>
 <%
 elf_magic = unpack('\x7fELF', 32)

@@ -558,10 +558,10 @@ def fit(pieces, **kwargs):
     in `filler` if it has finite length or the byte at index `n` otherwise.
 
     If `length` is given, the output will padded with bytes from `filler` to be
-    this size.  If the output is longer than `length`, a :exception:`ValueError`
+    this size.  If the output is longer than `length`, a :py:exc:`ValueError`
     exception is raised.
 
-    If entries in `pieces` overlap, a :exception:`ValueError` exception is
+    If entries in `pieces` overlap, a :py:exc:`ValueError` exception is
     raised.
 
     Arguments:
