@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.powerpc.linux import syscall
 %>
-<%page args="from, tofd, to"/>
+<%page args="from_, tofd, to"/>
 <%docstring>
 Invokes the syscall symlinkat.  See 'man 2 symlinkat' for more information.
 
@@ -12,4 +12,4 @@ Arguments:
     to(char): to
 </%docstring>
 
-    ${syscall('SYS_symlinkat', from, tofd, to)}
+    ${syscall('SYS_symlinkat', from_, tofd, to)}

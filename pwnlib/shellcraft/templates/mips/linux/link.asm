@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.mips.linux import syscall
 %>
-<%page args="from, to"/>
+<%page args="from_, to"/>
 <%docstring>
 Invokes the syscall link.  See 'man 2 link' for more information.
 
@@ -11,4 +11,4 @@ Arguments:
     to(char): to
 </%docstring>
 
-    ${syscall('SYS_link', from, to)}
+    ${syscall('SYS_link', from_, to)}

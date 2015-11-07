@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.arm.linux import syscall
 %>
-<%page args="from, num, turn_on"/>
+<%page args="from_, num, turn_on"/>
 <%docstring>
 Invokes the syscall ioperm.  See 'man 2 ioperm' for more information.
 
@@ -12,4 +12,4 @@ Arguments:
     turn_on(int): turn_on
 </%docstring>
 
-    ${syscall('SYS_ioperm', from, num, turn_on)}
+    ${syscall('SYS_ioperm', from_, num, turn_on)}

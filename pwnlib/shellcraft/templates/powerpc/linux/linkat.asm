@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.powerpc.linux import syscall
 %>
-<%page args="fromfd, from, tofd, to, flags"/>
+<%page args="fromfd, from_, tofd, to, flags"/>
 <%docstring>
 Invokes the syscall linkat.  See 'man 2 linkat' for more information.
 
@@ -14,4 +14,4 @@ Arguments:
     flags(int): flags
 </%docstring>
 
-    ${syscall('SYS_linkat', fromfd, from, tofd, to, flags)}
+    ${syscall('SYS_linkat', fromfd, from_, tofd, to, flags)}

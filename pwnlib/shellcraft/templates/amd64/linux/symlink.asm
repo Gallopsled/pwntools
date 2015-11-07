@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.amd64.linux import syscall
 %>
-<%page args="from, to"/>
+<%page args="from_, to"/>
 <%docstring>
 Invokes the syscall symlink.  See 'man 2 symlink' for more information.
 
@@ -11,4 +11,4 @@ Arguments:
     to(char): to
 </%docstring>
 
-    ${syscall('SYS_symlink', from, to)}
+    ${syscall('SYS_symlink', from_, to)}
