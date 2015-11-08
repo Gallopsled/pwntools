@@ -575,7 +575,7 @@ class ssh(Timeout, Logger):
             >>> s = ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
-            >>> sh = s.process('sh', env={'PS1':''})
+            >>> sh = s.process('/bin/sh', env={'PS1':''})
             >>> sh.sendline('echo Hello; exit')
             >>> sh.recvall()
             'Hello\n'
