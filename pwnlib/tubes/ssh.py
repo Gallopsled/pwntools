@@ -66,7 +66,7 @@ class ssh_channel(sock):
     #: Only valid when instantiated through :meth:`ssh.process`
     argv = None
 
-    def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = Timeout.default, level = 0):
+    def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = Timeout.default, level = 0, raw = True):
         super(ssh_channel, self).__init__(timeout, level=level)
 
         # keep the parent from being garbage collected in some cases
@@ -95,7 +95,11 @@ class ssh_channel(sock):
                 process = 'export %s=%s; %s' % (name, misc.sh_string(value), process)
 
         if process and tty:
-            process = 'stty raw -ctlecho -echo; ' + process
+            if raw:
+                process = 'stty raw -ctlecho -echo; ' + process
+            else:
+                process = 'stty -ctlecho -echo; ' + process
+
 
         # If this object is enabled for DEBUG-level logging, don't hide
         # anything about the command that's actually executed.
@@ -517,7 +521,7 @@ class ssh(Timeout, Logger):
         return self.run(shell, tty, timeout = timeout)
 
     def process(self, argv=None, executable=None, tty = True, cwd = None, env = None, timeout = Timeout.default, run = True,
-                stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=[]):
+                stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=[], raw=True):
         r"""
         Executes a process on the remote server, in the same fashion
         as pwnlib.tubes.process.process.
@@ -560,8 +564,6 @@ class ssh(Timeout, Logger):
                 See ``stdin``.
             stderr(int, str):
                 See ``stdin``.
-            ulimit(int):
-                Set the ulimit for the
 
         Returns:
             A new SSH channel, or a path to a script if ``run=False``.
@@ -669,8 +671,9 @@ env   = %(env)r
 
 os.chdir(%(cwd)r)
 
-if env is None:
-    env = os.environ
+if env:
+    os.environ.clear()
+    os.environ.update(env)
 
 def is_exe(path):
     return os.path.isfile(path) and os.access(path, os.X_OK)
@@ -706,7 +709,7 @@ for fd, newfd in {0: %(stdin)r, 1: %(stdout)r, 2:%(stderr)r}.items():
 %(func_src)s
 apply(%(func_name)s, %(func_args)r)
 
-os.execve(exe, argv, env)
+os.execve(exe, argv, os.environ)
 """ % locals()
 
         script = script.lstrip()
@@ -728,7 +731,7 @@ os.execve(exe, argv, env)
 
             script = misc.sh_string(script)
             with context.local(log_level='error'):
-                python = self.run('test -x "$(which python 2>&1)" && exec python -c %s check; echo 2' % script)
+                python = self.run('test -x "$(which python 2>&1)" && exec python -c %s check; echo 2' % script, raw=raw)
             result = safeeval.const(python.recvline())
 
             # If an error occurred, try to grab as much output
@@ -749,11 +752,14 @@ os.execve(exe, argv, env)
 
         return python
 
-    def system(self, process, tty = True, wd = None, env = None, timeout = Timeout.default):
-        r"""system(process, tty = True, wd = None, env = None, timeout = Timeout.default) -> ssh_channel
+    def system(self, process, tty = True, wd = None, env = None, timeout = Timeout.default, raw = True):
+        r"""system(process, tty = True, wd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
         then a TTY is requested on the remote server.
+
+        If `raw` is True, terminal control codes are ignored and input is not
+        echoed back.
 
         Return a :class:`pwnlib.tubes.ssh.ssh_channel` object.
 
@@ -772,7 +778,7 @@ os.execve(exe, argv, env)
         if wd is None:
             wd = self.cwd
 
-        return ssh_channel(self, process, tty, wd, env, timeout, level = self.level)
+        return ssh_channel(self, process, tty, wd, env, timeout, level = self.level, raw = raw)
 
     #: Backward compatibility.  Use :meth:`system`
     run = system
