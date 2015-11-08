@@ -96,7 +96,9 @@ __all__ = [
     'getLogger', 'install_default_handler', 'rootlogger'
 ]
 
+import ConfigParser
 import logging
+import os
 import random
 import re
 import sys
@@ -113,18 +115,40 @@ from .term import text
 # list of prefixes to use for the different message types.  note that the `text`
 # module won't add any escape codes if `sys.stderr.isatty()` is `False`
 _msgtype_prefixes = {
-    'status'       : (text.magenta, 'x'),
-    'success'      : (text.bold_green, '+'),
-    'failure'      : (text.bold_red, '-'),
-    'debug'        : (text.bold_red, 'DEBUG'),
-    'info'         : (text.bold_blue, '*'),
-    'warning'      : (text.bold_yellow, '!'),
-    'error'        : (text.on_red, 'ERROR'),
-    'exception'    : (text.on_red, 'ERROR'),
-    'critical'     : (text.on_red, 'CRITICAL'),
-    'info_once'    : (text.bold_blue, '*'),
-    'warning_once' : (text.bold_yellow, '!'),
+    'status'       : [text.magenta, 'x'],
+    'success'      : [text.bold_green, '+'],
+    'failure'      : [text.bold_red, '-'],
+    'debug'        : [text.bold_red, 'DEBUG'],
+    'info'         : [text.bold_blue, '*'],
+    'warning'      : [text.bold_yellow, '!'],
+    'error'        : [text.on_red, 'ERROR'],
+    'exception'    : [text.on_red, 'ERROR'],
+    'critical'     : [text.on_red, 'CRITICAL'],
+    'info_once'    : [text.bold_blue, '*'],
+    'warning_once' : [text.bold_yellow, '!'],
     }
+
+
+# permit setting logging colors from a configuration file
+config = os.path.expanduser('~/.pwn.conf')
+if os.path.exists(config):
+    c = ConfigParser.ConfigParser()
+    c.read([config])
+
+    for section in c.sections():
+        if section not in _msgtype_prefixes:
+            continue
+
+        for key, value in c.items(section):
+            if key == 'color':
+                try:
+                    _msgtype_prefixes[section][0] = getattr(text, value)
+                except AttributeError:
+                    pass
+
+            elif key == 'symbol':
+                _msgtype_prefixes[section][1] = value
+
 
 # the text decoration to use for spinners.  the spinners themselves can be found
 # in the `pwnlib.term.spinners` module
