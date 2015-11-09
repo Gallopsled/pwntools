@@ -39,7 +39,7 @@ install_requires     = ['paramiko>=1.15.2',
                         'capstone',
                         'ropgadget>=5.3',
                         'pyserial>=2.7',
-                        'requests>=2.5.1']
+                        'requests>=2.0']
 
 # This is a hack until somebody ports psutil to OpenBSD
 if platform.system() != 'OpenBSD':
