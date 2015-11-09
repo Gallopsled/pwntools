@@ -735,6 +735,10 @@ class tube(Timeout, Logger):
 
         self.send(line + self.newline)
 
+    def sendlines(self, lines=[]):
+        for line in lines:
+            self.sendline(line)
+
     def sendafter(self, delim, data, timeout = default):
         """sendafter(delim, data, timeout = default) -> str
 
