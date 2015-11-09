@@ -656,9 +656,9 @@ class ssh(Timeout, Logger):
         func_args = preexec_args
 
         if not isinstance(func, types.FunctionType):
-            log.error("func must be a function")
+            log.error("preexec_fn must be a function")
         if func_name == (lambda: 0).__name__:
-            log.error("Can't use lambdas")
+            log.error("preexec_fn cannot be a lambda")
 
 
 
