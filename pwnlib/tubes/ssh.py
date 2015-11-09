@@ -643,9 +643,10 @@ class ssh(Timeout, Logger):
             self.error("argv must only contain strings: %r" % argv)
 
         # Allow passing in sys.stdin/stdout/stderr objects
-        stdin  = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}.get(stdin, stdin)
-        stdout = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}.get(stdout, stdout)
-        stderr = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}.get(stderr, stderr)
+        handles = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}
+        stdin  = handles.get(stdin, stdin)
+        stdout = handles.get(stdout, stdout)
+        stderr = handles.get(stderr, stderr)
 
         # Allow the user to provide a self-contained function to run
         def func(): pass
