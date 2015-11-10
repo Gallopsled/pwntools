@@ -281,6 +281,42 @@ class ssh_channel(sock):
     def _close_msg(self):
         self.info('Closed SSH channel with %s' % self.host)
 
+    def getenv(self, variable, **kwargs):
+        """Retrieve the address of an environment variable in the remote process.
+        """
+        if not hasattr(self, 'argv'):
+            log.error("Can only call getenv() on ssh_channel objects created with ssh.process")
+
+        argv0 = self.argv[0]
+
+        script = 'from ctypes import *;'
+        script += 'import os;'
+        script += 'libc = CDLL("libc.so.6");'
+        script += 'print os.path.realpath(%r);' % self.exe
+        script += 'print(libc.getenv(%r));' % variable
+
+        with context.local(log_level='error'):
+            python = self.parent.which('python')
+
+            if not python:
+                self.error("Python is not installed on the remote system.")
+
+            io = self.parent.process([argv0,'-c', script.strip()],
+                                      executable=python,
+                                      env=self.env,
+                                      **kwargs)
+            path = io.recvline()
+            address = int(io.recvline())
+
+            address -= len(python)
+            address += len(path)
+
+        try:
+            return int(result) & context.mask
+        except:
+            self.exception("Could not look up environment variable %r" % variable)
+
+
 class ssh_connecter(sock):
     def __init__(self, parent, host, port, timeout = Timeout.default, level = None):
         super(ssh_connecter, self).__init__(timeout, level = level)
@@ -520,8 +556,8 @@ class ssh(Timeout, Logger):
         """
         return self.run(shell, tty, timeout = timeout)
 
-    def process(self, argv=None, executable=None, tty = True, cwd = None, env = None, timeout = Timeout.default, run = True,
-                stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=[], raw=True):
+    def process(self, argv=None, executable=None, tty=True, cwd=None, env=None, timeout=Timeout.default, run=True,
+                stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=[], raw=True, aslr=None):
         r"""
         Executes a process on the remote server, in the same fashion
         as pwnlib.tubes.process.process.
@@ -564,6 +600,14 @@ class ssh(Timeout, Logger):
                 See ``stdin``.
             stderr(int, str):
                 See ``stdin``.
+            preexec_fn(callable):
+                Function which is executed on the remote side before execve().
+            preexec_args(object):
+                Argument passed to ``preexec_fn``.
+            raw(bool):
+                If ``True``, disable TTY control code interpretation.
+            aslr(bool):
+                If ``False``, attempt to disable ASLR for the process.
 
         Returns:
             A new SSH channel, or a path to a script if ``run=False``.
@@ -606,6 +650,7 @@ class ssh(Timeout, Logger):
             self.error("Must specify argv or executable")
 
         argv      = argv or []
+        aslr      = aslr if aslr is not None else context.aslr
 
         if isinstance(argv, (str, unicode)):
             argv = [argv]
@@ -664,7 +709,7 @@ class ssh(Timeout, Logger):
 
         script = r"""
 #!/usr/bin/env python2
-import os, sys
+import os, sys, ctypes, resource, platform
 from collections import OrderedDict
 exe   = %(executable)r
 argv  = %(argv)r
@@ -706,6 +751,13 @@ for fd, newfd in {0: %(stdin)r, 1: %(stdout)r, 2:%(stderr)r}.items():
         os.open(newfd, os.O_RDONLY if fd == 0 else (os.O_RDWR|os.O_CREAT))
     elif isinstance(newfd, int) and newfd != fd:
         os.dup2(fd, newfd)
+
+if not %(aslr)r:
+    if platform.system().lower() == 'linux':
+        ADDR_NO_RANDOMIZE = 0x0040000
+        ctypes.CDLL('libc.so.6').personality(ADDR_NO_RANDOMIZE)
+
+    resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
 
 %(func_src)s
 apply(%(func_name)s, %(func_args)r)
@@ -783,6 +835,46 @@ os.execve(exe, argv, os.environ)
 
     #: Backward compatibility.  Use :meth:`system`
     run = system
+
+    def getenv(self, variable, **kwargs):
+        """Retrieve the address of an environment variable on the remote
+        system.
+
+        Note:
+
+            The exact address will differ based on what other environment
+            variables are set, as well as argv[0].  In order to ensure that
+            the path is *exactly* the same, it is recommended to invoke the
+            process with ``argv=[]``.
+
+        Example:
+
+            >>> s =  ssh(host='example.pwnme',
+            ...         user='travis',
+            ...         password='demopass',
+            ...         cache=False)
+            >>>
+
+        """
+        script = '''
+from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
+''' % variable
+
+        with context.local(log_level='error'):
+            python = self.which('python')
+
+            if not python:
+                self.error("Python is not installed on the remote system.")
+
+            io = self.process(['','-c', script.strip()], executable=python, **kwargs)
+            result = io.recvall()
+
+        try:
+            return int(result) & context.mask
+        except:
+            self.exception("Could not look up environment variable %r" % variable)
+
+
 
     def run_to_end(self, process, tty = False, wd = None, env = None):
         r"""run_to_end(process, tty = False, timeout = Timeout.default, env = None) -> str
@@ -1140,7 +1232,7 @@ os.execve(exe, argv, os.environ)
             data(str): The data to upload.
             remote(str): The filename to upload it to.
 
-        Examoles:
+        Example:
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')

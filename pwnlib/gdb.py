@@ -64,6 +64,9 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
     Returns:
         A tube connected to the target process
     """
+    if isinstance(args, (int, tubes.process.process, tubes.ssh.ssh_channel)):
+        log.error("Use gdb.attach() to debug a running process")
+
     if env is None:
         env = os.environ
 
@@ -85,7 +88,13 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
         if not gdbserver:
             log.error("gdbserver is not installed")
 
-        args = [gdbserver, '--no-disable-randomization', 'localhost:0'] + args
+        orig_args = args
+
+        args = [gdbserver]
+        if context.aslr:
+            args += ['--no-disable-randomization']
+        args += ['localhost:0']
+        args += orig_args
     else:
         qemu_port = random.randint(1024, 65535)
         args = [get_qemu_user(), '-g', str(qemu_port)] + args
@@ -167,16 +176,7 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
     Returns:
       :const:`None`
 """
-    # if ptrace_scope is set and we're not root, we cannot attach to a running process
-    try:
-        ptrace_scope = open('/proc/sys/kernel/yama/ptrace_scope').read().strip()
-        if need_ptrace_scope and ptrace_scope != '0' and os.geteuid() != 0:
-            msg =  'Disable ptrace_scope to attach to running processes.\n'
-            msg += 'More info: https://askubuntu.com/q/41629'
-            log.warning(msg)
-            return
-    except IOError:
-        pass
+
 
     # if execute is a file object, then read it; we probably need to run some
     # more gdb script anyway
@@ -199,6 +199,20 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
         pre += 'set endian %s\n' % context.endian
         pre += 'set architecture %s\n' % get_gdb_arch()
         # pre += 'set gnutarget ' + _bfdname() + '\n'
+    else:
+        # If ptrace_scope is set and we're not root, we cannot attach to a
+        # running process.
+        # We assume that we do not need this to be set if we are debugging on
+        # a different architecture (e.g. under qemu-user).
+        try:
+            ptrace_scope = open('/proc/sys/kernel/yama/ptrace_scope').read().strip()
+            if need_ptrace_scope and ptrace_scope != '0' and os.geteuid() != 0:
+                msg =  'Disable ptrace_scope to attach to running processes.\n'
+                msg += 'More info: https://askubuntu.com/q/41629'
+                log.warning(msg)
+                return
+        except IOError:
+            pass
 
     # let's see if we can find a pid to attach to
     pid = None
@@ -445,9 +459,10 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     cmd = shlex.split(cmd)
 
     with runner(cmd) as gdb:
+        if context.aslr:
+            gdb.sendline('set disable-randomization off')
         gdb.send("""
         set prompt
-        set disable-randomization off
         break *%#x
         run
         """ % entry)

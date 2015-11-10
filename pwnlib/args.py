@@ -65,8 +65,8 @@ def set_timeout(v):
 def set_randomize(v):
     context.defaults['randomize'] = asbool(v)
 
-def set_multiply(v):
-    context.defaults['multiply'] = int(v, 0)
+def set_aslr(v):
+    context.defaults['aslr'] = not asbool(v)
 
 hooks = {
     'LOG_LEVEL': set_log_level,
@@ -75,8 +75,8 @@ hooks = {
     'NOTERM': set_noterm,
     'SILENT': set_log_level_error,
     'RANDOMIZE': set_randomize,
-    'MULTIPLY': set_multiply,
-    'TIMEOUT': set_timeout
+    'TIMEOUT': set_timeout,
+    'NOASLR': set_aslr,
 }
 
 def initialize():

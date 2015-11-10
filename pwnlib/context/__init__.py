@@ -318,6 +318,7 @@ class ContextType(object):
     #: Default values for :class:`pwnlib.context.ContextType`
     defaults = {
         'arch': 'i386',
+        'aslr': True,
         'binary': None,
         'bits': 32,
         'endian': 'little',
@@ -625,6 +626,19 @@ class ContextType(object):
                 self._tls[k] = v
 
         return arch
+
+    @_validator
+    def aslr(self, aslr):
+        """
+        ASLR settings for new processes.
+
+        If ``False``, attempt to disable ASLR in all processes which are
+        created via ``personality`` (``setarch -R``) and ``setrlimit``
+        (``ulimit -s unlimited``).
+
+        The ``setarch`` changes are lost if a ``setuid`` binary is executed.
+        """
+        return bool(aslr)
 
     @_validator
     def kernel(self, arch):

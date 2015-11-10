@@ -1,8 +1,10 @@
+import ctypes
 import errno
 import fcntl
 import logging
 import os
 import pty
+import resource
 import select
 import subprocess
 import tty
@@ -66,6 +68,12 @@ class process(tube):
             Set the created pty to raw mode (i.e. disable echo and control
             characters).  ``True`` by default.  If no pty is created, this
             has no effect.
+        aslr(bool):
+            If set to ``False``, disable ASLR via ``personality`` (``setarch -R``)
+            and ``setrlimit`` (``ulimit -s unlimited``).
+            This disables ASLR for the target process.  However, the ``setarch``
+            changes are lost if a ``setuid`` binary is executed.
+            The default value is inherited from ``context.aslr``.
 
     Attributes:
         proc(subprocess)
@@ -140,6 +148,15 @@ class process(tube):
 
         >>> process('echo hello 1>&2', shell=True, stderr=PIPE).recvall()
         ''
+
+        >>> a = process(['cat', '/proc/self/maps']).recvall()
+        >>> b = process(['cat', '/proc/self/maps'], aslr=False).recvall()
+        >>> with context.local(aslr=False):
+        ...    c = process(['cat', '/proc/self/maps']).recvall()
+        >>> a == b
+        False
+        >>> b == c
+        True
     """
 
     PTY = PTY
@@ -159,7 +176,8 @@ class process(tube):
                  level = None,
                  close_fds = True,
                  preexec_fn = lambda: None,
-                 raw = True):
+                 raw = True,
+                 aslr = None):
         super(process, self).__init__(timeout, level = level)
 
         #: `subprocess.Popen` object
@@ -184,6 +202,9 @@ class process(tube):
 
         #: Whether the controlling TTY is set to raw mode
         self.raw          = raw
+
+        #: Whether ASLR should be left on
+        self.aslr         = aslr if aslr is not None else context.aslr
 
         # Create the PTY if necessary
         stdin, stdout, stderr, master, slave = self._handles(*handles)
@@ -271,6 +292,19 @@ class process(tube):
         """
         if self.pty is not None:
             self.__pty_make_controlling_tty(self.pty)
+        if not self.aslr:
+            try:
+                if context.os == 'linux':
+                    ADDR_NO_RANDOMIZE = 0x0040000
+                    ctypes.CDLL('libc.so.6').personality(ADDR_NO_RANDOMIZE)
+
+                resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
+            except:
+                log.exception("Could not disable ASLR")
+
+
+
+
         self.preexec_fn()
 
     @property
