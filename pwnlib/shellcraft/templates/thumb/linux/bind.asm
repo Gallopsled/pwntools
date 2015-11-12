@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.thumb.linux import syscall
 %>
-<%page args="fd, addr, len"/>
+<%page args="fd, addr, length"/>
 <%docstring>
 Invokes the syscall bind.  See 'man 2 bind' for more information.
 
@@ -12,4 +12,4 @@ Arguments:
     len(socklen_t): len
 </%docstring>
 
-    ${syscall('SYS_bind', fd, addr, len)}
+    ${syscall('SYS_bind', fd, addr, length)}

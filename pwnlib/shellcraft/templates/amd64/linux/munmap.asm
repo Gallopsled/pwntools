@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.amd64.linux import syscall
 %>
-<%page args="addr, len"/>
+<%page args="addr, length"/>
 <%docstring>
 Invokes the syscall munmap.  See 'man 2 munmap' for more information.
 
@@ -11,4 +11,4 @@ Arguments:
     len(size_t): len
 </%docstring>
 
-    ${syscall('SYS_munmap', addr, len)}
+    ${syscall('SYS_munmap', addr, length)}

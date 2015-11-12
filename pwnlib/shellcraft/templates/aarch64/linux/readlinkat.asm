@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.aarch64.linux import syscall
 %>
-<%page args="fd, path, buf, len"/>
+<%page args="fd, path, buf, length"/>
 <%docstring>
 Invokes the syscall readlinkat.  See 'man 2 readlinkat' for more information.
 
@@ -13,4 +13,4 @@ Arguments:
     len(size_t): len
 </%docstring>
 
-    ${syscall('SYS_readlinkat', fd, path, buf, len)}
+    ${syscall('SYS_readlinkat', fd, path, buf, length)}

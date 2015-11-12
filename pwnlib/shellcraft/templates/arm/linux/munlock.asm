@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.arm.linux import syscall
 %>
-<%page args="addr, len"/>
+<%page args="addr, length"/>
 <%docstring>
 Invokes the syscall munlock.  See 'man 2 munlock' for more information.
 
@@ -11,4 +11,4 @@ Arguments:
     len(size_t): len
 </%docstring>
 
-    ${syscall('SYS_munlock', addr, len)}
+    ${syscall('SYS_munlock', addr, length)}

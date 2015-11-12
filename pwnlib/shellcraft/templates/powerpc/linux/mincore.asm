@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.powerpc.linux import syscall
 %>
-<%page args="start, len, vec"/>
+<%page args="start, length, vec"/>
 <%docstring>
 Invokes the syscall mincore.  See 'man 2 mincore' for more information.
 
@@ -12,4 +12,4 @@ Arguments:
     vec(unsigned): vec
 </%docstring>
 
-    ${syscall('SYS_mincore', start, len, vec)}
+    ${syscall('SYS_mincore', start, length, vec)}

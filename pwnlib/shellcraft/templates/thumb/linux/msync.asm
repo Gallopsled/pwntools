@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.thumb.linux import syscall
 %>
-<%page args="addr, len, flags"/>
+<%page args="addr, length, flags"/>
 <%docstring>
 Invokes the syscall msync.  See 'man 2 msync' for more information.
 
@@ -12,4 +12,4 @@ Arguments:
     flags(int): flags
 </%docstring>
 
-    ${syscall('SYS_msync', addr, len, flags)}
+    ${syscall('SYS_msync', addr, length, flags)}

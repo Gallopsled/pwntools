@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.mips.linux import syscall
 %>
-<%page args="fd, mode, offset, len"/>
+<%page args="fd, mode, offset, length"/>
 <%docstring>
 Invokes the syscall fallocate.  See 'man 2 fallocate' for more information.
 
@@ -13,4 +13,4 @@ Arguments:
     len(off_t): len
 </%docstring>
 
-    ${syscall('SYS_fallocate', fd, mode, offset, len)}
+    ${syscall('SYS_fallocate', fd, mode, offset, length)}

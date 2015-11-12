@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.thumb.linux import syscall
 %>
-<%page args="addr, len"/>
+<%page args="addr, length"/>
 <%docstring>
 Invokes the syscall mlock.  See 'man 2 mlock' for more information.
 
@@ -11,4 +11,4 @@ Arguments:
     len(size_t): len
 </%docstring>
 
-    ${syscall('SYS_mlock', addr, len)}
+    ${syscall('SYS_mlock', addr, length)}

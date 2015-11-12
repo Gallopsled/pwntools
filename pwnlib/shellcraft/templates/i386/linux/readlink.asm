@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.i386.linux import syscall
 %>
-<%page args="path, buf, len"/>
+<%page args="path, buf, length"/>
 <%docstring>
 Invokes the syscall readlink.  See 'man 2 readlink' for more information.
 
@@ -12,4 +12,4 @@ Arguments:
     len(size_t): len
 </%docstring>
 
-    ${syscall('SYS_readlink', path, buf, len)}
+    ${syscall('SYS_readlink', path, buf, length)}

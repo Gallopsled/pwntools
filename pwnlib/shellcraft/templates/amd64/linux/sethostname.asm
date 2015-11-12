@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.amd64.linux import syscall
 %>
-<%page args="name, len"/>
+<%page args="name, length"/>
 <%docstring>
 Invokes the syscall sethostname.  See 'man 2 sethostname' for more information.
 
@@ -11,4 +11,4 @@ Arguments:
     len(size_t): len
 </%docstring>
 
-    ${syscall('SYS_sethostname', name, len)}
+    ${syscall('SYS_sethostname', name, length)}

@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.aarch64.linux import syscall
 %>
-<%page args="fd, addr, len"/>
+<%page args="fd, addr, length"/>
 <%docstring>
 Invokes the syscall getsockname.  See 'man 2 getsockname' for more information.
 
@@ -12,4 +12,4 @@ Arguments:
     len(socklen_t): len
 </%docstring>
 
-    ${syscall('SYS_getsockname', fd, addr, len)}
+    ${syscall('SYS_getsockname', fd, addr, length)}

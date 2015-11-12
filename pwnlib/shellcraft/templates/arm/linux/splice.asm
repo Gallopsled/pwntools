@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.arm.linux import syscall
 %>
-<%page args="fdin, offin, fdout, offout, len, flags"/>
+<%page args="fdin, offin, fdout, offout, length, flags"/>
 <%docstring>
 Invokes the syscall splice.  See 'man 2 splice' for more information.
 
@@ -15,4 +15,4 @@ Arguments:
     flags(unsigned): flags
 </%docstring>
 
-    ${syscall('SYS_splice', fdin, offin, fdout, offout, len, flags)}
+    ${syscall('SYS_splice', fdin, offin, fdout, offout, length, flags)}

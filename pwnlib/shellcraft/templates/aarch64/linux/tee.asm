@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.aarch64.linux import syscall
 %>
-<%page args="fdin, fdout, len, flags"/>
+<%page args="fdin, fdout, length, flags"/>
 <%docstring>
 Invokes the syscall tee.  See 'man 2 tee' for more information.
 
@@ -13,4 +13,4 @@ Arguments:
     flags(unsigned): flags
 </%docstring>
 
-    ${syscall('SYS_tee', fdin, fdout, len, flags)}
+    ${syscall('SYS_tee', fdin, fdout, length, flags)}
