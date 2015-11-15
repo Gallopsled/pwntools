@@ -9,6 +9,7 @@ from . import packing
 from ..context import context
 from ..log import getLogger
 from ..term import text
+from .cyclic import cyclic
 from .cyclic import cyclic_find
 
 log = getLogger(__name__)
@@ -526,8 +527,17 @@ default_style = {
     'ff':           text.green,
 }
 
+cyclic_pregen = ''
+
+def sequential_lines(a,b):
+    return (a+b) in cyclic_pregen
+
+def update_cyclic_pregenerated(size):
+    global cyclic_pregen
+    cyclic_pregen = cyclic(size)
+
 def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
-                 style = None, highlight = None):
+                 style = None, highlight = None, cyclic=False):
     """hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
                     style = {}, highlight = []) -> str generator
 
@@ -541,6 +551,7 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
         begin(int):  Offset of the first byte to print in the left column
         style(dict): Color scheme to use.
         highlight(iterable): Byte values to highlight.
+        cyclic(bool): Attempt to skip consecutive, unmodified cyclic lines
 
     Returns:
         A hexdump-dump in the form of a string.
@@ -584,10 +595,19 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
             return hbyte, abyte
         cache = [style_byte(chr(b)) for b in range(256)]
 
-    for line, chunk in enumerate(lists.group(width, s)):
+    if cyclic:
+        update_cyclic_pregenerated(len(s))
+
+    chunks = lists.group(width, s)
+
+    for line, chunk in enumerate(chunks):
         # If this chunk is the same as the last unique chunk,
         # use a '*' instead.
-        if skip and last_unique == chunk:
+        if line != 0 \
+        and line != len(chunks)-1 \
+        and skip \
+        and (last_unique == chunk \
+            or (cyclic and sequential_lines(last_unique, chunk))):
             last_unique = chunk
             if not skipping:
                 yield '*'
@@ -626,9 +646,9 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
     yield line
 
 def hexdump(s, width = 16, skip = True, hexii = False, begin = 0,
-            style = None, highlight = None):
+            style = None, highlight = None, cyclic=False):
     s = packing.flat(s)
-    return '\n'.join(hexdump_iter(s, width, skip, hexii, begin, style, highlight))
+    return '\n'.join(hexdump_iter(s, width, skip, hexii, begin, style, highlight, cyclic))
 
 def negate(value, width = None):
     """
