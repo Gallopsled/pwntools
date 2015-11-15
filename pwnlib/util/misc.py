@@ -310,14 +310,14 @@ def dealarm_shell(tube):
     """
     tube.clean()
 
-    tube.sendline('which python')
+    tube.sendline('which python || echo')
     if tube.recvline().startswith('/'):
         tube.sendline('''exec python -c "import signal, os; signal.alarm(0); os.execl('$SHELL','')"''')
         return tube
 
-    tube.sendline('which perl')
+    tube.sendline('which perl || echo')
     if tube.recvline().startswith('/'):
-        tube.sendline('''exec perl -e "alarm 0; exec '$SHELL'"''')
+        tube.sendline('''exec perl -e "alarm 0; exec '${SHELL:-/bin/sh}'"''')
         return tube
 
     return None
