@@ -376,6 +376,14 @@ class Logger(object):
         """
         self._log(logging.INFO, message, args, kwargs, 'info')
 
+    def hexdump(self, message, *args, **kwargs):
+        # cyclic dependencies FTW!
+        # TODO: Move pwnlib.util.fiddling.hexdump into a new module.
+        import pwnlib.util.fiddling
+
+        self.info(pwnlib.util.fiddling.hexdump(message, *args, **kwargs))
+
+
     def warning(self, message, *args, **kwargs):
         """warning(message, *args, **kwargs)
 
