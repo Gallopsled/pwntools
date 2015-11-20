@@ -429,6 +429,32 @@ def ror(n, k, word_size = None):
 
     return rol(n, -k, word_size)
 
+def naf(n):
+    """naf(int) -> int generator
+
+    Returns a generator for the non-adjacent form (NAF[1]) of a number, `n`.  If
+    `naf(n)` generates `z_0, z_1, ...`, then `n == z_0 + z_1 * 2 + z_2 * 2**2,
+    ...`.
+
+    [1] https://en.wikipedia.org/wiki/Non-adjacent_form
+
+    Example:
+
+      >>> n = 45
+      >>> m = 0
+      >>> x = 1
+      >>> for z in naf(n):
+      ...     m += x * z
+      ...     x *= 2
+      >>> n == m
+      True
+
+    """
+    while n:
+        z = 2 - n % 4 if n & 1 else 0
+        n = (n - z) // 2
+        yield z
+
 def isprint(c):
     """isprint(c) -> bool
 
