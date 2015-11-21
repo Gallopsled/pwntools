@@ -585,7 +585,7 @@ class ssh(Timeout, Logger):
         return self.run(shell, tty, timeout = timeout)
 
     def process(self, argv=None, executable=None, tty=True, cwd=None, env=None, timeout=Timeout.default, run=True,
-                stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=[], raw=True, aslr=None):
+                stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=[], raw=True, aslr=None, nosetuid=False):
         r"""
         Executes a process on the remote server, in the same fashion
         as pwnlib.tubes.process.process.
@@ -636,6 +636,8 @@ class ssh(Timeout, Logger):
                 If ``True``, disable TTY control code interpretation.
             aslr(bool):
                 If ``False``, attempt to disable ASLR for the process.
+            nosetuid(bool):
+                If ``True``, prevent setuid from taking effect.
 
         Returns:
             A new SSH channel, or a path to a script if ``run=False``.
@@ -786,6 +788,13 @@ if not %(aslr)r:
         ctypes.CDLL('libc.so.6').personality(ADDR_NO_RANDOMIZE)
 
     resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
+
+if %(nosetuid)r:
+    try:
+        PR_SET_NO_NEW_PRIVS = 38
+        ctypes.CDLL('libc.so.6').prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)
+    except:
+        pass
 
 %(func_src)s
 apply(%(func_name)s, %(func_args)r)
