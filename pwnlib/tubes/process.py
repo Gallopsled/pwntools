@@ -14,6 +14,7 @@ from ..log import getLogger
 from ..qemu import get_qemu_user
 from ..timeout import Timeout
 from ..util.misc import which
+from ..util.misc import parse_ldd_output
 from .tube import tube
 
 log = getLogger(__name__)
@@ -74,6 +75,10 @@ class process(tube):
             This disables ASLR for the target process.  However, the ``setarch``
             changes are lost if a ``setuid`` binary is executed.
             The default value is inherited from ``context.aslr``.
+        nosetuid(bool):
+            If set to ``True``, prevent the binary from running as another user,
+            even if the setuid bit is set.  This is only supported on Linux,
+            with kernels v3.5 or greater.
 
     Attributes:
         proc(subprocess)
@@ -177,7 +182,8 @@ class process(tube):
                  close_fds = True,
                  preexec_fn = lambda: None,
                  raw = True,
-                 aslr = None):
+                 aslr = None,
+                 nosetuid = False):
         super(process, self).__init__(timeout, level = level)
 
         #: `subprocess.Popen` object
@@ -205,6 +211,9 @@ class process(tube):
 
         #: Whether ASLR should be left on
         self.aslr         = aslr if aslr is not None else context.aslr
+
+        #: Whether setuid is permitted
+        self._setuid      = not nosetuid
 
         # Create the PTY if necessary
         stdin, stdout, stderr, master, slave = self._handles(*handles)
@@ -292,6 +301,7 @@ class process(tube):
         """
         if self.pty is not None:
             self.__pty_make_controlling_tty(self.pty)
+
         if not self.aslr:
             try:
                 if context.os == 'linux':
@@ -302,8 +312,12 @@ class process(tube):
             except:
                 log.exception("Could not disable ASLR")
 
-
-
+        if not self._setuid:
+            try:
+                PR_SET_NO_NEW_PRIVS = 38
+                ctypes.CDLL('libc.so.6').prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)
+            except:
+                pass
 
         self.preexec_fn()
 
@@ -632,3 +646,34 @@ class process(tube):
             raise Exception("Could not open controlling tty, /dev/tty")
         else:
             os.close(fd)
+
+    def libs(self):
+        """libs() -> dict
+
+        Return a dictionary mapping the path of each shared library loaded
+        by the process to the address it is loaded at in the process' address
+        space.
+
+        If ``/proc/$PID/maps`` for the process cannot be accessed, the output
+        of ``ldd`` alone is used.  This may give inaccurate results if ASLR
+        is enabled.
+        """
+        with context.local(log_level='error'):
+            ldd = process(['ldd', self.executable]).recvall()
+
+        maps = parse_ldd_output(ldd)
+
+        try:
+            maps_raw = open('/proc/%d/maps' % self.pid).read()
+        except IOError:
+            return maps
+
+        for lib in maps:
+            path = os.path.realpath(lib)
+            for line in maps_raw.splitlines():
+                if line.endswith(path):
+                    address = line.split('-')[0]
+                    maps[lib] = int(address, 16)
+                    break
+
+        return maps

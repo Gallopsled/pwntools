@@ -120,7 +120,10 @@ class ssh_channel(sock):
 
                 def resizer():
                     if self.sock:
-                        self.sock.resize_pty(term.width, term.height)
+                        try:
+                            self.sock.resize_pty(term.width, term.height)
+                        except paramiko.ssh_exception.SSHException:
+                            pass
 
                 self.resizer = resizer
                 term.term.on_winch.append(self.resizer)
@@ -289,33 +292,58 @@ class ssh_channel(sock):
 
         argv0 = self.argv[0]
 
-        script = 'from ctypes import *;'
-        script += 'import os;'
-        script += 'libc = CDLL("libc.so.6");'
-        script += 'print os.path.realpath(%r);' % self.exe
-        script += 'print(libc.getenv(%r));' % variable
-
-        with context.local(log_level='error'):
-            python = self.parent.which('python')
-
-            if not python:
-                self.error("Python is not installed on the remote system.")
-
-            io = self.parent.process([argv0,'-c', script.strip()],
-                                      executable=python,
-                                      env=self.env,
-                                      **kwargs)
-            path = io.recvline()
-            address = int(io.recvline())
-
-            address -= len(python)
-            address += len(path)
+        script = ';'.join(('from ctypes import *',
+                           'import os',
+                           'libc = CDLL("libc.so.6")',
+                           'print os.path.realpath(%r)' % self.exe,
+                           'print(libc.getenv(%r))' % variable,))
 
         try:
-            return int(result) & context.mask
+            with context.local(log_level='error'):
+                python = self.parent.which('python')
+
+                if not python:
+                    self.error("Python is not installed on the remote system.")
+
+                io = self.parent.process([argv0,'-c', script.strip()],
+                                          executable=python,
+                                          env=self.env,
+                                          **kwargs)
+                path = io.recvline()
+                address = int(io.recvline())
+
+                address -= len(python)
+                address += len(path)
+
+                return int(address) & context.mask
         except:
             self.exception("Could not look up environment variable %r" % variable)
 
+    def libs(self):
+        """libs() -> dict
+
+        Returns a dictionary mapping the address of each loaded library in the
+        process's address space.
+
+        If ``/proc/$PID/maps`` cannot be opened, the output of ldd is used
+        verbatim, which may be different than the actual addresses if ASLR
+        is enabled.
+        """
+        if not self.exe:
+            log.error("Can only use libs() on ssh_channel objects created with ssh.process()")
+
+        maps = self.parent.libs(self.exe)
+
+        maps_raw = self.parent.cat('/proc/%d/maps' % self.pid)
+
+        for lib in maps:
+            remote_path = lib.split(self.parent.host)[-1]
+            for line in maps_raw.splitlines():
+                if line.endswith(remote_path):
+                    address = line.split('-')[0]
+                    maps[lib] = int(address, 16)
+                    break
+        return maps
 
 class ssh_connecter(sock):
     def __init__(self, parent, host, port, timeout = Timeout.default, level = None):
