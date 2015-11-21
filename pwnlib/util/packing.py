@@ -642,3 +642,9 @@ def fit(pieces, **kwargs):
         out = out[:l]
 
     return ''.join(out)
+
+def signed(integer):
+    return unpack(pack(integer), signed=True)
+
+def unsigned(integer):
+    return unpack(pack(integer))
