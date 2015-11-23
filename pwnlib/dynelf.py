@@ -426,6 +426,7 @@ class DynELF(object):
         else:
             self._waitfor.status(msg)
 
+    @property
     def libc(self):
         """libc(self) -> ELF
 

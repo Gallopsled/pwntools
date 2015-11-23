@@ -345,6 +345,23 @@ class ssh_channel(sock):
                     break
         return maps
 
+
+    @property
+    def libc(self):
+        """libc() -> ELF
+
+        Returns an ELF for the libc for the current process.
+        If possible, it is adjusted to the correct address
+        automatically.
+        """
+        from ..elf import ELF
+
+        for lib, address in self.libs().items():
+            if 'libc.so' in lib:
+                e = ELF(lib)
+                e.address = address
+                return e
+
 class ssh_connecter(sock):
     def __init__(self, parent, host, port, timeout = Timeout.default, level = None):
         super(ssh_connecter, self).__init__(timeout, level = level)
