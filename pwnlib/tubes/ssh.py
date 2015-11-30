@@ -729,8 +729,8 @@ class ssh(Timeout, Logger):
             self.error("executable / argv[0] must be a string: %r" % executable)
         if not isinstance(argv, (list, tuple)):
             self.error("argv must be a list or tuple: %r" % argv)
-        if env is not None and not isinstance(env, dict):
-            self.error("env must be a dict: %r") % env
+        if env is not None and not isinstance(env, dict) and env != os.environ:
+            self.error("env must be a dict: %r" % env)
         if not all(isinstance(s, str) for s in argv):
             self.error("argv must only contain strings: %r" % argv)
 
@@ -832,7 +832,11 @@ os.execve(exe, argv, os.environ)
             self.upload_data(script, tmpfile)
             return tmpfile
 
-        execve_repr = "execve(%r, %s, %s)" % (executable, argv, env or 'os.environ')
+        execve_repr = "execve(%r, %s, %s)" % (executable,
+                                              argv,
+                                              'os.environ'
+                                              if (not env or env == os.environ)
+                                              else env)
 
         with self.progress('Opening new channel: %s' % execve_repr) as h:
 
@@ -858,6 +862,19 @@ os.execve(exe, argv, os.environ)
             python.exe  = executable
 
         return python
+
+    def which(self, program):
+        """which(program) -> str
+
+        Minor modification to just directly invoking ``which`` on the remote
+        system which adds the current working directory to the end of ``$PATH``.
+        """
+        result = self.run('export PATH=$PATH:$PWD; which %s' % program).recvall().strip()
+
+        if not result.startswith('/'):
+            return None
+
+        return result
 
     def system(self, process, tty = True, wd = None, env = None, timeout = Timeout.default, raw = True):
         r"""system(process, tty = True, wd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
@@ -1376,11 +1393,18 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                     self.error("Could not untar %r on the remote end\n%s" % (remote_tar, message))
 
     def upload(self, file_or_directory, remote=None):
+        if isinstance(file_or_directory, str):
+            file_or_directory = os.path.expanduser(file_or_directory)
+            file_or_directory = os.path.expandvars(file_or_directory)
+
         if os.path.isfile(file_or_directory):
             return self.upload_file(file_or_directory, remote)
 
         if os.path.isdir(file_or_directory):
             return self.upload_dir(file_or_directory, remote)
+
+        log.error('%r does not exist' % file_or_directory)
+
 
     def download(self, file_or_directory, remote=None):
         if not self.sftp:
