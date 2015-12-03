@@ -80,7 +80,7 @@ class ssh_channel(sock):
         self.cwd  = wd or '.'
 
         env = env or {}
-        msg = 'Opening new channel: %r' % ((process,) or 'shell')
+        msg = 'Opening new channel: %r' % (process or 'shell')
 
         if isinstance(process, (list, tuple)):
             process = ' '.join(misc.sh_string(s) for s in process)
