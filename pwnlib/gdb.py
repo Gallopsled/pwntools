@@ -28,7 +28,7 @@ def debug_assembly(asm, execute=None, vma=None):
     tmp_elf = make_elf_from_assembly(asm, vma=vma, extract=False)
     os.chmod(tmp_elf, 0777)
     atexit.register(lambda: os.unlink(tmp_elf))
-    return debug(tmp_elf, execute=None, arch=context.arch)
+    return debug(tmp_elf, execute=execute, arch=context.arch)
 
 @LocalContext
 def debug_shellcode(data, execute=None, vma=None):
@@ -47,7 +47,7 @@ def debug_shellcode(data, execute=None, vma=None):
     tmp_elf = make_elf(data, extract=False, vma=vma)
     os.chmod(tmp_elf, 0777)
     atexit.register(lambda: os.unlink(tmp_elf))
-    return debug(tmp_elf, execute=None, arch=context.arch)
+    return debug(tmp_elf, execute=execute, arch=context.arch)
 
 @LocalContext
 def debug(args, execute=None, exe=None, ssh=None, env=None):
@@ -76,8 +76,8 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
     orig_args = args
 
     if ssh:
-        runner  = ssh.run
-        which   = lambda it: ssh.run('export PATH=$PATH:.; which %s' % it)
+        runner  = ssh.process
+        which   = ssh.which
     else:
         runner  = tubes.process.process
         which   = misc.which
@@ -103,8 +103,7 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
     if not which(args[0]):
         log.error("%s is not installed" % args[0])
 
-    with context.local(log_level='debug'):
-        gdbserver = runner(args, executable=exe, env=env)
+    gdbserver = runner(args, executable=exe, env=env)
 
     if context.native:
         # Process /bin/bash created; pid = 14366
