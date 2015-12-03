@@ -31,7 +31,7 @@ def run_assembly(assembly):
     return ELF.from_assembly(assembly).process()
 
 @LocalContext
-def run_shellcode(bytes):
+def run_shellcode(bytes, **kw):
     """Given assembled machine code bytes, execute them.
 
     Example:
@@ -48,7 +48,7 @@ def run_shellcode(bytes):
         >>> p.poll()
         12
     """
-    return ELF.from_bytes(bytes).process()
+    return ELF.from_bytes(bytes, **kw).process()
 
 @LocalContext
 def run_assembly_exitcode(assembly):
