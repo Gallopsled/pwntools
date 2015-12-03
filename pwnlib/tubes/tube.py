@@ -1320,7 +1320,7 @@ class tube(Timeout, Logger):
     #: Alias for :meth:`sendlinethen`
     def writelinethen(self, *a, **kw): return self.sendlinethen(*a, **kw)
 
-    def p64(self, *a, **kwdata):    return self.send(packing.p64(*a, **kw))
+    def p64(self, *a, **kw):        return self.send(packing.p64(*a, **kw))
     def p32(self, *a, **kw):        return self.send(packing.p32(*a, **kw))
     def p16(self, *a, **kw):        return self.send(packing.p16(*a, **kw))
     def p8(self, *a, **kw):         return self.send(packing.p8(*a, **kw))
