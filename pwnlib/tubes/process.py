@@ -162,6 +162,9 @@ class process(tube):
         False
         >>> b == c
         True
+
+        >>> process(['sh','-c','ulimit -s'], aslr=0).recvline()
+        'unlimited\n'
     """
 
     PTY = PTY
