@@ -9,6 +9,8 @@ import functools
 import logging
 import os
 import platform
+import socks
+import socket
 import string
 import sys
 import threading
@@ -16,6 +18,7 @@ import time
 
 from ..timeout import Timeout
 
+_original_socket = socket.socket
 
 class _devnull(object):
     name = None
@@ -328,6 +331,7 @@ class ContextType(object):
         'randomize': False,
         'newline': '\n',
         'os': 'linux',
+        'proxy': None,
         'signed': False,
         'terminal': None,
         'timeout': Timeout.maximum,
@@ -957,6 +961,35 @@ class ContextType(object):
     def abi(self):
         return self._abi
 
+    @_validator
+    def proxy(self, proxy):
+        """
+        Default proxy for all socket connections.
+
+        >>> context.proxy = 'localhost' #doctest: +ELLIPSIS
+        >>> r = remote('google.com', 80)
+        Traceback (most recent call last):
+        ...
+        ProxyConnectionError: Error connecting to SOCKS5 proxy localhost:1080: [Errno 111] Connection refused
+
+        >>> context.proxy = None
+        >>> r = remote('google.com', 80)
+        """
+
+        if not proxy:
+            socket.socket = _original_socket
+            return None
+
+        if isinstance(proxy, str):
+            proxy = (socks.SOCKS5, proxy)
+
+        if not isinstance(proxy, collections.Iterable):
+            raise AttributeError('proxy must be a string hostname, or tuple of arguments for socks.set_default_proxy')
+
+        socks.set_default_proxy(*proxy)
+        socket.socket = socks.socksocket
+
+        return proxy
 
     #*************************************************************************
     #                               ALIASES
