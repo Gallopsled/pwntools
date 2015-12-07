@@ -1,6 +1,7 @@
 .. testsetup:: *
 
    from pwn import *
+   import logging
    log = pwnlib.log.getLogger('pwnlib.context')
 
 :mod:`pwnlib.context` --- Setting runtime variables
