@@ -825,3 +825,37 @@ class ELF(ELFFile):
     def unpack(self, address, *a, **kw):        return packing.unpack(self.read(address, context.bytes), *a, **kw)
 
     def flat(self, *a, **kw):       return self.send(packing.flat(*a,**kw))
+
+    def maps(self, color=0):
+        """maps() -> str
+
+        Returns a string representation of the address space in the ELF file,
+        which should look similar to what is in /proc/$$/maps.
+
+        This is particularly useful for core files, which contain the entire
+        address space mapping.
+        """
+
+        #
+        # For reference, here is an example mapping.
+        #
+        # 00400000-004a5000         r-xp 00000000 fc:01 524322      /bin/zsh5
+        # 7fa61a3c7000-7fa61a3d7000 r-xp 00000000 fc:01 1058022     /usr/lib/x86_64-linux-gnu/zsh/5.0.5/zsh/computil.so
+        #
+        # In order to cut down on the length, we will only print basename(path).
+        # Also in order to make the output prettier*, just align all of the
+        # addresses to pointer-size.
+        #
+        # *And non-conforming to /proc/$$/maps.
+        #
+
+        def by_address(s):
+            return s.header.p_vaddr
+
+        segments = sorted(self.segments, key=by_address)
+        segments = filter(by_address, segments)
+
+        for segment in segments:
+            start = segment.header.p_vaddr
+            stop  = start + segment.header.p_memsz
+            print "%#x-%#x" % (start, stop)

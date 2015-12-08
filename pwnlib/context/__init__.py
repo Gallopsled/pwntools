@@ -967,13 +967,13 @@ class ContextType(object):
         Default proxy for all socket connections.
 
         >>> context.proxy = 'localhost' #doctest: +ELLIPSIS
-        >>> remote('google.com', 80)
+        >>> r=remote('google.com', 80)
         Traceback (most recent call last):
         ...
         ProxyConnectionError: Error connecting to SOCKS5 proxy localhost:1080: [Errno 111] Connection refused
 
         >>> context.proxy = None
-        >>> remote('google.com', 80, level='error')
+        >>> r=remote('google.com', 80, level='error')
         """
 
         if not proxy:
