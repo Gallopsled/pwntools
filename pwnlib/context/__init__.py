@@ -5,12 +5,24 @@ Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
 import collections
+import functools
 import logging
+import os
+import platform
 import string
+import sys
 import threading
+import time
 
 from ..timeout import Timeout
 
+
+class _devnull(object):
+    name = None
+    def write(self, *a, **kw): pass
+    def read(self, *a, **kw):  return ''
+    def flush(self, *a, **kw): pass
+    def close(self, *a, **kw): pass
 
 class _defaultdict(dict):
     """
@@ -306,19 +318,23 @@ class ContextType(object):
     #: Default values for :class:`pwnlib.context.ContextType`
     defaults = {
         'arch': 'i386',
+        'aslr': True,
         'binary': None,
         'bits': 32,
         'endian': 'little',
+        'kernel': None,
         'log_level': logging.INFO,
+        'log_file': _devnull(),
+        'randomize': False,
         'newline': '\n',
         'os': 'linux',
         'signed': False,
-        'timeout': Timeout.maximum,
         'terminal': None,
+        'timeout': Timeout.maximum,
     }
 
     #: Valid values for :meth:`pwnlib.context.ContextType.os`
-    oses = sorted(('linux','freebsd','windows'))
+    oses = sorted(('linux','freebsd','windows','cgc','android'))
 
     big_32    = {'endian': 'big', 'bits': 32}
     big_64    = {'endian': 'big', 'bits': 64}
@@ -481,10 +497,19 @@ class ContextType(object):
 
         return LocalContext()
 
-    def clear(self):
+    @property
+    def silent(self):
+        return self.local(log_level='error')
+
+    def clear(self, *a, **kw):
         """
         Clears the contents of the context.
         All values are set to their defaults.
+
+        Arguments:
+
+            a: Arguments passed to ``update``
+            kw: Arguments passed to ``update``
 
         Examples:
 
@@ -500,10 +525,24 @@ class ContextType(object):
         """
         self._tls._current.clear()
 
+        if a or kw:
+            self.update(*a, **kw)
+
+    @property
+    def native(self):
+        arch = context.arch
+        with context.local(arch = platform.machine()):
+            platform_arch = context.arch
+
+            if arch in ('i386', 'amd64') and platform_arch in ('i386', 'amd64'):
+                return True
+
+            return arch == platform_arch
+
     @_validator
     def arch(self, arch):
         """
-        Target machine architecture.
+        Target binary architecture.
 
         Allowed values are listed in :attr:`pwnlib.context.ContextType.architectures`.
 
@@ -572,7 +611,7 @@ class ContextType(object):
 
         # Attempt to perform convenience and legacy compatibility
         # transformations.
-        transform = {'x86':'i386', 'ppc': 'powerpc', 'x86_64': 'amd64'}
+        transform = {'x86':'i386', 'ppc': 'powerpc', 'x86_64': 'amd64', 'i686': 'i386'}
         for k, v in transform.items():
             if arch.startswith(k):
                 arch = arch.replace(k,v,1)
@@ -587,6 +626,33 @@ class ContextType(object):
                 self._tls[k] = v
 
         return arch
+
+    @_validator
+    def aslr(self, aslr):
+        """
+        ASLR settings for new processes.
+
+        If ``False``, attempt to disable ASLR in all processes which are
+        created via ``personality`` (``setarch -R``) and ``setrlimit``
+        (``ulimit -s unlimited``).
+
+        The ``setarch`` changes are lost if a ``setuid`` binary is executed.
+        """
+        return bool(aslr)
+
+    @_validator
+    def kernel(self, arch):
+        """
+        Target machine's kernel architecture.
+
+        Usually, this is the same as ``arch``, except when
+        running a 32-bit binary on a 64-bit kernel (e.g. i386-on-amd64).
+
+        Even then, this doesn't matter much -- only when the the segment
+        registers need to be known
+        """
+        with context.local(arch=arch):
+            return context.arch
 
     @_validator
     def bits(self, bits):
@@ -635,13 +701,14 @@ class ContextType(object):
         # Cyclic imports... sorry Idolf.
         from ..elf     import ELF
 
-        e = ELF(binary)
+        if not isinstance(binary, ELF):
+            binary = ELF(binary)
 
-        self.arch   = e.arch
-        self.bits   = e.bits
-        self.endian = e.endian
+        self.arch   = binary.arch
+        self.bits   = binary.bits
+        self.endian = binary.endian
 
-        return e
+        return binary
 
     @property
     def bytes(self):
@@ -665,7 +732,6 @@ class ContextType(object):
     @bytes.setter
     def bytes(self, value):
         self.bits = value*8
-
 
     @_validator
     def endian(self, endianness):
@@ -741,6 +807,61 @@ class ContextType(object):
         permitted = sorted(level_names)
         raise AttributeError('log_level must be an integer or one of %r' % permitted)
 
+    @_validator
+    def log_file(self, value):
+        r"""
+        Sets the target file for all logging output.
+
+        Works in a similar fashion to :attr:`log_level`.
+
+        Examples:
+
+
+            >>> context.log_file = 'foo.txt' #doctest: +ELLIPSIS
+            >>> log.debug('Hello!') #doctest: +ELLIPSIS
+            >>> with context.local(log_level='ERROR'): #doctest: +ELLIPSIS
+            ...     log.info('Hello again!')
+            >>> with context.local(log_file='bar.txt'):
+            ...     log.debug('Hello from bar!')
+            >>> log.info('Hello from foo!')
+            >>> file('foo.txt').readlines()[-3] #doctest: +ELLIPSIS
+            '...:DEBUG:...:Hello!\n'
+            >>> file('foo.txt').readlines()[-2] #doctest: +ELLIPSIS
+            '...:INFO:...:Hello again!\n'
+            >>> file('foo.txt').readlines()[-1] #doctest: +ELLIPSIS
+            '...:INFO:...:Hello from foo!\n'
+            >>> file('bar.txt').readlines()[-1] #doctest: +ELLIPSIS
+            '...:DEBUG:...:Hello from bar!\n'
+        """
+        if isinstance(value, (str,unicode)):
+            modes = ('w', 'wb', 'a', 'ab')
+            # check if mode was specified as "[value],[mode]"
+            if ',' not in value:
+                value += ',a'
+            filename, mode = value.rsplit(',', 1)
+            value = open(filename, mode)
+
+        elif not isinstance(value, (file)):
+            raise AttributeError('log_file must be a file')
+
+        iso_8601 = '%Y-%m-%dT%H:%M:%S'
+        lines = [
+            '=' * 78,
+            ' Started at %s ' % time.strftime(iso_8601),
+            ' sys.argv = [',
+            ]
+        for arg in sys.argv:
+            lines.append('   %r,' % arg)
+        lines.append(' ]')
+        lines.append('=' * 78)
+        for line in lines:
+            value.write('=%-78s=\n' % line)
+        value.flush()
+        return value
+
+    @property
+    def mask(self):
+        return (1 << self.bits) - 1
 
     @_validator
     def os(self, os):
@@ -766,7 +887,12 @@ class ContextType(object):
 
         return os
 
-
+    @_validator
+    def randomize(self, r):
+        """
+        Global flag that lots of things should be randomized.
+        """
+        return bool(r)
 
     @_validator
     def signed(self, signed):
@@ -826,6 +952,11 @@ class ContextType(object):
         if isinstance(value, (str, unicode)):
             return [value]
         return value
+
+    @property
+    def abi(self):
+        return self._abi
+
 
     #*************************************************************************
     #                               ALIASES
@@ -909,3 +1040,27 @@ class ContextType(object):
 #: Consider it a shorthand to passing ``os=`` and ``arch=`` to every single
 #: function call.
 context = ContextType()
+
+def LocalContext(function):
+    """
+    Wraps the specied function on a context.local() block, using kwargs.
+
+    Example:
+
+        >>> @LocalContext
+        ... def printArch():
+        ...     print(context.arch)
+        >>> printArch()
+        i386
+        >>> printArch(arch='arm')
+        arm
+    """
+    @functools.wraps(function)
+    def setter(*a, **kw):
+        # Fast path to skip adding a Context frame
+        if not kw:
+            return function(*a)
+
+        with context.local(**{k:kw.pop(k) for k,v in kw.items() if isinstance(getattr(ContextType, k, None), property)}):
+            return function(*a, **kw)
+    return setter

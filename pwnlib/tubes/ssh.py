@@ -1027,7 +1027,7 @@ os.execve(exe, argv, env)
     def download_file(self, remote, local = None):
         """Downloads a file from the remote server.
 
-        The file is cached in /tmp/binjitsu-ssh-cache using a hash of the file, so
+        The file is cached in /tmp/pwntools-ssh-cache using a hash of the file, so
         calling the function twice has little overhead.
 
         Arguments:
