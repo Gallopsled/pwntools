@@ -342,7 +342,9 @@ class ELF(ELFFile):
                     continue
                 if sym.entry.st_info['type'] == 'STT_FUNC' and sym.entry.st_size != 0:
                     name = sym.name
-                    addr = self.symbols[sym.name]
+                    if name not in self.symbols:
+                        continue
+                    addr = self.symbols[name]
                     size = sym.entry.st_size
                     self.functions[name] = Function(addr, size)
 
