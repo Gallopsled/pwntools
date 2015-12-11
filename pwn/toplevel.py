@@ -1,9 +1,11 @@
 # Get all the modules from pwnlib
 import collections
+import logging
 import math
 import operator
 import os
 import re
+import socks
 import string
 import struct
 import subprocess
