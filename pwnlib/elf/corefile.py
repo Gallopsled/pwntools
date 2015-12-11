@@ -5,9 +5,14 @@ from elftools.common.utils import roundup, struct_parse
 from elftools.common.py3compat import bytes2str
 from elftools.construct import CString
 
+
+from ..context import context
+from ..log import getLogger
 from .datatypes import *
 from .elf import ELF
 from ..tubes.tube import tube
+
+log = getLogger(__name__)
 
 types = {
     'i386': elf_prstatus_i386,
@@ -67,6 +72,9 @@ class Mapping(object):
                                                self.size,
                                                self.flags)
 
+    def __int__(self):
+        return self.start
+
 class Core(ELF):
     """Core(*a, **kw) -> Core
 
@@ -82,8 +90,12 @@ class Core(ELF):
         self.prstatus = None
         self.files    = {}
         self.mappings = []
+        self.stack    = None
+        self.env      = {}
 
         super(Core, self).__init__(*a, **kw)
+        self.load_addr = 0
+        self._address  = 0
 
         if not self.elftype == 'CORE':
             log.error("%s is not a valid corefile" % e.file.name)
@@ -93,20 +105,36 @@ class Core(ELF):
 
         prstatus_type = types[self.arch]
 
-        for segment in self.segments:
-            if not isinstance(segment, elftools.elf.segments.NoteSegment):
-                continue
-            for note in iter_notes(segment):
-                # Try to find NT_PRSTATUS.  Note that pyelftools currently
-                # mis-identifies the enum name as 'NT_GNU_ABI_TAG'.
-                if note.n_descsz == ctypes.sizeof(prstatus_type) and \
-                   note.n_type == 'NT_GNU_ABI_TAG':
-                    self.NT_PRSTATUS = note
-                    self.prstatus = prstatus_type.from_buffer_copy(note.n_desc)
+        with log.waitfor("Parsing corefile...") as w:
+            for segment in self.segments:
+                if not isinstance(segment, elftools.elf.segments.NoteSegment):
+                    continue
+                for note in iter_notes(segment):
+                    # Try to find NT_PRSTATUS.  Note that pyelftools currently
+                    # mis-identifies the enum name as 'NT_GNU_ABI_TAG'.
+                    if note.n_descsz == ctypes.sizeof(prstatus_type) and \
+                       note.n_type == 'NT_GNU_ABI_TAG':
+                        self.NT_PRSTATUS = note
+                        self.prstatus = prstatus_type.from_buffer_copy(note.n_desc)
 
-                # Try to find the list of mapped files
-                if note.n_type == constants.NT_FILE:
-                    self._parse_nt_file(note)
+                    # Try to find the list of mapped files
+                    if note.n_type == constants.NT_FILE:
+                        with context.local(bytes=self.bytes):
+                            self._parse_nt_file(note)
+
+                    # Try to find the auxiliary vector, which will tell us
+                    # where the top of the stack is.
+                    if note.n_type == constants.NT_AUXV:
+                        with context.local(bytes=self.bytes):
+                            self._parse_auxv(note)
+
+            if self.stack and self.mappings:
+                for mapping in self.mappings:
+                    if mapping.stop == self.stack:
+                        mapping.name = '[stack]'
+                        self.stack   = mapping
+                        with context.local(bytes=self.bytes):
+                            self._parse_stack()
 
     def _parse_nt_file(self, note):
         t = tube()
@@ -147,10 +175,97 @@ class Core(ELF):
         self.mappings = sorted(mappings, key=lambda m: m.start)
         self.addresses = addresses
 
+    def _parse_auxv(self, note):
+        t = tube()
+        t.unrecv(note.n_desc)
+
+        for i in range(0, note.n_descsz, context.bytes * 2):
+            key = t.unpack()
+            value = t.unpack()
+
+            # The AT_EXECFN entry is a pointer to the executable's filename
+            # at the very top of the stack, followed by a word's with of
+            # NULL bytes.  For example, on a 64-bit system...
+            #
+            # 0x7fffffffefe8  53 3d 31 34  33 00 2f 62  69 6e 2f 62  61 73 68 00  |S=14|3./b|in/b|ash.|
+            # 0x7fffffffeff8  00 00 00 00  00 00 00 00                            |....|....|    |    |
+
+            if key == constants.AT_EXECFN:
+                self.at_execfn = value
+                value = value & ~0xfff
+                value += 0x1000
+                self.stack = value
+
+    def _parse_stack(self):
+        # AT_EXECFN is the start of the filename, e.g. '/bin/sh'
+        # Immediately preceding is a NULL-terminated environment variable string.
+        # We want to find the beginning of it
+        address = self.at_execfn-1
+
+        # Sanity check!
+        try:
+            assert self.u8(address) == 0
+        except AssertionError:
+            # Something weird is happening.  Just don't touch it.
+            return
+        except ValueError:
+            # If the stack is not actually present in the coredump, we can't
+            # read from the stack.  This will fail as:
+            # ValueError: 'seek out of range'
+            return
+
+        # Find the next NULL, which is 1 byte past the environment variable.
+        while self.u8(address-1) != 0:
+            address -= 1
+
+        # We've found the beginning of the last environment variable.
+        # We should be able to search up the stack for the envp[] array to
+        # find a pointer to this address, followed by a NULL.
+        last_env_addr = address
+        address &= ~(context.bytes-1)
+
+        while self.unpack(address) != last_env_addr:
+            address -= context.bytes
+
+        assert self.unpack(address+context.bytes) == 0
+
+        # We've successfully located the end of the envp[] array.
+        # It comes immediately after the argv[] array, which itself
+        # is NULL-terminated.
+        end_of_envp = address+context.bytes
+
+        while self.unpack(address - context.bytes) != 0:
+            address -= context.bytes
+
+        start_of_envp = address
+
+        # Now we can fill in the environment easier.
+        for env in range(start_of_envp, end_of_envp, context.bytes):
+            envaddr = self.unpack(env)
+            value   = self.string(envaddr)
+            name    = value.split('=', 1)[0]
+            self.env[name] = envaddr
+
     @property
     def maps(self):
         """A printable string which is similar to /proc/xx/maps."""
         return '\n'.join(map(str, self.mappings))
+
+    def getenv(self, name):
+        """getenv(name) -> int
+
+        Read an environment variable off the stack, and return its address.
+
+        Arguments:
+            name(str): Name of the environment variable to read.
+
+        Returns:
+            The address of the environment variable.
+        """
+        if name not in self.env:
+            log.error("Environment variable %r not set" % name)
+
+        return self.string(self.env[name]).split('=',1)[-1]
 
     def __getattr__(self, attribute):
         if self.prstatus:

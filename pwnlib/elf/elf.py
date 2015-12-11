@@ -84,6 +84,7 @@ class ELF(ELFFile):
 
         #: Bit-ness of the file
         self.bits = self.elfclass
+        self.bytes = self.bits / 8
 
         if self.arch == 'mips':
             if self.header['e_flags'] & E_FLAGS.EF_MIPS_ARCH_64 \
@@ -213,6 +214,10 @@ class ELF(ELFFile):
         return self.get_dwarf_info()
 
     @property
+    def sym(self):
+        return self.symbols
+
+    @property
     def address(self):
         """Address of the lowest segment loaded in the ELF.
         When updated, cascades updates to segment vaddrs, section addrs, symbols, plt, and got.
@@ -224,10 +229,6 @@ class ELF(ELFFile):
         True
         """
         return self._address
-
-    @property
-    def sym(self):
-        return self.symbols
 
     @address.setter
     def address(self, new):
@@ -575,7 +576,7 @@ class ELF(ELFFile):
             self.stream.seek(old)
             return data
 
-        return None
+        return ''
 
     def write(self, address, data):
         """Writes data to the specified virtual address
@@ -822,5 +823,11 @@ class ELF(ELFFile):
     def u16(self,    address, *a, **kw):        return packing.u16(self.read(address, 2), *a, **kw)
     def u8(self,     address, *a, **kw):        return packing.u8(self.read(address, 1), *a, **kw)
     def unpack(self, address, *a, **kw):        return packing.unpack(self.read(address, context.bytes), *a, **kw)
+    def string(self, address):
+        data = ''
+        while not data.endswith('\x00'):
+            data += self.read(address, 1)
+            address += 1
+        return data[:-1]
 
     def flat(self, *a, **kw):       return self.send(packing.flat(*a,**kw))

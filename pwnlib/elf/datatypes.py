@@ -47,6 +47,43 @@ Elf64_Word = ctypes.c_uint32
 Elf64_Xword = ctypes.c_uint64
 Elf64_Sxword = ctypes.c_int64
 
+
+AT_CONSTANTS = {
+    0 : 'AT_NULL',      # /* End of vector */
+    1 : 'AT_IGNORE',    # /* Entry should be ignored */
+    2 : 'AT_EXECFD',    # /* File descriptor of program */
+    3 : 'AT_PHDR',      # /* Program headers for program */
+    4 : 'AT_PHENT',     # /* Size of program header entry */
+    5 : 'AT_PHNUM',     # /* Number of program headers */
+    6 : 'AT_PAGESZ',    # /* System page size */
+    7 : 'AT_BASE',      # /* Base address of interpreter */
+    8 : 'AT_FLAGS',     # /* Flags */
+    9 : 'AT_ENTRY',     # /* Entry point of program */
+    10: 'AT_NOTELF',    # /* Program is not ELF */
+    11: 'AT_UID',       # /* Real uid */
+    12: 'AT_EUID',      # /* Effective uid */
+    13: 'AT_GID',       # /* Real gid */
+    14: 'AT_EGID',      # /* Effective gid */
+    15: 'AT_PLATFORM',  # /* String identifying platform */
+    16: 'AT_HWCAP',     # /* Machine dependent hints about processor capabilities */
+    17: 'AT_CLKTCK',    # /* Frequency of times() */
+    18: 'AT_FPUCW',
+    19: 'AT_DCACHEBSIZE',
+    20: 'AT_ICACHEBSIZE',
+    21: 'AT_UCACHEBSIZE',
+    22: 'AT_IGNOREPPC',
+    23: 'AT_SECURE',
+    24: 'AT_BASE_PLATFORM', # String identifying real platforms
+    25: 'AT_RANDOM',    # Address of 16 random bytes
+    31: 'AT_EXECFN',    # Filename of executable
+    32: 'AT_SYSINFO',
+    33: 'AT_SYSINFO_EHDR',
+    34: 'AT_L1I_CACHESHAPE',
+    35: 'AT_L1D_CACHESHAPE',
+    36: 'AT_L2_CACHESHAPE',
+    37: 'AT_L3_CACHESHAPE',
+}
+
 class constants:
     EI_MAG0                 = 0
     EI_MAG1                 = 1
@@ -180,6 +217,41 @@ class constants:
     NT_METAG_CBUF           = 0x500
     NT_METAG_RPIPE          = 0x501
     NT_METAG_TLS            = 0x502
+
+    AT_NULL                 = 0
+    AT_IGNORE               = 1
+    AT_EXECFD               = 2
+    AT_PHDR                 = 3
+    AT_PHENT                = 4
+    AT_PHNUM                = 5
+    AT_PAGESZ               = 6
+    AT_BASE                 = 7
+    AT_FLAGS                = 8
+    AT_ENTRY                = 9
+    AT_NOTELF               = 10
+    AT_UID                  = 11
+    AT_EUID                 = 12
+    AT_GID                  = 13
+    AT_EGID                 = 14
+    AT_PLATFORM             = 15
+    AT_HWCAP                = 16
+    AT_CLKTCK               = 17
+    AT_FPUCW                = 18
+    AT_DCACHEBSIZE          = 19
+    AT_ICACHEBSIZE          = 20
+    AT_UCACHEBSIZE          = 21
+    AT_IGNOREPPC            = 22
+    AT_SECURE               = 23
+    AT_BASE_PLATFORM        = 24
+    AT_RANDOM               = 25
+    AT_EXECFN               = 31
+    AT_SYSINFO              = 32
+    AT_SYSINFO_EHDR         = 33
+    AT_L1I_CACHESHAPE       = 34
+    AT_L1D_CACHESHAPE       = 35
+    AT_L2_CACHESHAPE        = 36
+    AT_L3_CACHESHAPE        = 37
+
 
 
 class Elf32_Ehdr(ctypes.Structure):
@@ -470,3 +542,10 @@ class elf_prstatus_amd64(ctypes.Structure):
     _fields_ = generate_prstatus_common(64, user_regs_struct_amd64)
 
 assert ctypes.sizeof(elf_prstatus_amd64) == 0x150
+
+class Elf32_auxv_t(ctypes.Structure):
+    _fields_ = [('a_type', ctypes.c_uint32),
+                ('a_val', ctypes.c_uint32),]
+class Elf64_auxv_t(ctypes.Structure):
+    _fields_ = [('a_type', ctypes.c_uint64),
+                ('a_val', ctypes.c_uint64),]
