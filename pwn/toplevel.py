@@ -21,6 +21,7 @@ from pwnlib.context import Thread
 from pwnlib.context import context
 from pwnlib.dynelf import DynELF
 from pwnlib.encoders import *
+from pwnlib.elf import Core
 from pwnlib.elf import ELF
 from pwnlib.elf import load
 from pwnlib.encoders import *
