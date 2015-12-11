@@ -93,7 +93,12 @@ class Core(ELF):
         self.stack    = None
         self.env      = {}
 
-        super(Core, self).__init__(*a, **kw)
+        try:
+            super(Core, self).__init__(*a, **kw)
+        except IOError:
+            log.warning("No corefile.  Have you set /proc/sys/kernel/core_pattern?")
+            raise
+
         self.load_addr = 0
         self._address  = 0
 
