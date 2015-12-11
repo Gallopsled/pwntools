@@ -110,6 +110,7 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
         # Listening on port 34816
         process_created = gdbserver.recvline()
         gdbserver.pid   = int(process_created.split()[-1], 0)
+        gdbserver.executable = which(orig_args[0])
         listening_on    = gdbserver.recvline()
 
         port = int(listening_on.split()[-1])
