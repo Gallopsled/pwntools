@@ -806,6 +806,9 @@ if not %(aslr)r:
 
     resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
 
+# Assume that the user would prefer to have core dumps.
+resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
+
 if %(nosetuid)r:
     try:
         PR_SET_NO_NEW_PRIVS = 38

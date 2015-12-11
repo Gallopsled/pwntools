@@ -315,6 +315,9 @@ class process(tube):
             except:
                 log.exception("Could not disable ASLR")
 
+        # Assume that the user would prefer to have core dumps.
+        resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
+
         if not self._setuid:
             try:
                 PR_SET_NO_NEW_PRIVS = 38
