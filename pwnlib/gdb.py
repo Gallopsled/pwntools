@@ -131,6 +131,10 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
     if ssh:
         remote <> listener.wait_for_connection()
 
+        # Disable showing GDB traffic when debugging verbosity is increased
+        remote.level = 'error'
+        listener.level = 'error'
+
     # gdbserver outputs a message when a client connects
     garbage = gdbserver.recvline(timeout=1)
 
