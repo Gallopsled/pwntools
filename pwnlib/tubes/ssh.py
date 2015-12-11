@@ -781,9 +781,18 @@ if os.path.sep not in exe and not is_exe(exe):
             break
 
 if not is_exe(exe):
-    sys.stderr.write('0\n')
-    sys.stderr.write("{} is not executable or does not exist in {}".format(exe,PATH))
+    sys.stderr.write('3\n')
+    sys.stderr.write("{} is not executable or does not exist in $PATH: {}".format(exe,PATH))
     sys.exit(-1)
+
+if %(nosetuid)r:
+    PR_SET_NO_NEW_PRIVS = 38
+    result = ctypes.CDLL('libc.so.6').prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)
+
+    if result != 0:
+        sys.stdout.write('3\n')
+        sys.stdout.write("Could not disable setuid: prctl(PR_SET_NO_NEW_PRIVS) failed")
+        sys.exit(-1)
 
 if sys.argv[-1] == 'check':
     sys.stdout.write("1\n")
@@ -808,13 +817,6 @@ if not %(aslr)r:
 
 # Assume that the user would prefer to have core dumps.
 resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
-
-if %(nosetuid)r:
-    try:
-        PR_SET_NO_NEW_PRIVS = 38
-        ctypes.CDLL('libc.so.6').prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)
-    except:
-        pass
 
 %(func_src)s
 apply(%(func_name)s, %(func_args)r)
@@ -841,6 +843,10 @@ os.execve(exe, argv, os.environ)
                                               if (not env or env == os.environ)
                                               else env)
 
+        # Avoid spamming the screen
+        if context.log_level >= logging.INFO:
+            execve_repr = execve_repr[:80] + '...'
+
         with self.progress('Opening new channel: %s' % execve_repr) as h:
 
             script = misc.sh_string(script)
@@ -855,6 +861,8 @@ os.execve(exe, argv, os.environ)
 
             if result == 0:
                 self.error("%r does not exist or is not executable" % executable)
+            elif result == 3:
+                self.error(error_message)
             elif result == 2:
                 self.error("python is not installed on the remote system %r" % self.host)
             elif result != 1:
