@@ -295,7 +295,7 @@ class ssh_channel(sock):
         script = ';'.join(('from ctypes import *',
                            'import os',
                            'libc = CDLL("libc.so.6")',
-                           'print os.path.realpath(%r)' % self.exe,
+                           'print os.path.realpath(%r)' % self.executable,
                            'print(libc.getenv(%r))' % variable,))
 
         try:
@@ -329,10 +329,10 @@ class ssh_channel(sock):
         verbatim, which may be different than the actual addresses if ASLR
         is enabled.
         """
-        if not self.exe:
-            log.error("Can only use libs() on ssh_channel objects created with ssh.process()")
+        if not self.executable:
+            self.error("Can only use libs() on ssh_channel objects created with ssh.process()")
 
-        maps = self.parent.libs(self.exe)
+        maps = self.parent.libs(self.executable)
 
         maps_raw = self.parent.cat('/proc/%d/maps' % self.pid)
 
@@ -859,7 +859,7 @@ os.execve(exe, argv, os.environ)
 
             python.pid  = safeeval.const(python.recvline())
             python.argv = argv
-            python.exe  = executable
+            python.executable = executable
 
         return python
 
@@ -871,7 +871,7 @@ os.execve(exe, argv, os.environ)
         """
         result = self.run('export PATH=$PATH:$PWD; which %s' % program).recvall().strip()
 
-        if not result.startswith('/'):
+        if '/' not in result:
             return None
 
         return result
