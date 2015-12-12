@@ -111,6 +111,8 @@ class Core(ELF):
         prstatus_type = types[self.arch]
 
         with log.waitfor("Parsing corefile...") as w:
+            self._load_mappings()
+
             for segment in self.segments:
                 if not isinstance(segment, elftools.elf.segments.NoteSegment):
                     continue
@@ -138,8 +140,9 @@ class Core(ELF):
                     if mapping.stop == self.stack:
                         mapping.name = '[stack]'
                         self.stack   = mapping
-                        with context.local(bytes=self.bytes):
-                            self._parse_stack()
+
+            with context.local(bytes=self.bytes):
+                self._parse_stack()
 
     def _parse_nt_file(self, note):
         t = tube()
@@ -148,37 +151,35 @@ class Core(ELF):
         count = t.unpack()
         page_size = t.unpack()
 
-        mappings = []
+        starts = []
         addresses = {}
 
         for i in range(count):
             start = t.unpack()
             end = t.unpack()
             ofs = t.unpack()
-            mapping = Mapping(None, start, end, 0)
-            mappings.append(mapping)
-            addresses[start] = mapping
+            starts.append(start)
 
         for i in range(count):
             filename = t.recvuntil('\x00', drop=True)
-            mappings[i].name = filename
+            start = starts[i]
 
+            for mapping in self.mappings:
+                if mapping.start == start:
+                    mapping.name = filename
+
+        self.mappings = sorted(mappings, key=lambda m: m.start)
+
+    def _load_mappings(self):
         for s in self.segments:
             if s.header.p_type != 'PT_LOAD':
                 continue
 
-            if s.header.p_vaddr in addresses:
-                addresses[s.header.p_vaddr].flags = s.header.p_flags
-            else:
-                mapping = Mapping(None,
-                                  s.header.p_vaddr,
-                                  s.header.p_vaddr + s.header.p_memsz,
-                                  s.header.p_flags)
-                mappings.append(mapping)
-                addresses[s.header.p_vaddr] = mapping
-
-        self.mappings = sorted(mappings, key=lambda m: m.start)
-        self.addresses = addresses
+            mapping = Mapping(None,
+                              s.header.p_vaddr,
+                              s.header.p_vaddr + s.header.p_memsz,
+                              s.header.p_flags)
+            self.mappings.append(mapping)
 
     def _parse_auxv(self, note):
         t = tube()
