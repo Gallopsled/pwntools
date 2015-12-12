@@ -844,8 +844,8 @@ os.execve(exe, argv, os.environ)
                                               else env)
 
         # Avoid spamming the screen
-        if context.log_level >= logging.INFO:
-            execve_repr = execve_repr[:80] + '...'
+        if context.log_level >= logging.INFO and len(execve_repr) > 512:
+            execve_repr = execve_repr[:512] + '...'
 
         with self.progress('Opening new channel: %s' % execve_repr) as h:
 
