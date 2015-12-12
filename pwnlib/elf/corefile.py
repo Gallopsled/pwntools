@@ -168,7 +168,7 @@ class Core(ELF):
                 if mapping.start == start:
                     mapping.name = filename
 
-        self.mappings = sorted(mappings, key=lambda m: m.start)
+        self.mappings = sorted(self.mappings, key=lambda m: m.start)
 
     def _load_mappings(self):
         for s in self.segments:
@@ -249,8 +249,8 @@ class Core(ELF):
         for env in range(start_of_envp, end_of_envp, context.bytes):
             envaddr = self.unpack(env)
             value   = self.string(envaddr)
-            name    = value.split('=', 1)[0]
-            self.env[name] = envaddr
+            name, value = value.split('=', 1)
+            self.env[name] = envaddr + len(name) + 1
 
     @property
     def maps(self):
