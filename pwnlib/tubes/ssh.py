@@ -390,7 +390,8 @@ class ssh(Timeout, Logger):
 
     def __init__(self, user, host, port = 22, password = None, key = None,
                  keyfile = None, proxy_command = None, proxy_sock = None,
-                 timeout = Timeout.default, level = None, cache = True):
+                 timeout = Timeout.default, level = None, cache = True,
+                 ssh_agent = False):
         """Creates a new ssh connection.
 
         Arguments:
@@ -405,6 +406,7 @@ class ssh(Timeout, Logger):
             timeout: Timeout, in seconds
             level: Log level
             cache: Cache downloaded files (by hash/size/timestamp)
+            ssh_agent: If ``True``, enable usage of keys via ssh-agent
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used."""
@@ -426,6 +428,12 @@ class ssh(Timeout, Logger):
         self.cache           = cache
 
         misc.mkdir_p(self._cachedir)
+
+        # This is a dirty hack to make my Yubikey shut up.
+        # If anybody has a problem with this, please open a bug and I'll
+        # figure out a better workaround.
+        if not ssh_agent:
+            os.environ.pop('SSH_AUTH_SOCK', None)
 
         import paramiko
 
