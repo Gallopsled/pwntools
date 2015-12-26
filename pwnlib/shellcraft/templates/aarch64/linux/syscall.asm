@@ -14,16 +14,16 @@ Example:
 
     >>> print shellcraft.aarch64.linux.syscall(11, 1, 'sp', 2, 0).rstrip()
         /* call syscall(11, 1, 'sp', 2, 0) */
-        mov r0, #1
-        mov r1, sp
-        mov r2, #2
-        eor r3, r3 /* 0 (#0) */
-        mov r7, #0xb
+        mov  x0, #1
+        mov  x1, sp
+        mov  x2, #2
+        mov  x3, xzr
+        mov  x8, #11
         svc 0
     >>> print shellcraft.aarch64.linux.syscall('SYS_exit', 0).rstrip()
         /* call exit(0) */
-        eor r0, r0 /* 0 (#0) */
-        mov r7, #(SYS_exit) /* 1 */
+        mov  x0, xzr
+        mov  x8, #(SYS_exit)
         svc 0
 </%docstring>
 <%

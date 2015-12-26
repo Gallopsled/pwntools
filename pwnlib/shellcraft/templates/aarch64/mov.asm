@@ -6,6 +6,7 @@
   from pwnlib.util.lists import group
   from pwnlib.util.packing import p16, u16, pack, unpack
   from pwnlib.util.fiddling import xor_pair
+  from pwnlib.shellcraft import pretty
   from pwnlib.shellcraft.registers import aarch64 as regs
   log = getLogger('pwnlib.shellcraft.arm.mov')
 %>
@@ -24,10 +25,9 @@ Examples:
 
     >>> print shellcraft.aarch64.mov('x0','x1').rstrip()
         mov  x0, x1
-    >>> print shellcraft.aarch64.mov('x0','x0').rstrip()
+    >>> print shellcraft.aarch64.mov('x0','0').rstrip()
         mov  x0, xzr
     >>> print shellcraft.aarch64.mov('x0', 5).rstrip()
-        /* Set x0 = 5 = 0x5 */
         mov  x0, #5
     >>> print shellcraft.aarch64.mov('x0', 0x34532).rstrip()
         /* Set x0 = 214322 = 0x34532 */
@@ -80,29 +80,32 @@ xor        = None
 %if not isinstance(src, (int, long)):
     mov  ${dst}, ${src}
 %else:
-    /* Set ${dst} = ${src} = 0x${'%x' % src} */
   %if src == 0:
     mov  ${dst}, xzr
   %elif src & 0xffff == 0:
     eor  ${dst}, ${dst}, ${dst}
-  %endif
-  %if src & 0x000000000000ffff:
+  %elif src & 0xffff == src:
+    mov  ${dst}, #${src}
+  %else:
+    /* Set ${dst} = ${src} = ${pretty(src)} */
+    %if src & 0x000000000000ffff:
     mov  ${dst}, #${(src >> 0x00) & 0xffff}
-  %endif
-  %if src & 0x00000000ffff0000:
+    %endif
+    %if src & 0x00000000ffff0000:
     movk ${dst}, #${(src >> 0x10) & 0xffff}, lsl #16
-  %endif
-  %if src & 0x0000ffff00000000:
+    %endif
+    %if src & 0x0000ffff00000000:
     movk ${dst}, #${(src >> 0x20) & 0xffff}, lsl #0x20
-  %endif
-  %if src & 0xffff000000000000:
+    %endif
+    %if src & 0xffff000000000000:
     movk ${dst}, #${(src >> 0x30) & 0xffff}, lsl #0x30
-  %endif
-  %if xor:
+    %endif
+    %if xor:
     ${aarch64.mov('x14', xor)}
     eor ${dst}, ${dst}, x14
-  %endif
-  %if mov_x0_x15:
+    %endif
+    %if mov_x0_x15:
     ${aarch64.mov('x0','x15')}
+    %endif
   %endif
 %endif

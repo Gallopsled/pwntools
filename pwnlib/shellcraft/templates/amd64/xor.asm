@@ -20,14 +20,15 @@ Args:
 Example:
 
     >>> sc  = shellcraft.read(0, 'rsp', 32)
-    >>> sc += 'mov rbx, [rsp]\n'
-    >>> sc += 'mov rdx, rax'
-    >>> sc += shellcraft.xor('rbx', 'rsp', 'rax')
-    >>> sc += shellcraft.write(1, 'rsp', 'rdx')
+    >>> sc += shellcraft.xor(0xdeadbeef, 'rsp', 32)
+    >>> sc += shellcraft.write(1, 'rsp', 32)
     >>> io = run_assembly(sc)
     >>> io.send(cyclic(32))
-    >>> io.recv() == xor(cyclic(context.bytes), cyclic(32))
+    >>> result = io.recvn(32)
+    >>> expected = xor(cyclic(32), p32(0xdeadbeef))
+    >>> result == expected
     True
+
 </%docstring>
 <%
 log = getLogger('pwnlib.shellcraft.templates.amd64.xor')

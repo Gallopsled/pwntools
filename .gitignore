@@ -12,3 +12,4 @@ build
 MANIFEST
 dist
 binjitsu.egg-info
+*.core

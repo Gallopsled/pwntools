@@ -16,13 +16,13 @@ Args:
 Example:
 
     >>> print shellcraft.setregs({'x0':1, 'x2':'x3'}).rstrip()
-        mov x0, #1
-        mov x2, x3
+        mov  x0, #1
+        mov  x2, x3
     >>> print shellcraft.setregs({'x0':'x1', 'x1':'x0', 'x2':'x3'}).rstrip()
-        mov x2, x3
-        eor x0, x0, x1 /* xchg r0, r1 */
-        eor x1, x0, x1
-        eor x0, x0, x1
+        mov  x2, x3
+        eor  x0, x0, x1 /* xchg x0, x1 */
+        eor  x1, x0, x1
+        eor  x0, x0, x1
 </%docstring>
 <%
 reg_context = {k:v for k,v in reg_context.items() if v is not None}
@@ -33,9 +33,9 @@ sorted_regs = regsort(reg_context, registers.aarch64)
 % else:
 % for how, dst, src in regsort(reg_context, registers.aarch64):
 % if how == 'xchg':
-    eor ${dst}, ${dst}, ${src} /* xchg ${dst}, ${src} */
-    eor ${src}, ${dst}, ${src}
-    eor ${dst}, ${dst}, ${src}
+    eor  ${dst}, ${dst}, ${src} /* xchg ${dst}, ${src} */
+    eor  ${src}, ${dst}, ${src}
+    eor  ${dst}, ${dst}, ${src}
 % else:
     ${mov(dst, src)}
 % endif

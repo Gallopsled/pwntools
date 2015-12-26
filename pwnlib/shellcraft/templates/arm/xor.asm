@@ -15,6 +15,18 @@ Args:
                    and not longer than 4 bytes.
     address (int): Address of the data (e.g. 0xdead0000, 'rsp')
     count (int): Number of bytes to XOR.
+
+Example:
+
+    >>> sc  = shellcraft.read(0, 'sp', 32)
+    >>> sc += shellcraft.xor(0xdeadbeef, 'sp', 32)
+    >>> sc += shellcraft.write(1, 'sp', 32)
+    >>> io = run_assembly(sc)
+    >>> io.send(cyclic(32))
+    >>> result = io.recvn(32)
+    >>> expected = xor(cyclic(32), p32(0xdeadbeef))
+    >>> result == expected
+    True
 </%docstring>
 <%
 log = getLogger('pwnlib.shellcraft.templates.arm.xor')
@@ -46,14 +58,8 @@ if count == 0 or key_size == 0:
 
 start = common.label('start')
 
-## Determine the move size
-word_name = {1:'BYTE', 2:'WORD', 4:'DWORD', 8:'QWORD'}[key_size]
-
 ## Set up the register context
-regctx = {'r0': count, 'r1': address}
-if key in regs:
-    regctx['r2'] = key
-    key_pretty = 'r2'
+regctx = {'r0': count, 'r1': address, 'r2': key_int}
 %>
     /* xor(${pretty(key)}, ${pretty(address)}, ${pretty(count)}) */
     ${arm.setregs(regctx)}
