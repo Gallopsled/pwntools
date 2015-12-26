@@ -50,14 +50,14 @@ start = common.label('start')
 word_name = {1:'BYTE', 2:'WORD', 4:'DWORD', 8:'QWORD'}[key_size]
 
 ## Set up the register context
-regctx = {'x0': count, 'x1': address}
+regctx = {'x1': address}
 if key in regs:
     regctx['x2'] = key
     key_pretty = 'x2'
 %>
     /* xor(${pretty(key)}, ${pretty(address)}, ${pretty(count)}) */
     ${aarch64.setregs(regctx)}
-    add x0, x0, x1
+    add x0, x1, #${count}
 ${start}:
     ldr x3, [x1]
     eor x3, x3, x2
