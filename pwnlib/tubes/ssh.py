@@ -1242,7 +1242,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             shutil.copy2(local_tmp, local)
 
     def download_dir(self, remote=None, local=None):
-        """Recursively downloads a directory form the remote server
+        """Recursively downloads a directory from the remote server
 
         Arguments:
             local: Local directory
