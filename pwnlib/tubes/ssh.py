@@ -699,7 +699,10 @@ class ssh(Timeout, Logger):
             'hello\n'
             >>> s.process(['/bin/echo', 'hello'], stdout='/dev/null').recvall()
             ''
-
+            >>> s.process(['/usr/bin/env'], env={}).recvall()
+            ''
+            >>> s.process('/usr/bin/env', env={'A':'B'}).recvall()
+            'A=B\n'
         """
         if not argv and not executable:
             self.error("Must specify argv or executable")
@@ -772,7 +775,7 @@ env   = %(env)r
 
 os.chdir(%(cwd)r)
 
-if env:
+if env is not None:
     os.environ.clear()
     os.environ.update(env)
 
