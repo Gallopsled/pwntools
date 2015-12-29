@@ -142,7 +142,12 @@ class Core(ELF):
                         self.stack   = mapping
 
             with context.local(bytes=self.bytes):
-                self._parse_stack()
+                try:
+                    self._parse_stack()
+                except ValueError:
+                    # If there are no environment variables, we die by running
+                    # off the end of the stack.
+                    pass
 
     def _parse_nt_file(self, note):
         t = tube()
