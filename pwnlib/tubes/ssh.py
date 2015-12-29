@@ -851,7 +851,7 @@ os.execve(exe, argv, os.environ)
         execve_repr = "execve(%r, %s, %s)" % (executable,
                                               argv,
                                               'os.environ'
-                                              if (not env or env == os.environ)
+                                              if (env in (None, os.environ))
                                               else env)
 
         # Avoid spamming the screen
