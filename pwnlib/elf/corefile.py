@@ -141,7 +141,7 @@ class Core(ELF):
                         mapping.name = '[stack]'
                         self.stack   = mapping
 
-            with context.local(bytes=self.bytes):
+            with context.local(bytes=self.bytes, log_level='error'):
                 try:
                     self._parse_stack()
                 except ValueError:

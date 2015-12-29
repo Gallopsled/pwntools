@@ -827,9 +827,13 @@ class ELF(ELFFile):
     def unpack(self, address, *a, **kw):        return packing.unpack(self.read(address, context.bytes), *a, **kw)
     def string(self, address):
         data = ''
-        while not data.endswith('\x00'):
-            data += self.read(address, 1)
+        while True:
+            c = self.read(address, 1)
+            if not c:
+                return ''
+            if c == '\x00':
+                return data
+            data += c
             address += 1
-        return data[:-1]
 
     def flat(self, *a, **kw):       return self.send(packing.flat(*a,**kw))
