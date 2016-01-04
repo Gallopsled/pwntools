@@ -318,6 +318,11 @@ class process(tube):
         # Assume that the user would prefer to have core dumps.
         resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
 
+        # Given that we want a core file, assume that we want the whole thing.
+        if os.path.exists('/proc/self/coredump_filter'):
+            with open('/proc/self/coredump_filter', 'w') as f:
+                f.write('0xff')
+
         if not self._setuid:
             try:
                 PR_SET_NO_NEW_PRIVS = 38
