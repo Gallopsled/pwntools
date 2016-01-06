@@ -56,4 +56,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 If you have any questions not worthy of a [bug report](https://github.com/Gallopsled/pwntools/issues), feel free to join us
 at [`#pwntools` on Freenode](irc://irc.freenode.net/pwntools) and ask away.
 Click [here](https://kiwiirc.com/client/irc.freenode.net/pwntools) to connect.
-
+There is also a [mailing list](https://groups.google.com/forum/#!forum/pwntools-users) for lower latency discussion.
