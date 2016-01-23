@@ -324,6 +324,7 @@ class ContextType(object):
         'aslr': True,
         'binary': None,
         'bits': 32,
+        'device': os.environ.get('ANDROID_SERIAL', None),
         'endian': 'little',
         'kernel': None,
         'log_level': logging.INFO,
@@ -1004,6 +1005,17 @@ class ContextType(object):
         This option can be set with the ``NOPTRACE`` command-line argument.
         """
         return bool(value)
+
+    @_validator
+    def device(self, value):
+        """Sets a target device for local, attached-device debugging.
+
+        This is useful for local Android exploitation.
+
+        This option automatically inherits the ANDROID_SERIAL environment
+        value.
+        """
+        return str(value)
 
     #*************************************************************************
     #                               ALIASES
