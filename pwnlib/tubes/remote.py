@@ -155,3 +155,15 @@ class remote(sock):
         s = socket
         host, port = s.getpeername()
         return remote(host, port, fam=s.family, typ=s.type, sock=s)
+
+class tcp(remote):
+    def __init__(self, host, port,
+                 fam = "any", typ = "tcp",
+                 timeout = Timeout.default, ssl=False, sock=None, level = None):
+        return super(tcp, self).__init__(host, port, fam, typ, timeout, ssl, sock, level)
+
+class udp(remote):
+    def __init__(self, host, port,
+                 fam = "any", typ = "udp",
+                 timeout = Timeout.default, ssl=False, sock=None, level = None):
+        return super(udp, self).__init__(host, port, fam, typ, timeout, ssl, sock, level)
