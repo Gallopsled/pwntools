@@ -64,6 +64,10 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
     Returns:
         A tube connected to the target process
     """
+    if context.noptrace:
+        log.warn_once("Skipping debugger since context.noptrace==True")
+        return tubes.process.process(args, executable=exe, env=env)
+
     if isinstance(args, (int, tubes.process.process, tubes.ssh.ssh_channel)):
         log.error("Use gdb.attach() to debug a running process")
 
@@ -180,7 +184,9 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
     Returns:
       :const:`None`
 """
-
+    if context.noptrace:
+        log.warn_once("Skipping debug attach since context.noptrace==True")
+        return
 
     # if execute is a file object, then read it; we probably need to run some
     # more gdb script anyway
@@ -351,6 +357,7 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
     misc.run_in_new_terminal(cmd)
     if pid:
         proc.wait_for_debugger(pid)
+    return pid
 
 def ssh_gdb(ssh, process, execute = None, arch = None, **kwargs):
     if isinstance(process, (list, tuple)):

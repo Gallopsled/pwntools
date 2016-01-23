@@ -68,6 +68,9 @@ def set_randomize(v):
 def set_aslr(v):
     context.defaults['aslr'] = not asbool(v)
 
+def set_noptrace(v):
+    context.defaults['noptrace'] = asbool(v)
+
 hooks = {
     'LOG_LEVEL': set_log_level,
     'LOG_FILE': set_log_file,
@@ -77,6 +80,7 @@ hooks = {
     'RANDOMIZE': set_randomize,
     'TIMEOUT': set_timeout,
     'NOASLR': set_aslr,
+    'NOPTRACE': set_noptrace,
 }
 
 def initialize():

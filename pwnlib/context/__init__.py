@@ -330,6 +330,7 @@ class ContextType(object):
         'log_file': _devnull(),
         'randomize': False,
         'newline': '\n',
+        'noptrace': False,
         'os': 'linux',
         'proxy': None,
         'signed': False,
@@ -503,6 +504,8 @@ class ContextType(object):
 
     @property
     def silent(self):
+        """Disable all non-error logging within the enclosed scope.
+        """
         return self.local(log_level='error')
 
     def clear(self, *a, **kw):
@@ -882,12 +885,12 @@ class ContextType(object):
             >>> context.os = 'foobar' #doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
-            AttributeError: os must be one of ['freebsd', 'linux', 'windows']
+            AttributeError: os must be one of ['android', 'cgc', 'freebsd', 'linux', 'windows']
         """
         os = os.lower()
 
         if os not in ContextType.oses:
-            raise AttributeError("os must be one of %r" % sorted(ContextType.oses))
+            raise AttributeError("os must be one of %r" % ContextType.oses)
 
         return os
 
@@ -990,6 +993,17 @@ class ContextType(object):
         socket.socket = socks.socksocket
 
         return proxy
+
+    @_validator
+    def noptrace(self, value):
+        """Disable all actions which rely on ptrace.
+
+        This is useful for switching between local exploitation with a debugger,
+        and remote exploitation (without a debugger).
+
+        This option can be set with the ``NOPTRACE`` command-line argument.
+        """
+        return bool(value)
 
     #*************************************************************************
     #                               ALIASES
