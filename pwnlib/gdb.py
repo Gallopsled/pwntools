@@ -246,7 +246,7 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
         tmpfile = shell.mktemp()
         shell.upload_data(execute or '', tmpfile)
 
-        cmd = ['ssh', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
+        cmd = ['ssh', '-C', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
         if shell.password:
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
