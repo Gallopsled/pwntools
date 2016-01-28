@@ -72,13 +72,27 @@ class process(tube):
         aslr(bool):
             If set to ``False``, disable ASLR via ``personality`` (``setarch -R``)
             and ``setrlimit`` (``ulimit -s unlimited``).
+
             This disables ASLR for the target process.  However, the ``setarch``
             changes are lost if a ``setuid`` binary is executed.
+
             The default value is inherited from ``context.aslr``.
-        nosetuid(bool):
-            If set to ``True``, prevent the binary from running as another user,
-            even if the setuid bit is set.  This is only supported on Linux,
-            with kernels v3.5 or greater.
+            See ``setuid`` below for additional options and information.
+        setuid(bool):
+            Used to control `setuid` status of the target binary, and the
+            corresponding actions taken.
+
+            By default, this value is ``None``, so no assumptions are made.
+
+            If ``True``, treat the target binary as ``setuid``.
+            This modifies the mechanisms used to disable ASLR on the process if
+            ``aslr=False``.
+            This is useful for debugging locally, when the exploit is a
+            ``setuid`` binary.
+
+            If ``False``, prevent ``setuid`` bits from taking effect on the
+            target binary.  This is only supported on Linux, with kernels v3.5
+            or greater.
 
     Attributes:
         proc(subprocess)
@@ -186,7 +200,7 @@ class process(tube):
                  preexec_fn = lambda: None,
                  raw = True,
                  aslr = None,
-                 nosetuid = False):
+                 setuid = None):
         super(process, self).__init__(timeout, level = level)
 
         #: `subprocess.Popen` object
@@ -216,7 +230,7 @@ class process(tube):
         self.aslr         = aslr if aslr is not None else context.aslr
 
         #: Whether setuid is permitted
-        self._setuid      = not nosetuid
+        self._setuid      = setuid if setuid is None else bool(setuid)
 
         # Create the PTY if necessary
         stdin, stdout, stderr, master, slave = self._handles(*handles)
@@ -307,7 +321,7 @@ class process(tube):
 
         if not self.aslr:
             try:
-                if context.os == 'linux':
+                if context.os == 'linux' and self._setuid is not True:
                     ADDR_NO_RANDOMIZE = 0x0040000
                     ctypes.CDLL('libc.so.6').personality(ADDR_NO_RANDOMIZE)
 
@@ -323,7 +337,7 @@ class process(tube):
             with open('/proc/self/coredump_filter', 'w') as f:
                 f.write('0xff')
 
-        if not self._setuid:
+        if self._setuid is False:
             try:
                 PR_SET_NO_NEW_PRIVS = 38
                 ctypes.CDLL('libc.so.6').prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)
@@ -679,6 +693,14 @@ class process(tube):
         except IOError:
             return maps
 
+        # Enumerate all of the libraries actually loaded right now.
+        for line in maps_raw.splitlines():
+            if '/' not in line: continue
+            path = line[line.index('/'):]
+            path = os.path.realpath(path)
+            if path not in maps:
+                maps[path]=0
+
         for lib in maps:
             path = os.path.realpath(lib)
             for line in maps_raw.splitlines():
@@ -704,3 +726,19 @@ class process(tube):
                 e = ELF(lib)
                 e.address = address
                 return e
+
+    @property
+    def corefile(self):
+        # Prevent gdb.attach from spawning a new window
+        with context.local(terminal = ['sh', '-c']): # , log_level='error'):
+            filename = '%s.core' % (self.pid)
+
+            # Hurray cyclic dependencies!
+            import pwnlib.gdb
+            pid = pwnlib.gdb.attach(self, 'gcore %s\ndetach\nexit' % filename)
+
+            import pwnlib.util.proc
+            pwnlib.util.proc.wait_for_debugger_detach(self.pid)
+
+            import pwnlib.elf.corefile
+            return pwnlib.elf.corefile.Core(filename)
