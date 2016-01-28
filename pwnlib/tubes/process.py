@@ -333,9 +333,11 @@ class process(tube):
         resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
 
         # Given that we want a core file, assume that we want the whole thing.
-        if os.path.exists('/proc/self/coredump_filter'):
+        try:
             with open('/proc/self/coredump_filter', 'w') as f:
                 f.write('0xff')
+        except Exception:
+            pass
 
         if self._setuid is False:
             try:
