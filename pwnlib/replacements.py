@@ -7,7 +7,7 @@ import time as __time
 def sleep(n):
     """sleep(n)
 
-    Replacement for :func:`time.sleep()`, which does not return if a signal is recieved.
+    Replacement for :func:`time.sleep()`, which does not return if a signal is received.
 
     Arguments:
       n (int):  Number of seconds to sleep.
