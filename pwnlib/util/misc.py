@@ -138,6 +138,10 @@ def which(name, all = False):
       >>> which('sh')
       '/bin/sh'
 """
+    # If name is a path, do not attempt to resolve it.
+    if os.path.sep in name:
+        return name
+
     isroot = os.getuid() == 0
     out = set()
     try:

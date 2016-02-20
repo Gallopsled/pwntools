@@ -227,6 +227,7 @@ class ssh_channel(sock):
                 try:
                     cur = self.recv(timeout = 0.05)
                     cur = cur.replace('\r\n','\n')
+                    cur = cur.replace('\r','')
                     if cur == None:
                         continue
                     elif cur == '\a':
@@ -891,6 +892,10 @@ os.execve(exe, argv, os.environ)
         Minor modification to just directly invoking ``which`` on the remote
         system which adds the current working directory to the end of ``$PATH``.
         """
+        # If name is a path, do not attempt to resolve it.
+        if os.path.sep in program:
+            return program
+
         result = self.run('export PATH=$PATH:$PWD; which %s' % program).recvall().strip()
 
         if '/' not in result:
