@@ -114,7 +114,7 @@ class Buffer(Exception):
             'goodbyeworld'
         """
         if isinstance(data, Buffer):
-            self.data = data + self.data
+            self.data = data.data + self.data
             self.size += data.size
         else:
             self.data.insert(0, data)
