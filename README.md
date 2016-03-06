@@ -1,40 +1,59 @@
-This is the CTF framework used by pwnies in every CTF.
+![pwntools logo](docs/source/logo.png?raw=true)
 
-Most code is inside the pwn folder, which is typically used as:
+[![Docs latest](https://readthedocs.org/projects/pwntools/badge/)](https://pwntools.readthedocs.org/en/latest)
+[![Docs 2.2.0](https://readthedocs.org/projects/pwntools/badge/?version=2.2.0)](https://pwntools.readthedocs.org/en/2.2.0)
+[![PyPI](https://img.shields.io/pypi/v/pwntools.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
+[![Gittip](https://img.shields.io/gittip/gallopsled.svg?style=flat)](https://www.gittip.com/gallopsled/)
+[![Travis](https://travis-ci.org/Gallopsled/pwntools.svg)](https://travis-ci.org/Gallopsled/pwntools)
+[![Twitter](https://img.shields.io/badge/twitter-Gallopsled-4099FF.svg?style=flat)](https://twitter.com/Gallopsled)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](http://choosealicense.com/licenses/mit/)
+
+This is the CTF framework used by Gallopsled in every CTF.
 
 ```python
 from pwn import *
-context('i386', 'linux')
+context(arch = 'i386', os = 'linux')
 
-# EXPLOIT HERE
+r = remote('exploitme.example.com', 31337)
+# EXPLOIT CODE GOES HERE
+r.send(asm(shellcraft.sh()))
+r.interactive()
 ```
 
-However we have made command-line frontends for much of the functionality
-inside the pwnlib. These are:
+However we have made command-line frontends for some of the functionality
+in `pwnlib`. These are:
 
-* `cyclic`: De Bruijn sequence generator and lookup tool
-* `hex`/`unhex`: Command line tools for doing common hexing/unhexing operations
-* `nops`: Tool for generating random nopsleds.
-* `peek`/`poke`: Simple tool for sending files over a LAN
-* `randomua`: Returns a random user agent
-* `scramble`: Shellcode packer
-* `shellcraft`: Frontend to our shellcode
+* `asm`/`disasm`: Small wrapper for various assemblers.
+* `constgrep`: Tool for finding constants defined in header files.
+* `cyclic`: De Bruijn sequence generator and lookup tool.
+* `hex`/`unhex`: Command line tools for doing common hexing/unhexing operations.
+* `shellcraft`: Frontend to our shellcode.
+* `phd`: Replacement for `hexdump` with colors.
 
-We also have the following tools, not dependent on the pwnlib:
+# Documentation
+Our documentation is available at [pwntools.readthedocs.org](https://pwntools.readthedocs.org/en/latest/)
 
-* `asm`/`disasm`: Small wrapper for nasm
-* binutils directory: Assemblers and disassemblers for various architectures
-* `bytes`: Extract the raw bytes from various textual representations
-* `crop`: Cut out rectangular portions of text
-* `demo32`/`demo64`: Tool for testing shellcode
-* `dictgen`: Generate dictionaries from input corpora
-* `gadgets`: Find ROP gadgets
-* `mags`: Run `file` at all offsets
+To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/Gallopsled/pwntools-write-ups).
 
-All of these tools are symlinked to the bin folder.
+# Installation
 
-To install it, just update your `PYTHONPATH` and `PATH` variables. Alternatively
-you can run `install.sh`.
+pwntools is best supported on Ubuntu 12.04 and 14.04, but most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).
 
-If you have any questions not worthy of a bug report, feel free to join us
-at `#zomg_pwnies` and ask away.
+Most of the functionality of pwntools is self-contained and Python-only.  You should be able to get running quickly with
+
+```sh
+pip install pwntools
+```
+
+However, some of the features (ROP generation and assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://pwntools.readthedocs.org/en/latest/install.html).
+
+
+# Contribution
+
+See [CONTRIBUTING.md](CONTRIBUTING.md)
+
+# Contact
+If you have any questions not worthy of a [bug report](https://github.com/Gallopsled/pwntools/issues), feel free to join us
+at [`#pwntools` on Freenode](irc://irc.freenode.net/pwntools) and ask away.
+Click [here](https://kiwiirc.com/client/irc.freenode.net/pwntools) to connect.
+

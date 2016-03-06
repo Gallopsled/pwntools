@@ -1,0 +1,24 @@
+.. testsetup:: *
+
+   from pwn import *
+
+:mod:`pwnlib.shellcraft.i386` --- Shellcode for Intel 80386
+===========================================================
+
+:mod:`pwnlib.shellcraft.i386`
+-----------------------------
+
+.. automodule:: pwnlib.shellcraft.i386
+   :members:
+
+:mod:`pwnlib.shellcraft.i386.linux`
+-----------------------------------
+
+.. automodule:: pwnlib.shellcraft.i386.linux
+   :members:
+
+:mod:`pwnlib.shellcraft.i386.freebsd`
+-------------------------------------
+
+.. automodule:: pwnlib.shellcraft.i386.freebsd
+   :members:

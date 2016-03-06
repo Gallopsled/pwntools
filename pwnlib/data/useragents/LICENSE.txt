@@ -1,0 +1,16 @@
+This directory contains a script `download-useragents.py' which downloads a list
+of user agent strings from the Internet.
+
+The user agent strings are downloaded from:
+ - http://www.useragentstring.com/
+ - http://www.user-agents.org/
+ - http://techpatterns.com/downloads/firefox/useragentswitcher.xml
+
+The latter list is part of the Firefox `User Agent Switcher' add-on and released
+under BSD 2 Clause.
+
+
+As mentioned elsewhere we are not lawyers and do not know the legal status of
+these lists.  To the extend that we can legally do so, we redistribute
+everything under an MIT license, but otherwise we allow it under the licenses
+the lists were originally made available under.

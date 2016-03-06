@@ -1,0 +1,6 @@
+paramiko
+argparse
+mako
+pyelftools
+sphinxcontrib-napoleon
+sphinxcontrib-autoprogram

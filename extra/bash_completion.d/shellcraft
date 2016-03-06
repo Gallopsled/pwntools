@@ -1,0 +1,46 @@
+# cache list of shellcodes
+_shellcraft_shellcodes=$(shellcraft)
+
+_shellcraft()
+{
+    COMPREPLY=()
+    local cur prev opts word code
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    opts="-h --help -? --show -o --out -f --format"
+
+    if [ "${prev}" == "-f" -o    \
+         "${prev}" == "--format" \
+        ] ; then
+        opts="raw str c hex asm p hexii"
+        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}))
+        return 0
+    fi
+
+    if [ "${prev}" == "-o" -o \
+         "${prev}" == "--out" \
+        ] ; then
+        COMPREPLY=( $(compgen -f ${cur}))
+        return 0
+    fi
+
+    if [[ "${cur}" == -* ]] ; then
+        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+        return 0
+    fi
+
+    # check if a shellcode was already chosen
+    for word in "${COMP_WORDS[@]}" ; do
+        for code in ${_shellcraft_shellcodes} ; do
+            if [ "${word}" == "${code}" ] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+                return 0
+            fi
+        done
+    done
+
+    # complete shellcode name
+    COMPREPLY=( $(compgen -W "${_shellcraft_shellcodes}" -- ${cur}) )
+}
+
+complete -F _shellcraft shellcraft

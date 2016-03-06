@@ -1,6 +1,0 @@
-        %include "linux/errno.asm"
-        %include "linux/file.asm"
-        %include "linux/mman.asm"
-        %include "linux/network.asm"
-        %include "linux/signal.asm"
-        %include "linux/socketcall.asm"

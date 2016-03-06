@@ -1,0 +1,29 @@
+This directory, the directory pwnlib/constants/ and subdirectories contains:
+
+- header files from the FreeBSD project
+- header files from the dietlibc project
+- code for transforming these header files into a
+  format more suitable for our use of them
+- the result of that transformation
+
+
+The header files can be retrieved from https://www.freebsd.org and
+http://www.fefe.de/dietlibc/ respectively.
+
+
+The header files from the FreeBSD project are to the best of our
+knowledge available under a BSD 2-clause license available here:
+
+https://www.freebsd.org/copyright/freebsd-license.html
+
+
+The header files from dietlibc are to the best of our knowledge
+available under under GPLv2 or later, available here:
+
+https://www.gnu.org/copyleft/gpl.html
+
+
+We are not laywers and do not know the legal status of header files nor do we
+know the legal status of derivatives. To the extend that we can legally do so,
+we would like to redistribute everything under an MIT license, but otherwise
+we allow it under the licenses the files were originally made available under.

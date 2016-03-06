@@ -1,0 +1,16 @@
+The shellcode module.
+
+This module contains functions for generating shellcode.
+
+It is organized first by architecture and then by operating system.
+
+Example:
+
+    >>> print shellcraft.i386.nop().strip('\n')
+        nop
+    >>> print shellcraft.i386.linux.sh()
+        /* push '/bin///sh\x00' */
+        push 0x68
+        push 0x732f2f2f
+        push 0x6e69622f
+    ...
