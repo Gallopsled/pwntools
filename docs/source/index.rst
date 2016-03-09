@@ -60,9 +60,11 @@ Each of the ``binjitsu`` modules is documented here.
 
    testexample
 
-Indices and tables
-==================
+.. only:: not dash
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   Indices and tables
+   ==================
+
+   * :ref:`genindex`
+   * :ref:`modindex`
+   * :ref:`search`

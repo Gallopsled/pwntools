@@ -11,3 +11,5 @@ requests>=2.5.1
 pip>=6.0.8
 tox>=1.8.1
 pygments>=2.0
+sphinx_rtd_theme
+doc2dash

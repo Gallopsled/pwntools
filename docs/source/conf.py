@@ -15,6 +15,8 @@ import os
 import subprocess
 import sys
 
+build_dash = tags.has('dash')
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -169,10 +171,10 @@ html_static_path = []
 #html_additional_pages = {}
 
 # If false, no module index is generated.
-#html_domain_indices = True
+html_domain_indices = not build_dash
 
 # If false, no index is generated.
-#html_use_index = True
+html_use_index = not build_dash
 
 # If true, the index is split into individual pages for each letter.
 #html_split_index = False
@@ -320,3 +322,18 @@ def linkcode_resolve(domain, info):
                 pass
 
     return "https://github.com/binjitsu/binjitsu/blob/%s/%s" % (branch, filename)
+
+
+# The readthedocs theme is used by the Dash generator. (Can be used for HTML too.)
+
+if build_dash:
+
+    # on_rtd is whether we are on readthedocs.org
+    on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+    if not on_rtd:  # only import and set the theme if we're building docs locally
+        import sphinx_rtd_theme
+        html_theme = 'sphinx_rtd_theme'
+        html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+    # otherwise, readthedocs.org uses their theme by default, so no need to specify it
