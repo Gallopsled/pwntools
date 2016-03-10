@@ -13,7 +13,7 @@ RUN apt-get install -y \
     binutils \
     binutils-aarch64-linux-gnu \
     binutils-arm-linux-gnueabihf \
-    curl \
+    curl \ze
     gdb \
     gdbserver \
     gdb-multiarch \
@@ -61,6 +61,5 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-COPY zerocool /home/zerocool
 RUN chown -R zerocool.zerocool /home/zerocool
 RUN chsh -s /bin/bash zerocool
