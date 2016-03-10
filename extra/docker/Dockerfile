@@ -21,6 +21,7 @@ RUN apt-get install -y \
     libc6-i386 \
     libc6-arm64-cross \
     libc6-armhf-cross \
+    libc6-dev-i386 \
     libncurses5-dev \
     libncursesw5-dev \
     python-dev \
@@ -41,16 +42,19 @@ RUN ln -s /usr/aarch64-linux-gnu /etc/qemu-binfmt/aarch64
 RUN ln -s /usr/arm-linux-gnueabihf /etc/qemu-binfmt/arm
 
 RUN git clone https://github.com/aquynh/capstone \
-        && cd capstone \
-        && git checkout -t origin/next \
-        && sudo ./make.sh install \
-        && cd bindings/python \
-        && python2 setup.py install \
-        && python3 setup.py install
+	&& cd capstone \
+	&& git checkout -t origin/next \
+	&& sudo ./make.sh install \
+	&& cd bindings/python \
+	&& python2 setup.py install \
+	&& python3 setup.py install
 RUN pip install --upgrade pycparser
 RUN pip3 install --upgrade pycparser
 
 RUN pip install --upgrade git+https://github.com/binjitsu/binjitsu.git
+
+RUN git clone https://github.com/zachriggle/pwndbg /home/zerocool/pwndbg
+RUN echo "source /home/zerocool/pwndbg/gdbinit.py" > /home/zerocool/.gdbinit
 
 RUN locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
