@@ -213,6 +213,20 @@ class MemLeak(object):
             out += b
         return out
 
+    def __getitem__(self, key):
+        if isinstance(key, (int, long)):
+            return self.rawb(key)
+        else:
+            if None in (key.start, key.stop):
+                raise ValueError("Bot start and stop must be given for leaked range")
+            out = ''
+            for addr in xrange(key.start, key.stop, key.step or 1):
+                b = self.rawb(addr)
+                if b == None:
+                    return None
+                out += b
+            return out
+
     def _int(self, addr, ndx, size):
         addr += ndx * size
         data = self.n(addr, size)
