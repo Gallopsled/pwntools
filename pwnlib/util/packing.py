@@ -645,7 +645,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
 
     `src` can be an iterable of characters or integers, a unicode string or a
     file object.  If it is an iterable of integers, each integer must be in the
-    range [0;255].  If it is a unicode string, it's UTF-8 encoding will be used.
+    range [0;255].  If it is a unicode string, its UTF-8 encoding will be used.
 
     The seek offset of file objects will be preserved.
 
@@ -663,8 +663,8 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
                        byte.
 
     Returns:
-      A modified version `dst`.  If `dst` is a mutable type it will be modified
-      in-place.
+      A modified version of `dst`.  If `dst` is a mutable type it will be
+      modified in-place.
 
     Examples:
     >>> dd(tuple('Hello!'), '?', skip = 5)
@@ -679,6 +679,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
     ... dd(file('/tmp/foo'), file('/dev/zero'), skip = 3, count = 4, truncate = True)
     ... read('/tmp/foo')
     'AAA\x00\x00\x00\x00'
+
     """
 
     # Re-open file objects to make sure we have the mode right
@@ -717,9 +718,15 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
     # Otherwise get `src` in canonical form, i.e. a string of at most `count`
     # bytes
     if isinstance(src, unicode):
-        src = src.encode('utf8')[seek:]
         if count:
-            src = src[:count]
+            # The only way to know where the `seek`th byte is, is to decode, but
+            # we only need to decode up to the first `seek + count` code points
+            src = src[:seek + count].encode('utf8')
+            # The code points may result in more that `seek + count` bytes
+            src = src[seek : seek + count]
+        else:
+            src = src.encode('utf8')[seek:]
+
     elif isinstance(src, file):
         src.seek(seek)
         src_ = ''
@@ -737,7 +744,14 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
                 src_ += s
         src.close()
         src = src_
-    else:
+
+    elif isinstance(src, str):
+        if count:
+            src = src[seek : seek + count]
+        else:
+            src = src[seek:]
+
+    elif hasattr(src, '__iter__'):
         src = src[seek:]
         src_ = ''
         for i, b in enumerate(src, seek):
@@ -749,7 +763,12 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
                 if b > 255 or b < 0:
                     raise ValueError("dd(): Source value %d at index %d is not in range [0;255]" % (b, i))
                 src_ += chr(b)
+            else:
+                raise TypeError("dd(): Unsupported `src` element type: %r" % type(b))
         src = src_
+
+    else:
+        raise TypeError("dd(): Unsupported `src` type: %r" % type(src))
 
     # If truncate, then where?
     if truncate:
@@ -770,23 +789,25 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
             dst.truncate(truncate)
         dst.close()
         dst = real_dst
+
     elif isinstance(dst, (list, bytearray)):
-        print dst
         dst[skip : skip + len(src)] = list(src)
-        print dst
         if truncate:
             while len(dst) > truncate:
                 dst.pop()
+
     elif isinstance(dst, tuple):
         tail = dst[skip + len(src):]
         dst = dst[:skip] + tuple(src)
         if not truncate:
             dst = dst + tail
+
     elif isinstance(dst, str):
         tail = dst[skip + len(src):]
         dst = dst[:skip] + src
         if not truncate:
             dst = dst + tail
+
     else:
         raise TypeError("dd(): Unsupported `dst` type: %r" % type(dst))
 
