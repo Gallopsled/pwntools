@@ -54,11 +54,11 @@ class MemLeak(object):
             ...     return binsh[addr:addr+4]
             >>> leaker.d(0)
             leaker failed 0x0
-            None
-            >>> hex(leaker.d(0x100))
+            >>> leaker.d(0x100) == pwnlib.util.packing.u32(binsh[0x100:0x104])
+            leaker failed 0x100
             leaking 0xff
             leaking 0x103
-            0x219f88
+            True
             >>> leaker[0xf0:0x110] == binsh[0xf0:0x110] == leaker.n(0xf0, 0x20)
             leaking 0xf0
             leaking 0xf4
@@ -73,8 +73,8 @@ class MemLeak(object):
             ...     _pack_ = True
             ...     _fields_ = [("a", ctypes.c_char),
             ...                 ("b", ctypes.c_uint32),]
-            >>> hex(leaker.field(0x101, MyStruct.b))
-            0x21
+            >>> leaker.field(0x101, MyStruct.b) == leaker.d(0x102)
+            True
     """
     def __init__(self, f, search_range = 20, reraise = True):
         self.leak = f
