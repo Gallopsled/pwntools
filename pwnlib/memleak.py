@@ -45,6 +45,15 @@ class MemLeak(object):
             >>> hex(leaker.d(0))
             leaking 0x1
             '0x464c457f'
+            >>> @pwnlib.memleak.MemLeak
+            ... def leaker(addr):
+            ...     if addr in [0x100, 0x101, 0x102]:
+            ...         return None
+            ...     return binsh[addr:addr+4]
+            >>> leaker.d(0) == None
+            True
+            >>> leaker[0x100:0x104] == binsh[0x100:0x104]
+            True
     """
     def __init__(self, f, search_range = 20, reraise = True):
         self.leak = f
@@ -113,7 +122,7 @@ class MemLeak(object):
             # to see if another request will satisfy it
             if not data and recurse:
                 for i in range(1, self.search_range):
-                    data = self._leak(address-i, i, False)
+                    data = self._leak(address-i, i+1, False)
                     if address in self.cache:
                         break
                 else:
@@ -438,3 +447,12 @@ class MemLeak(object):
 
         for i,b in enumerate(val):
             self.cache[addr+i] = b
+
+    def __getitem__(self, item):
+        if isinstance(item, slice):
+            start = item.start
+            stop  = item.stop
+            step  = item.step
+        else:
+            start, stop, step = (item, item+1, 1)
+        return self.n(start, stop-start)[::step]
