@@ -13,7 +13,7 @@ RUN apt-get install -y \
     binutils \
     binutils-aarch64-linux-gnu \
     binutils-arm-linux-gnueabihf \
-    curl \ze
+    curl \
     gdb \
     gdbserver \
     gdb-multiarch \
