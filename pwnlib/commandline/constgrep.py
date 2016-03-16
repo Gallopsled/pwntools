@@ -7,6 +7,7 @@ import re
 from pwnlib.context import context
 from pwnlib import constants
 from pwnlib.asm import cpp
+from pwnlib.util import safeeval
 
 from . import common
 
