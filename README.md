@@ -1,5 +1,5 @@
 # binjitsu - CTF toolkit
-[![Docs latest](https://readthedocs.org/projects/binjitsu/badge/)](https://binjitsu.readthedocs.org/en/latest)
+[![Docs latest](https://readthedocs.org/projects/binjitsu/badge/)](https://binjitsu.readthedocs.org/)
 [![Travis](https://travis-ci.org/binjitsu/binjitsu.svg?branch=master)](https://travis-ci.org/binjitsu/binjitsu)
 [![Twitter](https://img.shields.io/badge/twitter-ctfbinjitsu-4099FF.svg?style=flat)](https://twitter.com/ctfbinjitsu)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](http://choosealicense.com/licenses/mit/)
@@ -45,7 +45,7 @@ apt-get install python2.7 python-pip python-dev git
 pip install --upgrade git+https://github.com/binjitsu/binjitsu.git
 ```
 
-However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://binjitsu.readthedocs.org/en/latest/install.html).
+However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://binjitsu.readthedocs.org/install.html).
 
 
 # Contribution
