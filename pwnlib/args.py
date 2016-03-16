@@ -86,6 +86,10 @@ hooks = {
 def initialize():
     global args, term_mode
 
+    # Hack for readthedocs.org
+    if 'READTHEDOCS' in os.environ:
+        os.environ['PWNLIB_NOTERM'] = '1'
+
     for k, v in os.environ.items():
         if not k.startswith(env_prefix):
             continue
