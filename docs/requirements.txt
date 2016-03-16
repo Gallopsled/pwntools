@@ -2,7 +2,6 @@ sphinxcontrib-napoleon
 sphinxcontrib-autoprogram
 isort
 paramiko>=1.15.2
-argparse
 mako>=1.0.0
 pyelftools>=0.2.3
 capstone

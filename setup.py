@@ -33,7 +33,6 @@ for filename in glob.glob('pwnlib/commandline/*'):
     console_scripts.append(script)
 
 install_requires     = ['paramiko>=1.15.2',
-                        'argparse',
                         'mako>=1.0.0',
                         'pyelftools>=0.2.3',
                         'capstone',
