@@ -29,7 +29,7 @@ It will drop you into a clean, Docker-ized container.  There is nothing of value
 binjitsu is a fork of the [`pwntools`](https://github.com/Gallopsled/pwntools) project.  For the most part, it's a drop-in replacement, though I've added some functionality of my own which may not be available in the upstream release.
 
 # Documentation
-Our documentation is available at [binjitsu.readthedocs.org](https://binjitsu.readthedocs.org/en/latest/)
+Our documentation is available at [binjitsu.readthedocs.org](https://binjitsu.readthedocs.org/)
 
 To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/binjitsu/examples).
 
