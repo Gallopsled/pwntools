@@ -11,6 +11,10 @@ def get(cap, *args, **kwargs):
     if 'PWNLIB_NOTERM' in os.environ:
         return ''
 
+    # Hack for readthedocs.org
+    if 'READTHEDOCS' in os.environ:
+        return ''
+
     if kwargs != {}:
         raise TypeError("get(): No such argument %r" % kwargs.popitem()[0])
 
