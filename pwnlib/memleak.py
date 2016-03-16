@@ -38,6 +38,8 @@ class MemLeak(object):
             leaking 0x0
             leaking 0x4
             '\\x7fELF'
+            >>> leaker[:4]
+            '\\x7fELF'
             >>> hex(leaker.d(0))
             '0x464c457f'
             >>> hex(leaker.clearb(1))
@@ -46,13 +48,18 @@ class MemLeak(object):
             leaking 0x1
             '0x464c457f'
             >>> @pwnlib.memleak.MemLeak
-            ... def leaker(addr):
-            ...     if addr in [0x100, 0x101, 0x102]:
+            ... def leaker_nonulls(addr):
+            ...     print "leaking 0x%x" % addr
+            ...     if addr & 0xff == 0:
             ...         return None
             ...     return binsh[addr:addr+4]
-            >>> leaker.d(0) == None
+            >>> leaker_nonulls.d(0) == None
+            leaking 0x0
             True
-            >>> leaker[0x100:0x104] == binsh[0x100:0x104]
+            >>> leaker_nonulls[0x100:0x104] == binsh[0x100:0x104]
+            leaking 0x100
+            leaking 0xff
+            leaking 0x103
             True
     """
     def __init__(self, f, search_range = 20, reraise = True):
@@ -103,6 +110,9 @@ class MemLeak(object):
         Returns:
             A string of length ``n``, or ``None``.
         """
+        if addr < 0:
+            return None
+
         addresses = [addr+i for i in xrange(n)]
 
         for address in addresses:
@@ -118,24 +128,19 @@ class MemLeak(object):
                 if self.reraise:
                     raise
 
+            if data:
+                for i,byte in enumerate(data):
+                    self.cache[address+i] = byte
+
             # We could not leak this particular byte, search backwardd
             # to see if another request will satisfy it
-            if not data and recurse:
+            elif recurse:
                 for i in range(1, self.search_range):
                     data = self._leak(address-i, i+1, False)
                     if address in self.cache:
                         break
                 else:
                     return None
-
-            # Could not receive any data, even overlapped with previous
-            # requests.
-            if not data:
-                return None
-
-            # Fill cache for as many bytes as we received
-            for i,byte in enumerate(data):
-                self.cache[address+i] = byte
 
         # Ensure everything is in the cache
         if not all(a in self.cache for a in addresses):
@@ -450,9 +455,13 @@ class MemLeak(object):
 
     def __getitem__(self, item):
         if isinstance(item, slice):
-            start = item.start
+            start = item.start or 0
             stop  = item.stop
             step  = item.step
         else:
             start, stop, step = (item, item+1, 1)
+
+        if None in (stop, start):
+            log.error("Cannot perform unbounded leaks")
+
         return self.n(start, stop-start)[::step]
