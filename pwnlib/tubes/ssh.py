@@ -60,7 +60,7 @@ class ssh_channel(sock):
 
     #: Executable of the process
     #: Only valid when instantiated through :meth:`ssh.process`
-    exe = None
+    executable = None
 
     #: Arguments passed to the process
     #: Only valid when instantiated through :meth:`ssh.process`
@@ -809,6 +809,7 @@ if %(setuid)r is False:
 if sys.argv[-1] == 'check':
     sys.stdout.write("1\n")
     sys.stdout.write(str(os.getpid()) + "\n")
+    sys.stdout.write(exe + '\x00')
     sys.stdout.flush()
 
 for fd, newfd in {0: %(stdin)r, 1: %(stdout)r, 2:%(stderr)r}.items():
@@ -882,7 +883,7 @@ os.execve(exe, argv, os.environ)
 
             python.pid  = safeeval.const(python.recvline())
             python.argv = argv
-            python.executable = executable
+            python.executable = python.recvuntil('\x00')[:-1]
 
         return python
 

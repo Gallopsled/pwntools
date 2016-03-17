@@ -251,7 +251,10 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
-        cmd += ['gdb %r %s -x "%s" ; rm "%s"' % (target.exe, target.pid, tmpfile, tmpfile)]
+        cmd += ['gdb %r %s -x "%s" ; rm "%s"' % (target.executable,
+                                                 target.pid,
+                                                 tmpfile,
+                                                 tmpfile)]
 
         misc.run_in_new_terminal(' '.join(cmd))
         return
