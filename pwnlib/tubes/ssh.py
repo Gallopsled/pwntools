@@ -1020,6 +1020,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         return ssh_connecter(self, host, port, timeout, level=self.level)
 
+    remote = connect_remote
+
     def listen_remote(self, port = 0, bind_address = '', timeout = Timeout.default):
         r"""listen_remote(port = 0, bind_address = '', timeout = Timeout.default) -> ssh_connecter
 
@@ -1043,6 +1045,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         """
 
         return ssh_listener(self, bind_address, port, timeout, level=self.level)
+
+    listen = listen_remote
 
     def __getitem__(self, attr):
         """Permits indexed access to run commands over SSH
