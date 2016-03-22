@@ -752,7 +752,11 @@ class process(tube):
             address(int): Address to leak memory at
             count(int): Number of bytes to leak at that address.
         """
+        # If it's running under qemu-user, don't leak anything.
+        if 'qemu-' in os.path.realpath('/proc/%i/exe' % self.pid):
+            log.error("Cannot use leaker on binaries under QEMU.")
+
         with open('/proc/%i/mem' % self.pid, 'rb') as mem:
             mem.seek(address)
-            return mem.read(count)
+            return mem.read(count) or None
 
