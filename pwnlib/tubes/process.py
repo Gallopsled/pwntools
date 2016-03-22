@@ -744,3 +744,9 @@ class process(tube):
 
             import pwnlib.elf.corefile
             return pwnlib.elf.corefile.Core(filename)
+
+    def leak(self, address):
+        with open('/proc/%i/mem' % self.pid) as mem:
+            mem.seek(address)
+            return mem.read()
+
