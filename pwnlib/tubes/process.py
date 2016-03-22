@@ -745,8 +745,14 @@ class process(tube):
             import pwnlib.elf.corefile
             return pwnlib.elf.corefile.Core(filename)
 
-    def leak(self, address):
+    def leak(self, address, count=0):
+        """Leaks memory within the process at the specified address.
+
+        Arguments:
+            address(int): Address to leak memory at
+            count(int): Number of bytes to leak at that address.
+        """
         with open('/proc/%i/mem' % self.pid) as mem:
             mem.seek(address)
-            return mem.read()
+            return mem.read(count)
 
