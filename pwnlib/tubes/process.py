@@ -752,7 +752,7 @@ class process(tube):
             address(int): Address to leak memory at
             count(int): Number of bytes to leak at that address.
         """
-        with open('/proc/%i/mem' % self.pid) as mem:
+        with open('/proc/%i/mem' % self.pid, 'rb') as mem:
             mem.seek(address)
             return mem.read(count)
 
