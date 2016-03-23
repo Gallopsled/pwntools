@@ -572,8 +572,9 @@ class ContextType(object):
 
         # Attempt to perform convenience and legacy compatibility
         # transformations.
-        transform = {'x86':'i386', 'ppc': 'powerpc', 'x86_64': 'amd64'}
-        for k, v in transform.items():
+        # We have to make sure that x86_64 appears before x86 for this to work correctly.
+        transform = [('ppc', 'powerpc'), ('x86_64', 'amd64'), ('x86', 'i386')]
+        for k, v in transform:
             if arch.startswith(k):
                 arch = arch.replace(k,v,1)
 
