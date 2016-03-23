@@ -613,9 +613,8 @@ class ContextType(object):
             True
         """
 
-        # Lowercase, remove everything non-alphanumeric
+        # Lowercase
         arch = arch.lower()
-        arch = arch.replace(string.punctuation, '')
 
         # Attempt to perform convenience and legacy compatibility transformations.
         # We have to make sure that x86_64 appears before x86 for this to work correctly.
