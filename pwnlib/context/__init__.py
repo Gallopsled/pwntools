@@ -679,12 +679,12 @@ class ContextType(object):
             >>> context.bits = -1 #doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
-            AttributeError: bits must be >= 0 (-1)
+            AttributeError: bits must be > 0 (-1)
         """
         bits = int(bits)
 
         if bits <= 0:
-            raise AttributeError("bits must be >= 0 (%r)" % bits)
+            raise AttributeError("bits must be > 0 (%r)" % bits)
 
         return bits
 
@@ -734,7 +734,7 @@ class ContextType(object):
             >>> context.bytes = 0 #doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
-            AttributeError: bits must be >= 0 (0)
+            AttributeError: bits must be > 0 (0)
         """
         return self.bits/8
     @bytes.setter
