@@ -10,32 +10,34 @@ RUN apt-get update && apt-get install -y software-properties-common
 RUN apt-add-repository --yes ppa:pwntools/binutils
 RUN apt-get update
 RUN apt-get install -y \
-    binutils \
-    binutils-aarch64-linux-gnu \
-    binutils-arm-linux-gnueabihf \
-    curl \
-    gdb \
-    gdbserver \
-    gdb-multiarch \
-    git \
-    libc6-i386 \
-    libc6-arm64-cross \
-    libc6-armhf-cross \
-    libc6-dev-i386 \
-    libncurses5-dev \
-    libncursesw5-dev \
-    python-dev \
-    python-pip \
-    python3-pip \
-    python2.7 \
-    qemu \
-    qemu-user-static \
-    tmux \
-    wget
+	binutils \
+	binutils-aarch64-linux-gnu \
+	binutils-arm-linux-gnueabihf \
+	curl \
+	gdb \
+	gdbserver \
+	gdb-multiarch \
+	git \
+	libc6-i386 \
+	libc6-arm64-cross \
+	libc6-armhf-cross \
+	libc6-dev-i386 \
+	libglib2.0-dev \
+	libncurses5-dev \
+	libncursesw5-dev \
+	ltrace \
+	python-dev \
+	python-pip \
+	python3-pip \
+	python2.7 \
+	qemu \
+	qemu-user-static \
+	strace \
+	tmux \
+	wget
 RUN pip install --upgrade ipython
 RUN useradd -m zerocool
 RUN usermod -U zerocool
-
 
 RUN mkdir -p /etc/qemu-binfmt
 RUN ln -s /usr/aarch64-linux-gnu /etc/qemu-binfmt/aarch64
@@ -48,10 +50,18 @@ RUN git clone https://github.com/aquynh/capstone \
 	&& cd bindings/python \
 	&& python2 setup.py install \
 	&& python3 setup.py install
-RUN pip install --upgrade pycparser
-RUN pip3 install --upgrade pycparser
 
-RUN pip install --upgrade git+https://github.com/binjitsu/binjitsu.git
+RUN git clone https://github.com/unicorn-engine/unicorn \
+	&& cd unicorn \
+	&& sudo ./make.sh install \
+	&& cd bindings/python \
+	&& sudo python2 setup.py install \
+	&& sudo python3 setup.py install
+
+RUN pip install --upgrade pip pycparser psutil python-ptrace
+RUN pip3 install --upgrade pip pycparser psutil python-ptrace
+
+RUN pip install --upgrade git+https://github.com/binjitsu/binjitsu.git # 2016-3-16
 
 RUN git clone https://github.com/zachriggle/pwndbg /home/zerocool/pwndbg
 RUN echo "source /home/zerocool/pwndbg/gdbinit.py" > /home/zerocool/.gdbinit
