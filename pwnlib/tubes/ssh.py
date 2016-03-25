@@ -567,17 +567,24 @@ class ssh(Timeout, Logger):
 
             h.success()
 
-        try:
-            self.sftp = self.transport.open_sftp_client()
-        except Exception:
-            self.sftp = None
-
+        self._tried_sftp = False
 
         with context.local(log_level='error'):
             try:
                 self.pid = int(self.system('echo $PPID').recv(timeout=1))
             except Exception:
                 self.pid = None
+
+    @property
+    def sftp(self):
+        if not self._tried_sftp:
+            try:
+                self._sftp = self.transport.open_sftp_client()
+            except Exception:
+                self._sftp = None
+
+        self._tried_sftp = True
+        return self._sftp
 
 
     def __enter__(self, *a):
