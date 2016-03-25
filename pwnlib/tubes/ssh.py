@@ -1263,7 +1263,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ...         cache=False)
             >>> s.download_data('/tmp/bar')
             'Hello, world'
-            >>> s.sftp = False
+            >>> s._sftp = None
+            >>> s._tried_sftp = True
             >>> s.download_data('/tmp/bar')
             'Hello, world'
 
@@ -1349,7 +1350,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> s.upload_data('Hello, world', '/tmp/upload_foo')
             >>> print file('/tmp/upload_foo').read()
             Hello, world
-            >>> s.sftp = False
+            >>> s._sftp = False
+            >>> s._tried_sftp = True
             >>> s.upload_data('Hello, world', '/tmp/upload_bar')
             >>> print file('/tmp/upload_bar').read()
             Hello, world
