@@ -84,6 +84,8 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         '\\x05\\x04\\x03\\x02\\x01'
         >>> pack(-1)
         '\\xff\\xff\\xff\\xff'
+        >>> pack(0x80000000, 'all', 'big', True)
+        '\\x00\\x80\\x00\\x00\\x00'
 """
     if sign is None and number < 0:
         sign = True
@@ -114,7 +116,10 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
             if number == 0:
                 word_size = 8
             elif number > 0:
-                word_size = ((number.bit_length() - 1) | 7) + 1
+                if sign == False:
+                    word_size = ((number.bit_length() - 1) | 7) + 1
+                else:
+                    word_size = (number.bit_length() | 7) + 1
             else:
                 if sign == False:
                     raise ValueError("pack(): number does not fit within word_size")
