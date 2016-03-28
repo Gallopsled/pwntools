@@ -329,7 +329,7 @@ class Logger(object):
 
     def warn_once(self, *args, **kwargs):
         """Alias for :meth:`warning_once`."""
-        return self.warning(*args, **kwargs)
+        return self.warning_once(*args, **kwargs)
 
     # logging functions also exposed by `logging.Logger`
 
