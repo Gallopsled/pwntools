@@ -109,9 +109,14 @@ def which_binutils(util):
     except AttributeError:
         log.warn_once("Your local binutils won't be used because architecture %r is not supported." % machine)
 
+    utils = [util]
+
+    # hack for homebrew-installed binutils on mac
+    if platform.system() == 'Darwin':
+        utils = ['g'+util, util]
+
     for arch in arches:
-        # hack for homebrew-installed binutils on mac
-        for gutil in ['g'+util, util]:
+        for gutil in utils:
             # e.g. objdump
             if arch is None: pattern = gutil
 
