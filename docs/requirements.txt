@@ -4,3 +4,5 @@ mako
 pyelftools
 sphinxcontrib-napoleon
 sphinxcontrib-autoprogram
+sphinx_rtd_theme
+doc2dash
