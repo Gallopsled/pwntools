@@ -55,7 +55,7 @@ Each of the ``pwntools`` modules is documented here.
 
    Indices and tables
    ==================
-   
+
    * :ref:`genindex`
    * :ref:`modindex`
    * :ref:`search`

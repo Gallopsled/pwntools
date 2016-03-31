@@ -11,7 +11,9 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os, subprocess
+import os
+import subprocess
+import sys
 
 build_dash = tags.has('dash')
 
@@ -330,4 +332,3 @@ if build_dash:
         html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
     # otherwise, readthedocs.org uses their theme by default, so no need to specify it
-
