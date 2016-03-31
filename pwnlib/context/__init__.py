@@ -566,9 +566,8 @@ class ContextType(object):
             True
         """
 
-        # Lowercase, remove everything non-alphanumeric
+        # Lowercase
         arch = arch.lower()
-        arch = arch.replace(string.punctuation, '')
 
         # Attempt to perform convenience and legacy compatibility
         # transformations.
