@@ -351,6 +351,7 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
     if execute:
         tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.gdb',
                                           delete = False)
+        log.debug('Wrote gdb script to %r\n%s' % (tmp.name, execute))
         tmp.write(execute)
         tmp.close()
         atexit.register(lambda: os.unlink(tmp.name))
