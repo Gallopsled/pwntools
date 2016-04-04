@@ -41,6 +41,7 @@ Each of the ``pwntools`` modules is documented here.
    memleak
    replacements
    rop
+   runner
    shellcraft
    shellcraft/*
    term

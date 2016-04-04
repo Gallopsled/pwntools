@@ -23,6 +23,7 @@ __all__ = [
     'regsort',
     'replacements',
     'rop',
+    'runner',
     'shellcraft',
     'term',
     'tubes',
