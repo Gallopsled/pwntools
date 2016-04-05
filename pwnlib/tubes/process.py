@@ -731,19 +731,11 @@ class process(tube):
 
     @property
     def corefile(self):
-        # Prevent gdb.attach from spawning a new window
-        with context.local(terminal = ['sh', '-c']): # , log_level='error'):
-            filename = '%s.core' % (self.pid)
+        filename = 'core.%i' % (self.pid)
+        process(['gcore', '-o', 'core', str(self.pid)]).wait()
 
-            # Hurray cyclic dependencies!
-            import pwnlib.gdb
-            pid = pwnlib.gdb.attach(self, 'gcore %s\ndetach\nexit' % filename)
-
-            import pwnlib.util.proc
-            pwnlib.util.proc.wait_for_debugger_detach(self.pid)
-
-            import pwnlib.elf.corefile
-            return pwnlib.elf.corefile.Core(filename)
+        import pwnlib.elf.corefile
+        return pwnlib.elf.corefile.Core(filename)
 
     def leak(self, address, count=0):
         """Leaks memory within the process at the specified address.
