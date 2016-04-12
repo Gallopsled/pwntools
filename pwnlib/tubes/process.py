@@ -266,8 +266,9 @@ class process(tube):
             exception = None
 
             try:
-                qemu = get_qemu_user()
-                prefixes.append(([qemu], qemu))
+                if not context.native:
+                    qemu = get_qemu_user()
+                    prefixes.append(([qemu], qemu))
             except: pass
 
             for prefix, executable in prefixes:
