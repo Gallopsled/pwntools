@@ -1,5 +1,8 @@
 from .context import context, LocalContext
+from .log import getLogger
 from .util import misc
+
+log = getLogger(__name__)
 
 @LocalContext
 def get_qemu_arch():
