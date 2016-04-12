@@ -82,11 +82,14 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
     if ssh:
         runner  = ssh.process
         which   = ssh.which
+    elif context.os == 'android':
+        runner  = lambda p, *a, **kw: tubes.process.process(['adb','shell'] + list(p), *a, **kw)
+        which   = lambda *a, **kw: runner(['which'] + list(a), **kw).recvall().strip()
     else:
         runner  = tubes.process.process
         which   = misc.which
 
-    if ssh or context.native:
+    if ssh or context.native or (context.os == 'android'):
         gdbserver = which('gdbserver')
 
         if not gdbserver:
@@ -109,7 +112,7 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
 
     gdbserver = runner(args, executable=exe, env=env)
 
-    if context.native:
+    if context.native or (context.os == 'android'):
         # Process /bin/bash created; pid = 14366
         # Listening on port 34816
         process_created = gdbserver.recvline()
@@ -120,6 +123,14 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
         port = int(listening_on.split()[-1])
     else:
         port = qemu_port
+
+    if (context.os == 'android'):
+        tcp_port = 'tcp:%s' % port
+        start_forwarding = ['adb', 'forward', tcp_port, tcp_port]
+        stop_forwarding = ['adb', 'forward', '--remove', tcp_port]
+
+        tubes.process.process(start_forwarding, level='debug').recvall()
+        atexit.register(lambda: tubes.process.process(stop_forwarding, level='debug').recvall())
 
     listener = remote = None
 
@@ -208,7 +219,9 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
                 '$ apt-get install gdb-multiarch')
         pre += 'set endian %s\n' % context.endian
         pre += 'set architecture %s\n' % get_gdb_arch()
-        # pre += 'set gnutarget ' + _bfdname() + '\n'
+
+        if context.os == 'android':
+            pre += 'set gnutarget ' + _bfdname() + '\n'
     else:
         # If ptrace_scope is set and we're not root, we cannot attach to a
         # running process.
@@ -338,7 +351,7 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
     if not cmd:
         log.error('no gdb installed')
 
-    if exe:
+    if exe and context.native:
         if not os.path.isfile(exe):
             log.error('no such file: %s' % exe)
         cmd += ' "%s"' % exe
