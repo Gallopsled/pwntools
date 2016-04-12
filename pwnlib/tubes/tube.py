@@ -128,7 +128,7 @@ class tube(Timeout, Logger):
             self.debug('Received %#x bytes:' % len(data))
 
             if len(set(data)) == 1 and len(data) > 1:
-                self.indented('%r * %#x' % (data[0], len(data)))
+                self.indented('%r * %#x' % (data[0], len(data)), level = logging.DEBUG)
             elif all(c in string.printable for c in data):
                 for line in data.splitlines(True):
                     self.indented(repr(line), level = logging.DEBUG)
