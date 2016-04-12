@@ -2,6 +2,7 @@ import base64
 import errno
 import os
 import re
+import platform
 import socket
 import stat
 import string
@@ -213,9 +214,11 @@ def run_in_new_terminal(command, terminal = None, args = None):
     log.debug("Launching a new terminal: %r" % argv)
 
     if os.fork() == 0:
-        os.close(0)
-        os.close(1)
-        os.close(2)
+        # Closing the file descriptors makes everything fail under tmux on OSX.
+        if platform.system() != 'Darwin':
+            os.close(0)
+            os.close(1)
+            os.close(2)
         os.execv(argv[0], argv)
         os._exit(1)
 
