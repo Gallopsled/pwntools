@@ -36,7 +36,7 @@ class process(tube):
             Set to `True` to interpret `argv` as a string
             to pass to the shell for interpretation instead of as argv.
         executable(str):
-            Path t`o the binary to execute.  If ``None``, uses ``argv[0]``.
+            Path to the binary to execute.  If ``None``, uses ``argv[0]``.
             Cannot be used with ``shell``.
         cwd(str):
             Working directory.  Uses the current working directory by default.
