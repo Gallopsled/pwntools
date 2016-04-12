@@ -538,6 +538,9 @@ class ContextType(object):
 
     @property
     def native(self):
+        if context.os in ('android', 'cgc'):
+            return False
+
         arch = context.arch
         with context.local(arch = platform.machine()):
             platform_arch = context.arch
