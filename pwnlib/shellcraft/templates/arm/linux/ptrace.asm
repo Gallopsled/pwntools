@@ -2,7 +2,7 @@
 <%
     from pwnlib.shellcraft.arm.linux import syscall
 %>
-<%page args="request, vararg"/>
+<%page args="request, *vararg"/>
 <%docstring>
 Invokes the syscall ptrace.  See 'man 2 ptrace' for more information.
 
@@ -11,4 +11,4 @@ Arguments:
     vararg(int): vararg
 </%docstring>
 
-    ${syscall('SYS_ptrace', request, vararg)}
+    ${syscall('SYS_ptrace', request, *vararg)}
