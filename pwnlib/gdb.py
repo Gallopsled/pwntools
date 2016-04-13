@@ -90,7 +90,14 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
         which   = misc.which
 
     if ssh or context.native or (context.os == 'android'):
-        gdbserver = which('gdbserver')
+        gdbserver = ''
+
+        # Android targets have a distinct gdbserver
+        if context.bits == 64:
+            gdbserver = which('gdbserver64')
+
+        if not gdbserver:
+            gdbserver = which('gdbserver')
 
         if not gdbserver:
             log.error("gdbserver is not installed")
@@ -118,7 +125,10 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
         process_created = gdbserver.recvline()
         gdbserver.pid   = int(process_created.split()[-1], 0)
         gdbserver.executable = which(orig_args[0])
-        listening_on    = gdbserver.recvline()
+
+        listening_on = ''
+        while 'Listening' not in listening_on:
+            listening_on    = gdbserver.recvline()
 
         port = int(listening_on.split()[-1])
     else:
