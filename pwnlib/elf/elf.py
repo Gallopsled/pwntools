@@ -92,16 +92,16 @@ class ELF(ELFFile):
                 self.arch = 'mips64'
                 self.bits = 64
 
-        self._populate_got_plt()
-        self._populate_symbols()
-        self._populate_libraries()
-        self._populate_functions()
-
         if self.elftype == 'DYN':
             self._address = 0
         else:
             self._address = min(filter(bool, (s.header.p_vaddr for s in self.segments)))
         self.load_addr = self._address
+
+        self._populate_got_plt()
+        self._populate_symbols()
+        self._populate_libraries()
+        self._populate_functions()
 
         self._describe()
 
@@ -446,10 +446,24 @@ class ELF(ELFFile):
             'aarch64': (0x20, 0x20),
         }.get(self.arch, (0,0))
 
+        address = plt.header.sh_addr + header_size
 
         # Based on the ordering of the GOT symbols, populate the PLT
         for i,(addr,name) in enumerate(sorted((addr,name) for name, addr in self.got.items())):
-            self.plt[name] = plt.header.sh_addr + header_size + i*entry_size
+            self.plt[name] = address
+
+            # Some PLT entries in ARM binaries have a thumb-mode stub that looks like:
+            #
+            # 00008304 <__gmon_start__@plt>:
+            #     8304:   4778        bx  pc
+            #     8306:   46c0        nop         ; (mov r8, r8)
+            #     8308:   e28fc600    add ip, pc, #0, 12
+            #     830c:   e28cca08    add ip, ip, #8, 20  ; 0x8000
+            #     8310:   e5bcf228    ldr pc, [ip, #552]! ; 0x228
+            if self.arch in ('arm', 'thumb') and packing.u16(self.read(address, 2)) == 0x4778:
+                address += 4
+
+            address += entry_size
 
     def search(self, needle, writable = False):
         """search(needle, writable = False) -> str generator
@@ -834,8 +848,8 @@ class ELF(ELFFile):
     @property
     def ubsan(self):
         return any(s.startswith('__ubsan_') for s in self.symbols)
-    
-   
+
+
 
     def p64(self,  address, data, *a, **kw):    return self.write(address, packing.p64(data, *a, **kw))
     def p32(self,  address, data, *a, **kw):    return self.write(address, packing.p32(data, *a, **kw))
