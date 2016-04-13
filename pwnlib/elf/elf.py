@@ -460,7 +460,7 @@ class ELF(ELFFile):
             #     8308:   e28fc600    add ip, pc, #0, 12
             #     830c:   e28cca08    add ip, ip, #8, 20  ; 0x8000
             #     8310:   e5bcf228    ldr pc, [ip, #552]! ; 0x228
-            if self.arch in ('arm', 'thumb') and packing.u16(self.read(address, 2)) == 0x4778:
+            if self.arch in ('arm', 'thumb') and self.u16(address) == 0x4778:
                 address += 4
 
             address += entry_size
