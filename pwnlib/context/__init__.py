@@ -12,6 +12,7 @@ import platform
 import socks
 import socket
 import string
+import subprocess
 import sys
 import threading
 import time
@@ -320,11 +321,12 @@ class ContextType(object):
 
     #: Default values for :class:`pwnlib.context.ContextType`
     defaults = {
+        'adb_host': os.getenv('ANDROID_ADB_SERVER_HOST', '127.0.0.1'),
+        'adb_port': os.getenv('ANDROID_ADB_SERVER_PORT', 5037),
         'arch': 'i386',
         'aslr': True,
         'binary': None,
         'bits': 32,
-        'device': os.environ.get('ANDROID_SERIAL', None),
         'endian': 'little',
         'kernel': None,
         'log_level': logging.INFO,
@@ -1008,16 +1010,35 @@ class ContextType(object):
         """
         return bool(value)
 
+
     @_validator
-    def device(self, value):
-        """Sets a target device for local, attached-device debugging.
+    def adb_host(self, value):
+        """Sets the target host which is used for ADB.
 
-        This is useful for local Android exploitation.
+        This is useful for Android exploitation.
 
-        This option automatically inherits the ANDROID_SERIAL environment
-        value.
+        The default value is inherited from ANDROID_ADB_SERVER_HOST, or set
+        to the default 'localhost'.
         """
         return str(value)
+
+
+    @_validator
+    def adb_port(self, value):
+        """Sets the target port which is used for ADB.
+
+        This is useful for Android exploitation.
+
+        The default value is inherited from ANDROID_ADB_SERVER_PORT, or set
+        to the default 5037.
+        """
+        return int(value)
+
+    @property
+    def adb(self):
+        """Returns an argument array for connecting to adb."""
+        return ['adb', '-H', self.adb_host, '-P', str(self.adb_port)]
+
 
     #*************************************************************************
     #                               ALIASES

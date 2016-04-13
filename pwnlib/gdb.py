@@ -83,7 +83,7 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
         runner  = ssh.process
         which   = ssh.which
     elif context.os == 'android':
-        runner  = lambda p, *a, **kw: tubes.process.process(['adb','shell'] + list(p), *a, **kw)
+        runner  = lambda p, *a, **kw: tubes.process.process(context.adb + ['shell'] + list(p), *a, **kw)
         which   = lambda *a, **kw: runner(['which'] + list(a), **kw).recvall().strip()
     else:
         runner  = tubes.process.process
@@ -136,8 +136,8 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
 
     if (context.os == 'android'):
         tcp_port = 'tcp:%s' % port
-        start_forwarding = ['adb', 'forward', tcp_port, tcp_port]
-        stop_forwarding = ['adb', 'forward', '--remove', tcp_port]
+        start_forwarding = context.adb + ['forward', tcp_port, tcp_port]
+        stop_forwarding = context.adb + ['forward', '--remove', tcp_port]
 
         tubes.process.process(start_forwarding, level='debug').recvall()
         atexit.register(lambda: tubes.process.process(stop_forwarding, level='debug').recvall())
