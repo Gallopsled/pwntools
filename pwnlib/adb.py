@@ -1,4 +1,5 @@
 import os
+import re
 import tempfile
 
 from . import atexit
@@ -22,7 +23,9 @@ def adb(argv, *a, **kw):
 
 def root():
     serial = get_serialno()
-    reply  = adb('root')
+    
+    with context.local(log_level='error'):
+        reply  = adb('root')
 
     if 'restarting adbd as root' not in reply \
     and 'adbd is already running as root' not in reply:
@@ -32,27 +35,38 @@ def root():
 
 def reboot(wait=True):
     serial = get_serialno()
-    adb('reboot')
+    
+    with context.local(log_level='error'):
+        adb('reboot')
 
     if wait: wait_for_device(serial)
 
 def reboot_bootloader():
-    adb('reboot-bootloader')
+    with context.local(log_level='error'):
+        adb('reboot-bootloader')
 
 def get_serialno():
-    reply = adb('get-serialno')
+    with context.local(log_level='error'):
+        reply = adb('get-serialno')
+
     if 'unknown' in reply:
         log.error("No devices connected")
     return reply.strip()
 
 def wait_for_device(serial=None):
     msg = "Waiting for device %s to come online" % (serial or '(any)')
-    with log.waitfor(msg):
-        adb('wait-for-device', serial=serial)
-        return serial or get_serialno()
+    with log.waitfor(msg) as w:
+        with context.local(log_level='error'):
+            adb('wait-for-device', serial=serial)
+
+        if not serial:
+            serial = get_serialno()
+            w.success(serial)
+    return serial
 
 def foreach(callable=None):
-    reply = adb('devices')
+    with context.local(log_level='error'):
+        reply = adb('devices')
 
     for line in reply.splitlines():
         if 'List of devices' in line:
@@ -80,7 +94,8 @@ def foreach(callable=None):
 def disable_verity():
     root()
 
-    reply = adb('disable-verity')
+    with context.local(log_level='error'):
+        reply = adb('disable-verity')
 
     if 'Verity already disabled' in reply:
         return
@@ -91,13 +106,15 @@ def disable_verity():
 
 
 def remount():
-    reply = adb('remount')
+    with context.local(log_level='error'):
+        reply = adb('remount')
 
     if 'remount succeeded' not in reply:
         log.error("Could not remount filesystem:\n%s" % reply)
 
 def unroot():
-    reply  = adb('unroot')
+    with context.local(log_level='error'):
+        reply  = adb('unroot')
 
     if 'restarting adbd as non root' not in reply:
         log.error("Could not run as root:\n%s" % reply)
@@ -134,7 +151,8 @@ def shell():
     return process([])
 
 def which(name):
-    return process(['which', name]).recvall().strip()
+    with context.local(log_level='error'):
+        return process(['which', name]).recvall().strip()
 
 def forward(port):
     tcp_port = 'tcp:%s' % port
@@ -145,11 +163,47 @@ def logcat(extra='-d'):
     return adb(['logcat', extra])
 
 def pidof(name):
-    io = process(['pidof', name])
-    data = io.recvall().split()
+    with context.local(log_level='error'):
+        io = process(['pidof', name])
+        data = io.recvall().split()
     return list(map(int, data))
 
 def proc_exe(pid):
-    io  = process(['readlink','-e','/proc/%d/exe' % pid])
-    data = io.recvall().strip()
+    with context.local(log_level='error'):
+        io  = process(['readlink','-e','/proc/%d/exe' % pid])
+        data = io.recvall().strip()
     return data
+
+def getprop(name=None):
+    with context.local(log_level='error'):
+        if name:
+            return process(['getprop', name]).recvall().strip()
+
+
+        result = process(['getprop']).recvall()
+
+    expr = r'\[([^\]]+)\]: \[(.*)\]'
+
+    props = {}
+
+    for line in result.splitlines():
+        if not line.startswith('['):
+            continue
+
+        name, value = re.search(expr, line).groups()
+
+        if value.isdigit():
+            value = int(value)
+
+        props[name] = value
+
+    return props
+
+def fingerprint():
+    return getprop('ro.build.fingerprint')
+
+def product():
+    return getprop('ro.build.product')
+
+def build():
+    return getprop('ro.build.id')
