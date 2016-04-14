@@ -30,7 +30,8 @@ __all__ = [
     'tubes',
     'ui',
     'useragents',
-    'util'
+    'util',
+    'adb',
 ]
 
 for module in __all__:

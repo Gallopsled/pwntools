@@ -564,6 +564,7 @@ class ssh(Timeout, Logger):
                 self.client.connect(host, port, user, password, key, keyfiles, self.timeout, compress = True)
 
             self.transport = self.client.get_transport()
+            self.transport.use_compression(True)
 
             h.success()
 
