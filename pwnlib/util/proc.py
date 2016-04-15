@@ -75,16 +75,22 @@ def pid_by_name(name):
         True
     """
     def match(p):
-         if p.name() == name:
-             return True
-         try:
-             if p.exe() == name:
-                 return True
-         except Exception:
-             pass
-         return False
+        if p.status() == 'zombie':
+            return False
+        if p.name() == name:
+            return True
+        try:
+            if p.exe() == name:
+                return True
+        except Exception:
+            pass
+        return False
 
-    return [p.pid for p in psutil.process_iter() if match(p)]
+    processes = (p for p in psutil.process_iter() if match(p))
+
+    processes = sorted(processes, key=lambda p: p.create_time())
+
+    return list(reversed([p.pid for p in processes]))
 
 def name(pid):
     """name(pid) -> str
