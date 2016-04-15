@@ -23,30 +23,36 @@ def adb(argv, *a, **kw):
 
 def root():
     serial = get_serialno()
+    log.info("Enabling root on %s" % serial)
     
-    with context.local(log_level='error'):
+    with context.quiet:
         reply  = adb('root')
 
-    if 'restarting adbd as root' not in reply \
+    if reply and 'restarting adbd as root' not in reply \
     and 'adbd is already running as root' not in reply:
         log.error("Could not run as root:\n%s" % reply)
 
-    wait_for_device(serial)
+    with context.quiet:
+        wait_for_device(serial)
 
 def reboot(wait=True):
     serial = get_serialno()
+
+    log.info('Rebooting device %s' % serial)
     
-    with context.local(log_level='error'):
+    with context.quiet:
         adb('reboot')
 
     if wait: wait_for_device(serial)
 
 def reboot_bootloader():
-    with context.local(log_level='error'):
+    log.info('Rebooting %s to bootloader' % serial)
+
+    with context.quiet:
         adb('reboot-bootloader')
 
 def get_serialno():
-    with context.local(log_level='error'):
+    with context.quiet:
         reply = adb('get-serialno')
 
     if 'unknown' in reply:
@@ -56,7 +62,7 @@ def get_serialno():
 def wait_for_device(serial=None):
     msg = "Waiting for device %s to come online" % (serial or '(any)')
     with log.waitfor(msg) as w:
-        with context.local(log_level='error'):
+        with context.quiet:
             adb('wait-for-device', serial=serial)
 
         if not serial:
@@ -65,7 +71,7 @@ def wait_for_device(serial=None):
     return serial
 
 def foreach(callable=None):
-    with context.local(log_level='error'):
+    with context.quiet:
         reply = adb('devices')
 
     for line in reply.splitlines():
@@ -92,28 +98,33 @@ def foreach(callable=None):
                 del os.environ['ANDROID_SERIAL']
 
 def disable_verity():
-    root()
+    with log.waitfor("Disabling dm-verity on %s" % get_serialno()):
+        root()
 
-    with context.local(log_level='error'):
-        reply = adb('disable-verity')
+        with context.quiet:
+            reply = adb('disable-verity')
 
-    if 'Verity already disabled' in reply:
-        return
-    elif 'Now reboot your device' in reply:
-        reboot(wait=True)
-    else:
-        log.error("Could not disable verity:\n%s" % reply)
+        if 'Verity already disabled' in reply:
+            return
+        elif 'Now reboot your device' in reply:
+            reboot(wait=True)
+        else:
+            log.failure("Could not disable verity:\n%s" % reply)
 
 
 def remount():
-    with context.local(log_level='error'):
-        reply = adb('remount')
+    with log.waitfor("Remounting filesystem on %s" % get_serialno()) as w:
+        disable_verity()
+    
+        with context.quiet:
+            reply = adb('remount')
 
-    if 'remount succeeded' not in reply:
-        log.error("Could not remount filesystem:\n%s" % reply)
+        if 'remount succeeded' not in reply:
+            log.failure("Could not remount filesystem:\n%s" % reply)
 
 def unroot():
-    with context.local(log_level='error'):
+    log.info("Unrooting %s" % get_serialno())
+    with context.quiet:
         reply  = adb('unroot')
 
     if 'restarting adbd as non root' not in reply:
@@ -121,7 +132,7 @@ def unroot():
 
 
 def read(path, target=None):
-    with tempfile.TemporaryFile() as temp:
+    with tempfile.NamedTemporaryFile() as temp:
         target = target or temp.name
         reply  = adb(['pull', path, target])
 
@@ -132,7 +143,7 @@ def read(path, target=None):
     return result
 
 def write(path, data=''):
-    with tempfile.TemporaryFile() as temp:
+    with tempfile.NamedTemporaryFile() as temp:
         misc.write(temp.name, data)
 
         reply  = adb(['push', temp.name, path])
@@ -147,11 +158,11 @@ def process(argv, *a, **kw):
     argv = context.adb + ['shell'] + argv
     return tubes.process.process(argv, *a, **kw)
 
-def shell():
-    return process([])
+def shell(**kw):
+    return process([], level='info', **kw).interactive()
 
 def which(name):
-    with context.local(log_level='error'):
+    with context.quiet:
         return process(['which', name]).recvall().strip()
 
 def forward(port):
@@ -163,19 +174,19 @@ def logcat(extra='-d'):
     return adb(['logcat', extra])
 
 def pidof(name):
-    with context.local(log_level='error'):
+    with context.quiet:
         io = process(['pidof', name])
         data = io.recvall().split()
     return list(map(int, data))
 
 def proc_exe(pid):
-    with context.local(log_level='error'):
+    with context.quiet:
         io  = process(['readlink','-e','/proc/%d/exe' % pid])
         data = io.recvall().strip()
     return data
 
 def getprop(name=None):
-    with context.local(log_level='error'):
+    with context.quiet:
         if name:
             return process(['getprop', name]).recvall().strip()
 

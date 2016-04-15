@@ -511,6 +511,16 @@ class ContextType(object):
         """
         return self.local(log_level='error')
 
+    @property
+    def quiet(self):
+        """Disables all non-error logging within the enclosed scope,
+        *unless* the debugging level is set to 'debug' or lower."""
+        level = 'error'
+        if context.log_level <= logging.DEBUG:
+            level = None
+        return self.local(log_level=level)
+
+
     def clear(self, *a, **kw):
         """
         Clears the contents of the context.

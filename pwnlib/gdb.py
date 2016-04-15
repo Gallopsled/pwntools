@@ -51,7 +51,7 @@ def debug_shellcode(data, execute=None, vma=None):
     return debug(tmp_elf, execute=execute, arch=context.arch)
 
 def _gdbserver_args(pid=None, path=None, args=None, which=None):
-    """_gdbserver_port_forward(pid=None, path=None) -> list
+    """_gdbserver_args(pid=None, path=None) -> list
 
     Sets up a listening gdbserver, to either connect to the specified
     PID, or launch the specified binary by its full path.
@@ -91,6 +91,10 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None):
     gdbserver_args = [gdbserver]
     if context.aslr:
         gdbserver_args += ['--no-disable-randomization']
+
+    if pid:
+        gdbserver_args += ['--once', '--attach']
+
     gdbserver_args += ['localhost:0']
     gdbserver_args += args
 
@@ -305,9 +309,9 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
 
         pids = pidof(target)
         if not pids:
-            log.error('no such process: %s' % target)
+            log.error('No such process: %s' % target)
         pid = pids[0]
-        log.info('attaching you youngest process "%s" (PID = %d)' %
+        log.info('Attaching to youngest process "%s" (PID = %d)' %
                  (target, pid))
     elif isinstance(target, tubes.ssh.ssh_channel):
         if not target.pid:
@@ -417,8 +421,17 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
             log.error('no such file: %s' % exe)
         cmd += ' "%s"' % exe
 
-    if pid:
+    if pid and not context.os == 'android':
         cmd += ' %d' % pid
+
+    if context.os == 'android' and pid:
+        runner  = _get_runner()
+        which   = _get_which()
+        gdb_cmd = _gdbserver_args(pid=pid, which=which)
+        gdbserver = runner(gdb_cmd)
+        port    = _gdbserver_port(gdbserver, None)
+        host    = context.adb_host
+        pre    += 'target remote %s:%i' % (context.adb_host, port)
 
     execute = pre + (execute or '')
 
@@ -433,7 +446,7 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
 
     log.info('running in new terminal: %s' % cmd)
     misc.run_in_new_terminal(cmd)
-    if pid:
+    if pid and context.native:
         proc.wait_for_debugger(pid)
     return pid
 
