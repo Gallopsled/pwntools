@@ -42,7 +42,7 @@ class _local_handler(object):
         self.old_stop     = self.obj._stop
 
         self.obj._stop    = 0
-        self.obj._timeout = self.timeout # leverage validation
+        self.obj._timeout = self.timeout
         self.obj.timeout_change()
 
     def __exit__(self, *a):
@@ -152,7 +152,7 @@ class Timeout(object):
         else:
             value = float(value)
 
-            if value is value < 0:
+            if value < 0:
                 raise AttributeError("timeout: Timeout cannot be negative")
 
             if value > self.maximum:
@@ -199,6 +199,7 @@ class Timeout(object):
         and restores it when leaving the scope.
         """
         if timeout is self.default or timeout == self.timeout:
+            self.timeout_change()
             return _DummyContext
 
         return _local_handler(self, timeout)
