@@ -210,7 +210,13 @@ def run_in_new_terminal(command, terminal = None, args = None):
     if not terminal_path:
         log.error('Could not find terminal: %s' % terminal)
 
-    argv = [terminal_path] + args + [command]
+    argv = [terminal_path] + args
+
+    if isinstance(command, str):
+        argv += [command]
+    elif isinstance(command, (list, tuple)):
+        argv += list(command)
+
     log.debug("Launching a new terminal: %r" % argv)
 
     if os.fork() == 0:
