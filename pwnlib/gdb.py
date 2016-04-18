@@ -28,7 +28,16 @@ def debug_assembly(asm, execute=None, vma=None):
     """
     tmp_elf = make_elf_from_assembly(asm, vma=vma, extract=False)
     os.chmod(tmp_elf, 0777)
-    atexit.register(lambda: os.unlink(tmp_elf))
+
+    def unlink():
+        with context.silent: os.unlink(tmp_elf)
+    atexit.register(lambda: unlink)
+
+    if context.os == 'android':
+        android_path = '/data/data/%s' % os.path.basename(tmp_elf)
+        adb.push(tmp_elf, android_path)
+        tmp_elf = android_path
+
     return debug(tmp_elf, execute=execute, arch=context.arch)
 
 @LocalContext
@@ -47,7 +56,16 @@ def debug_shellcode(data, execute=None, vma=None):
         log.error("Shellcode is cannot be unicode.  Did you mean debug_assembly?")
     tmp_elf = make_elf(data, extract=False, vma=vma)
     os.chmod(tmp_elf, 0777)
-    atexit.register(lambda: os.unlink(tmp_elf))
+
+    def unlink():
+        with context.silent: os.unlink(tmp_elf)
+    atexit.register(lambda: unlink)
+
+    if context.os == 'android':
+        android_path = '/data/data/%s' % os.path.basename(tmp_elf)
+        adb.push(tmp_elf, android_path)
+        tmp_elf = android_path
+
     return debug(tmp_elf, execute=execute, arch=context.arch)
 
 def _gdbserver_args(pid=None, path=None, args=None, which=None):
