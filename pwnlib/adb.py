@@ -1,3 +1,4 @@
+import dateutil.parser
 import os
 import re
 import tempfile
@@ -19,7 +20,7 @@ def adb(argv, *a, **kw):
     if serial:
         argv = ['-s', serial] + argv
 
-    return tubes.process.process(context.adb + argv).recvall()
+    return tubes.process.process(context.adb + argv, *a, **kw).recvall()
 
 def root():
     serial = get_serialno()
@@ -65,9 +66,12 @@ def wait_for_device(serial=None):
         with context.quiet:
             adb('wait-for-device', serial=serial)
 
-        if not serial:
-            serial = get_serialno()
-            w.success(serial)
+        serial = get_serialno()
+        w.success('%s (%s %s %s)' % (serial,
+                                     product(),
+                                     build(),
+                                     _build_date()))
+
     return serial
 
 def foreach(callable=None):
@@ -98,7 +102,7 @@ def foreach(callable=None):
                 del os.environ['ANDROID_SERIAL']
 
 def disable_verity():
-    with log.waitfor("Disabling dm-verity on %s" % get_serialno()):
+    with log.waitfor("Disabling dm-verity on %s" % get_serialno()) as w:
         root()
 
         with context.quiet:
@@ -109,7 +113,7 @@ def disable_verity():
         elif 'Now reboot your device' in reply:
             reboot(wait=True)
         else:
-            log.failure("Could not disable verity:\n%s" % reply)
+            log.error("Could not disable verity:\n%s" % reply)
 
 
 def remount():
@@ -120,7 +124,7 @@ def remount():
             reply = adb('remount')
 
         if 'remount succeeded' not in reply:
-            log.failure("Could not remount filesystem:\n%s" % reply)
+            log.error("Could not remount filesystem:\n%s" % reply)
 
 def unroot():
     log.info("Unrooting %s" % get_serialno())
@@ -130,6 +134,32 @@ def unroot():
     if 'restarting adbd as non root' not in reply:
         log.error("Could not run as root:\n%s" % reply)
 
+def pull(remote_path, local_path=None):
+    if local_path is None:
+        local_path = os.path.basename(remote_path)
+    
+    msg = "Pulling %r from %r" % (remote_path, local_path)
+
+    if context.log_level == 'debug':
+        msg += ' (%s)' % get_serialno()
+
+    with log.waitfor(msg) as w:
+        reply = adb(['pull', remote_path, local_path])
+
+        if ' bytes in ' not in reply:
+            log.error(reply)
+
+def push(local_path, remote_path):
+    msg = "Pushing %r to %r" % (local_path, remote_path) 
+
+    if context.log_level == 'debug':
+        msg += ' (%s)' % get_serialno()
+
+    with log.waitfor(msg) as w:
+        reply = adb(['push', local_path, remote_path])
+
+        if ' bytes in ' not in reply:
+            log.error(reply)
 
 def read(path, target=None):
     with tempfile.NamedTemporaryFile() as temp:
@@ -171,7 +201,12 @@ def forward(port):
     atexit.register(lambda: adb(['forward', '--remove', tcp_port]))
 
 def logcat(extra='-d'):
-    return adb(['logcat', extra])
+    with context.quiet:
+        return adb(['logcat', extra])
+
+def logcat_stream():
+    with context.local(log_level='debug'):
+        return process(['logcat']).recvall()
 
 def pidof(name):
     with context.quiet:
@@ -218,3 +253,9 @@ def product():
 
 def build():
     return getprop('ro.build.id')
+
+def _build_date():
+    """Returns the build date in the form YYYY-MM-DD as a string"""
+    as_string = getprop('ro.build.date')
+    as_datetime =  dateutil.parser.parse(as_string)
+    return as_datetime.strftime('%Y-%b-%d')
