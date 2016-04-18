@@ -380,7 +380,10 @@ def make_elf_from_assembly(assembly, vma = 0x10000000, extract=False):
             assembly = to_thumb + assembly
 
     path = asm(assembly, vma = vma, extract = extract)
-    os.chmod(path, 0755)
+
+    if not extract:
+        os.chmod(path, 0755)
+
     return path
 
 @LocalContext
