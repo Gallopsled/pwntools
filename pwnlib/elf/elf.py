@@ -12,6 +12,8 @@ from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 
+from .. import adb
+
 from ..asm import *
 from ..context import context, LocalContext
 from ..log import getLogger
@@ -148,6 +150,8 @@ class ELF(ELFFile):
         return ELF(make_elf(bytes, extract=False, *a, **kw))
 
     def process(self, argv=[], *a, **kw):
+        if context.os == 'android':
+            process = adb.process
         return process([self.path] + argv, *a, **kw)
 
     def _describe(self):
