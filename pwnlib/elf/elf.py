@@ -150,9 +150,10 @@ class ELF(ELFFile):
         return ELF(make_elf(bytes, extract=False, *a, **kw))
 
     def process(self, argv=[], *a, **kw):
+        p = process
         if context.os == 'android':
-            process = adb.process
-        return process([self.path] + argv, *a, **kw)
+            p = adb.process
+        return p([self.path] + argv, *a, **kw)
 
     def _describe(self):
         log.info_once('\n'.join((repr(self.path),
