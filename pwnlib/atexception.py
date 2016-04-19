@@ -85,10 +85,7 @@ def _run_handlers():
             traceback.print_exception(typ, val, tb.tb_next)
 
 # we rely on the existing excepthook to print exceptions
-if hasattr(sys, 'excepthook'):
-    _oldhook = sys.excepthook
-else:
-    _oldhook = None
+_oldhook = getattr(sys, 'excepthook', None)
 
 def _newhook(typ, val, tb):
     """_newhook(typ, val, tb)
