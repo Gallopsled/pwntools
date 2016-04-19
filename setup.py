@@ -42,7 +42,8 @@ install_requires     = ['paramiko>=1.15.2',
                         'pip>=6.0.8',
                         'tox>=1.8.1',
                         'pygments>=2.0',
-                        'pysocks']
+                        'pysocks',
+                        'python-dateutil']
 
 # This is a hack until somebody ports psutil to OpenBSD
 if platform.system() != 'OpenBSD':
