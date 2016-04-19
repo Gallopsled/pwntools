@@ -74,7 +74,9 @@ def _run_handlers():
     for _ident, (func, args, kwargs, ctx) in \
         sorted(_handlers.items(), reverse = True):
         try:
-            with context.local(**ctx):
+            with context.local():
+                context.clear()
+                context.update(**ctx)
                 func(*args, **kwargs)
         except SystemExit:
             pass
