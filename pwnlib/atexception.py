@@ -71,7 +71,6 @@ def _run_handlers():
     If a handler raises an exception, it will be printed but nothing else
     happens, i.e. other handlers will be run.
     """
-    context.clear()
     for _ident, (func, args, kwargs, ctx) in \
         sorted(_handlers.items(), reverse = True):
         try:
