@@ -1,3 +1,4 @@
+from .context import context
 from .log import getLogger
 from .util.packing import pack
 from .util.packing import unpack
@@ -240,6 +241,13 @@ class MemLeak(object):
             True
         """
         return self._b(addr, ndx, 8)
+
+    def p(self, addr, ndx = 0):
+        """p(addr, ndx = 0) -> int
+
+        Leak a pointer-width value at ``((void**) addr)[ndx]``
+        """
+        return self._b(addr, ndx, context.bytes)
 
     def s(self, addr):
         r"""s(addr) -> str
