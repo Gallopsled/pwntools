@@ -625,6 +625,15 @@ def fit(pieces, **kwargs):
         pieces_[k] = v
     pieces = pieces_
 
+    # convert values to their flattened forms
+    for k,v in pieces.items():
+        pieces[k] = _flat([v], preprocessor, packer)
+
+    # if we were provided a length, make sure everything fits
+    last = max(pieces)
+    if length and last and (last + len(pieces[last]) > length):
+        raise ValueError("fit(): Pieces do not fit within `length` (= %d) bytes" % length)
+
     # insert data into output
     out = list(out)
     l = 0
@@ -635,6 +644,11 @@ def fit(pieces, **kwargs):
             out.append(filler.next())
         v = _flat([v], preprocessor, packer)
         l = k + len(v)
+
+        # consume the filler for each byte of actual data
+        for i in range(len(out), l):
+            filler.next()
+
         out[k:l] = v
 
     # truncate/pad output
