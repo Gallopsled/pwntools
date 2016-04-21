@@ -611,6 +611,12 @@ def fit(pieces, **kwargs):
     filler = iters.cycle(filler)
     out = ''
 
+    if not length and not pieces:
+        return ''
+
+    if not pieces:
+        return ''.join(filler.next() for f in range(length))
+
     # convert str keys to offsets
     pieces_ = dict()
     for k, v in pieces.items():
