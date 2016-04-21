@@ -1,5 +1,6 @@
 from ..i386.delta import i386DeltaEncoder
 
+
 class amd64DeltaEncoder(i386DeltaEncoder):
     """
     amd64 encoder built on delta-encoding.

@@ -3,8 +3,10 @@
 import mmap
 import os
 import subprocess
+from collections import namedtuple
 
-from elftools.elf.constants import P_FLAGS, E_FLAGS
+from elftools.elf.constants import E_FLAGS
+from elftools.elf.constants import P_FLAGS
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.elffile import ELFFile
@@ -13,16 +15,15 @@ from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 
 from .. import adb
-
 from ..asm import *
-from ..context import context, LocalContext
+from ..context import LocalContext
+from ..context import context
 from ..log import getLogger
-from ..term import text
-from ..util import misc, packing
 from ..qemu import get_qemu_arch
+from ..term import text
 from ..tubes.process import process
-
-from collections import namedtuple
+from ..util import misc
+from ..util import packing
 
 log = getLogger(__name__)
 

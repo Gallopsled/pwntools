@@ -200,18 +200,22 @@ import re
 import sys
 import tempfile
 
+from . import srop
 from .. import abi
 from .. import constants
-
-from ..context import context, LocalContext
+from ..context import LocalContext
+from ..context import context
 from ..elf import ELF
 from ..log import getLogger
 from ..util import cyclic
 from ..util import lists
 from ..util import packing
 from ..util.packing import *
-from . import srop
-from .call import Call, StackAdjustment, AppendedArgument, CurrentStackPointer, NextGadgetAddress
+from .call import AppendedArgument
+from .call import Call
+from .call import CurrentStackPointer
+from .call import NextGadgetAddress
+from .call import StackAdjustment
 from .gadgets import Gadget
 
 log = getLogger(__name__)

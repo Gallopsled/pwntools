@@ -1,6 +1,8 @@
 from ..context import context
-from .packing import unpack
 from .fiddling import hexdump
+from .packing import unpack
+
+
 class linux_dirent(object):
     def __init__(self, buf):
         n = context.bytes

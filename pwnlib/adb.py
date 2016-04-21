@@ -1,7 +1,8 @@
-import dateutil.parser
 import os
 import re
 import tempfile
+
+import dateutil.parser
 
 from . import atexit
 from . import tubes

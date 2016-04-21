@@ -1,4 +1,5 @@
 from pwnlib.constants.constant import Constant
+
 terminate = Constant('terminate', 1)
 SYS_terminate = Constant('SYS_terminate', 1)
 __NR_terminate = Constant('__NR_terminate', 1)

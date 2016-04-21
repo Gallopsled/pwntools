@@ -5,8 +5,8 @@ from types import ModuleType
 
 from . import internal
 from .. import constants
-from ..util import packing
 from ..context import context
+from ..util import packing
 
 
 class module(ModuleType):

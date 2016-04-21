@@ -4,9 +4,9 @@ import argparse
 import os
 import re
 
-from pwnlib.context import context
 from pwnlib import constants
 from pwnlib.asm import cpp
+from pwnlib.context import context
 from pwnlib.util import safeeval
 
 from . import common

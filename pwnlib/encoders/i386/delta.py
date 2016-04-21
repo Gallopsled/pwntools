@@ -1,10 +1,13 @@
 import collections
-from random import randint, choice
+from random import choice
+from random import randint
+
 from ...asm import asm
 from ...asm import disasm
 from ...context import context
 from ...util.fiddling import hexdump
 from ..encoder import Encoder
+
 
 '''
 base:

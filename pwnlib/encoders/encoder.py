@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import collections
 import random
-import string
 import re
+import string
 
-from ..context import context, LocalContext
+from ..context import LocalContext
+from ..context import context
 from ..log import getLogger
 from ..util.fiddling import hexdump
 
@@ -160,4 +161,3 @@ def scramble(raw_bytes, *a, **kw):
     Accepts the same arguments as :func:`encode`.
     """
     return encode(raw_bytes, force=1, *a, **kw)
-

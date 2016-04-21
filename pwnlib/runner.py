@@ -1,8 +1,8 @@
 import os
 import tempfile
 
-from .elf import ELF
 from .context import LocalContext
+from .elf import ELF
 from .tubes.process import process
 
 __all__ = ['run_assembly', 'run_shellcode', 'run_assembly_exitcode', 'run_shellcode_exitcode']
@@ -88,4 +88,3 @@ def run_shellcode_exitcode(bytes):
     p = run_shellcode(bytes)
     p.wait_for_close()
     return p.poll()
-

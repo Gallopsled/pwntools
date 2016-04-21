@@ -162,7 +162,8 @@ Mipsel Example:
 from collections import namedtuple
 
 from ..abi import ABI
-from ..context import context, LocalContext
+from ..context import LocalContext
+from ..context import context
 from ..log import getLogger
 from ..util.packing import flat
 from ..util.packing import pack

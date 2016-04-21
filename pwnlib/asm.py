@@ -55,7 +55,8 @@ from os import path
 
 from . import atexit
 from . import shellcraft
-from .context import context, LocalContext
+from .context import LocalContext
+from .context import context
 from .log import getLogger
 
 log = getLogger(__name__)

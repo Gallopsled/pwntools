@@ -1,4 +1,5 @@
-from .context import context, LocalContext
+from .context import LocalContext
+from .context import context
 from .log import getLogger
 from .util import misc
 

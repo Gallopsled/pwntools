@@ -13,8 +13,8 @@ from ..context import context
 from ..log import getLogger
 from ..qemu import get_qemu_user
 from ..timeout import Timeout
-from ..util.misc import which
 from ..util.misc import parse_ldd_output
+from ..util.misc import which
 from .tube import tube
 
 log = getLogger(__name__)
@@ -752,4 +752,3 @@ class process(tube):
         with open('/proc/%i/mem' % self.pid, 'rb') as mem:
             mem.seek(address)
             return mem.read(count) or None
-

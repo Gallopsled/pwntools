@@ -1,6 +1,7 @@
 import os
-import struct
 import random
+import struct
+
 
 # +------------------------------------------------------------------------+
 # |                       RANDOM NUMBERS FUNCTIONS                         |

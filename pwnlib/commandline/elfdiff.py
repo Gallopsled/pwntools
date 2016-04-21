@@ -3,7 +3,9 @@ from argparse import ArgumentParser
 from subprocess import CalledProcessError
 from subprocess import check_output
 from tempfile import NamedTemporaryFile
+
 from pwn import *
+
 
 def dump(objdump, elf):
     n = NamedTemporaryFile(delete=False)

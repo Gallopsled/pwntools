@@ -6,8 +6,9 @@ import logging
 import os
 import string
 import sys
-from .context import context
+
 from . import term
+from .context import context
 
 term_mode  = True
 args       = collections.defaultdict(str)

@@ -24,8 +24,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from ...asm import asm
 from ... import shellcraft
+from ...asm import asm
 from ...context import context
 from ...util.fiddling import xor_key
 from ..encoder import Encoder

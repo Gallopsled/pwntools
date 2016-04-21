@@ -11,12 +11,13 @@
 #; but WITHOUT ANY WARRANTY; without even the implied warranty of
 #; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-from ...asm import asm
 from ... import shellcraft
+from ...asm import asm
 from ...context import context
-from ...util.lists import group
 from ...util.fiddling import xor_pair
+from ...util.lists import group
 from ..encoder import Encoder
+
 
 # Note shellcode assumes it's based at ecx
 

@@ -1,11 +1,13 @@
-import builder
 import binascii
 import random
-import sys
 import string
+import sys
 
-from ...encoder import Encoder
+import builder
+
 from ....context import context
+from ...encoder import Encoder
+
 
 class ArmEncoder(Encoder):
     arch = 'arm'

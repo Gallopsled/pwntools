@@ -1,8 +1,8 @@
 import base64
 import errno
 import os
-import re
 import platform
+import re
 import socket
 import stat
 import string

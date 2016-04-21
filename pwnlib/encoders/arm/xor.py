@@ -1,10 +1,11 @@
-from ...asm import asm
 from ... import shellcraft
+from ...asm import asm
 from ...context import context
-from ...util.lists import group
 from ...util.fiddling import xor_key
+from ...util.lists import group
 from ...util.packing import u8
 from ..encoder import Encoder
+
 
 class ArmXorEncoder(Encoder):
     r"""Generates an XOR decoder for ARM.

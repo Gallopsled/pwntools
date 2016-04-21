@@ -2,8 +2,10 @@
 """
 Topographical sort
 """
-from random import shuffle, randint
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
+from collections import defaultdict
+from random import randint
+from random import shuffle
 
 from .context import context
 from .log import getLogger

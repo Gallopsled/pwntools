@@ -8,12 +8,15 @@ from . import adb
 from . import atexit
 from . import elf
 from . import tubes
-from .asm import make_elf, make_elf_from_assembly, _bfdname
-from .context import context, LocalContext
+from .asm import _bfdname
+from .asm import make_elf
+from .asm import make_elf_from_assembly
+from .context import LocalContext
+from .context import context
 from .log import getLogger
+from .qemu import get_qemu_user
 from .util import misc
 from .util import proc
-from .qemu import get_qemu_user
 
 log = getLogger(__name__)
 

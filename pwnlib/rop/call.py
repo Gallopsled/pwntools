@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """Abstracting ROP calls
 """
+from ..abi import ABI
 from ..context import context
 from ..util import packing
-from ..abi   import ABI
+
+
 class Unresolved(object):
     """
     Encapsulates logic for deferring evaluation of a value used
@@ -232,4 +234,3 @@ class Call(object):
             else:
                 args.append(arg)
         return '%s(%s)' % (self.name or fmt % self.target, ', '.join(map(str, args)))
-

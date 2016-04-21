@@ -1,7 +1,7 @@
-import random_funcs
+import alphanum_byte
 import ARM_Instructions
 import builder
-import alphanum_byte
+import random_funcs
 
 #+---------------------------------------------------+*/
 #|                Builder Functions                  |*/

@@ -9,13 +9,14 @@ import functools
 import logging
 import os
 import platform
-import socks
 import socket
 import string
 import subprocess
 import sys
 import threading
 import time
+
+import socks
 
 from ..timeout import Timeout
 

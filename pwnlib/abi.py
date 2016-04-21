@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from .context import context, LocalContext
+from .context import LocalContext
+from .context import context
+
 
 class ABI(object):
     """

@@ -34,7 +34,8 @@ import struct
 import sys
 
 from . import iters
-from ..context import context, LocalContext
+from ..context import LocalContext
+from ..context import context
 
 mod = sys.modules[__name__]
 

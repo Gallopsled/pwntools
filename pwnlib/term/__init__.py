@@ -1,12 +1,12 @@
 import sys
 
+from . import completer
 from . import key
 from . import keymap
 from . import readline
 from . import term
 from . import termcap
 from . import text
-from . import completer
 
 # Re-exports (XXX: Are these needed?)
 output = term.output
