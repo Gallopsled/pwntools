@@ -25,7 +25,7 @@ def adb(argv, *a, **kw):
 def root():
     serial = get_serialno()
     log.info("Enabling root on %s" % serial)
-    
+
     with context.quiet:
         reply  = adb('root')
 
@@ -40,7 +40,7 @@ def reboot(wait=True):
     serial = get_serialno()
 
     log.info('Rebooting device %s' % serial)
-    
+
     with context.quiet:
         adb('reboot')
 
@@ -81,7 +81,7 @@ def foreach(callable=None):
     for line in reply.splitlines():
         if 'List of devices' in line:
             continue
-        
+
         if not line:
             continue
 
@@ -120,7 +120,7 @@ def remount():
     with log.waitfor("Remounting filesystem on %s" % get_serialno()) as w:
         disable_verity()
         root()
-    
+
         with context.quiet:
             reply = adb('remount')
 
@@ -138,26 +138,28 @@ def unroot():
 def pull(remote_path, local_path=None):
     if local_path is None:
         local_path = os.path.basename(remote_path)
-    
+
     msg = "Pulling %r from %r" % (remote_path, local_path)
 
     if context.log_level == 'debug':
         msg += ' (%s)' % get_serialno()
 
     with log.waitfor(msg) as w:
-        reply = adb(['pull', remote_path, local_path])
+        with context.quiet:
+            reply = adb(['pull', remote_path, local_path])
 
         if ' bytes in ' not in reply:
             log.error(reply)
 
 def push(local_path, remote_path):
-    msg = "Pushing %r to %r" % (local_path, remote_path) 
+    msg = "Pushing %r to %r" % (local_path, remote_path)
 
     if context.log_level == 'debug':
         msg += ' (%s)' % get_serialno()
 
     with log.waitfor(msg) as w:
-        reply = adb(['push', local_path, remote_path])
+        with context.quiet:
+            reply = adb(['push', local_path, remote_path])
 
         if ' bytes in ' not in reply:
             log.error(reply)
