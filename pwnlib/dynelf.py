@@ -584,7 +584,7 @@ class DynELF(object):
 
         libbase = leak.field(cur, LinkMap.l_addr)
 
-        self.status("Resolved library at %#x" % libbase)
+        self.status("Resolved library %r at %#x" % (libname, libbase))
 
         lib = DynELF(leak, libbase)
         lib._dynamic = leak.field(cur, LinkMap.l_ld)
@@ -776,9 +776,35 @@ class DynELF(object):
             libbase = self.lookup(symb = None, lib = lib)
 
         if not libbase:
+            self.status("Couldn't find libc base")
             return None
 
         for offset in libcdb.get_build_id_offsets():
             address = libbase + offset
             if self.leak.d(address + 0xC) == unpack("GNU\x00", 32):
                 return enhex(''.join(self.leak.raw(address + 0x10, 20)))
+            else:
+                self.status("Magic did not match")
+                import pdb
+                pdb.set_trace()
+                pass
+
+    def stack(self):
+        """Finds a pointer to the stack via __environ, which is an exported
+        symbol in libc, which points to the environment block.
+        """
+        symbols = ['environ', '_environ', '__environ']
+
+        for symbol in symbols:
+            environ = self.lookup(symbol, 'libc')
+
+            if environ:
+                break
+        else:
+            log.error("Could not find the stack")
+
+        stack = self.leak.p(environ)
+
+        self.success('*environ: %#x' % stack)
+
+        return stack
