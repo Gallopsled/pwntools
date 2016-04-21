@@ -867,6 +867,19 @@ class ContextType(object):
         elif not isinstance(value, (file)):
             raise AttributeError('log_file must be a file')
 
+        # Is this the same file we already have open?
+        # If so, don't re-print the banner.
+        # If not, we need to close the old file.
+        if self.log_file and not isinstance(self.log_file, _devnull):
+            a = os.fstat(value.fileno()).st_ino
+            b = os.fstat(self.log_file.fileno()).st_ino
+
+            if a == b:
+                value.close()
+                return self.log_file
+            else:
+                self.log_file.close()
+
         iso_8601 = '%Y-%m-%dT%H:%M:%S'
         lines = [
             '=' * 78,
