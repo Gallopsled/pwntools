@@ -119,6 +119,7 @@ def disable_verity():
 def remount():
     with log.waitfor("Remounting filesystem on %s" % get_serialno()) as w:
         disable_verity()
+        root()
     
         with context.quiet:
             reply = adb('remount')
