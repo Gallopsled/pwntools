@@ -162,7 +162,7 @@ def _get_runner(ssh=None):
     else:                          return tubes.process.process
 
 @LocalContext
-def debug(args, execute=None, exe=None, ssh=None, env=None):
+def debug(args, execute=None, exe=None, ssh=None, env=None, **kwargs):
     """debug(args) -> tube
 
     Launch a GDB server with the specified command line,
@@ -209,7 +209,7 @@ def debug(args, execute=None, exe=None, ssh=None, env=None):
         log.error("%s does not exist" % orig_args[0])
 
     # Start gdbserver/qemu
-    gdbserver = runner(args, env=env)
+    gdbserver = runner(args, env=env, **kwargs)
 
     # Set the .executable on the process object.
     gdbserver.executable = which(orig_args[0])
