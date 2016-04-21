@@ -323,7 +323,7 @@ class ContextType(object):
     #: Default values for :class:`pwnlib.context.ContextType`
     defaults = {
         'adb_host': os.getenv('ANDROID_ADB_SERVER_HOST', '127.0.0.1'),
-        'adb_port': os.getenv('ANDROID_ADB_SERVER_PORT', 5037),
+        'adb_port': int(os.getenv('ANDROID_ADB_SERVER_PORT', '5037')),
         'arch': 'i386',
         'aslr': True,
         'binary': None,
