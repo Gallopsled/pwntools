@@ -169,6 +169,7 @@ class DynELF(object):
         if not isinstance(leak, MemLeak):
             leak = MemLeak(leak)
 
+        self.elf     = elf
         self.leak    = leak
         self.libbase = self._find_base(pointer or elf.address)
 
@@ -256,6 +257,19 @@ class DynELF(object):
 
         ptr &= page_mask
         w = None
+
+        # If we have an ELF< we can probably speed this up a little bit?
+        if self.elf and self.leak.n(ptr, 32):
+            attempt = self.leak.n(ptr, 32)
+
+            for candidate in self.elf.search(attempt):
+                # Page aligned?
+                if candidate & 0xfff != 0:
+                    continue
+
+                candidate -= self.elf.address
+                ptr       -= candidate
+                break
 
         while True:
             if self.leak.b(ptr) == 0x7f and self.leak.n(ptr+1,3) == 'ELF':
@@ -482,7 +496,7 @@ class DynELF(object):
         if symb and lib:
             pretty = '%r in %r' % (symb, lib)
         else:
-            pretty = symb or lib
+            pretty = repr(symb or lib)
 
         if not pretty:
             self.failure("Must specify a library or symbol")
@@ -493,7 +507,7 @@ class DynELF(object):
         # If we are loading from a different library, create
         # a DynELF instance for it.
         #
-        if lib: dynlib = self._dynamic_load_dynelf(lib)
+        if lib is not None: dynlib = self._dynamic_load_dynelf(lib)
         else:   dynlib = self
 
         if dynlib is None:
@@ -541,11 +555,18 @@ class DynELF(object):
             LinkMap = {32: elf.Elf32_Link_Map, 64: elf.Elf64_Link_Map}[self.elfclass]
 
             cur = self.link_map
+
+            # make sure we rewind to the beginning!
+            while leak.field(cur, LinkMap.l_prev):
+                cur = leak.field(cur, LinkMap.l_prev)
+
             while cur:
                 p_name = leak.field(cur, LinkMap.l_name)
                 name   = leak.s(p_name)
                 addr   = leak.field(cur, LinkMap.l_addr)
                 cur    = leak.field(cur, LinkMap.l_next)
+
+                log.debug('Found %r @ %#x' % (name, addr))
 
                 self._bases[name] = addr
 
@@ -565,6 +586,10 @@ class DynELF(object):
         cur     = self.link_map
         leak    = self.leak
         LinkMap = {32: elf.Elf32_Link_Map, 64: elf.Elf64_Link_Map}[self.elfclass]
+
+        # make sure we rewind to the beginning!
+        while leak.field(cur, LinkMap.l_prev):
+            cur = leak.field(cur, LinkMap.l_prev)
 
         while cur:
             self.status("link_map entry %#x" % cur)

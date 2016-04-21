@@ -473,3 +473,9 @@ class MemLeak(object):
             log.error("Cannot perform unbounded leaks")
 
         return self.n(start, stop-start)[::step]
+
+    def compare(self, address, bytes):
+        for i, byte in enumerate(bytes):
+            if self.n(address + i, 1) != byte:
+                return False
+        return True
