@@ -734,7 +734,12 @@ class ROP(object):
             frame         = srop.SigreturnFrame()
             frame.pc      = syscall_gadget
             frame.syscall = syscall_number
-            SYS_sigreturn  = constants.SYS_sigreturn
+
+            try:
+                SYS_sigreturn  = constants.SYS_sigreturn
+            except AttributeError:
+                SYS_sigreturn  = constants.SYS_rt_sigreturn
+
             for register, value in zip(frame.arguments, arguments):
                 frame[register] = value
 
@@ -760,9 +765,11 @@ class ROP(object):
         Returns a gadget with the exact sequence of instructions specified
         in the ``instructions`` argument.
         """
+        n = len(instructions)
         for gadget in self.gadgets.values():
-            if tuple(gadget.insns) == tuple(instructions):
+            if tuple(gadget.insns)[:n] == tuple(instructions):
                 return gadget
+
 
     def raw(self, value):
         """Adds a raw integer or string to the ROP chain.
