@@ -379,11 +379,9 @@ class DynELF(object):
 
         # Found the _DYNAMIC program header, now find PLTGOT entry in it
         # An entry with a DT_NULL tag marks the end of the DYNAMIC array.
-        while True:
+        while not leak.field_compare(dynamic, Dyn.d_tag, constants.DT_NULL):
             if leak.field_compare(dynamic, Dyn.d_tag, tag):
                 break
-            if leak.field_compare(dynamic, Dyn.d_tag, constants.DT_NULL):
-                return None
             dynamic += sizeof(Dyn)
         else:
             self.failure("Could not find tag %s" % name)
