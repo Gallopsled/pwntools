@@ -168,6 +168,9 @@ class DynELF(object):
         if not isinstance(leak, MemLeak):
             leak = MemLeak(leak)
 
+        if not elf:
+            log.warn("No ELF provided.  Leaking is much faster if you have a copy of the ELF being leaked.")
+
         self.elf     = elf
         self.leak    = leak
         self.libbase = self._find_base(pointer or elf.address)
