@@ -230,7 +230,7 @@ class DynELF(object):
             elf = ELF(path)
         elf.address = self.libbase
 
-        self.waitfor("Loading from %r" % elf.path)
+        w = self.waitfor("Loading from %r" % elf.path)
 
         # Save our real leaker
         real_leak = self.leak
@@ -249,7 +249,10 @@ class DynELF(object):
         self.leak = fake_leak
 
         # Get useful pointers for resolving the linkmap faster
+        w.status("Searching for DT_PLTGOT")
         pltgot = self._find_dt(constants.DT_PLTGOT)
+
+        w.status("Searching for DT_DEBUG")
         debug  = self._find_dt(constants.DT_DEBUG)
 
         # Restore the real leaker
@@ -379,6 +382,8 @@ class DynELF(object):
         while True:
             if leak.field_compare(dynamic, Dyn.d_tag, tag):
                 break
+            if leak.field_compare(dynamic, Dyn.d_tag, constants.DT_NULL):
+                return None
             dynamic += sizeof(Dyn)
         else:
             self.failure("Could not find tag %s" % name)
