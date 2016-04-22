@@ -169,7 +169,7 @@ class DynELF(object):
             leak = MemLeak(leak)
 
         if not elf:
-            log.warn("No ELF provided.  Leaking is much faster if you have a copy of the ELF being leaked.")
+            log.warn_once("No ELF provided.  Leaking is much faster if you have a copy of the ELF being leaked.")
 
         self.elf     = elf
         self.leak    = leak
@@ -232,14 +232,20 @@ class DynELF(object):
 
         self.waitfor("Loading from %r" % elf.path)
 
+        # Save our real leaker
+        real_leak = self.leak
+
         # Create a fake leaker which just leaks out of the 'loaded' ELF
+        # However, we may load things which are outside of the ELF (e.g.
+        # the linkmap or GOT) so we need to fall back on the real leak.
         @MemLeak
         def fake_leak(address):
-            data = elf.read(address, 4)
-            return data
+            try:
+                return elf.read(address, 4)
+            except ValueError:
+                return real_leak.b(address)
 
         # Save off our real leaker, use the fake leaker
-        real_leak = self.leak
         self.leak = fake_leak
 
         # Get useful pointers for resolving the linkmap faster
@@ -260,22 +266,16 @@ class DynELF(object):
         ptr &= page_mask
         w = None
 
-        # If we have an ELF< we can probably speed this up a little bit?
-        if self.elf and self.leak.n(ptr, 32):
-            attempt = self.leak.n(ptr, 32)
-
-            for candidate in self.elf.search(attempt):
-                # Page aligned?
-                if candidate & 0xfff != 0:
-                    continue
-
-                candidate -= self.elf.address
-                ptr       -= candidate
-                break
-
         while True:
             if self.leak.compare(ptr, '\x7fELF'):
                 break
+
+            # See if we can short circuit the search
+            fast = self._find_base_optimized(ptr)
+            if fast:
+                ptr = fast
+                continue
+
             ptr -= page_size
 
             if ptr < 0:
@@ -292,6 +292,33 @@ class DynELF(object):
 
         return ptr
 
+    def _find_base_optimized(self, ptr):
+        if not self.elf:
+            return None
+
+        # If we have an ELF< we can probably speed this up a little bit?
+        # Note that we add +0x20 onto the offset in order to avoid needing
+        # to leak any bytes which contain '\r\n\t\b '
+        ptr += 0x20
+        data = self.leak.n(ptr, 32)
+        if not data:
+            return None
+
+        # Do not permit multiple matches
+        matches = list(self.elf.search(data))
+        if len(matches) != 1:
+            return None
+
+        candidate = matches[0]
+        candidate -= self.elf.address
+
+        # The match should have the same page-alignment as our leaked data.
+        if candidate & 0xfff != 0x20:
+            return None
+
+        # Adjust based on the original pointer we got, and the ELF's address.
+        ptr -= candidate
+        return ptr
 
     def _find_dynamic_phdr(self):
         """
