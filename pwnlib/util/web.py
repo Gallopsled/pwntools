@@ -30,7 +30,7 @@ def wget(url, save=None, timeout=5, **kwargs):
     """
     import requests
 
-    with log.progress("Downloading '%s'" % url) as w:
+    with log.progress("Downloading '%s'" % url, freq=0.1) as w:
         w.status("Making request...")
 
         response = requests.get(url, stream=True, timeout=timeout, **kwargs)

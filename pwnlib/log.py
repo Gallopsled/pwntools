@@ -173,6 +173,7 @@ class Progress(object):
         self._level = level
         self._stopped = False
         self.last_status = 0
+        self.rate = kwargs.pop('rate', 0.1)
         self._log(status, args, kwargs, 'status')
         # it is a common use case to create a logger and then immediately update
         # its status line, so we reset `last_status` to accomodate this pattern
@@ -199,7 +200,7 @@ class Progress(object):
         Status updates are throttled at one update per 100ms.
         """
         now = time.time()
-        if (now - self.last_status) > 0.1:
+        if (now - self.last_status) > self.rate:
             self.last_status = now
             self._log(status, args, kwargs, 'status')
 
@@ -274,6 +275,11 @@ class Logger(object):
 
         self._logger = logger
 
+    def _getlevel(self, levelString):
+        if isinstance(levelString, int):
+            return levelString
+        return logging._levelNames[levelString.upper()]
+
     def _log(self, level, msg, args, kwargs, msgtype, progress = None):
         extra = kwargs.get('extra', {})
         extra.setdefault('pwnlib_msgtype', msgtype)
@@ -303,7 +309,7 @@ class Logger(object):
                    time.sleep(0.5)
                x = 1/0
         """
-        level = kwargs.pop('level', logging.INFO)
+        level = self._getlevel(kwargs.pop('level', logging.INFO))
         return Progress(self, message, status, level, args, kwargs)
 
     def waitfor(self, *args, **kwargs):
@@ -319,7 +325,7 @@ class Logger(object):
             level(int): Alternate log level at which to set the indented
                         message.  Defaults to :const:`logging.INFO`.
         """
-        level = kwargs.pop('level', logging.INFO)
+        level = self._getlevel(kwargs.pop('level', logging.INFO))
         self._log(level, message, args, kwargs, 'indented')
 
     def success(self, message, *args, **kwargs):

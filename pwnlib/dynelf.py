@@ -308,7 +308,7 @@ class DynELF(object):
         self.status("PT_DYNAMIC count = %#x" % phnum)
 
         for i in range(phnum):
-            if leak.field(phead, Phdr.p_type) == constants.PT_DYNAMIC:
+            if leak.field_compare(phead, Phdr.p_type, constants.PT_DYNAMIC):
                 break
             phead += sizeof(Phdr)
         else:
@@ -324,43 +324,34 @@ class DynELF(object):
 
         return dynamic
 
-    def _find_dt(self, tags):
+    def _find_dt(self, tag):
         """
         Find an entry in the DYNAMIC array.
 
         Arguments:
-            tags(int, tuple): Single tag, or list of tags to search for
+            tag(int): Single tag to find
 
         Returns:
             Pointer to the data described by the specified entry.
         """
-        if not isinstance(tags, (list, tuple)):
-            tags = [tags]
-
         leak    = self.leak
         base    = self.libbase
         dynamic = self.dynamic
-        name    = lambda tag: next(k for k,v in ENUM_D_TAG.items() if v == tag)
+        name    = next(k for k,v in ENUM_D_TAG.items() if v == tag)
 
         Dyn = {32: elf.Elf32_Dyn,    64: elf.Elf64_Dyn}     [self.elfclass]
 
         # Found the _DYNAMIC program header, now find PLTGOT entry in it
         # An entry with a DT_NULL tag marks the end of the DYNAMIC array.
         while True:
-            d_tag = leak.field(dynamic, Dyn.d_tag)
-
-            if d_tag == constants.DT_NULL:
-                return None
-            elif d_tag in tags:
+            if leak.field_compare(dynamic, Dyn.d_tag, tag):
                 break
-
-            #Skip to next
             dynamic += sizeof(Dyn)
         else:
-            self.failure("Could not find any of: " % map(name, tags))
+            self.failure("Could not find tag %s" % name)
             return None
 
-        self.status("Found %s at %#x" % (name(d_tag), dynamic))
+        self.status("Found %s at %#x" % (name, dynamic))
         ptr = leak.field(dynamic, Dyn.d_ptr)
 
         # Sometimes this is an offset rather than an actual pointer.
@@ -388,7 +379,10 @@ class DynELF(object):
         r_debug = {32: elf.Elf32_r_debug, 64: elf.Elf64_r_debug}[self.elfclass]
 
         result = None
-        pltgot = pltgot or self._find_dt(constants.DT_PLTGOT)
+
+        if not pltgot:
+            w.status("Finding linkmap: DT_PLTGOT")
+            pltgot = self._find_dt(constants.DT_PLTGOT)
 
         if pltgot:
             w.status("GOT.linkmap")

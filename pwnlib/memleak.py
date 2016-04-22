@@ -103,6 +103,31 @@ class MemLeak(object):
         data   = self.n(address + offset, size)
         return unpack(data, size*8)
 
+    def field_compare(self, address, obj, expected):
+        """field_compare(address, field, expected) ==> bool
+
+        Leak a field from a structure, with an expected value.
+        As soon as any mismatch is found, stop leaking the structure.
+
+        Arguments:
+            address(int): Base address to calculate offsets from
+            field(obj):   Instance of a ctypes field
+            expected(int,str): Expected value
+
+        Return Value:
+            The type of the return value will be dictated by
+            the type of ``field``.
+        """
+        if not isinstance(expected, (int, str)):
+            raise TypeError("Expected value must be an int or str")
+
+        if isinstance(expected, int):
+            expected = pack(expected, bytes=obj.size)
+
+        assert obj.size == len(expected)
+
+        return self.compare(address + obj.offset, expected)
+
     def _leak(self, addr, n, recurse=True):
         """_leak(addr, n) => str
 
