@@ -192,8 +192,11 @@ def process(argv, *a, **kw):
     argv = context.adb + ['shell'] + argv
     return tubes.process.process(argv, *a, **kw)
 
+def interactive(**kw):
+    return shell(**kw).interactive()
+
 def shell(**kw):
-    return process([], level='info', **kw).interactive()
+    return process([], **kw)
 
 def which(name):
     with context.quiet:

@@ -88,10 +88,17 @@ class Core(ELF):
     Mappings can be iterated in order via ``core_obj.mappings``.
     """
     def __init__(self, *a, **kw):
+        #: The NT_PRSTATUS object.
         self.prstatus = None
-        self.files    = {}
+
+        #: Dictionary of memory mappings from {address:name}
         self.mappings = []
+
+        #: Address of the stack base
         self.stack    = None
+
+        #: Environment variables read from the stack {name:address}.
+        #: N.B. Use with the ``string`` method to extract them.
         self.env      = {}
 
         try:
@@ -176,6 +183,54 @@ class Core(ELF):
 
         self.mappings = sorted(self.mappings, key=lambda m: m.start)
 
+        vvar = vdso = vsyscall = False
+        for mapping in reversed(self.mappings):
+            if mapping.name:
+                continue
+
+            if not vsyscall and mapping.start == 0xffffffffff600000:
+                mapping.name = '[vsyscall]' 
+                vsyscall = True
+                continue
+
+            if not vdso and mapping.size == 0x1000 and mapping.flags == 5:
+                mapping.name = '[vdso]'
+                vdso = True
+                continue
+
+            if not vvar and mapping.size == 0x2000 and mapping.flags == 4:
+                mapping.name = '[vvar]'
+                vvar = True
+                continue
+
+    @property
+    def vvar(self):
+        """Return the mapping for the vvar"""
+        for m in self.mappings:
+            if m.name == '[vvar]':
+                return m
+
+    @property
+    def vdso(self):
+        """Return the mapping for the vdso"""
+        for m in self.mappings:
+            if m.name == '[vdso]':
+                return m
+
+    @property
+    def libc(self):
+        """Return the first mapping in libc"""
+        for m in self.mappings:
+            if m.name.startswith('libc') and m.name.endswith('.so'):
+                return m
+
+    @property
+    def exe(self):
+        """Return the first mapping in the executable file."""
+        for m in self.mappings:
+            if self.at_entry and m.start <= self.at_entry <= m.stop:
+                return m
+
     def _load_mappings(self):
         for s in self.segments:
             if s.header.p_type != 'PT_LOAD':
@@ -207,6 +262,15 @@ class Core(ELF):
                 value = value & ~0xfff
                 value += 0x1000
                 self.stack = value
+
+            if key == constants.AT_ENTRY:
+                self.at_entry = value
+
+            if key == constants.AT_PHDR:
+                self.at_phdr = value
+
+            if key == constants.AT_BASE:
+                self.at_base = value
 
     def _parse_stack(self):
         # AT_EXECFN is the start of the filename, e.g. '/bin/sh'
