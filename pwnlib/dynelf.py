@@ -271,9 +271,13 @@ class DynELF(object):
                 break
 
         while True:
-            if self.leak.b(ptr) == 0x7f and self.leak.n(ptr+1,3) == 'ELF':
+            if self.leak.compare(ptr, '\x7fELF'):
                 break
             ptr -= page_size
+
+            if ptr < 0:
+                w.failure("Address is negative, something is wrong!")
+                return None
 
             # Defer creating the spinner in the event that 'ptr'
             # is already the base address

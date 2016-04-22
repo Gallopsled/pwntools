@@ -173,7 +173,7 @@ class Progress(object):
         self._level = level
         self._stopped = False
         self.last_status = 0
-        self.rate = kwargs.pop('rate', 0.1)
+        self.rate = kwargs.pop('rate', 0)
         self._log(status, args, kwargs, 'status')
         # it is a common use case to create a logger and then immediately update
         # its status line, so we reset `last_status` to accomodate this pattern
