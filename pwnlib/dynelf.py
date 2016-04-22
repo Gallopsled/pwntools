@@ -276,8 +276,7 @@ class DynELF(object):
             ptr -= page_size
 
             if ptr < 0:
-                w.failure("Address is negative, something is wrong!")
-                return None
+                raise ValueError("Address is negative, something is wrong!")
 
             # Defer creating the spinner in the event that 'ptr'
             # is already the base address
