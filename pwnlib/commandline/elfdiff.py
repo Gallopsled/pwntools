@@ -20,12 +20,11 @@ def diff(a,b):
     except CalledProcessError as e:
         return e.output
 
-
+p = ArgumentParser()
+p.add_argument('a')
+p.add_argument('b')
 
 def main():
-    p = ArgumentParser()
-    p.add_argument('a')
-    p.add_argument('b')
     a = p.parse_args()
 
     with context.silent:
