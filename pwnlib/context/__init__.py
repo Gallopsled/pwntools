@@ -998,6 +998,10 @@ class ContextType(object):
         """
         Default proxy for all socket connections.
 
+        Accepts either a string (hostname or IP address) for a SOCKS5 proxy on
+        the default port, **or** a ``tuple`` passed to ``socks.set_default_proxy``,
+        e.g. ``(socks.SOCKS4, 'localhost', 1234)``.
+
         >>> context.proxy = 'localhost' #doctest: +ELLIPSIS
         >>> r=remote('google.com', 80)
         Traceback (most recent call last):
