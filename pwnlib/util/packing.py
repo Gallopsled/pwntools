@@ -546,7 +546,7 @@ def flat(*args, **kwargs):
 
 
 @LocalContext
-def fit(pieces, **kwargs):
+def fit(pieces=None, **kwargs):
     """fit(pieces, filler = de_bruijn(), length = None, preprocessor = None) -> str
 
     Generates a string from a dictionary mapping offsets to data to place at
