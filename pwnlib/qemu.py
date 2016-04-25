@@ -49,4 +49,4 @@ def get_qemu_user():
     if misc.which(normal):
         return normal
 
-    log.error("Neither %r nor %r are available" % (normal, static))
+    log.warn_once("Neither %r nor %r are available" % (normal, static))
