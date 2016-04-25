@@ -1,4 +1,6 @@
 #!/usr/bin/env python2
+import shutil
+
 from argparse import ArgumentParser
 from subprocess import CalledProcessError
 from subprocess import check_output
@@ -6,10 +8,9 @@ from tempfile import NamedTemporaryFile
 
 from pwn import *
 
-
-def dump(objdump, elf):
+def dump(objdump, path):
     n = NamedTemporaryFile(delete=False)
-    o = check_output([objdump,'-d','-x','-s',elf.path])
+    o = check_output([objdump,'-d','-x','-s',path])
     n.write(o)
     n.flush()
     return n.name
@@ -20,12 +21,12 @@ def diff(a,b):
         return e.output
 
 
-p = ArgumentParser()
-p.add_argument('a')
-p.add_argument('b')
 
 def main():
-    a = p.parse_args()  
+    p = ArgumentParser()
+    p.add_argument('a')
+    p.add_argument('b')
+    a = p.parse_args()
 
     with context.silent:
         x = ELF(a.a)
@@ -38,6 +39,15 @@ def main():
 
     objdump = pwnlib.asm.which_binutils('objdump')
 
-    print diff(dump(objdump, x), dump(objdump, y))
+    tmp = NamedTemporaryFile()
+    name = tmp.name
+
+    shutil.copy(x.path, name)
+    x = dump(objdump, name)
+
+    shutil.copy(y.path, name)
+    y = dump(objdump, name)
+
+    print diff(x, y)
 
 if __name__ == '__main__': main()
