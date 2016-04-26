@@ -576,14 +576,14 @@ def fit(pieces, **kwargs):
       >>> fit({12: 0x41414141,
       ...      24: 'Hello',
       ...     })
-      'aaaabaaacaaaAAAAdaaaeaaaHello'
+      'aaaabaaacaaaAAAAeaaafaaaHello'
       >>> fit({'caaa': ''})
       'aaaabaaa'
       >>> fit({12: 'XXXX'}, filler = 'AB', length = 20)
       'ABABABABABABXXXXABAB'
       >>> fit({ 8: [0x41414141, 0x42424242],
       ...      20: 'CCCC'})
-      'aaaabaaaAAAABBBBcaaaCCCC'
+      'aaaabaaaAAAABBBBeaaaCCCC'
 
     """
     # HACK: To avoid circular imports we need to delay the import of `cyclic`
@@ -627,6 +627,10 @@ def fit(pieces, **kwargs):
             out.append(filler.next())
         v = _flat([v], preprocessor, packer)
         l = k + len(v)
+        # skip filler to correct position.
+        if len(out) < l:
+            for _ in range(l - len(out)):
+                filler.next()
         out[k:l] = v
 
     # truncate/pad output
