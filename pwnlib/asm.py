@@ -357,7 +357,7 @@ def cpp(shellcode):
     return _run(cmd, code).strip('\n').rstrip() + '\n'
 
 @LocalContext
-def make_elf_from_assembly(assembly, vma = 0x10000000, extract=False):
+def make_elf_from_assembly(assembly, vma = None, extract=False, shared = False):
     r"""
     Builds an ELF file with the specified assembly as its
     executable code.
@@ -374,13 +374,19 @@ def make_elf_from_assembly(assembly, vma = 0x10000000, extract=False):
         The path to the assembled ELF (extract=False), or the data
         of the assembled ELF.
     """
+    if shared and vma:
+        log.error("Cannot specify a VMA for a shared library.")
+
+    if not shared and vma is None:
+        vma = 0x10000000
+
     if context.arch == 'thumb':
         to_thumb = shellcraft.arm.to_thumb()
 
         if not assembly.startswith(to_thumb):
             assembly = to_thumb + assembly
 
-    path = asm(assembly, vma = vma, extract = extract)
+    path = asm(assembly, vma = vma, extract = extract, shared = shared)
 
     if not extract:
         os.chmod(path, 0755)
@@ -388,7 +394,7 @@ def make_elf_from_assembly(assembly, vma = 0x10000000, extract=False):
     return path
 
 @LocalContext
-def make_elf(data, vma = None, strip=True, extract=True):
+def make_elf(data, vma = None, strip=True, extract=True, shared=False):
     r"""
     Builds an ELF file with the specified binary data as its
     executable code.
@@ -418,6 +424,9 @@ def make_elf(data, vma = None, strip=True, extract=True):
         'Hello\n'
     """
     retval = None
+
+    if shared and vma:
+        log.error("Cannot specify a VMA for a shared library.")
 
     if context.arch == 'thumb':
         to_thumb = asm(shellcraft.arm.to_thumb(), arch='arm')
@@ -449,6 +458,9 @@ def make_elf(data, vma = None, strip=True, extract=True):
         if vma:
             linker_options += ['--section-start=.shellcode=%#x' % vma,
                                '--entry=%#x' % vma]
+        elif shared:
+            linker_options += ['-shared', '-init=_start']
+
         linker_options += ['-o', step3, step2]
 
         _run(linker + linker_options)
@@ -472,7 +484,7 @@ def make_elf(data, vma = None, strip=True, extract=True):
     return retval
 
 @LocalContext
-def asm(shellcode, vma = 0, extract = True):
+def asm(shellcode, vma = 0, extract = True, shared = False):
     r"""asm(code, vma = 0, extract = True, ...) -> str
 
     Runs :func:`cpp` over a given shellcode and then assembles it into bytes.
@@ -539,7 +551,8 @@ def asm(shellcode, vma = 0, extract = True):
                             '--entry=%#x' % vma,
                             '-z', 'max-page-size=4096',
                             '-z', 'common-page-size=4096']
-
+            elif shared:
+                ldflags += ['-shared', '-init=_start']
             _run(linker + ldflags)
 
         elif file(step2,'rb').read(4) == '\x7fELF':
