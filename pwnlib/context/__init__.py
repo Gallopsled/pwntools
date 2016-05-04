@@ -1061,7 +1061,15 @@ class ContextType(object):
     @property
     def adb(self):
         """Returns an argument array for connecting to adb."""
-        return ['adb', '-H', self.adb_host, '-P', str(self.adb_port)]
+        command = ['adb']
+
+        if self.adb_host != self.defaults['adb_host']:
+            command += ['-H', self.adb_host]
+
+        if self.adb_port != self.defaults['adb_port']:
+            command += ['-P', str(self.adb_port)]
+
+        return command
 
 
     #*************************************************************************
