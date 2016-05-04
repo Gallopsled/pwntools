@@ -377,8 +377,11 @@ def make_elf_from_assembly(assembly, vma = None, extract=False, shared = False):
     if shared and vma:
         log.error("Cannot specify a VMA for a shared library.")
 
-    if not shared and vma is None:
-        vma = 0x10000000
+    if vma is None:
+        if shared:
+            vma = 0
+        else:
+            vma = 0x10000000
 
     if context.arch == 'thumb':
         to_thumb = shellcraft.arm.to_thumb()
