@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -e
 local_deb_extract()
 {
     wget $1
@@ -17,7 +17,7 @@ get_binutils()
 get_qemu()
 {
     echo "Installing qemu"
-    QEMU_URL='http://mirrors.kernel.org/ubuntu/pool/universe/q/qemu/qemu-user-static_2.5%2bdfsg-5ubuntu9_amd64.deb'
+    QEMU_URL='https://mirrors.kernel.org/ubuntu/pool/universe/q/qemu/qemu-user-static_2.5%2bdfsg-5ubuntu11_amd64.deb'
     local_deb_extract "$QEMU_URL"
 }
 
