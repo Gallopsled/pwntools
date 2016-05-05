@@ -33,12 +33,16 @@ def root():
     with context.quiet:
         reply  = adb('root')
 
-    if reply and 'restarting adbd as root' not in reply \
-    and 'adbd is already running as root' not in reply:
+    if 'already running as root' in reply:
+        return
+
+    elif 'restarting adbd as root' in reply:
+        with context.quiet:
+            wait_for_device(device=serial)
+
+    else:
         log.error("Could not run as root:\n%s" % reply)
 
-    with context.quiet:
-        wait_for_device(device=serial)
 
 def reboot(wait=True):
     serial = get_serialno()
@@ -374,6 +378,7 @@ class Kernel(object):
         return read('/proc/version').strip()
 
     @property
+    @context.quiet
     def cmdline(self):
         root()
         return read('/proc/cmdline').strip()
