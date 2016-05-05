@@ -227,6 +227,7 @@ def push(local_path, remote_path):
         if ' bytes in ' not in reply:
             log.error(reply)
 
+@context.quiet
 def read(path, target=None):
     with tempfile.NamedTemporaryFile() as temp:
         target = target or temp.name
@@ -238,6 +239,7 @@ def read(path, target=None):
         result = misc.read(target)
     return result
 
+@context.quiet
 def write(path, data=''):
     with tempfile.NamedTemporaryFile() as temp:
         misc.write(temp.name, data)
@@ -347,6 +349,19 @@ def build():
     return properties.ro.build.id
 
 class Kernel(object):
+    _kallsyms = {}
+
+    @property
+    def symbols(self):
+        """Returns a dictionary of kernel symbols"""
+        if not self._kallsyms:
+            with context.quiet():
+                root()
+                adb.write('/proc/sys/kernel/kptr_restrict', '1')
+                for line in adb.read('/proc/kallsyms').splitlines():
+                    pass
+        return self._kallsyms
+
     @property
     def version(self):
         """Returns the kernel version of the device."""
