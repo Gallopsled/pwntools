@@ -19,7 +19,7 @@ def adb(argv, *a, **kw):
 
     serial = context.device
 
-    print "$ " + ' '.join(['adb'] + argv)
+    log.debug("$ " + ' '.join(['adb'] + argv))
 
     if serial:
         argv = ['-s', serial] + argv
