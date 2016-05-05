@@ -328,6 +328,7 @@ class ContextType(object):
         'aslr': True,
         'binary': None,
         'bits': 32,
+        'device': os.getenv('ANDROID_SERIAL', None) or None,
         'endian': 'little',
         'kernel': None,
         'log_level': logging.INFO,
@@ -1058,6 +1059,12 @@ class ContextType(object):
         """
         return int(value)
 
+    @_validator
+    def device(self, serial):
+        """Sets the device being operated on.
+        """
+        return str(serial) if serial else None
+
     @property
     def adb(self):
         """Returns an argument array for connecting to adb."""
@@ -1068,6 +1075,9 @@ class ContextType(object):
 
         if self.adb_port != self.defaults['adb_port']:
             command += ['-P', str(self.adb_port)]
+
+        if self.device:
+            command += ['-s', self.device]
 
         return command
 
