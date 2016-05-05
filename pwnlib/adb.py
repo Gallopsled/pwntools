@@ -1,3 +1,5 @@
+"""Provides utilities for interacting with Android devices via the Android Debug Bridge.
+"""
 import os
 import re
 import tempfile
@@ -14,6 +16,7 @@ from .util import misc
 log = getLogger(__name__)
 
 def adb(argv, *a, **kw):
+    """Returns the output of an ADB subcommand."""
     if isinstance(argv, (str, unicode)):
         argv = [argv]
 
@@ -27,6 +30,7 @@ def adb(argv, *a, **kw):
     return tubes.process.process(context.adb + argv, *a, **kw).recvall()
 
 def root():
+    """Restarts adbd as root."""
     serial = get_serialno()
     log.info("Enabling root on %s" % serial)
 
@@ -45,6 +49,7 @@ def root():
 
 
 def reboot(wait=True):
+    """Reboots the device."""
     serial = get_serialno()
 
     log.info('Rebooting device %s' % serial)
@@ -55,6 +60,7 @@ def reboot(wait=True):
     if wait: wait_for_device(device=serial)
 
 def reboot_bootloader():
+    """Reboots the device to the bootloader."""
     serial = get_serialno()
     log.info('Rebooting %s to bootloader' % serial)
 
@@ -62,6 +68,7 @@ def reboot_bootloader():
         adb('reboot-bootloader')
 
 def get_serialno():
+    """Retrieves the serial number of the connected device."""
     if context.device:
         return context.device
 
@@ -74,10 +81,7 @@ def get_serialno():
     return reply.strip()
 
 class Device(object):
-    """
-    ZX1G22LM7G             device usb:336789504X product:shamu model:Nexus_6 device:shamu features:cmd,shell_v2
-    84B5T15A29020449       device usb:336855040X product:angler model:Nexus_6P device:angler
-    """
+    """Encapsulates information about a connected device."""
     def __init__(self, serial, type, port, product, model, device):
         self.serial  = serial
         self.type    = type
@@ -98,6 +102,12 @@ class Device(object):
     def from_adb_output(line):
         fields = line.split()
 
+        """
+        Example output:
+        ZX1G22LM7G             device usb:336789504X product:shamu model:Nexus_6 device:shamu features:cmd,shell_v2
+        84B5T15A29020449       device usb:336855040X product:angler model:Nexus_6P device:angler
+        """
+
         # The last few fields need to be split at colons.
         split  = lambda x: x.split(':')[-1]
         fields[3:] = list(map(split, fields[3:]))
@@ -105,6 +115,7 @@ class Device(object):
         return Device(*fields[:6])
 
 def devices():
+    """Returns a list of ``Device`` objects corresponding to the connected devices."""
     lines = adb(['devices', '-l'])
     result = []
 
@@ -118,6 +129,7 @@ def devices():
 
 @LocalContext
 def wait_for_device():
+    """Waits for a device to be connected."""
     with log.waitfor("Waiting for device to come online") as w:
         with context.quiet:
             adb('wait-for-device')
@@ -141,34 +153,8 @@ def wait_for_device():
 
     return serial
 
-def foreach(callable=None):
-    with context.quiet:
-        reply = adb('devices')
-
-    for line in reply.splitlines():
-        if 'List of devices' in line:
-            continue
-
-        if not line:
-            continue
-
-        serial = line.split()[0]
-
-        if callable is None:
-            yield serial
-            continue
-
-        original = os.environ.get('ANDROID_SERIAL', None)
-        try:
-            os.environ['ANDROID_SERIAL'] = serial
-            callable()
-        finally:
-            if original is not None:
-                os.environ['ANDROID_SERIAL'] = original
-            else:
-                del os.environ['ANDROID_SERIAL']
-
 def disable_verity():
+    """Disables dm-verity on the device."""
     with log.waitfor("Disabling dm-verity on %s" % get_serialno()) as w:
         root()
 
@@ -184,6 +170,7 @@ def disable_verity():
 
 
 def remount():
+    """Remounts the filesystem as writable."""
     with log.waitfor("Remounting filesystem on %s" % get_serialno()) as w:
         disable_verity()
         root()
@@ -195,6 +182,7 @@ def remount():
             log.error("Could not remount filesystem:\n%s" % reply)
 
 def unroot():
+    """Restarts adbd as AID_SHELL."""
     log.info("Unrooting %s" % get_serialno())
     with context.quiet:
         reply  = adb('unroot')
@@ -203,6 +191,13 @@ def unroot():
         log.error("Could not run as root:\n%s" % reply)
 
 def pull(remote_path, local_path=None):
+    """Download a file from the device.
+
+    Arguments:
+        remote_path(str): Path or directory of the file on the device.
+        local_path(str): Path to save the file to.
+            Uses the file's name by default.
+    """
     if local_path is None:
         local_path = os.path.basename(remote_path)
 
@@ -219,6 +214,12 @@ def pull(remote_path, local_path=None):
             log.error(reply)
 
 def push(local_path, remote_path):
+    """Upload a file to the device.
+
+    Arguments:
+        local_path(str): Path to the local file to push.
+        remote_path(str): Path or directory to store the file on the device.
+    """
     msg = "Pushing %r to %r" % (local_path, remote_path)
 
     if context.log_level == 'debug':
@@ -233,6 +234,13 @@ def push(local_path, remote_path):
 
 @context.quiet
 def read(path, target=None):
+    """Download a file from the device, and extract its contents.
+
+    Arguments:
+        path(str): Path to the file on the device.
+        target(str): Optional, location to store the file.
+            Uses a temporary file by default.
+    """
     with tempfile.NamedTemporaryFile() as temp:
         target = target or temp.name
         reply  = adb(['pull', path, target])
@@ -245,6 +253,12 @@ def read(path, target=None):
 
 @context.quiet
 def write(path, data=''):
+    """Create a file on the device with the provided contents.
+
+    Arguments:
+        path(str): Path to the file on the device
+        data(str): Contents to store in the file
+    """
     with tempfile.NamedTemporaryFile() as temp:
         misc.write(temp.name, data)
 
@@ -254,6 +268,13 @@ def write(path, data=''):
             log.error("Could not read %r:\n%s" % (path, reply))
 
 def process(argv, *a, **kw):
+    """Execute a process on the device.
+
+    See ``pwnlib.tubes.process.process`` documentation for more info.
+
+    Returns:
+        A ``process`` tube.
+    """
     argv = argv or []
     if isinstance(argv, (str, unicode)):
         argv = [argv]
@@ -261,41 +282,68 @@ def process(argv, *a, **kw):
     return tubes.process.process(argv, *a, **kw)
 
 def interactive(**kw):
+    """Spawns an interactive shell."""
     return shell(**kw).interactive()
 
 def shell(**kw):
+    """Returns an interactive shell."""
     return process([], **kw)
 
 def which(name):
+    """Retrieves the full path to a binary in ``PATH`` on the device"""
     with context.quiet:
         return process(['which', name]).recvall().strip()
 
 def forward(port):
+    """Sets up a port to forward to the device."""
     tcp_port = 'tcp:%s' % port
     start_forwarding = adb(['forward', tcp_port, tcp_port])
     atexit.register(lambda: adb(['forward', '--remove', tcp_port]))
 
-def logcat(extra='-d'):
-    with context.quiet:
-        return adb(['logcat', extra])
+@context.quiet
+def logcat(stream=False):
+    """Reads the system log file.
 
-def logcat_stream():
-    with context.local(log_level='debug'):
-        return process(['logcat']).recvall()
+    By default, causes logcat to exit after reading the file.
+
+    Arguments:
+        stream(bool): If ``True``, the contents are streamed rather than
+            read in a one-shot manner.  Default is ``False``.
+
+    Returns:
+        If ``stream`` is ``False``, returns a string containing the log data.
+        Otherwise, it returns a ``tube`` connected to the log output.
+    """
+
+    if stream:
+        return process(['logcat'])
+    else:
+        return adb(['logcat', '-d'])
 
 def pidof(name):
+    """Returns a list of PIDs for the named process."""
     with context.quiet:
         io = process(['pidof', name])
         data = io.recvall().split()
     return list(map(int, data))
 
 def proc_exe(pid):
+    """Returns the full path of the executable for the provided PID."""
     with context.quiet:
         io  = process(['readlink','-e','/proc/%d/exe' % pid])
         data = io.recvall().strip()
     return data
 
 def getprop(name=None):
+    """Reads a properties from the system property store.
+
+    Arguments:
+        name(str): Optional, read a single property.
+
+    Returns:
+        If ``name`` is not specified, a ``dict`` of all properties is returned.
+        Otherwise, a string is returned with the contents of the named property.
+    """
     with context.quiet:
         if name:
             return process(['getprop', name]).recvall().strip()
@@ -321,9 +369,16 @@ def getprop(name=None):
     return props
 
 def setprop(name, value):
+    """Writes a property to the system property store."""
     return process(['setprop', name, value]).recvall().strip()
 
 def listdir(directory='/'):
+    """Returns a list containing the entries in the provided directory.
+
+    Note:
+        Because ``adb shell`` is used to retrieve the listing, shell
+        environment variable expansion and globbing are in effect.
+    """
     io = process(['ls', directory])
     data = io.recvall()
     lines = data.splitlines()

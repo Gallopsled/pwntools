@@ -28,6 +28,7 @@ Each of the ``binjitsu`` modules is documented here.
    :maxdepth: 1
    :glob:
 
+   adb
    asm
    atexception
    atexit
