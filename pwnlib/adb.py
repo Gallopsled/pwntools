@@ -7,6 +7,7 @@ import dateutil.parser
 from . import atexit
 from . import tubes
 from .context import context
+from .context import LocalContext
 from .log import getLogger
 from .util import misc
 
@@ -16,7 +17,9 @@ def adb(argv, *a, **kw):
     if isinstance(argv, (str, unicode)):
         argv = [argv]
 
-    serial = kw.pop('serial', None)
+    serial = context.device
+
+    print "$ " + ' '.join(['adb'] + argv)
 
     if serial:
         argv = ['-s', serial] + argv
@@ -35,7 +38,7 @@ def root():
         log.error("Could not run as root:\n%s" % reply)
 
     with context.quiet:
-        wait_for_device(serial)
+        wait_for_device(device=serial)
 
 def reboot(wait=True):
     serial = get_serialno()
@@ -45,33 +48,92 @@ def reboot(wait=True):
     with context.quiet:
         adb('reboot')
 
-    if wait: wait_for_device(serial)
+    if wait: wait_for_device(device=serial)
 
 def reboot_bootloader():
+    serial = get_serialno()
     log.info('Rebooting %s to bootloader' % serial)
 
     with context.quiet:
         adb('reboot-bootloader')
 
 def get_serialno():
+    if context.device:
+        return context.device
+
     with context.quiet:
         reply = adb('get-serialno')
 
     if 'unknown' in reply:
         log.error("No devices connected")
+
     return reply.strip()
 
-def wait_for_device(serial=None):
-    msg = "Waiting for device %s to come online" % (serial or '(any)')
-    with log.waitfor(msg) as w:
-        with context.quiet:
-            adb('wait-for-device', serial=serial)
+class Device(object):
+    """
+    ZX1G22LM7G             device usb:336789504X product:shamu model:Nexus_6 device:shamu features:cmd,shell_v2
+    84B5T15A29020449       device usb:336855040X product:angler model:Nexus_6P device:angler
+    """
+    def __init__(self, serial, type, port, product, model, device):
+        self.serial  = serial
+        self.type    = type
+        self.port    = port
+        self.product = product
+        self.model   = model
+        self.device  = device
 
-        serial = get_serialno()
-        w.success('%s (%s %s %s)' % (serial,
-                                     product(),
-                                     build(),
-                                     _build_date()))
+    def __str__(self):
+        return self.serial
+
+    def __repr__(self):
+        fields = ['serial', 'type', 'port', 'product', 'model', 'device']
+        return '%s(%s)' % (self.__class__.__name__,
+                           ', '.join(('%s=%r' % (field, getattr(self, field)) for field in fields)))
+
+    @staticmethod
+    def from_adb_output(line):
+        fields = line.split()
+
+        # The last few fields need to be split at colons.
+        split  = lambda x: x.split(':')[-1]
+        fields[3:] = list(map(split, fields[3:]))
+
+        return Device(*fields[:6])
+
+def devices():
+    lines = adb(['devices', '-l'])
+    result = []
+
+    for line in lines.splitlines():
+        # Skip the first 'List of devices attached' line, and the final empty line.
+        if 'List of devices' in line or not line.strip():
+            continue
+        result.append(Device.from_adb_output(line))
+
+    return tuple(result)
+
+@LocalContext
+def wait_for_device():
+    with log.waitfor("Waiting for device to come online") as w:
+        with context.quiet:
+            adb('wait-for-device')
+
+        if context.device:
+            return context.device
+
+        for device in devices():
+            break
+        else:
+            log.error("Could not find any devices")
+
+        with context.local(device=device):
+            # There may be multiple devices, so get_serialno() is
+            # insufficient.  Pick the first device reported.
+            serial = get_serialno()
+            w.success('%s (%s %s %s)' % (serial,
+                                         product(),
+                                         build(),
+                                         _build_date()))
 
     return serial
 
@@ -252,14 +314,83 @@ def getprop(name=None):
 
     return props
 
+def setprop(name, value):
+    return process(['setprop', name, value]).recvall().strip()
+
+def listdir(directory='/'):
+    io = process(['ls', directory])
+    data = io.recvall()
+    lines = data.splitlines()
+    return [l.strip() for l in lines]
+
+def enable_kernel_uart():
+    """Reboots the device with kernel logging to the UART enabled."""
+    # Need to be root
+    with context.local(device=get_serialno()):
+        reboot_bootloader()
+        fastboot(['oem','uart','enable'])
+        fastboot(['-c'])
+        wait_for_device()
+
+def fastboot(args, *a, **kw):
+    """Executes a fastboot command.
+
+    Returns:
+        The command output.
+    """
+    serial = get_serialno()
+    if not serial:
+        log.error("Unknown device")
+    return tubes.process.process(['fastboot', '-s', serial] + list(args), **kw).recvall()
+
 def fingerprint():
-    return getprop('ro.build.fingerprint')
+    """Returns the device build fingerprint."""
+    return properties.ro.build.fingerprint
 
 def product():
-    return getprop('ro.build.product')
+    """Returns the device product identifier."""
+    return properties.ro.build.product
 
 def build():
-    return getprop('ro.build.id')
+    """Returns the Build ID of the device."""
+    return properties.ro.build.id
+
+class Kernel(object):
+    @property
+    def version(self):
+        """Returns the kernel version of the device."""
+        return read('/proc/version').strip()
+
+    @property
+    def cmdline(self):
+        return read('/proc/cmdline').strip()
+
+kernel = Kernel()
+
+class Property(object):
+    def __init__(self, name=None):
+        self.__dict__['name'] = name
+
+    def __str__(self):
+        return getprop(self.name).strip()
+
+    def __repr__(self):
+        return repr(str(self))
+
+    def __getattr__(self, attr):
+        if self.name:
+            attr = '%s.%s' % (self.name, attr)
+        return Property(attr)
+
+    def __setattr__(self, attr, value):
+        if attr in self.__dict__:
+            return super(Property, self).__setattr__(attr, value)
+
+        if self.name:
+            attr = '%s.%s' % (self.name, attr)
+        setprop(attr, value)
+
+properties = Property()
 
 def _build_date():
     """Returns the build date in the form YYYY-MM-DD as a string"""
