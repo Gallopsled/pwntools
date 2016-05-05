@@ -349,17 +349,21 @@ def build():
     return properties.ro.build.id
 
 class Kernel(object):
-    _kallsyms = {}
+    _kallsyms = None
 
     @property
+    @context.quiet
     def symbols(self):
         """Returns a dictionary of kernel symbols"""
         if not self._kallsyms:
-            with context.quiet():
-                root()
-                adb.write('/proc/sys/kernel/kptr_restrict', '1')
-                for line in adb.read('/proc/kallsyms').splitlines():
-                    pass
+            self._kallsyms = {}
+            root()
+            write('/proc/sys/kernel/kptr_restrict', '1')
+            for line in read('/proc/kallsyms').splitlines():
+                fields = line.split()
+                address = int(fields[0], 16)
+                name    = fields[-1]
+                self._kallsyms[name] = address
         return self._kallsyms
 
     @property
