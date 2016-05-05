@@ -323,15 +323,6 @@ def listdir(directory='/'):
     lines = data.splitlines()
     return [l.strip() for l in lines]
 
-def enable_kernel_uart():
-    """Reboots the device with kernel logging to the UART enabled."""
-    # Need to be root
-    with context.local(device=get_serialno()):
-        reboot_bootloader()
-        fastboot(['oem','uart','enable'])
-        fastboot(['-c'])
-        wait_for_device()
-
 def fastboot(args, *a, **kw):
     """Executes a fastboot command.
 
@@ -359,11 +350,29 @@ class Kernel(object):
     @property
     def version(self):
         """Returns the kernel version of the device."""
+        with context.quiet:
+            root()
         return read('/proc/version').strip()
 
     @property
     def cmdline(self):
         return read('/proc/cmdline').strip()
+
+    def enable_uart(self):
+        """Reboots the device with kernel logging to the UART enabled."""
+        with log.waitfor('Enabling kernel UART') as w:
+            # Check the current commandline, it may already be enabled.
+            if any(s.startswith('console=') for s in self.cmdline.split()):
+                w.success("Already enabled")
+                return
+
+            # Need to be root
+            with context.local(device=get_serialno()):
+                reboot_bootloader()
+                fastboot(['oem','uart','enable'])
+                fastboot(['-c'])
+                wait_for_device()
+
 
 kernel = Kernel()
 
