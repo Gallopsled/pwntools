@@ -367,14 +367,15 @@ class Kernel(object):
         return self._kallsyms
 
     @property
+    @context.quiet
     def version(self):
         """Returns the kernel version of the device."""
-        with context.quiet:
-            root()
+        root()
         return read('/proc/version').strip()
 
     @property
     def cmdline(self):
+        root()
         return read('/proc/cmdline').strip()
 
     def enable_uart(self):
