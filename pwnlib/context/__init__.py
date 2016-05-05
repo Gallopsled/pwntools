@@ -466,7 +466,7 @@ class ContextType(object):
         v = sorted("%s = %r" % (k,v) for k,v in self._tls._current.items())
         return '%s(%s)' % (self.__class__.__name__, ', '.join(v))
 
-    def local(self, **kwargs):
+    def local(self, function=None, **kwargs):
         """local(**kwargs) -> context manager
 
         Create a context manager for use with the ``with`` statement.
@@ -505,22 +505,29 @@ class ContextType(object):
             def __exit__(a, *b, **c):
                 self._tls.pop()
 
+            def __call__(self, function, *a, **kw):
+                @functools.wraps(function)
+                def inner(*a, **kw):
+                    with self:
+                        return function(*a, **kw)
+                return inner
+
         return LocalContext()
 
     @property
-    def silent(self):
+    def silent(self, function=None):
         """Disable all non-error logging within the enclosed scope.
         """
-        return self.local(log_level='error')
+        return self.local(function, log_level='error')
 
     @property
-    def quiet(self):
+    def quiet(self, function=None):
         """Disables all non-error logging within the enclosed scope,
         *unless* the debugging level is set to 'debug' or lower."""
         level = 'error'
         if context.log_level <= logging.DEBUG:
             level = None
-        return self.local(log_level=level)
+        return self.local(function, log_level=level)
 
 
     def clear(self, *a, **kw):
