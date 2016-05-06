@@ -20,19 +20,16 @@ def adb(argv, *a, **kw):
     if isinstance(argv, (str, unicode)):
         argv = [argv]
 
-    serial = context.device
-
     log.debug("$ " + ' '.join(['adb'] + argv))
 
-    if serial:
-        argv = ['-s', serial] + argv
+    if context.device:
+        argv = ['-s', context.device] + argv
 
     return tubes.process.process(context.adb + argv, *a, **kw).recvall()
 
 def root():
     """Restarts adbd as root."""
-    serial = get_serialno()
-    log.info("Enabling root on %s" % serial)
+    log.info("Enabling root on %s" % context.device)
 
     with context.quiet:
         reply  = adb('root')
@@ -40,9 +37,9 @@ def root():
     if 'already running as root' in reply:
         return
 
-    elif 'restarting adbd as root' in reply:
+    elif not reply or 'restarting adbd as root' in reply:
         with context.quiet:
-            wait_for_device(device=serial)
+            wait_for_device()
 
     else:
         log.error("Could not run as root:\n%s" % reply)
@@ -50,35 +47,20 @@ def root():
 
 def reboot(wait=True):
     """Reboots the device."""
-    serial = get_serialno()
-
-    log.info('Rebooting device %s' % serial)
+    log.info('Rebooting device %s' % context.device)
 
     with context.quiet:
         adb('reboot')
 
-    if wait: wait_for_device(device=serial)
+    if wait:
+        wait_for_device()
 
 def reboot_bootloader():
     """Reboots the device to the bootloader."""
-    serial = get_serialno()
-    log.info('Rebooting %s to bootloader' % serial)
+    log.info('Rebooting %s to bootloader' % context.device)
 
     with context.quiet:
         adb('reboot-bootloader')
-
-def get_serialno():
-    """Retrieves the serial number of the connected device."""
-    if context.device:
-        return context.device
-
-    with context.quiet:
-        reply = adb('get-serialno')
-
-    if 'unknown' in reply:
-        log.error("No devices connected")
-
-    return reply.strip()
 
 class Device(object):
     """Encapsulates information about a connected device."""
@@ -87,7 +69,7 @@ class Device(object):
         self.type    = type
         self.port    = port
         self.product = product
-        self.model   = model
+        self.model   = model.replace('_', ' ')
         self.device  = device
 
     def __str__(self):
@@ -114,7 +96,15 @@ class Device(object):
 
         return Device(*fields[:6])
 
-def devices():
+    def __getattr__(self, attr):
+        module = self.__module__
+        if hasattr(module, attr):
+            with context.local(device=self.serial):
+                return getattr(module, attr)
+        return super(Device, self).__getattr__(attr)
+
+@context.quiet
+def devices(serial=None):
     """Returns a list of ``Device`` objects corresponding to the connected devices."""
     lines = adb(['devices', '-l'])
     result = []
@@ -123,7 +113,10 @@ def devices():
         # Skip the first 'List of devices attached' line, and the final empty line.
         if 'List of devices' in line or not line.strip():
             continue
-        result.append(Device.from_adb_output(line))
+        device = Device.from_adb_output(line)
+        if device.serial == serial:
+            return device
+        result.append(device)
 
     return tuple(result)
 
@@ -143,19 +136,18 @@ def wait_for_device():
             log.error("Could not find any devices")
 
         with context.local(device=device):
-            # There may be multiple devices, so get_serialno() is
+            # There may be multiple devices, so context.device is
             # insufficient.  Pick the first device reported.
-            serial = get_serialno()
-            w.success('%s (%s %s %s)' % (serial,
+            w.success('%s (%s %s %s)' % (device,
                                          product(),
                                          build(),
                                          _build_date()))
 
-    return serial
+    return device
 
 def disable_verity():
     """Disables dm-verity on the device."""
-    with log.waitfor("Disabling dm-verity on %s" % get_serialno()) as w:
+    with log.waitfor("Disabling dm-verity on %s" % context.device) as w:
         root()
 
         with context.quiet:
@@ -171,7 +163,7 @@ def disable_verity():
 
 def remount():
     """Remounts the filesystem as writable."""
-    with log.waitfor("Remounting filesystem on %s" % get_serialno()) as w:
+    with log.waitfor("Remounting filesystem on %s" % context.device) as w:
         disable_verity()
         root()
 
@@ -183,7 +175,7 @@ def remount():
 
 def unroot():
     """Restarts adbd as AID_SHELL."""
-    log.info("Unrooting %s" % get_serialno())
+    log.info("Unrooting %s" % context.device)
     with context.quiet:
         reply  = adb('unroot')
 
@@ -204,7 +196,7 @@ def pull(remote_path, local_path=None):
     msg = "Pulling %r from %r" % (remote_path, local_path)
 
     if context.log_level == 'debug':
-        msg += ' (%s)' % get_serialno()
+        msg += ' (%s)' % context.device
 
     with log.waitfor(msg) as w:
         with context.quiet:
@@ -223,7 +215,7 @@ def push(local_path, remote_path):
     msg = "Pushing %r to %r" % (local_path, remote_path)
 
     if context.log_level == 'debug':
-        msg += ' (%s)' % get_serialno()
+        msg += ' (%s)' % context.device
 
     with log.waitfor(msg) as w:
         with context.quiet:
@@ -390,7 +382,7 @@ def fastboot(args, *a, **kw):
     Returns:
         The command output.
     """
-    serial = get_serialno()
+    serial = context.device
     if not serial:
         log.error("Unknown device")
     return tubes.process.process(['fastboot', '-s', serial] + list(args), **kw).recvall()
@@ -447,7 +439,7 @@ class Kernel(object):
                 return
 
             # Need to be root
-            with context.local(device=get_serialno()):
+            with context.local(device=context.device):
                 reboot_bootloader()
                 fastboot(['oem','uart','enable'])
                 fastboot(['-c'])
