@@ -3,6 +3,7 @@
 import os
 import re
 import tempfile
+import time
 
 import dateutil.parser
 
@@ -95,13 +96,6 @@ class Device(object):
         fields[3:] = list(map(split, fields[3:]))
 
         return Device(*fields[:6])
-
-    def __getattr__(self, attr):
-        module = self.__module__
-        if hasattr(module, attr):
-            with context.local(device=self.serial):
-                return getattr(module, attr)
-        return super(Device, self).__getattr__(attr)
 
 @context.quiet
 def devices(serial=None):
@@ -281,10 +275,13 @@ def shell(**kw):
     """Returns an interactive shell."""
     return process([], **kw)
 
+@context.quiet
 def which(name):
     """Retrieves the full path to a binary in ``PATH`` on the device"""
-    with context.quiet:
-        return process(['which', name]).recvall().strip()
+    return process(['which', name]).recvall().strip()
+
+def whoami():
+    return process(['whoami']).recvall().strip()
 
 def forward(port):
     """Sets up a port to forward to the device."""
@@ -434,15 +431,28 @@ class Kernel(object):
         """Reboots the device with kernel logging to the UART enabled."""
         with log.waitfor('Enabling kernel UART') as w:
             # Check the current commandline, it may already be enabled.
-            if any(s.startswith('console=') for s in self.cmdline.split()):
+            if any(s.startswith('console=tty') for s in self.cmdline.split()):
                 w.success("Already enabled")
                 return
 
             # Need to be root
             with context.local(device=context.device):
+                # Save off the command line before rebooting to the bootloader
+                cmdline = kernel.cmdline
+
                 reboot_bootloader()
-                fastboot(['oem','uart','enable'])
-                fastboot(['-c'])
+
+                # Wait for device to come online
+                while context.device not in fastboot(['devices',' -l']):
+                    time.sleep(0.5)
+
+                # Try the 'new' way
+                result = fastboot(['oem','uart','enable'])
+
+                if "'uart' is not a supported oem command" in result:
+                    result = fastboot(['oem','config','console','enable'])
+
+                fastboot(['continue'])
                 wait_for_device()
 
 
