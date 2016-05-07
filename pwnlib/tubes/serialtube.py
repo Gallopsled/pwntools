@@ -1,3 +1,5 @@
+import glob
+import platform
 import sys
 import time
 
@@ -13,13 +15,19 @@ log = getLogger(__name__)
 
 class serialtube(tube.tube):
     def __init__(
-            self, port = '/dev/ttyUSB0', baudrate = 115200,
+            self, port = None, baudrate = 115200,
             convert_newlines = True,
             bytesize = 8, parity='N', stopbits=1, xonxoff = False,
             rtscts = False, dsrdtr = False,
             timeout = Timeout.default,
             level = None):
         super(serialtube, self).__init__(timeout, level = level)
+
+        if port is None:
+            if platform.system() == 'Darwin':
+                port = glob.glob('/dev/tty.usbserial-*')[0]
+            else:
+                port = '/dev/ttyUSB0'
 
         self.convert_newlines = convert_newlines
         self.conn = serial.Serial(
