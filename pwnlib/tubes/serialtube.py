@@ -25,14 +25,14 @@ class serialtube(tube.tube):
         self.conn = serial.Serial(
             port = port,
             baudrate = baudrate,
-            bytesize = 8,
-            parity = 'N',
-            stopbits = 1,
+            bytesize = bytesize,
+            parity = parity,
+            stopbits = stopbits,
             timeout = 0,
-            xonxoff = False,
-            rtscts = False,
+            xonxoff = xonxoff,
+            rtscts = rtscts,
             writeTimeout = None,
-            dsrdtr = False,
+            dsrdtr = dsrdtr,
             interCharTimeout = 0
         )
 
