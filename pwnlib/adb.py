@@ -427,6 +427,12 @@ class Kernel(object):
         root()
         return read('/proc/cmdline').strip()
 
+    @property
+    @context.quiet
+    def lastmsg(self):
+        root()
+        return read('/sys/fs/pstore/console-ramoops')
+
     def enable_uart(self):
         """Reboots the device with kernel logging to the UART enabled."""
         with log.waitfor('Enabling kernel UART') as w:
