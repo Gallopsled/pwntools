@@ -435,7 +435,28 @@ class Kernel(object):
 
     def enable_uart(self):
         """Reboots the device with kernel logging to the UART enabled."""
+        model = properties.ro.product.model
+
+        known_commands = {
+            'Nexus 4': None,
+            'Nexus 5': None,
+            'Nexus 6': 'oem config console enable',
+            'Nexus 5X': None,
+            'Nexus 6P': 'oem uart enable',
+            'Nexus 7': 'oem uart-on',
+        }
+
         with log.waitfor('Enabling kernel UART') as w:
+
+            if model not in known_commands:
+                log.error("Device UART is unsupported.")
+
+            command = known_commands[model]
+
+            if command is None:
+                w.success('Always enabled')
+                return
+
             # Check the current commandline, it may already be enabled.
             if any(s.startswith('console=tty') for s in self.cmdline.split()):
                 w.success("Already enabled")
@@ -453,11 +474,7 @@ class Kernel(object):
                     time.sleep(0.5)
 
                 # Try the 'new' way
-                result = fastboot(['oem','uart','enable'])
-
-                if "'uart' is not a supported oem command" in result:
-                    result = fastboot(['oem','config','console','enable'])
-
+                fastboot(command.split())
                 fastboot(['continue'])
                 wait_for_device()
 
