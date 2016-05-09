@@ -403,15 +403,23 @@ class Kernel(object):
     @context.quiet
     def symbols(self):
         """Returns a dictionary of kernel symbols"""
+        result = {}
+        for line in self._kallsyms.splitlines():
+            fields = line.split()
+            address = int(fields[0], 16)
+            name    = fields[-1]
+            result[name] = address
+        return result
+
+    @property
+    @context.quiet
+    def kallsyms(self):
+        """Returns the raw output of kallsyms"""
         if not self._kallsyms:
             self._kallsyms = {}
             root()
             write('/proc/sys/kernel/kptr_restrict', '1')
-            for line in read('/proc/kallsyms').splitlines():
-                fields = line.split()
-                address = int(fields[0], 16)
-                name    = fields[-1]
-                self._kallsyms[name] = address
+            self._kallsyms = read('/proc/kallsyms')
         return self._kallsyms
 
     @property
