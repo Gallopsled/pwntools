@@ -192,12 +192,17 @@ def pull(remote_path, local_path=None):
     if context.log_level == 'debug':
         msg += ' (%s)' % context.device
 
+    result = ''
     with log.waitfor(msg) as w:
         with context.quiet:
-            reply = adb(['pull', remote_path, local_path])
+            args = context.adb + ['pull', remote_path, local_path]
+            io = tubes.process.process(args)
+            result = io.recvall()
 
-        if ' bytes in ' not in reply:
-            log.error(reply)
+            if 0 != io.poll(block=True):
+                log.error(result)
+
+    return result
 
 def push(local_path, remote_path):
     """Upload a file to the device.
@@ -229,11 +234,7 @@ def read(path, target=None):
     """
     with tempfile.NamedTemporaryFile() as temp:
         target = target or temp.name
-        reply  = adb(['pull', path, target])
-
-        if ' bytes in ' not in reply:
-            log.error("Could not read %r:\n%s" % (path, reply))
-
+        pull(path, target)
         result = misc.read(target)
     return result
 
