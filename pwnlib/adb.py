@@ -218,10 +218,14 @@ def push(local_path, remote_path):
 
     with log.waitfor(msg) as w:
         with context.quiet:
-            reply = adb(['push', local_path, remote_path])
+            args = context.adb + ['push', local_path, remote_path]
+            io = tubes.process.process(args)
+            result = io.recvall()
 
-        if ' bytes in ' not in reply:
-            log.error(reply)
+            if 0 != io.poll(block=True):
+                log.error(result)
+
+    return result
 
 @context.quiet
 def read(path, target=None):
