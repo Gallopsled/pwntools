@@ -24,10 +24,7 @@ def adb(argv, *a, **kw):
     if isinstance(argv, (str, unicode)):
         argv = [argv]
 
-    log.debug("$ " + ' '.join(['adb'] + argv))
-
-    if context.device:
-        argv = ['-s', context.device] + argv
+    log.debug("$ " + ' '.join(context.adb + argv))
 
     return tubes.process.process(context.adb + argv, *a, **kw).recvall()
 
@@ -524,7 +521,7 @@ def _build_date():
     as_datetime =  dateutil.parser.parse(as_string)
     return as_datetime.strftime('%Y-%b-%d')
 
-def _find_ndk_project_root(source):
+def find_ndk_project_root(source):
     '''Given a directory path, find the topmost project root.
 
     tl;dr "foo/bar/jni/baz.cpp" ==> "foo/bar"
@@ -597,7 +594,7 @@ def compile(source):
     ndk_build = os.path.join(ndk, 'ndk-build')
 
     # Determine whether the source is an NDK project or a single source file.
-    project = _find_ndk_project_root(source)
+    project = find_ndk_project_root(source)
 
     if not project:
         project = _generate_ndk_project(source,
