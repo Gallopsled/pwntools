@@ -397,6 +397,16 @@ def build():
     """Returns the Build ID of the device."""
     return properties.ro.build.id
 
+def unlock_bootloader():
+    """Unlocks the bootloader of the device.
+
+    Note:
+        This requires physical interaction with the device.
+    """
+    adb(['reboot-bootloader'])
+    fastboot(['oem', 'unlock'])
+    fastboot(['continue'])
+
 class Kernel(object):
     _kallsyms = None
 
