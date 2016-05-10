@@ -1,7 +1,10 @@
 """Provides utilities for interacting with Android devices via the Android Debug Bridge.
 """
+import glob
 import os
+import platform
 import re
+import shutil
 import tempfile
 import time
 
@@ -252,11 +255,7 @@ def write(path, data=''):
     """
     with tempfile.NamedTemporaryFile() as temp:
         misc.write(temp.name, data)
-
-        reply  = adb(['push', temp.name, path])
-
-        if ' bytes in ' not in reply:
-            log.error("Could not read %r:\n%s" % (path, reply))
+        push(temp.name, path)
 
 def process(argv, *a, **kw):
     """Execute a process on the device.
@@ -524,3 +523,101 @@ def _build_date():
     as_string = getprop('ro.build.date')
     as_datetime =  dateutil.parser.parse(as_string)
     return as_datetime.strftime('%Y-%b-%d')
+
+def _find_ndk_project_root(source):
+    '''Given a directory path, find the topmost project root.
+
+    tl;dr "foo/bar/jni/baz.cpp" ==> "foo/bar"
+    '''
+    ndk_directory = os.path.abspath(source)
+    while ndk_directory != '/':
+        if os.path.exists(os.path.join(ndk_directory, 'jni')):
+            break
+        ndk_directory = os.path.dirname(ndk_directory)
+    else:
+        return None
+
+    return ndk_directory
+
+_android_mk_template = '''
+LOCAL_PATH := $(call my-dir)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := poc
+LOCAL_SRC_FILES := %(local_src_files)s
+
+include $(BUILD_EXECUTABLE)
+'''.lstrip()
+
+_application_mk_template = '''
+LOCAL_PATH := $(call my-dir)
+
+include $(CLEAR_VARS)
+APP_ABI:= %(app_abi)s
+APP_PLATFORM:=%(app_platform)s
+'''.lstrip()
+
+def _generate_ndk_project(file_list, abi='arm-v7a', platform_version=21):
+    # Create our project root
+    root = tempfile.mkdtemp()
+
+    if not isinstance(file_list, (list, tuple)):
+        file_list = [file_list]
+
+    # Copy over the source file(s)
+    jni_directory = os.path.join(root, 'jni')
+    os.mkdir(jni_directory)
+    for file in file_list:
+        shutil.copy(file, jni_directory)
+
+    # Create the directories
+
+    # Populate Android.mk
+    local_src_files = ' '.join(list(map(os.path.basename, file_list)))
+    Android_mk = os.path.join(jni_directory, 'Android.mk')
+    with open(Android_mk, 'w+') as f:
+        f.write(_android_mk_template % locals())
+
+    # Populate Application.mk
+    app_abi = abi
+    app_platform = 'android-%s' % platform_version
+    Application_mk = os.path.join(jni_directory, 'Application.mk')
+    with open(Application_mk, 'w+') as f:
+        f.write(_application_mk_template % locals())
+
+    return root
+
+def compile(source):
+    """Compile a source file or project with the Android NDK."""
+
+    # Ensure that we can find the NDK.
+    ndk = os.environ.get('NDK', None)
+    if ndk is None:
+        log.error('$NDK must be set to the Android NDK directory')
+    ndk_build = os.path.join(ndk, 'ndk-build')
+
+    # Determine whether the source is an NDK project or a single source file.
+    project = _find_ndk_project_root(source)
+
+    if not project:
+        project = _generate_ndk_project(source,
+                                        properties.ro.product.cpu.abi,
+                                        properties.ro.build.version.sdk)
+
+    # Remove any output files
+    lib = os.path.join(project, 'libs')
+    if os.path.exists(lib):
+        shutil.rmtree(lib)
+
+    # Build the project
+    io = tubes.process.process(ndk_build, cwd=os.path.join(project, 'jni'))
+
+    result = io.recvall()
+
+    if 0 != io.poll():
+        log.error("Build failed:\n%s" % result)
+
+    # Find all of the output files
+    output = glob.glob(os.path.join(lib, '*', '*'))
+
+    return output[0]
