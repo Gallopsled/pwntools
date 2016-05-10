@@ -440,7 +440,11 @@ class Kernel(object):
     @context.quiet
     def lastmsg(self):
         root()
-        return read('/sys/fs/pstore/console-ramoops')
+        if 'last_kmsg' in listdir('/proc'):
+            return read('/proc/last_kmsg')
+
+        if 'console-ramoops' in listdir('/sys/fs/pstore/'):
+            return read('/sys/fs/pstore/console-ramoops')
 
     def enable_uart(self):
         """Reboots the device with kernel logging to the UART enabled."""
