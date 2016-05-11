@@ -105,7 +105,7 @@ class MemLeak(object):
                 if prev != b:
                     raise ValueError(
                         "Leaked byte 0x%02x at address 0x%x disagrees with "
-                        "previously leaked byte 0x%02x" % (b, prev))
+                        "previously leaked byte 0x%02x" % (ord(b), a, ord(prev)))
                 else:
                     continue
 
