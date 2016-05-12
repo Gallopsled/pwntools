@@ -49,7 +49,8 @@ def iter_notes(self):
         yield note
 
 class Mapping(object):
-    def __init__(self, name, start, stop, flags):
+    def __init__(self, core, name, start, stop, flags):
+        self._core=core
         self.name=name
         self.start=start
         self.stop=stop
@@ -75,6 +76,10 @@ class Mapping(object):
 
     def __int__(self):
         return self.start
+
+    @property
+    def data(self):
+        return self._core.read(self.start, self.size)
 
 class Core(ELF):
     """Core(*a, **kw) -> Core
@@ -189,11 +194,14 @@ class Core(ELF):
                 continue
 
             if not vsyscall and mapping.start == 0xffffffffff600000:
-                mapping.name = '[vsyscall]' 
+                mapping.name = '[vsyscall]'
                 vsyscall = True
                 continue
 
-            if not vdso and mapping.size == 0x1000 and mapping.flags == 5:
+            if mapping.start == self.at_sysinfo_ehdr \
+            or (not vdso and mapping.size in [0x1000, 0x2000] \
+                and mapping.flags == 5 \
+                and self.read(mapping.start, 4) == '\x7fELF'):
                 mapping.name = '[vdso]'
                 vdso = True
                 continue
@@ -236,7 +244,8 @@ class Core(ELF):
             if s.header.p_type != 'PT_LOAD':
                 continue
 
-            mapping = Mapping(None,
+            mapping = Mapping(self,
+                              None,
                               s.header.p_vaddr,
                               s.header.p_vaddr + s.header.p_memsz,
                               s.header.p_flags)
@@ -271,6 +280,9 @@ class Core(ELF):
 
             if key == constants.AT_BASE:
                 self.at_base = value
+
+            if key == constants.AT_SYSINFO_EHDR:
+                self.at_sysinfo_ehdr = value
 
     def _parse_stack(self):
         # AT_EXECFN is the start of the filename, e.g. '/bin/sh'
