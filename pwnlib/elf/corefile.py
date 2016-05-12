@@ -226,6 +226,13 @@ class Core(ELF):
                 return m
 
     @property
+    def vsyscall(self):
+        """Return the mapping for the vdso"""
+        for m in self.mappings:
+            if m.name == '[vsyscall]':
+                return m
+
+    @property
     def libc(self):
         """Return the first mapping in libc"""
         for m in self.mappings:
