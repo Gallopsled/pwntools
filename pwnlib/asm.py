@@ -373,6 +373,16 @@ def make_elf_from_assembly(assembly, vma = None, extract=False, shared = False):
 
         The path to the assembled ELF (extract=False), or the data
         of the assembled ELF.
+
+    Example:
+
+        >>> context.arch = 'amd64'
+        >>> sc = 'push rbp; mov rbp, rsp;'
+        >>> sc += shellcraft.echo('Hello\n')
+        >>> sc += 'mov rsp, rbp; pop rbp; ret'
+        >>> solib = make_elf_from_assembly(sc, shared=1)
+        >>> subprocess.check_output(['echo', 'World'], env={'LD_PRELOAD': solib})
+        'Hello\nWorld\n'
     """
     if shared and vma:
         log.error("Cannot specify a VMA for a shared library.")
