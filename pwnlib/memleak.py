@@ -1,3 +1,6 @@
+import functools
+import string
+
 from .context import context
 from .log import getLogger
 from .util.packing import pack
@@ -70,6 +73,20 @@ class MemLeak(object):
 
         # Map of address: byte for all bytes received
         self.cache = {}
+
+        functools.update_wrapper(self, f)
+
+    def __repr__(self):
+        return "%s.%s(%r, search_range=%i, reraise=%s)" % (
+            self.__class__.__module__,
+            self.__class__.__name__,
+            self.leak,
+            self.search_range,
+            self.reraise
+        )
+
+    def __call__(self, *a, **kw):
+        return self.leak(*a, **kw)
 
     def struct(self, address, struct):
         """struct(address, struct) => structure object
@@ -504,3 +521,75 @@ class MemLeak(object):
             if self.n(address + i, 1) != byte:
                 return False
         return True
+
+    @staticmethod
+    def NoNulls(function):
+        """Wrapper for leak functions such that addresses which contain NULL
+        bytes are not leaked.
+
+        This is useful if the address which is used for the leak is read in via
+        a string-reading function like ``scanf("%s")`` or smilar.
+        """
+
+        @functools.wraps(function, updated=[])
+        def null_wrapper(address, *a, **kw):
+            if '\x00' in pack(address):
+                log.info('Ignoring leak request for %#x: Contains NULL bytes' % address)
+                return None
+            return function(address, *a, **kw)
+
+        return MemLeak(null_wrapper)
+
+    @staticmethod
+    def NoWhitespace(function):
+        """Wrapper for leak functions such that addresses which contain whitespace
+        bytes are not leaked.
+
+        This is useful if the address which is used for the leak is read in via
+        e.g. ``scanf()``.
+        """
+
+        @functools.wraps(function, updated=[])
+        def whitespace_wrapper(address, *a, **kw):
+            if set(pack(address)) & set(string.whitespace):
+                log.info('Ignoring leak request for %#x: Contains whitespace' % address)
+                return None
+            return function(address, *a, **kw)
+
+        return MemLeak(whitespace_wrapper)
+
+    @staticmethod
+    def NoNewlines(function):
+        """Wrapper for leak functions such that addresses which contain newline
+        bytes are not leaked.
+
+        This is useful if the address which is used for the leak is provided by
+        e.g. ``fgets()``.
+        """
+
+        @functools.wraps(function, updated=[])
+        def whitespace_wrapper(address, *a, **kw):
+            if '\n' in pack(address):
+                log.info('Ignoring leak request for %#x: Contains newlines' % address)
+                return None
+            return function(address, *a, **kw)
+
+        return MemLeak(whitespace_wrapper)
+
+    @staticmethod
+    def String(function):
+        """Wrapper for leak functions which leak strings, such that a NULL
+        terminator is automaticall added.
+
+        This is useful if the data leaked is printed out as a NULL-terminated
+        string, via e.g. ``printf()``.
+        """
+
+        @functools.wraps(function, updated=[])
+        def string_wrapper(address, *a, **kw):
+            result = function(address, *a, **kw)
+            if isinstance(result, (str, bytes)):
+                result += '\x00'
+            return result
+
+        return MemLeak(string_wrapper)
