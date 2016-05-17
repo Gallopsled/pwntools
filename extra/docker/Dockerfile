@@ -43,28 +43,10 @@ RUN mkdir -p /etc/qemu-binfmt
 RUN ln -s /usr/aarch64-linux-gnu /etc/qemu-binfmt/aarch64
 RUN ln -s /usr/arm-linux-gnueabihf /etc/qemu-binfmt/arm
 
-RUN git clone https://github.com/aquynh/capstone \
-	&& cd capstone \
-	&& git checkout -t origin/next \
-	&& sudo ./make.sh install \
-	&& cd bindings/python \
-	&& python2 setup.py install \
-	&& python3 setup.py install
-
-RUN git clone https://github.com/unicorn-engine/unicorn \
-	&& cd unicorn \
-	&& sudo ./make.sh install \
-	&& cd bindings/python \
-	&& sudo python2 setup.py install \
-	&& sudo python3 setup.py install
-
 RUN pip install --upgrade pip pycparser psutil python-ptrace
 RUN pip3 install --upgrade pip pycparser psutil python-ptrace
 
-RUN pip install --upgrade git+https://github.com/binjitsu/binjitsu.git # 2016-3-16
-
-RUN git clone https://github.com/zachriggle/pwndbg /home/zerocool/pwndbg
-RUN echo "source /home/zerocool/pwndbg/gdbinit.py" > /home/zerocool/.gdbinit
+RUN pip install --upgrade git+https://github.com/binjitsu/binjitsu.git
 
 RUN locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
