@@ -376,6 +376,7 @@ def make_elf_from_assembly(assembly, vma = None, extract=False, shared = False):
 
     Example:
 
+        >>> context.clear()
         >>> context.arch = 'amd64'
         >>> sc = 'push rbp; mov rbp, rsp;'
         >>> sc += shellcraft.echo('Hello\n')
