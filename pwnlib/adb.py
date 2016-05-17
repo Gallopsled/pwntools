@@ -518,6 +518,9 @@ class Property(object):
     def __init__(self, name=None):
         self.__dict__['name'] = name
 
+    def __eq__(self, other):
+        return str(self) == other
+
     def __str__(self):
         return getprop(self.name).strip()
 
