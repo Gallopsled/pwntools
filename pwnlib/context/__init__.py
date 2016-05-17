@@ -1100,7 +1100,7 @@ class ContextType(object):
             command += ['-P', str(self.adb_port)]
 
         if self.device:
-            command += ['-s', self.device]
+            command += ['-s', str(self.device)]
 
         return command
 
