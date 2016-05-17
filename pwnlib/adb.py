@@ -265,7 +265,7 @@ def process(argv, *a, **kw):
     argv = argv or []
     if isinstance(argv, (str, unicode)):
         argv = [argv]
-    argv = context.adb + ['shell'] + argv
+    argv = context.adb + ['shell', '-t', '-t'] + argv
     return tubes.process.process(argv, *a, **kw)
 
 def interactive(**kw):
