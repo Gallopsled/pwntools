@@ -18,6 +18,7 @@ import time
 
 import socks
 
+from ..device import Device
 from ..timeout import Timeout
 
 _original_socket = socket.socket
@@ -1073,10 +1074,19 @@ class ContextType(object):
         return int(value)
 
     @_validator
-    def device(self, serial):
+    def device(self, device):
         """Sets the device being operated on.
         """
-        return str(serial) if serial else None
+        if isinstance(device, Device):
+            self.arch = device.arch or self.arch
+            self.bits = device.bits or self.bits
+            self.endian = device.endian or self.endian
+        elif isinstance(device, str):
+            device = Device(device)
+        else:
+            raise AttributeError("device must be either a Device object or a serial number as a string")
+
+        return device
 
     @property
     def adb(self):

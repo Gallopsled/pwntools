@@ -14,6 +14,7 @@ from . import atexit
 from . import tubes
 from .context import context
 from .context import LocalContext
+from .device import Device
 from .log import getLogger
 from .util import misc
 
@@ -63,7 +64,7 @@ def reboot_bootloader():
     with context.quiet:
         adb('reboot-bootloader')
 
-class Device(object):
+class AdbDevice(Device):
     """Encapsulates information about a connected device."""
     def __init__(self, serial, type, port, product, model, device):
         self.serial  = serial
@@ -72,6 +73,14 @@ class Device(object):
         self.product = product
         self.model   = model.replace('_', ' ')
         self.device  = device
+
+        with context.local(device=serial):
+            abi = properties.ro.product.cpu.abi
+            context.clear()
+            context.arch = str(abi)
+            self.arch = context.arch
+            self.bits = context.bits
+            self.endian = context.endian
 
     def __str__(self):
         return self.serial
@@ -95,7 +104,7 @@ class Device(object):
         split  = lambda x: x.split(':')[-1]
         fields[3:] = list(map(split, fields[3:]))
 
-        return Device(*fields[:6])
+        return AdbDevice(*fields[:6])
 
 @context.quiet
 def devices(serial=None):
@@ -107,7 +116,7 @@ def devices(serial=None):
         # Skip the first 'List of devices attached' line, and the final empty line.
         if 'List of devices' in line or not line.strip():
             continue
-        device = Device.from_adb_output(line)
+        device = AdbDevice.from_adb_output(line)
         if device.serial == serial:
             return device
         result.append(device)
@@ -123,10 +132,9 @@ def wait_for_device(kick=False):
                 adb(['reconnect'])
             adb('wait-for-device')
 
-        if context.device:
-            return context.device
-
         for device in devices():
+            if context.device == device:
+                return device
             break
         else:
             log.error("Could not find any devices")
@@ -139,7 +147,7 @@ def wait_for_device(kick=False):
                                          build(),
                                          _build_date()))
 
-    return device
+            return context.device
 
 def disable_verity():
     """Disables dm-verity on the device."""
@@ -634,3 +642,7 @@ def compile(source):
     output = glob.glob(os.path.join(lib, '*', '*'))
 
     return output[0]
+
+def _initialize():
+    android_serial = os.getenv('ANDROID_SERIAL', None)
+    device = adb.wait_for_device()
