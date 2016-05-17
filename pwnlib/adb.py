@@ -115,10 +115,12 @@ def devices(serial=None):
     return tuple(result)
 
 @LocalContext
-def wait_for_device():
+def wait_for_device(kick=False):
     """Waits for a device to be connected."""
     with log.waitfor("Waiting for device to come online") as w:
         with context.quiet:
+            if kick:
+                adb(['reconnect'])
             adb('wait-for-device')
 
         if context.device:
