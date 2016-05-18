@@ -129,7 +129,10 @@ def wait_for_device(kick=False):
     with log.waitfor("Waiting for device to come online") as w:
         with context.quiet:
             if kick:
-                adb(['reconnect'])
+                try:
+                    adb(['reconnect'])
+                except Exception:
+                    pass
             adb('wait-for-device')
 
         for device in devices():
@@ -379,7 +382,7 @@ def listdir(directory='/'):
         Because ``adb shell`` is used to retrieve the listing, shell
         environment variable expansion and globbing are in effect.
     """
-    io = process(['ls', directory])
+    io = process(['ls', '-1', directory])
     data = io.recvall()
     lines = data.splitlines()
     return [l.strip() for l in lines]
@@ -517,9 +520,6 @@ kernel = Kernel()
 class Property(object):
     def __init__(self, name=None):
         self.__dict__['name'] = name
-
-    def __eq__(self, other):
-        return str(self) == other
 
     def __str__(self):
         return getprop(self.name).strip()
