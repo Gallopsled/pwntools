@@ -664,34 +664,38 @@ class Partition(object):
 
 class Partitions(object):
     @context.quiet
-    def __getattr__(self, attr):
+    def __iter__(self):
         root()
 
         # Find all named partitions
         by_name = adb(['shell','find /dev/block/platform -type d -name by-name']).strip()
         names   = listdir(by_name)
 
-        # Ensure the request is for a valid name
-        if attr not in names:
+        for name in names:
+            yield os.path.join(by_name, name)
+
+    @context.quiet
+    def __getattr__(self, attr):
+        for path in self:
+            if os.path.basename(path) == attr:
+                break
+        else:
             raise AttributeError("No partition %r" % attr)
 
         # Find the actual path of the device
-        cmd  = ['readlink', '-n', '%s/%s' % (by_name, attr)]
-        path = process(cmd).recvall()
-
-        # Get the name of the block device
-        name = os.path.basename(path)
+        devpath = process(['readlink', '-n', path]).recvall()
+        devname = os.path.basename(devpath)
 
         # Get the size of the partition
         for line in read('/proc/partitions').splitlines():
             if not line.strip():
                 continue
-            major, minor, blocks, pname = line.split(None, 4)
-            if pname == name:
+            major, minor, blocks, name = line.split(None, 4)
+            if devname == name:
                 break
         else:
             log.error("Could not find size of partition %r" % name)
 
-        return Partition(path, attr, int(blocks))
+        return Partition(devpath, attr, int(blocks))
 
 partitions = Partitions()
