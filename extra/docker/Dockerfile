@@ -22,6 +22,7 @@ RUN apt-get install -y \
 	libc6-arm64-cross \
 	libc6-armhf-cross \
 	libc6-dev-i386 \
+	libffi-dev \
 	libglib2.0-dev \
 	libncurses5-dev \
 	libncursesw5-dev \
