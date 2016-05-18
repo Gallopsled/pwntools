@@ -523,25 +523,25 @@ kernel = Kernel()
 
 class Property(object):
     def __init__(self, name=None):
-        self.__dict__['name'] = name
+        self.__dict__['_name'] = name
 
     def __str__(self):
-        return getprop(self.name).strip()
+        return getprop(self._name).strip()
 
     def __repr__(self):
         return repr(str(self))
 
     def __getattr__(self, attr):
-        if self.name:
-            attr = '%s.%s' % (self.name, attr)
+        if self._name:
+            attr = '%s.%s' % (self._name, attr)
         return Property(attr)
 
     def __setattr__(self, attr, value):
         if attr in self.__dict__:
             return super(Property, self).__setattr__(attr, value)
 
-        if self.name:
-            attr = '%s.%s' % (self.name, attr)
+        if self._name:
+            attr = '%s.%s' % (self._name, attr)
         setprop(attr, value)
 
 properties = Property()
