@@ -424,11 +424,15 @@ class Kernel(object):
     _kallsyms = None
 
     @property
+    def address(self):
+        return self.symbols['_text']
+
+    @property
     @context.quiet
     def symbols(self):
         """Returns a dictionary of kernel symbols"""
         result = {}
-        for line in self._kallsyms.splitlines():
+        for line in self.kallsyms.splitlines():
             fields = line.split()
             address = int(fields[0], 16)
             name    = fields[-1]
@@ -646,6 +650,48 @@ def compile(source):
 
     return output[0]
 
-def _initialize():
-    android_serial = os.getenv('ANDROID_SERIAL', None)
-    device = adb.wait_for_device()
+class Partition(object):
+    def __init__(self, path, name, blocks=0):
+        self.path = path
+        self.name = name
+        self.blocks = blocks
+        self.size = blocks * 1024
+
+    @property
+    def data(self):
+        with log.waitfor('Fetching %r partition (%s)' % (self.name, self.path)):
+            return read(self.path)
+
+class Partitions(object):
+    @context.quiet
+    def __getattr__(self, attr):
+        root()
+
+        # Find all named partitions
+        by_name = adb(['shell','find /dev/block/platform -type d -name by-name']).strip()
+        names   = listdir(by_name)
+
+        # Ensure the request is for a valid name
+        if attr not in names:
+            raise AttributeError("No partition %r" % attr)
+
+        # Find the actual path of the device
+        cmd  = ['readlink', '-n', '%s/%s' % (by_name, attr)]
+        path = process(cmd).recvall()
+
+        # Get the name of the block device
+        name = os.path.basename(path)
+
+        # Get the size of the partition
+        for line in read('/proc/partitions').splitlines():
+            if not line.strip():
+                continue
+            major, minor, blocks, pname = line.split(None, 4)
+            if pname == name:
+                break
+        else:
+            log.error("Could not find size of partition %r" % name)
+
+        return Partition(path, attr, int(blocks))
+
+partitions = Partitions()
