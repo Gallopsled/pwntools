@@ -257,6 +257,9 @@ class process(tube):
 
         with self.progress(message) as p:
 
+            if not self.aslr:
+                log.warn_once("ASLR is disabled!")
+
             # In the event the binary is a foreign architecture,
             # and binfmt is not installed (e.g. when running on
             # Travis CI), re-try with qemu-XXX if we get an
