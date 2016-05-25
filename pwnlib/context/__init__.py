@@ -530,6 +530,11 @@ class ContextType(object):
             level = None
         return self.local(function, log_level=level)
 
+    @property
+    def verbose(self):
+        """Enable all logging within the enclosed scope.
+        """
+        return self.local(log_level='debug')
 
     def clear(self, *a, **kw):
         """
