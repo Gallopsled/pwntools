@@ -214,7 +214,8 @@ def debug(args, execute=None, exe=None, ssh=None, env=None, **kwargs):
         log.error("%s does not exist" % orig_args[0])
 
     # Start gdbserver/qemu
-    gdbserver = runner(args, env=env, **kwargs)
+    # (Note: We override ASLR here for the gdbserver process itself.)
+    gdbserver = runner(args, env=env, aslr=1, **kwargs)
 
     # Set the .executable on the process object.
     gdbserver.executable = which(orig_args[0])
