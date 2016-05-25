@@ -870,6 +870,9 @@ os.execve(exe, argv, os.environ)
 
         with self.progress('Opening new channel: %s' % execve_repr) as h:
 
+            if not aslr:
+                self.warn_once("ASLR is disabled!")
+
             script = misc.sh_string(script)
             with context.local(log_level='error'):
                 python = self.run('test -x "$(which python 2>&1)" && exec python -c %s check; echo 2' % script, raw=raw)
