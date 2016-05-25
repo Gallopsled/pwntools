@@ -27,11 +27,10 @@ binjitsu is available as a ``pip`` package.
     $ apt-get install python2.7 python2.7-dev python-pip
     $ pip install --upgrade git+https://github.com/binjitsu/binjitsu.git
 
-Latest Version
+Development
 --------------
 
-Alternatively if you prefer to use the latest version from the
-repository:
+If you are hacking on Binjitsu locally, you'll want to do something like this:
 
 .. code-block:: bash
 
