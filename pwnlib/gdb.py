@@ -112,6 +112,8 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None):
     gdbserver_args = [gdbserver]
     if context.aslr:
         gdbserver_args += ['--no-disable-randomization']
+    else:
+        log.warn_once("Debugging process with ASLR disabled")
 
     if pid:
         gdbserver_args += ['--once', '--attach']
