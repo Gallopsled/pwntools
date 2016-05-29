@@ -25,7 +25,7 @@ class serialtube(tube.tube):
 
         if port is None:
             if platform.system() == 'Darwin':
-                port = glob.glob('/dev/tty.usbserial-*')[0]
+                port = glob.glob('/dev/tty.usbserial*')[0]
             else:
                 port = '/dev/ttyUSB0'
 
