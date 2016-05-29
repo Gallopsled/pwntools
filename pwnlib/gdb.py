@@ -440,6 +440,8 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
     else:
         log.error('no gdb installed')
 
+    cmd += ' -q '
+
     if exe and context.native:
         if not os.path.isfile(exe):
             log.error('no such file: %s' % exe)
