@@ -66,13 +66,16 @@ def reboot_bootloader():
 
 class AdbDevice(Device):
     """Encapsulates information about a connected device."""
-    def __init__(self, serial, type, port, product, model, device):
+    def __init__(self, serial, type, port, product='unknown', model='unknown', device='unknown'):
         self.serial  = serial
         self.type    = type
         self.port    = port
         self.product = product
         self.model   = model.replace('_', ' ')
         self.device  = device
+
+        if product == 'unknown':
+            return
 
         with context.local(device=serial):
             abi = properties.ro.product.cpu.abi
@@ -98,6 +101,7 @@ class AdbDevice(Device):
         Example output:
         ZX1G22LM7G             device usb:336789504X product:shamu model:Nexus_6 device:shamu features:cmd,shell_v2
         84B5T15A29020449       device usb:336855040X product:angler model:Nexus_6P device:angler
+        0062741b0e54b353       unauthorized usb:337641472X
         """
 
         # The last few fields need to be split at colons.
@@ -278,7 +282,7 @@ def process(argv, *a, **kw):
     argv = argv or []
     if isinstance(argv, (str, unicode)):
         argv = [argv]
-    argv = context.adb + ['shell', '-t', '-t'] + argv
+    argv = context.adb + ['shell'] + argv
     return tubes.process.process(argv, *a, **kw)
 
 def interactive(**kw):
