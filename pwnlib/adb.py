@@ -78,7 +78,7 @@ class AdbDevice(Device):
             return
 
         with context.local(device=serial):
-            abi = properties.ro.product.cpu.abi
+            abi = str(properties.ro.product.cpu.abi)
             context.clear()
             context.arch = str(abi)
             self.arch = context.arch
@@ -405,15 +405,15 @@ def fastboot(args, *a, **kw):
 
 def fingerprint():
     """Returns the device build fingerprint."""
-    return properties.ro.build.fingerprint
+    return str(properties.ro.build.fingerprint)
 
 def product():
     """Returns the device product identifier."""
-    return properties.ro.build.product
+    return str(properties.ro.build.product)
 
 def build():
     """Returns the Build ID of the device."""
-    return properties.ro.build.id
+    return str(properties.ro.build.id)
 
 def unlock_bootloader():
     """Unlocks the bootloader of the device.
@@ -480,7 +480,7 @@ class Kernel(object):
 
     def enable_uart(self):
         """Reboots the device with kernel logging to the UART enabled."""
-        model = properties.ro.product.model
+        model = str(properties.ro.product.model)
 
         known_commands = {
             'Nexus 4': None,
@@ -634,8 +634,8 @@ def compile(source):
 
     if not project:
         project = _generate_ndk_project(source,
-                                        properties.ro.product.cpu.abi,
-                                        properties.ro.build.version.sdk)
+                                        str(properties.ro.product.cpu.abi),
+                                        str(properties.ro.build.version.sdk))
 
     # Remove any output files
     lib = os.path.join(project, 'libs')
