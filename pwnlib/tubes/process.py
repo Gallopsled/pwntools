@@ -93,6 +93,10 @@ class process(tube):
             If ``False``, prevent ``setuid`` bits from taking effect on the
             target binary.  This is only supported on Linux, with kernels v3.5
             or greater.
+        where(str):
+            Where the process is running, used for logging purposes.
+        display(list):
+            List of arguments to display, instead of the main executable name.
 
     Attributes:
         proc(subprocess)
@@ -200,7 +204,9 @@ class process(tube):
                  preexec_fn = lambda: None,
                  raw = True,
                  aslr = None,
-                 setuid = None):
+                 setuid = None,
+                 where = 'local',
+                 display = None):
         super(process, self).__init__(timeout, level = level)
 
         #: `subprocess.Popen` object
@@ -249,7 +255,7 @@ class process(tube):
 
         self.preexec_fn = preexec_fn
 
-        message = "Starting program %r" % self.program
+        message = "Starting %s process %r" % (where, display or self.program)
 
         if self.isEnabledFor(logging.DEBUG):
             if self.argv != [self.executable]: message += ' argv=%r ' % self.argv
@@ -508,7 +514,7 @@ class process(tube):
         self.proc.poll()
         if self.proc.returncode != None and not self._stop_noticed:
             self._stop_noticed = True
-            self.info("Program %r stopped with exit code %d" % (self.program, self.proc.returncode))
+            self.info("Process %r stopped with exit code %d" % (self.program, self.proc.returncode))
 
         return self.proc.returncode
 
