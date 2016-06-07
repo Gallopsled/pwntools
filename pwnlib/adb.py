@@ -388,7 +388,9 @@ def listdir(directory='/'):
     """
     io = process(['find', directory, '-maxdepth', '1', '-print0'])
     data = io.recvall()
-    return data.split('\x00')
+    paths = filter(len, data.split('\x00'))
+    relpaths = [os.path.relpath(path, directory) for path in paths]
+    return relpaths
 
 def fastboot(args, *a, **kw):
     """Executes a fastboot command.
