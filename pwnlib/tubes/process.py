@@ -254,8 +254,9 @@ class process(tube):
         self.cwd          = cwd or os.path.curdir
 
         self.preexec_fn = preexec_fn
+        self.display    = display or self.program
 
-        message = "Starting %s process %r" % (where, display or self.program)
+        message = "Starting %s process %r" % (where, self.display)
 
         if self.isEnabledFor(logging.DEBUG):
             if self.argv != [self.executable]: message += ' argv=%r ' % self.argv
@@ -514,7 +515,7 @@ class process(tube):
         self.proc.poll()
         if self.proc.returncode != None and not self._stop_noticed:
             self._stop_noticed = True
-            self.info("Process %r stopped with exit code %d" % (self.program, self.proc.returncode))
+            self.info("Process %r stopped with exit code %d" % (self.display, self.proc.returncode))
 
         return self.proc.returncode
 
