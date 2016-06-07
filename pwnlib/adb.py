@@ -386,10 +386,9 @@ def listdir(directory='/'):
         Because ``adb shell`` is used to retrieve the listing, shell
         environment variable expansion and globbing are in effect.
     """
-    io = process(['ls', '-1', directory])
+    io = process(['find', directory, '-maxdepth', '1', '-print0'])
     data = io.recvall()
-    lines = data.splitlines()
-    return [l.strip() for l in lines]
+    return data.split('\x00')
 
 def fastboot(args, *a, **kw):
     """Executes a fastboot command.
