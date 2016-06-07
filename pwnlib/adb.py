@@ -282,9 +282,11 @@ def process(argv, *a, **kw):
     argv = argv or []
     if isinstance(argv, (str, unicode)):
         argv = [argv]
+
+    display = argv
     argv = context.adb + ['shell'] + argv
 
-    kw.setdefault('display', argv)
+    kw.setdefault('display', display)
     kw.setdefault('where', 'Android')
 
     return tubes.process.process(argv, *a, **kw)
