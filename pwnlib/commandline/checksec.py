@@ -10,16 +10,31 @@ parser = argparse.ArgumentParser(
     description = 'Check binary security settings'
 )
 
+
 parser.add_argument(
     'elf',
-    nargs='+',
+    nargs='*',
     type=file,
     help='Files to check'
+)
+parser.add_argument(
+    '--file',
+    nargs='*',
+    dest='elf2',
+    metavar='elf',
+    type=file,
+    help='File to check (for compatibility with checksec.sh)'
 )
 
 def main():
     args   = parser.parse_args()
-    for f in args.elf:
+    files  = args.elf or args.elf2 or []
+
+    if not files:
+        parser.print_usage()
+        return
+
+    for f in files:
         e = ELF(f.name)
 
 if __name__ == '__main__': main()
