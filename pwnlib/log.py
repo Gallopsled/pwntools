@@ -349,7 +349,8 @@ class Logger(object):
         """
         m = message % args
         if m not in self._one_time_infos:
-            self._one_time_infos.add(m)
+            if self.isEnabledFor(logging.INFO):
+                self._one_time_infos.add(m)
             self._log(logging.INFO, message, args, kwargs, 'info_once')
 
     def warning_once(self, message, *args, **kwargs):
@@ -359,7 +360,8 @@ class Logger(object):
         """
         m = message % args
         if m not in self._one_time_warnings:
-            self._one_time_warnings.add(m)
+            if self.isEnabledFor(logging.INFO):
+                self._one_time_warnings.add(m)
             self._log(logging.WARNING, message, args, kwargs, 'warning_once')
 
     def warn_once(self, *args, **kwargs):
