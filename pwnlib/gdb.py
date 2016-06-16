@@ -191,7 +191,7 @@ def attach(target, execute = None, exe = None, arch = None):
         if not pids:
             log.error('no such process: %s' % target)
         pid = pids[0]
-        log.info('attaching you youngest process "%s" (PID = %d)' %
+        log.info('attaching to youngest process "%s" (PID = %d)' %
                  (target, pid))
     elif isinstance(target, tubes.ssh.ssh_channel):
         if not target.pid:
