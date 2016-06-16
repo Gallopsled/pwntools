@@ -304,9 +304,9 @@ def attach(target, execute = None, exe = None, arch = None):
     if execute:
         tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.gdb',
                                           delete = False)
+        tmp.write("shell /bin/rm %s\n" % tmp.name)
         tmp.write(execute)
         tmp.close()
-        atexit.register(lambda: os.unlink(tmp.name))
         cmd += ' -x "%s"' % tmp.name
 
     log.info('running in new terminal: %s' % cmd)
