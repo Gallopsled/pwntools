@@ -676,24 +676,33 @@ class Partition(object):
             return read(self.path)
 
 class Partitions(object):
+    @property
+    @context.quiet
+    def by_name_dir(self):
+        cmd = ['shell','find /dev/block/platform -type d -name by-name']
+        return adb(cmd).strip()
+
+    @context.quiet
+    def __dir__(self):
+        return list(self)
+
     @context.quiet
     def __iter__(self):
         root()
 
         # Find all named partitions
-        by_name = adb(['shell','find /dev/block/platform -type d -name by-name']).strip()
-        names   = listdir(by_name)
-
-        for name in names:
-            yield os.path.join(by_name, name)
+        for name in listdir(self.by_name_dir):
+            yield name
 
     @context.quiet
     def __getattr__(self, attr):
-        for path in self:
-            if os.path.basename(path) == attr:
+        for name in self:
+            if name == attr:
                 break
         else:
             raise AttributeError("No partition %r" % attr)
+
+        path = os.path.join(self.by_name_dir, name)
 
         # Find the actual path of the device
         devpath = process(['readlink', '-n', path]).recvall()
