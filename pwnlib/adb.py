@@ -396,6 +396,8 @@ def listdir(directory='/'):
     data = io.recvall()
     paths = filter(len, data.split('\x00'))
     relpaths = [os.path.relpath(path, directory) for path in paths]
+    if '.' in relpaths:
+        relpaths.remove('.')
     return relpaths
 
 def fastboot(args, *a, **kw):
