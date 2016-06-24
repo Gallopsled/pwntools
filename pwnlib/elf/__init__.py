@@ -596,18 +596,20 @@ class ELF(ELFFile):
         if self.dynamic_by_tag('DT_BIND_NOW'):
             return "Full"
 
-        if any('GNU_RELRO' in s.header.p_type for s in self.segments):
+        if 'PT_GNU_RELRO' in (seg.header.p_type for seg in self.segments):
             return "Partial"
         return None
 
     @property
     def nx(self):
-        if not any('GNU_STACK' in seg.header.p_type for seg in self.segments):
+        if 'PT_GNU_STACK' not in (seg.header.p_type for seg in self.segments):
             return False
 
         # Can't call self.executable_segments because of dependency loop.
-        exec_seg = [s for s in self.segments if s.header.p_flags & P_FLAGS.PF_X]
-        return not any('GNU_STACK' in seg.header.p_type for seg in exec_seg)
+        exec_seg_types = [seg.header.p_type
+                          for seg in self.segments
+                          if seg.header.p_flags & P_FLAGS.PF_X]
+        return 'PT_GNU_STACK' not in exec_seg_types
 
     @property
     def execstack(self):
