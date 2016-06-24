@@ -113,6 +113,9 @@ class Buffer(Exception):
             >>> b.get()
             'goodbyeworld'
         """
+        # Fast path for ''
+        if not data: return
+
         if isinstance(data, Buffer):
             self.data = data.data + self.data
             self.size += data.size

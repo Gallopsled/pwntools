@@ -179,6 +179,10 @@ class tube(Timeout):
 
         with self.countdown(timeout):
             while not pred(data):
+                if not self.countdown_active():
+                    self.unrecv(data)
+                    return ''
+
                 try:
                     res = self.recv(1)
                 except:
@@ -233,7 +237,7 @@ class tube(Timeout):
         # It will be pasted together at the end if a
         # timeout does not occur, or put into the tube buffer.
         with self.countdown(timeout):
-            while self.countdown_active() and len(self.buffer) < numb and self._fillbuffer(self.timeout):
+            while self.countdown_active() and len(self.buffer) < numb and self._fillbuffer():
                 pass
 
         if len(self.buffer) < numb:
@@ -302,7 +306,7 @@ class tube(Timeout):
         with self.countdown(timeout):
             while self.countdown_active():
                 try:
-                    res = self.recv(timeout=self.timeout)
+                    res = self.recv()
                 except:
                     self.unrecv(''.join(data) + top)
                     raise
