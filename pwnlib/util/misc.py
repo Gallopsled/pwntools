@@ -189,6 +189,10 @@ def run_in_new_terminal(command, terminal = None, args = None):
         elif 'TMUX' in os.environ:
             terminal = 'tmux'
             args     = ['splitw']
+            if 'zsh' in os.environ['SHELL'] and ';' in command:
+                # zsh and tmux have issues with handling SIGINT
+                # wrapping command with sh -c (and escaping single quotes) works around this
+                command = "sh -c '" + command.replace("\\", "\\\\").replace("'", "'\\\\\\''") + "'"
 
     if not terminal:
         log.error('Argument `terminal` is not set, and could not determine a default')
