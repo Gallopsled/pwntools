@@ -74,3 +74,4 @@ warning = log.warning
 warn    = log.warning
 info    = log.info
 debug   = log.debug
+success = log.success
