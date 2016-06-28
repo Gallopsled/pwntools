@@ -323,8 +323,8 @@ class ContextType(object):
 
     #: Default values for :class:`pwnlib.context.ContextType`
     defaults = {
-        'adb_host': os.getenv('ANDROID_ADB_SERVER_HOST', '127.0.0.1'),
-        'adb_port': int(os.getenv('ANDROID_ADB_SERVER_PORT', '5037')),
+        'adb_host': 'localhost',
+        'adb_port': 5037,
         'arch': 'i386',
         'aslr': True,
         'binary': None,
@@ -647,7 +647,7 @@ class ContextType(object):
 
         # Attempt to perform convenience and legacy compatibility transformations.
         # We have to make sure that x86_64 appears before x86 for this to work correctly.
-        transform = [('ppc64', 'powerpc64'), 
+        transform = [('ppc64', 'powerpc64'),
                      ('ppc', 'powerpc'),
                      ('x86_64', 'amd64'),
                      ('x86', 'i386'),
@@ -1192,6 +1192,13 @@ class ContextType(object):
 #: Consider it a shorthand to passing ``os=`` and ``arch=`` to every single
 #: function call.
 context = ContextType()
+
+# Inherit default ADB values
+if 'ANDROID_ADB_SERVER_HOST' in os.environ:
+    context.adb_host = os.environ.get('ANDROID_ADB_SERVER_HOST')
+
+if 'ANDROID_ADB_SERVER_PORT' in os.environ:
+    context.adb_port = int(os.getenv('ANDROID_ADB_SERVER_PORT'))
 
 def LocalContext(function):
     """
