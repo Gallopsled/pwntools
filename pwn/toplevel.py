@@ -68,3 +68,9 @@ try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
+
+error   = log.error
+warning = log.warning
+warn    = log.warning
+info    = log.info
+debug   = log.debug
