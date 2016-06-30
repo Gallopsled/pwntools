@@ -54,6 +54,7 @@ setup_travis()
     which mips-linux-gnu-as
     which powerpc-linux-gnu-as
     which aarch64-linux-gnu-as
+    which qemu-arm-static
 }
 
 setup_linux()
