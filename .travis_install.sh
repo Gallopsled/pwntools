@@ -17,7 +17,7 @@ get_binutils()
 get_qemu()
 {
     echo "Installing qemu"
-    QEMU_URL='https://mirrors.kernel.org/ubuntu/pool/universe/q/qemu/qemu-user-static_2.5%2bdfsg-5ubuntu11_amd64.deb'
+    QEMU_URL='https://mirrors.kernel.org/ubuntu/pool/universe/q/qemu/qemu-user-static_2.6%2bdfsg-3ubuntu1_amd64.deb'
     local_deb_extract "$QEMU_URL"
 }
 
@@ -38,7 +38,7 @@ setup_travis()
         local_deb_extract http://mirrors.mit.edu/ubuntu/ubuntu/pool/universe/b/binutils/binutils-multiarch_2.22-6ubuntu1_amd64.deb
     fi
 
-    if ! which qemu-arm-static; then
+    if ! (which qemu-arm-static && qemu-arm-static -version | grep 2.6.0); then
         get_qemu
     fi
 
