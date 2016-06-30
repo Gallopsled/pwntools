@@ -1,10 +1,10 @@
-# binjitsu - CTF toolkit
-[![Docs latest](https://readthedocs.org/projects/binjitsu/badge/?version=latest)](https://binjitsu.readthedocs.org/)
-[![Travis](https://travis-ci.org/Gallopsled/pwntools.svg?branch=master)](https://travis-ci.org/binjitsu/binjitsu)
-[![Twitter](https://img.shields.io/badge/twitter-ctfbinjitsu-4099FF.svg?style=flat)](https://twitter.com/ctfbinjitsu)
+# pwntools - CTF toolkit
+[![Docs latest](https://readthedocs.org/projects/pwntools/badge/?version=latest)](https://pwntools.readthedocs.org/)
+[![Travis](https://travis-ci.org/Gallopsled/pwntools.svg?branch=master)](https://travis-ci.org/pwntools/pwntools)
+[![Twitter](https://img.shields.io/badge/twitter-ctfpwntools-4099FF.svg?style=flat)](https://twitter.com/ctfpwntools)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](http://choosealicense.com/licenses/mit/)
 
-binjitsu is a CTF framework and exploit development library. Written in Python, it is designed for rapid prototyping and development, and intended to make exploit writing as simple as possible.
+pwntools is a CTF framework and exploit development library. Written in Python, it is designed for rapid prototyping and development, and intended to make exploit writing as simple as possible.
 
 ```python
 from pwn import *
@@ -18,7 +18,7 @@ r.interactive()
 
 # Try It Now!
 
-You can now do a live demo of Binjitsu, [right in your browser](http://demo.pwntools.com).  Alternately, you can SSH to the same host, and log in as user `zerocool` with [this private key][key] (password `i_promise_not_to_be_evil`).
+You can now do a live demo of Pwntools, [right in your browser](http://demo.pwntools.com).  Alternately, you can SSH to the same host, and log in as user `zerocool` with [this private key][key] (password `i_promise_not_to_be_evil`).
 
 It will drop you into a clean, Docker-ized container.  There is nothing of value on the VPS, so please don't be evil.
 
@@ -26,18 +26,18 @@ It will drop you into a clean, Docker-ized container.  There is nothing of value
 
 # Origin
 
-binjitsu is a fork of the [`pwntools`](https://github.com/Gallopsled/pwntools) project.  For the most part, it's a drop-in replacement, though I've added some functionality of my own which may not be available in the upstream release.
+pwntools is a fork of the [`pwntools`](https://github.com/Gallopsled/pwntools) project.  For the most part, it's a drop-in replacement, though I've added some functionality of my own which may not be available in the upstream release.
 
 # Documentation
-Our documentation is available at [binjitsu.readthedocs.org](https://binjitsu.readthedocs.org/)
+Our documentation is available at [pwntools.readthedocs.org](https://pwntools.readthedocs.org/)
 
-To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/binjitsu/examples).
+To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/pwntools/examples).
 
 # Installation
 
-binjitsu is best supported on 64-bit Ubuntu 12.04 and 14.04, but most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).  Python 2.7 is required.
+pwntools is best supported on 64-bit Ubuntu 12.04 and 14.04, but most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).  Python 2.7 is required.
 
-Most of the functionality of binjitsu is self-contained and Python-only.  You should be able to get running quickly with
+Most of the functionality of pwntools is self-contained and Python-only.  You should be able to get running quickly with
 
 ```sh
 apt-get update
@@ -45,7 +45,7 @@ apt-get install python2.7 python-pip python-dev git
 pip install --upgrade git+https://github.com/Gallopsled/pwntools.git
 ```
 
-However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://binjitsu.readthedocs.org/install.html).
+However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://pwntools.readthedocs.org/install.html).
 
 
 # Contribution

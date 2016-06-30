@@ -10,7 +10,7 @@
 Command Line Tools
 ========================
 
-binjitsu comes with a handful of useful command-line utilities which serve as wrappers for some of the internal functionality.
+pwntools comes with a handful of useful command-line utilities which serve as wrappers for some of the internal functionality.
 
 .. toctree::
 

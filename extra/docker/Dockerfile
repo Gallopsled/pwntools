@@ -1,5 +1,5 @@
 ############################################################
-# Dockerfile to build Binjitsu container
+# Dockerfile to build Pwntools container
 # Based on Ubuntu
 ############################################################
 

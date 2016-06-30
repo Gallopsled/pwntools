@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# binjitsu documentation build configuration file, created by
+# pwntools documentation build configuration file, created by
 # sphinx-quickstart on Wed May 28 15:00:52 2014.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -74,7 +74,7 @@ source_encoding = 'utf-8-sig'
 master_doc = 'index'
 
 # General information about the project.
-project = u'binjitsu'
+project = u'pwntools'
 copyright = u'2015, Zach Riggle'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -197,7 +197,7 @@ html_use_index = not build_dash
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'binjitsudoc'
+htmlhelp_basename = 'pwntoolsdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -216,7 +216,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'binjitsu.tex', u'binjitsu Documentation',
+  ('index', 'pwntools.tex', u'pwntools Documentation',
    u'2015, Zach Riggle', 'manual'),
 ]
 
@@ -249,7 +249,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None),
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'binjitsu', u'binjitsu Documentation',
+    ('index', 'pwntools', u'pwntools Documentation',
      [u'2015, Zach Riggle'], 1)
 ]
 
@@ -263,8 +263,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'binjitsu', u'binjitsu Documentation',
-   u'', 'binjitsu', 'CTF exploit writing toolkit.',
+  ('index', 'pwntools', u'pwntools Documentation',
+   u'', 'pwntools', 'CTF exploit writing toolkit.',
    'Miscellaneous'),
 ]
 

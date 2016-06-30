@@ -11,5 +11,5 @@ docs/build
 build
 MANIFEST
 dist
-binjitsu.egg-info
+*.egg-info
 *.core

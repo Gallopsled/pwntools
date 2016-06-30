@@ -273,7 +273,7 @@ class ContextType(object):
 
     Additionally, the context is thread-aware when using
     :class:`pwnlib.context.Thread` instead of :class:`threading.Thread`
-    (all internal ``binjitsu`` threads use the former).
+    (all internal ``pwntools`` threads use the former).
 
     The context is also scope-aware by using the ``with`` keyword.
 
@@ -816,7 +816,7 @@ class ContextType(object):
     @_validator
     def log_level(self, value):
         """
-        Sets the verbosity of ``binjitsu`` logging mechanism.
+        Sets the verbosity of ``pwntools`` logging mechanism.
 
         More specifically it controls the filtering of messages that happens
         inside the handler for logging to the screen. So if you want e.g. log
@@ -1184,7 +1184,7 @@ class ContextType(object):
     Thread = Thread
 
 
-#: Global ``context`` object, used to store commonly-used binjitsu settings.
+#: Global ``context`` object, used to store commonly-used pwntools settings.
 #: In most cases, the context is used to infer default variables values.
 #: For example, :meth:`pwnlib.asm.asm` can take an ``os`` parameter as a
 #: keyword argument.  If it is not supplied, the ``os`` specified by

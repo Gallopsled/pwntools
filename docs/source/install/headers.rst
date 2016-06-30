@@ -1,7 +1,7 @@
 Python Development Headers
 -----------------------------
 
-Some of binjitsu' Python dependencies require native extensions (for example, Paramiko requires PyCrypto).
+Some of pwntools' Python dependencies require native extensions (for example, Paramiko requires PyCrypto).
 
 In order to build these native extensions, the development headers for Python must be installed.
 

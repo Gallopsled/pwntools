@@ -1,6 +1,6 @@
 # Testing
 
-Binjitsu makes extensive use of unit tests and integration tests to ensure everything is in working order, and no regressions occur.
+Pwntools makes extensive use of unit tests and integration tests to ensure everything is in working order, and no regressions occur.
 
 ## Test Suite
 

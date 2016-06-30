@@ -16,7 +16,7 @@ for dirpath, dirnames, filenames in os.walk(convert_path('pwnlib/shellcraft/temp
     for f in filenames:
         templates.append(os.path.relpath(os.path.join(dirpath, f), 'pwnlib'))
 
-# This makes binjitsu-LICENSE.txt appear with the package folders
+# This makes pwntools-LICENSE.txt appear with the package folders
 for scheme in INSTALL_SCHEMES.values():
     scheme['data'] = scheme['purelib']
 
@@ -57,11 +57,11 @@ if not os.path.exists(PythonH):
     sys.exit(-1)
 
 setup(
-    name                 = 'binjitsu',
+    name                 = 'pwntools',
     packages             = find_packages(),
     version              = '2.2.1',
     data_files           = [('',
-                             ['LICENSE-binjitsu.txt',
+                             ['LICENSE-pwntools.txt',
                              ]),
                             ],
     package_data         = {
@@ -81,7 +81,7 @@ setup(
     url                  = 'https://pwntools.com',
     download_url         = "https://pwntools.com/tarball/master",
     install_requires     = install_requires,
-    license              = "Mostly MIT, some GPL/BSD, see LICENSE-binjitsu.txt and LICENSE-pwntools.txt",
+    license              = "Mostly MIT, some GPL/BSD, see LICENSE-pwntools.txt and LICENSE-pwntools.txt",
     classifiers          = [
         'Topic :: Security',
         'Environment :: Console',

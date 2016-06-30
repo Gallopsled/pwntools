@@ -11,7 +11,7 @@ and::
 '''
 from pwn import *
 
-s = 'hello from binjitsu'
+s = 'hello from pwntools'
 print text.black_on_green(s)
 print text.black_on_bright_green(s)
 print text.green_on_black(s)

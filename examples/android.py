@@ -1,6 +1,6 @@
 from pwn import *
 
-# Tell binjitsu that the target is an Android device
+# Tell pwntools that the target is an Android device
 context.os='android'
 context.arch='aarch64' # or 'arm'
 

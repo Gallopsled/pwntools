@@ -11,7 +11,7 @@ Building `binutils` from source takes about 60 seconds on a modern 8-core machin
 
 Ubuntu
 ^^^^^^^^^^^^^^^^
-First, add our `Personal Package Archive repository <http://binutils.binjitsu.com>`__.
+First, add our `Personal Package Archive repository <http://binutils.pwntools.com>`__.
 
 .. code-block:: bash
 

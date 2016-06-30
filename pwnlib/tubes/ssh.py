@@ -509,7 +509,7 @@ class ssh(Timeout, Logger):
         self.password        = password
         self.key             = key
         self.keyfile         = keyfile
-        self._cachedir       = os.path.join(tempfile.gettempdir(), 'binjitsu-ssh-cache')
+        self._cachedir       = os.path.join(tempfile.gettempdir(), 'pwntools-ssh-cache')
         self.cwd             = '.'
         self.cache           = cache
 
@@ -1280,7 +1280,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
     def download_file(self, remote, local = None):
         """Downloads a file from the remote server.
 
-        The file is cached in /tmp/binjitsu-ssh-cache using a hash of the file, so
+        The file is cached in /tmp/pwntools-ssh-cache using a hash of the file, so
         calling the function twice has little overhead.
 
         Arguments:

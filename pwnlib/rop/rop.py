@@ -813,7 +813,7 @@ class ROP(object):
     def __get_cachefile_name(self, elf):
         basename = os.path.basename(elf.file.name)
         sha256 = hashlib.sha256(elf.get_data()).hexdigest()
-        cachedir = os.path.join(tempfile.gettempdir(), 'binjitsu-rop-cache')
+        cachedir = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache')
         if not os.path.exists(cachedir):
             os.mkdir(cachedir)
         return os.path.join(cachedir, sha256)

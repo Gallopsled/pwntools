@@ -5,9 +5,9 @@
 Getting Started
 ========================
 
-To get your feet wet with binjitsu, let's first go through a few examples.
+To get your feet wet with pwntools, let's first go through a few examples.
 
-When writing exploits, binjitsu generally follows the "kitchen sink" approach.
+When writing exploits, pwntools generally follows the "kitchen sink" approach.
 
     >>> from pwn import *
 
@@ -21,7 +21,7 @@ Making Connections
 ------------------
 
 You need to talk to the challenge binary in order to pwn it, right?
-binjitsu makes this stupid simple with its :mod:`pwnlib.tubes` module.
+pwntools makes this stupid simple with its :mod:`pwnlib.tubes` module.
 
 This exposes a standard interface to talk to processes, sockets, serial ports,
 and all manner of things, along with some nifty helpers for common tasks.
@@ -91,7 +91,7 @@ A common task for exploit-writing is converting between integers as Python
 sees them, and their representation as a sequence of bytes.
 Usually folks resort to the built-in ``struct`` module.
 
-binjitsu makes this easier with :mod:`pwnlib.util.packing`.  No more remembering
+pwntools makes this easier with :mod:`pwnlib.util.packing`.  No more remembering
 unpacking codes, and littering your code with helper routines.
 
     >>> import struct
@@ -139,7 +139,7 @@ Additionally, you can use a shorthand to set all of the values at once.
 Setting Logging Verbosity
 -------------------------
 
-You can control the verbosity of the standard binjitsu logging via ``context``.
+You can control the verbosity of the standard pwntools logging via ``context``.
 
 For example, setting
 
@@ -170,7 +170,7 @@ But if you do, it's easy to suss out!
        5:   eb f9                   jmp    0x0
 
 However, you shouldn't even need to write your own shellcode most of the
-time!  binjitsu comes with the :mod:`pwnlib.shellcraft` module, which is
+time!  pwntools comes with the :mod:`pwnlib.shellcraft` module, which is
 loaded with useful time-saving shellcodes.
 
 Let's say that we want to `setreuid(getuid(), getuid())` followed by `dup`ing

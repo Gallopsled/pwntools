@@ -1,7 +1,7 @@
-binjitsu
+pwntools
 ====================================
 
-``binjitsu`` is a CTF framework and exploit development library.
+``pwntools`` is a CTF framework and exploit development library.
 Written in Python, it is designed for rapid prototyping and development,
 and intended to make exploit writing as simple as possible.
 
@@ -22,7 +22,7 @@ Getting Started
 Module Index
 ------------
 
-Each of the ``binjitsu`` modules is documented here.
+Each of the ``pwntools`` modules is documented here.
 
 .. toctree::
    :maxdepth: 1
