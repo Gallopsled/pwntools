@@ -24,10 +24,6 @@ It will drop you into a clean, Docker-ized container.  There is nothing of value
 
 [key]: https://gist.githubusercontent.com/zachriggle/efa2e0080ae6de2e8344/raw/4b503e9db54f009d97477d03d4ba5678471f8ff0/id_rsa
 
-# Origin
-
-pwntools is a fork of the [`pwntools`](https://github.com/Gallopsled/pwntools) project.  For the most part, it's a drop-in replacement, though I've added some functionality of my own which may not be available in the upstream release.
-
 # Documentation
 Our documentation is available at [pwntools.readthedocs.org](https://pwntools.readthedocs.org/)
 
