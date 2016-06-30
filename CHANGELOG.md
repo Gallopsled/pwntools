@@ -5,7 +5,7 @@ minor changes are omitted.
 
 ## 3.0.0
 
-This was a large release with a lot of bugfixes and changes.  The Binjitsu project, a fork of Pwntools, was merged back into Pwntools.  As such, its features are now available here.
+This was a large release (1270 commits since 2.2.0) with a lot of bugfixes and changes.  The Binjitsu project, a fork of Pwntools, was merged back into Pwntools.  As such, its features are now available here.
 
 As always, the best source of information on specific features is the comprehensive docs at https://pwntools.readthedocs.org.
 
