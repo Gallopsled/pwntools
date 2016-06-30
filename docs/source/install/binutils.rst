@@ -32,11 +32,11 @@ Mac OS X is just as easy, but requires building binutils from source.
 However, we've made ``homebrew`` recipes to make this a single command.
 After installing `brew <http://brew.sh>`__, grab the appropriate
 recipe from our `binutils
-repo <https://github.com/binjitsu/binjitsu-binutils/>`__.
+repo <https://github.com/Gallopsled/pwntools-binutils/>`__.
 
 .. code-block:: bash
 
-    $ brew install https://raw.githubusercontent.com/binjitsu/binjitsu-binutils/master/osx/binutils-$ARCH.rb
+    $ brew install https://raw.githubusercontent.com/Gallopsled/pwntools-binutils/master/osx/binutils-$ARCH.rb
 
 Alternate OSes
 ^^^^^^^^^^^^^^^^

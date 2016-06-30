@@ -47,7 +47,7 @@ RUN ln -s /usr/arm-linux-gnueabihf /etc/qemu-binfmt/arm
 RUN pip install --upgrade pip pycparser psutil python-ptrace
 RUN pip3 install --upgrade pip pycparser psutil python-ptrace
 
-RUN pip install --upgrade git+https://github.com/binjitsu/binjitsu.git
+RUN pip install --upgrade git+https://github.com/Gallopsled/pwntools.git
 
 RUN locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8

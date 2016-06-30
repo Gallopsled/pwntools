@@ -1,6 +1,6 @@
 # binjitsu - CTF toolkit
 [![Docs latest](https://readthedocs.org/projects/binjitsu/badge/?version=latest)](https://binjitsu.readthedocs.org/)
-[![Travis](https://travis-ci.org/binjitsu/binjitsu.svg?branch=master)](https://travis-ci.org/binjitsu/binjitsu)
+[![Travis](https://travis-ci.org/Gallopsled/pwntools.svg?branch=master)](https://travis-ci.org/binjitsu/binjitsu)
 [![Twitter](https://img.shields.io/badge/twitter-ctfbinjitsu-4099FF.svg?style=flat)](https://twitter.com/ctfbinjitsu)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](http://choosealicense.com/licenses/mit/)
 
@@ -42,7 +42,7 @@ Most of the functionality of binjitsu is self-contained and Python-only.  You sh
 ```sh
 apt-get update
 apt-get install python2.7 python-pip python-dev git
-pip install --upgrade git+https://github.com/binjitsu/binjitsu.git
+pip install --upgrade git+https://github.com/Gallopsled/pwntools.git
 ```
 
 However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://binjitsu.readthedocs.org/install.html).
@@ -53,7 +53,7 @@ However, some of the features (assembling/disassembling foreign architectures) r
 See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 # Contact
-If you have any questions not worthy of a [bug report](https://github.com/binjitsu/binjitsu/issues), feel free to ping
+If you have any questions not worthy of a [bug report](https://github.com/Gallopsled/pwntools/issues), feel free to ping
 at [`ebeip90` on Freenode](irc://irc.freenode.net/pwntools) and ask away.
 Click [here](https://kiwiirc.com/client/irc.freenode.net/pwntools) to connect.
 There is also a [mailing list](https://groups.google.com/forum/#!forum/pwntools-users) for higher latency discussion.
