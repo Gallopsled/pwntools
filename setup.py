@@ -78,8 +78,8 @@ setup(
     description          = "CTF framework and exploit development library.",
     author               = "Zach Riggle",
     author_email         = "zachriggle@gmail.com",
-    url                  = 'https://binjit.su',
-    download_url         = "https://binjit.su/tarball/master",
+    url                  = 'https://pwntools.com',
+    download_url         = "https://pwntools.com/tarball/master",
     install_requires     = install_requires,
     license              = "Mostly MIT, some GPL/BSD, see LICENSE-binjitsu.txt and LICENSE-pwntools.txt",
     classifiers          = [

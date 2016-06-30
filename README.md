@@ -18,7 +18,7 @@ r.interactive()
 
 # Try It Now!
 
-You can now do a live demo of Binjitsu, [right in your browser](http://demo.binjit.su).  Alternately, you can SSH to the same host, and log in as user `zerocool` with [this private key][key] (password `i_promise_not_to_be_evil`).
+You can now do a live demo of Binjitsu, [right in your browser](http://demo.pwntools.com).  Alternately, you can SSH to the same host, and log in as user `zerocool` with [this private key][key] (password `i_promise_not_to_be_evil`).
 
 It will drop you into a clean, Docker-ized container.  There is nothing of value on the VPS, so please don't be evil.
 
