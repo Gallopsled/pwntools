@@ -1,9 +1,9 @@
-"""
+r"""
 Resolve symbols in loaded, dynamically-linked ELF binaries.
 Given a function which can leak data at an arbitrary address,
 any symbol in any loaded library can be resolved.
 
-Example
+Examples
 ^^^^^^^^
 
 ::
@@ -44,6 +44,47 @@ Example
     # given a pointer into it.
     d = DynELF(leak, libc + 0x1234)
     assert d.lookup('system')      == system
+
+
+Here's another example which actually serves as a doctest.
+First, let's assume that we have a pointer somewhere into the main
+executable.
+
+    >>> maps = read('/proc/self/maps').splitlines()
+    >>> map  = (line for line in maps if '/python' in line).next()
+    >>> addr = map.split('-')[0]
+    >>> addr = int(addr, 16)
+
+Normally we don't get the base address, but some random offset into
+the binary.
+
+    >>> addr += 0xdead
+
+Next, let's describe a leak function which can return memory from
+the target address space.
+
+    >>> @MemLeak
+    ... def leak(addr):
+    ...     with open('/proc/self/mem', 'rb') as mem:
+    ...         mem.seek(addr)
+    ...         try:
+    ...             return mem.read(32)
+    ...         except:
+    ...             pass
+
+Now we can find arbitrary functions, in arbitrary modules.
+
+    >>> de = DynELF(leak, addr)
+    >>> system = de.lookup('system', 'libc')
+
+Let's try out our function pointer!  Normally we would have register
+or stack control to do this, but we can do it properly with ctypes.
+
+    >>> import ctypes
+    >>> system_functype = ctypes.CFUNCTYPE(None, ctypes.c_char_p)
+    >>> system_functype(system)("echo hello > hello.dynelf")
+    >>> read('hello.dynelf')
+    'hello\n'
 
 DynELF
 """
@@ -259,7 +300,7 @@ class DynELF(object):
         self.leak = real_leak
 
         # Find the linkmap using the helper pointers
-        self._find_linkmap(pltgot, debug)
+        self._link_map = self._find_linkmap(pltgot, debug)
         self.success('Done')
 
     def _find_base(self, ptr):
