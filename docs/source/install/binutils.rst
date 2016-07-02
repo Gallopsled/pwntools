@@ -52,6 +52,8 @@ OSes, ``binutils`` is simple to build by hand.
     ARCH=arm # Target architecture
 
     cd /tmp
+
+    rm -rf binutils-*
     wget -nc https://ftp.gnu.org/gnu/binutils/binutils-$V.tar.gz
     wget -nc https://ftp.gnu.org/gnu/binutils/binutils-$V.tar.gz.sig
 
