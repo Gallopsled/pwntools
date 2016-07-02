@@ -1,6 +1,5 @@
 import alphanum_byte
 import ARM_Instructions
-import builder
 import random_funcs
 
 #+---------------------------------------------------+*/
