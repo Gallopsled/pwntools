@@ -1,6 +1,7 @@
 import base64
 import errno
 import os
+import platform
 import re
 import socket
 import stat
@@ -84,6 +85,13 @@ def size(n, abbriv = 'B', si = False):
 
     return '%.02fP%s' % (n / base, abbriv)
 
+KB = 1024
+MB = 1024 * KB
+GB = 1024 * MB
+
+KiB = 1000
+MiB = 1000 * KB
+GiB = 1000 * MB
 
 def read(path, count=-1, skip=0):
     """read(path, count=-1, skip=0) -> str
@@ -131,6 +139,10 @@ def which(name, all = False):
       >>> which('sh')
       '/bin/sh'
 """
+    # If name is a path, do not attempt to resolve it.
+    if os.path.sep in name:
+        return name
+
     isroot = os.getuid() == 0
     out = set()
     try:
@@ -198,13 +210,21 @@ def run_in_new_terminal(command, terminal = None, args = None):
     if not terminal_path:
         log.error('Could not find terminal: %s' % terminal)
 
-    argv = [terminal_path] + args + [command]
+    argv = [terminal_path] + args
+
+    if isinstance(command, str):
+        argv += [command]
+    elif isinstance(command, (list, tuple)):
+        argv += list(command)
+
     log.debug("Launching a new terminal: %r" % argv)
 
     if os.fork() == 0:
-        os.close(0)
-        os.close(1)
-        os.close(2)
+        # Closing the file descriptors makes everything fail under tmux on OSX.
+        if platform.system() != 'Darwin':
+            os.close(0)
+            os.close(1)
+            os.close(2)
         os.execv(argv[0], argv)
         os._exit(1)
 
@@ -310,14 +330,14 @@ def dealarm_shell(tube):
     """
     tube.clean()
 
-    tube.sendline('which python')
+    tube.sendline('which python || echo')
     if tube.recvline().startswith('/'):
         tube.sendline('''exec python -c "import signal, os; signal.alarm(0); os.execl('$SHELL','')"''')
         return tube
 
-    tube.sendline('which perl')
+    tube.sendline('which perl || echo')
     if tube.recvline().startswith('/'):
-        tube.sendline('''exec perl -e "alarm 0; exec '$SHELL'"''')
+        tube.sendline('''exec perl -e "alarm 0; exec '${SHELL:-/bin/sh}'"''')
         return tube
 
     return None

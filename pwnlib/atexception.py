@@ -71,25 +71,23 @@ def _run_handlers():
     If a handler raises an exception, it will be printed but nothing else
     happens, i.e. other handlers will be run.
     """
-    context.clear()
     for _ident, (func, args, kwargs, ctx) in \
         sorted(_handlers.items(), reverse = True):
         try:
-            with context.local(**ctx):
+            with context.local():
+                context.clear()
+                context.update(**ctx)
                 func(*args, **kwargs)
         except SystemExit:
             pass
-        except:
+        except Exception:
             # extract the current exception and rewind the traceback to where it
             # originated
             typ, val, tb = sys.exc_info()
             traceback.print_exception(typ, val, tb.tb_next)
 
 # we rely on the existing excepthook to print exceptions
-if hasattr(sys, 'excepthook'):
-    _oldhook = sys.excepthook
-else:
-    _oldhook = None
+_oldhook = getattr(sys, 'excepthook', None)
 
 def _newhook(typ, val, tb):
     """_newhook(typ, val, tb)
@@ -99,6 +97,7 @@ def _newhook(typ, val, tb):
     """
     if _oldhook:
         _oldhook(typ, val, tb)
-    _run_handlers()
+    if _run_handlers:
+        _run_handlers()
 
 sys.excepthook = _newhook

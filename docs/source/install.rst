@@ -20,21 +20,22 @@ following system libraries installed.
 Released Version
 -----------------
 
-Pwntools is available as a ``pip`` package.
+pwntools is available as a ``pip`` package.
 
 .. code-block:: bash
 
     $ apt-get install python2.7 python2.7-dev python-pip
-    $ pip install pwntools
+    $ pip install --upgrade git+https://github.com/Gallopsled/pwntools.git
 
-Latest Version
+Development
 --------------
 
-Alternatively if you prefer to use the latest version from the
-repository, pip can install directly from github.
+If you are hacking on Pwntools locally, you'll want to do something like this:
 
 .. code-block:: bash
 
-    $ pip install git+https://github.com/Gallopsled/pwntools#egg=pwntools
+    $ git clone https://github.com/Gallopsled/pwntools
+    $ cd pwntools
+    $ pip install -e .
 
 .. _Ubuntu: https://launchpad.net/~pwntools/+archive/ubuntu/binutils

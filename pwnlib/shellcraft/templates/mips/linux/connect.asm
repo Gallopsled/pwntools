@@ -1,6 +1,8 @@
-<% 
-    from pwnlib.shellcraft import mips
-    from pwnlib.util.net import sockaddr
+<%
+ from pwnlib.shellcraft.mips import push, mov, pushstr
+ from pwnlib.shellcraft.mips.linux import syscall
+ from pwnlib.constants import SOCK_STREAM, SYS_socket, SYS_connect
+ from pwnlib.util.net import sockaddr
 %>
 <%page args="host, port, network='ipv4'"/>
 <%docstring>
@@ -11,12 +13,14 @@
 <%
     sockaddr, addr_len, address_family = sockaddr(host, port, network)
 %>\
-    /* First create socket */
-    ${mips.syscall('SYS_socket', address_family, 'SOCK_STREAM', 0)}
-    ${mips.mov('$s0', '$v0')}
+/* open new socket */
+    ${syscall(SYS_socket, address_family, SOCK_STREAM, 0)}
 
-    /* Create address structure on stack */
-    ${mips.pushstr(sockaddr, False)}
+/* save opened socket */
+    ${mov('$s0', '$v0')}
 
-    /* Connect the socket */
-    ${mips.syscall('SYS_connect', '$s0', '$sp', addr_len)}
+/* push sockaddr, connect() */
+    ${pushstr(sockaddr, False)}
+    ${syscall(SYS_connect, '$s0', '$sp', addr_len)}
+
+/* Socket that is maybe connected is in $s0 */

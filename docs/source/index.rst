@@ -28,19 +28,24 @@ Each of the ``pwntools`` modules is documented here.
    :maxdepth: 1
    :glob:
 
+   adb
    asm
    atexception
    atexit
    constants
    context
    dynelf
+   encoders
    elf
    exception
+   fmtstr
    gdb
    log
    memleak
    replacements
    rop
+   rop/*
+   runner
    shellcraft
    shellcraft/*
    term
@@ -50,6 +55,11 @@ Each of the ``pwntools`` modules is documented here.
    ui
    useragents
    util/*
+
+.. toctree::
+   :hidden:
+
+   testexample
 
 .. only:: not dash
 

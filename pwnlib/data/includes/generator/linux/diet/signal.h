@@ -122,7 +122,7 @@ __BEGIN_DECLS
 #define SIGSTKFLT	36
 
 #else
-#error signal layout not yet known
+//#error signal layout not yet known
 #endif
 
 #define SIGCLD		SIGCHLD

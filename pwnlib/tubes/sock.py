@@ -10,8 +10,8 @@ log = getLogger(__name__)
 class sock(tube):
     """Methods available exclusively to sockets."""
 
-    def __init__(self, timeout):
-        super(sock, self).__init__(timeout)
+    def __init__(self, timeout, level = None):
+        super(sock, self).__init__(timeout, level = level)
         self.closed = {"recv": False, "send": False}
 
     # Overwritten for better usability
@@ -22,7 +22,7 @@ class sock(tube):
         """
 
         if getattr(self, 'type', None) == socket.SOCK_DGRAM:
-            log.error("UDP sockets does not supports recvall")
+            self.error("UDP sockets does not supports recvall")
         else:
             return super(sock, self).recvall(timeout)
 
@@ -101,11 +101,11 @@ class sock(tube):
         self._close_msg()
 
     def _close_msg(self):
-        log.info('Closed connection to %s port %d' % (self.rhost, self.rport))
+        self.info('Closed connection to %s port %d' % (self.rhost, self.rport))
 
     def fileno(self):
         if not self.sock:
-            log.error("A closed socket does not have a file number")
+            self.error("A closed socket does not have a file number")
 
         return self.sock.fileno()
 

@@ -11,7 +11,7 @@ Thin wrapper around :func:`pwnlib.shellcraft.i386.mov`, which sets
 Example:
 
     >>> print pwnlib.shellcraft.i386.freebsd.mov('eax', 'SYS_execve').rstrip()
-        push 0x3b
+        push (SYS_execve) /* 0x3b */
         pop eax
 
 </%docstring>

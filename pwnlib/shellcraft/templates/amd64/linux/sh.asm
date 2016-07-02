@@ -1,6 +1,11 @@
 <% from pwnlib.shellcraft import amd64 %>
-<%docstring>Execute /bin/sh</%docstring>
+<%docstring>
+Execute a different process.
 
-${amd64.pushstr("/bin///sh")}
+    >>> p = run_assembly(shellcraft.amd64.linux.sh())
+    >>> p.sendline('echo Hello')
+    >>> p.recv()
+    'Hello\n'
 
-${amd64.syscall('SYS_execve', 'rsp', 0, 0)}
+</%docstring>
+${amd64.linux.execve('/bin///sh', 0, 0)}

@@ -1,11 +1,14 @@
 .. testsetup:: *
 
-   from pwnlib.elf import *
-   from pwnlib.rop import *
-   from pwnlib.util.misc import which
+   from pwn import *
 
 :mod:`pwnlib.rop` --- Return Oriented Programming
 =================================================
 
-.. automodule:: pwnlib.rop
-   :members:
+Submodules
+----------
+
+.. toctree::
+   :glob:
+
+   rop/*

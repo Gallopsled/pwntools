@@ -10,7 +10,7 @@ from . import keyconsts as kc
 from . import termcap
 
 try:    _fd = sys.stdin.fileno()
-except: _fd = file('/dev/null', 'r').fileno()
+except Exception: _fd = file('/dev/null', 'r').fileno()
 
 def getch(timeout = 0):
     while True:

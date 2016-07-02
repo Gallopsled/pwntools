@@ -1,7 +1,7 @@
 .. testsetup:: *
 
    import tempfile
-   import os
+   import subprocess
    from pwnlib.context import context
    from pwnlib.asm import *
    from pwnlib import shellcraft

@@ -1,4 +1,7 @@
-from pwn import *
+import sys
+
+import pwnlib
+from pwnlib.context import context
 
 pwnlib.log.console.stream = sys.stderr
 

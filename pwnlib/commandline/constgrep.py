@@ -4,13 +4,12 @@ import argparse
 import os
 import re
 
-import pwnlib.log
-from pwnlib import asm
 from pwnlib import constants
+from pwnlib.asm import cpp
 from pwnlib.context import context
 from pwnlib.util import safeeval
 
-pwnlib.log.install_default_handler()
+from . import common
 
 p = argparse.ArgumentParser(
     description = "Looking up constants from header files.\n\nExample: constgrep -c freebsd -m  ^PROT_ '3 + 4'",
@@ -20,7 +19,7 @@ p = argparse.ArgumentParser(
 group = p.add_mutually_exclusive_group()
 group.add_argument(
     '-e', '--exact',
-    metavar = '<constant name>',
+    metavar = 'constant',
     # nargs = 1,
     default = None,
     help = 'Do an exact match for a constant instead of searching for a regex',
@@ -53,33 +52,26 @@ p.add_argument(
 
 p.add_argument(
     '-c', '--context',
-    metavar = '<opt>',
-    choices = context.oses + list(context.architectures),
-    default = ['i386','linux'],
+    metavar = 'arch_or_os',
     action = 'append',
-    help = 'The os/architecture to find constants for (default: linux/i386), choose from: %s' % \
-    ', '.join(sorted(context.oses + context.architectures.keys()))
+    type   = common.context_arg,
+    choices = common.choices,
+    help = 'The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: %s' % common.choices,
 )
 
 def main():
     args = p.parse_args()
 
-    # Find the architecture and os from the list of contexts
-    for arch in args.context[::-1]:
-        if arch in context.architectures: break
-    for os in args.context[::-1]:
-        if os in context.oses: break
-
     if args.exact:
         # This is the simple case
-        print asm.cpp(args.exact, os = os, arch = arch).strip()
+        print cpp(args.exact).strip()
     else:
         # New we search in the right module.
         # But first: We find the right module
-        if os == 'freebsd':
+        if context.os == 'freebsd':
             mod = constants.freebsd
         else:
-            mod = getattr(getattr(constants, os), arch)
+            mod = getattr(getattr(constants, context.os), context.arch)
 
         # Compile the given regex, for optimized lookup
         if args.case_insensitive:
@@ -122,7 +114,7 @@ def main():
 
         # Output all matching constants
         for _, k in sorted(out):
-            print '#define %s %s' % (k.ljust(maxlen), asm.cpp(k, os = os, arch = arch).strip())
+            print '#define %s %s' % (k.ljust(maxlen), cpp(k).strip())
 
         # If we are in match_mode, then try to find a combination of
         # constants that yield the exact given value

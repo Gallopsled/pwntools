@@ -1,8 +1,11 @@
-<%docstring>Execute /bin/sh</%docstring>
+<% from pwnlib.shellcraft import arm %>
+<%docstring>
+Execute a different process.
 
-    adr r0, bin_sh
-    mov r2, #0
-    push {r0, r2}
-    mov r1, sp
-    svc SYS_execve
-    bin_sh: .asciz "/bin/sh"
+    >>> p = run_assembly(shellcraft.arm.linux.sh())
+    >>> p.sendline('echo Hello')
+    >>> p.recv()
+    'Hello\n'
+
+</%docstring>
+    ${arm.linux.execve('/bin///sh', 0, 0)}

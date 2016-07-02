@@ -4,6 +4,7 @@ Script to generate README.md
 
 from pwn import *
 
+
 out = '''# Examples
 While these examples should all work, they are not very representative of
 the pwntools project.

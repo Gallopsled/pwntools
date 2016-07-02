@@ -1,7 +1,6 @@
 <%
+  from pwnlib.shellcraft import eval, pretty, okay
   from pwnlib.util import lists, packing, fiddling, misc
-  from pwnlib import constants
-  from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
   from pwnlib.log import getLogger
   from pwnlib.shellcraft.registers import get_register, is_register, bits_required
   log = getLogger('pwnlib.shellcraft.i386.mov')
@@ -20,6 +19,11 @@ If src is a string that is not a register, then it will locally set
 `context.arch` to `'i386'` and use :func:`pwnlib.constants.eval` to evaluate the
 string. Note that this means that this shellcode can change behavior depending
 on the value of `context.os`.
+
+Args:
+  dest (str): The destination register.
+  src (str): Either the input register, or an immediate value.
+  stack_allowed (bool): Can the stack be used?
 
 Example:
 
@@ -45,52 +49,47 @@ Example:
     >>> print shellcraft.i386.mov('ax', 'bl').rstrip()
         movzx ax, bl
     >>> print shellcraft.i386.mov('eax', 1).rstrip()
-        push 0x1
+        push 1
         pop eax
     >>> print shellcraft.i386.mov('eax', 1, stack_allowed=False).rstrip()
         xor eax, eax
-        mov al, 0x1
+        mov al, 1
     >>> print shellcraft.i386.mov('eax', 0xdead00ff).rstrip()
-        mov eax, 0x1010101 /* mov eax, 0xdead00ff */
-        xor eax, 0xdfac01fe
+        mov eax, -0xdead00ff
+        neg eax
     >>> print shellcraft.i386.mov('eax', 0xc0).rstrip()
         xor eax, eax
         mov al, 0xc0
+    >>> print shellcraft.i386.mov('edi', 0xc0).rstrip()
+        mov edi, -0xc0
+        neg edi
     >>> print shellcraft.i386.mov('eax', 0xc000).rstrip()
-        xor eax, eax /* mov eax, 0xc000 */
-        mov ah, 0xc0
+        xor eax, eax
+        mov ah, 0xc000 >> 8
+    >>> print shellcraft.i386.mov('eax', 0xffc000).rstrip()
+        mov eax, 0x1010101
+        xor eax, 0x1010101 ^ 0xffc000
     >>> print shellcraft.i386.mov('edi', 0xc000).rstrip()
-        mov edi, 0x1010101 /* mov edi, 0xc000 */
-        xor edi, 0x101c101
+        mov edi, (-1) ^ 0xc000
+        not edi
+    >>> print shellcraft.i386.mov('edi', 0xf500).rstrip()
+        mov edi, 0x1010101
+        xor edi, 0x1010101 ^ 0xf500
     >>> print shellcraft.i386.mov('eax', 0xc0c0).rstrip()
         xor eax, eax
         mov ax, 0xc0c0
     >>> print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
-        push 0xb
+        push (SYS_execve) /* 0xb */
         pop eax
-    >>> with context.local(os = 'freebsd'):
+    >>> with context.local(os='freebsd'):
     ...     print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
-        push 0x3b
+        push (SYS_execve) /* 0x3b */
         pop eax
     >>> print shellcraft.i386.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
-        push 0x7
+        push (PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
         pop eax
-
-Args:
-  dest (str): The destination register.
-  src (str): Either the input register, or an immediate value.
-  stack_allowed (bool): Can the stack be used?
 </%docstring>
 <%
-def okay(s):
-    return '\0' not in s and '\n' not in s
-
-def pretty(n):
-    if n < 0:
-        return str(n)
-    else:
-        return hex(n)
-
 src_name = src
 if not isinstance(src, (str, tuple)):
     src_name = pretty(src)
@@ -112,8 +111,7 @@ if get_register(src):
     if dest.size < src.size and src.name not in dest.bigger:
         log.error("cannot mov %s, %s: dddest is smaller than src" % (dest, src))
 else:
-    with ctx.local(arch = 'i386'):
-        src = constants.eval(src)
+    src = eval(src)
 
     if not dest.fits(src):
         log.error("cannot mov %s, %r: dest is smaller than src" % (dest, src))
@@ -121,12 +119,18 @@ else:
     src_size = bits_required(src)
 
     # Calculate the packed version
-    srcp = packing.pack(src & ((1<<32)-1), dest.size)
+    mask = ((1<<32)-1)
+    masked = src & mask
+    srcp = packing.pack(masked, dest.size)
 
     # Calculate the unsigned and signed versions
     srcu = packing.unpack(srcp, dest.size, sign=False)
     srcs = packing.unpack(srcp, dest.size, sign=True)
 
+    srcp_not = packing.pack(fiddling.bnot(masked))
+    srcp_neg = packing.pack(fiddling.negate(masked))
+    srcu_not = packing.unpack(srcp_not)
+    srcu_neg = packing.unpack(srcp_neg)
 %>\
 % if is_register(src):
     % if src == dest:
@@ -160,19 +164,26 @@ else:
     % elif okay(srcp):
         mov ${dest}, ${pretty(src)}
 ## If it's an IMM8, we can use the 8-bit register
-    % elif 0 <= srcu < 2**8 and okay(srcp[0]) and dest.sizes[8]:
+    % elif 0 <= srcu < 2**8 and okay(srcp[0]) and dest.sizes.get(8, 0):
         xor ${dest}, ${dest}
         mov ${dest.sizes[8]}, ${pretty(srcu)}
 ## If it's an IMM16, but there's nothing in the lower 8 bits,
 ## we can use the high-8-bits register.
 ## However, we must check that it exists.
     % elif srcu == (srcu & 0xff00) and okay(srcp[1]) and dest.ff00:
-        xor ${dest}, ${dest} /* mov ${dest}, ${pretty(src)} */
-        mov ${dest.ff00}, ${pretty(srcu >> 8)}
+        xor ${dest}, ${dest}
+        mov ${dest.ff00}, ${pretty(src)} >> 8
 ## If it's an IMM16, use the 16-bit register
     % elif 0 <= srcu < 2**16 and okay(srcp[:2]) and dest.sizes[16]:
         xor ${dest}, ${dest}
         mov ${dest.sizes[16]}, ${pretty(src)}
+## A few more tricks to try...
+    % elif okay(srcp_neg):
+        mov ${dest}, -${pretty(src)}
+        neg ${dest}
+    %elif okay(srcp_not):
+        mov ${dest}, (-1) ^ ${pretty(src)}
+        not ${dest}
 ## We couldn't find a way to make things work out, so just do
 ## the XOR trick.
     % else:
@@ -181,7 +192,7 @@ else:
         a = hex(packing.unpack(a, dest.size))
         b = hex(packing.unpack(b, dest.size))
         %>\
-        mov ${dest}, ${a} /* mov ${dest}, ${src_name} */
-        xor ${dest}, ${b}
+        mov ${dest}, ${a}
+        xor ${dest}, ${a} ^ ${pretty(src)}
     % endif
 % endif

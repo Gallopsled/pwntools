@@ -3,17 +3,45 @@ import re
 from ..context import context
 from ..util.misc import register_sizes
 
-mips =  map('${}'.format, range(32))
-mips += map('$v{}'.format, range(2))
-mips += map('$a{}'.format, range(4))
-mips += map('$t{}'.format, range(8))
-mips += map('$s{}'.format, range(9))
-mips += map('$t{}'.format, range(8,10))
-mips += map('$k{}'.format, range(2))
-mips += ['$zero', '$at', '$gp', '$sp', '$ra']
+mips = {
+    '$0' :  0, '$zero': 0,
+    '$1' :  1, '$at':  1,
+    '$2' :  2, '$v0':  2,
+    '$3' :  3, '$v1':  3,
+    '$4' :  4, '$a0':  4,
+    '$5' :  5, '$a1':  5,
+    '$6' :  6, '$a2':  6,
+    '$7' :  7, '$a3':  7,
+    '$8' :  8, '$t0':  8,
+    '$9' :  9, '$t1':  9,
+    '$10': 10, '$t2': 10,
+    '$11': 11, '$t3': 11,
+    '$12': 12, '$t4': 12,
+    '$13': 13, '$t5': 13,
+    '$14': 14, '$t6': 14,
+    '$15': 15, '$t7': 15,
+    '$16': 16, '$s0': 16,
+    '$17': 17, '$s1': 17,
+    '$18': 18, '$s2': 18,
+    '$19': 19, '$s3': 19,
+    '$20': 20, '$s4': 20,
+    '$21': 21, '$s5': 21,
+    '$22': 22, '$s6': 22,
+    '$23': 23, '$s7': 23,
+    '$24': 24, '$t8': 24,
+    '$25': 25, '$t9': 25,
+    '$26': 26, '$k0': 26,
+    '$27': 27, '$k1': 27,
+    '$28': 28, '$gp': 28,
+    '$29': 29, '$sp': 29,
+    '$30': 30, '$s8': 30,
+    '$31': 31, '$ra': 31,
+}
 
 arm = map('r{}'.format, range(13))
 arm += ["sp", "lr", "pc", "cpsr"]
+
+thumb = arm
 
 aarch64 = map('x{}'.format, range(32))
 aarch64 += ["sp", "lr", "pc", "cpsr"]
@@ -25,8 +53,8 @@ i386 += i386_baseregs
 i386 += [ "eflags", "cs", "ss", "ds", "es", "fs", "gs", ]
 
 amd64 =  map('r{}'.format, i386_baseregs)
-amd64 += map('r{}'.format, range(10,16))
-amd64 += map('r{}d'.format, range(10,16))
+amd64 += map('r{}'.format, range(8,16))
+amd64 += map('r{}d'.format, range(8,16))
 amd64 += i386
 
 powerpc =  map('r{}'.format, range(32))
@@ -127,6 +155,14 @@ class Register(object):
         if name.startswith('r') or name[1:3].isdigit():
             self.is64bit = True
 
+    @property
+    def bits(self):
+        return self.size
+
+    @property
+    def bytes(self):
+        return self.bits / 8
+
     def fits(self, value):
         return self.size >= bits_required(value)
 
@@ -134,7 +170,7 @@ class Register(object):
         return self.name
 
     def __repr__(self):
-        return "Register(%r)" % self.namepyth
+        return "Register(%r)" % self.name
 
 intel = {}
 
@@ -143,7 +179,11 @@ for row in i386_ordered:
         intel[reg] = Register(reg, 64 >> i)
 
 def get_register(name):
-    return intel.get(name, None)
+    if isinstance(name, Register):
+        return name
+    if isinstance(name, str):
+        return intel.get(name, None)
+    return None
 
 def is_register(obj):
     if isinstance(obj, Register):
@@ -155,12 +195,30 @@ def bits_required(value):
     bits  = 0
 
     if value < 0:
-        return context.bits
+        value = -(value)
 
     while value:
         value >>= 8
         bits += 8
     return bits
+
+
+# def is_register(sz):
+#     try:
+#         sz = sz.lower()
+#         return sz.lower() in {
+#         'i386': i386,
+#         'amd64': amd64,
+#         'powerpc': powerpc,
+#         'sparc': sparc,
+#         'arm': arm,
+#         'aarch64': arm,
+#         'thumb': arm,
+#         'mips': mips,
+#         'mips64': mips
+#         }[context.arch]
+#     except:
+#         return False
 
 def register_size(reg):
     return sizes[reg]

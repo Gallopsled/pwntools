@@ -4,18 +4,47 @@ import re
 import shlex
 import tempfile
 
+from . import adb
 from . import atexit
 from . import elf
 from . import tubes
+from .asm import _bfdname
 from .asm import make_elf
+from .asm import make_elf_from_assembly
+from .context import LocalContext
 from .context import context
 from .log import getLogger
+from .qemu import get_qemu_user
 from .util import misc
 from .util import proc
 
 log = getLogger(__name__)
 
-def debug_shellcode(data, execute=None, **kwargs):
+@LocalContext
+def debug_assembly(asm, execute=None, vma=None):
+    """
+    Creates an ELF file, and launches it with GDB.
+
+    This is identical to debug_shellcode, except that
+    any defined symbols are available in GDB, and it
+    saves you the explicit call to asm().
+    """
+    tmp_elf = make_elf_from_assembly(asm, vma=vma, extract=False)
+    os.chmod(tmp_elf, 0777)
+
+    def unlink():
+        with context.silent: os.unlink(tmp_elf)
+    atexit.register(lambda: unlink)
+
+    if context.os == 'android':
+        android_path = '/data/data/%s' % os.path.basename(tmp_elf)
+        adb.push(tmp_elf, android_path)
+        tmp_elf = android_path
+
+    return debug(tmp_elf, execute=execute, arch=context.arch)
+
+@LocalContext
+def debug_shellcode(data, execute=None, vma=None):
     """
     Creates an ELF file, and launches it with GDB.
 
@@ -26,29 +55,119 @@ def debug_shellcode(data, execute=None, **kwargs):
     Returns:
         A ``process`` tube connected to the shellcode on stdin/stdout/stderr.
     """
-    with context.local(**kwargs):
-        tmp_elf  = tempfile.mktemp(prefix='pwn', suffix='.elf')
-        elf_data = make_elf(data)
-        with open(tmp_elf,'wb+') as f:
-            f.write(elf_data)
-            f.flush()
-        os.chmod(tmp_elf, 0777)
-        atexit.register(lambda: os.unlink(tmp_elf))
-        return debug(tmp_elf, execute=None, arch=context.arch)
+    if isinstance(data, unicode):
+        log.error("Shellcode is cannot be unicode.  Did you mean debug_assembly?")
+    tmp_elf = make_elf(data, extract=False, vma=vma)
+    os.chmod(tmp_elf, 0777)
 
-def get_qemu_arch(arch):
-    if arch == 'mips' and context.endian == 'little':
-        return 'mipsel'
-    if arch == 'arm' and context.endian == 'big':
-        return 'armeb'
-    if arch == 'amd64':
-        return 'x86_64'
+    def unlink():
+        with context.silent: os.unlink(tmp_elf)
+    atexit.register(lambda: unlink)
 
-    arch = arch.replace('powerpc', 'ppc')
+    if context.os == 'android':
+        android_path = '/data/data/%s' % os.path.basename(tmp_elf)
+        adb.push(tmp_elf, android_path)
+        tmp_elf = android_path
 
-    return arch
+    return debug(tmp_elf, execute=execute, arch=context.arch)
 
-def debug(args, exe=None, execute=None, ssh=None, arch=None):
+def _gdbserver_args(pid=None, path=None, args=None, which=None):
+    """_gdbserver_args(pid=None, path=None) -> list
+
+    Sets up a listening gdbserver, to either connect to the specified
+    PID, or launch the specified binary by its full path.
+
+    Arguments:
+        pid(int): Process ID to attach to
+        path(str): Process to launch
+        args(list): List of arguments to provide on the debugger command line
+        which(callaable): Function to find the path of a binary.
+
+    Returns:
+        A list of arguments to invoke gdbserver.
+    """
+    if [pid, path, args].count(None) != 2:
+        log.error("Must specify exactly one of pid, path, or args")
+
+    if not which:
+        log.error("Must specify which.")
+
+    gdbserver = ''
+
+    if not args:
+        args = [str(path or pid)]
+
+    # Android targets have a distinct gdbserver
+    if context.bits == 64:
+        gdbserver = which('gdbserver64')
+
+    if not gdbserver:
+        gdbserver = which('gdbserver')
+
+    if not gdbserver:
+        log.error("gdbserver is not installed")
+
+    orig_args = args
+
+    gdbserver_args = [gdbserver]
+    if context.aslr:
+        gdbserver_args += ['--no-disable-randomization']
+    else:
+        log.warn_once("Debugging process with ASLR disabled")
+
+    if pid:
+        gdbserver_args += ['--once', '--attach']
+
+    gdbserver_args += ['localhost:0']
+    gdbserver_args += args
+
+    return gdbserver_args
+
+def _gdbserver_port(gdbserver, ssh):
+    which = _get_which(ssh)
+
+    # Process /bin/bash created; pid = 14366
+    # Listening on port 34816
+    process_created = gdbserver.recvline()
+    gdbserver.pid   = int(process_created.split()[-1], 0)
+
+    listening_on = ''
+    while 'Listening' not in listening_on:
+        listening_on    = gdbserver.recvline()
+
+    port = int(listening_on.split()[-1])
+
+    # Set up port forarding for SSH
+    if ssh:
+        remote   = ssh.connect_remote('127.0.0.1', port)
+        listener = tubes.listen.listen(0)
+        port     = listener.lport
+        
+        # Disable showing GDB traffic when debugging verbosity is increased
+        remote.level = 'error'
+        listener.level = 'error'
+        
+        # Hook them up
+        remote <> listener
+
+    # Set up port forwarding for ADB
+    elif context.os == 'android':
+        adb.forward(port)
+
+    return port
+
+def _get_which(ssh=None):
+    if ssh:                        return ssh.which
+    elif context.os == 'android':  return adb.which
+    else:                          return misc.which
+
+def _get_runner(ssh=None):
+    if ssh:                        return ssh.process
+    elif context.os == 'android':  return adb.process
+    else:                          return tubes.process.process
+
+@LocalContext
+def debug(args, execute=None, exe=None, ssh=None, env=None, **kwargs):
     """debug(args) -> tube
 
     Launch a GDB server with the specified command line,
@@ -62,67 +181,77 @@ def debug(args, exe=None, execute=None, ssh=None, arch=None):
     Returns:
         A tube connected to the target process
     """
+    if context.noptrace:
+        log.warn_once("Skipping debugger since context.noptrace==True")
+        return tubes.process.process(args, executable=exe, env=env)
+
+    if isinstance(args, (int, tubes.process.process, tubes.ssh.ssh_channel)):
+        log.error("Use gdb.attach() to debug a running process")
+
+    if env is None:
+        env = os.environ
+
     if isinstance(args, (str, unicode)):
         args = [args]
 
     orig_args = args
 
-    if not arch:
-        args = ['gdbserver', 'localhost:0'] + args
+    runner = _get_runner(ssh)
+    which  = _get_which(ssh)
+
+    if ssh or context.native or (context.os == 'android'):
+        args = _gdbserver_args(args=args, which=which)
     else:
         qemu_port = random.randint(1024, 65535)
-        qemu_arch = get_qemu_arch(arch)
-        args = ['qemu-%s-static' % qemu_arch, '-g', str(qemu_port)] + args
+        args = [get_qemu_user(), '-g', str(qemu_port)] + args
 
-    if not ssh:
-        runner  = tubes.process.process
-        which   = misc.which
-    if ssh:
-        runner  = ssh.run
-        which   = ssh.which
-
-    # Make sure gdbserver is installed
+    # Make sure gdbserver/qemu is installed
     if not which(args[0]):
         log.error("%s is not installed" % args[0])
 
-    with context.local(log_level='debug'):
-        gdbserver = runner(args)
+    exe = exe or which(orig_args[0])
+    if not exe:
+        log.error("%s does not exist" % orig_args[0])
 
-    if not arch:
-        # Process /bin/bash created; pid = 14366
-        # Listening on port 34816
-        process_created = gdbserver.recvline()
-        listening_on    = gdbserver.recvline()
+    # Start gdbserver/qemu
+    # (Note: We override ASLR here for the gdbserver process itself.)
+    gdbserver = runner(args, env=env, aslr=1, **kwargs)
 
-        port = int(listening_on.split()[-1])
+    # Set the .executable on the process object.
+    gdbserver.executable = which(orig_args[0])
+
+    # Find what port we need to connect to
+    if context.native or (context.os == 'android'):
+        port = _gdbserver_port(gdbserver, ssh)
     else:
         port = qemu_port
 
-    listener = remote = None
+    host = '127.0.0.1' 
+    if not ssh and context.os == 'android':
+        host = context.adb_host
 
-    if ssh:
-        remote   = ssh.connect_remote('127.0.0.1', port)
-        listener = tubes.listen.listen(0)
-        port     = listener.lport
-    elif not exe:
-        exe = misc.which(orig_args[0])
+    attach((host, port), exe=exe, execute=execute, need_ptrace_scope = False)
 
-    attach(('127.0.0.1', port), exe=orig_args[0], execute=execute, arch=context.arch)
+    # gdbserver outputs a message when a client connects
+    garbage = gdbserver.recvline(timeout=1)
 
-    if ssh:
-        remote <> listener.wait_for_connection()
+    if "Remote debugging from host" not in garbage:
+        gdbserver.unrecv(garbage)
 
     return gdbserver
 
-def get_gdb_arch(arch):
+def get_gdb_arch():
     return {
         'amd64': 'i386:x86-64',
-        'powerpc': 'powerpc:403',
-        'powerpc64': 'powerpc:e5500'
-    }.get(arch, arch)
+        'powerpc': 'powerpc:common',
+        'powerpc64': 'powerpc:common64',
+        'mips64': 'mips:isa64',
+        'thumb': 'arm'
+    }.get(context.arch, context.arch)
 
 
-def attach(target, execute = None, exe = None, arch = None):
+@LocalContext
+def attach(target, execute = None, exe = None, need_ptrace_scope = True):
     """attach(target, execute = None, exe = None, arch = None) -> None
 
     Start GDB in a new terminal and attach to `target`.
@@ -148,16 +277,9 @@ def attach(target, execute = None, exe = None, arch = None):
     Returns:
       :const:`None`
 """
-    # if ptrace_scope is set and we're not root, we cannot attach to a running process
-    try:
-        ptrace_scope = open('/proc/sys/kernel/yama/ptrace_scope').read().strip()
-        if ptrace_scope != '0' and os.geteuid() != 0:
-            msg =  'Disable ptrace_scope to attach to running processes.\n'
-            msg += 'More info: https://askubuntu.com/q/41629'
-            log.warning(msg)
-            return
-    except IOError:
-        pass
+    if context.noptrace:
+        log.warn_once("Skipping debug attach since context.noptrace==True")
+        return
 
     # if execute is a file object, then read it; we probably need to run some
     # more gdb script anyway
@@ -173,12 +295,29 @@ def attach(target, execute = None, exe = None, arch = None):
 
     # gdb script to run before `execute`
     pre = ''
-    if arch:
+    if not context.native:
         if not misc.which('gdb-multiarch'):
             log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n' \
                 '$ apt-get install gdb-multiarch')
         pre += 'set endian %s\n' % context.endian
-        pre += 'set architecture %s\n' % get_gdb_arch(arch)
+        pre += 'set architecture %s\n' % get_gdb_arch()
+
+        if context.os == 'android':
+            pre += 'set gnutarget ' + _bfdname() + '\n'
+    else:
+        # If ptrace_scope is set and we're not root, we cannot attach to a
+        # running process.
+        # We assume that we do not need this to be set if we are debugging on
+        # a different architecture (e.g. under qemu-user).
+        try:
+            ptrace_scope = open('/proc/sys/kernel/yama/ptrace_scope').read().strip()
+            if need_ptrace_scope and ptrace_scope != '0' and os.geteuid() != 0:
+                msg =  'Disable ptrace_scope to attach to running processes.\n'
+                msg += 'More info: https://askubuntu.com/q/41629'
+                log.warning(msg)
+                return
+        except IOError:
+            pass
 
     # let's see if we can find a pid to attach to
     pid = None
@@ -187,11 +326,16 @@ def attach(target, execute = None, exe = None, arch = None):
         pid = target
     elif isinstance(target, str):
         # pidof picks the youngest process
-        pids = proc.pidof(target)
+        pidof = proc.pidof
+
+        if context.os == 'android':
+            pidof = adb.pidof
+
+        pids = pidof(target)
         if not pids:
-            log.error('no such process: %s' % target)
+            log.error('No such process: %s' % target)
         pid = pids[0]
-        log.info('attaching to youngest process "%s" (PID = %d)' %
+        log.info('Attaching to youngest process "%s" (PID = %d)' %
                  (target, pid))
     elif isinstance(target, tubes.ssh.ssh_channel):
         if not target.pid:
@@ -202,12 +346,15 @@ def attach(target, execute = None, exe = None, arch = None):
         tmpfile = shell.mktemp()
         shell.upload_data(execute or '', tmpfile)
 
-        cmd = ['ssh', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
+        cmd = ['ssh', '-C', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
         if shell.password:
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
-        cmd += ['gdb %r %s -x "%s" ; rm "%s"' % (target.exe, target.pid, tmpfile, tmpfile)]
+        cmd += ['gdb %r %s -x "%s" ; rm "%s"' % (target.executable,
+                                                 target.pid,
+                                                 tmpfile,
+                                                 tmpfile)]
 
         misc.run_in_new_terminal(' '.join(cmd))
         return
@@ -277,7 +424,10 @@ def attach(target, execute = None, exe = None, arch = None):
 
     # if we have a pid but no exe, just look it up in /proc/
     if pid and not exe:
-        exe = proc.exe(pid)
+        exe_fn = proc.exe
+        if context.os == 'android':
+            exe_fn = adb.proc_exe
+        exe = exe_fn(pid)
 
     if not pid and not exe:
         log.error('could not find target process')
@@ -287,23 +437,34 @@ def attach(target, execute = None, exe = None, arch = None):
         if misc.which(p):
             cmd = p
             break
-
-    if not cmd:
+    else:
         log.error('no gdb installed')
 
-    if exe:
+    cmd += ' -q '
+
+    if exe and context.native:
         if not os.path.isfile(exe):
             log.error('no such file: %s' % exe)
         cmd += ' "%s"' % exe
 
-    if pid:
+    if pid and not context.os == 'android':
         cmd += ' %d' % pid
+
+    if context.os == 'android' and pid:
+        runner  = _get_runner()
+        which   = _get_which()
+        gdb_cmd = _gdbserver_args(pid=pid, which=which)
+        gdbserver = runner(gdb_cmd)
+        port    = _gdbserver_port(gdbserver, None)
+        host    = context.adb_host
+        pre    += 'target remote %s:%i' % (context.adb_host, port)
 
     execute = pre + (execute or '')
 
     if execute:
         tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.gdb',
                                           delete = False)
+        log.debug('Wrote gdb script to %r\n%s' % (tmp.name, execute))
         tmp.write(execute)
         tmp.close()
         atexit.register(lambda: os.unlink(tmp.name))
@@ -311,8 +472,9 @@ def attach(target, execute = None, exe = None, arch = None):
 
     log.info('running in new terminal: %s' % cmd)
     misc.run_in_new_terminal(cmd)
-    if pid:
+    if pid and context.native:
         proc.wait_for_debugger(pid)
+    return pid
 
 def ssh_gdb(ssh, process, execute = None, arch = None, **kwargs):
     if isinstance(process, (list, tuple)):
@@ -425,9 +587,10 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     cmd = shlex.split(cmd)
 
     with runner(cmd) as gdb:
+        if context.aslr:
+            gdb.sendline('set disable-randomization off')
         gdb.send("""
         set prompt
-        set disable-randomization off
         break *%#x
         run
         """ % entry)

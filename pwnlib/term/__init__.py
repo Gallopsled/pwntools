@@ -1,5 +1,6 @@
 import sys
 
+from . import completer
 from . import key
 from . import keymap
 from . import readline
@@ -24,7 +25,7 @@ def can_init():
     ``pwnlib`` manage the terminal.
     """
 
-    if not sys.stderr.isatty():
+    if not sys.stdout.isatty():
         return False
 
     # Check for python -i

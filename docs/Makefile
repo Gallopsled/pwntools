@@ -44,6 +44,10 @@ help:
 
 clean:
 	-rm -rf $(BUILDDIR)/*
+	-rm -rf /tmp/user/pwn*
+	-rm -rf $(HOME)/.pwntools-cache
+	-rm -rf /tmp/pwn* 2>/dev/null || true
+	-rm -rf build
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html

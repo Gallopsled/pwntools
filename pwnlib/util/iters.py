@@ -9,7 +9,6 @@ __all__ = [
     'consume'                                ,
     'cyclen'                                 ,
     'dotproduct'                             ,
-    'exp'                                    ,
     'flatten'                                ,
     'group'                                  ,
     'iter_except'                            ,
@@ -59,10 +58,8 @@ import copy
 import multiprocessing
 import operator
 import random
-import time
 from itertools import *
 
-from ..context import *
 from ..log import getLogger
 
 log = getLogger(__name__)
@@ -730,27 +727,7 @@ def chained(func):
                 yield x
     return wrapper
 
-def exp(s, n):
-    """exp(s, n)
-
-    Generalization of exponentiation to iterators.  The expression ``exp(s, n)``
-    is simply a shorthand notation for ``product(*[s]*n)``.
-
-    Arguments:
-      s(iterable): The iterable to exponentiate.
-      n(int): The exponent.
-
-    Returns:
-      A generator of ``n``-tuples of elements in ``s``.
-
-    Example:
-      >>> list(exp((0, 1), 3))
-      [(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1), (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)]
-    """
-    return product(*[s]*n)
-
 def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = None):
-
     """bruteforce(func, alphabet, length, method = 'upto', start = None)
 
     Bruteforce `func` to return :const:`True`.  `func` should take a string

@@ -8,20 +8,17 @@ import threading
 import time
 
 from .. import atexit
-from .. import context
 from .. import term
-from ..log import getLogger
-from ..log import getPerformanceLogger
+from ..context import context
+from ..log import Logger
 from ..timeout import Timeout
 from ..util import fiddling
 from ..util import misc
 from ..util import packing
 from .buffer import Buffer
 
-log = getLogger(__name__)
-dumplog = getPerformanceLogger(__name__ + '.dump')
 
-class tube(Timeout):
+class tube(Timeout, Logger):
     """
     Container of all the tube functions common to sockets, TTYs and SSH connetions.
     """
@@ -33,8 +30,13 @@ class tube(Timeout):
     #: and related functions.
     newline = '\n'
 
-    def __init__(self, timeout = default):
+    def __init__(self, timeout = default, level = None):
         super(tube, self).__init__(timeout)
+
+        Logger.__init__(self, None)
+        if level is not None:
+            self.setLevel(level)
+
         self.buffer          = Buffer()
         atexit.register(self.close)
 
@@ -122,16 +124,16 @@ class tube(Timeout):
         with self.local(timeout):
             data = self.recv_raw(4096)
 
-        if data and dumplog.isEnabledFor(logging.DEBUG):
-            dumplog.debug('Received %#x bytes:' % len(data))
+        if data and self.isEnabledFor(logging.DEBUG):
+            self.debug('Received %#x bytes:' % len(data))
 
-            if len(set(data)) == 1:
-                dumplog.indented('%r * %#x' % (data[0], len(data)), level = logging.DEBUG)
+            if len(set(data)) == 1 and len(data) > 1:
+                self.indented('%r * %#x' % (data[0], len(data)), level = logging.DEBUG)
             elif all(c in string.printable for c in data):
                 for line in data.splitlines(True):
-                    dumplog.indented(repr(line), level = logging.DEBUG)
+                    self.indented(repr(line), level = logging.DEBUG)
             else:
-                dumplog.indented(fiddling.hexdump(data), level = logging.DEBUG)
+                self.indented(fiddling.hexdump(data), level = logging.DEBUG)
 
         if data:
             self.buffer.add(data)
@@ -142,7 +144,7 @@ class tube(Timeout):
     def _recv(self, numb = 4096, timeout = default):
         """_recv(numb = 4096, timeout = default) -> str
 
-        Receives one chunk of from the internal buffer or from the OS if the
+        Recieves one chunk of from the internal buffer or from the OS if the
         buffer is empty.
         """
         data = ''
@@ -181,7 +183,7 @@ class tube(Timeout):
             while not pred(data):
                 try:
                     res = self.recv(1)
-                except:
+                except Exception:
                     self.unrecv(data)
                     return ''
 
@@ -196,7 +198,7 @@ class tube(Timeout):
     def recvn(self, numb, timeout = default):
         """recvn(numb, timeout = default) -> str
 
-        Receives exactly `n` bytes.
+        Recieves exactly `n` bytes.
 
         If the request is not satisfied before ``timeout`` seconds pass,
         all data is buffered and an empty string (``''``) is returned.
@@ -226,8 +228,8 @@ class tube(Timeout):
                 >>> t.recv_raw = lambda *a: time.sleep(0.01) or 'a'
                 >>> t.recvn(10, timeout=0.05)
                 ''
-                >>> t.recvn(10, timeout=0.05)
-                'aaaaaaaaaa'
+                >>> t.recvn(10, timeout=0.06) # doctest: +ELLIPSIS
+                'aaaaaa...'
         """
         # Keep track of how much data has been received
         # It will be pasted together at the end if a
@@ -244,7 +246,7 @@ class tube(Timeout):
     def recvuntil(self, delims, drop=False, timeout = default):
         """recvuntil(delims, timeout = default) -> str
 
-        Receive data until one of `delims` is encountered.
+        Recieve data until one of `delims` is encountered.
 
         If the request is not satisfied before ``timeout`` seconds pass,
         all data is buffered and an empty string (``''``) is returned.
@@ -303,7 +305,7 @@ class tube(Timeout):
             while self.countdown_active():
                 try:
                     res = self.recv(timeout=self.timeout)
-                except:
+                except Exception:
                     self.unrecv(''.join(data) + top)
                     raise
 
@@ -332,10 +334,10 @@ class tube(Timeout):
 
         return ''
 
-    def recvlines(self, numlines, keepends = False, timeout = default):
+    def recvlines(self, numlines=2**20, keepends = False, timeout = default):
         r"""recvlines(numlines, keepends = False, timeout = default) -> str list
 
-        Receive up to ``numlines`` lines.
+        Recieve up to ``numlines`` lines.
 
         A "line" is any sequence of bytes terminated by the byte sequence
         set by :attr:`newline`, which defaults to ``'\n'``.
@@ -377,7 +379,7 @@ class tube(Timeout):
                     # restore the original, unmodified data to the buffer
                     # in the event of a timeout.
                     res = self.recvline(keepends=True, timeout=timeout)
-                except:
+                except Exception:
                     self.unrecv(''.join(lines))
                     raise
 
@@ -460,7 +462,7 @@ class tube(Timeout):
             while self.countdown_active():
                 try:
                     line = self.recvline(keepends=True)
-                except:
+                except Exception:
                     self.buffer.add(tmpbuf)
                     raise
 
@@ -514,8 +516,8 @@ class tube(Timeout):
     def recvline_startswith(self, delims, keepends = False, timeout = default):
         r"""recvline_startswith(delims, keepends = False, timeout = default) -> str
 
-        Keep receiving lines until one is found that starts with one of
-        `delims`.  Returns the last line received.
+        Keep recieving lines until one is found that starts with one of
+        `delims`.  Returns the last line recieved.
 
         If the request is not satisfied before ``timeout`` seconds pass,
         all data is buffered and an empty string (``''``) is returned.
@@ -552,8 +554,8 @@ class tube(Timeout):
     def recvline_endswith(self, delims, keepends = False, timeout = default):
         r"""recvline_endswith(delims, keepends = False, timeout = default) -> str
 
-        Keep receiving lines until one is found that starts with one of
-        `delims`.  Returns the last line received.
+        Keep recieving lines until one is found that starts with one of
+        `delims`.  Returns the last line recieved.
 
         If the request is not satisfied before ``timeout`` seconds pass,
         all data is buffered and an empty string (``''``) is returned.
@@ -667,7 +669,7 @@ class tube(Timeout):
         Receives data until EOF is reached.
         """
 
-        with log.waitfor('Receiving all data') as h:
+        with self.waitfor('Recieving all data') as h:
             l = len(self.buffer)
             with self.local(timeout):
                 try:
@@ -703,18 +705,18 @@ class tube(Timeout):
             'hello'
         """
 
-        if dumplog.isEnabledFor(logging.DEBUG):
-            log.debug('Sent %#x bytes:' % len(data))
+        if self.isEnabledFor(logging.DEBUG):
+            self.debug('Sent %#x bytes:' % len(data))
             if len(set(data)) == 1:
-                dumplog.indented('%r * %#x' % (data[0], len(data)))
+                self.indented('%r * %#x' % (data[0], len(data)))
             elif all(c in string.printable for c in data):
                 for line in data.splitlines(True):
-                    log.indented(repr(line), level = logging.DEBUG)
+                    self.indented(repr(line), level = logging.DEBUG)
             else:
-                log.indented(fiddling.hexdump(data), level = logging.DEBUG)
+                self.indented(fiddling.hexdump(data), level = logging.DEBUG)
         self.send_raw(data)
 
-    def sendline(self, line):
+    def sendline(self, line=''):
         r"""sendline(data)
 
         Shorthand for ``t.send(data + t.newline)``.
@@ -732,6 +734,10 @@ class tube(Timeout):
         """
 
         self.send(line + self.newline)
+
+    def sendlines(self, lines=[]):
+        for line in lines:
+            self.sendline(line)
 
     def sendafter(self, delim, data, timeout = default):
         """sendafter(delim, data, timeout = default) -> str
@@ -779,18 +785,19 @@ class tube(Timeout):
         Thus it only works in while in :data:`pwnlib.term.term_mode`.
         """
 
-        log.info('Switching to interactive mode')
+        self.info('Switching to interactive mode')
 
         go = threading.Event()
         def recv_thread():
             while not go.isSet():
                 try:
                     cur = self.recv(timeout = 0.05)
+                    cur = cur.replace('\r\n', '\n')
                     if cur:
-                        sys.stderr.write(cur)
-                        sys.stderr.flush()
+                        sys.stdout.write(cur)
+                        sys.stdout.flush()
                 except EOFError:
-                    log.info('Got EOF while reading in interactive')
+                    self.info('Got EOF while reading in interactive')
                     break
 
         t = context.Thread(target = recv_thread)
@@ -809,11 +816,11 @@ class tube(Timeout):
                         self.send(data)
                     except EOFError:
                         go.set()
-                        log.info('Got EOF while sending in interactive')
+                        self.info('Got EOF while sending in interactive')
                 else:
                     go.set()
         except KeyboardInterrupt:
-            log.info('Interrupted')
+            self.info('Interrupted')
             go.set()
 
         while t.is_alive():
@@ -851,8 +858,8 @@ class tube(Timeout):
     def clean_and_log(self, timeout = 0.05):
         r"""clean_and_log(timeout = 0.05)
 
-        Works exactly as :meth:`pwnlib.tubes.tube.tube.clean`, but logs received
-        data with :meth:`pwnlib.log.info`.
+        Works exactly as :meth:`pwnlib.tubes.tube.tube.clean`, but logs recieved
+        data with :meth:`pwnlib.self.info`.
 
         Returns:
 
@@ -874,7 +881,7 @@ class tube(Timeout):
             'hooray_data'
             >>> context.clear()
         """
-        with context.context.local(log_level='debug'):
+        with context.local(log_level='debug'):
             return self.clean(timeout)
 
     def connect_input(self, other):
@@ -1313,7 +1320,7 @@ class tube(Timeout):
     #: Alias for :meth:`sendlinethen`
     def writelinethen(self, *a, **kw): return self.sendlinethen(*a, **kw)
 
-    def p64(self, *a, **kwdata):    return self.send(packing.p64(*a, **kw))
+    def p64(self, *a, **kw):        return self.send(packing.p64(*a, **kw))
     def p32(self, *a, **kw):        return self.send(packing.p32(*a, **kw))
     def p16(self, *a, **kw):        return self.send(packing.p16(*a, **kw))
     def p8(self, *a, **kw):         return self.send(packing.p8(*a, **kw))

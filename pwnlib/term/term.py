@@ -26,7 +26,7 @@ from . import termcap
 settings = None
 _graphics_mode = False
 
-fd = sys.stderr
+fd = sys.stdout
 
 def show_cursor():
     do('cnorm')
@@ -265,10 +265,10 @@ def parse(s):
                 #  related: https://unix.stackexchange.com/questions/5936/can-i-set-my-local-machines-terminal-colors-to-use-those-of-the-machine-i-ssh-i
                 try:
                     j = s.index('\x07', i)
-                except:
+                except Exception:
                     try:
                         j = s.index('\x1b\\', i)
-                    except:
+                    except Exception:
                         j = 1
                 x = (OOB, s[i:j + 1])
                 i = j + 1

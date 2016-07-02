@@ -1,5 +1,6 @@
 <%
   from pwnlib.regsort import regsort
+  from pwnlib.constants import Constant, eval
   from pwnlib.shellcraft import registers
   from pwnlib.shellcraft.i386 import mov
 %>
@@ -16,7 +17,7 @@ Example:
 
     >>> print shellcraft.setregs({'eax':1, 'ebx':'eax'}).rstrip()
         mov ebx, eax
-        push 0x1
+        push 1
         pop eax
     >>> print shellcraft.setregs({'eax':'ebx', 'ebx':'eax', 'ecx':'ebx'}).rstrip()
         mov ecx, ebx
@@ -25,23 +26,33 @@ Example:
 
 </%docstring>
 <%
-
-# If None is passed in for register values, disregard it
 reg_context = {k:v for k,v in reg_context.items() if v is not None}
-
-# If EAX is known to be positive and EDX is zero,
-# we can cheat slightly and use 'cdq'
 
 eax = reg_context.get('eax', None)
 edx = reg_context.get('edx', None)
 cdq = False
 
-if None not in (eax,edx) and eax > 0 and edx == 0:
-    reg_context.pop('edx')
+if isinstance(eax, str):
+    try:
+        eax = eval(eax)
+    except NameError:
+        pass
+
+if isinstance(edx, str):
+    try:
+        edx = eval(edx)
+    except NameError:
+        pass
+
+if isinstance(eax, int) and isinstance(edx, int) and eax >> 31 == edx:
     cdq = True
+    reg_context.pop('edx')
 
+sorted_regs = regsort(reg_context, registers.i386)
 %>
-
+% if not sorted_regs:
+  /* setregs noop */
+% else:
 % for how, src, dst in regsort(reg_context, registers.i386):
 % if how == 'xchg':
     xchg ${src}, ${dst}
@@ -50,5 +61,6 @@ if None not in (eax,edx) and eax > 0 and edx == 0:
 % endif
 % endfor
 % if cdq:
-    cdq /* Set edx to 0, eax is known to be positive */
+    cdq /* edx=0 */
+% endif
 % endif

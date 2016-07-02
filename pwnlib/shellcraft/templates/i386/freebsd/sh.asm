@@ -1,5 +1,7 @@
 <% from pwnlib.shellcraft import i386 %>
-<%docstring>Execute /bin/sh</%docstring>
+<%docstring>
+Execute /bin/sh
+</%docstring>
 
 
     /*  Clear eax, ecx, edx */

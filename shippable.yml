@@ -1,0 +1,17 @@
+language: python
+python:
+  - "2.7"
+before_install:
+  - source .travis_install.sh
+  - source .travis_ssh_setup.sh
+install:
+  - pip install -e .
+  - pip install -r docs/requirements.txt
+before_script:
+  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
+  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
+  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
+  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
+script:
+  - PWNLIB_NOTERM=1 make -C docs doctest
+

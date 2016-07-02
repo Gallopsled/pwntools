@@ -1,4 +1,5 @@
 import errno
+import socket
 import time
 
 from .. import tubes
@@ -32,14 +33,27 @@ def pidof(target):
     Returns:
         A list of found PIDs.
     """
-    if isinstance(target, tubes.sock.sock):
+    if isinstance(target, tubes.ssh.ssh_channel):
+        return [target.pid]
+
+    elif isinstance(target, tubes.sock.sock):
          local  = target.sock.getsockname()
          remote = target.sock.getpeername()
 
-         def match(p):
+         def match(c):
              return (c.raddr, c.laddr, c.status) == (local, remote, 'ESTABLISHED')
 
          return [c.pid for c in psutil.net_connections() if match(c)]
+
+    elif isinstance(target, tuple):
+        host, port = target
+
+        host = socket.gethostbyname(host)
+
+        def match(c):
+            return c.raddr == (host, port)
+
+        return [c.pid for c in psutil.net_connections() if match(c)]
 
     elif isinstance(target, tubes.process.process):
          return [target.proc.pid]
@@ -61,16 +75,22 @@ def pid_by_name(name):
         True
     """
     def match(p):
-         if p.name() == name:
-             return True
-         try:
-             if p.exe() == name:
-                 return True
-         except:
-             pass
-         return False
+        if p.status() == 'zombie':
+            return False
+        if p.name() == name:
+            return True
+        try:
+            if p.exe() == name:
+                return True
+        except Exception:
+            pass
+        return False
 
-    return [p.pid for p in psutil.process_iter() if match(p)]
+    processes = (p for p in psutil.process_iter() if match(p))
+
+    processes = sorted(processes, key=lambda p: p.create_time())
+
+    return list(reversed([p.pid for p in processes]))
 
 def name(pid):
     """name(pid) -> str
@@ -99,7 +119,7 @@ def parent(pid):
     """
     try:
          return psutil.Process(pid).parent().pid
-    except:
+    except Exception:
          return 0
 
 def children(ppid):

@@ -1,6 +1,11 @@
 <% from pwnlib.shellcraft import i386 %>
-<%docstring>Execute /bin/sh</%docstring>
+<%docstring>
+Execute a different process.
 
-${i386.pushstr('/bin///sh')}
+    >>> p = run_assembly(shellcraft.i386.linux.sh())
+    >>> p.sendline('echo Hello')
+    >>> p.recv()
+    'Hello\n'
 
-${i386.linux.syscall('SYS_execve', 'esp', 0, 0)}
+</%docstring>
+${i386.linux.execve('/bin///sh', 0, 0)}

@@ -170,14 +170,14 @@ But if you do, it's easy to suss out!
        5:   eb f9                   jmp    0x0
 
 However, you shouldn't even need to write your own shellcode most of the
-time!  Pwntools comes with the :mod:`pwnlib.shellcraft` module, which is
+time!  pwntools comes with the :mod:`pwnlib.shellcraft` module, which is
 loaded with useful time-saving shellcodes.
 
 Let's say that we want to `setreuid(getuid(), getuid())` followed by `dup`ing
 file descriptor 4 to `stdin`, `stdout`, and `stderr`, and then pop a shell!
 
     >>> asm(shellcraft.setreuid() + shellcraft.dupsh(4)).encode('hex')
-    '6a3158cd8089c389d96a4658cd806a045b6a0359496a3f58cd8075f86a68682f2f2f73682f62696e89e331c96a0b5899cd80'
+    '6a3158cd8089c36a465889d9cd806a045b6a0359496a3f58cd8075f86a68682f2f2f73682f62696e6a0b5889e331c999cd80'
 
 
 Misc Tools

@@ -1,2 +1,2 @@
-<%docstring>A nop instruction.</%docstring>
-    ori $zero, $a1, 0xffff
+<%docstring>MIPS nop instruction.</%docstring>
+    add $t9, $t9, $zero /* nop */

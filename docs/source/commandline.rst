@@ -17,6 +17,9 @@ pwntools comes with a handful of useful command-line utilities which serve as wr
 .. autoprogram:: pwnlib.commandline.asm:parser
    :prog: asm
 
+.. autoprogram:: pwnlib.commandline.checksec:parser
+   :prog: checksec
+
 .. autoprogram:: pwnlib.commandline.constgrep:p
    :prog: constgrep
 

@@ -5,12 +5,30 @@ Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
 import collections
+import functools
 import logging
+import os
+import platform
+import socket
 import string
+import subprocess
+import sys
 import threading
+import time
 
+import socks
+
+from ..device import Device
 from ..timeout import Timeout
 
+_original_socket = socket.socket
+
+class _devnull(object):
+    name = None
+    def write(self, *a, **kw): pass
+    def read(self, *a, **kw):  return ''
+    def flush(self, *a, **kw): pass
+    def close(self, *a, **kw): pass
 
 class _defaultdict(dict):
     """
@@ -305,20 +323,29 @@ class ContextType(object):
 
     #: Default values for :class:`pwnlib.context.ContextType`
     defaults = {
+        'adb_host': 'localhost',
+        'adb_port': 5037,
         'arch': 'i386',
+        'aslr': True,
         'binary': None,
         'bits': 32,
+        'device': os.getenv('ANDROID_SERIAL', None) or None,
         'endian': 'little',
+        'kernel': None,
         'log_level': logging.INFO,
+        'log_file': _devnull(),
+        'randomize': False,
         'newline': '\n',
+        'noptrace': False,
         'os': 'linux',
+        'proxy': None,
         'signed': False,
-        'timeout': Timeout.maximum,
         'terminal': None,
+        'timeout': Timeout.maximum,
     }
 
     #: Valid values for :meth:`pwnlib.context.ContextType.os`
-    oses = sorted(('linux','freebsd','windows'))
+    oses = sorted(('linux','freebsd','windows','cgc','android'))
 
     big_32    = {'endian': 'big', 'bits': 32}
     big_64    = {'endian': 'big', 'bits': 64}
@@ -440,7 +467,7 @@ class ContextType(object):
         v = sorted("%s = %r" % (k,v) for k,v in self._tls._current.items())
         return '%s(%s)' % (self.__class__.__name__, ', '.join(v))
 
-    def local(self, **kwargs):
+    def local(self, function=None, **kwargs):
         """local(**kwargs) -> context manager
 
         Create a context manager for use with the ``with`` statement.
@@ -479,12 +506,45 @@ class ContextType(object):
             def __exit__(a, *b, **c):
                 self._tls.pop()
 
+            def __call__(self, function, *a, **kw):
+                @functools.wraps(function)
+                def inner(*a, **kw):
+                    with self:
+                        return function(*a, **kw)
+                return inner
+
         return LocalContext()
 
-    def clear(self):
+    @property
+    def silent(self, function=None):
+        """Disable all non-error logging within the enclosed scope.
+        """
+        return self.local(function, log_level='error')
+
+    @property
+    def quiet(self, function=None):
+        """Disables all non-error logging within the enclosed scope,
+        *unless* the debugging level is set to 'debug' or lower."""
+        level = 'error'
+        if context.log_level <= logging.DEBUG:
+            level = None
+        return self.local(function, log_level=level)
+
+    @property
+    def verbose(self):
+        """Enable all logging within the enclosed scope.
+        """
+        return self.local(log_level='debug')
+
+    def clear(self, *a, **kw):
         """
         Clears the contents of the context.
         All values are set to their defaults.
+
+        Arguments:
+
+            a: Arguments passed to ``update``
+            kw: Arguments passed to ``update``
 
         Examples:
 
@@ -500,10 +560,27 @@ class ContextType(object):
         """
         self._tls._current.clear()
 
+        if a or kw:
+            self.update(*a, **kw)
+
+    @property
+    def native(self):
+        if context.os in ('android', 'cgc'):
+            return False
+
+        arch = context.arch
+        with context.local(arch = platform.machine()):
+            platform_arch = context.arch
+
+            if arch in ('i386', 'amd64') and platform_arch in ('i386', 'amd64'):
+                return True
+
+            return arch == platform_arch
+
     @_validator
     def arch(self, arch):
         """
-        Target machine architecture.
+        Target binary architecture.
 
         Allowed values are listed in :attr:`pwnlib.context.ContextType.architectures`.
 
@@ -565,17 +642,22 @@ class ContextType(object):
             >>> vars(context) == {'arch': 'powerpc64', 'bits': 64, 'endian': 'big'}
             True
         """
-
         # Lowercase
         arch = arch.lower()
 
-        # Attempt to perform convenience and legacy compatibility
-        # transformations.
+        # Attempt to perform convenience and legacy compatibility transformations.
         # We have to make sure that x86_64 appears before x86 for this to work correctly.
-        transform = [('ppc', 'powerpc'), ('x86_64', 'amd64'), ('x86', 'i386')]
+        transform = [('ppc64', 'powerpc64'),
+                     ('ppc', 'powerpc'),
+                     ('x86_64', 'amd64'),
+                     ('x86', 'i386'),
+                     ('i686', 'i386'),
+                     ('armeabi', 'arm'),
+                     ('arm64', 'aarch64')]
         for k, v in transform:
             if arch.startswith(k):
-                arch = arch.replace(k,v,1)
+                arch = v
+                break
 
         try:
             defaults = ContextType.architectures[arch]
@@ -587,6 +669,33 @@ class ContextType(object):
                 self._tls[k] = v
 
         return arch
+
+    @_validator
+    def aslr(self, aslr):
+        """
+        ASLR settings for new processes.
+
+        If ``False``, attempt to disable ASLR in all processes which are
+        created via ``personality`` (``setarch -R``) and ``setrlimit``
+        (``ulimit -s unlimited``).
+
+        The ``setarch`` changes are lost if a ``setuid`` binary is executed.
+        """
+        return bool(aslr)
+
+    @_validator
+    def kernel(self, arch):
+        """
+        Target machine's kernel architecture.
+
+        Usually, this is the same as ``arch``, except when
+        running a 32-bit binary on a 64-bit kernel (e.g. i386-on-amd64).
+
+        Even then, this doesn't matter much -- only when the the segment
+        registers need to be known
+        """
+        with context.local(arch=arch):
+            return context.arch
 
     @_validator
     def bits(self, bits):
@@ -635,13 +744,14 @@ class ContextType(object):
         # Cyclic imports... sorry Idolf.
         from ..elf     import ELF
 
-        e = ELF(binary)
+        if not isinstance(binary, ELF):
+            binary = ELF(binary)
 
-        self.arch   = e.arch
-        self.bits   = e.bits
-        self.endian = e.endian
+        self.arch   = binary.arch
+        self.bits   = binary.bits
+        self.endian = binary.endian
 
-        return e
+        return binary
 
     @property
     def bytes(self):
@@ -665,7 +775,6 @@ class ContextType(object):
     @bytes.setter
     def bytes(self, value):
         self.bits = value*8
-
 
     @_validator
     def endian(self, endianness):
@@ -741,6 +850,70 @@ class ContextType(object):
         permitted = sorted(level_names)
         raise AttributeError('log_level must be an integer or one of %r' % permitted)
 
+    @_validator
+    def log_file(self, value):
+        r"""
+        Sets the target file for all logging output.
+
+        Works in a similar fashion to :attr:`log_level`.
+
+        Examples:
+
+
+            >>> context.log_file = 'foo.txt' #doctest: +ELLIPSIS
+            >>> log.debug('Hello!') #doctest: +ELLIPSIS
+            >>> with context.local(log_level='ERROR'): #doctest: +ELLIPSIS
+            ...     log.info('Hello again!')
+            >>> with context.local(log_file='bar.txt'):
+            ...     log.debug('Hello from bar!')
+            >>> log.info('Hello from foo!')
+            >>> file('foo.txt').readlines()[-3] #doctest: +ELLIPSIS
+            '...:DEBUG:...:Hello!\n'
+            >>> file('foo.txt').readlines()[-2] #doctest: +ELLIPSIS
+            '...:INFO:...:Hello again!\n'
+            >>> file('foo.txt').readlines()[-1] #doctest: +ELLIPSIS
+            '...:INFO:...:Hello from foo!\n'
+            >>> file('bar.txt').readlines()[-1] #doctest: +ELLIPSIS
+            '...:DEBUG:...:Hello from bar!\n'
+        """
+        if isinstance(value, (str,unicode)):
+            modes = ('w', 'wb', 'a', 'ab')
+            # check if mode was specified as "[value],[mode]"
+            if ',' not in value:
+                value += ',a'
+            filename, mode = value.rsplit(',', 1)
+            value = open(filename, mode)
+
+        elif not isinstance(value, (file)):
+            raise AttributeError('log_file must be a file')
+
+        # Is this the same file we already have open?
+        # If so, don't re-print the banner.
+        if self.log_file and not isinstance(self.log_file, _devnull):
+            a = os.fstat(value.fileno()).st_ino
+            b = os.fstat(self.log_file.fileno()).st_ino
+
+            if a == b:
+                return self.log_file
+
+        iso_8601 = '%Y-%m-%dT%H:%M:%S'
+        lines = [
+            '=' * 78,
+            ' Started at %s ' % time.strftime(iso_8601),
+            ' sys.argv = [',
+            ]
+        for arg in sys.argv:
+            lines.append('   %r,' % arg)
+        lines.append(' ]')
+        lines.append('=' * 78)
+        for line in lines:
+            value.write('=%-78s=\n' % line)
+        value.flush()
+        return value
+
+    @property
+    def mask(self):
+        return (1 << self.bits) - 1
 
     @_validator
     def os(self, os):
@@ -757,16 +930,21 @@ class ContextType(object):
             >>> context.os = 'foobar' #doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
-            AttributeError: os must be one of ['freebsd', 'linux', 'windows']
+            AttributeError: os must be one of ['android', 'cgc', 'freebsd', 'linux', 'windows']
         """
         os = os.lower()
 
         if os not in ContextType.oses:
-            raise AttributeError("os must be one of %r" % sorted(ContextType.oses))
+            raise AttributeError("os must be one of %r" % ContextType.oses)
 
         return os
 
-
+    @_validator
+    def randomize(self, r):
+        """
+        Global flag that lots of things should be randomized.
+        """
+        return bool(r)
 
     @_validator
     def signed(self, signed):
@@ -826,6 +1004,111 @@ class ContextType(object):
         if isinstance(value, (str, unicode)):
             return [value]
         return value
+
+    @property
+    def abi(self):
+        return self._abi
+
+    @_validator
+    def proxy(self, proxy):
+        """
+        Default proxy for all socket connections.
+
+        Accepts either a string (hostname or IP address) for a SOCKS5 proxy on
+        the default port, **or** a ``tuple`` passed to ``socks.set_default_proxy``,
+        e.g. ``(socks.SOCKS4, 'localhost', 1234)``.
+
+        >>> context.proxy = 'localhost' #doctest: +ELLIPSIS
+        >>> r=remote('google.com', 80)
+        Traceback (most recent call last):
+        ...
+        ProxyConnectionError: Error connecting to SOCKS5 proxy localhost:1080: [Errno 111] Connection refused
+
+        >>> context.proxy = None
+        >>> r=remote('google.com', 80, level='error')
+        """
+
+        if not proxy:
+            socket.socket = _original_socket
+            return None
+
+        if isinstance(proxy, str):
+            proxy = (socks.SOCKS5, proxy)
+
+        if not isinstance(proxy, collections.Iterable):
+            raise AttributeError('proxy must be a string hostname, or tuple of arguments for socks.set_default_proxy')
+
+        socks.set_default_proxy(*proxy)
+        socket.socket = socks.socksocket
+
+        return proxy
+
+    @_validator
+    def noptrace(self, value):
+        """Disable all actions which rely on ptrace.
+
+        This is useful for switching between local exploitation with a debugger,
+        and remote exploitation (without a debugger).
+
+        This option can be set with the ``NOPTRACE`` command-line argument.
+        """
+        return bool(value)
+
+
+    @_validator
+    def adb_host(self, value):
+        """Sets the target host which is used for ADB.
+
+        This is useful for Android exploitation.
+
+        The default value is inherited from ANDROID_ADB_SERVER_HOST, or set
+        to the default 'localhost'.
+        """
+        return str(value)
+
+
+    @_validator
+    def adb_port(self, value):
+        """Sets the target port which is used for ADB.
+
+        This is useful for Android exploitation.
+
+        The default value is inherited from ANDROID_ADB_SERVER_PORT, or set
+        to the default 5037.
+        """
+        return int(value)
+
+    @_validator
+    def device(self, device):
+        """Sets the device being operated on.
+        """
+        if isinstance(device, Device):
+            self.arch = device.arch or self.arch
+            self.bits = device.bits or self.bits
+            self.endian = device.endian or self.endian
+        elif isinstance(device, str):
+            device = Device(device)
+        else:
+            raise AttributeError("device must be either a Device object or a serial number as a string")
+
+        return device
+
+    @property
+    def adb(self):
+        """Returns an argument array for connecting to adb."""
+        command = ['adb']
+
+        if self.adb_host != self.defaults['adb_host']:
+            command += ['-H', self.adb_host]
+
+        if self.adb_port != self.defaults['adb_port']:
+            command += ['-P', str(self.adb_port)]
+
+        if self.device:
+            command += ['-s', str(self.device)]
+
+        return command
+
 
     #*************************************************************************
     #                               ALIASES
@@ -909,3 +1192,34 @@ class ContextType(object):
 #: Consider it a shorthand to passing ``os=`` and ``arch=`` to every single
 #: function call.
 context = ContextType()
+
+# Inherit default ADB values
+if 'ANDROID_ADB_SERVER_HOST' in os.environ:
+    context.adb_host = os.environ.get('ANDROID_ADB_SERVER_HOST')
+
+if 'ANDROID_ADB_SERVER_PORT' in os.environ:
+    context.adb_port = int(os.getenv('ANDROID_ADB_SERVER_PORT'))
+
+def LocalContext(function):
+    """
+    Wraps the specied function on a context.local() block, using kwargs.
+
+    Example:
+
+        >>> @LocalContext
+        ... def printArch():
+        ...     print(context.arch)
+        >>> printArch()
+        i386
+        >>> printArch(arch='arm')
+        arm
+    """
+    @functools.wraps(function)
+    def setter(*a, **kw):
+        # Fast path to skip adding a Context frame
+        if not kw:
+            return function(*a)
+
+        with context.local(**{k:kw.pop(k) for k,v in kw.items() if isinstance(getattr(ContextType, k, None), property)}):
+            return function(*a, **kw)
+    return setter

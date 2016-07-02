@@ -22,6 +22,8 @@ build_dash = tags.has('dash')
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../..'))
 
+import pwnlib
+
 # -- General configuration -----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -43,12 +45,16 @@ extensions = [
 ]
 
 doctest_global_setup = '''
-import pwnlib, sys
+import sys, os
+os.environ['PWNLIB_NOTERM'] = '1'
+os.environ['PWNLIB_RANDOMIZE'] = '0'
+import pwnlib
 pwnlib.context.context.reset_local()
 pwnlib.context.ContextType.defaults['log_level'] = 'ERROR'
+pwnlib.context.ContextType.defaults['randomize'] = False
 pwnlib.term.text.when = 'never'
 pwnlib.log.install_default_handler()
-pwnlib.log.console.stream = sys.stdout
+pwnlib.log.rootlogger.setLevel(1)
 '''
 
 autodoc_member_order = 'alphabetical'
@@ -69,14 +75,13 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pwntools'
-copyright = u'2014, Gallopsled et al'
+copyright = u'2015, Zach Riggle'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-import pwnlib
 release = pwnlib.__version__
 version = release.rsplit('.', 1)[0]
 
@@ -212,7 +217,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'pwntools.tex', u'pwntools Documentation',
-   u'Gallopsled et al', 'manual'),
+   u'2015, Zach Riggle', 'manual'),
 ]
 
 intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None),
@@ -245,7 +250,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None),
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'pwntools', u'pwntools Documentation',
-     [u'Gallopsled et al'], 1)
+     [u'2015, Zach Riggle'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -259,7 +264,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'pwntools', u'pwntools Documentation',
-   u'Gallopsled et al', 'pwntools', 'One line description of project.',
+   u'', 'pwntools', 'CTF exploit writing toolkit.',
    'Miscellaneous'),
 ]
 

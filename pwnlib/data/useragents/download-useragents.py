@@ -2,7 +2,6 @@
 """
 Script for downloading lists of user agent strings
 """
-
 import os
 import re
 import urllib

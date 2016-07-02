@@ -5,8 +5,8 @@ off some proof-of-concepts.
 """
 
 from pwn import *
-from pwnlib.term.completer import LongestPrefixCompleter, \
-                                  PathCompleter
+from pwnlib.term.completer import LongestPrefixCompleter
+from pwnlib.term.completer import PathCompleter
 
 c1 = LongestPrefixCompleter([
     'foobar',

@@ -46,6 +46,7 @@ from types import ModuleType
 
 from ..context import context
 from ..util import safeeval
+from .constant import Constant
 
 
 class ConstantsModule(ModuleType):
@@ -67,6 +68,8 @@ class ConstantsModule(ModuleType):
         True
 
     """
+    Constant = Constant
+
     possible_submodules = set(context.oses) | set(context.architectures)
 
     def __init__(self, name, module):
@@ -122,14 +125,14 @@ class ConstantsModule(ModuleType):
         Example:
 
             >>> with context.local(arch = 'i386', os = 'linux'):
-            ...    print constants.eval('SYS_execve + PROT_WRITE')
-            13
+            ...    print 13 == constants.eval('SYS_execve + PROT_WRITE')
+            True
             >>> with context.local(arch = 'amd64', os = 'linux'):
-            ...    print constants.eval('SYS_execve + PROT_WRITE')
-            61
+            ...    print 61 == constants.eval('SYS_execve + PROT_WRITE')
+            True
             >>> with context.local(arch = 'amd64', os = 'linux'):
-            ...    print constants.eval('SYS_execve + PROT_WRITE')
-            61
+            ...    print 61 == constants.eval('SYS_execve + PROT_WRITE')
+            True
         """
         if not isinstance(string, str):
             return string
@@ -138,7 +141,7 @@ class ConstantsModule(ModuleType):
         if key not in self._env_store:
             self._env_store[key] = {key: getattr(self, key) for key in dir(self) if not key.endswith('__')}
 
-        return safeeval.values(string, self._env_store[key])
+        return Constant('(%s)' % string, safeeval.values(string, self._env_store[key]))
 
 
 # To prevent garbage collection

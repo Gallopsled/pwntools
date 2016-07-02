@@ -1,10 +1,13 @@
 import string
 
+from ..context import context
+from ..log import getLogger
 from . import packing
 
+log = getLogger(__name__)
 
 # Taken from https://en.wikipedia.org/wiki/De_Bruijn_sequence but changed to a generator
-def de_bruijn(alphabet = string.ascii_lowercase, n = 4):
+def de_bruijn(alphabet = string.ascii_lowercase, n = None):
     """de_bruijn(alphabet = string.ascii_lowercase, n = 4) -> generator
 
     Generator for a sequence of unique substrings of length `n`. This is implemented using a
@@ -13,9 +16,11 @@ def de_bruijn(alphabet = string.ascii_lowercase, n = 4):
     The returned generator will yield up to ``len(alphabet)**n`` elements.
 
     Arguments:
-      alphabet: List or string to generate the sequence over.
-      n(int): The length of subsequences that should be unique.
-"""
+        alphabet: List or string to generate the sequence over.
+        n(int): The length of subsequences that should be unique.
+    """
+    if n is None:
+        n = 4
     k = len(alphabet)
     a = [0] * k * n
     def db(t, p):
@@ -35,7 +40,7 @@ def de_bruijn(alphabet = string.ascii_lowercase, n = 4):
 
     return db(1,1)
 
-def cyclic(length = None, alphabet = string.ascii_lowercase, n = 4):
+def cyclic(length = None, alphabet = string.ascii_lowercase, n = None):
     """cyclic(length = None, alphabet = string.ascii_lowercase, n = 4) -> list/str
 
     A simple wrapper over :func:`de_bruijn`. This function returns a
@@ -45,19 +50,21 @@ def cyclic(length = None, alphabet = string.ascii_lowercase, n = 4):
     a list is returned.
 
     Arguments:
-      length: The desired length of the list or None if the entire sequence is desired.
-      alphabet: List or string to generate the sequence over.
-      n(int): The length of subsequences that should be unique.
+        length: The desired length of the list or None if the entire sequence is desired.
+        alphabet: List or string to generate the sequence over.
+        n(int): The length of subsequences that should be unique.
 
     Example:
-      >>> cyclic(alphabet = "ABC", n = 3)
-      'AAABAACABBABCACBACCBBBCBCCC'
-      >>> cyclic(20)
-      'aaaabaaacaaadaaaeaaa'
-      >>> alphabet, n = range(30), 3
-      >>> len(alphabet)**n, len(cyclic(alphabet = alphabet, n = n))
-      (27000, 27000)
-"""
+        >>> cyclic(alphabet = "ABC", n = 3)
+        'AAABAACABBABCACBACCBBBCBCCC'
+        >>> cyclic(20)
+        'aaaabaaacaaadaaaeaaa'
+        >>> alphabet, n = range(30), 3
+        >>> len(alphabet)**n, len(cyclic(alphabet = alphabet, n = n))
+        (27000, 27000)
+    """
+    if n is None:
+        n = 4
 
     out = []
     for ndx, c in enumerate(de_bruijn(alphabet, n)):
@@ -86,24 +93,32 @@ def cyclic_find(subseq, alphabet = string.ascii_lowercase, n = None):
        https://www.sciencedirect.com/science/article/pii/S0012365X00001175
 
     Arguments:
-      subseq: The subsequence to look for. This can either be a string, a list
-              or an integer. If an integer is provided it will be packed as a
-              little endian integer.
-      alphabet: List or string to generate the sequence over.
-      n(int): The length of subsequences that should be unique.
+        subseq: The subsequence to look for. This can either be a string, a list
+                or an integer. If an integer is provided it will be packed as a
+                little endian integer.
+        alphabet: List or string to generate the sequence over.
+        n(int): The length of subsequences that should be unique.
 
 
     Examples:
 
-      >>> cyclic_find(cyclic(1000)[514:518])
-      514
+        >>> cyclic_find(cyclic(1000)[514:518])
+        514
+        >>> cyclic_find(0x61616162)
+        4
     """
+    if isinstance(subseq, (int, long)):
+        width = 'all' if n is None else n * 8
+        subseq = packing.pack(subseq, width, 'little', False)
+
+    if n is None and len(subseq) != 4:
+        log.warn_once("cyclic_find() expects 4-byte subsequences by default, you gave %r\n" % subseq \
+            + "Unless you specified cyclic(..., n=%i), you probably just want the first 4 bytes.\n" % len(subseq) \
+            + "Truncating the data at 4 bytes.  Specify cyclic_find(..., n=%i) to override this." % len(subseq))
+        subseq = subseq[:4]
+
     if any(c not in alphabet for c in subseq):
         return -1
-
-    if isinstance(subseq, (int, long)):
-        width = n * 8 or 'all'
-        subseq = packing.pack(subseq, width, 'little', False)
 
     n = n or len(subseq)
 

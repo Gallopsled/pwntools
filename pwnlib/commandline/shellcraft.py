@@ -67,6 +67,7 @@ p.add_argument(
                'a', 'asm', 'assembly',
                'p',
                'i', 'hexii',
+               'e', 'elf',
                'default'],
     default = 'default',
     help = 'Output format (default: hex), choose from {r}aw, {s}tring, {c}-style array, {h}ex string, hex{i}i, {a}ssembly code, {p}reprocssed code',
@@ -97,6 +98,85 @@ p.add_argument(
     action='store_true'
 )
 
+p.add_argument(
+    '-b',
+    '--before',
+    help='Insert a debug trap before the code',
+    action='store_true'
+)
+
+p.add_argument(
+    '-a',
+    '--after',
+    help='Insert a debug trap after the code',
+    action='store_true'
+)
+
+p.add_argument(
+    '-v', '--avoid',
+    action='append',
+    help = 'Encode the shellcode to avoid the listed bytes'
+)
+
+p.add_argument(
+    '-n', '--newline',
+    dest='avoid',
+    action='append_const',
+    const='\n',
+    help = 'Encode the shellcode to avoid newlines'
+)
+
+p.add_argument(
+    '-z', '--zero',
+    dest='avoid',
+    action='append_const',
+    const='\x00',
+    help = 'Encode the shellcode to avoid NULL bytes'
+)
+
+p.add_argument(
+    '-r',
+    '--run',
+    help="Run output",
+    action='store_true'
+)
+
+p.add_argument(
+    '--color',
+    help="Color output",
+    action='store_true',
+    default=sys.stdout.isatty()
+)
+
+p.add_argument(
+    '--no-color',
+    help="Disable color output",
+    action='store_false',
+    dest='color'
+)
+
+p.add_argument(
+    '--syscalls',
+    help="List syscalls",
+    action='store_true'
+)
+
+p.add_argument(
+    '--address',
+    help="Load address",
+    default=None
+)
+
+def get_template(name):
+    func = shellcraft
+    for attr in name.split('.'):
+        func = getattr(func, attr)
+    return func
+
+def is_not_a_syscall_template(name):
+    template_src = shellcraft._get_source(name)
+    return 'man 2' not in read(template_src)
+
 def main():
     # Banner must be added here so that it doesn't appear in the autodoc
     # generation for command line tools
@@ -104,18 +184,15 @@ def main():
     args = p.parse_args()
 
     if not args.shellcode:
-        print '\n'.join(shellcraft.templates)
+        templates = shellcraft.templates
+
+        if not args.syscalls:
+            templates = filter(is_not_a_syscall_template, templates)
+
+        print '\n'.join(templates)
         exit()
 
-    if args.format == 'default':
-        if sys.stdout.isatty():
-            args.format = 'hex'
-        else:
-            args.format = 'raw'
-
-    func = shellcraft
-    for attr in args.shellcode.split('.'):
-        func = getattr(func, attr)
+    func = get_template(args.shellcode)
 
     if args.show:
         # remove doctests
@@ -184,23 +261,72 @@ def main():
     map(common.context_arg, args.shellcode.split('.'))
     code = func(*args.args)
 
+
+    if args.before:
+        code = shellcraft.trap() + code
+    if args.after:
+        code = code + shellcraft.trap()
+
+
     if args.format in ['a', 'asm', 'assembly']:
+        if args.color:
+            from pygments import highlight
+            from pygments.formatters import TerminalFormatter
+            from pwnlib.lexer import PwntoolsLexer
+
+            code = highlight(code, PwntoolsLexer(), TerminalFormatter())
+
         print code
         exit()
     if args.format == 'p':
         print cpp(code)
         exit()
 
-    code = asm(code)
+    assembly = code
+
+    vma = args.address
+    if vma:
+        vma = eval(vma)
+
+    if args.format in ['e','elf']:
+        args.format = 'default'
+        try: os.fchmod(args.out.fileno(), 0700)
+        except OSError: pass
+
+
+        if not args.avoid:
+            code = read(make_elf_from_assembly(assembly, vma=vma))
+        else:
+            code = asm(assembly)
+            code = encode(code, args.avoid)
+            code = make_elf(code, vma=vma)
+            # code = read(make_elf(encode(asm(code), args.avoid)))
+    else:
+        code = encode(asm(assembly), args.avoid)
+
+    if args.format == 'default':
+        if args.out.isatty():
+            args.format = 'hex'
+        else:
+            args.format = 'raw'
+
+    arch = args.shellcode.split('.')[0]
 
     if args.debug:
-        arch = args.shellcode.split('.')[0]
-        proc = gdb.debug_shellcode(code, arch=arch)
+        if not args.avoid:
+            proc = gdb.debug_assembly(assembly, arch=arch, vma=vma)
+        else:
+            proc = gdb.debug_shellcode(code, arch=arch, vma=vma)
+        proc.interactive()
+        sys.exit(0)
+
+    if args.run:
+        proc = run_shellcode(code, arch=arch)
         proc.interactive()
         sys.exit(0)
 
     if args.format in ['s', 'str', 'string']:
-        code = _string(code)
+        code = _string(code) + '"\n'
     elif args.format == 'c':
         code = '{' + ', '.join(map(hex, bytearray(code))) + '}' + '\n'
     elif args.format in ['h', 'hex']:
@@ -209,8 +335,8 @@ def main():
         code = hexii(code) + '\n'
 
     if not sys.stdin.isatty():
-        sys.stdout.write(sys.stdin.read())
+        args.out.write(sys.stdin.read())
 
-    sys.stdout.write(code)
+    args.out.write(code)
 
 if __name__ == '__main__': main()

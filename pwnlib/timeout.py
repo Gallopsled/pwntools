@@ -54,6 +54,11 @@ class TimeoutDefault(object):
     def __repr__(self): return "pwnlib.timeout.Timeout.default"
     def __str__(self): return "<default timeout>"
 
+class Maximum(float):
+    def __repr__(self):
+        return 'pwnlib.timeout.maximum'
+maximum = Maximum(2**20)
+
 class Timeout(object):
     """
     Implements a basic class which has a timeout, and support for
@@ -116,8 +121,7 @@ class Timeout(object):
     #: OSX does not permit setting socket timeouts to 2**22.
     #: Assume that if we receive a timeout of 2**21 or greater,
     #: that the value is effectively infinite.
-    maximum = float(2**20)
-
+    maximum = maximum
 
     def __init__(self, timeout=default):
         self._stop    = 0

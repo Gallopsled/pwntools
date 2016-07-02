@@ -2,11 +2,7 @@
 import argparse
 import sys
 
-import pwnlib.log
-from pwnlib.elf import ELF
-from pwnlib.util.fiddling import unhex
-
-pwnlib.log.install_default_handler()
+from pwn import *
 
 p = argparse.ArgumentParser()
 p.add_argument('elf',help="File to patch")
@@ -22,7 +18,9 @@ def main():
 
     offset = int(a.offset, 16)
     bytes  = unhex(a.bytes)
-    elf    = ELF(a.elf)
+
+    with context.silent:
+        elf    = ELF(a.elf)
 
     elf.write(offset, bytes)
     sys.stdout.write(elf.get_data())

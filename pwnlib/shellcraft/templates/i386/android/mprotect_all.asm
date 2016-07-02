@@ -1,0 +1,1 @@
+../linux/mprotect_all.asm

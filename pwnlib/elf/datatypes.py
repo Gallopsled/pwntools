@@ -47,6 +47,43 @@ Elf64_Word = ctypes.c_uint32
 Elf64_Xword = ctypes.c_uint64
 Elf64_Sxword = ctypes.c_int64
 
+
+AT_CONSTANTS = {
+    0 : 'AT_NULL',      # /* End of vector */
+    1 : 'AT_IGNORE',    # /* Entry should be ignored */
+    2 : 'AT_EXECFD',    # /* File descriptor of program */
+    3 : 'AT_PHDR',      # /* Program headers for program */
+    4 : 'AT_PHENT',     # /* Size of program header entry */
+    5 : 'AT_PHNUM',     # /* Number of program headers */
+    6 : 'AT_PAGESZ',    # /* System page size */
+    7 : 'AT_BASE',      # /* Base address of interpreter */
+    8 : 'AT_FLAGS',     # /* Flags */
+    9 : 'AT_ENTRY',     # /* Entry point of program */
+    10: 'AT_NOTELF',    # /* Program is not ELF */
+    11: 'AT_UID',       # /* Real uid */
+    12: 'AT_EUID',      # /* Effective uid */
+    13: 'AT_GID',       # /* Real gid */
+    14: 'AT_EGID',      # /* Effective gid */
+    15: 'AT_PLATFORM',  # /* String identifying platform */
+    16: 'AT_HWCAP',     # /* Machine dependent hints about processor capabilities */
+    17: 'AT_CLKTCK',    # /* Frequency of times() */
+    18: 'AT_FPUCW',
+    19: 'AT_DCACHEBSIZE',
+    20: 'AT_ICACHEBSIZE',
+    21: 'AT_UCACHEBSIZE',
+    22: 'AT_IGNOREPPC',
+    23: 'AT_SECURE',
+    24: 'AT_BASE_PLATFORM', # String identifying real platforms
+    25: 'AT_RANDOM',    # Address of 16 random bytes
+    31: 'AT_EXECFN',    # Filename of executable
+    32: 'AT_SYSINFO',
+    33: 'AT_SYSINFO_EHDR',
+    34: 'AT_L1I_CACHESHAPE',
+    35: 'AT_L1D_CACHESHAPE',
+    36: 'AT_L2_CACHESHAPE',
+    37: 'AT_L3_CACHESHAPE',
+}
+
 class constants:
     EI_MAG0                 = 0
     EI_MAG1                 = 1
@@ -140,6 +177,82 @@ class constants:
     STT_FILE                = 4
     STT_COMMON              = 5
     STT_TLS                 = 6
+
+    #
+    # Notes used in ET_CORE. Architectures export some of the arch register sets
+    # using the corresponding note types via the PTRACE_GETREGSET and
+    # PTRACE_SETREGSET requests.
+    #
+    NT_PRSTATUS             = 1
+    NT_PRFPREG              = 2
+    NT_PRPSINFO             = 3
+    NT_TASKSTRUCT           = 4
+    NT_AUXV                 = 6
+    #
+    # Note to userspace developers: size of NT_SIGINFO note may increase
+    # in the future to accomodate more fields, don't assume it is fixed!
+    #
+    NT_SIGINFO              = 0x53494749
+    NT_FILE                 = 0x46494c45
+    NT_PRXFPREG             = 0x46e62b7f
+    NT_PPC_VMX              = 0x100
+    NT_PPC_SPE              = 0x101
+    NT_PPC_VSX              = 0x102
+    NT_386_TLS              = 0x200
+    NT_386_IOPERM           = 0x201
+    NT_X86_XSTATE           = 0x202
+    NT_S390_HIGH_GPRS       = 0x300
+    NT_S390_TIMER           = 0x301
+    NT_S390_TODCMP          = 0x302
+    NT_S390_TODPREG         = 0x303
+    NT_S390_CTRS            = 0x304
+    NT_S390_PREFIX          = 0x305
+    NT_S390_LAST_BREAK      = 0x306
+    NT_S390_SYSTEM_CALL     = 0x307
+    NT_S390_TDB             = 0x308
+    NT_ARM_VFP              = 0x400
+    NT_ARM_TLS              = 0x401
+    NT_ARM_HW_BREAK         = 0x402
+    NT_ARM_HW_WATCH         = 0x403
+    NT_METAG_CBUF           = 0x500
+    NT_METAG_RPIPE          = 0x501
+    NT_METAG_TLS            = 0x502
+
+    AT_NULL                 = 0
+    AT_IGNORE               = 1
+    AT_EXECFD               = 2
+    AT_PHDR                 = 3
+    AT_PHENT                = 4
+    AT_PHNUM                = 5
+    AT_PAGESZ               = 6
+    AT_BASE                 = 7
+    AT_FLAGS                = 8
+    AT_ENTRY                = 9
+    AT_NOTELF               = 10
+    AT_UID                  = 11
+    AT_EUID                 = 12
+    AT_GID                  = 13
+    AT_EGID                 = 14
+    AT_PLATFORM             = 15
+    AT_HWCAP                = 16
+    AT_CLKTCK               = 17
+    AT_FPUCW                = 18
+    AT_DCACHEBSIZE          = 19
+    AT_ICACHEBSIZE          = 20
+    AT_UCACHEBSIZE          = 21
+    AT_IGNOREPPC            = 22
+    AT_SECURE               = 23
+    AT_BASE_PLATFORM        = 24
+    AT_RANDOM               = 25
+    AT_EXECFN               = 31
+    AT_SYSINFO              = 32
+    AT_SYSINFO_EHDR         = 33
+    AT_L1I_CACHESHAPE       = 34
+    AT_L1D_CACHESHAPE       = 35
+    AT_L2_CACHESHAPE        = 36
+    AT_L3_CACHESHAPE        = 37
+
+
 
 class Elf32_Ehdr(ctypes.Structure):
     _fields_ = [("e_ident", (ctypes.c_ubyte * 16)),
@@ -323,3 +436,116 @@ class Elf64_r_debug(ctypes.Structure):
 
 constants.DT_GNU_HASH = 0x6ffffef5
 constants.STN_UNDEF   = 0
+
+pid_t = ctypes.c_uint32
+
+class elf_siginfo(ctypes.Structure):
+    _fields_ = [('si_signo', ctypes.c_int32),
+                ('si_code', ctypes.c_int32),
+                ('si_errno', ctypes.c_int32)]
+
+class timeval32(ctypes.Structure):
+    _fields_ = [('tv_sec', ctypes.c_int32),
+                ('tv_usec', ctypes.c_int32),]
+
+class timeval64(ctypes.Structure):
+    _fields_ = [('tv_sec', ctypes.c_int64),
+                ('tv_usec', ctypes.c_int64),]
+
+# See linux/elfcore.h
+def generate_prstatus_common(size, regtype):
+    c_long = ctypes.c_uint32 if size==32 else ctypes.c_uint64
+    timeval = timeval32 if size==32 else timeval64
+
+    return [('pr_info', elf_siginfo),
+            ('pr_cursig', ctypes.c_int16),
+            ('pr_sigpend', c_long),
+            ('pr_sighold', c_long),
+            ('pr_pid', pid_t),
+            ('pr_ppid', pid_t),
+            ('pr_pgrp', pid_t),
+            ('pr_sid', pid_t),
+            ('pr_utime', timeval),
+            ('pr_stime', timeval),
+            ('pr_cutime', timeval),
+            ('pr_cstime', timeval),
+            ('pr_reg', regtype),
+            ('pr_fpvalid', ctypes.c_uint32)
+            ]
+
+# See i386-linux-gnu/sys/user.h
+class user_regs_struct_i386(ctypes.Structure):
+    _fields_ = [(name, ctypes.c_uint32) for name in [
+                'ebx',
+                'ecx',
+                'edx',
+                'esi',
+                'edi',
+                'ebp',
+                'eax',
+                'xds',
+                'xes',
+                'xfs',
+                'xgs',
+                'orig_eax',
+                'eip',
+                'xcs',
+                'eflags',
+                'esp',
+                'xss',
+                ]]
+
+
+assert ctypes.sizeof(user_regs_struct_i386) == 0x44
+
+
+# See i386-linux-gnu/sys/user.h
+class user_regs_struct_amd64(ctypes.Structure):
+    _fields_ = [(name, ctypes.c_uint64) for name in [
+                'r15',
+                'r14',
+                'r13',
+                'r12',
+                'rbp',
+                'rbx',
+                'r11',
+                'r10',
+                'r9',
+                'r8',
+                'rax',
+                'rcx',
+                'rdx',
+                'rsi',
+                'rdi',
+                'orig_rax',
+                'rip',
+                'cs',
+                'eflags',
+                'rsp',
+                'ss',
+                'fs_base',
+                'gs_base',
+                'ds',
+                'es',
+                'fs',
+                'gs',
+                ]]
+
+assert ctypes.sizeof(user_regs_struct_amd64) == 0xd8
+
+class elf_prstatus_i386(ctypes.Structure):
+    _fields_ = generate_prstatus_common(32, user_regs_struct_i386)
+
+assert ctypes.sizeof(elf_prstatus_i386) == 0x90
+
+class elf_prstatus_amd64(ctypes.Structure):
+    _fields_ = generate_prstatus_common(64, user_regs_struct_amd64)
+
+assert ctypes.sizeof(elf_prstatus_amd64) == 0x150
+
+class Elf32_auxv_t(ctypes.Structure):
+    _fields_ = [('a_type', ctypes.c_uint32),
+                ('a_val', ctypes.c_uint32),]
+class Elf64_auxv_t(ctypes.Structure):
+    _fields_ = [('a_type', ctypes.c_uint64),
+                ('a_val', ctypes.c_uint64),]

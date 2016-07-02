@@ -105,7 +105,7 @@ class PathCompleter(Completer):
         if os.path.isdir(dirname):
             try:
                 names = os.listdir(dirname)
-            except:
+            except Exception:
                 return
             names = [n for n in names if n.startswith(basename)]
             dirname = os.path.dirname(prefix)
