@@ -1,7 +1,11 @@
 # pwntools - CTF toolkit
+![pwntools logo](docs/source/logo.png?raw=true)
 [![Docs latest](https://readthedocs.org/projects/pwntools/badge/?version=latest)](https://pwntools.readthedocs.org/)
+[![Docs 2.2.0](https://readthedocs.org/projects/pwntools/badge/?version=2.2.0)](https://pwntools.readthedocs.org/en/2.2.0)
+[![PyPI](https://img.shields.io/pypi/v/pwntools.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
+[![Gittip](https://img.shields.io/gittip/gallopsled.svg?style=flat)](https://www.gittip.com/gallopsled/)
 [![Travis](https://travis-ci.org/Gallopsled/pwntools.svg?branch=master)](https://travis-ci.org/pwntools/pwntools)
-[![Twitter](https://img.shields.io/badge/twitter-ctfpwntools-4099FF.svg?style=flat)](https://twitter.com/ctfpwntools)
+[![Twitter](https://img.shields.io/badge/twitter-Gallopsled-4099FF.svg?style=flat)](https://twitter.com/Gallopsled)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](http://choosealicense.com/licenses/mit/)
 
 pwntools is a CTF framework and exploit development library. Written in Python, it is designed for rapid prototyping and development, and intended to make exploit writing as simple as possible.
