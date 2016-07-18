@@ -117,7 +117,7 @@ def null(raw_bytes, *a, **kw):
 
     Accepts the same arguments as :func:`encode`.
     """
-    return encode(raw_bytes, expr=null, *a, **kw)
+    return encode(raw_bytes, expr=re_null, *a, **kw)
 
 @LocalContext
 def line(raw_bytes, *a, **kw):
