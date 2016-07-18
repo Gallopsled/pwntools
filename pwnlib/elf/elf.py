@@ -736,7 +736,7 @@ class ELF(ELFFile):
 
         # Can't call self.executable_segments because of dependency loop.
         exec_seg = [s for s in self.segments if s.header.p_flags & P_FLAGS.PF_X]
-        return not any('GNU_STACK' in seg.header.p_type for seg in exec_seg)
+        return not any('GNU_STACK' in str(seg.header.p_type) for seg in exec_seg)
 
     @property
     def execstack(self):
