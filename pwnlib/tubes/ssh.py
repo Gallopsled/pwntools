@@ -535,6 +535,8 @@ class ssh(Timeout, Logger):
                     self.host = host = host_config['hostname']
                 if not keyfile and 'identityfile' in host_config:
                     keyfile = host_config['identityfile'][0]
+                    if keyfile.lower() == 'none':
+                        keyfile = None
         except Exception as e:
             self.debug("An error occurred while parsing ~/.ssh/config:\n%s" % e)
 
