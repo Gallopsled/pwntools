@@ -35,11 +35,20 @@ pwntools comes with a handful of useful command-line utilities which serve as wr
 .. autoprogram:: pwnlib.commandline.elfpatch:p
    :prog: elfpatch
 
+.. autoprogram:: pwnlib.commandline.errno:parser
+   :prog: errno
+
 .. autoprogram:: pwnlib.commandline.hex:parser
    :prog: hex
 
 .. autoprogram:: pwnlib.commandline.phd:parser
    :prog: phd
+
+.. autoprogram:: pwnlib.commandline.pwnstrip:p
+   :prog: pwnstrip
+
+.. autoprogram:: pwnlib.commandline.scramble:parser
+   :prog: scramble
 
 .. autoprogram:: pwnlib.commandline.shellcraft:p
    :prog: shellcraft
