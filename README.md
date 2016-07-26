@@ -1,5 +1,6 @@
 # pwntools - CTF toolkit
 ![pwntools logo](docs/source/logo.png?raw=true)
+
 [![Docs latest](https://readthedocs.org/projects/pwntools/badge/?version=latest)](https://pwntools.readthedocs.org/)
 [![Docs 2.2.0](https://readthedocs.org/projects/pwntools/badge/?version=2.2.0)](https://pwntools.readthedocs.org/en/2.2.0)
 [![PyPI](https://img.shields.io/pypi/v/pwntools.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
