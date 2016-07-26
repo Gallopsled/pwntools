@@ -94,13 +94,13 @@ MiB = 1000 * KB
 GiB = 1000 * MB
 
 def read(path, count=-1, skip=0):
-    """read(path, count=-1, skip=0) -> str
+    r"""read(path, count=-1, skip=0) -> str
 
     Open file, return content.
 
     Examples:
-        >>> read('pwnlib/util/misc.py').split('\\n')[0]
-        'import base64'
+        >>> read('/proc/self/exe')[:4]
+        '\x7fELF'
     """
     path = os.path.expanduser(os.path.expandvars(path))
     with open(path) as fd:
