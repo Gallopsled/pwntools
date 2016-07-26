@@ -1,5 +1,5 @@
 # pwntools - CTF toolkit
-![pwntools logo](docs/source/logo.png?raw=true)
+![pwntools logo](https://github.com/Gallopsled/pwntools/blob/master/docs/source/logo.png?raw=true)
 
 [![Docs latest](https://readthedocs.org/projects/pwntools/badge/?version=latest)](https://pwntools.readthedocs.org/)
 [![Docs 2.2.0](https://readthedocs.org/projects/pwntools/badge/?version=2.2.0)](https://pwntools.readthedocs.org/en/2.2.0)
