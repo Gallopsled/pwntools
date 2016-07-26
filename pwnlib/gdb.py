@@ -142,11 +142,11 @@ def _gdbserver_port(gdbserver, ssh):
         remote   = ssh.connect_remote('127.0.0.1', port)
         listener = tubes.listen.listen(0)
         port     = listener.lport
-        
+
         # Disable showing GDB traffic when debugging verbosity is increased
         remote.level = 'error'
         listener.level = 'error'
-        
+
         # Hook them up
         remote <> listener
 
@@ -226,7 +226,7 @@ def debug(args, execute=None, exe=None, ssh=None, env=None, **kwargs):
     else:
         port = qemu_port
 
-    host = '127.0.0.1' 
+    host = '127.0.0.1'
     if not ssh and context.os == 'android':
         host = context.adb_host
 
@@ -370,53 +370,15 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
     elif isinstance(target, tuple) and len(target) == 2:
         host, port = target
         pre += 'target remote %s:%d\n' % (host, port)
+
         def findexe():
-            # hm no PID then, but wait! we might not be totally out of luck yet: if
-            # the gdbserver is running locally and we know the program who is
-            # hosting it (e.g qemu, gdbserver) we can figure out the `exe` from the
-            # command line
-
-            # find inode of the listen socket
-            inode = None
-
-            # XXX: do a proper check to see if we're hosting the server
-            if host not in ('localhost', '127.0.0.1', '0.0.0.0',
-                            '::1', 'ip6-localhost', '::'):
-                return
-
-            for f in ['tcp', 'tcp6']:
-                with open('/proc/net/%s' % f) as fd:
-                    # skip the first line with the column names
-                    fd.readline()
-                    for line in fd:
-                        line = line.split()
-                        loc = line[1]
-                        lport = int(loc.split(':')[1], 16)
-                        st = int(line[3], 16)
-                        if st != 10: # TCP_LISTEN, see include/net/tcp_states.h
-                            continue
-                        if lport == port:
-                            inode = int(line[9])
-                            break
-                if inode:
-                    break
-
-            # if we didn't find the inode, there's nothing we can do about it
-            if not inode:
-                return
-
-            # find the process who owns the socket
-            spid = proc.pid_by_inode(inode)
-            if not spid:
-                return
-
-            # let's have a look at the server exe
-            sexe = proc.exe(spid)
-            name = os.path.basename(sexe)
-            # XXX: parse cmdline
-            if name.startswith('qemu-') or name.startswith('gdbserver'):
-                exe = proc.cmdline(spid)[-1]
-                return os.path.join(proc.cwd(spid), exe)
+            for spid in proc.pidof(target):
+                sexe = proc.exe(spid)
+                name = os.path.basename(sexe)
+                # XXX: parse cmdline
+                if name.startswith('qemu-') or name.startswith('gdbserver'):
+                    exe = proc.cmdline(spid)[-1]
+                    return os.path.join(proc.cwd(spid), exe)
 
         exe = exe or findexe()
     else:
