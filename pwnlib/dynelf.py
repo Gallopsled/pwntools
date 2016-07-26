@@ -901,3 +901,14 @@ class DynELF(object):
         self.success('*environ: %#x' % stack)
 
         return stack
+
+    def heap(self):
+        """Finds the beginning of the heap via __curbrk, which is an exported
+        symbol in the linker, which points to the current brk.
+        """
+        curbrk = self.lookup('__curbrk', 'libc')
+        brk    = self.leak.p(curbrk)
+
+        self.success('*curbrk: %#x' % brk)
+
+        return brk
