@@ -18,6 +18,7 @@ log = getLogger(__name__)
 types = {
     'i386': elf_prstatus_i386,
     'amd64': elf_prstatus_amd64,
+    'arm': elf_prstatus_arm
 }
 
 # Slightly modified copy of the pyelftools version of the same function,
@@ -118,13 +119,21 @@ class Core(ELF):
         if not self.elftype == 'CORE':
             log.error("%s is not a valid corefile" % e.file.name)
 
-        if not self.arch in ('i386','amd64'):
-            log.error("%s does not use a supported corefile architecture" % e.file.name)
+        if not self.arch in ('i386','amd64','arm'):
+            log.error("%s does not use a supported corefile architecture" % self.file.name)
 
         prstatus_type = types[self.arch]
 
         with log.waitfor("Parsing corefile...") as w:
             self._load_mappings()
+
+            # Attempt to detect broken QEMU corefiles
+            if self.file.name.startswith('qemu') \
+            and any(m.stop > (1 << self.bits) for m in self.mappings):
+                log.warn_once("Broken QEMU corefile may have invalid memory mappings.  Use a newer QEMU.\n" +
+                    "Consider using the most recent statically-linked package from Ubuntu.\n" +
+                    "http://security.ubuntu.com/ubuntu/pool/universe/q/qemu/\n" +
+                    "$ sudo dpkg -i qemu-user-static-foobar.deb")
 
             for segment in self.segments:
                 if not isinstance(segment, elftools.elf.segments.NoteSegment):
@@ -157,7 +166,7 @@ class Core(ELF):
             with context.local(bytes=self.bytes, log_level='error'):
                 try:
                     self._parse_stack()
-                except ValueError:
+                except (ValueError, AttributeError):
                     # If there are no environment variables, we die by running
                     # off the end of the stack.
                     pass
