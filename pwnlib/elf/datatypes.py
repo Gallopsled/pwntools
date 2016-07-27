@@ -533,6 +533,42 @@ class user_regs_struct_amd64(ctypes.Structure):
 
 assert ctypes.sizeof(user_regs_struct_amd64) == 0xd8
 
+# See /usr/arm-linux-gnueabihf/include/sys/user.h
+#
+# This is not all of the fields, just all of the general purpose registers.
+# This is also all of the data that we get from qemu-arm user-mode, in order
+# to get the PRSTATUS size to be 0x94 bytes.
+#
+# $ readelf -a qemu_step3-elf_20160727-005035_10884.core
+# ELF Header:
+#   Magic:   7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00
+#   Class:                             ELF32
+#   ...
+#   Type:                              CORE (Core file)
+#   Machine:                           ARM
+# Displaying notes found at file offset 0x000000b4 with length 0x000001c4:
+#   Owner                 Data size   Description
+#   CORE                 0x00000094   NT_PRSTATUS (prstatus structure)
+#
+class user_regs_struct_arm(ctypes.Structure):
+    _fields_ = [(name, ctypes.c_uint32) for name in [
+                'r%i' % i for i in range(18)
+                ]]
+
+    @property
+    def sp(self):
+        return self.r13
+
+    @property
+    def lr(self):
+        return self.r14
+
+    @property
+    def pc(self):
+        return self.r15
+
+assert ctypes.sizeof(user_regs_struct_arm) == 0x48
+
 class elf_prstatus_i386(ctypes.Structure):
     _fields_ = generate_prstatus_common(32, user_regs_struct_i386)
 
@@ -542,6 +578,11 @@ class elf_prstatus_amd64(ctypes.Structure):
     _fields_ = generate_prstatus_common(64, user_regs_struct_amd64)
 
 assert ctypes.sizeof(elf_prstatus_amd64) == 0x150
+
+class elf_prstatus_arm(ctypes.Structure):
+    _fields_ = generate_prstatus_common(32, user_regs_struct_arm)
+
+assert ctypes.sizeof(elf_prstatus_arm) == 0x94
 
 class Elf32_auxv_t(ctypes.Structure):
     _fields_ = [('a_type', ctypes.c_uint32),

@@ -18,6 +18,7 @@ log = getLogger(__name__)
 types = {
     'i386': elf_prstatus_i386,
     'amd64': elf_prstatus_amd64,
+    'arm': elf_prstatus_arm
 }
 
 # Slightly modified copy of the pyelftools version of the same function,
@@ -118,13 +119,21 @@ class Core(ELF):
         if not self.elftype == 'CORE':
             log.error("%s is not a valid corefile" % e.file.name)
 
-        if not self.arch in ('i386','amd64'):
-            log.error("%s does not use a supported corefile architecture" % e.file.name)
+        if not self.arch in ('i386','amd64','arm'):
+            log.error("%s does not use a supported corefile architecture" % self.file.name)
 
         prstatus_type = types[self.arch]
 
         with log.waitfor("Parsing corefile...") as w:
             self._load_mappings()
+
+            # Attempt to detect broken QEMU corefiles
+            if self.file.name.startswith('qemu') \
+            and any(m.stop > (1 << self.bits) for m in self.mappings):
+                log.warn_once("Broken QEMU corefile may have invalid memory mappings.  Use a newer QEMU.\n" +
+                    "Consider using the most recent statically-linked package from Ubuntu.\n" +
+                    "http://security.ubuntu.com/ubuntu/pool/universe/q/qemu/\n" +
+                    "$ sudo dpkg -i qemu-user-static-foobar.deb")
 
             for segment in self.segments:
                 if not isinstance(segment, elftools.elf.segments.NoteSegment):
@@ -148,16 +157,16 @@ class Core(ELF):
                         with context.local(bytes=self.bytes):
                             self._parse_auxv(note)
 
-            if self.stack and self.mappings:
+            if self.stack_end and self.mappings:
                 for mapping in self.mappings:
-                    if mapping.stop == self.stack:
+                    if mapping.stop == self.stack_end:
                         mapping.name = '[stack]'
                         self.stack   = mapping
 
             with context.local(bytes=self.bytes, log_level='error'):
                 try:
                     self._parse_stack()
-                except ValueError:
+                except (ValueError, AttributeError):
                     # If there are no environment variables, we die by running
                     # off the end of the stack.
                     pass
@@ -246,6 +255,10 @@ class Core(ELF):
             if self.at_entry and m.start <= self.at_entry <= m.stop:
                 return m
 
+    @property
+    def entry(self):
+        return self.at_entry
+
     def _load_mappings(self):
         for s in self.segments:
             if s.header.p_type != 'PT_LOAD':
@@ -262,40 +275,47 @@ class Core(ELF):
         t = tube()
         t.unrecv(note.n_desc)
 
+        for k in AT_CONSTANTS.values():
+            setattr(self, k.lower(), None)
+
         for i in range(0, note.n_descsz, context.bytes * 2):
             key = t.unpack()
             value = t.unpack()
+            name = AT_CONSTANTS.get(key, None)
 
-            # The AT_EXECFN entry is a pointer to the executable's filename
-            # at the very top of the stack, followed by a word's with of
-            # NULL bytes.  For example, on a 64-bit system...
-            #
-            # 0x7fffffffefe8  53 3d 31 34  33 00 2f 62  69 6e 2f 62  61 73 68 00  |S=14|3./b|in/b|ash.|
-            # 0x7fffffffeff8  00 00 00 00  00 00 00 00                            |....|....|    |    |
+            if name:
+                setattr(self, name.lower(), value)
 
-            if key == constants.AT_EXECFN:
-                self.at_execfn = value
-                value = value & ~0xfff
-                value += 0x1000
-                self.stack = value
+        # The AT_EXECFN entry is a pointer to the executable's filename
+        # at the very top of the stack, followed by a word's with of
+        # NULL bytes.  For example, on a 64-bit system...
+        #
+        # 0x7fffffffefe8  53 3d 31 34  33 00 2f 62  69 6e 2f 62  61 73 68 00  |S=14|3./b|in/b|ash.|
+        # 0x7fffffffeff8  00 00 00 00  00 00 00 00                            |....|....|    |    |
+        if self.at_execfn:
+            value = self.at_execfn & ~0xfff
+            value += 0x1000
+            self.stack_end = value
 
-            if key == constants.AT_ENTRY:
-                self.at_entry = value
-
-            if key == constants.AT_PHDR:
-                self.at_phdr = value
-
-            if key == constants.AT_BASE:
-                self.at_base = value
-
-            if key == constants.AT_SYSINFO_EHDR:
-                self.at_sysinfo_ehdr = value
+        # The AT_RANDOM entry is a pointer to random data for use by libc.
+        # However, the only place that it can be mapped is on the stack,
+        # so it's a pointer to the stack.
+        elif self.at_random:
+            for m in self.mappings:
+                if m.start <= self.at_random <= m.stop:
+                    self.stack_end = m.stop
 
     def _parse_stack(self):
-        # AT_EXECFN is the start of the filename, e.g. '/bin/sh'
-        # Immediately preceding is a NULL-terminated environment variable string.
-        # We want to find the beginning of it
-        address = self.at_execfn-1
+        # The end of the stack has AT_EXECFN, and is immediately preceded by the
+        # environment.
+        address = self.stack_end - 1
+
+        # Rewind past AT_EXECFN.  This will be a handful of NUL bytes, then the
+        # filename, then the end of the last environment variable (which ends with a NUL).
+        while self.u8(address) == 0:
+            address -= 1
+        while self.u8(address) != 0:
+            address -= 1
 
         # Sanity check!
         try:
@@ -371,3 +391,19 @@ class Core(ELF):
                 return getattr(self.prstatus.pr_reg, attribute)
 
         return super(Core, self).__getattribute__(attribute)
+
+    @property
+    def registers(self):
+        """A dictionary of register names to values"""
+
+        # Shellcraft import is deferred because it's SLOOOOOOW
+        from ..shellcraft import registers
+
+        result = {}
+
+        for reg in getattr(registers, self.arch, []):
+            val = getattr(self.prstatus.pr_reg, reg, None)
+            if val is not None:
+                result[reg] = val
+
+        return result
