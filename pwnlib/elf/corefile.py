@@ -255,6 +255,10 @@ class Core(ELF):
             if self.at_entry and m.start <= self.at_entry <= m.stop:
                 return m
 
+    @property
+    def entry(self):
+        return self.at_entry
+
     def _load_mappings(self):
         for s in self.segments:
             if s.header.p_type != 'PT_LOAD':
