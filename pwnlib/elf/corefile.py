@@ -391,3 +391,19 @@ class Core(ELF):
                 return getattr(self.prstatus.pr_reg, attribute)
 
         return super(Core, self).__getattribute__(attribute)
+
+    @property
+    def registers(self):
+        """A dictionary of register names to values"""
+
+        # Shellcraft import is deferred because it's SLOOOOOOW
+        from ..shellcraft import registers
+
+        result = {}
+
+        for reg in getattr(registers, self.arch, []):
+            val = getattr(self.prstatus.pr_reg, reg, None)
+            if val is not None:
+                result[reg] = val
+
+        return result
