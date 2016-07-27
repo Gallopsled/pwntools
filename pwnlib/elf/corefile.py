@@ -157,9 +157,9 @@ class Core(ELF):
                         with context.local(bytes=self.bytes):
                             self._parse_auxv(note)
 
-            if self.stack and self.mappings:
+            if self.stack_end and self.mappings:
                 for mapping in self.mappings:
-                    if mapping.stop == self.stack:
+                    if mapping.stop == self.stack_end:
                         mapping.name = '[stack]'
                         self.stack   = mapping
 
@@ -275,40 +275,47 @@ class Core(ELF):
         t = tube()
         t.unrecv(note.n_desc)
 
+        for k in AT_CONSTANTS.values():
+            setattr(self, k.lower(), None)
+
         for i in range(0, note.n_descsz, context.bytes * 2):
             key = t.unpack()
             value = t.unpack()
+            name = AT_CONSTANTS.get(key, None)
 
-            # The AT_EXECFN entry is a pointer to the executable's filename
-            # at the very top of the stack, followed by a word's with of
-            # NULL bytes.  For example, on a 64-bit system...
-            #
-            # 0x7fffffffefe8  53 3d 31 34  33 00 2f 62  69 6e 2f 62  61 73 68 00  |S=14|3./b|in/b|ash.|
-            # 0x7fffffffeff8  00 00 00 00  00 00 00 00                            |....|....|    |    |
+            if name:
+                setattr(self, name.lower(), value)
 
-            if key == constants.AT_EXECFN:
-                self.at_execfn = value
-                value = value & ~0xfff
-                value += 0x1000
-                self.stack = value
+        # The AT_EXECFN entry is a pointer to the executable's filename
+        # at the very top of the stack, followed by a word's with of
+        # NULL bytes.  For example, on a 64-bit system...
+        #
+        # 0x7fffffffefe8  53 3d 31 34  33 00 2f 62  69 6e 2f 62  61 73 68 00  |S=14|3./b|in/b|ash.|
+        # 0x7fffffffeff8  00 00 00 00  00 00 00 00                            |....|....|    |    |
+        if self.at_execfn:
+            value = self.at_execfn & ~0xfff
+            value += 0x1000
+            self.stack_end = value
 
-            if key == constants.AT_ENTRY:
-                self.at_entry = value
-
-            if key == constants.AT_PHDR:
-                self.at_phdr = value
-
-            if key == constants.AT_BASE:
-                self.at_base = value
-
-            if key == constants.AT_SYSINFO_EHDR:
-                self.at_sysinfo_ehdr = value
+        # The AT_RANDOM entry is a pointer to random data for use by libc.
+        # However, the only place that it can be mapped is on the stack,
+        # so it's a pointer to the stack.
+        elif self.at_random:
+            for m in self.mappings:
+                if m.start <= self.at_random <= m.stop:
+                    self.stack_end = m.stop
 
     def _parse_stack(self):
-        # AT_EXECFN is the start of the filename, e.g. '/bin/sh'
-        # Immediately preceding is a NULL-terminated environment variable string.
-        # We want to find the beginning of it
-        address = self.at_execfn-1
+        # The end of the stack has AT_EXECFN, and is immediately preceded by the
+        # environment.
+        address = self.stack_end - 1
+
+        # Rewind past AT_EXECFN.  This will be a handful of NUL bytes, then the
+        # filename, then the end of the last environment variable (which ends with a NUL).
+        while self.u8(address) == 0:
+            address -= 1
+        while self.u8(address) != 0:
+            address -= 1
 
         # Sanity check!
         try:
