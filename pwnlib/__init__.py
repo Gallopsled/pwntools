@@ -33,6 +33,7 @@ __all__ = [
     'useragents',
     'util',
     'adb',
+    'update',
 ]
 
 for module in __all__:
