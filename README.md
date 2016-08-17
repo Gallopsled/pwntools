@@ -45,7 +45,7 @@ apt-get install python2.7 python-pip python-dev git libssl-dev
 pip install --upgrade git+https://github.com/Gallopsled/pwntools.git
 ```
 
-However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://pwntools.readthedocs.org/install.html).
+However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://pwntools.readthedocs.org/en/latest/install.html).
 
 
 # Contribution
