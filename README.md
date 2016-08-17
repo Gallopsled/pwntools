@@ -1,7 +1,11 @@
 # pwntools - CTF toolkit
+![pwntools logo](docs/source/logo.png?raw=true)
 [![Docs latest](https://readthedocs.org/projects/pwntools/badge/?version=latest)](https://pwntools.readthedocs.org/)
+[![Docs 2.2.0](https://readthedocs.org/projects/pwntools/badge/?version=2.2.0)](https://pwntools.readthedocs.org/en/2.2.0)
+[![PyPI](https://img.shields.io/pypi/v/pwntools.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
+[![Gittip](https://img.shields.io/gittip/gallopsled.svg?style=flat)](https://www.gittip.com/gallopsled/)
 [![Travis](https://travis-ci.org/Gallopsled/pwntools.svg?branch=master)](https://travis-ci.org/pwntools/pwntools)
-[![Twitter](https://img.shields.io/badge/twitter-ctfpwntools-4099FF.svg?style=flat)](https://twitter.com/ctfpwntools)
+[![Twitter](https://img.shields.io/badge/twitter-pwntools-4099FF.svg?style=flat)](https://twitter.com/pwntools)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](http://choosealicense.com/licenses/mit/)
 
 pwntools is a CTF framework and exploit development library. Written in Python, it is designed for rapid prototyping and development, and intended to make exploit writing as simple as possible.
@@ -27,7 +31,7 @@ It will drop you into a clean, Docker-ized container.  There is nothing of value
 # Documentation
 Our documentation is available at [pwntools.readthedocs.org](https://pwntools.readthedocs.org/)
 
-To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/pwntools/examples).
+To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/Gallopsled/pwntools-write-ups).
 
 # Installation
 
@@ -37,7 +41,7 @@ Most of the functionality of pwntools is self-contained and Python-only.  You sh
 
 ```sh
 apt-get update
-apt-get install python2.7 python-pip python-dev git
+apt-get install python2.7 python-pip python-dev git libssl-dev
 pip install --upgrade git+https://github.com/Gallopsled/pwntools.git
 ```
 
@@ -49,7 +53,7 @@ However, some of the features (assembling/disassembling foreign architectures) r
 See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 # Contact
-If you have any questions not worthy of a [bug report](https://github.com/Gallopsled/pwntools/issues), feel free to ping
-at [`ebeip90` on Freenode](irc://irc.freenode.net/pwntools) and ask away.
+If you have any questions not worthy of a [bug report](https://github.com/Gallopsled/pwntools/issues), feel free to ping us
+at [`#pwntools` on Freenode](irc://irc.freenode.net/pwntools) and ask away.
 Click [here](https://kiwiirc.com/client/irc.freenode.net/pwntools) to connect.
 There is also a [mailing list](https://groups.google.com/forum/#!forum/pwntools-users) for higher latency discussion.
