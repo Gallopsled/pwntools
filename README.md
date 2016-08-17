@@ -31,7 +31,7 @@ It will drop you into a clean, Docker-ized container.  There is nothing of value
 # Documentation
 Our documentation is available at [pwntools.readthedocs.org](https://pwntools.readthedocs.org/)
 
-To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/pwntools/examples).
+To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/Gallopsled/pwntools-write-ups).
 
 # Installation
 
@@ -41,7 +41,7 @@ Most of the functionality of pwntools is self-contained and Python-only.  You sh
 
 ```sh
 apt-get update
-apt-get install python2.7 python-pip python-dev git
+apt-get install python2.7 python-pip python-dev git libssl-dev
 pip install --upgrade git+https://github.com/Gallopsled/pwntools.git
 ```
 
