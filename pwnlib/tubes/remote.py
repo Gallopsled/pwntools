@@ -21,6 +21,7 @@ class remote(sock):
         typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
         timeout: A positive number, None or the string "default".
         ssl(bool): Wrap the socket with SSL
+        ssl(dict): Wrap the socket with SSL, use the dict as arguments to `ssl.wrap_socket`
         sock(socket): Socket to inherit, rather than connecting
 
     Examples:
@@ -71,8 +72,10 @@ class remote(sock):
             self.lhost, self.lport = self.sock.getsockname()[:2]
 
             if ssl:
-                self.sock = _ssl.wrap_socket(self.sock)
-
+                try:
+                    self.sock = _ssl.wrap_socket(self.sock, **ssl)
+                except TypeError:
+                    self.sock = _ssl.wrap_socket(self.sock)
 
     @staticmethod
     def _get_family(fam):

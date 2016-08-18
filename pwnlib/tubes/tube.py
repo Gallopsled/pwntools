@@ -4,6 +4,7 @@ import re
 import string
 import subprocess
 import sys
+import ssl
 import threading
 import time
 
@@ -796,6 +797,8 @@ class tube(Timeout, Logger):
                     if cur:
                         sys.stdout.write(cur)
                         sys.stdout.flush()
+                except ssl.SSLError:
+                    pass
                 except EOFError:
                     self.info('Got EOF while reading in interactive')
                     break
