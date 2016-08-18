@@ -1,4 +1,5 @@
 <%
+  from pwnlib.shellcraft import thumb
   from random import choice
   from pwnlib.shellcraft import registers
 %>
@@ -18,6 +19,6 @@
     .thumb
     add ${reg}, pc, #4
     bx  ${reg}
-    nop
+    ${thumb.nop()}
     .arm
 
