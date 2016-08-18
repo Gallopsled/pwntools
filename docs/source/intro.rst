@@ -67,7 +67,7 @@ actually **interact** with processes.
 
 There's even an SSH module for when you've got to SSH into a box to perform
 a local/setuid exploit with :mod:`pwnlib.tubes.ssh`.  You can quickly spawn
-processes and grab the output, or spawn a process and interact iwth it like
+processes and grab the output, or spawn a process and interact with it like
 a ``process`` tube.
 
 ::
