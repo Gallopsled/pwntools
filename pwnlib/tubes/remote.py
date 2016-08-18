@@ -71,11 +71,10 @@ class remote(sock):
             self.settimeout(self.timeout)
             self.lhost, self.lport = self.sock.getsockname()[:2]
 
-            if ssl:
-                try:
-                    self.sock = _ssl.wrap_socket(self.sock, **ssl)
-                except TypeError:
-                    self.sock = _ssl.wrap_socket(self.sock)
+            if type(ssl) == dict:
+                self.sock = _ssl.wrap_socket(self.sock, **ssl)
+            elif ssl:
+                self.sock = _ssl.wrap_socket(self.sock)
 
     @staticmethod
     def _get_family(fam):
