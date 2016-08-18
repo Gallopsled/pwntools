@@ -83,16 +83,17 @@ class ssh_channel(sock):
         msg = 'Opening new channel: %r' % (process or 'shell')
 
         if isinstance(process, (list, tuple)):
-            process = ' '.join(misc.sh_string(s) for s in process)
+            fmt = ' '.join('%s' for s in process)
+            process = misc.sh_command_with(fmt, *process)
 
         if process and wd:
-            process = "cd %s >/dev/null 2>&1; %s" % (misc.sh_string(wd), process)
+            process = misc.sh_command_with('cd %s >/dev/null 2>&1;', wd) + process
 
         if process and env:
             for name, value in env.items():
                 if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', name):
                     self.error('run(): Invalid environment key $r' % name)
-                process = 'export %s=%s; %s' % (name, misc.sh_string(value), process)
+                process = '%s;%s' % (misc.sh_prepare(name, value, export=True), process)
 
         if process and tty:
             if raw:
@@ -847,7 +848,7 @@ apply(%(func_name)s, %(func_args)r)
 os.execve(exe, argv, os.environ)
 """ % locals()
 
-        script = script.lstrip()
+        script = script.strip()
 
         self.debug("Created execve script:\n" + script)
 
@@ -875,9 +876,9 @@ os.execve(exe, argv, os.environ)
             if not aslr:
                 self.warn_once("ASLR is disabled!")
 
-            script = misc.sh_string(script)
+            script = misc.sh_command_with('for py in python2.7 python2 python; do test -x "$(which $py 2>&1)" && exec $py -c %s check; done; echo 2', script)
             with context.local(log_level='error'):
-                python = self.run('test -x "$(which python 2>&1)" && exec python -c %s check; echo 2' % script, raw=raw)
+                python = self.run(script, raw=raw)
             result = safeeval.const(python.recvline())
 
             # If an error occurred, try to grab as much output
@@ -1146,8 +1147,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
     def _libs_remote(self, remote):
         """Return a dictionary of the libraries used by a remote file."""
         cmd = '(ulimit -s unlimited; ldd %s > /dev/null && (LD_TRACE_LOADED_OBJECTS=1 %s || ldd %s)) 2>/dev/null'
-        arg = misc.sh_string(remote)
-        data, status = self.run_to_end(cmd % (arg, arg, arg))
+        cmd = misc.sh_command_with(lambda arg: cmd % (arg, arg, arg), remote)
+        data, status = self.run_to_end(cmd)
         if status != 0:
             self.error('Unable to find libraries for %r' % remote)
             return {}
@@ -1155,8 +1156,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         return misc.parse_ldd_output(data)
 
     def _get_fingerprint(self, remote):
-        arg = misc.sh_string(remote)
-        cmd = '(openssl sha256 || sha256 || sha256sum) 2>/dev/null < %s' % (arg)
+        cmd = '(openssl sha256 || sha256 || sha256sum) 2>/dev/null < %s'
+        cmd = misc.sh_command_with(cmd, remote)
         data, status = self.run_to_end(cmd)
 
         if status != 0:
@@ -1199,7 +1200,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             self.sftp.get(remote, local, update)
             return
 
-        total, exitcode = self.run_to_end('wc -c <' + misc.sh_string(remote))
+        cmd = misc.sh_command_with('wc -c < %s', remote)
+        total, exitcode = self.run_to_end(cmd)
 
         if exitcode != 0:
             h.failure("%r does not exist or is not accessible" % remote)
@@ -1208,7 +1210,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         total = int(total)
 
         with context.local(log_level = 'ERROR'):
-            c = self.run('cat ' + misc.sh_string(remote))
+            cmd = misc.sh_command_with('cat < %s', remote)
+            c = self.run(cmd)
         data = ''
 
         while True:
@@ -1318,7 +1321,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             remote = str(self.sftp.normalize(remote))
         else:
             with context.local(log_level='error'):
-                remote = self.system('readlink -f %s' % remote)
+                remote = self.system(misc.sh_command_with('readlink -f %s', remote))
 
         dirname  = os.path.dirname(remote)
         basename = os.path.basename(remote)
@@ -1330,7 +1333,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         with context.local(log_level='error'):
             remote_tar = self.mktemp()
-            tar = self.system('tar -C %s -czf %s %s' % (dirname, remote_tar, basename))
+            tar = self.system(misc.sh_command_with('tar -C %s -czf %s %s', dirname, remote_tar, basename))
 
             if 0 != tar.wait():
                 self.error("Could not create remote tar")
@@ -1374,7 +1377,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 return
 
         with context.local(log_level = 'ERROR'):
-            s = self.run('cat>' + misc.sh_string(remote), tty=False)
+            cmd = misc.sh_command_with('cat>%s', remote)
+            s = self.run(cmd, tty=False)
             s.send(data)
             s.shutdown('send')
             data   = s.recvall()
@@ -1457,7 +1461,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if not self.sftp:
             self.error("Cannot determine remote file type without SFTP")
 
-        if 0 == self.system('test -d %s' % file_or_directory).wait():
+        if 0 == self.system(misc.sh_command_with('test -d %s', file_or_directory)).wait():
             self.download_dir(file_or_directory, remote)
         else:
             self.download_file(file_or_directory, remote)
@@ -1513,7 +1517,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         s = self.shell(shell)
 
         if self.cwd != '.':
-            s.sendline('cd ' + misc.sh_string(self.cwd))
+            cmd = misc.sh_command_with('cd %s', self.cwd)
+            s.sendline(cmd)
 
         s.interactive()
         s.close()
@@ -1554,7 +1559,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 self.error("Could not generate a temporary directory (%i)\n%s" % (status, wd))
 
         else:
-            _, status = self.run_to_end('ls ' + misc.sh_string(wd), wd = '.')
+            cmd = misc.sh_command_with('ls %s', wd)
+            _, status = self.run_to_end(cmd, wd = '.')
 
             if status:
                 self.error("%r does not appear to exist" % wd)
