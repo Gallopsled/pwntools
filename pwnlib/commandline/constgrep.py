@@ -4,11 +4,7 @@ import argparse
 import os
 import re
 
-from pwnlib import constants
-from pwnlib.asm import cpp
-from pwnlib.context import context
-from pwnlib.util import safeeval
-
+from pwn import *
 from . import common
 
 p = argparse.ArgumentParser(
@@ -81,7 +77,10 @@ def main():
 
         # Evaluate the given constant
         if args.constant:
-            constant = safeeval.expr(args.constant)
+            try:
+                constant = safeeval.expr(args.constant)
+            except:
+                log.error("Could not evaluate constant %r" % args.constant)
         else:
             constant = None
 
