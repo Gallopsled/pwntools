@@ -13,3 +13,4 @@ MANIFEST
 dist
 *.egg-info
 *.core
+.coverage

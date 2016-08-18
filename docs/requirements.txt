@@ -13,3 +13,4 @@ tox>=1.8.1
 pygments>=2.0
 sphinx_rtd_theme
 doc2dash
+coveralls

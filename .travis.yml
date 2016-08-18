@@ -13,6 +13,8 @@ cache:
         - /home/travis/virtualenv/python2.7.9/bin/
 python:
   - "2.7"
+after_success:
+  - coveralls
 before_install:
   - source .travis_install.sh
   - source .travis_ssh_setup.sh
@@ -24,5 +26,5 @@ before_script:
   - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
   - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
   - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
-script: PWNLIB_NOTERM=1 make -C docs doctest
-
+script:
+  - PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest
