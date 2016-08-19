@@ -20,8 +20,7 @@ class remote(sock):
         fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
         typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
         timeout: A positive number, None or the string "default".
-        ssl(bool): Wrap the socket with SSL
-        ssl(dict): Wrap the socket with SSL, use the dict as arguments to `ssl.wrap_socket`
+        ssl(bool,dict): ``True`` to wrap the socket with SSL.  Use a ``dict`` to pass options to the SSL wraper.
         sock(socket): Socket to inherit, rather than connecting
 
     Examples:
