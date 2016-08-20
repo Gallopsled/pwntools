@@ -8,6 +8,7 @@ import stat
 import string
 
 from . import lists
+from . import fiddling
 from ..context import context
 from ..log import getLogger
 
@@ -290,9 +291,9 @@ def sh_string(s):
         >>> print sh_string("foo\\\\'bar")
         "foo\\\\'bar"
         >>> print sh_string("foo\\x01'bar")
-        "$( (echo Zm9vASdiYXI=|(base64 -d||openssl enc -d -base64)||echo -en 'foo\\x01\\x27bar') 2>/dev/null)"
-        >>> print subprocess.check_output("echo -n " + sh_string("foo\\\\'bar"), shell = True)
-        foo\\'bar
+        "$(printf 'foo\\001\\047bar')"
+        >>> print `subprocess.check_output("echo -n " + sh_string("foo\\x01'bar"), shell = True)`
+        "foo\\x01'bar"
     """
 
     very_good = set(string.ascii_letters + string.digits)
@@ -301,6 +302,8 @@ def sh_string(s):
 
     if '\x00' in s:
         log.error("sh_string(): Cannot create a null-byte")
+    if s.endswith('\n'):
+        log.error("sh_string(): Cannot create a newline-terminated string")
 
     if all(c in very_good for c in s):
         return s
@@ -319,11 +322,111 @@ def sh_string(s):
         for c in s:
             if c == '\\':
                 fixed += '\\\\'
+            elif c == '\n':
+                fixed += '\\n'
             elif c in good:
                 fixed += c
             else:
-                fixed += '\\x%02x' % ord(c)
-        return '"$( (echo %s|(base64 -d||openssl enc -d -base64)||echo -en \'%s\') 2>/dev/null)"' % (base64.b64encode(s), fixed)
+                fixed += '\\%03o' % ord(c)
+        return '"$(printf \'%s\')"' % fixed
+
+def sh_prepare(variables, export = False):
+    """Outputs a posix compliant shell command that will put the data specified
+    by the dictionary into the environment.
+
+    It is assumed that the keys in the dictionary are valid variable names that
+    does not need any escaping.
+
+    Arguments:
+      variables(dict): The variables to set.
+      export(bool): Should the variables be exported or only stored in the shell environment?
+      output(str): A valid posix shell command that will set the given variables.
+
+    It is assumed that `var` is a valid name for a variable in the shell.
+
+    Examples:
+
+        >>> print sh_prepare({'X': 'foobar'})
+        X=foobar
+        >>> r = sh_prepare({'X': 'foobar', 'Y': 'cookies'})
+        >>> r == 'X=foobar;Y=cookies' or r == 'Y=cookies;X=foobar'
+        True
+        >>> print sh_prepare({'X': 'foo bar'})
+        X='foo bar'
+        >>> print sh_prepare({'X': "foo'bar"})
+        X="foo'bar"
+        >>> print sh_prepare({'X': "foo\\\\bar"})
+        X='foo\\bar'
+        >>> print sh_prepare({'X': "foo\\\\'bar"})
+        X="foo\\\\'bar"
+        >>> print sh_prepare({'X': "foo\\x01'bar"})
+        X="$(printf 'foo\\001\\047bar')"
+        >>> print sh_prepare({'X': "foo\\x01'bar"}, export = True)
+        export X="$(printf 'foo\\001\\047bar')"
+        >>> print sh_prepare({'X': "foo\\x01'bar\\n"})
+        X="$(printf 'foo\\001\\047bar\\nx')";X=${X%x}
+        >>> print sh_prepare({'X': "foo\\x01'bar\\n"}, export = True)
+        X="$(printf 'foo\\001\\047bar\\nx')";export X=${X%x}
+        >>> print `subprocess.check_output('%s;echo -n "$X"' % sh_prepare({'X': "foo\\x01'bar"}), shell = True)`
+        "foo\\x01'bar"
+    """
+
+    out = []
+    export = 'export ' if export else ''
+
+    for k, v in variables.items():
+        if v.endswith('\n'):
+            out.append('%s=%s;%s%s=${%s%%x}' % (k, sh_string(v + "x"), export, k, k))
+        else:
+            out.append('%s%s=%s' % (export, k, sh_string(v)))
+    return ';'.join(out)
+
+def sh_command_with(f, *args):
+    """sh_command_with(f, arg0, ..., argN) -> command
+
+    Returns a command create by evaluating `f(new_arg0, ..., new_argN)`
+    whenever `f` is a function and `f % (new_arg0, ..., new_argN)` otherwise.
+
+    If the arguments are purely alphanumeric, then they are simply passed to
+    function. If they are simple to escape, they will be escaped and passed to
+    the function.
+
+    If the arguments contain trailing newlines, then it is hard to use them
+    directly because of a limitation in the posix shell. In this case the
+    output from `f` is prepended with a bit of code to create the variables.
+
+    Examples:
+
+        >>> print sh_command_with(lambda: "echo hello")
+        echo hello
+        >>> print sh_command_with(lambda x: "echo " + x, "hello")
+        echo hello
+        >>> print sh_command_with(lambda x: "echo " + x, "\\x01")
+        echo "$(printf '\\001')"
+        >>> import random
+        >>> random.seed(1)
+        >>> print sh_command_with(lambda x: "echo " + x, "\\x01\\n")
+        dwtgmlqu="$(printf '\\001\\nx')";dwtgmlqu=${dwtgmlqu%x};echo "$dwtgmlqu"
+        >>> random.seed(1)
+        >>> print sh_command_with("echo %s", "\\x01\\n")
+        dwtgmlqu="$(printf '\\001\\nx')";dwtgmlqu=${dwtgmlqu%x};echo "$dwtgmlqu"
+    """
+
+    args = list(args)
+    out = []
+
+    for n in range(len(args)):
+        if args[n].endswith('\n'):
+            v = fiddling.randoms(8)
+            out.append(sh_prepare({v: args[n]}))
+            args[n] = '"$%s"' % v
+        else:
+            args[n] = sh_string(args[n])
+    if hasattr(f, '__call__'):
+        out.append(f(*args))
+    else:
+        out.append(f % tuple(args))
+    return ';'.join(out)
 
 def dealarm_shell(tube):
     """Given a tube which is a shell, dealarm it.
