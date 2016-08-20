@@ -70,7 +70,7 @@ class remote(sock):
             self.settimeout(self.timeout)
             self.lhost, self.lport = self.sock.getsockname()[:2]
 
-            if type(ssl) == dict:
+            if isinstance(ssl, dict):
                 self.sock = _ssl.wrap_socket(self.sock, **ssl)
             elif ssl:
                 self.sock = _ssl.wrap_socket(self.sock)
