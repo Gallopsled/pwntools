@@ -1,12 +1,10 @@
 # pwntools - CTF toolkit
 ![pwntools logo](https://github.com/Gallopsled/pwntools/blob/stable/docs/source/logo.png?raw=true)
 
-[![Docs dev](https://readthedocs.org/projects/pwntools/badge/?version=dev)](https://docs.pwntools.com/en/dev)
-[![Docs beta](https://readthedocs.org/projects/pwntools/badge/?version=beta)](https://docs.pwntools.com/en/beta)
-[![Docs stable](https://readthedocs.org/projects/pwntools/badge/?version=stable)](https://docs.pwntools.com/en/stable)
+[![Docs](https://readthedocs.org/projects/pwntools/badge/?version=stable)](https://docs.pwntools.com/)
 [![PyPI](https://img.shields.io/pypi/v/pwntools.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
-[![Travis](https://travis-ci.org/Gallopsled/pwntools.svg?branch=stable)](https://travis-ci.org/Gallopsled/pwntools)
-[![Coveralls](https://img.shields.io/coveralls/Gallopsled/pwntools/stable.svg)](https://coveralls.io/github/Gallopsled/pwntools?branch=stable)
+[![Travis](https://travis-ci.org/Gallopsled/pwntools.svg)](https://travis-ci.org/Gallopsled/pwntools)
+[![Coveralls](https://img.shields.io/coveralls/Gallopsled/pwntools/dev.svg)](https://coveralls.io/github/Gallopsled/pwntools?branch=dev)
 [![Twitter](https://img.shields.io/badge/twitter-pwntools-4099FF.svg?style=flat)](https://twitter.com/pwntools)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](http://choosealicense.com/licenses/mit/)
 
@@ -44,18 +42,13 @@ Most of the functionality of pwntools is self-contained and Python-only.  You sh
 ```sh
 apt-get update
 apt-get install python2.7 python-pip python-dev git libssl-dev
-
-# For cutting edge:
-pip install --upgrade git+https://github.com/Gallopsled/pwntools.git@dev
-
-# If you want early access to the next release to help file bugs:
-pip install --upgrade git+https://github.com/Gallopsled/pwntools.git@beta
-
-# If you just want it to work
-pip install pwntools
+pip install --upgrade pwntools
 ```
 
-However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://docs.pwntools.com/en/dev/install.html).
+If you'd like to be an early tester of the the current beta release, add
+`--pre` to the command-line.
+
+However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://docs.pwntools.com/en/stable/install.html).
 
 
 # Contribution

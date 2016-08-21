@@ -79,9 +79,9 @@ setup(
     author               = "Gallopsled et al.",
     author_email         = "#pwntools @ freenode.net",
     url                  = 'https://pwntools.com',
-    download_url         = "https://pwntools.com/tarball/stable",
+    download_url         = "https://github.com/Gallopsled/pwntools/releases",
     install_requires     = install_requires,
-    license              = "Mostly MIT, some GPL/BSD, see LICENSE-pwntools.txt and LICENSE-pwntools.txt",
+    license              = "Mostly MIT, some GPL/BSD, see LICENSE-pwntools.txt",
     classifiers          = [
         'Topic :: Security',
         'Environment :: Console',
