@@ -1,12 +1,12 @@
 # pwntools - CTF toolkit
-![pwntools logo](https://github.com/Gallopsled/pwntools/blob/master/docs/source/logo.png?raw=true)
+![pwntools logo](https://github.com/Gallopsled/pwntools/blob/beta/docs/source/logo.png?raw=true)
 
 [![Docs latest](https://readthedocs.org/projects/pwntools/badge/?version=latest)](https://pwntools.readthedocs.org/)
 [![Docs 2.2.0](https://readthedocs.org/projects/pwntools/badge/?version=2.2.0)](https://pwntools.readthedocs.org/en/2.2.0)
 [![PyPI](https://img.shields.io/pypi/v/pwntools.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
 [![Gittip](https://img.shields.io/gittip/gallopsled.svg?style=flat)](https://www.gittip.com/gallopsled/)
-[![Travis](https://travis-ci.org/Gallopsled/pwntools.svg?branch=master)](https://travis-ci.org/Gallopsled/pwntools)
-[![Coveralls](https://img.shields.io/coveralls/Gallopsled/pwntools/master.svg)](https://coveralls.io/github/Gallopsled/pwntools?branch=master)
+[![Travis](https://travis-ci.org/Gallopsled/pwntools.svg?branch=beta)](https://travis-ci.org/Gallopsled/pwntools)
+[![Coveralls](https://img.shields.io/coveralls/Gallopsled/pwntools/beta.svg)](https://coveralls.io/github/Gallopsled/pwntools?branch=beta)
 [![Twitter](https://img.shields.io/badge/twitter-pwntools-4099FF.svg?style=flat)](https://twitter.com/pwntools)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](http://choosealicense.com/licenses/mit/)
 

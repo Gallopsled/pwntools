@@ -79,7 +79,7 @@ setup(
     author               = "Zach Riggle",
     author_email         = "zachriggle@gmail.com",
     url                  = 'https://pwntools.com',
-    download_url         = "https://pwntools.com/tarball/master",
+    download_url         = "https://pwntools.com/tarball/beta",
     install_requires     = install_requires,
     license              = "Mostly MIT, some GPL/BSD, see LICENSE-pwntools.txt and LICENSE-pwntools.txt",
     classifiers          = [
