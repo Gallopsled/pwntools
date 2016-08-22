@@ -25,7 +25,14 @@ pwntools is available as a ``pip`` package.
 .. code-block:: bash
 
     $ apt-get install python2.7 python2.7-dev python-pip
-    $ pip install --upgrade git+https://github.com/Gallopsled/pwntools.git
+    $ pip install --upgrade pwntools
+
+Alternatively you can get early access to the beta release if you want to help
+file bugs or simple get newer features:
+
+.. code-block:: bash
+    $ pip install --upgrade --pre pwntools
+
 
 Development
 --------------
