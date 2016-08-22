@@ -59,7 +59,7 @@ if not os.path.exists(PythonH):
 setup(
     name                 = 'pwntools',
     packages             = find_packages(),
-    version              = '3.1.0-dev',
+    version              = '3.1.0dev',
     data_files           = [('',
                              ['LICENSE-pwntools.txt',
                              ]),
@@ -76,12 +76,16 @@ setup(
     entry_points = {'console_scripts': console_scripts},
     scripts              = glob.glob("bin/*"),
     description          = "CTF framework and exploit development library.",
-    author               = "Zach Riggle",
-    author_email         = "zachriggle@gmail.com",
+    author               = "Gallopsled et al.",
+    author_email         = "#pwntools @ freenode.net",
     url                  = 'https://pwntools.com',
+<<<<<<< HEAD
     download_url         = "https://pwntools.com/tarball/dev",
+=======
+    download_url         = "https://github.com/Gallopsled/pwntools/releases",
+>>>>>>> beta
     install_requires     = install_requires,
-    license              = "Mostly MIT, some GPL/BSD, see LICENSE-pwntools.txt and LICENSE-pwntools.txt",
+    license              = "Mostly MIT, some GPL/BSD, see LICENSE-pwntools.txt",
     classifiers          = [
         'Topic :: Security',
         'Environment :: Console',

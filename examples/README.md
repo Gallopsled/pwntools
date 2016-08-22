@@ -4,7 +4,7 @@ the pwntools project.
 
 We have a plan to create a separate repository with examples, primarily
 exploits. Until we do so, we recommend new users to look at
-https://pwntools.readthedocs.org, as this is a better overview of our features.
+https://docs.pwntools.com, as this is a better overview of our features.
 
 In no particular order the docstrings for each example:
 

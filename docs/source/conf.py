@@ -75,7 +75,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pwntools'
-copyright = u'2015, Zach Riggle'
+copyright = u'2016, Gallopsled et al.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -217,7 +217,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'pwntools.tex', u'pwntools Documentation',
-   u'2015, Zach Riggle', 'manual'),
+   u'2016, Gallopsled et al.', 'manual'),
 ]
 
 intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None),
@@ -250,7 +250,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None),
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'pwntools', u'pwntools Documentation',
-     [u'2015, Zach Riggle'], 1)
+     [u'2016, Gallopsled et al.'], 1)
 ]
 
 # If true, show URL addresses after external links.

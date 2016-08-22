@@ -5,6 +5,20 @@ pwntools
 Written in Python, it is designed for rapid prototyping and development,
 and intended to make exploit writing as simple as possible.
 
+The primary location for this documentation is at docs.pwntools.com_, which uses
+readthedocs_. It comes in three primary flavors:
+
+- Stable_
+- Beta_
+- Dev_
+
+.. _readthedocs: https://readthedocs.org
+.. _docs.pwntools.com: https://docs.pwntools.com
+.. _Stable: https://docs.pwntools.com/en/stable
+.. _Beta: https://docs.pwntools.com/en/beta
+.. _Dev: https://docs.pwntools.com/en/dev
+
+
 Getting Started
 ---------------
 
