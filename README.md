@@ -1,10 +1,10 @@
 # pwntools - CTF toolkit
 ![pwntools logo](https://github.com/Gallopsled/pwntools/blob/stable/docs/source/logo.png?raw=true)
 
-[![Docs dev](https://readthedocs.org/projects/pwntools/badge/?version=dev)](https://docs.pwntools.com/en/dev)
-[![Docs beta](https://readthedocs.org/projects/pwntools/badge/?version=beta)](https://docs.pwntools.com/en/beta)
-[![Docs stable](https://readthedocs.org/projects/pwntools/badge/?version=stable)](https://docs.pwntools.com/en/stable)
+[![Docs latest](https://readthedocs.org/projects/pwntools/badge/?version=latest)](https://pwntools.readthedocs.org/)
+[![Docs 2.2.0](https://readthedocs.org/projects/pwntools/badge/?version=2.2.0)](https://pwntools.readthedocs.org/en/2.2.0)
 [![PyPI](https://img.shields.io/pypi/v/pwntools.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
+[![Gittip](https://img.shields.io/gittip/gallopsled.svg?style=flat)](https://www.gittip.com/gallopsled/)
 [![Travis](https://travis-ci.org/Gallopsled/pwntools.svg?branch=stable)](https://travis-ci.org/Gallopsled/pwntools)
 [![Coveralls](https://img.shields.io/coveralls/Gallopsled/pwntools/stable.svg)](https://coveralls.io/github/Gallopsled/pwntools?branch=stable)
 [![Twitter](https://img.shields.io/badge/twitter-pwntools-4099FF.svg?style=flat)](https://twitter.com/pwntools)
@@ -31,7 +31,7 @@ It will drop you into a clean, Docker-ized container.  There is nothing of value
 [key]: https://gist.githubusercontent.com/zachriggle/efa2e0080ae6de2e8344/raw/4b503e9db54f009d97477d03d4ba5678471f8ff0/id_rsa
 
 # Documentation
-Our documentation is available at [docs.pwntools.com](https://docs.pwntools.com/)
+Our documentation is available at [pwntools.readthedocs.org](https://pwntools.readthedocs.org/)
 
 To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/Gallopsled/pwntools-write-ups).
 
@@ -44,18 +44,10 @@ Most of the functionality of pwntools is self-contained and Python-only.  You sh
 ```sh
 apt-get update
 apt-get install python2.7 python-pip python-dev git libssl-dev
-
-# For cutting edge:
-pip install --upgrade git+https://github.com/Gallopsled/pwntools.git@dev
-
-# If you want early access to the next release to help file bugs:
-pip install --upgrade git+https://github.com/Gallopsled/pwntools.git@beta
-
-# If you just want it to work
-pip install pwntools
+pip install --upgrade git+https://github.com/Gallopsled/pwntools.git
 ```
 
-However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://docs.pwntools.com/en/dev/install.html).
+However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://pwntools.readthedocs.org/en/latest/install.html).
 
 
 # Contribution
