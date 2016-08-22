@@ -31,6 +31,7 @@ Alternatively you can get early access to the beta release if you want to help
 file bugs or simple get newer features:
 
 .. code-block:: bash
+
     $ pip install --upgrade --pre pwntools
 
 
