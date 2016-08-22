@@ -4,7 +4,7 @@
 ############################################################
 
 FROM ubuntu:trusty
-MAINTAINER Maintainer Zach Riggle
+MAINTAINER Maintainer Gallopsled et al.
 
 RUN apt-get update && apt-get install -y software-properties-common
 RUN apt-add-repository --yes ppa:pwntools/binutils

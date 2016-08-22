@@ -1,12 +1,10 @@
 # pwntools - CTF toolkit
 ![pwntools logo](https://github.com/Gallopsled/pwntools/blob/beta/docs/source/logo.png?raw=true)
 
-[![Docs latest](https://readthedocs.org/projects/pwntools/badge/?version=latest)](https://pwntools.readthedocs.org/)
-[![Docs 2.2.0](https://readthedocs.org/projects/pwntools/badge/?version=2.2.0)](https://pwntools.readthedocs.org/en/2.2.0)
+[![Docs](https://readthedocs.org/projects/pwntools/badge/?version=stable)](https://docs.pwntools.com/)
 [![PyPI](https://img.shields.io/pypi/v/pwntools.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
-[![Gittip](https://img.shields.io/gittip/gallopsled.svg?style=flat)](https://www.gittip.com/gallopsled/)
-[![Travis](https://travis-ci.org/Gallopsled/pwntools.svg?branch=beta)](https://travis-ci.org/Gallopsled/pwntools)
-[![Coveralls](https://img.shields.io/coveralls/Gallopsled/pwntools/beta.svg)](https://coveralls.io/github/Gallopsled/pwntools?branch=beta)
+[![Travis](https://travis-ci.org/Gallopsled/pwntools.svg)](https://travis-ci.org/Gallopsled/pwntools)
+[![Coveralls](https://img.shields.io/coveralls/Gallopsled/pwntools/dev.svg)](https://coveralls.io/github/Gallopsled/pwntools?branch=dev)
 [![Twitter](https://img.shields.io/badge/twitter-pwntools-4099FF.svg?style=flat)](https://twitter.com/pwntools)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](http://choosealicense.com/licenses/mit/)
 
@@ -31,7 +29,7 @@ It will drop you into a clean, Docker-ized container.  There is nothing of value
 [key]: https://gist.githubusercontent.com/zachriggle/efa2e0080ae6de2e8344/raw/4b503e9db54f009d97477d03d4ba5678471f8ff0/id_rsa
 
 # Documentation
-Our documentation is available at [pwntools.readthedocs.org](https://pwntools.readthedocs.org/)
+Our documentation is available at [docs.pwntools.com](https://docs.pwntools.com/)
 
 To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/Gallopsled/pwntools-write-ups).
 
@@ -44,10 +42,13 @@ Most of the functionality of pwntools is self-contained and Python-only.  You sh
 ```sh
 apt-get update
 apt-get install python2.7 python-pip python-dev git libssl-dev
-pip install --upgrade git+https://github.com/Gallopsled/pwntools.git
+pip install --upgrade pwntools
 ```
 
-However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://pwntools.readthedocs.org/en/latest/install.html).
+If you'd like to be an early tester of the the current beta release, add
+`--pre` to the command-line.
+
+However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://docs.pwntools.com/en/stable/install.html).
 
 
 # Contribution

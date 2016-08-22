@@ -133,7 +133,7 @@ def which_binutils(util):
     log.warning("""
 Could not find %(util)r installed for %(context)s
 Try installing binutils for this architecture:
-https://pwntools.readthedocs.org/en/latest/install/binutils.html
+https://docs.pwntools.com/en/stable/install/binutils.html
 """.strip() % locals())
     raise Exception('Could not find %(util)r installed for %(context)s' % locals())
 
@@ -179,7 +179,7 @@ def _assembler():
         version = re.search(r' (\d\.\d+)', result).group(1)
         if version < '2.19':
             log.warn_once('Your binutils version is too old and may not work!\n'  + \
-                'Try updating with: https://pwntools.readthedocs.org/en/latest/install/binutils.html\n' + \
+                'Try updating with: https://docs.pwntools.com/en/stable/install/binutils.html\n' + \
                 'Reported Version: %r' % result.strip())
 
 
