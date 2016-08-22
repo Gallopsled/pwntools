@@ -79,11 +79,7 @@ setup(
     author               = "Gallopsled et al.",
     author_email         = "#pwntools @ freenode.net",
     url                  = 'https://pwntools.com',
-<<<<<<< HEAD
-    download_url         = "https://pwntools.com/tarball/dev",
-=======
     download_url         = "https://github.com/Gallopsled/pwntools/releases",
->>>>>>> beta
     install_requires     = install_requires,
     license              = "Mostly MIT, some GPL/BSD, see LICENSE-pwntools.txt",
     classifiers          = [
