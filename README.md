@@ -1,5 +1,5 @@
 # pwntools - CTF toolkit
-![pwntools logo](https://github.com/Gallopsled/pwntools/blob/beta/docs/source/logo.png?raw=true)
+![pwntools logo](https://github.com/Gallopsled/pwntools/blob/stable/docs/source/logo.png?raw=true)
 
 [![Docs](https://readthedocs.org/projects/pwntools/badge/?version=stable)](https://docs.pwntools.com/)
 [![PyPI](https://img.shields.io/pypi/v/pwntools.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
