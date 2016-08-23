@@ -3,8 +3,6 @@
 This changelog only includes added major features and changes. Bugfixes and
 minor changes are omitted.
 
-## 3.1.0 (???)
-
 ## 3.0.1 (August 20 2016)
 
 A small bugfix release. There were a lot of references to the `master`-branch, however after 3.0.0 we use the names `stable`, `beta` and `dev` for our branches.
