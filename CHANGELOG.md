@@ -3,6 +3,14 @@
 This changelog only includes added major features and changes. Bugfixes and
 minor changes are omitted.
 
+## 3.2.0 (November 12 2016)
+
+Fixed a performance regression in `phd` (#695).
+
+## 3.1.0 (October 1 2016)
+
+A number of smaller bugfixes.
+
 ## 3.0.1 (August 20 2016)
 
 A small bugfix release. There were a lot of references to the `master`-branch, however after 3.0.0 we use the names `stable`, `beta` and `dev` for our branches.
