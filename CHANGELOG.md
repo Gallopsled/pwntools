@@ -3,7 +3,9 @@
 This changelog only includes added major features and changes. Bugfixes and
 minor changes are omitted.
 
-## 3.1.0 (???)
+## 3.1.0 (October 1 2016)
+
+A number of smaller bugfixes.
 
 ## 3.0.1 (August 20 2016)
 
