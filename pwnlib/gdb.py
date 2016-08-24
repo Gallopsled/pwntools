@@ -32,9 +32,7 @@ def debug_assembly(asm, execute=None, vma=None):
     tmp_elf = make_elf_from_assembly(asm, vma=vma, extract=False)
     os.chmod(tmp_elf, 0777)
 
-    def unlink():
-        with context.silent: os.unlink(tmp_elf)
-    atexit.register(lambda: unlink)
+    atexit.register(lambda: os.unlink(tmp_elf))
 
     if context.os == 'android':
         android_path = '/data/data/%s' % os.path.basename(tmp_elf)
@@ -60,9 +58,7 @@ def debug_shellcode(data, execute=None, vma=None):
     tmp_elf = make_elf(data, extract=False, vma=vma)
     os.chmod(tmp_elf, 0777)
 
-    def unlink():
-        with context.silent: os.unlink(tmp_elf)
-    atexit.register(lambda: unlink)
+    atexit.register(lambda: os.unlink(tmp_elf))
 
     if context.os == 'android':
         android_path = '/data/data/%s' % os.path.basename(tmp_elf)
@@ -344,6 +340,7 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
         shell = target.parent
 
         tmpfile = shell.mktemp()
+        execute = 'shell rm %s\n%s' % (tmpfile, execute)
         shell.upload_data(execute or '', tmpfile)
 
         cmd = ['ssh', '-C', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
@@ -351,10 +348,9 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
-        cmd += ['gdb %r %s -x "%s" ; rm "%s"' % (target.executable,
-                                                 target.pid,
-                                                 tmpfile,
-                                                 tmpfile)]
+        cmd += ['gdb %r %s -x "%s"' % (target.executable,
+                                       target.pid,
+                                       tmpfile)]
 
         misc.run_in_new_terminal(' '.join(cmd))
         return
@@ -427,10 +423,11 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
         tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.gdb',
                                           delete = False)
         log.debug('Wrote gdb script to %r\n%s' % (tmp.name, execute))
+        execute = 'shell rm %s\n%s' % (tmp.name, execute)
+
         tmp.write(execute)
         tmp.close()
-        atexit.register(lambda: os.unlink(tmp.name))
-        cmd += ' -x "%s" ; rm "%s"' % (tmp.name, tmp.name)
+        cmd += ' -x "%s"' % (tmp.name)
 
     log.info('running in new terminal: %s' % cmd)
     misc.run_in_new_terminal(cmd)
