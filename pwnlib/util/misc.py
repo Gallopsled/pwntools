@@ -189,7 +189,6 @@ def run_in_new_terminal(command, terminal = None, args = None):
 
     Returns:
       None
-
     """
 
     if not terminal:
@@ -214,8 +213,12 @@ def run_in_new_terminal(command, terminal = None, args = None):
     argv = [terminal_path] + args
 
     if isinstance(command, str):
+        if ';' in command:
+            log.error("Cannot use commands with semicolon.  Create a script and invoke that directly.")
         argv += [command]
     elif isinstance(command, (list, tuple)):
+        if any(';' in c for c in command):
+            log.error("Cannot use commands with semicolon.  Create a script and invoke that directly.")
         argv += list(command)
 
     log.debug("Launching a new terminal: %r" % argv)
