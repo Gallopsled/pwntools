@@ -20,8 +20,7 @@ Example:
             li $t9, ~2
             not $a2, $t9
             slti $a3, $zero, 0xFFFF /* $a3 = 0 */
-            li $t9, ~(SYS_execve) /* 0xfab */
-            not $v0, $t9
+            ori $v0, $zero, (SYS_execve)
             syscall 0x40404
         >>> print pwnlib.shellcraft.mips.linux.syscall('SYS_execve', 2, 1, 0, 20).rstrip()
             /* call execve(2, 1, 0, 0x14) */
@@ -32,8 +31,7 @@ Example:
             slti $a2, $zero, 0xFFFF /* $a2 = 0 */
             li $t9, ~0x14
             not $a3, $t9
-            li $t9, ~(SYS_execve) /* 0xfab */
-            not $v0, $t9
+            ori $v0, $zero, (SYS_execve)
             syscall 0x40404
         >>> print pwnlib.shellcraft.mips.linux.syscall().rstrip()
             /* call syscall() */
@@ -60,10 +58,8 @@ Example:
             not $a1, $t9
             li $t9, ~(PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
             not $a2, $t9
-            li $t9, ~(MAP_PRIVATE | MAP_ANONYMOUS) /* 0x802 */
-            not $a3, $t9
-            li $t9, ~(SYS_mmap2) /* 0x1072 */
-            not $v0, $t9
+            ori $a3, $zero, (MAP_PRIVATE | MAP_ANONYMOUS)
+            ori $v0, $zero, (SYS_mmap2)
             syscall 0x40404
 </%docstring>
 <%

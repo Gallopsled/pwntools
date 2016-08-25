@@ -11,8 +11,7 @@ Thin wrapper around :func:`pwnlib.shellcraft.mips.mov`, which sets
 Example:
 
     >>> print pwnlib.shellcraft.mips.linux.mov('$a1', 'SYS_execve').rstrip()
-        .set noat
-        ori $a1, $zero, SYS_execve
+        ori $a1, $zero, (SYS_execve)
 
 </%docstring>
 
