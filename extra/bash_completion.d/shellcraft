@@ -43,4 +43,4 @@ _shellcraft()
     COMPREPLY=( $(compgen -W "${_shellcraft_shellcodes}" -- ${cur}) )
 }
 
-complete -F _shellcraft shellcraft
+complete -F _shellcraft pwn shellcraft

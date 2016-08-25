@@ -7,8 +7,9 @@ from pwn import *
 
 from . import common
 
-parser = argparse.ArgumentParser(
-    description = "Cyclic pattern creator/finder"
+parser = common.parser_commands.add_parser(
+    'cyclic',
+    help = "Cyclic pattern creator/finder"
 )
 
 parser.add_argument(
@@ -50,8 +51,7 @@ group.add_argument(
     help = 'Number of characters to print'
 )
 
-def main():
-    args = parser.parse_args()
+def main(args):
     alphabet = args.alphabet
     subsize  = args.length
 
@@ -90,4 +90,5 @@ def main():
         if sys.stdout.isatty():
             sys.stdout.write('\n')
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    pwnlib.common.main(__file__)

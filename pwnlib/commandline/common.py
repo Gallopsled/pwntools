@@ -1,3 +1,5 @@
+import argparse
+import os
 import sys
 
 import pwnlib
@@ -20,3 +22,12 @@ def context_arg(arg):
     try: context.endian = arg
     except Exception: pass
     return arg
+
+parser = argparse.ArgumentParser(description='Pwntools Command-line Interface')
+parser_commands = parser.add_subparsers(dest='command')
+
+def main(file=sys.argv[0]):
+    import pwnlib.commandline.main
+    sys.argv.insert(0, 'pwn')
+    sys.argv[1] = os.path.splitext(os.path.basename(file))[0]
+    pwnlib.commandline.main.main()

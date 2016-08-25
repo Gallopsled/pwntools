@@ -5,8 +5,11 @@ import sys
 
 from pwn import *
 
-parser = argparse.ArgumentParser(
-    description = 'Pwnlib HexDump'
+from . import common
+
+parser = common.parser_commands.add_parser(
+    'phd',
+    help = 'Pwnlib HexDump'
 )
 
 parser.add_argument(
@@ -64,9 +67,7 @@ def asint(s):
     else:
         return int(s, 10)
 
-def main():
-    args = parser.parse_args()
-
+def main(args):
     infile = args.file
     width  = asint(args.width)
     skip   = asint(args.skip)
@@ -95,4 +96,5 @@ def main():
     except (KeyboardInterrupt, IOError):
         pass
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    pwnlib.common.main(__file__)

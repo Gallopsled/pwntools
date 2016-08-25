@@ -8,18 +8,6 @@ from pwn import *
 
 from . import common
 
-r = text.red
-g = text.green
-b = text.blue
-
-banner = '\n'.join(['  ' + r('____') + '  ' + g('_') + '          ' + r('_') + ' ' + g('_') + '                 ' + b('__') + ' ' + r('_'),
-                    ' ' + r('/ ___|') + g('| |__') + '   ' + b('___') + r('| |') + ' ' + g('|') + ' ' + b('___') + ' ' + r('_ __') + ' ' + g('__ _') + ' ' + b('/ _|') + ' ' + r('|_'),
-                    ' ' + r('\___ \\') + g('| \'_ \\') + ' ' + b('/ _ \\') + ' ' + r('|') + ' ' + g('|') + b('/ __|') + ' ' + r('\'__/') + ' ' + g('_` |') + ' ' + b('|_') + r('| __|'),
-                    '  ' + r('___) |') + ' ' + g('| | |') + '  ' + b('__/') + ' ' + r('|') + ' ' + g('|') + ' ' + b('(__') + r('| |') + ' ' + g('| (_| |') + '  ' + b('_|') + ' ' + r('|_'),
-                    ' ' + r('|____/') + g('|_| |_|') + b('\\___|') + r('_|') + g('_|') + b('\\___|') + r('_|') + '  ' + g('\\__,_|') + b('_|') + '  ' + r('\\__|'),
-                    '\n'
-                    ])
-
 
 #  ____  _          _ _                 __ _
 # / ___|| |__   ___| | | ___ _ __ __ _ / _| |_
@@ -37,9 +25,10 @@ def _string(s):
             out.append('\\x%02x' % co)
     return '"' + ''.join(out) + '"\n'
 
-p = argparse.ArgumentParser(
-    description = 'Microwave shellcode -- Easy, fast and delicious',
-    formatter_class = argparse.RawDescriptionHelpFormatter,
+
+p = common.parser_commands.add_parser(
+    'shellcraft',
+    help = 'Microwave shellcode -- Easy, fast and delicious',
 )
 
 
@@ -76,12 +65,9 @@ p.add_argument(
 p.add_argument(
     'shellcode',
     nargs = '?',
-    choices = shellcraft.templates,
-    metavar = 'shellcode',
     help = 'The shellcode you want',
+    type = str
 )
-
-p.epilog = 'Available shellcodes are:\n' + '\n'.join(shellcraft.templates)
 
 p.add_argument(
     'args',
@@ -167,6 +153,12 @@ p.add_argument(
     default=None
 )
 
+p.add_argument(
+    '-l', '--list',
+    action='store_true',
+    help='List available shellcodes, optionally provide a filter'
+)
+
 def get_template(name):
     func = shellcraft
     for attr in name.split('.'):
@@ -177,20 +169,24 @@ def is_not_a_syscall_template(name):
     template_src = shellcraft._get_source(name)
     return 'man 2' not in read(template_src)
 
-def main():
-    # Banner must be added here so that it doesn't appear in the autodoc
-    # generation for command line tools
-    p.description = banner + p.description
-    args = p.parse_args()
-
-    if not args.shellcode:
+def main(args):
+    if args.list:
         templates = shellcraft.templates
 
-        if not args.syscalls:
+        if args.shellcode:
+            templates = filter(lambda a: args.shellcode in a, templates)
+        elif not args.syscalls:
             templates = filter(is_not_a_syscall_template, templates)
 
         print '\n'.join(templates)
         exit()
+
+    if not args.shellcode:
+        common.parser.print_usage()
+        exit()
+
+    if args.shellcode not in shellcraft.templates:
+        log.error("Unknown shellcraft template %r. Use --list to see available shellcodes." % args.shellcode)
 
     func = get_template(args.shellcode)
 
@@ -326,7 +322,7 @@ def main():
         sys.exit(0)
 
     if args.format in ['s', 'str', 'string']:
-        code = _string(code) + '"\n'
+        code = _string(code)
     elif args.format == 'c':
         code = '{' + ', '.join(map(hex, bytearray(code))) + '}' + '\n'
     elif args.format in ['h', 'hex']:
@@ -339,4 +335,5 @@ def main():
 
     args.out.write(code)
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    pwnlib.common.main(__file__)

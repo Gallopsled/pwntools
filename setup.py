@@ -20,8 +20,16 @@ for dirpath, dirnames, filenames in os.walk(convert_path('pwnlib/shellcraft/temp
 for scheme in INSTALL_SCHEMES.values():
     scheme['data'] = scheme['purelib']
 
-# Find all of the console scripts
-console_scripts = []
+console_scripts = ['pwn=pwnlib.commandline.main:main']
+
+# Find all of the ancillary console scripts
+# We have a magic flag --include-all-scripts
+flag = '--only-use-pwn-command'
+if flag in sys.argv:
+    sys.argv.remove(flag)
+else:
+    flag = False
+
 for filename in glob.glob('pwnlib/commandline/*'):
     filename = os.path.basename(filename)
     filename, ext = os.path.splitext(filename)
@@ -29,8 +37,9 @@ for filename in glob.glob('pwnlib/commandline/*'):
     if ext != '.py' or '__init__' in filename:
         continue
 
-    script = '%s=pwnlib.commandline.%s:main' % (filename, filename)
-    console_scripts.append(script)
+    script = '%s=pwnlib.commandline.common:main' % filename
+    if not flag:
+        console_scripts.append(script)
 
 install_requires     = ['paramiko>=1.15.2',
                         'mako>=1.0.0',
