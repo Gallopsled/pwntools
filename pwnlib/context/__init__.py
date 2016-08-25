@@ -1202,7 +1202,7 @@ if 'ANDROID_ADB_SERVER_PORT' in os.environ:
 
 def LocalContext(function):
     """
-    Wraps the specied function on a context.local() block, using kwargs.
+    Wraps the specified function on a context.local() block, using kwargs.
 
     Example:
 
