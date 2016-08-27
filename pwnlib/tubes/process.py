@@ -6,6 +6,7 @@ import os
 import pty
 import resource
 import select
+import signal
 import subprocess
 import tty
 
@@ -97,6 +98,8 @@ class process(tube):
             Where the process is running, used for logging purposes.
         display(list):
             List of arguments to display, instead of the main executable name.
+        alarm(int):
+            Set a SIGALRM alarm timeout on the process.
 
     Attributes:
         proc(subprocess)
@@ -183,6 +186,10 @@ class process(tube):
 
         >>> process(['sh','-c','ulimit -s'], aslr=0).recvline()
         'unlimited\n'
+
+        >>> io = process(['sh','-c','sleep 10; exit 7'], alarm=2)
+        >>> io.poll(block=True) == -signal.SIGALRM
+        True
     """
 
     PTY = PTY
@@ -206,7 +213,8 @@ class process(tube):
                  aslr = None,
                  setuid = None,
                  where = 'local',
-                 display = None):
+                 display = None,
+                 alarm = None):
         super(process, self).__init__(timeout, level = level)
 
         #: `subprocess.Popen` object
@@ -252,6 +260,9 @@ class process(tube):
 
         #: Directory the process was created in
         self.cwd          = cwd or os.path.curdir
+
+        #: Alarm timeout of the process
+        self.alarm        = alarm
 
         self.preexec_fn = preexec_fn
         self.display    = display or self.program
@@ -356,6 +367,9 @@ class process(tube):
                 ctypes.CDLL('libc.so.6').prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)
             except:
                 pass
+
+        if self.alarm is not None:
+            signal.alarm(self.alarm)
 
         self.preexec_fn()
 
