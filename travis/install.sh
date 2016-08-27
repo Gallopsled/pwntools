@@ -96,8 +96,8 @@ setup_android_emulator()
         NDK_VERSION=android-ndk-r12b
         if [ ! -f android-ndk/ndk-build ]; then
             wget   https://dl.google.com/android/repository/$NDK_VERSION-linux-x86_64.zip
-            unzip  android-ndk-*.zip
-            rm -f  android-ndk-*.zip
+            unzip -q android-ndk-*.zip
+            rm -f    android-ndk-*.zip
 
             # Travis caching causes this to exist already
             rm -rf android-ndk
