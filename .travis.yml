@@ -5,12 +5,15 @@ addons:
     packages:
     - gcc-multilib
     - gcc-4.6-arm-linux-gnueabihf
+    - lib32stdc++6
 cache:
     - pip
     - directories:
         - usr
         - /home/travis/virtualenv/python2.7.9/lib/python2.7/site-packages/
         - /home/travis/virtualenv/python2.7.9/bin/
+        - android-ndk
+        - android-sdk
 python:
   - "2.7"
 before_install:

@@ -168,6 +168,9 @@ def disable_verity():
             return
         elif 'Now reboot your device' in reply:
             reboot(wait=True)
+        elif 'error: closed' in reply:
+            # Device does not support dm-verity?
+            return
         else:
             log.error("Could not disable verity:\n%s" % reply)
 
