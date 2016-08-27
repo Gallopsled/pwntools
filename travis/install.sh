@@ -90,6 +90,7 @@ setup_android_emulator()
         fi
 
         export PATH="$PWD/android-sdk/tools:$PATH"
+        export PATH="$PWD/android-sdk/platform-tools:$PATH"
         which android
 
         # Install the NDK, which is required for adb.compile()
