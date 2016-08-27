@@ -66,7 +66,7 @@ def reboot_bootloader():
 
 class AdbDevice(Device):
     """Encapsulates information about a connected device."""
-    def __init__(self, serial, type, port, product='unknown', model='unknown', device='unknown'):
+    def __init__(self, serial, type, port=None, product='unknown', model='unknown', device='unknown'):
         self.serial  = serial
         self.type    = type
         self.port    = port
@@ -102,11 +102,15 @@ class AdbDevice(Device):
         ZX1G22LM7G             device usb:336789504X product:shamu model:Nexus_6 device:shamu features:cmd,shell_v2
         84B5T15A29020449       device usb:336855040X product:angler model:Nexus_6P device:angler
         0062741b0e54b353       unauthorized usb:337641472X
+        emulator-5554          offline
         """
 
         # The last few fields need to be split at colons.
         split  = lambda x: x.split(':')[-1]
         fields[3:] = list(map(split, fields[3:]))
+
+        if fields[1] in ('unauthorized', 'offline'):
+            return
 
         return AdbDevice(*fields[:6])
 
@@ -360,6 +364,8 @@ def getprop(name=None):
         If ``name`` is not specified, a ``dict`` of all properties is returned.
         Otherwise, a string is returned with the contents of the named property.
     """
+    wait_for_device()
+
     with context.quiet:
         if name:
             return process(['getprop', name]).recvall().strip()
@@ -634,19 +640,29 @@ def _generate_ndk_project(file_list, abi='arm-v7a', platform_version=21):
 def compile(source):
     """Compile a source file or project with the Android NDK."""
 
-    # Ensure that we can find the NDK.
-    ndk = os.environ.get('NDK', None)
-    if ndk is None:
-        log.error('$NDK must be set to the Android NDK directory')
-    ndk_build = os.path.join(ndk, 'ndk-build')
+    ndk_build = misc.which('ndk-build')
+    if not ndk_build:
+        # Ensure that we can find the NDK.
+        ndk = os.environ.get('NDK', None)
+        if ndk is None:
+            log.error('$NDK must be set to the Android NDK directory')
+        ndk_build = os.path.join(ndk, 'ndk-build')
 
     # Determine whether the source is an NDK project or a single source file.
     project = find_ndk_project_root(source)
 
     if not project:
-        project = _generate_ndk_project(source,
-                                        str(properties.ro.product.cpu.abi),
-                                        str(properties.ro.build.version.sdk))
+        # Realistically this should inherit from context.arch, but
+        # this works for now.
+        abi = 'armeabi-v7a'
+        sdk = '21'
+
+        # If we have an atatched device, use its settings.
+        if context.device:
+            abi = str(properties.ro.product.cpu.abi)
+            sdk = str(properties.ro.build.version.sdk)
+
+        project = _generate_ndk_project(source, abi, sdk)
 
     # Remove any output files
     lib = os.path.join(project, 'libs')
