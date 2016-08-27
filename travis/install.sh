@@ -67,7 +67,7 @@ setup_linux()
 }
 
 setup_android_emulator()
-
+{
     if ! which java; then
         echo "OpenJDK-8-JRE is required for Android stuff"
         exit 1
