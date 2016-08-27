@@ -1,6 +1,6 @@
 <%
   from pwnlib import constants
-  from pwnlib.shellcraft import mips 
+  from pwnlib.shellcraft import mips
   from pwnlib.shellcraft import common
 %>
 <%page args="filename, fd=1"/>
@@ -11,7 +11,9 @@ Example:
 
     >>> f = tempfile.mktemp()
     >>> write(f, 'FLAG')
-    >>> run_assembly(shellcraft.mips.linux.cat(f)).recvall()
+    >>> asm  = shellcraft.mips.linux.cat(f)
+    >>> asm += shellcraft.mips.linux.exit(0)
+    >>> run_assembly(asm).recvall()
     'FLAG'
 
 </%docstring>
