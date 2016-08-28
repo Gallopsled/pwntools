@@ -1,5 +1,6 @@
 """Provides utilities for interacting with Android devices via the Android Debug Bridge.
 """
+import functools
 import glob
 import os
 import platform
@@ -21,7 +22,11 @@ from .util import misc
 log = getLogger(__name__)
 
 def adb(argv, *a, **kw):
-    """Returns the output of an ADB subcommand."""
+    """Returns the output of an ADB subcommand.
+
+    >>> adb.adb(['get-serialno'])
+    'emulator-5554\n'
+    """
     if isinstance(argv, (str, unicode)):
         argv = [argv]
 
@@ -30,7 +35,10 @@ def adb(argv, *a, **kw):
     return tubes.process.process(context.adb + argv, *a, **kw).recvall()
 
 def root():
-    """Restarts adbd as root."""
+    """Restarts adbd as root.
+
+    >>> adb.root()
+    """
     log.info("Enabling root on %s" % context.device)
 
     with context.quiet:
@@ -46,9 +54,19 @@ def root():
     else:
         log.error("Could not run as root:\n%s" % reply)
 
+def no_emulator(f):
+    @functools.wraps(f)
+    def wrapper(*a,**kw):
+        c = current_device()
+        if c and c.port == 'emulator':
+            log.error("Cannot invoke %s.%s on an emulator." % (f.__module__, f.__name__))
+        return f(*a,**kw)
+    return wrapper
 
+@no_emulator
 def reboot(wait=True):
-    """Reboots the device."""
+    """Reboots the device.
+    """
     log.info('Rebooting device %s' % context.device)
 
     with context.quiet:
@@ -57,8 +75,10 @@ def reboot(wait=True):
     if wait:
         wait_for_device()
 
+@no_emulator
 def reboot_bootloader():
-    """Reboots the device to the bootloader."""
+    """Reboots the device to the bootloader.
+    """
     log.info('Rebooting %s to bootloader' % context.device)
 
     with context.quiet:
@@ -66,7 +86,7 @@ def reboot_bootloader():
 
 class AdbDevice(Device):
     """Encapsulates information about a connected device."""
-    def __init__(self, serial, type, port=None, product='unknown', model='unknown', device='unknown'):
+    def __init__(self, serial, type, port=None, product='unknown', model='unknown', device='unknown', features=None):
         self.serial  = serial
         self.type    = type
         self.port    = port
@@ -84,6 +104,19 @@ class AdbDevice(Device):
             self.arch = context.arch
             self.bits = context.bits
             self.endian = context.endian
+
+        if self.port == 'emulator':
+            emulator, port = self.serial.split('-')
+            port = int(port)
+            try:
+                with remote('localhost', port, level='error') as r:
+                    r.recvuntil('OK')
+                    r.recvline() # Rest of the line
+                    r.sendline('avd name')
+                    self.avd = r.recvline().strip()
+            except:
+                pass
+            # r = remote('localhost')
 
     def __str__(self):
         return self.serial
@@ -103,16 +136,23 @@ class AdbDevice(Device):
         84B5T15A29020449       device usb:336855040X product:angler model:Nexus_6P device:angler
         0062741b0e54b353       unauthorized usb:337641472X
         emulator-5554          offline
+        emulator-5554          device product:sdk_phone_armv7 model:sdk_phone_armv7 device:generic
         """
 
-        # The last few fields need to be split at colons.
-        split  = lambda x: x.split(':')[-1]
-        fields[3:] = list(map(split, fields[3:]))
+        fields = line.split()
 
-        if fields[1] in ('unauthorized', 'offline'):
-            return
+        serial = fields[0]
+        type   = fields[1]
+        kwargs = {}
 
-        return AdbDevice(*fields[:6])
+        if serial.startswith('emulator-'):
+            kwargs['port'] = 'emulator'
+
+        for field in fields[2:]:
+            k,v = field.split(':')
+            kwargs[k] = v
+
+        return AdbDevice(serial, type, **kwargs)
 
 @context.quiet
 def devices(serial=None):
@@ -131,9 +171,29 @@ def devices(serial=None):
 
     return tuple(result)
 
+def current_device():
+    """Returns an ``AdbDevice`` instance for the currently-selected device
+    (via ``context.device``).
+
+    Example:
+
+        >>> adb.current_device()
+        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_phone_armv7', model='sdk phone armv7', device='generic')
+        >>> adb.current_device().port
+        'emulator'
+    """
+    for device in devices():
+        if device == context.device:
+            return device
+
 @LocalContext
 def wait_for_device(kick=False):
-    """Waits for a device to be connected."""
+    """Waits for a device to be connected.
+
+    Examples:
+
+        >>> adb.wait_for_device()
+    """
     with log.waitfor("Waiting for device to come online") as w:
         with context.quiet:
             if kick:
@@ -198,7 +258,7 @@ def unroot():
         reply  = adb('unroot')
 
     if 'restarting adbd as non root' not in reply:
-        log.error("Could not run as root:\n%s" % reply)
+        log.error("Could not unroot:\n%s" % reply)
 
 def pull(remote_path, local_path=None):
     """Download a file from the device.
@@ -207,6 +267,12 @@ def pull(remote_path, local_path=None):
         remote_path(str): Path or directory of the file on the device.
         local_path(str): Path to save the file to.
             Uses the file's name by default.
+
+    Example:
+
+        >>> _=adb.pull('/proc/version', './proc-version')
+        >>> read('./proc-version') #doctest: +ELLIPSIS
+        "Linux version ...\n"
     """
     if local_path is None:
         local_path = os.path.basename(remote_path)
@@ -234,6 +300,13 @@ def push(local_path, remote_path):
     Arguments:
         local_path(str): Path to the local file to push.
         remote_path(str): Path or directory to store the file on the device.
+
+    Example:
+
+        >>> write('./filename', 'contents')
+        >>> _=adb.push('./filename', '/data/local/tmp')
+        >>> adb.read('/data/local/tmp/filename')
+        'contents'
     """
     msg = "Pushing %r to %r" % (local_path, remote_path)
 
@@ -259,6 +332,11 @@ def read(path, target=None):
         path(str): Path to the file on the device.
         target(str): Optional, location to store the file.
             Uses a temporary file by default.
+
+    Examples:
+
+        >>> read('/proc/version') #doctest: +ELLIPSIS
+        "Linux version ...\n"
     """
     with tempfile.NamedTemporaryFile() as temp:
         target = target or temp.name
@@ -273,6 +351,10 @@ def write(path, data=''):
     Arguments:
         path(str): Path to the file on the device
         data(str): Contents to store in the file
+
+    ExamplesS:
+
+        >>> write('')
     """
     with tempfile.NamedTemporaryFile() as temp:
         misc.write(temp.name, data)
@@ -289,6 +371,10 @@ def process(argv, *a, **kw):
     argv = argv or []
     if isinstance(argv, (str, unicode)):
         argv = [argv]
+
+    for i, arg in enumerate(argv):
+        if ' ' in arg and '"' not in arg:
+            argv[i] = '"%s"' % arg
 
     display = argv
     argv = context.adb + ['shell'] + argv
@@ -364,8 +450,6 @@ def getprop(name=None):
         If ``name`` is not specified, a ``dict`` of all properties is returned.
         Otherwise, a string is returned with the contents of the named property.
     """
-    wait_for_device()
-
     with context.quiet:
         if name:
             return process(['getprop', name]).recvall().strip()
