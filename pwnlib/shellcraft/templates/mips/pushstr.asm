@@ -21,8 +21,7 @@ Example:
         addiu $sp, $sp, -4
     >>> print shellcraft.mips.pushstr('aa').rstrip()
         /* push 'aa\x00' */
-        li $t9, ~0x6161
-        not $t1, $t9
+        ori $t1, $zero, 24929
         sw $t1, -4($sp)
         addiu $sp, $sp, -4
     >>> print shellcraft.mips.pushstr('aaa').rstrip()

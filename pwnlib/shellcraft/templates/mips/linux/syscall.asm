@@ -12,63 +12,55 @@ Any of the arguments can be expressions to be evaluated by :func:`pwnlib.constan
 
 Example:
 
-        >>> print pwnlib.shellcraft.i386.linux.syscall('SYS_execve', 1, 'esp', 2, 0).rstrip()
-            /* call execve(1, 'esp', 2, 0) */
-            push 0x1
-            pop ebx
-            mov ecx, esp
-            push 0x2
-            pop edx
-            xor esi, esi
-            push 0xb
-            pop eax
-            int 0x80
-        >>> print pwnlib.shellcraft.i386.linux.syscall('SYS_execve', 2, 1, 0, 20).rstrip()
-            /* call execve(2, 1, 0, 20) */
-            push 0x2
-            pop ebx
-            push 0x1
-            pop ecx
-            push 0x14
-            pop esi
-            push 0xb
-            pop eax
-            cdq /* Set edx to 0, eax is known to be positive */
-            int 0x80
-        >>> print pwnlib.shellcraft.i386.linux.syscall().rstrip()
+        >>> print pwnlib.shellcraft.mips.linux.syscall('SYS_execve', 1, '$sp', 2, 0).rstrip()
+            /* call execve(1, '$sp', 2, 0) */
+            li $t9, ~1
+            not $a0, $t9
+            add $a1, $sp, $0 /* mov $a1, $sp */
+            li $t9, ~2
+            not $a2, $t9
+            slti $a3, $zero, 0xFFFF /* $a3 = 0 */
+            ori $v0, $zero, (SYS_execve)
+            syscall 0x40404
+        >>> print pwnlib.shellcraft.mips.linux.syscall('SYS_execve', 2, 1, 0, 20).rstrip()
+            /* call execve(2, 1, 0, 0x14) */
+            li $t9, ~2
+            not $a0, $t9
+            li $t9, ~1
+            not $a1, $t9
+            slti $a2, $zero, 0xFFFF /* $a2 = 0 */
+            li $t9, ~0x14
+            not $a3, $t9
+            ori $v0, $zero, (SYS_execve)
+            syscall 0x40404
+        >>> print pwnlib.shellcraft.mips.linux.syscall().rstrip()
             /* call syscall() */
-            int 0x80
-        >>> print pwnlib.shellcraft.i386.linux.syscall('eax', 'ebx', 'ecx').rstrip()
-            /* call syscall('eax', 'ebx', 'ecx') */
-            /* moving ebx into ebx, but this is a no-op */
-            /* moving ecx into ecx, but this is a no-op */
-            /* moving eax into eax, but this is a no-op */
-            int 0x80
-        >>> print pwnlib.shellcraft.i386.linux.syscall('ebp', None, None, 1).rstrip()
-            /* call syscall('ebp', ?, ?, 1) */
-            push 0x1
-            pop edx
-            mov eax, ebp
-            int 0x80
-        >>> print pwnlib.shellcraft.i386.linux.syscall(
+            syscall 0x40404
+        >>> print pwnlib.shellcraft.mips.linux.syscall('$v0', '$a0', '$a1').rstrip()
+            /* call syscall('$v0', '$a0', '$a1') */
+            /* setregs noop */
+            syscall 0x40404
+        >>> print pwnlib.shellcraft.mips.linux.syscall('$a3', None, None, 1).rstrip()
+            /* call syscall('$a3', ?, ?, 1) */
+            li $t9, ~1
+            not $a2, $t9
+            sw $a3, -4($sp) /* mov $v0, $a3 */
+            lw $v0, -4($sp)
+            syscall 0x40404
+        >>> print pwnlib.shellcraft.mips.linux.syscall(
         ...               'SYS_mmap2', 0, 0x1000,
         ...               'PROT_READ | PROT_WRITE | PROT_EXEC',
         ...               'MAP_PRIVATE | MAP_ANONYMOUS',
         ...               -1, 0).rstrip()
-            /* call mmap2(0, 4096, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
-            xor ebx, ebx
-            xor ecx, ecx
-            mov ch, 0x10
-            push 0x7
-            pop edx
-            push 0x22
-            pop esi
-            push -1
-            pop edi
-            xor ebp, ebp
-            xor eax, eax
-            mov al, 0xc0
-            int 0x80
+            /* call mmap2(0, 0x1000, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
+            slti $a0, $zero, 0xFFFF /* $a0 = 0 */
+            li $t9, ~0x1000
+            not $a1, $t9
+            li $t9, ~(PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
+            not $a2, $t9
+            ori $a3, $zero, (MAP_PRIVATE | MAP_ANONYMOUS)
+            ori $v0, $zero, (SYS_mmap2)
+            syscall 0x40404
 </%docstring>
 <%
   append_cdq = False

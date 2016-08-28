@@ -120,6 +120,8 @@ if src_reg == 0:
 % elif okay(src):
 ## Nice and easy
     li ${dst}, ${pretty(src)}
+% elif 0 < src <= 0xffff and okay(src, bytes=2):
+    ori ${dst}, $zero, ${src}
 % elif okay((~srcu) & 0xffffffff):
 ## Almost nice and easy
     li $t9, ~${pretty(src)}
