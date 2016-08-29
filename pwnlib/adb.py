@@ -34,6 +34,54 @@ def adb(argv, *a, **kw):
 
     return tubes.process.process(context.adb + argv, *a, **kw).recvall()
 
+@context.quiet
+def devices(serial=None):
+    """Returns a list of ``Device`` objects corresponding to the connected devices."""
+    lines = adb(['devices', '-l'])
+    result = []
+
+    for line in lines.splitlines():
+        # Skip the first 'List of devices attached' line, and the final empty line.
+        if 'List of devices' in line or not line.strip():
+            continue
+        device = AdbDevice.from_adb_output(line)
+        if device.serial == serial:
+            return device
+        result.append(device)
+
+    return tuple(result)
+
+def current_device(any=False):
+    """Returns an ``AdbDevice`` instance for the currently-selected device
+    (via ``context.device``).
+
+    Example:
+
+        >>> adb.current_device()
+        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_phone_armv7', model='sdk phone armv7', device='generic')
+        >>> adb.current_device().port
+        'emulator'
+    """
+    all_devices = devices()
+    for device in all_devices:
+        if any or device == context.device:
+            return device
+
+def with_device(f):
+    @functools.wraps(f)
+    def wrapper(*a,**kw):
+        if not context.device:
+            device = current_device(any=True)
+            if device:
+                log.warn_once('Automatically selecting device %s' % device)
+                context.device = device
+        if not context.device:
+            log.error('No devices connected, cannot invoke %s.%s' % (f.__module__, f.__name__))
+        return f(*a,**kw)
+    return wrapper
+
+
+@with_device
 def root():
     """Restarts adbd as root.
 
@@ -64,6 +112,7 @@ def no_emulator(f):
     return wrapper
 
 @no_emulator
+@with_device
 def reboot(wait=True):
     """Reboots the device.
     """
@@ -76,6 +125,7 @@ def reboot(wait=True):
         wait_for_device()
 
 @no_emulator
+@with_device
 def reboot_bootloader():
     """Reboots the device to the bootloader.
     """
@@ -154,38 +204,6 @@ class AdbDevice(Device):
 
         return AdbDevice(serial, type, **kwargs)
 
-@context.quiet
-def devices(serial=None):
-    """Returns a list of ``Device`` objects corresponding to the connected devices."""
-    lines = adb(['devices', '-l'])
-    result = []
-
-    for line in lines.splitlines():
-        # Skip the first 'List of devices attached' line, and the final empty line.
-        if 'List of devices' in line or not line.strip():
-            continue
-        device = AdbDevice.from_adb_output(line)
-        if device.serial == serial:
-            return device
-        result.append(device)
-
-    return tuple(result)
-
-def current_device():
-    """Returns an ``AdbDevice`` instance for the currently-selected device
-    (via ``context.device``).
-
-    Example:
-
-        >>> adb.current_device()
-        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_phone_armv7', model='sdk phone armv7', device='generic')
-        >>> adb.current_device().port
-        'emulator'
-    """
-    for device in devices():
-        if device == context.device:
-            return device
-
 @LocalContext
 def wait_for_device(kick=False):
     """Waits for a device to be connected.
@@ -220,6 +238,7 @@ def wait_for_device(kick=False):
 
             return context.device
 
+@with_device
 def disable_verity():
     """Disables dm-verity on the device."""
     with log.waitfor("Disabling dm-verity on %s" % context.device) as w:
@@ -238,7 +257,7 @@ def disable_verity():
         else:
             log.error("Could not disable verity:\n%s" % reply)
 
-
+@with_device
 def remount():
     """Remounts the filesystem as writable."""
     with log.waitfor("Remounting filesystem on %s" % context.device) as w:
@@ -251,6 +270,7 @@ def remount():
         if 'remount succeeded' not in reply:
             log.error("Could not remount filesystem:\n%s" % reply)
 
+@with_device
 def unroot():
     """Restarts adbd as AID_SHELL."""
     log.info("Unrooting %s" % context.device)
@@ -260,6 +280,7 @@ def unroot():
     if 'restarting adbd as non root' not in reply:
         log.error("Could not unroot:\n%s" % reply)
 
+@with_device
 def pull(remote_path, local_path=None):
     """Download a file from the device.
 
@@ -294,6 +315,7 @@ def pull(remote_path, local_path=None):
 
     return result
 
+@with_device
 def push(local_path, remote_path):
     """Upload a file to the device.
 
@@ -325,6 +347,7 @@ def push(local_path, remote_path):
     return result
 
 @context.quiet
+@with_device
 def read(path, target=None):
     """Download a file from the device, and extract its contents.
 
@@ -345,6 +368,7 @@ def read(path, target=None):
     return result
 
 @context.quiet
+@with_device
 def write(path, data=''):
     """Create a file on the device with the provided contents.
 
@@ -352,7 +376,7 @@ def write(path, data=''):
         path(str): Path to the file on the device
         data(str): Contents to store in the file
 
-    ExamplesS:
+    Examples:
 
         >>> write('')
     """
@@ -360,6 +384,7 @@ def write(path, data=''):
         misc.write(temp.name, data)
         push(temp.name, path)
 
+@with_device
 def process(argv, *a, **kw):
     """Execute a process on the device.
 
@@ -367,6 +392,12 @@ def process(argv, *a, **kw):
 
     Returns:
         A ``process`` tube.
+
+    Examples:
+
+        >>> adb.root()
+        >>> adb.process(['whoami']).recvall().strip()
+        'root'
     """
     argv = argv or []
     if isinstance(argv, (str, unicode)):
@@ -384,22 +415,27 @@ def process(argv, *a, **kw):
 
     return tubes.process.process(argv, *a, **kw)
 
+@with_device
 def interactive(**kw):
     """Spawns an interactive shell."""
     return shell(**kw).interactive()
 
+@with_device
 def shell(**kw):
     """Returns an interactive shell."""
     return process([], **kw)
 
 @context.quiet
+@with_device
 def which(name):
     """Retrieves the full path to a binary in ``PATH`` on the device"""
     return process(['which', name]).recvall().strip()
 
+@with_device
 def whoami():
     return process(['whoami']).recvall().strip()
 
+@with_device
 def forward(port):
     """Sets up a port to forward to the device."""
     tcp_port = 'tcp:%s' % port
@@ -407,6 +443,7 @@ def forward(port):
     atexit.register(lambda: adb(['forward', '--remove', tcp_port]))
 
 @context.quiet
+@with_device
 def logcat(stream=False):
     """Reads the system log file.
 
@@ -426,6 +463,7 @@ def logcat(stream=False):
     else:
         return adb(['logcat', '-d'])
 
+@with_device
 def pidof(name):
     """Returns a list of PIDs for the named process."""
     with context.quiet:
@@ -433,6 +471,7 @@ def pidof(name):
         data = io.recvall().split()
     return list(map(int, data))
 
+@with_device
 def proc_exe(pid):
     """Returns the full path of the executable for the provided PID."""
     with context.quiet:
@@ -440,6 +479,7 @@ def proc_exe(pid):
         data = io.recvall().strip()
     return data
 
+@with_device
 def getprop(name=None):
     """Reads a properties from the system property store.
 
@@ -474,10 +514,12 @@ def getprop(name=None):
 
     return props
 
+@with_device
 def setprop(name, value):
     """Writes a property to the system property store."""
     return process(['setprop', name, value]).recvall().strip()
 
+@with_device
 def listdir(directory='/'):
     """Returns a list containing the entries in the provided directory.
 
@@ -485,10 +527,11 @@ def listdir(directory='/'):
         Because ``adb shell`` is used to retrieve the listing, shell
         environment variable expansion and globbing are in effect.
     """
-    io = process(['find', directory, '-maxdepth', '1', '-print0'])
+    # io = process(['find', directory, '-maxdepth', '1', '-print0'])
+    io = process(['sh','-c',"""'cd %s; for file in ./* ./.*; do [ -e "$file" ] || continue; echo -n "$file"; echo -ne "\\x00"; done'""" % directory])
     data = io.recvall()
     paths = filter(len, data.split('\x00'))
-    relpaths = [os.path.relpath(path, directory) for path in paths]
+    relpaths = [os.path.relpath(path, '.') for path in paths]
     if '.' in relpaths:
         relpaths.remove('.')
     return relpaths
@@ -504,18 +547,23 @@ def fastboot(args, *a, **kw):
         log.error("Unknown device")
     return tubes.process.process(['fastboot', '-s', serial] + list(args), **kw).recvall()
 
+@with_device
 def fingerprint():
     """Returns the device build fingerprint."""
     return str(properties.ro.build.fingerprint)
 
+@with_device
 def product():
     """Returns the device product identifier."""
     return str(properties.ro.build.product)
 
+@with_device
 def build():
     """Returns the Build ID of the device."""
     return str(properties.ro.build.id)
 
+@with_device
+@no_emulator
 def unlock_bootloader():
     """Unlocks the bootloader of the device.
 
@@ -790,6 +838,7 @@ class Partitions(object):
         return list(self)
 
     @context.quiet
+    @with_device
     def __iter__(self):
         root()
 
