@@ -6,6 +6,7 @@ import operator
 import os
 import re
 import socks
+import signal
 import string
 import struct
 import subprocess
