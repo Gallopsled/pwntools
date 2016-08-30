@@ -300,8 +300,8 @@ def pull(remote_path, local_path=None):
     Example:
 
         >>> _=adb.pull('/proc/version', './proc-version')
-        >>> read('./proc-version') #doctest: +ELLIPSIS
-        "Linux version ..."
+        >>> print read('./proc-version') # doctest: +ELLIPSIS
+        Linux version ...
     """
     if local_path is None:
         local_path = os.path.basename(remote_path)
@@ -366,8 +366,8 @@ def read(path, target=None):
 
     Examples:
 
-        >>> read('/proc/version') #doctest: +ELLIPSIS
-        "Linux version ..."
+        >>> print read('/proc/version') # doctest: +ELLIPSIS
+        Linux version ...
     """
     with tempfile.NamedTemporaryFile() as temp:
         target = target or temp.name
@@ -405,8 +405,8 @@ def process(argv, *a, **kw):
     Examples:
 
         >>> adb.root()
-        >>> adb.process(['cat','/proc/version']).recvall() #doctest:+ELLIPSIS
-        "Linux version ..."
+        >>> print adb.process(['cat','/proc/version']).recvall() # doctest: +ELLIPSIS
+        Linux version ...
     """
     argv = argv or []
     if isinstance(argv, (str, unicode)):
