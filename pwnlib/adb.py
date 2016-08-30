@@ -22,7 +22,7 @@ from .util import misc
 log = getLogger(__name__)
 
 def adb(argv, *a, **kw):
-    """Returns the output of an ADB subcommand.
+    r"""Returns the output of an ADB subcommand.
 
     >>> adb.adb(['get-serialno'])
     'emulator-5554\n'
@@ -57,9 +57,10 @@ def current_device(any=False):
 
     Example:
 
-        >>> adb.current_device()
+        >>> device = adb.current_device(any=True)
+        >>> device
         AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_phone_armv7', model='sdk phone armv7', device='generic')
-        >>> adb.current_device().port
+        >>> device.port
         'emulator'
     """
     all_devices = devices()
@@ -208,9 +209,16 @@ class AdbDevice(Device):
 def wait_for_device(kick=False):
     """Waits for a device to be connected.
 
+    By default, waits for the currently-selected device (via ``context.device``).
+    To wait for a specific device, set ``context.device``.
+    To wait for *any* device, clear ``context.device``.
+
+    Return:
+        An ``AdbDevice`` instance for the device.
+
     Examples:
 
-        >>> adb.wait_for_device()
+        >>> device = adb.wait_for_device()
     """
     with log.waitfor("Waiting for device to come online") as w:
         with context.quiet:
@@ -293,7 +301,7 @@ def pull(remote_path, local_path=None):
 
         >>> _=adb.pull('/proc/version', './proc-version')
         >>> read('./proc-version') #doctest: +ELLIPSIS
-        "Linux version ...\n"
+        "Linux version ..."
     """
     if local_path is None:
         local_path = os.path.basename(remote_path)
@@ -359,7 +367,7 @@ def read(path, target=None):
     Examples:
 
         >>> read('/proc/version') #doctest: +ELLIPSIS
-        "Linux version ...\n"
+        "Linux version ..."
     """
     with tempfile.NamedTemporaryFile() as temp:
         target = target or temp.name
@@ -378,7 +386,8 @@ def write(path, data=''):
 
     Examples:
 
-        >>> write('')
+        >>> adb.write('/dev/null', 'data')
+        >>> adb.write('/data/local/tmp/')
     """
     with tempfile.NamedTemporaryFile() as temp:
         misc.write(temp.name, data)
@@ -396,8 +405,8 @@ def process(argv, *a, **kw):
     Examples:
 
         >>> adb.root()
-        >>> adb.process(['whoami']).recvall().strip()
-        'root'
+        >>> adb.process(['cat','/proc/version']).recvall() #doctest:+ELLIPSIS
+        "Linux version ..."
     """
     argv = argv or []
     if isinstance(argv, (str, unicode)):
@@ -428,12 +437,31 @@ def shell(**kw):
 @context.quiet
 @with_device
 def which(name):
-    """Retrieves the full path to a binary in ``PATH`` on the device"""
-    return process(['which', name]).recvall().strip()
+    """Retrieves the full path to a binary in ``PATH`` on the device
+
+    >>> adb.which('sh')
+    '/system/bin/sh'
+    """
+
+    # Unfortunately, there is no native 'which' on many phones.
+    which_cmd = '''
+IFS=:
+BINARY=%s
+P=($PATH)
+for path in "${P[@]}"; do
+    if [ -e "$path/$BINARY" ]; then
+        echo "$path/$BINARY";
+        break
+    fi
+done
+''' % name
+
+    which_cmd = which_cmd.strip()
+    return process([which_cmd]).recvall().strip()
 
 @with_device
 def whoami():
-    return process(['whoami']).recvall().strip()
+    return process(['sh','-ic','echo $USER']).recvall().strip()
 
 @with_device
 def forward(port):
@@ -475,7 +503,7 @@ def pidof(name):
 def proc_exe(pid):
     """Returns the full path of the executable for the provided PID."""
     with context.quiet:
-        io  = process(['readlink','-e','/proc/%d/exe' % pid])
+        io  = process(['realpath','/proc/%d/exe' % pid])
         data = io.recvall().strip()
     return data
 
