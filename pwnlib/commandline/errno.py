@@ -1,17 +1,18 @@
 import argparse
 import os
 
-parser = argparse.ArgumentParser(
-    description = 'Prints out error messages'
+from . import common
+
+parser = common.parser_commands.add_parser(
+    'errno',
+    help = 'Prints out error messages'
 )
 
 parser.add_argument(
     'error', help='Error message or value', type=str
 )
 
-def main():
-  args, unknown = parser.parse_known_args()
-
+def main(args):
   try:
     value = int(args.error, 0)
 
@@ -40,4 +41,5 @@ def main():
   print '#define', name, value
   print os.strerror(value)
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    pwnlib.common.main(__file__)

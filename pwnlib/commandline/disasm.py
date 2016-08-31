@@ -7,8 +7,9 @@ from pwn import *
 
 from . import common
 
-parser = argparse.ArgumentParser(
-    description = 'Disassemble bytes into text format'
+parser = common.parser_commands.add_parser(
+    'disasm',
+    help = 'Disassemble bytes into text format'
 )
 
 parser.add_argument(
@@ -52,9 +53,7 @@ parser.add_argument(
 )
 
 
-def main():
-    args = parser.parse_args()
-
+def main(args):
     if len(args.hex) > 0:
         dat = ''.join(args.hex)
         dat = dat.translate(None, string.whitespace)
@@ -88,4 +87,5 @@ def main():
 
     print disasm(dat, vma=safeeval.const(args.address))
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    pwnlib.common.main(__file__)

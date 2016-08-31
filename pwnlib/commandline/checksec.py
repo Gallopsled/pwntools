@@ -6,11 +6,10 @@ from pwn import *
 
 from . import common
 
-parser = argparse.ArgumentParser(
-    description = 'Check binary security settings'
+parser = common.parser_commands.add_parser(
+    'checksec',
+    help = 'Check binary security settings'
 )
-
-
 parser.add_argument(
     'elf',
     nargs='*',
@@ -26,8 +25,7 @@ parser.add_argument(
     help='File to check (for compatibility with checksec.sh)'
 )
 
-def main():
-    args   = parser.parse_args()
+def main(args):
     files  = args.elf or args.elf2 or []
 
     if not files:
@@ -37,4 +35,5 @@ def main():
     for f in files:
         e = ELF(f.name)
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    pwnlib.common.main(__file__)

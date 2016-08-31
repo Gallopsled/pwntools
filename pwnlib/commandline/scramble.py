@@ -5,10 +5,10 @@ from pwn import *
 
 from . import common
 
-parser = argparse.ArgumentParser(
-    description = 'Shellcode encoder'
+parser = common.parser_commands.add_parser(
+    'scramble',
+    help = 'Shellcode encoder'
 )
-
 
 parser.add_argument(
     "-f", "--format",
@@ -68,8 +68,7 @@ parser.add_argument(
     action='store_true'
 )
 
-def main():
-    args   = parser.parse_args()
+def main(args):
     tty    = args.output.isatty()
 
     if sys.stdin.isatty():
@@ -100,4 +99,6 @@ def main():
     if tty and fmt is not 'raw':
         args.output.write('\n')
 
-if __name__ == '__main__': main()
+
+if __name__ == '__main__':
+    pwnlib.common.main(__file__)

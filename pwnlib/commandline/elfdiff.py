@@ -8,6 +8,8 @@ from tempfile import NamedTemporaryFile
 
 from pwn import *
 
+from . import common
+
 def dump(objdump, path):
     n = NamedTemporaryFile(delete=False)
     o = check_output([objdump,'-d','-x','-s',path])
@@ -20,13 +22,15 @@ def diff(a,b):
     except CalledProcessError as e:
         return e.output
 
-p = ArgumentParser()
+p = common.parser_commands.add_parser(
+    'elfdiff',
+    help = 'Compare two ELF files'
+)
+
 p.add_argument('a')
 p.add_argument('b')
 
-def main():
-    a = p.parse_args()
-
+def main(a):
     with context.silent:
         x = ELF(a.a)
         y = ELF(a.b)
@@ -49,4 +53,5 @@ def main():
 
     print diff(x, y)
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    pwnlib.common.main(__file__)

@@ -6,8 +6,9 @@ from pwn import *
 
 from . import common
 
-parser = argparse.ArgumentParser(
-    description = 'Assemble shellcode into bytes'
+parser = common.parser_commands.add_parser(
+    'asm',
+    help = 'Assemble shellcode into bytes'
 )
 
 parser.add_argument(
@@ -91,8 +92,7 @@ parser.add_argument(
     action='store_true'
 )
 
-def main():
-    args   = parser.parse_args()
+def main(args):
     tty    = args.output.isatty()
 
     data   = '\n'.join(args.lines) or args.infile.read()
@@ -123,4 +123,5 @@ def main():
     if tty and fmt is not 'raw':
         args.output.write('\n')
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    pwnlib.common.main(__file__)

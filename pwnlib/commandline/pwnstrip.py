@@ -4,9 +4,9 @@ from pwn import *
 
 from . import common
 
-p = argparse.ArgumentParser(
-    description = 'Strip binaries for CTF usage',
-    formatter_class = argparse.RawDescriptionHelpFormatter,
+p = common.parser_commands.add_parser(
+    'pwnstrip',
+    help = 'Strip binaries for CTF usage',
 )
 
 g = p.add_argument_group("actions")
@@ -15,9 +15,7 @@ g.add_argument('-p', '--patch', metavar='FUNCTION', help="Patch function", actio
 p.add_argument('-o', '--output', type=file, default=sys.stdout)
 p.add_argument('file', type=file)
 
-def main():
-    args = p.parse_args()
-
+def main(args):
     if not (args.patch or args.build_id):
         sys.stderr.write("Must specify at least one action\n")
         sys.stderr.write(p.format_usage())
@@ -48,6 +46,5 @@ def main():
 
     args.output.write(result)
 
-
 if __name__ == '__main__':
-    main()
+    pwnlib.common.main(__file__)

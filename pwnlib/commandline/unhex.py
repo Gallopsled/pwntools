@@ -3,14 +3,18 @@ import argparse
 import sys
 from string import whitespace
 
-parser = argparse.ArgumentParser(description='''
+from . import common
+
+parser = common.parser_commands.add_parser(
+    'unhex',
+    help = '''
 Decodes hex-encoded data provided on the command line or via stdin.
 ''')
+
 parser.add_argument('hex', nargs='*',
     help='Hex bytes to decode')
 
-def main():
-    args = parser.parse_args()
+def main(args):
     try:
         if not args.hex:
             s = sys.stdin.read().translate(None, whitespace)
@@ -20,4 +24,5 @@ def main():
     except TypeError, e:
         sys.stderr.write(str(e) + '\n')
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    pwnlib.common.main(__file__)

@@ -7,8 +7,9 @@ import re
 from pwn import *
 from . import common
 
-p = argparse.ArgumentParser(
-    description = "Looking up constants from header files.\n\nExample: constgrep -c freebsd -m  ^PROT_ '3 + 4'",
+p = common.parser_commands.add_parser(
+    'constgrep',
+    help = "Looking up constants from header files.\n\nExample: constgrep -c freebsd -m  ^PROT_ '3 + 4'",
     formatter_class = argparse.RawDescriptionHelpFormatter,
 )
 
@@ -55,9 +56,7 @@ p.add_argument(
     help = 'The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: %s' % common.choices,
 )
 
-def main():
-    args = p.parse_args()
-
+def main(args):
     if args.exact:
         # This is the simple case
         print cpp(args.exact).strip()
@@ -134,4 +133,5 @@ def main():
                 print
                 print '(%s) == %s' % (' | '.join(k for v, k in good), args.constant)
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    pwnlib.common.main(__file__)
