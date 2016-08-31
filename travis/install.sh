@@ -67,6 +67,24 @@ setup_linux()
 
 setup_android_emulator()
 {
+    # If we are running on Travis CI, and there were no changes to Android
+    # or ADB code, then we do not need the emulator
+    if [ -n "$TRAVIS" ]; then
+        if ! (git log --stat "$TRAVIS_COMMIT_RANGE" | grep -E "android|adb"); then
+            # In order to avoid running the doctests that require the Android
+            # emulator, while still leaving the code intact, we remove the
+            # RST file that Sphinx searches.
+            rm -f 'docs/source/adb.rst'
+
+            # However, the file needs to be present or else things break.
+            touch 'docs/source/adb.rst'
+
+            echo "Skipping Android emulator install, Android tests disabled."
+            return
+        fi
+    fi
+
+
     if ! which java; then
         echo "OpenJDK-8-JRE is required for Android stuff"
         exit 1
