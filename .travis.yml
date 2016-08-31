@@ -5,6 +5,7 @@ addons:
     packages:
     - gcc-multilib
     - gcc-4.6-arm-linux-gnueabihf
+    - lib32stdc++6
 cache:
     - pip
     - directories:
