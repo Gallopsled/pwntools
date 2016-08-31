@@ -385,6 +385,48 @@ def setprop(name, value):
     """Writes a property to the system property store."""
     return process(['setprop', name, value]).recvall().strip()
 
+def run_cmd(cmd, use_su=False):
+    """Run a shell command"""
+    commands = ['shell']
+    if use_su:
+        commands.extend(['su', '-c'])
+    commands.append(cmd)
+    return adb(commands)
+
+def install(apk, forward_lock=False, reinstall_and_keep_data=False, install_on_sd_card=False):
+    """Install an APK on the device
+
+    Arguments:
+        apk(str): Local path to APK to install.
+        forward_lock(bool): forward-lock the app. Default=False.
+        reinstall_and_keep_data(bool): reinstall the app, keeping its data. Default=False.
+        install_on_sd_card(bool): install on SD card instead of internal storage
+    """
+    args = ['install']
+    if forward_lock:
+        args.append('-l')
+    if reinstall_and_keep_data:
+        args.append('-r')
+    if install_on_sd_card:
+        args.append('-s')
+    args.append(apk)
+    return adb(args).splitlines()[-1].strip() == 'Success'
+
+def uninstall(package, keep_data=False):
+    """Remove app package from the device
+
+    Arguments:
+        keep_data(bool): keep the data and cache directories.
+
+    Returns:
+        ``True`` if the package was removed successfully
+    """
+    args = ['uninstall']
+    if keep_data:
+        args.append('-k')
+    args.append(package)
+    return adb(args).strip() == 'Success'
+
 def listdir(directory='/'):
     """Returns a list containing the entries in the provided directory.
 
