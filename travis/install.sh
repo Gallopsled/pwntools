@@ -161,6 +161,7 @@ setup_osx()
 
 if [[ "$USER" == "travis" ]]; then
     setup_travis
+    setup_android_emulator
 elif [[ "$USER" == "shippable" ]]; then
     sudo apt-get update
     sudo apt-get install openssh-server gcc-multilib
@@ -170,8 +171,8 @@ elif [[ "$(uname)" == "Darwin" ]]; then
     setup_osx
 elif [[ "$(uname)" == "Linux" ]]; then
     setup_linux
+    setup_android_emulator
 fi
 
-setup_android_emulator
 
 dpkg -l
