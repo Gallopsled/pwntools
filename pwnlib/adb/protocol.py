@@ -14,7 +14,7 @@ from ..tubes.process import process
 from ..tubes.remote import remote
 from ..util.lists import group
 from ..util.misc import size
-from ..util.misc import sh_string
+from ..util.sh_string import sh_string
 from ..util.packing import p32
 from ..util.proc import pidof
 
@@ -199,6 +199,8 @@ class Client(Logger):
         self.transport(context.device)
         if isinstance(argv, str):
             argv = [argv]
+        import pdb
+        pdb.set_trace()
         argv = list(map(sh_string, argv))
         cmd = 'exec:%s' % (' '.join(argv))
         if OKAY == self.send(cmd):

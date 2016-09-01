@@ -2,10 +2,12 @@
 """
 import functools
 import glob
+import logging
 import os
 import platform
 import re
 import shutil
+import stat
 import tempfile
 import time
 
@@ -318,7 +320,7 @@ def pull(remote_path, local_path=None):
 
     msg = "Pulling %r to %r" % (remote_path, local_path)
 
-    if context.log_level == 'debug':
+    if log.isEnabledFor(logging.DEBUG):
         msg += ' (%s)' % context.device
 
     with log.waitfor(msg) as w:
@@ -357,11 +359,16 @@ def push(local_path, remote_path):
     """
     msg = "Pushing %r to %r" % (local_path, remote_path)
 
-    if context.log_level == 'debug':
+    if log.isEnabledFor(logging.DEBUG):
         msg += ' (%s)' % context.device
 
     with log.waitfor(msg) as w:
         with Client() as c:
+
+            # We need to discover whether remote_path is a directory or not.
+            mode = c.stat(remote_path)['mode']
+            if stat.S_ISDIR(mode):
+                remote_path = os.path.join(remote_path, os.path.basename(local_path))
 
             def callback(filename, data, size, chunk, chunk_size):
                 have = len(data) + len(chunk)
@@ -439,11 +446,16 @@ def process(argv, *a, **kw):
         >>> print adb.process(['cat','/proc/version']).recvall() # doctest: +ELLIPSIS
         Linux version ...
     """
-    argv = argv or []
     if isinstance(argv, (str, unicode)):
         argv = [argv]
 
-    return Client().execute(argv)
+    message = "Starting %s process %r" % ('Android', argv[0])
+
+    if log.isEnabledFor(logging.DEBUG):
+        if argv != [argv[0]]: message += ' argv=%r ' % argv
+
+    with log.progress(message) as p:
+        return Client().execute(argv)
 
 @with_device
 def interactive(**kw):
@@ -455,7 +467,6 @@ def shell(**kw):
     """Returns an interactive shell."""
     return process(['sh', '-i'], **kw)
 
-@context.quiet
 @with_device
 def which(name):
     """Retrieves the full path to a binary in ``PATH`` on the device
@@ -463,7 +474,6 @@ def which(name):
     >>> adb.which('sh')
     '/system/bin/sh'
     """
-
     # Unfortunately, there is no native 'which' on many phones.
     which_cmd = '''
 IFS=:
@@ -478,7 +488,7 @@ done
 ''' % name
 
     which_cmd = which_cmd.strip()
-    return process([which_cmd]).recvall().strip()
+    return process(['sh','-c',which_cmd]).recvall().strip()
 
 @with_device
 def whoami():
