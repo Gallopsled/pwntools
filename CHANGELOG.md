@@ -7,10 +7,15 @@ minor changes are omitted.
 
 - [#695][695] Fixed a performance regression in `phd`.
 - [#700][700] Added missing MIPS shellcode documentation to readthedocs, and enabled unit tests
-- [#704][704] The `process` object has a new, optional argument `alarm` for setting a `SIGALRM` timeout for processes.
 - [#701][701] Command line tools refactored to have a common `pwn` entry point.
     + Added an option to *not* install the traditional `asm`, `disasm`, `checksec`, etc scripts
     + All existing tools can be accessed from the `pwn` command (e.g. `pwn asm nop`).
+- [#704][704] The `process` object has a new, optional argument `alarm` for setting a `SIGALRM` timeout for processes.
+
+[695]: https://github.com/Gallopsled/pwntools/pull/695
+[700]: https://github.com/Gallopsled/pwntools/pull/700
+[701]: https://github.com/Gallopsled/pwntools/pull/701
+[704]: https://github.com/Gallopsled/pwntools/pull/704
 
 ## 3.1.0 (October 1 2016)
 
