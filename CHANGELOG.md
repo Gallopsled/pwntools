@@ -13,11 +13,13 @@ minor changes are omitted.
     + Added an option to *not* install the traditional `asm`, `disasm`, `checksec`, etc scripts
     + All existing tools can be accessed from the `pwn` command (e.g. `pwn asm nop`).
 - [#704][704] The `process` object has a new, optional argument `alarm` for setting a `SIGALRM` timeout for processes.
+- [#711][711] `DynELF` has a new attribute, `heap`, which leaks the current `brk` address (heap base).  This is useful for finding heap allocations with dlmalloc-derived allocators like those used by Glibc.
 
 [695]: https://github.com/Gallopsled/pwntools/pull/695
 [700]: https://github.com/Gallopsled/pwntools/pull/700
 [701]: https://github.com/Gallopsled/pwntools/pull/701
 [704]: https://github.com/Gallopsled/pwntools/pull/704
+[711]: https://github.com/Gallopsled/pwntools/pull/711
 
 ## 3.1.0 (October 1, 2016)
 
