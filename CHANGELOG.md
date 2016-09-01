@@ -3,7 +3,9 @@
 This changelog only includes added major features and changes. Bugfixes and
 minor changes are omitted.
 
-## 3.2.0 (November 12 2016)
+## 3.2.0 Dev (November 12 2016)
+
+**Currently on the _dev_ branch**
 
 - [#695][695] Fixed a performance regression in `phd`.
 - [#700][700] Added missing MIPS shellcode documentation to readthedocs, and enabled unit tests
@@ -19,9 +21,13 @@ minor changes are omitted.
 
 ## 3.1.0 (October 1 2016)
 
+**Currently on the _beta_ branch**
+
 A number of smaller bugfixes and documentation tweaks.
 
 ## 3.0.1 (August 20 2016)
+
+**Current release**
 
 A small bugfix release. There were a lot of references to the `master`-branch, however after 3.0.0 we use the names `stable`, `beta` and `dev` for our branches.
 
