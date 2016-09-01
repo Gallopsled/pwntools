@@ -525,10 +525,21 @@ class ContextType(object):
     def quiet(self, function=None):
         """Disables all non-error logging within the enclosed scope,
         *unless* the debugging level is set to 'debug' or lower."""
-        level = 'error'
-        if context.log_level <= logging.DEBUG:
-            level = None
-        return self.local(function, log_level=level)
+        if not function:
+            level = 'error'
+            if context.log_level <= logging.DEBUG:
+                level = None
+            return self.local(function, log_level=level)
+
+        @functools.wraps(function)
+        def wrapper(*a, **kw):
+            level = 'error'
+            if context.log_level <= logging.DEBUG:
+                level = None
+            with self.local(function, log_level=level):
+                return function(*a, **kw)
+        return wrapper
+
 
     @property
     def verbose(self):
