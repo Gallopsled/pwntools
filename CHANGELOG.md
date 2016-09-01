@@ -5,11 +5,16 @@ minor changes are omitted.
 
 ## 3.2.0 (November 12 2016)
 
-Fixed a performance regression in `phd` (#695).
+- [#695][695] Fixed a performance regression in `phd`.
+- [#700][700] Added missing MIPS shellcode documentation to readthedocs, and enabled unit tests
+- [#704][704] The `process` object has a new, optional argument `alarm` for setting a `SIGALRM` timeout for processes.
+- [#701][701] Command line tools refactored to have a common `pwn` entry point.
+    + Added an option to *not* install the traditional `asm`, `disasm`, `checksec`, etc scripts
+    + All existing tools can be accessed from the `pwn` command (e.g. `pwn asm nop`).
 
 ## 3.1.0 (October 1 2016)
 
-A number of smaller bugfixes.
+A number of smaller bugfixes and documentation tweaks.
 
 ## 3.0.1 (August 20 2016)
 
