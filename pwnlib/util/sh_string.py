@@ -258,7 +258,7 @@ def test_all():
 
 
 def test(original):
-    """Tests the output provided by a shell interpreting a string
+    r"""Tests the output provided by a shell interpreting a string
 
     >>> test('foobar')
     >>> test('foo bar')
