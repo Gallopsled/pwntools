@@ -14,12 +14,17 @@ minor changes are omitted.
     + All existing tools can be accessed from the `pwn` command (e.g. `pwn asm nop`).
 - [#704][704] The `process` object has a new, optional argument `alarm` for setting a `SIGALRM` timeout for processes.
 - [#711][711] `DynELF` has a new attribute, `heap`, which leaks the current `brk` address (heap base).  This is useful for finding heap allocations with dlmalloc-derived allocators like those used by Glibc.
+- [#717][717] `sh_string` was rewritten to emit more compact and compatible strings
+    + This was achieved by embedding single-quoted non-printable literals
+    + Much more testing was added
+    + Emitted strings are no longer copy-paste compatible, but work fine with e.g. `tubes` module and the default `subprocess` module
 
 [695]: https://github.com/Gallopsled/pwntools/pull/695
 [700]: https://github.com/Gallopsled/pwntools/pull/700
 [701]: https://github.com/Gallopsled/pwntools/pull/701
 [704]: https://github.com/Gallopsled/pwntools/pull/704
 [711]: https://github.com/Gallopsled/pwntools/pull/711
+[717]: https://github.com/Gallopsled/pwntools/pull/717
 
 ## 3.1.0 (October 1, 2016)
 
