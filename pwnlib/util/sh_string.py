@@ -269,6 +269,7 @@ def test(original):
     >>> test("foo\\x01'bar")
     >>> test('\n')
     >>> test('\xff')
+    >>> test(os.urandom(16 * 1024).replace('\x00', ''))
     """
     input = sh_string(original)
 
