@@ -66,6 +66,60 @@ __all__ = ['asm', 'cpp', 'disasm', 'make_elf', 'make_elf_from_assembly']
 _basedir = path.split(__file__)[0]
 _incdir  = path.join(_basedir, 'data', 'includes')
 
+def dpkg_search_for_binutils(arch, util):
+    """Use dpkg to search for any available assemblers which will work.
+
+    Returns:
+        A list of candidate package names.
+    """
+
+    # Example output:
+    # $ dpkg -S 'arm*linux*-as'
+    # binutils-arm-linux-gnu: /usr/bin/arm-linux-gnu-as
+    # binutils-arm-linux-gnueabihf: /usr/bin/arm-linux-gnueabihf-as
+    # binutils-arm-linux-gnueabihf: /usr/x86_64-linux-gnu/arm-linux-gnueabihf/include/dis-asm.h
+    # binutils-arm-linux-gnu: /usr/x86_64-linux-gnu/arm-linux-gnu/include/dis-asm.h
+    packages = []
+
+    try:
+        filename = 'bin/%s*linux*-%s' % (arch, util)
+        output = subprocess.check_output(['dpkg','-S',filename])
+        for line in output.strip().splitlines():
+            package, path = line.split(':', 1)
+            packages.append(package)
+    except OSError:
+        pass
+    except subprocess.CalledProcessError:
+        pass
+
+    return packages
+
+def print_binutils_instructions(util, context):
+    """On failure to find a binutils utility, inform the user of a way
+    they can get it easily.
+    """
+    # This links to our instructions on how to manually install binutils
+    # for several architectures.
+    instructions = 'https://docs.pwntools.com/en/stable/install/binutils.html'
+
+    # However, if we can directly provide a useful command, go for it.
+    binutils_arch = {
+        'amd64': 'x86_64',
+        'arm':   'armeabi',
+        'thumb': 'armeabi',
+    }.get(context.arch, context.arch)
+
+    packages = dpkg_search_for_binutils(binutils_arch, util)
+
+    if packages:
+        instructions = '$ sudo apt-get install %s' % packages[0]
+
+    log.error("""
+Could not find %(util)r installed for %(context)s
+Try installing binutils for this architecture:
+%(instructions)s
+""".strip() % locals())
+
 @LocalContext
 def which_binutils(util):
     """
@@ -129,13 +183,8 @@ def which_binutils(util):
                 if res:
                     return res[0]
 
-    locals()['context'] = context
-    log.warning("""
-Could not find %(util)r installed for %(context)s
-Try installing binutils for this architecture:
-https://docs.pwntools.com/en/stable/install/binutils.html
-""".strip() % locals())
-    raise Exception('Could not find %(util)r installed for %(context)s' % locals())
+    # No dice!
+    print_binutils_instructions(util, context)
 
 checked_assembler_version = defaultdict(lambda: False)
 

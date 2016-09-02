@@ -11,7 +11,10 @@ Building `binutils` from source takes about 60 seconds on a modern 8-core machin
 
 Ubuntu
 ^^^^^^^^^^^^^^^^
-First, add our `Personal Package Archive repository <http://binutils.pwntools.com>`__.
+
+For Ubuntu 12.04 through 15.10, you must first add the pwntools `Personal Package Archive repository <http://binutils.pwntools.com>`__.
+
+Ubuntu Xenial (16.04) has official packages for most architectures, and does not require this step.
 
 .. code-block:: bash
 
