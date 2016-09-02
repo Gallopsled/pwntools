@@ -337,7 +337,7 @@ ESCAPED = {
 }
 
 def sh_string(s):
-    """Outputs a string in a format that will be understood by /bin/sh.
+    r"""Outputs a string in a format that will be understood by /bin/sh.
 
     If the string does not contain any bad characters, it will simply be
     returned, possibly with quotes. If it contains bad characters, it will
@@ -402,7 +402,7 @@ def sh_string(s):
     return quoted_string
 
 def sh_prepare(variables, export = False):
-    """Outputs a posix compliant shell command that will put the data specified
+    r"""Outputs a posix compliant shell command that will put the data specified
     by the dictionary into the environment.
 
     It is assumed that the keys in the dictionary are valid variable names that
@@ -451,7 +451,7 @@ def sh_prepare(variables, export = False):
     return ';'.join(out)
 
 def sh_command_with(f, *args):
-    """sh_command_with(f, arg0, ..., argN) -> command
+    r"""sh_command_with(f, arg0, ..., argN) -> command
 
     Returns a command create by evaluating `f(new_arg0, ..., new_argN)`
     whenever `f` is a function and `f % (new_arg0, ..., new_argN)` otherwise.
