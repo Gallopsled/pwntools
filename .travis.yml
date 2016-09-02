@@ -6,6 +6,12 @@ addons:
     - gcc-multilib
     - gcc-4.6-arm-linux-gnueabihf
     - lib32stdc++6
+    - ash
+    - bash
+    - dash
+    - ksh
+    - mksh
+    - zsh
 cache:
     - pip
     - directories:

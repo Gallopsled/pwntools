@@ -15,4 +15,5 @@ from . import net
 from . import packing
 from . import proc
 from . import safeeval
+from . import sh_string
 from . import web

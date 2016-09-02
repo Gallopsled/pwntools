@@ -56,6 +56,7 @@ from pwnlib.util.lists import *
 from pwnlib.util.misc import *
 from pwnlib.util.packing import *
 from pwnlib.util.proc import pidof
+from pwnlib.util.sh_string import sh_string, sh_prepare, sh_command_with
 from pwnlib.util.splash import *
 from pwnlib.util.web import *
 
