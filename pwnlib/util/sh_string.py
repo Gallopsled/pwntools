@@ -337,7 +337,7 @@ ESCAPED = {
 }
 
 def sh_string(s):
-    r"""Outputs a string in a format that will be understood by /bin/sh.
+    """Outputs a string in a format that will be understood by /bin/sh.
 
     If the string does not contain any bad characters, it will simply be
     returned, possibly with quotes. If it contains bad characters, it will
@@ -353,18 +353,18 @@ def sh_string(s):
 
     Examples:
 
-        >>> print sh_string('foobar')
-        foobar
-        >>> print sh_string('foo bar')
-        'foo bar'
-        >>> print sh_string("foo'bar")
-        'foo'\''bar'
-        >>> print sh_string("foo\\\\bar")
-        'foo\\bar'
-        >>> print sh_string("foo\\\\'bar")
-        'foo\\'\''bar'
-        >>> print sh_string("foo\\x01'bar")
-        'foo\x01'\''bar'
+        >>> sh_string('foobar')
+        'foobar'
+        >>> sh_string('foo bar')
+        "'foo bar'"
+        >>> sh_string("foo'bar")
+        "'foo'\\''bar'"
+        >>> sh_string("foo\\\\bar")
+        "'foo\\\\bar'"
+        >>> sh_string("foo\\\\'bar")
+        "'foo\\\\'\\''bar'"
+        >>> sh_string("foo\\x01'bar")
+        "'foo\\x01'\\''bar'"
     """
     if '\x00' in s:
         log.error("sh_string(): Cannot create a null-byte")
@@ -402,7 +402,7 @@ def sh_string(s):
     return quoted_string
 
 def sh_prepare(variables, export = False):
-    r"""Outputs a posix compliant shell command that will put the data specified
+    """Outputs a posix compliant shell command that will put the data specified
     by the dictionary into the environment.
 
     It is assumed that the keys in the dictionary are valid variable names that
@@ -417,30 +417,29 @@ def sh_prepare(variables, export = False):
 
     Examples:
 
-        >>> print sh_prepare({'X': 'foobar'})
-        X=foobar
+        >>> sh_prepare({'X': 'foobar'})
+        'X=foobar'
         >>> r = sh_prepare({'X': 'foobar', 'Y': 'cookies'})
         >>> r == 'X=foobar;Y=cookies' or r == 'Y=cookies;X=foobar'
         True
-        >>> print sh_prepare({'X': 'foo bar'})
-        X='foo bar'
-        >>> print sh_prepare({'X': "foo'bar"})
-        X='foo'\''bar'
-        >>> print sh_prepare({'X': "foo\\\\bar"})
-        X='foo\\bar'
-        >>> print sh_prepare({'X': "foo\\\\'bar"})
-        X='foo\\'\''bar'
-        >>> print sh_prepare({'X': "foo\\x01'bar"})
-        X='foo\x01'\''bar'
-        >>> print sh_prepare({'X': "foo\\x01'bar"}, export = True)
-        export X='foo\x01'\''bar'
-        >>> print sh_prepare({'X': "foo\\x01'bar\\n"})
-        X='foo\x01'\''bar
-        '
-        >>> print sh_prepare({'X': "foo\\x01'bar\\n"})
-        X='foo\x01'\''bar\n'
-        >>> print sh_prepare({'X': "foo\\x01'bar\\n"}, export = True)
-        export X='foo\x01'\''bar\n'
+        >>> sh_prepare({'X': 'foo bar'})
+        "X='foo bar'"
+        >>> sh_prepare({'X': "foo'bar"})
+        "X='foo'\\''bar'"
+        >>> sh_prepare({'X': "foo\\\\bar"})
+        "X='foo\\\\bar'"
+        >>> sh_prepare({'X': "foo\\\\'bar"})
+        "X='foo\\\\'\\''bar'"
+        >>> sh_prepare({'X': "foo\\x01'bar"})
+        "X='foo\\x01'\\''bar'"
+        >>> sh_prepare({'X': "foo\\x01'bar"}, export = True)
+        "export X='foo\\x01'\\''bar'"
+        >>> sh_prepare({'X': "foo\\x01'bar\\n"})
+        "X='foo\\x01'\\''bar\\n'"
+        >>> sh_prepare({'X': "foo\\x01'bar\\n"})
+        "X='foo\\x01'\\''bar\\n'"
+        >>> sh_prepare({'X': "foo\\x01'bar\\n"}, export = True)
+        "export X='foo\\x01'\\''bar\\n'"
     """
 
     out = []
@@ -467,16 +466,16 @@ def sh_command_with(f, *args):
 
     Examples:
 
-        >>> print sh_command_with(lambda: "echo hello")
-        echo hello
-        >>> print sh_command_with(lambda x: "echo " + x, "hello")
-        echo hello
-        >>> print sh_command_with(lambda x: "/bin/echo " + x, "\\x01")
-        echo '\x01'
-        >>> print sh_command_with(lambda x: "/bin/echo " + x, "\\x01\\n")
-        /bin/echo '\x01\n'
-        >>> print sh_command_with("/bin/echo %s", "\\x01\\n")
-        /bin/echo '\x01\n'
+        >>> sh_command_with(lambda: "echo hello")
+        'echo hello'
+        >>> sh_command_with(lambda x: "echo " + x, "hello")
+        'echo hello'
+        >>> sh_command_with(lambda x: "/bin/echo " + x, "\\x01")
+        "/bin/echo '\\x01'"
+        >>> sh_command_with(lambda x: "/bin/echo " + x, "\\x01\\n")
+        "/bin/echo '\\x01\\n'"
+        >>> sh_command_with("/bin/echo %s", "\\x01\\n")
+        "/bin/echo '\\x01\\n'"
     """
 
     args = list(args)
