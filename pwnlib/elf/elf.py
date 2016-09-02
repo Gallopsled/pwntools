@@ -24,6 +24,7 @@ from ..term import text
 from ..tubes.process import process
 from ..util import misc
 from ..util import packing
+from ..util import sh_string
 
 log = getLogger(__name__)
 
