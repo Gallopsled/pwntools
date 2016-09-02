@@ -24,6 +24,7 @@ from ..term import text
 from ..tubes.process import process
 from ..util import misc
 from ..util import packing
+from ..util import sh_string
 
 log = getLogger(__name__)
 
@@ -312,7 +313,7 @@ class ELF(ELFFile):
             return
 
         try:
-            cmd = misc.sh_command_with('ulimit -s unlimited; LD_TRACE_LOADED_OBJECTS=1 LD_WARN=1 LD_BIND_NOW=1 %s 2>/dev/null', self.path)
+            cmd = sh_string.sh_command_with('ulimit -s unlimited; LD_TRACE_LOADED_OBJECTS=1 LD_WARN=1 LD_BIND_NOW=1 %s 2>/dev/null', self.path)
 
             data = subprocess.check_output(cmd, shell = True, stderr = subprocess.STDOUT)
             libs = misc.parse_ldd_output(data)
