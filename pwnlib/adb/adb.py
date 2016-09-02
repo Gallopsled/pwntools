@@ -479,8 +479,8 @@ def which(name):
 IFS=:
 BINARY=%s
 P=($PATH)
-for path in "${P[@]}"; do
-    if [ -e "$path/$BINARY" ]; then
+for path in "${P[@]}"; do \
+    if [ -e "$path/$BINARY" ]; then \
         echo "$path/$BINARY";
         break
     fi

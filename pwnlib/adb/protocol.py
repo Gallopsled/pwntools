@@ -199,8 +199,6 @@ class Client(Logger):
         self.transport(context.device)
         if isinstance(argv, str):
             argv = [argv]
-        import pdb
-        pdb.set_trace()
         argv = list(map(sh_string, argv))
         cmd = 'exec:%s' % (' '.join(argv))
         if OKAY == self.send(cmd):
