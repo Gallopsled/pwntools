@@ -23,11 +23,12 @@ def context_arg(arg):
     except Exception: pass
     return arg
 
-parser = argparse.ArgumentParser(description='Pwntools Command-line Interface')
+parser = argparse.ArgumentParser(description='Pwntools Command-line Interface',
+                                 prog='pwn')
 parser_commands = parser.add_subparsers(dest='command')
 
 def main(file=sys.argv[0]):
     import pwnlib.commandline.main
-    sys.argv.insert(0, 'pwn')
-    sys.argv[1] = os.path.splitext(os.path.basename(file))[0]
+    name = os.path.splitext(os.path.basename(file))[0]
+    sys.argv.insert(1, name)
     pwnlib.commandline.main.main()

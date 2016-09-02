@@ -14,6 +14,7 @@ from . import pwnstrip
 from . import scramble
 from . import shellcraft
 from . import unhex
+from . import update
 
 commands = {
     'asm': asm.main,
@@ -30,6 +31,7 @@ commands = {
     'scramble': scramble.main,
     'shellcraft': shellcraft.main,
     'unhex': unhex.main,
+    'update': update.main,
 }
 
 def main():
