@@ -18,6 +18,9 @@ minor changes are omitted.
     + This was achieved by embedding single-quoted non-printable literals
     + Much more testing was added
     + Emitted strings are no longer copy-paste compatible, but work fine with e.g. `tubes` module and the default `subprocess` module
+- [#709][709] The `adb` module now directly talks to the `adb` server process via a new module, `adb.protocol`
+    + Removes the need to shell out to `adb`
+    + Avoids version-compatibility issues with `adb` server vs. client
 
 [695]: https://github.com/Gallopsled/pwntools/pull/695
 [700]: https://github.com/Gallopsled/pwntools/pull/700
@@ -25,6 +28,7 @@ minor changes are omitted.
 [704]: https://github.com/Gallopsled/pwntools/pull/704
 [711]: https://github.com/Gallopsled/pwntools/pull/711
 [717]: https://github.com/Gallopsled/pwntools/pull/717
+[709]: https://github.com/Gallopsled/pwntools/pull/709
 
 ## 3.1.0 (October 1, 2016)
 
