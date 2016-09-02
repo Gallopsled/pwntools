@@ -6,5 +6,5 @@
 :mod:`pwnlib.adb` --- Android Debug Bridge
 =====================================================
 
-.. automodule:: pwnlib.adb
+.. automodule:: pwnlib.adb.adb
    :members:

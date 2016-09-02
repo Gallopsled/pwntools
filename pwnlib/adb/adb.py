@@ -2,22 +2,26 @@
 """
 import functools
 import glob
+import logging
 import os
 import platform
 import re
 import shutil
+import stat
 import tempfile
 import time
 
 import dateutil.parser
 
-from . import atexit
-from . import tubes
-from .context import context
-from .context import LocalContext
-from .device import Device
-from .log import getLogger
-from .util import misc
+from .protocol import Client
+
+from .. import atexit
+from .. import tubes
+from ..context import context
+from ..context import LocalContext
+from ..device import Device
+from ..log import getLogger
+from ..util import misc
 
 log = getLogger(__name__)
 
@@ -37,7 +41,8 @@ def adb(argv, *a, **kw):
 @context.quiet
 def devices(serial=None):
     """Returns a list of ``Device`` objects corresponding to the connected devices."""
-    lines = adb(['devices', '-l'])
+    with Client() as c:
+        lines = c.devices(long=True)
     result = []
 
     for line in lines.splitlines():
@@ -91,7 +96,8 @@ def root():
     log.info("Enabling root on %s" % context.device)
 
     with context.quiet:
-        reply  = adb('root')
+        with Client() as c:
+            reply = c.root()
 
     if 'already running as root' in reply:
         return
@@ -119,8 +125,8 @@ def reboot(wait=True):
     """
     log.info('Rebooting device %s' % context.device)
 
-    with context.quiet:
-        adb('reboot')
+    with Client() as c:
+        c.reboot()
 
     if wait:
         wait_for_device()
@@ -132,8 +138,8 @@ def reboot_bootloader():
     """
     log.info('Rebooting %s to bootloader' % context.device)
 
-    with context.quiet:
-        adb('reboot-bootloader')
+    with Client() as c:
+        c.reboot_bootloader()
 
 class AdbDevice(Device):
     """Encapsulates information about a connected device."""
@@ -221,13 +227,13 @@ def wait_for_device(kick=False):
         >>> device = adb.wait_for_device()
     """
     with log.waitfor("Waiting for device to come online") as w:
-        with context.quiet:
+        with Client() as c:
             if kick:
                 try:
-                    adb(['reconnect'])
+                    c.reconnect()
                 except Exception:
                     pass
-            adb('wait-for-device')
+            c.wait_for_device()
 
         for device in devices():
             if context.device == device:
@@ -252,16 +258,15 @@ def disable_verity():
     with log.waitfor("Disabling dm-verity on %s" % context.device) as w:
         root()
 
-        with context.quiet:
-            reply = adb('disable-verity')
+        with Client() as c:
+            reply = c.disable_verity()
 
         if 'Verity already disabled' in reply:
             return
         elif 'Now reboot your device' in reply:
             reboot(wait=True)
-        elif 'error: closed' in reply:
-            # Device does not support dm-verity?
-            return
+        elif '0006closed' in reply:
+            return # Emulator doesnt support Verity?
         else:
             log.error("Could not disable verity:\n%s" % reply)
 
@@ -272,8 +277,8 @@ def remount():
         disable_verity()
         root()
 
-        with context.quiet:
-            reply = adb('remount')
+        with Client() as c:
+            reply = c.remount()
 
         if 'remount succeeded' not in reply:
             log.error("Could not remount filesystem:\n%s" % reply)
@@ -283,7 +288,11 @@ def unroot():
     """Restarts adbd as AID_SHELL."""
     log.info("Unrooting %s" % context.device)
     with context.quiet:
-        reply  = adb('unroot')
+        with Client() as c:
+            reply  = c.unroot()
+
+    if '0006closed' == reply:
+        return # Emulator doesnt care
 
     if 'restarting adbd as non root' not in reply:
         log.error("Could not unroot:\n%s" % reply)
@@ -297,6 +306,9 @@ def pull(remote_path, local_path=None):
         local_path(str): Path to save the file to.
             Uses the file's name by default.
 
+    Return:
+        The contents of the file.
+
     Example:
 
         >>> _=adb.pull('/proc/version', './proc-version')
@@ -306,22 +318,29 @@ def pull(remote_path, local_path=None):
     if local_path is None:
         local_path = os.path.basename(remote_path)
 
-    msg = "Pulling %r from %r" % (remote_path, local_path)
+    msg = "Pulling %r to %r" % (remote_path, local_path)
 
-    if context.log_level == 'debug':
+    if log.isEnabledFor(logging.DEBUG):
         msg += ' (%s)' % context.device
 
-    result = ''
     with log.waitfor(msg) as w:
-        with context.quiet:
-            args = context.adb + ['pull', remote_path, local_path]
-            io = tubes.process.process(args)
-            result = io.recvall()
 
-            if 0 != io.poll(block=True):
-                log.error(result)
+        def callback(filename, data, size, chunk, chunk_size):
+            have = len(data) + len(chunk)
+            if size == 0:
+                size = '???'
+                percent = '???'
+            else:
+                percent = int(100 * have // size)
+                size = misc.size(size)
+            have = misc.size(have)
+            w.status('%s/%s (%s%%)' % (have, size, percent))
+            return True
 
-    return result
+        data = read(remote_path, callback=callback)
+        misc.write(local_path, data)
+
+    return data
 
 @with_device
 def push(local_path, remote_path):
@@ -340,40 +359,59 @@ def push(local_path, remote_path):
     """
     msg = "Pushing %r to %r" % (local_path, remote_path)
 
-    if context.log_level == 'debug':
+    if log.isEnabledFor(logging.DEBUG):
         msg += ' (%s)' % context.device
 
     with log.waitfor(msg) as w:
-        with context.quiet:
-            args = context.adb + ['push', local_path, remote_path]
-            io = tubes.process.process(args)
-            result = io.recvall()
+        with Client() as c:
 
-            if 0 != io.poll(block=True):
-                log.error(result)
+            # We need to discover whether remote_path is a directory or not.
+            mode = c.stat(remote_path)['mode']
+            if stat.S_ISDIR(mode):
+                remote_path = os.path.join(remote_path, os.path.basename(local_path))
 
-    return result
+            def callback(filename, data, size, chunk, chunk_size):
+                have = len(data) + len(chunk)
+                if size == 0:
+                    size = '???'
+                    percent = '???'
+                else:
+                    percent = int(100 * have // size)
+                    size = misc.size(size)
+                have = misc.size(have)
+                w.status('%s/%s (%s%%)' % (have, size, percent))
+                return True
 
+            return c.write(remote_path,
+                           misc.read(local_path),
+                           callback=callback)
 @context.quiet
 @with_device
-def read(path, target=None):
+def read(path, target=None, callback=None):
     """Download a file from the device, and extract its contents.
 
     Arguments:
         path(str): Path to the file on the device.
         target(str): Optional, location to store the file.
             Uses a temporary file by default.
+        callback(callable): See the documentation for
+            ``adb.protocol.Client.read``.
 
     Examples:
 
         >>> print read('/proc/version') # doctest: +ELLIPSIS
         Linux version ...
     """
-    with tempfile.NamedTemporaryFile() as temp:
-        target = target or temp.name
-        pull(path, target)
-        result = misc.read(target)
-    return result
+    with Client() as c:
+        stat = c.stat(path)
+        if not stat:
+            log.error('Could not stat %r' % path)
+        data = c.read(path, stat['size'], callback=callback)
+
+    if target:
+        misc.write(target, data)
+
+    return data
 
 @context.quiet
 @with_device
@@ -408,21 +446,16 @@ def process(argv, *a, **kw):
         >>> print adb.process(['cat','/proc/version']).recvall() # doctest: +ELLIPSIS
         Linux version ...
     """
-    argv = argv or []
     if isinstance(argv, (str, unicode)):
         argv = [argv]
 
-    for i, arg in enumerate(argv):
-        if ' ' in arg and '"' not in arg:
-            argv[i] = '"%s"' % arg
+    message = "Starting %s process %r" % ('Android', argv[0])
 
-    display = argv
-    argv = context.adb + ['shell'] + argv
+    if log.isEnabledFor(logging.DEBUG):
+        if argv != [argv[0]]: message += ' argv=%r ' % argv
 
-    kw.setdefault('display', display)
-    kw.setdefault('where', 'Android')
-
-    return tubes.process.process(argv, *a, **kw)
+    with log.progress(message) as p:
+        return Client().execute(argv)
 
 @with_device
 def interactive(**kw):
@@ -432,9 +465,8 @@ def interactive(**kw):
 @with_device
 def shell(**kw):
     """Returns an interactive shell."""
-    return process([], **kw)
+    return process(['sh', '-i'], **kw)
 
-@context.quiet
 @with_device
 def which(name):
     """Retrieves the full path to a binary in ``PATH`` on the device
@@ -442,14 +474,13 @@ def which(name):
     >>> adb.which('sh')
     '/system/bin/sh'
     """
-
     # Unfortunately, there is no native 'which' on many phones.
     which_cmd = '''
 IFS=:
 BINARY=%s
 P=($PATH)
-for path in "${P[@]}"; do
-    if [ -e "$path/$BINARY" ]; then
+for path in "${P[@]}"; do \
+    if [ -e "$path/$BINARY" ]; then \
         echo "$path/$BINARY";
         break
     fi
@@ -457,7 +488,7 @@ done
 ''' % name
 
     which_cmd = which_cmd.strip()
-    return process([which_cmd]).recvall().strip()
+    return process(['sh','-c',which_cmd]).recvall().strip()
 
 @with_device
 def whoami():
@@ -489,7 +520,7 @@ def logcat(stream=False):
     if stream:
         return process(['logcat'])
     else:
-        return adb(['logcat', '-d'])
+        return process(['logcat', '-d']).recvall()
 
 @with_device
 def pidof(name):
@@ -552,17 +583,14 @@ def listdir(directory='/'):
     """Returns a list containing the entries in the provided directory.
 
     Note:
-        Because ``adb shell`` is used to retrieve the listing, shell
-        environment variable expansion and globbing are in effect.
+        This uses the SYNC LIST functionality, which runs in the adbd
+        SELinux context.  If adbd is running in the su domain ('adb root'),
+        this behaves as expected.
+
+        Otherwise, less files may be returned due to restrictive SELinux
+        policies on adbd.
     """
-    # io = process(['find', directory, '-maxdepth', '1', '-print0'])
-    io = process(['sh','-c',"""'cd %s; for file in ./* ./.*; do [ -e "$file" ] || continue; echo -n "$file"; echo -ne "\\x00"; done'""" % directory])
-    data = io.recvall()
-    paths = filter(len, data.split('\x00'))
-    relpaths = [os.path.relpath(path, '.') for path in paths]
-    if '.' in relpaths:
-        relpaths.remove('.')
-    return relpaths
+    return list(sorted(Client().list(directory)))
 
 def fastboot(args, *a, **kw):
     """Executes a fastboot command.
@@ -598,7 +626,7 @@ def unlock_bootloader():
     Note:
         This requires physical interaction with the device.
     """
-    adb(['reboot-bootloader'])
+    Client().reboot_bootloader()
     fastboot(['oem', 'unlock'])
     fastboot(['continue'])
 
