@@ -19,16 +19,22 @@ package_name    = 'pwntools'
 package_repo    = 'Gallopsled/pwntools'
 update_freq     = datetime.timedelta(days=7).total_seconds()
 
-def available_on_github():
+def available_on_github(prerelease=False):
     """Return True if an update is available on Github."""
     url = 'https://api.github.com/repos/%s/tags' % package_repo
 
     with context.quiet:
         tags = json.loads(wget(url))
 
-    return max(map(pkg_resources.parse_version, [t['name'] for t in tags]))
 
-def available_on_pypi():
+    versions = map(pkg_resources.parse_version, [t['name'] for t in tags])
+
+    if not prerelease:
+        versions = filter(lambda v: not v.is_prerelease, versions)
+
+    return max(versions)
+
+def available_on_pypi(prerelease=False):
     """Return True if an update is available on PyPI."""
     search_command = pip.commands.search.SearchCommand()
     options, _ = search_command.parse_args([package_name])
@@ -36,7 +42,13 @@ def available_on_pypi():
     for hit in pip.commands.search.transform_hits(pypi_hits):
         if hit['name'] != 'pwntools':
             continue
-        return max(map(pkg_resources.parse_version, hit['versions']))
+
+        versions = map(pkg_resources.parse_version, hit['versions'])
+
+        if not prerelease:
+            versions = filter(lambda v: not v.is_prerelease, versions)
+
+        return max(versions)
 
 def cache_file():
     """Returns the path of the file used to cache update data, and ensures that it exists."""
@@ -61,17 +73,17 @@ def should_check():
         return False
     return time.time() > (last_check() + update_freq)
 
-def perform_check():
+def perform_check(prerelease=False):
     """Perform the update check, and report to the user."""
     pypi = current_version
     try:
-        pypi = available_on_pypi()
+        pypi = available_on_pypi(prerelease)
     except:
         log.warning("An issue occurred while checking PyPI")
 
     github = current_version
     try:
-        github = available_on_github()
+        github = available_on_github(prerelease)
     except:
         log.warning("An issue occurred while checking Github")
 
@@ -95,6 +107,7 @@ def perform_check():
     log.info("A newer version of %s is available on %s (%s --> %s).\n" % (package_name, where, current_version, best) +
              "Update with: $ %s" % command)
 
+    return command
 
 def check_automatically():
     if should_check():
