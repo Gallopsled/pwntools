@@ -59,7 +59,7 @@ if not os.path.exists(PythonH):
 setup(
     name                 = 'pwntools',
     packages             = find_packages(),
-    version              = '3.1.0beta0',
+    version              = '3.1.0beta1',
     data_files           = [('',
                              ['LICENSE-pwntools.txt',
                              ]),
