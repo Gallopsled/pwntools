@@ -36,9 +36,15 @@ minor changes are omitted.
 
 A number of smaller bugfixes and documentation tweaks.
 
-## 3.0.1 (August 20, 2016)
+## 3.0.2 (September, 6 2016)
 
 **Current release**
+
+- Cherry-pick #695, as this was a regression-fix.
+- Added a fix for the update checker, as it would suggest prereleases as updates to stable releases.
+- Various documentation fixes.
+
+## 3.0.1 (August 20, 2016)
 
 A small bugfix release. There were a lot of references to the `master`-branch, however after 3.0.0 we use the names `stable`, `beta` and `dev` for our branches.
 
