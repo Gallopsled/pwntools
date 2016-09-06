@@ -3,6 +3,7 @@ import base64
 import random
 import re
 import string
+import StringIO
 
 from . import lists
 from . import packing
@@ -487,7 +488,7 @@ def rol(n, k, word_size = None):
 def ror(n, k, word_size = None):
     """A simple wrapper around :func:`rol`, which negates the values of `k`."""
 
-    return ror(n, -k, word_size)
+    return rol(n, -k, word_size)
 
 def naf(n):
     """naf(int) -> int generator
@@ -566,15 +567,16 @@ def update_cyclic_pregenerated(size):
     global cyclic_pregen
     cyclic_pregen = cyclic(size)
 
-def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
-                 style = None, highlight = None, cyclic=False):
+def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
+                 highlight=None, cyclic=False):
     """hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
-                    style = {}, highlight = []) -> str generator
+                    style = None, highlight = None, cyclic = False) -> str generator
 
-    Return a hexdump-dump of a string as a generator of lines.
+    Return a hexdump-dump of a string as a generator of lines.  Unless you have
+    massive amounts of data you probably want to use :meth:`hexdump`.
 
     Arguments:
-        s(str): The string to dump
+        fd(file): File object to dump.  Use :meth:`StringIO.StringIO` or :meth:`hexdump` to dump a string.
         width(int): The number of characters per line
         skip(bool): Set to True, if repeated lines should be replaced by a "*"
         hexii(bool): Set to True, if a hexii-dump should be returned instead of a hexdump.
@@ -584,7 +586,7 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
         cyclic(bool): Attempt to skip consecutive, unmodified cyclic lines
 
     Returns:
-        A hexdump-dump in the form of a string.
+        A generator producing the hexdump-dump one line at a time.
     """
     style     = style or {}
     highlight = highlight or []
@@ -628,16 +630,18 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
     if cyclic:
         update_cyclic_pregenerated(len(s))
 
-    chunks = lists.group(width, s)
-
-    for line, chunk in enumerate(chunks):
+    numb = 0
+    while True:
+        offset = begin + numb
+        chunk = fd.read(width)
+        if chunk == '':
+            break
+        numb += len(chunk)
         # If this chunk is the same as the last unique chunk,
         # use a '*' instead.
-        if line != 0 \
-        and line != len(chunks)-1 \
-        and skip \
-        and (last_unique == chunk \
-            or (cyclic and sequential_lines(last_unique, chunk))):
+        if skip and \
+           (last_unique == chunk or \
+            (cyclic and sequential_lines(last_unique, chunk))):
             last_unique = chunk
             if not skipping:
                 yield '*'
@@ -648,8 +652,7 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
         last_unique = chunk
         skipping = False
 
-        # Cenerate contents for line
-        offset    = begin+line*width
+        # Generate contents for line
         hexbytes = ''
         printable = ''
         for i, b in enumerate(chunk):
@@ -672,13 +675,38 @@ def hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
         line = line_fmt % {'offset': offset, 'hexbytes': hexbytes, 'printable': printable}
         yield line
 
-    line = "%08x" % (len(s) + begin)
+    line = "%08x" % (begin + numb)
     yield line
 
-def hexdump(s, width = 16, skip = True, hexii = False, begin = 0,
-            style = None, highlight = None, cyclic=False):
+def hexdump(s, width=16, skip=True, hexii=False, begin=0,
+            style=None, highlight=None, cyclic=False):
+    """hexdump(s, width = 16, skip = True, hexii = False, begin = 0,
+               style = None, highlight = None, cyclic = False) -> str generator
+
+    Return a hexdump-dump of a string.
+
+    Arguments:
+        s(str): The data to hexdump.
+        width(int): The number of characters per line
+        skip(bool): Set to True, if repeated lines should be replaced by a "*"
+        hexii(bool): Set to True, if a hexii-dump should be returned instead of a hexdump.
+        begin(int):  Offset of the first byte to print in the left column
+        style(dict): Color scheme to use.
+        highlight(iterable): Byte values to highlight.
+        cyclic(bool): Attempt to skip consecutive, unmodified cyclic lines
+
+    Returns:
+        A hexdump-dump in the form of a string.
+"""
     s = packing.flat(s)
-    return '\n'.join(hexdump_iter(s, width, skip, hexii, begin, style, highlight, cyclic))
+    return '\n'.join(hexdump_iter(StringIO.StringIO(s),
+                                  width,
+                                  skip,
+                                  hexii,
+                                  begin,
+                                  style,
+                                  highlight,
+                                  cyclic))
 
 def negate(value, width = None):
     """
