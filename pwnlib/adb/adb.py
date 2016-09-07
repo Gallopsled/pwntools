@@ -150,6 +150,7 @@ class AdbDevice(Device):
         self.product = product
         self.model   = model.replace('_', ' ')
         self.device  = device
+        self.os      = 'android'
 
         if product == 'unknown':
             return

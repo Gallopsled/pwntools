@@ -1097,6 +1097,7 @@ class ContextType(object):
             self.arch = device.arch or self.arch
             self.bits = device.bits or self.bits
             self.endian = device.endian or self.endian
+            self.os = device.os or self.os
         elif isinstance(device, str):
             device = Device(device)
         else:
