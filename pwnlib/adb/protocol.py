@@ -320,7 +320,7 @@ class Client(Logger):
 
         Examples:
 
-            >>> adb.Client().list('/data/user') # doctest: +ELLIPSIS
+            >>> pprint(adb.Client().list('/data/user'))
             {'0': {'mode': 41471, 'size': 11, 'time': ...}}
             >>> adb.Client().list('/does/not/exist')
             {}
