@@ -298,6 +298,20 @@ def unroot():
     if 'restarting adbd as non root' not in reply:
         log.error("Could not unroot:\n%s" % reply)
 
+def _create_adb_push_pull_callback(w):
+    def callback(filename, data, size, chunk, chunk_size):
+        have = len(data) + len(chunk)
+        if size == 0:
+            size = '???'
+            percent = '???'
+        else:
+            percent = int(100 * have // size)
+            size = misc.size(size)
+        have = misc.size(have)
+        w.status('%s/%s (%s%%)' % (have, size, percent))
+        return True
+    return callback
+
 @with_device
 def pull(remote_path, local_path=None):
     """Download a file from the device.
@@ -325,20 +339,7 @@ def pull(remote_path, local_path=None):
         msg += ' (%s)' % context.device
 
     with log.waitfor(msg) as w:
-
-        def callback(filename, data, size, chunk, chunk_size):
-            have = len(data) + len(chunk)
-            if size == 0:
-                size = '???'
-                percent = '???'
-            else:
-                percent = int(100 * have // size)
-                size = misc.size(size)
-            have = misc.size(have)
-            w.status('%s/%s (%s%%)' % (have, size, percent))
-            return True
-
-        data = read(remote_path, callback=callback)
+        data = read(remote_path, callback=_create_adb_push_pull_callback(w))
         misc.write(local_path, data)
 
     return data
@@ -357,6 +358,10 @@ def push(local_path, remote_path):
         >>> _=adb.push('./filename', '/data/local/tmp')
         >>> adb.read('/data/local/tmp/filename')
         'contents'
+        >>> adb.push('./filename', '/does/not/exist')
+        Traceback (most recent call last):
+        ...
+        PwnlibException: Could not stat '/does/not/exist'
     """
     msg = "Pushing %r to %r" % (local_path, remote_path)
 
@@ -367,25 +372,16 @@ def push(local_path, remote_path):
         with Client() as c:
 
             # We need to discover whether remote_path is a directory or not.
-            mode = c.stat(remote_path)['mode']
+            stat_ = c.stat(remote_path)
+            if not stat_:
+                log.error('Could not stat %r' % remote_path)
+            mode = stat_['mode']
             if stat.S_ISDIR(mode):
                 remote_path = os.path.join(remote_path, os.path.basename(local_path))
 
-            def callback(filename, data, size, chunk, chunk_size):
-                have = len(data) + len(chunk)
-                if size == 0:
-                    size = '???'
-                    percent = '???'
-                else:
-                    percent = int(100 * have // size)
-                    size = misc.size(size)
-                have = misc.size(have)
-                w.status('%s/%s (%s%%)' % (have, size, percent))
-                return True
-
             return c.write(remote_path,
                            misc.read(local_path),
-                           callback=callback)
+                           callback=_create_adb_push_pull_callback(w))
 @context.quiet
 @with_device
 def read(path, target=None, callback=None):
@@ -400,8 +396,12 @@ def read(path, target=None, callback=None):
 
     Examples:
 
-        >>> print read('/proc/version') # doctest: +ELLIPSIS
+        >>> print adb.read('/proc/version') # doctest: +ELLIPSIS
         Linux version ...
+        >>> adb.read('/does/not/exist')
+        Traceback (most recent call last):
+        ...
+        PwnlibException: Could not stat '/does/not/exist'
     """
     with Client() as c:
         stat = c.stat(path)
