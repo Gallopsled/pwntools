@@ -15,6 +15,8 @@ import tempfile
 import threading
 import time
 
+from pprint import pprint
+
 import pwnlib
 from pwnlib import *
 from pwnlib.asm import *
