@@ -191,7 +191,7 @@ class Client(Logger):
     @_autoclose
     @_with_transport
     def execute(self, argv):
-        """Executes a program on the device.
+        r"""Executes a program on the device.
 
         Returns:
             A ``tube`` which is connected to the process.
