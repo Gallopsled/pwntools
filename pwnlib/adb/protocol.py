@@ -142,7 +142,7 @@ class Client(Logger):
 
         Example:
 
-            >>> Client().version() # doctest: +SKIP
+            >>> adb.protocol.Client().version() # doctest: +SKIP
             (4, 36)
         """
         response = self.send('host:version')
@@ -182,7 +182,7 @@ class Client(Logger):
 
         Examples:
 
-            >>> Client().transport()
+            >>> adb.protocol.Client().transport()
         """
         msg = 'host:transport:%s' % (serial or context.device)
         if self.send(msg) == FAIL:
@@ -191,10 +191,15 @@ class Client(Logger):
     @_autoclose
     @_with_transport
     def execute(self, argv):
-        """Executes a program on the device.
+        r"""Executes a program on the device.
 
         Returns:
             A ``tube`` which is connected to the process.
+
+        Examples:
+
+            >>> adb.protocol.Client().execute(['echo','hello']).recvall()
+            'hello\n'
         """
         self.transport(context.device)
         if isinstance(argv, str):
@@ -312,6 +317,13 @@ class Client(Logger):
 
             This issue is not a problem if the phone is rooted via
             'adb root', since adbd then runs in the ``su`` domain.
+
+        Examples:
+
+            >>> pprint(adb.Client().list('/data/user'))
+            {'0': {'mode': 41471, 'size': 11, 'time': ...}}
+            >>> adb.Client().list('/does/not/exist')
+            {}
         """
         self.c.flat('LIST', len(path), path, word_size=32)
         files = {}
@@ -354,9 +366,9 @@ class Client(Logger):
         Example:
 
             >>> expected = {'mode': 16749, 'size': 0, 'time': 0}
-            >>> Client().stat('/proc')           == expected
+            >>> adb.protocol.Client().stat('/proc')           == expected
             True
-            >>> Client().stat('/does/not/exist') == None
+            >>> adb.protocol.Client().stat('/does/not/exist') == None
             True
         """
         self.c.flat('STAT', len(path), path, word_size=32)

@@ -8,3 +8,6 @@
 
 .. automodule:: pwnlib.adb.adb
    :members:
+
+.. automodule:: pwnlib.adb.protocol
+   :members:
