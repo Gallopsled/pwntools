@@ -21,10 +21,10 @@ def wget(url, save=None, timeout=5, **kwargs):
     Example:
 
       >>> url    = 'https://httpbin.org/robots.txt'
-      >>> result = wget(url)
+      >>> result = wget(url, timeout=60)
       >>> result
       'User-agent: *\\nDisallow: /deny\\n'
-      >>> result2 = wget(url, True)
+      >>> result2 = wget(url, True, timeout=60)
       >>> result == file('robots.txt').read()
       True
     """
