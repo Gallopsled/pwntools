@@ -91,7 +91,7 @@ def perform_check(prerelease=current_version.is_prerelease):
         A list of arguments to the update command.
 
     >>> from pkg_resources import parse_version
-    >>> current_version = parse_version("0.0.0")
+    >>> pwntools.update.current_version = parse_version("0.0.0")
     >>> perform_check() # doctest: +ELLIPSIS
     ['pip', 'install', '-U', ...]
 
