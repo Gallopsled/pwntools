@@ -8,15 +8,16 @@ import functools
 import time
 
 from ..context import context
-from ..log import getLogger, Logger
+from ..log import Logger
+from ..log import getLogger
 from ..tubes.listen import listen
 from ..tubes.process import process
 from ..tubes.remote import remote
 from ..util.lists import group
 from ..util.misc import size
-from ..util.sh_string import sh_string
 from ..util.packing import p32
 from ..util.proc import pidof
+from ..util.sh_string import sh_string
 
 log = getLogger(__name__)
 

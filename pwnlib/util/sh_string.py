@@ -226,10 +226,10 @@ import string
 import subprocess
 
 from . import fiddling
-from .misc import which
 from ..context import context
 from ..log import getLogger
 from ..tubes.process import process
+from .misc import which
 
 log = getLogger(__name__)
 

@@ -13,15 +13,14 @@ import time
 
 import dateutil.parser
 
-from .protocol import Client
-
 from .. import atexit
 from .. import tubes
-from ..context import context
 from ..context import LocalContext
+from ..context import context
 from ..device import Device
 from ..log import getLogger
 from ..util import misc
+from .protocol import Client
 
 log = getLogger(__name__)
 

@@ -1,8 +1,8 @@
 import string
 
+from . import packing
 from ..context import context
 from ..log import getLogger
-from . import packing
 
 log = getLogger(__name__)
 

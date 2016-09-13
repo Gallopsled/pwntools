@@ -1,4 +1,3 @@
-from .common import parser
 from . import asm
 from . import checksec
 from . import common
@@ -15,6 +14,7 @@ from . import scramble
 from . import shellcraft
 from . import unhex
 from . import update
+from .common import parser
 
 commands = {
     'asm': asm.main,

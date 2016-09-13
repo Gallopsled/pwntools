@@ -7,8 +7,8 @@ import socket
 import stat
 import string
 
-from . import lists
 from . import fiddling
+from . import lists
 from ..context import context
 from ..log import getLogger
 

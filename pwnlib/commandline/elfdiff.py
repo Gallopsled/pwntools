@@ -1,6 +1,5 @@
 #!/usr/bin/env python2
 import shutil
-
 from argparse import ArgumentParser
 from subprocess import CalledProcessError
 from subprocess import check_output
@@ -9,6 +8,7 @@ from tempfile import NamedTemporaryFile
 from pwn import *
 
 from . import common
+
 
 def dump(objdump, path):
     n = NamedTemporaryFile(delete=False)

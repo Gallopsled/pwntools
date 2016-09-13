@@ -1,16 +1,17 @@
 import datetime
 import json
-import pip
-import pkg_resources
 import os
 import time
 
+import pip
+import pkg_resources
+
 from .context import context
 from .log import getLogger
-from .version import __version__
 from .util.misc import read
 from .util.misc import write
 from .util.web import wget
+from .version import __version__
 
 log = getLogger(__name__)
 
