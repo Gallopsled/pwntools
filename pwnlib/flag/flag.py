@@ -44,9 +44,9 @@ def submit_flag(flag,
     Doctest:
 
         >>> l = listen()
-        >>> submit_flag('flag', server='localhost', port=l.lport)
-        >>> l.wait_for_connection()
-        >>> l.recvall().split()
+        >>> _ = submit_flag('flag', server='localhost', port=l.lport)
+        >>> c = l.wait_for_connection()
+        >>> c.recvall().split()
         ['flag', 'unnamed-exploit', 'unknown-target', 'unknown-team']
     """
     flag = flag.strip()
