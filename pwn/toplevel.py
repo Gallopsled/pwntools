@@ -29,6 +29,7 @@ from pwnlib.elf import ELF
 from pwnlib.elf import load
 from pwnlib.encoders import *
 from pwnlib.exception import PwnlibException
+from pwnlib.flag import *
 from pwnlib.fmtstr import FmtStr, fmtstr_payload
 from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak
