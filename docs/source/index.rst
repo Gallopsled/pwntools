@@ -67,6 +67,7 @@ Each of the ``pwntools`` modules is documented here.
    tubes
    tubes/*
    ui
+   update
    useragents
    util/*
 
