@@ -1,11 +1,5 @@
-import datetime
-import json
 import os
 import time
-import xmlrpclib
-
-import pip
-import pkg_resources
 
 from .context import context
 from .log import getLogger
@@ -16,12 +10,19 @@ from .version import __version__
 
 log = getLogger(__name__)
 
-current_version = pkg_resources.parse_version(__version__)
+def current_version():
+    import pkg_resources
+    global current_version
+    ver = pkg_resources.parse_version(__version__)
+    current_version = lambda: ver
+    return ver
 package_name    = 'pwntools'
 package_repo    = 'Gallopsled/pwntools'
-update_freq     = datetime.timedelta(days=7).total_seconds()
+def update_freq():
+    import datetime
+    return datetime.timedelta(days=7).total_seconds()
 
-def available_on_github(prerelease=current_version.is_prerelease):
+def available_on_github(prerelease=None):
     """Return True if an update is available on Github.
 
     >>> available_on_github() # doctest: +ELLIPSIS
@@ -29,6 +30,9 @@ def available_on_github(prerelease=current_version.is_prerelease):
     >>> available_on_github(prerelease=False).is_prerelease
     False
     """
+    import json, pkg_resources
+    if prerelease == None:
+        prerelease = current_version().is_prerelease
     url = 'https://api.github.com/repos/%s/tags' % package_repo
 
     with context.quiet:
@@ -41,7 +45,7 @@ def available_on_github(prerelease=current_version.is_prerelease):
 
     return max(versions)
 
-def available_on_pypi(prerelease=current_version.is_prerelease):
+def available_on_pypi(prerelease=None):
     """Return True if an update is available on PyPI.
 
     >>> available_on_pypi() # doctest: +ELLIPSIS
@@ -49,6 +53,9 @@ def available_on_pypi(prerelease=current_version.is_prerelease):
     >>> available_on_pypi(prerelease=False).is_prerelease
     False
     """
+    import xmlrpclib, pkg_resources
+    if prerelease == None:
+        prerelease = current_version().is_prerelease
     client = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
     versions = client.package_releases('pwntools', True)
     versions = map(pkg_resources.parse_version, versions)
@@ -79,9 +86,9 @@ def should_check():
     """Return True if we should check for an update"""
     if read(cache_file()).strip() == 'never':
         return False
-    return time.time() > (last_check() + update_freq)
+    return time.time() > (last_check() + update_freq())
 
-def perform_check(prerelease=current_version.is_prerelease):
+def perform_check(prerelease=None):
     """Perform the update check, and report to the user.
 
     Arguments:
@@ -91,7 +98,7 @@ def perform_check(prerelease=current_version.is_prerelease):
         A list of arguments to the update command.
 
     >>> from pkg_resources import parse_version
-    >>> pwnlib.update.current_version = parse_version("0.0.0")
+    >>> pwnlib.update.current_version = lambda: parse_version("0.0.0")
     >>> perform_check() # doctest: +ELLIPSIS
     ['pip', 'install', '-U', ...]
 
@@ -112,25 +119,27 @@ def perform_check(prerelease=current_version.is_prerelease):
     >>> perform_check(prerelease=True)  # doctest: +ELLIPSIS
     ['pip', 'install', '-U', 'git+https://github.com/Gallopsled/pwntools.git@...']
     """
-    pypi = current_version
+    if prerelease == None:
+        prerelease = current_version().is_prerelease
+    pypi = current_version()
     try:
         pypi = available_on_pypi(prerelease)
     except Exception:
         log.warning("An issue occurred while checking PyPI")
 
-    github = current_version
+    github = current_version()
     try:
         github = available_on_github(prerelease)
     except Exception:
         log.warning("An issue occurred while checking Github")
 
-    best = max(pypi, github, current_version)
+    best = max(pypi, github, current_version())
     where = None
     command = None
 
     os.utime(cache_file(), None)
 
-    if best == current_version:
+    if best == current_version():
         log.info("You have the latest version of Pwntools (%s)" % best)
         return
 
@@ -152,7 +161,7 @@ def perform_check(prerelease=current_version.is_prerelease):
 
     command_str = ' '.join(command)
 
-    log.info("A newer version of %s is available on %s (%s --> %s).\n" % (package_name, where, current_version, best) +
+    log.info("A newer version of %s is available on %s (%s --> %s).\n" % (package_name, where, current_version(), best) +
              "Update with: $ %s" % command_str)
 
     return command
