@@ -108,9 +108,9 @@ def perform_check(prerelease=current_version.is_prerelease):
 
     >>> pwnlib.update.available_on_pypi = bail
     >>> perform_check(prerelease=False)
-    ['pip', 'install', '-U', 'https://github.com/Gallopsled/pwntools.git@...']
+    ['pip', 'install', '-U', 'git+https://github.com/Gallopsled/pwntools.git@...']
     >>> perform_check(prerelease=True)  # doctest: +ELLIPSIS
-    ['pip', 'install', '-U', 'https://github.com/Gallopsled/pwntools.git@...']
+    ['pip', 'install', '-U', 'git+https://github.com/Gallopsled/pwntools.git@...']
     """
     pypi = current_version
     try:
