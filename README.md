@@ -22,7 +22,7 @@ r.interactive()
 
 # Try It Now!
 
-You can now do a live demo of Pwntools, [right in your browser](http://demo.pwntools.com).
+You can now do a live demo of Pwntools, [right in your browser](https://demo.pwntools.com).
 
 # Documentation
 
