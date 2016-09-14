@@ -176,8 +176,8 @@ loaded with useful time-saving shellcodes.
 Let's say that we want to `setreuid(getuid(), getuid())` followed by `dup`ing
 file descriptor 4 to `stdin`, `stdout`, and `stderr`, and then pop a shell!
 
-    >>> asm(shellcraft.setreuid() + shellcraft.dupsh(4)).encode('hex')
-    '6a3158cd8089c36a465889d9cd806a045b6a0359496a3f58cd8075f86a68682f2f2f73682f62696e6a0b5889e331c999cd80'
+    >>> asm(shellcraft.setreuid() + shellcraft.dupsh(4)).encode('hex') # doctest: +ELLIPSIS
+    '6a3158cd80...'
 
 
 Misc Tools
