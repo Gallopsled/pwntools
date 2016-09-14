@@ -45,9 +45,6 @@ apt-get install python2.7 python-pip python-dev git libssl-dev
 pip install --upgrade pwntools
 ```
 
-If you'd like to be an early tester of the the current beta release, add
-`--pre` to the command-line.
-
 However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://docs.pwntools.com/en/stable/install.html).
 
 
