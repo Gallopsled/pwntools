@@ -12,6 +12,7 @@ addons:
     - ksh
     - mksh
     - zsh
+    - pandoc
 cache:
     - pip
     - directories:
