@@ -112,6 +112,9 @@ def perform_check(prerelease=current_version.is_prerelease):
         A list of arguments to the update command.
 
     >>> from packaging.version import Version
+    >>> pwnlib.update.current_version = Version("999.0.0")
+    >>> print perform_check()
+    None
     >>> pwnlib.update.current_version = Version("0.0.0")
     >>> perform_check() # doctest: +ELLIPSIS
     ['pip', 'install', '-U', ...]
