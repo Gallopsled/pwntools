@@ -28,14 +28,14 @@ setup_travis()
     export PATH=$PWD/usr/bin:$PATH
     export LD_LIBRARY_PATH=$PWD/usr/lib
 
-    if [ ! -d usr/bin ];
-    then
-        # Install our custom binutils
-        which arm-linux-as     || get_binutils arm
-        which mips-linux-as    || get_binutils mips
-        which powerpc-linux-as || get_binutils powerpc
-        which aarch64-linux-as || get_binutils aarch64
+    # Install our custom binutils
+    which arm-linux-as     || get_binutils arm
+    which mips-linux-as    || get_binutils mips
+    which powerpc-linux-as || get_binutils powerpc
+    which aarch64-linux-as || get_binutils aarch64
 
+    if [ ! -d usr/lib ];
+    then
         # Install the multiarch binutils
         local_deb_extract http://mirrors.mit.edu/ubuntu/ubuntu/pool/universe/b/binutils/binutils-multiarch_2.22-6ubuntu1_amd64.deb
     fi
