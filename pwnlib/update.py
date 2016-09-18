@@ -45,7 +45,7 @@ def available_on_github(prerelease=current_version.is_prerelease):
     url = 'https://api.github.com/repos/%s/tags' % package_repo
 
     with context.quiet:
-        tags = json.loads(wget(url))
+        tags = json.loads(wget(url, timeout = 60))
 
     # 'pwntools-ancient' is a tag, but not a valid version.
     # Handle this here, and for all potential tags which cause

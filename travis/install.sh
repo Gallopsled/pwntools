@@ -32,7 +32,7 @@ setup_travis()
     if [ ! -f usr/lib/libbfd-2.22-multiarch.so ];
     then
         # Install the multiarch binutils
-        local_deb_extract http://mirrors.mit.edu/ubuntu/ubuntu/pool/universe/b/binutils/binutils-multiarch_2.22-6ubuntu1_amd64.deb
+        local_deb_extract http://mirrors.mit.edu/ubuntu/pool/universe/b/binutils/binutils-multiarch_2.22-6ubuntu1_amd64.deb
         pushd usr/lib
         ln -sf libbfd-2.22-multiarch.so libbfd-2.22.so
         ln -sf libopcodes-2.22-multiarch.so libopcodes-2.22.so
