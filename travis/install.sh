@@ -32,7 +32,6 @@ setup_travis()
     which arm-linux-as     || get_binutils arm
     which mips-linux-as    || get_binutils mips
     which powerpc-linux-as || get_binutils powerpc
-    which aarch64-linux-as || get_binutils aarch64
 
     if [ ! -d usr/lib ];
     then
@@ -55,7 +54,6 @@ setup_travis()
     which arm-linux-gnu-as
     which mips-linux-gnu-as
     which powerpc-linux-gnu-as
-    which aarch64-linux-gnu-as
     which qemu-arm-static
 }
 
