@@ -6,7 +6,6 @@ from elftools.common.py3compat import bytes2str
 from elftools.common.utils import roundup
 from elftools.common.utils import struct_parse
 from elftools.construct import CString
-
 from ..context import context
 from ..log import getLogger
 from ..tubes.tube import tube
@@ -30,11 +29,11 @@ def iter_notes(self):
     end = self['p_offset'] + self['p_filesz']
     while offset < end:
         note = struct_parse(
-            self._elfstructs.Elf_Nhdr,
+            self.elffile.structs.Elf_Nhdr,
             self.stream,
             stream_pos=offset)
         note['n_offset'] = offset
-        offset += self._elfstructs.Elf_Nhdr.sizeof()
+        offset += self.elffile.structs.Elf_Nhdr.sizeof()
         self.stream.seek(offset)
         # n_namesz is 4-byte aligned.
         disk_namesz = roundup(note['n_namesz'], 2)

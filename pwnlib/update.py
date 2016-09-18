@@ -1,11 +1,24 @@
+"""
+# Pwntools Update
+
+In order to ensure that Pwntools users always have the latest and
+greatest version, Pwntools automatically checks for updates.
+
+Since this update check takes a moment, it is only performed once
+every week.  It can be permanently disabled via:
+
+.. code-block:: bash
+
+    $ echo never > ~/.pwntools-cache/update
+
+"""
 import datetime
 import json
 import os
 import time
 import xmlrpclib
 
-import pip
-import pkg_resources
+import packaging.version
 
 from .context import context
 from .log import getLogger
@@ -16,7 +29,7 @@ from .version import __version__
 
 log = getLogger(__name__)
 
-current_version = pkg_resources.parse_version(__version__)
+current_version = packaging.version.Version(__version__)
 package_name    = 'pwntools'
 package_repo    = 'Gallopsled/pwntools'
 update_freq     = datetime.timedelta(days=7).total_seconds()
@@ -34,7 +47,15 @@ def available_on_github(prerelease=current_version.is_prerelease):
     with context.quiet:
         tags = json.loads(wget(url))
 
-    versions = map(pkg_resources.parse_version, [t['name'] for t in tags])
+    # 'pwntools-ancient' is a tag, but not a valid version.
+    # Handle this here, and for all potential tags which cause
+    # issues.
+    versions = []
+    for tag in [t['name'] for t in tags]:
+        try:
+            versions.append(packaging.version.Version(tag))
+        except Exception:
+            pass
 
     if not prerelease:
         versions = filter(lambda v: not v.is_prerelease, versions)
@@ -51,7 +72,7 @@ def available_on_pypi(prerelease=current_version.is_prerelease):
     """
     client = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
     versions = client.package_releases('pwntools', True)
-    versions = map(pkg_resources.parse_version, versions)
+    versions = map(packaging.version.Version, versions)
 
     if not prerelease:
         versions = filter(lambda v: not v.is_prerelease, versions)
@@ -90,8 +111,11 @@ def perform_check(prerelease=current_version.is_prerelease):
     Returns:
         A list of arguments to the update command.
 
-    >>> from pkg_resources import parse_version
-    >>> pwnlib.update.current_version = parse_version("0.0.0")
+    >>> from packaging.version import Version
+    >>> pwnlib.update.current_version = Version("999.0.0")
+    >>> print perform_check()
+    None
+    >>> pwnlib.update.current_version = Version("0.0.0")
     >>> perform_check() # doctest: +ELLIPSIS
     ['pip', 'install', '-U', ...]
 
