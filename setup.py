@@ -75,7 +75,7 @@ except ImportError:
 setup(
     name                 = 'pwntools',
     packages             = find_packages(),
-    version              = '3.0.2',
+    version              = '3.0.3',
     data_files           = [('',
                              ['LICENSE-pwntools.txt',
                              ]),
