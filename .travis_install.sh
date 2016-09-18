@@ -18,7 +18,8 @@ get_binutils()
 get_qemu()
 {
     echo "Installing qemu"
-    QEMU_URL='https://mirrors.kernel.org/ubuntu/pool/universe/q/qemu/qemu-user-static_2.6%2bdfsg-3ubuntu1_amd64.deb'
+    QEMU_INDEX='http://packages.ubuntu.com/en/yakkety/amd64/qemu-user-static/download'
+    QEMU_URL=$(curl "$QEMU_INDEX" | grep kernel.org | grep -Eo 'http.*\.deb')
     local_deb_extract "$QEMU_URL"
 }
 
