@@ -22,6 +22,7 @@ for scheme in INSTALL_SCHEMES.values():
 
 # Find all of the console scripts
 console_scripts = []
+
 for filename in glob.glob('pwnlib/commandline/*'):
     filename = os.path.basename(filename)
     filename, ext = os.path.splitext(filename)
@@ -34,7 +35,7 @@ for filename in glob.glob('pwnlib/commandline/*'):
 
 install_requires     = ['paramiko>=1.15.2',
                         'mako>=1.0.0',
-                        'pyelftools>=0.2.3',
+                        'pyelftools>=0.2.4',
                         'capstone',
                         'ropgadget>=5.3',
                         'pyserial>=2.7',
@@ -43,7 +44,9 @@ install_requires     = ['paramiko>=1.15.2',
                         'tox>=1.8.1',
                         'pygments>=2.0',
                         'pysocks',
-                        'python-dateutil']
+                        'python-dateutil',
+                        'pypandoc',
+                        'packaging']
 
 # This is a hack until somebody ports psutil to OpenBSD
 if platform.system() != 'OpenBSD':
@@ -56,10 +59,23 @@ if not os.path.exists(PythonH):
     print >> sys.stderr, "$ apt-get install python-dev"
     sys.exit(-1)
 
+# Convert README.md to reStructuredText for PyPI
+long_description = ''
+try:
+    import pypandoc
+    try:
+        pypandoc.get_pandoc_path()
+    except OSError:
+        pypandoc.download_pandoc()
+    long_description = pypandoc.convert_file('README.md', 'rst')
+except ImportError:
+    pass
+
+
 setup(
     name                 = 'pwntools',
     packages             = find_packages(),
-    version              = '3.1.0beta1',
+    version              = '3.1.0beta2',
     data_files           = [('',
                              ['LICENSE-pwntools.txt',
                              ]),
@@ -75,19 +91,32 @@ setup(
     },
     entry_points = {'console_scripts': console_scripts},
     scripts              = glob.glob("bin/*"),
-    description          = "CTF framework and exploit development library.",
+    description          = "Pwntools CTF framework and exploit development library.",
+    long_description     = long_description,
     author               = "Gallopsled et al.",
     author_email         = "#pwntools @ freenode.net",
     url                  = 'https://pwntools.com',
     download_url         = "https://github.com/Gallopsled/pwntools/releases",
     install_requires     = install_requires,
     license              = "Mostly MIT, some GPL/BSD, see LICENSE-pwntools.txt",
+    keywords             = 'pwntools exploit ctf capture the flag binary wargame overflow stack heap defcon',
     classifiers          = [
-        'Topic :: Security',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
-        'Operating System :: OS Independent',
+        'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
+        'Intended Audience :: System Administrators',
         'License :: OSI Approved :: MIT License',
+        'Natural Language :: English',
+        'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 2.7',
-        'Intended Audience :: Developers'
+        'Topic :: Security',
+        'Topic :: Software Development :: Assemblers',
+        'Topic :: Software Development :: Debuggers',
+        'Topic :: Software Development :: Disassemblers',
+        'Topic :: Software Development :: Embedded Systems',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Topic :: System :: System Shells',
+        'Topic :: Utilities',
     ]
 )

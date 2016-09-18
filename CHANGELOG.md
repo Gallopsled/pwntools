@@ -7,6 +7,13 @@ minor changes are omitted.
 
 A number of smaller bugfixes.
 
+## 3.0.3 (September 18 2016)
+
+- Fixed some performance and usability problems with the update system (Issues:
+  #723, #724, #736. PRs: #729, #738, #747).
+- Fixed a bug related to internals in pyelftools (PRs: #730, #746).
+- Fixed an issue with travis (Issue: #741, PRs: #743, #744, #745).
+
 ## 3.0.2 (September 6 2016)
 
 - Cherry-pick #695, as this was a regression-fix.

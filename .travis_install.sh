@@ -1,4 +1,5 @@
 #!/usr/bin/env bash -e
+set -e
 local_deb_extract()
 {
     wget $1
@@ -17,7 +18,8 @@ get_binutils()
 get_qemu()
 {
     echo "Installing qemu"
-    QEMU_URL='https://mirrors.kernel.org/ubuntu/pool/universe/q/qemu/qemu-user-static_2.6%2bdfsg-3ubuntu1_amd64.deb'
+    QEMU_INDEX='http://packages.ubuntu.com/en/yakkety/amd64/qemu-user-static/download'
+    QEMU_URL=$(curl "$QEMU_INDEX" | grep kernel.org | grep -Eo 'http.*\.deb')
     local_deb_extract "$QEMU_URL"
 }
 
@@ -26,35 +28,35 @@ setup_travis()
     export PATH=$PWD/usr/bin:$PATH
     export LD_LIBRARY_PATH=$PWD/usr/lib
 
-    if [ ! -d usr/bin ];
+    # Install libbfd-multiarch and libopcodes-multiarch if not found in the cache
+    if [ ! -f usr/lib/libbfd-2.22-multiarch.so ];
     then
-        # Install our custom binutils
-        which arm-linux-as     || get_binutils arm
-        which mips-linux-as    || get_binutils mips
-        which powerpc-linux-as || get_binutils powerpc
-        which aarch64-linux-as || get_binutils aarch64
-
         # Install the multiarch binutils
         local_deb_extract http://mirrors.mit.edu/ubuntu/ubuntu/pool/universe/b/binutils/binutils-multiarch_2.22-6ubuntu1_amd64.deb
+        pushd usr/lib
+        ln -sf libbfd-2.22-multiarch.so libbfd-2.22.so
+        ln -sf libopcodes-2.22-multiarch.so libopcodes-2.22.so
+        popd
     fi
 
-    if ! (which qemu-arm-static && qemu-arm-static -version | grep 2.6.0); then
+    # Install/upgrade qemu
+    if ! (which qemu-arm-static && qemu-arm-static -version | grep 2.6.1); then
         get_qemu
     fi
 
-    # Get rid of files we don't want cached
-    rm -rf usr/share
+    # Install our custom binutils
+    which arm-linux-gnu-as     || get_binutils arm
+    which mips-linux-gnu-as    || get_binutils mips
+    which powerpc-linux-gnu-as || get_binutils powerpc
 
-    pushd usr/lib
-    ln -sf libbfd-2.22-multiarch.so libbfd-2.22.so
-    ln -sf libopcodes-2.22-multiarch.so libopcodes-2.22.so
-    popd
-
+    # Test that the installs worked
     which arm-linux-gnu-as
     which mips-linux-gnu-as
     which powerpc-linux-gnu-as
-    which aarch64-linux-gnu-as
     which qemu-arm-static
+
+    # Get rid of files we don't want cached
+    rm -rf usr/share
 }
 
 setup_linux()
