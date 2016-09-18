@@ -38,7 +38,7 @@ pubkey=$(cat ~/.ssh/$U.pub)
 
 # Set the authorized_keys entry to only permit login from localhost,
 # and only with
-USUDO mkdir $H/.ssh
+USUDO mkdir $H/.ssh || true
 USUDO tee -a $H/.ssh/authorized_keys <<EOF
 from="127.0.0.1" $pubkey
 EOF
