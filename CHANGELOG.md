@@ -13,6 +13,9 @@ minor changes are omitted.
     + Added an option to *not* install the traditional `asm`, `disasm`, `checksec`, etc scripts
     + All existing tools can be accessed from the `pwn` command (e.g. `pwn asm nop`).
 - [#704][704] The `process` object has a new, optional argument `alarm` for setting a `SIGALRM` timeout for processes.
+- [#705][705] Added the Android Emulator to the test suite and Travis CI.
+    + Android Emulator is now required for the full test suite
+    + Android Emulator tests are skipped if no Android-related changes are detected
 - [#711][711] `DynELF` has a new attribute, `heap`, which leaks the current `brk` address (heap base).  This is useful for finding heap allocations with dlmalloc-derived allocators like those used by Glibc.
 - [#717][717] `sh_string` was rewritten to emit more compact and compatible strings
     + This was achieved by embedding single-quoted non-printable literals
@@ -29,6 +32,7 @@ minor changes are omitted.
 [711]: https://github.com/Gallopsled/pwntools/pull/711
 [717]: https://github.com/Gallopsled/pwntools/pull/717
 [709]: https://github.com/Gallopsled/pwntools/pull/709
+[705]: https://github.com/Gallopsled/pwntools/pull/705
 
 ## 3.1.0 (October 1, 2016)
 
