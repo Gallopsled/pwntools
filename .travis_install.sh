@@ -1,5 +1,5 @@
 #!/usr/bin/env bash -e
-set -ex
+set -e
 local_deb_extract()
 {
     wget $1

@@ -4,7 +4,7 @@
 #
 # All of the "conditional sudo" is to do container-based builds on
 # Travis which are much, much faster.
-set -ex
+set -e
 
 U=travis
 H=/home/$U
