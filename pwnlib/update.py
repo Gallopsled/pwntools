@@ -1,54 +1,83 @@
+"""
+# Pwntools Update
+
+In order to ensure that Pwntools users always have the latest and
+greatest version, Pwntools automatically checks for updates.
+
+Since this update check takes a moment, it is only performed once
+every week.  It can be permanently disabled via:
+
+.. code-block:: bash
+
+    $ echo never > ~/.pwntools-cache/update
+
+"""
 import datetime
 import json
-import pip
-import pkg_resources
 import os
 import time
+import xmlrpclib
+
+import packaging.version
 
 from .context import context
 from .log import getLogger
-from .version import __version__
 from .util.misc import read
 from .util.misc import write
 from .util.web import wget
+from .version import __version__
 
 log = getLogger(__name__)
 
-current_version = pkg_resources.parse_version(__version__)
+current_version = packaging.version.Version(__version__)
 package_name    = 'pwntools'
 package_repo    = 'Gallopsled/pwntools'
 update_freq     = datetime.timedelta(days=7).total_seconds()
 
-def available_on_github(prerelease=False):
-    """Return True if an update is available on Github."""
+def available_on_github(prerelease=current_version.is_prerelease):
+    """Return True if an update is available on Github.
+
+    >>> available_on_github() # doctest: +ELLIPSIS
+    <Version('...')>
+    >>> available_on_github(prerelease=False).is_prerelease
+    False
+    """
     url = 'https://api.github.com/repos/%s/tags' % package_repo
 
     with context.quiet:
         tags = json.loads(wget(url))
 
-
-    versions = map(pkg_resources.parse_version, [t['name'] for t in tags])
+    # 'pwntools-ancient' is a tag, but not a valid version.
+    # Handle this here, and for all potential tags which cause
+    # issues.
+    versions = []
+    for tag in [t['name'] for t in tags]:
+        try:
+            versions.append(packaging.version.Version(tag))
+        except Exception:
+            pass
 
     if not prerelease:
         versions = filter(lambda v: not v.is_prerelease, versions)
 
     return max(versions)
 
-def available_on_pypi(prerelease=False):
-    """Return True if an update is available on PyPI."""
-    search_command = pip.commands.search.SearchCommand()
-    options, _ = search_command.parse_args([package_name])
-    pypi_hits = search_command.search(package_name, options)
-    for hit in pip.commands.search.transform_hits(pypi_hits):
-        if hit['name'] != 'pwntools':
-            continue
+def available_on_pypi(prerelease=current_version.is_prerelease):
+    """Return True if an update is available on PyPI.
 
-        versions = map(pkg_resources.parse_version, hit['versions'])
+    >>> available_on_pypi() # doctest: +ELLIPSIS
+    <Version('...')>
+    >>> available_on_pypi(prerelease=False).is_prerelease
+    False
+    """
+    client = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
+    versions = client.package_releases('pwntools', True)
+    versions = map(packaging.version.Version, versions)
 
-        if not prerelease:
-            versions = filter(lambda v: not v.is_prerelease, versions)
+    if not prerelease:
+        versions = filter(lambda v: not v.is_prerelease, versions)
 
-        return max(versions)
+    return max(versions)
 
 def cache_file():
     """Returns the path of the file used to cache update data, and ensures that it exists."""
@@ -73,18 +102,47 @@ def should_check():
         return False
     return time.time() > (last_check() + update_freq)
 
-def perform_check(prerelease=False):
-    """Perform the update check, and report to the user."""
+def perform_check(prerelease=current_version.is_prerelease):
+    """Perform the update check, and report to the user.
+
+    Arguments:
+        prerelease(bool): Whether or not to include pre-release versions.
+
+    Returns:
+        A list of arguments to the update command.
+
+    >>> from packaging.version import Version
+    >>> pwnlib.update.current_version = Version("0.0.0")
+    >>> perform_check() # doctest: +ELLIPSIS
+    ['pip', 'install', '-U', ...]
+
+    >>> def bail(*a): raise Exception()
+    >>> github = pwnlib.update.available_on_github
+    >>> pypi   = pwnlib.update.available_on_pypi
+
+    >>> pwnlib.update.available_on_github = bail
+    >>> perform_check(prerelease=False)
+    ['pip', 'install', '-U', 'pwntools']
+    >>> perform_check(prerelease=True)  # doctest: +ELLIPSIS
+    ['pip', 'install', '-U', 'pwntools...']
+    >>> pwnlib.update.available_on_github = github
+
+    >>> pwnlib.update.available_on_pypi = bail
+    >>> perform_check(prerelease=False)
+    ['pip', 'install', '-U', 'git+https://github.com/Gallopsled/pwntools.git@...']
+    >>> perform_check(prerelease=True)  # doctest: +ELLIPSIS
+    ['pip', 'install', '-U', 'git+https://github.com/Gallopsled/pwntools.git@...']
+    """
     pypi = current_version
     try:
         pypi = available_on_pypi(prerelease)
-    except:
+    except Exception:
         log.warning("An issue occurred while checking PyPI")
 
     github = current_version
     try:
         github = available_on_github(prerelease)
-    except:
+    except Exception:
         log.warning("An issue occurred while checking Github")
 
     best = max(pypi, github, current_version)
@@ -97,15 +155,26 @@ def perform_check(prerelease=False):
         log.info("You have the latest version of Pwntools (%s)" % best)
         return
 
+    command = [
+        'pip',
+        'install',
+        '-U'
+    ]
+
     if best == pypi:
         where = 'pypi'
-        command = 'pip install -U %s' % package_name
+        pypi_package = package_name
+        if best.is_prerelease:
+            pypi_package += '==%s' % (best)
+        command += [pypi_package]
     else:
         where = 'GitHub'
-        command = 'pip install -U git+https://github.com/%s.git@%s' % (package_repo, github)
+        command += ['git+https://github.com/%s.git@%s' % (package_repo, github)]
+
+    command_str = ' '.join(command)
 
     log.info("A newer version of %s is available on %s (%s --> %s).\n" % (package_name, where, current_version, best) +
-             "Update with: $ %s" % command)
+             "Update with: $ %s" % command_str)
 
     return command
 
