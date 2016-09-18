@@ -1,4 +1,5 @@
 #!/usr/bin/env bash -e
+set -ex
 local_deb_extract()
 {
     wget $1
@@ -17,7 +18,8 @@ get_binutils()
 get_qemu()
 {
     echo "Installing qemu"
-    QEMU_URL='https://mirrors.kernel.org/ubuntu/pool/universe/q/qemu/qemu-user-static_2.6%2bdfsg-3ubuntu1_amd64.deb'
+    QEMU_INDEX='http://packages.ubuntu.com/en/yakkety/amd64/qemu-user-static/download'
+    QEMU_URL=$(curl "$QEMU_INDEX" | grep kernel.org | grep -Eo 'http.*\.deb')
     local_deb_extract "$QEMU_URL"
 }
 
@@ -26,14 +28,13 @@ setup_travis()
     export PATH=$PWD/usr/bin:$PATH
     export LD_LIBRARY_PATH=$PWD/usr/lib
 
-    if [ ! -d usr/bin ];
-    then
-        # Install our custom binutils
-        which arm-linux-as     || get_binutils arm
-        which mips-linux-as    || get_binutils mips
-        which powerpc-linux-as || get_binutils powerpc
-        which aarch64-linux-as || get_binutils aarch64
+    # Install our custom binutils
+    which arm-linux-as     || get_binutils arm
+    which mips-linux-as    || get_binutils mips
+    which powerpc-linux-as || get_binutils powerpc
 
+    if [ ! -d usr/lib ];
+    then
         # Install the multiarch binutils
         local_deb_extract http://mirrors.mit.edu/ubuntu/ubuntu/pool/universe/b/binutils/binutils-multiarch_2.22-6ubuntu1_amd64.deb
     fi
@@ -53,7 +54,6 @@ setup_travis()
     which arm-linux-gnu-as
     which mips-linux-gnu-as
     which powerpc-linux-gnu-as
-    which aarch64-linux-gnu-as
     which qemu-arm-static
 }
 
