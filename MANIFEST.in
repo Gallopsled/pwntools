@@ -1,1 +1,7 @@
-include *.txt
+graft examples
+graft extra
+include *.md *.txt *.sh *.yml MANIFEST.in
+recursive-include docs   *.rst *.png Makefile *.py *.txt
+recursive-include pwnlib *.py *.asm *.rst *.md *.txt *.sh
+recursive-include pwn    *.py *.asm *.rst *.md *.txt *.sh
+recursive-exclude *.pyc
