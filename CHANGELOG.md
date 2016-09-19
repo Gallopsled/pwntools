@@ -95,7 +95,7 @@ Android support via a new `adb` module, `context.device`, `context.adb_host`, an
 - Added `context.noptrace` setting for disabling actions which require `ptrace` support.  This is useful for turning all `gdb.debug` and `gdb.attach` options into no-ops, and can be set via the `NOPTRACE` magic command-line option.
 - Added `context.proxy` which hooks all connections and sends them to a SOCKS4/SOCKS5.  This can be set via the `PROXY` magic command-line option.
 - Added `context.randomize` to control randommization of settings like XOR keys and register ordering (default off).
-- Added `context.termianl` for setting how to launch commands in a new terminal.
+- Added `context.terminal` for setting how to launch commands in a new terminal.
 
 #### DynELF and MemLeak Module
 
