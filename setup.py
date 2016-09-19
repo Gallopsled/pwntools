@@ -85,8 +85,7 @@ setup(
     packages             = find_packages(),
     version              = '3.2.0dev',
     data_files           = [('',
-                             ['LICENSE-pwntools.txt',
-                             ]),
+                             glob.glob('*.md') + glob.glob('*.txt')),
                             ],
     package_data         = {
         'pwnlib': [
