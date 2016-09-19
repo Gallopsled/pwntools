@@ -3,9 +3,13 @@
 This changelog only includes added major features and changes. Bugfixes and
 minor changes are omitted.
 
-## 3.0.3 (September 18, 2016)
+## 3.0.4 (September 19, 2016)
 
 **Current release**
+
+- Fixed a bug that made 3.0.3 uninstallable (Issue: #751, PR: #752)
+
+## 3.0.3 (September 18, 2016, broken release)
 
 - Fixed some performance and usability problems with the update system (Issues:
   #723, #724, #736. PRs: #729, #738, #747).

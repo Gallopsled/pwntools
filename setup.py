@@ -75,7 +75,7 @@ except ImportError:
 setup(
     name                 = 'pwntools',
     packages             = find_packages(),
-    version              = '3.0.3',
+    version              = '3.0.4',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],
