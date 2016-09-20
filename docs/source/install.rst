@@ -27,14 +27,6 @@ pwntools is available as a ``pip`` package.
     $ apt-get install python2.7 python2.7-dev python-pip
     $ pip install --upgrade pwntools
 
-Alternatively you can get early access to the beta release if you want to help
-file bugs or simple get newer features:
-
-.. code-block:: bash
-
-    $ pip install --upgrade --pre pwntools
-
-
 Development
 --------------
 
@@ -44,6 +36,6 @@ If you are hacking on Pwntools locally, you'll want to do something like this:
 
     $ git clone https://github.com/Gallopsled/pwntools
     $ cd pwntools
-    $ pip install -e .
+    $ python setup.py develop
 
 .. _Ubuntu: https://launchpad.net/~pwntools/+archive/ubuntu/binutils
