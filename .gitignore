@@ -14,3 +14,4 @@ dist
 *.egg-info
 *.core
 .coverage
+.tox

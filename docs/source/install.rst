@@ -35,7 +35,6 @@ If you are hacking on Pwntools locally, you'll want to do something like this:
 .. code-block:: bash
 
     $ git clone https://github.com/Gallopsled/pwntools
-    $ cd pwntools
-    $ python setup.py develop
+    $ pip install --upgrade --editable ./pwntools
 
 .. _Ubuntu: https://launchpad.net/~pwntools/+archive/ubuntu/binutils
