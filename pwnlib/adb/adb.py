@@ -373,6 +373,9 @@ def push(local_path, remote_path):
             # We need to discover whether remote_path is a directory or not.
             stat_ = c.stat(remote_path)
             if not stat_:
+                remote_path = os.path.dirname(remote_path)
+                stat_ = c.stat(remote_path)
+            if not stat_:
                 log.error('Could not stat %r' % remote_path)
             mode = stat_['mode']
             if stat.S_ISDIR(mode):
