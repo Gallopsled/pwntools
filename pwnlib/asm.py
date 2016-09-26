@@ -27,8 +27,8 @@ Assembly
     Finally, :func:`asm` is used to assemble shellcode provided by ``pwntools``
     in the :mod:`shellcraft` module.
 
-        >>> asm(shellcraft.sh())
-        'jhh///sh/binj\x0bX\x89\xe31\xc9\x99\xcd\x80'
+        >>> asm(shellcraft.nop())
+        '\x90'
 
 Disassembly
 ------------------------
