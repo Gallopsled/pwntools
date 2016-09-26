@@ -142,7 +142,7 @@ def reboot_bootloader():
 
 class AdbDevice(Device):
     """Encapsulates information about a connected device."""
-    def __init__(self, serial, type, port=None, product='unknown', model='unknown', device='unknown', features=None):
+    def __init__(self, serial, type, port=None, product='unknown', model='unknown', device='unknown', features=None, **kw):
         self.serial  = serial
         self.type    = type
         self.port    = port
