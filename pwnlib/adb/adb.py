@@ -233,7 +233,12 @@ def wait_for_device(kick=False):
                     c.reconnect()
                 except Exception:
                     pass
-            c.wait_for_device()
+
+            serial = ''
+            if context.device:
+                serial = str(context.device)
+
+            c.wait_for_device(serial)
 
         for device in devices():
             if context.device == device:
