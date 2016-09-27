@@ -363,6 +363,7 @@ def push(local_path, remote_path):
         PwnlibException: Could not stat '/does/not/exist'
     """
     msg = "Pushing %r to %r" % (local_path, remote_path)
+    remote_filename = os.path.basename(local_path)
 
     if log.isEnabledFor(logging.DEBUG):
         msg += ' (%s)' % context.device
@@ -371,15 +372,22 @@ def push(local_path, remote_path):
         with Client() as c:
 
             # We need to discover whether remote_path is a directory or not.
+            # If we cannot stat the full path, assume it's a path-plus-filename,
+            # where the filename does not exist.
             stat_ = c.stat(remote_path)
             if not stat_:
                 remote_path = os.path.dirname(remote_path)
+                remote_filename = os.path.basename(remote_path)
                 stat_ = c.stat(remote_path)
+
+            # If we can't find the exact path, or its parent directory, bail!
             if not stat_:
                 log.error('Could not stat %r' % remote_path)
+
+            # If we found the parent directory, append the filename
             mode = stat_['mode']
             if stat.S_ISDIR(mode):
-                remote_path = os.path.join(remote_path, os.path.basename(local_path))
+                remote_path = os.path.join(remote_path, remote_filename)
 
             return c.write(remote_path,
                            misc.read(local_path),
