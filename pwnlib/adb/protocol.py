@@ -68,6 +68,10 @@ class Connection(remote):
     def adb_unpack(self):
         return unpack(self.recvn(4))
 
+    def flat(self, *a, **kw):
+        kw.setdefault('word_size', 32)
+        return super(Connection, self).flat(*a, **kw)
+
 class Process(Connection):
     """Duck-typed ``tubes.remote`` object to add properties of a ``tubes.process``"""
 
@@ -326,7 +330,7 @@ class Client(Logger):
             >>> adb.Client().list('/does/not/exist')
             {}
         """
-        self.c.flat('LIST', len(path), path, word_size=32)
+        self.c.flat('LIST', len(path), path)
         files = {}
         while True:
             response = self.c.recvn(4)
@@ -372,7 +376,7 @@ class Client(Logger):
             >>> adb.protocol.Client().stat('/does/not/exist') == None
             True
         """
-        self.c.flat('STAT', len(path), path, word_size=32)
+        self.c.flat('STAT', len(path), path)
         if self.c.recvn(4) != 'STAT':
             self.error("An error occured while attempting to STAT a file.")
 
@@ -403,7 +407,7 @@ class Client(Logger):
         # Send completion notification and timestamp
         if timestamp is None:
             timestamp = int(time.time())
-        self.c.flat('DONE', timestamp, word_size=32)
+        self.c.flat('DONE', timestamp)
 
         result = self.c.recvn(4)
         if result != 'OKAY':
