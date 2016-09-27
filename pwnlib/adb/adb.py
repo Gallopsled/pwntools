@@ -381,8 +381,8 @@ def push(local_path, remote_path):
             # where the filename does not exist.
             stat_ = c.stat(remote_path)
             if not stat_:
-                remote_path = os.path.dirname(remote_path)
                 remote_filename = os.path.basename(remote_path)
+                remote_path = os.path.dirname(remote_path)
                 stat_ = c.stat(remote_path)
 
             # If we can't find the exact path, or its parent directory, bail!
