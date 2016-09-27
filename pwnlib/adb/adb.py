@@ -35,6 +35,10 @@ def adb(argv, *a, **kw):
 
     log.debug("$ " + ' '.join(context.adb + argv))
 
+    # All "adb shell" incantations should go through adb.process()
+    if argv[0] == 'shell':
+        return process(argv[1:], *a, **kw).recvall()
+
     return tubes.process.process(context.adb + argv, *a, **kw).recvall()
 
 @context.quiet
@@ -945,3 +949,4 @@ class Partitions(object):
         return Partition(devpath, attr, int(blocks))
 
 partitions = Partitions()
+
