@@ -1,4 +1,22 @@
 """Provides utilities for interacting with Android devices via the Android Debug Bridge.
+
+# Using Android Devices with Pwntools
+
+Pwntools tries to be as easy as possible to use with Android devices.
+
+If you have only one device attached, everything "just works".
+
+If you have multiple devices, you have a handful of options to select one, or iterate
+over the devices.
+
+First and most important is the ``context.device`` property, which declares the "currently"
+seelcted device in any scope.  It can be set manually to a serial number, or to a ``Device``
+instance.
+
+.. code-block:: python
+
+    >>> context.device = ''
+
 """
 import functools
 import glob
@@ -979,4 +997,51 @@ class Partitions(object):
         return Partition(devpath, attr, int(blocks))
 
 partitions = Partitions()
+
+def install(apk, *arguments):
+    """Install an APK onto the device.
+
+    This is a wrapper around 'pm install', which backs 'adb install'.
+
+    Arguments:
+        apk(str): Path to the APK to intall (e.g. ``'foo.apk'``)
+        arguments: Supplementary arguments to 'pm install',
+            e.g. ``'-l', '-g'``.
+    """
+    if not apk.endswith('.apk'):
+        log.error("APK must have .apk extension")
+
+    basename = os.path.basename(apk)
+    target_path = '/data/local/tmp/{}.apk'.format(basename)
+
+    with log.progress("Installing APK {}".format(basename)) as p:
+        with context.quiet:
+            p.status('Copying APK to device')
+            push(apk, target_path)
+
+            p.status('Installing')
+            result = process(['pm', 'install-create', target_path] + list(arguments)).recvall()
+
+            status = result.splitlines()[-1]
+            if 'Success' not in status:
+                log.error(status)
+
+def uninstall(package, *arguments):
+    """Uninstall an APK from the device.
+
+    This is a wrapper around 'pm uninstall', which backs 'adb uninstall'.
+
+    Arguments:
+        package(str): Name of the package to uninstall (e.g. ``'com.foo.MyPackage'``)
+        arguments: Supplementary arguments to ``'pm install'``, e.g. ``'-k'``.
+    """
+    with log.progress("Installing package {}".format(package)):
+        with context.quiet:
+            return process(['pm','uninstall',apk] + list(arguments)).recvall()
+
+@context.quiet
+def packages():
+    """Returns a list of packages installed on the system"""
+    packages = process(['pm', 'list', 'packages']).recvall()
+    return [line.split('package:', 1)[-1] for line in packages.splitlines()]
 
