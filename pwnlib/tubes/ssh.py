@@ -1387,7 +1387,6 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             if result != 0:
                 self.error("Could not upload file %r (%r)\n%s" % (remote, result, data))
 
-
     def upload_file(self, filename, remote = None):
         """Uploads a file to the remote server. Returns the remote filename.
 
@@ -1569,3 +1568,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         self.info("Working directory: %r" % wd)
         self.cwd = wd
         return self.cwd
+
+    def write(self, path, data):
+        """Wrapper around upload_data to match ``pwnlib.util.misc.write``"""
+        return self.upload_data(data, path)
+
+    def read(self, path):
+        """Wrapper around download_data to match ``pwnlib.util.misc.read``"""
+        return self.download_data(path)
