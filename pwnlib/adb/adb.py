@@ -240,6 +240,9 @@ class AdbDevice(Device):
 
             value = g[name]
 
+        if not hasattr(value, '__call__'):
+            return value
+
         return self.__wrapped(value)
 
 @LocalContext
