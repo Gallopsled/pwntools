@@ -24,6 +24,18 @@ minor changes are omitted.
 - [#709][709] The `adb` module now directly talks to the `adb` server process via a new module, `adb.protocol`
     + Removes the need to shell out to `adb`
     + Avoids version-compatibility issues with `adb` server vs. client
+- [#703][703] Added new methods to `adb`
+    + `install` - Installs an APK
+    + `uninstall` - Uninstalls a package
+    + `packages` - Lists installed packages
+- [4893819][4893819] Modified `shellcraft.sh` on all platforms to provide `argv[0]` and set `argc==1`
+    + This is needed for systems which have Busybox or other minimal shell for `/bin/sh` which does not behave well with `argc==0` or `argv[0]==NULL`.
+- [1e414af][1e414af] Added `connect()` alias for `remote()`
+    + For example, `io=connect('google.com', 80)`
+    + This also works with `tcp(...)` and `udp(...)` aliases
+- [869ec42][869ec42] Added `ssh.read()` and `ssh.write()` aiases
+- [2af55c9][2af55c9] `AdbDevice` objects exposed via e.g. `adb.devices()` now offer scoped access to all `adb` module properties
+    + It is now possible to e.g. `map(lambda d: d.process(['id']).recvall(), adb.devices())`
 
 [695]: https://github.com/Gallopsled/pwntools/pull/695
 [700]: https://github.com/Gallopsled/pwntools/pull/700
@@ -33,6 +45,11 @@ minor changes are omitted.
 [717]: https://github.com/Gallopsled/pwntools/pull/717
 [709]: https://github.com/Gallopsled/pwntools/pull/709
 [705]: https://github.com/Gallopsled/pwntools/pull/705
+[703]: https://github.com/Gallopsled/pwntools/pull/703
+[1e414af]: https://github.com/Gallopsled/pwntools/commit/1e414afbeb3a01242f4918f111febaa63b640eb7
+[869ec42]: https://github.com/Gallopsled/pwntools/commit/869ec42082b4b98958dfe85103da9b101dde7daa
+[4893819]: https://github.com/Gallopsled/pwntools/commit/4893819b4c23182da570e2f4ea4c14d73af2c0df
+[2af55c9]: https://github.com/Gallopsled/pwntools/commit/2af55c9bc382eca23f89bc0abc7a07c075521f94
 
 ## 3.1.0 (October 1, 2016)
 
