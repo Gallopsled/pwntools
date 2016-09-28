@@ -236,7 +236,7 @@ class AdbDevice(Device):
             g = globals()
 
             if name not in g:
-                return super(AdbDevice, self).__getattr__(name)
+                raise AttributeError('%r object has no attribute %r' % (type(self).__name__,name))
 
             value = g[name]
 
