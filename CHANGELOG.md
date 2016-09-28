@@ -3,9 +3,22 @@
 This changelog only includes added major features and changes. Bugfixes and
 minor changes are omitted.
 
-## 3.2.0 Dev (November 12, 2016)
+## Release History
 
-**Currently on the _dev_ branch**
+The table below shows which release corresponds to each branch, and what date the version was released.
+
+| Version          | Branch   | Release Date           |
+| ---------------- | -------- | ---------------------- |
+| [3.2.0](#320)    | `dev`    | Nov 12, 2016 (planned)
+| [3.1.0](#310)    | `beta`   | Oct 1, 2016 (planned) 
+| [3.0.4](#304)    | `stable` | Sept 19, 2016
+| [3.0.3](#303)    |          | Sept 18, 2016
+| [3.0.2](#302)    |          | Sept 6, 2016
+| [3.0.1](#301)    |          | Aug 20, 2016
+| [3.0.0](#300)    |          | Aug 20, 2016
+| [2.2.0](#220)    |          | Jan 5, 2015
+
+## 3.2.0
 
 - [#695][695] Fixed a performance regression in `phd`.
 - [#700][700] Added missing MIPS shellcode documentation to readthedocs, and enabled unit tests
@@ -51,36 +64,32 @@ minor changes are omitted.
 [4893819]: https://github.com/Gallopsled/pwntools/commit/4893819b4c23182da570e2f4ea4c14d73af2c0df
 [2af55c9]: https://github.com/Gallopsled/pwntools/commit/2af55c9bc382eca23f89bc0abc7a07c075521f94
 
-## 3.1.0 (October 1, 2016)
-
-**Currently on the _beta_ branch**
+## 3.1.0
 
 A number of smaller bugfixes and documentation tweaks.
 
-## 3.0.4 (September 19, 2016)
-
-**Current release**
+## 3.0.4
 
 - Fixed a bug that made 3.0.3 uninstallable (Issue: #751, PR: #752)
 
-## 3.0.3 (September 18, 2016, broken release)
+## 3.0.3
 
 - Fixed some performance and usability problems with the update system (Issues:
   #723, #724, #736. PRs: #729, #738, #747).
 - Fixed a bug related to internals in pyelftools (PRs: #730, #746).
 - Fixed an issue with travis (Issue: #741, PRs: #743, #744, #745).
 
-## 3.0.2 (September 6, 2016)
+## 3.0.2
 
 - Cherry-pick #695, as this was a regression-fix.
 - Added a fix for the update checker, as it would suggest prereleases as updates to stable releases.
 - Various documentation fixes.
 
-## 3.0.1 (August 20, 2016)
+## 3.0.1
 
 A small bugfix release. There were a lot of references to the `master`-branch, however after 3.0.0 we use the names `stable`, `beta` and `dev` for our branches.
 
-## 3.0.0 (August 20, 2016)
+## 3.0.0
 
 This was a large release (1305 commits since 2.2.0) with a lot of bugfixes and changes.  The Binjitsu project, a fork of Pwntools, was merged back into Pwntools.  As such, its features are now available here.
 
@@ -179,7 +188,7 @@ Android support via a new `adb` module, `context.device`, `context.adb_host`, an
 - Added a multi-threaded `bruteforce()` implementation, `mbruteforce()`.
 - Added `dealarm_shell()` helper to remove the effects of `alarm()` after you've popped a shell.
 
-## 2.2.0 (January 5, 2015)
+## 2.2.0
 
 This was a large release with a lot of bugfixes and changes. Only the most significant
 are mentioned here.
