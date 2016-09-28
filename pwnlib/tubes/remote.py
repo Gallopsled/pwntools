@@ -157,13 +157,18 @@ class remote(sock):
         return remote(host, port, fam=s.family, typ=s.type, sock=s)
 
 class tcp(remote):
+    __doc__ = remote.__doc__
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
                  timeout = Timeout.default, ssl=False, sock=None, level = None):
         return super(tcp, self).__init__(host, port, fam, typ, timeout, ssl, sock, level)
 
 class udp(remote):
+    __doc__ = remote.__doc__
     def __init__(self, host, port,
                  fam = "any", typ = "udp",
                  timeout = Timeout.default, ssl=False, sock=None, level = None):
         return super(udp, self).__init__(host, port, fam, typ, timeout, ssl, sock, level)
+
+class connect(remote):
+    __doc__ = remote.__doc__
