@@ -215,6 +215,33 @@ class AdbDevice(Device):
 
         return AdbDevice(serial, type, **kwargs)
 
+    def __wrapped(self, function):
+        """Wrapps a callable in a scope which selects the current device."""
+        @functools.wraps(function)
+        def wrapper(*a, **kw):
+            with context.local(device=self):
+                return function(*a,**kw)
+        return wrapper
+
+    def __getattr__(self, name):
+        """Provides scoped access to ``adb`` module propertise, in the context
+        of this device.
+
+        >>> property = 'ro.build.fingerprint'
+        >>> device = adb.current_device()
+        >>> adb.getprop(property) == device.getprop(property)
+        True
+        """
+        with context.local(device=self):
+            g = globals()
+
+            if name not in g:
+                return super(AdbDevice, self).__getattr__(name)
+
+            value = g[name]
+
+        return self.__wrapped(value)
+
 @LocalContext
 def wait_for_device(kick=False):
     """Waits for a device to be connected.
