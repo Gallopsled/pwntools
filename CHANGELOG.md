@@ -9,14 +9,19 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.2.0](#320)    | `dev`    | Nov 12, 2016 (planned)
-| [3.1.0](#310)    | `beta`   | Oct 1, 2016 (planned) 
-| [3.0.4](#304)    | `stable` | Sept 19, 2016
+| [3.3.0](#330)    | `dev`    | Dec 24, 2016 (planned)
+| [3.2.0](#320)    | `beta`   | Nov 12, 2016 (planned)
+| [3.1.0](#310)    | `stable` | Oct 2, 2016
+| [3.0.4](#304)    |          | Sept 19, 2016
 | [3.0.3](#303)    |          | Sept 18, 2016
 | [3.0.2](#302)    |          | Sept 6, 2016
 | [3.0.1](#301)    |          | Aug 20, 2016
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
+
+## 3.3.0
+
+Nothing yet.
 
 ## 3.2.0
 
