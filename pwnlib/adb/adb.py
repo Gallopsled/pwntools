@@ -1044,4 +1044,3 @@ def packages():
     """Returns a list of packages installed on the system"""
     packages = process(['pm', 'list', 'packages']).recvall()
     return [line.split('package:', 1)[-1] for line in packages.splitlines()]
-

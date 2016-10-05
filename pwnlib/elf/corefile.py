@@ -6,6 +6,7 @@ from elftools.common.py3compat import bytes2str
 from elftools.common.utils import roundup
 from elftools.common.utils import struct_parse
 from elftools.construct import CString
+
 from ..context import context
 from ..log import getLogger
 from ..tubes.tube import tube

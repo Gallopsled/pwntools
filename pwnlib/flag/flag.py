@@ -3,8 +3,8 @@
 import os
 
 from ..args import args
-from ..tubes.remote import remote
 from ..log import getLogger
+from ..tubes.remote import remote
 
 env_server  = args.get('FLAG_HOST', 'flag-submission-server').strip()
 env_port    = args.get('FLAG_PORT', '31337').strip()
