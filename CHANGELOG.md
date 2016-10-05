@@ -23,6 +23,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 Nothing yet.
 
+- [b198ec8][b198ec8] Added `tube.stream()` function, which is like `tube.interact()` without a prompt or keyboard input.
+
+[b198ec8]: https://github.com/Gallopsled/pwntools/commit/b198ec8
+
 ## 3.2.0
 
 - [#695][695] Fixed a performance regression in `phd`.
