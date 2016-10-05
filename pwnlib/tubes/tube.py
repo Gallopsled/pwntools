@@ -838,16 +838,22 @@ class tube(Timeout, Logger):
 
         Arguments:
             line_mode(bool): Whether to receive line-by-line or raw data.
-        """
-        data = True
-        while data:
-            if line_mode:
-                data = self.recvline()
-            else:
-                data = self.recv()
 
-            if data:
-                sys.stdout.write(data)
+        Returns:
+            All data printed.
+        """
+        buf = Buffer()
+        function = self.recvline if line_mode else self.recv
+        try:
+            while True:
+                buf.add(function())
+                sys.stdout.write(buf.data[-1])
+        except KeyboardInterrupt:
+            pass
+        except EOFError:
+            pass
+
+        return buf.get()
 
     def clean(self, timeout = 0.05):
         """clean(timeout = 0.05)
