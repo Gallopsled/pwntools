@@ -43,6 +43,7 @@ Each of the ``pwntools`` modules is documented here.
    :glob:
 
    adb
+   args
    asm
    atexception
    atexit

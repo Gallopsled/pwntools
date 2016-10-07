@@ -663,8 +663,6 @@ def install_default_handler():
     the ``pwnlib`` root logger.  This function is automatically called from when
     importing :mod:`pwn`.
     '''
-    console.stream = sys.stdout
-
     logger         = logging.getLogger('pwnlib')
 
     if console not in logger.handlers:
