@@ -113,7 +113,7 @@ from .term import spinners
 from .term import text
 
 # list of prefixes to use for the different message types.  note that the `text`
-# module won't add any escape codes if `sys.stderr.isatty()` is `False`
+# module won't add any escape codes if `pwnlib.log.console.stream.isatty()` is `False`
 _msgtype_prefixes = {
     'status'       : [text.magenta, 'x'],
     'success'      : [text.bold_green, '+'],
@@ -489,8 +489,6 @@ class Handler(logging.StreamHandler):
     If :data:`term.term_mode` is enabled log records originating from a progress
     logger will not be emitted but rather an animated progress line will be
     created.
-
-    This handler outputs to ``sys.stderr``.
 
     An instance of this handler is added to the ``'pwnlib'`` logger.
     """
