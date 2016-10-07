@@ -1,3 +1,5 @@
+import sys
+
 from . import asm
 from . import checksec
 from . import common
@@ -14,6 +16,7 @@ from . import scramble
 from . import shellcraft
 from . import unhex
 from . import update
+from .. import log
 from .common import parser
 
 commands = {
@@ -35,6 +38,7 @@ commands = {
 }
 
 def main():
+    log.console.stream = sys.stderr
     args = parser.parse_args()
     commands[args.command](args)
 
