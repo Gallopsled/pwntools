@@ -38,9 +38,9 @@ commands = {
 }
 
 def main():
-    context.log_console = sys.stderr
     args = parser.parse_args()
-    commands[args.command](args)
+    with context.local(log_console = sys.stderr):
+        commands[args.command](args)
 
 if __name__ == '__main__':
     main()
