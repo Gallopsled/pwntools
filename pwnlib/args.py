@@ -129,7 +129,7 @@ def NOPTRACE(v):
 
 def STDERR(v):
     """Sends logging to ``stderr`` by default, instead of ``stdout``"""
-    log.console.stream = sys.stderr
+    context.log_console = sys.stderr
 
 hooks = {
     'LOG_LEVEL': LOG_LEVEL,

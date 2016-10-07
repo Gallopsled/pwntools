@@ -38,7 +38,7 @@ commands = {
 }
 
 def main():
-    log.console.stream = sys.stderr
+    context.log_console = sys.stderr
     args = parser.parse_args()
     commands[args.command](args)
 
