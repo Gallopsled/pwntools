@@ -34,34 +34,6 @@ package_name    = 'pwntools'
 package_repo    = 'Gallopsled/pwntools'
 update_freq     = datetime.timedelta(days=7).total_seconds()
 
-def available_on_github(prerelease=current_version.is_prerelease):
-    """Return True if an update is available on Github.
-
-    >>> available_on_github() # doctest: +ELLIPSIS
-    <Version('...')>
-    >>> available_on_github(prerelease=False).is_prerelease
-    False
-    """
-    url = 'https://api.github.com/repos/%s/tags' % package_repo
-
-    with context.quiet:
-        tags = json.loads(wget(url, timeout = 60))
-
-    # 'pwntools-ancient' is a tag, but not a valid version.
-    # Handle this here, and for all potential tags which cause
-    # issues.
-    versions = []
-    for tag in [t['name'] for t in tags]:
-        try:
-            versions.append(packaging.version.Version(tag))
-        except Exception:
-            pass
-
-    if not prerelease:
-        versions = filter(lambda v: not v.is_prerelease, versions)
-
-    return max(versions)
-
 def available_on_pypi(prerelease=current_version.is_prerelease):
     """Return True if an update is available on PyPI.
 
@@ -120,21 +92,12 @@ def perform_check(prerelease=current_version.is_prerelease):
     ['pip', 'install', '-U', ...]
 
     >>> def bail(*a): raise Exception()
-    >>> github = pwnlib.update.available_on_github
     >>> pypi   = pwnlib.update.available_on_pypi
 
-    >>> pwnlib.update.available_on_github = bail
     >>> perform_check(prerelease=False)
     ['pip', 'install', '-U', 'pwntools']
     >>> perform_check(prerelease=True)  # doctest: +ELLIPSIS
     ['pip', 'install', '-U', 'pwntools...']
-    >>> pwnlib.update.available_on_github = github
-
-    >>> pwnlib.update.available_on_pypi = bail
-    >>> perform_check(prerelease=False)
-    ['pip', 'install', '-U', 'git+https://github.com/Gallopsled/pwntools.git@...']
-    >>> perform_check(prerelease=True)  # doctest: +ELLIPSIS
-    ['pip', 'install', '-U', 'git+https://github.com/Gallopsled/pwntools.git@...']
     """
     pypi = current_version
     try:
@@ -142,13 +105,7 @@ def perform_check(prerelease=current_version.is_prerelease):
     except Exception:
         log.warning("An issue occurred while checking PyPI")
 
-    github = current_version
-    try:
-        github = available_on_github(prerelease)
-    except Exception:
-        log.warning("An issue occurred while checking Github")
-
-    best = max(pypi, github, current_version)
+    best = max(pypi, current_version)
     where = None
     command = None
 
@@ -170,9 +127,6 @@ def perform_check(prerelease=current_version.is_prerelease):
         if best.is_prerelease:
             pypi_package += '==%s' % (best)
         command += [pypi_package]
-    else:
-        where = 'GitHub'
-        command += ['git+https://github.com/%s.git@%s' % (package_repo, github)]
 
     command_str = ' '.join(command)
 
