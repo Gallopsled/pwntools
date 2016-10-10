@@ -55,6 +55,11 @@ pwnlib.context.ContextType.defaults['randomize'] = False
 pwnlib.term.text.when = 'never'
 pwnlib.log.install_default_handler()
 pwnlib.log.rootlogger.setLevel(1)
+
+# Sphinx modifies sys.stdout, and context.log_terminal has
+# a reference to the original instance.  We need to update
+# it for logging to be captured.
+pwnlib.context.log_terminal = sys.stdout
 '''
 
 autodoc_member_order = 'alphabetical'
