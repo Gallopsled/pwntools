@@ -290,6 +290,7 @@ def wait_for_device(kick=False):
             if context.device:
                 serial = str(context.device)
 
+        with Client() as c:
             c.wait_for_device(serial)
 
         for device in devices():
