@@ -64,7 +64,7 @@ class stdout(object):
         return getattr(sys.stdout, name)
     def __setattr__(self, name, value):
         return setattr(sys.stdout, name, value)
-pwnlib.context.log_terminal = stdout()
+pwnlib.context.ContextType.defaults['log_console'] = stdout()
 '''
 
 autodoc_member_order = 'alphabetical'
