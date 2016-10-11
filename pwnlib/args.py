@@ -1,5 +1,43 @@
 #!/usr/bin/env python2
 """
+Pwntools exposes several magic command-line arguments and environment
+variables when operating in `from pwn import *` mode.
+
+The arguments extracted from the command-line and removed from ``sys.argv``.
+
+Arguments can be set by appending them to the command-line, or setting
+them in the environment prefixed by ``PWNLIB_``.
+
+The easiest example is to enable more verbose debugging.  Just set ``DEBUG``.
+
+.. code-block:: bash
+
+    $ PWNLIB_DEBUG=1 python exploit.py
+    $ python exploit.py DEBUG
+
+These arguments are automatically extracted, regardless of their name, and
+exposed via ``pwnlib.args.args``, which is exposed as the global variable
+``args``.  Arguments which ``pwntools`` reserves internally are not exposed
+this way.
+
+.. code-block:: bash
+
+    $ python -c 'from pwn import *; print args' A=1 B=Hello HOST=1.2.3.4 DEBUG
+    defaultdict(<type 'str'>, {'A': '1', 'HOST': '1.2.3.4', 'B': 'Hello'})
+
+This is very useful for conditional code, for example determining whether to
+run an exploit locally or to connect to a remote server.  Arguments which are
+not specified evaluate to an empty string.
+
+.. code-block:: python
+
+    if args['REMOTE']:
+        io = remote('exploitme.com', 4141)
+    else:
+        io = process('./pwnable')
+
+The full list of supported "magic arguments" and their effects are listed
+below.
 """
 import collections
 import logging
@@ -42,46 +80,67 @@ def asbool(s):
     else:
         raise ValueError('must be integer or boolean: %r' % s)
 
-def set_log_level(x):
+def LOG_LEVEL(x):
+    """Sets the logging verbosity used via ``context.log_level``,
+    e.g. ``LOG_LEVEL=debug``.
+    """
     with context.local(log_level=x):
         context.defaults['log_level']=context.log_level
 
-def set_log_file(x):
+def LOG_FILE(x):
+    """Sets a log file to be used via ``context.log_file``, e.g.
+    ``LOG_FILE=./log.txt``"""
     context.log_file=x
 
-def set_log_level_error(x):
-    set_log_level('error')
+def SILENT(x):
+    """Sets the logging verbosity to ``error`` which silences most
+    output."""
+    LOG_FILE('error')
 
-def set_log_level_debug(x):
-    set_log_level('debug')
+def DEBUG(x):
+    """Sets the logging verbosity to ``debug`` which displays much
+    more information, including logging each byte sent by tubes."""
+    LOG_FILE('debug')
 
-def set_noterm(v):
+def NOTERM(v):
+    """Disables pretty terminal settings and animations."""
     if asbool(v):
         global term_mode
         term_mode = False
 
-def set_timeout(v):
+def TIMEOUT(v):
+    """Sets a timeout for tube operations (in seconds) via
+    ``context.timeout``, e.g. ``TIMEOUT=30``"""
     context.defaults['timeout'] = int(v)
 
-def set_randomize(v):
+def RANDOMIZE(v):
+    """Enables randomization of various pieces via ``context.randomize``"""
     context.defaults['randomize'] = asbool(v)
 
-def set_aslr(v):
+def NOASLR(v):
+    """Disables ASLR via ``context.aslr``"""
     context.defaults['aslr'] = not asbool(v)
 
-def set_noptrace(v):
+def NOPTRACE(v):
+    """Disables facilities which require ``ptrace`` such as ``gdb.attach()``
+    statements, via ``context.noptrace``."""
     context.defaults['noptrace'] = asbool(v)
 
+def STDERR(v):
+    """Sends logging to ``stderr`` by default, instead of ``stdout``"""
+    context.log_console = sys.stderr
+
 hooks = {
-    'LOG_LEVEL': set_log_level,
-    'LOG_FILE': set_log_file,
-    'DEBUG': set_log_level_debug,
-    'NOTERM': set_noterm,
-    'SILENT': set_log_level_error,
-    'RANDOMIZE': set_randomize,
-    'TIMEOUT': set_timeout,
-    'NOASLR': set_aslr,
-    'NOPTRACE': set_noptrace,
+    'LOG_LEVEL': LOG_LEVEL,
+    'LOG_FILE': LOG_FILE,
+    'DEBUG': DEBUG,
+    'NOTERM': NOTERM,
+    'SILENT': SILENT,
+    'RANDOMIZE': RANDOMIZE,
+    'TIMEOUT': TIMEOUT,
+    'NOASLR': NOASLR,
+    'NOPTRACE': NOPTRACE,
+    'STDERR': STDERR,
 }
 
 def initialize():

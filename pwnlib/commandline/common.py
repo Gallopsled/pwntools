@@ -5,8 +5,6 @@ import sys
 import pwnlib
 from pwnlib.context import context
 
-pwnlib.log.console.stream = sys.stderr
-
 choices = map(str, [16,32,64])
 choices += list(context.oses)
 choices += list(context.architectures)
