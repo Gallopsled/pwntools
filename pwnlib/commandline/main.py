@@ -16,7 +16,6 @@ from . import scramble
 from . import shellcraft
 from . import unhex
 from . import update
-from .. import log
 from .common import parser
 from ..context import context
 

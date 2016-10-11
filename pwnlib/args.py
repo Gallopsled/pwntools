@@ -45,7 +45,6 @@ import os
 import string
 import sys
 
-from . import log
 from . import term
 from .context import context
 
