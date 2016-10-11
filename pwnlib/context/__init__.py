@@ -930,11 +930,12 @@ class ContextType(object):
 
         Examples:
 
-            >>> context.clear()
+            >>> context.log_level = 'warn'
             >>> log.warn("Hello")
             [!] Hello
-            >>> with context.local(log_console=open('/dev/null', 'w')):
-            ...  log.warn("Hello")
+            >>> context.log_console=open('/dev/null', 'w')
+            >>> log.warn("Hello")
+            >>> context.clear()
         """
         if isinstance(stream, str):
             stream = open(stream, 'wt')
