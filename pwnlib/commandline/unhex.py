@@ -20,7 +20,7 @@ def main(args):
             s = sys.stdin.read().translate(None, whitespace)
             sys.stdout.write(s.decode('hex'))
         else:
-            sys.stdout.write(''.join(sys.argv[1:]).decode('hex'))
+            sys.stdout.write(''.join(args.hex).decode('hex'))
     except TypeError, e:
         sys.stderr.write(str(e) + '\n')
 
