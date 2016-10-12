@@ -1,7 +1,7 @@
 __all__ = [
     'crc', 'cyclic', 'fiddling', 'hashes', 'iters',
     'lists', 'misc', 'net', 'packing', 'proc', 'safeeval',
-    'web'
+    'web', 'shellsim'
 ]
 
 from . import crc
@@ -17,3 +17,4 @@ from . import proc
 from . import safeeval
 from . import sh_string
 from . import web
+from . import shellsim
