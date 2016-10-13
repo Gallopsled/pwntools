@@ -331,9 +331,7 @@ def main(args):
     elif args.format in ['i', 'hexii']:
         code = hexii(code) + '\n'
     elif args.format in ['y', 'python']:
-        code = pwnlib.util.fiddling.enhex(code)
-        code = '\\x' + '\\x'.join(map(''.join, zip(code[::2], code[1::2]))) + '\n'
-
+        code = ''.join('\\x%02x' % ord(c) for c in code) + '\n'
     if not sys.stdin.isatty():
         args.out.write(sys.stdin.read())
 
