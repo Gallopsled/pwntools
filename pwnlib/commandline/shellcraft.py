@@ -57,10 +57,10 @@ p.add_argument(
                'p',
                'i', 'hexii',
                'e', 'elf',
-               'y', 'python',
+               'a', 'escaped',
                'default'],
     default = 'default',
-    help = 'Output format (default: hex), choose from {r}aw, {s}tring, {c}-style array, {h}ex string, hex{i}i, {a}ssembly code, {p}reprocssed code, p{y}thon-style array.',
+    help = 'Output format (default: hex), choose from {r}aw, {s}tring, {c}-style array, {h}ex string, hex{i}i, {a}ssembly code, {p}reprocssed code, esc{a}ped hex string',
 )
 
 p.add_argument(
@@ -330,7 +330,7 @@ def main(args):
         code = pwnlib.util.fiddling.enhex(code) + '\n'
     elif args.format in ['i', 'hexii']:
         code = hexii(code) + '\n'
-    elif args.format in ['y', 'python']:
+    elif args.format in ['a', 'escaped']:
         code = ''.join('\\x%02x' % ord(c) for c in code) + '\n'
     if not sys.stdin.isatty():
         args.out.write(sys.stdin.read())
