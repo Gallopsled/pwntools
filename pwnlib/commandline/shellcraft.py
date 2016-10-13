@@ -60,7 +60,7 @@ p.add_argument(
                'd', 'escaped',
                'default'],
     default = 'default',
-    help = 'Output format (default: hex), choose from {r}aw, {s}tring, {c}-style array, {h}ex string, hex{i}i, {a}ssembly code, {p}reprocssed code, escape{d} hex string',
+    help = 'Output format (default: hex), choose from {e}lf, {r}aw, {s}tring, {c}-style array, {h}ex string, hex{i}i, {a}ssembly code, {p}reprocssed code, escape{d} hex string',
 )
 
 p.add_argument(
