@@ -1,3 +1,4 @@
+import ctypes
 import functools
 import string
 
@@ -97,7 +98,7 @@ class MemLeak(object):
         Return Value:
             An instance of the provided struct class, with the leaked data decoded
         """
-        size = sizeof(struct)
+        size = ctypes.sizeof(struct)
         data = self.n(address, size)
         obj = struct.from_buffer_copy(data)
         return obj
