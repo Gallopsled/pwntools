@@ -95,12 +95,12 @@ def LOG_FILE(x):
 def SILENT(x):
     """Sets the logging verbosity to ``error`` which silences most
     output."""
-    LOG_FILE('error')
+    LOG_LEVEL('error')
 
 def DEBUG(x):
     """Sets the logging verbosity to ``debug`` which displays much
     more information, including logging each byte sent by tubes."""
-    LOG_FILE('debug')
+    LOG_LEVEL('debug')
 
 def NOTERM(v):
     """Disables pretty terminal settings and animations."""
