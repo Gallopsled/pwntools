@@ -197,7 +197,7 @@ class process(tube):
     #: Have we seen the process stop?
     _stop_noticed = False
 
-    def __init__(self, argv,
+    def __init__(self, argv = None,
                  shell = False,
                  executable = None,
                  cwd = None,
@@ -216,6 +216,14 @@ class process(tube):
                  display = None,
                  alarm = None):
         super(process, self).__init__(timeout, level = level)
+
+        # Permit using context.binary
+        if argv is None:
+            if context.binary:
+                argv = [context.binary.path]
+            else:
+                raise TypeError('Must provide argv or set context.binary')
+
 
         #: `subprocess.Popen` object
         self.proc = None
