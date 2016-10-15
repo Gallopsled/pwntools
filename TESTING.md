@@ -5,7 +5,7 @@ Pwntools makes extensive use of unit tests and integration tests to ensure every
 ## Test Suite
 
 
-To run the test suite, it is beste to use Ubuntu 12.04 or 14.04, and run the following commands.  **Be aware** that this will add a user to the machine, and create a public key for SSH login!
+To run the test suite, it is best to use Ubuntu 12.04 or 14.04, and run the following commands.  **Be aware** that this will add a user to the machine, and create a public key for SSH login!
 
 ```sh
 bash travis/install.sh
