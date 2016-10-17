@@ -54,7 +54,9 @@ install_requires     = ['paramiko>=1.15.2',
                         'pysocks',
                         'python-dateutil',
                         'pypandoc',
-                        'packaging']
+                        'packaging',
+                        'pep8',
+                        'autopep8']
 
 # This is a hack until somebody ports psutil to OpenBSD
 if platform.system() != 'OpenBSD':
