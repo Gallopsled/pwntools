@@ -233,12 +233,13 @@ from .misc import which
 
 log = getLogger(__name__)
 
+
 def test_all():
     test('a')
     test('ab')
     test('a b')
     test(r"a\'b")
-    everything_1 = ''.join(chr(c) for c in range(1,256))
+    everything_1 = ''.join(chr(c) for c in range(1, 256))
     for s in everything_1:
         test(s)
         test(s*4)
@@ -251,7 +252,7 @@ def test_all():
     test(everything_1)
     test(everything_1 * 2)
     test(everything_1 * 4)
-    everything_2 = ''.join(chr(c) * 2 for c in range(1,256))
+    everything_2 = ''.join(chr(c) * 2 for c in range(1, 256))
     test(everything_2)
 
     test(randoms(1000, everything_1))
@@ -309,18 +310,17 @@ def test(original):
         data = data[:-1]
 
         if data != original:
-            for i,(a,b) in enumerate(zip(data, original)):
+            for i, (a, b) in enumerate(zip(data, original)):
                 if a == b:
                     continue
                 log.error(('Shell %r failed\n' +
-                          'Expect %r\n' +
-                          'Sent   %r\n' +
-                          'Output %r\n' +
-                          'Mismatch @ %i: %r vs %r') \
-                        % (binary, original, input, data, i, a, b))
+                           'Expect %r\n' +
+                           'Sent   %r\n' +
+                           'Output %r\n' +
+                           'Mismatch @ %i: %r vs %r')
+                          % (binary, original, input, data, i, a, b))
 
         progress.success()
-
 
 
 SINGLE_QUOTE = "'"
@@ -336,6 +336,7 @@ ESCAPED = {
     # a single backslash literal.
     # '\\': '"\\\\\\\\"'
 }
+
 
 def sh_string(s):
     r"""Outputs a string in a format that will be understood by /bin/sh.
@@ -402,6 +403,7 @@ def sh_string(s):
 
     return quoted_string
 
+
 def sh_prepare(variables, export = False):
     r"""Outputs a posix compliant shell command that will put the data specified
     by the dictionary into the environment.
@@ -450,6 +452,7 @@ def sh_prepare(variables, export = False):
         out.append('%s%s=%s' % (export, k, sh_string(v)))
 
     return ';'.join(out)
+
 
 def sh_command_with(f, *args):
     r"""sh_command_with(f, arg0, ..., argN) -> command

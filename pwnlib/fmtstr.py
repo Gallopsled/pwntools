@@ -70,23 +70,23 @@ Example - Automated exploitation
 
 .. code-block:: python
 
-	# Assume a process that reads a string
-	# and gives this string as the first argument
-	# of a printf() call
-	# It do this indefinitely
-	p = process('./vulnerable')
+    # Assume a process that reads a string
+    # and gives this string as the first argument
+    # of a printf() call
+    # It do this indefinitely
+    p = process('./vulnerable')
 
-	# Function called in order to send a payload
-	def send_payload(payload):
-		log.info("payload = %s" % repr(payload))
-		p.sendline(payload)
-		return p.recv()
+    # Function called in order to send a payload
+    def send_payload(payload):
+        log.info("payload = %s" % repr(payload))
+        p.sendline(payload)
+        return p.recv()
 
-	# Create a FmtStr object and give to him the function
-	format_string = FmtStr(execute_fmt=send_payload)
-	format_string.write(0x0, 0x1337babe) # write 0x1337babe at 0x0
-	format_string.write(0x1337babe, 0x0) # write 0x0 at 0x1337babe
-	format_string.execute_writes()
+    # Create a FmtStr object and give to him the function
+    format_string = FmtStr(execute_fmt=send_payload)
+    format_string.write(0x0, 0x1337babe) # write 0x1337babe at 0x0
+    format_string.write(0x1337babe, 0x0) # write 0x0 at 0x1337babe
+    format_string.execute_writes()
 
 """
 import logging
@@ -99,6 +99,7 @@ from pwnlib.util.fiddling import randoms
 from pwnlib.util.packing import *
 
 log = getLogger(__name__)
+
 
 def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
     r"""fmtstr_payload(offset, writes, numbwritten=0, write_size='byte') -> str
@@ -177,6 +178,7 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
 
     return payload
 
+
 class FmtStr(object):
     """
     Provides an automated format string exploitation.
@@ -213,8 +215,7 @@ class FmtStr(object):
         self.padlen = padlen
         self.numbwritten = numbwritten
 
-
-        if self.offset == None:
+        if self.offset is None:
             self.offset, self.padlen = self.find_offset()
             log.info("Found format string offset: %d", self.offset)
 
@@ -232,7 +233,7 @@ class FmtStr(object):
 
     def find_offset(self):
         marker = cyclic(20)
-        for off in range(1,1000):
+        for off in range(1, 1000):
             leak = self.leak_stack(off, marker)
             leak = pack(leak)
 

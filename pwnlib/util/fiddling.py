@@ -15,6 +15,7 @@ from .cyclic import cyclic_find
 
 log = getLogger(__name__)
 
+
 def unhex(s):
     r"""unhex(s) -> str
 
@@ -32,6 +33,7 @@ def unhex(s):
         s = '0' + s
     return s.decode('hex')
 
+
 def enhex(x):
     """enhex(x) -> str
 
@@ -44,6 +46,7 @@ def enhex(x):
     """
     return x.encode('hex')
 
+
 def urlencode(s):
     """urlencode(s) -> str
 
@@ -55,6 +58,7 @@ def urlencode(s):
         '%74%65%73%74'
     """
     return ''.join(['%%%02x' % ord(c) for c in s])
+
 
 def urldecode(s, ignore_invalid = False):
     """urldecode(s, ignore_invalid = False) -> str
@@ -89,6 +93,7 @@ def urldecode(s, ignore_invalid = False):
             else:
                 raise ValueError("Invalid input to urldecode")
     return res
+
 
 def bits(s, endian = 'big', zero = 0, one = 1):
     """bits(s, endian = 'big', zero = 0, one = 1) -> list
@@ -148,6 +153,7 @@ def bits(s, endian = 'big', zero = 0, one = 1):
 
     return out
 
+
 def bits_str(s, endian = 'big', zero = '0', one = '1'):
     """bits_str(s, endian = 'big', zero = '0', one = '1') -> str
 
@@ -161,6 +167,7 @@ def bits_str(s, endian = 'big', zero = '0', one = '1'):
        '0100011010010110001011101100111011111010110011100010111001001110'
     """
     return ''.join(bits(s, endian, zero, one))
+
 
 def unbits(s, endian = 'big'):
     """unbits(s, endian = 'big') -> str
@@ -182,10 +189,17 @@ def unbits(s, endian = 'big'):
        >>> unbits(bits('hello'), endian = 'little')
        '\\x16\\xa666\\xf6'
     """
+
+    def little(s):
+        return chr(int(s[::-1], 2))
+
+    def big(s):
+        return chr(int(s, 2))
+
     if endian == 'little':
-        u = lambda s: chr(int(s[::-1], 2))
+        u = little
     elif endian == 'big':
-        u = lambda s: chr(int(s, 2))
+        u = big
     else:
         raise ValueError("unbits(): 'endian' must be either 'little' or 'big'")
 
@@ -225,6 +239,7 @@ def bitswap(s):
         out.append(unbits(bits_str(c)[::-1]))
 
     return ''.join(out)
+
 
 def bitswap_int(n, width):
     """bitswap_int(n) -> int
@@ -267,6 +282,7 @@ def b64e(s):
        """
     return base64.b64encode(s)
 
+
 def b64d(s):
     """b64d(s) -> str
 
@@ -280,6 +296,8 @@ def b64d(s):
     return base64.b64decode(s)
 
 # misc binary functions
+
+
 def xor(*args, **kwargs):
     """xor(*args, cut = 'max') -> str
 
@@ -332,6 +350,7 @@ def xor(*args, **kwargs):
 
     return ''.join(get(n) for n in range(cut))
 
+
 def xor_pair(data, avoid = '\x00\n'):
     """xor_pair(data, avoid = '\\x00\\n') -> None or (str, str)
 
@@ -373,6 +392,7 @@ def xor_pair(data, avoid = '\x00\n'):
 
     return res1, res2
 
+
 def xor_key(data, avoid='\x00\n', size=None):
     r"""xor_key(data, size=None, avoid='\x00\n') -> None or (int, str)
 
@@ -402,7 +422,7 @@ def xor_key(data, avoid='\x00\n', size=None):
     words    = lists.group(size, data)
     columns  = [''] * size
     for word in words:
-        for i,byte in enumerate(word):
+        for i, byte in enumerate(word):
             columns[i] += byte
 
     alphabet = list(chr(n) for n in range(256) if chr(n) not in avoid)
@@ -420,6 +440,7 @@ def xor_key(data, avoid='\x00\n', size=None):
             return None
 
     return result, xor(data, result)
+
 
 def randoms(count, alphabet = string.lowercase):
     """randoms(count, alphabet = string.lowercase) -> str
@@ -485,10 +506,12 @@ def rol(n, k, word_size = None):
     else:
         raise ValueError("rol(): 'n' must be an integer, string, list or tuple")
 
+
 def ror(n, k, word_size = None):
     """A simple wrapper around :func:`rol`, which negates the values of `k`."""
 
     return rol(n, -k, word_size)
+
 
 def naf(n):
     """naf(int) -> int generator
@@ -516,6 +539,7 @@ def naf(n):
         n = (n - z) // 2
         yield z
 
+
 def isprint(c):
     """isprint(c) -> bool
 
@@ -539,6 +563,7 @@ def hexii(s, width = 16, skip = True):
 
     return hexdump(s, width, skip, True)
 
+
 def _hexiichar(c):
     HEXII = string.punctuation + string.digits + string.letters
     if c in HEXII:
@@ -560,12 +585,15 @@ default_style = {
 
 cyclic_pregen = ''
 
-def sequential_lines(a,b):
+
+def sequential_lines(a, b):
     return (a+b) in cyclic_pregen
+
 
 def update_cyclic_pregenerated(size):
     global cyclic_pregen
     cyclic_pregen = cyclic(size)
+
 
 def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
                  highlight=None, cyclic=False):
@@ -606,7 +634,7 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
     column_sep  = '  '
     line_fmt    = '%%(offset)08x  %%(hexbytes)-%is │%%(printable)s│' % (len(column_sep)+(width*byte_width))
     spacer      = ' '
-    marker      = (style.get('marker') or (lambda s:s))('│')
+    marker      = (style.get('marker') or (lambda s: s))('│')
 
     if hexii:
         column_sep = ''
@@ -640,8 +668,8 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
         # If this chunk is the same as the last unique chunk,
         # use a '*' instead.
         if skip and \
-           (last_unique == chunk or \
-            (cyclic and sequential_lines(last_unique, chunk))):
+           (last_unique == chunk or
+                (cyclic and sequential_lines(last_unique, chunk))):
             last_unique = chunk
             if not skipping:
                 yield '*'
@@ -678,6 +706,7 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
     line = "%08x" % (begin + numb)
     yield line
 
+
 def hexdump(s, width=16, skip=True, hexii=False, begin=0,
             style=None, highlight=None, cyclic=False):
     """hexdump(s, width = 16, skip = True, hexii = False, begin = 0,
@@ -708,6 +737,7 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
                                   highlight,
                                   cyclic))
 
+
 def negate(value, width = None):
     """
     Returns the two's complement of 'value'.
@@ -716,6 +746,7 @@ def negate(value, width = None):
         width = context.bits
     mask = ((1<<width)-1)
     return ((mask+1) - value) & mask
+
 
 def bnot(value, width=None):
     """

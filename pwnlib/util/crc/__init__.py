@@ -21,6 +21,7 @@ from .. import packing
 
 
 class BitPolynom(object):
+
     def __init__(self, n):
         if not isinstance(n, (int, long)):
             raise TypeError("Polynomial must be called with an integer or a list")
@@ -141,7 +142,9 @@ class BitPolynom(object):
             out.append("1")
         return ' + '.join(out)
 
+
 class Module(types.ModuleType):
+
     def __init__(self):
         super(Module, self).__init__(__name__)
         self._cached_crcs = None

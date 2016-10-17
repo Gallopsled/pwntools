@@ -59,13 +59,15 @@ parser.add_argument(
     default='auto',
 )
 
+
 def asint(s):
-    if   s.startswith('0x'):
+    if s.startswith('0x'):
         return int(s, 16)
     elif s.startswith('0'):
         return int(s, 8)
     else:
         return int(s, 10)
+
 
 def main(args):
     infile = args.file

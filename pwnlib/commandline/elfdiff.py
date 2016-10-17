@@ -12,13 +12,15 @@ from . import common
 
 def dump(objdump, path):
     n = NamedTemporaryFile(delete=False)
-    o = check_output([objdump,'-d','-x','-s',path])
+    o = check_output([objdump, '-d', '-x', '-s', path])
     n.write(o)
     n.flush()
     return n.name
 
-def diff(a,b):
-    try: return check_output(['diff',a,b])
+
+def diff(a, b):
+    try:
+        return check_output(['diff', a, b])
     except CalledProcessError as e:
         return e.output
 
@@ -29,6 +31,7 @@ p = common.parser_commands.add_parser(
 
 p.add_argument('a')
 p.add_argument('b')
+
 
 def main(a):
     with context.silent:

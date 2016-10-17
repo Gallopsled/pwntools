@@ -7,8 +7,8 @@ from . import termcap
 
 def eval_when(when):
     if isinstance(when, file) or \
-      when in ('always', 'never', 'auto', sys.stderr, sys.stdout):
-        if   when == 'always':
+            when in ('always', 'never', 'auto', sys.stderr, sys.stdout):
+        if when == 'always':
             return True
         elif when == 'never':
             return False
@@ -19,7 +19,9 @@ def eval_when(when):
     else:
         raise ValueError('text.when: must be a file-object or "always", "never" or "auto"')
 
+
 class Module(types.ModuleType):
+
     def __init__(self):
         self.__file__ = __file__
         self.__name__ = __name__
@@ -36,7 +38,7 @@ class Module(types.ModuleType):
             'magenta': 5,
             'cyan': 6,
             'white': 7,
-            }
+        }
         self._reset = '\x1b[m'
         self._attributes = {}
         for x, y in [('italic'   , 'sitm'),
@@ -87,6 +89,7 @@ class Module(types.ModuleType):
                     ds.pop(0)
                 except KeyError:
                     break
+
             def c():
                 bright = 0
                 c = ds.pop(0)

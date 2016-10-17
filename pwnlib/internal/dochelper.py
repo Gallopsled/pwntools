@@ -32,5 +32,6 @@ class ExecDirective(Directive):
         finally:
             sys.stdout = old_stdout
 
+
 def setup(app):
     app.add_directive('exec', ExecDirective)

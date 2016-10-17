@@ -6,6 +6,7 @@ from .log import getLogger
 
 log = getLogger(__name__)
 
+
 def yesno(prompt, default = None):
     """Presents the user with prompt (typically in the form of question) which
     the user must answer yes or no.
@@ -25,18 +26,18 @@ def yesno(prompt, default = None):
         term.output(' [?] %s [' % prompt)
         yesfocus, yes = term.text.bold('Yes'), 'yes'
         nofocus, no = term.text.bold('No'), 'no'
-        hy = term.output(yesfocus if default == True else yes)
+        hy = term.output(yesfocus if default else yes)
         term.output('/')
-        hn = term.output(nofocus if default == False else no)
+        hn = term.output(nofocus if not default else no)
         term.output(']\n')
         cur = default
         while True:
             k = term.key.get()
-            if   k in ('y', 'Y', '<left>') and cur != True:
+            if k in ('y', 'Y', '<left>') and not cur:
                 cur = True
                 hy.update(yesfocus)
                 hn.update(no)
-            elif k in ('n', 'N', '<right>') and cur != False:
+            elif k in ('n', 'N', '<right>') and cur:
                 cur = False
                 hy.update(yes)
                 hn.update(nofocus)
@@ -45,18 +46,19 @@ def yesno(prompt, default = None):
                     return cur
     else:
         prompt = ' [?] %s [%s/%s] ' % (prompt,
-                                       'Yes' if default == True else 'yes',
-                                       'No' if default == False else 'no',
+                                       'Yes' if default else 'yes',
+                                       'No' if not default else 'no',
                                        )
         while True:
             opt = raw_input(prompt).lower()
-            if opt == '' and default != None:
+            if opt == '' and default is not None:
                 return default
-            elif opt in ('y','yes'):
+            elif opt in ('y', 'yes'):
                 return True
             elif opt in ('n', 'no'):
                 return False
             print 'Please answer yes or no'
+
 
 def options(prompt, opts, default = None):
     """Presents the user with a prompt (typically in the
@@ -93,7 +95,7 @@ def options(prompt, opts, default = None):
             prev = cur
             was_digit = False
             k = term.key.get()
-            if   k == '<up>':
+            if k == '<up>':
                 if cur is None:
                     cur = 0
                 else:
@@ -129,7 +131,7 @@ def options(prompt, opts, default = None):
                 else:
                     hs[cur].update(arrow)
     else:
-        linefmt =       '       %' + str(len(str(len(opts)))) + 'd) %s'
+        linefmt = '       %' + str(len(str(len(opts)))) + 'd) %s'
         while True:
             print ' [?] ' + prompt
             for i, opt in enumerate(opts):
@@ -144,10 +146,11 @@ def options(prompt, opts, default = None):
             if x >= 1 and x <= len(opts):
                 return x
 
+
 def pause(n = None):
     """Waits for either user input or a specific number of seconds."""
 
-    if n == None:
+    if n is None:
         if term.term_mode:
             log.info('Paused (press any to continue)')
             term.getkey()
@@ -162,6 +165,7 @@ def pause(n = None):
             l.success()
     else:
         raise ValueError('pause(): n must be a number or None')
+
 
 def more(text):
     """more(text)

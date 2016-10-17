@@ -1,19 +1,20 @@
 _const_codes = [
-    'POP_TOP','ROT_TWO','ROT_THREE','ROT_FOUR','DUP_TOP',
-    'BUILD_LIST','BUILD_MAP','BUILD_TUPLE',
-    'LOAD_CONST','RETURN_VALUE','STORE_SUBSCR', 'STORE_MAP'
-    ]
+    'POP_TOP', 'ROT_TWO', 'ROT_THREE', 'ROT_FOUR', 'DUP_TOP',
+    'BUILD_LIST', 'BUILD_MAP', 'BUILD_TUPLE',
+    'LOAD_CONST', 'RETURN_VALUE', 'STORE_SUBSCR', 'STORE_MAP'
+]
 
 _expr_codes = _const_codes + [
-    'UNARY_POSITIVE','UNARY_NEGATIVE','UNARY_NOT',
-    'UNARY_INVERT','BINARY_POWER','BINARY_MULTIPLY',
-    'BINARY_DIVIDE','BINARY_FLOOR_DIVIDE','BINARY_TRUE_DIVIDE',
-    'BINARY_MODULO','BINARY_ADD','BINARY_SUBTRACT',
-    'BINARY_LSHIFT','BINARY_RSHIFT','BINARY_AND','BINARY_XOR',
+    'UNARY_POSITIVE', 'UNARY_NEGATIVE', 'UNARY_NOT',
+    'UNARY_INVERT', 'BINARY_POWER', 'BINARY_MULTIPLY',
+    'BINARY_DIVIDE', 'BINARY_FLOOR_DIVIDE', 'BINARY_TRUE_DIVIDE',
+    'BINARY_MODULO', 'BINARY_ADD', 'BINARY_SUBTRACT',
+    'BINARY_LSHIFT', 'BINARY_RSHIFT', 'BINARY_AND', 'BINARY_XOR',
     'BINARY_OR',
-    ]
+]
 
 _values_codes = _expr_codes + ['LOAD_NAME']
+
 
 def _get_opcodes(codeobj):
     """_get_opcodes(codeobj) -> [opcodes]
@@ -37,6 +38,7 @@ def _get_opcodes(codeobj):
             i += 1
     return opcodes
 
+
 def test_expr(expr, allowed_codes):
     """test_expr(expr, allowed_codes) -> codeobj
 
@@ -55,6 +57,7 @@ def test_expr(expr, allowed_codes):
         if code not in allowed_codes:
             raise ValueError("opcode %s not allowed" % dis.opname[code])
     return c
+
 
 def const(expr):
     """const(expression) -> value
@@ -80,6 +83,7 @@ def const(expr):
     c = test_expr(expr, _const_codes)
     return eval(c)
 
+
 def expr(expr):
     """expr(expression) -> value
 
@@ -103,6 +107,7 @@ def expr(expr):
 
     c = test_expr(expr, _expr_codes)
     return eval(c)
+
 
 def values(expr, env):
     """values(expression, dict) -> value

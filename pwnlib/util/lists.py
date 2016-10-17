@@ -31,6 +31,7 @@ def partition(lst, f, save_keys = False):
     else:
         return d.values()
 
+
 def group(n, lst, underfull_action = 'ignore', fill_value = None):
     """group(n, lst, underfull_action = 'ignore', fill_value = None) -> list
 
@@ -86,6 +87,7 @@ def group(n, lst, underfull_action = 'ignore', fill_value = None):
 
     return out
 
+
 def concat(l):
     """concat(l) -> list
 
@@ -103,6 +105,7 @@ def concat(l):
         res.extend(k)
 
     return res
+
 
 def concat_all(*args):
     """concat_all(*args) -> list
@@ -126,6 +129,7 @@ def concat_all(*args):
 
     return res
 
+
 def ordlist(s):
     """ordlist(s) -> list
 
@@ -137,6 +141,7 @@ def ordlist(s):
     """
     return map(ord, s)
 
+
 def unordlist(cs):
     """unordlist(cs) -> str
 
@@ -147,6 +152,7 @@ def unordlist(cs):
       'hello'
     """
     return ''.join(chr(c) for c in cs)
+
 
 def findall(haystack, needle):
     """findall(l, e) -> l
@@ -200,7 +206,6 @@ def findall(haystack, needle):
         for i in xrange(len(S)):
             if S[i] == w:
                 yield i
-
 
     if type(haystack) != type(needle):
         needle = [needle]

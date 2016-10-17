@@ -24,6 +24,7 @@ _banner = r'''
   .:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:.
 '''
 
+
 def splash():
     """Put this at the beginning of your exploit to create the illusion that
     your sploit is enterprisey and top notch quality"""
@@ -38,6 +39,7 @@ def splash():
             text.green  , text.bold_green  ,
             text.cyan   , text.bold_cyan   ,
         ]
+
         def getcolor(n):
             return colors[(n / 4) % len(colors)]
 

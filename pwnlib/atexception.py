@@ -15,6 +15,7 @@ _lock = threading.Lock()
 _ident = 0
 _handlers = {}
 
+
 def register(func, *args, **kwargs):
     """register(func, *args, **kwargs)
 
@@ -53,6 +54,7 @@ def register(func, *args, **kwargs):
     _handlers[ident] = (func, args, kwargs, vars(context))
     return ident
 
+
 def unregister(func):
     """unregister(func)
 
@@ -61,6 +63,7 @@ def unregister(func):
     """
     if func in _handlers:
         del _handlers[func]
+
 
 def _run_handlers():
     """_run_handlers()
@@ -72,7 +75,7 @@ def _run_handlers():
     happens, i.e. other handlers will be run.
     """
     for _ident, (func, args, kwargs, ctx) in \
-        sorted(_handlers.items(), reverse = True):
+            sorted(_handlers.items(), reverse = True):
         try:
             with context.local():
                 context.clear()
@@ -88,6 +91,7 @@ def _run_handlers():
 
 # we rely on the existing excepthook to print exceptions
 _oldhook = getattr(sys, 'excepthook', None)
+
 
 def _newhook(typ, val, tb):
     """_newhook(typ, val, tb)

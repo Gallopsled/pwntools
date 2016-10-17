@@ -46,28 +46,27 @@ thumb = arm
 aarch64 = map('x{}'.format, range(32))
 aarch64 += ["sp", "lr", "pc", "cpsr"]
 
-i386_baseregs = [ "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", "ip"]
+i386_baseregs = ["ax", "cx", "dx", "bx", "sp", "bp", "si", "di", "ip"]
 
 i386 = map('e{}'.format, i386_baseregs)
 i386 += i386_baseregs
-i386 += [ "eflags", "cs", "ss", "ds", "es", "fs", "gs", ]
+i386 += ["eflags", "cs", "ss", "ds", "es", "fs", "gs", ]
 
-amd64 =  map('r{}'.format, i386_baseregs)
-amd64 += map('r{}'.format, range(8,16))
-amd64 += map('r{}d'.format, range(8,16))
+amd64 = map('r{}'.format, i386_baseregs)
+amd64 += map('r{}'.format, range(8, 16))
+amd64 += map('r{}d'.format, range(8, 16))
 amd64 += i386
 
-powerpc =  map('r{}'.format, range(32))
-powerpc += ["pc", "msr", "cr", "lr", "ctr", "xer", "orig_r3", "trap" ]
-powerpc =  map('%{}'.format, powerpc)
+powerpc = map('r{}'.format, range(32))
+powerpc += ["pc", "msr", "cr", "lr", "ctr", "xer", "orig_r3", "trap"]
+powerpc = map('%{}'.format, powerpc)
 
-sparc =  map('g{}'.format, range(8))
+sparc = map('g{}'.format, range(8))
 sparc += map('o{}'.format, range(5))
 sparc += map('l{}'.format, range(8))
 sparc += map('i{}'.format, range(5))
-sparc += ["pc", "sp", "fp", "psr" ]
-sparc =  map('%{}'.format, sparc)
-
+sparc += ["pc", "sp", "fp", "psr"]
+sparc = map('%{}'.format, sparc)
 
 
 # x86/amd64 registers in decreasing size
@@ -91,8 +90,9 @@ i386_ordered = [
 ]
 
 all_regs, sizes, bigger, smaller = register_sizes(i386_ordered, [64, 32, 16, 8, 8])
-native64 = {k:v[0] for k,v in bigger.items()}
-native32 = {k:v[1] for k,v in bigger.items() if not k.startswith('r')}
+native64 = {k: v[0] for k, v in bigger.items()}
+native32 = {k: v[1] for k, v in bigger.items() if not k.startswith('r')}
+
 
 class Register(object):
     #: Register name
@@ -138,7 +138,7 @@ class Register(object):
             if name in row:
                 self.bigger  = row[0:row.index(name)]
                 self.smaller = row[row.index(name)+1:]
-                self.sizes   = {64>>i:r for i,r in enumerate(row)}
+                self.sizes   = {64>>i: r for i, r in enumerate(row)}
                 self.native64 = row[0]
                 self.native32 = row[1]
                 self.xor = self.sizes[min(self.size, 32)]
@@ -178,12 +178,14 @@ for row in i386_ordered:
     for i, reg in enumerate(row):
         intel[reg] = Register(reg, 64 >> i)
 
+
 def get_register(name):
     if isinstance(name, Register):
         return name
     if isinstance(name, str):
         return intel.get(name, None)
     return None
+
 
 def is_register(obj):
     if isinstance(obj, Register):
@@ -222,6 +224,7 @@ def bits_required(value):
 
 def register_size(reg):
     return sizes[reg]
+
 
 def fits_in_register(reg, value):
     return register_size(reg) >= bits_required(value)

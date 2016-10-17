@@ -159,15 +159,18 @@ p.add_argument(
     help='List available shellcodes, optionally provide a filter'
 )
 
+
 def get_template(name):
     func = shellcraft
     for attr in name.split('.'):
         func = getattr(func, attr)
     return func
 
+
 def is_not_a_syscall_template(name):
     template_src = shellcraft._get_source(name)
     return 'man 2' not in read(template_src)
+
 
 def main(args):
     if args.list:
@@ -257,12 +260,10 @@ def main(args):
     map(common.context_arg, args.shellcode.split('.'))
     code = func(*args.args)
 
-
     if args.before:
         code = shellcraft.trap() + code
     if args.after:
         code = code + shellcraft.trap()
-
 
     if args.format in ['a', 'asm', 'assembly']:
         if args.color:
@@ -284,11 +285,12 @@ def main(args):
     if vma:
         vma = eval(vma)
 
-    if args.format in ['e','elf']:
+    if args.format in ['e', 'elf']:
         args.format = 'default'
-        try: os.fchmod(args.out.fileno(), 0700)
-        except OSError: pass
-
+        try:
+            os.fchmod(args.out.fileno(), 0700)
+        except OSError:
+            pass
 
         if not args.avoid:
             code = read(make_elf_from_assembly(assembly, vma=vma))

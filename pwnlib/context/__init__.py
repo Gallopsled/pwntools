@@ -23,12 +23,18 @@ from ..timeout import Timeout
 
 _original_socket = socket.socket
 
+
 class _devnull(object):
     name = None
+
     def write(self, *a, **kw): pass
-    def read(self, *a, **kw):  return ''
+
+    def read(self, *a, **kw): return ''
+
     def flush(self, *a, **kw): pass
+
     def close(self, *a, **kw): pass
+
 
 class _defaultdict(dict):
     """
@@ -59,6 +65,7 @@ class _defaultdict(dict):
         ...
         KeyError: 'baz'
     """
+
     def __init__(self, default=None):
         super(_defaultdict, self).__init__()
         if default is None:
@@ -66,9 +73,9 @@ class _defaultdict(dict):
 
         self.default = default
 
-
     def __missing__(self, key):
         return self.default[key]
+
 
 class _DictStack(object):
     """
@@ -94,6 +101,7 @@ class _DictStack(object):
         >>> t
         {'key': 'value'}
     """
+
     def __init__(self, default):
         self._current = _defaultdict(default)
         self.__stack  = []
@@ -109,19 +117,28 @@ class _DictStack(object):
         return self._current.copy()
 
     # Pass-through container emulation routines
-    def __len__(self):              return self._current.__len__()
-    def __delitem__(self, k):       return self._current.__delitem__(k)
-    def __getitem__(self, k):       return self._current.__getitem__(k)
-    def __setitem__(self, k, v):    return self._current.__setitem__(k, v)
-    def __contains__(self, k):      return self._current.__contains__(k)
-    def __iter__(self):             return self._current.__iter__()
-    def __repr__(self):             return self._current.__repr__()
-    def __eq__(self, other):        return self._current.__eq__(other)
+    def __len__(self): return self._current.__len__()
+
+    def __delitem__(self, k): return self._current.__delitem__(k)
+
+    def __getitem__(self, k): return self._current.__getitem__(k)
+
+    def __setitem__(self, k, v): return self._current.__setitem__(k, v)
+
+    def __contains__(self, k): return self._current.__contains__(k)
+
+    def __iter__(self): return self._current.__iter__()
+
+    def __repr__(self): return self._current.__repr__()
+
+    def __eq__(self, other): return self._current.__eq__(other)
 
     # Required for keyword expansion operator ** to work
-    def keys(self):                 return self._current.keys()
-    def values(self):               return self._current.values()
-    def items(self):                return self._current.items()
+    def keys(self): return self._current.keys()
+
+    def values(self): return self._current.values()
+
+    def items(self): return self._current.items()
 
 
 class _Tls_DictStack(threading.local, _DictStack):
@@ -161,9 +178,10 @@ def _validator(validator):
         self._tls[name] = validator(self, val)
 
     def fdel(self):
-        self._tls._current.pop(name,None)
+        self._tls._current.pop(name, None)
 
     return property(fget, fset, fdel, doc)
+
 
 class Thread(threading.Thread):
     """
@@ -220,6 +238,7 @@ class Thread(threading.Thread):
         ``target=`` for ``__init__``, or that all subclasses invoke
         ``super(Subclass.self).set_up_context()`` or similar.
     """
+
     def __init__(self, *args, **kwargs):
         super(Thread, self).__init__(*args, **kwargs)
         self.old = context.copy()
@@ -233,6 +252,7 @@ class Thread(threading.Thread):
         """
         context.update(**self.old)
         super(Thread, self).__bootstrap()
+
 
 def _longest(d):
     """
@@ -250,11 +270,13 @@ def _longest(d):
     bb
     a
     """
-    return collections.OrderedDict((k,d[k]) for k in sorted(d, key=len, reverse=True))
+    return collections.OrderedDict((k, d[k]) for k in sorted(d, key=len, reverse=True))
+
 
 def TlsProperty(object):
     def __get__(self, obj, objtype=None):
         return obj._tls
+
 
 class ContextType(object):
     r"""
@@ -346,7 +368,7 @@ class ContextType(object):
     }
 
     #: Valid values for :meth:`pwnlib.context.ContextType.os`
-    oses = sorted(('linux','freebsd','windows','cgc','android'))
+    oses = sorted(('linux', 'freebsd', 'windows', 'cgc', 'android'))
 
     big_32    = {'endian': 'big', 'bits': 32}
     big_64    = {'endian': 'big', 'bits': 64}
@@ -410,7 +432,6 @@ class ContextType(object):
         self._tls = _Tls_DictStack(_defaultdict(ContextType.defaults))
         self.update(**kwargs)
 
-
     def copy(self):
         """copy() -> dict
         Returns a copy of the current context as a dictionary.
@@ -423,7 +444,6 @@ class ContextType(object):
             True
         """
         return self._tls.copy()
-
 
     @property
     def __dict__(self):
@@ -461,11 +481,11 @@ class ContextType(object):
         for arg in args:
             self.update(**arg)
 
-        for k,v in kwargs.items():
-            setattr(self,k,v)
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
     def __repr__(self):
-        v = sorted("%s = %r" % (k,v) for k,v in self._tls._current.items())
+        v = sorted("%s = %r" % (k, v) for k, v in self._tls._current.items())
         return '%s(%s)' % (self.__class__.__name__, ', '.join(v))
 
     def local(self, function=None, **kwargs):
@@ -499,9 +519,10 @@ class ContextType(object):
             1.0
         """
         class LocalContext(object):
+
             def __enter__(a):
                 self._tls.push()
-                self.update(**{k:v for k,v in kwargs.items() if v is not None})
+                self.update(**{k: v for k, v in kwargs.items() if v is not None})
                 return self
 
             def __exit__(a, *b, **c):
@@ -540,7 +561,6 @@ class ContextType(object):
             with self.local(function, log_level=level):
                 return function(*a, **kw)
         return wrapper
-
 
     @property
     def verbose(self):
@@ -676,7 +696,7 @@ class ContextType(object):
         except KeyError:
             raise AttributeError('AttributeError: arch must be one of %r' % sorted(ContextType.architectures))
 
-        for k,v in ContextType.architectures[arch].items():
+        for k, v in ContextType.architectures[arch].items():
             if k not in self._tls:
                 self._tls[k] = v
 
@@ -754,7 +774,7 @@ class ContextType(object):
 
         """
         # Cyclic imports... sorry Idolf.
-        from ..elf     import ELF
+        from ..elf import ELF
 
         if not isinstance(binary, ELF):
             binary = ELF(binary)
@@ -784,6 +804,7 @@ class ContextType(object):
             AttributeError: bits must be > 0 (0)
         """
         return self.bits/8
+
     @bytes.setter
     def bytes(self, value):
         self.bits = value*8
@@ -824,7 +845,6 @@ class ContextType(object):
 
         return ContextType.endiannesses[endian]
 
-
     @_validator
     def log_level(self, value):
         """
@@ -850,15 +870,19 @@ class ContextType(object):
             AttributeError: log_level must be an integer or one of ['CRITICAL', 'DEBUG', 'ERROR', 'INFO', 'NOTSET', 'WARN', 'WARNING']
         """
         # If it can be converted into an int, success
-        try:                    return int(value)
-        except ValueError:  pass
+        try:
+            return int(value)
+        except ValueError:
+            pass
 
         # If it is defined in the logging module, success
-        try:                    return getattr(logging, value.upper())
-        except AttributeError:  pass
+        try:
+            return getattr(logging, value.upper())
+        except AttributeError:
+            pass
 
         # Otherwise, fail
-        level_names = filter(lambda x: isinstance(x,str), logging._levelNames)
+        level_names = filter(lambda x: isinstance(x, str), logging._levelNames)
         permitted = sorted(level_names)
         raise AttributeError('log_level must be an integer or one of %r' % permitted)
 
@@ -888,7 +912,7 @@ class ContextType(object):
             >>> file('bar.txt').readlines()[-1] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello from bar!\n'
         """
-        if isinstance(value, (str,unicode)):
+        if isinstance(value, (str, unicode)):
             modes = ('w', 'wb', 'a', 'ab')
             # check if mode was specified as "[value],[mode]"
             if ',' not in value:
@@ -913,7 +937,7 @@ class ContextType(object):
             '=' * 78,
             ' Started at %s ' % time.strftime(iso_8601),
             ' sys.argv = [',
-            ]
+        ]
         for arg in sys.argv:
             lines.append('   %r,' % arg)
         lines.append(' ]')
@@ -1003,8 +1027,10 @@ class ContextType(object):
             ...
             AttributeError: signed must be one of ['no', 'signed', 'unsigned', 'yes'] or a non-string truthy value
         """
-        try:             signed = ContextType.signednesses[signed]
-        except KeyError: pass
+        try:
+            signed = ContextType.signednesses[signed]
+        except KeyError:
+            pass
 
         if isinstance(signed, str):
             raise AttributeError('signed must be one of %r or a non-string truthy value' % sorted(ContextType.signednesses))
@@ -1084,7 +1110,6 @@ class ContextType(object):
         """
         return bool(value)
 
-
     @_validator
     def adb_host(self, value):
         """Sets the target host which is used for ADB.
@@ -1095,7 +1120,6 @@ class ContextType(object):
         to the default 'localhost'.
         """
         return str(value)
-
 
     @_validator
     def adb_port(self, value):
@@ -1140,7 +1164,6 @@ class ContextType(object):
 
         return command
 
-
     #*************************************************************************
     #                               ALIASES
     #*************************************************************************
@@ -1173,10 +1196,10 @@ class ContextType(object):
             True
         """
         return self.endian
+
     @endianness.setter
     def endianness(self, value):
         self.endian = value
-
 
     @property
     def sign(self):
@@ -1199,7 +1222,6 @@ class ContextType(object):
     @signedness.setter
     def signedness(self, value):
         self.signed = value
-
 
     @property
     def word_size(self):
@@ -1231,6 +1253,7 @@ if 'ANDROID_ADB_SERVER_HOST' in os.environ:
 if 'ANDROID_ADB_SERVER_PORT' in os.environ:
     context.adb_port = int(os.getenv('ANDROID_ADB_SERVER_PORT'))
 
+
 def LocalContext(function):
     """
     Wraps the specified function on a context.local() block, using kwargs.
@@ -1251,6 +1274,6 @@ def LocalContext(function):
         if not kw:
             return function(*a)
 
-        with context.local(**{k:kw.pop(k) for k,v in kw.items() if isinstance(getattr(ContextType, k, None), property)}):
+        with context.local(**{k: kw.pop(k) for k, v in kw.items() if isinstance(getattr(ContextType, k, None), property)}):
             return function(*a, **kw)
     return setter

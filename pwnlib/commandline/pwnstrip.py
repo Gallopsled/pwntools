@@ -15,6 +15,7 @@ g.add_argument('-p', '--patch', metavar='FUNCTION', help="Patch function", actio
 p.add_argument('-o', '--output', type=file, default=sys.stdout)
 p.add_argument('file', type=file)
 
+
 def main(args):
     if not (args.patch or args.build_id):
         sys.stderr.write("Must specify at least one action\n")

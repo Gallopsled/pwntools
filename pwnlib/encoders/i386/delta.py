@@ -30,6 +30,7 @@ next:
 data:
 '''
 
+
 class i386DeltaEncoder(Encoder):
     r"""
     i386 encoder built on delta-encoding.
@@ -55,8 +56,11 @@ class i386DeltaEncoder(Encoder):
         table = collections.defaultdict(lambda: [])
         endchar = ''
 
-        not_bad = lambda x: chr(x) not in avoid
-        not_bad_or_term = lambda x: not_bad(x) and x != self.terminator
+        def not_bad(x):
+            return chr(x) not in avoid
+
+        def not_bad_or_term(x):
+            return not_bad(x) and x != self.terminator
 
         for i in filter(not_bad_or_term, range(0, 256)):
             endchar += chr(i)

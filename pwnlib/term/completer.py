@@ -5,19 +5,25 @@ from . import readline
 
 
 class Completer:
+
     def complete(self, _left, _right):
         raise Exception("unimplemented")
+
     def suggest(self, _left, _right):
         raise Exception("unimplemented")
+
     def __enter__(self):
         self._saved_complete_hook = readline.complete_hook
         self._saved_suggest_hook = readline.suggest_hook
         readline.set_completer(self)
+
     def __exit__(self, *args):
         readline.complete_hook = self._saved_complete_hook
         readline.suggest_hook = self._saved_suggest_hook
 
+
 class WordCompleter(Completer):
+
     def __init__(self, delims = None):
         self.delims = delims or ' \t\n`!@#$^&*()=+[{]}\\|;:\'",<>?'
         self._cur_word = None
@@ -54,7 +60,9 @@ class WordCompleter(Completer):
     def complete_word(self, word):
         raise Exception("unimplemented")
 
+
 class LongestPrefixCompleter(WordCompleter):
+
     def __init__(self, words = None, delims = None):
         words = words or []
         WordCompleter.__init__(self, delims)
@@ -79,7 +87,9 @@ class LongestPrefixCompleter(WordCompleter):
         else:
             return cs
 
+
 class PathCompleter(Completer):
+
     def __init__(self, mask = '*', only_dirs = False):
         if mask != '*':
             mask = mask.replace('.', '\\.').replace('*', '.*')
@@ -113,8 +123,8 @@ class PathCompleter(Completer):
             if self.only_dirs:
                 cs = [c for c in cs if os.path.isdir(c)]
             if self.mask:
-                cs = [c for c in cs if \
-                      self.mask.match(os.path.basename(c)) or \
+                cs = [c for c in cs if
+                      self.mask.match(os.path.basename(c)) or
                       os.path.isdir(c)]
             self._completions = cs
 

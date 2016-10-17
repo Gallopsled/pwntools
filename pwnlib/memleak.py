@@ -8,6 +8,7 @@ from .util.packing import unpack
 
 log = getLogger(__name__)
 
+
 class MemLeak(object):
     """MemLeak is a caching and heuristic tool for exploiting memory leaks.
 
@@ -66,6 +67,7 @@ class MemLeak(object):
             leaking 0x103
             True
     """
+
     def __init__(self, f, search_range = 20, reraise = True):
         self.leak = f
         self.search_range = search_range
@@ -172,7 +174,7 @@ class MemLeak(object):
                     raise
 
             if data:
-                for i,byte in enumerate(data):
+                for i, byte in enumerate(data):
                     self.cache[address+i] = byte
 
             # We could not leak this particular byte, search backwardd
@@ -197,7 +199,6 @@ class MemLeak(object):
 
         Leak `numb` bytes at `addr`"""
         return map(lambda a: self._leak(a, 1), range(addr, addr+numb))
-
 
     def _b(self, addr, ndx, size):
         addr += ndx * size
@@ -346,7 +347,6 @@ class MemLeak(object):
         """
         return self._leak(addr, numb) or None
 
-
     def _clear(self, addr, ndx, size):
         addr += ndx * size
         data = map(lambda x: self.cache.pop(x, None), range(addr, addr+size))
@@ -432,10 +432,9 @@ class MemLeak(object):
         """
         return self._clear(addr, ndx, 8)
 
-
     def _set(self, addr, val, ndx, size):
         addr += ndx * size
-        for i,b in enumerate(pack(val, size*8)):
+        for i, b in enumerate(pack(val, size*8)):
             self.cache[addr+i] = b
 
     def setb(self, addr, val, ndx = 0):
@@ -500,7 +499,7 @@ class MemLeak(object):
         if null_terminate:
             val += '\x00'
 
-        for i,b in enumerate(val):
+        for i, b in enumerate(val):
             self.cache[addr+i] = b
 
     def __getitem__(self, item):

@@ -23,6 +23,8 @@ types = {
 # Slightly modified copy of the pyelftools version of the same function,
 # until they fix this issue:
 # https://github.com/eliben/pyelftools/issues/93
+
+
 def iter_notes(self):
     """ Iterates the list of notes in the segment.
     """
@@ -48,14 +50,17 @@ def iter_notes(self):
         note['n_size'] = offset - note['n_offset']
         yield note
 
+
 class Mapping(object):
+
     def __init__(self, core, name, start, stop, flags):
-        self._core=core
-        self.name=name
-        self.start=start
-        self.stop=stop
-        self.size=stop-start
-        self.flags=flags
+        self._core = core
+        self.name = name
+        self.start = start
+        self.stop = stop
+        self.size = stop-start
+        self.flags = flags
+
     @property
     def permstr(self):
         flags = self.flags
@@ -63,8 +68,9 @@ class Mapping(object):
                         'w' if flags & 2 else '-',
                         'x' if flags & 1 else '-',
                         'p'])
+
     def __str__(self):
-        return '%x-%x %s %x %s' % (self.start,self.stop,self.permstr,self.size,self.name)
+        return '%x-%x %s %x %s' % (self.start, self.stop, self.permstr, self.size, self.name)
 
     def __repr__(self):
         return '%s(%r, %#x, %#x, %#x, %#x)' % (self.__class__.__name__,
@@ -81,6 +87,7 @@ class Mapping(object):
     def data(self):
         return self._core.read(self.start, self.size)
 
+
 class Core(ELF):
     """Core(*a, **kw) -> Core
 
@@ -92,6 +99,7 @@ class Core(ELF):
 
     Mappings can be iterated in order via ``core_obj.mappings``.
     """
+
     def __init__(self, *a, **kw):
         #: The NT_PRSTATUS object.
         self.prstatus = None
@@ -115,10 +123,10 @@ class Core(ELF):
         self.load_addr = 0
         self._address  = 0
 
-        if not self.elftype == 'CORE':
+        if self.elftype != 'CORE':
             log.error("%s is not a valid corefile" % e.file.name)
 
-        if not self.arch in ('i386','amd64'):
+        if self.arch not in ('i386', 'amd64'):
             log.error("%s does not use a supported corefile architecture" % e.file.name)
 
         prstatus_type = types[self.arch]
@@ -199,9 +207,9 @@ class Core(ELF):
                 continue
 
             if mapping.start == self.at_sysinfo_ehdr \
-            or (not vdso and mapping.size in [0x1000, 0x2000] \
-                and mapping.flags == 5 \
-                and self.read(mapping.start, 4) == '\x7fELF'):
+                or (not vdso and mapping.size in [0x1000, 0x2000]
+                    and mapping.flags == 5
+                    and self.read(mapping.start, 4) == '\x7fELF'):
                 mapping.name = '[vdso]'
                 vdso = True
                 continue
@@ -360,7 +368,7 @@ class Core(ELF):
         if name not in self.env:
             log.error("Environment variable %r not set" % name)
 
-        return self.string(self.env[name]).split('=',1)[-1]
+        return self.string(self.env[name]).split('=', 1)[-1]
 
     def __getattr__(self, attribute):
         if self.prstatus:

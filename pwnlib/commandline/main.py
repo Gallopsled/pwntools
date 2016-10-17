@@ -37,6 +37,7 @@ commands = {
     'update': update.main,
 }
 
+
 def main():
     args = parser.parse_args()
     with context.local(log_console = sys.stderr):

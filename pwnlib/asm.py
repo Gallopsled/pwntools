@@ -66,6 +66,7 @@ __all__ = ['asm', 'cpp', 'disasm', 'make_elf', 'make_elf_from_assembly']
 _basedir = path.split(__file__)[0]
 _incdir  = path.join(_basedir, 'data', 'includes')
 
+
 def dpkg_search_for_binutils(arch, util):
     """Use dpkg to search for any available assemblers which will work.
 
@@ -83,7 +84,7 @@ def dpkg_search_for_binutils(arch, util):
 
     try:
         filename = 'bin/%s*linux*-%s' % (arch, util)
-        output = subprocess.check_output(['dpkg','-S',filename])
+        output = subprocess.check_output(['dpkg', '-S', filename])
         for line in output.strip().splitlines():
             package, path = line.split(':', 1)
             packages.append(package)
@@ -93,6 +94,7 @@ def dpkg_search_for_binutils(arch, util):
         pass
 
     return packages
+
 
 def print_binutils_instructions(util, context):
     """On failure to find a binutils utility, inform the user of a way
@@ -119,6 +121,7 @@ Could not find %(util)r installed for %(context)s
 Try installing binutils for this architecture:
 %(instructions)s
 """.strip() % locals())
+
 
 @LocalContext
 def which_binutils(util):
@@ -173,10 +176,12 @@ def which_binutils(util):
     for arch in arches:
         for gutil in utils:
             # e.g. objdump
-            if arch is None: pattern = gutil
+            if arch is None:
+                pattern = gutil
 
             # e.g. aarch64-linux-gnu-objdump
-            else:       pattern = '%s*linux*-%s' % (arch,gutil)
+            else:
+                pattern = '%s*linux*-%s' % (arch, gutil)
 
             for dir in environ['PATH'].split(':'):
                 res = sorted(glob(path.join(dir, pattern)))
@@ -187,6 +192,7 @@ def which_binutils(util):
     print_binutils_instructions(util, context)
 
 checked_assembler_version = defaultdict(lambda: False)
+
 
 def _assembler():
     gas = which_binutils('as')
@@ -223,16 +229,16 @@ def _assembler():
 
     if not checked_assembler_version[gas]:
         checked_assembler_version[gas] = True
-        result = subprocess.check_output([gas, '--version','/dev/null'],
+        result = subprocess.check_output([gas, '--version', '/dev/null'],
                                          stderr=subprocess.STDOUT)
         version = re.search(r' (\d\.\d+)', result).group(1)
         if version < '2.19':
-            log.warn_once('Your binutils version is too old and may not work!\n'  + \
-                'Try updating with: https://docs.pwntools.com/en/stable/install/binutils.html\n' + \
-                'Reported Version: %r' % result.strip())
-
+            log.warn_once('Your binutils version is too old and may not work!\n'  +
+                          'Try updating with: https://docs.pwntools.com/en/stable/install/binutils.html\n' +
+                          'Reported Version: %r' % result.strip())
 
     return assembler
+
 
 def _linker():
     ld  = [which_binutils('ld')]
@@ -249,8 +255,10 @@ def _linker():
 
     return ld + bfd + [E] + arguments
 
+
 def _objcopy():
     return [which_binutils('objcopy')]
+
 
 def _objdump():
     path = [which_binutils('objdump')]
@@ -260,13 +268,14 @@ def _objdump():
 
     return path
 
+
 def _include_header():
     os   = context.os
     arch = context.arch
     include = '%s/%s.h' % (os, arch)
 
     if not include or not path.exists(path.join(_incdir, include)):
-        log.warn_once("Could not find system include headers for %s-%s" % (arch,os))
+        log.warn_once("Could not find system include headers for %s-%s" % (arch, os))
         return '\n'
 
     return '#include <%s>\n' % include
@@ -274,10 +283,10 @@ def _include_header():
 
 def _arch_header():
     prefix  = ['.section .shellcode,"awx"',
-                '.global _start',
-                '.global __start',
-                '_start:',
-                '__start:']
+               '.global _start',
+               '.global __start',
+               '_start:',
+               '__start:']
     headers = {
         'i386'  :  ['.intel_syntax noprefix'],
         'amd64' :  ['.intel_syntax noprefix'],
@@ -293,6 +302,7 @@ def _arch_header():
     }
 
     return '\n'.join(prefix + headers.get(context.arch, [])) + '\n'
+
 
 def _bfdname():
     arch = context.arch
@@ -326,16 +336,17 @@ def _bfdname():
 def _bfdarch():
     arch = context.arch
     convert = {
-    'i386': 'i386',
-    'amd64': 'i386:x86-64',
-    'thumb': 'arm',
-    'ia64': 'ia64-elf64'
+        'i386': 'i386',
+        'amd64': 'i386:x86-64',
+        'thumb': 'arm',
+        'ia64': 'ia64-elf64'
     }
 
     if arch in convert:
         return convert[arch]
 
     return arch
+
 
 def _run(cmd, stdin = None):
     log.debug(subprocess.list2cmdline(cmd))
@@ -363,6 +374,7 @@ def _run(cmd, stdin = None):
         log.error(msg)
 
     return stdout
+
 
 @LocalContext
 def cpp(shellcode):
@@ -404,6 +416,7 @@ def cpp(shellcode):
         '/dev/stdin'
     ]
     return _run(cmd, code).strip('\n').rstrip() + '\n'
+
 
 @LocalContext
 def make_elf_from_assembly(assembly, vma = None, extract=False, shared = False):
@@ -456,6 +469,7 @@ def make_elf_from_assembly(assembly, vma = None, extract=False, shared = False):
 
     return path
 
+
 @LocalContext
 def make_elf(data, vma = None, strip=True, extract=True, shared=False):
     r"""
@@ -496,7 +510,6 @@ def make_elf(data, vma = None, strip=True, extract=True, shared=False):
 
         if not data.startswith(to_thumb):
             data = to_thumb + data
-
 
     assembler = _assembler()
     linker    = _linker()
@@ -545,6 +558,7 @@ def make_elf(data, vma = None, strip=True, extract=True, shared=False):
         atexit.register(lambda: shutil.rmtree(tmpdir))
 
     return retval
+
 
 @LocalContext
 def asm(shellcode, vma = 0, extract = True, shared = False):
@@ -618,7 +632,7 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
                 ldflags += ['-shared', '-init=_start']
             _run(linker + ldflags)
 
-        elif file(step2,'rb').read(4) == '\x7fELF':
+        elif file(step2, 'rb').read(4) == '\x7fELF':
             # Sanity check for seeing if the output has relocations
             relocs = subprocess.check_output(
                 [which_binutils('readelf'), '-r', step2]
@@ -637,12 +651,13 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
             result = fd.read()
 
     except Exception:
-        lines = '\n'.join('%4i: %s' % (i+1,line) for (i,line) in enumerate(code.splitlines()))
+        lines = '\n'.join('%4i: %s' % (i+1, line) for (i, line) in enumerate(code.splitlines()))
         log.exception("An error occurred while assembling:\n%s" % lines)
     else:
         atexit.register(lambda: shutil.rmtree(tmpdir))
 
     return result
+
 
 @LocalContext
 def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
@@ -729,7 +744,6 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
         log.exception("An error occurred while disassembling:\n%s" % data)
     else:
         atexit.register(lambda: shutil.rmtree(tmpdir))
-
 
     lines = []
     pattern = '^( *[0-9a-f]+: *)((?:[0-9a-f]+ )+ *)(.*)'

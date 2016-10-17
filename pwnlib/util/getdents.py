@@ -4,20 +4,21 @@ from .packing import unpack
 
 
 class linux_dirent(object):
+
     def __init__(self, buf):
         n = context.bytes
 
         # Long
         self.d_ino    = unpack(buf[:n])
-        buf=buf[n:]
+        buf = buf[n:]
 
         # Long
         self.d_off    = unpack(buf[:n])
-        buf=buf[n:]
+        buf = buf[n:]
 
         # Short
         self.d_reclen = unpack(buf[:2], 16)
-        buf=buf[2:]
+        buf = buf[2:]
 
         # Name
         self.d_name = buf[:buf.index('\x00')]
@@ -27,6 +28,7 @@ class linux_dirent(object):
 
     def __str__(self):
         return "inode=%i %r" % (self.d_ino, self.d_name)
+
 
 def dirents(buf):
     """unpack_dents(buf) -> list

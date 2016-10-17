@@ -4,8 +4,9 @@ from . import key
 
 
 class Keymap:
+
     def __init__(self, bindings, on_match = None, on_nomatch = None,
-                  on_key = None):
+                 on_key = None):
         self._on_match = on_match
         self._on_nomatch = on_nomatch
         self._on_key = on_key
@@ -59,7 +60,7 @@ class Keymap:
             for k, v in desc.items():
                 self.register(k, v)
         else:
-            if   desc == '<match>':
+            if desc == '<match>':
                 self.on_match(cb)
             elif desc == '<nomatch>':
                 self.on_nomatch(cb)

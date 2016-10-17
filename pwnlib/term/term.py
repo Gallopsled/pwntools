@@ -28,11 +28,14 @@ _graphics_mode = False
 
 fd = sys.stdout
 
+
 def show_cursor():
     do('cnorm')
 
+
 def hide_cursor():
     do('civis')
+
 
 def update_geometry():
     global width, height
@@ -48,19 +51,23 @@ def update_geometry():
                 cell.start = (cell.start[0] + delta, cell.start[1])
     height, width = h, w
 
+
 def handler_sigwinch(signum, stack):
     update_geometry()
     redraw()
     for cb in on_winch:
         cb()
 
+
 def handler_sigstop(signum, stack):
     resetterm()
     os.kill(os.getpid(), signal.SIGSTOP)
 
+
 def handler_sigcont(signum, stack):
     setupterm()
     redraw()
+
 
 def setupterm():
     global settings
@@ -82,13 +89,15 @@ def setupterm():
     mode[CC][termios.VTIME] = 0
     termios.tcsetattr(fd, termios.TCSAFLUSH, mode)
 
+
 def resetterm():
     if settings:
         termios.tcsetattr(fd.fileno(), termios.TCSADRAIN, settings)
     show_cursor()
     do('rmkx')
     fd.write(' \x08') # XXX: i don't know why this is needed...
-                      #      only necessary when suspending the process
+    #      only necessary when suspending the process
+
 
 def init():
     atexit.register(resetterm)
@@ -116,11 +125,15 @@ def init():
     cell.float = 0
     cell.indent = 0
     cells.append(cell)
+
     class Wrapper:
+
         def __init__(self, fd):
             self._fd = fd
+
         def write(self, s):
             output(s, frozen = True)
+
         def __getattr__(self, k):
             return self._fd.__getattribute__(k)
     if sys.stdout.isatty():
@@ -129,6 +142,7 @@ def init():
         sys.stderr = Wrapper(sys.stderr)
     # freeze all cells if an exception is thrown
     orig_hook = sys.excepthook
+
     def hook(*args):
         resetterm()
         for c in cells:
@@ -144,15 +158,19 @@ def init():
             os.close(fd.fileno())
     sys.excepthook = hook
 
+
 def put(s):
     fd.write(s)
 
+
 def flush(): fd.flush()
+
 
 def do(c, *args):
     s = termcap.get(c, *args)
     if s:
         put(s)
+
 
 def goto((r, c)):
     do('cup', r - scroll + height - 1, c)
@@ -160,21 +178,29 @@ def goto((r, c)):
 cells = []
 scroll = 0
 
+
 class Cell(object):
     pass
 
+
 class Handle:
+
     def __init__(self, cell, is_floating):
         self.h = id(cell)
         self.is_floating = is_floating
+
     def update(self, s):
         update(self.h, s)
+
     def freeze(self):
         freeze(self.h)
+
     def delete(self):
         delete(self.h)
 
 STR, CSI, LF, BS, CR, SOH, STX, OOB = range(8)
+
+
 def parse_csi(buf, offset):
     i = offset
     while i < len(buf):
@@ -194,7 +220,7 @@ def parse_csi(buf, offset):
         i += 1
     while i < end:
         c = buf[i]
-        if   c >= ord('0') and c <= ord('9'):
+        if c >= ord('0') and c <= ord('9'):
             if not in_num:
                 args.append(c - ord('0'))
                 in_num = True
@@ -212,10 +238,11 @@ def parse_csi(buf, offset):
         i += 1
     return cmd, args, end + 1
 
+
 def parse_utf8(buf, offset):
     c0 = buf[offset]
     n = 0
-    if   c0 & 0b11100000 == 0b11000000:
+    if c0 & 0b11100000 == 0b11000000:
         n = 2
     elif c0 & 0b11110000 == 0b11100000:
         n = 3
@@ -227,6 +254,7 @@ def parse_utf8(buf, offset):
         n = 6
     if n:
         return offset + n
+
 
 def parse(s):
     global _graphics_mode
@@ -250,7 +278,7 @@ def parse(s):
                 i = j
         elif c == 0x1b and len(buf) > i + 1:
             c1 = buf[i + 1]
-            if   c1 == ord('['):
+            if c1 == ord('['):
                 ret = parse_csi(buf, i + 2)
                 if ret:
                     cmd, args, j = ret
@@ -317,6 +345,8 @@ def parse(s):
 
 saved_cursor = None
 # XXX: render cells that is half-way on the screen
+
+
 def render_cell(cell, clear_after = False):
     global scroll, saved_cursor
     row, col = cell.start
@@ -325,7 +355,7 @@ def render_cell(cell, clear_after = False):
         return
     indent = min(cell.indent, width - 1)
     for t, x in cell.content:
-        if   t == STR:
+        if t == STR:
             i = 0
             while i < len(x):
                 if col >= width:
@@ -352,7 +382,7 @@ def render_cell(cell, clear_after = False):
                     m = args[1]
                 else:
                     m = None
-                if   c == ord('A'):
+                if c == ord('A'):
                     n = n or 1
                     row = max(0, row - n)
                 elif c == ord('B'):
@@ -404,7 +434,7 @@ def render_cell(cell, clear_after = False):
                 put('\x08')
                 col -= 1
         elif t == CR:
-#            put('\r')
+            #            put('\r')
             col = 0
         elif t == SOH:
             put('\x01')
@@ -418,6 +448,7 @@ def render_cell(cell, clear_after = False):
             row -= d
     row = row + scroll - height + 1
     cell.end = (row, col)
+
 
 def render_from(i, force = False, clear_after = False):
     e = None
@@ -438,6 +469,7 @@ def render_from(i, force = False, clear_after = False):
         put('\x1b[J')
     flush()
 
+
 def redraw():
     for i in reversed(range(len(cells))):
         row = cells[i].start[0]
@@ -449,8 +481,10 @@ def redraw():
     render_from(i, force = True, clear_after = True)
 
 lock = threading.Lock()
+
+
 def output(s = '', float = False, priority = 10, frozen = False,
-            indent = 0, before = None, after = None):
+           indent = 0, before = None, after = None):
     with lock:
         rel = before or after
         if rel:
@@ -491,11 +525,13 @@ def output(s = '', float = False, priority = 10, frozen = False,
             render_from(i, clear_after = True)
         return h
 
+
 def find_cell(h):
     for i, c in enumerate(cells):
         if id(c) == h:
             return i, c
     raise KeyError
+
 
 def discard_frozen():
     # we assume that no cell will shrink very much and that noone has space
@@ -503,6 +539,7 @@ def discard_frozen():
     while len(cells) > 1 and scroll - cells[0].end[0] > MAX_TERM_HEIGHT:
         c = cells.pop(0)
         del c # trigger GC maybe, kthxbai
+
 
 def update(h, s):
     with lock:
@@ -514,6 +551,7 @@ def update(h, s):
             c.content = parse(s)
             render_from(i, clear_after = True)
 
+
 def freeze(h):
     try:
         i, c = find_cell(h)
@@ -524,6 +562,7 @@ def freeze(h):
         discard_frozen()
     except KeyError:
         return
+
 
 def delete(h):
     update(h, '')

@@ -12,7 +12,8 @@ Decodes hex-encoded data provided on the command line or via stdin.
 ''')
 
 parser.add_argument('hex', nargs='*',
-    help='Hex bytes to decode')
+                    help='Hex bytes to decode')
+
 
 def main(args):
     try:

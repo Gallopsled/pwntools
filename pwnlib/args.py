@@ -52,6 +52,7 @@ term_mode  = True
 args       = collections.defaultdict(str)
 env_prefix = 'PWNLIB_'
 
+
 def isident(s):
     """
     Helper function to check whether a string is a valid identifier,
@@ -67,11 +68,12 @@ def isident(s):
         return False
     return True
 
+
 def asbool(s):
     """
     Convert a string to its boolean value
     """
-    if   s.lower() == 'true':
+    if s.lower() == 'true':
         return True
     elif s.lower() == 'false':
         return False
@@ -80,27 +82,32 @@ def asbool(s):
     else:
         raise ValueError('must be integer or boolean: %r' % s)
 
+
 def LOG_LEVEL(x):
     """Sets the logging verbosity used via ``context.log_level``,
     e.g. ``LOG_LEVEL=debug``.
     """
     with context.local(log_level=x):
-        context.defaults['log_level']=context.log_level
+        context.defaults['log_level'] = context.log_level
+
 
 def LOG_FILE(x):
     """Sets a log file to be used via ``context.log_file``, e.g.
     ``LOG_FILE=./log.txt``"""
-    context.log_file=x
+    context.log_file = x
+
 
 def SILENT(x):
     """Sets the logging verbosity to ``error`` which silences most
     output."""
     LOG_LEVEL('error')
 
+
 def DEBUG(x):
     """Sets the logging verbosity to ``debug`` which displays much
     more information, including logging each byte sent by tubes."""
     LOG_LEVEL('debug')
+
 
 def NOTERM(v):
     """Disables pretty terminal settings and animations."""
@@ -108,23 +115,28 @@ def NOTERM(v):
         global term_mode
         term_mode = False
 
+
 def TIMEOUT(v):
     """Sets a timeout for tube operations (in seconds) via
     ``context.timeout``, e.g. ``TIMEOUT=30``"""
     context.defaults['timeout'] = int(v)
 
+
 def RANDOMIZE(v):
     """Enables randomization of various pieces via ``context.randomize``"""
     context.defaults['randomize'] = asbool(v)
+
 
 def NOASLR(v):
     """Disables ASLR via ``context.aslr``"""
     context.defaults['aslr'] = not asbool(v)
 
+
 def NOPTRACE(v):
     """Disables facilities which require ``ptrace`` such as ``gdb.attach()``
     statements, via ``context.noptrace``."""
     context.defaults['noptrace'] = asbool(v)
+
 
 def STDERR(v):
     """Sends logging to ``stderr`` by default, instead of ``stdout``"""
@@ -142,6 +154,7 @@ hooks = {
     'NOPTRACE': NOPTRACE,
     'STDERR': STDERR,
 }
+
 
 def initialize():
     global args, term_mode

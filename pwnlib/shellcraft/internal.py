@@ -5,6 +5,8 @@ __all__ = ['make_function']
 
 loaded = {}
 lookup = None
+
+
 def init_mako():
     global lookup, render_global
     from mako.lookup import TemplateLookup
@@ -12,16 +14,19 @@ def init_mako():
     from mako import ast
     import threading
 
-    if lookup != None:
+    if lookup is not None:
         return
 
     class IsInsideManager:
+
         def __init__(self, parent):
             self.parent = parent
+
         def __enter__(self):
             self.oldval = self.parent.is_inside
             self.parent.is_inside = True
             return self.oldval
+
         def __exit__(self, *args):
             self.parent.is_inside = self.oldval
 
@@ -67,6 +72,7 @@ def init_mako():
             method = getattr(visitor, "visitCode", lambda x: x)
             method(self)
 
+
 def lookup_template(filename):
     init_mako()
 
@@ -74,6 +80,7 @@ def lookup_template(filename):
         loaded[filename] = lookup.get_template(filename)
 
     return loaded[filename]
+
 
 def get_context_from_dirpath(directory):
     """
@@ -84,18 +91,21 @@ def get_context_from_dirpath(directory):
     >>> get_context_from_dirpath('amd64/linux') == {'arch': 'amd64', 'os': 'linux'}
     True
     """
-    A,O = os.path.split(directory)
+    A, O = os.path.split(directory)
 
     if O == 'common':
         O = None
 
     if not A:
-        A,O = O,None
+        A, O = O, None
 
     rv = {}
-    if O: rv['os']=O
-    if A: rv['arch']=A
+    if O:
+        rv['os'] = O
+    if A:
+        rv['arch'] = A
     return rv
+
 
 def make_function(funcname, filename, directory):
     import inspect
@@ -166,13 +176,16 @@ def wrap(template, render_global):
     # Setting _relpath is a slight hack only used to get better documentation
     res = wrap(template, render_global)
     res._relpath = path
-    res.__module__ = 'pwnlib.shellcraft.' + os.path.dirname(path).replace('/','.')
+    res.__module__ = 'pwnlib.shellcraft.' + os.path.dirname(path).replace('/', '.')
 
-    import sys, inspect, functools
+    import sys
+    import inspect
+    import functools
 
     @functools.wraps(res)
     def function(*a):
         return sys.modules[res.__module__].function(res.__name__, res, *a)
+
     @functools.wraps(res)
     def call(*a):
         return sys.modules[res.__module__].call(res.__name__, *a)

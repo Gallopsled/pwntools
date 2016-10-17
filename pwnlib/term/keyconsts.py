@@ -142,9 +142,9 @@ KEY_NAMES = {
     KEY_KPCOMMA   : '<kp comma>',
     KEY_KPPERIOD  : '<kp period>',
     KEY_KPEQUALS  : '<kp equals>',
-    }
+}
 
-KEY_NAMES_REVERSE = {v:k for k, v in KEY_NAMES.items()}
+KEY_NAMES_REVERSE = {v: k for k, v in KEY_NAMES.items()}
 
 # terminfo
 
@@ -298,7 +298,7 @@ STRNAMES = [
     'kspd',
     'kund',
     'kcuu1',
-    ]
+]
 
 STRFNAMES = [
     'a1',
@@ -450,48 +450,48 @@ STRFNAMES = [
     'suspend',
     'undo',
     'up',
-    ]
+]
 
 FUNCSYMS = {
-    'backspace' : (KEY_DEL,       MOD_NONE ),
-    'begin'     : (KEY_BEGIN,     MOD_NONE ),
-    'beg'       : (KEY_BEGIN,     MOD_NONE ),
+    'backspace' : (KEY_DEL,       MOD_NONE),
+    'begin'     : (KEY_BEGIN,     MOD_NONE),
+    'beg'       : (KEY_BEGIN,     MOD_NONE),
     'btab'      : (KEY_TAB,       MOD_SHIFT),
-    'cancel'    : (KEY_CANCEL,    MOD_NONE ),
-    'clear'     : (KEY_CLEAR,     MOD_NONE ),
-    'close'     : (KEY_CLOSE,     MOD_NONE ),
-    'command'   : (KEY_COMMAND,   MOD_NONE ),
-    'copy'      : (KEY_COPY,      MOD_NONE ),
-    'dc'        : (KEY_DELETE,    MOD_NONE ),
-    'down'      : (KEY_DOWN,      MOD_NONE ),
-    'end'       : (KEY_END,       MOD_NONE ),
-    'enter'     : (KEY_ENTER,     MOD_NONE ),
-    'exit'      : (KEY_EXIT,      MOD_NONE ),
-    'find'      : (KEY_FIND,      MOD_NONE ),
-    'help'      : (KEY_HELP,      MOD_NONE ),
-    'home'      : (KEY_HOME,      MOD_NONE ),
-    'ic'        : (KEY_INSERT,    MOD_NONE ),
-    'left'      : (KEY_LEFT,      MOD_NONE ),
-    'mark'      : (KEY_MARK,      MOD_NONE ),
-    'message'   : (KEY_MESSAGE,   MOD_NONE ),
-    'move'      : (KEY_MOVE,      MOD_NONE ),
-    'next'      : (KEY_PAGEDOWN,  MOD_NONE ), # Not quite, but it's the best we can do
-    'npage'     : (KEY_PAGEDOWN,  MOD_NONE ),
-    'open'      : (KEY_OPEN,      MOD_NONE ),
-    'options'   : (KEY_OPTIONS,   MOD_NONE ),
-    'ppage'     : (KEY_PAGEUP,    MOD_NONE ),
-    'previous'  : (KEY_PAGEUP,    MOD_NONE ), # Not quite, but it's the best we can do
-    'print'     : (KEY_PRINT,     MOD_NONE ),
-    'redo'      : (KEY_REDO,      MOD_NONE ),
-    'reference' : (KEY_REFERENCE, MOD_NONE ),
-    'refresh'   : (KEY_REFRESH,   MOD_NONE ),
-    'replace'   : (KEY_REPLACE,   MOD_NONE ),
-    'restart'   : (KEY_RESTART,   MOD_NONE ),
-    'resume'    : (KEY_RESUME,    MOD_NONE ),
-    'right'     : (KEY_RIGHT,     MOD_NONE ),
-    'save'      : (KEY_SAVE,      MOD_NONE ),
-    'select'    : (KEY_SELECT,    MOD_NONE ),
-    'suspend'   : (KEY_SUSPEND,   MOD_NONE ),
-    'undo'      : (KEY_UNDO,      MOD_NONE ),
-    'up'        : (KEY_UP,        MOD_NONE ),
-    }
+    'cancel'    : (KEY_CANCEL,    MOD_NONE),
+    'clear'     : (KEY_CLEAR,     MOD_NONE),
+    'close'     : (KEY_CLOSE,     MOD_NONE),
+    'command'   : (KEY_COMMAND,   MOD_NONE),
+    'copy'      : (KEY_COPY,      MOD_NONE),
+    'dc'        : (KEY_DELETE,    MOD_NONE),
+    'down'      : (KEY_DOWN,      MOD_NONE),
+    'end'       : (KEY_END,       MOD_NONE),
+    'enter'     : (KEY_ENTER,     MOD_NONE),
+    'exit'      : (KEY_EXIT,      MOD_NONE),
+    'find'      : (KEY_FIND,      MOD_NONE),
+    'help'      : (KEY_HELP,      MOD_NONE),
+    'home'      : (KEY_HOME,      MOD_NONE),
+    'ic'        : (KEY_INSERT,    MOD_NONE),
+    'left'      : (KEY_LEFT,      MOD_NONE),
+    'mark'      : (KEY_MARK,      MOD_NONE),
+    'message'   : (KEY_MESSAGE,   MOD_NONE),
+    'move'      : (KEY_MOVE,      MOD_NONE),
+    'next'      : (KEY_PAGEDOWN,  MOD_NONE), # Not quite, but it's the best we can do
+    'npage'     : (KEY_PAGEDOWN,  MOD_NONE),
+    'open'      : (KEY_OPEN,      MOD_NONE),
+    'options'   : (KEY_OPTIONS,   MOD_NONE),
+    'ppage'     : (KEY_PAGEUP,    MOD_NONE),
+    'previous'  : (KEY_PAGEUP,    MOD_NONE), # Not quite, but it's the best we can do
+    'print'     : (KEY_PRINT,     MOD_NONE),
+    'redo'      : (KEY_REDO,      MOD_NONE),
+    'reference' : (KEY_REFERENCE, MOD_NONE),
+    'refresh'   : (KEY_REFRESH,   MOD_NONE),
+    'replace'   : (KEY_REPLACE,   MOD_NONE),
+    'restart'   : (KEY_RESTART,   MOD_NONE),
+    'resume'    : (KEY_RESUME,    MOD_NONE),
+    'right'     : (KEY_RIGHT,     MOD_NONE),
+    'save'      : (KEY_SAVE,      MOD_NONE),
+    'select'    : (KEY_SELECT,    MOD_NONE),
+    'suspend'   : (KEY_SUSPEND,   MOD_NONE),
+    'undo'      : (KEY_UNDO,      MOD_NONE),
+    'up'        : (KEY_UP,        MOD_NONE),
+}

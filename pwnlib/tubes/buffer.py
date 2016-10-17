@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 
+
 class Buffer(Exception):
     """
     List of strings with some helper routines.
@@ -28,10 +29,10 @@ class Buffer(Exception):
         The ``0th`` item in the buffer is the oldest item, and
         will be received first.
     """
+
     def __init__(self):
         self.data = [] # Buffer
         self.size = 0  # Length
-
 
     def __len__(self):
         """
@@ -86,7 +87,8 @@ class Buffer(Exception):
             data(str,Buffer): Data to add
         """
         # Fast path for ''
-        if not data: return
+        if not data:
+            return
 
         if isinstance(data, Buffer):
             self.size += data.size
