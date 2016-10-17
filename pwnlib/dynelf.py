@@ -656,9 +656,6 @@ class DynELF(object):
         leak = self.leak
         Dyn  = {32: elf.Elf32_Dyn, 64: elf.Elf64_Dyn}[self.elfclass]
 
-        def name(tag):
-            return next(k for k, v in ENUM_D_TAG.items() if v == tag)
-
         self.status('.gnu.hash/.hash, .strtab and .symtab offsets')
 
         #

@@ -179,7 +179,6 @@ def wrap(template, render_global):
     res.__module__ = 'pwnlib.shellcraft.' + os.path.dirname(path).replace('/', '.')
 
     import sys
-    import inspect
     import functools
 
     @functools.wraps(res)

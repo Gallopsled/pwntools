@@ -23,7 +23,7 @@ def context_arg(arg):
     try:
         context.bits = int(arg)
     except Exception:
-        arg
+        pass
     try:
         context.endian = arg
     except Exception:
