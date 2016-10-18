@@ -1,5 +1,6 @@
+#!/usr/bin/env bash
 # cache list of shellcodes
-_shellcraft_shellcodes=$(shellcraft)
+_shellcraft_shellcodes=$(pwn shellcraft -l)
 
 _shellcraft()
 {
@@ -44,3 +45,4 @@ _shellcraft()
 }
 
 complete -F _shellcraft pwn shellcraft
+complete -F _shellcraft shellcraft
