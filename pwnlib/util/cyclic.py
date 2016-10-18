@@ -43,8 +43,8 @@ def de_bruijn(alphabet = string.ascii_lowercase, n = None):
 def cyclic(length = None, alphabet = string.ascii_lowercase, n = None):
     """cyclic(length = None, alphabet = string.ascii_lowercase, n = 4) -> list/str
 
-    A simple wrapper over :func:`de_bruijn`. This function returns a
-    at most `length` elements.
+    A simple wrapper over :func:`de_bruijn`. This function returns at most
+    `length` elements.
 
     If the given alphabet is a string, a string is returned from this function. Otherwise
     a list is returned.
@@ -93,8 +93,8 @@ def cyclic_find(subseq, alphabet = string.ascii_lowercase, n = None):
        https://www.sciencedirect.com/science/article/pii/S0012365X00001175
 
     Arguments:
-        subseq: The subsequence to look for. This can either be a string, a list
-                or an integer. If an integer is provided it will be packed as a
+        subseq: The subsequence to look for. This can be a string, a list or an
+                integer. If an integer is provided it will be packed as a
                 little endian integer.
         alphabet: List or string to generate the sequence over.
         n(int): The length of subsequences that should be unique.
@@ -125,7 +125,7 @@ def cyclic_find(subseq, alphabet = string.ascii_lowercase, n = None):
     return _gen_find(subseq, de_bruijn(alphabet, n))
 
 def _gen_find(subseq, generator):
-    """Returns the first position of subseq in the generator or -1 if there is no such position."""
+    """Returns the first position of `subseq` in the generator or -1 if there is no such position."""
     subseq = list(subseq)
     pos = 0
     saved = []
