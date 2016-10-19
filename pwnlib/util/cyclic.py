@@ -66,6 +66,10 @@ def cyclic(length = None, alphabet = string.ascii_lowercase, n = None):
     if n is None:
         n = 4
 
+    if len(alphabet) ** n < length:
+        log.error("Can't create a pattern length=%i with len(alphabet)==%i and n==%i" \
+                  % (length, len(alphabet), n))
+
     out = []
     for ndx, c in enumerate(de_bruijn(alphabet, n)):
         if length != None and ndx >= length:
