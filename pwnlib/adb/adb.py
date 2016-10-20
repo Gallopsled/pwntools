@@ -1036,9 +1036,9 @@ def uninstall(package, *arguments):
         package(str): Name of the package to uninstall (e.g. ``'com.foo.MyPackage'``)
         arguments: Supplementary arguments to ``'pm install'``, e.g. ``'-k'``.
     """
-    with log.progress("Installing package {}".format(package)):
+    with log.progress("Uninstalling package {}".format(package)):
         with context.quiet:
-            return process(['pm','uninstall',apk] + list(arguments)).recvall()
+            return process(['pm','uninstall',package] + list(arguments)).recvall()
 
 @context.quiet
 def packages():
