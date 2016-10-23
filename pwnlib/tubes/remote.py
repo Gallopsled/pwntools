@@ -7,6 +7,7 @@ from .sock import sock
 
 log = getLogger(__name__)
 
+
 class remote(sock):
     r"""Creates a TCP or UDP-connection to a remote host. It supports
     both IPv4 and IPv6.
@@ -73,7 +74,6 @@ class remote(sock):
             if ssl:
                 self.sock = _ssl.wrap_socket(self.sock)
 
-
     @staticmethod
     def _get_family(fam):
 
@@ -120,7 +120,7 @@ class remote(sock):
 
             sock = socket.socket(self.family, self.type, self.proto)
 
-            if timeout != None and timeout <= 0:
+            if timeout is not None and timeout <= 0:
                 sock.setblocking(0)
             else:
                 sock.setblocking(1)
@@ -138,8 +138,6 @@ class remote(sock):
         h.success()
         return sock
 
-
-
     @classmethod
     def fromsocket(cls, socket):
         """
@@ -156,19 +154,24 @@ class remote(sock):
         host, port = s.getpeername()
         return remote(host, port, fam=s.family, typ=s.type, sock=s)
 
+
 class tcp(remote):
     __doc__ = remote.__doc__
+
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
                  timeout = Timeout.default, ssl=False, sock=None, level = None):
         return super(tcp, self).__init__(host, port, fam, typ, timeout, ssl, sock, level)
 
+
 class udp(remote):
     __doc__ = remote.__doc__
+
     def __init__(self, host, port,
                  fam = "any", typ = "udp",
                  timeout = Timeout.default, ssl=False, sock=None, level = None):
         return super(udp, self).__init__(host, port, fam, typ, timeout, ssl, sock, level)
+
 
 class connect(remote):
     __doc__ = remote.__doc__

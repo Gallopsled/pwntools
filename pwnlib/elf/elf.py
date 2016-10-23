@@ -32,13 +32,17 @@ __all__ = ['load', 'ELF']
 
 Function = namedtuple('Function', 'address size')
 
+
 def load(*args, **kwargs):
     """Compatibility wrapper for pwntools v1"""
     return ELF(*args, **kwargs)
 
+
 class dotdict(dict):
+
     def __getattr__(self, name):
         return self[name]
+
 
 class ELF(ELFFile):
     """Encapsulates information about an ELF file.
@@ -65,14 +69,15 @@ class ELF(ELFFile):
            # 6:   68 59 00 00 00          push   0x59
            # b:   e9 50 fa ff ff          jmp    0xfffffffffffffa60
     """
+
     def __init__(self, path):
         # elftools uses the backing file for all reads and writes
         # in order to permit writing without being able to write to disk,
         # mmap() the file.
-        self.file = open(path,'rb')
+        self.file = open(path, 'rb')
         self.mmap = mmap.mmap(self.file.fileno(), 0, access=mmap.ACCESS_COPY)
 
-        super(ELF,self).__init__(self.mmap)
+        super(ELF, self).__init__(self.mmap)
 
         #: Path to the file
         self.path = os.path.abspath(path)
@@ -92,7 +97,7 @@ class ELF(ELFFile):
 
         if self.arch == 'mips':
             if self.header['e_flags'] & E_FLAGS.EF_MIPS_ARCH_64 \
-            or self.header['e_flags'] & E_FLAGS.EF_MIPS_ARCH_64R2:
+                    or self.header['e_flags'] & E_FLAGS.EF_MIPS_ARCH_64R2:
                 self.arch = 'mips64'
                 self.bits = 64
 
@@ -159,8 +164,8 @@ class ELF(ELFFile):
 
     def _describe(self):
         log.info_once('\n'.join((repr(self.path),
-                                '%-10s%s-%s-%s' % ('Arch:', self.arch, self.bits, self.endian),
-                                self.checksec())))
+                                 '%-10s%s-%s-%s' % ('Arch:', self.arch, self.bits, self.endian),
+                                 self.checksec())))
 
     def __repr__(self):
         return "ELF(%r)" % self.path
@@ -168,7 +173,7 @@ class ELF(ELFFile):
     def get_machine_arch(self):
         return {
             'EM_X86_64': 'amd64',
-            'EM_386' :'i386',
+            'EM_386' : 'i386',
             'EM_486': 'i386',
             'EM_ARM': 'arm',
             'EM_AARCH64': 'aarch64',
@@ -240,11 +245,13 @@ class ELF(ELFFile):
     @address.setter
     def address(self, new):
         delta     = new-self._address
-        update    = lambda x: x+delta
 
-        self.symbols = dotdict({k:update(v) for k,v in self.symbols.items()})
-        self.plt     = dotdict({k:update(v) for k,v in self.plt.items()})
-        self.got     = dotdict({k:update(v) for k,v in self.got.items()})
+        def update(x):
+            return x+delta
+
+        self.symbols = dotdict({k: update(v) for k, v in self.symbols.items()})
+        self.plt     = dotdict({k: update(v) for k, v in self.plt.items()})
+        self.got     = dotdict({k: update(v) for k, v in self.got.items()})
 
         self._address = update(self.address)
 
@@ -298,7 +305,6 @@ class ELF(ELFFile):
             if '/libc.' in lib or '/libc-' in lib:
                 return ELF(lib)
 
-
     def _populate_libraries(self):
         """
         >>> from os.path import exists
@@ -309,7 +315,7 @@ class ELF(ELFFile):
         True
         """
         if not self.get_section_by_name('.dynamic'):
-            self.libs= {}
+            self.libs = {}
             return
 
         try:
@@ -344,7 +350,7 @@ class ELF(ELFFile):
 
             for sym in sec.iter_symbols():
                 # Avoid duplicates
-                if self.functions.has_key(sym.name):
+                if sym.name in self.functions:
                     continue
                 if sym.entry.st_info['type'] == 'STT_FUNC' and sym.entry.st_size != 0:
                     name = sym.name
@@ -386,7 +392,6 @@ class ELF(ELFFile):
             if addr not in self.symbols.values():
                 self.symbols['got.%s' % sym] = addr
 
-
     def _populate_got_plt(self):
         """Loads the GOT and the PLT symbols and addresses.
 
@@ -417,8 +422,8 @@ class ELF(ELFFile):
         # Find the relocation section for PLT
         try:
             rel_plt = next(s for s in self.sections if
-                            s.header.sh_info == self.sections.index(plt) and
-                            isinstance(s, RelocationSection))
+                           s.header.sh_info == self.sections.index(plt) and
+                           isinstance(s, RelocationSection))
         except StopIteration:
             # Evidently whatever android-ndk uses to build binaries zeroes out sh_info for rel.plt
             rel_plt = self.get_section_by_name('.rel.plt') or self.get_section_by_name('.rela.plt')
@@ -450,12 +455,12 @@ class ELF(ELFFile):
             'amd64': (0x10, 0x10),
             'arm':   (0x14, 0xC),
             'aarch64': (0x20, 0x20),
-        }.get(self.arch, (0,0))
+        }.get(self.arch, (0, 0))
 
         address = plt.header.sh_addr + header_size
 
         # Based on the ordering of the GOT symbols, populate the PLT
-        for i,(addr,name) in enumerate(sorted((addr,name) for name, addr in self.got.items())):
+        for i, (addr, name) in enumerate(sorted((addr, name) for name, addr in self.got.items())):
             self.plt[name] = address
 
             # Some PLT entries in ARM binaries have a thumb-mode stub that looks like:
@@ -541,7 +546,6 @@ class ELF(ELFFile):
                 delta = offset - begin
                 return segment.header.p_vaddr + delta + load_address_fixup
         return None
-
 
     def vaddr_to_offset(self, address):
         """Translates the specified virtual address to a file address
@@ -641,7 +645,7 @@ class ELF(ELFFile):
         """
         old = self.stream.tell()
 
-        with open(path,'wb+') as fd:
+        with open(path, 'wb+') as fd:
             self.stream.seek(0)
             fd.write(self.get_data())
 
@@ -719,7 +723,6 @@ class ELF(ELFFile):
             address += 1
         return string.rstrip('\x00')
 
-
     @property
     def relro(self):
         if self.dynamic_by_tag('DT_BIND_NOW'):
@@ -753,7 +756,7 @@ class ELF(ELFFile):
     @property
     def pie(self):
         return self.elftype == 'DYN'
-    aslr=pie
+    aslr = pie
 
     @property
     def rpath(self):
@@ -805,13 +808,13 @@ class ELF(ELFFile):
         rwx = self.rwx_segments
 
         if self.nx and rwx:
-            res += [ "RWX:".ljust(10) + red("Has RWX segments") ]
+            res += ["RWX:".ljust(10) + red("Has RWX segments")]
 
         if self.rpath:
-            res += [ "RPATH:".ljust(10) + red(repr(self.rpath)) ]
+            res += ["RPATH:".ljust(10) + red(repr(self.rpath))]
 
         if self.runpath:
-            res += [ "RUNPATH:".ljust(10) + red(repr(self.runpath)) ]
+            res += ["RUNPATH:".ljust(10) + red(repr(self.runpath))]
 
         if self.packed:
             res.append('Packer:'.ljust(10) + red("Packed with UPX"))
@@ -855,19 +858,26 @@ class ELF(ELFFile):
     def ubsan(self):
         return any(s.startswith('__ubsan_') for s in self.symbols)
 
+    def p64(self,  address, data, *a, **kw): return self.write(address, packing.p64(data, *a, **kw))
 
+    def p32(self,  address, data, *a, **kw): return self.write(address, packing.p32(data, *a, **kw))
 
-    def p64(self,  address, data, *a, **kw):    return self.write(address, packing.p64(data, *a, **kw))
-    def p32(self,  address, data, *a, **kw):    return self.write(address, packing.p32(data, *a, **kw))
-    def p16(self,  address, data, *a, **kw):    return self.write(address, packing.p16(data, *a, **kw))
-    def p8(self,   address, data, *a, **kw):    return self.write(address, packing.p8(data, *a, **kw))
-    def pack(self, address, data, *a, **kw):    return self.write(address, packing.pack(data, *a, **kw))
+    def p16(self,  address, data, *a, **kw): return self.write(address, packing.p16(data, *a, **kw))
 
-    def u64(self,    address, *a, **kw):        return packing.u64(self.read(address, 8), *a, **kw)
-    def u32(self,    address, *a, **kw):        return packing.u32(self.read(address, 4), *a, **kw)
-    def u16(self,    address, *a, **kw):        return packing.u16(self.read(address, 2), *a, **kw)
-    def u8(self,     address, *a, **kw):        return packing.u8(self.read(address, 1), *a, **kw)
-    def unpack(self, address, *a, **kw):        return packing.unpack(self.read(address, context.bytes), *a, **kw)
+    def p8(self,   address, data, *a, **kw): return self.write(address, packing.p8(data, *a, **kw))
+
+    def pack(self, address, data, *a, **kw): return self.write(address, packing.pack(data, *a, **kw))
+
+    def u64(self,    address, *a, **kw): return packing.u64(self.read(address, 8), *a, **kw)
+
+    def u32(self,    address, *a, **kw): return packing.u32(self.read(address, 4), *a, **kw)
+
+    def u16(self,    address, *a, **kw): return packing.u16(self.read(address, 2), *a, **kw)
+
+    def u8(self,     address, *a, **kw): return packing.u8(self.read(address, 1), *a, **kw)
+
+    def unpack(self, address, *a, **kw): return packing.unpack(self.read(address, context.bytes), *a, **kw)
+
     def string(self, address):
         data = ''
         while True:
@@ -879,4 +889,4 @@ class ELF(ELFFile):
             data += c
             address += 1
 
-    def flat(self, *a, **kw):       return self.send(packing.flat(*a,**kw))
+    def flat(self, *a, **kw): return self.send(packing.flat(*a, **kw))

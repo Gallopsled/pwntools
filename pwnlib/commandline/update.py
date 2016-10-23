@@ -18,6 +18,7 @@ p.add_argument('--pre', action='store_true', help='''
     Check for pre-releases.
 ''')
 
+
 def main(a):
     result = pwnlib.update.perform_check(prerelease=a.pre)
     if a.install:

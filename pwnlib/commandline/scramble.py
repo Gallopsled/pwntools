@@ -17,7 +17,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-o","--output",
+    "-o", "--output",
     metavar='file',
     help="Output file (defaults to stdout)",
     type=argparse.FileType('w'),
@@ -68,6 +68,7 @@ parser.add_argument(
     action='store_true'
 )
 
+
 def main(args):
     tty    = args.output.isatty()
 
@@ -78,7 +79,7 @@ def main(args):
     data   = sys.stdin.read()
     output = data
     fmt    = args.format or ('hex' if tty else 'raw')
-    formatters = {'r':str, 'h':enhex, 's':repr}
+    formatters = {'r': str, 'h': enhex, 's': repr}
 
     if args.alphanumeric:
         output = alphanumeric(output)

@@ -66,6 +66,7 @@ from ..log import getLogger
 
 log = getLogger(__name__)
 
+
 def take(n, iterable):
     """take(n, iterable) -> list
 
@@ -93,6 +94,7 @@ def take(n, iterable):
     """
     return list(islice(iterable, n))
 
+
 def tabulate(func, start = 0):
     """tabulate(func, start = 0) -> iterator
 
@@ -110,6 +112,7 @@ def tabulate(func, start = 0):
       [1, 4, 9, 16, 25]
     """
     return imap(func, count(start))
+
 
 def consume(n, iterator):
     """consume(n, iterator)
@@ -142,6 +145,7 @@ def consume(n, iterator):
         # advance to the empty slice starting at position n
         next(islice(iterator, n, n), None)
 
+
 def nth(n, iterable, default = None):
     """nth(n, iterable, default = None) -> object
 
@@ -170,6 +174,7 @@ def nth(n, iterable, default = None):
     """
     return next(islice(iterable, n, None), default)
 
+
 def quantify(iterable, pred = bool):
     """quantify(iterable, pred = bool) -> int
 
@@ -191,6 +196,7 @@ def quantify(iterable, pred = bool):
       3
     """
     return sum(imap(pred, iterable))
+
 
 def pad(iterable, value = None):
     """pad(iterable, value = None) -> iterator
@@ -219,6 +225,7 @@ def pad(iterable, value = None):
     """
     return chain(iterable, repeat(value))
 
+
 def cyclen(n, iterable):
     """cyclen(n, iterable) -> iterator
 
@@ -240,6 +247,7 @@ def cyclen(n, iterable):
     """
     return chain.from_iterable(repeat(tuple(iterable), n))
 
+
 def dotproduct(x, y):
     """dotproduct(x, y) -> int
 
@@ -258,6 +266,7 @@ def dotproduct(x, y):
       32
     """
     return sum(imap(operator.mul, x, y))
+
 
 def flatten(xss):
     """flatten(xss) -> iterator
@@ -280,6 +289,7 @@ def flatten(xss):
       [43, 42, 41, 40, 0, 1]
     """
     return chain.from_iterable(xss)
+
 
 def repeat_func(func, *args, **kwargs):
     """repeat_func(func, *args, **kwargs) -> iterator
@@ -325,6 +335,7 @@ def repeat_func(func, *args, **kwargs):
     else:
         return starmap(func, repeat(args))
 
+
 def pairwise(iterable):
     """pairwise(iterable) -> iterator
 
@@ -345,6 +356,7 @@ def pairwise(iterable):
     a, b = tee(iterable)
     next(b, None)
     return izip(a, b)
+
 
 def group(n, iterable, fill_value = None):
     """group(n, iterable, fill_value = None) -> iterator
@@ -371,6 +383,7 @@ def group(n, iterable, fill_value = None):
     """
     args = [iter(iterable)] * n
     return izip_longest(fillvalue = fill_value, *args)
+
 
 def roundrobin(*iterables):
     """roundrobin(*iterables)
@@ -401,6 +414,7 @@ def roundrobin(*iterables):
             pending -= 1
             nexts = cycle(islice(nexts, pending))
 
+
 def powerset(iterable, include_empty = True):
     """powerset(iterable, include_empty = True) -> iterator
 
@@ -424,6 +438,7 @@ def powerset(iterable, include_empty = True):
     if not include_empty:
         next(i)
     return i
+
 
 def unique_everseen(iterable, key = None):
     """unique_everseen(iterable, key = None) -> iterator
@@ -460,6 +475,7 @@ def unique_everseen(iterable, key = None):
                 seen_add(k)
                 yield element
 
+
 def unique_justseen(iterable, key = None):
     """unique_everseen(iterable, key = None) -> iterator
 
@@ -483,6 +499,7 @@ def unique_justseen(iterable, key = None):
       'ABCAD'
     """
     return imap(next, imap(operator.itemgetter(1), groupby(iterable, key)))
+
 
 def unique_window(iterable, window, key = None):
     """unique_everseen(iterable, window, key = None) -> iterator
@@ -523,6 +540,7 @@ def unique_window(iterable, window, key = None):
                 yield element
             seen_add(k)
 
+
 def iter_except(func, exception):
     """iter_except(func, exception)
 
@@ -559,6 +577,7 @@ def iter_except(func, exception):
     except exception:
         pass
 
+
 def random_product(*args, **kwargs):
     """random_product(*args, repeat = 1) -> tuple
 
@@ -585,6 +604,7 @@ def random_product(*args, **kwargs):
     pools = map(tuple, args) * repeat
     return tuple(random.choice(pool) for pool in pools)
 
+
 def random_permutation(iterable, r = None):
     """random_product(iterable, r = None) -> tuple
 
@@ -606,6 +626,7 @@ def random_permutation(iterable, r = None):
     r = len(pool) if r is None else r
     return tuple(random.sample(pool, r))
 
+
 def random_combination(iterable, r):
     """random_combination(iterable, r) -> tuple
 
@@ -626,6 +647,7 @@ def random_combination(iterable, r):
     n = len(pool)
     indices = sorted(random.sample(xrange(n), r))
     return tuple(pool[i] for i in indices)
+
 
 def random_combination_with_replacement(iterable, r):
     """random_combination(iterable, r) -> tuple
@@ -650,6 +672,7 @@ def random_combination_with_replacement(iterable, r):
     n = len(pool)
     indices = sorted(random.randrange(n) for i in xrange(r))
     return tuple(pool[i] for i in indices)
+
 
 def lookahead(n, iterable):
     """lookahead(n, iterable) -> object
@@ -682,6 +705,7 @@ def lookahead(n, iterable):
         return value
     raise IndexError(n)
 
+
 def lexicographic(alphabet):
     """lexicographic(alphabet) -> iterator
 
@@ -702,6 +726,7 @@ def lexicographic(alphabet):
     for n in count():
         for e in product(alphabet, repeat = n):
             yield e
+
 
 def chained(func):
     """chained(func)
@@ -728,6 +753,7 @@ def chained(func):
             for x in xs:
                 yield x
     return wrapper
+
 
 def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = None):
     """bruteforce(func, alphabet, length, method = 'upto', start = None)
@@ -761,7 +787,7 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
       True
     """
 
-    if   method == 'upto' and length > 1:
+    if method == 'upto' and length > 1:
         iterator = product(alphabet, repeat = 1)
         for i in xrange(2, length + 1):
             iterator = chain(iterator, product(alphabet, repeat = i))
@@ -807,7 +833,7 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
 
     h = log.waitfor('Bruteforcing')
     cur_iteration = 0
-    if start != None:
+    if start is not None:
         consume(i, iterator)
     for e in iterator:
         cur = ''.join(e)
@@ -823,11 +849,10 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
         if res:
             h.success('Found key: "%s"' % cur)
             return cur
-        if start != None:
+        if start is not None:
             consume(N - 1, iterator)
 
     h.failure('No matches found')
-
 
 
 def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads = None):
@@ -847,10 +872,10 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
         context.log_level = oldloglevel
         databag["result"] = res
 
-    if start == None:
+    if start is None:
         start = (1, 1)
 
-    if threads == None:
+    if threads is None:
         try:
             threads = multiprocessing.cpu_count()
         except NotImplementedError:
@@ -873,8 +898,8 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
         chunkid = (i2-1) + (i * N2) + 1
 
         processes[i] = multiprocessing.Process(target=bruteforcewrap,
-                args=(func, alphabet, length, method, (chunkid, totalchunks),
-                        shareddata[i]))
+                                               args=(func, alphabet, length, method, (chunkid, totalchunks),
+                                                     shareddata[i]))
         processes[i].start()
 
     done = False
@@ -882,9 +907,9 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
     while not done:
         # log status
         current_item_list = ",".join(["\"%s\"" % x["current_item"]
-                                for x in shareddata if x != None])
-        items_done = sum([x["items_done"] for x in shareddata if x != None])
-        items_total = sum([x["items_total"] for x in shareddata if x != None])
+                                      for x in shareddata if x is not None])
+        items_done = sum([x["items_done"] for x in shareddata if x is not None])
+        items_total = sum([x["items_total"] for x in shareddata if x is not None])
 
         progress = 100.0 * items_done / items_total if items_total != 0 else 0.0
 
@@ -892,23 +917,23 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
 
         # handle finished threads
         for i in range(threads):
-            if processes[i] and processes[i].exitcode != None:
+            if processes[i] and processes[i].exitcode is not None:
                 # thread has terminated
                 res = shareddata[i]["result"]
                 processes[i].join()
                 processes[i] = None
 
                 # if successful, kill all other threads and return success
-                if res != None:
+                if res is not None:
                     for i in range(threads):
-                        if processes[i] != None:
+                        if processes[i] is not None:
                             processes[i].terminate()
                             processes[i].join()
                             processes[i] = None
                     h.success('Found key: "%s"' % res)
                     return res
 
-                if all([x == None for x in processes]):
+                if all([x is None for x in processes]):
                     done = True
         time.sleep(0.3)
     h.failure('No matches found')

@@ -11,6 +11,7 @@ import __builtin__
 
 original_hex = __builtin__.hex
 
+
 def hex(number):
     original_hex.__doc__
     return original_hex(number).rstrip('L')

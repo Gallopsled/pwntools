@@ -7,6 +7,7 @@ from .misc import size
 
 log = getLogger(__name__)
 
+
 def wget(url, save=None, timeout=5, **kwargs):
     """wget(url, save=None, timeout=5) -> str
 
@@ -39,7 +40,7 @@ def wget(url, save=None, timeout=5, **kwargs):
             w.failure("Got code %s" % response.status_code)
             return
 
-        total_size = int(response.headers.get('content-length',0))
+        total_size = int(response.headers.get('content-length', 0))
 
         w.status('0 / %s' % size(total_size))
 
@@ -64,7 +65,7 @@ def wget(url, save=None, timeout=5, **kwargs):
             if not isinstance(save, (str, unicode)):
                 save = os.path.basename(url)
                 save = save or tempfile.NamedTemporaryFile(dir='.', delete=False).name
-            with file(save,'wb+') as f:
+            with file(save, 'wb+') as f:
                 f.write(total_data)
                 w.success('Saved %r (%s)' % (f.name, size(total_data)))
         else:

@@ -25,6 +25,7 @@ parser.add_argument(
     help='File to check (for compatibility with checksec.sh)'
 )
 
+
 def main(args):
     files  = args.elf or args.elf2 or []
 

@@ -21,8 +21,10 @@ from ..util.sh_string import sh_string
 
 log = getLogger(__name__)
 
+
 def pack(val):
     return '%04x' % val
+
 
 def unpack(val):
     return int(val, 16)
@@ -30,22 +32,28 @@ def unpack(val):
 OKAY = "OKAY"
 FAIL = "FAIL"
 
+
 class Message(object):
     """An ADB hex-length-prefixed message"""
+
     def __init__(self, string):
         self.string = string
+
     def __str__(self):
         return ('%04x' % len(self.string)) + self.string
+
     def __flat__(self):
         return str(self)
 
+
 class Connection(remote):
     """Connection to the ADB server"""
+
     def __init__(self, host, port, level=None, *a, **kw):
 
         # Try to make sure ADB is running if it's on the default host and port.
         if host == context.defaults['adb_host'] \
-        and port == context.defaults['adb_port']:
+                and port == context.defaults['adb_port']:
             process(context.adb + ['start-server'], level='error').wait_for_close()
 
         with context.quiet:
@@ -72,11 +80,14 @@ class Connection(remote):
         kw.setdefault('word_size', 32)
         return super(Connection, self).flat(*a, **kw)
 
+
 class Process(Connection):
     """Duck-typed ``tubes.remote`` object to add properties of a ``tubes.process``"""
 
+
 class Client(Logger):
     """ADB Client"""
+
     def __init__(self, level=None):
         super(Client, self).__init__()
 
@@ -384,7 +395,7 @@ class Client(Logger):
         size = self.c.u32()
         time = self.c.u32()
 
-        if (mode,size,time) == (0,0,0):
+        if (mode, size, time) == (0, 0, 0):
             return None
 
         return {'mode': mode, 'size': size, 'time': time}
@@ -485,7 +496,9 @@ class Client(Logger):
         return self
 
     @_autoclose
-    def __exit__(self, *a, **kw): pass
+    def __exit__(self, *a, **kw):
+        pass
+
 
 def proxy(port=9999):
     """Starts an ADB proxy on the specified port, for debugging purposes."""

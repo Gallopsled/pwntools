@@ -14,6 +14,7 @@ from ..log import getLogger
 
 log = getLogger(__name__)
 
+
 def align(alignment, x):
     """align(alignment, x) -> int
 
@@ -94,6 +95,7 @@ KiB = 1000
 MiB = 1000 * KB
 GiB = 1000 * MB
 
+
 def read(path, count=-1, skip=0):
     r"""read(path, count=-1, skip=0) -> str
 
@@ -118,6 +120,7 @@ def write(path, data = '', create_dir = False, mode = 'w'):
         mkdir_p(os.path.dirname(path))
     with open(path, mode) as f:
         f.write(data)
+
 
 def which(name, all = False):
     """which(name, flags = os.X_OK, all = False) -> str or str set
@@ -158,7 +161,7 @@ def which(name, all = False):
                 continue
             # work around this issue: https://bugs.python.org/issue9311
             if isroot and not \
-              st.st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH):
+                    st.st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH):
                 continue
             if all:
                 out.add(p)
@@ -168,6 +171,7 @@ def which(name, all = False):
         return out
     else:
         return None
+
 
 def run_in_new_terminal(command, terminal = None, args = None):
     """run_in_new_terminal(command, terminal = None) -> None
@@ -232,6 +236,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
         os.execv(argv[0], argv)
         os._exit(1)
 
+
 def parse_ldd_output(output):
     """Parses the output from a run of 'ldd' on a binary.
     Returns a dictionary of {path: address} for
@@ -263,6 +268,7 @@ def parse_ldd_output(output):
 
     return libs
 
+
 def mkdir_p(path):
     """Emulates the behavior of ``mkdir -p``."""
 
@@ -273,6 +279,7 @@ def mkdir_p(path):
             pass
         else:
             raise
+
 
 def dealarm_shell(tube):
     """Given a tube which is a shell, dealarm it.
@@ -290,6 +297,7 @@ def dealarm_shell(tube):
         return tube
 
     return None
+
 
 def register_sizes(regs, in_sizes):
     """Create dictionaries over register sizes and relations

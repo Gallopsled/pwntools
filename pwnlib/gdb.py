@@ -20,6 +20,7 @@ from .util import proc
 
 log = getLogger(__name__)
 
+
 @LocalContext
 def debug_assembly(asm, execute=None, vma=None):
     """
@@ -40,6 +41,7 @@ def debug_assembly(asm, execute=None, vma=None):
         tmp_elf = android_path
 
     return debug(tmp_elf, execute=execute, arch=context.arch)
+
 
 @LocalContext
 def debug_shellcode(data, execute=None, vma=None):
@@ -66,6 +68,7 @@ def debug_shellcode(data, execute=None, vma=None):
         tmp_elf = android_path
 
     return debug(tmp_elf, execute=execute, arch=context.arch)
+
 
 def _gdbserver_args(pid=None, path=None, args=None, which=None):
     """_gdbserver_args(pid=None, path=None) -> list
@@ -119,6 +122,7 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None):
 
     return gdbserver_args
 
+
 def _gdbserver_port(gdbserver, ssh):
     which = _get_which(ssh)
 
@@ -152,15 +156,24 @@ def _gdbserver_port(gdbserver, ssh):
 
     return port
 
+
 def _get_which(ssh=None):
-    if ssh:                        return ssh.which
-    elif context.os == 'android':  return adb.which
-    else:                          return misc.which
+    if ssh:
+        return ssh.which
+    elif context.os == 'android':
+        return adb.which
+    else:
+        return misc.which
+
 
 def _get_runner(ssh=None):
-    if ssh:                        return ssh.process
-    elif context.os == 'android':  return adb.process
-    else:                          return tubes.process.process
+    if ssh:
+        return ssh.process
+    elif context.os == 'android':
+        return adb.process
+    else:
+        return tubes.process.process
+
 
 @LocalContext
 def debug(args, execute=None, exe=None, ssh=None, env=None, **kwargs):
@@ -236,6 +249,7 @@ def debug(args, execute=None, exe=None, ssh=None, env=None, **kwargs):
 
     return gdbserver
 
+
 def get_gdb_arch():
     return {
         'amd64': 'i386:x86-64',
@@ -293,8 +307,8 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
     pre = ''
     if not context.native:
         if not misc.which('gdb-multiarch'):
-            log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n' \
-                '$ apt-get install gdb-multiarch')
+            log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n'
+                          '$ apt-get install gdb-multiarch')
         pre += 'set endian %s\n' % context.endian
         pre += 'set architecture %s\n' % get_gdb_arch()
 
@@ -308,7 +322,7 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
         try:
             ptrace_scope = open('/proc/sys/kernel/yama/ptrace_scope').read().strip()
             if need_ptrace_scope and ptrace_scope != '0' and os.geteuid() != 0:
-                msg =  'Disable ptrace_scope to attach to running processes.\n'
+                msg = 'Disable ptrace_scope to attach to running processes.\n'
                 msg += 'More info: https://askubuntu.com/q/41629'
                 log.warning(msg)
                 return
@@ -317,7 +331,7 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
 
     # let's see if we can find a pid to attach to
     pid = None
-    if   isinstance(target, (int, long)):
+    if isinstance(target, (int, long)):
         # target is a pid, easy peasy
         pid = target
     elif isinstance(target, str):
@@ -435,6 +449,7 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
         proc.wait_for_debugger(pid)
     return pid
 
+
 def ssh_gdb(ssh, process, execute = None, arch = None, **kwargs):
     if isinstance(process, (list, tuple)):
         exe = process[0]
@@ -463,6 +478,7 @@ def ssh_gdb(ssh, process, execute = None, arch = None, **kwargs):
     attach(('127.0.0.1', forwardport), execute, local_exe, arch)
     l.wait_for_connection() <> ssh.connect_remote('127.0.0.1', gdbport)
     return c
+
 
 def find_module_addresses(binary, ssh=None, ulimit=False):
     """
@@ -560,7 +576,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         for line in lines.splitlines():
             m = expr.match(line)
             if m:
-                libs[m.group(2)] = int(m.group(1),16)
+                libs[m.group(2)] = int(m.group(1), 16)
         gdb.sendline('kill')
         gdb.sendline('y')
         gdb.sendline('quit')
@@ -570,7 +586,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     #
     rv = []
 
-    for remote_path,text_address in sorted(libs.items()):
+    for remote_path, text_address in sorted(libs.items()):
         # Match up the local copy to the remote path
         try:
             path     = next(p for p in local_libs.keys() if remote_path in p)

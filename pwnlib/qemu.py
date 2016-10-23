@@ -5,6 +5,7 @@ from .util import misc
 
 log = getLogger(__name__)
 
+
 @LocalContext
 def get_qemu_arch():
     """
@@ -27,6 +28,7 @@ def get_qemu_arch():
         ('thumb', 'little'):     'arm',
         ('thumb', 'big'):        'armeb',
     }.get((context.arch, context.endian), context.arch)
+
 
 @LocalContext
 def get_qemu_user():

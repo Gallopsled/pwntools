@@ -11,6 +11,7 @@ from ..util.fiddling import hexdump
 
 log = getLogger(__name__)
 
+
 class Encoder(object):
     _encoders = collections.defaultdict(lambda: [])
 
@@ -87,7 +88,6 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
 
         return v
 
-
     avoid_errmsg = ''
     if orig_avoid and expr:
         avoid_errmsg = '%r and %r' % (orig_avoid, expr)
@@ -108,6 +108,7 @@ re_whitespace    = r'\s'
 re_null          = r'\x00'
 re_line          = r'[\s\x00]'
 
+
 @LocalContext
 def null(raw_bytes, *a, **kw):
     """null(raw_bytes) -> str
@@ -118,6 +119,7 @@ def null(raw_bytes, *a, **kw):
     Accepts the same arguments as :func:`encode`.
     """
     return encode(raw_bytes, expr=re_null, *a, **kw)
+
 
 @LocalContext
 def line(raw_bytes, *a, **kw):
@@ -130,6 +132,7 @@ def line(raw_bytes, *a, **kw):
     """
     return encode(raw_bytes, expr=re_whitespace, *a, **kw)
 
+
 @LocalContext
 def alphanumeric(raw_bytes, *a, **kw):
     """alphanumeric(raw_bytes) -> str
@@ -141,6 +144,7 @@ def alphanumeric(raw_bytes, *a, **kw):
     """
     return encode(raw_bytes, expr=re_alphanumeric, *a, **kw)
 
+
 @LocalContext
 def printable(raw_bytes, *a, **kw):
     """printable(raw_bytes) -> str
@@ -151,6 +155,7 @@ def printable(raw_bytes, *a, **kw):
     Accepts the same arguments as :func:`encode`.
     """
     return encode(raw_bytes, expr=re_printable, *a, **kw)
+
 
 @LocalContext
 def scramble(raw_bytes, *a, **kw):

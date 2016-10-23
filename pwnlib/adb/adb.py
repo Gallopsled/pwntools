@@ -42,6 +42,7 @@ from .protocol import Client
 
 log = getLogger(__name__)
 
+
 def adb(argv, *a, **kw):
     r"""Returns the output of an ADB subcommand.
 
@@ -58,6 +59,7 @@ def adb(argv, *a, **kw):
         return process(argv[1:], *a, **kw).recvall()
 
     return tubes.process.process(context.adb + argv, *a, **kw).recvall()
+
 
 @context.quiet
 def devices(serial=None):
@@ -77,6 +79,7 @@ def devices(serial=None):
 
     return tuple(result)
 
+
 def current_device(any=False):
     """Returns an ``AdbDevice`` instance for the currently-selected device
     (via ``context.device``).
@@ -94,9 +97,10 @@ def current_device(any=False):
         if any or device == context.device:
             return device
 
+
 def with_device(f):
     @functools.wraps(f)
-    def wrapper(*a,**kw):
+    def wrapper(*a, **kw):
         if not context.device:
             device = current_device(any=True)
             if device:
@@ -104,7 +108,7 @@ def with_device(f):
                 context.device = device
         if not context.device:
             log.error('No devices connected, cannot invoke %s.%s' % (f.__module__, f.__name__))
-        return f(*a,**kw)
+        return f(*a, **kw)
     return wrapper
 
 
@@ -130,14 +134,16 @@ def root():
     else:
         log.error("Could not run as root:\n%s" % reply)
 
+
 def no_emulator(f):
     @functools.wraps(f)
-    def wrapper(*a,**kw):
+    def wrapper(*a, **kw):
         c = current_device()
         if c and c.port == 'emulator':
             log.error("Cannot invoke %s.%s on an emulator." % (f.__module__, f.__name__))
-        return f(*a,**kw)
+        return f(*a, **kw)
     return wrapper
+
 
 @no_emulator
 @with_device
@@ -152,6 +158,7 @@ def reboot(wait=True):
     if wait:
         wait_for_device()
 
+
 @no_emulator
 @with_device
 def reboot_bootloader():
@@ -162,8 +169,10 @@ def reboot_bootloader():
     with Client() as c:
         c.reboot_bootloader()
 
+
 class AdbDevice(Device):
     """Encapsulates information about a connected device."""
+
     def __init__(self, serial, type, port=None, product='unknown', model='unknown', device='unknown', features=None, **kw):
         self.serial  = serial
         self.type    = type
@@ -228,7 +237,7 @@ class AdbDevice(Device):
             kwargs['port'] = 'emulator'
 
         for field in fields[2:]:
-            k,v = field.split(':')
+            k, v = field.split(':')
             kwargs[k] = v
 
         return AdbDevice(serial, type, **kwargs)
@@ -238,7 +247,7 @@ class AdbDevice(Device):
         @functools.wraps(function)
         def wrapper(*a, **kw):
             with context.local(device=self):
-                return function(*a,**kw)
+                return function(*a, **kw)
         return wrapper
 
     def __getattr__(self, name):
@@ -254,7 +263,7 @@ class AdbDevice(Device):
             g = globals()
 
             if name not in g:
-                raise AttributeError('%r object has no attribute %r' % (type(self).__name__,name))
+                raise AttributeError('%r object has no attribute %r' % (type(self).__name__, name))
 
             value = g[name]
 
@@ -262,6 +271,7 @@ class AdbDevice(Device):
             return value
 
         return self.__wrapped(value)
+
 
 @LocalContext
 def wait_for_device(kick=False):
@@ -310,6 +320,7 @@ def wait_for_device(kick=False):
 
             return context.device
 
+
 @with_device
 def disable_verity():
     """Disables dm-verity on the device."""
@@ -328,6 +339,7 @@ def disable_verity():
         else:
             log.error("Could not disable verity:\n%s" % reply)
 
+
 @with_device
 def remount():
     """Remounts the filesystem as writable."""
@@ -340,6 +352,7 @@ def remount():
 
         if 'remount succeeded' not in reply:
             log.error("Could not remount filesystem:\n%s" % reply)
+
 
 @with_device
 def unroot():
@@ -355,6 +368,7 @@ def unroot():
     if 'restarting adbd as non root' not in reply:
         log.error("Could not unroot:\n%s" % reply)
 
+
 def _create_adb_push_pull_callback(w):
     def callback(filename, data, size, chunk, chunk_size):
         have = len(data) + len(chunk)
@@ -368,6 +382,7 @@ def _create_adb_push_pull_callback(w):
         w.status('%s/%s (%s%%)' % (have, size, percent))
         return True
     return callback
+
 
 @with_device
 def pull(remote_path, local_path=None):
@@ -400,6 +415,7 @@ def pull(remote_path, local_path=None):
         misc.write(local_path, data)
 
     return data
+
 
 @with_device
 def push(local_path, remote_path):
@@ -450,6 +466,8 @@ def push(local_path, remote_path):
             return c.write(remote_path,
                            misc.read(local_path),
                            callback=_create_adb_push_pull_callback(w))
+
+
 @context.quiet
 @with_device
 def read(path, target=None, callback=None):
@@ -482,6 +500,7 @@ def read(path, target=None, callback=None):
 
     return data
 
+
 @context.quiet
 @with_device
 def write(path, data=''):
@@ -499,6 +518,7 @@ def write(path, data=''):
     with tempfile.NamedTemporaryFile() as temp:
         misc.write(temp.name, data)
         push(temp.name, path)
+
 
 @with_device
 def process(argv, *a, **kw):
@@ -521,20 +541,24 @@ def process(argv, *a, **kw):
     message = "Starting %s process %r" % ('Android', argv[0])
 
     if log.isEnabledFor(logging.DEBUG):
-        if argv != [argv[0]]: message += ' argv=%r ' % argv
+        if argv != [argv[0]]:
+            message += ' argv=%r ' % argv
 
     with log.progress(message) as p:
         return Client().execute(argv)
+
 
 @with_device
 def interactive(**kw):
     """Spawns an interactive shell."""
     return shell(**kw).interactive()
 
+
 @with_device
 def shell(**kw):
     """Returns an interactive shell."""
     return process(['sh', '-i'], **kw)
+
 
 @with_device
 def which(name):
@@ -557,11 +581,13 @@ done
 ''' % name
 
     which_cmd = which_cmd.strip()
-    return process(['sh','-c',which_cmd]).recvall().strip()
+    return process(['sh', '-c', which_cmd]).recvall().strip()
+
 
 @with_device
 def whoami():
-    return process(['sh','-ic','echo $USER']).recvall().strip()
+    return process(['sh', '-ic', 'echo $USER']).recvall().strip()
+
 
 @with_device
 def forward(port):
@@ -569,6 +595,7 @@ def forward(port):
     tcp_port = 'tcp:%s' % port
     start_forwarding = adb(['forward', tcp_port, tcp_port])
     atexit.register(lambda: adb(['forward', '--remove', tcp_port]))
+
 
 @context.quiet
 @with_device
@@ -591,6 +618,7 @@ def logcat(stream=False):
     else:
         return process(['logcat', '-d']).recvall()
 
+
 @with_device
 def pidof(name):
     """Returns a list of PIDs for the named process."""
@@ -599,13 +627,15 @@ def pidof(name):
         data = io.recvall().split()
     return list(map(int, data))
 
+
 @with_device
 def proc_exe(pid):
     """Returns the full path of the executable for the provided PID."""
     with context.quiet:
-        io  = process(['realpath','/proc/%d/exe' % pid])
+        io  = process(['realpath', '/proc/%d/exe' % pid])
         data = io.recvall().strip()
     return data
+
 
 @with_device
 def getprop(name=None):
@@ -621,7 +651,6 @@ def getprop(name=None):
     with context.quiet:
         if name:
             return process(['getprop', name]).recvall().strip()
-
 
         result = process(['getprop']).recvall()
 
@@ -642,10 +671,12 @@ def getprop(name=None):
 
     return props
 
+
 @with_device
 def setprop(name, value):
     """Writes a property to the system property store."""
     return process(['setprop', name, value]).recvall().strip()
+
 
 @with_device
 def listdir(directory='/'):
@@ -661,6 +692,7 @@ def listdir(directory='/'):
     """
     return list(sorted(Client().list(directory)))
 
+
 def fastboot(args, *a, **kw):
     """Executes a fastboot command.
 
@@ -672,20 +704,24 @@ def fastboot(args, *a, **kw):
         log.error("Unknown device")
     return tubes.process.process(['fastboot', '-s', serial] + list(args), **kw).recvall()
 
+
 @with_device
 def fingerprint():
     """Returns the device build fingerprint."""
     return str(properties.ro.build.fingerprint)
+
 
 @with_device
 def product():
     """Returns the device product identifier."""
     return str(properties.ro.build.product)
 
+
 @with_device
 def build():
     """Returns the Build ID of the device."""
     return str(properties.ro.build.id)
+
 
 @with_device
 @no_emulator
@@ -698,6 +734,7 @@ def unlock_bootloader():
     Client().reboot_bootloader()
     fastboot(['oem', 'unlock'])
     fastboot(['continue'])
+
 
 class Kernel(object):
     _kallsyms = None
@@ -789,7 +826,7 @@ class Kernel(object):
                 reboot_bootloader()
 
                 # Wait for device to come online
-                while context.device not in fastboot(['devices',' -l']):
+                while context.device not in fastboot(['devices', ' -l']):
                     time.sleep(0.5)
 
                 # Try the 'new' way
@@ -800,7 +837,9 @@ class Kernel(object):
 
 kernel = Kernel()
 
+
 class Property(object):
+
     def __init__(self, name=None):
         self.__dict__['_name'] = name
 
@@ -825,11 +864,13 @@ class Property(object):
 
 properties = Property()
 
+
 def _build_date():
     """Returns the build date in the form YYYY-MM-DD as a string"""
     as_string = getprop('ro.build.date')
-    as_datetime =  dateutil.parser.parse(as_string)
+    as_datetime = dateutil.parser.parse(as_string)
     return as_datetime.strftime('%Y-%b-%d')
+
 
 def find_ndk_project_root(source):
     '''Given a directory path, find the topmost project root.
@@ -864,6 +905,7 @@ APP_ABI:= %(app_abi)s
 APP_PLATFORM:=%(app_platform)s
 '''.lstrip()
 
+
 def _generate_ndk_project(file_list, abi='arm-v7a', platform_version=21):
     # Create our project root
     root = tempfile.mkdtemp()
@@ -893,6 +935,7 @@ def _generate_ndk_project(file_list, abi='arm-v7a', platform_version=21):
         f.write(_application_mk_template % locals())
 
     return root
+
 
 def compile(source):
     """Compile a source file or project with the Android NDK."""
@@ -939,7 +982,9 @@ def compile(source):
 
     return output[0]
 
+
 class Partition(object):
+
     def __init__(self, path, name, blocks=0):
         self.path = path
         self.name = name
@@ -951,11 +996,13 @@ class Partition(object):
         with log.waitfor('Fetching %r partition (%s)' % (self.name, self.path)):
             return read(self.path)
 
+
 class Partitions(object):
+
     @property
     @context.quiet
     def by_name_dir(self):
-        cmd = ['shell','find /dev/block/platform -type d -name by-name']
+        cmd = ['shell', 'find /dev/block/platform -type d -name by-name']
         return adb(cmd).strip()
 
     @context.quiet
@@ -999,6 +1046,7 @@ class Partitions(object):
 
 partitions = Partitions()
 
+
 def install(apk, *arguments):
     """Install an APK onto the device.
 
@@ -1027,6 +1075,7 @@ def install(apk, *arguments):
             if 'Success' not in status:
                 log.error(status)
 
+
 def uninstall(package, *arguments):
     """Uninstall an APK from the device.
 
@@ -1038,7 +1087,8 @@ def uninstall(package, *arguments):
     """
     with log.progress("Installing package {}".format(package)):
         with context.quiet:
-            return process(['pm','uninstall',apk] + list(arguments)).recvall()
+            return process(['pm', 'uninstall', apk] + list(arguments)).recvall()
+
 
 @context.quiet
 def packages():

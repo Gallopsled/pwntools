@@ -7,6 +7,8 @@ from ..log import getLogger
 log = getLogger(__name__)
 
 # Taken from https://en.wikipedia.org/wiki/De_Bruijn_sequence but changed to a generator
+
+
 def de_bruijn(alphabet = string.ascii_lowercase, n = None):
     """de_bruijn(alphabet = string.ascii_lowercase, n = 4) -> generator
 
@@ -23,6 +25,7 @@ def de_bruijn(alphabet = string.ascii_lowercase, n = None):
         n = 4
     k = len(alphabet)
     a = [0] * k * n
+
     def db(t, p):
         if t > n:
             if n % p == 0:
@@ -38,7 +41,8 @@ def de_bruijn(alphabet = string.ascii_lowercase, n = None):
                 for c in db(t + 1, t):
                     yield c
 
-    return db(1,1)
+    return db(1, 1)
+
 
 def cyclic(length = None, alphabet = string.ascii_lowercase, n = None):
     """cyclic(length = None, alphabet = string.ascii_lowercase, n = 4) -> list/str
@@ -72,7 +76,7 @@ def cyclic(length = None, alphabet = string.ascii_lowercase, n = None):
 
     out = []
     for ndx, c in enumerate(de_bruijn(alphabet, n)):
-        if length != None and ndx >= length:
+        if length is not None and ndx >= length:
             break
         else:
             out.append(c)
@@ -81,6 +85,7 @@ def cyclic(length = None, alphabet = string.ascii_lowercase, n = None):
         return ''.join(out)
     else:
         return out
+
 
 def cyclic_find(subseq, alphabet = string.ascii_lowercase, n = None):
     """cyclic_find(subseq, alphabet = string.ascii_lowercase, n = None) -> int
@@ -116,9 +121,9 @@ def cyclic_find(subseq, alphabet = string.ascii_lowercase, n = None):
         subseq = packing.pack(subseq, width, 'little', False)
 
     if n is None and len(subseq) != 4:
-        log.warn_once("cyclic_find() expects 4-byte subsequences by default, you gave %r\n" % subseq \
-            + "Unless you specified cyclic(..., n=%i), you probably just want the first 4 bytes.\n" % len(subseq) \
-            + "Truncating the data at 4 bytes.  Specify cyclic_find(..., n=%i) to override this." % len(subseq))
+        log.warn_once("cyclic_find() expects 4-byte subsequences by default, you gave %r\n" % subseq
+                      + "Unless you specified cyclic(..., n=%i), you probably just want the first 4 bytes.\n" % len(subseq)
+                      + "Truncating the data at 4 bytes.  Specify cyclic_find(..., n=%i) to override this." % len(subseq))
         subseq = subseq[:4]
 
     if any(c not in alphabet for c in subseq):
@@ -127,6 +132,7 @@ def cyclic_find(subseq, alphabet = string.ascii_lowercase, n = None):
     n = n or len(subseq)
 
     return _gen_find(subseq, de_bruijn(alphabet, n))
+
 
 def _gen_find(subseq, generator):
     """Returns the first position of `subseq` in the generator or -1 if there is no such position."""

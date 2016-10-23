@@ -26,9 +26,10 @@ from .sock import sock
 # Kill the warning line:
 # No handlers could be found for logger "paramiko.transport"
 paramiko_log = logging.getLogger("paramiko.transport")
-h = logging.StreamHandler(file('/dev/null','w+'))
+h = logging.StreamHandler(file('/dev/null', 'w+'))
 h.setFormatter(logging.Formatter())
 paramiko_log.addHandler(h)
+
 
 class ssh_channel(sock):
 
@@ -101,7 +102,6 @@ class ssh_channel(sock):
                 process = 'stty raw -ctlecho -echo; ' + process
             else:
                 process = 'stty -ctlecho -echo; ' + process
-
 
         # If this object is enabled for DEBUG-level logging, don't hide
         # anything about the command that's actually executed.
@@ -182,8 +182,8 @@ class ssh_channel(sock):
         process has not yet finished and the exit code otherwise.
         """
 
-        if self.returncode == None and self.sock \
-        and (block or self.sock.exit_status_ready()):
+        if self.returncode is None and self.sock \
+                and (block or self.sock.exit_status_ready()):
             while not self.sock.status_event.is_set():
                 self.sock.status_event.wait(0.05)
             self.returncode = self.sock.recv_exit_status()
@@ -224,13 +224,14 @@ class ssh_channel(sock):
         term.term.show_cursor()
 
         event = threading.Event()
+
         def recv_thread(event):
             while not event.is_set():
                 try:
                     cur = self.recv(timeout = 0.05)
-                    cur = cur.replace('\r\n','\n')
-                    cur = cur.replace('\r','')
-                    if cur == None:
+                    cur = cur.replace('\r\n', '\n')
+                    cur = cur.replace('\r', '')
+                    if cur is None:
                         continue
                     elif cur == '\a':
                         # Ugly hack until term unstands bell characters
@@ -308,10 +309,10 @@ class ssh_channel(sock):
                 if not python:
                     self.error("Python is not installed on the remote system.")
 
-                io = self.parent.process([argv0,'-c', script.strip()],
-                                          executable=python,
-                                          env=self.env,
-                                          **kwargs)
+                io = self.parent.process([argv0, '-c', script.strip()],
+                                         executable=python,
+                                         env=self.env,
+                                         **kwargs)
                 path = io.recvline()
                 address = int(io.recvline())
 
@@ -348,7 +349,6 @@ class ssh_channel(sock):
                     break
         return maps
 
-
     @property
     def libc(self):
         """libc() -> ELF
@@ -365,7 +365,9 @@ class ssh_channel(sock):
                 e.address = address
                 return e
 
+
 class ssh_connecter(sock):
+
     def __init__(self, parent, host, port, timeout = Timeout.default, level = None):
         super(ssh_connecter, self).__init__(timeout, level = level)
 
@@ -398,6 +400,7 @@ class ssh_connecter(sock):
 
 
 class ssh_listener(sock):
+
     def __init__(self, parent, bind_address, port, timeout = Timeout.default, level = None):
         super(ssh_listener, self).__init__(timeout, level = level)
 
@@ -504,7 +507,6 @@ class ssh(Timeout, Logger):
         if level is not None:
             self.setLevel(level)
 
-
         self.host            = host
         self.port            = port
         self.user            = user
@@ -590,7 +592,6 @@ class ssh(Timeout, Logger):
 
         self._tried_sftp = True
         return self._sftp
-
 
     def __enter__(self, *a):
         return self
@@ -759,7 +760,7 @@ class ssh(Timeout, Logger):
             self.error("argv must only contain strings: %r" % argv)
 
         # Allow passing in sys.stdin/stdout/stderr objects
-        handles = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}
+        handles = {sys.stdin: 0, sys.stdout: 1, sys.stderr: 2}
         stdin  = handles.get(stdin, stdin)
         stdout = handles.get(stdout, stdout)
         stderr = handles.get(stderr, stderr)
@@ -980,15 +981,13 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             if not python:
                 self.error("Python is not installed on the remote system.")
 
-            io = self.process(['','-c', script.strip()], executable=python, **kwargs)
+            io = self.process(['', '-c', script.strip()], executable=python, **kwargs)
             result = io.recvall()
 
         try:
             return int(result) & context.mask
         except:
             self.exception("Could not look up environment variable %r" % variable)
-
-
 
     def run_to_end(self, process, tty = False, wd = None, env = None):
         r"""run_to_end(process, tty = False, timeout = Timeout.default, env = None) -> str
@@ -1109,8 +1108,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         ]
 
         if attr in self.__dict__ \
-        or attr in bad_attrs \
-        or attr.startswith('_'):
+                or attr in bad_attrs \
+                or attr.startswith('_'):
             raise AttributeError
 
         def runner(*args):
@@ -1166,11 +1165,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         # OpenSSL outputs in the format of...
         # (stdin)= e3b0c4429...
-        data = data.replace('(stdin)= ','')
+        data = data.replace('(stdin)= ', '')
 
         # sha256 and sha256sum outputs in the format of...
         # e3b0c442...  -
-        data = data.replace('-','')
+        data = data.replace('-', '')
 
         return data.strip()
 
@@ -1233,7 +1232,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
     def _download_to_cache(self, remote, p):
 
         with context.local(log_level='error'):
-            remote = self.readlink('-f',remote)
+            remote = self.readlink('-f', remote)
 
         fingerprint = self._get_fingerprint(remote)
         if fingerprint is None:
@@ -1294,7 +1293,6 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             local(str): The local filename to save it to. Default is to infer it from the remote filename.
         """
 
-
         if not local:
             local = os.path.basename(os.path.normpath(remote))
 
@@ -1317,7 +1315,6 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         """
         remote   = remote or self.cwd
 
-
         if self.sftp:
             remote = str(self.sftp.normalize(remote))
         else:
@@ -1330,7 +1327,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         local    = local or '.'
         local    = os.path.expanduser(local)
 
-        self.info("Downloading %r to %r" % (basename,local))
+        self.info("Downloading %r to %r" % (basename, local))
 
         with context.local(log_level='error'):
             remote_tar = self.mktemp()
@@ -1344,7 +1341,6 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
             tar = tarfile.open(local_tar.name)
             tar.extractall(local)
-
 
     def upload_data(self, data, remote):
         """Uploads some data into a file on the remote server.
@@ -1394,8 +1390,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         filename(str): The local filename to download
         remote(str): The remote filename to save it to. Default is to infer it from the local filename."""
 
-
-        if remote == None:
+        if remote is None:
             remote = os.path.normpath(filename)
             remote = os.path.basename(remote)
             remote = os.path.join(self.cwd, remote)
@@ -1403,7 +1398,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         with open(filename) as fd:
             data = fd.read()
 
-        self.info("Uploading %r to %r" % (filename,remote))
+        self.info("Uploading %r to %r" % (filename, remote))
         self.upload_data(data, remote)
 
         return remote
@@ -1425,7 +1420,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if not os.path.isdir(local):
             self.error("%r is not a directory" % local)
 
-        msg = "Uploading %r to %r" % (basename,remote)
+        msg = "Uploading %r to %r" % (basename, remote)
         with self.waitfor(msg) as w:
             # Generate a tarfile with everything inside of it
             local_tar  = tempfile.mktemp()
@@ -1456,7 +1451,6 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         log.error('%r does not exist' % file_or_directory)
 
-
     def download(self, file_or_directory, remote=None):
         if not self.sftp:
             self.error("Cannot determine remote file type without SFTP")
@@ -1480,10 +1474,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         libs = self._libs_remote(remote)
 
-        remote = self.readlink('-f',remote).strip()
+        remote = self.readlink('-f', remote).strip()
         libs[remote] = 0
 
-        if directory == None:
+        if directory is None:
             directory = self.host
 
         directory = os.path.realpath(directory)

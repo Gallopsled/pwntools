@@ -25,7 +25,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-o","--output",
+    "-o", "--output",
     metavar='file',
     help="Output file (defaults to stdout)",
     type=argparse.FileType('w'),
@@ -92,13 +92,14 @@ parser.add_argument(
     action='store_true'
 )
 
+
 def main(args):
     tty    = args.output.isatty()
 
     data   = '\n'.join(args.lines) or args.infile.read()
     output = asm(data.replace(';', '\n'))
     fmt    = args.format or ('hex' if tty else 'raw')
-    formatters = {'r':str, 'h':enhex, 's':repr}
+    formatters = {'r': str, 'h': enhex, 's': repr}
 
     if args.avoid:
         output = encode(output, args.avoid)
@@ -115,8 +116,10 @@ def main(args):
 
     if fmt[0] == 'e':
         args.output.write(make_elf(output))
-        try: os.fchmod(args.output.fileno(), 0700)
-        except OSError: pass
+        try:
+            os.fchmod(args.output.fileno(), 0700)
+        except OSError:
+            pass
     else:
         args.output.write(formatters[fmt[0]](output))
 

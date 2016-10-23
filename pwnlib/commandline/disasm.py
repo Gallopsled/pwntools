@@ -30,7 +30,7 @@ parser.add_argument(
 
 
 parser.add_argument(
-    "-a","--address",
+    "-a", "--address",
     metavar='address',
     help="Base address",
     type=str,
@@ -64,7 +64,6 @@ def main(args):
     else:
         dat = sys.stdin.read()
 
-
     if args.color:
         from pygments import highlight
         from pygments.formatters import TerminalFormatter
@@ -75,14 +74,13 @@ def main(args):
         instrs  = disasm(dat, vma=safeeval.const(args.address), byte=False, offset=False)
         # instrs  = highlight(instrs, PwntoolsLexer(), TerminalFormatter())
 
-        split = lambda x: x.splitlines()
-        for o,b,i in zip(*list(map(split, (offsets, bytes, instrs)))):
+        for o, b, i in zip(*list(map(str.splitlines, (offsets, bytes, instrs)))):
             b = b.replace('00', text.red('00'))
             b = b.replace('0a', text.red('0a'))
             i = highlight(i.strip(), PwntoolsLexer(), TerminalFormatter()).strip()
-            i = i.replace(',',', ')
+            i = i.replace(',', ', ')
 
-            print o,b,i
+            print o, b, i
         return
 
     print disasm(dat, vma=safeeval.const(args.address))

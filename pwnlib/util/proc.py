@@ -16,6 +16,7 @@ log = getLogger(__name__)
 if _ok_import:
     all_pids = psutil.pids
 
+
 def pidof(target):
     """pidof(target) -> int list
 
@@ -37,13 +38,13 @@ def pidof(target):
         return [target.pid]
 
     elif isinstance(target, tubes.sock.sock):
-         local  = target.sock.getsockname()
-         remote = target.sock.getpeername()
+        local  = target.sock.getsockname()
+        remote = target.sock.getpeername()
 
-         def match(c):
-             return (c.raddr, c.laddr, c.status) == (local, remote, 'ESTABLISHED')
+        def match(c):
+            return (c.raddr, c.laddr, c.status) == (local, remote, 'ESTABLISHED')
 
-         return [c.pid for c in psutil.net_connections() if match(c)]
+        return [c.pid for c in psutil.net_connections() if match(c)]
 
     elif isinstance(target, tuple):
         host, port = target
@@ -56,10 +57,11 @@ def pidof(target):
         return [c.pid for c in psutil.net_connections() if match(c)]
 
     elif isinstance(target, tubes.process.process):
-         return [target.proc.pid]
+        return [target.proc.pid]
 
     else:
-         return pid_by_name(target)
+        return pid_by_name(target)
+
 
 def pid_by_name(name):
     """pid_by_name(name) -> int list
@@ -92,6 +94,7 @@ def pid_by_name(name):
 
     return list(reversed([p.pid for p in processes]))
 
+
 def name(pid):
     """name(pid) -> str
 
@@ -108,6 +111,7 @@ def name(pid):
     """
     return psutil.Process(pid).name()
 
+
 def parent(pid):
     """parent(pid) -> int
 
@@ -119,9 +123,10 @@ def parent(pid):
         or 0 if there is not parent.
     """
     try:
-         return psutil.Process(pid).parent().pid
+        return psutil.Process(pid).parent().pid
     except Exception:
-         return 0
+        return 0
+
 
 def children(ppid):
     """children(ppid) -> int list
@@ -134,6 +139,7 @@ def children(ppid):
     """
     return [p.pid for p in psutil.Process(ppid).children()]
 
+
 def ancestors(pid):
     """ancestors(pid) -> int list
 
@@ -145,9 +151,10 @@ def ancestors(pid):
     """
     pids = []
     while pid != 0:
-         pids.append(pid)
-         pid = parent(pid)
+        pids.append(pid)
+        pid = parent(pid)
     return pids
+
 
 def descendants(pid):
     """descendants(pid) -> dict
@@ -161,15 +168,19 @@ def descendants(pid):
     this_pid = pid
     allpids = all_pids()
     ppids = {}
+
     def _parent(pid):
-         if pid not in ppids:
-             ppids[pid] = parent(pid)
-         return ppids[pid]
+        if pid not in ppids:
+            ppids[pid] = parent(pid)
+        return ppids[pid]
+
     def _children(ppid):
-         return [pid for pid in allpids if _parent(pid) == ppid]
+        return [pid for pid in allpids if _parent(pid) == ppid]
+
     def _loop(ppid):
-         return {pid: _loop(pid) for pid in _children(ppid)}
+        return {pid: _loop(pid) for pid in _children(ppid)}
     return _loop(pid)
+
 
 def exe(pid):
     """exe(pid) -> str
@@ -181,6 +192,7 @@ def exe(pid):
         The path of the binary of the process. I.e. what ``/proc/<pid>/exe`` points to.
     """
     return psutil.Process(pid).exe()
+
 
 def cwd(pid):
     """cwd(pid) -> str
@@ -194,6 +206,7 @@ def cwd(pid):
     """
     return psutil.Process(pid).cwd()
 
+
 def cmdline(pid):
     """cmdline(pid) -> str list
 
@@ -205,6 +218,7 @@ def cmdline(pid):
     """
     return psutil.Process(pid).cmdline()
 
+
 def stat(pid):
     """stat(pid) -> str list
 
@@ -215,12 +229,13 @@ def stat(pid):
         A list of the values in ``/proc/<pid>/stat``, with the exception that ``(`` and ``)`` has been removed from around the process name.
     """
     with open('/proc/%d/stat' % pid) as fd:
-         s = fd.read()
+        s = fd.read()
     # filenames can have ( and ) in them, dammit
     i = s.find('(')
     j = s.rfind(')')
     name = s[i+1:j]
     return s[:i].split() + [name] + s[j+1:].split()
+
 
 def starttime(pid):
     """starttime(pid) -> float
@@ -232,6 +247,7 @@ def starttime(pid):
         The time (in seconds) the process started after system boot
     """
     return psutil.Process(pid).create_time() - psutil.boot_time()
+
 
 def status(pid):
     """status(pid) -> dict
@@ -259,6 +275,7 @@ def status(pid):
             raise
     return out
 
+
 def tracer(pid):
     """tracer(pid) -> int
 
@@ -275,6 +292,7 @@ def tracer(pid):
     tpid = int(status(pid)['TracerPid'])
     return tpid if tpid > 0 else None
 
+
 def state(pid):
     """state(pid) -> str
 
@@ -289,6 +307,7 @@ def state(pid):
         'R (running)'
     """
     return status(pid)['State']
+
 
 def wait_for_debugger(pid):
     """wait_for_debugger(pid) -> None

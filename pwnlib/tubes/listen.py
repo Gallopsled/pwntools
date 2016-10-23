@@ -8,6 +8,7 @@ from .sock import sock
 
 log = getLogger(__name__)
 
+
 class listen(sock):
     """Creates an TCP or UDP-socket to receive data on. It supports
     both IPv4 and IPv6.

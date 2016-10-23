@@ -227,6 +227,7 @@ class Padding(object):
     Placeholder for exactly one pointer-width of padding.
     """
 
+
 class DescriptiveStack(list):
     """
     List of resolved ROP gadgets that correspond to the ROP calls that
@@ -260,7 +261,7 @@ class DescriptiveStack(list):
             line = '0x%04x:' % addr
             if isinstance(data, str):
                 line += ' %16r' % data
-            elif isinstance(data, (int,long)):
+            elif isinstance(data, (int, long)):
                 line += ' %#16x' % data
                 if self.address != 0 and self.address < data < self.next:
                     off = data - addr
@@ -535,7 +536,6 @@ class ROP(object):
                 stack.describe(self.describe(slot))
                 stack.append(slot)
 
-
             # Byte blobs can also be added, however they must be
             # broken down into pointer-width blobs.
             elif isinstance(slot, (str, unicode)):
@@ -608,7 +608,6 @@ class ROP(object):
                         stack.describe('<pad>')
                         stack.append(Padding())
 
-
                 for i, argument in enumerate(stackArguments):
 
                     if isinstance(argument, NextGadgetAddress):
@@ -661,7 +660,6 @@ class ROP(object):
 
         return stack
 
-
     def find_stack_adjustment(self, slots):
         self.search(move=slots * context.arch)
 
@@ -681,8 +679,6 @@ class ROP(object):
         if registers is None:
             registers = {}
         registers.update(kw)
-
-
 
     def call(self, resolvable, arguments = (), abi = None, **kwargs):
         """Add a call to the ROP chain
@@ -710,8 +706,6 @@ class ROP(object):
         # Otherwise, if it is a syscall we might be able to call it
         elif not self._srop_call(resolvable, arguments):
             log.error('Could not resolve %r.' % resolvable)
-
-
 
     def _srop_call(self, resolvable, arguments):
         # Check that the call is a valid syscall
@@ -756,7 +750,6 @@ class ROP(object):
         self.raw(call)
         self.raw(frame)
 
-
         # We do not expect to ever recover after the syscall, as it would
         # require something like 'int 0x80; ret' which does not ever occur
         # in the wild.
@@ -773,7 +766,6 @@ class ROP(object):
         for gadget in self.gadgets.values():
             if tuple(gadget.insns)[:n] == tuple(instructions):
                 return gadget
-
 
     def raw(self, value):
         """Adds a raw integer or string to the ROP chain.
@@ -824,11 +816,11 @@ class ROP(object):
             return None
         log.info_once('Loaded cached gadgets for %r' % elf.file.name)
         gadgets = eval(file(filename).read())
-        gadgets = {k - elf.load_addr + elf.address:v for k, v in gadgets.items()}
+        gadgets = {k - elf.load_addr + elf.address: v for k, v in gadgets.items()}
         return gadgets
 
     def __cache_save(self, elf, data):
-        data = {k + elf.load_addr - elf.address:v for k, v in data.items()}
+        data = {k + elf.load_addr - elf.address: v for k, v in data.items()}
         file(self.__get_cachefile_name(elf), 'w+').write(repr(data))
 
     def __load(self):
@@ -863,7 +855,8 @@ class ROP(object):
         # >>> valid('add esp, 0x24')
         # True
         #
-        valid = lambda insn: any(map(lambda pattern: pattern.match(insn), [pop,add,ret,leave,int80,syscall,sysenter]))
+        def valid(insn):
+            return any(map(lambda pattern: pattern.match(insn), [pop, add, ret, leave, int80, syscall, sysenter]))
 
         #
         # Currently, ropgadget.args.Args() doesn't take any arguments, and pulls
@@ -906,7 +899,7 @@ class ROP(object):
             elf_gadgets = {}
             for gadget in core._Core__gadgets:
                 address = gadget['vaddr'] - elf.load_addr + elf.address
-                insns = [ g.strip() for g in gadget['gadget'].split(';') ]
+                insns = [g.strip() for g in gadget['gadget'].split(';')]
                 if all(map(valid, insns)):
                     elf_gadgets[address] = insns
 
@@ -970,8 +963,10 @@ class ROP(object):
         regs = set(regs or ())
 
         for addr, gadget in self.gadgets.items():
-            if gadget.move < move:          continue
-            if not (regs <= set(gadget.regs)):   continue
+            if gadget.move < move:
+                continue
+            if not (regs <= set(gadget.regs)):
+                continue
             yield gadget
 
     def search(self, move = 0, regs = None, order = 'size'):
@@ -1041,8 +1036,8 @@ class ROP(object):
         ]
 
         if attr in self.__dict__ \
-        or attr in bad_attrs \
-        or attr.startswith('_'):
+                or attr in bad_attrs \
+                or attr.startswith('_'):
             raise AttributeError('ROP instance has no attribute %r' % attr)
 
         #
@@ -1056,8 +1051,8 @@ class ROP(object):
 
         if attr in ('int80', 'syscall', 'sysenter'):
             mapping = {'int80': 'int 0x80',
-             'syscall': 'syscall',
-             'sysenter': 'sysenter'}
+                       'syscall': 'syscall',
+                       'sysenter': 'sysenter'}
             for each in self.gadgets:
                 if self.gadgets[each]['insns'] == [mapping[attr]]:
                     return gadget(each, self.gadgets[each])

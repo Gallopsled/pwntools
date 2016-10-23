@@ -65,6 +65,7 @@ from .util.web import wget
 log    = getLogger(__name__)
 sizeof = ctypes.sizeof
 
+
 def sysv_hash(symbol):
     """sysv_hash(str) -> int
 
@@ -79,6 +80,7 @@ def sysv_hash(symbol):
         h &= ~g
     return h & 0xffffffff
 
+
 def gnu_hash(s):
     """gnu_hash(str) -> int
 
@@ -88,6 +90,7 @@ def gnu_hash(s):
     for c in s:
         h = h * 33 + ord(c)
     return h & 0xffffffff
+
 
 class DynELF(object):
     '''
@@ -198,7 +201,7 @@ class DynELF(object):
         """32 or 64"""
         if not self._elfclass:
             elfclass = self.leak.field(self.libbase, elf.Elf_eident.EI_CLASS)
-            self._elfclass =  {constants.ELFCLASS32: 32,
+            self._elfclass = {constants.ELFCLASS32: 32,
                               constants.ELFCLASS64: 64}[elfclass]
         return self._elfclass
 
@@ -331,7 +334,7 @@ class DynELF(object):
         leak  = self.leak
         base  = self.libbase
 
-        #First find PT_DYNAMIC
+        # First find PT_DYNAMIC
         Ehdr  = {32: elf.Elf32_Ehdr, 64: elf.Elf64_Ehdr}[self.elfclass]
         Phdr  = {32: elf.Elf32_Phdr, 64: elf.Elf64_Phdr}[self.elfclass]
 
@@ -354,7 +357,7 @@ class DynELF(object):
         dynamic = leak.field(phead, Phdr.p_vaddr)
         self.status("PT_DYNAMIC @ %#x" % dynamic)
 
-        #Sometimes this is an offset instead of an address
+        # Sometimes this is an offset instead of an address
         if 0 < dynamic < 0x400000:
             dynamic += base
 
@@ -373,9 +376,9 @@ class DynELF(object):
         leak    = self.leak
         base    = self.libbase
         dynamic = self.dynamic
-        name    = next(k for k,v in ENUM_D_TAG.items() if v == tag)
+        name    = next(k for k, v in ENUM_D_TAG.items() if v == tag)
 
-        Dyn = {32: elf.Elf32_Dyn,    64: elf.Elf64_Dyn}     [self.elfclass]
+        Dyn = {32: elf.Elf32_Dyn,    64: elf.Elf64_Dyn}[self.elfclass]
 
         # Found the _DYNAMIC program header, now find PLTGOT entry in it
         # An entry with a DT_NULL tag marks the end of the DYNAMIC array.
@@ -395,7 +398,6 @@ class DynELF(object):
             ptr += self.libbase
 
         return ptr
-
 
     def _find_linkmap(self, pltgot=None, debug=None):
         """
@@ -500,7 +502,7 @@ class DynELF(object):
             libc.address = dynlib.libbase
             return libc
 
-    def lookup (self, symb = None, lib = None):
+    def lookup(self, symb = None, lib = None):
         """lookup(symb = None, lib = None) -> int
 
         Find the address of ``symbol``, which is found in ``lib``.
@@ -536,8 +538,10 @@ class DynELF(object):
         # If we are loading from a different library, create
         # a DynELF instance for it.
         #
-        if lib is not None: dynlib = self._dynamic_load_dynelf(lib)
-        else:   dynlib = self
+        if lib is not None:
+            dynlib = self._dynamic_load_dynelf(lib)
+        else:
+            dynlib = self
 
         if dynlib is None:
             log.failure("Could not find %r" % lib)
@@ -569,8 +573,10 @@ class DynELF(object):
         #
         # Did we win?
         #
-        if result: self.success("%#x" % result)
-        else:      self.failure("Could not find %s" % pretty)
+        if result:
+            self.success("%#x" % result)
+        else:
+            self.failure("Could not find %s" % pretty)
 
         return result
 
@@ -649,7 +655,6 @@ class DynELF(object):
         """Performs the actual symbol lookup within one ELF file."""
         leak = self.leak
         Dyn  = {32: elf.Elf32_Dyn, 64: elf.Elf64_Dyn}[self.elfclass]
-        name = lambda tag: next(k for k,v in ENUM_D_TAG.items() if v == tag)
 
         self.status('.gnu.hash/.hash, .strtab and .symtab offsets')
 
@@ -727,7 +732,7 @@ class DynELF(object):
 
                 # Make sure it matches the name of the symbol we were looking for.
                 if name == symb:
-                    #Bingo
+                    # Bingo
                     addr = libbase + leak.field(sym, Sym.st_value)
                     return addr
 

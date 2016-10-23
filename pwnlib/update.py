@@ -34,6 +34,7 @@ package_name    = 'pwntools'
 package_repo    = 'Gallopsled/pwntools'
 update_freq     = datetime.timedelta(days=7).total_seconds()
 
+
 def available_on_pypi(prerelease=current_version.is_prerelease):
     """Return True if an update is available on PyPI.
 
@@ -51,6 +52,7 @@ def available_on_pypi(prerelease=current_version.is_prerelease):
 
     return max(versions)
 
+
 def cache_file():
     """Returns the path of the file used to cache update data, and ensures that it exists."""
     cache_dir  = os.path.expanduser('~/.pwntools-cache')
@@ -64,15 +66,18 @@ def cache_file():
 
     return cache_file
 
+
 def last_check():
     """Return the date of the last check"""
     return os.path.getmtime(cache_file())
+
 
 def should_check():
     """Return True if we should check for an update"""
     if read(cache_file()).strip() == 'never':
         return False
     return time.time() > (last_check() + update_freq)
+
 
 def perform_check(prerelease=current_version.is_prerelease):
     """Perform the update check, and report to the user.
@@ -134,6 +139,7 @@ def perform_check(prerelease=current_version.is_prerelease):
              "Update with: $ %s" % command_str)
 
     return command
+
 
 def check_automatically():
     if should_check():

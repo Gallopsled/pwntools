@@ -51,6 +51,7 @@ class StackAdjustment(Unresolved):
     """
     pass
 
+
 class AppendedArgument(Unresolved):
     """
     Encapsulates information about a pointer argument, and the data
@@ -221,9 +222,9 @@ class Call(object):
     def __repr__(self):
         fmt = "%#x" if isinstance(self.target, (int, long)) else "%r"
         return '%s(%r, %s, %r)' % (self.__class__.__name__,
-                                    self.name,
-                                    fmt % self.target,
-                                    self.args)
+                                   self.name,
+                                   fmt % self.target,
+                                   self.args)
 
     def __str__(self):
         fmt = "%#x" if isinstance(self.target, (int, long)) else "%r"

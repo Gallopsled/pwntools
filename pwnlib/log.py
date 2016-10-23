@@ -126,7 +126,7 @@ _msgtype_prefixes = {
     'critical'     : [text.on_red, 'CRITICAL'],
     'info_once'    : [text.bold_blue, '*'],
     'warning_once' : [text.bold_yellow, '!'],
-    }
+}
 
 
 # permit setting logging colors from a configuration file
@@ -154,6 +154,7 @@ if os.path.exists(config):
 # in the `pwnlib.term.spinners` module
 _spinner_style = text.bold_blue
 
+
 class Progress(object):
     """
     Progress logger used to generate log records associated with some running
@@ -165,6 +166,7 @@ class Progress(object):
     This class is intended for internal use.  Progress loggers should be created
     using :meth:`Logger.progress`.
     """
+
     def __init__(self, logger, msg, status, level, args, kwargs):
         global _progressid
         self._logger = logger
@@ -235,6 +237,7 @@ class Progress(object):
             self.success()
         else:
             self.failure()
+
 
 class Logger(object):
     """
@@ -391,7 +394,6 @@ class Logger(object):
 
         self.info(pwnlib.util.fiddling.hexdump(message, *args, **kwargs))
 
-
     def warning(self, message, *args, **kwargs):
         """warning(message, *args, **kwargs)
 
@@ -475,6 +477,7 @@ class Logger(object):
     @property
     def level(self):
         return self._logger.level
+
     @level.setter
     def level(self, value):
         with context.local(log_level=value):
@@ -495,9 +498,11 @@ class Handler(logging.StreamHandler):
     @property
     def stream(self):
         return context.log_console
+
     @stream.setter
     def stream(self, value):
         pass
+
     def emit(self, record):
         """
         Emit a log record or create/update an animated progress logger
@@ -538,6 +543,7 @@ class Handler(logging.StreamHandler):
             spinner_handle = term.output('')
             msg_handle = term.output(msg)
             stop = threading.Event()
+
             def spin():
                 '''Wheeeee!'''
                 state = 0
@@ -566,6 +572,7 @@ class Handler(logging.StreamHandler):
             style, symb = _msgtype_prefixes[msgtype]
             prefix = '[%s] ' % style(symb)
             progress._spinner_handle.update(prefix)
+
 
 class Formatter(logging.Formatter):
     """
@@ -622,18 +629,25 @@ class Formatter(logging.Formatter):
 
 # we keep a dictionary of loggers such that multiple calls to `getLogger` with
 # the same name will return the same logger
+
+
 def getLogger(name):
     return Logger(logging.getLogger(name))
 
+
 class LogfileHandler(logging.FileHandler):
+
     def __init__(self):
         super(LogfileHandler, self).__init__('', delay=1)
+
     @property
     def stream(self):
         return context.log_file
+
     @stream.setter
     def stream(self, value):
         pass
+
     def handle(self, *a, **kw):
         if self.stream.name is not None:
             super(LogfileHandler, self).handle(*a, **kw)
@@ -659,6 +673,7 @@ rootlogger = getLogger('pwnlib')
 console   = Handler()
 formatter = Formatter()
 console.setFormatter(formatter)
+
 
 def install_default_handler():
     '''install_default_handler()

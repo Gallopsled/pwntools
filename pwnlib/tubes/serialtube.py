@@ -13,7 +13,9 @@ from ..timeout import Timeout
 
 log = getLogger(__name__)
 
+
 class serialtube(tube.tube):
+
     def __init__(
             self, port = None, baudrate = 115200,
             convert_newlines = True,
@@ -49,7 +51,7 @@ class serialtube(tube.tube):
         if not self.conn:
             raise EOFError
 
-        if self.timeout == None:
+        if self.timeout is None:
             end = float('inf')
         else:
             end = time.time() + self.timeout
@@ -90,7 +92,7 @@ class serialtube(tube.tube):
         return False
 
     def connected_raw(self, direction):
-        return self.conn != None
+        return self.conn is not None
 
     def close(self):
         if self.conn:

@@ -51,6 +51,7 @@ group.add_argument(
     help = 'Number of characters to print'
 )
 
+
 def main(args):
     alphabet = args.alphabet
     subsize  = args.length

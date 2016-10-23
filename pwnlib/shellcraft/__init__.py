@@ -10,6 +10,7 @@ from ..util import packing
 
 
 class module(ModuleType):
+
     def __init__(self, name, directory):
         super(module, self).__init__(name)
 
@@ -123,7 +124,7 @@ class module(ModuleType):
     templates = sorted(templates)
 
     def eval(self, item):
-        if isinstance(item, (int,long)):
+        if isinstance(item, (int, long)):
             return item
         return constants.eval(item)
 
@@ -133,8 +134,10 @@ class module(ModuleType):
         if not isinstance(n, int):
             return n
         if isinstance(n, constants.Constant):
-            if comment: return '%s /* %s */' % (n,self.pretty(int(n)))
-            else:       return '%s (%s)'     % (n,self.pretty(int(n)))
+            if comment:
+                return '%s /* %s */' % (n, self.pretty(int(n)))
+            else:
+                return '%s (%s)'     % (n, self.pretty(int(n)))
         elif abs(n) < 10:
             return str(n)
         else:
@@ -153,7 +156,9 @@ tether = sys.modules[__name__]
 # Create the module structure
 shellcraft = module(__name__, '')
 
+
 class LazyImporter:
+
     def find_module(self, fullname, path):
         if not fullname.startswith('pwnlib.shellcraft.'):
             return None

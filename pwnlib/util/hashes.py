@@ -6,6 +6,7 @@ import hashlib
 for _algo in hashlib.algorithms:
     def _closure():
         hash = hashlib.__dict__[_algo]
+
         def file(p):
             h = hash()
             fd = open(p)
@@ -16,6 +17,7 @@ for _algo in hashlib.algorithms:
                 h.update(s)
             fd.close()
             return h
+
         def sum(s):
             return hash(s)
         filef = lambda x: file(x).digest()

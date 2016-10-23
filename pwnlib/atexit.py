@@ -20,6 +20,7 @@ _lock = threading.Lock()
 _ident = 0
 _handlers = {}
 
+
 def register(func, *args, **kwargs):
     """register(func, *args, **kwargs)
 
@@ -56,6 +57,7 @@ def register(func, *args, **kwargs):
     _handlers[ident] = (func, args, kwargs, vars(context))
     return ident
 
+
 def unregister(ident):
     """unregister(ident)
 
@@ -64,6 +66,7 @@ def unregister(ident):
     """
     if ident in _handlers:
         del _handlers[ident]
+
 
 def _run_handlers():
     """_run_handlers()
@@ -77,7 +80,7 @@ def _run_handlers():
     """
     context.clear()
     for _ident, (func, args, kwargs, ctx) in \
-        sorted(_handlers.items(), reverse = True):
+            sorted(_handlers.items(), reverse = True):
         try:
             with context.local(**ctx):
                 func(*args, **kwargs)

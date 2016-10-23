@@ -16,6 +16,7 @@ env_team_name    = args.get('TEAM_NAME', 'unknown-team').strip()
 
 log = getLogger(__name__)
 
+
 def submit_flag(flag,
                 exploit=env_exploit_name,
                 target=env_target_host,

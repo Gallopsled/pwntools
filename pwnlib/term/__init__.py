@@ -10,13 +10,14 @@ from . import text
 
 # Re-exports (XXX: Are these needed?)
 output = term.output
-width =  term.width
+width = term.width
 height = term.height
 getkey = key.get
 Keymap = keymap.Keymap
 
 #: This is True exactly when we have taken over the terminal using :func:`init`.
 term_mode = False
+
 
 def can_init():
     """This function returns True iff stderr is a TTY and we are not inside a
@@ -70,6 +71,7 @@ def init():
         return
 
     term.init()
+
     def update_geometry():
         global height, width
         height = term.height

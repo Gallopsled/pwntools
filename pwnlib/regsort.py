@@ -12,6 +12,7 @@ from .log import getLogger
 
 log = getLogger(__name__)
 
+
 def check_cycle(reg, assignments):
     """Walk down the assignment list of a register,
     return the path walked if it is encountered again.
@@ -36,6 +37,7 @@ def check_cycle(reg, assignments):
     """
     return check_cycle_(reg, assignments, [])
 
+
 def check_cycle_(reg, assignments, path):
     target = assignments[reg]
     path.append(reg)
@@ -58,6 +60,7 @@ def check_cycle_(reg, assignments, path):
     # Recurse
     return check_cycle_(target, assignments, path)
 
+
 def extract_dependencies(reg, assignments):
     """Return a list of all registers which directly
     depend on the specified register.
@@ -74,7 +77,7 @@ def extract_dependencies(reg, assignments):
         ['b', 'c']
     """
     # sorted() is only for determinism
-    return sorted([k for k,v in assignments.items() if v == reg])
+    return sorted([k for k, v in assignments.items() if v == reg])
 
 
 def resolve_order(reg, deps):
@@ -100,12 +103,14 @@ def resolve_order(reg, deps):
     x.append(reg)
     return x
 
+
 def depends_on_cycle(reg, assignments, in_cycles):
     while reg in assignments:
         if reg in in_cycles:
             return True
         reg = assignments.get(reg, None)
     return False
+
 
 def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
     """
@@ -233,19 +238,19 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
     # Drop all registers which will be set to themselves.
     #
     # For example, {'eax': 'eax'}
-    in_out = {k:v for k,v in in_out.items() if k != v}
+    in_out = {k: v for k, v in in_out.items() if k != v}
 
     # Collapse constant values
     #
     # For eaxmple, {'eax': 0, 'ebx': 0} => {'eax': 0, 'ebx': 'eax'}
     v_k = defaultdict(lambda: [])
-    for k,v in sorted(in_out.items()):
+    for k, v in sorted(in_out.items()):
         if v not in all_regs and v != 0:
             v_k[v].append(k)
 
     post_mov = {}
 
-    for v,ks in sorted(v_k.items()):
+    for v, ks in sorted(v_k.items()):
         for k in ks[1:]:
             post_mov[k] = ks[0]
             in_out.pop(k)
@@ -258,8 +263,8 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
     # which are also 'outputs'.
     #
     # For example, {'eax': 1, 'ebx': 2, 'ecx': 'edx'}
-    if not any(v in in_out for k,v in in_out.items()):
-        result = [('mov', k,in_out[k]) for k in sorted(in_out)]
+    if not any(v in in_out for k, v in in_out.items()):
+        result = [('mov', k, in_out[k]) for k in sorted(in_out)]
 
         if randomize:
             shuffle(result)
@@ -301,7 +306,6 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
                 x = randint(0, len(cycle))
                 cycle = cycle[x:] + cycle[:x]
 
-
             cycles.append(cycle)
             in_cycle.extend(cycle)
             for reg in cycle:
@@ -339,9 +343,8 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
                 tmp = reg
                 break
         else:
-            nope = sorted((k,v) for k,v in in_out.items())
+            nope = sorted((k, v) for k, v in in_out.items())
             log.error("Cannot break dependency cycles in %r" % nope)
-
 
     # Don't set the temporary register now
     if tmp in not_in_cycle:
@@ -360,14 +363,13 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
             if reg not in not_in_cycle:
                 continue
 
-            src =  in_out[reg]
+            src = in_out[reg]
             result.append(('mov', reg, src))
             not_in_cycle.remove(reg)
 
             # Mark this as resolved
             if reg in deps.get(src, []):
                 deps[src].remove(reg)
-
 
     # If using a temporary register, break each cycle individually
     #

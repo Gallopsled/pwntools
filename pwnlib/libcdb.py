@@ -21,6 +21,7 @@ log = getLogger(__name__)
 
 cache_dir = os.path.join(tempfile.gettempdir(), 'pwn')
 
+
 def search_by_build_id(hex_encoded_id):
     """
     Given a hex-encoded Build ID, return the path to an ELF with that Build ID
@@ -60,6 +61,7 @@ def search_by_build_id(hex_encoded_id):
     write(cache, data)
     return cache
 
+
 def get_build_id_offsets():
     """
     Returns a list of file offsets where the Build ID should reside within
@@ -83,31 +85,31 @@ def get_build_id_offsets():
     # }
 
     return {
-    # $ check_arch 80386
-    #     181 Displaying notes found at file offset 0x00000174 with length 0x00000024:
+        # $ check_arch 80386
+        #     181 Displaying notes found at file offset 0x00000174 with length 0x00000024:
         'i386': [0x174],
-    # $ check_arch "ARM, EABI5"
-    #      69 Displaying notes found at file offset 0x00000174 with length 0x00000024:
+        # $ check_arch "ARM, EABI5"
+        #      69 Displaying notes found at file offset 0x00000174 with length 0x00000024:
         'arm':  [0x174],
         'thumb':  [0x174],
-    # $ check_arch "ARM aarch64"
-    #       1 Displaying notes found at file offset 0x00000238 with length 0x00000024:
+        # $ check_arch "ARM aarch64"
+        #       1 Displaying notes found at file offset 0x00000238 with length 0x00000024:
         'aarch64': [0x238],
-    # $ check_arch "x86-64"
-    #       6 Displaying notes found at file offset 0x00000174 with length 0x00000024:
-    #      82 Displaying notes found at file offset 0x00000270 with length 0x00000024:
+        # $ check_arch "x86-64"
+        #       6 Displaying notes found at file offset 0x00000174 with length 0x00000024:
+        #      82 Displaying notes found at file offset 0x00000270 with length 0x00000024:
         'amd64': [0x270, 0x174],
-    # $ check_arch "PowerPC or cisco"
-    #      88 Displaying notes found at file offset 0x00000174 with length 0x00000024:
+        # $ check_arch "PowerPC or cisco"
+        #      88 Displaying notes found at file offset 0x00000174 with length 0x00000024:
         'powerpc': [0x174],
-    # $ check_arch "64-bit PowerPC"
-    #      30 Displaying notes found at file offset 0x00000238 with length 0x00000024:
+        # $ check_arch "64-bit PowerPC"
+        #      30 Displaying notes found at file offset 0x00000238 with length 0x00000024:
         'powerpc64': [0x238],
-    # $ check_arch "SPARC32"
-    #      32 Displaying notes found at file offset 0x00000174 with length 0x00000024:
+        # $ check_arch "SPARC32"
+        #      32 Displaying notes found at file offset 0x00000174 with length 0x00000024:
         'sparc': [0x174],
-    # $ check_arch "SPARC V9"
-    #      33 Displaying notes found at file offset 0x00000270 with length 0x00000024:
+        # $ check_arch "SPARC V9"
+        #      33 Displaying notes found at file offset 0x00000270 with length 0x00000024:
         'sparc64': [0x270]
     }.get(context.arch, [])
 

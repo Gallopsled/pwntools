@@ -7,6 +7,7 @@ from .tubes.process import process
 
 __all__ = ['run_assembly', 'run_shellcode', 'run_assembly_exitcode', 'run_shellcode_exitcode']
 
+
 @LocalContext
 def run_assembly(assembly):
     """
@@ -30,6 +31,7 @@ def run_assembly(assembly):
     """
     return ELF.from_assembly(assembly).process()
 
+
 @LocalContext
 def run_shellcode(bytes, **kw):
     """Given assembled machine code bytes, execute them.
@@ -50,6 +52,7 @@ def run_shellcode(bytes, **kw):
     """
     return ELF.from_bytes(bytes, **kw).process()
 
+
 @LocalContext
 def run_assembly_exitcode(assembly):
     """
@@ -68,6 +71,7 @@ def run_assembly_exitcode(assembly):
     p = run_assembly(assembly)
     p.wait_for_close()
     return p.poll()
+
 
 @LocalContext
 def run_shellcode_exitcode(bytes):

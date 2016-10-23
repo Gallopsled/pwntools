@@ -7,6 +7,7 @@ from .tube import tube
 
 log = getLogger(__name__)
 
+
 class sock(tube):
     """Methods available exclusively to sockets."""
 

@@ -23,8 +23,11 @@ log = getLogger(__name__)
 PIPE = subprocess.PIPE
 STDOUT = subprocess.STDOUT
 
-class PTY(object): pass
-PTY=PTY()
+
+class PTY(object):
+    pass
+PTY = PTY()
+
 
 class process(tube):
     r"""
@@ -278,8 +281,10 @@ class process(tube):
         message = "Starting %s process %r" % (where, self.display)
 
         if self.isEnabledFor(logging.DEBUG):
-            if self.argv != [self.executable]: message += ' argv=%r ' % self.argv
-            if self.env  != os.environ:        message += ' env=%r ' % self.env
+            if self.argv != [self.executable]:
+                message += ' argv=%r ' % self.argv
+            if self.env  != os.environ:
+                message += ' env=%r ' % self.env
 
         with self.progress(message) as p:
 
@@ -298,7 +303,8 @@ class process(tube):
                 if not context.native:
                     qemu = get_qemu_user()
                     prefixes.append(([qemu], qemu))
-            except: pass
+            except:
+                pass
 
             for prefix, executable in prefixes:
                 try:
@@ -461,11 +467,11 @@ class process(tube):
         # Create a duplicate so we can modify it safely
         env = dict(os.environ if env is None else env)
 
-        for k,v in env.items():
+        for k, v in env.items():
             if not isinstance(k, (str, unicode)):
                 log.error('Environment keys must be strings: %r' % k)
             if not isinstance(k, (str, unicode)):
-                log.error('Environment values must be strings: %r=%r' % (k,v))
+                log.error('Environment values must be strings: %r=%r' % (k, v))
             if '\x00' in k[:-1]:
                 log.error('Inappropriate nulls in env key: %r' % (k))
             if '\x00' in v[:-1]:
@@ -535,7 +541,7 @@ class process(tube):
             self.wait_for_close()
 
         self.proc.poll()
-        if self.proc.returncode != None and not self._stop_noticed:
+        if self.proc.returncode is not None and not self._stop_noticed:
             self._stop_noticed = True
             self.info("Process %r stopped with exit code %d" % (self.display, self.proc.returncode))
 
@@ -599,7 +605,7 @@ class process(tube):
             return False
 
         try:
-            if timeout == None:
+            if timeout is None:
                 return select.select([self.proc.stdout], [], []) == ([self.proc.stdout], [], [])
 
             return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
@@ -617,7 +623,7 @@ class process(tube):
 
     def connected_raw(self, direction):
         if direction == 'any':
-            return self.poll() == None
+            return self.poll() is None
         elif direction == 'send':
             return not self.proc.stdin.closed
         elif direction == 'recv':
@@ -630,7 +636,7 @@ class process(tube):
         # First check if we are already dead
         self.poll()
 
-        #close file descriptors
+        # close file descriptors
         for fd in [self.proc.stdin, self.proc.stdout, self.proc.stderr]:
             if fd is not None:
                 fd.close()
@@ -643,7 +649,6 @@ class process(tube):
                 self.info('Stopped program %r' % self.program)
             except OSError:
                 pass
-
 
     def fileno(self):
         if not self.connected():
@@ -687,7 +692,7 @@ class process(tube):
             if fd >= 0:
                 os.close(fd)
                 raise Exception('Failed to disconnect from ' +
-                    'controlling tty. It is still possible to open /dev/tty.')
+                                'controlling tty. It is still possible to open /dev/tty.')
         # which exception, shouldnt' we catch explicitly .. ?
         except OSError:
             # Good! We are disconnected from a controlling tty.
@@ -730,11 +735,12 @@ class process(tube):
 
         # Enumerate all of the libraries actually loaded right now.
         for line in maps_raw.splitlines():
-            if '/' not in line: continue
+            if '/' not in line:
+                continue
             path = line[line.index('/'):]
             path = os.path.realpath(path)
             if path not in maps:
-                maps[path]=0
+                maps[path] = 0
 
         for lib in maps:
             path = os.path.realpath(lib)
