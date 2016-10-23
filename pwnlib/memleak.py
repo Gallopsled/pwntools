@@ -97,6 +97,16 @@ class MemLeak(object):
             struct(class): A ctypes structure to be instantiated with leaked data
         Return Value:
             An instance of the provided struct class, with the leaked data decoded
+
+        Examples:
+
+            >>> @pwnlib.memleak.MemLeak
+            ... def leaker(addr):
+            ...     return "A"
+            >>> e = leaker.struct(0, pwnlib.elf.Elf32_Phdr)
+            >>> hex(e.p_paddr)
+            '0x41414141'
+
         """
         size = ctypes.sizeof(struct)
         data = self.n(address, size)
