@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.3.0](#330)    | `dev`    | Dec 24, 2016 (planned)
 | [3.2.0](#320)    | `beta`   | Nov 12, 2016 (planned)
-| [3.1.0](#310)    | `stable` | Oct 2, 2016
+| [3.1.1](#311)    | `stable` | Oct 23, 2016
+| [3.1.0](#310)    |          | Oct 2, 2016
 | [3.0.4](#304)    |          | Sept 19, 2016
 | [3.0.3](#303)    |          | Sept 18, 2016
 | [3.0.2](#302)    |          | Sept 6, 2016
@@ -64,6 +65,10 @@ The table below shows which release corresponds to each branch, and what date th
 [869ec42]: https://github.com/Gallopsled/pwntools/commit/869ec42082b4b98958dfe85103da9b101dde7daa
 [4893819]: https://github.com/Gallopsled/pwntools/commit/4893819b4c23182da570e2f4ea4c14d73af2c0df
 [2af55c9]: https://github.com/Gallopsled/pwntools/commit/2af55c9bc382eca23f89bc0abc7a07c075521f94
+
+## 3.1.1
+
+Fixed a bug in `MemLeak.struct` (PR: #768).
 
 ## 3.1.0
 
