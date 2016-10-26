@@ -128,7 +128,7 @@ def cyclic_find(subseq, alphabet = string.ascii_lowercase, n = None):
 
     return _gen_find(subseq, de_bruijn(alphabet, n))
 
-def metasploit_pattern(sets = [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]):
+def metasploit_pattern(sets = None):
     """metasploit_pattern(sets = [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]) -> generator
 
     Generator for a sequence of characters as per Metasploit Framework's
@@ -140,6 +140,7 @@ def metasploit_pattern(sets = [ string.ascii_uppercase, string.ascii_lowercase, 
     Arguments:
         sets: List of strings to generate the sequence over.
     """
+    sets = sets or [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]
     offsets = [ 0 ] * len(sets)
     offsets_indexes_reversed = list(reversed(range(len(offsets))))
 
@@ -155,7 +156,7 @@ def metasploit_pattern(sets = [ string.ascii_uppercase, string.ascii_lowercase, 
         if offsets == [ 0 ] * len(sets):
             return
 
-def cyclic_metasploit(length = None, sets = [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]):
+def cyclic_metasploit(length = None, sets = None):
     """cyclic_metasploit(length = None, sets = [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]) -> str
 
     A simple wrapper over :func:`metasploit_pattern`. This function returns a
@@ -175,7 +176,9 @@ def cyclic_metasploit(length = None, sets = [ string.ascii_uppercase, string.asc
         >>> len(cyclic_metasploit())
         20280
     """
+    sets = sets or [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]
     out = []
+
     for ndx, c in enumerate(metasploit_pattern(sets)):
         if length != None and ndx >= length:
             break
@@ -190,7 +193,7 @@ def cyclic_metasploit(length = None, sets = [ string.ascii_uppercase, string.asc
 
     return ''.join(out)
 
-def cyclic_metasploit_find(subseq, sets = [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]):
+def cyclic_metasploit_find(subseq, sets = None):
     """cyclic_metasploit_find(subseq, sets = [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]) -> int
 
     Calculates the position of a substring into a Metasploit Pattern sequence.
@@ -208,6 +211,8 @@ def cyclic_metasploit_find(subseq, sets = [ string.ascii_uppercase, string.ascii
         >>> cyclic_metasploit_find(0x61413161)
         4
     """
+    sets = sets or [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]
+
     if isinstance(subseq, (int, long)):
         subseq = packing.pack(subseq, 'all', 'little', False)
 
