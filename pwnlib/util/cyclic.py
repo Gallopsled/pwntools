@@ -128,6 +128,96 @@ def cyclic_find(subseq, alphabet = string.ascii_lowercase, n = None):
 
     return _gen_find(subseq, de_bruijn(alphabet, n))
 
+def metasploit_pattern(sets = None):
+    """metasploit_pattern(sets = [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]) -> generator
+
+    Generator for a sequence of characters as per Metasploit Framework's
+    `Rex::Text.pattern_create` (aka `pattern_create.rb`).
+
+    The returned generator will yield up to
+    ``len(sets) * reduce(lambda x,y: x*y, map(len, sets))`` elements.
+
+    Arguments:
+        sets: List of strings to generate the sequence over.
+    """
+    sets = sets or [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]
+    offsets = [ 0 ] * len(sets)
+    offsets_indexes_reversed = list(reversed(range(len(offsets))))
+
+    while True:
+        for i, j in zip(sets, offsets):
+            yield i[j]
+        # increment offsets with cascade
+        for i in offsets_indexes_reversed:
+            offsets[i] = (offsets[i] + 1) % len(sets[i])
+            if offsets[i] != 0:
+                break
+        # finish up if we've exhausted the sequence
+        if offsets == [ 0 ] * len(sets):
+            return
+
+def cyclic_metasploit(length = None, sets = None):
+    """cyclic_metasploit(length = None, sets = [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]) -> str
+
+    A simple wrapper over :func:`metasploit_pattern`. This function returns a
+    string of length `length`.
+
+    Arguments:
+        length: The desired length of the string or None if the entire sequence is desired.
+        sets: List of strings to generate the sequence over.
+
+    Example:
+        >>> cyclic_metasploit(32)
+        'Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab'
+        >>> cyclic_metasploit(sets = ["AB","ab","12"])
+        'Aa1Aa2Ab1Ab2Ba1Ba2Bb1Bb2'
+        >>> cyclic_metasploit()[1337:1341]
+        '5Bs6'
+        >>> len(cyclic_metasploit())
+        20280
+    """
+    sets = sets or [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]
+    out = []
+
+    for ndx, c in enumerate(metasploit_pattern(sets)):
+        if length != None and ndx >= length:
+            break
+        else:
+            out.append(c)
+
+    out = ''.join(out)
+
+    if len(out) < length:
+        log.error("Can't create a pattern of length %i with sets of lengths %s. Maximum pattern length is %i." \
+                  % (length, map(len, sets), len(out)))
+
+    return ''.join(out)
+
+def cyclic_metasploit_find(subseq, sets = None):
+    """cyclic_metasploit_find(subseq, sets = [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]) -> int
+
+    Calculates the position of a substring into a Metasploit Pattern sequence.
+
+    Arguments:
+        subseq: The subsequence to look for. This can be a string or an
+                integer. If an integer is provided it will be packed as a
+                little endian integer.
+        sets: List of strings to generate the sequence over.
+
+    Examples:
+
+        >>> cyclic_metasploit_find(cyclic_metasploit(1000)[514:518])
+        514
+        >>> cyclic_metasploit_find(0x61413161)
+        4
+    """
+    sets = sets or [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]
+
+    if isinstance(subseq, (int, long)):
+        subseq = packing.pack(subseq, 'all', 'little', False)
+
+    return _gen_find(subseq, metasploit_pattern(sets))
+
 def _gen_find(subseq, generator):
     """Returns the first position of `subseq` in the generator or -1 if there is no such position."""
     subseq = list(subseq)
