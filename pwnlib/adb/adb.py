@@ -164,7 +164,7 @@ def reboot_bootloader():
 
 @with_device
 def uptime():
-    """boot_time() -> float
+    """uptime() -> float
 
     Returns:
         Uptime of the device, in seconds
