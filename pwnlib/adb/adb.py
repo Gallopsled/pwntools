@@ -162,6 +162,29 @@ def reboot_bootloader():
     with Client() as c:
         c.reboot_bootloader()
 
+@with_device
+def uptime():
+    """boot_time() -> float
+
+    Returns:
+        Uptime of the device, in seconds
+    """
+    up, idle = map(float, read('/proc/uptime').split())
+    return up
+
+@with_device
+def boot_time():
+    """boot_time() -> int
+
+    Returns:
+        Boot time of the device, in Unix time, rounded to the
+        nearest second.
+    """
+    for line in read('/proc/stat').splitlines():
+        name, value = line.split(None, 1)
+        if name == 'btime':
+            return int(value)
+
 class AdbDevice(Device):
     """Encapsulates information about a connected device."""
     def __init__(self, serial, type, port=None, product='unknown', model='unknown', device='unknown', features=None, **kw):
