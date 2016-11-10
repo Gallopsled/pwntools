@@ -700,6 +700,9 @@ class ROP(object):
         # If we can find a function with that name, just call it
         if isinstance(resolvable, str):
             addr = self.resolve(resolvable)
+        elif hasattr(resolvable, 'name') and hasattr(resolvable, 'address'):
+            addr = resolvable.address
+            resolvable = str(resolvable.name)
         else:
             addr = resolvable
             resolvable = ''
