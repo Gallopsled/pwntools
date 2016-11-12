@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.3.0](#330)    | `dev`    | Dec 24, 2016 (planned)
-| [3.2.0](#320)    | `beta`   | Nov 12, 2016 (planned)
-| [3.1.1](#311)    | `stable` | Oct 23, 2016
+| [3.4.0](#340)    | `dev`    | Feb 4, 2017 (planned)
+| [3.3.0](#330)    | `beta`   | Dec 24, 2016 (planned)
+| [3.2.0](#320)    | `stable` | Nov 12, 2016
+| [3.1.1](#311)    |          | Oct 23, 2016
 | [3.1.0](#310)    |          | Oct 2, 2016
 | [3.0.4](#304)    |          | Sept 19, 2016
 | [3.0.3](#303)    |          | Sept 18, 2016
@@ -20,9 +21,20 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
+## 3.4.0
+
+To be released on Feb 4, 2017.
+
+## 3.3.0
+
+To be released on Dec 24, 2016.
+
 ## 3.2.0
 
 - [#695][695] Fixed a performance regression in `phd`.
+- [452605e][452605e] Fixed [#629][#629] related to correct removal of temporary files.
+- [ea94ee4][ea94ee4] Disallows semi-colons in for the `run_in_terminal` function, since it did not work properly in all cases. 
+- [6376d07][6376d07] Added the mips shellcode `pushstr_array`.
 - [#700][700] Added missing MIPS shellcode documentation to readthedocs, and enabled unit tests
 - [#701][701] Command line tools refactored to have a common `pwn` entry point.
     + Added an option to *not* install the traditional `asm`, `disasm`, `checksec`, etc scripts
@@ -52,6 +64,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [2af55c9][2af55c9] `AdbDevice` objects exposed via e.g. `adb.devices()` now offer scoped access to all `adb` module properties
     + It is now possible to e.g. `map(lambda d: d.process(['id']).recvall(), adb.devices())`
 
+
 [695]: https://github.com/Gallopsled/pwntools/pull/695
 [700]: https://github.com/Gallopsled/pwntools/pull/700
 [701]: https://github.com/Gallopsled/pwntools/pull/701
@@ -61,6 +74,9 @@ The table below shows which release corresponds to each branch, and what date th
 [709]: https://github.com/Gallopsled/pwntools/pull/709
 [705]: https://github.com/Gallopsled/pwntools/pull/705
 [703]: https://github.com/Gallopsled/pwntools/pull/703
+[452605e]: https://github.com/Gallopsled/pwntools/commit/452605e854f4870ef5ccfdf7fb110dfd75c50feb
+[ea94ee4]: https://github.com/Gallopsled/pwntools/commit/ea94ee4ca5a8060567cc9bd0dc33796a89ad0b95
+[6376d07]: https://github.com/Gallopsled/pwntools/commit/6376d072660fb2250f48bd22629bbd7e3c61c758
 [1e414af]: https://github.com/Gallopsled/pwntools/commit/1e414afbeb3a01242f4918f111febaa63b640eb7
 [869ec42]: https://github.com/Gallopsled/pwntools/commit/869ec42082b4b98958dfe85103da9b101dde7daa
 [4893819]: https://github.com/Gallopsled/pwntools/commit/4893819b4c23182da570e2f4ea4c14d73af2c0df
