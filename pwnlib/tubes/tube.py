@@ -826,6 +826,35 @@ class tube(Timeout, Logger):
         while t.is_alive():
             t.join(timeout = 0.1)
 
+    def stream(self, line_mode=True):
+        """stream()
+
+        Receive data until the tube exits, and print it to stdout.
+
+        Similar to :func:`interactive`, except that no input is sent.
+
+        Similar to ``print tube.recvall()`` except that data is printed
+        as it is received, rather than after all data is received.
+
+        Arguments:
+            line_mode(bool): Whether to receive line-by-line or raw data.
+
+        Returns:
+            All data printed.
+        """
+        buf = Buffer()
+        function = self.recvline if line_mode else self.recv
+        try:
+            while True:
+                buf.add(function())
+                sys.stdout.write(buf.data[-1])
+        except KeyboardInterrupt:
+            pass
+        except EOFError:
+            pass
+
+        return buf.get()
+
     def clean(self, timeout = 0.05):
         """clean(timeout = 0.05)
 

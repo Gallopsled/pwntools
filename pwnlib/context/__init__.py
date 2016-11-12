@@ -334,6 +334,7 @@ class ContextType(object):
         'kernel': None,
         'log_level': logging.INFO,
         'log_file': _devnull(),
+        'log_console': sys.stdout,
         'randomize': False,
         'newline': '\n',
         'noptrace': False,
@@ -921,6 +922,24 @@ class ContextType(object):
             value.write('=%-78s=\n' % line)
         value.flush()
         return value
+
+    @_validator
+    def log_console(self, stream):
+        """
+        Sets the default logging console target.
+
+        Examples:
+
+            >>> context.log_level = 'warn'
+            >>> log.warn("Hello")
+            [!] Hello
+            >>> context.log_console=open('/dev/null', 'w')
+            >>> log.warn("Hello")
+            >>> context.clear()
+        """
+        if isinstance(stream, str):
+            stream = open(stream, 'wt')
+        return stream
 
     @property
     def mask(self):

@@ -51,6 +51,7 @@ from pwnlib.util import iters
 from pwnlib.util import net
 from pwnlib.util import proc
 from pwnlib.util import safeeval
+from pwnlib.util.crc import BitPolynom
 from pwnlib.util.cyclic import *
 from pwnlib.util.fiddling import *
 from pwnlib.util.getdents import *

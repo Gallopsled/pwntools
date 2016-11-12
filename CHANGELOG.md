@@ -27,7 +27,9 @@ To be released on Feb 4, 2017.
 
 ## 3.3.0
 
-To be released on Dec 24, 2016.
+- [b198ec8][b198ec8] Added `tube.stream()` function, which is like `tube.interact()` without a prompt or keyboard input.
+
+[b198ec8]: https://github.com/Gallopsled/pwntools/commit/b198ec8
 
 ## 3.2.0
 

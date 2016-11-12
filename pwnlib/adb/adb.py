@@ -10,12 +10,38 @@ If you have multiple devices, you have a handful of options to select one, or it
 over the devices.
 
 First and most important is the ``context.device`` property, which declares the "currently"
-seelcted device in any scope.  It can be set manually to a serial number, or to a ``Device``
+selected device in any scope.  It can be set manually to a serial number, or to a ``Device``
 instance.
 
 .. code-block:: python
 
-    >>> context.device = ''
+    # Take the first available device
+    context.device = adb.wait_for_device()
+
+    # Set a device by serial number
+    context.device = 'ZX1G22LH8S'
+
+    # Set a device by its product name
+    for device in adb.devices():
+        if device.product == 'shamu':
+            break
+    else:
+        error("Could not find any shamus!")
+
+Once a device is selected, you can operate on it with any of the functions in
+the ``pwnlib.adb`` module.
+
+.. code-block:: python
+
+    # Get a process listing
+    print adb.process(['ps']).recvall()
+
+    # Fetch properties
+    print adb.properties.ro.build.fingerprint
+
+    # Read and write files
+    print adb.read('/proc/version')
+    adb.write('/data/local/tmp/foo', 'my data')
 
 """
 import functools
@@ -161,6 +187,29 @@ def reboot_bootloader():
 
     with Client() as c:
         c.reboot_bootloader()
+
+@with_device
+def uptime():
+    """uptime() -> float
+
+    Returns:
+        Uptime of the device, in seconds
+    """
+    up, idle = map(float, read('/proc/uptime').split())
+    return up
+
+@with_device
+def boot_time():
+    """boot_time() -> int
+
+    Returns:
+        Boot time of the device, in Unix time, rounded to the
+        nearest second.
+    """
+    for line in read('/proc/stat').splitlines():
+        name, value = line.split(None, 1)
+        if name == 'btime':
+            return int(value)
 
 class AdbDevice(Device):
     """Encapsulates information about a connected device."""
@@ -1036,13 +1085,12 @@ def uninstall(package, *arguments):
         package(str): Name of the package to uninstall (e.g. ``'com.foo.MyPackage'``)
         arguments: Supplementary arguments to ``'pm install'``, e.g. ``'-k'``.
     """
-    with log.progress("Installing package {}".format(package)):
+    with log.progress("Uninstalling package {}".format(package)):
         with context.quiet:
-            return process(['pm','uninstall',apk] + list(arguments)).recvall()
+            return process(['pm','uninstall',package] + list(arguments)).recvall()
 
 @context.quiet
 def packages():
     """Returns a list of packages installed on the system"""
     packages = process(['pm', 'list', 'packages']).recvall()
     return [line.split('package:', 1)[-1] for line in packages.splitlines()]
-

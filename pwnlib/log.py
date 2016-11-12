@@ -113,7 +113,7 @@ from .term import spinners
 from .term import text
 
 # list of prefixes to use for the different message types.  note that the `text`
-# module won't add any escape codes if `sys.stderr.isatty()` is `False`
+# module won't add any escape codes if `pwnlib.context.log_console.isatty()` is `False`
 _msgtype_prefixes = {
     'status'       : [text.magenta, 'x'],
     'success'      : [text.bold_green, '+'],
@@ -490,10 +490,14 @@ class Handler(logging.StreamHandler):
     logger will not be emitted but rather an animated progress line will be
     created.
 
-    This handler outputs to ``sys.stderr``.
-
     An instance of this handler is added to the ``'pwnlib'`` logger.
     """
+    @property
+    def stream(self):
+        return context.log_console
+    @stream.setter
+    def stream(self, value):
+        pass
     def emit(self, record):
         """
         Emit a log record or create/update an animated progress logger
@@ -652,7 +656,7 @@ log_file.setFormatter(logging.Formatter(fmt, iso_8601))
 #     logger.addHandler(myCoolPitchingHandler)
 #
 rootlogger = getLogger('pwnlib')
-console   = Handler(sys.stdout)
+console   = Handler()
 formatter = Formatter()
 console.setFormatter(formatter)
 
@@ -663,8 +667,6 @@ def install_default_handler():
     the ``pwnlib`` root logger.  This function is automatically called from when
     importing :mod:`pwn`.
     '''
-    console.stream = sys.stdout
-
     logger         = logging.getLogger('pwnlib')
 
     if console not in logger.handlers:

@@ -1,5 +1,6 @@
 """Exposes functionality for manipulating ELF files
 """
+import codecs
 import mmap
 import os
 import subprocess
@@ -30,7 +31,18 @@ log = getLogger(__name__)
 
 __all__ = ['load', 'ELF']
 
-Function = namedtuple('Function', 'address size')
+class Function(object):
+    def __init__(self, name, address, size):
+        self.name    = name
+        self.address = address
+        self.size    = size
+    def __repr__(self):
+        return '%s(name=%r, address=%#x, size=%#x)' % (
+            self.__class__.__name__,
+            self.name,
+            self.address,
+            self.size
+            )
 
 def load(*args, **kwargs):
     """Compatibility wrapper for pwntools v1"""
@@ -348,11 +360,15 @@ class ELF(ELFFile):
                     continue
                 if sym.entry.st_info['type'] == 'STT_FUNC' and sym.entry.st_size != 0:
                     name = sym.name
+                    try:
+                        name = codecs.encode(name, 'latin-1')
+                    except Exception:
+                        pass
                     if name not in self.symbols:
                         continue
                     addr = self.symbols[name]
                     size = sym.entry.st_size
-                    self.functions[name] = Function(addr, size)
+                    self.functions[name] = Function(name, addr, size)
 
     def _populate_symbols(self):
         """

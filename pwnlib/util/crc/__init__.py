@@ -1,10 +1,10 @@
 """Module for calculating CRC-sums.
 
-Contains all crc implementations know on the interwebz. For most implementations it
-contains only the core crc algorithm and not e.g. padding schemes.
+Contains all crc implementations know on the interwebz. For most implementations
+it contains only the core crc algorithm and not e.g. padding schemes.
 
 It is horribly slow, as implements a naive algorithm working direclty on
-bit polynomials.
+bit polynomials. This class is exposed as `BitPolynom`.
 
 The current algorithm is super-linear and takes about 4 seconds to calculate
 the crc32-sum of ``'A'*40000``.
@@ -18,15 +18,70 @@ import types
 from . import known
 from .. import fiddling
 from .. import packing
+from .. import safeeval
 
 
 class BitPolynom(object):
+    """Class for representing GF(2)[X], i.e. the field of polynomials over
+    GF(2).
+
+    In practice the polynomials are represented as numbers such that `x**n`
+    corresponds to `1 << n`. In this representation calculations are easy: Just
+    do everything as normal, but forget about everything the carries.
+
+    Addition becomes xor and multiplication becomes carry-less multiplication.
+
+    Examples:
+
+        >>> p1 = BitPolynom("x**3 + x + 1")
+        >>> p1
+        BitPolynom('x**3 + x + 1')
+        >>> int(p1)
+        11
+        >>> p1 == BitPolynom(11)
+        True
+        >>> p2 = BitPolynom("x**2 + x + 1")
+        >>> p1 + p2
+        BitPolynom('x**3 + x**2')
+        >>> p1 * p2
+        BitPolynom('x**5 + x**4 + 1')
+        >>> p1 / p2
+        BitPolynom('x + 1')
+        >>> p1 % p2
+        BitPolynom('x')
+        >>> d, r = divmod(p1, p2)
+        >>> d * p2 + r == p1
+        True
+        >>> BitPolynom(-1)
+        Traceback (most recent call last):
+            ...
+        ValueError: Polynomials cannot be negative: -1
+        >>> BitPolynom('y')
+        Traceback (most recent call last):
+            ...
+        ValueError: Not a valid polynomial: y
+    """
+
+
     def __init__(self, n):
-        if not isinstance(n, (int, long)):
-            raise TypeError("Polynomial must be called with an integer or a list")
-        if n < 0:
-            raise ValueError("Polynomials cannot be negative: %d" % n)
-        self.n = n
+        if isinstance(n, (str, unicode)):
+            self.n = 0
+            x = BitPolynom(2)
+            try:
+                for p in n.split('+'):
+                    k = safeeval.values(p.strip(), {'x': x, 'X': x})
+                    assert isinstance(k, (BitPolynom, int, long))
+                    assert k >= 0
+                    self.n ^= int(k)
+            except (ValueError, NameError, AssertionError):
+                raise ValueError("Not a valid polynomial: %s" % n)
+        elif isinstance(n, (int, long)):
+            if n >= 0:
+                self.n = n
+            else:
+                raise ValueError("Polynomials cannot be negative: %d" % n)
+        else:
+            raise TypeError("Polynomial must be called with a string or integer")
 
     def __int__(self):
         return self.n
@@ -126,7 +181,30 @@ class BitPolynom(object):
     def __rrshift__(self, other):
         return BitPolynom(int(other) >> int(self))
 
+    def __pow__(self, other):
+        r = BitPolynom(1)
+        for _ in range(other):
+            r *= self
+        return r
+
     def degree(self):
+        """Returns the degree of the polynomial.
+
+        Examples:
+
+            >>> BitPolynom(0).degree()
+            0
+            >>> BitPolynom(1).degree()
+            0
+            >>> BitPolynom(2).degree()
+            1
+            >>> BitPolynom(7).degree()
+            2
+            >>> BitPolynom((1 << 10) - 1).degree()
+            9
+            >>> BitPolynom(1 << 10).degree()
+            10
+        """
         return max(0, int(self).bit_length()-1)
 
     def __repr__(self):
@@ -134,17 +212,20 @@ class BitPolynom(object):
             return '0'
 
         out = []
-        for n in range(self.degree(), 0, -1):
+        for n in range(self.degree(), 1, -1):
             if int(self) & (1 << n):
                 out.append("x**%d" % n)
+        if int(self) & 2:
+            out.append("x")
         if int(self) & 1:
             out.append("1")
-        return ' + '.join(out)
+        return 'BitPolynom(%r)' % ' + '.join(out)
 
 class Module(types.ModuleType):
     def __init__(self):
         super(Module, self).__init__(__name__)
         self._cached_crcs = None
+        self.BitPolynom = BitPolynom
         self.__dict__.update({
             '__file__'    : __file__,
             '__package__' : __package__,
@@ -154,7 +235,7 @@ class Module(types.ModuleType):
         crcs = known.all_crcs
 
         if attr == '__all__':
-            return ['generic_crc', 'cksum', 'find_crc_function'] + sorted(crcs.keys())
+            return ['BitPolynom', 'generic_crc', 'cksum', 'find_crc_function'] + sorted(crcs.keys())
 
         info = crcs.get(attr, None)
         if not info:
