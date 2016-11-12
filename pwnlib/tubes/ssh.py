@@ -291,7 +291,7 @@ class ssh_channel(sock):
         """Retrieve the address of an environment variable in the remote process.
         """
         if not hasattr(self, 'argv'):
-            log.error("Can only call getenv() on ssh_channel objects created with ssh.process")
+            self.error("Can only call getenv() on ssh_channel objects created with ssh.process")
 
         argv0 = self.argv[0]
 
@@ -668,8 +668,12 @@ class ssh(Timeout, Logger):
                 See ``stdin``.
             preexec_fn(callable):
                 Function which is executed on the remote side before execve().
+                This **MUST** be a self-contained function -- it must perform
+                all of its own imports, and cannot refer to variables outside
+                its scope.
             preexec_args(object):
                 Argument passed to ``preexec_fn``.
+                This **MUST** only consist of native Python objects.
             raw(bool):
                 If ``True``, disable TTY control code interpretation.
             aslr(bool):
@@ -716,6 +720,23 @@ class ssh(Timeout, Logger):
             ''
             >>> s.process('/usr/bin/env', env={'A':'B'}).recvall()
             'A=B\n'
+
+            >>> s.process('false', preexec_fn=1234)
+            Traceback (most recent call last):
+            ...
+            PwnlibException: preexec_fn must be a function
+
+            >>> s.process('false', preexec_fn=lambda: 1234)
+            Traceback (most recent call last):
+            ...
+            PwnlibException: preexec_fn cannot be a lambda
+
+            >>> def uses_globals():
+            ...     foo = bar
+            >>> print s.process('false', preexec_fn=uses_globals).recvall().strip() # doctest: +ELLIPSIS
+            Traceback (most recent call last):
+            ...
+            NameError: global name 'bar' is not defined
         """
         if not argv and not executable:
             self.error("Must specify argv or executable")
@@ -767,15 +788,16 @@ class ssh(Timeout, Logger):
         # Allow the user to provide a self-contained function to run
         def func(): pass
         func      = preexec_fn or func
-        func_src  = inspect.getsource(func).strip()
-        func_name = func.__name__
         func_args = preexec_args
 
         if not isinstance(func, types.FunctionType):
-            log.error("preexec_fn must be a function")
-        if func_name == (lambda: 0).__name__:
-            log.error("preexec_fn cannot be a lambda")
+            self.error("preexec_fn must be a function")
 
+        func_name = func.__name__
+        if func_name == (lambda: 0).__name__:
+            self.error("preexec_fn cannot be a lambda")
+
+        func_src  = inspect.getsource(func).strip()
         setuid = setuid if setuid is None else bool(setuid)
 
         script = r"""
@@ -1454,7 +1476,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if os.path.isdir(file_or_directory):
             return self.upload_dir(file_or_directory, remote)
 
-        log.error('%r does not exist' % file_or_directory)
+        self.error('%r does not exist' % file_or_directory)
 
 
     def download(self, file_or_directory, remote=None):
