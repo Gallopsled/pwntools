@@ -34,7 +34,7 @@ To be released on Feb 4, 2017.
 ## 3.2.0
 
 - [#695][695] Fixed a performance regression in `phd`.
-- [452605e][452605e] Fixed [#629][#629] related to correct removal of temporary files.
+- [452605e][452605e] Fixed [#629][629] related to correct removal of temporary files.
 - [ea94ee4][ea94ee4] Disallows semi-colons in for the `run_in_terminal` function, since it did not work properly in all cases. 
 - [6376d07][6376d07] Added the mips shellcode `pushstr_array`.
 - [#700][700] Added missing MIPS shellcode documentation to readthedocs, and enabled unit tests
@@ -67,6 +67,7 @@ To be released on Feb 4, 2017.
     + It is now possible to e.g. `map(lambda d: d.process(['id']).recvall(), adb.devices())`
 
 
+[629]: https://github.com/Gallopsled/pwntools/issues/629
 [695]: https://github.com/Gallopsled/pwntools/pull/695
 [700]: https://github.com/Gallopsled/pwntools/pull/700
 [701]: https://github.com/Gallopsled/pwntools/pull/701
