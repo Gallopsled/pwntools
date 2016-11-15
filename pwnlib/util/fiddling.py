@@ -3,7 +3,7 @@ import base64
 import random
 import re
 import string
-import StringIO
+import io
 
 from . import lists
 from . import packing
@@ -12,6 +12,7 @@ from ..log import getLogger
 from ..term import text
 from .cyclic import cyclic
 from .cyclic import cyclic_find
+from functools import reduce
 
 log = getLogger(__name__)
 
@@ -133,7 +134,7 @@ def bits(s, endian = 'big', zero = 0, one = 1):
                 out += byte
             else:
                 out += byte[::-1]
-    elif isinstance(s, (int, long)):
+    elif isinstance(s, int):
         if s == 0:
             out.append(zero)
         while s:
@@ -314,7 +315,7 @@ def xor(*args, **kwargs):
     if strs == []:
         return ''
 
-    if isinstance(cut, (int, long)):
+    if isinstance(cut, int):
         cut = cut
     elif cut == 'left':
         cut = len(strs[0])
@@ -351,7 +352,7 @@ def xor_pair(data, avoid = '\x00\n'):
         ('\\x01\\x01\\x01\\x01', 'udru')
     """
 
-    if isinstance(data, (int, long)):
+    if isinstance(data, int):
         data = packing.pack(data)
 
     alphabet = list(chr(n) for n in range(256) if chr(n) not in avoid)
@@ -421,7 +422,7 @@ def xor_key(data, avoid='\x00\n', size=None):
 
     return result, xor(data, result)
 
-def randoms(count, alphabet = string.lowercase):
+def randoms(count, alphabet=None):
     """randoms(count, alphabet = string.lowercase) -> str
 
     Returns a random string of a given length using only the specified alphabet.
@@ -438,8 +439,9 @@ def randoms(count, alphabet = string.lowercase):
         >>> randoms(10) #doctest: +SKIP
         'evafjilupm'
     """
-
-    return ''.join(random.choice(alphabet) for _ in xrange(count))
+    if alphabet is None :
+        alphabet = string.lowercase
+    return ''.join(random.choice(alphabet) for _ in range(count))
 
 
 def rol(n, k, word_size = None):
@@ -468,15 +470,15 @@ def rol(n, k, word_size = None):
 
     word_size = word_size or context.word_size
 
-    if not isinstance(word_size, (int, long)) or word_size <= 0:
+    if not isinstance(word_size, int) or word_size <= 0:
         raise ValueError("rol(): 'word_size' must be a strictly positive integer")
 
-    if not isinstance(k, (int, long)):
+    if not isinstance(k, int):
         raise ValueError("rol(): 'k' must be an integer")
 
-    if isinstance(n, (str, unicode, list, tuple)):
+    if isinstance(n, (str, list, tuple)):
         return n[k % len(n):] + n[:k % len(n)]
-    elif isinstance(n, (int, long)):
+    elif isinstance(n, int):
         k = k % word_size
         n = (n << k) | (n >> (word_size - k))
         n &= (1 << word_size) - 1
@@ -699,7 +701,7 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         A hexdump-dump in the form of a string.
 """
     s = packing.flat(s)
-    return '\n'.join(hexdump_iter(StringIO.StringIO(s),
+    return '\n'.join(hexdump_iter(io.StringIO(s),
                                   width,
                                   skip,
                                   hexii,

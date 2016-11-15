@@ -232,7 +232,7 @@ class process(tube):
             executable, argv, env = self._validate(cwd, executable, argv, env)
 
         # Permit invocation as process('sh') and process(['sh'])
-        if isinstance(argv, (str, unicode)):
+        if isinstance(argv, str):
             argv = [argv]
 
         # Avoid the need to have to deal with the STDOUT magic value.
@@ -402,10 +402,10 @@ class process(tube):
         # - Must be a list/tuple of strings
         # - Each string must not contain '\x00'
         #
-        if isinstance(argv, (str, unicode)):
+        if isinstance(argv, str):
             argv = [argv]
 
-        if not all(isinstance(arg, (str, unicode)) for arg in argv):
+        if not all(isinstance(arg, str) for arg in argv):
             log.error("argv must be strings: %r" % argv)
 
         # Create a duplicate so we can modify it
@@ -461,10 +461,10 @@ class process(tube):
         # Create a duplicate so we can modify it safely
         env = dict(os.environ if env is None else env)
 
-        for k,v in env.items():
-            if not isinstance(k, (str, unicode)):
+        for k,v in list(env.items()):
+            if not isinstance(k, str):
                 log.error('Environment keys must be strings: %r' % k)
-            if not isinstance(k, (str, unicode)):
+            if not isinstance(k, str):
                 log.error('Environment values must be strings: %r=%r' % (k,v))
             if '\x00' in k[:-1]:
                 log.error('Inappropriate nulls in env key: %r' % (k))
@@ -568,7 +568,8 @@ class process(tube):
 
         try:
             data = self.proc.stdout.read(numb)
-        except IOError as (err, strerror):
+        except IOError as xxx_todo_changeme:
+            (err, strerror) = xxx_todo_changeme.args
             pass
 
         if not data:
@@ -756,7 +757,7 @@ class process(tube):
         """
         from ..elf import ELF
 
-        for lib, address in self.libs().items():
+        for lib, address in list(self.libs().items()):
             if 'libc.so' in lib:
                 e = ELF(lib)
                 e.address = address

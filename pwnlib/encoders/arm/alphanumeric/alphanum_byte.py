@@ -1,4 +1,4 @@
-import random_funcs
+from . import random_funcs
 
 # +------------------------------------------------------------------------+ 
 # |                    ALPHANUMERIC MANIPULATIONS FUNCTIONS                | 

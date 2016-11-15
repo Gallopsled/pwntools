@@ -5,7 +5,7 @@ import codecs
 import json
 import os
 import tempfile
-import urlparse
+import urllib.parse
 
 from .context import context
 from .elf import ELF
@@ -44,7 +44,7 @@ def search_by_build_id(hex_encoded_id):
     log.info("Downloading data from GitHub")
 
     url_base = "https://gitlab.com/libcdb/libcdb/raw/master/hashes/build_id/"
-    url      = urlparse.urljoin(url_base, hex_encoded_id)
+    url      = urllib.parse.urljoin(url_base, hex_encoded_id)
 
     data   = ""
     while not data.startswith('\x7fELF'):
@@ -55,7 +55,7 @@ def search_by_build_id(hex_encoded_id):
 
         if data.startswith('..'):
             url = os.path.dirname(url) + '/'
-            url = urlparse.urljoin(url, data)
+            url = urllib.parse.urljoin(url, data)
 
     write(cache, data)
     return cache

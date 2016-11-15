@@ -30,7 +30,7 @@ def debug_assembly(asm, execute=None, vma=None):
     saves you the explicit call to asm().
     """
     tmp_elf = make_elf_from_assembly(asm, vma=vma, extract=False)
-    os.chmod(tmp_elf, 0777)
+    os.chmod(tmp_elf, 0o777)
 
     atexit.register(lambda: os.unlink(tmp_elf))
 
@@ -53,10 +53,10 @@ def debug_shellcode(data, execute=None, vma=None):
     Returns:
         A ``process`` tube connected to the shellcode on stdin/stdout/stderr.
     """
-    if isinstance(data, unicode):
+    if isinstance(data, str):
         log.error("Shellcode is cannot be unicode.  Did you mean debug_assembly?")
     tmp_elf = make_elf(data, extract=False, vma=vma)
-    os.chmod(tmp_elf, 0777)
+    os.chmod(tmp_elf, 0o777)
 
     atexit.register(lambda: os.unlink(tmp_elf))
 
@@ -144,7 +144,7 @@ def _gdbserver_port(gdbserver, ssh):
         listener.level = 'error'
 
         # Hook them up
-        remote <> listener
+        remote != listener
 
     # Set up port forwarding for ADB
     elif context.os == 'android':
@@ -187,7 +187,7 @@ def debug(args, execute=None, exe=None, ssh=None, env=None, **kwargs):
     if env is None:
         env = os.environ
 
-    if isinstance(args, (str, unicode)):
+    if isinstance(args, str):
         args = [args]
 
     orig_args = args
@@ -317,7 +317,7 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
 
     # let's see if we can find a pid to attach to
     pid = None
-    if   isinstance(target, (int, long)):
+    if   isinstance(target, int):
         # target is a pid, easy peasy
         pid = target
     elif isinstance(target, str):
@@ -461,7 +461,7 @@ def ssh_gdb(ssh, process, execute = None, arch = None, **kwargs):
     forwardport = l.lport
 
     attach(('127.0.0.1', forwardport), execute, local_exe, arch)
-    l.wait_for_connection() <> ssh.connect_remote('127.0.0.1', gdbport)
+    l.wait_for_connection() != ssh.connect_remote('127.0.0.1', gdbport)
     return c
 
 def find_module_addresses(binary, ssh=None, ulimit=False):
@@ -573,9 +573,9 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     for remote_path,text_address in sorted(libs.items()):
         # Match up the local copy to the remote path
         try:
-            path     = next(p for p in local_libs.keys() if remote_path in p)
+            path     = next(p for p in list(local_libs.keys()) if remote_path in p)
         except StopIteration:
-            print "Skipping %r" % remote_path
+            print("Skipping %r" % remote_path)
             continue
 
         # Load it

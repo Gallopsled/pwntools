@@ -3,7 +3,7 @@ import random
 import string
 import sys
 
-import builder
+from . import builder
 
 from ....context import context
 from ...encoder import Encoder

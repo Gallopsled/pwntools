@@ -2,10 +2,11 @@
 Functions for computing various hashes of files and strings.
 """
 import hashlib
-
-for _algo in hashlib.algorithms:
+import pprint
+#pprint.pprint(hashlib.__dict__)
+for _algo in hashlib.algorithms_available:
     def _closure():
-        hash = hashlib.__dict__[_algo]
+        hash = hashlib.new(_algo)
         def file(p):
             h = hash()
             fd = open(p)

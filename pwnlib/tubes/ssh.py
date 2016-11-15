@@ -26,7 +26,7 @@ from .sock import sock
 # Kill the warning line:
 # No handlers could be found for logger "paramiko.transport"
 paramiko_log = logging.getLogger("paramiko.transport")
-h = logging.StreamHandler(file('/dev/null','w+'))
+h = logging.StreamHandler(open('/dev/null','w+'))
 h.setFormatter(logging.Formatter())
 paramiko_log.addHandler(h)
 
@@ -91,7 +91,7 @@ class ssh_channel(sock):
             process = sh_string.sh_command_with('cd %s >/dev/null 2>&1;', wd) + process
 
         if process and env:
-            for name, value in env.items():
+            for name, value in list(env.items()):
                 if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', name):
                     self.error('run(): Invalid environment key $r' % name)
                 process = '%s;%s' % (sh_string.sh_prepare(name, value, export=True), process)
@@ -359,7 +359,7 @@ class ssh_channel(sock):
         """
         from ..elf import ELF
 
-        for lib, address in self.libs().items():
+        for lib, address in list(self.libs().items()):
             if 'libc.so' in lib:
                 e = ELF(lib)
                 e.address = address
@@ -744,7 +744,7 @@ class ssh(Timeout, Logger):
         argv      = argv or []
         aslr      = aslr if aslr is not None else context.aslr
 
-        if isinstance(argv, (str, unicode)):
+        if isinstance(argv, str):
             argv = [argv]
 
         if not isinstance(argv, (list, tuple)):
@@ -759,7 +759,7 @@ class ssh(Timeout, Logger):
 
         # Python also doesn't like when envp contains '\x00'
         if env and hasattr(env, 'items'):
-            for k, v in env.items():
+            for k, v in list(env.items()):
                 if '\x00' in k[:-1]:
                     self.error('Inappropriate nulls in environment key %r' % (i, k))
                 if '\x00' in v[:-1]:
@@ -1514,7 +1514,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         seen = set()
 
-        for lib, addr in libs.items():
+        for lib, addr in list(libs.items()):
             local = os.path.realpath(os.path.join(directory, '.' + os.path.sep + lib))
             if not local.startswith(directory):
                 self.warning('This seems fishy: %r' % lib)

@@ -38,35 +38,35 @@ mips = {
     '$31': 31, '$ra': 31,
 }
 
-arm = map('r{}'.format, range(13))
+arm = list(map('r{}'.format, list(range(13))))
 arm += ["sp", "lr", "pc", "cpsr"]
 
 thumb = arm
 
-aarch64 = map('x{}'.format, range(32))
+aarch64 = list(map('x{}'.format, list(range(32))))
 aarch64 += ["sp", "lr", "pc", "cpsr"]
 
 i386_baseregs = [ "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", "ip"]
 
-i386 = map('e{}'.format, i386_baseregs)
+i386 = list(map('e{}'.format, i386_baseregs))
 i386 += i386_baseregs
 i386 += [ "eflags", "cs", "ss", "ds", "es", "fs", "gs", ]
 
-amd64 =  map('r{}'.format, i386_baseregs)
-amd64 += map('r{}'.format, range(8,16))
-amd64 += map('r{}d'.format, range(8,16))
+amd64 =  list(map('r{}'.format, i386_baseregs))
+amd64 += list(map('r{}'.format, list(range(8,16))))
+amd64 += list(map('r{}d'.format, list(range(8,16))))
 amd64 += i386
 
-powerpc =  map('r{}'.format, range(32))
+powerpc =  list(map('r{}'.format, list(range(32))))
 powerpc += ["pc", "msr", "cr", "lr", "ctr", "xer", "orig_r3", "trap" ]
-powerpc =  map('%{}'.format, powerpc)
+powerpc =  list(map('%{}'.format, powerpc))
 
-sparc =  map('g{}'.format, range(8))
-sparc += map('o{}'.format, range(5))
-sparc += map('l{}'.format, range(8))
-sparc += map('i{}'.format, range(5))
+sparc =  list(map('g{}'.format, list(range(8))))
+sparc += list(map('o{}'.format, list(range(5))))
+sparc += list(map('l{}'.format, list(range(8))))
+sparc += list(map('i{}'.format, list(range(5))))
 sparc += ["pc", "sp", "fp", "psr" ]
-sparc =  map('%{}'.format, sparc)
+sparc =  list(map('%{}'.format, sparc))
 
 
 
@@ -91,8 +91,8 @@ i386_ordered = [
 ]
 
 all_regs, sizes, bigger, smaller = register_sizes(i386_ordered, [64, 32, 16, 8, 8])
-native64 = {k:v[0] for k,v in bigger.items()}
-native32 = {k:v[1] for k,v in bigger.items() if not k.startswith('r')}
+native64 = {k:v[0] for k,v in list(bigger.items())}
+native32 = {k:v[1] for k,v in list(bigger.items()) if not k.startswith('r')}
 
 class Register(object):
     #: Register name

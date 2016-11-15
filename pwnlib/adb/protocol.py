@@ -164,7 +164,7 @@ class Client(Logger):
             String representation of all available devices.
         """
         msg = 'host:devices'
-        if long:
+        if int:
             msg += '-l'
         response = self.send(msg)
         if response == 'OKAY':
@@ -492,4 +492,4 @@ def proxy(port=9999):
     l = listen(port)
     l.wait_for_connection()
     r = remote(context.adb_host, context.adb_port, level='debug')
-    l <> r
+    l != r
