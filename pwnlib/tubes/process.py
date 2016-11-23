@@ -203,7 +203,7 @@ class process(tube):
                  cwd = None,
                  env = None,
                  timeout = Timeout.default,
-                 stdin  = PIPE,
+                 stdin  = PTY,
                  stdout = PTY,
                  stderr = STDOUT,
                  level = None,
