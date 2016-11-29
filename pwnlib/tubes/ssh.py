@@ -623,7 +623,8 @@ class ssh(Timeout, Logger):
         return self.run(shell, tty, timeout = timeout)
 
     def process(self, argv=None, executable=None, tty=True, cwd=None, env=None, timeout=Timeout.default, run=True,
-                stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=[], raw=True, aslr=None, setuid=None):
+                stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=[], raw=True, aslr=None, setuid=None,
+                shell=False):
         r"""
         Executes a process on the remote server, in the same fashion
         as pwnlib.tubes.process.process.
@@ -680,6 +681,8 @@ class ssh(Timeout, Logger):
                 See ``pwnlib.tubes.process.process`` for more information.
             setuid(bool):
                 See ``pwnlib.tubes.process.process`` for more information.
+            shell(bool):
+                Pass the command-line arguments to the shell.
 
         Returns:
             A new SSH channel, or a path to a script if ``run=False``.
@@ -737,6 +740,9 @@ class ssh(Timeout, Logger):
             Traceback (most recent call last):
             ...
             NameError: global name 'bar' is not defined
+
+            >>> s.process('echo hello', shell=True).recvall()
+            'hello\n'
         """
         if not argv and not executable:
             self.error("Must specify argv or executable")
@@ -749,6 +755,11 @@ class ssh(Timeout, Logger):
 
         if not isinstance(argv, (list, tuple)):
             self.error('argv must be a list or tuple')
+
+        if shell:
+            if len(argv) != 1:
+                self.error('Cannot provide more than 1 argument if shell=True')
+            argv = ['/bin/sh', '-c'] + argv
 
         # Python doesn't like when an arg in argv contains '\x00'
         # -> execve() arg 2 must contain only strings
