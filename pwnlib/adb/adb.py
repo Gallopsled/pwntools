@@ -955,8 +955,10 @@ class Partitions(object):
     @property
     @context.quiet
     def by_name_dir(self):
-        cmd = ['shell','find /dev/block/platform -type d -name by-name']
-        return adb(cmd).strip()
+        return process(['find',
+                        '/dev/block/platform',
+                        '-type', 'd',
+                        '-name', 'by-name']).recvall().strip()
 
     @context.quiet
     def __dir__(self):
