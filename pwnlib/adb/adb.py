@@ -951,14 +951,38 @@ class Partition(object):
         with log.waitfor('Fetching %r partition (%s)' % (self.name, self.path)):
             return read(self.path)
 
+def walk(top, topdown=True):
+    join = os.path.join
+    isdir = lambda x: stat.S_ISDIR(x['mode'])
+    client = Client()
+    names = client.list(top)
+
+    dirs, nondirs = [], []
+    for name, metadata in names.items():
+        if isdir(metadata):
+            dirs.append(name)
+        else:
+            nondirs.append(name)
+
+    if topdown:
+        yield top, dirs, nondirs
+    for name in dirs:
+        new_path = join(top, name)
+        for x in walk(new_path, topdown):
+            yield x
+    if not topdown:
+        yield top, dirs, nondirs
+
+def find(top, name):
+    for root, dirs, files in walk(top):
+        if name in files or name in dirs:
+            yield os.path.join(root, name)
+
 class Partitions(object):
     @property
     @context.quiet
     def by_name_dir(self):
-        return process(['find',
-                        '/dev/block/platform',
-                        '-type', 'd',
-                        '-name', 'by-name']).recvall().strip()
+        return next(find('/dev/block/platform','by-name'))
 
     @context.quiet
     def __dir__(self):
