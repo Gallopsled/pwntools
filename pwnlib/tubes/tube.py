@@ -33,13 +33,14 @@ class tube(Timeout):
     #: and related functions.
     newline = '\n'
 
-    def __init__(self, timeout = default):
+    def __init__(self, timeout = default, bufSize = 4096):
         super(tube, self).__init__(timeout)
         self.buffer          = Buffer()
+        self.bufSize         = bufSize
         atexit.register(self.close)
 
     # Functions based on functions from subclasses
-    def recv(self, numb = 4096, timeout = default):
+    def recv(self, numb = None, timeout = default):
         r"""recv(numb = 4096, timeout = default) -> str
 
         Receives up to `numb` bytes of data from the tube, and returns
@@ -70,6 +71,7 @@ class tube(Timeout):
             [...] Received 0xc bytes:
                 'Hello, world'
         """
+        numb = self.bufSize if numb is None else numb
         return self._recv(numb, timeout) or ''
 
     def unrecv(self, data):
@@ -120,7 +122,7 @@ class tube(Timeout):
         data = ''
 
         with self.local(timeout):
-            data = self.recv_raw(4096)
+            data = self.recv_raw(self.bufSize)
 
         if data and dumplog.isEnabledFor(logging.DEBUG):
             dumplog.debug('Received %#x bytes:' % len(data))
@@ -139,13 +141,14 @@ class tube(Timeout):
         return data
 
 
-    def _recv(self, numb = 4096, timeout = default):
+    def _recv(self, numb = None, timeout = default):
         """_recv(numb = 4096, timeout = default) -> str
 
         Receives one chunk of from the internal buffer or from the OS if the
         buffer is empty.
         """
         data = ''
+        numb = self.bufSize if numb is None else numb
 
         # No buffered data, could not put anything in the buffer
         # before timeout.
