@@ -10,8 +10,8 @@ log = getLogger(__name__)
 class sock(tube):
     """Methods available exclusively to sockets."""
 
-    def __init__(self, timeout):
-        super(sock, self).__init__(timeout)
+    def __init__(self, timeout, bufSize = 4096):
+        super(sock, self).__init__(timeout, bufSize = bufSize)
         self.closed = {"recv": False, "send": False}
 
     # Overwritten for better usability
