@@ -138,8 +138,9 @@ class process(tube):
                  stdout = PTY,
                  stderr = STDOUT,
                  close_fds = True,
-                 preexec_fn = lambda: None):
-        super(process, self).__init__(timeout)
+                 preexec_fn = lambda: None,
+                 bufSize = 4096):
+        super(process, self).__init__(timeout,bufSize = bufSize)
 
         if not shell:
             executable, argv, env = self._validate(cwd, executable, argv, env)
