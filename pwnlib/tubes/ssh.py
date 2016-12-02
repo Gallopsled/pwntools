@@ -872,6 +872,13 @@ if not %(aslr)r:
 
     resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
 
+# Attempt to dump ALL core file regions
+try:
+    with open('/proc/self/coredump_filter', 'w') as core_filter:
+        core_filter.write('0x3f\n')
+except Exception:
+    pass
+
 # Assume that the user would prefer to have core dumps.
 resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
 
