@@ -25,8 +25,8 @@ class listen(sock):
 
     def __init__(self, port=0, bindaddr = "0.0.0.0",
                  fam = "any", typ = "tcp",
-                 timeout = Timeout.default, level = None):
-        super(listen, self).__init__(timeout, level = level)
+                 timeout = Timeout.default, level = None, *args, **kwargs):
+        super(listen, self).__init__(timeout, level = level, *args, **kwargs)
 
         port = int(port)
         fam  = {socket.AF_INET: 'ipv4',

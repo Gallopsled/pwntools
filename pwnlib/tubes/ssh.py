@@ -67,8 +67,8 @@ class ssh_channel(sock):
     #: Only valid when instantiated through :meth:`ssh.process`
     argv = None
 
-    def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = Timeout.default, level = 0, raw = True):
-        super(ssh_channel, self).__init__(timeout, level=level)
+    def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = Timeout.default, level = 0, raw = True, *args, **kwargs):
+        super(ssh_channel, self).__init__(timeout, level=level, *args, **kwarg)
 
         # keep the parent from being garbage collected in some cases
         self.parent = parent
