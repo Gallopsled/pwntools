@@ -214,8 +214,11 @@ class process(tube):
                  setuid = None,
                  where = 'local',
                  display = None,
-                 alarm = None):
-        super(process, self).__init__(timeout, level = level)
+                 alarm = None,
+                 *args,
+                 **kwargs
+                 ):
+        super(process, self).__init__(timeout, level = level,*args,**kwargs)
 
         # Permit using context.binary
         if argv is None:

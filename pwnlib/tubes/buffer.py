@@ -28,9 +28,12 @@ class Buffer(Exception):
         The ``0th`` item in the buffer is the oldest item, and
         will be received first.
     """
-    def __init__(self):
+    def __init__(self,*args,**kwargs):
         self.data = [] # Buffer
         self.size = 0  # Length
+        self.buffer_fill_size = kwargs.get("buffer_fill_size",4096)
+        print("Got bufsize: " + str(self.buffer_fill_size))
+        # Buffer.get_fill_size(self, size)
 
 
     def __len__(self):
@@ -169,3 +172,17 @@ class Buffer(Exception):
         self.size -= len(data)
 
         return data
+
+    def get_fill_size(self,size=None):
+        """
+        Retrieves the default fill size for this buffer class.
+
+        Arguments:
+            size (int): (Optional) If set and not None, returns the size variable back.
+
+        Returns:
+            Fill size as integer if size == None, else size.
+        """
+        if size is not None:
+            return size
+        return self.buffer_fill_size

@@ -45,8 +45,8 @@ class remote(sock):
 
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
-                 timeout = Timeout.default, ssl=False, sock=None, level = None):
-        super(remote, self).__init__(timeout, level = level)
+                 timeout = Timeout.default, ssl=False, sock=None, level = None, *args, **kwargs):
+        super(remote, self).__init__(timeout, level = level,*args,**kwargs)
 
         self.rport  = int(port)
         self.rhost  = host
