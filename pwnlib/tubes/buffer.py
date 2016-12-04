@@ -32,9 +32,6 @@ class Buffer(Exception):
         self.data = [] # Buffer
         self.size = 0  # Length
         self.buffer_fill_size = kwargs.get("buffer_fill_size",4096)
-        print("Got bufsize: " + str(self.buffer_fill_size))
-        # Buffer.get_fill_size(self, size)
-
 
     def __len__(self):
         """
