@@ -2,6 +2,7 @@
 
 from ..context import context
 
+
 class Buffer(Exception):
     """
     List of strings with some helper routines.
