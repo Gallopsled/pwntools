@@ -28,10 +28,10 @@ class Buffer(Exception):
         The ``0th`` item in the buffer is the oldest item, and
         will be received first.
     """
-    def __init__(self,*args,**kwargs):
+    def __init__(self, buffer_fill_size=4096):
         self.data = [] # Buffer
         self.size = 0  # Length
-        self.buffer_fill_size = kwargs.get("buffer_fill_size",4096)
+        self.buffer_fill_size = buffer_fill_size
 
     def __len__(self):
         """
@@ -180,6 +180,4 @@ class Buffer(Exception):
         Returns:
             Fill size as integer if size == None, else size.
         """
-        if size is not None:
-            return size
-        return self.buffer_fill_size
+        return size or self.buffer_fill_size

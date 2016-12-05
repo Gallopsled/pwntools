@@ -30,14 +30,14 @@ class tube(Timeout, Logger):
     #: and related functions.
     newline = '\n'
 
-    def __init__(self, timeout = default, level = None, *args, **kwargs):
+    def __init__(self, timeout = default, level = None, *a, **kw):
         super(tube, self).__init__(timeout)
 
         Logger.__init__(self, None)
         if level is not None:
             self.setLevel(level)
 
-        self.buffer          = Buffer(*args,**kwargs)
+        self.buffer = Buffer(*a, **kw)
         atexit.register(self.close)
 
     # Functions based on functions from subclasses

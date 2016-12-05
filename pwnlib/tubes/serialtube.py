@@ -18,10 +18,8 @@ class serialtube(tube.tube):
             self, port = None, baudrate = 115200,
             convert_newlines = True,
             bytesize = 8, parity='N', stopbits=1, xonxoff = False,
-            rtscts = False, dsrdtr = False,
-            timeout = Timeout.default,
-            level = None):
-        super(serialtube, self).__init__(timeout, level = level)
+            rtscts = False, dsrdtr = False):
+        super(serialtube, self).__init__(*a, **kw)
 
         if port is None:
             if platform.system() == 'Darwin':
