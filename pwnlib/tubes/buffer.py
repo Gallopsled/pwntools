@@ -1,5 +1,7 @@
 #!/usr/bin/env python2
 
+from ..context import context
+
 class Buffer(Exception):
     """
     List of strings with some helper routines.
@@ -28,7 +30,7 @@ class Buffer(Exception):
         The ``0th`` item in the buffer is the oldest item, and
         will be received first.
     """
-    def __init__(self, buffer_fill_size=4096):
+    def __init__(self, buffer_fill_size = None):
         self.data = [] # Buffer
         self.size = 0  # Length
         self.buffer_fill_size = buffer_fill_size
@@ -180,4 +182,8 @@ class Buffer(Exception):
         Returns:
             Fill size as integer if size == None, else size.
         """
-        return size or self.buffer_fill_size
+        if size:
+            return size
+
+        with context.local(buffer_size = self.buffer_fill_size):
+            return context.buffer_size
