@@ -478,7 +478,7 @@ class ssh(Timeout, Logger):
 
     def __init__(self, user, host, port = 22, password = None, key = None,
                  keyfile = None, proxy_command = None, proxy_sock = None,
-                 cache = True, ssh_agent = False, *a, **kw):
+                 level = None, cache = True, ssh_agent = False, *a, **kw):
         """Creates a new ssh connection.
 
         Arguments:
@@ -951,7 +951,7 @@ os.execve(exe, argv, os.environ)
 
         return result
 
-    def system(self, process, tty = True, wd = None, env = None, timeout = Timeout.default, raw = True):
+    def system(self, process, tty = True, wd = None, env = None, timeout = None, raw = True):
         r"""system(process, tty = True, wd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
@@ -977,7 +977,10 @@ os.execve(exe, argv, os.environ)
         if wd is None:
             wd = self.cwd
 
-        return ssh_channel(self, process, tty, wd, env, timeout, level = self.level, raw = raw)
+        if timeout is None:
+            timeout = self.timeout
+
+        return ssh_channel(self, process, tty, wd, env, timeout = timeout, level = self.level, raw = raw)
 
     #: Backward compatibility.  Use :meth:`system`
     run = system
