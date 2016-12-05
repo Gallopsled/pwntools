@@ -1,5 +1,8 @@
 #!/usr/bin/env python2
 
+from ..context import context
+
+
 class Buffer(Exception):
     """
     List of strings with some helper routines.
@@ -28,10 +31,10 @@ class Buffer(Exception):
         The ``0th`` item in the buffer is the oldest item, and
         will be received first.
     """
-    def __init__(self):
+    def __init__(self, buffer_fill_size = None):
         self.data = [] # Buffer
         self.size = 0  # Length
-
+        self.buffer_fill_size = buffer_fill_size
 
     def __len__(self):
         """
@@ -169,3 +172,19 @@ class Buffer(Exception):
         self.size -= len(data)
 
         return data
+
+    def get_fill_size(self,size=None):
+        """
+        Retrieves the default fill size for this buffer class.
+
+        Arguments:
+            size (int): (Optional) If set and not None, returns the size variable back.
+
+        Returns:
+            Fill size as integer if size == None, else size.
+        """
+        if size:
+            return size
+
+        with context.local(buffer_size = self.buffer_fill_size):
+            return context.buffer_size

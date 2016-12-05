@@ -20,13 +20,11 @@ class listen(sock):
         bindaddr(str): The address to bind to.
         fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
         typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
-        timeout: A positive number, None
     """
 
     def __init__(self, port=0, bindaddr = "0.0.0.0",
-                 fam = "any", typ = "tcp",
-                 timeout = Timeout.default, level = None):
-        super(listen, self).__init__(timeout, level = level)
+                 fam = "any", typ = "tcp", *args, **kwargs):
+        super(listen, self).__init__(*args, **kwargs)
 
         port = int(port)
         fam  = {socket.AF_INET: 'ipv4',

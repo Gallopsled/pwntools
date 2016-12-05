@@ -21,8 +21,8 @@ import termios
 import threading
 import traceback
 
-from ..context import ContextType
 from . import termcap
+from ..context import ContextType
 
 settings = None
 _graphics_mode = False

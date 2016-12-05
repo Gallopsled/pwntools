@@ -59,7 +59,7 @@ class ssh_channel(sock):
     #: Only valid when instantiated through :meth:`ssh.process`
     pid = None
 
-    #: Executable of the process
+    #: Executable of the procesks
     #: Only valid when instantiated through :meth:`ssh.process`
     executable = None
 
@@ -67,8 +67,8 @@ class ssh_channel(sock):
     #: Only valid when instantiated through :meth:`ssh.process`
     argv = None
 
-    def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = Timeout.default, level = 0, raw = True):
-        super(ssh_channel, self).__init__(timeout, level=level)
+    def __init__(self, parent, process = None, tty = False, wd = None, env = None, raw = True, *args, **kwargs):
+        super(ssh_channel, self).__init__(*args, **kwargs)
 
         # keep the parent from being garbage collected in some cases
         self.parent = parent
@@ -366,8 +366,8 @@ class ssh_channel(sock):
                 return e
 
 class ssh_connecter(sock):
-    def __init__(self, parent, host, port, timeout = Timeout.default, level = None):
-        super(ssh_connecter, self).__init__(timeout, level = level)
+    def __init__(self, parent, host, port, *a, **kw):
+        super(ssh_connecter, self).__init__(*a, **kw)
 
         # keep the parent from being garbage collected in some cases
         self.parent = parent
@@ -398,8 +398,8 @@ class ssh_connecter(sock):
 
 
 class ssh_listener(sock):
-    def __init__(self, parent, bind_address, port, timeout = Timeout.default, level = None):
-        super(ssh_listener, self).__init__(timeout, level = level)
+    def __init__(self, parent, bind_address, port, *a, **kw):
+        super(ssh_listener, self).__init__(*a, **kw)
 
         # keep the parent from being garbage collected in some cases
         self.parent = parent
@@ -478,8 +478,7 @@ class ssh(Timeout, Logger):
 
     def __init__(self, user, host, port = 22, password = None, key = None,
                  keyfile = None, proxy_command = None, proxy_sock = None,
-                 timeout = Timeout.default, level = None, cache = True,
-                 ssh_agent = False):
+                 level = None, cache = True, ssh_agent = False, *a, **kw):
         """Creates a new ssh connection.
 
         Arguments:
@@ -498,7 +497,7 @@ class ssh(Timeout, Logger):
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used."""
-        super(ssh, self).__init__(timeout)
+        super(ssh, self).__init__(*a, **kw)
 
         Logger.__init__(self)
         if level is not None:
@@ -952,7 +951,7 @@ os.execve(exe, argv, os.environ)
 
         return result
 
-    def system(self, process, tty = True, wd = None, env = None, timeout = Timeout.default, raw = True):
+    def system(self, process, tty = True, wd = None, env = None, timeout = None, raw = True):
         r"""system(process, tty = True, wd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
@@ -978,7 +977,10 @@ os.execve(exe, argv, os.environ)
         if wd is None:
             wd = self.cwd
 
-        return ssh_channel(self, process, tty, wd, env, timeout, level = self.level, raw = raw)
+        if timeout is None:
+            timeout = self.timeout
+
+        return ssh_channel(self, process, tty, wd, env, timeout = timeout, level = self.level, raw = raw)
 
     #: Backward compatibility.  Use :meth:`system`
     run = system
