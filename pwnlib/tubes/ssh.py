@@ -68,7 +68,7 @@ class ssh_channel(sock):
     argv = None
 
     def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = Timeout.default, level = 0, raw = True, *args, **kwargs):
-        super(ssh_channel, self).__init__(timeout, level=level, *args, **kwarg)
+        super(ssh_channel, self).__init__(timeout, level=level, *args, **kwargs)
 
         # keep the parent from being garbage collected in some cases
         self.parent = parent
