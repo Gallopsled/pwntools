@@ -176,6 +176,10 @@ class AdbDevice(Device):
         if product == 'unknown':
             return
 
+        # Defer initialization of the following
+        self._deferred_fields = ['arch', 'bits', 'endian', 'avd']
+
+    def _do_deferred_initialization(self):
         with context.local(device=serial):
             abi = str(properties.ro.product.cpu.abi)
             context.clear()
@@ -250,6 +254,10 @@ class AdbDevice(Device):
         >>> adb.getprop(property) == device.getprop(property)
         True
         """
+        if name in self._deferred_fields:
+            self._do_deferred_initialization()
+            return getattr(self, name)
+
         with context.local(device=self):
             g = globals()
 
@@ -296,7 +304,9 @@ def wait_for_device(kick=False):
         for device in devices():
             if context.device == device:
                 return device
-            break
+
+            if not serial:
+                break
         else:
             log.error("Could not find any devices")
 
@@ -850,7 +860,7 @@ _android_mk_template = '''
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := poc
+LOCAL_MODULE := %(local_module)s
 LOCAL_SRC_FILES := %(local_src_files)s
 
 include $(BUILD_EXECUTABLE)
@@ -880,6 +890,8 @@ def _generate_ndk_project(file_list, abi='arm-v7a', platform_version=21):
     # Create the directories
 
     # Populate Android.mk
+    local_module = os.path.basename(file_list[0])
+    local_module, _ = os.path.splitext(local_module)
     local_src_files = ' '.join(list(map(os.path.basename, file_list)))
     Android_mk = os.path.join(jni_directory, 'Android.mk')
     with open(Android_mk, 'w+') as f:
@@ -914,7 +926,7 @@ def compile(source):
         abi = 'armeabi-v7a'
         sdk = '21'
 
-        # If we have an atatched device, use its settings.
+        # If we have an attached device, use its settings.
         if context.device:
             abi = str(properties.ro.product.cpu.abi)
             sdk = str(properties.ro.build.version.sdk)

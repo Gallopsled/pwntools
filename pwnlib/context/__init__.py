@@ -1107,8 +1107,13 @@ class ContextType(object):
 
     @property
     def adb(self):
-        """Returns an argument array for connecting to adb."""
-        command = ['adb']
+        """Returns an argument array for connecting to adb.
+
+        Unless ``$ADB_PATH`` is set, uses the default ``adb`` binary in ``$PATH``.
+        """
+        ADB_PATH = os.environ.get('ADB_PATH', 'adb')
+
+        command = [ADB_PATH]
 
         if self.adb_host != self.defaults['adb_host']:
             command += ['-H', self.adb_host]
