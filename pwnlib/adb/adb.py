@@ -606,8 +606,6 @@ def makedirs(path):
         >>> adb.listdir('/data/local/tmp/this/is/a/directory')
         ['heirarchy']
     """
-    directories = []
-
     if path != '/':
         makedirs(os.path.dirname(path))
 
