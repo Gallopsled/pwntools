@@ -10,6 +10,7 @@ import logging
 import os
 import platform
 import socket
+import stat
 import string
 import subprocess
 import sys
@@ -1120,6 +1121,33 @@ class ContextType(object):
             command += ['-s', str(self.device)]
 
         return command
+
+    @property
+    def cache_dir(self):
+        """Directory used for caching data.
+
+        Note:
+            May be either a path string, or ``None``.
+        """
+        home = os.path.expanduser('~')
+
+        if not os.access(home, os.W_OK):
+            return None
+
+        cache = os.path.join(home, '.pwntools-cache')
+
+        if not os.path.exists(cache):
+            try:
+                os.mkdir(cache)
+            except OSError:
+                return None
+
+        # Some wargames e.g. pwnable.kr have created dummy directories
+        # which cannot be modified by the user account (owned by root).
+        if not os.access(cache, os.W_OK):
+            return None
+
+        return cache
 
 
     #*************************************************************************
