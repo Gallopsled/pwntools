@@ -2,7 +2,6 @@ import os
 import re
 import sys
 from types import ModuleType
-
 from . import internal
 from .. import constants
 from ..context import context
@@ -109,7 +108,7 @@ class module(ModuleType):
         return result
 
     template_dir = os.path.join(os.path.dirname(__file__), 'templates')
-    templates    = []
+    templates = []
 
     for root, subfolder, files in os.walk(template_dir):
         for file in filter(lambda x: x.endswith('.asm'), files):
@@ -123,7 +122,7 @@ class module(ModuleType):
     templates = sorted(templates)
 
     def eval(self, item):
-        if isinstance(item, (int,long)):
+        if isinstance(item, (int, long)):
             return item
         return constants.eval(item)
 
@@ -133,8 +132,10 @@ class module(ModuleType):
         if not isinstance(n, int):
             return n
         if isinstance(n, constants.Constant):
-            if comment: return '%s /* %s */' % (n,self.pretty(int(n)))
-            else:       return '%s (%s)'     % (n,self.pretty(int(n)))
+            if comment:
+                return '%s /* %s */' % (n, self.pretty(int(n)))
+            else:
+                return '%s (%s)' % (n, self.pretty(int(n)))
         elif abs(n) < 10:
             return str(n)
         else:
@@ -152,6 +153,7 @@ tether = sys.modules[__name__]
 
 # Create the module structure
 shellcraft = module(__name__, '')
+
 
 class LazyImporter:
     def find_module(self, fullname, path):
