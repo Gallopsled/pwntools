@@ -642,11 +642,11 @@ def isdir(path):
         >>> adb.isdir('/init')
         False
         >>> adb.isdir('/does/not/exist')
-        True
+        False
     """
     with Client() as c:
         st = c.stat(path)
-        return st and stat.S_ISDIR(st['mode'])
+        return bool(st and stat.S_ISDIR(st['mode']))
 
 @context.quiet
 @with_device
