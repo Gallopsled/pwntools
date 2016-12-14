@@ -572,7 +572,9 @@ def mkdir(path):
         True
 
         >>> adb.mkdir('/init')
-        'mkdir failed for /init, File exists'
+        Traceback (most recent call last):
+        ...
+        PwnlibException: mkdir failed for /init, File exists
     """
     if not path.startswith('/'):
         log.error("Must provide an absolute path: %r" % path)
@@ -651,28 +653,31 @@ def isdir(path):
 def unlink(path, recursive=False):
     """Unlinks a file or directory on the target device.
 
-    >>> adb.unlink("/does/not/exist")
-    Traceback (most recent call last):
-    ...
-    PwnlibException: Could not unlink '/does/not/exist': Does not exist
+    Examples:
 
-    >>> filename = '/data/local/tmp/unlink-test'
-    >>> adb.write(filename, 'hello')
-    >>> adb.exists(filename)
-    True
-    >>> adb.unlink(filename)
-    >>> adb.exists(filename)
-    False
+        >>> adb.unlink("/does/not/exist")
+        Traceback (most recent call last):
+        ...
+        PwnlibException: Could not unlink '/does/not/exist': Does not exist
 
-    >>> adb.mkdir(filename)
-    >>> adb.write(filename + '/contents', 'hello')
-    >>> adb.unlink(filename)
-    Traceback (most recent call last):
-    ...
-    PwnlibException: Cannot delete non-empty directory '/data/local/tmp/unlink-test' without recursive=True
-    >>> adb.unlink(filename, recursive=True)
-    >>> adb.exists(filename)
-    False
+        >>> filename = '/data/local/tmp/unlink-test'
+        >>> adb.write(filename, 'hello')
+        >>> adb.exists(filename)
+        True
+        >>> adb.unlink(filename)
+        >>> adb.exists(filename)
+        False
+
+        >>> adb.mkdir(filename)
+        >>> adb.write(filename + '/contents', 'hello')
+        >>> adb.unlink(filename)
+        Traceback (most recent call last):
+        ...
+        PwnlibException: Cannot delete non-empty directory '/data/local/tmp/unlink-test' without recursive=True
+
+        >>> adb.unlink(filename, recursive=True)
+        >>> adb.exists(filename)
+        False
     """
     with Client() as c:
         st = c.stat(path)
@@ -685,7 +690,10 @@ def unlink(path, recursive=False):
 
         flags = '-rf' if recursive else '-r'
 
-        return c.execute(['rm', flags, path]).recvall()
+        output = c.execute(['rm', flags, path]).recvall()
+
+        if output:
+            log.error(output)
 
 @with_device
 def process(argv, *a, **kw):
