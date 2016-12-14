@@ -49,12 +49,14 @@ To be released on Feb 4, 2017.
     + Also adds `context.log_console` to log to any file or terminal
 - [67e11a9][67e11a9] Add faster error checking to `cyclic()` when provided very large values
 - [5fda658][5fda658] Expose BitPolynom in `globals()`
+- [#765][765] Added `-d` option for hex-escaped output for `shellcraft` command-line tool
 - [#772][772] Fixed bash completion regressions
 - [30c34b7][30c34b7] Fix `ROP.call()` with `Function` objects from `ELF.functions`
 - [fa402ce][fa402ce] Add `adb.uptime` and `adb.boot_time`
 - [82312ba][82312ba] Add `cyclic_metasploit` and `cyclic_metasploit_find`
 
 [757]: https://github.com/Gallopsled/pwntools/pull/757
+[765]: https://github.com/Gallopsled/pwntools/pull/765
 [772]: https://github.com/Gallopsled/pwntools/pull/772
 [b198ec8]: https://github.com/Gallopsled/pwntools/commit/b198ec8
 [aec3fa6]: https://github.com/Gallopsled/pwntools/commit/aec3fa6
