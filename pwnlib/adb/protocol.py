@@ -43,13 +43,11 @@ class Message(object):
 class Connection(remote):
     """Connection to the ADB server"""
     def __init__(self, host, port, level=None, *a, **kw):
-
         # Try to make sure ADB is running if it's on the default host and port.
         if host == context.defaults['adb_host'] \
         and port == context.defaults['adb_port']:
-            with context.local():
-                context.clear()
-                process(context.adb + ['start-server'], level='error').wait_for_close()
+            with context.quiet:
+                process(context.adb + ['start-server']).recvall()
 
         with context.quiet:
             super(Connection, self).__init__(host, port, level=level, *a, **kw)
