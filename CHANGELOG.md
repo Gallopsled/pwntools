@@ -32,7 +32,7 @@ To be released on Feb 4, 2017.
 - [546061e][546061e] Modify `coredump_filter` of all spawned processes, so that core dumps are more complete
 
 
-[#800]: https://github.com/Gallopsled/pwntools/pull/800
+[800]: https://github.com/Gallopsled/pwntools/pull/800
 [5d9792f]: https://github.com/Gallopsled/pwntools/commit/5d9792f
 [b83a6c7]: https://github.com/Gallopsled/pwntools/commit/b83a6c7
 [546061e]: https://github.com/Gallopsled/pwntools/commit/546061e
@@ -54,8 +54,8 @@ To be released on Feb 4, 2017.
 - [fa402ce][fa402ce] Add `adb.uptime` and `adb.boot_time`
 - [82312ba][82312ba] Add `cyclic_metasploit` and `cyclic_metasploit_find`
 
-[#757]: https://github.com/Gallopsled/pwntools/pull/757
-[#772]: https://github.com/Gallopsled/pwntools/pull/772
+[757]: https://github.com/Gallopsled/pwntools/pull/757
+[772]: https://github.com/Gallopsled/pwntools/pull/772
 [b198ec8]: https://github.com/Gallopsled/pwntools/commit/b198ec8
 [aec3fa6]: https://github.com/Gallopsled/pwntools/commit/aec3fa6
 [f9133b1]: https://github.com/Gallopsled/pwntools/commit/f9133b1
@@ -79,16 +79,16 @@ Multiple bug fixes.
 - [#814][814] Fixed exceptions thrown if the `$HOME` directory is not writable
 - [#815][815] Properly handle `None` in `MemLeak`
 
-[#783]: https://github.com/Gallopsled/pwntools/pull/783
-[#787]: https://github.com/Gallopsled/pwntools/pull/787
-[#793]: https://github.com/Gallopsled/pwntools/pull/793
-[#802]: https://github.com/Gallopsled/pwntools/pull/802
-[#804]: https://github.com/Gallopsled/pwntools/pull/804
-[#805]: https://github.com/Gallopsled/pwntools/pull/805
-[#811]: https://github.com/Gallopsled/pwntools/pull/811
-[#813]: https://github.com/Gallopsled/pwntools/pull/813
-[#814]: https://github.com/Gallopsled/pwntools/pull/814
-[#815]: https://github.com/Gallopsled/pwntools/pull/815
+[783]: https://github.com/Gallopsled/pwntools/pull/783
+[787]: https://github.com/Gallopsled/pwntools/pull/787
+[793]: https://github.com/Gallopsled/pwntools/pull/793
+[802]: https://github.com/Gallopsled/pwntools/pull/802
+[804]: https://github.com/Gallopsled/pwntools/pull/804
+[805]: https://github.com/Gallopsled/pwntools/pull/805
+[811]: https://github.com/Gallopsled/pwntools/pull/811
+[813]: https://github.com/Gallopsled/pwntools/pull/813
+[814]: https://github.com/Gallopsled/pwntools/pull/814
+[815]: https://github.com/Gallopsled/pwntools/pull/815
 
 ## 3.2.0
 
