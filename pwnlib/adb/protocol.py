@@ -329,7 +329,9 @@ class Client(Logger):
             >>> pprint(adb.Client().list('/data/user'))
             {'0': {'mode': 41471, 'size': 11, 'time': ...}}
             >>> adb.Client().list('/does/not/exist')
-            {}
+            Traceback (most recent call last):
+            ...
+            PwnlibException: Cannot list directory '/does/not/exist': Does not exist
         """
         st = self.stat(path)
 
