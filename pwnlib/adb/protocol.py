@@ -5,6 +5,7 @@ Documentation is available here:
 https://android.googlesource.com/platform/system/core/+/master/adb/protocol.txt
 """
 import functools
+import stat
 import time
 
 from ..context import context
@@ -298,8 +299,6 @@ class Client(Logger):
             return rv
         return wrapper
 
-    @_with_transport
-    @_sync
     def list(self, path):
         """Execute the ``LIST`` command of the ``SYNC`` API.
 
@@ -332,6 +331,19 @@ class Client(Logger):
             >>> adb.Client().list('/does/not/exist')
             {}
         """
+        st = self.stat(path)
+
+        if not st:
+            log.error("Cannot list directory %r: Does not exist" % path)
+
+        if not stat.S_ISDIR(st['mode']):
+            log.error("Cannot list directory %r: Path is not a directory" % path)
+
+        return self._list(path)
+
+    @_with_transport
+    @_sync
+    def _list(self, path):
         self.c.flat('LIST', len(path), path)
         files = {}
         while True:
@@ -391,9 +403,35 @@ class Client(Logger):
 
         return {'mode': mode, 'size': size, 'time': time}
 
+    def write(self, path, data, mode=0o755, timestamp=None, callback=None):
+        """Execute the ``WRITE`` command of the ``SYNC`` API.
+
+        Arguments:
+            path(str): Path to the file to write
+            data(str): Data to write to the file
+            mode(int): File mode to set (e.g. ``0o755``)
+            timestamp(int): Unix timestamp to set the file date to
+            callback(callable): Callback function invoked as data
+                is written.  Arguments provided are:
+
+                - File path
+                - All data
+                - Expected size of all data
+                - Current chunk
+                - Expected size of chunk
+        """
+        # We must ensure that 'path' is not a directory
+        # Writing to a directory is supported, but creates a temporary file
+        st = self.stat(path)
+
+        if st and stat.S_ISDIR(st['mode']):
+            log.error("Cannot write to %r: Path is a directory" % path)
+
+        return self._write(path, data, mode=0o755, timestamp=None, callback=None)
+
     @_with_transport
     @_sync
-    def write(self, path, data, mode=0o755, timestamp=None, callback=None):
+    def _write(self, path, data, mode=0o755, timestamp=None, callback=None):
         path += ',' + str(mode)
         self.c.flat('SEND', len(path), path)
 
