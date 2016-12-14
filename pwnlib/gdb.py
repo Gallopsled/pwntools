@@ -304,9 +304,12 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
             pre += 'set gnutarget ' + _bfdname() + '\n'
     else:
         # If ptrace_scope is set and we're not root, we cannot attach to a
-        # running process.
+        # running process*.
+        #
         # We assume that we do not need this to be set if we are debugging on
         # a different architecture (e.g. under qemu-user).
+        #
+        # *Unless the process explicitly called PR_SET_PTRACER.
         try:
             ptrace_scope = open('/proc/sys/kernel/yama/ptrace_scope').read().strip()
             if need_ptrace_scope and ptrace_scope != '0' and os.geteuid() != 0:
