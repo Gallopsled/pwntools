@@ -59,6 +59,7 @@ To be released on Feb 4, 2017.
 [b198ec8]: https://github.com/Gallopsled/pwntools/commit/b198ec8
 [aec3fa6]: https://github.com/Gallopsled/pwntools/commit/aec3fa6
 [f9133b1]: https://github.com/Gallopsled/pwntools/commit/f9133b1
+[67e11a9]: https://github.com/Gallopsled/pwntools/commit/67e11a9
 [5fda658]: https://github.com/Gallopsled/pwntools/commit/5fda658
 [30c34b7]: https://github.com/Gallopsled/pwntools/commit/30c34b7
 [fa402ce]: https://github.com/Gallopsled/pwntools/commit/fa402ce
