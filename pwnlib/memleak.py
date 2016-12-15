@@ -606,3 +606,14 @@ class MemLeak(object):
             return result
 
         return MemLeak(string_wrapper)
+
+    # Aliases for convenience
+    u64 = q
+    u32 = d
+    u16 = w
+    u8 = b
+
+    p64 = setq
+    p32 = setd
+    p16 = setw
+    p8 = setb
