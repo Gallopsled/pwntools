@@ -11,5 +11,5 @@ if [ "$TRAVIS_BRANCH" = "stable" ] && [ ! -z "$TRY_KEY" ]; then
     ssh-add           ~/.ssh/try_key
 
     # Update!
-    ssh root@demo-ssh.pwntools.com -- 'docker/update'
+    ssh -o "StrictHostKeyChecking no" root@demo-ssh.pwntools.com -- 'docker/update'
 fi

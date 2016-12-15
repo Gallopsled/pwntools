@@ -1,6 +1,8 @@
 import os
 from collections import defaultdict
 
+from ..context import context
+
 __all__ = ['make_function']
 
 loaded = {}
@@ -33,10 +35,14 @@ def init_mako():
 
     render_global = IsInside()
 
+    cache  = context.cache_dir
+    if cache:
+        cache = os.path.join(cache, 'mako')
+
     curdir = os.path.dirname(os.path.abspath(__file__))
     lookup = TemplateLookup(
         directories      = [os.path.join(curdir, 'templates')],
-        module_directory = os.path.expanduser('~/.pwntools-cache/mako')
+        module_directory = cache
     )
 
     # The purpose of this definition is to create a new Tag.

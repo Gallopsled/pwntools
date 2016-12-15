@@ -10,6 +10,7 @@ import logging
 import os
 import platform
 import socket
+import stat
 import string
 import subprocess
 import sys
@@ -1126,8 +1127,13 @@ class ContextType(object):
 
     @property
     def adb(self):
-        """Returns an argument array for connecting to adb."""
-        command = ['adb']
+        """Returns an argument array for connecting to adb.
+
+        Unless ``$ADB_PATH`` is set, uses the default ``adb`` binary in ``$PATH``.
+        """
+        ADB_PATH = os.environ.get('ADB_PATH', 'adb')
+
+        command = [ADB_PATH]
 
         if self.adb_host != self.defaults['adb_host']:
             command += ['-H', self.adb_host]
@@ -1139,6 +1145,45 @@ class ContextType(object):
             command += ['-s', str(self.device)]
 
         return command
+
+    @property
+    def cache_dir(self):
+        """Directory used for caching data.
+
+        Note:
+            May be either a path string, or ``None``.
+
+        Example:
+
+            >>> cache_dir = context.cache_dir
+            >>> cache_dir is not None
+            True
+            >>> os.chmod(cache_dir, 0o000)
+            >>> context.cache_dir is None
+            True
+            >>> os.chmod(cache_dir, 0o755)
+            >>> cache_dir == context.cache_dir
+            True
+        """
+        home = os.path.expanduser('~')
+
+        if not os.access(home, os.W_OK):
+            return None
+
+        cache = os.path.join(home, '.pwntools-cache')
+
+        if not os.path.exists(cache):
+            try:
+                os.mkdir(cache)
+            except OSError:
+                return None
+
+        # Some wargames e.g. pwnable.kr have created dummy directories
+        # which cannot be modified by the user account (owned by root).
+        if not os.access(cache, os.W_OK):
+            return None
+
+        return cache
 
 
     #*************************************************************************
