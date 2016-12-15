@@ -1134,7 +1134,7 @@ def uninstall(package, *arguments):
     """
     with log.progress("Installing package {}".format(package)):
         with context.quiet:
-            return process(['pm','uninstall',apk] + list(arguments)).recvall()
+            return process(['pm','uninstall',package] + list(arguments)).recvall()
 
 @context.quiet
 def packages():
