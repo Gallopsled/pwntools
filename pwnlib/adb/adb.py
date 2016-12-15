@@ -212,7 +212,22 @@ def boot_time():
             return int(value)
 
 class AdbDevice(Device):
-    """Encapsulates information about a connected device."""
+    """Encapsulates information about a connected device.
+
+    Example:
+
+        >>> device = adb.wait_for_device()
+        >>> device.arch
+        'arm'
+        >>> device.bits
+        32
+        >>> device.os
+        'android'
+        >>> device.product
+        'sdk_phone_armv7'
+        >>> device.serial
+        'emulator-5554'
+    """
     def __init__(self, serial, type, port=None, product='unknown', model='unknown', device='unknown', features=None, **kw):
         self.serial  = serial
         self.type    = type
@@ -225,13 +240,45 @@ class AdbDevice(Device):
         if product == 'unknown':
             return
 
-        with context.local(device=serial):
+        # Deferred fields
+        self._initialized = False
+        self._arch = None
+        self._bits = None
+        self._endian = None
+        self._avd = None
+
+    @property
+    def arch(self):
+        self.__do_deferred_initialization()
+        return self._arch
+
+    @property
+    def avd(self):
+        self.__do_deferred_initialization()
+        return self._avd
+
+    @property
+    def bits(self):
+        self.__do_deferred_initialization()
+        return self._bits
+
+    @property
+    def endian(self):
+        self.__do_deferred_initialization()
+        return self._endian
+
+
+    def __do_deferred_initialization(self):
+        if self._initialized:
+            return
+
+        with context.local(device=self.serial):
             abi = str(properties.ro.product.cpu.abi)
             context.clear()
             context.arch = str(abi)
-            self.arch = context.arch
-            self.bits = context.bits
-            self.endian = context.endian
+            self._arch = context.arch
+            self._bits = context.bits
+            self._endian = context.endian
 
         if self.port == 'emulator':
             emulator, port = self.serial.split('-')
@@ -244,7 +291,8 @@ class AdbDevice(Device):
                     self.avd = r.recvline().strip()
             except:
                 pass
-            # r = remote('localhost')
+
+        self._initialized = True
 
     def __str__(self):
         return self.serial
@@ -299,6 +347,10 @@ class AdbDevice(Device):
         >>> adb.getprop(property) == device.getprop(property)
         True
         """
+        if name in self.__deferred_fields:
+            self._do_deferred_initialization()
+            return getattr(self, name)
+
         with context.local(device=self):
             g = globals()
 
@@ -345,7 +397,9 @@ def wait_for_device(kick=False):
         for device in devices():
             if context.device == device:
                 return device
-            break
+
+            if not serial:
+                break
         else:
             log.error("Could not find any devices")
 
@@ -1042,7 +1096,7 @@ _android_mk_template = '''
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := poc
+LOCAL_MODULE := %(local_module)s
 LOCAL_SRC_FILES := %(local_src_files)s
 
 include $(BUILD_EXECUTABLE)
@@ -1072,6 +1126,8 @@ def _generate_ndk_project(file_list, abi='arm-v7a', platform_version=21):
     # Create the directories
 
     # Populate Android.mk
+    local_module = os.path.basename(file_list[0])
+    local_module, _ = os.path.splitext(local_module)
     local_src_files = ' '.join(list(map(os.path.basename, file_list)))
     Android_mk = os.path.join(jni_directory, 'Android.mk')
     with open(Android_mk, 'w+') as f:
@@ -1106,7 +1162,7 @@ def compile(source):
         abi = 'armeabi-v7a'
         sdk = '21'
 
-        # If we have an atatched device, use its settings.
+        # If we have an attached device, use its settings.
         if context.device:
             abi = str(properties.ro.product.cpu.abi)
             sdk = str(properties.ro.build.version.sdk)
@@ -1143,12 +1199,51 @@ class Partition(object):
         with log.waitfor('Fetching %r partition (%s)' % (self.name, self.path)):
             return read(self.path)
 
+@with_device
+def walk(top, topdown=True):
+    join = os.path.join
+    isdir = lambda x: stat.S_ISDIR(x['mode'])
+    client = Client()
+    names = client.list(top)
+
+    dirs, nondirs = [], []
+    for name, metadata in names.items():
+        if isdir(metadata):
+            dirs.append(name)
+        else:
+            nondirs.append(name)
+
+    if topdown:
+        yield top, dirs, nondirs
+    for name in dirs:
+        new_path = join(top, name)
+        for x in walk(new_path, topdown):
+            yield x
+    if not topdown:
+        yield top, dirs, nondirs
+
+@with_device
+def find(top, name):
+    for root, dirs, files in walk(top):
+        if name in files or name in dirs:
+            yield os.path.join(root, name)
+
+@with_device
+def readlink(path):
+    path = process(['readlink', path]).recvall()
+
+    # Readlink will emit a single newline
+    # We can't use the '-n' flag since old versions don't support it
+    if path.endswith('\n'):
+        path = path[:-1]
+
+    return path
+
 class Partitions(object):
     @property
     @context.quiet
     def by_name_dir(self):
-        cmd = ['shell','find /dev/block/platform -type d -name by-name']
-        return adb(cmd).strip()
+        return next(find('/dev/block/platform','by-name'))
 
     @context.quiet
     def __dir__(self):
@@ -1164,6 +1259,7 @@ class Partitions(object):
             yield name
 
     @context.quiet
+    @with_device
     def __getattr__(self, attr):
         for name in self:
             if name == attr:
@@ -1174,7 +1270,7 @@ class Partitions(object):
         path = os.path.join(self.by_name_dir, name)
 
         # Find the actual path of the device
-        devpath = process(['readlink', '-n', path]).recvall()
+        devpath = readlink(path)
         devname = os.path.basename(devpath)
 
         # Get the size of the partition

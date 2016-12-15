@@ -108,37 +108,29 @@ class remote(sock):
         sock    = None
         timeout = self.timeout
 
-        h = self.waitfor('Opening connection to %s on port %d' % (self.rhost, self.rport))
+        with self.waitfor('Opening connection to %s on port %d' % (self.rhost, self.rport)) as h:
+            for res in socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE):
+                self.family, self.type, self.proto, _canonname, sockaddr = res
 
-        for res in socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE):
-            self.family, self.type, self.proto, _canonname, sockaddr = res
+                if self.type not in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
+                    continue
 
-            if self.type not in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
-                continue
+                h.status("Trying %s" % sockaddr[0])
 
-            h.status("Trying %s" % sockaddr[0])
+                sock = socket.socket(self.family, self.type, self.proto)
 
-            sock = socket.socket(self.family, self.type, self.proto)
+                if timeout != None and timeout <= 0:
+                    sock.setblocking(0)
+                else:
+                    sock.setblocking(1)
+                    sock.settimeout(timeout)
 
-            if timeout != None and timeout <= 0:
-                sock.setblocking(0)
-            else:
-                sock.setblocking(1)
-                sock.settimeout(timeout)
-
-            try:
-                sock.connect(sockaddr)
-                break
-            except socket.error:
-                pass
-        else:
-            h.failure()
+                try:
+                    sock.connect(sockaddr)
+                    return sock
+                except socket.error:
+                    pass
             self.error("Could not connect to %s on port %d" % (self.rhost, self.rport))
-
-        h.success()
-        return sock
-
-
 
     @classmethod
     def fromsocket(cls, socket):

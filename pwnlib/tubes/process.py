@@ -3,6 +3,7 @@ import errno
 import fcntl
 import logging
 import os
+import platform
 import pty
 import resource
 import select
@@ -188,6 +189,9 @@ class process(tube):
         >>> io = process(['sh','-c','sleep 10; exit 7'], alarm=2)
         >>> io.poll(block=True) == -signal.SIGALRM
         True
+
+        >>> binary = ELF.from_assembly('nop', arch='mips')
+        >>> p = process(binary.path)
     """
 
     PTY = PTY
@@ -283,7 +287,7 @@ class process(tube):
         with self.progress(message) as p:
 
             if not self.aslr:
-                log.warn_once("ASLR is disabled!")
+                self.warn_once("ASLR is disabled!")
 
             # In the event the binary is a foreign architecture,
             # and binfmt is not installed (e.g. when running on
@@ -292,12 +296,6 @@ class process(tube):
             prefixes = [([], executable)]
             executables = [executable]
             exception = None
-
-            try:
-                if not context.native:
-                    qemu = get_qemu_user()
-                    prefixes.append(([qemu], qemu))
-            except: pass
 
             for prefix, executable in prefixes:
                 try:
@@ -315,11 +313,7 @@ class process(tube):
                 except OSError as exception:
                     if exception.errno != errno.ENOEXEC:
                         raise
-            else:
-                try:
-                    raise exception
-                except:
-                    log.exception(str(prefixes))
+                    prefixes.append(self.__on_enoexec(exception))
 
         if self.pty is not None:
             if stdin is slave:
@@ -356,7 +350,7 @@ class process(tube):
 
                 resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
             except:
-                log.exception("Could not disable ASLR")
+                self.exception("Could not disable ASLR")
 
         # Assume that the user would prefer to have core dumps.
         resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
@@ -380,13 +374,43 @@ class process(tube):
 
         self.preexec_fn()
 
+    def __on_enoexec(self, exception):
+        """We received an 'exec format' error (ENOEXEC)
+
+        This implies that the user tried to execute e.g.
+        an ARM binary on a non-ARM system, and does not have
+        binfmt helpers installed for QEMU.
+        """
+        # Get the ELF binary for the target executable
+        with context.quiet:
+            # XXX: Cyclic imports :(
+            from ..elf import ELF
+            binary = ELF(self.executable)
+
+        # If we're on macOS, this will never work.  Bail now.
+        # if platform.mac_ver()[0]:
+            # self.error("Cannot run ELF binaries on macOS")
+
+        # Determine what architecture the binary is, and find the
+        # appropriate qemu binary to run it.
+        qemu = get_qemu_user(arch=binary.arch)
+        if qemu:
+            args = [qemu]
+            if self.argv:
+                args += ['-0', self.argv[0]]
+            args += ['--']
+            return [args, qemu]
+
+        # If we get here, we couldn't run the binary directly, and
+        # we don't have a qemu which can run it.
+        self.exception(exception)
+
     @property
     def program(self):
         """Alias for ``executable``, for backward compatibility"""
         return self.executable
 
-    @staticmethod
-    def _validate(cwd, executable, argv, env):
+    def _validate(self, cwd, executable, argv, env):
         """
         Perform extended validation on the executable path, argv, and envp.
 
@@ -405,14 +429,14 @@ class process(tube):
             argv = [argv]
 
         if not all(isinstance(arg, (str, unicode)) for arg in argv):
-            log.error("argv must be strings: %r" % argv)
+            self.error("argv must be strings: %r" % argv)
 
         # Create a duplicate so we can modify it
         argv = list(argv or [])
 
         for i, arg in enumerate(argv):
             if '\x00' in arg[:-1]:
-                log.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
+                self.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
 
             argv[i] = arg.rstrip('\x00')
 
@@ -424,7 +448,7 @@ class process(tube):
         #
         if not executable:
             if not argv:
-                log.error("Must specify argv or executable")
+                self.error("Must specify argv or executable")
             executable = argv[0]
 
         # Do not change absolute paths to binaries
@@ -444,11 +468,11 @@ class process(tube):
             executable = os.path.join(cwd, executable)
 
         if not os.path.exists(executable):
-            log.error("%r does not exist"  % executable)
+            self.error("%r does not exist"  % executable)
         if not os.path.isfile(executable):
-            log.error("%r is not a file" % executable)
+            self.error("%r is not a file" % executable)
         if not os.access(executable, os.X_OK):
-            log.error("%r is not marked as executable (+x)" % executable)
+            self.error("%r is not marked as executable (+x)" % executable)
 
         #
         # Validate environment
@@ -462,13 +486,13 @@ class process(tube):
 
         for k,v in env.items():
             if not isinstance(k, (str, unicode)):
-                log.error('Environment keys must be strings: %r' % k)
+                self.error('Environment keys must be strings: %r' % k)
             if not isinstance(k, (str, unicode)):
-                log.error('Environment values must be strings: %r=%r' % (k,v))
+                self.error('Environment values must be strings: %r=%r' % (k,v))
             if '\x00' in k[:-1]:
-                log.error('Inappropriate nulls in env key: %r' % (k))
+                self.error('Inappropriate nulls in env key: %r' % (k))
             if '\x00' in v[:-1]:
-                log.error('Inappropriate nulls in env value: %r=%r' % (k, v))
+                self.error('Inappropriate nulls in env value: %r=%r' % (k, v))
 
             env[k.rstrip('\x00')] = v.rstrip('\x00')
 
@@ -778,7 +802,7 @@ class process(tube):
         """
         # If it's running under qemu-user, don't leak anything.
         if 'qemu-' in os.path.realpath('/proc/%i/exe' % self.pid):
-            log.error("Cannot use leaker on binaries under QEMU.")
+            self.error("Cannot use leaker on binaries under QEMU.")
 
         with open('/proc/%i/mem' % self.pid, 'rb') as mem:
             mem.seek(address)
