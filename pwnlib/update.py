@@ -53,7 +53,11 @@ def available_on_pypi(prerelease=current_version.is_prerelease):
 
 def cache_file():
     """Returns the path of the file used to cache update data, and ensures that it exists."""
-    cache_dir  = os.path.expanduser('~/.pwntools-cache')
+    cache_dir = context.cache_dir
+
+    if not cache_dir:
+        return None
+
     cache_file = os.path.join(cache_dir, 'update')
 
     if not os.path.isdir(cache_dir):
@@ -66,12 +70,23 @@ def cache_file():
 
 def last_check():
     """Return the date of the last check"""
-    return os.path.getmtime(cache_file())
+    cache = cache_file()
+    if cache:
+        return os.path.getmtime(cache_file())
+
+    # Fallback
+    return time.time()
 
 def should_check():
     """Return True if we should check for an update"""
-    if read(cache_file()).strip() == 'never':
+    filename = cache_file()
+
+    if not filename:
         return False
+
+    if read(filename).strip() == 'never':
+        return False
+
     return time.time() > (last_check() + update_freq)
 
 def perform_check(prerelease=current_version.is_prerelease):
@@ -109,7 +124,10 @@ def perform_check(prerelease=current_version.is_prerelease):
     where = None
     command = None
 
-    os.utime(cache_file(), None)
+    cache = cache_file()
+
+    if cache:
+        os.utime(cache, None)
 
     if best == current_version:
         log.info("You have the latest version of Pwntools (%s)" % best)
