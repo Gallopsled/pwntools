@@ -235,7 +235,7 @@ class Core(ELF):
     def libc(self):
         """Return the first mapping in libc"""
         for m in self.mappings:
-            if m.name.startswith('libc') and m.name.endswith('.so'):
+            if m.name and m.name.startswith('libc') and m.name.endswith('.so'):
                 return m
 
     @property
