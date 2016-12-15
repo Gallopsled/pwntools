@@ -1,6 +1,6 @@
-import alphanum_byte
-import ARM_Instructions
-import random_funcs
+from . import alphanum_byte
+from . import ARM_Instructions
+from . import random_funcs
 
 #+---------------------------------------------------+*/
 #|                Builder Functions                  |*/

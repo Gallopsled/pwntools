@@ -6,7 +6,8 @@ from . import termcap
 
 
 def eval_when(when):
-    if isinstance(when, file) or \
+    # isinstance(when, file) -> hasattr(when, "read")
+    if hasattr(when, "read")  or \
       when in ('always', 'never', 'auto', sys.stderr, sys.stdout):
         if   when == 'always':
             return True

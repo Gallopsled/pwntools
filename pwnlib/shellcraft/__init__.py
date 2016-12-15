@@ -7,7 +7,7 @@ from . import internal
 from .. import constants
 from ..context import context
 from ..util import packing
-
+from . import registers
 
 class module(ModuleType):
     def __init__(self, name, directory):
@@ -145,7 +145,7 @@ class module(ModuleType):
             s = packing.pack(s, *a, **kw)
         return '\0' not in s and '\n' not in s
 
-    import registers
+    
 
 # To prevent garbage collection
 tether = sys.modules[__name__]

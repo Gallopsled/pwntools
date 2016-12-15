@@ -58,9 +58,9 @@ class i386DeltaEncoder(Encoder):
         not_bad = lambda x: chr(x) not in avoid
         not_bad_or_term = lambda x: not_bad(x) and x != self.terminator
 
-        for i in filter(not_bad_or_term, range(0, 256)):
+        for i in filter(not_bad_or_term, list(range(0, 256))):
             endchar += chr(i)
-            for j in filter(not_bad, range(0, 256)):
+            for j in filter(not_bad, list(range(0, 256))):
                 table[(j - i) & 0xff].append(chr(i) + chr(j))
 
         res = self.raw
@@ -69,7 +69,7 @@ class i386DeltaEncoder(Encoder):
             a = ord(c)
             l = len(table[a])
             if l == 0:
-                print 'No encodings for character %02x' % a
+                print('No encodings for character %02x' % a)
                 return None
 
             res += table[a][randint(0, l - 1)]

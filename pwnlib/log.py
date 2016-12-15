@@ -96,7 +96,7 @@ __all__ = [
     'getLogger', 'install_default_handler', 'rootlogger'
 ]
 
-import ConfigParser
+import configparser
 import logging
 import os
 import random
@@ -132,7 +132,7 @@ _msgtype_prefixes = {
 # permit setting logging colors from a configuration file
 config = os.path.expanduser('~/.pwn.conf')
 if os.path.exists(config):
-    c = ConfigParser.ConfigParser()
+    c = configparser.ConfigParser()
     c.read([config])
 
     for section in c.sections():

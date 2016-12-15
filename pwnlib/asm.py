@@ -452,7 +452,7 @@ def make_elf_from_assembly(assembly, vma = None, extract=False, shared = False):
     path = asm(assembly, vma = vma, extract = extract, shared = shared)
 
     if not extract:
-        os.chmod(path, 0755)
+        os.chmod(path, 0o755)
 
     return path
 
@@ -533,7 +533,7 @@ def make_elf(data, vma = None, strip=True, extract=True, shared=False):
             _run([which_binutils('strip'), '--strip-unneeded', step3])
 
         if not extract:
-            os.chmod(step3, 0755)
+            os.chmod(step3, 0o755)
             retval = step3
 
         else:
