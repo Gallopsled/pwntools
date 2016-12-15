@@ -166,7 +166,6 @@ class Progress(object):
     using :meth:`Logger.progress`.
     """
     def __init__(self, logger, msg, status, level, args, kwargs):
-        global _progressid
         self._logger = logger
         self._msg = msg
         self._status = status
@@ -264,7 +263,7 @@ class Logger(object):
             # This is a minor hack to permit user-defined classes which inherit
             # from a tube (which do not actually reside in the pwnlib library)
             # to receive logging abilities that behave as they would expect from
-            # the resto f the library
+            # the rest of the library
             module = self.__module__
             if not module.startswith('pwnlib'):
                 module = 'pwnlib.' + module
