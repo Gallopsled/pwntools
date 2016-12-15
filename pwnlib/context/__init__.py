@@ -1133,6 +1133,18 @@ class ContextType(object):
 
         Note:
             May be either a path string, or ``None``.
+
+        Example:
+
+            >>> cache_dir = context.cache_dir
+            >>> cache_dir is not None
+            True
+            >>> os.chmod(cache_dir, 0o000)
+            >>> context.cache_dir is None
+            True
+            >>> os.chmod(cache_dir, 0o755)
+            >>> cache_dir == context.cache_dir
+            True
         """
         home = os.path.expanduser('~')
 
