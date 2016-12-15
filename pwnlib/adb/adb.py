@@ -737,7 +737,7 @@ def unlink(path, recursive=False):
             log.error("Could not unlink %r: Does not exist" % path)
 
         # If the directory is not empty, do not delete it
-        if c.list(path) and not recursive:
+        if isdir(path) and c.list(path) and not recursive:
             log.error("Cannot delete non-empty directory %r without recursive=True" % path)
 
         flags = '-rf' if recursive else '-r'
