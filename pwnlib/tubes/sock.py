@@ -147,6 +147,7 @@ class sock(tube):
 
         for fd, event in poll.poll(0):
             if event & select.POLLHUP:
+                self.close()
                 return False
             if event & select.POLLIN:
                 return True
