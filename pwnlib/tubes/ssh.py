@@ -191,11 +191,11 @@ class ssh_channel(sock):
         return self.returncode
 
     def can_recv_raw(self, timeout):
-        end = time.time() + timeout
-        while time.time() < end:
-            if self.sock.recv_ready():
-                return True
-            time.sleep(0.05)
+        with self.countdown(timeout):
+            while self.countdown_active():
+                if self.sock.recv_ready():
+                    return True
+                time.sleep(min(self.timeout, 0.05))
         return False
 
     def interactive(self, prompt = term.text.bold_red('$') + ' '):
