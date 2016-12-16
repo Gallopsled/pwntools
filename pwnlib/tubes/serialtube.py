@@ -90,7 +90,7 @@ class serialtube(tube.tube):
 
     def fileno(self):
         if not self.connected():
-            self.error("A stopped program does not have a file number")
+            self.error("A closed serialtube does not have a file number")
 
         return self.conn.fileno()
 
