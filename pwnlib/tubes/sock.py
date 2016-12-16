@@ -26,13 +26,13 @@ class sock(tube):
         else:
             return super(sock, self).recvall(timeout)
 
-    def recv_raw(self, numb, flags=0):
+    def recv_raw(self, numb, *a):
         if self.closed["recv"]:
             raise EOFError
 
         while True:
             try:
-                data = self.sock.recv(numb, flags)
+                data = self.sock.recv(numb, *a)
                 break
             except socket.timeout:
                 return None
