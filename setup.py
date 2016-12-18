@@ -3,6 +3,7 @@ import glob
 import os
 import platform
 import sys
+import traceback
 from distutils.command.install import INSTALL_SCHEMES
 from distutils.sysconfig import get_python_inc
 from distutils.util import convert_path
@@ -78,6 +79,9 @@ try:
     long_description = pypandoc.convert_file('README.md', 'rst')
 except ImportError:
     pass
+except Exception as e:
+    print >>sys.stderr, "Failed to convert README.md through pandoc, proceeding anyway"
+    traceback.print_exc()
 
 
 setup(
