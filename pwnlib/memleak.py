@@ -625,3 +625,8 @@ class MemLeak(object):
     p32 = setd
     p16 = setw
     p8 = setb
+
+class RelativeMemLeak(MemLeak):
+    def __init__(self, *a, **kw):
+        kw.setdefault('relative', True)
+        return super(RelativeMemLeak, self).__init__(*a, **kw)
