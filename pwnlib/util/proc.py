@@ -2,19 +2,14 @@ import errno
 import socket
 import time
 
+import psutil
+
 from .. import tubes
 from ..log import getLogger
 
-try:
-    import psutil
-    _ok_import = True
-except ImportError:
-    _ok_import = False
-
 log = getLogger(__name__)
 
-if _ok_import:
-    all_pids = psutil.pids
+all_pids = psutil.pids
 
 def pidof(target):
     """pidof(target) -> int list
@@ -305,56 +300,3 @@ def wait_for_debugger(pid):
         while tracer(pid) is None:
             time.sleep(0.01)
         l.success()
-
-if not _ok_import:
-    def _make_stub(func):
-        func.__doc__ = 'Stubbed out function, because psutil is not available.'
-        return func
-
-    @_make_stub
-    def all_pids():
-        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
-
-    @_make_stub
-    def pidof(target):
-        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
-
-    @_make_stub
-    def pid_by_name(name):
-        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
-
-    @_make_stub
-    def name(pid):
-        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
-
-    @_make_stub
-    def parent(pid):
-        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
-
-    @_make_stub
-    def children(ppid):
-        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
-
-    @_make_stub
-    def ancestors(pid):
-        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
-
-    @_make_stub
-    def descendants(pid):
-        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
-
-    @_make_stub
-    def exe(pid):
-        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
-
-    @_make_stub
-    def cwd(pid):
-        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
-
-    @_make_stub
-    def cmdline(pid):
-        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
-
-    @_make_stub
-    def starttime(pid):
-        log.error("Called stubbed-out function. Get psutil to work on your platform, then come back.")
