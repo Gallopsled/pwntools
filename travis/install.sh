@@ -72,7 +72,13 @@ setup_android_emulator()
     # If we are running on Travis CI, and there were no changes to Android
     # or ADB code, then we do not need the emulator
     if [ -n "$TRAVIS" ]; then
-        if ! (git log --stat "$TRAVIS_COMMIT_RANGE" | grep -E "android|adb"); then
+        if [ -z "$TRAVIS_COMMIT_RANGE" ]; then
+            echo "TRAVIS_COMMIT_RANGE is empty, forcing Android Emulator installation"
+        elif ! git show "$TRAVIS_COMMIT_RANGE" ; then
+            echo "TRAVIS_COMMIT_RANGE is invalid, forcing Android Emulator installation"
+        elif (git log --stat "$TRAVIS_COMMIT_RANGE" | grep -iE "android|adb"); then
+            echo "Found Android-related commits, forcing Android Emulator installation"
+        else
             # In order to avoid running the doctests that require the Android
             # emulator, while still leaving the code intact, we remove the
             # RST file that Sphinx searches.
