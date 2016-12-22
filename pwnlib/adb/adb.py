@@ -347,10 +347,6 @@ class AdbDevice(Device):
         >>> adb.getprop(property) == device.getprop(property)
         True
         """
-        if name in self.__deferred_fields:
-            self._do_deferred_initialization()
-            return getattr(self, name)
-
         with context.local(device=self):
             g = globals()
 
