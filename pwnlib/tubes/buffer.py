@@ -173,7 +173,7 @@ class Buffer(Exception):
 
         return data
 
-    def get_fill_size(self,size=None):
+    def get_fill_size(self, size=None):
         """
         Retrieves the default fill size for this buffer class.
 
@@ -183,8 +183,8 @@ class Buffer(Exception):
         Returns:
             Fill size as integer if size == None, else size.
         """
-        if size:
-            return size
+        if size is None:
+            size = self.buffer_fill_size
 
-        with context.local(buffer_size = self.buffer_fill_size):
+        with context.local(buffer_size=size):
             return context.buffer_size
