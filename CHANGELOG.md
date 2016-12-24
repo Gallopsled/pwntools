@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.4.0](#340)    | `dev`    | Feb 4, 2017 (planned)
-| [3.3.0](#330)    | `beta`   | Dec 24, 2016 (planned)
-| [3.2.1](#321)    | `stable` | Dec 24, 2016
+| [3.5.0](#350)    | `dev`    | Mar 18, 2017 (planned)
+| [3.4.0](#340)    | `beta`   | Feb 4, 2017 (planned)
+| [3.3.0](#330)    | `stable` | Dec 24, 2016
+| [3.2.1](#321)    |          | Dec 24, 2016
 | [3.2.0](#320)    |          | Nov 12, 2016
 | [3.1.1](#311)    |          | Oct 23, 2016
 | [3.1.0](#310)    |          | Oct 2, 2016
@@ -22,13 +23,15 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
+## 3.5.0
+
+To be released on Mar 18, 2017.
+
 ## 3.4.0
 
 To be released on Feb 4, 2017.
 
 ## 3.3.0
-
-To be released on Dec 24, 2016.
 
 - [b198ec8][b198ec8] Added `tube.stream()` function, which is like `tube.interact()` without a prompt or keyboard input.
     + Effectively, this is similar to `cat file` and just prints data as fast as it is received.
