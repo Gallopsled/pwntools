@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.4.0](#340)    | `dev`    | Feb 4, 2017 (planned)
 | [3.3.0](#330)    | `beta`   | Dec 24, 2016 (planned)
-| [3.2.0](#320)    | `stable` | Nov 12, 2016
+| [3.2.1](#321)    | `stable` | Dec 24, 2016
+| [3.2.0](#320)    |          | Nov 12, 2016
 | [3.1.1](#311)    |          | Oct 23, 2016
 | [3.1.0](#310)    |          | Oct 2, 2016
 | [3.0.4](#304)    |          | Sept 19, 2016
@@ -27,15 +28,67 @@ To be released on Feb 4, 2017.
 
 ## 3.3.0
 
-- [b198ec8][b198ec8] Added `tube.stream()` function, which is like `tube.interact()` without a prompt or keyboard input.
+To be released on Dec 24, 2016.
 
+- [b198ec8][b198ec8] Added `tube.stream()` function, which is like `tube.interact()` without a prompt or keyboard input.
+    + Effectively, this is similar to `cat file` and just prints data as fast as it is received.
+- [aec3fa6][aec3fa6] Disable update checks against GitHub
+    + These checks frequently broke due to GitHub query limits
+- [#757][757] Fixed `adb.wait_for_device()` re-use of the same connection
+- [f9133b1][f9133b1] Add a `STDERR` magic argument to make logging go to `stderr` instead of `stdout`
+    + Usage is e.g. `python foo.py STDERR` or `PWNLIB_STDERR=1 python foo.py`
+    + Also adds `context.log_console` to log to any file or terminal
+- [67e11a9][67e11a9] Add faster error checking to `cyclic()` when provided very large values
+- [5fda658][5fda658] Expose BitPolynom in `globals()`
+- [#765][765] Added `-d` option for hex-escaped output for `shellcraft` command-line tool
+- [#772][772] Fixed bash completion regressions
+- [30c34b7][30c34b7] Fix `ROP.call()` with `Function` objects from `ELF.functions`
+- [fa402ce][fa402ce] Add `adb.uptime` and `adb.boot_time`
+- [82312ba][82312ba] Add `cyclic_metasploit` and `cyclic_metasploit_find`
+
+[757]: https://github.com/Gallopsled/pwntools/pull/757
+[765]: https://github.com/Gallopsled/pwntools/pull/765
+[772]: https://github.com/Gallopsled/pwntools/pull/772
 [b198ec8]: https://github.com/Gallopsled/pwntools/commit/b198ec8
+[aec3fa6]: https://github.com/Gallopsled/pwntools/commit/aec3fa6
+[f9133b1]: https://github.com/Gallopsled/pwntools/commit/f9133b1
+[67e11a9]: https://github.com/Gallopsled/pwntools/commit/67e11a9
+[5fda658]: https://github.com/Gallopsled/pwntools/commit/5fda658
+[30c34b7]: https://github.com/Gallopsled/pwntools/commit/30c34b7
+[fa402ce]: https://github.com/Gallopsled/pwntools/commit/fa402ce
+[82312ba]: https://github.com/Gallopsled/pwntools/commit/82312ba
+
+## 3.2.1
+
+Multiple bug fixes.
+
+- [#783][783] Fix `adb.uninstall` typo
+- [#787][787] Added error handling for `ssh.process` argument `preexec_fn`
+- [#793][793] Fixed progress message in `remote()` when connections failed
+- [#802][802] Fixed partition listing in `adb.partitions`, which accidentally shelled out to the `adb` binary
+- [#804][804] Fix error message for 32-bit distributions
+- [#805][805] Fix exception in `Core.segments` when a segment has no name
+- [#811][811] Fixes and performance improvements for `adb.wait_for_device()`
+- [#813][813] Fixed a release script
+- [#814][814] Fixed exceptions thrown if the `$HOME` directory is not writable
+- [#815][815] Properly handle `None` in `MemLeak`
+
+[783]: https://github.com/Gallopsled/pwntools/pull/783
+[787]: https://github.com/Gallopsled/pwntools/pull/787
+[793]: https://github.com/Gallopsled/pwntools/pull/793
+[802]: https://github.com/Gallopsled/pwntools/pull/802
+[804]: https://github.com/Gallopsled/pwntools/pull/804
+[805]: https://github.com/Gallopsled/pwntools/pull/805
+[811]: https://github.com/Gallopsled/pwntools/pull/811
+[813]: https://github.com/Gallopsled/pwntools/pull/813
+[814]: https://github.com/Gallopsled/pwntools/pull/814
+[815]: https://github.com/Gallopsled/pwntools/pull/815
 
 ## 3.2.0
 
 - [#695][695] Fixed a performance regression in `phd`.
 - [452605e][452605e] Fixed [#629][629] related to correct removal of temporary files.
-- [ea94ee4][ea94ee4] Disallows semi-colons in for the `run_in_terminal` function, since it did not work properly in all cases. 
+- [ea94ee4][ea94ee4] Disallows semi-colons in for the `run_in_terminal` function, since it did not work properly in all cases.
 - [6376d07][6376d07] Added the mips shellcode `pushstr_array`.
 - [#700][700] Added missing MIPS shellcode documentation to readthedocs, and enabled unit tests
 - [#701][701] Command line tools refactored to have a common `pwn` entry point.
