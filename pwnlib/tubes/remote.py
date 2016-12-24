@@ -45,8 +45,8 @@ class remote(sock):
 
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
-                 timeout = Timeout.default, ssl=False, sock=None, level = None):
-        super(remote, self).__init__(timeout, level = level)
+                 ssl=False, sock=None, *args, **kwargs):
+        super(remote, self).__init__(*args, **kwargs)
 
         self.rport  = int(port)
         self.rhost  = host
@@ -150,17 +150,13 @@ class remote(sock):
 
 class tcp(remote):
     __doc__ = remote.__doc__
-    def __init__(self, host, port,
-                 fam = "any", typ = "tcp",
-                 timeout = Timeout.default, ssl=False, sock=None, level = None):
-        return super(tcp, self).__init__(host, port, fam, typ, timeout, ssl, sock, level)
+    def __init__(self, host, port, *a, **kw):
+        return super(tcp, self).__init__(host, port, typ="tcp", *a, **kw)
 
 class udp(remote):
     __doc__ = remote.__doc__
-    def __init__(self, host, port,
-                 fam = "any", typ = "udp",
-                 timeout = Timeout.default, ssl=False, sock=None, level = None):
-        return super(udp, self).__init__(host, port, fam, typ, timeout, ssl, sock, level)
+    def __init__(self, host, port, *a, **kw):
+        return super(udp, self).__init__(host, port, typ="udp", *a, **kw)
 
 class connect(remote):
     __doc__ = remote.__doc__

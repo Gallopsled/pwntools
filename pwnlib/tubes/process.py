@@ -44,8 +44,6 @@ class process(tube):
             Working directory.  Uses the current working directory by default.
         env(dict):
             Environment variables.  By default, inherits from Python's environment.
-        timeout(int):
-            Timeout to use on ``tube`` ``recv`` operations.
         stdin(int):
             File object or file descriptor number to use for ``stdin``.
             By default, a pipe is used.  A pty can be used instead by setting
@@ -206,11 +204,9 @@ class process(tube):
                  executable = None,
                  cwd = None,
                  env = None,
-                 timeout = Timeout.default,
                  stdin  = PIPE,
                  stdout = PTY,
                  stderr = STDOUT,
-                 level = None,
                  close_fds = True,
                  preexec_fn = lambda: None,
                  raw = True,
@@ -218,8 +214,11 @@ class process(tube):
                  setuid = None,
                  where = 'local',
                  display = None,
-                 alarm = None):
-        super(process, self).__init__(timeout, level = level)
+                 alarm = None,
+                 *args,
+                 **kwargs
+                 ):
+        super(process, self).__init__(*args,**kwargs)
 
         # Permit using context.binary
         if argv is None:
@@ -794,7 +793,7 @@ class process(tube):
         import pwnlib.elf.corefile
         return pwnlib.elf.corefile.Core(filename)
 
-    def leak(self, address, count=0):
+    def leak(self, address, count=1):
         """Leaks memory within the process at the specified address.
 
         Arguments:

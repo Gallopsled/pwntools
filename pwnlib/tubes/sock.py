@@ -10,8 +10,8 @@ log = getLogger(__name__)
 class sock(tube):
     """Methods available exclusively to sockets."""
 
-    def __init__(self, timeout, level = None):
-        super(sock, self).__init__(timeout, level = level)
+    def __init__(self, *args, **kwargs):
+        super(sock, self).__init__(*args, **kwargs)
         self.closed = {"recv": False, "send": False}
 
     # Overwritten for better usability
@@ -26,13 +26,13 @@ class sock(tube):
         else:
             return super(sock, self).recvall(timeout)
 
-    def recv_raw(self, numb):
+    def recv_raw(self, numb, *a):
         if self.closed["recv"]:
             raise EOFError
 
         while True:
             try:
-                data = self.sock.recv(numb)
+                data = self.sock.recv(numb, *a)
                 break
             except socket.timeout:
                 return None
@@ -72,21 +72,89 @@ class sock(tube):
             self.sock.settimeout(timeout)
 
     def can_recv_raw(self, timeout):
+        """
+        Tests:
+
+            >>> l = listen()
+            >>> r = remote('localhost', l.lport)
+            >>> r.can_recv_raw(timeout=0)
+            False
+            >>> l.send('a')
+            >>> r.can_recv_raw(timeout=1)
+            True
+            >>> r.recv()
+            'a'
+            >>> r.can_recv_raw(timeout=0)
+            False
+            >>> l.close()
+            >>> r.can_recv_raw(timeout=1)
+            False
+            >>> r.closed['recv']
+            True
+        """
         if not self.sock or self.closed["recv"]:
             return False
 
-        return select.select([self.sock], [], [], timeout) == ([self.sock], [], [])
+        # select() will tell us data is available at EOF
+        can_recv = select.select([self.sock], [], [], timeout) == ([self.sock], [], [])
+
+        if not can_recv:
+            return False
+
+        # Ensure there's actually data, not just EOF
+        try:
+            self.recv_raw(1, socket.MSG_PEEK)
+        except EOFError:
+            return False
+
+        return True
 
     def connected_raw(self, direction):
+        """
+        Tests:
+
+            >>> l = listen()
+            >>> r = remote('localhost', l.lport)
+            >>> r.connected()
+            True
+            >>> l.close()
+            >>> time.sleep(1) # Avoid race condition
+            >>> r.connected()
+            False
+        """
+        # If there's no socket, it's definitely closed
         if not self.sock:
             return False
 
-        if direction == 'any':
-            return True
-        elif direction == 'recv':
-            return not self.closed['recv']
-        elif direction == 'send':
-            return not self.closed['send']
+        # If we have noticed a connection close in a given direction before,
+        # return fast.
+        if self.closed.get(direction, False):
+            return False
+
+        # If a connection is closed in all manners, return fast
+        if all(self.closed.values()):
+            return False
+
+        # Use poll() to determine the connection state
+        want = {
+            'recv': select.POLLIN,
+            'send': select.POLLOUT,
+            'any':  select.POLLIN | select.POLLOUT,
+        }[direction]
+
+        poll = select.poll()
+        poll.register(self, want | select.POLLHUP | select.POLLERR)
+
+        for fd, event in poll.poll(0):
+            if event & select.POLLHUP:
+                self.close()
+                return False
+            if event & select.POLLIN:
+                return True
+            if event & select.POLLOUT:
+                return True
+
+        return True
 
     def close(self):
         if not getattr(self, 'sock', None):

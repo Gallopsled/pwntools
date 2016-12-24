@@ -16,8 +16,8 @@ from . import scramble
 from . import shellcraft
 from . import unhex
 from . import update
-from .common import parser
 from ..context import context
+from .common import parser
 
 commands = {
     'asm': asm.main,

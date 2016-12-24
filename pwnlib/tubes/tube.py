@@ -30,18 +30,18 @@ class tube(Timeout, Logger):
     #: and related functions.
     newline = '\n'
 
-    def __init__(self, timeout = default, level = None):
+    def __init__(self, timeout = default, level = None, *a, **kw):
         super(tube, self).__init__(timeout)
 
         Logger.__init__(self, None)
         if level is not None:
             self.setLevel(level)
 
-        self.buffer          = Buffer()
+        self.buffer = Buffer(*a, **kw)
         atexit.register(self.close)
 
     # Functions based on functions from subclasses
-    def recv(self, numb = 4096, timeout = default):
+    def recv(self, numb = None, timeout = default):
         r"""recv(numb = 4096, timeout = default) -> str
 
         Receives up to `numb` bytes of data from the tube, and returns
@@ -72,6 +72,7 @@ class tube(Timeout, Logger):
             [...] Received 0xc bytes:
                 'Hello, world'
         """
+        numb = self.buffer.get_fill_size(numb)
         return self._recv(numb, timeout) or ''
 
     def unrecv(self, data):
@@ -122,7 +123,7 @@ class tube(Timeout, Logger):
         data = ''
 
         with self.local(timeout):
-            data = self.recv_raw(4096)
+            data = self.recv_raw(self.buffer.get_fill_size())
 
         if data and self.isEnabledFor(logging.DEBUG):
             self.debug('Received %#x bytes:' % len(data))
@@ -141,12 +142,13 @@ class tube(Timeout, Logger):
         return data
 
 
-    def _recv(self, numb = 4096, timeout = default):
+    def _recv(self, numb = None, timeout = default):
         """_recv(numb = 4096, timeout = default) -> str
 
         Receives one chunk of from the internal buffer or from the OS if the
         buffer is empty.
         """
+        numb = self.buffer.get_fill_size(numb)
         data = ''
 
         # No buffered data, could not put anything in the buffer

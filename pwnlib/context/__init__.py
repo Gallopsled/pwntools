@@ -330,6 +330,7 @@ class ContextType(object):
         'aslr': True,
         'binary': None,
         'bits': 32,
+        'buffer_size': 4096,
         'device': os.getenv('ANDROID_SERIAL', None) or None,
         'endian': 'little',
         'kernel': None,
@@ -1146,6 +1147,15 @@ class ContextType(object):
 
         return command
 
+    @_validator
+    def buffer_size(self, size):
+        """Internal buffer size to use for ``tube`` objects.
+
+        This is not the maximum size of the buffer, but this is the amount of data
+        which is passed to each raw ``read`` syscall (or equivalent).
+        """
+        return int(size)
+
     @property
     def cache_dir(self):
         """Directory used for caching data.
@@ -1184,7 +1194,6 @@ class ContextType(object):
             return None
 
         return cache
-
 
     #*************************************************************************
     #                               ALIASES

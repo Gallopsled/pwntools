@@ -22,6 +22,7 @@ import threading
 import traceback
 
 from . import termcap
+from ..context import ContextType
 
 settings = None
 _graphics_mode = False
@@ -127,6 +128,11 @@ def init():
         sys.stdout = Wrapper(sys.stdout)
     if sys.stderr.isatty():
         sys.stderr = Wrapper(sys.stderr)
+
+    console = ContextType.defaults['log_console']
+    if console.isatty():
+        ContextType.defaults['log_console'] = Wrapper(console)
+
     # freeze all cells if an exception is thrown
     orig_hook = sys.excepthook
     def hook(*args):

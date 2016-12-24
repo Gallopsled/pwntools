@@ -38,7 +38,7 @@ Most of the functionality of pwntools is self-contained and Python-only.  You sh
 
 ```sh
 apt-get update
-apt-get install python2.7 python-pip python-dev git libssl-dev
+apt-get install python2.7 python-pip python-dev git libssl-dev libffi-dev
 pip install --upgrade pwntools
 ```
 

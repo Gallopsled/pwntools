@@ -21,7 +21,7 @@ p.add_argument('--pre', action='store_true', help='''
 def main(a):
     result = pwnlib.update.perform_check(prerelease=a.pre)
     if a.install:
-        subprocess.check_call(result, shell=True)
+        subprocess.check_call(result, shell=False)
 
 if __name__ == '__main__':
     pwnlib.common.main(__file__)

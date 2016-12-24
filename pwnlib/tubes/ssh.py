@@ -59,7 +59,7 @@ class ssh_channel(sock):
     #: Only valid when instantiated through :meth:`ssh.process`
     pid = None
 
-    #: Executable of the process
+    #: Executable of the procesks
     #: Only valid when instantiated through :meth:`ssh.process`
     executable = None
 
@@ -67,8 +67,8 @@ class ssh_channel(sock):
     #: Only valid when instantiated through :meth:`ssh.process`
     argv = None
 
-    def __init__(self, parent, process = None, tty = False, wd = None, env = None, timeout = Timeout.default, level = 0, raw = True):
-        super(ssh_channel, self).__init__(timeout, level=level)
+    def __init__(self, parent, process = None, tty = False, wd = None, env = None, raw = True, *args, **kwargs):
+        super(ssh_channel, self).__init__(*args, **kwargs)
 
         # keep the parent from being garbage collected in some cases
         self.parent = parent
@@ -191,11 +191,11 @@ class ssh_channel(sock):
         return self.returncode
 
     def can_recv_raw(self, timeout):
-        end = time.time() + timeout
-        while time.time() < end:
-            if self.sock.recv_ready():
-                return True
-            time.sleep(0.05)
+        with self.countdown(timeout):
+            while self.countdown_active():
+                if self.sock.recv_ready():
+                    return True
+                time.sleep(min(self.timeout, 0.05))
         return False
 
     def interactive(self, prompt = term.text.bold_red('$') + ' '):
@@ -366,8 +366,8 @@ class ssh_channel(sock):
                 return e
 
 class ssh_connecter(sock):
-    def __init__(self, parent, host, port, timeout = Timeout.default, level = None):
-        super(ssh_connecter, self).__init__(timeout, level = level)
+    def __init__(self, parent, host, port, *a, **kw):
+        super(ssh_connecter, self).__init__(*a, **kw)
 
         # keep the parent from being garbage collected in some cases
         self.parent = parent
@@ -398,8 +398,8 @@ class ssh_connecter(sock):
 
 
 class ssh_listener(sock):
-    def __init__(self, parent, bind_address, port, timeout = Timeout.default, level = None):
-        super(ssh_listener, self).__init__(timeout, level = level)
+    def __init__(self, parent, bind_address, port, *a, **kw):
+        super(ssh_listener, self).__init__(*a, **kw)
 
         # keep the parent from being garbage collected in some cases
         self.parent = parent
@@ -478,8 +478,7 @@ class ssh(Timeout, Logger):
 
     def __init__(self, user, host, port = 22, password = None, key = None,
                  keyfile = None, proxy_command = None, proxy_sock = None,
-                 timeout = Timeout.default, level = None, cache = True,
-                 ssh_agent = False):
+                 level = None, cache = True, ssh_agent = False, *a, **kw):
         """Creates a new ssh connection.
 
         Arguments:
@@ -498,7 +497,7 @@ class ssh(Timeout, Logger):
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used."""
-        super(ssh, self).__init__(timeout)
+        super(ssh, self).__init__(*a, **kw)
 
         Logger.__init__(self)
         if level is not None:
@@ -623,7 +622,8 @@ class ssh(Timeout, Logger):
         return self.run(shell, tty, timeout = timeout)
 
     def process(self, argv=None, executable=None, tty=True, cwd=None, env=None, timeout=Timeout.default, run=True,
-                stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=[], raw=True, aslr=None, setuid=None):
+                stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=[], raw=True, aslr=None, setuid=None,
+                shell=False):
         r"""
         Executes a process on the remote server, in the same fashion
         as pwnlib.tubes.process.process.
@@ -680,6 +680,8 @@ class ssh(Timeout, Logger):
                 See ``pwnlib.tubes.process.process`` for more information.
             setuid(bool):
                 See ``pwnlib.tubes.process.process`` for more information.
+            shell(bool):
+                Pass the command-line arguments to the shell.
 
         Returns:
             A new SSH channel, or a path to a script if ``run=False``.
@@ -737,6 +739,9 @@ class ssh(Timeout, Logger):
             Traceback (most recent call last):
             ...
             NameError: global name 'bar' is not defined
+
+            >>> s.process('echo hello', shell=True).recvall()
+            'hello\n'
         """
         if not argv and not executable:
             self.error("Must specify argv or executable")
@@ -749,6 +754,11 @@ class ssh(Timeout, Logger):
 
         if not isinstance(argv, (list, tuple)):
             self.error('argv must be a list or tuple')
+
+        if shell:
+            if len(argv) != 1:
+                self.error('Cannot provide more than 1 argument if shell=True')
+            argv = ['/bin/sh', '-c'] + argv
 
         # Python doesn't like when an arg in argv contains '\x00'
         # -> execve() arg 2 must contain only strings
@@ -862,6 +872,13 @@ if not %(aslr)r:
 
     resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
 
+# Attempt to dump ALL core file regions
+try:
+    with open('/proc/self/coredump_filter', 'w') as core_filter:
+        core_filter.write('0x3f\n')
+except Exception:
+    pass
+
 # Assume that the user would prefer to have core dumps.
 resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
 
@@ -941,7 +958,7 @@ os.execve(exe, argv, os.environ)
 
         return result
 
-    def system(self, process, tty = True, wd = None, env = None, timeout = Timeout.default, raw = True):
+    def system(self, process, tty = True, wd = None, env = None, timeout = None, raw = True):
         r"""system(process, tty = True, wd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
@@ -967,7 +984,10 @@ os.execve(exe, argv, os.environ)
         if wd is None:
             wd = self.cwd
 
-        return ssh_channel(self, process, tty, wd, env, timeout, level = self.level, raw = raw)
+        if timeout is None:
+            timeout = self.timeout
+
+        return ssh_channel(self, process, tty, wd, env, timeout = timeout, level = self.level, raw = raw)
 
     #: Backward compatibility.  Use :meth:`system`
     run = system

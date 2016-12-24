@@ -9,7 +9,6 @@ from . import tube
 from .. import context
 from .. import term
 from ..log import getLogger
-from ..timeout import Timeout
 
 log = getLogger(__name__)
 
@@ -18,10 +17,8 @@ class serialtube(tube.tube):
             self, port = None, baudrate = 115200,
             convert_newlines = True,
             bytesize = 8, parity='N', stopbits=1, xonxoff = False,
-            rtscts = False, dsrdtr = False,
-            timeout = Timeout.default,
-            level = None):
-        super(serialtube, self).__init__(timeout, level = level)
+            rtscts = False, dsrdtr = False, *a, **kw):
+        super(serialtube, self).__init__(*a, **kw)
 
         if port is None:
             if platform.system() == 'Darwin':
@@ -49,21 +46,14 @@ class serialtube(tube.tube):
         if not self.conn:
             raise EOFError
 
-        if self.timeout == None:
-            end = float('inf')
-        else:
-            end = time.time() + self.timeout
+        with self.countdown():
+            while self.conn and self.countdown_active():
+                data = self.conn.read(numb)
 
-        while self.conn:
-            data = self.conn.read(numb)
-            if data:
-                return data
+                if data:
+                    return data
 
-            delta = end - time.time()
-            if delta <= 0:
-                break
-            else:
-                time.sleep(min(delta, 0.1))
+                time.sleep(min(self.timeout, 0.1))
 
         return None
 
@@ -83,10 +73,11 @@ class serialtube(tube.tube):
         pass
 
     def can_recv_raw(self, timeout):
-        end = time.time()
-        while time.time() < end:
-            if self.conn.inWaiting():
-                return True
+        with self.countdown(timeout):
+            while self.conn and self.countdown_active():
+                if self.conn.inWaiting():
+                    return True
+                time.sleep(min(self.timeout, 0.1))
         return False
 
     def connected_raw(self, direction):
@@ -99,7 +90,7 @@ class serialtube(tube.tube):
 
     def fileno(self):
         if not self.connected():
-            self.error("A stopped program does not have a file number")
+            self.error("A closed serialtube does not have a file number")
 
         return self.conn.fileno()
 

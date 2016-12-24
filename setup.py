@@ -54,11 +54,8 @@ install_requires     = ['paramiko>=1.15.2',
                         'pysocks',
                         'python-dateutil',
                         'pypandoc',
-                        'packaging']
-
-# This is a hack until somebody ports psutil to OpenBSD
-if platform.system() != 'OpenBSD':
-    install_requires.append('psutil>=2.1.3')
+                        'packaging',
+                        'psutil>=3.3.0']
 
 # Check that the user has installed the Python development headers
 PythonH = os.path.join(get_python_inc(), 'Python.h')
@@ -83,7 +80,7 @@ except ImportError:
 setup(
     name                 = 'pwntools',
     packages             = find_packages(),
-    version              = '3.3.0',
+    version              = '3.4.0beta0',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],

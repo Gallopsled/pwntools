@@ -599,6 +599,150 @@ def write(path, data=''):
         misc.write(temp.name, data)
         push(temp.name, path)
 
+@context.quiet
+@with_device
+def mkdir(path):
+    """Create a directory on the target device.
+
+    Note:
+        Silently succeeds if the directory already exists.
+
+    Arguments:
+        path(str): Directory to create.
+
+    Examples:
+
+        >>> adb.mkdir('/')
+
+        >>> path = '/data/local/tmp/mkdir_test'
+        >>> adb.exists(path)
+        False
+        >>> adb.mkdir(path)
+        >>> adb.exists(path)
+        True
+
+        >>> adb.mkdir('/init')
+        Traceback (most recent call last):
+        ...
+        PwnlibException: mkdir failed for /init, File exists
+    """
+    if not path.startswith('/'):
+        log.error("Must provide an absolute path: %r" % path)
+
+    with Client() as c:
+        st = c.stat(path)
+
+        # Don't re-create existing directories
+        if st and stat.S_ISDIR(st['mode']):
+            return
+
+        result = process(['mkdir', path]).recvall()
+
+        # Any output at all is an error
+        if result:
+            log.error(result)
+
+@context.quiet
+@with_device
+def makedirs(path):
+    """Create a directory and all parent directories on the target device.
+
+    Note:
+        Silently succeeds if the directory already exists.
+
+    Examples:
+
+        >>> adb.makedirs('/data/local/tmp/this/is/a/directory/heirarchy')
+        >>> adb.listdir('/data/local/tmp/this/is/a/directory')
+        ['heirarchy']
+    """
+    if path != '/':
+        makedirs(os.path.dirname(path))
+
+    mkdir(path)
+
+@context.quiet
+@with_device
+def exists(path):
+    """Return ``True`` if ``path`` exists on the target device.
+
+    Examples:
+
+        >>> adb.exists('/')
+        True
+        >>> adb.exists('/init')
+        True
+        >>> adb.exists('/does/not/exist')
+        False
+    """
+    with Client() as c:
+        return bool(c.stat(path))
+
+@context.quiet
+@with_device
+def isdir(path):
+    """Return ``True`` if ``path`` is a on the target device.
+
+    Examples:
+
+        >>> adb.isdir('/')
+        True
+        >>> adb.isdir('/init')
+        False
+        >>> adb.isdir('/does/not/exist')
+        False
+    """
+    with Client() as c:
+        st = c.stat(path)
+        return bool(st and stat.S_ISDIR(st['mode']))
+
+@context.quiet
+@with_device
+def unlink(path, recursive=False):
+    """Unlinks a file or directory on the target device.
+
+    Examples:
+
+        >>> adb.unlink("/does/not/exist")
+        Traceback (most recent call last):
+        ...
+        PwnlibException: Could not unlink '/does/not/exist': Does not exist
+
+        >>> filename = '/data/local/tmp/unlink-test'
+        >>> adb.write(filename, 'hello')
+        >>> adb.exists(filename)
+        True
+        >>> adb.unlink(filename)
+        >>> adb.exists(filename)
+        False
+
+        >>> adb.mkdir(filename)
+        >>> adb.write(filename + '/contents', 'hello')
+        >>> adb.unlink(filename)
+        Traceback (most recent call last):
+        ...
+        PwnlibException: Cannot delete non-empty directory '/data/local/tmp/unlink-test' without recursive=True
+
+        >>> adb.unlink(filename, recursive=True)
+        >>> adb.exists(filename)
+        False
+    """
+    with Client() as c:
+        st = c.stat(path)
+        if not st:
+            log.error("Could not unlink %r: Does not exist" % path)
+
+        # If the directory is not empty, do not delete it
+        if isdir(path) and c.list(path) and not recursive:
+            log.error("Cannot delete non-empty directory %r without recursive=True" % path)
+
+        flags = '-rf' if recursive else '-r'
+
+        output = c.execute(['rm', flags, path]).recvall()
+
+        if output:
+            log.error(output)
+
 @with_device
 def process(argv, *a, **kw):
     """Execute a process on the device.
@@ -760,16 +904,15 @@ def listdir(directory='/'):
     """
     return list(sorted(Client().list(directory)))
 
+@with_device
 def fastboot(args, *a, **kw):
     """Executes a fastboot command.
 
     Returns:
         The command output.
     """
-    serial = context.device
-    if not serial:
-        log.error("Unknown device")
-    return tubes.process.process(['fastboot', '-s', serial] + list(args), **kw).recvall()
+    argv = ['fastboot', '-s', str(context.device)] + list(args)
+    return tubes.process.process(argv, *a, **kw).recvall()
 
 @with_device
 def fingerprint():
