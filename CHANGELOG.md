@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.4.0](#340)    | `dev`    | Feb 4, 2017 (planned)
 | [3.3.0](#330)    | `beta`   | Dec 24, 2016 (planned)
-| [3.2.0](#320)    | `stable` | Nov 12, 2016
+| [3.2.1](#321)    | `stable` | Dec 24, 2016
+| [3.2.0](#320)    |          | Nov 12, 2016
 | [3.1.1](#311)    |          | Oct 23, 2016
 | [3.1.0](#310)    |          | Oct 2, 2016
 | [3.0.4](#304)    |          | Sept 19, 2016
@@ -29,11 +30,37 @@ To be released on Feb 4, 2017.
 
 To be released on Dec 24, 2016.
 
+## 3.2.1
+
+Multiple bug fixes.
+
+- [#783][783] Fix `adb.uninstall` typo
+- [#787][787] Added error handling for `ssh.process` argument `preexec_fn`
+- [#793][793] Fixed progress message in `remote()` when connections failed
+- [#802][802] Fixed partition listing in `adb.partitions`, which accidentally shelled out to the `adb` binary
+- [#804][804] Fix error message for 32-bit distributions
+- [#805][805] Fix exception in `Core.segments` when a segment has no name
+- [#811][811] Fixes and performance improvements for `adb.wait_for_device()`
+- [#813][813] Fixed a release script
+- [#814][814] Fixed exceptions thrown if the `$HOME` directory is not writable
+- [#815][815] Properly handle `None` in `MemLeak`
+
+[783]: https://github.com/Gallopsled/pwntools/pull/783
+[787]: https://github.com/Gallopsled/pwntools/pull/787
+[793]: https://github.com/Gallopsled/pwntools/pull/793
+[802]: https://github.com/Gallopsled/pwntools/pull/802
+[804]: https://github.com/Gallopsled/pwntools/pull/804
+[805]: https://github.com/Gallopsled/pwntools/pull/805
+[811]: https://github.com/Gallopsled/pwntools/pull/811
+[813]: https://github.com/Gallopsled/pwntools/pull/813
+[814]: https://github.com/Gallopsled/pwntools/pull/814
+[815]: https://github.com/Gallopsled/pwntools/pull/815
+
 ## 3.2.0
 
 - [#695][695] Fixed a performance regression in `phd`.
-- [452605e][452605e] Fixed [#629][#629] related to correct removal of temporary files.
-- [ea94ee4][ea94ee4] Disallows semi-colons in for the `run_in_terminal` function, since it did not work properly in all cases. 
+- [452605e][452605e] Fixed [#629][629] related to correct removal of temporary files.
+- [ea94ee4][ea94ee4] Disallows semi-colons in for the `run_in_terminal` function, since it did not work properly in all cases.
 - [6376d07][6376d07] Added the mips shellcode `pushstr_array`.
 - [#700][700] Added missing MIPS shellcode documentation to readthedocs, and enabled unit tests
 - [#701][701] Command line tools refactored to have a common `pwn` entry point.
@@ -65,6 +92,7 @@ To be released on Dec 24, 2016.
     + It is now possible to e.g. `map(lambda d: d.process(['id']).recvall(), adb.devices())`
 
 
+[629]: https://github.com/Gallopsled/pwntools/issues/629
 [695]: https://github.com/Gallopsled/pwntools/pull/695
 [700]: https://github.com/Gallopsled/pwntools/pull/700
 [701]: https://github.com/Gallopsled/pwntools/pull/701
