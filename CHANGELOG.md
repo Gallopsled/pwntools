@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.4.0](#340)    | `dev`    | Feb 4, 2017 (planned)
 | [3.3.0](#330)    | `beta`   | Dec 24, 2016 (planned)
-| [3.2.0](#320)    | `stable` | Nov 12, 2016
+| [3.2.1](#321)    | `stable` | Dec 24, 2016
+| [3.2.0](#320)    |          | Nov 12, 2016
 | [3.1.1](#311)    |          | Oct 23, 2016
 | [3.1.0](#310)    |          | Oct 2, 2016
 | [3.0.4](#304)    |          | Sept 19, 2016
@@ -39,11 +40,13 @@ To be released on Feb 4, 2017.
 
 ## 3.3.0
 
+To be released on Dec 24, 2016.
+
 - [b198ec8][b198ec8] Added `tube.stream()` function, which is like `tube.interact()` without a prompt or keyboard input.
     + Effectively, this is similar to `cat file` and just prints data as fast as it is received.
 - [aec3fa6][aec3fa6] Disable update checks against GitHub
     + These checks frequently broke due to GitHub query limits
-- [#757][757] Fixed adb.wait_for_device() re-use of the same connection
+- [#757][757] Fixed `adb.wait_for_device()` re-use of the same connection
 - [f9133b1][f9133b1] Add a `STDERR` magic argument to make logging go to `stderr` instead of `stdout`
     + Usage is e.g. `python foo.py STDERR` or `PWNLIB_STDERR=1 python foo.py`
     + Also adds `context.log_console` to log to any file or terminal
@@ -97,7 +100,7 @@ Multiple bug fixes.
 
 - [#695][695] Fixed a performance regression in `phd`.
 - [452605e][452605e] Fixed [#629][629] related to correct removal of temporary files.
-- [ea94ee4][ea94ee4] Disallows semi-colons in for the `run_in_terminal` function, since it did not work properly in all cases. 
+- [ea94ee4][ea94ee4] Disallows semi-colons in for the `run_in_terminal` function, since it did not work properly in all cases.
 - [6376d07][6376d07] Added the mips shellcode `pushstr_array`.
 - [#700][700] Added missing MIPS shellcode documentation to readthedocs, and enabled unit tests
 - [#701][701] Command line tools refactored to have a common `pwn` entry point.
