@@ -41,6 +41,9 @@ for filename in glob.glob('pwnlib/commandline/*'):
     if not flag:
         console_scripts.append(script)
 
+scaffolds = ['remote=pwnlib.scaffolds:RemoteExploitTemplate']
+# Todo: Auto load all scaffolds
+
 install_requires     = ['paramiko>=1.15.2',
                         'mako>=1.0.0',
                         'pyelftools>=0.2.4',
@@ -61,7 +64,8 @@ install_requires     = ['paramiko>=1.15.2',
 PythonH = os.path.join(get_python_inc(), 'Python.h')
 if not os.path.exists(PythonH):
     print >> sys.stderr, "You must install the Python development headers!"
-    print >> sys.stderr, "$ apt-get install python-dev"
+    print >> sys.stderr, "Debian: $ apt-get install python-dev"
+    print >> sys.stderr, "OpenSuse: $ zypper install python-devel"
     sys.exit(-1)
 
 # Convert README.md to reStructuredText for PyPI
@@ -93,7 +97,8 @@ setup(
             'data/includes/*/*.h',
         ] + templates,
     },
-    entry_points = {'console_scripts': console_scripts},
+    entry_points = {'console_scripts': console_scripts,
+                    'pwnlib.scaffolds': scaffolds},
     scripts              = glob.glob("bin/*"),
     description          = "Pwntools CTF framework and exploit development library.",
     long_description     = long_description,
