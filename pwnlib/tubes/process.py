@@ -351,7 +351,7 @@ class process(tube):
                     ctypes.CDLL('libc.so.6').personality(ADDR_NO_RANDOMIZE)
 
                 resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
-            except:
+            except Exception:
                 self.exception("Could not disable ASLR")
 
         # Assume that the user would prefer to have core dumps.
@@ -368,7 +368,7 @@ class process(tube):
             try:
                 PR_SET_NO_NEW_PRIVS = 38
                 ctypes.CDLL('libc.so.6').prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)
-            except:
+            except Exception:
                 pass
 
         # Avoid issues with attaching to processes when yama-ptrace is set
@@ -376,7 +376,7 @@ class process(tube):
             PR_SET_PTRACER = 0x59616d61
             PR_SET_PTRACER_ANY = -1
             ctypes.CDLL('libc.so.6').prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0)
-        except:
+        except Exception:
             pass
 
 
