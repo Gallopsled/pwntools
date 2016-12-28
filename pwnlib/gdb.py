@@ -302,6 +302,12 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
 
         if context.os == 'android':
             pre += 'set gnutarget ' + _bfdname() + '\n'
+    elif isinstance(target, tubes.process.process):
+        # All processes spawned disable YAMA ptrace mitigations
+        pass
+    elif isinstance(target, tubes.ssh.ssh_channel):
+        # All SSH processes spawned disable YAMA ptrace mitigations
+        pass
     else:
         # If ptrace_scope is set and we're not root, we cannot attach to a
         # running process*.
