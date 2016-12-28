@@ -830,7 +830,7 @@ class process(tube):
             >>> e = ELF('/bin/sh')
             >>> p = process(e.path)
             >>> p.leak(e.address, 4)
-            '\7xELF'
+            '\x7fELF'
         """
         # If it's running under qemu-user, don't leak anything.
         if 'qemu-' in os.path.realpath('/proc/%i/exe' % self.pid):
