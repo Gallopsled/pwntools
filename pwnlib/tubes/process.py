@@ -476,7 +476,9 @@ class process(tube):
         # Either there is a path component, or the binary is not in $PATH
         # For example, 'foo/bar' or 'bar' with cwd=='foo'
         elif os.path.sep not in executable:
+            tmp = executable
             executable = os.path.join(cwd, executable)
+            log.warn_once("Could not find executable %r in $PATH, using %r instead" % (tmp, executable))
 
         if not os.path.exists(executable):
             self.error("%r does not exist"  % executable)
