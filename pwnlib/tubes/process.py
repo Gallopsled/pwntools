@@ -808,6 +808,9 @@ class process(tube):
         """
         filename = 'core.%i' % (self.pid)
 
+        if not which('gcore'):
+            self.error("Cannot generate corefile without GDB installed")
+
         gcore = process(['gcore', '-o', 'core', str(self.pid)])
 
         data = gcore.recvall()

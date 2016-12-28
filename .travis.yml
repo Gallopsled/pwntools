@@ -13,6 +13,7 @@ addons:
     - mksh
     - zsh
     - pandoc
+    - gdb
 cache:
     - pip
     - directories:
