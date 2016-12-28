@@ -819,7 +819,7 @@ class process(tube):
         return pwnlib.elf.corefile.Core(filename)
 
     def leak(self, address, count=1):
-        """Leaks memory within the process at the specified address.
+        r"""Leaks memory within the process at the specified address.
 
         Arguments:
             address(int): Address to leak memory at
