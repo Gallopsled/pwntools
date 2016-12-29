@@ -66,11 +66,19 @@ class MemLeak(object):
             leaking 0xff
             leaking 0x103
             True
+
+            >>> memory = {-4+i: c for i,c in enumerate('wxyzABCDE')}
+            >>> def relative_leak(index):
+            ...     return memory.get(index, None)
+            >>> leak = pwnlib.memleak.MemLeak(relative_leak, relative = True)
+            >>> leak[-1:2]
+            'zAB'
     """
-    def __init__(self, f, search_range = 20, reraise = True):
+    def __init__(self, f, search_range = 20, reraise = True, relative = False):
         self.leak = f
         self.search_range = search_range
         self.reraise = reraise
+        self.relative = relative
 
         # Map of address: byte for all bytes received
         self.cache = {}
@@ -166,7 +174,7 @@ class MemLeak(object):
         Returns:
             A string of length ``n``, or ``None``.
         """
-        if addr < 0:
+        if not self.relative and addr < 0:
             return None
 
         addresses = [addr+i for i in xrange(n)]
@@ -617,3 +625,8 @@ class MemLeak(object):
     p32 = setd
     p16 = setw
     p8 = setb
+
+class RelativeMemLeak(MemLeak):
+    def __init__(self, *a, **kw):
+        kw.setdefault('relative', True)
+        super(RelativeMemLeak, self).__init__(*a, **kw)
