@@ -629,4 +629,4 @@ class MemLeak(object):
 class RelativeMemLeak(MemLeak):
     def __init__(self, *a, **kw):
         kw.setdefault('relative', True)
-        return super(RelativeMemLeak, self).__init__(*a, **kw)
+        super(RelativeMemLeak, self).__init__(*a, **kw)
