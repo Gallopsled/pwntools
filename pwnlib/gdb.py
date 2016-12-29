@@ -271,8 +271,7 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True, gdb_arg
         exe(str): The path of the target binary.
         arch(str): Architechture of the target binary.  If `exe` known GDB will
           detect the architechture automatically (if it is supported).
-        gdb_args(list): List of arguments to pass to GDB.  Arug
-
+        gdb_args(list): List of arguments to pass to GDB.
 
     Returns:
         PID of the GDB process, or the window which it is running in.
@@ -447,10 +446,13 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True, gdb_arg
         cmd += ' -x "%s"' % (tmp.name)
 
     log.info('running in new terminal: %s' % cmd)
-    misc.run_in_new_terminal(cmd)
+
+    gdb_pid = misc.run_in_new_terminal(cmd)
+
     if pid and context.native:
         proc.wait_for_debugger(pid)
-    return pid
+
+    return gdb_pid
 
 def ssh_gdb(ssh, process, execute = None, arch = None, **kwargs):
     if isinstance(process, (list, tuple)):
@@ -619,8 +621,9 @@ def corefile(process):
     temp = tempfile.NamedTemporaryFile(prefix='pwn-corefile-')
 
     # Due to https://sourceware.org/bugzilla/show_bug.cgi?id=16092
-    # we cannot use gcore to generate core-files, as it will not
-    # contain all memory.
+    # we cannot* use gcore to generate core-files, as it will not
+    # contain all memory -- unless we want to add version detection.
+    # Easier to just work around it for all versions.
     gdb_args = ['--batch',
                 '-q',
                 '--nx',
@@ -629,7 +632,7 @@ def corefile(process):
                 '-ex', '"gcore %s"' % temp.name,
                 '-ex', '"detach"']
 
-    with context.local(terminal = ['sh', '-c', 'exec']):
+    with context.local(terminal = ['sh', '-c']):
         pid = attach(process, gdb_args=gdb_args)
 
         while pid in proc.all_pids():
