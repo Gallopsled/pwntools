@@ -210,7 +210,10 @@ def run_in_new_terminal(command, terminal = None, args = None):
     if not terminal_path:
         log.error('Could not find terminal: %s' % terminal)
 
+    # Handle rxvt/urxvt
     argv = [terminal_path] + args
+    if terminal in ('urxvt', 'rxvt'):
+        argv = [terminal_path, '--hold', '-e', 'bash', '-c'] + args
 
     if isinstance(command, str):
         if ';' in command:
