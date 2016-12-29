@@ -11,7 +11,6 @@ import resource
 import select
 import signal
 import subprocess
-import tempfile
 import tty
 
 from pwnlib.context import context

@@ -249,7 +249,7 @@ def get_gdb_arch():
 
 
 @LocalContext
-def attach(target, execute = None, exe = None, need_ptrace_scope = True, gdb_args = []):
+def attach(target, execute = None, exe = None, need_ptrace_scope = True, gdb_args = None):
     """attach(target, execute = None, exe = None, arch = None) -> None
 
     Start GDB in a new terminal and attach to `target`.
