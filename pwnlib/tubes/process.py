@@ -820,7 +820,7 @@ class process(tube):
 
             >>> proc = process('bash')
             >>> proc.corefile.read(proc.elf.address, 4)
-            '\x7fELF'
+            'LOLELF'
         """
         import pwnlib.gdb
         return pwnlib.gdb.corefile(self)
