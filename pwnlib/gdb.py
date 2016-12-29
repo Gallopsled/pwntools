@@ -625,7 +625,7 @@ def corefile(process):
     # we cannot* use gcore to generate core-files, as it will not
     # contain all memory -- unless we want to add version detection.
     # Easier to just work around it for all versions.
-    gdb_args = ['--batch',
+    gdb_args = ['-batch',
                 '-q',
                 '--nx',
                 '--nh',
@@ -635,8 +635,6 @@ def corefile(process):
 
     with context.local(terminal = ['sh', '-c']):
         pid = attach(process, gdb_args=gdb_args)
-
-        while pid in proc.all_pids():
-            time.sleep(0.1)
+        os.waitpid(pid, 0)
 
     return elf.corefile.Core(temp.name)
