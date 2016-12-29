@@ -5,6 +5,7 @@ import random
 import re
 import shlex
 import tempfile
+import time
 
 from pwnlib import adb
 from pwnlib import atexit
