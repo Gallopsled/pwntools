@@ -41,8 +41,8 @@ for filename in glob.glob('pwnlib/commandline/*'):
     if not flag:
         console_scripts.append(script)
 
-scaffolds = ['remote=pwnlib.scaffolds:RemoteExploitTemplate']
-# Todo: Auto load all scaffolds
+scaffolds = ['remote=pwnlib.scaffolds.remote:RemoteExploitTemplate',
+             'web=pwnlib.scaffolds.web:WebExploitTemplate']
 
 install_requires     = ['paramiko>=1.15.2',
                         'mako>=1.0.0',
@@ -98,7 +98,7 @@ setup(
         ] + templates,
     },
     entry_points = {'console_scripts': console_scripts,
-                    'pwnlib.scaffolds': scaffolds},
+                    'pwnlib.scaffold': scaffolds},
     scripts              = glob.glob("bin/*"),
     description          = "Pwntools CTF framework and exploit development library.",
     long_description     = long_description,

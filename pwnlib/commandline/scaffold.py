@@ -36,12 +36,10 @@ parser.add_argument('output_file',
 
 def show_scaffolds():
     scaffolds = all_scaffolds()
-    print(scaffolds)
-    scaffolds = sorted(scaffolds, key=lambda x: x.name)
     if scaffolds:
-        max_name = max([len(t.name) for t in scaffolds])
+        max_name = max([len(t.name) for t in scaffolds.values()])
         sys.stdout.write('Available scaffolds:\n')
-        for scaffold in scaffolds:
+        for scaffold in scaffolds.values():
             sys.stdout.write('  %s:%s  %s\n' % (
                 scaffold.name,
                 ' ' * (max_name - len(scaffold.name)), scaffold.summary))
@@ -50,13 +48,13 @@ def show_scaffolds():
     return 0
 
 def all_scaffolds():
-    scaffolds = []
+    scaffolds = dict()
     eps = list(pkg_resources.iter_entry_points('pwnlib.scaffold'))
     for entry in eps:
         try:
             scaffold_class = entry.load()
-            scaffold = scaffold_class(entry.name)
-            scaffolds.append(scaffold)
+            scaffold = scaffold_class()
+            scaffolds[entry.name] = scaffold
         except Exception as e:  # pragma: no cover
             sys.stdout.write('Warning: could not load entry point %s (%s: %s)\n' % (
                 entry.name, e.__class__.__name__, e))
@@ -72,7 +70,37 @@ def main(args):
         return
 
     scaffolds = all_scaffolds()
-    print("Using Template: %s" % args.template)
+    for name in args.scaffold_name:
+        print("Using Scaffold: %s" % name)
+
+    if not args.output_file:
+        output = "pwn.py"
+        fd = open(output, 'w')
+    else:
+        output = args.output_file
+        fd = open(output, 'w')
+
+    if output == "-":
+        output = "stdout"
+        fd = sys.stdout
+
+    print("Output %s" % output)
+
+    for name in args.scaffold_name:
+        try:
+            template = scaffolds[name].build()
+        except KeyError:
+            print("No such scaffold")
+            continue
+
+
+        # Todo: Check for old files
+        # Todo: Handle multiple templates at once.
+        fd.write(template)
+        try:
+            fd.close()
+        except:
+            pass
 
 if __name__ == '__main__':
     pwnlib.common.main(__file__)
