@@ -249,7 +249,7 @@ def get_gdb_arch():
 
 
 @LocalContext
-def attach(target, execute = None, exe = None, need_ptrace_scope = True):
+def attach(target, execute = None, exe = None, need_ptrace_scope = True, gdb_args = []):
     """attach(target, execute = None, exe = None, arch = None) -> None
 
     Start GDB in a new terminal and attach to `target`.
@@ -266,15 +266,17 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
     If `gdb-multiarch` is installed we use that or 'gdb' otherwise.
 
     Arguments:
-      target: The target to attach to.
-      execute (str or file): GDB script to run after attaching.
-      exe (str): The path of the target binary.
-      arch (str): Architechture of the target binary.  If `exe` known GDB will
-      detect the architechture automatically (if it is supported).
+        target: The target to attach to.
+        execute (str or file): GDB script to run after attaching.
+        exe(str): The path of the target binary.
+        arch(str): Architechture of the target binary.  If `exe` known GDB will
+          detect the architechture automatically (if it is supported).
+        gdb_args(list): List of arguments to pass to GDB.  Arug
+
 
     Returns:
-      :const:`None`
-"""
+        PID of the GDB process, or the window which it is running in.
+    """
     if context.noptrace:
         log.warn_once("Skipping debug attach since context.noptrace==True")
         return
@@ -408,6 +410,10 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
             break
     else:
         log.error('no gdb installed')
+
+    if gdb_args:
+        cmd += ' '
+        cmd += ' '.join(gdb_args)
 
     cmd += ' -q '
 
@@ -600,3 +606,33 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         rv.append(lib)
 
     return rv
+
+def corefile(process):
+    r"""Drops a core file for the process.
+
+    Arguments:
+        process: Process to dump
+
+    Returns:
+        A ``pwnlib.elf.corefile.Core`` object.
+    """
+    temp = tempfile.NamedTemporaryFile(prefix='pwn-corefile-')
+
+    # Due to https://sourceware.org/bugzilla/show_bug.cgi?id=16092
+    # we cannot use gcore to generate core-files, as it will not
+    # contain all memory.
+    gdb_args = ['--batch',
+                '-q',
+                '--nx',
+                '--nh',
+                '-ex', '"set use-coredump-filter on"',
+                '-ex', '"gcore %s"' % temp.name,
+                '-ex', '"detach"']
+
+    with context.local(terminal = ['sh', '-c', 'exec']):
+        pid = attach(process, gdb_args=gdb_args)
+
+        while pid in proc.all_pids():
+            time.sleep(0.1)
+
+    return elf.corefile.Core(temp.name)

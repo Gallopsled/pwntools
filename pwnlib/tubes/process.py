@@ -11,6 +11,7 @@ import resource
 import select
 import signal
 import subprocess
+import tempfile
 import tty
 
 from pwnlib.context import context
@@ -279,6 +280,7 @@ class process(tube):
 
         self.preexec_fn = preexec_fn
         self.display    = display or self.program
+        self.__qemu     = False
 
         message = "Starting %s process %r" % (where, self.display)
 
@@ -410,6 +412,7 @@ class process(tube):
             if self.argv:
                 args += ['-0', self.argv[0]]
             args += ['--']
+            self.__qemu = True
             return [args, qemu]
 
         # If we get here, we couldn't run the binary directly, and
@@ -799,29 +802,28 @@ class process(tube):
                 return e
 
     @property
+    def elf(self):
+        """elf() -> pwnlib.elf.elf.ELF
+
+        Returns an ELF file for the executable that launched the process.
+        """
+        import pwnlib.elf
+        return pwnlib.elf.elf.ELF(self.executable)
+
+    @property
     def corefile(self):
-        """Drops a core file for the process.
+        """corefile() -> pwnlib.elf.elf.Core
+
+        Returns a corefile for the process.
 
         Example:
 
-            >>> e = ELF('/bin/sh')
-            >>> p = process(e.path)
-            >>> c = p.corefile
+            >>> proc = process('bash')
+            >>> proc.corefile.read(proc.elf.address, 4)
+            '\x7fELF'
         """
-        filename = 'core.%i' % (self.pid)
-
-        if not which('gcore'):
-            self.error("Cannot generate corefile without GDB installed")
-
-        gcore = process(['gcore', '-o', 'core', str(self.pid)])
-
-        data = gcore.recvall()
-
-        if gcore.poll() != 0:
-            log.error(message)
-
-        import pwnlib.elf.corefile
-        return pwnlib.elf.corefile.Core(filename)
+        import pwnlib.gdb
+        return pwnlib.gdb.corefile(self)
 
     def leak(self, address, count=1):
         r"""Leaks memory within the process at the specified address.

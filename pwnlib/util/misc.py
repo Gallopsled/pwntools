@@ -188,7 +188,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
       args (list): Arguments to pass to the terminal
 
     Returns:
-      None
+      PID of the new terminal process
     """
 
     if not terminal:
@@ -223,7 +223,9 @@ def run_in_new_terminal(command, terminal = None, args = None):
 
     log.debug("Launching a new terminal: %r" % argv)
 
-    if os.fork() == 0:
+    pid = os.fork()
+
+    if pid == 0:
         # Closing the file descriptors makes everything fail under tmux on OSX.
         if platform.system() != 'Darwin':
             os.close(0)
@@ -231,6 +233,8 @@ def run_in_new_terminal(command, terminal = None, args = None):
             os.close(2)
         os.execv(argv[0], argv)
         os._exit(1)
+
+    return pid
 
 def parse_ldd_output(output):
     """Parses the output from a run of 'ldd' on a binary.
