@@ -12,6 +12,7 @@ from . import errno
 from . import hex
 from . import phd
 from . import pwnstrip
+from . import scaffold
 from . import scramble
 from . import shellcraft
 from . import unhex
@@ -31,6 +32,7 @@ commands = {
     'hex': hex.main,
     'phd': phd.main,
     'pwnstrip': pwnstrip.main,
+    'scaffold': scaffold.main,
     'scramble': scramble.main,
     'shellcraft': shellcraft.main,
     'unhex': unhex.main,
