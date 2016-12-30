@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-import argparse
 import sys
 import pkg_resources
 
@@ -97,10 +96,7 @@ def main(args):
         # Todo: Check for old files
         # Todo: Handle multiple templates at once.
         fd.write(template)
-        try:
-            fd.close()
-        except:
-            pass
+        fd.close()
 
 if __name__ == '__main__':
     pwnlib.common.main(__file__)
