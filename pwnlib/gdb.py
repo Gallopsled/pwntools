@@ -635,7 +635,7 @@ def corefile(process):
 
     # Due to https://sourceware.org/bugzilla/show_bug.cgi?id=16092
     # will disregard coredump_filter, and will not dump private mappings.
-    if version() < (7,111):
+    if version() < (7,11):
         log.warn_once('The installed GDB (%s) does not emit core-dumps which '
                       'contain all of the data in the process.\n'
                       'Upgrade to GDB >= 7.11 for better core-dumps.' % binary())
