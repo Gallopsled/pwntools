@@ -817,7 +817,7 @@ class process(tube):
         Example:
 
             >>> proc = process('bash')
-            >>> proc.executable in proc.corefile.maps
+            >>> proc.corefile.elftype == 'core.elftype'
             True
         """
         import pwnlib.gdb
