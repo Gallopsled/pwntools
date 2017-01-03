@@ -1,10 +1,12 @@
+from __future__ import absolute_import
+
 import errno
 import socket
 
-from ..context import context
-from ..log import getLogger
-from ..timeout import Timeout
-from .sock import sock
+from pwnlib.context import context
+from pwnlib.log import getLogger
+from pwnlib.timeout import Timeout
+from pwnlib.tubes.sock import sock
 
 log = getLogger(__name__)
 

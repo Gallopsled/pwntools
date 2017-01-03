@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Abstracting ROP calls
 """
-from ..abi import ABI
-from ..context import context
-from ..util import packing
+from pwnlib.abi import ABI
+from pwnlib.context import context
+from pwnlib.util import packing
 
 
 class Unresolved(object):

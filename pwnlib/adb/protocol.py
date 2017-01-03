@@ -4,21 +4,23 @@ Implementation of the Android Debug Bridge (ADB) protocol, as far as Binjitsu ne
 Documentation is available here:
 https://android.googlesource.com/platform/system/core/+/master/adb/protocol.txt
 """
+from __future__ import absolute_import
+
 import functools
 import stat
 import time
 
-from ..context import context
-from ..log import Logger
-from ..log import getLogger
-from ..tubes.listen import listen
-from ..tubes.process import process
-from ..tubes.remote import remote
-from ..util.lists import group
-from ..util.misc import size
-from ..util.packing import p32
-from ..util.proc import pidof
-from ..util.sh_string import sh_string
+from pwnlib.context import context
+from pwnlib.log import Logger
+from pwnlib.log import getLogger
+from pwnlib.tubes.listen import listen
+from pwnlib.tubes.process import process
+from pwnlib.tubes.remote import remote
+from pwnlib.util.lists import group
+from pwnlib.util.misc import size
+from pwnlib.util.packing import p32
+from pwnlib.util.proc import pidof
+from pwnlib.util.sh_string import sh_string
 
 log = getLogger(__name__)
 

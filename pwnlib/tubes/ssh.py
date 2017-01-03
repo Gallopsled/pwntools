@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import inspect
 import logging
 import os
@@ -11,17 +13,17 @@ import threading
 import time
 import types
 
-from .. import term
-from ..context import context
-from ..log import Logger
-from ..log import getLogger
-from ..timeout import Timeout
-from ..util import hashes
-from ..util import misc
-from ..util import safeeval
-from ..util import sh_string
-from .process import process
-from .sock import sock
+from pwnlib import term
+from pwnlib.context import context
+from pwnlib.log import Logger
+from pwnlib.log import getLogger
+from pwnlib.timeout import Timeout
+from pwnlib.tubes.process import process
+from pwnlib.tubes.sock import sock
+from pwnlib.util import hashes
+from pwnlib.util import misc
+from pwnlib.util import safeeval
+from pwnlib.util import sh_string
 
 # Kill the warning line:
 # No handlers could be found for logger "paramiko.transport"
@@ -357,7 +359,7 @@ class ssh_channel(sock):
         If possible, it is adjusted to the correct address
         automatically.
         """
-        from ..elf import ELF
+        from pwnlib.elf import ELF
 
         for lib, address in self.libs().items():
             if 'libc.so' in lib:

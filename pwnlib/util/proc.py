@@ -1,11 +1,13 @@
+from __future__ import absolute_import
+
 import errno
 import socket
 import time
 
 import psutil
 
-from .. import tubes
-from ..log import getLogger
+from pwnlib import tubes
+from pwnlib.log import getLogger
 
 log = getLogger(__name__)
 

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-from .context import LocalContext
-from .context import context
+from __future__ import absolute_import
+
+from pwnlib.context import LocalContext
+from pwnlib.context import context
 
 
 class ABI(object):

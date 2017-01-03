@@ -39,6 +39,8 @@ Disassembly
     '   0:   b8 0b 00 00 00          mov    eax,0xb'
 
 """
+from __future__ import absolute_import
+
 import errno
 import os
 import platform
@@ -53,11 +55,11 @@ from glob import glob
 from os import environ
 from os import path
 
-from . import atexit
-from . import shellcraft
-from .context import LocalContext
-from .context import context
-from .log import getLogger
+from pwnlib import atexit
+from pwnlib import shellcraft
+from pwnlib.context import LocalContext
+from pwnlib.context import context
+from pwnlib.log import getLogger
 
 log = getLogger(__name__)
 

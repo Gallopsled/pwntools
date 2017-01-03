@@ -1,5 +1,7 @@
 # Promote useful stuff to toplevel
-from .toplevel import *
+from __future__ import absolute_import
+
+from pwn.toplevel import *
 
 pwnlib.args.initialize()
 pwnlib.log.install_default_handler()

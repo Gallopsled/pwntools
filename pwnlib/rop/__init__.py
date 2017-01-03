@@ -1,1 +1,1 @@
-from .rop import ROP
+from pwnlib.rop.rop import ROP

@@ -1,9 +1,11 @@
+from __future__ import absolute_import
+
 import socket
 import ssl as _ssl
 
-from ..log import getLogger
-from ..timeout import Timeout
-from .sock import sock
+from pwnlib.log import getLogger
+from pwnlib.timeout import Timeout
+from pwnlib.tubes.sock import sock
 
 log = getLogger(__name__)
 

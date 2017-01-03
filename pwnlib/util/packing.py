@@ -30,12 +30,14 @@ Examples:
     >>> with context.local(endian='big'): print repr(p(0x1ff))
     '\xff\x01'
 """
+from __future__ import absolute_import
+
 import struct
 import sys
 
-from . import iters
-from ..context import LocalContext
-from ..context import context
+from pwnlib.context import LocalContext
+from pwnlib.context import context
+from pwnlib.util import iters
 
 mod = sys.modules[__name__]
 
@@ -596,7 +598,7 @@ def fit(pieces=None, **kwargs):
 
     """
     # HACK: To avoid circular imports we need to delay the import of `cyclic`
-    from . import cyclic
+    from pwnlib.util import cyclic
 
     filler       = kwargs.pop('filler', cyclic.de_bruijn())
     length       = kwargs.pop('length', None)

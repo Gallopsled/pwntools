@@ -1,8 +1,10 @@
+from __future__ import absolute_import
+
 import time
 import types
 
-from . import term
-from .log import getLogger
+from pwnlib import term
+from pwnlib.log import getLogger
 
 log = getLogger(__name__)
 

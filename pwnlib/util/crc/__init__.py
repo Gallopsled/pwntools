@@ -11,14 +11,15 @@ the crc32-sum of ``'A'*40000``.
 
 An obvious optimization would be to actually generate some lookup-tables.
 """
+from __future__ import absolute_import
 
 import sys
 import types
 
-from . import known
-from .. import fiddling
-from .. import packing
-from .. import safeeval
+from pwnlib.util import fiddling
+from pwnlib.util import packing
+from pwnlib.util import safeeval
+from pwnlib.util.crc import known
 
 
 class BitPolynom(object):

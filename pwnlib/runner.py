@@ -1,9 +1,11 @@
+from __future__ import absolute_import
+
 import os
 import tempfile
 
-from .context import LocalContext
-from .elf import ELF
-from .tubes.process import process
+from pwnlib.context import LocalContext
+from pwnlib.elf import ELF
+from pwnlib.tubes.process import process
 
 __all__ = ['run_assembly', 'run_shellcode', 'run_assembly_exitcode', 'run_shellcode_exitcode']
 

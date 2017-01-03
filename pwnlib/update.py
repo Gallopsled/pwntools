@@ -12,6 +12,8 @@ every week.  It can be permanently disabled via:
     $ echo never > ~/.pwntools-cache/update
 
 """
+from __future__ import absolute_import
+
 import datetime
 import json
 import os
@@ -20,12 +22,12 @@ import xmlrpclib
 
 import packaging.version
 
-from .context import context
-from .log import getLogger
-from .util.misc import read
-from .util.misc import write
-from .util.web import wget
-from .version import __version__
+from pwnlib.context import context
+from pwnlib.log import getLogger
+from pwnlib.util.misc import read
+from pwnlib.util.misc import write
+from pwnlib.util.web import wget
+from pwnlib.version import __version__
 
 log = getLogger(__name__)
 

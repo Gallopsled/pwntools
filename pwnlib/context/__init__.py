@@ -4,6 +4,8 @@
 Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
+from __future__ import absolute_import
+
 import collections
 import functools
 import logging
@@ -19,8 +21,8 @@ import time
 
 import socks
 
-from ..device import Device
-from ..timeout import Timeout
+from pwnlib.device import Device
+from pwnlib.timeout import Timeout
 
 _original_socket = socket.socket
 
@@ -756,7 +758,7 @@ class ContextType(object):
 
         """
         # Cyclic imports... sorry Idolf.
-        from ..elf     import ELF
+        from pwnlib.elf     import ELF
 
         if not isinstance(binary, ELF):
             binary = ELF(binary)

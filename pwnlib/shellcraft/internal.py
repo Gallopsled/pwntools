@@ -1,7 +1,9 @@
+from __future__ import absolute_import
+
 import os
 from collections import defaultdict
 
-from ..context import context
+from pwnlib.context import context
 
 __all__ = ['make_function']
 

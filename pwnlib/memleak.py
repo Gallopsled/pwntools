@@ -1,11 +1,13 @@
+from __future__ import absolute_import
+
 import ctypes
 import functools
 import string
 
-from .context import context
-from .log import getLogger
-from .util.packing import pack
-from .util.packing import unpack
+from pwnlib.context import context
+from pwnlib.log import getLogger
+from pwnlib.util.packing import pack
+from pwnlib.util.packing import unpack
 
 log = getLogger(__name__)
 

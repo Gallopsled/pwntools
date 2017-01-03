@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
 import logging
 import re
 import string
@@ -7,15 +9,15 @@ import sys
 import threading
 import time
 
-from .. import atexit
-from .. import term
-from ..context import context
-from ..log import Logger
-from ..timeout import Timeout
-from ..util import fiddling
-from ..util import misc
-from ..util import packing
-from .buffer import Buffer
+from pwnlib import atexit
+from pwnlib import term
+from pwnlib.context import context
+from pwnlib.log import Logger
+from pwnlib.timeout import Timeout
+from pwnlib.tubes.buffer import Buffer
+from pwnlib.util import fiddling
+from pwnlib.util import misc
+from pwnlib.util import packing
 
 
 class tube(Timeout, Logger):

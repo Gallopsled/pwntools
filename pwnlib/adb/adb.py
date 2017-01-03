@@ -44,6 +44,8 @@ the ``pwnlib.adb`` module.
     adb.write('/data/local/tmp/foo', 'my data')
 
 """
+from __future__ import absolute_import
+
 import functools
 import glob
 import logging
@@ -57,14 +59,14 @@ import time
 
 import dateutil.parser
 
-from .. import atexit
-from .. import tubes
-from ..context import LocalContext
-from ..context import context
-from ..device import Device
-from ..log import getLogger
-from ..util import misc
-from .protocol import Client
+from pwnlib import atexit
+from pwnlib import tubes
+from pwnlib.adb.protocol import Client
+from pwnlib.context import LocalContext
+from pwnlib.context import context
+from pwnlib.device import Device
+from pwnlib.log import getLogger
+from pwnlib.util import misc
 
 log = getLogger(__name__)
 

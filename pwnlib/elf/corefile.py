@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import collections
 import ctypes
 
@@ -7,11 +9,11 @@ from elftools.common.utils import roundup
 from elftools.common.utils import struct_parse
 from elftools.construct import CString
 
-from ..context import context
-from ..log import getLogger
-from ..tubes.tube import tube
-from .datatypes import *
-from .elf import ELF
+from pwnlib.context import context
+from pwnlib.elf.datatypes import *
+from pwnlib.elf.elf import ELF
+from pwnlib.log import getLogger
+from pwnlib.tubes.tube import tube
 
 log = getLogger(__name__)
 

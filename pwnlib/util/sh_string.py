@@ -222,14 +222,16 @@ and should therefore be compatible with ``dash``.
 [openbsd]: http://man.openbsd.org/cgi-bin/man.cgi?query=sh#SHELL_GRAMMAR
 [busybox]: https://en.wikipedia.org/wiki/BusyBox#Features
 """
+from __future__ import absolute_import
+
 import string
 import subprocess
 
-from . import fiddling
-from ..context import context
-from ..log import getLogger
-from ..tubes.process import process
-from .misc import which
+from pwnlib.context import context
+from pwnlib.log import getLogger
+from pwnlib.tubes.process import process
+from pwnlib.util import fiddling
+from pwnlib.util.misc import which
 
 log = getLogger(__name__)
 

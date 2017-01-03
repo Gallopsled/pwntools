@@ -1,5 +1,7 @@
 """Exposes functionality for manipulating ELF files
 """
+from __future__ import absolute_import
+
 import codecs
 import mmap
 import os
@@ -15,17 +17,17 @@ from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 
-from .. import adb
-from ..asm import *
-from ..context import LocalContext
-from ..context import context
-from ..log import getLogger
-from ..qemu import get_qemu_arch
-from ..term import text
-from ..tubes.process import process
-from ..util import misc
-from ..util import packing
-from ..util import sh_string
+from pwnlib import adb
+from pwnlib.asm import *
+from pwnlib.context import LocalContext
+from pwnlib.context import context
+from pwnlib.log import getLogger
+from pwnlib.qemu import get_qemu_arch
+from pwnlib.term import text
+from pwnlib.tubes.process import process
+from pwnlib.util import misc
+from pwnlib.util import packing
+from pwnlib.util import sh_string
 
 log = getLogger(__name__)
 

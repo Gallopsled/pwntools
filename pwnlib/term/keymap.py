@@ -1,6 +1,9 @@
+from __future__ import absolute_import
+
+from pwnlib.term import key
+
 __all__ = ['Keymap']
 
-from . import key
 
 
 class Keymap:

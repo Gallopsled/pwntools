@@ -1,12 +1,13 @@
 #!/usr/bin/env python2
+from __future__ import absolute_import
+
 import argparse
 import os
 import sys
 import types
 
 from pwn import *
-
-from . import common
+from pwnlib.commandline import common
 
 
 #  ____  _          _ _                 __ _

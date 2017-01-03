@@ -1,10 +1,12 @@
 """Describes a way to submit a key to a key server.
 """
+from __future__ import absolute_import
+
 import os
 
-from ..args import args
-from ..log import getLogger
-from ..tubes.remote import remote
+from pwnlib.args import args
+from pwnlib.log import getLogger
+from pwnlib.tubes.remote import remote
 
 env_server  = args.get('FLAG_HOST', 'flag-submission-server').strip()
 env_port    = args.get('FLAG_PORT', '31337').strip()

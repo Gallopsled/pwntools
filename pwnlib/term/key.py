@@ -1,4 +1,4 @@
-__all__ = ['getch', 'getraw', 'get', 'unget']
+from __future__ import absolute_import
 
 import errno
 import os
@@ -6,8 +6,12 @@ import select
 import string
 import sys
 
-from . import keyconsts as kc
-from . import termcap
+from pwnlib.term import keyconsts as kc
+from pwnlib.term import termcap
+
+__all__ = ['getch', 'getraw', 'get', 'unget']
+
+
 
 try:    _fd = sys.stdin.fileno()
 except Exception: _fd = file('/dev/null', 'r').fileno()

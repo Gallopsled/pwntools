@@ -1,7 +1,9 @@
-from .context import LocalContext
-from .context import context
-from .log import getLogger
-from .util import misc
+from __future__ import absolute_import
+
+from pwnlib.context import LocalContext
+from pwnlib.context import context
+from pwnlib.log import getLogger
+from pwnlib.util import misc
 
 log = getLogger(__name__)
 

@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
 import os
 import tempfile
 
-from ..log import getLogger
-from .misc import size
+from pwnlib.log import getLogger
+from pwnlib.util.misc import size
 
 log = getLogger(__name__)
 

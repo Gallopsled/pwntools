@@ -1,4 +1,6 @@
-from ..i386.delta import i386DeltaEncoder
+from __future__ import absolute_import
+
+from pwnlib.encoders.i386.delta import i386DeltaEncoder
 
 
 class amd64DeltaEncoder(i386DeltaEncoder):

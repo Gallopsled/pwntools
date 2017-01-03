@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import ctypes
 import errno
 import fcntl
@@ -11,13 +13,13 @@ import signal
 import subprocess
 import tty
 
-from ..context import context
-from ..log import getLogger
-from ..qemu import get_qemu_user
-from ..timeout import Timeout
-from ..util.misc import parse_ldd_output
-from ..util.misc import which
-from .tube import tube
+from pwnlib.context import context
+from pwnlib.log import getLogger
+from pwnlib.qemu import get_qemu_user
+from pwnlib.timeout import Timeout
+from pwnlib.tubes.tube import tube
+from pwnlib.util.misc import parse_ldd_output
+from pwnlib.util.misc import which
 
 log = getLogger(__name__)
 
@@ -384,7 +386,7 @@ class process(tube):
         # Get the ELF binary for the target executable
         with context.quiet:
             # XXX: Cyclic imports :(
-            from ..elf import ELF
+            from pwnlib.elf import ELF
             binary = ELF(self.executable)
 
         # If we're on macOS, this will never work.  Bail now.
@@ -777,7 +779,7 @@ class process(tube):
         If possible, it is adjusted to the correct address
         automatically.
         """
-        from ..elf import ELF
+        from pwnlib.elf import ELF
 
         for lib, address in self.libs().items():
             if 'libc.so' in lib:

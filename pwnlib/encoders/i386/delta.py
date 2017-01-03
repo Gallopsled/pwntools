@@ -1,12 +1,14 @@
+from __future__ import absolute_import
+
 import collections
 from random import choice
 from random import randint
 
-from ...asm import asm
-from ...asm import disasm
-from ...context import context
-from ...util.fiddling import hexdump
-from ..encoder import Encoder
+from pwnlib.asm import asm
+from pwnlib.asm import disasm
+from pwnlib.context import context
+from pwnlib.encoders.encoder import Encoder
+from pwnlib.util.fiddling import hexdump
 
 
 '''

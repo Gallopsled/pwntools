@@ -1,9 +1,11 @@
+from __future__ import absolute_import
+
 import errno
 import select
 import socket
 
-from ..log import getLogger
-from .tube import tube
+from pwnlib.log import getLogger
+from pwnlib.tubes.tube import tube
 
 log = getLogger(__name__)
 

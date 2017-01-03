@@ -7,10 +7,10 @@ import socket
 import stat
 import string
 
-from . import fiddling
-from . import lists
-from ..context import context
-from ..log import getLogger
+from pwnlib.context import context
+from pwnlib.log import getLogger
+from pwnlib.util import fiddling
+from pwnlib.util import lists
 
 log = getLogger(__name__)
 

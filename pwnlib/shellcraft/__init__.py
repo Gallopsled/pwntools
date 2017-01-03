@@ -1,12 +1,14 @@
+from __future__ import absolute_import
+
 import os
 import re
 import sys
 from types import ModuleType
 
-from . import internal
-from .. import constants
-from ..context import context
-from ..util import packing
+from pwnlib import constants
+from pwnlib.context import context
+from pwnlib.shellcraft import internal
+from pwnlib.util import packing
 
 
 class module(ModuleType):
@@ -145,7 +147,7 @@ class module(ModuleType):
             s = packing.pack(s, *a, **kw)
         return '\0' not in s and '\n' not in s
 
-    import registers
+    from pwnlib.shellcraft import registers
 
 # To prevent garbage collection
 tether = sys.modules[__name__]
