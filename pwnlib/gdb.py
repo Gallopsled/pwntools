@@ -317,29 +317,6 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True, gdb_arg
 
         if context.os == 'android':
             pre += 'set gnutarget ' + _bfdname() + '\n'
-    elif isinstance(target, tubes.process.process):
-        # All processes spawned disable YAMA ptrace mitigations
-        pass
-    elif isinstance(target, tubes.ssh.ssh_channel):
-        # All SSH processes spawned disable YAMA ptrace mitigations
-        pass
-    else:
-        # If ptrace_scope is set and we're not root, we cannot attach to a
-        # running process*.
-        #
-        # We assume that we do not need this to be set if we are debugging on
-        # a different architecture (e.g. under qemu-user).
-        #
-        # *Unless the process explicitly called PR_SET_PTRACER.
-        try:
-            ptrace_scope = open('/proc/sys/kernel/yama/ptrace_scope').read().strip()
-            if need_ptrace_scope and ptrace_scope != '0' and os.geteuid() != 0:
-                msg =  'Disable ptrace_scope to attach to running processes.\n'
-                msg += 'More info: https://askubuntu.com/q/41629'
-                log.warning(msg)
-                return
-        except IOError:
-            pass
 
     # let's see if we can find a pid to attach to
     pid = None
