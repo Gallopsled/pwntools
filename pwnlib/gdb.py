@@ -678,5 +678,5 @@ def version(program='gdb'):
 
     with tubes.process.process([program, '--version'], level='error') as gdb:
         version = gdb.recvline().split()[-1]
-    major, minor = map(int, version.split('.'))
-    return (major, minor)
+    versions = tuple(map(int, version.split('.')))
+    return versions
