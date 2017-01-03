@@ -10,13 +10,14 @@
 #; This program is distributed in the hope that it will be useful,
 #; but WITHOUT ANY WARRANTY; without even the implied warranty of
 #; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+from __future__ import absolute_import
 
-from ... import shellcraft
-from ...asm import asm
-from ...context import context
-from ...util.fiddling import xor_pair
-from ...util.lists import group
-from ..encoder import Encoder
+from pwnlib import shellcraft
+from pwnlib.asm import asm
+from pwnlib.context import context
+from pwnlib.encoders.encoder import Encoder
+from pwnlib.util.fiddling import xor_pair
+from pwnlib.util.lists import group
 
 
 # Note shellcode assumes it's based at ecx

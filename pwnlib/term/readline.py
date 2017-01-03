@@ -1,7 +1,9 @@
-from . import keyconsts as kc
-from . import keymap as km
-from . import term
-from . import text
+from __future__ import absolute_import
+
+from pwnlib.term import keyconsts as kc
+from pwnlib.term import keymap as km
+from pwnlib.term import term
+from pwnlib.term import text
 
 cursor = text.reverse
 
@@ -403,7 +405,7 @@ def readline(_size = None, prompt = '', float = True, priority = 10):
 def init():
     # defer imports until initialization
     import sys, __builtin__
-    from ..util import safeeval
+    from pwnlib.util import safeeval
 
     class Wrapper:
         def __init__(self, fd):

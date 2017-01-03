@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
 import collections
 import random
 import re
 import string
 
-from ..context import LocalContext
-from ..context import context
-from ..log import getLogger
-from ..util.fiddling import hexdump
+from pwnlib.context import LocalContext
+from pwnlib.context import context
+from pwnlib.log import getLogger
+from pwnlib.util.fiddling import hexdump
 
 log = getLogger(__name__)
 

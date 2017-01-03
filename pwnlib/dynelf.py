@@ -47,20 +47,22 @@ Example
 
 DynELF
 """
+from __future__ import absolute_import
+
 import ctypes
 
 from elftools.elf.enums import ENUM_D_TAG
 
-from . import elf
-from . import libcdb
-from .context import context
-from .elf import ELF
-from .elf import constants
-from .log import getLogger
-from .memleak import MemLeak
-from .util.fiddling import enhex
-from .util.packing import unpack
-from .util.web import wget
+from pwnlib import elf
+from pwnlib import libcdb
+from pwnlib.context import context
+from pwnlib.elf import ELF
+from pwnlib.elf import constants
+from pwnlib.log import getLogger
+from pwnlib.memleak import MemLeak
+from pwnlib.util.fiddling import enhex
+from pwnlib.util.packing import unpack
+from pwnlib.util.web import wget
 
 log    = getLogger(__name__)
 sizeof = ctypes.sizeof

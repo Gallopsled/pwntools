@@ -1,22 +1,24 @@
+from __future__ import absolute_import
+
 import os
 import random
 import re
 import shlex
 import tempfile
 
-from . import adb
-from . import atexit
-from . import elf
-from . import tubes
-from .asm import _bfdname
-from .asm import make_elf
-from .asm import make_elf_from_assembly
-from .context import LocalContext
-from .context import context
-from .log import getLogger
-from .qemu import get_qemu_user
-from .util import misc
-from .util import proc
+from pwnlib import adb
+from pwnlib import atexit
+from pwnlib import elf
+from pwnlib import tubes
+from pwnlib.asm import _bfdname
+from pwnlib.asm import make_elf
+from pwnlib.asm import make_elf_from_assembly
+from pwnlib.context import LocalContext
+from pwnlib.context import context
+from pwnlib.log import getLogger
+from pwnlib.qemu import get_qemu_user
+from pwnlib.util import misc
+from pwnlib.util import proc
 
 log = getLogger(__name__)
 

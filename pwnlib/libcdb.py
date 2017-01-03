@@ -1,21 +1,23 @@
 """
 Fetch a LIBC binary based on some heuristics.
 """
+from __future__ import absolute_import
+
 import codecs
 import json
 import os
 import tempfile
 import urlparse
 
-from .context import context
-from .elf import ELF
-from .log import getLogger
-from .util.fiddling import b64d
-from .util.fiddling import hexdump
-from .util.misc import read
-from .util.misc import write
-from .util.safeeval import const
-from .util.web import wget
+from pwnlib.context import context
+from pwnlib.elf import ELF
+from pwnlib.log import getLogger
+from pwnlib.util.fiddling import b64d
+from pwnlib.util.fiddling import hexdump
+from pwnlib.util.misc import read
+from pwnlib.util.misc import write
+from pwnlib.util.safeeval import const
+from pwnlib.util.web import wget
 
 log = getLogger(__name__)
 

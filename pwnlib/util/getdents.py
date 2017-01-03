@@ -1,6 +1,8 @@
-from ..context import context
-from .fiddling import hexdump
-from .packing import unpack
+from __future__ import absolute_import
+
+from pwnlib.context import context
+from pwnlib.util.fiddling import hexdump
+from pwnlib.util.packing import unpack
 
 
 class linux_dirent(object):

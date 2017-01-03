@@ -1,7 +1,9 @@
+from __future__ import absolute_import
+
 import argparse
 import os
 
-from . import common
+from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'errno',

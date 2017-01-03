@@ -1,12 +1,14 @@
+from __future__ import absolute_import
+
 import sys
 
-from . import completer
-from . import key
-from . import keymap
-from . import readline
-from . import term
-from . import termcap
-from . import text
+from pwnlib.term import completer
+from pwnlib.term import key
+from pwnlib.term import keymap
+from pwnlib.term import readline
+from pwnlib.term import term
+from pwnlib.term import termcap
+from pwnlib.term import text
 
 # Re-exports (XXX: Are these needed?)
 output = term.output

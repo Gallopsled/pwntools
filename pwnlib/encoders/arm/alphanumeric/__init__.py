@@ -1,12 +1,13 @@
+from __future__ import absolute_import
+
 import binascii
 import random
 import string
 import sys
 
-import builder
-
-from ....context import context
-from ...encoder import Encoder
+from pwnlib.context import context
+from pwnlib.encoders.arm.alphanumeric import builder
+from pwnlib.encoders.encoder import Encoder
 
 
 class ArmEncoder(Encoder):

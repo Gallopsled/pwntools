@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
 import base64
 import random
 import re
 import string
 import StringIO
 
-from . import lists
-from . import packing
-from ..context import context
-from ..log import getLogger
-from ..term import text
-from .cyclic import cyclic
-from .cyclic import cyclic_find
+from pwnlib.context import context
+from pwnlib.log import getLogger
+from pwnlib.term import text
+from pwnlib.util import lists
+from pwnlib.util import packing
+from pwnlib.util.cyclic import cyclic
+from pwnlib.util.cyclic import cyclic_find
 
 log = getLogger(__name__)
 

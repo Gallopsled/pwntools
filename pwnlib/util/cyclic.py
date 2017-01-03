@@ -1,8 +1,10 @@
+from __future__ import absolute_import
+
 import string
 
-from . import packing
-from ..context import context
-from ..log import getLogger
+from pwnlib.context import context
+from pwnlib.log import getLogger
+from pwnlib.util import packing
 
 log = getLogger(__name__)
 

@@ -23,12 +23,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import absolute_import
 
-from ... import shellcraft
-from ...asm import asm
-from ...context import context
-from ...util.fiddling import xor_key
-from ..encoder import Encoder
+from pwnlib import asm
+from pwnlib import shellcraft
+from pwnlib.context import context
+from pwnlib.encoders.encoder import Encoder
+from pwnlib.util.fiddling import xor_key
 
 decoders = {
     'little': ''.join([

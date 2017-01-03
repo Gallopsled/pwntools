@@ -192,6 +192,8 @@ Let's try it out!
     >>> p.recvline()
     'hello\n'
 """
+from __future__ import absolute_import
+
 import collections
 import copy
 import hashlib
@@ -200,23 +202,23 @@ import re
 import sys
 import tempfile
 
-from . import srop
-from .. import abi
-from .. import constants
-from ..context import LocalContext
-from ..context import context
-from ..elf import ELF
-from ..log import getLogger
-from ..util import cyclic
-from ..util import lists
-from ..util import packing
-from ..util.packing import *
-from .call import AppendedArgument
-from .call import Call
-from .call import CurrentStackPointer
-from .call import NextGadgetAddress
-from .call import StackAdjustment
-from .gadgets import Gadget
+from pwnlib import abi
+from pwnlib import constants
+from pwnlib.context import LocalContext
+from pwnlib.context import context
+from pwnlib.elf import ELF
+from pwnlib.log import getLogger
+from pwnlib.rop import srop
+from pwnlib.rop.call import AppendedArgument
+from pwnlib.rop.call import Call
+from pwnlib.rop.call import CurrentStackPointer
+from pwnlib.rop.call import NextGadgetAddress
+from pwnlib.rop.call import StackAdjustment
+from pwnlib.rop.gadgets import Gadget
+from pwnlib.util import cyclic
+from pwnlib.util import lists
+from pwnlib.util import packing
+from pwnlib.util.packing import *
 
 log = getLogger(__name__)
 __all__ = ['ROP']

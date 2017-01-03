@@ -1,6 +1,18 @@
 """
 This module includes and extends the standard module :mod:`itertools`.
 """
+from __future__ import absolute_import
+
+import collections
+import copy
+import multiprocessing
+import operator
+import random
+import time
+from itertools import *
+
+from pwnlib.context import context
+from pwnlib.log import getLogger
 
 __all__ = [
     'bruteforce'                             ,
@@ -53,16 +65,7 @@ __all__ = [
     'tee'
 ]
 
-import collections
-import copy
-import multiprocessing
-import operator
-import random
-import time
-from itertools import *
 
-from ..context import context
-from ..log import getLogger
 
 log = getLogger(__name__)
 

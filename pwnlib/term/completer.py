@@ -1,7 +1,9 @@
+from __future__ import absolute_import
+
 import os
 import re
 
-from . import readline
+from pwnlib.term import readline
 
 
 class Completer:

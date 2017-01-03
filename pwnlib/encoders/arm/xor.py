@@ -1,10 +1,12 @@
-from ... import shellcraft
-from ...asm import asm
-from ...context import context
-from ...util.fiddling import xor_key
-from ...util.lists import group
-from ...util.packing import u8
-from ..encoder import Encoder
+from __future__ import absolute_import
+
+from pwnlib import shellcraft
+from pwnlib.asm import asm
+from pwnlib.context import context
+from pwnlib.encoders.encoder import Encoder
+from pwnlib.util.fiddling import xor_key
+from pwnlib.util.lists import group
+from pwnlib.util.packing import u8
 
 
 class ArmXorEncoder(Encoder):

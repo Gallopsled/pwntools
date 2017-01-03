@@ -1,8 +1,9 @@
+from __future__ import absolute_import
+
 import argparse
 
 from pwn import *
-
-from . import common
+from pwnlib.commandline import common
 
 p = common.parser_commands.add_parser(
     'pwnstrip',

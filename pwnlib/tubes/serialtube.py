@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import glob
 import platform
 import sys
@@ -5,10 +7,8 @@ import time
 
 import serial
 
-from . import tube
-from .. import context
-from .. import term
-from ..log import getLogger
+from pwnlib.log import getLogger
+from pwnlib.tubes import tube
 
 log = getLogger(__name__)
 

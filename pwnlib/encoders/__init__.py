@@ -2,14 +2,16 @@
 """
 Encode shellcode to avoid input filtering and impress your friends!
 """
-from . import amd64
-from . import arm
-from . import i386
-from . import mips
-from .encoder import Encoder
-from .encoder import alphanumeric
-from .encoder import encode
-from .encoder import line
-from .encoder import null
-from .encoder import printable
-from .encoder import scramble
+from __future__ import absolute_import
+
+from pwnlib.encoders import amd64
+from pwnlib.encoders import arm
+from pwnlib.encoders import i386
+from pwnlib.encoders import mips
+from pwnlib.encoders.encoder import Encoder
+from pwnlib.encoders.encoder import alphanumeric
+from pwnlib.encoders.encoder import encode
+from pwnlib.encoders.encoder import line
+from pwnlib.encoders.encoder import null
+from pwnlib.encoders.encoder import printable
+from pwnlib.encoders.encoder import scramble

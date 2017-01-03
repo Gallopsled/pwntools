@@ -39,14 +39,16 @@ not specified evaluate to an empty string.
 The full list of supported "magic arguments" and their effects are listed
 below.
 """
+from __future__ import absolute_import
+
 import collections
 import logging
 import os
 import string
 import sys
 
-from . import term
-from .context import context
+from pwnlib import term
+from pwnlib.context import context
 
 term_mode  = True
 args       = collections.defaultdict(str)

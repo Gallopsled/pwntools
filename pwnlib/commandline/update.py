@@ -1,9 +1,10 @@
 #!/usr/bin/env python2
+from __future__ import absolute_import
+
 import subprocess
 
 from pwn import *
-
-from . import common
+from pwnlib.commandline import common
 
 p = common.parser_commands.add_parser(
     'update',

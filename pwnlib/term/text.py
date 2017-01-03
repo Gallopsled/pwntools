@@ -1,8 +1,10 @@
+from __future__ import absolute_import
+
 import functools
 import sys
 import types
 
-from . import termcap
+from pwnlib.term import termcap
 
 
 def eval_when(when):

@@ -2,13 +2,15 @@
 """
 Topographical sort
 """
+from __future__ import absolute_import
+
 from collections import OrderedDict
 from collections import defaultdict
 from random import randint
 from random import shuffle
 
-from .context import context
-from .log import getLogger
+from pwnlib.context import context
+from pwnlib.log import getLogger
 
 log = getLogger(__name__)
 
