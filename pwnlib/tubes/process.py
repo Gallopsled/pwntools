@@ -817,8 +817,8 @@ class process(tube):
         Example:
 
             >>> proc = process('bash')
-            >>> proc.corefile.vdso.data[:4]
-            'LOLELF'
+            >>> proc.executable in proc.corefile.maps
+            True
         """
         import pwnlib.gdb
         return pwnlib.gdb.corefile(self)
