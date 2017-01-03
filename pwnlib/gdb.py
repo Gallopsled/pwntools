@@ -648,13 +648,16 @@ def version(program='gdb'):
 
     Example:
 
-        >>> version = gdb.version()
+        >>> version = version()
         >>> (7,0) <= version <= (8,0)
         True
     """
     program = misc.which(program)
+    expr = r'([0-9]+\.?)+'
 
     with tubes.process.process([program, '--version'], level='error') as gdb:
-        version = gdb.recvline().split()[-1]
-    versions = tuple(map(int, version.split('.')))
-    return versions
+        version = gdb.recvline()
+
+    versions = re.search(expr, version).group()
+
+    return tuple(map(int, versions.split('.')))
