@@ -101,6 +101,9 @@ class process(tube):
             List of arguments to display, instead of the main executable name.
         alarm(int):
             Set a SIGALRM alarm timeout on the process.
+        stopped(bool):
+            Start the process in ``STOPPED`` state.
+            Must attach a debugger, or use ``process.continue`` to resume execution.
 
     Attributes:
         proc(subprocess)
@@ -217,6 +220,7 @@ class process(tube):
                  where = 'local',
                  display = None,
                  alarm = None,
+                 stopped = False,
                  *args,
                  **kwargs
                  ):
@@ -552,13 +556,33 @@ class process(tube):
             return getattr(self.proc, attr)
         raise AttributeError("'process' object has no attribute '%s'" % attr)
 
-    def kill(self):
-        """kill()
+    def kill(self, signal=signal.SIGKILL):
+        """kill(signal=signal.SIGKILL)
 
         Kills the process.
-        """
 
+        Arguments:
+            signal(int): Signal to send to the process
+        """
+        if self.proc:
+            self.proc.send_signal(signal)
         self.close()
+
+    def stop(self):
+        """stop()
+
+        Stops the process with ``SIGSTOP``.
+        """
+        if self.proc:
+            self.proc.send_signal(signal.SIGSTOP)
+
+    def resume(self):
+        """continue()
+
+        Resumes the process with ``SIGCONT``.
+        """
+        if self.proc:
+            self.proc.send_signal(signal.SIGCONT)
 
     def poll(self, block = False):
         """poll(block = False) -> int

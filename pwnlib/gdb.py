@@ -248,6 +248,22 @@ def get_gdb_arch():
         'thumb': 'arm'
     }.get(context.arch, context.arch)
 
+def binary():
+    gdb = misc.which('gdb')
+
+    if not context.native:
+        multiarch = misc.which('gdb-multiarch')
+
+        if multiarch:
+            return multiarch
+        log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n' \
+                      '$ apt-get install gdb-multiarch')
+
+    if not gdb:
+        log.error('GDB is not installed\n'
+                  '$ apt-get install gdb')
+
+    return gdb
 
 @LocalContext
 def attach(target, execute = None, exe = None, need_ptrace_scope = True, gdb_args = None):
@@ -296,9 +312,6 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True, gdb_arg
     # gdb script to run before `execute`
     pre = ''
     if not context.native:
-        if not misc.which('gdb-multiarch'):
-            log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n' \
-                '$ apt-get install gdb-multiarch')
         pre += 'set endian %s\n' % context.endian
         pre += 'set architecture %s\n' % get_gdb_arch()
 
@@ -403,13 +416,7 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True, gdb_arg
     if not pid and not exe:
         log.error('could not find target process')
 
-    cmd = None
-    for p in ('gdb-multiarch', 'gdb'):
-        if misc.which(p):
-            cmd = p
-            break
-    else:
-        log.error('no gdb installed')
+    cmd = binary()
 
     if gdb_args:
         cmd += ' '
@@ -619,22 +626,57 @@ def corefile(process):
     Returns:
         A ``pwnlib.elf.corefile.Core`` object.
     """
+
+    if context.noptrace:
+        log.warn_once("Skipping corefile since context.noptrace==True")
+        return
+
     temp = tempfile.NamedTemporaryFile(prefix='pwn-corefile-')
 
     # Due to https://sourceware.org/bugzilla/show_bug.cgi?id=16092
-    # we cannot* use gcore to generate core-files, as it will not
-    # contain all memory -- unless we want to add version detection.
-    # Easier to just work around it for all versions.
+    # will disregard coredump_filter, and will not dump private mappings.
+    if version() < (7,111):
+        log.warn_once('The installed GDB (%s) does not emit core-dumps which '
+                      'contain all of the data in the process.\n'
+                      'Upgrade to GDB >= 7.11 for better core-dumps.' % binary())
+
+    # This is effectively the same as what the 'gcore' binary does
     gdb_args = ['-batch',
                 '-q',
                 '--nx',
-                '--nh',
+                '-ex', '"set pagination off"',
+                '-ex', '"set height 0"',
+                '-ex', '"set width 0"',
                 '-ex', '"set use-coredump-filter on"',
-                '-ex', '"gcore %s"' % temp.name,
-                '-ex', '"detach"']
+                '-ex', '"generate-core-file %s"' % temp.name,
+                '-ex', 'detach']
 
     with context.local(terminal = ['sh', '-c']):
         pid = attach(process, gdb_args=gdb_args)
         os.waitpid(pid, 0)
 
     return elf.corefile.Core(temp.name)
+
+def version(program='gdb'):
+    """Gets the current GDB version.
+
+    Note:
+        Requires that GDB version meets the following format:
+
+        ``GNU gdb (GDB) 7.12``
+
+    Returns:
+        A tuple
+
+    Example:
+
+        >>> version = gdb.version()
+        >>> (7,0) <= version <= (8,0)
+        True
+    """
+    program = misc.which(program)
+
+    with tubes.process.process([program, '--version'], level='error') as gdb:
+        version = gdb.recvline().split()[-1]
+    major, minor = map(int, version.split('.'))
+    return (major, minor)
