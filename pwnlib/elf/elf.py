@@ -708,7 +708,7 @@ class ELF(ELFFile):
         return curr_bss + offset
 
     def __repr__(self):
-        return "ELF(%r)" % self.path
+        return "%s(%r)" % (self.__class__.__name__, self.path)
 
     def dynamic_by_tag(self, tag):
         dt      = None
