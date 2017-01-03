@@ -652,8 +652,9 @@ def corefile(process):
                 '-ex', 'detach']
 
     with context.local(terminal = ['sh', '-c']):
-        pid = attach(process, gdb_args=gdb_args)
-        os.waitpid(pid, 0)
+        with context.quiet:
+            pid = attach(process, gdb_args=gdb_args)
+            os.waitpid(pid, 0)
 
     return elf.corefile.Core(temp.name)
 
