@@ -61,7 +61,7 @@ class process(tube):
             File object or file descriptor number to use for ``stderr``.
             By default, ``STDOUT`` is used.
             May also be ``PIPE`` to use a separate pipe,
-            although the ``tube`` wrapper will not be able to read this data.
+            although the :class:`pwnlib.tubes.tube.tube` wrapper will not be able to read this data.
         close_fds(bool):
             Close all open file descriptors except stdin, stdout, stderr.
             By default, :const:`True` is used.

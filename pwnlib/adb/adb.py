@@ -828,7 +828,7 @@ def logcat(stream=False):
 
     Returns:
         If ``stream`` is :const:`False`, returns a string containing the log data.
-        Otherwise, it returns a ``tube`` connected to the log output.
+        Otherwise, it returns a :class:`pwnlib.tubes.tube.tube` connected to the log output.
     """
 
     if stream:

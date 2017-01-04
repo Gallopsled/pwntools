@@ -202,7 +202,7 @@ class Client(Logger):
         r"""Executes a program on the device.
 
         Returns:
-            A ``tube`` which is connected to the process.
+            A :class:`pwnlib.tubes.tube.tube` which is connected to the process.
 
         Examples:
 

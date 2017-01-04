@@ -1151,7 +1151,7 @@ class ContextType(object):
 
     @_validator
     def buffer_size(self, size):
-        """Internal buffer size to use for ``tube`` objects.
+        """Internal buffer size to use for :class:`pwnlib.tubes.tube.tube` objects.
 
         This is not the maximum size of the buffer, but this is the amount of data
         which is passed to each raw ``read`` syscall (or equivalent).
