@@ -278,6 +278,7 @@ class process(tube):
 
         self.preexec_fn = preexec_fn
         self.display    = display or self.program
+        self.__qemu     = False
 
         message = "Starting %s process %r" % (where, self.display)
 
@@ -350,7 +351,7 @@ class process(tube):
                     ctypes.CDLL('libc.so.6').personality(ADDR_NO_RANDOMIZE)
 
                 resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
-            except:
+            except Exception:
                 self.exception("Could not disable ASLR")
 
         # Assume that the user would prefer to have core dumps.
@@ -367,8 +368,17 @@ class process(tube):
             try:
                 PR_SET_NO_NEW_PRIVS = 38
                 ctypes.CDLL('libc.so.6').prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)
-            except:
+            except Exception:
                 pass
+
+        # Avoid issues with attaching to processes when yama-ptrace is set
+        try:
+            PR_SET_PTRACER = 0x59616d61
+            PR_SET_PTRACER_ANY = -1
+            ctypes.CDLL('libc.so.6').prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0)
+        except Exception:
+            pass
+
 
         if self.alarm is not None:
             signal.alarm(self.alarm)
@@ -400,6 +410,7 @@ class process(tube):
             if self.argv:
                 args += ['-0', self.argv[0]]
             args += ['--']
+            self.__qemu = True
             return [args, qemu]
 
         # If we get here, we couldn't run the binary directly, and
@@ -466,7 +477,9 @@ class process(tube):
         # Either there is a path component, or the binary is not in $PATH
         # For example, 'foo/bar' or 'bar' with cwd=='foo'
         elif os.path.sep not in executable:
+            tmp = executable
             executable = os.path.join(cwd, executable)
+            log.warn_once("Could not find executable %r in $PATH, using %r instead" % (tmp, executable))
 
         if not os.path.exists(executable):
             self.error("%r does not exist"  % executable)
@@ -543,7 +556,6 @@ class process(tube):
 
         Kills the process.
         """
-
         self.close()
 
     def poll(self, block = False):
@@ -787,19 +799,42 @@ class process(tube):
                 return e
 
     @property
-    def corefile(self):
-        filename = 'core.%i' % (self.pid)
-        process(['gcore', '-o', 'core', str(self.pid)]).wait()
+    def elf(self):
+        """elf() -> pwnlib.elf.elf.ELF
 
-        import pwnlib.elf.corefile
-        return pwnlib.elf.corefile.Core(filename)
+        Returns an ELF file for the executable that launched the process.
+        """
+        import pwnlib.elf
+        return pwnlib.elf.elf.ELF(self.executable)
+
+    @property
+    def corefile(self):
+        """corefile() -> pwnlib.elf.elf.Core
+
+        Returns a corefile for the process.
+
+        Example:
+
+            >>> proc = process('bash')
+            >>> isinstance(proc.corefile, pwnlib.elf.corefile.Core)
+            True
+        """
+        import pwnlib.gdb
+        return pwnlib.gdb.corefile(self)
 
     def leak(self, address, count=1):
-        """Leaks memory within the process at the specified address.
+        r"""Leaks memory within the process at the specified address.
 
         Arguments:
             address(int): Address to leak memory at
             count(int): Number of bytes to leak at that address.
+
+        Example:
+
+            >>> e = ELF('/bin/sh')
+            >>> p = process(e.path)
+            >>> p.leak(e.address, 4)
+            '\x7fELF'
         """
         # If it's running under qemu-user, don't leak anything.
         if 'qemu-' in os.path.realpath('/proc/%i/exe' % self.pid):

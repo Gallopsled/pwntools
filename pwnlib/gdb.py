@@ -5,6 +5,7 @@ import random
 import re
 import shlex
 import tempfile
+import time
 
 from pwnlib import adb
 from pwnlib import atexit
@@ -247,9 +248,25 @@ def get_gdb_arch():
         'thumb': 'arm'
     }.get(context.arch, context.arch)
 
+def binary():
+    gdb = misc.which('gdb')
+
+    if not context.native:
+        multiarch = misc.which('gdb-multiarch')
+
+        if multiarch:
+            return multiarch
+        log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n' \
+                      '$ apt-get install gdb-multiarch')
+
+    if not gdb:
+        log.error('GDB is not installed\n'
+                  '$ apt-get install gdb')
+
+    return gdb
 
 @LocalContext
-def attach(target, execute = None, exe = None, need_ptrace_scope = True):
+def attach(target, execute = None, exe = None, need_ptrace_scope = True, gdb_args = None):
     """attach(target, execute = None, exe = None, arch = None) -> None
 
     Start GDB in a new terminal and attach to `target`.
@@ -266,15 +283,16 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
     If `gdb-multiarch` is installed we use that or 'gdb' otherwise.
 
     Arguments:
-      target: The target to attach to.
-      execute (str or file): GDB script to run after attaching.
-      exe (str): The path of the target binary.
-      arch (str): Architechture of the target binary.  If `exe` known GDB will
-      detect the architechture automatically (if it is supported).
+        target: The target to attach to.
+        execute (str or file): GDB script to run after attaching.
+        exe(str): The path of the target binary.
+        arch(str): Architechture of the target binary.  If `exe` known GDB will
+          detect the architechture automatically (if it is supported).
+        gdb_args(list): List of arguments to pass to GDB.
 
     Returns:
-      :const:`None`
-"""
+        PID of the GDB process, or the window which it is running in.
+    """
     if context.noptrace:
         log.warn_once("Skipping debug attach since context.noptrace==True")
         return
@@ -294,28 +312,11 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
     # gdb script to run before `execute`
     pre = ''
     if not context.native:
-        if not misc.which('gdb-multiarch'):
-            log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n' \
-                '$ apt-get install gdb-multiarch')
         pre += 'set endian %s\n' % context.endian
         pre += 'set architecture %s\n' % get_gdb_arch()
 
         if context.os == 'android':
             pre += 'set gnutarget ' + _bfdname() + '\n'
-    else:
-        # If ptrace_scope is set and we're not root, we cannot attach to a
-        # running process.
-        # We assume that we do not need this to be set if we are debugging on
-        # a different architecture (e.g. under qemu-user).
-        try:
-            ptrace_scope = open('/proc/sys/kernel/yama/ptrace_scope').read().strip()
-            if need_ptrace_scope and ptrace_scope != '0' and os.geteuid() != 0:
-                msg =  'Disable ptrace_scope to attach to running processes.\n'
-                msg += 'More info: https://askubuntu.com/q/41629'
-                log.warning(msg)
-                return
-        except IOError:
-            pass
 
     # let's see if we can find a pid to attach to
     pid = None
@@ -392,13 +393,11 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
     if not pid and not exe:
         log.error('could not find target process')
 
-    cmd = None
-    for p in ('gdb-multiarch', 'gdb'):
-        if misc.which(p):
-            cmd = p
-            break
-    else:
-        log.error('no gdb installed')
+    cmd = binary()
+
+    if gdb_args:
+        cmd += ' '
+        cmd += ' '.join(gdb_args)
 
     cmd += ' -q '
 
@@ -432,10 +431,13 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True):
         cmd += ' -x "%s"' % (tmp.name)
 
     log.info('running in new terminal: %s' % cmd)
-    misc.run_in_new_terminal(cmd)
+
+    gdb_pid = misc.run_in_new_terminal(cmd)
+
     if pid and context.native:
         proc.wait_for_debugger(pid)
-    return pid
+
+    return gdb_pid
 
 def ssh_gdb(ssh, process, execute = None, arch = None, **kwargs):
     if isinstance(process, (list, tuple)):
@@ -591,3 +593,70 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         rv.append(lib)
 
     return rv
+
+def corefile(process):
+    r"""Drops a core file for the process.
+
+    Arguments:
+        process: Process to dump
+
+    Returns:
+        A ``pwnlib.elf.corefile.Core`` object.
+    """
+
+    if context.noptrace:
+        log.warn_once("Skipping corefile since context.noptrace==True")
+        return
+
+    temp = tempfile.NamedTemporaryFile(prefix='pwn-corefile-')
+
+    # Due to https://sourceware.org/bugzilla/show_bug.cgi?id=16092
+    # will disregard coredump_filter, and will not dump private mappings.
+    if version() < (7,11):
+        log.warn_once('The installed GDB (%s) does not emit core-dumps which '
+                      'contain all of the data in the process.\n'
+                      'Upgrade to GDB >= 7.11 for better core-dumps.' % binary())
+
+    # This is effectively the same as what the 'gcore' binary does
+    gdb_args = ['-batch',
+                '-q',
+                '--nx',
+                '-ex', '"set pagination off"',
+                '-ex', '"set height 0"',
+                '-ex', '"set width 0"',
+                '-ex', '"set use-coredump-filter on"',
+                '-ex', '"generate-core-file %s"' % temp.name,
+                '-ex', 'detach']
+
+    with context.local(terminal = ['sh', '-c']):
+        with context.quiet:
+            pid = attach(process, gdb_args=gdb_args)
+            os.waitpid(pid, 0)
+
+    return elf.corefile.Core(temp.name)
+
+def version(program='gdb'):
+    """Gets the current GDB version.
+
+    Note:
+        Requires that GDB version meets the following format:
+
+        ``GNU gdb (GDB) 7.12``
+
+    Returns:
+        A tuple
+
+    Example:
+
+        >>> (7,0) <= gdb.version() <= (8,0)
+        True
+    """
+    program = misc.which(program)
+    expr = r'([0-9]+\.?)+'
+
+    with tubes.process.process([program, '--version'], level='error') as gdb:
+        version = gdb.recvline()
+
+    versions = re.search(expr, version).group()
+
+    return tuple(map(int, versions.split('.')))

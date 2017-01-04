@@ -852,6 +852,13 @@ if %(setuid)r is False:
         sys.stdout.write("Could not disable setuid: prctl(PR_SET_NO_NEW_PRIVS) failed")
         sys.exit(-1)
 
+try:
+    PR_SET_PTRACER = 0x59616d61
+    PR_SET_PTRACER_ANY = -1
+    ctypes.CDLL('libc.so.6').prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0)
+except Exception:
+    pass
+
 if sys.argv[-1] == 'check':
     sys.stdout.write("1\n")
     sys.stdout.write(str(os.getpid()) + "\n")
