@@ -25,6 +25,8 @@ log = getLogger(__name__)
 
 class PTY(object): pass
 PTY=PTY()
+STDOUT = subprocess.STDOUT
+PIPE = subprocess.PIPE
 
 class process(tube):
     r"""
@@ -193,8 +195,8 @@ class process(tube):
         >>> p = process(binary.path)
     """
 
-    STDOUT = subprocess.STDOUT
-    PIPE = subprocess.PIPE
+    STDOUT = STDOUT
+    PIPE = PIPE
     PTY = PTY
 
     #: Have we seen the process stop?
