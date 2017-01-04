@@ -817,7 +817,7 @@ class process(tube):
         Example:
 
             >>> proc = process('bash')
-            >>> proc.corefile.elftype == 'core.elftype'
+            >>> isinstance(proc.corefile, pwnlib.elf.corefile.Core)
             True
         """
         import pwnlib.gdb
