@@ -54,7 +54,7 @@ def debug_shellcode(data, execute=None, vma=None):
         kwargs(dict): Arguments passed to context (e.g. arch='arm')
 
     Returns:
-        A ``process`` tube connected to the shellcode on stdin/stdout/stderr.
+        A :class:`pwnlib.tubes.process.process` tube connected to the shellcode on stdin/stdout/stderr.
     """
     if isinstance(data, unicode):
         log.error("Shellcode is cannot be unicode.  Did you mean debug_assembly?")
@@ -505,7 +505,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     Arguments:
         binary(str): Path to the binary on the remote server
         ssh(pwnlib.tubes.tube): SSH connection through which to load the libraries.
-            If left as :const:`None`, will use a ``pwnlib.tubes.process.process``.
+            If left as :const:`None`, will use a :class:`pwnlib.tubes.process.process`.
         ulimit(bool): Set to :const:`True` to run "ulimit -s unlimited" before GDB.
 
     Returns:

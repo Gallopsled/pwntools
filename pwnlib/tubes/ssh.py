@@ -679,9 +679,9 @@ class ssh(Timeout, Logger):
             raw(bool):
                 If :const:`True`, disable TTY control code interpretation.
             aslr(bool):
-                See ``pwnlib.tubes.process.process`` for more information.
+                See :class:`pwnlib.tubes.process.process` for more information.
             setuid(bool):
-                See ``pwnlib.tubes.process.process`` for more information.
+                See :class:`pwnlib.tubes.process.process` for more information.
             shell(bool):
                 Pass the command-line arguments to the shell.
 

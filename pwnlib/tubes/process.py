@@ -33,6 +33,7 @@ class process(tube):
     Spawns a new process, and wraps it with a tube for communication.
 
     Arguments:
+
         argv(list):
             List of arguments to pass to the spawned process.
         shell(bool):
@@ -102,6 +103,7 @@ class process(tube):
             Set a SIGALRM alarm timeout on the process.
 
     Attributes:
+
         proc(subprocess)
 
     Examples:

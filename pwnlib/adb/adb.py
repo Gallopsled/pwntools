@@ -749,10 +749,10 @@ def unlink(path, recursive=False):
 def process(argv, *a, **kw):
     """Execute a process on the device.
 
-    See ``pwnlib.tubes.process.process`` documentation for more info.
+    See :class:`pwnlib.tubes.process.process` documentation for more info.
 
     Returns:
-        A ``process`` tube.
+        A :class:`pwnlib.tubes.process.process` tube.
 
     Examples:
 

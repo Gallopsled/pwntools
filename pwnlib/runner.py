@@ -16,7 +16,7 @@ def run_assembly(assembly):
 
     Returns:
 
-        A ``process`` tube to interact with the process.
+        A :class:`pwnlib.tubes.process.process` tube to interact with the process.
 
     Example:
 
