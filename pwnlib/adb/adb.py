@@ -1,6 +1,7 @@
 """Provides utilities for interacting with Android devices via the Android Debug Bridge.
 
-# Using Android Devices with Pwntools
+Using Android Devices with Pwntools
+-----------------------------------
 
 Pwntools tries to be as easy as possible to use with Android devices.
 
