@@ -72,7 +72,7 @@ autodoc_member_order = 'alphabetical'
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
-doctest_test_doctest_blocks = True
+doctest_test_doctest_blocks = 'true'
 
 # The suffix of source filenames.
 source_suffix = '.rst'
