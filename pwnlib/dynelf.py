@@ -514,7 +514,7 @@ class DynELF(object):
               If set to ``'libc'``, ``'libc.so'`` is assumed.
 
         Returns:
-            Address of the named symbol, or ``None``.
+            Address of the named symbol, or :const:`None`.
         """
         result = None
 

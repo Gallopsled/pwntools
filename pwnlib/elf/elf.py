@@ -306,7 +306,7 @@ class ELF(ELFFile):
         and we can determine the appropriate path to it on the local
         system, returns an ELF object pertaining to that libc.so.
 
-        Otherwise, returns ``None``.
+        Otherwise, returns :const:`None`.
         """
         for lib in self.libs:
             if '/libc.' in lib or '/libc-' in lib:

@@ -67,7 +67,7 @@ class Timeout(object):
     Valid timeout values are:
 
     - ``Timeout.default`` use the global default value (``context.default``)
-    - ``Timeout.forever`` or ``None`` never time out
+    - ``Timeout.forever`` or :const:`None` never time out
     - Any positive float, indicates timeouts in seconds
 
     Example:
@@ -181,8 +181,8 @@ class Timeout(object):
         calculated against the time when the scope was entered, in a
         countdown fashion.
 
-        If ``None`` is specified for ``timeout``, then the current
-        timeout is used is made.  This allows ``None`` to be specified
+        If :const:`None` is specified for ``timeout``, then the current
+        timeout is used is made.  This allows :const:`None` to be specified
         as a default argument with less complexity.
         """
         # Don't count down from infinity

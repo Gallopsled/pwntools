@@ -174,7 +174,7 @@ class MemLeak(object):
         Leak ``n`` consecutive bytes starting at ``addr``.
 
         Returns:
-            A string of length ``n``, or ``None``.
+            A string of length ``n``, or :const:`None`.
         """
         if not self.relative and addr < 0:
             return None

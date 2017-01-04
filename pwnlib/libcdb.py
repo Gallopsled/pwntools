@@ -35,7 +35,7 @@ def search_by_build_id(hex_encoded_id):
             Hex-encoded Build ID (e.g. 'ABCDEF...') of the library
 
     Returns:
-        Path to the downloaded library on disk, or ``None``.
+        Path to the downloaded library on disk, or :const:`None`.
     """
     cache = cache_dir + '-libc.so.' + hex_encoded_id
 

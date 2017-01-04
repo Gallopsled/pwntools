@@ -257,7 +257,7 @@ class tube(Timeout, Logger):
 
         arguments:
             delims(str,tuple): String of delimiters characters, or list of delimiter strings.
-            drop(bool): Drop the ending.  If ``True`` it is removed from the end of the return value.
+            drop(bool): Drop the ending.  If :const:`True` it is removed from the end of the return value.
 
         Raises:
             exceptions.EOFError: The connection closed before the request could be satisfied
@@ -351,7 +351,7 @@ class tube(Timeout, Logger):
 
         Arguments:
             numlines(int): Maximum number of lines to receive
-            keepends(bool): Keep newlines at the end of each line (``False``).
+            keepends(bool): Keep newlines at the end of each line (:const:`False`).
             timeout(int): Maximum timeout
 
         Raises:
@@ -409,7 +409,7 @@ class tube(Timeout, Logger):
         all data is buffered and an empty string (``''``) is returned.
 
         Arguments:
-            keepends(bool): Keep the line ending (``True``).
+            keepends(bool): Keep the line ending (:const:`True`).
             timeout(int): Timeout
 
         Return:
@@ -444,7 +444,7 @@ class tube(Timeout, Logger):
 
         Arguments:
             pred(callable): Function to call.  Returns the line for which
-                this function returns ``True``.
+                this function returns :const:`True`.
 
         Examples:
 
@@ -490,7 +490,7 @@ class tube(Timeout, Logger):
 
         Arguments:
             items(str,tuple): List of strings to search for, or a single string.
-            keepends(bool): Return lines with newlines if ``True``
+            keepends(bool): Return lines with newlines if :const:`True`
             timeout(int): Timeout, in seconds
 
         Examples:
@@ -528,7 +528,7 @@ class tube(Timeout, Logger):
 
         Arguments:
             delims(str,tuple): List of strings to search for, or string of single characters
-            keepends(bool): Return lines with newlines if ``True``
+            keepends(bool): Return lines with newlines if :const:`True`
             timeout(int): Timeout, in seconds
 
         Returns:

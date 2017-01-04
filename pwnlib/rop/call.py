@@ -148,7 +148,7 @@ class AppendedArgument(Unresolved):
 
         Arguments:
             addr(int): Address at which the data starts in memory.
-                If ``None``, ``self.addr`` is used.
+                If :const:`None`, ``self.addr`` is used.
         """
         if addr is None:
             addr = self.address

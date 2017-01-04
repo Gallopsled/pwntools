@@ -691,7 +691,7 @@ class ContextType(object):
         """
         ASLR settings for new processes.
 
-        If ``False``, attempt to disable ASLR in all processes which are
+        If :const:`False`, attempt to disable ASLR in all processes which are
         created via ``personality`` (``setarch -R``) and ``setrlimit``
         (``ulimit -s unlimited``).
 
@@ -987,7 +987,7 @@ class ContextType(object):
 
         Can be set to any non-string truthy value, or the specific string
         values ``'signed'`` or ``'unsigned'`` which are converted into
-        ``True`` and ``False`` correspondingly.
+        :const:`True` and :const:`False` correspondingly.
 
         Examples:
 
@@ -1163,7 +1163,7 @@ class ContextType(object):
         """Directory used for caching data.
 
         Note:
-            May be either a path string, or ``None``.
+            May be either a path string, or :const:`None`.
 
         Example:
 

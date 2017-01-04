@@ -162,7 +162,7 @@ class Client(Logger):
     def devices(self, long=False):
         """
         Arguments:
-            long(bool): If ``True``, fetch the long-format listing.
+            long(bool): If :const:`True`, fetch the long-format listing.
         Returns:
             String representation of all available devices.
         """

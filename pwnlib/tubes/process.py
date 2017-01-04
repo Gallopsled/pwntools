@@ -39,7 +39,7 @@ class process(tube):
             Set to `True` to interpret `argv` as a string
             to pass to the shell for interpretation instead of as argv.
         executable(str):
-            Path to the binary to execute.  If ``None``, uses ``argv[0]``.
+            Path to the binary to execute.  If :const:`None`, uses ``argv[0]``.
             Cannot be used with ``shell``.
         cwd(str):
             Working directory.  Uses the current working directory by default.
@@ -63,15 +63,15 @@ class process(tube):
             although the ``tube`` wrapper will not be able to read this data.
         close_fds(bool):
             Close all open file descriptors except stdin, stdout, stderr.
-            By default, ``True`` is used.
+            By default, :const:`True` is used.
         preexec_fn(callable):
             Callable to invoke immediately before calling ``execve``.
         raw(bool):
             Set the created pty to raw mode (i.e. disable echo and control
-            characters).  ``True`` by default.  If no pty is created, this
+            characters).  :const:`True` by default.  If no pty is created, this
             has no effect.
         aslr(bool):
-            If set to ``False``, disable ASLR via ``personality`` (``setarch -R``)
+            If set to :const:`False`, disable ASLR via ``personality`` (``setarch -R``)
             and ``setrlimit`` (``ulimit -s unlimited``).
 
             This disables ASLR for the target process.  However, the ``setarch``
@@ -83,15 +83,15 @@ class process(tube):
             Used to control `setuid` status of the target binary, and the
             corresponding actions taken.
 
-            By default, this value is ``None``, so no assumptions are made.
+            By default, this value is :const:`None`, so no assumptions are made.
 
-            If ``True``, treat the target binary as ``setuid``.
+            If :const:`True`, treat the target binary as ``setuid``.
             This modifies the mechanisms used to disable ASLR on the process if
             ``aslr=False``.
             This is useful for debugging locally, when the exploit is a
             ``setuid`` binary.
 
-            If ``False``, prevent ``setuid`` bits from taking effect on the
+            If :const:`False`, prevent ``setuid`` bits from taking effect on the
             target binary.  This is only supported on Linux, with kernels v3.5
             or greater.
         where(str):

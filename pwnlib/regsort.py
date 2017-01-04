@@ -123,7 +123,7 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
     If a dependency cycle is encountered, one of the following will
     occur:
 
-    - If ``xchg`` is ``True``, it is assumed that dependency cyles can
+    - If ``xchg`` is :const:`True`, it is assumed that dependency cyles can
       be broken by swapping the contents of two register (a la the
       ``xchg`` instruction on i386).
     - If ``xchg`` is not set, but not all destination registers in
@@ -167,8 +167,8 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
         as a temporary register, and later overwritten with its final
         value.
 
-        If ``xchg`` is ``True`` and it is used to break a dependency cycle,
-        then ``reg_name`` will be ``None`` and ``value`` will be a tuple
+        If ``xchg`` is :const:`True` and it is used to break a dependency cycle,
+        then ``reg_name`` will be :const:`None` and ``value`` will be a tuple
         of the instructions to swap.
 
     Example:

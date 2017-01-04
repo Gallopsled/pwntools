@@ -505,8 +505,8 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     Arguments:
         binary(str): Path to the binary on the remote server
         ssh(pwnlib.tubes.tube): SSH connection through which to load the libraries.
-            If left as ``None``, will use a ``pwnlib.tubes.process.process``.
-        ulimit(bool): Set to ``True`` to run "ulimit -s unlimited" before GDB.
+            If left as :const:`None`, will use a ``pwnlib.tubes.process.process``.
+        ulimit(bool): Set to :const:`True` to run "ulimit -s unlimited" before GDB.
 
     Returns:
         A list of pwnlib.elf.ELF objects, with correct base addresses.

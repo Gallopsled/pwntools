@@ -40,14 +40,14 @@ class ssh_channel(sock):
     #: Remote host
     host = None
 
-    #: Return code, or ``None`` if the process has not returned
+    #: Return code, or :const:`None` if the process has not returned
     #: Use :meth:`poll` to check.
     returncode = None
 
-    #: ``True`` if a tty was allocated for this channel
+    #: :const:`True` if a tty was allocated for this channel
     tty = False
 
-    #: Environment specified for the remote process, or ``None``
+    #: Environment specified for the remote process, or :const:`None`
     #: if the default environment was used
     env = None
 
@@ -472,7 +472,7 @@ class ssh(Timeout, Logger):
     client = None
 
     #: Paramiko SFTPClient object which is used for file transfers.
-    #: Set to ``None`` to disable ``sftp``.
+    #: Set to :const:`None` to disable ``sftp``.
     sftp = None
 
     #: PID of the remote ``sshd`` process servicing this connection.
@@ -495,7 +495,7 @@ class ssh(Timeout, Logger):
             timeout: Timeout, in seconds
             level: Log level
             cache: Cache downloaded files (by hash/size/timestamp)
-            ssh_agent: If ``True``, enable usage of keys via ssh-agent
+            ssh_agent: If :const:`True`, enable usage of keys via ssh-agent
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used."""
@@ -606,8 +606,8 @@ class ssh(Timeout, Logger):
 
         Arguments:
             shell(str): Path to the shell program to run.
-                If ``None``, uses the default shell for the logged in user.
-            tty(bool): If ``True``, then a TTY is requested on the remote server.
+                If :const:`None`, uses the default shell for the logged in user.
+            tty(bool): If :const:`True`, then a TTY is requested on the remote server.
 
         Returns:
             Return a :class:`pwnlib.tubes.ssh.ssh_channel` object.
@@ -641,29 +641,29 @@ class ssh(Timeout, Logger):
                 List of arguments to pass into the process
             executable(str):
                 Path to the executable to run.
-                If ``None``, ``argv[0]`` is used.
+                If :const:`None`, ``argv[0]`` is used.
             tty(bool):
                 Request a `tty` from the server.  This usually fixes buffering problems
                 by causing `libc` to write data immediately rather than buffering it.
                 However, this disables interpretation of control codes (e.g. Ctrl+C)
                 and breaks `.shutdown`.
             cwd(str):
-                Working directory.  If ``None``, uses the working directory specified
+                Working directory.  If :const:`None`, uses the working directory specified
                 on :attr:`cwd` or set via :meth:`set_working_directory`.
             env(dict):
-                Environment variables to set in the child.  If ``None``, inherits the
+                Environment variables to set in the child.  If :const:`None`, inherits the
                 default environment.
             timeout(int):
                 Timeout to set on the `tube` created to interact with the process.
             run(bool):
-                Set to ``True`` to run the program (default).
-                If ``False``, returns the path to an executable Python script on the
+                Set to :const:`True` to run the program (default).
+                If :const:`False`, returns the path to an executable Python script on the
                 remote server which, when executed, will do it.
             stdin(int, str):
                 If an integer, replace stdin with the numbered file descriptor.
                 If a string, a open a file with the specified path and replace
                 stdin with its file descriptor.  May also be one of ``sys.stdin``,
-                ``sys.stdout``, ``sys.stderr``.  If ``None``, the file descriptor is closed.
+                ``sys.stdout``, ``sys.stderr``.  If :const:`None`, the file descriptor is closed.
             stdout(int, str):
                 See ``stdin``.
             stderr(int, str):
@@ -677,7 +677,7 @@ class ssh(Timeout, Logger):
                 Argument passed to ``preexec_fn``.
                 This **MUST** only consist of native Python objects.
             raw(bool):
-                If ``True``, disable TTY control code interpretation.
+                If :const:`True`, disable TTY control code interpretation.
             aslr(bool):
                 See ``pwnlib.tubes.process.process`` for more information.
             setuid(bool):

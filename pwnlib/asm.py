@@ -564,7 +564,7 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
       shellcode(str): Assembler code to assemble.
       vma(int):       Virtual memory address of the beginning of assembly
       extract(bool):  Extract the raw assembly bytes from the assembled
-                      file.  If ``False``, returns the path to an ELF file
+                      file.  If :const:`False`, returns the path to an ELF file
                       with the assembly embedded.
 
     Kwargs:

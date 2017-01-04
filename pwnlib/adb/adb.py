@@ -666,7 +666,7 @@ def makedirs(path):
 @context.quiet
 @with_device
 def exists(path):
-    """Return ``True`` if ``path`` exists on the target device.
+    """Return :const:`True` if ``path`` exists on the target device.
 
     Examples:
 
@@ -683,7 +683,7 @@ def exists(path):
 @context.quiet
 @with_device
 def isdir(path):
-    """Return ``True`` if ``path`` is a on the target device.
+    """Return :const:`True` if ``path`` is a on the target device.
 
     Examples:
 
@@ -823,11 +823,11 @@ def logcat(stream=False):
     By default, causes logcat to exit after reading the file.
 
     Arguments:
-        stream(bool): If ``True``, the contents are streamed rather than
-            read in a one-shot manner.  Default is ``False``.
+        stream(bool): If :const:`True`, the contents are streamed rather than
+            read in a one-shot manner.  Default is :const:`False`.
 
     Returns:
-        If ``stream`` is ``False``, returns a string containing the log data.
+        If ``stream`` is :const:`False`, returns a string containing the log data.
         Otherwise, it returns a ``tube`` connected to the log output.
     """
 
