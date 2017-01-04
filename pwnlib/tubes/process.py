@@ -48,18 +48,18 @@ class process(tube):
         stdin(int):
             File object or file descriptor number to use for ``stdin``.
             By default, a pipe is used.  A pty can be used instead by setting
-            this to ``process.PTY``.  This will cause programs to behave in an
+            this to ``PTY``.  This will cause programs to behave in an
             interactive manner (e.g.., ``python`` will show a ``>>>`` prompt).
             If the application reads from ``/dev/tty`` directly, use a pty.
         stdout(int):
             File object or file descriptor number to use for ``stdout``.
             By default, a pty is used so that any stdout buffering by libc
             routines is disabled.
-            May also be ``subprocess.PIPE`` to use a normal pipe.
+            May also be ``PIPE`` to use a normal pipe.
         stderr(int):
             File object or file descriptor number to use for ``stderr``.
-            By default, ``stdout`` is used.
-            May also be ``subprocess.PIPE`` to use a separate pipe,
+            By default, ``STDOUT`` is used.
+            May also be ``PIPE`` to use a separate pipe,
             although the ``tube`` wrapper will not be able to read this data.
         close_fds(bool):
             Close all open file descriptors except stdin, stdout, stderr.
@@ -157,12 +157,11 @@ class process(tube):
         >>> process(stack_smashing).recvall()
         'stack smashing detected'
 
-        >>> PIPE=subprocess.PIPE
         >>> process(stack_smashing, stdout=PIPE).recvall()
         ''
 
         >>> getpass = ['python','-c','import getpass; print getpass.getpass("XXX")']
-        >>> p = process(getpass, stdin=process.PTY)
+        >>> p = process(getpass, stdin=PTY)
         >>> p.recv()
         'XXX'
         >>> p.sendline('hunter2')
@@ -518,7 +517,7 @@ class process(tube):
         master = slave = None
 
         if self.pty is not None:
-            # Normally we could just use subprocess.PIPE and be happy.
+            # Normally we could just use PIPE and be happy.
             # Unfortunately, this results in undesired behavior when
             # printf() and similar functions buffer data instead of
             # sending it directly.
