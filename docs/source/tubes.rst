@@ -27,4 +27,4 @@ Types of Tubes
   .. autoclass:: pwnlib.tubes.tube.tube()
      :members:
      :exclude-members: recv_raw, send_raw, settimeout_raw,
-                       can_recv_raw
+                       can_recv_raw, shutdown_raw, connected_raw,
