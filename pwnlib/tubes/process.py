@@ -23,9 +23,6 @@ from pwnlib.util.misc import which
 
 log = getLogger(__name__)
 
-PIPE = subprocess.PIPE
-STDOUT = subprocess.STDOUT
-
 class PTY(object): pass
 PTY=PTY()
 
@@ -196,6 +193,8 @@ class process(tube):
         >>> p = process(binary.path)
     """
 
+    STDOUT = subprocess.STDOUT
+    PIPE = subprocess.PIPE
     PTY = PTY
 
     #: Have we seen the process stop?
