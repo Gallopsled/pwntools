@@ -281,7 +281,7 @@ class process(tube):
                 self.executable = which(self.argv[0])
 
         #: Environment passed on envp
-        self.env = os.environ if env is None else env
+        self.env = env if env is not None else dict(os.environ)
 
         self._cwd = os.path.realpath(cwd or os.path.curdir)
 
