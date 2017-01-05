@@ -52,7 +52,7 @@ It's quite cumbersom to comment and un-comment lines containing `attach`.
 You can cause these lines to be a no-op by running your script with the
 ``NOPTRACE`` argument appended, or with ``PWNLIB_NOPTRACE=1`` in the environment.
 
-.. code-block:
+::
 
     $ python exploit.py NOPTRACE
 
@@ -66,7 +66,7 @@ a direct parent-child relationship.
 This causes some issues with the normal Pwntools workflow, since the process
 heirarchy looks like this:
 
-.. code-block:
+::
 
     python ---> target
            `--> gdb
