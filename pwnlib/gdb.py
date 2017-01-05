@@ -55,6 +55,9 @@ You can cause these lines to be a no-op by running your script with the
 ::
 
     $ python exploit.py NOPTRACE
+    [+] Starting local process '/bin/bash': Done
+    [!] Skipping debug attach since context.noptrace==True
+    ...
 
 Kernel Yama ptrace_scope
 ~~~~~~~~~~~~~~~~~~~~~~~~
