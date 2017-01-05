@@ -1,3 +1,90 @@
+# -*- coding: utf-8 -*-
+"""
+During exploit development, it is frequently useful to debug the
+target binary under GDB.
+
+Pwntools makes this easy-to-do with a handful of helper routines, designed
+to make your exploit-debug-update cycles much faster.
+
+Useful Functions
+----------------
+
+- :func:`attach` - Attach to an existing process
+- :func:`debug` - Start a new process under a debugger, stopped at the first instruction
+- :func:`debug_shellcode` - Build a binary with the provided shellcode, and start it under a debugger
+
+Debugging Tips
+--------------
+
+The :func:`attach` and :func:`debug` functions will likely be your bread and
+butter for debugging.
+
+Both allow you to provide a script to pass to GDB when it is started, so that
+it can automatically set your breakpoints.
+
+Attaching to Processes
+~~~~~~~~~~~~~~~~~~~~~~
+
+To attach to an existing process, just use :func:`attach`.  It is surprisingly
+versatile, and can attach to a :class:`.process` for simple
+binaries, or will automatically find the correct process to attach to for a
+forking server, if given a :class:`.remote` object.
+
+Spawning New Processes
+~~~~~~~~~~~~~~~~~~~~~~
+
+Attaching to processes with :func:`attach` is useful, but the state the process
+is in may vary.  If you need to attach to a process very early, and debug it from
+the very first instruction (or even the start of ``main``), you instead should use
+:func:`debug`.
+
+When you use :func:`debug`, the return value is a :class:`.tube` object
+that you interact with exactly like normal.
+
+Tips and Troubleshooting
+------------------------
+
+``NOPTRACE`` magic argument
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It's quite cumbersom to comment and un-comment lines containing `attach`.
+
+You can cause these lines to be a no-op by running your script with the
+``NOPTRACE`` argument appended, or with ``PWNLIB_NOPTRACE=1`` in the environment.
+
+.. code-block:
+
+    $ python exploit.py NOPTRACE
+
+Kernel Yama ptrace_scope
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Linux kernel v3.4 introduced a security mechanism called ``ptrace_scope``,
+which is intended to prevent processes from debugging eachother unless there is
+a direct parent-child relationship.
+
+This causes some issues with the normal Pwntools workflow, since the process
+heirarchy looks like this:
+
+.. code-block:
+
+    python ---> target
+           `--> gdb
+
+Note that ``python`` is the parent of ``target``, not ``gdb``.
+
+In order to avoid this being a problem, Pwntools uses the function
+``prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY)``.  This disables Yama
+for any processes launched by Pwntools via :class:`.process` or via
+:meth:`.ssh.process`.
+
+Older versions of Pwntools did not perform the ``prctl`` step, and
+required that the Yama security feature was disabled systemwide, which
+requires ``root`` access.
+
+Member Documentation
+===============================
+"""
 from __future__ import absolute_import
 
 import os
@@ -24,13 +111,23 @@ from pwnlib.util import proc
 log = getLogger(__name__)
 
 @LocalContext
-def debug_assembly(asm, execute=None, vma=None):
-    """
-    Creates an ELF file, and launches it with GDB.
+def debug_assembly(asm, gdbscript=None, vma=None):
+    """debug_assembly(asm, gdbscript=None, vma=None) -> tube
+
+    Creates an ELF file, and launches it under a debugger.
 
     This is identical to debug_shellcode, except that
     any defined symbols are available in GDB, and it
     saves you the explicit call to asm().
+
+    Arguments:
+        asm(str): Assembly code to debug
+        gdbscript(str): Script to run in GDB
+        vma(int): Base address to load the shellcode at
+        **kwargs: Override any :obj:`.context` values.
+
+    Returns:
+        :class:`.process`
     """
     tmp_elf = make_elf_from_assembly(asm, vma=vma, extract=False)
     os.chmod(tmp_elf, 0777)
@@ -42,19 +139,21 @@ def debug_assembly(asm, execute=None, vma=None):
         adb.push(tmp_elf, android_path)
         tmp_elf = android_path
 
-    return debug(tmp_elf, execute=execute, arch=context.arch)
+    return debug(tmp_elf, gdbscript=gdbscript, arch=context.arch)
 
 @LocalContext
-def debug_shellcode(data, execute=None, vma=None):
+def debug_shellcode(data, gdbscript=None, vma=None):
     """
-    Creates an ELF file, and launches it with GDB.
+    Creates an ELF file, and launches it under a debugger.
 
     Arguments:
         data(str): Assembled shellcode bytes
-        kwargs(dict): Arguments passed to context (e.g. arch='arm')
+        gdbscript(str): Script to run in GDB
+        vma(int): Base address to load the shellcode at
+        **kwargs: Override any :obj:`.context` values.
 
     Returns:
-        A :class:`pwnlib.tubes.process.process` tube connected to the shellcode on stdin/stdout/stderr.
+        :class:`.process`
     """
     if isinstance(data, unicode):
         log.error("Shellcode is cannot be unicode.  Did you mean debug_assembly?")
@@ -68,7 +167,7 @@ def debug_shellcode(data, execute=None, vma=None):
         adb.push(tmp_elf, android_path)
         tmp_elf = android_path
 
-    return debug(tmp_elf, execute=execute, arch=context.arch)
+    return debug(tmp_elf, gdbscript=gdbscript, arch=context.arch)
 
 def _gdbserver_args(pid=None, path=None, args=None, which=None):
     """_gdbserver_args(pid=None, path=None) -> list
@@ -166,19 +265,89 @@ def _get_runner(ssh=None):
     else:                          return tubes.process.process
 
 @LocalContext
-def debug(args, execute=None, exe=None, ssh=None, env=None, **kwargs):
+def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
     """debug(args) -> tube
 
     Launch a GDB server with the specified command line,
     and launches GDB to attach to it.
 
     Arguments:
-        args: Same args as passed to pwnlib.tubes.process
-        ssh: Remote ssh session to use to launch the process.
-          Automatically sets up port forwarding so that gdb runs locally.
+        args(list): Arguments to the process, similar to :class:`.process`.
+        gdbscript(str): GDB script to run.
+        exe(str): Path to the executable on disk
+        env(dict): Environment to start the binary in
+        ssh(:class:`.ssh`): Remote ssh session to use to launch the process.
 
     Returns:
-        A tube connected to the target process
+        :class:`.process` or :class:`.ssh_channel`: A tube connected to the target process
+
+    Notes:
+
+        The debugger is attached automatically, and you can debug everything
+        from the very beginning.  This requires that both ``gdb`` and ``gdbserver``
+        are installed on your machine.
+
+        .. code-block:: python
+
+            # Create a new process, and stop it at 'main'
+            io = gdb.debug('bash', '''
+            break main
+            continue
+            ''')
+
+        When GDB opens via :func:`debug`, it will initially be stopped on the very first
+        instruction of the dynamic linker (``ld.so``) for dynamically-linked binaries.
+
+        Only the target binary and the linker will be loaded in memory, so you cannot
+        set breakpoints on shared library routines like ``malloc`` since ``libc.so``
+        has not even been loaded yet.
+
+        There are several ways to handle this:
+
+        1. Set a breakpoint on the executable's entry point (generally, ``_start``)
+            - This is only invoked after all of the required shared libraries
+              are loaded.
+            - You can generally get the address via the GDB command ``info file``.
+        2. Use pending breakpoints via ``set breakpoint pending on``
+            - This has the side-effect of setting breakpoints for **every** function
+              which matches the name.  For ``malloc``, this will generally set a
+              breakpoint in the executable's PLT, in the linker's internal ``malloc``,
+              and eventaully in ``libc``'s malloc.
+        3. Wait for libraries to be loaded with ``set stop-on-solib-event 1``
+            - There is no way to stop on any specific library being loaded, and sometimes
+              multiple libraries are loaded and only a single breakpoint is issued.
+            - Generally, you just add a few ``continue`` commands until things are set up
+              the way you want it to be.
+
+        .. code-block:: python
+
+            # Create a new process, and stop it at 'main'
+            io = gdb.debug('bash', '''
+            # Wait until we hit the main executable's entry point
+            break _start
+            continue
+
+            # Now set breakpoint on shared library routines
+            break malloc
+            break free
+            continue
+            ''')
+
+        You can use :func:`debug` to spawn new processes on remote machines as well,
+        by using the ``ssh=`` keyword to pass in your :class:`.ssh` instance.
+
+        .. code-block:: python
+
+            # Connect to the SSH server
+            shell = ssh('passcode', 'pwnable.kr', 2222, password='guest')
+
+            # Start a process on the server
+            bash = gdb.debug(['bash'],
+                            ssh=shell,
+                            gdbscript='''
+            break main
+            continue
+            ''')
     """
     if context.noptrace:
         log.warn_once("Skipping debugger since context.noptrace==True")
@@ -229,7 +398,7 @@ def debug(args, execute=None, exe=None, ssh=None, env=None, **kwargs):
     if not ssh and context.os == 'android':
         host = context.adb_host
 
-    attach((host, port), exe=exe, execute=execute, need_ptrace_scope = False)
+    attach((host, port), exe=exe, gdbscript=gdbscript, need_ptrace_scope = False)
 
     # gdbserver outputs a message when a client connects
     garbage = gdbserver.recvline(timeout=1)
@@ -249,6 +418,11 @@ def get_gdb_arch():
     }.get(context.arch, context.arch)
 
 def binary():
+    """binary() -> str
+
+    Returns:
+        str: Path to the appropriate ``gdb`` binary to use.
+    """
     gdb = misc.which('gdb')
 
     if not context.native:
@@ -266,50 +440,116 @@ def binary():
     return gdb
 
 @LocalContext
-def attach(target, execute = None, exe = None, need_ptrace_scope = True, gdb_args = None):
-    """attach(target, execute = None, exe = None, arch = None) -> None
+def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_args = None):
+    """attach(target, gdbscript = None, exe = None, arch = None) -> None
 
     Start GDB in a new terminal and attach to `target`.
-    :func:`pwnlib.util.proc.pidof` is used to find the PID of `target` except
-    when `target` is a ``(host, port)``-pair.  In that case `target` is assumed
-    to be a GDB server.
-
-    If it is running locally and `exe` is not given we will try to find the path
-    of the target binary from parsing the command line of the program running
-    the GDB server (e.g. qemu or gdbserver).  Notice that if the PID is known
-    (when `target` is not a GDB server) `exe` will be read from
-    ``/proc/<pid>/exe``.
-
-    If `gdb-multiarch` is installed we use that or 'gdb' otherwise.
 
     Arguments:
         target: The target to attach to.
-        execute (str or file): GDB script to run after attaching.
+        gdbscript(:obj:`str` or :obj:`file`): GDB script to run after attaching.
         exe(str): The path of the target binary.
         arch(str): Architechture of the target binary.  If `exe` known GDB will
           detect the architechture automatically (if it is supported).
-        gdb_args(list): List of arguments to pass to GDB.
+        gdb_args(list): List of additional arguments to pass to GDB.
 
     Returns:
-        PID of the GDB process, or the window which it is running in.
+        PID of the GDB process (or the window which it is running in).
+
+    Notes:
+
+        The ``target`` argument is very robust, and can be any of the following:
+
+        :obj:`int`
+            PID of a process
+        :obj:`str`
+            Process name.  The youngest process is selected.
+        :obj:`tuple`
+            Host, port pair of a listening ``gdbserver``
+        :class:`.process`
+            Process to connect to
+        :class:`.sock`
+            Connected socket. The executable on the other end of the connection is attached to.
+            Can be any socket type, including :class:`.listen` or :class:`.remote`.
+        :class:`.ssh_channel`
+            Remote process spawned via :meth:`.ssh.process`.
+            This will use the GDB installed on the remote machine.
+            If a password is required to connect, the ``sshpass`` program must be installed.
+
+        .. code-block:: python
+
+            # Attach directly to pid 1234
+            gdb.attach(1234)
+
+        .. code-block:: python
+
+            # Attach to the youngest "bash" process
+            gdb.attach('bash')
+
+        .. code-block:: python
+
+            # Start a process
+            bash = process('bash')
+
+            # Attach the debugger
+            gdb.attach(bash, '''
+            set follow-fork-mode child
+            break execve
+            continue
+            ''')
+
+            # Interact with the process
+            bash.sendline('whoami')
+
+        .. code-block:: python
+
+            # Start a forking server
+            server = process(['socat', 'tcp-listen:1234,fork,reuseaddr', 'exec:/bin/sh'])
+
+            # Connect to the server
+            io = remote('localhost', 1234)
+
+            # Connect the debugger to the server-spawned process
+            gdb.attach(io, '''
+            break exit
+            continue
+            ''')
+
+            # Talk to the spawned 'sh'
+            io.sendline('exit')
+
+        .. code-block:: python
+
+            # Connect to the SSH server
+            shell = ssh('bandit0', 'bandit.labs.overthewire.org', password='bandit0')
+
+            # Start a process on the server
+            cat = shell.process(['cat'])
+
+            # Attach a debugger to it
+            gdb.attach(cat, '''
+            break exit
+            continue
+            ''')
+
+            # Cause `cat` to exit
+            cat.close()
     """
     if context.noptrace:
         log.warn_once("Skipping debug attach since context.noptrace==True")
         return
 
-    # if execute is a file object, then read it; we probably need to run some
+    # if gdbscript is a file object, then read it; we probably need to run some
     # more gdb script anyway
-    if execute:
-        if isinstance(execute, file):
-            fd = execute
-            execute = fd.read()
-            fd.close()
+    if isinstance(gdbscript, file):
+        with gdbscript:
+            gdbscript = gdbscript.read()
 
     # enable gdb.attach(p, 'continue')
-    if execute and not execute.endswith('\n'):
-        execute += '\n'
+    if gdbscript and not gdbscript.endswith('\n'):
+        gdbscript += '\n'
 
-    # gdb script to run before `execute`
+    # gdb script to run before `gdbscript`
     pre = ''
     if not context.native:
         pre += 'set endian %s\n' % context.endian
@@ -343,11 +583,13 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True, gdb_arg
         shell = target.parent
 
         tmpfile = shell.mktemp()
-        execute = 'shell rm %s\n%s' % (tmpfile, execute)
-        shell.upload_data(execute or '', tmpfile)
+        gdbscript = 'shell rm %s\n%s' % (tmpfile, gdbscript)
+        shell.upload_data(gdbscript or '', tmpfile)
 
         cmd = ['ssh', '-C', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
         if shell.password:
+            if not misc.which('sshpass'):
+                log.error("sshpass must be installed to debug ssh processes")
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
@@ -418,15 +660,15 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True, gdb_arg
         host    = context.adb_host
         pre    += 'target remote %s:%i' % (context.adb_host, port)
 
-    execute = pre + (execute or '')
+    gdbscript = pre + (gdbscript or '')
 
-    if execute:
+    if gdbscript:
         tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.gdb',
                                           delete = False)
-        log.debug('Wrote gdb script to %r\n%s' % (tmp.name, execute))
-        execute = 'shell rm %s\n%s' % (tmp.name, execute)
+        log.debug('Wrote gdb script to %r\n%s' % (tmp.name, gdbscript))
+        gdbscript = 'shell rm %s\n%s' % (tmp.name, gdbscript)
 
-        tmp.write(execute)
+        tmp.write(gdbscript)
         tmp.close()
         cmd += ' -x "%s"' % (tmp.name)
 
@@ -439,20 +681,19 @@ def attach(target, execute = None, exe = None, need_ptrace_scope = True, gdb_arg
 
     return gdb_pid
 
-def ssh_gdb(ssh, process, execute = None, arch = None, **kwargs):
-    if isinstance(process, (list, tuple)):
-        exe = process[0]
-        process = ["gdbserver", "127.0.0.1:0"] + process
-    else:
-        exe = process
-        process = "gdbserver 127.0.0.1:0 " + process
+def ssh_gdb(ssh, argv, gdbscript = None, arch = None, **kwargs):
+    if not isinstance(argv, (list, tuple)):
+        argv = [argv]
+
+    exe = argv[0]
+    argv = ["gdbserver", "127.0.0.1:0"] + argv
 
     # Download the executable
     local_exe = os.path.basename(exe)
-    ssh.download_file(exe, local_exe)
+    ssh.download_file(ssh.which(exe), local_exe)
 
     # Run the process
-    c = ssh.run(process, **kwargs)
+    c = ssh.process(argv, **kwargs)
 
     # Find the port for the gdb server
     c.recvuntil('port ')
@@ -464,7 +705,7 @@ def ssh_gdb(ssh, process, execute = None, arch = None, **kwargs):
     l = tubes.listen.listen(0)
     forwardport = l.lport
 
-    attach(('127.0.0.1', forwardport), execute, local_exe, arch)
+    attach(('127.0.0.1', forwardport), gdbscript, local_exe, arch)
     l.wait_for_connection() <> ssh.connect_remote('127.0.0.1', gdbport)
     return c
 
@@ -601,7 +842,7 @@ def corefile(process):
         process: Process to dump
 
     Returns:
-        A ``pwnlib.elf.corefile.Core`` object.
+        :class:`.Core`: The generated core file
     """
 
     if context.noptrace:
@@ -644,7 +885,7 @@ def version(program='gdb'):
         ``GNU gdb (GDB) 7.12``
 
     Returns:
-        A tuple
+        tuple: A tuple containing the version numbers
 
     Example:
 
