@@ -67,6 +67,7 @@ from pwnlib.context import context
 from pwnlib.device import Device
 from pwnlib.log import getLogger
 from pwnlib.protocols.adb import AdbClient
+from pwnlib.util.sh_string import sh_string
 from pwnlib.util import misc
 
 log = getLogger(__name__)
@@ -337,7 +338,7 @@ class AdbDevice(Device):
         """Wrapps a callable in a scope which selects the current device."""
         @functools.wraps(function)
         def wrapper(*a, **kw):
-            with context.local(device=self):
+            with context.local(device=self.serial):
                 return function(*a,**kw)
         return wrapper
 
@@ -350,7 +351,7 @@ class AdbDevice(Device):
         >>> adb.getprop(property) == device.getprop(property)
         True
         """
-        with context.local(device=self):
+        with context.local(device=self.serial):
             g = globals()
 
             if name not in g:
@@ -402,7 +403,7 @@ def wait_for_device(kick=False):
         else:
             log.error("Could not find any devices")
 
-        with context.local(device=device):
+        with context.local(device=device.serial):
             # There may be multiple devices, so context.device is
             # insufficient.  Pick the first device reported.
             w.success('%s (%s %s %s)' % (device,
@@ -754,7 +755,7 @@ def unlink(path, recursive=False):
             log.error(output)
 
 @with_device
-def process(argv, *a, **kw):
+def process(argv, shell=False, executable=None, env=None, *a, **kw):
     """Execute a process on the device.
 
     See :class:`pwnlib.tubes.process.process` documentation for more info.
@@ -768,8 +769,45 @@ def process(argv, *a, **kw):
         >>> print adb.process(['cat','/proc/version']).recvall() # doctest: +ELLIPSIS
         Linux version ...
     """
+
     if isinstance(argv, (str, unicode)):
         argv = [argv]
+
+    # Save off a copy of the original argv array, which is stashed
+    # on the object.
+    saved_argv = list(argv)
+
+    # Determine the full path to the executable
+    if not executable:
+        executable = which(argv[0]) or './' + argv[0]
+
+    # If we're doing shell expansion, we need to feed it back into 'sh'
+    # Yes, this is a little convoluted.
+    if shell:
+        argv = ['sh', '-c'] + argv
+
+    # If we are *setting* the environment, prepent the "env -i" ...
+    if env:
+        # Build the command-line for env iteself
+        env_cmd = ['env', '-i']
+        for k,v in env.items():
+            env_cmd += ['%s=%s' % (k,v)]
+
+        argv = env_cmd + argv
+
+    # Echo the PID of our shell, so we know our own PID.
+    #
+    # This must be performed in this routine, since the '$' are escaped
+    # otherwise.
+    cmd = 'echo $$;'
+
+    # Actually "exec" the command, rather than fork-and-exec
+    #
+    # This avoids weird side-effects where execute(['sh'])
+    # would actually create two "sh" processes.
+    argv0 = sh_string(argv[0])
+    argv_str = ' '.join(map(sh_string, argv))
+    cmd += 'exec -a %s %s' % (argv0, argv_str)
 
     message = "Starting %s process %r" % ('Android', argv[0])
 
@@ -777,7 +815,13 @@ def process(argv, *a, **kw):
         if argv != [argv[0]]: message += ' argv=%r ' % argv
 
     with log.progress(message) as p:
-        return AdbClient().execute(argv)
+        result = AdbClient().execute(argv)
+
+    result.argv = saved_argv
+    result.pid  = int(result.recvline())
+    result.executable = executable or saved_argv[0]
+
+    return result
 
 @with_device
 def interactive(**kw):
@@ -843,7 +887,6 @@ done
 
     return None
 
-
 @with_device
 def whoami():
     return process(['sh','-ic','echo $USER']).recvall().strip()
@@ -905,10 +948,10 @@ def getprop(name=None):
     """
     with context.quiet:
         if name:
-            return process(['getprop', name]).recvall().strip()
+            io = process(['getprop', name], executable='/system/bin/getprop')
+            return ui.recvall().strip()
 
-
-        result = process(['getprop']).recvall()
+        result = process(['getprop'], executable='/system/bin/getprop').recvall()
 
     expr = r'\[([^\]]+)\]: \[(.*)\]'
 
@@ -1066,7 +1109,7 @@ class Kernel(object):
                 return
 
             # Need to be root
-            with context.local(device=context.device):
+            with context.local(device=context.device.serial):
                 # Save off the command line before rebooting to the bootloader
                 cmdline = kernel.cmdline
 
