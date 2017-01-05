@@ -142,7 +142,17 @@ class Client(Logger):
 
     @_autoclose
     def kill(self):
-        """Kills the remote ADB server"""
+        """Kills the remote ADB server"
+
+        >>> c=adb.protocol.Client()
+        >>> c.kill()
+
+        The server is automatically re-started on the next request,
+        if the default host/port are used.
+
+        >>> c.version() > (4,0)
+        True
+        """
         try:
             self.send('host:kill')
         except EOFError:
