@@ -92,7 +92,7 @@ class Client(Logger):
                 # as long as it's the *default* port.
                 if self.host == context.defaults['adb_host'] \
                 and self.port == context.defaults['adb_port']:
-                    log.info("Could not connect to ADB server, trying to start it")
+                    log.warn("Could not connect to ADB server, trying to start it")
                     process(context.adb + ['start-server']).recvall()
                 else:
                     log.exception('Could not connect to ADB server')
@@ -148,6 +148,7 @@ class Client(Logger):
         except EOFError:
             pass
 
+    @_autoclose
     def version(self):
         """
         Returns:
