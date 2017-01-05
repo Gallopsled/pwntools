@@ -43,14 +43,7 @@ class Message(object):
 class Connection(remote):
     """Connection to the ADB server"""
     def __init__(self, host, port, level=None, *a, **kw):
-        # Try to make sure ADB is running if it's on the default host and port.
-        if host == context.defaults['adb_host'] \
-        and port == context.defaults['adb_port']:
-            with context.quiet:
-                process(context.adb + ['start-server']).recvall()
-
-        with context.quiet:
-            super(Connection, self).__init__(host, port, level=level, *a, **kw)
+        super(Connection, self).__init__(host, port, level=level, *a, **kw)
 
         self._executable = None
         self._argv       = None
@@ -91,6 +84,20 @@ class Client(Logger):
     @property
     def c(self):
         """Client's connection to the ADB server"""
+        if not self._c:
+            try:
+                self._c = Connection(self.host, self.port, level=self.level)
+            except Exception:
+                # If the connection fails, try starting a server on that port
+                # as long as it's the *default* port.
+                if self.host == context.defaults['adb_host'] \
+                and self.port == context.defaults['adb_port']:
+                    log.info("Could not connect to ADB server, trying to start it")
+                    process(context.adb + ['start-server']).recvall()
+                else:
+                    log.exception('Could not connect to ADB server')
+
+        # Final attempt...
         if not self._c:
             self._c = Connection(self.host, self.port, level=self.level)
         return self._c
