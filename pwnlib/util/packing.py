@@ -595,6 +595,8 @@ def fit(pieces=None, **kwargs):
       >>> fit({ 8: [0x41414141, 0x42424242],
       ...      20: 'CCCC'})
       'aaaabaaaAAAABBBBeaaaCCCC'
+      >>> fit({ 0x61616162: 'X'})
+      'aaaaX'
 
     """
     # HACK: To avoid circular imports we need to delay the import of `cyclic`
@@ -620,15 +622,21 @@ def fit(pieces=None, **kwargs):
     if not pieces:
         return ''.join(filler.next() for f in range(length))
 
+    def fill(out, value):
+        while value not in out:
+            out += filler.next()
+        return out, out.index(value)
+
     # convert str keys to offsets
+    # convert large int keys to offsets
     pieces_ = dict()
     for k, v in pieces.items():
         if isinstance(k, (int, long)):
-            pass
+            # cyclic() generally starts with 'aaaa'
+            if k >= 0x61616161:
+                out, k = fill(out, pack(k))
         elif isinstance(k, str):
-            while k not in out:
-                out += filler.next()
-            k = out.index(k)
+            out, k = fill(out, k)
         else:
             raise TypeError("fit(): offset must be of type int or str, but got '%s'" % type(k))
         pieces_[k] = v
