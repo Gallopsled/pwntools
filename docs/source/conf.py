@@ -44,6 +44,10 @@ extensions = [
     'sphinxcontrib.napoleon'
 ]
 
+# Napoleon settings
+napoleon_use_ivar = True
+napoleon_use_rtype = False
+
 doctest_global_setup = '''
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
@@ -67,7 +71,7 @@ class stdout(object):
 pwnlib.context.ContextType.defaults['log_console'] = stdout()
 '''
 
-autodoc_member_order = 'alphabetical'
+autodoc_member_order = 'groupwise' # 'alphabetical'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -231,7 +235,7 @@ latex_documents = [
 ]
 
 intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None),
-                       'paramiko': ('https://paramiko-docs.readthedocs.org/en/1.15/', None)}
+                       'paramiko': ('https://paramiko-docs.readthedocs.org/en/2.1/', None)}
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
@@ -347,3 +351,9 @@ if build_dash:
         html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
     # otherwise, readthedocs.org uses their theme by default, so no need to specify it
+
+
+# -- Customization to Sphinx autodoc generation --------------------------------------------
+import sphinx.ext.autodoc
+
+sphinx.ext.autodoc
