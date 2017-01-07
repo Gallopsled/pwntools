@@ -97,6 +97,9 @@ class Function(object):
             self.elf
             )
 
+    def __flag__(self):
+        return packing.pack(self.address)
+
 def load(*args, **kwargs):
     """Compatibility wrapper for pwntools v1"""
     return ELF(*args, **kwargs)
