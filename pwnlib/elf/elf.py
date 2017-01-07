@@ -112,7 +112,7 @@ class dotdict(dict):
 
     Example:
 
-        >>> x = dotdict()
+        >>> x = pwnlib.elf.elf.dotdict()
         >>> isinstance(x, dict)
         True
         >>> x['foo'] = 3
@@ -368,7 +368,7 @@ class ELF(ELFFile):
             >>> read = bash.symbols['read']
             >>> text = bash.get_section_by_name('.text').header.sh_addr
             >>> bash.address += 0x1000
-            >>> read + 0x1000 = bash.symbols['read']
+            >>> read + 0x1000 == bash.symbols['read']
             True
             >>> text == bash.get_section_by_name('.text').header.sh_addr
             True
@@ -649,7 +649,7 @@ class ELF(ELFFile):
 
             We can also search for string the binary.
 
-            >>> len(list(e.search('GNU bash'))) > 0
+            >>> len(list(bash.search('GNU bash'))) > 0
             True
         """
         load_address_fixup = (self.address - self.load_addr)
