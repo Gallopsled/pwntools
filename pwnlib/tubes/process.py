@@ -28,6 +28,8 @@ PTY=PTY()
 STDOUT = subprocess.STDOUT
 PIPE = subprocess.PIPE
 
+signal_names = {-v:k for k,v in signal.__dict__.items() if k.startswith('SIG')}
+
 class process(tube):
     r"""
     Spawns a new process, and wraps it with a tube for communication.
@@ -574,11 +576,18 @@ class process(tube):
             self.wait_for_close()
 
         self.proc.poll()
-        if self.proc.returncode != None and not self._stop_noticed:
-            self._stop_noticed = True
-            self.info("Process %r stopped with exit code %d" % (self.display, self.proc.returncode))
+        returncode = self.proc.returncode
 
-        return self.proc.returncode
+        if returncode != None and not self._stop_noticed:
+            self._stop_noticed = True
+            signame = ''
+            if returncode < 0:
+                signame = ' (%s)' % (signal_names.get(returncode, 'SIG???'))
+
+            self.info("Process %r stopped with exit code %d%s" % (self.display,
+                                                                  returncode,
+                                                                  signame))
+        return returncode
 
     def communicate(self, stdin = None):
         """communicate(stdin = None) -> str
