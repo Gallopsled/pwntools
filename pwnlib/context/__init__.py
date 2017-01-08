@@ -565,6 +565,7 @@ class ContextType(object):
         Examples:
 
             >>> # Default value
+            >>> context.clear()
             >>> context.arch == 'i386'
             True
             >>> context.arch = 'arm'

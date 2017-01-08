@@ -3,6 +3,7 @@
    from pwn import *
    import logging
    log = pwnlib.log.getLogger('pwnlib.context')
+   context.clear()
 
 :mod:`pwnlib.context` --- Setting runtime variables
 =====================================================
