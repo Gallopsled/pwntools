@@ -17,6 +17,7 @@ from pwnlib import term
 from pwnlib.context import context
 from pwnlib.log import Logger
 from pwnlib.log import getLogger
+from pwnlib.term import text
 from pwnlib.timeout import Timeout
 from pwnlib.tubes.process import process
 from pwnlib.tubes.sock import sock
@@ -516,6 +517,9 @@ class ssh(Timeout, Logger):
         self.cwd             = '.'
         self.cache           = cache
 
+        # Deferred attributes
+        self._platform_info = {}
+
         misc.mkdir_p(self._cachedir)
 
         # This is a dirty hack to make my Yubikey shut up.
@@ -576,10 +580,15 @@ class ssh(Timeout, Logger):
         self._tried_sftp = False
 
         with context.local(log_level='error'):
+            def getppid():
+                import os
+                print(os.getppid())
             try:
-                self.pid = int(self.system('echo $PPID').recv(timeout=1))
+                self.pid = int(self.process('false', preexec_fn=getppid).recvall())
             except Exception:
                 self.pid = None
+
+        self.info_once(self.checksec())
 
     @property
     def sftp(self):
@@ -1627,3 +1636,187 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
     def read(self, path):
         """Wrapper around download_data to match ``pwnlib.util.misc.read``"""
         return self.download_data(path)
+
+    def _init_remote_platform_info(self):
+        """Fills _platform_info, e.g.:
+
+        {'distro': 'Ubuntu\n',
+         'distro_ver': '14.04\n',
+         'machine': 'x86_64',
+         'node': 'pwnable.kr',
+         'processor': 'x86_64',
+         'release': '3.11.0-12-generic',
+         'system': 'linux',
+         'version': '#19-ubuntu smp wed oct 9 16:20:46 utc 2013'}
+        """
+        if self._platform_info:
+            return
+
+        def preexec():
+            import platform
+            print('\n'.join(platform.uname()))
+
+        with context.quiet:
+            with self.process('true', preexec_fn=preexec) as io:
+
+                self._platform_info = {
+                    'system': io.recvline().lower().strip(),
+                    'node': io.recvline().lower().strip(),
+                    'release': io.recvline().lower().strip(),
+                    'version': io.recvline().lower().strip(),
+                    'machine': io.recvline().lower().strip(),
+                    'processor': io.recvline().lower().strip(),
+                    'distro': 'Unknown',
+                    'distro_ver': ''
+                }
+
+            try:
+                with self.process(['lsb_release', '-irs']) as io:
+                    self._platform_info.update({
+                        'distro': io.recvline().strip(),
+                        'distro_ver': io.recvline().strip()
+                    })
+            except Exception:
+                pass
+
+    @property
+    def os(self):
+        """:class:`str`: Operating System of the remote machine."""
+        try:
+            self._init_remote_platform_info()
+            with context.local(os=self._platform_info['system']):
+                return context.os
+        except Exception:
+            return "Unknown"
+
+
+    @property
+    def arch(self):
+        """:class:`str`: CPU Architecture of the remote machine."""
+        try:
+            self._init_remote_platform_info()
+            with context.local(arch=self._platform_info['processor']):
+                return context.arch
+        except Exception:
+            return "Unknown"
+
+    @property
+    def bits(self):
+        """:class:`str`: Pointer size of the remote machine."""
+        try:
+            with context.local():
+                context.clear()
+                context.arch = self.arch
+                return context.bits
+        except Exception:
+            return context.bits
+
+    @property
+    def version(self):
+        """:class:`tuple`: Kernel version of the remote machine."""
+        try:
+            self._init_remote_platform_info()
+            vers = self._platform_info['release']
+
+            # 3.11.0-12-generic
+            expr = r'([0-9]+\.?)+'
+
+            vers = re.search(expr, vers).group()
+            return tuple(map(int, vers.split('.')))
+
+        except Exception:
+            return (0,0,0)
+
+    @property
+    def distro(self):
+        """:class:`tuple`: Linux distribution name and release."""
+        try:
+            self._init_remote_platform_info()
+            return (self._platform_info['distro'], self._platform_info['distro_ver'])
+        except Exception:
+            return ("Unknown", "Unknown")
+
+    @property
+    def aslr(self):
+        """:class:`bool`: Whether ASLR is enabled on the system."""
+        if self.os != 'linux':
+            self.warn_once("Only Linux is supported for ASLR checks.")
+            return False
+
+        with context.quiet:
+            rvs = self.read('/proc/sys/kernel/randomize_va_space')
+
+        if rvs.startswith('0'):
+            return False
+
+        return True
+
+    @property
+    def aslr_ulimit(self):
+        """:class:`bool`: Whether the entropy of 32-bit processes can be reduced with ulimit."""
+        import pwnlib.elf.elf
+        import pwnlib.shellcraft
+
+        # This test must run a 32-bit binary, fix the architecture
+        arch = {
+            'amd64': 'i386',
+            'aarch64': 'arm'
+        }.get(self.arch, self.arch)
+
+        with context.local(arch=arch, bits=32, os=self.os, aslr=False):
+            with context.quiet:
+                sc = pwnlib.shellcraft.cat('/proc/self/maps') \
+                   + pwnlib.shellcraft.exit(0)
+
+                elf = pwnlib.elf.elf.ELF.from_assembly(sc, shared=True)
+
+                # Move to a new temporary directory
+                cwd = self.cwd
+                tmp = self.set_working_directory()
+                self.upload(elf.path, './aslr-test')
+                self.process(['chmod', '+x', './aslr-test']).wait()
+                maps = self.process(['./aslr-test']).recvall()
+
+                # Move back to the old directory
+                self.cwd = cwd
+
+                # Clean up the files
+                self.process(['rm', '-rf', tmp]).wait()
+
+        # Check for 555555000 (1/3 of the address space for PAE)
+        # and for 40000000 (1/3 of the address space with 3BG barrier)
+        if '55555000' in maps or '40000000' in maps:
+            return True
+
+        return False
+
+    def checksec(self, banner=True):
+        """checksec()
+
+        Prints a helpful message about the remote system.
+
+        Arguments:
+            banner(bool): Whether to print the path to the ELF binary.
+        """
+        red    = text.red
+        green  = text.green
+        yellow = text.yellow
+
+        res = [
+            "%s@%s:" % (self.user, self.host),
+            "Distro".ljust(10) + ' '.join(self.distro),
+            "OS:".ljust(10) + self.os,
+            "Arch:".ljust(10) + self.arch,
+            "Version:".ljust(10) + '.'.join(map(str, self.version)),
+
+            "ASLR:".ljust(10) + {
+                True: green("Enabled"),
+                False: red("Disabled")
+            }[self.aslr]
+        ]
+
+        if self.aslr_ulimit:
+            res += [ "Note:".ljust(10) + red("Susceptible to ASLR ulimit trick (CVE-2016-3672)")]
+
+        return '\n'.join(res)
+
