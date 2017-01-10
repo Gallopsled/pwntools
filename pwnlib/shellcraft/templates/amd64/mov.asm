@@ -61,17 +61,26 @@ Example:
         mov rax, 0x1010110dfac01fe
         xor [rsp], rax
         pop rax
-   >>> with context.local(os = 'linux'):
-   ...     print shellcraft.amd64.mov('eax', 'SYS_read').rstrip()
-       xor eax, eax /* (SYS_read) */
-   >>> with context.local(os = 'freebsd'):
-   ...     print shellcraft.amd64.mov('eax', 'SYS_read').rstrip()
-       push (SYS_read) /* 3 */
-       pop rax
-   >>> with context.local(os = 'linux'):
-   ...     print shellcraft.amd64.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
-       push (PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
-       pop rax
+    >>> print shellcraft.amd64.mov('rax', 0xffffffff).rstrip()
+        mov eax, 0xffffffff
+    >>> print shellcraft.amd64.mov('rax', 0x7fffffff).rstrip()
+        mov eax, 0x7fffffff
+    >>> print shellcraft.amd64.mov('rax', 0x80010101).rstrip()
+        mov eax, 0x80010101
+    >>> print shellcraft.amd64.mov('rax', 0x80000000).rstrip()
+        mov eax, 0x1010101 /* 2147483648 == 0x80000000 */
+        xor eax, 0x81010101
+    >>> with context.local(os = 'linux'):
+    ...     print shellcraft.amd64.mov('eax', 'SYS_read').rstrip()
+        xor eax, eax /* (SYS_read) */
+    >>> with context.local(os = 'freebsd'):
+    ...     print shellcraft.amd64.mov('eax', 'SYS_read').rstrip()
+        push (SYS_read) /* 3 */
+        pop rax
+    >>> with context.local(os = 'linux'):
+    ...     print shellcraft.amd64.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
+        push (PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
+        pop rax
 
 Args:
   dest (str): The destination register.
@@ -99,7 +108,6 @@ if get_register(src):
     if dest.size == 64 and src.size <= 32:
         dest = get_register(dest.native32)
 
-    src_size = src.size
 else:
     with ctx.local(arch = 'amd64'):
         src = eval(src)
@@ -107,9 +115,9 @@ else:
     if not dest.fits(src):
         log.error("cannot mov %s, %r: dest is smaller than src" % (dest, src))
 
-    src_size = bits_required(src)
+    orig_dest = dest
 
-    if dest.size == 64 and src_size <= 32:
+    if dest.size == 64 and bits_required(src) <= 32:
         dest = get_register(dest.native32)
 
     # Calculate the packed version
@@ -117,7 +125,15 @@ else:
 
     # Calculate the unsigned and signed versions
     srcu = packing.unpack(srcp, dest.size, sign=False)
-    srcs = packing.unpack(srcp, dest.size, sign=True)
+
+    # N.B.: We may have downsized the register for e.g. mov('rax', 0xffffffff)
+    #       In this case, srcp is now a 4-byte packed value, which will expand
+    #       to "-1", which isn't correct.
+    if orig_dest.size != dest.size:
+        srcs = src
+    else:
+        srcs = packing.unpack(srcp, dest.size, sign=True)
+
 %>\
 % if is_register(src):
     % if src == dest:
