@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.5.0](#350)    | `dev`    | Mar 18, 2017 (planned)
 | [3.4.0](#340)    | `beta`   | Feb 4, 2017 (planned)
-| [3.3.0](#330)    | `stable` | Dec 24, 2016
+| [3.3.1](#331)    | `stable` | Jan 10, 2016
+| [3.3.0](#330)    |          | Dec 24, 2016
 | [3.2.1](#321)    |          | Dec 24, 2016
 | [3.2.0](#320)    |          | Nov 12, 2016
 | [3.1.1](#311)    |          | Oct 23, 2016
@@ -42,6 +43,15 @@ To be released on Feb 4, 2017.
 [5d9792f]: https://github.com/Gallopsled/pwntools/commit/5d9792f
 [b83a6c7]: https://github.com/Gallopsled/pwntools/commit/b83a6c7
 [546061e]: https://github.com/Gallopsled/pwntools/commit/546061e
+
+## 3.3.1
+
+- [#833][833] Fixed a performance-impacting bug in the adb module.
+- [#837][837] Fixed a bug([#836][836]) causing `hexdump(cyclic=True)` to throw an exception.
+
+[833]: https://github.com/Gallopsled/pwntools/pull/833
+[837]: https://github.com/Gallopsled/pwntools/pull/837
+[836]: https://github.com/Gallopsled/pwntools/issues/836
 
 ## 3.3.0
 
