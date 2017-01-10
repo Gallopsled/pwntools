@@ -70,6 +70,9 @@ Example:
     >>> print shellcraft.amd64.mov('rax', 0x80000000).rstrip()
         mov eax, 0x1010101 /* 2147483648 == 0x80000000 */
         xor eax, 0x81010101
+    >>> print shellcraft.amd64.mov('rax', 0xffffffffffffffff).rstrip()
+        push 0xffffffffffffffff
+        pop rax
     >>> with context.local(os = 'linux'):
     ...     print shellcraft.amd64.mov('eax', 'SYS_read').rstrip()
         xor eax, eax /* (SYS_read) */

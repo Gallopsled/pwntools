@@ -132,7 +132,7 @@ class module(ModuleType):
     def pretty(self, n, comment=True):
         if isinstance(n, str):
             return repr(n)
-        if not isinstance(n, int):
+        if not isinstance(n, (int,long)):
             return n
         if isinstance(n, constants.Constant):
             if comment: return '%s /* %s */' % (n,self.pretty(int(n)))
