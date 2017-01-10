@@ -675,6 +675,7 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
 
         # Chunk is unique, no longer skipping
         skipping = False
+        last_unique = chunk
 
         # Generate contents for line
         hexbytes = ''
