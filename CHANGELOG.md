@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.5.0](#350)    | `dev`    | Mar 18, 2017 (planned)
 | [3.4.0](#340)    | `beta`   | Feb 4, 2017 (planned)
-| [3.3.2](#332)    | `stable` | Jan 10, 2016
+| [3.3.3](#333)    | `stable` | Jan 10, 2016
+| [3.3.2](#332)    |          | Jan 10, 2016
 | [3.3.1](#331)    |          | Jan 10, 2016
 | [3.3.0](#330)    |          | Dec 24, 2016
 | [3.2.1](#321)    |          | Dec 24, 2016
@@ -45,11 +46,17 @@ To be released on Feb 4, 2017.
 [b83a6c7]: https://github.com/Gallopsled/pwntools/commit/b83a6c7
 [546061e]: https://github.com/Gallopsled/pwntools/commit/546061e
 
+## 3.3.3
+
+- [#843][843] fixed a bug in `amd64.mov`.
+
+[843]: https://github.com/gallopsled/pwntools/pull/843
+
 ## 3.3.2
 
-- [#840][840] Fixed a regression introduced by [#837][837].
+- [#840][840] fixed a regression introduced by [#837][837].
 
-[840]: https://github.com/Gallopsled/pwntools/pull/840
+[840]: https://github.com/gallopsled/pwntools/pull/840
 
 ## 3.3.1
 
