@@ -1,6 +1,7 @@
 .. testsetup:: *
 
-   from pwnlib.util.fiddling import *
+    from pwn import *
+    from pwnlib.util.fiddling import *
 
 
 :mod:`pwnlib.util.fiddling` --- Utilities bit fiddling

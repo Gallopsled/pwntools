@@ -56,6 +56,7 @@ import pwnlib
 pwnlib.context.context.reset_local()
 pwnlib.context.ContextType.defaults['log_level'] = 'ERROR'
 pwnlib.context.ContextType.defaults['randomize'] = False
+pwnlib.util.fiddling.default_style = {}
 pwnlib.term.text.when = 'never'
 pwnlib.log.install_default_handler()
 pwnlib.log.rootlogger.setLevel(1)
