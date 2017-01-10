@@ -608,6 +608,22 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
     spacer      = ' '
     marker      = (style.get('marker') or (lambda s:s))('│')
 
+    # Total length of the input stream
+    total = 0
+
+    if hasattr(fd, 'len'):
+        total = fd.len
+    else:
+        # Save the current file offset
+        cur = fd.seek(0, os.SEEK_CUR)
+
+        # Determine the total size of the file
+        fd.seek(0, os.SEEK_END)
+        total = fd.tell()
+
+        # Restore the file offset
+        fd.seek(cur, os.SEEK_SET)
+
     if hexii:
         column_sep = ''
         line_fmt   = '%%(offset)08x  %%(hexbytes)-%is│' % (len(column_sep)+(width*byte_width))
@@ -628,7 +644,7 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
         cache = [style_byte(chr(b)) for b in range(256)]
 
     if cyclic:
-        update_cyclic_pregenerated(len(s))
+        update_cyclic_pregenerated(total)
 
     numb = 0
     while True:
@@ -637,19 +653,25 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
         if chunk == '':
             break
         numb += len(chunk)
+
         # If this chunk is the same as the last unique chunk,
         # use a '*' instead.
-        if skip and \
-           (last_unique == chunk or \
-            (cyclic and sequential_lines(last_unique, chunk))):
+        if skip and last_unique:
+            same_as_last_line = (last_unique == chunk)
+            lines_are_sequential = (cyclic and sequential_lines(last_unique, chunk))
             last_unique = chunk
-            if not skipping:
-                yield '*'
-                skipping = True
-            continue
 
-        # Chunk is unique, save for next iteration
-        last_unique = chunk
+            if same_as_last_line or lines_are_sequential:
+
+                # If we have not already printed a "*", do so
+                if not skipping:
+                    yield '*'
+                    skipping = True
+
+                # Move on to the next chunk
+                continue
+
+        # Chunk is unique, no longer skipping
         skipping = False
 
         # Generate contents for line
