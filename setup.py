@@ -83,7 +83,7 @@ except ImportError:
 setup(
     name                 = 'pwntools',
     packages             = find_packages(),
-    version              = '3.3.1',
+    version              = '3.3.2',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],
