@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import base64
 import random
+import os
 import re
 import string
 import StringIO
@@ -615,14 +616,15 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
         total = fd.len
     else:
         # Save the current file offset
-        cur = fd.seek(0, os.SEEK_CUR)
+        cur = fd.tell()
 
         # Determine the total size of the file
         fd.seek(0, os.SEEK_END)
-        total = fd.tell()
+        total = fd.tell() - cur
 
-        # Restore the file offset
-        fd.seek(cur, os.SEEK_SET)
+        # Restore the file offset, and
+        fd.seek(cur or 0, os.SEEK_SET)
+
 
     if hexii:
         column_sep = ''
