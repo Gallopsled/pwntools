@@ -572,7 +572,7 @@ def update_cyclic_pregenerated(size):
 
 def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
                  highlight=None, cyclic=False):
-    """hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
+    r"""hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
                     style = None, highlight = None, cyclic = False) -> str generator
 
     Return a hexdump-dump of a string as a generator of lines.  Unless you have
@@ -590,6 +590,16 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
 
     Returns:
         A generator producing the hexdump-dump one line at a time.
+
+    Example:
+
+        >>> tmp = tempfile.NamedTemporaryFile()
+        >>> tmp.write('XXXXHELLO, WORLD')
+        >>> tmp.flush()
+        >>> tmp.seek(4)
+        >>> print '\n'.join(hexdump_iter(tmp))
+        00000000  48 45 4c 4c  4f 2c 20 57  4f 52 4c 44               │HELL│O, W│ORLD││
+        0000000c
     """
     style     = style or {}
     highlight = highlight or []
