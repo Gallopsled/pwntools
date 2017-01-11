@@ -396,6 +396,9 @@ class SigreturnFrame(dict):
     def __len__(self):
         return self.size
 
+    def __flat__(self):
+        return str(self)
+
     @property
     def registers(self):
         if self.arch == "mips" and self.endian == "little":
