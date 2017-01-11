@@ -285,6 +285,22 @@ class ELF(ELFFile):
             p = adb.process
         return p([self.path] + argv, *a, **kw)
 
+    def debug(self, argv=[], *a, **kw):
+        """debug(argv=[], *a, **kw) -> tube
+
+        Debug the binary with :func:`.gdb.debug`.
+
+        Arguments:
+            argv(list): List of arguments to the binary
+            *args: Extra arguments to :func:`.gdb.debug`
+            **kwargs: Extra arguments to :func:`.gdb.debug`
+
+        Returns:
+            :class:`.tube`: See :func:`.gdb.debug`
+        """
+        import pwnlib.gdb
+        return pwnlib.gdb.debug([self.path] + argv, *a, **kw)
+
     def _describe(self):
         log.info_once('\n'.join((repr(self.path),
                                 '%-10s%s-%s-%s' % ('Arch:', self.arch, self.bits, self.endian),
@@ -1134,9 +1150,16 @@ class ELF(ELFFile):
             data += c
             address += 1
 
-    def flat(self, *a, **kw):
+    def flat(self, address, *a, **kw):
         """Writes a full array of values to the specified address.
 
         See: :func:`.packing.flat`
         """
-        return self.send(packing.flat(*a,**kw))
+        return self.write(address, packing.flat(*a,**kw))
+
+    def fit(self, address, *a, **kw):
+        """Writes fitted data into the specified address.
+
+        See: :func:`.packing.fit`
+        """
+        return self.write(address, packing.fit(*a, **kw))

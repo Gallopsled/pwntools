@@ -1366,3 +1366,4 @@ class tube(Timeout, Logger):
     def unpack(self, *a, **kw):     return packing.unpack(self.recvn(context.bytes), *a, **kw)
 
     def flat(self, *a, **kw):       return self.send(packing.flat(*a,**kw))
+    def fit(self, *a, **kw):        return self.send(packing.fit(*a, **kw))
