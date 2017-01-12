@@ -11,7 +11,7 @@ from . import packing
 from ..context import context
 from ..log import getLogger
 from ..term import text
-from .cyclic import cyclic
+from .cyclic import de_bruijn
 from .cyclic import cyclic_find
 
 log = getLogger(__name__)
@@ -560,13 +560,15 @@ default_style = {
 }
 
 cyclic_pregen = ''
+de_bruijn_gen = de_bruijn()
 
 def sequential_lines(a,b):
     return (a+b) in cyclic_pregen
 
 def update_cyclic_pregenerated(size):
     global cyclic_pregen
-    cyclic_pregen = cyclic(size)
+    while size > len(cyclic_pregen):
+        cyclic_pregen += de_bruijn_gen.next()
 
 def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
                  highlight=None, cyclic=False):
@@ -609,23 +611,6 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
     spacer      = ' '
     marker      = (style.get('marker') or (lambda s:s))('│')
 
-    # Total length of the input stream
-    total = 0
-
-    if hasattr(fd, 'len'):
-        total = fd.len
-    else:
-        # Save the current file offset
-        cur = fd.tell()
-
-        # Determine the total size of the file
-        fd.seek(0, os.SEEK_END)
-        total = fd.tell() - cur
-
-        # Restore the file offset, and
-        fd.seek(cur or 0, os.SEEK_SET)
-
-
     if hexii:
         column_sep = ''
         line_fmt   = '%%(offset)08x  %%(hexbytes)-%is│' % (len(column_sep)+(width*byte_width))
@@ -645,16 +630,28 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
             return hbyte, abyte
         cache = [style_byte(chr(b)) for b in range(256)]
 
-    if cyclic:
-        update_cyclic_pregenerated(total)
-
     numb = 0
     while True:
         offset = begin + numb
-        chunk = fd.read(width)
+
+        # If a tube is passed in as fd, it will raise EOFError when it runs
+        # out of data, unlike a file or StringIO object, which return an empty
+        # string.
+        try:
+            chunk = fd.read(width)
+        except EOFError:
+            chunk = ''
+
+        # We have run out of data, exit the loop
         if chunk == '':
             break
+
+        # Advance the cursor by the number of bytes we actually read
         numb += len(chunk)
+
+        # Update the cyclic pattern in case
+        if cyclic:
+            update_cyclic_pregenerated(numb)
 
         # If this chunk is the same as the last unique chunk,
         # use a '*' instead.
