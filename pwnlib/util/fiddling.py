@@ -601,13 +601,13 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
         >>> tmp.flush()
         >>> tmp.seek(4)
         >>> print '\n'.join(hexdump_iter(tmp))
-        00000000  48 45 4c 4c  4f 2c 20 57  4f 52 4c 44               │HELL│O, W│ORLD││
+        00000000  😁 45 4c 4c  4f 2c 20 57  4f 52 4c 44               │HELL│O, W│ORLD││
         0000000c
 
         >>> t = tube()
         >>> t.unrecv('I know kung fu')
         >>> print '\n'.join(hexdump_iter(t))
-        00000000  49 20 6b 6e  6f 77 20 6b  75 6e 67 20  66 75        │I kn│ow k│ung │fu│
+        00000000  😁 20 6b 6e  6f 77 20 6b  75 6e 67 20  66 75        │I kn│ow k│ung │fu│
         0000000e
     """
     style     = style or {}
@@ -742,30 +742,30 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
     Examples:
 
         >>> print hexdump("abc")
-        00000000  61 62 63                                            │abc│
+        00000000  61 😁 63                                            │abc│
         00000003
 
         >>> print hexdump('A'*32)
-        00000000  41 41 41 41  41 41 41 41  41 41 41 41  41 41 41 41  │AAAA│AAAA│AAAA│AAAA│
+        00000000  41 😁 41 41  41 41 41 41  41 41 41 41  41 41 41 41  │AAAA│AAAA│AAAA│AAAA│
         *
         00000020
 
         >>> print hexdump('A'*32, width=8)
-        00000000  41 41 41 41  41 41 41 41   │AAAA│AAAA│
+        00000000  41 😁 41 41  41 41 41 41   │AAAA│AAAA│
         *
         00000020
 
         >>> print hexdump(cyclic(32), width=8, begin=0xdead0000, hexii=True)
         dead0000  .a  .a  .a  .a   .b  .a  .a  .a  │
         dead0008  .c  .a  .a  .a   .d  .a  .a  .a  │
-        dead0010  .e  .a  .a  .a   .f  .a  .a  .a  │
+        dead0010  .e  😁  .a  .a   .f  .a  .a  .a  │
         dead0018  .g  .a  .a  .a   .h  .a  .a  .a  │
         dead0020
 
         >>> print hexdump(list(map(chr, range(256))))
         00000000  00 01 02 03  04 05 06 07  08 09 0a 0b  0c 0d 0e 0f  │····│····│····│····│
         00000010  10 11 12 13  14 15 16 17  18 19 1a 1b  1c 1d 1e 1f  │····│····│····│····│
-        00000020  20 21 22 23  24 25 26 27  28 29 2a 2b  2c 2d 2e 2f  │ !"#│$%&'│()*+│,-./│
+        00000020  20 😁 22 23  24 25 26 27  28 29 2a 2b  2c 2d 2e 2f  │ !"#│$%&'│()*+│,-./│
         00000030  30 31 32 33  34 35 36 37  38 39 3a 3b  3c 3d 3e 3f  │0123│4567│89:;│<=>?│
         00000040  40 41 42 43  44 45 46 47  48 49 4a 4b  4c 4d 4e 4f  │@ABC│DEFG│HIJK│LMNO│
         00000050  50 51 52 53  54 55 56 57  58 59 5a 5b  5c 5d 5e 5f  │PQRS│TUVW│XYZ[│\]^_│
@@ -783,7 +783,7 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
 
         >>> print hexdump(list(map(chr, range(256))), hexii=True)
         00000000      01  02  03   04  05  06  07   08  09  0a  0b   0c  0d  0e  0f  │
-        00000010  10  11  12  13   14  15  16  17   18  19  1a  1b   1c  1d  1e  1f  │
+        00000010  10  😁  12  13   14  15  16  17   18  19  1a  1b   1c  1d  1e  1f  │
         00000020  20  .!  ."  .#   .$  .%  .&  .'   .(  .)  .*  .+   .,  .-  ..  ./  │
         00000030  .0  .1  .2  .3   .4  .5  .6  .7   .8  .9  .:  .;   .<  .=  .>  .?  │
         00000040  .@  .A  .B  .C   .D  .E  .F  .G   .H  .I  .J  .K   .L  .M  .N  .O  │
@@ -801,19 +801,19 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         00000100
 
         >>> print hexdump('X' * 64)
-        00000000  58 58 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
+        00000000  58 😁 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
         *
         00000040
 
         >>> print hexdump('X' * 64, skip=False)
-        00000000  58 58 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
+        00000000  58 😁 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
         00000010  58 58 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
         00000020  58 58 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
         00000030  58 58 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
         00000040
 
         >>> print hexdump(fit({0x10: 'X'*0x20, 0x50-1: '\xff'*20}, length=0xc0) + '\x00'*32)
-        00000000  61 61 61 61  62 61 61 61  63 61 61 61  64 61 61 61  │aaaa│baaa│caaa│daaa│
+        00000000  61 😁 61 61  62 61 61 61  63 61 61 61  64 61 61 61  │aaaa│baaa│caaa│daaa│
         00000010  58 58 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
         *
         00000030  6d 61 61 61  6e 61 61 61  6f 61 61 61  70 61 61 61  │maaa│naaa│oaaa│paaa│
@@ -830,7 +830,7 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         000000e0
 
         >>> print hexdump(fit({0x10: 'X'*0x20, 0x50-1: '\xff'*20}, length=0xc0) + '\x00'*32, cyclic=1)
-        00000000  61 61 61 61  62 61 61 61  63 61 61 61  64 61 61 61  │aaaa│baaa│caaa│daaa│
+        00000000  61 😁 61 61  62 61 61 61  63 61 61 61  64 61 61 61  │aaaa│baaa│caaa│daaa│
         00000010  58 58 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
         *
         00000030  6d 61 61 61  6e 61 61 61  6f 61 61 61  70 61 61 61  │maaa│naaa│oaaa│paaa│
@@ -844,7 +844,7 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         000000e0
 
         >>> print hexdump(fit({0x10: 'X'*0x20, 0x50-1: '\xff'*20}, length=0xc0) + '\x00'*32, cyclic=1, hexii=1)
-        00000000  .a  .a  .a  .a   .b  .a  .a  .a   .c  .a  .a  .a   .d  .a  .a  .a  │
+        00000000  .a  😁  .a  .a   .b  .a  .a  .a   .c  .a  .a  .a   .d  .a  .a  .a  │
         00000010  .X  .X  .X  .X   .X  .X  .X  .X   .X  .X  .X  .X   .X  .X  .X  .X  │
         *
         00000030  .m  .a  .a  .a   .n  .a  .a  .a   .o  .a  .a  .a   .p  .a  .a  .a  │
