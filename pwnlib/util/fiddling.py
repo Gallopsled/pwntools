@@ -3,8 +3,8 @@ from __future__ import absolute_import
 
 import base64
 import random
-import os
 import re
+import os
 import string
 import StringIO
 
@@ -711,7 +711,16 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
 
         if i + 1 < width:
             delta = width - i - 1
-            hexbytes += ' ' * (byte_width * delta + (delta - 1) // 4)
+
+            # How many hex-bytes would we have printed?
+            count = byte_width * delta
+
+            # How many dividers do we need to fill out the line?
+            dividers_per_line = (width // 4) - (1 if width % 4 == 0 else 0)
+            dividers_printed = (i // 4) + (1 if i % 4 == 3 else 0)
+            count += dividers_per_line - dividers_printed
+
+            hexbytes += ' ' * count
 
         line = line_fmt % {'offset': offset, 'hexbytes': hexbytes, 'printable': printable}
         yield line
@@ -856,6 +865,35 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         000000c0                                                                     │
         *
         000000e0
+
+        >>> print hexdump('A'*16, width=9)
+        00000000  41 41 41 41  41 41 41 41  41  │AAAA│AAAA│A│
+        00000009  41 41 41 41  41 41 41         │AAAA│AAA│
+        00000010
+        >>> print hexdump('A'*16, width=10)
+        00000000  41 41 41 41  41 41 41 41  41 41  │AAAA│AAAA│AA│
+        0000000a  41 41 41 41  41 41               │AAAA│AA│
+        00000010
+        >>> print hexdump('A'*16, width=11)
+        00000000  41 41 41 41  41 41 41 41  41 41 41  │AAAA│AAAA│AAA│
+        0000000b  41 41 41 41  41                     │AAAA│A│
+        00000010
+        >>> print hexdump('A'*16, width=12)
+        00000000  41 41 41 41  41 41 41 41  41 41 41 41  │AAAA│AAAA│AAAA│
+        0000000c  41 41 41 41                            │AAAA││
+        00000010
+        >>> print hexdump('A'*16, width=13)
+        00000000  41 41 41 41  41 41 41 41  41 41 41 41  41  │AAAA│AAAA│AAAA│A│
+        0000000d  41 41 41                                   │AAA│
+        00000010
+        >>> print hexdump('A'*16, width=14)
+        00000000  41 41 41 41  41 41 41 41  41 41 41 41  41 41  │AAAA│AAAA│AAAA│AA│
+        0000000e  41 41                                         │AA│
+        00000010
+        >>> print hexdump('A'*16, width=15)
+        00000000  41 41 41 41  41 41 41 41  41 41 41 41  41 41 41  │AAAA│AAAA│AAAA│AAA│
+        0000000f  41                                               │A│
+        00000010
     """
     s = packing.flat(s)
     return '\n'.join(hexdump_iter(StringIO.StringIO(s),
