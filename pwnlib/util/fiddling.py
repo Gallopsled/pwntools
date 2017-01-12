@@ -634,7 +634,7 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
         fd.seek(0, os.SEEK_END)
         total = fd.tell() - cur
 
-        # Restore the file offset, and
+        # Restore the file offset
         fd.seek(cur or 0, os.SEEK_SET)
 
 
