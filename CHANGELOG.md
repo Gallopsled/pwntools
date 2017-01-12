@@ -46,6 +46,16 @@ To be released on Feb 4, 2017.
 [b83a6c7]: https://github.com/Gallopsled/pwntools/commit/b83a6c7
 [546061e]: https://github.com/Gallopsled/pwntools/commit/546061e
 
+## 3.3.4
+
+- [#850][850] and [#846][846] fix issues with `hexdump` and the `phd` command-line utility, when using pipes (e.g. `echo foo | phd`)
+- [#852][852] Fixes register ordering in `regsort`
+- [#853][853] Fixes the registers restored in `shellcraft.amd64.popad`
+
+[850]: https://github.com/gallopsled/pwntools/pull/843
+[852]: https://github.com/gallopsled/pwntools/pull/843
+[853]: https://github.com/gallopsled/pwntools/pull/843
+
 ## 3.3.3
 
 - [#843][843] fixed a bug in `amd64.mov`.
