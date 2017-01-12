@@ -6,7 +6,7 @@ in the same order.
     pop rdi
     pop rsi
     pop rbp
-    add rsp, 8
+    pop rbx /* add rsp, 8 */
     pop rbx
     pop rdx
     pop rcx
