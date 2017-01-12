@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.5.0](#350)    | `dev`    | Mar 18, 2017 (planned)
 | [3.4.0](#340)    | `beta`   | Feb 4, 2017 (planned)
-| [3.3.3](#333)    | `stable` | Jan 10, 2016
+| [3.3.4](#334)    | `stable` | Jan 12, 2016
+| [3.3.3](#333)    |          | Jan 10, 2016
 | [3.3.2](#332)    |          | Jan 10, 2016
 | [3.3.1](#331)    |          | Jan 10, 2016
 | [3.3.0](#330)    |          | Dec 24, 2016
@@ -52,9 +53,10 @@ To be released on Feb 4, 2017.
 - [#852][852] Fixes register ordering in `regsort`
 - [#853][853] Fixes the registers restored in `shellcraft.amd64.popad`
 
-[850]: https://github.com/gallopsled/pwntools/pull/843
-[852]: https://github.com/gallopsled/pwntools/pull/843
-[853]: https://github.com/gallopsled/pwntools/pull/843
+[846]: https://github.com/gallopsled/pwntools/pull/846
+[850]: https://github.com/gallopsled/pwntools/pull/850
+[852]: https://github.com/gallopsled/pwntools/pull/852
+[853]: https://github.com/gallopsled/pwntools/pull/853
 
 ## 3.3.3
 

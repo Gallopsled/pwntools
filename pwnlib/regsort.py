@@ -226,6 +226,8 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
          ('mov', 'b', 'c'),
          ('mov', 'c', 'x'),
          ('mov', 'x', '1')]
+         >>> regsort({'a': 'b', 'b': 'c'}, ['a','b','c'], xchg=0)
+         [('mov', 'a', 'b'), ('mov', 'b', 'c')]
     """
     if randomize is None:
         randomize = context.randomize
@@ -335,7 +337,9 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
     # If XCHG is expressly disabled, and there is no temporary register,
     # try to see if there is any register which can be used as a temp
     # register instead.
-    if not (xchg or tmp):
+    #
+    # If there are no cycles, there's no need for a temporary register.
+    if in_cycle and not (xchg or tmp):
         for reg in in_out:
             if not depends_on_cycle(reg, in_out, in_cycle):
                 tmp = reg
