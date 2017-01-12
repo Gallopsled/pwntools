@@ -72,6 +72,7 @@ class stdout(object):
 pwnlib.context.ContextType.defaults['log_console'] = stdout()
 '''
 
+autoclass_content = 'both'
 autodoc_member_order = 'groupwise' # 'alphabetical'
 
 # Add any paths that contain templates here, relative to this directory.
