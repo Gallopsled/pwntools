@@ -32,16 +32,15 @@ Example:
 if isinstance(envp, dict):
     envp = ['%s=%s' % (k,v) for (k,v) in envp.items()]
 
-args_reg = abi.register_arguments[2]
-env_reg  = abi.register_arguments[3]
+regs = abi.register_arguments
 %>
 % if isinstance(argv, (list, tuple)):
-    ${amd64.pushstr_array(abi.register_arguments[3], argv)}
-    <% argv = abi.register_arguments[3] %>
+    ${amd64.pushstr_array(regs[2], argv)}
+    <% argv = regs[2] %>
 % endif
 % if isinstance(envp, (list, tuple)):
-    ${amd64.pushstr_array(abi.register_arguments[2], envp)}
-    <% envp = abi.register_arguments[2] %>
+    ${amd64.pushstr_array(regs[3], envp)}
+    <% envp = regs[3] %>
 % endif
 % if isinstance(path, str) and not registers.is_register(path):
     ${amd64.pushstr(path)}
