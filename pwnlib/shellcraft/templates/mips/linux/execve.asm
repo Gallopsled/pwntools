@@ -31,14 +31,16 @@ Example:
 <%
 if isinstance(envp, dict):
     envp = ['%s=%s' % (k,v) for (k,v) in envp.items()]
+
+regs = abi.register_arguments
 %>
 % if isinstance(argv, (list, tuple)):
-    ${mips.pushstr_array(abi.register_arguments[3], argv)}
-    <% argv = abi.register_arguments[3] %>
+    ${mips.pushstr_array(regs[2], argv)}
+    <% argv = regs[2] %>
 % endif
 % if isinstance(envp, (list, tuple)):
-    ${mips.pushstr_array(abi.register_arguments[2], envp)}
-    <% envp = abi.register_arguments[2] %>
+    ${mips.pushstr_array(regs[3], envp)}
+    <% envp = regs[3] %>
 % endif
 % if isinstance(path, str) and not registers.is_register(path):
     ${mips.pushstr(path)}
