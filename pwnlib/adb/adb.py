@@ -949,7 +949,7 @@ def getprop(name=None):
     with context.quiet:
         if name:
             io = process(['getprop', name], executable='/system/bin/getprop')
-            return ui.recvall().strip()
+            return io.recvall().strip()
 
         result = process(['getprop'], executable='/system/bin/getprop').recvall()
 
