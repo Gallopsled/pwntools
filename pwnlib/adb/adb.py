@@ -779,7 +779,7 @@ def process(argv, shell=False, executable=None, env=None, *a, **kw):
 
     # Determine the full path to the executable
     if not executable:
-        executable = which(argv[0]) or './' + argv[0]
+        executable = argv[0] # which(argv[0]) or './' + argv[0]
 
     # If we're doing shell expansion, we need to feed it back into 'sh'
     # Yes, this is a little convoluted.
@@ -805,9 +805,16 @@ def process(argv, shell=False, executable=None, env=None, *a, **kw):
     #
     # This avoids weird side-effects where execute(['sh'])
     # would actually create two "sh" processes.
+    #
+    # The Toolbox version does not support '-a'
     argv0 = sh_string(argv[0])
     argv_str = ' '.join(map(sh_string, argv))
-    cmd += 'exec -a %s %s' % (argv0, argv_str)
+    cmd += 'exec '
+
+    if argv0 != os.path.basename(executable):
+        cmd += '-a %s '
+
+    cmd += argv_str
 
     message = "Starting %s process %r" % ('Android', argv[0])
 
