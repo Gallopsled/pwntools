@@ -601,6 +601,10 @@ class ssh(Timeout, Logger):
         self._tried_sftp = True
         return self._sftp
 
+    @sftp.setter
+    def sftp(self, value):
+        self._sftp = value
+        self._tried_sftp = True
 
     def __enter__(self, *a):
         return self
