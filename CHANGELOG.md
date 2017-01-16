@@ -166,7 +166,7 @@ Multiple bug fixes.
 - [1e414af][1e414af] Added `connect()` alias for `remote()`
     + For example, `io=connect('google.com', 80)`
     + This also works with `tcp(...)` and `udp(...)` aliases
-- [869ec42][869ec42] Added `ssh.read()` and `ssh.write()` aiases
+- [869ec42][869ec42] Added `ssh.read()` and `ssh.write()` aliases
 - [2af55c9][2af55c9] `AdbDevice` objects exposed via e.g. `adb.devices()` now offer scoped access to all `adb` module properties
     + It is now possible to e.g. `map(lambda d: d.process(['id']).recvall(), adb.devices())`
 
@@ -253,7 +253,7 @@ Android support via a new `adb` module, `context.device`, `context.adb_host`, an
 - Added `context.log_file` setting for sending logs to a file.  This can be set with the `LOG_FILE` magic command-line option.
 - Added `context.noptrace` setting for disabling actions which require `ptrace` support.  This is useful for turning all `gdb.debug` and `gdb.attach` options into no-ops, and can be set via the `NOPTRACE` magic command-line option.
 - Added `context.proxy` which hooks all connections and sends them to a SOCKS4/SOCKS5.  This can be set via the `PROXY` magic command-line option.
-- Added `context.randomize` to control randommization of settings like XOR keys and register ordering (default off).
+- Added `context.randomize` to control randomization of settings like XOR keys and register ordering (default off).
 - Added `context.terminal` for setting how to launch commands in a new terminal.
 
 #### DynELF and MemLeak Module
@@ -266,7 +266,7 @@ Android support via a new `adb` module, `context.device`, `context.adb_host`, an
 #### Encoders Module
 
 - Added a `pwnlib.encoders` module for assembled-shellcode encoders/decoders
-- Includes position-indepentent basic XOR encoders
+- Includes position-independent basic XOR encoders
 - Includes position-independent delta encoders
 - Includes non-position-independent alphanumeric encoders for Intel
 - Includes position-independent alphanumeric encoders for ARM/Thumb

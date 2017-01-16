@@ -59,9 +59,9 @@ This is a quick list of most of the objects and routines imported, in rough orde
     - Launch a binary under GDB and pop up a new terminal to interact with it.  Automates setting breakpoints and makes iteration on exploits MUCH faster.
     - Alternately, attach to a running process given a PID, ``pwnlib.tubes`` object, or even just a socket that's connected to it
 - ``args``
-    - Dictionary contining all-caps command-line arguments for quick access
+    - Dictionary containing all-caps command-line arguments for quick access
     - Run via ``python foo.py REMOTE=1`` and ``args['REMOTE'] == '1'``.
-    - Can also control logging verbosity and terminal fancyness
+    - Can also control logging verbosity and terminal fanciness
         - `NOTERM`
         - `SILENT`
         - `DEBUG`
@@ -78,7 +78,7 @@ This is a quick list of most of the objects and routines imported, in rough orde
     - It's the new ``getch``
 - ``safeeval``
     - :mod:`pwnlib.util.safeeval`
-    - Functions for safely evalutaing python code without nasty side-effects.
+    - Functions for safely evaluating python code without nasty side-effects.
 
 These are all pretty self explanatory, but are useful to have in the global namespace.
 
