@@ -1,8 +1,9 @@
 """
-Implementation of the Android Debug Bridge (ADB) protocol, as far as Binjitsu needs it.
+Implementation of the Android Debug Bridge (ADB) protocol.
 
-Documentation is available here:
-https://android.googlesource.com/platform/system/core/+/master/adb/protocol.txt
+Documentation is available here_.
+
+.. _here: https://android.googlesource.com/platform/system/core/+/master/adb/protocol.txt
 """
 from __future__ import absolute_import
 

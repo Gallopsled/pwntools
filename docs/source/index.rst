@@ -58,6 +58,7 @@ Each of the ``pwntools`` modules is documented here.
    gdb
    log
    memleak
+   protocols
    replacements
    rop
    rop/*

@@ -1,15 +1,15 @@
-
-:mod:`pwnlib.protocols` --- Wire Protocol Implementations
-=========================================================
+:mod:`pwnlib.protocols` --- Wire Protocols
+=============================================
 
 .. automodule:: pwnlib.protocols
 
 
-Protocols
+Supported Protocols
 -------------------
 
 .. toctree::
     :maxdepth: 3
     :glob:
 
-    tubes/*
+    protocols/*
+
