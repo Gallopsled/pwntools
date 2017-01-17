@@ -530,12 +530,13 @@ class ContextType(object):
     def quiet(self, function=None):
         """Disables all non-error logging within the enclosed scope,
         *unless* the debugging level is set to 'debug' or lower."""
-        if not function:
-            level = 'error'
-            if context.log_level <= logging.DEBUG:
-                level = None
-            return self.local(function, log_level=level)
+        level = 'error'
+        if context.log_level <= logging.DEBUG:
+            level = None
+        return self.local(function, log_level=level)
 
+    def quietfunc(self, function):
+        """Similar to :attr:`quiet`, but wraps a whole function."""
         @functools.wraps(function)
         def wrapper(*a, **kw):
             level = 'error'

@@ -88,7 +88,7 @@ def adb(argv, *a, **kw):
 
     return tubes.process.process(context.adb + argv, *a, **kw).recvall()
 
-@context.quiet
+@context.quietfunc
 def devices(serial=None):
     """Returns a list of ``Device`` objects corresponding to the connected devices."""
     with Client() as c:
@@ -552,7 +552,7 @@ def push(local_path, remote_path):
             return c.write(remote_path,
                            misc.read(local_path),
                            callback=_create_adb_push_pull_callback(w))
-@context.quiet
+@context.quietfunc
 @with_device
 def read(path, target=None, callback=None):
     """Download a file from the device, and extract its contents.
@@ -584,7 +584,7 @@ def read(path, target=None, callback=None):
 
     return data
 
-@context.quiet
+@context.quietfunc
 @with_device
 def write(path, data=''):
     """Create a file on the device with the provided contents.
@@ -602,7 +602,7 @@ def write(path, data=''):
         misc.write(temp.name, data)
         push(temp.name, path)
 
-@context.quiet
+@context.quietfunc
 @with_device
 def mkdir(path):
     """Create a directory on the target device.
@@ -645,7 +645,7 @@ def mkdir(path):
         if result:
             log.error(result)
 
-@context.quiet
+@context.quietfunc
 @with_device
 def makedirs(path):
     """Create a directory and all parent directories on the target device.
@@ -664,7 +664,7 @@ def makedirs(path):
 
     mkdir(path)
 
-@context.quiet
+@context.quietfunc
 @with_device
 def exists(path):
     """Return :const:`True` if ``path`` exists on the target device.
@@ -681,7 +681,7 @@ def exists(path):
     with Client() as c:
         return bool(c.stat(path))
 
-@context.quiet
+@context.quietfunc
 @with_device
 def isdir(path):
     """Return :const:`True` if ``path`` is a on the target device.
@@ -699,7 +699,7 @@ def isdir(path):
         st = c.stat(path)
         return bool(st and stat.S_ISDIR(st['mode']))
 
-@context.quiet
+@context.quietfunc
 @with_device
 def unlink(path, recursive=False):
     """Unlinks a file or directory on the target device.
@@ -816,7 +816,7 @@ def forward(port):
     start_forwarding = adb(['forward', tcp_port, tcp_port])
     atexit.register(lambda: adb(['forward', '--remove', tcp_port]))
 
-@context.quiet
+@context.quietfunc
 @with_device
 def logcat(stream=False):
     """Reads the system log file.
@@ -952,7 +952,7 @@ class Kernel(object):
         return self.symbols['_text']
 
     @property
-    @context.quiet
+    @context.quietfunc
     def symbols(self):
         """Returns a dictionary of kernel symbols"""
         result = {}
@@ -964,7 +964,7 @@ class Kernel(object):
         return result
 
     @property
-    @context.quiet
+    @context.quietfunc
     def kallsyms(self):
         """Returns the raw output of kallsyms"""
         if not self._kallsyms:
@@ -975,20 +975,20 @@ class Kernel(object):
         return self._kallsyms
 
     @property
-    @context.quiet
+    @context.quietfunc
     def version(self):
         """Returns the kernel version of the device."""
         root()
         return read('/proc/version').strip()
 
     @property
-    @context.quiet
+    @context.quietfunc
     def cmdline(self):
         root()
         return read('/proc/cmdline').strip()
 
     @property
-    @context.quiet
+    @context.quietfunc
     def lastmsg(self):
         root()
         if 'last_kmsg' in listdir('/proc'):
@@ -1240,15 +1240,15 @@ def readlink(path):
 
 class Partitions(object):
     @property
-    @context.quiet
+    @context.quietfunc
     def by_name_dir(self):
         return next(find('/dev/block/platform','by-name'))
 
-    @context.quiet
+    @context.quietfunc
     def __dir__(self):
         return list(self)
 
-    @context.quiet
+    @context.quietfunc
     @with_device
     def __iter__(self):
         root()
@@ -1257,7 +1257,7 @@ class Partitions(object):
         for name in listdir(self.by_name_dir):
             yield name
 
-    @context.quiet
+    @context.quietfunc
     @with_device
     def __getattr__(self, attr):
         for name in self:
@@ -1327,7 +1327,7 @@ def uninstall(package, *arguments):
         with context.quiet:
             return process(['pm','uninstall',package] + list(arguments)).recvall()
 
-@context.quiet
+@context.quietfunc
 def packages():
     """Returns a list of packages installed on the system"""
     packages = process(['pm', 'list', 'packages']).recvall()
