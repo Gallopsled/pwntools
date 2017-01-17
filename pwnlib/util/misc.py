@@ -51,14 +51,15 @@ def binary_ip(host):
     return socket.inet_aton(socket.gethostbyname(host))
 
 
-def size(n, abbriv = 'B', si = False):
-    """size(n, abbriv = 'B', si = False) -> str
+def size(n, abbrev = 'B', si = False):
+    """size(n, abbrev = 'B', si = False) -> str
 
     Convert the length of a bytestream to human readable form.
 
     Arguments:
-      n(int,str): The length to convert to human readable form
-      abbriv(str):
+      n(int,iterable): The length to convert to human readable form,
+        or an object which can have ``len()`` called on it.
+      abbrev(str): String appended to the size, defaults to ``'B'``.
 
     Example:
         >>> size(451)
@@ -67,24 +68,30 @@ def size(n, abbriv = 'B', si = False):
         '1000B'
         >>> size(1024)
         '1.00KB'
+        >>> size(1024, ' bytes')
+        '1.00K bytes'
         >>> size(1024, si = True)
         '1.02KB'
         >>> [size(1024 ** n) for n in range(7)]
         ['1B', '1.00KB', '1.00MB', '1.00GB', '1.00TB', '1.00PB', '1024.00PB']
+        >>> size([])
+        '0B'
+        >>> size([1,2,3])
+        '3B'
     """
-    if isinstance(n, str):
+    if hasattr(n, '__len__'):
         n = len(n)
 
     base = 1000.0 if si else 1024.0
     if n < base:
-        return '%d%s' % (n, abbriv)
+        return '%d%s' % (n, abbrev)
 
     for suffix in ['K', 'M', 'G', 'T']:
         n /= base
         if n < base:
-            return '%.02f%s%s' % (n, suffix, abbriv)
+            return '%.02f%s%s' % (n, suffix, abbrev)
 
-    return '%.02fP%s' % (n / base, abbriv)
+    return '%.02fP%s' % (n / base, abbrev)
 
 KB = 1024
 MB = 1024 * KB

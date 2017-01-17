@@ -5,6 +5,7 @@ import os
 import tempfile
 
 from pwnlib.log import getLogger
+from pwnlib.tubes.buffer import Buffer
 from pwnlib.util.misc import size
 
 log = getLogger(__name__)
@@ -51,15 +52,17 @@ def wget(url, save=None, timeout=5, **kwargs):
             chunk_size *= 1000
 
         # Count chunks as they're received
-        total_data    = ''
+        buf = Buffer()
 
         # Loop until we have all of the data
         for chunk in response.iter_content(chunk_size = 2**10):
-            total_data    += chunk
+            buf.add(chunk)
             if total_size:
-                w.status('%s / %s' % (size(total_data), size(total_size)))
+                w.status('%s / %s' % (size(buf.size), size(total_size)))
             else:
-                w.status('%s' % size(total_data))
+                w.status('%s' % size(buf.size))
+
+        total_data = buf.get()
 
         # Save to the target file if provided
         if save:
