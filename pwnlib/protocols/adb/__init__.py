@@ -74,7 +74,7 @@ class Process(Connection):
 class AdbClient(Logger):
     """ADB Client"""
     def __init__(self, level=None):
-        super(Client, self).__init__()
+        super(AdbClient, self).__init__()
 
         if level is not None:
             self.setLevel(level)
@@ -85,7 +85,7 @@ class AdbClient(Logger):
 
     @property
     def c(self):
-        """Client's connection to the ADB server"""
+        """AdbClient's connection to the ADB server"""
         if not self._c:
             try:
                 self._c = Connection(self.host, self.port, level=self.level)
@@ -344,9 +344,9 @@ class AdbClient(Logger):
 
         Examples:
 
-            >>> pprint(adb.Client().list('/data/user'))
+            >>> pprint(AdbClient().list('/data/user'))
             {'0': {'mode': 41471, 'size': 11, 'time': ...}}
-            >>> adb.Client().list('/does/not/exist')
+            >>> AdbClient().list('/does/not/exist')
             Traceback (most recent call last):
             ...
             PwnlibException: Cannot list directory '/does/not/exist': Does not exist
