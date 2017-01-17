@@ -545,21 +545,14 @@ class ELF(ELFFile):
                 continue
 
             for symbol in section.iter_symbols():
-                if not symbol.entry.st_value:
+                value = symbol.entry.st_value
+                if not value:
                     continue
+                self.symbols[symbol.name] = value
 
-                self.symbols[symbol.name] = symbol.entry.st_value
-
-        # Add 'plt.foo' and 'got.foo' to the symbols for entries,
-        # iff there is no symbol for that address
-        for sym, addr in self.plt.items():
-            if addr not in self.symbols.values():
-                self.symbols['plt.%s' % sym] = addr
-
-        for sym, addr in self.got.items():
-            if addr not in self.symbols.values():
-                self.symbols['got.%s' % sym] = addr
-
+        # Add 'plt.foo' and 'got.foo' to the symbols for entries
+        self.symbols.update({'plt.%s' % sym: addr for sym, addr in self.plt.items()})
+        self.symbols.update({'got.%s' % sym: addr for sym, addr in self.got.items()})
 
     def _populate_got_plt(self):
         """Loads the GOT and the PLT symbols and addresses.
