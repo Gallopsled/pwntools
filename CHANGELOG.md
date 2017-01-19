@@ -47,8 +47,6 @@ To be released on Mar 18, 2017.
 - [d0267f3][d0267f3] `packing.fit()` now treats large offsets as cyclic patterns (e.g. `0x61616161` behaves the same as `"aaaa"`)
 - [#835][835] Added `ssh.checksec`
     + Reports the kernel version and other relevant information on connection
-- [#852][852] Fixed register selection in `regsort`
-- [#853][853] Fixed `shellcraft.amd64.popad` registers
 - [#857][857] Slightly shortened `execve` shellcode
 - [300f8e0][300f8e0] Slightly speed up processing of large ELF files
 - [#861][861] Add `parse_kconfig` and add Linux Kernel information to `ELF.checksec`
@@ -62,8 +60,6 @@ To be released on Mar 18, 2017.
 [828]: https://github.com/Gallopsled/pwntools/pull/828
 [833]: https://github.com/Gallopsled/pwntools/pull/833
 [835]: https://github.com/Gallopsled/pwntools/pull/835
-[852]: https://github.com/Gallopsled/pwntools/pull/852
-[853]: https://github.com/Gallopsled/pwntools/pull/853
 [857]: https://github.com/Gallopsled/pwntools/pull/857
 [861]: https://github.com/Gallopsled/pwntools/pull/861
 
