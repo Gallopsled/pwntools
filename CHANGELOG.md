@@ -27,9 +27,50 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
+
+
 ## 3.5.0
 
 To be released on Mar 18, 2017.
+
+- [b584ca3][b584ca3] Fixed an issue running `setup.py` on ARM
+- [#822][822] Enabled relative leaks with `MemLeak`
+    + This should be useful for e.g. heap-relative leaks
+- [#832][832] Changed all internal imports to use absolute imports (no functional changes)
+- [a12d0b6][a12d0b6] Move `STDOUT`, `PIPE`, `PTY` constants to globals
+    + `process(..., stdin=process.PTY)` --> `process(..., stdin=PTY)`
+- [#828][828] Use `PR_SET_PTRACER` for all `process()` and `ssh.process()` instances
+    + This simplifies debugging on systems with YAMA ptrace enabled
+- Various documentation enhancements
+    + In particular, the [gdb][gdb], [elf][elf], and [ssh][ssh] docs are much better
+- [#833][833] Performance enhancements for `adb` module
+- [d0267f3][d0267f3] `packing.fit()` now treats large offsets as cyclic patterns (e.g. `0x61616161` behaves the same as `"aaaa"`)
+- [#835][835] Added `ssh.checksec`
+    + Reports the kernel version and other relevant information on connection
+- [#852][852] Fixed register selection in `regsort`
+- [#853][853] Fixed `shellcraft.amd64.popad` registers
+- [#857][857] Slightly shortened `execve` shellcode
+- [300f8e0][300f8e0] Slightly speed up processing of large ELF files
+- [#861][861] Add `parse_kconfig` and add Linux Kernel information to `ELF.checksec`
+
+[ssh]: http://docs.pwntools.com/en/dev/tubes/ssh.html
+[gdb]: http://docs.pwntools.com/en/dev/gdb.html
+[elf]: http://docs.pwntools.com/en/dev/elf.html
+
+[822]: https://github.com/Gallopsled/pwntools/pull/822
+[832]: https://github.com/Gallopsled/pwntools/pull/832
+[828]: https://github.com/Gallopsled/pwntools/pull/828
+[833]: https://github.com/Gallopsled/pwntools/pull/833
+[835]: https://github.com/Gallopsled/pwntools/pull/835
+[852]: https://github.com/Gallopsled/pwntools/pull/852
+[853]: https://github.com/Gallopsled/pwntools/pull/853
+[857]: https://github.com/Gallopsled/pwntools/pull/857
+[861]: https://github.com/Gallopsled/pwntools/pull/861
+
+[b584ca3]: https://github.com/Gallopsled/pwntools/commit/b584ca3
+[a12d0b6]: https://github.com/Gallopsled/pwntools/commit/a12d0b6
+[d0267f3]: https://github.com/Gallopsled/pwntools/commit/d0267f3
+[300f8e0]: https://github.com/Gallopsled/pwntools/commit/300f8e0
 
 ## 3.4.0
 
