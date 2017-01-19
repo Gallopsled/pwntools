@@ -36,9 +36,14 @@ Module Members
 from __future__ import absolute_import
 
 import codecs
+import collections
+import gzip
 import mmap
 import os
+import re
+import StringIO
 import subprocess
+
 from collections import namedtuple
 
 from elftools.elf.constants import E_FLAGS
@@ -54,6 +59,8 @@ from pwnlib import adb
 from pwnlib.asm import *
 from pwnlib.context import LocalContext
 from pwnlib.context import context
+from pwnlib.elf.config import kernel_configuration
+from pwnlib.elf.config import parse_kconfig
 from pwnlib.log import getLogger
 from pwnlib.qemu import get_qemu_arch
 from pwnlib.term import text
@@ -187,6 +194,15 @@ class ELF(ELFFile):
         #: :class:`dotdict` of ``name`` to :class:`.Function` for each function in the ELF
         self.functions = dotdict()
 
+        #: :class:`dict`: Linux kernel configuration, if this is a Linux kernel image
+        self.config = {}
+
+        #: :class:`tuple`: Linux kernel version, if this is a Linux kernel image
+        self.version = (0,)
+
+        #: :class:`str`: Linux kernel build commit, if this is a Linux kernel image
+        self.build = ''
+
         #: :class:`str`: Endianness of the file (e.g. ``'big'``, ``'little'``)
         self.endian = {
             'ELFDATANONE': 'little',
@@ -212,10 +228,30 @@ class ELF(ELFFile):
             self._address = min(filter(bool, (s.header.p_vaddr for s in self.segments)))
         self.load_addr = self._address
 
+        # Try to figure out if we have a kernel configuration embedded
+        IKCFG_ST='IKCFG_ST'
+
+        for start in self.search(IKCFG_ST):
+            start += len(IKCFG_ST)
+            stop = self.search('IKCFG_ED').next()
+
+            fileobj = StringIO.StringIO(self.read(start, stop-start))
+
+            # Python gzip throws an exception if there is non-Gzip data
+            # after the Gzip stream.
+            #
+            # Catch the exception, and just deal with it.
+            with gzip.GzipFile(fileobj=fileobj) as gz:
+                config = gz.read()
+
+            if config:
+                self.config = parse_kconfig(config)
+
         self._populate_got_plt()
         self._populate_symbols()
         self._populate_libraries()
         self._populate_functions()
+        self._populate_kernel_version()
 
         self._describe()
 
@@ -635,6 +671,26 @@ class ELF(ELFFile):
 
             address += entry_size
 
+    def _populate_kernel_version(self):
+        if 'linux_banner' not in self.symbols:
+            return
+
+        banner = self.string(self.symbols.linux_banner)
+
+        # 'Linux version 3.18.31-gd0846ecc
+        regex = r'Linux version (\S+)'
+        match = re.search(regex, banner)
+
+        if match:
+            version = match.group(1)
+
+            if '-' in version:
+                version, self.build = version.split('-', 1)
+
+            self.version = list(map(int, version.split('.')))
+
+        self.config['version'] = self.version
+
     def search(self, needle, writable = False):
         """search(needle, writable = False) -> generator
 
@@ -1004,7 +1060,15 @@ class ELF(ELFFile):
         green  = text.green
         yellow = text.yellow
 
-        res = [
+        res = []
+
+        # Kernel version?
+        if self.version:
+            res.append('Version:'.ljust(10) + '.'.join(map(str, self.version)))
+        if self.build:
+            res.append('Build:'.ljust(10) + self.build)
+
+        res.extend([
             "RELRO:".ljust(10) + {
                 'Full':    green("Full RELRO"),
                 'Partial': yellow("Partial RELRO"),
@@ -1020,9 +1084,10 @@ class ELF(ELFFile):
             }[self.nx],
             "PIE:".ljust(10) + {
                 True: green("PIE enabled"),
-                False: red("No PIE")
+                False: red("No PIE (%#x)" % self.address)
             }[self.pie]
-        ]
+        ])
+
 
         # Are there any RWX areas in the binary?
         #
@@ -1053,6 +1118,27 @@ class ELF(ELFFile):
 
         if self.ubsan:
             res.append("UBSAN:".ljust(10) + green("Enabled"))
+
+        # Check for Linux configuration, it must contain more than
+        # just the version.
+        if len(self.config) > 1:
+            config_opts = collections.defaultdict(lambda: [])
+            for checker in kernel_configuration:
+                result, message = checker(self.config)
+
+                if not result:
+                    config_opts[checker.title].append((checker.name, message))
+
+
+            for title, values in config_opts.items():
+                res.append(title + ':')
+                for name, message in sorted(values):
+                    line = '{} = {}'.format(name, red(str(self.config.get(name, None))))
+                    if message:
+                        line += ' ({})'.format(message)
+                    res.append('    ' + line)
+
+            # res.extend(sorted(config_opts))
 
         return '\n'.join(res)
 
@@ -1156,3 +1242,6 @@ class ELF(ELFFile):
         See: :func:`.packing.fit`
         """
         return self.write(address, packing.fit(*a, **kw))
+
+    def parse_kconfig(self, data):
+        self.config.update(parse_kconfig(data))

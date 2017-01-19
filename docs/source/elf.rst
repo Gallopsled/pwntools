@@ -14,4 +14,5 @@ ELF Modules
 
 .. toctree::
     elf/elf
+    elf/config
     elf/corefile
