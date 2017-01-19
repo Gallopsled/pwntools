@@ -211,9 +211,24 @@ class AdbClient(Logger):
 
             >>> pwnlib.protocols.adb.AdbClient().transport()
         """
-        msg = 'host:transport:%s' % (serial or context.device)
+
+        # If no serial was explicitly provided, try the current device
+        if not serial and context.device:
+            serial = context.device
+
+        # Select the appropriate (or any) device
+        if serial:
+            # Extract the serial, str(Device) --> serial
+            serial = str(serial)
+            msg = 'host:transport:%s' % serial
+        else:
+            msg = 'host:transport-any'
+
         if self.send(msg) == FAIL:
-            self.error("Could not set transport to %r" % serial)
+            if serial:
+                self.error("Could not set transport to %r" % serial)
+            else:
+                self.error("Could not set transport 'any'")
 
     @_autoclose
     @_with_transport
