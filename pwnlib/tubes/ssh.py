@@ -1587,7 +1587,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         s.interactive()
         s.close()
 
-    def set_working_directory(self, wd = None):
+    def set_working_directory(self, wd = None, symlink=False):
         """Sets the working directory in which future commands will
         be run (via ssh.run) and to which files will be uploaded/downloaded
         from if no path is provided
@@ -1602,6 +1602,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Arguments:
             wd(string): Working directory.  Default is to auto-generate a directory
                 based on the result of running 'mktemp -d' on the remote machine.
+            symlink(bool): Whether to symlink all files / directories in the
+                original directory.  Default is ``False``.
 
         Examples:
             >>> s =  ssh(host='example.pwnme',
@@ -1614,6 +1616,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             True
         """
         status = 0
+
+        if symlink:
+            oldwd = self.pwd()
 
         if not wd:
             wd, status = self.run_to_end('x=$(mktemp -d) && cd $x && chmod +x . && echo $PWD', wd='.')
@@ -1631,6 +1636,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         self.info("Working directory: %r" % wd)
         self.cwd = wd
+
+        if symlink:
+            self.ln('-s', os.path.join(oldwd, '*'), '.')
+
         return self.cwd
 
     def write(self, path, data):
