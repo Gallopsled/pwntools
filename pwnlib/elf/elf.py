@@ -874,14 +874,8 @@ class ELF(ELFFile):
         """
         if path is None:
             path = self.path
-
-        old = self.stream.tell()
-
-        with open(path,'wb+') as fd:
-            self.stream.seek(0)
-            fd.write(self.get_data())
-
-        self.stream.seek(old)
+        data = self.get_data()
+        misc.write(path, data)
 
     def get_data(self):
         """get_data() -> bytes
