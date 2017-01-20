@@ -862,7 +862,7 @@ class ELF(ELFFile):
 
         return None
 
-    def save(self, path):
+    def save(self, path=None):
         """Save the ELF to a file
 
         >>> bash = ELF(which('bash'))
@@ -872,6 +872,9 @@ class ELF(ELFFile):
         >>> bash.read() == copy.read()
         True
         """
+        if path is None:
+            path = self.path
+
         old = self.stream.tell()
 
         with open(path,'wb+') as fd:
