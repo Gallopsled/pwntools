@@ -786,7 +786,7 @@ class ssh(Timeout, Logger):
         if env and hasattr(env, 'items'):
             for k, v in env.items():
                 if '\x00' in k[:-1]:
-                    self.error('Inappropriate nulls in environment key %r' % (i, k))
+                    self.error('Inappropriate nulls in environment key %r' % k)
                 if '\x00' in v[:-1]:
                     self.error('Inappropriate nulls in environment value %r=%r' % (k, v))
                 env[k.rstrip('\x00')] = v.rstrip('\x00')
