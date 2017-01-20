@@ -1066,7 +1066,7 @@ class ELF(ELFFile):
         res = []
 
         # Kernel version?
-        if self.version:
+        if self.version and self.version != (0,):
             res.append('Version:'.ljust(10) + '.'.join(map(str, self.version)))
         if self.build:
             res.append('Build:'.ljust(10) + self.build)
