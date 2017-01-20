@@ -1587,7 +1587,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         s.interactive()
         s.close()
 
-    def set_working_directory(self, wd = None):
+    def set_working_directory(self, wd = None, symlink = False):
         """Sets the working directory in which future commands will
         be run (via ssh.run) and to which files will be uploaded/downloaded
         from if no path is provided
@@ -1602,6 +1602,17 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Arguments:
             wd(string): Working directory.  Default is to auto-generate a directory
                 based on the result of running 'mktemp -d' on the remote machine.
+            symlink(bool,str): Create symlinks in the new directory.
+
+                The default value, ``False``, implies that no symlinks should be
+                created.
+
+                A string value is treated as a path that should be symlinked.
+                It is passed directly to the shell on the remote end for expansion,
+                so wildcards work.
+
+                Any other value is treated as a boolean, where ``True`` indicates
+                that all files in the "old" working directory should be symlinked.
 
         Examples:
             >>> s =  ssh(host='example.pwnme',
@@ -1612,8 +1623,32 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ''
             >>> s.pwd() == cwd
             True
+
+            >>> s =  ssh(host='example.pwnme',
+            ...         user='travis',
+            ...         password='demopass')
+            >>> homedir = s.pwd()
+            >>> _=s.touch('foo')
+
+            >>> _=s.set_working_directory()
+            >>> assert s.ls() == ''
+
+            >>> _=s.set_working_directory(homedir)
+            >>> assert 'foo' in s.ls().split()
+
+            >>> _=s.set_working_directory(symlink=True)
+            >>> assert 'foo' in s.ls().split()
+            >>> assert homedir != s.pwd()
+
+            >>> symlink=os.path.join(homedir,'*')
+            >>> _=s.set_working_directory(symlink=symlink)
+            >>> assert 'foo' in s.ls().split()
+            >>> assert homedir != s.pwd()
         """
         status = 0
+
+        if symlink and not isinstance(symlink, str):
+            symlink = os.path.join(self.pwd(), '*')
 
         if not wd:
             wd, status = self.run_to_end('x=$(mktemp -d) && cd $x && chmod +x . && echo $PWD', wd='.')
@@ -1631,6 +1666,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         self.info("Working directory: %r" % wd)
         self.cwd = wd
+
+        if symlink:
+            self.ln('-s', symlink, '.')
+
         return self.cwd
 
     def write(self, path, data):
