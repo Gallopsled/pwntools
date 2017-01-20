@@ -62,11 +62,11 @@ import dateutil.parser
 
 from pwnlib import atexit
 from pwnlib import tubes
-from pwnlib.adb.protocol import Client
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.device import Device
 from pwnlib.log import getLogger
+from pwnlib.protocols.adb import AdbClient
 from pwnlib.util import misc
 
 log = getLogger(__name__)
@@ -91,7 +91,7 @@ def adb(argv, *a, **kw):
 @context.quietfunc
 def devices(serial=None):
     """Returns a list of ``Device`` objects corresponding to the connected devices."""
-    with Client() as c:
+    with AdbClient() as c:
         lines = c.devices(long=True)
     result = []
 
@@ -146,7 +146,7 @@ def root():
     log.info("Enabling root on %s" % context.device)
 
     with context.quiet:
-        with Client() as c:
+        with AdbClient() as c:
             reply = c.root()
 
     if 'already running as root' in reply:
@@ -175,7 +175,7 @@ def reboot(wait=True):
     """
     log.info('Rebooting device %s' % context.device)
 
-    with Client() as c:
+    with AdbClient() as c:
         c.reboot()
 
     if wait:
@@ -188,7 +188,7 @@ def reboot_bootloader():
     """
     log.info('Rebooting %s to bootloader' % context.device)
 
-    with Client() as c:
+    with AdbClient() as c:
         c.reboot_bootloader()
 
 @with_device
@@ -379,7 +379,7 @@ def wait_for_device(kick=False):
         >>> device = adb.wait_for_device()
     """
     with log.waitfor("Waiting for device to come online") as w:
-        with Client() as c:
+        with AdbClient() as c:
             if kick:
                 try:
                     c.reconnect()
@@ -390,7 +390,7 @@ def wait_for_device(kick=False):
             if context.device:
                 serial = str(context.device)
 
-        with Client() as c:
+        with AdbClient() as c:
             c.wait_for_device(serial)
 
         for device in devices():
@@ -418,7 +418,7 @@ def disable_verity():
     with log.waitfor("Disabling dm-verity on %s" % context.device) as w:
         root()
 
-        with Client() as c:
+        with AdbClient() as c:
             reply = c.disable_verity()
 
         if 'Verity already disabled' in reply:
@@ -437,7 +437,7 @@ def remount():
         disable_verity()
         root()
 
-        with Client() as c:
+        with AdbClient() as c:
             reply = c.remount()
 
         if 'remount succeeded' not in reply:
@@ -448,7 +448,7 @@ def unroot():
     """Restarts adbd as AID_SHELL."""
     log.info("Unrooting %s" % context.device)
     with context.quiet:
-        with Client() as c:
+        with AdbClient() as c:
             reply  = c.unroot()
 
     if '0006closed' == reply:
@@ -529,7 +529,7 @@ def push(local_path, remote_path):
         msg += ' (%s)' % context.device
 
     with log.waitfor(msg) as w:
-        with Client() as c:
+        with AdbClient() as c:
 
             # We need to discover whether remote_path is a directory or not.
             # If we cannot stat the full path, assume it's a path-plus-filename,
@@ -562,7 +562,7 @@ def read(path, target=None, callback=None):
         target(str): Optional, location to store the file.
             Uses a temporary file by default.
         callback(callable): See the documentation for
-            ``adb.protocol.Client.read``.
+            ``adb.protocol.AdbClient.read``.
 
     Examples:
 
@@ -573,7 +573,7 @@ def read(path, target=None, callback=None):
         ...
         PwnlibException: Could not stat '/does/not/exist'
     """
-    with Client() as c:
+    with AdbClient() as c:
         stat = c.stat(path)
         if not stat:
             log.error('Could not stat %r' % path)
@@ -632,7 +632,7 @@ def mkdir(path):
     if not path.startswith('/'):
         log.error("Must provide an absolute path: %r" % path)
 
-    with Client() as c:
+    with AdbClient() as c:
         st = c.stat(path)
 
         # Don't re-create existing directories
@@ -678,7 +678,7 @@ def exists(path):
         >>> adb.exists('/does/not/exist')
         False
     """
-    with Client() as c:
+    with AdbClient() as c:
         return bool(c.stat(path))
 
 @context.quietfunc
@@ -695,7 +695,7 @@ def isdir(path):
         >>> adb.isdir('/does/not/exist')
         False
     """
-    with Client() as c:
+    with AdbClient() as c:
         st = c.stat(path)
         return bool(st and stat.S_ISDIR(st['mode']))
 
@@ -730,7 +730,7 @@ def unlink(path, recursive=False):
         >>> adb.exists(filename)
         False
     """
-    with Client() as c:
+    with AdbClient() as c:
         st = c.stat(path)
         if not st:
             log.error("Could not unlink %r: Does not exist" % path)
@@ -770,7 +770,7 @@ def process(argv, *a, **kw):
         if argv != [argv[0]]: message += ' argv=%r ' % argv
 
     with log.progress(message) as p:
-        return Client().execute(argv)
+        return AdbClient().execute(argv)
 
 @with_device
 def interactive(**kw):
@@ -905,7 +905,7 @@ def listdir(directory='/'):
         Otherwise, less files may be returned due to restrictive SELinux
         policies on adbd.
     """
-    return list(sorted(Client().list(directory)))
+    return list(sorted(AdbClient().list(directory)))
 
 @with_device
 def fastboot(args, *a, **kw):
@@ -940,7 +940,7 @@ def unlock_bootloader():
     Note:
         This requires physical interaction with the device.
     """
-    Client().reboot_bootloader()
+    AdbClient().reboot_bootloader()
     fastboot(['oem', 'unlock'])
     fastboot(['continue'])
 
@@ -1202,7 +1202,7 @@ class Partition(object):
 def walk(top, topdown=True):
     join = os.path.join
     isdir = lambda x: stat.S_ISDIR(x['mode'])
-    client = Client()
+    client = AdbClient()
     names = client.list(top)
 
     dirs, nondirs = [], []

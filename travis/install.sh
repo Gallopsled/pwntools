@@ -83,9 +83,11 @@ setup_android_emulator()
             # emulator, while still leaving the code intact, we remove the
             # RST file that Sphinx searches.
             rm -f 'docs/source/adb.rst'
+            rm -f 'docs/source/protocols/adb.rst'
 
             # However, the file needs to be present or else things break.
             touch 'docs/source/adb.rst'
+            touch 'docs/source/protocols/adb.rst'
 
             echo "Skipping Android emulator install, Android tests disabled."
             return
