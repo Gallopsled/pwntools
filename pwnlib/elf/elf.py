@@ -55,6 +55,8 @@ from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 
+import intervaltree
+
 from pwnlib import adb
 from pwnlib.asm import *
 from pwnlib.context import LocalContext
@@ -173,6 +175,10 @@ class ELF(ELFFile):
         self.mmap = mmap.mmap(self.file.fileno(), 0, access=mmap.ACCESS_COPY)
 
         super(ELF,self).__init__(self.mmap)
+
+        #: IntervalTree which maps all of the loaded memory segments
+        self.memory = intervaltree.IntervalTree()
+        self._populate_memory()
 
         #: :class:`str`: Path to the file
         self.path = os.path.abspath(path)
@@ -436,6 +442,16 @@ class ELF(ELFFile):
         self.plt     = dotdict({k:update(v) for k,v in self.plt.items()})
         self.got     = dotdict({k:update(v) for k,v in self.got.items()})
 
+        # Update our view of memory
+        memory = intervaltree.IntervalTree()
+
+        for begin, end, data in self.memory:
+            memory.addi(update(begin),
+                        update(end),
+                        data)
+
+        self.memory = memory
+
         self._address = update(self.address)
 
     def section(self, name):
@@ -620,7 +636,7 @@ class ELF(ELFFile):
                             s.header.sh_info == self.sections.index(plt) and
                             isinstance(s, RelocationSection))
         except StopIteration:
-            # Evidently whatever android-ndk uses to build binaries zeroes out sh_info for rel.plt
+            # Evidently whatever android-ndk uses to build binaries zeroed out sh_info for rel.plt
             rel_plt = self.get_section_by_name('.rel.plt') or self.get_section_by_name('.rela.plt')
 
         if not rel_plt:
@@ -696,6 +712,12 @@ class ELF(ELFFile):
 
         Search the ELF's virtual address space for the specified string.
 
+        Notes:
+            Does not search empty space between segments, or uninitialized
+            data.  This will only return data that actually exists in the
+            ELF file.  Searching for a long string of NULL bytes probably
+            won't work.
+
         Arguments:
             needle(str): String to search for.
             writable(bool): Search only writable sections.
@@ -726,7 +748,8 @@ class ELF(ELFFile):
 
         for seg in segments:
             addr   = seg.header.p_vaddr
-            data   = seg.data()
+            zeroed = seg.header.p_memsz - seg.header.p_filesz
+            data   = seg.data() + ('\x00' * zeroed)
             offset = 0
             while True:
                 offset = data.find(needle, offset)
@@ -771,6 +794,32 @@ class ELF(ELFFile):
                 return segment.header.p_vaddr + delta + load_address_fixup
         return None
 
+    def _populate_memory(self):
+        segments = sorted(self.iter_segments(), key=lambda s: s.header.p_vaddr)
+
+        load_segments = filter(lambda s: s.header.p_type == 'PT_LOAD', segments)
+
+        # Map all of the segments
+        for i, segment in enumerate(load_segments):
+            start = segment.header.p_vaddr
+            stop_data = start + segment.header.p_filesz
+            stop_mem  = start + segment.header.p_memsz
+
+            self.memory.addi(start, stop_data, segment)
+
+            if stop_data != stop_mem:
+                self.memory.addi(stop_data, stop_mem, '\x00')
+
+            # Check for holes which we can fill
+            if i+1 < len(load_segments):
+                next_start = load_segments[i+1].header.p_vaddr
+                if stop_mem < next_start:
+                    self.memory.addi(stop_mem, next_start, None)
+            else:
+                page_end = (stop_mem + 0xfff) & ~(0xfff)
+
+                if stop_mem < page_end:
+                    self.memory.addi(stop_mem, page_end, None)
 
     def vaddr_to_offset(self, address):
         """vaddr_to_offset(address) -> int
@@ -786,27 +835,29 @@ class ELF(ELFFile):
 
         Examples:
             >>> bash = ELF(which('bash'))
-            >>> 0 == bash.vaddr_to_offset(bash.address)
-            True
+            >>> bash.vaddr_to_offset(bash.address)
+            0
             >>> bash.address += 0x123456
-            >>> 0 == bash.vaddr_to_offset(bash.address)
+            >>> bash.vaddr_to_offset(bash.address)
+            0
+            >>> bash.vaddr_to_offset(0) is None
             True
         """
-        load_address = address - self.address + self.load_addr
 
-        for segment in self.segments:
-            begin = segment.header.p_vaddr
-            size  = segment.header.p_memsz
-            end   = begin + size
-            if begin <= load_address and load_address <= end:
-                delta = load_address - begin
-                return segment.header.p_offset + delta
+        for interval in self.memory[address]:
+            segment = interval.data
 
-        log.warning("Address %#x does not exist in %s" % (address, self.file.name))
-        return None
+            # Convert the address back to how it was when the segment was loaded
+            address = (address - self.address) + self.load_addr
+
+            # Figure out the offset into the segment
+            offset = address - segment.header.p_vaddr
+
+            # Add the segment-base offset to the offset-within-the-segment
+            return segment.header.p_offset + offset
 
     def read(self, address, count):
-        """read(address, count) -> bytes
+        r"""read(address, count) -> bytes
 
         Read data from the specified virtual address
 
@@ -818,20 +869,105 @@ class ELF(ELFFile):
             A :class:`str` object, or :const:`None`.
 
         Examples:
-          >>> bash = ELF(which('bash'))
-          >>> bash.read(bash.address+1, 3)
-          'ELF'
+            The simplest example is just to read the ELF header.
+
+            >>> bash = ELF(which('bash'))
+            >>> bash.read(bash.address, 4)
+            '\x7fELF'
+
+            ELF segments do not have to contain all of the data on-disk
+            that gets loaded into memory.
+
+            First, let's create an ELF file has some code in two sections.
+
+            >>> assembly = '''
+            ... .section .A,"awx"
+            ... .global A
+            ... A: nop
+            ... .section .B,"awx"
+            ... .global B
+            ... B: int3
+            ... '''
+            >>> e = ELF.from_assembly(assembly, vma=False)
+
+            By default, these come right after eachother in memory.
+
+            >>> e.read(e.symbols.A, 2)
+            '\x90\xcc'
+            >>> e.symbols.B - e.symbols.A
+            1
+
+            Let's move the sections so that B is a little bit further away.
+
+            >>> objcopy = pwnlib.asm._objcopy()
+            >>> objcopy += [
+            ...     '--change-section-vma', '.B+5',
+            ...     '--change-section-lma', '.B+5',
+            ...     e.path
+            ... ]
+            >>> subprocess.check_call(objcopy)
+            0
+
+            Now let's re-load the ELF, and check again
+
+            >>> e = ELF(e.path)
+            >>> e.symbols.B - e.symbols.A
+            6
+            >>> e.read(e.symbols.A, 2)
+            '\x90\x00'
+            >>> e.read(e.symbols.A, 7)
+            '\x90\x00\x00\x00\x00\x00\xcc'
+            >>> e.read(e.symbols.A, 10)
+            '\x90\x00\x00\x00\x00\x00\xcc\x00\x00\x00'
+
+            Everything is relative to the user-selected base address, so moving
+            things around keeps everything working.
+
+            >>> e.address += 0x1000
+            >>> e.read(e.symbols.A, 10)
+            '\x90\x00\x00\x00\x00\x00\xcc\x00\x00\x00'
         """
-        offset = self.vaddr_to_offset(address)
+        retval = []
 
-        if offset is not None:
-            old = self.stream.tell()
-            self.stream.seek(offset)
-            data = self.stream.read(count)
-            self.stream.seek(old)
-            return data
+        start = address
+        stop = address + count
 
-        return ''
+        overlap = self.memory.search(start, stop)
+
+        # Create a new view of memory, for just what we need
+        memory = intervaltree.IntervalTree(overlap)
+        memory.chop(None, start)
+        memory.chop(stop, None)
+
+        if memory.begin() != start:
+            log.error("Address %#x is not contained in %s" % (start, self))
+
+        if memory.end() != stop:
+            log.error("Address %#x is not contained in %s" % (stop, self))
+
+        # We have a view of memory which lets us get everything we need
+        for begin, end, data in sorted(memory):
+            length = end-begin
+
+            if data in (None, '\x00'):
+                retval.append('\x00' * length)
+                continue
+
+            # Offset within VMA range
+            begin -= self.address
+
+            # Adjust to original VMA range
+            begin += self.load_addr
+
+            # Adjust to offset within segment VMA
+            offset = begin - data.header.p_vaddr
+
+            # Adjust in-segment offset to in-file offset
+            offset += data.header.p_offset
+
+            retval.append(self.mmap[offset:offset+length])
+
+        return ''.join(retval)
 
     def write(self, address, data):
         """Writes data to the specified virtual address
@@ -840,7 +976,7 @@ class ELF(ELFFile):
             address(int): Virtual address to write
             data(str): Bytes to write
 
-        Note::
+        Note:
             This routine does not check the bounds on the write to ensure
             that it stays in the same segment.
 
@@ -855,10 +991,8 @@ class ELF(ELFFile):
         offset = self.vaddr_to_offset(address)
 
         if offset is not None:
-            old = self.stream.tell()
-            self.stream.seek(offset)
-            self.stream.write(data)
-            self.stream.seek(old)
+            length = len(data)
+            self.mmap[offset:offset+length] = data
 
         return None
 
@@ -874,8 +1008,7 @@ class ELF(ELFFile):
         """
         if path is None:
             path = self.path
-        data = self.get_data()
-        misc.write(path, data)
+        misc.write(path, self.data)
 
     def get_data(self):
         """get_data() -> bytes
@@ -887,11 +1020,7 @@ class ELF(ELFFile):
         >>> bash.get_data() == fd.read()
         True
         """
-        old = self.stream.tell()
-        self.stream.seek(0)
-        data = self.stream.read(self.stream.size())
-        self.stream.seek(old)
-        return data
+        return self.mmap[:]
 
     @property
     def data(self):
@@ -900,7 +1029,7 @@ class ELF(ELFFile):
         See:
             :meth:`get_data`
         """
-        return self.get_data()
+        return self.mmap[:]
 
     def disasm(self, address, n_bytes):
         """disasm(address, n_bytes) -> str
