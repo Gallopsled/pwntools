@@ -103,6 +103,16 @@ def dpkg_search_for_binutils(arch, util):
 def print_binutils_instructions(util, context):
     """On failure to find a binutils utility, inform the user of a way
     they can get it easily.
+
+    Doctest:
+
+        >>> context.clear(arch = 'amd64')
+        >>> pwnlib.asm.print_binutils_instructions('as', context)
+        Traceback (most recent call last):
+        ...
+        PwnlibException: Could not find 'as' installed for ContextType(arch = 'amd64', bits = 64, endian = 'little')
+        Try installing binutils for this architecture:
+        $ sudo apt-get install binutils
     """
     # This links to our instructions on how to manually install binutils
     # for several architectures.
