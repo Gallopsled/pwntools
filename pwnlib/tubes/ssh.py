@@ -1024,15 +1024,6 @@ os.execve(exe, argv, os.environ)
             variables are set, as well as argv[0].  In order to ensure that
             the path is *exactly* the same, it is recommended to invoke the
             process with ``argv=[]``.
-
-        Example:
-
-            >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
-            ...         password='demopass',
-            ...         cache=False)
-            >>>
-
         """
         script = '''
 from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))

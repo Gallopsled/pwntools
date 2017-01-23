@@ -694,7 +694,6 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
            4:   00900052        addseq  r0, r0, r2, asr r0
         >>> print disasm('4ff00500'.decode('hex'), arch = 'thumb', bits=32)
            0:   f04f 0005       mov.w   r0, #5
-        >>>
     """
     result = ''
 
