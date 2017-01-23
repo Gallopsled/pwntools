@@ -74,7 +74,8 @@ def dpkg_search_for_binutils(arch, util):
     Returns:
         A list of candidate package names.
 
-    Examples:
+    ::
+
         >>> pwnlib.asm.dpkg_search_for_binutils('aarch64', 'as')
         ['binutils-aarch64-linux-gnu']
     """
