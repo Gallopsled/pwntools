@@ -30,7 +30,7 @@ instance.
         error("Could not find any shamus!")
 
 Once a device is selected, you can operate on it with any of the functions in
-the ``pwnlib.adb`` module.
+the :mod:`pwnlib.adb` module.
 
 .. code-block:: python
 

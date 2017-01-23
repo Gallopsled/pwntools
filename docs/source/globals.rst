@@ -17,7 +17,7 @@ This is a quick list of most of the objects and routines imported, in rough orde
     - :data:`pwnlib.context.context`
     - Responsible for most of the pwntools convenience settings
     - Set `context.log_level = 'debug'` when troubleshooting your exploit
-    - Scope-aware, so you can disable logging for a subsection of code via ``pwnlib.context.ContextType.local``
+    - Scope-aware, so you can disable logging for a subsection of code via :meth:`.ContextType.local`
 - ``remote``, ``listen``, ``ssh``, ``process``
     - :mod:`pwnlib.tubes`
     - Super convenient wrappers around all of the common functionality for CTF challenges
@@ -57,7 +57,7 @@ This is a quick list of most of the objects and routines imported, in rough orde
 - ``gdb.debug`` and ``gdb.attach``
     - :mod:`pwnlib.gdb`
     - Launch a binary under GDB and pop up a new terminal to interact with it.  Automates setting breakpoints and makes iteration on exploits MUCH faster.
-    - Alternately, attach to a running process given a PID, ``pwnlib.tubes`` object, or even just a socket that's connected to it
+    - Alternately, attach to a running process given a PID, :mod:`pwnlib.tubes` object, or even just a socket that's connected to it
 - ``args``
     - Dictionary containing all-caps command-line arguments for quick access
     - Run via ``python foo.py REMOTE=1`` and ``args['REMOTE'] == '1'``.

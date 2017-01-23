@@ -396,7 +396,7 @@ class ROP(object):
     def __init__(self, elfs, base = None, **kwargs):
         """
         Arguments:
-            elfs(list): List of ``pwnlib.elf.ELF`` objects for mining
+            elfs(list): List of :class:`.ELF` objects for mining
         """
         import ropgadget
 
@@ -498,7 +498,7 @@ class ROP(object):
     def build(self, base = None, description = None):
         """
         Construct the ROP chain into a list of elements which can be passed
-        to ``pwnlib.util.packing.flat``.
+        to :func:`.flat`.
 
         Arguments:
             base(int):
@@ -998,7 +998,7 @@ class ROP(object):
         by ``(total_moves, total_regs, addr)``, otherwise by ``(total_regs, total_moves, addr)``.
 
         Returns:
-            A ``pwnlib.rop.gadgets.Gadget`` object
+            A :class:`.Gadget` object
         """
         matches = self.search_iter(move, regs)
         if matches is None:

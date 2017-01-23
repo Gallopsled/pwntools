@@ -144,7 +144,7 @@ class AppendedArgument(Unresolved):
     def resolve(self, addr = None):
         """
         Return a flat list of ``int`` or ``str`` objects which can be
-        passed to ``pwnlib.packing.flat``
+        passed to :func:`.flat`.
 
         Arguments:
             addr(int): Address at which the data starts in memory.

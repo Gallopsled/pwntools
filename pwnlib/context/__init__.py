@@ -263,7 +263,7 @@ class ContextType(object):
     r"""
     Class for specifying information about the target machine.
     Intended for use as a pseudo-singleton through the global
-    variable ``pwnlib.context.context``, available via
+    variable :data:`.context`, available via
     ``from pwn import *`` as ``context``.
 
     The context is usually specified at the top of the Python file for clarity. ::
@@ -1273,11 +1273,14 @@ class ContextType(object):
     Thread = Thread
 
 
-#: Global ``context`` object, used to store commonly-used pwntools settings.
+#: Global :class:`.ContextType` object, used to store commonly-used pwntools settings.
+#:
 #: In most cases, the context is used to infer default variables values.
-#: For example, :meth:`pwnlib.asm.asm` can take an ``os`` parameter as a
-#: keyword argument.  If it is not supplied, the ``os`` specified by
-#: ``context`` is used instead.
+#: For example, :func:`.asm` can take an ``arch`` parameter as a
+#: keyword argument.
+#:
+#: If it is not supplied, the ``arch`` specified by ``context`` is used instead.
+#:
 #: Consider it a shorthand to passing ``os=`` and ``arch=`` to every single
 #: function call.
 context = ContextType()

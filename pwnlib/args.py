@@ -16,8 +16,8 @@ The easiest example is to enable more verbose debugging.  Just set ``DEBUG``.
     $ python exploit.py DEBUG
 
 These arguments are automatically extracted, regardless of their name, and
-exposed via ``pwnlib.args.args``, which is exposed as the global variable
-``args``.  Arguments which ``pwntools`` reserves internally are not exposed
+exposed via :mod:`pwnlib.args.args`, which is exposed as the global variable
+:data:`args`.  Arguments which ``pwntools`` reserves internally are not exposed
 this way.
 
 .. code-block:: bash

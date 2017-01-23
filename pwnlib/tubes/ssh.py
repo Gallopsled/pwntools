@@ -1664,11 +1664,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         return self.cwd
 
     def write(self, path, data):
-        """Wrapper around upload_data to match ``pwnlib.util.misc.write``"""
+        """Wrapper around upload_data to match :func:`pwnlib.util.misc.write`"""
         return self.upload_data(data, path)
 
     def read(self, path):
-        """Wrapper around download_data to match ``pwnlib.util.misc.read``"""
+        """Wrapper around download_data to match :func:`pwnlib.util.misc.read`"""
         return self.download_data(path)
 
     def _init_remote_platform_info(self):
