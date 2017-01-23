@@ -73,6 +73,10 @@ def dpkg_search_for_binutils(arch, util):
 
     Returns:
         A list of candidate package names.
+
+    Examples:
+        >>> pwnlib.asm.dpkg_search_for_binutils('amd64', 'as')
+        ['binutils']
     """
 
     # Example output:
