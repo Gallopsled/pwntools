@@ -33,48 +33,46 @@ class MemLeak(object):
 
     Example:
 
-        .. doctest:: leaker
+        >>> import pwnlib
+        >>> binsh = pwnlib.util.misc.read('/bin/sh')
+        >>> @pwnlib.memleak.MemLeak
+        ... def leaker(addr):
+        ...     print "leaking 0x%x" % addr
+        ...     return binsh[addr:addr+4]
+        >>> leaker.s(0)[:4]
+        leaking 0x0
+        leaking 0x4
+        '\\x7fELF'
+        >>> leaker[:4]
+        '\\x7fELF'
+        >>> hex(leaker.d(0))
+        '0x464c457f'
+        >>> hex(leaker.clearb(1))
+        '0x45'
+        >>> hex(leaker.d(0))
+        leaking 0x1
+        '0x464c457f'
+        >>> @pwnlib.memleak.MemLeak
+        ... def leaker_nonulls(addr):
+        ...     print "leaking 0x%x" % addr
+        ...     if addr & 0xff == 0:
+        ...         return None
+        ...     return binsh[addr:addr+4]
+        >>> leaker_nonulls.d(0) == None
+        leaking 0x0
+        True
+        >>> leaker_nonulls[0x100:0x104] == binsh[0x100:0x104]
+        leaking 0x100
+        leaking 0xff
+        leaking 0x103
+        True
 
-            >>> import pwnlib
-            >>> binsh = pwnlib.util.misc.read('/bin/sh')
-            >>> @pwnlib.memleak.MemLeak
-            ... def leaker(addr):
-            ...     print "leaking 0x%x" % addr
-            ...     return binsh[addr:addr+4]
-            >>> leaker.s(0)[:4]
-            leaking 0x0
-            leaking 0x4
-            '\\x7fELF'
-            >>> leaker[:4]
-            '\\x7fELF'
-            >>> hex(leaker.d(0))
-            '0x464c457f'
-            >>> hex(leaker.clearb(1))
-            '0x45'
-            >>> hex(leaker.d(0))
-            leaking 0x1
-            '0x464c457f'
-            >>> @pwnlib.memleak.MemLeak
-            ... def leaker_nonulls(addr):
-            ...     print "leaking 0x%x" % addr
-            ...     if addr & 0xff == 0:
-            ...         return None
-            ...     return binsh[addr:addr+4]
-            >>> leaker_nonulls.d(0) == None
-            leaking 0x0
-            True
-            >>> leaker_nonulls[0x100:0x104] == binsh[0x100:0x104]
-            leaking 0x100
-            leaking 0xff
-            leaking 0x103
-            True
-
-            >>> memory = {-4+i: c for i,c in enumerate('wxyzABCDE')}
-            >>> def relative_leak(index):
-            ...     return memory.get(index, None)
-            >>> leak = pwnlib.memleak.MemLeak(relative_leak, relative = True)
-            >>> leak[-1:2]
-            'zAB'
+        >>> memory = {-4+i: c for i,c in enumerate('wxyzABCDE')}
+        >>> def relative_leak(index):
+        ...     return memory.get(index, None)
+        >>> leak = pwnlib.memleak.MemLeak(relative_leak, relative = True)
+        >>> leak[-1:2]
+        'zAB'
     """
     def __init__(self, f, search_range = 20, reraise = True, relative = False):
         self.leak = f

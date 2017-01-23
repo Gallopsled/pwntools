@@ -85,19 +85,17 @@ class tube(Timeout, Logger):
 
         Examples:
 
-            .. doctest::
-
-                >>> t = tube()
-                >>> t.recv_raw = lambda n: 'hello'
-                >>> t.recv()
-                'hello'
-                >>> t.recv()
-                'hello'
-                >>> t.unrecv('world')
-                >>> t.recv()
-                'world'
-                >>> t.recv()
-                'hello'
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: 'hello'
+            >>> t.recv()
+            'hello'
+            >>> t.recv()
+            'hello'
+            >>> t.unrecv('world')
+            >>> t.recv()
+            'world'
+            >>> t.recv()
+            'hello'
         """
         self.buffer.unget(data)
 
@@ -216,24 +214,22 @@ class tube(Timeout, Logger):
 
         Examples:
 
-            .. doctest::
-
-                >>> t = tube()
-                >>> data = 'hello world'
-                >>> t.recv_raw = lambda *a: data
-                >>> t.recvn(len(data)) == data
-                True
-                >>> t.recvn(len(data)+1) == data + data[0]
-                True
-                >>> t.recv_raw = lambda *a: None
-                >>> # The remaining data is buffered
-                >>> t.recv() == data[1:]
-                True
-                >>> t.recv_raw = lambda *a: time.sleep(0.01) or 'a'
-                >>> t.recvn(10, timeout=0.05)
-                ''
-                >>> t.recvn(10, timeout=0.06) # doctest: +ELLIPSIS
-                'aaaaaa...'
+            >>> t = tube()
+            >>> data = 'hello world'
+            >>> t.recv_raw = lambda *a: data
+            >>> t.recvn(len(data)) == data
+            True
+            >>> t.recvn(len(data)+1) == data + data[0]
+            True
+            >>> t.recv_raw = lambda *a: None
+            >>> # The remaining data is buffered
+            >>> t.recv() == data[1:]
+            True
+            >>> t.recv_raw = lambda *a: time.sleep(0.01) or 'a'
+            >>> t.recvn(10, timeout=0.05)
+            ''
+            >>> t.recvn(10, timeout=0.06) # doctest: +ELLIPSIS
+            'aaaaaa...'
         """
         # Keep track of how much data has been received
         # It will be pasted together at the end if a
@@ -268,30 +264,28 @@ class tube(Timeout, Logger):
 
         Examples:
 
-            .. doctest::
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: "Hello World!"
+            >>> t.recvuntil(' ')
+            'Hello '
+            >>> _=t.clean(0)
+            >>> # Matches on 'o' in 'Hello'
+            >>> t.recvuntil(tuple(' Wor'))
+            'Hello'
+            >>> _=t.clean(0)
+            >>> # Matches expressly full string
+            >>> t.recvuntil(' Wor')
+            'Hello Wor'
+            >>> _=t.clean(0)
+            >>> # Matches on full string, drops match
+            >>> t.recvuntil(' Wor', drop=True)
+            'Hello'
 
-                >>> t = tube()
-                >>> t.recv_raw = lambda n: "Hello World!"
-                >>> t.recvuntil(' ')
-                'Hello '
-                >>> _=t.clean(0)
-                >>> # Matches on 'o' in 'Hello'
-                >>> t.recvuntil(tuple(' Wor'))
-                'Hello'
-                >>> _=t.clean(0)
-                >>> # Matches expressly full string
-                >>> t.recvuntil(' Wor')
-                'Hello Wor'
-                >>> _=t.clean(0)
-                >>> # Matches on full string, drops match
-                >>> t.recvuntil(' Wor', drop=True)
-                'Hello'
-
-                >>> # Try with regex special characters
-                >>> t = tube()
-                >>> t.recv_raw = lambda n: "Hello|World"
-                >>> t.recvuntil('|', drop=True)
-                'Hello'
+            >>> # Try with regex special characters
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: "Hello|World"
+            >>> t.recvuntil('|', drop=True)
+            'Hello'
 
         """
         # Convert string into singleton tupple
@@ -363,17 +357,15 @@ class tube(Timeout, Logger):
 
         Examples:
 
-            .. doctest::
-
-                >>> t = tube()
-                >>> t.recv_raw = lambda n: '\n'
-                >>> t.recvlines(3)
-                ['', '', '']
-                >>> t.recv_raw = lambda n: 'Foo\nBar\nBaz\n'
-                >>> t.recvlines(3)
-                ['Foo', 'Bar', 'Baz']
-                >>> t.recvlines(3, True)
-                ['Foo\n', 'Bar\n', 'Baz\n']
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: '\n'
+            >>> t.recvlines(3)
+            ['', '', '']
+            >>> t.recv_raw = lambda n: 'Foo\nBar\nBaz\n'
+            >>> t.recvlines(3)
+            ['Foo', 'Bar', 'Baz']
+            >>> t.recvlines(3, True)
+            ['Foo\n', 'Bar\n', 'Baz\n']
         """
         lines = []
         with self.countdown(timeout):
@@ -448,16 +440,14 @@ class tube(Timeout, Logger):
 
         Examples:
 
-            .. doctest::
-
-                >>> t = tube()
-                >>> t.recv_raw = lambda n: "Foo\nBar\nBaz\n"
-                >>> t.recvline_pred(lambda line: line == "Bar\n")
-                'Bar'
-                >>> t.recvline_pred(lambda line: line == "Bar\n", keepends=True)
-                'Bar\n'
-                >>> t.recvline_pred(lambda line: line == 'Nope!', timeout=0.1)
-                ''
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: "Foo\nBar\nBaz\n"
+            >>> t.recvline_pred(lambda line: line == "Bar\n")
+            'Bar'
+            >>> t.recvline_pred(lambda line: line == "Bar\n", keepends=True)
+            'Bar\n'
+            >>> t.recvline_pred(lambda line: line == 'Nope!', timeout=0.1)
+            ''
         """
 
         tmpbuf = Buffer()
@@ -536,16 +526,14 @@ class tube(Timeout, Logger):
 
         Examples:
 
-            .. doctest::
-
-                >>> t = tube()
-                >>> t.recv_raw = lambda n: "Hello\nWorld\nXylophone\n"
-                >>> t.recvline_startswith(tuple('WXYZ'))
-                'World'
-                >>> t.recvline_startswith(tuple('WXYZ'), True)
-                'Xylophone\n'
-                >>> t.recvline_startswith('Wo')
-                'World'
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: "Hello\nWorld\nXylophone\n"
+            >>> t.recvline_startswith(tuple('WXYZ'))
+            'World'
+            >>> t.recvline_startswith(tuple('WXYZ'), True)
+            'Xylophone\n'
+            >>> t.recvline_startswith('Wo')
+            'World'
         """
         # Convert string into singleton tupple
         if isinstance(delims, (str, unicode)):
@@ -568,16 +556,14 @@ class tube(Timeout, Logger):
 
         Examples:
 
-            .. doctest::
-
-                >>> t = tube()
-                >>> t.recv_raw = lambda n: 'Foo\nBar\nBaz\nKaboodle\n'
-                >>> t.recvline_endswith('r')
-                'Bar'
-                >>> t.recvline_endswith(tuple('abcde'), True)
-                'Kaboodle\n'
-                >>> t.recvline_endswith('oodle')
-                'Kaboodle'
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: 'Foo\nBar\nBaz\nKaboodle\n'
+            >>> t.recvline_endswith('r')
+            'Bar'
+            >>> t.recvline_endswith(tuple('abcde'), True)
+            'Kaboodle\n'
+            >>> t.recvline_endswith('oodle')
+            'Kaboodle'
         """
         # Convert string into singleton tupple
         if isinstance(delims, (str, unicode)):
@@ -1201,13 +1187,11 @@ class tube(Timeout, Logger):
 
         Examples:
 
-            .. doctest::
-
-                >>> t = tube()
-                >>> def p(x): print x
-                >>> t.close = lambda: p("Closed!")
-                >>> with t: pass
-                Closed!
+            >>> t = tube()
+            >>> def p(x): print x
+            >>> t.close = lambda: p("Closed!")
+            >>> with t: pass
+            Closed!
         """
         return self
 

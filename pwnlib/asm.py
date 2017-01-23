@@ -396,16 +396,14 @@ def cpp(shellcode):
 
     Examples:
 
-        .. doctest::
-
-            >>> cpp("mov al, SYS_setresuid", arch = "i386", os = "linux")
-            'mov al, 164\n'
-            >>> cpp("weee SYS_setresuid", arch = "arm", os = "linux")
-            'weee (0+164)\n'
-            >>> cpp("SYS_setresuid", arch = "thumb", os = "linux")
-            '(0+164)\n'
-            >>> cpp("SYS_setresuid", os = "freebsd")
-            '311\n'
+        >>> cpp("mov al, SYS_setresuid", arch = "i386", os = "linux")
+        'mov al, 164\n'
+        >>> cpp("weee SYS_setresuid", arch = "arm", os = "linux")
+        'weee (0+164)\n'
+        >>> cpp("SYS_setresuid", arch = "thumb", os = "linux")
+        '(0+164)\n'
+        >>> cpp("SYS_setresuid", os = "freebsd")
+        '311\n'
     """
     arch = context.arch
     os   = context.os
@@ -586,16 +584,14 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
 
     Examples:
 
-        .. doctest::
-
-            >>> asm("mov eax, SYS_select", arch = 'i386', os = 'freebsd')
-            '\xb8]\x00\x00\x00'
-            >>> asm("mov eax, SYS_select", arch = 'amd64', os = 'linux')
-            '\xb8\x17\x00\x00\x00'
-            >>> asm("mov rax, SYS_select", arch = 'amd64', os = 'linux')
-            'H\xc7\xc0\x17\x00\x00\x00'
-            >>> asm("mov r0, #SYS_select", arch = 'arm', os = 'linux', bits=32)
-            'R\x00\xa0\xe3'
+        >>> asm("mov eax, SYS_select", arch = 'i386', os = 'freebsd')
+        '\xb8]\x00\x00\x00'
+        >>> asm("mov eax, SYS_select", arch = 'amd64', os = 'linux')
+        '\xb8\x17\x00\x00\x00'
+        >>> asm("mov rax, SYS_select", arch = 'amd64', os = 'linux')
+        'H\xc7\xc0\x17\x00\x00\x00'
+        >>> asm("mov r0, #SYS_select", arch = 'arm', os = 'linux', bits=32)
+        'R\x00\xa0\xe3'
     """
     result = ''
 
@@ -683,24 +679,22 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
 
     Examples:
 
-        .. doctest::
-
-          >>> print disasm('b85d000000'.decode('hex'), arch = 'i386')
-             0:   b8 5d 00 00 00          mov    eax,0x5d
-          >>> print disasm('b85d000000'.decode('hex'), arch = 'i386', byte = 0)
-             0:   mov    eax,0x5d
-          >>> print disasm('b85d000000'.decode('hex'), arch = 'i386', byte = 0, offset = 0)
-          mov    eax,0x5d
-          >>> print disasm('b817000000'.decode('hex'), arch = 'amd64')
-             0:   b8 17 00 00 00          mov    eax,0x17
-          >>> print disasm('48c7c017000000'.decode('hex'), arch = 'amd64')
-             0:   48 c7 c0 17 00 00 00    mov    rax,0x17
-          >>> print disasm('04001fe552009000'.decode('hex'), arch = 'arm')
-             0:   e51f0004        ldr     r0, [pc, #-4]   ; 0x4
-             4:   00900052        addseq  r0, r0, r2, asr r0
-          >>> print disasm('4ff00500'.decode('hex'), arch = 'thumb', bits=32)
-             0:   f04f 0005       mov.w   r0, #5
-          >>>
+        >>> print disasm('b85d000000'.decode('hex'), arch = 'i386')
+           0:   b8 5d 00 00 00          mov    eax,0x5d
+        >>> print disasm('b85d000000'.decode('hex'), arch = 'i386', byte = 0)
+           0:   mov    eax,0x5d
+        >>> print disasm('b85d000000'.decode('hex'), arch = 'i386', byte = 0, offset = 0)
+        mov    eax,0x5d
+        >>> print disasm('b817000000'.decode('hex'), arch = 'amd64')
+           0:   b8 17 00 00 00          mov    eax,0x17
+        >>> print disasm('48c7c017000000'.decode('hex'), arch = 'amd64')
+           0:   48 c7 c0 17 00 00 00    mov    rax,0x17
+        >>> print disasm('04001fe552009000'.decode('hex'), arch = 'arm')
+           0:   e51f0004        ldr     r0, [pc, #-4]   ; 0x4
+           4:   00900052        addseq  r0, r0, r2, asr r0
+        >>> print disasm('4ff00500'.decode('hex'), arch = 'thumb', bits=32)
+           0:   f04f 0005       mov.w   r0, #5
+        >>>
     """
     result = ''
 
