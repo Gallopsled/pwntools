@@ -795,9 +795,7 @@ class ELF(ELFFile):
         return None
 
     def _populate_memory(self):
-        segments = sorted(self.iter_segments(), key=lambda s: s.header.p_vaddr)
-
-        load_segments = filter(lambda s: s.header.p_type == 'PT_LOAD', segments)
+        load_segments = filter(lambda s: s.header.p_type == 'PT_LOAD', self.iter_segments())
 
         # Map all of the segments
         for i, segment in enumerate(load_segments):
@@ -805,6 +803,15 @@ class ELF(ELFFile):
             stop_data = start + segment.header.p_filesz
             stop_mem  = start + segment.header.p_memsz
 
+            # Chop any existing segments which cover the range described by
+            # [vaddr, vaddr+filesz].
+            #
+            # This has the effect of removing any issues we may encounter
+            # with "overlapping" segments, by giving precedence to whichever
+            # DT_LOAD segment is **last** to load data into the region.
+            self.memory.chop(start, stop_data)
+
+            # Add the new segment
             self.memory.addi(start, stop_data, segment)
 
             if stop_data != stop_mem:
