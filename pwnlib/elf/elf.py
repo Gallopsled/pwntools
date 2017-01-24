@@ -226,8 +226,13 @@ class ELF(ELFFile):
 
         self._address = 0
         if self.elftype != 'DYN':
-            for addr in (seg.header.p_vaddr for sig in self.segments):
-                if addr and (addr < self._address or not self._address):
+            for seg in self.segments:
+                if seg.header.p_type != 'PT_LOAD':
+                    continue
+                addr = seg.header.p_vaddr
+                if addr == 0:
+                    continue
+                if addr < self._address or self._address == 0:
                     self._address = addr
 
         self.load_addr = self._address
