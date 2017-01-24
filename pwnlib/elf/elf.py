@@ -180,7 +180,9 @@ class ELF(ELFFile):
         #: :class:`str`: Architecture of the file (e.g. ``'i386'``, ``'arm'``).
         #:
         #: See: :attr:`.ContextType.arch`
-        self.arch = self.get_machine_arch().lower()
+        self.arch = self.get_machine_arch()
+        if isinstance(self.arch, (str, unicode)):
+            self.arch = self.arch.lower()
 
         #: :class:`dotdict` of ``name`` to ``address`` for all symbols in the ELF
         self.symbols = dotdict()
@@ -222,10 +224,12 @@ class ELF(ELFFile):
                 self.arch = 'mips64'
                 self.bits = 64
 
-        if self.elftype == 'DYN':
-            self._address = 0
-        else:
-            self._address = min(filter(bool, (s.header.p_vaddr for s in self.segments)))
+        self._address = 0
+        if self.elftype != 'DYN':
+            for addr in (seg.header.p_vaddr for sig in self.segments):
+                if addr and (addr < self._address or not self._address):
+                    self._address = addr
+
         self.load_addr = self._address
 
         # Try to figure out if we have a kernel configuration embedded
