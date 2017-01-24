@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
 import ctypes
@@ -11,6 +12,7 @@ import resource
 import select
 import signal
 import subprocess
+import time
 import tty
 
 from pwnlib.context import context
@@ -202,8 +204,8 @@ class process(tube):
     PIPE = PIPE
     PTY = PTY
 
-    #: Have we seen the process stop?
-    _stop_noticed = False
+    #: Have we seen the process stop?  If so, this is a unix timestamp.
+    _stop_noticed = 0
 
     def __init__(self, argv = None,
                  shell = False,
@@ -266,24 +268,29 @@ class process(tube):
         # Create the PTY if necessary
         stdin, stdout, stderr, master, slave = self._handles(*handles)
 
+        #: Arguments passed on argv
+        self.argv = argv
+
         #: Full path to the executable
         self.executable = executable
 
-        #: Arguments passed on argv
-        self.argv = argv
+        if self.executable is None:
+            if shell:
+                self.executable = '/bin/sh'
+            else:
+                self.executable = which(self.argv[0])
 
         #: Environment passed on envp
         self.env = os.environ if env is None else env
 
-        #: Directory the process was created in
-        self.cwd          = cwd or os.path.curdir
+        self._cwd = os.path.realpath(cwd or os.path.curdir)
 
         #: Alarm timeout of the process
         self.alarm        = alarm
 
         self.preexec_fn = preexec_fn
         self.display    = display or self.program
-        self.__qemu     = False
+        self._qemu      = False
 
         message = "Starting %s process %r" % (where, self.display)
 
@@ -322,6 +329,8 @@ class process(tube):
                         raise
                     prefixes.append(self.__on_enoexec(exception))
 
+            p.success('pid %i' % self.pid)
+
         if self.pty is not None:
             if stdin is slave:
                 self.proc.stdin = os.fdopen(os.dup(master), 'r+')
@@ -338,6 +347,18 @@ class process(tube):
         fd = self.proc.stdout.fileno()
         fl = fcntl.fcntl(fd, fcntl.F_GETFL)
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+
+        # Save off information about whether the binary is setuid / setgid
+        self.uid = os.getuid()
+        self.gid = os.getgid()
+        self.suid = -1
+        self.sgid = -1
+        st = os.stat(self.executable)
+        if self._setuid:
+            if (st.st_mode & stat.S_ISUID):
+                self.setuid = st.st_uid
+            if (st.st_mode & stat.S_ISGID):
+                self.setgid = st.st_gid
 
     def __preexec_fn(self):
         """
@@ -360,7 +381,10 @@ class process(tube):
                 self.exception("Could not disable ASLR")
 
         # Assume that the user would prefer to have core dumps.
-        resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
+        try:
+            resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
+        except Exception:
+            pass
 
         # Given that we want a core file, assume that we want the whole thing.
         try:
@@ -415,7 +439,7 @@ class process(tube):
             if self.argv:
                 args += ['-0', self.argv[0]]
             args += ['--']
-            self.__qemu = True
+            self._qemu = True
             return [args, qemu]
 
         # If we get here, we couldn't run the binary directly, and
@@ -424,8 +448,42 @@ class process(tube):
 
     @property
     def program(self):
-        """Alias for ``executable``, for backward compatibility"""
+        """Alias for ``executable``, for backward compatibility.
+
+        Example:
+
+            >>> p = process('true')
+            >>> p.executable == '/bin/true'
+            True
+            >>> p.executable == p.program
+            True
+
+        """
         return self.executable
+
+    @property
+    def cwd(self):
+        """Directory that the process is working in.
+
+        Example:
+
+            >>> p = process('sh')
+            >>> p.sendline('cd /tmp; echo AAA')
+            >>> _ = p.recvuntil('AAA')
+            >>> p.cwd == '/tmp'
+            True
+            >>> p.sendline('cd /proc; echo BBB;')
+            >>> _ = p.recvuntil('BBB')
+            >>> p.cwd
+            '/proc'
+        """
+        try:
+            self._cwd = os.readlink('/proc/%i/cwd' % self.pid)
+        except Exception:
+            pass
+
+        return self._cwd
+
 
     def _validate(self, cwd, executable, argv, env):
         """
@@ -572,6 +630,11 @@ class process(tube):
         Poll the exit code of the process. Will return None, if the
         process has not yet finished and the exit code otherwise.
         """
+
+        # In order to facilitate retrieving core files, force an update
+        # to the current working directory
+        _ = self.cwd
+
         if block:
             self.wait_for_close()
 
@@ -579,14 +642,15 @@ class process(tube):
         returncode = self.proc.returncode
 
         if returncode != None and not self._stop_noticed:
-            self._stop_noticed = True
+            self._stop_noticed = time.time()
             signame = ''
             if returncode < 0:
                 signame = ' (%s)' % (signal_names.get(returncode, 'SIG???'))
 
-            self.info("Process %r stopped with exit code %d%s" % (self.display,
+            self.info("Process %r stopped with exit code %d%s (pid %i)" % (self.display,
                                                                   returncode,
-                                                                  signame))
+                                                                  signame,
+                                                                  self.pid))
         return returncode
 
     def communicate(self, stdin = None):
@@ -687,15 +751,15 @@ class process(tube):
             try:
                 self.proc.kill()
                 self.proc.wait()
-                self._stop_noticed = True
-                self.info('Stopped program %r' % self.program)
+                self._stop_noticed = time.time()
+                self.info('Stopped process %r (pid %i)' % (self.program, self.pid))
             except OSError:
                 pass
 
 
     def fileno(self):
         if not self.connected():
-            self.error("A stopped program does not have a file number")
+            self.error("A stopped process does not have a file number")
 
         return self.proc.stdout.fileno()
 
@@ -816,7 +880,7 @@ class process(tube):
 
         Returns an ELF file for the executable that launched the process.
         """
-        import pwnlib.elf
+        import pwnlib.elf.elf
         return pwnlib.elf.elf.ELF(self.executable)
 
     @property
@@ -825,14 +889,23 @@ class process(tube):
 
         Returns a corefile for the process.
 
-        Example:
+        If the process is alive, attempts to create a coredump with GDB.
 
-            >>> proc = process('bash')
-            >>> isinstance(proc.corefile, pwnlib.elf.corefile.Core)
-            True
+        If the process is dead, attempts to locate the coredump created
+        by the kernel.
         """
+        # If the process is still alive, try using GDB
+        import pwnlib.elf.corefile
         import pwnlib.gdb
-        return pwnlib.gdb.corefile(self)
+
+        if self.poll() is None:
+            return pwnlib.gdb.corefile(self)
+
+        finder = pwnlib.elf.corefile.CorefileFinder(self)
+        if not finder.core_path:
+            self.error("Could not find core file for pid %i" % self.pid)
+
+        return pwnlib.elf.corefile.Corefile(finder.core_path)
 
     def leak(self, address, count=1):
         r"""Leaks memory within the process at the specified address.
