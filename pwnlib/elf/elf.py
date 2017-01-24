@@ -621,7 +621,9 @@ class ELF(ELFFile):
                             isinstance(s, RelocationSection))
         except StopIteration:
             # Evidently whatever android-ndk uses to build binaries zeroes out sh_info for rel.plt
-            rel_plt = self.get_section_by_name('.rel.plt') or self.get_section_by_name('.rela.plt')
+            rel_plt = self.get_section_by_name('.rel.plt') or \
+                self.get_section_by_name('.rela.plt') or \
+                self.get_section_by_name('.rela.dyn')
 
         if not rel_plt:
             log.warning("Couldn't find relocations against PLT to get symbols")
