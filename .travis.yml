@@ -26,6 +26,7 @@ before_install:
   - source travis/install.sh
   - source travis/ssh_setup.sh
 install:
+  - pip install --upgrade pip
   - pip install --upgrade --editable .
   - pip install --upgrade --requirement docs/requirements.txt
 before_script:
