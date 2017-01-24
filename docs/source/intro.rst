@@ -212,8 +212,8 @@ Stop hard-coding things!  Look them up at runtime with :mod:`pwnlib.elf`.
 You can even patch and save the files.
 
     >>> e = ELF('/bin/cat')
-    >>> e.read(e.address+1, 3)
-    'ELF'
+    >>> e.read(e.address, 4)
+    '\x7fELF'
     >>> e.asm(e.address, 'ret')
     >>> e.save('/tmp/quiet-cat')
     >>> disasm(file('/tmp/quiet-cat','rb').read(1))

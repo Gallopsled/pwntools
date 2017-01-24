@@ -56,7 +56,8 @@ install_requires     = ['paramiko>=1.15.2',
                         'python-dateutil',
                         'pypandoc',
                         'packaging',
-                        'psutil>=3.3.0']
+                        'psutil>=3.3.0',
+                        'intervaltree']
 
 # Check that the user has installed the Python development headers
 PythonH = os.path.join(get_python_inc(), 'Python.h')
