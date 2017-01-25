@@ -49,6 +49,14 @@ setup_travis()
     # Force-install capstone because it's broken somehow
     [[ -f usr/lib/libcapstone.so.3 ]] || install_deb libcapstone3
 
+    # Install a newer copy of GDB
+    if [[ ! -f usr/bin/gdb ]]; then
+        git clone --depth=1 https://github.com/zachriggle/pwntools-gdb-travis-ci.git
+        tar xf pwntools-gdb-travis-ci/gdb.tar.xz
+        which gdb
+        usr/bin/gdb --version
+    fi
+
     # Get rid of files we don't want cached
     rm -rf usr/share
 }
