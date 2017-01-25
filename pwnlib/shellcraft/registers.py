@@ -204,6 +204,14 @@ def bits_required(value):
         bits += 8
     return bits
 
+def current():
+    return {
+        'i386': i386,
+        'amd64': amd64,
+        'arm': arm,
+        'aarch64': aarch64,
+        'mips': mips,
+    }[context.arch]
 
 # def is_register(sz):
 #     try:
