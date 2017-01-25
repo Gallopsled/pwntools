@@ -1,0 +1,58 @@
+<%
+import pwnlib.shellcraft as sc
+import pwnlib.abi as abi
+%>
+<%docstring>profil(sample_buffer, size, offset, scale) -> str
+
+Invokes the syscall profil.
+
+See 'man 2 profil' for more information.
+
+Arguments:
+    sample_buffer(unsigned*): sample_buffer
+    size(size_t): size
+    offset(size_t): offset
+    scale(unsigned): scale
+Returns:
+    int
+</%docstring>
+<%page args="sample_buffer, size, offset, scale"/>
+<%
+    abi = abi.ABI.syscall()
+    stack = abi.stack
+    regs = abi.register_arguments[1:]
+
+    can_pushstr = []
+    can_pushstr_array = []
+
+    argument_names = ['sample_buffer', 'size', 'offset', 'scale']
+    argument_values = [sample_buffer, size, offset, scale]
+    arguments = dict(zip(argument_names, argument_values))
+
+    # Figure out which register arguments can be set immediately
+    register_arguments = dict()
+    string_arguments = dict()
+    dict_arguments = dict()
+    array_arguments = dict()
+
+    for name, arg in arguments.items():
+        if name in can_pushstr and isinstance(arg, str):
+            string_arguments[name] = arg
+        elif name in can_pushstr_array and isinstance(arg, dict):
+            array_arguments[name] = ['%s=%s' % (k,v) for (k,v) in arg.items()]
+        elif name in can_pushstr_array and isinstance(arg, (list, tuple)):
+            array_arguments[name] = arg
+        else:
+            index = argument_names.index(name)
+            target = regs[index]
+            register_arguments[target] = arg
+%>
+    ${sc.setregs(register_arguments)}
+%for name, arg in string_arguments.items():
+    ${sc.pushstr(arg, append_null=('\x00' not in arg))}
+    ${sc.mov(regs[argument_names.index(name)], abi.stack)}
+%endfor
+%for name, arg in array_arguments.items():
+    ${sc.pushstr_array(regs[argument_names.index(name)], arg)}
+%endfor
+    ${sc.syscall('SYS_profil')}
