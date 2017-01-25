@@ -2,7 +2,7 @@
 import pwnlib.shellcraft as sc
 import pwnlib.abi as abi
 %>
-<%docstring>mmap(addr, len, prot, flags, fd, offset) -> str
+<%docstring>mmap(addr, length, prot, flags, fd, offset) -> str
 
 Invokes the syscall mmap.
 
@@ -18,7 +18,7 @@ Arguments:
 Returns:
     void*
 </%docstring>
-<%page args="addr, len, prot, flags, fd, offset"/>
+<%page args="addr, length, prot, flags, fd, offset"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack
@@ -28,8 +28,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['addr', 'len', 'prot', 'flags', 'fd', 'offset']
-    argument_values = [addr, len, prot, flags, fd, offset]
+    argument_names = ['addr', 'length', 'prot', 'flags', 'fd', 'offset']
+    argument_values = [addr, length, prot, flags, fd, offset]
 
     # Figure out which register arguments can be set immediately
     register_arguments = dict()
@@ -53,7 +53,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
-    /* mmap(addr=${repr(addr)}, len=${repr(len)}, prot=${repr(prot)}, flags=${repr(flags)}, fd=${repr(fd)}, offset=${repr(offset)}) */
+    /* mmap(addr=${repr(addr)}, length=${repr(length)}, prot=${repr(prot)}, flags=${repr(flags)}, fd=${repr(fd)}, offset=${repr(offset)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

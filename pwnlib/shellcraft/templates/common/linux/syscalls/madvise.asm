@@ -2,7 +2,7 @@
 import pwnlib.shellcraft as sc
 import pwnlib.abi as abi
 %>
-<%docstring>madvise(addr, len, advice) -> str
+<%docstring>madvise(addr, length, advice) -> str
 
 Invokes the syscall madvise.
 
@@ -15,7 +15,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="addr, len, advice"/>
+<%page args="addr, length, advice"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack
@@ -25,8 +25,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['addr', 'len', 'advice']
-    argument_values = [addr, len, advice]
+    argument_names = ['addr', 'length', 'advice']
+    argument_values = [addr, length, advice]
 
     # Figure out which register arguments can be set immediately
     register_arguments = dict()
@@ -50,7 +50,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
-    /* madvise(addr=${repr(addr)}, len=${repr(len)}, advice=${repr(advice)}) */
+    /* madvise(addr=${repr(addr)}, length=${repr(length)}, advice=${repr(advice)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

@@ -2,7 +2,7 @@
 import pwnlib.shellcraft as sc
 import pwnlib.abi as abi
 %>
-<%docstring>splice(fdin, offin, fdout, offout, len, flags) -> str
+<%docstring>splice(fdin, offin, fdout, offout, length, flags) -> str
 
 Invokes the syscall splice.
 
@@ -18,7 +18,7 @@ Arguments:
 Returns:
     ssize_t
 </%docstring>
-<%page args="fdin, offin, fdout, offout, len, flags"/>
+<%page args="fdin, offin, fdout, offout, length, flags"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack
@@ -28,8 +28,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['fdin', 'offin', 'fdout', 'offout', 'len', 'flags']
-    argument_values = [fdin, offin, fdout, offout, len, flags]
+    argument_names = ['fdin', 'offin', 'fdout', 'offout', 'length', 'flags']
+    argument_values = [fdin, offin, fdout, offout, length, flags]
 
     # Figure out which register arguments can be set immediately
     register_arguments = dict()
@@ -53,7 +53,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
-    /* splice(fdin=${repr(fdin)}, offin=${repr(offin)}, fdout=${repr(fdout)}, offout=${repr(offout)}, len=${repr(len)}, flags=${repr(flags)}) */
+    /* splice(fdin=${repr(fdin)}, offin=${repr(offin)}, fdout=${repr(fdout)}, offout=${repr(offout)}, length=${repr(length)}, flags=${repr(flags)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

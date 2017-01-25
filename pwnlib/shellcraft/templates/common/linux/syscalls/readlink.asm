@@ -2,7 +2,7 @@
 import pwnlib.shellcraft as sc
 import pwnlib.abi as abi
 %>
-<%docstring>readlink(path, buf, len) -> str
+<%docstring>readlink(path, buf, length) -> str
 
 Invokes the syscall readlink.
 
@@ -15,7 +15,7 @@ Arguments:
 Returns:
     ssize_t
 </%docstring>
-<%page args="path, buf, len"/>
+<%page args="path, buf, length"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack
@@ -25,8 +25,8 @@ Returns:
     can_pushstr = ['path', 'buf']
     can_pushstr_array = []
 
-    argument_names = ['path', 'buf', 'len']
-    argument_values = [path, buf, len]
+    argument_names = ['path', 'buf', 'length']
+    argument_values = [path, buf, length]
 
     # Figure out which register arguments can be set immediately
     register_arguments = dict()
@@ -50,7 +50,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
-    /* readlink(path=${repr(path)}, buf=${repr(buf)}, len=${repr(len)}) */
+    /* readlink(path=${repr(path)}, buf=${repr(buf)}, length=${repr(length)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

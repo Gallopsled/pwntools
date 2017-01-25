@@ -92,13 +92,19 @@ def can_be_array(arg):
     if arg.type == 'char' and arg.derefcnt == 2:
         return True
 
+def fix_bad_arg_names(arg):
+    if arg == 'str': return 'str_'
+    if arg == 'len': return 'length'
+    if arg == 'repr': return 'repr_'
+    return arg
+
 def main(target):
     for name, function in functions.items():
         if 'SYS_%s' % name not in SYSCALL_NAMES:
             continue
 
         # Set up the argument string
-        argument_names = [a.name for a in function.args]
+        argument_names = map(fix_bad_arg_names, [a.name for a in function.args])
         arguments_comma_separated = ', '.join(argument_names)
 
         string_arguments = []

@@ -2,7 +2,7 @@
 import pwnlib.shellcraft as sc
 import pwnlib.abi as abi
 %>
-<%docstring>fallocate(fd, mode, offset, len) -> str
+<%docstring>fallocate(fd, mode, offset, length) -> str
 
 Invokes the syscall fallocate.
 
@@ -16,7 +16,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="fd, mode, offset, len"/>
+<%page args="fd, mode, offset, length"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack
@@ -26,8 +26,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['fd', 'mode', 'offset', 'len']
-    argument_values = [fd, mode, offset, len]
+    argument_names = ['fd', 'mode', 'offset', 'length']
+    argument_values = [fd, mode, offset, length]
 
     # Figure out which register arguments can be set immediately
     register_arguments = dict()
@@ -51,7 +51,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
-    /* fallocate(fd=${repr(fd)}, mode=${repr(mode)}, offset=${repr(offset)}, len=${repr(len)}) */
+    /* fallocate(fd=${repr(fd)}, mode=${repr(mode)}, offset=${repr(offset)}, length=${repr(length)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

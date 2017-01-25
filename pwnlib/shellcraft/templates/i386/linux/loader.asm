@@ -1,8 +1,5 @@
 <%
-    from pwnlib.shellcraft.i386.linux import exit as exit
-    from pwnlib.shellcraft.i386.linux import mmap
-    from pwnlib.shellcraft.i386 import setregs
-
+    import pwnlib.shellcraft as sc
     from pwnlib.shellcraft import common
     from pwnlib.util.packing import unpack
 %>
@@ -59,7 +56,7 @@ p_memsz  = 0x0014
 PT_LOAD  = 1
 %>
 
-    ${setregs({'esi': address})}
+    ${sc.setregs({'esi': address})}
 
     /* Check the ELF header */
     mov  eax, dword ptr [esi]
@@ -145,7 +142,7 @@ ${load_one}:
 
     /* Map the page in */
     pushad
-    ${mmap('edi', 'ebx', 'PROT_READ|PROT_WRITE|PROT_EXEC', 'MAP_ANONYMOUS|MAP_PRIVATE|MAP_FIXED', 0, 0)}
+    ${sc.mmap('edi', 'ebx', 'PROT_READ|PROT_WRITE|PROT_EXEC', 'MAP_ANONYMOUS|MAP_PRIVATE|MAP_FIXED', 0, 0)}
     /* Ignore failure */
     popad
 
@@ -170,4 +167,4 @@ ${next_phdr}:
     ret
 
 ${die}:
-    ${exit(1)}
+    ${sc.exit(1)}

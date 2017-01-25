@@ -2,7 +2,7 @@
 import pwnlib.shellcraft as sc
 import pwnlib.abi as abi
 %>
-<%docstring>mprotect(addr, len, prot) -> str
+<%docstring>mprotect(addr, length, prot) -> str
 
 Invokes the syscall mprotect.
 
@@ -15,7 +15,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="addr, len, prot"/>
+<%page args="addr, length, prot"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack
@@ -25,8 +25,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['addr', 'len', 'prot']
-    argument_values = [addr, len, prot]
+    argument_names = ['addr', 'length', 'prot']
+    argument_values = [addr, length, prot]
 
     # Figure out which register arguments can be set immediately
     register_arguments = dict()
@@ -50,7 +50,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
-    /* mprotect(addr=${repr(addr)}, len=${repr(len)}, prot=${repr(prot)}) */
+    /* mprotect(addr=${repr(addr)}, length=${repr(length)}, prot=${repr(prot)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

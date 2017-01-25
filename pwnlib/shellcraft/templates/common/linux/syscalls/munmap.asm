@@ -2,7 +2,7 @@
 import pwnlib.shellcraft as sc
 import pwnlib.abi as abi
 %>
-<%docstring>munmap(addr, len) -> str
+<%docstring>munmap(addr, length) -> str
 
 Invokes the syscall munmap.
 
@@ -14,7 +14,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="addr, len"/>
+<%page args="addr, length"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack
@@ -24,8 +24,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['addr', 'len']
-    argument_values = [addr, len]
+    argument_names = ['addr', 'length']
+    argument_values = [addr, length]
 
     # Figure out which register arguments can be set immediately
     register_arguments = dict()
@@ -49,7 +49,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
-    /* munmap(addr=${repr(addr)}, len=${repr(len)}) */
+    /* munmap(addr=${repr(addr)}, length=${repr(length)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

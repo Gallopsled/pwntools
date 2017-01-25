@@ -2,7 +2,7 @@
 import pwnlib.shellcraft as sc
 import pwnlib.abi as abi
 %>
-<%docstring>mincore(start, len, vec) -> str
+<%docstring>mincore(start, length, vec) -> str
 
 Invokes the syscall mincore.
 
@@ -15,7 +15,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="start, len, vec"/>
+<%page args="start, length, vec"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack
@@ -25,8 +25,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['start', 'len', 'vec']
-    argument_values = [start, len, vec]
+    argument_names = ['start', 'length', 'vec']
+    argument_values = [start, length, vec]
 
     # Figure out which register arguments can be set immediately
     register_arguments = dict()
@@ -50,7 +50,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
-    /* mincore(start=${repr(start)}, len=${repr(len)}, vec=${repr(vec)}) */
+    /* mincore(start=${repr(start)}, length=${repr(length)}, vec=${repr(vec)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

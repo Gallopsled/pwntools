@@ -2,7 +2,7 @@
 import pwnlib.shellcraft as sc
 import pwnlib.abi as abi
 %>
-<%docstring>sethostname(name, len) -> str
+<%docstring>sethostname(name, length) -> str
 
 Invokes the syscall sethostname.
 
@@ -14,7 +14,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="name, len"/>
+<%page args="name, length"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack
@@ -24,8 +24,8 @@ Returns:
     can_pushstr = ['name']
     can_pushstr_array = []
 
-    argument_names = ['name', 'len']
-    argument_values = [name, len]
+    argument_names = ['name', 'length']
+    argument_values = [name, length]
 
     # Figure out which register arguments can be set immediately
     register_arguments = dict()
@@ -49,7 +49,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
-    /* sethostname(name=${repr(name)}, len=${repr(len)}) */
+    /* sethostname(name=${repr(name)}, length=${repr(length)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

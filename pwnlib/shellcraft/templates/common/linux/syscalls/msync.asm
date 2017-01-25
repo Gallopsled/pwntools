@@ -2,7 +2,7 @@
 import pwnlib.shellcraft as sc
 import pwnlib.abi as abi
 %>
-<%docstring>msync(addr, len, flags) -> str
+<%docstring>msync(addr, length, flags) -> str
 
 Invokes the syscall msync.
 
@@ -15,7 +15,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="addr, len, flags"/>
+<%page args="addr, length, flags"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack
@@ -25,8 +25,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['addr', 'len', 'flags']
-    argument_values = [addr, len, flags]
+    argument_names = ['addr', 'length', 'flags']
+    argument_values = [addr, length, flags]
 
     # Figure out which register arguments can be set immediately
     register_arguments = dict()
@@ -50,7 +50,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
-    /* msync(addr=${repr(addr)}, len=${repr(len)}, flags=${repr(flags)}) */
+    /* msync(addr=${repr(addr)}, length=${repr(length)}, flags=${repr(flags)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

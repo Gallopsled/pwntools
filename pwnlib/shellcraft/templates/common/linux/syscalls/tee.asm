@@ -2,7 +2,7 @@
 import pwnlib.shellcraft as sc
 import pwnlib.abi as abi
 %>
-<%docstring>tee(fdin, fdout, len, flags) -> str
+<%docstring>tee(fdin, fdout, length, flags) -> str
 
 Invokes the syscall tee.
 
@@ -16,7 +16,7 @@ Arguments:
 Returns:
     ssize_t
 </%docstring>
-<%page args="fdin, fdout, len, flags"/>
+<%page args="fdin, fdout, length, flags"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack
@@ -26,8 +26,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['fdin', 'fdout', 'len', 'flags']
-    argument_values = [fdin, fdout, len, flags]
+    argument_names = ['fdin', 'fdout', 'length', 'flags']
+    argument_values = [fdin, fdout, length, flags]
 
     # Figure out which register arguments can be set immediately
     register_arguments = dict()
@@ -51,7 +51,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
-    /* tee(fdin=${repr(fdin)}, fdout=${repr(fdout)}, len=${repr(len)}, flags=${repr(flags)}) */
+    /* tee(fdin=${repr(fdin)}, fdout=${repr(fdout)}, length=${repr(length)}, flags=${repr(flags)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}
