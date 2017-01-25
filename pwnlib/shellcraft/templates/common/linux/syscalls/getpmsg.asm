@@ -48,6 +48,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* getpmsg(fildes=${repr(fildes)}, ctlptr=${repr(ctlptr)}, dataptr=${repr(dataptr)}, bandp=${repr(bandp)}, flagsp=${repr(flagsp)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

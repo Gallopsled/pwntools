@@ -45,6 +45,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* sched_rr_get_interval(pid=${repr(pid)}, t=${repr(t)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

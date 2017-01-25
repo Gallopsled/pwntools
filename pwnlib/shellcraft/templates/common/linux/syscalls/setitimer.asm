@@ -46,6 +46,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* setitimer(which=${repr(which)}, new=${repr(new)}, old=${repr(old)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

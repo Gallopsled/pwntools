@@ -46,6 +46,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* fchown(fd=${repr(fd)}, owner=${repr(owner)}, group=${repr(group)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

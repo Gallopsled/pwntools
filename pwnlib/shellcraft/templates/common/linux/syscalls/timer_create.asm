@@ -46,6 +46,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* timer_create(clock_id=${repr(clock_id)}, evp=${repr(evp)}, timerid=${repr(timerid)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

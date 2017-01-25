@@ -46,6 +46,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* msync(addr=${repr(addr)}, len=${repr(len)}, flags=${repr(flags)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

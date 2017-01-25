@@ -46,6 +46,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* open(file=${repr(file)}, oflag=${repr(oflag)}, vararg=${repr(vararg)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

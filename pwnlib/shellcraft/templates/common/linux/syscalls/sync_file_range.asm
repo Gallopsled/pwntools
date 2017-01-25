@@ -47,6 +47,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* sync_file_range(fd=${repr(fd)}, offset=${repr(offset)}, count=${repr(count)}, flags=${repr(flags)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

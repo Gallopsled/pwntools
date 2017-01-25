@@ -45,6 +45,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* nanosleep(requested_time=${repr(requested_time)}, remaining=${repr(remaining)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

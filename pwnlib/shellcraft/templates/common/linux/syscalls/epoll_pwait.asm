@@ -48,6 +48,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* epoll_pwait(epfd=${repr(epfd)}, events=${repr(events)}, maxevents=${repr(maxevents)}, timeout=${repr(timeout)}, ss=${repr(ss)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

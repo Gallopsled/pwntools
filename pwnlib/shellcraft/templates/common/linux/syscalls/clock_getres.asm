@@ -45,6 +45,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* clock_getres(clock_id=${repr(clock_id)}, res=${repr(res)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

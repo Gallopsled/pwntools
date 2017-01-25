@@ -49,6 +49,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* splice(fdin=${repr(fdin)}, offin=${repr(offin)}, fdout=${repr(fdout)}, offout=${repr(offout)}, len=${repr(len)}, flags=${repr(flags)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

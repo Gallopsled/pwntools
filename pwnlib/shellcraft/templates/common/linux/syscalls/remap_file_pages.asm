@@ -48,6 +48,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* remap_file_pages(start=${repr(start)}, size=${repr(size)}, prot=${repr(prot)}, pgoff=${repr(pgoff)}, flags=${repr(flags)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

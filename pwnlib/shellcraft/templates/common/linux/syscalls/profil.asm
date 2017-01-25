@@ -47,6 +47,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* profil(sample_buffer=${repr(sample_buffer)}, size=${repr(size)}, offset=${repr(offset)}, scale=${repr(scale)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

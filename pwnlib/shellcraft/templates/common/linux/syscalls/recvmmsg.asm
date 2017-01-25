@@ -48,6 +48,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* recvmmsg(fd=${repr(fd)}, vmessages=${repr(vmessages)}, vlen=${repr(vlen)}, flags=${repr(flags)}, tmo=${repr(tmo)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

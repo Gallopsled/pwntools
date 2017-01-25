@@ -48,6 +48,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* mremap(addr=${repr(addr)}, old_len=${repr(old_len)}, new_len=${repr(new_len)}, flags=${repr(flags)}, vararg=${repr(vararg)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

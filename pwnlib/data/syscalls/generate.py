@@ -68,6 +68,7 @@ CALL = """
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* {name}({syscall_repr}) */
     ${{sc.setregs(register_arguments)}}
 %for name, arg in string_arguments.items():
     ${{sc.pushstr(arg, append_null=('\\x00' not in arg))}}
@@ -114,6 +115,7 @@ def main(target):
 
         return_type = str(function.type) + ('*' * function.derefcnt)
         arg_docs = '\n'.join(arg_docs)
+        syscall_repr = ', '.join(('%s=${repr(%s)}' % (n,n) for n in argument_names))
 
         lines = [
             HEADER,

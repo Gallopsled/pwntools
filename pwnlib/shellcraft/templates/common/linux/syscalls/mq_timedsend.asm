@@ -48,6 +48,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* mq_timedsend(mqdes=${repr(mqdes)}, msg_ptr=${repr(msg_ptr)}, msg_len=${repr(msg_len)}, msg_prio=${repr(msg_prio)}, abs_timeout=${repr(abs_timeout)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

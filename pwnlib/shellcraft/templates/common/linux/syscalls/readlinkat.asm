@@ -47,6 +47,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* readlinkat(fd=${repr(fd)}, path=${repr(path)}, buf=${repr(buf)}, len=${repr(len)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

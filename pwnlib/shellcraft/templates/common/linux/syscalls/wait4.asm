@@ -47,6 +47,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* wait4(pid=${repr(pid)}, stat_loc=${repr(stat_loc)}, options=${repr(options)}, usage=${repr(usage)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

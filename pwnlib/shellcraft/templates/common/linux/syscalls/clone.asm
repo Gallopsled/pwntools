@@ -48,6 +48,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* clone(fn=${repr(fn)}, child_stack=${repr(child_stack)}, flags=${repr(flags)}, arg=${repr(arg)}, vararg=${repr(vararg)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

@@ -47,6 +47,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* prlimit64(pid=${repr(pid)}, resource=${repr(resource)}, new_limit=${repr(new_limit)}, old_limit=${repr(old_limit)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}

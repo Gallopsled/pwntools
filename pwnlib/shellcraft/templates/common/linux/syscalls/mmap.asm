@@ -49,6 +49,7 @@ Returns:
             target = regs[index]
             register_arguments[target] = arg
 %>
+    /* mmap(addr=${repr(addr)}, len=${repr(len)}, prot=${repr(prot)}, flags=${repr(flags)}, fd=${repr(fd)}, offset=${repr(offset)}) */
     ${sc.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
     ${sc.pushstr(arg, append_null=('\x00' not in arg))}
