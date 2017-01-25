@@ -19,13 +19,13 @@ Returns:
     abi = abi.ABI.syscall()
     stack = abi.stack
     regs = abi.register_arguments[1:]
+    allregs = sc.registers.current()
 
     can_pushstr = []
     can_pushstr_array = []
 
     argument_names = ['mqdes', 'notification']
     argument_values = [mqdes, notification]
-    arguments = dict(zip(argument_names, argument_values))
 
     # Figure out which register arguments can be set immediately
     register_arguments = dict()
@@ -33,8 +33,12 @@ Returns:
     dict_arguments = dict()
     array_arguments = dict()
 
-    for name, arg in arguments.items():
-        if name in can_pushstr and isinstance(arg, str):
+    for name, arg in zip(argument_names, argument_values):
+        if arg in allregs:
+            index = argument_names.index(name)
+            target = regs[index]
+            register_arguments[target] = arg
+        elif name in can_pushstr and isinstance(arg, str):
             string_arguments[name] = arg
         elif name in can_pushstr_array and isinstance(arg, dict):
             array_arguments[name] = ['%s=%s' % (k,v) for (k,v) in arg.items()]
