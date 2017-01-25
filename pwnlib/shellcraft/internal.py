@@ -103,6 +103,8 @@ def get_context_from_dirpath(directory):
 
     if osys == 'common':
         osys = None
+    if arch == 'common':
+        arch = None
 
     return {'os': osys, 'arch': arch}
 
