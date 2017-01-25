@@ -1,5 +1,5 @@
 <%
-from pwnlib.shellcraft import pretty, value, common, registers
+from pwnlib.shellcraft import pretty, common, registers
 from pwnlib.shellcraft.thumb import mov, pushstr, udiv_10, setregs
 from pwnlib import constants
 %>
