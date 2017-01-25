@@ -26,7 +26,8 @@ class ABI(object):
     #: Indicates that this ABI returns to the next address on the slot
     returns            = True
 
-    def __init__(self, regs, align, minimum):
+    def __init__(self, stack, regs, align, minimum):
+        self.stack              = stack
         self.register_arguments = regs
         self.arg_alignment      = align
         self.stack_minimum      = minimum
@@ -81,9 +82,9 @@ class SyscallABI(ABI):
     The syscall ABI treats the syscall number as the zeroth argument,
     which must be loaded into the specified register.
     """
-    def __init__(self, register_arguments, *a, **kw):
-        super(SyscallABI, self).__init__(register_arguments, *a, **kw)
-        self.syscall_register = register_arguments[0]
+    def __init__(self, *a, **kw):
+        super(SyscallABI, self).__init__(*a, **kw)
+        self.syscall_register = self.register_arguments[0]
 
 class SigreturnABI(SyscallABI):
     """
@@ -94,27 +95,27 @@ class SigreturnABI(SyscallABI):
     returns = False
 
 
-linux_i386   = ABI([], 4, 0)
-linux_amd64  = ABI(['rdi','rsi','rdx','rcx','r8','r9'], 8, 0)
-linux_arm    = ABI(['r0', 'r1', 'r2', 'r3'], 8, 0)
-linux_aarch64 = ABI(['x0', 'x1', 'x2', 'x3'], 16, 0)
-linux_mips  = ABI(['$a0','$a1','$a2','$a3'], 4, 0)
+linux_i386   = ABI('esp', [], 4, 0)
+linux_amd64  = ABI('rsp', ['rdi','rsi','rdx','rcx','r8','r9'], 8, 0)
+linux_arm    = ABI('sp', ['r0', 'r1', 'r2', 'r3'], 8, 0)
+linux_aarch64 = ABI('sp', ['x0', 'x1', 'x2', 'x3'], 16, 0)
+linux_mips  = ABI('$sp', ['$a0','$a1','$a2','$a3'], 4, 0)
 
-linux_i386_syscall = SyscallABI(['eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp'], 4, 0)
-linux_amd64_syscall = SyscallABI(['rax','rdi', 'rsi', 'rdx', 'r10', 'r8', 'r9'],   8, 0)
-linux_arm_syscall   = SyscallABI(['r7', 'r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6'], 4, 0)
-linux_aarch64_syscall   = SyscallABI(['x8', 'x0', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6'], 16, 0)
-linux_mips_syscall  = ABI(['$v0', '$a0','$a1','$a2','$a3'], 4, 0)
+linux_i386_syscall = SyscallABI('esp', ['eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp'], 4, 0)
+linux_amd64_syscall = SyscallABI('rsp', ['rax', 'rdi', 'rsi', 'rdx', 'r10', 'r8', 'r9'],   8, 0)
+linux_arm_syscall   = SyscallABI('sp', ['r7', 'r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6'], 4, 0)
+linux_aarch64_syscall   = SyscallABI('sp', ['x8', 'x0', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6'], 16, 0)
+linux_mips_syscall  = SyscallABI('$sp', ['$v0','$a0','$a1','$a2','$a3'], 4, 0)
 
-linux_i386_sigreturn = SigreturnABI(['eax'], 4, 0)
-linux_amd64_sigreturn = SigreturnABI(['rax'], 4, 0)
-linux_arm_sigreturn = SigreturnABI(['r7'], 4, 0)
-linux_aarch64_sigreturn = SigreturnABI(['x8'], 16, 0)
+linux_i386_sigreturn = SigreturnABI('esp', ['eax'], 4, 0)
+linux_amd64_sigreturn = SigreturnABI('rsp', ['rax'], 4, 0)
+linux_arm_sigreturn = SigreturnABI('sp', ['r7'], 4, 0)
+linux_aarch64_sigreturn = SigreturnABI('sp', ['x8'], 16, 0)
 
-windows_i386  = ABI([], 4, 0)
-windows_amd64 = ABI(['rcx','rdx','r8','r9'], 32, 32)
+windows_i386  = ABI('esp', [], 4, 0)
+windows_amd64 = ABI('rsp', ['rcx','rdx','r8','r9'], 32, 32)
 
 # Fake ABIs used by SROP
-linux_i386_srop = ABI(['eax'], 4, 0)
-linux_amd64_srop = ABI(['rax'], 4, 0)
-linux_arm_srop = ABI(['r7'], 4, 0)
+linux_i386_srop = ABI('esp', ['eax'], 4, 0)
+linux_amd64_srop = ABI('rsp', ['rax'], 4, 0)
+linux_arm_srop = ABI('sp', ['r7'], 4, 0)
