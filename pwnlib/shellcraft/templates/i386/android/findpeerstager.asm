@@ -1,1 +1,0 @@
-../linux/findpeerstager.asm

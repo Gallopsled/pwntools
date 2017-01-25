@@ -12,6 +12,8 @@ from pwnlib.util import packing
 
 
 class module(ModuleType):
+    _templates = []
+
     def __init__(self, name, directory):
         super(module, self).__init__(name)
 
@@ -110,19 +112,26 @@ class module(ModuleType):
             result.extend(m.__shellcodes__())
         return result
 
-    template_dir = os.path.join(os.path.dirname(__file__), 'templates')
-    templates    = []
+    @property
+    def templates(self):
+        if self._templates:
+            return self._templates
 
-    for root, subfolder, files in os.walk(template_dir):
-        for file in filter(lambda x: x.endswith('.asm'), files):
-            value = os.path.splitext(file)[0]
-            value = os.path.join(root, value)
-            value = value.replace(template_dir, '')
-            value = value.replace(os.path.sep, '.')
-            value = value.lstrip('.')
-            templates.append(value)
+        template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+        templates    = []
 
-    templates = sorted(templates)
+        for root, subfolder, files in os.walk(template_dir, followlinks=False):
+            for file in filter(lambda x: x.endswith('.asm'), files):
+                value = os.path.splitext(file)[0]
+                value = os.path.join(root, value)
+                value = value.replace(template_dir, '')
+                value = value.replace(os.path.sep, '.')
+                value = value.lstrip('.')
+                templates.append(value)
+
+        templates = sorted(templates)
+        self._templates = templates
+        return templates
 
     def eval(self, item):
         if isinstance(item, (int,long)):
