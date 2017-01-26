@@ -17,3 +17,10 @@ RUN apt-get install -y python-dev
 RUN pip install --upgrade pip
 RUN python -m pip install --upgrade pwntools
 RUN PWNLIB_NOTERM=1 pwn update
+
+RUN apt-get install -y sudo
+RUN useradd -m pwntools
+RUN passwd --delete --unlock pwntools
+RUN echo "pwntools ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/pwntools
+USER pwntools
+WORKDIR /home/pwntools

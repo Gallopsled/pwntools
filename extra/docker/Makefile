@@ -1,11 +1,11 @@
-subdirs=$(wildcard */)
+subdirs=xenial stable $(wildcard */)
 makefiles=$(wildcard */Makefile)
+tags=stable beta dev
 
 all: $(makefiles) $(subdirs)
-	echo $(subdirs)
 
 $(subdirs):
-	docker build -t pwntools:$(shell basename $(@)) "$@"
+	docker build -t pwntools/pwntools:$(shell basename $(@)) "$@"
 
 $(makefiles):
 	make -C $(shell dirname $@)
