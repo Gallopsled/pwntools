@@ -5,6 +5,9 @@ import argparse
 import os
 import re
 
+import pwnlib
+pwnlib.args.free_form = False
+
 from pwn import *
 from pwnlib.commandline import common
 
@@ -74,6 +77,7 @@ def main(args):
             matcher = re.compile(args.regex, re.IGNORECASE)
         else:
             matcher = re.compile(args.regex)
+
 
         # Evaluate the given constant
         if args.constant:

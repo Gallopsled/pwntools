@@ -6,6 +6,9 @@ import os
 import sys
 import types
 
+import pwnlib
+pwnlib.args.free_form = False
+
 from pwn import *
 from pwnlib.commandline import common
 

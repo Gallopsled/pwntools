@@ -2,6 +2,9 @@ from __future__ import absolute_import
 
 import argparse
 
+import pwnlib
+pwnlib.args.free_form = False
+
 from pwn import *
 from pwnlib.commandline import common
 

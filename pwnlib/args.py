@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python2
 """
 Pwntools exposes several magic command-line arguments and environment
@@ -53,6 +54,17 @@ from pwnlib.context import context
 term_mode  = True
 args       = collections.defaultdict(str)
 env_prefix = 'PWNLIB_'
+free_form  = True
+
+# Check to see if we were invoked as one of the 'pwn xxx' scripts.
+# If so, we don't want to remove e.g. "SYS_" from the end of the command
+# line, as this breaks things like constgrep.
+import pwnlib.commandline
+basename = os.path.basename(sys.argv[0])
+
+if basename == 'pwn' or basename in pwnlib.commandline.__all__:
+    free_form = False
+
 
 def isident(s):
     """
@@ -174,7 +186,7 @@ def initialize():
             sys.argv.remove(orig)
             hooks[arg](value)
 
-        elif isident(arg):
+        elif free_form and isident(arg):
             sys.argv.remove(orig)
             args[arg] = value
 

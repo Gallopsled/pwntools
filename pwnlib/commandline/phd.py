@@ -5,6 +5,9 @@ import argparse
 import os
 import sys
 
+import pwnlib
+pwnlib.args.free_form = False
+
 from pwn import *
 from pwnlib.commandline import common
 
