@@ -783,27 +783,59 @@ def shell(**kw):
     return process(['sh', '-i'], **kw)
 
 @with_device
-def which(name):
-    """Retrieves the full path to a binary in ``PATH`` on the device
+def which(name, all = False, *a, **kw):
+    """Retrieves the full path to a binary in ``$PATH`` on the device
 
-    >>> adb.which('sh')
-    '/system/bin/sh'
+    Arguments:
+        name(str): Binary name
+        all(bool): Whether to return all paths, or just the first
+        *a: Additional arguments for :func:`.adb.process`
+        **kw: Additional arguments for :func:`.adb.process`
+
+    Returns:
+        Either a path, or list of paths
+
+    Example:
+
+        >>> adb.which('sh')
+        '/system/bin/sh'
+        >>> adb.which('sh', all=True)
+        ['/system/bin/sh']
+
+        >>> adb.which('foobar') is None
+        True
+        >>> adb.which('foobar', all=True)
+        []
     """
     # Unfortunately, there is no native 'which' on many phones.
     which_cmd = '''
-IFS=:
-BINARY=%s
-P=($PATH)
-for path in "${P[@]}"; do \
-    if [ -e "$path/$BINARY" ]; then \
-        echo "$path/$BINARY";
-        break
-    fi
+echo $PATH | while read -d: directory; do
+    [ -x "$directory/{name}" ] || continue;
+    echo -n "$directory/{name}\\x00";
 done
-''' % name
+'''.format(name=name)
 
     which_cmd = which_cmd.strip()
-    return process(['sh','-c',which_cmd]).recvall().strip()
+    data = process(['sh','-c', which_cmd], *a, **kw).recvall()
+    result = []
+
+    for path in data.split('\x00'):
+        # Skip empty entries
+        if not path:
+            continue
+
+        # Return the first entry if all=False
+        if not all:
+            return path
+
+        # Accumulate all entries if all=True
+        result.append(path)
+
+    if all:
+        return result
+
+    return None
+
 
 @with_device
 def whoami():
