@@ -10,7 +10,7 @@ local_deb_extract()
 
 install_deb()
 {
-    version=zesty
+    version=${2:-zesty}
     package=$1
     echo "Installing $package"
     INDEX="http://packages.ubuntu.com/en/$version/amd64/$package/download"
@@ -28,7 +28,7 @@ setup_travis()
     [[ -f usr/bin/objcopy ]] || install_deb binutils
 
     # Install/upgrade qemu
-    [[ -f usr/bin/qemu-arm-static ]] || install_deb qemu-user-static
+    [[ -f usr/bin/qemu-arm-static ]] || install_deb qemu-user-static xenial
 
     # Install cross-binutils
     [[ -f usr/bin/x86_64-linux-gnu-ar ]]    || install_deb binutils-multiarch
