@@ -1,1 +1,0 @@
-../linux/stat64.asm

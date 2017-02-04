@@ -1,0 +1,1 @@
+../../linux/syscalls/ftruncate64.asm

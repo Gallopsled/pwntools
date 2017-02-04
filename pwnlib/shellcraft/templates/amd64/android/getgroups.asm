@@ -1,1 +1,0 @@
-../linux/getgroups.asm

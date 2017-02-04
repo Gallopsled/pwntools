@@ -92,18 +92,19 @@ def get_context_from_dirpath(directory):
     >>> get_context_from_dirpath('amd64/linux') == {'arch': 'amd64', 'os': 'linux'}
     True
     """
-    A,O = os.path.split(directory)
+    from ..util.misc import path_splitall
 
-    if O == 'common':
-        O = None
+    dirs = path_splitall(directory)
 
-    if not A:
-        A,O = O,None
+    if not dirs:
+        return {}
+    elif dirs[0] == 'common':
+        return {}
+    elif len(dirs) >= 2:
+        return { 'arch' : dirs[0], 'os' : dirs[1] }
+    else:
+        return { 'arch' : dirs[0] }
 
-    rv = {}
-    if O: rv['os']=O
-    if A: rv['arch']=A
-    return rv
 
 def make_function(funcname, filename, directory):
     import inspect

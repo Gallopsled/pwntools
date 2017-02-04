@@ -28,9 +28,12 @@ class module(ModuleType):
         # Find the absolute path of the directory
         self._absdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', self._dir)
 
-        # Get the docstring
+        # Get the docstring (if it exists)
         with open(os.path.join(self._absdir, "__doc__")) as fd:
-            self.__doc__ = fd.read()
+            try:
+                self.__doc__ = fd.read()
+            except IOError:
+                self.__doc__ = ""
 
         # Insert into the module list
         sys.modules[self.__name__] = self

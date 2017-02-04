@@ -1,0 +1,1 @@
+../../linux/syscalls/getpriority.asm
