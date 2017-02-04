@@ -103,7 +103,7 @@ class module(ModuleType):
     def _context_modules(self):
         self.__lazyinit__ and self.__lazyinit__()
         for k, m in self._submodules.items():
-            if k in [context.arch, context.os]:
+            if k in [context.arch, context.os] or (context.arch in m.__name__ and context.os in m.__name__):
                 yield m
 
     def __shellcodes__(self):
