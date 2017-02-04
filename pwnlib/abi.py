@@ -40,6 +40,7 @@ class ABI(object):
 
         return {
         (32, 'i386', 'linux'):  linux_i386,
+        (64, 'aarch64', 'linux'): linux_aarch64,
         (64, 'amd64', 'linux'): linux_amd64,
         (32, 'arm', 'linux'):   linux_arm,
         (32, 'thumb', 'linux'):   linux_arm,
@@ -57,6 +58,7 @@ class ABI(object):
         return {
         (32, 'i386', 'linux'):  linux_i386_syscall,
         (64, 'amd64', 'linux'): linux_amd64_syscall,
+        (64, 'aarch64', 'linux'): linux_aarch64_syscall,
         (32, 'arm', 'linux'):   linux_arm_syscall,
         (32, 'thumb', 'linux'):   linux_arm_syscall,
         (32, 'mips', 'linux'):   linux_mips_syscall,
