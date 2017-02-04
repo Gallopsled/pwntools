@@ -1,1 +1,0 @@
-../linux/fstat64.asm

@@ -1,0 +1,1 @@
+../../linux/syscalls/truncate64.asm

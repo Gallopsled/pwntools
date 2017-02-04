@@ -1,0 +1,1 @@
+../../linux/syscalls/mq_notify.asm

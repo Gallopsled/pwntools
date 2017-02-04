@@ -1,0 +1,1 @@
+../../linux/syscalls/fstatat64.asm

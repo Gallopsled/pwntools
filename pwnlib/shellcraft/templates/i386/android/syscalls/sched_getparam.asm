@@ -1,0 +1,1 @@
+../../linux/syscalls/sched_getparam.asm
