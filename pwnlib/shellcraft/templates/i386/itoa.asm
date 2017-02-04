@@ -16,7 +16,7 @@ Example:
 
     >>> sc = shellcraft.i386.mov('eax', 0xdeadbeef)
     >>> sc += shellcraft.i386.itoa('eax')
-    >>> sc += shellcraft.i386.linux.write(1, 'esp', 32)
+    >>> sc += shellcraft.i386.linux.syscalls.write(1, 'esp', 32)
     >>> run_assembly(sc).recvuntil('\x00')
     '3735928559\x00'
 </%docstring>
