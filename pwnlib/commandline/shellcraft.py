@@ -172,7 +172,7 @@ def get_template(name):
 
 def is_not_a_syscall_template(name):
     template_src = shellcraft._get_source(name)
-    return 'man 2' not in read(template_src)
+    return '/syscalls' not in template_src
 
 def main(args):
     if args.list:
