@@ -356,3 +356,25 @@ def register_sizes(regs, in_sizes):
             smaller[r] = [r_ for r_ in l if sizes[r_] < sizes[r]]
 
     return lists.concat(regs), sizes, bigger, smaller
+
+def path_splitall(path):
+    """ Split a path into its constituent parts
+
+    Example:
+        >>> path_splitall("/home/pwner/git/gud")
+        ['/', 'home', 'pwner', 'git', 'gud']
+    """
+
+    allparts = []
+    while 1:
+	parts = os.path.split(path)
+	if parts[0] == path:
+	    allparts.insert(0, parts[0])
+	    break
+	elif parts[1] == path:
+	    allparts.insert(0, parts[1])
+	    break
+	else:
+	    path = parts[0]
+	    allparts.insert(0, parts[1])
+    return allparts
