@@ -25,6 +25,27 @@ Example:
         eor  r0, r0 /* 0 (#0) */
         mov  r7, #(SYS_exit) /* 1 */
         svc  0
+    >>> print pwnlib.shellcraft.open('/home/pwn/flag')
+        /* open(file='/home/pwn/flag', oflag=0, vararg=0) */
+        eor  r1, r1 /* 0 (#0) */
+        eor  r2, r2 /* 0 (#0) */
+        /* push '/home/pwn/flag\x00A' */
+        movw r7, #0x41006761 & 0xffff
+        movt r7, #0x41006761 >> 16
+        push {r7}
+        movw r7, #0x6c662f6e & 0xffff
+        movt r7, #0x6c662f6e >> 16
+        push {r7}
+        movw r7, #0x77702f65 & 0xffff
+        movt r7, #0x77702f65 >> 16
+        push {r7}
+        movw r7, #0x6d6f682f & 0xffff
+        movt r7, #0x6d6f682f >> 16
+        push {r7}
+        mov  r0, sp
+        /* call open() */
+        mov  r7, #(SYS_open) /* 5 */
+        svc  0
 </%docstring>
 <%
   if isinstance(syscall, (str, unicode)) and syscall.startswith('SYS_'):

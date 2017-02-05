@@ -67,7 +67,22 @@ Example:
             mov esi, 0x1010101 /* 4096 == 0x1000 */
             xor esi, 0x1011101
             syscall
-
+        >>> print pwnlib.shellcraft.open('/home/pwn/flag')
+            /* open(file='/home/pwn/flag', oflag=0, vararg=0) */
+            xor edx, edx /* 0 */
+            xor esi, esi /* 0 */
+            /* push '/home/pwn/flag\x00' */
+            mov rax, 0x101010101010101
+            push rax
+            mov rax, 0x101010101010101 ^ 0x67616c662f6e
+            xor [rsp], rax
+            mov rax, 0x77702f656d6f682f
+            push rax
+            mov rdi, rsp
+            /* call open() */
+            push (SYS_open) /* 2 */
+            pop rax
+            syscall
 </%docstring>
 <%
   append_cdq = False

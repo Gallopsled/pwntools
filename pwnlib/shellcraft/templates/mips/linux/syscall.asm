@@ -61,6 +61,24 @@ Example:
             ori $a3, $zero, (MAP_PRIVATE | MAP_ANONYMOUS)
             ori $v0, $zero, (SYS_mmap2)
             syscall 0x40404
+        >>> print pwnlib.shellcraft.open('/home/pwn/flag')
+            /* open(file='/home/pwn/flag', oflag=0, vararg=0) */
+            slti $a1, $zero, 0xFFFF /* $a1 = 0 */
+            slti $a2, $zero, 0xFFFF /* $a2 = 0 */
+            /* push '/home/pwn/flag\x00' */
+            li $t1, 0x6d6f682f
+            sw $t1, -16($sp)
+            li $t1, 0x77702f65
+            sw $t1, -12($sp)
+            li $t1, 0x6c662f6e
+            sw $t1, -8($sp)
+            ori $t1, $zero, 26465
+            sw $t1, -4($sp)
+            addiu $sp, $sp, -16
+            add $a0, $sp, $0 /* mov $a0, $sp */
+            /* call open() */
+            ori $v0, $zero, (SYS_open)
+            syscall 0x40404
 </%docstring>
 <%
   append_cdq = False
