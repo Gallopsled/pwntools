@@ -1,5 +1,6 @@
 #!/usr/bin/env bash -e
 set -e
+
 local_deb_extract()
 {
     wget $1
@@ -186,5 +187,4 @@ elif [[ "$(uname)" == "Linux" ]]; then
     setup_android_emulator
 fi
 
-
-dpkg -l
+set +e
