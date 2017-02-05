@@ -25,7 +25,7 @@ Example:
         eor  r0, r0 /* 0 (#0) */
         mov  r7, #(SYS_exit) /* 1 */
         svc  0
-    >>> print pwnlib.shellcraft.open('/home/pwn/flag')
+    >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
         /* open(file='/home/pwn/flag', oflag=0, vararg=0) */
         eor  r1, r1 /* 0 (#0) */
         eor  r2, r2 /* 0 (#0) */

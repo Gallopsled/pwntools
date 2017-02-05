@@ -67,7 +67,7 @@ Example:
             push (MAP_PRIVATE | MAP_ANONYMOUS) /* 0x22 */
             pop esi
             int 0x80
-        >>> print pwnlib.shellcraft.open('/home/pwn/flag')
+        >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
             /* open(file='/home/pwn/flag', oflag=0, vararg=0) */
             xor ecx, ecx
             xor edx, edx

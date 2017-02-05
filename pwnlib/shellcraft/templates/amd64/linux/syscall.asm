@@ -67,7 +67,7 @@ Example:
             mov esi, 0x1010101 /* 4096 == 0x1000 */
             xor esi, 0x1011101
             syscall
-        >>> print pwnlib.shellcraft.open('/home/pwn/flag')
+        >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
             /* open(file='/home/pwn/flag', oflag=0, vararg=0) */
             xor edx, edx /* 0 */
             xor esi, esi /* 0 */
