@@ -50,6 +50,14 @@ Returns:
             index = argument_names.index(name)
             target = regs[index]
             register_arguments[target] = arg
+
+    # Some syscalls have different names on various architectures
+    syscalls = ['__NR_wait4']
+
+    for syscall in syscalls:
+        syscall = getattr(constants, syscall, None)
+        if syscall:
+            break
 %>
     /* wait4(pid=${repr(pid)}, stat_loc=${repr(stat_loc)}, options=${repr(options)}, usage=${repr(usage)}) */
     ${sc.setregs(register_arguments)}
@@ -60,4 +68,4 @@ Returns:
 %for name, arg in array_arguments.items():
     ${sc.pushstr_array(regs[argument_names.index(name)], arg)}
 %endfor
-    ${sc.syscall('SYS_wait4')}
+    ${sc.syscall(syscall)}

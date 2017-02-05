@@ -51,6 +51,14 @@ Returns:
             index = argument_names.index(name)
             target = regs[index]
             register_arguments[target] = arg
+
+    # Some syscalls have different names on various architectures
+    syscalls = ['__NR_remap_file_pages']
+
+    for syscall in syscalls:
+        syscall = getattr(constants, syscall, None)
+        if syscall:
+            break
 %>
     /* remap_file_pages(start=${repr(start)}, size=${repr(size)}, prot=${repr(prot)}, pgoff=${repr(pgoff)}, flags=${repr(flags)}) */
     ${sc.setregs(register_arguments)}
@@ -61,4 +69,4 @@ Returns:
 %for name, arg in array_arguments.items():
     ${sc.pushstr_array(regs[argument_names.index(name)], arg)}
 %endfor
-    ${sc.syscall('SYS_remap_file_pages')}
+    ${sc.syscall(syscall)}

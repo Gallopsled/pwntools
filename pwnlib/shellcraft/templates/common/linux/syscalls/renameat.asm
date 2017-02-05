@@ -50,6 +50,14 @@ Returns:
             index = argument_names.index(name)
             target = regs[index]
             register_arguments[target] = arg
+
+    # Some syscalls have different names on various architectures
+    syscalls = ['__NR_renameat']
+
+    for syscall in syscalls:
+        syscall = getattr(constants, syscall, None)
+        if syscall:
+            break
 %>
     /* renameat(oldfd=${repr(oldfd)}, old=${repr(old)}, newfd=${repr(newfd)}, new=${repr(new)}) */
     ${sc.setregs(register_arguments)}
@@ -60,4 +68,4 @@ Returns:
 %for name, arg in array_arguments.items():
     ${sc.pushstr_array(regs[argument_names.index(name)], arg)}
 %endfor
-    ${sc.syscall('SYS_renameat')}
+    ${sc.syscall(syscall)}

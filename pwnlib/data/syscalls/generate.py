@@ -10,7 +10,7 @@ from functions import functions
 
 ARCHITECTURES = ['i386', 'amd64', 'arm', 'aarch64', 'mips']
 
-SYSCALL_NAMES = [c for c in dir(constants) if c.startswith('SYS_')]
+SYSCALL_NAMES = [c for c in dir(constants) if c.startswith('__NR_')]
 
 HEADER = '''
 <%
@@ -71,6 +71,14 @@ CALL = """
             index = argument_names.index(name)
             target = regs[index]
             register_arguments[target] = arg
+
+    # Some syscalls have different names on various architectures
+    syscalls = {syscalls!r}
+
+    for syscall in syscalls:
+        syscall = getattr(constants, syscall, None)
+        if syscall:
+            break
 %>
     /* {name}({syscall_repr}) */
     ${{sc.setregs(register_arguments)}}
@@ -81,7 +89,7 @@ CALL = """
 %for name, arg in array_arguments.items():
     ${{sc.pushstr_array(regs[argument_names.index(name)], arg)}}
 %endfor
-    ${{sc.syscall('SYS_{syscall}')}}
+    ${{sc.syscall(syscall)}}
 """
 def can_be_constant(arg):
     if arg.derefcnt == 0:
@@ -103,16 +111,18 @@ def fix_bad_arg_names(arg):
 
 def fix_syscall_name(name):
     # Do not use old_mmap
-    if name == 'mmap':
-        return 'mmap2'
-    return name
+    if name == '__NR_mmap':
+        return ['__NR_mmap2', name]
+    return [name]
 
 def main(target):
     for name, function in functions.items():
-        if 'SYS_%s' % name not in SYSCALL_NAMES:
+        syscall = '__NR_%s' % name
+
+        if syscall not in SYSCALL_NAMES:
             continue
 
-        syscall = fix_syscall_name(name)
+        syscalls = fix_syscall_name(syscall)
 
         # Set up the argument string
         argument_names = map(fix_bad_arg_names, [a.name for a in function.args])

@@ -50,6 +50,14 @@ Returns:
             index = argument_names.index(name)
             target = regs[index]
             register_arguments[target] = arg
+
+    # Some syscalls have different names on various architectures
+    syscalls = ['__NR_timer_settime']
+
+    for syscall in syscalls:
+        syscall = getattr(constants, syscall, None)
+        if syscall:
+            break
 %>
     /* timer_settime(timerid=${repr(timerid)}, flags=${repr(flags)}, value=${repr(value)}, ovalue=${repr(ovalue)}) */
     ${sc.setregs(register_arguments)}
@@ -60,4 +68,4 @@ Returns:
 %for name, arg in array_arguments.items():
     ${sc.pushstr_array(regs[argument_names.index(name)], arg)}
 %endfor
-    ${sc.syscall('SYS_timer_settime')}
+    ${sc.syscall(syscall)}

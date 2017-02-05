@@ -48,6 +48,14 @@ Returns:
             index = argument_names.index(name)
             target = regs[index]
             register_arguments[target] = arg
+
+    # Some syscalls have different names on various architectures
+    syscalls = ['__NR_clock_gettime']
+
+    for syscall in syscalls:
+        syscall = getattr(constants, syscall, None)
+        if syscall:
+            break
 %>
     /* clock_gettime(clock_id=${repr(clock_id)}, tp=${repr(tp)}) */
     ${sc.setregs(register_arguments)}
@@ -58,4 +66,4 @@ Returns:
 %for name, arg in array_arguments.items():
     ${sc.pushstr_array(regs[argument_names.index(name)], arg)}
 %endfor
-    ${sc.syscall('SYS_clock_gettime')}
+    ${sc.syscall(syscall)}

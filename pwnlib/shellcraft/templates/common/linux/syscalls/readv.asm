@@ -49,6 +49,14 @@ Returns:
             index = argument_names.index(name)
             target = regs[index]
             register_arguments[target] = arg
+
+    # Some syscalls have different names on various architectures
+    syscalls = ['__NR_readv']
+
+    for syscall in syscalls:
+        syscall = getattr(constants, syscall, None)
+        if syscall:
+            break
 %>
     /* readv(fd=${repr(fd)}, iovec=${repr(iovec)}, count=${repr(count)}) */
     ${sc.setregs(register_arguments)}
@@ -59,4 +67,4 @@ Returns:
 %for name, arg in array_arguments.items():
     ${sc.pushstr_array(regs[argument_names.index(name)], arg)}
 %endfor
-    ${sc.syscall('SYS_readv')}
+    ${sc.syscall(syscall)}

@@ -50,6 +50,14 @@ Returns:
             index = argument_names.index(name)
             target = regs[index]
             register_arguments[target] = arg
+
+    # Some syscalls have different names on various architectures
+    syscalls = ['__NR_fstatat64']
+
+    for syscall in syscalls:
+        syscall = getattr(constants, syscall, None)
+        if syscall:
+            break
 %>
     /* fstatat64(fd=${repr(fd)}, file=${repr(file)}, buf=${repr(buf)}, flag=${repr(flag)}) */
     ${sc.setregs(register_arguments)}
@@ -60,4 +68,4 @@ Returns:
 %for name, arg in array_arguments.items():
     ${sc.pushstr_array(regs[argument_names.index(name)], arg)}
 %endfor
-    ${sc.syscall('SYS_fstatat64')}
+    ${sc.syscall(syscall)}

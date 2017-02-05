@@ -51,6 +51,14 @@ Returns:
             index = argument_names.index(name)
             target = regs[index]
             register_arguments[target] = arg
+
+    # Some syscalls have different names on various architectures
+    syscalls = ['__NR_mq_timedsend']
+
+    for syscall in syscalls:
+        syscall = getattr(constants, syscall, None)
+        if syscall:
+            break
 %>
     /* mq_timedsend(mqdes=${repr(mqdes)}, msg_ptr=${repr(msg_ptr)}, msg_len=${repr(msg_len)}, msg_prio=${repr(msg_prio)}, abs_timeout=${repr(abs_timeout)}) */
     ${sc.setregs(register_arguments)}
@@ -61,4 +69,4 @@ Returns:
 %for name, arg in array_arguments.items():
     ${sc.pushstr_array(regs[argument_names.index(name)], arg)}
 %endfor
-    ${sc.syscall('SYS_mq_timedsend')}
+    ${sc.syscall(syscall)}

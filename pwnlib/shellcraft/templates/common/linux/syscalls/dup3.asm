@@ -49,6 +49,14 @@ Returns:
             index = argument_names.index(name)
             target = regs[index]
             register_arguments[target] = arg
+
+    # Some syscalls have different names on various architectures
+    syscalls = ['__NR_dup3']
+
+    for syscall in syscalls:
+        syscall = getattr(constants, syscall, None)
+        if syscall:
+            break
 %>
     /* dup3(fd=${repr(fd)}, fd2=${repr(fd2)}, flags=${repr(flags)}) */
     ${sc.setregs(register_arguments)}
@@ -59,4 +67,4 @@ Returns:
 %for name, arg in array_arguments.items():
     ${sc.pushstr_array(regs[argument_names.index(name)], arg)}
 %endfor
-    ${sc.syscall('SYS_dup3')}
+    ${sc.syscall(syscall)}
