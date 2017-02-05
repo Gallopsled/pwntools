@@ -162,6 +162,9 @@ class ELF(ELFFile):
     endian = 'little'
     address = 0x400000
 
+    # Whether to fill gaps in memory with zeroed pages
+    _fill_gaps = True
+
 
     def __init__(self, path):
         # elftools uses the backing file for all reads and writes
@@ -339,7 +342,7 @@ class ELF(ELFFile):
     def debug(self, argv=[], *a, **kw):
         """debug(argv=[], *a, **kw) -> tube
 
-        Debug the binary with :func:`.gdb.debug`.
+        Debug the ELF with :func:`.gdb.debug`.
 
         Arguments:
             argv(list): List of arguments to the binary
@@ -757,8 +760,11 @@ class ELF(ELFFile):
 
         for seg in segments:
             addr   = seg.header.p_vaddr
-            zeroed = seg.header.p_memsz - seg.header.p_filesz
-            data   = seg.data() + ('\x00' * zeroed)
+            memsz  = seg.header.p_memsz
+            zeroed = memsz - seg.header.p_filesz
+            offset = seg.header.p_offset
+            data   = self.mmap[offset:offset+memsz]
+            data   += '\x00' * zeroed
             offset = 0
             while True:
                 offset = data.find(needle, offset)
@@ -821,13 +827,14 @@ class ELF(ELFFile):
             self.memory.chop(start, stop_data)
 
             # Add the new segment
-            self.memory.addi(start, stop_data, segment)
+            if start != stop_data:
+                self.memory.addi(start, stop_data, segment)
 
             if stop_data != stop_mem:
                 self.memory.addi(stop_data, stop_mem, '\x00')
 
             # Check for holes which we can fill
-            if i+1 < len(load_segments):
+            if self._fill_gaps and i+1 < len(load_segments):
                 next_start = load_segments[i+1].header.p_vaddr
                 if stop_mem < next_start:
                     self.memory.addi(stop_mem, next_start, None)
@@ -944,6 +951,9 @@ class ELF(ELFFile):
             '\x90\x00\x00\x00\x00\x00\xcc\x00\x00\x00'
         """
         retval = []
+
+        if count == 0:
+            return ''
 
         start = address
         stop = address + count

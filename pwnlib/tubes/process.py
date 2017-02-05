@@ -291,6 +291,7 @@ class process(tube):
         self.preexec_fn = preexec_fn
         self.display    = display or self.program
         self._qemu      = False
+        self._corefile  = None
 
         message = "Starting %s process %r" % (where, self.display)
 
@@ -434,12 +435,15 @@ class process(tube):
         # Determine what architecture the binary is, and find the
         # appropriate qemu binary to run it.
         qemu = get_qemu_user(arch=binary.arch)
+        qemu = which(qemu)
         if qemu:
+            self._qemu = qemu
+
             args = [qemu]
             if self.argv:
                 args += ['-0', self.argv[0]]
             args += ['--']
-            self._qemu = True
+
             return [args, qemu]
 
         # If we get here, we couldn't run the binary directly, and
@@ -894,6 +898,9 @@ class process(tube):
         If the process is dead, attempts to locate the coredump created
         by the kernel.
         """
+        if self._corefile is not None:
+            return self._corefile
+
         # If the process is still alive, try using GDB
         import pwnlib.elf.corefile
         import pwnlib.gdb
@@ -903,9 +910,11 @@ class process(tube):
 
         finder = pwnlib.elf.corefile.CorefileFinder(self)
         if not finder.core_path:
-            self.error("Could not find core file for pid %i" % self.pid)
+            self.warn("Could not find core file for pid %i" % self.pid)
+            return
 
-        return pwnlib.elf.corefile.Corefile(finder.core_path)
+        self._corefile = pwnlib.elf.corefile.Corefile(finder.core_path)
+        return self._corefile
 
     def leak(self, address, count=1):
         r"""Leaks memory within the process at the specified address.
@@ -918,6 +927,16 @@ class process(tube):
 
             >>> e = ELF('/bin/sh')
             >>> p = process(e.path)
+
+            In order to make sure there's not a race condition against
+            the process getting set up...
+
+            >>> p.sendline('echo hello')
+            >>> p.recvuntil('hello')
+            'hello'
+
+            Now we can leak some data!
+
             >>> p.leak(e.address, 4)
             '\x7fELF'
         """

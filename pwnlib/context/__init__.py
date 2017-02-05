@@ -333,6 +333,7 @@ class ContextType(object):
         'binary': None,
         'bits': 32,
         'buffer_size': 4096,
+        'delete_corefiles': False,
         'device': os.getenv('ANDROID_SERIAL', None) or None,
         'endian': 'little',
         'kernel': None,
@@ -340,6 +341,7 @@ class ContextType(object):
         'log_file': _devnull(),
         'log_console': sys.stdout,
         'randomize': False,
+        'rename_corefiles': True,
         'newline': '\n',
         'noptrace': False,
         'os': 'linux',
@@ -1198,6 +1200,32 @@ class ContextType(object):
             return None
 
         return cache
+
+    @_validator
+    def delete_corefiles(self, v):
+        """Whether pwntools automatically deletes corefiles after exiting.
+        This only affects corefiles accessed via :attr:`.process.corefile`.
+
+        Default value is ``False``.
+        """
+        return bool(v)
+
+    @_validator
+    def rename_corefiles(self, v):
+        """Whether pwntools automatically renames corefiles.
+
+        This is useful for two things:
+
+        - Prevent corefiles from being overwritten, if ``kernel.core_pattern``
+          is something simple like ``"core"``.
+        - Ensure corefiles are generated, if ``kernel.core_pattern`` uses ``apport``,
+          which refuses to overwrite any existing files.
+
+        This only affects corefiles accessed via :attr:`.process.corefile`.
+
+        Default value is ``True``.
+        """
+        return bool(v)
 
     #*************************************************************************
     #                               ALIASES

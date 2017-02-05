@@ -533,6 +533,22 @@ class user_regs_struct_amd64(ctypes.Structure):
 
 assert ctypes.sizeof(user_regs_struct_amd64) == 0xd8
 
+class user_regs_struct_arm(ctypes.Structure):
+    _fields_ = [('r%i' % i, ctypes.c_uint32) for i in range(18)]
+
+    @property
+    def cpsr(self):
+        return self.r16
+    @property
+    def pc(self):
+        return self.r15
+    @property
+    def lr(self):
+        return self.r14
+    @property
+    def sp(self):
+        return self.r13
+
 class elf_prstatus_i386(ctypes.Structure):
     _fields_ = generate_prstatus_common(32, user_regs_struct_i386)
 
@@ -544,9 +560,51 @@ class elf_prstatus_amd64(ctypes.Structure):
 
 assert ctypes.sizeof(elf_prstatus_amd64) == 0x150
 
+class elf_prstatus_arm(ctypes.Structure):
+    _fields_ = generate_prstatus_common(32, user_regs_struct_arm)
+
+
 class Elf32_auxv_t(ctypes.Structure):
     _fields_ = [('a_type', ctypes.c_uint32),
                 ('a_val', ctypes.c_uint32),]
 class Elf64_auxv_t(ctypes.Structure):
     _fields_ = [('a_type', ctypes.c_uint64),
                 ('a_val', ctypes.c_uint64),]
+
+def generate_prspinfo(long):
+    return [
+        ('pr_state', byte),
+        ('pr_sname', char),
+        ('pr_zomb', byte),
+        ('pr_nice', byte),
+        ('pr_flag', long),
+        ('pr_uid', ctypes.c_ushort),
+        ('pr_gid', ctypes.c_ushort),
+        ('pr_pid', ctypes.c_int),
+        ('pr_ppid', ctypes.c_int),
+        ('pr_pgrp', ctypes.c_int),
+        ('pr_sid', ctypes.c_int),
+        ('pr_fname', char * 16),
+        ('pr_psargs', char * 80)
+    ]
+
+class elf_prspinfo_32(ctypes.Structure):
+    _fields_ = generate_prspinfo(Elf32_Addr)
+
+class elf_prspinfo_64(ctypes.Structure):
+    _fields_ = generate_prspinfo(Elf64_Addr)
+
+def generate_siginfo(int_t, long_t):
+    class siginfo_t(ctypes.Structure):
+        _fields_ = [('si_signo', int_t),
+                    ('si_errno', int_t),
+                    ('si_code', int_t),
+                    ('sigfault_addr', long_t),
+                    ('sigfault_trapno', int_t)]
+    return siginfo_t
+
+class elf_siginfo_32(generate_siginfo(ctypes.c_uint32, ctypes.c_uint32)):
+    pass
+
+class elf_siginfo_64(generate_siginfo(ctypes.c_uint32, ctypes.c_uint64)):
+    pass

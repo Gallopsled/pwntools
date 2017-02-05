@@ -352,10 +352,6 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
             continue
             ''')
     """
-    if context.noptrace:
-        log.warn_once("Skipping debugger since context.noptrace==True")
-        return tubes.process.process(args, executable=exe, env=env)
-
     if isinstance(args, (int, tubes.process.process, tubes.ssh.ssh_channel)):
         log.error("Use gdb.attach() to debug a running process")
 
@@ -369,6 +365,10 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
 
     runner = _get_runner(ssh)
     which  = _get_which(ssh)
+
+    if context.noptrace:
+        log.warn_once("Skipping debugger since context.noptrace==True")
+        return runner(args, executable=exe, env=env)
 
     if ssh or context.native or (context.os == 'android'):
         args = _gdbserver_args(args=args, which=which)
@@ -625,6 +625,8 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
                     return os.path.join(proc.cwd(spid), exe)
 
         exe = exe or findexe()
+    elif isinstance(target, elf.corefile.Corefile):
+        pre += 'target core %s\n' % target.path
     else:
         log.error("don't know how to attach to target: %r" % target)
 
@@ -852,7 +854,8 @@ def corefile(process):
         log.warn_once("Skipping corefile since context.noptrace==True")
         return
 
-    temp = tempfile.NamedTemporaryFile(prefix='pwn-corefile-')
+    corefile_path = './core.%s.%i' % (os.path.basename(process.executable),
+                                    process.pid)
 
     # Due to https://sourceware.org/bugzilla/show_bug.cgi?id=16092
     # will disregard coredump_filter, and will not dump private mappings.
@@ -869,7 +872,7 @@ def corefile(process):
                 '-ex', '"set height 0"',
                 '-ex', '"set width 0"',
                 '-ex', '"set use-coredump-filter on"',
-                '-ex', '"generate-core-file %s"' % temp.name,
+                '-ex', '"generate-core-file %s"' % corefile_path,
                 '-ex', 'detach']
 
     with context.local(terminal = ['sh', '-c']):
@@ -877,7 +880,7 @@ def corefile(process):
             pid = attach(process, gdb_args=gdb_args)
             os.waitpid(pid, 0)
 
-    return elf.corefile.Core(temp.name)
+    return elf.corefile.Core(corefile_path)
 
 def version(program='gdb'):
     """Gets the current GDB version.
