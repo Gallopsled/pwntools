@@ -57,9 +57,10 @@ Returns:
     syscalls = ['__NR_epoll_pwait']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* epoll_pwait(epfd=${repr(epfd)}, events=${repr(events)}, maxevents=${repr(maxevents)}, timeout=${repr(timeout)}, ss=${repr(ss)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

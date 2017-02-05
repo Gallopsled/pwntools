@@ -56,9 +56,10 @@ Returns:
     syscalls = ['__NR_clock_nanosleep']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* clock_nanosleep(clock_id=${repr(clock_id)}, flags=${repr(flags)}, req=${repr(req)}, rem=${repr(rem)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

@@ -54,9 +54,10 @@ Returns:
     syscalls = ['__NR_gettimeofday']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* gettimeofday(tv=${repr(tv)}, tz=${repr(tz)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

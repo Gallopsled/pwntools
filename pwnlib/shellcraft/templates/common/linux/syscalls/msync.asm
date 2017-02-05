@@ -55,9 +55,10 @@ Returns:
     syscalls = ['__NR_msync']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* msync(addr=${repr(addr)}, length=${repr(length)}, flags=${repr(flags)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

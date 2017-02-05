@@ -56,9 +56,10 @@ Returns:
     syscalls = ['__NR_pwrite']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* pwrite(fd=${repr(fd)}, buf=${repr(buf)}, n=${repr(n)}, offset=${repr(offset)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

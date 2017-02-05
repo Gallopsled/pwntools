@@ -58,9 +58,10 @@ Returns:
     syscalls = ['__NR_splice']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* splice(fdin=${repr(fdin)}, offin=${repr(offin)}, fdout=${repr(fdout)}, offout=${repr(offout)}, length=${repr(length)}, flags=${repr(flags)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

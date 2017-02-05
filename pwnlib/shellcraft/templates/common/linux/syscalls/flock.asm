@@ -54,9 +54,10 @@ Returns:
     syscalls = ['__NR_flock']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* flock(fd=${repr(fd)}, operation=${repr(operation)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

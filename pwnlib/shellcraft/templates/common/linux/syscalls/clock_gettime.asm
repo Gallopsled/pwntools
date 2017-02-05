@@ -54,9 +54,10 @@ Returns:
     syscalls = ['__NR_clock_gettime']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* clock_gettime(clock_id=${repr(clock_id)}, tp=${repr(tp)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

@@ -54,9 +54,10 @@ Returns:
     syscalls = ['__NR_fchmod']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* fchmod(fd=${repr(fd)}, mode=${repr(mode)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

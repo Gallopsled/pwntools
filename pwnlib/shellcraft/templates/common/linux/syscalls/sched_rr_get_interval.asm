@@ -54,9 +54,10 @@ Returns:
     syscalls = ['__NR_sched_rr_get_interval']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* sched_rr_get_interval(pid=${repr(pid)}, t=${repr(t)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

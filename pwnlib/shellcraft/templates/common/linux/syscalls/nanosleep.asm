@@ -54,9 +54,10 @@ Returns:
     syscalls = ['__NR_nanosleep']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* nanosleep(requested_time=${repr(requested_time)}, remaining=${repr(remaining)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

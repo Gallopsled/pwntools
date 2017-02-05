@@ -55,9 +55,10 @@ Returns:
     syscalls = ['__NR_read']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* read(fd=${repr(fd)}, buf=${repr(buf)}, nbytes=${repr(nbytes)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

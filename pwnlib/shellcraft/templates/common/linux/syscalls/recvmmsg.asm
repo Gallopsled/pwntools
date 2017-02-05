@@ -57,9 +57,10 @@ Returns:
     syscalls = ['__NR_recvmmsg']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* recvmmsg(fd=${repr(fd)}, vmessages=${repr(vmessages)}, vlen=${repr(vlen)}, flags=${repr(flags)}, tmo=${repr(tmo)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

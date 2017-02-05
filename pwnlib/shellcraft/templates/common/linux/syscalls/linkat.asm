@@ -57,9 +57,10 @@ Returns:
     syscalls = ['__NR_linkat']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* linkat(fromfd=${repr(fromfd)}, from=${repr(from)}, tofd=${repr(tofd)}, to=${repr(to)}, flags=${repr(flags)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

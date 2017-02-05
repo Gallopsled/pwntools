@@ -56,9 +56,10 @@ Returns:
     syscalls = ['__NR_fallocate']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* fallocate(fd=${repr(fd)}, mode=${repr(mode)}, offset=${repr(offset)}, length=${repr(length)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

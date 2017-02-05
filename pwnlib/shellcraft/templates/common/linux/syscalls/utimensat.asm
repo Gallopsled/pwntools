@@ -56,9 +56,10 @@ Returns:
     syscalls = ['__NR_utimensat']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* utimensat(fd=${repr(fd)}, path=${repr(path)}, times=${repr(times)}, flags=${repr(flags)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

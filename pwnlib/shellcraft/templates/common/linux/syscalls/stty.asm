@@ -54,9 +54,10 @@ Returns:
     syscalls = ['__NR_stty']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* stty(fd=${repr(fd)}, params=${repr(params)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

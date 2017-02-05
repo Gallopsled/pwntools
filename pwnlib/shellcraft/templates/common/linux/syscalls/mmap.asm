@@ -58,9 +58,10 @@ Returns:
     syscalls = ['__NR_mmap2', '__NR_mmap']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* mmap(addr=${repr(addr)}, length=${repr(length)}, prot=${repr(prot)}, flags=${repr(flags)}, fd=${repr(fd)}, offset=${repr(offset)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

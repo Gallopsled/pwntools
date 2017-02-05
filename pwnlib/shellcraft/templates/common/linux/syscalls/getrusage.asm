@@ -54,9 +54,10 @@ Returns:
     syscalls = ['__NR_getrusage']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* getrusage(who=${repr(who)}, usage=${repr(usage)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

@@ -56,9 +56,10 @@ Returns:
     syscalls = ['__NR_pread']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* pread(fd=${repr(fd)}, buf=${repr(buf)}, nbytes=${repr(nbytes)}, offset=${repr(offset)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

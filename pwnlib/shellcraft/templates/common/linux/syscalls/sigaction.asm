@@ -55,9 +55,10 @@ Returns:
     syscalls = ['__NR_sigaction']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* sigaction(sig=${repr(sig)}, act=${repr(act)}, oact=${repr(oact)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

@@ -55,9 +55,10 @@ Returns:
     syscalls = ['__NR_mknod']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* mknod(path=${repr(path)}, mode=${repr(mode)}, dev=${repr(dev)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

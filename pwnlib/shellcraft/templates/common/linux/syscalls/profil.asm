@@ -56,9 +56,10 @@ Returns:
     syscalls = ['__NR_profil']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* profil(sample_buffer=${repr(sample_buffer)}, size=${repr(size)}, offset=${repr(offset)}, scale=${repr(scale)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

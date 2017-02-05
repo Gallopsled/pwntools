@@ -57,9 +57,10 @@ Returns:
     syscalls = ['__NR_mq_timedsend']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* mq_timedsend(mqdes=${repr(mqdes)}, msg_ptr=${repr(msg_ptr)}, msg_len=${repr(msg_len)}, msg_prio=${repr(msg_prio)}, abs_timeout=${repr(abs_timeout)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

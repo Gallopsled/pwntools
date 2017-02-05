@@ -56,9 +56,10 @@ Returns:
     syscalls = ['__NR_tee']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* tee(fdin=${repr(fdin)}, fdout=${repr(fdout)}, length=${repr(length)}, flags=${repr(flags)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

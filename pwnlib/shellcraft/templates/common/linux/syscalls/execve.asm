@@ -55,9 +55,10 @@ Returns:
     syscalls = ['__NR_execve']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* execve(path=${repr(path)}, argv=${repr(argv)}, envp=${repr(envp)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

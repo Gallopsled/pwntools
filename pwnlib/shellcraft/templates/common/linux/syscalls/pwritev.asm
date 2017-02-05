@@ -56,9 +56,10 @@ Returns:
     syscalls = ['__NR_pwritev']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* pwritev(fd=${repr(fd)}, iovec=${repr(iovec)}, count=${repr(count)}, offset=${repr(offset)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

@@ -55,9 +55,10 @@ Returns:
     syscalls = ['__NR_open']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* open(file=${repr(file)}, oflag=${repr(oflag)}, vararg=${repr(vararg)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

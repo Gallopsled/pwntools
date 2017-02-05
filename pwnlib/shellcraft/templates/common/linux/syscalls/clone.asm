@@ -57,9 +57,10 @@ Returns:
     syscalls = ['__NR_clone']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* clone(fn=${repr(fn)}, child_stack=${repr(child_stack)}, flags=${repr(flags)}, arg=${repr(arg)}, vararg=${repr(vararg)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

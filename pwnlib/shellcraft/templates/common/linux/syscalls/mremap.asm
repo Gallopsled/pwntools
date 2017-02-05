@@ -57,9 +57,10 @@ Returns:
     syscalls = ['__NR_mremap']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* mremap(addr=${repr(addr)}, old_len=${repr(old_len)}, new_len=${repr(new_len)}, flags=${repr(flags)}, vararg=${repr(vararg)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

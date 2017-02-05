@@ -54,9 +54,10 @@ Returns:
     syscalls = ['__NR_creat']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* creat(file=${repr(file)}, mode=${repr(mode)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

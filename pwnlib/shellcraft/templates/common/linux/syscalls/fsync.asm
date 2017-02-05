@@ -53,9 +53,10 @@ Returns:
     syscalls = ['__NR_fsync']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* fsync(fd=${repr(fd)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

@@ -54,9 +54,10 @@ Returns:
     syscalls = ['__NR_munlock']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* munlock(addr=${repr(addr)}, length=${repr(length)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

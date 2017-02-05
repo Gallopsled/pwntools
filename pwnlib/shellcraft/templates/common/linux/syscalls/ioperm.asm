@@ -55,9 +55,10 @@ Returns:
     syscalls = ['__NR_ioperm']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* ioperm(from=${repr(from)}, num=${repr(num)}, turn_on=${repr(turn_on)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

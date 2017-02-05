@@ -54,9 +54,10 @@ Returns:
     syscalls = ['__NR_rename']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* rename(old=${repr(old)}, new=${repr(new)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}

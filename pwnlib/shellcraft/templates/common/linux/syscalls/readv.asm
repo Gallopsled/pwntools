@@ -55,9 +55,10 @@ Returns:
     syscalls = ['__NR_readv']
 
     for syscall in syscalls:
-        syscall = getattr(pwnlib.constants, syscall, None)
-        if syscall:
+        if hasattr(pwnlib.constants, syscall):
             break
+    else:
+        raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
     /* readv(fd=${repr(fd)}, iovec=${repr(iovec)}, count=${repr(count)}) */
     ${pwnlib.shellcraft.setregs(register_arguments)}
