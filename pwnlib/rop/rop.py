@@ -386,9 +386,6 @@ class ROP(object):
     #: Stack address where the first byte of the ROP chain lies, if known.
     base = 0
 
-    #: Alignment of the ROP chain; generally the same as the pointer size
-    align = 4
-
     #: Whether or not the ROP chain directly sets the stack pointer to a value
     #: which is not contiguous
     migrated = False
@@ -408,7 +405,6 @@ class ROP(object):
         self.elfs = elfs
         self._chain = []
         self.base = base
-        self.align = max((e.elfclass for e in elfs)) / 8
         self.migrated = False
         self.__load()
 
@@ -673,7 +669,7 @@ class ROP(object):
         Returns:
             str containing raw ROP bytes
         """
-        return packing.flat(self.build(), word_size=8 * self.align)
+        return packing.flat(self.build())
 
     def dump(self):
         """Dump the ROP chain in an easy-to-read manner"""
@@ -805,7 +801,7 @@ class ROP(object):
             self.raw(next_base)
         elif pop_bp and leave and len(pop_bp.regs) == 1:
             self.raw(pop_bp)
-            self.raw(next_base - 4)
+            self.raw(next_base - context.bytes)
             self.raw(leave)
         else:
             log.error('Cannot find the gadgets to migrate')
@@ -924,18 +920,22 @@ class ROP(object):
         #
         self.gadgets = {}
         self.pivots = {}
-        frame_regs = ['ebp', 'esp'] if self.align == 4 else ['rbp', 'rsp']
+        frame_regs = {
+            4: ['ebp', 'esp'],
+            8: ['rbp', 'rsp']
+        }[context.bytes]
+
         for addr, insns in gadgets.items():
             sp_move = 0
             regs = []
             for insn in insns:
                 if pop.match(insn):
                     regs.append(pop.match(insn).group(1))
-                    sp_move += self.align
+                    sp_move += context.bytes
                 elif add.match(insn):
                     sp_move += int(add.match(insn).group(1), 16)
                 elif ret.match(insn):
-                    sp_move += self.align
+                    sp_move += context.bytes
                 elif leave.match(insn):
                     #
                     # HACK: Since this modifies ESP directly, this should
@@ -1054,7 +1054,7 @@ class ROP(object):
         # Check for 'ret' or 'ret_X'
         #
         if attr.startswith('ret'):
-            count = 4
+            count = context.bytes
             if '_' in attr:
                 count = int(attr.split('_')[1])
             return self.search(move=count)
