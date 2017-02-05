@@ -1908,10 +1908,15 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         with context.local(arch=arch, bits=32, os=self.os, aslr=True):
             with context.quiet:
-                sc = pwnlib.shellcraft.cat('/proc/self/maps') \
-                   + pwnlib.shellcraft.exit(0)
+                try:
+                    sc = pwnlib.shellcraft.cat('/proc/self/maps') \
+                       + pwnlib.shellcraft.exit(0)
 
-                elf = pwnlib.elf.elf.ELF.from_assembly(sc, shared=True)
+                    elf = pwnlib.elf.elf.ELF.from_assembly(sc, shared=True)
+                except Exception:
+                    self.warn_once("Can't determine ulimit ASLR status")
+                    self._aslr_ulimit = False
+                    return self._aslr_ulimit
 
                 def preexec():
                     import resource
