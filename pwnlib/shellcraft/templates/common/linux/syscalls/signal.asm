@@ -14,7 +14,7 @@ Arguments:
 Returns:
     sighandler_t
 </%docstring>
-<%page args="sig, handler"/>
+<%page args="sig=0, handler=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

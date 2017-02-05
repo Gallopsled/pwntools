@@ -13,7 +13,7 @@ Arguments:
 Returns:
     time_t
 </%docstring>
-<%page args="timer"/>
+<%page args="timer=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

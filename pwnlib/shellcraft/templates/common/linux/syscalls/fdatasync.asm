@@ -13,7 +13,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="fildes"/>
+<%page args="fildes=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

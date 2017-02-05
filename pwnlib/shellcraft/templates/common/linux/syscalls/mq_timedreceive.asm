@@ -17,7 +17,7 @@ Arguments:
 Returns:
     ssize_t
 </%docstring>
-<%page args="mqdes, msg_ptr, msg_len, msg_prio, abs_timeout"/>
+<%page args="mqdes=0, msg_ptr=0, msg_len=0, msg_prio=0, abs_timeout=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

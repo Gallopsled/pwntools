@@ -13,7 +13,7 @@ Arguments:
 Returns:
     dirent*
 </%docstring>
-<%page args="dirp"/>
+<%page args="dirp=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

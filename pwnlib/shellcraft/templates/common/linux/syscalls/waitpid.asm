@@ -15,7 +15,7 @@ Arguments:
 Returns:
     pid_t
 </%docstring>
-<%page args="pid, stat_loc, options"/>
+<%page args="pid=0, stat_loc=0, options=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

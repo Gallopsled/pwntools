@@ -14,7 +14,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="clock_id, res"/>
+<%page args="clock_id=0, res=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

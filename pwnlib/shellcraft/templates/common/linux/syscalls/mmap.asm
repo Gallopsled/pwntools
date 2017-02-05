@@ -18,7 +18,7 @@ Arguments:
 Returns:
     void*
 </%docstring>
-<%page args="addr, length, prot, flags, fd, offset"/>
+<%page args="addr=0, length=0, prot=0, flags=0, fd=0, offset=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

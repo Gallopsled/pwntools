@@ -14,7 +14,7 @@ Arguments:
 Returns:
     char*
 </%docstring>
-<%page args="buf, size"/>
+<%page args="buf=0, size=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

@@ -14,7 +14,7 @@ Arguments:
 Returns:
     long
 </%docstring>
-<%page args="request, vararg"/>
+<%page args="request=0, vararg=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

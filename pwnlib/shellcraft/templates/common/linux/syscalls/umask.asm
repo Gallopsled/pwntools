@@ -13,7 +13,7 @@ Arguments:
 Returns:
     mode_t
 </%docstring>
-<%page args="mask"/>
+<%page args="mask=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

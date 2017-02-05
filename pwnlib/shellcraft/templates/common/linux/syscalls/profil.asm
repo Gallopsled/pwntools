@@ -16,7 +16,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="sample_buffer, size, offset, scale"/>
+<%page args="sample_buffer=0, size=0, offset=0, scale=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

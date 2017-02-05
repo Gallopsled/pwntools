@@ -15,7 +15,7 @@ Arguments:
 Returns:
     off_t
 </%docstring>
-<%page args="fd, offset, whence"/>
+<%page args="fd=0, offset=0, whence=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

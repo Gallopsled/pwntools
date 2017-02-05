@@ -14,7 +14,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="mqdes, notification"/>
+<%page args="mqdes=0, notification=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

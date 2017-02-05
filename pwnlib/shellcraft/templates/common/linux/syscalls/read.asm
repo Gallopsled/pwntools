@@ -15,7 +15,7 @@ Arguments:
 Returns:
     ssize_t
 </%docstring>
-<%page args="fd, buf, nbytes"/>
+<%page args="fd=0, buf=0, nbytes=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

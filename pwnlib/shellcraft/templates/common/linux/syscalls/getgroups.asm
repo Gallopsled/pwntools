@@ -14,7 +14,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="size, list"/>
+<%page args="size=0, list=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

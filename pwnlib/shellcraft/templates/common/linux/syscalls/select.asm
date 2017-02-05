@@ -17,7 +17,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="nfds, readfds, writefds, exceptfds, timeout"/>
+<%page args="nfds=0, readfds=0, writefds=0, exceptfds=0, timeout=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

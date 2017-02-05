@@ -15,7 +15,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="which, who, prio"/>
+<%page args="which=0, who=0, prio=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

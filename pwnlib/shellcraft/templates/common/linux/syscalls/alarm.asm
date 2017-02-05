@@ -13,7 +13,7 @@ Arguments:
 Returns:
     unsigned
 </%docstring>
-<%page args="seconds"/>
+<%page args="seconds=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

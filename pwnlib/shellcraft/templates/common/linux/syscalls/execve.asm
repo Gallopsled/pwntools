@@ -15,7 +15,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="path, argv, envp"/>
+<%page args="path=0, argv=0, envp=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

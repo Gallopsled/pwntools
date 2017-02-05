@@ -15,7 +15,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="pid, cpusetsize, cpuset"/>
+<%page args="pid=0, cpusetsize=0, cpuset=0"/>
 <%
     abi = abi.ABI.syscall()
     stack = abi.stack

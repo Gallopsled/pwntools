@@ -34,7 +34,7 @@ Returns:
 '''
 
 ARGUMENTS = """
-<%page args="{arguments_comma_separated}"/>
+<%page args="{arguments_default_values}"/>
 """
 
 CALL = """
@@ -83,6 +83,9 @@ CALL = """
 %endfor
     ${{sc.syscall('SYS_{syscall}')}}
 """
+def can_be_constant(arg):
+    if arg.derefcnt == 0:
+        return True
 
 def can_be_string(arg):
     if arg.type == 'char' and arg.derefcnt == 1:
@@ -113,6 +116,7 @@ def main(target):
 
         # Set up the argument string
         argument_names = map(fix_bad_arg_names, [a.name for a in function.args])
+        arguments_default_values = ', '.join('%s=0' % a for a in argument_names)
         arguments_comma_separated = ', '.join(argument_names)
 
         string_arguments = []
