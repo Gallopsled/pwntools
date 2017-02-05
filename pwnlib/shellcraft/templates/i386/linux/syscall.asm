@@ -67,6 +67,21 @@ Example:
             push (MAP_PRIVATE | MAP_ANONYMOUS) /* 0x22 */
             pop esi
             int 0x80
+        >>> print pwnlib.shellcraft.open('/home/pwn/flag')
+            /* open(file='/home/pwn/flag', oflag=0, vararg=0) */
+            xor ecx, ecx
+            xor edx, edx
+            /* push '/home/pwn/flag\x00' */
+            push 0x1010101
+            xor dword ptr [esp], 0x1016660
+            push 0x6c662f6e
+            push 0x77702f65
+            push 0x6d6f682f
+            mov ebx, esp
+            /* call open() */
+            push (SYS_open) /* 5 */
+            pop eax
+            int 0x80
 </%docstring>
 <%
   append_cdq = False
