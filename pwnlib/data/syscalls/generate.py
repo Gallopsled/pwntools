@@ -81,7 +81,7 @@ CALL = """
 %for name, arg in array_arguments.items():
     ${{sc.pushstr_array(regs[argument_names.index(name)], arg)}}
 %endfor
-    ${{sc.syscall('SYS_{name}')}}
+    ${{sc.syscall('SYS_{syscall}')}}
 """
 
 def can_be_string(arg):
@@ -98,10 +98,18 @@ def fix_bad_arg_names(arg):
     if arg == 'repr': return 'repr_'
     return arg
 
+def fix_syscall_name(name):
+    # Do not use old_mmap
+    if name == 'mmap':
+        return 'mmap2'
+    return name
+
 def main(target):
     for name, function in functions.items():
         if 'SYS_%s' % name not in SYSCALL_NAMES:
             continue
+
+        syscall = fix_syscall_name(name)
 
         # Set up the argument string
         argument_names = map(fix_bad_arg_names, [a.name for a in function.args])

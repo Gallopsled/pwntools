@@ -62,4 +62,4 @@ Returns:
 %for name, arg in array_arguments.items():
     ${sc.pushstr_array(regs[argument_names.index(name)], arg)}
 %endfor
-    ${sc.syscall('SYS_mmap')}
+    ${sc.syscall('SYS_mmap2')}
