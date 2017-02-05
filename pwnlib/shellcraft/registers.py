@@ -209,8 +209,10 @@ def current():
         'i386': i386,
         'amd64': amd64,
         'arm': arm,
+        'thumb': arm,
         'aarch64': aarch64,
         'mips': mips,
+        'powerpc': powerpc
     }[context.arch]
 
 # def is_register(sz):
