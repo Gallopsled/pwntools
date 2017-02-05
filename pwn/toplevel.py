@@ -24,7 +24,7 @@ from pwnlib.context import Thread
 from pwnlib.context import context
 from pwnlib.dynelf import DynELF
 from pwnlib.encoders import *
-from pwnlib.elf.corefile import Core, Corefile
+from pwnlib.elf.corefile import Core, Corefile, Coredump
 from pwnlib.elf.elf import ELF, load
 from pwnlib.encoders import *
 from pwnlib.exception import PwnlibException
