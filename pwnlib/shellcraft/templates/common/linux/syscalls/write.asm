@@ -1,6 +1,7 @@
 <%
-import pwnlib.shellcraft as sc
-import pwnlib.abi as abi
+import pwnlib.abi
+import pwnlib.constants
+import pwnlib.shellcraft
 %>
 <%docstring>write(fd, buf, n) -> str
 
@@ -17,10 +18,10 @@ Returns:
 </%docstring>
 <%page args="fd=0, buf=0, n=0"/>
 <%
-    abi = abi.ABI.syscall()
+    abi = pwnlib.abi.ABI.syscall()
     stack = abi.stack
     regs = abi.register_arguments[1:]
-    allregs = sc.registers.current()
+    allregs = pwnlib.shellcraft.registers.current()
 
     can_pushstr = []
     can_pushstr_array = []
@@ -54,17 +55,17 @@ Returns:
     syscalls = ['__NR_write']
 
     for syscall in syscalls:
-        syscall = getattr(constants, syscall, None)
+        syscall = getattr(pwnlib.constants, syscall, None)
         if syscall:
             break
 %>
     /* write(fd=${repr(fd)}, buf=${repr(buf)}, n=${repr(n)}) */
-    ${sc.setregs(register_arguments)}
+    ${pwnlib.shellcraft.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
-    ${sc.pushstr(arg, append_null=('\x00' not in arg))}
-    ${sc.mov(regs[argument_names.index(name)], abi.stack)}
+    ${pwnlib.shellcraft.pushstr(arg, append_null=('\x00' not in arg))}
+    ${pwnlib.shellcraft.mov(regs[argument_names.index(name)], abi.stack)}
 %endfor
 %for name, arg in array_arguments.items():
-    ${sc.pushstr_array(regs[argument_names.index(name)], arg)}
+    ${pwnlib.shellcraft.pushstr_array(regs[argument_names.index(name)], arg)}
 %endfor
-    ${sc.syscall(syscall)}
+    ${pwnlib.shellcraft.syscall(syscall)}

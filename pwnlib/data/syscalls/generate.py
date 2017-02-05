@@ -14,8 +14,9 @@ SYSCALL_NAMES = [c for c in dir(constants) if c.startswith('__NR_')]
 
 HEADER = '''
 <%
-import pwnlib.shellcraft as sc
-import pwnlib.abi as abi
+import pwnlib.abi
+import pwnlib.constants
+import pwnlib.shellcraft
 %>
 '''
 
@@ -39,10 +40,10 @@ ARGUMENTS = """
 
 CALL = """
 <%
-    abi = abi.ABI.syscall()
+    abi = pwnlib.abi.ABI.syscall()
     stack = abi.stack
     regs = abi.register_arguments[1:]
-    allregs = sc.registers.current()
+    allregs = pwnlib.shellcraft.registers.current()
 
     can_pushstr = {string_arguments!r}
     can_pushstr_array = {array_arguments!r}
@@ -76,20 +77,20 @@ CALL = """
     syscalls = {syscalls!r}
 
     for syscall in syscalls:
-        syscall = getattr(constants, syscall, None)
+        syscall = getattr(pwnlib.constants, syscall, None)
         if syscall:
             break
 %>
     /* {name}({syscall_repr}) */
-    ${{sc.setregs(register_arguments)}}
+    ${{pwnlib.shellcraft.setregs(register_arguments)}}
 %for name, arg in string_arguments.items():
-    ${{sc.pushstr(arg, append_null=('\\x00' not in arg))}}
-    ${{sc.mov(regs[argument_names.index(name)], abi.stack)}}
+    ${{pwnlib.shellcraft.pushstr(arg, append_null=('\\x00' not in arg))}}
+    ${{pwnlib.shellcraft.mov(regs[argument_names.index(name)], abi.stack)}}
 %endfor
 %for name, arg in array_arguments.items():
-    ${{sc.pushstr_array(regs[argument_names.index(name)], arg)}}
+    ${{pwnlib.shellcraft.pushstr_array(regs[argument_names.index(name)], arg)}}
 %endfor
-    ${{sc.syscall(syscall)}}
+    ${{pwnlib.shellcraft.syscall(syscall)}}
 """
 def can_be_constant(arg):
     if arg.derefcnt == 0:

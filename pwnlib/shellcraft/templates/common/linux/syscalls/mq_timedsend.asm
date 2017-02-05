@@ -1,6 +1,7 @@
 <%
-import pwnlib.shellcraft as sc
-import pwnlib.abi as abi
+import pwnlib.abi
+import pwnlib.constants
+import pwnlib.shellcraft
 %>
 <%docstring>mq_timedsend(mqdes, msg_ptr, msg_len, msg_prio, abs_timeout) -> str
 
@@ -19,10 +20,10 @@ Returns:
 </%docstring>
 <%page args="mqdes=0, msg_ptr=0, msg_len=0, msg_prio=0, abs_timeout=0"/>
 <%
-    abi = abi.ABI.syscall()
+    abi = pwnlib.abi.ABI.syscall()
     stack = abi.stack
     regs = abi.register_arguments[1:]
-    allregs = sc.registers.current()
+    allregs = pwnlib.shellcraft.registers.current()
 
     can_pushstr = ['msg_ptr']
     can_pushstr_array = []
@@ -56,17 +57,17 @@ Returns:
     syscalls = ['__NR_mq_timedsend']
 
     for syscall in syscalls:
-        syscall = getattr(constants, syscall, None)
+        syscall = getattr(pwnlib.constants, syscall, None)
         if syscall:
             break
 %>
     /* mq_timedsend(mqdes=${repr(mqdes)}, msg_ptr=${repr(msg_ptr)}, msg_len=${repr(msg_len)}, msg_prio=${repr(msg_prio)}, abs_timeout=${repr(abs_timeout)}) */
-    ${sc.setregs(register_arguments)}
+    ${pwnlib.shellcraft.setregs(register_arguments)}
 %for name, arg in string_arguments.items():
-    ${sc.pushstr(arg, append_null=('\x00' not in arg))}
-    ${sc.mov(regs[argument_names.index(name)], abi.stack)}
+    ${pwnlib.shellcraft.pushstr(arg, append_null=('\x00' not in arg))}
+    ${pwnlib.shellcraft.mov(regs[argument_names.index(name)], abi.stack)}
 %endfor
 %for name, arg in array_arguments.items():
-    ${sc.pushstr_array(regs[argument_names.index(name)], arg)}
+    ${pwnlib.shellcraft.pushstr_array(regs[argument_names.index(name)], arg)}
 %endfor
-    ${sc.syscall(syscall)}
+    ${pwnlib.shellcraft.syscall(syscall)}
