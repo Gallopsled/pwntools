@@ -52,7 +52,7 @@ class module(ModuleType):
                 self._submodules[name] = module(self.__name__ + '.' + name, os.path.join(self._dir, name))
             elif os.path.isfile(path) and name != '__doc__' and name[0] != '.':
                 funcname, _ext = os.path.splitext(name)
-                if not re.match('^[a-zA-Z][a-zA-Z0-9_]*$', funcname):
+                if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', funcname):
                     raise ValueError("found illegal filename, %r" % name)
                 self._shellcodes[funcname] = name
 
