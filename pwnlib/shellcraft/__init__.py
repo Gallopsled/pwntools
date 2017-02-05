@@ -120,7 +120,7 @@ class module(ModuleType):
         template_dir = os.path.join(os.path.dirname(__file__), 'templates')
         templates    = []
 
-        for root, subfolder, files in os.walk(template_dir, followlinks=False):
+        for root, subfolder, files in os.walk(template_dir, followlinks=True):
             for file in filter(lambda x: x.endswith('.asm'), files):
                 value = os.path.splitext(file)[0]
                 value = os.path.join(root, value)
