@@ -58,7 +58,8 @@ Example:
             not $a1, $t9
             li $t9, ~(PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
             not $a2, $t9
-            ori $a3, $zero, (MAP_PRIVATE | MAP_ANONYMOUS)
+            li $t9, ~(MAP_PRIVATE | MAP_ANONYMOUS) /* 0x22 */
+            not $a3, $t9
             ori $v0, $zero, SYS_mmap2
             syscall 0x40404
         >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()

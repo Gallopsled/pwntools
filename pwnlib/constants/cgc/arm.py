@@ -1,1 +1,1 @@
-thumb.py
+../cgc.py

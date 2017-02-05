@@ -117,7 +117,10 @@ def main(args):
 
         # Output all matching constants
         for _, k in sorted(out):
-            print '#define %s %s' % (k.ljust(maxlen), cpp(k).strip())
+            constant = getattr(constants, k)
+            if not isinstance(constant, constants.Constant):
+                continue
+            print '#define %s %s' % (k.ljust(maxlen), int(constant))
 
         # If we are in match_mode, then try to find a combination of
         # constants that yield the exact given value
