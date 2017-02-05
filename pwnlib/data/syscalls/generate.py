@@ -115,6 +115,8 @@ def fix_syscall_name(name):
     # Do not use old_mmap
     if name == '__NR_mmap':
         return ['__NR_mmap2', name]
+    if name == '__NR_sigreturn':
+        return [name, '__NR_rt_sigreturn']
     return [name]
 
 def main(target):
