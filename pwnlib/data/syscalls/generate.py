@@ -10,7 +10,7 @@ from functions import functions
 
 ARCHITECTURES = ['i386', 'amd64', 'arm', 'aarch64', 'mips']
 
-SYSCALL_NAMES = [c for c in dir(constants) if c.startswith('__NR_')]
+SYSCALL_NAMES = [c for c in dir(constants) if c.startswith('SYS_')]
 
 HEADER = '''
 <%
@@ -113,15 +113,15 @@ def fix_bad_arg_names(arg):
 
 def fix_syscall_name(name):
     # Do not use old_mmap
-    if name == '__NR_mmap':
-        return ['__NR_mmap2', name]
-    if name == '__NR_sigreturn':
-        return [name, '__NR_rt_sigreturn']
+    if name == 'SYS_mmap':
+        return ['SYS_mmap2', name]
+    if name == 'SYS_sigreturn':
+        return [name, 'SYS_rt_sigreturn']
     return [name]
 
 def main(target):
     for name, function in functions.items():
-        syscall = '__NR_%s' % name
+        syscall = 'SYS_%s' % name
 
         if syscall not in SYSCALL_NAMES:
             continue

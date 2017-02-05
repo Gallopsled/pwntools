@@ -51,7 +51,7 @@ Returns:
             register_arguments[target] = arg
 
     # Some syscalls have different names on various architectures
-    syscalls = ['__NR_lstat64']
+    syscalls = ['SYS_lstat64']
 
     for syscall in syscalls:
         if hasattr(pwnlib.constants, syscall):

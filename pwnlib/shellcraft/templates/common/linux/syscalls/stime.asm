@@ -50,7 +50,7 @@ Returns:
             register_arguments[target] = arg
 
     # Some syscalls have different names on various architectures
-    syscalls = ['__NR_stime']
+    syscalls = ['SYS_stime']
 
     for syscall in syscalls:
         if hasattr(pwnlib.constants, syscall):

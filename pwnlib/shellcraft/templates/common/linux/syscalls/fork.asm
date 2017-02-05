@@ -50,7 +50,7 @@ Returns:
             register_arguments[target] = arg
 
     # Some syscalls have different names on various architectures
-    syscalls = ['__NR_fork']
+    syscalls = ['SYS_fork']
 
     for syscall in syscalls:
         if hasattr(pwnlib.constants, syscall):

@@ -55,7 +55,7 @@ Returns:
             register_arguments[target] = arg
 
     # Some syscalls have different names on various architectures
-    syscalls = ['__NR_splice']
+    syscalls = ['SYS_splice']
 
     for syscall in syscalls:
         if hasattr(pwnlib.constants, syscall):

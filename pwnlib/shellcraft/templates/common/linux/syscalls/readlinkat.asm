@@ -53,7 +53,7 @@ Returns:
             register_arguments[target] = arg
 
     # Some syscalls have different names on various architectures
-    syscalls = ['__NR_readlinkat']
+    syscalls = ['SYS_readlinkat']
 
     for syscall in syscalls:
         if hasattr(pwnlib.constants, syscall):

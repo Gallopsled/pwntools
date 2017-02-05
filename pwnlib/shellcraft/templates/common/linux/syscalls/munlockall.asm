@@ -50,7 +50,7 @@ Returns:
             register_arguments[target] = arg
 
     # Some syscalls have different names on various architectures
-    syscalls = ['__NR_munlockall']
+    syscalls = ['SYS_munlockall']
 
     for syscall in syscalls:
         if hasattr(pwnlib.constants, syscall):

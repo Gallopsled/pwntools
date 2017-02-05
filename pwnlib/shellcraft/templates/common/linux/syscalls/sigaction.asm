@@ -52,7 +52,7 @@ Returns:
             register_arguments[target] = arg
 
     # Some syscalls have different names on various architectures
-    syscalls = ['__NR_sigaction']
+    syscalls = ['SYS_sigaction']
 
     for syscall in syscalls:
         if hasattr(pwnlib.constants, syscall):

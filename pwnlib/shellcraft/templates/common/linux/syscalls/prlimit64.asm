@@ -53,7 +53,7 @@ Returns:
             register_arguments[target] = arg
 
     # Some syscalls have different names on various architectures
-    syscalls = ['__NR_prlimit64']
+    syscalls = ['SYS_prlimit64']
 
     for syscall in syscalls:
         if hasattr(pwnlib.constants, syscall):
