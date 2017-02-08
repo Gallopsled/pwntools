@@ -60,8 +60,12 @@ CALL = """
     string_arguments = dict()
     dict_arguments = dict()
     array_arguments = dict()
+    syscall_repr = []
 
     for name, arg in zip(argument_names, argument_values):
+        if arg is not None:
+            syscall_repr.append('%s=%r' % (name, arg))
+
         # If the argument itself (input) is a register...
         if arg in allregs:
             index = argument_names.index(name)
@@ -105,18 +109,15 @@ CALL = """
     else:
         raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
-    /* {name}({syscall_repr}) */
+    /* {name}(${{', '.join(syscall_repr)}}) */
 %for name, arg in string_arguments.items():
-    /* {{name}} */
     ${{pwnlib.shellcraft.pushstr(arg, append_null=('\\x00' not in arg))}}
     ${{pwnlib.shellcraft.mov(regs[argument_names.index(name)], abi.stack)}}
 %endfor
 %for name, arg in array_arguments.items():
-    /* {{name}} */
     ${{pwnlib.shellcraft.pushstr_array(regs[argument_names.index(name)], arg)}}
 %endfor
 %for name, arg in stack_arguments.items():
-    /* {{name}} */
     ${{pwnlib.shellcraft.push(arg)}}
 %endfor
     ${{pwnlib.shellcraft.setregs(register_arguments)}}
@@ -139,13 +140,17 @@ def can_be_array(arg):
         return True
 
 
-def fix_bad_arg_names(arg):
+def fix_bad_arg_names(func, arg):
     if arg.name == 'str':
         return 'str_'
     if arg.name == 'len':
         return 'length'
     if arg.name == 'repr':
         return 'repr_'
+
+    if func.name == 'open' and arg.name == 'vararg':
+        return 'mode'
+
     return arg.name
 
 
@@ -193,7 +198,7 @@ def main(target):
         #
 
         for i, arg in enumerate(function.args):
-            argname = fix_bad_arg_names(arg)
+            argname = fix_bad_arg_names(function, arg)
             default = get_arg_default(arg)
 
             # Mako is unable to use *vararg and *kwarg, so we just stub in
@@ -230,8 +235,6 @@ def main(target):
 
         return_type = str(function.type) + ('*' * function.derefcnt)
         arg_docs = '\n'.join(arg_docs)
-        syscall_repr = ', '.join(
-            ('%s=${repr(%s)}' % (n, n) for n in argument_names))
 
         lines = [
             HEADER,

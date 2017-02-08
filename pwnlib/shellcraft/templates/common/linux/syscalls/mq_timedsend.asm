@@ -38,8 +38,12 @@ Returns:
     string_arguments = dict()
     dict_arguments = dict()
     array_arguments = dict()
+    syscall_repr = []
 
     for name, arg in zip(argument_names, argument_values):
+        if arg is not None:
+            syscall_repr.append('%s=%r' % (name, arg))
+
         # If the argument itself (input) is a register...
         if arg in allregs:
             index = argument_names.index(name)
@@ -83,7 +87,7 @@ Returns:
     else:
         raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
-    /* mq_timedsend(mqdes=${repr(mqdes)}, msg_ptr=${repr(msg_ptr)}, msg_len=${repr(msg_len)}, msg_prio=${repr(msg_prio)}, abs_timeout=${repr(abs_timeout)}) */
+    /* mq_timedsend(${', '.join(syscall_repr)}) */
 %for name, arg in string_arguments.items():
     ${pwnlib.shellcraft.pushstr(arg, append_null=('\x00' not in arg))}
     ${pwnlib.shellcraft.mov(regs[argument_names.index(name)], abi.stack)}
