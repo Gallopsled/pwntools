@@ -25,6 +25,26 @@ Example:
         mov  x0, xzr
         mov  x8, #SYS_exit
         svc 0
+    >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
+        /* open(file='/home/pwn/flag', oflag=0, mode=0) */
+        /* push '/home/pwn/flag\x00\x00' */
+        sub sp, sp, #16
+        /* Set x0 = 8606431000579237935 = 0x77702f656d6f682f */
+        mov  x0, #26671
+        movk x0, #28015, lsl #16
+        movk x0, #12133, lsl #0x20
+        movk x0, #30576, lsl #0x30
+        /* Set x1 = 113668128124782 = 0x67616c662f6e */
+        mov  x1, #12142
+        movk x1, #27750, lsl #16
+        movk x1, #26465, lsl #0x20
+        stp x0, x1, [sp, #16 * 0]
+        mov  x0, sp
+        mov  x1, xzr
+        mov  x2, xzr
+        /* call open() */
+        mov  x8, #SYS_open
+        svc 0
 </%docstring>
 <%
   if isinstance(syscall, (str, unicode)) and syscall.startswith('SYS_'):

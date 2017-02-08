@@ -62,7 +62,7 @@ Example:
             ori $v0, $zero, SYS_mmap2
             syscall 0x40404
         >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
-            /* open(file='/home/pwn/flag', oflag=0, vararg=0) */
+            /* open(file='/home/pwn/flag', oflag=0, mode=0) */
             slti $a1, $zero, 0xFFFF /* $a1 = 0 */
             slti $a2, $zero, 0xFFFF /* $a2 = 0 */
             /* push '/home/pwn/flag\x00' */

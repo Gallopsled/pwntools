@@ -26,7 +26,7 @@ Example:
         mov r7, #SYS_exit /* 1 */
         svc 0x41
     >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip() #doctest: +ELLIPSIS
-        /* open(file='/home/pwn/flag', oflag=0, vararg=0) */
+        /* open(file='/home/pwn/flag', oflag=0, mode=0) */
         eor r1, r1
         eor r2, r2
         /* push '/home/pwn/flag\x00' */

@@ -68,7 +68,7 @@ Example:
             pop esi
             int 0x80
         >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
-            /* open(file='/home/pwn/flag', oflag=0, vararg=0) */
+            /* open(file='/home/pwn/flag', oflag=0, mode=0) */
             xor ecx, ecx
             xor edx, edx
             /* push '/home/pwn/flag\x00' */

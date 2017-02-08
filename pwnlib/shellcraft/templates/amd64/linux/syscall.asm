@@ -68,7 +68,7 @@ Example:
             xor esi, 0x1011101
             syscall
         >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
-            /* open(file='/home/pwn/flag', oflag=0, vararg=0) */
+            /* open(file='/home/pwn/flag', oflag=0, mode=0) */
             xor edx, edx /* 0 */
             xor esi, esi /* 0 */
             /* push '/home/pwn/flag\x00' */
