@@ -32,15 +32,15 @@ Example:
         push 0x1010201
         xor dword ptr [esp], 0x1010301
     >>> print pwnlib.shellcraft.i386.push('SYS_execve').rstrip()
-        /* push (SYS_execve) (0xb) */
+        /* push SYS_execve (0xb) */
         push 0xb
     >>> print pwnlib.shellcraft.i386.push('SYS_sendfile').rstrip()
-        /* push (SYS_sendfile) (0xbb) */
+        /* push SYS_sendfile (0xbb) */
         push 0x1010101
         xor dword ptr [esp], 0x10101ba
     >>> with context.local(os = 'freebsd'):
     ...     print pwnlib.shellcraft.i386.push('SYS_execve').rstrip()
-        /* push (SYS_execve) (0x3b) */
+        /* push SYS_execve (0x3b) */
         push 0x3b
 </%docstring>
 

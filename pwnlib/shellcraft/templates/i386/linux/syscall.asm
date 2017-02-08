@@ -14,7 +14,7 @@ Example:
 
         >>> print pwnlib.shellcraft.i386.linux.syscall('SYS_execve', 1, 'esp', 2, 0).rstrip()
             /* call execve(1, 'esp', 2, 0) */
-            push (SYS_execve) /* 0xb */
+            push SYS_execve /* 0xb */
             pop eax
             push 1
             pop ebx
@@ -25,7 +25,7 @@ Example:
             int 0x80
         >>> print pwnlib.shellcraft.i386.linux.syscall('SYS_execve', 2, 1, 0, 20).rstrip()
             /* call execve(2, 1, 0, 0x14) */
-            push (SYS_execve) /* 0xb */
+            push SYS_execve /* 0xb */
             pop eax
             push 2
             pop ebx
@@ -79,12 +79,11 @@ Example:
             push 0x6d6f682f
             mov ebx, esp
             /* call open() */
-            push (SYS_open) /* 5 */
+            push SYS_open /* 5 */
             pop eax
             int 0x80
 </%docstring>
 <%
-  append_cdq = False
   if isinstance(syscall, (str, unicode, Constant)) and str(syscall).startswith('SYS_'):
       syscall_repr = str(syscall)[4:] + "(%s)"
       args = []

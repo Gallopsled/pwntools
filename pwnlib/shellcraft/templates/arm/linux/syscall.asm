@@ -23,7 +23,7 @@ Example:
     >>> print shellcraft.arm.linux.syscall('SYS_exit', 0).rstrip()
         /* call exit(0) */
         eor  r0, r0 /* 0 (#0) */
-        mov  r7, #(SYS_exit) /* 1 */
+        mov  r7, #SYS_exit /* 1 */
         svc  0
     >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
         /* open(file='/home/pwn/flag', oflag=0, vararg=0) */
@@ -44,7 +44,7 @@ Example:
         push {r7}
         mov  r0, sp
         /* call open() */
-        mov  r7, #(SYS_open) /* 5 */
+        mov  r7, #SYS_open /* 5 */
         svc  0
 </%docstring>
 <%

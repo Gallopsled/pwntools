@@ -15,7 +15,7 @@ Example:
         >>> print pwnlib.shellcraft.amd64.linux.syscall('SYS_execve', 1, 'rsp', 2, 0).rstrip()
             /* call execve(1, 'rsp', 2, 0) */
             xor r10d, r10d /* 0 */
-            push (SYS_execve) /* 0x3b */
+            push SYS_execve /* 0x3b */
             pop rax
             push 1
             pop rdi
@@ -27,7 +27,7 @@ Example:
             /* call execve(2, 1, 0, -1) */
             push -1
             pop r10
-            push (SYS_execve) /* 0x3b */
+            push SYS_execve /* 0x3b */
             pop rax
             push 2
             pop rdi
@@ -59,7 +59,7 @@ Example:
             push -1
             pop r8
             xor r9d, r9d /* 0 */
-            push (SYS_mmap) /* 9 */
+            push SYS_mmap /* 9 */
             pop rax
             xor edi, edi /* 0 */
             push (PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
@@ -80,7 +80,7 @@ Example:
             push rax
             mov rdi, rsp
             /* call open() */
-            push (SYS_open) /* 2 */
+            push SYS_open /* 2 */
             pop rax
             syscall
 </%docstring>

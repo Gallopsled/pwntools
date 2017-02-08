@@ -20,7 +20,7 @@ Example:
         pop rax
     >>> print shellcraft.setregs({'rax': 'SYS_write', 'rbx':'rax'}).rstrip()
         mov rbx, rax
-        push (SYS_write) /* 1 */
+        push SYS_write /* 1 */
         pop rax
     >>> print shellcraft.setregs({'rax':'rbx', 'rbx':'rax', 'rcx':'rbx'}).rstrip()
         mov rcx, rbx

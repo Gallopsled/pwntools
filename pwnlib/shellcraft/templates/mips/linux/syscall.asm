@@ -20,7 +20,7 @@ Example:
             li $t9, ~2
             not $a2, $t9
             slti $a3, $zero, 0xFFFF /* $a3 = 0 */
-            ori $v0, $zero, (SYS_execve)
+            ori $v0, $zero, SYS_execve
             syscall 0x40404
         >>> print pwnlib.shellcraft.mips.linux.syscall('SYS_execve', 2, 1, 0, 20).rstrip()
             /* call execve(2, 1, 0, 0x14) */
@@ -31,7 +31,7 @@ Example:
             slti $a2, $zero, 0xFFFF /* $a2 = 0 */
             li $t9, ~0x14
             not $a3, $t9
-            ori $v0, $zero, (SYS_execve)
+            ori $v0, $zero, SYS_execve
             syscall 0x40404
         >>> print pwnlib.shellcraft.mips.linux.syscall().rstrip()
             /* call syscall() */
@@ -59,7 +59,7 @@ Example:
             li $t9, ~(PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
             not $a2, $t9
             ori $a3, $zero, (MAP_PRIVATE | MAP_ANONYMOUS)
-            ori $v0, $zero, (SYS_mmap2)
+            ori $v0, $zero, SYS_mmap2
             syscall 0x40404
         >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
             /* open(file='/home/pwn/flag', oflag=0, vararg=0) */
@@ -77,7 +77,7 @@ Example:
             addiu $sp, $sp, -16
             add $a0, $sp, $0 /* mov $a0, $sp */
             /* call open() */
-            ori $v0, $zero, (SYS_open)
+            ori $v0, $zero, SYS_open
             syscall 0x40404
 </%docstring>
 <%

@@ -23,7 +23,7 @@ Example:
     >>> print shellcraft.aarch64.linux.syscall('SYS_exit', 0).rstrip()
         /* call exit(0) */
         mov  x0, xzr
-        mov  x8, #(SYS_exit)
+        mov  x8, #SYS_exit
         svc 0
 </%docstring>
 <%
