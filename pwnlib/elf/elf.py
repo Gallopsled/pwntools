@@ -272,8 +272,10 @@ class ELF(ELFFile):
         except StopIteration:
             self.dynamic = None
 
-        self._populate_got_plt()
         self._populate_symbols()
+        self._populate_got()
+        self._populate_plt()
+        self._populate_got_plt_symbols()
         self._populate_libraries()
         self._populate_functions()
         self._populate_kernel_version()
@@ -605,11 +607,6 @@ class ELF(ELFFile):
         >>> bash.symbols['_start'] == bash.header.e_entry
         True
         """
-        # By default, have 'symbols' include everything in the PLT.
-        #
-        # This way, elf.symbols['write'] will be a valid address to call
-        # for write().
-        self.symbols.update(self.plt)
 
         for section in self.sections:
             if not isinstance(section, SymbolTableSection):
@@ -621,12 +618,172 @@ class ELF(ELFFile):
                     continue
                 self.symbols[symbol.name] = value
 
+    def _populate_got_plt_symbols(self):
+        """Add GOT and PLT symbols to our symbol table"""
+
+        # By default, have 'symbols' include everything in the PLT.
+        #
+        # This way, elf.symbols['write'] will be a valid address to call
+        # for write().
+        self.symbols.update(self.plt)
+
         # Add 'plt.foo' and 'got.foo' to the symbols for entries
         self.symbols.update({'plt.%s' % sym: addr for sym, addr in self.plt.items()})
         self.symbols.update({'got.%s' % sym: addr for sym, addr in self.got.items()})
 
-    def _populate_got_plt(self):
-        """Loads the GOT and the PLT symbols and addresses.
+    def _populate_got(self):
+        """Loads the GOT symbols and addresses."""
+
+        self.got = {}
+
+        # TODO: In reality, the canonical relocation list is the one linked from
+        # the DYNAMIC segment; if we parse that, then we can get GOT even if the
+        # section headers are missing or obfuscated away.
+        for sect in self.sections:
+            if not isinstance(sect, RelocationSection):
+                continue
+
+            if sect.header.sh_link == SHN_INDICES.SHN_UNDEF:
+                continue
+
+            # We have to examine all relocation sections.
+            # Binaries (especially RELRO binaries) may put PLT GOT entries in *either*
+            # .rel[a].dyn or .rel[a].plt.
+            # This might pull in extraneous relocations, but it's better than missing
+            # important external symbols.
+
+            # Find the symbols for the relocation section
+            sym_rel = self.sections[sect.header.sh_link]
+
+            # Populate the GOT
+            for rel in sect.iter_relocations():
+                sym_idx  = rel.entry.r_info_sym
+                symbol   = sym_rel.get_symbol(sym_idx)
+                if not symbol:
+                    # local relocation
+                    continue
+                name     = symbol.name
+
+                self.got[name] = rel.entry.r_offset
+
+        if not self.got:
+            log.warning("Failed to get GOT relocations!")
+
+    def _parse_plt_i386(self, revgot, plt):
+        res = {}
+        data = plt.data()
+        saddr = plt.header.sh_addr
+        pos = 0
+
+        # Need the got base address for PIE executables
+        # TODO: how might we get this if the symbol table is missing?
+        gotaddr = self.symbols.get('_GLOBAL_OFFSET_TABLE_', 0)
+
+        while pos < len(data):
+            if data[pos:pos+2] == '\xff\x25':
+                # jmp dword ptr ds:ABS (non-PIE)
+                addr = packing.u32(data[pos+2:pos+6])
+                if addr in revgot:
+                    res[revgot[addr]] = saddr + pos
+                pos += 8
+            elif data[pos:pos+2] == '\xff\xa3':
+                # jmp dword ptr [ebx+REL] (PIE)
+                addr = packing.u32(data[pos+2:pos+6]) + gotaddr
+                if addr in revgot:
+                    res[revgot[addr]] = saddr + pos
+                pos += 8
+            else:
+                # unknown/stub (add more cases for future/different PLT stub designs)
+                pos += 4
+
+        return res
+
+    def _parse_plt_amd64(self, revgot, plt):
+        res = {}
+        data = plt.data()
+        saddr = plt.header.sh_addr
+        pos = 0
+
+        while pos < len(data):
+            if data[pos:pos+2] == '\xff\x25':
+                # jmp dword ptr [rip+REL]
+                addr = packing.u32(data[pos+2:pos+6]) + saddr + pos + 6
+                if addr in revgot:
+                    res[revgot[addr]] = saddr + pos
+                pos += 8
+            else:
+                # unknown/stub (add more cases for future/different PLT stub designs)
+                pos += 4
+
+        return res
+
+    def _parse_plt_arm(self, revgot, plt):
+        res = {}
+        data = plt.data()
+        saddr = plt.header.sh_addr
+        pos = 0
+
+        has_thumb = False
+        while pos < len(data):
+            if packing.u16(data[pos:pos+2]) == 0x4778:
+                # bx pc (thumb PLT stub)
+                has_thumb = True
+                pos += 4
+            elif (packing.u32(data[pos:pos+4]) & 0xffffff00) == 0xe28fc600 \
+                and pos + 12 <= len(data):
+                # add ip, pc, #PAGE_TOP, 12
+                # add ip, ip, #PAGE_OFF, 20
+                # ldr pc, [ip, #OFF]!
+                addr = (((packing.u32(data[pos:pos+4]) & 0xff) << 20)
+                       |((packing.u32(data[pos+4:pos+8]) & 0xff) << 12)
+                       |(packing.u32(data[pos+8:pos+12]) & 0xfff)) + saddr + pos + 8
+
+                if addr in revgot:
+                    res[revgot[addr]] = saddr + pos
+                    if has_thumb:
+                        res[revgot[addr] + '$thumb'] = saddr + pos - 4
+
+                has_thumb = False
+                pos += 12
+            else:
+                has_thumb = False
+                pos += 4
+
+        return res
+
+    def _parse_plt_aarch64(self, revgot, plt):
+        res = {}
+        data = plt.data()
+        saddr = plt.header.sh_addr
+        words = packing.unpack_many(data, 32)
+        pos = 0
+
+        # Manual instruction decoding for speed (don't want to shell out to objdump right now)
+        while pos < len(words):
+            if (words[pos] & 0x8f00001f) == 0x80000010 \
+                and pos + 4 <= len(words) \
+                and words[pos+3] == 0xd61f0220:
+                # adrp x16, PAGE
+                # ldr  x17, [x16,#REL]
+                # add  x16, x16, #REL
+                # br   x17
+
+                page = (((words[pos] & 0x60000000) >> 29)
+                       |((words[pos] & 0x00ffffe0) >> 3))
+                offs = ((words[pos+1] & 0x003ffc00) >> 7)
+                curpage = (saddr + (pos << 2)) >> 12
+                addr = ((page + curpage) << 12) + offs
+                if addr in revgot:
+                    res[revgot[addr]] = saddr + pos
+                pos += 4
+            else:
+                # unknown/stub (add more cases for future/different PLT stub designs)
+                pos += 1
+
+        return res
+
+    def _populate_plt(self):
+        """Loads the PLT addresses.
 
         The following doctest checks the valitidy of the addresses.
         This assumes that each GOT entry points to its PLT entry,
@@ -643,68 +800,28 @@ class ELF(ELFFile):
         >>> all(map(validate_got_plt, bash.got.keys()))
         True
         """
-        plt = self.get_section_by_name('.plt')
-        got = self.get_section_by_name('.got')
 
-        if not plt:
+        plts = [self.get_section_by_name(name) for name in ('.plt', '.plt.got')]
+        plts = [plt for plt in plts if plt]
+
+        self.plt = {}
+
+        if not plts:
+            log.warning("Couldn't find any PLT sections")
             return
 
-        # Find the relocation section for PLT
-        try:
-            rel_plt = next(s for s in self.sections if
-                            s.header.sh_info == self.sections.index(plt) and
-                            isinstance(s, RelocationSection))
-        except StopIteration:
-            # Evidently whatever android-ndk uses to build binaries zeroed out sh_info for rel.plt
-            rel_plt = self.get_section_by_name('.rel.plt') or self.get_section_by_name('.rela.plt')
-
-        if not rel_plt:
-            log.warning("Couldn't find relocations against PLT to get symbols")
+        plt_parser = getattr(self, '_parse_plt_' + self.arch, None)
+        if not plt_parser:
+            log.warning("Don't know how to parse PLT relocations for arch %s" % self.arch)
             return
 
-        if rel_plt.header.sh_link != SHN_INDICES.SHN_UNDEF:
-            # Find the symbols for the relocation section
-            sym_rel_plt = self.sections[rel_plt.header.sh_link]
+        revgot = {v: k for k,v in self.got.iteritems()}
+        for plt in plts:
+            self.plt.update(plt_parser(revgot, plt))
 
-            # Populate the GOT
-            for rel in rel_plt.iter_relocations():
-                sym_idx  = rel.entry.r_info_sym
-                symbol   = sym_rel_plt.get_symbol(sym_idx)
-                name     = symbol.name
-
-                self.got[name] = rel.entry.r_offset
-
-        # Depending on the architecture, the beginning of the .plt will differ
-        # in size, and each entry in the .plt will also differ in size.
-        offset     = None
-        multiplier = None
-
-        # Map architecture: offset, multiplier
-        header_size, entry_size = {
-            'i386':   (0x10, 0x10),
-            'amd64': (0x10, 0x10),
-            'arm':   (0x14, 0xC),
-            'aarch64': (0x20, 0x20),
-        }.get(self.arch, (0,0))
-
-        address = plt.header.sh_addr + header_size
-
-        # Based on the ordering of the GOT symbols, populate the PLT
-        for i,(addr,name) in enumerate(sorted((addr,name) for name, addr in self.got.items())):
-            self.plt[name] = address
-
-            # Some PLT entries in ARM binaries have a thumb-mode stub that looks like:
-            #
-            # 00008304 <__gmon_start__@plt>:
-            #     8304:   4778        bx  pc
-            #     8306:   46c0        nop         ; (mov r8, r8)
-            #     8308:   e28fc600    add ip, pc, #0, 12
-            #     830c:   e28cca08    add ip, ip, #8, 20  ; 0x8000
-            #     8310:   e5bcf228    ldr pc, [ip, #552]! ; 0x228
-            if self.arch in ('arm', 'thumb') and self.u16(address) == 0x4778:
-                address += 4
-
-            address += entry_size
+        if not self.plt:
+            log.warning("Failed to parse PLT relocation table for arch %s" % self.arch)
+            return
 
     def _populate_kernel_version(self):
         if 'linux_banner' not in self.symbols:
