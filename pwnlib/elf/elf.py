@@ -50,6 +50,7 @@ from elftools.elf.constants import E_FLAGS
 from elftools.elf.constants import P_FLAGS
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
+from elftools.elf.dynamic import DynamicSegment
 from elftools.elf.elffile import ELFFile
 from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection
@@ -264,6 +265,12 @@ class ELF(ELFFile):
 
             if config:
                 self.config = parse_kconfig(config)
+
+        #: Dynamic linking information
+        try:
+            self.dynamic = next(seg for seg in self.iter_segments() if isinstance(seg, DynamicSegment))
+        except StopIteration:
+            self.dynamic = None
 
         self._populate_got_plt()
         self._populate_symbols()
@@ -1103,13 +1110,12 @@ class ELF(ELFFile):
             :class:`elftools.elf.dynamic.DynamicTag`
         """
         dt      = None
-        dynamic = self.get_section_by_name('.dynamic')
 
-        if not dynamic:
+        if not self.dynamic:
             return None
 
         try:
-            dt = next(t for t in dynamic.iter_tags() if tag == t.entry.d_tag)
+            dt = next(t for t in self.dynamic.iter_tags() if tag == t.entry.d_tag)
         except StopIteration:
             pass
 
