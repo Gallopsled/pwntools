@@ -69,8 +69,6 @@ Example:
             int 0x80
         >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
             /* open(file='/home/pwn/flag', oflag=0, mode=0) */
-            xor ecx, ecx
-            xor edx, edx
             /* push '/home/pwn/flag\x00' */
             push 0x1010101
             xor dword ptr [esp], 0x1016660
@@ -78,6 +76,8 @@ Example:
             push 0x77702f65
             push 0x6d6f682f
             mov ebx, esp
+            xor ecx, ecx
+            xor edx, edx
             /* call open() */
             push SYS_open /* 5 */
             pop eax

@@ -69,8 +69,6 @@ Example:
             syscall
         >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
             /* open(file='/home/pwn/flag', oflag=0, mode=0) */
-            xor edx, edx /* 0 */
-            xor esi, esi /* 0 */
             /* push '/home/pwn/flag\x00' */
             mov rax, 0x101010101010101
             push rax
@@ -79,6 +77,8 @@ Example:
             mov rax, 0x77702f656d6f682f
             push rax
             mov rdi, rsp
+            xor edx, edx /* 0 */
+            xor esi, esi /* 0 */
             /* call open() */
             push SYS_open /* 2 */
             pop rax

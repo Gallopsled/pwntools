@@ -27,8 +27,6 @@ Example:
         svc 0x41
     >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip() #doctest: +ELLIPSIS
         /* open(file='/home/pwn/flag', oflag=0, mode=0) */
-        eor r1, r1
-        eor r2, r2
         /* push '/home/pwn/flag\x00' */
         mov r7, #(0x6761 >> 8)
         lsl r7, #8
@@ -50,6 +48,8 @@ Example:
     value_..._after:
         push {r7}
         mov r0, sp
+        eor r1, r1
+        eor r2, r2
         /* call open() */
         mov r7, #SYS_open /* 5 */
         svc 0x41
