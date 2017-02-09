@@ -89,7 +89,8 @@ class AdbClient(Logger):
         """AdbClient's connection to the ADB server"""
         if not self._c:
             try:
-                self._c = Connection(self.host, self.port, level=self.level)
+                with context.quiet:
+                    self._c = Connection(self.host, self.port, level=self.level)
             except Exception:
                 # If the connection fails, try starting a server on that port
                 # as long as it's the *default* port.
