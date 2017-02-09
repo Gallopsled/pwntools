@@ -511,10 +511,14 @@ def push(local_path, remote_path):
         local_path(str): Path to the local file to push.
         remote_path(str): Path or directory to store the file on the device.
 
+    Returns:
+        Remote path of the file.
+
     Example:
 
         >>> write('./filename', 'contents')
-        >>> _=adb.push('./filename', '/data/local/tmp')
+        >>> adb.push('./filename', '/data/local/tmp')
+        '/data/local/tmp/filename'
         >>> adb.read('/data/local/tmp/filename')
         'contents'
         >>> adb.push('./filename', '/does/not/exist')
@@ -549,9 +553,12 @@ def push(local_path, remote_path):
             if stat.S_ISDIR(mode):
                 remote_path = os.path.join(remote_path, remote_filename)
 
-            return c.write(remote_path,
-                           misc.read(local_path),
-                           callback=_create_adb_push_pull_callback(w))
+            c.write(remote_path,
+                    misc.read(local_path),
+                    callback=_create_adb_push_pull_callback(w))
+
+    return remote_path
+
 @context.quietfunc
 @with_device
 def read(path, target=None, callback=None):
