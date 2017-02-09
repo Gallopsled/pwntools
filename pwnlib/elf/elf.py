@@ -653,7 +653,7 @@ class ELF(ELFFile):
             # important external symbols.
 
             # Find the symbols for the relocation section
-            sym_rel = self.sections[sect.header.sh_link]
+            sym_rel = self.get_section(sect.header.sh_link)
 
             # Populate the GOT
             for rel in sect.iter_relocations():
