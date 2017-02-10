@@ -7,6 +7,7 @@ Documentation is available here_.
 """
 from __future__ import absolute_import
 
+import logging
 import functools
 import stat
 import time
@@ -89,8 +90,12 @@ class AdbClient(Logger):
         """AdbClient's connection to the ADB server"""
         if not self._c:
             try:
+                # Squelch the first '[ERROR] Could not connect to localhost on port 5037'
+                level = self.level
                 with context.quiet:
-                    self._c = Connection(self.host, self.port, level=self.level)
+                    if not self.isEnabledFor(logging.INFO):
+                        level = logging.FATAL
+                    self._c = Connection(self.host, self.port, level=level)
             except Exception:
                 # If the connection fails, try starting a server on that port
                 # as long as it's the *default* port.
@@ -99,7 +104,8 @@ class AdbClient(Logger):
                     log.warn("Could not connect to ADB server, trying to start it")
                     process(context.adb + ['start-server']).recvall()
                 else:
-                    log.exception('Could not connect to ADB server')
+                    log.exception('Could not connect to ADB server (%s:%s)' % \
+                                    (self.host, self.port))
 
         # Final attempt...
         if not self._c:
