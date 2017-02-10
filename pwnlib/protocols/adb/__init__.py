@@ -65,7 +65,7 @@ class Connection(remote):
     def adb_unpack(self):
         return unpack(self.recvn(4))
 
-    def flat(self, *a, **kw):
+    def flat32(self, *a, **kw):
         kw.setdefault('word_size', 32)
         return super(Connection, self).flat(*a, **kw)
 
@@ -381,7 +381,7 @@ class AdbClient(Logger):
     @_with_transport
     @_sync
     def _list(self, path):
-        self.c.flat('LIST', len(path), path)
+        self.c.flat32('LIST', len(path), path)
         files = {}
         while True:
             response = self.c.recvn(4)
@@ -427,7 +427,7 @@ class AdbClient(Logger):
             >>> pwnlib.protocols.adb.AdbClient().stat('/does/not/exist') == None
             True
         """
-        self.c.flat('STAT', len(path), path)
+        self.c.flat32('STAT', len(path), path)
         if self.c.recvn(4) != 'STAT':
             self.error("An error occured while attempting to STAT a file.")
 
@@ -470,13 +470,13 @@ class AdbClient(Logger):
     @_sync
     def _write(self, path, data, mode=0o755, timestamp=None, callback=None):
         path += ',' + str(mode)
-        self.c.flat('SEND', len(path), path)
+        self.c.flat32('SEND', len(path), path)
 
         sent = 0
 
         # Data needs to be broken up into chunks!
         for chunk in group(0x10000, data):
-            self.c.flat('DATA', len(chunk), chunk)
+            self.c.flat32('DATA', len(chunk), chunk)
             if callback:
                 callback(path, data[:sent], len(data), chunk, len(chunk))
             sent += len(chunk)
@@ -484,7 +484,7 @@ class AdbClient(Logger):
         # Send completion notification and timestamp
         if timestamp is None:
             timestamp = int(time.time())
-        self.c.flat('DONE', timestamp)
+        self.c.flat32('DONE', timestamp)
 
         result = self.c.recvn(4)
         if result != 'OKAY':
