@@ -389,6 +389,9 @@ def sh_string(s):
     if '\x00' in s:
         log.error("sh_string(): Cannot create a null-byte")
 
+    if s == '':
+        return "''"
+
     chars = set(s)
     very_good = set(string.ascii_letters + string.digits + "_+.,/")
 
