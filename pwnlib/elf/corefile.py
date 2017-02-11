@@ -534,9 +534,16 @@ class Corefile(ELF):
                     if mapping.stop == self.stack:
                         mapping.name = '[stack]'
                         self.stack   = mapping
+                        break
                 else:
-                    log.warn('Could not find the stack!')
-                    self.stack = None
+                    for mapping in self.mappings:
+                        if self.stack in mapping:
+                            mapping.name = '[stack]'
+                            self.stack   = mapping
+                            break
+                    else:
+                        log.warn('Could not find the stack!')
+                        self.stack = None
 
             with context.local(bytes=self.bytes, log_level='error'):
                 try:
