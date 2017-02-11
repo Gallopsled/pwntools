@@ -1,0 +1,1 @@
+../../linux/syscalls/readlinkat.asm

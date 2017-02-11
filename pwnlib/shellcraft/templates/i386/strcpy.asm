@@ -11,8 +11,8 @@ Example:
     >>> sc  = 'jmp get_str\n'
     >>> sc += 'pop_str: pop eax\n'
     >>> sc += shellcraft.i386.strcpy('esp', 'eax')
-    >>> sc += shellcraft.i386.linux.write(1, 'esp', 32)
-    >>> sc += shellcraft.i386.linux.exit(0)
+    >>> sc += shellcraft.i386.linux.syscalls.write(1, 'esp', 32)
+    >>> sc += shellcraft.i386.linux.syscalls.exit(0)
     >>> sc += 'get_str: call pop_str\n'
     >>> sc += '.asciz "Hello, world\\n"'
     >>> run_assembly(sc).recvline()

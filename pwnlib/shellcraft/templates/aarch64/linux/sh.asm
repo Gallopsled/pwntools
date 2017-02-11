@@ -9,4 +9,4 @@ Execute a different process.
 
 </%docstring>
     ${aarch64.pushstr('/bin///sh')}
-    ${aarch64.linux.execve('sp', 0, 0)}
+    ${aarch64.linux.syscalls.execve('sp', 0, 0)}

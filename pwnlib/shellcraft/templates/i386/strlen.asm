@@ -17,7 +17,7 @@ Example:
     >>> sc += 'pop_str: pop eax\n'
     >>> sc += shellcraft.i386.strlen('eax')
     >>> sc += 'push ecx;'
-    >>> sc += shellcraft.i386.linux.write(1, 'esp', 4)
+    >>> sc += shellcraft.i386.linux.syscalls.write(1, 'esp', 4)
     >>> sc += shellcraft.i386.linux.exit(0)
     >>> sc += 'get_str: call pop_str\n'
     >>> sc += '.asciz "Hello, world\\n"'

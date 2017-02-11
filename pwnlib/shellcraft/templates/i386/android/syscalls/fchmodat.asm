@@ -1,0 +1,1 @@
+../../linux/syscalls/fchmodat.asm

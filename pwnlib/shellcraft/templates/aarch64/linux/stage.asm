@@ -1,6 +1,7 @@
 <%
 from pwnlib.shellcraft.aarch64 import mov
-from pwnlib.shellcraft.aarch64.linux import read, readn, mmap
+from pwnlib.shellcraft.aarch64.linux import readn, mmap
+from pwnlib.shellcraft.aarch64.linux.syscalls import read
 from pwnlib import constants as C
 %>
 <%page args="fd=0, length=None"/>

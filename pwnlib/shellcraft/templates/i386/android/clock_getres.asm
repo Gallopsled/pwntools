@@ -1,1 +1,0 @@
-../linux/clock_getres.asm

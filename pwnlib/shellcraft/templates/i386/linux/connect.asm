@@ -18,7 +18,7 @@ Examples:
     >>> l = listen(timeout=5)
     >>> assembly  = shellcraft.i386.linux.connect('localhost', l.lport)
     >>> assembly += shellcraft.i386.pushstr('Hello')
-    >>> assembly += shellcraft.i386.linux.write('edx', 'esp', 5)
+    >>> assembly += shellcraft.i386.linux.syscalls.write('edx', 'esp', 5)
     >>> p = run_assembly(assembly)
     >>> l.wait_for_connection().recv()
     'Hello'
