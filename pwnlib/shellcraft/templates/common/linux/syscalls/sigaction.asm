@@ -4,18 +4,20 @@ import pwnlib.abi
 import pwnlib.constants
 import pwnlib.shellcraft
 %>
-<%docstring>sigaction(vararg_0, vararg_1, vararg_2, vararg_3, vararg_4) -> str
+<%docstring>sigaction(sig, act, oact) -> str
 
 Invokes the syscall sigaction.
 
 See 'man 2 sigaction' for more information.
 
 Arguments:
-    vararg(int): vararg
+    sig(int): sig
+    act(sigaction*): act
+    oact(sigaction*): oact
 Returns:
-    long
+    int
 </%docstring>
-<%page args="vararg_0=None, vararg_1=None, vararg_2=None, vararg_3=None, vararg_4=None"/>
+<%page args="sig=0, act=0, oact=0"/>
 <%
     abi = pwnlib.abi.ABI.syscall()
     stack = abi.stack
@@ -25,8 +27,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['vararg_0', 'vararg_1', 'vararg_2', 'vararg_3', 'vararg_4']
-    argument_values = [vararg_0, vararg_1, vararg_2, vararg_3, vararg_4]
+    argument_names = ['sig', 'act', 'oact']
+    argument_values = [sig, act, oact]
 
     # Load all of the arguments into their destination registers / stack slots.
     register_arguments = dict()
@@ -77,7 +79,7 @@ Returns:
 
     # Some syscalls have different names on various architectures.
     # Determine which syscall number to use for the current architecture.
-    for syscall in ['SYS_rt_sigaction']:
+    for syscall in ['SYS_sigaction']:
         if hasattr(pwnlib.constants, syscall):
             break
     else:

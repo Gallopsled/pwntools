@@ -4,18 +4,21 @@ import pwnlib.abi
 import pwnlib.constants
 import pwnlib.shellcraft
 %>
-<%docstring>sigreturn(scp) -> str
+<%docstring>sync_file_range2(fd, flags, offset, nbytes) -> str
 
-Invokes the syscall sigreturn.
+Invokes the syscall sync_file_range2.
 
-See 'man 2 sigreturn' for more information.
+See 'man 2 sync_file_range2' for more information.
 
 Arguments:
-    scp(sigcontext*): scp
+    fd(int): fd
+    flags(unsigned): flags
+    offset(off64_t): offset
+    nbytes(off64_t): nbytes
 Returns:
     int
 </%docstring>
-<%page args="scp=0"/>
+<%page args="fd=0, flags=0, offset=0, nbytes=0"/>
 <%
     abi = pwnlib.abi.ABI.syscall()
     stack = abi.stack
@@ -25,8 +28,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['scp']
-    argument_values = [scp]
+    argument_names = ['fd', 'flags', 'offset', 'nbytes']
+    argument_values = [fd, flags, offset, nbytes]
 
     # Load all of the arguments into their destination registers / stack slots.
     register_arguments = dict()
@@ -77,13 +80,13 @@ Returns:
 
     # Some syscalls have different names on various architectures.
     # Determine which syscall number to use for the current architecture.
-    for syscall in ['SYS_sigreturn', 'SYS_rt_sigreturn']:
+    for syscall in ['SYS_sync_file_range2']:
         if hasattr(pwnlib.constants, syscall):
             break
     else:
         raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
-    /* sigreturn(${', '.join(syscall_repr)}) */
+    /* sync_file_range2(${', '.join(syscall_repr)}) */
 %for name, arg in string_arguments.items():
     ${pwnlib.shellcraft.pushstr(arg, append_null=('\x00' not in arg))}
     ${pwnlib.shellcraft.mov(regs[argument_names.index(name)], abi.stack)}

@@ -4,18 +4,21 @@ import pwnlib.abi
 import pwnlib.constants
 import pwnlib.shellcraft
 %>
-<%docstring>sigreturn(scp) -> str
+<%docstring>recv(fd, buf, n, flags) -> str
 
-Invokes the syscall sigreturn.
+Invokes the syscall recv.
 
-See 'man 2 sigreturn' for more information.
+See 'man 2 recv' for more information.
 
 Arguments:
-    scp(sigcontext*): scp
+    fd(int): fd
+    buf(void*): buf
+    n(size_t): n
+    flags(int): flags
 Returns:
-    int
+    ssize_t
 </%docstring>
-<%page args="scp=0"/>
+<%page args="fd=0, buf=0, n=0, flags=0"/>
 <%
     abi = pwnlib.abi.ABI.syscall()
     stack = abi.stack
@@ -25,8 +28,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['scp']
-    argument_values = [scp]
+    argument_names = ['fd', 'buf', 'n', 'flags']
+    argument_values = [fd, buf, n, flags]
 
     # Load all of the arguments into their destination registers / stack slots.
     register_arguments = dict()
@@ -77,13 +80,13 @@ Returns:
 
     # Some syscalls have different names on various architectures.
     # Determine which syscall number to use for the current architecture.
-    for syscall in ['SYS_sigreturn', 'SYS_rt_sigreturn']:
+    for syscall in ['SYS_recv']:
         if hasattr(pwnlib.constants, syscall):
             break
     else:
         raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
-    /* sigreturn(${', '.join(syscall_repr)}) */
+    /* recv(${', '.join(syscall_repr)}) */
 %for name, arg in string_arguments.items():
     ${pwnlib.shellcraft.pushstr(arg, append_null=('\x00' not in arg))}
     ${pwnlib.shellcraft.mov(regs[argument_names.index(name)], abi.stack)}

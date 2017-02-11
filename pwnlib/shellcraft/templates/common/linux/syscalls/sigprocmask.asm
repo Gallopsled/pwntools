@@ -4,18 +4,20 @@ import pwnlib.abi
 import pwnlib.constants
 import pwnlib.shellcraft
 %>
-<%docstring>sigprocmask(vararg_0, vararg_1, vararg_2, vararg_3, vararg_4) -> str
+<%docstring>sigprocmask(how, set, oset) -> str
 
 Invokes the syscall sigprocmask.
 
 See 'man 2 sigprocmask' for more information.
 
 Arguments:
-    vararg(int): vararg
+    how(int): how
+    set(sigset_t*): set
+    oset(sigset_t*): oset
 Returns:
-    long
+    int
 </%docstring>
-<%page args="vararg_0=None, vararg_1=None, vararg_2=None, vararg_3=None, vararg_4=None"/>
+<%page args="how=0, set=0, oset=0"/>
 <%
     abi = pwnlib.abi.ABI.syscall()
     stack = abi.stack
@@ -25,8 +27,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['vararg_0', 'vararg_1', 'vararg_2', 'vararg_3', 'vararg_4']
-    argument_values = [vararg_0, vararg_1, vararg_2, vararg_3, vararg_4]
+    argument_names = ['how', 'set', 'oset']
+    argument_values = [how, set, oset]
 
     # Load all of the arguments into their destination registers / stack slots.
     register_arguments = dict()
@@ -77,7 +79,7 @@ Returns:
 
     # Some syscalls have different names on various architectures.
     # Determine which syscall number to use for the current architecture.
-    for syscall in ['SYS_rt_sigprocmask']:
+    for syscall in ['SYS_sigprocmask']:
         if hasattr(pwnlib.constants, syscall):
             break
     else:

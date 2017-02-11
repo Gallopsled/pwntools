@@ -4,18 +4,21 @@ import pwnlib.abi
 import pwnlib.constants
 import pwnlib.shellcraft
 %>
-<%docstring>sigreturn(scp) -> str
+<%docstring>arm_fadvise64_64(fd, advice, offset, length) -> str
 
-Invokes the syscall sigreturn.
+Invokes the syscall arm_fadvise64_64.
 
-See 'man 2 sigreturn' for more information.
+See 'man 2 arm_fadvise64_64' for more information.
 
 Arguments:
-    scp(sigcontext*): scp
+    fd(int): fd
+    advice(int): advice
+    offset(loff_t): offset
+    len(loff_t): len
 Returns:
-    int
+    long
 </%docstring>
-<%page args="scp=0"/>
+<%page args="fd=0, advice=0, offset=0, length=0"/>
 <%
     abi = pwnlib.abi.ABI.syscall()
     stack = abi.stack
@@ -25,8 +28,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['scp']
-    argument_values = [scp]
+    argument_names = ['fd', 'advice', 'offset', 'length']
+    argument_values = [fd, advice, offset, length]
 
     # Load all of the arguments into their destination registers / stack slots.
     register_arguments = dict()
@@ -77,13 +80,13 @@ Returns:
 
     # Some syscalls have different names on various architectures.
     # Determine which syscall number to use for the current architecture.
-    for syscall in ['SYS_sigreturn', 'SYS_rt_sigreturn']:
+    for syscall in ['SYS_arm_fadvise64_64']:
         if hasattr(pwnlib.constants, syscall):
             break
     else:
         raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
-    /* sigreturn(${', '.join(syscall_repr)}) */
+    /* arm_fadvise64_64(${', '.join(syscall_repr)}) */
 %for name, arg in string_arguments.items():
     ${pwnlib.shellcraft.pushstr(arg, append_null=('\x00' not in arg))}
     ${pwnlib.shellcraft.mov(regs[argument_names.index(name)], abi.stack)}

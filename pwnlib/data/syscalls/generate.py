@@ -4,14 +4,12 @@ import os
 
 import pwnlib
 from pwnlib import constants
-pwnlib.context.context.arch = 'amd64'
+from pwnlib.context import context
 
 # github.com/zachriggle/functions
 from functions import functions, Function, Argument
 
 ARCHITECTURES = ['i386', 'amd64', 'arm', 'aarch64', 'mips']
-
-SYSCALL_NAMES = [c for c in dir(constants) if c.startswith('SYS_')]
 
 HEADER = '''
 <%
@@ -172,8 +170,26 @@ def fix_syscall_names(name):
 
 
 def main(target):
+    for arch in ARCHITECTURES:
+        with context.local(arch=arch):
+            generate_one(target)
+
+def generate_one(target):
+    SYSCALL_NAMES = [c for c in dir(constants) if c.startswith('SYS_')]
+
     for syscall in SYSCALL_NAMES:
         name = syscall[4:]
+
+        # Skip anything with uppercase
+        if name.lower() != name:
+            print 'Skipping %s' % name
+            continue
+
+        # Skip anything that starts with 'unused' or 'sys' after stripping
+        if name.startswith('unused'):
+            print 'Skipping %s' % name
+            continue
+
         function = functions.get(name, None)
 
         if name.startswith('rt_'):

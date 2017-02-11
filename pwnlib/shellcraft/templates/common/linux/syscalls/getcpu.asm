@@ -4,18 +4,20 @@ import pwnlib.abi
 import pwnlib.constants
 import pwnlib.shellcraft
 %>
-<%docstring>sigreturn(scp) -> str
+<%docstring>getcpu(cpu, node, tcache) -> str
 
-Invokes the syscall sigreturn.
+Invokes the syscall getcpu.
 
-See 'man 2 sigreturn' for more information.
+See 'man 2 getcpu' for more information.
 
 Arguments:
-    scp(sigcontext*): scp
+    cpu(unsigned*): cpu
+    node(unsigned*): node
+    tcache(getcpu_cache*): tcache
 Returns:
     int
 </%docstring>
-<%page args="scp=0"/>
+<%page args="cpu=0, node=0, tcache=0"/>
 <%
     abi = pwnlib.abi.ABI.syscall()
     stack = abi.stack
@@ -25,8 +27,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['scp']
-    argument_values = [scp]
+    argument_names = ['cpu', 'node', 'tcache']
+    argument_values = [cpu, node, tcache]
 
     # Load all of the arguments into their destination registers / stack slots.
     register_arguments = dict()
@@ -77,13 +79,13 @@ Returns:
 
     # Some syscalls have different names on various architectures.
     # Determine which syscall number to use for the current architecture.
-    for syscall in ['SYS_sigreturn', 'SYS_rt_sigreturn']:
+    for syscall in ['SYS_getcpu']:
         if hasattr(pwnlib.constants, syscall):
             break
     else:
         raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
-    /* sigreturn(${', '.join(syscall_repr)}) */
+    /* getcpu(${', '.join(syscall_repr)}) */
 %for name, arg in string_arguments.items():
     ${pwnlib.shellcraft.pushstr(arg, append_null=('\x00' not in arg))}
     ${pwnlib.shellcraft.mov(regs[argument_names.index(name)], abi.stack)}
