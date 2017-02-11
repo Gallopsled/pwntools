@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 import argparse
 import os
-import subprocess
 
 import pwnlib
 from pwnlib import constants
@@ -197,7 +196,7 @@ def main(target):
 
         #
 
-        for i, arg in enumerate(function.args):
+        for arg in function.args:
             argname = fix_bad_arg_names(function, arg)
             default = get_arg_default(arg)
 
@@ -231,16 +230,29 @@ def main(target):
             argname = arg.name
             argtype = str(arg.type) + ('*' * arg.derefcnt)
             arg_docs.append(
-                '    {argname}({argtype}): {argname}'.format(**locals()))
+                '    {argname}({argtype}): {argname}'.format(argname=argname,
+                                                             argtype=argtype))
 
         return_type = str(function.type) + ('*' * function.derefcnt)
         arg_docs = '\n'.join(arg_docs)
 
+        template_variables = {
+            'name': name,
+            'arg_docs': arg_docs,
+            'syscalls': syscalls,
+            'arguments_default_values': arguments_default_values,
+            'arguments_comma_separated': arguments_comma_separated,
+            'return_type': return_type,
+            'string_arguments': string_arguments,
+            'array_arguments': array_arguments,
+            'argument_names': argument_names,
+        }
+
         lines = [
             HEADER,
-            DOCSTRING.format(**locals()),
-            ARGUMENTS.format(**locals()),
-            CALL.format(**locals())
+            DOCSTRING.format(**template_variables),
+            ARGUMENTS.format(**template_variables),
+            CALL.format(**template_variables)
         ]
 
         with open(os.path.join(target, name + '.asm'), 'wt+') as f:
