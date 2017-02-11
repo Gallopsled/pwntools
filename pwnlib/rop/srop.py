@@ -372,7 +372,9 @@ class SigreturnFrame(dict):
         if item not in self._regs:
             log.error("Unknown register %r (not in %r)" % (item, self._regs))
         if self.arch == "arm" and item == "sp" and (value & 0x7):
-            log.error("ARM SP should be 8-bit aligned")
+            log.warn_once("ARM SP should be aligned to an 8-byte boundary")
+        if self.arch == "aarch64" and item == "sp" and (value & 0xf):
+            log.warn_once("AArch64 SP should be aligned to a 16-byte boundary")
         super(SigreturnFrame, self).__setitem__(item, value)
 
     def __setattr__(self, attr, value):
