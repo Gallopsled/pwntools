@@ -669,7 +669,7 @@ class Corefile(ELF):
         if self.siginfo:
             return int(self.siginfo.sigfault_addr)
 
-        return self.pc
+        return getattr(self, 'pc', 0)
 
     @property
     def _pc_register(self):
@@ -712,8 +712,8 @@ class Corefile(ELF):
         fields = [
             repr(self.path),
             '%-10s %s' % ('Arch:', gnu_triplet),
-            '%-10s %#x' % ('%s:' % self._pc_register.upper(), self.pc),
-            '%-10s %#x' % ('%s:' % self._sp_register.upper(), self.sp),
+            '%-10s %#x' % ('%s:' % self._pc_register.upper(), getattr(self, 'pc', 0)),
+            '%-10s %#x' % ('%s:' % self._sp_register.upper(), getattr(self, 'sp', 0)),
         ]
 
         if self.exe and self.exe.name:
