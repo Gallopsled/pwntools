@@ -980,18 +980,16 @@ class CorefileFinder(object):
             log.debug("Found core immediately: %r" % core_path)
             self.core_path = core_path
 
-        # Check for native coredumps if we don't 100% know the target
-        # is running under qemu-user emulation.
-        if not self.core_path:
-            log.debug("Looking for native corefile")
-            self.core_path = self.native_corefile()
-
-        # If we still have not found the corefile, the process may have
-        # been running under qemu-user emulation and we just can't tell
-        # (e.g. can't enumerate binfmt_misc in a Docker container).
+        # Try QEMU first, since it's unlikely to be a false-positive unless
+        # there is a PID *and* filename collision.
         if not self.core_path:
             log.debug("Looking for QEMU corefile")
             self.core_path = self.qemu_corefile()
+
+        # Check for native coredumps as a last resort
+        if not self.core_path:
+            log.debug("Looking for native corefile")
+            self.core_path = self.native_corefile()
 
         if not self.core_path:
             return
