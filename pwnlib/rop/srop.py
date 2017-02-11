@@ -416,6 +416,11 @@ class SigreturnFrame(dict):
         # Skip the register used to hold the syscall number
         return ABI.syscall(arch=self.arch).register_arguments[1:]
 
+    @arguments.setter
+    def arguments(self, a):
+        for arg, reg in zip(a, self.arguments):
+            setattr(self, reg, arg)
+
     @property
     def sp(self):
         return self[stack_pointers[self.arch]]
