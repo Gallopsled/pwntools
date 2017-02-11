@@ -2,9 +2,7 @@ from pwn import *
 context.arch='aarch64'
 frame = SigreturnFrame()
 
-registers = ['x%i' % i for i in range(0, 19)]
-# registers 19-26 are not included
-registers += ['x%i' % i for i in range(27, 31)]
+registers = ['x%i' % i for i in range(0, 31)]
 registers += ['sp', 'pc']
 
 

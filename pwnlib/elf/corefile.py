@@ -534,6 +534,9 @@ class Corefile(ELF):
                     if mapping.stop == self.stack:
                         mapping.name = '[stack]'
                         self.stack   = mapping
+                else:
+                    log.warn('Could not find the stack!')
+                    self.stack = None
 
             with context.local(bytes=self.bytes, log_level='error'):
                 try:
