@@ -34,6 +34,9 @@ class ABI(object):
     @staticmethod
     @LocalContext
     def default():
+        if context.os == 'android':
+            context.os = 'linux'
+
         return {
         (32, 'i386', 'linux'):  linux_i386,
         (64, 'amd64', 'linux'): linux_amd64,
@@ -47,22 +50,30 @@ class ABI(object):
     @staticmethod
     @LocalContext
     def syscall():
+        if context.os == 'android':
+            context.os = 'linux'
+
         return {
         (32, 'i386', 'linux'):  linux_i386_syscall,
         (64, 'amd64', 'linux'): linux_amd64_syscall,
         (32, 'arm', 'linux'):   linux_arm_syscall,
         (32, 'thumb', 'linux'):   linux_arm_syscall,
         (32, 'mips', 'linux'):   linux_mips_syscall,
+        (64, 'aarch64', 'linux'):   linux_aarch64_syscall,
         }[(context.bits, context.arch, context.os)]
 
     @staticmethod
     @LocalContext
     def sigreturn():
+        if context.os == 'android':
+            context.os = 'linux'
+
         return {
         (32, 'i386', 'linux'):  linux_i386_sigreturn,
         (64, 'amd64', 'linux'): linux_amd64_sigreturn,
         (32, 'arm', 'linux'):   linux_arm_sigreturn,
         (32, 'thumb', 'linux'):   linux_arm_sigreturn,
+        (64, 'aarch64', 'linux'):   linux_aarch64_sigreturn,
         }[(context.bits, context.arch, context.os)]
 
 class SyscallABI(ABI):
@@ -98,6 +109,7 @@ linux_mips_syscall  = ABI(['$v0', '$a0','$a1','$a2','$a3'], 4, 0)
 linux_i386_sigreturn = SigreturnABI(['eax'], 4, 0)
 linux_amd64_sigreturn = SigreturnABI(['rax'], 4, 0)
 linux_arm_sigreturn = SigreturnABI(['r7'], 4, 0)
+linux_aarch64_sigreturn = SigreturnABI(['x8'], 16, 0)
 
 windows_i386  = ABI([], 4, 0)
 windows_amd64 = ABI(['rcx','rdx','r8','r9'], 32, 32)
