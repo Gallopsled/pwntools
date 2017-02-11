@@ -95,7 +95,7 @@ class Function(object):
         self.size = size
 
         #: Encapsulating ELF object
-        self.elf = ELF
+        self.elf = elf
 
     def __repr__(self):
         return '%s(name=%r, address=%#x, size=%#x, elf=%r)' % (
@@ -593,7 +593,7 @@ class ELF(ELFFile):
                         continue
                     addr = self.symbols[name]
                     size = sym.entry.st_size
-                    self.functions[name] = Function(name, addr, size)
+                    self.functions[name] = Function(name, addr, size, self)
 
     def _populate_symbols(self):
         """
