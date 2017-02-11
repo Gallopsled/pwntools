@@ -555,6 +555,22 @@ class user_regs_struct_arm(ctypes.Structure):
     def fp(self):
         return self.r11
 
+
+class user_regs_struct_aarch64(ctypes.Structure):
+    _fields_ = [('x%i' % i, ctypes.c_uint64) for i in range(31)] \
+             + [('sp', ctypes.c_uint64),
+                ('pc', ctypes.c_uint64),
+                ('pstate', ctypes.c_uint64)]
+
+    @property
+    def lr(self):
+        return self.x30
+
+    def __getattr__(self, name):
+        if name.startswith('r'):
+            name = 'x' + name[1:]
+            return getattr(name) & 0xffffffff
+
 class elf_prstatus_i386(ctypes.Structure):
     _fields_ = generate_prstatus_common(32, user_regs_struct_i386)
 
@@ -569,6 +585,8 @@ assert ctypes.sizeof(elf_prstatus_amd64) == 0x150
 class elf_prstatus_arm(ctypes.Structure):
     _fields_ = generate_prstatus_common(32, user_regs_struct_arm)
 
+class elf_prstatus_aarch64(ctypes.Structure):
+    _fields_ = generate_prstatus_common(64, user_regs_struct_aarch64)
 
 class Elf32_auxv_t(ctypes.Structure):
     _fields_ = [('a_type', ctypes.c_uint32),
