@@ -26,7 +26,7 @@ Returns:
     regs = abi.register_arguments[1:]
     allregs = pwnlib.shellcraft.registers.current()
 
-    can_pushstr = ['name']
+    can_pushstr = ['name', 'buf']
     can_pushstr_array = []
 
     argument_names = ['name', 'which', 'buf', 'bufsize', 'ret']

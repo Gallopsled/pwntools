@@ -22,7 +22,7 @@ Returns:
     regs = abi.register_arguments[1:]
     allregs = pwnlib.shellcraft.registers.current()
 
-    can_pushstr = []
+    can_pushstr = ['shmaddr']
     can_pushstr_array = []
 
     argument_names = ['shmaddr']

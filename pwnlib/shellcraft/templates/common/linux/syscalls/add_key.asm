@@ -26,7 +26,7 @@ Returns:
     regs = abi.register_arguments[1:]
     allregs = pwnlib.shellcraft.registers.current()
 
-    can_pushstr = ['type', 'description']
+    can_pushstr = ['type', 'description', 'payload']
     can_pushstr_array = []
 
     argument_names = ['type', 'description', 'payload', 'plen', 'keyring']

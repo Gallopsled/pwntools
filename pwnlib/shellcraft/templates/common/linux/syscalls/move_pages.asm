@@ -28,7 +28,7 @@ Returns:
     allregs = pwnlib.shellcraft.registers.current()
 
     can_pushstr = []
-    can_pushstr_array = []
+    can_pushstr_array = ['pages']
 
     argument_names = ['pid', 'count', 'pages', 'nodes', 'status', 'flags']
     argument_values = [pid, count, pages, nodes, status, flags]

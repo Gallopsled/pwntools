@@ -26,7 +26,7 @@ Returns:
     regs = abi.register_arguments[1:]
     allregs = pwnlib.shellcraft.registers.current()
 
-    can_pushstr = []
+    can_pushstr = ['child_stack', 'arg']
     can_pushstr_array = []
 
     argument_names = ['fn', 'child_stack', 'flags', 'arg', 'vararg_0', 'vararg_1', 'vararg_2', 'vararg_3', 'vararg_4']

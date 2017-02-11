@@ -130,10 +130,13 @@ def can_be_constant(arg):
 def can_be_string(arg):
     if arg.type == 'char' and arg.derefcnt == 1:
         return True
-
+    if arg.type == 'void' and arg.derefcnt == 1:
+        return True
 
 def can_be_array(arg):
     if arg.type == 'char' and arg.derefcnt == 2:
+        return True
+    if arg.type == 'void' and arg.derefcnt == 2:
         return True
 
 

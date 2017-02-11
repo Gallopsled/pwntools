@@ -26,7 +26,7 @@ Returns:
     regs = abi.register_arguments[1:]
     allregs = pwnlib.shellcraft.registers.current()
 
-    can_pushstr = ['special_file', 'dir', 'fstype']
+    can_pushstr = ['special_file', 'dir', 'fstype', 'data']
     can_pushstr_array = []
 
     argument_names = ['special_file', 'dir', 'fstype', 'rwflag', 'data']
