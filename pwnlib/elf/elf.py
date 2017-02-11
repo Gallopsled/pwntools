@@ -109,6 +109,9 @@ class Function(object):
     def __flat__(self):
         return packing.pack(self.address)
 
+    def disasm(self):
+        return self.elf.disasm(self.address, self.size)
+
 def load(*args, **kwargs):
     """Compatibility wrapper for pwntools v1"""
     return ELF(*args, **kwargs)
