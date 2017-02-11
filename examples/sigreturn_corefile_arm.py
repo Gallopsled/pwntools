@@ -27,6 +27,6 @@ corefile = io.corefile
 for index, register in enumerate(registers):
     value = getattr(corefile, register)
     if index != value:
-        log.warn("%s != %i (%i)" % (register, index, value))
+        log.error("%s != %i (%i)" % (register, index, value))
     else:
         log.success("%s == %i" % (register, value))
