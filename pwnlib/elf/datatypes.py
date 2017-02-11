@@ -548,6 +548,12 @@ class user_regs_struct_arm(ctypes.Structure):
     @property
     def sp(self):
         return self.r13
+    @property
+    def ip(self):
+        return self.r12
+    @property
+    def fp(self):
+        return self.r11
 
 class elf_prstatus_i386(ctypes.Structure):
     _fields_ = generate_prstatus_common(32, user_regs_struct_i386)
