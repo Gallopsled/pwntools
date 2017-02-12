@@ -5,7 +5,6 @@ Style note: these utilities should work with plain elftools ELFFiles.
 
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.relocation import RelocationSection
-from elftools.elf.elffile import ELFFile
 from pwnlib.util import packing
 from pwnlib.log import getLogger
 
@@ -224,7 +223,7 @@ def _fallback_plt_reader(elf):
     plt = {}
 
     # Based on the ordering of the GOT symbols, populate the PLT
-    for i,(addr,name) in enumerate(sorted((addr,name) for name, addr in plt_got.items())):
+    for name in sorted(plt_got, key=lambda name: plt_got[name]):
         plt[name] = address
 
         # Some PLT entries in ARM binaries have a thumb-mode stub that looks like:
