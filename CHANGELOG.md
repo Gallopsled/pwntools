@@ -77,9 +77,12 @@ To be released on Feb 4, 2017.
     + Also adds `buffer_fill_size=` argument for all tubes
 - [b83a6c7][b83a6c7] Fix undocumented `process.leak` function
 - [546061e][546061e] Modify `coredump_filter` of all spawned processes, so that core dumps are more complete
-
+- [809][809] Add several functions to `adb` (`unlink`, `mkdir`, `makedirs`, `isdir`, `exists`)
+- [817][817] Make disconnection detection more robust
 
 [800]: https://github.com/Gallopsled/pwntools/pull/800
+[809]: https://github.com/Gallopsled/pwntools/pull/809
+[817]: https://github.com/Gallopsled/pwntools/pull/817
 [5d9792f]: https://github.com/Gallopsled/pwntools/commit/5d9792f
 [b83a6c7]: https://github.com/Gallopsled/pwntools/commit/b83a6c7
 [546061e]: https://github.com/Gallopsled/pwntools/commit/546061e
