@@ -73,12 +73,12 @@ To be released on Mar 18, 2017.
 To be released on Feb 4, 2017.
 
 - [#800][800] Add `shell=` option to `ssh.process()`
-- [806][806] Add `context.buffer_size` for fine-tuning `tube` performance
+- [#806][806] Add `context.buffer_size` for fine-tuning `tube` performance
     + Also adds `buffer_fill_size=` argument for all tubes
 - [b83a6c7][b83a6c7] Fix undocumented `process.leak` function
 - [546061e][546061e] Modify `coredump_filter` of all spawned processes, so that core dumps are more complete
-- [809][809] Add several functions to `adb` (`unlink`, `mkdir`, `makedirs`, `isdir`, `exists`)
-- [817][817] Make disconnection detection more robust
+- [#809][809] Add several functions to `adb` (`unlink`, `mkdir`, `makedirs`, `isdir`, `exists`)
+- [#817][817] Make disconnection detection more robust
 
 [800]: https://github.com/Gallopsled/pwntools/pull/800
 [806]: https://github.com/Gallopsled/pwntools/pull/806
