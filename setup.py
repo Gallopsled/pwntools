@@ -13,7 +13,7 @@ from setuptools import setup
 
 # Get all template files
 templates = []
-for dirpath, dirnames, filenames in os.walk(convert_path('pwnlib/shellcraft/templates')):
+for dirpath, dirnames, filenames in os.walk(convert_path('pwnlib/shellcraft/templates'), followlinks=True):
     for f in filenames:
         templates.append(os.path.relpath(os.path.join(dirpath, f), 'pwnlib'))
 
