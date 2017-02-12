@@ -1,5 +1,6 @@
 #!/usr/bin/env bash -e
 set -e
+
 local_deb_extract()
 {
     wget $1
@@ -8,52 +9,54 @@ local_deb_extract()
     rm -f *.tar.* *deb*
 }
 
-get_binutils()
+install_deb()
 {
-    BINUTILS_PREFIX='https://launchpad.net/~pwntools/+archive/ubuntu/binutils/+files/binutils-'
-    BINUTILS_SUFFIX='-linux-gnu_2.22-6ubuntu1.1cross0.11pwntools12~precise_amd64.deb'
-    local_deb_extract "${BINUTILS_PREFIX}${1}${BINUTILS_SUFFIX}"
-}
-
-get_qemu()
-{
-    echo "Installing qemu"
-    QEMU_INDEX='http://packages.ubuntu.com/en/yakkety/amd64/qemu-user-static/download'
-    QEMU_URL=$(curl "$QEMU_INDEX" | grep kernel.org | grep -Eo 'http.*\.deb')
-    local_deb_extract "$QEMU_URL"
+    version=${2:-zesty}
+    package=$1
+    echo "Installing $package"
+    INDEX="http://packages.ubuntu.com/en/$version/amd64/$package/download"
+    URL=$(curl "$INDEX" | grep -Eo "https?://.*$package.*\.deb" | head -1)
+    local_deb_extract "$URL"
 }
 
 setup_travis()
 {
     export PATH=$PWD/usr/bin:$PATH
-    export LD_LIBRARY_PATH=$PWD/usr/lib
+    export LD_LIBRARY_PATH=$PWD/usr/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=$PWD/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
 
-    # Install libbfd-multiarch and libopcodes-multiarch if not found in the cache
-    if [ ! -f usr/lib/libbfd-2.22-multiarch.so ];
-    then
-        # Install the multiarch binutils
-        local_deb_extract http://mirrors.mit.edu/ubuntu/pool/universe/b/binutils/binutils-multiarch_2.22-6ubuntu1_amd64.deb
-        pushd usr/lib
-        ln -sf libbfd-2.22-multiarch.so libbfd-2.22.so
-        ln -sf libopcodes-2.22-multiarch.so libopcodes-2.22.so
-        popd
-    fi
+    # Install a more modern binutils, which is required for some of the tests
+    [[ -f usr/bin/objcopy ]] || install_deb binutils
 
     # Install/upgrade qemu
-    if ! (which qemu-arm-static && qemu-arm-static -version | grep 2.6.1); then
-        get_qemu
-    fi
+    [[ -f usr/bin/qemu-arm-static ]] || install_deb qemu-user-static xenial
 
-    # Install our custom binutils
-    which arm-linux-gnu-as     || get_binutils arm
-    which mips-linux-gnu-as    || get_binutils mips
-    which powerpc-linux-gnu-as || get_binutils powerpc
+    # Install cross-binutils
+    [[ -f usr/bin/x86_64-linux-gnu-ar ]]    || install_deb binutils-multiarch
+    [[ -f usr/bin/aarch64-linux-gnu-as ]]   || install_deb binutils-aarch64-linux-gnu
+    [[ -f usr/bin/arm-linux-gnueabihf-as ]] || install_deb binutils-arm-linux-gnueabihf
+    [[ -f usr/bin/mips-linux-gnu-as ]]      || install_deb binutils-mips-linux-gnu
+    [[ -f usr/bin/powerpc-linux-gnu-as ]]   || install_deb binutils-powerpc-linux-gnu
 
     # Test that the installs worked
-    which arm-linux-gnu-as
-    which mips-linux-gnu-as
-    which powerpc-linux-gnu-as
-    which qemu-arm-static
+    as                      --version
+    x86_64-linux-gnu-ar     --version
+    aarch64-linux-gnu-as    --version
+    arm-linux-gnueabihf-as  --version
+    mips-linux-gnu-as       --version
+    powerpc-linux-gnu-as    --version
+    qemu-arm-static         --version
+
+    # Force-install capstone because it's broken somehow
+    [[ -f usr/lib/libcapstone.so.3 ]] || install_deb libcapstone3
+
+    # Install a newer copy of GDB
+    if [[ ! -f usr/bin/gdb ]]; then
+        git clone --depth=1 https://github.com/zachriggle/pwntools-gdb-travis-ci.git
+        tar xf pwntools-gdb-travis-ci/gdb.tar.xz
+        which gdb
+        usr/bin/gdb --version
+    fi
 
     # Get rid of files we don't want cached
     rm -rf usr/share
@@ -74,7 +77,7 @@ setup_android_emulator()
     if [ -n "$TRAVIS" ]; then
         if [ -z "$TRAVIS_COMMIT_RANGE" ]; then
             echo "TRAVIS_COMMIT_RANGE is empty, forcing Android Emulator installation"
-        elif ! git show "$TRAVIS_COMMIT_RANGE" ; then
+        elif ! (git show "$TRAVIS_COMMIT_RANGE" >/dev/null) ; then
             echo "TRAVIS_COMMIT_RANGE is invalid, forcing Android Emulator installation"
         elif (git log --stat "$TRAVIS_COMMIT_RANGE" | grep -iE "android|adb"); then
             echo "Found Android-related commits, forcing Android Emulator installation"
@@ -83,9 +86,11 @@ setup_android_emulator()
             # emulator, while still leaving the code intact, we remove the
             # RST file that Sphinx searches.
             rm -f 'docs/source/adb.rst'
+            rm -f 'docs/source/protocols/adb.rst'
 
             # However, the file needs to be present or else things break.
             touch 'docs/source/adb.rst'
+            touch 'docs/source/protocols/adb.rst'
 
             echo "Skipping Android emulator install, Android tests disabled."
             return
@@ -182,5 +187,4 @@ elif [[ "$(uname)" == "Linux" ]]; then
     setup_android_emulator
 fi
 
-
-dpkg -l
+set +e
