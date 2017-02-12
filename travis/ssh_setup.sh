@@ -54,3 +54,5 @@ Host example.pwnme
 EOF
 
 ssh -o "StrictHostKeyChecking no" -vvvv travis@example.pwnme id
+
+set +e
