@@ -1,5 +1,5 @@
 <%
-  from pwnlib.shellcraft import i386
+  import pwnlib.shellcraft as sc
   from pwnlib.shellcraft import common
 %>
 <%page args="filename, fd=1"/>
@@ -18,6 +18,6 @@ Example:
 label = common.label("sendfile_loop")
 %>
 
-    ${i386.pushstr(filename)}
-    ${i386.syscall('SYS_open', 'esp', 0, 'O_RDONLY')}
-    ${i386.syscall('SYS_sendfile', fd, 'eax', 0, 0x7fffffff)}
+    ${sc.pushstr(filename)}
+    ${sc.open('esp', 0, 'O_RDONLY')}
+    ${sc.sendfile(fd, 'eax', 0, 0x7fffffff)}

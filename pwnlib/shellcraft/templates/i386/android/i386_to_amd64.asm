@@ -1,1 +1,0 @@
-../linux/i386_to_amd64.asm

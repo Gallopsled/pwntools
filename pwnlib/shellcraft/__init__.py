@@ -12,6 +12,8 @@ from pwnlib.util import packing
 
 
 class module(ModuleType):
+    _templates = []
+
     def __init__(self, name, directory):
         super(module, self).__init__(name)
 
@@ -50,7 +52,7 @@ class module(ModuleType):
                 self._submodules[name] = module(self.__name__ + '.' + name, os.path.join(self._dir, name))
             elif os.path.isfile(path) and name != '__doc__' and name[0] != '.':
                 funcname, _ext = os.path.splitext(name)
-                if not re.match('^[a-zA-Z][a-zA-Z0-9_]*$', funcname):
+                if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', funcname):
                     raise ValueError("found illegal filename, %r" % name)
                 self._shellcodes[funcname] = name
 
@@ -100,7 +102,7 @@ class module(ModuleType):
     def _context_modules(self):
         self.__lazyinit__ and self.__lazyinit__()
         for k, m in self._submodules.items():
-            if k in [context.arch, context.os]:
+            if k in [context.arch, context.os, 'syscalls']:
                 yield m
 
     def __shellcodes__(self):
@@ -110,19 +112,26 @@ class module(ModuleType):
             result.extend(m.__shellcodes__())
         return result
 
-    template_dir = os.path.join(os.path.dirname(__file__), 'templates')
-    templates    = []
+    @property
+    def templates(self):
+        if self._templates:
+            return self._templates
 
-    for root, subfolder, files in os.walk(template_dir):
-        for file in filter(lambda x: x.endswith('.asm'), files):
-            value = os.path.splitext(file)[0]
-            value = os.path.join(root, value)
-            value = value.replace(template_dir, '')
-            value = value.replace(os.path.sep, '.')
-            value = value.lstrip('.')
-            templates.append(value)
+        template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+        templates    = []
 
-    templates = sorted(templates)
+        for root, _, files in os.walk(template_dir, followlinks=True):
+            for file in filter(lambda x: x.endswith('.asm'), files):
+                value = os.path.splitext(file)[0]
+                value = os.path.join(root, value)
+                value = value.replace(template_dir, '')
+                value = value.replace(os.path.sep, '.')
+                value = value.lstrip('.')
+                templates.append(value)
+
+        templates = sorted(templates)
+        self._templates = templates
+        return templates
 
     def eval(self, item):
         if isinstance(item, (int,long)):

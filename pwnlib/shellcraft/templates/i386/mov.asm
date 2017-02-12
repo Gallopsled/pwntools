@@ -79,11 +79,11 @@ Example:
         xor eax, eax
         mov ax, 0xc0c0
     >>> print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
-        push (SYS_execve) /* 0xb */
+        push SYS_execve /* 0xb */
         pop eax
     >>> with context.local(os='freebsd'):
     ...     print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
-        push (SYS_execve) /* 0x3b */
+        push SYS_execve /* 0x3b */
         pop eax
     >>> print shellcraft.i386.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
         push (PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */

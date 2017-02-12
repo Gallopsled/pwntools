@@ -1,1 +1,0 @@
-../linux/msync.asm

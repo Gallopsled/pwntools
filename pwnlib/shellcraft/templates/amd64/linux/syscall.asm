@@ -15,7 +15,7 @@ Example:
         >>> print pwnlib.shellcraft.amd64.linux.syscall('SYS_execve', 1, 'rsp', 2, 0).rstrip()
             /* call execve(1, 'rsp', 2, 0) */
             xor r10d, r10d /* 0 */
-            push (SYS_execve) /* 0x3b */
+            push SYS_execve /* 0x3b */
             pop rax
             push 1
             pop rdi
@@ -27,7 +27,7 @@ Example:
             /* call execve(2, 1, 0, -1) */
             push -1
             pop r10
-            push (SYS_execve) /* 0x3b */
+            push SYS_execve /* 0x3b */
             pop rax
             push 2
             pop rdi
@@ -59,7 +59,7 @@ Example:
             push -1
             pop r8
             xor r9d, r9d /* 0 */
-            push (SYS_mmap) /* 9 */
+            push SYS_mmap /* 9 */
             pop rax
             xor edi, edi /* 0 */
             push (PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
@@ -67,7 +67,22 @@ Example:
             mov esi, 0x1010101 /* 4096 == 0x1000 */
             xor esi, 0x1011101
             syscall
-
+        >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
+            /* open(file='/home/pwn/flag', oflag=0, mode=0) */
+            /* push '/home/pwn/flag\x00' */
+            mov rax, 0x101010101010101
+            push rax
+            mov rax, 0x101010101010101 ^ 0x67616c662f6e
+            xor [rsp], rax
+            mov rax, 0x77702f656d6f682f
+            push rax
+            mov rdi, rsp
+            xor edx, edx /* 0 */
+            xor esi, esi /* 0 */
+            /* call open() */
+            push SYS_open /* 2 */
+            pop rax
+            syscall
 </%docstring>
 <%
   append_cdq = False

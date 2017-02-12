@@ -23,8 +23,37 @@ Example:
     >>> print shellcraft.thumb.linux.syscall('SYS_exit', 0).rstrip()
         /* call exit(0) */
         eor r0, r0
-        mov r7, #(SYS_exit) /* 1 */
+        mov r7, #SYS_exit /* 1 */
         svc 0x41
+    >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip() #doctest: +ELLIPSIS
+        /* open(file='/home/pwn/flag', oflag=0, mode=0) */
+        /* push '/home/pwn/flag\x00' */
+        mov r7, #(0x6761 >> 8)
+        lsl r7, #8
+        add r7, #(0x6761 & 0xff)
+        push {r7}
+        ldr r7, value_...
+        b value_..._after
+    value_...: .word 0x6c662f6e
+    value_..._after:
+        push {r7}
+        ldr r7, value_...
+        b value_..._after
+    value_...: .word 0x77702f65
+    value_..._after:
+        push {r7}
+        ldr r7, value_...
+        b value_..._after
+    value_...: .word 0x6d6f682f
+    value_..._after:
+        push {r7}
+        mov r0, sp
+        eor r1, r1
+        eor r2, r2
+        /* call open() */
+        mov r7, #SYS_open /* 5 */
+        svc 0x41
+
 </%docstring>
 <%
   if isinstance(syscall, (str, unicode)) and syscall.startswith('SYS_'):

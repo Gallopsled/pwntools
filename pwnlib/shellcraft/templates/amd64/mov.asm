@@ -75,10 +75,10 @@ Example:
         pop rax
     >>> with context.local(os = 'linux'):
     ...     print shellcraft.amd64.mov('eax', 'SYS_read').rstrip()
-        xor eax, eax /* (SYS_read) */
+        xor eax, eax /* SYS_read */
     >>> with context.local(os = 'freebsd'):
     ...     print shellcraft.amd64.mov('eax', 'SYS_read').rstrip()
-        push (SYS_read) /* 3 */
+        push SYS_read /* 3 */
         pop rax
     >>> with context.local(os = 'linux'):
     ...     print shellcraft.amd64.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()

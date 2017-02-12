@@ -1,1 +1,0 @@
-../linux/mmap_rwx.asm

@@ -139,6 +139,11 @@ class ConstantsModule(ModuleType):
         if not isinstance(string, str):
             return string
 
+        simple = getattr(self, string, None)
+
+        if simple is not None:
+            return simple
+
         key = context.os, context.arch
         if key not in self._env_store:
             self._env_store[key] = {key: getattr(self, key) for key in dir(self) if not key.endswith('__')}
