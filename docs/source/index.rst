@@ -48,6 +48,7 @@ Each of the ``pwntools`` modules is documented here.
    atexception
    atexit
    constants
+   config
    context
    dynelf
    encoders

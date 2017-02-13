@@ -103,6 +103,7 @@ import threading
 import time
 
 from pwnlib import term
+from pwnlib.config import register_config
 from pwnlib.context import Thread
 from pwnlib.context import context
 from pwnlib.exception import PwnlibException
@@ -132,26 +133,26 @@ _msgtype_prefixes = {
     }
 
 
-# permit setting logging colors from a configuration file
-config = os.path.expanduser('~/.pwn.conf')
-if os.path.exists(config):
-    c = ConfigParser.ConfigParser()
-    c.read([config])
-
-    for section in c.sections():
-        if section not in _msgtype_prefixes:
+def read_log_config(settings):
+    log = getLogger(__name__)
+    for key, value in settings.items():
+        if '.' not in key:
+            log.warn("Invalid configuration option %r in section %r" % (key, 'log'))
             continue
 
-        for key, value in c.items(section):
-            if key == 'color':
-                try:
-                    _msgtype_prefixes[section][0] = getattr(text, value)
-                except AttributeError:
-                    pass
+        msgtype, key = key.split('.', 1)
 
-            elif key == 'symbol':
-                _msgtype_prefixes[section][1] = value
+        if key == 'color':
+            current = _msgtype_prefixes[msgtype][0]
+            _msgtype_prefixes[msgtype][0] = getattr(text, value, current)
 
+        elif key == 'symbol':
+            _msgtype_prefixes[msgtype][1] = value
+
+        else:
+            log.warn("Unknown configuration option %r in section %r" % (key, 'log'))
+
+register_config('log', read_log_config)
 
 # the text decoration to use for spinners.  the spinners themselves can be found
 # in the `pwnlib.term.spinners` module
