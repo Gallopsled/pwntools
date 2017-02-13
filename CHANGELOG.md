@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.5.0](#350)    | `dev`    | Mar 18, 2017 (planned)
-| [3.4.0](#340)    | `beta`   | Feb 4, 2017 (planned)
-| [3.3.4](#334)    | `stable` | Jan 12, 2016
+| [3.6.0](#350)    | `dev`    | May 6, 2017 (planned)
+| [3.5.0](#350)    | `beta`   | Mar 25, 2017 (planned)
+| [3.4.0](#340)    | `stable` | Feb 13, 2017
+| [3.3.4](#334)    |          | Jan 12, 2016
 | [3.3.3](#333)    |          | Jan 10, 2016
 | [3.3.2](#332)    |          | Jan 10, 2016
 | [3.3.1](#331)    |          | Jan 10, 2016
@@ -27,22 +28,29 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
+
+## 3.6.0
+
+To be released on May 6, 2017.
+
 ## 3.5.0
 
-To be released on Mar 18, 2017.
+To be released on Mar 25, 2017.
 
 ## 3.4.0
 
-To be released on Feb 4, 2017.
-
 - [#800][800] Add `shell=` option to `ssh.process()`
-- [5d9792f][5d9792f] Add `context.buffer_size` for fine-tuning `tube` performance
+- [#806][806] Add `context.buffer_size` for fine-tuning `tube` performance
     + Also adds `buffer_fill_size=` argument for all tubes
 - [b83a6c7][b83a6c7] Fix undocumented `process.leak` function
 - [546061e][546061e] Modify `coredump_filter` of all spawned processes, so that core dumps are more complete
-
+- [#809][809] Add several functions to `adb` (`unlink`, `mkdir`, `makedirs`, `isdir`, `exists`)
+- [#817][817] Make disconnection detection more robust
 
 [800]: https://github.com/Gallopsled/pwntools/pull/800
+[806]: https://github.com/Gallopsled/pwntools/pull/806
+[809]: https://github.com/Gallopsled/pwntools/pull/809
+[817]: https://github.com/Gallopsled/pwntools/pull/817
 [5d9792f]: https://github.com/Gallopsled/pwntools/commit/5d9792f
 [b83a6c7]: https://github.com/Gallopsled/pwntools/commit/b83a6c7
 [546061e]: https://github.com/Gallopsled/pwntools/commit/546061e
@@ -166,7 +174,7 @@ Multiple bug fixes.
 - [1e414af][1e414af] Added `connect()` alias for `remote()`
     + For example, `io=connect('google.com', 80)`
     + This also works with `tcp(...)` and `udp(...)` aliases
-- [869ec42][869ec42] Added `ssh.read()` and `ssh.write()` aiases
+- [869ec42][869ec42] Added `ssh.read()` and `ssh.write()` aliases
 - [2af55c9][2af55c9] `AdbDevice` objects exposed via e.g. `adb.devices()` now offer scoped access to all `adb` module properties
     + It is now possible to e.g. `map(lambda d: d.process(['id']).recvall(), adb.devices())`
 
@@ -253,7 +261,7 @@ Android support via a new `adb` module, `context.device`, `context.adb_host`, an
 - Added `context.log_file` setting for sending logs to a file.  This can be set with the `LOG_FILE` magic command-line option.
 - Added `context.noptrace` setting for disabling actions which require `ptrace` support.  This is useful for turning all `gdb.debug` and `gdb.attach` options into no-ops, and can be set via the `NOPTRACE` magic command-line option.
 - Added `context.proxy` which hooks all connections and sends them to a SOCKS4/SOCKS5.  This can be set via the `PROXY` magic command-line option.
-- Added `context.randomize` to control randommization of settings like XOR keys and register ordering (default off).
+- Added `context.randomize` to control randomization of settings like XOR keys and register ordering (default off).
 - Added `context.terminal` for setting how to launch commands in a new terminal.
 
 #### DynELF and MemLeak Module
@@ -266,7 +274,7 @@ Android support via a new `adb` module, `context.device`, `context.adb_host`, an
 #### Encoders Module
 
 - Added a `pwnlib.encoders` module for assembled-shellcode encoders/decoders
-- Includes position-indepentent basic XOR encoders
+- Includes position-independent basic XOR encoders
 - Includes position-independent delta encoders
 - Includes non-position-independent alphanumeric encoders for Intel
 - Includes position-independent alphanumeric encoders for ARM/Thumb
