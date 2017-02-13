@@ -21,8 +21,10 @@ import time
 
 import socks
 
+from pwnlib.config import register_config
 from pwnlib.device import Device
 from pwnlib.timeout import Timeout
+
 
 _original_socket = socket.socket
 
@@ -1343,3 +1345,20 @@ def LocalContext(function):
         with context.local(**{k:kw.pop(k) for k,v in kw.items() if isinstance(getattr(ContextType, k, None), property)}):
             return function(*a, **kw)
     return setter
+
+# Read configuration options from the context section
+def update_context_defaults(section):
+    # Circular imports FTW!
+    from pwnlib.util import safeeval
+    from pwnlib.log import getLogger
+    log = getLogger(__name__)
+    for key, value in section.items():
+        if key not in ContextType.defaults:
+            log.warn("Unknown configuration option %r in section %r" % (key, 'context'))
+            continue
+        if isinstance(ContextType.defaults[key], (str, unicode)):
+            value = safeeval.expr(value)
+
+        ContextType.defaults[key] = value
+
+register_config('context', update_context_defaults)
