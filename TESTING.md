@@ -4,7 +4,6 @@ Pwntools makes extensive use of unit tests and integration tests to ensure every
 
 ## Test Suite
 
-
 To run the test suite, it is best to use Ubuntu 12.04 or 14.04, and run the following commands.  **Be aware** that this will add a user to the machine, and create a public key for SSH login!
 
 ```sh
@@ -13,6 +12,12 @@ bash travis/ssh_setup.sh
 pip install --upgrade --editable .
 PWNLIB_NOTERM=1 make -C docs doctest
 ```
+
+## Testing in Docker
+
+A `Dockerfile` has been provided which has a clean testing environment with Ubuntu Xenial.  It is very similar to the online Travis CI testing environment, but uses a more modern version of Ubuntu.
+
+See `travis/docker/README.md` for more information.
 
 ## New Tests
 
