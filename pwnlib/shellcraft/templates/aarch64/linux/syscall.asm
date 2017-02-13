@@ -25,8 +25,8 @@ Example:
         mov  x0, xzr
         mov  x8, #SYS_exit
         svc 0
-    >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
-        /* open(file='/home/pwn/flag', oflag=0, mode=0) */
+    >>> print pwnlib.shellcraft.openat(-2, '/home/pwn/flag').rstrip()
+        /* openat(fd=-2, file='/home/pwn/flag', oflag=0) */
         /* push '/home/pwn/flag\x00\x00' */
         sub sp, sp, #16
         /* Set x0 = 8606431000579237935 = 0x77702f656d6f682f */
@@ -39,11 +39,15 @@ Example:
         movk x1, #27750, lsl #16
         movk x1, #26465, lsl #0x20
         stp x0, x1, [sp, #16 * 0]
-        mov  x0, sp
-        mov  x1, xzr
+        mov  x1, sp
+        /* Set x0 = -2 = -2 */
+        mov  x0, #65534
+        movk x0, #65535, lsl #16
+        movk x0, #65535, lsl #0x20
+        movk x0, #65535, lsl #0x30
         mov  x2, xzr
-        /* call open() */
-        mov  x8, #SYS_open
+        /* call openat() */
+        mov  x8, #SYS_openat
         svc 0
 </%docstring>
 <%
