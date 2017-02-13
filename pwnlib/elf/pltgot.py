@@ -181,6 +181,8 @@ def _arch(elf):
 def _fallback_plt_reader(elf):
     sections = list(elf.iter_sections())
     pltsect = elf.get_section_by_name('.plt')
+    if not pltsect:
+        return {}
 
     try:
         rel_plt = next(s for s in sections if

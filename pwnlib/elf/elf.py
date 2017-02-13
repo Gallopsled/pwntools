@@ -275,9 +275,9 @@ class ELF(ELFFile):
         self.got = read_got(self)
         if not self.got:
             log.warning("Failed to get GOT relocations!")
-        self.plt = read_plt(self, self.symbols, self.got)
-        if not self.plt:
-            log.warning("Failed to read PLT!")
+            self.plt = {}
+        else:
+            self.plt = read_plt(self, self.symbols, self.got)
         self._populate_got_plt_symbols()
         self._populate_libraries()
         self._populate_functions()
