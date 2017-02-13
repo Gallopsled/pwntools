@@ -1,6 +1,5 @@
 <%
-  from pwnlib.shellcraft.aarch64 import syscall, pushstr
-  from pwnlib.shellcraft import common
+  from pwnlib import shellcraft
 %>
 <%page args="filename, fd=1"/>
 <%docstring>
@@ -33,7 +32,9 @@ Example:
     >>> run_assembly(shellcode).recvline()
     'This is the flag\n'
 </%docstring>
-
-    ${pushstr(filename)}
-    ${syscall('SYS_open', 'sp', 0, 'O_RDONLY')}
-    ${syscall('SYS_sendfile', fd, 'x0', 0, 0x7fffffff)}
+<%
+if fd == 'x0':
+  raise Exception("File descriptor cannot be x0, it will be overwritten")
+%>
+    ${shellcraft.open(filename)}
+    ${shellcraft.syscall('SYS_sendfile', fd, 'x0', 0, 0x7fffffff)}
