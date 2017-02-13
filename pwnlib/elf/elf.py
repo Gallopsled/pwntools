@@ -69,7 +69,7 @@ from pwnlib.term import text
 from pwnlib.tubes.process import process
 from pwnlib.util import misc
 from pwnlib.util import packing
-from pwnlib.util import sh_string
+from pwnlib.util.sh_string import sh_string
 
 log = getLogger(__name__)
 
@@ -551,7 +551,7 @@ class ELF(ELFFile):
             return
 
         try:
-            cmd = sh_string.sh_command_with('ulimit -s unlimited; LD_TRACE_LOADED_OBJECTS=1 LD_WARN=1 LD_BIND_NOW=1 %s 2>/dev/null', self.path)
+            cmd = 'ulimit -s unlimited; LD_TRACE_LOADED_OBJECTS=1 LD_WARN=1 LD_BIND_NOW=1 %s 2>/dev/null' % sh_string(self.path)
 
             data = subprocess.check_output(cmd, shell = True, stderr = subprocess.STDOUT)
             libs = misc.parse_ldd_output(data)
