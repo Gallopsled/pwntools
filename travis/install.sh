@@ -79,6 +79,12 @@ setup_android_emulator()
             echo "TRAVIS_COMMIT_RANGE is empty, forcing Android Emulator installation"
         elif ! (git show "$TRAVIS_COMMIT_RANGE" >/dev/null) ; then
             echo "TRAVIS_COMMIT_RANGE is invalid, forcing Android Emulator installation"
+        elif [[ "$TRAVIS_BRANCH" =~ "staging" ]]; then
+            echo "TRAVIS_BRANCH ($TRAVIS_BRANCH) indicates a branch we care about"
+            echo "Forcing Android Emulator installation"
+        elif [[ -n "$TRAVIS_TAG" ]]; then
+            echo "TRAVIS_TAG ($TRAVIS_TAG) indicates a new relase"
+            echo "Forcing Android Emulator installation"
         elif (git log --stat "$TRAVIS_COMMIT_RANGE" | grep -iE "android|adb"); then
             echo "Found Android-related commits, forcing Android Emulator installation"
         else

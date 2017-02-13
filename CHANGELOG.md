@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.5.0](#350)    | `dev`    | Mar 18, 2017 (planned)
-| [3.4.0](#340)    | `beta`   | Feb 4, 2017 (planned)
-| [3.3.4](#334)    | `stable` | Jan 12, 2016
+| [3.6.0](#350)    | `dev`    | May 6, 2017 (planned)
+| [3.5.0](#350)    | `beta`   | Mar 25, 2017 (planned)
+| [3.4.0](#340)    | `stable` | Feb 13, 2017
+| [3.3.4](#334)    |          | Jan 12, 2016
 | [3.3.3](#333)    |          | Jan 10, 2016
 | [3.3.2](#332)    |          | Jan 10, 2016
 | [3.3.1](#331)    |          | Jan 10, 2016
@@ -28,10 +29,13 @@ The table below shows which release corresponds to each branch, and what date th
 | [2.2.0](#220)    |          | Jan 5, 2015
 
 
+## 3.6.0
+
+To be released on May 6, 2017.
 
 ## 3.5.0
 
-To be released on Mar 18, 2017.
+To be released on Mar 25, 2017.
 
 - [b584ca3][b584ca3] Fixed an issue running `setup.py` on ARM
 - [#822][822] Enabled relative leaks with `MemLeak`
@@ -69,8 +73,6 @@ To be released on Mar 18, 2017.
 [300f8e0]: https://github.com/Gallopsled/pwntools/commit/300f8e0
 
 ## 3.4.0
-
-To be released on Feb 4, 2017.
 
 - [#800][800] Add `shell=` option to `ssh.process()`
 - [#806][806] Add `context.buffer_size` for fine-tuning `tube` performance
