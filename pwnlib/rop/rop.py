@@ -478,7 +478,9 @@ class ROP(object):
         """
         Generates padding to be inserted into the ROP stack.
         """
-        return cyclic.cyclic(offset + count)[-count:]
+        if count:
+            return cyclic.cyclic(offset + count)[-count:]
+        return ''
 
     def describe(self, object):
         """
