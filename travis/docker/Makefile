@@ -9,7 +9,7 @@ TREE = HEAD
 endif
 
 all: image
-	docker run -e "ANDROID=$(ANDROID)" -e "TARGET=$(TARGET)" --rm --privileged -it travis
+	docker run -e "ANDROID=$(ANDROID)" -e "TARGET=$(TARGET)" --rm --init --privileged -it travis
 
 shell: image
 	docker run --rm --init --privileged --entrypoint /bin/bash -it travis
