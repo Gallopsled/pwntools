@@ -15,7 +15,7 @@ i386 Example:
 
     Let's just print a message out using SROP.
 
-    >>> message = "Hello, World"
+    >>> message = "Hello, World\\n"
 
     First, we'll create our example binary.
     It just reads some data onto the stack, and invokes
@@ -47,11 +47,10 @@ i386 Example:
 
     >>> p = process(binary.path)
     >>> p.send(str(frame))
-    >>> p.recvn(len(message)) == message
-    True
-    >>> p.wait_for_close()
-    >>> p.poll() == 0
-    True
+    >>> p.recvline()
+    'Hello, World\n'
+    >>> p.poll(block=True)
+    0
 
 amd64 Example:
 
@@ -73,11 +72,10 @@ amd64 Example:
     >>> frame.rip = binary.symbols['syscall']
     >>> p = process(binary.path)
     >>> p.send(str(frame))
-    >>> p.recvn(len(message)) == message
-    True
-    >>> p.wait_for_close()
-    >>> p.poll() == 0
-    True
+    >>> p.recvline()
+    'Hello, World\n'
+    >>> p.poll(block=True)
+    0
 
 arm Example:
 
@@ -99,11 +97,11 @@ arm Example:
     >>> frame.pc = binary.symbols['syscall']
     >>> p = process(binary.path)
     >>> p.send(str(frame))
-    >>> p.recvn(len(message)) == message
-    True
+    >>> p.recvline()
+    'Hello, World\n'
     >>> p.wait_for_close()
-    >>> p.poll() == 0
-    True
+    >>> p.poll(block=True)
+    0
 
 Mips Example:
 
@@ -125,11 +123,10 @@ Mips Example:
     >>> frame.pc = binary.symbols['syscall']
     >>> p = process(binary.path)
     >>> p.send(str(frame))
-    >>> p.recvn(len(message)) == message
-    True
-    >>> p.wait_for_close()
-    >>> p.poll() == 0
-    True
+    >>> p.recvline()
+    'Hello, World\n'
+    >>> p.poll(block=True)
+    0
 
 Mipsel Example:
 
@@ -151,11 +148,10 @@ Mipsel Example:
     >>> frame.pc = binary.symbols['syscall']
     >>> p = process(binary.path)
     >>> p.send(str(frame))
-    >>> p.recvn(len(message)) == message
-    True
-    >>> p.wait_for_close()
-    >>> p.poll() == 0
-    True
+    >>> p.recvline()
+    'Hello, World\n'
+    >>> p.poll(block=True)
+    0
 
 """
 from __future__ import absolute_import
