@@ -29,7 +29,7 @@ setup_travis()
     [[ -f usr/bin/objcopy ]] || install_deb binutils
 
     # Install/upgrade qemu
-    [[ -f usr/bin/qemu-arm-static ]] || install_deb qemu-user-static xenial
+    [[ -f usr/bin/qemu-arm-static ]] || install_deb qemu-user-static
 
     # Install cross-binutils
     [[ -f usr/bin/x86_64-linux-gnu-ar ]]    || install_deb binutils-multiarch
