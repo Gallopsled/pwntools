@@ -231,8 +231,14 @@ class ELF(ELFFile):
         self.bytes = self.bits / 8
 
         if self.arch == 'mips':
-            if self.header['e_flags'] & E_FLAGS.EF_MIPS_ARCH_64 \
-            or self.header['e_flags'] & E_FLAGS.EF_MIPS_ARCH_64R2:
+            mask = lambda a, b: a & b == b
+            flags = self.header['e_flags']
+
+            if mask(flags, E_FLAGS.EF_MIPS_ARCH_32) \
+            or mask(flags, E_FLAGS.EF_MIPS_ARCH_32R2):
+                pass
+            elif mask(flags, E_FLAGS.EF_MIPS_ARCH_64) \
+            or mask(flags, E_FLAGS.EF_MIPS_ARCH_64R2):
                 self.arch = 'mips64'
                 self.bits = 64
 
