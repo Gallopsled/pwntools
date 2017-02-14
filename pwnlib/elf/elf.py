@@ -48,11 +48,10 @@ from collections import namedtuple
 
 from elftools.elf.constants import E_FLAGS
 from elftools.elf.constants import P_FLAGS
-from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
+from elftools.elf.dynamic import DynamicSegment
 from elftools.elf.elffile import ELFFile
 from elftools.elf.gnuversions import GNUVerDefSection
-from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 
 import intervaltree
@@ -63,6 +62,7 @@ from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.elf.config import kernel_configuration
 from pwnlib.elf.config import parse_kconfig
+from pwnlib.elf.pltgot import read_got, read_plt
 from pwnlib.log import getLogger
 from pwnlib.qemu import get_qemu_arch
 from pwnlib.term import text
@@ -274,8 +274,20 @@ class ELF(ELFFile):
             if config:
                 self.config = parse_kconfig(config)
 
-        self._populate_got_plt()
+        #: Dynamic linking information
+        try:
+            self.dynamic = next(seg for seg in self.iter_segments() if isinstance(seg, DynamicSegment))
+        except StopIteration:
+            self.dynamic = None
+
         self._populate_symbols()
+        self.got = read_got(self)
+        if not self.got:
+            log.warning("Failed to get GOT relocations!")
+            self.plt = {}
+        else:
+            self.plt = read_plt(self, self.symbols, self.got)
+        self._populate_got_plt_symbols()
         self._populate_libraries()
         self._populate_functions()
         self._populate_kernel_version()
@@ -607,11 +619,6 @@ class ELF(ELFFile):
         >>> bash.symbols['_start'] == bash.header.e_entry
         True
         """
-        # By default, have 'symbols' include everything in the PLT.
-        #
-        # This way, elf.symbols['write'] will be a valid address to call
-        # for write().
-        self.symbols.update(self.plt)
 
         for section in self.sections:
             if not isinstance(section, SymbolTableSection):
@@ -623,90 +630,18 @@ class ELF(ELFFile):
                     continue
                 self.symbols[symbol.name] = value
 
+    def _populate_got_plt_symbols(self):
+        """Add GOT and PLT symbols to our symbol table"""
+
+        # By default, have 'symbols' include everything in the PLT.
+        #
+        # This way, elf.symbols['write'] will be a valid address to call
+        # for write().
+        self.symbols.update(self.plt)
+
         # Add 'plt.foo' and 'got.foo' to the symbols for entries
         self.symbols.update({'plt.%s' % sym: addr for sym, addr in self.plt.items()})
         self.symbols.update({'got.%s' % sym: addr for sym, addr in self.got.items()})
-
-    def _populate_got_plt(self):
-        """Loads the GOT and the PLT symbols and addresses.
-
-        The following doctest checks the valitidy of the addresses.
-        This assumes that each GOT entry points to its PLT entry,
-        usually +6 bytes but could be anywhere within 0-16 bytes.
-
-        >>> from pwnlib.util.packing import unpack
-        >>> bash = ELF(which('bash'))
-        >>> def validate_got_plt(sym):
-        ...     got      = bash.got[sym]
-        ...     plt      = bash.plt[sym]
-        ...     got_addr = unpack(bash.read(got, bash.bytes), bash.bits)
-        ...     return got_addr in range(plt,plt+0x10)
-        ...
-        >>> all(map(validate_got_plt, bash.got.keys()))
-        True
-        """
-        plt = self.get_section_by_name('.plt')
-        got = self.get_section_by_name('.got')
-
-        if not plt:
-            return
-
-        # Find the relocation section for PLT
-        try:
-            rel_plt = next(s for s in self.sections if
-                            s.header.sh_info == self.sections.index(plt) and
-                            isinstance(s, RelocationSection))
-        except StopIteration:
-            # Evidently whatever android-ndk uses to build binaries zeroed out sh_info for rel.plt
-            rel_plt = self.get_section_by_name('.rel.plt') or self.get_section_by_name('.rela.plt')
-
-        if not rel_plt:
-            log.warning("Couldn't find relocations against PLT to get symbols")
-            return
-
-        if rel_plt.header.sh_link != SHN_INDICES.SHN_UNDEF:
-            # Find the symbols for the relocation section
-            sym_rel_plt = self.sections[rel_plt.header.sh_link]
-
-            # Populate the GOT
-            for rel in rel_plt.iter_relocations():
-                sym_idx  = rel.entry.r_info_sym
-                symbol   = sym_rel_plt.get_symbol(sym_idx)
-                name     = symbol.name
-
-                self.got[name] = rel.entry.r_offset
-
-        # Depending on the architecture, the beginning of the .plt will differ
-        # in size, and each entry in the .plt will also differ in size.
-        offset     = None
-        multiplier = None
-
-        # Map architecture: offset, multiplier
-        header_size, entry_size = {
-            'i386':   (0x10, 0x10),
-            'amd64': (0x10, 0x10),
-            'arm':   (0x14, 0xC),
-            'aarch64': (0x20, 0x20),
-        }.get(self.arch, (0,0))
-
-        address = plt.header.sh_addr + header_size
-
-        # Based on the ordering of the GOT symbols, populate the PLT
-        for i,(addr,name) in enumerate(sorted((addr,name) for name, addr in self.got.items())):
-            self.plt[name] = address
-
-            # Some PLT entries in ARM binaries have a thumb-mode stub that looks like:
-            #
-            # 00008304 <__gmon_start__@plt>:
-            #     8304:   4778        bx  pc
-            #     8306:   46c0        nop         ; (mov r8, r8)
-            #     8308:   e28fc600    add ip, pc, #0, 12
-            #     830c:   e28cca08    add ip, ip, #8, 20  ; 0x8000
-            #     8310:   e5bcf228    ldr pc, [ip, #552]! ; 0x228
-            if self.arch in ('arm', 'thumb') and self.u16(address) == 0x4778:
-                address += 4
-
-            address += entry_size
 
     def _populate_kernel_version(self):
         if 'linux_banner' not in self.symbols:
@@ -1112,13 +1047,12 @@ class ELF(ELFFile):
             :class:`elftools.elf.dynamic.DynamicTag`
         """
         dt      = None
-        dynamic = self.get_section_by_name('.dynamic')
 
-        if not dynamic:
+        if not self.dynamic:
             return None
 
         try:
-            dt = next(t for t in dynamic.iter_tags() if tag == t.entry.d_tag)
+            dt = next(t for t in self.dynamic.iter_tags() if tag == t.entry.d_tag)
         except StopIteration:
             pass
 
