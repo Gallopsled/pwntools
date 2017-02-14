@@ -63,6 +63,7 @@ from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.elf.config import kernel_configuration
 from pwnlib.elf.config import parse_kconfig
+from pwnlib.elf.plt import emulate_plt_instructions
 from pwnlib.log import getLogger
 from pwnlib.qemu import get_qemu_arch
 from pwnlib.term import text
@@ -244,9 +245,7 @@ class ELF(ELFFile):
 
         self._address = 0
         if self.elftype != 'DYN':
-            for seg in self.segments:
-                if seg.header.p_type != 'PT_LOAD':
-                    continue
+            for seg in self.iter_segments_by_type('PT_LOAD'):
                 addr = seg.header.p_vaddr
                 if addr == 0:
                     continue
@@ -274,7 +273,21 @@ class ELF(ELFFile):
             if config:
                 self.config = parse_kconfig(config)
 
-        self._populate_got_plt()
+        #: ``True`` if the ELF is a statically linked executable
+        self.statically_linked = bool(self.elftype == 'EXEC' and self.load_addr)
+
+        #: ``True`` if the ELF is an executable
+        self.executable = bool(self.elftype == 'EXEC')
+
+        for seg in self.iter_segments_by_type('PT_INTERP'):
+            self.executable = True
+            self.statically_linked = False
+
+        #: ``True`` if the ELF is a shared library
+        self.library = not self.executable and self.elftype == 'DYN'
+
+        self._populate_got()
+        self._populate_plt()
         self._populate_symbols()
         self._populate_libraries()
         self._populate_functions()
@@ -406,6 +419,15 @@ class ELF(ELFFile):
             for the segments in the ELF.
         """
         return list(self.iter_segments())
+
+    def iter_segments_by_type(self, t):
+        """
+        Yields:
+            Segments matching the specified type.
+        """
+        for seg in self.iter_segments():
+            if t == seg.header.p_type or t in str(seg.header.p_type):
+                yield seg
 
     @property
     def sections(self):
@@ -627,86 +649,77 @@ class ELF(ELFFile):
         self.symbols.update({'plt.%s' % sym: addr for sym, addr in self.plt.items()})
         self.symbols.update({'got.%s' % sym: addr for sym, addr in self.got.items()})
 
-    def _populate_got_plt(self):
-        """Loads the GOT and the PLT symbols and addresses.
-
-        The following doctest checks the valitidy of the addresses.
-        This assumes that each GOT entry points to its PLT entry,
-        usually +6 bytes but could be anywhere within 0-16 bytes.
-
-        >>> from pwnlib.util.packing import unpack
-        >>> bash = ELF(which('bash'))
-        >>> def validate_got_plt(sym):
-        ...     got      = bash.got[sym]
-        ...     plt      = bash.plt[sym]
-        ...     got_addr = unpack(bash.read(got, bash.bytes), bash.bits)
-        ...     return got_addr in range(plt,plt+0x10)
-        ...
-        >>> all(map(validate_got_plt, bash.got.keys()))
-        True
-        """
-        plt = self.get_section_by_name('.plt')
-        got = self.get_section_by_name('.got')
-
-        if not plt:
+    def _populate_got(self):
+        """Loads the symbols for all relocations"""
+        # Statically linked implies no relocations, since there is no linker
+        # Could always be self-relocating like Android's linker *shrug*
+        if self.statically_linked:
             return
 
-        # Find the relocation section for PLT
-        try:
-            rel_plt = next(s for s in self.sections if
-                            s.header.sh_info == self.sections.index(plt) and
-                            isinstance(s, RelocationSection))
-        except StopIteration:
-            # Evidently whatever android-ndk uses to build binaries zeroed out sh_info for rel.plt
-            rel_plt = self.get_section_by_name('.rel.plt') or self.get_section_by_name('.rela.plt')
+        for section in self.iter_sections():
 
-        if not rel_plt:
-            log.warning("Couldn't find relocations against PLT to get symbols")
-            return
+            # We are only interested in relocations
+            if not isinstance(section, RelocationSection):
+                continue
 
-        if rel_plt.header.sh_link != SHN_INDICES.SHN_UNDEF:
-            # Find the symbols for the relocation section
-            sym_rel_plt = self.sections[rel_plt.header.sh_link]
+            # Only get relocations which link to another section (for symbols)
+            if section.header.sh_link == SHN_INDICES.SHN_UNDEF:
+                continue
 
-            # Populate the GOT
-            for rel in rel_plt.iter_relocations():
+            symbols = self.get_section(section.header.sh_link)
+
+            for rel in section.iter_relocations():
                 sym_idx  = rel.entry.r_info_sym
-                symbol   = sym_rel_plt.get_symbol(sym_idx)
-                name     = symbol.name
+                symbol   = symbols.get_symbol(sym_idx)
 
-                self.got[name] = rel.entry.r_offset
+                if symbol and symbol.name:
+                    self.got[symbol.name] = rel.entry.r_offset
 
-        # Depending on the architecture, the beginning of the .plt will differ
-        # in size, and each entry in the .plt will also differ in size.
-        offset     = None
-        multiplier = None
+        if not self.got:
+            log.warn("Did not find any GOT entries")
 
-        # Map architecture: offset, multiplier
-        header_size, entry_size = {
-            'i386':   (0x10, 0x10),
-            'amd64': (0x10, 0x10),
-            'arm':   (0x14, 0xC),
-            'aarch64': (0x20, 0x20),
-        }.get(self.arch, (0,0))
 
-        address = plt.header.sh_addr + header_size
+    def _populate_plt(self):
+        """Loads the PLT symbols
+        """
+        if self.statically_linked:
+            log.debug("%r is statically linked, skipping GOT/PLT symbols" % self.path)
+            return
 
-        # Based on the ordering of the GOT symbols, populate the PLT
-        for i,(addr,name) in enumerate(sorted((addr,name) for name, addr in self.got.items())):
-            self.plt[name] = address
+        if not self.got:
+            log.debug("%r doesn't have any GOT symbols, skipping PLT" % self.path)
+            return
 
-            # Some PLT entries in ARM binaries have a thumb-mode stub that looks like:
-            #
-            # 00008304 <__gmon_start__@plt>:
-            #     8304:   4778        bx  pc
-            #     8306:   46c0        nop         ; (mov r8, r8)
-            #     8308:   e28fc600    add ip, pc, #0, 12
-            #     830c:   e28cca08    add ip, ip, #8, 20  ; 0x8000
-            #     8310:   e5bcf228    ldr pc, [ip, #552]! ; 0x228
-            if self.arch in ('arm', 'thumb') and self.u16(address) == 0x4778:
-                address += 4
+        # This element holds an address associated with the procedure linkage table
+        # and/or the global offset table.
+        #
+        # Zach's note: This corresponds to the ".got.plt" section, in a PIE non-RELRO binary.
+        #              This corresponds to the ".got" section, in a PIE full-RELRO binary.
+        #              In particular, this is where EBX points when it points into the GOT.
+        dt_pltgot = self.dynamic_value_by_tag('DT_PLTGOT') or 0
 
-            address += entry_size
+        # There are two PLTs we may need to search
+        plt = self.get_section_by_name('.plt')          # <-- Functions only
+        plt_got = self.get_section_by_name('.plt.got')  # <-- Functions used as data
+
+        # Invert the GOT symbols we already have, so we can look up by address
+        got_addrs = {v:k for k,v in self.got.items()}
+
+        with context.local(arch=self.arch, bits=self.bits, endian=self.endian):
+            for section in (plt, plt_got):
+                if not section:
+                    continue
+                res = emulate_plt_instructions(self,
+                                                dt_pltgot,
+                                                section.header.sh_addr,
+                                                section.data(),
+                                                got_addrs)
+
+                for address, target in reversed(sorted(res.items())):
+                    self.plt[got_addrs[target]] = address
+
+        for a,n in sorted({v:k for k,v in self.plt.items()}.items()):
+            log.debug('PLT %#x %s', a, n)
 
     def _populate_kernel_version(self):
         if 'linux_banner' not in self.symbols:
@@ -1123,6 +1136,18 @@ class ELF(ELFFile):
             pass
 
         return dt
+
+    def dynamic_value_by_tag(self, tag):
+        """dynamic_value_by_tag(tag) -> int
+
+        Retrieve the value from a dynamic tag a la ``DT_XXX``.
+
+        If the tag is missing, returns ``None``.
+        """
+        tag = self.dynamic_by_tag(tag)
+
+        if tag:
+            return tag.entry.d_val
 
     def dynamic_string(self, offset):
         """dynamic_string(offset) -> bytes
