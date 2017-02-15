@@ -51,6 +51,7 @@ from elftools.elf.constants import P_FLAGS
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.elffile import ELFFile
+from elftools.elf.enums import ENUM_P_TYPE
 from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
@@ -1177,30 +1178,160 @@ class ELF(ELFFile):
         return string.rstrip('\x00')
 
 
+
     @property
     def relro(self):
-        """:class:`bool`: Whether the current binary uses RELRO protections."""
+        """:class:`bool`: Whether the current binary uses RELRO protections.
+
+        This requires both presence of the dynamic tag ``DT_BIND_NOW``, and
+        a ``GNU_RELRO`` program header.
+
+        The `ELF Specification`_ describes how the linker should resolve
+        symbols immediately, as soon as a binary is loaded.  This can be
+        emulated with the ``LD_BIND_NOW=1`` environment variable.
+
+            ``DT_BIND_NOW``
+
+            If present in a shared object or executable, this entry instructs
+            the dynamic linker to process all relocations for the object
+            containing this entry before transferring control to the program.
+            The presence of this entry takes precedence over a directive to use
+            lazy binding for this object when specified through the environment
+            or via ``dlopen(BA_LIB)``.
+
+            (`page 81`_)
+
+        Separately, an extension to the GNU linker allows a binary to specify
+        a PT_GNU_RELRO_ program header, which describes the *region of memory
+        which is to be made read-only after relocations are complete.*
+
+        Finally, a new-ish extension which doesn't seem to have a canonical
+        source of documentation is DF_BIND_NOW_, which has supposedly superceded
+        ``DT_BIND_NOW``.
+
+            ``DF_BIND_NOW``
+
+            If set in a shared object or executable, this flag instructs the
+            dynamic linker to process all relocations for the object containing
+            this entry before transferring control to the program. The presence
+            of this entry takes precedence over a directive to use lazy binding
+            for this object when specified through the environment or via
+            ``dlopen(BA_LIB)``.
+
+        .. _ELF Specification: https://refspecs.linuxbase.org/elf/elf.pdf
+        .. _page 81: https://refspecs.linuxbase.org/elf/elf.pdf#page=81
+        .. _DT_BIND_NOW: https://refspecs.linuxbase.org/elf/elf.pdf#page=81
+        .. _PT_GNU_RELRO: https://refspecs.linuxbase.org/LSB_3.1.1/LSB-Core-generic/LSB-Core-generic.html#PROGHEADER
+        .. _DF_BIND_NOW: http://refspecs.linuxbase.org/elf/gabi4+/ch5.dynamic.html#df_bind_now
+
+        """
         if self.dynamic_by_tag('DT_BIND_NOW'):
             return "Full"
 
         if any('GNU_RELRO' in str(s.header.p_type) for s in self.segments):
             return "Partial"
+
         return None
 
     @property
     def nx(self):
-        """:class:`bool`: Whether the current binary uses NX protections."""
-        if not any('GNU_STACK' in str(seg.header.p_type) for seg in self.segments):
-            return False
+        """:class:`bool`: Whether the current binary uses NX protections.
 
-        # Can't call self.executable_segments because of dependency loop.
-        exec_seg = [s for s in self.segments if s.header.p_flags & P_FLAGS.PF_X]
-        return not any('GNU_STACK' in str(seg.header.p_type) for seg in exec_seg)
+        Specifically, we are checking for ``READ_IMPLIES_EXEC`` being set
+        by the kernel, as a result of honoring ``PT_GNU_STACK`` in the kernel.
+
+        The **Linux kernel** directly honors ``PT_GNU_STACK`` to `mark the
+        stack as executable.`__
+
+        .. __: https://github.com/torvalds/linux/blob/v4.9/fs/binfmt_elf.c#L784-L789
+
+        .. code-block:: c
+
+            case PT_GNU_STACK:
+                if (elf_ppnt->p_flags & PF_X)
+                    executable_stack = EXSTACK_ENABLE_X;
+                else
+                    executable_stack = EXSTACK_DISABLE_X;
+                break;
+
+        Additionally, it then sets ``read_implies_exec``, so that `all readable pages
+        are executable`__.
+
+        .. __: https://github.com/torvalds/linux/blob/v4.9/fs/binfmt_elf.c#L849-L850
+
+        .. code-block:: c
+
+            if (elf_read_implies_exec(loc->elf_ex, executable_stack))
+                current->personality |= READ_IMPLIES_EXEC;
+        """
+        if not self.executable:
+            return True
+
+        for seg in self.iter_segments_by_type('GNU_STACK'):
+            return not bool(seg.header.p_flags & P_FLAGS.PF_X)
+
+        # If you NULL out the PT_GNU_STACK section via ELF.disable_nx(),
+        # everything is executable.
+        return False
 
     @property
     def execstack(self):
-        """:class:`bool`: Whether the current binary uses an executable stack."""
-        return not self.nx
+        """:class:`bool`: Whether the current binary uses an executable stack.
+
+        This is based on the presence of a program header PT_GNU_STACK_
+        being present, and its setting.
+
+            ``PT_GNU_STACK``
+
+            The p_flags member specifies the permissions on the segment
+            containing the stack and is used to indicate wether the stack
+            should be executable. The absense of this header indicates
+            that the stack will be executable.
+
+        In particular, if the header is missing the stack is executable.
+        If the header is present, it may **explicitly** mark that the stack is
+        executable.
+
+        This is only somewhat accurate.  When using the GNU Linker, it usees
+        DEFAULT_STACK_PERMS_ to decide whether a lack of ``PT_GNU_STACK``
+        should mark the stack as executable:
+
+        .. code-block:: c
+
+            /* On most platforms presume that PT_GNU_STACK is absent and the stack is
+             * executable.  Other platforms default to a nonexecutable stack and don't
+             * need PT_GNU_STACK to do so.  */
+            uint_fast16_t stack_flags = DEFAULT_STACK_PERMS;
+
+        By searching the source for ``DEFAULT_STACK_PERMS``, we can see which
+        architectures have which settings.
+
+        ::
+
+            $ git grep '#define DEFAULT_STACK_PERMS' | grep -v PF_X
+            sysdeps/aarch64/stackinfo.h:31:#define DEFAULT_STACK_PERMS (PF_R|PF_W)
+            sysdeps/nios2/stackinfo.h:31:#define DEFAULT_STACK_PERMS (PF_R|PF_W)
+            sysdeps/tile/stackinfo.h:31:#define DEFAULT_STACK_PERMS (PF_R|PF_W)
+
+        .. _PT_GNU_STACK: https://refspecs.linuxbase.org/LSB_3.0.0/LSB-PDA/LSB-PDA/progheader.html
+        .. _DEFAULT_STACK_PERMS: https://github.com/bminor/glibc/blob/glibc-2.25/elf/dl-load.c#L1036-L1038
+        """
+        # Dynamic objects do not have the ability to change the executable state of the stack.
+        if not self.executable:
+            return False
+
+        # If NX is completely off for the process, the stack is executable.
+        if not self.nx:
+            return True
+
+        # If the ``PT_GNU_STACK`` program header is missing, then use the
+        # default rules.  Only AArch64 gets a non-executable stack by default.
+        for seg in self.iter_segments_by_type('GNU_STACK'):
+            break
+        else:
+            return self.arch != 'aarch64'
+
+        return False
 
     @property
     def canary(self):
@@ -1275,17 +1406,18 @@ class ELF(ELFFile):
             "PIE:".ljust(10) + {
                 True: green("PIE enabled"),
                 False: red("No PIE (%#x)" % self.address)
-            }[self.pie]
+            }[self.pie],
         ])
 
+        # Execstack may be a thing, even with NX enabled, because of glibc
+        if self.execstack and self.nx:
+            res.append("Stack:".ljust(10) + red("Executable"))
 
         # Are there any RWX areas in the binary?
         #
         # This will occur if NX is disabled and *any* area is
         # RW, or can expressly occur.
-        rwx = self.rwx_segments
-
-        if self.nx and rwx:
+        if self.rwx_segments or (not self.nx and self.writable_segments):
             res += [ "RWX:".ljust(10) + red("Has RWX segments") ]
 
         if self.rpath:
@@ -1435,3 +1567,31 @@ class ELF(ELFFile):
 
     def parse_kconfig(self, data):
         self.config.update(parse_kconfig(data))
+
+    def disable_nx(self):
+        """Disables NX for the ELF.
+
+        Zeroes out the ``PT_GNU_STACK`` program header ``p_type`` field.
+        """
+        PT_GNU_STACK = packing.p32(ENUM_P_TYPE['PT_GNU_STACK'])
+
+        if not self.executable:
+            log.error("Can only make stack executable with executables")
+
+        for i, segment in enumerate(self.iter_segments()):
+            if not segment.header.p_type:
+                continue
+            if 'GNU_STACK' not in segment.header.p_type:
+                continue
+
+            phoff = self.header.e_phoff
+            phentsize = self.header.e_phentsize
+            offset = phoff + phentsize * i
+
+            if self.mmap[offset:offset+4] == PT_GNU_STACK:
+                self.mmap[offset:offset+4] = '\x00' * 4
+                self.save()
+                return
+
+        log.error("Could not find PT_GNU_STACK, stack should already be executable")
+
