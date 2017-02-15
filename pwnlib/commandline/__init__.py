@@ -7,6 +7,7 @@ __all__ = [
     'cyclic',
     'debug',
     'disasm',
+    'disablenx',
     'elfdiff',
     'elfpatch',
     'errno',

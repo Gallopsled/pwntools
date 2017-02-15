@@ -9,6 +9,7 @@ from pwnlib.commandline import constgrep
 from pwnlib.commandline import cyclic
 from pwnlib.commandline import debug
 from pwnlib.commandline import disasm
+from pwnlib.commandline import disablenx
 from pwnlib.commandline import elfdiff
 from pwnlib.commandline import elfpatch
 from pwnlib.commandline import errno
@@ -29,6 +30,7 @@ commands = {
     'cyclic': cyclic.main,
     'debug': debug.main,
     'disasm': disasm.main,
+    'disablenx': disablenx.main,
     'elfdiff': elfdiff.main,
     'elfpatch': elfpatch.main,
     'errno': errno.main,

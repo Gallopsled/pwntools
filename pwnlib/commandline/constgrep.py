@@ -139,4 +139,4 @@ def main(args):
                 print '(%s) == %s' % (' | '.join(k for v, k in good), args.constant)
 
 if __name__ == '__main__':
-    pwnlib.common.main(__file__)
+    pwnlib.commandline.common.main(__file__)

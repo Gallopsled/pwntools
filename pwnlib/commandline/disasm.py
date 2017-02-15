@@ -92,4 +92,4 @@ def main(args):
     print disasm(dat, vma=safeeval.const(args.address))
 
 if __name__ == '__main__':
-    pwnlib.common.main(__file__)
+    pwnlib.commandline.common.main(__file__)

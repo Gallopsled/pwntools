@@ -1326,7 +1326,7 @@ class ELF(ELFFile):
 
         # If the ``PT_GNU_STACK`` program header is missing, then use the
         # default rules.  Only AArch64 gets a non-executable stack by default.
-        for seg in self.iter_segments_by_type('GNU_STACK'):
+        for _ in self.iter_segments_by_type('GNU_STACK'):
             break
         else:
             return self.arch != 'aarch64'
