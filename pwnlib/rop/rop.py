@@ -475,6 +475,16 @@ class ROP(object):
     def generatePadding(self, offset, count):
         """
         Generates padding to be inserted into the ROP stack.
+
+        >>> rop = ROP([])
+        >>> val = rop.generatePadding(5,15)
+        >>> cyclic_find(val[:4])
+        5
+        >>> len(val)
+        15
+        >>> rop.generatePadding(0,0)
+        ''
+
         """
         if count:
             return cyclic.cyclic(offset + count)[-count:]
@@ -786,6 +796,18 @@ class ROP(object):
 
         Arguments:
             data(int/str): The raw value to put onto the rop chain.
+
+        >>> rop = ROP([])
+        >>> rop.raw('AAAAAAAA')
+        >>> rop.raw('BBBBBBBB')
+        >>> rop.raw('CCCCCCCC')
+        >>> print rop.dump()
+        0x0000:           'AAAA' 'AAAAAAAA'
+        0x0004:           'AAAA'
+        0x0008:           'BBBB' 'BBBBBBBB'
+        0x000c:           'BBBB'
+        0x0010:           'CCCC' 'CCCCCCCC'
+        0x0014:           'CCCC'
         """
         if self.migrated:
             log.error('Cannot append to a migrated chain')
