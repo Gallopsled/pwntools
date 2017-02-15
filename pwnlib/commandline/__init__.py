@@ -5,6 +5,7 @@ __all__ = [
     'common',
     'constgrep',
     'cyclic',
+    'debug',
     'disasm',
     'elfdiff',
     'elfpatch',

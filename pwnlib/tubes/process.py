@@ -435,6 +435,10 @@ class process(tube):
         # Determine what architecture the binary is, and find the
         # appropriate qemu binary to run it.
         qemu = get_qemu_user(arch=binary.arch)
+
+        if not qemu:
+            raise exception
+
         qemu = which(qemu)
         if qemu:
             self._qemu = qemu
