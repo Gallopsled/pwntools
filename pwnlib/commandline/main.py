@@ -7,6 +7,7 @@ from pwnlib.commandline import checksec
 from pwnlib.commandline import common
 from pwnlib.commandline import constgrep
 from pwnlib.commandline import cyclic
+from pwnlib.commandline import debug
 from pwnlib.commandline import disasm
 from pwnlib.commandline import elfdiff
 from pwnlib.commandline import elfpatch
@@ -26,6 +27,7 @@ commands = {
     'checksec': checksec.main,
     'constgrep': constgrep.main,
     'cyclic': cyclic.main,
+    'debug': debug.main,
     'disasm': disasm.main,
     'elfdiff': elfdiff.main,
     'elfpatch': elfpatch.main,
