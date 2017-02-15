@@ -670,6 +670,10 @@ class ELF(ELFFile):
 
             for rel in section.iter_relocations():
                 sym_idx  = rel.entry.r_info_sym
+
+                if not sym_idx:
+                    continue
+
                 symbol   = symbols.get_symbol(sym_idx)
 
                 if symbol and symbol.name:
