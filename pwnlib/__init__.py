@@ -14,6 +14,7 @@ __all__ = [
     'commandline',
     'constants',
     'context',
+    'data',
     'dynelf',
     'encoders',
     'elf',
