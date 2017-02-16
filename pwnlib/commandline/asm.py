@@ -96,6 +96,10 @@ parser.add_argument(
 def main(args):
     tty    = args.output.isatty()
 
+    if args.infile.isatty():
+        parser.print_usage()
+        sys.exit(1)
+
     data   = '\n'.join(args.lines) or args.infile.read()
     output = asm(data.replace(';', '\n'))
     fmt    = args.format or ('hex' if tty else 'raw')
