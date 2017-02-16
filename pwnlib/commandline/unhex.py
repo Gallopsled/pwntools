@@ -27,4 +27,4 @@ def main(args):
         sys.stderr.write(str(e) + '\n')
 
 if __name__ == '__main__':
-    pwnlib.common.main(__file__)
+    pwnlib.commandline.common.main(__file__)

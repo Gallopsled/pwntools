@@ -21,4 +21,4 @@ def main(args):
         print ' '.join(args.data).encode('hex')
 
 if __name__ == '__main__':
-    pwnlib.common.main(__file__)
+    pwnlib.commandline.common.main(__file__)
