@@ -31,16 +31,23 @@ def emulate_plt_instructions(elf, ebx, address, data, targets):
         'mips': U.UC_ARCH_MIPS,
         # 'powerpc': U.UC_ARCH_PPC, <-- Not actually supported
         'thumb': U.UC_ARCH_ARM,
-    }.get(context.arch, None)
+    }.get(elf.arch, None)
 
     if arch is None:
         log.warn("Could not emulate PLT instructions for %r" % elf)
         return {}
 
+    emulation_bits = elf.bits
+
+    # x32 uses 64-bit instructions, just restricts itself to a 32-bit
+    # address space.
+    if elf.arch == 'amd64' and elf.bits == 32:
+        emulation_bits = 64
+
     mode = {
         32: U.UC_MODE_32,
         64: U.UC_MODE_64
-    }.get(context.bits)
+    }.get(emulation_bits)
 
     if context.arch in ('arm', 'aarch64'):
         mode = U.UC_MODE_ARM
@@ -108,10 +115,11 @@ def emulate_plt_instructions(elf, ebx, address, data, targets):
             continue
 
         address = stopped_addr.pop()
+        hit = address in targets
 
-        log.debug("%#x -> %#x", pc, address)
+        log.debug("%#x -> %#x %s", pc, address, hit)
 
-        if address in targets:
+        if hit:
             rv[pc] = address
 
     return rv
