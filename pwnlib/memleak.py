@@ -11,6 +11,8 @@ from pwnlib.util.packing import unpack
 
 log = getLogger(__name__)
 
+__all__ = ['MemLeak', 'RelativeMemLeak']
+
 class MemLeak(object):
     """MemLeak is a caching and heuristic tool for exploiting memory leaks.
 
