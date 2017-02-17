@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.6.0](#350)    | `dev`    | May 6, 2017 (planned)
 | [3.5.0](#350)    | `beta`   | Mar 25, 2017 (planned)
-| [3.4.0](#340)    | `stable` | Feb 13, 2017
+| [3.4.1](#341)    | `stable` | Feb 17, 2017
+| [3.4.0](#340)    |          | Feb 13, 2017
 | [3.3.4](#334)    |          | Jan 12, 2016
 | [3.3.3](#333)    |          | Jan 10, 2016
 | [3.3.2](#332)    |          | Jan 10, 2016
@@ -71,6 +72,15 @@ To be released on Mar 25, 2017.
 [a12d0b6]: https://github.com/Gallopsled/pwntools/commit/a12d0b6
 [d0267f3]: https://github.com/Gallopsled/pwntools/commit/d0267f3
 [300f8e0]: https://github.com/Gallopsled/pwntools/commit/300f8e0
+
+## 3.4.1
+
+- [#894][894] Fix a bug when using `gdb.debug()` over ssh.
+- [e021f57][e021f57] Fix a bug ([#891][891]) in `rop` when needing to insert padding to fix alignment
+
+[e021f57]: https://github.com/Gallopsled/pwntools/commit/e021f57
+[894]: https://github.com/Gallopsled/pwntools/pull/894
+[891]: https://github.com/Gallopsled/pwntools/issues/891
 
 ## 3.4.0
 
