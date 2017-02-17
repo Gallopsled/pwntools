@@ -65,6 +65,27 @@ def emulate_plt_instructions(elf, ebx, address, data, targets):
     uc.hook_add(U.UC_HOOK_MEM_READ, hook_mem, stopped_addr)
     uc.hook_add(U.UC_HOOK_MEM_UNMAPPED, hook_mem, stopped_addr)
 
+    # Unicorn doesn't support big-endian for everything yet.
+    # For all architectures where big-endian is a real option
+    # (ARM, MIPS, PowerPC) use a hook to swap the endianness of
+    # each instruction before it is executed.
+    #
+    # This approach is naive since if an instruction is re-executed
+    # it will be re-swapped, but it doesn't matter for this
+    # specific application.
+    if context.endian == 'big':
+        if context.arch not in ('arm', 'thumb', 'mips', 'powerpc'):
+            log.warn("Unsupported big-endian emulation architecture: %s", arch)
+            return {}
+
+        def hook_insn(uc, access, address, size, value, user_data):
+            mem = uc.mem_read(address, 4)
+            mem = mem[::-1]
+            uc.mem_write(address, 4)
+            return True
+
+        uc.hook_add(U.UC_HOOK_INSN, hook_insn)
+
     # Brute force addresses, assume that PLT entry points are 8-byte-aligned
     # Do not emulate more than a handful of instructions.
     rv = {}
