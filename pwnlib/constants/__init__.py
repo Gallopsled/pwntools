@@ -39,6 +39,16 @@ Example:
     ...     print int(constants.SYS_stat)
     4
 
+    >>> with context.local(arch = 'i386', os = 'linux'):
+    ...    print constants.SYS_execve + constants.PROT_WRITE
+    13
+    >>> with context.local(arch = 'amd64', os = 'linux'):
+    ...    print constants.SYS_execve + constants.PROT_WRITE
+    61
+    >>> with context.local(arch = 'amd64', os = 'linux'):
+    ...    print constants.SYS_execve + constants.PROT_WRITE
+    61
+
 """
 from __future__ import absolute_import
 
@@ -56,19 +66,6 @@ class ConstantsModule(ModuleType):
     ModuleType specialization in order to automatically
     route queries down to the correct module based on the
     current context arch / os.
-
-        >>> with context.local(arch = 'i386', os = 'linux'):
-        ...    print constants.SYS_execve + constants.PROT_WRITE
-        13
-        >>> with context.local(arch = 'amd64', os = 'linux'):
-        ...    print constants.SYS_execve + constants.PROT_WRITE
-        61
-        >>> with context.local(arch = 'amd64', os = 'linux'):
-        ...    print constants.SYS_execve + constants.PROT_WRITE
-        61
-        >>> False
-        True
-
     """
     Constant = Constant
 
