@@ -89,7 +89,7 @@ def emulate_plt_instructions(elf, ebx, address, data, targets):
     # Brute force addresses, assume that PLT entry points are 8-byte-aligned
     # Do not emulate more than a handful of instructions.
     rv = {}
-    for pc in range(address, address + len(data), 8):
+    for pc in range(address, address + len(data), 4):
 
         # For Intel, set the value of EBX
         if context.arch == 'i386' and ebx:
