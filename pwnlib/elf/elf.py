@@ -1345,7 +1345,10 @@ class ELF(ELFFile):
     @property
     def canary(self):
         """:class:`bool`: Whether the current binary uses stack canaries."""
-        return '__stack_chk_fail' in self.symbols
+
+        # Sometimes there is no function for __stack_chk_fail,
+        # but there is an entry in the GOT
+        return '__stack_chk_fail' in (set(self.symbols) | set(self.got))
 
     @property
     def packed(self):

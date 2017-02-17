@@ -34,7 +34,7 @@ def emulate_plt_instructions(elf, ebx, address, data, targets):
     }.get(context.arch, None)
 
     if arch is None:
-        log.warn("Could not emulate PLT instructions for %r" % elf.path)
+        log.warn("Could not emulate PLT instructions for %r" % elf)
         return {}
 
     mode = {
