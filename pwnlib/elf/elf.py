@@ -287,9 +287,9 @@ class ELF(ELFFile):
         #: ``True`` if the ELF is a shared library
         self.library = not self.executable and self.elftype == 'DYN'
 
+        self._populate_symbols()
         self._populate_got()
         self._populate_plt()
-        self._populate_symbols()
         self._populate_libraries()
         self._populate_functions()
         self._populate_kernel_version()
@@ -648,7 +648,6 @@ class ELF(ELFFile):
                 self.symbols[symbol.name] = value
 
         # Add 'plt.foo' and 'got.foo' to the symbols for entries
-        self.symbols.update({'plt.%s' % sym: addr for sym, addr in self.plt.items()})
         self.symbols.update({'got.%s' % sym: addr for sym, addr in self.got.items()})
 
     def _populate_got(self):
@@ -659,7 +658,6 @@ class ELF(ELFFile):
             return
 
         for section in self.iter_sections():
-
             # We are only interested in relocations
             if not isinstance(section, RelocationSection):
                 continue
@@ -681,9 +679,48 @@ class ELF(ELFFile):
                 if symbol and symbol.name:
                     self.got[symbol.name] = rel.entry.r_offset
 
+        if self.arch == 'mips':
+            self._populate_mips_got()
+
         if not self.got:
             log.warn("Did not find any GOT entries")
 
+    def _populate_mips_got(self):
+        strings = self.get_section(self.header.e_shstrndx)
+
+        ELF_MIPS_GNU_GOT1_MASK = 0x80000000
+
+        if self.bits == 64:
+            ELF_MIPS_GNU_GOT1_MASK <<= 32
+
+        # Beginning of the GOT
+        got = self.dynamic_value_by_tag('DT_PLTGOT') or 0
+
+
+        # Find the beginning of the GOT pointers
+        got1_mask = (self.unpack(got) & ELF_MIPS_GNU_GOT1_MASK)
+        i = 2 if got1_mask else 1
+
+        # We don't care about local GOT entries, skip them
+        local_gotno = self.dynamic_value_by_tag('DT_MIPS_LOCAL_GOTNO')
+        got += local_gotno * context.bytes
+
+        # Iterate over the dynamic symbol table
+        dynsym = self.get_section_by_name('.dynsym')
+        symbol_iter = dynsym.iter_symbols()
+
+        # 'gotsym' is the index of the first GOT symbol
+        gotsym = self.dynamic_value_by_tag('DT_MIPS_GOTSYM')
+        for i in range(gotsym):
+            symbol_iter.next()
+
+        # 'symtabno' is the total number of symbols
+        symtabno = self.dynamic_value_by_tag('DT_MIPS_SYMTABNO')
+
+        for i in range(symtabno - gotsym):
+            symbol = symbol_iter.next()
+            self.got[symbol.name] = got
+            got += self.bytes
 
     def _populate_plt(self):
         """Loads the PLT symbols
@@ -717,23 +754,27 @@ class ELF(ELFFile):
         plt_got = self.get_section_by_name('.plt.got')  # <-- Functions used as data
 
         # Invert the GOT symbols we already have, so we can look up by address
-        got_addrs = {v:k for k,v in self.got.items()}
+        inv_symbols = {v:k for k,v in self.got.items()}
+        plt_targets = set(self.got) | set(self.symbols)
 
         with context.local(arch=self.arch, bits=self.bits, endian=self.endian):
             for section in (plt, plt_got):
                 if not section:
                     continue
+
                 res = emulate_plt_instructions(self,
                                                 dt_pltgot,
                                                 section.header.sh_addr,
                                                 section.data(),
-                                                got_addrs)
+                                                plt_targets)
 
                 for address, target in reversed(sorted(res.items())):
                     self.plt[got_addrs[target]] = address
 
         for a,n in sorted({v:k for k,v in self.plt.items()}.items()):
             log.debug('PLT %#x %s', a, n)
+
+        self.symbols.update({'plt.%s' % sym: addr for sym, addr in self.plt.items()})
 
     def _populate_kernel_version(self):
         if 'linux_banner' not in self.symbols:
@@ -1510,45 +1551,59 @@ class ELF(ELFFile):
         Undefined Behavior Sanitizer (``UBSAN``)."""
         return any(s.startswith('__ubsan_') for s in self.symbols)
 
+    def _update_args(self, kw):
+        kw.setdefault('arch', self.arch)
+        kw.setdefault('bits', self.bits)
+        kw.setdefault('endian', self.endian)
 
     def p64(self,  address, data, *a, **kw):
         """Writes a 64-bit integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
         return self.write(address, packing.p64(data, *a, **kw))
 
     def p32(self,  address, data, *a, **kw):
         """Writes a 32-bit integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
         return self.write(address, packing.p32(data, *a, **kw))
 
     def p16(self,  address, data, *a, **kw):
         """Writes a 16-bit integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
         return self.write(address, packing.p16(data, *a, **kw))
 
     def p8(self,   address, data, *a, **kw):
         """Writes a 8-bit integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
         return self.write(address, packing.p8(data, *a, **kw))
 
     def pack(self, address, data, *a, **kw):
         """Writes a packed integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
         return self.write(address, packing.pack(data, *a, **kw))
 
     def u64(self,    address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
         return packing.u64(self.read(address, 8), *a, **kw)
 
     def u32(self,    address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
         return packing.u32(self.read(address, 4), *a, **kw)
 
     def u16(self,    address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
         return packing.u16(self.read(address, 2), *a, **kw)
 
     def u8(self,     address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
         return packing.u8(self.read(address, 1), *a, **kw)
 
     def unpack(self, address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
         return packing.unpack(self.read(address, context.bytes), *a, **kw)
 
     def string(self, address):
