@@ -51,8 +51,12 @@ import sys
 from pwnlib import term
 from pwnlib.context import context
 
+class PwnlibArgs(collections.defaultdict):
+    def __getattr__(self, attr):
+        return self[attr]
+
+args = PwnlibArgs(str)
 term_mode  = True
-args       = collections.defaultdict(str)
 env_prefix = 'PWNLIB_'
 free_form  = True
 

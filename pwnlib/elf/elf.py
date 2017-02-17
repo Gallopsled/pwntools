@@ -171,7 +171,7 @@ class ELF(ELFFile):
     _fill_gaps = True
 
 
-    def __init__(self, path):
+    def __init__(self, path, checksec=True):
         # elftools uses the backing file for all reads and writes
         # in order to permit writing without being able to write to disk,
         # mmap() the file.
@@ -294,7 +294,8 @@ class ELF(ELFFile):
         self._populate_functions()
         self._populate_kernel_version()
 
-        self._describe()
+        if checksec:
+            self._describe()
 
     @staticmethod
     @LocalContext
