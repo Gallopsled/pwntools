@@ -728,7 +728,6 @@ class ContextType(object):
 
         Examples:
             >>> context.clear()
-            >>> False
             >>> context.bits == 32
             True
             >>> context.bits = 64
