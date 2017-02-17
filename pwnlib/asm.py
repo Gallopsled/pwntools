@@ -146,8 +146,9 @@ def which_binutils(util):
     Examples:
 
         >>> import platform
+        >>> which_binutils = pwnlib.asm.which_binutils
         >>> which_binutils('as', arch=platform.machine())
-        '.../bin/as'
+        '.../bin/...as'
         >>> which_binutils('as', arch='arm') #doctest: +ELLIPSIS
         '.../bin/arm-...-as'
         >>> which_binutils('as', arch='powerpc') #doctest: +ELLIPSIS

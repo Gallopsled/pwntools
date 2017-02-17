@@ -27,11 +27,7 @@ The recommended method is to use ``context.binary``  to automagically set all of
     context.binary = './challenge-binary'
 
 Module Members
-=====================================================
+----------------------------------------------------
 
-.. autodata:: pwnlib.context.context
-
-.. autoclass:: pwnlib.context.ContextType
-    :members:
-
-.. autoclass:: pwnlib.context.Thread
+.. automodule:: pwnlib.context
+   :members:
