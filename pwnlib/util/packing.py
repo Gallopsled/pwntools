@@ -506,7 +506,7 @@ def _flat(args, preprocessor, packer):
             raise ValueError("flat(): Flat does not support values of type %s" % type(arg))
     return ''.join(out)
 
-
+@LocalContext
 def flat(*args, **kwargs):
     """flat(*args, preprocessor = None, word_size = None, endianness = None, sign = None)
 
@@ -538,8 +538,6 @@ def flat(*args, **kwargs):
 
     preprocessor = kwargs.pop('preprocessor', lambda x: None)
     word_size    = kwargs.pop('word_size', None)
-    endianness   = kwargs.pop('endianness', None)
-    sign         = kwargs.pop('sign', None)
 
     if kwargs != {}:
         raise TypeError("flat() does not support argument %r" % kwargs.popitem()[0])
@@ -605,9 +603,6 @@ def fit(pieces=None, **kwargs):
     filler       = kwargs.pop('filler', cyclic.de_bruijn())
     length       = kwargs.pop('length', None)
     preprocessor = kwargs.pop('preprocessor', lambda x: None)
-    word_size    = kwargs.pop('word_size', None)
-    endianness   = kwargs.pop('endianness', None)
-    sign         = kwargs.pop('sign', None)
 
     if kwargs != {}:
         raise TypeError("fit() does not support argument %r" % kwargs.popitem()[0])

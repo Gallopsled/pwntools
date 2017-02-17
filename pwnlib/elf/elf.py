@@ -674,7 +674,7 @@ class ELF(ELFFile):
                 if not sym_idx:
                     continue
 
-                symbol   = symbols.get_symbol(sym_idx)
+                symbol = symbols.get_symbol(sym_idx)
 
                 if symbol and symbol.name:
                     self.got[symbol.name] = rel.entry.r_offset
@@ -686,6 +686,7 @@ class ELF(ELFFile):
             log.warn("Did not find any GOT entries")
 
     def _populate_mips_got(self):
+        self._mips_got = {}
         strings = self.get_section(self.header.e_shstrndx)
 
         ELF_MIPS_GNU_GOT1_MASK = 0x80000000
@@ -696,10 +697,10 @@ class ELF(ELFFile):
         # Beginning of the GOT
         got = self.dynamic_value_by_tag('DT_PLTGOT') or 0
 
-
         # Find the beginning of the GOT pointers
         got1_mask = (self.unpack(got) & ELF_MIPS_GNU_GOT1_MASK)
         i = 2 if got1_mask else 1
+        self._mips_skip = i
 
         # We don't care about local GOT entries, skip them
         local_gotno = self.dynamic_value_by_tag('DT_MIPS_LOCAL_GOTNO')
@@ -719,6 +720,7 @@ class ELF(ELFFile):
 
         for i in range(symtabno - gotsym):
             symbol = symbol_iter.next()
+            self._mips_got[i + gotsym] = got
             self.got[symbol.name] = got
             got += self.bytes
 
@@ -752,13 +754,14 @@ class ELF(ELFFile):
         # There are two PLTs we may need to search
         plt = self.get_section_by_name('.plt')          # <-- Functions only
         plt_got = self.get_section_by_name('.plt.got')  # <-- Functions used as data
+        plt_mips = self.get_section_by_name('.MIPS.stubs')
 
         # Invert the GOT symbols we already have, so we can look up by address
         inv_symbols = {v:k for k,v in self.got.items()}
-        plt_targets = set(self.got) | set(self.symbols)
+        plt_targets = set(self.got.values()) | set(self.symbols.values())
 
         with context.local(arch=self.arch, bits=self.bits, endian=self.endian):
-            for section in (plt, plt_got):
+            for section in (plt, plt_got, plt_mips):
                 if not section:
                     continue
 
@@ -769,7 +772,7 @@ class ELF(ELFFile):
                                                 plt_targets)
 
                 for address, target in reversed(sorted(res.items())):
-                    self.plt[got_addrs[target]] = address
+                    self.plt[inv_symbols[target]] = address
 
         for a,n in sorted({v:k for k,v in self.plt.items()}.items()):
             log.debug('PLT %#x %s', a, n)
