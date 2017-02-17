@@ -96,7 +96,7 @@ setup_android_emulator()
 
             # However, the file needs to be present or else things break.
             touch 'docs/source/adb.rst'
-            touch 'docs/source/protocols/adb.rst'
+            touch 'docs/source/protocols/adb.rst' || true
 
             echo "Skipping Android emulator install, Android tests disabled."
             return
