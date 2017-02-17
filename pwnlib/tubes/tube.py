@@ -111,6 +111,7 @@ class tube(Timeout, Logger):
 
         Examples:
 
+            >>> False
             >>> t = tube()
             >>> t.recv_raw = lambda *a: 'abc'
             >>> len(t.buffer)
