@@ -1,6 +1,7 @@
 .. testsetup:: *
 
    from pwn import *
+   from glob import glob
 
 :mod:`pwnlib.elf.elf` --- ELF Files
 ===========================================================
