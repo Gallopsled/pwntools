@@ -81,8 +81,8 @@ def emulate_plt_instructions(elf, ebx, address, data, targets):
     # it will be re-swapped, but it doesn't matter for this
     # specific application.
     if context.endian == 'big':
-        if context.arch not in ('arm', 'thumb', 'mips', 'powerpc'):
-            log.warn("Unsupported big-endian emulation architecture: %s", arch)
+        if context.arch not in ('arm', 'aarch64', 'thumb', 'mips', 'powerpc'):
+            log.warn("Unsupported big-endian emulation architecture: %s", context.arch)
             return {}
 
         def hook_insn(uc, access, address, size, value, user_data):
