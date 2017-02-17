@@ -249,9 +249,10 @@ def _longest(d):
     as it ensures the most complete match will be found.
 
     >>> data = {'a': 1, 'bb': 2, 'ccc': 3}
-    >>> _longest(data) == data
+    >>> pwnlib.context._longest(data) == data
     True
-    >>> for i in _longest(data): print i
+    >>> for i in pwnlib.context._longest(data):
+    ...     print i
     ccc
     bb
     a
@@ -1329,6 +1330,7 @@ def LocalContext(function):
 
     Example:
 
+        >>> context.clear()
         >>> @LocalContext
         ... def printArch():
         ...     print(context.arch)
