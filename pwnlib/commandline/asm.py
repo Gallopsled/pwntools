@@ -96,7 +96,7 @@ parser.add_argument(
 def main(args):
     tty    = args.output.isatty()
 
-    if args.infile.isatty():
+    if args.infile.isatty() and not args.lines:
         parser.print_usage()
         sys.exit(1)
 
