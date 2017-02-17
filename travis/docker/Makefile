@@ -18,6 +18,7 @@ image: $(ARCHIVE)
 	docker build -t travis .
 
 $(ARCHIVE): FORCE
+	rm -f $@
 	cd $(ROOT) && git archive $(TREE) -o $@
 
 FORCE:
