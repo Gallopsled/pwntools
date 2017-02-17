@@ -45,11 +45,6 @@ def emulate_plt_instructions(elf, ebx, address, data, targets):
     if context.arch in ('arm', 'aarch64'):
         mode = U.UC_MODE_ARM
 
-    if context.endian == 'little':
-        mode |= U.UC_MODE_LITTLE_ENDIAN
-    else:
-        mode |= U.UC_MODE_BIG_ENDIAN
-
     uc = U.Uc(arch, mode)
 
     # Map the page of memory, and fill it with the contents
