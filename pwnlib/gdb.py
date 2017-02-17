@@ -401,7 +401,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
     if not ssh and context.os == 'android':
         host = context.adb_host
 
-    attach((host, port), exe=exe, gdbscript=gdbscript, need_ptrace_scope = False)
+    attach((host, port), exe=exe, gdbscript=gdbscript, need_ptrace_scope = False, ssh=ssh)
 
     # gdbserver outputs a message when a client connects
     garbage = gdbserver.recvline(timeout=1)
@@ -443,8 +443,8 @@ def binary():
     return gdb
 
 @LocalContext
-def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_args = None):
-    """attach(target, gdbscript = None, exe = None, arch = None) -> None
+def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_args = None, ssh = None):
+    """attach(target, gdbscript = None, exe = None, arch = None, ssh = None) -> None
 
     Start GDB in a new terminal and attach to `target`.
 
@@ -649,8 +649,11 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
     cmd += ' -q '
 
     if exe and context.native:
+        if ssh:
+            ssh.download_file(exe)
+            exe = os.path.basename(exe)
         if not os.path.isfile(exe):
-            log.error('no such file: %s' % exe)
+            log.error('No such file: %s' % exe)
         cmd += ' "%s"' % exe
 
     if pid and not context.os == 'android':
@@ -710,7 +713,7 @@ def ssh_gdb(ssh, argv, gdbscript = None, arch = None, **kwargs):
     l = tubes.listen.listen(0)
     forwardport = l.lport
 
-    attach(('127.0.0.1', forwardport), gdbscript, local_exe, arch)
+    attach(('127.0.0.1', forwardport), gdbscript, local_exe, arch, ssh=ssh)
     l.wait_for_connection() <> ssh.connect_remote('127.0.0.1', gdbport)
     return c
 
