@@ -91,6 +91,10 @@ def emulate_plt_instructions_inner(elf, got, pc, data, targets):
     # Map the page of memory, and fill it with the contents
     start = pc & (~0xfff)
     stop  = (pc + len(data) + 0xfff) & (~0xfff)
+
+    if not (0 <= start <= stop <= (1 << elf.bits)):
+        return None
+
     uc.mem_map(start, stop-start)
     uc.mem_write(pc, data)
     assert uc.mem_read(pc, len(data)) == data
