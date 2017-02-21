@@ -16,7 +16,6 @@ Examples:
 
     >>> print shellcraft.pushstr("Hello!").rstrip()
         /* push 'Hello!\x00' */
-        sub sp, sp, #16
         /* Set x14 = 36762444129608 = 0x216f6c6c6548 */
         mov  x14, #25928
         movk x14, #27756, lsl #16

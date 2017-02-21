@@ -27,18 +27,17 @@ Example:
         svc 0
     >>> print pwnlib.shellcraft.openat(-2, '/home/pwn/flag').rstrip()
         /* openat(fd=-2, file='/home/pwn/flag', oflag=0) */
-        /* push '/home/pwn/flag\x00\x00' */
-        sub sp, sp, #16
-        /* Set x0 = 8606431000579237935 = 0x77702f656d6f682f */
-        mov  x0, #26671
-        movk x0, #28015, lsl #16
-        movk x0, #12133, lsl #0x20
-        movk x0, #30576, lsl #0x30
-        /* Set x1 = 113668128124782 = 0x67616c662f6e */
-        mov  x1, #12142
-        movk x1, #27750, lsl #16
-        movk x1, #26465, lsl #0x20
-        stp x0, x1, [sp, #16 * 0]
+        /* push '/home/pwn/flag\x00' */
+        /* Set x14 = 8606431000579237935 = 0x77702f656d6f682f */
+        mov  x14, #26671
+        movk x14, #28015, lsl #16
+        movk x14, #12133, lsl #0x20
+        movk x14, #30576, lsl #0x30
+        /* Set x15 = 113668128124782 = 0x67616c662f6e */
+        mov  x15, #12142
+        movk x15, #27750, lsl #16
+        movk x15, #26465, lsl #0x20
+        stp x14, x15, [sp, #-16]!
         mov  x1, sp
         /* Set x0 = -2 = -2 */
         mov  x0, #65534

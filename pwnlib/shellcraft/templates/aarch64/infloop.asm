@@ -4,7 +4,7 @@ An infinite loop.
 
 Example:
 
-    >>> io = run_assembly(shellcraft.breakpoint())
+    >>> io = run_assembly(shellcraft.infloop())
     >>> io.recvall(timeout=1)
     ''
     >>> io.close()
