@@ -1,5 +1,5 @@
 <%
-  from pwnlib.shellcraft import common, aarch64
+  from pwnlib import shellcraft as SC
   from pwnlib import constants
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
   from pwnlib.log import getLogger
@@ -23,13 +23,13 @@ on the value of `context.os`.
 
 Examples:
 
-    >>> print shellcraft.aarch64.mov('x0','x1').rstrip()
+    >>> print shellcraft.mov('x0','x1').rstrip()
         mov  x0, x1
-    >>> print shellcraft.aarch64.mov('x0','0').rstrip()
+    >>> print shellcraft.mov('x0','0').rstrip()
         mov  x0, xzr
-    >>> print shellcraft.aarch64.mov('x0', 5).rstrip()
+    >>> print shellcraft.mov('x0', 5).rstrip()
         mov  x0, #5
-    >>> print shellcraft.aarch64.mov('x0', 0x34532).rstrip()
+    >>> print shellcraft.mov('x0', 0x34532).rstrip()
         /* Set x0 = 214322 = 0x34532 */
         mov  x0, #17714
         movk x0, #3, lsl #16
@@ -43,8 +43,7 @@ if dst not in regs:
     log.error('%r is not a register' % str(dst))
 
 if not src in regs:
-    with ctx.local(arch = 'aarch64'):
-        src = constants.eval(src)
+    src = SC.eval(src)
 
 mov_x0_x15 = False
 xor        = None
@@ -101,11 +100,11 @@ xor        = None
     movk ${dst}, #${(src >> 0x30) & 0xffff}, lsl #0x30
     %endif
     %if xor:
-    ${aarch64.mov('x14', xor)}
+    ${SC.mov('x14', xor)}
     eor ${dst}, ${dst}, x14
     %endif
     %if mov_x0_x15:
-    ${aarch64.mov('x0','x15')}
+    ${SC.mov('x0','x15')}
     %endif
   %endif
 %endif
