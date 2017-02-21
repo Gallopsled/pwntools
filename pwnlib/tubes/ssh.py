@@ -1327,8 +1327,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             h.status("%s/%s" % (misc.size(has), misc.size(total)))
 
         if self.sftp:
-            self.sftp.get(remote, local, update)
-            return
+            try:
+                self.sftp.get(remote, local, update)
+                return
+            except IOError:
+                pass
 
         cmd = sh_string.sh_command_with('wc -c < %s', remote)
         total, exitcode = self.run_to_end(cmd)
@@ -1810,6 +1813,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 }
 
             try:
+                if not self.which('lsb_release'):
+                    return
+
                 with self.process(['lsb_release', '-irs']) as io:
                     self._platform_info.update({
                         'distro': io.recvline().strip(),
