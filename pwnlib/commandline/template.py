@@ -31,6 +31,15 @@ def main(args):
         module_directory = cache
     )
 
+    # For the SSH scenario, check that the binary is at the
+    # same path on the remote host.
+    if args.user:
+        s = ssh(args.user, args.host, args.port or 22, args.password or None)
+        s.download(args.path or args.exe)
+
+        if not args.exe:
+            args.exe = os.path.basename(args.path)
+
     template = lookup.get_template('pwnup.mako')
     output = template.render(args.exe,
                              args.host,

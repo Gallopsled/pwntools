@@ -62,6 +62,9 @@ remote_path = ${repr(remote_path)}
 %endif
 
 %if exe or remote_path:
+# Specify your GDB script here for debugging
+# GDB will be launched if the exploit is run via e.g.
+# ./exploit.py GDB
 gdbscript = '''
 %if ctx.binary:
   %if 'main' in ctx.binary.symbols:
@@ -75,6 +78,7 @@ continue
 %endif
 
 %if ssh:
+# Connect to the remote SSH server
 shell = None
 if not args.LOCAL:
     shell = ssh(user, host, port, password)
@@ -82,18 +86,24 @@ if not args.LOCAL:
 %endif
 
 %if host:
-def local():
+# Execute the target binary locally
+def local(argv=[]):
     if args.GDB:
-        return gdb.debug(exe.path, gdbscript=gdbscript)
+        return gdb.debug([exe.path] + argv, gdbscript=gdbscript)
     else:
-        return process(exe.path)
+        return process([exe.path] + argv)
 
-def remote():
+%if ssh:
+# Execute the target binary on the remote host
+%else:
+# Connect to the process on the remote host
+%endif
+def remote(argv=[]):
   %if ssh:
     if args.GDB:
-        return gdb.debug(remote_path, gdbscript=gdbscript, ssh=shell)
+        return gdb.debug([remote_path] + argv, gdbscript=gdbscript, ssh=shell)
     else:
-        return shell.process(remote_path)
+        return shell.process([remote_path] + argv)
   %else:
     return connect(host, port)
   %endif
@@ -101,13 +111,12 @@ def remote():
 
 %if host:
 start = local if args.LOCAL else remote
-
-io = start()
 %else:
-if args.GDB:
-    io = gdb.debug(${binary_repr}, gdbscript=gdbscript)
-else:
-    io = process(${binary_repr})
+def start(argv=[]):
+    if args.GDB:
+        io = gdb.debug([${binary_repr}] + argv, gdbscript=gdbscript)
+    else:
+        io = process([${binary_repr}] + argv)
 %endif
 
 %if host and not ssh:
@@ -118,6 +127,8 @@ if args.GDB and not args.LOCAL:
 #===========================================================
 #                    EXPLOIT GOES HERE
 #===========================================================
+io = start()
+
 # shellcode = asm(shellcraft.sh())
 # payload = fit({
 #     32: 0xdeadbeef,
