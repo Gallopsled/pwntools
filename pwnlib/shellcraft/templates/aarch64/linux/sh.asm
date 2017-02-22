@@ -1,4 +1,4 @@
-<% from pwnlib.shellcraft import aarch64 %>
+<% from pwnlib import shellcraft as SC %>
 <%docstring>
 Execute a different process.
 
@@ -8,5 +8,5 @@ Execute a different process.
     'Hello\n'
 
 </%docstring>
-    ${aarch64.pushstr('/bin///sh')}
-    ${aarch64.linux.execve('sp', 0, 0)}
+    ${SC.pushstr('/bin///sh')}
+    ${SC.execve('sp', 0, 0)}

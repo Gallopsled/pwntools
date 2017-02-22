@@ -1,8 +1,6 @@
 <%
+  from pwnlib import shellcraft as SC
   from pwnlib.regsort import regsort
-  from pwnlib.constants import Constant, eval
-  from pwnlib.shellcraft import registers
-  from pwnlib.shellcraft.aarch64 import mov
 %>
 <%page args="reg_context, stack_allowed = True"/>
 <%docstring>
@@ -26,18 +24,19 @@ Example:
 </%docstring>
 <%
 reg_context = {k:v for k,v in reg_context.items() if v is not None}
-sorted_regs = regsort(reg_context, registers.aarch64)
+registers = SC.registers.aarch64
+sorted_regs = regsort(reg_context, registers)
 %>
 % if not sorted_regs:
   /* setregs noop */
 % else:
-% for how, dst, src in regsort(reg_context, registers.aarch64):
+% for how, dst, src in regsort(reg_context, registers):
 % if how == 'xchg':
     eor  ${dst}, ${dst}, ${src} /* xchg ${dst}, ${src} */
     eor  ${src}, ${dst}, ${src}
     eor  ${dst}, ${dst}, ${src}
 % else:
-    ${mov(dst, src)}
+    ${SC.mov(dst, src)}
 % endif
 % endfor
 % endif
