@@ -749,7 +749,7 @@ def unlink(path, recursive=False):
 
         flags = '-rf' if recursive else '-r'
 
-        output = c.execute(['rm', flags, path]).recvall()
+        output = process(['rm', flags, path]).recvall()
 
         if output:
             log.error(output)
@@ -822,7 +822,7 @@ def process(argv, shell=False, executable=None, env=None, *a, **kw):
         if argv != [argv[0]]: message += ' argv=%r ' % argv
 
     with log.progress(message) as p:
-        result = AdbClient().execute(argv)
+        result = AdbClient().execute(cmd)
 
     result.argv = saved_argv
     result.pid  = int(result.recvline())
