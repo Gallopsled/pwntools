@@ -133,7 +133,7 @@ USER travis
 RUN mkdir /home/travis/pwntools
 WORKDIR /home/travis/pwntools
 ADD run.sh .
-ADD pwntools.tar.gz .
-RUN sudo pip install --editable .
-RUN sudo chown -R travis .
+COPY pwntools.tar.gz .
+RUN tar xf pwntools.tar.gz
+RUN sudo rm -f pwntools.tar.gz
 ENTRYPOINT bash run.sh
