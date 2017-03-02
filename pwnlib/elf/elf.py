@@ -124,6 +124,8 @@ class dotdict(dict):
     Is a real :class:`dict` object, but also serves up keys as attributes
     when reading attributes.
 
+    Supports recursive instantiation for keys which contain dots.
+
     Example:
 
         >>> x = pwnlib.elf.elf.dotdict()
@@ -132,9 +134,22 @@ class dotdict(dict):
         >>> x['foo'] = 3
         >>> x.foo
         3
+        >>> x['bar.baz'] = 4
+        >>> x.bar.baz
+        4
     """
     def __getattr__(self, name):
-        return self[name]
+        if name in self:
+            return self[name]
+
+        name_dot = name + '.'
+        name_len = len(name_dot)
+        subkeys = {k[name_len:]: self[k] for k in self if k.startswith(name_dot)}
+
+        if subkeys:
+            return dotdict(subkeys)
+
+        return getattr(super(dotdict, self), name)
 
 class ELF(ELFFile):
     """Encapsulates information about an ELF file.
@@ -290,6 +305,7 @@ class ELF(ELFFile):
         self._populate_symbols()
         self._populate_got()
         self._populate_plt()
+        self._populate_synthetic_symbols()
         self._populate_libraries()
         self._populate_functions()
         self._populate_kernel_version()
@@ -628,15 +644,11 @@ class ELF(ELFFile):
     def _populate_symbols(self):
         """
         >>> bash = ELF(which('bash'))
-        >>> bash.symbols['_start'] == bash.header.e_entry
+        >>> bash.symbols['_start'] == bash.entry
         True
         """
-        # By default, have 'symbols' include everything in the PLT.
-        #
-        # This way, elf.symbols['write'] will be a valid address to call
-        # for write().
-        self.symbols.update(self.plt)
 
+        # Populate all of the "normal" symbols from the symbol tables
         for section in self.sections:
             if not isinstance(section, SymbolTableSection):
                 continue
@@ -647,8 +659,29 @@ class ELF(ELFFile):
                     continue
                 self.symbols[symbol.name] = value
 
-        # Add 'plt.foo' and 'got.foo' to the symbols for entries
-        self.symbols.update({'got.%s' % sym: addr for sym, addr in self.got.items()})
+    def _populate_synthetic_symbols(self):
+        """Adds symbols from the GOT and PLT to the symbols dictionary.
+
+        Does not overwrite any existing symbols, and prefers PLT symbols.
+
+        Synthetic plt.xxx and got.xxx symbols are added for each PLT and
+        GOT entry, respectively.
+
+        Example:bash.
+
+            >>> bash = ELF(which('bash'))
+            >>> bash.symbols.wcscmp == bash.plt.wcscmp
+            >>> bash.symbols.wcscmp == bash.symbols.plt.wcscmp
+            >>> bash.symbols.stdin  == bash.got.stdin
+            >>> bash.symbols.stdin  == bash.symbols.got.stdin
+        """
+        for symbol, address in self.plt.items():
+            self.symbols.setdefault(symbol, address)
+            self.symbols['plt.' + symbol] = address
+
+        for symbol, address in self.got.items():
+            self.symbols.setdefault(symbol, address)
+            self.symbols['got.' + symbol] = address
 
     def _populate_got(self):
         """Loads the symbols for all relocations"""
@@ -776,8 +809,6 @@ class ELF(ELFFile):
 
         for a,n in sorted({v:k for k,v in self.plt.items()}.items()):
             log.debug('PLT %#x %s', a, n)
-
-        self.symbols.update({'plt.%s' % sym: addr for sym, addr in self.plt.items()})
 
     def _populate_kernel_version(self):
         if 'linux_banner' not in self.symbols:
