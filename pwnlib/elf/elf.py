@@ -766,7 +766,6 @@ class ELF(ELFFile):
         ...     assert '__stack_chk_fail' in test.got, test
         ...     if test.arch != 'ppc':
         ...         assert '__stack_chk_fail' in test.plt, test
-        >>> False
         """
         if self.statically_linked:
             log.debug("%r is statically linked, skipping GOT/PLT symbols" % self.path)
