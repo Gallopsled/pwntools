@@ -713,7 +713,10 @@ class ELF(ELFFile):
                     self.got[symbol.name] = rel.entry.r_offset
 
         if self.arch == 'mips':
-            self._populate_mips_got()
+            try:
+                self._populate_mips_got()
+            except Exception as e:
+                log.warn("Could not populate MIPS GOT: %s", e)
 
         if not self.got:
             log.warn("Did not find any GOT entries")
