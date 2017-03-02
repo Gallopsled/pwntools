@@ -302,9 +302,21 @@ class ELF(ELFFile):
         #: ``True`` if the ELF is a shared library
         self.library = not self.executable and self.elftype == 'DYN'
 
-        self._populate_symbols()
-        self._populate_got()
-        self._populate_plt()
+        try:
+            self._populate_symbols()
+        except Exception as e:
+            log.warn("Could not populate symbols: %s", e)
+
+        try:
+            self._populate_got()
+        except Exception as e:
+            log.warn("Could not populate GOT: %s", e)
+
+        try:
+            self._populate_plt()
+        except Exception as e:
+            log.warn("Could not populate PLT: %s", e)
+
         self._populate_synthetic_symbols()
         self._populate_libraries()
         self._populate_functions()
@@ -671,9 +683,13 @@ class ELF(ELFFile):
 
             >>> bash = ELF(which('bash'))
             >>> bash.symbols.wcscmp == bash.plt.wcscmp
+            True
             >>> bash.symbols.wcscmp == bash.symbols.plt.wcscmp
+            True
             >>> bash.symbols.stdin  == bash.got.stdin
+            True
             >>> bash.symbols.stdin  == bash.symbols.got.stdin
+            True
         """
         for symbol, address in self.plt.items():
             self.symbols.setdefault(symbol, address)
