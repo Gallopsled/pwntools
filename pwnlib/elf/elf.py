@@ -1146,7 +1146,8 @@ class ELF(ELFFile):
         if self.arch == 'arm' and address & 1:
             arch = 'thumb'
             address -= 1
-        return disasm(self.read(address, n_bytes), vma=address, arch=arch)
+
+        return disasm(self.read(address, n_bytes), vma=address, arch=arch, endian=self.endian)
 
     def asm(self, address, assembly):
         """asm(address, assembly)

@@ -1,6 +1,9 @@
 """Emulates instructions in the PLT to locate symbols more accurately.
 """
+import logging
+
 from pwnlib.log import getLogger
+from pwnlib.util import fiddling
 from pwnlib.util import packing
 
 log = getLogger(__name__)
@@ -22,32 +25,22 @@ def emulate_plt_instructions(elf, got, address, data, targets):
     """
     rv = {}
 
-
     # Unicorn doesn't support big-endian for everything yet.
-    # For all architectures where big-endian is a real option
-    # (ARM, MIPS, PowerPC) use a hook to swap the endianness of
-    # each instruction before it is executed.
-    #
-    # This approach is naive since if an instruction is re-executed
-    # it will be re-swapped, but it doesn't matter for this
-    # specific application.
-    if elf.endian == 'big':
-        if elf.arch not in ('arm', 'aarch64', 'thumb', 'mips', 'powerpc'):
-            log.warn("Unsupported big-endian emulation architecture: %s", elf.arch)
-            return {}
-
+    if elf.endian == 'big' and elf.arch == 'mips':
         data = packing.unpack_many(data, bits=32, endian='little')
         data = packing.flat(data, bits=32, endian='big')
 
     # Brute force addresses, assume that PLT entry points are at 4-byte aligned
     # Do not emulate more than a handful of instructions.
     for i, pc in enumerate(range(address, address + len(data), 4)):
-        address = emulate_plt_instructions_inner(elf, got, address, data[i*4:], targets)
+        if log.isEnabledFor(logging.DEBUG):
+            log.debug('%s %#x', fiddling.enhex(data[i*4:(i+1) * 4]), pc)
+            log.debug(elf.disasm(pc, 4))
+        target = emulate_plt_instructions_inner(elf, got, pc, data[i*4:], targets)
 
-        log.debug("%#x -> %#x", pc, address)
-
-        if address in targets:
-            rv[pc] = address
+        if target in targets:
+            log.debug("%#x -> %#x", pc, target)
+            rv[pc] = target
 
     return rv
 
@@ -148,7 +141,7 @@ def emulate_plt_instructions_inner(elf, got, pc, data, targets):
 
     # callback for tracing instructions
     # def hook_code(uc, address, size, user_data):
-    #     print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
+    #     print(">>> Tracing instruction at 0x%x, instruction size = 0x%x, data=%r" %(address, size, uc.mem_read(address, size)))
     # uc.hook_add(U.UC_HOOK_CODE, hook_code)
 
     # For Intel, set the value of EBX
@@ -164,7 +157,10 @@ def emulate_plt_instructions_inner(elf, got, pc, data, targets):
     try:
         uc.emu_start(pc, until=-1, count=5)
     except U.UcError as error:
-        log.debug("%#x: %s", pc, error)
+        UC_ERR = (k for k,v in \
+                    U.unicorn_const.__dict__.items()
+                    if error.errno == v and k.startswith('UC_ERR_')).next()
+        log.debug("%#x: %s (%s)", pc, error, UC_ERR)
 
     if elf.arch == 'mips':
         pc = uc.reg_read(U.mips_const.UC_MIPS_REG_PC)
