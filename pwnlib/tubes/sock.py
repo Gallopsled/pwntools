@@ -10,7 +10,7 @@ from pwnlib.tubes.tube import tube
 log = getLogger(__name__)
 
 class sock(tube):
-    """Methods available exclusively to sockets."""
+    """Base type used for :class:`.tubes.remote` and :class:`.tubes.listen` classes"""
 
     def __init__(self, *args, **kwargs):
         super(sock, self).__init__(*args, **kwargs)
@@ -205,3 +205,35 @@ class sock(tube):
 
         if False not in self.closed.values():
             self.close()
+
+    def _get_family(self, fam):
+
+        if isinstance(fam, (int, long)):
+            pass
+        elif fam == 'any':
+            fam = socket.AF_UNSPEC
+        elif fam.lower() in ['ipv4', 'ip4', 'v4', '4']:
+            fam = socket.AF_INET
+        elif fam.lower() in ['ipv6', 'ip6', 'v6', '6']:
+            fam = socket.AF_INET6
+        else:
+            self.error("%s(): socket family %r is not supported",
+                       self.__class__.__name__,
+                       fam)
+
+        return fam
+
+    def _get_type(self, typ):
+
+        if isinstance(typ, (int, long)):
+            pass
+        elif typ == "tcp":
+            typ = socket.SOCK_STREAM
+        elif typ == "udp":
+            typ = socket.SOCK_DGRAM
+        else:
+            self.error("%s(): socket type %r is not supported",
+                       self.__class__.__name__,
+                       typ)
+
+        return typ

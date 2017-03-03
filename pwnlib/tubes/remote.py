@@ -31,10 +31,16 @@ class remote(sock):
         >>> r.send('GET /\r\n\r\n')
         >>> r.recvn(4)
         'HTTP'
+
+        If a connection cannot be made, an exception is raised.
+
         >>> r = remote('127.0.0.1', 1)
         Traceback (most recent call last):
         ...
         PwnlibException: Could not connect to 127.0.0.1 on port 1
+
+        You can also use :meth:`.remote.fromsocket` to wrap an existing socket.
+
         >>> import socket
         >>> s = socket.socket()
         >>> s.connect(('google.com', 80))
@@ -74,37 +80,6 @@ class remote(sock):
 
             if ssl:
                 self.sock = _ssl.wrap_socket(self.sock)
-
-
-    @staticmethod
-    def _get_family(fam):
-
-        if isinstance(fam, (int, long)):
-            pass
-        elif fam == 'any':
-            fam = socket.AF_UNSPEC
-        elif fam.lower() in ['ipv4', 'ip4', 'v4', '4']:
-            fam = socket.AF_INET
-        elif fam.lower() in ['ipv6', 'ip6', 'v6', '6']:
-            fam = socket.AF_INET6
-        else:
-            self.error("remote(): family %r is not supported" % fam)
-
-        return fam
-
-    @staticmethod
-    def _get_type(typ):
-
-        if isinstance(typ, (int, long)):
-            pass
-        elif typ == "tcp":
-            typ = socket.SOCK_STREAM
-        elif typ == "udp":
-            typ = socket.SOCK_DGRAM
-        else:
-            self.error("remote(): type %r is not supported" % typ)
-
-        return typ
 
     def _connect(self, fam, typ):
         sock    = None

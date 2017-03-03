@@ -11,7 +11,7 @@ from pwnlib.tubes.sock import sock
 log = getLogger(__name__)
 
 class listen(sock):
-    """Creates an TCP or UDP-socket to receive data on. It supports
+    r"""Creates an TCP or UDP-socket to receive data on. It supports
     both IPv4 and IPv6.
 
     The returned object supports all the methods from
@@ -19,10 +19,51 @@ class listen(sock):
 
     Arguments:
         port(int): The port to connect to.
+            Defaults to a port auto-selected by the operating system.
         bindaddr(str): The address to bind to.
+            Defaults to ``0.0.0.0`` / `::`.
         fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
         typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
+
+    Examples:
+
+        >>> l = listen(1234)
+        >>> r = remote('localhost', l.lport)
+        >>> _ = l.wait_for_connection()
+        >>> l.sendline('Hello')
+        >>> r.recvline()
+        'Hello\n'
+
+        >>> l = listen()
+        >>> l.spawn_process('/bin/sh')
+        >>> r = remote('localhost', l.lport)
+        >>> r.sendline('echo Goodbye')
+        >>> r.recvline()
+        'Goodbye\n'
     """
+
+    #: Local port
+    lport = 0
+
+    #: Local host
+    lhost = None
+
+    #: Socket type (e.g. socket.SOCK_STREAM)
+    type = None
+
+    #: Socket family
+    family = None
+
+    #: Socket protocol
+    protocol = None
+
+    #: Canonical name of the listening interface
+    canonname = None
+
+    #: Sockaddr structure that is being listened on
+    sockaddr = None
+
+    _accepter = None
 
     def __init__(self, port=0, bindaddr = "0.0.0.0",
                  fam = "any", typ = "tcp", *args, **kwargs):
@@ -32,27 +73,11 @@ class listen(sock):
         fam  = {socket.AF_INET: 'ipv4',
                 socket.AF_INET6: 'ipv6'}.get(fam, fam)
 
-        if fam == 'any':
-            fam = socket.AF_UNSPEC
-        elif fam.lower() in ['ipv4', 'ip4', 'v4', '4']:
-            fam = socket.AF_INET
-        elif fam.lower() in ['ipv6', 'ip6', 'v6', '6']:
-            fam = socket.AF_INET6
-            if bindaddr == '0.0.0.0':
-                bindaddr = '::'
-        elif isinstance(fam, (int, long)):
-            pass
-        else:
-            self.error("remote(): family %r is not supported" % fam)
+        fam = self._get_family(fam)
+        typ = self._get_type(typ)
 
-        if typ == "tcp":
-            typ = socket.SOCK_STREAM
-        elif typ == "udp":
-            typ = socket.SOCK_DGRAM
-        elif isinstance(typ, (int, long)):
-            pass
-        else:
-            self.error("remote(): type %r is not supported" % typ)
+        if fam == socket.AF_INET6 and bindaddr == '0.0.0.0':
+            bindaddr = '::'
 
         h = self.waitfor('Trying to bind to %s on port %d' % (bindaddr, port))
 
@@ -135,6 +160,6 @@ class listen(sock):
     def close(self):
         # since `close` is scheduled to run on exit we must check that we got
         # a connection or the program will hang in the `join` call above
-        if self._accepter.is_alive():
+        if self._accepter and self._accepter.is_alive():
             return
         super(listen, self).close()
