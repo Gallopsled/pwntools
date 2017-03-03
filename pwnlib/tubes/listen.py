@@ -21,7 +21,7 @@ class listen(sock):
         port(int): The port to connect to.
             Defaults to a port auto-selected by the operating system.
         bindaddr(str): The address to bind to.
-            Defaults to ``0.0.0.0``.
+            Defaults to ``0.0.0.0`` / `::`.
         fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
         typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
 
@@ -75,6 +75,9 @@ class listen(sock):
 
         fam = self._get_family(fam)
         typ = self._get_type(typ)
+
+        if fam == socket.AF_INET6 and bindaddr == '0.0.0.0':
+            bindaddr = '::'
 
         h = self.waitfor('Trying to bind to %s on port %d' % (bindaddr, port))
 
