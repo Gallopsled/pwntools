@@ -31,10 +31,16 @@ class remote(sock):
         >>> r.send('GET /\r\n\r\n')
         >>> r.recvn(4)
         'HTTP'
+
+        If a connection cannot be made, an exception is raised.
+
         >>> r = remote('127.0.0.1', 1)
         Traceback (most recent call last):
         ...
         PwnlibException: Could not connect to 127.0.0.1 on port 1
+
+        You can also use :meth:`.remote.fromsocket` to wrap an existing socket.
+
         >>> import socket
         >>> s = socket.socket()
         >>> s.connect(('google.com', 80))
