@@ -346,7 +346,7 @@ class AdbDevice(Device):
         of this device.
 
         >>> property = 'ro.build.fingerprint'
-        >>> device = adb.current_device()
+        >>> device = adb.wait_for_device()
         >>> adb.getprop(property) == device.getprop(property)
         True
         """

@@ -136,4 +136,5 @@ ADD run.sh .
 COPY pwntools.tar.gz .
 RUN tar xf pwntools.tar.gz
 RUN sudo rm -f pwntools.tar.gz
+RUN sudo pip install -U -e .
 ENTRYPOINT bash run.sh

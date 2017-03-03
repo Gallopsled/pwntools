@@ -124,6 +124,8 @@ class dotdict(dict):
     Is a real :class:`dict` object, but also serves up keys as attributes
     when reading attributes.
 
+    Supports recursive instantiation for keys which contain dots.
+
     Example:
 
         >>> x = pwnlib.elf.elf.dotdict()
@@ -132,9 +134,22 @@ class dotdict(dict):
         >>> x['foo'] = 3
         >>> x.foo
         3
+        >>> x['bar.baz'] = 4
+        >>> x.bar.baz
+        4
     """
     def __getattr__(self, name):
-        return self[name]
+        if name in self:
+            return self[name]
+
+        name_dot = name + '.'
+        name_len = len(name_dot)
+        subkeys = {k[name_len:]: self[k] for k in self if k.startswith(name_dot)}
+
+        if subkeys:
+            return dotdict(subkeys)
+
+        return getattr(super(dotdict, self), name)
 
 class ELF(ELFFile):
     """Encapsulates information about an ELF file.
@@ -287,9 +302,22 @@ class ELF(ELFFile):
         #: ``True`` if the ELF is a shared library
         self.library = not self.executable and self.elftype == 'DYN'
 
-        self._populate_got()
-        self._populate_plt()
-        self._populate_symbols()
+        try:
+            self._populate_symbols()
+        except Exception as e:
+            log.warn("Could not populate symbols: %s", e)
+
+        try:
+            self._populate_got()
+        except Exception as e:
+            log.warn("Could not populate GOT: %s", e)
+
+        try:
+            self._populate_plt()
+        except Exception as e:
+            log.warn("Could not populate PLT: %s", e)
+
+        self._populate_synthetic_symbols()
         self._populate_libraries()
         self._populate_functions()
         self._populate_kernel_version()
@@ -628,15 +656,11 @@ class ELF(ELFFile):
     def _populate_symbols(self):
         """
         >>> bash = ELF(which('bash'))
-        >>> bash.symbols['_start'] == bash.header.e_entry
+        >>> bash.symbols['_start'] == bash.entry
         True
         """
-        # By default, have 'symbols' include everything in the PLT.
-        #
-        # This way, elf.symbols['write'] will be a valid address to call
-        # for write().
-        self.symbols.update(self.plt)
 
+        # Populate all of the "normal" symbols from the symbol tables
         for section in self.sections:
             if not isinstance(section, SymbolTableSection):
                 continue
@@ -647,9 +671,33 @@ class ELF(ELFFile):
                     continue
                 self.symbols[symbol.name] = value
 
-        # Add 'plt.foo' and 'got.foo' to the symbols for entries
-        self.symbols.update({'plt.%s' % sym: addr for sym, addr in self.plt.items()})
-        self.symbols.update({'got.%s' % sym: addr for sym, addr in self.got.items()})
+    def _populate_synthetic_symbols(self):
+        """Adds symbols from the GOT and PLT to the symbols dictionary.
+
+        Does not overwrite any existing symbols, and prefers PLT symbols.
+
+        Synthetic plt.xxx and got.xxx symbols are added for each PLT and
+        GOT entry, respectively.
+
+        Example:bash.
+
+            >>> bash = ELF(which('bash'))
+            >>> bash.symbols.wcscmp == bash.plt.wcscmp
+            True
+            >>> bash.symbols.wcscmp == bash.symbols.plt.wcscmp
+            True
+            >>> bash.symbols.stdin  == bash.got.stdin
+            True
+            >>> bash.symbols.stdin  == bash.symbols.got.stdin
+            True
+        """
+        for symbol, address in self.plt.items():
+            self.symbols.setdefault(symbol, address)
+            self.symbols['plt.' + symbol] = address
+
+        for symbol, address in self.got.items():
+            self.symbols.setdefault(symbol, address)
+            self.symbols['got.' + symbol] = address
 
     def _populate_got(self):
         """Loads the symbols for all relocations"""
@@ -659,7 +707,6 @@ class ELF(ELFFile):
             return
 
         for section in self.iter_sections():
-
             # We are only interested in relocations
             if not isinstance(section, RelocationSection):
                 continue
@@ -676,17 +723,68 @@ class ELF(ELFFile):
                 if not sym_idx:
                     continue
 
-                symbol   = symbols.get_symbol(sym_idx)
+                symbol = symbols.get_symbol(sym_idx)
 
                 if symbol and symbol.name:
                     self.got[symbol.name] = rel.entry.r_offset
 
+        if self.arch == 'mips':
+            try:
+                self._populate_mips_got()
+            except Exception as e:
+                log.warn("Could not populate MIPS GOT: %s", e)
+
         if not self.got:
             log.warn("Did not find any GOT entries")
 
+    def _populate_mips_got(self):
+        self._mips_got = {}
+        strings = self.get_section(self.header.e_shstrndx)
+
+        ELF_MIPS_GNU_GOT1_MASK = 0x80000000
+
+        if self.bits == 64:
+            ELF_MIPS_GNU_GOT1_MASK <<= 32
+
+        # Beginning of the GOT
+        got = self.dynamic_value_by_tag('DT_PLTGOT') or 0
+
+        # Find the beginning of the GOT pointers
+        got1_mask = (self.unpack(got) & ELF_MIPS_GNU_GOT1_MASK)
+        i = 2 if got1_mask else 1
+        self._mips_skip = i
+
+        # We don't care about local GOT entries, skip them
+        local_gotno = self.dynamic_value_by_tag('DT_MIPS_LOCAL_GOTNO')
+        got += local_gotno * context.bytes
+
+        # Iterate over the dynamic symbol table
+        dynsym = self.get_section_by_name('.dynsym')
+        symbol_iter = dynsym.iter_symbols()
+
+        # 'gotsym' is the index of the first GOT symbol
+        gotsym = self.dynamic_value_by_tag('DT_MIPS_GOTSYM')
+        for i in range(gotsym):
+            symbol_iter.next()
+
+        # 'symtabno' is the total number of symbols
+        symtabno = self.dynamic_value_by_tag('DT_MIPS_SYMTABNO')
+
+        for i in range(symtabno - gotsym):
+            symbol = symbol_iter.next()
+            self._mips_got[i + gotsym] = got
+            self.got[symbol.name] = got
+            got += self.bytes
 
     def _populate_plt(self):
         """Loads the PLT symbols
+
+        >>> path = pwnlib.data.elf.path
+        >>> for test in glob(os.path.join(path, 'test-*')):
+        ...     test = ELF(test)
+        ...     assert '__stack_chk_fail' in test.got, test
+        ...     if test.arch != 'ppc':
+        ...         assert '__stack_chk_fail' in test.plt, test
         """
         if self.statically_linked:
             log.debug("%r is statically linked, skipping GOT/PLT symbols" % self.path)
@@ -707,22 +805,25 @@ class ELF(ELFFile):
         # There are two PLTs we may need to search
         plt = self.get_section_by_name('.plt')          # <-- Functions only
         plt_got = self.get_section_by_name('.plt.got')  # <-- Functions used as data
+        plt_mips = self.get_section_by_name('.MIPS.stubs')
 
         # Invert the GOT symbols we already have, so we can look up by address
-        got_addrs = {v:k for k,v in self.got.items()}
+        inv_symbols = {v:k for k,v in self.got.items()}
+        plt_targets = set(self.got.values()) | set(self.symbols.values())
 
         with context.local(arch=self.arch, bits=self.bits, endian=self.endian):
-            for section in (plt, plt_got):
+            for section in (plt, plt_got, plt_mips):
                 if not section:
                     continue
+
                 res = emulate_plt_instructions(self,
                                                 dt_pltgot,
                                                 section.header.sh_addr,
                                                 section.data(),
-                                                got_addrs)
+                                                plt_targets)
 
                 for address, target in reversed(sorted(res.items())):
-                    self.plt[got_addrs[target]] = address
+                    self.plt[inv_symbols[target]] = address
 
         for a,n in sorted({v:k for k,v in self.plt.items()}.items()):
             log.debug('PLT %#x %s', a, n)
@@ -1094,7 +1195,8 @@ class ELF(ELFFile):
         if self.arch == 'arm' and address & 1:
             arch = 'thumb'
             address -= 1
-        return disasm(self.read(address, n_bytes), vma=address, arch=arch)
+
+        return disasm(self.read(address, n_bytes), vma=address, arch=arch, endian=self.endian)
 
     def asm(self, address, assembly):
         """asm(address, assembly)
@@ -1337,7 +1439,10 @@ class ELF(ELFFile):
     @property
     def canary(self):
         """:class:`bool`: Whether the current binary uses stack canaries."""
-        return '__stack_chk_fail' in self.symbols
+
+        # Sometimes there is no function for __stack_chk_fail,
+        # but there is an entry in the GOT
+        return '__stack_chk_fail' in (set(self.symbols) | set(self.got))
 
     @property
     def packed(self):
@@ -1499,45 +1604,59 @@ class ELF(ELFFile):
         Undefined Behavior Sanitizer (``UBSAN``)."""
         return any(s.startswith('__ubsan_') for s in self.symbols)
 
+    def _update_args(self, kw):
+        kw.setdefault('arch', self.arch)
+        kw.setdefault('bits', self.bits)
+        kw.setdefault('endian', self.endian)
 
     def p64(self,  address, data, *a, **kw):
         """Writes a 64-bit integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
         return self.write(address, packing.p64(data, *a, **kw))
 
     def p32(self,  address, data, *a, **kw):
         """Writes a 32-bit integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
         return self.write(address, packing.p32(data, *a, **kw))
 
     def p16(self,  address, data, *a, **kw):
         """Writes a 16-bit integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
         return self.write(address, packing.p16(data, *a, **kw))
 
     def p8(self,   address, data, *a, **kw):
         """Writes a 8-bit integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
         return self.write(address, packing.p8(data, *a, **kw))
 
     def pack(self, address, data, *a, **kw):
         """Writes a packed integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
         return self.write(address, packing.pack(data, *a, **kw))
 
     def u64(self,    address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
         return packing.u64(self.read(address, 8), *a, **kw)
 
     def u32(self,    address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
         return packing.u32(self.read(address, 4), *a, **kw)
 
     def u16(self,    address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
         return packing.u16(self.read(address, 2), *a, **kw)
 
     def u8(self,     address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
         return packing.u8(self.read(address, 1), *a, **kw)
 
     def unpack(self, address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
         return packing.unpack(self.read(address, context.bytes), *a, **kw)
 
     def string(self, address):
