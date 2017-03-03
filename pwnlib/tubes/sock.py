@@ -10,7 +10,7 @@ from pwnlib.tubes.tube import tube
 log = getLogger(__name__)
 
 class sock(tube):
-    """Methods available exclusively to sockets."""
+    """Base type used for :class:`.tubes.remote` and :class:`.tubes.listen` classes"""
 
     def __init__(self, *args, **kwargs):
         super(sock, self).__init__(*args, **kwargs)
