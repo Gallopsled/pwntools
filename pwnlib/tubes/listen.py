@@ -63,6 +63,8 @@ class listen(sock):
     #: Sockaddr structure that is being listened on
     sockaddr = None
 
+    _accepter = None
+
     def __init__(self, port=0, bindaddr = "0.0.0.0",
                  fam = "any", typ = "tcp", *args, **kwargs):
         super(listen, self).__init__(*args, **kwargs)
@@ -155,6 +157,6 @@ class listen(sock):
     def close(self):
         # since `close` is scheduled to run on exit we must check that we got
         # a connection or the program will hang in the `join` call above
-        if self._accepter.is_alive():
+        if self._accepter and self._accepter.is_alive():
             return
         super(listen, self).close()
