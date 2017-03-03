@@ -388,6 +388,10 @@ class ssh_process(ssh_channel):
             self.exception("Could not look up environment variable %r" % variable)
 
     def _close_msg(self):
+        # If we never completely started up, just use the parent implementation
+        if self.executable is None:
+            return super(ssh_process, self)._close_msg()
+
         self.info('Stopped remote process %r on %s (pid %i)' \
             % (os.path.basename(self.executable),
                self.host,
@@ -616,7 +620,10 @@ class ssh(Timeout, Logger):
             except Exception:
                 self.pid = None
 
-        self.info_once(self.checksec())
+        try:
+            self.info_once(self.checksec())
+        except Exception:
+            log.warn_once("Couldn't check security settings on %r" % self.host)
 
     @property
     def sftp(self):
@@ -1048,7 +1055,7 @@ os.execve(exe, argv, os.environ)
 
         result = self.run('export PATH=$PATH:$PWD; which %s' % program).recvall().strip()
 
-        if '/' not in result:
+        if ('/%s' % program) not in result:
             return None
 
         return result
@@ -1335,8 +1342,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             h.status("%s/%s" % (misc.size(has), misc.size(total)))
 
         if self.sftp:
-            self.sftp.get(remote, local, update)
-            return
+            try:
+                self.sftp.get(remote, local, update)
+                return
+            except IOError:
+                pass
 
         cmd = 'wc -c < ' + sh_string(remote)
         total, exitcode = self.run_to_end(cmd)
@@ -1791,14 +1801,16 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
     def _init_remote_platform_info(self):
         """Fills _platform_info, e.g.:
 
-        {'distro': 'Ubuntu\n',
-         'distro_ver': '14.04\n',
-         'machine': 'x86_64',
-         'node': 'pwnable.kr',
-         'processor': 'x86_64',
-         'release': '3.11.0-12-generic',
-         'system': 'linux',
-         'version': '#19-ubuntu smp wed oct 9 16:20:46 utc 2013'}
+        ::
+
+            {'distro': 'Ubuntu\n',
+             'distro_ver': '14.04\n',
+             'machine': 'x86_64',
+             'node': 'pwnable.kr',
+             'processor': 'x86_64',
+             'release': '3.11.0-12-generic',
+             'system': 'linux',
+             'version': '#19-ubuntu smp wed oct 9 16:20:46 utc 2013'}
         """
         if self._platform_info:
             return
@@ -1822,6 +1834,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 }
 
             try:
+                if not self.which('lsb_release'):
+                    return
+
                 with self.process(['lsb_release', '-irs']) as io:
                     self._platform_info.update({
                         'distro': io.recvline().strip(),
@@ -1846,7 +1861,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         """:class:`str`: CPU Architecture of the remote machine."""
         try:
             self._init_remote_platform_info()
-            with context.local(arch=self._platform_info['processor']):
+            with context.local(arch=self._platform_info['machine']):
                 return context.arch
         except Exception:
             return "Unknown"
@@ -1889,7 +1904,14 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
     @property
     def aslr(self):
-        """:class:`bool`: Whether ASLR is enabled on the system."""
+        """:class:`bool`: Whether ASLR is enabled on the system.
+
+        Example:
+
+            >>> s = ssh("esoteric3", "wargame.w3challs.com", 20202, "esoteric3")
+            >>> s.aslr
+            True
+        """
         if self._aslr is None:
             if self.os != 'linux':
                 self.warn_once("Only Linux is supported for ASLR checks.")
@@ -1940,7 +1962,14 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 # Move to a new temporary directory
                 cwd = self.cwd
                 tmp = self.set_working_directory()
-                self.upload(elf.path, './aslr-test')
+
+                try:
+                    self.upload(elf.path, './aslr-test')
+                except IOError:
+                    self.warn_once("Couldn't check ASLR ulimit trick")
+                    self._aslr_ulimit = False
+                    return False
+
                 self.process(['chmod', '+x', './aslr-test']).wait()
                 maps = self.process(['./aslr-test'], preexec_fn=preexec).recvall()
 
