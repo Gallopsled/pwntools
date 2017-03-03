@@ -19,10 +19,49 @@ class listen(sock):
 
     Arguments:
         port(int): The port to connect to.
+            Defaults to a port auto-selected by the operating system.
         bindaddr(str): The address to bind to.
+            Defaults to ``0.0.0.0``.
         fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
         typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
+
+    Examples:
+
+        >>> l = listen(1234)
+        >>> r = remote('localhost', l.lport)
+        >>> l.wait_for_connection()
+        >>> l.sendline('Hello')
+        >>> r.recvline()
+        'Hello\n'
+
+        >>> l = listen()
+        >>> l.spawn_process('/bin/sh')
+        >>> r = remote('localhost', l.lport)
+        >>> r.sendline('echo Goodbye')
+        >>> r.recvline()
+        'Goodbye\n'
     """
+
+    #: Local port
+    lport = 0
+
+    #: Local host
+    lhost = None
+
+    #: Socket type (e.g. socket.SOCK_STREAM)
+    type = None
+
+    #: Socket family
+    family = None
+
+    #: Socket protocol
+    protocol = None
+
+    #: Canonical name of the listening interface
+    canonname = None
+
+    #: Sockaddr structure that is being listened on
+    sockaddr = None
 
     def __init__(self, port=0, bindaddr = "0.0.0.0",
                  fam = "any", typ = "tcp", *args, **kwargs):
