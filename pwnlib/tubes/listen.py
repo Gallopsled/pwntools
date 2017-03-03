@@ -11,7 +11,7 @@ from pwnlib.tubes.sock import sock
 log = getLogger(__name__)
 
 class listen(sock):
-    """Creates an TCP or UDP-socket to receive data on. It supports
+    r"""Creates an TCP or UDP-socket to receive data on. It supports
     both IPv4 and IPv6.
 
     The returned object supports all the methods from
@@ -29,7 +29,7 @@ class listen(sock):
 
         >>> l = listen(1234)
         >>> r = remote('localhost', l.lport)
-        >>> l.wait_for_connection()
+        >>> _ = l.wait_for_connection()
         >>> l.sendline('Hello')
         >>> r.recvline()
         'Hello\n'
