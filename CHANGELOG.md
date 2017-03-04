@@ -98,6 +98,7 @@ To be released on Mar 25, 2017.
 [875]: https://github.com/Gallopsled/pwntools/pull/857
 [879]: https://github.com/Gallopsled/pwntools/issues/879
 [882]: https://github.com/Gallopsled/pwntools/pull/882
+[887]: https://github.com/Gallopsled/pwntools/pull/887
 
 
 [b584ca3]: https://github.com/Gallopsled/pwntools/commit/b584ca3
