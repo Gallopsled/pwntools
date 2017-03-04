@@ -8,7 +8,8 @@
 
 Utilities and helpers for format string exploitation.
 
-## Terminology
+Terminology
+------------
 
 Basic format string exploitation relies on a stack layout that looks
 something like the following:
@@ -107,17 +108,20 @@ By putting a the address we want to overwrite in the buffer
 that address.
 
 ::
+
     format_string = "%256$n"
     controlled_stack_buffer = "\xbe\xba\xfe\ca"
 
 In the above scenario, we will write the value "0" to address ``0xcafebabe``.
 
-## Tips and Tricks
+Tips and Tricks
+---------------
 
 Frequently, it is easier to modify a GOT pointer than to overwrite
 a stack variable.
 
-## Example
+Example
+^^^^^^^^^^^^^^^
 
 Let's assume a small binary with a simple format string vulnerability.
 
