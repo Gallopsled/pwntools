@@ -125,7 +125,7 @@ Example
 
 Let's assume a small binary with a simple format string vulnerability.
 
-:: ..code-block:: c
+::
 
     #include <stdlib.h>
     #include <stdio.h>
