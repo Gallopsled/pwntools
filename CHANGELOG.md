@@ -54,19 +54,51 @@ To be released on Mar 25, 2017.
     + Reports the kernel version and other relevant information on connection
 - [#857][857] Slightly shortened `execve` shellcode
 - [300f8e0][300f8e0] Slightly speed up processing of large ELF files
-- [#861][861] Add `parse_kconfig` and add Linux Kernel information to `ELF.checksec`
+- [#861][861] Adds support for extracting `IKCONFIG` configs from Linux kernel images, and extends `checksec` to report on any insecure configurations discovered
+- [#871][871] Moves all of the basic syscall templates to `shellcraft/common` and exposes them via symlinks.  Closed [#685][685]
+    + Should not have any visible effects from any documented APIs
+    + `shellcraft.arch.os.syscall_function()` still works the same
+    + We now have the ability to differentiate between the `connect` syscall, and a TCP `connect` helper
+- [#887][887] `sh_string` now returns a quoted empty string `''` rather than just an empty string
+- [#839][839] Exposes a huge amount of functionality via corefiles which was not previously availble.  See the [docs][corefile_docs] for examples.
+    + `process().corefile` will automatically instantiate a Corefile for the process
+    + QEMU-emulated processes are supported
+    + Native processes are supported, including extraction of coredumps from `apport` crash logs
+    + Native processes can be dumped *while running*, in a manner similar to `GDB`'s `gcore` script
+- [#875][857] Added [documentation][aarch64] (and tests) for AArch64 shellcode
+- [#882][882] The `ROP` class now respects `context.bytes` instead of using the hard-coded value of `4` (fixed [#879][879])
+- [#869][869] Added several fields to the `process` class (`uid`, `gid`, `suid`, `sgid`) which are recorded at execution time, based on the file permissions
+- [#868][868] Changed the way that `ssh.process()` works internally, and it now returns a more specialized class, `ssh_process`.
+    + Added `ssh_process.corefile` for fetching remote corefiles
+    + Added `ssh_process.ELF` for getting an ELF of the remote executable
+    + The `uid`, `gid`, and `suid`, and `sgid` which are recorded at execution time, based on the file permissions
+- [#865][865] Fixes `ELF.read` to support contiguous memory reads across non-contiguous file-backed segments
+- [#862][862] Adds a `symlink=` argument to `ssh.set_working_directory`, which will automatically symlink all of the files in the "old" working directory into the "new" working directory
 
 [ssh]: http://docs.pwntools.com/en/dev/tubes/ssh.html
 [gdb]: http://docs.pwntools.com/en/dev/gdb.html
 [elf]: http://docs.pwntools.com/en/dev/elf.html
+[corefile_docs]: http://docs.pwntools.com/en/dev/elf/corefile.html
+[aarch64]: http://docs.pwntools.com/en/dev/shellcraft/aarch64.html
 
+[685]: https://github.com/Gallopsled/pwntools/pull/685
 [822]: https://github.com/Gallopsled/pwntools/pull/822
-[832]: https://github.com/Gallopsled/pwntools/pull/832
 [828]: https://github.com/Gallopsled/pwntools/pull/828
+[832]: https://github.com/Gallopsled/pwntools/pull/832
 [833]: https://github.com/Gallopsled/pwntools/pull/833
 [835]: https://github.com/Gallopsled/pwntools/pull/835
+[839]: https://github.com/Gallopsled/pwntools/pull/839
 [857]: https://github.com/Gallopsled/pwntools/pull/857
 [861]: https://github.com/Gallopsled/pwntools/pull/861
+[862]: https://github.com/Gallopsled/pwntools/pull/862
+[865]: https://github.com/Gallopsled/pwntools/pull/865
+[868]: https://github.com/Gallopsled/pwntools/pull/868
+[869]: https://github.com/Gallopsled/pwntools/pull/869
+[871]: https://github.com/Gallopsled/pwntools/pull/871
+[875]: https://github.com/Gallopsled/pwntools/pull/857
+[879]: https://github.com/Gallopsled/pwntools/issues/879
+[882]: https://github.com/Gallopsled/pwntools/pull/882
+
 
 [b584ca3]: https://github.com/Gallopsled/pwntools/commit/b584ca3
 [a12d0b6]: https://github.com/Gallopsled/pwntools/commit/a12d0b6
