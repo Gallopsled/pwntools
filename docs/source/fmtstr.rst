@@ -122,6 +122,7 @@ a stack variable.
 Let's assume a small binary with a simple format string vulnerability.
 
 ::
+
     #include <stdlib.h>
     #include <stdio.h>
     #include <string.h>
@@ -140,6 +141,7 @@ Let's assume a small binary with a simple format string vulnerability.
     }
 
 ::
+
     $ clang test.c -fomit-frame-pointer -m32 -fno-stack-protector
 
 The compiled function and its stack layout looks something like the
