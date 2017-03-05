@@ -6,9 +6,9 @@
 int target = 0;
 
 void vulnerable() {
-  char buffer[64];
+  char buffer[512];
   memset(buffer, 0, sizeof buffer);
-  read(0, buffer, 64);
+  read(0, buffer, sizeof buffer);
   printf(buffer);
 }
 
