@@ -809,7 +809,7 @@ class ELF(ELFFile):
 
         # Invert the GOT symbols we already have, so we can look up by address
         inv_symbols = {v:k for k,v in self.got.items()}
-        plt_targets = set(self.got.values()) | set(self.symbols.values())
+        inv_symbols.update({v:k for k,v in self.symbols.items()})
 
         with context.local(arch=self.arch, bits=self.bits, endian=self.endian):
             for section in (plt, plt_got, plt_mips):
@@ -820,7 +820,7 @@ class ELF(ELFFile):
                                                 dt_pltgot,
                                                 section.header.sh_addr,
                                                 section.data(),
-                                                plt_targets)
+                                                inv_symbols)
 
                 for address, target in reversed(sorted(res.items())):
                     self.plt[inv_symbols[target]] = address
