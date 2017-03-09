@@ -177,10 +177,10 @@ def run_in_new_terminal(command, terminal = None, args = None):
     When `terminal` is not set:
       - If `context.terminal` is set it will be used.  If it is an iterable then
         `context.terminal[1:]` are default arguments.
-      - If X11 is detected (by the presence of the ``DISPLAY`` environment
-        variable), ``x-terminal-emulator`` is used.
       - If tmux is detected (by the presence of the ``TMUX`` environment
         variable), a new pane will be opened.
+      - If X11 is detected (by the presence of the ``DISPLAY`` environment
+        variable), ``x-terminal-emulator`` is used.
 
     Arguments:
       command (str): The command to run.
@@ -195,12 +195,12 @@ def run_in_new_terminal(command, terminal = None, args = None):
         if context.terminal:
             terminal = context.terminal[0]
             args     = context.terminal[1:]
-        elif 'DISPLAY' in os.environ:
-            terminal = 'x-terminal-emulator'
-            args     = ['-e']
         elif 'TMUX' in os.environ:
             terminal = 'tmux'
             args     = ['splitw']
+        elif 'DISPLAY' in os.environ:
+            terminal = 'x-terminal-emulator'
+            args     = ['-e']
 
     if not terminal:
         log.error('Argument `terminal` is not set, and could not determine a default')
