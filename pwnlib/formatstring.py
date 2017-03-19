@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 import collections
+import glob
 import os
+import signal
 
 from pwnlib.context import context
+from pwnlib.context import LocalContext
 from pwnlib.util.iters import group
 from pwnlib.abi import ABI
 from pwnlib.log import getLogger
 from pwnlib.tubes.process import process
+from pwnlib.util.cyclic import cyclic
 from pwnlib.util.packing import unpack
 from pwnlib.util.packing import flat
 
@@ -68,6 +72,10 @@ class FormatFunction(object):
 
         if register_arguments:
             format_index += len(register_arguments)
+
+        else:
+            format_index += 1
+
 
         return max(0, format_index)
 
@@ -222,7 +230,6 @@ class FormatString(object):
         #: Operand stack, of what is being performed
         self.memory = {}
 
-        self._dirty = True
         self._format_string = None
         self._stack_data = None
         self._writes = None
@@ -295,6 +302,10 @@ class FormatString(object):
             log.error("Could not find a suitable stack address")
 
         offset = address - stack_pointer
+
+        # Adjust for return address on stack
+        offset -= context.bytes
+
         message = "Found {length:#x} bytes of data on stack = {address:#x}\n" \
                 + "Stack pointer @ {stack_pointer:#x}\n" \
                 + "Offset in bytes = {offset:#x}"
@@ -314,7 +325,6 @@ class FormatString(object):
         return self.memory.get(index, None)
 
     def __setitem__(self, index, value):
-        self._dirty = True
 
         for i, byte in enumerate(flat(value)):
             self.memory[index + i] = byte
@@ -349,9 +359,6 @@ class FormatString(object):
 
         Generate the format string.
         """
-        if not self._dirty:
-            return
-
         # Coalesce writes into chunks of write_size or smaller
         write_sizes = []
         while 1 not in write_sizes:
@@ -577,7 +584,6 @@ class FormatString(object):
         self._format_string = format_string
         self._stack_data = stack_data
         self._writes = ordered_writes
-        self._dirty = False
 
     def dump(self):
         rv = []
@@ -615,3 +621,37 @@ class AutomaticDiscoveryProcess(process):
         """
         raise NotImplementedError('Must subclass and implement submit')
 
+
+@LocalContext
+def test_formatstring():
+    import pwnlib
+
+    path = pwnlib.data.formatstring.path
+    arch = context.arch
+    main = os.path.join(path, 'main-' + arch)
+    preload = os.path.join(path, 'preload-' + arch)
+
+    assert os.path.exists(main), main
+    assert os.path.exists(preload), preload
+
+    # Perform the first test with a crasher
+    env = dict(os.environ)
+    env['LD_PRELOAD'] = preload
+    io = process(main, env=env)
+    data = cyclic(512)
+    io.send(data)
+    io.wait()
+    assert io.poll() == -signal.SIGTRAP, io.poll()
+
+    # Check the corefile
+    fmtstr = FormatString.from_corefile(io.corefile, data)
+
+    elf = pwnlib.elf.elf.ELF(main)
+    target = elf.symbols.target
+
+    fmtstr[target] = 0xdeadbeef
+
+    io = process(main)
+    data = fit({0: fmtstr.format_string}, length=len(data))
+    io.send(data)
+    io.recvall()
