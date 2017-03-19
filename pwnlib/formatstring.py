@@ -653,5 +653,7 @@ def test_formatstring():
 
     io = process(main)
     data = fit({0: fmtstr.format_string}, length=len(data))
+    log.hexdump(data)
+    gdb.attach(io, 'break printf\nc')
     io.send(data)
     io.recvall()

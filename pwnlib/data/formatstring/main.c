@@ -5,16 +5,54 @@
 
 int target = 0;
 
-void vulnerable() {
+int *target_heap = NULL;
+
+void vulnerable_printf() {
   char buffer[512];
   memset(buffer, 0, sizeof buffer);
   read(0, buffer, sizeof buffer);
   printf(buffer);
 }
 
+void vulnerable_sprintf() {
+  char buffer[512];
+  char dest[512];
+  memset(buffer, 0, sizeof buffer);
+  read(0, buffer, sizeof buffer);
+  sprintf(dest, buffer);
+}
+
+void vulnerable_snprintf() {
+  char buffer[512];
+  char dest[512];
+  memset(buffer, 0, sizeof buffer);
+  read(0, buffer, sizeof buffer);
+  snprintf(dest, 512, buffer);
+}
+
+
 int main() {
-  vulnerable();
-  printf("%#x\n", target);
-  write(0, &target, sizeof(target));
+  target_heap = malloc(sizeof(int));
+  *target_heap = 0;
+  write(1, target_heap, sizeof(int));
+
+  int choice = getchar();
+
+  switch (choice) {
+  case 0:
+    vulnerable_printf();
+    break;
+  case 1:
+    vulnerable_sprintf();
+    break;
+  case 2:
+    vulnerable_snprintf();
+    break;
+  default:
+    exit(-1);
+  }
+
+  write(1, &target, sizeof(int));
+  write(1, target_heap, sizeof(int));
   return 0;
 }
