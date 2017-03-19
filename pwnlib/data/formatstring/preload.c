@@ -1,13 +1,21 @@
 #include <signal.h>
 
-void printf() { raise(SIGTRAP); }
+__attribute__((naked))
+void printf() { __builtin_trap(); }
 
-void sprintf() { raise(SIGTRAP); }
+__attribute__((naked))
+void sprintf() { __builtin_trap(); }
 
-void snprintf() { raise(SIGTRAP); }
+__attribute__((naked))
+void snprintf() { __builtin_trap(); }
 
-void asprintf() { raise(SIGTRAP); }
+__attribute__((naked))
+void asprintf() { __builtin_trap(); }
 
-void dprintf() { raise(SIGTRAP); }
+__attribute__((naked))
+void dprintf() { __builtin_trap(); }
 
-void fprintf() { raise(SIGTRAP); }
+__attribute__((naked))
+void fprintf() { __builtin_trap(); }
+
+

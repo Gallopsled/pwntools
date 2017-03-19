@@ -34,7 +34,7 @@ void vulnerable_snprintf() {
 int main() {
   target_heap = malloc(sizeof(int));
   *target_heap = 0;
-  write(1, target_heap, sizeof(int));
+  write(1, &target_heap, sizeof(target_heap));
 
   int choice = getchar();
 
@@ -52,7 +52,7 @@ int main() {
     exit(-1);
   }
 
-  write(1, &target, sizeof(int));
-  write(1, target_heap, sizeof(int));
+  write(1, &target, sizeof(target));
+  write(1, target_heap, sizeof(*target_heap));
   return 0;
 }

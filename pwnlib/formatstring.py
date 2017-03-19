@@ -42,7 +42,14 @@ write_strings_positional = {
     4: '%@$n'
 }
 
-write = collections.namedtuple("write", ("address", "data"))
+class write(object):
+    def __init__(self, address, data):
+        self.address = address
+        self.data = data
+    def __repr__(self):
+        return "%s(%#x, %#x)" % (self.__class__.__name__,
+                                 self.address,
+                                 self.data)
 
 class FormatFunction(object):
     """Encapsulates data about a function which takes a format string.
@@ -278,25 +285,25 @@ class FormatString(object):
 
             :class:`Corefile`: A corefile object
         """
+        import pdb
+        pdb.set_trace()
         stack_pointer = corefile.sp
 
         # The data that the user gave us may not actually appear anywhere
         # in the process, because it may have been truncated by e.g. fgets()
         length = 0
         address = 0
-        while True:
-            # The data must be on the stack, and at a higher address than sp
-            for match in sorted(corefile.search(stack_data[:length])):
-                if match > stack_pointer:
-                    address = match
-                    break
-            else:
-                break
+        stack = corefile.stack
 
-            if length == len(stack_data):
-                break
+        for offset in stack.data.find(stack_data, stack_pointer - stack.address):
+            address = stack.address + offset
+            break
+        else:
+            log.error("Could not find provided data on the stack (%r)", stack_data)
 
-            length += 1
+        # Double-check that the address is within the stack mapping
+        if address not in corefile.stack:
+            log.warn("")
 
         if not address or length == 0 or length < len(stack_data) / 2:
             log.error("Could not find a suitable stack address")
@@ -304,10 +311,10 @@ class FormatString(object):
         offset = address - stack_pointer
 
         # Adjust for return address on stack
-        offset -= context.bytes
+        offset -= corefile.bytes
 
-        message = "Found {length:#x} bytes of data on stack = {address:#x}\n" \
-                + "Stack pointer @ {stack_pointer:#x}\n" \
+        message = "Stack pointer @ {stack_pointer:#x}\n" \
+                + "Found {length:#x} bytes of data on stack = {address:#x}\n" \
                 + "Offset in bytes = {offset:#x}"
 
         log.info(message.format(**locals()))
@@ -478,26 +485,26 @@ class FormatString(object):
         stack_buffer = []
         counter = self.already_written
 
-        for addr, value in ordered_writes:
-            size = len(memory[addr])
+        for w in ordered_writes:
+            size = len(memory[w.address])
             fmt = ''
 
             # If we need to adjust the value which will be written, do it
-            delta = value - counter
+            delta = w.data - counter
 
             if delta > 3:
-                fmt += '%{}c'.format(value-counter)
+                fmt += '%{}c'.format(w.data - counter)
             elif delta > 0:
                 fmt += ' ' * counter
 
-            counter = value
+            counter = w.data
 
             # Actually write the value
             fmt += write_strings_positional[size]
 
             # Save both
             format_strings.append(fmt)
-            stack_buffer.append(addr)
+            stack_buffer.append(w.address)
 
         # Loop until we get the right sizes, after adjustment
         num_positions = len(format_strings)
@@ -591,6 +598,11 @@ class FormatString(object):
             rv.append('%#x => %r' % (write.address, write.data))
         return '\n'.join(rv)
 
+    def draw(self):
+        """Draw a nice ASCII art diagram of where everything is in memory.
+        """
+
+
 
 class AutomaticDiscoveryProcess(process):
     def __init__(self, argv, remote=True, size=None, **kw):
@@ -623,8 +635,10 @@ class AutomaticDiscoveryProcess(process):
 
 
 @LocalContext
-def test_formatstring():
+def test_formatstring(function):
     import pwnlib
+
+
 
     path = pwnlib.data.formatstring.path
     arch = context.arch
@@ -638,6 +652,8 @@ def test_formatstring():
     env = dict(os.environ)
     env['LD_PRELOAD'] = preload
     io = process(main, env=env)
+    io.p8(function.format_index)
+
     data = cyclic(512)
     io.send(data)
     io.wait()
@@ -645,15 +661,22 @@ def test_formatstring():
 
     # Check the corefile
     fmtstr = FormatString.from_corefile(io.corefile, data)
+    fmtstr.function = function
 
     elf = pwnlib.elf.elf.ELF(main)
     target = elf.symbols.target
 
-    fmtstr[target] = 0xdeadbeef
 
     io = process(main)
+    heap = io.unpack()
+    io.p8(function.format_index)
+
+    fmtstr[target] = 0xdeadbeef
+    fmtstr[heap] = 0xcafebabe
+
     data = fit({0: fmtstr.format_string}, length=len(data))
-    log.hexdump(data)
+
+    log.hexdump(data, cyclic=1)
     gdb.attach(io, 'break printf\nc')
     io.send(data)
     io.recvall()
