@@ -11,8 +11,8 @@ log = getLogger(__name__)
 
 DEBUG = args.PLT_DEBUG or 0
 
-if DEBUG:
-    log.setLevel(logging.DEBUG - 1)
+if not DEBUG:
+    log.setLevel(logging.DEBUG + 1)
 
 def emulate_plt_instructions(elf, got, address, data, targets):
     """Emulates instructions in ``data``
