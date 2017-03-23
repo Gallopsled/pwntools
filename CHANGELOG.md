@@ -34,6 +34,28 @@ The table below shows which release corresponds to each branch, and what date th
 
 To be released on May 6, 2017.
 
+- [#895][895] Added a Dockerfile to simplify testing setup and allow testing on OSX
+- [#897][897] Fixed some incorrect AArch64 syscals
+- [#893][893] Added the `pwnlib.config` module
+    + Configuration options can now be set in `~/.pwn.conf`
+    + This replaces the old, **undocumented** mechanism for changing logging colors.  Only @br0ns and @ebeip90 were likely using this.
+    + More information is available in the documentation [here](http://docs.pwntools.com/en/dev/config.html).
+- [#899][899] Pwntools now uses Unicorn Engine to emulate PLT instructions to ensure correct mapping of PIE / RELRO binaries.
+- [#904][904] Enhancements to the accuracy of the `pwn checksec` command.
+- [#905][905] Added a `pwn debug` command-line utility which automates the process of `gdb.attach(process(...))` to spawn GDB
+    + More information is available in the documentation [here](http://docs.pwntools.com/en/dev/commandline.html#pwn-debug)
+- [#919][919] Added a `pwn template` command-line utility to simplify the process of bootstrapping a new exploit.
+    + More information is available in the documentation [here](http://docs.pwntools.com/en/dev/commandline.html#pwn-template).
+
+[895]: https://github.com/Gallopsled/pwntools/pull/895
+[897]: https://github.com/Gallopsled/pwntools/pull/897
+[893]: https://github.com/Gallopsled/pwntools/pull/893
+[899]: https://github.com/Gallopsled/pwntools/pull/899
+[904]: https://github.com/Gallopsled/pwntools/pull/904
+[905]: https://github.com/Gallopsled/pwntools/pull/905
+[919]: https://github.com/Gallopsled/pwntools/pull/919
+
+
 ## 3.5.0
 
 To be released on Mar 25, 2017.
