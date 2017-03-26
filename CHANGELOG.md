@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.6.0](#350)    | `dev`    | May 6, 2017 (planned)
-| [3.5.0](#350)    | `beta`   | Mar 25, 2017 (planned)
-| [3.4.1](#341)    | `stable` | Feb 17, 2017
+| [3.7.0](#350)    | `dev`    | Jun 17, 2017 (planned)
+| [3.6.0](#350)    | `beta`   | May 6, 2017 (planned)
+| [3.5.0](#350)    | `stable` | Mar 26, 2017
+| [3.4.1](#341)    |          | Feb 17, 2017
 | [3.4.0](#340)    |          | Feb 13, 2017
 | [3.3.4](#334)    |          | Jan 12, 2016
 | [3.3.3](#333)    |          | Jan 10, 2016
@@ -29,6 +30,9 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
+## 3.7.0
+
+To be on Jun 17, 2017.
 
 ## 3.6.0
 
@@ -57,8 +61,6 @@ To be released on May 6, 2017.
 
 
 ## 3.5.0
-
-To be released on Mar 25, 2017.
 
 - [b584ca3][b584ca3] Fixed an issue running `setup.py` on ARM
 - [#822][822] Enabled relative leaks with `MemLeak`
