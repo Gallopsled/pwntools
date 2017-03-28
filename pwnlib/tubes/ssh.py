@@ -624,7 +624,7 @@ class ssh(Timeout, Logger):
         try:
             self.info_once(self.checksec())
         except Exception:
-            log.warn_once("Couldn't check security settings on %r" % self.host)
+            self.warn_once("Couldn't check security settings on %r" % self.host)
 
     @property
     def sftp(self):
