@@ -596,7 +596,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
-        cmd += ['gdb %r %s -x "%s"' % (target.executable,
+        cmd += ['gdb -q %r %s -x "%s"' % (target.executable,
                                        target.pid,
                                        tmpfile)]
 
@@ -790,7 +790,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     # Get the addresses from GDB
     #
     libs = {}
-    cmd  = "gdb --args %s" % (binary)
+    cmd  = "gdb -q --args %s" % (binary)
     expr = re.compile(r'(0x\S+)[^/]+(.*)')
 
     if ulimit:
