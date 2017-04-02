@@ -157,6 +157,7 @@ class DynELF(object):
             elf(str,ELF):  Path to the ELF file on disk, or a loaded :class:`pwnlib.elf.ELF`.
         '''
         self._elfclass = None
+        self._elftype  = None
         self._link_map = None
         self._waitfor  = None
         self._bases    = {}
@@ -203,6 +204,22 @@ class DynELF(object):
             self._elfclass =  {constants.ELFCLASS32: 32,
                               constants.ELFCLASS64: 64}[elfclass]
         return self._elfclass
+
+    @property
+    def elftype(self):
+        """e_type from the elf header. In practice the value will almost always
+        be 'EXEC' or 'DYN'. If the value is architecture-specific (between
+        ET_LOPROC and ET_HIPROC) or invalid, KeyError is raised.
+        """
+        if not self._elftype:
+            Ehdr  = {32: elf.Elf32_Ehdr, 64: elf.Elf64_Ehdr}[self.elfclass]
+            elftype = self.leak.field(self.libbase, Ehdr.e_type)
+            self._elftype = {constants.ET_NONE: 'NONE',
+                             constants.ET_REL: 'REL',
+                             constants.ET_EXEC: 'EXEC',
+                             constants.ET_DYN: 'DYN',
+                             constants.ET_CORE: 'CORE'}[elftype]
+        return self._elftype
 
     @property
     def link_map(self):
@@ -356,9 +373,7 @@ class DynELF(object):
         dynamic = leak.field(phead, Phdr.p_vaddr)
         self.status("PT_DYNAMIC @ %#x" % dynamic)
 
-        #Sometimes this is an offset instead of an address
-        if 0 < dynamic < 0x400000:
-            dynamic += base
+        dynamic = self._make_absolute_ptr(dynamic)
 
         return dynamic
 
@@ -392,9 +407,7 @@ class DynELF(object):
         self.status("Found %s at %#x" % (name, dynamic))
         ptr = leak.field(dynamic, Dyn.d_ptr)
 
-        # Sometimes this is an offset rather than an actual pointer.
-        if 0 < ptr < 0x400000:
-            ptr += self.libbase
+        ptr = self._make_absolute_ptr(ptr)
 
         return ptr
 
@@ -438,8 +451,7 @@ class DynELF(object):
             w.failure("Could not find DT_PLTGOT or DT_DEBUG")
             return None
 
-        if 0 < result < 0x400000:
-            result += self.libbase
+        result = self._make_absolute_ptr(result)
 
         w.success('%#x' % result)
         return result
@@ -672,11 +684,9 @@ class DynELF(object):
         if not all([strtab, symtab, hshtab]):
             self.failure("Could not find all tables")
 
-        # glibc pointers are relocated but uclibc are not
-        if 0 < strtab < 0x400000:
-            strtab  += self.libbase
-            symtab  += self.libbase
-            hshtab  += self.libbase
+        strtab = self._make_absolute_ptr(strtab)
+        symtab = self._make_absolute_ptr(symtab)
+        hshtab = self._make_absolute_ptr(hshtab)
 
         #
         # Perform the hash lookup
@@ -842,6 +852,29 @@ class DynELF(object):
             else:
                 self.status("Magic did not match")
                 pass
+
+    def _make_absolute_ptr(self, ptr_or_offset):
+        """For shared libraries (or PIE executables), many ELF fields may
+        contain offsets rather than actual pointers. If the ELF type is 'DYN',
+        the argument may be an offset. It will not necessarily be an offset,
+        because the run-time linker may have fixed it up to be a real pointer
+        already. In this case an educated guess is made, and the ELF base
+        address is added to the value if it is determined to be an offset.
+        """
+        if_ptr = ptr_or_offset
+        if_offset = ptr_or_offset + self.libbase
+
+        # if the ELF type is not DYN, the value is a pointer
+
+        if self.elftype != 'DYN':
+            return if_ptr
+
+        # if the ELF type may be DYN, guess
+
+        if 0 < ptr_or_offset < self.libbase:
+            return if_offset
+        else:
+            return if_ptr
 
     def stack(self):
         """Finds a pointer to the stack via __environ, which is an exported
