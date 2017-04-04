@@ -223,7 +223,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
     terminal_path = which(terminal)
 
     if not terminal_path:
-        log.error('Could not find terminal: %s' % terminal)
+        log.error('Could not find terminal: %s. Set context.terminal to your terminal' % terminal)
 
     argv = [terminal_path] + args
 
