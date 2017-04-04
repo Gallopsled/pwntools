@@ -182,6 +182,8 @@ kernel_configuration = [
     Enabled('CPU_SW_DOMAIN_PAN', requires=['ARM'], minver=4.3),
     Enabled('CONFIG_ARM64_PAN', requires=['ARM64'], minver=4.3),
     Disabled('OABI_COMPAT'),
+    Disabled('CP_ACCESS', requires=['ARM']),
+    Disabled('CP_ACCESS64', requires=['ARM64']),
 
 # Only relevant of MODULES are enabled
     Enabled('MODULE_SIG', requires=['MODULES']),
