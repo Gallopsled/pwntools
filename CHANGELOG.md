@@ -34,6 +34,14 @@ The table below shows which release corresponds to each branch, and what date th
 
 To be on Jun 17, 2017.
 
+## 3.6.1
+
+- [#948][948] Fix unnecessary warning for Core files
+- [#947][947] Fix error when generating SSH templates via `pwn template` when a filename was not provided
+
+[948]: https://github.com/Gallopsled/pwntools/pull/948
+[947]: https://github.com/Gallopsled/pwntools/pull/947
+
 ## 3.6.0
 
 To be released on May 6, 2017.
@@ -59,6 +67,13 @@ To be released on May 6, 2017.
 [905]: https://github.com/Gallopsled/pwntools/pull/905
 [919]: https://github.com/Gallopsled/pwntools/pull/919
 
+## 3.5.1
+
+- [#945][945] Update ssh connections by caching ssh.checksec() results
+- [#950][950] Fix issue where `adb.compile()` would ignore `context.arch` with no connected device
+
+[945]: https://github.com/Gallopsled/pwntools/pull/945
+[950]: https://github.com/Gallopsled/pwntools/pull/950
 
 ## 3.5.0
 
