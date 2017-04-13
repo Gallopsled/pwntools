@@ -34,6 +34,9 @@ def main(args):
     # For the SSH scenario, check that the binary is at the
     # same path on the remote host.
     if args.user:
+        if not args.path or args.exe:
+            log.error("Must specify --path or a exe")
+
         s = ssh(args.user, args.host, args.port or 22, args.password or None)
         s.download(args.path or args.exe)
 
