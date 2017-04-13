@@ -943,6 +943,10 @@ class Corefile(ELF):
 
         return super(Corefile, self).__getattribute__(attribute)
 
+    # Override routines which don't make sense for Corefiles
+    def _populate_got(*a): pass
+    def _populate_plt(*a): pass
+
 class Core(Corefile):
     """Alias for :class:`.Corefile`"""
 
