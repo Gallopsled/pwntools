@@ -1359,7 +1359,7 @@ def update_context_defaults(section):
         if key not in ContextType.defaults:
             log.warn("Unknown configuration option %r in section %r" % (key, 'context'))
             continue
-        if isinstance(ContextType.defaults[key], (str, unicode)):
+        if not isinstance(ContextType.defaults[key], (str, unicode)):
             value = safeeval.expr(value)
 
         ContextType.defaults[key] = value
