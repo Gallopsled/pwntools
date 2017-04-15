@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.7.0](#350)    | `dev`    | Jun 17, 2017 (planned)
 | [3.6.0](#350)    | `beta`   | May 6, 2017 (planned)
-| [3.5.0](#350)    | `stable` | Mar 26, 2017
+| [3.5.1](#351)    | `stable` | Apr 15, 2017
+| [3.5.0](#350)    |          | Mar 26, 2017
 | [3.4.1](#341)    |          | Feb 17, 2017
 | [3.4.0](#340)    |          | Feb 13, 2017
 | [3.3.4](#334)    |          | Jan 12, 2016
@@ -59,6 +60,14 @@ To be released on May 6, 2017.
 [905]: https://github.com/Gallopsled/pwntools/pull/905
 [919]: https://github.com/Gallopsled/pwntools/pull/919
 
+## 3.5.1
+
+- [#945][945] Speed up ssh via caching checksec results (fixes [#944][944])
+- [#950][950] Fixes a bug where setting `context.arch` does not have an effect on `adb.compile()` output architecture
+
+[944]: https://github.com/Gallopsled/pwntools/issues/944
+[945]: https://github.com/Gallopsled/pwntools/pull/945
+[950]: https://github.com/Gallopsled/pwntools/pull/950
 
 ## 3.5.0
 
