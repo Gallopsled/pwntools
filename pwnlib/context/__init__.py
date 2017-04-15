@@ -1131,7 +1131,7 @@ class ContextType(object):
             self.os = device.os or self.os
         elif isinstance(device, str):
             device = Device(device)
-        else:
+        elif device is not None:
             raise AttributeError("device must be either a Device object or a serial number as a string")
 
         return device
