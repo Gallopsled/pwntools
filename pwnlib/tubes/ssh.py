@@ -623,7 +623,7 @@ class ssh(Timeout, Logger):
         try:
             self.info_once(self.checksec())
         except Exception:
-            log.warn_once("Couldn't check security settings on %r" % self.host)
+            self.warn_once("Couldn't check security settings on %r" % self.host)
 
     @property
     def sftp(self):
@@ -1985,6 +1985,16 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         return self._aslr_ulimit
 
+    def _checksec_cache(self, value=None):
+        path = self._get_cachefile('%s-%s' % (self.host, self.port))
+
+        if value is not None:
+            with open(path, 'w+') as f:
+                f.write(value)
+        else:
+            with open(path, 'r+') as f:
+                return f.read()
+
     def checksec(self, banner=True):
         """checksec()
 
@@ -1993,6 +2003,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Arguments:
             banner(bool): Whether to print the path to the ELF binary.
         """
+        cached = self._checksec_cache()
+        if cached:
+            return cached
+
         red    = text.red
         green  = text.green
         yellow = text.yellow
@@ -2013,4 +2027,6 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if self.aslr_ulimit:
             res += [ "Note:".ljust(10) + red("Susceptible to ASLR ulimit trick (CVE-2016-3672)")]
 
-        return '\n'.join(res)
+        cached = '\n'.join(res)
+        self._checksec_cache(cached)
+        return cached
