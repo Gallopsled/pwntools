@@ -97,6 +97,7 @@ setup(
             'data/binutils/*',
             'data/includes/*.h',
             'data/includes/*/*.h',
+            'data/templates/pwnup.mako',
         ] + templates,
     },
     entry_points = {'console_scripts': console_scripts},
