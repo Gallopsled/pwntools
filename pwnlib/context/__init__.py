@@ -351,7 +351,7 @@ class ContextType(object):
         'os': 'linux',
         'proxy': None,
         'signed': False,
-        'terminal': [],
+        'terminal': tuple(),
         'timeout': Timeout.maximum,
     }
 
@@ -1359,7 +1359,7 @@ def update_context_defaults(section):
         if key not in ContextType.defaults:
             log.warn("Unknown configuration option %r in section %r" % (key, 'context'))
             continue
-        if isinstance(ContextType.defaults[key], (str, unicode, list)):
+        if isinstance(ContextType.defaults[key], (str, unicode, tuple)):
             value = safeeval.expr(value)
 
         ContextType.defaults[key] = value
