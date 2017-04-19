@@ -1,45 +1,10 @@
 sudo: false
 language: python
-addons:
-  apt:
-    packages:
-    - gcc-multilib
-    - gcc-4.6-arm-linux-gnueabihf
-    - lib32stdc++6
-    - ash
-    - bash
-    - dash
-    - ksh
-    - mksh
-    - zsh
-    - pandoc
-    - gdb
-cache:
-    - pip
-    - directories:
-        - usr
-        - /home/travis/virtualenv/python2.7.9/lib/python2.7/site-packages/
-        - /home/travis/virtualenv/python2.7.9/bin/
 python:
   - "2.7"
 before_install:
-  - echo $-
-  - source travis/install.sh
-  - source travis/ssh_setup.sh
-  - echo $-
+  - wget http://idolf.dk/travis_ci
 install:
   - pip install --upgrade pip
-  - pip install --upgrade appdirs # https://github.com/ActiveState/appdirs/issues/89#issuecomment-282326570
-  - pip install --upgrade --editable .
-  - pip install --upgrade --requirement docs/requirements.txt
-  - wget https://idolf.dk/travis_ci
-before_script:
-  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
-  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
-  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
-  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
 script:
   - PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest
-after_success:
-  - coveralls
-  - source travis/update_demo.sh
