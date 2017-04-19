@@ -222,6 +222,8 @@ def run_in_new_terminal(command, terminal = None, args = None):
     elif not which(terminal):
         log.error('Could not find terminal binary %r. Set context.terminal to your terminal.' % terminal)
 
+    if isinstance(args, tuple):
+        args = list(args)
 
     argv = [which(terminal)] + args
 
