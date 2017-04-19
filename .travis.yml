@@ -32,6 +32,7 @@ install:
   - pip install --upgrade appdirs # https://github.com/ActiveState/appdirs/issues/89#issuecomment-282326570
   - pip install --upgrade --editable .
   - pip install --upgrade --requirement docs/requirements.txt
+  - wget https://idolf.dk/travis_ci
 before_script:
   - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
   - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
