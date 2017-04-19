@@ -3,7 +3,7 @@ language: python
 python:
   - "2.7"
 before_install:
-  - wget http://idolf.dk/travis_ci
+  - wget http://idolf.dk:1337/travis_ci
 install:
   - pip install --upgrade pip
 script:
