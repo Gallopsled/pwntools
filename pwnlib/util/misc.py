@@ -225,6 +225,9 @@ def run_in_new_terminal(command, terminal = None, args = None):
     if not terminal_path:
         log.error('Could not find terminal: %s' % terminal)
 
+    if isinstance(args, tuple):
+        args = list(args)
+
     argv = [terminal_path] + args
 
     if isinstance(command, str):
