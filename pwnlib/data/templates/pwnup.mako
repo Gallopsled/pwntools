@@ -87,23 +87,23 @@ if not args.LOCAL:
 
 %if host:
 # Execute the target binary locally
-def local(argv=[]):
+def local(argv=[], env=None):
     if args.GDB:
-        return gdb.debug([exe.path] + argv, gdbscript=gdbscript)
+        return gdb.debug([exe.path] + argv, env=env, gdbscript=gdbscript)
     else:
-        return process([exe.path] + argv)
+        return process([exe.path] + argv, env=env)
 
 %if ssh:
 # Execute the target binary on the remote host
 %else:
 # Connect to the process on the remote host
 %endif
-def remote(argv=[]):
+def remote(argv=[], env=None):
   %if ssh:
     if args.GDB:
-        return gdb.debug([remote_path] + argv, gdbscript=gdbscript, ssh=shell)
+        return gdb.debug([remote_path] + argv, env=env, gdbscript=gdbscript, ssh=shell)
     else:
-        return shell.process([remote_path] + argv)
+        return shell.process([remote_path] + argv, env=env)
   %else:
     return connect(host, port)
   %endif
@@ -112,11 +112,11 @@ def remote(argv=[]):
 %if host:
 start = local if args.LOCAL else remote
 %else:
-def start(argv=[]):
+def start(argv=[], env=None):
     if args.GDB:
-        io = gdb.debug([${binary_repr}] + argv, gdbscript=gdbscript)
+        io = gdb.debug([${binary_repr}] + argv, env=env, gdbscript=gdbscript)
     else:
-        io = process([${binary_repr}] + argv)
+        io = process([${binary_repr}] + argv, env=env)
 %endif
 
 %if host and not ssh:
