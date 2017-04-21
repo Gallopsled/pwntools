@@ -697,36 +697,33 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
     The seek offset of file objects will be preserved.
 
     Arguments:
-      dst: Supported types are `:class:file`, `:class:list`, `:class:tuple`,
-           `:class:str`, `:class:bytearray` and `:class:unicode`.
-      src: An iterable of byte values (characters or integers), a unicode
-           string or a file object.
-      count (int): How many bytes to copy.  If `count` is 0 or larger than
-                   ``len(src[seek:])``, all bytes until the end of `src` are
-                   copied.
-      skip (int): Offset in `dst` to copy to.
-      seek (int): Offset in `src` to copy from.
-      truncate (bool): If `:const:True`, `dst` is truncated at the last copied
-                       byte.
+        dst: Supported types are `:class:file`, `:class:list`, `:class:tuple`,
+             `:class:str`, `:class:bytearray` and `:class:unicode`.
+        src: An iterable of byte values (characters or integers), a unicode
+             string or a file object.
+        count (int): How many bytes to copy.  If `count` is 0 or larger than
+                     ``len(src[seek:])``, all bytes until the end of `src` are
+                     copied.
+        skip (int): Offset in `dst` to copy to.
+        seek (int): Offset in `src` to copy from.
+        truncate (bool): If `:const:True`, `dst` is truncated at the last copied
+                         byte.
 
     Returns:
-      A modified version of `dst`.  If `dst` is a mutable type it will be
-      modified in-place.
+        A modified version of `dst`.  If `dst` is a mutable type it will be
+        modified in-place.
 
     Examples:
-    >>> dd(tuple('Hello!'), '?', skip = 5)
-    ('H', 'e', 'l', 'l', 'o', '?')
-    >>> dd(list('Hello!'), (63,), skip = 5)
-    ['H', 'e', 'l', 'l', 'o', '?']
-    >>> write('/tmp/foo', 'A' * 10)
-    ... dd(file('/tmp/foo'), file('/dev/zero'), skip = 3, count = 4)
-    ... read('/tmp/foo')
-    'AAA\x00\x00\x00\x00AAA'
-    >>> write('/tmp/foo', 'A' * 10)
-    ... dd(file('/tmp/foo'), file('/dev/zero'), skip = 3, count = 4, truncate = True)
-    ... read('/tmp/foo')
-    'AAA\x00\x00\x00\x00'
-
+        >>> dd(tuple('Hello!'), '?', skip = 5)
+        ('H', 'e', 'l', 'l', 'o', '?')
+        >>> dd(list('Hello!'), (63,), skip = 5)
+        ['H', 'e', 'l', 'l', 'o', '?']
+        >>> file('/tmp/foo', 'w').write('A' * 10)
+        >>> dd(file('/tmp/foo'), file('/dev/zero'), skip = 3, count = 4).read()
+        'AAA\\x00\\x00\\x00\\x00AAA'
+        >>> file('/tmp/foo', 'w').write('A' * 10)
+        >>> dd(file('/tmp/foo'), file('/dev/zero'), skip = 3, count = 4, truncate = True).read()
+        'AAA\\x00\\x00\\x00\\x00'
     """
 
     # Re-open file objects to make sure we have the mode right
