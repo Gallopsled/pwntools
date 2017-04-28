@@ -764,7 +764,7 @@ class tube(Timeout, Logger):
         self.send(data + self.newline)
         return self.recvuntil(delim, timeout)
 
-    def interactive(self, prompt = term.text.bold_red('$') + ' '):
+    def interactive(self, prompt = term.text.bold_red('$') + ' ', command_mode=False):
         """interactive(prompt = pwnlib.term.text.bold_red('$') + ' ')
 
         Does simultaneous reading and writing to the tube. In principle this just
@@ -782,7 +782,7 @@ class tube(Timeout, Logger):
             while not go.isSet():
                 try:
                     cur = self.recv(timeout = 0.05)
-                    cur = cur.replace('\r\n', '\n')
+                    cur = cur.replace(self.newline, '\n')
                     if cur:
                         sys.stdout.write(cur)
                         sys.stdout.flush()
@@ -801,7 +801,11 @@ class tube(Timeout, Logger):
                 else:
                     data = sys.stdin.read(1)
 
+                data = data.replace('\n', self.newline)
+
                 if data:
+                    if data[0] == '!' and command_mode:
+                        data = subprocess.check_output(['/bin/bash', '-c', data[1:]])
                     try:
                         self.send(data)
                     except EOFError:
