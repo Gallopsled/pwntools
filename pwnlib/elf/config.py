@@ -127,6 +127,7 @@ kernel_configuration = [
     Enabled('SECURITY_DMESG_RESTRICT'),
     Enabled('SECURITY_NETWORK'),
     Enabled('SECURITY_SELINUX'),
+    Enabled('ARCH_HAS_ELF_RANDOMIZE'),
     EnabledIfPresent('MSM_KERNEL_PROTECT'),
 
 # Not really security relevant, but come on guys
