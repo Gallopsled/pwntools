@@ -210,6 +210,8 @@ def run_in_new_terminal(command, terminal = None, args = None):
         elif which('pwntools-terminal'):
             terminal = 'pwntools-terminal'
             args     = []
+        elif 'TERM_PROGRAM' in os.environ:
+            terminal = os.environ['TERM_PROGRAM']
         elif 'DISPLAY' in os.environ:
             terminal = 'x-terminal-emulator'
             args     = ['-e']
