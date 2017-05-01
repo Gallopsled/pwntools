@@ -212,6 +212,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
             args     = []
         elif 'TERM_PROGRAM' in os.environ:
             terminal = os.environ['TERM_PROGRAM']
+            args     = []
         elif 'DISPLAY' in os.environ:
             terminal = 'x-terminal-emulator'
             args     = ['-e']
