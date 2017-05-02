@@ -105,7 +105,10 @@ def remote(argv=[], *a, **kw):
     else:
         return shell.process([remote_path] + argv, *a, **kw)
   %else:
-    return connect(host, port)
+    io = connect(host, port)
+    if args.GDB:
+        gdb.attach(io, gdbscript=gdbscript)
+    return io
   %endif
 %endif
 
@@ -117,11 +120,6 @@ def start(argv=[], *a, **kw):
         io = gdb.debug([${binary_repr}] + argv, gdbscript=gdbscript, *a, **kw)
     else:
         io = process([${binary_repr}] + argv, *a, **kw)
-%endif
-
-%if host and not ssh:
-if args.GDB and not args.LOCAL:
-    gdb.attach(io, gdbscript=gdbscript)
 %endif
 
 #===========================================================
