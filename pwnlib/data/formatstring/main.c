@@ -36,8 +36,9 @@ int main() {
   *target_heap = 0;
   write(1, &target_heap, sizeof(target_heap));
 
-  int choice = getchar();
-
+  while(1) {
+  unsigned int choice = getchar();
+  write(1, &choice, sizeof(choice));
   switch (choice) {
   case 0:
     vulnerable_printf();
@@ -49,7 +50,8 @@ int main() {
     vulnerable_snprintf();
     break;
   default:
-    exit(-1);
+    break;
+  }
   }
 
   write(1, &target, sizeof(target));

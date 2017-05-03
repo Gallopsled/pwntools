@@ -12,7 +12,7 @@ main-%: main.c
 	$(CC) -o "$@" main.c
 
 patched-%: main-%
-	$(CC) -o "$@" preload.c -fPIC -pie -shared
+	python patch.py "$^" "$@" printf sprintf snprintf
 
 clean:
 	rm -f main-* patched-*

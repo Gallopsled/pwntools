@@ -1,21 +1,24 @@
-#include <signal.h>
 
-__attribute__((naked))
-void printf() { __builtin_trap(); }
+int printf(const char* fmt, ...) {
+    return 0;
+}
 
-__attribute__((naked))
-void sprintf() { __builtin_trap(); }
+int sprintf(char* s, const char* fmt, ...) {
+    return 0;
+}
 
-__attribute__((naked))
-void snprintf() { __builtin_trap(); }
+int snprintf(char* s, unsigned long size, const char* fmt, ...) {
+    return 0;
+}
 
-__attribute__((naked))
-void asprintf() { __builtin_trap(); }
+char* asprintf(char **out, const char* fmt, ...) {
+    return 0;
+}
 
-__attribute__((naked))
-void dprintf() { __builtin_trap(); }
+int dprintf(int f, const char* fmt, ...) {
+    return 0;
+}
 
-__attribute__((naked))
-void fprintf() { __builtin_trap(); }
-
-
+int fprintf(void * f, const char * fmt, ...) {
+    return 0;
+}
