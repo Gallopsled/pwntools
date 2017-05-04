@@ -39,9 +39,10 @@ As of May 4, 2017, there have been no new features or major notable changes sinc
 
 A few typos were fixed, a few Linux kernel configuration flags were added, and a few error messages were enhanced.
 
-## 3.6.2
+## 3.6.1
 
-- [#948][948] Disable GOT/PLT emulation for Corefiles
+- [#947][947] Fix error when generating SSH templates via `pwn template` when a filename was not provided
+- [#948][948] Fix unnecessary warning for Core files
 - [#950][950] Fix ABI detection in `adb.compile` when no device is present
 - [#954][954] Fix list processing in `~/.pwn.conf`
 - [#960][960] Pass `*args` and `**kwargs` to routines in `pwn template`
@@ -49,6 +50,7 @@ A few typos were fixed, a few Linux kernel configuration flags were added, and a
 - [#968][968] Fix incorrect ordering in `pwn template` when using `GDB=1`
 - [#970][970] Fix overly-aggressive corefile caching
 
+[947]: https://github.com/Gallopsled/pwntools/pull/947
 [948]: https://github.com/Gallopsled/pwntools/pull/948
 [950]: https://github.com/Gallopsled/pwntools/pull/950
 [954]: https://github.com/Gallopsled/pwntools/pull/954
@@ -56,14 +58,6 @@ A few typos were fixed, a few Linux kernel configuration flags were added, and a
 [967]: https://github.com/Gallopsled/pwntools/pull/967
 [968]: https://github.com/Gallopsled/pwntools/pull/968
 [970]: https://github.com/Gallopsled/pwntools/pull/970
-
-## 3.6.1
-
-- [#948][948] Fix unnecessary warning for Core files
-- [#947][947] Fix error when generating SSH templates via `pwn template` when a filename was not provided
-
-[948]: https://github.com/Gallopsled/pwntools/pull/948
-[947]: https://github.com/Gallopsled/pwntools/pull/947
 
 ## 3.6.0
 
