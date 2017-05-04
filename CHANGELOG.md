@@ -35,7 +35,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 To be on Jun 17, 2017.
 
-As of May 4, 2017, there have been no new features or major notable changes since 3.6.1.
+As of May 4, 2017, there have been no new features or major notable changes since 3.6.0.
 
 A few typos were fixed, a few Linux kernel configuration flags were added, and a few error messages were enhanced.
 
