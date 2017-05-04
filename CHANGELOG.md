@@ -39,8 +39,22 @@ As of May 4, 2017, there have been no new features or major notable changes sinc
 
 A few typos were fixed, a few Linux kernel configuration flags were added, and a few error messages were enhanced.
 
-## 3.6.1
+## 3.6.0
 
+To be released on May 6, 2017.
+
+- [#895][895] Added a Dockerfile to simplify testing setup and allow testing on OSX
+- [#897][897] Fixed some incorrect AArch64 syscals
+- [#893][893] Added the `pwnlib.config` module
+    + Configuration options can now be set in `~/.pwn.conf`
+    + This replaces the old, **undocumented** mechanism for changing logging colors.  Only @br0ns and @ebeip90 were likely using this.
+    + More information is available in the documentation [here](http://docs.pwntools.com/en/dev/config.html).
+- [#899][899] Pwntools now uses Unicorn Engine to emulate PLT instructions to ensure correct mapping of PIE / RELRO binaries.
+- [#904][904] Enhancements to the accuracy of the `pwn checksec` command.
+- [#905][905] Added a `pwn debug` command-line utility which automates the process of `gdb.attach(process(...))` to spawn GDB
+    + More information is available in the documentation [here](http://docs.pwntools.com/en/dev/commandline.html#pwn-debug)
+- [#919][919] Added a `pwn template` command-line utility to simplify the process of bootstrapping a new exploit.
+    + More information is available in the documentation [here](http://docs.pwntools.com/en/dev/commandline.html#pwn-template).
 - [#947][947] Fix error when generating SSH templates via `pwn template` when a filename was not provided
 - [#948][948] Fix unnecessary warning for Core files
 - [#950][950] Fix ABI detection in `adb.compile` when no device is present
@@ -58,23 +72,6 @@ A few typos were fixed, a few Linux kernel configuration flags were added, and a
 [967]: https://github.com/Gallopsled/pwntools/pull/967
 [968]: https://github.com/Gallopsled/pwntools/pull/968
 [970]: https://github.com/Gallopsled/pwntools/pull/970
-
-## 3.6.0
-
-To be released on May 6, 2017.
-
-- [#895][895] Added a Dockerfile to simplify testing setup and allow testing on OSX
-- [#897][897] Fixed some incorrect AArch64 syscals
-- [#893][893] Added the `pwnlib.config` module
-    + Configuration options can now be set in `~/.pwn.conf`
-    + This replaces the old, **undocumented** mechanism for changing logging colors.  Only @br0ns and @ebeip90 were likely using this.
-    + More information is available in the documentation [here](http://docs.pwntools.com/en/dev/config.html).
-- [#899][899] Pwntools now uses Unicorn Engine to emulate PLT instructions to ensure correct mapping of PIE / RELRO binaries.
-- [#904][904] Enhancements to the accuracy of the `pwn checksec` command.
-- [#905][905] Added a `pwn debug` command-line utility which automates the process of `gdb.attach(process(...))` to spawn GDB
-    + More information is available in the documentation [here](http://docs.pwntools.com/en/dev/commandline.html#pwn-debug)
-- [#919][919] Added a `pwn template` command-line utility to simplify the process of bootstrapping a new exploit.
-    + More information is available in the documentation [here](http://docs.pwntools.com/en/dev/commandline.html#pwn-template).
 
 [895]: https://github.com/Gallopsled/pwntools/pull/895
 [897]: https://github.com/Gallopsled/pwntools/pull/897
