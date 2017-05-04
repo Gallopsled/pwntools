@@ -55,13 +55,10 @@ To be released on May 6, 2017.
     + More information is available in the documentation [here](http://docs.pwntools.com/en/dev/commandline.html#pwn-debug)
 - [#919][919] Added a `pwn template` command-line utility to simplify the process of bootstrapping a new exploit.
     + More information is available in the documentation [here](http://docs.pwntools.com/en/dev/commandline.html#pwn-template).
-- [#947][947] Fix error when generating SSH templates via `pwn template` when a filename was not provided
 - [#948][948] Fix unnecessary warning for Core files
 - [#950][950] Fix ABI detection in `adb.compile` when no device is present
 - [#954][954] Fix list processing in `~/.pwn.conf`
-- [#960][960] Pass `*args` and `**kwargs` to routines in `pwn template`
 - [#967][967] Respect `TERM_PROGRAM` for `run_in_new_terminal`
-- [#968][968] Fix incorrect ordering in `pwn template` when using `GDB=1`
 - [#970][970] Fix overly-aggressive corefile caching
 
 [947]: https://github.com/Gallopsled/pwntools/pull/947
