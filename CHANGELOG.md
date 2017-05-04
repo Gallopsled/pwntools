@@ -35,6 +35,28 @@ The table below shows which release corresponds to each branch, and what date th
 
 To be on Jun 17, 2017.
 
+As of May 4, 2017, there have been no new features or major notable changes since 3.6.1.
+
+A few typos were fixed, a few Linux kernel configuration flags were added, and a few error messages were enhanced.
+
+## 3.6.2
+
+- [#948][948] Disable GOT/PLT emulation for Corefiles
+- [#950][950] Fix ABI detection in `adb.compile` when no device is present
+- [#954][954] Fix list processing in `~/.pwn.conf`
+- [#960][960] Pass `*args` and `**kwargs` to routines in `pwn template`
+- [#967][967] Respect `TERM_PROGRAM` for `run_in_new_terminal`
+- [#968][968] Fix incorrect ordering in `pwn template` when using `GDB=1`
+- [#970][970] Fix overly-aggressive corefile caching
+
+[948]: https://github.com/Gallopsled/pwntools/pull/948
+[950]: https://github.com/Gallopsled/pwntools/pull/950
+[954]: https://github.com/Gallopsled/pwntools/pull/954
+[960]: https://github.com/Gallopsled/pwntools/pull/960
+[967]: https://github.com/Gallopsled/pwntools/pull/967
+[968]: https://github.com/Gallopsled/pwntools/pull/968
+[970]: https://github.com/Gallopsled/pwntools/pull/970
+
 ## 3.6.1
 
 - [#948][948] Fix unnecessary warning for Core files
