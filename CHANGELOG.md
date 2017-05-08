@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.7.0](#350)    | `dev`    | Jun 17, 2017 (planned)
-| [3.6.0](#350)    | `beta`   | May 6, 2017 (planned)
-| [3.5.1](#351)    | `stable` | Apr 15, 2017
+| [3.8.0](#380)    | `dev`    | Jul 28, 2017 (planned)
+| [3.7.0](#370)    | `beta`   | Jun 17, 2017 (planned)
+| [3.6.0](#360)    | `stable` | May 8, 2017
+| [3.5.1](#351)    |          | Apr 15, 2017
 | [3.5.0](#350)    |          | Mar 26, 2017
 | [3.4.1](#341)    |          | Feb 17, 2017
 | [3.4.0](#340)    |          | Feb 13, 2017
@@ -31,6 +32,10 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
+## 3.8.0
+
+To be on Jul 28, 2017.
+
 ## 3.7.0
 
 To be on Jun 17, 2017.
@@ -40,8 +45,6 @@ As of May 4, 2017, there have been no new features or major notable changes sinc
 A few typos were fixed, a few Linux kernel configuration flags were added, and a few error messages were enhanced.
 
 ## 3.6.0
-
-To be released on May 6, 2017.
 
 - [#895][895] Added a Dockerfile to simplify testing setup and allow testing on OSX
 - [#897][897] Fixed some incorrect AArch64 syscals
