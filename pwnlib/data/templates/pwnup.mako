@@ -117,9 +117,9 @@ start = local if args.LOCAL else remote
 %else:
 def start(argv=[], *a, **kw):
     if args.GDB:
-        io = gdb.debug([${binary_repr}] + argv, gdbscript=gdbscript, *a, **kw)
+        return gdb.debug([${binary_repr}] + argv, gdbscript=gdbscript, *a, **kw)
     else:
-        io = process([${binary_repr}] + argv, *a, **kw)
+        return process([${binary_repr}] + argv, *a, **kw)
 %endif
 
 #===========================================================
