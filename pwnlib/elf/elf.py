@@ -1328,6 +1328,12 @@ class ELF(ELFFile):
         .. _PT_GNU_RELRO: https://refspecs.linuxbase.org/LSB_3.1.1/LSB-Core-generic/LSB-Core-generic.html#PROGHEADER
         .. _DF_BIND_NOW: http://refspecs.linuxbase.org/elf/gabi4+/ch5.dynamic.html#df_bind_now
 
+        >>> path = pwnlib.data.elf.relro.path
+        >>> for test in glob(os.path.join(path, 'test-*')):
+        ...     e = ELF(test)
+        ...     expected = os.path.basename(test).split('-')[2]
+        ...     actual = str(e.relro).lower()
+        ...     assert actual == expected
         """
         if not any('GNU_RELRO' in str(s.header.p_type) for s in self.segments):
             return None
