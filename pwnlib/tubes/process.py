@@ -551,7 +551,7 @@ class process(tube):
         elif os.path.sep not in executable:
             tmp = executable
             executable = os.path.join(cwd, executable)
-            log.warn_once("Could not find executable %r in $PATH, using %r instead" % (tmp, executable))
+            self.warn_once("Could not find executable %r in $PATH, using %r instead" % (tmp, executable))
 
         if not os.path.exists(executable):
             self.error("%r does not exist"  % executable)

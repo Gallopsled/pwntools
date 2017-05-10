@@ -102,9 +102,9 @@ prstatus_types = {
     'aarch64': elf_prstatus_aarch64
 }
 
-prspinfo_types = {
-    32: elf_prspinfo_32,
-    64: elf_prspinfo_64,
+prpsinfo_types = {
+    32: elf_prpsinfo_32,
+    64: elf_prpsinfo_64,
 }
 
 siginfo_types = {
@@ -437,8 +437,8 @@ class Corefile(ELF):
         #: The NT_PRSTATUS object.
         self.prstatus = None
 
-        #: The NT_PRSPINFO object
-        self.prspinfo = None
+        #: The NT_PRPSINFO object
+        self.prpsinfo = None
 
         #: The NT_SIGINFO object
         self.siginfo = None
@@ -484,7 +484,7 @@ class Corefile(ELF):
             log.warn_once("%s does not use a supported corefile architecture, registers are unavailable" % self.file.name)
 
         prstatus_type = prstatus_types.get(self.arch, None)
-        prspinfo_type = prspinfo_types.get(self.bits, None)
+        prpsinfo_type = prpsinfo_types.get(self.bits, None)
         siginfo_type = siginfo_types.get(self.bits, None)
 
         with log.waitfor("Parsing corefile...") as w:
@@ -505,10 +505,10 @@ class Corefile(ELF):
                     # Try to find NT_PRPSINFO
                     # Note that pyelftools currently mis-identifies the enum name
                     # as 'NT_GNU_BUILD_ID'
-                    if note.n_descsz == ctypes.sizeof(prspinfo_type) and \
+                    if note.n_descsz == ctypes.sizeof(prpsinfo_type) and \
                        note.n_type == 'NT_GNU_BUILD_ID':
-                        self.NT_PRSPINFO = note
-                        self.prspinfo = prspinfo_type.from_buffer_copy(note.n_desc)
+                        self.NT_PRPSINFO = note
+                        self.prpsinfo = prpsinfo_type.from_buffer_copy(note.n_desc)
 
                     # Try to find NT_SIGINFO so we can see the fault
                     if note.n_type == 0x53494749:

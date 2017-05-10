@@ -65,9 +65,14 @@ setup_travis()
 setup_linux()
 {
     sudo apt-get install -y software-properties-common openssh-server libncurses5-dev libncursesw5-dev openjdk-8-jre-headless
-    sudo apt-add-repository --yes ppa:pwntools/binutils
-    sudo apt-get update
-    sudo apt-get install binutils-arm-linux-gnu binutils-mips-linux-gnu binutils-powerpc-linux-gnu
+    RELEASE="$(lsb-release -sr)"
+    if [[ "$RELEASE" < "16.04" ]]; then
+        sudo apt-add-repository --yes ppa:pwntools/binutils
+        sudo apt-get update
+        sudo apt-get install -y binutils-arm-linux-gnu binutils-mips-linux-gnu binutils-powerpc-linux-gnu
+    else
+        sudo apt-get install -y binutils-arm-linux-gnueabihf binutils-mips-linux-gnu binutils-powerpc-linux-gnu
+    fi
 }
 
 setup_android_emulator()

@@ -213,25 +213,22 @@ def run_in_new_terminal(command, terminal = None, args = None):
         elif 'TERM_PROGRAM' in os.environ:
             terminal = os.environ['TERM_PROGRAM']
             args     = []
-        elif 'DISPLAY' in os.environ:
+        elif 'DISPLAY' in os.environ and which('x-terminal-emulator'):
             terminal = 'x-terminal-emulator'
             args     = ['-e']
-        elif 'TMUX' in os.environ:
+        elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
             args     = ['splitw']
 
     if not terminal:
-        log.error('Argument `terminal` is not set, and could not determine a default')
-
-    terminal_path = which(terminal)
-
-    if not terminal_path:
-        log.error('Could not find terminal: %s' % terminal)
+        log.error('Could not find a terminal binary to use. Set context.terminal to your terminal.')
+    elif not which(terminal):
+        log.error('Could not find terminal binary %r. Set context.terminal to your terminal.' % terminal)
 
     if isinstance(args, tuple):
         args = list(args)
 
-    argv = [terminal_path] + args
+    argv = [which(terminal)] + args
 
     if isinstance(command, str):
         if ';' in command:
