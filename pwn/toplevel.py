@@ -22,13 +22,9 @@ from pwnlib import *
 from pwnlib.asm import *
 from pwnlib.context import Thread
 from pwnlib.context import context
-from pwnlib.dynelf import DynELF
 from pwnlib.encoders import *
-from pwnlib.elf.corefile import Core, Corefile, Coredump
-from pwnlib.elf.elf import ELF, load
 from pwnlib.encoders import *
 from pwnlib.exception import PwnlibException
-from pwnlib.gdb import attach, debug, debug_assembly, debug_shellcode
 from pwnlib.flag import *
 from pwnlib.fmtstr import FmtStr, fmtstr_payload
 from pwnlib.log import getLogger
@@ -37,13 +33,11 @@ from pwnlib.regsort import *
 from pwnlib.replacements import *
 from pwnlib.rop import ROP
 from pwnlib.rop.srop import SigreturnFrame
-from pwnlib.runner import *
 from pwnlib.timeout import Timeout
 from pwnlib.tubes.listen import listen
 from pwnlib.tubes.process import process, PTY, PIPE, STDOUT
 from pwnlib.tubes.remote import remote, tcp, udp, connect
 from pwnlib.tubes.serialtube import serialtube
-from pwnlib.tubes.ssh import ssh
 from pwnlib.tubes.tube import tube
 from pwnlib.ui import *
 from pwnlib.util import crc
@@ -63,6 +57,15 @@ from pwnlib.util.proc import pidof
 from pwnlib.util.sh_string import sh_string, sh_prepare, sh_command_with
 from pwnlib.util.splash import *
 from pwnlib.util.web import *
+
+if sys.platform != 'win32':
+	from pwnlib.dynelf import DynELF	
+	from pwnlib.elf.corefile import Core, Corefile, Coredump
+	from pwnlib.elf.elf import ELF, load	
+	from pwnlib.runner import *
+	from pwnlib.tubes.ssh import ssh
+	from pwnlib.gdb import attach, debug, debug_assembly, debug_shellcode
+	
 
 # Promote these modules, so that "from pwn import *" will let you access them
 

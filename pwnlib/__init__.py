@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import importlib
+import sys
 
 from pwnlib.version import __version__
 
@@ -15,22 +16,16 @@ __all__ = [
     'constants',
     'context',
     'data',
-    'dynelf',
     'encoders',
-    'elf',
     'exception',
     'fmtstr',
-    'gdb',
-    'libcdb',
     'log',
     'memleak',
     'pep237',
     'regsort',
     'replacements',
     'rop',
-    'runner',
     'shellcraft',
-    'term',
     'tubes',
     'ui',
     'useragents',
@@ -38,6 +33,15 @@ __all__ = [
     'adb',
     'update',
 ]
+
+if sys.platform != 'win32':
+	__all__.append('dynelf')
+	__all__.append('elf')
+	__all__.append('gdb')
+	__all__.append('term')
+	__all__.append('libcdb')
+	__all__.append('runner')
+	
 
 for module in __all__:
     importlib.import_module('.%s' % module, 'pwnlib')

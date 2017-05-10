@@ -48,7 +48,9 @@ import os
 import string
 import sys
 
-from pwnlib import term
+if sys.platform != 'win32':
+	from pwnlib import term
+	
 from pwnlib.context import context
 
 class PwnlibArgs(collections.defaultdict):
@@ -56,7 +58,7 @@ class PwnlibArgs(collections.defaultdict):
         return self[attr]
 
 args = PwnlibArgs(str)
-term_mode  = True
+term_mode  = False
 env_prefix = 'PWNLIB_'
 free_form  = True
 
@@ -193,6 +195,5 @@ def initialize():
         elif free_form and isident(arg):
             sys.argv.remove(orig)
             args[arg] = value
-
-    if term_mode:
-        term.init()
+	if sys.platform != 'win32' and term_mode:
+		term.init()

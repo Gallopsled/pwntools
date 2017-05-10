@@ -10,7 +10,10 @@ import threading
 import time
 
 from pwnlib import atexit
-from pwnlib import term
+
+if sys.platform != 'win32':
+	from pwnlib import term
+	
 from pwnlib.context import context
 from pwnlib.log import Logger
 from pwnlib.timeout import Timeout
@@ -764,7 +767,7 @@ class tube(Timeout, Logger):
         self.send(data + self.newline)
         return self.recvuntil(delim, timeout)
 
-    def interactive(self, prompt = term.text.bold_red('$') + ' '):
+    def interactive(self, prompt = term.text.bold_red('$') + ' ' if  sys.platform != 'win32' else ' '):
         """interactive(prompt = pwnlib.term.text.bold_red('$') + ' ')
 
         Does simultaneous reading and writing to the tube. In principle this just
@@ -796,8 +799,9 @@ class tube(Timeout, Logger):
 
         try:
             while not go.isSet():
-                if term.term_mode:
-                    data = term.readline.readline(prompt = prompt, float = True)
+                if sys.platform != 'win32':
+					if term.term_mode:
+						data = term.readline.readline(prompt = prompt, float = True)
                 else:
                     data = sys.stdin.read(1)
 

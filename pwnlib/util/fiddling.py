@@ -6,11 +6,15 @@ import random
 import re
 import os
 import string
+import sys
 import StringIO
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
-from pwnlib.term import text
+
+if sys.platform != 'win32':
+	from pwnlib.term import text
+	
 from pwnlib.util import lists
 from pwnlib.util import packing
 from pwnlib.util.cyclic import cyclic
@@ -553,14 +557,16 @@ def _hexiichar(c):
         return "## "
     else:
         return "%02x " % ord(c)
-
-default_style = {
-    'marker':       text.gray if text.has_gray else text.blue,
-    'nonprintable': text.gray if text.has_gray else text.blue,
-    '00':           text.red,
-    '0a':           text.red,
-    'ff':           text.green,
-}
+		
+default_style = {}
+if sys.platform != 'win32':
+	default_style = {
+		'marker':       text.gray if text.has_gray else text.blue,
+		'nonprintable': text.gray if text.has_gray else text.blue,
+		'00':           text.red,
+		'0a':           text.red,
+		'ff':           text.green,
+	}
 
 cyclic_pregen = ''
 de_bruijn_gen = de_bruijn()
@@ -616,7 +622,8 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
     for b in highlight:
         if isinstance(b, str):
             b = ord(b)
-        style['%02x' % b] = text.white_on_red
+        if sys.platform != 'win32':
+			style['%02x' % b] = text.white_on_red
     _style = style
     style = default_style.copy()
     style.update(_style)

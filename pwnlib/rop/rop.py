@@ -206,7 +206,10 @@ from pwnlib import abi
 from pwnlib import constants
 from pwnlib.context import LocalContext
 from pwnlib.context import context
-from pwnlib.elf import ELF
+
+if sys.platform != 'win32':
+	from pwnlib.elf import ELF
+
 from pwnlib.log import getLogger
 from pwnlib.rop import srop
 from pwnlib.rop.call import AppendedArgument
@@ -398,10 +401,12 @@ class ROP(object):
         import ropgadget
 
         # Permit singular ROP(elf) vs ROP([elf])
-        if isinstance(elfs, ELF):
-            elfs = [elfs]
-        elif isinstance(elfs, (str, unicode)):
-            elfs = [ELF(elfs)]
+        if sys.platform != 'win32':
+			if isinstance(elfs, ELF):
+				elfs = [elfs]
+			elif isinstance(elfs, (str, unicode)):
+				elfs = [ELF(elfs)]
+				
         self.elfs = elfs
         self._chain = []
         self.base = base
@@ -411,7 +416,11 @@ class ROP(object):
     @staticmethod
     @LocalContext
     def from_blob(blob, *a, **kw):
-        return ROP(ELF.from_bytes(blob, *a, **kw))
+        ret = None
+        if sys.platform != 'win32':
+			ret = ROP(ELF.from_bytes(blob, *a, **kw))
+			
+        return ret
 
     def setRegisters(self, registers):
         """

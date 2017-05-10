@@ -67,7 +67,9 @@ from pwnlib.elf.config import parse_kconfig
 from pwnlib.elf.plt import emulate_plt_instructions
 from pwnlib.log import getLogger
 from pwnlib.qemu import get_qemu_arch
-from pwnlib.term import text
+
+from pwnlib.term import text	
+	
 from pwnlib.tubes.process import process
 from pwnlib.util import misc
 from pwnlib.util import packing

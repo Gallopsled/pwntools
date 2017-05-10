@@ -3,9 +3,11 @@ from __future__ import absolute_import
 
 import threading
 import time
+import sys
 
-from pwnlib import term
-from pwnlib.term import text
+if sys.platform != 'win32':
+	from pwnlib import term
+	from pwnlib.term import text
 
 
 _banner = r'''
@@ -64,8 +66,9 @@ def splash():
             ndx += 1
             time.sleep(0.15)
 
-    if term.term_mode:
-        t = threading.Thread(target = updater)
-        t.daemon = True
-        t.start()
-        time.sleep(0.2)
+    if sys.platform != 'win32':
+		if term.term_mode:
+			t = threading.Thread(target = updater)
+			t.daemon = True
+			t.start()
+			time.sleep(0.2)

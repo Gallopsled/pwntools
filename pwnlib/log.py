@@ -102,35 +102,39 @@ import sys
 import threading
 import time
 
-from pwnlib import term
+
+if sys.platform != 'win32':
+	from pwnlib import term
+	from pwnlib.term import spinners
+	from pwnlib.term import text
+	
 from pwnlib.config import register_config
 from pwnlib.context import Thread
 from pwnlib.context import context
 from pwnlib.exception import PwnlibException
-from pwnlib.term import spinners
-from pwnlib.term import text
+
 
 __all__ = [
     'getLogger', 'install_default_handler', 'rootlogger'
 ]
 
 
-
-# list of prefixes to use for the different message types.  note that the `text`
-# module won't add any escape codes if `pwnlib.context.log_console.isatty()` is `False`
-_msgtype_prefixes = {
-    'status'       : [text.magenta, 'x'],
-    'success'      : [text.bold_green, '+'],
-    'failure'      : [text.bold_red, '-'],
-    'debug'        : [text.bold_red, 'DEBUG'],
-    'info'         : [text.bold_blue, '*'],
-    'warning'      : [text.bold_yellow, '!'],
-    'error'        : [text.on_red, 'ERROR'],
-    'exception'    : [text.on_red, 'ERROR'],
-    'critical'     : [text.on_red, 'CRITICAL'],
-    'info_once'    : [text.bold_blue, '*'],
-    'warning_once' : [text.bold_yellow, '!'],
-    }
+if sys.platform != 'win32':
+	# list of prefixes to use for the different message types.  note that the `text`
+	# module won't add any escape codes if `pwnlib.context.log_console.isatty()` is `False`
+	_msgtype_prefixes = {
+		'status'       : [text.magenta, 'x'],
+		'success'      : [text.bold_green, '+'],
+		'failure'      : [text.bold_red, '-'],
+		'debug'        : [text.bold_red, 'DEBUG'],
+		'info'         : [text.bold_blue, '*'],
+		'warning'      : [text.bold_yellow, '!'],
+		'error'        : [text.on_red, 'ERROR'],
+		'exception'    : [text.on_red, 'ERROR'],
+		'critical'     : [text.on_red, 'CRITICAL'],
+		'info_once'    : [text.bold_blue, '*'],
+		'warning_once' : [text.bold_yellow, '!'],
+		}
 
 
 def read_log_config(settings):
@@ -154,9 +158,10 @@ def read_log_config(settings):
 
 register_config('log', read_log_config)
 
-# the text decoration to use for spinners.  the spinners themselves can be found
-# in the `pwnlib.term.spinners` module
-_spinner_style = text.bold_blue
+if sys.platform != 'win32':
+	# the text decoration to use for spinners.  the spinners themselves can be found
+	# in the `pwnlib.term.spinners` module
+	_spinner_style = text.bold_blue
 
 class Progress(object):
     """
@@ -524,51 +529,57 @@ class Handler(logging.StreamHandler):
 
         # if the record originates from a `Progress` object and term handling
         # is enabled we can have animated spinners! so check that
-        if progress is None or not term.term_mode:
-            super(Handler, self).emit(record)
-            return
+        #if progress is None or not term.term_mode:
+            #super(Handler, self).emit(record)
+            #return
+			
+        if sys.platform != 'win32' and term.term_mode:
 
-        # yay, spinners!
+			# yay, spinners!
 
-        # since we want to be able to update the spinner we overwrite the
-        # message type so that the formatter doesn't output a prefix symbol
-        msgtype = record.pwnlib_msgtype
-        record.pwnlib_msgtype = 'animated'
-        msg = "%s\n" % self.format(record)
+			# since we want to be able to update the spinner we overwrite the
+			# message type so that the formatter doesn't output a prefix symbol
+			msgtype = record.pwnlib_msgtype
+			record.pwnlib_msgtype = 'animated'
+			msg = "%s\n" % self.format(record)
 
-        # we enrich the `Progress` object to keep track of the spinner
-        if not hasattr(progress, '_spinner_handle'):
-            spinner_handle = term.output('')
-            msg_handle = term.output(msg)
-            stop = threading.Event()
-            def spin():
-                '''Wheeeee!'''
-                state = 0
-                states = random.choice(spinners.spinners)
-                while True:
-                    prefix = '[%s] ' % _spinner_style(states[state])
-                    spinner_handle.update(prefix)
-                    state = (state + 1) % len(states)
-                    if stop.wait(0.1):
-                        break
-            t = Thread(target = spin)
-            t.daemon = True
-            t.start()
-            progress._spinner_handle = spinner_handle
-            progress._msg_handle = msg_handle
-            progress._stop_event = stop
-            progress._spinner_thread = t
-        else:
-            progress._msg_handle.update(msg)
+			# we enrich the `Progress` object to keep track of the spinner
+			if not hasattr(progress, '_spinner_handle'):
+				spinner_handle = term.output('')
+				msg_handle = term.output(msg)
+				stop = threading.Event()
+				def spin():
+					'''Wheeeee!'''
+					state = 0
+					states = random.choice(spinners.spinners)
+					while True:
+						prefix = '[%s] ' % _spinner_style(states[state])
+						spinner_handle.update(prefix)
+						state = (state + 1) % len(states)
+						if stop.wait(0.1):
+							break
+				t = Thread(target = spin)
+				t.daemon = True
+				t.start()
+				progress._spinner_handle = spinner_handle
+				progress._msg_handle = msg_handle
+				progress._stop_event = stop
+				progress._spinner_thread = t
+			else:
+				progress._msg_handle.update(msg)
 
-        # if the message type was not a status message update, then we should
-        # stop the spinner
-        if msgtype != 'status':
-            progress._stop_event.set()
-            progress._spinner_thread.join()
-            style, symb = _msgtype_prefixes[msgtype]
-            prefix = '[%s] ' % style(symb)
-            progress._spinner_handle.update(prefix)
+			# if the message type was not a status message update, then we should
+			# stop the spinner
+			if msgtype != 'status':
+				progress._stop_event.set()
+				progress._spinner_thread.join()
+				style, symb = _msgtype_prefixes[msgtype]
+				prefix = '[%s] ' % style(symb)
+				progress._spinner_handle.update(prefix)
+				
+        else:		
+			super(Handler, self).emit(record)
+			
 
 class Formatter(logging.Formatter):
     """
@@ -606,19 +617,18 @@ class Formatter(logging.Formatter):
         if msgtype is None:
             return msg
 
-        if msgtype in _msgtype_prefixes:
-            style, symb = _msgtype_prefixes[msgtype]
-            prefix = '[%s] ' % style(symb)
-        elif msgtype == 'indented':
-            prefix = self.indent
-        elif msgtype == 'animated':
-            # the handler will take care of updating the spinner, so we will
-            # not include it here
-            prefix = ''
-        else:
-            # this should never happen
-            prefix = '[?] '
-
+        prefix = '[?] '
+        if sys.platform != 'win32':
+			if msgtype in _msgtype_prefixes:
+				style, symb = _msgtype_prefixes[msgtype]
+				prefix = '[%s] ' % style(symb)
+			elif msgtype == 'indented':
+				prefix = self.indent
+			elif msgtype == 'animated':
+				# the handler will take care of updating the spinner, so we will
+				# not include it here
+				prefix = ''
+			
         msg = prefix + msg
         msg = self.nlindent.join(msg.splitlines())
         return msg

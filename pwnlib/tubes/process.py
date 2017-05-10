@@ -3,17 +3,22 @@ from __future__ import absolute_import
 
 import ctypes
 import errno
-import fcntl
+import sys
+
+if sys.platform != 'win32':
+	import fcntl
+	import pty
+	import tty	
+	import resource
+	
+	
 import logging
 import os
 import platform
-import pty
-import resource
 import select
 import signal
 import subprocess
 import time
-import tty
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -343,11 +348,12 @@ class process(tube):
             os.close(master)
             os.close(slave)
 
-        # Set in non-blocking mode so that a call to call recv(1000) will
-        # return as soon as a the first byte is available
-        fd = self.proc.stdout.fileno()
-        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+        if sys.platform != 'win32':
+			# Set in non-blocking mode so that a call to call recv(1000) will
+			# return as soon as a the first byte is available
+			fd = self.proc.stdout.fileno()
+			fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+			fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
         # Save off information about whether the binary is setuid / setgid
         self.uid = os.getuid()
@@ -370,22 +376,23 @@ class process(tube):
         """
         if self.pty is not None:
             self.__pty_make_controlling_tty(self.pty)
+	
+        if sys.platform != 'win32': 
+			if not self.aslr:
+				try:
+					if context.os == 'linux' and self._setuid is not True:
+						ADDR_NO_RANDOMIZE = 0x0040000
+						ctypes.CDLL('libc.so.6').personality(ADDR_NO_RANDOMIZE)
 
-        if not self.aslr:
-            try:
-                if context.os == 'linux' and self._setuid is not True:
-                    ADDR_NO_RANDOMIZE = 0x0040000
-                    ctypes.CDLL('libc.so.6').personality(ADDR_NO_RANDOMIZE)
+					resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
+				except Exception:
+					self.exception("Could not disable ASLR")
 
-                resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
-            except Exception:
-                self.exception("Could not disable ASLR")
-
-        # Assume that the user would prefer to have core dumps.
-        try:
-            resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
-        except Exception:
-            pass
+			# Assume that the user would prefer to have core dumps.
+			try:
+				resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
+			except Exception:
+				pass
 
         # Given that we want a core file, assume that we want the whole thing.
         try:
@@ -586,7 +593,7 @@ class process(tube):
     def _handles(self, stdin, stdout, stderr):
         master = slave = None
 
-        if self.pty is not None:
+        if sys.platform != 'win32' and self.pty is not None:
             # Normally we could just use PIPE and be happy.
             # Unfortunately, this results in undesired behavior when
             # printf() and similar functions buffer data instead of

@@ -13,11 +13,13 @@ import threading
 import time
 import types
 
-from pwnlib import term
+if sys.platform != 'win32':
+	from pwnlib import term
+	from pwnlib.term import text
+
 from pwnlib.context import context
 from pwnlib.log import Logger
 from pwnlib.log import getLogger
-from pwnlib.term import text
 from pwnlib.timeout import Timeout
 from pwnlib.tubes.process import process
 from pwnlib.tubes.sock import sock
