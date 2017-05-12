@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.8.0](#380)    | `dev`    | Jul 28, 2017 (planned)
 | [3.7.0](#370)    | `beta`   | Jun 17, 2017 (planned)
-| [3.6.0](#360)    | `stable` | May 8, 2017
+| [3.6.1](#361)    | `stable` | May 12, 2017
+| [3.6.0](#360)    |          | May 8, 2017
 | [3.5.1](#351)    |          | Apr 15, 2017
 | [3.5.0](#350)    |          | Mar 26, 2017
 | [3.4.1](#341)    |          | Feb 17, 2017
@@ -43,6 +44,16 @@ To be on Jun 17, 2017.
 As of May 4, 2017, there have been no new features or major notable changes since 3.6.0.
 
 A few typos were fixed, a few Linux kernel configuration flags were added, and a few error messages were enhanced.
+
+## 3.6.1
+
+- [#979][979]+[1a4a1e1][1a4a1e1] Fixed [#974][974], a bug related to the terminal handling and numlock.
+- [#980][980] Fixed the `pwn template` command.
+
+[974]: https://github.com/Gallopsled/pwntools/issues/974
+[979]: https://github.com/Gallopsled/pwntools/pull/979
+[980]: https://github.com/Gallopsled/pwntools/pull/980
+[1a4a1e1]: https://github.com/Gallopsled/pwntools/commit/1a4a1e1
 
 ## 3.6.0
 
