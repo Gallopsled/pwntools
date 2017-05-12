@@ -86,7 +86,7 @@ except Exception as e:
 setup(
     name                 = 'pwntools',
     packages             = find_packages(),
-    version              = '3.7.0beta0',
+    version              = '3.7.0beta1',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],
@@ -97,7 +97,7 @@ setup(
             'data/binutils/*',
             'data/includes/*.h',
             'data/includes/*/*.h',
-            'data/templates/pwnup.mako',
+            'data/templates/*.mako',
         ] + templates,
     },
     entry_points = {'console_scripts': console_scripts},
