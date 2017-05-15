@@ -46,6 +46,9 @@ pip install --upgrade pwntools
 However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://docs.pwntools.com/en/stable/install.html).
 
 
+powershell -exec bypass .\preinstall_win.ps1
+
+
 # Contribution
 
 See [CONTRIBUTING.md](CONTRIBUTING.md)
