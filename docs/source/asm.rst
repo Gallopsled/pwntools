@@ -15,7 +15,7 @@
    :members:
 
 Internal Functions
-=========================================
+-----------------------------------------
 
 These are only included so that their tests are run.
 
