@@ -310,28 +310,28 @@ class tube(Timeout, Logger):
                     self.unrecv(''.join(data) + top)
                     raise
 
-                if not res:
+                if not res and sys.platform != "win32":
                     self.unrecv(''.join(data) + top)
                     return ''
-
-                top += res
-                start = len(top)
-                for d in delims:
-                    j = top.find(d)
-                    if start > j > -1:
-                        start = j
-                        end = j + len(d)
-                if start < len(top):
-                    self.unrecv(top[end:])
-                    if drop:
-                        top = top[:start]
-                    else:
-                        top = top[:end]
-                    return ''.join(data) + top
-                if len(top) > longest:
-                    i = -longest - 1
-                    data.append(top[:i])
-                    top = top[i:]
+                elif len(res) > 0:
+                    top += res
+                    start = len(top)
+                    for d in delims:
+                        j = top.find(d)
+                        if start > j > -1:
+                            start = j
+                            end = j + len(d)
+                    if start < len(top):
+                        self.unrecv(top[end:])
+                        if drop:
+                            top = top[:start]
+                        else:
+                            top = top[:end]
+                        return ''.join(data) + top
+                    if len(top) > longest:
+                        i = -longest - 1
+                        data.append(top[:i])
+                        top = top[i:]
 
         return ''
 

@@ -156,7 +156,7 @@ def pause(n = None):
     """Waits for either user input or a specific number of seconds."""
 
     if n == None:
-        if term.term_mode:
+        if sys.platform != 'win32' and term.term_mode:
             log.info('Paused (press any to continue)')
             term.getkey()
         else:

@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import errno
 import socket
 import time
-
+import sys
 import psutil
 
 from pwnlib import tubes
@@ -30,7 +30,7 @@ def pidof(target):
     Returns:
         A list of found PIDs.
     """
-    if isinstance(target, tubes.ssh.ssh_channel):
+    if sys.platform != 'win32' and isinstance(target, tubes.ssh.ssh_channel):
         return [target.pid]
 
     elif isinstance(target, tubes.sock.sock):

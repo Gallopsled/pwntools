@@ -6,6 +6,7 @@ import re
 import socket
 import stat
 import string
+import sys
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -151,7 +152,9 @@ def which(name, all = False):
     if os.path.sep in name:
         return name
 
-    isroot = os.getuid() == 0
+    if sys.platform != 'win32':
+       isroot = os.getuid() == 0
+        
     out = set()
     try:
         path = os.environ['PATH']
@@ -163,10 +166,11 @@ def which(name, all = False):
             st = os.stat(p)
             if not stat.S_ISREG(st.st_mode):
                 continue
-            # work around this issue: https://bugs.python.org/issue9311
-            if isroot and not \
-              st.st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH):
-                continue
+            if sys.platform != 'win32':
+                # work around this issue: https://bugs.python.org/issue9311
+                if isroot and not \
+                  st.st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH):
+                    continue
             if all:
                 out.add(p)
             else:

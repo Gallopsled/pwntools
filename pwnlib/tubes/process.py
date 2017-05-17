@@ -27,6 +27,7 @@ from pwnlib.timeout import Timeout
 from pwnlib.tubes.tube import tube
 from pwnlib.util.misc import parse_ldd_output
 from pwnlib.util.misc import which
+from pwnlib.util.nbstreamreader import NonBlockingStreamReader as NBSR
 
 log = getLogger(__name__)
 
@@ -218,7 +219,7 @@ class process(tube):
                  cwd = None,
                  env = None,
                  stdin  = PIPE,
-                 stdout = PTY,
+                 stdout = PTY if  sys.platform != 'win32' else PIPE,
                  stderr = STDOUT,
                  close_fds = True,
                  preexec_fn = lambda: None,
@@ -316,6 +317,9 @@ class process(tube):
             prefixes = [([], executable)]
             executables = [executable]
             exception = None
+			
+            if sys.platform == 'win32':
+				close_fds = False			
 
             for prefix, executable in prefixes:
                 try:
@@ -328,7 +332,7 @@ class process(tube):
                                                  stdout = stdout,
                                                  stderr = stderr,
                                                  close_fds = close_fds,
-                                                 preexec_fn = self.__preexec_fn)
+                                                 preexec_fn = self.__preexec_fn if  sys.platform != 'win32' else None )
                     break
                 except OSError as exception:
                     if exception.errno != errno.ENOEXEC:
@@ -355,9 +359,12 @@ class process(tube):
 			fl = fcntl.fcntl(fd, fcntl.F_GETFL)
 			fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
-        # Save off information about whether the binary is setuid / setgid
-        self.uid = os.getuid()
-        self.gid = os.getgid()
+			# Save off information about whether the binary is setuid / setgid
+			self.uid = os.getuid()
+			self.gid = os.getgid()
+        else:
+            self._stdout_reader = NBSR(self.proc.stdout)
+			
         self.suid = -1
         self.sgid = -1
         st = os.stat(self.executable)
@@ -693,11 +700,15 @@ class process(tube):
         # should be safe to read without expecting it to block.
         data = ''
 
-        try:
-            data = self.proc.stdout.read(numb)
-        except IOError as (err, strerror):
-            pass
-
+        if sys.platform != 'win32':
+            try:
+                data = self.proc.stdout.read(numb)
+            except IOError as (err, strerror):
+                pass
+        else:
+            data = self._stdout_reader.read(numb, timeout=self.timeout)
+            
+        #print "Received %d bytes. \n" % len(data)
         if not data:
             self.shutdown("recv")
             raise EOFError
@@ -724,23 +735,26 @@ class process(tube):
     def can_recv_raw(self, timeout):
         if not self.connected_raw('recv'):
             return False
+        if sys.platform != 'win32':
+			try:
+				if timeout == None:
+					return select.select([self.proc.stdout], [], []) == ([self.proc.stdout], [], [])
 
-        try:
-            if timeout == None:
-                return select.select([self.proc.stdout], [], []) == ([self.proc.stdout], [], [])
-
-            return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
-        except ValueError:
-            # Not sure why this isn't caught when testing self.proc.stdout.closed,
-            # but it's not.
-            #
-            #   File "/home/user/pwntools/pwnlib/tubes/process.py", line 112, in can_recv_raw
-            #     return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
-            # ValueError: I/O operation on closed file
-            raise EOFError
-        except select.error as v:
-            if v[0] == errno.EINTR:
-                return False
+				return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
+			except ValueError:
+				# Not sure why this isn't caught when testing self.proc.stdout.closed,
+				# but it's not.
+				#
+				#   File "/home/user/pwntools/pwnlib/tubes/process.py", line 112, in can_recv_raw
+				#     return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
+				# ValueError: I/O operation on closed file
+				raise EOFError
+			except select.error as v:
+				print "Exception: \n"
+				if v[0] == errno.EINTR:
+					return False
+        else:
+            return self._stdout_reader.canread()
 
     def connected_raw(self, direction):
         if direction == 'any':
@@ -760,6 +774,8 @@ class process(tube):
         #close file descriptors
         for fd in [self.proc.stdin, self.proc.stdout, self.proc.stderr]:
             if fd is not None:
+                if fd == self.proc.stdout and sys.platform == 'win32':
+                    continue
                 fd.close()
 
         if not self._stop_noticed:
