@@ -524,7 +524,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         .. code-block:: python
 
             # Connect to the SSH server
-            shell = ssh('bandit0', 'bandit.labs.overthewire.org', password='bandit0')
+            shell = ssh('bandit0', 'bandit.labs.overthewire.org', password='bandit0', port=2220)
 
             # Start a process on the server
             cat = shell.process(['cat'])
@@ -763,7 +763,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     Example:
 
     >>> with context.local(log_level=9999): # doctest: +SKIP
-    ...     shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0')
+    ...     shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0', port=2220)
     ...     bash_libs = gdb.find_module_addresses('/bin/bash', shell)
     >>> os.path.basename(bash_libs[0].path) # doctest: +SKIP
     'libc.so.6'
