@@ -53,15 +53,25 @@ def main(args):
         target = int(args.pid)
     elif args.process:
         if context.os == 'android':
-            target = adb.pidof(process)
+            targets = adb.pidof(args.process)
         else:
-            target = pidof(process)
+            targets = pidof(args.process)
+
+        if not targets:
+            log.error("Could not find PID for %r", args.process)
+
+        target = targets[0]
     else:
         parser.print_usage()
         return 1
 
     if args.pid or args.process:
-        gdb.attach(target, gdbscript=gdbscript)
+        pid = gdb.attach(target, gdbscript=gdbscript)
+
+        # Android needs to keep the fowarding open
+        if context.os == 'android':
+            with log.waitfor("Press 'enter' to terminate ADB forwarding session"):
+                pause()
     else:
         gdb.debug(target, gdbscript=gdbscript).interactive()
 

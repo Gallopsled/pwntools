@@ -69,6 +69,23 @@ a direct parent-child relationship.
 This causes some issues with the normal Pwntools workflow, since the process
 heirarchy looks like this:
 
+Android Debugging
+~~~~~~~~~~~~~~~~~
+
+All of the functionality described here also works on Android devices, given:
+
+1. Your ``gdb`` can debug the device's binaries
+2. The device has a ``gdbserver`` binary
+3. You have properly set ``context.os`` and ``context.arch``
+
+.. code-block:: python
+
+    # set context.os, context.arch, context.bits, and context.device
+    context.device = adb.wait_for_device()
+
+    # launch a process
+    p = adb.process('sh')
+
 ::
 
     python ---> target
@@ -602,6 +619,11 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
         misc.run_in_new_terminal(' '.join(cmd))
         return
+
+    elif isinstance(target, tubes.sock.sock) and context.os == 'android':
+        # Android processes are really just sockets connected to
+        # the ADB server.
+        pass
 
     elif isinstance(target, tubes.sock.sock):
         pids = proc.pidof(target)

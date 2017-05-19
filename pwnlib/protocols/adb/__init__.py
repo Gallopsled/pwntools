@@ -239,8 +239,11 @@ class AdbClient(Logger):
 
     @_autoclose
     @_with_transport
-    def execute(self, argv):
+    def execute(self, string):
         r"""Executes a program on the device.
+
+        Arguments:
+            string(str): Raw string fed directly to the system shell.
 
         Returns:
             A :class:`pwnlib.tubes.tube.tube` which is connected to the process.
@@ -251,11 +254,11 @@ class AdbClient(Logger):
             'hello\n'
         """
         self.transport(context.device)
-        if isinstance(argv, str):
-            argv = [argv]
-        argv = list(map(sh_string, argv))
-        cmd = 'exec:%s' % (' '.join(argv))
-        if OKAY == self.send(cmd):
+
+        if not isinstance(string, str):
+            log.error("Not a string: %r", string)
+
+        if OKAY == self.send('exec:' + string):
             rv = self._c
             self._c = None
             return rv
