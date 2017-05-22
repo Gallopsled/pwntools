@@ -41,10 +41,10 @@ def search_by_hash(hex_encoded_id, hash_type='build_id'):
 
         data = read(cache)
         if data.startswith('\x7FELF'):
-            log.info_once("Using cached data from %r" % cache)
+            log.info_once("Using cached data from %r", cache)
             return cache
         else:
-            log.info_once("Skipping unavialable libc")
+            log.info_once("Skipping unavialable libc %s", hex_encoded_id)
             return None
 
     # Build the URL using the requested hash type
@@ -57,7 +57,7 @@ def search_by_hash(hex_encoded_id, hash_type='build_id'):
         data = wget(url)
 
         if not data:
-            log.warn_once("Could not fetch libc for build_id %s" % hex_encoded_id)
+            log.warn_once("Could not fetch libc for build_id %s", hex_encoded_id)
             break
 
         # GitLab serves up symlinks with
