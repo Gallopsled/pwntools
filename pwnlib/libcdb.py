@@ -211,4 +211,4 @@ def get_build_id_offsets():
     }.get(context.arch, [])
 
 
-__all__ = ['get_build_id_offsets', 'search_by_build_id']
+__all__ = ['get_build_id_offsets', 'search_by_build_id', 'search_by_sha1', 'search_by_sha256', 'search_by_md5sum']
