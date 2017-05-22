@@ -39,11 +39,16 @@ def search_by_build_id(hex_encoded_id):
     """
     cache = cache_dir + '-libc.so.' + hex_encoded_id
 
-    if os.path.exists(cache) and read(cache).startswith('\x7FELF'):
-        log.info_once("Using cached data from %r" % cache)
-        return cache
+    if os.path.exists(cache):
+        data = read(cache)
+        if data.startswith('\x7FELF'):
+            log.info_once("Using cached data from %r" % cache)
+            return cache
+        if not data:
+            log.info_once("Skipping unavialable libc")
+            return None
 
-    log.info("Downloading data from GitHub")
+    log.info("Downloading data from LibcDB")
 
     url_base = "https://gitlab.com/libcdb/libcdb/raw/master/hashes/build_id/"
     url      = urlparse.urljoin(url_base, hex_encoded_id)
@@ -53,6 +58,8 @@ def search_by_build_id(hex_encoded_id):
         data = wget(url)
 
         if not data:
+            log.warn_once("Could not fetch libc for build_id %s" % hex_encoded_id)
+            write(cache, '')
             return None
 
         if data.startswith('..'):
