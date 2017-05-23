@@ -21,14 +21,63 @@ from pwnlib.util.web import wget
 
 log = getLogger(__name__)
 
-cache_dir = os.path.join(tempfile.gettempdir(), 'pwn')
+HASHES = ['build_id', 'sha1', 'sha256', 'md5']
+
+def search_by_hash(hex_encoded_id, hash_type='build_id'):
+    assert hash_type in HASHES, hash_type
+
+    # Ensure that the libcdb cache directory exists
+    cache_dir = os.path.join(context.cache_dir, 'libcdb', hash_type)
+
+    if not os.path.isdir(cache_dir):
+        os.makedirs(cache_dir)
+
+    # If we already downloaded the file, and it looks even passingly like
+    # a valid ELF file, return it.
+    cache = os.path.join(cache_dir, hex_encoded_id)
+
+    if os.path.exists(cache):
+        log.debug("Found existing cached libc at %r", cache)
+
+        data = read(cache)
+        if data.startswith('\x7FELF'):
+            log.info_once("Using cached data from %r", cache)
+            return cache
+        else:
+            log.info_once("Skipping unavialable libc %s", hex_encoded_id)
+            return None
+
+    # Build the URL using the requested hash type
+    url_base = "https://gitlab.com/libcdb/libcdb/raw/master/hashes/%s/" % hash_type
+    url      = urlparse.urljoin(url_base, hex_encoded_id)
+
+    data   = ""
+    while not data.startswith('\x7fELF'):
+        log.debug("Downloading data from LibcDB: %s", url)
+        data = wget(url)
+
+        if not data:
+            log.warn_once("Could not fetch libc for build_id %s", hex_encoded_id)
+            break
+
+        # GitLab serves up symlinks with
+        if data.startswith('..'):
+            url = os.path.dirname(url) + '/'
+            url = urlparse.urljoin(url, data)
+
+    # Save whatever we got to the cache
+    write(cache, data or '')
+
+    # Return ``None`` if we did not get a valid ELF file
+    if not data or not data.startswith('\x7FELF'):
+        return None
+
+    return cache
+
 
 def search_by_build_id(hex_encoded_id):
     """
-    Given a hex-encoded Build ID, return the path to an ELF with that Build ID
-    only the local system.
-
-    If it can't be found, return None.
+    Given a hex-encoded Build ID, attempt to download a matching libc from libcdb.
 
     Arguments:
         hex_encoded_id(str):
@@ -36,31 +85,79 @@ def search_by_build_id(hex_encoded_id):
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
+
+    Examples:
+        >>> filename = search_by_build_id('fe136e485814fee2268cf19e5c124ed0f73f4400')
+        >>> hex(ELF(filename).symbols.read)
+        '0xda260'
+        >>> None == search_by_build_id('XX')
+        True
     """
-    cache = cache_dir + '-libc.so.' + hex_encoded_id
+    return search_by_hash(hex_encoded_id, 'build_id')
 
-    if os.path.exists(cache) and read(cache).startswith('\x7FELF'):
-        log.info_once("Using cached data from %r" % cache)
-        return cache
+def search_by_md5(hex_encoded_id):
+    """
+    Given a hex-encoded md5sum, attempt to download a matching libc from libcdb.
 
-    log.info("Downloading data from GitHub")
+    Arguments:
+        hex_encoded_id(str):
+            Hex-encoded Build ID (e.g. 'ABCDEF...') of the library
 
-    url_base = "https://gitlab.com/libcdb/libcdb/raw/master/hashes/build_id/"
-    url      = urlparse.urljoin(url_base, hex_encoded_id)
+    Returns:
+        Path to the downloaded library on disk, or :const:`None`.
 
-    data   = ""
-    while not data.startswith('\x7fELF'):
-        data = wget(url)
+    Examples:
+        >>> filename = search_by_md5('7a71dafb87606f360043dcd638e411bd')
+        >>> hex(ELF(filename).symbols.read)
+        '0xda260'
+        >>> None == search_by_build_id('XX')
+        True
+    """
+    return search_by_hash(hex_encoded_id, 'md5')
 
-        if not data:
-            return None
+def search_by_sha1(hex_encoded_id):
+    """
+    Given a hex-encoded sha1, attempt to download a matching libc from libcdb.
 
-        if data.startswith('..'):
-            url = os.path.dirname(url) + '/'
-            url = urlparse.urljoin(url, data)
+    Arguments:
+        hex_encoded_id(str):
+            Hex-encoded Build ID (e.g. 'ABCDEF...') of the library
 
-    write(cache, data)
-    return cache
+    Returns:
+        Path to the downloaded library on disk, or :const:`None`.
+
+    Examples:
+        >>> filename = search_by_sha1('34471e355a5e71400b9d65e78d2cd6ce7fc49de5')
+        >>> hex(ELF(filename).symbols.read)
+        '0xda260'
+        >>> None == search_by_sha1('XX')
+        True
+    """
+    return search_by_hash(hex_encoded_id, 'sha1')
+
+
+def search_by_sha256(hex_encoded_id):
+    """
+    Given a hex-encoded sha256, attempt to download a matching libc from libcdb.
+
+    Arguments:
+        hex_encoded_id(str):
+            Hex-encoded Build ID (e.g. 'ABCDEF...') of the library
+
+    Returns:
+        Path to the downloaded library on disk, or :const:`None`.
+
+    Examples:
+        >>> filename = search_by_sha256('5e877a8272da934812d2d1f9ee94f73c77c790cbc5d8251f5322389fc9667f21')
+        >>> hex(ELF(filename).symbols.read)
+        '0xda260'
+        >>> None == search_by_sha256('XX')
+        True
+    """
+    return search_by_hash(hex_encoded_id, 'sha256')
+
+
+
 
 def get_build_id_offsets():
     """
@@ -114,4 +211,4 @@ def get_build_id_offsets():
     }.get(context.arch, [])
 
 
-__all__ = ['get_build_id_offsets', 'search_by_build_id']
+__all__ = ['get_build_id_offsets', 'search_by_build_id', 'search_by_sha1', 'search_by_sha256', 'search_by_md5']

@@ -145,7 +145,7 @@ class DynELF(object):
     .. _DT_PLTGOT: http://refspecs.linuxfoundation.org/ELF/zSeries/lzsabi0_zSeries/x2251.html
     '''
 
-    def __init__(self, leak, pointer=None, elf=None):
+    def __init__(self, leak, pointer=None, elf=None, libcdb=True):
         '''
         Instantiates an object which can resolve symbols in a running binary
         given a :class:`pwnlib.memleak.MemLeak` leaker and a pointer inside
@@ -155,7 +155,9 @@ class DynELF(object):
             leak(MemLeak): Instance of pwnlib.memleak.MemLeak for leaking memory
             pointer(int):  A pointer into a loaded ELF file
             elf(str,ELF):  Path to the ELF file on disk, or a loaded :class:`pwnlib.elf.ELF`.
+            libcdb(bool):  Attempt to use libcdb to speed up libc lookups
         '''
+        self.libcdb    = libcdb
         self._elfclass = None
         self._elftype  = None
         self._link_map = None
@@ -560,7 +562,7 @@ class DynELF(object):
         #
         # If we are resolving a symbol in the library, find it.
         #
-        if symb:
+        if symb and self.libcdb:
             # Try a quick lookup by build ID
             self.status("Trying lookup based on Build ID")
             build_id = dynlib._lookup_build_id(lib=lib)
