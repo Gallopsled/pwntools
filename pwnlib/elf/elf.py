@@ -64,6 +64,7 @@ from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.elf.config import kernel_configuration
 from pwnlib.elf.config import parse_kconfig
+from pwnlib.elf.datatypes import constants
 from pwnlib.elf.plt import emulate_plt_instructions
 from pwnlib.log import getLogger
 from pwnlib.qemu import get_qemu_arch
@@ -1327,14 +1328,28 @@ class ELF(ELFFile):
         .. _PT_GNU_RELRO: https://refspecs.linuxbase.org/LSB_3.1.1/LSB-Core-generic/LSB-Core-generic.html#PROGHEADER
         .. _DF_BIND_NOW: http://refspecs.linuxbase.org/elf/gabi4+/ch5.dynamic.html#df_bind_now
 
+        >>> path = pwnlib.data.elf.relro.path
+        >>> for test in glob(os.path.join(path, 'test-*')):
+        ...     e = ELF(test)
+        ...     expected = os.path.basename(test).split('-')[2]
+        ...     actual = str(e.relro).lower()
+        ...     assert actual == expected
         """
+        if not any('GNU_RELRO' in str(s.header.p_type) for s in self.segments):
+            return None
+
         if self.dynamic_by_tag('DT_BIND_NOW'):
             return "Full"
 
-        if any('GNU_RELRO' in str(s.header.p_type) for s in self.segments):
-            return "Partial"
+        flags = self.dynamic_value_by_tag('DT_FLAGS')
+        if flags and flags & constants.DF_BIND_NOW:
+            return "Full"
 
-        return None
+        flags_1 = self.dynamic_value_by_tag('DT_FLAGS_1')
+        if flags_1 and flags_1 & constants.DF_1_NOW:
+            return "Full"
+
+        return "Partial"
 
     @property
     def nx(self):
