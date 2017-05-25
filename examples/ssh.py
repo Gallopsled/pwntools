@@ -4,7 +4,7 @@ Example showing how to use the ssh class.
 
 from pwn import *
 
-shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0')
+shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0', port=2220)
 
 # Show basic command syntax
 log.info("username: %s" % shell.whoami())
