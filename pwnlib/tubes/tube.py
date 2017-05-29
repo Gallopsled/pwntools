@@ -622,7 +622,7 @@ class tube(Timeout, Logger):
         return self.recvline_pred(pred, keepends = keepends, timeout = timeout)
 
     def recvrepeat(self, timeout = default):
-        """recvrepeat()
+        """recvrepeat(timeout = default) -> str
 
         Receives data until a timeout or EOF is reached.
 
