@@ -1,1 +1,1 @@
-../freebsd.h
+freebsd.h

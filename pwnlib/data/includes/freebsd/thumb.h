@@ -1,1 +1,1 @@
-../freebsd.h
+arm.h
