@@ -328,7 +328,7 @@ class AdbDevice(Device):
             kwargs['port'] = 'emulator'
 
         for field in fields[2:]:
-            k,v = field.split(':')
+            k,v = field.split(':', 1)
             kwargs[k] = v
 
         return AdbDevice(serial, type, **kwargs)
