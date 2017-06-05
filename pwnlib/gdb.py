@@ -683,7 +683,6 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     log.info('running in new terminal: %s' % cmd)
 
-    
     gdb_pid = misc.run_in_new_terminal(cmd, args=terminal_args)
 
     if pid and context.native:
