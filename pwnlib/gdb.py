@@ -443,7 +443,7 @@ def binary():
     return gdb
 
 @LocalContext
-def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_args = None, ssh = None):
+def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_args = None, ssh = None, terminal_args = None):
     """attach(target, gdbscript = None, exe = None, arch = None, ssh = None) -> None
 
     Start GDB in a new terminal and attach to `target`.
@@ -455,6 +455,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         arch(str): Architechture of the target binary.  If `exe` known GDB will
           detect the architechture automatically (if it is supported).
         gdb_args(list): List of additional arguments to pass to GDB.
+        terminal_args(list): List of additional arguments to pass to Terminal. e.g.) tmux.
 
     Returns:
         PID of the GDB process (or the window which it is running in).
@@ -682,7 +683,8 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     log.info('running in new terminal: %s' % cmd)
 
-    gdb_pid = misc.run_in_new_terminal(cmd)
+    
+    gdb_pid = misc.run_in_new_terminal(cmd, args=terminal_args)
 
     if pid and context.native:
         proc.wait_for_debugger(pid)
