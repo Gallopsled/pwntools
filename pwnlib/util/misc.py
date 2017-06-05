@@ -204,6 +204,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
     """
 
     if not terminal:
+        tmp_args = args
         if context.terminal:
             terminal = context.terminal[0]
             args     = context.terminal[1:]
@@ -219,6 +220,9 @@ def run_in_new_terminal(command, terminal = None, args = None):
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
             args     = ['splitw']
+
+        if isinstance(tmp_args, list):
+            args.extend(tmp_args)
 
     if not terminal:
         log.error('Could not find a terminal binary to use. Set context.terminal to your terminal.')
