@@ -41,6 +41,8 @@ if sys.platform != 'win32':
 	__all__.append('term')
 	__all__.append('libcdb')
 	__all__.append('runner')
+else:
+    __all__.append('windbg')
 	
 
 for module in __all__:

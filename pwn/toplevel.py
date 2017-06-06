@@ -65,6 +65,8 @@ if sys.platform != 'win32':
 	from pwnlib.runner import *
 	from pwnlib.tubes.ssh import ssh
 	from pwnlib.gdb import attach, debug, debug_assembly, debug_shellcode
+else:
+    from pwnlib.windbg import attach
 	
 
 # Promote these modules, so that "from pwn import *" will let you access them
