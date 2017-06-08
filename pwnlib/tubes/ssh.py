@@ -1908,7 +1908,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Example:
 
-            >>> s = ssh("esoteric3", "wargame.w3challs.com", 20202, "esoteric3")
+            >>> s = ssh("travis", "example.pwnme")
             >>> s.aslr
             True
         """
