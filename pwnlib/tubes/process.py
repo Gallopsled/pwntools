@@ -223,6 +223,7 @@ class process(tube):
                  stderr = STDOUT,
                  close_fds = True,
                  preexec_fn = lambda: None,
+                 creationflags = 0,
                  raw = True,
                  aslr = None,
                  setuid = None,
@@ -332,7 +333,8 @@ class process(tube):
                                                  stdout = stdout,
                                                  stderr = stderr,
                                                  close_fds = close_fds,
-                                                 preexec_fn = self.__preexec_fn if  sys.platform != 'win32' else None )
+                                                 preexec_fn = self.__preexec_fn if  sys.platform != 'win32' else None,
+                                                 creationflags = creationflags )
                     break
                 except OSError as exception:
                     if exception.errno != errno.ENOEXEC:

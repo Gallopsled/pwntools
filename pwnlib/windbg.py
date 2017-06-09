@@ -82,237 +82,58 @@ from pwnlib.util import proc
 
 log = getLogger(__name__)
 
-# def _gdbserver_args(pid=None, path=None, args=None, which=None):
-    # """_gdbserver_args(pid=None, path=None) -> list
-
-    # Sets up a listening gdbserver, to either connect to the specified
-    # PID, or launch the specified binary by its full path.
-
-    # Arguments:
-        # pid(int): Process ID to attach to
-        # path(str): Process to launch
-        # args(list): List of arguments to provide on the debugger command line
-        # which(callaable): Function to find the path of a binary.
-
-    # Returns:
-        # A list of arguments to invoke gdbserver.
-    # """
-    # if [pid, path, args].count(None) != 2:
-        # log.error("Must specify exactly one of pid, path, or args")
-
-    # if not which:
-        # log.error("Must specify which.")
-
-    # gdbserver = ''
-
-    # if not args:
-        # args = [str(path or pid)]
-
-    # # Android targets have a distinct gdbserver
-    # if context.bits == 64:
-        # gdbserver = which('gdbserver64')
-
-    # if not gdbserver:
-        # gdbserver = which('gdbserver')
-
-    # if not gdbserver:
-        # log.error("gdbserver is not installed")
-
-    # orig_args = args
-
-    # gdbserver_args = [gdbserver]
-    # if context.aslr:
-        # gdbserver_args += ['--no-disable-randomization']
-    # else:
-        # log.warn_once("Debugging process with ASLR disabled")
-
-    # if pid:
-        # gdbserver_args += ['--once', '--attach']
-
-    # gdbserver_args += ['localhost:0']
-    # gdbserver_args += args
-
-    # return gdbserver_args
-
-# def _gdbserver_port(gdbserver, ssh):
-    # which = _get_which(ssh)
-
-    # # Process /bin/bash created; pid = 14366
-    # # Listening on port 34816
-    # process_created = gdbserver.recvline()
-    # gdbserver.pid   = int(process_created.split()[-1], 0)
-
-    # listening_on = ''
-    # while 'Listening' not in listening_on:
-        # listening_on    = gdbserver.recvline()
-
-    # port = int(listening_on.split()[-1])
-
-    # # Set up port forarding for SSH
-    # if ssh:
-        # remote   = ssh.connect_remote('127.0.0.1', port)
-        # listener = tubes.listen.listen(0)
-        # port     = listener.lport
-
-        # # Disable showing GDB traffic when debugging verbosity is increased
-        # remote.level = 'error'
-        # listener.level = 'error'
-
-        # # Hook them up
-        # remote <> listener
-
-    # # Set up port forwarding for ADB
-    # elif context.os == 'android':
-        # adb.forward(port)
-
-    # return port
-
-# def _get_which(ssh=None):
-    # if ssh:                        return ssh.which
-    # elif context.os == 'android':  return adb.which
-    # else:                          return misc.which
-
-# def _get_runner(ssh=None):
-    # if ssh:                        return ssh.process
-    # elif context.os == 'android':  return adb.process
-    # else:                          return tubes.process.process
-
 # @LocalContext
-# def debug(args, gdbscript=None, exe=None, env=None, **kwargs):
+def debug(args, windbgscript=None, exe=None, env=None ):
     # """debug(args) -> tube
 
-    # Launch a GDB server with the specified command line,
-    # and launches GDB to attach to it.
+    # Launch a process in a suspended state, attach debugger and return process
 
     # Arguments:
         # args(list): Arguments to the process, similar to :class:`.process`.
-        # gdbscript(str): GDB script to run.
+        # windbgscript(str): WinDbg script to run.
         # exe(str): Path to the executable on disk
-        # env(dict): Environment to start the binary in
 
     # Returns:
-        # :class:`.process` or :class:`.ssh_channel`: A tube connected to the target process
+        # :class:`.process`: A tube connected to the target process
 
     # Notes:
 
-        # The debugger is attached automatically, and you can debug everything
-        # from the very beginning.  This requires that both ``gdb`` and ``gdbserver``
-        # are installed on your machine.
-
         # .. code-block:: python
 
             # # Create a new process, and stop it at 'main'
-            # io = gdb.debug('bash', '''
-            # break main
-            # continue
+            # io = windbg.debug('calc', '''
+            # bp $exentry
+            # go
             # ''')
 
-        # When GDB opens via :func:`debug`, it will initially be stopped on the very first
-        # instruction of the dynamic linker (``ld.so``) for dynamically-linked binaries.
-
-        # Only the target binary and the linker will be loaded in memory, so you cannot
-        # set breakpoints on shared library routines like ``malloc`` since ``libc.so``
-        # has not even been loaded yet.
-
-        # There are several ways to handle this:
-
-        # 1. Set a breakpoint on the executable's entry point (generally, ``_start``)
-            # - This is only invoked after all of the required shared libraries
-              # are loaded.
-            # - You can generally get the address via the GDB command ``info file``.
-        # 2. Use pending breakpoints via ``set breakpoint pending on``
-            # - This has the side-effect of setting breakpoints for **every** function
-              # which matches the name.  For ``malloc``, this will generally set a
-              # breakpoint in the executable's PLT, in the linker's internal ``malloc``,
-              # and eventaully in ``libc``'s malloc.
-        # 3. Wait for libraries to be loaded with ``set stop-on-solib-event 1``
-            # - There is no way to stop on any specific library being loaded, and sometimes
-              # multiple libraries are loaded and only a single breakpoint is issued.
-            # - Generally, you just add a few ``continue`` commands until things are set up
-              # the way you want it to be.
-
-        # .. code-block:: python
-
-            # # Create a new process, and stop it at 'main'
-            # io = gdb.debug('bash', '''
-            # # Wait until we hit the main executable's entry point
-            # break _start
-            # continue
-
-            # # Now set breakpoint on shared library routines
-            # break malloc
-            # break free
-            # continue
-            # ''')
+        # When WinDbg opens via :func:`debug`, it will initially be stopped on the very first
+        # instruction of the entry point.
+                  
        
     # """
-    # if isinstance(args, (int, tubes.process.process )):
-        # log.error("Use gdb.attach() to debug a running process")
+    if isinstance(args, (int, tubes.process.process )):
+        log.error("Use windbg.attach() to debug a running process")
 
-    # if env is None:
-        # env = os.environ
+    orig_args = args
+    
+    if context.noptrace:
+        log.warn_once("Skipping debugger since context.noptrace==True")
+        return tubes.process.process(args, executable=exe, env=env )
 
-    # if isinstance(args, (str, unicode)):
-        # args = [args]
+    exe = exe or misc.which(orig_args[0])
+    if not exe:
+        log.error("%s does not exist" % orig_args[0])
 
-    # orig_args = args
+    final_script = ['~0m']
+    if windbgscript:
+        final_script += windbgscript
+    
+    #Start the process in a suspended start
+    p = tubes.process.process(args, executable=exe, env=env, creationflags=4 )
+    #Attach to it using windbg
+    attach( p, final_script )
 
-    # runner = _get_runner(ssh)
-    # which  = _get_which(ssh)
-
-    # if context.noptrace:
-        # log.warn_once("Skipping debugger since context.noptrace==True")
-        # return runner(args, executable=exe, env=env)
-
-    # if ssh or context.native or (context.os == 'android'):
-        # args = _gdbserver_args(args=args, which=which)
-    # else:
-        # qemu_port = random.randint(1024, 65535)
-        # args = [get_qemu_user(), '-g', str(qemu_port)] + args
-
-    # # Make sure gdbserver/qemu is installed
-    # if not which(args[0]):
-        # log.error("%s is not installed" % args[0])
-
-    # exe = exe or which(orig_args[0])
-    # if not exe:
-        # log.error("%s does not exist" % orig_args[0])
-
-    # # Start gdbserver/qemu
-    # # (Note: We override ASLR here for the gdbserver process itself.)
-    # gdbserver = runner(args, env=env, aslr=1, **kwargs)
-
-    # # Set the .executable on the process object.
-    # gdbserver.executable = which(orig_args[0])
-
-    # # Find what port we need to connect to
-    # if context.native or (context.os == 'android'):
-        # port = _gdbserver_port(gdbserver, ssh)
-    # else:
-        # port = qemu_port
-
-    # host = '127.0.0.1'
-    # if not ssh and context.os == 'android':
-        # host = context.adb_host
-
-    # attach((host, port), exe=exe, gdbscript=gdbscript, need_ptrace_scope = False, ssh=ssh)
-
-    # # gdbserver outputs a message when a client connects
-    # garbage = gdbserver.recvline(timeout=1)
-
-    # if "Remote debugging from host" not in garbage:
-        # gdbserver.unrecv(garbage)
-
-    # return gdbserver
-
-# def get_gdb_arch():
-    # return {
-        # 'amd64': 'i386:x86-64',
-        # 'powerpc': 'powerpc:common',
-        # 'powerpc64': 'powerpc:common64',
-        # 'mips64': 'mips:isa64',
-        # 'thumb': 'arm'
-    # }.get(context.arch, context.arch)
+    return p
 
 def binary():
     """binary() -> str
@@ -381,21 +202,6 @@ def attach(target, windbgscript = None, windbg_args = [] ):
         log.warn_once("Skipping debug attach since context.noptrace==True")
         return
 
-    # if windbgscript is a file object, then read it;
-    if isinstance(windbgscript, file):
-        with windbgscript:
-            windbgscript = windbgscript.read()
-
-    # enable gdb.attach(p, 'continue')
-    if windbgscript and not windbgscript.endswith('\n'):
-        windbgscript += '\n'
-
-    # gdb script to run before `gdbscript`
-    # pre = ''
-    # if not context.native:
-        # pre += 'set endian %s\n' % context.endian
-        # pre += 'set architecture %s\n' % get_gdb_arch()
-
     # let's see if we can find a pid to attach to
     pid = None
     if isinstance(target, (int, long)):
@@ -431,16 +237,20 @@ def attach(target, windbgscript = None, windbg_args = [] ):
         cmd.append('%d' % pid)
 
     #windbgscript = pre + (windbgscript or '')
-    if windbgscript:
-        tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.windbg',
-                                          delete = False)
-        log.debug('Wrote windbgscript script to %r\n%s' % (tmp.name, windbgscript))
+    if isinstance(windbgscript, list):
+        #tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.windbg',
+        #                                  delete = False)
+        #log.debug('Wrote windbgscript script to %r\n%s' % (tmp.name, windbgscript))
         #windbgscript = '.shell del %s\n%s' % (tmp.name, windbgscript)
 
-        tmp.write(windbgscript)
-        tmp.close()
+        #tmp.write(windbgscript)
+        #tmp.close()
+        #cmd.append('$><%s' % (tmp.name))
+        
+        #Array vs file
+        cmds = ";".join(windbgscript)
         cmd.append('-c')
-        cmd.append('$><%s' % (tmp.name))
+        cmd.append(cmds)
     
     log.info("Launching a new process: %r" % cmd)
     p = subprocess.Popen( cmd, executable=cmd[0] )

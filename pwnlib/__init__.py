@@ -43,7 +43,7 @@ if sys.platform != 'win32':
 	__all__.append('runner')
 else:
     __all__.append('windbg')
-	
+    __all__.append('pe')	
 
 for module in __all__:
     importlib.import_module('.%s' % module, 'pwnlib')

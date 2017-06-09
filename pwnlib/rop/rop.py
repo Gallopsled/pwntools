@@ -209,6 +209,8 @@ from pwnlib.context import context
 
 if sys.platform != 'win32':
 	from pwnlib.elf import ELF
+else:
+    from pwnlib.pe import PE
 
 from pwnlib.log import getLogger
 from pwnlib.rop import srop
@@ -384,7 +386,7 @@ class ROP(object):
     _chain = []
 
     #: List of ELF files which are available for mining gadgets
-    elfs = []
+    exes = []
 
     #: Stack address where the first byte of the ROP chain lies, if known.
     base = 0
@@ -393,21 +395,26 @@ class ROP(object):
     #: which is not contiguous
     migrated = False
 
-    def __init__(self, elfs, base = None, **kwargs):
+    def __init__(self, exes, base = None, **kwargs):
         """
         Arguments:
-            elfs(list): List of :class:`.ELF` objects for mining
+            exes(list): List of :class:`.ELF` objects for mining
         """
         import ropgadget
 
         # Permit singular ROP(elf) vs ROP([elf])
         if sys.platform != 'win32':
-			if isinstance(elfs, ELF):
-				elfs = [elfs]
-			elif isinstance(elfs, (str, unicode)):
-				elfs = [ELF(elfs)]
+			if isinstance(exes, ELF):
+				exes = [exes]
+			elif isinstance(exes, (str, unicode)):
+				exes = [ELF(exes)]
+        else:
+            if isinstance(exes, PE):
+                exes = [exes]
+            elif isinstance(exes, (str, unicode)):
+				exes = [PE(exes)]
 				
-        self.elfs = elfs
+        self.exes = exes
         self._chain = []
         self.base = base
         self.migrated = False
@@ -453,7 +460,7 @@ class ROP(object):
             int containing address of 'resolvable', or None
         """
         if isinstance(resolvable, str):
-            for elf in self.elfs:
+            for elf in self.exes:
                 if resolvable in elf.symbols:
                     return elf.symbols[resolvable]
 
@@ -472,7 +479,7 @@ class ROP(object):
             String containing the symbol name for the address, disassembly for a gadget
             (if there's one at that address), or an empty string.
         """
-        for elf in self.elfs:
+        for elf in self.exes:
             for name, addr in elf.symbols.items():
                 if addr == value:
                     return name
@@ -756,7 +763,7 @@ class ROP(object):
             log.error("Could not find any instructions in %r" % syscall_instructions)
 
         # Generate the SROP frame which would invoke the syscall
-        with context.local(arch=self.elfs[0].arch):
+        with context.local(arch=self.exes[0].arch):
             frame         = srop.SigreturnFrame()
             frame.pc      = syscall_gadget
             frame.syscall = syscall_number
@@ -844,29 +851,29 @@ class ROP(object):
         """Returns: Raw bytes of the ROP chain"""
         return self.chain()
 
-    def __get_cachefile_name(self, elf):
-        basename = os.path.basename(elf.file.name)
-        sha256 = hashlib.sha256(elf.get_data()).hexdigest()
+    def __get_cachefile_name(self, exe):
+        basename = os.path.basename(exe.file.name)
+        sha256 = hashlib.sha256(exe.get_data()).hexdigest()
         cachedir = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache')
         if not os.path.exists(cachedir):
             os.mkdir(cachedir)
         return os.path.join(cachedir, sha256)
 
-    def __cache_load(self, elf):
-        filename = self.__get_cachefile_name(elf)
+    def __cache_load(self, exe):
+        filename = self.__get_cachefile_name(exe)
         if not os.path.exists(filename):
             return None
-        log.info_once('Loaded cached gadgets for %r' % elf.file.name)
+        log.info_once('Loaded cached gadgets for %r' % exe.file.name)
         gadgets = eval(file(filename).read())
-        gadgets = {k - elf.load_addr + elf.address:v for k, v in gadgets.items()}
+        gadgets = {k - exe.load_addr + exe.address:v for k, v in gadgets.items()}
         return gadgets
 
-    def __cache_save(self, elf, data):
-        data = {k + elf.load_addr - elf.address:v for k, v in data.items()}
-        file(self.__get_cachefile_name(elf), 'w+').write(repr(data))
+    def __cache_save(self, exe, data):
+        data = {k + exe.load_addr - exe.address:v for k, v in data.items()}
+        file(self.__get_cachefile_name(exe), 'w+').write(repr(data))
 
     def __load(self):
-        """Load all ROP gadgets for the selected ELF files"""
+        """Load all ROP gadgets for the selected exe files"""
         #
         # We accept only instructions that look like these.
         #
@@ -919,33 +926,39 @@ class ROP(object):
                 return self._fd.__getattribute__(k)
 
         gadgets = {}
-        for elf in self.elfs:
-            cache = self.__cache_load(elf)
+        for exe in self.exes:
+        
+            #Only use cache for non-win32, too lazy to implement
+            cache = None
+            if sys.platform != 'win32':
+                cache = self.__cache_load(exe)
             if cache:
                 gadgets.update(cache)
                 continue
-            log.info_once('Loading gadgets for %r' % elf.path)
+            log.info_once('Loading gadgets for %r' % exe.path)
             try:
                 sys.stdout = Wrapper(sys.stdout)
                 import ropgadget
-                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop']
+                sys.argv = ['ropgadget', '--binary', exe.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop']
                 args = ropgadget.args.Args().getArgs()
                 core = ropgadget.core.Core(args)
-                core.do_binary(elf.path)
+                core.do_binary(exe.path)
                 core.do_load(0)
             finally:
                 sys.argv = argv
                 sys.stdout = stdout
 
-            elf_gadgets = {}
+            exe_gadgets = {}
             for gadget in core._Core__gadgets:
-                address = gadget['vaddr'] - elf.load_addr + elf.address
+                address = gadget['vaddr'] - exe.load_addr + exe.address
                 insns = [ g.strip() for g in gadget['gadget'].split(';') ]
                 if all(map(valid, insns)):
-                    elf_gadgets[address] = insns
-
-            self.__cache_save(elf, elf_gadgets)
-            gadgets.update(elf_gadgets)
+                    exe_gadgets[address] = insns
+                    
+            #Only use cache for non-win32, too lazy to implement
+            if sys.platform != 'win32':
+                self.__cache_save(exe, exe_gadgets)
+            gadgets.update(exe_gadgets)
 
         #
         # For each gadget we decided to keep, find out how much it moves the stack,
@@ -996,7 +1009,7 @@ class ROP(object):
         self.leave = leave
 
     def __repr__(self):
-        return 'ROP(%r)' % self.elfs
+        return 'ROP(%r)' % self.exes
 
     def search_iter(self, move=None, regs=None):
         """
