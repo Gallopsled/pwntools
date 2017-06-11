@@ -201,7 +201,8 @@ import os
 import re
 import sys
 import tempfile
-
+import ropgadget
+                
 from pwnlib import abi
 from pwnlib import constants
 from pwnlib.context import LocalContext
@@ -395,13 +396,12 @@ class ROP(object):
     #: which is not contiguous
     migrated = False
 
-    def __init__(self, exes, base = None, **kwargs):
+    def __init__(self, exes, base = None, load_all = False, **kwargs):
         """
         Arguments:
             exes(list): List of :class:`.ELF` objects for mining
         """
-        import ropgadget
-
+       
         # Permit singular ROP(elf) vs ROP([elf])
         if sys.platform != 'win32':
 			if isinstance(exes, ELF):
@@ -418,7 +418,11 @@ class ROP(object):
         self._chain = []
         self.base = base
         self.migrated = False
-        self.__load()
+        
+        if load_all == False:
+            self.__load()
+        else:
+            self.__load_all()
 
     @staticmethod
     @LocalContext
@@ -852,8 +856,13 @@ class ROP(object):
         return self.chain()
 
     def __get_cachefile_name(self, exe):
-        basename = os.path.basename(exe.file.name)
-        sha256 = hashlib.sha256(exe.get_data()).hexdigest()
+        
+        if sys.platform != 'win32':
+            data = exe.get_data()
+        else:
+            data = exe.pe.header
+                
+        sha256 = hashlib.sha256(data).hexdigest()
         cachedir = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache')
         if not os.path.exists(cachedir):
             os.mkdir(cachedir)
@@ -863,7 +872,7 @@ class ROP(object):
         filename = self.__get_cachefile_name(exe)
         if not os.path.exists(filename):
             return None
-        log.info_once('Loaded cached gadgets for %r' % exe.file.name)
+        log.info_once('Loaded cached gadgets for %r' % exe.path)
         gadgets = eval(file(filename).read())
         gadgets = {k - exe.load_addr + exe.address:v for k, v in gadgets.items()}
         return gadgets
@@ -873,7 +882,7 @@ class ROP(object):
         file(self.__get_cachefile_name(exe), 'w+').write(repr(data))
 
     def __load(self):
-        """Load all ROP gadgets for the selected exe files"""
+        """Load selected ROP gadgets for the selected exe files"""
         #
         # We accept only instructions that look like these.
         #
@@ -928,18 +937,15 @@ class ROP(object):
         gadgets = {}
         for exe in self.exes:
         
-            #Only use cache for non-win32, too lazy to implement
-            cache = None
-            if sys.platform != 'win32':
-                cache = self.__cache_load(exe)
+            cache = self.__cache_load(exe)
             if cache:
                 gadgets.update(cache)
                 continue
             log.info_once('Loading gadgets for %r' % exe.path)
             try:
                 sys.stdout = Wrapper(sys.stdout)
-                import ropgadget
                 sys.argv = ['ropgadget', '--binary', exe.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop']
+                                    
                 args = ropgadget.args.Args().getArgs()
                 core = ropgadget.core.Core(args)
                 core.do_binary(exe.path)
@@ -955,9 +961,7 @@ class ROP(object):
                 if all(map(valid, insns)):
                     exe_gadgets[address] = insns
                     
-            #Only use cache for non-win32, too lazy to implement
-            if sys.platform != 'win32':
-                self.__cache_save(exe, exe_gadgets)
+            self.__cache_save(exe, exe_gadgets)
             gadgets.update(exe_gadgets)
 
         #
@@ -979,7 +983,12 @@ class ROP(object):
                     regs.append(pop.match(insn).group(1))
                     sp_move += context.bytes
                 elif add.match(insn):
-                    sp_move += int(add.match(insn).group(1), 16)
+                    try:
+                        sp_move += int(add.match(insn).group(1), 16)
+                    except ValueError as e:
+                        print e
+                        print "Instruction: " + str(insn)
+                        pass  
                 elif ret.match(insn):
                     sp_move += context.bytes
                 elif leave.match(insn):
@@ -1007,7 +1016,150 @@ class ROP(object):
         if leave and leave.regs != frame_regs:
             leave = None
         self.leave = leave
+        
+    def __load_all(self):
+        """Load all ROP gadgets for the selected exe files"""
+        #
+        # This function accepts all gadgets produced by ropgadget
+        #
 
+        pop   = re.compile(r'^pop (.{3})')
+        add   = re.compile(r'^add .sp, (\S+)$')
+        ret   = re.compile(r'^ret')
+        leave = re.compile(r'^leave$')
+
+        #
+        # Currently, ropgadget.args.Args() doesn't take any arguments, and pulls
+        # only from sys.argv.  Preserve it through this call.  We also
+        # monkey-patch sys.stdout to suppress output from ropgadget.
+        #
+        argv = sys.argv
+        stdout = sys.stdout
+
+        class Wrapper:
+
+            def __init__(self, fd):
+                self._fd = fd
+
+            def write(self, s):
+                pass
+
+            def __getattr__(self, k):
+                return self._fd.__getattribute__(k)
+
+        gadgets = {}
+        for exe in self.exes:
+        
+            cache = self.__cache_load(exe)
+            if cache:
+                gadgets.update(cache)
+                continue
+            log.info_once('Loading gadgets for %r' % exe.path)
+            try:
+                sys.stdout = Wrapper(sys.stdout)
+                sys.argv = ['ropgadget', '--binary', exe.path ]
+                                    
+                args = ropgadget.args.Args().getArgs()
+                core = ropgadget.core.Core(args)
+                core.do_binary(exe.path)
+                core.do_load(0)
+            finally:
+                sys.argv = argv
+                sys.stdout = stdout
+
+            exe_gadgets = {}
+            for gadget in core._Core__gadgets:
+                address = gadget['vaddr'] - exe.load_addr + exe.address
+                insns = [ g.strip() for g in gadget['gadget'].split(';') ]
+                exe_gadgets[address] = insns
+                    
+            self.__cache_save(exe, exe_gadgets)
+            gadgets.update(exe_gadgets)
+
+        #
+        # For each gadget we decided to keep, find out how much it moves the stack,
+        # and log which registers are used.
+        #
+        self.gadgets = {}
+        self.pivots = {}
+        frame_regs = {
+            4: ['ebp', 'esp'],
+            8: ['rbp', 'rsp']
+        }[context.bytes]
+
+        #
+        # For each gadget we decided to keep, find out how much it moves the stack,
+        # and log which registers are used.
+        #
+        for addr, insns in gadgets.items():
+            sp_move = 0
+            dst_regs = set()
+            src_regs = set()
+            ops = set()
+            
+            for insn in insns:
+            
+                opr_1 = None
+                opr_2 = None
+                
+                #First split as if there are two operands
+                insn_arr = insn.split(",")
+                #Next split the first half into operator and first operand
+                first_half_arr = insn_arr[0].split(" ")
+                ops.add(first_half_arr[0])
+                
+                #Attemp to convert the first operand to a hex number, if it fails add it to registers
+                if len(first_half_arr) > 1:
+                    opr_1 = " ".join(first_half_arr[1:]).strip()
+                    #opr_1 = first_half_arr[1].strip()
+                    try:
+                        opr_1 = int(opr_1, 16)
+                    except:
+                        if "ptr" in opr_1:
+                            idx = opr_1.index("[")
+                            opr_1 = opr_1[idx+1:].split(" ")[0].replace("]","")
+                        dst_regs.add(opr_1)
+            
+                #Check if there is a second operand
+                if len(insn_arr) > 1:
+                    opr_2 = insn_arr[1].strip()
+                    try:
+                        opr_2 = int(opr_2, 16)
+                    except:
+                        if "ptr" in opr_2:
+                            idx = opr_2.index("[")
+                            opr_2 = opr_2[idx+1:].split(" ")[0].replace("]","")
+                        src_regs.add(opr_2)                
+                        
+                        
+                #Update the stack movement stats
+                if pop.match(insn):
+                    sp_move += context.bytes
+                elif add.match(insn):
+                    try:
+                        sp_move += int(add.match(insn).group(1), 16)
+                    except ValueError as e:
+                        print e
+                        print "Instruction: " + str(insn)
+                        pass  
+                elif ret.match(insn):
+                    sp_move += context.bytes
+                    if isinstance( opr_1, int):
+                        sp_move += opr_1
+                    
+            # Permit duplicates, because blacklisting bytes in the gadget
+            # addresses may result in us needing the dupes.
+            self.gadgets[addr] = Gadget(addr, insns, [], sp_move, src_regs=src_regs, dst_regs=dst_regs, ops=ops)
+
+            # Don't use 'pop esp' for pivots
+            if sp_move > context.bytes:
+                self.pivots[sp_move] = addr
+
+        leave = self.search(regs=frame_regs, order='regs')
+        if leave and leave.regs != frame_regs:
+            leave = None
+        self.leave = leave
+        
     def __repr__(self):
         return 'ROP(%r)' % self.exes
 

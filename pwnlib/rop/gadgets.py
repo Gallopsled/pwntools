@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from pwnlib.context import context
 
 class Gadget(object):
     """
@@ -37,12 +38,19 @@ class Gadget(object):
     #:      add esp, 0x10; ret ==> 0x14
     move = 0
 
-    def __init__(self, address, insns, regs, move):
+    def __init__(self, address, insns, regs=[], move=context.bytes, src_regs=[], dst_regs=[], ops=[]):
         self.address = address
         self.insns   = insns
         self.regs    = regs
         self.move    = move
-
+        
+        self.src_regs = src_regs
+        self.dst_regs = dst_regs
+        self.ops = ops
+        
+        self.regs += self.dst_regs
+        self.regs += self.src_regs
+             
     __indices = ['address', 'details']
 
     def __repr__(self):
