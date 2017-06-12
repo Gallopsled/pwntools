@@ -11,6 +11,7 @@ import pty
 import resource
 import select
 import signal
+import stat
 import subprocess
 import time
 import tty

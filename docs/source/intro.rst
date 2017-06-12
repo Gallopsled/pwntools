@@ -72,7 +72,7 @@ a ``process`` tube.
 
 ::
 
-    >>> shell = ssh('bandit0', 'bandit.labs.overthewire.org', password='bandit0')
+    >>> shell = ssh('bandit0', 'bandit.labs.overthewire.org', password='bandit0', port=2220)
     >>> shell['whoami']
     'bandit0'
     >>> shell.download_file('/etc/motd')
