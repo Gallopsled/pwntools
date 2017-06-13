@@ -25,6 +25,7 @@ pip install unicorn
 wheel install deps\capstone-3.0.5rc2-py2-none-win_amd64.whl
 pip install cryptography
 pip install win_inet_pton
+pip install pynacl
 
 python setup.py build
 python setup.py install
