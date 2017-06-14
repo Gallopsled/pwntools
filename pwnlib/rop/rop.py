@@ -1163,7 +1163,7 @@ class ROP(object):
     def __repr__(self):
         return 'ROP(%r)' % self.exes
 
-    def search_iter(self, move=None, regs=None):
+    def search_iter(self, move=None, regs=None,  src_regs=None, dst_regs=None, ops=None,):
         """
         Iterate through all gadgets which move the stack pointer by
         *at least* ``move`` bytes, and which allow you to set all
@@ -1171,10 +1171,16 @@ class ROP(object):
         """
         move = move or 0
         regs = set(regs or ())
+        src_regs= set(src_regs or ())
+        dst_regs = set(dst_regs or ())
+        ops = set(ops or ())
 
         for addr, gadget in self.gadgets.items():
             if gadget.move < move:          continue
             if not (regs <= set(gadget.regs)):   continue
+            if not (src_regs <= set(gadget.src_regs)):   continue
+            if not (dst_regs <= set(gadget.dst_regs)):   continue
+            if not (ops <= set(gadget.ops)):   continue
             yield gadget
 
     def search(self, move = 0, regs = None, order = 'size'):

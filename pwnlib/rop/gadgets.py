@@ -29,7 +29,7 @@ class Gadget(object):
     #: pop ebx; pop eax; ret => {'ebx': 0, 'eax': 4}
     #: add esp, 0x10; pop ebx; ret => {'ebx': 16}
     #: mov eax, ebx; ret => {'eax': 'ebx'}
-    regs = {}
+    regs = set()
 
     #: The total amount that the stack pointer is modified by
     #:
@@ -41,15 +41,15 @@ class Gadget(object):
     def __init__(self, address, insns, regs=[], move=context.bytes, src_regs=[], dst_regs=[], ops=[]):
         self.address = address
         self.insns   = insns
-        self.regs    = regs
+        self.regs    = set(regs)
         self.move    = move
         
-        self.src_regs = src_regs
-        self.dst_regs = dst_regs
+        self.src_regs = set(src_regs)
+        self.dst_regs = set(dst_regs)
         self.ops = ops
         
-        self.regs += self.dst_regs
-        self.regs += self.src_regs
+        self.regs.update(dst_regs)
+        self.regs.update(src_regs)
              
     __indices = ['address', 'details']
 
