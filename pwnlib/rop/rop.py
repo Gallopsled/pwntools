@@ -464,9 +464,9 @@ class ROP(object):
             int containing address of 'resolvable', or None
         """
         if isinstance(resolvable, str):
-            for elf in self.exes:
-                if resolvable in elf.symbols:
-                    return elf.symbols[resolvable]
+            for exe in self.exes:
+                if resolvable in exe.symbols:
+                    return exe.symbols[resolvable]
 
         if isinstance(resolvable, (int, long)):
             return resolvable
@@ -986,8 +986,6 @@ class ROP(object):
                     try:
                         sp_move += int(add.match(insn).group(1), 16)
                     except ValueError as e:
-                        print e
-                        print "Instruction: " + str(insn)
                         pass  
                 elif ret.match(insn):
                     sp_move += context.bytes
@@ -1139,8 +1137,6 @@ class ROP(object):
                     try:
                         sp_move += int(add.match(insn).group(1), 16)
                     except ValueError as e:
-                        print e
-                        print "Instruction: " + str(insn)
                         pass  
                 elif ret.match(insn):
                     sp_move += context.bytes

@@ -310,9 +310,13 @@ class tube(Timeout, Logger):
                     self.unrecv(''.join(data) + top)
                     raise
 
-                if not res and sys.platform != "win32":
-                    self.unrecv(''.join(data) + top)
-                    return ''
+                if not res:
+                    if sys.platform != "win32":
+                        self.unrecv(''.join(data) + top)
+                        return ''
+                    else:
+                        time.sleep(0.1)
+                        
                 elif len(res) > 0:
                     top += res
                     start = len(top)
