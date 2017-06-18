@@ -10,7 +10,9 @@ import ctypes
 from pwnlib import tubes
 from pwnlib.log import getLogger
 from ctypes import *
-from _multiprocessing import win32
+
+if sys.platform == 'win32':
+    from _multiprocessing import win32
 
 log = getLogger(__name__)
 
