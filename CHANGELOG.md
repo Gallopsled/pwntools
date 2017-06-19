@@ -38,21 +38,23 @@ The table below shows which release corresponds to each branch, and what date th
 
 To be released on Sep 8, 2017.
 
-
 ## 3.8.0
 
 To be released on Jul 28, 2017.
 
-- [981][981] Fixed RELRO detection logic
-- [986][986] Enhancements to DynELF for controlling usage of LibcDB
+- [#981][981] Fixed RELRO detection logic
+- [#986][986] Enhancements to DynELF for controlling usage of LibcDB
+
+[981]: https://github.com/Gallopsled/pwntools/issues/981
+[986]: https://github.com/Gallopsled/pwntools/issues/986
 
 ## 3.7.0
 
-A few typos were fixed, a few Linux kernel configuration flags were added, and a few error messages were enhanced.
-
+- [#933][933] DynELF works better with different base addresses
 - [#952][952] A few small fixes were made to `pwn template`, and the CRC database was updated.
 - [5c72d62c][5c72d62c] Updated the CRC database
 
+[933]: https://github.com/Gallopsled/pwntools/issues/933
 [952]: https://github.com/Gallopsled/pwntools/issues/952
 [5c72d62c]: https://github.com/Gallopsled/pwntools/commit/5c72d62c
 
