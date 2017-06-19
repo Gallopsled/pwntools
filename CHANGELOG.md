@@ -11,7 +11,7 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.9.0](#390)    | `dev`    | Sep 8, 2017 (planned)
 | [3.8.0](#380)    | `beta`   | Jul 28, 2017 (planned)
-| [3.7.0](#370)    | `stable` | Jun 19, 2017 (planned)
+| [3.7.0](#370)    | `stable` | Jun 19, 2017
 | [3.6.1](#361)    |          | May 12, 2017
 | [3.6.0](#360)    |          | May 8, 2017
 | [3.5.1](#351)    |          | Apr 15, 2017
