@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.8.0](#380)    | `dev`    | Jul 28, 2017 (planned)
-| [3.7.0](#370)    | `beta`   | Jun 17, 2017 (planned)
-| [3.6.1](#361)    | `stable` | May 12, 2017
+| [3.9.0](#390)    | `dev`    | Sep 8, 2017 (planned)
+| [3.8.0](#380)    | `beta`   | Jul 28, 2017 (planned)
+| [3.7.0](#370)    | `stable` | Jun 19, 2017 (planned)
+| [3.6.1](#361)    |          | May 12, 2017
 | [3.6.0](#360)    |          | May 8, 2017
 | [3.5.1](#351)    |          | Apr 15, 2017
 | [3.5.0](#350)    |          | Mar 26, 2017
@@ -33,17 +34,27 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
+## 3.9.0
+
+To be released on Sep 8, 2017.
+
+
 ## 3.8.0
 
-To be on Jul 28, 2017.
+To be released on Jul 28, 2017.
+
+- [981][981] Fixed RELRO detection logic
+- [986][986] Enhancements to DynELF for controlling usage of LibcDB
 
 ## 3.7.0
 
-To be on Jun 17, 2017.
-
-As of May 4, 2017, there have been no new features or major notable changes since 3.6.0.
-
 A few typos were fixed, a few Linux kernel configuration flags were added, and a few error messages were enhanced.
+
+- [#952][952] A few small fixes were made to `pwn template`, and the CRC database was updated.
+- [5c72d62c][5c72d62c] Updated the CRC database
+
+[952]: https://github.com/Gallopsled/pwntools/issues/952
+[5c72d62c]: https://github.com/Gallopsled/pwntools/commit/5c72d62c
 
 ## 3.6.1
 
