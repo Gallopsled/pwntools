@@ -1359,9 +1359,12 @@ def update_context_defaults(section):
         if key not in ContextType.defaults:
             log.warn("Unknown configuration option %r in section %r" % (key, 'context'))
             continue
-        if isinstance(ContextType.defaults[key], (str, unicode, tuple)):
+
+        default = ContextType.defaults[key]
+
+        if isinstance(default, (str, unicode, tuple, int, long, list, dict)):
             value = safeeval.expr(value)
 
-        ContextType.defaults[key] = value
+        ContextType.defaults[key] = type(default)(value)
 
 register_config('context', update_context_defaults)
