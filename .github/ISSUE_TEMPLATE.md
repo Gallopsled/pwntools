@@ -9,12 +9,6 @@ Please verify that your issue occurs on 64-bit Ubuntu 14.04.  You can use the Do
 ```
 $ docker pull pwntools/pwntools:stable
 $ docker run -it pwntools/pwntools:stable
-
-pwntools@77d2ca17a8a6:~$ python
-Python 2.7.12 (default, Nov 19 2016, 06:48:10)
-[GCC 5.4.0 20160609] on linux2
-Type "help", "copyright", "credits" or "license" for more information.
->>> from pwn import *
 ```
 
 If possible, provide a proof-of-concept which demonstrates the problem.  Include any binaries or scripts necessary to reproduce the issue, and please include the full debug output via setting the environment variable `PWNLIB_DEBUG=1`.
