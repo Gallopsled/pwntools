@@ -264,7 +264,7 @@ def status(pid):
  
 def tracer_win(pid):
     
-    ret = False
+    ret = 0
     kernel32 = WinDLL("kernel32", use_last_error=True)
     OpenProcess = kernel32.OpenProcess 
     proc_handle = OpenProcess( win32.PROCESS_ALL_ACCESS, False, pid )
@@ -272,7 +272,8 @@ def tracer_win(pid):
     present = c_bool()
     CheckRemoteDebuggerPresent = kernel32.CheckRemoteDebuggerPresent
     CheckRemoteDebuggerPresent( proc_handle, byref(present) )
-    ret = present.value
+    if present.value:
+        ret = pid
 
     CloseHandle = kernel32.CloseHandle
     CloseHandle(proc_handle)
@@ -293,8 +294,12 @@ def tracer(pid):
         >>> tracer(os.getpid()) is None
         True
     """
-    tpid = int(status(pid)['TracerPid'])
-    return tpid if tpid > 0 else None
+    if sys.platform != 'win32':
+        tpid = int(status(pid)['TracerPid'])
+    else:
+        tpid = tracer_win(pid)
+        
+    return tpid if tpid > 0 else None 
 
 def state(pid):
     """state(pid) -> str
@@ -324,10 +329,7 @@ def wait_for_debugger(pid):
     """
     with log.waitfor('Waiting for debugger on pid %d' % pid) as l:
     
-        if sys.platform != 'win32':
-            while tracer(pid) is None:
-                time.sleep(0.01)
-        else:
-            while tracer_win(pid) == False:
-                time.sleep(0.01)
+        while tracer(pid) is None:
+            time.sleep(0.01)
+        
         l.success()
