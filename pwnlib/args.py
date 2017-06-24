@@ -48,8 +48,11 @@ import os
 import string
 import sys
 
+term_mode = True
 if sys.platform != 'win32':
 	from pwnlib import term
+else:
+	term_mode  = False
 	
 from pwnlib.context import context
 
@@ -58,7 +61,6 @@ class PwnlibArgs(collections.defaultdict):
         return self[attr]
 
 args = PwnlibArgs(str)
-term_mode  = False
 env_prefix = 'PWNLIB_'
 free_form  = True
 
