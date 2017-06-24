@@ -45,7 +45,7 @@ pip install --upgrade pwntools
 
 However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://docs.pwntools.com/en/stable/install.html).
 
-There is minimal support on 64-bit Windows, run the following installation wrapper script
+There is experimental support on 64-bit Windows, run the following installation wrapper script
 
 powershell -exec bypass .\preinstall_win.ps1
 
