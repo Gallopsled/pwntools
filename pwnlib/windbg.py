@@ -65,11 +65,7 @@ Member Documentation
 from __future__ import absolute_import
 
 import os
-import random
-import re
-import shlex
 import tempfile
-import time
 import subprocess
 
 from pwnlib import atexit
@@ -84,33 +80,33 @@ log = getLogger(__name__)
 
 # @LocalContext
 def debug(args, windbgscript=None, exe=None, env=None ):
-    # """debug(args) -> tube
+    """debug(args) -> tube
 
-    # Launch a process in a suspended state, attach debugger and return process
+    Launch a process in a suspended state, attach debugger and return process
 
-    # Arguments:
-        # args(list): Arguments to the process, similar to :class:`.process`.
-        # windbgscript(str): WinDbg script to run.
-        # exe(str): Path to the executable on disk
+    Arguments:
+        args(list): Arguments to the process, similar to :class:`.process`.
+        windbgscript(str): WinDbg script to run.
+        exe(str): Path to the executable on disk
 
-    # Returns:
-        # :class:`.process`: A tube connected to the target process
+    Returns:
+        :class:`.process`: A tube connected to the target process
 
-    # Notes:
+    Notes:
 
-        # .. code-block:: python
+        .. code-block:: python
 
-            # # Create a new process, and stop it at 'main'
-            # io = windbg.debug('calc', '''
-            # bp $exentry
-            # go
-            # ''')
+            # Create a new process, and stop it at 'main'
+            io = windbg.debug('calc', '''
+            bp $exentry
+            go
+            ''')
 
-        # When WinDbg opens via :func:`debug`, it will initially be stopped on the very first
-        # instruction of the entry point.
+        When WinDbg opens via :func:`debug`, it will initially be stopped on the very first
+        instruction of the entry point.
                   
        
-    # """
+    """
     if isinstance(args, (int, tubes.process.process )):
         log.error("Use windbg.attach() to debug a running process")
 
@@ -260,132 +256,6 @@ def attach(target, windbgscript = None, windbg_args = [] ):
         proc.wait_for_debugger(pid)
 
     return windbg_pid
-
-# def find_module_addresses(binary, ssh=None, ulimit=False):
-    # """
-    # Cheat to find modules by using GDB.
-
-    # We can't use ``/proc/$pid/map`` since some servers forbid it.
-    # This breaks ``info proc`` in GDB, but ``info sharedlibrary`` still works.
-    # Additionally, ``info sharedlibrary`` works on FreeBSD, which may not have
-    # procfs enabled or accessible.
-
-    # The output looks like this:
-
-    # ::
-
-        # info proc mapping
-        # process 13961
-        # warning: unable to open /proc file '/proc/13961/maps'
-
-        # info sharedlibrary
-        # From        To          Syms Read   Shared Object Library
-        # 0xf7fdc820  0xf7ff505f  Yes (*)     /lib/ld-linux.so.2
-        # 0xf7fbb650  0xf7fc79f8  Yes         /lib32/libpthread.so.0
-        # 0xf7e26f10  0xf7f5b51c  Yes (*)     /lib32/libc.so.6
-        # (*): Shared library is missing debugging information.
-
-    # Note that the raw addresses provided by ``info sharedlibrary`` are actually
-    # the address of the ``.text`` segment, not the image base address.
-
-    # This routine automates the entire process of:
-
-    # 1. Downloading the binaries from the remote server
-    # 2. Scraping GDB for the information
-    # 3. Loading each library into an ELF
-    # 4. Fixing up the base address vs. the ``.text`` segment address
-
-    # Arguments:
-        # binary(str): Path to the binary on the remote server
-        # ssh(pwnlib.tubes.tube): SSH connection through which to load the libraries.
-            # If left as :const:`None`, will use a :class:`pwnlib.tubes.process.process`.
-        # ulimit(bool): Set to :const:`True` to run "ulimit -s unlimited" before GDB.
-
-    # Returns:
-        # A list of pwnlib.elf.ELF objects, with correct base addresses.
-
-    # Example:
-
-    # >>> with context.local(log_level=9999): # doctest: +SKIP
-    # ...     shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0')
-    # ...     bash_libs = gdb.find_module_addresses('/bin/bash', shell)
-    # >>> os.path.basename(bash_libs[0].path) # doctest: +SKIP
-    # 'libc.so.6'
-    # >>> hex(bash_libs[0].symbols['system']) # doctest: +SKIP
-    # '0x7ffff7634660'
-    # """
-    # #
-    # # Download all of the remote libraries
-    # #
-    # if ssh:
-        # runner     = ssh.run
-        # local_bin  = ssh.download_file(binary)
-        # local_elf  = elf.ELF(os.path.basename(binary))
-        # local_libs = ssh.libs(binary)
-
-    # else:
-        # runner     = tubes.process.process
-        # local_elf  = elf.ELF(binary)
-        # local_libs = local_elf.libs
-
-    # entry      = local_elf.header.e_entry
-
-    # #
-    # # Get the addresses from GDB
-    # #
-    # libs = {}
-    # cmd  = "gdb -q --args %s" % (binary)
-    # expr = re.compile(r'(0x\S+)[^/]+(.*)')
-
-    # if ulimit:
-        # cmd = 'sh -c "(ulimit -s unlimited; %s)"' % cmd
-
-    # cmd = shlex.split(cmd)
-
-    # with runner(cmd) as gdb:
-        # if context.aslr:
-            # gdb.sendline('set disable-randomization off')
-        # gdb.send("""
-        # set prompt
-        # break *%#x
-        # run
-        # """ % entry)
-        # gdb.clean(2)
-        # gdb.sendline('info sharedlibrary')
-        # lines = gdb.recvrepeat(2)
-
-        # for line in lines.splitlines():
-            # m = expr.match(line)
-            # if m:
-                # libs[m.group(2)] = int(m.group(1),16)
-        # gdb.sendline('kill')
-        # gdb.sendline('y')
-        # gdb.sendline('quit')
-
-    # #
-    # # Fix up all of the addresses against the .text address
-    # #
-    # rv = []
-
-    # for remote_path,text_address in sorted(libs.items()):
-        # # Match up the local copy to the remote path
-        # try:
-            # path     = next(p for p in local_libs.keys() if remote_path in p)
-        # except StopIteration:
-            # print "Skipping %r" % remote_path
-            # continue
-
-        # # Load it
-        # lib      = elf.ELF(path)
-
-        # # Find its text segment
-        # text     = lib.get_section_by_name('.text')
-
-        # # Fix the address
-        # lib.address = text_address - text.header.sh_addr
-        # rv.append(lib)
-
-    # return rv
 
 # def corefile(process):
     # r"""Drops a core file for the process.

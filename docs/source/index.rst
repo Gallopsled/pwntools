@@ -57,6 +57,8 @@ Each of the ``pwntools`` modules is documented here.
    flag
    fmtstr
    gdb
+   windbg
+   pe
    log
    memleak
    protocols
