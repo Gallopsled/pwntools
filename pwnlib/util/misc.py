@@ -152,8 +152,7 @@ def which(name, all = False):
     if os.path.sep in name:
         return name
 
-    if sys.platform != 'win32':
-       isroot = os.getuid() == 0
+    isroot = False if sys.platform == 'win32' else (os.getuid() == 0)
         
     out = set()
     try:
@@ -166,11 +165,10 @@ def which(name, all = False):
             st = os.stat(p)
             if not stat.S_ISREG(st.st_mode):
                 continue
-            if sys.platform != 'win32':
-                # work around this issue: https://bugs.python.org/issue9311
-                if isroot and not \
-                  st.st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH):
-                    continue
+            # work around this issue: https://bugs.python.org/issue9311
+            if isroot and not \
+                st.st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH):
+                continue
             if all:
                 out.add(p)
             else:
