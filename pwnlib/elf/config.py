@@ -121,7 +121,6 @@ kernel_configuration = [
     Enabled('CC_STACKPROTECTOR_STRONG', minver=3.14),
     Enabled('PANIC_ON_OOPS', minver=3.5),
     Enabled('DEBUG_SET_MODULE_RONX', requires=['MODULES']),
-    Enabled('DEBUG_RODATA'),
     Enabled('SECURITY_KPTR_RESTRICT'),
     Enabled('SECURITY_PERF_EVENTS_RESTRICT'),
     Enabled('SECURITY_DMESG_RESTRICT'),
@@ -129,6 +128,11 @@ kernel_configuration = [
     Enabled('SECURITY_SELINUX'),
     Enabled('ARCH_HAS_ELF_RANDOMIZE'),
     EnabledIfPresent('MSM_KERNEL_PROTECT'),
+
+# DEBUG_RODATA was added to ARM64 in 3.19, but backported to 3.18
+# for Google Pixel devices.
+    Enabled('DEBUG_RODATA', minver=3.19),
+    Enabled('DEBUG_RODATA', minver=3.18, maxver=3.19, excludes=['DEBUG_RODATA'])
 
 # Not really security relevant, but come on guys
     Enabled('COREDUMP'),
@@ -175,7 +179,7 @@ kernel_configuration = [
 
 # ARM specific
     Enabled('VMSPLIT_3G', requires=['ARM']),
-    Disabled('STRICT_MEMORY_RWX', requires=['ARM', 'ARM64']),
+    Enabled('STRICT_MEMORY_RWX', requires=['ARM', 'ARM64'], excludes=['DEBUG_RODATA']),
     Minimum('DEFAULT_MMAP_MIN_ADDR', 32768, requires=['ARM', 'ARM64']),
     Minimum('ARCH_MMAP_RND_BITS', 16, requires=['ARM']),
     Minimum('ARCH_MMAP_RND_BITS', 24, requires=['ARM64']),
