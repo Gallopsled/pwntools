@@ -105,7 +105,7 @@ setup(
     description          = "Pwntools CTF framework and exploit development library.",
     long_description     = long_description,
     author               = "Gallopsled et al.",
-    author_email         = "#pwntools @ freenode.net",
+    author_email         = "pwntools-users@googlegroups.com",
     url                  = 'https://pwntools.com',
     download_url         = "https://github.com/Gallopsled/pwntools/releases",
     install_requires     = install_requires,
