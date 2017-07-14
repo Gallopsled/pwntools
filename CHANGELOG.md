@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.9.0](#390)    | `dev`    | Sep 8, 2017 (planned)
 | [3.8.0](#380)    | `beta`   | Jul 28, 2017 (planned)
-| [3.7.0](#370)    | `stable` | Jun 19, 2017
+| [3.7.1](#371)    | `stable` | Jul 14, 2017
+| [3.7.0](#370)    |          | Jun 19, 2017
 | [3.6.1](#361)    |          | May 12, 2017
 | [3.6.0](#360)    |          | May 8, 2017
 | [3.5.1](#351)    |          | Apr 15, 2017
@@ -45,8 +46,14 @@ To be released on Jul 28, 2017.
 - [#981][981] Fixed RELRO detection logic
 - [#986][986] Enhancements to DynELF for controlling usage of LibcDB
 
-[981]: https://github.com/Gallopsled/pwntools/issues/981
-[986]: https://github.com/Gallopsled/pwntools/issues/986
+[981]: https://github.com/Gallopsled/pwntools/pull/981
+[986]: https://github.com/Gallopsled/pwntools/pull/986
+
+## 3.7.1
+
+- [#998][998] Fix a bug where integer values could not be set in `.pwn.conf`.
+
+[998]: https://github.com/Gallopsled/pwntools/pull/998
 
 ## 3.7.0
 
@@ -54,8 +61,8 @@ To be released on Jul 28, 2017.
 - [#952][952] A few small fixes were made to `pwn template`, and the CRC database was updated.
 - [5c72d62c][5c72d62c] Updated the CRC database
 
-[933]: https://github.com/Gallopsled/pwntools/issues/933
-[952]: https://github.com/Gallopsled/pwntools/issues/952
+[933]: https://github.com/Gallopsled/pwntools/pull/933
+[952]: https://github.com/Gallopsled/pwntools/pull/952
 [5c72d62c]: https://github.com/Gallopsled/pwntools/commit/5c72d62c
 
 ## 3.6.1
