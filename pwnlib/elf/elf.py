@@ -276,7 +276,7 @@ class ELF(ELFFile):
 
         for start in self.search(IKCFG_ST):
             start += len(IKCFG_ST)
-            stop = self.search('IKCFG_ED').next()
+            stop = next(self.search('IKCFG_ED'))
 
             fileobj = StringIO.StringIO(self.read(start, stop-start))
 
@@ -640,7 +640,7 @@ class ELF(ELFFile):
 
             for sym in sec.iter_symbols():
                 # Avoid duplicates
-                if self.functions.has_key(sym.name):
+                if sym.name in self.functions:
                     continue
                 if sym.entry.st_info['type'] == 'STT_FUNC' and sym.entry.st_size != 0:
                     name = sym.name
@@ -766,13 +766,13 @@ class ELF(ELFFile):
         # 'gotsym' is the index of the first GOT symbol
         gotsym = self.dynamic_value_by_tag('DT_MIPS_GOTSYM')
         for i in range(gotsym):
-            symbol_iter.next()
+            next(symbol_iter)
 
         # 'symtabno' is the total number of symbols
         symtabno = self.dynamic_value_by_tag('DT_MIPS_SYMTABNO')
 
         for i in range(symtabno - gotsym):
-            symbol = symbol_iter.next()
+            symbol = next(symbol_iter)
             self._mips_got[i + gotsym] = got
             self.got[symbol.name] = got
             got += self.bytes

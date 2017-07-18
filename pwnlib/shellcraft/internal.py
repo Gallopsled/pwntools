@@ -172,7 +172,7 @@ def wrap(template, render_global):
     return %(funcname)s
 ''' % locals()
 
-    exec T in locals()
+    exec(T, locals())
 
     # Setting _relpath is a slight hack only used to get better documentation
     res = wrap(template, render_global)

@@ -9,11 +9,12 @@ and::
 
   $ TERM=xterm-256color python text.py
 '''
+from __future__ import print_function
 from pwn import *
 
 s = 'hello from pwntools'
-print text.black_on_green(s)
-print text.black_on_bright_green(s)
-print text.green_on_black(s)
-print text.bright_green_on_black(s)
-print text.bold_green_on_black(s)
+print(text.black_on_green(s))
+print(text.black_on_bright_green(s))
+print(text.green_on_black(s))
+print(text.bright_green_on_black(s))
+print(text.bold_green_on_black(s))

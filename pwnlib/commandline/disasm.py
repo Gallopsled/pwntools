@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import absolute_import
+from __future__ import print_function
 
 import argparse
 import string
@@ -62,7 +63,7 @@ def main(args):
         dat = ''.join(args.hex)
         dat = dat.translate(None, string.whitespace)
         if not set(string.hexdigits) >= set(dat):
-            print "This is not a hex string"
+            print("This is not a hex string")
             exit(-1)
         dat = dat.decode('hex')
     else:
@@ -86,10 +87,10 @@ def main(args):
             i = highlight(i.strip(), PwntoolsLexer(), TerminalFormatter()).strip()
             i = i.replace(',',', ')
 
-            print o,b,i
+            print(o,b,i)
         return
 
-    print disasm(dat, vma=safeeval.const(args.address))
+    print(disasm(dat, vma=safeeval.const(args.address)))
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)

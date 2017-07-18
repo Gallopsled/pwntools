@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import absolute_import
+from __future__ import print_function
 
 import argparse
 import os
@@ -183,7 +184,7 @@ def main(args):
         elif not args.syscalls:
             templates = filter(is_not_a_syscall_template, templates)
 
-        print '\n'.join(templates)
+        print('\n'.join(templates))
         exit()
 
     if not args.shellcode:
@@ -238,11 +239,11 @@ def main(args):
             if not in_doctest:
                 doc.append(line)
             i += 1
-        print '\n'.join(doc).rstrip()
+        print('\n'.join(doc).rstrip())
         exit()
 
-    defargs = len(func.func_defaults or ())
-    reqargs = func.func_code.co_argcount - defargs
+    defargs = len(func.__defaults__ or ())
+    reqargs = func.__code__.co_argcount - defargs
     if len(args.args) < reqargs:
         if defargs > 0:
             log.critical('%s takes at least %d arguments' % (args.shellcode, reqargs))
@@ -277,10 +278,10 @@ def main(args):
 
             code = highlight(code, PwntoolsLexer(), TerminalFormatter())
 
-        print code
+        print(code)
         exit()
     if args.format == 'p':
-        print cpp(code)
+        print(cpp(code))
         exit()
 
     assembly = code
@@ -291,7 +292,7 @@ def main(args):
 
     if args.format in ['e','elf']:
         args.format = 'default'
-        try: os.fchmod(args.out.fileno(), 0700)
+        try: os.fchmod(args.out.fileno(), 0o700)
         except OSError: pass
 
 

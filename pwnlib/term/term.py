@@ -164,7 +164,8 @@ def do(c, *args):
     if s:
         put(s)
 
-def goto((r, c)):
+def goto(xxx_todo_changeme):
+    (r, c) = xxx_todo_changeme
     do('cup', r - scroll + height - 1, c)
 
 cells = []

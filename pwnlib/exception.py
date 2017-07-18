@@ -19,7 +19,7 @@ class PwnlibException(Exception):
         if self.reason:
             s += '\nReason:\n'
             s += ''.join(traceback.format_exception(*self.reason))
-        elif sys.exc_type not in [None, KeyboardInterrupt]:
+        elif sys.exc_info()[0] not in [None, KeyboardInterrupt]:
             s += '\n'
             s += ''.join(traceback.format_exc())
         return s

@@ -9,6 +9,7 @@ Solution:
  1. Always run wireshark or tcpdump.  Always.
  2. Register <your socket>.clean or <your socket>.clean_and_log to run at exit.
 """
+from __future__ import print_function
 
 from pwn import *
 
@@ -25,4 +26,4 @@ atexit.register(r.clean_and_log)
 
 while True:
     line = r.recvline()
-    print re.findall('^prefix (\S+)$', line)[0]
+    print(re.findall('^prefix (\S+)$', line)[0])

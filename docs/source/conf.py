@@ -330,7 +330,7 @@ def linkcode_resolve(domain, info):
     else:
         filename = info['module'].replace('.', '/') + '.py'
 
-        if isinstance(val, (types.ModuleType, types.ClassType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType)):
+        if isinstance(val, (types.ModuleType, type, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType)):
             try:
                 lines, first = inspect.getsourcelines(val)
                 filename += '#L%d-%d' % (first, first + len(lines) - 1)

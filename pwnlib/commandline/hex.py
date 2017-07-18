@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import absolute_import
+from __future__ import print_function
 
 import argparse
 import sys
@@ -16,9 +17,9 @@ parser.add_argument('data', nargs='*',
 
 def main(args):
     if not args.data:
-        print sys.stdin.read().encode('hex')
+        print(sys.stdin.read().encode('hex'))
     else:
-        print ' '.join(args.data).encode('hex')
+        print(' '.join(args.data).encode('hex'))
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)

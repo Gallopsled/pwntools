@@ -615,11 +615,11 @@ def fit(pieces=None, **kwargs):
         return ''
 
     if not pieces:
-        return ''.join(filler.next() for f in range(length))
+        return ''.join(next(filler) for f in range(length))
 
     def fill(out, value):
         while value not in out:
-            out += filler.next()
+            out += next(filler)
         return out, out.index(value)
 
     # convert str keys to offsets
@@ -653,13 +653,13 @@ def fit(pieces=None, **kwargs):
         if k < l:
             raise ValueError("fit(): data at offset %d overlaps with previous data which ends at offset %d" % (k, l))
         while len(out) < k:
-            out.append(filler.next())
+            out.append(next(filler))
         v = _flat([v], preprocessor, packer)
         l = k + len(v)
 
         # consume the filler for each byte of actual data
         for i in range(len(out), l):
-            filler.next()
+            next(filler)
 
         out[k:l] = v
 
@@ -668,7 +668,7 @@ def fit(pieces=None, **kwargs):
         if l > length:
             raise ValueError("fit(): Pieces does not fit within `length` (= %d) bytes" % length)
         while len(out) < length:
-            out.append(filler.next())
+            out.append(next(filler))
     else:
         out = out[:l]
 

@@ -300,7 +300,7 @@ class Module(types.ModuleType):
     def _make_crc(name, polynom, width, init, refin, refout, xorout, check, extra_doc = ''):
         def inner(data):
             return crc.generic_crc(data, polynom, width, init, refin, refout, xorout)
-        inner.func_name = 'crc_' + name
+        inner.__name__ = 'crc_' + name
         inner.__name__  = 'crc_' + name
 
         inner.__doc__   = """%s(data) -> int
