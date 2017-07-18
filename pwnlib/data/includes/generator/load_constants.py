@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+from __future__ import print_function
 import re
 import sys
 
@@ -7,7 +8,7 @@ from pwnlib.util import safeeval
 python = open(sys.argv[1], "w")
 header = open(sys.argv[2], "w")
 
-print >>python, 'from pwnlib.constants.constant import Constant'
+print('from pwnlib.constants.constant import Constant', file=python)
 
 data = sys.stdin.read().strip().split('\n')
 
@@ -29,8 +30,8 @@ for l in data:
     elif val.endswith('L'):
         val = val[:-1]
 
-    print >> python, "{key} = Constant({key!r},{val})".format(**locals())
+    print("{key} = Constant({key!r},{val})".format(**locals()), file=python)
     if re.match(r'^0[0-9]', val) or re.match(r'[^0-9a-fA-Fx]0[0-9]', val):
-        print >> header, "#define %s %s" % (key, hex(safeeval.expr(val)))
+        print("#define %s %s" % (key, hex(safeeval.expr(val))), file=header)
     else:
-        print >> header, "#define %s %s" % (key, val)
+        print("#define %s %s" % (key, val), file=header)

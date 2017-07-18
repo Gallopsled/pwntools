@@ -1,6 +1,7 @@
 """
 Just a lot of spinners!
 """
+from __future__ import print_function
 
 from pwn import *
 
@@ -10,7 +11,7 @@ n = 1
 h = log.waitfor('spinners running', status = str(n))
 
 hs = []
-print 'type "q" to quit'
+print('type "q" to quit')
 while True:
     s = raw_input('> ')
     if s == 'q':

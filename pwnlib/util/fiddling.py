@@ -16,6 +16,7 @@ from pwnlib.util import packing
 from pwnlib.util.cyclic import cyclic
 from pwnlib.util.cyclic import de_bruijn
 from pwnlib.util.cyclic import cyclic_find
+from functools import reduce
 
 log = getLogger(__name__)
 
@@ -571,7 +572,7 @@ def sequential_lines(a,b):
 def update_cyclic_pregenerated(size):
     global cyclic_pregen
     while size > len(cyclic_pregen):
-        cyclic_pregen += de_bruijn_gen.next()
+        cyclic_pregen += next(de_bruijn_gen)
 
 def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
                  highlight=None, cyclic=False):

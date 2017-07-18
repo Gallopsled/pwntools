@@ -1,3 +1,4 @@
+from __future__ import print_function
 from pwn import *
 
 # Tell pwntools that the target is an Android device
@@ -8,15 +9,15 @@ context.arch='aarch64' # or 'arm'
 context.adb_host='172.16.110.1'
 
 # Wait for a device to become available
-print adb.wait_for_device()
+print(adb.wait_for_device())
 
 # Who am I?
-print adb.process('id').recvall().strip()
+print(adb.process('id').recvall().strip())
 
 # Interactive sessions!
 io = adb.shell()
 io.sendline('echo Hello, world; exit')
-print io.recvall().replace('\r\n', '\n').strip()
+print(io.recvall().replace('\r\n', '\n').strip())
 
 # Debugging!
 gdb.debug('sh').interactive()

@@ -2,6 +2,7 @@
 Simple example showing how to use the remote
 gdb debugging features available in pwntools.
 """
+from __future__ import print_function
 
 import getpass
 
@@ -14,4 +15,4 @@ c''')
 
 c.sendline('ls -la')
 c.sendline('exit')
-print c.recvall()
+print(c.recvall())

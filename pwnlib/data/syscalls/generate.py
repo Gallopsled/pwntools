@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+from __future__ import print_function
 import argparse
 import os
 
@@ -184,12 +185,12 @@ def generate_one(target):
 
         # Skip anything with uppercase
         if name.lower() != name:
-            print 'Skipping %s' % name
+            print('Skipping %s' % name)
             continue
 
         # Skip anything that starts with 'unused' or 'sys' after stripping
         if name.startswith('unused'):
-            print 'Skipping %s' % name
+            print('Skipping %s' % name)
             continue
 
         function = functions.get(name, None)
@@ -200,7 +201,7 @@ def generate_one(target):
         # If we can't find a function, just stub it out with something
         # that has a vararg argument.
         if function is None:
-            print 'Stubbing out %s' % name
+            print('Stubbing out %s' % name)
             args = [Argument('int', 0, 'vararg')]
             function = Function('long', 0, name, args)
 

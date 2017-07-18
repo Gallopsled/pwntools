@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import absolute_import
+from __future__ import print_function
 
 import argparse
 import os
@@ -96,7 +97,7 @@ def main(args):
 
     try:
         for line in hexdump_iter(infile, width, highlight = hl, begin = offset + skip):
-            print line
+            print(line)
     except (KeyboardInterrupt, IOError):
         pass
 

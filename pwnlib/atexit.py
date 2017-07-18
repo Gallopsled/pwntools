@@ -10,6 +10,7 @@ printed twice when the standard :mod:`atexit` is used.
 from __future__ import absolute_import
 
 import sys
+import atexit
 import threading
 import traceback
 
@@ -94,4 +95,4 @@ def _run_handlers():
 if hasattr(sys, "exitfunc"):
     register(sys.exitfunc)
 
-sys.exitfunc = _run_handlers
+atexit.register(_run_handlers)

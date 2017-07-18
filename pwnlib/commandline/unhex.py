@@ -23,7 +23,7 @@ def main(args):
             sys.stdout.write(s.decode('hex'))
         else:
             sys.stdout.write(''.join(args.hex).decode('hex'))
-    except TypeError, e:
+    except TypeError as e:
         sys.stderr.write(str(e) + '\n')
 
 if __name__ == '__main__':

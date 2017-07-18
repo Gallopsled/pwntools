@@ -11,8 +11,9 @@ Try running this example with::
 
   $ python args.py RHOST=localhost RPORT=1337
 """
+from __future__ import print_function
 
 from pwn import *
 
-print args['RHOST'] or 'RHOST is not set'
-print args['RPORT'] or 'RPORT is not set'
+print(args['RHOST'] or 'RHOST is not set')
+print(args['RPORT'] or 'RPORT is not set')

@@ -1037,19 +1037,6 @@ class tube(Timeout, Logger):
         self.connect_output(other)
         return other
 
-    def __ne__(self, other):
-        """
-        Shorthand for connecting tubes to eachother.
-
-        The following are equivalent ::
-
-            a >> b >> a
-            a <> b
-
-        See :meth:`connect_input` for more information.
-        """
-        self << other << self
-
     def wait_for_close(self):
         """Waits until the tube is closed."""
 

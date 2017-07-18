@@ -1,10 +1,11 @@
+from __future__ import absolute_import
 import ctypes
 import ctypes.util
 import socket
 
-from packing import p16
-from packing import p32
-from packing import pack
+from .packing import p16
+from .packing import p32
+from .packing import pack
 
 __all__ = ['getifaddrs', 'interfaces', 'interfaces4', 'interfaces6', 'sockaddr']
 

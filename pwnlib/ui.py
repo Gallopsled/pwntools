@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import print_function
 
 import time
 import types
@@ -20,7 +21,7 @@ def yesno(prompt, default = None):
       `True` if the answer was "yes", `False` if "no"
 """
 
-    if not isinstance(default, (bool, types.NoneType)):
+    if not isinstance(default, (bool, type(None))):
         raise ValueError('yesno(): default must be a boolean or None')
 
     if term.term_mode:
@@ -58,7 +59,7 @@ def yesno(prompt, default = None):
                 return True
             elif opt in ('n', 'no'):
                 return False
-            print 'Please answer yes or no'
+            print('Please answer yes or no')
 
 def options(prompt, opts, default = None):
     """Presents the user with a prompt (typically in the
@@ -73,12 +74,12 @@ def options(prompt, opts, default = None):
       The users choice in the form of an integer.
 """
 
-    if not isinstance(default, (int, long, types.NoneType)):
+    if not isinstance(default, (int, long, type(None))):
         raise ValueError('options(): default must be a number or None')
 
     if term.term_mode:
         numfmt = '%' + str(len(str(len(opts)))) + 'd) '
-        print ' [?] ' + prompt
+        print(' [?] ' + prompt)
         hs = []
         space = '       '
         arrow = term.text.bold_green('    => ')
@@ -133,9 +134,9 @@ def options(prompt, opts, default = None):
     else:
         linefmt =       '       %' + str(len(str(len(opts)))) + 'd) %s'
         while True:
-            print ' [?] ' + prompt
+            print(' [?] ' + prompt)
             for i, opt in enumerate(opts):
-                print linefmt % (i + 1, opt)
+                print(linefmt % (i + 1, opt))
             s = '     Choice '
             if default:
                 s += '[%s] ' % str(default)
@@ -184,9 +185,9 @@ def more(text):
         step = term.height - 1
         for i in range(0, len(lines), step):
             for l in lines[i:i + step]:
-                print l
+                print(l)
             if i + step < len(lines):
                 term.key.get()
         h.delete()
     else:
-        print text
+        print(text)

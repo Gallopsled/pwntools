@@ -507,7 +507,7 @@ def make_elf_from_assembly(assembly,
     result = asm(assembly, vma = vma, shared = shared, extract = False, **kwargs)
 
     if not extract:
-        os.chmod(result, 0755)
+        os.chmod(result, 0o755)
     else:
         with open(result, 'rb') as io:
             result = io.read()
@@ -594,7 +594,7 @@ def make_elf(data,
             _run([which_binutils('strip'), '--strip-unneeded', step3])
 
         if not extract:
-            os.chmod(step3, 0755)
+            os.chmod(step3, 0o755)
             retval = step3
 
         else:
