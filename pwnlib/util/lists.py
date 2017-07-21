@@ -114,17 +114,15 @@ def concat_all(*args):
        [0, 1, 2, 3, 4, 5, 6]
     """
 
-    if len(args) != 1:
-        return concat_all(list(args))
+    def go(arg, output):
+        if isinstance(arg, (tuple, list)):
+            for e in arg:
+                go(e, output)
+        else:
+            output.append(arg)
+        return output
 
-    if not isinstance(args[0], (tuple, list)):
-        return [args[0]]
-
-    res = []
-    for k in args[0]:
-        res.extend(concat_all(k))
-
-    return res
+    return go(args, [])
 
 def ordlist(s):
     """ordlist(s) -> list
