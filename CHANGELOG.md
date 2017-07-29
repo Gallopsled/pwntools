@@ -44,6 +44,10 @@ To be released on Sep 8, 2017.
 
 To be released on Sep 8, 2017.
 
+- [#1003][1003] Make `concat_all` faster while also simplifying it's logic
+
+[1003]: https://github.com/Gallopsled/pwntools/pull/1003
+
 ## 3.8.0
 
 - [#981][981] Fixed RELRO detection logic
