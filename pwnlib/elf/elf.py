@@ -1488,7 +1488,7 @@ class ELF(ELFFile):
         if not dt_runpath:
             return None
 
-        return self.dynamic_string(dt_rpath.entry.d_ptr)
+        return self.dynamic_string(dt_runpath.entry.d_ptr)
 
     def checksec(self, banner=True):
         """checksec(banner=True)
