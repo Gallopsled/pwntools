@@ -150,7 +150,7 @@ class _Tls_DictStack(threading.local, _DictStack):
 
 def _validator(validator):
     """
-    Validator that tis tightly coupled to the implementation
+    Validator that is tightly coupled to the implementation
     of the classes here.
 
     This expects that the object has a ._tls property which
