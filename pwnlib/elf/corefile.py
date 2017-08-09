@@ -826,6 +826,10 @@ class Corefile(ELF):
         # find a pointer to this address, followed by a NULL.
         last_env_addr = address + 1
         p_last_env_addr = stack.find(pack(last_env_addr), None, last_env_addr)
+        if p_last_env_addr < 0:
+            # Something weird is happening.  Just don't touch it.
+            log.debug("Something is weird")
+            return
 
         # Sanity check that we did correctly find the envp NULL terminator.
         envp_nullterm = p_last_env_addr+context.bytes
