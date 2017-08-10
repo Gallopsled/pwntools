@@ -545,7 +545,7 @@ class Corefile(ELF):
                         log.warn('Could not find the stack!')
                         self.stack = None
 
-            with context.local(bytes=self.bytes, log_level='error'):
+            with context.local(bytes=self.bytes, log_level='warn'):
                 try:
                     self._parse_stack()
                 except ValueError:
@@ -828,7 +828,7 @@ class Corefile(ELF):
         p_last_env_addr = stack.find(pack(last_env_addr), None, last_env_addr)
         if p_last_env_addr < 0:
             # Something weird is happening.  Just don't touch it.
-            log.debug("Something is weird")
+            log.warn_once("Found bad environment at %#x", last_env_addr)
             return
 
         # Sanity check that we did correctly find the envp NULL terminator.
