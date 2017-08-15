@@ -28,6 +28,13 @@ class MemLeak(object):
     cannot be recovered, it will try to leak nearby bytes in the hope that the
     byte is recovered as a side-effect.
 
+    One caveat to watch out for is when using printf/puts or similar string
+    printing functions for leaking is if the address to leak points to a null
+    byte your leak function will end up returning an empty string which will be
+    interpreted as it being unable to leak that address. Since these functions
+    always leak up to but excluding a null byte you can fix this by simply
+    appending the missing null byte.
+
     Arguments:
         f (function): The leaker function.
         search_range (int): How many bytes to search backwards in case an address does not work.
