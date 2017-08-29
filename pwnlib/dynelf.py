@@ -417,7 +417,7 @@ class DynELF(object):
     def _find_linkmap(self, pltgot=None, debug=None):
         """
         The linkmap is a chained structure created by the loader at runtime
-        which contains information on the names and load addresses osf all
+        which contains information on the names and load addresses of all
         libraries.
 
         For non-RELRO binaries, a pointer to this is stored in the .got.plt
@@ -431,7 +431,7 @@ class DynELF(object):
         Got     = {32: elf.Elf_i386_GOT, 64: elf.Elf_x86_64_GOT}[self.elfclass]
         r_debug = {32: elf.Elf32_r_debug, 64: elf.Elf64_r_debug}[self.elfclass]
 
-        result = None
+        linkmap = None
 
         if not pltgot:
             w.status("Finding linkmap: DT_PLTGOT")
@@ -439,24 +439,24 @@ class DynELF(object):
 
         if pltgot:
             w.status("GOT.linkmap")
-            result = self.leak.field(pltgot, Got.linkmap)
-            w.status("GOT.linkmap %#x" % result)
+            linkmap = self.leak.field(pltgot, Got.linkmap)
+            w.status("GOT.linkmap %#x" % linkmap)
 
-        if not result:
+        if not linkmap:
             debug = debug or self._find_dt(constants.DT_DEBUG)
             if debug:
                 w.status("r_debug.linkmap")
-                result = self.leak.field(debug, r_debug.r_map)
+                linkmap = self.leak.field(debug, r_debug.r_map)
                 w.status("r_debug.linkmap %#x" % result)
 
-        if not (pltgot or debug):
+        if not linkmap:
             w.failure("Could not find DT_PLTGOT or DT_DEBUG")
             return None
 
-        result = self._make_absolute_ptr(result)
+        linkmap = self._make_absolute_ptr(linkmap)
 
-        w.success('%#x' % result)
-        return result
+        w.success('%#x' % linkmap)
+        return linkmap
 
     def waitfor(self, msg):
         if not self._waitfor:
@@ -580,7 +580,7 @@ class DynELF(object):
                 self.status("Trying remote lookup")
                 result = dynlib._lookup(symb)
         else:
-            result = dynlib.libbase
+            result = dynlib._lookup(symb)
 
         #
         # Did we win?
@@ -839,6 +839,9 @@ class DynELF(object):
     def _lookup_build_id(self, lib = None):
 
         libbase = self.libbase
+        if not self.link_map:
+            self.status("No linkmap found")
+            return None
 
         if lib is not None:
             libbase = self.lookup(symb = None, lib = lib)
