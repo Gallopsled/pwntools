@@ -178,7 +178,7 @@ class DynELF(object):
 
         self.elf     = elf
         self.leak    = leak
-        self.libbase = self._find_base(pointer or elf.address)
+        self.libbase = elf.address if elf else self._find_base(pointer)
 
         if elf:
             self._find_linkmap_assisted(elf)
