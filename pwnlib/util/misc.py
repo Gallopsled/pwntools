@@ -216,6 +216,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
         elif 'DISPLAY' in os.environ and which('x-terminal-emulator'):
             terminal = 'x-terminal-emulator'
             args     = ['-e']
+            command  = command.split(' ')
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
             args     = ['splitw']
