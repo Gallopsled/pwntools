@@ -62,6 +62,6 @@ cat /etc/ssh/ssh_config  || true
 ls -lash /etc/ssh/
 ls -lash ~/.ssh/
 
-ssh -o PreferredAuthentications=publickey -o "StrictHostKeyChecking no" -vvvv travis@127.0.0.1 id
+ssh -o PreferredAuthentications=publickey -o "StrictHostKeyChecking no" -vvvv travis@example.pwnme id
 
 set +e
