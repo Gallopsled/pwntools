@@ -39,14 +39,11 @@ USUDO mkdir $H/.ssh || true
 # Generate a new key so that we can log into it
 ssh-keygen -t rsa -f ~/.ssh/$U -N ''
 
-# Load the public key into a memory for below
-pubkey=$(cat ~/.ssh/$U.pub)
-
-
 if [[ "$USER" == "travis" ]]; then
-    echo "$pubkey"
+    cat ~/.ssh/$U.pub
 else
-    echo 'from="127.0.0.1"' "$pubkey"
+    echo -n 'from="127.0.0.1 "'
+    cat ~/.ssh/$U.pub
 fi | USUDO tee -a $H/.ssh/authorized_keys
 
 # In the pwntools examples, we ssh to 'example.pwnme'
@@ -64,6 +61,6 @@ cat /etc/ssh/ssh_config  || true
 
 ls -lash ~/.ssh/
 
-ssh -o PreferredAuthentications=publickey -o "StrictHostKeyChecking no" -vvvv travis@example.pwnme id
+ssh -o PreferredAuthentications=publickey -o "StrictHostKeyChecking no" -vvvv travis@127.0.0.1 id
 
 set +e
