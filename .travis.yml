@@ -13,7 +13,7 @@ addons:
     - mksh
     - zsh
     - pandoc
-    - gdb
+    - gdb && sudo -E dpkg-reconfigure openssh-server
 cache:
     - pip
     - directories:
