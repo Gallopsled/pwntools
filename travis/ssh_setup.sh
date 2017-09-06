@@ -9,6 +9,8 @@ set -e
 U=travis
 H=/home/$U
 
+ls -lash ~/.ssh/
+
 USUDO()
 {
 if [[ "$USER" == "travis" ]];
@@ -56,6 +58,9 @@ Host example.pwnme
     HostName 127.0.0.1
     IdentityFile ~/.ssh/$U
 EOF
+
+cat /etc/ssh/sshd_config || true
+ls -lash ~/.ssh/
 
 ssh -o PreferredAuthentications=publickey -o "StrictHostKeyChecking no" -vvvv travis@example.pwnme id
 
