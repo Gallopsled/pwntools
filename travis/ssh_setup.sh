@@ -57,6 +57,6 @@ Host example.pwnme
     IdentityFile ~/.ssh/$U
 EOF
 
-ssh -o "StrictHostKeyChecking no" -vvvv travis@example.pwnme id
+ssh -o PreferredAuthentications=publickey -o "StrictHostKeyChecking no" -vvvv travis@example.pwnme id
 
 set +e
