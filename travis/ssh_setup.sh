@@ -4,7 +4,7 @@
 #
 # All of the "conditional sudo" is to do container-based builds on
 # Travis which are much, much faster.
-set -ex
+set -e
 
 U=travis
 H=/home/$U
@@ -39,9 +39,13 @@ pubkey=$(cat ~/.ssh/$U.pub)
 # Set the authorized_keys entry to only permit login from localhost,
 # and only with
 USUDO mkdir $H/.ssh || true
-USUDO tee -a $H/.ssh/authorized_keys <<EOF
-from="127.0.0.1" $pubkey
-EOF
+
+
+if [[ "$USER" == "travis" ]]; then
+    echo "$pubkey"
+else
+    echo 'from="127.0.0.1"' "$pubkey"
+fi | USUDO tee -a $H/.ssh/authorized_keys
 
 # In the pwntools examples, we ssh to 'example.pwnme'
 # Set up an SSH config entry to make this actually work
@@ -55,4 +59,4 @@ EOF
 
 ssh -o "StrictHostKeyChecking no" -vvvv travis@example.pwnme id
 
-set +ex
+set +e
