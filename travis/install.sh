@@ -1,5 +1,5 @@
 #!/usr/bin/env bash -e
-set -e
+set -ex
 
 local_deb_extract()
 {
@@ -198,4 +198,4 @@ elif [[ "$(uname)" == "Linux" ]]; then
     setup_android_emulator
 fi
 
-set +e
+set +ex
