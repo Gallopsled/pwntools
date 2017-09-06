@@ -32,15 +32,15 @@ else
     sudo passwd --delete --unlock $U
 fi
 
+# Set the authorized_keys entry to only permit login from localhost,
+# and only with
+USUDO mkdir $H/.ssh || true
+
 # Generate a new key so that we can log into it
 ssh-keygen -t rsa -f ~/.ssh/$U -N ''
 
 # Load the public key into a memory for below
 pubkey=$(cat ~/.ssh/$U.pub)
-
-# Set the authorized_keys entry to only permit login from localhost,
-# and only with
-USUDO mkdir $H/.ssh || true
 
 
 if [[ "$USER" == "travis" ]]; then
@@ -60,6 +60,8 @@ Host example.pwnme
 EOF
 
 cat /etc/ssh/sshd_config || true
+cat /etc/ssh/ssh_config  || true
+
 ls -lash ~/.ssh/
 
 ssh -o PreferredAuthentications=publickey -o "StrictHostKeyChecking no" -vvvv travis@example.pwnme id
