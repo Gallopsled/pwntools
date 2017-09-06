@@ -5,7 +5,6 @@ addons:
   apt:
     packages:
     - gcc-multilib
-    - gcc-arm-linux-gnueabihf
     - lib32stdc++6
     - ash
     - bash
