@@ -197,6 +197,7 @@ from __future__ import absolute_import
 import collections
 import copy
 import hashlib
+import itertools
 import os
 import re
 import sys
@@ -415,24 +416,83 @@ class ROP(object):
 
     def setRegisters(self, registers):
         """
-        Returns an OrderedDict of addresses/values which will set the specified
-        register context.
+        Returns an list of addresses/values which will set the specified register context.
 
         Arguments:
             registers(dict): Dictionary of ``{register name: value}``
 
         Returns:
-            An OrderedDict of ``{register: sequence of gadgets, values, etc.}``.
+            A list of tuples, ordering the stack.
+
+            Each tuple is in the form of ``(value, name)`` where ``value`` is either a
+            gadget address or literal value to go on the stack, and ``name`` is either
+            a string name or other item which can be "unresolved".
+
+        Note:
+            This is basically an implementation of the Set Cover Problem, which is
+            NP-hard.  This means that we will take polynomial time N**2, where N is
+            the number of gadgets.  We can reduce runtime by discarding useless and
+            inferior gadgets ahead of time.
         """
-        reg_order = collections.OrderedDict()
+        if not registers:
+            return []
 
-        for reg, value in registers.items():
-            gadget = self.find_gadget(['pop ' + reg, 'ret'])
-            if not gadget:
-                log.error("can't set %r" % reg)
-            reg_order[reg] = [gadget, value]
+        regset = set(registers)
 
-        return reg_order
+        # Collect all gadgets which use these registers
+        # Also collect the "best" gadget for each combination of registers
+        gadgets = []
+        best_gadgets = {}
+
+        for gadget in self.gadgets.values():
+            touched = tuple(regset & set(gadget.regs))
+
+            if not touched:
+                continue
+
+            old = best_gadgets.get(touched, gadget)
+
+            if old is gadget or old.move > gadget.move:
+                best_gadgets[touched] = gadget
+
+
+        winner = None
+        budget = 999999999
+
+        for num_gadgets in range(len(registers)):
+            for combo in itertools.combinations(best_gadgets.values(), 1+num_gadgets):
+                # Is this better than what we can already do?
+                cost = sum((g.move for g in combo))
+                if cost > budget:
+                    continue
+
+                # Does it hit all of the registers we want?
+                coverage = set(sum((g.regs for g in combo), [])) & regset
+
+                if coverage != regset:
+                    continue
+
+                # It is better than what we had, and hits all of the registers.
+                winner = combo
+                budget = cost
+
+        if not winner:
+            log.error("Could not satisfy setRegisters(%r)", registers)
+
+        # We have our set of "winner" gadgets, let's build a stack!
+        stack = []
+
+        for gadget in winner:
+            goodregs = set(gadget.regs) & regset
+            name = ",".join(goodregs)
+            stack.append((gadget.address, gadget))
+            for r in gadget.regs:
+                if r in registers:
+                    stack.append((registers[r], r))
+                else:
+                    stack.append((Padding(), r))
+
+        return stack
 
     def resolve(self, resolvable):
         """Resolves a symbol to an address
@@ -575,13 +635,17 @@ class ROP(object):
                 stack.describe(self.describe(slot))
 
                 registers    = dict(zip(slot.abi.register_arguments, slot.args))
-                setRegisters = self.setRegisters(registers)
 
-                for register, gadgets in setRegisters.items():
-                    value       = registers[register]
-                    description = self.describe(value) or 'arg%i' % slot.args.index(value)
-                    stack.describe('set %s = %s' % (register, description))
-                    stack.extend(gadgets)
+                for value, name in self.setRegisters(registers):
+                    if name in registers:
+                        index = slot.abi.register_arguments.index(name)
+                        description = self.describe(value) or value
+                        stack.describe('[arg%s] %s = %s' % (index, name, description))
+                    elif isinstance(name, Gadget):
+                        stack.describe('; '.join(name.insns))
+                    elif isinstance(name, str):
+                        stack.describe(name)
+                    stack.append(value)
 
                 if address != stack.next:
                     stack.describe(slot.name)
@@ -614,10 +678,6 @@ class ROP(object):
 
                         for pad in range(fix_bytes, adjust.move, context.bytes):
                             stackArguments.append(Padding())
-                    else:
-                        stack.describe('<pad>')
-                        stack.append(Padding())
-
 
                 for i, argument in enumerate(stackArguments):
 
@@ -835,13 +895,22 @@ class ROP(object):
         """Returns: Raw bytes of the ROP chain"""
         return self.chain()
 
-    def __get_cachefile_name(self, elf):
-        basename = os.path.basename(elf.file.name)
-        sha256 = hashlib.sha256(elf.get_data()).hexdigest()
+    def __get_cachefile_name(self, files):
+        """Given an ELF or list of ELF objects, return a cache file for the set of files"""
         cachedir = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache')
         if not os.path.exists(cachedir):
             os.mkdir(cachedir)
-        return os.path.join(cachedir, sha256)
+
+        if isinstance(files, ELF):
+            files = [files]
+
+        hashes = []
+
+        for elf in self.elfs:
+            sha256 = hashlib.sha256(elf.get_data()).hexdigest()
+            hashes.append(sha256)
+
+        return os.path.join(cachedir, '_'.join(hashes))
 
     def __cache_load(self, elf):
         filename = self.__get_cachefile_name(elf)
@@ -871,7 +940,7 @@ class ROP(object):
         #
 
         pop   = re.compile(r'^pop (.{3})')
-        add   = re.compile(r'^add .sp, (\S+)$')
+        add   = re.compile(r'^add [er]sp, (\S+)$')
         ret   = re.compile(r'^ret$')
         leave = re.compile(r'^leave$')
         int80 = re.compile(r'int +0x80')
