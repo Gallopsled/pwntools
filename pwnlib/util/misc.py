@@ -6,6 +6,7 @@ import re
 import socket
 import stat
 import string
+import shlex
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -201,6 +202,14 @@ def run_in_new_terminal(command, terminal = None, args = None):
 
     Returns:
       PID of the new terminal process
+
+    Examples:
+        >>> type(run_in_new_terminal('/usr/bin/gdb -q /bin/ls'))
+        <type 'int'>
+        >>> type(run_in_new_terminal(['/usr/bin/gdb', '-q', '/bin/ls']))
+        <type 'int'>
+        >>> type(run_in_new_terminal('/usr/bin/gdb -q "/tmp/l s"'))
+        <type 'int'>
     """
 
     if not terminal:
@@ -216,7 +225,8 @@ def run_in_new_terminal(command, terminal = None, args = None):
         elif 'DISPLAY' in os.environ and which('x-terminal-emulator'):
             terminal = 'x-terminal-emulator'
             args     = ['-e']
-            command  = command.split(' ')
+            if isinstance(command, str):
+                command  = shlex.split(command)
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
             args     = ['splitw']
@@ -360,3 +370,8 @@ def register_sizes(regs, in_sizes):
             smaller[r] = [r_ for r_ in l if sizes[r_] < sizes[r]]
 
     return lists.concat(regs), sizes, bigger, smaller
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
