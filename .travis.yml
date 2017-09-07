@@ -1,10 +1,9 @@
-sudo: false
+dist: precise
 language: python
 addons:
   apt:
     packages:
     - gcc-multilib
-    - gcc-4.6-arm-linux-gnueabihf
     - lib32stdc++6
     - ash
     - bash
