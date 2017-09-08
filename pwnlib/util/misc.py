@@ -6,7 +6,6 @@ import re
 import socket
 import stat
 import string
-import shlex
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -204,12 +203,28 @@ def run_in_new_terminal(command, terminal = None, args = None):
       PID of the new terminal process
 
     Examples:
-        >>> type(run_in_new_terminal('/usr/bin/gdb -q /bin/ls'))
-        <type 'int'>
-        >>> type(run_in_new_terminal(['/usr/bin/gdb', '-q', '/bin/ls']))
-        <type 'int'>
-        >>> type(run_in_new_terminal('/usr/bin/gdb -q "/tmp/l s"'))
-        <type 'int'>
+        >>> import tempfile
+        >>> os_level, path = tempfile.mkstemp()
+        >>> pid = run_in_new_terminal(['rm', '-f', path])
+        >>> pid, status = os.waitpid(pid, 0)
+        >>> status == 0
+        True
+        >>> os.path.exists(path)
+        False
+        >>> os_level, path = tempfile.mkstemp()
+        >>> pid = run_in_new_terminal('rm -f %s' % path)
+        >>> pid, status = os.waitpid(pid, 0)
+        >>> status == 0
+        True
+        >>> os.path.exists(path)
+        False
+        >>> os_level, path = tempfile.mkstemp(suffix=' with space')
+        >>> pid = run_in_new_terminal('rm -f "%s"' % path)
+        >>> pid, status = os.waitpid(pid, 0)
+        >>> status == 0
+        True
+        >>> os.path.exists(path)
+        False
     """
 
     if not terminal:
@@ -226,7 +241,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
             terminal = 'x-terminal-emulator'
             args     = ['-e']
             if isinstance(command, str):
-                command  = shlex.split(command)
+                command  = ['/bin/sh', '-c', command]
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
             args     = ['splitw']
@@ -370,8 +385,3 @@ def register_sizes(regs, in_sizes):
             smaller[r] = [r_ for r_ in l if sizes[r_] < sizes[r]]
 
     return lists.concat(regs), sizes, bigger, smaller
-
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
