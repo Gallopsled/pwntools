@@ -1,5 +1,5 @@
 #!/usr/bin/env bash -e
-set -e
+set -ex
 
 local_deb_extract()
 {
@@ -15,7 +15,7 @@ install_deb()
     package=$1
     echo "Installing $package"
     INDEX="http://packages.ubuntu.com/en/$version/amd64/$package/download"
-    URL=$(curl "$INDEX" | grep -Eo "https?://.*$package.*\.deb" | head -1)
+    URL=$(curl -L "$INDEX" | grep -Eo "https?://.*$package.*\.deb" | head -1)
     local_deb_extract "$URL"
 }
 
@@ -198,4 +198,4 @@ elif [[ "$(uname)" == "Linux" ]]; then
     setup_android_emulator
 fi
 
-set +e
+set +ex

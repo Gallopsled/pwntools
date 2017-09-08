@@ -8,7 +8,10 @@ MAINTAINER Maintainer Gallopsled et al.
 
 USER root
 
+RUN apt-get update
+
 # Use UTF-8
+RUN apt-get install -y locales
 RUN locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
