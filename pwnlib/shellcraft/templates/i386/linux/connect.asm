@@ -24,7 +24,7 @@ Examples:
     'Hello'
 
     >>> l = listen(fam='ipv6', timeout=5)
-    >>> assembly   = shellcraft.i386.linux.connect('ip6-localhost', l.lport, 'ipv6')
+    >>> assembly = shellcraft.i386.linux.connect('::1', l.lport, 'ipv6')
     >>> p = run_assembly(assembly)
     >>> assert l.wait_for_connection()
 
