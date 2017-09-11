@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.10.0](#3100)  | `dev`    | Oct 21, 2017 (planned)
-| [3.9.0](#390)    | `beta`   | Sep 9, 2017 (planned)
-| [3.8.0](#380)    | `stable` | Jul 29, 2017
+| [3.11.0](#3110)  | `dev`    | Dec 2, 2017 (planned)
+| [3.10.0](#3100)  | `beta`   | Oct 21, 2017 (planned)
+| [3.9.0](#390)    | `stable` | Sep 11, 2017
+| [3.8.0](#380)    |          | Jul 29, 2017
 | [3.7.1](#371)    |          | Jul 14, 2017
 | [3.7.0](#370)    |          | Jun 19, 2017
 | [3.6.1](#361)    |          | May 12, 2017
@@ -36,13 +37,23 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
+## 3.11.0
+
+To be released on Dec 2, 2017.
+
 ## 3.10.0
 
-To be released on Sep 8, 2017.
+To be released on Oct 21, 2017.
 
 ## 3.9.0
 
-To be released on Sep 8, 2017.
+- [#1003][1003] Make `concat_all` faster while also simplifying it's logic
+- [#1014][1014] Fix for overwritten env when parsing core file
+- [#1023][1023] Fixes to Travis CI
+
+[1003]: https://github.com/Gallopsled/pwntools/pull/1003
+[1014]: https://github.com/Gallopsled/pwntools/pull/1014
+[1023]: https://github.com/Gallopsled/pwntools/pull/1023
 
 ## 3.8.0
 
