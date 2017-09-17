@@ -151,29 +151,72 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
 
     number, step, mask, formatz, decalage = config[context.bits][write_size]
 
-    # add wheres
+    # preare address, values
+    d = {}
+    for a, v in writes.items():
+        if context.bits == 32 and write_size == 'byte':
+           div = {
+                  a  : v & mask,
+                  a+1: (v>>0x08) & mask,
+                  a+2: (v>>0x10) & mask,
+                  a+3: (v>>0x18) & mask
+                 }
+        elif context.bits == 32 and write_size == 'short':
+           div = {
+                  a  : v & mask,
+                  a+2: (v>>0x10) & mask
+                 }
+        elif context.bits == 32 and write_size == 'int':
+           div = {
+                  a  : v & mask
+                 }
+        elif context.bits == 64 and write_size == 'byte':
+           div = {
+                  a  : v & mask,
+                  a+1: (v>>0x08) & mask,
+                  a+2: (v>>0x10) & mask,
+                  a+3: (v>>0x18) & mask,
+                  a+4: (v>>0x20) & mask,
+                  a+5: (v>>0x28) & mask,
+                  a+6: (v>>0x30) & mask,
+                  a+7: (v>>0x38) & mask
+                 }
+        elif context.bits == 64 and write_size == 'short':
+           div = {
+                  a  : v & mask,
+                  a+2: (v>>0x10) & mask,
+                  a+4: (v>>0x20) & mask,
+                  a+6: (v>>0x30) & mask
+                 }
+        elif context.bits == 64 and write_size == 'int':
+           div = {
+                  a  : v,
+                  a+4: (v>>0x20) & mask
+                 }
+        else:
+           log.error("write_size must be 'byte', 'short' or 'int'")
+        d.update(div)
+
+    # make payload
     payload = ""
-    for where, what in writes.items():
-        for i in range(0, number*step, step):
-            payload += pack(where+i)
+    for a, v in sorted(d.items(), key=lambda x:x[1]):
+        payload += pack(a)
 
     numbwritten += len(payload)
     fmtCount = 0
-    for where, what in writes.items():
-        for i in range(0, number):
-            current = what & mask
-            if numbwritten & mask <= current:
-                to_add = current - (numbwritten & mask)
-            else:
-                to_add = (current | (mask+1)) - (numbwritten & mask)
+    for a, v in sorted(d.items(), key=lambda x:x[1]):
+        current = v & mask
+        if numbwritten & mask <= current:
+            to_add = current - (numbwritten & mask)
+        else:
+            to_add = (current | (mask+1)) - (numbwritten & mask)
 
-            if to_add != 0:
-                payload += "%{}c".format(to_add)
-            payload += "%{}${}n".format(offset + fmtCount, formatz)
+        if to_add != 0:
+            payload += "%{}c".format(to_add)
+        payload += "%{}${}n".format(offset + fmtCount, formatz)
 
-            numbwritten += to_add
-            what >>= decalage
-            fmtCount += 1
+        numbwritten += to_add
+        fmtCount += 1
 
     return payload
 
