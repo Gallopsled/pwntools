@@ -178,7 +178,7 @@ class DynELF(object):
 
         self.elf     = elf
         self.leak    = leak
-        self.libbase = elf.address if elf else self._find_base(pointer)
+        self.libbase = self._find_base(pointer or elf.address)
 
         if elf:
             self._find_linkmap_assisted(elf)
@@ -523,6 +523,7 @@ class DynELF(object):
 
         Arguments:
             symb(str): Named routine to look up
+              If omitted, the base address of the library will be returned.
             lib(str): Substring to match for the library name.
               If omitted, the current library is searched.
               If set to ``'libc'``, ``'libc.so'`` is assumed.
@@ -566,7 +567,6 @@ class DynELF(object):
             # Try a quick lookup by build ID
             self.status("Trying lookup based on Build ID")
             build_id = dynlib._lookup_build_id(lib=lib)
-            result   = None
             if build_id:
                 log.info("Trying lookup based on Build ID: %s" % build_id)
                 path = libcdb.search_by_build_id(build_id)
@@ -575,12 +575,11 @@ class DynELF(object):
                         e = ELF(path)
                         e.address = dynlib.libbase
                         result = e.symbols[symb]
-
-            if not result:
-                self.status("Trying remote lookup")
-                result = dynlib._lookup(symb)
-        else:
+        if symb and not result:
+            self.status("Trying remote lookup")
             result = dynlib._lookup(symb)
+        if not symb:
+            result = dynlib.libbase
 
         #
         # Did we win?
