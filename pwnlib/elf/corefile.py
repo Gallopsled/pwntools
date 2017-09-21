@@ -429,6 +429,14 @@ class Corefile(ELF):
         -1
         >>> io.corefile.signal == signal.SIGTRAP # doctest: +SKIP
         True
+
+        Make sure fault_addr synthesis works for amd64 on ret.
+
+        >>> context.clear(arch='amd64')
+        >>> elf = ELF.from_assembly('push 1234; ret')
+        >>> io = elf.process()
+        >>> io.wait()
+        >>> io.corefile.fault_addr == 1234
     """
 
     _fill_gaps = False
