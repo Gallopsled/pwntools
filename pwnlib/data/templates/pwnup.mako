@@ -13,7 +13,7 @@ argv[0] = os.path.basename(argv[0])
 
 try:
     if binary:
-        ctx.binary = ELF(binary, checksec=False)
+       ctx.binary = ELF(binary, checksec=False)
 except ELFError:
     pass
 
@@ -141,6 +141,7 @@ continue
 '''.format(**locals())
 %endif
 
+
 %if not quiet:
 #===========================================================
 #                    EXPLOIT GOES HERE
@@ -148,6 +149,16 @@ continue
 %else:
 # -- Exploit goes here --
 %endif
+%if ctx.binary and not quiet:
+# ${'%-10s%s-%s-%s' % ('Arch:',
+                       ctx.binary.arch,
+                       ctx.binary.bits,
+                       ctx.binary.endian)}
+%for line in ctx.binary.checksec(color=False).splitlines():
+# ${line}
+%endfor
+%endif
+
 io = start()
 
 %if not quiet:
