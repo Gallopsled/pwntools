@@ -510,9 +510,20 @@ class ContextType(object):
             1.0
         """
         class LocalContext(object):
+            def validate(a):
+                # Prevent the user from doing silly things with invalid
+                # architecture / bits / endianness combinations.
+                if (self.arch == 'i386' and self.bits != 32) \
+                  or (self.arch == 'amd64' and self.bits != 64):
+                    raise AttributeError("Invalid arch/bits combination: %s/%s" % (self.arch, self.bits))
+
+                if self.arch in ('i386', 'amd64') and self.endianness == 'big':
+                    raise AttributeError("Invalid arch/endianness combination: %s/%s" % (self.arch, self.endianness))
+
             def __enter__(a):
                 self._tls.push()
                 self.update(**{k:v for k,v in kwargs.items() if v is not None})
+                a.validate()
                 return self
 
             def __exit__(a, *b, **c):
@@ -1385,6 +1396,15 @@ def update_context_defaults(section):
         else:
             log.warn("Unsupported configuration option %r in section %r" % (key, 'context'))
 
-        ContextType.defaults[key] = type(default)(value)
+        # Attempt to set the value, to see if it is value:
+        try:
+            value = type(default)(value)
+            with context.local(**{key: value}):
+                pass
+        except (ValueError, AttributeError):
+            log.warn("Could not set context.%s=%s via pwn.conf", key, section[key])
+            continue
+
+        ContextType.defaults[key] = value
 
 register_config('context', update_context_defaults)
