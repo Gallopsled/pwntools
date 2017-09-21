@@ -87,9 +87,9 @@ if not args.LOCAL:
 def local(argv=[], *a, **kw):
     '''Execute the target binary locally'''
     if args.GDB:
-        return gdb.debug([exe.path] + argv, gdbscript=gdbscript, *a, **kw)
+        return gdb.debug([${binary_repr}] + argv, gdbscript=gdbscript, *a, **kw)
     else:
-        return process([exe.path] + argv, *a, **kw)
+        return process([${binary_repr}] + argv, *a, **kw)
 
 def remote(argv=[], *a, **kw):
   %if ssh:
@@ -108,9 +108,15 @@ def remote(argv=[], *a, **kw):
 %endif
 
 %if host:
-start = local if args.LOCAL else remote
+def start(argv=[], *a, **kw):
+    '''Start the exploit against the target.'''
+    if args.LOCAL:
+        return local(argv, *a, **kw)
+    else:
+        return remote(argv, *a, **kw)
 %else:
 def start(argv=[], *a, **kw):
+    '''Start the exploit against the target.'''
     if args.GDB:
         return gdb.debug([${binary_repr}] + argv, gdbscript=gdbscript, *a, **kw)
     else:
