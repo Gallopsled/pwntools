@@ -429,6 +429,13 @@ class Corefile(ELF):
         -1
         >>> io.corefile.signal == signal.SIGTRAP # doctest: +SKIP
         True
+
+        Some fields are synthesized.  For example, ``fault_addr`` on AMD64 is
+        set to zero if crashing on a ``ret`` instruction under some circumstances.
+        We work around this by populating the field with the expected value.
+
+        >>> context.clear(arch='amd64')
+        >>> elf = ELF.from_assembly('push 0x1234; ret')
     """
 
     _fill_gaps = False
