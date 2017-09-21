@@ -1,10 +1,16 @@
 <%page args="binary, host=None, port=None, user=None, password=None, remote_path=None"/>\
 <%
+import os
+import sys
+
 from pwnlib.context import context as ctx
 from pwnlib.elf.elf import ELF
+from pwnlib.util.sh_string import sh_string
 from elftools.common.exceptions import ELFError
 
-import os
+argv = list(sys.argv)
+argv[0] = os.path.basename(argv[0])
+
 try:
     if binary:
         ctx.binary = ELF(binary, checksec=False)
@@ -28,6 +34,8 @@ binary_repr = repr(binary)
 %>\
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
+# This exploit template was generated via:
+# $ ${' '.join(map(sh_string, argv))}
 from pwn import *
 
 # Set up pwntools for the correct architecture
