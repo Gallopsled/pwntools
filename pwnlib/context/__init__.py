@@ -510,20 +510,9 @@ class ContextType(object):
             1.0
         """
         class LocalContext(object):
-            def validate(a):
-                # Prevent the user from doing silly things with invalid
-                # architecture / bits / endianness combinations.
-                if (self.arch == 'i386' and self.bits != 32) \
-                  or (self.arch == 'amd64' and self.bits != 64):
-                    raise AttributeError("Invalid arch/bits combination: %s/%s" % (self.arch, self.bits))
-
-                if self.arch in ('i386', 'amd64') and self.endianness == 'big':
-                    raise AttributeError("Invalid arch/endianness combination: %s/%s" % (self.arch, self.endianness))
-
             def __enter__(a):
                 self._tls.push()
                 self.update(**{k:v for k,v in kwargs.items() if v is not None})
-                a.validate()
                 return self
 
             def __exit__(a, *b, **c):
@@ -1370,11 +1359,20 @@ def LocalContext(function):
     """
     @functools.wraps(function)
     def setter(*a, **kw):
-        # Fast path to skip adding a Context frame
-        if not kw:
-            return function(*a)
-
         with context.local(**{k:kw.pop(k) for k,v in kw.items() if isinstance(getattr(ContextType, k, None), property)}):
+            arch = context.arch
+            bits = context.bits
+            end = context.endian
+
+            # Prevent the user from doing silly things with invalid
+            # architecture / bits / endianness combinations.
+            if (arch == 'i386' and bits != 32) \
+              or (arch == 'amd64' and bits != 64):
+                raise AttributeError("Invalid arch/bits combination: %s/%s" % (arch, bits))
+
+            if arch in ('i386', 'amd64') and endianness == 'big':
+                raise AttributeError("Invalid arch/endianness combination: %s/%s" % (arch, endian))
+
             return function(*a, **kw)
     return setter
 
@@ -1401,8 +1399,8 @@ def update_context_defaults(section):
             value = type(default)(value)
             with context.local(**{key: value}):
                 pass
-        except (ValueError, AttributeError):
-            log.warn("Could not set context.%s=%s via pwn.conf", key, section[key])
+        except (ValueError, AttributeError) as e:
+            log.warn("Could not set context.%s=%s via pwn.conf (%s)", key, section[key], e)
             continue
 
         ContextType.defaults[key] = value
