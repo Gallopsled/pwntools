@@ -436,7 +436,8 @@ class Corefile(ELF):
         >>> elf = ELF.from_assembly('push 1234; ret')
         >>> io = elf.process()
         >>> io.wait()
-        >>> io.corefile.fault_addr == 1234
+        >>> io.corefile.fault_addr
+        1234
     """
 
     _fill_gaps = False
