@@ -46,7 +46,6 @@ extensions = [
 
 # Disable "info" logging directly to stdout by Sphinx
 import logging
-import sphinx.util.logging
 
 class SphinxPwnlibFilter(logging.Filter):
     def filter(self, record):
