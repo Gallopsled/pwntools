@@ -44,6 +44,23 @@ extensions = [
     'sphinxcontrib.napoleon'
 ]
 
+# Disable "info" logging directly to stdout by Sphinx
+import logging
+
+class SphinxPwnlibFilter(logging.Filter):
+    def filter(self, record):
+        if record.name.startswith('pwn'):
+            return False
+        if record.name.startswith('paramiko'):
+            return False
+        return True
+
+log_filter = SphinxPwnlibFilter()
+
+for i, handler in enumerate(logging.root.handlers):
+    print("Filtering Sphinx handler", handler)
+    handler.addFilter(log_filter)
+
 # Napoleon settings
 napoleon_use_ivar = True
 napoleon_use_rtype = False
