@@ -108,10 +108,6 @@ class process(tube):
         alarm(int):
             Set a SIGALRM alarm timeout on the process.
 
-    Attributes:
-
-        proc(subprocess)
-
     Examples:
 
         >>> p = process('python2')
@@ -238,7 +234,7 @@ class process(tube):
                 raise TypeError('Must provide argv or set context.binary')
 
 
-        #: `subprocess.Popen` object
+        #: :class:`subprocess.Popen` object that backs this process
         self.proc = None
 
         if not shell:
@@ -957,3 +953,25 @@ class process(tube):
         with open('/proc/%i/mem' % self.pid, 'rb') as mem:
             mem.seek(address)
             return mem.read(count) or None
+
+    @property
+    def stdin(self):
+        """Shorthand for ``self.proc.stdin``
+
+        See: :obj:`.process.proc`
+        """
+        return self.proc.stdin
+    @property
+    def stdout(self):
+        """Shorthand for ``self.proc.stdout``
+
+        See: :obj:`.process.proc`
+        """
+        return self.proc.stdout
+    @property
+    def stderr(self):
+        """Shorthand for ``self.proc.stderr``
+
+        See: :obj:`.process.proc`
+        """
+        return self.proc.stderr

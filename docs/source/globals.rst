@@ -13,7 +13,7 @@ Which imports a bazillion things into the global namespace to make your life eas
 
 This is a quick list of most of the objects and routines imported, in rough order of importance and frequency of use.
 
-- :obj:`.context`
+- :mod:`pwnlib.context`
     - :data:`pwnlib.context.context`
     - Responsible for most of the pwntools convenience settings
     - Set `context.log_level = 'debug'` when troubleshooting your exploit
