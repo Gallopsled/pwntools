@@ -430,12 +430,14 @@ class Corefile(ELF):
         >>> io.corefile.signal == signal.SIGTRAP # doctest: +SKIP
         True
 
-        Some fields are synthesized.  For example, ``fault_addr`` on AMD64 is
-        set to zero if crashing on a ``ret`` instruction under some circumstances.
-        We work around this by populating the field with the expected value.
+        Make sure fault_addr synthesis works for amd64 on ret.
 
         >>> context.clear(arch='amd64')
-        >>> elf = ELF.from_assembly('push 0x1234; ret')
+        >>> elf = ELF.from_assembly('push 1234; ret')
+        >>> io = elf.process()
+        >>> io.wait()
+        >>> io.corefile.fault_addr
+        1234
     """
 
     _fill_gaps = False
@@ -683,9 +685,30 @@ class Corefile(ELF):
             SIGILL, SIGFPE, SIGSEGV, SIGBUS.  This is only available in native
             core dumps created by the kernel.  If the information is unavailable,
             this returns the address of the instruction pointer."""
-        if self.siginfo:
-            return int(self.siginfo.sigfault_addr)
+        fault_addr = 0
 
+        if self.siginfo:
+            fault_addr = int(self.siginfo.sigfault_addr)
+
+            # The fault_addr on AMD64 is zero if the crash occurs
+            # after a "ret" instruction, if the "ret" would return
+            # to an invalid address.  We need to extract the address
+            # manually, as a convenience.
+            if fault_addr == 0 and self.arch == 'amd64' and self.pc and self.sp:
+                try:
+                    code = self.read(self.pc, 1)
+                    if code != '\xc3':
+                        return fault_addr
+                    address = self.unpack(self.sp)
+                    return address
+                except Exception:
+                    # Could not read $rsp or $rip
+                    pass
+
+            return fault_addr
+
+        # No embedded siginfo structure, so just return the
+        # current instruction pointer.
         return getattr(self, 'pc', 0)
 
     @property

@@ -408,10 +408,10 @@ class ELF(ELFFile):
         import pwnlib.gdb
         return pwnlib.gdb.debug([self.path] + argv, *a, **kw)
 
-    def _describe(self):
+    def _describe(self, *a, **kw):
         log.info_once('\n'.join((repr(self.path),
                                 '%-10s%s-%s-%s' % ('Arch:', self.arch, self.bits, self.endian),
-                                self.checksec())))
+                                self.checksec(*a, **kw))))
 
     def __repr__(self):
         return "ELF(%r)" % self.path
@@ -1490,7 +1490,7 @@ class ELF(ELFFile):
 
         return self.dynamic_string(dt_rpath.entry.d_ptr)
 
-    def checksec(self, banner=True):
+    def checksec(self, banner=True, color=True):
         """checksec(banner=True)
 
         Prints out information in the binary, similar to ``checksec.sh``.
@@ -1498,9 +1498,9 @@ class ELF(ELFFile):
         Arguments:
             banner(bool): Whether to print the path to the ELF binary.
         """
-        red    = text.red
-        green  = text.green
-        yellow = text.yellow
+        red    = text.red if color else str
+        green  = text.green if color else str
+        yellow = text.yellow if color else str
 
         res = []
 
