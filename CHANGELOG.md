@@ -45,6 +45,16 @@ To be released on Dec 2, 2017.
 
 To be released on Oct 21, 2017.
 
+## 3.9.1
+
+- [#1038][1038] Fix an issue with `process()` where glibc would buffer data internally, causing a hang on `select()`
+- [#1036][1036] Fix Travis CI logging verbosity
+- [#1029][1029] Fix some `unicode` issues when using the `readline` command history in `tube.interactive()`
+
+[1038]: https://github.com/Gallopsled/pwntools/pull/1038
+[1036]: https://github.com/Gallopsled/pwntools/pull/1036
+[1029]: https://github.com/Gallopsled/pwntools/pull/1029
+
 ## 3.9.0
 
 - [#1003][1003] Make `concat_all` faster while also simplifying it's logic
