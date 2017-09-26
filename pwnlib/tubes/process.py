@@ -332,11 +332,11 @@ class process(tube):
 
         if self.pty is not None:
             if stdin is slave:
-                self.proc.stdin = os.fdopen(os.dup(master), 'r+')
+                self.proc.stdin = os.fdopen(os.dup(master), 'r+', 0)
             if stdout is slave:
-                self.proc.stdout = os.fdopen(os.dup(master), 'r+')
+                self.proc.stdout = os.fdopen(os.dup(master), 'r+', 0)
             if stderr is slave:
-                self.proc.stderr = os.fdopen(os.dup(master), 'r+')
+                self.proc.stderr = os.fdopen(os.dup(master), 'r+', 0)
 
             os.close(master)
             os.close(slave)
