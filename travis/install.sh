@@ -119,7 +119,7 @@ setup_android_emulator()
     else
         if [ ! -f android-sdk/android ]; then
             # Install the SDK, which gives us the 'android' and 'emulator' commands
-            wget https://dl.google.com/android/android-sdk_r24.4.1-linux.tgz
+            wget -nv https://dl.google.com/android/android-sdk_r24.4.1-linux.tgz
             tar xf android-sdk_r24.4.1-linux.tgz
             rm  -f android-sdk_r24.4.1-linux.tgz
 
