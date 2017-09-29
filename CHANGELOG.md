@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.11.0](#3110)  | `dev`    | Dec 2, 2017 (planned)
 | [3.10.0](#3100)  | `beta`   | Oct 21, 2017 (planned)
-| [3.9.0](#390)    | `stable` | Sep 11, 2017
+| [3.9.1](#391)    | `stable` | Sep 28, 2017
+| [3.9.0](#390)    |          | Sep 11, 2017
 | [3.8.0](#380)    |          | Jul 29, 2017
 | [3.7.1](#371)    |          | Jul 14, 2017
 | [3.7.0](#370)    |          | Jun 19, 2017
@@ -44,6 +45,16 @@ To be released on Dec 2, 2017.
 ## 3.10.0
 
 To be released on Oct 21, 2017.
+
+## 3.9.1
+
+- [#1038][1038] Fix an issue with `process()` where glibc would buffer data internally, causing a hang on `select()`
+- [#1036][1036] Fix Travis CI logging verbosity
+- [#1029][1029] Fix some `unicode` issues when using the `readline` command history in `tube.interactive()`
+
+[1038]: https://github.com/Gallopsled/pwntools/pull/1038
+[1036]: https://github.com/Gallopsled/pwntools/pull/1036
+[1029]: https://github.com/Gallopsled/pwntools/pull/1029
 
 ## 3.9.0
 
