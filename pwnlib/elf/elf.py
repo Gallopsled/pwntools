@@ -55,6 +55,7 @@ from elftools.elf.enums import ENUM_P_TYPE
 from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
+from elftools.elf.segments import InterpSegment
 
 import intervaltree
 
@@ -605,8 +606,18 @@ class ELF(ELFFile):
         >>> any(map(lambda x: 'libc' in x, bash.libs.keys()))
         True
         """
-        if not self.get_section_by_name('.dynamic'):
+
+        # We need a .dynamic section for dynamically linked libraries
+        if not self.get_section_by_name('.dynamic') or self.statically_linked:
             self.libs= {}
+            return
+
+        # We must also specify a 'PT_INTERP', otherwise it's a 'statically-linked'
+        # binary which is also position-independent (and as such has a .dynamic).
+        for segment in self.iter_segments_by_type('PT_INTERP'):
+            break
+        else:
+            self.libs = {}
             return
 
         try:
