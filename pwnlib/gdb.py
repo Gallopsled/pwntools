@@ -374,7 +374,10 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
         args = _gdbserver_args(args=args, which=which)
     else:
         qemu_port = random.randint(1024, 65535)
-        args = [get_qemu_user(), '-g', str(qemu_port)] + args
+        qemu_user = get_qemu_user()
+        if not qemu_user:
+            log.error("Cannot debug %s binaries without appropriate QEMU binaries" % context.arch)
+        args = [qemu_user, '-g', str(qemu_port)] + args
 
     # Make sure gdbserver/qemu is installed
     if not which(args[0]):
