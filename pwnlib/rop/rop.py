@@ -713,7 +713,7 @@ class ROP(object):
                 # properly, but likely also need to adjust the stack past the
                 # arguments.
                 if slot.abi.returns:
-                    if remaining:
+                    if remaining or stackArguments:
                         nextGadgetAddr = stack.next
 
                         if len(stackArguments) > 0:
@@ -726,7 +726,7 @@ class ROP(object):
 
                             nextGadgetAddr += adjust.move
 
-                            stack.describe('<adjust: %s>' % self.describe(adjust))
+                            stack.describe('<adjust %#x: %s>' % (fix_bytes, self.describe(adjust)))
                             stack.append(adjust.address)
 
                             for pad in range(fix_bytes, adjust.move, context.bytes):
