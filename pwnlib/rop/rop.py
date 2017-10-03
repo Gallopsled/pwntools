@@ -229,6 +229,8 @@ class Padding(object):
     """
     Placeholder for exactly one pointer-width of padding.
     """
+    def __init__(self, name='<pad>'):
+        self.name = name
 
 class DescriptiveStack(list):
     """
@@ -483,14 +485,20 @@ class ROP(object):
         stack = []
 
         for gadget in winner:
+            moved = 8 # Account for the gadget itself
             goodregs = set(gadget.regs) & regset
             name = ",".join(goodregs)
             stack.append((gadget.address, gadget))
             for r in gadget.regs:
+                moved += 8
                 if r in registers:
                     stack.append((registers[r], r))
                 else:
-                    stack.append((Padding(), r))
+                    stack.append((Padding('<pad %s>' % r), r))
+
+            for slot in range(moved, gadget.move, context.bytes):
+                left = gadget.move - slot
+                stack.append((Padding('<pad %#x>' % left), 'stack padding'))
 
         return stack
 
@@ -717,7 +725,7 @@ class ROP(object):
 
             elif isinstance(slot, Padding):
                 stack[i] = self.generatePadding(i * context.bytes, context.bytes)
-                stack.describe('<pad>', slot_address)
+                stack.describe(slot.name, slot_address)
 
             elif isinstance(slot, Gadget):
                 stack[i] = slot.address
