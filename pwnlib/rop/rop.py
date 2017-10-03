@@ -729,7 +729,7 @@ class ROP(object):
                         if adjust:
                             nextGadgetAddr += adjust.move
 
-                            stack.describe('<adjust %#x: %s>' % (fix_bytes, self.describe(adjust)))
+                            stack.describe('<adjust @%#x> %s' % (nextGadgetAddr, self.describe(adjust)))
                             stack.append(adjust.address)
 
                             for pad in range(fix_bytes, adjust.move, context.bytes):
