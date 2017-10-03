@@ -713,17 +713,20 @@ class ROP(object):
                 # properly, but likely also need to adjust the stack past the
                 # arguments.
                 if slot.abi.returns:
+
+                    # Save off the address of the next gadget
                     if remaining or stackArguments:
                         nextGadgetAddr = stack.next
 
-                        if len(stackArguments) > 0:
-                            fix_size  = (1 + len(stackArguments))
-                            fix_bytes = fix_size * context.bytes
-                            adjust   = self.search(move = fix_bytes)
+                    # If there were arguments on the stack, we need to stick something
+                    # in the slot where the return address goes.
+                    if len(stackArguments) > 0:
+                        fix_size  = (1 + len(stackArguments))
+                        fix_bytes = fix_size * context.bytes
+                        adjust   = self.search(move = fix_bytes)
 
-                            if not adjust:
-                                log.error("Could not find gadget to adjust stack by %#x bytes" % fix_bytes)
-
+                        # If we were unable to find an adjustment, use it
+                        if adjust:
                             nextGadgetAddr += adjust.move
 
                             stack.describe('<adjust %#x: %s>' % (fix_bytes, self.describe(adjust)))
@@ -731,6 +734,15 @@ class ROP(object):
 
                             for pad in range(fix_bytes, adjust.move, context.bytes):
                                 stackArguments.append(Padding())
+
+                        # We could not find a proper "adjust" gadget, but also didn't need one.
+                        elif not remaining:
+                            stack.append(Padding())
+
+                        # We really needed the adjustment to proceed
+                        else:
+                            log.error("Could not find gadget to adjust stack by %#x bytes" % fix_bytes)
+
 
                 for i, argument in enumerate(stackArguments):
 
