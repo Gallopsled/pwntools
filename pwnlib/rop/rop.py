@@ -128,6 +128,48 @@ Let's try it out!
     >>> print p.recvall(timeout=5)
     The flag
 
+ROP Example (amd64)
+-------------------
+
+For amd64 binaries, the registers are loaded off the stack.  Pwntools can do
+basic reasoning about simple "pop; pop; add; ret"-style gadgets, and satisfy
+requirements so that everything "just works".
+
+    >>> context.clear(arch='amd64')
+    >>> assembly = 'pop rdx; pop rdi; pop rsi; add rsp, 0x20; ret; target: ret'
+    >>> binary = ELF.from_assembly(assembly)
+    >>> rop = ROP(binary)
+    >>> rop.target(1,2,3)
+    >>> print rop.dump()
+    0x0000:       0x10000000 pop rdx; pop rdi; pop rsi; add rsp, 0x20; ret
+    0x0008:              0x3 [arg2] rdx = 3
+    0x0010:              0x1 [arg0] rdi = 1
+    0x0018:              0x2 [arg1] rsi = 2
+    0x0020:       'iaaajaaa' <pad 0x20>
+    0x0028:       'kaaalaaa' <pad 0x18>
+    0x0030:       'maaanaaa' <pad 0x10>
+    0x0038:       'oaaapaaa' <pad 0x8>
+    0x0040:       0x10000008 target
+    >>> rop.target(1)
+    >>> print rop.dump()
+    0x0000:       0x10000000 pop rdx; pop rdi; pop rsi; add rsp, 0x20; ret
+    0x0008:              0x3 [arg2] rdx = 3
+    0x0010:              0x1 [arg0] rdi = 1
+    0x0018:              0x2 [arg1] rsi = 2
+    0x0020:       'iaaajaaa' <pad 0x20>
+    0x0028:       'kaaalaaa' <pad 0x18>
+    0x0030:       'maaanaaa' <pad 0x10>
+    0x0038:       'oaaapaaa' <pad 0x8>
+    0x0040:       0x10000008 target
+    0x0048:       0x10000001 pop rdi; pop rsi; add rsp, 0x20; ret
+    0x0050:              0x1 [arg0] rdi = 1
+    0x0058:       'waaaxaaa' <pad rsi>
+    0x0060:       'yaaazaab' <pad 0x20>
+    0x0068:       'baabcaab' <pad 0x18>
+    0x0070:       'daabeaab' <pad 0x10>
+    0x0078:       'faabgaab' <pad 0x8>
+    0x0080:       0x10000008 target
+
 ROP + Sigreturn
 -----------------------
 
