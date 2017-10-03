@@ -739,7 +739,7 @@ class ROP(object):
 
                         # We could not find a proper "adjust" gadget, but also didn't need one.
                         else:
-                            stack.append(Padding())
+                            stack.append(Padding("<return address>"))
 
 
                 for i, argument in enumerate(stackArguments):
