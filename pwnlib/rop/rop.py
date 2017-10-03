@@ -672,20 +672,23 @@ class ROP(object):
                 # arguments.
                 if slot.abi.returns:
                     if remaining:
-                        fix_size  = (1 + len(stackArguments))
-                        fix_bytes = fix_size * context.bytes
-                        adjust   = self.search(move = fix_bytes)
+                        nextGadgetAddr = stack.next
 
-                        if not adjust:
-                            log.error("Could not find gadget to adjust stack by %#x bytes" % fix_bytes)
+                        if len(stackArguments) > 0:
+                            fix_size  = (1 + len(stackArguments))
+                            fix_bytes = fix_size * context.bytes
+                            adjust   = self.search(move = fix_bytes)
 
-                        nextGadgetAddr = stack.next + adjust.move
+                            if not adjust:
+                                log.error("Could not find gadget to adjust stack by %#x bytes" % fix_bytes)
 
-                        stack.describe('<adjust: %s>' % self.describe(adjust))
-                        stack.append(adjust.address)
+                            nextGadgetAddr += adjust.move
 
-                        for pad in range(fix_bytes, adjust.move, context.bytes):
-                            stackArguments.append(Padding())
+                            stack.describe('<adjust: %s>' % self.describe(adjust))
+                            stack.append(adjust.address)
+
+                            for pad in range(fix_bytes, adjust.move, context.bytes):
+                                stackArguments.append(Padding())
 
                 for i, argument in enumerate(stackArguments):
 
