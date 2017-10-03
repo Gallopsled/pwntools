@@ -721,12 +721,14 @@ class ROP(object):
                     # If there were arguments on the stack, we need to stick something
                     # in the slot where the return address goes.
                     if len(stackArguments) > 0:
-                        fix_size  = (1 + len(stackArguments))
-                        fix_bytes = fix_size * context.bytes
-                        adjust   = self.search(move = fix_bytes)
+                        if remaining:
+                            fix_size  = (1 + len(stackArguments))
+                            fix_bytes = fix_size * context.bytes
+                            adjust   = self.search(move = fix_bytes)
 
-                        # If we were unable to find an adjustment, use it
-                        if adjust:
+                            if not adjust:
+                                log.error("Could not find gadget to adjust stack by %#x bytes" % fix_bytes)
+
                             nextGadgetAddr += adjust.move
 
                             stack.describe('<adjust @%#x> %s' % (nextGadgetAddr, self.describe(adjust)))
@@ -736,12 +738,8 @@ class ROP(object):
                                 stackArguments.append(Padding())
 
                         # We could not find a proper "adjust" gadget, but also didn't need one.
-                        elif not remaining:
-                            stack.append(Padding())
-
-                        # We really needed the adjustment to proceed
                         else:
-                            log.error("Could not find gadget to adjust stack by %#x bytes" % fix_bytes)
+                            stack.append(Padding())
 
 
                 for i, argument in enumerate(stackArguments):
