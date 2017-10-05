@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.11.0](#3110)  | `dev`    | Dec 2, 2017 (planned)
 | [3.10.0](#3100)  | `beta`   | Oct 21, 2017 (planned)
-| [3.9.1](#391)    | `stable` | Sep 28, 2017
+| [3.9.2](#392)    | `stable` | Oct 5, 2017
+| [3.9.1](#391)    |          | Sep 28, 2017
 | [3.9.0](#390)    |          | Sep 11, 2017
 | [3.8.0](#380)    |          | Jul 29, 2017
 | [3.7.1](#371)    |          | Jul 14, 2017
@@ -45,6 +46,12 @@ To be released on Dec 2, 2017.
 ## 3.10.0
 
 To be released on Oct 21, 2017.
+
+## 3.9.2
+
+- [#1043][1043] Do not attempt to populate the libraries used by statically-linked binaries
+
+[1043]: https://github.com/Gallopsled/pwntools/pull/1043
 
 ## 3.9.1
 
