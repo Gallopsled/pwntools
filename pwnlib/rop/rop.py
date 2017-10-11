@@ -67,7 +67,6 @@ The stack is automatically adjusted for the next frame
     0x0034:              0x9 arg2
     0x0038:           'oaaa' <pad>
     0x003c:       0xfeedface exit()
-    0x0040:           'qaaa' <pad>
 
 ROP Example
 -------------------
@@ -113,13 +112,12 @@ Finally, let's build our ROP stack
     0x0010:              0x8 arg2
     0x0014:           'faaa' <pad>
     0x0018:       0x1000002f exit()
-    0x001c:           'haaa' <pad>
 
 The raw data from the ROP stack is available via `str`.
 
     >>> raw_rop = str(rop)
     >>> print enhex(raw_rop)
-    120000100e000010010000002600001008000000666161612f00001068616161
+    120000100e000010010000002600001008000000666161612f000010
 
 Let's try it out!
 
@@ -399,7 +397,7 @@ class ROP(object):
     0x804801c:       0x10000007 <adjust @0x8048024> pop eax; ret
     0x8048020:              0x3 arg0
     0x8048024:       0x10000007 pop eax; ret
-    0x8048028:             0x77
+    0x8048028:             0x77 [arg0] eax = SYS_sigreturn
     0x804802c:       0x10000000 int 0x80
     0x8048030:              0x0 gs
     0x8048034:              0x0 fs
@@ -1154,7 +1152,8 @@ class ROP(object):
         regs = set(regs or ())
 
         for addr, gadget in self.gadgets.items():
-            if gadget.move < move:          continue
+            if gadget.insns[-1] != 'ret':        continue
+            if gadget.move < move:               continue
             if not (regs <= set(gadget.regs)):   continue
             yield gadget
 
