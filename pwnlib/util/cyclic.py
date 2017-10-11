@@ -195,6 +195,12 @@ def cyclic_find(subseq, alphabet = None, n = None):
         4
         >>> cyclic_find(0x61616162, endian='big')
         1
+
+        You can use anything for the cyclic pattern, including non-printable
+        characters.
+
+        >>> cyclic_find(0x00000000, alphabet=unhex('DEADBEEF00'))
+        621
     """
 
     if n is None:
