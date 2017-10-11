@@ -501,6 +501,10 @@ class ROP(object):
         best_gadgets = {}
 
         for gadget in self.gadgets.values():
+            # Do not use gadgets which end in e.g. "int 0x80"
+            if gadget.insns[-1] != 'ret':
+                continue
+
             touched = tuple(regset & set(gadget.regs))
 
             if not touched:
