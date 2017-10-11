@@ -103,7 +103,11 @@ def cyclic(length = None, alphabet = None, n = None):
 
         >>> context.cyclic_alphabet = "ABC"
         >>> cyclic(10)
-        'AAAABAAACAABBAABCAAC'
+        'AAAABAAACA'
+
+        The original values can always be restored with:
+
+        >>> context.clear()
 
         The following just a test to make sure the length is correct.
 
