@@ -242,6 +242,7 @@ import hashlib
 import itertools
 import os
 import re
+import string
 import sys
 import tempfile
 
@@ -258,9 +259,9 @@ from pwnlib.rop.call import CurrentStackPointer
 from pwnlib.rop.call import NextGadgetAddress
 from pwnlib.rop.call import StackAdjustment
 from pwnlib.rop.gadgets import Gadget
-from pwnlib.util import cyclic
 from pwnlib.util import lists
 from pwnlib.util import packing
+from pwnlib.util.cyclic import cyclic
 from pwnlib.util.packing import *
 
 log = getLogger(__name__)
@@ -420,25 +421,24 @@ class ROP(object):
     0x8048074:              0x0 esp_at_signal
     0x8048078:             0x2b ss
     0x804807c:              0x0 fpstate
+
+
+    >>> elf = ELF.from_assembly('ret')
+    >>> r = ROP(elf)
+    >>> r.ret.address == 0x10000000
+    True
+    >>> r = ROP(elf, badchars='\x00')
+    >>> r.gadgets == {}
+    True
+    >>> r.ret is None
+    True
     """
-    #: List of individual ROP gadgets, ROP calls, SROP frames, etc.
-    #: This is intended to be the highest-level abstraction that we can muster.
-    _chain = []
-
-    #: List of ELF files which are available for mining gadgets
-    elfs = []
-
-    #: Stack address where the first byte of the ROP chain lies, if known.
-    base = 0
-
-    #: Whether or not the ROP chain directly sets the stack pointer to a value
-    #: which is not contiguous
-    migrated = False
-
-    def __init__(self, elfs, base = None, **kwargs):
+    def __init__(self, elfs, base = None, badchars = '', **kwargs):
         """
         Arguments:
             elfs(list): List of :class:`.ELF` objects for mining
+            base(int): Stack address where the first byte of the ROP chain lies, if known.
+            badchars(str): Characters which should not appear in ROP gadget addresses.
         """
         import ropgadget
 
@@ -447,10 +447,24 @@ class ROP(object):
             elfs = [elfs]
         elif isinstance(elfs, (str, unicode)):
             elfs = [ELF(elfs)]
-        self.elfs = elfs
+
+        #: List of individual ROP gadgets, ROP calls, SROP frames, etc.
+        #: This is intended to be the highest-level abstraction that we can muster.
         self._chain = []
+
+        #: List of ELF files which are available for mining gadgets
+        self.elfs = elfs
+
+        #: Stack address where the first byte of the ROP chain lies, if known.
         self.base = base
+
+        #: Whether or not the ROP chain directly sets the stack pointer to a value
+        #: which is not contiguous
         self.migrated = False
+
+        #: Characters which should not appear in ROP gadget addresses.
+        self._badchars = set(badchars)
+
         self.__load()
 
     @staticmethod
@@ -596,8 +610,12 @@ class ROP(object):
         ''
 
         """
+
+        # Ensure we don't generate a cyclic pattern which contains badchars
+        alphabet = ''.join(c for c in string.ascii_lowercase if c not in self._badchars)
+
         if count:
-            return cyclic.cyclic(offset + count)[-count:]
+            return cyclic(offset + count, alphabet=alphabet)[-count:]
         return ''
 
     def describe(self, object):
@@ -1082,6 +1100,11 @@ class ROP(object):
         }[context.bytes]
 
         for addr, insns in gadgets.items():
+
+            # Filter out gadgets by address against badchars
+            if set(pack(addr)) & self._badchars:
+                continue
+
             sp_move = 0
             regs = []
             for insn in insns:
