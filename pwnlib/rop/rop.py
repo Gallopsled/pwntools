@@ -40,7 +40,7 @@ standard Linux ABIs.
     0x0004:       0x64636261
     0x0008:              0x2
     0x000c:       0xdeadbeef read(4, 5, 6)
-    0x0010:           'eaaa' <pad>
+    0x0010:           'eaaa' <return address>
     0x0014:              0x4 arg0
     0x0018:              0x5 arg1
     0x001c:              0x6 arg2
@@ -55,13 +55,13 @@ The stack is automatically adjusted for the next frame
     0x0004:       0x64636261
     0x0008:              0x2
     0x000c:       0xdeadbeef read(4, 5, 6)
-    0x0010:       0x10000000 <adjust: add esp, 0x10; ret>
+    0x0010:       0x10000000 <adjust @0x24> add esp, 0x10; ret
     0x0014:              0x4 arg0
     0x0018:              0x5 arg1
     0x001c:              0x6 arg2
     0x0020:           'iaaa' <pad>
     0x0024:       0xdecafbad write(7, 8, 9)
-    0x0028:       0x10000000 <adjust: add esp, 0x10; ret>
+    0x0028:       0x10000000 <adjust @0x3c> add esp, 0x10; ret
     0x002c:              0x7 arg0
     0x0030:              0x8 arg1
     0x0034:              0x9 arg2
@@ -107,7 +107,7 @@ Finally, let's build our ROP stack
     >>> rop.exit()
     >>> print rop.dump()
     0x0000:       0x10000012 write(STDOUT_FILENO, 268435494, 8)
-    0x0004:       0x1000000e <adjust: add esp, 0x10; ret>
+    0x0004:       0x1000000e <adjust @0x18> add esp, 0x10; ret
     0x0008:              0x1 arg0
     0x000c:       0x10000026 flag
     0x0010:              0x8 arg2
@@ -202,7 +202,7 @@ That's all there is to it.
 
     >>> print rop.dump()
     0x0000:       0x1000000e pop eax; ret
-    0x0004:             0x77
+    0x0004:             0x77 [arg0] eax = SYS_sigreturn
     0x0008:       0x1000000b int 0x80
     0x000c:              0x0 gs
     0x0010:              0x0 fs
@@ -351,16 +351,16 @@ class ROP(object):
     >>> r.execve(4, 5, 6)
     >>> print r.dump()
     0x0000:       0x10001234 funcname(1, 2)
-    0x0004:       0x10000003 <adjust: add esp, 0x10; ret>
+    0x0004:       0x10000003 <adjust @0x18> add esp, 0x10; ret
     0x0008:              0x1 arg0
     0x000c:              0x2 arg1
     0x0010:           'eaaa' <pad>
     0x0014:           'faaa' <pad>
     0x0018:       0x10001234 funcname(3)
-    0x001c:       0x10000007 <adjust: pop eax; ret>
+    0x001c:       0x10000007 <adjust @0x24> pop eax; ret
     0x0020:              0x3 arg0
     0x0024:       0x10000007 pop eax; ret
-    0x0028:             0x77
+    0x0028:             0x77 [arg0] eax = SYS_sigreturn
     0x002c:       0x10000000 int 0x80
     0x0030:              0x0 gs
     0x0034:              0x0 fs
@@ -389,13 +389,13 @@ class ROP(object):
     >>> r.execve(4, 5, 6)
     >>> print r.dump()
     0x8048000:       0x10001234 funcname(1, 2)
-    0x8048004:       0x10000003 <adjust: add esp, 0x10; ret>
+    0x8048004:       0x10000003 <adjust @0x8048018> add esp, 0x10; ret
     0x8048008:              0x1 arg0
     0x804800c:              0x2 arg1
     0x8048010:           'eaaa' <pad>
     0x8048014:           'faaa' <pad>
     0x8048018:       0x10001234 funcname(3)
-    0x804801c:       0x10000007 <adjust: pop eax; ret>
+    0x804801c:       0x10000007 <adjust @0x8048024> pop eax; ret
     0x8048020:              0x3 arg0
     0x8048024:       0x10000007 pop eax; ret
     0x8048028:             0x77
