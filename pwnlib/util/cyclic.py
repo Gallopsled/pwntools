@@ -182,7 +182,7 @@ def cyclic_find(subseq, alphabet = None, n = None):
         If you provided e.g. `n=8` to `cyclic` to generate larger subsequences,
         you must explicitly provide that argument.
 
-        >>> cyclic_fid('baaacaaa', n=8)
+        >>> cyclic_find('baaacaaa', n=8)
         3515208
 
         We can generate a large cyclic pattern, and grab a subset of it to
