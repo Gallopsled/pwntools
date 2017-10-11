@@ -43,6 +43,13 @@ The table below shows which release corresponds to each branch, and what date th
 
 To be released on Dec 2, 2017.
 
+- [#1044][1044] Enhancements to ROP
+    + Much better support for 64-bit Intel (amd64) ROP
+    + ROP gadget selection is optimized to favor multi-pops instead of multiple single-pop gadgets
+    + Added support for blacklisting byte values in ROP gadget addresses
+
+[1044]: https://github.com/Gallopsled/pwntools/pull/1044
+
 ## 3.10.0
 
 To be released on Oct 21, 2017.
