@@ -201,8 +201,7 @@ def cyclic_find(subseq, alphabet = None, n = None):
         n = context.cyclic_size
 
     if isinstance(subseq, (int, long)):
-        width = n * 8
-        subseq = packing.pack(subseq, width)
+        subseq = packing.pack(subseq, bytes=n)
 
     if len(subseq) != n:
         log.warn_once("cyclic_find() expects %i-byte subsequences by default, you gave %r\n"\
