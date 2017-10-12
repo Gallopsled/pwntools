@@ -47,8 +47,12 @@ To be released on Dec 2, 2017.
     + Much better support for 64-bit Intel (amd64) ROP
     + ROP gadget selection is optimized to favor multi-pops instead of multiple single-pop gadgets
     + Added support for blacklisting byte values in ROP gadget addresses
+- [#1049][1049] Enhancements to `cyclic`
+    + `context` now has two additional attributes, `cyclic_alphabet` and `cyclic_length`, which correspond to the arguments `alphabet` and `n` to `cyclic()` and `cyclic_find()` and related routines.
+    + The motivation for this change is to allow setting the `alphabet` globally, so that any padding / patterns generated internally to pwntools can be controlled.  The specific motivation is blacklisting values in ROP padding.
 
 [1044]: https://github.com/Gallopsled/pwntools/pull/1044
+[1049]: https://github.com/Gallopsled/pwntools/pull/1049
 
 ## 3.10.0
 
