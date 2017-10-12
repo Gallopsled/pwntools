@@ -60,6 +60,7 @@ from elftools.elf.segments import InterpSegment
 import intervaltree
 
 from pwnlib import adb
+from pwnlib import qemu
 from pwnlib.asm import *
 from pwnlib.context import LocalContext
 from pwnlib.context import context
@@ -68,7 +69,6 @@ from pwnlib.elf.config import parse_kconfig
 from pwnlib.elf.datatypes import constants
 from pwnlib.elf.plt import emulate_plt_instructions
 from pwnlib.log import getLogger
-from pwnlib.qemu import get_qemu_arch
 from pwnlib.term import text
 from pwnlib.tubes.process import process
 from pwnlib.util import misc
@@ -260,6 +260,11 @@ class ELF(ELFFile):
             or mask(flags, E_FLAGS.EF_MIPS_ARCH_64R2):
                 self.arch = 'mips64'
                 self.bits = 64
+
+        # Is this a native binary? Should we be checking QEMU?
+        with context.local(arch=self.arch):
+            #: Whether this ELF should be able to run natively
+            self.native = context.native
 
         self._address = 0
         if self.elftype != 'DYN':
@@ -630,10 +635,11 @@ class ELF(ELFFile):
                 if os.path.exists(lib):
                     continue
 
-                qemu_lib = '/etc/qemu-binfmt/%s/%s' % (get_qemu_arch(arch=self.arch), lib)
-
-                if os.path.exists(qemu_lib):
-                    libs[os.path.realpath(qemu_lib)] = libs.pop(lib)
+                if not self.native:
+                    ld_prefix = qemu.ld_prefix()
+                    qemu_lib = os.path.exists(os.path.join(ld_prefix, lib))
+                    if qemu_lib:
+                        libs[os.path.realpath(qemu_lib)] = libs.pop(lib)
 
             self.libs = libs
 

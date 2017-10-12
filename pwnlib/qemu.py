@@ -10,14 +10,14 @@ from pwnlib.util import misc
 log = getLogger(__name__)
 
 @LocalContext
-def get_qemu_arch():
+def archname():
     """
     Returns the name which QEMU uses for the currently selected
     architecture.
 
-    >>> get_qemu_arch()
+    >>> pwnlib.qemu.archname()
     'i386'
-    >>> get_qemu_arch(arch='powerpc')
+    >>> pwnlib.qemu.archname(arch='powerpc')
     'ppc'
     """
     return {
@@ -33,17 +33,17 @@ def get_qemu_arch():
     }.get((context.arch, context.endian), context.arch)
 
 @LocalContext
-def get_qemu_user():
+def user_path():
     """
     Returns the path to the QEMU-user binary for the currently
     selected architecture.
 
-    >>> get_qemu_user()
+    >>> pwnlib.qemu.user_path()
     'qemu-i386-static'
-    >>> get_qemu_user(arch='thumb')
+    >>> pwnlib.qemu.user_path(arch='thumb')
     'qemu-arm-static'
     """
-    arch   = get_qemu_arch()
+    arch   = archname()
     normal = 'qemu-' + arch
     static = normal + '-static'
 
@@ -56,10 +56,10 @@ def get_qemu_user():
     log.warn_once("Neither %r nor %r are available" % (normal, static))
 
 @LocalContext
-def qemu_ld_prefix(path=None, env=None):
+def ld_prefix(path=None, env=None):
     """Returns the linker prefix for the selected qemu-user binary
 
-    >>> qemu_ld_prefix(arch='arm')
+    >>> pwnlib.qemu.ld_prefix(arch='arm')
     '/etc/qemu-binfmt/arm'
     """
     if path is None:
@@ -82,3 +82,4 @@ def qemu_ld_prefix(path=None, env=None):
     name, libpath = line.split('=', 1)
 
     return libpath.strip()
+

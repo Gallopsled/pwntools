@@ -100,6 +100,7 @@ import time
 from pwnlib import adb
 from pwnlib import atexit
 from pwnlib import elf
+from pwnlib import qemu
 from pwnlib import tubes
 from pwnlib.asm import _bfdname
 from pwnlib.asm import make_elf
@@ -107,7 +108,6 @@ from pwnlib.asm import make_elf_from_assembly
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.log import getLogger
-from pwnlib.qemu import get_qemu_user
 from pwnlib.util import misc
 from pwnlib.util import proc
 
@@ -374,7 +374,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
         args = _gdbserver_args(args=args, which=which)
     else:
         qemu_port = random.randint(1024, 65535)
-        qemu_user = get_qemu_user()
+        qemu_user = qemu.user_path()
         if not qemu_user:
             log.error("Cannot debug %s binaries without appropriate QEMU binaries" % context.arch)
         args = [qemu_user, '-g', str(qemu_port)] + args
