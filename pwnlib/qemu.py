@@ -1,3 +1,29 @@
+"""Run foreign-architecture binaries
+
+So you want to exploit ARM binaries on your Intel PC?
+
+Pwntools has a good level of integration with QEMU user-mode emulation,
+in order to run, debug, and pwn foreign architecture binaries.
+
+In general, everything magic happens "behind the scenes", and pwntools
+attempts to make your life easier.
+
+When using :class:`.process.process`, pwntools will attempt to blindly
+execute the binary, in case your system is configured to use ``binfmt-misc``.
+
+If this fails, pwntools will attempt to manually launch the binary under
+qemu user-mode emulation.  Preference is given to statically-linked variants,
+i.e. ``qemu-arm-static`` will be selected before ``qemu-arm``.
+
+When debugging binaries with :func:`.gdb.debug`, pwntools automatically adds
+the appropriate command-line flags to QEMU to start its GDB stub, and
+automatically informs GDB of the correct architecture and sysroot.
+
+You can override the default sysroot by setting the ``QEMU_LD_PREFIX``
+environment variable.  This affects where ``qemu`` will look for files when
+``open()`` is called, e.g. when the linker is attempting to resolve ``libc.so``.
+
+"""
 from __future__ import absolute_import
 
 import os

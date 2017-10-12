@@ -365,6 +365,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
 
     runner = _get_runner(ssh)
     which  = _get_which(ssh)
+    sysroot = None
 
     if context.noptrace:
         log.warn_once("Skipping debugger since context.noptrace==True")
@@ -375,6 +376,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
     else:
         qemu_port = random.randint(1024, 65535)
         qemu_user = qemu.user_path()
+        sysroot = qemu.ld_prefix(env)
         if not qemu_user:
             log.error("Cannot debug %s binaries without appropriate QEMU binaries" % context.arch)
         args = [qemu_user, '-g', str(qemu_port)] + args
@@ -404,7 +406,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
     if not ssh and context.os == 'android':
         host = context.adb_host
 
-    attach((host, port), exe=exe, gdbscript=gdbscript, need_ptrace_scope = False, ssh=ssh)
+    attach((host, port), exe=exe, gdbscript=gdbscript, need_ptrace_scope = False, ssh=ssh, sysroot=sysroot)
 
     # gdbserver outputs a message when a client connects
     garbage = gdbserver.recvline(timeout=1)
@@ -446,7 +448,7 @@ def binary():
     return gdb
 
 @LocalContext
-def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_args = None, ssh = None):
+def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_args = None, ssh = None, sysroot = None):
     """attach(target, gdbscript = None, exe = None, arch = None, ssh = None) -> None
 
     Start GDB in a new terminal and attach to `target`.
@@ -458,6 +460,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         arch(str): Architechture of the target binary.  If `exe` known GDB will
           detect the architechture automatically (if it is supported).
         gdb_args(list): List of additional arguments to pass to GDB.
+        sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
 
     Returns:
         PID of the GDB process (or the window which it is running in).
@@ -560,6 +563,8 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
     if not context.native:
         pre += 'set endian %s\n' % context.endian
         pre += 'set architecture %s\n' % get_gdb_arch()
+        if sysroot:
+            pre += 'set sysroot %s\n' % sysroot
 
         if context.os == 'android':
             pre += 'set gnutarget ' + _bfdname() + '\n'
