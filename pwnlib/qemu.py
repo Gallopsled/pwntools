@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+import os
+
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -52,3 +54,31 @@ def get_qemu_user():
         return normal
 
     log.warn_once("Neither %r nor %r are available" % (normal, static))
+
+@LocalContext
+def qemu_ld_prefix(path=None, env=None):
+    """Returns the linker prefix for the selected qemu-user binary
+
+    >>> qemu_ld_prefix(arch='arm')
+    '/etc/qemu-binfmt/arm'
+    """
+    if path is None:
+        path = get_qemu_user()
+
+    # Did we explicitly specify the path in an environment variable?
+    if 'QEMU_LD_PREFIX' in env:
+        return env['QEMU_LD_PREFIX']
+
+    if 'QEMU_LD_PREFIX' in os.environ:
+        return os.environ['QEMU_LD_PREFIX']
+
+    # Cyclic imports!
+    from pwnlib.tubes.process import process
+
+    with context.quiet:
+        with process([path, '--help'], env=env) as io:
+            line = io.recvline_regex('QEMU_LD_PREFIX *=')
+
+    name, libpath = line.split('=', 1)
+
+    return libpath.strip()
