@@ -67,6 +67,7 @@ from pwnlib.context import context
 from pwnlib.elf.config import kernel_configuration
 from pwnlib.elf.config import parse_kconfig
 from pwnlib.elf.datatypes import constants
+from pwnlib.elf.maps import patch_elf_and_read_maps
 from pwnlib.elf.plt import emulate_plt_instructions
 from pwnlib.log import getLogger
 from pwnlib.term import text
@@ -325,12 +326,14 @@ class ELF(ELFFile):
             log.warn("Could not populate PLT: %s", e)
 
         self._populate_synthetic_symbols()
-        self._populate_libraries()
         self._populate_functions()
         self._populate_kernel_version()
 
         if checksec:
             self._describe()
+
+        self._libs = None
+        self._maps = None
 
     @staticmethod
     @LocalContext
@@ -466,6 +469,41 @@ class ELF(ELFFile):
             if t == seg.header.p_type or t in str(seg.header.p_type):
                 yield seg
 
+    def get_segment_for_address(self, address, size=1):
+        """get_segment_for_address(address, size=1) -> Segment
+
+        Given a virtual address described by a ``PT_LOAD`` segment, return the
+        first segment which describes the virtual address.  An optional ``size``
+        may be provided to ensure the entire range falls into the same segment.
+
+        Arguments:
+            address(int): Virtual address to find
+            size(int): Number of bytes which must be available after ``address``
+                in **both** the file-backed data for the segment, and the memory
+                region which is reserved for the data.
+
+        Returns:
+            Either returns a :class:`.segments.Segment` object, or ``None``.
+        """
+        for seg in self.iter_segments_by_type("PT_LOAD"):
+            mem_start = seg.header.p_vaddr
+            mem_stop  = seg.header.p_memsz + mem_start
+
+            if not (mem_start <= address <= address+size < mem_stop):
+                continue
+
+            offset = self.vaddr_to_offset(address)
+
+            file_start = seg.header.p_offset
+            file_stop  = seg.header.p_filesz + file_start
+
+            if not (file_start <= offset <= offset+size < file_stop):
+                continue
+
+            return seg
+
+        return None
+
     @property
     def sections(self):
         """
@@ -591,6 +629,20 @@ class ELF(ELFFile):
         return [s for s in self.segments if not s.header.p_flags & P_FLAGS.PF_W]
 
     @property
+    def libs(self):
+        """Dictionary of {path: address} for every library loaded for this ELF."""
+        if self._libs is None:
+            self._populate_libraries()
+        return self._libs
+
+    @property
+    def maps(self):
+        """Dictionary of {name: address} for every mapping in this ELF's address space."""
+        if self._maps is None:
+            self._populate_libraries()
+        return self._maps
+
+    @property
     def libc(self):
         """:class:`.ELF`: If this :class:`.ELF` imports any libraries which contain ``'libc[.-]``,
         and we can determine the appropriate path to it on the local
@@ -611,40 +663,31 @@ class ELF(ELFFile):
         >>> any(map(lambda x: 'libc' in x, bash.libs.keys()))
         True
         """
+        # Patch some shellcode into the ELF and run it.
+        maps = patch_elf_and_read_maps(self)
 
-        # We need a .dynamic section for dynamically linked libraries
-        if not self.get_section_by_name('.dynamic') or self.statically_linked:
-            self.libs= {}
-            return
+        self._maps = maps
+        self._libs = {}
 
-        # We must also specify a 'PT_INTERP', otherwise it's a 'statically-linked'
-        # binary which is also position-independent (and as such has a .dynamic).
-        for segment in self.iter_segments_by_type('PT_INTERP'):
-            break
-        else:
-            self.libs = {}
-            return
+        for lib, address in maps.items():
 
-        try:
-            cmd = 'ulimit -s unlimited; LD_TRACE_LOADED_OBJECTS=1 LD_WARN=1 LD_BIND_NOW=1 %s 2>/dev/null' % sh_string(self.path)
+            # Filter out [stack] and such from the library listings
+            if lib.startswith('['):
+                continue
 
-            data = subprocess.check_output(cmd, shell = True, stderr = subprocess.STDOUT)
-            libs = misc.parse_ldd_output(data)
+            # Any existing files we can just use
+            if os.path.exists(lib):
+                self._libs[lib] = address
 
-            for lib in dict(libs):
-                if os.path.exists(lib):
-                    continue
+            # Try etc/qemu-binfmt, as per Ubuntu
+            if not self.native:
+                ld_prefix = qemu.ld_prefix()
 
-                if not self.native:
-                    ld_prefix = qemu.ld_prefix()
-                    qemu_lib = os.path.exists(os.path.join(ld_prefix, lib))
-                    if qemu_lib:
-                        libs[os.path.realpath(qemu_lib)] = libs.pop(lib)
+                qemu_lib = os.path.join(ld_prefix, lib)
+                qemu_lib = os.path.realpath(qemu_lib)
 
-            self.libs = libs
-
-        except subprocess.CalledProcessError:
-            self.libs = {}
+                if os.path.exists(qemu_lib):
+                    self._libs[qemu_lib] = address
 
     def _populate_functions(self):
         """Builds a dict of 'functions' (i.e. symbols of type 'STT_FUNC')
