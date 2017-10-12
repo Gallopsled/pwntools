@@ -137,7 +137,7 @@ def ld_prefix(path=None, env=None):
     '/etc/qemu-binfmt/arm'
     """
     if path is None:
-        path = get_qemu_user()
+        path = user_path()
 
     # Did we explicitly specify the path in an environment variable?
     if 'QEMU_LD_PREFIX' in env:
