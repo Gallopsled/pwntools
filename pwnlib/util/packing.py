@@ -58,7 +58,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
 
     Arguments:
         number (int): Number to convert
-        word_size (int): Word size of the converted integer or the string 'all'.
+        word_size (int): Word size of the converted integer or the string 'all' (in bits).
         endianness (str): Endianness of the converted integer ("little"/"big")
         sign (str): Signedness of the converted integer (False/True)
         kwargs: Anything that can be passed to context.local
@@ -171,7 +171,7 @@ def unpack(data, word_size = None):
 
     Arguments:
         number (int): String to convert
-        word_size (int): Word size of the converted integer or the string "all".
+        word_size (int): Word size of the converted integer or the string "all" (in bits).
         endianness (str): Endianness of the converted integer ("little"/"big")
         sign (str): Signedness of the converted integer (False/True)
         kwargs: Anything that can be passed to context.local
@@ -237,7 +237,7 @@ def unpack_many(data, word_size = None):
 
     Args
         number (int): String to convert
-        word_size (int): Word size of the converted integers or the string "all".
+        word_size (int): Word size of the converted integers or the string "all" (in bits).
         endianness (str): Endianness of the converted integer ("little"/"big")
         sign (str): Signedness of the converted integer (False/True)
         kwargs: Anything that can be passed to context.local
@@ -366,7 +366,7 @@ def make_packer(word_size = None, sign = None, **kwargs):
     faster to call this function, since it will then use a specialized version.
 
     Arguments:
-        word_size (int): The word size to be baked into the returned packer or the string all.
+        word_size (int): The word size to be baked into the returned packer or the string all (in bits).
         endianness (str): The endianness to be baked into the returned packer. ("little"/"big")
         sign (str): The signness to be baked into the returned packer. ("unsigned"/"signed")
         kwargs: Additional context flags, for setting by alias (e.g. ``endian=`` rather than index)
@@ -429,7 +429,7 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
     faster to call this function, since it will then use a specialized version.
 
     Arguments:
-        word_size (int): The word size to be baked into the returned packer.
+        word_size (int): The word size to be baked into the returned packer (in bits).
         endianness (str): The endianness to be baked into the returned packer. ("little"/"big")
         sign (str): The signness to be baked into the returned packer. ("unsigned"/"signed")
         kwargs: Additional context flags, for setting by alias (e.g. ``endian=`` rather than index)
@@ -525,7 +525,7 @@ def flat(*args, **kwargs):
       preprocessor (function): Gets called on every element to optionally
          transform the element before flattening. If :const:`None` is
          returned, then the original value is uded.
-      word_size (int): Word size of the converted integer.
+      word_size (int): Word size of the converted integer (in bits).
       endianness (str): Endianness of the converted integer ("little"/"big").
       sign (str): Signedness of the converted integer (False/True)
 
@@ -577,7 +577,7 @@ def fit(pieces=None, **kwargs):
       preprocessor (function): Gets called on every element to optionally
          transform the element before flattening. If :const:`None` is
          returned, then the original value is used.
-      word_size (int): Word size of the converted integer.
+      word_size (int): Word size of the converted integer (in bits).
       endianness (str): Endianness of the converted integer ("little"/"big").
       sign (str): Signedness of the converted integer (False/True)
 
