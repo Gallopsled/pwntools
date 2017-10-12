@@ -1,5 +1,8 @@
 """Run foreign-architecture binaries
 
+Overview
+--------
+
 So you want to exploit ARM binaries on your Intel PC?
 
 Pwntools has a good level of integration with QEMU user-mode emulation,
@@ -15,14 +18,59 @@ If this fails, pwntools will attempt to manually launch the binary under
 qemu user-mode emulation.  Preference is given to statically-linked variants,
 i.e. ``qemu-arm-static`` will be selected before ``qemu-arm``.
 
+Debugging
+~~~~~~~~~
+
 When debugging binaries with :func:`.gdb.debug`, pwntools automatically adds
 the appropriate command-line flags to QEMU to start its GDB stub, and
 automatically informs GDB of the correct architecture and sysroot.
 
+Sysroot
+~~~~~~~
 You can override the default sysroot by setting the ``QEMU_LD_PREFIX``
 environment variable.  This affects where ``qemu`` will look for files when
 ``open()`` is called, e.g. when the linker is attempting to resolve ``libc.so``.
 
+Required Setup
+--------------
+
+For Ubuntu 16.04 and newer, the setup is relatively straightforward for most
+architectures.
+
+First, install the QEMU emulator itself.  If your binary is statically-linked,
+thsi is sufficient.
+
+    $ sudo apt-get install qemu-user
+
+If your binary is dynamically linked, you need to install libraries like libc.
+Generally, this package is named ``libc6-$ARCH-cross``, e.g. ``libc-mips-cross``.
+ARM comes in both soft-float and hard-float variants, e.g. ``armhf``.
+
+    $ sudo apt-get install libc6-arm64-cross
+
+If your binary relies on additional libraries, you can generally find them
+easily with ``apt-cache search``.  For example, if it's a C++ binary it
+may require ``libstdc++``.
+
+    $ apt-cache search 'libstdc++' | grep arm64
+
+Any other libraries that you require you'll have to find some other way.
+
+Telling QEMU Where Libraries Are
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The libraries are now installed on your system at e.g. ``/usr/aarch64-linux-gnu``.
+
+QEMU does not know where they are, and expects them to be at e.g. ``/etc/qemu-binfmt/aarch64``.
+If you try to run your library now, you'll probably see an error about ``libc.so.6`` missing.
+
+Create the ``/etc/qemu-binfmt`` directory if it does not exist, and create a symlink to
+the appropriate path.
+
+    $ sudo mkdir /etc/qemu-binfmt
+    $ sudo ln -s /usr/aarch64-linux-gnu /etc/qemu-binfmt/aarch64
+
+Now QEMU should be able to run the libraries.
 """
 from __future__ import absolute_import
 
