@@ -68,7 +68,7 @@ def patch_elf_and_read_maps(elf):
     """
 
     # Get our shellcode
-    sc = shellcode.get(elf.arch, None)
+    sc = CAT_PROC_MAPS_EXIT.get(elf.arch, None)
 
     if sc is None:
         log.error("Cannot patch /proc/self/maps shellcode into %r binary", elf.arch)
