@@ -116,7 +116,7 @@ def current_device(any=False):
         >>> device
         AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_phone_armv7', model='sdk phone armv7', device='generic')
         >>> device.port
-        'XXXXXXX'
+        'emulator'
     """
     all_devices = devices()
     for device in all_devices:
