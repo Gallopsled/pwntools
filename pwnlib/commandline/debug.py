@@ -53,15 +53,27 @@ def main(args):
         target = int(args.pid)
     elif args.process:
         if context.os == 'android':
-            target = adb.pidof(process)
+            target = adb.pidof(args.process)
         else:
-            target = pidof(process)
+            target = pidof(args.process)
+
+        # pidof() returns a list
+        if not target:
+            log.error("Could not find a PID for %r", args.process)
+        target = target[0]
     else:
         parser.print_usage()
         return 1
 
     if args.pid or args.process:
-        gdb.attach(target, gdbscript=gdbscript)
+        pid = gdb.attach(target, gdbscript=gdbscript)
+
+        # Since we spawned the gdbserver process, and process registers an
+        # atexit handler to close itself, gdbserver will be terminated when
+        # we exit.  This will manifest as a "remote connected ended" or
+        # similar error message.  Hold it open for the user.
+        log.info("GDB connection forwarding will terminate when you press enter")
+        pause()
     else:
         gdb.debug(target, gdbscript=gdbscript).interactive()
 

@@ -673,7 +673,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         gdbserver = runner(gdb_cmd)
         port    = _gdbserver_port(gdbserver, None)
         host    = context.adb_host
-        pre    += 'target remote %s:%i' % (context.adb_host, port)
+        pre    += 'target remote %s:%i\n' % (context.adb_host, port)
 
     gdbscript = pre + (gdbscript or '')
 
