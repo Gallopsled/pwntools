@@ -32,7 +32,7 @@ CAT_PROC_MAPS_EXIT = {
         'e0031faaa80b80d2010000d4',
 }
 
-def test_shellcode():
+def _test_shellcode():
     """Only a test harness for checking CAT_PROC_MAPS_EXIT.
 
     >>> for arch in CAT_PROC_MAPS_EXIT:

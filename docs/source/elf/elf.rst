@@ -26,3 +26,5 @@
 
   .. autoclass:: pwnlib.elf.elf.dotdict
      :members:
+
+.. automodule:: pwnlib.elf.maps
