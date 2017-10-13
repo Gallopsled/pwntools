@@ -30,7 +30,13 @@ parser.add_argument(
     help = 'The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: %s' % common.choices,
 )
 parser.add_argument(
-    '--exec', type=file, dest='executable',
+    '--exec',
+
+    # NOTE: Type cannot be "file" because we may be referring to a remote
+    #       file, or a file on an Android device.
+    type=str,
+
+    dest='executable',
     help='File to debug'
 )
 parser.add_argument(
@@ -47,8 +53,14 @@ def main(args):
         context.device = adb.wait_for_device()
 
     if args.executable:
-        context.binary = ELF(args.executable.name)
-        target = context.binary.path
+        if os.path.exists(args.executable):
+            context.binary = ELF(args.executable.name)
+            target = context.binary.path
+
+        # This path does nothing, but avoids the "print_usage()"
+        # path below.
+        elif context.os == 'android':
+            target = args.executable
     elif args.pid:
         target = int(args.pid)
     elif args.process:

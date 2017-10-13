@@ -675,6 +675,11 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         host    = context.adb_host
         pre    += 'target remote %s:%i\n' % (context.adb_host, port)
 
+        # gdbserver doesn't handle following forks unless it's started in
+        # '--multi' mode.  Since we don't do multi mode (yet?) try to prevent
+        # following the child.
+        pre += 'set follow-fork-mode parent\n'
+
     gdbscript = pre + (gdbscript or '')
 
     if gdbscript:
