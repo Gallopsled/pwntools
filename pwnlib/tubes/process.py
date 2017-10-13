@@ -16,9 +16,9 @@ import subprocess
 import time
 import tty
 
+from pwnlib import qemu
 from pwnlib.context import context
 from pwnlib.log import getLogger
-from pwnlib.qemu import get_qemu_user
 from pwnlib.timeout import Timeout
 from pwnlib.tubes.tube import tube
 from pwnlib.util.hashes import sha256file
@@ -432,21 +432,21 @@ class process(tube):
 
         # Determine what architecture the binary is, and find the
         # appropriate qemu binary to run it.
-        qemu = get_qemu_user(arch=binary.arch)
+        qemu_path = qemu.user_path(arch=binary.arch)
 
         if not qemu:
             raise exception
 
-        qemu = which(qemu)
+        qemu_path = which(qemu_path)
         if qemu:
-            self._qemu = qemu
+            self._qemu = qemu_path
 
-            args = [qemu]
+            args = [qemu_path]
             if self.argv:
                 args += ['-0', self.argv[0]]
             args += ['--']
 
-            return [args, qemu]
+            return [args, qemu_path]
 
         # If we get here, we couldn't run the binary directly, and
         # we don't have a qemu which can run it.
