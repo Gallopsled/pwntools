@@ -758,9 +758,14 @@ class ELF(ELFFile):
         os.chmod(path, 0o755)
 
         # Run a copy of it, get the maps
-        io = process(path)
-        data = io.recvall()
-        io.wait()
+        try:
+            with context.silent:
+                io = process(path)
+                data = io.recvall(timeout=2)
+                io.wait()
+        except Exception:
+            log.warn_once("Injected /proc/self/maps code did not execute correctly")
+            return {}
 
         # Swap in the original ELF name
         data = data.replace(path, elf.path)
