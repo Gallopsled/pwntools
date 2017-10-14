@@ -770,7 +770,14 @@ class ELF(ELFFile):
         data = data.replace(path, elf.path)
 
         # All we care about in the data is the load address of each file-backed mapping,
-        # or each kernel-supplied mapping
+        # or each kernel-supplied mapping.
+        #
+        # For quick reference, the data looks like this:
+        # 7fcb025f2000-7fcb025f3000 r--p 00025000 fe:01 3025685  /lib/x86_64-linux-gnu/ld-2.23.so
+        # 7fcb025f3000-7fcb025f4000 rw-p 00026000 fe:01 3025685  /lib/x86_64-linux-gnu/ld-2.23.so
+        # 7fcb025f4000-7fcb025f5000 rw-p 00000000 00:00 0
+        # 7ffe39cd4000-7ffe39cf6000 rw-p 00000000 00:00 0        [stack]
+        # 7ffe39d05000-7ffe39d07000 r--p 00000000 00:00 0        [vvar]
         result = {}
         for line in data.splitlines():
             if '/' in line:
