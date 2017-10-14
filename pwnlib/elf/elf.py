@@ -67,13 +67,14 @@ from pwnlib.context import context
 from pwnlib.elf.config import kernel_configuration
 from pwnlib.elf.config import parse_kconfig
 from pwnlib.elf.datatypes import constants
-from pwnlib.elf.maps import patch_elf_and_read_maps
+from pwnlib.elf.maps import CAT_PROC_MAPS_EXIT
 from pwnlib.elf.plt import emulate_plt_instructions
 from pwnlib.log import getLogger
 from pwnlib.term import text
 from pwnlib.tubes.process import process
 from pwnlib.util import misc
 from pwnlib.util import packing
+from pwnlib.util.fiddling import unhex
 from pwnlib.util.sh_string import sh_string
 
 log = getLogger(__name__)
@@ -688,6 +689,104 @@ class ELF(ELFFile):
 
                 if os.path.exists(qemu_lib):
                     self._libs[qemu_lib] = address
+
+    def _patch_elf_and_read_maps(self):
+        """patch_elf_and_read_maps(self) -> dict
+
+        Read ``/proc/self/maps`` as if the ELF were executing.
+
+        This is done by replacing the code at the entry point with shellcode which
+        dumps ``/proc/self/maps`` and exits, and **actually executing the binary**.
+
+        Returns:
+            A ``dict`` mapping file paths to the lowest address they appear at.
+            Does not do any translation for e.g. QEMU emulation, the raw results
+            are returned.
+
+            If there is not enough space to inject the shellcode in the segment
+            which contains the entry point, returns ``{}``.
+
+        Doctests:
+
+            These tests are just to ensure that our shellcode is correct.
+
+            >>> for arch in CAT_PROC_MAPS_EXIT:
+            ...   with context.local(arch=arch):
+            ...     sc = shellcraft.cat("/proc/self/maps")
+            ...     sc += shellcraft.exit()
+            ...     sc = asm(sc)
+            ...     sc = enhex(sc)
+            ...     assert sc == CAT_PROC_MAPS_EXIT[arch]
+        """
+
+        # Get our shellcode
+        sc = CAT_PROC_MAPS_EXIT.get(self.arch, None)
+
+        if sc is None:
+            log.error("Cannot patch /proc/self/maps shellcode into %r binary", self.arch)
+
+        sc = unhex(sc)
+
+        # Ensure there is enough room in the segment where the entry point resides
+        # in order to inject our shellcode.
+        seg = self.get_segment_for_address(self.entry, len(sc))
+        if not seg:
+            log.warn_once("Could not inject code to determine memory mapping for %r: Not enough space", self)
+            return {}
+
+        # Create our temporary file
+        # NOTE: We cannot use "with NamedTemporaryFile() as foo", because we cannot
+        # execute the file while the handle is open.
+        fd, path = tempfile.mkstemp()
+
+        # Close the file descriptor so that it may be executed
+        os.close(fd)
+
+        # Save off a copy of the ELF
+        self.save(path)
+
+        # Load a new copy of the ELF at the temporary file location
+        old = self.read(self.entry, len(sc))
+        try:
+            self.write(self.entry, sc)
+            self.save(path)
+        finally:
+            # Restore the original contents
+            self.write(self.entry, old)
+
+        # Make the file executable
+        os.chmod(path, 0o755)
+
+        # Run a copy of it, get the maps
+        io = process(path)
+        data = io.recvall()
+        io.wait()
+
+        # Swap in the original ELF name
+        data = data.replace(path, elf.path)
+
+        # All we care about in the data is the load address of each file-backed mapping,
+        # or each kernel-supplied mapping
+        result = {}
+        for line in data.splitlines():
+            if '/' in line:
+                index = line.index('/')
+            elif '[' in line:
+                index = line.index('[')
+            else:
+                continue
+
+            address, _ = line.split('-', 1)
+
+            address = int(address, 0x10)
+            name = line[index:]
+
+            result.setdefault(name, address)
+
+        # Remove the temporary file, best-effort
+        os.unlink(path)
+
+        return result
 
     def _populate_functions(self):
         """Builds a dict of 'functions' (i.e. symbols of type 'STT_FUNC')
