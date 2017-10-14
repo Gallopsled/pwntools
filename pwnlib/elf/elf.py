@@ -762,7 +762,6 @@ class ELF(ELFFile):
             with context.silent:
                 io = process(path)
                 data = io.recvall(timeout=2)
-                io.wait()
         except Exception:
             log.warn_once("Injected /proc/self/maps code did not execute correctly")
             return {}
