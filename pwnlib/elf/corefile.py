@@ -458,7 +458,7 @@ class Corefile(ELF):
         ...   pop eax
         ...   jmp LOOP
         ... '''
-        >>> elf = ELF.from_assembly(assembly)
+        >>> elf = ELF.from_assembly(assembly, arch='i386')
         >>> io = elf.process()
         >>> io.wait()
         >>> core = io.corefile
