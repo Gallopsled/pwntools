@@ -389,7 +389,7 @@ class Corefile(ELF):
 
         >>> core.vdso.data[:4]
         '\x7fELF'
-        >>> core.libc # docteset: +ELLIPSIS
+        >>> core.libc # doctest: +ELLIPSIS
         Mapping('/lib/x86_64-linux-gnu/libc-...', ...)
 
         The corefile also contains a :attr:`.Corefile.stack` property, which gives
@@ -428,6 +428,45 @@ class Corefile(ELF):
         >>> io.wait()
         -1
         >>> io.corefile.signal == signal.SIGTRAP # doctest: +SKIP
+        True
+
+    Tests:
+
+        These are extra tests not meant to serve as examples.
+
+        Corefile.getenv() works correctly, even if the environment variable's
+        value contains embedded '='. Corefile is able to find the stack, even
+        if the stack pointer doesn't point at the stack.
+
+        >>> elf = ELF.from_assembly(shellcraft.crash())
+        >>> io = elf.process(env={'FOO': 'BAR=BAZ'})
+        >>> io.wait()
+        >>> core = io.corefile
+        >>> core.getenv('FOO')
+        'BAR=BAZ'
+        >>> core.sp == 0
+        True
+        >>> core.sp in core.stack
+        False
+
+        Corefile gracefully handles the stack being filled with garbage, including
+        argc / argv / envp being overwritten.
+
+        >>> assembly = '''
+        ... LOOP:
+        ...   mov dword ptr [esp], 0x41414141
+        ...   pop eax
+        ...   jmp LOOP
+        ... '''
+        >>> elf = ELF.from_assembly(assembly)
+        >>> io = elf.process()
+        >>> io.wait()
+        >>> core = io.corefile
+        >>> core.argc, core.argv, core.env
+        (0, [], {})
+        >>> core.stack.data.endswith('AAAA')
+        True
+        >>> core.fault_addr == core.sp
         True
     """
 
@@ -848,11 +887,31 @@ class Corefile(ELF):
         # Now we can fill in the environment
         env_pointer_data = stack[start_of_envp:p_last_env_addr+self.bytes]
         for pointer in unpack_many(env_pointer_data):
-            end = stack.find('=', last_env_addr)
 
-            if pointer in stack and end in stack:
-                name = stack[pointer:end]
-                self.env[name] = pointer
+            # If the stack is corrupted, the pointer will be outside of
+            # the stack.
+            if pointer not in stack:
+                continue
+
+            try:
+                name_value = self.string(pointer)
+            except Exception:
+                continue
+
+            name, value = name_value.split('=', 1)
+
+            # "end" points at the byte after the null terminator
+            end = pointer + len(name_value) + 1
+
+            # Do not mark things as environment variables if they point
+            # outside of the stack itself, or we had to cross into a different
+            # mapping (after the stack) to read it.
+            # This may occur when the entire stack is filled with non-NUL bytes,
+            # and we NULL-terminate on a read failure in .string().
+            if end not in stack:
+                continue
+
+            self.env[name] = pointer
 
         # May as well grab the arguments off the stack as well.
         # argc comes immediately before argv[0] on the stack, but
@@ -908,7 +967,8 @@ class Corefile(ELF):
         if name not in self.env:
             log.error("Environment variable %r not set" % name)
 
-        return self.string(self.env[name]).split('=',1)[-1]
+        name, value = self.string(self.env[name]).split('=', 1)
+        return value
 
     @property
     def registers(self):

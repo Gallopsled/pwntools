@@ -1686,16 +1686,33 @@ class ELF(ELFFile):
         return packing.unpack(self.read(address, context.bytes), *a, **kw)
 
     def string(self, address):
-        """Reads a null-terminated string from the specified ``address``"""
+        """string(address) -> str
+
+        Reads a null-terminated string from the specified ``address``
+
+        Returns:
+            A ``str`` with the string contents (NUL terminator is omitted),
+            or an empty string if no NUL terminator could be found.
+        """
         data = ''
         while True:
-            c = self.read(address, 1)
+            read_size = 0x1000
+            partial_page = address & 0xfff
+
+            if partial_page:
+                read_size -= partial_page
+
+            c = self.read(address, read_size)
+
             if not c:
                 return ''
-            if c == '\x00':
-                return data
+
             data += c
-            address += 1
+
+            if '\x00' in c:
+                return data[:data.index('\x00')]
+
+            address += len(c)
 
     def flat(self, address, *a, **kw):
         """Writes a full array of values to the specified address.
