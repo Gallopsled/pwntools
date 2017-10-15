@@ -421,7 +421,7 @@ class Corefile(ELF):
 
         >>> s = ssh('travis', 'example.pwnme')
         >>> _ = s.set_working_directory()
-        >>> elf = ELF.from_assembly('int3')
+        >>> elf = ELF.from_assembly(shellcraft.trap())
         >>> path = s.upload(elf.path)
         >>> _ =s.chmod('+x', path)
         >>> io = s.process(path)
@@ -493,6 +493,9 @@ class Corefile(ELF):
         #: variable.
         #:
         #: Note: Use with the :meth:`.ELF.string` method to extract them.
+        #:
+        #: Note: If FOO=BAR is in the environment, self.env['FOO'] is the
+        #:       address of the string "BAR\x00".
         self.env = {}
 
         #: :class:`list`: List of addresses of arguments on the stack.
@@ -703,7 +706,22 @@ class Corefile(ELF):
 
     @property
     def signal(self):
-        """:class:`int`: Signal which caused the core to be dumped."""
+        """:class:`int`: Signal which caused the core to be dumped.
+
+        Example:
+
+            >>> elf = ELF.from_assembly(shellcraft.trap())
+            >>> io = elf.process()
+            >>> io.wait()
+            >>> io.corefile.signal == signal.SIGTRAP
+            True
+
+            >>> elf = ELF.from_assembly(shellcraft.crash())
+            >>> io = elf.process()
+            >>> io.wait()
+            >>> io.corefile.signal == signal.SIGSEGV
+            True
+        """
         if self.siginfo:
             return int(self.siginfo.si_signo)
         if self.prstatus:
@@ -714,7 +732,17 @@ class Corefile(ELF):
         """:class:`int`: Address which generated the fault, for the signals
             SIGILL, SIGFPE, SIGSEGV, SIGBUS.  This is only available in native
             core dumps created by the kernel.  If the information is unavailable,
-            this returns the address of the instruction pointer."""
+            this returns the address of the instruction pointer.
+
+
+        Example:
+
+            >>> elf = ELF.from_assembly('mov eax, 0xdeadbeef; jmp eax', arch='i386')
+            >>> io = elf.process()
+            >>> io.wait()
+            >>> io.corefile.fault_addr == io.corefile.eax == 0xdeadbeef
+            True
+        """
         if self.siginfo:
             return int(self.siginfo.sigfault_addr)
 
@@ -911,7 +939,7 @@ class Corefile(ELF):
             if end not in stack:
                 continue
 
-            self.env[name] = pointer
+            self.env[name] = pointer + len(name) + len('=')
 
         # May as well grab the arguments off the stack as well.
         # argc comes immediately before argv[0] on the stack, but
@@ -963,16 +991,33 @@ class Corefile(ELF):
 
         Returns:
             :class:`str`: The contents of the environment variable.
+
+        Example:
+
+            >>> elf = ELF.from_assembly(shellcraft.trap())
+            >>> io = elf.process(env={'GREETING': 'Hello!'})
+            >>> io.wait()
+            >>> io.corefile.getenv('GREETING')
+            'Hello!'
         """
         if name not in self.env:
             log.error("Environment variable %r not set" % name)
 
-        name, value = self.string(self.env[name]).split('=', 1)
+        name, value = self.string(self.env[name])
         return value
 
     @property
     def registers(self):
-        """:class:`dict`: All available registers in the coredump."""
+        """:class:`dict`: All available registers in the coredump.
+
+        Example:
+
+            >>> elf = ELF.from_assembly('mov eax, 0xdeadbeef;' + shellcraft.trap(), arch='i386')
+            >>> io = elf.process()
+            >>> io.wait()
+            >>> io.corefile.registers['eax'] == 0xdeadbeef
+            True
+        """
         if not self.prstatus:
             return {}
 
