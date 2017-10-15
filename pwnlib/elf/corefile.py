@@ -452,13 +452,14 @@ class Corefile(ELF):
         Corefile gracefully handles the stack being filled with garbage, including
         argc / argv / envp being overwritten.
 
+        >>> context.clear(arch='i386')
         >>> assembly = '''
         ... LOOP:
         ...   mov dword ptr [esp], 0x41414141
         ...   pop eax
         ...   jmp LOOP
         ... '''
-        >>> elf = ELF.from_assembly(assembly, arch='i386')
+        >>> elf = ELF.from_assembly(assembly)
         >>> io = elf.process()
         >>> io.wait()
         >>> core = io.corefile
