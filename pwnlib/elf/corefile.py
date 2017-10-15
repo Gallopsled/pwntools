@@ -1125,6 +1125,7 @@ class CorefileFinder(object):
             new_path = 'core.%i' % core_pid
             if core_pid > 0 and new_path != self.core_path:
                 write(new_path, self.read(self.core_path))
+                self.unlink(self.core_path)
                 self.core_path = new_path
 
         # Check the PID
