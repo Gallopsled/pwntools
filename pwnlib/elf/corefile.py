@@ -1003,8 +1003,7 @@ class Corefile(ELF):
         if name not in self.env:
             log.error("Environment variable %r not set" % name)
 
-        name, value = self.string(self.env[name])
-        return value
+        return self.string(self.env[name])
 
     @property
     def registers(self):
