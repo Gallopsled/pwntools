@@ -131,6 +131,15 @@ def debug_assembly(asm, gdbscript=None, vma=None):
 
     Returns:
         :class:`.process`
+
+    Example:
+
+        .. code-block:: python
+
+            >>> assembly = shellcraft.echo("Hello world!\n")
+            >>> io = gdb.debug_assembly(assembly)
+            >>> io.recvline()
+            'Hello world!'
     """
     tmp_elf = make_elf_from_assembly(asm, vma=vma, extract=False)
     os.chmod(tmp_elf, 0777)
@@ -157,6 +166,16 @@ def debug_shellcode(data, gdbscript=None, vma=None):
 
     Returns:
         :class:`.process`
+
+    Example:
+
+        .. code-block:: python
+
+            >>> assembly = shellcraft.echo("Hello world!\n")
+            >>> shellcode = asm(assembly)
+            >>> io = gdb.debug_shellcode(shellcode)
+            >>> io.recvline()
+            'Hello world!'
     """
     if isinstance(data, unicode):
         log.error("Shellcode is cannot be unicode.  Did you mean debug_assembly?")
@@ -290,14 +309,6 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
         from the very beginning.  This requires that both ``gdb`` and ``gdbserver``
         are installed on your machine.
 
-        .. code-block:: python
-
-            # Create a new process, and stop it at 'main'
-            io = gdb.debug('bash', '''
-            break main
-            continue
-            ''')
-
         When GDB opens via :func:`debug`, it will initially be stopped on the very first
         instruction of the dynamic linker (``ld.so``) for dynamically-linked binaries.
 
@@ -322,6 +333,22 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
             - Generally, you just add a few ``continue`` commands until things are set up
               the way you want it to be.
 
+    Examples:
+
+        .. code-block:: python
+
+            # Create a new process, and stop it at 'main'
+            io = gdb.debug('bash', '''
+            break main
+            continue
+            ''')
+
+            # Send a command to Bash
+            io.sendline("echo hello")
+
+            # Interact with the process
+            io.interactive()
+
         .. code-block:: python
 
             # Create a new process, and stop it at 'main'
@@ -336,6 +363,12 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
             continue
             ''')
 
+            # Send a command to Bash
+            io.sendline("echo hello")
+
+            # Interact with the process
+            io.interactive()
+
         You can use :func:`debug` to spawn new processes on remote machines as well,
         by using the ``ssh=`` keyword to pass in your :class:`.ssh` instance.
 
@@ -345,12 +378,18 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
             shell = ssh('passcode', 'pwnable.kr', 2222, password='guest')
 
             # Start a process on the server
-            bash = gdb.debug(['bash'],
+            io = gdb.debug(['bash'],
                             ssh=shell,
                             gdbscript='''
             break main
             continue
             ''')
+
+            # Send a command to Bash
+            io.sendline("echo hello")
+
+            # Interact with the process
+            io.interactive()
     """
     if isinstance(args, (int, tubes.process.process, tubes.ssh.ssh_channel)):
         log.error("Use gdb.attach() to debug a running process")
@@ -430,6 +469,11 @@ def binary():
 
     Returns:
         str: Path to the appropriate ``gdb`` binary to use.
+
+    Example:
+
+        >>> gdb.binary() # doctest: +SKIP
+        '/usr/bin/gdb'
     """
     gdb = misc.which('gdb')
 
@@ -484,6 +528,8 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
             Remote process spawned via :meth:`.ssh.process`.
             This will use the GDB installed on the remote machine.
             If a password is required to connect, the ``sshpass`` program must be installed.
+
+    Examples:
 
         .. code-block:: python
 
