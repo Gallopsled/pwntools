@@ -405,6 +405,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
     runner = _get_runner(ssh)
     which  = _get_which(ssh)
     sysroot = None
+    gdbscript = gdbscript or ''
 
     if context.noptrace:
         log.warn_once("Skipping debugger since context.noptrace==True")
@@ -427,6 +428,8 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
     exe = exe or which(orig_args[0])
     if not exe:
         log.error("%s does not exist" % orig_args[0])
+    else:
+        gdbscript = 'file %s\n%s' % (exe, gdbscript)
 
     # Start gdbserver/qemu
     # (Note: We override ASLR here for the gdbserver process itself.)
@@ -665,6 +668,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         pid = pids[0]
     elif isinstance(target, tubes.process.process):
         pid = proc.pidof(target)[0]
+        exe = exe or target.executable
     elif isinstance(target, tuple) and len(target) == 2:
         host, port = target
         pre += 'target remote %s:%d\n' % (host, port)
@@ -693,6 +697,9 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     if not pid and not exe:
         log.error('could not find target process')
+
+    if exe:
+        pre += 'file %s\n' % exe
 
     cmd = binary()
 
