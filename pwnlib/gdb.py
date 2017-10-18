@@ -136,10 +136,10 @@ def debug_assembly(asm, gdbscript=None, vma=None):
 
         .. code-block:: python
 
-            >>> assembly = shellcraft.echo("Hello world!\n")
-            >>> io = gdb.debug_assembly(assembly)
-            >>> io.recvline()
-            'Hello world!'
+            assembly = shellcraft.echo("Hello world!\n")
+            io = gdb.debug_assembly(assembly)
+            io.recvline()
+            # 'Hello world!'
     """
     tmp_elf = make_elf_from_assembly(asm, vma=vma, extract=False)
     os.chmod(tmp_elf, 0777)
@@ -171,11 +171,11 @@ def debug_shellcode(data, gdbscript=None, vma=None):
 
         .. code-block:: python
 
-            >>> assembly = shellcraft.echo("Hello world!\n")
-            >>> shellcode = asm(assembly)
-            >>> io = gdb.debug_shellcode(shellcode)
-            >>> io.recvline()
-            'Hello world!'
+            assembly = shellcraft.echo("Hello world!\n")
+            shellcode = asm(assembly)
+            io = gdb.debug_shellcode(shellcode)
+            io.recvline()
+            # 'Hello world!'
     """
     if isinstance(data, unicode):
         log.error("Shellcode is cannot be unicode.  Did you mean debug_assembly?")
