@@ -447,7 +447,7 @@ class DynELF(object):
             if debug:
                 w.status("r_debug.linkmap")
                 linkmap = self.leak.field(debug, r_debug.r_map)
-                w.status("r_debug.linkmap %#x" % result)
+                w.status("r_debug.linkmap %#x" % linkmap)
 
         if not linkmap:
             w.failure("Could not find DT_PLTGOT or DT_DEBUG")
