@@ -50,13 +50,24 @@ To be released on Dec 2, 2017.
 - [#1049][1049] Enhancements to `cyclic`
     + `context` now has two additional attributes, `cyclic_alphabet` and `cyclic_length`, which correspond to the arguments `alphabet` and `n` to `cyclic()` and `cyclic_find()` and related routines.
     + The motivation for this change is to allow setting the `alphabet` globally, so that any padding / patterns generated internally to pwntools can be controlled.  The specific motivation is blacklisting values in ROP padding.
+- [#1052][1052] Enhancements for detecting `QEMU_LD_PREFIX` used by QEMU user-mode emulation for sysroots
 
 [1044]: https://github.com/Gallopsled/pwntools/pull/1044
 [1049]: https://github.com/Gallopsled/pwntools/pull/1049
+[1052]: https://github.com/Gallopsled/pwntools/pull/1052
 
 ## 3.10.0
 
 To be released on Oct 21, 2017.
+
+- [#1055][1055] Fixes for `Corefile` stack parsing, speed up `ELF.string()`
+- [#1057][1057] Fix a variable name typo in `DynELF` logging which results in an exception being thrown
+- [#1058][1058] Fix an edge case in `ssh_process.exe`
+
+[1055]: https://github.com/Gallopsled/pwntools/pull/1055
+[1057]: https://github.com/Gallopsled/pwntools/pull/1057
+[1058]: https://github.com/Gallopsled/pwntools/pull/1058
+
 
 ## 3.9.2
 
