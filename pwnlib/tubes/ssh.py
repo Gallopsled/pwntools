@@ -341,7 +341,8 @@ class ssh_process(ssh_channel):
         libs = self.parent.libs(self.executable)
 
         for lib in libs:
-            if self.executable in lib:
+            # Cannot just check "executable in lib", see issue #1047
+            if lib.endswith(self.executable):
                 return pwnlib.elf.elf.ELF(lib)
 
 
