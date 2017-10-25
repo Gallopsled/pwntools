@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.11.0](#3110)  | `dev`    | Dec 2, 2017 (planned)
-| [3.10.0](#3100)  | `beta`   | Oct 21, 2017 (planned)
-| [3.9.2](#392)    | `stable` | Oct 5, 2017
+| [3.12.0](#3120)  | `dev`    | Jan 13, 2018 (planned)
+| [3.11.0](#3110)  | `beta`   | Dec 2, 2017 (planned)
+| [3.10.0](#3100)  | `stable` | Oct 25, 2017
+| [3.9.2](#392)    |          | Oct 5, 2017
 | [3.9.1](#391)    |          | Sep 28, 2017
 | [3.9.0](#390)    |          | Sep 11, 2017
 | [3.8.0](#380)    |          | Jul 29, 2017
@@ -39,13 +40,39 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
+## 3.12.0
+
+To be released on Jan 13, 2018.
+
 ## 3.11.0
 
 To be released on Dec 2, 2017.
 
+- [#1044][1044] Enhancements to ROP
+    + Much better support for 64-bit Intel (amd64) ROP
+    + ROP gadget selection is optimized to favor multi-pops instead of multiple single-pop gadgets
+    + Added support for blacklisting byte values in ROP gadget addresses
+- [#1049][1049] Enhancements to `cyclic`
+    + `context` now has two additional attributes, `cyclic_alphabet` and `cyclic_length`, which correspond to the arguments `alphabet` and `n` to `cyclic()` and `cyclic_find()` and related routines.
+    + The motivation for this change is to allow setting the `alphabet` globally, so that any padding / patterns generated internally to pwntools can be controlled.  The specific motivation is blacklisting values in ROP padding.
+- [#1052][1052] Enhancements for detecting `QEMU_LD_PREFIX` used by QEMU user-mode emulation for sysroots
+
+[1044]: https://github.com/Gallopsled/pwntools/pull/1044
+[1049]: https://github.com/Gallopsled/pwntools/pull/1049
+[1052]: https://github.com/Gallopsled/pwntools/pull/1052
+
 ## 3.10.0
 
-To be released on Oct 21, 2017.
+- [#1007][1007] Add support for setting a `gdbinit` file in the context
+- [#1055][1055] Fixes for `Corefile` stack parsing, speed up `ELF.string()`
+- [#1057][1057] Fix a variable name typo in `DynELF` logging which results in an exception being thrown
+- [#1058][1058] Fix an edge case in `ssh_process.exe`
+
+[1007]: https://github.com/Gallopsled/pwntools/pull/1007
+[1055]: https://github.com/Gallopsled/pwntools/pull/1055
+[1057]: https://github.com/Gallopsled/pwntools/pull/1057
+[1058]: https://github.com/Gallopsled/pwntools/pull/1058
+
 
 ## 3.9.2
 
