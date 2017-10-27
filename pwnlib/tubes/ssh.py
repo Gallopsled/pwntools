@@ -874,6 +874,8 @@ os.chdir(%(cwd)r)
 if env is not None:
     os.environ.clear()
     os.environ.update(env)
+else:
+    env = os.environ
 
 def is_exe(path):
     return os.path.isfile(path) and os.access(path, os.X_OK)
@@ -961,7 +963,7 @@ except Exception:
 %(func_src)s
 apply(%(func_name)s, %(func_args)r)
 
-os.execve(exe, argv, os.environ)
+os.execve(exe, argv, env)
 """ % locals()
 
         script = script.strip()
