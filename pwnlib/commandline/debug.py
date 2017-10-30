@@ -30,7 +30,13 @@ parser.add_argument(
     help = 'The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: %s' % common.choices,
 )
 parser.add_argument(
-    '--exec', type=file, dest='executable',
+    '--exec',
+
+    # NOTE: Type cannot be "file" because we may be referring to a remote
+    #       file, or a file on an Android device.
+    type=str,
+
+    dest='executable',
     help='File to debug'
 )
 parser.add_argument(
@@ -47,21 +53,39 @@ def main(args):
         context.device = adb.wait_for_device()
 
     if args.executable:
-        context.binary = ELF(args.executable.name)
-        target = context.binary.path
+        if os.path.exists(args.executable):
+            context.binary = ELF(args.executable.name)
+            target = context.binary.path
+
+        # This path does nothing, but avoids the "print_usage()"
+        # path below.
+        elif context.os == 'android':
+            target = args.executable
     elif args.pid:
         target = int(args.pid)
     elif args.process:
         if context.os == 'android':
-            target = adb.pidof(process)
+            target = adb.pidof(args.process)
         else:
-            target = pidof(process)
+            target = pidof(args.process)
+
+        # pidof() returns a list
+        if not target:
+            log.error("Could not find a PID for %r", args.process)
+        target = target[0]
     else:
         parser.print_usage()
         return 1
 
     if args.pid or args.process:
-        gdb.attach(target, gdbscript=gdbscript)
+        pid = gdb.attach(target, gdbscript=gdbscript)
+
+        # Since we spawned the gdbserver process, and process registers an
+        # atexit handler to close itself, gdbserver will be terminated when
+        # we exit.  This will manifest as a "remote connected ended" or
+        # similar error message.  Hold it open for the user.
+        log.info("GDB connection forwarding will terminate when you press enter")
+        pause()
     else:
         gdb.debug(target, gdbscript=gdbscript).interactive()
 

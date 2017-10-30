@@ -229,7 +229,7 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None):
 
     orig_args = args
 
-    gdbserver_args = [gdbserver]
+    gdbserver_args = [gdbserver, '--multi']
     if context.aslr:
         gdbserver_args += ['--no-disable-randomization']
     else:
@@ -671,7 +671,15 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         exe = exe or target.executable
     elif isinstance(target, tuple) and len(target) == 2:
         host, port = target
-        pre += 'target remote %s:%d\n' % (host, port)
+
+        if context.os != 'android':
+            pre += 'target remote %s:%d\n' % (host, port)
+        else:
+            # Android debugging is done over gdbserver, which can't follow
+            # new inferiors (tldr; follow-fork-mode child) unless it is run
+            # in extended-remote mode.
+            pre += 'target extended-remote %s:%d\n' % (host, port)
+            pre += 'set detach-on-fork off'
 
         def findexe():
             for spid in proc.pidof(target):
@@ -731,7 +739,11 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         gdbserver = runner(gdb_cmd)
         port    = _gdbserver_port(gdbserver, None)
         host    = context.adb_host
-        pre    += 'target remote %s:%i' % (context.adb_host, port)
+        pre    += 'target extended-remote %s:%i\n' % (context.adb_host, port)
+
+        # gdbserver on Android sets 'detach-on-fork on' which breaks things
+        # when you're trying to debug anything that forks.
+        pre += 'set detach-on-fork off\n'
 
     gdbscript = pre + (gdbscript or '')
 
@@ -759,7 +771,7 @@ def ssh_gdb(ssh, argv, gdbscript = None, arch = None, **kwargs):
         argv = [argv]
 
     exe = argv[0]
-    argv = ["gdbserver", "127.0.0.1:0"] + argv
+    argv = ["gdbserver", "--multi", "127.0.0.1:0"] + argv
 
     # Download the executable
     local_exe = os.path.basename(exe)
