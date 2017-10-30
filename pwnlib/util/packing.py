@@ -481,7 +481,7 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
 
 
 
-def _flat(args, preprocessor, packer):
+def _flat(args, preprocessor, packer, address):
     out = []
     for arg in args:
 
@@ -490,10 +490,12 @@ def _flat(args, preprocessor, packer):
             if arg_ != None:
                 arg = arg_
 
-        if hasattr(arg, '__flat__'):
+        if hasattr(arg, '__flat_at__'):
+            out.append(arg.__flat_at__(address))
+        elif hasattr(arg, '__flat__'):
             out.append(arg.__flat__())
         elif isinstance(arg, (list, tuple)):
-            out.append(_flat(arg, preprocessor, packer))
+            out.append(_flat(arg, preprocessor, packer, address))
         elif isinstance(arg, str):
             out.append(arg)
         elif isinstance(arg, unicode):
@@ -504,11 +506,14 @@ def _flat(args, preprocessor, packer):
             out.append(str(arg))
         else:
             raise ValueError("flat(): Flat does not support values of type %s" % type(arg))
+
+        address += len(out[-1])
+
     return ''.join(out)
 
 @LocalContext
 def flat(*args, **kwargs):
-    """flat(*args, preprocessor = None, word_size = None, endianness = None, sign = None)
+    """flat(*args, preprocessor = None, word_size = None, endianness = None, sign = None, address = 0)
 
     Flattens the arguments into a string.
 
@@ -528,6 +533,8 @@ def flat(*args, **kwargs):
       word_size (int): Word size of the converted integer (in bits).
       endianness (str): Endianness of the converted integer ("little"/"big").
       sign (str): Signedness of the converted integer (False/True)
+      address (int): Address at which this data resides.  Used for more advanced
+        packing features, and objects that implement __flat_at__.
 
     Examples:
       >>> flat(1, "test", [[["AB"]*2]*3], endianness = 'little', word_size = 16, sign = False)
@@ -538,11 +545,12 @@ def flat(*args, **kwargs):
 
     preprocessor = kwargs.pop('preprocessor', lambda x: None)
     word_size    = kwargs.pop('word_size', None)
+    address      = kwargs.pop('address', 0)
 
     if kwargs != {}:
-        raise TypeError("flat() does not support argument %r" % kwargs.popitem()[0])
+        raise TypeError("flat() got an unexpected keyword argument %r" % kwargs.popitem()[0])
 
-    return _flat(args, preprocessor, make_packer(word_size))
+    return _flat(args, preprocessor, make_packer(word_size), address)
 
 
 @LocalContext
@@ -580,6 +588,7 @@ def fit(pieces=None, **kwargs):
       word_size (int): Word size of the converted integer (in bits).
       endianness (str): Endianness of the converted integer ("little"/"big").
       sign (str): Signedness of the converted integer (False/True)
+      address (int): Address at which the data will be placed.
 
     Examples:
       >>> fit({12: 0x41414141,
@@ -603,9 +612,10 @@ def fit(pieces=None, **kwargs):
     filler       = kwargs.pop('filler', cyclic.de_bruijn())
     length       = kwargs.pop('length', None)
     preprocessor = kwargs.pop('preprocessor', lambda x: None)
+    address      = kwargs.pop('address', 0)
 
     if kwargs != {}:
-        raise TypeError("fit() does not support argument %r" % kwargs.popitem()[0])
+        raise TypeError("fit() got an unexpected keyword argument %r" % kwargs.popitem()[0])
 
     packer = make_packer()
     filler = iters.cycle(filler)
@@ -639,7 +649,7 @@ def fit(pieces=None, **kwargs):
 
     # convert values to their flattened forms
     for k,v in pieces.items():
-        pieces[k] = _flat([v], preprocessor, packer)
+        pieces[k] = _flat([v], preprocessor, packer, address=address+k)
 
     # if we were provided a length, make sure everything fits
     last = max(pieces)
@@ -654,7 +664,7 @@ def fit(pieces=None, **kwargs):
             raise ValueError("fit(): data at offset %d overlaps with previous data which ends at offset %d" % (k, l))
         while len(out) < k:
             out.append(filler.next())
-        v = _flat([v], preprocessor, packer)
+        v = _flat([v], preprocessor, packer, address=address+k)
         l = k + len(v)
 
         # consume the filler for each byte of actual data
