@@ -18,8 +18,8 @@ cache:
     - pip
     - directories:
         - usr
-        - /home/travis/virtualenv/python2.7.9/lib/python2.7/site-packages/
-        - /home/travis/virtualenv/python2.7.9/bin/
+        - /home/travis/virtualenv/python2.7.13/lib/python2.7/site-packages/
+        - /home/travis/virtualenv/python2.7.13/bin/
 python:
   - "2.7"
 before_install:
