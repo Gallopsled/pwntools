@@ -489,7 +489,7 @@ def _flat(args, preprocessor, packer, address):
     for arg in args:
         address = address + out.tell()
 
-        if isinstance(arg, type(lambda:0)):
+        while isinstance(arg, type(lambda:0)):
             arg = arg()
 
         if not isinstance(arg, (list, tuple)):
@@ -511,8 +511,6 @@ def _flat(args, preprocessor, packer, address):
             out.write(packer(arg))
         elif isinstance(arg, bytearray):
             out.write(str(arg))
-        elif hasattr(arg, '__call__'):
-            out.write(arg(address))
         else:
             raise ValueError("flat(): Flat does not support values of type %s" % type(arg))
 
@@ -557,7 +555,13 @@ def flat(*args, **kwargs):
     if kwargs != {}:
         raise TypeError("flat() got an unexpected keyword argument %r" % kwargs.popitem()[0])
 
-    return _flat(args, preprocessor, make_packer(word_size), address)
+    for _ in xrange(10000):
+        try:
+            return _flat(args, preprocessor, make_packer(word_size), address)
+        except FitOffsetsChangedException:
+            pass
+    else:
+        raise ValueError("Invalid flat() arguments: %r" % args)
 
 class FitOffsetsChangedException(Exception):
     pass
@@ -589,11 +593,9 @@ class FitLabel(object):
 
     @address.setter
     def address(self, new):
-        print 'address', hex(new or 0)
         old = self._address
         self._address = new
         if new not in (None, old):
-            print("Address changed")
             raise FitOffsetsChangedException()
 
     @property
@@ -602,13 +604,11 @@ class FitLabel(object):
 
     @contents.setter
     def contents(self, new):
-        print 'contents', new
         old = self._contents
         if new is not None:
             new = flat(new)
         self._contents = new
         if new not in (None, old):
-            print("Contents changed")
             raise FitOffsetsChangedException()
 
 @LocalContext
@@ -722,7 +722,6 @@ def fit(pieces=None, **kwargs):
         00000070  64 61 61 62  65 61 61 62  66 61 61 62  67 61 61 62  │daab│eaab│faab│gaab│
         00000080  50 6f 69 6e  74 65 72 20  74 6f 20 61  2e 40 00 ad  │Poin│ter │to a│.@··│
         00000090  de 25 33 33  24 6e                                  │·%33│$n│
-        00000096
     """
     # HACK: To avoid circular imports we need to delay the import of `cyclic`
     from pwnlib.util import cyclic
