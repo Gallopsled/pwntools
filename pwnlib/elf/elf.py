@@ -665,7 +665,7 @@ class ELF(ELFFile):
         True
         """
         # Patch some shellcode into the ELF and run it.
-        maps = patch_elf_and_read_maps(self)
+        maps = self._patch_elf_and_read_maps()
 
         self._maps = maps
         self._libs = {}
