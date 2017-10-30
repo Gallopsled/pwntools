@@ -240,5 +240,5 @@ class Call(object):
             if isinstance(arg, (int,long)) and arg > 0x100:
                 arg_str.append(hex(arg))
             else:
-                arg_str.append(arg)
+                arg_str.append(str(arg))
         return '%s(%s)' % (name, ', '.join(arg_str))
