@@ -32,8 +32,11 @@ Examples:
 """
 from __future__ import absolute_import
 
+import io
+import numbers
 import struct
 import sys
+import types
 
 from pwnlib.context import LocalContext
 from pwnlib.context import context
@@ -105,7 +108,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         endianness = context.endianness
         sign       = context.sign
 
-        if not isinstance(number, (int,long)):
+        if not isinstance(number, numbers.Integral):
             raise ValueError("pack(): number must be of type (int,long) (got %r)" % type(number))
 
         if sign not in [True, False]:
@@ -127,7 +130,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
                 if sign == False:
                     raise ValueError("pack(): number does not fit within word_size")
                 word_size = ((number + 1).bit_length() | 7) + 1
-        elif not isinstance(word_size, (int, long)) or word_size <= 0:
+        elif not isinstance(word_size, numbers.Integral) or word_size <= 0:
             raise ValueError("pack(): word_size must be a positive integer or the string 'all'")
 
         if sign == True:
@@ -202,7 +205,7 @@ def unpack(data, word_size = None):
     # Verify that word_size make sense
     if word_size == 'all':
         word_size = len(data) * 8
-    elif not isinstance(word_size, (int, long)) or word_size <= 0:
+    elif not isinstance(word_size, numbers.Integral) or word_size <= 0:
         raise ValueError("unpack(): word_size must be a positive integer or the string 'all'")
 
     byte_size = (word_size + 7) / 8
@@ -482,8 +485,12 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
 
 
 def _flat(args, preprocessor, packer, address):
-    out = []
+    out = io.BytesIO()
     for arg in args:
+        address = address + out.tell()
+
+        if isinstance(arg, type(lambda:0)):
+            arg = arg()
 
         if not isinstance(arg, (list, tuple)):
             arg_ = preprocessor(arg)
@@ -491,27 +498,25 @@ def _flat(args, preprocessor, packer, address):
                 arg = arg_
 
         if hasattr(arg, '__flat_at__'):
-            out.append(arg.__flat_at__(address))
+            out.write(arg.__flat_at__(address))
         elif hasattr(arg, '__flat__'):
-            out.append(arg.__flat__())
+            out.write(arg.__flat__())
         elif isinstance(arg, (list, tuple)):
-            out.append(_flat(arg, preprocessor, packer, address))
+            out.write(_flat(arg, preprocessor, packer, address))
         elif isinstance(arg, str):
-            out.append(arg)
+            out.write(arg)
         elif isinstance(arg, unicode):
-            out.append(arg.encode('utf8'))
-        elif isinstance(arg, (int, long)):
-            out.append(packer(arg))
+            out.write(arg.encode('utf8'))
+        elif isinstance(arg, numbers.Integral):
+            out.write(packer(arg))
         elif isinstance(arg, bytearray):
-            out.append(str(arg))
+            out.write(str(arg))
         elif hasattr(arg, '__call__'):
-            out.append(arg(address))
+            out.write(arg(address))
         else:
             raise ValueError("flat(): Flat does not support values of type %s" % type(arg))
 
-        address += len(out[-1])
-
-    return ''.join(out)
+    return out.getvalue()
 
 @LocalContext
 def flat(*args, **kwargs):
@@ -554,6 +559,57 @@ def flat(*args, **kwargs):
 
     return _flat(args, preprocessor, make_packer(word_size), address)
 
+class FitOffsetsChangedException(Exception):
+    pass
+
+class FitLabel(object):
+    """Label mechanism for use with :func:`.packing.fit`
+    """
+    _address = None
+    _contents = None
+
+    def __init__(self, contents=None, address=None):
+        self._contents = contents
+        self._address = address
+
+    def __call__(self, contents):
+        self.contents = contents
+        return self
+
+    def __flat_at__(self, address):
+        self.address = address
+        return self.contents
+
+    def __len__(self):
+        return len(self.contents)
+
+    @property
+    def address(self):
+        return int(self._address or 0)
+
+    @address.setter
+    def address(self, new):
+        print 'address', hex(new or 0)
+        old = self._address
+        self._address = new
+        if new not in (None, old):
+            print("Address changed")
+            raise FitOffsetsChangedException()
+
+    @property
+    def contents(self):
+        return self._contents or ''
+
+    @contents.setter
+    def contents(self, new):
+        print 'contents', new
+        old = self._contents
+        if new is not None:
+            new = flat(new)
+        self._contents = new
+        if new not in (None, old):
+            print("Contents changed")
+            raise FitOffsetsChangedException()
 
 @LocalContext
 def fit(pieces=None, **kwargs):
@@ -564,7 +620,8 @@ def fit(pieces=None, **kwargs):
 
     For each key-value pair in `pieces`, the key is either an offset or a byte
     sequence.  In the latter case, the offset will be the lowest index at which
-    the sequence occurs in `filler`.  See examples below.
+    the sequence occurs in `filler`.  Lambdas are supported for either keys or values,
+    allowing use of complex expressions.  See examples below.
 
     Each piece of data is passed to :meth:`flat` along with the keyword
     arguments `word_size`, `endianness` and `sign`.
@@ -581,32 +638,91 @@ def fit(pieces=None, **kwargs):
     raised.
 
     Arguments:
-      pieces: Offsets and values to output.
-      length: The length of the output.
-      filler: Iterable to use for padding.
-      preprocessor (function): Gets called on every element to optionally
-         transform the element before flattening. If :const:`None` is
-         returned, then the original value is used.
-      word_size (int): Word size of the converted integer (in bits).
-      endianness (str): Endianness of the converted integer ("little"/"big").
-      sign (str): Signedness of the converted integer (False/True)
-      address (int): Address at which the data will be placed.
+        pieces: Offsets and values to output.
+        length: The length of the output.
+        filler: Iterable to use for padding.
+        preprocessor (function): Gets called on every element to optionally
+           transform the element before flattening. If :const:`None` is
+           returned, then the original value is used.
+        word_size (int): Word size of the converted integer (in bits).
+        endianness (str): Endianness of the converted integer ("little"/"big").
+        sign (str): Signedness of the converted integer (False/True)
+        address (int): Address at which the data will be placed.
 
     Examples:
-      >>> fit({12: 0x41414141,
-      ...      24: 'Hello',
-      ...     })
-      'aaaabaaacaaaAAAAeaaafaaaHello'
-      >>> fit({'caaa': ''})
-      'aaaabaaa'
-      >>> fit({12: 'XXXX'}, filler = 'AB', length = 20)
-      'ABABABABABABXXXXABAB'
-      >>> fit({ 8: [0x41414141, 0x42424242],
-      ...      20: 'CCCC'})
-      'aaaabaaaAAAABBBBeaaaCCCC'
-      >>> fit({ 0x61616162: 'X'})
-      'aaaaX'
 
+        >>> fit({12: 0x41414141,
+        ...      24: 'Hello',
+        ...     })
+        'aaaabaaacaaaAAAAeaaafaaaHello'
+        >>> fit({'caaa': ''})
+        'aaaabaaa'
+        >>> fit({12: 'XXXX'}, filler = 'AB', length = 20)
+        'ABABABABABABXXXXABAB'
+        >>> fit({ 8: [0x41414141, 0x42424242],
+        ...      20: 'CCCC'})
+        'aaaabaaaAAAABBBBeaaaCCCC'
+        >>> fit({ 0x61616162: 'X'})
+        'aaaaX'
+        >>> fit({ lambda: 4: 'X'})
+        'aaaaX'
+        >>> fit({ 4: lambda: 'X'})
+        'aaaaX'
+        >>> fit({ lambda: 4: lambda: 'X'})
+        'aaaaX'
+
+    Label Examples:
+
+        Let's start by inspecting the three important attributes of a :class:`.Label`,
+        ``address``, ``contents``, and ``length``.
+
+        >>> a = fit.Label("Static label contents")
+        >>> a.contents
+        "Static label contents"
+        >>> len(a) == len("Static label contents")
+        True
+        >>> a.address
+        0
+
+        When used inside of a `fit()` expression behind a ``lambda``, these fields
+        can be automatically updated.
+
+        >>> a = fit.Label()
+        >>> offset = lambda: (len(a) / 4)
+        >>> contents = lambda: a("Dynamic contents.  Offset %i, Length %i" % (a.address, len(a)))
+        >>> fit({offset: contents})
+        'aaaabaaacDynamic contents.  Offset 9, Length 38'
+
+        After ``fit`` completes the packing, the values can be extracted from the label.
+
+        >>> a.contents, a.address, len(a)
+        ('Dynamic contents.  Offset 9, Length 38', 9, 38)
+
+        The above example only makes use of one label, but you can build more complicated
+        constructs fairly easy.
+
+        >>> a = fit.Label()
+        >>> b = fit.Label()
+        >>> c = fit.Label()
+        >>> address = 0xdead0000
+        >>> build_fmtstr = lambda: '%%%d$n' % (1 + ((b.address - address) / 4))
+        >>> result = fit({
+        ...     0:    lambda: "The format string is %d bytes long at %#x." % (len(build_fmtstr()), c.address),
+        ...     0x40: lambda: a("Pretend this is some shellcode."),
+        ...     0x80: lambda: [b("Pointer to a."), a.address, c(build_fmtstr())]
+        ... }, address=address)
+        >>> print(hexdump(result))
+        00000000  54 68 65 20  66 6f 72 6d  61 74 20 73  74 72 69 6e  │The │form│at s│trin│
+        00000010  67 20 69 73  20 35 20 62  79 74 65 73  20 6c 6f 6e  │g is│ 5 b│ytes│ lon│
+        00000020  67 20 61 74  20 30 78 64  65 61 64 30  30 39 65 2e  │g at│ 0xd│ead0│09e.│
+        00000030  6d 61 61 61  6e 61 61 61  6f 61 61 61  70 61 61 61  │maaa│naaa│oaaa│paaa│
+        00000040  50 72 65 74  65 6e 64 20  74 68 69 73  20 69 73 20  │Pret│end │this│ is │
+        00000050  73 6f 6d 65  20 73 68 65  6c 6c 63 6f  64 65 2e 61  │some│ she│llco│de.a│
+        00000060  79 61 61 61  7a 61 61 62  62 61 61 62  63 61 61 62  │yaaa│zaab│baab│caab│
+        00000070  64 61 61 62  65 61 61 62  66 61 61 62  67 61 61 62  │daab│eaab│faab│gaab│
+        00000080  50 6f 69 6e  74 65 72 20  74 6f 20 61  2e 40 00 ad  │Poin│ter │to a│.@··│
+        00000090  de 25 33 33  24 6e                                  │·%33│$n│
+        00000096
     """
     # HACK: To avoid circular imports we need to delay the import of `cyclic`
     from pwnlib.util import cyclic
@@ -638,20 +754,33 @@ def fit(pieces=None, **kwargs):
     # convert large int keys to offsets
     pieces_ = dict()
     for k, v in pieces.items():
-        if isinstance(k, (int, long)):
+        if isinstance(k, numbers.Integral):
             # cyclic() generally starts with 'aaaa'
             if k >= 0x61616161:
                 out, k = fill(out, pack(k))
         elif isinstance(k, str):
             out, k = fill(out, k)
+        elif callable(k):
+            pass
         else:
             raise TypeError("fit(): offset must be of type int or str, but got '%s'" % type(k))
         pieces_[k] = v
     pieces = pieces_
 
     # convert values to their flattened forms
-    for k,v in pieces.items():
-        pieces[k] = _flat([v], preprocessor, packer, address=address+k)
+    orig_pieces = pieces.copy()
+    for _ in xrange(10000):
+        pieces = {}
+        try:
+            for k,v in orig_pieces.items():
+                if callable(k):
+                    k = k()
+                pieces[k] = _flat([v], preprocessor, packer, address=address+k)
+            break
+        except FitOffsetsChangedException:
+            continue
+    else:
+        raise ValueError("fit(): Could not stabilize labels")
 
     # if we were provided a length, make sure everything fits
     last = max(pieces)
@@ -685,6 +814,9 @@ def fit(pieces=None, **kwargs):
         out = out[:l]
 
     return ''.join(out)
+
+# Make fit.Label available via "fit.Label"
+fit.Label = FitLabel
 
 def signed(integer):
     return unpack(pack(integer), signed=True)
@@ -815,7 +947,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
                 break
             if isinstance(b, str):
                 src_ += b
-            elif isinstance(b, (int, long)):
+            elif isinstance(b, numbers.Integral):
                 if b > 255 or b < 0:
                     raise ValueError("dd(): Source value %d at index %d is not in range [0;255]" % (b, i))
                 src_ += chr(b)
