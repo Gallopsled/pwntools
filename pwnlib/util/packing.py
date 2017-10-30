@@ -504,6 +504,8 @@ def _flat(args, preprocessor, packer, address):
             out.append(packer(arg))
         elif isinstance(arg, bytearray):
             out.append(str(arg))
+        elif hasattr(arg, '__call__'):
+            out.append(arg(address))
         else:
             raise ValueError("flat(): Flat does not support values of type %s" % type(arg))
 
