@@ -490,7 +490,7 @@ def _flat(args, preprocessor, packer, address):
     for arg in args:
         address = initial_address + out.tell()
 
-        while isinstance(arg, type(lambda:0)):
+        while callable(arg) and not isinstance(arg, FitLabel):
             arg = arg()
 
         if not isinstance(arg, (list, tuple)):
