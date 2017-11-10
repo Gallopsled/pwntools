@@ -892,6 +892,7 @@ class Corefile(ELF):
         # We want to find the beginning of it
         if self.at_execfn:
             address = self.at_execfn-1
+            log.debug("Using AT_EXECFN: {:#x}".format(address))
         else:
             log.debug('No AT_EXECFN')
             address = stack.stop
@@ -926,6 +927,12 @@ class Corefile(ELF):
         if p_last_env_addr < 0:
             # Something weird is happening.  Just don't touch it.
             log.warn_once("Found bad environment at %#x", last_env_addr)
+            return
+
+        # The envp[] array may have been overridden by a stack corruption. Give up if
+        # we cannot find it.
+        if p_last_env_addr == -1:
+            log.warn("Core dump's stack is corrupted past the main frame (could not find envp[] and argv[] arrays)")
             return
 
         # Sanity check that we did correctly find the envp NULL terminator.
