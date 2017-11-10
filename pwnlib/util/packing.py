@@ -486,8 +486,9 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
 
 def _flat(args, preprocessor, packer, address):
     out = io.BytesIO()
+    initial_address = address
     for arg in args:
-        address = address + out.tell()
+        address = initial_address + out.tell()
 
         while isinstance(arg, type(lambda:0)):
             arg = arg()
@@ -714,7 +715,7 @@ def fit(pieces=None, **kwargs):
         >>> print(hexdump(result))
         00000000  54 68 65 20  66 6f 72 6d  61 74 20 73  74 72 69 6e  │The │form│at s│trin│
         00000010  67 20 69 73  20 35 20 62  79 74 65 73  20 6c 6f 6e  │g is│ 5 b│ytes│ lon│
-        00000020  67 20 61 74  20 30 78 64  65 61 64 30  30 39 65 2e  │g at│ 0xd│ead0│09e.│
+        00000020  67 20 61 74  20 30 78 64  65 61 64 30  30 39 31 2e  │g at│ 0xd│ead0│091.│
         00000030  6d 61 61 61  6e 61 61 61  6f 61 61 61  70 61 61 61  │maaa│naaa│oaaa│paaa│
         00000040  50 72 65 74  65 6e 64 20  74 68 69 73  20 69 73 20  │Pret│end │this│ is │
         00000050  73 6f 6d 65  20 73 68 65  6c 6c 63 6f  64 65 2e 61  │some│ she│llco│de.a│
@@ -722,6 +723,7 @@ def fit(pieces=None, **kwargs):
         00000070  64 61 61 62  65 61 61 62  66 61 61 62  67 61 61 62  │daab│eaab│faab│gaab│
         00000080  50 6f 69 6e  74 65 72 20  74 6f 20 61  2e 40 00 ad  │Poin│ter │to a│.@··│
         00000090  de 25 33 33  24 6e                                  │·%33│$n│
+        00000096
     """
     # HACK: To avoid circular imports we need to delay the import of `cyclic`
     from pwnlib.util import cyclic
