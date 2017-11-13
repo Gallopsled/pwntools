@@ -5,7 +5,6 @@ import socket
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
-from pwnlib.timeout import Timeout
 from pwnlib.tubes.sock import sock
 from pwnlib.tubes.remote import remote
 
@@ -41,7 +40,7 @@ class server(sock):
         >>> def callback(conn):
         ...     s = conn.recvline()
         ...     conn.send(s[::-1])
-        ... 
+        ...
         >>> t = server(8889, callback=callback)
         >>> r3 = remote('localhost', t.lport)
         >>> r3.sendline('callback')
