@@ -15,9 +15,8 @@ class server(sock):
     r"""Creates an TCP or UDP-server to listen for connections. It supports
     both IPv4 and IPv6.
 
-    The returned object supports all the methods from
-    The callback should take a :class:`pwnlib.tubes.remote` as
-    it's only argument.
+    The callback function should take a :class:`pwnlib.tubes.remote` as
+    its only argument.
 
     Arguments:
         port(int): The port to connect to.
@@ -26,6 +25,7 @@ class server(sock):
             Defaults to ``0.0.0.0`` / `::`.
         fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
         typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
+        callback: The function to run with the new connection.
 
     Examples:
 
@@ -38,6 +38,15 @@ class server(sock):
         'Hi\n'
         >>> r1.recvline()
         'Hello\n'
+        >>> def callback(conn):
+        ...     s = conn.recvline()
+        ...     conn.send(s[::-1])
+        ... 
+        >>> t = server(8889, callback=callback)
+        >>> r3 = remote('localhost', t.lport)
+        >>> r3.sendline('callback')
+        >>> r3.recv()
+        '\nkcabllac'
     """
 
     #: Local port
