@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import errno
 import socket
+import threading
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -14,9 +15,6 @@ class server(sock):
     r"""Creates an TCP or UDP-server to listen for connections. It supports
     both IPv4 and IPv6.
 
-    The callback function should take a :class:`pwnlib.tubes.remote` as
-    its only argument.
-
     Arguments:
         port(int): The port to connect to.
             Defaults to a port auto-selected by the operating system.
@@ -24,27 +22,24 @@ class server(sock):
             Defaults to ``0.0.0.0`` / `::`.
         fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
         typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
-        callback: The function to run with the new connection.
+        callback: A function to be started on incoming connections. It should take a :class:`pwnlib.tubes.remote` as its only argument.
 
     Examples:
 
         >>> s = server(8888)
-        >>> r1 = remote('localhost', s.lport)
-        >>> r2 = remote('localhost', s.lport)
-        >>> r1.sendline("Hello")
-        >>> r2.sendline("Hi")
-        >>> r2.recvline()
-        'Hi\n'
-        >>> r1.recvline()
+        >>> client_conn = remote('localhost', s.lport)
+        >>> server_conn = s.next_connection()
+        >>> client_conn.sendline('Hello')
+        >>> server_conn.recvline()
         'Hello\n'
-        >>> def callback(conn):
-        ...     s = conn.recvline()
-        ...     conn.send(s[::-1])
+        >>> def cb(r):
+        ...     client_input = r.readline()
+        ...     r.send(client_input[::-1])
         ...
-        >>> t = server(8889, callback=callback)
-        >>> r3 = remote('localhost', t.lport)
-        >>> r3.sendline('callback')
-        >>> r3.recv()
+        >>> t = server(8889, callback=cb)
+        >>> client_conn = remote('localhost', t.lport)
+        >>> client_conn.sendline('callback')
+        >>> client_conn.recv()
         '\nkcabllac'
     """
 
@@ -71,8 +66,8 @@ class server(sock):
 
     _accepter = None
 
-    def __init__(self, port=0, bindaddr = "0.0.0.0",
-                 fam = "any", typ = "tcp", callback = None, *args, **kwargs):
+    def __init__(self, port=0, bindaddr = "0.0.0.0", fam = "any", typ = "tcp",
+                 callback = None, blocking = False, *args, **kwargs):
         super(server, self).__init__(*args, **kwargs)
 
         port = int(port)
@@ -84,14 +79,6 @@ class server(sock):
 
         if fam == socket.AF_INET6 and bindaddr == '0.0.0.0':
             bindaddr = '::'
-
-        def echo(remote):
-            while True:
-                s = remote.readline()
-                remote.send(s)
-
-        if not callback:
-            callback = echo
 
         h = self.waitfor('Trying to bind to %s on port %d' % (bindaddr, port))
 
@@ -115,6 +102,9 @@ class server(sock):
 
         h.success()
 
+        self.sock = listen_sock
+        self.connections_waiting = threading.Event()
+        self.connections = []
         def accepter():
             while True:
                 h = self.waitfor('Waiting for connections on %s:%s' % (self.lhost, self.lport))
@@ -122,7 +112,6 @@ class server(sock):
                     try:
                         if self.type == socket.SOCK_STREAM:
                             sock, rhost = listen_sock.accept()
-                            rhost, rport = rhost[:2]
                         else:
                             data, rhost = listen_sock.recvfrom(4096)
                             listen_sock.connect(rhost)
@@ -138,18 +127,34 @@ class server(sock):
                         sock = None
                         return
 
-                r = remote(rhost, rport, sock = sock)
-                t = context.Thread(target = callback, args = (r,))
-                t.daemon = False
-                t.start()
-                h.success('Got connection from %s on port %d' % (rhost, rport))
+                self.rhost, self.rport = rhost[:2]
+                r = remote(self.rhost, self.rport, sock = sock)
+                h.success('Got connection from %s on port %d' % (self.rhost, self.rport))
+                if callback:
+                    if not blocking:
+                        t = context.Thread(target = callback, args = (r,))
+                        t.daemon = True
+                        t.start()
+                    else:
+                        callback(r)
+                else:
+                    self.connections.append(r)
+                    if not self.connections_waiting.is_set():
+                        self.connections_waiting.set()
 
         self._accepter = context.Thread(target = accepter)
         self._accepter.daemon = False
         self._accepter.start()
 
+    def next_connection(self):
+        if not self.connections_waiting.is_set():
+            self.connections_waiting.wait()
+        conn = self.connections.pop(0)
+        if not self.connections:
+            self.connections_waiting.clear()
+        return conn
+
     def close(self):
-        self._accepter.close()
         # since `close` is scheduled to run on exit we must check that we got
         # a connection or the program will hang in the `join` call above
         if self._accepter and self._accepter.is_alive():
