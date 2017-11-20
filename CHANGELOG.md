@@ -9,9 +9,13 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.10.0](#3100)  | `dev`    | Oct 21, 2017 (planned)
-| [3.9.0](#390)    | `beta`   | Sep 9, 2017 (planned)
-| [3.8.0](#380)    | `stable` | Jul 29, 2017
+| [3.12.0](#3120)  | `dev`    | Jan 13, 2018 (planned)
+| [3.11.0](#3110)  | `beta`   | Dec 2, 2017 (planned)
+| [3.10.0](#3100)  | `stable` | Oct 25, 2017
+| [3.9.2](#392)    |          | Oct 5, 2017
+| [3.9.1](#391)    |          | Sep 28, 2017
+| [3.9.0](#390)    |          | Sep 11, 2017
+| [3.8.0](#380)    |          | Jul 29, 2017
 | [3.7.1](#371)    |          | Jul 14, 2017
 | [3.7.0](#370)    |          | Jun 19, 2017
 | [3.6.1](#361)    |          | May 12, 2017
@@ -36,13 +40,65 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
+## 3.12.0
+
+To be released on Jan 13, 2018.
+
+## 3.11.0
+
+To be released on Dec 2, 2017.
+
+- [#1044][1044] Enhancements to ROP
+    + Much better support for 64-bit Intel (amd64) ROP
+    + ROP gadget selection is optimized to favor multi-pops instead of multiple single-pop gadgets
+    + Added support for blacklisting byte values in ROP gadget addresses
+- [#1049][1049] Enhancements to `cyclic`
+    + `context` now has two additional attributes, `cyclic_alphabet` and `cyclic_length`, which correspond to the arguments `alphabet` and `n` to `cyclic()` and `cyclic_find()` and related routines.
+    + The motivation for this change is to allow setting the `alphabet` globally, so that any padding / patterns generated internally to pwntools can be controlled.  The specific motivation is blacklisting values in ROP padding.
+- [#1052][1052] Enhancements for detecting `QEMU_LD_PREFIX` used by QEMU user-mode emulation for sysroots
+
+[1044]: https://github.com/Gallopsled/pwntools/pull/1044
+[1049]: https://github.com/Gallopsled/pwntools/pull/1049
+[1052]: https://github.com/Gallopsled/pwntools/pull/1052
+
 ## 3.10.0
 
-To be released on Sep 8, 2017.
+- [#1007][1007] Add support for setting a `gdbinit` file in the context
+- [#1055][1055] Fixes for `Corefile` stack parsing, speed up `ELF.string()`
+- [#1057][1057] Fix a variable name typo in `DynELF` logging which results in an exception being thrown
+- [#1058][1058] Fix an edge case in `ssh_process.exe`
+
+[1007]: https://github.com/Gallopsled/pwntools/pull/1007
+[1055]: https://github.com/Gallopsled/pwntools/pull/1055
+[1057]: https://github.com/Gallopsled/pwntools/pull/1057
+[1058]: https://github.com/Gallopsled/pwntools/pull/1058
+
+
+## 3.9.2
+
+- [#1043][1043] Do not attempt to populate the libraries used by statically-linked binaries
+
+[1043]: https://github.com/Gallopsled/pwntools/pull/1043
+
+## 3.9.1
+
+- [#1038][1038] Fix an issue with `process()` where glibc would buffer data internally, causing a hang on `select()`
+- [#1036][1036] Fix Travis CI logging verbosity
+- [#1029][1029] Fix some `unicode` issues when using the `readline` command history in `tube.interactive()`
+
+[1038]: https://github.com/Gallopsled/pwntools/pull/1038
+[1036]: https://github.com/Gallopsled/pwntools/pull/1036
+[1029]: https://github.com/Gallopsled/pwntools/pull/1029
 
 ## 3.9.0
 
-To be released on Sep 8, 2017.
+- [#1003][1003] Make `concat_all` faster while also simplifying it's logic
+- [#1014][1014] Fix for overwritten env when parsing core file
+- [#1023][1023] Fixes to Travis CI
+
+[1003]: https://github.com/Gallopsled/pwntools/pull/1003
+[1014]: https://github.com/Gallopsled/pwntools/pull/1014
+[1023]: https://github.com/Gallopsled/pwntools/pull/1023
 
 ## 3.8.0
 
