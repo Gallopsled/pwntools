@@ -219,6 +219,9 @@ def run_in_new_terminal(command, terminal = None, args = None):
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
             args     = ['splitw']
+        elif 'STY' in os.environ and which('screen'):
+            terminal = 'screen'
+            args     = ['-t','pwntools-gdb','bash','-c']
 
     if not terminal:
         log.error('Could not find a terminal binary to use. Set context.terminal to your terminal.')
