@@ -190,6 +190,8 @@ def run_in_new_terminal(command, terminal = None, args = None):
           variable), ``x-terminal-emulator`` is used.
         - If tmux is detected (by the presence of the ``$TMUX`` environment
           variable), a new pane will be opened.
+        - If GNU Screen is detected (by the presence of the ``$STY`` environment
+          variable), a new screen will be opened.
 
     Arguments:
         command (str): The command to run.
