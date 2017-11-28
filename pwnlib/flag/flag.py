@@ -4,10 +4,13 @@ from __future__ import absolute_import
 
 import os
 
-from pwnlib.args import args
+import pwnlib.args
 from pwnlib.log import getLogger
 from pwnlib.tubes.remote import remote
+from pwnlib.util.misc import write
 
+pwnlib.args.initialize()
+args = pwnlib.args.args
 env_server  = args.get('FLAG_HOST', 'flag-submission-server').strip()
 env_port    = args.get('FLAG_PORT', '31337').strip()
 env_proto   = args.get('FLAG_PROTO', 'tcp').strip()
