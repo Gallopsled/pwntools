@@ -1156,7 +1156,7 @@ class ROP(object):
         regs = set(regs or ())
 
         for addr, gadget in self.gadgets.items():
-            addr_bytes = set(pack(gadget.addr))
+            addr_bytes = set(pack(gadget.address))
             if addr_bytes & self._badchars:     continue
             if gadget.insns[-1] != 'ret':        continue
             if gadget.move < move:               continue
