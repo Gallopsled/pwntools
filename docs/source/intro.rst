@@ -27,7 +27,7 @@ This exposes a standard interface to talk to processes, sockets, serial ports,
 and all manner of things, along with some nifty helpers for common tasks.
 For example, remote connections via :mod:`pwnlib.tubes.remote`.
 
-    >>> conn = remote('ftp.debian.org',21)
+    >>> conn = remote('ftp.ubuntu.org',21)
     >>> conn.recvline() # doctest: +ELLIPSIS
     '220 ...'
     >>> conn.send('USER anonymous\r\n')
