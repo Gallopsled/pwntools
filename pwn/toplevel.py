@@ -30,7 +30,7 @@ from pwnlib.encoders import *
 from pwnlib.exception import PwnlibException
 from pwnlib.gdb import attach, debug, debug_assembly, debug_shellcode
 from pwnlib.flag import *
-from pwnlib.fmtstr import FmtStr, fmtstr_payload
+from pwnlib.formatstring import FormatString
 from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak, RelativeMemLeak
 from pwnlib.regsort import *
