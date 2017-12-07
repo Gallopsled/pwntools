@@ -43,6 +43,7 @@ import os
 import re
 import StringIO
 import subprocess
+import tempfile
 
 from collections import namedtuple
 

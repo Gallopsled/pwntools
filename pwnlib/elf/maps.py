@@ -1,8 +1,5 @@
 from __future__ import absolute_import
 
-import os
-import tempfile
-
 # Pre-assembled shellcode for each architecture.
 #
 # This is literally the output of:
