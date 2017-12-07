@@ -20,6 +20,7 @@ from pprint import pprint
 import pwnlib
 from pwnlib import *
 from pwnlib.asm import *
+from pwnlib.args import args
 from pwnlib.context import Thread
 from pwnlib.context import context
 from pwnlib.dynelf import DynELF

@@ -6,5 +6,5 @@
 :mod:`pwnlib.flag` --- CTF Flag Management
 ==========================================
 
-.. automodule:: pwnlib.flag
+.. automodule:: pwnlib.flag.flag
    :members:

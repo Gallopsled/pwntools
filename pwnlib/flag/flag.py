@@ -7,24 +7,48 @@ import os
 from pwnlib.args import args
 from pwnlib.log import getLogger
 from pwnlib.tubes.remote import remote
-
-env_server  = args.get('FLAG_HOST', 'flag-submission-server').strip()
-env_port    = args.get('FLAG_PORT', '31337').strip()
-env_proto   = args.get('FLAG_PROTO', 'tcp').strip()
-env_file    = args.get('FLAG_FILE', '/does/not/exist').strip()
-env_exploit_name = args.get('EXPLOIT_NAME', 'unnamed-exploit').strip()
-env_target_host  = args.get('TARGET_HOST', 'unknown-target').strip()
-env_team_name    = args.get('TEAM_NAME', 'unknown-team').strip()
+from pwnlib.util.misc import write
 
 log = getLogger(__name__)
 
+#: Default values used for :func:`.submit_flag`
+DEFAULTS = {
+    'server': 'flag-submission-server',
+    'exploit': 'unnamed-exploit',
+    'target': 'unknown-target',
+    'port': '31337',
+    'proto': 'tcp',
+    'team': 'unknown-team',
+    'file': ''
+}
+
+#: Argument names used for :func:`.submit_flag` (see :mod:`pwnlib.args`).
+#:
+#: Used e.g. ``python exploit.py FLAG_HOST=foo.bar.com`` or
+#: ``PWNLIB_FLAG_HOST=foo.bar.com python exploit.py``
+ARGS = {
+    'server':  'FLAG_HOST',
+    'exploit': 'EXPLOIT_NAME',
+    'target':  'TARGET_HOST',
+    'port':    'FLAG_PORT',
+    'proto':   'FLAG_PROTO',
+    'team':    'TEAM_NAME',
+    'file':    'FLAG_FILE',
+}
+
+def _get_env_default(name):
+    value = args.get(ARGS[name], DEFAULTS[name])
+    return value.strip()
+
+
 def submit_flag(flag,
-                exploit=env_exploit_name,
-                target=env_target_host,
-                server=env_server,
-                port=env_port,
-                proto=env_proto,
-                team=env_team_name):
+                exploit=None,
+                target=None,
+                server=None,
+                port=None,
+                proto=None,
+                team=None,
+                file=None):
     """
     Submits a flag to the game server
 
@@ -34,10 +58,14 @@ def submit_flag(flag,
         target(str): Target identifier, optional
         server(str): Flag server host name, optional
         port(int): Flag server port, optional
-        proto(str), Flag server protocol, optional
+        proto(str): Flag server protocol, optional
 
     Optional arguments are inferred from the environment,
     or omitted if none is set.
+
+    Note:
+        If ``file`` is specified, ``server`` is not specified
+        (or is the default value), ``server`` is ignored.
 
     Returns:
         A string indicating the status of the key submission,
@@ -46,14 +74,25 @@ def submit_flag(flag,
     Doctest:
 
         >>> l = listen()
-        >>> _ = submit_flag('flag', server='localhost', port=l.lport)
+        >>> _ = submit_flag('the-flag', server='localhost', port=l.lport)
         >>> c = l.wait_for_connection()
         >>> c.recvall().split()
-        ['flag', 'unnamed-exploit', 'unknown-target', 'unknown-team']
+        ['the-flag', 'unnamed-exploit', 'unknown-target', 'unknown-team']
+
+        >>> submit_flag('the-flag', file='./my-flag-file')
+        >>> read('./my-flag-file')
+        'the-flag'
     """
     flag = flag.strip()
-
     log.success("Flag: %r" % flag)
+
+    server  = server  or _get_env_default('server')
+    exploit = exploit or _get_env_default('exploit')
+    target  = target  or _get_env_default('target')
+    port    = port    or _get_env_default('port')
+    proto   = proto   or _get_env_default('proto')
+    team    = team    or _get_env_default('team')
+    file    = file    or _get_env_default('file')
 
     data = "\n".join([flag,
                       exploit,
@@ -61,13 +100,20 @@ def submit_flag(flag,
                       team,
                       ''])
 
-    if os.path.exists(env_file):
-        write(env_file, data)
+    if file:
+        try:
+            write(file, data)
+        except Exception as e:
+            log.warn("Could not write flag %r to %r (%s)", flag, os.path.realpath(file), e)
+
+    # If the server is the default value, don't attempt to submit
+    # the flag to the server if we wrote to file.
+    if file and server == DEFAULTS['server']:
         return
 
     try:
         with remote(server, int(port)) as r:
             r.send(data)
             return r.recvall(timeout=1)
-    except Exception:
-        log.warn("Could not submit flag %r to %s:%s" % (flag, server, port))
+    except Exception as e:
+        log.warn("Could not submit flag %r to %s:%s (%s)", flag, server, port, e)
