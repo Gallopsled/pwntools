@@ -478,7 +478,7 @@ def binary():
         >>> gdb.binary() # doctest: +SKIP
         '/usr/bin/gdb'
     """
-    gdb = misc.which('gdb')
+    gdb = misc.which('pwntools-gdb') or misc.which('gdb')
 
     if not context.native:
         multiarch = misc.which('gdb-multiarch')
