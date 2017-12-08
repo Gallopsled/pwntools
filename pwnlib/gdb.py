@@ -230,6 +230,12 @@ def _gdbserver_port(gdbserver, ssh):
     # Process /bin/bash created; pid = 14366
     # Listening on port 34816
     process_created = gdbserver.recvline()
+
+    if process_created.startswith('ERROR:'):
+        raise ValueError(
+            'Failed to spawn process under gdbserver. gdbserver error message: %s' % process_created
+        )
+
     gdbserver.pid   = int(process_created.split()[-1], 0)
 
     listening_on = ''
