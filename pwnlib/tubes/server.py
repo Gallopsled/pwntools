@@ -143,7 +143,7 @@ class server(sock):
                         self.connections_waiting.set()
 
         self._accepter = context.Thread(target = accepter)
-        self._accepter.daemon = False
+        self._accepter.daemon = True
         self._accepter.start()
 
     def next_connection(self):
