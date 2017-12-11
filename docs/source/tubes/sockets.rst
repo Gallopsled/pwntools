@@ -23,3 +23,9 @@
    .. autoclass:: pwnlib.tubes.listen.listen
       :members:
       :show-inheritance:
+
+.. automodule:: pwnlib.tubes.server
+
+   .. autoclass:: pwnlib.tubes.server.server
+      :members:
+      :show-inheritance:
