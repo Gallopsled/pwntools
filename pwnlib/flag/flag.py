@@ -81,7 +81,7 @@ def submit_flag(flag,
 
         >>> submit_flag('the-flag', file='./my-flag-file')
         >>> read('./my-flag-file')
-        'the-flag'
+        'the-flag\nunnamed-exploit\nunknown-target\nunknown-team\n'
     """
     flag = flag.strip()
     log.success("Flag: %r" % flag)
