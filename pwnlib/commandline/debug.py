@@ -43,6 +43,12 @@ parser.add_argument(
     '--process', metavar='PROCESS_NAME',
     help='Name of the process to attach to (e.g. "bash")'
 )
+parser.add_argument(
+    '--sysroot', metavar='SYSROOT',
+    type=str,
+    default='',
+    help="GDB sysroot path"
+)
 
 def main(args):
     gdbscript = ''
@@ -78,7 +84,7 @@ def main(args):
         return 1
 
     if args.pid or args.process:
-        pid = gdb.attach(target, gdbscript=gdbscript)
+        pid = gdb.attach(target, gdbscript=gdbscript, sysroot=args.sysroot)
 
         # Since we spawned the gdbserver process, and process registers an
         # atexit handler to close itself, gdbserver will be terminated when
@@ -87,7 +93,7 @@ def main(args):
         log.info("GDB connection forwarding will terminate when you press enter")
         pause()
     else:
-        gdb.debug(target, gdbscript=gdbscript).interactive()
+        gdb.debug(target, gdbscript=gdbscript, sysroot=args.sysroot).interactive()
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)
