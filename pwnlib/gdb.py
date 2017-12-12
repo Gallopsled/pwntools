@@ -689,7 +689,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
             # new inferiors (tldr; follow-fork-mode child) unless it is run
             # in extended-remote mode.
             pre += 'target extended-remote %s:%d\n' % (host, port)
-            pre += 'set detach-on-fork off'
+            pre += 'set detach-on-fork off\n'
 
         def findexe():
             for spid in proc.pidof(target):
