@@ -60,7 +60,7 @@ def main(args):
 
     if args.executable:
         if os.path.exists(args.executable):
-            context.binary = ELF(args.executable.name)
+            context.binary = ELF(args.executable)
             target = context.binary.path
 
         # This path does nothing, but avoids the "print_usage()"
