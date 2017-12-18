@@ -717,7 +717,8 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         log.error('could not find target process')
 
     if exe:
-        pre += 'file %s\n' % exe
+        # The 'file' statement should go first
+        pre = 'file %s\n%s' % (exe, pre)
 
     cmd = binary()
 
