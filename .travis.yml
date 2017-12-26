@@ -21,6 +21,10 @@ cache:
         - /home/travis/virtualenv/python2.7.13/bin/
 python:
   - "2.7"
+  - "3.6"
+matrix:
+  allow_failures:
+    - python: "3.6"
 before_install:
   - echo $-
   - source travis/install.sh
@@ -31,7 +35,12 @@ install:
   - pip install --upgrade appdirs # https://github.com/ActiveState/appdirs/issues/89#issuecomment-282326570
   - pip install --upgrade --editable .
   - pip install --upgrade --requirement docs/requirements.txt
+  - pip install --upgrade flake8
 before_script:
+  # stop the build if there are Python syntax errors or undefined names
+  - flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics
+  # exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
+  - flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
   - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
   - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
   - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
