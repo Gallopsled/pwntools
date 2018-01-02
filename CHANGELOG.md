@@ -44,6 +44,21 @@ The table below shows which release corresponds to each branch, and what date th
 
 To be released on Jan 13, 2018.
 
+- [#1083][1083] Better error messages for `gdb` when `LD_PRELOAD` is incorrect
+- [#1085][1085] Add support for extracting Android `BOOTLDR!` images
+- [#1075][1075] Add support for detecting GNU Screen for `run_in_new_terminal`
+- [#1074][1074] Add support for running `pwntools-gdb` wrapper script instead of `gdb`
+- [#1067][1067] Add `pwnlib.tubes.server` module, which adds a reusable `server` listener
+- [#1063][1063] Add support for labels in `fit()`, allowing dynamic contents to be injected.  (This feature is really cool, check out the pull request!)
+
+[1083]: https://github.com/Gallopsled/pwntools/pull/1083
+[1085]: https://github.com/Gallopsled/pwntools/pull/1085
+[1075]: https://github.com/Gallopsled/pwntools/pull/1075
+[1074]: https://github.com/Gallopsled/pwntools/pull/1074
+[1067]: https://github.com/Gallopsled/pwntools/pull/1067
+[1063]: https://github.com/Gallopsled/pwntools/pull/1063
+
+
 ## 3.11.0
 
 To be released on Dec 2, 2017.
@@ -56,10 +71,18 @@ To be released on Dec 2, 2017.
     + `context` now has two additional attributes, `cyclic_alphabet` and `cyclic_length`, which correspond to the arguments `alphabet` and `n` to `cyclic()` and `cyclic_find()` and related routines.
     + The motivation for this change is to allow setting the `alphabet` globally, so that any padding / patterns generated internally to pwntools can be controlled.  The specific motivation is blacklisting values in ROP padding.
 - [#1052][1052] Enhancements for detecting `QEMU_LD_PREFIX` used by QEMU user-mode emulation for sysroots
+- [#1035][1035] Minor documentation changes
+- [#1032][1032] Enhancements to `pwn template`
+- [#1031][1031] More accurate `Coredump.fault_addr` on amd64
+- [#1084][1084] Fix broken tests due to `ftp.debian.org` going down
 
 [1044]: https://github.com/Gallopsled/pwntools/pull/1044
 [1049]: https://github.com/Gallopsled/pwntools/pull/1049
 [1052]: https://github.com/Gallopsled/pwntools/pull/1052
+[1035]: https://github.com/Gallopsled/pwntools/pull/1035
+[1032]: https://github.com/Gallopsled/pwntools/pull/1032
+[1031]: https://github.com/Gallopsled/pwntools/pull/1031
+[1084]: https://github.com/Gallopsled/pwntools/pull/1084
 
 ## 3.10.0
 
