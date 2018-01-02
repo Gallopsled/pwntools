@@ -90,7 +90,7 @@ setup_android_emulator()
         elif [[ -n "$TRAVIS_TAG" ]]; then
             echo "TRAVIS_TAG ($TRAVIS_TAG) indicates a new relase"
             echo "Forcing Android Emulator installation"
-        elif (git log --stat "$TRAVIS_COMMIT_RANGE" | grep -iE "android|adb"); then
+        elif (git log --stat "$TRAVIS_COMMIT_RANGE" | grep -iE "android|adb" | grep -v "commit "); then
             echo "Found Android-related commits, forcing Android Emulator installation"
         else
             # In order to avoid running the doctests that require the Android

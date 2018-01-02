@@ -55,6 +55,7 @@ from elftools.elf.enums import ENUM_P_TYPE
 from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
+from elftools.elf.segments import InterpSegment
 
 import intervaltree
 
@@ -605,8 +606,18 @@ class ELF(ELFFile):
         >>> any(map(lambda x: 'libc' in x, bash.libs.keys()))
         True
         """
-        if not self.get_section_by_name('.dynamic'):
+
+        # We need a .dynamic section for dynamically linked libraries
+        if not self.get_section_by_name('.dynamic') or self.statically_linked:
             self.libs= {}
+            return
+
+        # We must also specify a 'PT_INTERP', otherwise it's a 'statically-linked'
+        # binary which is also position-independent (and as such has a .dynamic).
+        for segment in self.iter_segments_by_type('PT_INTERP'):
+            break
+        else:
+            self.libs = {}
             return
 
         try:
@@ -1675,16 +1686,33 @@ class ELF(ELFFile):
         return packing.unpack(self.read(address, context.bytes), *a, **kw)
 
     def string(self, address):
-        """Reads a null-terminated string from the specified ``address``"""
+        """string(address) -> str
+
+        Reads a null-terminated string from the specified ``address``
+
+        Returns:
+            A ``str`` with the string contents (NUL terminator is omitted),
+            or an empty string if no NUL terminator could be found.
+        """
         data = ''
         while True:
-            c = self.read(address, 1)
+            read_size = 0x1000
+            partial_page = address & 0xfff
+
+            if partial_page:
+                read_size -= partial_page
+
+            c = self.read(address, read_size)
+
             if not c:
                 return ''
-            if c == '\x00':
-                return data
+
             data += c
-            address += 1
+
+            if '\x00' in c:
+                return data[:data.index('\x00')]
+
+            address += len(c)
 
     def flat(self, address, *a, **kw):
         """Writes a full array of values to the specified address.

@@ -150,7 +150,7 @@ class _Tls_DictStack(threading.local, _DictStack):
 
 def _validator(validator):
     """
-    Validator that tis tightly coupled to the implementation
+    Validator that is tightly coupled to the implementation
     of the classes here.
 
     This expects that the object has a ._tls property which
@@ -340,6 +340,7 @@ class ContextType(object):
         'delete_corefiles': False,
         'device': os.getenv('ANDROID_SERIAL', None) or None,
         'endian': 'little',
+        'gdbinit': "",
         'kernel': None,
         'log_level': logging.INFO,
         'log_file': _devnull(),
@@ -1230,6 +1231,23 @@ class ContextType(object):
         Default value is ``True``.
         """
         return bool(v)
+
+
+    @_validator
+    def gdbinit(self, value):
+        """Path to the gdbinit that is used when running GDB locally.
+
+        This is useful if you want pwntools-launched GDB to include some additional modules,
+        like PEDA but you do not want to have GDB include them by default.
+
+        The setting will only apply when GDB is launched locally since remote hosts may not have
+        the necessary requirements for the gdbinit.
+
+        If set to an empty string, GDB will use the default `~/.gdbinit`.
+
+        Default value is ``""``.
+        """
+        return str(value)
 
     #*************************************************************************
     #                               ALIASES

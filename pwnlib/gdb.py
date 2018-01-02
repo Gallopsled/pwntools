@@ -646,6 +646,10 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         cmd += ' '
         cmd += ' '.join(gdb_args)
 
+    if context.gdbinit:
+        cmd += ' -nh '                     # ignore ~/.gdbinit
+        cmd += ' -x %s ' % context.gdbinit # load custom gdbinit
+
     cmd += ' -q '
 
     if exe and context.native:
