@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.12.0](#3120)  | `dev`    | Jan 13, 2018 (planned)
-| [3.11.0](#3110)  | `beta`   | Dec 2, 2017 (planned)
-| [3.10.0](#3100)  | `stable` | Oct 25, 2017
+| [3.13.0](#3130)  | `dev`    | Mar 31, 2018 (planned)
+| [3.12.0](#3120)  | `beta`   | Feb 17, 2018 (planned)
+| [3.11.0](#3110)  | `stable` | Jan 3, 2018
+| [3.10.0](#3100)  |          | Oct 25, 2017
 | [3.9.2](#392)    |          | Oct 5, 2017
 | [3.9.1](#391)    |          | Sep 28, 2017
 | [3.9.0](#390)    |          | Sep 11, 2017
@@ -42,7 +43,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 3.12.0
 
-To be released on Jan 13, 2018.
+To be released on Feb 17, 2018.
 
 - [#1083][1083] Better error messages for `gdb` when `LD_PRELOAD` is incorrect
 - [#1085][1085] Add support for extracting Android `BOOTLDR!` images
@@ -58,10 +59,7 @@ To be released on Jan 13, 2018.
 [1067]: https://github.com/Gallopsled/pwntools/pull/1067
 [1063]: https://github.com/Gallopsled/pwntools/pull/1063
 
-
 ## 3.11.0
-
-To be released on Dec 2, 2017.
 
 - [#1044][1044] Enhancements to ROP
     + Much better support for 64-bit Intel (amd64) ROP
@@ -95,7 +93,6 @@ To be released on Dec 2, 2017.
 [1055]: https://github.com/Gallopsled/pwntools/pull/1055
 [1057]: https://github.com/Gallopsled/pwntools/pull/1057
 [1058]: https://github.com/Gallopsled/pwntools/pull/1058
-
 
 ## 3.9.2
 
