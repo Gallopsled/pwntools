@@ -602,7 +602,7 @@ def hexdump_iter(fd, width=16, groupsize=4, skip=True, hexii=False, begin=0,
         >>> tmp.flush()
         >>> tmp.seek(4)
         >>> print '\n'.join(hexdump_iter(tmp))
-        00000000  48 45 4c 4c  4f 2c 20 57  4f 52 4c 44               │HELL│O, W│ORLD││
+        00000000  48 45 4c 4c  4f 2c 20 57  4f 52 4c 44               │HELL│O, W│ORLD│
         0000000c
 
         >>> t = tube()
