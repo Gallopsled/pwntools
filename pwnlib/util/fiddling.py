@@ -573,10 +573,10 @@ def update_cyclic_pregenerated(size):
     while size > len(cyclic_pregen):
         cyclic_pregen += de_bruijn_gen.next()
 
-def hexdump_iter(fd, width=16, groupsize=4, skip=True, hexii=False, begin=0,
-                 style=None, highlight=None, cyclic=False):
-    r"""hexdump_iter(s, width = 16, groupsize=4, skip = True, hexii = False, begin = 0,
-                    style = None, highlight = None, cyclic = False) -> str generator
+def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0,
+                 style=None, highlight=None, cyclic=False, groupsize=4):
+    r"""hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
+                    style = None, highlight = None, cyclic = False, groupsize=4) -> str generator
 
     Return a hexdump-dump of a string as a generator of lines.  Unless you have
     massive amounts of data you probably want to use :meth:`hexdump`.
@@ -734,10 +734,10 @@ def hexdump_iter(fd, width=16, groupsize=4, skip=True, hexii=False, begin=0,
     line = "%08x" % (begin + numb)
     yield line
 
-def hexdump(s, width=16, groupsize=4, skip=True, hexii=False,
-            begin=0, style=None, highlight=None, cyclic=False):
-    r"""hexdump(s, width = 16, groupsize=4, skip = True, hexii = False,
-               begin = 0, style = None, highlight = None, cyclic = False) -> str generator
+def hexdump(s, width=16, skip=True, hexii=False, begin=0,
+            style=None, highlight=None, cyclic=False, groupsize=4):
+    r"""hexdump(s, width = 16, skip = True, hexii = False, begin = 0,
+               style = None, highlight = None, cyclic = False, groupsize=4) -> str generator
 
     Return a hexdump-dump of a string.
 
@@ -914,13 +914,13 @@ def hexdump(s, width=16, groupsize=4, skip=True, hexii=False,
     s = packing.flat(s)
     return '\n'.join(hexdump_iter(StringIO.StringIO(s),
                                   width,
-                                  groupsize,
                                   skip,
                                   hexii,
                                   begin,
                                   style,
                                   highlight,
-                                  cyclic))
+                                  cyclic,
+                                  groupsize))
 
 def negate(value, width = None):
     """
