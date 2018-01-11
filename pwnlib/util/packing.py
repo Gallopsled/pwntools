@@ -595,6 +595,8 @@ def fit(pieces=None, **kwargs):
       'aaaabaaaAAAABBBBeaaaCCCC'
       >>> fit({ 0x61616162: 'X'})
       'aaaaX'
+      >>> fit({4: {0: 'X', 4: 'Y'}})
+      'aaaaXaaaY'
 
     """
     # HACK: To avoid circular imports we need to delay the import of `cyclic`
@@ -637,10 +639,6 @@ def fit(pieces=None, **kwargs):
         pieces_[k] = v
     pieces = pieces_
 
-    # convert values to their flattened forms
-    for k,v in pieces.items():
-        pieces[k] = _flat([v], preprocessor, packer)
-
     # if we were provided a length, make sure everything fits
     last = max(pieces)
     if length and last and (last + len(pieces[last]) > length):
@@ -654,7 +652,12 @@ def fit(pieces=None, **kwargs):
             raise ValueError("fit(): data at offset %d overlaps with previous data which ends at offset %d" % (k, l))
         while len(out) < k:
             out.append(filler.next())
-        v = _flat([v], preprocessor, packer)
+        # call `fit` recursively on dictionaries
+        if isinstance(v, dict):
+            v = fit(v, filler=filler, preprocessor=preprocessor)
+        # otherwise just flatten
+        else:
+            v = _flat([v], preprocessor, packer)
         l = k + len(v)
 
         # consume the filler for each byte of actual data
