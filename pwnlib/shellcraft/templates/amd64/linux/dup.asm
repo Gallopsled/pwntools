@@ -10,7 +10,7 @@ Args: [sock (imm/reg) = rbp]
   after     = common.label("after")
 %>
 
-
+    /* dup() file descriptor ${sock} into stdin/stdout/stderr */
 ${dup}:
     ${amd64.mov('rbp', sock)}
 

@@ -1,6 +1,6 @@
 subdirs=xenial stable $(wildcard */)
 makefiles=$(wildcard */Makefile)
-tags=stable beta dev
+tags=base stable beta dev
 
 all: $(makefiles) $(subdirs)
 

@@ -85,8 +85,9 @@ except Exception as e:
 
 setup(
     name                 = 'pwntools',
+    python_requires      = '~=2.7',
     packages             = find_packages(),
-    version              = '3.8.0dev',
+    version              = '3.13.0dev',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],
@@ -97,7 +98,7 @@ setup(
             'data/binutils/*',
             'data/includes/*.h',
             'data/includes/*/*.h',
-            'data/templates/pwnup.mako',
+            'data/templates/*.mako',
         ] + templates,
     },
     entry_points = {'console_scripts': console_scripts},
@@ -105,7 +106,7 @@ setup(
     description          = "Pwntools CTF framework and exploit development library.",
     long_description     = long_description,
     author               = "Gallopsled et al.",
-    author_email         = "#pwntools @ freenode.net",
+    author_email         = "pwntools-users@googlegroups.com",
     url                  = 'https://pwntools.com',
     download_url         = "https://github.com/Gallopsled/pwntools/releases",
     install_requires     = install_requires,

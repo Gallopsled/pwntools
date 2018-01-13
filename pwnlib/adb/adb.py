@@ -328,7 +328,7 @@ class AdbDevice(Device):
             kwargs['port'] = 'emulator'
 
         for field in fields[2:]:
-            k,v = field.split(':')
+            k,v = field.split(':', 1)
             kwargs[k] = v
 
         return AdbDevice(serial, type, **kwargs)
@@ -820,6 +820,7 @@ echo $PATH | while read -d: directory; do
     [ -x "$directory/{name}" ] || continue;
     echo -n "$directory/{name}\\x00";
 done
+[ -x "{name}" ] && echo -n "$PWD/{name}\\x00"
 '''.format(name=name)
 
     which_cmd = which_cmd.strip()

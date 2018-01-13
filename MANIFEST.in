@@ -2,6 +2,6 @@ graft examples
 graft extra
 include *.md *.txt *.sh *.yml MANIFEST.in
 recursive-include docs   *.rst *.png Makefile *.py *.txt
-recursive-include pwnlib *.py *.asm *.rst *.md *.txt *.sh __doc__
+recursive-include pwnlib *.py *.asm *.rst *.md *.txt *.sh __doc__ *.mako
 recursive-include pwn    *.py *.asm *.rst *.md *.txt *.sh
 recursive-exclude *.pyc

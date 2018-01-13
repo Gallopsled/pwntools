@@ -233,4 +233,12 @@ class Call(object):
                 args.extend(map(repr, arg.values))
             else:
                 args.append(arg)
-        return '%s(%s)' % (self.name or fmt % self.target, ', '.join(map(str, args)))
+
+        name = self.name or fmt & self.target
+        arg_str = []
+        for arg in args:
+            if isinstance(arg, (int,long)) and arg > 0x100:
+                arg_str.append(hex(arg))
+            else:
+                arg_str.append(str(arg))
+        return '%s(%s)' % (name, ', '.join(arg_str))

@@ -8,7 +8,7 @@
 :mod:`pwnlib.context` --- Setting runtime variables
 =====================================================
 
-Many settings in ``pwntools`` are controlled via the global variable :data:`.context, such as the selected target operating system, architecture, and bit-width.
+Many settings in ``pwntools`` are controlled via the global variable :data:`.context`, such as the selected target operating system, architecture, and bit-width.
 
 In general, exploits will start with something like:
 

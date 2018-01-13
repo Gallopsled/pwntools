@@ -1,6 +1,6 @@
 all: Dockerfile
 
-Dockerfile: ../stable/Dockerfile FORCE
+Dockerfile: ../xenial/Dockerfile FORCE
 	sed "s|ubuntu:xenial|kalilinux/kali-linux-docker|" < "$<" > "$@"
 
 FORCE:

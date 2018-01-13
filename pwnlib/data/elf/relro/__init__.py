@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from pwnlib.data.elf import relro
-
 import os
 path = os.path.dirname(__file__)
 

@@ -37,8 +37,18 @@ not specified evaluate to an empty string.
     else:
         io = process('./pwnable')
 
+Arguments can also be accessed directly with the dot operator, e.g.:
+
+.. code-block:: python
+
+    if args.REMOTE:
+        ...
+
+Any undefined arguments evaluate to an empty string, ``''``.
+
 The full list of supported "magic arguments" and their effects are listed
 below.
+
 """
 from __future__ import absolute_import
 

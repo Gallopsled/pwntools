@@ -341,7 +341,8 @@ class ssh_process(ssh_channel):
         libs = self.parent.libs(self.executable)
 
         for lib in libs:
-            if self.executable in lib:
+            # Cannot just check "executable in lib", see issue #1047
+            if lib.endswith(self.executable):
                 return pwnlib.elf.elf.ELF(lib)
 
 
@@ -873,6 +874,8 @@ os.chdir(%(cwd)r)
 if env is not None:
     os.environ.clear()
     os.environ.update(env)
+else:
+    env = os.environ
 
 def is_exe(path):
     return os.path.isfile(path) and os.access(path, os.X_OK)
@@ -960,7 +963,7 @@ except Exception:
 %(func_src)s
 apply(%(func_name)s, %(func_args)r)
 
-os.execve(exe, argv, os.environ)
+os.execve(exe, argv, env)
 """ % locals()
 
         script = script.strip()
@@ -1908,7 +1911,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Example:
 
-            >>> s = ssh("esoteric3", "wargame.w3challs.com", 20202, "esoteric3")
+            >>> s = ssh("travis", "example.pwnme")
             >>> s.aslr
             True
         """
