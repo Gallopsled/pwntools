@@ -14,11 +14,9 @@ class ArmEncoder(Encoder):
     arch = 'arm'
 
     blacklist  = {chr(c) for c in range(256) if chr(c) in (string.ascii_letters + string.digits)}
+    icache_flush = 1
 
     def __call__(self, input, avoid, pcreg=None):
-
-        icache_flush = 1
-
         # If randomization is disabled, ensure that the seed
         # is always the same for the builder.
         state = random.getstate()
@@ -29,9 +27,9 @@ class ArmEncoder(Encoder):
             b = builder.builder()
 
             enc_data = b.enc_data_builder(input)
-            dec_loop = b.DecoderLoopBuilder(icache_flush)
+            dec_loop = b.DecoderLoopBuilder(self.icache_flush)
             enc_dec_loop = b.encDecoderLoopBuilder(dec_loop)
-            dec = b.DecoderBuilder(dec_loop, icache_flush)
+            dec = b.DecoderBuilder(dec_loop, self.icache_flush)
 
             output,dec = b.buildInit(dec);
 
