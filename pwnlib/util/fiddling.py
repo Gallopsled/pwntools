@@ -573,8 +573,8 @@ def update_cyclic_pregenerated(size):
     while size > len(cyclic_pregen):
         cyclic_pregen += de_bruijn_gen.next()
 
-def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0,
-                 style=None, highlight=None, cyclic=False, groupsize=4):
+def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
+                 highlight=None, cyclic=False, groupsize=4):
     r"""hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
                     style = None, highlight = None, cyclic = False, groupsize=4) -> str generator
 
