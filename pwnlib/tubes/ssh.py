@@ -1304,7 +1304,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         return misc.parse_ldd_output(data)
 
     def _get_fingerprint(self, remote):
-        cmd = '(openssl sha256 || sha256 || sha256sum) 2>/dev/null < '
+        cmd = '(sha256 || sha256sum || openssl sha256) 2>/dev/null < '
         cmd = cmd + sh_string(remote)
         data, status = self.run_to_end(cmd)
 
