@@ -506,7 +506,9 @@ def binary():
     return gdb
 
 @LocalContext
-def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_args = None, ssh = None, sysroot = None):
+def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True,
+            gdb_args = None, ssh = None, sysroot = None,
+            run_in_new_terminal = misc.run_in_new_terminal):
     """attach(target, gdbscript = None, exe = None, arch = None, ssh = None) -> None
 
     Start GDB in a new terminal and attach to `target`.
@@ -669,11 +671,12 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
-        cmd += ['gdb -q %r %s -x "%s"' % (target.executable,
+        cmd += ['gdb -q %r %s -x "%s" %s' % (target.executable,
                                        target.pid,
-                                       tmpfile)]
+                                       tmpfile,
+                                       ' '.join(gdb_args or []))]
 
-        misc.run_in_new_terminal(' '.join(cmd))
+        run_in_new_terminal(' '.join(cmd))
         return
 
     elif isinstance(target, tubes.sock.sock):
@@ -768,7 +771,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.gdb',
                                           delete = False)
         log.debug('Wrote gdb script to %r\n%s' % (tmp.name, gdbscript))
-        gdbscript = 'shell rm %s\n%s' % (tmp.name, gdbscript)
+        gdbscript = 'shell rm %s\n%s' % (tmp.name, gdbscript or '')
 
         tmp.write(gdbscript)
         tmp.close()
@@ -776,7 +779,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     log.info('running in new terminal: %s' % cmd)
 
-    gdb_pid = misc.run_in_new_terminal(cmd)
+    gdb_pid = run_in_new_terminal(cmd)
 
     if pid and context.native:
         proc.wait_for_debugger(pid)
@@ -947,6 +950,19 @@ def corefile(process):
         :class:`.Core`: The generated core file
     """
 
+    ssh = None
+    run_in_new_terminal = misc.run_in_new_terminal
+
+    if isinstance(process, tubes.ssh.ssh_process):
+        ssh = process.parent
+        def run_in_new_terminal(a):
+            # XXX: This is super hacky.
+            # The argstring includes sshpass XXX, which we need to remove.
+            a = a[a.index('gdb'):]
+            io = ssh.process(['bash', '-c', a])
+            io.recvall()
+            return 0
+
     if context.noptrace:
         log.warn_once("Skipping corefile since context.noptrace==True")
         return
@@ -974,8 +990,13 @@ def corefile(process):
 
     with context.local(terminal = ['sh', '-c']):
         with context.quiet:
-            pid = attach(process, gdb_args=gdb_args)
-            os.waitpid(pid, 0)
+            pid = attach(process, gdb_args=gdb_args, ssh=ssh,
+                         run_in_new_terminal=run_in_new_terminal)
+            if not ssh:
+                os.waitpid(pid, 0)
+
+    if ssh:
+        ssh.download_file(corefile_path)
 
     return elf.corefile.Core(corefile_path)
 

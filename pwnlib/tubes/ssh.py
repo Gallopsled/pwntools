@@ -350,6 +350,9 @@ class ssh_process(ssh_channel):
     def corefile(self):
         import pwnlib.elf.corefile
 
+        if self.poll() is None:
+            return pwnlib.gdb.corefile(self)
+
         finder = pwnlib.elf.corefile.CorefileFinder(self)
         if not finder.core_path:
             self.error("Could not find core file for pid %i" % self.pid)
