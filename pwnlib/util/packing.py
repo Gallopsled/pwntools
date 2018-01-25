@@ -479,43 +479,121 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
     else:
         return lambda number: unpack(number, word_size, endianness, sign)
 
+def _fit(pieces, preprocessor, packer, filler):
+    # Pulls bytes from `filler` and adds them to `pad` until it ends in `key`.
+    # Returns the index of `key` in `pad`.
+    pad = []
+    def fill(key):
+        key = list(key)
+        while len(pad) < len(key) or pad[-len(key):] != key:
+            pad.append(filler.next())
+        return len(pad) - len(key)
 
+    # Key conversion:
+    # - convert str/unicode keys to offsets
+    # - convert large int (no null-bytes in a machine word) keys to offsets
+    pieces_ = dict()
+    large_key = 2**(context.word_size-8)
+    for k, v in pieces.items():
+        if isinstance(k, (int, long)):
+            if k >= large_key:
+                k = fill(pack(k))
+        elif isinstance(k, unicode):
+            k = fill(k.encode('utf8'))
+        elif isinstance(k, bytearray):
+            k = fill(str(k))
+        elif isinstance(k, str):
+            k = fill(k)
+        else:
+            raise TypeError("flat(): offset must be of type int or str, but got '%s'" % type(k))
+        if k in pieces_:
+            raise ValueError("flag(): multiple values at offset %d" % k)
+        pieces_[k] = v
+    pieces = pieces_
 
-def _flat(args, preprocessor, packer):
+    # We must "roll back" `filler` so each recursive call to `_flat` gets it in
+    # the right position
+    filler = iters.chain(pad, filler)
+
+    # Build output
+    out = ''
+    for k, v in sorted(pieces.items()):
+        if k < len(out):
+            raise ValueError("flat(): data at offset %d overlaps with previous data which ends at offset %d" % (k, len(out)))
+
+        # Fill up to offset
+        while len(out) < k:
+            out += filler.next()
+
+        # Recursively flatten data
+        out += _flat([v], preprocessor, packer, filler)
+
+    return filler, out
+
+def _flat(args, preprocessor, packer, filler):
     out = []
     for arg in args:
 
-        if not isinstance(arg, (list, tuple)):
+        if not isinstance(arg, (list, tuple, dict)):
             arg_ = preprocessor(arg)
             if arg_ != None:
                 arg = arg_
 
         if hasattr(arg, '__flat__'):
-            out.append(arg.__flat__())
+            val = arg.__flat__()
         elif isinstance(arg, (list, tuple)):
-            out.append(_flat(arg, preprocessor, packer))
+            val = _flat(arg, preprocessor, packer, filler)
+        elif isinstance(arg, dict):
+            filler, val = _fit(arg, preprocessor, packer, filler)
         elif isinstance(arg, str):
-            out.append(arg)
+            val = arg
         elif isinstance(arg, unicode):
-            out.append(arg.encode('utf8'))
+            val = arg.encode('utf8')
         elif isinstance(arg, (int, long)):
-            out.append(packer(arg))
+            val = packer(arg)
         elif isinstance(arg, bytearray):
-            out.append(str(arg))
+            val = str(arg)
         else:
             raise ValueError("flat(): Flat does not support values of type %s" % type(arg))
+
+        out.append(val)
+
+        # Advance `filler` for "non-recursive" values
+        if not isinstance(arg, (list, tuple, dict)):
+            for _ in xrange(len(val)):
+                filler.next()
+
     return ''.join(out)
 
 @LocalContext
 def flat(*args, **kwargs):
-    """flat(*args, preprocessor = None, word_size = None, endianness = None, sign = None)
+    """flat(*args, preprocessor = None, length = None, filler = de_bruijn(),
+     word_size = None, endianness = None, sign = None) -> str
 
     Flattens the arguments into a string.
 
-    This function takes an arbitrary number of arbitrarily nested lists and
-    tuples. It will then find every string and number inside those and flatten
-    them out. Strings are inserted directly while numbers are packed using the
-    :func:`pack` function.
+    This function takes an arbitrary number of arbitrarily nested lists, tuples
+    and dictionaries.  It will then find every string and number inside those
+    and flatten them out.  Strings are inserted directly while numbers are
+    packed using the :func:`pack` function.  Unicode strings are UTF-8 encoded.
+
+    Dictionary keys give offsets at which to place the corresponding values
+    (which are recursively flattened).  Offsets are relative to where the
+    flattened dictionary occurs in the output (i.e. `{0: 'foo'}` is equivalent
+    to `'foo'`).  Offsets can be integers, unicode strings or regular strings.
+    Integer offsets >= `2**(word_size-8)` are converted to a string using
+    `:func:pack`.  Unicode strings are UTF-8 encoded.  After these conversions
+    offsets are either integers or strings.  In the latter case, the offset will
+    be the lowest index at which the string occurs in `filler`.  See examples
+    below.
+
+    Space between pieces of data is filled out using the iterable `filler`.  The
+    `n`'th byte in the output will be byte at index ``n % len(iterable)`` byte
+    in `filler` if it has finite length or the byte at index `n` otherwise.
+
+    If `length` is given, the output will be padded with bytes from `filler` to
+    be this size.  If the output is longer than `length`, a :py:exc:`ValueError`
+    exception is raised.
 
     The three kwargs `word_size`, `endianness` and `sign` will default to using
     values in :mod:`pwnlib.context` if not specified as an argument.
@@ -524,8 +602,10 @@ def flat(*args, **kwargs):
       args: Values to flatten
       preprocessor (function): Gets called on every element to optionally
          transform the element before flattening. If :const:`None` is
-         returned, then the original value is uded.
-      word_size (int): Word size of the converted integer (in bits).
+         returned, then the original value is used.
+      length: The length of the output.
+      filler: Iterable to use for padding.
+      word_size (int): Word size of the converted integer.
       endianness (str): Endianness of the converted integer ("little"/"big").
       sign (str): Signedness of the converted integer (False/True)
 
@@ -534,21 +614,48 @@ def flat(*args, **kwargs):
       '\\x01\\x00testABABABABABAB'
       >>> flat([1, [2, 3]], preprocessor = lambda x: str(x+1))
       '234'
-"""
+      >>> flat({12: 0x41414141,
+      ...       24: 'Hello',
+      ...      })
+      'aaaabaaacaaaAAAAeaaafaaaHello'
+      >>> flat({'caaa': ''})
+      'aaaabaaa'
+      >>> flat({12: 'XXXX'}, filler = 'AB', length = 20)
+      'ABABABABABABXXXXABAB'
+      >>> flat({ 8: [0x41414141, 0x42424242],
+      ...       20: 'CCCC'})
+      'aaaabaaaAAAABBBBeaaaCCCC'
+      >>> flat({ 0x61616162: 'X'})
+      'aaaaX'
+      >>> flat({4: {0: 'X', 4: 'Y'}})
+      'aaaaXaaaY'
+
+    """
+    # HACK: To avoid circular imports we need to delay the import of `cyclic`
+    from pwnlib.util import cyclic
 
     preprocessor = kwargs.pop('preprocessor', lambda x: None)
-    word_size    = kwargs.pop('word_size', None)
+    filler       = kwargs.pop('filler', cyclic.de_bruijn())
+    length       = kwargs.pop('length', None)
 
     if kwargs != {}:
         raise TypeError("flat() does not support argument %r" % kwargs.popitem()[0])
 
-    return _flat(args, preprocessor, make_packer(word_size))
+    filler = iters.cycle(filler)
+    out = _flat(args, preprocessor, make_packer(), filler)
 
+    if length:
+        if len(out) > length:
+            raise ValueError("flat(): Arguments does not fit within `length` (= %d) bytes" % length)
+        out += ''.join(filler.next() for _ in xrange(length - len(out)))
 
-@LocalContext
-def fit(pieces=None, **kwargs):
-    """fit(pieces, filler = de_bruijn(), length = None, preprocessor = None) -> str
+    return out
 
+def fit(*args, **kwargs):
+    """Legacy alias for `:func:flat`"""
+    return flat(*args, **kwargs)
+
+"""
     Generates a string from a dictionary mapping offsets to data to place at
     that offset.
 
@@ -582,97 +689,8 @@ def fit(pieces=None, **kwargs):
       sign (str): Signedness of the converted integer (False/True)
 
     Examples:
-      >>> fit({12: 0x41414141,
-      ...      24: 'Hello',
-      ...     })
-      'aaaabaaacaaaAAAAeaaafaaaHello'
-      >>> fit({'caaa': ''})
-      'aaaabaaa'
-      >>> fit({12: 'XXXX'}, filler = 'AB', length = 20)
-      'ABABABABABABXXXXABAB'
-      >>> fit({ 8: [0x41414141, 0x42424242],
-      ...      20: 'CCCC'})
-      'aaaabaaaAAAABBBBeaaaCCCC'
-      >>> fit({ 0x61616162: 'X'})
-      'aaaaX'
 
     """
-    # HACK: To avoid circular imports we need to delay the import of `cyclic`
-    from pwnlib.util import cyclic
-
-    filler       = kwargs.pop('filler', cyclic.de_bruijn())
-    length       = kwargs.pop('length', None)
-    preprocessor = kwargs.pop('preprocessor', lambda x: None)
-
-    if kwargs != {}:
-        raise TypeError("fit() does not support argument %r" % kwargs.popitem()[0])
-
-    packer = make_packer()
-    filler = iters.cycle(filler)
-    out = ''
-
-    if not length and not pieces:
-        return ''
-
-    if not pieces:
-        return ''.join(filler.next() for f in range(length))
-
-    def fill(out, value):
-        while value not in out:
-            out += filler.next()
-        return out, out.index(value)
-
-    # convert str keys to offsets
-    # convert large int keys to offsets
-    pieces_ = dict()
-    for k, v in pieces.items():
-        if isinstance(k, (int, long)):
-            # cyclic() generally starts with 'aaaa'
-            if k >= 0x61616161:
-                out, k = fill(out, pack(k))
-        elif isinstance(k, str):
-            out, k = fill(out, k)
-        else:
-            raise TypeError("fit(): offset must be of type int or str, but got '%s'" % type(k))
-        pieces_[k] = v
-    pieces = pieces_
-
-    # convert values to their flattened forms
-    for k,v in pieces.items():
-        pieces[k] = _flat([v], preprocessor, packer)
-
-    # if we were provided a length, make sure everything fits
-    last = max(pieces)
-    if length and last and (last + len(pieces[last]) > length):
-        raise ValueError("fit(): Pieces do not fit within `length` (= %d) bytes" % length)
-
-    # insert data into output
-    out = list(out)
-    l = 0
-    for k, v in sorted(pieces.items()):
-        if k < l:
-            raise ValueError("fit(): data at offset %d overlaps with previous data which ends at offset %d" % (k, l))
-        while len(out) < k:
-            out.append(filler.next())
-        v = _flat([v], preprocessor, packer)
-        l = k + len(v)
-
-        # consume the filler for each byte of actual data
-        for i in range(len(out), l):
-            filler.next()
-
-        out[k:l] = v
-
-    # truncate/pad output
-    if length:
-        if l > length:
-            raise ValueError("fit(): Pieces does not fit within `length` (= %d) bytes" % length)
-        while len(out) < length:
-            out.append(filler.next())
-    else:
-        out = out[:l]
-
-    return ''.join(out)
 
 def signed(integer):
     return unpack(pack(integer), signed=True)
