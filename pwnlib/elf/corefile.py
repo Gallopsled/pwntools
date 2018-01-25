@@ -1094,7 +1094,7 @@ class Coredump(Corefile):
 class CorefileFinder(object):
     def __init__(self, proc):
         if proc.poll() is None:
-            log.error("Process %i has not exited" % (process.pid))
+            log.error("Process %i has not exited" % (proc.pid))
 
         self.process = proc
         self.pid = proc.pid
