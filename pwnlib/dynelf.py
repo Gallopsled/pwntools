@@ -911,7 +911,7 @@ class DynELF(object):
 
         return brk
 
-    def _find_mapped_pages(self, page_size = 0x1000):
+    def _find_mapped_pages(self, readonly = False, page_size = 0x1000):
         """
         A generator of all mapped pages, as found using the Program Headers.
 
@@ -929,7 +929,8 @@ class DynELF(object):
         for i in range(phnum):
             if leak.field_compare(phead, Phdr.p_type, constants.PT_LOAD) :
                 # the interesting pages are those that are aligned to PAGE_SIZE
-                if leak.field_compare(phead, Phdr.p_align, page_size) :
+                if leak.field_compare(phead, Phdr.p_align, page_size) and \
+                    (readonly or leak.field(phead, Phdr.p_flags) & 0x02 != 0):
                     vaddr = leak.field(phead, Phdr.p_vaddr)
                     memsz = leak.field(phead, Phdr.p_memsz)
                     # fix relative offsets
@@ -938,38 +939,29 @@ class DynELF(object):
                     yield vaddr, memsz
             phead += sizeof(Phdr)
 
-    def dump(self, libs = False):
-        """dump(libs = False)
+    def dump(self, libs = False, readonly = False):
+        """dump(libs = False, readonly = False)
 
         Dumps the ELF's memory pages to allow further analysis.
 
         Arguments:
             libs(bool, optional): True if should dump the libraries too (False by default)
+            readonly(bool, optional): True if should dump read-only pages (False by default)
 
         Returns:
-            a list of tuples of the form:
-            [(
-                <virtual address base:     0x804a000>,
-                <ELF's virtual address:    0x804af08>,
-                <ELF's memory size:            0x144>,
-                <binary memory content: '\x7fELF...'>,
-             ),
-            ]
+            a dictionary of the form: { address : bytes }
         """
         leak      = self.leak
         page_size = 0x1000
-        pages     = []
+        pages     = {}
 
-        for vaddr, memsz in self._find_mapped_pages(page_size) :
-            print hex(vaddr), hex(memsz)
+        for vaddr, memsz in self._find_mapped_pages(readonly, page_size) :
             offset    = vaddr % page_size
-            leak_addr = vaddr
-            leak_size = memsz
             if offset != 0 :
-                leak_size = memsz + offset
-                leak_addr = vaddr - offset
-            leak_size += (page_size - (leak_size % page_size)) % page_size
-            pages.append((leak_addr, vaddr, memsz, leak.n(leak_addr, leak_size)))
+                memsz += offset
+                vaddr -= offset
+            memsz += (page_size - (memsz % page_size)) % page_size
+            pages[vaddr] = leak.n(vaddr, memsz)
 
         if libs :
             for lib_name in self.bases() :
@@ -977,6 +969,6 @@ class DynELF(object):
                     continue
                 dyn_lib = self._dynamic_load_dynelf(lib_name)
                 if dyn_lib is not None :
-                    pages += dyn_lib.dump()
+                    pages.update(dyn_lib.dump(readonly = readonly))
 
         return pages
