@@ -159,6 +159,11 @@ def emulate_plt_instructions_inner(elf, got, pc, data, targets):
         OFFSET_GP_GOT = 0x7ff0
         uc.reg_write(U.mips_const.UC_MIPS_REG_GP, got + 0x7ff0)
 
+        # MIPS implements delayed branch, so if the previous instruction is a jump, the execution can't start from here 
+        prev_inst = elf.u32(pc-4, sign='unsigned') # extract the previous instruction
+        if prev_inst in (0x03200008, 0x08002003):  # "jr t9", rispectively: big endian, little endian
+            return None
+
     try:
         uc.emu_start(pc, until=-1, count=5)
     except U.UcError as error:
