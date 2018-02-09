@@ -1,7 +1,7 @@
 <%
   from pwnlib import shellcraft
 %>
-<%page args="filename, mode='O_RDONLY'"/>
+<%page args="filename, flags='O_RDONLY', mode=0"/>
 <%docstring>
 Opens a file
 </%docstring>
@@ -9,4 +9,4 @@ Opens a file
   AT_FDCWD=-100
 %>
     ${shellcraft.pushstr(filename)}
-    ${shellcraft.syscall('SYS_openat', AT_FDCWD, 'sp', mode, 0)}
+    ${shellcraft.syscall('SYS_openat', AT_FDCWD, 'sp', flags, mode)}
