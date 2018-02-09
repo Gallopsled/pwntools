@@ -15,5 +15,5 @@ Example:
 
 </%docstring>
     ${arm.pushstr(filename)}
-    ${arm.linux.open('sp', 0, int(constants.O_RDONLY))}
+    ${arm.linux.open('sp', int(constants.O_RDONLY), 0)}
     ${arm.linux.sendfile(fd, 'r0', 0, 0x7fffffff)}
