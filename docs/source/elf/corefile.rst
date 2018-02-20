@@ -1,5 +1,6 @@
 .. testsetup:: *
 
+   from glob import glob
    from pwn import *
 
 :mod:`pwnlib.elf.corefile` --- Core Files
