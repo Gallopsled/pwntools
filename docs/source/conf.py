@@ -24,6 +24,27 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 import pwnlib
 
+# -- WORK-AROUNDS FOR DEPRECATION ----------------------------------------------
+# Deprecated
+# 1.6b1
+# sphinx.util.compat.Directive class is now deprecated.
+# Please use instead docutils.parsers.rst.Directive
+#
+# Pwntools Note:
+#   Can't just "do the right thing" since we have dependencies that
+#   are also affected by this, specifically sphinxcontrib.autoprogram
+try:
+    import sphinx.util.compat
+except ImportError:
+    import sys
+    import types
+    import sphinx.util
+    import docutils.parsers.rst
+    class compat(types.ModuleType):
+        Directive = docutils.parsers.rst.Directive
+    sphinx.util.compat = compat('sphinx.util.compat')
+    sys.modules['sphinx.util.compat'] = sphinx.util.compat
+
 # -- General configuration -----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
