@@ -41,6 +41,24 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
+## 3.13.0
+
+- [#1104][1104] Add `DynELF.dump()` for dumping remote ELF files
+- [#1101][1101] Set `context.os` via `context.binary`, useful for Android exploitation
+- [5fdc08][5fdc08] Work around broken `pidof` on Android
+- [63dfed][63dfed] Print warning when Corefile deletion fails instead of throwing an exception
+- [#1094][1094] Make hexdump output alignment more consistent
+- [#1096][1096] `flat()` and `fit()` are now the same function
+- [#1068][1068] Work around very old OpenSSL versions which don't have sha256 support *AND* don't exit with an error code when trying to use it
+
+[1104]: https://github.com/Gallopsled/pwntools/pull/1104
+[1101]: https://github.com/Gallopsled/pwntools/pull/1101
+[1094]: https://github.com/Gallopsled/pwntools/pull/1094
+[1096]: https://github.com/Gallopsled/pwntools/pull/1096
+[1068]: https://github.com/Gallopsled/pwntools/pull/1068
+[5fdc08]: https://github.com/Gallopsled/pwntools/commit/5fdc08
+[63dfed]: https://github.com/Gallopsled/pwntools/commit/63dfed
+
 ## 3.12.0
 
 To be released on Feb 17, 2018.
