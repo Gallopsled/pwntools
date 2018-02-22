@@ -820,6 +820,7 @@ echo $PATH | while read -d: directory; do
     [ -x "$directory/{name}" ] || continue;
     echo -n "$directory/{name}\\x00";
 done
+[ -x "{name}" ] && echo -n "$PWD/{name}\\x00"
 '''.format(name=name)
 
     which_cmd = which_cmd.strip()

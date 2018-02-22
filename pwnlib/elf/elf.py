@@ -262,9 +262,13 @@ class ELF(ELFFile):
                 self.bits = 64
 
         # Is this a native binary? Should we be checking QEMU?
-        with context.local(arch=self.arch):
-            #: Whether this ELF should be able to run natively
-            self.native = context.native
+        try:
+            with context.local(arch=self.arch):
+                #: Whether this ELF should be able to run natively
+                self.native = context.native
+        except AttributeError:
+            # The architecture may not be supported in pwntools
+            self.native = False
 
         self._address = 0
         if self.elftype != 'DYN':

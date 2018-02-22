@@ -229,7 +229,7 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None):
 
     orig_args = args
 
-    gdbserver_args = [gdbserver]
+    gdbserver_args = [gdbserver, '--multi']
     if context.aslr:
         gdbserver_args += ['--no-disable-randomization']
     else:
@@ -249,6 +249,12 @@ def _gdbserver_port(gdbserver, ssh):
     # Process /bin/bash created; pid = 14366
     # Listening on port 34816
     process_created = gdbserver.recvline()
+
+    if process_created.startswith('ERROR:'):
+        raise ValueError(
+            'Failed to spawn process under gdbserver. gdbserver error message: %s' % process_created
+        )
+
     gdbserver.pid   = int(process_created.split()[-1], 0)
 
     listening_on = ''
@@ -287,7 +293,7 @@ def _get_runner(ssh=None):
     else:                          return tubes.process.process
 
 @LocalContext
-def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
+def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kwargs):
     """debug(args) -> tube
 
     Launch a GDB server with the specified command line,
@@ -299,6 +305,8 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
         exe(str): Path to the executable on disk
         env(dict): Environment to start the binary in
         ssh(:class:`.ssh`): Remote ssh session to use to launch the process.
+        sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
+            and Android targets.
 
     Returns:
         :class:`.process` or :class:`.ssh_channel`: A tube connected to the target process
@@ -404,7 +412,6 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
 
     runner = _get_runner(ssh)
     which  = _get_which(ssh)
-    sysroot = None
     gdbscript = gdbscript or ''
 
     if context.noptrace:
@@ -416,10 +423,14 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, **kwargs):
     else:
         qemu_port = random.randint(1024, 65535)
         qemu_user = qemu.user_path()
-        sysroot = qemu.ld_prefix(env)
+        sysroot = sysroot or qemu.ld_prefix(env)
         if not qemu_user:
             log.error("Cannot debug %s binaries without appropriate QEMU binaries" % context.arch)
         args = [qemu_user, '-g', str(qemu_port)] + args
+
+    # Use a sane default sysroot for Android
+    if not sysroot and context.os == 'android':
+        sysroot = 'remote:/'
 
     # Make sure gdbserver/qemu is installed
     if not which(args[0]):
@@ -478,7 +489,7 @@ def binary():
         >>> gdb.binary() # doctest: +SKIP
         '/usr/bin/gdb'
     """
-    gdb = misc.which('gdb')
+    gdb = misc.which('pwntools-gdb') or misc.which('gdb')
 
     if not context.native:
         multiarch = misc.which('gdb-multiarch')
@@ -508,6 +519,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
           detect the architechture automatically (if it is supported).
         gdb_args(list): List of additional arguments to pass to GDB.
         sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
+            and Android targets.
 
     Returns:
         PID of the GDB process (or the window which it is running in).
@@ -607,6 +619,10 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
     if gdbscript and not gdbscript.endswith('\n'):
         gdbscript += '\n'
 
+    # Use a sane default sysroot for Android
+    if not sysroot and context.os == 'android':
+        sysroot = 'remote:/'
+
     # gdb script to run before `gdbscript`
     pre = ''
     if not context.native:
@@ -671,7 +687,15 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         exe = exe or target.executable
     elif isinstance(target, tuple) and len(target) == 2:
         host, port = target
-        pre += 'target remote %s:%d\n' % (host, port)
+
+        if context.os != 'android':
+            pre += 'target remote %s:%d\n' % (host, port)
+        else:
+            # Android debugging is done over gdbserver, which can't follow
+            # new inferiors (tldr; follow-fork-mode child) unless it is run
+            # in extended-remote mode.
+            pre += 'target extended-remote %s:%d\n' % (host, port)
+            pre += 'set detach-on-fork off\n'
 
         def findexe():
             for spid in proc.pidof(target):
@@ -699,7 +723,8 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         log.error('could not find target process')
 
     if exe:
-        pre += 'file %s\n' % exe
+        # The 'file' statement should go first
+        pre = 'file %s\n%s' % (exe, pre)
 
     cmd = binary()
 
@@ -731,7 +756,11 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         gdbserver = runner(gdb_cmd)
         port    = _gdbserver_port(gdbserver, None)
         host    = context.adb_host
-        pre    += 'target remote %s:%i' % (context.adb_host, port)
+        pre    += 'target extended-remote %s:%i\n' % (context.adb_host, port)
+
+        # gdbserver on Android sets 'detach-on-fork on' which breaks things
+        # when you're trying to debug anything that forks.
+        pre += 'set detach-on-fork off\n'
 
     gdbscript = pre + (gdbscript or '')
 
@@ -759,7 +788,7 @@ def ssh_gdb(ssh, argv, gdbscript = None, arch = None, **kwargs):
         argv = [argv]
 
     exe = argv[0]
-    argv = ["gdbserver", "127.0.0.1:0"] + argv
+    argv = ["gdbserver", "--multi", "127.0.0.1:0"] + argv
 
     # Download the executable
     local_exe = os.path.basename(exe)

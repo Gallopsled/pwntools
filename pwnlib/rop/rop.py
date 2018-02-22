@@ -105,7 +105,7 @@ Finally, let's build our ROP stack
     >>> rop.write(c.STDOUT_FILENO, binary.symbols['flag'], 8)
     >>> rop.exit()
     >>> print rop.dump()
-    0x0000:       0x10000012 write(STDOUT_FILENO, 268435494, 8)
+    0x0000:       0x10000012 write(STDOUT_FILENO, 0x10000026, 8)
     0x0004:       0x1000000e <adjust @0x18> add esp, 0x10; ret
     0x0008:              0x1 arg0
     0x000c:       0x10000026 flag
@@ -1156,6 +1156,8 @@ class ROP(object):
         regs = set(regs or ())
 
         for addr, gadget in self.gadgets.items():
+            addr_bytes = set(pack(gadget.address))
+            if addr_bytes & self._badchars:     continue
             if gadget.insns[-1] != 'ret':        continue
             if gadget.move < move:               continue
             if not (regs <= set(gadget.regs)):   continue

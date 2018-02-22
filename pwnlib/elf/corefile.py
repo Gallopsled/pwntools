@@ -753,30 +753,38 @@ class Corefile(ELF):
             >>> io.corefile.fault_addr == io.corefile.eax == 0xdeadbeef
             True
         """
-        fault_addr = 0
-        if self.siginfo:
-            fault_addr = int(self.siginfo.sigfault_addr)
+        if not self.siginfo:
+            return getattr(self, 'pc', 0)
 
-            # The fault_addr on AMD64 is zero if the crash occurs
-            # after a "ret" instruction, if the "ret" would return
-            # to an invalid address.  We need to extract the address
-            # manually, as a convenience.
-            if fault_addr == 0 and self.arch == 'amd64' and self.pc and self.sp:
-                try:
-                    code = self.read(self.pc, 1)
-                    if code != '\xc3':
-                        return fault_addr
-                    address = self.unpack(self.sp)
-                    return address
-                except Exception:
-                    # Could not read $rsp or $rip
-                    pass
+        fault_addr = int(self.siginfo.sigfault_addr)
 
-            return fault_addr
+        # The fault_addr is zero if the crash occurs due to a
+        # "protection fault", e.g. a dereference of 0x4141414141414141
+        # because this is technically a kernel address.
+        #
+        # A protection fault does not set "fault_addr" in the siginfo.
+        # (http://elixir.free-electrons.com/linux/v4.14-rc8/source/kernel/signal.c#L1052)
+        #
+        # Since a common use for corefiles is to spray the stack with a
+        # cyclic pattern to find the offset to get control of $PC,
+        # check for a "ret" instruction ("\xc3").
+        #
+        # If we find a RET at $PC, extract the "return address" from the
+        # top of the stack.
+        if fault_addr == 0 and self.siginfo.si_code == 0x80:
+            try:
+                code = self.read(self.pc, 1)
+                RET = '\xc3'
+                if code == RET:
+                    fault_addr = self.unpack(self.sp)
+            except Exception:
+                # Could not read $rsp or $rip
+                pass
+
+        return fault_addr
 
         # No embedded siginfo structure, so just return the
         # current instruction pointer.
-        return getattr(self, 'pc', 0)
 
     @property
     def _pc_register(self):
@@ -819,8 +827,8 @@ class Corefile(ELF):
         fields = [
             repr(self.path),
             '%-10s %s' % ('Arch:', gnu_triplet),
-            '%-10s %#x' % ('%s:' % self._pc_register.upper(), getattr(self, 'pc', 0)),
-            '%-10s %#x' % ('%s:' % self._sp_register.upper(), getattr(self, 'sp', 0)),
+            '%-10s %#x' % ('%s:' % self._pc_register.upper(), self.pc or 0),
+            '%-10s %#x' % ('%s:' % self._sp_register.upper(), self.sp or 0),
         ]
 
         if self.exe and self.exe.name:
