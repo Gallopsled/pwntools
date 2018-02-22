@@ -1102,7 +1102,7 @@ class Coredump(Corefile):
 class CorefileFinder(object):
     def __init__(self, proc):
         if proc.poll() is None:
-            log.error("Process %i has not exited" % (process.pid))
+            log.error("Process %i has not exited" % (proc.pid))
 
         self.process = proc
         self.pid = proc.pid
@@ -1162,7 +1162,10 @@ class CorefileFinder(object):
             new_path = 'core.%i' % core_pid
             if core_pid > 0 and new_path != self.core_path:
                 write(new_path, self.read(self.core_path))
-                self.unlink(self.core_path)
+                try:
+                    self.unlink(self.core_path)
+                except (IOError, OSError):
+                    log.warn("Could not delete %r" % self.core_path)
                 self.core_path = new_path
 
         # Check the PID

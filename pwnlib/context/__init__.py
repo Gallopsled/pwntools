@@ -777,6 +777,7 @@ class ContextType(object):
         self.arch   = binary.arch
         self.bits   = binary.bits
         self.endian = binary.endian
+        self.os     = binary.os
 
         return binary
 
