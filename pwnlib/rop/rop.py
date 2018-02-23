@@ -240,6 +240,7 @@ import hashlib
 import itertools
 import os
 import re
+import shutil
 import string
 import sys
 import tempfile
@@ -989,19 +990,25 @@ class ROP(object):
 
         hashes = []
 
-        for elf in self.elfs:
+        for elf in files:
             sha256 = hashlib.sha256(elf.get_data()).hexdigest()
             hashes.append(sha256)
 
         return os.path.join(cachedir, '_'.join(hashes))
 
+    @staticmethod
+    def clear_cache():
+        """Clears the ROP gadget cache"""
+        cachedir = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache')
+        shutil.rmtree(cachedir)
+
     def __cache_load(self, elf):
         filename = self.__get_cachefile_name(elf)
         if not os.path.exists(filename):
             return None
-        log.info_once('Loaded cached gadgets for %r' % elf.file.name)
         gadgets = eval(file(filename).read())
         gadgets = {k - elf.load_addr + elf.address:v for k, v in gadgets.items()}
+        log.info_once('Loaded %s cached gadgets for %r', len(gadgets), elf.file.name)
         return gadgets
 
     def __cache_save(self, elf, data):
