@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.13.0](#3130)  | `dev`    | Mar 31, 2018 (planned)
-| [3.12.0](#3120)  | `beta`   | Feb 17, 2018 (planned)
-| [3.11.0](#3110)  | `stable` | Jan 3, 2018
+| [3.14.0](#3130)  | `dev`    | Jun 12, 2018 (planned)
+| [3.13.0](#3130)  | `beta`   | Mar 31, 2018 (planned)
+| [3.12.0](#3120)  | `stable` | Feb 22, 2018
+| [3.11.0](#3110)  |          | Jan 3, 2018
 | [3.10.0](#3100)  |          | Oct 25, 2017
 | [3.9.2](#392)    |          | Oct 5, 2017
 | [3.9.1](#391)    |          | Sep 28, 2017
@@ -41,9 +42,31 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 3.12.0
+## 3.14.0
 
-To be released on Feb 17, 2018.
+To be released on Jun 12, 2018.
+
+## 3.13.0
+
+To be released on Mar 31, 2018.
+
+- [#1104][1104] Add `DynELF.dump()` for dumping remote ELF files
+- [#1101][1101] Set `context.os` via `context.binary`, useful for Android exploitation
+- [5fdc08][5fdc08] Work around broken `pidof` on Android
+- [63dfed][63dfed] Print warning when Corefile deletion fails instead of throwing an exception
+- [#1094][1094] Make hexdump output alignment more consistent
+- [#1096][1096] `flat()` and `fit()` are now the same function
+- [#1068][1068] Work around very old OpenSSL versions which don't have sha256 support *AND* don't exit with an error code when trying to use it
+
+[1104]: https://github.com/Gallopsled/pwntools/pull/1104
+[1101]: https://github.com/Gallopsled/pwntools/pull/1101
+[1094]: https://github.com/Gallopsled/pwntools/pull/1094
+[1096]: https://github.com/Gallopsled/pwntools/pull/1096
+[1068]: https://github.com/Gallopsled/pwntools/pull/1068
+[5fdc08]: https://github.com/Gallopsled/pwntools/commit/5fdc08
+[63dfed]: https://github.com/Gallopsled/pwntools/commit/63dfed
+
+## 3.12.0
 
 - [#1083][1083] Better error messages for `gdb` when `LD_PRELOAD` is incorrect
 - [#1085][1085] Add support for extracting Android `BOOTLDR!` images
@@ -58,7 +81,6 @@ To be released on Feb 17, 2018.
 [1074]: https://github.com/Gallopsled/pwntools/pull/1074
 [1067]: https://github.com/Gallopsled/pwntools/pull/1067
 [1063]: https://github.com/Gallopsled/pwntools/pull/1063
-
 
 ## 3.11.0
 
@@ -94,7 +116,6 @@ To be released on Feb 17, 2018.
 [1055]: https://github.com/Gallopsled/pwntools/pull/1055
 [1057]: https://github.com/Gallopsled/pwntools/pull/1057
 [1058]: https://github.com/Gallopsled/pwntools/pull/1058
-
 
 ## 3.9.2
 

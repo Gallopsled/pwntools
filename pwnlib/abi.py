@@ -124,8 +124,3 @@ linux_aarch64_sigreturn = SigreturnABI('sp', ['x8'], 16, 0)
 
 windows_i386  = ABI('esp', [], 4, 0)
 windows_amd64 = ABI('rsp', ['rcx','rdx','r8','r9'], 32, 32)
-
-# Fake ABIs used by SROP
-linux_i386_srop = ABI('esp', ['eax'], 4, 0)
-linux_amd64_srop = ABI('rsp', ['rax'], 4, 0)
-linux_arm_srop = ABI('sp', ['r7'], 4, 0)

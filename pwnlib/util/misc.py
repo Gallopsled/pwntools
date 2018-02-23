@@ -190,6 +190,8 @@ def run_in_new_terminal(command, terminal = None, args = None):
           variable), ``x-terminal-emulator`` is used.
         - If tmux is detected (by the presence of the ``$TMUX`` environment
           variable), a new pane will be opened.
+        - If GNU Screen is detected (by the presence of the ``$STY`` environment
+          variable), a new screen will be opened.
 
     Arguments:
         command (str): The command to run.
@@ -219,6 +221,9 @@ def run_in_new_terminal(command, terminal = None, args = None):
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
             args     = ['splitw']
+        elif 'STY' in os.environ and which('screen'):
+            terminal = 'screen'
+            args     = ['-t','pwntools-gdb','bash','-c']
 
     if not terminal:
         log.error('Could not find a terminal binary to use. Set context.terminal to your terminal.')

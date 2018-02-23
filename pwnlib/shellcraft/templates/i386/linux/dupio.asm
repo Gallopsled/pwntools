@@ -11,6 +11,7 @@ Args: [sock (imm/reg) = ebp]
   looplabel = common.label("loop")
 %>
 
+    /* dup() file descriptor ${sock} into stdin/stdout/stderr */
 ${dup}:
     ${mov('ebx', sock)}
     ${mov('ecx', 3)}

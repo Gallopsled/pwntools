@@ -565,7 +565,7 @@ class process(tube):
         #
 
         # Create a duplicate so we can modify it safely
-        env = dict(os.environ if env is None else env)
+        env = (os.environ if env is None else env).copy()
 
         for k,v in env.items():
             if not isinstance(k, (str, unicode)):
