@@ -164,7 +164,7 @@ def do(c, *args):
     if s:
         put(s)
 
-def goto((r, c)):
+def goto(r, c):
     do('cup', r - scroll + height - 1, c)
 
 cells = []
@@ -435,10 +435,10 @@ def render_from(i, force = False, clear_after = False):
     # check it and just do nothing if something went wrong.
     if i < 0 or i >= len(cells):
         return
-    goto(cells[i].start)
+    goto(*cells[i].start)
     for c in cells[i:]:
         if not force and c.start == e:
-            goto(cells[-1].end)
+            goto(*cells[-1].end)
             break
         elif e:
             c.start = e
