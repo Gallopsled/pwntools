@@ -211,7 +211,7 @@ def current():
         'arm': arm,
         'thumb': arm,
         'aarch64': aarch64,
-        'mips': mips,
+        'mips': list(mips),
         'powerpc': powerpc
     }[context.arch]
 
