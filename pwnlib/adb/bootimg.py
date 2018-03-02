@@ -1,13 +1,6 @@
 from __future__ import unicode_literals
 
 import ctypes
-import io
-import os
-import sys
-
-from pwnlib.log import getLogger
-
-log = getLogger(__name__)
 
 BOOT_MAGIC = b"ANDROID!"
 BOOT_MAGIC_SIZE = 8
@@ -49,6 +42,7 @@ class BootImage(object):
 
         PAGE = self.header.page_size
 
+        # The kernel starts at the beginning of the second page.
         self.kernel = self.data[PAGE:PAGE+self.header.kernel_size]
 
     def __getattr__(self, name):
