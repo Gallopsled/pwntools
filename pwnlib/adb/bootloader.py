@@ -5,6 +5,10 @@ import io
 import os
 import sys
 
+from pwnlib.log import getLogger
+
+log = getLogger(__name__)
+
 class img_info(ctypes.Structure):
     _fields_ = [
         ('name', ctypes.c_char * 64),
@@ -19,11 +23,7 @@ class bootloader_images_header(ctypes.Structure):
         ('bootldr_size', ctypes.c_uint32),
     ]
 
-    def __init__(self, *a, **kw):
-        super(bootloader_images_header, self).__init__(*a, **kw)
-        if self.magic != self.MAGIC:
-            raise ValueError("Incorrect magic (%r, expected %r)" % (self.magic, self.MAGIC))
-    MAGIC = 'BOOTLDR!'
+BOOTLDR_MAGIC = bytes('BOOTLDR!')
 
 class BootloaderImage(object):
     def __init__(self, data):
@@ -34,6 +34,21 @@ class BootloaderImage(object):
         """
         self.data = data
         self.header = bootloader_images_header.from_buffer_copy(data)
+
+        if self.header.magic != BOOTLDR_MAGIC:
+            log.error("Incorrect magic (%r, expected %r)" % (self.header.magic, BOOTLDR_MAGIC))
+
+        if(self.header.bootldr_size > len(data)):
+            log.warn_once("Bootloader is supposed to be %#x bytes, only have %#x",
+                          self.header.bootldr_size,
+                          len(data))
+
+        if(self.header.num_images >= 0x100):
+            old = self.header.num_images
+            self.header.num_images = 1
+            log.warn_once("Bootloader num_images (%#x) appears corrupted, truncating to 1",
+                          old)
+
 
         imgarray = ctypes.ARRAY(img_info, self.header.num_images)
         self.img_info = imgarray.from_buffer_copy(data, ctypes.sizeof(self.header))
