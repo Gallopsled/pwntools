@@ -38,10 +38,10 @@ class BootImage(object):
         self.data = data
         self.header = boot_img_hdr.from_buffer_copy(data)
 
-        PAGE = self.header.page_size
+        PAGE = self.page_size
 
         # The kernel starts at the beginning of the second page.
-        self.kernel = self.data[PAGE:PAGE+self.header.kernel_size]
+        self.kernel = self.data[PAGE:PAGE+self.kernel_size]
 
     def __getattr__(self, name):
         value = getattr(self.header, name, None)
