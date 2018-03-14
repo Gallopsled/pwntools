@@ -9,34 +9,34 @@ null bytes or newline characters.
 
 Example:
 
-    >>> print shellcraft.mips.pushstr('').rstrip()
+    >>> print(shellcraft.mips.pushstr('').rstrip())
         /* push '\x00' */
         sw $zero, -4($sp)
         addiu $sp, $sp, -4
-    >>> print shellcraft.mips.pushstr('a').rstrip()
+    >>> print(shellcraft.mips.pushstr('a').rstrip())
         /* push 'a\x00' */
         li $t9, ~0x61
         not $t1, $t9
         sw $t1, -4($sp)
         addiu $sp, $sp, -4
-    >>> print shellcraft.mips.pushstr('aa').rstrip()
+    >>> print(shellcraft.mips.pushstr('aa').rstrip())
         /* push 'aa\x00' */
         ori $t1, $zero, 24929
         sw $t1, -4($sp)
         addiu $sp, $sp, -4
-    >>> print shellcraft.mips.pushstr('aaa').rstrip()
+    >>> print(shellcraft.mips.pushstr('aaa').rstrip())
         /* push 'aaa\x00' */
         li $t9, ~0x616161
         not $t1, $t9
         sw $t1, -4($sp)
         addiu $sp, $sp, -4
-    >>> print shellcraft.mips.pushstr('aaaa').rstrip()
+    >>> print(shellcraft.mips.pushstr('aaaa').rstrip())
         /* push 'aaaa\x00' */
         li $t1, 0x61616161
         sw $t1, -8($sp)
         sw $zero, -4($sp)
         addiu $sp, $sp, -8
-    >>> print shellcraft.mips.pushstr('aaaaa').rstrip()
+    >>> print(shellcraft.mips.pushstr('aaaaa').rstrip())
         /* push 'aaaaa\x00' */
         li $t1, 0x61616161
         sw $t1, -8($sp)
@@ -44,28 +44,28 @@ Example:
         not $t1, $t9
         sw $t1, -4($sp)
         addiu $sp, $sp, -8
-    >>> print shellcraft.mips.pushstr('aaaa', append_null = False).rstrip()
+    >>> print(shellcraft.mips.pushstr('aaaa', append_null = False).rstrip())
         /* push 'aaaa' */
         li $t1, 0x61616161
         sw $t1, -4($sp)
         addiu $sp, $sp, -4
-    >>> print shellcraft.mips.pushstr('\xc3').rstrip()
+    >>> print(shellcraft.mips.pushstr('\xc3').rstrip())
         /* push '\xc3\x00' */
         li $t9, ~0xc3
         not $t1, $t9
         sw $t1, -4($sp)
         addiu $sp, $sp, -4
-    >>> print shellcraft.mips.pushstr('\xc3', append_null = False).rstrip()
+    >>> print(shellcraft.mips.pushstr('\xc3', append_null = False).rstrip())
         /* push '\xc3' */
         li $t9, ~0xc3
         not $t1, $t9
         sw $t1, -4($sp)
         addiu $sp, $sp, -4
-    >>> print enhex(asm(shellcraft.mips.pushstr("/bin/sh")))
+    >>> print(enhex(asm(shellcraft.mips.pushstr("/bin/sh"))))
     696e093c2f622935f8ffa9af97ff193cd08c393727482003fcffa9aff8ffbd27
-    >>> print enhex(asm(shellcraft.mips.pushstr("")))
+    >>> print(enhex(asm(shellcraft.mips.pushstr(""))))
     fcffa0affcffbd27
-    >>> print enhex(asm(shellcraft.mips.pushstr("\x00", False)))
+    >>> print(enhex(asm(shellcraft.mips.pushstr("\x00", False))))
     fcffa0affcffbd27
 
 Args:

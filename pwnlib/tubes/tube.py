@@ -4,6 +4,7 @@ from __future__ import division
 
 import logging
 import re
+import six
 import string
 import subprocess
 import sys
@@ -290,7 +291,7 @@ class tube(Timeout, Logger):
 
         """
         # Convert string into singleton tupple
-        if isinstance(delims, (str, unicode)):
+        if isinstance(delims, (bytes, six.text_type)):
             delims = (delims,)
 
         # Longest delimiter for tracking purposes
@@ -500,7 +501,7 @@ class tube(Timeout, Logger):
             >>> t.recvline_contains((b'car', b'train'))
             'bicycle car train'
         """
-        if isinstance(items, (str,unicode)):
+        if isinstance(items, (bytes, six.text_type)):
             items = (items,)
 
         def pred(line):
@@ -537,7 +538,7 @@ class tube(Timeout, Logger):
             'World'
         """
         # Convert string into singleton tupple
-        if isinstance(delims, (str, unicode)):
+        if isinstance(delims, (bytes, six.text_type)):
             delims = (delims,)
 
         return self.recvline_pred(lambda line: any(map(line.startswith, delims)),
@@ -567,7 +568,7 @@ class tube(Timeout, Logger):
             'Kaboodle'
         """
         # Convert string into singleton tupple
-        if isinstance(delims, (str, unicode)):
+        if isinstance(delims, (bytes, six.text_type)):
             delims = (delims,)
 
         delims = tuple(delim + self.newline for delim in delims)
@@ -589,7 +590,7 @@ class tube(Timeout, Logger):
         all data is buffered and an empty string (``''``) is returned.
         """
 
-        if isinstance(regex, (str, unicode)):
+        if isinstance(regex, (bytes, six.text_type)):
             regex = re.compile(regex)
 
         if exact:
@@ -612,7 +613,7 @@ class tube(Timeout, Logger):
         all data is buffered and an empty string (``''``) is returned.
         """
 
-        if isinstance(regex, (str, unicode)):
+        if isinstance(regex, (bytes, six.text_type)):
             regex = re.compile(regex)
 
         if exact:
@@ -689,7 +690,7 @@ class tube(Timeout, Logger):
 
         Examples:
 
-            >>> def p(x): print repr(x)
+            >>> def p(x): print(repr(x))
             >>> t = tube()
             >>> t.send_raw = p
             >>> t.send('hello')
@@ -714,7 +715,7 @@ class tube(Timeout, Logger):
 
         Examples:
 
-            >>> def p(x): print repr(x)
+            >>> def p(x): print(repr(x))
             >>> t = tube()
             >>> t.send_raw = p
             >>> t.sendline(b'hello')
@@ -912,7 +913,7 @@ class tube(Timeout, Logger):
 
         Examples:
 
-            >>> def p(x): print x
+            >>> def p(x): print(x)
             >>> def recvone(n, data=['data']):
             ...     while data: return data.pop()
             ...     raise EOFError
@@ -968,7 +969,7 @@ class tube(Timeout, Logger):
 
         Examples:
 
-            >>> def p(x): print x
+            >>> def p(x): print(x)
             >>> def recvone(n, data=['data']):
             ...     while data: return data.pop()
             ...     raise EOFError
@@ -1127,7 +1128,7 @@ class tube(Timeout, Logger):
 
         Examples:
 
-            >>> def p(x): print x
+            >>> def p(x): print(x)
             >>> t = tube()
             >>> t.shutdown_raw = p
             >>> _=list(map(t.shutdown, ('in', 'read', 'recv', 'out', 'write', 'send')))
@@ -1160,7 +1161,7 @@ class tube(Timeout, Logger):
 
         Doctest:
 
-            >>> def p(x): print x
+            >>> def p(x): print(x)
             >>> t = tube()
             >>> t.connected_raw = p
             >>> _=list(map(t.connected, ('any', 'in', 'read', 'recv', 'out', 'write', 'send')))
@@ -1189,7 +1190,7 @@ class tube(Timeout, Logger):
         Examples:
 
             >>> t = tube()
-            >>> def p(x): print x
+            >>> def p(x): print(x)
             >>> t.close = lambda: p("Closed!")
             >>> with t: pass
             Closed!

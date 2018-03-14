@@ -12,6 +12,7 @@ import pty
 import resource
 import select
 import signal
+import six
 import stat
 import subprocess
 import time
@@ -112,8 +113,8 @@ class process(tube):
     Examples:
 
         >>> p = process('python2')
-        >>> p.sendline("print 'Hello world'")
-        >>> p.sendline("print 'Wow, such data'");
+        >>> p.sendline(b"print 'Hello world'")
+        >>> p.sendline(b"print 'Wow, such data'");
         >>> '' == p.recv(timeout=0.01)
         True
         >>> p.shutdown('send')
@@ -152,7 +153,7 @@ class process(tube):
         >>> p.recv()
         '\x00\x00\x00\x00\x00\x00\x00\x00'
 
-        >>> p = process(['python','-c','import os; print os.read(2,1024)'],
+        >>> p = process(['python','-c','import os; print(os.read(2,1024))'],
         ...             preexec_fn = lambda: os.dup2(0,2))
         >>> p.sendline(b'hello')
         >>> p.recvline()
@@ -165,7 +166,7 @@ class process(tube):
         >>> process(stack_smashing, stdout=PIPE).recvall()
         ''
 
-        >>> getpass = ['python','-c','import getpass; print getpass.getpass("XXX")']
+        >>> getpass = ['python','-c','import getpass; print(getpass.getpass("XXX"))']
         >>> p = process(getpass, stdin=PTY)
         >>> p.recv()
         'XXX'
@@ -242,7 +243,7 @@ class process(tube):
             executable, argv, env = self._validate(cwd, executable, argv, env)
 
         # Permit invocation as process('sh') and process(['sh'])
-        if isinstance(argv, (str, unicode)):
+        if isinstance(argv, (bytes, six.text_type)):
             argv = [argv]
 
         # Avoid the need to have to deal with the STDOUT magic value.
@@ -507,10 +508,10 @@ class process(tube):
         # - Must be a list/tuple of strings
         # - Each string must not contain '\x00'
         #
-        if isinstance(argv, (str, unicode)):
+        if isinstance(argv, (bytes, six.text_type)):
             argv = [argv]
 
-        if not all(isinstance(arg, (str, unicode)) for arg in argv):
+        if not all(isinstance(arg, (bytes, six.text_type)) for arg in argv):
             self.error("argv must be strings: %r" % argv)
 
         # Create a duplicate so we can modify it
@@ -569,9 +570,9 @@ class process(tube):
         env = (os.environ if env is None else env).copy()
 
         for k,v in env.items():
-            if not isinstance(k, (str, unicode)):
+            if not isinstance(k, (bytes, six.text_type)):
                 self.error('Environment keys must be strings: %r' % k)
-            if not isinstance(k, (str, unicode)):
+            if not isinstance(k, (bytes, six.text_type)):
                 self.error('Environment values must be strings: %r=%r' % (k,v))
             if '\x00' in k[:-1]:
                 self.error('Inappropriate nulls in env key: %r' % (k))

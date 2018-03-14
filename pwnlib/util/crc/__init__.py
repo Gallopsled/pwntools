@@ -14,6 +14,7 @@ An obvious optimization would be to actually generate some lookup-tables.
 from __future__ import absolute_import
 from __future__ import division
 
+import six
 import sys
 import types
 
@@ -66,13 +67,13 @@ class BitPolynom(object):
 
 
     def __init__(self, n):
-        if isinstance(n, (str, unicode)):
+        if isinstance(n, (bytes, six.text_type)):
             self.n = 0
             x = BitPolynom(2)
             try:
                 for p in n.split('+'):
                     k = safeeval.values(p.strip(), {'x': x, 'X': x})
-                    assert isinstance(k, (BitPolynom, int, long))
+                    assert isinstance(k, (BitPolynom,)+six.integer_types)
                     assert k >= 0
                     self.n ^= int(k)
             except (ValueError, NameError, AssertionError):

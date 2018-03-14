@@ -7,8 +7,9 @@ import binascii
 import random
 import re
 import os
+import six
 import string
-import StringIO
+from six import BytesIO
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -128,9 +129,8 @@ def bits(s, endian = 'big', zero = 0, one = 1):
         little = endian == 'little'
 
     out = []
-    if isinstance(s, str):
-        for c in s:
-            b = ord(c)
+    if isinstance(s, bytes):
+        for b in bytearray(s):
             byte = []
             for _ in range(8):
                 byte.append(one if b & 1 else zero)
@@ -139,7 +139,7 @@ def bits(s, endian = 'big', zero = 0, one = 1):
                 out += byte
             else:
                 out += byte[::-1]
-    elif isinstance(s, (int, long)):
+    elif isinstance(s, six.integer_types):
         if s == 0:
             out.append(zero)
         while s:
@@ -315,12 +315,12 @@ def xor(*args, **kwargs):
         raise ValueError("Must have something to xor")
 
     strs = [packing.flat(s, word_size = 8, sign = False, endianness = 'little') for s in args]
-    strs = [[ord(c) for c in s] for s in strs if s != '']
+    strs = [bytearray(s) for s in strs if s]
 
     if strs == []:
         return b''
 
-    if isinstance(cut, (int, long)):
+    if isinstance(cut, six.integer_types):
         cut = cut
     elif cut == 'left':
         cut = len(strs[0])
@@ -334,11 +334,13 @@ def xor(*args, **kwargs):
         raise ValueError("Not a valid argument for 'cut'")
 
     def get(n):
-        return chr(reduce(lambda x, y: x ^ y, [s[n % len(s)] for s in strs]))
+        rv = 0
+        for s in strs: rv ^= s[n%len(s)]
+        return packing.p8(rv)
 
     return b''.join(map(get, range(cut)))
 
-def xor_pair(data, avoid = '\x00\n'):
+def xor_pair(data, avoid = b'\x00\n'):
     """xor_pair(data, avoid = '\\x00\\n') -> None or (str, str)
 
     Finds two strings that will xor into a given string, while only
@@ -357,19 +359,23 @@ def xor_pair(data, avoid = '\x00\n'):
         ('\\x01\\x01\\x01\\x01', 'udru')
     """
 
-    if isinstance(data, (int, long)):
+    if isinstance(data, six.integer_types):
         data = packing.pack(data)
 
-    alphabet = list(chr(n) for n in range(256) if chr(n) not in avoid)
+    if not isinstance(avoid, bytes):
+        avoid = avoid.encode('utf-8')
+
+    avoid = bytearray(avoid)
+    alphabet = list(packing.p8(n) for n in range(256) if n not in avoid)
 
     res1 = b''
     res2 = b''
 
-    for c1 in data:
+    for c1 in bytearray(data):
         if context.randomize:
             random.shuffle(alphabet)
         for c2 in alphabet:
-            c3 = chr(ord(c1) ^ ord(c2))
+            c3 = packing.p8(c1 ^ packing.u8(c2))
             if c3 in alphabet:
                 res1 += c2
                 res2 += c3
@@ -406,21 +412,22 @@ def xor_key(data, avoid=b'\x00\n', size=None):
         log.error("Data must be padded to size for xor_key")
 
     words    = lists.group(size, data)
-    columns  = [''] * size
+    columns  = [b''] * size
     for word in words:
-        for i,byte in enumerate(word):
-            columns[i] += byte
+        for i,byte in enumerate(bytearray(word)):
+            columns[i] += bytearray((byte,))
 
-    alphabet = list(chr(n) for n in range(256) if chr(n) not in avoid)
+    avoid = bytearray(avoid)
+    alphabet = bytearray(n for n in range(256) if n not in avoid)
 
-    result = ''
+    result = b''
 
     for column in columns:
         if context.randomize:
             random.shuffle(alphabet)
         for c2 in alphabet:
-            if all(chr(ord(c)^ord(c2)) in alphabet for c in column):
-                result += c2
+            if all(c^c2 in alphabet for c in column):
+                result += packing.p8(c2)
                 break
         else:
             return None
@@ -474,15 +481,15 @@ def rol(n, k, word_size = None):
 
     word_size = word_size or context.word_size
 
-    if not isinstance(word_size, (int, long)) or word_size <= 0:
+    if not isinstance(word_size, six.integer_types) or word_size <= 0:
         raise ValueError("rol(): 'word_size' must be a strictly positive integer")
 
-    if not isinstance(k, (int, long)):
+    if not isinstance(k, six.integer_types):
         raise ValueError("rol(): 'k' must be an integer")
 
-    if isinstance(n, (str, unicode, list, tuple)):
+    if isinstance(n, (bytes, six.text_type, list, tuple)):
         return n[k % len(n):] + n[:k % len(n)]
-    elif isinstance(n, (int, long)):
+    elif isinstance(n, six.integer_types):
         k = k % word_size
         n = (n << k) | (n >> (word_size - k))
         n &= (1 << word_size) - 1
@@ -603,13 +610,13 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
         >>> tmp.write(b'XXXXHELLO, WORLD')
         >>> tmp.flush()
         >>> tmp.seek(4)
-        >>> print '\n'.join(hexdump_iter(tmp))
+        >>> print('\n'.join(hexdump_iter(tmp)))
         00000000  48 45 4c 4c  4f 2c 20 57  4f 52 4c 44               │HELL│O, W│ORLD│
         0000000c
 
         >>> t = tube()
-        >>> t.unrecv('I know kung fu')
-        >>> print '\n'.join(hexdump_iter(t))
+        >>> t.unrecv(b'I know kung fu')
+        >>> print('\n'.join(hexdump_iter(t)))
         00000000  49 20 6b 6e  6f 77 20 6b  75 6e 67 20  66 75        │I kn│ow k│ung │fu│
         0000000e
     """
@@ -759,28 +766,28 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
 
     Examples:
 
-        >>> print hexdump("abc")
+        >>> print(hexdump(b"abc"))
         00000000  61 62 63                                            │abc│
         00000003
 
-        >>> print hexdump('A'*32)
+        >>> print(hexdump(b'A'*32))
         00000000  41 41 41 41  41 41 41 41  41 41 41 41  41 41 41 41  │AAAA│AAAA│AAAA│AAAA│
         *
         00000020
 
-        >>> print hexdump('A'*32, width=8)
+        >>> print(hexdump(b'A'*32, width=8))
         00000000  41 41 41 41  41 41 41 41  │AAAA│AAAA│
         *
         00000020
 
-        >>> print hexdump(cyclic(32), width=8, begin=0xdead0000, hexii=True)
+        >>> print(hexdump(cyclic(32), width=8, begin=0xdead0000, hexii=True))
         dead0000  .a  .a  .a  .a   .b  .a  .a  .a  │
         dead0008  .c  .a  .a  .a   .d  .a  .a  .a  │
         dead0010  .e  .a  .a  .a   .f  .a  .a  .a  │
         dead0018  .g  .a  .a  .a   .h  .a  .a  .a  │
         dead0020
 
-        >>> print hexdump(list(map(chr, range(256))))
+        >>> print(hexdump(list(map(chr, range(256)))))
         00000000  00 01 02 03  04 05 06 07  08 09 0a 0b  0c 0d 0e 0f  │····│····│····│····│
         00000010  10 11 12 13  14 15 16 17  18 19 1a 1b  1c 1d 1e 1f  │····│····│····│····│
         00000020  20 21 22 23  24 25 26 27  28 29 2a 2b  2c 2d 2e 2f  │ !"#│$%&'│()*+│,-./│
@@ -799,7 +806,7 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         000000f0  f0 f1 f2 f3  f4 f5 f6 f7  f8 f9 fa fb  fc fd fe ff  │····│····│····│····│
         00000100
 
-        >>> print hexdump(list(map(chr, range(256))), hexii=True)
+        >>> print(hexdump(list(map(chr, range(256))), hexii=True))
         00000000      01  02  03   04  05  06  07   08  09  0a  0b   0c  0d  0e  0f  │
         00000010  10  11  12  13   14  15  16  17   18  19  1a  1b   1c  1d  1e  1f  │
         00000020  20  .!  ."  .#   .$  .%  .&  .'   .(  .)  .*  .+   .,  .-  ..  ./  │
@@ -818,19 +825,19 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         000000f0  f0  f1  f2  f3   f4  f5  f6  f7   f8  f9  fa  fb   fc  fd  fe  ##  │
         00000100
 
-        >>> print hexdump('X' * 64)
+        >>> print(hexdump(b'X' * 64))
         00000000  58 58 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
         *
         00000040
 
-        >>> print hexdump('X' * 64, skip=False)
+        >>> print(hexdump(b'X' * 64, skip=False))
         00000000  58 58 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
         00000010  58 58 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
         00000020  58 58 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
         00000030  58 58 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
         00000040
 
-        >>> print hexdump(fit({0x10: 'X'*0x20, 0x50-1: '\xff'*20}, length=0xc0) + '\x00'*32)
+        >>> print(hexdump(fit({0x10: b'X'*0x20, 0x50-1: b'\xff'*20}, length=0xc0) + b'\x00'*32))
         00000000  61 61 61 61  62 61 61 61  63 61 61 61  64 61 61 61  │aaaa│baaa│caaa│daaa│
         00000010  58 58 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
         *
@@ -847,7 +854,7 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         *
         000000e0
 
-        >>> print hexdump(fit({0x10: 'X'*0x20, 0x50-1: '\xff'*20}, length=0xc0) + '\x00'*32, cyclic=1)
+        >>> print(hexdump(fit({0x10: b'X'*0x20, 0x50-1: b'\xff'*20}, length=0xc0) + b'\x00'*32, cyclic=1))
         00000000  61 61 61 61  62 61 61 61  63 61 61 61  64 61 61 61  │aaaa│baaa│caaa│daaa│
         00000010  58 58 58 58  58 58 58 58  58 58 58 58  58 58 58 58  │XXXX│XXXX│XXXX│XXXX│
         *
@@ -861,7 +868,7 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         *
         000000e0
 
-        >>> print hexdump(fit({0x10: 'X'*0x20, 0x50-1: '\xff'*20}, length=0xc0) + '\x00'*32, cyclic=1, hexii=1)
+        >>> print(hexdump(fit({0x10: b'X'*0x20, 0x50-1: b'\xff'*20}, length=0xc0) + b'\x00'*32, cyclic=1, hexii=1))
         00000000  .a  .a  .a  .a   .b  .a  .a  .a   .c  .a  .a  .a   .d  .a  .a  .a  │
         00000010  .X  .X  .X  .X   .X  .X  .X  .X   .X  .X  .X  .X   .X  .X  .X  .X  │
         *
@@ -875,46 +882,46 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         *
         000000e0
 
-        >>> print hexdump('A'*16, width=9)
+        >>> print(hexdump(b'A'*16, width=9))
         00000000  41 41 41 41  41 41 41 41  41  │AAAA│AAAA│A│
         00000009  41 41 41 41  41 41 41         │AAAA│AAA│
         00000010
-        >>> print hexdump('A'*16, width=10)
+        >>> print(hexdump(b'A'*16, width=10))
         00000000  41 41 41 41  41 41 41 41  41 41  │AAAA│AAAA│AA│
         0000000a  41 41 41 41  41 41               │AAAA│AA│
         00000010
-        >>> print hexdump('A'*16, width=11)
+        >>> print(hexdump(b'A'*16, width=11))
         00000000  41 41 41 41  41 41 41 41  41 41 41  │AAAA│AAAA│AAA│
         0000000b  41 41 41 41  41                     │AAAA│A│
         00000010
-        >>> print hexdump('A'*16, width=12)
+        >>> print(hexdump(b'A'*16, width=12))
         00000000  41 41 41 41  41 41 41 41  41 41 41 41  │AAAA│AAAA│AAAA│
         0000000c  41 41 41 41                            │AAAA│
         00000010
-        >>> print hexdump('A'*16, width=13)
+        >>> print(hexdump(b'A'*16, width=13))
         00000000  41 41 41 41  41 41 41 41  41 41 41 41  41  │AAAA│AAAA│AAAA│A│
         0000000d  41 41 41                                   │AAA│
         00000010
-        >>> print hexdump('A'*16, width=14)
+        >>> print(hexdump(b'A'*16, width=14))
         00000000  41 41 41 41  41 41 41 41  41 41 41 41  41 41  │AAAA│AAAA│AAAA│AA│
         0000000e  41 41                                         │AA│
         00000010
-        >>> print hexdump('A'*16, width=15)
+        >>> print(hexdump(b'A'*16, width=15))
         00000000  41 41 41 41  41 41 41 41  41 41 41 41  41 41 41  │AAAA│AAAA│AAAA│AAA│
         0000000f  41                                               │A│
         00000010
 
-        >>> print hexdump('A'*24, width=16, groupsize=8)
+        >>> print(hexdump(b'A'*24, width=16, groupsize=8))
         00000000  41 41 41 41 41 41 41 41  41 41 41 41 41 41 41 41  │AAAAAAAA│AAAAAAAA│
         00000010  41 41 41 41 41 41 41 41                           │AAAAAAAA│
         00000018
-        >>> print hexdump('A'*24, width=16, groupsize=-1)
+        >>> print(hexdump(b'A'*24, width=16, groupsize=-1))
         00000000  41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41  │AAAAAAAAAAAAAAAA│
         00000010  41 41 41 41 41 41 41 41                          │AAAAAAAA│
         00000018
     """
     s = packing.flat(s)
-    return '\n'.join(hexdump_iter(StringIO.StringIO(s),
+    return '\n'.join(hexdump_iter(BytesIO(s),
                                   width,
                                   skip,
                                   hexii,

@@ -23,13 +23,13 @@ on the value of `context.os`.
 
 Examples:
 
-    >>> print shellcraft.mov('x0','x1').rstrip()
+    >>> print(shellcraft.mov('x0','x1').rstrip())
         mov  x0, x1
-    >>> print shellcraft.mov('x0','0').rstrip()
+    >>> print(shellcraft.mov('x0','0').rstrip())
         mov  x0, xzr
-    >>> print shellcraft.mov('x0', 5).rstrip()
+    >>> print(shellcraft.mov('x0', 5).rstrip())
         mov  x0, #5
-    >>> print shellcraft.mov('x0', 0x34532).rstrip()
+    >>> print(shellcraft.mov('x0', 0x34532).rstrip())
         /* Set x0 = 214322 = 0x34532 */
         mov  x0, #17714
         movk x0, #3, lsl #16

@@ -12,6 +12,7 @@ import functools
 import logging
 import os
 import platform
+import six
 import socket
 import stat
 import string
@@ -139,9 +140,9 @@ class _Tls_DictStack(threading.local, _DictStack):
 
         >>> t = pwnlib.context._Tls_DictStack({})
         >>> t['key'] = 'value'
-        >>> print t
+        >>> print(t)
         {'key': 'value'}
-        >>> def p(): print t
+        >>> def p(): print(t)
         >>> thread = threading.Thread(target=p)
         >>> _ = (thread.start(), thread.join())
         {}
@@ -195,9 +196,9 @@ class Thread(threading.Thread):
         >>> context.clear()
         >>> context.update(arch='arm')
         >>> def p():
-        ...     print context.arch
+        ...     print(context.arch)
         ...     context.arch = 'mips'
-        ...     print context.arch
+        ...     print(context.arch)
         >>> # Note that a normal Thread starts with a clean context
         >>> # (i386 is the default architecture)
         >>> t = threading.Thread(target=p)
@@ -205,7 +206,7 @@ class Thread(threading.Thread):
         i386
         mips
         >>> # Note that the main Thread's context is unchanged
-        >>> print context.arch
+        >>> print(context.arch)
         arm
         >>> # Note that a context-aware Thread receives a copy of the context
         >>> t = pwnlib.context.Thread(target=p)
@@ -213,7 +214,7 @@ class Thread(threading.Thread):
         arm
         mips
         >>> # Again, the main thread is unchanged
-        >>> print context.arch
+        >>> print(context.arch)
         arm
 
     Implementation Details:
@@ -253,7 +254,7 @@ def _longest(d):
     >>> pwnlib.context._longest(data) == data
     True
     >>> for i in pwnlib.context._longest(data):
-    ...     print i
+    ...     print(i)
     ccc
     bb
     a
@@ -299,7 +300,7 @@ class ContextType(object):
         >>> context.bits
         32
         >>> def nop():
-        ...   print pwnlib.asm.asm('nop').encode('hex')
+        ...   print(enhex(pwnlib.asm.asm('nop')))
         >>> nop()
         00f020e3
         >>> with context.local(arch = 'i386'):
@@ -338,7 +339,7 @@ class ContextType(object):
         'binary': None,
         'bits': 32,
         'buffer_size': 4096,
-        'cyclic_alphabet': string.ascii_lowercase,
+        'cyclic_alphabet': string.ascii_lowercase.encode(),
         'cyclic_size': 4,
         'delete_corefiles': False,
         'device': os.getenv('ANDROID_SERIAL', None) or None,
@@ -501,15 +502,15 @@ class ContextType(object):
             >>> context.timeout = 1
             >>> context.timeout == 1
             True
-            >>> print context.timeout
+            >>> print(context.timeout)
             1.0
             >>> with context.local(timeout = 2):
-            ...     print context.timeout
+            ...     print(context.timeout)
             ...     context.timeout = 3
-            ...     print context.timeout
+            ...     print(context.timeout)
             2.0
             3.0
-            >>> print context.timeout
+            >>> print(context.timeout)
             1.0
         """
         class LocalContext(object):
@@ -905,7 +906,7 @@ class ContextType(object):
             >>> open('bar.txt').readlines()[-1] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello from bar!\n'
         """
-        if isinstance(value, (str,unicode)):
+        if isinstance(value, (bytes, six.text_type)):
             modes = ('w', 'wb', 'a', 'ab')
             # check if mode was specified as "[value],[mode]"
             if ',' not in value:
@@ -1048,7 +1049,7 @@ class ContextType(object):
         Can be a string or an iterable of strings.  In the latter case the first
         entry is the terminal and the rest are default arguments.
         """
-        if isinstance(value, (str, unicode)):
+        if isinstance(value, (bytes, six.text_type)):
             return [value]
         return value
 
@@ -1195,7 +1196,7 @@ class ContextType(object):
         if not os.access(home, os.W_OK):
             return None
 
-        cache = os.path.join(home, '.pwntools-cache')
+        cache = os.path.join(home, '.pwntools-cache-%d.%d' % sys.version_info[:2])
 
         if not os.path.exists(cache):
             try:
@@ -1264,7 +1265,7 @@ class ContextType(object):
         if len(set(alphabet)) != len(alphabet):
             raise AttributeError("cyclic alphabet cannot contain duplicates")
 
-        return str(alphabet)
+        return alphabet.encode()
 
     @_validator
     def cyclic_size(self, size):

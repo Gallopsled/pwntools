@@ -44,7 +44,7 @@ Examples:
     >>> addr = unpack(p.recv(4))
     >>> payload = fmtstr_payload(offset, {addr: 0x1337babe})
     >>> p.sendline(payload)
-    >>> print hex(unpack(p.recv(4)))
+    >>> print(hex(unpack(p.recv(4))))
     0x1337babe
 
 Example - Payload generation
@@ -119,18 +119,18 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
 
     Examples:
         >>> context.clear(arch = 'amd64')
-        >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int'))
+        >>> print(repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')))
         '\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00%322419374c%1$n%3972547906c%2$n'
-        >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short'))
+        >>> print(repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short')))
         '\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00%47774c%1$hn%22649c%2$hn%60617c%3$hn%4$hn'
-        >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte'))
+        >>> print(repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte')))
         '\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00%126c%1$hhn%252c%2$hhn%125c%3$hhn%220c%4$hhn%237c%5$hhn%6$hhn%7$hhn%8$hhn'
         >>> context.clear(arch = 'i386')
-        >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int'))
+        >>> print(repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')))
         '\x00\x00\x00\x00%322419386c%1$n'
-        >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short'))
+        >>> print(repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short')))
         '\x00\x00\x00\x00\x02\x00\x00\x00%47798c%1$hn%22649c%2$hn'
-        >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte'))
+        >>> print(repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte')))
         '\x00\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00%174c%1$hhn%252c%2$hhn%125c%3$hhn%220c%4$hhn'
 
     """
@@ -170,8 +170,8 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
                 to_add = (current | (mask+1)) - (numbwritten & mask)
 
             if to_add != 0:
-                payload += "%{}c".format(to_add)
-            payload += "%{}${}n".format(offset + fmtCount, formatz)
+                payload += "%{}c".format(to_add).encode()
+            payload += "%{}${}n".format(offset + fmtCount, formatz).encode()
 
             numbwritten += to_add
             what >>= decalage
@@ -293,7 +293,7 @@ class FmtStr(object):
         Examples:
 
             >>> def send_fmt_payload(payload):
-            ...     print repr(payload)
+            ...     print(repr(payload))
             ...
             >>> f = FmtStr(send_fmt_payload, offset=5)
             >>> f.write(0x08040506, 0x1337babe)

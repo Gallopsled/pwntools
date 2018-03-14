@@ -739,20 +739,20 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
 
     Examples:
 
-        >>> print disasm('b85d000000'.decode('hex'), arch = 'i386')
+        >>> print(disasm(unhex('b85d000000'), arch = 'i386'))
            0:   b8 5d 00 00 00          mov    eax,0x5d
-        >>> print disasm('b85d000000'.decode('hex'), arch = 'i386', byte = 0)
+        >>> print(disasm(unhex('b85d000000'), arch = 'i386', byte = 0))
            0:   mov    eax,0x5d
-        >>> print disasm('b85d000000'.decode('hex'), arch = 'i386', byte = 0, offset = 0)
+        >>> print(disasm(unhex('b85d000000'), arch = 'i386', byte = 0, offset = 0))
         mov    eax,0x5d
-        >>> print disasm('b817000000'.decode('hex'), arch = 'amd64')
+        >>> print(disasm(unhex('b817000000'), arch = 'amd64'))
            0:   b8 17 00 00 00          mov    eax,0x17
-        >>> print disasm('48c7c017000000'.decode('hex'), arch = 'amd64')
+        >>> print(disasm(unhex('48c7c017000000'), arch = 'amd64'))
            0:   48 c7 c0 17 00 00 00    mov    rax,0x17
-        >>> print disasm('04001fe552009000'.decode('hex'), arch = 'arm')
+        >>> print(disasm(unhex('04001fe552009000'), arch = 'arm'))
            0:   e51f0004        ldr     r0, [pc, #-4]   ; 0x4
            4:   00900052        addseq  r0, r0, r2, asr r0
-        >>> print disasm('4ff00500'.decode('hex'), arch = 'thumb', bits=32)
+        >>> print(disasm(unhex('4ff00500'), arch = 'thumb', bits=32))
            0:   f04f 0005       mov.w   r0, #5
     """
     result = ''

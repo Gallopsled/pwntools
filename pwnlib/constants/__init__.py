@@ -30,23 +30,23 @@ what happens in :mod:`pwnlib.shellcraft`.
 Example:
 
     >>> with context.local(os = 'freebsd'):
-    ...     print int(constants.SYS_stat)
+    ...     print(int(constants.SYS_stat))
     188
     >>> with context.local(os = 'linux', arch = 'i386'):
-    ...     print int(constants.SYS_stat)
+    ...     print(int(constants.SYS_stat))
     106
     >>> with context.local(os = 'linux', arch = 'amd64'):
-    ...     print int(constants.SYS_stat)
+    ...     print(int(constants.SYS_stat))
     4
 
     >>> with context.local(arch = 'i386', os = 'linux'):
-    ...    print constants.SYS_execve + constants.PROT_WRITE
+    ...    print(constants.SYS_execve + constants.PROT_WRITE)
     13
     >>> with context.local(arch = 'amd64', os = 'linux'):
-    ...    print constants.SYS_execve + constants.PROT_WRITE
+    ...    print(constants.SYS_execve + constants.PROT_WRITE)
     61
     >>> with context.local(arch = 'amd64', os = 'linux'):
-    ...    print constants.SYS_execve + constants.PROT_WRITE
+    ...    print(constants.SYS_execve + constants.PROT_WRITE)
     61
 
 """
@@ -124,13 +124,13 @@ class ConstantsModule(ModuleType):
         Example:
 
             >>> with context.local(arch = 'i386', os = 'linux'):
-            ...    print 13 == constants.eval('SYS_execve + PROT_WRITE')
+            ...    print(13 == constants.eval('SYS_execve + PROT_WRITE'))
             True
             >>> with context.local(arch = 'amd64', os = 'linux'):
-            ...    print 61 == constants.eval('SYS_execve + PROT_WRITE')
+            ...    print(61 == constants.eval('SYS_execve + PROT_WRITE'))
             True
             >>> with context.local(arch = 'amd64', os = 'linux'):
-            ...    print 61 == constants.eval('SYS_execve + PROT_WRITE')
+            ...    print(61 == constants.eval('SYS_execve + PROT_WRITE'))
             True
         """
         if not isinstance(string, str):

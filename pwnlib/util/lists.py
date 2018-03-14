@@ -1,6 +1,7 @@
 from __future__ import division
 
 import collections
+import six
 
 
 def partition(lst, f, save_keys = False):
@@ -68,8 +69,8 @@ def group(n, lst, underfull_action = 'ignore', fill_value = None):
             fill_value = (fill_value,)
         elif isinstance(lst, list):
             fill_value = [fill_value]
-        elif isinstance(lst, (str, unicode)):
-            if not isinstance(fill_value, (str, unicode)):
+        elif isinstance(lst, (bytes, six.text_type)):
+            if not isinstance(fill_value, (bytes, six.text_type)):
                 raise ValueError("group(): cannot fill a string with a non-string")
         else:
             raise ValueError("group(): 'lst' must be either a tuple, list or string")

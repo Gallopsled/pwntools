@@ -12,6 +12,7 @@
 # serve to show the default.
 
 import os
+import six
 import subprocess
 import sys
 
@@ -345,11 +346,11 @@ def linkcode_resolve(domain, info):
     else:
         filename = info['module'].replace('.', '/') + '.py'
 
-        if isinstance(val, (types.ModuleType, types.ClassType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType)):
+        if isinstance(val, (types.ModuleType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType) + six.class_types):
             try:
                 lines, first = inspect.getsourcelines(val)
                 filename += '#L%d-%d' % (first, first + len(lines) - 1)
-            except IOError:
+            except (IOError, TypeError):
                 pass
 
     return "https://github.com/Gallopsled/pwntools/blob/%s/%s" % (branch, filename)

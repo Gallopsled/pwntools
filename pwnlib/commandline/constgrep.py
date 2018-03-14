@@ -64,7 +64,7 @@ p.add_argument(
 def main(args):
     if args.exact:
         # This is the simple case
-        print cpp(args.exact).strip()
+        print(cpp(args.exact).strip())
     else:
         # New we search in the right module.
         # But first: We find the right module
@@ -118,7 +118,7 @@ def main(args):
 
         # Output all matching constants
         for _, k in sorted(out):
-            print '#define %s %s' % (k.ljust(maxlen), cpp(k).strip())
+            print('#define %s %s' % (k.ljust(maxlen), cpp(k).strip()))
 
         # If we are in match_mode, then try to find a combination of
         # constants that yield the exact given value
@@ -136,8 +136,8 @@ def main(args):
                 out = [(v, k) for v, k in out if mask & v == v]
 
             if reduce(lambda x, cur: x | cur[0], good, 0) == constant:
-                print
-                print '(%s) == %s' % (' | '.join(k for v, k in good), args.constant)
+                print('')
+                print('(%s) == %s' % (' | '.join(k for v, k in good), args.constant))
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)

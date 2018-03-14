@@ -163,7 +163,7 @@ from the internet!  The :mod:`pwnlib.asm` module is full of awesome.
 
 But if you do, it's easy to suss out!
 
-    >>> print disasm('6a0258cd80ebf9'.decode('hex'))
+    >>> print(disasm(unhex('6a0258cd80ebf9')))
        0:   6a 02                   push   0x2
        2:   58                      pop    eax
        3:   cd 80                   int    0x80
@@ -188,10 +188,10 @@ Never write another hexdump, thanks to :mod:`pwnlib.util.fiddling`.
 
 Find offsets in your buffer that cause a crash, thanks to :mod:`pwnlib.cyclic`.
 
-    >>> print cyclic(20)
+    >>> print(cyclic(20))
     aaaabaaacaaadaaaeaaa
-    >>> # Assume EIP = 0x62616166 ('faab' which is pack(0x62616166))  at crash time
-    >>> print cyclic_find('faab')
+    >>> # Assume EIP = 0x62616166 (b'faab' which is pack(0x62616166))  at crash time
+    >>> print(cyclic_find(b'faab'))
     120
 
 ELF Manipulation
@@ -200,13 +200,13 @@ ELF Manipulation
 Stop hard-coding things!  Look them up at runtime with :mod:`pwnlib.elf`.
 
     >>> e = ELF('/bin/cat')
-    >>> print hex(e.address) #doctest: +SKIP
+    >>> print(hex(e.address)) #doctest: +SKIP
     0x400000
-    >>> print hex(e.symbols['write']) #doctest: +SKIP
+    >>> print(hex(e.symbols['write'])) #doctest: +SKIP
     0x401680
-    >>> print hex(e.got['write']) #doctest: +SKIP
+    >>> print(hex(e.got['write'])) #doctest: +SKIP
     0x60b070
-    >>> print hex(e.plt['write']) #doctest: +SKIP
+    >>> print(hex(e.plt['write'])) #doctest: +SKIP
     0x401680
 
 You can even patch and save the files.

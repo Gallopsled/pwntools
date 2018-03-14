@@ -14,14 +14,14 @@ Args:
 
 Examples:
 
-    >>> print shellcraft.pushstr("Hello!").rstrip()
+    >>> print(shellcraft.pushstr("Hello!").rstrip())
         /* push 'Hello!\x00' */
         /* Set x14 = 36762444129608 = 0x216f6c6c6548 */
         mov  x14, #25928
         movk x14, #27756, lsl #16
         movk x14, #8559, lsl #0x20
         str x14, [sp, #-16]!
-    >>> print shellcraft.pushstr("Hello, world!").rstrip()
+    >>> print(shellcraft.pushstr("Hello, world!").rstrip())
         /* push 'Hello, world!\x00' */
         /* Set x14 = 8583909746840200520 = 0x77202c6f6c6c6548 */
         mov  x14, #25928
@@ -33,7 +33,7 @@ Examples:
         movk x15, #25708, lsl #16
         movk x15, #33, lsl #0x20
         stp x14, x15, [sp, #-16]!
-    >>> print shellcraft.pushstr("Hello, world, bienvenue").rstrip()
+    >>> print(shellcraft.pushstr("Hello, world, bienvenue").rstrip())
         /* push 'Hello, world, bienvenue\x00' */
         /* Set x14 = 8583909746840200520 = 0x77202c6f6c6c6548 */
         mov  x14, #25928
@@ -52,7 +52,7 @@ Examples:
         movk x14, #30062, lsl #0x20
         movk x14, #101, lsl #0x30
         str x14, [sp, #-16]!
-    >>> print shellcraft.pushstr("Hello, world, bienvenue!").rstrip()
+    >>> print(shellcraft.pushstr("Hello, world, bienvenue!").rstrip())
         /* push 'Hello, world, bienvenue!\x00' */
         /* Set x14 = 8583909746840200520 = 0x77202c6f6c6c6548 */
         mov  x14, #25928

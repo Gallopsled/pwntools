@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import argparse
 import os
@@ -25,7 +25,7 @@ def main(args):
       value = 0x100000000 - value
 
     if value not in os.errno.errorcode:
-      print "No errno for %s" % value
+      print("No errno for %s" % value)
       return
 
     name = os.errno.errorcode[value]
@@ -34,14 +34,14 @@ def main(args):
     name = args.error.upper()
 
     if not hasattr(os.errno, name):
-      print "No errno for %s" % name
+      print("No errno for %s" % name)
       return
 
     value = getattr(os.errno, name)
 
 
-  print '#define', name, value
-  print os.strerror(value)
+  print('#define', name, value)
+  print(os.strerror(value))
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)

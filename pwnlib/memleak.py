@@ -3,6 +3,7 @@ from __future__ import division
 
 import ctypes
 import functools
+import six
 import string
 
 from pwnlib.context import context
@@ -40,7 +41,7 @@ class MemLeak(object):
         >>> binsh = pwnlib.util.misc.read('/bin/sh')
         >>> @pwnlib.memleak.MemLeak
         ... def leaker(addr):
-        ...     print "leaking 0x%x" % addr
+        ...     print("leaking 0x%x" % addr)
         ...     return binsh[addr:addr+4]
         >>> leaker.s(0)[:4]
         leaking 0x0
@@ -57,7 +58,7 @@ class MemLeak(object):
         '0x464c457f'
         >>> @pwnlib.memleak.MemLeak
         ... def leaker_nonulls(addr):
-        ...     print "leaking 0x%x" % addr
+        ...     print("leaking 0x%x" % addr)
         ...     if addr & 0xff == 0:
         ...         return None
         ...     return binsh[addr:addr+4]
@@ -214,7 +215,7 @@ class MemLeak(object):
             return None
 
         # Cache is filled, satisfy the request
-        return ''.join(self.cache[addr+i] for i in xrange(n))
+        return b''.join(six.int2byte(six.indexbytes(self.cache, addr+i)) for i in range(n))
 
     def raw(self, addr, numb):
         """raw(addr, numb) -> list

@@ -7,6 +7,8 @@ from pwnlib.abi import ABI
 from pwnlib.context import context
 from pwnlib.util import packing
 
+import six
+
 
 class Unresolved(object):
     """
@@ -158,7 +160,7 @@ class AppendedArgument(Unresolved):
             self.address = addr
             rv = [None] * len(self.values)
             for i, value in enumerate(self.values):
-                if isinstance(value, int):
+                if isinstance(value, six.integer_types):
                     rv[i] = value
                 if isinstance(value, str):
                     value += '\x00'
@@ -179,7 +181,7 @@ class AppendedArgument(Unresolved):
         return packing.flat(self.resolve())
 
     def __repr__(self):
-        if isinstance(self.address, int):
+        if isinstance(self.address, six.integer_types):
             return '%s(%r, %#x)' % (self.__class__.__name__, self.values, self.address)
         else:
             return '%s(%r, %r)' % (self.__class__.__name__, self.values, self.address)
@@ -210,25 +212,25 @@ class Call(object):
 
     def __init__(self, name, target, args, abi=None):
         assert isinstance(name, str)
-        # assert isinstance(target, int)
+        # assert isinstance(target, six.integer_types)
         assert isinstance(args, (list, tuple))
         self.abi  = abi or ABI.default()
         self.name = name
         self.target = target
         self.args = list(args)
         for i, arg in enumerate(args):
-            if not isinstance(arg, (int, long, Unresolved)):
+            if not isinstance(arg, six.integer_types+(Unresolved,)):
                 self.args[i] = AppendedArgument(arg)
 
     def __repr__(self):
-        fmt = "%#x" if isinstance(self.target, (int, long)) else "%r"
+        fmt = "%#x" if isinstance(self.target, six.integer_types) else "%r"
         return '%s(%r, %s, %r)' % (self.__class__.__name__,
                                     self.name,
                                     fmt % self.target,
                                     self.args)
 
     def __str__(self):
-        fmt = "%#x" if isinstance(self.target, (int, long)) else "%r"
+        fmt = "%#x" if isinstance(self.target, six.integer_types) else "%r"
         args = []
         for arg in self.args:
             if isinstance(arg, AppendedArgument) and len(arg.values) == 1:
@@ -239,7 +241,7 @@ class Call(object):
         name = self.name or (fmt % self.target)
         arg_str = []
         for arg in args:
-            if isinstance(arg, (int,long)) and arg > 0x100:
+            if isinstance(arg, six.integer_types) and arg > 0x100:
                 arg_str.append(hex(arg))
             else:
                 arg_str.append(str(arg))

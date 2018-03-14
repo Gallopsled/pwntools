@@ -125,6 +125,7 @@ def write(path, data = b'', create_dir = False, mode = 'w'):
     if create_dir:
         path = os.path.realpath(path)
         mkdir_p(os.path.dirname(path))
+    if mode == 'w' and isinstance(data, bytes): mode += 'b'
     with open(path, mode) as f:
         f.write(data)
 

@@ -97,7 +97,7 @@ def main(args):
 
     try:
         for line in hexdump_iter(infile, width, highlight = hl, begin = offset + skip):
-            print line
+            print(line)
     except (KeyboardInterrupt, IOError):
         pass
 

@@ -56,7 +56,7 @@ def main(a):
     shutil.copy(y.path, name)
     y = dump(objdump, name)
 
-    print diff(x, y)
+    print(diff(x, y))
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)

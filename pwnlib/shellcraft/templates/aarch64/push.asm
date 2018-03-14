@@ -24,28 +24,28 @@ Args:
 
 Example:
 
-    >>> print pwnlib.shellcraft.push(0).rstrip()
+    >>> print(pwnlib.shellcraft.push(0).rstrip())
         /* push 0 */
         mov  x14, xzr
         str x14, [sp, #-16]!
-    >>> print pwnlib.shellcraft.push(1).rstrip()
+    >>> print(pwnlib.shellcraft.push(1).rstrip())
         /* push 1 */
         mov  x14, #1
         str x14, [sp, #-16]!
-    >>> print pwnlib.shellcraft.push(256).rstrip()
+    >>> print(pwnlib.shellcraft.push(256).rstrip())
         /* push 0x100 */
         mov  x14, #256
         str x14, [sp, #-16]!
-    >>> print pwnlib.shellcraft.push('SYS_execve').rstrip()
+    >>> print(pwnlib.shellcraft.push('SYS_execve').rstrip())
         /* push SYS_execve (0xdd) */
         mov  x14, #221
         str x14, [sp, #-16]!
-    >>> print pwnlib.shellcraft.push('SYS_sendfile').rstrip()
+    >>> print(pwnlib.shellcraft.push('SYS_sendfile').rstrip())
         /* push SYS_sendfile (0x47) */
         mov  x14, #71
         str x14, [sp, #-16]!
     >>> with context.local(os = 'freebsd'):
-    ...     print pwnlib.shellcraft.push('SYS_execve').rstrip()
+    ...     print(pwnlib.shellcraft.push('SYS_execve').rstrip())
     ...
         /* push SYS_execve (0x3b) */
         mov  x14, #59

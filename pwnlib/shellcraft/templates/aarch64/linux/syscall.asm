@@ -12,7 +12,7 @@ Any of the arguments can be expressions to be evaluated by :func:`pwnlib.constan
 
 Example:
 
-    >>> print shellcraft.aarch64.linux.syscall(11, 1, 'sp', 2, 0).rstrip()
+    >>> print(shellcraft.aarch64.linux.syscall(11, 1, 'sp', 2, 0).rstrip())
         /* call syscall(11, 1, 'sp', 2, 0) */
         mov  x0, #1
         mov  x1, sp
@@ -20,12 +20,12 @@ Example:
         mov  x3, xzr
         mov  x8, #11
         svc 0
-    >>> print shellcraft.aarch64.linux.syscall('SYS_exit', 0).rstrip()
+    >>> print(shellcraft.aarch64.linux.syscall('SYS_exit', 0).rstrip())
         /* call exit(0) */
         mov  x0, xzr
         mov  x8, #SYS_exit
         svc 0
-    >>> print pwnlib.shellcraft.openat(-2, '/home/pwn/flag').rstrip()
+    >>> print(pwnlib.shellcraft.openat(-2, '/home/pwn/flag').rstrip())
         /* openat(fd=-2, file='/home/pwn/flag', oflag=0) */
         /* push '/home/pwn/flag\x00' */
         /* Set x14 = 8606431000579237935 = 0x77702f656d6f682f */

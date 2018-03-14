@@ -70,8 +70,9 @@ import gzip
 import re
 import os
 import socket
-import StringIO
 import tempfile
+
+from six import BytesIO, StringIO
 
 import elftools
 from elftools.common.py3compat import bytes2str
@@ -791,7 +792,7 @@ class Corefile(ELF):
         if fault_addr == 0 and self.siginfo.si_code == 0x80:
             try:
                 code = self.read(self.pc, 1)
-                RET = '\xc3'
+                RET = b'\xc3'
                 if code == RET:
                     fault_addr = self.unpack(self.sp)
             except Exception:
@@ -1253,7 +1254,7 @@ class CorefileFinder(object):
         Returns:
             `str`: Raw binary data for the core file, or ``None``.
         """
-        file = StringIO.StringIO(crashfile_data)
+        file = StringIO(crashfile_data)
 
         # Find the pid of the crashfile
         for line in file:
@@ -1282,8 +1283,8 @@ class CorefileFinder(object):
             chunks.append(b64d(line))
 
         # Smush everything together, then extract it
-        compressed_data = ''.join(chunks)
-        compressed_file = StringIO.StringIO(compressed_data)
+        compressed_data = b''.join(chunks)
+        compressed_file = BytesIO(compressed_data)
         gzip_file = gzip.GzipFile(fileobj=compressed_file)
         core_data = gzip_file.read()
 

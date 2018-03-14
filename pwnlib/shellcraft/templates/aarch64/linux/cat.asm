@@ -9,7 +9,7 @@ Example:
 
     >>> write('flag', 'This is the flag\n')
     >>> shellcode = shellcraft.cat('flag') + shellcraft.exit(0)
-    >>> print disasm(asm(shellcode))
+    >>> print(disasm(asm(shellcode)))
        0:   d28d8cce        mov     x14, #0x6c66                    // #27750
        4:   f2acec2e        movk    x14, #0x6761, lsl #16
        8:   f81f0fee        str     x14, [sp, #-16]!

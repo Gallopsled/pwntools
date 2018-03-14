@@ -24,37 +24,37 @@ Args:
 
 Example:
 
-    >>> print shellcraft.mips.mov('$t0', 0).rstrip()
+    >>> print(shellcraft.mips.mov('$t0', 0).rstrip())
         slti $t0, $zero, 0xFFFF /* $t0 = 0 */
-    >>> print shellcraft.mips.mov('$t2', 0).rstrip()
+    >>> print(shellcraft.mips.mov('$t2', 0).rstrip())
         xor $t2, $t2, $t2  /* $t2 = 0 */
-    >>> print shellcraft.mips.mov('$t0', 0xcafebabe).rstrip()
+    >>> print(shellcraft.mips.mov('$t0', 0xcafebabe).rstrip())
         li $t0, 0xcafebabe
-    >>> print shellcraft.mips.mov('$t2', 0xcafebabe).rstrip()
+    >>> print(shellcraft.mips.mov('$t2', 0xcafebabe).rstrip())
         li $t9, 0xcafebabe
         add $t2, $t9, $zero
-    >>> print shellcraft.mips.mov('$s0', 0xca0000be).rstrip()
+    >>> print(shellcraft.mips.mov('$s0', 0xca0000be).rstrip())
         li $t9, ~0xca0000be
         not $s0, $t9
-    >>> print shellcraft.mips.mov('$s0', 0xca0000ff).rstrip()
+    >>> print(shellcraft.mips.mov('$s0', 0xca0000ff).rstrip())
         li $t9, 0x1010101 ^ 0xca0000ff
         li $s0, 0x1010101
         xor $s0, $t9, $s0
-    >>> print shellcraft.mips.mov('$t9', 0xca0000be).rstrip()
+    >>> print(shellcraft.mips.mov('$t9', 0xca0000be).rstrip())
         li $t9, ~0xca0000be
         not $t9, $t9
-    >>> print shellcraft.mips.mov('$t2', 0xca0000be).rstrip()
+    >>> print(shellcraft.mips.mov('$t2', 0xca0000be).rstrip())
         li $t9, ~0xca0000be
         not $t9, $t9
         add $t2, $t9, $0 /* mov $t2, $t9 */
-    >>> print shellcraft.mips.mov('$t2', 0xca0000ff).rstrip()
+    >>> print(shellcraft.mips.mov('$t2', 0xca0000ff).rstrip())
         li $t8, 0x1010101 ^ 0xca0000ff
         li $t9, 0x1010101
         xor $t9, $t8, $t9
         add $t2, $t9, $0 /* mov $t2, $t9 */
-    >>> print shellcraft.mips.mov('$a0', '$t2').rstrip()
+    >>> print(shellcraft.mips.mov('$a0', '$t2').rstrip())
         add $a0, $t2, $0 /* mov $a0, $t2 */
-    >>> print shellcraft.mips.mov('$a0', '$t8').rstrip()
+    >>> print(shellcraft.mips.mov('$a0', '$t8').rstrip())
         sw $t8, -4($sp) /* mov $a0, $t8 */
         lw $a0, -4($sp)
 

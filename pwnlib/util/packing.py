@@ -27,12 +27,13 @@ Examples:
     '\xff'
     >>> p(0x1ff)
     '\xff\x01'
-    >>> with context.local(endian='big'): print repr(p(0x1ff))
+    >>> with context.local(endian='big'): print(repr(p(0x1ff)))
     '\xff\x01'
 """
 from __future__ import absolute_import
 from __future__ import division
 
+import six
 import struct
 import sys
 
@@ -106,7 +107,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         endianness = context.endianness
         sign       = context.sign
 
-        if not isinstance(number, (int,long)):
+        if not isinstance(number, six.integer_types):
             raise ValueError("pack(): number must be of type (int,long) (got %r)" % type(number))
 
         if sign not in [True, False]:
@@ -128,7 +129,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
                 if sign == False:
                     raise ValueError("pack(): number does not fit within word_size")
                 word_size = ((number + 1).bit_length() | 7) + 1
-        elif not isinstance(word_size, (int, long)) or word_size <= 0:
+        elif not isinstance(word_size, six.integer_types) or word_size <= 0:
             raise ValueError("pack(): word_size must be a positive integer or the string 'all'")
 
         if sign == True:
@@ -148,7 +149,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         out = []
 
         for _ in range(byte_size):
-            out.append(chr(number & 0xff))
+            out.append(_p8lu(number & 0xff))
             number = number >> 8
 
         if endianness == 'little':
@@ -203,7 +204,7 @@ def unpack(data, word_size = None):
     # Verify that word_size make sense
     if word_size == 'all':
         word_size = len(data) * 8
-    elif not isinstance(word_size, (int, long)) or word_size <= 0:
+    elif not isinstance(word_size, six.integer_types) or word_size <= 0:
         raise ValueError("unpack(): word_size must be a positive integer or the string 'all'")
 
     byte_size = (word_size + 7) // 8
@@ -282,7 +283,9 @@ def unpack_many(data, word_size = None):
 #
 # Make individual packers, e.g. _p8lu
 #
-ops   = {'p': struct.pack, 'u': lambda *a: struct.unpack(*a)[0]}
+ops   = {'p': struct.pack, 'u': lambda *a: struct.unpack(*(
+                                             x.encode('latin1') if not hasattr(x, 'decode') else x
+                                             for x in a))[0]}
 sizes = {8:'b', 16:'h', 32:'i', 64:'q'}
 ends  = ['b','l']
 signs = ['s','u']
@@ -496,14 +499,14 @@ def _fit(pieces, preprocessor, packer, filler):
     pieces_ = dict()
     large_key = 2**(context.word_size-8)
     for k, v in pieces.items():
-        if isinstance(k, (int, long)):
+        if isinstance(k, six.integer_types):
             if k >= large_key:
                 k = fill(pack(k))
-        elif isinstance(k, unicode):
+        elif isinstance(k, six.text_type):
             k = fill(k.encode('utf8'))
         elif isinstance(k, bytearray):
-            k = fill(str(k))
-        elif isinstance(k, str):
+            k = fill(bytes(k))
+        elif isinstance(k, bytes):
             k = fill(k)
         else:
             raise TypeError("flat(): offset must be of type int or str, but got '%s'" % type(k))
@@ -546,11 +549,11 @@ def _flat(args, preprocessor, packer, filler):
             val = _flat(arg, preprocessor, packer, filler)
         elif isinstance(arg, dict):
             filler, val = _fit(arg, preprocessor, packer, filler)
-        elif isinstance(arg, str):
+        elif isinstance(arg, bytes):
             val = arg
-        elif isinstance(arg, unicode):
+        elif isinstance(arg, six.text_type):
             val = arg.encode('utf8')
-        elif isinstance(arg, (int, long)):
+        elif isinstance(arg, six.integer_types):
             val = packer(arg)
         elif isinstance(arg, bytearray):
             val = str(arg)
@@ -780,7 +783,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
 
     # Otherwise get `src` in canonical form, i.e. a string of at most `count`
     # bytes
-    if isinstance(src, unicode):
+    if isinstance(src, six.text_type):
         if count:
             # The only way to know where the `seek`th byte is, is to decode, but
             # we only need to decode up to the first `seek + count` code points
@@ -808,7 +811,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         src.close()
         src = src_
 
-    elif isinstance(src, str):
+    elif isinstance(src, bytes):
         if count:
             src = src[seek : seek + count]
         else:
@@ -820,12 +823,12 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         for i, b in enumerate(src, seek):
             if count and i > count + seek:
                 break
-            if isinstance(b, str):
+            if isinstance(b, bytes):
                 src_ += b
-            elif isinstance(b, (int, long)):
+            elif isinstance(b, six.integer_types):
                 if b > 255 or b < 0:
                     raise ValueError("dd(): Source value %d at index %d is not in range [0;255]" % (b, i))
-                src_ += chr(b)
+                src_ += _p8lu(b)
             else:
                 raise TypeError("dd(): Unsupported `src` element type: %r" % type(b))
         src = b''.join(src_)
@@ -838,7 +841,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         truncate = skip + len(src)
 
     # UTF-8 encode unicode `dst`
-    if isinstance(dst, unicode):
+    if isinstance(dst, six.text_type):
         dst = dst.encode('utf8')
         utf8 = True
     else:
@@ -865,7 +868,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         if not truncate:
             dst = dst + tail
 
-    elif isinstance(dst, str):
+    elif isinstance(dst, bytes):
         tail = dst[skip + len(src):]
         dst = dst[:skip] + src
         if not truncate:

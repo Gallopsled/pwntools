@@ -12,7 +12,7 @@ Any of the arguments can be expressions to be evaluated by :func:`pwnlib.constan
 
 Example:
 
-        >>> print pwnlib.shellcraft.mips.linux.syscall('SYS_execve', 1, '$sp', 2, 0).rstrip()
+        >>> print(pwnlib.shellcraft.mips.linux.syscall('SYS_execve', 1, '$sp', 2, 0).rstrip())
             /* call execve(1, '$sp', 2, 0) */
             li $t9, ~1
             not $a0, $t9
@@ -22,7 +22,7 @@ Example:
             slti $a3, $zero, 0xFFFF /* $a3 = 0 */
             ori $v0, $zero, SYS_execve
             syscall 0x40404
-        >>> print pwnlib.shellcraft.mips.linux.syscall('SYS_execve', 2, 1, 0, 20).rstrip()
+        >>> print(pwnlib.shellcraft.mips.linux.syscall('SYS_execve', 2, 1, 0, 20).rstrip())
             /* call execve(2, 1, 0, 0x14) */
             li $t9, ~2
             not $a0, $t9
@@ -33,25 +33,25 @@ Example:
             not $a3, $t9
             ori $v0, $zero, SYS_execve
             syscall 0x40404
-        >>> print pwnlib.shellcraft.mips.linux.syscall().rstrip()
+        >>> print(pwnlib.shellcraft.mips.linux.syscall().rstrip())
             /* call syscall() */
             syscall 0x40404
-        >>> print pwnlib.shellcraft.mips.linux.syscall('$v0', '$a0', '$a1').rstrip()
+        >>> print(pwnlib.shellcraft.mips.linux.syscall('$v0', '$a0', '$a1').rstrip())
             /* call syscall('$v0', '$a0', '$a1') */
             /* setregs noop */
             syscall 0x40404
-        >>> print pwnlib.shellcraft.mips.linux.syscall('$a3', None, None, 1).rstrip()
+        >>> print(pwnlib.shellcraft.mips.linux.syscall('$a3', None, None, 1).rstrip())
             /* call syscall('$a3', ?, ?, 1) */
             li $t9, ~1
             not $a2, $t9
             sw $a3, -4($sp) /* mov $v0, $a3 */
             lw $v0, -4($sp)
             syscall 0x40404
-        >>> print pwnlib.shellcraft.mips.linux.syscall(
+        >>> print(pwnlib.shellcraft.mips.linux.syscall(
         ...               'SYS_mmap2', 0, 0x1000,
         ...               'PROT_READ | PROT_WRITE | PROT_EXEC',
         ...               'MAP_PRIVATE | MAP_ANONYMOUS',
-        ...               -1, 0).rstrip()
+        ...               -1, 0).rstrip())
             /* call mmap2(0, 0x1000, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
             slti $a0, $zero, 0xFFFF /* $a0 = 0 */
             li $t9, ~0x1000
@@ -61,7 +61,7 @@ Example:
             ori $a3, $zero, (MAP_PRIVATE | MAP_ANONYMOUS)
             ori $v0, $zero, SYS_mmap2
             syscall 0x40404
-        >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
+        >>> print(pwnlib.shellcraft.open('/home/pwn/flag').rstrip())
             /* open(file='/home/pwn/flag', oflag=0, mode=0) */
             /* push '/home/pwn/flag\x00' */
             li $t1, 0x6d6f682f

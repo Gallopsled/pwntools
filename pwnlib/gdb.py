@@ -923,7 +923,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         try:
             path     = next(p for p in local_libs.keys() if remote_path in p)
         except StopIteration:
-            print "Skipping %r" % remote_path
+            print("Skipping %r" % remote_path)
             continue
 
         # Load it

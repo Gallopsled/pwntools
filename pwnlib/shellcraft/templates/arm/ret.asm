@@ -6,9 +6,9 @@ Args:
 
 Examples:
     >>> with context.local(arch='arm'):
-    ...     print enhex(asm(shellcraft.ret()))
-    ...     print enhex(asm(shellcraft.ret(0)))
-    ...     print enhex(asm(shellcraft.ret(0xdeadbeef)))
+    ...     print(enhex(asm(shellcraft.ret())))
+    ...     print(enhex(asm(shellcraft.ret(0))))
+    ...     print(enhex(asm(shellcraft.ret(0xdeadbeef))))
     1eff2fe1
     000020e01eff2fe1
     ef0e0be3ad0e4de31eff2fe1

@@ -4,6 +4,7 @@ from __future__ import division
 import itertools
 import os
 import re
+import six
 import sys
 from types import ModuleType
 
@@ -136,14 +137,14 @@ class module(ModuleType):
         return templates
 
     def eval(self, item):
-        if isinstance(item, (int,long)):
+        if isinstance(item, six.integer_types):
             return item
         return constants.eval(item)
 
     def pretty(self, n, comment=True):
         if isinstance(n, str):
             return repr(n)
-        if not isinstance(n, (int,long)):
+        if not isinstance(n, six.integer_types):
             return n
         if isinstance(n, constants.Constant):
             if comment: return '%s /* %s */' % (n,self.pretty(int(n)))

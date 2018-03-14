@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import six
 import string
 
 from pwnlib.context import context, LocalContext
@@ -133,8 +134,11 @@ def cyclic(length = None, alphabet = None, n = None):
         else:
             out.append(c)
 
-    if isinstance(alphabet, str):
-        return ''.join(out)
+    if isinstance(alphabet, (bytes, six.text_type)):
+        try:
+            return type(alphabet)().join(out)
+        except:
+            return type(alphabet)(out)
     else:
         return out
 
@@ -211,7 +215,7 @@ def cyclic_find(subseq, alphabet = None, n = None):
     if n is None:
         n = context.cyclic_size
 
-    if isinstance(subseq, (int, long)):
+    if isinstance(subseq, six.integer_types):
         subseq = packing.pack(subseq, bytes=n)
 
     if len(subseq) != n:
@@ -316,7 +320,7 @@ def cyclic_metasploit_find(subseq, sets = None):
     """
     sets = sets or [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]
 
-    if isinstance(subseq, (int, long)):
+    if isinstance(subseq, six.integer_types):
         subseq = packing.pack(subseq, 'all', 'little', False)
 
     return _gen_find(subseq, metasploit_pattern(sets))

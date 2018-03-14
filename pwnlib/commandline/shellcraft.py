@@ -190,7 +190,7 @@ def main(args):
         elif not args.syscalls:
             templates = filter(is_not_a_syscall_template, templates)
 
-        print '\n'.join(templates)
+        print('\n'.join(templates))
         exit()
 
     if not args.shellcode:
@@ -245,7 +245,7 @@ def main(args):
             if not in_doctest:
                 doc.append(line)
             i += 1
-        print '\n'.join(doc).rstrip()
+        print('\n'.join(doc).rstrip())
         exit()
 
     defargs = len(func.func_defaults or ())
@@ -284,10 +284,10 @@ def main(args):
 
             code = highlight(code, PwntoolsLexer(), TerminalFormatter())
 
-        print code
+        print(code)
         exit()
     if args.format == 'p':
-        print cpp(code)
+        print(cpp(code))
         exit()
 
     assembly = code

@@ -9,51 +9,51 @@ null bytes or newline characters.
 
 Example:
 
-    >>> print shellcraft.amd64.pushstr('').rstrip()
+    >>> print(shellcraft.amd64.pushstr('').rstrip())
         /* push '\x00' */
         push 1
         dec byte ptr [rsp]
-    >>> print shellcraft.amd64.pushstr('a').rstrip()
+    >>> print(shellcraft.amd64.pushstr('a').rstrip())
         /* push 'a\x00' */
         push 0x61
-    >>> print shellcraft.amd64.pushstr('aa').rstrip()
+    >>> print(shellcraft.amd64.pushstr('aa').rstrip())
         /* push 'aa\x00' */
         push 0x1010101 ^ 0x6161
         xor dword ptr [rsp], 0x1010101
-    >>> print shellcraft.amd64.pushstr('aaa').rstrip()
+    >>> print(shellcraft.amd64.pushstr('aaa').rstrip())
         /* push 'aaa\x00' */
         push 0x1010101 ^ 0x616161
         xor dword ptr [rsp], 0x1010101
-    >>> print shellcraft.amd64.pushstr('aaaa').rstrip()
+    >>> print(shellcraft.amd64.pushstr('aaaa').rstrip())
         /* push 'aaaa\x00' */
         push 0x61616161
-    >>> print shellcraft.amd64.pushstr('aaa\xc3').rstrip()
+    >>> print(shellcraft.amd64.pushstr('aaa\xc3').rstrip())
         /* push 'aaa\xc3\x00' */
         mov rax, 0x101010101010101
         push rax
         mov rax, 0x101010101010101 ^ 0xc3616161
         xor [rsp], rax
-    >>> print shellcraft.amd64.pushstr('aaa\xc3', append_null = False).rstrip()
+    >>> print(shellcraft.amd64.pushstr('aaa\xc3', append_null = False).rstrip())
         /* push 'aaa\xc3' */
         push -0x3c9e9e9f
-    >>> print shellcraft.amd64.pushstr('\xc3').rstrip()
+    >>> print(shellcraft.amd64.pushstr('\xc3').rstrip())
         /* push '\xc3\x00' */
         push 0x1010101 ^ 0xc3
         xor dword ptr [rsp], 0x1010101
-    >>> print shellcraft.amd64.pushstr('\xc3', append_null = False).rstrip()
+    >>> print(shellcraft.amd64.pushstr('\xc3', append_null = False).rstrip())
         /* push '\xc3' */
         push -0x3d
     >>> with context.local():
     ...    context.arch = 'amd64'
-    ...    print enhex(asm(shellcraft.pushstr("/bin/sh")))
+    ...    print(enhex(asm(shellcraft.pushstr("/bin/sh"))))
     48b801010101010101015048b82e63686f2e72690148310424
     >>> with context.local():
     ...    context.arch = 'amd64'
-    ...    print enhex(asm(shellcraft.pushstr("")))
+    ...    print(enhex(asm(shellcraft.pushstr(""))))
     6a01fe0c24
     >>> with context.local():
     ...    context.arch = 'amd64'
-    ...    print enhex(asm(shellcraft.pushstr("\x00", False)))
+    ...    print(enhex(asm(shellcraft.pushstr("\x00", False))))
     6a01fe0c24
 
 Args:

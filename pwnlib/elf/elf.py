@@ -9,13 +9,13 @@ Example Usage
 .. code-block:: python
 
     >>> e = ELF('/bin/cat')
-    >>> print hex(e.address) #doctest: +SKIP
+    >>> print(hex(e.address)) #doctest: +SKIP
     0x400000
-    >>> print hex(e.symbols['write']) #doctest: +SKIP
+    >>> print(hex(e.symbols['write'])) #doctest: +SKIP
     0x401680
-    >>> print hex(e.got['write']) #doctest: +SKIP
+    >>> print(hex(e.got['write'])) #doctest: +SKIP
     0x60b070
-    >>> print hex(e.plt['write']) #doctest: +SKIP
+    >>> print(hex(e.plt['write'])) #doctest: +SKIP
     0x401680
 
 You can even patch and save the files.
@@ -42,8 +42,10 @@ import gzip
 import mmap
 import os
 import re
-import StringIO
+import six
 import subprocess
+
+from six import BytesIO
 
 from collections import namedtuple
 
@@ -219,7 +221,7 @@ class ELF(ELFFile):
         #:
         #: See: :attr:`.ContextType.arch`
         self.arch = self.get_machine_arch()
-        if isinstance(self.arch, (str, unicode)):
+        if isinstance(self.arch, (bytes, six.text_type)):
             self.arch = self.arch.lower()
 
         #: :class:`dotdict` of ``name`` to ``address`` for all symbols in the ELF
@@ -295,7 +297,7 @@ class ELF(ELFFile):
             start += len(IKCFG_ST)
             stop = next(self.search(b'IKCFG_ED'))
 
-            fileobj = StringIO.StringIO(self.read(start, stop-start))
+            fileobj = BytesIO(self.read(start, stop-start))
 
             # Python gzip throws an exception if there is non-Gzip data
             # after the Gzip stream.

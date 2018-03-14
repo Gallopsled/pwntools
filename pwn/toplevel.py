@@ -67,15 +67,7 @@ from pwnlib.util.web import *
 
 # Promote these modules, so that "from pwn import *" will let you access them
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from six.moves import cPickle as pickle, cStringIO as StringIO
 
 error   = log.error
 warning = log.warning

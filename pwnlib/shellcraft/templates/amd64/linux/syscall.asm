@@ -12,7 +12,7 @@ Any of the arguments can be expressions to be evaluated by :func:`pwnlib.constan
 
 Example:
 
-        >>> print pwnlib.shellcraft.amd64.linux.syscall('SYS_execve', 1, 'rsp', 2, 0).rstrip()
+        >>> print(pwnlib.shellcraft.amd64.linux.syscall('SYS_execve', 1, 'rsp', 2, 0).rstrip())
             /* call execve(1, 'rsp', 2, 0) */
             xor r10d, r10d /* 0 */
             push SYS_execve /* 0x3b */
@@ -23,7 +23,7 @@ Example:
             pop rdx
             mov rsi, rsp
             syscall
-        >>> print pwnlib.shellcraft.amd64.linux.syscall('SYS_execve', 2, 1, 0, -1).rstrip()
+        >>> print(pwnlib.shellcraft.amd64.linux.syscall('SYS_execve', 2, 1, 0, -1).rstrip())
             /* call execve(2, 1, 0, -1) */
             push -1
             pop r10
@@ -35,24 +35,24 @@ Example:
             pop rsi
             cdq /* rdx=0 */
             syscall
-        >>> print pwnlib.shellcraft.amd64.linux.syscall().rstrip()
+        >>> print(pwnlib.shellcraft.amd64.linux.syscall().rstrip())
             /* call syscall() */
             syscall
-        >>> print pwnlib.shellcraft.amd64.linux.syscall('rax', 'rdi', 'rsi').rstrip()
+        >>> print(pwnlib.shellcraft.amd64.linux.syscall('rax', 'rdi', 'rsi').rstrip())
             /* call syscall('rax', 'rdi', 'rsi') */
             /* setregs noop */
             syscall
-        >>> print pwnlib.shellcraft.amd64.linux.syscall('rbp', None, None, 1).rstrip()
+        >>> print(pwnlib.shellcraft.amd64.linux.syscall('rbp', None, None, 1).rstrip())
             /* call syscall('rbp', ?, ?, 1) */
             mov rax, rbp
             push 1
             pop rdx
             syscall
-        >>> print pwnlib.shellcraft.amd64.linux.syscall(
+        >>> print(pwnlib.shellcraft.amd64.linux.syscall(
         ...               'SYS_mmap', 0, 0x1000,
         ...               'PROT_READ | PROT_WRITE | PROT_EXEC',
         ...               'MAP_PRIVATE | MAP_ANONYMOUS',
-        ...               -1, 0).rstrip()
+        ...               -1, 0).rstrip())
             /* call mmap(0, 4096, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
             push (MAP_PRIVATE | MAP_ANONYMOUS) /* 0x22 */
             pop r10
@@ -67,7 +67,7 @@ Example:
             mov esi, 0x1010101 /* 4096 == 0x1000 */
             xor esi, 0x1011101
             syscall
-        >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
+        >>> print(pwnlib.shellcraft.open('/home/pwn/flag').rstrip())
             /* open(file='/home/pwn/flag', oflag=0, mode=0) */
             /* push '/home/pwn/flag\x00' */
             mov rax, 0x101010101010101

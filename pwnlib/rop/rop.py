@@ -26,7 +26,7 @@ With the ROP object, you can manually add stack frames.
 Inspecting the ROP stack is easy, and laid out in an easy-to-read
 manner.
 
-    >>> print rop.dump()
+    >>> print(rop.dump())
     0x0000:              0x0
     0x0004:       0x64636261
     0x0008:              0x2
@@ -35,7 +35,7 @@ The ROP module is also aware of how to make function calls with
 standard Linux ABIs.
 
     >>> rop.call('read', [4,5,6])
-    >>> print rop.dump()
+    >>> print(rop.dump())
     0x0000:              0x0
     0x0004:       0x64636261
     0x0008:              0x2
@@ -50,7 +50,7 @@ The stack is automatically adjusted for the next frame
 
     >>> rop.write(7,8,9)
     >>> rop.exit()
-    >>> print rop.dump()
+    >>> print(rop.dump())
     0x0000:              0x0
     0x0004:       0x64636261
     0x0008:              0x2
@@ -104,7 +104,7 @@ Finally, let's build our ROP stack
     >>> rop = ROP(binary)
     >>> rop.write(c.STDOUT_FILENO, binary.symbols['flag'], 8)
     >>> rop.exit()
-    >>> print rop.dump()
+    >>> print(rop.dump())
     0x0000:       0x10000012 write(STDOUT_FILENO, 0x10000026, 8)
     0x0004:       0x1000000e <adjust @0x18> add esp, 0x10; ret
     0x0008:              0x1 arg0
@@ -116,14 +116,14 @@ Finally, let's build our ROP stack
 The raw data from the ROP stack is available via `str`.
 
     >>> raw_rop = str(rop)
-    >>> print enhex(raw_rop)
+    >>> print(enhex(raw_rop))
     120000100e000010010000002600001008000000666161612f000010
 
 Let's try it out!
 
     >>> p = process(binary.path)
     >>> p.send(raw_rop)
-    >>> print p.recvall(timeout=5)
+    >>> print(p.recvall(timeout=5))
     The flag
 
 ROP Example (amd64)
@@ -138,7 +138,7 @@ requirements so that everything "just works".
     >>> binary = ELF.from_assembly(assembly)
     >>> rop = ROP(binary)
     >>> rop.target(1,2,3)
-    >>> print rop.dump()
+    >>> print(rop.dump())
     0x0000:       0x10000000 pop rdx; pop rdi; pop rsi; add rsp, 0x20; ret
     0x0008:              0x3 [arg2] rdx = 3
     0x0010:              0x1 [arg0] rdi = 1
@@ -149,7 +149,7 @@ requirements so that everything "just works".
     0x0038:       'oaaapaaa' <pad 0x8>
     0x0040:       0x10000008 target
     >>> rop.target(1)
-    >>> print rop.dump()
+    >>> print(rop.dump())
     0x0000:       0x10000000 pop rdx; pop rdi; pop rsi; add rsp, 0x20; ret
     0x0008:              0x3 [arg2] rdx = 3
     0x0010:              0x1 [arg0] rdi = 1
@@ -213,7 +213,7 @@ Let's create a ROP object and invoke the call.
 
 That's all there is to it.
 
-    >>> print rop.dump()
+    >>> print(rop.dump())
     0x0000:       0x1000000e pop eax; ret
     0x0004:             0x77 [arg0] eax = SYS_sigreturn
     0x0008:       0x1000000b int 0x80
@@ -256,6 +256,7 @@ import hashlib
 import itertools
 import os
 import re
+import six
 import string
 import sys
 import tempfile
@@ -322,7 +323,7 @@ class DescriptiveStack(list):
             line = '0x%04x:' % addr
             if isinstance(data, str):
                 line += ' %16r' % data
-            elif isinstance(data, (int,long)):
+            elif isinstance(data, six.integer_types):
                 line += ' %#16x' % data
                 if self.address != 0 and self.address < data < self.next:
                     off = data - addr
@@ -364,7 +365,7 @@ class ROP(object):
     >>> r.funcname(1, 2)
     >>> r.funcname(3)
     >>> r.execve(4, 5, 6)
-    >>> print r.dump()
+    >>> print(r.dump())
     0x0000:       0x10001234 funcname(1, 2)
     0x0004:       0x10000003 <adjust @0x18> add esp, 0x10; ret
     0x0008:              0x1 arg0
@@ -402,7 +403,7 @@ class ROP(object):
     >>> r.funcname(1, 2)
     >>> r.funcname(3)
     >>> r.execve(4, 5, 6)
-    >>> print r.dump()
+    >>> print(r.dump())
     0x8048000:       0x10001234 funcname(1, 2)
     0x8048004:       0x10000003 <adjust @0x8048018> add esp, 0x10; ret
     0x8048008:              0x1 arg0
@@ -459,7 +460,7 @@ class ROP(object):
         # Permit singular ROP(elf) vs ROP([elf])
         if isinstance(elfs, ELF):
             elfs = [elfs]
-        elif isinstance(elfs, (str, unicode)):
+        elif isinstance(elfs, (bytes, six.text_type)):
             elfs = [ELF(elfs)]
 
         #: List of individual ROP gadgets, ROP calls, SROP frames, etc.
@@ -599,7 +600,7 @@ class ROP(object):
                 if resolvable in elf.symbols:
                     return elf.symbols[resolvable]
 
-        if isinstance(resolvable, (int, long)):
+        if isinstance(resolvable, six.integer_types):
             return resolvable
 
     def unresolve(self, value):
@@ -649,7 +650,7 @@ class ROP(object):
         """
         Return a description for an object in the ROP stack
         """
-        if isinstance(object, (int, long)):
+        if isinstance(object, six.integer_types):
             return self.unresolve(object)
         if isinstance(object, str):
             return repr(object)
@@ -696,14 +697,14 @@ class ROP(object):
 
             # Integers can just be added.
             # Do our best to find out what the address is.
-            if isinstance(slot, (int, long)):
+            if isinstance(slot, six.integer_types):
                 stack.describe(self.describe(slot))
                 stack.append(slot)
 
 
             # Byte blobs can also be added, however they must be
             # broken down into pointer-width blobs.
-            elif isinstance(slot, (str, unicode)):
+            elif isinstance(slot, (bytes, six.text_type)):
                 stack.describe(self.describe(slot))
                 slot += self.generatePadding(stack.next, len(slot) % context.bytes)
 
@@ -810,10 +811,10 @@ class ROP(object):
         size  = (stack.next - base)
         for i, slot in enumerate(stack):
             slot_address = stack.address + (i * context.bytes)
-            if isinstance(slot, (int, long)):
+            if isinstance(slot, six.integer_types):
                 pass
 
-            elif isinstance(slot, (str, unicode)):
+            elif isinstance(slot, (bytes, six.text_type)):
                 pass
 
             elif isinstance(slot, AppendedArgument):
@@ -969,7 +970,7 @@ class ROP(object):
         >>> rop.raw('AAAAAAAA')
         >>> rop.raw('BBBBBBBB')
         >>> rop.raw('CCCCCCCC')
-        >>> print rop.dump()
+        >>> print(rop.dump())
         0x0000:           'AAAA' 'AAAAAAAA'
         0x0004:           'AAAA'
         0x0008:           'BBBB' 'BBBBBBBB'

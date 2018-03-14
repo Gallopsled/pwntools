@@ -9,51 +9,51 @@ null bytes or newline characters.
 
 Example:
 
-    >>> print shellcraft.i386.pushstr('').rstrip()
+    >>> print(shellcraft.i386.pushstr('').rstrip())
         /* push '\x00' */
         push 1
         dec byte ptr [esp]
-    >>> print shellcraft.i386.pushstr('a').rstrip()
+    >>> print(shellcraft.i386.pushstr('a').rstrip())
         /* push 'a\x00' */
         push 0x61
-    >>> print shellcraft.i386.pushstr('aa').rstrip()
+    >>> print(shellcraft.i386.pushstr('aa').rstrip())
         /* push 'aa\x00' */
         push 0x1010101
         xor dword ptr [esp], 0x1016060
-    >>> print shellcraft.i386.pushstr('aaa').rstrip()
+    >>> print(shellcraft.i386.pushstr('aaa').rstrip())
         /* push 'aaa\x00' */
         push 0x1010101
         xor dword ptr [esp], 0x1606060
-    >>> print shellcraft.i386.pushstr('aaaa').rstrip()
+    >>> print(shellcraft.i386.pushstr('aaaa').rstrip())
         /* push 'aaaa\x00' */
         push 1
         dec byte ptr [esp]
         push 0x61616161
-    >>> print shellcraft.i386.pushstr('aaaaa').rstrip()
+    >>> print(shellcraft.i386.pushstr('aaaaa').rstrip())
         /* push 'aaaaa\x00' */
         push 0x61
         push 0x61616161
-    >>> print shellcraft.i386.pushstr('aaaa', append_null = False).rstrip()
+    >>> print(shellcraft.i386.pushstr('aaaa', append_null = False).rstrip())
         /* push 'aaaa' */
         push 0x61616161
-    >>> print shellcraft.i386.pushstr('\xc3').rstrip()
+    >>> print(shellcraft.i386.pushstr('\xc3').rstrip())
         /* push '\xc3\x00' */
         push 0x1010101
         xor dword ptr [esp], 0x10101c2
-    >>> print shellcraft.i386.pushstr('\xc3', append_null = False).rstrip()
+    >>> print(shellcraft.i386.pushstr('\xc3', append_null = False).rstrip())
         /* push '\xc3' */
         push -0x3d
     >>> with context.local():
     ...    context.arch = 'i386'
-    ...    print enhex(asm(shellcraft.pushstr("/bin/sh")))
+    ...    print(enhex(asm(shellcraft.pushstr("/bin/sh"))))
     68010101018134242e726901682f62696e
     >>> with context.local():
     ...    context.arch = 'i386'
-    ...    print enhex(asm(shellcraft.pushstr("")))
+    ...    print(enhex(asm(shellcraft.pushstr(""))))
     6a01fe0c24
     >>> with context.local():
     ...    context.arch = 'i386'
-    ...    print enhex(asm(shellcraft.pushstr("\x00", False)))
+    ...    print(enhex(asm(shellcraft.pushstr("\x00", False))))
     6a01fe0c24
 
 Args:

@@ -23,65 +23,65 @@ on the value of `context.os`.
 
 Example:
 
-    >>> print shellcraft.amd64.mov('eax','ebx').rstrip()
+    >>> print(shellcraft.amd64.mov('eax','ebx').rstrip())
         mov eax, ebx
-    >>> print shellcraft.amd64.mov('eax', 0).rstrip()
+    >>> print(shellcraft.amd64.mov('eax', 0).rstrip())
         xor eax, eax /* 0 */
-    >>> print shellcraft.amd64.mov('ax', 0).rstrip()
+    >>> print(shellcraft.amd64.mov('ax', 0).rstrip())
         xor ax, ax /* 0 */
-    >>> print shellcraft.amd64.mov('rax', 0).rstrip()
+    >>> print(shellcraft.amd64.mov('rax', 0).rstrip())
         xor eax, eax /* 0 */
-    >>> print shellcraft.amd64.mov('rdi', 'ax').rstrip()
+    >>> print(shellcraft.amd64.mov('rdi', 'ax').rstrip())
         movzx edi, ax
-    >>> print shellcraft.amd64.mov('al', 'ax').rstrip()
+    >>> print(shellcraft.amd64.mov('al', 'ax').rstrip())
         /* moving ax into al, but this is a no-op */
-    >>> print shellcraft.amd64.mov('ax', 'bl').rstrip()
+    >>> print(shellcraft.amd64.mov('ax', 'bl').rstrip())
         movzx ax, bl
-    >>> print shellcraft.amd64.mov('eax', 1).rstrip()
+    >>> print(shellcraft.amd64.mov('eax', 1).rstrip())
         push 1
         pop rax
-    >>> print shellcraft.amd64.mov('rax', 0xc0).rstrip()
+    >>> print(shellcraft.amd64.mov('rax', 0xc0).rstrip())
         xor eax, eax
         mov al, 0xc0
-    >>> print shellcraft.amd64.mov('rax', 0xc000).rstrip()
+    >>> print(shellcraft.amd64.mov('rax', 0xc000).rstrip())
         xor eax, eax
         mov ah, 0xc000 >> 8
-    >>> print shellcraft.amd64.mov('rax', 0xc0c0).rstrip()
+    >>> print(shellcraft.amd64.mov('rax', 0xc0c0).rstrip())
         xor eax, eax
         mov ax, 0xc0c0
-    >>> print shellcraft.amd64.mov('rdi', 0xff).rstrip()
+    >>> print(shellcraft.amd64.mov('rdi', 0xff).rstrip())
         mov edi, 0x1010101 /* 255 == 0xff */
         xor edi, 0x10101fe
-    >>> print shellcraft.amd64.mov('rax', 0xdead00ff).rstrip()
+    >>> print(shellcraft.amd64.mov('rax', 0xdead00ff).rstrip())
         mov eax, 0x1010101 /* 3735879935 == 0xdead00ff */
         xor eax, 0xdfac01fe
-    >>> print shellcraft.amd64.mov('rax', 0x11dead00ff).rstrip()
+    >>> print(shellcraft.amd64.mov('rax', 0x11dead00ff).rstrip())
         mov rax, 0x101010101010101 /* 76750323967 == 0x11dead00ff */
         push rax
         mov rax, 0x1010110dfac01fe
         xor [rsp], rax
         pop rax
-    >>> print shellcraft.amd64.mov('rax', 0xffffffff).rstrip()
+    >>> print(shellcraft.amd64.mov('rax', 0xffffffff).rstrip())
         mov eax, 0xffffffff
-    >>> print shellcraft.amd64.mov('rax', 0x7fffffff).rstrip()
+    >>> print(shellcraft.amd64.mov('rax', 0x7fffffff).rstrip())
         mov eax, 0x7fffffff
-    >>> print shellcraft.amd64.mov('rax', 0x80010101).rstrip()
+    >>> print(shellcraft.amd64.mov('rax', 0x80010101).rstrip())
         mov eax, 0x80010101
-    >>> print shellcraft.amd64.mov('rax', 0x80000000).rstrip()
+    >>> print(shellcraft.amd64.mov('rax', 0x80000000).rstrip())
         mov eax, 0x1010101 /* 2147483648 == 0x80000000 */
         xor eax, 0x81010101
-    >>> print shellcraft.amd64.mov('rax', 0xffffffffffffffff).rstrip()
+    >>> print(shellcraft.amd64.mov('rax', 0xffffffffffffffff).rstrip())
         push 0xffffffffffffffff
         pop rax
     >>> with context.local(os = 'linux'):
-    ...     print shellcraft.amd64.mov('eax', 'SYS_read').rstrip()
+    ...     print(shellcraft.amd64.mov('eax', 'SYS_read').rstrip())
         xor eax, eax /* SYS_read */
     >>> with context.local(os = 'freebsd'):
-    ...     print shellcraft.amd64.mov('eax', 'SYS_read').rstrip()
+    ...     print(shellcraft.amd64.mov('eax', 'SYS_read').rstrip())
         push SYS_read /* 3 */
         pop rax
     >>> with context.local(os = 'linux'):
-    ...     print shellcraft.amd64.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
+    ...     print(shellcraft.amd64.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip())
         push (PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
         pop rax
 

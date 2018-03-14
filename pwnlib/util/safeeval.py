@@ -124,7 +124,7 @@ def values(expr, env):
         10
         >>> class Foo:
         ...    def __add__(self, other):
-        ...        print "Firing the missiles"
+        ...        print("Firing the missiles")
         >>> values("A + 1", {'A': Foo()})
         Firing the missiles
         >>> values("A.x", {'A': Foo()})

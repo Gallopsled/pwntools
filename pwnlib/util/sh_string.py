@@ -242,6 +242,7 @@ and should therefore be compatible with ``dash``.
 from __future__ import absolute_import
 from __future__ import division
 
+import six
 import string
 import subprocess
 
@@ -254,24 +255,24 @@ from pwnlib.util.misc import which
 log = getLogger(__name__)
 
 def test_all():
-    test('a')
-    test('ab')
-    test('a b')
-    test(r"a\'b")
-    everything_1 = ''.join(chr(c) for c in range(1,256))
+    test(b'a')
+    test(b'ab')
+    test(b'a b')
+    test(br"a\'b")
+    everything_1 = b''.join(six.int2byte(c) for c in range(1,256))
     for s in everything_1:
         test(s)
         test(s*4)
-        test(s * 2 + 'X')
-        test('X' + s * 2)
-        test((s*2 + 'X') * 2)
-        test(s + 'X' + s)
-        test(s*2 + 'X' + s*2)
-        test('X' + s*2 + 'X')
+        test(s * 2 + b'X')
+        test(b'X' + s * 2)
+        test((s*2 + b'X') * 2)
+        test(s + b'X' + s)
+        test(s*2 + b'X' + s*2)
+        test(b'X' + s*2 + b'X')
     test(everything_1)
     test(everything_1 * 2)
     test(everything_1 * 4)
-    everything_2 = ''.join(chr(c) * 2 for c in range(1,256))
+    everything_2 = b''.join(six.int2byte(c) * 2 for c in range(1,256))
     test(everything_2)
 
     test(randoms(1000, everything_1))
@@ -280,16 +281,16 @@ def test_all():
 def test(original):
     r"""Tests the output provided by a shell interpreting a string
 
-    >>> test('foobar')
-    >>> test('foo bar')
-    >>> test('foo bar\n')
-    >>> test("foo'bar")
-    >>> test("foo\\\\bar")
-    >>> test("foo\\\\'bar")
-    >>> test("foo\\x01'bar")
-    >>> test('\n')
-    >>> test('\xff')
-    >>> test(os.urandom(16 * 1024).replace('\x00', ''))
+    >>> test(b'foobar')
+    >>> test(b'foo bar')
+    >>> test(b'foo bar\n')
+    >>> test(b"foo'bar")
+    >>> test(b"foo\\\\bar")
+    >>> test(b"foo\\\\'bar")
+    >>> test(b"foo\\x01'bar")
+    >>> test(b'\n')
+    >>> test(b'\xff')
+    >>> test(os.urandom(16 * 1024).replace(b'\x00', b''))
     """
     input = sh_string(original)
 
@@ -343,12 +344,12 @@ def test(original):
 
 
 
-SINGLE_QUOTE = "'"
-ESCAPED_SINGLE_QUOTE = r"\'"
+SINGLE_QUOTE = "'" ##
+ESCAPED_SINGLE_QUOTE = r"\'" ##
 
 ESCAPED = {
     # The single quote itself must be escaped, outside of single quotes.
-    "'": "\\'",
+    "'": "\\'", ##
 
     # Slashes must themselves be escaped
     #
@@ -387,14 +388,14 @@ def sh_string(s):
         >>> sh_string("foo\\x01'bar")
         "'foo\\x01'\\''bar'"
     """
-    if '\x00' in s:
+    if '\x00' in s: ##
         log.error("sh_string(): Cannot create a null-byte")
 
-    if s == '':
-        return "''"
+    if s == '': ##
+        return "''" ##
 
     chars = set(s)
-    very_good = set(string.ascii_letters + string.digits + "_+.,/-")
+    very_good = set(six.b(string.ascii_letters + string.digits + "_+.,/-"))
 
     # Alphanumeric can always just be used verbatim.
     if chars <= very_good:
@@ -402,18 +403,18 @@ def sh_string(s):
 
     # If there are no single-quotes, the entire thing can be single-quoted
     if not (chars & set(ESCAPED)):
-        return "'%s'" % s
+        return "'%s'" % s ##
 
     # If there are single-quotes, we can single-quote around them, and simply
     # escape the single-quotes.
-    quoted_string = ''
+    quoted_string = '' ##
     quoted = False
-    for char in s:
+    for char in s: ##
         if char not in ESCAPED:
             if not quoted:
                 quoted_string += SINGLE_QUOTE
                 quoted = True
-            quoted_string += char
+            quoted_string += char ##
         else:
             if quoted:
                 quoted = False
