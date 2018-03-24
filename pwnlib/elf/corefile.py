@@ -777,6 +777,11 @@ class Corefile(ELF):
                 RET = '\xc3'
                 if code == RET:
                     fault_addr = self.unpack(self.sp)
+
+                code = self.read(self.pc, 2)
+                CALL_RDX = "\xff\xd2"
+                if code == CALL_RDX:
+                    fault_addr = self.rdx
             except Exception:
                 # Could not read $rsp or $rip
                 pass
