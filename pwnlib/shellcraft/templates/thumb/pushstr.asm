@@ -1,6 +1,7 @@
 <%
   from pwnlib.shellcraft import thumb
   from pwnlib.util import lists, packing
+  import six
 %>
 <%page args="string, append_null = True, register = 'r7'"/>
 <%docstring>
@@ -34,8 +35,10 @@ on your version of binutils.
 
 </%docstring>
 <%
+    if isinstance(string, six.text_type):
+        string = string.encode('utf-8')
     if append_null:
-        string += '\x00'
+        string += b'\x00'
     if not string:
         return
 
@@ -44,7 +47,7 @@ on your version of binutils.
         offset += 1
 %>\
     /* push ${repr(string)} */
-% for word in lists.group(4, string, 'fill', '\x00')[::-1]:
+% for word in lists.group(4, string, 'fill', b'\x00')[::-1]:
     ${thumb.mov(register, packing.unpack(word))}
     push {${register}}
 % endfor

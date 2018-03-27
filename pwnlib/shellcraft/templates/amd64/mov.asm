@@ -4,6 +4,7 @@
   from pwnlib.log import getLogger
   from pwnlib.shellcraft import eval, pretty, okay
   from pwnlib.shellcraft.registers import get_register, is_register, bits_required
+  import six
   log = getLogger('pwnlib.shellcraft.amd64.mov')
 %>
 <%page args="dest, src, stack_allowed = True"/>
@@ -148,7 +149,7 @@ else:
     % else:
     mov ${dest}, ${src}
     % endif
-% elif isinstance(src, (int, long)):
+% elif isinstance(src, six.integer_types):
 ## Special case for zeroes
 ## XORing the 32-bit register clears the high 32 bits as well
     % if src == 0:
@@ -186,7 +187,7 @@ else:
         mov ${dest.sizes[8]}, ${pretty(src)}
 ## Target value is a 16-bit value with no data in the low 8 bits
 ## means we can use the 'AH' style register.
-    % elif srcu == srcu & 0xff00 and okay(srcp[1]) and dest.ff00:
+    % elif srcu == srcu & 0xff00 and okay(srcp[1:2]) and dest.ff00:
         xor ${dest}, ${dest}
         mov ${dest.ff00}, ${pretty(src)} >> 8
 ## Target value is a 16-bit value, use a 16-bit mov
@@ -200,7 +201,7 @@ else:
 ## All else has failed.  Use some XOR magic to move things around.
     % else:
         <%
-        a,b = fiddling.xor_pair(srcp, avoid = '\x00\n')
+        a,b = fiddling.xor_pair(srcp, avoid = b'\x00\n')
         a = '%#x' % packing.unpack(a, dest.size)
         b = '%#x' % packing.unpack(b, dest.size)
         %>\

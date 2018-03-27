@@ -3,7 +3,7 @@
 Execute a different process.
 
     >>> p = run_assembly(shellcraft.amd64.linux.sh())
-    >>> p.sendline('echo Hello')
+    >>> p.sendline(b'echo Hello')
     >>> p.recv()
     'Hello\n'
 

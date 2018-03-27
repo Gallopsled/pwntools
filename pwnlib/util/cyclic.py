@@ -27,6 +27,8 @@ def de_bruijn(alphabet = None, n = None):
         alphabet = context.cyclic_alphabet
     if n is None:
         n = context.cyclic_size
+    if isinstance(alphabet, bytes):
+        alphabet = bytearray(alphabet)
     k = len(alphabet)
     a = [0] * k * n
     def db(t, p):
@@ -134,11 +136,10 @@ def cyclic(length = None, alphabet = None, n = None):
         else:
             out.append(c)
 
-    if isinstance(alphabet, (bytes, six.text_type)):
-        try:
-            return type(alphabet)().join(out)
-        except:
-            return type(alphabet)(out)
+    if isinstance(alphabet, six.text_type):
+        return ''.join(out)
+    elif isinstance(alphabet, bytes):
+        return bytes(bytearray(out))
     else:
         return out
 
@@ -253,6 +254,8 @@ def metasploit_pattern(sets = None):
 
     while True:
         for i, j in zip(sets, offsets):
+            if isinstance(i, bytes):
+                i = bytearray(i)
             yield i[j]
         # increment offsets with cascade
         for i in offsets_indexes_reversed:
@@ -276,15 +279,15 @@ def cyclic_metasploit(length = None, sets = None):
     Example:
         >>> cyclic_metasploit(32)
         'Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab'
-        >>> cyclic_metasploit(sets = ["AB","ab","12"])
+        >>> cyclic_metasploit(sets = [b"AB",b"ab",b"12"])
         'Aa1Aa2Ab1Ab2Ba1Ba2Bb1Bb2'
         >>> cyclic_metasploit()[1337:1341]
         '5Bs6'
         >>> len(cyclic_metasploit())
         20280
     """
-    sets = sets or [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]
-    out = []
+    sets = sets or [ string.ascii_uppercase.encode(), string.ascii_lowercase.encode(), string.digits.encode() ]
+    out = bytearray()
 
     for ndx, c in enumerate(metasploit_pattern(sets)):
         if length != None and ndx >= length:
@@ -292,13 +295,13 @@ def cyclic_metasploit(length = None, sets = None):
         else:
             out.append(c)
 
-    out = b''.join(out)
+    out = bytes(out)
 
     if length != None and len(out) < length:
         log.error("Can't create a pattern of length %i with sets of lengths %s. Maximum pattern length is %i." \
-                  % (length, map(len, sets), len(out)))
+                  % (length, list(map(len, sets)), len(out)))
 
-    return b''.join(out)
+    return out
 
 def cyclic_metasploit_find(subseq, sets = None):
     """cyclic_metasploit_find(subseq, sets = [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]) -> int
@@ -318,7 +321,7 @@ def cyclic_metasploit_find(subseq, sets = None):
         >>> cyclic_metasploit_find(0x61413161)
         4
     """
-    sets = sets or [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]
+    sets = sets or [ string.ascii_uppercase.encode(), string.ascii_lowercase.encode(), string.digits.encode() ]
 
     if isinstance(subseq, six.integer_types):
         subseq = packing.pack(subseq, 'all', 'little', False)
@@ -327,6 +330,8 @@ def cyclic_metasploit_find(subseq, sets = None):
 
 def _gen_find(subseq, generator):
     """Returns the first position of `subseq` in the generator or -1 if there is no such position."""
+    if isinstance(subseq, bytes):
+        subseq = bytearray(subseq)
     subseq = list(subseq)
     pos = 0
     saved = []

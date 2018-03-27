@@ -301,7 +301,7 @@ def make_single(op,size,end,sign):
 
     def routine(data):
         return ops[op](fmt,data)
-    routine.__name__ = name
+    routine.__name__ = routine.__qualname__ = name
 
     return name, routine
 
@@ -486,9 +486,9 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
 def _fit(pieces, preprocessor, packer, filler):
     # Pulls bytes from `filler` and adds them to `pad` until it ends in `key`.
     # Returns the index of `key` in `pad`.
-    pad = []
+    pad = bytearray()
     def fill(key):
-        key = list(key)
+        key = bytearray(key)
         while len(pad) < len(key) or pad[-len(key):] != key:
             pad.append(next(filler))
         return len(pad) - len(key)
@@ -504,9 +504,7 @@ def _fit(pieces, preprocessor, packer, filler):
                 k = fill(pack(k))
         elif isinstance(k, six.text_type):
             k = fill(k.encode('utf8'))
-        elif isinstance(k, bytearray):
-            k = fill(bytes(k))
-        elif isinstance(k, bytes):
+        elif isinstance(k, (bytearray, bytes)):
             k = fill(k)
         else:
             raise TypeError("flat(): offset must be of type int or str, but got '%s'" % type(k))
@@ -520,14 +518,14 @@ def _fit(pieces, preprocessor, packer, filler):
     filler = iters.chain(pad, filler)
 
     # Build output
-    out = ''
+    out = b''
     for k, v in sorted(pieces.items()):
         if k < len(out):
             raise ValueError("flat(): data at offset %d overlaps with previous data which ends at offset %d" % (k, len(out)))
 
         # Fill up to offset
         while len(out) < k:
-            out += next(filler)
+            out += p8(next(filler))
 
         # Recursively flatten data
         out += _flat([v], preprocessor, packer, filler)
@@ -624,7 +622,7 @@ def flat(*args, **kwargs):
       'aaaabaaacaaaAAAAeaaafaaaHello'
       >>> flat({'caaa': ''})
       'aaaabaaa'
-      >>> flat({12: 'XXXX'}, filler = 'AB', length = 20)
+      >>> flat({12: 'XXXX'}, filler = (ord('A'), ord('B')), length = 20)
       'ABABABABABABXXXXABAB'
       >>> flat({ 8: [0x41414141, 0x42424242],
       ...       20: 'CCCC'})
@@ -651,7 +649,7 @@ def flat(*args, **kwargs):
     if length:
         if len(out) > length:
             raise ValueError("flat(): Arguments does not fit within `length` (= %d) bytes" % length)
-        out += ''.join(next(filler) for _ in range(length - len(out)))
+        out += b''.join(p8(next(filler)) for _ in range(length - len(out)))
 
     return out
 
@@ -740,10 +738,10 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         ('H', 'e', 'l', 'l', 'o', '?')
         >>> dd(list('Hello!'), (63,), skip = 5)
         ['H', 'e', 'l', 'l', 'o', '?']
-        >>> open('/tmp/foo', 'w').write('A' * 10)
+        >>> _ = open('/tmp/foo', 'w').write('A' * 10)
         >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4).read()
         'AAA\\x00\\x00\\x00\\x00AAA'
-        >>> open('/tmp/foo', 'w').write('A' * 10)
+        >>> _ = open('/tmp/foo', 'w').write('A' * 10)
         >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4, truncate = True).read()
         'AAA\\x00\\x00\\x00\\x00'
     """
@@ -764,14 +762,14 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         if count:
             while n < count:
                 s = src.read(min(count - n, 0x1000))
-                if s == '':
+                if not s:
                     break
                 n += len(s)
                 dst.write(s)
         else:
             while True:
                 s = src.read(0x1000)
-                if s == '':
+                if not s:
                     break
                 n += len(s)
                 dst.write(s)
@@ -795,17 +793,17 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
 
     elif hasattr(src, 'seek'):
         src.seek(seek)
-        src_ = ''
+        src_ = b''
         if count:
             while len(src_) < count:
                 s = src.read(count - len(src_))
-                if s == '':
+                if not s:
                     break
                 src_ += s
         else:
             while True:
                 s = src.read()
-                if s == '':
+                if not s:
                     break
                 src_ += s
         src.close()
@@ -831,7 +829,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
                 src_ += _p8lu(b)
             else:
                 raise TypeError("dd(): Unsupported `src` element type: %r" % type(b))
-        src = b''.join(src_)
+        src = src_
 
     else:
         raise TypeError("dd(): Unsupported `src` type: %r" % type(src))
@@ -857,14 +855,14 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         dst = real_dst
 
     elif isinstance(dst, (list, bytearray)):
-        dst[skip : skip + len(src)] = list(src)
+        dst[skip : skip + len(src)] = list(map(p8, bytearray(src)))
         if truncate:
             while len(dst) > truncate:
                 dst.pop()
 
     elif isinstance(dst, tuple):
         tail = dst[skip + len(src):]
-        dst = dst[:skip] + tuple(src)
+        dst = dst[:skip] + tuple(map(p8, bytearray(src)))
         if not truncate:
             dst = dst + tail
 

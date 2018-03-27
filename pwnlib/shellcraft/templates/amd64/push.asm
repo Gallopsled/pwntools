@@ -5,6 +5,7 @@
   from pwnlib import constants
   from pwnlib.shellcraft.registers import amd64 as regs
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
+  from six import text_type
   import re
 %>
 <%page args="value"/>
@@ -49,7 +50,7 @@ Example:
   is_reg = False
   if value in regs:
     is_reg = True
-  if not is_reg and isinstance(value, (str, unicode)):
+  if not is_reg and isinstance(value, (str, text_type)):
     try:
       with ctx.local(arch = 'amd64'):
         value = constants.eval(value)

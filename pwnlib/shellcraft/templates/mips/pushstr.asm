@@ -1,6 +1,7 @@
 <%
     from pwnlib.util import lists, packing, fiddling
     from pwnlib.shellcraft import mips
+    import six
 %>\
 <%page args="string, append_null = True"/>
 <%docstring>
@@ -49,13 +50,13 @@ Example:
         li $t1, 0x61616161
         sw $t1, -4($sp)
         addiu $sp, $sp, -4
-    >>> print(shellcraft.mips.pushstr('\xc3').rstrip())
+    >>> print(shellcraft.mips.pushstr(b'\xc3').rstrip())
         /* push '\xc3\x00' */
         li $t9, ~0xc3
         not $t1, $t9
         sw $t1, -4($sp)
         addiu $sp, $sp, -4
-    >>> print(shellcraft.mips.pushstr('\xc3', append_null = False).rstrip())
+    >>> print(shellcraft.mips.pushstr(b'\xc3', append_null = False).rstrip())
         /* push '\xc3' */
         li $t9, ~0xc3
         not $t1, $t9
@@ -73,15 +74,17 @@ Args:
   append_null (bool): Whether to append a single NULL-byte before pushing.
 </%docstring>
 <%
+    if isinstance(string, six.text_type):
+        string = string.encode('utf-8')
     if append_null:
-        string += '\x00'
+        string += b'\x00'
     if not string:
         return
 
     def get_offset(nib):
         num = 0
         # Ensure we don't overflow our existing nibble
-        if nib[0] == '\xff':
+        if nib[0] == b'\xff':
             num = 3
         else:
             num = 0x101
@@ -90,12 +93,12 @@ Args:
     def pretty(n):
         return hex(n & (2 ** 32 - 1))
 
-    split_string = lists.group(4, string, 'fill', '\x00')
+    split_string = lists.group(4, string, 'fill', b'\x00')
     stack_offset = len(split_string) * -4
 %>\
     /* push ${repr(string)} */
 % for index, word in enumerate(split_string):
-% if word == '\x00\x00\x00\x00':
+% if word == b'\x00\x00\x00\x00':
     sw $zero, ${stack_offset+(4 * index)}($sp)
 <%
     continue

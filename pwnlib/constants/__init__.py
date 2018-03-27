@@ -111,7 +111,7 @@ class ConstantsModule(ModuleType):
                 pass
         else:
             mod = self.guess()
-            if hasattr(mod, key):
+            if mod is not self and hasattr(mod, key): ##
                 return getattr(mod, key)
 
         raise AttributeError("'module' object has no attribute '%s'" % key)

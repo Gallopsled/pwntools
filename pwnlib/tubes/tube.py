@@ -65,11 +65,11 @@ class tube(Timeout, Logger):
 
             >>> t = tube()
             >>> # Fake a data source
-            >>> t.recv_raw = lambda n: 'Hello, world'
-            >>> t.recv() == 'Hello, world'
+            >>> t.recv_raw = lambda n: b'Hello, world'
+            >>> t.recv() == b'Hello, world'
             True
-            >>> t.unrecv('Woohoo')
-            >>> t.recv() == 'Woohoo'
+            >>> t.unrecv(b'Woohoo')
+            >>> t.recv() == b'Woohoo'
             True
             >>> with context.local(log_level='debug'):
             ...    _ = t.recv() # doctest: +ELLIPSIS
@@ -88,12 +88,12 @@ class tube(Timeout, Logger):
         Examples:
 
             >>> t = tube()
-            >>> t.recv_raw = lambda n: 'hello'
+            >>> t.recv_raw = lambda n: b'hello'
             >>> t.recv()
             'hello'
             >>> t.recv()
             'hello'
-            >>> t.unrecv('world')
+            >>> t.unrecv(b'world')
             >>> t.recv()
             'world'
             >>> t.recv()
@@ -114,7 +114,7 @@ class tube(Timeout, Logger):
         Examples:
 
             >>> t = tube()
-            >>> t.recv_raw = lambda *a: 'abc'
+            >>> t.recv_raw = lambda *a: b'abc'
             >>> len(t.buffer)
             0
             >>> t._fillbuffer()
@@ -132,7 +132,7 @@ class tube(Timeout, Logger):
 
             if len(set(data)) == 1 and len(data) > 1:
                 self.indented('%r * %#x' % (data[0], len(data)), level = logging.DEBUG)
-            elif all(c in string.printable for c in data):
+            elif all(c in string.printable.encode() for c in data):
                 for line in data.splitlines(True):
                     self.indented(repr(line), level = logging.DEBUG)
             else:
@@ -217,17 +217,17 @@ class tube(Timeout, Logger):
         Examples:
 
             >>> t = tube()
-            >>> data = 'hello world'
+            >>> data = b'hello world'
             >>> t.recv_raw = lambda *a: data
             >>> t.recvn(len(data)) == data
             True
-            >>> t.recvn(len(data)+1) == data + data[0]
+            >>> t.recvn(len(data)+1) == data + data[:1]
             True
             >>> t.recv_raw = lambda *a: None
             >>> # The remaining data is buffered
             >>> t.recv() == data[1:]
             True
-            >>> t.recv_raw = lambda *a: time.sleep(0.01) or 'a'
+            >>> t.recv_raw = lambda *a: time.sleep(0.01) or b'a'
             >>> t.recvn(10, timeout=0.05)
             ''
             >>> t.recvn(10, timeout=0.06) # doctest: +ELLIPSIS
@@ -272,7 +272,7 @@ class tube(Timeout, Logger):
             'Hello '
             >>> _=t.clean(0)
             >>> # Matches on 'o' in 'Hello'
-            >>> t.recvuntil(tuple(b' Wor'))
+            >>> t.recvuntil((b' ',b'W',b'o',b'r'))
             'Hello'
             >>> _=t.clean(0)
             >>> # Matches expressly full string
@@ -360,10 +360,10 @@ class tube(Timeout, Logger):
         Examples:
 
             >>> t = tube()
-            >>> t.recv_raw = lambda n: '\n'
+            >>> t.recv_raw = lambda n: b'\n'
             >>> t.recvlines(3)
             ['', '', '']
-            >>> t.recv_raw = lambda n: 'Foo\nBar\nBaz\n'
+            >>> t.recv_raw = lambda n: b'Foo\nBar\nBaz\n'
             >>> t.recvlines(3)
             ['Foo', 'Bar', 'Baz']
             >>> t.recvlines(3, True)
@@ -414,14 +414,14 @@ class tube(Timeout, Logger):
         Examples:
 
             >>> t = tube()
-            >>> t.recv_raw = lambda n: 'Foo\nBar\r\nBaz\n'
+            >>> t.recv_raw = lambda n: b'Foo\nBar\r\nBaz\n'
             >>> t.recvline()
             'Foo\n'
             >>> t.recvline()
             'Bar\r\n'
             >>> t.recvline(keepends = False)
             'Baz'
-            >>> t.newline = '\r\n'
+            >>> t.newline = b'\r\n'
             >>> t.recvline(keepends = False)
             'Foo\nBar'
         """
@@ -443,12 +443,12 @@ class tube(Timeout, Logger):
         Examples:
 
             >>> t = tube()
-            >>> t.recv_raw = lambda n: "Foo\nBar\nBaz\n"
-            >>> t.recvline_pred(lambda line: line == "Bar\n")
+            >>> t.recv_raw = lambda n: b"Foo\nBar\nBaz\n"
+            >>> t.recvline_pred(lambda line: line == b"Bar\n")
             'Bar'
-            >>> t.recvline_pred(lambda line: line == "Bar\n", keepends=True)
+            >>> t.recvline_pred(lambda line: line == b"Bar\n", keepends=True)
             'Bar\n'
-            >>> t.recvline_pred(lambda line: line == 'Nope!', timeout=0.1)
+            >>> t.recvline_pred(lambda line: line == b'Nope!', timeout=0.1)
             ''
         """
 
@@ -530,9 +530,9 @@ class tube(Timeout, Logger):
 
             >>> t = tube()
             >>> t.recv_raw = lambda n: b"Hello\nWorld\nXylophone\n"
-            >>> t.recvline_startswith(tuple(b'WXYZ'))
+            >>> t.recvline_startswith((b'W',b'X',b'Y',b'Z'))
             'World'
-            >>> t.recvline_startswith(tuple(b'WXYZ'), True)
+            >>> t.recvline_startswith((b'W',b'X',b'Y',b'Z'), True)
             'Xylophone\n'
             >>> t.recvline_startswith(b'Wo')
             'World'
@@ -559,12 +559,12 @@ class tube(Timeout, Logger):
         Examples:
 
             >>> t = tube()
-            >>> t.recv_raw = lambda n: 'Foo\nBar\nBaz\nKaboodle\n'
-            >>> t.recvline_endswith('r')
+            >>> t.recv_raw = lambda n: b'Foo\nBar\nBaz\nKaboodle\n'
+            >>> t.recvline_endswith(b'r')
             'Bar'
-            >>> t.recvline_endswith(tuple('abcde'), True)
+            >>> t.recvline_endswith((b'a',b'b',b'c',b'd',b'e'), True)
             'Kaboodle\n'
-            >>> t.recvline_endswith('oodle')
+            >>> t.recvline_endswith(b'oodle')
             'Kaboodle'
         """
         # Convert string into singleton tupple
@@ -631,11 +631,11 @@ class tube(Timeout, Logger):
         Examples:
 
             >>> data = [
-            ... 'd',
-            ... '', # simulate timeout
-            ... 'c',
-            ... 'b',
-            ... 'a',
+            ... b'd',
+            ... b'', # simulate timeout
+            ... b'c',
+            ... b'b',
+            ... b'a',
             ... ]
             >>> def delayrecv(n, data=data):
             ...     return data.pop()
@@ -701,7 +701,7 @@ class tube(Timeout, Logger):
             self.debug('Sent %#x bytes:' % len(data))
             if len(set(data)) == 1:
                 self.indented('%r * %#x' % (data[0], len(data)))
-            elif all(c in string.printable for c in data):
+            elif all(c in string.printable.encode() for c in data):
                 for line in data.splitlines(True):
                     self.indented(repr(line), level = logging.DEBUG)
             else:
@@ -784,7 +784,7 @@ class tube(Timeout, Logger):
             while not go.isSet():
                 try:
                     cur = self.recv(timeout = 0.05)
-                    cur = cur.replace('\r\n', '\n')
+                    cur = cur.replace(self.newline, b'\n')
                     if cur:
                         sys.stdout.write(cur)
                         sys.stdout.flush()
@@ -865,7 +865,7 @@ class tube(Timeout, Logger):
         Examples:
 
             >>> t = tube()
-            >>> t.unrecv('clean me up')
+            >>> t.unrecv(b'clean me up')
             >>> t.clean(0)
             'clean me up'
             >>> len(t.buffer)
@@ -913,8 +913,8 @@ class tube(Timeout, Logger):
 
         Examples:
 
-            >>> def p(x): print(x)
-            >>> def recvone(n, data=['data']):
+            >>> def p(x): print(x.decode())
+            >>> def recvone(n, data=[b'data']):
             ...     while data: return data.pop()
             ...     raise EOFError
             >>> a = tube()

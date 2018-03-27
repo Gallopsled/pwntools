@@ -415,7 +415,8 @@ def readline(_size = None, prompt = '', float = True, priority = 10):
 
 def init():
     # defer imports until initialization
-    import sys, __builtin__
+    import sys
+    from six.moves import builtins
     from pwnlib.util import safeeval
 
     class Wrapper:
@@ -439,7 +440,7 @@ def init():
                          bottom of the screen when `term.term_mode` is enabled.
         """
         return readline(None, prompt, float)
-    __builtin__.raw_input = raw_input
+    builtins.raw_input = raw_input
 
     def input(prompt = '', float = True):
         """input(prompt = '', float = True)
@@ -453,4 +454,4 @@ def init():
                          bottom of the screen when `term.term_mode` is enabled.
         """
         return safeeval.const(readline(None, prompt, float))
-    __builtin__.input = input
+    builtins.input = input

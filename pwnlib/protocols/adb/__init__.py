@@ -319,7 +319,10 @@ class AdbClient(Logger):
 
     @_autoclose
     def wait_for_device(self, serial=''):
-        response = self.send('host-serial:%s:wait-for-any-device' % serial)
+        if serial:
+            response = self.send('host-serial:%s:wait-for-any-device' % serial)
+        else:
+            response = self.send('host:wait-for-any')
 
         # The first OKAY is that the command was understood
         if response != 'OKAY':

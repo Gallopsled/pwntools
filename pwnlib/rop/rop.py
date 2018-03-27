@@ -20,7 +20,7 @@ pretty straightforward.
 With the ROP object, you can manually add stack frames.
 
     >>> rop.raw(0)
-    >>> rop.raw(unpack('abcd'))
+    >>> rop.raw(unpack(b'abcd'))
     >>> rop.raw(2)
 
 Inspecting the ROP stack is easy, and laid out in an easy-to-read
@@ -115,7 +115,7 @@ Finally, let's build our ROP stack
 
 The raw data from the ROP stack is available via `str`.
 
-    >>> raw_rop = str(rop)
+    >>> raw_rop = rop.chain()
     >>> print(enhex(raw_rop))
     120000100e000010010000002600001008000000666161612f000010
 
@@ -241,9 +241,9 @@ That's all there is to it.
 Let's try it out!
 
     >>> p = process(binary.path)
-    >>> p.send(str(rop))
+    >>> p.send(rop.chain())
     >>> time.sleep(1)
-    >>> p.sendline('echo hello; exit')
+    >>> p.sendline(b'echo hello; exit')
     >>> p.recvline()
     'hello\n'
 """
@@ -321,7 +321,7 @@ class DescriptiveStack(list):
             addr = self.address + i * context.bytes
             off = None
             line = '0x%04x:' % addr
-            if isinstance(data, str):
+            if isinstance(data, bytes):
                 line += ' %16r' % data
             elif isinstance(data, six.integer_types):
                 line += ' %#16x' % data
@@ -442,13 +442,13 @@ class ROP(object):
     >>> r = ROP(elf)
     >>> r.ret.address == 0x10000000
     True
-    >>> r = ROP(elf, badchars='\x00')
+    >>> r = ROP(elf, badchars=b'\x00')
     >>> r.gadgets == {}
     True
     >>> r.ret is None
     True
     """
-    def __init__(self, elfs, base = None, badchars = '', **kwargs):
+    def __init__(self, elfs, base = None, badchars = b'', **kwargs):
         """
         Arguments:
             elfs(list): List of :class:`.ELF` objects for mining
@@ -640,11 +640,11 @@ class ROP(object):
         """
 
         # Ensure we don't generate a cyclic pattern which contains badchars
-        alphabet = ''.join(c for c in string.ascii_lowercase if c not in self._badchars)
+        alphabet = b''.join(packing.p8(c) for c in bytearray(string.ascii_lowercase.encode()) if c not in self._badchars)
 
         if count:
             return cyclic(offset + count, alphabet=alphabet)[-count:]
-        return ''
+        return b''
 
     def describe(self, object):
         """
@@ -652,7 +652,7 @@ class ROP(object):
         """
         if isinstance(object, six.integer_types):
             return self.unresolve(object)
-        if isinstance(object, str):
+        if isinstance(object, bytes):
             return repr(object)
         if isinstance(object, Call):
             return str(object)
@@ -967,9 +967,9 @@ class ROP(object):
             data(int/str): The raw value to put onto the rop chain.
 
         >>> rop = ROP([])
-        >>> rop.raw('AAAAAAAA')
-        >>> rop.raw('BBBBBBBB')
-        >>> rop.raw('CCCCCCCC')
+        >>> rop.raw(b'AAAAAAAA')
+        >>> rop.raw(b'BBBBBBBB')
+        >>> rop.raw(b'CCCCCCCC')
         >>> print(rop.dump())
         0x0000:           'AAAA' 'AAAAAAAA'
         0x0004:           'AAAA'
@@ -1000,13 +1000,16 @@ class ROP(object):
             log.error('Cannot find the gadgets to migrate')
         self.migrated = True
 
-    def __str__(self):
+    def __bytes__(self):
         """Returns: Raw bytes of the ROP chain"""
         return self.chain()
 
+    def __str__(self):
+        return str(self.chain())
+
     def __get_cachefile_name(self, files):
         """Given an ELF or list of ELF objects, return a cache file for the set of files"""
-        cachedir = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache')
+        cachedir = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache-%d.%d' % sys.version_info[:2])
         if not os.path.exists(cachedir):
             os.mkdir(cachedir)
 

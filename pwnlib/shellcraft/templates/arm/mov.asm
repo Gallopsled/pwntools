@@ -4,6 +4,7 @@
   from pwnlib.log import getLogger
   from pwnlib.shellcraft.registers import arm as regs
   from pwnlib.util import fiddling
+  import six
   log = getLogger('pwnlib.shellcraft.arm.mov')
 %>
 <%page args="dst, src"/>
@@ -85,7 +86,7 @@ if not src in regs:
 %>
 %if src == dst:
     /* mov ${dst}, ${src} */
-%elif not isinstance(src, (int, long)):
+%elif not isinstance(src, six.integer_types):
     mov  ${dst}, ${src}
 %else:
     %if src == 0:

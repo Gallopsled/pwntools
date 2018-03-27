@@ -6,9 +6,11 @@ from __future__ import division
 
 import collections
 import copy
+import functools
 import multiprocessing
 import operator
 import random
+import six
 import time
 from itertools import *
 
@@ -52,12 +54,12 @@ __all__ = [
     'cycle'                                  ,
     'dropwhile'                              ,
     'groupby'                                ,
-    'ifilter'                                ,
-    'ifilterfalse'                           ,
-    'imap'                                   ,
+    'filter'                                 ,
+    'filterfalse'                            ,
+    'map'                                    ,
     'islice'                                 ,
-    'izip'                                   ,
-    'izip_longest'                           ,
+    'zip'                                    ,
+    'zip_longest'                            ,
     'permutations'                           ,
     'product'                                ,
     'repeat'                                 ,
@@ -66,7 +68,9 @@ __all__ = [
     'tee'
 ]
 
-
+for attr in __all__:
+    if hasattr(six.moves, attr):
+        globals()[attr] = getattr(six.moves, attr)
 
 log = getLogger(__name__)
 
@@ -113,7 +117,7 @@ def tabulate(func, start = 0):
       >>> take(5, tabulate(lambda x: x**2, start = 1))
       [1, 4, 9, 16, 25]
     """
-    return imap(func, count(start))
+    return map(func, count(start))
 
 def consume(n, iterator):
     """consume(n, iterator)
@@ -194,7 +198,7 @@ def quantify(iterable, pred = bool):
       >>> quantify(['1', 'two', '3', '42'], str.isdigit)
       3
     """
-    return sum(imap(pred, iterable))
+    return sum(map(pred, iterable))
 
 def pad(iterable, value = None):
     """pad(iterable, value = None) -> iterator
@@ -261,7 +265,7 @@ def dotproduct(x, y):
       ... # 1 * 4 + 2 * 5 + 3 * 6 == 32
       32
     """
-    return sum(imap(operator.mul, x, y))
+    return sum(map(operator.mul, x, y))
 
 def flatten(xss):
     """flatten(xss) -> iterator
@@ -348,7 +352,7 @@ def pairwise(iterable):
     """
     a, b = tee(iterable)
     next(b, None)
-    return izip(a, b)
+    return zip(a, b)
 
 def group(n, iterable, fill_value = None):
     """group(n, iterable, fill_value = None) -> iterator
@@ -374,7 +378,7 @@ def group(n, iterable, fill_value = None):
       ['ABC', 'DEF', 'Gxx']
     """
     args = [iter(iterable)] * n
-    return izip_longest(fillvalue = fill_value, *args)
+    return zip_longest(fillvalue = fill_value, *args)
 
 def roundrobin(*iterables):
     """roundrobin(*iterables)
@@ -454,7 +458,7 @@ def unique_everseen(iterable, key = None):
     seen = set()
     seen_add = seen.add
     if key is None:
-        for element in ifilterfalse(seen.__contains__, iterable):
+        for element in filterfalse(seen.__contains__, iterable):
             seen_add(element)
             yield element
     else:
@@ -486,7 +490,7 @@ def unique_justseen(iterable, key = None):
       >>> ''.join(unique_justseen('ABBCcAD', str.lower))
       'ABCAD'
     """
-    return imap(next, imap(operator.itemgetter(1), groupby(iterable, key)))
+    return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
 
 def unique_window(iterable, window, key = None):
     """unique_everseen(iterable, window, key = None) -> iterator
@@ -628,7 +632,7 @@ def random_combination(iterable, r):
     """
     pool = tuple(iterable)
     n = len(pool)
-    indices = sorted(random.sample(xrange(n), r))
+    indices = sorted(random.sample(range(n), r))
     return tuple(pool[i] for i in indices)
 
 def random_combination_with_replacement(iterable, r):
@@ -652,7 +656,7 @@ def random_combination_with_replacement(iterable, r):
     """
     pool = tuple(iterable)
     n = len(pool)
-    indices = sorted(random.randrange(n) for i in xrange(r))
+    indices = sorted(random.randrange(n) for i in range(r))
     return tuple(pool[i] for i in indices)
 
 def lookahead(n, iterable):
@@ -700,7 +704,7 @@ def lexicographic(alphabet):
       order.
 
     Example:
-      >>> take(8, imap(lambda x: ''.join(x), lexicographic('01')))
+      >>> take(8, map(lambda x: ''.join(x), lexicographic('01')))
       ['', '0', '1', '00', '01', '10', '11', '000']
     """
     for n in count():
@@ -767,12 +771,12 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
 
     if   method == 'upto' and length > 1:
         iterator = product(alphabet, repeat = 1)
-        for i in xrange(2, length + 1):
+        for i in range(2, length + 1):
             iterator = chain(iterator, product(alphabet, repeat = i))
 
     elif method == 'downfrom' and length > 1:
         iterator = product(alphabet, repeat = length)
-        for i in xrange(length - 1, 1, -1):
+        for i in range(length - 1, 1, -1):
             iterator = chain(iterator, product(alphabet, repeat = i))
 
     elif method == 'fixed':

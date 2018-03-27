@@ -4,6 +4,7 @@
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
   from pwnlib.log import getLogger
   from pwnlib.shellcraft import mips, registers, pretty, okay
+  import six
   log = getLogger('pwnlib.shellcraft.mips.mov')
 %>
 <%page args="dst, src"/>
@@ -108,7 +109,7 @@ if src_reg == 0:
     ${mips.mov('$t9', src)}
     ${mips.mov(dst, '$t9')}
     %endif
-% elif isinstance(src, (int, long)):
+% elif isinstance(src, six.integer_types):
 ## Everything else is the general case for moving into registers.
 <%
     srcp = packing.pack(src, word_size=32)

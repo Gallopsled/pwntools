@@ -49,7 +49,10 @@ def enhex(x):
         >>> enhex(b"test")
         '74657374'
     """
-    return binascii.hexlify(x)
+    x = binascii.hexlify(x)
+    if not hasattr(x, 'encode'):
+        x = x.decode('ascii')
+    return x
 
 def urlencode(s):
     """urlencode(s) -> str
@@ -120,8 +123,6 @@ def bits(s, endian = 'big', zero = 0, one = 1):
         >>> bits(0)
         [0, 0, 0, 0, 0, 0, 0, 0]
     """
-    if s < 0:
-        s = s & ((1<<context.bits)-1)
 
     if endian not in ['little', 'big']:
         raise ValueError("bits(): 'endian' must be either 'little' or 'big'")
@@ -140,6 +141,8 @@ def bits(s, endian = 'big', zero = 0, one = 1):
             else:
                 out += byte[::-1]
     elif isinstance(s, six.integer_types):
+        if s < 0:
+            s = s & ((1<<context.bits)-1)
         if s == 0:
             out.append(zero)
         while s:
@@ -189,30 +192,30 @@ def unbits(s, endian = 'big'):
        '\\x16\\xa666\\xf6'
     """
     if endian == 'little':
-        u = lambda s: chr(int(s[::-1], 2))
+        u = lambda s: packing.p8(int(s[::-1], 2))
     elif endian == 'big':
-        u = lambda s: chr(int(s, 2))
+        u = lambda s: packing.p8(int(s, 2))
     else:
         raise ValueError("unbits(): 'endian' must be either 'little' or 'big'")
 
-    out = ''
-    cur = ''
+    out = b''
+    cur = b''
 
     for c in s:
         if c in ['1', 1, True]:
-            cur += '1'
+            cur += b'1'
         elif c in ['0', 0, False]:
-            cur += '0'
+            cur += b'0'
         else:
             raise ValueError("unbits(): cannot decode the value %r into a bit" % c)
 
         if len(cur) == 8:
             out += u(cur)
-            cur = ''
+            cur = b''
     if cur:
-        out += u(cur.ljust(8, '0'))
+        out += u(cur.ljust(8, b'0'))
 
-    return ''.join(out)
+    return out
 
 
 def bitswap(s):
@@ -230,7 +233,7 @@ def bitswap(s):
     for c in s:
         out.append(unbits(bits_str(c)[::-1]))
 
-    return ''.join(out)
+    return b''.join(out)
 
 def bitswap_int(n, width):
     """bitswap_int(n) -> int
@@ -533,7 +536,8 @@ def isprint(c):
     """isprint(c) -> bool
 
     Return True if a character is printable"""
-    return c in string.ascii_letters + string.digits + string.punctuation + ' '
+    t = (string.ascii_letters + string.digits + string.punctuation + ' ').encode()
+    return c in set(map(packing.p8, bytearray(t)))|set(map(chr, bytearray(t)))
 
 
 def hexii(s, width = 16, skip = True):
@@ -553,15 +557,15 @@ def hexii(s, width = 16, skip = True):
     return hexdump(s, width, skip, True)
 
 def _hexiichar(c):
-    HEXII = string.punctuation + string.digits + string.ascii_letters
+    HEXII = bytearray((string.punctuation + string.digits + string.ascii_letters).encode())
     if c in HEXII:
         return ".%c " % c
-    elif c == '\0':
+    elif c == 0:
         return "   "
-    elif c == '\xff':
+    elif c == 0xff:
         return "## "
     else:
-        return "%02x " % ord(c)
+        return "%02x " % c
 
 default_style = {
     'marker':       text.gray if text.has_gray else text.blue,
@@ -571,7 +575,7 @@ default_style = {
     'ff':           text.green,
 }
 
-cyclic_pregen = ''
+cyclic_pregen = b''
 de_bruijn_gen = de_bruijn()
 
 def sequential_lines(a,b):
@@ -580,7 +584,7 @@ def sequential_lines(a,b):
 def update_cyclic_pregenerated(size):
     global cyclic_pregen
     while size > len(cyclic_pregen):
-        cyclic_pregen += next(de_bruijn_gen)
+        cyclic_pregen += packing.p8(next(de_bruijn_gen))
 
 def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
                  highlight=None, cyclic=False, groupsize=4):
@@ -607,9 +611,9 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
     Example:
 
         >>> tmp = tempfile.NamedTemporaryFile()
-        >>> tmp.write(b'XXXXHELLO, WORLD')
+        >>> _ = tmp.write(b'XXXXHELLO, WORLD')
         >>> tmp.flush()
-        >>> tmp.seek(4)
+        >>> _ = tmp.seek(4)
         >>> print('\n'.join(hexdump_iter(tmp)))
         00000000  48 45 4c 4c  4f 2c 20 57  4f 52 4c 44               │HELL│O, W│ORLD│
         0000000c
@@ -643,8 +647,9 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
 
     if not hexii:
         def style_byte(b):
-            hbyte = '%02x' % ord(b)
-            abyte = b if isprint(b) else '·'
+            hbyte = '%02x' % b
+            b = packing.p8(b)
+            abyte = b.decode() if isprint(b) else '·'
             if hbyte in style:
                 st = style[hbyte]
             elif isprint(b):
@@ -655,7 +660,7 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
                 hbyte = st(hbyte)
                 abyte = st(abyte)
             return hbyte, abyte
-        cache = [style_byte(chr(b)) for b in range(256)]
+        cache = [style_byte(b) for b in range(256)]
 
     numb = 0
     while True:
@@ -667,10 +672,10 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
         try:
             chunk = fd.read(width)
         except EOFError:
-            chunk = ''
+            chunk = b''
 
         # We have run out of data, exit the loop
-        if chunk == '':
+        if chunk == b'':
             break
 
         # Advance the cursor by the number of bytes we actually read
@@ -706,10 +711,10 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
         printable = ''
         color_chars = 0
         abyte = abyte_previous = ''
-        for i, b in enumerate(chunk):
+        for i, b in enumerate(bytearray(chunk)):
             if not hexii:
                 abyte_previous = abyte
-                hbyte, abyte = cache[ord(b)]
+                hbyte, abyte = cache[b]
                 color_chars += len(hbyte) - 2
             else:
                 hbyte, abyte = _hexiichar(b), ''
@@ -787,7 +792,8 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         dead0018  .g  .a  .a  .a   .h  .a  .a  .a  │
         dead0020
 
-        >>> print(hexdump(list(map(chr, range(256)))))
+        >>> import struct
+        >>> print(hexdump(list(map(struct.Struct("B").pack, range(256)))))
         00000000  00 01 02 03  04 05 06 07  08 09 0a 0b  0c 0d 0e 0f  │····│····│····│····│
         00000010  10 11 12 13  14 15 16 17  18 19 1a 1b  1c 1d 1e 1f  │····│····│····│····│
         00000020  20 21 22 23  24 25 26 27  28 29 2a 2b  2c 2d 2e 2f  │ !"#│$%&'│()*+│,-./│
@@ -806,7 +812,7 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         000000f0  f0 f1 f2 f3  f4 f5 f6 f7  f8 f9 fa fb  fc fd fe ff  │····│····│····│····│
         00000100
 
-        >>> print(hexdump(list(map(chr, range(256))), hexii=True))
+        >>> print(hexdump(list(map(struct.Struct("B").pack, range(256))), hexii=True))
         00000000      01  02  03   04  05  06  07   08  09  0a  0b   0c  0d  0e  0f  │
         00000010  10  11  12  13   14  15  16  17   18  19  1a  1b   1c  1d  1e  1f  │
         00000020  20  .!  ."  .#   .$  .%  .&  .'   .(  .)  .*  .+   .,  .-  ..  ./  │

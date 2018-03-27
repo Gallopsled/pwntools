@@ -853,7 +853,7 @@ class DynELF(object):
         for offset in libcdb.get_build_id_offsets():
             address = libbase + offset
             if self.leak.compare(address + 0xC, "GNU\x00"):
-                return enhex(''.join(self.leak.raw(address + 0x10, 20)))
+                return enhex(b''.join(self.leak.raw(address + 0x10, 20)))
             else:
                 self.status("Magic did not match")
                 pass

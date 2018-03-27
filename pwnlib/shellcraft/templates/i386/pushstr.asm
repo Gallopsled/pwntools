@@ -1,6 +1,7 @@
 <%
     from pwnlib.util import lists, packing, fiddling
     from pwnlib.shellcraft import pretty, okay
+    import six
 %>
 <%page args="string, append_null = True"/>
 <%docstring>
@@ -36,11 +37,11 @@ Example:
     >>> print(shellcraft.i386.pushstr('aaaa', append_null = False).rstrip())
         /* push 'aaaa' */
         push 0x61616161
-    >>> print(shellcraft.i386.pushstr('\xc3').rstrip())
+    >>> print(shellcraft.i386.pushstr(b'\xc3').rstrip())
         /* push '\xc3\x00' */
         push 0x1010101
         xor dword ptr [esp], 0x10101c2
-    >>> print(shellcraft.i386.pushstr('\xc3', append_null = False).rstrip())
+    >>> print(shellcraft.i386.pushstr(b'\xc3', append_null = False).rstrip())
         /* push '\xc3' */
         push -0x3d
     >>> with context.local():
@@ -65,17 +66,19 @@ original = string
 string   = packing.flat(string)
 
 if append_null:
-    string += '\x00'
-    if isinstance(original, str):
+    string += b'\x00'
+    if isinstance(original, six.binary_type):
+        original += b'\x00'
+    elif isinstance(original, six.text_type):
         original += '\x00'
 
 if not string:
     return
 
-if ord(string[-1]) >= 128:
-    extend = '\xff'
+if six.indexbytes(string, -1) >= 128:
+    extend = b'\xff'
 else:
-    extend = '\x00'
+    extend = b'\x00'
 %>\
     /* push ${pretty(original, False)} */
 % for word in lists.group(4, string, 'fill', extend)[::-1]:
@@ -85,13 +88,13 @@ else:
 % if sign in [0, 0xa]:
     push ${pretty(sign + 1)}
     dec byte ptr [esp]
-% elif -0x80 <= sign <= 0x7f and okay(word[0]):
+% elif -0x80 <= sign <= 0x7f and okay(word[:1]):
     push ${pretty(sign)}
 % elif okay(word):
     push ${pretty(sign)}
 % else:
 <%
-    a,b = fiddling.xor_pair(word, avoid = '\x00\n')
+    a,b = fiddling.xor_pair(word, avoid = b'\x00\n')
     a   = packing.u32(a, endian='little', sign='unsigned')
     b   = packing.u32(b, endian='little', sign='unsigned')
 %>\

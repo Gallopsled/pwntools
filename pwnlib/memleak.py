@@ -71,7 +71,7 @@ class MemLeak(object):
         leaking 0x103
         True
 
-        >>> memory = {-4+i: c for i,c in enumerate('wxyzABCDE')}
+        >>> memory = {-4+i: c.encode() for i,c in enumerate('wxyzABCDE')}
         >>> def relative_leak(index):
         ...     return memory.get(index, None)
         >>> leak = pwnlib.memleak.MemLeak(relative_leak, relative = True)
@@ -114,7 +114,7 @@ class MemLeak(object):
 
             >>> @pwnlib.memleak.MemLeak
             ... def leaker(addr):
-            ...     return "A"
+            ...     return b"A"
             >>> e = leaker.struct(0, pwnlib.elf.Elf32_Phdr)
             >>> hex(e.p_paddr)
             '0x41414141'
@@ -221,7 +221,7 @@ class MemLeak(object):
         """raw(addr, numb) -> list
 
         Leak `numb` bytes at `addr`"""
-        return map(lambda a: self._leak(a, 1), range(addr, addr+numb))
+        return [self._leak(a, 1) for a in range(addr, addr+numb)]
 
 
     def _b(self, addr, ndx, size):
@@ -241,7 +241,7 @@ class MemLeak(object):
         Examples:
 
             >>> import string
-            >>> data = string.ascii_lowercase
+            >>> data = string.ascii_lowercase.encode()
             >>> l = MemLeak(lambda a: data[a:a+2], reraise=False)
             >>> l.b(0) == ord('a')
             True
@@ -260,7 +260,7 @@ class MemLeak(object):
         Examples:
 
             >>> import string
-            >>> data = string.ascii_lowercase
+            >>> data = string.ascii_lowercase.encode()
             >>> l = MemLeak(lambda a: data[a:a+4], reraise=False)
             >>> l.w(0) == unpack(b'ab', 16)
             True
@@ -279,7 +279,7 @@ class MemLeak(object):
         Examples:
 
             >>> import string
-            >>> data = string.ascii_lowercase
+            >>> data = string.ascii_lowercase.encode()
             >>> l = MemLeak(lambda a: data[a:a+8], reraise=False)
             >>> l.d(0) == unpack(b'abcd', 32)
             True
@@ -298,7 +298,7 @@ class MemLeak(object):
         Examples:
 
             >>> import string
-            >>> data = string.ascii_lowercase
+            >>> data = string.ascii_lowercase.encode()
             >>> l = MemLeak(lambda a: data[a:a+16], reraise=False)
             >>> l.q(0) == unpack(b'abcdefgh', 64)
             True
@@ -329,15 +329,15 @@ class MemLeak(object):
 
         Examples:
 
-            >>> data = "Hello\x00World"
+            >>> data = b"Hello\x00World"
             >>> l = MemLeak(lambda a: data[a:a+4], reraise=False)
-            >>> l.s(0) == "Hello"
+            >>> l.s(0) == b"Hello"
             True
-            >>> l.s(5) == ""
+            >>> l.s(5) == b""
             True
-            >>> l.s(6) == "World"
+            >>> l.s(6) == b"World"
             True
-            >>> l.s(999) == ""
+            >>> l.s(999) == b""
             True
         """
 
@@ -358,9 +358,9 @@ class MemLeak(object):
         Examples:
 
             >>> import string
-            >>> data = string.ascii_lowercase
+            >>> data = string.ascii_lowercase.encode()
             >>> l = MemLeak(lambda a: data[a:a+4], reraise=False)
-            >>> l.n(0,1) == 'a'
+            >>> l.n(0,1) == b'a'
             True
             >>> l.n(0,26) == data
             True
@@ -374,12 +374,12 @@ class MemLeak(object):
 
     def _clear(self, addr, ndx, size):
         addr += ndx * size
-        data = map(lambda x: self.cache.pop(x, None), range(addr, addr+size))
+        data = [self.cache.pop(x, None) for x in range(addr, addr+size)]
 
-        if not all(data):
+        if any(i is None for i in data):
             return None
 
-        return unpack(b''.join(data), size*8)
+        return unpack(b''.join(map(six.int2byte, bytearray(data))), size*8)
 
     def clearb(self, addr, ndx = 0):
         """clearb(addr, ndx = 0) -> int
@@ -390,8 +390,8 @@ class MemLeak(object):
         Examples:
 
             >>> l = MemLeak(lambda a: None)
-            >>> l.cache = {0:'a'}
-            >>> l.n(0,1) == 'a'
+            >>> l.cache = {0:b'a'[0]}
+            >>> l.n(0,1) == b'a'
             True
             >>> l.clearb(0) == unpack(b'a', 8)
             True
@@ -411,7 +411,7 @@ class MemLeak(object):
         Examples:
 
             >>> l = MemLeak(lambda a: None)
-            >>> l.cache = {0:b'a', 1: b'b'}
+            >>> l.cache = dict(enumerate(b'ab'))
             >>> l.n(0, 2) == b'ab'
             True
             >>> l.clearw(0) == unpack(b'ab', 16)
@@ -430,7 +430,7 @@ class MemLeak(object):
         Examples:
 
             >>> l = MemLeak(lambda a: None)
-            >>> l.cache = {0:b'a', 1: b'b', 2: b'c', 3: b'd'}
+            >>> l.cache = dict(enumerate(b'abcd'))
             >>> l.n(0, 4) == b'abcd'
             True
             >>> l.cleard(0) == unpack(b'abcd', 32)
@@ -449,7 +449,7 @@ class MemLeak(object):
         Examples:
 
             >>> c = MemLeak(lambda addr: b'')
-            >>> c.cache = {x:b'x' for x in range(0x100, 0x108)}
+            >>> c.cache = {x:b'x'[0] for x in range(0x100, 0x108)}
             >>> c.clearq(0x100) == unpack(b'xxxxxxxx', 64)
             True
             >>> c.cache == {}
@@ -468,11 +468,11 @@ class MemLeak(object):
 
         Examples:
 
-            >>> l = MemLeak(lambda x: '')
+            >>> l = MemLeak(lambda x: b'')
             >>> l.cache == {}
             True
             >>> l.setb(33, 0x41)
-            >>> l.cache == {33: 'A'}
+            >>> l.cache == {33: b'A'[0]}
             True
         """
         return self._set(addr, val, ndx, 1)
@@ -482,11 +482,11 @@ class MemLeak(object):
 
         Examples:
 
-            >>> l = MemLeak(lambda x: '')
+            >>> l = MemLeak(lambda x: b'')
             >>> l.cache == {}
             True
             >>> l.setw(33, 0x41)
-            >>> l.cache == {33: 'A', 34: '\x00'}
+            >>> l.cache == {33: b'A'[0], 34: b'\x00'[0]}
             True
         """
         return self._set(addr, val, ndx, 2)
@@ -515,15 +515,15 @@ class MemLeak(object):
 
         Examples:
 
-            >>> l = MemLeak(lambda x: '')
+            >>> l = MemLeak(lambda x: b'')
             >>> l.cache == {}
             True
-            >>> l.sets(0, 'H\x00ello')
-            >>> l.cache == {0: 'H', 1: '\x00', 2: 'e', 3: 'l', 4: 'l', 5: 'o', 6: '\x00'}
+            >>> l.sets(0, b'H\x00ello')
+            >>> l.cache == dict(enumerate(b'H\x00ello\x00'))
             True
         """
         if null_terminate:
-            val += '\x00'
+            val += b'\x00'
 
         for i,b in enumerate(val):
             self.cache[addr+i] = b
@@ -614,7 +614,7 @@ class MemLeak(object):
         def string_wrapper(address, *a, **kw):
             result = function(address, *a, **kw)
             if isinstance(result, (str, bytes)):
-                result += '\x00'
+                result += b'\x00'
             return result
 
         return MemLeak(string_wrapper)

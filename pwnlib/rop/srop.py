@@ -265,43 +265,43 @@ class SigreturnFrame(dict):
 
         >>> context.clear(arch='amd64')
         >>> s = SigreturnFrame()
-        >>> unpack_many(str(s))
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0]
         >>> assert len(s) == 248
         >>> s.rax = 0xa
         >>> s.rdi = 0x00601000
         >>> s.rsi = 0x1000
         >>> s.rdx = 0x7
-        >>> assert len(str(s)) == 248
-        >>> unpack_many(str(s))
+        >>> assert len(bytes(s)) == 248
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6295552, 4096, 0, 0, 7, 10, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0]
 
         Crafting a SigreturnFrame that calls mprotect on i386
 
         >>> context.clear(arch='i386')
         >>> s = SigreturnFrame(kernel='i386')
-        >>> unpack_many(str(s))
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 115, 0, 0, 123, 0]
         >>> assert len(s) == 80
         >>> s.eax = 125
         >>> s.ebx = 0x00601000
         >>> s.ecx = 0x1000
         >>> s.edx = 0x7
-        >>> assert len(str(s)) == 80
-        >>> unpack_many(str(s))
+        >>> assert len(bytes(s)) == 80
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 6295552, 7, 4096, 125, 0, 0, 0, 115, 0, 0, 123, 0]
 
         Crafting a SigreturnFrame that calls mprotect on ARM
 
         >>> s = SigreturnFrame(arch='arm')
-        >>> unpack_many(str(s))
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1073741840, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1447448577, 288]
         >>> s.r0 = 125
         >>> s.r1 = 0x00601000
         >>> s.r2 = 0x1000
         >>> s.r3 = 0x7
-        >>> assert len(str(s)) == 240
-        >>> unpack_many(str(s))
+        >>> assert len(bytes(s)) == 240
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 6, 0, 0, 125, 6295552, 4096, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1073741840, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1447448577, 288]
 
         Crafting a SigreturnFrame that calls mprotect on MIPS
@@ -309,14 +309,14 @@ class SigreturnFrame(dict):
         >>> context.clear()
         >>> context.endian = "big"
         >>> s = SigreturnFrame(arch='mips')
-        >>> unpack_many(str(s))
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         >>> s.v0 = 0x101d
         >>> s.a0 = 0x00601000
         >>> s.a1 = 0x1000
         >>> s.a2 = 0x7
-        >>> assert len(str(s)) == 296
-        >>> unpack_many(str(s))
+        >>> assert len(bytes(s)) == 296
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4125, 0, 0, 0, 6295552, 0, 4096, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         Crafting a SigreturnFrame that calls mprotect on MIPSel
@@ -324,14 +324,14 @@ class SigreturnFrame(dict):
         >>> context.clear()
         >>> context.endian = "little"
         >>> s = SigreturnFrame(arch='mips')
-        >>> unpack_many(str(s))
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         >>> s.v0 = 0x101d
         >>> s.a0 = 0x00601000
         >>> s.a1 = 0x1000
         >>> s.a2 = 0x7
-        >>> assert len(str(s)) == 292
-        >>> unpack_many(str(s))
+        >>> assert len(bytes(s)) == 292
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4125, 0, 0, 0, 6295552, 0, 4096, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         Crafting a SigreturnFrame that calls mprotect on Aarch64
@@ -339,14 +339,14 @@ class SigreturnFrame(dict):
         >>> context.clear()
         >>> context.endian = "little"
         >>> s = SigreturnFrame(arch='aarch64')
-        >>> unpack_many(str(s))
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1179680769, 528]
         >>> s.x8 = 0xe2
         >>> s.x0 = 0x4000
         >>> s.x1 = 0x1000
         >>> s.x2 = 0x7
-        >>> assert len(str(s)) == 600
-        >>> unpack_many(str(s))
+        >>> assert len(bytes(s)) == 600
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16384, 0, 4096, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 226, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1179680769, 528]
     """
 

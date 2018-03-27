@@ -4,6 +4,7 @@ from __future__ import division
 import errno
 import os
 import select
+import six
 import string
 import sys
 
@@ -143,7 +144,7 @@ class Key:
         return self.__str__()
 
     def __eq__(self, other):
-        if   isinstance(other, (unicode, str)):
+        if   isinstance(other, (six.text_type, six.binary_type)):
             return Matcher(other)(self)
         elif isinstance(other, Matcher):
             return other(self)
@@ -212,7 +213,7 @@ def _init_ti_table():
             continue
         k = _name_to_key(fname)
         if k:
-            _ti_table.append((map(ord, seq), k))
+            _ti_table.append((list(bytearray(seq)), k))
 
 # csi
 def _parse_csi(offset):
@@ -278,7 +279,7 @@ def _csi_ss3(cmd, args):
     return k
 
 def _csi_u(cmd, args):
-    k = Key(kc.TYPE_UNICODE, unichr(args[0]))
+    k = Key(kc.TYPE_UNICODE, six.unichr(args[0]))
     if len(args) > 1 and args[1]:
         k.mods |= args[1] - 1
     return k
@@ -451,17 +452,17 @@ def _peek_simple():
                 if   c0 == 0:
                     k.code = u' '
                 elif chr(c0 + 0x40) in string.ascii_uppercase:
-                    k.code = unichr(c0 + 0x60)
+                    k.code = six.unichr(c0 + 0x60)
                 else:
-                    k.code = unichr(c0 + 0x40)
+                    k.code = six.unichr(c0 + 0x40)
                 k.mods |= kc.MOD_CTRL
         elif c0 == 0x7f:
             # print 'del\r'
             k = Key(kc.TYPE_KEYSYM, kc.KEY_DEL)
         elif c0 >= 0x20 and c0 < 0x80:
-            k = Key(kc.TYPE_UNICODE, unichr(c0))
+            k = Key(kc.TYPE_UNICODE, six.unichr(c0))
         else:
-            k = Key(kc.TYPE_UNICODE, unichr(c0 - 0x40), kc.MOD_CTRL | kc.MOD_ALT)
+            k = Key(kc.TYPE_UNICODE, six.unichr(c0 - 0x40), kc.MOD_CTRL | kc.MOD_ALT)
     else: # utf8
         n = 0
         if   c0 & 0b11100000 == 0b11000000:

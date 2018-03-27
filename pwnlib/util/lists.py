@@ -198,7 +198,7 @@ def findall(haystack, needle):
                 i = max(T[i], 0)
 
     def __single_search(S, w):
-        for i in xrange(len(S)):
+        for i in range(len(S)):
             if S[i] == w:
                 yield i
 

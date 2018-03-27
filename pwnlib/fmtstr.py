@@ -252,15 +252,15 @@ class FmtStr(object):
         # Thus the solution to this problem is to check if the next 3 bytes are
         # "ELF" and if so we lie and leak "\x7f"
         # unless it is leaked otherwise.
-        if addr & 0xfff == 0 and self.leaker._leak(addr+1, 3, False) == "ELF":
-            return "\x7f"
+        if addr & 0xfff == 0 and self.leaker._leak(addr+1, 3, False) == b"ELF":
+            return b"\x7f"
 
-        fmtstr = randoms(self.padlen) + pack(addr) + "START%%%d$sEND" % self.offset
+        fmtstr = randoms(self.padlen).encode() + pack(addr) + b"START%%%d$sEND" % self.offset
 
         leak = self.execute_fmt(fmtstr)
-        leak = re.findall(r"START(.*)END", leak, re.MULTILINE | re.DOTALL)[0]
+        leak = re.findall(br"START(.*)END", leak, re.MULTILINE | re.DOTALL)[0]
 
-        leak += "\x00"
+        leak += b"\x00"
 
         return leak
 
@@ -273,7 +273,7 @@ class FmtStr(object):
             None
 
         """
-        fmtstr = randoms(self.padlen)
+        fmtstr = randoms(self.padlen).encode()
         fmtstr += fmtstr_payload(self.offset, self.writes, numbwritten=self.padlen, write_size='byte')
         self.execute_fmt(fmtstr)
         self.writes = {}

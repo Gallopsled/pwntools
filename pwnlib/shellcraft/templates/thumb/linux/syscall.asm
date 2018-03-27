@@ -2,6 +2,7 @@
   from pwnlib.shellcraft import thumb
   from pwnlib.constants import eval
   from pwnlib.abi import linux_arm_syscall as abi
+  from six import text_type
 %>
 <%page args="syscall = None, arg0 = None, arg1 = None, arg2 = None, arg3 = None, arg4 = None, arg5 = None, arg6 = None"/>
 <%docstring>
@@ -56,7 +57,7 @@ Example:
 
 </%docstring>
 <%
-  if isinstance(syscall, (str, unicode)) and syscall.startswith('SYS_'):
+  if isinstance(syscall, (str, text_type)) and syscall.startswith('SYS_'):
       syscall_repr = syscall[4:] + "(%s)"
       args = []
   else:

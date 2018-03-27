@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import shutil
+import six
 import string
 import sys
 import tarfile
@@ -67,28 +68,35 @@ class ssh_channel(sock):
         self.tty  = tty
         self.env  = env
         self.process = process
-        self.cwd  = wd or '.'
+        if isinstance(wd, six.text_type):
+            wd = wd.encode('utf-8')
+        self.cwd  = wd or b'.'
 
         env = env or {}
         msg = 'Opening new channel: %r' % (process or 'shell')
 
         if isinstance(process, (list, tuple)):
-            process = ' '.join(sh_string(s) for s in process)
+            process = b' '.join((lambda x:x.encode('utf-8') if isinstance(x, six.text_type) else x)(sh_string(s)) for s in process)
+        if isinstance(process, six.text_type):
+            process = process.encode('utf-8')
 
         if process and wd:
-            process = 'cd %s >/dev/null 2>&1;%s' % (sh_string(wd), process)
+            process = b'cd ' + sh_string(wd) + b' >/dev/null 2>&1;' + process
 
         if process and env:
             for name, value in env.items():
                 if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', name):
-                    self.error('run(): Invalid environment key $r' % name)
-                process = 'export %s=%s;%s' % (name, sh_string(value), process)
+                    self.error('run(): Invalid environment key %r' % name)
+                export = 'export %s=%s;' % (name, sh_string(value))
+                if isinstance(export, six.text_type):
+                    export = export.encode('utf-8')
+                process = export + process
 
         if process and tty:
             if raw:
-                process = 'stty raw -ctlecho -echo; ' + process
+                process = b'stty raw -ctlecho -echo; ' + process
             else:
-                process = 'stty -ctlecho -echo; ' + process
+                process = b'stty -ctlecho -echo; ' + process
 
 
         # If this object is enabled for DEBUG-level logging, don't hide
@@ -252,7 +260,7 @@ class ssh_channel(sock):
 
             if data:
                 try:
-                    self.send(''.join(chr(c) for c in data))
+                    self.send(b''.join(six.int2byte(c) for c in data))
                 except EOFError:
                     event.set()
                     self.info('Got EOF while sending in interactive')
@@ -570,7 +578,7 @@ class ssh(Timeout, Logger):
 
             if os.path.exists(config_file):
                 ssh_config  = paramiko.SSHConfig()
-                ssh_config.parse(file(config_file))
+                ssh_config.parse(open(config_file))
                 host_config = ssh_config.lookup(host)
                 if 'hostname' in host_config:
                     self.host = host = host_config['hostname']
@@ -746,10 +754,10 @@ class ssh(Timeout, Logger):
             ...         user='travis',
             ...         password='demopass')
             >>> sh = s.process('/bin/sh', env={'PS1':''})
-            >>> sh.sendline('echo Hello; exit')
+            >>> sh.sendline(b'echo Hello; exit')
             >>> sh.recvall()
             'Hello\n'
-            >>> s.process(['/bin/echo', '\xff']).recvall()
+            >>> s.process(['/bin/echo', b'\xff']).recvall()
             '\xff\n'
             >>> s.process(['readlink', '/proc/self/exe']).recvall()
             '/bin/readlink\n'
@@ -763,7 +771,7 @@ class ssh(Timeout, Logger):
             >>> s.process(['pwd'], cwd='/tmp').recvall()
             '/tmp\n'
             >>> p = s.process(['python','-c','import os; print(os.read(2, 1024))'], stderr=0)
-            >>> p.send('hello')
+            >>> p.send(b'hello')
             >>> p.recv()
             'hello\n'
             >>> s.process(['/bin/echo', 'hello']).recvall()
@@ -787,7 +795,7 @@ class ssh(Timeout, Logger):
 
             >>> def uses_globals():
             ...     foo = bar
-            >>> print(s.process('false', preexec_fn=uses_globals).recvall().strip()) # doctest: +ELLIPSIS
+            >>> print(s.process('false', preexec_fn=uses_globals).recvall().strip().decode()) # doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
             NameError: global name 'bar' is not defined
@@ -801,7 +809,7 @@ class ssh(Timeout, Logger):
         argv      = argv or []
         aslr      = aslr if aslr is not None else context.aslr
 
-        if isinstance(argv, (str, unicode)):
+        if isinstance(argv, (six.text_type, six.binary_type)):
             argv = [argv]
 
         if not isinstance(argv, (list, tuple)):
@@ -815,30 +823,38 @@ class ssh(Timeout, Logger):
         # Python doesn't like when an arg in argv contains '\x00'
         # -> execve() arg 2 must contain only strings
         for i, arg in enumerate(argv):
-            if '\x00' in arg[:-1]:
+            if isinstance(arg, six.text_type):
+                arg = arg.encode('utf-8')
+            if b'\x00' in arg[:-1]:
                 self.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
-            argv[i] = arg.rstrip('\x00')
+            argv[i] = arg.rstrip(b'\x00')
 
         # Python also doesn't like when envp contains '\x00'
+        env2 = {}
         if env and hasattr(env, 'items'):
             for k, v in env.items():
                 if '\x00' in k[:-1]:
                     self.error('Inappropriate nulls in environment key %r' % k)
                 if '\x00' in v[:-1]:
                     self.error('Inappropriate nulls in environment value %r=%r' % (k, v))
-                env[k.rstrip('\x00')] = v.rstrip('\x00')
+                if isinstance(k, six.text_type):
+                    k = k.encode('utf-8')
+                if isinstance(v, six.text_type):
+                    v = v.encode('utf-8')
+                env2[k.rstrip(b'\x00')] = v.rstrip(b'\x00')
+        env = env2 or env
 
         executable = executable or argv[0]
         cwd        = cwd or self.cwd
 
         # Validate, since failures on the remote side will suck.
-        if not isinstance(executable, str):
+        if not isinstance(executable, (six.text_type, six.binary_type)):
             self.error("executable / argv[0] must be a string: %r" % executable)
         if not isinstance(argv, (list, tuple)):
             self.error("argv must be a list or tuple: %r" % argv)
         if env is not None and not isinstance(env, dict) and env != os.environ:
             self.error("env must be a dict: %r" % env)
-        if not all(isinstance(s, str) for s in argv):
+        if not all(isinstance(s, (six.text_type, six.binary_type)) for s in argv):
             self.error("argv must only contain strings: %r" % argv)
 
         # Allow passing in sys.stdin/stdout/stderr objects
@@ -1028,7 +1044,7 @@ os.execve(exe, argv, env)
             python.suid = safeeval.const(python.recvline())
             python.sgid = safeeval.const(python.recvline())
             python.argv = argv
-            python.executable = python.recvuntil('\x00')[:-1]
+            python.executable = python.recvuntil(b'\x00')[:-1]
 
             h.success('pid %i' % python.pid)
 
@@ -1080,9 +1096,9 @@ os.execve(exe, argv, env)
             ...         user='travis',
             ...         password='demopass')
             >>> py = s.run('python -i')
-            >>> _ = py.recvuntil('>>> ')
-            >>> py.sendline('print(2+2)')
-            >>> py.sendline('exit')
+            >>> _ = py.recvuntil(b'>>> ')
+            >>> py.sendline(b'print(2+2)')
+            >>> py.sendline(b'exit')
             >>> print(repr(py.recvline()))
             '4\n'
         """
@@ -1307,6 +1323,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
     def _get_fingerprint(self, remote):
         cmd = '(sha256 || sha256sum || openssl sha256) 2>/dev/null < '
         cmd = cmd + sh_string(remote)
+
         data, status = self.run_to_end(cmd)
 
         if status != 0:
@@ -1314,13 +1331,16 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         # OpenSSL outputs in the format of...
         # (stdin)= e3b0c4429...
-        data = data.replace('(stdin)= ','')
+        data = data.replace(b'(stdin)= ',b'')
 
         # sha256 and sha256sum outputs in the format of...
         # e3b0c442...  -
-        data = data.replace('-','')
+        data = data.replace(b'-',b'').strip()
 
-        return data.strip()
+        if not isinstance(data, str):
+            data = data.decode('ascii')
+
+        return data
 
     def _get_cachefile(self, fingerprint):
         return os.path.join(self._cachedir, fingerprint)
@@ -1364,11 +1384,14 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         with context.local(log_level = 'ERROR'):
             cmd = 'cat < ' + sh_string(remote)
             c = self.run(cmd)
-        data = ''
+        data = b''
 
+        countr = 0
         while True:
             try:
                 data += c.recv()
+                countr += 1
+                if countr > 1000000: raise MemoryError('infinite loop!') ##
             except EOFError:
                 break
             update(len(data), total)
@@ -1378,13 +1401,15 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             h.failure('Could not download file %r (%r)' % (remote, result))
             return
 
-        with open(local, 'w') as fd:
+        with open(local, 'wb') as fd:
             fd.write(data)
 
     def _download_to_cache(self, remote, p):
 
         with context.local(log_level='error'):
             remote = self.readlink('-f',remote)
+        if not hasattr(remote, 'encode'):
+            remote = remote.decode('utf-8')
 
         fingerprint = self._get_fingerprint(remote)
         if fingerprint is None:
@@ -1416,8 +1441,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
 
         Examples:
-            >>> with file('/tmp/bar','w+') as f:
-            ...     f.write('Hello, world')
+            >>> with open('/tmp/bar','w+') as f:
+            ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass',
@@ -1431,7 +1456,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         """
         with self.progress('Downloading %r' % remote) as p:
-            with open(self._download_to_cache(remote, p)) as fd:
+            with open(self._download_to_cache(remote, p), 'rb') as fd:
                 return fd.read()
 
     def download_file(self, remote, local = None):
@@ -1512,12 +1537,12 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
-            >>> s.upload_data('Hello, world', '/tmp/upload_foo')
+            >>> s.upload_data(b'Hello, world', '/tmp/upload_foo')
             >>> print(open('/tmp/upload_foo').read())
             Hello, world
             >>> s._sftp = False
             >>> s._tried_sftp = True
-            >>> s.upload_data('Hello, world', '/tmp/upload_bar')
+            >>> s.upload_data(b'Hello, world', '/tmp/upload_bar')
             >>> print(open('/tmp/upload_bar').read())
             Hello, world
         """
@@ -1555,7 +1580,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             remote = os.path.basename(remote)
             remote = os.path.join(self.cwd, remote)
 
-        with open(filename) as fd:
+        with open(filename, 'rb') as fd:
             data = fd.read()
 
         self.info("Uploading %r to %r" % (filename,remote))
@@ -1755,24 +1780,26 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> _=s.touch('foo')
 
             >>> _=s.set_working_directory()
-            >>> assert s.ls() == ''
+            >>> assert s.ls() == b''
 
             >>> _=s.set_working_directory(homedir)
-            >>> assert 'foo' in s.ls().split()
+            >>> assert b'foo' in s.ls().split()
 
             >>> _=s.set_working_directory(symlink=True)
-            >>> assert 'foo' in s.ls().split()
+            >>> assert b'foo' in s.ls().split()
             >>> assert homedir != s.pwd()
 
-            >>> symlink=os.path.join(homedir,'*')
+            >>> symlink=os.path.join(homedir,b'*')
             >>> _=s.set_working_directory(symlink=symlink)
-            >>> assert 'foo' in s.ls().split()
+            >>> assert b'foo' in s.ls().split()
             >>> assert homedir != s.pwd()
         """
         status = 0
 
-        if symlink and not isinstance(symlink, str):
-            symlink = os.path.join(self.pwd(), '*')
+        if symlink and not isinstance(symlink, (six.binary_type, six.text_type)):
+            symlink = os.path.join(self.pwd(), b'*')
+        if not hasattr(symlink, 'encode') and hasattr(symlink, 'decode'):
+            symlink = symlink.decode('utf-8')
 
         if not wd:
             wd, status = self.run_to_end('x=$(mktemp -d) && cd $x && chmod +x . && echo $PWD', wd='.')
@@ -1782,19 +1809,22 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 self.error("Could not generate a temporary directory (%i)\n%s" % (status, wd))
 
         else:
-            cmd = 'ls ' + sh_string(wd)
+            cmd = b'ls ' + sh_string(wd)
             _, status = self.run_to_end(cmd, wd = '.')
 
             if status:
                 self.error("%r does not appear to exist" % wd)
 
-        self.info("Working directory: %r" % wd)
         self.cwd = wd
+        if not isinstance(wd, str):
+            self.cwd = wd.decode('utf-8')
+
+        self.info("Working directory: %r" % self.cwd)
 
         if symlink:
             self.ln('-s', symlink, '.')
 
-        return self.cwd
+        return wd
 
     def write(self, path, data):
         """Wrapper around upload_data to match :func:`pwnlib.util.misc.write`"""

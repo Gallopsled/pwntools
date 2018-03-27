@@ -8,6 +8,7 @@
   from pwnlib.util.fiddling import xor_pair
   from pwnlib.shellcraft import pretty
   from pwnlib.shellcraft.registers import aarch64 as regs
+  import six
   log = getLogger('pwnlib.shellcraft.arm.mov')
 %>
 <%page args="dst, src"/>
@@ -48,7 +49,7 @@ if not src in regs:
 mov_x0_x15 = False
 xor        = None
 
-# if isinstance(src, (int, long)):
+# if isinstance(src, six.integer_types):
 #     # Moving an immediate into x0 emits a null byte.
 #     # Moving a register into x0 does not.
 #     # Use x15 as a scratch register.
@@ -76,7 +77,7 @@ xor        = None
 #     xor = unpack(''.join(xor))
 
 %>
-%if not isinstance(src, (int, long)):
+%if not isinstance(src, six.integer_types):
     mov  ${dst}, ${src}
 %else:
   %if src == 0:

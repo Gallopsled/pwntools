@@ -47,6 +47,8 @@ class Module(types.ModuleType):
                      ('underline', 'smul'),
                      ('reverse'  , 'rev')]:
             s = termcap.get(y)
+            if not hasattr(s, 'encode'):
+                s = s.decode('utf-8')
             self._attributes[x] = s
         self._cache = {}
 
@@ -59,10 +61,16 @@ class Module(types.ModuleType):
         self._when = eval_when(val)
 
     def _fg_color(self, c):
-        return termcap.get('setaf', c) or termcap.get('setf', c)
+        c = termcap.get('setaf', c) or termcap.get('setf', c)
+        if not hasattr(c, 'encode'):
+            c = c.decode('utf-8')
+        return c
 
     def _bg_color(self, c):
-        return termcap.get('setab', c) or termcap.get('setb', c)
+        c = termcap.get('setab', c) or termcap.get('setb', c)
+        if not hasattr(c, 'encode'):
+            c = c.decode('utf-8')
+        return c
 
     def _decorator(self, desc, init):
         def f(self, s, when = None):

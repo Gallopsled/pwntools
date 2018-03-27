@@ -95,6 +95,7 @@ import os
 import random
 import re
 import shlex
+import six
 import tempfile
 import time
 
@@ -612,7 +613,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     # if gdbscript is a file object, then read it; we probably need to run some
     # more gdb script anyway
-    if isinstance(gdbscript, file):
+    if hasattr(gdbscript, 'read'):
         with gdbscript:
             gdbscript = gdbscript.read()
 
@@ -637,7 +638,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     # let's see if we can find a pid to attach to
     pid = None
-    if   isinstance(target, (int, long)):
+    if   isinstance(target, six.integer_types):
         # target is a pid, easy peasy
         pid = target
     elif isinstance(target, str):
@@ -767,7 +768,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     if gdbscript:
         tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.gdb',
-                                          delete = False)
+                                          delete = False, mode = 'w+')
         log.debug('Wrote gdb script to %r\n%s' % (tmp.name, gdbscript))
         gdbscript = 'shell rm %s\n%s' % (tmp.name, gdbscript)
 

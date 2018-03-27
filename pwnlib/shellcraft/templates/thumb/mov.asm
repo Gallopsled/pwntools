@@ -3,6 +3,7 @@
   from pwnlib.log import getLogger
   from pwnlib.util import fiddling
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
+  import six
 %>
 <%page args="dst, src"/>
 <%docstring>
@@ -59,7 +60,7 @@ Example:
 <%
 log = getLogger(__name__)
 src_orig = src
-if isinstance(src, (str, unicode)):
+if isinstance(src, (six.binary_type, six.text_type)):
     src = src.strip()
     if src.lower() in registers.arm:
         src = src.lower()
@@ -109,7 +110,7 @@ if not src in registers.arm:
 %>
 % if dst == src:
   /* moving ${src} into ${dst}, but this is a no-op */
-% elif not isinstance(src, (int, long)):
+% elif not isinstance(src, six.integer_types):
     mov ${dst}, ${src}
 % else:
   <%

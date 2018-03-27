@@ -17,7 +17,7 @@ Example:
     >>> sc = shellcraft.amd64.mov('rax', 0xdeadbeef)
     >>> sc += shellcraft.amd64.itoa('rax')
     >>> sc += shellcraft.amd64.linux.write(1, 'rsp', 32)
-    >>> run_assembly(sc).recvuntil('\x00')
+    >>> run_assembly(sc).recvuntil(b'\x00')
     '3735928559\x00'
 </%docstring>
 <%page args="v, buffer='rsp', allocate_stack=True"/>

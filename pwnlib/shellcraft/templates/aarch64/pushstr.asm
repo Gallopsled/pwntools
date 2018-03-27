@@ -1,5 +1,6 @@
 <% from pwnlib.util import lists, packing, fiddling %>
 <% from pwnlib import shellcraft %>
+<% import six %>
 <%page args="string, append_null = True, register1='x14', register2='x15', pretty=None"/>
 <%docstring>
 Pushes a string onto the stack.
@@ -74,13 +75,16 @@ Examples:
         stp x14, x15, [sp, #-16]!
 </%docstring>
 <%
-if append_null and not string.endswith('\x00'):
-    string += '\x00'
+if isinstance(string, six.text_type):
+    string = string.encode('utf-8')
+
+if append_null and not string.endswith(b'\x00'):
+    string += b'\x00'
 
 pretty_string = pretty or shellcraft.pretty(string)
 
 while len(string) % 8:
-    string += '\x00'
+    string += b'\x00'
 
 # Unpack everything into integers, and group them by twos
 # so we may use STP to store multiple in a single instruction

@@ -115,7 +115,7 @@ class process(tube):
         >>> p = process('python2')
         >>> p.sendline(b"print 'Hello world'")
         >>> p.sendline(b"print 'Wow, such data'");
-        >>> '' == p.recv(timeout=0.01)
+        >>> b'' == p.recv(timeout=0.01)
         True
         >>> p.shutdown('send')
         >>> p.proc.stdin.closed
@@ -517,11 +517,15 @@ class process(tube):
         # Create a duplicate so we can modify it
         argv = list(argv or [])
 
-        for i, arg in enumerate(argv):
-            if '\x00' in arg[:-1]:
-                self.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
+        for i, oarg in enumerate(argv):
+            if isinstance(oarg, six.text_type):
+                arg = oarg.encode('utf-8')
+            else:
+                arg = oarg
+            if b'\x00' in arg[:-1]:
+                self.error('Inappropriate nulls in argv[%i]: %r' % (i, oarg))
 
-            argv[i] = arg.rstrip('\x00')
+            argv[i] = arg.rstrip(b'\x00')
 
         #
         # Validate executable
@@ -533,6 +537,9 @@ class process(tube):
             if not argv:
                 self.error("Must specify argv or executable")
             executable = argv[0]
+
+        if not isinstance(executable, str):
+            executable = executable.decode('utf-8')
 
         # Do not change absolute paths to binaries
         if executable.startswith(os.path.sep):
@@ -912,7 +919,7 @@ class process(tube):
         finder = pwnlib.elf.corefile.CorefileFinder(self)
         if not finder.core_path:
             self.warn("Could not find core file for pid %i" % self.pid)
-            return
+            return Ellipsis ##
 
         core_hash = sha256file(finder.core_path)
 

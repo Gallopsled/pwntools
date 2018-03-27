@@ -52,7 +52,7 @@ dump to extract the relevant information.
 
     # Get a shell!
     io = process(['./crash', payload])
-    io.sendline('id')
+    io.sendline(b'id')
     print io.recvline()
     # uid=1000(user) gid=1000(user) groups=1000(user)
 
@@ -407,7 +407,7 @@ class Corefile(ELF):
         terminated path to the executable (as passed via the first arg to ``execve``).
 
         >>> stack_end = core.exe.name
-        >>> stack_end += '\x00' * (1+8)
+        >>> stack_end += b'\x00' * (1+8)
         >>> core.stack.data.endswith(stack_end)
         True
         >>> len(core.stack.data) == core.stack.size
@@ -484,7 +484,7 @@ class Corefile(ELF):
         [!] End of the stack is corrupted, skipping stack parsing (got: 4141414141414141)
         >>> core.argc, core.argv, core.env
         (0, [], {})
-        >>> core.stack.data.endswith('AAAA')
+        >>> core.stack.data.endswith(b'AAAA')
         True
         >>> core.fault_addr == core.sp
         True
@@ -570,6 +570,8 @@ class Corefile(ELF):
                 # for NT_PRSTATUS, NT_PRPSINFO, NT_AUXV, etc.
                 # For this reason, we have to check if note.n_type is any of several values.
                 for note in iter_notes(segment):
+                    if not isinstance(note.n_desc, bytes):
+                        note['n_desc'] = note.n_desc.encode('latin1')
                     # Try to find NT_PRSTATUS.
                     if prstatus_type and \
                        note.n_descsz == ctypes.sizeof(prstatus_type) and \
@@ -602,7 +604,7 @@ class Corefile(ELF):
                             self._parse_auxv(note)
 
             if not self.stack and self.mappings:
-                self.stack = self.mappings[-1]
+                self.stack = self.mappings[-1].stop
 
             if self.stack and self.mappings:
                 for mapping in self.mappings:
@@ -698,7 +700,7 @@ class Corefile(ELF):
     @property
     def libc(self):
         """:class:`Mapping`: First mapping for ``libc.so``"""
-        expr = r'libc\b.*so$'
+        expr = br'libc\b.*so$'
 
         for m in self.mappings:
             if not m.name:
@@ -927,7 +929,7 @@ class Corefile(ELF):
             address = stack.stop
             address -= 2*self.bytes
             address -= 1
-            address = stack.rfind('\x00', None, address)
+            address = stack.rfind(b'\x00', None, address)
             address += 1
             self.at_execfn = address
 
@@ -936,7 +938,7 @@ class Corefile(ELF):
 
         # Sanity check!
         try:
-            assert stack[address] == '\x00'
+            assert stack[address] == b'\x00'
         except AssertionError:
             # Something weird is happening.  Just don't touch it.
             log.debug("Something is weird")
@@ -950,7 +952,7 @@ class Corefile(ELF):
 
         # address is currently set to the NULL terminator of the last
         # environment variable.
-        address = stack.rfind('\x00', None, address)
+        address = stack.rfind(b'\x00', None, address)
 
         # We've found the beginning of the last environment variable.
         # We should be able to search up the stack for the envp[] array to
@@ -990,7 +992,7 @@ class Corefile(ELF):
             except Exception:
                 continue
 
-            name, value = name_value.split('=', 1)
+            name, value = name_value.split(b'=', 1)
 
             # "end" points at the byte after the null terminator
             end = pointer + len(name_value) + 1
@@ -1369,7 +1371,7 @@ class CorefileFinder(object):
         """
         replace = {
             '%%': '%',
-            '%e': self.basename,
+            '%e': os.path.basename(self.interpreter) or self.basename,
             '%E': self.exe.replace('/', '!'),
             '%g': str(self.gid),
             '%h': socket.gethostname(),
@@ -1380,8 +1382,10 @@ class CorefileFinder(object):
             '%s': str(-self.process.poll()),
             '%u': str(self.uid)
         }
-        replace = dict((re.escape(k), v) for k, v in replace.iteritems())
+        replace = dict((re.escape(k), v) for k, v in replace.items())
         pattern = re.compile("|".join(replace.keys()))
+        if not hasattr(self.kernel_core_pattern, 'encode'):
+            self.kernel_core_pattern = self.kernel_core_pattern.decode('utf-8')
         core_pattern = self.kernel_core_pattern
         corefile_path = pattern.sub(lambda m: replace[re.escape(m.group(0))], core_pattern)
 
@@ -1467,7 +1471,7 @@ class CorefileFinder(object):
                 continue
 
             magic = bytearray(unhex(keys['magic']))
-            mask  = bytearray('\xff' * len(magic))
+            mask  = bytearray(b'\xff' * len(magic))
 
             if 'mask' in keys:
                 mask = bytearray(unhex(keys['mask']))

@@ -2,6 +2,7 @@
   from pwnlib.shellcraft import i386, pretty
   from pwnlib.constants import Constant
   from pwnlib.abi import linux_i386_syscall as abi
+  from six import text_type
 %>
 <%page args="syscall = None, arg0 = None, arg1 = None, arg2 = None, arg3 = None, arg4 = None, arg5 = None"/>
 <%docstring>
@@ -84,7 +85,7 @@ Example:
             int 0x80
 </%docstring>
 <%
-  if isinstance(syscall, (str, unicode, Constant)) and str(syscall).startswith('SYS_'):
+  if isinstance(syscall, (str, text_type, Constant)) and str(syscall).startswith('SYS_'):
       syscall_repr = str(syscall)[4:] + "(%s)"
       args = []
   else:

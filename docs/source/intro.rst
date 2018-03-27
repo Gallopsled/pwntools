@@ -188,7 +188,7 @@ Never write another hexdump, thanks to :mod:`pwnlib.util.fiddling`.
 
 Find offsets in your buffer that cause a crash, thanks to :mod:`pwnlib.cyclic`.
 
-    >>> print(cyclic(20))
+    >>> print(cyclic(20).decode())
     aaaabaaacaaadaaaeaaa
     >>> # Assume EIP = 0x62616166 (b'faab' which is pack(0x62616166))  at crash time
     >>> print(cyclic_find(b'faab'))

@@ -55,6 +55,7 @@ import os
 import platform
 import re
 import shutil
+import six
 import stat
 import tempfile
 import time
@@ -78,7 +79,7 @@ def adb(argv, *a, **kw):
     >>> adb.adb(['get-serialno'])
     'emulator-5554\n'
     """
-    if isinstance(argv, (str, unicode)):
+    if isinstance(argv, (bytes, six.text_type)):
         argv = [argv]
 
     log.debug("$ " + ' '.join(context.adb + argv))
@@ -594,7 +595,7 @@ def read(path, target=None, callback=None):
 
 @context.quietfunc
 @with_device
-def write(path, data=''):
+def write(path, data=b''):
     """Create a file on the device with the provided contents.
 
     Arguments:
@@ -651,7 +652,7 @@ def mkdir(path):
 
         # Any output at all is an error
         if result:
-            log.error(result)
+            log.error(result.rstrip())
 
 @context.quietfunc
 @with_device
@@ -769,7 +770,7 @@ def process(argv, *a, **kw):
         >>> print adb.process(['cat','/proc/version']).recvall() # doctest: +ELLIPSIS
         Linux version ...
     """
-    if isinstance(argv, (str, unicode)):
+    if isinstance(argv, (bytes, six.text_type)):
         argv = [argv]
 
     message = "Starting %s process %r" % ('Android', argv[0])
@@ -1098,7 +1099,7 @@ class Property(object):
         self.__dict__['_name'] = name
 
     def __str__(self):
-        return getprop(self._name).strip()
+        return str(getprop(self._name)).strip()
 
     def __repr__(self):
         return repr(str(self))

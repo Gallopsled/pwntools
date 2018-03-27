@@ -10,7 +10,7 @@ for _algo in hashlib.algorithms_guaranteed:
         hash = hashlib.__dict__[_algo]
         def file(p):
             h = hash()
-            fd = open(p)
+            fd = open(p, 'rb')
             while True:
                 s = fd.read(4096)
                 if not s:

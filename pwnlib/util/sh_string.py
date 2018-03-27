@@ -255,10 +255,10 @@ from pwnlib.util.misc import which
 log = getLogger(__name__)
 
 def test_all():
-    test(b'a')
-    test(b'ab')
-    test(b'a b')
-    test(br"a\'b")
+    test('a') ##
+    test('ab') ##
+    test('a b') ##
+    test(r"a\'b") ##
     everything_1 = b''.join(six.int2byte(c) for c in range(1,256))
     for s in everything_1:
         test(s)
@@ -272,7 +272,7 @@ def test_all():
     test(everything_1)
     test(everything_1 * 2)
     test(everything_1 * 4)
-    everything_2 = b''.join(six.int2byte(c) * 2 for c in range(1,256))
+    everything_2 = b''.join(six.int2byte(c) * 2 for c in range(1,256)) ##
     test(everything_2)
 
     test(randoms(1000, everything_1))
@@ -294,7 +294,10 @@ def test(original):
     """
     input = sh_string(original)
 
-    cmdstr = '/bin/echo %s' % input
+    if not isinstance(input, str):
+        input = input.decode('latin1')
+
+    cmdstr = six.b('/bin/echo %s' % input)
 
     SUPPORTED_SHELLS = [
         ['ash', '-c', cmdstr],
@@ -388,22 +391,31 @@ def sh_string(s):
         >>> sh_string("foo\\x01'bar")
         "'foo\\x01'\\''bar'"
     """
+    orig_s = s
+    if isinstance(s, six.binary_type):
+        s = s.decode('latin1')
     if '\x00' in s: ##
         log.error("sh_string(): Cannot create a null-byte")
 
-    if s == '': ##
-        return "''" ##
+    if not s:
+        quoted_string = "''" ##
+        if isinstance(orig_s, six.binary_type):
+            quoted_string = quoted_string.encode('latin1')
+        return quoted_string
 
     chars = set(s)
-    very_good = set(six.b(string.ascii_letters + string.digits + "_+.,/-"))
+    very_good = set(string.ascii_letters + string.digits + "_+.,/-") ##
 
     # Alphanumeric can always just be used verbatim.
     if chars <= very_good:
-        return s
+        return orig_s
 
     # If there are no single-quotes, the entire thing can be single-quoted
     if not (chars & set(ESCAPED)):
-        return "'%s'" % s ##
+        quoted_string = "'%s'" % s ##
+        if isinstance(orig_s, six.binary_type):
+            quoted_string = quoted_string.encode('latin1')
+        return quoted_string
 
     # If there are single-quotes, we can single-quote around them, and simply
     # escape the single-quotes.
@@ -424,6 +436,8 @@ def sh_string(s):
     if quoted:
         quoted_string += SINGLE_QUOTE
 
+    if isinstance(orig_s, six.binary_type):
+        quoted_string = quoted_string.encode('latin1')
     return quoted_string
 
 def sh_prepare(variables, export = False):

@@ -138,8 +138,8 @@ class Buffer(Exception):
         Example:
 
             >>> b = Buffer()
-            >>> b.add('hello')
-            >>> b.add('world')
+            >>> b.add(b'hello')
+            >>> b.add(b'world')
             >>> b.get(1)
             'h'
             >>> b.get()

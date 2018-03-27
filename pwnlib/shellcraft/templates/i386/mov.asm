@@ -3,6 +3,7 @@
   from pwnlib.util import lists, packing, fiddling, misc
   from pwnlib.log import getLogger
   from pwnlib.shellcraft.registers import get_register, is_register, bits_required
+  import six
   log = getLogger('pwnlib.shellcraft.i386.mov')
 %>
 <%page args="dest, src, stack_allowed = True"/>
@@ -142,7 +143,7 @@ else:
     % else:
     mov ${dest}, ${src}
     % endif
-% elif isinstance(src, (int, long)):
+% elif isinstance(src, six.integer_types):
 ## Special case for zeroes
     % if src == 0:
         xor ${dest}, ${dest}
@@ -157,20 +158,20 @@ else:
     % elif stack_allowed and dest.size == 32 and okay(srcp):
         push ${pretty(src)}
         pop ${dest}
-    % elif stack_allowed and dest.size == 32 and  -127 <= srcs < 128 and okay(srcp[0]):
+    % elif stack_allowed and dest.size == 32 and  -127 <= srcs < 128 and okay(srcp[:1]):
         push ${pretty(src)}
         pop ${dest}
 ## Easy case, everybody is happy
     % elif okay(srcp):
         mov ${dest}, ${pretty(src)}
 ## If it's an IMM8, we can use the 8-bit register
-    % elif 0 <= srcu < 2**8 and okay(srcp[0]) and dest.sizes.get(8, 0):
+    % elif 0 <= srcu < 2**8 and okay(srcp[:1]) and dest.sizes.get(8, 0):
         xor ${dest}, ${dest}
         mov ${dest.sizes[8]}, ${pretty(srcu)}
 ## If it's an IMM16, but there's nothing in the lower 8 bits,
 ## we can use the high-8-bits register.
 ## However, we must check that it exists.
-    % elif srcu == (srcu & 0xff00) and okay(srcp[1]) and dest.ff00:
+    % elif srcu == (srcu & 0xff00) and okay(srcp[1:2]) and dest.ff00:
         xor ${dest}, ${dest}
         mov ${dest.ff00}, ${pretty(src)} >> 8
 ## If it's an IMM16, use the 16-bit register

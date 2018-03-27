@@ -254,7 +254,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
     if pid == 0:
         # Closing the file descriptors makes everything fail under tmux on OSX.
         if platform.system() != 'Darwin':
-            devnull = open(os.devnull, 'rwb')
+            devnull = open(os.devnull, 'r+b')
             os.dup2(devnull.fileno(), 0)
             os.dup2(devnull.fileno(), 1)
             os.dup2(devnull.fileno(), 2)

@@ -240,7 +240,13 @@ class Thread(threading.Thread):
             differently.
         """
         context.update(**self.old)
-        super(Thread, self).__bootstrap()
+        sup = super(Thread, self)
+        bootstrap = getattr(sup, '_bootstrap', None)
+        if bootstrap is None:
+            sup.__bootstrap()
+        else:
+            bootstrap()
+    _bootstrap = __bootstrap
 
 def _longest(d):
     """
