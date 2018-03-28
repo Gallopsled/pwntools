@@ -35,13 +35,13 @@ the :mod:`pwnlib.adb` module.
 .. code-block:: python
 
     # Get a process listing
-    print adb.process(['ps']).recvall()
+    print(adb.process(['ps']).recvall())
 
     # Fetch properties
-    print adb.properties.ro.build.fingerprint
+    print(adb.properties.ro.build.fingerprint)
 
     # Read and write files
-    print adb.read('/proc/version')
+    print(adb.read('/proc/version'))
     adb.write('/data/local/tmp/foo', 'my data')
 
 """
@@ -357,7 +357,6 @@ class AdbDevice(Device):
 
             if name not in g:
                 raise AttributeError('%r object has no attribute %r' % (type(self).__name__,name))
-
             value = g[name]
 
         if not hasattr(value, '__call__'):
@@ -488,7 +487,7 @@ def pull(remote_path, local_path=None):
     Example:
 
         >>> _=adb.pull('/proc/version', './proc-version')
-        >>> print read('./proc-version') # doctest: +ELLIPSIS
+        >>> print(read('./proc-version').decode('utf-8')) # doctest: +ELLIPSIS
         Linux version ...
     """
     if local_path is None:
@@ -575,7 +574,7 @@ def read(path, target=None, callback=None):
 
     Examples:
 
-        >>> print adb.read('/proc/version') # doctest: +ELLIPSIS
+        >>> print(adb.read('/proc/version').decode('utf-8')) # doctest: +ELLIPSIS
         Linux version ...
         >>> adb.read('/does/not/exist')
         Traceback (most recent call last):
@@ -604,7 +603,7 @@ def write(path, data=b''):
 
     Examples:
 
-        >>> adb.write('/dev/null', 'data')
+        >>> adb.write('/dev/null', b'data')
         >>> adb.write('/data/local/tmp/')
     """
     with tempfile.NamedTemporaryFile() as temp:
@@ -652,7 +651,7 @@ def mkdir(path):
 
         # Any output at all is an error
         if result:
-            log.error(result.rstrip())
+            log.error(result.rstrip().decode('utf-8'))
 
 @context.quietfunc
 @with_device
@@ -748,12 +747,12 @@ def unlink(path, recursive=False):
         if isdir(path) and c.list(path) and not recursive:
             log.error("Cannot delete non-empty directory %r without recursive=True" % path)
 
-        flags = '-rf' if recursive else '-r'
+        flags = '-rf' if recursive else '-f'
 
         output = c.execute(['rm', flags, path]).recvall()
 
         if output:
-            log.error(output)
+            log.error(output.decode('utf-8'))
 
 @with_device
 def process(argv, *a, **kw):
@@ -767,7 +766,7 @@ def process(argv, *a, **kw):
     Examples:
 
         >>> adb.root()
-        >>> print adb.process(['cat','/proc/version']).recvall() # doctest: +ELLIPSIS
+        >>> print(adb.process(['cat','/proc/version']).recvall().decode('utf-8')) # doctest: +ELLIPSIS
         Linux version ...
     """
     if isinstance(argv, (bytes, six.text_type)):
@@ -827,6 +826,8 @@ done
 
     which_cmd = which_cmd.strip()
     data = process(['sh','-c', which_cmd], *a, **kw).recvall()
+    if not hasattr(data, 'encode'):
+        data = data.decode('utf-8')
     result = []
 
     for path in data.split('\x00'):
@@ -915,10 +916,16 @@ def getprop(name=None):
     """
     with context.quiet:
         if name:
-            return process(['getprop', name]).recvall().strip()
+            result = process(['getprop', name]).recvall().strip()
+            if not hasattr(result, 'encode'):
+                result = result.decode('utf-8')
+            return result
 
 
         result = process(['getprop']).recvall()
+
+    if not hasattr(result, 'encode'):
+        result = result.decode('utf-8')
 
     expr = r'\[([^\]]+)\]: \[(.*)\]'
 
