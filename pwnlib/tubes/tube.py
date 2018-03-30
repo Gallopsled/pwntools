@@ -786,8 +786,9 @@ class tube(Timeout, Logger):
                     cur = self.recv(timeout = 0.05)
                     cur = cur.replace(self.newline, b'\n')
                     if cur:
-                        sys.stdout.write(cur)
-                        sys.stdout.flush()
+                        stdout = getattr(sys.stdout, 'buffer', sys.stdout)
+                        stdout.write(cur)
+                        stdout.flush()
                 except EOFError:
                     self.info('Got EOF while reading in interactive')
                     break
@@ -801,7 +802,8 @@ class tube(Timeout, Logger):
                 if term.term_mode:
                     data = term.readline.readline(prompt = prompt, float = True)
                 else:
-                    data = sys.stdin.read(1)
+                    stdin = getattr(sys.stdin, 'buffer', sys.stdin)
+                    data = stdin.read(1)
 
                 if data:
                     try:

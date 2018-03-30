@@ -389,14 +389,14 @@ def readline(_size = None, prompt = '', float = True, priority = 10):
                     keymap.handle_input()
                 except EOFError:
                     if len(buffer_left + buffer_right) == 0:
-                        return ''
+                        return b''
                 if eof:
-                    return ''
+                    return b''
                 else:
                     buffer = (buffer_left + buffer_right)
                     if buffer:
                         history.insert(0, buffer)
-                    return force_to_bytes(buffer) + '\n'
+                    return force_to_bytes(buffer) + b'\n'
             except KeyboardInterrupt:
                 control_c()
     finally:

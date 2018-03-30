@@ -352,7 +352,7 @@ def render_cell(cell, clear_after = False):
                     col = indent
                 c = x[i]
                 if not hasattr(c, 'encode'):
-                    c = c.decode('latin1')
+                    c = c.decode('utf-8')
                 put(c)
                 col += 1
                 i += 1
@@ -498,7 +498,7 @@ def output(s = '', float = False, priority = 10, frozen = False,
         i += 1
         cells.insert(i, cell)
         h = Handle(cell, is_floating)
-        if s == '':
+        if not s:
             cell.end = cell.start
             return h
         # the invariant is that the cursor is placed after the last cell
