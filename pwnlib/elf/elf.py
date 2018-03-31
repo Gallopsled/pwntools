@@ -686,10 +686,6 @@ class ELF(ELFFile):
                     continue
                 if sym.entry.st_info['type'] == 'STT_FUNC' and sym.entry.st_size != 0:
                     name = sym.name
-                    try:
-                        name = codecs.encode(name, 'latin-1')
-                    except Exception:
-                        pass
                     if name not in self.symbols:
                         continue
                     addr = self.symbols[name]

@@ -786,7 +786,9 @@ class tube(Timeout, Logger):
                     cur = self.recv(timeout = 0.05)
                     cur = cur.replace(self.newline, b'\n')
                     if cur:
-                        stdout = getattr(sys.stdout, 'buffer', sys.stdout)
+                        stdout = sys.stdout
+                        if not term.term_mode:
+                            stdout = getattr(stdout, 'buffer', stdout)
                         stdout.write(cur)
                         stdout.flush()
                 except EOFError:
@@ -841,7 +843,10 @@ class tube(Timeout, Logger):
         try:
             while True:
                 buf.add(function())
-                sys.stdout.write(buf.data[-1])
+                stdout = sys.stdout
+                if not term.term_mode:
+                    stdout = getattr(stdout, 'buffer', stdout)
+                stdout.write(buf.data[-1])
         except KeyboardInterrupt:
             pass
         except EOFError:
