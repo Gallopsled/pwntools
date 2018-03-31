@@ -224,15 +224,18 @@ class ssh_channel(sock):
             while not event.is_set():
                 try:
                     cur = self.recv(timeout = 0.05)
-                    cur = cur.replace('\r\n','\n')
-                    cur = cur.replace('\r','')
+                    cur = cur.replace(b'\r\n',b'\n')
+                    cur = cur.replace(b'\r',b'')
                     if cur == None:
                         continue
-                    elif cur == '\a':
+                    elif cur == b'\a':
                         # Ugly hack until term unstands bell characters
                         continue
-                    sys.stdout.write(cur)
-                    sys.stdout.flush()
+                    stdout = sys.stdout
+                    if not term.term_mode:
+                        stdout = getattr(stdout, 'buffer', stdout)
+                    stdout.write(cur)
+                    stdout.flush()
                 except EOFError:
                     self.info('Got EOF while reading in interactive')
                     event.set()
@@ -252,11 +255,12 @@ class ssh_channel(sock):
                     if not event.is_set():
                         raise
             else:
-                data = sys.stdin.read(1)
+                stdin = getattr(sys.stdin, 'buffer', sys.stdin)
+                data = stdin.read(1)
                 if not data:
                     event.set()
                 else:
-                    data = [ord(data)]
+                    data = [six.byte2int(data)]
 
             if data:
                 try:
@@ -823,24 +827,26 @@ class ssh(Timeout, Logger):
         # Python doesn't like when an arg in argv contains '\x00'
         # -> execve() arg 2 must contain only strings
         for i, arg in enumerate(argv):
-            if isinstance(arg, six.text_type):
-                arg = arg.encode('utf-8')
+            if isinstance(oarg, six.text_type):
+                arg = oarg.encode('utf-8')
+            else:
+                arg = oarg
             if b'\x00' in arg[:-1]:
-                self.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
+                self.error('Inappropriate nulls in argv[%i]: %r' % (i, oarg))
             argv[i] = arg.rstrip(b'\x00')
 
         # Python also doesn't like when envp contains '\x00'
         env2 = {}
         if env and hasattr(env, 'items'):
             for k, v in env.items():
-                if '\x00' in k[:-1]:
-                    self.error('Inappropriate nulls in environment key %r' % k)
-                if '\x00' in v[:-1]:
-                    self.error('Inappropriate nulls in environment value %r=%r' % (k, v))
                 if isinstance(k, six.text_type):
                     k = k.encode('utf-8')
                 if isinstance(v, six.text_type):
                     v = v.encode('utf-8')
+                if b'\x00' in k[:-1]:
+                    self.error('Inappropriate nulls in environment key %r' % k)
+                if b'\x00' in v[:-1]:
+                    self.error('Inappropriate nulls in environment value %r=%r' % (k, v))
                 env2[k.rstrip(b'\x00')] = v.rstrip(b'\x00')
         env = env2 or env
 

@@ -524,7 +524,6 @@ class process(tube):
                 arg = oarg
             if b'\x00' in arg[:-1]:
                 self.error('Inappropriate nulls in argv[%i]: %r' % (i, oarg))
-
             argv[i] = arg.rstrip(b'\x00')
 
         #
@@ -574,21 +573,25 @@ class process(tube):
         #
 
         # Create a duplicate so we can modify it safely
-        env = (os.environ if env is None else env).copy()
+        env = os.environ if env is None else env
 
+        env2 = {}
         for k,v in env.items():
             if not isinstance(k, (bytes, six.text_type)):
                 self.error('Environment keys must be strings: %r' % k)
             if not isinstance(k, (bytes, six.text_type)):
                 self.error('Environment values must be strings: %r=%r' % (k,v))
-            if '\x00' in k[:-1]:
+            if isinstance(k, six.text_type):
+                k = k.encode('utf-8')
+            if isinstance(v, six.text_type):
+                v = v.encode('utf-8')
+            if b'\x00' in k[:-1]:
                 self.error('Inappropriate nulls in env key: %r' % (k))
-            if '\x00' in v[:-1]:
+            if b'\x00' in v[:-1]:
                 self.error('Inappropriate nulls in env value: %r=%r' % (k, v))
+            env2[k.rstrip(b'\x00')] = v.rstrip(b'\x00')
 
-            env[k.rstrip('\x00')] = v.rstrip('\x00')
-
-        return executable, argv, env
+        return executable, argv, env2
 
     def _handles(self, stdin, stdout, stderr):
         master = slave = None
