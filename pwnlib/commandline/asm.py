@@ -45,14 +45,14 @@ parser.add_argument(
 parser.add_argument(
     '-v', '--avoid',
     action='append',
-    help = 'Encode the shellcode to avoid the listed bytes (provided as hex; default: 000a)'
+    help = 'Encode the shellcode to avoid the listed bytes (provided as hex)'
 )
 
 parser.add_argument(
     '-n', '--newline',
     dest='avoid',
     action='append_const',
-    const='\n',
+    const='0a',
     help = 'Encode the shellcode to avoid newlines'
 )
 
@@ -60,7 +60,7 @@ parser.add_argument(
     '-z', '--zero',
     dest='avoid',
     action='append_const',
-    const='\x00',
+    const='00',
     help = 'Encode the shellcode to avoid NULL bytes'
 )
 
@@ -106,7 +106,8 @@ def main(args):
     formatters = {'r':str, 'h':enhex, 's':repr}
 
     if args.avoid:
-        output = encode(output, args.avoid)
+        avoid = unhex(''.join(args.avoid))
+        output = encode(output, avoid)
 
     if args.debug:
         proc = gdb.debug_shellcode(output, arch=context.arch)

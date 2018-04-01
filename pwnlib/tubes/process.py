@@ -875,7 +875,7 @@ class process(tube):
         from pwnlib.elf import ELF
 
         for lib, address in self.libs().items():
-            if 'libc.so' in lib:
+            if 'libc.so' in lib or 'libc-' in lib:
                 e = ELF(lib)
                 e.address = address
                 return e
