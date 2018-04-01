@@ -234,7 +234,7 @@ class Call(object):
             else:
                 args.append(arg)
 
-        name = self.name or fmt & self.target
+        name = self.name or (fmt % self.target)
         arg_str = []
         for arg in args:
             if isinstance(arg, (int,long)) and arg > 0x100:
