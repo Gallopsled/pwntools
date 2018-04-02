@@ -4,14 +4,7 @@ from os.path import basename
 from docutils import nodes
 from docutils import statemachine
 
-try:
-    from sphinx.util.compat import Directive
-except ImportError:
-    # Deprecated
-    # 1.6b1
-    # sphinx.util.compat.Directive class is now deprecated.
-    # Please use instead docutils.parsers.rst.Directive
-    from docutils.parsers.rst import Directive
+from docutils.parsers.rst import Directive
 
 try:
     from StringIO import StringIO
