@@ -782,7 +782,7 @@ class DynELF(object):
         maskwords = leak.field(hshtab, elf.GNU_HASH.maskwords)
 
         # Skip over the bloom filter to get to the buckets
-        elfword = self.elfclass / 8
+        elfword = self.elfclass // 8
         buckets = hshtab + sizeof(elf.GNU_HASH) + (elfword * maskwords)
 
         # The chains come after the buckets

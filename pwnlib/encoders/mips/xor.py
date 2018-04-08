@@ -118,7 +118,7 @@ class MipsXorEncoder(Encoder):
 
         assert 0 == len(raw_bytes) % context.bytes, "Payload is not aligned"
 
-        size = (len(raw_bytes)/4) + 1
+        size = (len(raw_bytes) // 4) + 1
         assert size < 0x10000, "Payload is too long"
 
         size   = size ^ 0xffff

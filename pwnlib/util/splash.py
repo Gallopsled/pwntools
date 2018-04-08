@@ -40,7 +40,7 @@ def splash():
             text.cyan   , text.bold_cyan   ,
         ]
         def getcolor(n):
-            return colors[(n / 4) % len(colors)]
+            return colors[(n // 4) % len(colors)]
 
         lines = ['    ' + line + '\n' for line in _banner.strip('\n').split('\n')]
 

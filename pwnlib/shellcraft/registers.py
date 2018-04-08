@@ -165,7 +165,7 @@ class Register(object):
 
     @property
     def bytes(self):
-        return self.bits / 8
+        return self.bits // 8
 
     def fits(self, value):
         return self.size >= bits_required(value)

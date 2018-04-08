@@ -46,7 +46,7 @@ class BitPolynom(object):
         BitPolynom('x**3 + x**2')
         >>> p1 * p2
         BitPolynom('x**5 + x**4 + 1')
-        >>> p1 / p2
+        >>> p1 // p2
         BitPolynom('x + 1')
         >>> p1 % p2
         BitPolynom('x')
@@ -154,6 +154,9 @@ class BitPolynom(object):
 
     def __rdiv__(self, other):
         return divmod(other, self)[0]
+
+    __floordiv__ = __div__
+    __rfloordiv__ = __rdiv__
 
     def __mod__(self, other):
         return divmod(self, other)[1]

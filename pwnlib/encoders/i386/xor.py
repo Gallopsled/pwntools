@@ -69,7 +69,7 @@ end:
 
         a, b = xor_pair(raw_bytes, avoid)
 
-        mov_ecx = shellcraft.i386.mov('ecx', len(raw_bytes) / context.bytes)
+        mov_ecx = shellcraft.i386.mov('ecx', len(raw_bytes) // context.bytes)
         decoder = self.decoder % mov_ecx
         decoder = asm(decoder)
 

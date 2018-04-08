@@ -5,4 +5,4 @@
     ${amd64.linux.mmap_rwx(size)}
     ${amd64.mov('rsp', 'rax')}
 
-    add rsp, ${hex((size * 3 / 4) & ~7)}
+    add rsp, ${hex((size * 3 // 4) & ~7)}
