@@ -1,4 +1,6 @@
 #!/usr/bin/env python2
+from __future__ import print_function
+
 import glob
 import os
 import platform
@@ -64,8 +66,8 @@ install_requires     = ['paramiko>=1.15.2',
 # Check that the user has installed the Python development headers
 PythonH = os.path.join(get_python_inc(), 'Python.h')
 if not os.path.exists(PythonH):
-    print >> sys.stderr, "You must install the Python development headers!"
-    print >> sys.stderr, "$ apt-get install python-dev"
+    print("You must install the Python development headers!", file=sys.stderr)
+    print("$ apt-get install python-dev", file=sys.stderr)
     sys.exit(-1)
 
 # Convert README.md to reStructuredText for PyPI
@@ -73,12 +75,12 @@ long_description = ''
 try:
     long_description = subprocess.check_output(['pandoc', 'README.md', '--to=rst'])
 except Exception as e:
-    print >>sys.stderr, "Failed to convert README.md through pandoc, proceeding anyway"
+    print("Failed to convert README.md through pandoc, proceeding anyway", file=sys.stderr)
     traceback.print_exc()
 
 setup(
     name                 = 'pwntools',
-    python_requires      = '~=2.7',
+    python_requires      = '>=2.7',
     packages             = find_packages(),
     version              = '3.14.0dev',
     data_files           = [('',
