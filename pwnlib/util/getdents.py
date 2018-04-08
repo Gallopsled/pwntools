@@ -23,7 +23,7 @@ class linux_dirent(object):
         buf=buf[2:]
 
         # Name
-        self.d_name = buf[:buf.index('\x00')]
+        self.d_name = buf[:buf.index(b'\x00')].decode('utf-8')
 
     def __len__(self):
         return self.d_reclen # 2 * context.bytes + 2 + len(self.d_name) + 1
