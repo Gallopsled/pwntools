@@ -131,7 +131,7 @@ def consume(n, iterator):
     Examples:
       >>> i = count()
       >>> consume(5, i)
-      >>> i.next()
+      >>> next(i)
       5
       >>> i = iter([1, 2, 3, 4, 5])
       >>> consume(2, i)
@@ -396,11 +396,11 @@ def roundrobin(*iterables):
     """
     # Recipe credited to George Sakkis
     pending = len(iterables)
-    nexts = cycle(iter(it).next for it in iterables)
+    nexts = cycle(iter(it) for it in iterables)
     while pending:
         try:
-            for next in nexts:
-                yield next()
+            for nxt in nexts:
+                yield next(nxt)
         except StopIteration:
             pending -= 1
             nexts = cycle(islice(nexts, pending))
@@ -546,13 +546,13 @@ def iter_except(func, exception):
     Examples:
       >>> s = {1, 2, 3}
       >>> i = iter_except(s.pop, KeyError)
-      >>> i.next()
+      >>> next(i)
       1
-      >>> i.next()
+      >>> next(i)
       2
-      >>> i.next()
+      >>> next(i)
       3
-      >>> i.next()
+      >>> next(i)
       Traceback (most recent call last):
           ...
       StopIteration
@@ -672,12 +672,12 @@ def lookahead(n, iterable):
       >>> i = count()
       >>> lookahead(4, i)
       4
-      >>> i.next()
+      >>> next(i)
       0
       >>> i = count()
       >>> nth(4, i)
       4
-      >>> i.next()
+      >>> next(i)
       5
       >>> lookahead(4, i)
       10
