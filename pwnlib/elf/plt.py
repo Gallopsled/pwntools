@@ -1,5 +1,6 @@
 """Emulates instructions in the PLT to locate symbols more accurately.
 """
+from __future__ import division
 import logging
 
 from pwnlib.args import args

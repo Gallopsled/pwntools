@@ -28,6 +28,7 @@ supported by ``pwnlib.util.safeeval.expr``.
     terminal=['x-terminal-emulator', '-e']
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import ConfigParser
 import os

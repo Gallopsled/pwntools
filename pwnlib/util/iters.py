@@ -2,6 +2,7 @@
 This module includes and extends the standard module :mod:`itertools`.
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import collections
 import copy

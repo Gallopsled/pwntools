@@ -1,5 +1,6 @@
 """Silly module mostly meant as an easter-egg."""
 from __future__ import absolute_import
+from __future__ import division
 
 import threading
 import time

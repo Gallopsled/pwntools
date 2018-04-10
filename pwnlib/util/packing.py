@@ -31,6 +31,7 @@ Examples:
     '\xff\x01'
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import struct
 import sys

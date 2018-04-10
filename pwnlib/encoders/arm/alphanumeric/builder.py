@@ -1,3 +1,4 @@
+from __future__ import division
 import alphanum_byte
 import ARM_Instructions
 import random_funcs

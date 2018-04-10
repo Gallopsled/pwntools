@@ -5,6 +5,7 @@ Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import collections
 import functools

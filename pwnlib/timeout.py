@@ -3,6 +3,8 @@
 """
 Timeout encapsulation, complete with countdowns and scope managers.
 """
+from __future__ import division
+
 import time
 
 import pwnlib

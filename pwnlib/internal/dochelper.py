@@ -1,3 +1,5 @@
+from __future__ import division
+
 import sys
 from os.path import basename
 

@@ -12,6 +12,7 @@ the crc32-sum of ``'A'*40000``.
 An obvious optimization would be to actually generate some lookup-tables.
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import sys
 import types
