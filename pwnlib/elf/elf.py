@@ -34,6 +34,7 @@ Module Members
 --------------
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import codecs
 import collections
@@ -248,7 +249,7 @@ class ELF(ELFFile):
         self.bits = self.elfclass
 
         #: :class:`int`: Pointer width, in bytes
-        self.bytes = self.bits / 8
+        self.bytes = self.bits // 8
 
         if self.arch == 'mips':
             mask = lambda a, b: a & b == b

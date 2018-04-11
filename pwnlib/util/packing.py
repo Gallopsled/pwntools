@@ -31,6 +31,7 @@ Examples:
     '\xff\x01'
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import struct
 import sys
@@ -142,7 +143,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         # Normalize number and size now that we have verified them
         # From now on we can treat positive and negative numbers the same
         number = number & ((1 << word_size) - 1)
-        byte_size = (word_size + 7) / 8
+        byte_size = (word_size + 7) // 8
 
         out = []
 
@@ -205,7 +206,7 @@ def unpack(data, word_size = None):
     elif not isinstance(word_size, (int, long)) or word_size <= 0:
         raise ValueError("unpack(): word_size must be a positive integer or the string 'all'")
 
-    byte_size = (word_size + 7) / 8
+    byte_size = (word_size + 7) // 8
 
     if byte_size != len(data):
         raise ValueError("unpack(): data must have length %d, since word_size was %d" % (byte_size, word_size))

@@ -2,6 +2,7 @@
 This module includes and extends the standard module :mod:`itertools`.
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import collections
 import copy
@@ -783,7 +784,7 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
     if method == 'fixed':
         total_iterations = len(alphabet) ** length
     else:
-        total_iterations = (len(alphabet) ** (length + 1) / (len(alphabet) - 1)) - 1
+        total_iterations = (len(alphabet) ** (length + 1) // (len(alphabet) - 1)) - 1
 
     if start is not None:
         i, N = start
@@ -791,7 +792,7 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
             raise ValueError('bruteforce(): invalid starting point')
 
         i -= 1
-        chunk_size = total_iterations / N
+        chunk_size = total_iterations // N
         rest = total_iterations % N
         starting_point = 0
 

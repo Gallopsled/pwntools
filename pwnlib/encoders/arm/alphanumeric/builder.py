@@ -1,3 +1,4 @@
+from __future__ import division
 import alphanum_byte
 import ARM_Instructions
 import random_funcs
@@ -360,12 +361,12 @@ class builder:
       v1 = random_funcs.randel(arr1)
       v2 = random_funcs.randel(arr1)
 
-      topv = ((total - (v1 + v2))/4) + 1
+      topv = ((total - (v1 + v2)) // 4) + 1
 
       w1 = random_funcs.randel(arr1)
       w2 = random_funcs.randel(arr1)
 
-      topw = ((total - (w1 + w2))/4) + 2
+      topw = ((total - (w1 + w2)) // 4) + 2
 
       arrop = [EOR, SUB, RSB]
       arrcond = [PL, MI]
@@ -373,7 +374,7 @@ class builder:
       arrd = [3, 5, 7]
       arrn = [1, 2, 3, 4, 5, 6, 7, 8, 9]
       p = 1
-      while p <= ((total-8)/4):
+      while p <= ((total-8) // 4):
          op = random_funcs.randel(arrop)
          cond = random_funcs.randel(arrcond)
          if op == EOR:
@@ -422,7 +423,7 @@ class builder:
       #SUBPL rj, ri, #x*/
       output += ARM_Instructions.dpimm(SUB, PL, 0, self.j, self.i, self.x)
 
-      quo = (self.size - 4) / 0x7a
+      quo = (self.size - 4) // 0x7a
       if quo >= 1:
          for p in range(quo):
             #SUBPL rj, rj, #0x7a*/
