@@ -1206,6 +1206,92 @@ class ROP(object):
 
         return result
 
+    def ret2csu(self, edi, rsi, rdx, rbx=0, rbp=0, r12=0, r13=0, r14=0, r15=0, call=None):
+        """Build a ret2csu ROPchain
+
+        Arguments:
+            edi, rsi, rdx: Three primary registers to populate
+            rbx, rbp, r12, r13, r14, r15: Optional registers to populate
+            call: Pointer to the address of a function to call during
+                second gadget. If None then use the address of _fini in the
+                .dynamic section. .got.plt entries are a good target. Required
+                for PIE binaries.
+
+        Examples:
+            >>> rop = ROP(elf64_noPIE)
+            >>> rop.ret2csu(edi, rsi, rdx)
+            >>> print rop.dump()
+
+            >>> rop = ROP(elf64_PIE)
+            >>> rop.ret2csu(edi, rsi, rdx, call=elf.got.read)
+            >>> print rop.dump()
+        """
+        if self.migrated:
+            log.error('Cannot append to a migrated chain')
+
+        if context.bits != 64:
+            log.error('64bit binaries only')
+
+        # Find an appropriate, non-library ELF.
+        # Prioritise non-PIE binaries so we can use _fini
+        exes = (elf for elf in self.elfs if not elf.library)
+        if not exes:
+            log.error('No non-library binaries in [elfs]')
+
+        for elf in exes:
+            if not elf.pie:
+                if elf.sym.has_key(u'__libc_csu_init'):
+                    break
+                nonpie = elf
+            elif elf.sym.has_key(u'__libc_csu_init'):
+                csu = elf
+
+        if elf.pie:
+            if 'nonpie' in locals():
+                elf = nonpie
+            elif 'csu' in locals():
+                elf = csu
+
+        # Resolve __libc_csu_init if candidate binary is stripped
+        if not elf.sym.has_key(u'__libc_csu_init'):
+            if elf.pie:
+                elf.sym[u'__libc_csu_init'] = u64(elf.read(elf.entry + 0x19, 4).ljust(8, '\x00')) + elf.entry + 0x1d
+            else:
+                elf.sym[u'__libc_csu_init'] = u64(elf.read(elf.entry + 0x19, 4).ljust(8, '\x00'))
+
+        # Resolve location of _fini address if required
+        if not elf.pie and not call:
+            fini_offset = 0x28 # delta between .dynamic & location of _fini address
+            dyn = elf.get_section_by_name('.dynamic').header['sh_addr']
+            fini = dyn + fini_offset
+        elif elf.pie and not call:
+            log.error('No non-PIE binaries in [elfs], \'call\' parameter is required')
+
+        # 1st gadget: Populate registers for 2nd gadget
+        offset_g1 = 0x5a # delta between __libc_csu_init & 1st gadget
+        self.raw(elf.sym[u'__libc_csu_init'] + offset_g1)
+        self.raw(0x00) # pop rbx
+        self.raw(0x01) # pop rbp
+        if call:
+            self.raw(call) # pop r12
+        else:
+            self.raw(fini) # pop r12
+        self.raw(rdx)  # pop r13
+        self.raw(rsi)  # pop r14
+        self.raw(edi)  # pop r15
+
+        # 2nd gadget: Populate edi, rsi & rdx. Populate optional registers
+        offset_g2 = 0x40 # delta between __libc_csu_init & 2nd gadget
+        self.raw(elf.sym[u'__libc_csu_init'] + offset_g2)
+        self.raw(0x00) # add rsp, 8
+        self.raw(rbx)  # pop rbx
+        self.raw(rbp)  # pop rbp
+        self.raw(r12)  # pop r12
+        self.raw(r13)  # pop r13
+        self.raw(r14)  # pop r14
+        self.raw(r15)  # pop r15
+
+
     def __getattr__(self, attr):
         """Helper to make finding ROP gadets easier.
 
