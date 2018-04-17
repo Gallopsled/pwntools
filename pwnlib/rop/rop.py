@@ -244,6 +244,8 @@ import re
 import string
 import sys
 import tempfile
+from capstone import *
+from capstone.x86 import *
 
 from pwnlib import abi
 from pwnlib import constants
@@ -1216,25 +1218,19 @@ class ROP(object):
                 second gadget. If None then use the address of _fini in the
                 .dynamic section. .got.plt entries are a good target. Required
                 for PIE binaries.
-
-        Examples:
-            >>> rop = ROP(elf64_noPIE)
-            >>> rop.ret2csu(edi, rsi, rdx)
-            >>> print rop.dump()
-
-            >>> rop = ROP(elf64_PIE)
-            >>> rop.ret2csu(edi, rsi, rdx, call=elf.got.read)
-            >>> print rop.dump()
         """
         if self.migrated:
             log.error('Cannot append to a migrated chain')
 
-        if context.bits != 64:
-            log.error('64bit binaries only')
+        # Ensure 'edi' argument is packable
+        try:
+            p32(edi)
+        except(struct.error):
+            log.error('edi must be a 32bit value')
 
         # Find an appropriate, non-library ELF.
         # Prioritise non-PIE binaries so we can use _fini
-        exes = (elf for elf in self.elfs if not elf.library)
+        exes = (elf for elf in self.elfs if not elf.library and elf.bits == 64)
         if not exes:
             log.error('No non-library binaries in [elfs]')
 
@@ -1252,24 +1248,40 @@ class ROP(object):
             elif 'csu' in locals():
                 elf = csu
 
-        # Resolve __libc_csu_init if candidate binary is stripped
+        # Prepare capstone
+        md = Cs(CS_ARCH_X86, CS_MODE_64)
+        md.detail = True
+
+        # Resolve __libc_csu_ symbols if candidate binary is stripped
         if not elf.sym.has_key(u'__libc_csu_init'):
             if elf.pie:
-                elf.sym[u'__libc_csu_init'] = u64(elf.read(elf.entry + 0x19, 4).ljust(8, '\x00')) + elf.entry + 0x1d
+                for insn in md.disasm(elf.section('.text'), elf.offset_to_vaddr(elf.get_section_by_name('.text').header['sh_offset'])):
+                    if insn.mnemonic == 'lea' and insn.operands[0].reg == X86_REG_R8:
+                        elf.sym[u'__libc_csu_fini'] = insn.address + insn.size + insn.disp
+                    if insn.mnemonic == 'lea' and insn.operands[0].reg == X86_REG_RCX:
+                        elf.sym[u'__libc_csu_init'] = insn.address + insn.size + insn.disp
+                        break
             else:
-                elf.sym[u'__libc_csu_init'] = u64(elf.read(elf.entry + 0x19, 4).ljust(8, '\x00'))
+                for insn in md.disasm(elf.section('.text'), elf.get_section_by_name('.text').header['sh_addr']):
+                    if insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_R8:
+                        elf.sym[u'__libc_csu_fini'] = insn.operands[1].imm
+                    if insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_RCX:
+                        elf.sym[u'__libc_csu_init'] = insn.operands[1].imm
+                        break
 
         # Resolve location of _fini address if required
         if not elf.pie and not call:
-            fini_offset = 0x28 # delta between .dynamic & location of _fini address
-            dyn = elf.get_section_by_name('.dynamic').header['sh_addr']
-            fini = dyn + fini_offset
+            fini = elf.search(p64(elf.dynamic_by_tag('DT_FINI')['d_ptr'])).next()
         elif elf.pie and not call:
             log.error('No non-PIE binaries in [elfs], \'call\' parameter is required')
 
-        # 1st gadget: Populate registers for 2nd gadget
-        offset_g1 = 0x5a # delta between __libc_csu_init & 1st gadget
-        self.raw(elf.sym[u'__libc_csu_init'] + offset_g1)
+        csu_function = elf.read(elf.sym['__libc_csu_init'], elf.sym['__libc_csu_fini'] - elf.sym['__libc_csu_init'])
+
+        # 1st gadget: Populate registers in preparation for 2nd gadget
+        for insn in md.disasm(csu_function, elf.sym['__libc_csu_init']):
+            if insn.mnemonic == 'pop' and insn.operands[0].reg == X86_REG_RBX:
+                self.raw(insn.address)
+                break
         self.raw(0x00) # pop rbx
         self.raw(0x01) # pop rbp
         if call:
@@ -1281,8 +1293,10 @@ class ROP(object):
         self.raw(edi)  # pop r15
 
         # 2nd gadget: Populate edi, rsi & rdx. Populate optional registers
-        offset_g2 = 0x40 # delta between __libc_csu_init & 2nd gadget
-        self.raw(elf.sym[u'__libc_csu_init'] + offset_g2)
+        for insn in md.disasm(csu_function, elf.sym['__libc_csu_init']):
+            if insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_RDX and insn.operands[1].reg == X86_REG_R13:
+                self.raw(insn.address)
+                break
         self.raw(0x00) # add rsp, 8
         self.raw(rbx)  # pop rbx
         self.raw(rbp)  # pop rbp
