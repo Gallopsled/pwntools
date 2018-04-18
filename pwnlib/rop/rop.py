@@ -1236,10 +1236,10 @@ class ROP(object):
 
         for elf in exes:
             if not elf.pie:
-                if elf.sym.has_key(u'__libc_csu_init'):
+                if u'__libc_csu_init' in elf.symbols:
                     break
                 nonpie = elf
-            elif elf.sym.has_key(u'__libc_csu_init'):
+            elif u'__libc_csu_init' in elf.symbols:
                 csu = elf
 
         if elf.pie:
@@ -1253,7 +1253,7 @@ class ROP(object):
         md.detail = True
 
         # Resolve __libc_csu_ symbols if candidate binary is stripped
-        if not elf.sym.has_key(u'__libc_csu_init'):
+        if not u'__libc_csu_init' in elf.symbols:
             if elf.pie:
                 for insn in md.disasm(elf.section('.text'), elf.offset_to_vaddr(elf.get_section_by_name('.text').header['sh_offset'])):
                     if insn.mnemonic == 'lea' and insn.operands[0].reg == X86_REG_R8:
