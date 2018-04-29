@@ -584,7 +584,7 @@ class process(tube):
             if isinstance(k, six.text_type):
                 k = k.encode('utf-8')
             if isinstance(v, six.text_type):
-                v = v.encode('utf-8')
+                v = v.encode('utf-8', 'surrogateescape')
             if b'\x00' in k[:-1]:
                 self.error('Inappropriate nulls in env key: %r' % (k))
             if b'\x00' in v[:-1]:
