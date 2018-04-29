@@ -92,7 +92,14 @@ jobs:
         adb wait-for-device
         echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope # required by some gdb doctests
         PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest
-        coverage combine
+
+    - name: Coverage running examples
+      run: |
+        python travis/coverage_chdir.py examples/fmtstr examples/fmtstr/exploit.py
+        python travis/coverage_chdir.py examples/fmtstr examples/fmtstr/exploit2.py
+        coverage run examples/asm.py
+        coverage run examples/asm.py
+        coverage run examples/text.py
 
     - name: Build source and wheel distributions
       run: |
@@ -104,4 +111,6 @@ jobs:
         path: dist/*
 
     - name: Upload coverage to coveralls.io
-      run:  COVERALLS_REPO_TOKEN=PP20MEgztXIQJJTguQwe2jeCh6Bm4lkbv coveralls
+      run: |
+        coverage combine
+        COVERALLS_REPO_TOKEN=PP20MEgztXIQJJTguQwe2jeCh6Bm4lkbv coveralls

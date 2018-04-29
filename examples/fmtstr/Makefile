@@ -1,9 +1,11 @@
 CFLAGS := -Wno-unused-result -Wno-format-security
 TARGETS := printf.mips printf.mips64 printf.mipsel printf.mips64el printf.arm printf.aarch64 \
-	         printf.ppc printf.ppc64 printf.sparc64 printf.native printf.native32
+	         printf.ppc printf.ppc64 printf.sparc64 printf.native printf.native32 \
+	         printf-loop.native printf-loop.native32
 
 .PHONY: run
 run: all
+	./exploit2.py
 	./exploit.py
 
 .PHONY: all
@@ -43,7 +45,7 @@ clean:
 %.native: %.c
 	gcc $(CFLAGS) -o "$@" $^
 %.native32: %.c
-	i686-linux-gnu-gcc $(CFLAGS) -o "$@" $^
+	gcc $(CFLAGS) -m32 -o "$@" $^
 
 # install deps on ubuntu xenial
 .PHONY: install-apt

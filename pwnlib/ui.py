@@ -63,7 +63,7 @@ def yesno(prompt, default=None):
         ValueError: yesno(): default must be a boolean or None
         >>> saved_stdin = sys.stdin
         >>> try:
-        ...     sys.stdin = io.StringIO(u"x\nyes\nno\n\n")
+        ...     sys.stdin = io.TextIOWrapper(io.BytesIO(b"x\nyes\nno\n\n"))
         ...     yesno("is it good 1")
         ...     yesno("is it good 2", True)
         ...     yesno("is it good 3", False)
@@ -114,12 +114,12 @@ def yesno(prompt, default=None):
                                        'No' if default is False else 'no',
                                        )
         while True:
-            opt = raw_input(prompt).lower()
+            opt = raw_input(prompt).strip().lower()
             if not opt and default is not None:
                 return default
-            elif opt in ('y','yes'):
+            elif opt in (b'y', b'yes'):
                 return True
-            elif opt in ('n', 'no'):
+            elif opt in (b'n', b'no'):
                 return False
             print('Please answer yes or no')
 
@@ -147,7 +147,7 @@ def options(prompt, opts, default = None):
         >>> _ = p.recvall()
         >>> saved_stdin = sys.stdin
         >>> try:
-        ...     sys.stdin = io.StringIO(u"\n4\n\n3\n")
+        ...     sys.stdin = io.TextIOWrapper(io.BytesIO(b"\n4\n\n3\n"))
         ...     with context.local(log_level="INFO"):
         ...         options("select a color A", ("red", "green", "blue"), 0)
         ...         options("select a color B", ("red", "green", "blue"))
@@ -265,7 +265,7 @@ def pause(n=None):
     Tests:
         >>> saved_stdin = sys.stdin
         >>> try:
-        ...     sys.stdin = io.StringIO(u"\n")
+        ...     sys.stdin = io.TextIOWrapper(io.BytesIO(b"\n"))
         ...     with context.local(log_level="INFO"):
         ...         pause()
         ... finally:

@@ -164,7 +164,7 @@ def search_by_sha256(hex_encoded_id):
 def get_build_id_offsets():
     """
     Returns a list of file offsets where the Build ID should reside within
-    an ELF file of the currentlys-elected architecture.
+    an ELF file of the currently selected architecture.
     """
     # Given the corpus of almost all libc to have been released with
     # RedHat, Fedora, Ubuntu, Debian, etc. over the past several years,
