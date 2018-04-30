@@ -687,7 +687,7 @@ class process(tube):
 
         try:
             data = self.proc.stdout.read(numb)
-        except IOError as (err, strerror):
+        except IOError:
             pass
 
         if not data:
