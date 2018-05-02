@@ -858,7 +858,7 @@ class ELF(ELFFile):
                                                 section.data(),
                                                 inv_symbols)
 
-                for address, target in reversed(sorted(res.items())):
+                for address, target in sorted(res.items()):
                     self.plt[inv_symbols[target]] = address
 
         for a,n in sorted({v:k for k,v in self.plt.items()}.items()):
