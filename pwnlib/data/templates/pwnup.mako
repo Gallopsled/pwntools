@@ -133,7 +133,7 @@ gdbscript = '''
 %if ctx.binary:
 set sysroot
   %if 'main' in ctx.binary.symbols:
-break main
+tbreak main
 continue
   %endif
 %endif
