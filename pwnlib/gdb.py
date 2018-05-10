@@ -464,9 +464,15 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
 
     # gdbserver outputs a message when a client connects
     garbage = gdbserver.recvline(timeout=1)
+    garbage += gdbserver.recvline(timeout=1)
 
-    if "Remote debugging from host" not in garbage:
-        gdbserver.unrecv(garbage)
+    msgidx = garbage.find("Remote debugging from host ")
+    if msgidx != -1:
+        eolidx = garbage.find('\n', msgidx)
+        if eolidx != -1:
+            garbage = garbage[eolidx+1:]
+
+    gdbserver.unrecv(garbage)
 
     return gdbserver
 
