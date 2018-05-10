@@ -134,9 +134,9 @@ gdbscript = '''
 set sysroot
   %if 'main' in ctx.binary.symbols:
 tbreak main
-continue
   %endif
 %endif
+continue
 '''.format(**locals())
 %endif
 
