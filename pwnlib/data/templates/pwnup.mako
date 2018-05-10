@@ -160,8 +160,6 @@ continue
 
 io = start()
 
-if args.GDB:
-    log.info(io.recvline())
 %if not quiet:
 # shellcode = asm(shellcraft.sh())
 # payload = fit({
