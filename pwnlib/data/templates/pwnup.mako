@@ -131,13 +131,12 @@ def start(argv=[], *a, **kw):
 %endif
 gdbscript = '''
 %if ctx.binary:
+set sysroot
   %if 'main' in ctx.binary.symbols:
-break *0x{exe.symbols.main:x}
-  %else:
-break *0x{exe.entry:x}
+break main
+continue
   %endif
 %endif
-continue
 '''.format(**locals())
 %endif
 
@@ -161,6 +160,8 @@ continue
 
 io = start()
 
+if args.GDB:
+    log.info(io.recvline())
 %if not quiet:
 # shellcode = asm(shellcraft.sh())
 # payload = fit({
