@@ -1995,8 +1995,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             with open(path, 'w+') as f:
                 f.write(value)
         else:
-            with open(path, 'r+') as f:
-                return f.read()
+            try:
+                with open(path, 'r+') as f:
+                    return f.read()
+            except IOError: # file not exists
+                return None
 
     def checksec(self, banner=True):
         """checksec()
