@@ -131,7 +131,6 @@ def start(argv=[], *a, **kw):
 %endif
 gdbscript = '''
 %if ctx.binary:
-set sysroot
   %if 'main' in ctx.binary.symbols:
 tbreak main
   %endif
