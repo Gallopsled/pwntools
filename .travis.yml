@@ -1,4 +1,4 @@
-dist: precise
+dist: trusty
 language: python
 addons:
   apt:
@@ -19,6 +19,7 @@ cache:
         - usr
         - /home/travis/virtualenv/python2.7.13/lib/python2.7/site-packages/
         - /home/travis/virtualenv/python2.7.13/bin/
+sudo: required
 python:
   - "2.7"
 before_install:
