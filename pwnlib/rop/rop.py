@@ -501,8 +501,8 @@ class ROP(object):
         best_gadgets = {}
 
         for gadget in self.gadgets.values():
-            # Do not use gadgets which end in e.g. "int 0x80"
-            if gadget.insns[-1] != 'ret':
+            # Do not use gadgets which doesn't end with 'ret' or has the syscall/int 0xXX instructions in it
+            if (gadget.insns[-1] != 'ret') or ('syscall' in gadget.insns) or ('int 0x' in gadget.insns):
                 continue
 
             touched = tuple(regset & set(gadget.regs))
@@ -512,9 +512,11 @@ class ROP(object):
 
             old = best_gadgets.get(touched, gadget)
 
-            if old is gadget or old.move > gadget.move:
+            # if we have a new gadget for the touched registers, choose it
+            # if the new gadget requires less stack space, choose it
+            # if both gadgets require same stack space, choose the one with less instructions
+            if (old is gadget) or (old.move > gadget.move) or (old.move == gadget.move and len(old.insns) > len(gadget.insns)):
                 best_gadgets[touched] = gadget
-
 
         winner = None
         budget = 999999999
