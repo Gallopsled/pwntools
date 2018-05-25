@@ -876,7 +876,7 @@ class process(tube):
         from pwnlib.elf import ELF
 
         for lib, address in self.libs().items():
-            if 'libc.so' in lib:
+            if 'libc.so' in lib or 'libc-' in lib:
                 e = ELF(lib)
                 e.address = address
                 return e
@@ -932,7 +932,7 @@ class process(tube):
 
         Example:
 
-            >>> e = ELF('/bin/sh')
+            >>> e = ELF('/bin/bash')
             >>> p = process(e.path)
 
             In order to make sure there's not a race condition against
