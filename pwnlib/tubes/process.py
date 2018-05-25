@@ -931,7 +931,7 @@ class process(tube):
 
         Example:
 
-            >>> e = ELF('/bin/sh')
+            >>> e = ELF('/bin/bash')
             >>> p = process(e.path)
 
             In order to make sure there's not a race condition against
