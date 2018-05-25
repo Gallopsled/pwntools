@@ -1994,12 +1994,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if value is not None:
             with open(path, 'w+') as f:
                 f.write(value)
-        else:
-            try:
-                with open(path, 'r+') as f:
-                    return f.read()
-            except IOError: # file not exists
-                return None
+        
+        if os.path.exists(path):
+            with open(path, 'r+') as f:
+                 return f.read()
 
     def checksec(self, banner=True):
         """checksec()
