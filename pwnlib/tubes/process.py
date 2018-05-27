@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+from __future__ import division
 
 import ctypes
 import errno
@@ -686,7 +687,7 @@ class process(tube):
 
         try:
             data = self.proc.stdout.read(numb)
-        except IOError as (err, strerror):
+        except IOError:
             pass
 
         if not data:

@@ -5,6 +5,7 @@ Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import collections
 import functools
@@ -777,6 +778,7 @@ class ContextType(object):
         self.arch   = binary.arch
         self.bits   = binary.bits
         self.endian = binary.endian
+        self.os     = binary.os
 
         return binary
 
@@ -785,7 +787,7 @@ class ContextType(object):
         """
         Target machine word size, in bytes (i.e. the size of general purpose registers).
 
-        This is a convenience wrapper around ``bits / 8``.
+        This is a convenience wrapper around ``bits // 8``.
 
         Examples:
 
@@ -798,7 +800,7 @@ class ContextType(object):
             ...
             AttributeError: bits must be > 0 (0)
         """
-        return self.bits/8
+        return self.bits // 8
     @bytes.setter
     def bytes(self, value):
         self.bits = value*8

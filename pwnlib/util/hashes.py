@@ -1,6 +1,8 @@
 """
 Functions for computing various hashes of files and strings.
 """
+from __future__ import division
+
 import hashlib
 
 for _algo in hashlib.algorithms:

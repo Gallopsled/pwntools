@@ -13,6 +13,7 @@ every week.  It can be permanently disabled via:
 
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import datetime
 import json

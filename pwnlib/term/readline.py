@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+from __future__ import division
 
 from pwnlib.term import keyconsts as kc
 from pwnlib.term import keymap as km

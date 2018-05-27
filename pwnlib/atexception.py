@@ -3,6 +3,7 @@ Analogous to atexit, this module allows the programmer to register functions to
 be run if an unhandled exception occurs.
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import sys
 import threading

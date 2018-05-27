@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 
 import errno
 import socket
@@ -245,6 +246,8 @@ def status(pid):
     try:
         with open('/proc/%d/status' % pid) as fd:
             for line in fd:
+                if -1 == line.find(':'):
+                    continue
                 i = line.index(':')
                 key = line[:i]
                 val = line[i + 2:-1] # initial :\t and trailing \n

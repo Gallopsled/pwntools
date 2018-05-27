@@ -40,6 +40,7 @@ Disassembly
 
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import errno
 import os
@@ -614,7 +615,7 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
     Runs :func:`cpp` over a given shellcode and then assembles it into bytes.
 
     To see which architectures or operating systems are supported,
-    look in :mod:`pwnlib.contex`.
+    look in :mod:`pwnlib.context`.
 
     Assembling shellcode requires that the GNU assembler is installed
     for the target architecture.

@@ -46,7 +46,7 @@ ${egghunter_loop}:
     jz ${next_page}
 
 ## We found a page, scan all of the DWORDs
-    ${i386.mov('edx', 0x1000/4)}
+    ${i386.mov('edx', 0x1000 // 4)}
 ${memcmp}:
     test edx, edx
     jz   ${next_page}
@@ -54,7 +54,7 @@ ${memcmp}:
 ## Scan forward by DWORD
     ${i386.setregs({'esi':'esp',
                     'edi':'ebx',
-                    'ecx': len(egg_str)/4})}
+                    'ecx': len(egg_str) // 4})}
 ## Success?
     repe cmpsd
     jz ${done}

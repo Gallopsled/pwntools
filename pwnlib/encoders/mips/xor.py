@@ -24,6 +24,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from __future__ import absolute_import
+from __future__ import division
 
 from pwnlib import asm
 from pwnlib import shellcraft
@@ -118,7 +119,7 @@ class MipsXorEncoder(Encoder):
 
         assert 0 == len(raw_bytes) % context.bytes, "Payload is not aligned"
 
-        size = (len(raw_bytes)/4) + 1
+        size = (len(raw_bytes) // 4) + 1
         assert size < 0x10000, "Payload is too long"
 
         size   = size ^ 0xffff

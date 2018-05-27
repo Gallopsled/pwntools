@@ -240,6 +240,7 @@ and should therefore be compatible with ``dash``.
 .. _BusyBox's Wikipedia page: https://en.wikipedia.org/wiki/BusyBox#Features
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import string
 import subprocess

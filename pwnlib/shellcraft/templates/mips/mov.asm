@@ -10,7 +10,7 @@
 <%docstring>
 Move src into dst without newlines and null bytes.
 
-Register $t8 and $t9 are not guarenteed to be preserved.
+Registers $t8 and $t9 are not guaranteed to be preserved.
 
 If src is a string that is not a register, then it will locally set
 `context.arch` to `'mips'` and use :func:`pwnlib.constants.eval` to evaluate the

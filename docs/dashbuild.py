@@ -44,7 +44,7 @@ def main(args):
 		doc2dash.__main__.main.main( \
 			[ os.path.join(dstdir, "html"), "-d", dstdir, "-n", name, \
 					"-f", "-I", "index.html"], "doc2dash", False)
-	except SystemExit,e:
+	except SystemExit as e:
 		pass
 
 	# Insert a link to the online version.

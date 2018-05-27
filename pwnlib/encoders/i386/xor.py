@@ -11,6 +11,7 @@
 #; but WITHOUT ANY WARRANTY; without even the implied warranty of
 #; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 from __future__ import absolute_import
+from __future__ import division
 
 from pwnlib import shellcraft
 from pwnlib.asm import asm
@@ -69,7 +70,7 @@ end:
 
         a, b = xor_pair(raw_bytes, avoid)
 
-        mov_ecx = shellcraft.i386.mov('ecx', len(raw_bytes) / context.bytes)
+        mov_ecx = shellcraft.i386.mov('ecx', len(raw_bytes) // context.bytes)
         decoder = self.decoder % mov_ecx
         decoder = asm(decoder)
 
