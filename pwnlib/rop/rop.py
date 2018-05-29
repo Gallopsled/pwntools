@@ -495,14 +495,19 @@ class ROP(object):
 
         regset = set(registers)
 
+        bad_instructions = set(('syscall', 'sysenter', 'int 0x80'))
+        
         # Collect all gadgets which use these registers
         # Also collect the "best" gadget for each combination of registers
         gadgets = []
         best_gadgets = {}
 
         for gadget in self.gadgets.values():
-            # Do not use gadgets which doesn't end with 'ret' or has the syscall/int 0xXX instructions in it
-            if (gadget.insns[-1] != 'ret') or ('syscall' in gadget.insns) or ('int 0x' in gadget.insns):
+            # Do not use gadgets which doesn't end with 'ret'
+            if gadget.insns[-1] != 'ret':
+                continue
+            # Do not use gadgets which contain 'syscall' or 'int'
+            if set(gadget.insns) & bad_instructions:
                 continue
 
             touched = tuple(regset & set(gadget.regs))
