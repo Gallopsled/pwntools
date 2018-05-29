@@ -520,7 +520,9 @@ class ROP(object):
             # if we have a new gadget for the touched registers, choose it
             # if the new gadget requires less stack space, choose it
             # if both gadgets require same stack space, choose the one with less instructions
-            if (old is gadget) or (old.move > gadget.move) or (old.move == gadget.move and len(old.insns) > len(gadget.insns)):
+            if (old is gadget) \
+              or (old.move > gadget.move) \
+              or (old.move == gadget.move and len(old.insns) > len(gadget.insns)):
                 best_gadgets[touched] = gadget
 
         winner = None
