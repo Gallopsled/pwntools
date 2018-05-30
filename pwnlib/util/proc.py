@@ -245,7 +245,7 @@ def status(pid):
     try:
         with open('/proc/%d/status' % pid) as fd:
             for line in fd:
-                if -1 == line.find(':'):
+                if ':' not in line:
                     continue
                 i = line.index(':')
                 key = line[:i]
