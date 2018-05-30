@@ -58,7 +58,7 @@ install_requires     = ['paramiko>=1.15.2',
                         'packaging',
                         'psutil>=3.3.0',
                         'intervaltree',
-                        'sortedcontainers<=2.0.1', # See Gallopsled/pwntools#1154
+                        'sortedcontainers<2.0', # See Gallopsled/pwntools#1154
                         'unicorn']
 
 # Check that the user has installed the Python development headers
