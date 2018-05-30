@@ -133,6 +133,8 @@ gdbscript = '''
 %if ctx.binary:
   %if 'main' in ctx.binary.symbols:
 tbreak main
+  %elif 'DYN' != ctx.binary.elftype:
+tbreak *0x{exe.entry:x}
   %endif
 %endif
 continue
