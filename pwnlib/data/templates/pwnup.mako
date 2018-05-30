@@ -132,9 +132,9 @@ def start(argv=[], *a, **kw):
 gdbscript = '''
 %if ctx.binary:
   %if 'main' in ctx.binary.symbols:
-break *0x{exe.symbols.main:x}
-  %else:
-break *0x{exe.entry:x}
+tbreak main
+  %elif 'DYN' != ctx.binary.elftype:
+tbreak *0x{exe.entry:x}
   %endif
 %endif
 continue
