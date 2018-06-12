@@ -926,12 +926,10 @@ class ELF(ELFFile):
         for seg in segments:
             addr   = seg.header.p_vaddr
             memsz  = seg.header.p_memsz
-            filesz = seg.header.p_filesz
-            zeroed = memsz - filesz
+            zeroed = memsz - seg.header.p_filesz
             offset = seg.header.p_offset
-            data   = self.mmap[offset:offset+filesz]
+            data   = self.mmap[offset:offset+memsz]
             data   += '\x00' * zeroed
-            assert len(data) == memsz
             offset = 0
             while True:
                 offset = data.find(needle, offset)
