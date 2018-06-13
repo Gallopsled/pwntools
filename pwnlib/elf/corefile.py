@@ -858,8 +858,8 @@ class Corefile(ELF):
                               None,
                               s.header.p_vaddr,
                               s.header.p_vaddr + s.header.p_memsz,
-                              None,
-                              s.header.p_flags)
+                              s.header.p_flags
+                              None)
             self.mappings.append(mapping)
 
     def _parse_auxv(self, note):
