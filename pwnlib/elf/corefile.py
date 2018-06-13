@@ -144,7 +144,7 @@ def iter_notes(self):
 class Mapping(object):
     """Encapsulates information about a memory mapping in a :class:`Corefile`.
     """
-    def __init__(self, core, name, start, stop, page_offset, flags):
+    def __init__(self, core, name, start, stop, flags, page_offset):
         self._core=core
 
         #: :class:`str`: Name of the mapping, e.g. ``'/bin/bash'`` or ``'[vdso]'``.
