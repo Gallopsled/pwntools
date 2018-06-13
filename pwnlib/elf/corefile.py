@@ -187,7 +187,7 @@ class Mapping(object):
         return '%x-%x %s %x %s' % (self.start,self.stop,self.permstr,self.size,self.name)
 
     def __repr__(self):
-        return '%s(%r, start=%#x, stop=%#x, size=%#x, page_offset=%#x, flags=%#x)' \
+        return '%s(%r, start=%#x, stop=%#x, size=%#x, flags=%#x, page_offset=%#x)' \
             % (self.__class__.__name__,
                self.name,
                self.start,
@@ -299,21 +299,21 @@ class Corefile(ELF):
     ::
 
         >>> Corefile('./core').mappings
-        [Mapping('/home/user/pwntools/crash', start=0x8048000, stop=0x8049000, size=0x1000, page_offset=0x0, flags=0x5),
-         Mapping('/home/user/pwntools/crash', start=0x8049000, stop=0x804a000, size=0x1000, page_offset=0x1, flags=0x4),
-         Mapping('/home/user/pwntools/crash', start=0x804a000, stop=0x804b000, size=0x1000, page_offset=0x2, flags=0x6),
-         Mapping(None, start=0xf7528000, stop=0xf7529000, size=0x1000, page_offset=0x0, flags=0x6),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf7529000, stop=0xf76d1000, size=0x1a8000, page_offset=0x0, flags=0x5),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d1000, stop=0xf76d2000, size=0x1000, page_offset=0x1a8, flags=0x0),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d2000, stop=0xf76d4000, size=0x2000, page_offset=0x1a9, flags=0x4),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d4000, stop=0xf76d5000, size=0x1000, page_offset=0x1aa, flags=0x6),
-         Mapping(None, start=0xf76d5000, stop=0xf76d8000, size=0x3000, page_offset=0x0, flags=0x6),
-         Mapping(None, start=0xf76ef000, stop=0xf76f1000, size=0x2000, page_offset=0x0, flags=0x6),
-         Mapping('[vdso]', start=0xf76f1000, stop=0xf76f2000, size=0x1000, page_offset=0x0, flags=0x5),
-         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf76f2000, stop=0xf7712000, size=0x20000, page_offset=0x0, flags=0x5),
-         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7712000, stop=0xf7713000, size=0x1000, page_offset=0x20, flags=0x4),
-         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7713000, stop=0xf7714000, size=0x1000, page_offset=0x21, flags=0x6),
-         Mapping('[stack]', start=0xfff3e000, stop=0xfff61000, size=0x23000, page_offset=0x0, flags=0x6)]
+        [Mapping('/home/user/pwntools/crash', start=0x8048000, stop=0x8049000, size=0x1000, flags=0x5, page_offset=0x0),
+         Mapping('/home/user/pwntools/crash', start=0x8049000, stop=0x804a000, size=0x1000, flags=0x4, page_offset=0x1),
+         Mapping('/home/user/pwntools/crash', start=0x804a000, stop=0x804b000, size=0x1000, flags=0x6, page_offset=0x2),
+         Mapping(None, start=0xf7528000, stop=0xf7529000, size=0x1000, flags=0x6, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf7529000, stop=0xf76d1000, size=0x1a8000, flags=0x5, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d1000, stop=0xf76d2000, size=0x1000, flags=0x0, page_offset=0x1a8),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d2000, stop=0xf76d4000, size=0x2000, flags=0x4, page_offset=0x1a9),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d4000, stop=0xf76d5000, size=0x1000, flags=0x6, page_offset=0x1aa),
+         Mapping(None, start=0xf76d5000, stop=0xf76d8000, size=0x3000, flags=0x6, page_offset=0x0),
+         Mapping(None, start=0xf76ef000, stop=0xf76f1000, size=0x2000, flags=0x6, page_offset=0x0),
+         Mapping('[vdso]', start=0xf76f1000, stop=0xf76f2000, size=0x1000, flags=0x5, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf76f2000, stop=0xf7712000, size=0x20000, flags=0x5, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7712000, stop=0xf7713000, size=0x1000, flags=0x4, page_offset=0x20),
+         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7713000, stop=0xf7714000, size=0x1000, flags=0x6, page_offset=0x21),
+         Mapping('[stack]', start=0xfff3e000, stop=0xfff61000, size=0x23000, flags=0x6, page_offset=0x0)]
 
     Example:
 
