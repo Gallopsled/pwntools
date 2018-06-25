@@ -337,6 +337,8 @@ class ContextType(object):
         'binary': None,
         'bits': 32,
         'buffer_size': 4096,
+        'cyclic_alphabet': string.ascii_lowercase,
+        'cyclic_size': 4,
         'delete_corefiles': False,
         'device': os.getenv('ANDROID_SERIAL', None) or None,
         'endian': 'little',
@@ -1248,6 +1250,32 @@ class ContextType(object):
         Default value is ``""``.
         """
         return str(value)
+
+    @_validator
+    def cyclic_alphabet(self, alphabet):
+        """Cyclic alphabet.
+
+        Default value is `string.ascii_lowercase`.
+        """
+
+        # Do not allow multiple occurrences
+        if len(set(alphabet)) != len(alphabet):
+            raise AttributeError("cyclic alphabet cannot contain duplicates")
+
+        return str(alphabet)
+
+    @_validator
+    def cyclic_size(self, size):
+        """Cyclic pattern size.
+
+        Default value is `4`.
+        """
+        size = int(size)
+
+        if size > self.bytes:
+            raise AttributeError("cyclic pattern size cannot be larger than word size")
+
+        return size
 
     #*************************************************************************
     #                               ALIASES

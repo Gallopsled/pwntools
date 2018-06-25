@@ -874,6 +874,8 @@ os.chdir(%(cwd)r)
 if env is not None:
     os.environ.clear()
     os.environ.update(env)
+else:
+    env = os.environ
 
 def is_exe(path):
     return os.path.isfile(path) and os.access(path, os.X_OK)
@@ -961,7 +963,7 @@ except Exception:
 %(func_src)s
 apply(%(func_name)s, %(func_args)r)
 
-os.execve(exe, argv, os.environ)
+os.execve(exe, argv, env)
 """ % locals()
 
         script = script.strip()
@@ -1302,7 +1304,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         return misc.parse_ldd_output(data)
 
     def _get_fingerprint(self, remote):
-        cmd = '(openssl sha256 || sha256 || sha256sum) 2>/dev/null < '
+        cmd = '(sha256 || sha256sum || openssl sha256) 2>/dev/null < '
         cmd = cmd + sh_string(remote)
         data, status = self.run_to_end(cmd)
 
@@ -1992,7 +1994,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if value is not None:
             with open(path, 'w+') as f:
                 f.write(value)
-        else:
+        elif os.path.exists(path):
             with open(path, 'r+') as f:
                 return f.read()
 

@@ -45,7 +45,7 @@ for filename in glob.glob('pwnlib/commandline/*'):
 install_requires     = ['paramiko>=1.15.2',
                         'mako>=1.0.0',
                         'pyelftools>=0.2.4',
-                        'capstone',
+                        'capstone>=3.0.5rc2', # See Gallopsled/pwntools#971, Gallopsled/pwntools#1160
                         'ropgadget>=5.3',
                         'pyserial>=2.7',
                         'requests>=2.0',
@@ -58,6 +58,7 @@ install_requires     = ['paramiko>=1.15.2',
                         'packaging',
                         'psutil>=3.3.0',
                         'intervaltree',
+                        'sortedcontainers<2.0', # See Gallopsled/pwntools#1154
                         'unicorn']
 
 # Check that the user has installed the Python development headers
@@ -86,7 +87,7 @@ except Exception as e:
 setup(
     name                 = 'pwntools',
     packages             = find_packages(),
-    version              = '3.10.0',
+    version              = '3.12.0',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],

@@ -2,7 +2,7 @@
 ![pwntools logo](https://github.com/Gallopsled/pwntools/blob/stable/docs/source/logo.png?raw=true)
 
 [![Docs](https://readthedocs.org/projects/pwntools/badge/?version=stable)](https://docs.pwntools.com/)
-[![PyPI](https://img.shields.io/badge/pypi-v3.10.0-green.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
+[![PyPI](https://img.shields.io/badge/pypi-v3.12.0-green.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
 [![Travis](https://travis-ci.org/Gallopsled/pwntools.svg)](https://travis-ci.org/Gallopsled/pwntools)
 [![Coveralls](https://img.shields.io/coveralls/Gallopsled/pwntools/dev.svg)](https://coveralls.io/github/Gallopsled/pwntools?branch=dev)
 [![Twitter](https://img.shields.io/badge/twitter-pwntools-4099FF.svg?style=flat)](https://twitter.com/pwntools)

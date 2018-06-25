@@ -11,7 +11,7 @@ local_deb_extract()
 
 install_deb()
 {
-    version=${2:-zesty}
+    version=${2:-artful}
     package=$1
     echo "Installing $package"
     INDEX="http://packages.ubuntu.com/en/$version/amd64/$package/download"
@@ -119,7 +119,7 @@ setup_android_emulator()
     else
         if [ ! -f android-sdk/android ]; then
             # Install the SDK, which gives us the 'android' and 'emulator' commands
-            wget https://dl.google.com/android/android-sdk_r24.4.1-linux.tgz
+            wget -nv https://dl.google.com/android/android-sdk_r24.4.1-linux.tgz
             tar xf android-sdk_r24.4.1-linux.tgz
             rm  -f android-sdk_r24.4.1-linux.tgz
 
@@ -137,7 +137,7 @@ setup_android_emulator()
         # Install the NDK, which is required for adb.compile()
         NDK_VERSION=android-ndk-r12b
         if [ ! -f android-ndk/ndk-build ]; then
-            wget   https://dl.google.com/android/repository/$NDK_VERSION-linux-x86_64.zip
+            wget -nv https://dl.google.com/android/repository/$NDK_VERSION-linux-x86_64.zip
             unzip -q android-ndk-*.zip
             rm -f    android-ndk-*.zip
 

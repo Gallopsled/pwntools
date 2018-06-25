@@ -9,9 +9,11 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.12.0](#3120)  | `dev`    | Jan 13, 2018 (planned)
-| [3.11.0](#3110)  | `beta`   | Dec 2, 2017 (planned)
-| [3.10.0](#3100)  | `stable` | Oct 25, 2017
+| [3.14.0](#3130)  | `dev`    | Jun 12, 2018 (planned)
+| [3.13.0](#3130)  | `beta`   | Mar 31, 2018 (planned)
+| [3.12.0](#3120)  | `stable` | Feb 22, 2018
+| [3.11.0](#3110)  |          | Jan 3, 2018
+| [3.10.0](#3100)  |          | Oct 25, 2017
 | [3.9.2](#392)    |          | Oct 5, 2017
 | [3.9.1](#391)    |          | Sep 28, 2017
 | [3.9.0](#390)    |          | Sep 11, 2017
@@ -40,13 +42,47 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
+## 3.14.0
+
+To be released on Jun 12, 2018.
+
+## 3.13.0
+
+To be released on Mar 31, 2018.
+
+- [#1104][1104] Add `DynELF.dump()` for dumping remote ELF files
+- [#1101][1101] Set `context.os` via `context.binary`, useful for Android exploitation
+- [5fdc08][5fdc08] Work around broken `pidof` on Android
+- [63dfed][63dfed] Print warning when Corefile deletion fails instead of throwing an exception
+- [#1094][1094] Make hexdump output alignment more consistent
+- [#1096][1096] `flat()` and `fit()` are now the same function
+- [#1068][1068] Work around very old OpenSSL versions which don't have sha256 support *AND* don't exit with an error code when trying to use it
+
+[1104]: https://github.com/Gallopsled/pwntools/pull/1104
+[1101]: https://github.com/Gallopsled/pwntools/pull/1101
+[1094]: https://github.com/Gallopsled/pwntools/pull/1094
+[1096]: https://github.com/Gallopsled/pwntools/pull/1096
+[1068]: https://github.com/Gallopsled/pwntools/pull/1068
+[5fdc08]: https://github.com/Gallopsled/pwntools/commit/5fdc08
+[63dfed]: https://github.com/Gallopsled/pwntools/commit/63dfed
+
 ## 3.12.0
 
-To be released on Jan 13, 2018.
+- [#1083][1083] Better error messages for `gdb` when `LD_PRELOAD` is incorrect
+- [#1085][1085] Add support for extracting Android `BOOTLDR!` images
+- [#1075][1075] Add support for detecting GNU Screen for `run_in_new_terminal`
+- [#1074][1074] Add support for running `pwntools-gdb` wrapper script instead of `gdb`
+- [#1067][1067] Add `pwnlib.tubes.server` module, which adds a reusable `server` listener
+- [#1063][1063] Add support for labels in `fit()`, allowing dynamic contents to be injected.  (This feature is really cool, check out the pull request!)
+
+[1083]: https://github.com/Gallopsled/pwntools/pull/1083
+[1085]: https://github.com/Gallopsled/pwntools/pull/1085
+[1075]: https://github.com/Gallopsled/pwntools/pull/1075
+[1074]: https://github.com/Gallopsled/pwntools/pull/1074
+[1067]: https://github.com/Gallopsled/pwntools/pull/1067
+[1063]: https://github.com/Gallopsled/pwntools/pull/1063
 
 ## 3.11.0
-
-To be released on Dec 2, 2017.
 
 - [#1044][1044] Enhancements to ROP
     + Much better support for 64-bit Intel (amd64) ROP
@@ -56,10 +92,18 @@ To be released on Dec 2, 2017.
     + `context` now has two additional attributes, `cyclic_alphabet` and `cyclic_length`, which correspond to the arguments `alphabet` and `n` to `cyclic()` and `cyclic_find()` and related routines.
     + The motivation for this change is to allow setting the `alphabet` globally, so that any padding / patterns generated internally to pwntools can be controlled.  The specific motivation is blacklisting values in ROP padding.
 - [#1052][1052] Enhancements for detecting `QEMU_LD_PREFIX` used by QEMU user-mode emulation for sysroots
+- [#1035][1035] Minor documentation changes
+- [#1032][1032] Enhancements to `pwn template`
+- [#1031][1031] More accurate `Coredump.fault_addr` on amd64
+- [#1084][1084] Fix broken tests due to `ftp.debian.org` going down
 
 [1044]: https://github.com/Gallopsled/pwntools/pull/1044
 [1049]: https://github.com/Gallopsled/pwntools/pull/1049
 [1052]: https://github.com/Gallopsled/pwntools/pull/1052
+[1035]: https://github.com/Gallopsled/pwntools/pull/1035
+[1032]: https://github.com/Gallopsled/pwntools/pull/1032
+[1031]: https://github.com/Gallopsled/pwntools/pull/1031
+[1084]: https://github.com/Gallopsled/pwntools/pull/1084
 
 ## 3.10.0
 
@@ -72,7 +116,6 @@ To be released on Dec 2, 2017.
 [1055]: https://github.com/Gallopsled/pwntools/pull/1055
 [1057]: https://github.com/Gallopsled/pwntools/pull/1057
 [1058]: https://github.com/Gallopsled/pwntools/pull/1058
-
 
 ## 3.9.2
 

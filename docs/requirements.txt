@@ -1,5 +1,5 @@
 sphinxcontrib-napoleon
-sphinxcontrib-autoprogram==0.1.2
+sphinxcontrib-autoprogram==0.1.4
 isort
 paramiko>=1.15.2
 mako>=1.0.0
