@@ -168,6 +168,21 @@ requirements so that everything "just works".
     0x0078:       'faabgaab' <pad 0x8>
     0x0080:       0x10000008 target
 
+Pwntools will also filter out some bad instructions while setting the registers
+( e.g. syscall, int 0x80... )
+
+    >>> assembly = 'syscall; pop rdx; pop rsi; ret ; pop rdi ; int 0x80; pop rsi; pop rdx; ret ; pop rdi ; ret'
+    >>> binary = ELF.from_assembly(assembly)
+    >>> rop = ROP(binary)
+    >>> rop.call(0xdeadbeef, [1, 2, 3])
+    >>> print rop.dump()
+    0x0000:       0x1000000b pop rdi; ret
+    0x0008:              0x1 [arg0] rdi = 1
+    0x0010:       0x10000008 pop rsi; pop rdx; ret
+    0x0018:              0x2 [arg1] rsi = 2
+    0x0020:              0x3 [arg2] rdx = 3
+    0x0028:       0xdeadbeef
+
 ROP + Sigreturn
 -----------------------
 
@@ -496,14 +511,19 @@ class ROP(object):
 
         regset = set(registers)
 
+        bad_instructions = set(('syscall', 'sysenter', 'int 0x80'))
+        
         # Collect all gadgets which use these registers
         # Also collect the "best" gadget for each combination of registers
         gadgets = []
         best_gadgets = {}
 
         for gadget in self.gadgets.values():
-            # Do not use gadgets which end in e.g. "int 0x80"
+            # Do not use gadgets which doesn't end with 'ret'
             if gadget.insns[-1] != 'ret':
+                continue
+            # Do not use gadgets which contain 'syscall' or 'int'
+            if set(gadget.insns) & bad_instructions:
                 continue
 
             touched = tuple(regset & set(gadget.regs))
@@ -513,9 +533,13 @@ class ROP(object):
 
             old = best_gadgets.get(touched, gadget)
 
-            if old is gadget or old.move > gadget.move:
+            # if we have a new gadget for the touched registers, choose it
+            # if the new gadget requires less stack space, choose it
+            # if both gadgets require same stack space, choose the one with less instructions
+            if (old is gadget) \
+              or (old.move > gadget.move) \
+              or (old.move == gadget.move and len(old.insns) > len(gadget.insns)):
                 best_gadgets[touched] = gadget
-
 
         winner = None
         budget = 999999999

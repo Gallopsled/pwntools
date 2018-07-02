@@ -1995,7 +1995,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if value is not None:
             with open(path, 'w+') as f:
                 f.write(value)
-        else:
+        elif os.path.exists(path):
             with open(path, 'r+') as f:
                 return f.read()
 
