@@ -418,9 +418,18 @@ class ssh_connecter(sock):
                 self.exception(e.message)
                 raise
 
-            sockname = self.sock.get_transport().sock.getsockname()
-            self.lhost = sockname[0]
-            self.lport = sockname[1]
+            # Iterate all layers of proxying to get to base-level Socket object
+            curr = self.sock.get_transport().sock
+            while callable(getattr(curr, "get_transport", None)):
+                curr = curr.get_transport().sock
+
+            try:
+                sockname = curr.getsockname()
+                self.lhost = sockname[0]
+                self.lport = sockname[1]
+            except Exception as e:
+                self.exception("Could not find base-level Socket object.")
+                raise e
 
             h.success()
 
