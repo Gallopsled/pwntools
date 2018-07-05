@@ -418,12 +418,12 @@ class ssh_connecter(sock):
                 self.exception(e.message)
                 raise
 
-            # Iterate all layers of proxying to get to base-level Socket object
-            curr = self.sock.get_transport().sock
-            while callable(getattr(curr, "get_transport", None)):
-                curr = curr.get_transport().sock
-
             try:
+                # Iterate all layers of proxying to get to base-level Socket object
+                curr = self.sock.get_transport().sock
+                while callable(getattr(curr, "get_transport", None)):
+                    curr = curr.get_transport().sock
+
                 sockname = curr.getsockname()
                 self.lhost = sockname[0]
                 self.lport = sockname[1]
