@@ -477,7 +477,7 @@ def _peek_simple():
             n = 6
         if n:
             c = [c0] + _cbuf[:n - 1]
-            k = Key(kc.TYPE_UNICODE, ''.join(chr(b) for b in c).decode('utf8'))
+            k = Key(kc.TYPE_UNICODE, bytearray(c).decode('utf8'))
             _cbuf = _cbuf[n - 1:]
         else:
             k = Key(kc.TYPE_UNKNOWN, _cbuf)
