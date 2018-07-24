@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import base64
+import binascii
 import random
 import re
 import os
@@ -35,7 +36,7 @@ def unhex(s):
     s = s.strip()
     if len(s) % 2 != 0:
         s = '0' + s
-    return s.decode('hex')
+    return binascii.unhexlify(s)
 
 def enhex(x):
     """enhex(x) -> str
@@ -47,7 +48,7 @@ def enhex(x):
         >>> enhex("test")
         '74657374'
     """
-    return x.encode('hex')
+    return binascii.hexlify(x)
 
 def urlencode(s):
     """urlencode(s) -> str

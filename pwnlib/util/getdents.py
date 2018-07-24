@@ -45,7 +45,7 @@ def dirents(buf):
     Example:
 
         >>> data = '5ade6d010100000010002e0000000004010000000200000010002e2e006e3d04092b6d010300000010007461736b00045bde6d010400000010006664003b3504'
-        >>> data = data.decode('hex')
+        >>> data = unhex(data)
         >>> print dirents(data)
         ['.', '..', 'fd', 'task']
     """

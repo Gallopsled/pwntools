@@ -299,7 +299,7 @@ class ContextType(object):
         >>> context.bits
         32
         >>> def nop():
-        ...   print pwnlib.asm.asm('nop').encode('hex')
+        ...   print enhex(pwnlib.asm.asm('nop'))
         >>> nop()
         00f020e3
         >>> with context.local(arch = 'i386'):

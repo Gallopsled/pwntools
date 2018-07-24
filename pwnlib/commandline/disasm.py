@@ -65,7 +65,7 @@ def main(args):
         if not set(string.hexdigits) >= set(dat):
             print "This is not a hex string"
             exit(-1)
-        dat = dat.decode('hex')
+        dat = unhex(dat)
     else:
         dat = sys.stdin.read()
 

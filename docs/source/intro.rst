@@ -97,7 +97,7 @@ unpacking codes, and littering your code with helper routines.
     >>> import struct
     >>> p32(0xdeadbeef) == struct.pack('I', 0xdeadbeef)
     True
-    >>> leet = '37130000'.decode('hex')
+    >>> leet = unhex('37130000')
     >>> u32('abcd') == struct.unpack('I', 'abcd')[0]
     True
 
@@ -158,12 +158,12 @@ Assembly and Disassembly
 Never again will you need to run some already-assembled pile of shellcode
 from the internet!  The :mod:`pwnlib.asm` module is full of awesome.
 
-    >>> asm('mov eax, 0').encode('hex')
+    >>> enhex(asm('mov eax, 0'))
     'b800000000'
 
 But if you do, it's easy to suss out!
 
-    >>> print disasm('6a0258cd80ebf9'.decode('hex'))
+    >>> print disasm(unhex('6a0258cd80ebf9'))
        0:   6a 02                   push   0x2
        2:   58                      pop    eax
        3:   cd 80                   int    0x80
@@ -176,7 +176,7 @@ loaded with useful time-saving shellcodes.
 Let's say that we want to `setreuid(getuid(), getuid())` followed by `dup`ing
 file descriptor 4 to `stdin`, `stdout`, and `stderr`, and then pop a shell!
 
-    >>> asm(shellcraft.setreuid() + shellcraft.dupsh(4)).encode('hex') # doctest: +ELLIPSIS
+    >>> enhex(asm(shellcraft.setreuid() + shellcraft.dupsh(4))) # doctest: +ELLIPSIS
     '6a3158cd80...'
 
 
