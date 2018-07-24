@@ -826,7 +826,7 @@ class ssh(Timeout, Logger):
 
         # Python doesn't like when an arg in argv contains '\x00'
         # -> execve() arg 2 must contain only strings
-        for i, arg in enumerate(argv):
+        for i, oarg in enumerate(argv):
             if isinstance(oarg, six.text_type):
                 arg = oarg.encode('utf-8')
             else:
