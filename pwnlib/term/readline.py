@@ -139,8 +139,8 @@ def self_insert(trace):
 
 def set_buffer(left, right):
     global buffer_left, buffer_right
-    buffer_left = unicode(left)
-    buffer_right = unicode(right)
+    buffer_left = left
+    buffer_right = right
     redisplay()
 
 def cancel_search(*_):
