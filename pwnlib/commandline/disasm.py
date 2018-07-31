@@ -21,7 +21,7 @@ parser.add_argument(
     'hex',
     metavar = 'hex',
     nargs = '*',
-    help = 'Hex-string to disasemble. If none are supplied, then it uses stdin in non-hex mode.'
+    help = 'Hex-string to disassemble. If none are supplied, then it uses stdin in non-hex mode.'
 )
 
 parser.add_argument(
