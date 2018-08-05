@@ -73,7 +73,7 @@ if not os.path.exists(PythonH):
 # Convert README.md to reStructuredText for PyPI
 long_description = ''
 try:
-    long_description = subprocess.check_output(['pandoc', 'README.md', '--to=rst'])
+    long_description = subprocess.check_output(['pandoc', 'README.md', '--to=rst'], universal_newlines=True)
 except Exception as e:
     print("Failed to convert README.md through pandoc, proceeding anyway", file=sys.stderr)
     traceback.print_exc()
