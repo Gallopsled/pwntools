@@ -977,7 +977,7 @@ class tube(Timeout, Logger):
         Examples:
 
             >>> def p(x): print(x)
-            >>> def recvone(n, data=['data']):
+            >>> def recvone(n, data=[b'data']):
             ...     while data: return data.pop()
             ...     raise EOFError
             >>> a = tube()

@@ -920,7 +920,7 @@ class ContextType(object):
             filename, mode = value.rsplit(',', 1)
             value = open(filename, mode)
 
-        elif not isinstance(value, (file)):
+        elif not hasattr(value, "fileno"):
             raise AttributeError('log_file must be a file')
 
         # Is this the same file we already have open?
