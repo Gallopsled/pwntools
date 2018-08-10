@@ -68,7 +68,7 @@ def main(args):
             exit(-1)
         dat = unhex(dat)
     else:
-        dat = sys.stdin.read()
+        dat = getattr(sys.stdin, 'buffer', sys.stdin).read()
 
 
     if args.color:
@@ -81,8 +81,7 @@ def main(args):
         instrs  = disasm(dat, vma=safeeval.const(args.address), byte=False, offset=False)
         # instrs  = highlight(instrs, PwntoolsLexer(), TerminalFormatter())
 
-        split = lambda x: x.splitlines()
-        for o,b,i in zip(*list(map(split, (offsets, bytes, instrs)))):
+        for o,b,i in zip(*map(str.splitlines, (offsets, bytes, instrs))):
             b = b.replace('00', text.red('00'))
             b = b.replace('0a', text.red('0a'))
             i = highlight(i.strip(), PwntoolsLexer(), TerminalFormatter()).strip()

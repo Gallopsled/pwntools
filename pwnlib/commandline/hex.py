@@ -6,6 +6,7 @@ import argparse
 import sys
 
 from pwnlib.commandline import common
+from pwnlib.util.fiddling import enhex
 
 parser = common.parser_commands.add_parser(
     'hex',

@@ -7,6 +7,7 @@ import sys
 from string import whitespace
 
 from pwnlib.commandline import common
+from pwnlib.util.fiddling import unhex
 
 parser = common.parser_commands.add_parser(
     'unhex',

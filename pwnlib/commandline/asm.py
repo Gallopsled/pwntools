@@ -30,7 +30,7 @@ parser.add_argument(
     "-o","--output",
     metavar='file',
     help="Output file (defaults to stdout)",
-    type=argparse.FileType('w'),
+    type=argparse.FileType('wb'),
     default=sys.stdout
 )
 
@@ -104,7 +104,7 @@ def main(args):
     data   = '\n'.join(args.lines) or args.infile.read()
     output = asm(data.replace(';', '\n'))
     fmt    = args.format or ('hex' if tty else 'raw')
-    formatters = {'r':str, 'h':enhex, 's':repr}
+    formatters = {'r':bytes, 'h':enhex, 's':repr}
 
     if args.avoid:
         avoid = unhex(''.join(args.avoid))

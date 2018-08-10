@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import argparse
+import functools
 import os
 import re
 
@@ -135,7 +136,7 @@ def main(args):
 
                 out = [(v, k) for v, k in out if mask & v == v]
 
-            if reduce(lambda x, cur: x | cur[0], good, 0) == constant:
+            if functools.reduce(lambda x, cur: x | cur[0], good, 0) == constant:
                 print('')
                 print('(%s) == %s' % (' | '.join(k for v, k in good), args.constant))
 
