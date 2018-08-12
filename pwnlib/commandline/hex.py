@@ -18,9 +18,12 @@ parser.add_argument('data', nargs='*',
 
 def main(args):
     if not args.data:
-        print(enhex(sys.stdin.read()))
+        print(enhex(getattr(sys.stdin, 'buffer', sys.stdin).read()))
     else:
-        print(enhex(' '.join(args.data)))
+        data = ' '.join(args.data)
+        if not hasattr(data, 'decode'):
+            data = data.encode('utf-8', 'surrogateescape')
+        print(enhex(data))
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)

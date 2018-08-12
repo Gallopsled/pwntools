@@ -21,7 +21,7 @@ parser.add_argument('hex', nargs='*',
 def main(args):
     try:
         if not args.hex:
-            s = sys.stdin.read().translate(None, whitespace)
+            s = getattr(sys.stdin, 'buffer', sys.stdin).read().translate(None, whitespace.encode('ascii'))
             sys.stdout.write(unhex(s))
         else:
             sys.stdout.write(unhex(''.join(args.hex)))

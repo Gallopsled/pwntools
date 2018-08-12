@@ -31,7 +31,7 @@ parser.add_argument(
     metavar='file',
     help="Output file (defaults to stdout)",
     type=argparse.FileType('wb'),
-    default=sys.stdout
+    default=getattr(sys.stdout, 'buffer', sys.stdout)
 )
 
 parser.add_argument(
@@ -125,10 +125,13 @@ def main(args):
         try: os.fchmod(args.output.fileno(), 0o700)
         except OSError: pass
     else:
-        args.output.write(formatters[fmt[0]](output))
+        output = formatters[fmt[0]](output)
+        if not hasattr(output, 'decode'):
+            output = output.encode('ascii')
+        args.output.write(output)
 
     if tty and fmt is not 'raw':
-        args.output.write('\n')
+        args.output.write(b'\n')
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)

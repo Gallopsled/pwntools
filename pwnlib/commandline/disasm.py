@@ -61,9 +61,9 @@ parser.add_argument(
 
 def main(args):
     if len(args.hex) > 0:
-        dat = ''.join(args.hex)
-        dat = dat.translate(None, string.whitespace)
-        if not set(string.hexdigits) >= set(dat):
+        dat = ''.join(args.hex).encode('utf-8', 'surrogateescape')
+        dat = dat.translate(None, string.whitespace.encode('ascii'))
+        if not set(string.hexdigits.encode('ascii')) >= set(dat):
             print("This is not a hex string")
             exit(-1)
         dat = unhex(dat)

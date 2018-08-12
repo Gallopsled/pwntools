@@ -179,7 +179,7 @@ def debug_shellcode(data, gdbscript=None, vma=None):
             io.recvline()
             # 'Hello world!'
     """
-    if isinstance(data, unicode):
+    if isinstance(data, six.text_type):
         log.error("Shellcode is cannot be unicode.  Did you mean debug_assembly?")
     tmp_elf = make_elf(data, extract=False, vma=vma)
     os.chmod(tmp_elf, 0o777)
@@ -252,15 +252,15 @@ def _gdbserver_port(gdbserver, ssh):
     # Listening on port 34816
     process_created = gdbserver.recvline()
 
-    if process_created.startswith('ERROR:'):
+    if process_created.startswith(b'ERROR:'):
         raise ValueError(
             'Failed to spawn process under gdbserver. gdbserver error message: %s' % process_created
         )
 
     gdbserver.pid   = int(process_created.split()[-1], 0)
 
-    listening_on = ''
-    while 'Listening' not in listening_on:
+    listening_on = b''
+    while b'Listening' not in listening_on:
         listening_on    = gdbserver.recvline()
 
     port = int(listening_on.split()[-1])
@@ -407,7 +407,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     if env is None:
         env = os.environ
 
-    if isinstance(args, (str, unicode)):
+    if isinstance(args, (bytes, six.text_type)):
         args = [args]
 
     orig_args = args
@@ -800,7 +800,7 @@ def ssh_gdb(ssh, argv, gdbscript = None, arch = None, **kwargs):
     c = ssh.process(argv, **kwargs)
 
     # Find the port for the gdb server
-    c.recvuntil('port ')
+    c.recvuntil(b'port ')
     line = c.recvline().strip()
     gdbport = re.match(b'[0-9]+', line)
     if gdbport:

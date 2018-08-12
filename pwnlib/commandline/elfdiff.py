@@ -23,7 +23,7 @@ def dump(objdump, path):
     return n.name
 
 def diff(a,b):
-    try: return check_output(['diff',a,b])
+    try: return check_output(['diff',a,b], universal_newlines=True)
     except CalledProcessError as e:
         return e.output
 

@@ -4,6 +4,7 @@ from __future__ import division
 
 import argparse
 import os
+import six
 import sys
 import types
 
@@ -22,8 +23,8 @@ from pwnlib.commandline import common
 
 def _string(s):
     out = []
-    for c in s:
-        co = ord(c)
+    for co in bytearray(s):
+        c = chr(co)
         if co >= 0x20 and co <= 0x7e and c not in '/$\'"`':
             out.append(c)
         else:
@@ -46,8 +47,8 @@ p.add_argument(
 p.add_argument(
     '-o', '--out',
     metavar = 'file',
-    type = argparse.FileType('w'),
-    default = sys.stdout,
+    type = argparse.FileType('wb'),
+    default = getattr(sys.stdout, 'buffer', sys.stdout),
     help = 'Output file (default: stdout)',
 )
 
@@ -248,8 +249,8 @@ def main(args):
         print('\n'.join(doc).rstrip())
         exit()
 
-    defargs = len(func.func_defaults or ())
-    reqargs = func.func_code.co_argcount - defargs
+    defargs = len(six.get_function_defaults(func) or ())
+    reqargs = six.get_function_code(func).co_argcount - defargs
     if len(args.args) < reqargs:
         if defargs > 0:
             log.critical('%s takes at least %d arguments' % (args.shellcode, reqargs))
@@ -266,7 +267,7 @@ def main(args):
             pass
 
     # And he strikes again!
-    map(common.context_arg, args.shellcode.split('.'))
+    list(map(common.context_arg, args.shellcode.split('.')))
     code = func(*args.args)
 
 
@@ -342,10 +343,12 @@ def main(args):
     elif args.format in ['i', 'hexii']:
         code = hexii(code) + '\n'
     elif args.format in ['d', 'escaped']:
-        code = ''.join('\\x%02x' % ord(c) for c in code) + '\n'
+        code = ''.join('\\x%02x' % c for c in bytearray(code)) + '\n'
     if not sys.stdin.isatty():
-        args.out.write(sys.stdin.read())
+        args.out.write(getattr(sys.stdin, 'buffer', sys.stdin).read())
 
+    if not hasattr(code, 'decode'):
+        code = code.encode()
     args.out.write(code)
 
 if __name__ == '__main__':
