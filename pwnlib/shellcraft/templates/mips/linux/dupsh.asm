@@ -6,8 +6,6 @@ Args: [sock (imm/reg) = s0 ]
 </%docstring>
 
 
-${linux.dup2(sock,2)}
-${linux.dup2(sock,1)}
-${linux.dup2(sock,0)}
+${linux.dup(sock)}
 
 ${linux.sh()}
