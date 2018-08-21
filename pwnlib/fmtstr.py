@@ -164,6 +164,10 @@ class AtomWrite(namedtuple("AtomWrite", "start data mask")):
     def end(self):
         return self.start + self.size
 
+    @property
+    def maskedsize(self):
+        return sum(1 for a in self.mask if ord(a))
+
     def union(self, other):
         assert other.start == self.end, "writes to combine must be continous"
         return AtomWrite(self.start, self.data + other.data, self.mask + other.mask)
@@ -254,30 +258,55 @@ def find_nearest_bytes_le(lower, upper, value):
 
     return best[1]
 
+#
+# what we don't do:
+#  - create new atoms that cannot be created by merging existing atoms
+#  - optimize based on masks
+def merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows):
+    if not szmax:
+        szmax = max(SPECIFIER.keys())
 
-def merge_atoms_overlapping(atoms, sz, numbwritten, overflows=5):
     assert 1 <= overflows, "must allow at least one overflow"
-    mincounter = pack(numbwritten, 'all')
-    maxcounter = pack(numbwritten + overflows * (1 << (sz * 8)), 'all')
-    minconstraints = {}
+    assert sz <= szmax, "sz must be smaller or equal to szmax"
 
-    def merger(candidate, parts):
-        approx = find_nearest_bytes_le(mincounter, maxcounter, candidate.data)
-        #print(unpack(approx, 'all'), unpack(candidate.data, 'all'), unpack(mincounter, 'all'), unpack(maxcounter, 'all'))
-        start = parts[0].start
-        mask = ""
-        putback = []
-        for part in parts:
-            first, last = part.start-start, part.end-start
-            if approx[first:last] == candidate.data[first:last]:
-                mask += part.mask
-            else:
-                mask += "\0" * len(part.data)
-                putback += [part]
-        candidate = candidate._replace(mask=mask)
-        return [candidate], putback
+    maxwritten = numbwritten + (1 << (8 * sz)) * overflows
+    done = [False for _ in atoms]
 
-    return apply_atom_merger(merger, atoms)
+    def possible_writes(idx, numbwritten):
+        candidate = AtomWrite(atoms[idx].start, "", "")
+        best = 0
+        for nextidx in xrange(idx, len(atoms)):
+            if candidate.size > szmax or done[nextidx] or candidate.end != atoms[nextidx].start:
+                break
+
+            candidate = candidate.union(atoms[nextidx])
+            if candidate.size not in SPECIFIER: continue
+
+            approxed = candidate
+            if approxed.size > sz:
+                approx = find_nearest_bytes_le(pack(numbwritten, 'all'), pack(maxwritten, 'all'), approxed.data)
+                mask = "".join("\x00" if a != b else "\xFF" for a,b in zip(candidate.data, approx))
+                approxed = candidate._replace(mask=mask, data=approx)
+
+            if approxed.maskedsize > best:
+                best = approxed.maskedsize
+                yield list(xrange(idx, nextidx+1)), approxed
+
+    # possible_unconstrained = [list(possible_writes(idx, numbwritten))[:-1] for idx in xrange(len(atoms))]
+    minconstraints = [numbwritten for _ in atoms]
+    out = []
+    for idx in xrange(len(atoms)):
+        if done[idx]: continue
+        idxrange, candidate = list(possible_writes(idx, minconstraints[idx]))[-1]
+        offset = 0
+        for i in idxrange:
+            shift = atoms[i].size
+            minconstraints[i] = max(minconstraints[i], unpack(candidate.data, 'all'))
+            if all(a == b for a,b in zip(candidate.mask[offset:offset+shift], atoms[i].mask)):
+                done[i] = True
+            offset += shift
+        out += [candidate]
+    return out
 
 def sort_atoms(atoms, numbwritten):
     # find dependencies
@@ -368,14 +397,14 @@ def fmtstr_split(offset, writes, numbwritten=0, write_size='byte'):
     for address, data in normalize_writes(writes):
         atoms = make_atoms_simple(address, data)
         #atoms = merge_atoms_small(atoms, WRITE_SIZE[write_size], numbwritten)
-        atoms = merge_atoms_overlapping(atoms, WRITE_SIZE[write_size], numbwritten)
+        atoms = merge_atoms_overlapping(atoms, WRITE_SIZE[write_size], None, numbwritten, 5)
         atoms = sort_atoms(atoms, numbwritten)
 
         all_atoms += atoms
 
     return make_payload_dollar(offset, all_atoms, numbwritten=numbwritten)
 
-def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
+def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', offset_bytes=0):
     r"""fmtstr_payload(offset, writes, numbwritten=0, write_size='byte') -> str
 
     Makes payload with given parameter.
@@ -395,9 +424,9 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int'))
         '%322419390c%4$llnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00'
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short'))
-        '%4919c%6$n%60617c%7$hn%47806c%8$hnaaaaba\x02\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        '%47806c%5$lln%22649c%6$hnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00'
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte'))
-        '%7$hhn%19c%8$n%36c%9$hhn%131c%10$hhn%4c%11$hhnaa\x07\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        '%190c%7$lln%85c%8$hhn%36c%9$hhn%131c%10$hhnaaaab\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
         >>> context.clear(arch = 'i386')
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int'))
         '%322419390c%5$na\x00\x00\x00\x00'
@@ -410,11 +439,11 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
 
     fmt = ""
     for iteration in xrange(1000000):
-        data_offset = len(fmt) // context.bytes
+        data_offset = (offset_bytes + len(fmt)) // context.bytes
         fmt, data = fmtstr_split(offset + data_offset, writes, numbwritten=numbwritten, write_size=write_size)
-        fmt = fmt + cyclic((-len(fmt)) % context.bytes)
+        fmt = fmt + cyclic((-len(fmt)-offset_bytes) % context.bytes)
 
-        if len(fmt) == data_offset * context.bytes:
+        if len(fmt) + offset_bytes == data_offset * context.bytes:
             break
     else:
         raise RuntimeError("this is a bug ... format string building did not converge")
