@@ -97,6 +97,7 @@ import re
 from collections import namedtuple
 from intervaltree import IntervalTree, Interval
 from operator import itemgetter
+from sortedcontainers import SortedList
 
 from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak
@@ -168,13 +169,17 @@ class AtomWrite(namedtuple("AtomWrite", "start data mask")):
     def maskedsize(self):
         return sum(1 for a in self.mask if ord(a))
 
+    @property
+    def value(self):
+        return unpack(self.data, 'all')
+
     def union(self, other):
         assert other.start == self.end, "writes to combine must be continous"
         return AtomWrite(self.start, self.data + other.data, self.mask + other.mask)
 
     def compute_padding(self, counter):
         mask = unpack(self.mask, "all")
-        wanted = unpack(self.data, "all") & mask
+        wanted = self.value & mask
         padding = 0
         while True:
             diff = wanted ^ ((counter + padding) & mask)
@@ -311,10 +316,61 @@ def merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows):
 def sort_atoms(atoms, numbwritten):
     # find dependencies
     writes = IntervalTree()
-    deps = {}
+    depgraph = {}
+    rdepgraph = { a: set() for a in atoms }
     for atom in atoms:
-        deps[atom] = set(i.data for i in writes.search(atom.start, atom.end))
+        depgraph[atom] = set(i.data for i in writes.search(atom.start, atom.end))
+        for dep in depgraph[atom]:
+            rdepgraph[dep].add(atom)
         writes[atom.start:atom.end] = atom
+
+    mods = { sz: 1 << (sz * 8) for sz in SPECIFIER }
+    queues = { sz: SortedList(key=lambda a: a.value) for sz in SPECIFIER.keys() }
+    pointers = {}
+
+    def enqueue(atom):
+        queues[atom.size].add(atom)
+        if atom.value % mods[atom.size] < numbwritten % mods[atom.size]:
+            pointers[sz] += 1
+
+    for atom, deps in depgraph.items():
+        if not deps:
+            enqueue(atom)
+
+    out = []
+    while True:
+        active_sizes = [ sz for sz,p in pointers.items() if p < len(queues[sz]) ]
+        if active_sizes:
+            best_size = min(active_sizes, key=lambda sz: queues[sz][pointers[sz]].value - numbwritten)
+        else:
+            available_sizes = [ sz for sz,q in queues.items() if q ]
+            if not available_sizes:
+                break
+            best_size = min(available_sizes, key=lambda sz: queues[sz][0].compute_padding(numbwritten))
+            pointers[best_size] = 0
+
+        best_atom = queues[best_size][pointers[best_size]]
+
+        changed = False
+        for sz in pointers:
+            diff = (best_atom.value ^ numbwritten)
+            if diff // mods[sz] != 0:
+                changed |= pointers[sz] != 0
+                pointers[sz] = 0
+        if changed: continue
+
+        for dep in rdepgraph.pop(best_atom):
+            if best_atom not in depgraph[dep]: continue
+            depgraph[dep].discard(best_atom)
+            if not depgraph[dep]:
+                enqueue(dep)
+
+        out.append(best_atom)
+        queues[best_size].pop(pointers[best_size])
+        numbwritten += best_atom.compute_padding(numbwritten)
+
+    return out
+
 
     # sort the atoms respecting their dependencies using a topological sort
     #
