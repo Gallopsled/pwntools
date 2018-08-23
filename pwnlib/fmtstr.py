@@ -119,6 +119,7 @@ WRITE_SIZE = {
     "byte": 1,
     "short": 2,
     "int": 4,
+    "long": 8,
 }
 
 def normalize_writes(writes):
@@ -148,7 +149,20 @@ def normalize_writes(writes):
 # 00 00 05 05 00 05  -> need overlapping writes if numbwritten > 5
 
 class AtomWrite(object):
+    """
+    This class represents a write action that can be carried out by a single format string specifier.
+
+    Each write has an address (start), a size and the integer that should be written.
+
+    Additionally writes can have a mask to specify which bits are important.
+    While the write always overwrites all bytes in the range [start, start+size) the mask sometimes allows more
+    efficient execution. For example, assume the current format string counter is at 0xaabb and a write with
+    with integer = 0xaa00 and mask = 0xff00 needs to be executed. In that case, since the lower byte is not covered
+    by the mask, the write can be directly executed with a %hn sequence (so we will write 0xaabb, but that is ok
+    because the mask only requires the upper byte to be correctly written).
+    """
     __slots__ = ( "start", "size", "integer", "mask" )
+
     def __init__(self, start, size, integer, mask=None):
         if mask is None:
             mask = (1 << (8 * size)) - 1
@@ -175,7 +189,7 @@ class AtomWrite(object):
         return hash(self.__key())
 
     def __repr__(self):
-        return "AtomWrite(start=%d, size=%d, integer=%#x, mask=%#x" % (self.start, self.size, self.integer, self.mask)
+        return "AtomWrite(start=%d, size=%d, integer=%#x, mask=%#x)" % (self.start, self.size, self.integer, self.mask)
 
     @property
     def bitsize(self):
@@ -186,6 +200,18 @@ class AtomWrite(object):
         return self.start + self.size
 
     def compute_padding(self, counter):
+        """
+        This function computes the least amount of padding necessary to execute this write,
+        given the current format string write counter (how many bytes have been written until now).
+
+        Examples:
+        >>> hex(pwnlib.fmtstr.AtomWrite(0x0, 0x2, 0x2345).compute_padding(0x1111))
+        0x1234
+        >>> hex(pwnlib.fmtstr.AtomWrite(0x0, 0x2, 0xaa00).compute_padding(0xaabb))
+        0xff45
+        >>> hex(pwnlib.fmtstr.AtomWrite(0x0, 0x2, 0xaa00, 0xff00).compute_padding(0xaabb)) # with mask
+        0x0
+        """
         wanted = self.integer & self.mask
         padding = 0
         while True:
@@ -196,6 +222,9 @@ class AtomWrite(object):
         return padding
 
     def replace(self, start=None, size=None, integer=None, mask=None):
+        """
+        Return a new write with updated fields (everything that is not None is set to the new value)
+        """
         start = self.start if start is None else start
         size = self.size if size is None else size
         integer = self.integer if integer is None else integer
@@ -203,6 +232,14 @@ class AtomWrite(object):
         return AtomWrite(start, size, integer, mask)
 
     def union(self, other):
+        """
+        Combine adjacent writes into a single write.
+
+        Example:
+        >>> context.clear(endian = "little")
+        >>> pwnlib.fmtstr.AtomWrite(0x0, 0x1, 0x1, 0xff).union(pwnlib.fmtstr.AtomWrite(0x1, 0x1, 0x2, 0x77))
+        AtomWrite(start=0, size=2, integer=0x201, mask=0xff77)
+        """
         assert other.start == self.end, "writes to combine must be continous"
         if context.endian == "little":
             newinteger = (other.integer << self.bitsize) | self.integer
@@ -229,8 +266,35 @@ class AtomWrite(object):
             shift = (self.size - stop) * 8
         return AtomWrite(self.start + start, stop - start, (self.integer >> shift) & clip, (self.mask >> shift) & clip)
 
-def make_atoms_simple(address, data):
-    return [AtomWrite(address + i, 1, ord(d)) for i, d in enumerate(data)]
+def make_atoms_simple(address, data, badbytes=set()):
+    """
+    Build format string atoms for writing some data at a given address where some bytes are not allowed
+    to appear in addresses (such as nullbytes).
+
+    This function is simple and does not try to minimize the number of atoms. For example, if there are no
+    bad bytes, it simply returns one atom for each byte:
+
+    >>> pwnlib.fmtstr.make_atoms_simple(0x0, "abc", set())
+    [AtomWrite(start=0, size=1, integer=0x61, mask=0xff), AtomWrite(start=1, size=1, integer=0x62, mask=0xff), AtomWrite(start=2, size=1, integer=0x63, mask=0xff)]
+    """
+    if not badbytes:
+        return [AtomWrite(address + i, 1, ord(d)) for i, d in enumerate(data)]
+
+    i = 0
+    out = []
+    while i < len(data):
+        candidate = AtomWrite(address + i, 1, ord(data[i]))
+        while candidate.end < len(data) and any(x in badbytes for x in pack(candidate.end)):
+            candidate = candidate.union(AtomWrite(candidate.end, 1, ord(data[i + candidate.size])))
+
+        sz = min([s for s in SPECIFIER if s >= candidate.size] + [float("inf")])
+        if candidate.start + sz > len(data):
+            raise RuntimeError("impossible to avoid badbytes starting after offset %d (address %x)" % (i, i + address))
+        i += candidate.size
+        candidate = candidate.union(AtomWrite(candidate.end, sz - candidate.size, 0, 0))
+        out.append(candidate)
+    return out
+
 
 def merge_atoms_writesize(atoms, maxsize):
     assert maxsize in SPECIFIER, "write size must be supported by printf"
@@ -474,18 +538,19 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4):
 
     return fmt, data
 
-def make_atoms(writes, sz, szmax, numbwritten, overflows, strategy="small"):
+def make_atoms(writes, sz, szmax, numbwritten, overflows, strategy, badbytes):
     all_atoms = []
     for address, data in normalize_writes(writes):
-        atoms = make_atoms_simple(address, data)
+        atoms = make_atoms_simple(address, data, badbytes)
         if strategy == 'small':
             atoms = merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows)
         elif strategy == 'fast':
             atoms = merge_atoms_writesize(atoms, sz)
         atoms = sort_atoms(atoms, numbwritten)
+        all_atoms += atoms
     return all_atoms
 
-def fmtstr_split(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small"):
+def fmtstr_split(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small", badbytes=set()):
     if write_size not in ['byte', 'short', 'int']:
         log.error("write_size must be 'byte', 'short' or 'int'")
 
@@ -494,11 +559,11 @@ def fmtstr_split(offset, writes, numbwritten=0, write_size='byte', write_size_ma
 
     sz = WRITE_SIZE[write_size]
     szmax = WRITE_SIZE[write_size_max]
-    atoms = make_atoms(writes, sz, szmax, numbwritten, overflows, strategy)
+    atoms = make_atoms(writes, sz, szmax, numbwritten, overflows, strategy, badbytes)
 
     return make_payload_dollar(offset, atoms, numbwritten)
 
-def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', offset_bytes=0):
+def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small", badbytes=set(), offset_bytes=0):
     r"""fmtstr_payload(offset, writes, numbwritten=0, write_size='byte') -> str
 
     Makes payload with given parameter.
@@ -533,14 +598,9 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', offset_byte
         >>> print repr(fmtstr_payload(1, {0x0: "\xff\xff\x04\x11\x00\x00\x00\x00"}, write_size='short'))
         '%327679c%7$lln%18c%8$hhn\x00\x00\x00\x00\x03\x00\x00\x00'
     """
-    all_atoms = []
-    for address, data in normalize_writes(writes):
-        atoms = make_atoms_simple(address, data)
-        #atoms = merge_atoms_small(atoms, WRITE_SIZE[write_size], numbwritten)
-        atoms = merge_atoms_overlapping(atoms, WRITE_SIZE[write_size], None, numbwritten, 5)
-        atoms = sort_atoms(atoms, numbwritten)
-
-        all_atoms += atoms
+    sz = WRITE_SIZE[write_size]
+    szmax = WRITE_SIZE[write_size_max]
+    all_atoms = make_atoms(writes, sz, szmax, numbwritten, overflows, strategy, badbytes)
 
     fmt = ""
     for iteration in xrange(1000000):
