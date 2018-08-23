@@ -36,7 +36,7 @@ Examples:
     >>> def exec_fmt(payload):
     ...     p = process(program)
     ...     p.sendline(payload)
-    ...     return p.recvall()
+    ...     return p.recvall(timeout=0.1)
     ...
     >>> autofmt = FmtStr(exec_fmt)
     >>> offset = autofmt.offset
@@ -44,7 +44,7 @@ Examples:
     >>> addr = unpack(p.recv(4))
     >>> payload = fmtstr_payload(offset, {addr: 0x1337babe})
     >>> p.sendline(payload)
-    >>> print hex(unpack(p.recv(4)))
+    >>> print hex(unpack(p.recv(4, timeout=0.1)))
     0x1337babe
 
 Example - Payload generation
@@ -92,6 +92,7 @@ Example - Automated exploitation
 from __future__ import division
 
 import copy
+import functools
 import logging
 import re
 from collections import namedtuple
@@ -146,16 +147,35 @@ def normalize_writes(writes):
 # 00 00 05 00 00  -> %n%5c%n
 # 00 00 05 05 00 05  -> need overlapping writes if numbwritten > 5
 
-class AtomWrite(namedtuple("AtomWrite", "start data mask")):
-    __slots__ = ()
-    def __new__(cls, start, data, mask=None):
+class AtomWrite(object):
+    __slots__ = ( "start", "size", "integer", "mask" )
+    def __init__(self, start, size, integer, mask=None):
         if mask is None:
-            mask = "\xFF" * len(data)
-        return super(AtomWrite, cls).__new__(cls, start, data, mask)
+            mask = (1 << (8 * size)) - 1
+        self.start = long(start)
+        self.size = size
+        self.integer = long(integer)
+        self.mask = long(mask)
 
-    @property
-    def size(self):
-        return len(self.data)
+    def __len__(self):
+        return self.size
+
+    def __key(self):
+        return (self.start, self.size, self.integer, self.mask)
+
+    def __eq__(self, other):
+        if not isinstance(other, AtomWrite):
+            raise TypeError("comparision not supported between instances of '%s' and '%s'" % (type(self), type(other)))
+        return self.__key() == other.__key()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __repr__(self):
+        return "AtomWrite(start=%d, size=%d, integer=%#x, mask=%#x" % (self.start, self.size, self.integer, self.mask)
 
     @property
     def bitsize(self):
@@ -165,104 +185,151 @@ class AtomWrite(namedtuple("AtomWrite", "start data mask")):
     def end(self):
         return self.start + self.size
 
-    @property
-    def maskedsize(self):
-        return sum(1 for a in self.mask if ord(a))
-
-    @property
-    def value(self):
-        return unpack(self.data, 'all')
-
-    def union(self, other):
-        assert other.start == self.end, "writes to combine must be continous"
-        return AtomWrite(self.start, self.data + other.data, self.mask + other.mask)
-
     def compute_padding(self, counter):
-        mask = unpack(self.mask, "all")
-        wanted = self.value & mask
+        wanted = self.integer & self.mask
         padding = 0
         while True:
-            diff = wanted ^ ((counter + padding) & mask)
+            diff = wanted ^ ((counter + padding) & self.mask)
             if not diff: break
             # this masks the least significant set bit and adds it to padding
             padding += diff & (diff ^ (diff - 1))
         return padding
 
-def make_atoms_simple(address, data):
-    return [AtomWrite(address + i, d) for i, d in enumerate(data)]
+    def replace(self, start=None, size=None, integer=None, mask=None):
+        start = self.start if start is None else start
+        size = self.size if size is None else size
+        integer = self.integer if integer is None else integer
+        mask = self.mask if mask is None else mask
+        return AtomWrite(start, size, integer, mask)
 
-def apply_atom_merger(func, atoms, maxsize=max(SPECIFIER.keys())):
+    def union(self, other):
+        assert other.start == self.end, "writes to combine must be continous"
+        if context.endian == "little":
+            newinteger = (other.integer << self.bitsize) | self.integer
+            newmask = (other.mask << self.bitsize) | self.mask
+        elif context.endian == "big":
+            newinteger = (self.integer << other.bitsize) | other.integer
+            newmask = (self.mask << other.bitsize) | other.mask
+        return AtomWrite(self.start, self.size + other.size, newinteger, newmask)
+
+    def __getslice__(self, i,  j):
+        return self.__getitem__(slice(i, j))
+
+    def __getitem__(self, i):
+        if type(i) is not slice:
+            i = slice(i,i)
+        start, stop, step = i.indices(self.size)
+        if step != 1:
+            raise IndexError("slices with step != 1 not supported for AtomWrite")
+
+        clip = (1 << ((stop - start) * 8)) - 1
+        if context.endian == 'little':
+            shift = start * 8
+        elif context.endian == 'big':
+            shift = (self.size - stop) * 8
+        return AtomWrite(self.start + start, stop - start, (self.integer >> shift) & clip, (self.mask >> shift) & clip)
+
+def make_atoms_simple(address, data):
+    return [AtomWrite(address + i, 1, ord(d)) for i, d in enumerate(data)]
+
+def merge_atoms_writesize(atoms, maxsize):
+    assert maxsize in SPECIFIER, "write size must be supported by printf"
+
     out = []
     while atoms:
         # look forward to find atoms to merge with
-        accepted = [ atoms[0] ]
-        merged_count = 1
-        putback = []
+        best = (1, atoms[0])
         candidate = atoms[0]
         for idx in xrange(1, len(atoms)):
             if candidate.end != atoms[idx].start: break
-            if candidate.size > maxsize: break
+
             candidate = candidate.union(atoms[idx])
-            if candidate.size not in SPECIFIER: continue
-            merged = func(candidate, atoms[:idx+1])
-            if merged:
-                accepted, putback = merged
-                merged_count = idx+1
-        out += accepted
-        atoms[0:merged_count] = putback
+            if candidate.size > maxsize: break
+            if candidate.size in SPECIFIER:
+                best = (idx+1, candidate)
+
+        out += best[1]
+        atoms[:best[0]] = []
     return out
 
-def merge_atoms_writesize(atoms, maxsize=1):
-    assert maxsize in SPECIFIER, "write size must be supported by printf"
+def find_min_hamming_in_range_step(prev, step, carry, strict):
+    """
+    Compute a single step of the algorithm for find_min_hamming_in_range
 
-    def merger(candidate, parts):
-        return [candidate], []
+    Arguments:
+        prev(dict): results from previous iterations
+        step(tuple): tuple of bounds and target value, (lower, upper, target)
+        carry(int): carry means allow for overflow of the previous (less significant) byte
+        strict(int): strict means allow the previous bytes to be bigger than the upper limit (limited to those bytes)
+                     in lower = 0x2000, upper = 0x2100, choosing 0x21 for the upper byte is not strict because
+                     then the lower bytes have to actually be smaller than or equal to 00 (0x2111 would not be in
+                     range)
+    Returns:
+        A tuple (score, value, mask) where score equals the number of matching bytes between the returned value and target.
 
-    return apply_atom_merger(merger, atoms, maxsize=maxsize)
+    Examples:
+        >>> initial = {(0,0): (0,0,0), (0,1): None, (1,0): None, (1,1): None}
+        >>> pwnlib.fmtstr.find_min_hamming_in_range_step(initial, (0, 0xFF, 0x1), 0, 0)
+        (1, 1, 255)
+        >>> pwnlib.fmtstr.find_min_hamming_in_range_step(initial, (0, 1, 1), 0, 0)
+        (1, 1, 255)
+        >>> pwnlib.fmtstr.find_min_hamming_in_range_step(initial, (0, 1, 1), 0, 1)
+        (0, 0, 0)
+        >>> pwnlib.fmtstr.find_min_hamming_in_range_step(initial, (0, 1, 0), 0, 1)
+        (1, 0, 255)
+        >>> repr(pwnlib.fmtstr.find_min_hamming_in_range_step(initial, (0xFF, 0x00, 0xFF), 1, 0))
+        'None'
+    """
+    lower, upper, value = step
+    carryadd = 1 if carry else 0
 
-def merge_atoms_small(atoms, sz, numbwritten, overflows=5):
-    assert 1 <= overflows, "must allow at least one overflow"
-    mincounter = numbwritten
-    maxcounter = numbwritten + overflows * (1 << (sz * 8))
+    valbyte = value & 0xFF
+    lowbyte = lower & 0xFF
+    upbyte = upper & 0xFF
 
-    def merger(candidate, parts):
-        if mincounter <= unpack(candidate.data, "all") <= maxcounter: return [candidate], []
+    # if we can the requested byte without carry, do so
+    # requiring strictness if possible is not a problem since strictness will cost at most a single byte
+    # (so if we don't get our wanted byte without strictness, we may as well require it if possible)
+    val_require_strict = valbyte > upbyte or valbyte == upbyte and strict
+    if lowbyte + carryadd <= valbyte:
+        if prev[(0, val_require_strict)]:
+            prev_score, prev_val, prev_mask = prev[(0, val_require_strict)]
+            return prev_score + 1, (prev_val << 8) | valbyte, (prev_mask << 8) | 0xFF
 
-    return apply_atom_merger(merger, atoms)
+    # now, we have two options: pick the wanted byte (forcing carry), or pick something else
+    # check which option is better
+    lowcarrybyte = (lowbyte + carryadd) & 0xFF
+    other_require_strict = lowcarrybyte > upbyte or lowcarrybyte == upbyte and strict
+    other_require_carry = lowbyte + carryadd > 0xFF
+    prev_for_val = prev[(1, val_require_strict)]
+    prev_for_other = prev[(other_require_carry, other_require_strict)]
+    if prev_for_val and (not prev_for_other or prev_for_other[0] <= prev_for_val[0] + 1):
+        return prev_for_val[0] + 1, (prev_for_val[1] << 8) | valbyte, (prev_for_val[2] << 8) | 0xFF
+    if prev_for_other:
+        return prev_for_other[0], (prev_for_other[1] << 8) | lowcarrybyte, (prev_for_other[2] << 8)
+    return None
 
-def find_nearest_bytes_le(lower, upper, value):
-    if not len(lower):
-        return ""
+def find_min_hamming_in_range(maxbytes, lower, upper, value):
+    steps = []
+    for _ in xrange(maxbytes):
+        steps += [(lower, upper, value)]
+        lower = lower >> 8
+        upper = upper >> 8
+        value = value >> 8
 
-    if len(lower) != len(upper):
-        diff = len(upper) - len(lower)
-        return find_nearest_bytes_le(lower + "\x00"*diff, upper + "\x00"*(-diff), value)
-
-    if len(upper) != len(value):
-        diff = len(value) - len(upper)
-        return find_nearest_bytes_le(lower, upper + "\x00"*diff, value + "\x00"*(-diff))
-
-    lowbyte = ord(lower[-1])
-    upbyte = ord(upper[-1])
-    valbyte = ord(value[-1])
-
-    choices = { min(upbyte, lowbyte + 1) }
-    if lowbyte <= valbyte <= upbyte:
-        choices.add(valbyte)
-
-    best = (-1, None)
-    for choice in choices:
-        new_lower = "\x00" * (len(lower) - 1) if choice != lowbyte else lower[:-1]
-        new_upper = "\xFF" * (len(upper) - 1) if choice != upbyte else upper[:-1]
-        result = find_nearest_bytes_le(new_lower, new_upper, value[:-1]) + chr(choice)
-
-        same = [i for i,(a,b) in enumerate(zip(result, value)) if a == b]
-        score = (len(same), -max(same) if same else None)
-        if score > best[0]:
-            best = (score, result)
-
-    return best[1]
-
+    prev = {
+        (False,False): (0, 0, 0),
+        (False,True): None,
+        (True,False): None,
+        (True,True): None,
+    }
+    for step in reversed(steps):
+        prev = {
+            (carry, strict): find_min_hamming_in_range_step(prev, step, carry, strict )
+            for carry in [False, True]
+            for strict in [False, True]
+        }
+    return prev[(False,False)]
 #
 # what we don't do:
 #  - create new atoms that cannot be created by merging existing atoms
@@ -278,7 +345,7 @@ def merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows):
     done = [False for _ in atoms]
 
     def possible_writes(idx, numbwritten):
-        candidate = AtomWrite(atoms[idx].start, "", "")
+        candidate = AtomWrite(atoms[idx].start, 0, 0)
         best = 0
         for nextidx in xrange(idx, len(atoms)):
             if candidate.size > szmax or done[nextidx] or candidate.end != atoms[nextidx].start:
@@ -288,16 +355,15 @@ def merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows):
             if candidate.size not in SPECIFIER: continue
 
             approxed = candidate
+            score = candidate.size
             if approxed.size > sz:
-                approx = find_nearest_bytes_le(pack(numbwritten, 'all'), pack(maxwritten, 'all'), approxed.data)
-                mask = "".join("\x00" if a != b else "\xFF" for a,b in zip(candidate.data, approx))
-                approxed = candidate._replace(mask=mask, data=approx)
+                score, v, m = find_min_hamming_in_range(approxed.size, numbwritten, maxwritten, approxed.integer)
+                approxed = candidate.replace(integer=v, mask=m)
 
-            if approxed.maskedsize > best:
-                best = approxed.maskedsize
+            if score > best:
+                best = score
                 yield list(xrange(idx, nextidx+1)), approxed
 
-    # possible_unconstrained = [list(possible_writes(idx, numbwritten))[:-1] for idx in xrange(len(atoms))]
     minconstraints = [numbwritten for _ in atoms]
     out = []
     for idx in xrange(len(atoms)):
@@ -306,8 +372,8 @@ def merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows):
         offset = 0
         for i in idxrange:
             shift = atoms[i].size
-            minconstraints[i] = max(minconstraints[i], unpack(candidate.data, 'all'))
-            if all(a == b for a,b in zip(candidate.mask[offset:offset+shift], atoms[i].mask)):
+            minconstraints[i] = max(minconstraints[i], candidate.integer)
+            if not ((~candidate[offset:offset+shift].mask) & atoms[i].mask):
                 done[i] = True
             offset += shift
         out += [candidate]
@@ -315,23 +381,37 @@ def merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows):
 
 def sort_atoms(atoms, numbwritten):
     # find dependencies
-    writes = IntervalTree()
-    depgraph = {}
-    rdepgraph = { a: set() for a in atoms }
-    for atom in atoms:
-        depgraph[atom] = set(i.data for i in writes.search(atom.start, atom.end))
-        for dep in depgraph[atom]:
-            rdepgraph[dep].add(atom)
-        writes[atom.start:atom.end] = atom
+    order = { atom: i for i,atom in enumerate(atoms) }
 
-    mods = { sz: 1 << (sz * 8) for sz in SPECIFIER }
-    queues = { sz: SortedList(key=lambda a: a.value) for sz in SPECIFIER.keys() }
-    pointers = {}
+    def conflicts():
+        prev = None
+        for a in sorted(atoms, key=lambda a: a.start):
+            if not prev:
+                prev = a
+                continue
+            if prev.end > a.start:
+                yield prev, a
+            if a.end > prev.end:
+                prev = a
+
+    depgraph = { a: set() for a in atoms }
+    rdepgraph = { a: set() for a in atoms }
+    for a,b in conflicts():
+        if order[a] < order[b]:
+            depgraph[b].add(a)
+            rdepgraph[a].add(b)
+        else:
+            depgraph[a].add(b)
+            rdepgraph[b].add(a)
+
+    szmask = { sz: (1 << (sz * 8)) - 1 for sz in SPECIFIER }
+    queues = { sz: SortedList(key=lambda a: a.integer) for sz in SPECIFIER.keys() }
+    pointers = { sz: 0 for sz in SPECIFIER }
 
     def enqueue(atom):
         queues[atom.size].add(atom)
-        if atom.value % mods[atom.size] < numbwritten % mods[atom.size]:
-            pointers[sz] += 1
+        if atom.integer & szmask[atom.size] < numbwritten & szmask[atom.size]:
+            pointers[atom.size] += 1
 
     for atom, deps in depgraph.items():
         if not deps:
@@ -341,7 +421,7 @@ def sort_atoms(atoms, numbwritten):
     while True:
         active_sizes = [ sz for sz,p in pointers.items() if p < len(queues[sz]) ]
         if active_sizes:
-            best_size = min(active_sizes, key=lambda sz: queues[sz][pointers[sz]].value - numbwritten)
+            best_size = min(active_sizes, key=lambda sz: queues[sz][pointers[sz]].integer - numbwritten)
         else:
             available_sizes = [ sz for sz,q in queues.items() if q ]
             if not available_sizes:
@@ -353,73 +433,24 @@ def sort_atoms(atoms, numbwritten):
 
         changed = False
         for sz in pointers:
-            diff = (best_atom.value ^ numbwritten)
-            if diff // mods[sz] != 0:
+            diff = (best_atom.integer ^ numbwritten)
+            if diff & ~szmask[sz] != 0:
                 changed |= pointers[sz] != 0
                 pointers[sz] = 0
         if changed: continue
-
-        for dep in rdepgraph.pop(best_atom):
-            if best_atom not in depgraph[dep]: continue
-            depgraph[dep].discard(best_atom)
-            if not depgraph[dep]:
-                enqueue(dep)
 
         out.append(best_atom)
         queues[best_size].pop(pointers[best_size])
         numbwritten += best_atom.compute_padding(numbwritten)
 
+        for dep in rdepgraph.pop(best_atom):
+            if best_atom not in depgraph[dep]:
+                continue
+            depgraph[dep].discard(best_atom)
+            if not depgraph[dep]:
+                enqueue(dep)
+
     return out
-
-
-    # sort the atoms respecting their dependencies using a topological sort
-    #
-    # this is not optimal, I was not able to come up with an efficient optimal algorithm
-    #
-    # the reason the following is suboptimal is that it may be beneficial
-    # to delay some writes even though all their dependencies are
-    # already done
-    #
-    # here's an example where this algorithm will produce suboptimal results:
-    #
-    # a = Atom(0, "\x17\x00\x00\x00")
-    # b = Atom(1, "\x16\x00\x00\x00")  # overwrites parts of a
-    # c = Atom(5, "\x21\x01\x00\x00")  # overwrites nothing
-    # d = Atom(4, "\x15\x11")          # overwrites parts of b and c
-    # e = Atom(2, "\x22\x01")          # overwrites parts of b
-    #
-    # (writes are to be executed in order a,b,c,d,e)
-    #
-    # the dependency graph looks like this (a <-- b means b depends on a)
-    #
-    # a <-- b <-- e
-    #       ^
-    #       |
-    # c <-- d
-    #
-    # the algorithm will produce [a,c,b,e,d] while the sequence [a,b,c,e,d]
-    # would be better since c->e can be done more efficiently (difference is
-    # smaller, thus we need less characters for the padding number)
-    result = [(numbwritten, None)]
-    while deps:
-        # get all atoms that are ready (=> have no dependencies)
-        ready = [ atom for atom, d in deps.items() if not d & set(deps.keys()) ]
-
-        # insert ready atoms, preserving dependencies
-        for atom in ready:
-            minidx = max(i for i,(_, a) in enumerate(result) if a in deps[atom] or a is None)
-            best = (None, float("inf"))
-            for idx in xrange(minidx, len(result)):
-                score = atom.compute_padding(result[idx][0])
-                if score < best[1]:
-                    best = (idx, score)
-
-            newcounter = result[best[0]][0] + best[1]
-            result.insert(best[0] + 1, (newcounter, atom))
-            deps.pop(atom, None)
-
-    return [x for _, x in result[1:]]
-
 
 def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4):
     data = ""
@@ -427,8 +458,6 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4):
 
     counter = numbwritten
     for idx, atom in enumerate(atoms):
-        sz = len(atom.data)
-
         # set format string counter to correct value
         padding = atom.compute_padding(counter)
         counter = (counter + padding) % (1 << (countersize * 8))
@@ -445,20 +474,29 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4):
 
     return fmt, data
 
-def fmtstr_split(offset, writes, numbwritten=0, write_size='byte'):
-    if write_size not in ['byte', 'short', 'int']:
-        log.error("write_size must be 'byte', 'short' or 'int'")
-
+def make_atoms(writes, sz, szmax, numbwritten, overflows, strategy="small"):
     all_atoms = []
     for address, data in normalize_writes(writes):
         atoms = make_atoms_simple(address, data)
-        #atoms = merge_atoms_small(atoms, WRITE_SIZE[write_size], numbwritten)
-        atoms = merge_atoms_overlapping(atoms, WRITE_SIZE[write_size], None, numbwritten, 5)
+        if strategy == 'small':
+            atoms = merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows)
+        elif strategy == 'fast':
+            atoms = merge_atoms_writesize(atoms, sz)
         atoms = sort_atoms(atoms, numbwritten)
+    return all_atoms
 
-        all_atoms += atoms
+def fmtstr_split(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small"):
+    if write_size not in ['byte', 'short', 'int']:
+        log.error("write_size must be 'byte', 'short' or 'int'")
 
-    return make_payload_dollar(offset, all_atoms, numbwritten=numbwritten)
+    if write_size_max not in ['byte', 'short', 'int', 'long']:
+        log.error("write_size_max must be 'byte', 'short', 'int' or 'long'")
+
+    sz = WRITE_SIZE[write_size]
+    szmax = WRITE_SIZE[write_size_max]
+    atoms = make_atoms(writes, sz, szmax, numbwritten, overflows, strategy)
+
+    return make_payload_dollar(offset, atoms, numbwritten)
 
 def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', offset_bytes=0):
     r"""fmtstr_payload(offset, writes, numbwritten=0, write_size='byte') -> str
@@ -490,13 +528,24 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', offset_byte
         '%4919c%7$hn%42887c%8$hna\x02\x00\x00\x00\x00\x00\x00\x00'
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte'))
         '%19c%12$hhn%36c%13$hhn%131c%14$hhn%4c%15$hhn\x03\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
-
+        >>> print repr(fmtstr_payload(1, {0x0: 0x00000001}, write_size='byte'))
+        '%1c%3$na\x00\x00\x00\x00'
+        >>> print repr(fmtstr_payload(1, {0x0: "\xff\xff\x04\x11\x00\x00\x00\x00"}, write_size='short'))
+        '%327679c%7$lln%18c%8$hhn\x00\x00\x00\x00\x03\x00\x00\x00'
     """
+    all_atoms = []
+    for address, data in normalize_writes(writes):
+        atoms = make_atoms_simple(address, data)
+        #atoms = merge_atoms_small(atoms, WRITE_SIZE[write_size], numbwritten)
+        atoms = merge_atoms_overlapping(atoms, WRITE_SIZE[write_size], None, numbwritten, 5)
+        atoms = sort_atoms(atoms, numbwritten)
+
+        all_atoms += atoms
 
     fmt = ""
     for iteration in xrange(1000000):
         data_offset = (offset_bytes + len(fmt)) // context.bytes
-        fmt, data = fmtstr_split(offset + data_offset, writes, numbwritten=numbwritten, write_size=write_size)
+        fmt, data = make_payload_dollar(offset + data_offset, all_atoms, numbwritten=numbwritten)
         fmt = fmt + cyclic((-len(fmt)-offset_bytes) % context.bytes)
 
         if len(fmt) + offset_bytes == data_offset * context.bytes:
