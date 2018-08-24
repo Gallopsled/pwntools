@@ -280,6 +280,9 @@ def make_atoms_simple(address, data, badbytes=set()):
     if not badbytes:
         return [AtomWrite(address + i, 1, ord(d)) for i, d in enumerate(data)]
 
+    if any(x in badbytes for x in pack(address)):
+        raise RuntimeError("impossible to avoid a bad byte in starting address %x" % address)
+
     i = 0
     out = []
     while i < len(data):
@@ -373,19 +376,45 @@ def find_min_hamming_in_range_step(prev, step, carry, strict):
         return prev_for_other[0], (prev_for_other[1] << 8) | lowcarrybyte, (prev_for_other[2] << 8)
     return None
 
-def find_min_hamming_in_range(maxbytes, lower, upper, value):
+def find_min_hamming_in_range(maxbytes, lower, upper, target):
+    """
+    Find the value which differs in the least amount of bytes from the target and is in the given range.
+
+    Returns a tuple (count, value, mask) where count is the number of equal bytes and mask selects the equal bytes.
+    So mask & target == value & target and lower <= value <= upper.
+
+    Arguments:
+        maxbytes(int): bytes above maxbytes (counting from the least significant first) don't need to match
+        lower(int): lower bound for the returned value, inclusive
+        upper(int): upper bound, inclusive
+        target(int): the target value that should be approximated
+
+    Examples:
+        >>> pp = lambda (score, value, mask): (score, hex(value), hex(mask))
+        >>> pp(pwnlib.fmtstr.find_min_hamming_in_range(1, 0x0, 0x100, 0xaa))
+        (1, '0xaa', '0xff')
+        >>> pp(pwnlib.fmtstr.find_min_hamming_in_range(1, 0xbb, 0x100, 0xaa))
+        (0, '0xbb', '0x0')
+        >>> pp(pwnlib.fmtstr.find_min_hamming_in_range(1, 0xbb, 0x200, 0xaa))
+        (1, '0x1aa', '0xff')
+        >>> pp(pwnlib.fmtstr.find_min_hamming_in_range(2, 0x0, 0x100, 0xaa))
+        (2, '0xaa', '0xffff')
+        >>> pp(pwnlib.fmtstr.find_min_hamming_in_range(4, 0x1234, 0x10000, 0x0))
+        (3, '0x10000', '0xff00ffff')
+    """
     steps = []
     for _ in xrange(maxbytes):
-        steps += [(lower, upper, value)]
+        steps += [(lower, upper, target)]
         lower = lower >> 8
         upper = upper >> 8
-        value = value >> 8
+        target = target >> 8
 
+    # the initial state
     prev = {
         (False,False): (0, 0, 0),
-        (False,True): None,
-        (True,False): None,
-        (True,True): None,
+        (False,True): None if upper == lower else (0, lower, 0),
+        (True,False): None if upper == lower else (0, lower, 0),
+        (True,True): None if upper <= lower + 1 else (0, lower + 1, 0)
     }
     for step in reversed(steps):
         prev = {
@@ -428,17 +457,20 @@ def merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows):
                 best = score
                 yield list(xrange(idx, nextidx+1)), approxed
 
-    minconstraints = [numbwritten for _ in atoms]
+    numbwritten_at = [numbwritten for _ in atoms]
     out = []
     for idx in xrange(len(atoms)):
         if done[idx]: continue
-        idxrange, candidate = list(possible_writes(idx, minconstraints[idx]))[-1]
+        numbwritten_here = numbwritten_at[idx]
+        idxrange, candidate = list(possible_writes(idx, numbwritten_here))[-1]
+        numbwritten_here += candidate.compute_padding(numbwritten_here)
         offset = 0
         for i in idxrange:
             shift = atoms[i].size
-            minconstraints[i] = max(minconstraints[i], candidate.integer)
             if not ((~candidate[offset:offset+shift].mask) & atoms[i].mask):
                 done[i] = True
+            else:
+                numbwritten_at[i] = max(numbwritten_at[i], numbwritten_here)
             offset += shift
         out += [candidate]
     return out
@@ -551,6 +583,9 @@ def make_atoms(writes, sz, szmax, numbwritten, overflows, strategy, badbytes):
     return all_atoms
 
 def fmtstr_split(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small", badbytes=set()):
+    """
+    Build a format string like fmtstr_payload but return the string and data separately.
+    """
     if write_size not in ['byte', 'short', 'int']:
         log.error("write_size must be 'byte', 'short' or 'int'")
 
