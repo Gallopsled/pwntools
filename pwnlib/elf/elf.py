@@ -56,12 +56,11 @@ from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.segments import InterpSegment
 
-# ENUM_P_TYPE was renamed to ENUM_P_TYPE_BASE in elftools 0.25:
-# https://github.com/eliben/pyelftools/commit/73716604dcd617f77ea39f20b32189ca6dc395e5
+# See https://github.com/Gallopsled/pwntools/issues/1189
 try:
-    from elftools.elf.enums import ENUM_P_TYPE_BASE
+    from elftools.elf.enums import ENUM_P_TYPE
 except ImportError:
-    from elftools.elf.enums import ENUM_P_TYPE as ENUM_P_TYPE_BASE
+    from elftools.elf.enums import ENUM_P_TYPE_BASE as ENUM_P_TYPE
 
 import intervaltree
 
@@ -1752,7 +1751,7 @@ class ELF(ELFFile):
 
         Zeroes out the ``PT_GNU_STACK`` program header ``p_type`` field.
         """
-        PT_GNU_STACK = packing.p32(ENUM_P_TYPE_BASE['PT_GNU_STACK'])
+        PT_GNU_STACK = packing.p32(ENUM_P_TYPE['PT_GNU_STACK'])
 
         if not self.executable:
             log.error("Can only make stack executable with executables")
