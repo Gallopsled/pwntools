@@ -1102,7 +1102,7 @@ class Coredump(Corefile):
 class CorefileFinder(object):
     def __init__(self, proc):
         if proc.poll() is None:
-            log.error("Process %i has not exited" % (process.pid))
+            log.error("Process %r has not exited", process.pid)
 
         self.process = proc
         self.pid = proc.pid
@@ -1134,7 +1134,7 @@ class CorefileFinder(object):
 
         # If we have already located the corefile, we will
         # have renamed it to 'core.<pid>'
-        core_path = 'core.%i' % (proc.pid)
+        core_path = 'core.%r' % (proc.pid)
         self.core_path = None
 
         if os.path.isfile(core_path):
@@ -1159,7 +1159,7 @@ class CorefileFinder(object):
 
         # Move the corefile if we're configured that way
         if context.rename_corefiles:
-            new_path = 'core.%i' % core_pid
+            new_path = 'core.%r' % core_pid
             if core_pid > 0 and new_path != self.core_path:
                 write(new_path, self.read(self.core_path))
                 self.unlink(self.core_path)
@@ -1167,7 +1167,7 @@ class CorefileFinder(object):
 
         # Check the PID
         if core_pid != self.pid:
-            log.warn("Corefile PID does not match! (got %i)", core_pid)
+            log.warn("Corefile PID does not match! (got %r)", core_pid)
 
         # Register the corefile for removal only if it's an exact match
         elif context.delete_corefiles:
@@ -1355,7 +1355,7 @@ class CorefileFinder(object):
         corefile_path = pattern.sub(lambda m: replace[re.escape(m.group(0))], core_pattern)
 
         if self.kernel_core_uses_pid:
-            corefile_path += '.%i' % self.pid
+            corefile_path += '.%r' % self.pid
 
         if os.pathsep not in corefile_path:
             corefile_path = os.path.join(self.cwd, corefile_path)
