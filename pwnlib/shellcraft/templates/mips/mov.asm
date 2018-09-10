@@ -61,7 +61,7 @@ Example:
 </%docstring>
 <%
 if isinstance(src, str) and src.startswith('$') and src not in registers.mips:
-    log.error("Unknown register %r" % src)
+    log.error("Unknown register %r", src)
     return
 
 if not dst.startswith('$'):
@@ -69,7 +69,7 @@ if not dst.startswith('$'):
     return
 
 if isinstance(src, str) and dst.startswith('$') and dst not in registers.mips:
-    log.error("Unknown register %r" % dst)
+    log.error("Unknown register %r", dst)
     return
 
 if isinstance(src, str) and src not in registers.mips:

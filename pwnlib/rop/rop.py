@@ -326,7 +326,7 @@ class DescriptiveStack(list):
                 if self.address != 0 and self.address < data < self.next:
                     off = data - addr
             else:
-                log.error("Don't know how to dump %r" % data)
+                log.error("Don't know how to dump %r", data)
             desc = self.descriptions.get(addr, '')
             if desc:
                 line += ' %s' % desc
@@ -771,7 +771,7 @@ class ROP(object):
                             adjust   = self.search(move = fix_bytes)
 
                             if not adjust:
-                                log.error("Could not find gadget to adjust stack by %#x bytes" % fix_bytes)
+                                log.error("Could not find gadget to adjust stack by %#x bytes", fix_bytes)
 
                             nextGadgetAddr += adjust.move
 
@@ -889,7 +889,7 @@ class ROP(object):
 
         # Otherwise, if it is a syscall we might be able to call it
         elif not self._srop_call(resolvable, arguments):
-            log.error('Could not resolve %r.' % resolvable)
+            log.error('Could not resolve %r.', resolvable)
 
 
 
@@ -911,7 +911,7 @@ class ROP(object):
             if syscall_gadget:
                 break
         else:
-            log.error("Could not find any instructions in %r" % syscall_instructions)
+            log.error("Could not find any instructions in %r", syscall_instructions)
 
         # Generate the SROP frame which would invoke the syscall
         with context.local(arch=self.elfs[0].arch):

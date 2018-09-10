@@ -346,7 +346,7 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
                 break
         else:
             nope = sorted((k,v) for k,v in in_out.items())
-            log.error("Cannot break dependency cycles in %r" % nope)
+            log.error("Cannot break dependency cycles in %r", nope)
 
 
     # Don't set the temporary register now

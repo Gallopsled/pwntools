@@ -228,7 +228,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
     if not terminal:
         log.error('Could not find a terminal binary to use. Set context.terminal to your terminal.')
     elif not which(terminal):
-        log.error('Could not find terminal binary %r. Set context.terminal to your terminal.' % terminal)
+        log.error('Could not find terminal binary %r. Set context.terminal to your terminal.', terminal)
 
     if isinstance(args, tuple):
         args = list(args)
@@ -244,7 +244,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
             log.error("Cannot use commands with semicolon.  Create a script and invoke that directly.")
         argv += list(command)
 
-    log.debug("Launching a new terminal: %r" % argv)
+    log.debug("Launching a new terminal: %r", argv)
 
     pid = os.fork()
 

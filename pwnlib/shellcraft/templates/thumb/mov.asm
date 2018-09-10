@@ -68,7 +68,7 @@ if isinstance(src, (str, unicode)):
             try:
                 src = eval(src)
             except (AttributeError, ValueError):
-                log.error("Could not figure out the value of %r" % src)
+                log.error("Could not figure out the value of %r", src)
                 return
 
 # ARM has a mov-const-with-shift

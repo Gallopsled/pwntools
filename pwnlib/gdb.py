@@ -425,7 +425,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
         qemu_user = qemu.user_path()
         sysroot = sysroot or qemu.ld_prefix(env=env)
         if not qemu_user:
-            log.error("Cannot debug %s binaries without appropriate QEMU binaries" % context.arch)
+            log.error("Cannot debug %s binaries without appropriate QEMU binaries", context.arch)
         args = [qemu_user, '-g', str(qemu_port)] + args
 
     # Use a sane default sysroot for Android
@@ -434,11 +434,11 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
 
     # Make sure gdbserver/qemu is installed
     if not which(args[0]):
-        log.error("%s is not installed" % args[0])
+        log.error("%s is not installed", args[0])
 
     exe = exe or which(orig_args[0])
     if not exe:
-        log.error("%s does not exist" % orig_args[0])
+        log.error("%s does not exist", orig_args[0])
     else:
         gdbscript = 'file %s\n%s' % (exe, gdbscript)
 
@@ -648,7 +648,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
         pids = pidof(target)
         if not pids:
-            log.error('No such process: %s' % target)
+            log.error('No such process: %s', target)
         pid = pids[0]
         log.info('Attaching to youngest process "%s" (PID = %d)' %
                  (target, pid))
@@ -710,7 +710,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
     elif isinstance(target, elf.corefile.Corefile):
         pre += 'target core %s\n' % target.path
     else:
-        log.error("don't know how to attach to target: %r" % target)
+        log.error("don't know how to attach to target: %r", target)
 
     # if we have a pid but no exe, just look it up in /proc/
     if pid and not exe:
@@ -743,7 +743,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
             ssh.download_file(exe)
             exe = os.path.basename(exe)
         if not os.path.isfile(exe):
-            log.error('No such file: %s' % exe)
+            log.error('No such file: %s', exe)
         cmd += ' "%s"' % exe
 
     if pid and not context.os == 'android':

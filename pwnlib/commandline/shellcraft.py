@@ -197,7 +197,7 @@ def main(args):
         exit()
 
     if args.shellcode not in shellcraft.templates:
-        log.error("Unknown shellcraft template %r. Use --list to see available shellcodes." % args.shellcode)
+        log.error("Unknown shellcraft template %r. Use --list to see available shellcodes.", args.shellcode)
 
     func = get_template(args.shellcode)
 

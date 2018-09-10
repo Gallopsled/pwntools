@@ -84,7 +84,7 @@ def main(args):
             try:
                 constant = safeeval.expr(args.constant)
             except:
-                log.error("Could not evaluate constant %r" % args.constant)
+                log.error("Could not evaluate constant %r", args.constant)
         else:
             constant = None
 
