@@ -335,7 +335,7 @@ class Corefile(ELF):
         You can specify a full path a la ``Corefile('/path/to/core')``,
         but you can also just access the :attr:`.process.corefile` attribute.
 
-        >>> core = io.corefile
+        >>> with context.local(log_level='debug'): core = io.corefile
 
         The core file has a :attr:`.Corefile.exe` property, which is a :class:`.Mapping`
         object.  Each mapping can be accessed with virtual addresses via subscript, or
@@ -539,7 +539,7 @@ class Corefile(ELF):
         prpsinfo_type = prpsinfo_types.get(self.bits, None)
         siginfo_type = siginfo_types.get(self.bits, None)
 
-        with log.waitfor("Parsing corefile...") as w:
+        with log.waitfor("Parsing corefile %r..." % self.file.name) as w:
             self._load_mappings()
 
             for segment in self.segments:
@@ -594,7 +594,9 @@ class Corefile(ELF):
                             self.stack   = mapping
                             break
                     else:
+                        from pwnlib.util.fiddling import enhex
                         log.warn('Could not find the stack!')
+                        log.warn('HEX: %s', enhex(self.data))
                         self.stack = None
 
             with context.local(bytes=self.bytes, log_level='warn'):
@@ -1158,7 +1160,7 @@ class CorefileFinder(object):
         core_pid = self.load_core_check_pid()
 
         # Move the corefile if we're configured that way
-        if context.rename_corefiles:
+        if core_pid is not None and context.rename_corefiles:
             new_path = 'core.%r' % core_pid
             if core_pid > 0 and new_path != self.core_path:
                 write(new_path, self.read(self.core_path))
@@ -1180,11 +1182,8 @@ class CorefileFinder(object):
         Speculatively load a Corefile without informing the user, so that we
         can check if it matches the process we're looking for.
 
-        Arguments:
-            path(str): Path to the corefile on disk
-
         Returns:
-            `bool`: ``True`` if the Corefile matches, ``False`` otherwise.
+            PID of the corefile, or None
         """
 
         try:
@@ -1193,10 +1192,11 @@ class CorefileFinder(object):
                     tmp.write(self.read(self.core_path))
                     tmp.flush()
                     return Corefile(tmp.name).pid
-        except Exception:
+        except Exception as e:
+            log.debug("Could not load Corefile %r: %s", self.core_path, e)
             pass
 
-        return -1
+        return None
 
     def apport_corefile(self):
         """Find the apport crash for the process, and extract the core file.
@@ -1381,6 +1381,8 @@ class CorefileFinder(object):
         #
         # Note that we don't give any fucks about the date and time, since the PID
         # should be unique enough that we can just glob.
+        os.system('ls -la')
+
         corefile_name = 'qemu_{basename}_*_{pid}.core'
 
         # Format the name
@@ -1394,7 +1396,11 @@ class CorefileFinder(object):
 
         # Glob all of them, return the *most recent* based on numeric sort order.
         for corefile in sorted(glob.glob(corefile_path), reverse=True):
+            os.system('readelf -a %s' % corefile)
+            log.debug("Found QEMU corefile %r", corefile)
             return corefile
+
+        log.debug("Could not find a QEMU corefile")
 
     def binfmt_lookup(self):
         """Parses /proc/sys/fs/binfmt_misc to find the interpreter for a file"""
