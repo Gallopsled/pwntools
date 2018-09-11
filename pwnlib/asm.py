@@ -51,10 +51,48 @@ import string
 import subprocess
 import sys
 import tempfile
+from binascii import hexlify
 from collections import defaultdict
 from glob import glob
 from os import environ
 from os import path
+
+from capstone import CS_ARCH_ARM
+from capstone import CS_ARCH_ARM64
+from capstone import CS_ARCH_MIPS
+from capstone import CS_ARCH_PPC
+from capstone import CS_ARCH_SPARC
+from capstone import CS_ARCH_X86
+from capstone import CS_MODE_32
+from capstone import CS_MODE_64
+from capstone import CS_MODE_ARM
+from capstone import CS_MODE_BIG_ENDIAN
+from capstone import CS_MODE_LITTLE_ENDIAN
+from capstone import CS_MODE_MIPS32
+from capstone import CS_MODE_MIPS64
+from capstone import CS_MODE_THUMB
+from capstone import Cs
+from capstone import CsError
+from keystone import KS_ARCH_ARM
+from keystone import KS_ARCH_ARM64
+from keystone import KS_ARCH_MIPS
+from keystone import KS_ARCH_PPC
+from keystone import KS_ARCH_SPARC
+from keystone import KS_ARCH_X86
+from keystone import KS_MODE_32
+from keystone import KS_MODE_64
+from keystone import KS_MODE_ARM
+from keystone import KS_MODE_BIG_ENDIAN
+from keystone import KS_MODE_LITTLE_ENDIAN
+from keystone import KS_MODE_MIPS32
+from keystone import KS_MODE_MIPS64
+from keystone import KS_MODE_PPC32
+from keystone import KS_MODE_PPC64
+from keystone import KS_MODE_SPARC32
+from keystone import KS_MODE_SPARC64
+from keystone import KS_MODE_THUMB
+from keystone import Ks
+from keystone import KsError
 
 from pwnlib import atexit
 from pwnlib import shellcraft
@@ -208,6 +246,102 @@ def which_binutils(util):
     print_binutils_instructions(util, context)
 
 checked_assembler_version = defaultdict(lambda: False)
+
+def _keystone():
+    endian = {
+        'big':    KS_MODE_BIG_ENDIAN,
+        'little': KS_MODE_LITTLE_ENDIAN,
+    }[context.endianness]
+
+    ks_arch, ks_mode = '', ''
+    if context.arch == 'i386' or context.arch == 'amd64':
+        ks_arch = KS_ARCH_X86
+        if context.bits == 32:
+            ks_mode = KS_MODE_32
+        elif context.bits == 64:
+            ks_mode = KS_MODE_64
+    elif context.arch == 'thumb':
+        ks_arch = KS_ARCH_ARM
+        ks_mode = KS_MODE_THUMB + endian
+    elif context.arch == 'arm':
+        ks_arch = KS_ARCH_ARM
+        ks_mode = KS_MODE_ARM + endian
+    elif context.arch == 'aarch64':
+        ks_arch = KS_ARCH_ARM64
+        ks_mode = endian
+    elif context.arch == 'mips' or context.arch == 'mips64':
+        ks_arch = KS_ARCH_MIPS
+        if context.bits == 32:
+            ks_mode = KS_MODE_MIPS32 + endian
+        elif context.bits == 64:
+            ks_mode = KS_MODE_MIPS64 + endian
+    elif context.arch == 'sparc' or context.arch == 'sparc64':
+        ks_arch = KS_ARCH_SPARC
+        if context.bits == 32:
+            ks_mode = KS_MODE_SPARC32 + endian
+        elif context.bits == 64:
+            ks_mode = KS_MODE_SPARC64 + endian
+    elif context.arch == 'powerpc' or context.arch == 'powerpc64':
+        ks_arch = KS_ARCH_PPC
+        if context.bits == 32:
+            ks_mode = KS_MODE_PPC32 + endian
+        elif context.bits == 64:
+            ks_mode = KS_MODE_PPC64 + endian
+
+    if ks_arch == '' or ks_mode == '':
+        return None
+
+    try:
+        ks = Ks(ks_arch, ks_mode)
+    except:
+        log.exception('Keystone error.')
+
+    return ks
+
+def _capstone():
+    endian = {
+        'big':    CS_MODE_BIG_ENDIAN,
+        'little': CS_MODE_LITTLE_ENDIAN,
+    }[context.endianness]
+
+    cs_arch, cs_mode = '', ''
+    if context.arch == 'i386' or context.arch == 'amd64':
+        cs_arch = CS_ARCH_X86
+        if context.bits == 32:
+            cs_mode = CS_MODE_32
+        elif context.bits == 64:
+            cs_mode = CS_MODE_64
+    elif context.arch == 'thumb':
+        cs_arch = CS_ARCH_ARM
+        cs_mode = CS_MODE_THUMB + endian
+    elif context.arch == 'arm':
+        cs_arch = CS_ARCH_ARM
+        cs_mode = CS_MODE_ARM + endian
+    elif context.arch == 'aarch64':
+        cs_arch = CS_ARCH_ARM64
+        cs_mode = endian
+    elif context.arch == 'mips' or context.arch == 'mips64':
+        cs_arch = CS_ARCH_MIPS
+        if context.bits == 32:
+            cs_mode = CS_MODE_MIPS32 + endian
+        elif context.bits == 64:
+            cs_mode = CS_MODE_MIPS64 + endian
+    elif context.arch == 'sparc' or context.arch == 'sparc64':
+        cs_arch = CS_ARCH_SPARC
+        cs_mode = endian
+    elif context.arch == 'powerpc' or context.arch == 'powerpc64':
+        cs_arch = CS_ARCH_PPC
+        cs_mode = endian
+
+    if cs_arch == '' or cs_mode == '':
+        return None
+
+    try:
+        cs = Cs(cs_arch, cs_mode)
+    except CsError:
+        log.exception('Capstone error.')
+
+    return cs
 
 def _assembler():
     gas = which_binutils('as')
@@ -609,7 +743,7 @@ def make_elf(data,
     return retval
 
 @LocalContext
-def asm(shellcode, vma = 0, extract = True, shared = False):
+def _asm_binutil(shellcode, vma = 0, extract = True, shared = False):
     r"""asm(code, vma = 0, extract = True, shared = False, ...) -> str
 
     Runs :func:`cpp` over a given shellcode and then assembles it into bytes.
@@ -715,7 +849,7 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
     return result
 
 @LocalContext
-def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
+def _disasm_binutil(data, vma = 0, byte = True, offset = True, instructions = True):
     """disasm(data, ...) -> str
 
     Disassembles a bytestring into human readable assembler.
@@ -815,6 +949,123 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
             line += b
         if instructions:
             line += i
+        lines.append(line)
+
+    return '\n'.join(lines)
+
+@LocalContext
+def asm(shellcode, vma = 0, extract = True, shared = False):
+    r"""asm(code, vma = 0, extract = True, shared = False, ...) -> str
+
+    Runs :func:`cpp` over a given shellcode and then assembles it into bytes.
+
+    To see which architectures or operating systems are supported,
+    look in :mod:`pwnlib.context`.
+
+    Arguments:
+        shellcode(str): Assembler code to assemble.
+        vma(int):       Virtual memory address of the beginning of assembly
+        extract(bool):  Extract the raw assembly bytes from the assembled
+                        file.  If :const:`False`, returns the path to an ELF file
+                        with the assembly embedded.
+        shared(bool):   Create a shared object.
+        kwargs(dict):   Any attributes on :data:`.context` can be set, e.g.set
+                        ``arch='arm'``.
+
+    Examples:
+
+        >>> asm("mov eax, SYS_select", arch = 'i386', os = 'freebsd')
+        '\xb8]\x00\x00\x00'
+        >>> asm("mov eax, SYS_select", arch = 'amd64', os = 'linux')
+        '\xb8\x17\x00\x00\x00'
+        >>> asm("mov rax, SYS_select", arch = 'amd64', os = 'linux')
+        'H\xc7\xc0\x17\x00\x00\x00'
+        >>> asm("mov r0, #SYS_select", arch = 'arm', os = 'linux', bits = 32)
+        'R\x00\xa0\xe3'
+        >>> asm("rldicr r4,r4,32,31", arch = 'powerpc', bits = 64, endian = 'big')
+        'x\x84\x07\xc6'
+        >>> asm("li 0,4", arch = 'powerpc', bits = 32, endian = 'big')
+        '8\x00\x00\x04'
+        >>> asm("mov 1, %g1", arch = 'sparc', bits = 32)
+        '\x82\x10 \x01'
+        >>> asm("srlx %r1, %r2, %r3", arch = 'sparc', bits = 64, endian = 'big')
+        '\x870P\x02'
+    """
+    ks = _keystone()
+
+    if ks is None:
+        return _asm_binutil(shellcode, vma, extract, shared)
+
+    result = ''
+    code = cpp(shellcode)
+
+    log.debug('Assembling\n%s' % code)
+
+    try:
+        result, count = ks.asm(code, addr=vma, as_bytes=True)
+    except KsError as e:
+        lines = '\n'.join('%4i: %s' % (i+1,line) for (i,line) in enumerate(code.splitlines()))
+        log.exception("An error occurred while assembling:\n%s" % lines)
+
+    return result
+
+@LocalContext
+def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
+    """disasm(data, ...) -> str
+
+    Disassembles a bytestring into human readable assembler.
+
+    To see which architectures are supported,
+    look in :mod:`pwnlib.contex`.
+
+    Arguments:
+      data(str): Bytestring to disassemble.
+      vma(int): Passed through to the --adjust-vma argument of objdump
+      byte(bool): Include the hex-printed bytes in the disassembly
+      offset(bool): Include the virtual memory address in the disassembly
+      instructions(bool): Include the disassembled instructions
+
+    Kwargs:
+      Any arguments/properties that can be set on ``context``
+
+    Examples:
+
+        >>> print disasm('b85d000000'.decode('hex'), arch = 'i386')
+           0:   b85d000000              mov    eax, 0x5d
+        >>> print disasm('b85d000000'.decode('hex'), arch = 'i386', byte = 0)
+           0:   mov    eax, 0x5d
+        >>> print disasm('b85d000000'.decode('hex'), arch = 'i386', byte = 0, offset = 0)
+        mov    eax, 0x5d
+        >>> print disasm('b817000000'.decode('hex'), arch = 'amd64')
+           0:   b817000000              mov    eax, 0x17
+        >>> print disasm('48c7c017000000'.decode('hex'), arch = 'amd64')
+           0:   48c7c017000000          mov    rax, 0x17
+        >>> print disasm('04001fe552009000'.decode('hex'), arch = 'arm')
+           0:   04001fe5                ldr    r0, [pc, #-4]
+           4:   52009000                addseq r0, r0, r2, asr r0
+        >>> print disasm('4ff00500'.decode('hex'), arch = 'thumb', bits=32)
+           0:   4ff00500                mov.w  r0, #5
+    """
+    cs = _capstone()
+
+    if cs is None:
+        return _disasm_binutil(data, vma, byte, offset, instructions)
+
+    try:
+        result = cs.disasm(data, vma)
+    except Exception:
+        log.exception("An error occurred while disassembling:\n%s" % data)
+
+    lines = []
+    for insn in result:
+        line = ''
+
+        if offset:
+            line += '{:4x}:   '.format(insn.address)
+        if byte:
+            line += '{:23s} '.format(hexlify(insn.bytes))
+        if instructions:
+            line += '{:6s} {:s}'.format(insn.mnemonic, insn.op_str)
         lines.append(line)
 
     return '\n'.join(lines)
