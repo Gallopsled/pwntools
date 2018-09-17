@@ -14,3 +14,4 @@ pygments>=2.0
 sphinx_rtd_theme
 doc2dash
 coveralls
+sphinx<1.8.0
