@@ -87,6 +87,7 @@ from pwnlib.tubes.process import process
 from pwnlib.tubes.ssh import ssh_channel
 from pwnlib.tubes.tube import tube
 from pwnlib.util.fiddling import b64d
+from pwnlib.util.fiddling import enhex
 from pwnlib.util.fiddling import unhex
 from pwnlib.util.misc import read
 from pwnlib.util.misc import write
@@ -223,6 +224,8 @@ class Mapping(object):
         return self._core.read(item, 1)
 
     def __contains__(self, item):
+        if isinstance(item, Mapping):
+            return (self.start <= item.start) and (item.stop <= self.stop)
         return self.start <= item < self.stop
 
     def find(self, sub, start=None, end=None):
@@ -472,6 +475,7 @@ class Corefile(ELF):
         >>> io = elf.process()
         >>> io.wait()
         >>> core = io.corefile
+        [!] End of the stack is corrupted, skipping stack parsing (got: 4141414141414141)
         >>> core.argc, core.argv, core.env
         (0, [], {})
         >>> core.stack.data.endswith('AAAA')
@@ -545,36 +549,40 @@ class Corefile(ELF):
             for segment in self.segments:
                 if not isinstance(segment, elftools.elf.segments.NoteSegment):
                     continue
+
+
+                # Note that older versions of pyelftools (<=0.24) are missing enum values
+                # for NT_PRSTATUS, NT_PRPSINFO, NT_AUXV, etc.
+                # For this reason, we have to check if note.n_type is any of several values.
                 for note in iter_notes(segment):
-                    # Try to find NT_PRSTATUS.  Note that pyelftools currently
-                    # mis-identifies the enum name as 'NT_GNU_ABI_TAG'.
+                    # Try to find NT_PRSTATUS.
                     if prstatus_type and \
                        note.n_descsz == ctypes.sizeof(prstatus_type) and \
-                       note.n_type == 'NT_GNU_ABI_TAG':
+                       note.n_type in ('NT_GNU_ABI_TAG', 'NT_PRSTATUS'):
                         self.NT_PRSTATUS = note
                         self.prstatus = prstatus_type.from_buffer_copy(note.n_desc)
 
                     # Try to find NT_PRPSINFO
-                    # Note that pyelftools currently mis-identifies the enum name
-                    # as 'NT_GNU_BUILD_ID'
-                    if note.n_descsz == ctypes.sizeof(prpsinfo_type) and \
-                       note.n_type == 'NT_GNU_BUILD_ID':
+                    if prpsinfo_type and \
+                       note.n_descsz == ctypes.sizeof(prpsinfo_type) and \
+                       note.n_type in ('NT_GNU_ABI_TAG', 'NT_PRPSINFO'):
                         self.NT_PRPSINFO = note
                         self.prpsinfo = prpsinfo_type.from_buffer_copy(note.n_desc)
 
                     # Try to find NT_SIGINFO so we can see the fault
-                    if note.n_type == 0x53494749:
+                    if note.n_type in (0x53494749, 'NT_SIGINFO'):
                         self.NT_SIGINFO = note
                         self.siginfo = siginfo_type.from_buffer_copy(note.n_desc)
 
                     # Try to find the list of mapped files
-                    if note.n_type == constants.NT_FILE:
+                    if note.n_type in (constants.NT_FILE, 'NT_FILE'):
                         with context.local(bytes=self.bytes):
                             self._parse_nt_file(note)
 
                     # Try to find the auxiliary vector, which will tell us
                     # where the top of the stack is.
-                    if note.n_type == constants.NT_AUXV:
+                    if note.n_type in (constants.NT_AUXV, 'NT_AUXV'):
+                        self.NT_AUXV = note
                         with context.local(bytes=self.bytes):
                             self._parse_auxv(note)
 
@@ -583,19 +591,13 @@ class Corefile(ELF):
 
             if self.stack and self.mappings:
                 for mapping in self.mappings:
-                    if mapping.stop == self.stack:
+                    if self.stack in mapping or self.stack == mapping.stop:
                         mapping.name = '[stack]'
                         self.stack   = mapping
                         break
                 else:
-                    for mapping in self.mappings:
-                        if self.stack in mapping:
-                            mapping.name = '[stack]'
-                            self.stack   = mapping
-                            break
-                    else:
-                        log.warn('Could not find the stack!')
-                        self.stack = None
+                    log.warn('Could not find the stack!')
+                    self.stack = None
 
             with context.local(bytes=self.bytes, log_level='warn'):
                 try:
@@ -895,18 +897,25 @@ class Corefile(ELF):
         if not stack:
             return
 
+        # If the stack does not end with zeroes, something is very wrong.
+        if not stack.data.endswith('\x00' * 8):
+            log.warn_once("End of the stack is corrupted, skipping stack parsing (got: %s)",
+                          enhex(self.data[-8:]))
+            return
+
         # AT_EXECFN is the start of the filename, e.g. '/bin/sh'
         # Immediately preceding is a NULL-terminated environment variable string.
         # We want to find the beginning of it
-        if self.at_execfn:
-            address = self.at_execfn-1
-        else:
-            log.debug('No AT_EXECFN')
+        if not self.at_execfn:
             address = stack.stop
             address -= 2*self.bytes
             address -= 1
             address = stack.rfind('\x00', None, address)
             address += 1
+            self.at_execfn = address
+
+        address = self.at_execfn-1
+
 
         # Sanity check!
         try:
