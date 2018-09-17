@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.14.0](#3130)  | `dev`    | Jun 12, 2018 (planned)
 | [3.13.0](#3130)  | `beta`   | Mar 31, 2018 (planned)
-| [3.12.0](#3120)  | `stable` | Feb 22, 2018
+| [3.12.1](#3121)  | `stable` | Sept 17, 2018
+| [3.12.0](#3120)  |          | Feb 22, 2018
 | [3.11.0](#3110)  |          | Jan 3, 2018
 | [3.10.0](#3100)  |          | Oct 25, 2017
 | [3.9.2](#392)    |          | Oct 5, 2017
