@@ -248,6 +248,7 @@ Let's try it out!
     'hello\n'
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import collections
 import copy

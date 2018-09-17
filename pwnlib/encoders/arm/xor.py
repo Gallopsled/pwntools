@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 
 from pwnlib import shellcraft
 from pwnlib.asm import asm

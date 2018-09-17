@@ -61,6 +61,7 @@ Module Members
 
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import collections
 import ctypes
@@ -143,7 +144,7 @@ def iter_notes(self):
 class Mapping(object):
     """Encapsulates information about a memory mapping in a :class:`Corefile`.
     """
-    def __init__(self, core, name, start, stop, flags):
+    def __init__(self, core, name, start, stop, flags, page_offset):
         self._core=core
 
         #: :class:`str`: Name of the mapping, e.g. ``'/bin/bash'`` or ``'[vdso]'``.
@@ -157,6 +158,9 @@ class Mapping(object):
 
         #: :class:`int`: Size of the mapping, in bytes
         self.size = stop-start
+
+        #: :class:`int`: Offset in pages in the mapped file
+        self.page_offset = page_offset or 0
 
         #: :class:`int`: Mapping flags, using e.g. ``PROT_READ`` and so on.
         self.flags = flags
@@ -183,12 +187,13 @@ class Mapping(object):
         return '%x-%x %s %x %s' % (self.start,self.stop,self.permstr,self.size,self.name)
 
     def __repr__(self):
-        return '%s(%r, start=%#x, stop=%#x, size=%#x, flags=%#x)' \
+        return '%s(%r, start=%#x, stop=%#x, size=%#x, flags=%#x, page_offset=%#x)' \
             % (self.__class__.__name__,
                self.name,
                self.start,
                self.stop,
                self.size,
+               self.page_offset,
                self.flags)
 
     def __int__(self):
@@ -294,21 +299,21 @@ class Corefile(ELF):
     ::
 
         >>> Corefile('./core').mappings
-        [Mapping('/home/user/pwntools/crash', start=0x8048000, stop=0x8049000, size=0x1000, flags=0x5),
-         Mapping('/home/user/pwntools/crash', start=0x8049000, stop=0x804a000, size=0x1000, flags=0x4),
-         Mapping('/home/user/pwntools/crash', start=0x804a000, stop=0x804b000, size=0x1000, flags=0x6),
-         Mapping(None, start=0xf7528000, stop=0xf7529000, size=0x1000, flags=0x6),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf7529000, stop=0xf76d1000, size=0x1a8000, flags=0x5),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d1000, stop=0xf76d2000, size=0x1000, flags=0x0),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d2000, stop=0xf76d4000, size=0x2000, flags=0x4),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d4000, stop=0xf76d5000, size=0x1000, flags=0x6),
-         Mapping(None, start=0xf76d5000, stop=0xf76d8000, size=0x3000, flags=0x6),
-         Mapping(None, start=0xf76ef000, stop=0xf76f1000, size=0x2000, flags=0x6),
-         Mapping('[vdso]', start=0xf76f1000, stop=0xf76f2000, size=0x1000, flags=0x5),
-         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf76f2000, stop=0xf7712000, size=0x20000, flags=0x5),
-         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7712000, stop=0xf7713000, size=0x1000, flags=0x4),
-         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7713000, stop=0xf7714000, size=0x1000, flags=0x6),
-         Mapping('[stack]', start=0xfff3e000, stop=0xfff61000, size=0x23000, flags=0x6)]
+        [Mapping('/home/user/pwntools/crash', start=0x8048000, stop=0x8049000, size=0x1000, flags=0x5, page_offset=0x0),
+         Mapping('/home/user/pwntools/crash', start=0x8049000, stop=0x804a000, size=0x1000, flags=0x4, page_offset=0x1),
+         Mapping('/home/user/pwntools/crash', start=0x804a000, stop=0x804b000, size=0x1000, flags=0x6, page_offset=0x2),
+         Mapping(None, start=0xf7528000, stop=0xf7529000, size=0x1000, flags=0x6, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf7529000, stop=0xf76d1000, size=0x1a8000, flags=0x5, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d1000, stop=0xf76d2000, size=0x1000, flags=0x0, page_offset=0x1a8),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d2000, stop=0xf76d4000, size=0x2000, flags=0x4, page_offset=0x1a9),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d4000, stop=0xf76d5000, size=0x1000, flags=0x6, page_offset=0x1aa),
+         Mapping(None, start=0xf76d5000, stop=0xf76d8000, size=0x3000, flags=0x6, page_offset=0x0),
+         Mapping(None, start=0xf76ef000, stop=0xf76f1000, size=0x2000, flags=0x6, page_offset=0x0),
+         Mapping('[vdso]', start=0xf76f1000, stop=0xf76f2000, size=0x1000, flags=0x5, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf76f2000, stop=0xf7712000, size=0x20000, flags=0x5, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7712000, stop=0xf7713000, size=0x1000, flags=0x4, page_offset=0x20),
+         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7713000, stop=0xf7714000, size=0x1000, flags=0x6, page_offset=0x21),
+         Mapping('[stack]', start=0xfff3e000, stop=0xfff61000, size=0x23000, flags=0x6, page_offset=0x0)]
 
     Example:
 
@@ -620,16 +625,17 @@ class Corefile(ELF):
         for i in range(count):
             start = t.unpack()
             end = t.unpack()
-            ofs = t.unpack()
-            starts.append(start)
+            offset = t.unpack()
+            starts.append((start, offset))
 
         for i in range(count):
             filename = t.recvuntil('\x00', drop=True)
-            start = starts[i]
+            (start, offset) = starts[i]
 
             for mapping in self.mappings:
                 if mapping.start == start:
                     mapping.name = filename
+                    mapping.page_offset = offset
 
         self.mappings = sorted(self.mappings, key=lambda m: m.start)
 
@@ -852,7 +858,8 @@ class Corefile(ELF):
                               None,
                               s.header.p_vaddr,
                               s.header.p_vaddr + s.header.p_memsz,
-                              s.header.p_flags)
+                              s.header.p_flags,
+                              None)
             self.mappings.append(mapping)
 
     def _parse_auxv(self, note):
@@ -1102,7 +1109,7 @@ class Coredump(Corefile):
 class CorefileFinder(object):
     def __init__(self, proc):
         if proc.poll() is None:
-            log.error("Process %i has not exited" % (process.pid))
+            log.error("Process %i has not exited" % (proc.pid))
 
         self.process = proc
         self.pid = proc.pid
@@ -1162,7 +1169,10 @@ class CorefileFinder(object):
             new_path = 'core.%i' % core_pid
             if core_pid > 0 and new_path != self.core_path:
                 write(new_path, self.read(self.core_path))
-                self.unlink(self.core_path)
+                try:
+                    self.unlink(self.core_path)
+                except (IOError, OSError):
+                    log.warn("Could not delete %r" % self.core_path)
                 self.core_path = new_path
 
         # Check the PID

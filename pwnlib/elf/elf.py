@@ -34,6 +34,7 @@ Module Members
 --------------
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import codecs
 import collections
@@ -188,6 +189,7 @@ class ELF(ELFFile):
     functions = {}
     endian = 'little'
     address = 0x400000
+    linker = None
 
     # Whether to fill gaps in memory with zeroed pages
     _fill_gaps = True
@@ -252,7 +254,7 @@ class ELF(ELFFile):
         self.bits = self.elfclass
 
         #: :class:`int`: Pointer width, in bytes
-        self.bytes = self.bits / 8
+        self.bytes = self.bits // 8
 
         if self.arch == 'mips':
             mask = lambda a, b: a & b == b
@@ -291,7 +293,7 @@ class ELF(ELFFile):
 
         for start in self.search(IKCFG_ST):
             start += len(IKCFG_ST)
-            stop = self.search('IKCFG_ED').next()
+            stop = next(self.search('IKCFG_ED'))
 
             fileobj = StringIO.StringIO(self.read(start, stop-start))
 
@@ -313,7 +315,19 @@ class ELF(ELFFile):
 
         for seg in self.iter_segments_by_type('PT_INTERP'):
             self.executable = True
+
+            #: ``True`` if the ELF is statically linked
             self.statically_linked = False
+
+            #: Path to the linker for the ELF
+            self.linker = self.read(seg.header.p_vaddr, seg.header.p_memsz)
+            self.linker = self.linker.rstrip('\x00')
+
+        #: Operating system of the ELF
+        self.os = 'linux'
+
+        if self.linker and self.linker.startswith('/system/bin/linker'):
+            self.os = 'android'
 
         #: ``True`` if the ELF is a shared library
         self.library = not self.executable and self.elftype == 'DYN'
@@ -792,13 +806,13 @@ class ELF(ELFFile):
         # 'gotsym' is the index of the first GOT symbol
         gotsym = self.dynamic_value_by_tag('DT_MIPS_GOTSYM')
         for i in range(gotsym):
-            symbol_iter.next()
+            next(symbol_iter)
 
         # 'symtabno' is the total number of symbols
         symtabno = self.dynamic_value_by_tag('DT_MIPS_SYMTABNO')
 
         for i in range(symtabno - gotsym):
-            symbol = symbol_iter.next()
+            symbol = next(symbol_iter)
             self._mips_got[i + gotsym] = got
             self.got[symbol.name] = got
             got += self.bytes

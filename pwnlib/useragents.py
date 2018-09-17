@@ -1,6 +1,8 @@
 """
 Database of >22,000 user agent strings
 """
+from __future__ import division
+
 __all__ = ['getall', 'random']
 
 import os

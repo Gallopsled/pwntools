@@ -6,6 +6,7 @@ Documentation is available here_.
 .. _here: https://android.googlesource.com/platform/system/core/+/master/adb/protocol.txt
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import logging
 import functools

@@ -1,6 +1,8 @@
+from __future__ import division
+
 _const_codes = [
     'POP_TOP','ROT_TWO','ROT_THREE','ROT_FOUR','DUP_TOP',
-    'BUILD_LIST','BUILD_MAP','BUILD_TUPLE',
+    'BUILD_LIST','BUILD_MAP','BUILD_TUPLE','BUILD_SET',
     'LOAD_CONST','RETURN_VALUE','STORE_SUBSCR', 'STORE_MAP'
     ]
 

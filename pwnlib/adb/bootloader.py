@@ -1,9 +1,14 @@
 from __future__ import unicode_literals
+from __future__ import division
 
 import ctypes
 import io
 import os
 import sys
+
+from pwnlib.log import getLogger
+
+log = getLogger(__name__)
 
 class img_info(ctypes.Structure):
     _fields_ = [
@@ -19,11 +24,7 @@ class bootloader_images_header(ctypes.Structure):
         ('bootldr_size', ctypes.c_uint32),
     ]
 
-    def __init__(self, *a, **kw):
-        super(bootloader_images_header, self).__init__(*a, **kw)
-        if self.magic != self.MAGIC:
-            raise ValueError("Incorrect magic (%r, expected %r)" % (self.magic, self.MAGIC))
-    MAGIC = 'BOOTLDR!'
+BOOTLDR_MAGIC = bytes('BOOTLDR!')
 
 class BootloaderImage(object):
     def __init__(self, data):
@@ -35,7 +36,21 @@ class BootloaderImage(object):
         self.data = data
         self.header = bootloader_images_header.from_buffer_copy(data)
 
-        imgarray = ctypes.ARRAY(img_info, self.header.num_images)
+        if self.magic != BOOTLDR_MAGIC:
+            log.error("Incorrect magic (%r, expected %r)" % (self.magic, BOOTLDR_MAGIC))
+
+        if(self.bootldr_size > len(data)):
+            log.warn_once("Bootloader is supposed to be %#x bytes, only have %#x",
+                          self.bootldr_size,
+                          len(data))
+
+        if(self.num_images >= 0x100):
+            old = self.num_images
+            self.num_images = 1
+            log.warn_once("Bootloader num_images (%#x) appears corrupted, truncating to 1",
+                          old)
+
+        imgarray = ctypes.ARRAY(img_info, self.num_images)
         self.img_info = imgarray.from_buffer_copy(data, ctypes.sizeof(self.header))
 
     def extract(self, index_or_name):
@@ -62,7 +77,7 @@ class BootloaderImage(object):
         if index >= len(self.img_info):
             raise ValueError("index out of range (%s, max %s)" % (index, len(self.img_info)))
 
-        offset = self.header.start_offset
+        offset = self.start_offset
 
         for i in range(index):
             offset += self.img_info[i].size
@@ -87,15 +102,21 @@ class BootloaderImage(object):
     def __str__(self):
         rv = []
         rv.append("Bootloader")
-        rv.append("  Magic:  %r" % self.header.magic)
-        rv.append("  Offset: %#x" % self.header.start_offset)
-        rv.append("  Size:   %#x" % self.header.bootldr_size)
-        rv.append("  Images: %s" % self.header.num_images)
+        rv.append("  Magic:  %r" % self.magic)
+        rv.append("  Offset: %#x" % self.start_offset)
+        rv.append("  Size:   %#x" % self.bootldr_size)
+        rv.append("  Images: %s" % self.num_images)
         for img in self.img_info:
             rv.append("    Name: %s" % img.name)
             rv.append("    Size: %#x" % img.size)
             rv.append("    Data: %r..." % self.extract(img.name)[:32])
         return '\n'.join(rv)
+
+    def __getattr__(self, name):
+        value = getattr(self.header, name, None)
+        if value is not None:
+            return value
+        return getattr(super(BootImage, self), name)
 
 if __name__ == '__main__':
     # Easy sanity checking

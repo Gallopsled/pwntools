@@ -2,6 +2,7 @@
 import glob
 import os
 import platform
+import subprocess
 import sys
 import traceback
 from distutils.command.install import INSTALL_SCHEMES
@@ -44,7 +45,7 @@ for filename in glob.glob('pwnlib/commandline/*'):
 
 install_requires     = ['paramiko>=1.15.2',
                         'mako>=1.0.0',
-                        'pyelftools>=0.2.4',
+                        'pyelftools==0.2.4',
                         'capstone>=3.0.5rc2', # See Gallopsled/pwntools#971, Gallopsled/pwntools#1160
                         'ropgadget>=5.3',
                         'pyserial>=2.7',
@@ -54,7 +55,6 @@ install_requires     = ['paramiko>=1.15.2',
                         'pygments>=2.0',
                         'pysocks',
                         'python-dateutil',
-                        'pypandoc',
                         'packaging',
                         'psutil>=3.3.0',
                         'intervaltree',
@@ -71,23 +71,16 @@ if not os.path.exists(PythonH):
 # Convert README.md to reStructuredText for PyPI
 long_description = ''
 try:
-    import pypandoc
-    try:
-        pypandoc.get_pandoc_path()
-    except OSError:
-        pypandoc.download_pandoc()
-    long_description = pypandoc.convert_file('README.md', 'rst')
-except ImportError:
-    pass
+    long_description = subprocess.check_output(['pandoc', 'README.md', '--to=rst'])
 except Exception as e:
     print >>sys.stderr, "Failed to convert README.md through pandoc, proceeding anyway"
     traceback.print_exc()
 
-
 setup(
     name                 = 'pwntools',
+    python_requires      = '~=2.7',
     packages             = find_packages(),
-    version              = '3.12.0',
+    version              = '3.14.0dev',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],
