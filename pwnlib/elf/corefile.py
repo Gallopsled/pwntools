@@ -223,6 +223,8 @@ class Mapping(object):
         return self._core.read(item, 1)
 
     def __contains__(self, item):
+        if isinstance(item, Mapping):
+            return (self.start <= item.start) and (item.stop <= self.stop)
         return self.start <= item < self.stop
 
     def find(self, sub, start=None, end=None):
@@ -584,21 +586,15 @@ class Corefile(ELF):
             if not self.stack and self.mappings:
                 self.stack = self.mappings[-1]
 
-            if self.stack and self.mappings and isinstance(self.stack, int):
+            if self.stack and self.mappings:
                 for mapping in self.mappings:
-                    if mapping.stop == self.stack:
+                    if self.stack in mapping or self.stack == mapping.stop:
                         mapping.name = '[stack]'
                         self.stack   = mapping
                         break
                 else:
-                    for mapping in self.mappings:
-                        if self.stack in mapping:
-                            mapping.name = '[stack]'
-                            self.stack   = mapping
-                            break
-                    else:
-                        log.warn('Could not find the stack!')
-                        self.stack = None
+                    log.warn('Could not find the stack!')
+                    self.stack = None
 
             with context.local(bytes=self.bytes, log_level='warn'):
                 try:
