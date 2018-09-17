@@ -3,7 +3,7 @@ sphinxcontrib-autoprogram==0.1.4
 isort
 paramiko>=1.15.2
 mako>=1.0.0
-pyelftools>=0.2.3
+pyelftools==0.24
 capstone
 ropgadget>=5.3
 pyserial>=2.7
