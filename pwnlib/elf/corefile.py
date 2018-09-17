@@ -895,6 +895,11 @@ class Corefile(ELF):
         if not stack:
             return
 
+        # If the stack does not end with zeroes, something is very wrong.
+        if not stack.data.endswith('\x00' * 8):
+            log.warn("End of the stack is corrupted, skipping stack parsing")
+            return
+
         # AT_EXECFN is the start of the filename, e.g. '/bin/sh'
         # Immediately preceding is a NULL-terminated environment variable string.
         # We want to find the beginning of it
