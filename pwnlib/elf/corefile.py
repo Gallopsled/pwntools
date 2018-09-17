@@ -87,6 +87,7 @@ from pwnlib.tubes.process import process
 from pwnlib.tubes.ssh import ssh_channel
 from pwnlib.tubes.tube import tube
 from pwnlib.util.fiddling import b64d
+from pwnlib.util.fiddling import enhex
 from pwnlib.util.fiddling import unhex
 from pwnlib.util.misc import read
 from pwnlib.util.misc import write
@@ -474,6 +475,7 @@ class Corefile(ELF):
         >>> io = elf.process()
         >>> io.wait()
         >>> core = io.corefile
+        [!] End of the stack is corrupted, skipping stack parsing (got: 4141414141414141)
         >>> core.argc, core.argv, core.env
         (0, [], {})
         >>> core.stack.data.endswith('AAAA')
@@ -897,7 +899,8 @@ class Corefile(ELF):
 
         # If the stack does not end with zeroes, something is very wrong.
         if not stack.data.endswith('\x00' * 8):
-            log.warn("End of the stack is corrupted, skipping stack parsing")
+            log.warn_once("End of the stack is corrupted, skipping stack parsing (got: %s)",
+                          enhex(self.data[-8:]))
             return
 
         # AT_EXECFN is the start of the filename, e.g. '/bin/sh'
