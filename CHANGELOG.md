@@ -68,6 +68,8 @@ To be released on Mar 31, 2018.
 
 ## 3.12.1
 
+- [#1198][1198] More compatibility fixes for pyelftools==0.25, and pin Sphinx<1.8.0 since it causes testing errors
+- [#1191][1191] Fix compatibility with pyelftools==0.25
 - [#1159][1159] Fix check for `/proc/.../status`
 - [#1162][1162] Fix broken package versions
 - [#1150][1150] Fix exception raised when a cache file is missing
