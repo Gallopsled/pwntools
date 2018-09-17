@@ -580,6 +580,7 @@ class Corefile(ELF):
                     # Try to find the auxiliary vector, which will tell us
                     # where the top of the stack is.
                     if note.n_type in (constants.NT_AUXV, 'NT_AUXV'):
+                        self.NT_AUXV = note
                         with context.local(bytes=self.bytes):
                             self._parse_auxv(note)
 
@@ -897,15 +898,16 @@ class Corefile(ELF):
         # AT_EXECFN is the start of the filename, e.g. '/bin/sh'
         # Immediately preceding is a NULL-terminated environment variable string.
         # We want to find the beginning of it
-        if self.at_execfn:
-            address = self.at_execfn-1
-        else:
-            log.debug('No AT_EXECFN')
+        if not self.at_execfn:
             address = stack.stop
             address -= 2*self.bytes
             address -= 1
             address = stack.rfind('\x00', None, address)
             address += 1
+            self.at_execfn = address
+
+        address = self.at_execfn-1
+
 
         # Sanity check!
         try:
