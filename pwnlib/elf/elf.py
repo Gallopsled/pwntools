@@ -51,11 +51,16 @@ from elftools.elf.constants import P_FLAGS
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.elffile import ELFFile
-from elftools.elf.enums import ENUM_P_TYPE
 from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.segments import InterpSegment
+
+# See https://github.com/Gallopsled/pwntools/issues/1189
+try:
+    from elftools.elf.enums import ENUM_P_TYPE
+except ImportError:
+    from elftools.elf.enums import ENUM_P_TYPE_BASE as ENUM_P_TYPE
 
 import intervaltree
 
@@ -1780,4 +1785,3 @@ class ELF(ELFFile):
                 return
 
         log.error("Could not find PT_GNU_STACK, stack should already be executable")
-
