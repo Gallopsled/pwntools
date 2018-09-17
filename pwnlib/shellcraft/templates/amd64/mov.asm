@@ -92,7 +92,7 @@ Args:
 </%docstring>
 <%
 if not get_register(dest):
-    log.error('%r is not a register' % dest)
+    log.error('%r is not a register', dest)
 
 dest = get_register(dest)
 
@@ -222,5 +222,5 @@ else:
         % endif
     % endif
 % else:
-    <% log.error('%s is neither a register nor an immediate' % src) %>\
+    <% log.error('%s is neither a register nor an immediate', src) %>\
 % endif

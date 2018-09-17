@@ -36,7 +36,7 @@ def main(args):
 
     for function in args.patch:
         if function not in elf.symbols:
-            log.error("Could not find function %r" % function)
+            log.error("Could not find function %r", function)
 
         trap = asm(shellcraft.trap())
         offset = elf.symbols[function]

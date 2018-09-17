@@ -95,18 +95,18 @@ if not isinstance(src, (str, tuple)):
     src_name = pretty(src)
 
 if not get_register(dest):
-    log.error('%r is not a register' % dest)
+    log.error('%r is not a register', dest)
 
 dest = get_register(dest)
 
 if dest.size > 32 or dest.is64bit:
-    log.error("cannot use %s on i386" % dest)
+    log.error("cannot use %s on i386", dest)
 
 if get_register(src):
     src = get_register(src)
 
     if src.is64bit:
-        log.error("cannot use %s on i386" % src)
+        log.error("cannot use %s on i386", src)
 
     if dest.size < src.size and src.name not in dest.bigger:
         log.error("cannot mov %s, %s: dddest is smaller than src" % (dest, src))

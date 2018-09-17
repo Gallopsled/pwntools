@@ -335,7 +335,7 @@ class Corefile(ELF):
         You can specify a full path a la ``Corefile('/path/to/core')``,
         but you can also just access the :attr:`.process.corefile` attribute.
 
-        >>> core = io.corefile
+        >>> with context.local(log_level='debug'): core = io.corefile
 
         The core file has a :attr:`.Corefile.exe` property, which is a :class:`.Mapping`
         object.  Each mapping can be accessed with virtual addresses via subscript, or
@@ -530,16 +530,16 @@ class Corefile(ELF):
         self._address  = 0
 
         if not self.elftype == 'CORE':
-            log.error("%s is not a valid corefile" % self.file.name)
+            log.error("%s is not a valid corefile", self.file.name)
 
         if not self.arch in prstatus_types.keys():
-            log.warn_once("%s does not use a supported corefile architecture, registers are unavailable" % self.file.name)
+            log.warn_once("%s does not use a supported corefile architecture, registers are unavailable", self.file.name)
 
         prstatus_type = prstatus_types.get(self.arch, None)
         prpsinfo_type = prpsinfo_types.get(self.bits, None)
         siginfo_type = siginfo_types.get(self.bits, None)
 
-        with log.waitfor("Parsing corefile...") as w:
+        with log.waitfor("Parsing corefile %r..." % self.file.name) as w:
             self._load_mappings()
 
             for segment in self.segments:
@@ -594,7 +594,9 @@ class Corefile(ELF):
                             self.stack   = mapping
                             break
                     else:
+                        from pwnlib.util.fiddling import enhex
                         log.warn('Could not find the stack!')
+                        log.warn('HEX: %s', enhex(self.data))
                         self.stack = None
 
             with context.local(bytes=self.bytes, log_level='warn'):
@@ -1039,7 +1041,7 @@ class Corefile(ELF):
             'Hello!'
         """
         if name not in self.env:
-            log.error("Environment variable %r not set" % name)
+            log.error("Environment variable %r not set", name)
 
         return self.string(self.env[name])
 
@@ -1074,7 +1076,7 @@ class Corefile(ELF):
     def debug(self, *a, **kw):
         """Open the corefile under a debugger."""
         if a or kw:
-            log.error("Arguments are not supported for %s.debug()" % self.__class__.__name__)
+            log.error("Arguments are not supported for %s.debug()", self.__class__.__name__)
 
         import pwnlib.gdb
         pwnlib.gdb.attach(self, exe=self.exe.path)
@@ -1102,7 +1104,7 @@ class Coredump(Corefile):
 class CorefileFinder(object):
     def __init__(self, proc):
         if proc.poll() is None:
-            log.error("Process %i has not exited" % (process.pid))
+            log.error("Process %r has not exited", process.pid)
 
         self.process = proc
         self.pid = proc.pid
@@ -1125,20 +1127,20 @@ class CorefileFinder(object):
         self.kernel_core_pattern = self.read('/proc/sys/kernel/core_pattern').strip()
         self.kernel_core_uses_pid = bool(int(self.read('/proc/sys/kernel/core_uses_pid')))
 
-        log.debug("core_pattern: %r" % self.kernel_core_pattern)
-        log.debug("core_uses_pid: %r" % self.kernel_core_uses_pid)
+        log.debug("core_pattern: %r", self.kernel_core_pattern)
+        log.debug("core_uses_pid: %r", self.kernel_core_uses_pid)
 
         self.interpreter = self.binfmt_lookup()
 
-        log.debug("interpreter: %r" % self.interpreter)
+        log.debug("interpreter: %r", self.interpreter)
 
         # If we have already located the corefile, we will
         # have renamed it to 'core.<pid>'
-        core_path = 'core.%i' % (proc.pid)
+        core_path = 'core.%r' % (proc.pid)
         self.core_path = None
 
         if os.path.isfile(core_path):
-            log.debug("Found core immediately: %r" % core_path)
+            log.debug("Found core immediately: %r", core_path)
             self.core_path = core_path
 
         # Try QEMU first, since it's unlikely to be a false-positive unless
@@ -1158,8 +1160,8 @@ class CorefileFinder(object):
         core_pid = self.load_core_check_pid()
 
         # Move the corefile if we're configured that way
-        if context.rename_corefiles:
-            new_path = 'core.%i' % core_pid
+        if core_pid is not None and context.rename_corefiles:
+            new_path = 'core.%r' % core_pid
             if core_pid > 0 and new_path != self.core_path:
                 write(new_path, self.read(self.core_path))
                 self.unlink(self.core_path)
@@ -1167,7 +1169,7 @@ class CorefileFinder(object):
 
         # Check the PID
         if core_pid != self.pid:
-            log.warn("Corefile PID does not match! (got %i)" % core_pid)
+            log.warn("Corefile PID does not match! (got %r)", core_pid)
 
         # Register the corefile for removal only if it's an exact match
         elif context.delete_corefiles:
@@ -1180,11 +1182,8 @@ class CorefileFinder(object):
         Speculatively load a Corefile without informing the user, so that we
         can check if it matches the process we're looking for.
 
-        Arguments:
-            path(str): Path to the corefile on disk
-
         Returns:
-            `bool`: ``True`` if the Corefile matches, ``False`` otherwise.
+            PID of the corefile, or None
         """
 
         try:
@@ -1193,10 +1192,11 @@ class CorefileFinder(object):
                     tmp.write(self.read(self.core_path))
                     tmp.flush()
                     return Corefile(tmp.name).pid
-        except Exception:
+        except Exception as e:
+            log.debug("Could not load Corefile %r: %s", self.core_path, e)
             pass
 
-        return -1
+        return None
 
     def apport_corefile(self):
         """Find the apport crash for the process, and extract the core file.
@@ -1209,7 +1209,7 @@ class CorefileFinder(object):
         """
         crash_data = self.apport_read_crash_data()
 
-        log.debug("Apport Crash Data:\n%s" % crash_data)
+        log.debug("Apport Crash Data:\n%s", crash_data)
 
         if crash_data:
             return self.apport_crash_extract_corefile(crash_data)
@@ -1271,7 +1271,7 @@ class CorefileFinder(object):
         crash_path = '/var/crash/%s.%i.crash' % (crash_name, uid)
 
         try:
-            log.debug("Looking for Apport crash at %r" % crash_path)
+            log.debug("Looking for Apport crash at %r", crash_path)
             data = self.read(crash_path)
         except Exception:
             return None
@@ -1303,7 +1303,7 @@ class CorefileFinder(object):
         """
         # We only support apport
         if '/apport' not in self.kernel_core_pattern:
-            log.warn_once("Unsupported core_pattern: %r" % self.kernel_core_pattern)
+            log.warn_once("Unsupported core_pattern: %r", self.kernel_core_pattern)
             return None
 
         apport_core = self.apport_corefile()
@@ -1355,18 +1355,18 @@ class CorefileFinder(object):
         corefile_path = pattern.sub(lambda m: replace[re.escape(m.group(0))], core_pattern)
 
         if self.kernel_core_uses_pid:
-            corefile_path += '.%i' % self.pid
+            corefile_path += '.%r' % self.pid
 
         if os.pathsep not in corefile_path:
             corefile_path = os.path.join(self.cwd, corefile_path)
 
-        log.debug("Trying corefile_path: %r" % corefile_path)
+        log.debug("Trying corefile_path: %r", corefile_path)
 
         try:
             self.read(corefile_path)
             return corefile_path
         except Exception as e:
-            log.debug("No dice: %s" % e)
+            log.debug("No dice: %s", e)
 
     def qemu_corefile(self):
         """qemu_corefile() -> str
@@ -1381,6 +1381,8 @@ class CorefileFinder(object):
         #
         # Note that we don't give any fucks about the date and time, since the PID
         # should be unique enough that we can just glob.
+        os.system('ls -la')
+
         corefile_name = 'qemu_{basename}_*_{pid}.core'
 
         # Format the name
@@ -1390,11 +1392,15 @@ class CorefileFinder(object):
         # Get the full path
         corefile_path = os.path.join(self.cwd, corefile_name)
 
-        log.debug("Trying corefile_path: %r" % corefile_path)
+        log.debug("Trying corefile_path: %r", corefile_path)
 
         # Glob all of them, return the *most recent* based on numeric sort order.
         for corefile in sorted(glob.glob(corefile_path), reverse=True):
+            os.system('readelf -a %s' % corefile)
+            log.debug("Found QEMU corefile %r", corefile)
             return corefile
+
+        log.debug("Could not find a QEMU corefile")
 
     def binfmt_lookup(self):
         """Parses /proc/sys/fs/binfmt_misc to find the interpreter for a file"""

@@ -814,11 +814,11 @@ class ELF(ELFFile):
         ...         assert '__stack_chk_fail' in test.plt, test
         """
         if self.statically_linked:
-            log.debug("%r is statically linked, skipping GOT/PLT symbols" % self.path)
+            log.debug("%r is statically linked, skipping GOT/PLT symbols", self.path)
             return
 
         if not self.got:
-            log.debug("%r doesn't have any GOT symbols, skipping PLT" % self.path)
+            log.debug("%r doesn't have any GOT symbols, skipping PLT", self.path)
             return
 
         # This element holds an address associated with the procedure linkage table

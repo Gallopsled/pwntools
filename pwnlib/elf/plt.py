@@ -66,7 +66,7 @@ def emulate_plt_instructions_inner(elf, got, pc, data, targets):
     }.get(elf.arch, None)
 
     if arch is None:
-        log.warn("Could not emulate PLT instructions for %r" % elf)
+        log.warn("Could not emulate PLT instructions for %r", elf)
         return {}
 
     emulation_bits = elf.bits

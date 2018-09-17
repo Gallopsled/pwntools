@@ -313,7 +313,7 @@ def test(original):
         binary = shell[0]
 
         if not which(binary):
-            log.warn_once('Shell %r is not available' % binary)
+            log.warn_once('Shell %r is not available', binary)
             continue
 
         progress = log.progress('%s: %r' % (binary, original))

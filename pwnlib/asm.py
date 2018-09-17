@@ -180,7 +180,7 @@ def which_binutils(util):
             if context.arch in arches:
                 arches.append(None)
     except AttributeError:
-        log.warn_once("Your local binutils won't be used because architecture %r is not supported." % machine)
+        log.warn_once("Your local binutils won't be used because architecture %r is not supported.", machine)
 
     utils = [util]
 
@@ -650,7 +650,7 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
     code      += _arch_header()
     code      += cpp(shellcode)
 
-    log.debug('Assembling\n%s' % code)
+    log.debug('Assembling\n%s', code)
 
     tmpdir    = tempfile.mkdtemp(prefix = 'pwn-asm-')
     step1     = path.join(tmpdir, 'step1')
@@ -693,7 +693,7 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
                 [which_binutils('readelf'), '-r', step2]
             ).strip()
             if extract and len(relocs.split('\n')) > 1:
-                log.error('Shellcode contains relocations:\n%s' % relocs)
+                log.error('Shellcode contains relocations:\n%s', relocs)
         else:
             shutil.copy(step2, step3)
 
@@ -788,7 +788,7 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
         output1 = output0.split('<.text>:\n')
 
         if len(output1) != 2:
-            log.error('Could not find .text in objdump output:\n%s' % output0)
+            log.error('Could not find .text in objdump output:\n%s', output0)
 
         result = output1[1].strip('\n').rstrip().expandtabs()
     except Exception:

@@ -84,7 +84,7 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
             continue
 
         if avoid & set(v):
-            log.warning_once("Encoder %s did not succeed" % encoder)
+            log.warning_once("Encoder %s did not succeed", encoder)
             continue
 
         return v
