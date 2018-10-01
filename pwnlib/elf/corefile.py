@@ -517,11 +517,20 @@ class Corefile(ELF):
         #:       address of the string "BAR\x00".
         self.env = {}
 
+        #: :class:`int`: Pointer to envp on the stack
+        self.envp_address = 0
+
         #: :class:`list`: List of addresses of arguments on the stack.
         self.argv = []
 
+        #: :class:`int`: Pointer to argv on the stack
+        self.argv_address = 0
+
         #: :class:`int`: Number of arguments passed
         self.argc = 0
+
+        #: :class:`int`: Pointer to argc on the stack
+        self.argc_address = 0
 
         # Pointer to the executable filename on the stack
         self.at_execfn = 0
@@ -964,10 +973,10 @@ class Corefile(ELF):
         # Now let's find the end of argv
         p_end_of_argv = stack.rfind(pack(0), None, p_last_env_addr)
 
-        start_of_envp = p_end_of_argv + self.bytes
+        self.envp_address = p_end_of_argv + self.bytes
 
         # Now we can fill in the environment
-        env_pointer_data = stack[start_of_envp:p_last_env_addr+self.bytes]
+        env_pointer_data = stack[self.envp_address:p_last_env_addr+self.bytes]
         for pointer in unpack_many(env_pointer_data):
 
             # If the stack is corrupted, the pointer will be outside of
@@ -1005,10 +1014,12 @@ class Corefile(ELF):
             address -= self.bytes
 
         # address now points at argc
-        self.argc = self.unpack(address)
+        self.argc_address = address
+        self.argc = self.unpack(self.argc_address)
 
         # we can extract all of the arguments as well
-        self.argv = unpack_many(stack[address + self.bytes: p_end_of_argv])
+        self.argv_address = self.argc_address + self.bytes
+        self.argv = unpack_many(stack[self.argv_address: p_end_of_argv])
 
     @property
     def maps(self):
