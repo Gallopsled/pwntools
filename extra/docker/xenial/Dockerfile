@@ -6,7 +6,9 @@
 FROM ubuntu:xenial
 MAINTAINER Maintainer Gallopsled et al.
 
-RUN apt-get update && apt-get install -y build-essential \
+RUN apt-get update \
+    && apt-get install -y \
+        build-essential \
         git \
         libssl-dev \
         libffi-dev \
