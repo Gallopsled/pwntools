@@ -72,9 +72,9 @@ heirarchy looks like this:
 ::
 
     python ---> target
-           `--> gdb
+           `--> r2
 
-Note that ``python`` is the parent of ``target``, not ``gdb``.
+Note that ``python`` is the parent of ``target``, not ``r2``.
 
 In order to avoid this being a problem, Pwntools uses the function
 ``prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY)``.  This disables Yama
