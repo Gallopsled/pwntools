@@ -113,13 +113,13 @@ def read(path, count=-1, skip=0):
         '\x7fELF'
     """
     path = os.path.expanduser(os.path.expandvars(path))
-    with open(path) as fd:
+    with open(path, 'rb') as fd:
         if skip:
             fd.seek(skip)
         return fd.read(count)
 
 
-def write(path, data = '', create_dir = False, mode = 'w'):
+def write(path, data = b'', create_dir = False, mode = 'w'):
     """Create new file or truncate existing to zero length and write data."""
     path = os.path.expanduser(os.path.expandvars(path))
     if create_dir:

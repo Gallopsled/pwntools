@@ -47,7 +47,7 @@ def test_expr(expr, allowed_codes):
     return the compiled code object. Otherwise raise a ValueError
     """
     import dis
-    allowed_codes = [dis.opmap[c] for c in allowed_codes]
+    allowed_codes = [dis.opmap[c] for c in allowed_codes if c in dis.opmap]
     try:
         c = compile(expr, "", "eval")
     except SyntaxError:

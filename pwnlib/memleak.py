@@ -180,7 +180,7 @@ class MemLeak(object):
         if not self.relative and addr < 0:
             return None
 
-        addresses = [addr+i for i in xrange(n)]
+        addresses = [addr+i for i in range(n)]
 
         for address in addresses:
             # Cache hit
@@ -261,9 +261,9 @@ class MemLeak(object):
             >>> import string
             >>> data = string.ascii_lowercase
             >>> l = MemLeak(lambda a: data[a:a+4], reraise=False)
-            >>> l.w(0) == unpack('ab', 16)
+            >>> l.w(0) == unpack(b'ab', 16)
             True
-            >>> l.w(24) == unpack('yz', 16)
+            >>> l.w(24) == unpack(b'yz', 16)
             True
             >>> l.w(25) is None
             True
@@ -280,9 +280,9 @@ class MemLeak(object):
             >>> import string
             >>> data = string.ascii_lowercase
             >>> l = MemLeak(lambda a: data[a:a+8], reraise=False)
-            >>> l.d(0) == unpack('abcd', 32)
+            >>> l.d(0) == unpack(b'abcd', 32)
             True
-            >>> l.d(22) == unpack('wxyz', 32)
+            >>> l.d(22) == unpack(b'wxyz', 32)
             True
             >>> l.d(23) is None
             True
@@ -299,9 +299,9 @@ class MemLeak(object):
             >>> import string
             >>> data = string.ascii_lowercase
             >>> l = MemLeak(lambda a: data[a:a+16], reraise=False)
-            >>> l.q(0) == unpack('abcdefgh', 64)
+            >>> l.q(0) == unpack(b'abcdefgh', 64)
             True
-            >>> l.q(18) == unpack('stuvwxyz', 64)
+            >>> l.q(18) == unpack(b'stuvwxyz', 64)
             True
             >>> l.q(19) is None
             True
@@ -378,7 +378,7 @@ class MemLeak(object):
         if not all(data):
             return None
 
-        return unpack(''.join(data), size*8)
+        return unpack(b''.join(data), size*8)
 
     def clearb(self, addr, ndx = 0):
         """clearb(addr, ndx = 0) -> int
@@ -392,7 +392,7 @@ class MemLeak(object):
             >>> l.cache = {0:'a'}
             >>> l.n(0,1) == 'a'
             True
-            >>> l.clearb(0) == unpack('a', 8)
+            >>> l.clearb(0) == unpack(b'a', 8)
             True
             >>> l.cache
             {}
@@ -410,10 +410,10 @@ class MemLeak(object):
         Examples:
 
             >>> l = MemLeak(lambda a: None)
-            >>> l.cache = {0:'a', 1: 'b'}
-            >>> l.n(0, 2) == 'ab'
+            >>> l.cache = {0:b'a', 1: b'b'}
+            >>> l.n(0, 2) == b'ab'
             True
-            >>> l.clearw(0) == unpack('ab', 16)
+            >>> l.clearw(0) == unpack(b'ab', 16)
             True
             >>> l.cache
             {}
@@ -429,10 +429,10 @@ class MemLeak(object):
         Examples:
 
             >>> l = MemLeak(lambda a: None)
-            >>> l.cache = {0:'a', 1: 'b', 2: 'c', 3: 'd'}
-            >>> l.n(0, 4) == 'abcd'
+            >>> l.cache = {0:b'a', 1: b'b', 2: b'c', 3: b'd'}
+            >>> l.n(0, 4) == b'abcd'
             True
-            >>> l.cleard(0) == unpack('abcd', 32)
+            >>> l.cleard(0) == unpack(b'abcd', 32)
             True
             >>> l.cache
             {}
@@ -447,9 +447,9 @@ class MemLeak(object):
 
         Examples:
 
-            >>> c = MemLeak(lambda addr: '')
-            >>> c.cache = {x:'x' for x in range(0x100, 0x108)}
-            >>> c.clearq(0x100) == unpack('xxxxxxxx', 64)
+            >>> c = MemLeak(lambda addr: b'')
+            >>> c.cache = {x:b'x' for x in range(0x100, 0x108)}
+            >>> c.clearq(0x100) == unpack(b'xxxxxxxx', 64)
             True
             >>> c.cache == {}
             True

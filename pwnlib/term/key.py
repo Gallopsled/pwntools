@@ -450,7 +450,7 @@ def _peek_simple():
                 k = Key(kc.TYPE_UNICODE)
                 if   c0 == 0:
                     k.code = u' '
-                elif chr(c0 + 0x40) in string.uppercase:
+                elif chr(c0 + 0x40) in string.ascii_uppercase:
                     k.code = unichr(c0 + 0x60)
                 else:
                     k.code = unichr(c0 + 0x40)

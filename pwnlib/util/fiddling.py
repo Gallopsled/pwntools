@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import base64
+import binascii
 import random
 import re
 import os
@@ -35,7 +36,7 @@ def unhex(s):
     s = s.strip()
     if len(s) % 2 != 0:
         s = '0' + s
-    return s.decode('hex')
+    return binascii.unhexlify(s)
 
 def enhex(x):
     """enhex(x) -> str
@@ -44,10 +45,10 @@ def enhex(x):
 
     Example:
 
-        >>> enhex("test")
+        >>> enhex(b"test")
         '74657374'
     """
-    return x.encode('hex')
+    return binascii.hexlify(x)
 
 def urlencode(s):
     """urlencode(s) -> str
@@ -113,7 +114,7 @@ def bits(s, endian = 'big', zero = 0, one = 1):
 
         >>> bits(511, zero = "+", one = "-")
         ['+', '+', '+', '+', '+', '+', '+', '-', '-', '-', '-', '-', '-', '-', '-', '-']
-        >>> sum(bits("test"))
+        >>> sum(bits(b"test"))
         17
         >>> bits(0)
         [0, 0, 0, 0, 0, 0, 0, 0]
@@ -162,7 +163,7 @@ def bits_str(s, endian = 'big', zero = '0', one = '1'):
 
        >>> bits_str(511)
        '0000000111111111'
-       >>> bits_str("bits_str", endian = "little")
+       >>> bits_str(b"bits_str", endian = "little")
        '0100011010010110001011101100111011111010110011100010111001001110'
     """
     return ''.join(bits(s, endian, zero, one))
@@ -184,7 +185,7 @@ def unbits(s, endian = 'big'):
        '\\x80'
        >>> unbits([1], endian = 'little')
        '\\x01'
-       >>> unbits(bits('hello'), endian = 'little')
+       >>> unbits(bits(b'hello'), endian = 'little')
        '\\x16\\xa666\\xf6'
     """
     if endian == 'little':
@@ -220,7 +221,7 @@ def bitswap(s):
     Reverses the bits in every byte of a given string.
 
     Example:
-        >>> bitswap("1234")
+        >>> bitswap(b"1234")
         '\\x8cL\\xcc,'
     """
 
@@ -267,7 +268,7 @@ def b64e(s):
 
     Example:
 
-       >>> b64e("test")
+       >>> b64e(b"test")
        'dGVzdA=='
        """
     return base64.b64encode(s)
@@ -301,7 +302,7 @@ def xor(*args, **kwargs):
        The string of the arguments xor'ed together.
 
     Example:
-       >>> xor('lol', 'hello', 42)
+       >>> xor(b'lol', b'hello', 42)
        '. ***'
     """
 
@@ -317,7 +318,7 @@ def xor(*args, **kwargs):
     strs = [[ord(c) for c in s] for s in strs if s != '']
 
     if strs == []:
-        return ''
+        return b''
 
     if isinstance(cut, (int, long)):
         cut = cut
@@ -335,7 +336,7 @@ def xor(*args, **kwargs):
     def get(n):
         return chr(reduce(lambda x, y: x ^ y, [s[n % len(s)] for s in strs]))
 
-    return ''.join(get(n) for n in range(cut))
+    return b''.join(map(get, range(cut)))
 
 def xor_pair(data, avoid = '\x00\n'):
     """xor_pair(data, avoid = '\\x00\\n') -> None or (str, str)
@@ -352,7 +353,7 @@ def xor_pair(data, avoid = '\x00\n'):
 
     Example:
 
-        >>> xor_pair("test")
+        >>> xor_pair(b"test")
         ('\\x01\\x01\\x01\\x01', 'udru')
     """
 
@@ -361,8 +362,8 @@ def xor_pair(data, avoid = '\x00\n'):
 
     alphabet = list(chr(n) for n in range(256) if chr(n) not in avoid)
 
-    res1 = ''
-    res2 = ''
+    res1 = b''
+    res2 = b''
 
     for c1 in data:
         if context.randomize:
@@ -378,7 +379,7 @@ def xor_pair(data, avoid = '\x00\n'):
 
     return res1, res2
 
-def xor_key(data, avoid='\x00\n', size=None):
+def xor_key(data, avoid=b'\x00\n', size=None):
     r"""xor_key(data, size=None, avoid='\x00\n') -> None or (int, str)
 
     Finds a ``size``-width value that can be XORed with a string
@@ -396,7 +397,7 @@ def xor_key(data, avoid='\x00\n', size=None):
 
     Example:
 
-        >>> xor_key("Hello, world")
+        >>> xor_key(b"Hello, world")
         ('\x01\x01\x01\x01', 'Idmmn-!vnsme')
     """
     size = size or context.bytes
@@ -426,8 +427,8 @@ def xor_key(data, avoid='\x00\n', size=None):
 
     return result, xor(data, result)
 
-def randoms(count, alphabet = string.lowercase):
-    """randoms(count, alphabet = string.lowercase) -> str
+def randoms(count, alphabet = string.ascii_lowercase):
+    """randoms(count, alphabet = string.ascii_lowercase) -> str
 
     Returns a random string of a given length using only the specified alphabet.
 
@@ -444,7 +445,7 @@ def randoms(count, alphabet = string.lowercase):
         'evafjilupm'
     """
 
-    return ''.join(random.choice(alphabet) for _ in xrange(count))
+    return ''.join(random.choice(alphabet) for _ in range(count))
 
 
 def rol(n, k, word_size = None):
@@ -545,7 +546,7 @@ def hexii(s, width = 16, skip = True):
     return hexdump(s, width, skip, True)
 
 def _hexiichar(c):
-    HEXII = string.punctuation + string.digits + string.letters
+    HEXII = string.punctuation + string.digits + string.ascii_letters
     if c in HEXII:
         return ".%c " % c
     elif c == '\0':
@@ -599,7 +600,7 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
     Example:
 
         >>> tmp = tempfile.NamedTemporaryFile()
-        >>> tmp.write('XXXXHELLO, WORLD')
+        >>> tmp.write(b'XXXXHELLO, WORLD')
         >>> tmp.flush()
         >>> tmp.seek(4)
         >>> print '\n'.join(hexdump_iter(tmp))

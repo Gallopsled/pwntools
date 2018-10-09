@@ -41,7 +41,7 @@ def search_by_hash(hex_encoded_id, hash_type='build_id'):
         log.debug("Found existing cached libc at %r", cache)
 
         data = read(cache)
-        if data.startswith('\x7FELF'):
+        if data.startswith(b'\x7FELF'):
             log.info_once("Using cached data from %r", cache)
             return cache
         else:
@@ -52,8 +52,8 @@ def search_by_hash(hex_encoded_id, hash_type='build_id'):
     url_base = "https://gitlab.com/libcdb/libcdb/raw/master/hashes/%s/" % hash_type
     url      = urlparse.urljoin(url_base, hex_encoded_id)
 
-    data   = ""
-    while not data.startswith('\x7fELF'):
+    data   = b""
+    while not data.startswith(b'\x7fELF'):
         log.debug("Downloading data from LibcDB: %s", url)
         data = wget(url)
 
@@ -62,15 +62,15 @@ def search_by_hash(hex_encoded_id, hash_type='build_id'):
             break
 
         # GitLab serves up symlinks with
-        if data.startswith('..'):
+        if data.startswith(b'..'):
             url = os.path.dirname(url) + '/'
             url = urlparse.urljoin(url, data)
 
     # Save whatever we got to the cache
-    write(cache, data or '')
+    write(cache, data or b'')
 
     # Return ``None`` if we did not get a valid ELF file
-    if not data or not data.startswith('\x7FELF'):
+    if not data or not data.startswith(b'\x7FELF'):
         return None
 
     return cache

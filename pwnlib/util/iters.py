@@ -586,7 +586,7 @@ def random_product(*args, **kwargs):
     if kwargs != {}:
         raise TypeError('random_product() does not support argument %s' % kwargs.popitem())
 
-    pools = map(tuple, args) * repeat
+    pools = list(map(tuple, args)) * repeat
     return tuple(random.choice(pool) for pool in pools)
 
 def random_permutation(iterable, r = None):
@@ -759,7 +759,7 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
       if the search space was exhausted.
 
     Example:
-      >>> bruteforce(lambda x: x == 'hello', string.lowercase, length = 10)
+      >>> bruteforce(lambda x: x == 'hello', string.ascii_lowercase, length = 10)
       'hello'
       >>> bruteforce(lambda x: x == 'hello', 'hllo', 5) is None
       True

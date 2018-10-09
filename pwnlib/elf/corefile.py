@@ -640,7 +640,7 @@ class Corefile(ELF):
             starts.append((start, offset))
 
         for i in range(count):
-            filename = t.recvuntil('\x00', drop=True)
+            filename = t.recvuntil(b'\x00', drop=True)
             (start, offset) = starts[i]
 
             for mapping in self.mappings:
@@ -1321,7 +1321,7 @@ class CorefileFinder(object):
             process(process): Process whose crash we should find.
 
         """
-        if self.kernel_core_pattern.startswith('|'):
+        if self.kernel_core_pattern.startswith(b'|'):
             log.debug("Checking for corefile (piped)")
             return self.native_corefile_pipe()
 
@@ -1332,7 +1332,7 @@ class CorefileFinder(object):
         """native_corefile_pipe(self) -> str
         """
         # We only support apport
-        if '/apport' not in self.kernel_core_pattern:
+        if b'/apport' not in self.kernel_core_pattern:
             log.warn_once("Unsupported core_pattern: %r" % self.kernel_core_pattern)
             return None
 

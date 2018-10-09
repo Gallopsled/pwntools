@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import itertools
 import os
 import re
 import sys
@@ -61,7 +62,7 @@ class module(ModuleType):
         self.__dict__.update(self._submodules)
 
         # These are exported
-        self.__all__ = sorted(self._shellcodes.keys() + self._submodules.keys())
+        self.__all__ = sorted(itertools.chain(self._shellcodes.keys(), self._submodules.keys()))
 
         # Make sure this is not called again
         self.__lazyinit__ = None
@@ -108,7 +109,7 @@ class module(ModuleType):
 
     def __shellcodes__(self):
         self.__lazyinit__ and self.__lazyinit__()
-        result = self._shellcodes.keys()
+        result = list(self._shellcodes.keys())
         for m in self._context_modules():
             result.extend(m.__shellcodes__())
         return result
@@ -155,7 +156,7 @@ class module(ModuleType):
     def okay(self, s, *a, **kw):
         if isinstance(s, int):
             s = packing.pack(s, *a, **kw)
-        return '\0' not in s and '\n' not in s
+        return b'\0' not in s and b'\n' not in s
 
     from pwnlib.shellcraft import registers
 

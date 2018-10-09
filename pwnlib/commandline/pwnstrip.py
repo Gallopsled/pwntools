@@ -17,8 +17,8 @@ p = common.parser_commands.add_parser(
 g = p.add_argument_group("actions")
 g.add_argument('-b', '--build-id', help="Strip build ID", action='store_true')
 g.add_argument('-p', '--patch', metavar='FUNCTION', help="Patch function", action='append')
-p.add_argument('-o', '--output', type=file, default=sys.stdout)
-p.add_argument('file', type=file)
+p.add_argument('-o', '--output', type=argparse.FileType('r'), default=sys.stdout)
+p.add_argument('file', type=argparse.FileType('r'))
 
 def main(args):
     if not (args.patch or args.build_id):

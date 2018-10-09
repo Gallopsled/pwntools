@@ -152,9 +152,9 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
             number = number >> 8
 
         if endianness == 'little':
-            return ''.join(out)
+            return b''.join(out)
         else:
-            return ''.join(reversed(out))
+            return b''.join(reversed(out))
 
 @LocalContext
 def unpack(data, word_size = None):
@@ -181,17 +181,17 @@ def unpack(data, word_size = None):
         The unpacked number.
 
     Examples:
-        >>> hex(unpack('\\xaa\\x55', 16, endian='little', sign=False))
+        >>> hex(unpack(b'\\xaa\\x55', 16, endian='little', sign=False))
         '0x55aa'
-        >>> hex(unpack('\\xaa\\x55', 16, endian='big', sign=False))
+        >>> hex(unpack(b'\\xaa\\x55', 16, endian='big', sign=False))
         '0xaa55'
-        >>> hex(unpack('\\xaa\\x55', 16, endian='big', sign=True))
+        >>> hex(unpack(b'\\xaa\\x55', 16, endian='big', sign=True))
         '-0x55ab'
-        >>> hex(unpack('\\xaa\\x55', 15, endian='big', sign=True))
+        >>> hex(unpack(b'\\xaa\\x55', 15, endian='big', sign=True))
         '0x2a55'
-        >>> hex(unpack('\\xff\\x02\\x03', 'all', endian='little', sign=True))
+        >>> hex(unpack(b'\\xff\\x02\\x03', 'all', endian='little', sign=True))
         '0x302ff'
-        >>> hex(unpack('\\xff\\x02\\x03', 'all', endian='big', sign=True))
+        >>> hex(unpack(b'\\xff\\x02\\x03', 'all', endian='big', sign=True))
         '-0xfdfd'
     """
 
@@ -247,15 +247,15 @@ def unpack_many(data, word_size = None):
         The unpacked numbers.
 
     Examples:
-        >>> map(hex, unpack_many('\\xaa\\x55\\xcc\\x33', 16, endian='little', sign=False))
+        >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='little', sign=False)))
         ['0x55aa', '0x33cc']
-        >>> map(hex, unpack_many('\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=False))
+        >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=False)))
         ['0xaa55', '0xcc33']
-        >>> map(hex, unpack_many('\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=True))
+        >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=True)))
         ['-0x55ab', '-0x33cd']
-        >>> map(hex, unpack_many('\\xff\\x02\\x03', 'all', endian='little', sign=True))
+        >>> list(map(hex, unpack_many(b'\\xff\\x02\\x03', 'all', endian='little', sign=True)))
         ['0x302ff']
-        >>> map(hex, unpack_many('\\xff\\x02\\x03', 'all', endian='big', sign=True))
+        >>> list(map(hex, unpack_many(b'\\xff\\x02\\x03', 'all', endian='big', sign=True)))
         ['-0xfdfd']
     """
     # Lookup in context if None
@@ -561,10 +561,10 @@ def _flat(args, preprocessor, packer, filler):
 
         # Advance `filler` for "non-recursive" values
         if not isinstance(arg, (list, tuple, dict)):
-            for _ in xrange(len(val)):
+            for _ in range(len(val)):
                 next(filler)
 
-    return ''.join(out)
+    return b''.join(out)
 
 @LocalContext
 def flat(*args, **kwargs):
@@ -648,7 +648,7 @@ def flat(*args, **kwargs):
     if length:
         if len(out) > length:
             raise ValueError("flat(): Arguments does not fit within `length` (= %d) bytes" % length)
-        out += ''.join(next(filler) for _ in xrange(length - len(out)))
+        out += ''.join(next(filler) for _ in range(length - len(out)))
 
     return out
 
@@ -737,24 +737,24 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         ('H', 'e', 'l', 'l', 'o', '?')
         >>> dd(list('Hello!'), (63,), skip = 5)
         ['H', 'e', 'l', 'l', 'o', '?']
-        >>> file('/tmp/foo', 'w').write('A' * 10)
-        >>> dd(file('/tmp/foo'), file('/dev/zero'), skip = 3, count = 4).read()
+        >>> open('/tmp/foo', 'w').write('A' * 10)
+        >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4).read()
         'AAA\\x00\\x00\\x00\\x00AAA'
-        >>> file('/tmp/foo', 'w').write('A' * 10)
-        >>> dd(file('/tmp/foo'), file('/dev/zero'), skip = 3, count = 4, truncate = True).read()
+        >>> open('/tmp/foo', 'w').write('A' * 10)
+        >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4, truncate = True).read()
         'AAA\\x00\\x00\\x00\\x00'
     """
 
     # Re-open file objects to make sure we have the mode right
-    if isinstance(src, file):
-        src = file(src.name, 'rb')
-    if isinstance(dst, file):
+    if hasattr(src, 'name'):
+        src = open(src.name, 'rb')
+    if hasattr(dst, 'name'):
         real_dst = dst
-        dst = file(dst.name, 'rb+')
+        dst = open(dst.name, 'rb+')
 
     # Special case: both `src` and `dst` are files, so we don't need to hold
     # everything in memory
-    if isinstance(src, file) and isinstance(dst, file):
+    if hasattr(src, 'seek') and hasattr(dst, 'seek'):
         src.seek(seek)
         dst.seek(skip)
         n = 0
@@ -790,7 +790,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         else:
             src = src.encode('utf8')[seek:]
 
-    elif isinstance(src, file):
+    elif hasattr(src, 'seek'):
         src.seek(seek)
         src_ = ''
         if count:
@@ -816,7 +816,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
 
     elif hasattr(src, '__iter__'):
         src = src[seek:]
-        src_ = ''
+        src_ = b''
         for i, b in enumerate(src, seek):
             if count and i > count + seek:
                 break
@@ -828,7 +828,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
                 src_ += chr(b)
             else:
                 raise TypeError("dd(): Unsupported `src` element type: %r" % type(b))
-        src = src_
+        src = b''.join(src_)
 
     else:
         raise TypeError("dd(): Unsupported `src` type: %r" % type(src))
@@ -845,7 +845,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         utf8 = False
 
     # Match on the type of `dst`
-    if   isinstance(dst, file):
+    if   hasattr(dst, 'seek'):
         dst.seek(skip)
         dst.write(src)
         if truncate:

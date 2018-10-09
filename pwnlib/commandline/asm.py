@@ -84,7 +84,7 @@ parser.add_argument(
     '--infile',
     help="Specify input file",
     default=sys.stdin,
-    type=file
+    type=argparse.FileType('r')
 )
 
 parser.add_argument(

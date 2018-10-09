@@ -67,9 +67,9 @@ doctest_global_setup = '''
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
 os.environ['PWNLIB_RANDOMIZE'] = '0'
-import pwnlib
+import pwnlib, logging
 pwnlib.context.context.reset_local()
-pwnlib.context.ContextType.defaults['log_level'] = 'ERROR'
+pwnlib.context.ContextType.defaults['log_level'] = logging.ERROR
 pwnlib.context.ContextType.defaults['randomize'] = False
 pwnlib.util.fiddling.default_style = {}
 pwnlib.term.text.when = 'never'
@@ -311,13 +311,13 @@ texinfo_documents = [
 branch = release
 
 try:
-    git_branch = subprocess.check_output('git describe --tags', shell = True)
+    git_branch = subprocess.check_output('git describe --tags', shell = True, universal_newlines = True)
 except subprocess.CalledProcessError:
     git_branch = '-'
 
 try:
     if '-' in git_branch:
-        branch = subprocess.check_output('git rev-parse HEAD', shell = True).strip()[:10]
+        branch = subprocess.check_output('git rev-parse HEAD', shell = True, universal_newlines = True).strip()[:10]
 except subprocess.CalledProcessError:
     pass
 

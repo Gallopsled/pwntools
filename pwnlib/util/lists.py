@@ -31,7 +31,7 @@ def partition(lst, f, save_keys = False):
     if save_keys:
         return d
     else:
-        return d.values()
+        return list(d.values())
 
 def group(n, lst, underfull_action = 'ignore', fill_value = None):
     """group(n, lst, underfull_action = 'ignore', fill_value = None) -> list
@@ -135,7 +135,7 @@ def ordlist(s):
       >>> ordlist("hello")
       [104, 101, 108, 108, 111]
     """
-    return map(ord, s)
+    return list(map(ord, s))
 
 def unordlist(cs):
     """unordlist(cs) -> str

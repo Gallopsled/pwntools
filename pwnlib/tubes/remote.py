@@ -29,7 +29,7 @@ class remote(sock):
     Examples:
 
         >>> r = remote('google.com', 443, ssl=True)
-        >>> r.send('GET /\r\n\r\n')
+        >>> r.send(b'GET /\r\n\r\n')
         >>> r.recvn(4)
         'HTTP'
 
@@ -45,7 +45,7 @@ class remote(sock):
         >>> import socket
         >>> s = socket.socket()
         >>> s.connect(('google.com', 80))
-        >>> s.send('GET /' + '\r\n'*2)
+        >>> s.send(b'GET /' + b'\r\n'*2)
         9
         >>> r = remote.fromsocket(s)
         >>> r.recvn(4)

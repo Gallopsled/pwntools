@@ -21,9 +21,9 @@ def main(args):
     try:
         if not args.hex:
             s = sys.stdin.read().translate(None, whitespace)
-            sys.stdout.write(s.decode('hex'))
+            sys.stdout.write(unhex(s))
         else:
-            sys.stdout.write(''.join(args.hex).decode('hex'))
+            sys.stdout.write(unhex(''.join(args.hex)))
     except TypeError as e:
         sys.stderr.write(str(e) + '\n')
 

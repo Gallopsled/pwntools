@@ -147,7 +147,7 @@ class Buffer(Exception):
         """
         # Fast path, get all of the data
         if want >= self.size:
-            data   = ''.join(self.data)
+            data   = b''.join(self.data)
             self.size = 0
             self.data = []
             return data
@@ -160,7 +160,7 @@ class Buffer(Exception):
             i    += 1
 
         # Join the chunks, evict from the buffer
-        data   = ''.join(self.data[:i])
+        data   = b''.join(self.data[:i])
         self.data = self.data[i:]
 
         # If the last chunk puts us over the limit,

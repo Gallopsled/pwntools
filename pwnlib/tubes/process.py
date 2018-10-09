@@ -123,9 +123,9 @@ class process(tube):
         False
         >>> p.recvline()
         'Hello world\n'
-        >>> p.recvuntil(',')
+        >>> p.recvuntil(b',')
         'Wow,'
-        >>> p.recvregex('.*data')
+        >>> p.recvregex(b'.*data')
         ' such data'
         >>> p.recv()
         '\n'
@@ -135,7 +135,7 @@ class process(tube):
         EOFError
 
         >>> p = process('cat')
-        >>> d = open('/dev/urandom').read(4096)
+        >>> d = open('/dev/urandom', 'rb').read(4096)
         >>> p.recv(timeout=0.1)
         ''
         >>> p.write(d)
@@ -148,17 +148,17 @@ class process(tube):
         >>> p.poll()
         0
 
-        >>> p = process('cat /dev/zero | head -c8', shell=True, stderr=open('/dev/null', 'w+'))
+        >>> p = process('cat /dev/zero | head -c8', shell=True, stderr=open('/dev/null', 'w+b'))
         >>> p.recv()
         '\x00\x00\x00\x00\x00\x00\x00\x00'
 
         >>> p = process(['python','-c','import os; print os.read(2,1024)'],
         ...             preexec_fn = lambda: os.dup2(0,2))
-        >>> p.sendline('hello')
+        >>> p.sendline(b'hello')
         >>> p.recvline()
         'hello\n'
 
-        >>> stack_smashing = ['python','-c','open("/dev/tty","wb").write("stack smashing detected")']
+        >>> stack_smashing = ['python','-c','open("/dev/tty","wb").write(b"stack smashing detected")']
         >>> process(stack_smashing).recvall()
         'stack smashing detected'
 
@@ -169,7 +169,7 @@ class process(tube):
         >>> p = process(getpass, stdin=PTY)
         >>> p.recv()
         'XXX'
-        >>> p.sendline('hunter2')
+        >>> p.sendline(b'hunter2')
         >>> p.recvall()
         '\nhunter2\n'
 
@@ -333,11 +333,11 @@ class process(tube):
 
         if self.pty is not None:
             if stdin is slave:
-                self.proc.stdin = os.fdopen(os.dup(master), 'r+', 0)
+                self.proc.stdin = os.fdopen(os.dup(master), 'r+b', 0)
             if stdout is slave:
-                self.proc.stdout = os.fdopen(os.dup(master), 'r+', 0)
+                self.proc.stdout = os.fdopen(os.dup(master), 'r+b', 0)
             if stderr is slave:
-                self.proc.stderr = os.fdopen(os.dup(master), 'r+', 0)
+                self.proc.stderr = os.fdopen(os.dup(master), 'r+b', 0)
 
             os.close(master)
             os.close(slave)
@@ -475,12 +475,12 @@ class process(tube):
         Example:
 
             >>> p = process('sh')
-            >>> p.sendline('cd /tmp; echo AAA')
-            >>> _ = p.recvuntil('AAA')
+            >>> p.sendline(b'cd /tmp; echo AAA')
+            >>> _ = p.recvuntil(b'AAA')
             >>> p.cwd == '/tmp'
             True
-            >>> p.sendline('cd /proc; echo BBB;')
-            >>> _ = p.recvuntil('BBB')
+            >>> p.sendline(b'cd /proc; echo BBB;')
+            >>> _ = p.recvuntil(b'BBB')
             >>> p.cwd
             '/proc'
         """
@@ -938,8 +938,8 @@ class process(tube):
             In order to make sure there's not a race condition against
             the process getting set up...
 
-            >>> p.sendline('echo hello')
-            >>> p.recvuntil('hello')
+            >>> p.sendline(b'echo hello')
+            >>> p.recvuntil(b'hello')
             'hello'
 
             Now we can leak some data!

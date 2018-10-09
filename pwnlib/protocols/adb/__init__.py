@@ -576,4 +576,4 @@ def proxy(port=9999):
     l = listen(port)
     l.wait_for_connection()
     r = remote(context.adb_host, context.adb_port, level='debug')
-    l <> r
+    l.connect_both(r)

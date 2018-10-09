@@ -896,13 +896,13 @@ class ContextType(object):
             >>> with context.local(log_file='bar.txt'):
             ...     log.debug('Hello from bar!')
             >>> log.info('Hello from foo!')
-            >>> file('foo.txt').readlines()[-3] #doctest: +ELLIPSIS
+            >>> open('foo.txt').readlines()[-3] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello!\n'
-            >>> file('foo.txt').readlines()[-2] #doctest: +ELLIPSIS
+            >>> open('foo.txt').readlines()[-2] #doctest: +ELLIPSIS
             '...:INFO:...:Hello again!\n'
-            >>> file('foo.txt').readlines()[-1] #doctest: +ELLIPSIS
+            >>> open('foo.txt').readlines()[-1] #doctest: +ELLIPSIS
             '...:INFO:...:Hello from foo!\n'
-            >>> file('bar.txt').readlines()[-1] #doctest: +ELLIPSIS
+            >>> open('bar.txt').readlines()[-1] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello from bar!\n'
         """
         if isinstance(value, (str,unicode)):
@@ -1393,7 +1393,7 @@ def LocalContext(function):
         if not kw:
             return function(*a)
 
-        with context.local(**{k:kw.pop(k) for k,v in kw.items() if isinstance(getattr(ContextType, k, None), property)}):
+        with context.local(**{k:kw.pop(k) for k,v in list(kw.items()) if isinstance(getattr(ContextType, k, None), property)}):
             return function(*a, **kw)
     return setter
 

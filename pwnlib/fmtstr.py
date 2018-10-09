@@ -154,7 +154,7 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
     number, step, mask, formatz, decalage = config[context.bits][write_size]
 
     # add wheres
-    payload = ""
+    payload = b""
     for where, what in writes.items():
         for i in range(0, number*step, step):
             payload += pack(where+i)
@@ -223,10 +223,10 @@ class FmtStr(object):
         self.writes = {}
         self.leaker = MemLeak(self._leaker)
 
-    def leak_stack(self, offset, prefix=""):
-        leak = self.execute_fmt(prefix+"START%{}$pEND".format(offset))
+    def leak_stack(self, offset, prefix=b""):
+        leak = self.execute_fmt(prefix + b"START%%%d$pEND" % offset)
         try:
-            leak = re.findall(r"START(.*)END", leak, re.MULTILINE | re.DOTALL)[0]
+            leak = re.findall(br"START(.*)END", leak, re.MULTILINE | re.DOTALL)[0]
             leak = int(leak, 16)
         except ValueError:
             leak = 0

@@ -46,7 +46,7 @@ i386 Example:
     Let's start the process, send the data, and check the message.
 
     >>> p = process(binary.path)
-    >>> p.send(str(frame))
+    >>> p.send(bytes(frame))
     >>> p.recvline()
     'Hello, World\n'
     >>> p.poll(block=True)
@@ -71,7 +71,7 @@ amd64 Example:
     >>> frame.rsp = 0xdeadbeef
     >>> frame.rip = binary.symbols['syscall']
     >>> p = process(binary.path)
-    >>> p.send(str(frame))
+    >>> p.send(bytes(frame))
     >>> p.recvline()
     'Hello, World\n'
     >>> p.poll(block=True)
@@ -96,7 +96,7 @@ arm Example:
     >>> frame.sp = 0xdead0000
     >>> frame.pc = binary.symbols['syscall']
     >>> p = process(binary.path)
-    >>> p.send(str(frame))
+    >>> p.send(bytes(frame))
     >>> p.recvline()
     'Hello, World\n'
     >>> p.wait_for_close()
@@ -122,7 +122,7 @@ Mips Example:
     >>> frame.sp = 0xdead0000
     >>> frame.pc = binary.symbols['syscall']
     >>> p = process(binary.path)
-    >>> p.send(str(frame))
+    >>> p.send(bytes(frame))
     >>> p.recvline()
     'Hello, World\n'
     >>> p.poll(block=True)
@@ -147,7 +147,7 @@ Mipsel Example:
     >>> frame.sp = 0xdead0000
     >>> frame.pc = binary.symbols['syscall']
     >>> p = process(binary.path)
-    >>> p.send(str(frame))
+    >>> p.send(bytes(frame))
     >>> p.recvline()
     'Hello, World\n'
     >>> p.poll(block=True)
@@ -364,7 +364,7 @@ class SigreturnFrame(dict):
         self.endian = context.endian
         self._regs = [self.registers[i] for i in sorted(self.registers.keys())]
         self.update({r:0 for r in self._regs})
-        self.size = len(str(self))
+        self.size = len(bytes(self))
         self.update(defaults[self.arch])
 
         if context.arch == 'i386' and context.kernel == 'amd64':
@@ -388,20 +388,23 @@ class SigreturnFrame(dict):
     def __getattr__(self, attr):
         return self[attr]
 
-    def __str__(self):
-        frame = ""
+    def __bytes__(self):
+        frame = b""
         with context.local(arch=self.arch):
             for register_offset in sorted(self.register_offsets):
                 if len(frame) < register_offset:
-                    frame += "\x00"*(register_offset - len(frame))
+                    frame += b"\x00"*(register_offset - len(frame))
                 frame += pack(self[self.registers[register_offset]])
         return frame
+
+    def __str__(self):
+        return str(self.__bytes__())
 
     def __len__(self):
         return self.size
 
     def __flat__(self):
-        return str(self)
+        return bytes(self)
 
     @property
     def registers(self):

@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import argparse
 from pwn import *
 from pwnlib.commandline import common
 
@@ -12,7 +13,7 @@ parser = common.parser_commands.add_parser(
 parser.add_argument(
     'elf',
     nargs='+',
-    type=file,
+    type=argparse.FileType('rb'),
     help='Files to check'
 )
 

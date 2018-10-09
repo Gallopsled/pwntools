@@ -82,4 +82,4 @@ def init():
     readline.init()
 
     term_mode = True
-    text.num_colors = termcap.get('colors', default = 8)
+    text.num_colors = termcap.get('colors', default = 8) or 8

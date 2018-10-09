@@ -15,7 +15,7 @@ Example
     # leaks at least one byte at that address.
     def leak(address):
         data = p.read(address, 4)
-        log.debug("%#x => %s" % (address, (data or '').encode('hex')))
+        log.debug("%#x => %s" % (address, enhex(data or '')))
         return data
 
     # For the sake of this example, let's say that we

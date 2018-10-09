@@ -9,7 +9,7 @@ from pwnlib.term import termcap
 
 
 def eval_when(when):
-    if isinstance(when, file) or \
+    if hasattr(when, 'isatty') or \
       when in ('always', 'never', 'auto', sys.stderr, sys.stdout):
         if   when == 'always':
             return True

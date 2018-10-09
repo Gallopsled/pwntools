@@ -30,8 +30,8 @@ For example, remote connections via :mod:`pwnlib.tubes.remote`.
     >>> conn = remote('ftp.ubuntu.com',21)
     >>> conn.recvline() # doctest: +ELLIPSIS
     '220 ...'
-    >>> conn.send('USER anonymous\r\n')
-    >>> conn.recvuntil(' ', drop=True)
+    >>> conn.send(b'USER anonymous\r\n')
+    >>> conn.recvuntil(b' ', drop=True)
     '331'
     >>> conn.recvline()
     'Please specify the password.\r\n'
@@ -42,7 +42,7 @@ It's also easy to spin up a listener
     >>> l = listen()
     >>> r = remote('localhost', l.lport)
     >>> c = l.wait_for_connection()
-    >>> r.send('hello')
+    >>> r.send(b'hello')
     >>> c.recv()
     'hello'
 
@@ -51,7 +51,7 @@ Interacting with processes is easy thanks to :mod:`pwnlib.tubes.process`.
 ::
 
     >>> sh = process('/bin/sh')
-    >>> sh.sendline('sleep 3; echo hello world;')
+    >>> sh.sendline(b'sleep 3; echo hello world;')
     >>> sh.recvline(timeout=1)
     ''
     >>> sh.recvline(timeout=5)
@@ -77,7 +77,7 @@ a ``process`` tube.
     'bandit0'
     >>> shell.download_file('/etc/motd')
     >>> sh = shell.run('sh')
-    >>> sh.sendline('sleep 3; echo hello world;') # doctest: +SKIP
+    >>> sh.sendline(b'sleep 3; echo hello world;') # doctest: +SKIP
     >>> sh.recvline(timeout=1)
     ''
     >>> sh.recvline(timeout=5)
@@ -97,13 +97,13 @@ unpacking codes, and littering your code with helper routines.
     >>> import struct
     >>> p32(0xdeadbeef) == struct.pack('I', 0xdeadbeef)
     True
-    >>> leet = '37130000'.decode('hex')
-    >>> u32('abcd') == struct.unpack('I', 'abcd')[0]
+    >>> leet = unhex('37130000')
+    >>> u32(b'abcd') == struct.unpack('I', b'abcd')[0]
     True
 
 The packing/unpacking operations are defined for many common bit-widths.
 
-    >>> u8('A') == 0x41
+    >>> u8(b'A') == 0x41
     True
 
 Setting the Target Architecture and OS
@@ -158,7 +158,7 @@ Assembly and Disassembly
 Never again will you need to run some already-assembled pile of shellcode
 from the internet!  The :mod:`pwnlib.asm` module is full of awesome.
 
-    >>> asm('mov eax, 0').encode('hex')
+    >>> enhex(asm('mov eax, 0'))
     'b800000000'
 
 But if you do, it's easy to suss out!
@@ -176,7 +176,7 @@ loaded with useful time-saving shellcodes.
 Let's say that we want to `setreuid(getuid(), getuid())` followed by `dup`ing
 file descriptor 4 to `stdin`, `stdout`, and `stderr`, and then pop a shell!
 
-    >>> asm(shellcraft.setreuid() + shellcraft.dupsh(4)).encode('hex') # doctest: +ELLIPSIS
+    >>> enhex(asm(shellcraft.setreuid() + shellcraft.dupsh(4))) # doctest: +ELLIPSIS
     '6a3158cd80...'
 
 
@@ -216,6 +216,6 @@ You can even patch and save the files.
     '\x7fELF'
     >>> e.asm(e.address, 'ret')
     >>> e.save('/tmp/quiet-cat')
-    >>> disasm(file('/tmp/quiet-cat','rb').read(1))
+    >>> disasm(open('/tmp/quiet-cat','rb').read(1))
     '   0:   c3                      ret'
 
