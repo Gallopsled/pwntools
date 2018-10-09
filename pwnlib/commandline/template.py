@@ -60,7 +60,7 @@ def main(args):
     print output
 
     if not sys.stdout.isatty():
-        try: os.fchmod(sys.stdout.fileno(), 0700)
+        try: os.fchmod(sys.stdout.fileno(), 0o700)
         except OSError: pass
 
 if __name__ == '__main__':

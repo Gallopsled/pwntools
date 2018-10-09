@@ -298,7 +298,7 @@ def main(args):
 
     if args.format in ['e','elf']:
         args.format = 'default'
-        try: os.fchmod(args.out.fileno(), 0700)
+        try: os.fchmod(args.out.fileno(), 0o700)
         except OSError: pass
 
 
