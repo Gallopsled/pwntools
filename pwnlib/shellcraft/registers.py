@@ -77,10 +77,10 @@ sparc =  map('%{}'.format, sparc)
 
 # x86/amd64 registers in decreasing size
 i386_ordered = [
-    ['rax', 'eax', 'ax', 'al'],
-    ['rbx', 'ebx', 'bx', 'bl'],
-    ['rcx', 'ecx', 'cx', 'cl'],
-    ['rdx', 'edx', 'dx', 'dl'],
+    ['rax', 'eax', 'ax', 'al', 'ah'],
+    ['rbx', 'ebx', 'bx', 'bl', 'bh'],
+    ['rcx', 'ecx', 'cx', 'cl', 'ch'],
+    ['rdx', 'edx', 'dx', 'dl', 'dh'],
     ['rdi', 'edi', 'di'],
     ['rsi', 'esi', 'si'],
     ['rbp', 'ebp', 'bp'],
@@ -143,10 +143,11 @@ class Register(object):
             if name in row:
                 self.bigger  = row[0:row.index(name)]
                 self.smaller = row[row.index(name)+1:]
-                self.sizes   = {64>>i:r for i,r in enumerate(row)}
+                self.sizes = {i:r for r,i in sizes.items()}
                 self.native64 = row[0]
                 self.native32 = row[1]
                 self.xor = self.sizes[min(self.size, 32)]
+
 
         if self.size >= 32 and name.endswith('x'):
             self.ff00 = name[1] + 'h'
@@ -180,8 +181,8 @@ class Register(object):
 intel = {}
 
 for row in i386_ordered:
-    for i, reg in enumerate(row):
-        intel[reg] = Register(reg, 64 >> i)
+    for reg in sizes:
+        intel[reg] = Register(reg, sizes[reg])
 
 def get_register(name):
     if isinstance(name, Register):
