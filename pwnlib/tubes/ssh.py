@@ -1633,10 +1633,14 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if not self.sftp:
             self.error("Cannot determine remote file type without SFTP")
 
-        if 0 == self.system('test -d ' + sh_string(file_or_directory)).wait():
+        is_dir = self.system('test -d ' + sh_string(file_or_directory))
+
+        if 0 == is_dir.wait():
             self.download_dir(file_or_directory, local)
         else:
             self.download_file(file_or_directory, local)
+
+        is_dir.close()
 
     put = upload
     get = download
