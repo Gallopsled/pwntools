@@ -59,6 +59,7 @@ install_requires     = ['paramiko>=1.15.2',
                         'psutil>=3.3.0',
                         'intervaltree',
                         'sortedcontainers<2.0', # See Gallopsled/pwntools#1154
+                        'sphinx==1.6.7',
                         'unicorn']
 
 # Check that the user has installed the Python development headers

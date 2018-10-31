@@ -427,7 +427,7 @@ class Corefile(ELF):
 
         Corefiles can also be pulled from remote machines via SSH!
 
-        >>> s = ssh('travis', 'example.pwnme')
+        >>> s = ssh(host='example.pwnme', user='travis', password='demopass')
         >>> _ = s.set_working_directory()
         >>> elf = ELF.from_assembly(shellcraft.trap())
         >>> path = s.upload(elf.path)

@@ -64,14 +64,38 @@ setup_travis()
 
 setup_linux()
 {
-    sudo apt-get install -y software-properties-common openssh-server libncurses5-dev libncursesw5-dev openjdk-8-jre-headless
-    RELEASE="$(lsb-release -sr)"
-    if [[ "$RELEASE" < "16.04" ]]; then
-        sudo apt-add-repository --yes ppa:pwntools/binutils
-        sudo apt-get update
-        sudo apt-get install -y binutils-arm-linux-gnu binutils-mips-linux-gnu binutils-powerpc-linux-gnu
-    else
-        sudo apt-get install -y binutils-arm-linux-gnueabihf binutils-mips-linux-gnu binutils-powerpc-linux-gnu
+    declare -A osInfo;
+    osInfo[/etc/redhat-release]=yum
+    osInfo[/etc/arch-release]=pacman
+    osInfo[/etc/gentoo-release]=emerge
+    osInfo[/etc/SuSE-release]=zypp
+    osInfo[/etc/debian_version]=apt-get
+
+    for f in ${!osInfo[@]}
+    do
+        if [[ -f $f ]];then
+            PKG_MAN=${osInfo[$f]}
+            echo detected package manager $PKG_MAN
+        fi
+    done
+
+    if [ PKG_MAN = "apt-get" ]; then
+        sudo apt-get install -y software-properties-common openssh-server libncurses5-dev libncursesw5-dev openjdk-8-jre-headless
+        RELEASE="$(lsb-release -sr)"
+        if [[ "$RELEASE" < "16.04" ]]; then
+            sudo apt-add-repository --yes ppa:pwntools/binutils
+            sudo apt-get update
+            sudo apt-get install -y binutils-arm-linux-gnu binutils-mips-linux-gnu binutils-powerpc-linux-gnu
+        else
+            sudo apt-get install -y binutils-arm-linux-gnueabihf binutils-mips-linux-gnu binutils-powerpc-linux-gnu
+        fi
+    fi
+
+    if [ PKG_MAN = "pacman" ]; then
+        pacman -S openssh curses jre8-openjdk-headless bintuils arm-none-eabi-binutils yay
+        # TODO: binutils-mips-linux-gnu binutils-powerpc-linux-gnu are only in AUR
+        yay -S cross-mipsel-linux-gnu-binutils powerpc-linux-gnu-binutils
+        systemctl start sshd
     fi
 }
 
