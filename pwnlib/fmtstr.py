@@ -36,7 +36,7 @@ Examples:
     >>> def exec_fmt(payload):
     ...     p = process(program)
     ...     p.sendline(payload)
-    ...     return p.recvall(timeout=0.1)
+    ...     return p.recvall()
     ...
     >>> autofmt = FmtStr(exec_fmt)
     >>> offset = autofmt.offset
@@ -44,7 +44,7 @@ Examples:
     >>> addr = unpack(p.recv(4))
     >>> payload = fmtstr_payload(offset, {addr: 0x1337babe})
     >>> p.sendline(payload)
-    >>> print hex(unpack(p.recv(4, timeout=0.1)))
+    >>> print hex(unpack(p.recv(4)))
     0x1337babe
 
 Example - Payload generation
@@ -95,8 +95,6 @@ import copy
 import functools
 import logging
 import re
-from collections import namedtuple
-from intervaltree import IntervalTree, Interval
 from operator import itemgetter
 from sortedcontainers import SortedList
 
@@ -114,6 +112,9 @@ SPECIFIER = {
     4: 'n',
     8: 'lln',
 }
+
+
+SZMASK = { sz: (1 << (sz * 8)) - 1 for sz in SPECIFIER }
 
 WRITE_SIZE = {
     "byte": 1,
@@ -166,10 +167,10 @@ class AtomWrite(object):
     def __init__(self, start, size, integer, mask=None):
         if mask is None:
             mask = (1 << (8 * size)) - 1
-        self.start = long(start)
+        self.start = int(start)
         self.size = size
-        self.integer = long(integer)
-        self.mask = long(mask)
+        self.integer = int(integer)
+        self.mask = int(mask)
 
     def __len__(self):
         return self.size
@@ -253,7 +254,7 @@ class AtomWrite(object):
         return self.__getitem__(slice(i, j))
 
     def __getitem__(self, i):
-        if type(i) is not slice:
+        if not isinstance(i, slice):
             i = slice(i,i)
         start, stop, step = i.indices(self.size)
         if step != 1:
@@ -390,7 +391,7 @@ def find_min_hamming_in_range(maxbytes, lower, upper, target):
         target(int): the target value that should be approximated
 
     Examples:
-        >>> pp = lambda (score, value, mask): (score, hex(value), hex(mask))
+        >>> pp = lambda svm: (svm[0], hex(svm[1]), hex(svm[2]))
         >>> pp(pwnlib.fmtstr.find_min_hamming_in_range(1, 0x0, 0x100, 0xaa))
         (1, '0xaa', '0xff')
         >>> pp(pwnlib.fmtstr.find_min_hamming_in_range(1, 0xbb, 0x100, 0xaa))
@@ -481,32 +482,31 @@ def sort_atoms(atoms, numbwritten):
 
     def conflicts():
         prev = None
-        for a in sorted(atoms, key=lambda a: a.start):
+        for atom in sorted(atoms, key=lambda a: a.start):
             if not prev:
-                prev = a
+                prev = atom
                 continue
-            if prev.end > a.start:
-                yield prev, a
-            if a.end > prev.end:
-                prev = a
+            if prev.end > atom.start:
+                yield prev, atom
+            if atom.end > prev.end:
+                prev = atom
 
-    depgraph = { a: set() for a in atoms }
-    rdepgraph = { a: set() for a in atoms }
-    for a,b in conflicts():
-        if order[a] < order[b]:
-            depgraph[b].add(a)
-            rdepgraph[a].add(b)
+    depgraph = { atom: set() for atom in atoms }
+    rdepgraph = { atom: set() for atom in atoms }
+    for atom1,atom2 in conflicts():
+        if order[atom1] < order[atom2]:
+            depgraph[atom2].add(atom1)
+            rdepgraph[atom1].add(atom2)
         else:
-            depgraph[a].add(b)
-            rdepgraph[b].add(a)
+            depgraph[atom1].add(atom2)
+            rdepgraph[atom2].add(atom1)
 
-    szmask = { sz: (1 << (sz * 8)) - 1 for sz in SPECIFIER }
-    queues = { sz: SortedList(key=lambda a: a.integer) for sz in SPECIFIER.keys() }
+    queues = { sz: SortedList(key=lambda atom: atom.integer) for sz in SPECIFIER.keys() }
     pointers = { sz: 0 for sz in SPECIFIER }
 
     def enqueue(atom):
         queues[atom.size].add(atom)
-        if atom.integer & szmask[atom.size] < numbwritten & szmask[atom.size]:
+        if atom.integer & SZMASK[atom.size] < numbwritten & SZMASK[atom.size]:
             pointers[atom.size] += 1
 
     for atom, deps in depgraph.items():
@@ -530,7 +530,7 @@ def sort_atoms(atoms, numbwritten):
         changed = False
         for sz in pointers:
             diff = (best_atom.integer ^ numbwritten)
-            if diff & ~szmask[sz] != 0:
+            if diff & ~SZMASK[sz] != 0:
                 changed |= pointers[sz] != 0
                 pointers[sz] = 0
         if changed: continue
