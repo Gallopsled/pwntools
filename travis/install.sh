@@ -89,13 +89,16 @@ setup_linux()
         else
             sudo apt-get install -y binutils-arm-linux-gnueabihf binutils-mips-linux-gnu binutils-powerpc-linux-gnu
         fi
-    fi
-
-    if [ PKG_MAN = "pacman" ]; then
+    elif [ PKG_MAN = "pacman" ]; then
         pacman -S openssh curses jre8-openjdk-headless bintuils arm-none-eabi-binutils yay
         # TODO: binutils-mips-linux-gnu binutils-powerpc-linux-gnu are only in AUR
         yay -S cross-mipsel-linux-gnu-binutils powerpc-linux-gnu-binutils
         systemctl start sshd
+    else
+        echo "Package manager detected : $PKG_MAN"
+        echo "Your package manager isn't apt-get or pacman, try to manually install the following:"
+        echo "openssh curses jre8-openjdk-headless and binutils for x86_86, arm, mips and powerpc"
+        echo "and start openssh server (should allow user travis:demopass)
     fi
 }
 
