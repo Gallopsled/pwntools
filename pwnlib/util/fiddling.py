@@ -192,9 +192,9 @@ def unbits(s, endian = 'big'):
        '\\x16\\xa666\\xf6'
     """
     if endian == 'little':
-        u = lambda s: packing.p8(int(s[::-1], 2))
+        u = lambda s: packing._p8lu(int(s[::-1], 2))
     elif endian == 'big':
-        u = lambda s: packing.p8(int(s, 2))
+        u = lambda s: packing._p8lu(int(s, 2))
     else:
         raise ValueError("unbits(): 'endian' must be either 'little' or 'big'")
 
@@ -339,7 +339,7 @@ def xor(*args, **kwargs):
     def get(n):
         rv = 0
         for s in strs: rv ^= s[n%len(s)]
-        return packing.p8(rv)
+        return packing._p8lu(rv)
 
     return b''.join(map(get, range(cut)))
 
@@ -369,7 +369,7 @@ def xor_pair(data, avoid = b'\x00\n'):
         avoid = avoid.encode('utf-8')
 
     avoid = bytearray(avoid)
-    alphabet = list(packing.p8(n) for n in range(256) if n not in avoid)
+    alphabet = list(packing._p8lu(n) for n in range(256) if n not in avoid)
 
     res1 = b''
     res2 = b''
@@ -378,7 +378,7 @@ def xor_pair(data, avoid = b'\x00\n'):
         if context.randomize:
             random.shuffle(alphabet)
         for c2 in alphabet:
-            c3 = packing.p8(c1 ^ packing.u8(c2))
+            c3 = packing._p8lu(c1 ^ packing.u8(c2))
             if c3 in alphabet:
                 res1 += c2
                 res2 += c3
@@ -430,7 +430,7 @@ def xor_key(data, avoid=b'\x00\n', size=None):
             random.shuffle(alphabet)
         for c2 in alphabet:
             if all(c^c2 in alphabet for c in column):
-                result += packing.p8(c2)
+                result += packing._p8lu(c2)
                 break
         else:
             return None
@@ -537,7 +537,7 @@ def isprint(c):
 
     Return True if a character is printable"""
     t = (string.ascii_letters + string.digits + string.punctuation + ' ').encode()
-    return c in set(map(packing.p8, bytearray(t)))|set(map(chr, bytearray(t)))
+    return c in set(map(packing._p8lu, bytearray(t)))|set(map(chr, bytearray(t)))
 
 
 def hexii(s, width = 16, skip = True):
@@ -584,7 +584,7 @@ def sequential_lines(a,b):
 def update_cyclic_pregenerated(size):
     global cyclic_pregen
     while size > len(cyclic_pregen):
-        cyclic_pregen += packing.p8(next(de_bruijn_gen))
+        cyclic_pregen += packing._p8lu(next(de_bruijn_gen))
 
 def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
                  highlight=None, cyclic=False, groupsize=4):
@@ -646,10 +646,10 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
     marker      = (style.get('marker') or (lambda s:s))('│')
 
     if not hexii:
-        def style_byte(b):
-            hbyte = '%02x' % b
-            b = packing.p8(b)
-            abyte = b.decode() if isprint(b) else '·'
+        def style_byte(by):
+            hbyte = '%02x' % by
+            b = packing._p8lu(by)
+            abyte = chr(by) if isprint(b) else '·'
             if hbyte in style:
                 st = style[hbyte]
             elif isprint(b):
