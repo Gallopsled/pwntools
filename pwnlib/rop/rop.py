@@ -175,7 +175,7 @@ Pwntools will also filter out some bad instructions while setting the registers
     >>> binary = ELF.from_assembly(assembly)
     >>> rop = ROP(binary)
     >>> rop.call(0xdeadbeef, [1, 2, 3])
-    >>> print rop.dump()
+    >>> print(rop.dump())
     0x0000:       0x1000000b pop rdi; ret
     0x0008:              0x1 [arg0] rdi = 1
     0x0010:       0x10000008 pop rsi; pop rdx; ret

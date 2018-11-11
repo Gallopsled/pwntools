@@ -917,7 +917,7 @@ class Corefile(ELF):
             return
 
         # If the stack does not end with zeroes, something is very wrong.
-        if not stack.data.endswith('\x00' * 8):
+        if not stack.data.endswith(b'\x00' * 8):
             log.warn_once("End of the stack is corrupted, skipping stack parsing (got: %s)",
                           enhex(self.data[-8:]))
             return
