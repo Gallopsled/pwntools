@@ -29,6 +29,8 @@ def _get_opcodes(codeobj):
     [100, 100, 103, 83]
     """
     import dis
+    if hasattr(dis, 'get_instructions'):
+        return [ins.opcode for ins in dis.get_instructions(codeobj)]
     i = 0
     opcodes = []
     s = codeobj.co_code
