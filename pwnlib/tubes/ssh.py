@@ -1392,12 +1392,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             c = self.run(cmd)
         data = b''
 
-        countr = 0
         while True:
             try:
                 data += c.recv()
-                countr += 1
-                if countr > 1000000: raise MemoryError('infinite loop!') ##
             except EOFError:
                 break
             update(len(data), total)

@@ -51,7 +51,7 @@ class sock(tube):
                 else:
                     raise
 
-        if data == '':
+        if not data:
             self.shutdown("recv")
             raise EOFError
 
