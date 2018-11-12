@@ -1005,6 +1005,8 @@ class Corefile(ELF):
             if end not in stack:
                 continue
 
+            if not isinstance(name, str):
+                name = name.decode('utf-8', 'surrogateescape')
             self.env[name] = pointer + len(name) + len('=')
 
         # May as well grab the arguments off the stack as well.
@@ -1068,6 +1070,8 @@ class Corefile(ELF):
             >>> io.corefile.getenv('GREETING')
             'Hello!'
         """
+        if not isinstance(name, str):
+            name = name.decode('utf-8', 'surrogateescape')
         if name not in self.env:
             log.error("Environment variable %r not set" % name)
 

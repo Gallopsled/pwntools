@@ -157,7 +157,6 @@ Mipsel Example:
 from __future__ import absolute_import
 from __future__ import division
 
-import six
 from collections import namedtuple
 
 from pwnlib.abi import ABI
