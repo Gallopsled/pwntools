@@ -442,11 +442,12 @@ def merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows):
         candidate = AtomWrite(atoms[idx].start, 0, 0)
         best = 0
         for nextidx in xrange(idx, len(atoms)):
-            if candidate.size > szmax or done[nextidx] or candidate.end != atoms[nextidx].start:
+            if done[nextidx] or candidate.end != atoms[nextidx].start:
                 break
 
             candidate = candidate.union(atoms[nextidx])
             if candidate.size not in SPECIFIER: continue
+            if candidate.size > szmax: break
 
             approxed = candidate
             score = candidate.size
