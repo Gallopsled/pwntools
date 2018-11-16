@@ -12,6 +12,7 @@
 # serve to show the default.
 
 import os
+import doctest
 import six
 import subprocess
 import sys
@@ -411,8 +412,35 @@ class ModuleDocumenter(sphinx.ext.autodoc.ModuleDocumenter):
                         safe_getattr(self.object, '__name__', '???'), mname))
         return False, ret
 
+class Py2OutputChecker(doctest.OutputChecker):
+    def check_output(self, want, got, optionflags):
+        sup = super(Py2OutputChecker, self).check_output
+        if sup(want, got, optionflags):
+            return True
+        try:
+            rly_want = pwnlib.safeeval.const(want)
+            if sup(repr(rly_want), got, optionflags):
+                return True
+            rly_got = pwnlib.safeeval.const(got)
+            if rly_want == rly_got:
+                return True
+        except ValueError:
+            pass
+        rly_want = want.replace('b"', '"').replace("b'", "'")
+        if sup(rly_want, got, optionflags):
+            return True
+        rly_want = want.replace('b"', ' "').replace("b'", " '")
+        return sup(rly_want, got, optionflags)
+
+def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
+    if checker is None:
+        checker = Py2OutputChecker()
+    super(sphinx.ext.doctest.SphinxDocTestRunner, self).__init__(checker, verbose, optionflags)
+
 if 'doctest' in sys.argv:
     def setup(app):
         app.connect('autodoc-skip-member', dont_skip_any_doctests)
 
     sphinx.ext.autodoc.ModuleDocumenter = ModuleDocumenter
+    if sys.version_info[:1] < (3,):
+        sphinx.ext.doctest.SphinxDocTestRunner.__init__ = py2_doctest_init
