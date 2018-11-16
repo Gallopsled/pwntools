@@ -380,27 +380,25 @@ from sphinx.util.inspect import safe_getmembers, safe_getattr
 def dont_skip_any_doctests(app, what, name, obj, skip, options):
     return False
 
-# Test non-exported members
-class ModuleDocumenter(sphinx.ext.autodoc.ModuleDocumenter):
-    def get_object_members(self, want_all):
-        if want_all:
-            # if not hasattr(self.object, '__all__'):
-            #     for implicit module members, check __module__ to avoid
-            #     documenting imported objects
-                return True, safe_getmembers(self.object)
-            # else:
-            #     memberlist = self.object.__all__
-            #     # Sometimes __all__ is broken...
-            #     if not isinstance(memberlist, (list, tuple)) or not \
-            #        all(isinstance(entry, string_types) for entry in memberlist):
-            #         self.directive.warn(
-            #             '__all__ should be a list of strings, not %r '
-            #             '(in module %s) -- ignoring __all__' %
-            #             (memberlist, self.fullname))
-            #         # fall back to all members
-            #         return True, safe_getmembers(self.object)
-        else:
-            memberlist = self.options.members or []
+def get_object_members_all(self, want_all):
+    if want_all:
+        # if not hasattr(self.object, '__all__'):
+        #     for implicit module members, check __module__ to avoid
+        #     documenting imported objects
+        return True, safe_getmembers(self.object)
+    # else:
+    #     memberlist = self.object.__all__
+    #     # Sometimes __all__ is broken...
+    #     if not isinstance(memberlist, (list, tuple)) or not \
+        #        all(isinstance(entry, string_types) for entry in memberlist):
+    #         self.directive.warn(
+    #             '__all__ should be a list of strings, not %r '
+    #             '(in module %s) -- ignoring __all__' %
+    #             (memberlist, self.fullname))
+    #         # fall back to all members
+    #         return True, safe_getmembers(self.object)
+    else:
+        memberlist = self.options.members or []
         ret = []
         for mname in memberlist:
             try:
@@ -444,3 +442,4 @@ if 'doctest' in sys.argv:
     sphinx.ext.autodoc.ModuleDocumenter = ModuleDocumenter
     if sys.version_info[:1] < (3,):
         sphinx.ext.doctest.SphinxDocTestRunner.__init__ = py2_doctest_init
+    sphinx.ext.autodoc.ModuleDocumenter.get_object_members = get_object_members_all
