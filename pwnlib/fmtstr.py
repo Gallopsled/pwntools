@@ -303,6 +303,15 @@ def make_atoms_simple(address, data, badbytes=set()):
 
 
 def merge_atoms_writesize(atoms, maxsize):
+    """Merge consecutive atoms based on size.
+
+    This function simply merges adjacent atoms as long as the merged atom's size is not larger than ``maxsize``.
+
+    Examples:
+        >>> from pwnlib.fmtstr import *
+        >>> merge_atoms_writesize([AtomWrite(0, 1, 1), AtomWrite(1, 1, 1), AtomWrite(2, 1, 2)], 2)
+        [AtomWrite(start=0, size=2, integer=0x101, mask=0xffff), AtomWrite(start=2, size=1, integer=0x2, mask=0xff)]
+    """
     assert maxsize in SPECIFIER, "write size must be supported by printf"
 
     out = []
@@ -318,7 +327,7 @@ def merge_atoms_writesize(atoms, maxsize):
             if candidate.size in SPECIFIER:
                 best = (idx+1, candidate)
 
-        out += best[1]
+        out += [best[1]]
         atoms[:best[0]] = []
     return out
 
@@ -431,6 +440,29 @@ def find_min_hamming_in_range(maxbytes, lower, upper, target):
 #  - create new atoms that cannot be created by merging existing atoms
 #  - optimize based on masks
 def merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows):
+    """
+    Takes a list of atoms and merges consecutive atoms to reduce the number of atoms.
+    For example if you have two atoms ``AtomWrite(0, 1, 1)`` and ``AtomWrite(1, 1, 1)``
+    they can be merged into a single atom ``AtomWrite(0, 2, 0x0101)`` to produce a short format string.
+
+    Arguments:
+        atoms(list): list of atoms to merge
+        sz(int): basic write size in bytes. Atoms of this size are generated without constraints on their values.
+        szmax(int): maximum write size in bytes. No atoms with a size larger than this are generated.
+        numbwritten(int): the value at which the counter starts
+        overflows(int): how many extra overflows (of size sz) to tolerate to reduce the number of atoms
+
+    Examples:
+        >>> from pwnlib.fmtstr import *
+        >>> merge_atoms_overlapping([AtomWrite(0, 1, 1), AtomWrite(1, 1, 1)], 2, 8, 0, 1)
+        [AtomWrite(start=0, size=2, integer=0x101, mask=0xffff)]
+        >>> merge_atoms_overlapping([AtomWrite(0, 1, 1), AtomWrite(1, 1, 1)], 1, 8, 0, 1) # not merged since it causes an extra overflow of the 1-byte counter
+        [AtomWrite(start=0, size=1, integer=0x1, mask=0xff), AtomWrite(start=1, size=1, integer=0x1, mask=0xff)]
+        >>> merge_atoms_overlapping([AtomWrite(0, 1, 1), AtomWrite(1, 1, 1)], 1, 8, 0, 2)
+        [AtomWrite(start=0, size=2, integer=0x101, mask=0xffff)]
+        >>> merge_atoms_overlapping([AtomWrite(0, 1, 1), AtomWrite(1, 1, 1)], 1, 1, 0, 2) # not merged due to szmax
+        [AtomWrite(start=0, size=1, integer=0x1, mask=0xff), AtomWrite(start=1, size=1, integer=0x1, mask=0xff)]
+    """
     if not szmax:
         szmax = max(SPECIFIER.keys())
 
@@ -479,24 +511,101 @@ def merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows):
         out += [candidate]
     return out
 
-def sort_atoms(atoms, numbwritten):
-    # find dependencies
-    order = { atom: i for i,atom in enumerate(atoms) }
+def overlapping_atoms(atoms):
+    """
+    Finds pairs of atoms that write to the same address.
 
-    def conflicts():
-        prev = None
-        for atom in sorted(atoms, key=lambda a: a.start):
-            if not prev:
-                prev = atom
-                continue
-            if prev.end > atom.start:
-                yield prev, atom
-            if atom.end > prev.end:
-                prev = atom
+    Basic examples:
+        >>> from pwnlib.fmtstr import *
+        >>> list(overlapping_atoms([AtomWrite(0, 2, 0), AtomWrite(2, 10, 1)])) # no overlaps
+        []
+        >>> list(overlapping_atoms([AtomWrite(0, 2, 0), AtomWrite(1, 2, 1)])) # single overlap
+        [(AtomWrite(start=0, size=2, integer=0x0, mask=0xffff), AtomWrite(start=1, size=2, integer=0x1, mask=0xffff))]
+
+    When there are transitive overlaps, only the largest overlap is returned. For example:
+        >>> list(overlapping_atoms([AtomWrite(0, 3, 0), AtomWrite(1, 4, 1), AtomWrite(2, 4, 1)]))
+        [(AtomWrite(start=0, size=3, integer=0x0, mask=0xffffff), AtomWrite(start=1, size=4, integer=0x1, mask=0xffffffff)), (AtomWrite(start=1, size=4, integer=0x1, mask=0xffffffff), AtomWrite(start=2, size=4, integer=0x1, mask=0xffffffff))]
+
+    Even though ``AtomWrite(0, 3, 0)`` and ``AtomWrite(2, 4, 1)`` overlap as well that overlap is not returned
+    as only the largest overlap is returned.
+    """
+    prev = None
+    for atom in sorted(atoms, key=lambda a: a.start):
+        if not prev:
+            prev = atom
+            continue
+        if prev.end > atom.start:
+            yield prev, atom
+        if atom.end > prev.end:
+            prev = atom
+
+class AtomQueue(object):
+    def __init__(self, numbwritten):
+        self.queues = { sz: SortedList(key=lambda atom: atom.integer) for sz in SPECIFIER.keys() }
+        self.positions = { sz: 0 for sz in SPECIFIER }
+        self.numbwritten = numbwritten
+
+    def add(self, atom):
+        self.queues[atom.size].add(atom)
+        if atom.integer & SZMASK[atom.size] < self.numbwritten & SZMASK[atom.size]:
+            self.positions[atom.size] += 1
+
+    def pop(self):
+        # find queues that still have items left
+        active_sizes = [ sz for sz,p in self.positions.items() if p < len(self.queues[sz]) ]
+
+        # if all queues are exhausted, reset the one for the lowest size atoms
+        # resetting a queue means the counter overflows (for this size)
+        if not active_sizes:
+            try:
+                sz_reset = min(sz for sz,q in self.queues.items() if q)
+            except ValueError:
+                # all queues are empty, so there are no atoms left
+                return None
+
+            self.positions[sz_reset] = 0
+            active_sizes = [sz_reset]
+
+        # find the queue that requires the least amount of counter change
+        best_size = min(active_sizes, key=lambda sz: self.queues[sz][self.positions[sz]].compute_padding(self.numbwritten))
+        best_atom = self.queues[best_size].pop(self.positions[best_size])
+        self.numbwritten += best_atom.compute_padding(self.numbwritten)
+
+        return best_atom
+
+def sort_atoms(atoms, numbwritten):
+    """
+    This function sorts atoms such that the amount by which the format string counter has to been increased
+    between consecutive atoms is minimized.
+
+    The idea is to reduce the amount of data the the format string has to output to write the desired atoms.
+    For example, directly generating a format string for the atoms ``[AtomWrite(0, 1, 0xff), AtomWrite(1, 1, 0xfe)]``
+    is suboptimal: we'd first need to output 0xff bytes to get the counter to 0xff and then output 0x100+1 bytes to
+    get it to 0xfe again. If we sort the writes first we only need to output 0xfe bytes and then 1 byte to get to 0xff.
+
+    Arguments:
+        atoms(list): list of atoms to sort
+        numbwritten(int): the value at which the counter starts
+
+    Examples:
+        >>> from pwnlib.fmtstr import *
+        >>> sort_atoms([AtomWrite(0, 1, 0xff), AtomWrite(1, 1, 0xfe)], 0) # the example described above
+        [AtomWrite(start=1, size=1, integer=0xfe, mask=0xff), AtomWrite(start=0, size=1, integer=0xff, mask=0xff)]
+        >>> sort_atoms([AtomWrite(0, 1, 0xff), AtomWrite(1, 1, 0xfe)], 0xff) # if we start with 0xff it's different
+        [AtomWrite(start=0, size=1, integer=0xff, mask=0xff), AtomWrite(start=1, size=1, integer=0xfe, mask=0xff)]
+    """
+    # find dependencies
+    #
+    # in this phase, we determine for which writes we need to preserve order to ensure correctness
+    # for example, if we have atoms [a, b] as input and b writes to the same address as a, we cannot reorder that
+    # to [b, a] since then a would overwrite parts of what b wrote.
+    #
+    # a depends on b means: a must happen after b --> depgraph[a] contains b
+    order = { atom: i for i,atom in enumerate(atoms) }
 
     depgraph = { atom: set() for atom in atoms }
     rdepgraph = { atom: set() for atom in atoms }
-    for atom1,atom2 in conflicts():
+    for atom1,atom2 in overlapping_atoms(atoms):
         if order[atom1] < order[atom2]:
             depgraph[atom2].add(atom1)
             rdepgraph[atom1].add(atom2)
@@ -504,50 +613,27 @@ def sort_atoms(atoms, numbwritten):
             depgraph[atom1].add(atom2)
             rdepgraph[atom2].add(atom1)
 
-    queues = { sz: SortedList(key=lambda atom: atom.integer) for sz in SPECIFIER.keys() }
-    pointers = { sz: 0 for sz in SPECIFIER }
-
-    def enqueue(atom):
-        queues[atom.size].add(atom)
-        if atom.integer & SZMASK[atom.size] < numbwritten & SZMASK[atom.size]:
-            pointers[atom.size] += 1
+    queue = AtomQueue(numbwritten)
 
     for atom, deps in depgraph.items():
         if not deps:
-            enqueue(atom)
+            queue.add(atom)
 
     out = []
     while True:
-        active_sizes = [ sz for sz,p in pointers.items() if p < len(queues[sz]) ]
-        if active_sizes:
-            best_size = min(active_sizes, key=lambda sz: queues[sz][pointers[sz]].integer - numbwritten)
-        else:
-            available_sizes = [ sz for sz,q in queues.items() if q ]
-            if not available_sizes:
-                break
-            best_size = min(available_sizes, key=lambda sz: queues[sz][0].compute_padding(numbwritten))
-            pointers[best_size] = 0
+        atom = queue.pop()
+        if not atom: # we are done
+            break
 
-        best_atom = queues[best_size][pointers[best_size]]
+        out.append(atom)
 
-        changed = False
-        for sz in pointers:
-            diff = (best_atom.integer ^ numbwritten)
-            if diff & ~SZMASK[sz] != 0:
-                changed |= pointers[sz] != 0
-                pointers[sz] = 0
-        if changed: continue
-
-        out.append(best_atom)
-        queues[best_size].pop(pointers[best_size])
-        numbwritten += best_atom.compute_padding(numbwritten)
-
-        for dep in rdepgraph.pop(best_atom):
-            if best_atom not in depgraph[dep]:
+        # add all atoms that now have no dependencies anymore to the queue
+        for dep in rdepgraph.pop(atom):
+            if atom not in depgraph[dep]:
                 continue
-            depgraph[dep].discard(best_atom)
+            depgraph[dep].discard(atom)
             if not depgraph[dep]:
-                enqueue(dep)
+                queue.add(dep)
 
     return out
 
