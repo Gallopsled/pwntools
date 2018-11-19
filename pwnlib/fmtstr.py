@@ -255,7 +255,9 @@ class AtomWrite(object):
 
     def __getitem__(self, i):
         if not isinstance(i, slice):
-            i = slice(i,i)
+            if i < 0 or i >= self.size:
+                raise IndexError("out of range [0, " + str(self.size) + "): " + str(i))
+            i = slice(i,i+1)
         start, stop, step = i.indices(self.size)
         if step != 1:
             raise IndexError("slices with step != 1 not supported for AtomWrite")
