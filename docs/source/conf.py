@@ -439,7 +439,6 @@ if 'doctest' in sys.argv:
     def setup(app):
         app.connect('autodoc-skip-member', dont_skip_any_doctests)
 
-    sphinx.ext.autodoc.ModuleDocumenter = ModuleDocumenter
     if sys.version_info[:1] < (3,):
         sphinx.ext.doctest.SphinxDocTestRunner.__init__ = py2_doctest_init
     sphinx.ext.autodoc.ModuleDocumenter.get_object_members = get_object_members_all
