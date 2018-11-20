@@ -410,35 +410,38 @@ def get_object_members_all(self, want_all):
                         safe_getattr(self.object, '__name__', '???'), mname))
         return False, ret
 
-class Py2OutputChecker(doctest.OutputChecker):
+class _DummyClass(object): pass
+
+class Py2OutputChecker(_DummyClass, doctest.OutputChecker):
     def check_output(self, want, got, optionflags):
         sup = super(Py2OutputChecker, self).check_output
         if sup(want, got, optionflags):
             return True
         try:
-            rly_want = pwnlib.safeeval.const(want)
+            rly_want = pwnlib.util.safeeval.const(want)
             if sup(repr(rly_want), got, optionflags):
                 return True
-            rly_got = pwnlib.safeeval.const(got)
+            rly_got = pwnlib.util.safeeval.const(got)
             if rly_want == rly_got:
                 return True
         except ValueError:
             pass
-        rly_want = want.replace('b"', '"').replace("b'", "'")
+        rly_want = ' '.join(x[:1].lstrip('b')+x[1:] for x in want.split(' '))
         if sup(rly_want, got, optionflags):
             return True
-        rly_want = want.replace('b"', ' "').replace("b'", " '")
+        rly_want = ' '.join(x[:1].replace('b',' ')+x[1:] for x in want.split(' '))
         return sup(rly_want, got, optionflags)
 
 def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
     if checker is None:
         checker = Py2OutputChecker()
-    super(sphinx.ext.doctest.SphinxDocTestRunner, self).__init__(checker, verbose, optionflags)
+    doctest.DocTestRunner.__init__(self, checker, verbose, optionflags)
 
 if 'doctest' in sys.argv:
     def setup(app):
         app.connect('autodoc-skip-member', dont_skip_any_doctests)
 
     if sys.version_info[:1] < (3,):
+        import sphinx.ext.doctest
         sphinx.ext.doctest.SphinxDocTestRunner.__init__ = py2_doctest_init
     sphinx.ext.autodoc.ModuleDocumenter.get_object_members = get_object_members_all
