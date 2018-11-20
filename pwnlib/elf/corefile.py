@@ -388,16 +388,16 @@ class Corefile(ELF):
         Data can also be extracted directly from the corefile.
 
         >>> core.exe[elf.address:elf.address+4]
-        '\x7fELF'
+        b'\x7fELF'
         >>> core.exe.data[:4]
-        '\x7fELF'
+        b'\x7fELF'
 
         Various other mappings are available by name.  On Linux, 32-bit Intel binaries
         should have a VDSO section.  Since our ELF is statically linked, there is
         no libc which gets mapped.
 
         >>> core.vdso.data[:4]
-        '\x7fELF'
+        b'\x7fELF'
         >>> core.libc # doctest: +ELLIPSIS
         Mapping('/lib/x86_64-linux-gnu/libc-...', ...)
 
@@ -418,7 +418,7 @@ class Corefile(ELF):
         >>> 'HELLO' in core.env
         True
         >>> core.getenv('HELLO')
-        'WORLD'
+        b'WORLD'
         >>> core.argc
         1
         >>> core.argv[0] in core.stack
@@ -461,7 +461,7 @@ class Corefile(ELF):
         >>> io.wait()
         >>> core = io.corefile
         >>> core.getenv('FOO')
-        'BAR=BAZ'
+        b'BAR=BAZ'
         >>> core.sp == 0
         True
         >>> core.sp in core.stack
@@ -644,6 +644,8 @@ class Corefile(ELF):
 
         for i in range(count):
             filename = t.recvuntil(b'\x00', drop=True)
+            if not isinstance(filename, str):
+                filename = filename.decode('utf-8')
             (start, offset) = starts[i]
 
             for mapping in self.mappings:
@@ -666,7 +668,7 @@ class Corefile(ELF):
             if mapping.start == self.at_sysinfo_ehdr \
             or (not vdso and mapping.size in [0x1000, 0x2000] \
                 and mapping.flags == 5 \
-                and self.read(mapping.start, 4) == '\x7fELF'):
+                and self.read(mapping.start, 4) == b'\x7fELF'):
                 mapping.name = '[vdso]'
                 vdso = True
                 continue
@@ -700,7 +702,7 @@ class Corefile(ELF):
     @property
     def libc(self):
         """:class:`Mapping`: First mapping for ``libc.so``"""
-        expr = br'libc\b.*so$'
+        expr = r'libc\b.*so$'
 
         for m in self.mappings:
             if not m.name:
@@ -719,6 +721,8 @@ class Corefile(ELF):
 
                 if not m.name and self.at_execfn:
                     m.name = self.string(self.at_execfn)
+                    if not isinstance(m.name, str):
+                        m.name = m.name.decode('utf-8')
 
                 return m
 

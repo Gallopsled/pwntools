@@ -11,34 +11,34 @@ null bytes or newline characters.
 Example:
 
     >>> print(shellcraft.mips.pushstr('').rstrip())
-        /* push '\x00' */
+        /* push b'\x00' */
         sw $zero, -4($sp)
         addiu $sp, $sp, -4
     >>> print(shellcraft.mips.pushstr('a').rstrip())
-        /* push 'a\x00' */
+        /* push b'a\x00' */
         li $t9, ~0x61
         not $t1, $t9
         sw $t1, -4($sp)
         addiu $sp, $sp, -4
     >>> print(shellcraft.mips.pushstr('aa').rstrip())
-        /* push 'aa\x00' */
+        /* push b'aa\x00' */
         ori $t1, $zero, 24929
         sw $t1, -4($sp)
         addiu $sp, $sp, -4
     >>> print(shellcraft.mips.pushstr('aaa').rstrip())
-        /* push 'aaa\x00' */
+        /* push b'aaa\x00' */
         li $t9, ~0x616161
         not $t1, $t9
         sw $t1, -4($sp)
         addiu $sp, $sp, -4
     >>> print(shellcraft.mips.pushstr('aaaa').rstrip())
-        /* push 'aaaa\x00' */
+        /* push b'aaaa\x00' */
         li $t1, 0x61616161
         sw $t1, -8($sp)
         sw $zero, -4($sp)
         addiu $sp, $sp, -8
     >>> print(shellcraft.mips.pushstr('aaaaa').rstrip())
-        /* push 'aaaaa\x00' */
+        /* push b'aaaaa\x00' */
         li $t1, 0x61616161
         sw $t1, -8($sp)
         li $t9, ~0x61
@@ -46,18 +46,18 @@ Example:
         sw $t1, -4($sp)
         addiu $sp, $sp, -8
     >>> print(shellcraft.mips.pushstr('aaaa', append_null = False).rstrip())
-        /* push 'aaaa' */
+        /* push b'aaaa' */
         li $t1, 0x61616161
         sw $t1, -4($sp)
         addiu $sp, $sp, -4
     >>> print(shellcraft.mips.pushstr(b'\xc3').rstrip())
-        /* push '\xc3\x00' */
+        /* push b'\xc3\x00' */
         li $t9, ~0xc3
         not $t1, $t9
         sw $t1, -4($sp)
         addiu $sp, $sp, -4
     >>> print(shellcraft.mips.pushstr(b'\xc3', append_null = False).rstrip())
-        /* push '\xc3' */
+        /* push b'\xc3' */
         li $t9, ~0xc3
         not $t1, $t9
         sw $t1, -4($sp)

@@ -13,7 +13,7 @@ Args:
 Examples:
 
     >>> print(shellcraft.arm.pushstr("Hello!").rstrip())
-        /* push 'Hello!\x00A' */
+        /* push b'Hello!\x00A' */
         movw r7, #0x4100216f & 0xffff
         movt r7, #0x4100216f >> 16
         push {r7}

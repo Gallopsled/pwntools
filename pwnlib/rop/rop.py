@@ -40,7 +40,7 @@ standard Linux ABIs.
     0x0004:       0x64636261
     0x0008:              0x2
     0x000c:       0xdeadbeef read(4, 5, 6)
-    0x0010:           'eaaa' <return address>
+    0x0010:          b'eaaa' <return address>
     0x0014:              0x4 arg0
     0x0018:              0x5 arg1
     0x001c:              0x6 arg2
@@ -59,13 +59,13 @@ The stack is automatically adjusted for the next frame
     0x0014:              0x4 arg0
     0x0018:              0x5 arg1
     0x001c:              0x6 arg2
-    0x0020:           'iaaa' <pad>
+    0x0020:          b'iaaa' <pad>
     0x0024:       0xdecafbad write(7, 8, 9)
     0x0028:       0x10000000 <adjust @0x3c> add esp, 0x10; ret
     0x002c:              0x7 arg0
     0x0030:              0x8 arg1
     0x0034:              0x9 arg2
-    0x0038:           'oaaa' <pad>
+    0x0038:          b'oaaa' <pad>
     0x003c:       0xfeedface exit()
 
 ROP Example
@@ -110,7 +110,7 @@ Finally, let's build our ROP stack
     0x0008:              0x1 arg0
     0x000c:       0x10000026 flag
     0x0010:              0x8 arg2
-    0x0014:           'faaa' <pad>
+    0x0014:          b'faaa' <pad>
     0x0018:       0x1000002f exit()
 
 The raw data from the ROP stack is available via `str`.
@@ -143,10 +143,10 @@ requirements so that everything "just works".
     0x0008:              0x3 [arg2] rdx = 3
     0x0010:              0x1 [arg0] rdi = 1
     0x0018:              0x2 [arg1] rsi = 2
-    0x0020:       'iaaajaaa' <pad 0x20>
-    0x0028:       'kaaalaaa' <pad 0x18>
-    0x0030:       'maaanaaa' <pad 0x10>
-    0x0038:       'oaaapaaa' <pad 0x8>
+    0x0020:      b'iaaajaaa' <pad 0x20>
+    0x0028:      b'kaaalaaa' <pad 0x18>
+    0x0030:      b'maaanaaa' <pad 0x10>
+    0x0038:      b'oaaapaaa' <pad 0x8>
     0x0040:       0x10000008 target
     >>> rop.target(1)
     >>> print(rop.dump())
@@ -154,18 +154,18 @@ requirements so that everything "just works".
     0x0008:              0x3 [arg2] rdx = 3
     0x0010:              0x1 [arg0] rdi = 1
     0x0018:              0x2 [arg1] rsi = 2
-    0x0020:       'iaaajaaa' <pad 0x20>
-    0x0028:       'kaaalaaa' <pad 0x18>
-    0x0030:       'maaanaaa' <pad 0x10>
-    0x0038:       'oaaapaaa' <pad 0x8>
+    0x0020:      b'iaaajaaa' <pad 0x20>
+    0x0028:      b'kaaalaaa' <pad 0x18>
+    0x0030:      b'maaanaaa' <pad 0x10>
+    0x0038:      b'oaaapaaa' <pad 0x8>
     0x0040:       0x10000008 target
     0x0048:       0x10000001 pop rdi; pop rsi; add rsp, 0x20; ret
     0x0050:              0x1 [arg0] rdi = 1
-    0x0058:       'waaaxaaa' <pad rsi>
-    0x0060:       'yaaazaab' <pad 0x20>
-    0x0068:       'baabcaab' <pad 0x18>
-    0x0070:       'daabeaab' <pad 0x10>
-    0x0078:       'faabgaab' <pad 0x8>
+    0x0058:      b'waaaxaaa' <pad rsi>
+    0x0060:      b'yaaazaab' <pad 0x20>
+    0x0068:      b'baabcaab' <pad 0x18>
+    0x0070:      b'daabeaab' <pad 0x10>
+    0x0078:      b'faabgaab' <pad 0x8>
     0x0080:       0x10000008 target
 
 Pwntools will also filter out some bad instructions while setting the registers
@@ -370,8 +370,8 @@ class ROP(object):
     0x0004:       0x10000003 <adjust @0x18> add esp, 0x10; ret
     0x0008:              0x1 arg0
     0x000c:              0x2 arg1
-    0x0010:           'eaaa' <pad>
-    0x0014:           'faaa' <pad>
+    0x0010:          b'eaaa' <pad>
+    0x0014:          b'faaa' <pad>
     0x0018:       0x10001234 funcname(3)
     0x001c:       0x10000007 <adjust @0x24> pop eax; ret
     0x0020:              0x3 arg0
@@ -408,8 +408,8 @@ class ROP(object):
     0x8048004:       0x10000003 <adjust @0x8048018> add esp, 0x10; ret
     0x8048008:              0x1 arg0
     0x804800c:              0x2 arg1
-    0x8048010:           'eaaa' <pad>
-    0x8048014:           'faaa' <pad>
+    0x8048010:          b'eaaa' <pad>
+    0x8048014:          b'faaa' <pad>
     0x8048018:       0x10001234 funcname(3)
     0x804801c:       0x10000007 <adjust @0x8048024> pop eax; ret
     0x8048020:              0x3 arg0
@@ -635,7 +635,7 @@ class ROP(object):
         >>> len(val)
         15
         >>> rop.generatePadding(0,0)
-        ''
+        b''
 
         """
 
@@ -971,12 +971,12 @@ class ROP(object):
         >>> rop.raw(b'BBBBBBBB')
         >>> rop.raw(b'CCCCCCCC')
         >>> print(rop.dump())
-        0x0000:           'AAAA' 'AAAAAAAA'
-        0x0004:           'AAAA'
-        0x0008:           'BBBB' 'BBBBBBBB'
-        0x000c:           'BBBB'
-        0x0010:           'CCCC' 'CCCCCCCC'
-        0x0014:           'CCCC'
+        0x0000:          b'AAAA' 'AAAAAAAA'
+        0x0004:          b'AAAA'
+        0x0008:          b'BBBB' 'BBBBBBBB'
+        0x000c:          b'BBBB'
+        0x0010:          b'CCCC' 'CCCCCCCC'
+        0x0014:          b'CCCC'
         """
         if self.migrated:
             log.error('Cannot append to a migrated chain')

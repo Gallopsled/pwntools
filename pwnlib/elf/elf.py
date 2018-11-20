@@ -24,7 +24,7 @@ You can even patch and save the files.
 
     >>> e = ELF('/bin/cat')
     >>> e.read(e.address+1, 3)
-    'ELF'
+    b'ELF'
     >>> e.asm(e.address, 'ret')
     >>> e.save('/tmp/quiet-cat')
     >>> disasm(open('/tmp/quiet-cat','rb').read(1))
@@ -1064,7 +1064,7 @@ class ELF(ELFFile):
 
             >>> bash = ELF(which('bash'))
             >>> bash.read(bash.address, 4)
-            '\x7fELF'
+            b'\x7fELF'
 
             ELF segments do not have to contain all of the data on-disk
             that gets loaded into memory.
@@ -1084,7 +1084,7 @@ class ELF(ELFFile):
             By default, these come right after eachother in memory.
 
             >>> e.read(e.symbols.A, 2)
-            '\x90\xcc'
+            b'\x90\xcc'
             >>> e.symbols.B - e.symbols.A
             1
 
@@ -1105,18 +1105,18 @@ class ELF(ELFFile):
             >>> e.symbols.B - e.symbols.A
             6
             >>> e.read(e.symbols.A, 2)
-            '\x90\x00'
+            b'\x90\x00'
             >>> e.read(e.symbols.A, 7)
-            '\x90\x00\x00\x00\x00\x00\xcc'
+            b'\x90\x00\x00\x00\x00\x00\xcc'
             >>> e.read(e.symbols.A, 10)
-            '\x90\x00\x00\x00\x00\x00\xcc\x00\x00\x00'
+            b'\x90\x00\x00\x00\x00\x00\xcc\x00\x00\x00'
 
             Everything is relative to the user-selected base address, so moving
             things around keeps everything working.
 
             >>> e.address += 0x1000
             >>> e.read(e.symbols.A, 10)
-            '\x90\x00\x00\x00\x00\x00\xcc\x00\x00\x00'
+            b'\x90\x00\x00\x00\x00\x00\xcc\x00\x00\x00'
         """
         retval = []
 
@@ -1177,10 +1177,10 @@ class ELF(ELFFile):
         Examples:
           >>> bash = ELF(which('bash'))
           >>> bash.read(bash.address+1, 3)
-          'ELF'
+          b'ELF'
           >>> bash.write(bash.address, b"HELO")
           >>> bash.read(bash.address, 4)
-          'HELO'
+          b'HELO'
         """
         offset = self.vaddr_to_offset(address)
 

@@ -16,19 +16,19 @@ Assembly
     To assemble code, simply invoke :func:`asm` on the code to assemble.
 
         >>> asm('mov eax, 0')
-        '\xb8\x00\x00\x00\x00'
+        b'\xb8\x00\x00\x00\x00'
 
     Additionally, you can use constants as defined in the :mod:`pwnlib.constants`
     module.
 
         >>> asm('mov eax, SYS_execve')
-        '\xb8\x0b\x00\x00\x00'
+        b'\xb8\x0b\x00\x00\x00'
 
     Finally, :func:`asm` is used to assemble shellcode provided by ``pwntools``
     in the :mod:`shellcraft` module.
 
         >>> asm(shellcraft.nop())
-        '\x90'
+        b'\x90'
 
 Disassembly
 ------------------------
@@ -635,13 +635,13 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
     Examples:
 
         >>> asm("mov eax, SYS_select", arch = 'i386', os = 'freebsd')
-        '\xb8]\x00\x00\x00'
+        b'\xb8]\x00\x00\x00'
         >>> asm("mov eax, SYS_select", arch = 'amd64', os = 'linux')
-        '\xb8\x17\x00\x00\x00'
+        b'\xb8\x17\x00\x00\x00'
         >>> asm("mov rax, SYS_select", arch = 'amd64', os = 'linux')
-        'H\xc7\xc0\x17\x00\x00\x00'
+        b'H\xc7\xc0\x17\x00\x00\x00'
         >>> asm("mov r0, #SYS_select", arch = 'arm', os = 'linux', bits=32)
-        'R\x00\xa0\xe3'
+        b'R\x00\xa0\xe3'
     """
     result = ''
 

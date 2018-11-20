@@ -48,7 +48,7 @@ def binary_ip(host):
 
     Example:
         >>> binary_ip("127.0.0.1")
-        '\\x7f\\x00\\x00\\x01'
+        b'\\x7f\\x00\\x00\\x01'
     """
     return socket.inet_aton(socket.gethostbyname(host))
 
@@ -110,7 +110,7 @@ def read(path, count=-1, skip=0):
 
     Examples:
         >>> read('/proc/self/exe')[:4]
-        '\x7fELF'
+        b'\x7fELF'
     """
     path = os.path.expanduser(os.path.expandvars(path))
     with open(path, 'rb') as fd:

@@ -46,9 +46,9 @@ class MemLeak(object):
         >>> leaker.s(0)[:4]
         leaking 0x0
         leaking 0x4
-        '\\x7fELF'
+        b'\\x7fELF'
         >>> leaker[:4]
-        '\\x7fELF'
+        b'\\x7fELF'
         >>> hex(leaker.d(0))
         '0x464c457f'
         >>> hex(leaker.clearb(1))
@@ -76,7 +76,7 @@ class MemLeak(object):
         ...     return memory.get(index, None)
         >>> leak = pwnlib.memleak.MemLeak(relative_leak, relative = True)
         >>> leak[-1:2]
-        'zAB'
+        b'zAB'
     """
     def __init__(self, f, search_range = 20, reraise = True, relative = False):
         self.leak = f

@@ -11,38 +11,38 @@ null bytes or newline characters.
 Example:
 
     >>> print(shellcraft.i386.pushstr('').rstrip())
-        /* push '\x00' */
+        /* push b'\x00' */
         push 1
         dec byte ptr [esp]
     >>> print(shellcraft.i386.pushstr('a').rstrip())
-        /* push 'a\x00' */
+        /* push b'a\x00' */
         push 0x61
     >>> print(shellcraft.i386.pushstr('aa').rstrip())
-        /* push 'aa\x00' */
+        /* push b'aa\x00' */
         push 0x1010101
         xor dword ptr [esp], 0x1016060
     >>> print(shellcraft.i386.pushstr('aaa').rstrip())
-        /* push 'aaa\x00' */
+        /* push b'aaa\x00' */
         push 0x1010101
         xor dword ptr [esp], 0x1606060
     >>> print(shellcraft.i386.pushstr('aaaa').rstrip())
-        /* push 'aaaa\x00' */
+        /* push b'aaaa\x00' */
         push 1
         dec byte ptr [esp]
         push 0x61616161
     >>> print(shellcraft.i386.pushstr('aaaaa').rstrip())
-        /* push 'aaaaa\x00' */
+        /* push b'aaaaa\x00' */
         push 0x61
         push 0x61616161
     >>> print(shellcraft.i386.pushstr('aaaa', append_null = False).rstrip())
-        /* push 'aaaa' */
+        /* push b'aaaa' */
         push 0x61616161
     >>> print(shellcraft.i386.pushstr(b'\xc3').rstrip())
-        /* push '\xc3\x00' */
+        /* push b'\xc3\x00' */
         push 0x1010101
         xor dword ptr [esp], 0x10101c2
     >>> print(shellcraft.i386.pushstr(b'\xc3', append_null = False).rstrip())
-        /* push '\xc3' */
+        /* push b'\xc3' */
         push -0x3d
     >>> with context.local():
     ...    context.arch = 'i386'

@@ -64,7 +64,7 @@ Example:
             syscall 0x40404
         >>> print(pwnlib.shellcraft.open('/home/pwn/flag').rstrip())
             /* open(file='/home/pwn/flag', oflag=0, mode=0) */
-            /* push '/home/pwn/flag\x00' */
+            /* push b'/home/pwn/flag\x00' */
             li $t1, 0x6d6f682f
             sw $t1, -16($sp)
             li $t1, 0x77702f65

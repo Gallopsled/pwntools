@@ -28,7 +28,7 @@ Example:
         svc 0x41
     >>> print(pwnlib.shellcraft.open('/home/pwn/flag').rstrip()) #doctest: +ELLIPSIS
         /* open(file='/home/pwn/flag', oflag=0, mode=0) */
-        /* push '/home/pwn/flag\x00' */
+        /* push b'/home/pwn/flag\x00' */
         mov r7, #(0x6761 >> 8)
         lsl r7, #8
         add r7, #(0x6761 & 0xff)

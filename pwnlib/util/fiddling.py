@@ -30,9 +30,9 @@ def unhex(s):
     Example:
 
         >>> unhex("74657374")
-        'test'
+        b'test'
         >>> unhex("F\n")
-        '\x0f'
+        b'\x0f'
     """
     s = s.strip()
     if len(s) % 2 != 0:
@@ -185,11 +185,11 @@ def unbits(s, endian = 'big'):
 
     Example:
        >>> unbits([1])
-       '\\x80'
+       b'\\x80'
        >>> unbits([1], endian = 'little')
-       '\\x01'
+       b'\\x01'
        >>> unbits(bits(b'hello'), endian = 'little')
-       '\\x16\\xa666\\xf6'
+       b'\\x16\\xa666\\xf6'
     """
     if endian == 'little':
         u = lambda s: packing._p8lu(int(s[::-1], 2))
@@ -225,7 +225,7 @@ def bitswap(s):
 
     Example:
         >>> bitswap(b"1234")
-        '\\x8cL\\xcc,'
+        b'\\x8cL\\xcc,'
     """
 
     out = []
@@ -284,7 +284,7 @@ def b64d(s):
     Example:
 
        >>> b64d('dGVzdA==')
-       'test'
+       b'test'
     """
     return base64.b64decode(s)
 

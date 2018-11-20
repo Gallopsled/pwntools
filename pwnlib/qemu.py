@@ -156,5 +156,10 @@ def ld_prefix(path=None, env=None):
 
     name, libpath = line.split(b'=', 1)
 
-    return libpath.strip()
+    libpath = libpath.strip()
+
+    if not isinstance(libpath, str):
+        libpath = libpath.decode('utf-8')
+
+    return libpath
 

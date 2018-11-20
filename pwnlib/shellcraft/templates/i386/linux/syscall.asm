@@ -70,7 +70,7 @@ Example:
             int 0x80
         >>> print(pwnlib.shellcraft.open('/home/pwn/flag').rstrip())
             /* open(file='/home/pwn/flag', oflag=0, mode=0) */
-            /* push '/home/pwn/flag\x00' */
+            /* push b'/home/pwn/flag\x00' */
             push 0x1010101
             xor dword ptr [esp], 0x1016660
             push 0x6c662f6e

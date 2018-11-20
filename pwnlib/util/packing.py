@@ -12,23 +12,23 @@ though they can be overridden in the parameters.
 Examples:
 
     >>> p8(0)
-    '\x00'
+    b'\x00'
     >>> p32(0xdeadbeef)
-    '\xef\xbe\xad\xde'
+    b'\xef\xbe\xad\xde'
     >>> p32(0xdeadbeef, endian='big')
-    '\xde\xad\xbe\xef'
+    b'\xde\xad\xbe\xef'
     >>> with context.local(endian='big'): p32(0xdeadbeef)
-    '\xde\xad\xbe\xef'
+    b'\xde\xad\xbe\xef'
 
     Make a frozen packer, which does not change with context.
 
     >>> p=make_packer('all')
     >>> p(0xff)
-    '\xff'
+    b'\xff'
     >>> p(0x1ff)
-    '\xff\x01'
+    b'\xff\x01'
     >>> with context.local(endian='big'): print(repr(p(0x1ff)))
-    '\xff\x01'
+    b'\xff\x01'
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -70,27 +70,27 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
 
     Examples:
         >>> pack(0x414243, 24, 'big', True)
-        'ABC'
+        b'ABC'
         >>> pack(0x414243, 24, 'little', True)
-        'CBA'
+        b'CBA'
         >>> pack(0x814243, 24, 'big', False)
-        '\\x81BC'
+        b'\\x81BC'
         >>> pack(0x814243, 24, 'big', True)
         Traceback (most recent call last):
            ...
         ValueError: pack(): number does not fit within word_size
         >>> pack(0x814243, 25, 'big', True)
-        '\\x00\\x81BC'
+        b'\\x00\\x81BC'
         >>> pack(-1, 'all', 'little', True)
-        '\\xff'
+        b'\\xff'
         >>> pack(-256, 'all', 'big', True)
-        '\\xff\\x00'
+        b'\\xff\\x00'
         >>> pack(0x0102030405, 'all', 'little', True)
-        '\\x05\\x04\\x03\\x02\\x01'
+        b'\\x05\\x04\\x03\\x02\\x01'
         >>> pack(-1)
-        '\\xff\\xff\\xff\\xff'
+        b'\\xff\\xff\\xff\\xff'
         >>> pack(0x80000000, 'all', 'big', True)
-        '\\x00\\x80\\x00\\x00\\x00'
+        b'\\x00\\x80\\x00\\x00\\x00'
 """
     if sign is None and number < 0:
         sign = True
@@ -384,13 +384,13 @@ def make_packer(word_size = None, sign = None, **kwargs):
         >>> p
         <function _p32lu at 0x...>
         >>> p(42)
-        '*\\x00\\x00\\x00'
+        b'*\\x00\\x00\\x00'
         >>> p(-1)
         Traceback (most recent call last):
             ...
         error: integer out of range for 'I' format code
         >>> make_packer(33, endian='little', sign='unsigned')
-        <function <lambda> at 0x...>
+        <function ...<lambda> at 0x...>
 """
     with context.local(sign=sign, **kwargs):
         word_size  = word_size or context.word_size
@@ -453,7 +453,7 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
             ...
         error: unpack requires a string argument of length 4
         >>> make_unpacker(33, endian='little', sign='unsigned')
-        <function <lambda> at 0x...>
+        <function ...<lambda> at 0x...>
 """
     word_size  = word_size or context.word_size
     endianness = context.endianness
@@ -613,24 +613,24 @@ def flat(*args, **kwargs):
 
     Examples:
       >>> flat(1, "test", [[["AB"]*2]*3], endianness = 'little', word_size = 16, sign = False)
-      '\\x01\\x00testABABABABABAB'
+      b'\\x01\\x00testABABABABABAB'
       >>> flat([1, [2, 3]], preprocessor = lambda x: str(x+1))
-      '234'
+      b'234'
       >>> flat({12: 0x41414141,
       ...       24: 'Hello',
       ...      })
-      'aaaabaaacaaaAAAAeaaafaaaHello'
+      b'aaaabaaacaaaAAAAeaaafaaaHello'
       >>> flat({'caaa': ''})
-      'aaaabaaa'
+      b'aaaabaaa'
       >>> flat({12: 'XXXX'}, filler = (ord('A'), ord('B')), length = 20)
-      'ABABABABABABXXXXABAB'
+      b'ABABABABABABXXXXABAB'
       >>> flat({ 8: [0x41414141, 0x42424242],
       ...       20: 'CCCC'})
-      'aaaabaaaAAAABBBBeaaaCCCC'
+      b'aaaabaaaAAAABBBBeaaaCCCC'
       >>> flat({ 0x61616162: 'X'})
-      'aaaaX'
+      b'aaaaX'
       >>> flat({4: {0: 'X', 4: 'Y'}})
-      'aaaaXaaaY'
+      b'aaaaXaaaY'
 
     """
     # HACK: To avoid circular imports we need to delay the import of `cyclic`
@@ -740,10 +740,10 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         ['H', 'e', 'l', 'l', 'o', '?']
         >>> _ = open('/tmp/foo', 'w').write('A' * 10)
         >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4).read()
-        'AAA\\x00\\x00\\x00\\x00AAA'
+        b'AAA\\x00\\x00\\x00\\x00AAA'
         >>> _ = open('/tmp/foo', 'w').write('A' * 10)
         >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4, truncate = True).read()
-        'AAA\\x00\\x00\\x00\\x00'
+        b'AAA\\x00\\x00\\x00\\x00'
     """
 
     # Re-open file objects to make sure we have the mode right

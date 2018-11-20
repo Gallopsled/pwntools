@@ -70,7 +70,7 @@ Example:
             syscall
         >>> print(pwnlib.shellcraft.open('/home/pwn/flag').rstrip())
             /* open(file='/home/pwn/flag', oflag=0, mode=0) */
-            /* push '/home/pwn/flag\x00' */
+            /* push b'/home/pwn/flag\x00' */
             mov rax, 0x101010101010101
             push rax
             mov rax, 0x101010101010101 ^ 0x67616c662f6e
