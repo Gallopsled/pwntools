@@ -260,7 +260,7 @@ class AdbClient(Logger):
         Examples:
 
             >>> pwnlib.protocols.adb.AdbClient().execute(['echo','hello']).recvall()
-            'hello\n'
+            b'hello\n'
         """
         self.transport(context.device)
         if isinstance(argv, str):

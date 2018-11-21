@@ -33,14 +33,14 @@ class listen(sock):
         >>> _ = l.wait_for_connection()
         >>> l.sendline(b'Hello')
         >>> r.recvline()
-        'Hello\n'
+        b'Hello\n'
 
         >>> l = listen()
         >>> l.spawn_process('/bin/sh')
         >>> r = remote('localhost', l.lport)
         >>> r.sendline(b'echo Goodbye')
         >>> r.recvline()
-        'Goodbye\n'
+        b'Goodbye\n'
     """
 
     #: Local port

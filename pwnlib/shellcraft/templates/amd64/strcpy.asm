@@ -16,7 +16,7 @@ Example:
     >>> sc += 'get_str: call pop_str\n'
     >>> sc += '.asciz "Hello, world\\n"'
     >>> run_assembly(sc).recvline()
-    'Hello, world\n'
+    b'Hello, world\n'
 </%docstring>
 <%page args="dst, src"/>
     ${setregs({'rcx': -1,

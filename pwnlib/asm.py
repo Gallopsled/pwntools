@@ -547,7 +547,7 @@ def make_elf(data,
         >>> p = process(filename)
         >>> p.sendline(b'echo Hello; exit')
         >>> p.recvline()
-        'Hello\n'
+        b'Hello\n'
     """
     retval = None
 

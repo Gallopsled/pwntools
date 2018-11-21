@@ -29,12 +29,12 @@ For example, remote connections via :mod:`pwnlib.tubes.remote`.
 
     >>> conn = remote('ftp.ubuntu.com',21)
     >>> conn.recvline() # doctest: +ELLIPSIS
-    '220 ...'
+    b'220 ...'
     >>> conn.send(b'USER anonymous\r\n')
     >>> conn.recvuntil(b' ', drop=True)
-    '331'
+    b'331'
     >>> conn.recvline()
-    'Please specify the password.\r\n'
+    b'Please specify the password.\r\n'
     >>> conn.close()
 
 It's also easy to spin up a listener
@@ -44,7 +44,7 @@ It's also easy to spin up a listener
     >>> c = l.wait_for_connection()
     >>> r.send(b'hello')
     >>> c.recv()
-    'hello'
+    b'hello'
 
 Interacting with processes is easy thanks to :mod:`pwnlib.tubes.process`.
 
@@ -53,9 +53,9 @@ Interacting with processes is easy thanks to :mod:`pwnlib.tubes.process`.
     >>> sh = process('/bin/sh')
     >>> sh.sendline(b'sleep 3; echo hello world;')
     >>> sh.recvline(timeout=1)
-    ''
+    b''
     >>> sh.recvline(timeout=5)
-    'hello world\n'
+    b'hello world\n'
     >>> sh.close()
 
 Not only can you interact with processes programmatically, but you can
@@ -74,14 +74,14 @@ a ``process`` tube.
 
     >>> shell = ssh('bandit0', 'bandit.labs.overthewire.org', password='bandit0', port=2220)
     >>> shell['whoami']
-    'bandit0'
+    b'bandit0'
     >>> shell.download_file('/etc/motd')
     >>> sh = shell.run('sh')
     >>> sh.sendline(b'sleep 3; echo hello world;') # doctest: +SKIP
     >>> sh.recvline(timeout=1)
-    ''
+    b''
     >>> sh.recvline(timeout=5)
-    'hello world\n'
+    b'hello world\n'
     >>> shell.close()
 
 Packing Integers
@@ -112,9 +112,9 @@ Setting the Target Architecture and OS
 The target architecture can generally be specified as an argument to the routine that requires it.
 
     >>> asm('nop')
-    '\x90'
+    b'\x90'
     >>> asm('nop', arch='arm')
-    '\x00\xf0 \xe3'
+    b'\x00\xf0 \xe3'
 
 However, it can also be set once in the global ``context``.  The operating system, word size, and endianness can also be set here.
 
@@ -126,10 +126,10 @@ However, it can also be set once in the global ``context``.  The operating syste
 Additionally, you can use a shorthand to set all of the values at once.
 
     >>> asm('nop')
-    '\x90'
+    b'\x90'
     >>> context(arch='arm', os='linux', endian='big', word_size=32)
     >>> asm('nop')
-    '\xe3 \xf0\x00'
+    b'\xe3 \xf0\x00'
 
 .. doctest::
    :hide:
@@ -213,7 +213,7 @@ You can even patch and save the files.
 
     >>> e = ELF('/bin/cat')
     >>> e.read(e.address, 4)
-    '\x7fELF'
+    b'\x7fELF'
     >>> e.asm(e.address, 'ret')
     >>> e.save('/tmp/quiet-cat')
     >>> disasm(open('/tmp/quiet-cat','rb').read(1))

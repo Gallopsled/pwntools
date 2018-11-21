@@ -521,7 +521,7 @@ def push(local_path, remote_path):
         >>> adb.push('./filename', '/data/local/tmp')
         '/data/local/tmp/filename'
         >>> adb.read('/data/local/tmp/filename')
-        'contents'
+        b'contents'
         >>> adb.push('./filename', '/does/not/exist')
         Traceback (most recent call last):
         ...

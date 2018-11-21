@@ -306,7 +306,7 @@ def xor(*args, **kwargs):
 
     Example:
        >>> xor(b'lol', b'hello', 42)
-       '. ***'
+       b'. ***'
     """
 
     cut = kwargs.pop('cut', 'max')
@@ -359,7 +359,7 @@ def xor_pair(data, avoid = b'\x00\n'):
     Example:
 
         >>> xor_pair(b"test")
-        ('\\x01\\x01\\x01\\x01', 'udru')
+        (b'\\x01\\x01\\x01\\x01', b'udru')
     """
 
     if isinstance(data, six.integer_types):
@@ -407,7 +407,7 @@ def xor_key(data, avoid=b'\x00\n', size=None):
     Example:
 
         >>> xor_key(b"Hello, world")
-        ('\x01\x01\x01\x01', 'Idmmn-!vnsme')
+        (b'\x01\x01\x01\x01', b'Idmmn-!vnsme')
     """
     size = size or context.bytes
 

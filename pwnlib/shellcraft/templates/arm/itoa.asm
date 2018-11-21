@@ -18,7 +18,7 @@ Example:
     >>> sc += shellcraft.arm.itoa('r0')
     >>> sc += shellcraft.arm.linux.write(1, 'sp', 32)
     >>> run_assembly(sc).recvuntil(b'\x00')
-    '3735928559\x00'
+    b'3735928559\x00'
 </%docstring>
 <%page args="v, buffer='sp', allocate_stack=True"/>
 <%

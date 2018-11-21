@@ -21,7 +21,7 @@ class ArmXorEncoder(Encoder):
     >>> p = run_shellcode(encoded)
     >>> p.sendline(b'echo hello; exit')
     >>> p.recvline()
-    'hello\n'
+    b'hello\n'
     """
 
     arch = 'arm'

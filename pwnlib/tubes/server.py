@@ -32,7 +32,7 @@ class server(sock):
         >>> server_conn = s.next_connection()
         >>> client_conn.sendline(b'Hello')
         >>> server_conn.recvline()
-        'Hello\n'
+        b'Hello\n'
         >>> def cb(r):
         ...     client_input = r.readline()
         ...     r.send(client_input[::-1])
@@ -41,7 +41,7 @@ class server(sock):
         >>> client_conn = remote('localhost', t.lport)
         >>> client_conn.sendline(b'callback')
         >>> client_conn.recv()
-        '\nkcabllac'
+        b'\nkcabllac'
     """
 
     #: Local port

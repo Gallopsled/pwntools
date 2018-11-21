@@ -87,7 +87,7 @@ class sock(tube):
             >>> r.can_recv_raw(timeout=1)
             True
             >>> r.recv()
-            'a'
+            b'a'
             >>> r.can_recv_raw(timeout=0)
             False
             >>> l.close()

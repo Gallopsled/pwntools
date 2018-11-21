@@ -11,31 +11,31 @@ null bytes or newline characters.
 Example:
 
     >>> print(shellcraft.i386.pushstr('').rstrip())
-        /* push b'\x00' */
+        /* push '\x00' */
         push 1
         dec byte ptr [esp]
     >>> print(shellcraft.i386.pushstr('a').rstrip())
-        /* push b'a\x00' */
+        /* push 'a\x00' */
         push 0x61
     >>> print(shellcraft.i386.pushstr('aa').rstrip())
-        /* push b'aa\x00' */
+        /* push 'aa\x00' */
         push 0x1010101
         xor dword ptr [esp], 0x1016060
     >>> print(shellcraft.i386.pushstr('aaa').rstrip())
-        /* push b'aaa\x00' */
+        /* push 'aaa\x00' */
         push 0x1010101
         xor dword ptr [esp], 0x1606060
     >>> print(shellcraft.i386.pushstr('aaaa').rstrip())
-        /* push b'aaaa\x00' */
+        /* push 'aaaa\x00' */
         push 1
         dec byte ptr [esp]
         push 0x61616161
     >>> print(shellcraft.i386.pushstr('aaaaa').rstrip())
-        /* push b'aaaaa\x00' */
+        /* push 'aaaaa\x00' */
         push 0x61
         push 0x61616161
     >>> print(shellcraft.i386.pushstr('aaaa', append_null = False).rstrip())
-        /* push b'aaaa' */
+        /* push 'aaaa' */
         push 0x61616161
     >>> print(shellcraft.i386.pushstr(b'\xc3').rstrip())
         /* push b'\xc3\x00' */

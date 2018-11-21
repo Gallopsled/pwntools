@@ -31,7 +31,7 @@ class remote(sock):
         >>> r = remote('google.com', 443, ssl=True)
         >>> r.send(b'GET /\r\n\r\n')
         >>> r.recvn(4)
-        'HTTP'
+        b'HTTP'
 
         If a connection cannot be made, an exception is raised.
 
@@ -49,7 +49,7 @@ class remote(sock):
         9
         >>> r = remote.fromsocket(s)
         >>> r.recvn(4)
-        'HTTP'
+        b'HTTP'
     """
 
     def __init__(self, host, port,

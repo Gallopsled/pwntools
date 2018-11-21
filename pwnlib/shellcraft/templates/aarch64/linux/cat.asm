@@ -33,7 +33,7 @@ Example:
       50:   d2800ba8        mov     x8, #0x5d                       // #93
       54:   d4000001        svc     #0x0
     >>> run_assembly(shellcode).recvline()
-    'This is the flag\n'
+    b'This is the flag\n'
 </%docstring>
 <%
 if fd == 'x0':

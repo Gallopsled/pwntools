@@ -34,7 +34,7 @@ class i386XorEncoder(Encoder):
     >>> p = run_shellcode(encoded)
     >>> p.sendline(b'echo hello; exit')
     >>> p.recvline()
-    'hello\n'
+    b'hello\n'
     """
 
     arch = 'i386'

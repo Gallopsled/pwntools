@@ -18,7 +18,7 @@ Example:
     >>> sc += shellcraft.amd64.itoa('rax')
     >>> sc += shellcraft.amd64.linux.write(1, 'rsp', 32)
     >>> run_assembly(sc).recvuntil(b'\x00')
-    '3735928559\x00'
+    b'3735928559\x00'
 </%docstring>
 <%page args="v, buffer='rsp', allocate_stack=True"/>
 <%

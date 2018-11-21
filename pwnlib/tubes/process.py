@@ -123,13 +123,13 @@ class process(tube):
         >>> p.connected('send')
         False
         >>> p.recvline()
-        'Hello world\n'
+        b'Hello world\n'
         >>> p.recvuntil(b',')
-        'Wow,'
+        b'Wow,'
         >>> p.recvregex(b'.*data')
-        ' such data'
+        b' such data'
         >>> p.recv()
-        '\n'
+        b'\n'
         >>> p.recv() # doctest: +ELLIPSIS
         Traceback (most recent call last):
         ...
@@ -138,12 +138,12 @@ class process(tube):
         >>> p = process('cat')
         >>> d = open('/dev/urandom', 'rb').read(4096)
         >>> p.recv(timeout=0.1)
-        ''
+        b''
         >>> p.write(d)
         >>> p.recvrepeat(0.1) == d
         True
         >>> p.recv(timeout=0.1)
-        ''
+        b''
         >>> p.shutdown('send')
         >>> p.wait_for_close()
         >>> p.poll()
@@ -151,34 +151,34 @@ class process(tube):
 
         >>> p = process('cat /dev/zero | head -c8', shell=True, stderr=open('/dev/null', 'w+b'))
         >>> p.recv()
-        '\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
 
         >>> p = process(['python','-c','import os; print(os.read(2,1024))'],
         ...             preexec_fn = lambda: os.dup2(0,2))
         >>> p.sendline(b'hello')
         >>> p.recvline()
-        'hello\n'
+        b'hello\n'
 
         >>> stack_smashing = ['python','-c','open("/dev/tty","wb").write(b"stack smashing detected")']
         >>> process(stack_smashing).recvall()
-        'stack smashing detected'
+        b'stack smashing detected'
 
         >>> process(stack_smashing, stdout=PIPE).recvall()
-        ''
+        b''
 
         >>> getpass = ['python','-c','import getpass; print(getpass.getpass("XXX"))']
         >>> p = process(getpass, stdin=PTY)
         >>> p.recv()
-        'XXX'
+        b'XXX'
         >>> p.sendline(b'hunter2')
         >>> p.recvall()
-        '\nhunter2\n'
+        b'\nhunter2\n'
 
         >>> process('echo hello 1>&2', shell=True).recvall()
-        'hello\n'
+        b'hello\n'
 
         >>> process('echo hello 1>&2', shell=True, stderr=PIPE).recvall()
-        ''
+        b''
 
         >>> a = process(['cat', '/proc/self/maps']).recvall()
         >>> b = process(['cat', '/proc/self/maps'], aslr=False).recvall()
@@ -190,7 +190,7 @@ class process(tube):
         True
 
         >>> process(['sh','-c','ulimit -s'], aslr=0).recvline()
-        'unlimited\n'
+        b'unlimited\n'
 
         >>> io = process(['sh','-c','sleep 10; exit 7'], alarm=2)
         >>> io.poll(block=True) == -signal.SIGALRM
@@ -951,12 +951,12 @@ class process(tube):
 
             >>> p.sendline(b'echo hello')
             >>> p.recvuntil(b'hello')
-            'hello'
+            b'hello'
 
             Now we can leak some data!
 
             >>> p.leak(e.address, 4)
-            '\x7fELF'
+            b'\x7fELF'
         """
         # If it's running under qemu-user, don't leak anything.
         if 'qemu-' in os.path.realpath('/proc/%i/exe' % self.pid):

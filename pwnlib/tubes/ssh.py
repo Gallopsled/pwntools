@@ -760,32 +760,32 @@ class ssh(Timeout, Logger):
             >>> sh = s.process('/bin/sh', env={'PS1':''})
             >>> sh.sendline(b'echo Hello; exit')
             >>> sh.recvall()
-            'Hello\n'
+            b'Hello\n'
             >>> s.process(['/bin/echo', b'\xff']).recvall()
-            '\xff\n'
+            b'\xff\n'
             >>> s.process(['readlink', '/proc/self/exe']).recvall()
-            '/bin/readlink\n'
+            b'/bin/readlink\n'
             >>> s.process(['LOLOLOL', '/proc/self/exe'], executable='readlink').recvall()
-            '/bin/readlink\n'
+            b'/bin/readlink\n'
             >>> s.process(['LOLOLOL\x00', '/proc/self/cmdline'], executable='cat').recvall()
-            'LOLOLOL\x00/proc/self/cmdline\x00'
+            b'LOLOLOL\x00/proc/self/cmdline\x00'
             >>> sh = s.process(executable='/bin/sh')
             >>> sh.pid in pidof('sh') # doctest: +SKIP
             True
             >>> s.process(['pwd'], cwd='/tmp').recvall()
-            '/tmp\n'
+            b'/tmp\n'
             >>> p = s.process(['python','-c','import os; print(os.read(2, 1024))'], stderr=0)
             >>> p.send(b'hello')
             >>> p.recv()
-            'hello\n'
+            b'hello\n'
             >>> s.process(['/bin/echo', 'hello']).recvall()
-            'hello\n'
+            b'hello\n'
             >>> s.process(['/bin/echo', 'hello'], stdout='/dev/null').recvall()
-            ''
+            b''
             >>> s.process(['/usr/bin/env'], env={}).recvall()
-            ''
+            b''
             >>> s.process('/usr/bin/env', env={'A':'B'}).recvall()
-            'A=B\n'
+            b'A=B\n'
 
             >>> s.process('false', preexec_fn=1234)
             Traceback (most recent call last):
@@ -805,7 +805,7 @@ class ssh(Timeout, Logger):
             NameError: global name 'bar' is not defined
 
             >>> s.process('echo hello', shell=True).recvall()
-            'hello\n'
+            b'hello\n'
         """
         if not argv and not executable:
             self.error("Must specify argv or executable")
@@ -1106,7 +1106,7 @@ os.execve(exe, argv, env)
             >>> py.sendline(b'print(2+2)')
             >>> py.sendline(b'exit')
             >>> print(repr(py.recvline()))
-            '4\n'
+            b'4\n'
         """
 
         if wd is None:
@@ -1163,7 +1163,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ...         user='travis',
             ...         password='demopass')
             >>> print(s.run_to_end('echo Hello; exit 17'))
-            ('Hello\n', 17)
+            (b'Hello\n', 17)
             """
 
         with context.local(log_level = 'ERROR'):
@@ -1191,7 +1191,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> b = l.wait_for_connection()
             >>> a.sendline(b'Hello')
             >>> print(repr(b.recvline()))
-            'Hello\n'
+            b'Hello\n'
         """
 
         return ssh_connecter(self, host, port, timeout, level=self.level)
@@ -1217,7 +1217,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> b = l.wait_for_connection()
             >>> a.sendline(b'Hello')
             >>> print(repr(b.recvline()))
-            'Hello\n'
+            b'Hello\n'
         """
 
         return ssh_listener(self, bind_address, port, timeout, level=self.level)
@@ -1246,7 +1246,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ...         user='travis',
             ...         password='demopass')
             >>> print(repr(s('echo hello')))
-            'hello'
+            b'hello'
         """
         return self.__getattr__(attr)()
 
@@ -1259,11 +1259,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ...         user='travis',
             ...         password='demopass')
             >>> s.echo('hello')
-            'hello'
+            b'hello'
             >>> s.whoami()
-            'travis'
+            b'travis'
             >>> s.echo(['huh','yay','args'])
-            'huh yay args'
+            b'huh yay args'
         """
         bad_attrs = [
             'trait_names',          # ipython tab-complete
@@ -1451,11 +1451,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ...         password='demopass',
             ...         cache=False)
             >>> s.download_data('/tmp/bar')
-            'Hello, world'
+            b'Hello, world'
             >>> s._sftp = None
             >>> s._tried_sftp = True
             >>> s.download_data('/tmp/bar')
-            'Hello, world'
+            b'Hello, world'
 
         """
         with self.progress('Downloading %r' % remote) as p:
@@ -1772,7 +1772,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ...         password='demopass')
             >>> cwd = s.set_working_directory()
             >>> s.ls()
-            ''
+            b''
             >>> s.pwd() == cwd
             True
 

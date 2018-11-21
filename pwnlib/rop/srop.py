@@ -48,7 +48,7 @@ i386 Example:
     >>> p = process(binary.path)
     >>> p.send(bytes(frame))
     >>> p.recvline()
-    'Hello, World\n'
+    b'Hello, World\n'
     >>> p.poll(block=True)
     0
 
@@ -73,7 +73,7 @@ amd64 Example:
     >>> p = process(binary.path)
     >>> p.send(bytes(frame))
     >>> p.recvline()
-    'Hello, World\n'
+    b'Hello, World\n'
     >>> p.poll(block=True)
     0
 
@@ -98,7 +98,7 @@ arm Example:
     >>> p = process(binary.path)
     >>> p.send(bytes(frame))
     >>> p.recvline()
-    'Hello, World\n'
+    b'Hello, World\n'
     >>> p.wait_for_close()
     >>> p.poll(block=True)
     0
@@ -124,7 +124,7 @@ Mips Example:
     >>> p = process(binary.path)
     >>> p.send(bytes(frame))
     >>> p.recvline()
-    'Hello, World\n'
+    b'Hello, World\n'
     >>> p.poll(block=True)
     0
 
@@ -149,7 +149,7 @@ Mipsel Example:
     >>> p = process(binary.path)
     >>> p.send(bytes(frame))
     >>> p.recvline()
-    'Hello, World\n'
+    b'Hello, World\n'
     >>> p.poll(block=True)
     0
 
