@@ -426,10 +426,10 @@ class Py2OutputChecker(_DummyClass, doctest.OutputChecker):
                 return True
         except ValueError:
             pass
-        rly_want = ' '.join(x[:1].lstrip('b')+x[1:] for x in want.split(' '))
+        rly_want = ' '.join(x[:2].replace('b"','"').replace("b'","'")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
         if sup(rly_want, got, optionflags):
             return True
-        rly_want = ' '.join(x[:1].replace('b',' ')+x[1:] for x in want.split(' '))
+        rly_want = ' '.join(x[:2].replace('b"',' "').replace("b'"," '")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
         return sup(rly_want, got, optionflags)
 
 def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
