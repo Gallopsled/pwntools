@@ -423,7 +423,7 @@ class Corefile(ELF):
         1
         >>> core.argv[0] in core.stack
         True
-        >>> core.string(core.argv[0]) == core.exe.path
+        >>> core.string(core.argv[0]) == core.exe.path.encode()
         True
 
         Corefiles can also be pulled from remote machines via SSH!
@@ -1072,7 +1072,7 @@ class Corefile(ELF):
             >>> io = elf.process(env={'GREETING': 'Hello!'})
             >>> io.wait()
             >>> io.corefile.getenv('GREETING')
-            'Hello!'
+            b'Hello!'
         """
         if not isinstance(name, str):
             name = name.decode('utf-8', 'surrogateescape')

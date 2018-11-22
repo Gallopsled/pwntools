@@ -546,7 +546,7 @@ class ROP(object):
         budget = 999999999
 
         for num_gadgets in range(len(registers)):
-            for combo in itertools.combinations(best_gadgets.values(), 1+num_gadgets):
+            for combo in itertools.combinations(sorted(best_gadgets.values(), key=repr, reverse=True), 1+num_gadgets):
                 # Is this better than what we can already do?
                 cost = sum((g.move for g in combo))
                 if cost > budget:
@@ -652,7 +652,7 @@ class ROP(object):
         """
         if isinstance(object, six.integer_types):
             return self.unresolve(object)
-        if isinstance(object, bytes):
+        if isinstance(object, (bytes, six.text_type)):
             return repr(object)
         if isinstance(object, Call):
             return str(object)
@@ -706,6 +706,8 @@ class ROP(object):
             # broken down into pointer-width blobs.
             elif isinstance(slot, (bytes, six.text_type)):
                 stack.describe(self.describe(slot))
+                if not isinstance(slot, bytes):
+                    slot = slot.encode()
                 slot += self.generatePadding(stack.next, len(slot) % context.bytes)
 
                 for chunk in lists.group(context.bytes, slot):
@@ -967,9 +969,9 @@ class ROP(object):
             data(int/str): The raw value to put onto the rop chain.
 
         >>> rop = ROP([])
-        >>> rop.raw(b'AAAAAAAA')
-        >>> rop.raw(b'BBBBBBBB')
-        >>> rop.raw(b'CCCCCCCC')
+        >>> rop.raw('AAAAAAAA')
+        >>> rop.raw('BBBBBBBB')
+        >>> rop.raw('CCCCCCCC')
         >>> print(rop.dump())
         0x0000:          b'AAAA' 'AAAAAAAA'
         0x0004:          b'AAAA'

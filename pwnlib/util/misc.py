@@ -348,11 +348,11 @@ def register_sizes(regs, in_sizes):
         >>> all_regs
         ['eax', 'ax', 'al', 'ah', 'ebx', 'bx', 'bl', 'bh', 'ecx', 'cx', 'cl', 'ch', 'edx', 'dx', 'dl', 'dh', 'edi', 'di', 'esi', 'si', 'ebp', 'bp', 'esp', 'sp']
         >>> sizes
-        {'ch': 8, 'cl': 8, 'ah': 8, 'edi': 32, 'al': 8, 'cx': 16, 'ebp': 32, 'ax': 16, 'edx': 32, 'ebx': 32, 'esp': 32, 'esi': 32, 'dl': 8, 'dh': 8, 'di': 16, 'bl': 8, 'bh': 8, 'eax': 32, 'bp': 16, 'dx': 16, 'bx': 16, 'ecx': 32, 'sp': 16, 'si': 16}
+        {'eax': 32, 'ax': 16, 'al': 8, 'ah': 8, 'ebx': 32, 'bx': 16, 'bl': 8, 'bh': 8, 'ecx': 32, 'cx': 16, 'cl': 8, 'ch': 8, 'edx': 32, 'dx': 16, 'dl': 8, 'dh': 8, 'edi': 32, 'di': 16, 'esi': 32, 'si': 16, 'ebp': 32, 'bp': 16, 'esp': 32, 'sp': 16}
         >>> bigger
-        {'ch': ['ecx', 'cx', 'ch'], 'cl': ['ecx', 'cx', 'cl'], 'ah': ['eax', 'ax', 'ah'], 'edi': ['edi'], 'al': ['eax', 'ax', 'al'], 'cx': ['ecx', 'cx'], 'ebp': ['ebp'], 'ax': ['eax', 'ax'], 'edx': ['edx'], 'ebx': ['ebx'], 'esp': ['esp'], 'esi': ['esi'], 'dl': ['edx', 'dx', 'dl'], 'dh': ['edx', 'dx', 'dh'], 'di': ['edi', 'di'], 'bl': ['ebx', 'bx', 'bl'], 'bh': ['ebx', 'bx', 'bh'], 'eax': ['eax'], 'bp': ['ebp', 'bp'], 'dx': ['edx', 'dx'], 'bx': ['ebx', 'bx'], 'ecx': ['ecx'], 'sp': ['esp', 'sp'], 'si': ['esi', 'si']}
+        {'eax': ['eax'], 'ax': ['eax', 'ax'], 'al': ['eax', 'ax', 'al'], 'ah': ['eax', 'ax', 'ah'], 'ebx': ['ebx'], 'bx': ['ebx', 'bx'], 'bl': ['ebx', 'bx', 'bl'], 'bh': ['ebx', 'bx', 'bh'], 'ecx': ['ecx'], 'cx': ['ecx', 'cx'], 'cl': ['ecx', 'cx', 'cl'], 'ch': ['ecx', 'cx', 'ch'], 'edx': ['edx'], 'dx': ['edx', 'dx'], 'dl': ['edx', 'dx', 'dl'], 'dh': ['edx', 'dx', 'dh'], 'edi': ['edi'], 'di': ['edi', 'di'], 'esi': ['esi'], 'si': ['esi', 'si'], 'ebp': ['ebp'], 'bp': ['ebp', 'bp'], 'esp': ['esp'], 'sp': ['esp', 'sp']}
         >>> smaller
-        {'ch': [], 'cl': [], 'ah': [], 'edi': ['di'], 'al': [], 'cx': ['cl', 'ch'], 'ebp': ['bp'], 'ax': ['al', 'ah'], 'edx': ['dx', 'dl', 'dh'], 'ebx': ['bx', 'bl', 'bh'], 'esp': ['sp'], 'esi': ['si'], 'dl': [], 'dh': [], 'di': [], 'bl': [], 'bh': [], 'eax': ['ax', 'al', 'ah'], 'bp': [], 'dx': ['dl', 'dh'], 'bx': ['bl', 'bh'], 'ecx': ['cx', 'cl', 'ch'], 'sp': [], 'si': []}
+        {'eax': ['ax', 'al', 'ah'], 'ax': ['al', 'ah'], 'al': [], 'ah': [], 'ebx': ['bx', 'bl', 'bh'], 'bx': ['bl', 'bh'], 'bl': [], 'bh': [], 'ecx': ['cx', 'cl', 'ch'], 'cx': ['cl', 'ch'], 'cl': [], 'ch': [], 'edx': ['dx', 'dl', 'dh'], 'dx': ['dl', 'dh'], 'dl': [], 'dh': [], 'edi': ['di'], 'di': [], 'esi': ['si'], 'si': [], 'ebp': ['bp'], 'bp': [], 'esp': ['sp'], 'sp': []}
     """
     sizes = {}
     bigger = {}
