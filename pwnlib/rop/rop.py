@@ -178,9 +178,9 @@ Pwntools will also filter out some bad instructions while setting the registers
     >>> print(rop.dump())
     0x0000:       0x1000000b pop rdi; ret
     0x0008:              0x1 [arg0] rdi = 1
-    0x0010:       0x10000008 pop rsi; pop rdx; ret
-    0x0018:              0x2 [arg1] rsi = 2
-    0x0020:              0x3 [arg2] rdx = 3
+    0x0010:       0x10000002 pop rdx; pop rsi; ret
+    0x0018:              0x3 [arg2] rdx = 3
+    0x0020:              0x2 [arg1] rsi = 2
     0x0028:       0xdeadbeef
 
 ROP + Sigreturn
