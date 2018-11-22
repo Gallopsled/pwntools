@@ -1079,7 +1079,7 @@ os.execve(exe, argv, env)
         if os.path.sep in program:
             return program
 
-        result = self.run('export PATH=$PATH:$PWD; which %s' % program).recvall().strip()
+        result = self.run('export PATH=$PATH:$PWD; which %s' % program).recvall().strip().decode()
 
         if ('/%s' % program) not in result:
             return None
@@ -1232,8 +1232,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
-            >>> print(s['echo hello'])
-            hello
+            >>> print(repr(s['echo hello']))
+            b'hello'
         """
         return self.__getattr__(attr)()
 
@@ -1862,12 +1862,12 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             with self.process('true', preexec_fn=preexec) as io:
 
                 self._platform_info = {
-                    'system': io.recvline().lower().strip(),
-                    'node': io.recvline().lower().strip(),
-                    'release': io.recvline().lower().strip(),
-                    'version': io.recvline().lower().strip(),
-                    'machine': io.recvline().lower().strip(),
-                    'processor': io.recvline().lower().strip(),
+                    'system': io.recvline().lower().strip().decode(),
+                    'node': io.recvline().lower().strip().decode(),
+                    'release': io.recvline().lower().strip().decode(),
+                    'version': io.recvline().lower().strip().decode(),
+                    'machine': io.recvline().lower().strip().decode(),
+                    'processor': io.recvline().lower().strip().decode(),
                     'distro': 'Unknown',
                     'distro_ver': ''
                 }
@@ -1878,8 +1878,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
                 with self.process(['lsb_release', '-irs']) as io:
                     self._platform_info.update({
-                        'distro': io.recvline().strip(),
-                        'distro_ver': io.recvline().strip()
+                        'distro': io.recvline().strip().decode(),
+                        'distro_ver': io.recvline().strip().decode()
                     })
             except Exception:
                 pass
@@ -1960,7 +1960,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 with context.quiet:
                     rvs = self.read('/proc/sys/kernel/randomize_va_space')
 
-                self._aslr = not rvs.startswith('0')
+                self._aslr = not rvs.startswith(b'0')
 
         return self._aslr
 
@@ -2020,7 +2020,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         # Check for 555555000 (1/3 of the address space for PAE)
         # and for 40000000 (1/3 of the address space with 3BG barrier)
-        self._aslr_ulimit = bool('55555000' in maps or '40000000' in maps)
+        self._aslr_ulimit = bool(b'55555000' in maps or b'40000000' in maps)
 
         return self._aslr_ulimit
 

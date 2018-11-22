@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import socket
+import socks
 import ssl as _ssl
 
 from pwnlib.log import getLogger
@@ -106,6 +107,8 @@ class remote(sock):
                 try:
                     sock.connect(sockaddr)
                     return sock
+                except socks.ProxyError:
+                    raise
                 except socket.error:
                     pass
             self.error("Could not connect to %s on port %d" % (self.rhost, self.rport))

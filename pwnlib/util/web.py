@@ -28,7 +28,7 @@ def wget(url, save=None, timeout=5, **kwargs):
       >>> url    = 'https://httpbin.org/robots.txt'
       >>> result = wget(url, timeout=60)
       >>> result
-      'User-agent: *\\nDisallow: /deny\\n'
+      b'User-agent: *\\nDisallow: /deny\\n'
       >>> result2 = wget(url, True, timeout=60)
       >>> result == open('robots.txt', 'rb').read()
       True

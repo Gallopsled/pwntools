@@ -77,7 +77,7 @@ def adb(argv, *a, **kw):
     r"""Returns the output of an ADB subcommand.
 
     >>> adb.adb(['get-serialno'])
-    'emulator-5554\n'
+    b'emulator-5554\n'
     """
     if isinstance(argv, (bytes, six.text_type)):
         argv = [argv]

@@ -123,8 +123,8 @@ Let's try it out!
 
     >>> p = process(binary.path)
     >>> p.send(raw_rop)
-    >>> print(p.recvall(timeout=5))
-    The flag
+    >>> print(repr(p.recvall(timeout=5)))
+    b'The flag'
 
 ROP Example (amd64)
 -------------------

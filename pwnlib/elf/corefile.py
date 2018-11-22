@@ -406,7 +406,7 @@ class Corefile(ELF):
         should contain two pointer-widths of NULL bytes, preceded by the NULL-
         terminated path to the executable (as passed via the first arg to ``execve``).
 
-        >>> stack_end = core.exe.name
+        >>> stack_end = core.exe.name.encode()
         >>> stack_end += b'\x00' * (1+8)
         >>> core.stack.data.endswith(stack_end)
         True

@@ -453,7 +453,7 @@ class tube(Timeout, Logger):
         """
 
         tmpbuf = Buffer()
-        line   = ''
+        line   = b''
         with self.countdown(timeout):
             while self.countdown_active():
                 try:
@@ -464,7 +464,7 @@ class tube(Timeout, Logger):
 
                 if not line:
                     self.buffer.add(tmpbuf)
-                    return ''
+                    return b''
 
                 if pred(line):
                     if not keepends:
@@ -473,7 +473,7 @@ class tube(Timeout, Logger):
                 else:
                     tmpbuf.add(line)
 
-        return ''
+        return b''
 
     def recvline_contains(self, items, keepends = False, timeout = default):
         r"""
@@ -693,7 +693,7 @@ class tube(Timeout, Logger):
             >>> def p(x): print(repr(x))
             >>> t = tube()
             >>> t.send_raw = p
-            >>> t.send('hello')
+            >>> t.send(b'hello')
             b'hello'
         """
 

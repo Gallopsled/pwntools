@@ -83,7 +83,7 @@ class sock(tube):
             >>> r = remote('localhost', l.lport)
             >>> r.can_recv_raw(timeout=0)
             False
-            >>> l.send('a')
+            >>> l.send(b'a')
             >>> r.can_recv_raw(timeout=1)
             True
             >>> r.recv()

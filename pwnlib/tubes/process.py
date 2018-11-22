@@ -153,7 +153,7 @@ class process(tube):
         >>> p.recv()
         b'\x00\x00\x00\x00\x00\x00\x00\x00'
 
-        >>> p = process(['python','-c','import os; print(os.read(2,1024))'],
+        >>> p = process(['python','-c','import os; print(os.read(2,1024).decode())'],
         ...             preexec_fn = lambda: os.dup2(0,2))
         >>> p.sendline(b'hello')
         >>> p.recvline()

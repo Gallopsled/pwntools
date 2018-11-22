@@ -734,10 +734,10 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         modified in-place.
 
     Examples:
-        >>> dd(tuple('Hello!'), '?', skip = 5)
-        ('H', 'e', 'l', 'l', 'o', '?')
+        >>> dd(tuple('Hello!'), b'?', skip = 5)
+        ('H', 'e', 'l', 'l', 'o', b'?')
         >>> dd(list('Hello!'), (63,), skip = 5)
-        ['H', 'e', 'l', 'l', 'o', '?']
+        ['H', 'e', 'l', 'l', 'o', b'?']
         >>> _ = open('/tmp/foo', 'w').write('A' * 10)
         >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4).read()
         'AAA\\x00\\x00\\x00\\x00AAA'

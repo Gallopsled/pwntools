@@ -274,7 +274,10 @@ def b64e(s):
        >>> b64e(b"test")
        'dGVzdA=='
        """
-    return base64.b64encode(s)
+    x = base64.b64encode(s)
+    if not hasattr(x, 'encode'):
+        x = x.decode('ascii')
+    return x
 
 def b64d(s):
     """b64d(s) -> str
