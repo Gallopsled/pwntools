@@ -294,7 +294,7 @@ def _get_runner(ssh=None):
     else:                          return tubes.process.process
 
 @LocalContext
-def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kwargs):
+def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, ssh_exe=None, **kwargs):
     """debug(args) -> tube
 
     Launch a GDB server with the specified command line,
@@ -306,6 +306,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
         exe(str): Path to the executable on disk
         env(dict): Environment to start the binary in
         ssh(:class:`.ssh`): Remote ssh session to use to launch the process.
+        ssh_exe(str): Path to the remote executable to download.
         sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
             and Android targets.
 
@@ -460,7 +461,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     if not ssh and context.os == 'android':
         host = context.adb_host
 
-    attach((host, port), exe=exe, gdbscript=gdbscript, need_ptrace_scope = False, ssh=ssh, sysroot=sysroot)
+    attach((host, port), exe=exe, gdbscript=gdbscript, need_ptrace_scope = False, ssh=ssh, sysroot=sysroot, ssh_exe=ssh_exe)
 
     # gdbserver outputs a message when a client connects
     garbage = gdbserver.recvline(timeout=1)
@@ -507,7 +508,7 @@ def binary():
     return gdb
 
 @LocalContext
-def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_args = None, ssh = None, sysroot = None):
+def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_args = None, ssh = None, sysroot = None, ssh_exe = None):
     """attach(target, gdbscript = None, exe = None, arch = None, ssh = None) -> None
 
     Start GDB in a new terminal and attach to `target`.
@@ -515,12 +516,13 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
     Arguments:
         target: The target to attach to.
         gdbscript(:obj:`str` or :obj:`file`): GDB script to run after attaching.
-        exe(str): The path of the target binary.
+        exe(str): Path to the executable on disk
         arch(str): Architechture of the target binary.  If `exe` known GDB will
           detect the architechture automatically (if it is supported).
         gdb_args(list): List of additional arguments to pass to GDB.
         sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
             and Android targets.
+        ssh_exe(str): Path to the remote executable to download.
 
     Returns:
         PID of the GDB process (or the window which it is running in).
@@ -739,10 +741,10 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     cmd += ' -q '
 
+    if ssh and ssh_exe:
+        ssh.download_file(ssh_exe, exe)
+
     if exe and context.native:
-        if ssh:
-            ssh.download_file(exe)
-            exe = os.path.basename(exe)
         if not os.path.isfile(exe):
             log.error('No such file: %s' % exe)
         cmd += ' "%s"' % exe
