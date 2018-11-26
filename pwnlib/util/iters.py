@@ -13,6 +13,7 @@ import random
 import six
 import time
 from itertools import *
+from six.moves import range
 
 from pwnlib.context import context
 from pwnlib.log import getLogger

@@ -3,12 +3,13 @@ from __future__ import division
 
 import ctypes
 import functools
-import six
 import string
+
+from six.moves import range
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
-from pwnlib.util.packing import pack
+from pwnlib.util.packing import pack, _p8lu
 from pwnlib.util.packing import unpack
 
 log = getLogger(__name__)
@@ -160,8 +161,8 @@ class MemLeak(object):
             The type of the return value will be dictated by
             the type of ``field``.
         """
-        if not isinstance(expected, (int, str)):
-            raise TypeError("Expected value must be an int or str")
+        if not isinstance(expected, (int, bytes)):
+            raise TypeError("Expected value must be an int or bytes")
 
         if isinstance(expected, int):
             expected = pack(expected, bytes=obj.size)
@@ -197,10 +198,10 @@ class MemLeak(object):
                     raise
 
             if data:
-                for i,byte in enumerate(data):
-                    self.cache[address+i] = byte
+                for i,byte in enumerate(bytearray(data)):
+                    self.cache[address+i] = _p8lu(byte)
 
-            # We could not leak this particular byte, search backwardd
+            # We could not leak this particular byte, search backwards
             # to see if another request will satisfy it
             elif recurse:
                 for i in range(1, self.search_range):
@@ -215,7 +216,7 @@ class MemLeak(object):
             return None
 
         # Cache is filled, satisfy the request
-        return b''.join(six.int2byte(six.indexbytes(self.cache, addr+i)) for i in range(n))
+        return b''.join(self.cache[addr+i] for i in range(n))
 
     def raw(self, addr, numb):
         """raw(addr, numb) -> list
@@ -376,10 +377,10 @@ class MemLeak(object):
         addr += ndx * size
         data = [self.cache.pop(x, None) for x in range(addr, addr+size)]
 
-        if any(i is None for i in data):
+        if not all(data):
             return None
 
-        return unpack(b''.join(map(six.int2byte, bytearray(data))), size*8)
+        return unpack(b''.join(data), size*8)
 
     def clearb(self, addr, ndx = 0):
         """clearb(addr, ndx = 0) -> int
@@ -390,7 +391,7 @@ class MemLeak(object):
         Examples:
 
             >>> l = MemLeak(lambda a: None)
-            >>> l.cache = {0:b'a'[0]}
+            >>> l.cache = {0:b'a'}
             >>> l.n(0,1) == b'a'
             True
             >>> l.clearb(0) == unpack(b'a', 8)
@@ -411,7 +412,7 @@ class MemLeak(object):
         Examples:
 
             >>> l = MemLeak(lambda a: None)
-            >>> l.cache = dict(enumerate(b'ab'))
+            >>> l.cache = {0: b'a', 1: b'b'}
             >>> l.n(0, 2) == b'ab'
             True
             >>> l.clearw(0) == unpack(b'ab', 16)
@@ -430,7 +431,7 @@ class MemLeak(object):
         Examples:
 
             >>> l = MemLeak(lambda a: None)
-            >>> l.cache = dict(enumerate(b'abcd'))
+            >>> l.cache = {0: b'a', 1: b'b', 2: b'c', 3: b'd'}
             >>> l.n(0, 4) == b'abcd'
             True
             >>> l.cleard(0) == unpack(b'abcd', 32)
@@ -449,7 +450,7 @@ class MemLeak(object):
         Examples:
 
             >>> c = MemLeak(lambda addr: b'')
-            >>> c.cache = {x:b'x'[0] for x in range(0x100, 0x108)}
+            >>> c.cache = {x:b'x' for x in range(0x100, 0x108)}
             >>> c.clearq(0x100) == unpack(b'xxxxxxxx', 64)
             True
             >>> c.cache == {}
@@ -460,8 +461,8 @@ class MemLeak(object):
 
     def _set(self, addr, val, ndx, size):
         addr += ndx * size
-        for i,b in enumerate(pack(val, size*8)):
-            self.cache[addr+i] = b
+        for i,b in enumerate(bytearray(pack(val, size*8))):
+            self.cache[addr+i] = _p8lu(b)
 
     def setb(self, addr, val, ndx = 0):
         """Sets byte at ``((uint8_t*)addr)[ndx]`` to `val` in the cache.
@@ -472,7 +473,7 @@ class MemLeak(object):
             >>> l.cache == {}
             True
             >>> l.setb(33, 0x41)
-            >>> l.cache == {33: b'A'[0]}
+            >>> l.cache == {33: b'A'}
             True
         """
         return self._set(addr, val, ndx, 1)
@@ -486,7 +487,7 @@ class MemLeak(object):
             >>> l.cache == {}
             True
             >>> l.setw(33, 0x41)
-            >>> l.cache == {33: b'A'[0], 34: b'\x00'[0]}
+            >>> l.cache == {33: b'A', 34: b'\x00'}
             True
         """
         return self._set(addr, val, ndx, 2)
@@ -519,14 +520,14 @@ class MemLeak(object):
             >>> l.cache == {}
             True
             >>> l.sets(0, b'H\x00ello')
-            >>> l.cache == dict(enumerate(b'H\x00ello\x00'))
+            >>> l.cache == {0: b'H', 1: b'\x00', 2: b'e', 3: b'l', 4: b'l', 5: b'o', 6: b'\x00'}
             True
         """
         if null_terminate:
             val += b'\x00'
 
-        for i,b in enumerate(val):
-            self.cache[addr+i] = b
+        for i,b in enumerate(bytearray(val)):
+            self.cache[addr+i] = _p8lu(b)
 
     def __getitem__(self, item):
         if isinstance(item, slice):
@@ -541,9 +542,9 @@ class MemLeak(object):
 
         return self.n(start, stop-start)[::step]
 
-    def compare(self, address, bytes):
-        for i, byte in enumerate(bytes):
-            if self.n(address + i, 1) != byte:
+    def compare(self, address, bts):
+        for i, byte in enumerate(bytearray(bts)):
+            if self.n(address + i, 1) != _p8lu(byte):
                 return False
         return True
 
@@ -558,7 +559,7 @@ class MemLeak(object):
 
         @functools.wraps(function, updated=[])
         def null_wrapper(address, *a, **kw):
-            if '\x00' in pack(address):
+            if b'\x00' in pack(address):
                 log.info('Ignoring leak request for %#x: Contains NULL bytes' % address)
                 return None
             return function(address, *a, **kw)
@@ -576,7 +577,7 @@ class MemLeak(object):
 
         @functools.wraps(function, updated=[])
         def whitespace_wrapper(address, *a, **kw):
-            if set(pack(address)) & set(string.whitespace):
+            if set(pack(address)) & set(string.whitespace.encode()):
                 log.info('Ignoring leak request for %#x: Contains whitespace' % address)
                 return None
             return function(address, *a, **kw)
@@ -594,7 +595,7 @@ class MemLeak(object):
 
         @functools.wraps(function, updated=[])
         def whitespace_wrapper(address, *a, **kw):
-            if '\n' in pack(address):
+            if b'\n' in pack(address):
                 log.info('Ignoring leak request for %#x: Contains newlines' % address)
                 return None
             return function(address, *a, **kw)
@@ -613,7 +614,9 @@ class MemLeak(object):
         @functools.wraps(function, updated=[])
         def string_wrapper(address, *a, **kw):
             result = function(address, *a, **kw)
-            if isinstance(result, (str, bytes)):
+            if isinstance(result, str) and not isinstance(result, bytes):
+                result = result.encode('latin1')
+            if isinstance(result, bytes):
                 result += b'\x00'
             return result
 

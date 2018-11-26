@@ -37,6 +37,8 @@ import six
 import struct
 import sys
 
+from six.moves import range
+
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.util import iters

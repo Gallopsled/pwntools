@@ -151,8 +151,7 @@ def wrap(template, render_global):
         with render_global.go_inside() as was_inside:
             with pwnlib.context.context.local(**%(local_ctx)s):
                 lines = template.render(%(args_used)s).split('\\n')
-        for i in range(len(lines)):
-            line = lines[i]
+        for i, line in enumerate(lines):
             def islabelchar(c):
                 return c.isalnum() or c == '.' or c == '_'
             if ':' in line and islabelchar(line.lstrip()[0]):

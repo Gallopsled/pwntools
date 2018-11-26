@@ -9,7 +9,9 @@ import re
 import os
 import six
 import string
+
 from six import BytesIO
+from six.moves import range
 
 from pwnlib.context import context
 from pwnlib.log import getLogger

@@ -11,6 +11,8 @@ import sys
 import threading
 import time
 
+from six.moves import range
+
 from pwnlib import atexit
 from pwnlib import term
 from pwnlib.context import context
