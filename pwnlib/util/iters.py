@@ -6,14 +6,12 @@ from __future__ import division
 
 import collections
 import copy
-import functools
 import multiprocessing
 import operator
 import random
-import six
 import time
 from itertools import *
-from six.moves import range
+from six.moves import map, filter, filterfalse, range, zip, zip_longest
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -68,10 +66,6 @@ __all__ = [
     'takewhile'                              ,
     'tee'
 ]
-
-for attr in __all__:
-    if hasattr(six.moves, attr):
-        globals()[attr] = getattr(six.moves, attr)
 
 log = getLogger(__name__)
 

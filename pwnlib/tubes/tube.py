@@ -153,7 +153,6 @@ class tube(Timeout, Logger):
         buffer is empty.
         """
         numb = self.buffer.get_fill_size(numb)
-        data = b''
 
         # No buffered data, could not put anything in the buffer
         # before timeout.

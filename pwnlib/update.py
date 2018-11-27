@@ -18,7 +18,6 @@ from __future__ import division
 import datetime
 import json
 import os
-import six
 import time
 
 from six.moves.xmlrpc_client import ServerProxy
