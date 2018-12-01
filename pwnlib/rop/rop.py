@@ -277,7 +277,7 @@ from pwnlib.rop.gadgets import Gadget
 from pwnlib.util import lists
 from pwnlib.util import packing
 from pwnlib.util.cyclic import cyclic
-from pwnlib.util.packing import *
+from pwnlib.util.packing import pack
 
 log = getLogger(__name__)
 __all__ = ['ROP']

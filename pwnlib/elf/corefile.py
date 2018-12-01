@@ -996,7 +996,7 @@ class Corefile(ELF):
             except Exception:
                 continue
 
-            name, value = name_value.split(b'=', 1)
+            name, _ = name_value.split(b'=', 1)
 
             # "end" points at the byte after the null terminator
             end = pointer + len(name_value) + 1

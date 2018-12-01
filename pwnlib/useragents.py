@@ -57,4 +57,4 @@ def random():
     >>> random() # doctest: +SKIP
     'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; FunWebProducts; FunWebProducts-MyTotalSearch; iebar)'
     """
-    return random.choice(list(_load()))
+    return randommod.choice(list(_load()))

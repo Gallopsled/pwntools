@@ -154,7 +154,7 @@ def ld_prefix(path=None, env=None):
         with process([path, '--help'], env=env) as io:
             line = io.recvline_regex(b'QEMU_LD_PREFIX *=')
 
-    name, libpath = line.split(b'=', 1)
+    _, libpath = line.split(b'=', 1)
 
     libpath = libpath.strip()
 

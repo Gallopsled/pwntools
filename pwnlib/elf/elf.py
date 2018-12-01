@@ -36,7 +36,6 @@ Module Members
 from __future__ import absolute_import
 from __future__ import division
 
-import codecs
 import collections
 import gzip
 import mmap
