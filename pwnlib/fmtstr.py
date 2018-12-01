@@ -98,7 +98,7 @@ from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak
 from pwnlib.util.cyclic import *
 from pwnlib.util.fiddling import randoms
-from pwnlib.util.packing import *
+from pwnlib.util.packing import pack
 
 log = getLogger(__name__)
 

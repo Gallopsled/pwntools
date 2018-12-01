@@ -39,7 +39,7 @@ class builder:
       output = ''
       arr = [1,2,3,4,5,6,7,8,9]
       self.I = random_funcs.randel(arr)
-      for p, ab in enumerate(bytearray(input)):
+      for _, ab in enumerate(bytearray(input)):
          b = ab & 0x0f
          e0 = random_funcs.enc_data_msn(b, self.I)
          e0 = e0 << 4

@@ -67,7 +67,9 @@ from pwnlib.util.web import *
 
 # Promote these modules, so that "from pwn import *" will let you access them
 
+__all__ = ["pickle", "StringIO", "BytesIO"]
 from six.moves import cPickle as pickle, cStringIO as StringIO
+from six import BytesIO
 
 error   = log.error
 warning = log.warning
@@ -76,4 +78,4 @@ info    = log.info
 debug   = log.debug
 success = log.success
 
-__all__ = list(globals().keys())
+__all__ += list(globals().keys())
