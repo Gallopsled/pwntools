@@ -124,6 +124,15 @@ WRITE_SIZE = {
 }
 
 def normalize_writes(writes):
+    """
+    This function converts user-specified writes to a dict ``{ address1: data1, address2: data2, ... }``
+    such that all values are raw bytes and consecutive writes are merged to a single key.
+
+    Examples:
+        >>> context.clear(endian="little", bits=32)
+        >>> normalize_writes({0x0: [p32(0xdeadbeef)], 0x4: p32(0xf00dface), 0x10: 0x41414141})
+        [(0, '\\xef\\xbe\\xad\\xde\\xce\\xfa\\r\\xf0'), (16, 'AAAA')]
+    """
     # make all writes flat
     writes = { address: flat(data) for address, data in writes.items() }
 
@@ -206,12 +215,12 @@ class AtomWrite(object):
         given the current format string write counter (how many bytes have been written until now).
 
         Examples:
-        >>> hex(pwnlib.fmtstr.AtomWrite(0x0, 0x2, 0x2345).compute_padding(0x1111))
-        0x1234
-        >>> hex(pwnlib.fmtstr.AtomWrite(0x0, 0x2, 0xaa00).compute_padding(0xaabb))
-        0xff45
-        >>> hex(pwnlib.fmtstr.AtomWrite(0x0, 0x2, 0xaa00, 0xff00).compute_padding(0xaabb)) # with mask
-        0x0
+            >>> hex(pwnlib.fmtstr.AtomWrite(0x0, 0x2, 0x2345).compute_padding(0x1111))
+            '0x1234'
+            >>> hex(pwnlib.fmtstr.AtomWrite(0x0, 0x2, 0xaa00).compute_padding(0xaabb))
+            '0xff45'
+            >>> hex(pwnlib.fmtstr.AtomWrite(0x0, 0x2, 0xaa00, 0xff00).compute_padding(0xaabb)) # with mask
+            '0x0'
         """
         wanted = self.integer & self.mask
         padding = 0
