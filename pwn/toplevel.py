@@ -14,6 +14,7 @@ import sys
 import tempfile
 import threading
 import time
+import traceback
 
 from pprint import pprint
 
