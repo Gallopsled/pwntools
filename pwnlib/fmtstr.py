@@ -120,20 +120,43 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
     Examples:
         >>> context.clear(arch = 'amd64')
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int'))
-        '\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00%322419374c%1$n%3972547906c%2$n'
+        '%322419390c%5$n%3972547906c%6$n \x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00'
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short'))
-        '\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00%47774c%1$hn%22649c%2$hn%60617c%3$hn%4$hn'
+        '%47806c%7$hn%22649c%8$hn%60617c%9$hn%10$hn      \x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00'
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte'))
-        '\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00%126c%1$hhn%252c%2$hhn%125c%3$hhn%220c%4$hhn%237c%5$hhn%6$hhn%7$hhn%8$hhn'
+        '%190c%12$hhn%252c%13$hhn%125c%14$hhn%220c%15$hhn%237c%16$hhn%17$hhn%18$hhn%19$hhn       \x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00'
         >>> context.clear(arch = 'i386')
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int'))
-        '\x00\x00\x00\x00%322419386c%1$n'
+        '%322419390c%5$n \x00\x00\x00\x00'
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short'))
-        '\x00\x00\x00\x00\x02\x00\x00\x00%47798c%1$hn%22649c%2$hn'
+        '%47806c%7$hn%22649c%8$hn\x00\x00\x00\x00\x02\x00\x00\x00'
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte'))
-        '\x00\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00%174c%1$hhn%252c%2$hhn%125c%3$hhn%220c%4$hhn'
+        '%190c%13$hhn%252c%14$hhn%125c%15$hhn%220c%16$hhn\x00\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00'
 
     """
+
+    # create a format section with a certain amount of padding
+    def fmts_with_pad(numbwritten, pad_len):
+        fmt_count = 0
+        fmts = ''
+        # create "whats" of write
+        for _, what in writes.items():
+            for _ in range(number):
+                current = what & mask
+                if numbwritten & mask <= current:
+                    to_add = current - (numbwritten & mask)
+                else:
+                    to_add = (current | (mask+1)) - (numbwritten & mask)
+
+                if to_add != 0:
+                    fmts += "%{}c".format(to_add)
+                addr_offset = offset + fmt_count + pad_len
+                fmts += "%{}${}n".format(addr_offset, formatz)
+
+                numbwritten += to_add
+                what >>= decalage
+                fmt_count += 1
+        return fmts
 
     # 'byte': (number, step, mask, format, decalage)
     config = {
@@ -151,33 +174,36 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
     if write_size not in ['byte', 'short', 'int']:
         log.error("write_size must be 'byte', 'short' or 'int'")
 
+    # number: number of write_size in a word
+    # step: amount of bytes in write_size
+    # mask: mask for written values
+    # formatz: format size modifier for %n
+    # declage: amount of bits in write_size
     number, step, mask, formatz, decalage = config[context.bits][write_size]
 
-    # add wheres
-    payload = ""
-    for where, what in writes.items():
+    # create packed addrs using wheres
+    packed_addrs = ""
+    for where, _ in writes.items():
         for i in range(0, number*step, step):
-            payload += pack(where+i)
+            packed_addrs += pack(where+i)
 
-    numbwritten += len(payload)
-    fmtCount = 0
-    for where, what in writes.items():
-        for i in range(0, number):
-            current = what & mask
-            if numbwritten & mask <= current:
-                to_add = current - (numbwritten & mask)
-            else:
-                to_add = (current | (mask+1)) - (numbwritten & mask)
-
-            if to_add != 0:
-                payload += "%{}c".format(to_add)
-            payload += "%{}${}n".format(offset + fmtCount, formatz)
-
-            numbwritten += to_add
-            what >>= decalage
-            fmtCount += 1
-
-    return payload
+    # decide whether the packed addrs should be placed at the beginning or end
+    # of the payload
+    if '\x00' in packed_addrs:
+        # place at end of payload
+        pad_chr = ' '
+        pad_len = 0 # length to pad the format section to, in processor words
+        while True:
+            # try increasing amounts of padding
+            pad_len += 1
+            fmts = fmts_with_pad(numbwritten, pad_len)
+            if pad_len * context.bytes >= len(fmts):
+                break
+        return fmts.ljust(pad_len * context.bytes, pad_chr) + packed_addrs
+    else:
+        # place at beginning of payload
+        fmts = fmts_with_pad(numbwritten + len(packed_addrs), 0)
+        return packed_addrs + fmts
 
 class FmtStr(object):
     """
