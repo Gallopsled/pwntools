@@ -846,12 +846,12 @@ class FmtStr(object):
         return leak
 
     def find_offset(self):
-        marker = cyclic(20)
+        marker = cyclic(20, n=context.bytes)
         for off in range(1,1000):
             leak = self.leak_stack(off, marker)
             leak = pack(leak)
 
-            pad = cyclic_find(leak)
+            pad = cyclic_find(leak, n=context.bytes)
             if pad >= 0 and pad < 20:
                 return off, pad
         else:
