@@ -647,6 +647,25 @@ def sort_atoms(atoms, numbwritten):
     return out
 
 def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4):
+    r'''
+    Makes a format-string payload using glibc's dollar syntax to access the arguments.
+
+    Returns:
+        A tuple (fmt, data) where ``fmt`` are the format string instructions and data are the pointers
+        that are accessed by the instructions.
+
+    Arguments:
+        data_offset(int): format string argument offset at which the first pointer is located
+        atoms(list): list of atoms to execute
+        numbwritten(int): number of byte already written by the printf function
+        countersize(int): size in bytes of the format string counter (usually 4)
+
+    Examples:
+        >>> pwnlib.fmtstr.make_payload_dollar(1, [pwnlib.fmtstr.AtomWrite(0x0, 0x1, 0xff)])
+        ('%255c%1$hhn', '\x00\x00\x00\x00\x00\x00\x00\x00')
+
+
+    '''
     data = ""
     fmt = ""
 
@@ -669,6 +688,24 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4):
     return fmt, data
 
 def make_atoms(writes, sz, szmax, numbwritten, overflows, strategy, badbytes):
+    """
+    Builds an optimized list of atoms for the given format string payload parameters.
+    This function tries to optimize two things:
+
+    - use the fewest amount of possible atoms
+    - sort these atoms such that the amount of padding needed between consecutive elements is small
+
+    Together this should produce short format strings.
+
+    Arguments:
+        writes(dict): dict with addr, value ``{addr: value, addr2: value2}``
+        sz(int): basic write size in bytes. Atoms of this size are generated without constraints on their values.
+        szmax(int): maximum write size in bytes. No atoms with a size larger than this are generated (ignored for strategy 'fast')
+        numbwritten(int): number of byte already written by the printf function
+        overflows(int): how many extra overflows (of size sz) to tolerate to reduce the length of the format string
+        strategy(str): either 'fast' or 'small'
+        badbytes(str): bytes that are not allowed to appear in the payload
+    """
     all_atoms = []
     for address, data in normalize_writes(writes):
         atoms = make_atoms_simple(address, data, badbytes)
@@ -676,6 +713,8 @@ def make_atoms(writes, sz, szmax, numbwritten, overflows, strategy, badbytes):
             atoms = merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows)
         elif strategy == 'fast':
             atoms = merge_atoms_writesize(atoms, sz)
+        else:
+            raise ValueError("strategy must be either 'small' or 'fast'")
         atoms = sort_atoms(atoms, numbwritten)
         all_atoms += atoms
     return all_atoms
@@ -703,11 +742,16 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
     It can generate payload for 32 or 64 bits architectures.
     The size of the addr is taken from ``context.bits``
 
+    The overflows argument is a format-string-length to output-amount tradeoff:
+    Larger values for ``overflows`` produce shorter format strings that generate more output at runtime.
+
     Arguments:
         offset(int): the first formatter's offset you control
         writes(dict): dict with addr, value ``{addr: value, addr2: value2}``
         numbwritten(int): number of byte already written by the printf function
         write_size(str): must be ``byte``, ``short`` or ``int``. Tells if you want to write byte by byte, short by short or int by int (hhn, hn or n)
+        overflows(int): how many extra overflows (at size sz) to tolerate to reduce the length of the format string
+        strategy(str): either 'fast' or 'small' ('small' is default, 'fast' can be used if there are many writes)
     Returns:
         The payload in order to do needed writes
 
