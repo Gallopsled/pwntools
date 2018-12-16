@@ -684,9 +684,7 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4):
 
     Examples:
         >>> pwnlib.fmtstr.make_payload_dollar(1, [pwnlib.fmtstr.AtomWrite(0x0, 0x1, 0xff)])
-        ('%255c%1$hhn', '\x00\x00\x00\x00\x00\x00\x00\x00')
-
-
+        ('%255c%1$hhn', '\x00\x00\x00\x00')
     '''
     data = ""
     fmt = ""
