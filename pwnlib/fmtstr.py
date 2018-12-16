@@ -481,43 +481,65 @@ def merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows):
     maxwritten = numbwritten + (1 << (8 * sz)) * overflows
     done = [False for _ in atoms]
 
-    def possible_writes(idx, numbwritten):
-        candidate = AtomWrite(atoms[idx].start, 0, 0)
-        best = 0
-        for nextidx in xrange(idx, len(atoms)):
-            if done[nextidx] or candidate.end != atoms[nextidx].start:
-                break
-
-            candidate = candidate.union(atoms[nextidx])
-            if candidate.size not in SPECIFIER: continue
-            if candidate.size > szmax: break
-
-            approxed = candidate
-            score = candidate.size
-            if approxed.size > sz:
-                score, v, m = find_min_hamming_in_range(approxed.size, numbwritten, maxwritten, approxed.integer)
-                approxed = candidate.replace(integer=v, mask=m)
-
-            if score > best:
-                best = score
-                yield list(xrange(idx, nextidx+1)), approxed
-
     numbwritten_at = [numbwritten for _ in atoms]
     out = []
     for idx in xrange(len(atoms)):
         if done[idx]: continue
         numbwritten_here = numbwritten_at[idx]
-        idxrange, candidate = list(possible_writes(idx, numbwritten_here))[-1]
-        numbwritten_here += candidate.compute_padding(numbwritten_here)
+
+        # greedily find the best possible write at the current offset
+        # the best write is the one which sets the largest number of target
+        # bytes correctly
+        candidate = AtomWrite(atoms[idx].start, 0, 0)
+        best = (0, None)
+        for nextidx in xrange(idx, len(atoms)):
+            # if there is no atom immediately following the current candidate
+            # that we haven't written yet, stop
+            if done[nextidx] or candidate.end != atoms[nextidx].start:
+                break
+
+            # extend the candidate with the next atom.
+            # check that we are still within the limits and that the candidate
+            # can be written with a format specifier (this excludes non-power-of-2 candidate sizes)
+            candidate = candidate.union(atoms[nextidx])
+            if candidate.size not in SPECIFIER: continue
+            if candidate.size > szmax: break
+
+            # now approximate the candidate if it is larger than the always allowed size (sz),
+            # taking the `maxwritten` constraint into account
+            # this ensures that we don't write more than `maxwritten` bytes
+            approxed = candidate
+            score = candidate.size
+            if approxed.size > sz:
+                score, v, m = find_min_hamming_in_range(approxed.size, numbwritten_here, maxwritten, approxed.integer)
+                approxed = candidate.replace(integer=v, mask=m)
+
+            # if the current candidate sets more bytes correctly, save it
+            if score > best[0]:
+                best = (score, nextidx, approxed)
+
+        _, nextidx, best_candidate = best
+        numbwritten_here += best_candidate.compute_padding(numbwritten_here)
         offset = 0
-        for i in idxrange:
+
+        # for all atoms that we merged, check if all bytes are written already to update `done``
+        # also update the numbwritten_at for all the indices covered by the current best_candidate
+        for i in xrange(idx, nextidx+1):
             shift = atoms[i].size
-            if not ((~candidate[offset:offset+shift].mask) & atoms[i].mask):
+
+            # if there are no parts in the atom's that are not written by the candidate,
+            # mark it as done
+            if not (atoms[i].mask & (~best_candidate[offset:offset+shift].mask)):
                 done[i] = True
             else:
+                # numbwritten_at is only relevant for atoms that aren't done yet,
+                # so update it only in that case (done atoms are never processed again)
                 numbwritten_at[i] = max(numbwritten_at[i], numbwritten_here)
+
             offset += shift
-        out += [candidate]
+
+        # emit the best candidate
+        out += [best_candidate]
     return out
 
 def overlapping_atoms(atoms):
