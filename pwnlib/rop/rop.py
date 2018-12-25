@@ -1251,6 +1251,7 @@ class ROP(object):
         # Prepare capstone
         md = Cs(CS_ARCH_X86, CS_MODE_64)
         md.detail = True
+        md.skipdata = True
 
         # Resolve __libc_csu_ symbols if candidate binary is stripped
         if not u'__libc_csu_init' in elf.symbols:
