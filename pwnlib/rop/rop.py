@@ -1299,10 +1299,10 @@ class ROP(object):
         elif elf.pie and not call:
             log.error('No non-PIE binaries in [elfs], \'call\' parameter is required')
 
-        csu_function = elf.read(elf.sym['__libc_csu_init'], elf.sym['__libc_csu_fini'] - elf.sym['__libc_csu_init'])
+        csu_function = elf.read(elf.sym[u'__libc_csu_init'], elf.sym[u'__libc_csu_fini'] - elf.sym[u'__libc_csu_init'])
 
         # 1st gadget: Populate registers in preparation for 2nd gadget
-        for insn in md.disasm(csu_function, elf.sym['__libc_csu_init']):
+        for insn in md.disasm(csu_function, elf.sym[u'__libc_csu_init']):
             if insn.mnemonic == 'pop' and insn.operands[0].reg == X86_REG_RBX:
                 self.raw(insn.address)
                 break
@@ -1317,7 +1317,7 @@ class ROP(object):
         self.raw(edi)  # pop r15
 
         # 2nd gadget: Populate edi, rsi & rdx. Populate optional registers
-        for insn in md.disasm(csu_function, elf.sym['__libc_csu_init']):
+        for insn in md.disasm(csu_function, elf.sym[u'__libc_csu_init']):
             if insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_RDX and insn.operands[1].reg == X86_REG_R13:
                 self.raw(insn.address)
                 break
