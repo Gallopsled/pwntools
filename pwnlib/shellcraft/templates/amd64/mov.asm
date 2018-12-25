@@ -218,7 +218,7 @@ else:
         xor [rsp], ${dest}
         pop ${dest}
         % else:
-            <% log.error("Cannot put %s into '%s' without using stack." % (pretty(src), dest_orig)) %>\
+            <% log.error("Cannot put %s into '%s' without using stack." % (pretty(src), orig_dest)) %>\
         % endif
     % endif
 % else:

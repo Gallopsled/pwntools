@@ -487,7 +487,7 @@ def _fit(pieces, preprocessor, packer, filler):
     def fill(key):
         key = list(key)
         while len(pad) < len(key) or pad[-len(key):] != key:
-            pad.append(filler.next())
+            pad.append(next(filler))
         return len(pad) - len(key)
 
     # Key conversion:
@@ -524,7 +524,7 @@ def _fit(pieces, preprocessor, packer, filler):
 
         # Fill up to offset
         while len(out) < k:
-            out += filler.next()
+            out += next(filler)
 
         # Recursively flatten data
         out += _flat([v], preprocessor, packer, filler)
@@ -562,7 +562,7 @@ def _flat(args, preprocessor, packer, filler):
         # Advance `filler` for "non-recursive" values
         if not isinstance(arg, (list, tuple, dict)):
             for _ in xrange(len(val)):
-                filler.next()
+                next(filler)
 
     return ''.join(out)
 
@@ -648,7 +648,7 @@ def flat(*args, **kwargs):
     if length:
         if len(out) > length:
             raise ValueError("flat(): Arguments does not fit within `length` (= %d) bytes" % length)
-        out += ''.join(filler.next() for _ in xrange(length - len(out)))
+        out += ''.join(next(filler) for _ in xrange(length - len(out)))
 
     return out
 

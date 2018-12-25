@@ -14,9 +14,8 @@ Args: [sock (imm/reg) = ebp]
     /* dup() file descriptor ${sock} into stdin/stdout/stderr */
 ${dup}:
     ${mov('ebx', sock)}
-    ${mov('ecx', 3)}
+    ${mov('ecx', 2)}
 ${looplabel}:
-    dec ecx
 
     ${dup2('ebx', 'ecx')}
-    jnz ${looplabel}
+    loop ${looplabel}

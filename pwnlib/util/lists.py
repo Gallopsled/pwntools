@@ -156,11 +156,11 @@ def findall(haystack, needle):
 
     Example:
       >>> foo = findall([1,2,3,4,4,3,4,2,1], 4)
-      >>> foo.next()
+      >>> next(foo)
       3
-      >>> foo.next()
+      >>> next(foo)
       4
-      >>> foo.next()
+      >>> next(foo)
       6
     """
     def __kmp_table(W):

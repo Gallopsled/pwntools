@@ -113,6 +113,7 @@ class MipsXorEncoder(Encoder):
     'hello\n'
     """
 
+    arch = 'mips'
     blacklist = cannot_avoid = set(''.join(v for v in decoders.values()))
 
     def __call__(self, raw_bytes, avoid, pcreg=''):

@@ -52,11 +52,16 @@ from elftools.elf.constants import P_FLAGS
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.elffile import ELFFile
-from elftools.elf.enums import ENUM_P_TYPE
 from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.segments import InterpSegment
+
+# See https://github.com/Gallopsled/pwntools/issues/1189
+try:
+    from elftools.elf.enums import ENUM_P_TYPE
+except ImportError:
+    from elftools.elf.enums import ENUM_P_TYPE_BASE as ENUM_P_TYPE
 
 import intervaltree
 
@@ -288,7 +293,7 @@ class ELF(ELFFile):
 
         for start in self.search(IKCFG_ST):
             start += len(IKCFG_ST)
-            stop = self.search('IKCFG_ED').next()
+            stop = next(self.search('IKCFG_ED'))
 
             fileobj = StringIO.StringIO(self.read(start, stop-start))
 
@@ -801,13 +806,13 @@ class ELF(ELFFile):
         # 'gotsym' is the index of the first GOT symbol
         gotsym = self.dynamic_value_by_tag('DT_MIPS_GOTSYM')
         for i in range(gotsym):
-            symbol_iter.next()
+            next(symbol_iter)
 
         # 'symtabno' is the total number of symbols
         symtabno = self.dynamic_value_by_tag('DT_MIPS_SYMTABNO')
 
         for i in range(symtabno - gotsym):
-            symbol = symbol_iter.next()
+            symbol = next(symbol_iter)
             self._mips_got[i + gotsym] = got
             self.got[symbol.name] = got
             got += self.bytes
@@ -1781,4 +1786,3 @@ class ELF(ELFFile):
                 return
 
         log.error("Could not find PT_GNU_STACK, stack should already be executable")
-

@@ -26,7 +26,7 @@ class Module(types.ModuleType):
     def __init__(self):
         self.__file__ = __file__
         self.__name__ = __name__
-        self.num_colors = termcap.get('colors', default = 8)
+        self.num_colors = 8
         self.has_bright = self.num_colors >= 16
         self.has_gray = self.has_bright
         self.when = 'auto'

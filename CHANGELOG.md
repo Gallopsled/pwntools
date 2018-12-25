@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [3.14.0](#3130)  | `dev`    | Jun 12, 2018 (planned)
 | [3.13.0](#3130)  | `beta`   | Mar 31, 2018 (planned)
-| [3.12.0](#3120)  | `stable` | Feb 22, 2018
+| [3.12.1](#3121)  | `stable` | Sept 17, 2018
+| [3.12.0](#3120)  |          | Feb 22, 2018
 | [3.11.0](#3110)  |          | Jan 3, 2018
 | [3.10.0](#3100)  |          | Oct 25, 2017
 | [3.9.2](#392)    |          | Oct 5, 2017
@@ -65,6 +66,30 @@ To be released on Mar 31, 2018.
 [1068]: https://github.com/Gallopsled/pwntools/pull/1068
 [5fdc08]: https://github.com/Gallopsled/pwntools/commit/5fdc08
 [63dfed]: https://github.com/Gallopsled/pwntools/commit/63dfed
+
+## 3.12.1
+
+- [#1198][1198] More compatibility fixes for pyelftools==0.25, and pin Sphinx<1.8.0 since it causes testing errors
+- [#1191][1191] Fix compatibility with pyelftools==0.25
+- [#1159][1159] Fix check for `/proc/.../status`
+- [#1162][1162] Fix broken package versions
+- [#1150][1150] Fix exception raised when a cache file is missing
+- [#1156][1156] Fix ROP gadget selection logic involving `int` and `syscall` instructions
+- [#1152][1152] Fix QEMU LD_PREFIX calculation (wrong parameter passed)
+- [#1155][1155] Use Ubuntu Trusty for all CI builds
+- [#1131][1131] Add "libc-" to libc prefixes in `process` tubes
+- [#1125][1125] Fix a typo
+- [#1121][1121] Fix tests which were broken by an upstream Sphinx change
+
+[1159]: https://github.com/Gallopsled/pwntools/pull/1159
+[1162]: https://github.com/Gallopsled/pwntools/pull/1162
+[1150]: https://github.com/Gallopsled/pwntools/pull/1150
+[1156]: https://github.com/Gallopsled/pwntools/pull/1156
+[1152]: https://github.com/Gallopsled/pwntools/pull/1152
+[1155]: https://github.com/Gallopsled/pwntools/pull/1155
+[1131]: https://github.com/Gallopsled/pwntools/pull/1131
+[1125]: https://github.com/Gallopsled/pwntools/pull/1125
+[1121]: https://github.com/Gallopsled/pwntools/pull/1121
 
 ## 3.12.0
 

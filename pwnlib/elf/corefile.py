@@ -88,6 +88,7 @@ from pwnlib.tubes.process import process
 from pwnlib.tubes.ssh import ssh_channel
 from pwnlib.tubes.tube import tube
 from pwnlib.util.fiddling import b64d
+from pwnlib.util.fiddling import enhex
 from pwnlib.util.fiddling import unhex
 from pwnlib.util.misc import read
 from pwnlib.util.misc import write
@@ -144,7 +145,7 @@ def iter_notes(self):
 class Mapping(object):
     """Encapsulates information about a memory mapping in a :class:`Corefile`.
     """
-    def __init__(self, core, name, start, stop, flags):
+    def __init__(self, core, name, start, stop, flags, page_offset):
         self._core=core
 
         #: :class:`str`: Name of the mapping, e.g. ``'/bin/bash'`` or ``'[vdso]'``.
@@ -158,6 +159,9 @@ class Mapping(object):
 
         #: :class:`int`: Size of the mapping, in bytes
         self.size = stop-start
+
+        #: :class:`int`: Offset in pages in the mapped file
+        self.page_offset = page_offset or 0
 
         #: :class:`int`: Mapping flags, using e.g. ``PROT_READ`` and so on.
         self.flags = flags
@@ -184,12 +188,13 @@ class Mapping(object):
         return '%x-%x %s %x %s' % (self.start,self.stop,self.permstr,self.size,self.name)
 
     def __repr__(self):
-        return '%s(%r, start=%#x, stop=%#x, size=%#x, flags=%#x)' \
+        return '%s(%r, start=%#x, stop=%#x, size=%#x, flags=%#x, page_offset=%#x)' \
             % (self.__class__.__name__,
                self.name,
                self.start,
                self.stop,
                self.size,
+               self.page_offset,
                self.flags)
 
     def __int__(self):
@@ -224,6 +229,8 @@ class Mapping(object):
         return self._core.read(item, 1)
 
     def __contains__(self, item):
+        if isinstance(item, Mapping):
+            return (self.start <= item.start) and (item.stop <= self.stop)
         return self.start <= item < self.stop
 
     def find(self, sub, start=None, end=None):
@@ -295,21 +302,21 @@ class Corefile(ELF):
     ::
 
         >>> Corefile('./core').mappings
-        [Mapping('/home/user/pwntools/crash', start=0x8048000, stop=0x8049000, size=0x1000, flags=0x5),
-         Mapping('/home/user/pwntools/crash', start=0x8049000, stop=0x804a000, size=0x1000, flags=0x4),
-         Mapping('/home/user/pwntools/crash', start=0x804a000, stop=0x804b000, size=0x1000, flags=0x6),
-         Mapping(None, start=0xf7528000, stop=0xf7529000, size=0x1000, flags=0x6),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf7529000, stop=0xf76d1000, size=0x1a8000, flags=0x5),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d1000, stop=0xf76d2000, size=0x1000, flags=0x0),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d2000, stop=0xf76d4000, size=0x2000, flags=0x4),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d4000, stop=0xf76d5000, size=0x1000, flags=0x6),
-         Mapping(None, start=0xf76d5000, stop=0xf76d8000, size=0x3000, flags=0x6),
-         Mapping(None, start=0xf76ef000, stop=0xf76f1000, size=0x2000, flags=0x6),
-         Mapping('[vdso]', start=0xf76f1000, stop=0xf76f2000, size=0x1000, flags=0x5),
-         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf76f2000, stop=0xf7712000, size=0x20000, flags=0x5),
-         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7712000, stop=0xf7713000, size=0x1000, flags=0x4),
-         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7713000, stop=0xf7714000, size=0x1000, flags=0x6),
-         Mapping('[stack]', start=0xfff3e000, stop=0xfff61000, size=0x23000, flags=0x6)]
+        [Mapping('/home/user/pwntools/crash', start=0x8048000, stop=0x8049000, size=0x1000, flags=0x5, page_offset=0x0),
+         Mapping('/home/user/pwntools/crash', start=0x8049000, stop=0x804a000, size=0x1000, flags=0x4, page_offset=0x1),
+         Mapping('/home/user/pwntools/crash', start=0x804a000, stop=0x804b000, size=0x1000, flags=0x6, page_offset=0x2),
+         Mapping(None, start=0xf7528000, stop=0xf7529000, size=0x1000, flags=0x6, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf7529000, stop=0xf76d1000, size=0x1a8000, flags=0x5, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d1000, stop=0xf76d2000, size=0x1000, flags=0x0, page_offset=0x1a8),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d2000, stop=0xf76d4000, size=0x2000, flags=0x4, page_offset=0x1a9),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d4000, stop=0xf76d5000, size=0x1000, flags=0x6, page_offset=0x1aa),
+         Mapping(None, start=0xf76d5000, stop=0xf76d8000, size=0x3000, flags=0x6, page_offset=0x0),
+         Mapping(None, start=0xf76ef000, stop=0xf76f1000, size=0x2000, flags=0x6, page_offset=0x0),
+         Mapping('[vdso]', start=0xf76f1000, stop=0xf76f2000, size=0x1000, flags=0x5, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf76f2000, stop=0xf7712000, size=0x20000, flags=0x5, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7712000, stop=0xf7713000, size=0x1000, flags=0x4, page_offset=0x20),
+         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7713000, stop=0xf7714000, size=0x1000, flags=0x6, page_offset=0x21),
+         Mapping('[stack]', start=0xfff3e000, stop=0xfff61000, size=0x23000, flags=0x6, page_offset=0x0)]
 
     Example:
 
@@ -473,6 +480,7 @@ class Corefile(ELF):
         >>> io = elf.process()
         >>> io.wait()
         >>> core = io.corefile
+        [!] End of the stack is corrupted, skipping stack parsing (got: 4141414141414141)
         >>> core.argc, core.argv, core.env
         (0, [], {})
         >>> core.stack.data.endswith('AAAA')
@@ -509,11 +517,20 @@ class Corefile(ELF):
         #:       address of the string "BAR\x00".
         self.env = {}
 
+        #: :class:`int`: Pointer to envp on the stack
+        self.envp_address = 0
+
         #: :class:`list`: List of addresses of arguments on the stack.
         self.argv = []
 
+        #: :class:`int`: Pointer to argv on the stack
+        self.argv_address = 0
+
         #: :class:`int`: Number of arguments passed
         self.argc = 0
+
+        #: :class:`int`: Pointer to argc on the stack
+        self.argc_address = 0
 
         # Pointer to the executable filename on the stack
         self.at_execfn = 0
@@ -546,36 +563,40 @@ class Corefile(ELF):
             for segment in self.segments:
                 if not isinstance(segment, elftools.elf.segments.NoteSegment):
                     continue
+
+
+                # Note that older versions of pyelftools (<=0.24) are missing enum values
+                # for NT_PRSTATUS, NT_PRPSINFO, NT_AUXV, etc.
+                # For this reason, we have to check if note.n_type is any of several values.
                 for note in iter_notes(segment):
-                    # Try to find NT_PRSTATUS.  Note that pyelftools currently
-                    # mis-identifies the enum name as 'NT_GNU_ABI_TAG'.
+                    # Try to find NT_PRSTATUS.
                     if prstatus_type and \
                        note.n_descsz == ctypes.sizeof(prstatus_type) and \
-                       note.n_type == 'NT_GNU_ABI_TAG':
+                       note.n_type in ('NT_GNU_ABI_TAG', 'NT_PRSTATUS'):
                         self.NT_PRSTATUS = note
                         self.prstatus = prstatus_type.from_buffer_copy(note.n_desc)
 
                     # Try to find NT_PRPSINFO
-                    # Note that pyelftools currently mis-identifies the enum name
-                    # as 'NT_GNU_BUILD_ID'
-                    if note.n_descsz == ctypes.sizeof(prpsinfo_type) and \
-                       note.n_type == 'NT_GNU_BUILD_ID':
+                    if prpsinfo_type and \
+                       note.n_descsz == ctypes.sizeof(prpsinfo_type) and \
+                       note.n_type in ('NT_GNU_ABI_TAG', 'NT_PRPSINFO'):
                         self.NT_PRPSINFO = note
                         self.prpsinfo = prpsinfo_type.from_buffer_copy(note.n_desc)
 
                     # Try to find NT_SIGINFO so we can see the fault
-                    if note.n_type == 0x53494749:
+                    if note.n_type in (0x53494749, 'NT_SIGINFO'):
                         self.NT_SIGINFO = note
                         self.siginfo = siginfo_type.from_buffer_copy(note.n_desc)
 
                     # Try to find the list of mapped files
-                    if note.n_type == constants.NT_FILE:
+                    if note.n_type in (constants.NT_FILE, 'NT_FILE'):
                         with context.local(bytes=self.bytes):
                             self._parse_nt_file(note)
 
                     # Try to find the auxiliary vector, which will tell us
                     # where the top of the stack is.
-                    if note.n_type == constants.NT_AUXV:
+                    if note.n_type in (constants.NT_AUXV, 'NT_AUXV'):
+                        self.NT_AUXV = note
                         with context.local(bytes=self.bytes):
                             self._parse_auxv(note)
 
@@ -584,19 +605,13 @@ class Corefile(ELF):
 
             if self.stack and self.mappings:
                 for mapping in self.mappings:
-                    if mapping.stop == self.stack:
+                    if self.stack in mapping or self.stack == mapping.stop:
                         mapping.name = '[stack]'
                         self.stack   = mapping
                         break
                 else:
-                    for mapping in self.mappings:
-                        if self.stack in mapping:
-                            mapping.name = '[stack]'
-                            self.stack   = mapping
-                            break
-                    else:
-                        log.warn('Could not find the stack!')
-                        self.stack = None
+                    log.warn('Could not find the stack!')
+                    self.stack = None
 
             with context.local(bytes=self.bytes, log_level='warn'):
                 try:
@@ -621,16 +636,17 @@ class Corefile(ELF):
         for i in range(count):
             start = t.unpack()
             end = t.unpack()
-            ofs = t.unpack()
-            starts.append(start)
+            offset = t.unpack()
+            starts.append((start, offset))
 
         for i in range(count):
             filename = t.recvuntil('\x00', drop=True)
-            start = starts[i]
+            (start, offset) = starts[i]
 
             for mapping in self.mappings:
                 if mapping.start == start:
                     mapping.name = filename
+                    mapping.page_offset = offset
 
         self.mappings = sorted(self.mappings, key=lambda m: m.start)
 
@@ -853,7 +869,8 @@ class Corefile(ELF):
                               None,
                               s.header.p_vaddr,
                               s.header.p_vaddr + s.header.p_memsz,
-                              s.header.p_flags)
+                              s.header.p_flags,
+                              None)
             self.mappings.append(mapping)
 
     def _parse_auxv(self, note):
@@ -896,18 +913,25 @@ class Corefile(ELF):
         if not stack:
             return
 
+        # If the stack does not end with zeroes, something is very wrong.
+        if not stack.data.endswith('\x00' * 8):
+            log.warn_once("End of the stack is corrupted, skipping stack parsing (got: %s)",
+                          enhex(self.data[-8:]))
+            return
+
         # AT_EXECFN is the start of the filename, e.g. '/bin/sh'
         # Immediately preceding is a NULL-terminated environment variable string.
         # We want to find the beginning of it
-        if self.at_execfn:
-            address = self.at_execfn-1
-        else:
-            log.debug('No AT_EXECFN')
+        if not self.at_execfn:
             address = stack.stop
             address -= 2*self.bytes
             address -= 1
             address = stack.rfind('\x00', None, address)
             address += 1
+            self.at_execfn = address
+
+        address = self.at_execfn-1
+
 
         # Sanity check!
         try:
@@ -949,10 +973,10 @@ class Corefile(ELF):
         # Now let's find the end of argv
         p_end_of_argv = stack.rfind(pack(0), None, p_last_env_addr)
 
-        start_of_envp = p_end_of_argv + self.bytes
+        self.envp_address = p_end_of_argv + self.bytes
 
         # Now we can fill in the environment
-        env_pointer_data = stack[start_of_envp:p_last_env_addr+self.bytes]
+        env_pointer_data = stack[self.envp_address:p_last_env_addr+self.bytes]
         for pointer in unpack_many(env_pointer_data):
 
             # If the stack is corrupted, the pointer will be outside of
@@ -990,10 +1014,12 @@ class Corefile(ELF):
             address -= self.bytes
 
         # address now points at argc
-        self.argc = self.unpack(address)
+        self.argc_address = address
+        self.argc = self.unpack(self.argc_address)
 
         # we can extract all of the arguments as well
-        self.argv = unpack_many(stack[address + self.bytes: p_end_of_argv])
+        self.argv_address = self.argc_address + self.bytes
+        self.argv = unpack_many(stack[self.argv_address: p_end_of_argv])
 
     @property
     def maps(self):

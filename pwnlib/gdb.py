@@ -424,7 +424,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     else:
         qemu_port = random.randint(1024, 65535)
         qemu_user = qemu.user_path()
-        sysroot = sysroot or qemu.ld_prefix(env)
+        sysroot = sysroot or qemu.ld_prefix(env=env)
         if not qemu_user:
             log.error("Cannot debug %s binaries without appropriate QEMU binaries" % context.arch)
         args = [qemu_user, '-g', str(qemu_port)] + args
@@ -464,9 +464,9 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
 
     # gdbserver outputs a message when a client connects
     garbage = gdbserver.recvline(timeout=1)
-
-    if "Remote debugging from host" not in garbage:
-        gdbserver.unrecv(garbage)
+    
+    # Some versions of gdbserver output an additional message
+    garbage2 = gdbserver.recvline_startswith("Remote debugging from host ", timeout=1)
 
     return gdbserver
 
