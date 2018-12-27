@@ -1314,15 +1314,24 @@ class ROP(object):
             self.raw(call) # pop r12
         else:
             self.raw(fini) # pop r12
-        self.raw(rdx)  # pop r13
-        self.raw(rsi)  # pop r14
-        self.raw(edi)  # pop r15
 
-        # 2nd gadget: Populate edi, rsi & rdx. Populate optional registers
+        # Older versions of gcc use r13 to populate rdx then r15d to populate edi, newer versions use the reverse
+        # Account for this when the binary was linked against a glibc that was built with a newer gcc
         for insn in md.disasm(csu_function, elf.sym[u'__libc_csu_init']):
             if insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_RDX and insn.operands[1].reg == X86_REG_R13:
+                self.raw(rdx)  # pop r13
+                self.raw(rsi)  # pop r14
+                self.raw(edi)  # pop r15
                 self.raw(insn.address)
                 break
+            elif insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_RDX and insn.operands[1].reg == X86_REG_R15:
+                self.raw(edi)  # pop r13
+                self.raw(rsi)  # pop r14
+                self.raw(rdx)  # pop r15
+                self.raw(insn.address)
+                break
+
+        # 2nd gadget: Populate edi, rsi & rdx. Populate optional registers
         self.raw(0x00) # add rsp, 8
         self.raw(rbx)  # pop rbx
         self.raw(rbp)  # pop rbp
