@@ -1307,6 +1307,7 @@ class ROP(object):
             if insn.mnemonic == 'pop' and insn.operands[0].reg == X86_REG_RBX:
                 self.raw(insn.address)
                 break
+        # rbx and rbp must be equal after 'add rbx, 1'
         self.raw(0x00) # pop rbx
         self.raw(0x01) # pop rbp
         if call:
