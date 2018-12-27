@@ -8,6 +8,18 @@ Useful in conjuncion with findpeer.
 Args:
     sock, the socket to read the payload from.
     size, the size of the payload
+
+Example:
+
+    >>> stage_2 = asm(shellcraft.echo('hello') + "\n" + shellcraft.syscalls.exit(42))
+    >>> p = run_assembly(shellcraft.stager(0, len(stage_2)))
+    >>> p.write(stage_2)
+    >>> p.wait_for_close()
+    >>> p.poll()
+	42
+    >>> p.recvall()
+	'hello'
+
 </%docstring>
 <%page args="sock, size, handle_error=False, tiny=False"/>
 <%
