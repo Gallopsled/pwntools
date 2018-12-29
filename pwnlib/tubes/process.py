@@ -434,8 +434,8 @@ class process(tube):
         # appropriate qemu binary to run it.
         qemu_path = qemu.user_path(arch=binary.arch)
 
-        if not qemu:
-            raise exception
+        if not qemu_path:
+            raise RuntimeError("No QEMU runner available, please install QEMU first")
 
         qemu_path = which(qemu_path)
         if qemu:
