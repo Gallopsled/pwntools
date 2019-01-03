@@ -438,7 +438,7 @@ class process(tube):
             raise exception
 
         qemu_path = which(qemu_path)
-        if qemu:
+        if qemu_path:
             self._qemu = qemu_path
 
             args = [qemu_path]
