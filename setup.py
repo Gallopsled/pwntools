@@ -87,7 +87,7 @@ except Exception as e:
 setup(
     name                 = 'pwntools',
     packages             = find_packages(),
-    version              = '3.12.1',
+    version              = '3.12.2',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],
