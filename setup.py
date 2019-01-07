@@ -57,7 +57,7 @@ install_requires     = ['paramiko>=1.15.2',
                         'python-dateutil',
                         'packaging',
                         'psutil>=3.3.0',
-                        'intervaltree',
+                        'intervaltree<3.0', # See Gallopsled/pwntools#1238
                         'sortedcontainers<2.0', # See Gallopsled/pwntools#1154
                         'unicorn']
 
