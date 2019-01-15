@@ -13,13 +13,13 @@ Example:
 
     >>> stage_2 = asm(shellcraft.echo('hello') + "\n" + shellcraft.syscalls.exit(42))
     >>> p = run_assembly(shellcraft.stager(0, len(stage_2)))
-	>>> for c in stage_2:
+    >>> for c in stage_2:
     >>>     p.write(c)
     >>> p.wait_for_close()
     >>> p.poll()
-	42
+        42
     >>> p.recvall()
-	'hello'
+        'hello'
 
 </%docstring>
 <%page args="sock, size, handle_error=False, tiny=False"/>
