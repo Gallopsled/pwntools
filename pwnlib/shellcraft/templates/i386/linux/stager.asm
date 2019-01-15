@@ -17,9 +17,9 @@ Example:
     ...     p.write(c)
     >>> p.wait_for_close()
     >>> p.poll()
-        42
+    42
     >>> p.recvall()
-        'hello'
+    'hello'
 
 </%docstring>
 <%page args="sock, size, handle_error=False, tiny=False"/>
