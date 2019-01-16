@@ -1242,7 +1242,7 @@ class ELF(ELFFile):
         Assembles the specified instructions and inserts them
         into the ELF at the specified address.
 
-        This modifies the ELF in-pace.
+        This modifies the ELF in-place.
         The resulting binary can be saved with :meth:`.ELF.save`
         """
         binary = asm(assembly, vma=address)

@@ -436,11 +436,11 @@ class process(tube):
         # appropriate qemu binary to run it.
         qemu_path = qemu.user_path(arch=binary.arch)
 
-        if not qemu:
+        if not qemu_path:
             raise exception
 
         qemu_path = which(qemu_path)
-        if qemu:
+        if qemu_path:
             self._qemu = qemu_path
 
             args = [qemu_path]
