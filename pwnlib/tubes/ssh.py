@@ -663,6 +663,9 @@ class ssh(Timeout, Logger):
             Return a :class:`pwnlib.tubes.ssh.ssh_channel` object.
 
         Examples:
+        .. doctest::
+           :skipif: offline
+
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
@@ -742,6 +745,9 @@ class ssh(Timeout, Logger):
             Requires Python on the remote server.
 
         Examples:
+        .. doctest::
+           :skipif: offline
+
             >>> s = ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
@@ -1076,6 +1082,9 @@ os.execve(exe, argv, env)
         Return a :class:`pwnlib.tubes.ssh.ssh_channel` object.
 
         Examples:
+        .. doctest::
+           :skipif: offline
+
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
@@ -1137,6 +1146,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         a TTY on the remote server.
 
         Examples:
+        .. doctest::
+           :skipif: offline
+
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
@@ -1160,6 +1172,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Returns a :class:`pwnlib.tubes.ssh.ssh_connecter` object.
 
         Examples:
+        .. doctest::
+           :skipif: offline
+
             >>> from pwn import *
             >>> l = listen()
             >>> s =  ssh(host='example.pwnme',
@@ -1186,6 +1201,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Examples:
 
+        .. doctest::
+           :skipif: offline
+
             >>> from pwn import *
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
@@ -1207,6 +1225,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Examples:
 
+        .. doctest::
+           :skipif: offline
+
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
@@ -1220,6 +1241,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Examples:
 
+        .. doctest::
+           :skipif: offline
+
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
@@ -1232,6 +1256,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         """Permits member access to run commands over SSH
 
         Examples:
+
+        .. doctest::
+           :skipif: offline
 
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
@@ -1265,6 +1292,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         """Returns True if we are connected.
 
         Example:
+
+        .. doctest::
+           :skipif: offline
 
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
@@ -1416,6 +1446,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
 
         Examples:
+        .. doctest::
+           :skipif: offline
+
             >>> with file('/tmp/bar','w+') as f:
             ...     f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
@@ -1509,6 +1542,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             remote(str): The filename to upload it to.
 
         Example:
+        .. doctest::
+           :skipif: offline
+
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
@@ -1739,6 +1775,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 that all files in the "old" working directory should be symlinked.
 
         Examples:
+        .. doctest::
+           :skipif: offline
+
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
@@ -1913,6 +1952,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         """:class:`bool`: Whether ASLR is enabled on the system.
 
         Example:
+
+        .. doctest::
+           :skipif: offline
 
             >>> s = ssh("travis", "example.pwnme")
             >>> s.aslr

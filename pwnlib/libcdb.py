@@ -88,6 +88,9 @@ def search_by_build_id(hex_encoded_id):
         Path to the downloaded library on disk, or :const:`None`.
 
     Examples:
+    .. doctest::
+       :skipif: offline
+
         >>> filename = search_by_build_id('fe136e485814fee2268cf19e5c124ed0f73f4400')
         >>> hex(ELF(filename).symbols.read)
         '0xda260'
@@ -108,6 +111,9 @@ def search_by_md5(hex_encoded_id):
         Path to the downloaded library on disk, or :const:`None`.
 
     Examples:
+    .. doctest::
+       :skipif: offline
+
         >>> filename = search_by_md5('7a71dafb87606f360043dcd638e411bd')
         >>> hex(ELF(filename).symbols.read)
         '0xda260'
@@ -128,6 +134,9 @@ def search_by_sha1(hex_encoded_id):
         Path to the downloaded library on disk, or :const:`None`.
 
     Examples:
+    .. doctest::
+       :skipif: offline
+
         >>> filename = search_by_sha1('34471e355a5e71400b9d65e78d2cd6ce7fc49de5')
         >>> hex(ELF(filename).symbols.read)
         '0xda260'
@@ -149,6 +158,9 @@ def search_by_sha256(hex_encoded_id):
         Path to the downloaded library on disk, or :const:`None`.
 
     Examples:
+    .. doctest::
+       :skipif: offline
+
         >>> filename = search_by_sha256('5e877a8272da934812d2d1f9ee94f73c77c790cbc5d8251f5322389fc9667f21')
         >>> hex(ELF(filename).symbols.read)
         '0xda260'

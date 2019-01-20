@@ -28,6 +28,9 @@ class remote(sock):
 
     Examples:
 
+.. doctest::
+   :skipif: offline
+
         >>> r = remote('google.com', 443, ssl=True)
         >>> r.send('GET /\r\n\r\n')
         >>> r.recvn(4)
@@ -41,6 +44,9 @@ class remote(sock):
         PwnlibException: Could not connect to 127.0.0.1 on port 1
 
         You can also use :meth:`.remote.fromsocket` to wrap an existing socket.
+
+.. doctest::
+   :skipif: offline
 
         >>> import socket
         >>> s = socket.socket()

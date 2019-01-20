@@ -1065,6 +1065,9 @@ class ContextType(object):
         the default port, **or** a ``tuple`` passed to ``socks.set_default_proxy``,
         e.g. ``(socks.SOCKS4, 'localhost', 1234)``.
 
+.. doctest::
+   :skipif: offline
+
         >>> context.proxy = 'localhost' #doctest: +ELLIPSIS
         >>> r=remote('google.com', 80)
         Traceback (most recent call last):

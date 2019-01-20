@@ -24,6 +24,9 @@ def wget(url, save=None, timeout=5, **kwargs):
 
     Example:
 
+.. doctest::
+   :skipif: offline
+
       >>> url    = 'https://httpbin.org/robots.txt'
       >>> result = wget(url, timeout=60)
       >>> result

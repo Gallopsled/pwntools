@@ -40,6 +40,9 @@ update_freq     = datetime.timedelta(days=7).total_seconds()
 def available_on_pypi(prerelease=current_version.is_prerelease):
     """Return True if an update is available on PyPI.
 
+.. doctest::
+   :skipif: offline
+
     >>> available_on_pypi() # doctest: +ELLIPSIS
     <Version('...')>
     >>> available_on_pypi(prerelease=False).is_prerelease
@@ -100,6 +103,9 @@ def perform_check(prerelease=current_version.is_prerelease):
 
     Returns:
         A list of arguments to the update command.
+
+.. doctest::
+   :skipif: offline
 
     >>> from packaging.version import Version
     >>> pwnlib.update.current_version = Version("999.0.0")

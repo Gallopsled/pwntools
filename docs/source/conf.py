@@ -85,6 +85,8 @@ class stdout(object):
     def __setattr__(self, name, value):
         return setattr(sys.stdout, name, value)
 pwnlib.context.ContextType.defaults['log_console'] = stdout()
+
+offline=True
 '''
 
 autoclass_content = 'both'
