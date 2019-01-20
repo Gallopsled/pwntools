@@ -13,6 +13,14 @@ addons:
     - zsh
     - pandoc
     - gdb
+    - binutils
+    - qemu-arm-static
+    - binutils-multiarch
+    - binutils-aarch64-linux-gnu
+    - binutils-arm-linux-gnueabihf
+    - binutils-mips-linux-gnu
+    - binutils-powerpc-linux-gnu
+    - libcapstone3
 cache:
     - pip
     - directories:
