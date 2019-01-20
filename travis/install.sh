@@ -11,7 +11,7 @@ local_deb_extract()
 
 install_deb()
 {
-    version=${2:-artful}
+    version=${2:-bionic}
     package=$1
     echo "Installing $package"
     INDEX="http://packages.ubuntu.com/en/$version/amd64/$package/download"
@@ -184,7 +184,7 @@ setup_osx()
 }
 
 if [[ "$USER" == "travis" ]]; then
-#   setup_travis
+    setup_travis
     setup_android_emulator
 elif [[ "$USER" == "shippable" ]]; then
     sudo apt-get update
