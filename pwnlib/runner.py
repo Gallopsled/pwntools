@@ -26,6 +26,9 @@ def run_assembly(assembly):
         >>> p.poll()
         3
 
+    .. doctest::
+       :skipif: not binutils_arm or not qemu_arm
+
         >>> p = run_assembly('mov r0, #12; mov r7, #1; svc #0', arch='arm')
         >>> p.wait_for_close()
         >>> p.poll()
@@ -44,6 +47,9 @@ def run_shellcode(bytes, **kw):
         >>> p.wait_for_close()
         >>> p.poll()
         3
+
+    .. doctest::
+       :skipif: not binutils_aarch64 or not qemu_aarch64
 
         >>> bytes = asm('mov r0, #12; mov r7, #1; svc #0', arch='arm')
         >>> p = run_shellcode(bytes, arch='arm')

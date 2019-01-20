@@ -77,6 +77,9 @@ def dpkg_search_for_binutils(arch, util):
 
     ::
 
+.. doctest::
+   :skipif: not binutils_aarch64
+
         >>> pwnlib.asm.dpkg_search_for_binutils('aarch64', 'as')
         ['binutils-aarch64-linux-gnu']
     """
@@ -145,6 +148,9 @@ def which_binutils(util):
     Expects that the utility is prefixed with the architecture name.
 
     Examples:
+
+    .. doctest::
+       :skipif: not binutils_arm or not binutils_powerpc
 
         >>> import platform
         >>> which_binutils = pwnlib.asm.which_binutils
@@ -401,6 +407,9 @@ def cpp(shellcode):
 
     Examples:
 
+    .. doctest::
+       :skipif: not binutils_i386 or not binutils_arm or not binutils_thumb
+
         >>> cpp("mov al, SYS_setresuid", arch = "i386", os = "linux")
         'mov al, 164\n'
         >>> cpp("weee SYS_setresuid", arch = "arm", os = "linux")
@@ -469,6 +478,9 @@ def make_elf_from_assembly(assembly,
         This example shows how to create a shared library, and load it via
         ``LD_PRELOAD``.
 
+    .. doctest::
+       :skipif: not binutils_amd64 or not qemu_amd64
+
         >>> context.clear()
         >>> context.arch = 'amd64'
         >>> sc = 'push rbp; mov rbp, rsp;'
@@ -480,6 +492,9 @@ def make_elf_from_assembly(assembly,
 
         The same thing can be done with :func:`.make_elf`, though the sizes
         are different.  They both
+
+        .. doctest::
+           :skipif: not binutils_amd64 or not qemu_amd64
 
         >>> file_a = make_elf(asm('nop'), extract=True)
         >>> file_b = make_elf_from_assembly('nop', extract=True)
@@ -539,6 +554,9 @@ def make_elf(data,
     Examples:
         This example creates an i386 ELF that just does
         execve('/bin/sh',...).
+
+    .. doctest::
+       :skipif: not binutils_i386 or not qemu_i386
 
         >>> context.clear(arch='i386')
         >>> bin_sh = '6a68682f2f2f73682f62696e89e331c96a0b5899cd80'.decode('hex')
@@ -632,6 +650,9 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
                         ``arch='arm'``.
 
     Examples:
+
+    .. doctest::
+       :skipif: not binutils_i386 or not binutils_amd64 or not binutils_arm
 
         >>> asm("mov eax, SYS_select", arch = 'i386', os = 'freebsd')
         '\xb8]\x00\x00\x00'
@@ -736,6 +757,9 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
       Any arguments/properties that can be set on ``context``
 
     Examples:
+
+    .. doctest::
+       :skipif: not binutils_i386 or not binutils_amd64 or not binutils_arm or not binutils_thumb
 
         >>> print disasm('b85d000000'.decode('hex'), arch = 'i386')
            0:   b8 5d 00 00 00          mov    eax,0x5d

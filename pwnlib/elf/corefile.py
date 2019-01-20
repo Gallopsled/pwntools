@@ -330,6 +330,9 @@ class Corefile(ELF):
         If we run the binary and then wait for it to exit, we can get its
         core file.
 
+    .. doctest::
+       :skipif: not binutils_arm or not qemu_arm
+
         >>> context.clear(arch='arm')
         >>> shellcode = shellcraft.mov('r0', 0xdeadbeef)
         >>> shellcode += shellcraft.mov('r1', 0xcafebabe)
@@ -379,12 +382,18 @@ class Corefile(ELF):
         This requires GDB to be installed, and can only be done with native
         processes.  Getting a "complete" corefile requires GDB 7.11 or better.
 
+    .. doctest::
+       :skipif: not travis
+
         >>> elf = ELF('/bin/bash')
         >>> context.clear(binary=elf)
         >>> io = process(elf.path, env={'HELLO': 'WORLD'})
         >>> core = io.corefile
 
         Data can also be extracted directly from the corefile.
+
+    .. doctest::
+       :skipif: not travis
 
         >>> core.exe[elf.address:elf.address+4]
         '\x7fELF'
@@ -394,6 +403,9 @@ class Corefile(ELF):
         Various other mappings are available by name.  On Linux, 32-bit Intel binaries
         should have a VDSO section.  Since our ELF is statically linked, there is
         no libc which gets mapped.
+
+    .. doctest::
+       :skipif: not travis
 
         >>> core.vdso.data[:4]
         '\x7fELF'
@@ -405,6 +417,9 @@ class Corefile(ELF):
         should contain two pointer-widths of NULL bytes, preceded by the NULL-
         terminated path to the executable (as passed via the first arg to ``execve``).
 
+    .. doctest::
+       :skipif: not travis
+
         >>> stack_end = core.exe.name
         >>> stack_end += '\x00' * (1+8)
         >>> core.stack.data.endswith(stack_end)
@@ -413,6 +428,9 @@ class Corefile(ELF):
         True
 
         We can also directly access the environment variables and arguments.
+
+    .. doctest::
+       :skipif: not travis
 
         >>> 'HELLO' in core.env
         True
@@ -427,6 +445,9 @@ class Corefile(ELF):
 
         Corefiles can also be pulled from remote machines via SSH!
 
+    .. doctest::
+       :skipif: offline
+
         >>> s = ssh('travis', 'example.pwnme')
         >>> _ = s.set_working_directory()
         >>> elf = ELF.from_assembly(shellcraft.trap())
@@ -439,6 +460,9 @@ class Corefile(ELF):
         True
 
         Make sure fault_addr synthesis works for amd64 on ret.
+
+    .. doctest::
+       :skipif: not binutils_amd64
 
         >>> context.clear(arch='amd64')
         >>> elf = ELF.from_assembly('push 1234; ret')

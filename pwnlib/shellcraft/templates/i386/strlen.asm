@@ -13,6 +13,9 @@ Arguments:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> sc  = 'jmp get_str\n'
     >>> sc += 'pop_str: pop eax\n'
     >>> sc += shellcraft.i386.strlen('eax')

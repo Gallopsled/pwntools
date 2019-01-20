@@ -17,6 +17,9 @@ Arguments:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> p = run_assembly(shellcraft.stage())
     >>> sc = asm(shellcraft.echo("Hello\n", constants.STDOUT_FILENO))
     >>> p.pack(len(sc))

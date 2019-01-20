@@ -15,6 +15,9 @@ Arguments:
 
 Examples:
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> l = listen(timeout=5)
     >>> assembly  = shellcraft.i386.linux.connect('localhost', l.lport)
     >>> assembly += shellcraft.i386.pushstr('Hello')

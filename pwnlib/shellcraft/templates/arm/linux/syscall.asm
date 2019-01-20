@@ -12,6 +12,9 @@ Any of the arguments can be expressions to be evaluated by :func:`pwnlib.constan
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_arm or not qemu_arm
+
     >>> print shellcraft.arm.linux.syscall(11, 1, 'sp', 2, 0).rstrip()
         /* call syscall(11, 1, 'sp', 2, 0) */
         mov  r0, #1

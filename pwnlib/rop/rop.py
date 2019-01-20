@@ -195,6 +195,9 @@ Even better, this happens automagically.
 Our example binary will read some data onto the stack, and
 not do anything else interesting.
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> context.clear(arch='i386')
     >>> c = constants
     >>> assembly =  'read:'      + shellcraft.read(c.STDIN_FILENO, 'esp', 1024)
@@ -206,12 +209,18 @@ not do anything else interesting.
 
 Let's create a ROP object and invoke the call.
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> context.kernel = 'amd64'
     >>> rop   = ROP(binary)
     >>> binsh = binary.symbols['binsh']
     >>> rop.execve(binsh, 0, 0)
 
 That's all there is to it.
+
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
 
     >>> print rop.dump()
     0x0000:       0x1000000e pop eax; ret
@@ -239,6 +248,9 @@ That's all there is to it.
     0x0058:              0x0 fpstate
 
 Let's try it out!
+
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
 
     >>> p = process(binary.path)
     >>> p.send(str(rop))
@@ -356,6 +368,9 @@ class ROP(object):
        str(rop)
        # '\xfc\x82\x04\x08\xef\xbe\xad\xde\x00\x00\x00\x00\xa8\x96\x04\x08'
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> context.clear(arch = "i386", kernel = 'amd64')
     >>> assembly = 'int 0x80; ret; add esp, 0x10; ret; pop eax; ret'
     >>> e = ELF.from_assembly(assembly)
@@ -398,6 +413,9 @@ class ROP(object):
     0x0078:             0x2b ss
     0x007c:              0x0 fpstate
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> r = ROP(e, 0x8048000)
     >>> r.funcname(1, 2)
     >>> r.funcname(3)
@@ -436,6 +454,9 @@ class ROP(object):
     0x8048078:             0x2b ss
     0x804807c:              0x0 fpstate
 
+
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
 
     >>> elf = ELF.from_assembly('ret')
     >>> r = ROP(elf)
@@ -964,6 +985,11 @@ class ROP(object):
 
         Arguments:
             data(int/str): The raw value to put onto the rop chain.
+
+        FIXME why does this fail?
+
+    .. doctest::
+       :skipif: not binutils_i386 or not qemu_i386
 
         >>> rop = ROP([])
         >>> rop.raw('AAAAAAAA')

@@ -195,6 +195,9 @@ class process(tube):
         >>> io.poll(block=True) == -signal.SIGALRM
         True
 
+    .. doctest::
+       :skipif: not binutils_mips
+
         >>> binary = ELF.from_assembly('nop', arch='mips')
         >>> p = process(binary.path)
     """
@@ -460,7 +463,7 @@ class process(tube):
         Example:
 
             >>> p = process('true')
-            >>> p.executable == '/bin/true'
+            >>> '/bin/true' in p.executable
             True
             >>> p.executable == p.program
             True
@@ -932,17 +935,26 @@ class process(tube):
 
         Example:
 
+        .. doctest::
+           :skipif: not travis
+
             >>> e = ELF('/bin/bash')
             >>> p = process(e.path)
 
             In order to make sure there's not a race condition against
             the process getting set up...
 
+        .. doctest::
+           :skipif: not travis
+
             >>> p.sendline('echo hello')
             >>> p.recvuntil('hello')
             'hello'
 
             Now we can leak some data!
+
+        .. doctest::
+           :skipif: not travis
 
             >>> p.leak(e.address, 4)
             '\x7fELF'

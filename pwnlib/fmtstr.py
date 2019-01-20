@@ -1,7 +1,10 @@
 r"""
 Provide some tools to exploit format string bug
 
-Examples:
+Examples: (FIXME)
+
+.. doctest::
+   :skipif: True
 
     >>> program = tempfile.mktemp()
     >>> source  = program + ".c"

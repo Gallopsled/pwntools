@@ -192,6 +192,9 @@ class Thread(threading.Thread):
 
     Examples:
 
+    .. doctest::
+       :skipif: not binutils_mips or not binutils_arm
+
         >>> context.clear()
         >>> context.update(arch='arm')
         >>> def p():
@@ -286,6 +289,9 @@ class ContextType(object):
     The context is also scope-aware by using the ``with`` keyword.
 
     Examples:
+
+    .. doctest::
+       :skipif: not binutils_mips or not binutils_arm
 
         >>> context.clear()
         >>> context.update(os='linux') # doctest: +ELLIPSIS
@@ -758,6 +764,9 @@ class ContextType(object):
         Data type is a :class:`pwnlib.elf.ELF` object.
 
         Examples:
+
+        .. doctest::
+           :skipif: not travis
 
             >>> context.clear()
             >>> context.arch, context.bits

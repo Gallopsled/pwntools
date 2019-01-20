@@ -15,6 +15,9 @@ Args:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> print shellcraft.setregs({'eax':1, 'ebx':'eax'}).rstrip()
         mov ebx, eax
         push 1

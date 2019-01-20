@@ -996,7 +996,11 @@ def version(program='gdb'):
         >>> (7,0) <= gdb.version()
         True
     """
-    program = misc.which(program)
+    if os.environ.get('PYTHONHOME') is not None:
+        del os.environ['PYTHONHOME']
+    if os.environ.get('PYTHONPATH') is not None:
+        del os.environ['PYTHONPATH']
+    program = misc.which(program) # TODO good error if None
     expr = r'([0-9]+\.?)+'
 
     with tubes.process.process([program, '--version'], level='error') as gdb:

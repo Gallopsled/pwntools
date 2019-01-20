@@ -146,6 +146,9 @@ def which(name, all = False):
       else the first location or :const:`None` if not found.
 
     Example:
+    .. doctest::
+       :skipif: not travis
+
       >>> which('sh')
       '/bin/sh'
 """

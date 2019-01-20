@@ -24,6 +24,9 @@ Args:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_mips or not qemu_mips
+
     >>> print shellcraft.mips.mov('$t0', 0).rstrip()
         slti $t0, $zero, 0xFFFF /* $t0 = 0 */
     >>> print shellcraft.mips.mov('$t2', 0).rstrip()

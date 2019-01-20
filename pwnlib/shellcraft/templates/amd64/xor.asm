@@ -19,6 +19,9 @@ Args:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_amd64 or not qemu_amd64
+
     >>> sc  = shellcraft.read(0, 'rsp', 32)
     >>> sc += shellcraft.xor(0xdeadbeef, 'rsp', 32)
     >>> sc += shellcraft.write(1, 'rsp', 32)

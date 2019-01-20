@@ -13,6 +13,9 @@
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> with context.local():
     ...    context.arch = 'i386'
     ...    print enhex(asm(shellcraft.stackhunter()))

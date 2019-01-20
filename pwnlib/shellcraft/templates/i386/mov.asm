@@ -27,6 +27,9 @@ Args:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> print shellcraft.i386.mov('eax','ebx').rstrip()
         mov eax, ebx
     >>> print shellcraft.i386.mov('eax', 0).rstrip()

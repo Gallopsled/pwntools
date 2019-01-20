@@ -14,6 +14,9 @@ Arguments:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> gcc = process(['gcc','-m32','-xc','-static','-Wl,-Ttext-segment=0x20000000','-'])
     >>> gcc.write('''
     ... int main() {

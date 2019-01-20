@@ -14,6 +14,9 @@ Arguments:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_aarch64 or not qemu_aarch64
+
     >>> sc = shellcraft.thumb.mov('r0', 0xdeadbeef)
     >>> sc += shellcraft.thumb.itoa('r0')
     >>> sc += shellcraft.thumb.linux.write(1, 'sp', 32)

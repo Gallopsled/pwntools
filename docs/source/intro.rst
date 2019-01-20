@@ -114,6 +114,9 @@ Setting the Target Architecture and OS
 
 The target architecture can generally be specified as an argument to the routine that requires it.
 
+.. doctest::
+   :skipif: not binutils_arm
+
     >>> asm('nop')
     '\x90'
     >>> asm('nop', arch='arm')
@@ -121,12 +124,18 @@ The target architecture can generally be specified as an argument to the routine
 
 However, it can also be set once in the global ``context``.  The operating system, word size, and endianness can also be set here.
 
+.. doctest::
+   :skipif: not binutils_i386
+
     >>> context.arch      = 'i386'
     >>> context.os        = 'linux'
     >>> context.endian    = 'little'
     >>> context.word_size = 32
 
 Additionally, you can use a shorthand to set all of the values at once.
+
+.. doctest::
+   :skipif: not binutils_arm
 
     >>> asm('nop')
     '\x90'
@@ -202,7 +211,7 @@ ELF Manipulation
 
 Stop hard-coding things!  Look them up at runtime with :mod:`pwnlib.elf`.
 
-    >>> e = ELF('/bin/cat')
+    >>> e = ELF('/bin/cat') # doctest: +SKIP
     >>> print hex(e.address) #doctest: +SKIP
     0x400000
     >>> print hex(e.symbols['write']) #doctest: +SKIP
@@ -213,6 +222,9 @@ Stop hard-coding things!  Look them up at runtime with :mod:`pwnlib.elf`.
     0x401680
 
 You can even patch and save the files.
+
+ .. doctest::
+    :skipif: not travis
 
     >>> e = ELF('/bin/cat')
     >>> e.read(e.address, 4)

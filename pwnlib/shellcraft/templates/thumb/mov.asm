@@ -18,6 +18,9 @@
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_aarch64 or not qemu_aarch64
+
     >>> print shellcraft.thumb.mov('r1','r2').rstrip()
         mov r1, r2
     >>> print shellcraft.thumb.mov('r1', 0).rstrip()

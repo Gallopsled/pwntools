@@ -18,6 +18,10 @@ Args:
                  the number of bytes to XOR.
 
 Example:
+
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> sc  = shellcraft.read(0, 'esp', 32)
     >>> sc += shellcraft.xor(0xdeadbeef, 'esp', 32)
     >>> sc += shellcraft.write(1, 'esp', 32)

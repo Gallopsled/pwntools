@@ -9,6 +9,9 @@ null bytes or newline characters.
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_mips or not qemu_mips
+
     >>> print shellcraft.mips.pushstr('').rstrip()
         /* push '\x00' */
         sw $zero, -4($sp)

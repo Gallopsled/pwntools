@@ -293,7 +293,7 @@ def test(original):
     """
     input = sh_string(original)
 
-    cmdstr = '/bin/echo %s' % input
+    cmdstr = 'echo %s' % input
 
     SUPPORTED_SHELLS = [
         ['ash', '-c', cmdstr],
@@ -494,12 +494,12 @@ def sh_command_with(f, *args):
         'echo hello'
         >>> sh_command_with(lambda x: "echo " + x, "hello")
         'echo hello'
-        >>> sh_command_with(lambda x: "/bin/echo " + x, "\\x01")
-        "/bin/echo '\\x01'"
-        >>> sh_command_with(lambda x: "/bin/echo " + x, "\\x01\\n")
-        "/bin/echo '\\x01\\n'"
-        >>> sh_command_with("/bin/echo %s", "\\x01\\n")
-        "/bin/echo '\\x01\\n'"
+        >>> sh_command_with(lambda x: "echo " + x, "\\x01")
+        "echo '\\x01'"
+        >>> sh_command_with(lambda x: "echo " + x, "\\x01\\n")
+        "echo '\\x01\\n'"
+        >>> sh_command_with("echo %s", "\\x01\\n")
+        "echo '\\x01\\n'"
     """
 
     args = list(args)

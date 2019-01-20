@@ -8,6 +8,9 @@ Opens a file and writes its contents to the specified file descriptor.
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_arm or not qemu_arm
+
     >>> f = tempfile.mktemp()
     >>> write(f, 'FLAG\n')
     >>> run_assembly(shellcraft.arm.linux.cat(f)).recvline()

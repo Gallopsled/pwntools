@@ -5,6 +5,9 @@ Writes a string to a file descriptor
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_arm or not qemu_arm
+
     >>> run_assembly(shellcraft.echo('hello\n', 1)).recvline()
     'hello\n'
 

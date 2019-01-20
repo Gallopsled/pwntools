@@ -14,6 +14,9 @@ Args:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_amd64 or not qemu_amd64
+
     >>> print shellcraft.setregs({'rax':1, 'rbx':'rax'}).rstrip()
         mov rbx, rax
         push 1

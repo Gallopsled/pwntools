@@ -14,6 +14,9 @@ Args:
 
 Examples:
 
+.. doctest::
+   :skipif: not binutils_aarch64 or not qemu_aarch64
+
     >>> print shellcraft.pushstr("Hello!").rstrip()
         /* push 'Hello!\x00' */
         /* Set x14 = 36762444129608 = 0x216f6c6c6548 */

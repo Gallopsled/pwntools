@@ -22,6 +22,9 @@ Args:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_amd64 or not qemu_amd64
+
     >>> print pwnlib.shellcraft.amd64.push(0).rstrip()
         /* push 0 */
         push 1

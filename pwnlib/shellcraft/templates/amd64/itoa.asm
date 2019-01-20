@@ -14,6 +14,9 @@ Arguments:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_amd64 or not qemu_amd64
+
     >>> sc = shellcraft.amd64.mov('rax', 0xdeadbeef)
     >>> sc += shellcraft.amd64.itoa('rax')
     >>> sc += shellcraft.amd64.linux.write(1, 'rsp', 32)

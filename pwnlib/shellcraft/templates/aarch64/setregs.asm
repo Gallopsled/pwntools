@@ -13,6 +13,9 @@ Args:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_aarch64 or not qemu_aarch64
+
     >>> print shellcraft.setregs({'x0':1, 'x2':'x3'}).rstrip()
         mov  x0, #1
         mov  x2, x3

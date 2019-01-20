@@ -87,6 +87,21 @@ class stdout(object):
 pwnlib.context.ContextType.defaults['log_console'] = stdout()
 
 offline=True
+binutils_mips=False
+binutils_arm=False
+binutils_amd64=False
+binutils_i386=False
+binutils_aarch64=False
+binutils_powerpc=False
+binutils_thumb=False
+qemu_mips=False
+qemu_arm=False
+qemu_amd64=False
+qemu_i386=False
+qemu_aarch64=False
+qemu_powerpc=False
+qemu_thumb=False
+travis=False
 '''
 
 autoclass_content = 'both'

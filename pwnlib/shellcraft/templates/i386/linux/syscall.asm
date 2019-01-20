@@ -12,6 +12,9 @@ Any of the arguments can be expressions to be evaluated by :func:`pwnlib.constan
 
 Example:
 
+    .. doctest::
+       :skipif: not binutils_i386 or not qemu_i386
+
         >>> print pwnlib.shellcraft.i386.linux.syscall('SYS_execve', 1, 'esp', 2, 0).rstrip()
             /* call execve(1, 'esp', 2, 0) */
             push SYS_execve /* 0xb */

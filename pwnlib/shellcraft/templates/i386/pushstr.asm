@@ -9,6 +9,9 @@ null bytes or newline characters.
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> print shellcraft.i386.pushstr('').rstrip()
         /* push '\x00' */
         push 1

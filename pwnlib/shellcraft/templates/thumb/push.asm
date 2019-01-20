@@ -20,6 +20,9 @@ Args:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_aarch64 or not qemu_aarch64
+
     >>> print pwnlib.shellcraft.thumb.push('r0').rstrip()
         push {r0}
     >>> print pwnlib.shellcraft.thumb.push(0).rstrip()

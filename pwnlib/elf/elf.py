@@ -8,7 +8,7 @@ Example Usage
 
 .. code-block:: python
 
-    >>> e = ELF('/bin/cat')
+    >>> e = ELF('/bin/cat') #doctest: +SKIP
     >>> print hex(e.address) #doctest: +SKIP
     0x400000
     >>> print hex(e.symbols['write']) #doctest: +SKIP
@@ -21,6 +21,9 @@ Example Usage
 You can even patch and save the files.
 
 .. code-block:: python
+
+    .. doctest::
+       :skipif: not travis
 
     >>> e = ELF('/bin/cat')
     >>> e.read(e.address+1, 3)
@@ -525,6 +528,9 @@ class ELF(ELFFile):
 
         Example:
 
+        .. doctest::
+           :skipif: not travis
+
             >>> bash = ELF('/bin/bash')
             >>> read = bash.symbols['read']
             >>> text = bash.get_section_by_name('.text').header.sh_addr
@@ -912,11 +918,17 @@ class ELF(ELFFile):
             An ELF header starts with the bytes ``\\x7fELF``, so we
             sould be able to find it easily.
 
+        .. doctest::
+           :skipif: not travis
+
             >>> bash = ELF('/bin/bash')
             >>> bash.address + 1 == next(bash.search('ELF'))
             True
 
             We can also search for string the binary.
+
+        .. doctest::
+           :skipif: not travis
 
             >>> len(list(bash.search('GNU bash'))) > 0
             True
@@ -960,6 +972,9 @@ class ELF(ELFFile):
             This example shows that regardless of changes to the virtual
             address layout by modifying :attr:`.ELF.address`, the offset
             for any given address doesn't change.
+
+        .. doctest::
+           :skipif: not travis
 
             >>> bash = ELF('/bin/bash')
             >>> bash.address == bash.offset_to_vaddr(0)

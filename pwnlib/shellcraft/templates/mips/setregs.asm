@@ -15,6 +15,9 @@ Args:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_mips or not qemu_mips
+
     >>> print shellcraft.setregs({'$t0':1, '$a3':'0'}).rstrip()
         slti $a3, $zero, 0xFFFF /* $a3 = 0 */
         li $t9, ~1

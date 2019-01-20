@@ -24,6 +24,9 @@ Args:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_aarch64 or not qemu_aarch64
+
     >>> print pwnlib.shellcraft.push(0).rstrip()
         /* push 0 */
         mov  x14, xzr

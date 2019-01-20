@@ -85,6 +85,7 @@ def last_check():
 
 def should_check():
     """Return True if we should check for an update"""
+    return False
     filename = cache_file()
 
     if not filename:

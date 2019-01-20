@@ -4,6 +4,9 @@ Crash.
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_arm or not qemu_arm
+
     >>> run_assembly(shellcraft.crash()).poll(True)
     -11
 </%docstring>

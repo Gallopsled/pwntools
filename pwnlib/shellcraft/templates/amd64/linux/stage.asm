@@ -17,6 +17,9 @@ Arguments:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_amd64 or not qemu_amd64
+
     >>> p = run_assembly(shellcraft.stage())
     >>> sc = asm(shellcraft.echo("Hello\n", constants.STDOUT_FILENO))
     >>> p.pack(len(sc))

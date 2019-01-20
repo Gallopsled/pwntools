@@ -14,6 +14,9 @@ Arguments:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> sc = shellcraft.i386.mov('eax', 0xdeadbeef)
     >>> sc += shellcraft.i386.itoa('eax')
     >>> sc += shellcraft.i386.linux.write(1, 'esp', 32)

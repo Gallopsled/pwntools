@@ -23,6 +23,9 @@ on the value of `context.os`.
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_amd64 or not qemu_amd64
+
     >>> print shellcraft.amd64.mov('eax','ebx').rstrip()
         mov eax, ebx
     >>> print shellcraft.amd64.mov('eax', 0).rstrip()

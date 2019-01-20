@@ -20,6 +20,9 @@ Args:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> print pwnlib.shellcraft.i386.push(0).rstrip()
         /* push 0 */
         push 1

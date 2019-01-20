@@ -5,6 +5,9 @@ Args:
     return_value: Value to return
 
 Examples:
+.. doctest::
+   :skipif: not binutils_arm or not qemu_arm
+
     >>> with context.local(arch='arm'):
     ...     print enhex(asm(shellcraft.ret()))
     ...     print enhex(asm(shellcraft.ret(0)))

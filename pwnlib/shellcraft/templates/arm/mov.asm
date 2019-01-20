@@ -19,6 +19,9 @@ on the value of `context.os`.
 
 Examples:
 
+.. doctest::
+   :skipif: not binutils_arm or not qemu_arm
+
     >>> print shellcraft.arm.mov('r0','r1').rstrip()
         mov  r0, r1
     >>> print shellcraft.arm.mov('r0', 5).rstrip()

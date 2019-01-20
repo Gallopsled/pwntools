@@ -18,6 +18,9 @@ Args:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_aarch64 or not qemu_aarch64
+
     >>> sc  = shellcraft.read(0, 'sp', 32)
     >>> sc += shellcraft.xor(0xdeadbeef, 'sp', 32)
     >>> sc += shellcraft.write(1, 'sp', 32)

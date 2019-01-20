@@ -11,6 +11,9 @@ Args:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> stage_2 = asm(shellcraft.echo('hello') + "\n" + shellcraft.syscalls.exit(42))
     >>> p = run_assembly(shellcraft.stager(0, len(stage_2)))
     >>> for c in stage_2:

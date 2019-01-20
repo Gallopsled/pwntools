@@ -12,6 +12,9 @@ Any of the arguments can be expressions to be evaluated by :func:`pwnlib.constan
 
 Example:
 
+    .. doctest::
+       :skipif: not binutils_mips or not qemu_mips
+
         >>> print pwnlib.shellcraft.mips.linux.syscall('SYS_execve', 1, '$sp', 2, 0).rstrip()
             /* call execve(1, '$sp', 2, 0) */
             li $t9, ~1

@@ -11,6 +11,9 @@ Args:
 
 Examples:
 
+.. doctest::
+   :skipif: not binutils_arm or not qemu_arm
+
     >>> print shellcraft.arm.pushstr("Hello!").rstrip()
         /* push 'Hello!\x00A' */
         movw r7, #0x4100216f & 0xffff

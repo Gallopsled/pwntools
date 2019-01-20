@@ -23,6 +23,9 @@ i386 Example:
     We also make an ``int 0x80`` gadget available, followed
     immediately by ``exit(0)``.
 
+.. doctest::
+   :skipif: not binutils_i386
+
     >>> context.clear(arch='i386')
     >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, 'esp', 1024)
     >>> assembly += 'sigreturn:' + shellcraft.sigreturn()
@@ -35,6 +38,9 @@ i386 Example:
     Let's construct our frame to have it invoke a ``write``
     syscall, and dump the message to stdout.
 
+.. doctest::
+   :skipif: not binutils_i386
+
     >>> frame = SigreturnFrame(kernel='amd64')
     >>> frame.eax = constants.SYS_write
     >>> frame.ebx = constants.STDOUT_FILENO
@@ -45,6 +51,9 @@ i386 Example:
 
     Let's start the process, send the data, and check the message.
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> p = process(binary.path)
     >>> p.send(str(frame))
     >>> p.recvline()
@@ -53,6 +62,9 @@ i386 Example:
     0
 
 amd64 Example:
+
+.. doctest::
+   :skipif: not binutils_amd64 or not qemu_amd64
 
     >>> context.clear()
     >>> context.arch = "amd64"
@@ -78,6 +90,9 @@ amd64 Example:
     0
 
 arm Example:
+
+.. doctest::
+   :skipif: not binutils_arm or not qemu_arm
 
     >>> context.clear()
     >>> context.arch = "arm"
@@ -105,6 +120,9 @@ arm Example:
 
 Mips Example:
 
+.. doctest::
+   :skipif: not binutils_mips or not qemu_mips
+
     >>> context.clear()
     >>> context.arch = "mips"
     >>> context.endian = "big"
@@ -129,6 +147,9 @@ Mips Example:
     0
 
 Mipsel Example:
+
+.. doctest::
+   :skipif: not binutils_mips or not qemu_mips
 
     >>> context.clear()
     >>> context.arch = "mips"

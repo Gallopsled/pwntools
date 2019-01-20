@@ -15,6 +15,9 @@ Args:
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_arm or not qemu_arm
+
     >>> print shellcraft.setregs({'r0':1, 'r2':'r3'}).rstrip()
         mov  r0, #1
         mov  r2, r3

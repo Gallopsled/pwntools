@@ -7,6 +7,9 @@ Opens a file and writes its contents to the specified file descriptor.
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_aarch64 or not qemu_aarch64
+
     >>> write('flag', 'This is the flag\n')
     >>> shellcode = shellcraft.cat('flag') + shellcraft.exit(0)
     >>> print disasm(asm(shellcode))

@@ -90,6 +90,9 @@ def archname():
     Returns the name which QEMU uses for the currently selected
     architecture.
 
+.. doctest::
+   :skipif: not qemu_powerpc
+
     >>> pwnlib.qemu.archname()
     'i386'
     >>> pwnlib.qemu.archname(arch='powerpc')
@@ -113,10 +116,13 @@ def user_path():
     Returns the path to the QEMU-user binary for the currently
     selected architecture.
 
+.. doctest::
+   :skipif: not qemu_i386
+
     >>> pwnlib.qemu.user_path()
-    'qemu-i386-static'
+    'qemu-i386...'
     >>> pwnlib.qemu.user_path(arch='thumb')
-    'qemu-arm-static'
+    'qemu-arm...'
     """
     arch   = archname()
     normal = 'qemu-' + arch
@@ -133,6 +139,9 @@ def user_path():
 @LocalContext
 def ld_prefix(path=None, env=None):
     """Returns the linker prefix for the selected qemu-user binary
+
+.. doctest::
+   :skipif: not qemu_arm
 
     >>> pwnlib.qemu.ld_prefix(arch='arm')
     '/etc/qemu-binfmt/arm'

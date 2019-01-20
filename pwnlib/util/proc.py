@@ -100,6 +100,9 @@ def name(pid):
         Name of process as listed in ``/proc/<pid>/status``.
 
     Example:
+    .. doctest::
+       :skipif: not travis
+
         >>> pid = pidof('init')[0]
         >>> name(pid) == 'init'
         True

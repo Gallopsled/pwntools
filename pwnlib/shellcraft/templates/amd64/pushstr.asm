@@ -9,6 +9,9 @@ null bytes or newline characters.
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_amd64 or not qemu_amd64
+
     >>> print shellcraft.amd64.pushstr('').rstrip()
         /* push '\x00' */
         push 1

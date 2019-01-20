@@ -8,6 +8,9 @@ Copies a string
 
 Example:
 
+.. doctest::
+   :skipif: not binutils_amd64 or not qemu_amd64
+
     >>> sc  = 'jmp get_str\n'
     >>> sc += 'pop_str: pop rax\n'
     >>> sc += shellcraft.amd64.strcpy('rsp', 'rax')

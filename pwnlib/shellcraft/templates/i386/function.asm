@@ -15,9 +15,11 @@ Arguments:
 
 ::
 
+.. doctest::
+   :skipif: not binutils_i386 or not qemu_i386
+
     >>> shellcode = ''
     >>> shellcode += shellcraft.function('write', shellcraft.i386.linux.write, )
-
     >>> hello = shellcraft.i386.linux.echo("Hello!", 'eax')
     >>> hello_fn = shellcraft.i386.function(hello, 'eax').strip()
     >>> exit = shellcraft.i386.linux.exit('edi')
