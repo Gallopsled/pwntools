@@ -47,6 +47,8 @@ setup_travis()
     powerpc-linux-gnu-as    --version
     qemu-arm-static         --version
 
+    mips-linux-gnu-ld       --version
+
     # Force-install capstone because it's broken somehow
     [[ -f usr/lib/libcapstone.so.3 ]] || install_deb libcapstone3
 
