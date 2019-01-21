@@ -11,7 +11,7 @@ local_deb_extract()
 
 install_deb()
 {
-    version=${2:-artful}
+    version=${2:-bionic}
     package=$1
     echo "Installing $package"
     INDEX="http://packages.ubuntu.com/en/$version/amd64/$package/download"
