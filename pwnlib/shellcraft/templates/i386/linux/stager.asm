@@ -19,7 +19,7 @@ Example:
     >>> p.poll()
     42
     >>> p.recvall()
-    'hello'
+    b'hello'
 
 </%docstring>
 <%page args="sock, size, handle_error=False, tiny=False"/>
