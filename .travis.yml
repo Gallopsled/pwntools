@@ -1,4 +1,4 @@
-dist: bionic
+dist: xenial
 language: python
 addons:
   apt:
