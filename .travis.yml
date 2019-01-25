@@ -14,7 +14,7 @@ addons:
     - pandoc
     - gdb
     - binutils
-    - qemu-arm-static
+    - qemu-user-static
     - binutils-multiarch
     - binutils-aarch64-linux-gnu
     - binutils-arm-linux-gnueabihf
