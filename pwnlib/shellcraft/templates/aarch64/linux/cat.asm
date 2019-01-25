@@ -12,7 +12,7 @@ Example:
     >>> print disasm(asm(shellcode))
        0:   d28d8cce        mov     x14, #0x6c66                    // #27750
        4:   f2acec2e        movk    x14, #0x6761, lsl #16
-       8:   f81f0fee        str     x14, [sp, #-16]!
+       8:   f81f0fee        str     x14, [sp,#-16]!
        c:   d29ff380        mov     x0, #0xff9c                     // #65436
       10:   f2bfffe0        movk    x0, #0xffff, lsl #16
       14:   f2dfffe0        movk    x0, #0xffff, lsl #32
