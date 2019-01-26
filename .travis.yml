@@ -1,4 +1,4 @@
-dist: trusty
+dist: xenial
 language: python
 addons:
   apt:
@@ -13,6 +13,13 @@ addons:
     - zsh
     - pandoc
     - gdb
+    - binutils
+    - qemu-user-static
+    - binutils-multiarch
+    - binutils-aarch64-linux-gnu
+    - binutils-arm-linux-gnueabihf
+    - binutils-mips-linux-gnu
+    - binutils-powerpc-linux-gnu
 cache:
     - pip
     - directories:
