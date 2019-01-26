@@ -47,11 +47,7 @@ setup_travis()
     powerpc-linux-gnu-as    --version
     qemu-arm-static         --version
 
-    if ! mips-linux-gnu-ld  --version &>/dev/null; then
-        install_deb libc6
-        export LD_PRELOAD=$PWD/usr/lib/x86_64-linux-gnu/libc.so.6
-    fi
-    mips-linux-gnu-ld       --version
+    mips-linux-gnu-ld       --version || install_deb libc6
 
     # Force-install capstone because it's broken somehow
     [[ -f usr/lib/libcapstone.so.3 ]] || install_deb libcapstone3
