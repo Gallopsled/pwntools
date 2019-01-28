@@ -22,8 +22,8 @@ parser.add_argument(
     metavar='file',
     nargs='?',
     help='File to hexdump.  Reads from stdin if missing.',
-    type=argparse.FileType('r'),
-    default=sys.stdin
+    type=argparse.FileType('rb'),
+    default=getattr(sys.stdin, 'buffer', sys.stdin)
 )
 
 parser.add_argument(
@@ -97,7 +97,7 @@ def main(args):
 
     try:
         for line in hexdump_iter(infile, width, highlight = hl, begin = offset + skip):
-            print line
+            print(line)
     except (KeyboardInterrupt, IOError):
         pass
 

@@ -95,6 +95,7 @@ import os
 import random
 import re
 import shlex
+import six
 import tempfile
 import time
 
@@ -143,7 +144,7 @@ def debug_assembly(asm, gdbscript=None, vma=None):
             # 'Hello world!'
     """
     tmp_elf = make_elf_from_assembly(asm, vma=vma, extract=False)
-    os.chmod(tmp_elf, 0777)
+    os.chmod(tmp_elf, 0o777)
 
     atexit.register(lambda: os.unlink(tmp_elf))
 
@@ -178,10 +179,10 @@ def debug_shellcode(data, gdbscript=None, vma=None):
             io.recvline()
             # 'Hello world!'
     """
-    if isinstance(data, unicode):
+    if isinstance(data, six.text_type):
         log.error("Shellcode is cannot be unicode.  Did you mean debug_assembly?")
     tmp_elf = make_elf(data, extract=False, vma=vma)
-    os.chmod(tmp_elf, 0777)
+    os.chmod(tmp_elf, 0o777)
 
     atexit.register(lambda: os.unlink(tmp_elf))
 
@@ -251,15 +252,15 @@ def _gdbserver_port(gdbserver, ssh):
     # Listening on port 34816
     process_created = gdbserver.recvline()
 
-    if process_created.startswith('ERROR:'):
+    if process_created.startswith(b'ERROR:'):
         raise ValueError(
             'Failed to spawn process under gdbserver. gdbserver error message: %s' % process_created
         )
 
     gdbserver.pid   = int(process_created.split()[-1], 0)
 
-    listening_on = ''
-    while 'Listening' not in listening_on:
+    listening_on = b''
+    while b'Listening' not in listening_on:
         listening_on    = gdbserver.recvline()
 
     port = int(listening_on.split()[-1])
@@ -275,7 +276,7 @@ def _gdbserver_port(gdbserver, ssh):
         listener.level = 'error'
 
         # Hook them up
-        remote <> listener
+        remote.connect_both(listener)
 
     # Set up port forwarding for ADB
     elif context.os == 'android':
@@ -406,7 +407,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     if env is None:
         env = os.environ
 
-    if isinstance(args, (str, unicode)):
+    if isinstance(args, (bytes, six.text_type)):
         args = [args]
 
     orig_args = args
@@ -612,7 +613,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     # if gdbscript is a file object, then read it; we probably need to run some
     # more gdb script anyway
-    if isinstance(gdbscript, file):
+    if hasattr(gdbscript, 'read'):
         with gdbscript:
             gdbscript = gdbscript.read()
 
@@ -637,7 +638,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     # let's see if we can find a pid to attach to
     pid = None
-    if   isinstance(target, (int, long)):
+    if   isinstance(target, six.integer_types):
         # target is a pid, easy peasy
         pid = target
     elif isinstance(target, str):
@@ -767,7 +768,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     if gdbscript:
         tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.gdb',
-                                          delete = False)
+                                          delete = False, mode = 'w+')
         log.debug('Wrote gdb script to %r\n%s' % (tmp.name, gdbscript))
         gdbscript = 'shell rm %s\n%s' % (tmp.name, gdbscript)
 
@@ -799,9 +800,9 @@ def ssh_gdb(ssh, argv, gdbscript = None, arch = None, **kwargs):
     c = ssh.process(argv, **kwargs)
 
     # Find the port for the gdb server
-    c.recvuntil('port ')
+    c.recvuntil(b'port ')
     line = c.recvline().strip()
-    gdbport = re.match('[0-9]+', line)
+    gdbport = re.match(b'[0-9]+', line)
     if gdbport:
         gdbport = int(gdbport.group(0))
 
@@ -809,7 +810,7 @@ def ssh_gdb(ssh, argv, gdbscript = None, arch = None, **kwargs):
     forwardport = l.lport
 
     attach(('127.0.0.1', forwardport), gdbscript, local_exe, arch, ssh=ssh)
-    l.wait_for_connection() <> ssh.connect_remote('127.0.0.1', gdbport)
+    l.wait_for_connection().connect_both(ssh.connect_remote('127.0.0.1', gdbport))
     return c
 
 def find_module_addresses(binary, ssh=None, ulimit=False):
@@ -923,7 +924,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         try:
             path     = next(p for p in local_libs.keys() if remote_path in p)
         except StopIteration:
-            print "Skipping %r" % remote_path
+            print("Skipping %r" % remote_path)
             continue
 
         # Load it
@@ -997,11 +998,11 @@ def version(program='gdb'):
         True
     """
     program = misc.which(program)
-    expr = r'([0-9]+\.?)+'
+    expr = br'([0-9]+\.?)+'
 
     with tubes.process.process([program, '--version'], level='error') as gdb:
         version = gdb.recvline()
 
     versions = re.search(expr, version).group()
 
-    return tuple(map(int, versions.split('.')))
+    return tuple(map(int, versions.split(b'.')))

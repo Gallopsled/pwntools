@@ -48,7 +48,7 @@ def binary_ip(host):
 
     Example:
         >>> binary_ip("127.0.0.1")
-        '\\x7f\\x00\\x00\\x01'
+        b'\\x7f\\x00\\x00\\x01'
     """
     return socket.inet_aton(socket.gethostbyname(host))
 
@@ -110,21 +110,22 @@ def read(path, count=-1, skip=0):
 
     Examples:
         >>> read('/proc/self/exe')[:4]
-        '\x7fELF'
+        b'\x7fELF'
     """
     path = os.path.expanduser(os.path.expandvars(path))
-    with open(path) as fd:
+    with open(path, 'rb') as fd:
         if skip:
             fd.seek(skip)
         return fd.read(count)
 
 
-def write(path, data = '', create_dir = False, mode = 'w'):
+def write(path, data = b'', create_dir = False, mode = 'w'):
     """Create new file or truncate existing to zero length and write data."""
     path = os.path.expanduser(os.path.expandvars(path))
     if create_dir:
         path = os.path.realpath(path)
         mkdir_p(os.path.dirname(path))
+    if mode == 'w' and isinstance(data, bytes): mode += 'b'
     with open(path, mode) as f:
         f.write(data)
 
@@ -253,7 +254,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
     if pid == 0:
         # Closing the file descriptors makes everything fail under tmux on OSX.
         if platform.system() != 'Darwin':
-            devnull = open(os.devnull, 'rwb')
+            devnull = open(os.devnull, 'r+b')
             os.dup2(devnull.fileno(), 0)
             os.dup2(devnull.fileno(), 1)
             os.dup2(devnull.fileno(), 2)
@@ -347,11 +348,11 @@ def register_sizes(regs, in_sizes):
         >>> all_regs
         ['eax', 'ax', 'al', 'ah', 'ebx', 'bx', 'bl', 'bh', 'ecx', 'cx', 'cl', 'ch', 'edx', 'dx', 'dl', 'dh', 'edi', 'di', 'esi', 'si', 'ebp', 'bp', 'esp', 'sp']
         >>> sizes
-        {'ch': 8, 'cl': 8, 'ah': 8, 'edi': 32, 'al': 8, 'cx': 16, 'ebp': 32, 'ax': 16, 'edx': 32, 'ebx': 32, 'esp': 32, 'esi': 32, 'dl': 8, 'dh': 8, 'di': 16, 'bl': 8, 'bh': 8, 'eax': 32, 'bp': 16, 'dx': 16, 'bx': 16, 'ecx': 32, 'sp': 16, 'si': 16}
+        {'eax': 32, 'ax': 16, 'al': 8, 'ah': 8, 'ebx': 32, 'bx': 16, 'bl': 8, 'bh': 8, 'ecx': 32, 'cx': 16, 'cl': 8, 'ch': 8, 'edx': 32, 'dx': 16, 'dl': 8, 'dh': 8, 'edi': 32, 'di': 16, 'esi': 32, 'si': 16, 'ebp': 32, 'bp': 16, 'esp': 32, 'sp': 16}
         >>> bigger
-        {'ch': ['ecx', 'cx', 'ch'], 'cl': ['ecx', 'cx', 'cl'], 'ah': ['eax', 'ax', 'ah'], 'edi': ['edi'], 'al': ['eax', 'ax', 'al'], 'cx': ['ecx', 'cx'], 'ebp': ['ebp'], 'ax': ['eax', 'ax'], 'edx': ['edx'], 'ebx': ['ebx'], 'esp': ['esp'], 'esi': ['esi'], 'dl': ['edx', 'dx', 'dl'], 'dh': ['edx', 'dx', 'dh'], 'di': ['edi', 'di'], 'bl': ['ebx', 'bx', 'bl'], 'bh': ['ebx', 'bx', 'bh'], 'eax': ['eax'], 'bp': ['ebp', 'bp'], 'dx': ['edx', 'dx'], 'bx': ['ebx', 'bx'], 'ecx': ['ecx'], 'sp': ['esp', 'sp'], 'si': ['esi', 'si']}
+        {'eax': ['eax'], 'ax': ['eax', 'ax'], 'al': ['eax', 'ax', 'al'], 'ah': ['eax', 'ax', 'ah'], 'ebx': ['ebx'], 'bx': ['ebx', 'bx'], 'bl': ['ebx', 'bx', 'bl'], 'bh': ['ebx', 'bx', 'bh'], 'ecx': ['ecx'], 'cx': ['ecx', 'cx'], 'cl': ['ecx', 'cx', 'cl'], 'ch': ['ecx', 'cx', 'ch'], 'edx': ['edx'], 'dx': ['edx', 'dx'], 'dl': ['edx', 'dx', 'dl'], 'dh': ['edx', 'dx', 'dh'], 'edi': ['edi'], 'di': ['edi', 'di'], 'esi': ['esi'], 'si': ['esi', 'si'], 'ebp': ['ebp'], 'bp': ['ebp', 'bp'], 'esp': ['esp'], 'sp': ['esp', 'sp']}
         >>> smaller
-        {'ch': [], 'cl': [], 'ah': [], 'edi': ['di'], 'al': [], 'cx': ['cl', 'ch'], 'ebp': ['bp'], 'ax': ['al', 'ah'], 'edx': ['dx', 'dl', 'dh'], 'ebx': ['bx', 'bl', 'bh'], 'esp': ['sp'], 'esi': ['si'], 'dl': [], 'dh': [], 'di': [], 'bl': [], 'bh': [], 'eax': ['ax', 'al', 'ah'], 'bp': [], 'dx': ['dl', 'dh'], 'bx': ['bl', 'bh'], 'ecx': ['cx', 'cl', 'ch'], 'sp': [], 'si': []}
+        {'eax': ['ax', 'al', 'ah'], 'ax': ['al', 'ah'], 'al': [], 'ah': [], 'ebx': ['bx', 'bl', 'bh'], 'bx': ['bl', 'bh'], 'bl': [], 'bh': [], 'ecx': ['cx', 'cl', 'ch'], 'cx': ['cl', 'ch'], 'cl': [], 'ch': [], 'edx': ['dx', 'dl', 'dh'], 'dx': ['dl', 'dh'], 'dl': [], 'dh': [], 'edi': ['di'], 'di': [], 'esi': ['si'], 'si': [], 'ebp': ['bp'], 'bp': [], 'esp': ['sp'], 'sp': []}
     """
     sizes = {}
     bigger = {}

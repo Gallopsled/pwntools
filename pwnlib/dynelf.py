@@ -15,7 +15,7 @@ Example
     # leaks at least one byte at that address.
     def leak(address):
         data = p.read(address, 4)
-        log.debug("%#x => %s" % (address, (data or '').encode('hex')))
+        log.debug("%#x => %s" % (address, enhex(data or '')))
         return data
 
     # For the sake of this example, let's say that we
@@ -853,7 +853,7 @@ class DynELF(object):
         for offset in libcdb.get_build_id_offsets():
             address = libbase + offset
             if self.leak.compare(address + 0xC, "GNU\x00"):
-                return enhex(''.join(self.leak.raw(address + 0x10, 20)))
+                return enhex(b''.join(self.leak.raw(address + 0x10, 20)))
             else:
                 self.status("Magic did not match")
                 pass

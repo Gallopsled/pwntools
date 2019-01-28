@@ -9,13 +9,13 @@ Example Usage
 .. code-block:: python
 
     >>> e = ELF('/bin/cat')
-    >>> print hex(e.address) #doctest: +SKIP
+    >>> print(hex(e.address)) #doctest: +SKIP
     0x400000
-    >>> print hex(e.symbols['write']) #doctest: +SKIP
+    >>> print(hex(e.symbols['write'])) #doctest: +SKIP
     0x401680
-    >>> print hex(e.got['write']) #doctest: +SKIP
+    >>> print(hex(e.got['write'])) #doctest: +SKIP
     0x60b070
-    >>> print hex(e.plt['write']) #doctest: +SKIP
+    >>> print(hex(e.plt['write'])) #doctest: +SKIP
     0x401680
 
 You can even patch and save the files.
@@ -24,10 +24,10 @@ You can even patch and save the files.
 
     >>> e = ELF('/bin/cat')
     >>> e.read(e.address+1, 3)
-    'ELF'
+    b'ELF'
     >>> e.asm(e.address, 'ret')
     >>> e.save('/tmp/quiet-cat')
-    >>> disasm(file('/tmp/quiet-cat','rb').read(1))
+    >>> disasm(open('/tmp/quiet-cat','rb').read(1))
     '   0:   c3                      ret'
 
 Module Members
@@ -36,14 +36,15 @@ Module Members
 from __future__ import absolute_import
 from __future__ import division
 
-import codecs
 import collections
 import gzip
 import mmap
 import os
 import re
-import StringIO
+import six
 import subprocess
+
+from six import BytesIO
 
 from collections import namedtuple
 
@@ -219,7 +220,7 @@ class ELF(ELFFile):
         #:
         #: See: :attr:`.ContextType.arch`
         self.arch = self.get_machine_arch()
-        if isinstance(self.arch, (str, unicode)):
+        if isinstance(self.arch, (bytes, six.text_type)):
             self.arch = self.arch.lower()
 
         #: :class:`dotdict` of ``name`` to ``address`` for all symbols in the ELF
@@ -289,13 +290,13 @@ class ELF(ELFFile):
         self.load_addr = self._address
 
         # Try to figure out if we have a kernel configuration embedded
-        IKCFG_ST='IKCFG_ST'
+        IKCFG_ST=b'IKCFG_ST'
 
         for start in self.search(IKCFG_ST):
             start += len(IKCFG_ST)
-            stop = next(self.search('IKCFG_ED'))
+            stop = next(self.search(b'IKCFG_ED'))
 
-            fileobj = StringIO.StringIO(self.read(start, stop-start))
+            fileobj = BytesIO(self.read(start, stop-start))
 
             # Python gzip throws an exception if there is non-Gzip data
             # after the Gzip stream.
@@ -321,12 +322,12 @@ class ELF(ELFFile):
 
             #: Path to the linker for the ELF
             self.linker = self.read(seg.header.p_vaddr, seg.header.p_memsz)
-            self.linker = self.linker.rstrip('\x00')
+            self.linker = self.linker.rstrip(b'\x00')
 
         #: Operating system of the ELF
         self.os = 'linux'
 
-        if self.linker and self.linker.startswith('/system/bin/linker'):
+        if self.linker and self.linker.startswith(b'/system/bin/linker'):
             self.os = 'android'
 
         #: ``True`` if the ELF is a shared library
@@ -394,7 +395,7 @@ class ELF(ELFFile):
 
         Example:
 
-            >>> e = ELF.from_bytes('\x90\xcd\x80', vma=0xc000)
+            >>> e = ELF.from_bytes(b'\x90\xcd\x80', vma=0xc000)
             >>> print(e.disasm(e.entry, 3))
                 c000:       90                      nop
                 c001:       cd 80                   int    0x80
@@ -651,7 +652,7 @@ class ELF(ELFFile):
         try:
             cmd = 'ulimit -s unlimited; LD_TRACE_LOADED_OBJECTS=1 LD_WARN=1 LD_BIND_NOW=1 %s 2>/dev/null' % sh_string(self.path)
 
-            data = subprocess.check_output(cmd, shell = True, stderr = subprocess.STDOUT)
+            data = subprocess.check_output(cmd, shell = True, stderr = subprocess.STDOUT, universal_newlines = True)
             libs = misc.parse_ldd_output(data)
 
             for lib in dict(libs):
@@ -680,14 +681,10 @@ class ELF(ELFFile):
 
             for sym in sec.iter_symbols():
                 # Avoid duplicates
-                if self.functions.has_key(sym.name):
+                if sym.name in self.functions:
                     continue
                 if sym.entry.st_info['type'] == 'STT_FUNC' and sym.entry.st_size != 0:
                     name = sym.name
-                    try:
-                        name = codecs.encode(name, 'latin-1')
-                    except Exception:
-                        pass
                     if name not in self.symbols:
                         continue
                     addr = self.symbols[name]
@@ -913,12 +910,12 @@ class ELF(ELFFile):
             sould be able to find it easily.
 
             >>> bash = ELF('/bin/bash')
-            >>> bash.address + 1 == next(bash.search('ELF'))
+            >>> bash.address + 1 == next(bash.search(b'ELF'))
             True
 
             We can also search for string the binary.
 
-            >>> len(list(bash.search('GNU bash'))) > 0
+            >>> len(list(bash.search(b'GNU bash'))) > 0
             True
         """
         load_address_fixup = (self.address - self.load_addr)
@@ -934,7 +931,7 @@ class ELF(ELFFile):
             zeroed = memsz - seg.header.p_filesz
             offset = seg.header.p_offset
             data   = self.mmap[offset:offset+memsz]
-            data   += '\x00' * zeroed
+            data   += b'\x00' * zeroed
             offset = 0
             while True:
                 offset = data.find(needle, offset)
@@ -980,7 +977,7 @@ class ELF(ELFFile):
         return None
 
     def _populate_memory(self):
-        load_segments = filter(lambda s: s.header.p_type == 'PT_LOAD', self.iter_segments())
+        load_segments = list(filter(lambda s: s.header.p_type == 'PT_LOAD', self.iter_segments()))
 
         # Map all of the segments
         for i, segment in enumerate(load_segments):
@@ -1001,7 +998,7 @@ class ELF(ELFFile):
                 self.memory.addi(start, stop_data, segment)
 
             if stop_data != stop_mem:
-                self.memory.addi(stop_data, stop_mem, '\x00')
+                self.memory.addi(stop_data, stop_mem, b'\x00')
 
             # Check for holes which we can fill
             if self._fill_gaps and i+1 < len(load_segments):
@@ -1066,7 +1063,7 @@ class ELF(ELFFile):
 
             >>> bash = ELF(which('bash'))
             >>> bash.read(bash.address, 4)
-            '\x7fELF'
+            b'\x7fELF'
 
             ELF segments do not have to contain all of the data on-disk
             that gets loaded into memory.
@@ -1086,7 +1083,7 @@ class ELF(ELFFile):
             By default, these come right after eachother in memory.
 
             >>> e.read(e.symbols.A, 2)
-            '\x90\xcc'
+            b'\x90\xcc'
             >>> e.symbols.B - e.symbols.A
             1
 
@@ -1107,23 +1104,23 @@ class ELF(ELFFile):
             >>> e.symbols.B - e.symbols.A
             6
             >>> e.read(e.symbols.A, 2)
-            '\x90\x00'
+            b'\x90\x00'
             >>> e.read(e.symbols.A, 7)
-            '\x90\x00\x00\x00\x00\x00\xcc'
+            b'\x90\x00\x00\x00\x00\x00\xcc'
             >>> e.read(e.symbols.A, 10)
-            '\x90\x00\x00\x00\x00\x00\xcc\x00\x00\x00'
+            b'\x90\x00\x00\x00\x00\x00\xcc\x00\x00\x00'
 
             Everything is relative to the user-selected base address, so moving
             things around keeps everything working.
 
             >>> e.address += 0x1000
             >>> e.read(e.symbols.A, 10)
-            '\x90\x00\x00\x00\x00\x00\xcc\x00\x00\x00'
+            b'\x90\x00\x00\x00\x00\x00\xcc\x00\x00\x00'
         """
         retval = []
 
         if count == 0:
-            return ''
+            return b''
 
         start = address
         stop = address + count
@@ -1132,8 +1129,8 @@ class ELF(ELFFile):
 
         # Create a new view of memory, for just what we need
         memory = intervaltree.IntervalTree(overlap)
-        memory.chop(None, start)
-        memory.chop(stop, None)
+        memory.chop(-1<<64, start)
+        memory.chop(stop, 1<<64)
 
         if memory.begin() != start:
             log.error("Address %#x is not contained in %s" % (start, self))
@@ -1145,8 +1142,8 @@ class ELF(ELFFile):
         for begin, end, data in sorted(memory):
             length = end-begin
 
-            if data in (None, '\x00'):
-                retval.append('\x00' * length)
+            if data in (None, b'\x00'):
+                retval.append(b'\x00' * length)
                 continue
 
             # Offset within VMA range
@@ -1163,7 +1160,7 @@ class ELF(ELFFile):
 
             retval.append(self.mmap[offset:offset+length])
 
-        return ''.join(retval)
+        return b''.join(retval)
 
     def write(self, address, data):
         """Writes data to the specified virtual address
@@ -1179,10 +1176,10 @@ class ELF(ELFFile):
         Examples:
           >>> bash = ELF(which('bash'))
           >>> bash.read(bash.address+1, 3)
-          'ELF'
-          >>> bash.write(bash.address, "HELO")
+          b'ELF'
+          >>> bash.write(bash.address, b"HELO")
           >>> bash.read(bash.address, 4)
-          'HELO'
+          b'HELO'
         """
         offset = self.vaddr_to_offset(address)
 
@@ -1197,8 +1194,8 @@ class ELF(ELFFile):
 
         >>> bash = ELF(which('bash'))
         >>> bash.save('/tmp/bash_copy')
-        >>> copy = file('/tmp/bash_copy')
-        >>> bash = file(which('bash'))
+        >>> copy = open('/tmp/bash_copy', 'rb')
+        >>> bash = open(which('bash'), 'rb')
         >>> bash.read() == copy.read()
         True
         """
@@ -1212,7 +1209,7 @@ class ELF(ELFFile):
         Retrieve the raw data from the ELF file.
 
         >>> bash = ELF(which('bash'))
-        >>> fd   = open(which('bash'))
+        >>> fd   = open(which('bash'), 'rb')
         >>> bash.get_data() == fd.read()
         True
         """
@@ -1315,11 +1312,11 @@ class ELF(ELFFile):
             return None
 
         address   = dt_strtab.entry.d_ptr + offset
-        string    = ''
-        while '\x00' not in string:
+        string    = b''
+        while b'\x00' not in string:
             string  += self.read(address, 1)
             address += 1
-        return string.rstrip('\x00')
+        return string.rstrip(b'\x00')
 
 
 
@@ -1502,7 +1499,7 @@ class ELF(ELFFile):
     @property
     def packed(self):
         """:class:`bool`: Whether the current binary is packed with UPX."""
-        return 'UPX!' in self.get_data()
+        return b'UPX!' in self.get_data()
 
     @property
     def pie(self):
@@ -1723,7 +1720,7 @@ class ELF(ELFFile):
             A ``str`` with the string contents (NUL terminator is omitted),
             or an empty string if no NUL terminator could be found.
         """
-        data = ''
+        data = b''
         while True:
             read_size = 0x1000
             partial_page = address & 0xfff
@@ -1734,12 +1731,12 @@ class ELF(ELFFile):
             c = self.read(address, read_size)
 
             if not c:
-                return ''
+                return b''
 
             data += c
 
-            if '\x00' in c:
-                return data[:data.index('\x00')]
+            if b'\x00' in c:
+                return data[:data.index(b'\x00')]
 
             address += len(c)
 
@@ -1781,7 +1778,7 @@ class ELF(ELFFile):
             offset = phoff + phentsize * i
 
             if self.mmap[offset:offset+4] == PT_GNU_STACK:
-                self.mmap[offset:offset+4] = '\x00' * 4
+                self.mmap[offset:offset+4] = b'\x00' * 4
                 self.save()
                 return
 

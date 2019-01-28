@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
+import six
 import tempfile
 
 from pwnlib.log import getLogger
@@ -27,9 +28,9 @@ def wget(url, save=None, timeout=5, **kwargs):
       >>> url    = 'https://httpbin.org/robots.txt'
       >>> result = wget(url, timeout=60)
       >>> result
-      'User-agent: *\\nDisallow: /deny\\n'
+      b'User-agent: *\\nDisallow: /deny\\n'
       >>> result2 = wget(url, True, timeout=60)
-      >>> result == file('robots.txt').read()
+      >>> result == open('robots.txt', 'rb').read()
       True
     """
     import requests
@@ -67,10 +68,10 @@ def wget(url, save=None, timeout=5, **kwargs):
 
         # Save to the target file if provided
         if save:
-            if not isinstance(save, (str, unicode)):
+            if not isinstance(save, (bytes, six.text_type)):
                 save = os.path.basename(url)
                 save = save or tempfile.NamedTemporaryFile(dir='.', delete=False).name
-            with file(save,'wb+') as f:
+            with open(save,'wb+') as f:
                 f.write(total_data)
                 w.success('Saved %r (%s)' % (f.name, size(total_data)))
         else:

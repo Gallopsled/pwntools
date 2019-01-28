@@ -139,8 +139,8 @@ def self_insert(trace):
 
 def set_buffer(left, right):
     global buffer_left, buffer_right
-    buffer_left = unicode(left)
-    buffer_right = unicode(right)
+    buffer_left = left
+    buffer_right = right
     redisplay()
 
 def cancel_search(*_):
@@ -389,14 +389,14 @@ def readline(_size = None, prompt = '', float = True, priority = 10):
                     keymap.handle_input()
                 except EOFError:
                     if len(buffer_left + buffer_right) == 0:
-                        return ''
+                        return b''
                 if eof:
-                    return ''
+                    return b''
                 else:
                     buffer = (buffer_left + buffer_right)
                     if buffer:
                         history.insert(0, buffer)
-                    return force_to_bytes(buffer) + '\n'
+                    return force_to_bytes(buffer) + b'\n'
             except KeyboardInterrupt:
                 control_c()
     finally:
@@ -415,7 +415,8 @@ def readline(_size = None, prompt = '', float = True, priority = 10):
 
 def init():
     # defer imports until initialization
-    import sys, __builtin__
+    import sys
+    from six.moves import builtins
     from pwnlib.util import safeeval
 
     class Wrapper:
@@ -439,7 +440,7 @@ def init():
                          bottom of the screen when `term.term_mode` is enabled.
         """
         return readline(None, prompt, float)
-    __builtin__.raw_input = raw_input
+    builtins.raw_input = raw_input
 
     def input(prompt = '', float = True):
         """input(prompt = '', float = True)
@@ -453,4 +454,4 @@ def init():
                          bottom of the screen when `term.term_mode` is enabled.
         """
         return safeeval.const(readline(None, prompt, float))
-    __builtin__.input = input
+    builtins.input = input

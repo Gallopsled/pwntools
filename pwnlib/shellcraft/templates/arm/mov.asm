@@ -4,6 +4,7 @@
   from pwnlib.log import getLogger
   from pwnlib.shellcraft.registers import arm as regs
   from pwnlib.util import fiddling
+  import six
   log = getLogger('pwnlib.shellcraft.arm.mov')
 %>
 <%page args="dst, src"/>
@@ -19,26 +20,26 @@ on the value of `context.os`.
 
 Examples:
 
-    >>> print shellcraft.arm.mov('r0','r1').rstrip()
+    >>> print(shellcraft.arm.mov('r0','r1').rstrip())
         mov  r0, r1
-    >>> print shellcraft.arm.mov('r0', 5).rstrip()
+    >>> print(shellcraft.arm.mov('r0', 5).rstrip())
         mov  r0, #5
-    >>> print shellcraft.arm.mov('r0', 0x34532).rstrip()
+    >>> print(shellcraft.arm.mov('r0', 0x34532).rstrip())
         movw r0, #0x34532 & 0xffff
         movt r0, #0x34532 >> 16
-    >>> print shellcraft.arm.mov('r0', 0x101).rstrip()
+    >>> print(shellcraft.arm.mov('r0', 0x101).rstrip())
         movw r0, #0x101
-    >>> print shellcraft.arm.mov('r0', 0xff << 14).rstrip()
+    >>> print(shellcraft.arm.mov('r0', 0xff << 14).rstrip())
         mov  r0, #0x3fc000
-    >>> print shellcraft.arm.mov('r0', 0xff << 15).rstrip()
+    >>> print(shellcraft.arm.mov('r0', 0xff << 15).rstrip())
         movw r0, #0x7f8000 & 0xffff
         movt r0, #0x7f8000 >> 16
-    >>> print shellcraft.arm.mov('r0', 0xf00d0000).rstrip()
+    >>> print(shellcraft.arm.mov('r0', 0xf00d0000).rstrip())
         eor  r0, r0
         movt r0, #0xf00d0000 >> 16
-    >>> print shellcraft.arm.mov('r0', 0xffff00ff).rstrip()
+    >>> print(shellcraft.arm.mov('r0', 0xffff00ff).rstrip())
         mvn  r0, #(0xffff00ff ^ (-1))
-    >>> print shellcraft.arm.mov('r0', 0x1fffffff).rstrip()
+    >>> print(shellcraft.arm.mov('r0', 0x1fffffff).rstrip())
         mvn  r0, #(0x1fffffff ^ (-1))
 
 Args:
@@ -85,7 +86,7 @@ if not src in regs:
 %>
 %if src == dst:
     /* mov ${dst}, ${src} */
-%elif not isinstance(src, (int, long)):
+%elif not isinstance(src, six.integer_types):
     mov  ${dst}, ${src}
 %else:
     %if src == 0:

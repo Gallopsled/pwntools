@@ -23,7 +23,7 @@ class linux_dirent(object):
         buf=buf[2:]
 
         # Name
-        self.d_name = buf[:buf.index('\x00')]
+        self.d_name = buf[:buf.index(b'\x00')].decode('utf-8')
 
     def __len__(self):
         return self.d_reclen # 2 * context.bytes + 2 + len(self.d_name) + 1
@@ -45,7 +45,7 @@ def dirents(buf):
     Example:
 
         >>> data = '5ade6d010100000010002e0000000004010000000200000010002e2e006e3d04092b6d010300000010007461736b00045bde6d010400000010006664003b3504'
-        >>> data = data.decode('hex')
+        >>> data = unhex(data)
         >>> print dirents(data)
         ['.', '..', 'fd', 'task']
     """

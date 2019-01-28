@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 from __future__ import absolute_import
 from __future__ import division
 
@@ -25,7 +25,7 @@ p.add_argument('--pre', action='store_true', help='''
 
 def main(a):
     result = pwnlib.update.perform_check(prerelease=a.pre)
-    if a.install:
+    if result and a.install:
         subprocess.check_call(result, shell=False)
 
 if __name__ == '__main__':

@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import socket
+import socks
 import ssl as _ssl
 
 from pwnlib.log import getLogger
@@ -29,9 +30,9 @@ class remote(sock):
     Examples:
 
         >>> r = remote('google.com', 443, ssl=True)
-        >>> r.send('GET /\r\n\r\n')
+        >>> r.send(b'GET /\r\n\r\n')
         >>> r.recvn(4)
-        'HTTP'
+        b'HTTP'
 
         If a connection cannot be made, an exception is raised.
 
@@ -45,11 +46,11 @@ class remote(sock):
         >>> import socket
         >>> s = socket.socket()
         >>> s.connect(('google.com', 80))
-        >>> s.send('GET /' + '\r\n'*2)
+        >>> s.send(b'GET /' + b'\r\n'*2)
         9
         >>> r = remote.fromsocket(s)
         >>> r.recvn(4)
-        'HTTP'
+        b'HTTP'
     """
 
     def __init__(self, host, port,
@@ -106,6 +107,8 @@ class remote(sock):
                 try:
                     sock.connect(sockaddr)
                     return sock
+                except socks.ProxyError:
+                    raise
                 except socket.error:
                     pass
             self.error("Could not connect to %s on port %d" % (self.rhost, self.rport))

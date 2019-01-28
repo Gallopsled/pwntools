@@ -9,10 +9,10 @@ Example:
 
     >>> write('flag', 'This is the flag\n')
     >>> shellcode = shellcraft.cat('flag') + shellcraft.exit(0)
-    >>> print disasm(asm(shellcode))
+    >>> print(disasm(asm(shellcode)))
        0:   d28d8cce        mov     x14, #0x6c66                    // #27750
        4:   f2acec2e        movk    x14, #0x6761, lsl #16
-       8:   f81f0fee        str     x14, [sp, #-16]!
+       8:   f81f0fee        str     x14, [sp,#-16]!
        c:   d29ff380        mov     x0, #0xff9c                     // #65436
       10:   f2bfffe0        movk    x0, #0xffff, lsl #16
       14:   f2dfffe0        movk    x0, #0xffff, lsl #32
@@ -33,7 +33,7 @@ Example:
       50:   d2800ba8        mov     x8, #0x5d                       // #93
       54:   d4000001        svc     #0x0
     >>> run_assembly(shellcode).recvline()
-    'This is the flag\n'
+    b'This is the flag\n'
 </%docstring>
 <%
 if fd == 'x0':

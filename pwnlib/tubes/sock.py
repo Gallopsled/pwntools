@@ -3,6 +3,7 @@ from __future__ import division
 
 import errno
 import select
+import six
 import socket
 
 from pwnlib.log import getLogger
@@ -50,7 +51,7 @@ class sock(tube):
                 else:
                     raise
 
-        if data == '':
+        if not data:
             self.shutdown("recv")
             raise EOFError
 
@@ -82,11 +83,11 @@ class sock(tube):
             >>> r = remote('localhost', l.lport)
             >>> r.can_recv_raw(timeout=0)
             False
-            >>> l.send('a')
+            >>> l.send(b'a')
             >>> r.can_recv_raw(timeout=1)
             True
             >>> r.recv()
-            'a'
+            b'a'
             >>> r.can_recv_raw(timeout=0)
             False
             >>> l.close()
@@ -209,7 +210,7 @@ class sock(tube):
 
     def _get_family(self, fam):
 
-        if isinstance(fam, (int, long)):
+        if isinstance(fam, six.integer_types):
             pass
         elif fam == 'any':
             fam = socket.AF_UNSPEC
@@ -226,7 +227,7 @@ class sock(tube):
 
     def _get_type(self, typ):
 
-        if isinstance(typ, (int, long)):
+        if isinstance(typ, six.integer_types):
             pass
         elif typ == "tcp":
             typ = socket.SOCK_STREAM

@@ -1,4 +1,4 @@
-dist: trusty
+dist: xenial
 language: python
 addons:
   apt:
@@ -13,6 +13,13 @@ addons:
     - zsh
     - pandoc
     - gdb
+    - binutils
+    - qemu-user-static
+    - binutils-multiarch
+    - binutils-aarch64-linux-gnu
+    - binutils-arm-linux-gnueabihf
+    - binutils-powerpc-linux-gnu
+    - binutils-mips-linux-gnu
 cache:
     - pip
     - directories:
@@ -22,6 +29,7 @@ cache:
 sudo: required
 python:
   - "2.7"
+  - "3.6"
 before_install:
   - echo $-
   - source travis/install.sh
@@ -33,10 +41,10 @@ install:
   - pip install --upgrade --editable .
   - pip install --upgrade --requirement docs/requirements.txt
 before_script:
-  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
-  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
-  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
-  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
+  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
+  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
+  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
+  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
 script:
   - PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest
 after_success:

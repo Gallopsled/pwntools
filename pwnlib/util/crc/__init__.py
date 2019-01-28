@@ -14,6 +14,7 @@ An obvious optimization would be to actually generate some lookup-tables.
 from __future__ import absolute_import
 from __future__ import division
 
+import six
 import sys
 import types
 
@@ -66,18 +67,19 @@ class BitPolynom(object):
 
 
     def __init__(self, n):
-        if isinstance(n, (str, unicode)):
+        if isinstance(n, (bytes, six.text_type)):
             self.n = 0
             x = BitPolynom(2)
             try:
                 for p in n.split('+'):
                     k = safeeval.values(p.strip(), {'x': x, 'X': x})
-                    assert isinstance(k, (BitPolynom, int, long))
+                    assert isinstance(k, (BitPolynom,)+six.integer_types)
+                    k = int(k)
                     assert k >= 0
-                    self.n ^= int(k)
+                    self.n ^= k
             except (ValueError, NameError, AssertionError):
                 raise ValueError("Not a valid polynomial: %s" % n)
-        elif isinstance(n, (int, long)):
+        elif isinstance(n, six.integer_types):
             if n >= 0:
                 self.n = n
             else:
@@ -152,9 +154,11 @@ class BitPolynom(object):
 
     def __div__(self, other):
         return divmod(self, other)[0]
+    __floordiv__ = __div__
 
     def __rdiv__(self, other):
         return divmod(other, self)[0]
+    __rfloordiv__ = __rdiv__
 
     __floordiv__ = __div__
     __rfloordiv__ = __rdiv__
@@ -285,11 +289,13 @@ class Module(types.ModuleType):
             # refin is not meaningful in this case
             inlen = len(data)
             p = BitPolynom(int(''.join('1' if v else '0' for v in data), 2))
-        elif isinstance(data, str):
+        elif isinstance(data, six.binary_type):
             inlen = len(data)*8
             if refin:
                 data = fiddling.bitswap(data)
             p = BitPolynom(packing.unpack(data, 'all', endian='big', sign=False))
+        else:
+            raise ValueError("Don't know how to crc %s()" % type(data).__name__)
         p = p << width
         p ^= init << inlen
         p  = p % polynom
@@ -306,6 +312,7 @@ class Module(types.ModuleType):
             return crc.generic_crc(data, polynom, width, init, refin, refout, xorout)
         inner.func_name = 'crc_' + name
         inner.__name__  = 'crc_' + name
+        inner.__qualname__  = 'crc_' + name
 
         inner.__doc__   = """%s(data) -> int
 
@@ -326,7 +333,7 @@ class Module(types.ModuleType):
             data(str): The data to checksum.
 
         Example:
-            >>> print %s('123456789')
+            >>> print(%s(b'123456789'))
             %d
     """ % (name, name, polynom, width, init, refin, refout, xorout, extra_doc, name, check)
 
@@ -342,7 +349,7 @@ class Module(types.ModuleType):
             data(str): The data to checksum.
 
         Example:
-            >>> print cksum('123456789')
+            >>> print(cksum(b'123456789'))
             930766865
         """
 
@@ -359,7 +366,7 @@ class Module(types.ModuleType):
             data(str): Data for which the checksum is known.
 
         Example:
-            >>> find_crc_function('test', 46197)
+            >>> find_crc_function(b'test', 46197)
             [<function crc_crc_16_dnp at ...>]
         """
         candidates = []

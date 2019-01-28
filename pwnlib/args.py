@@ -86,7 +86,7 @@ def isident(s):
     Helper function to check whether a string is a valid identifier,
     as passed in on the command-line.
     """
-    first = string.uppercase + '_'
+    first = string.ascii_uppercase + '_'
     body = string.digits + first
     if not s:
         return False
