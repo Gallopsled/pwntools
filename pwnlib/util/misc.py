@@ -187,13 +187,13 @@ def run_in_new_terminal(command, terminal = None, args = None):
         - If ``context.terminal`` is set it will be used.
           If it is an iterable then ``context.terminal[1:]`` are default arguments.
         - If a ``pwntools-terminal`` command exists in ``$PATH``, it is used
-        - If ``$TERM_PROGRAM`` is set, that is used.
-        - If X11 is detected (by the presence of the ``$DISPLAY`` environment
-          variable), ``x-terminal-emulator`` is used.
         - If tmux is detected (by the presence of the ``$TMUX`` environment
           variable), a new pane will be opened.
         - If GNU Screen is detected (by the presence of the ``$STY`` environment
           variable), a new screen will be opened.
+        - If ``$TERM_PROGRAM`` is set, that is used.
+        - If X11 is detected (by the presence of the ``$DISPLAY`` environment
+          variable), ``x-terminal-emulator`` is used.
 
     Arguments:
         command (str): The command to run.
@@ -214,18 +214,18 @@ def run_in_new_terminal(command, terminal = None, args = None):
         elif which('pwntools-terminal'):
             terminal = 'pwntools-terminal'
             args     = []
-        elif 'TERM_PROGRAM' in os.environ:
-            terminal = os.environ['TERM_PROGRAM']
-            args     = []
-        elif 'DISPLAY' in os.environ and which('x-terminal-emulator'):
-            terminal = 'x-terminal-emulator'
-            args     = ['-e']
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
             args     = ['splitw']
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
+        elif 'TERM_PROGRAM' in os.environ:
+            terminal = os.environ['TERM_PROGRAM']
+            args     = []
+        elif 'DISPLAY' in os.environ and which('x-terminal-emulator'):
+            terminal = 'x-terminal-emulator'
+            args     = ['-e']
 
     if not terminal:
         log.error('Could not find a terminal binary to use. Set context.terminal to your terminal.')
