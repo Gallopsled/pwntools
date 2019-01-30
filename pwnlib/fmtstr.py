@@ -91,8 +91,6 @@ Example - Automated exploitation
 """
 from __future__ import division
 
-import copy
-import functools
 import logging
 import re
 from operator import itemgetter
