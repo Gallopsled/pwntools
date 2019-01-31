@@ -99,11 +99,8 @@ def name(pid):
         Name of process as listed in ``/proc/<pid>/status``.
 
     Example:
-        >>> from pwnlib import context
-        >>> from pwnlib.tubes.process import process
-        >>> with context.quiet, process('sh') as p:
-        ...     name(p.pid)
-        'sh'
+        >>> name(os.getpid()) == os.path.basename(sys.argv[0])
+        True
     """
     return psutil.Process(pid).name()
 
