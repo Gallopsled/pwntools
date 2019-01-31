@@ -100,7 +100,7 @@ def name(pid):
 
     Example:
         >>> p = process('cat')
-        >>> name(p)
+        >>> name(p.pid)
         'cat'
     """
     return psutil.Process(pid).name()
