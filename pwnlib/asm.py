@@ -723,9 +723,6 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
     To see which architectures are supported,
     look in :mod:`pwnlib.contex`.
 
-    To support all these architecture, we bundle the GNU objcopy
-    and objdump with pwntools.
-
     Arguments:
       data(str): Bytestring to disassemble.
       vma(int): Passed through to the --adjust-vma argument of objdump
