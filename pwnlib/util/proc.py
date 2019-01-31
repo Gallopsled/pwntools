@@ -99,8 +99,9 @@ def name(pid):
         Name of process as listed in ``/proc/<pid>/status``.
 
     Example:
-        >>> name(os.getpid()) == os.path.basename(sys.argv[0])
-        True
+        >>> p = process('cat')
+        >>> name(p)
+        'cat'
     """
     return psutil.Process(pid).name()
 
