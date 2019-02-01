@@ -6,6 +6,10 @@
 
     Finds a connected socket. If port is specified it is checked
     against the peer port. Resulting socket is left in r6.
+
+    Example:
+        >>> enhex(asm(shellcraft.findpeer(1337)))
+        '6ff00006ee4606f101064ff001074fea072707f11f07f54630461fb401a96a4601df0130efdd01994fea11414ff039024fea022202f105029142e4d1'
 </%docstring>
 findpeer:
     /* File descriptor in r6 */

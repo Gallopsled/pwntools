@@ -6,6 +6,10 @@
 
     Listens on a TCP port, accept a client and leave his socket in r6.
     Port is the TCP port to listen on, network is either 'ipv4' or 'ipv6'.
+
+    Example:
+        >>> enhex(asm(shellcraft.listen(1337, 'ipv4')))
+        '4ff001074fea072707f119074ff002004ff0010182ea020201df0646004901e00200053906b469464ff0100207f1010701df30464ff0010107f1020701df304681ea010182ea020207f1010701df0646'
 </%docstring>
     /* First create listening socket */
     ${mov('r7', 'SYS_socket')}
