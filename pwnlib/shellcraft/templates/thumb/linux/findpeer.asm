@@ -1,4 +1,4 @@
-<% from pwnlib.shellcraft.thumb.linux import mov %>
+<% from pwnlib.shellcraft.thumb import mov %>
 <% from socket import htons %>
 <%page args="port = None"/>
 <%docstring>
