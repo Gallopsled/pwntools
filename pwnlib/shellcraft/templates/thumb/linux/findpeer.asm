@@ -52,7 +52,7 @@ compare_port:
     ldr r1, [sp, #4]
     lsr r1, #16
 
-    /* Put the port (${port}) to search for into r1 */
+    /* Put the port (${port}) to search for into r2 */
     ${mov('r2', htons(int(port)))}
 
     /* Is it the one we have been searching for? */
