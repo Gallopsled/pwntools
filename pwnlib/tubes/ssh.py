@@ -146,13 +146,17 @@ class ssh_channel(sock):
         # However, we need to wait for the return value to propagate,
         # which may not happen by the time .close() is called by tube.recvall()
         tmp_sock = self.sock
+        tmp_close = self.close
+        self.close = lambda: None
 
         timeout = self.maximum if self.timeout is self.forever else self.timeout
         data = super(ssh_channel, self).recvall(timeout)
 
         # Restore self.sock to be able to call wait()
+        self.close = tmp_close
         self.sock = tmp_sock
         self.wait()
+        self.close()
 
         # Again set self.sock to None
         self.sock = None
@@ -1619,7 +1623,6 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         self.error('%r does not exist' % file_or_directory)
 
-
     def download(self, file_or_directory, local=None):
         """download(file_or_directory, local=None)
 
@@ -1633,7 +1636,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if not self.sftp:
             self.error("Cannot determine remote file type without SFTP")
 
-        if 0 == self.system('test -d ' + sh_string(file_or_directory)).wait():
+        with self.system('test -d ' + sh_string(file_or_directory)) as io:
+            is_dir = io.wait()
+
+        if 0 == is_dir:
             self.download_dir(file_or_directory, local)
         else:
             self.download_file(file_or_directory, local)

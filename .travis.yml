@@ -1,4 +1,4 @@
-dist: trusty
+dist: xenial
 language: python
 addons:
   apt:
@@ -13,15 +13,22 @@ addons:
     - zsh
     - pandoc
     - gdb
+    - binutils
+    - qemu-user-static
+    - binutils-multiarch
+    - binutils-aarch64-linux-gnu
+    - binutils-arm-linux-gnueabihf
+    - binutils-mips-linux-gnu
+    - binutils-powerpc-linux-gnu
 cache:
     - pip
     - directories:
         - usr
-        - /home/travis/virtualenv/python2.7.13/lib/python2.7/site-packages/
-        - /home/travis/virtualenv/python2.7.13/bin/
+        - /home/travis/virtualenv/python2.7.15/lib/python2.7/site-packages/
+        - /home/travis/virtualenv/python2.7.15/bin/
 sudo: required
 python:
-  - "2.7"
+  - "2.7.15"
 before_install:
   - echo $-
   - source travis/install.sh
