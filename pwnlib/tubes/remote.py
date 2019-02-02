@@ -55,7 +55,7 @@ class remote(sock):
 
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
-                 ssl=False, sock=None, ssl_args={},*args, **kwargs):
+                 ssl=False, sock=None, ssl_args=None, *args, **kwargs):
         super(remote, self).__init__(*args, **kwargs)
 
         self.rport  = int(port)
@@ -81,7 +81,7 @@ class remote(sock):
             self.lhost, self.lport = self.sock.getsockname()[:2]
 
             if ssl:
-                self.sock = _ssl.wrap_socket(self.sock,**ssl_args)
+                self.sock = _ssl.wrap_socket(self.sock,**(ssl_args or {}))
 
     def _connect(self, fam, typ):
         sock    = None
