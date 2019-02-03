@@ -754,6 +754,9 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
            4:   00900052        addseq  r0, r0, r2, asr r0
         >>> print(disasm(unhex('4ff00500'), arch = 'thumb', bits=32))
            0:   f04f 0005       mov.w   r0, #5
+        >>> print(disasm(unhex('656664676665400F18A4000000000051'), byte=0, arch='amd64'))
+           0:   gs data16 fs data16 rex nop/reserved BYTE PTR gs:[eax+eax*1+0x0]
+           f:   push   rcx
     """
     result = ''
 
@@ -774,6 +777,9 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
         '--set-section-flags', '.data=code',
         '--rename-section', '.data=.text',
     ]
+
+    if not byte:
+        objdump += ['--no-show-raw-insn']
 
     if arch == 'thumb':
         objcopy += ['--prefix-symbol=$t.']
@@ -801,10 +807,17 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
 
 
     lines = []
-    pattern = '^( *[0-9a-f]+: *)((?:[0-9a-f]+ )+ *)(.*)'
+    pattern = '^( *[0-9a-f]+: *)', '((?:[0-9a-f]+ )+ *)', '(.*)'
+    if not byte:
+        pattern = pattern[::2]
+    pattern = ''.join(pattern)
     for line in result.splitlines():
         try:
-            o, b, i = re.search(pattern, line).groups()
+            groups = re.search(pattern, line).groups()
+            if byte:
+                o, b, i = groups
+            else:
+                o, i = groups
         except:
             lines.append(line)
             continue
