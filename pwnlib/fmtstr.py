@@ -120,18 +120,18 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
     Examples:
         >>> context.clear(arch = 'amd64')
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int'))
-        '\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00%322419374c%1$n%3972547906c%2$n'
+        '%322419390c%5$n%3972547906c%6$n@\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00'
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short'))
-        '\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00%47774c%1$hn%22649c%2$hn%60617c%3$hn%4$hn'
+        '%4919c%7$hn%42887c%8$hn%17730c%9$hn%10$hn@@@@@@@\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00'
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte'))
-        '\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00%126c%1$hhn%252c%2$hhn%125c%3$hhn%220c%4$hhn%237c%5$hhn%6$hhn%7$hhn%8$hhn'
+        '%186c%11$hhn%4c%12$hhn%66c%13$hhn%14$hhn%15$hhn%16$hhn%19c%17$hhn%36c%18$hhn@@@@\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00'
         >>> context.clear(arch = 'i386')
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int'))
-        '\x00\x00\x00\x00%322419386c%1$n'
+        '%322419390c%5$n@\x00\x00\x00\x00'
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short'))
-        '\x00\x00\x00\x00\x02\x00\x00\x00%47798c%1$hn%22649c%2$hn'
+        '%4919c%7$hn%42887c%8$hn@\x02\x00\x00\x00\x00\x00\x00\x00'
         >>> print repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte'))
-        '\x00\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00%174c%1$hhn%252c%2$hhn%125c%3$hhn%220c%4$hhn'
+        '%55c%12$hhn%131c%13$hhn%4c%14$hhn%85c%15$hhn\x02\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00'
 
     """
 
@@ -152,30 +152,52 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
         log.error("write_size must be 'byte', 'short' or 'int'")
 
     number, step, mask, formatz, decalage = config[context.bits][write_size]
+    align = int(context.bits/8)
 
-    # add wheres
-    payload = ""
+    maxlen = len('%{}c%XX${}n'.format(mask, formatz))*number*len(writes)
+    if offset + maxlen/align + number*len(writes) > 99:
+        maxlen += number*len(writes)    # %{}c%XXX${}n
+
+    if maxlen % align:
+        maxlen += align - (maxlen % align)
+
+    # split all writes
+    allwrites = {}
     for where, what in writes.items():
         for i in range(0, number*step, step):
-            payload += pack(where+i)
-
-    numbwritten += len(payload)
-    fmtCount = 0
-    for where, what in writes.items():
-        for i in range(0, number):
-            current = what & mask
-            if numbwritten & mask <= current:
-                to_add = current - (numbwritten & mask)
-            else:
-                to_add = (current | (mask+1)) - (numbwritten & mask)
-
-            if to_add != 0:
-                payload += "%{}c".format(to_add)
-            payload += "%{}${}n".format(offset + fmtCount, formatz)
-
-            numbwritten += to_add
+            piece = what & mask
             what >>= decalage
+
+            if piece < (numbwritten + maxlen) % (mask + 1):
+                piece += mask+1
+            allwrites[where+i] = piece
+
+    def generate_payload(nbcut = 0):
+        fmtLength = maxlen - nbcut
+        assert fmtLength % align == 0, 'Wrong nbcut or maxlen'
+
+        fmtCount    = offset + int(fmtLength/align)
+        writeCount  = numbwritten
+
+        payload_fmt = ''
+        payload_adr = ''
+        for where, what in sorted(allwrites.items(), key=lambda x:x[1]):
+            to_add = (what - (writeCount & mask)) & mask
+            if to_add != 0:
+                payload_fmt += '%{}c'.format(to_add)
+            payload_fmt += '%{}${}n'.format(fmtCount, formatz)
+            payload_adr += pack(where)
+
+            writeCount += to_add
             fmtCount += 1
+
+        nbpad = fmtLength - len(payload_fmt)
+        payload_fmt += '@'*nbpad
+        return payload_fmt + payload_adr, nbpad
+
+    payload, nbpad = generate_payload()
+    while int(nbpad/align) > 0:
+        payload, nbpad = generate_payload(int(nbpad/align)*align)
 
     return payload
 
@@ -298,7 +320,7 @@ class FmtStr(object):
             >>> f = FmtStr(send_fmt_payload, offset=5)
             >>> f.write(0x08040506, 0x1337babe)
             >>> f.execute_writes()
-            '\x06\x05\x04\x08\x07\x05\x04\x08\x08\x05\x04\x08\t\x05\x04\x08%174c%5$hhn%252c%6$hhn%125c%7$hhn%220c%8$hhn'
+            '%55c%16$hhn%131c%17$hhn%4c%18$hhn%85c%19$hhn\x08\x05\x04\x08\x07\x05\x04\x08\x06\x05\x04\x08\t\x05\x04\x08'
 
         """
         self.writes[addr] = data
