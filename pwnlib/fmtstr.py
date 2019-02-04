@@ -195,9 +195,11 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte'):
         payload_fmt += '@'*nbpad
         return payload_fmt + payload_adr, nbpad
 
+    cut = 0
     payload, nbpad = generate_payload()
     while int(nbpad/align) > 0:
-        payload, nbpad = generate_payload(int(nbpad/align)*align)
+        cut += int(nbpad/align)*align
+        payload, nbpad = generate_payload(cut)
 
     return payload
 
