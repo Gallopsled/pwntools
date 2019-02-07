@@ -1417,7 +1417,7 @@ def update_context_defaults(section):
 
         default = ContextType.defaults[key]
 
-        if isinstance(default, (str, unicode, tuple, int, long, list, dict)):
+        if isinstance(default, six.string_types + six.integer_types + (tuple, list, dict)):
             value = safeeval.expr(value)
         else:
             log.warn("Unsupported configuration option %r in section %r" % (key, 'context'))
