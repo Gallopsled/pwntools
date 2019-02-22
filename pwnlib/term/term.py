@@ -251,9 +251,7 @@ def parse(s):
     out = []
     buf = bytearray(s)
     i = 0
-    while True:
-        if i >= len(buf):
-            break
+    while i < len(buf):
         x = None
         c = buf[i]
         if c >= 0x20 and c <= 0x7e:
@@ -320,6 +318,9 @@ def parse(s):
         elif c == 0x0d:
             x = (CR, None)
             i += 1
+        else:
+            i += 1
+
         if _graphics_mode:
             continue
         if x is None:

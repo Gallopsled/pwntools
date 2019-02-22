@@ -741,10 +741,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
     cmd += ' -q '
 
     if exe and context.native:
-        if ssh:
-            ssh.download_file(exe)
-            exe = os.path.basename(exe)
-        if not os.path.isfile(exe):
+        if not ssh and not os.path.isfile(exe):
             log.error('No such file: %s' % exe)
         cmd += ' "%s"' % exe
 

@@ -36,7 +36,7 @@ Disassembly
     To disassemble code, simply invoke :func:`disasm` on the bytes to disassemble.
 
     >>> disasm(b'\xb8\x0b\x00\x00\x00')
-    '   0:   b8 0b 00 00 00          mov    eax,0xb'
+    '   0:   b8 0b 00 00 00          mov    eax, 0xb'
 
 """
 from __future__ import absolute_import
@@ -725,9 +725,6 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
     To see which architectures are supported,
     look in :mod:`pwnlib.contex`.
 
-    To support all these architecture, we bundle the GNU objcopy
-    and objdump with pwntools.
-
     Arguments:
       data(str): Bytestring to disassemble.
       vma(int): Passed through to the --adjust-vma argument of objdump
@@ -832,4 +829,4 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
             line += i
         lines.append(line)
 
-    return '\n'.join(lines)
+    return re.sub(',([^ ])', r', \1', '\n'.join(lines))

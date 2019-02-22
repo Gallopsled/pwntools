@@ -26,6 +26,7 @@ class remote(sock):
         timeout: A positive number, None or the string "default".
         ssl(bool): Wrap the socket with SSL
         sock(socket.socket): Socket to inherit, rather than connecting
+        ssl_args(dict): Pass ssl.wrap_socket named arguments in a dictionary.
 
     Examples:
 
@@ -55,7 +56,7 @@ class remote(sock):
 
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
-                 ssl=False, sock=None, *args, **kwargs):
+                 ssl=False, sock=None, ssl_args=None, *args, **kwargs):
         super(remote, self).__init__(*args, **kwargs)
 
         self.rport  = int(port)
@@ -81,7 +82,7 @@ class remote(sock):
             self.lhost, self.lport = self.sock.getsockname()[:2]
 
             if ssl:
-                self.sock = _ssl.wrap_socket(self.sock)
+                self.sock = _ssl.wrap_socket(self.sock,**(ssl_args or {}))
 
     def _connect(self, fam, typ):
         sock    = None

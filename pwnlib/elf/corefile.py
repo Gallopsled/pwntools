@@ -70,9 +70,10 @@ import gzip
 import re
 import os
 import socket
+import subprocess
 import tempfile
 
-from six import BytesIO, StringIO
+from io import BytesIO, StringIO
 
 import elftools
 from elftools.common.py3compat import bytes2str
@@ -1325,12 +1326,42 @@ class CorefileFinder(object):
 
         return data
 
+    def systemd_coredump_corefile(self):
+        """Find the systemd-coredump crash for the process and dump it to a file.
+
+        Arguments:
+            process(process): Process object we're looking for.
+
+        Returns:
+            `str`: Filename of core file, if coredump was found.
+        """
+        filename = "core.%s.%i.coredumpctl" % (self.basename, self.pid)
+        try:
+            subprocess.check_call(
+                [
+                    "coredumpctl",
+                    "dump",
+                    "--output=%s" % filename,
+                    # Filter coredump by pid and filename
+                    str(self.pid),
+                    self.basename,
+                ],
+                stdout=open(os.devnull, 'w'),
+                stderr=subprocess.STDOUT,
+                shell=False,
+            )
+            return filename
+        except subprocess.CalledProcessError as e:
+            log.debug("coredumpctl failed with status: %d" % e.returncode)
+
     def native_corefile(self):
         """Find the corefile for a native crash.
 
         Arguments:
             process(process): Process whose crash we should find.
 
+        Returns:
+            `str`: Filename of core file.
         """
         if self.kernel_core_pattern.startswith(b'|'):
             log.debug("Checking for corefile (piped)")
@@ -1340,25 +1371,36 @@ class CorefileFinder(object):
         return self.native_corefile_pattern()
 
     def native_corefile_pipe(self):
-        """native_corefile_pipe(self) -> str
+        """Find the corefile for a piped core_pattern
+
+        Supports apport and systemd-coredump.
+
+        Arguments:
+            process(process): Process whose crash we should find.
+
+        Returns:
+            `str`: Filename of core file.
         """
-        # We only support apport
-        if b'/apport' not in self.kernel_core_pattern:
-            log.warn_once("Unsupported core_pattern: %r" % self.kernel_core_pattern)
+        if b'/apport' in self.kernel_core_pattern:
+            log.debug("Found apport in core_pattern")
+            apport_core = self.apport_corefile()
+
+            if apport_core:
+                # Write the corefile to the local directory
+                filename = 'core.%s.%i.apport' % (self.basename, self.pid)
+                with open(filename, 'wb+') as f:
+                    f.write(apport_core)
+                return filename
+
+            # Pretend core_pattern was just 'core', and see if we come up with anything
+            self.kernel_core_pattern = 'core'
+            return self.native_corefile_pattern()
+        elif b'systemd-coredump' in self.kernel_core_pattern:
+            log.debug("Found systemd-coredump in core_pattern")
+            return self.systemd_coredump_corefile()
+        else:
+            log.warn_once("Unsupported core_pattern: %r", self.kernel_core_pattern)
             return None
-
-        apport_core = self.apport_corefile()
-
-        if apport_core:
-            # Write the corefile to the local directory
-            filename = 'core.%s.%i.apport' % (self.basename, self.pid)
-            with open(filename, 'wb+') as f:
-                f.write(apport_core)
-            return filename
-
-        # Pretend core_pattern was just 'core', and see if we come up with anything
-        self.kernel_core_pattern = 'core'
-        return self.native_corefile_pattern()
 
     def native_corefile_pattern(self):
         """
