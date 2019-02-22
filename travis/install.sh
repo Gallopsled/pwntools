@@ -184,7 +184,7 @@ setup_osx()
 }
 
 if [[ "$USER" == "travis" ]]; then
-    setup_travis
+#   setup_travis
     setup_android_emulator
 elif [[ "$USER" == "shippable" ]]; then
     sudo apt-get update
