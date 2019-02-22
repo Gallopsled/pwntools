@@ -4,7 +4,7 @@ import os
 import re
 
 
-def generate(self):
+def generate():
     """Generates a dictionary of all the known CRC formats from:
     http://reveng.sourceforge.net/crc-catalogue/all.htm
 

@@ -10,6 +10,11 @@ The current algorithm is super-linear and takes about 4 seconds to calculate
 the crc32-sum of ``'A'*40000``.
 
 An obvious optimization would be to actually generate some lookup-tables.
+
+This doctest is to ensure that the known data are accurate:
+    >>> known = sys.modules['pwnlib.util.crc.known']
+    >>> known.all_crcs == known.generate()
+    True
 """
 from __future__ import absolute_import
 from __future__ import division
