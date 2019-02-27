@@ -732,7 +732,7 @@ class tube(Timeout, Logger):
     def sendafter(self, delim, data, timeout = default):
         """sendafter(delim, data, timeout = default) -> str
 
-        A combination of ``recvuntil(delim, timeout)`` and ``send(data)``.
+        A combination of ``recvuntil(delim, timeout=timeout)`` and ``send(data)``.
         """
 
         res = self.recvuntil(delim, timeout=timeout)
@@ -742,7 +742,7 @@ class tube(Timeout, Logger):
     def sendlineafter(self, delim, data, timeout = default):
         """sendlineafter(delim, data, timeout = default) -> str
 
-        A combination of ``recvuntil(delim, timeout)`` and ``sendline(data)``."""
+        A combination of ``recvuntil(delim, timeout=timeout)`` and ``sendline(data)``."""
 
         res = self.recvuntil(delim, timeout=timeout)
         self.sendline(data)
@@ -751,7 +751,7 @@ class tube(Timeout, Logger):
     def sendthen(self, delim, data, timeout = default):
         """sendthen(delim, data, timeout = default) -> str
 
-        A combination of ``send(data)`` and ``recvuntil(delim, timeout)``."""
+        A combination of ``send(data)`` and ``recvuntil(delim, timeout=timeout)``."""
 
         self.send(data)
         return self.recvuntil(delim, timeout=timeout)
@@ -759,7 +759,7 @@ class tube(Timeout, Logger):
     def sendlinethen(self, delim, data, timeout = default):
         """sendlinethen(delim, data, timeout = default) -> str
 
-        A combination of ``sendline(data)`` and ``recvuntil(delim, timeout)``."""
+        A combination of ``sendline(data)`` and ``recvuntil(delim, timeout=timeout)``."""
 
         self.send(data + self.newline)
         return self.recvuntil(delim, timeout=timeout)
