@@ -744,7 +744,7 @@ class tube(Timeout, Logger):
 
         A combination of ``recvuntil(delim, timeout)`` and ``sendline(data)``."""
 
-        res = self.recvuntil(delim, timeout)
+        res = self.recvuntil(delim, timeout=timeout)
         self.sendline(data)
         return res
 
