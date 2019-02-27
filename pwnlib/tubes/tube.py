@@ -735,7 +735,7 @@ class tube(Timeout, Logger):
         A combination of ``recvuntil(delim, timeout)`` and ``send(data)``.
         """
 
-        res = self.recvuntil(delim, timeout)
+        res = self.recvuntil(delim, timeout=timeout)
         self.send(data)
         return res
 
@@ -754,7 +754,7 @@ class tube(Timeout, Logger):
         A combination of ``send(data)`` and ``recvuntil(delim, timeout)``."""
 
         self.send(data)
-        return self.recvuntil(delim, timeout)
+        return self.recvuntil(delim, timeout=timeout)
 
     def sendlinethen(self, delim, data, timeout = default):
         """sendlinethen(delim, data, timeout = default) -> str
@@ -762,7 +762,7 @@ class tube(Timeout, Logger):
         A combination of ``sendline(data)`` and ``recvuntil(delim, timeout)``."""
 
         self.send(data + self.newline)
-        return self.recvuntil(delim, timeout)
+        return self.recvuntil(delim, timeout=timeout)
 
     def interactive(self, prompt = term.text.bold_red('$') + ' '):
         """interactive(prompt = pwnlib.term.text.bold_red('$') + ' ')
