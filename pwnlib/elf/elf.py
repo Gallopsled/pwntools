@@ -1006,17 +1006,7 @@ class ELF(ELFFile):
             # Check for holes which we can fill
             if self._fill_gaps and i+1 < len(load_segments):
                 next_start = load_segments[i+1].header.p_vaddr
-                # This method of filling holes is not rigorous enough. Take
-                # vmlinux for example, [start,stop_mem] like that
-                # [0xffffffff81000000, 0xffffffff81dcc000]
-                # [0xffffffff81e00000, 0xffffffff81f7d000]
-                # [0x0000000000000000, 0x0000000000017e98]
-                # [0xffffffff81f95000, 0xffffffff823bb000]
-                # 
-                # So don't fill 0x0000000000017e98 - 0xffffffff81f95000, 
-                # or 0xffffffff81000000 - 0xffffffff81f95000 will remapped with None, 
-                # which triger bug in memory read.
-                # So we should check if they are user-user or kernel-kernel.
+                
                 if stop_mem < next_start and stop_mem>>(self.bits-1) == next_start>>(self.bits-1):
                     self.memory.addi(stop_mem, next_start, None)
             else:
