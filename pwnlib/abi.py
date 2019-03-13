@@ -125,21 +125,21 @@ class SigreturnABI(SyscallABI):
 
 
 # System V ABI used by many UNIXes
-sysv_i386   = ABI('esp', [], 4, 0)
-sysv_amd64  = ABI('rsp', ['rdi','rsi','rdx','rcx','r8','r9'], 8, 0)
-sysv_arm    = ABI('sp', ['r0', 'r1', 'r2', 'r3'], 8, 0)
-sysv_aarch64 = ABI('sp', ['x0', 'x1', 'x2', 'x3'], 16, 0)
-sysv_mips  = ABI('$sp', ['$a0','$a1','$a2','$a3'], 4, 0)
-sysv_ppc = ABI('sp', ['r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10'], 4, 0)
-sysv_ppc64 = ABI('sp', ['r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10'], 8, 0)
+linux_i386   = ABI('esp', [], 4, 0)
+linux_amd64  = ABI('rsp', ['rdi','rsi','rdx','rcx','r8','r9'], 8, 0)
+linux_arm    = ABI('sp', ['r0', 'r1', 'r2', 'r3'], 8, 0)
+linux_aarch64 = ABI('sp', ['x0', 'x1', 'x2', 'x3'], 16, 0)
+linux_mips  = ABI('$sp', ['$a0','$a1','$a2','$a3'], 4, 0)
+linux_ppc = ABI('sp', ['r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10'], 4, 0)
+linux_ppc64 = ABI('sp', ['r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10'], 8, 0)
 
-linux_i386 = sysv_i386
-linux_amd64 = sysv_amd64
-linux_arm = sysv_arm
-linux_aarch64 = sysv_aarch64
-linux_mips = sysv_mips
-linux_ppc = sysv_ppc
-linux_ppc64 = sysv_ppc64
+sysv_i386 = linux_i386
+sysv_amd64 = linux_amd64
+sysv_arm = linux_arm
+sysv_aarch64 = linux_aarch64
+sysv_mips = linux_mips
+sysv_ppc = linux_ppc
+sysv_ppc64 = linux_ppc64
 
 linux_i386_syscall = SyscallABI('esp', ['eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp'], 4, 0)
 linux_amd64_syscall = SyscallABI('rsp', ['rax', 'rdi', 'rsi', 'rdx', 'r10', 'r8', 'r9'],   8, 0)
@@ -170,7 +170,6 @@ freebsd_mips_syscall  = SyscallABI('$sp', ['$v0','$a0','$a1','$a2','$a3'], 4, 0)
 freebsd_ppc_syscall = SyscallABI('sp', ['r0', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10'], 4, 0)
 freebsd_ppc64_syscall = SyscallABI('sp', ['r0', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10'], 8, 0)
 
-# TODO: confirm this
 freebsd_i386_sigreturn = SigreturnABI('esp', ['eax'], 4, 0)
 freebsd_amd64_sigreturn = SigreturnABI('rsp', ['rax'], 4, 0)
 freebsd_arm_sigreturn = SigreturnABI('sp', ['r7'], 4, 0)
