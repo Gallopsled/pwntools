@@ -51,7 +51,6 @@ Example:
   arguments  = iter(filter(lambda arg: arg is not None, arguments))
   regctx     = dict(zip(registers, arguments))
   stack_args = reversed(arguments) # push remaining args on stack in reverse order
-  stack_args = stack_args[::-1] # push in reverse order
 %>\
     /* call ${syscall_repr} */
     ${aarch64.setregs(regctx)}
