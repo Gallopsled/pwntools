@@ -48,7 +48,7 @@ Example:
 
   registers  = abi.register_arguments
   arguments  = [syscall, arg0, arg1, arg2, arg3, arg4, arg5]
-  arguments  = filter(lambda arg: arg is not None, arguments)
+  arguments  = iter(filter(lambda arg: arg is not None, arguments))
   regctx     = dict(zip(registers, arguments))
   stack_args = arguments[len(registers):] # remaining args pushed on stack
   stack_args = stack_args[::-1] # push in reverse order
