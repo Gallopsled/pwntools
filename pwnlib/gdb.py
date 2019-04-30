@@ -467,7 +467,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     garbage = gdbserver.recvline(timeout=1)
     
     # Some versions of gdbserver output an additional message
-    garbage2 = gdbserver.recvline_startswith("Remote debugging from host ", timeout=1)
+    garbage2 = gdbserver.recvline_startswith(b"Remote debugging from host ", timeout=1)
 
     return gdbserver
 
