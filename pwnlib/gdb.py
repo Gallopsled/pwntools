@@ -442,7 +442,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     if not exe:
         log.error("%s does not exist" % orig_args[0])
     else:
-        gdbscript = 'file %s\n%s' % (exe, gdbscript)
+        gdbscript = 'file "%s"\n%s' % (exe, gdbscript)
 
     # Start gdbserver/qemu
     # (Note: We override ASLR here for the gdbserver process itself.)
@@ -726,7 +726,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     if exe:
         # The 'file' statement should go first
-        pre = 'file %s\n%s' % (exe, pre)
+        pre = 'file "%s"\n%s' % (exe, pre)
 
     cmd = binary()
 
