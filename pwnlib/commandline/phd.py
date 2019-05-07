@@ -5,6 +5,7 @@ from __future__ import division
 import argparse
 import os
 import sys
+import io
 
 import pwnlib
 pwnlib.args.free_form = False
@@ -88,6 +89,9 @@ def main(args):
             infile.read(skip)
         else:
             infile.seek(skip, os.SEEK_CUR)
+
+    if count:
+        infile = io.BytesIO(infile.read(count))
 
     hl = []
     if args.highlight:
