@@ -11,7 +11,7 @@ local_deb_extract()
 
 install_deb()
 {
-    version=${2:-artful}
+    version=${2:-bionic}
     package=$1
     echo "Installing $package"
     INDEX="http://packages.ubuntu.com/en/$version/amd64/$package/download"
@@ -65,7 +65,7 @@ setup_travis()
 setup_linux()
 {
     sudo apt-get install -y software-properties-common openssh-server libncurses5-dev libncursesw5-dev openjdk-8-jre-headless
-    RELEASE="$(lsb-release -sr)"
+    RELEASE="$(lsb_release -sr)"
     if [[ "$RELEASE" < "16.04" ]]; then
         sudo apt-add-repository --yes ppa:pwntools/binutils
         sudo apt-get update
@@ -184,7 +184,7 @@ setup_osx()
 }
 
 if [[ "$USER" == "travis" ]]; then
-    setup_travis
+#   setup_travis
     setup_android_emulator
 elif [[ "$USER" == "shippable" ]]; then
     sudo apt-get update

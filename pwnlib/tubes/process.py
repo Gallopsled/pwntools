@@ -344,9 +344,10 @@ class process(tube):
 
         # Set in non-blocking mode so that a call to call recv(1000) will
         # return as soon as a the first byte is available
-        fd = self.proc.stdout.fileno()
-        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+        if self.proc.stdout:
+            fd = self.proc.stdout.fileno()
+            fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+            fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
         # Save off information about whether the binary is setuid / setgid
         self.uid = os.getuid()
@@ -435,11 +436,11 @@ class process(tube):
         # appropriate qemu binary to run it.
         qemu_path = qemu.user_path(arch=binary.arch)
 
-        if not qemu:
+        if not qemu_path:
             raise exception
 
         qemu_path = which(qemu_path)
-        if qemu:
+        if qemu_path:
             self._qemu = qemu_path
 
             args = [qemu_path]
