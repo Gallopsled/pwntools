@@ -28,6 +28,19 @@ cache:
         - /home/travis/virtualenv/python2.7.15/bin/
 python:
   - "2.7.15"
+matrix:
+  allow_failures:
+    - python: 3.7
+  include:
+    - python: 3.7
+      before_install: pip install --upgrade pip
+      install: pip install flake8
+      before_script: true  # override the main before_script
+      script:
+        # stop the build if there are Python syntax errors or undefined names
+        - flake8 . --count --select=E9,F63,F72,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
+        - flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 before_install:
   - echo $-
   - source travis/install.sh
