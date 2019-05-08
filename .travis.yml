@@ -26,13 +26,12 @@ cache:
         - usr
         - /home/travis/virtualenv/python2.7.15/lib/python2.7/site-packages/
         - /home/travis/virtualenv/python2.7.15/bin/
-python:
-  - "2.7.15"
 matrix:
   allow_failures:
     - python: 3.7
   include:
-    - python: 3.7
+    - python: "2.7.15"
+    - python: "3.7"
       before_install: pip install --upgrade pip
       install: pip install flake8
       before_script: true  # override the main before_script
