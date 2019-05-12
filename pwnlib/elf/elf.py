@@ -439,9 +439,12 @@ class ELF(ELFFile):
 
     def _describe(self, *a, **kw):
         log.info_once(
-            '%s\n%s\n%s',
+            '%s\n%-10s%s-%s-%s\n%s',
             repr(self.path),
-            '%-10s%s-%s-%s' % ('Arch:', self.arch, self.bits, self.endian),
+            'Arch:',
+            self.arch,
+            self.bits,
+            self.endian,
             self.checksec(*a, **kw)
         )
 
