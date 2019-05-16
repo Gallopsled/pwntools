@@ -2,6 +2,7 @@ from __future__ import absolute_import, print_function
 
 import argparse
 import os
+import errno
 
 from pwnlib.commandline import common
 
@@ -24,20 +25,20 @@ def main(args):
     if 0x100000000 - value < 0x200:
       value = 0x100000000 - value
 
-    if value not in os.errno.errorcode:
+    if value not in errno.errorcode:
       print("No errno for %s" % value)
       return
 
-    name = os.errno.errorcode[value]
+    name = errno.errorcode[value]
 
   except ValueError:
     name = args.error.upper()
 
-    if not hasattr(os.errno, name):
+    if not hasattr(errno, name):
       print("No errno for %s" % name)
       return
 
-    value = getattr(os.errno, name)
+    value = getattr(errno, name)
 
 
   print('#define', name, value)
