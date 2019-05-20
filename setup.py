@@ -59,7 +59,7 @@ install_requires     = ['paramiko>=1.15.2',
                         'python-dateutil',
                         'packaging',
                         'psutil>=3.3.0',
-                        'intervaltree',
+                        'intervaltree>=3.0',
                         'sortedcontainers',
                         'unicorn']
 
