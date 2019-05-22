@@ -429,7 +429,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
             log.error("Cannot debug %s binaries without appropriate QEMU binaries" % context.arch)
         qemu_args = [qemu_user, '-g', str(qemu_port)]
         if sysroot:
-            qemu_args = ['-L', sysroot]
+            qemu_args += ['-L', sysroot]
         args = qemu_args + args
 
     # Use a sane default sysroot for Android
