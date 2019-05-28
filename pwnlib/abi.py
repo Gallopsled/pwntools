@@ -154,6 +154,11 @@ linux_amd64_sigreturn = SigreturnABI('rsp', ['rax'], 4, 0)
 linux_arm_sigreturn = SigreturnABI('sp', ['r7'], 4, 0)
 linux_aarch64_sigreturn = SigreturnABI('sp', ['x8'], 16, 0)
 
+sysv_i386_sigreturn = linux_i386_sigreturn
+sysv_amd64_sigreturn = linux_amd64_sigreturn
+sysv_arm_sigreturn = linux_arm_sigreturn
+sysv_aarch64_sigreturn = linux_aarch64_sigreturn
+
 freebsd_i386 = sysv_i386
 freebsd_amd64 = sysv_amd64
 freebsd_arm = sysv_arm
@@ -170,10 +175,10 @@ freebsd_mips_syscall  = SyscallABI('$sp', ['$v0','$a0','$a1','$a2','$a3'], 4, 0)
 freebsd_ppc_syscall = SyscallABI('sp', ['r0', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10'], 4, 0)
 freebsd_ppc64_syscall = SyscallABI('sp', ['r0', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10'], 8, 0)
 
-freebsd_i386_sigreturn = SigreturnABI('esp', ['eax'], 4, 0)
-freebsd_amd64_sigreturn = SigreturnABI('rsp', ['rax'], 4, 0)
-freebsd_arm_sigreturn = SigreturnABI('sp', ['r7'], 4, 0)
-freebsd_aarch64_sigreturn = SigreturnABI('sp', ['x8'], 16, 0)
+freebsd_i386_sigreturn = sysv_i386_sigreturn
+freebsd_amd64_sigreturn = sysv_amd64_sigreturn
+freebsd_arm_sigreturn = sysv_arm_sigreturn
+freebsd_aarch64_sigreturn = sysv_aarch64_sigreturn
 
 windows_i386  = ABI('esp', [], 4, 0)
 windows_amd64 = ABI('rsp', ['rcx','rdx','r8','r9'], 32, 32)
