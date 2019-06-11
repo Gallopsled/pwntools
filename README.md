@@ -32,15 +32,30 @@ To get you started, we've provided some example solutions for past CTF challenge
 
 # Installation
 
-Pwntools is best supported on 64-bit Ubuntu LTE releases (12.04, 14.04, and 16.04).  Most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).  Python 2.7 is required.
+Pwntools is best supported on 64-bit Ubuntu LTE releases (12.04, 14.04, 16.04, 18.04).  Most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.). Unlike for mainstream pwntools, in Dev3 branch, Python 3 is expected.
 
 Most of the functionality of pwntools is self-contained and Python-only.  You should be able to get running quickly with
 
 ```sh
+# install bootstrap packages. Python 2.7 no longer required
 apt-get update
-apt-get install python2.7 python-pip python-dev git libssl-dev libffi-dev build-essential
-pip install --upgrade pip
-pip install --upgrade pwntools
+apt-get install python-pip python-dev git libssl-dev libffi-dev build-essential
+
+# Clone the repo
+git clone https://github.com/Gallopsled/pwntools
+cd pwntools
+
+# switch to the hidden Dev3 branch
+git branch -a
+git checkout remotes/origin/dev3
+
+# install the local dev3 branch
+pip3 install .
+
+# for whatever reason pip3 breaks after the installation.
+# Reference: https://stackoverflow.com/questions/49836676/error-after-upgrading-pip-cannot-import-name-main
+# Solution: to reinstall pip3
+python3 -m pip uninstall pip && sudo apt install python3-pip --reinstall
 ```
 
 However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://docs.pwntools.com/en/stable/install.html).
