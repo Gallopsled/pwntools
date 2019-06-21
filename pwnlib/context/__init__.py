@@ -825,7 +825,7 @@ class ContextType(object):
         return charset
 
     def _encode(self, s):
-        if not hasattr(s, 'encode'):
+        if isinstance(s, (bytes, bytearray)):
             return s   # already bytes
 
         if self.encoding == 'auto':
