@@ -818,7 +818,7 @@ class ContextType(object):
             return charset
 
         if (  b'aA'.decode(charset) != 'aA'
-            or 'aA'.encode(charset) != b'aA':
+            or 'aA'.encode(charset) != b'aA'):
             raise ValueError('Strange encoding!')
 
         return charset
