@@ -93,10 +93,10 @@ class tube(Timeout, Logger):
             >>> t = tube()
             >>> # Fake a data source
             >>> t.recv_raw = lambda n: b'Hello, world'
-            >>> t.recvs() == 'Hello, world'
+            >>> t.recvS() == 'Hello, world'
             True
             >>> t.unrecv(b'Woohoo')
-            >>> t.recvs() == 'Woohoo'
+            >>> t.recvS() == 'Woohoo'
             True
         """
         return context._decode(self.recv(numb, timeout))
@@ -479,7 +479,7 @@ class tube(Timeout, Logger):
             >>> t.recvlinesS(3)
             ['Foo', 'Bar', 'Baz']
         """
-        return [context._decode(x) for x in self.recvlines(delims, drop, timeout)]
+        return [context._decode(x) for x in self.recvlines(numlines, keepends, timeout)]
 
     def recvline(self, keepends=True, timeout=default):
         r"""recvline(keepends=True, timeout=default) -> bytes
