@@ -349,6 +349,7 @@ class ContextType(object):
         'cyclic_size': 4,
         'delete_corefiles': False,
         'device': os.getenv('ANDROID_SERIAL', None) or None,
+        'encoding': 'auto',
         'endian': 'little',
         'gdbinit': "",
         'kernel': None,
@@ -824,7 +825,7 @@ class ContextType(object):
         return charset
 
     def _encode(self, s):
-        if not hasattr(b, 'encode'):
+        if not hasattr(s, 'encode'):
             return s   # already bytes
 
         if self.encoding == 'auto':
