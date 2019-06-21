@@ -48,7 +48,7 @@ class tube(Timeout, Logger):
 
     # Functions based on functions from subclasses
     def recv(self, numb = None, timeout = default):
-        r"""recv(numb = 4096, timeout = default) -> str
+        r"""recv(numb = 4096, timeout = default) -> bytes
 
         Receives up to `numb` bytes of data from the tube, and returns
         as soon as any quantity of data is available.
@@ -60,7 +60,7 @@ class tube(Timeout, Logger):
             exceptions.EOFError: The connection is closed
 
         Returns:
-            A string containing bytes received from the socket,
+            A bytes object containing bytes received from the socket,
             or ``''`` if a timeout occurred while waiting.
 
         Examples:
@@ -80,6 +80,26 @@ class tube(Timeout, Logger):
         """
         numb = self.buffer.get_fill_size(numb)
         return self._recv(numb, timeout) or b''
+
+    def recvS(self, numb = None, timeout = default):
+        r"""recvS(numb = None, timeout = default) -> str
+
+        This function is identical to :meth:`recv`, but decodes
+        the received bytes into string using :func:`context.encoding`.
+        You should use :meth:`recv` whenever possible for better performance.
+
+        Examples:
+
+            >>> t = tube()
+            >>> # Fake a data source
+            >>> t.recv_raw = lambda n: b'Hello, world'
+            >>> t.recvs() == 'Hello, world'
+            True
+            >>> t.unrecv(b'Woohoo')
+            >>> t.recvs() == 'Woohoo'
+            True
+        """
+        return context._decode(self.recv(numb, timeout))
 
     def unrecv(self, data):
         """unrecv(data)
@@ -101,6 +121,7 @@ class tube(Timeout, Logger):
             >>> t.recv()
             b'hello'
         """
+        data = context._encode(data)
         self.buffer.unget(data)
 
     def _fillbuffer(self, timeout = default):
@@ -162,9 +183,9 @@ class tube(Timeout, Logger):
         return self.buffer.get(numb)
 
     def recvpred(self, pred, timeout = default):
-        """recvpred(pred, timeout = default) -> str
+        """recvpred(pred, timeout = default) -> bytes
 
-        Receives one byte at a time from the tube, until ``pred(bytes)``
+        Receives one byte at a time from the tube, until ``pred(all_bytes)``
         evaluates to True.
 
         If the request is not satisfied before ``timeout`` seconds pass,
@@ -178,7 +199,7 @@ class tube(Timeout, Logger):
             exceptions.EOFError: The connection is closed
 
         Returns:
-            A string containing bytes received from the socket,
+            A bytes object containing bytes received from the socket,
             or ``''`` if a timeout occurred while waiting.
         """
 
@@ -199,6 +220,15 @@ class tube(Timeout, Logger):
                     return b''
 
         return data
+
+    def recvpredS(self, pred, timeout = default):
+        """recvpredS(pred, timeout = default) -> str
+
+        This function is identical to :meth:`recvpred`, but decodes
+        the received bytes into string using :func:`context.encoding`.
+        You should use :meth:`recvpred` whenever possible for better performance.
+        """
+        return context._decode(self.recvpred(pred, timeout))
 
     def recvn(self, numb, timeout = default):
         """recvn(numb, timeout = default) -> str
@@ -246,8 +276,27 @@ class tube(Timeout, Logger):
 
         return self.buffer.get(numb)
 
-    def recvuntil(self, delims, drop=False, timeout = default):
-        """recvuntil(delims, timeout = default) -> str
+    def recvnS(self, numb, timeout = default):
+        """recvnS(numb, timeout = default) -> str
+
+        This function is identical to :meth:`recvn`, but decodes
+        the received bytes into string using :func:`context.encoding`.
+        You should use :meth:`recvn` whenever possible for better performance.
+
+        Examples:
+
+            >>> t = tube()
+            >>> data = b'hello world'
+            >>> t.recv_raw = lambda *a: data
+            >>> t.recvnS(len(data)) == data.decode()
+            True
+            >>> t.recvnS(len(data)+1).encode() == data + data[:1]
+            True
+        """
+        return context._decode(self.recvn(numb, timeout))
+
+    def recvuntil(self, delims, drop=False, timeout=default):
+        """recvuntil(delims, drop=False, timeout=default) -> bytes
 
         Receive data until one of `delims` is encountered.
 
@@ -255,7 +304,7 @@ class tube(Timeout, Logger):
         all data is buffered and an empty string (``''``) is returned.
 
         arguments:
-            delims(str,tuple): String of delimiters characters, or list of delimiter strings.
+            delims(bytes,tuple): Byte-string of delimiters characters, or list of delimiter byte-strings.
             drop(bool): Drop the ending.  If :const:`True` it is removed from the end of the return value.
 
         Raises:
@@ -294,6 +343,7 @@ class tube(Timeout, Logger):
         # Convert string into singleton tupple
         if isinstance(delims, (bytes, six.text_type)):
             delims = (delims,)
+        delims = tuple(map(context._encode, delims))
 
         # Longest delimiter for tracking purposes
         longest = max(map(len, delims))
@@ -335,8 +385,28 @@ class tube(Timeout, Logger):
 
         return b''
 
-    def recvlines(self, numlines=2**20, keepends = False, timeout = default):
-        r"""recvlines(numlines, keepends = False, timeout = default) -> str list
+    def recvuntilS(self, delims, drop=False, timeout=default):
+        """recvuntilS(delims, drop=False, timeout=default) -> str
+
+        This function is identical to :meth:`recvuntil`, but decodes
+        the received bytes into string using :func:`context.encoding`.
+        You should use :meth:`recvuntil` whenever possible for better performance.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b"Hello World!"
+            >>> t.recvuntilS(b' ')
+            'Hello '
+            >>> _=t.clean(0)
+            >>> # Matches on 'o' in 'Hello'
+            >>> t.recvuntilS((b' ',b'W',b'o',b'r'))
+            'Hello'
+        """
+        return context._decode(self.recvuntil(delims, drop, timeout))
+
+    def recvlines(self, numlines=2**20, keepends=False, timeout=default):
+        r"""recvlines(numlines, keepends=False, timeout=default) -> list of bytes objects
 
         Receive up to ``numlines`` lines.
 
@@ -392,8 +462,27 @@ class tube(Timeout, Logger):
 
         return lines
 
-    def recvline(self, keepends = True, timeout = default):
-        r"""recvline(keepends = True) -> str
+    def recvlinesS(self, numlines=2**20, keepends=False, timeout=default):
+        r"""recvlinesS(numlines, keepends=False, timeout=default) -> str list
+
+        This function is identical to :meth:`recvlines`, but decodes
+        the received bytes into string using :func:`context.encoding`.
+        You should use :meth:`recvlines` whenever possible for better performance.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b'\n'
+            >>> t.recvlinesS(3)
+            ['', '', '']
+            >>> t.recv_raw = lambda n: b'Foo\nBar\nBaz\n'
+            >>> t.recvlinesS(3)
+            ['Foo', 'Bar', 'Baz']
+        """
+        return [context._decode(x) for x in self.recvlines(delims, drop, timeout)]
+
+    def recvline(self, keepends=True, timeout=default):
+        r"""recvline(keepends=True, timeout=default) -> bytes
 
         Receive a single line from the tube.
 
@@ -428,8 +517,31 @@ class tube(Timeout, Logger):
         """
         return self.recvuntil(self.newline, drop = not keepends, timeout = timeout)
 
-    def recvline_pred(self, pred, keepends = False, timeout = default):
-        r"""recvline_pred(pred, keepends = False) -> str
+    def recvlineS(self, keepends=True, timeout=default):
+        r"""recvlineS(keepends=True, timeout=default) -> str
+
+        This function is identical to :meth:`recvline`, but decodes
+        the received bytes into string using :func:`context.encoding`.
+        You should use :meth:`recvline` whenever possible for better performance.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b'Foo\nBar\r\nBaz\n'
+            >>> t.recvlineS()
+            'Foo\n'
+            >>> t.recvlineS()
+            'Bar\r\n'
+            >>> t.recvlineS(keepends = False)
+            'Baz'
+            >>> t.newline = b'\r\n'
+            >>> t.recvlineS(keepends = False)
+            'Foo\nBar'
+        """
+        return context._decode(self.recvline(keepends, timeout))
+
+    def recvline_pred(self, pred, keepends=False, timeout=default):
+        r"""recvline_pred(pred, keepends=False) -> bytes
 
         Receive data until ``pred(line)`` returns a truthy value.
         Drop all other data.
@@ -476,6 +588,24 @@ class tube(Timeout, Logger):
 
         return b''
 
+    def recvline_predS(self, pred, keepends=False, timeout=default):
+        r"""recvline_predS(pred, keepends=False) -> str
+
+        This function is identical to :meth:`recvline_pred`, but decodes
+        the received bytes into string using :func:`context.encoding`.
+        You should use :meth:`recvline_pred` whenever possible for better performance.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b"Foo\nBar\nBaz\n"
+            >>> t.recvline_predS(lambda line: line == b"Bar\n")
+            'Bar'
+            >>> t.recvline_predS(lambda line: line == b"Bar\n", keepends=True)
+            'Bar\n'
+        """
+        return context._decode(self.recvline_pred(pred, keepends, timeout))
+
     def recvline_contains(self, items, keepends = False, timeout = default):
         r"""
         Receive lines until one line is found which contains at least
@@ -504,14 +634,39 @@ class tube(Timeout, Logger):
         """
         if isinstance(items, (bytes, six.text_type)):
             items = (items,)
+        items = tuple(map(context._encode, items))
 
         def pred(line):
             return any(d in line for d in items)
 
         return self.recvline_pred(pred, keepends, timeout)
 
-    def recvline_startswith(self, delims, keepends = False, timeout = default):
-        r"""recvline_startswith(delims, keepends = False, timeout = default) -> str
+    def recvline_containsS(self, items, keepends=False, timeout=default):
+        r"""
+        This function is identical to :meth:`recvline_contains`, but decodes
+        the received bytes into string using :func:`context.encoding`.
+        You should use :meth:`recvline_contains` whenever possible for better performance.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b"Hello\nWorld\nXylophone\n"
+            >>> t.recvline_contains(b'r')
+            b'World'
+            >>> f = lambda n: b"cat dog bird\napple pear orange\nbicycle car train\n"
+            >>> t = tube()
+            >>> t.recv_raw = f
+            >>> t.recvline_contains(b'pear')
+            b'apple pear orange'
+            >>> t = tube()
+            >>> t.recv_raw = f
+            >>> t.recvline_contains((b'car', b'train'))
+            b'bicycle car train'
+        """
+        return context._decode(self.recvline_contains(items, keepends, timeout))
+
+    def recvline_startswith(self, delims, keepends=False, timeout=default):
+        r"""recvline_startswith(delims, keepends=False, timeout=default) -> bytes
 
         Keep receiving lines until one is found that starts with one of
         `delims`.  Returns the last line received.
@@ -541,13 +696,33 @@ class tube(Timeout, Logger):
         # Convert string into singleton tupple
         if isinstance(delims, (bytes, six.text_type)):
             delims = (delims,)
+        delims = tuple(map(context._encode, delims))
 
         return self.recvline_pred(lambda line: any(map(line.startswith, delims)),
                                   keepends=keepends,
                                   timeout=timeout)
 
-    def recvline_endswith(self, delims, keepends = False, timeout = default):
-        r"""recvline_endswith(delims, keepends = False, timeout = default) -> str
+    def recvline_startswithS(self, delims, keepends=False, timeout=default):
+        r"""
+        This function is identical to :meth:`recvline_startswith`, but decodes
+        the received bytes into string using :func:`context.encoding`.
+        You should use :meth:`recvline_startswith` whenever possible for better performance.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b"Hello\nWorld\nXylophone\n"
+            >>> t.recvline_startswithS((b'W',b'X',b'Y',b'Z'))
+            'World'
+            >>> t.recvline_startswithS((b'W',b'X',b'Y',b'Z'), True)
+            'Xylophone\n'
+            >>> t.recvline_startswithS(b'Wo')
+            'World'
+        """
+        return context._decode(self.recvline_startswith(delims, keepends, timeout))
+
+    def recvline_endswith(self, delims, keepends=False, timeout=default):
+        r"""recvline_endswith(delims, keepends=False, timeout=default) -> bytes
 
         Keep receiving lines until one is found that starts with one of
         `delims`.  Returns the last line received.
@@ -572,14 +747,32 @@ class tube(Timeout, Logger):
         if isinstance(delims, (bytes, six.text_type)):
             delims = (delims,)
 
-        delims = tuple(delim + self.newline for delim in delims)
+        delims = tuple(context._encode(delim) + self.newline for delim in delims)
 
         return self.recvline_pred(lambda line: any(map(line.endswith, delims)),
                                   keepends=keepends,
                                   timeout=timeout)
 
-    def recvregex(self, regex, exact = False, timeout = default):
-        """recvregex(regex, exact = False, timeout = default) -> str
+    def recvline_endswithS(self, delims, keepends=False, timeout=default):
+        r"""
+        This function is identical to :meth:`recvline_endswith`, but decodes
+        the received bytes into string using :func:`context.encoding`.
+        You should use :meth:`recvline_endswith` whenever possible for better performance.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b'Foo\nBar\nBaz\nKaboodle\n'
+            >>> t.recvline_endswithS(b'r')
+            'Bar'
+            >>> t.recvline_endswithS((b'a',b'b',b'c',b'd',b'e'), True)
+            'Kaboodle\n'
+            >>> t.recvline_endswithS(b'oodle')
+            'Kaboodle'
+        """
+
+    def recvregex(self, regex, exact=False, timeout=default):
+        """recvregex(regex, exact=False, timeout=default) -> bytes
 
         Wrapper around :func:`recvpred`, which will return when a regex
         matches the string in the buffer.
@@ -601,8 +794,16 @@ class tube(Timeout, Logger):
 
         return self.recvpred(pred, timeout = timeout)
 
-    def recvline_regex(self, regex, exact = False, keepends = False, timeout = default):
-        """recvregex(regex, exact = False, keepends = False, timeout = default) -> str
+    def recvregexS(self, regex, exact=False, timeout=default):
+        """
+        This function is identical to :meth:`recvregex`, but decodes
+        the received bytes into string using :func:`context.encoding`.
+        You should use :meth:`recvregex` whenever possible for better performance.
+        """
+        return context._decode(self.recvregex(regex, exact, timeout))
+
+    def recvline_regex(self, regex, exact=False, keepends=False, timeout=default):
+        """recvline_regex(regex, exact=False, keepends=False, timeout=default) -> bytes
 
         Wrapper around :func:`recvline_pred`, which will return when a regex
         matches a line.
@@ -624,8 +825,16 @@ class tube(Timeout, Logger):
 
         return self.recvline_pred(pred, keepends = keepends, timeout = timeout)
 
-    def recvrepeat(self, timeout = default):
-        """recvrepeat(timeout = default) -> str
+    def recvline_regexS(self, regex, exact=False, keepends=False, timeout=default):
+        """
+        This function is identical to :meth:`recvline_regex`, but decodes
+        the received bytes into string using :func:`context.encoding`.
+        You should use :meth:`recvline_regex` whenever possible for better performance.
+        """
+        return context._decode(self.recvline_regex(regex, exact, keepends, timeout))
+
+    def recvrepeat(self, timeout=default):
+        """recvrepeat(timeout=default) -> bytes
 
         Receives data until a timeout or EOF is reached.
 
@@ -656,8 +865,16 @@ class tube(Timeout, Logger):
 
         return self.buffer.get()
 
+    def recvrepeatS(self, timeout=default):
+        """
+        This function is identical to :meth:`recvrepeat`, but decodes
+        the received bytes into string using :func:`context.encoding`.
+        You should use :meth:`recvrepeat` whenever possible for better performance.
+        """
+        return context._decode(self.recvrepeat(timeout))
+
     def recvall(self, timeout=Timeout.forever):
-        """recvall() -> str
+        """recvall() -> bytes
 
         Receives data until EOF is reached.
         """
@@ -678,6 +895,14 @@ class tube(Timeout, Logger):
 
         return self.buffer.get()
 
+    def recvallS(self, timeout=default):
+        """
+        This function is identical to :meth:`recvall`, but decodes
+        the received bytes into string using :func:`context.encoding`.
+        You should use :meth:`recvall` whenever possible for better performance.
+        """
+        return context._decode(self.recvall(timeout))
+
     def send(self, data):
         """send(data)
 
@@ -697,6 +922,8 @@ class tube(Timeout, Logger):
             >>> t.send(b'hello')
             b'hello'
         """
+
+        data = context._encode(data)
 
         if self.isEnabledFor(logging.DEBUG):
             self.debug('Sent %#x bytes:' % len(data))
@@ -725,6 +952,8 @@ class tube(Timeout, Logger):
             >>> t.sendline(b'hello')
             b'hello\r\n'
         """
+
+        line = context._encode(line)
 
         self.send(line + self.newline)
 
@@ -764,7 +993,7 @@ class tube(Timeout, Logger):
 
         A combination of ``sendline(data)`` and ``recvuntil(delim, timeout)``."""
 
-        self.send(data + self.newline)
+        self.sendline(data)
         return self.recvuntil(delim, timeout)
 
     def interactive(self, prompt = term.text.bold_red('$') + ' '):

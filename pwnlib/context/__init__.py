@@ -813,6 +813,36 @@ class ContextType(object):
         self.bits = value*8
 
     @_validator
+    def encoding(self, charset):
+        if charset == 'auto':
+            return charset
+
+        if (  b'aA'.decode(charset) != 'aA'
+            or 'aA'.encode(charset) != b'aA':
+            raise ValueError('Strange encoding!')
+
+        return charset
+
+    def _encode(self, s):
+        if not hasattr(b, 'encode'):
+            return s   # already bytes
+
+        if self.encoding == 'auto':
+            try:
+                return s.encode('latin1')
+            except UnicodeEncodeError:
+                return s.encode('utf-8', 'surrogateescape')
+        return s.encode(self.encoding)
+
+    def _decode(self, b):
+        if self.encoding == 'auto':
+            try:
+                return b.decode('utf-8')
+            except UnicodeDecodeError:
+                return b.decode('latin1')
+        return b.decode(self.encoding)
+
+    @_validator
     def endian(self, endianness):
         """
         Endianness of the target machine.
