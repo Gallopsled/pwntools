@@ -101,7 +101,7 @@ def main(args):
     else:
         args.output.write(formatters[fmt[0]](output))
 
-    if tty and fmt is not 'raw':
+    if tty and fmt != 'raw':
         args.output.write('\n')
 
 

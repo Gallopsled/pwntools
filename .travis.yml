@@ -26,7 +26,6 @@ cache:
         - usr
         - /home/travis/virtualenv/python2.7.15/lib/python2.7/site-packages/
         - /home/travis/virtualenv/python2.7.15/bin/
-sudo: required
 python:
   - "2.7.15"
 before_install:
