@@ -770,6 +770,7 @@ class tube(Timeout, Logger):
             >>> t.recvline_endswithS(b'oodle')
             'Kaboodle'
         """
+        return context._decode(self.recvline_endswith(delims, keepends, timeout))
 
     def recvregex(self, regex, exact=False, timeout=default):
         """recvregex(regex, exact=False, timeout=default) -> bytes
@@ -785,6 +786,7 @@ class tube(Timeout, Logger):
         """
 
         if isinstance(regex, (bytes, six.text_type)):
+            regex = context._encode(regex)
             regex = re.compile(regex)
 
         if exact:
@@ -799,6 +801,13 @@ class tube(Timeout, Logger):
         This function is identical to :meth:`recvregex`, but decodes
         the received bytes into string using :func:`context.encoding`.
         You should use :meth:`recvregex` whenever possible for better performance.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b"Hello\nWorld\nXylophone\n"
+            >>> t.recvregexS(b'[W-Z]'))
+            'Hello\nW'
         """
         return context._decode(self.recvregex(regex, exact, timeout))
 
@@ -816,6 +825,7 @@ class tube(Timeout, Logger):
         """
 
         if isinstance(regex, (bytes, six.text_type)):
+            regex = context._encode(regex)
             regex = re.compile(regex)
 
         if exact:
@@ -830,6 +840,13 @@ class tube(Timeout, Logger):
         This function is identical to :meth:`recvline_regex`, but decodes
         the received bytes into string using :func:`context.encoding`.
         You should use :meth:`recvline_regex` whenever possible for better performance.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b"Hello\nWorld\nXylophone\n"
+            >>> t.recvline_regexS(b'[W-Z]'))
+            'World'
         """
         return context._decode(self.recvline_regex(regex, exact, keepends, timeout))
 
@@ -1534,47 +1551,19 @@ class tube(Timeout, Logger):
 
         raise NotImplementedError()
 
-    #: Alias for :meth:`recv`
-    def read(self, *a, **kw): return self.recv(*a, **kw)
-    #: Alias for :meth:`recvpred`
-    def readpred(self, *a, **kw): return self.recvpred(*a, **kw)
-    #: Alias for :meth:`recvn`
-    def readn(self, *a, **kw): return self.recvn(*a, **kw)
-    #: Alias for :meth:`recvuntil`
-    def readuntil(self, *a, **kw): return self.recvuntil(*a, **kw)
-    #: Alias for :meth:`recvlines`
-    def readlines(self, *a, **kw): return self.recvlines(*a, **kw)
-    #: Alias for :meth:`recvline`
-    def readline(self, *a, **kw): return self.recvline(*a, **kw)
-    #: Alias for :meth:`recvline_pred`
-    def readline_pred(self, *a, **kw): return self.recvline_pred(*a, **kw)
-    #: Alias for :meth:`recvline_contains`
-    def readline_contains(self, *a, **kw): return self.recvline_contains(*a, **kw)
-    #: Alias for :meth:`recvline_startswith`
-    def readline_startswith(self, *a, **kw): return self.recvline_startswith(*a, **kw)
-    #: Alias for :meth:`recvline_endswith`
-    def readline_endswith(self, *a, **kw): return self.recvline_endswith(*a, **kw)
-    #: Alias for :meth:`recvregex`
-    def readregex(self, *a, **kw): return self.recvregex(*a, **kw)
-    #: Alias for :meth:`recvline_regex`
-    def readline_regex(self, *a, **kw): return self.recvline_regex(*a, **kw)
-    #: Alias for :meth:`recvrepeat`
-    def readrepeat(self, *a, **kw): return self.recvrepeat(*a, **kw)
-    #: Alias for :meth:`recvall`
-    def readall(self, *a, **kw): return self.recvall(*a, **kw)
-
-    #: Alias for :meth:`send`
-    def write(self, *a, **kw): return self.send(*a, **kw)
-    #: Alias for :meth:`sendline`
-    def writeline(self, *a, **kw): return self.sendline(*a, **kw)
-    #: Alias for :meth:`sendafter`
-    def writeafter(self, *a, **kw): return self.sendafter(*a, **kw)
-    #: Alias for :meth:`sendlineafter`
-    def writelineafter(self, *a, **kw): return self.sendlineafter(*a, **kw)
-    #: Alias for :meth:`sendthen`
-    def writethen(self, *a, **kw): return self.sendthen(*a, **kw)
-    #: Alias for :meth:`sendlinethen`
-    def writelinethen(self, *a, **kw): return self.sendlinethen(*a, **kw)
+    for _name in list(locals()):
+        if 'recv' in _name:
+            _name2 = _name.replace('recv', 'read')
+        elif 'send' in _name:
+            _name2 = _name.replace('send', 'write')
+        else:
+            continue
+        exec('''
+def %(_name2)s(self, *a, **k):
+    "Alias for :meth:`%(_name)s`"
+    return self.%(_name)s(*a, **k)
+''' % {'_name': _name, '_name2': _name2})
+    del _name, _name2
 
     def p64(self, *a, **kw):        return self.send(packing.p64(*a, **kw))
     def p32(self, *a, **kw):        return self.send(packing.p32(*a, **kw))
