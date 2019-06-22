@@ -104,7 +104,7 @@ def main(args):
             output = output.encode('ascii')
         args.output.write(output)
 
-    if tty and fmt is not 'raw':
+    if tty and fmt != 'raw':
         args.output.write(b'\n')
 
 

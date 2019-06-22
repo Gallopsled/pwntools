@@ -67,7 +67,7 @@ setup_travis()
 setup_linux()
 {
     sudo apt-get install -y software-properties-common openssh-server libncurses5-dev libncursesw5-dev openjdk-8-jre-headless
-    RELEASE="$(lsb-release -sr)"
+    RELEASE="$(lsb_release -sr)"
     if [[ "$RELEASE" < "16.04" ]]; then
         sudo apt-add-repository --yes ppa:pwntools/binutils
         sudo apt-get update
