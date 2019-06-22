@@ -1125,7 +1125,7 @@ class ELF(ELFFile):
         start = address
         stop = address + count
 
-        overlap = self.memory.search(start, stop)
+        overlap = self.memory.overlap(start, stop)
 
         # Create a new view of memory, for just what we need
         memory = intervaltree.IntervalTree(overlap)
