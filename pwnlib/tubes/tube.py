@@ -48,7 +48,7 @@ class tube(Timeout, Logger):
 
     # Functions based on functions from subclasses
     def recv(self, numb = None, timeout = default):
-        r"""recv(numb = 4096, timeout = default) -> str
+        r"""recv(numb = 4096, timeout = default) -> bytes
 
         Receives up to `numb` bytes of data from the tube, and returns
         as soon as any quantity of data is available.
@@ -60,7 +60,7 @@ class tube(Timeout, Logger):
             exceptions.EOFError: The connection is closed
 
         Returns:
-            A string containing bytes received from the socket,
+            A bytes object containing bytes received from the socket,
             or ``''`` if a timeout occurred while waiting.
 
         Examples:
@@ -101,6 +101,7 @@ class tube(Timeout, Logger):
             >>> t.recv()
             b'hello'
         """
+        data = context._encode(data)
         self.buffer.unget(data)
 
     def _fillbuffer(self, timeout = default):
@@ -162,9 +163,9 @@ class tube(Timeout, Logger):
         return self.buffer.get(numb)
 
     def recvpred(self, pred, timeout = default):
-        """recvpred(pred, timeout = default) -> str
+        """recvpred(pred, timeout = default) -> bytes
 
-        Receives one byte at a time from the tube, until ``pred(bytes)``
+        Receives one byte at a time from the tube, until ``pred(all_bytes)``
         evaluates to True.
 
         If the request is not satisfied before ``timeout`` seconds pass,
@@ -178,7 +179,7 @@ class tube(Timeout, Logger):
             exceptions.EOFError: The connection is closed
 
         Returns:
-            A string containing bytes received from the socket,
+            A bytes object containing bytes received from the socket,
             or ``''`` if a timeout occurred while waiting.
         """
 
@@ -246,8 +247,8 @@ class tube(Timeout, Logger):
 
         return self.buffer.get(numb)
 
-    def recvuntil(self, delims, drop=False, timeout = default):
-        """recvuntil(delims, timeout = default) -> str
+    def recvuntil(self, delims, drop=False, timeout=default):
+        """recvuntil(delims, drop=False, timeout=default) -> bytes
 
         Receive data until one of `delims` is encountered.
 
@@ -255,7 +256,7 @@ class tube(Timeout, Logger):
         all data is buffered and an empty string (``''``) is returned.
 
         arguments:
-            delims(str,tuple): String of delimiters characters, or list of delimiter strings.
+            delims(bytes,tuple): Byte-string of delimiters characters, or list of delimiter byte-strings.
             drop(bool): Drop the ending.  If :const:`True` it is removed from the end of the return value.
 
         Raises:
@@ -294,6 +295,7 @@ class tube(Timeout, Logger):
         # Convert string into singleton tupple
         if isinstance(delims, (bytes, six.text_type)):
             delims = (delims,)
+        delims = tuple(map(context._encode, delims))
 
         # Longest delimiter for tracking purposes
         longest = max(map(len, delims))
@@ -335,8 +337,8 @@ class tube(Timeout, Logger):
 
         return b''
 
-    def recvlines(self, numlines=2**20, keepends = False, timeout = default):
-        r"""recvlines(numlines, keepends = False, timeout = default) -> str list
+    def recvlines(self, numlines=2**20, keepends=False, timeout=default):
+        r"""recvlines(numlines, keepends=False, timeout=default) -> list of bytes objects
 
         Receive up to ``numlines`` lines.
 
@@ -392,8 +394,44 @@ class tube(Timeout, Logger):
 
         return lines
 
-    def recvline(self, keepends = True, timeout = default):
-        r"""recvline(keepends = True) -> str
+    def recvlinesS(self, numlines=2**20, keepends=False, timeout=default):
+        r"""recvlinesS(numlines, keepends=False, timeout=default) -> str list
+
+        This function is identical to :meth:`recvlines`, but decodes
+        the received bytes into string using :func:`context.encoding`.
+        You should use :meth:`recvlines` whenever possible for better performance.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b'\n'
+            >>> t.recvlinesS(3)
+            ['', '', '']
+            >>> t.recv_raw = lambda n: b'Foo\nBar\nBaz\n'
+            >>> t.recvlinesS(3)
+            ['Foo', 'Bar', 'Baz']
+        """
+        return [context._decode(x) for x in self.recvlines(numlines, keepends, timeout)]
+
+    def recvlinesb(self, numlines=2**20, keepends=False, timeout=default):
+        r"""recvlinesb(numlines, keepends=False, timeout=default) -> bytearray list
+
+        This function is identical to :meth:`recvlines`, but returns a bytearray.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b'\n'
+            >>> t.recvlinesb(3)
+            [bytearray(b''), bytearray(b''), bytearray(b'')]
+            >>> t.recv_raw = lambda n: b'Foo\nBar\nBaz\n'
+            >>> t.recvlinesb(3)
+            [bytearray(b'Foo'), bytearray(b'Bar'), bytearray(b'Baz')]
+        """
+        return [bytearray(x) for x in self.recvlines(numlines, keepends, timeout)]
+
+    def recvline(self, keepends=True, timeout=default):
+        r"""recvline(keepends=True, timeout=default) -> bytes
 
         Receive a single line from the tube.
 
@@ -428,8 +466,8 @@ class tube(Timeout, Logger):
         """
         return self.recvuntil(self.newline, drop = not keepends, timeout = timeout)
 
-    def recvline_pred(self, pred, keepends = False, timeout = default):
-        r"""recvline_pred(pred, keepends = False) -> str
+    def recvline_pred(self, pred, keepends=False, timeout=default):
+        r"""recvline_pred(pred, keepends=False) -> bytes
 
         Receive data until ``pred(line)`` returns a truthy value.
         Drop all other data.
@@ -504,14 +542,15 @@ class tube(Timeout, Logger):
         """
         if isinstance(items, (bytes, six.text_type)):
             items = (items,)
+        items = tuple(map(context._encode, items))
 
         def pred(line):
             return any(d in line for d in items)
 
         return self.recvline_pred(pred, keepends, timeout)
 
-    def recvline_startswith(self, delims, keepends = False, timeout = default):
-        r"""recvline_startswith(delims, keepends = False, timeout = default) -> str
+    def recvline_startswith(self, delims, keepends=False, timeout=default):
+        r"""recvline_startswith(delims, keepends=False, timeout=default) -> bytes
 
         Keep receiving lines until one is found that starts with one of
         `delims`.  Returns the last line received.
@@ -541,13 +580,14 @@ class tube(Timeout, Logger):
         # Convert string into singleton tupple
         if isinstance(delims, (bytes, six.text_type)):
             delims = (delims,)
+        delims = tuple(map(context._encode, delims))
 
         return self.recvline_pred(lambda line: any(map(line.startswith, delims)),
                                   keepends=keepends,
                                   timeout=timeout)
 
-    def recvline_endswith(self, delims, keepends = False, timeout = default):
-        r"""recvline_endswith(delims, keepends = False, timeout = default) -> str
+    def recvline_endswith(self, delims, keepends=False, timeout=default):
+        r"""recvline_endswith(delims, keepends=False, timeout=default) -> bytes
 
         Keep receiving lines until one is found that starts with one of
         `delims`.  Returns the last line received.
@@ -572,14 +612,14 @@ class tube(Timeout, Logger):
         if isinstance(delims, (bytes, six.text_type)):
             delims = (delims,)
 
-        delims = tuple(delim + self.newline for delim in delims)
+        delims = tuple(context._encode(delim) + self.newline for delim in delims)
 
         return self.recvline_pred(lambda line: any(map(line.endswith, delims)),
                                   keepends=keepends,
                                   timeout=timeout)
 
-    def recvregex(self, regex, exact = False, timeout = default):
-        """recvregex(regex, exact = False, timeout = default) -> str
+    def recvregex(self, regex, exact=False, timeout=default):
+        """recvregex(regex, exact=False, timeout=default) -> bytes
 
         Wrapper around :func:`recvpred`, which will return when a regex
         matches the string in the buffer.
@@ -592,6 +632,7 @@ class tube(Timeout, Logger):
         """
 
         if isinstance(regex, (bytes, six.text_type)):
+            regex = context._encode(regex)
             regex = re.compile(regex)
 
         if exact:
@@ -601,8 +642,8 @@ class tube(Timeout, Logger):
 
         return self.recvpred(pred, timeout = timeout)
 
-    def recvline_regex(self, regex, exact = False, keepends = False, timeout = default):
-        """recvregex(regex, exact = False, keepends = False, timeout = default) -> str
+    def recvline_regex(self, regex, exact=False, keepends=False, timeout=default):
+        """recvline_regex(regex, exact=False, keepends=False, timeout=default) -> bytes
 
         Wrapper around :func:`recvline_pred`, which will return when a regex
         matches a line.
@@ -615,6 +656,7 @@ class tube(Timeout, Logger):
         """
 
         if isinstance(regex, (bytes, six.text_type)):
+            regex = context._encode(regex)
             regex = re.compile(regex)
 
         if exact:
@@ -624,8 +666,8 @@ class tube(Timeout, Logger):
 
         return self.recvline_pred(pred, keepends = keepends, timeout = timeout)
 
-    def recvrepeat(self, timeout = default):
-        """recvrepeat(timeout = default) -> str
+    def recvrepeat(self, timeout=default):
+        """recvrepeat(timeout=default) -> bytes
 
         Receives data until a timeout or EOF is reached.
 
@@ -657,7 +699,7 @@ class tube(Timeout, Logger):
         return self.buffer.get()
 
     def recvall(self, timeout=Timeout.forever):
-        """recvall() -> str
+        """recvall() -> bytes
 
         Receives data until EOF is reached.
         """
@@ -698,6 +740,8 @@ class tube(Timeout, Logger):
             b'hello'
         """
 
+        data = context._encode(data)
+
         if self.isEnabledFor(logging.DEBUG):
             self.debug('Sent %#x bytes:' % len(data))
             if len(set(data)) == 1:
@@ -725,6 +769,8 @@ class tube(Timeout, Logger):
             >>> t.sendline(b'hello')
             b'hello\r\n'
         """
+
+        line = context._encode(line)
 
         self.send(line + self.newline)
 
@@ -764,7 +810,7 @@ class tube(Timeout, Logger):
 
         A combination of ``sendline(data)`` and ``recvuntil(delim, timeout)``."""
 
-        self.send(data + self.newline)
+        self.sendline(data)
         return self.recvuntil(delim, timeout)
 
     def interactive(self, prompt = term.text.bold_red('$') + ' '):
@@ -1305,47 +1351,6 @@ class tube(Timeout, Logger):
 
         raise NotImplementedError()
 
-    #: Alias for :meth:`recv`
-    def read(self, *a, **kw): return self.recv(*a, **kw)
-    #: Alias for :meth:`recvpred`
-    def readpred(self, *a, **kw): return self.recvpred(*a, **kw)
-    #: Alias for :meth:`recvn`
-    def readn(self, *a, **kw): return self.recvn(*a, **kw)
-    #: Alias for :meth:`recvuntil`
-    def readuntil(self, *a, **kw): return self.recvuntil(*a, **kw)
-    #: Alias for :meth:`recvlines`
-    def readlines(self, *a, **kw): return self.recvlines(*a, **kw)
-    #: Alias for :meth:`recvline`
-    def readline(self, *a, **kw): return self.recvline(*a, **kw)
-    #: Alias for :meth:`recvline_pred`
-    def readline_pred(self, *a, **kw): return self.recvline_pred(*a, **kw)
-    #: Alias for :meth:`recvline_contains`
-    def readline_contains(self, *a, **kw): return self.recvline_contains(*a, **kw)
-    #: Alias for :meth:`recvline_startswith`
-    def readline_startswith(self, *a, **kw): return self.recvline_startswith(*a, **kw)
-    #: Alias for :meth:`recvline_endswith`
-    def readline_endswith(self, *a, **kw): return self.recvline_endswith(*a, **kw)
-    #: Alias for :meth:`recvregex`
-    def readregex(self, *a, **kw): return self.recvregex(*a, **kw)
-    #: Alias for :meth:`recvline_regex`
-    def readline_regex(self, *a, **kw): return self.recvline_regex(*a, **kw)
-    #: Alias for :meth:`recvrepeat`
-    def readrepeat(self, *a, **kw): return self.recvrepeat(*a, **kw)
-    #: Alias for :meth:`recvall`
-    def readall(self, *a, **kw): return self.recvall(*a, **kw)
-
-    #: Alias for :meth:`send`
-    def write(self, *a, **kw): return self.send(*a, **kw)
-    #: Alias for :meth:`sendline`
-    def writeline(self, *a, **kw): return self.sendline(*a, **kw)
-    #: Alias for :meth:`sendafter`
-    def writeafter(self, *a, **kw): return self.sendafter(*a, **kw)
-    #: Alias for :meth:`sendlineafter`
-    def writelineafter(self, *a, **kw): return self.sendlineafter(*a, **kw)
-    #: Alias for :meth:`sendthen`
-    def writethen(self, *a, **kw): return self.sendthen(*a, **kw)
-    #: Alias for :meth:`sendlinethen`
-    def writelinethen(self, *a, **kw): return self.sendlinethen(*a, **kw)
 
     def p64(self, *a, **kw):        return self.send(packing.p64(*a, **kw))
     def p32(self, *a, **kw):        return self.send(packing.p32(*a, **kw))
@@ -1361,3 +1366,52 @@ class tube(Timeout, Logger):
 
     def flat(self, *a, **kw):       return self.send(packing.flat(*a,**kw))
     def fit(self, *a, **kw):        return self.send(packing.fit(*a, **kw))
+
+    # Dynamic functions
+
+    def make_wrapper(func):
+        def wrapperb(self, *a, **kw):
+            return bytearray(func(self, *a, **kw))
+        def wrapperS(self, *a, **kw):
+            return context._encode(func(self, *a, **kw))
+        wrapperb.__doc__ = 'Same as :meth:`{func.__name__}`, but returns a bytearray'.format(func=func)
+        wrapperb.__name__ = func.__name__ + 'b'
+        wrapperS.__doc__ = 'Same as :meth:`{func.__name__}`, but returns a str,' \
+                           'decoding the result using `context.encoding`.' \
+                           '(note that the binary versions are way faster)'.format(func=func)
+        wrapperS.__name__ = func.__name__ + 'S'
+        return wrapperb, wrapperS
+
+    for func in [recv,
+                 recvn,
+                 recvall,
+                 recvrepeat,
+                 recvuntil,
+                 recvpred,
+                 recvregex,
+                 recvline,
+                 recvline_contains,
+                 recvline_startswith,
+                 recvline_endswith,
+                 recvline_regex]:
+        for wrapper in make_wrapper(func):
+            locals()[wrapper.__name__] = wrapper
+
+    def make_wrapper(func, alias):
+        def wrapper(self, *a, **kw):
+            return func(self, *a, **kw)
+        wrapper.__doc__ = 'Alias for :meth:`{func.__name__}`'.format(func=func)
+        wrapper.__name__ = alias
+        return wrapper
+
+    for _name in list(locals()):
+        if 'recv' in _name:
+            _name2 = _name.replace('recv', 'read')
+        elif 'send' in _name:
+            _name2 = _name.replace('send', 'write')
+        else:
+            continue
+        locals()[_name2] = make_wrapper(locals()[_name], _name2)
+
+    # Clean up the scope
+    del wrapper, func, make_wrapper, _name, _name2
