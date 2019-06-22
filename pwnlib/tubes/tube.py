@@ -1402,6 +1402,7 @@ class tube(Timeout, Logger):
             return func(*a, **kw)
         wrapper.__doc__ = 'Alias for :meth:`{func.__name__}`'.format(func=func)
         wrapper.__name__ = alias
+        return wrapper
 
     for _name in list(locals()):
         if 'recv' in _name:
