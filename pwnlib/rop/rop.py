@@ -321,7 +321,7 @@ class DescriptiveStack(list):
             addr = self.address + i * context.bytes
             off = None
             line = '0x%04x:' % addr
-            if isinstance(data, bytes):
+            if isinstance(data, (str, bytes)):
                 line += ' %16r' % data
             elif isinstance(data, six.integer_types):
                 line += ' %#16x' % data
@@ -737,8 +737,8 @@ class ROP(object):
                 for value, name in self.setRegisters(registers):
                     if name in registers:
                         index = slot.abi.register_arguments.index(name)
-                        description = self.describe(value) or value
-                        stack.describe('[arg%s] %s = %s' % (index, name, description))
+                        description = self.describe(value) or repr(bytes(value))
+                        stack.describe('[arg%d] %s = %s' % (index, name, description))
                     elif isinstance(name, Gadget):
                         stack.describe('; '.join(name.insns))
                     elif isinstance(name, str):

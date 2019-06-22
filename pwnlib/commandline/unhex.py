@@ -20,11 +20,12 @@ parser.add_argument('hex', nargs='*',
 
 def main(args):
     try:
+        o = getattr(sys.stdout, 'buffer', sys.stdout)
         if not args.hex:
             s = getattr(sys.stdin, 'buffer', sys.stdin).read().translate(None, whitespace.encode('ascii'))
-            sys.stdout.write(unhex(s))
+            o.write(unhex(s))
         else:
-            sys.stdout.write(unhex(''.join(args.hex)))
+            o.write(unhex(''.join(args.hex)))
     except TypeError as e:
         sys.stderr.write(str(e) + '\n')
 

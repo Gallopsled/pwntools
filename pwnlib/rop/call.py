@@ -177,8 +177,9 @@ class AppendedArgument(Unresolved):
     def __len__(self):
         return self.size
 
-    def __str__(self):
+    def __bytes__(self):
         return packing.flat(self.resolve())
+    __str__ = __bytes__
 
     def __repr__(self):
         if isinstance(self.address, six.integer_types):
