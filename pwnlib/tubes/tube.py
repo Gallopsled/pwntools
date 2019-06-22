@@ -414,7 +414,7 @@ class tube(Timeout, Logger):
         return [context._decode(x) for x in self.recvlines(numlines, keepends, timeout)]
 
     def recvlinesb(self, numlines=2**20, keepends=False, timeout=default):
-        r"""recvlinesb(numlines, keepends=False, timeout=default) -> str list
+        r"""recvlinesb(numlines, keepends=False, timeout=default) -> bytearray list
 
         This function is identical to :meth:`recvlines`, but returns a bytearray.
 
@@ -422,10 +422,10 @@ class tube(Timeout, Logger):
 
             >>> t = tube()
             >>> t.recv_raw = lambda n: b'\n'
-            >>> t.recvlinesS(3)
+            >>> t.recvlinesb(3)
             [bytearray(b''), bytearray(b''), bytearray(b'')]
             >>> t.recv_raw = lambda n: b'Foo\nBar\nBaz\n'
-            >>> t.recvlinesS(3)
+            >>> t.recvlinesb(3)
             [bytearray(b'Foo'), bytearray(b'Bar'), bytearray(b'Baz')]
         """
         return [bytearray(x) for x in self.recvlines(numlines, keepends, timeout)]
