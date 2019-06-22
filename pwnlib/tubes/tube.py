@@ -1399,7 +1399,7 @@ class tube(Timeout, Logger):
 
     def make_wrapper(func, alias):
         def wrapper(self, *a, **kw):
-            return func(*a, **kw)
+            return func(self, *a, **kw)
         wrapper.__doc__ = 'Alias for :meth:`{func.__name__}`'.format(func=func)
         wrapper.__name__ = alias
         return wrapper
