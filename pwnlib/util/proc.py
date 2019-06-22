@@ -168,7 +168,7 @@ def descendants(pid):
 
     Example:
         >>> d = descendants(os.getppid())
-        >>> list(d[os.getpid()].keys()) == children(os.getpid())
+        >>> os.getpid() in d.keys()
         True
     """
     this_pid = pid
