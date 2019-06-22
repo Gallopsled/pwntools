@@ -81,26 +81,6 @@ class tube(Timeout, Logger):
         numb = self.buffer.get_fill_size(numb)
         return self._recv(numb, timeout) or b''
 
-    def recvS(self, numb = None, timeout = default):
-        r"""recvS(numb = None, timeout = default) -> str
-
-        This function is identical to :meth:`recv`, but decodes
-        the received bytes into string using :func:`context.encoding`.
-        You should use :meth:`recv` whenever possible for better performance.
-
-        Examples:
-
-            >>> t = tube()
-            >>> # Fake a data source
-            >>> t.recv_raw = lambda n: b'Hello, world'
-            >>> t.recvS() == 'Hello, world'
-            True
-            >>> t.unrecv(b'Woohoo')
-            >>> t.recvS() == 'Woohoo'
-            True
-        """
-        return context._decode(self.recv(numb, timeout))
-
     def unrecv(self, data):
         """unrecv(data)
 
@@ -221,15 +201,6 @@ class tube(Timeout, Logger):
 
         return data
 
-    def recvpredS(self, pred, timeout = default):
-        """recvpredS(pred, timeout = default) -> str
-
-        This function is identical to :meth:`recvpred`, but decodes
-        the received bytes into string using :func:`context.encoding`.
-        You should use :meth:`recvpred` whenever possible for better performance.
-        """
-        return context._decode(self.recvpred(pred, timeout))
-
     def recvn(self, numb, timeout = default):
         """recvn(numb, timeout = default) -> str
 
@@ -275,25 +246,6 @@ class tube(Timeout, Logger):
             return b''
 
         return self.buffer.get(numb)
-
-    def recvnS(self, numb, timeout = default):
-        """recvnS(numb, timeout = default) -> str
-
-        This function is identical to :meth:`recvn`, but decodes
-        the received bytes into string using :func:`context.encoding`.
-        You should use :meth:`recvn` whenever possible for better performance.
-
-        Examples:
-
-            >>> t = tube()
-            >>> data = b'hello world'
-            >>> t.recv_raw = lambda *a: data
-            >>> t.recvnS(len(data)) == data.decode()
-            True
-            >>> t.recvnS(len(data)+1).encode() == data + data[:1]
-            True
-        """
-        return context._decode(self.recvn(numb, timeout))
 
     def recvuntil(self, delims, drop=False, timeout=default):
         """recvuntil(delims, drop=False, timeout=default) -> bytes
@@ -385,26 +337,6 @@ class tube(Timeout, Logger):
 
         return b''
 
-    def recvuntilS(self, delims, drop=False, timeout=default):
-        """recvuntilS(delims, drop=False, timeout=default) -> str
-
-        This function is identical to :meth:`recvuntil`, but decodes
-        the received bytes into string using :func:`context.encoding`.
-        You should use :meth:`recvuntil` whenever possible for better performance.
-
-        Examples:
-
-            >>> t = tube()
-            >>> t.recv_raw = lambda n: b"Hello World!"
-            >>> t.recvuntilS(b' ')
-            'Hello '
-            >>> _=t.clean(0)
-            >>> # Matches on 'o' in 'Hello'
-            >>> t.recvuntilS((b' ',b'W',b'o',b'r'))
-            'Hello'
-        """
-        return context._decode(self.recvuntil(delims, drop, timeout))
-
     def recvlines(self, numlines=2**20, keepends=False, timeout=default):
         r"""recvlines(numlines, keepends=False, timeout=default) -> list of bytes objects
 
@@ -481,6 +413,23 @@ class tube(Timeout, Logger):
         """
         return [context._decode(x) for x in self.recvlines(numlines, keepends, timeout)]
 
+    def recvlinesb(self, numlines=2**20, keepends=False, timeout=default):
+        r"""recvlinesb(numlines, keepends=False, timeout=default) -> str list
+
+        This function is identical to :meth:`recvlines`, but returns a bytearray.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b'\n'
+            >>> t.recvlinesS(3)
+            [bytearray(b''), bytearray(b''), bytearray(b'')]
+            >>> t.recv_raw = lambda n: b'Foo\nBar\nBaz\n'
+            >>> t.recvlinesS(3)
+            [bytearray(b'Foo'), bytearray(b'Bar'), bytearray(b'Baz')]
+        """
+        return [bytearray(x) for x in self.recvlines(numlines, keepends, timeout)]
+
     def recvline(self, keepends=True, timeout=default):
         r"""recvline(keepends=True, timeout=default) -> bytes
 
@@ -516,29 +465,6 @@ class tube(Timeout, Logger):
             b'Foo\nBar'
         """
         return self.recvuntil(self.newline, drop = not keepends, timeout = timeout)
-
-    def recvlineS(self, keepends=True, timeout=default):
-        r"""recvlineS(keepends=True, timeout=default) -> str
-
-        This function is identical to :meth:`recvline`, but decodes
-        the received bytes into string using :func:`context.encoding`.
-        You should use :meth:`recvline` whenever possible for better performance.
-
-        Examples:
-
-            >>> t = tube()
-            >>> t.recv_raw = lambda n: b'Foo\nBar\r\nBaz\n'
-            >>> t.recvlineS()
-            'Foo\n'
-            >>> t.recvlineS()
-            'Bar\r\n'
-            >>> t.recvlineS(keepends = False)
-            'Baz'
-            >>> t.newline = b'\r\n'
-            >>> t.recvlineS(keepends = False)
-            'Foo\nBar'
-        """
-        return context._decode(self.recvline(keepends, timeout))
 
     def recvline_pred(self, pred, keepends=False, timeout=default):
         r"""recvline_pred(pred, keepends=False) -> bytes
@@ -588,24 +514,6 @@ class tube(Timeout, Logger):
 
         return b''
 
-    def recvline_predS(self, pred, keepends=False, timeout=default):
-        r"""recvline_predS(pred, keepends=False) -> str
-
-        This function is identical to :meth:`recvline_pred`, but decodes
-        the received bytes into string using :func:`context.encoding`.
-        You should use :meth:`recvline_pred` whenever possible for better performance.
-
-        Examples:
-
-            >>> t = tube()
-            >>> t.recv_raw = lambda n: b"Foo\nBar\nBaz\n"
-            >>> t.recvline_predS(lambda line: line == b"Bar\n")
-            'Bar'
-            >>> t.recvline_predS(lambda line: line == b"Bar\n", keepends=True)
-            'Bar\n'
-        """
-        return context._decode(self.recvline_pred(pred, keepends, timeout))
-
     def recvline_contains(self, items, keepends = False, timeout = default):
         r"""
         Receive lines until one line is found which contains at least
@@ -640,30 +548,6 @@ class tube(Timeout, Logger):
             return any(d in line for d in items)
 
         return self.recvline_pred(pred, keepends, timeout)
-
-    def recvline_containsS(self, items, keepends=False, timeout=default):
-        r"""
-        This function is identical to :meth:`recvline_contains`, but decodes
-        the received bytes into string using :func:`context.encoding`.
-        You should use :meth:`recvline_contains` whenever possible for better performance.
-
-        Examples:
-
-            >>> t = tube()
-            >>> t.recv_raw = lambda n: b"Hello\nWorld\nXylophone\n"
-            >>> t.recvline_contains(b'r')
-            b'World'
-            >>> f = lambda n: b"cat dog bird\napple pear orange\nbicycle car train\n"
-            >>> t = tube()
-            >>> t.recv_raw = f
-            >>> t.recvline_contains(b'pear')
-            b'apple pear orange'
-            >>> t = tube()
-            >>> t.recv_raw = f
-            >>> t.recvline_contains((b'car', b'train'))
-            b'bicycle car train'
-        """
-        return context._decode(self.recvline_contains(items, keepends, timeout))
 
     def recvline_startswith(self, delims, keepends=False, timeout=default):
         r"""recvline_startswith(delims, keepends=False, timeout=default) -> bytes
@@ -702,25 +586,6 @@ class tube(Timeout, Logger):
                                   keepends=keepends,
                                   timeout=timeout)
 
-    def recvline_startswithS(self, delims, keepends=False, timeout=default):
-        r"""
-        This function is identical to :meth:`recvline_startswith`, but decodes
-        the received bytes into string using :func:`context.encoding`.
-        You should use :meth:`recvline_startswith` whenever possible for better performance.
-
-        Examples:
-
-            >>> t = tube()
-            >>> t.recv_raw = lambda n: b"Hello\nWorld\nXylophone\n"
-            >>> t.recvline_startswithS((b'W',b'X',b'Y',b'Z'))
-            'World'
-            >>> t.recvline_startswithS((b'W',b'X',b'Y',b'Z'), True)
-            'Xylophone\n'
-            >>> t.recvline_startswithS(b'Wo')
-            'World'
-        """
-        return context._decode(self.recvline_startswith(delims, keepends, timeout))
-
     def recvline_endswith(self, delims, keepends=False, timeout=default):
         r"""recvline_endswith(delims, keepends=False, timeout=default) -> bytes
 
@@ -753,25 +618,6 @@ class tube(Timeout, Logger):
                                   keepends=keepends,
                                   timeout=timeout)
 
-    def recvline_endswithS(self, delims, keepends=False, timeout=default):
-        r"""
-        This function is identical to :meth:`recvline_endswith`, but decodes
-        the received bytes into string using :func:`context.encoding`.
-        You should use :meth:`recvline_endswith` whenever possible for better performance.
-
-        Examples:
-
-            >>> t = tube()
-            >>> t.recv_raw = lambda n: b'Foo\nBar\nBaz\nKaboodle\n'
-            >>> t.recvline_endswithS(b'r')
-            'Bar'
-            >>> t.recvline_endswithS((b'a',b'b',b'c',b'd',b'e'), True)
-            'Kaboodle\n'
-            >>> t.recvline_endswithS(b'oodle')
-            'Kaboodle'
-        """
-        return context._decode(self.recvline_endswith(delims, keepends, timeout))
-
     def recvregex(self, regex, exact=False, timeout=default):
         """recvregex(regex, exact=False, timeout=default) -> bytes
 
@@ -796,21 +642,6 @@ class tube(Timeout, Logger):
 
         return self.recvpred(pred, timeout = timeout)
 
-    def recvregexS(self, regex, exact=False, timeout=default):
-        """
-        This function is identical to :meth:`recvregex`, but decodes
-        the received bytes into string using :func:`context.encoding`.
-        You should use :meth:`recvregex` whenever possible for better performance.
-
-        Examples:
-
-            >>> t = tube()
-            >>> t.recv_raw = lambda n: b"Hello\nWorld\nXylophone\n"
-            >>> t.recvregexS(b'[W-Z]'))
-            'Hello\nW'
-        """
-        return context._decode(self.recvregex(regex, exact, timeout))
-
     def recvline_regex(self, regex, exact=False, keepends=False, timeout=default):
         """recvline_regex(regex, exact=False, keepends=False, timeout=default) -> bytes
 
@@ -834,21 +665,6 @@ class tube(Timeout, Logger):
             pred = regex.search
 
         return self.recvline_pred(pred, keepends = keepends, timeout = timeout)
-
-    def recvline_regexS(self, regex, exact=False, keepends=False, timeout=default):
-        """
-        This function is identical to :meth:`recvline_regex`, but decodes
-        the received bytes into string using :func:`context.encoding`.
-        You should use :meth:`recvline_regex` whenever possible for better performance.
-
-        Examples:
-
-            >>> t = tube()
-            >>> t.recv_raw = lambda n: b"Hello\nWorld\nXylophone\n"
-            >>> t.recvline_regexS(b'[W-Z]'))
-            'World'
-        """
-        return context._decode(self.recvline_regex(regex, exact, keepends, timeout))
 
     def recvrepeat(self, timeout=default):
         """recvrepeat(timeout=default) -> bytes
@@ -882,14 +698,6 @@ class tube(Timeout, Logger):
 
         return self.buffer.get()
 
-    def recvrepeatS(self, timeout=default):
-        """
-        This function is identical to :meth:`recvrepeat`, but decodes
-        the received bytes into string using :func:`context.encoding`.
-        You should use :meth:`recvrepeat` whenever possible for better performance.
-        """
-        return context._decode(self.recvrepeat(timeout))
-
     def recvall(self, timeout=Timeout.forever):
         """recvall() -> bytes
 
@@ -911,14 +719,6 @@ class tube(Timeout, Logger):
         self.close()
 
         return self.buffer.get()
-
-    def recvallS(self, timeout=default):
-        """
-        This function is identical to :meth:`recvall`, but decodes
-        the received bytes into string using :func:`context.encoding`.
-        You should use :meth:`recvall` whenever possible for better performance.
-        """
-        return context._decode(self.recvall(timeout))
 
     def send(self, data):
         """send(data)
@@ -1551,19 +1351,6 @@ class tube(Timeout, Logger):
 
         raise NotImplementedError()
 
-    for _name in list(locals()):
-        if 'recv' in _name:
-            _name2 = _name.replace('recv', 'read')
-        elif 'send' in _name:
-            _name2 = _name.replace('send', 'write')
-        else:
-            continue
-        exec('''
-def %(_name2)s(self, *a, **k):
-    "Alias for :meth:`%(_name)s`"
-    return self.%(_name)s(*a, **k)
-''' % {'_name': _name, '_name2': _name2})
-    del _name, _name2
 
     def p64(self, *a, **kw):        return self.send(packing.p64(*a, **kw))
     def p32(self, *a, **kw):        return self.send(packing.p32(*a, **kw))
@@ -1579,3 +1366,51 @@ def %(_name2)s(self, *a, **k):
 
     def flat(self, *a, **kw):       return self.send(packing.flat(*a,**kw))
     def fit(self, *a, **kw):        return self.send(packing.fit(*a, **kw))
+
+    # Dynamic functions
+
+    def make_wrapper(func):
+        def wrapperb(self, *a, **kw):
+            return bytearray(func(self, *a, **kw))
+        def wrapperS(self, *a, **kw):
+            return context._encode(func(self, *a, **kw))
+        wrapperb.__doc__ = 'Same as :meth:`{func.__name__}`, but returns a bytearray'.format(func=func)
+        wrapperb.__name__ = func.__name__ + 'b'
+        wrapperS.__doc__ = 'Same as :meth:`{func.__name__}`, but returns a str,' \
+                           'decoding the result using `context.encoding`.' \
+                           '(note that the binary versions are way faster)'.format(func=func)
+        wrapperS.__name__ = func.__name__ + 'S'
+        return wrapperb, wrapperS
+
+    for func in [recv,
+                 recvn,
+                 recvall,
+                 recvrepeat,
+                 recvuntil,
+                 recvpred,
+                 recvregex,
+                 recvline,
+                 recvline_contains,
+                 recvline_startswith,
+                 recvline_endswith,
+                 recvline_regex]:
+        for wrapper in make_wrapper(func):
+            locals()[wrapper.__name__] = wrapper
+
+    def make_wrapper(func, alias):
+        def wrapper(self, *a, **kw):
+            return func(*a, **kw)
+        wrapper.__doc__ = 'Alias for :meth:`{func.__name__}`'.format(func=func)
+        wrapper.__name__ = alias
+
+    for _name in list(locals()):
+        if 'recv' in _name:
+            _name2 = _name.replace('recv', 'read')
+        elif 'send' in _name:
+            _name2 = _name.replace('send', 'write')
+        else:
+            continue
+        locals()[_name2] = make_wrapper(locals()[_name], _name2)
+
+    # Clean up the scope
+    del wrapper, func, make_wrapper, _name, _name2
