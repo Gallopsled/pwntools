@@ -737,7 +737,7 @@ class ROP(object):
                 for value, name in self.setRegisters(registers):
                     if name in registers:
                         index = slot.abi.register_arguments.index(name)
-                        description = self.describe(value) or repr(bytes(value))
+                        description = self.describe(value) or value
                         stack.describe('[arg%d] %s = %s' % (index, name, description))
                     elif isinstance(name, Gadget):
                         stack.describe('; '.join(name.insns))
