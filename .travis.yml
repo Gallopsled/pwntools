@@ -38,7 +38,7 @@ before_install:
 install:
   - pip install --upgrade pip
   - pip install --upgrade appdirs # https://github.com/ActiveState/appdirs/issues/89#issuecomment-282326570
-  - pip install --upgrade --requirement requirements.txt
+  - python setup.py egg_info
   - pip install --upgrade --editable .
   - pip install --upgrade --requirement docs/requirements.txt
 before_script:
