@@ -218,6 +218,7 @@ def cyclic_find(subseq, alphabet = None, n = None):
 
     if isinstance(subseq, six.integer_types):
         subseq = packing.pack(subseq, bytes=n)
+    subseq = context._encode(subseq)
 
     if len(subseq) != n:
         log.warn_once("cyclic_find() expects %i-byte subsequences by default, you gave %r\n"\

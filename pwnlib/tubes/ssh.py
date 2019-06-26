@@ -21,7 +21,6 @@ from pwnlib.log import Logger
 from pwnlib.log import getLogger
 from pwnlib.term import text
 from pwnlib.timeout import Timeout
-from pwnlib.tubes.process import process
 from pwnlib.tubes.sock import sock
 from pwnlib.util import hashes
 from pwnlib.util import misc
@@ -774,7 +773,7 @@ class ssh(Timeout, Logger):
             >>> s.process(['LOLOLOL\x00', '/proc/self/cmdline'], executable='cat').recvall()
             b'LOLOLOL\x00/proc/self/cmdline\x00'
             >>> sh = s.process(executable='/bin/sh')
-            >>> sh.pid in pidof('sh') # doctest: +SKIP
+            >>> str(sh.pid).encode() in s.pidof('sh') # doctest: +SKIP
             True
             >>> s.process(['pwd'], cwd='/tmp').recvall()
             b'/tmp\n'
@@ -823,10 +822,16 @@ class ssh(Timeout, Logger):
         if not isinstance(argv, (list, tuple)):
             self.error('argv must be a list or tuple')
 
+        if not all(isinstance(arg, (six.text_type, six.binary_type)) for arg in argv):
+            self.error("argv must be strings or bytes: %r" % argv)
+
         if shell:
             if len(argv) != 1:
                 self.error('Cannot provide more than 1 argument if shell=True')
             argv = ['/bin/sh', '-c'] + argv
+
+        # Create a duplicate so we can modify it
+        argv = list(argv or [])
 
         # Python doesn't like when an arg in argv contains '\x00'
         # -> execve() arg 2 must contain only strings
@@ -860,12 +865,8 @@ class ssh(Timeout, Logger):
         # Validate, since failures on the remote side will suck.
         if not isinstance(executable, (six.text_type, six.binary_type)):
             self.error("executable / argv[0] must be a string: %r" % executable)
-        if not isinstance(argv, (list, tuple)):
-            self.error("argv must be a list or tuple: %r" % argv)
         if env is not None and not isinstance(env, dict) and env != os.environ:
             self.error("env must be a dict: %r" % env)
-        if not all(isinstance(s, (six.text_type, six.binary_type)) for s in argv):
-            self.error("argv must only contain strings: %r" % argv)
 
         # Allow passing in sys.stdin/stdout/stderr objects
         handles = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}
@@ -1328,7 +1329,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             self.error('Unable to find libraries for %r' % remote)
             return {}
 
-        return misc.parse_ldd_output(data)
+        return misc.parse_ldd_output(context._decode(data))
 
     def _get_fingerprint(self, remote):
         cmd = '(sha256 || sha256sum || openssl sha256) 2>/dev/null < '
@@ -1553,6 +1554,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> print(open('/tmp/upload_bar').read())
             Hello, world
         """
+        data = context._encode(data)
         # If a relative path was provided, prepend the cwd
         if os.path.normpath(remote) == os.path.basename(remote):
             remote = os.path.join(self.cwd, remote)
@@ -1700,7 +1702,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         libs = self._libs_remote(remote)
 
-        remote = self.readlink('-f',remote).strip()
+        remote = context._decode(self.readlink('-f',remote).strip())
         libs[remote] = 0
 
         if directory == None:

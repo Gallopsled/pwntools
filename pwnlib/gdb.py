@@ -404,9 +404,6 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     if isinstance(args, (int, tubes.process.process, tubes.ssh.ssh_channel)):
         log.error("Use gdb.attach() to debug a running process")
 
-    if env is None:
-        env = os.environ
-
     if isinstance(args, (bytes, six.text_type)):
         args = [args]
 
@@ -438,11 +435,11 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     if not which(args[0]):
         log.error("%s is not installed" % args[0])
 
-    exe = exe or which(orig_args[0])
-    if not exe:
-        log.error("%s does not exist" % orig_args[0])
-    else:
-        gdbscript = 'file "%s"\n%s' % (exe, gdbscript)
+    if not ssh:
+        exe = exe or which(orig_args[0])
+        if not (exe and os.path.exists(exe)):
+            log.error("%s does not exist" % exe)
+
 
     # Start gdbserver/qemu
     # (Note: We override ASLR here for the gdbserver process itself.)
@@ -660,9 +657,9 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
         shell = target.parent
 
-        tmpfile = shell.mktemp()
+        tmpfile = shell.mktemp().decode()
         gdbscript = 'shell rm %s\n%s' % (tmpfile, gdbscript)
-        shell.upload_data(context._encode(gdbscript), tmpfile)
+        shell.upload_data(gdbscript or '', tmpfile)
 
         cmd = ['ssh', '-C', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
         if shell.password:
@@ -671,7 +668,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
-        cmd += ['gdb -q %r %s -x "%s"' % (target.executable,
+        cmd += ['gdb -q %s %s -x "%s"' % (target.executable.decode(),
                                        target.pid,
                                        tmpfile)]
 
@@ -721,7 +718,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
             exe_fn = adb.proc_exe
         exe = exe_fn(pid)
 
-    if not pid and not exe:
+    if not pid and not exe and not ssh:
         log.error('could not find target process')
 
     if exe:
@@ -901,7 +898,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         """ % entry)
         gdb.clean(2)
         gdb.sendline('info sharedlibrary')
-        lines = gdb.recvrepeat(2)
+        lines = context._decode(gdb.recvrepeat(2))
 
         for line in lines.splitlines():
             m = expr.match(line)
