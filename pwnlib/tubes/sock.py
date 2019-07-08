@@ -65,7 +65,7 @@ class sock(tube):
             self.sock.sendall(data)
         except IOError as e:
             eof_numbers = [errno.EPIPE, errno.ECONNRESET, errno.ECONNREFUSED]
-            if e.message == 'Socket is closed' or e.errno in eof_numbers:
+            if e.errno in eof_numbers or 'Socket is closed' in e.args:
                 self.shutdown("send")
                 raise EOFError
             else:
