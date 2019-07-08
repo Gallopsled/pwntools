@@ -662,7 +662,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
         tmpfile = shell.mktemp()
         gdbscript = 'shell rm %s\n%s' % (tmpfile, gdbscript)
-        shell.upload_data(gdbscript or '', tmpfile)
+        shell.upload_data(context._encode(gdbscript), tmpfile)
 
         cmd = ['ssh', '-C', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
         if shell.password:
