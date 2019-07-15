@@ -310,7 +310,7 @@ class process(tube):
             for prefix, executable in prefixes:
                 try:
                     args = argv
-                    if (prefix):
+                    if prefix:
                         args = prefix + args
                     self.proc = subprocess.Popen(args = args,
                                                  shell = shell,
