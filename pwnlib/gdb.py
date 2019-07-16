@@ -852,10 +852,12 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
 
     Example:
 
-    >>> with context.local(log_level=9999): # doctest: +SKIP
-    ...     shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0', port=2220)
+    >>> with context.local(log_level=9999):
+    ...     shell =  ssh(host='example.pwnme',
+    ...                 user='travis',
+    ...                 password='demopass')
     ...     bash_libs = gdb.find_module_addresses('/bin/bash', shell)
-    >>> os.path.basename(bash_libs[0].path) # doctest: +SKIP
+    >>> os.path.basename(bash_libs[0].path)
     'libc.so.6'
     >>> hex(bash_libs[0].symbols['system']) # doctest: +SKIP
     '0x7ffff7634660'
