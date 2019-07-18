@@ -117,7 +117,7 @@ log = getLogger(__name__)
 
 @LocalContext
 def debug_assembly(asm, gdbscript=None, vma=None):
-    """debug_assembly(asm, gdbscript=None, vma=None) -> tube
+    r"""debug_assembly(asm, gdbscript=None, vma=None) -> tube
 
     Creates an ELF file, and launches it under a debugger.
 
@@ -136,12 +136,11 @@ def debug_assembly(asm, gdbscript=None, vma=None):
 
     Example:
 
-        .. code-block:: python
-
-            assembly = shellcraft.echo("Hello world!\n")
-            io = gdb.debug_assembly(assembly)
-            io.recvline()
-            # 'Hello world!'
+    >>> context.terminal=['/home/travis/build/Gallopsled/pwntools/gdb_doctest1.py']
+    >>> assembly = shellcraft.echo("Hello world!\n")
+    >>> io = gdb.debug_assembly(assembly)
+    >>> io.recvline()
+    b'Hello world!\n'
     """
     tmp_elf = make_elf_from_assembly(asm, vma=vma, extract=False)
     os.chmod(tmp_elf, 0o777)

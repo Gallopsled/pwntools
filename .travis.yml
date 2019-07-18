@@ -13,6 +13,7 @@ addons:
     - zsh
     - pandoc
     - gdb
+    - gdbserver
     - binutils
     - qemu-user-static
     - binutils-multiarch
