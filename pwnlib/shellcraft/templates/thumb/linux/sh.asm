@@ -8,4 +8,4 @@ Execute a different process.
     'Hello\n'
 
 </%docstring>
-${thumb.linux.execve('/bin///sh', ['sh'], 0)}
+${thumb.linux.execve('/bin///sh', ['sh','-p'], 0)}

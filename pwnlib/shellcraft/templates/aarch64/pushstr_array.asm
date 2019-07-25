@@ -72,7 +72,7 @@ pairwise_offsets = group(2, sorted_offsets)
     sub  ${register2}, sp, ${register2}
     stp  ${register1}, ${register2}, [sp], ${i * 16}
 %endfor
-%if len(array[-1] != 'sp')
+if len(array[-1] != 'sp')
 
     /* set ${reg} to the current top of the stack */
     ${shellcraft.mov(reg,'sp')}

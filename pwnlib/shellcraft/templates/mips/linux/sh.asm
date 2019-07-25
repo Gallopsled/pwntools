@@ -10,4 +10,4 @@ Example:
 
 </%docstring>
 
-${mips.execve('//bin/sh', ['sh'], {})}
+${mips.execve('//bin/sh', ['sh','-p'], {})}

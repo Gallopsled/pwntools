@@ -8,4 +8,4 @@ Execute a different process.
     'Hello\n'
 
 </%docstring>
-${i386.linux.execve('/bin///sh', ['sh'], 0)}
+${i386.linux.execve('/bin///sh', ['sh','-p'], 0)}
