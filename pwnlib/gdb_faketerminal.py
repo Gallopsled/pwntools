@@ -4,6 +4,7 @@ from time import sleep
 from sys import argv
 sleep(1)
 sh = process(argv[1], shell=True)
-sh.sendlineafter('(gdb)', 'c')
-sh.sendlineafter('(gdb)', 'c')
+res = sh.sendlineafter('(gdb)', 'c')
+while b'The program is not being run.' not in res:
+    res = sh.sendlineafter('(gdb)', 'c')
 sh.close()

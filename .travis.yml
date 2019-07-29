@@ -14,6 +14,8 @@ addons:
     - pandoc
     - gdb
     - gdbserver
+    - socat
+    - sshpass
     - binutils
     - qemu-user-static
     - binutils-multiarch
@@ -46,6 +48,7 @@ before_script:
   - PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
   - PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
   - PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
+  - sudo sh -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
 script:
   - PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest
 after_success:
