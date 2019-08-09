@@ -107,7 +107,7 @@ Finally, let's build our ROP stack
     >>> print(rop.dump())
     0x0000:       0x10000012 write(STDOUT_FILENO, 0x10000026, 8)
     0x0004:       0x1000000e <adjust @0x18> add esp, 0x10; ret
-    0x0008:              0x1 arg0
+    0x0008:              0x1 STDOUT_FILENO
     0x000c:       0x10000026 flag
     0x0010:              0x8 arg2
     0x0014:          b'faaa' <pad>
@@ -228,7 +228,7 @@ That's all there is to it.
     0x002c:       0x10000012 ebx = binsh
     0x0030:              0x0 edx
     0x0034:              0x0 ecx
-    0x0038:              0xb eax
+    0x0038:              0xb eax = SYS_execve
     0x003c:              0x0 trapno
     0x0040:              0x0 err
     0x0044:       0x1000000b int 0x80
@@ -354,7 +354,7 @@ class ROP(object):
        #  '0x0004:       0xdeadbeef',
        #  '0x0008:              0x0',
        #  '0x000c:        0x80496a8']
-       str(rop)
+       bytes(rop)
        # '\xfc\x82\x04\x08\xef\xbe\xad\xde\x00\x00\x00\x00\xa8\x96\x04\x08'
 
     >>> context.clear(arch = "i386", kernel = 'amd64')
@@ -389,7 +389,7 @@ class ROP(object):
     0x0050:              0x4 ebx
     0x0054:              0x6 edx
     0x0058:              0x5 ecx
-    0x005c:              0xb eax
+    0x005c:              0xb eax = SYS_execve
     0x0060:              0x0 trapno
     0x0064:              0x0 err
     0x0068:       0x10000000 int 0x80
@@ -427,7 +427,7 @@ class ROP(object):
     0x8048050:              0x4 ebx
     0x8048054:              0x6 edx
     0x8048058:              0x5 ecx
-    0x804805c:              0xb eax
+    0x804805c:              0xb eax = SYS_execve
     0x8048060:              0x0 trapno
     0x8048064:              0x0 err
     0x8048068:       0x10000000 int 0x80
@@ -650,12 +650,12 @@ class ROP(object):
         """
         Return a description for an object in the ROP stack
         """
+        if isinstance(object, (Call, constants.Constant)):
+            return str(object)
         if isinstance(object, six.integer_types):
             return self.unresolve(object)
         if isinstance(object, (bytes, six.text_type)):
             return repr(object)
-        if isinstance(object, Call):
-            return str(object)
         if isinstance(object, Gadget):
             return '; '.join(object.insns)
 
