@@ -163,9 +163,11 @@ class AppendedArgument(Unresolved):
                 if isinstance(value, six.integer_types):
                     rv[i] = value
                 if isinstance(value, str):
-                    value += '\x00'
+                    value = context._encode(value)
+                if isinstance(value, (bytes, bytearray)):
+                    value += b'\x00'
                     while len(value) % context.bytes:
-                        value += '$'
+                        value += b'$'
 
                     rv[i] = value
                 if isinstance(value, Unresolved):

@@ -353,7 +353,7 @@ def render_cell(cell, clear_after = False):
                     col = indent
                 c = x[i]
                 if not hasattr(c, 'encode'):
-                    c = c.decode('utf-8')
+                    c = c.decode('utf-8', 'backslashreplace')
                 put(c)
                 col += 1
                 i += 1
