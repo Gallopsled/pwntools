@@ -93,7 +93,7 @@ Example:
   arguments  = [syscall, arg0, arg1, arg2, arg3, arg4, arg5]
   arguments  = iter(filter(lambda arg: arg is not None, arguments))
   regctx     = dict(zip(registers, arguments))
-  stack_args = reversed(arguments) # push remaining args on stack in reverse order
+  stack_args = reversed(list(arguments)) # push remaining args on stack in reverse order
 %>\
     /* call ${syscall_repr} */
     ${amd64.setregs(regctx)}
