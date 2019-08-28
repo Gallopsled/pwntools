@@ -781,37 +781,37 @@ class tube(Timeout, Logger):
     def sendafter(self, delim, data, timeout = default):
         """sendafter(delim, data, timeout = default) -> str
 
-        A combination of ``recvuntil(delim, timeout)`` and ``send(data)``.
+        A combination of ``recvuntil(delim, timeout=timeout)`` and ``send(data)``.
         """
 
-        res = self.recvuntil(delim, timeout)
+        res = self.recvuntil(delim, timeout=timeout)
         self.send(data)
         return res
 
     def sendlineafter(self, delim, data, timeout = default):
         """sendlineafter(delim, data, timeout = default) -> str
 
-        A combination of ``recvuntil(delim, timeout)`` and ``sendline(data)``."""
+        A combination of ``recvuntil(delim, timeout=timeout)`` and ``sendline(data)``."""
 
-        res = self.recvuntil(delim, timeout)
+        res = self.recvuntil(delim, timeout=timeout)
         self.sendline(data)
         return res
 
     def sendthen(self, delim, data, timeout = default):
         """sendthen(delim, data, timeout = default) -> str
 
-        A combination of ``send(data)`` and ``recvuntil(delim, timeout)``."""
+        A combination of ``send(data)`` and ``recvuntil(delim, timeout=timeout)``."""
 
         self.send(data)
-        return self.recvuntil(delim, timeout)
+        return self.recvuntil(delim, timeout=timeout)
 
     def sendlinethen(self, delim, data, timeout = default):
         """sendlinethen(delim, data, timeout = default) -> str
 
-        A combination of ``sendline(data)`` and ``recvuntil(delim, timeout)``."""
+        A combination of ``sendline(data)`` and ``recvuntil(delim, timeout=timeout)``."""
 
         self.sendline(data)
-        return self.recvuntil(delim, timeout)
+        return self.recvuntil(delim, timeout=timeout)
 
     def interactive(self, prompt = term.text.bold_red('$') + ' '):
         """interactive(prompt = pwnlib.term.text.bold_red('$') + ' ')
