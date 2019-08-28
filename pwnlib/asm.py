@@ -36,7 +36,7 @@ Disassembly
     To disassemble code, simply invoke :func:`disasm` on the bytes to disassemble.
 
     >>> disasm('\xb8\x0b\x00\x00\x00')
-    '   0:   b8 0b 00 00 00          mov    eax,0xb'
+    '   0:   b8 0b 00 00 00          mov    eax, 0xb'
 
 """
 from __future__ import absolute_import
@@ -737,15 +737,15 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
     Examples:
 
         >>> print disasm('b85d000000'.decode('hex'), arch = 'i386')
-           0:   b8 5d 00 00 00          mov    eax,0x5d
+           0:   b8 5d 00 00 00          mov    eax, 0x5d
         >>> print disasm('b85d000000'.decode('hex'), arch = 'i386', byte = 0)
-           0:   mov    eax,0x5d
+           0:   mov    eax, 0x5d
         >>> print disasm('b85d000000'.decode('hex'), arch = 'i386', byte = 0, offset = 0)
-        mov    eax,0x5d
+        mov    eax, 0x5d
         >>> print disasm('b817000000'.decode('hex'), arch = 'amd64')
-           0:   b8 17 00 00 00          mov    eax,0x17
+           0:   b8 17 00 00 00          mov    eax, 0x17
         >>> print disasm('48c7c017000000'.decode('hex'), arch = 'amd64')
-           0:   48 c7 c0 17 00 00 00    mov    rax,0x17
+           0:   48 c7 c0 17 00 00 00    mov    rax, 0x17
         >>> print disasm('04001fe552009000'.decode('hex'), arch = 'arm')
            0:   e51f0004        ldr     r0, [pc, #-4]   ; 0x4
            4:   00900052        addseq  r0, r0, r2, asr r0
@@ -816,4 +816,4 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
             line += i
         lines.append(line)
 
-    return '\n'.join(lines)
+    return re.sub(',([^ ])', r', \1', '\n'.join(lines))
