@@ -12,7 +12,7 @@ Any of the arguments can be expressions to be evaluated by :func:`pwnlib.constan
 
 Example:
 
-        >>> print pwnlib.shellcraft.mips.freebsd.syscall('SYS_execve', 1, '$sp', 2, 0).rstrip()
+        >>> print(pwnlib.shellcraft.mips.freebsd.syscall('SYS_execve', 1, '$sp', 2, 0).rstrip())
             /* call execve(1, '$sp', 2, 0) */
             li $t9, ~1
             not $a0, $t9
@@ -23,7 +23,7 @@ Example:
             li $t9, ~SYS_execve /* 0x3b */
             not $v0, $t9
             syscall 0x40404
-        >>> print pwnlib.shellcraft.mips.freebsd.syscall('SYS_execve', 2, 1, 0, 20).rstrip()
+        >>> print(pwnlib.shellcraft.mips.freebsd.syscall('SYS_execve', 2, 1, 0, 20).rstrip())
             /* call execve(2, 1, 0, 0x14) */
             li $t9, ~2
             not $a0, $t9
@@ -35,15 +35,15 @@ Example:
             li $t9, ~SYS_execve /* 0x3b */
             not $v0, $t9
             syscall 0x40404
-        >>> print pwnlib.shellcraft.mips.freebsd.syscall().rstrip()
+        >>> print(pwnlib.shellcraft.mips.freebsd.syscall().rstrip())
             /* call syscall() */
             /* setregs noop */
             syscall 0x40404
-        >>> print pwnlib.shellcraft.mips.freebsd.syscall('$v0', '$a0', '$a1').rstrip()
+        >>> print(pwnlib.shellcraft.mips.freebsd.syscall('$v0', '$a0', '$a1').rstrip())
             /* call syscall('$v0', '$a0', '$a1') */
             /* setregs noop */
             syscall 0x40404
-        >>> print pwnlib.shellcraft.mips.freebsd.syscall('$a3', None, None, 1).rstrip()
+        >>> print(pwnlib.shellcraft.mips.freebsd.syscall('$a3', None, None, 1).rstrip())
             /* call syscall('$a3', ?, ?, 1) */
             li $t9, ~1
             not $a0, $t9

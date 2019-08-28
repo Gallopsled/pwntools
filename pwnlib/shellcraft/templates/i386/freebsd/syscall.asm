@@ -12,7 +12,7 @@ Any of the arguments can be expressions to be evaluated by :func:`pwnlib.constan
 
 Example:
 
-        >>> print pwnlib.shellcraft.i386.freebsd.syscall('SYS_execve', 1, 'esp', 2, 0).rstrip()
+        >>> print(pwnlib.shellcraft.i386.freebsd.syscall('SYS_execve', 1, 'esp', 2, 0).rstrip())
             /* call execve(1, 'esp', 2, 0) */
             push SYS_execve /* 0x3b */
             pop eax
@@ -27,7 +27,7 @@ Example:
             /* push padding DWORD */
             push eax
             int 0x80
-        >>> print pwnlib.shellcraft.i386.freebsd.syscall('SYS_execve', 2, 1, 0, 20).rstrip()
+        >>> print(pwnlib.shellcraft.i386.freebsd.syscall('SYS_execve', 2, 1, 0, 20).rstrip())
             /* call execve(2, 1, 0, 0x14) */
             push SYS_execve /* 0x3b */
             pop eax
@@ -43,13 +43,13 @@ Example:
             /* push padding DWORD */
             push eax
             int 0x80
-        >>> print pwnlib.shellcraft.i386.freebsd.syscall().rstrip()
+        >>> print(pwnlib.shellcraft.i386.freebsd.syscall().rstrip())
             /* call syscall() */
             /* setregs noop */
             /* push padding DWORD */
             push eax
             int 0x80
-        >>> print pwnlib.shellcraft.i386.freebsd.syscall('eax', 'ebx', 'ecx').rstrip()
+        >>> print(pwnlib.shellcraft.i386.freebsd.syscall('eax', 'ebx', 'ecx').rstrip())
             /* call syscall('eax', 'ebx', 'ecx') */
             /* setregs noop */
             push ecx

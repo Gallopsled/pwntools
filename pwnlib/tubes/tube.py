@@ -876,7 +876,7 @@ class tube(Timeout, Logger):
 
         Similar to :func:`interactive`, except that no input is sent.
 
-        Similar to ``print tube.recvall()`` except that data is printed
+        Similar to ``print(tube.recvall())`` except that data is printed
         as it is received, rather than after all data is received.
 
         Arguments:

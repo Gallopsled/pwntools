@@ -174,7 +174,7 @@ class ELF(ELFFile):
            0x41dac0
            >>> u32(bash.read(bash.got['read'], 4))
            0x41dac6
-           >>> print bash.disasm(bash.plt.read, 16)
+           >>> print(bash.disasm(bash.plt.read, 16))
            0:   ff 25 1a 18 2d 00       jmp    QWORD PTR [rip+0x2d181a]        # 0x2d1820
            6:   68 59 00 00 00          push   0x59
            b:   e9 50 fa ff ff          jmp    0xfffffffffffffa60

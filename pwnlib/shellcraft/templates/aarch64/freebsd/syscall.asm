@@ -12,7 +12,7 @@ Any of the arguments can be expressions to be evaluated by :func:`pwnlib.constan
 
 Example:
 
-    >>> print shellcraft.aarch64.freebsd.syscall(11, 1, 'sp', 2, 0).rstrip()
+    >>> print(shellcraft.aarch64.freebsd.syscall(11, 1, 'sp', 2, 0).rstrip())
         /* call syscall(11, 1, 'sp', 2, 0) */
         mov  x0, #1
         mov  x1, sp
@@ -20,7 +20,7 @@ Example:
         mov  x3, xzr
         mov  x8, #11
         svc 0
-    >>> print shellcraft.aarch64.freebsd.syscall('SYS_exit', 0).rstrip()
+    >>> print(shellcraft.aarch64.freebsd.syscall('SYS_exit', 0).rstrip())
         /* call exit(0) */
         mov  x0, xzr
         mov  x8, #SYS_exit

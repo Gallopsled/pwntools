@@ -372,7 +372,7 @@ def _peekkey_csi(offset):
         _cbuf = _cbuf[offset:]
         return Key(kc.TYPE_UNICODE, u'[', kc.MOD_ALT)
     cmd, args, numb = ret
-    # print cmd, args, '\r'
+    # print(cmd, args, '\r')
     _cbuf = _cbuf[numb:]
     k = None
     if   chr(cmd[0]) in _csi_handlers:
@@ -408,7 +408,7 @@ def _peekkey_ss3(offset):
 
 def _peek_csi():
     global _cbuf
-    # print 'csi', _cbuf, '\r'
+    # print('csi', _cbuf, '\r')
     c0 = _cbuf[0]
     if   c0 == 0x1b and len(_cbuf) >= 2:
         c1 = _cbuf[1]
@@ -423,7 +423,7 @@ def _peek_csi():
 
 def _peek_simple():
     global _cbuf
-    # print 'simple', _cbuf, '\r'
+    # print('simple', _cbuf, '\r')
     if not _cbuf:
         return
     c0 = _cbuf.pop(0)
@@ -433,7 +433,7 @@ def _peek_simple():
     elif c0 == 0x1b:
         if _cbuf:
             k = _peek()
-            # print k
+            # print(k)
             if k:
                 # need to deep copy or we risk modifying keys in ti table
                 return Key(k.type, k.code, k.mods | kc.MOD_ALT)
@@ -457,7 +457,7 @@ def _peek_simple():
                     k.code = six.unichr(c0 + 0x40)
                 k.mods |= kc.MOD_CTRL
         elif c0 == 0x7f:
-            # print 'del\r'
+            # print('del\r')
             k = Key(kc.TYPE_KEYSYM, kc.KEY_DEL)
         elif c0 >= 0x20 and c0 < 0x80:
             k = Key(kc.TYPE_UNICODE, six.unichr(c0))

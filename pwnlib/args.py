@@ -23,7 +23,7 @@ this way.
 
 .. code-block:: bash
 
-    $ python -c 'from pwn import *; print args' A=1 B=Hello HOST=1.2.3.4 DEBUG
+    $ python -c 'from pwn import *; print(args)' A=1 B=Hello HOST=1.2.3.4 DEBUG
     defaultdict(<type 'str'>, {'A': '1', 'HOST': '1.2.3.4', 'B': 'Hello'})
 
 This is very useful for conditional code, for example determining whether to

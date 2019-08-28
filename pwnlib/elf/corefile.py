@@ -53,7 +53,7 @@ dump to extract the relevant information.
     # Get a shell!
     io = process(['./crash', payload])
     io.sendline(b'id')
-    print io.recvline()
+    print(io.recvline())
     # uid=1000(user) gid=1000(user) groups=1000(user)
 
 Module Members
@@ -1037,7 +1037,7 @@ class Corefile(ELF):
 
         ::
 
-            >>> print Corefile('./core').maps
+            >>> print(Corefile('./core').maps)
             8048000-8049000 r-xp 1000 /home/user/pwntools/crash
             8049000-804a000 r--p 1000 /home/user/pwntools/crash
             804a000-804b000 rw-p 1000 /home/user/pwntools/crash

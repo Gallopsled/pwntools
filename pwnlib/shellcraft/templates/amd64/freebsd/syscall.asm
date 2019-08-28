@@ -12,7 +12,7 @@ Any of the arguments can be expressions to be evaluated by :func:`pwnlib.constan
 
 Example:
 
-        >>> print pwnlib.shellcraft.amd64.freebsd.syscall('SYS_execve', 1, 'rsp', 2, 0).rstrip()
+        >>> print(pwnlib.shellcraft.amd64.freebsd.syscall('SYS_execve', 1, 'rsp', 2, 0).rstrip())
             /* call execve(1, 'rsp', 2, 0) */
             push SYS_execve /* 0x3b */
             pop rax
@@ -23,7 +23,7 @@ Example:
             pop rdx
             mov rsi, rsp
             syscall
-        >>> print pwnlib.shellcraft.amd64.freebsd.syscall('SYS_execve', 2, 1, 0, -1).rstrip()
+        >>> print(pwnlib.shellcraft.amd64.freebsd.syscall('SYS_execve', 2, 1, 0, -1).rstrip())
             /* call execve(2, 1, 0, -1) */
             push SYS_execve /* 0x3b */
             pop rax
@@ -35,25 +35,25 @@ Example:
             pop rsi
             cdq /* rdx=0 */
             syscall
-        >>> print pwnlib.shellcraft.amd64.freebsd.syscall().rstrip()
+        >>> print(pwnlib.shellcraft.amd64.freebsd.syscall().rstrip())
             /* call syscall() */
             /* setregs noop */
             syscall
-        >>> print pwnlib.shellcraft.amd64.freebsd.syscall('rax', 'rdi', 'rsi').rstrip()
+        >>> print(pwnlib.shellcraft.amd64.freebsd.syscall('rax', 'rdi', 'rsi').rstrip())
             /* call syscall('rax', 'rdi', 'rsi') */
             /* setregs noop */
             syscall
-        >>> print pwnlib.shellcraft.amd64.freebsd.syscall('rbp', None, None, 1).rstrip()
+        >>> print(pwnlib.shellcraft.amd64.freebsd.syscall('rbp', None, None, 1).rstrip())
             /* call syscall('rbp', ?, ?, 1) */
             mov rax, rbp
             push 1
             pop rdi
             syscall
-        >>> print pwnlib.shellcraft.amd64.freebsd.syscall(
+        >>> print(pwnlib.shellcraft.amd64.freebsd.syscall(
         ...               'SYS_mmap', 0, 0x1000,
         ...               'PROT_READ | PROT_WRITE | PROT_EXEC',
         ...               'MAP_PRIVATE | MAP_ANONYMOUS',
-        ...               -1, 0).rstrip()
+        ...               -1, 0).rstrip())
             /* call mmap(0, 0x1000, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
             push -1
             pop r8
