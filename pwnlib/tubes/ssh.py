@@ -821,7 +821,7 @@ class ssh(Timeout, Logger):
         for i, arg in enumerate(argv):
             if '\x00' in arg[:-1]:
                 self.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
-            argv[i] = arg.rstrip('\x00')
+            argv[i] = str(arg.rstrip('\x00'))
 
         # Python also doesn't like when envp contains '\x00'
         if env and hasattr(env, 'items'):
@@ -836,7 +836,7 @@ class ssh(Timeout, Logger):
         cwd        = cwd or self.cwd
 
         # Validate, since failures on the remote side will suck.
-        if not isinstance(executable, str):
+        if not isinstance(executable, str) and not isinstance(executable, unicode):
             self.error("executable / argv[0] must be a string: %r" % executable)
         if not isinstance(argv, (list, tuple)):
             self.error("argv must be a list or tuple: %r" % argv)
