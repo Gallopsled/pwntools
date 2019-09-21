@@ -723,10 +723,6 @@ def attach(target, gdbscript = '', exe = None, need_ptrace_scope = True, gdb_arg
     if not pid and not exe and not ssh:
         log.error('could not find target process')
 
-    if exe:
-        # The 'file' statement should go first
-        pre = 'file "%s"\n%s' % (exe, pre)
-
     cmd = binary()
 
     if gdb_args:
