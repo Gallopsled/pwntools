@@ -129,7 +129,7 @@ def debug_assembly(asm, gdbscript=None, vma=None):
         asm(str): Assembly code to debug
         gdbscript(str): Script to run in GDB
         vma(int): Base address to load the shellcode at
-        **kwargs: Override any :obj:`pwnlib.context.context` values.
+        \\**kwargs: Override any :obj:`pwnlib.context.context` values.
 
     Returns:
         :class:`.process`
@@ -138,7 +138,7 @@ def debug_assembly(asm, gdbscript=None, vma=None):
 
         .. code-block:: python
 
-            assembly = shellcraft.echo("Hello world!\n")
+            assembly = shellcraft.echo("Hello world!\\n")
             io = gdb.debug_assembly(assembly)
             io.recvline()
             # 'Hello world!'
@@ -164,7 +164,7 @@ def debug_shellcode(data, gdbscript=None, vma=None):
         data(str): Assembled shellcode bytes
         gdbscript(str): Script to run in GDB
         vma(int): Base address to load the shellcode at
-        **kwargs: Override any :obj:`pwnlib.context.context` values.
+        \\**kwargs: Override any :obj:`pwnlib.context.context` values.
 
     Returns:
         :class:`.process`
@@ -173,7 +173,7 @@ def debug_shellcode(data, gdbscript=None, vma=None):
 
         .. code-block:: python
 
-            assembly = shellcraft.echo("Hello world!\n")
+            assembly = shellcraft.echo("Hello world!\\n")
             shellcode = asm(assembly)
             io = gdb.debug_shellcode(shellcode)
             io.recvline()
