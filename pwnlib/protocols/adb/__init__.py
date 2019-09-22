@@ -10,6 +10,7 @@ from __future__ import division
 
 import logging
 import functools
+import pprint
 import six
 import stat
 import time
@@ -381,7 +382,7 @@ class AdbClient(Logger):
 
         Examples:
 
-            >>> pprint(AdbClient().list('/data/user'))
+            >>> pprint.pprint(AdbClient().list('/data/user'))
             {'0': {'mode': 41471, 'size': 11, 'time': ...}}
             >>> AdbClient().list('/does/not/exist')
             Traceback (most recent call last):
@@ -435,14 +436,14 @@ class AdbClient(Logger):
     @_with_transport
     @_sync
     def stat(self, path):
-        """Execute the ``STAT`` command of the ``SYNC`` API.
+        """Execute the STAT command of the SYNC API.
 
         Arguments:
             path(str): Path to the file to stat.
 
         Return:
             On success, a dictionary mapping the values returned.
-            If the file cannot be ``stat()``ed, None is returned.
+            If the file cannot be stat() ed, None is returned.
 
         Example:
 
