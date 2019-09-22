@@ -1846,8 +1846,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         ::
 
-            {'distro': 'Ubuntu\n',
-             'distro_ver': '14.04\n',
+            {'distro': 'Ubuntu\\n',
+             'distro_ver': '14.04\\n',
              'machine': 'x86_64',
              'node': 'pwnable.kr',
              'processor': 'x86_64',
