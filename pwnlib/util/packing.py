@@ -571,7 +571,7 @@ def _flat(args, preprocessor, packer, filler):
 
 @LocalContext
 def flat(*args, **kwargs):
-    """flat(*args, preprocessor = None, length = None, filler = de_bruijn(),
+    """flat(\*args, preprocessor = None, length = None, filler = de_bruijn(),
      word_size = None, endianness = None, sign = None) -> str
 
     Flattens the arguments into a string.
@@ -585,7 +585,7 @@ def flat(*args, **kwargs):
     (which are recursively flattened).  Offsets are relative to where the
     flattened dictionary occurs in the output (i.e. `{0: 'foo'}` is equivalent
     to `'foo'`).  Offsets can be integers, unicode strings or regular strings.
-    Integer offsets >= `2**(word_size-8)` are converted to a string using
+    Integer offsets >= ``2**(word_size-8)`` are converted to a string using
     `:func:pack`.  Unicode strings are UTF-8 encoded.  After these conversions
     offsets are either integers or strings.  In the latter case, the offset will
     be the lowest index at which the string occurs in `filler`.  See examples
