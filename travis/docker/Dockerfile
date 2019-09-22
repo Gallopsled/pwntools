@@ -152,4 +152,3 @@ COPY pwntools.tar.gz .
 RUN tar xf pwntools.tar.gz
 RUN sudo rm -f pwntools.tar.gz
 ENTRYPOINT bash run.sh
-#ENTRYPOINT bash
