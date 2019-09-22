@@ -51,6 +51,15 @@ RUN apt-get install -y libxslt1-dev
 RUN apt-get install -y ssh
 RUN apt-get install -y lsb-release
 
+# Installing Python3 and setting it to the default
+WORKDIR /root
+RUN apt-get install -y python3
+RUN apt-get install -y python3
+RUN apt-get install -y python3-dev
+RUN apt-get install -y python3-pip
+RUN pip3 install --upgrade pip
+RUN echo 'alias python=python3' >> ~/.bashrc
+
 #==============================================================================
 #                               ANDROID EMULATOR
 #==============================================================================
@@ -78,22 +87,21 @@ RUN echo y | android update sdk --no-ui --all --filter platform-tools,extra-andr
 RUN echo y | android update sdk --no-ui --all --filter android-21
 RUN echo y | android update sdk --no-ui --all --filter sys-img-armeabi-v7a-android-21
 
-# Upgrade pip
-RUN pip install --upgrade pip
-
 #==============================================================================
 #                          PWNTOOLS TEST REQUIREMENTS
 #==============================================================================
 
-# Install pwntools from 'dev', to get all of the latest dependencies
+# Install pwntools from 'dev3', to get all of the latest dependencies
 # Then uninstall pwntools so we have a clean slate, but still have
 # all of its dependencies installed.
 WORKDIR /root
 RUN git clone https://github.com/Gallopsled/pwntools
 WORKDIR /root/pwntools
-RUN pip install --upgrade --editable .
-RUN pip install --upgrade --requirement docs/requirements.txt
-RUN pip uninstall --yes pwntools
+RUN git checkout dev3
+RUN pip3 install --upgrade --editable .
+RUN pip3 uninstall --yes pwntools
+COPY requirements.txt requirements.txt
+RUN pip3 install --upgrade --requirement requirements.txt
 WORKDIR /root
 RUN rm -rf pwntools
 
@@ -128,16 +136,20 @@ RUN emulator64-arm -avd android-armeabi-v7a -no-window -no-boot-anim -no-skin -n
 
 # Final touchup
 USER root
+# Setting Python3 as the default
+RUN echo 'alias python=python3' >> ~/.bashrc
 
 RUN apt-get install -y strace nano vim tmux
 
 # Entry point
 USER travis
+# Setting Python3 as the default
+RUN echo 'alias python=python3' >> ~/.bashrc
 RUN mkdir /home/travis/pwntools
 WORKDIR /home/travis/pwntools
 ADD run.sh .
 COPY pwntools.tar.gz .
 RUN tar xf pwntools.tar.gz
 RUN sudo rm -f pwntools.tar.gz
-RUN sudo pip install -U -e .
 ENTRYPOINT bash run.sh
+#ENTRYPOINT bash
