@@ -4,7 +4,6 @@ import base64
 import errno
 import os
 import platform
-import pprint
 import re
 import socket
 import stat
@@ -348,7 +347,7 @@ def register_sizes(regs, in_sizes):
         >>> all_regs, sizes, bigger, smaller = register_sizes(regs, [32, 16, 8, 8])
         >>> all_regs
         ['eax', 'ax', 'al', 'ah', 'ebx', 'bx', 'bl', 'bh', 'ecx', 'cx', 'cl', 'ch', 'edx', 'dx', 'dl', 'dh', 'edi', 'di', 'esi', 'si', 'ebp', 'bp', 'esp', 'sp']
-        >>> pprint.pprint(sizes)
+        >>> pprint(sizes)
         {'ah': 8,
          'al': 8,
          'ax': 16,
@@ -373,7 +372,7 @@ def register_sizes(regs, in_sizes):
          'esp': 32,
          'si': 16,
          'sp': 16}
-        >>> pprint.pprint(bigger)
+        >>> pprint(bigger)
         {'ah': ['eax', 'ax', 'ah'],
          'al': ['eax', 'ax', 'al'],
          'ax': ['eax', 'ax'],
@@ -398,7 +397,7 @@ def register_sizes(regs, in_sizes):
          'esp': ['esp'],
          'si': ['esi', 'si'],
          'sp': ['esp', 'sp']}
-        >>> pprint.pprint(smaller)
+        >>> pprint(smaller)
         {'ah': [],
          'al': [],
          'ax': ['al', 'ah'],

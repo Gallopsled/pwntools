@@ -571,7 +571,7 @@ def _flat(args, preprocessor, packer, filler):
 
 @LocalContext
 def flat(*args, **kwargs):
-    """flat(\*args, preprocessor = None, length = None, filler = de_bruijn(),
+    r"""flat(\*args, preprocessor = None, length = None, filler = de_bruijn(),
      word_size = None, endianness = None, sign = None) -> str
 
     Flattens the arguments into a string.
@@ -615,7 +615,7 @@ def flat(*args, **kwargs):
 
     Examples:
       >>> flat(1, "test", [[["AB"]*2]*3], endianness = 'little', word_size = 16, sign = False)
-      b'\\x01\\x00testABABABABABAB'
+      b'\x01\x00testABABABABABAB'
       >>> flat([1, [2, 3]], preprocessor = lambda x: str(x+1))
       b'234'
       >>> flat({12: 0x41414141,

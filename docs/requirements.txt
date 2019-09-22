@@ -1,5 +1,4 @@
 capstone
-coverage
 coveralls
 doc2dash
 isort

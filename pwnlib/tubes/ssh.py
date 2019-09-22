@@ -1842,12 +1842,12 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         return self.download_data(path)
 
     def _init_remote_platform_info(self):
-        """Fills _platform_info, e.g.:
+        r"""Fills _platform_info, e.g.:
 
         ::
 
-            {'distro': 'Ubuntu\\n',
-             'distro_ver': '14.04\\n',
+            {'distro': 'Ubuntu\n',
+             'distro_ver': '14.04\n',
              'machine': 'x86_64',
              'node': 'pwnable.kr',
              'processor': 'x86_64',

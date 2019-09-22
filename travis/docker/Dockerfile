@@ -99,9 +99,8 @@ RUN git clone https://github.com/Gallopsled/pwntools
 WORKDIR /root/pwntools
 RUN git checkout dev3
 RUN pip3 install --upgrade --editable .
+RUN pip3 install --upgrade --requirement docs/requirements.txt
 RUN pip3 uninstall --yes pwntools
-COPY requirements.txt requirements.txt
-RUN pip3 install --upgrade --requirement requirements.txt
 WORKDIR /root
 RUN rm -rf pwntools
 

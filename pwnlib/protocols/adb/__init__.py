@@ -10,7 +10,6 @@ from __future__ import division
 
 import logging
 import functools
-import pprint
 import six
 import stat
 import time
@@ -382,7 +381,7 @@ class AdbClient(Logger):
 
         Examples:
 
-            >>> pprint.pprint(AdbClient().list('/data/user'))
+            >>> pprint(AdbClient().list('/data/user'))
             {'0': {'mode': 41471, 'size': 11, 'time': ...}}
             >>> AdbClient().list('/does/not/exist')
             Traceback (most recent call last):
