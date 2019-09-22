@@ -293,13 +293,13 @@ class Padding(object):
 class DescriptiveStack(list):
     """
     List of resolved ROP gadgets that correspond to the ROP calls that
-    the user has specified.  Also includes
+    the user has specified.
     """
 
     #: Base address
     address = 0
 
-    #: Dictionary of ``{address: [list of descriptions]}``
+    #: Dictionary of \`{address: [list of descriptions]}`
     descriptions = {}
 
     def __init__(self, address):
