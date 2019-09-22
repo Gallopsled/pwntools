@@ -4,6 +4,7 @@ import base64
 import errno
 import os
 import platform
+import pprint
 import re
 import socket
 import stat
@@ -347,12 +348,81 @@ def register_sizes(regs, in_sizes):
         >>> all_regs, sizes, bigger, smaller = register_sizes(regs, [32, 16, 8, 8])
         >>> all_regs
         ['eax', 'ax', 'al', 'ah', 'ebx', 'bx', 'bl', 'bh', 'ecx', 'cx', 'cl', 'ch', 'edx', 'dx', 'dl', 'dh', 'edi', 'di', 'esi', 'si', 'ebp', 'bp', 'esp', 'sp']
-        >>> sizes
-        {'eax': 32, 'ax': 16, 'al': 8, 'ah': 8, 'ebx': 32, 'bx': 16, 'bl': 8, 'bh': 8, 'ecx': 32, 'cx': 16, 'cl': 8, 'ch': 8, 'edx': 32, 'dx': 16, 'dl': 8, 'dh': 8, 'edi': 32, 'di': 16, 'esi': 32, 'si': 16, 'ebp': 32, 'bp': 16, 'esp': 32, 'sp': 16}
-        >>> bigger
-        {'eax': ['eax'], 'ax': ['eax', 'ax'], 'al': ['eax', 'ax', 'al'], 'ah': ['eax', 'ax', 'ah'], 'ebx': ['ebx'], 'bx': ['ebx', 'bx'], 'bl': ['ebx', 'bx', 'bl'], 'bh': ['ebx', 'bx', 'bh'], 'ecx': ['ecx'], 'cx': ['ecx', 'cx'], 'cl': ['ecx', 'cx', 'cl'], 'ch': ['ecx', 'cx', 'ch'], 'edx': ['edx'], 'dx': ['edx', 'dx'], 'dl': ['edx', 'dx', 'dl'], 'dh': ['edx', 'dx', 'dh'], 'edi': ['edi'], 'di': ['edi', 'di'], 'esi': ['esi'], 'si': ['esi', 'si'], 'ebp': ['ebp'], 'bp': ['ebp', 'bp'], 'esp': ['esp'], 'sp': ['esp', 'sp']}
-        >>> smaller
-        {'eax': ['ax', 'al', 'ah'], 'ax': ['al', 'ah'], 'al': [], 'ah': [], 'ebx': ['bx', 'bl', 'bh'], 'bx': ['bl', 'bh'], 'bl': [], 'bh': [], 'ecx': ['cx', 'cl', 'ch'], 'cx': ['cl', 'ch'], 'cl': [], 'ch': [], 'edx': ['dx', 'dl', 'dh'], 'dx': ['dl', 'dh'], 'dl': [], 'dh': [], 'edi': ['di'], 'di': [], 'esi': ['si'], 'si': [], 'ebp': ['bp'], 'bp': [], 'esp': ['sp'], 'sp': []}
+        >>> pprint.pprint(sizes)
+        {'ah': 8,
+         'al': 8,
+         'ax': 16,
+         'bh': 8,
+         'bl': 8,
+         'bp': 16,
+         'bx': 16,
+         'ch': 8,
+         'cl': 8,
+         'cx': 16,
+         'dh': 8,
+         'di': 16,
+         'dl': 8,
+         'dx': 16,
+         'eax': 32,
+         'ebp': 32,
+         'ebx': 32,
+         'ecx': 32,
+         'edi': 32,
+         'edx': 32,
+         'esi': 32,
+         'esp': 32,
+         'si': 16,
+         'sp': 16}
+        >>> pprint.pprint(bigger)
+        {'ah': ['eax', 'ax', 'ah'],
+         'al': ['eax', 'ax', 'al'],
+         'ax': ['eax', 'ax'],
+         'bh': ['ebx', 'bx', 'bh'],
+         'bl': ['ebx', 'bx', 'bl'],
+         'bp': ['ebp', 'bp'],
+         'bx': ['ebx', 'bx'],
+         'ch': ['ecx', 'cx', 'ch'],
+         'cl': ['ecx', 'cx', 'cl'],
+         'cx': ['ecx', 'cx'],
+         'dh': ['edx', 'dx', 'dh'],
+         'di': ['edi', 'di'],
+         'dl': ['edx', 'dx', 'dl'],
+         'dx': ['edx', 'dx'],
+         'eax': ['eax'],
+         'ebp': ['ebp'],
+         'ebx': ['ebx'],
+         'ecx': ['ecx'],
+         'edi': ['edi'],
+         'edx': ['edx'],
+         'esi': ['esi'],
+         'esp': ['esp'],
+         'si': ['esi', 'si'],
+         'sp': ['esp', 'sp']}
+        >>> pprint.pprint(smaller)
+        {'ah': [],
+         'al': [],
+         'ax': ['al', 'ah'],
+         'bh': [],
+         'bl': [],
+         'bp': [],
+         'bx': ['bl', 'bh'],
+         'ch': [],
+         'cl': [],
+         'cx': ['cl', 'ch'],
+         'dh': [],
+         'di': [],
+         'dl': [],
+         'dx': ['dl', 'dh'],
+         'eax': ['ax', 'al', 'ah'],
+         'ebp': ['bp'],
+         'ebx': ['bx', 'bl', 'bh'],
+         'ecx': ['cx', 'cl', 'ch'],
+         'edi': ['di'],
+         'edx': ['dx', 'dl', 'dh'],
+         'esi': ['si'],
+         'esp': ['sp'],
+         'si': [],
+         'sp': []}
     """
     sizes = {}
     bigger = {}
