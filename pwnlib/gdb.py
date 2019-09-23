@@ -117,7 +117,7 @@ log = getLogger(__name__)
 
 @LocalContext
 def debug_assembly(asm, gdbscript=None, vma=None):
-    """debug_assembly(asm, gdbscript=None, vma=None) -> tube
+    r"""debug_assembly(asm, gdbscript=None, vma=None) -> tube
 
     Creates an ELF file, and launches it under a debugger.
 
@@ -129,7 +129,7 @@ def debug_assembly(asm, gdbscript=None, vma=None):
         asm(str): Assembly code to debug
         gdbscript(str): Script to run in GDB
         vma(int): Base address to load the shellcode at
-        **kwargs: Override any :obj:`pwnlib.context.context` values.
+        \**kwargs: Override any :obj:`pwnlib.context.context` values.
 
     Returns:
         :class:`.process`
@@ -157,14 +157,14 @@ def debug_assembly(asm, gdbscript=None, vma=None):
 
 @LocalContext
 def debug_shellcode(data, gdbscript=None, vma=None):
-    """
+    r"""
     Creates an ELF file, and launches it under a debugger.
 
     Arguments:
         data(str): Assembled shellcode bytes
         gdbscript(str): Script to run in GDB
         vma(int): Base address to load the shellcode at
-        **kwargs: Override any :obj:`pwnlib.context.context` values.
+        \**kwargs: Override any :obj:`pwnlib.context.context` values.
 
     Returns:
         :class:`.process`

@@ -1842,7 +1842,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         return self.download_data(path)
 
     def _init_remote_platform_info(self):
-        """Fills _platform_info, e.g.:
+        r"""Fills _platform_info, e.g.:
 
         ::
 
