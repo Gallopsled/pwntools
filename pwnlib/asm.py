@@ -47,9 +47,7 @@ import os
 import platform
 import re
 import shutil
-import string
 import subprocess
-import sys
 import tempfile
 from collections import defaultdict
 from glob import glob
@@ -161,7 +159,6 @@ def which_binutils(util):
         Exception: Could not find 'as' installed for ContextType(arch = 'msp430')
     """
     arch = context.arch
-    bits = context.bits
 
     # Fix up pwntools vs Debian triplet naming, and account
     # for 'thumb' being its own pwntools architecture.
@@ -411,8 +408,6 @@ def cpp(shellcode):
         >>> cpp("SYS_setresuid", os = "freebsd")
         '311\n'
     """
-    arch = context.arch
-    os   = context.os
     code = _include_header() + shellcode
     cmd  = [
         'cpp',
@@ -758,7 +753,6 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
     result = ''
 
     arch   = context.arch
-    os     = context.os
 
     tmpdir = tempfile.mkdtemp(prefix = 'pwn-disasm-')
     step1  = path.join(tmpdir, 'step1')
@@ -788,7 +782,7 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
         with open(step1, 'wb') as fd:
             fd.write(data)
 
-        res = _run(objcopy + [step1, step2])
+        _run(objcopy + [step1, step2])
 
         output0 = _run(objdump + [step2])
         output1 = output0.split('<.text>:\n')
@@ -809,15 +803,16 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
         pattern = pattern[::2]
     pattern = ''.join(pattern)
     for line in result.splitlines():
-        try:
-            groups = re.search(pattern, line).groups()
-            if byte:
-                o, b, i = groups
-            else:
-                o, i = groups
-        except:
+        match = re.search(pattern, line)
+        if not match:
             lines.append(line)
             continue
+
+        groups = match.groups()
+        if byte:
+            o, b, i = groups
+        else:
+            o, i = groups
 
         line = ''
 

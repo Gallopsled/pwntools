@@ -439,9 +439,15 @@ class ELF(ELFFile):
         return pwnlib.gdb.debug([self.path] + argv, *a, **kw)
 
     def _describe(self, *a, **kw):
-        log.info_once('\n'.join((repr(self.path),
-                                '%-10s%s-%s-%s' % ('Arch:', self.arch, self.bits, self.endian),
-                                self.checksec(*a, **kw))))
+        log.info_once(
+            '%s\n%-10s%s-%s-%s\n%s',
+            repr(self.path),
+            'Arch:',
+            self.arch,
+            self.bits,
+            self.endian,
+            self.checksec(*a, **kw)
+        )
 
     def __repr__(self):
         return "ELF(%r)" % self.path
