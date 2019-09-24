@@ -52,7 +52,6 @@ import functools
 import glob
 import logging
 import os
-import platform
 import re
 import shutil
 import stat
@@ -416,7 +415,7 @@ def wait_for_device(kick=False):
 @with_device
 def disable_verity():
     """Disables dm-verity on the device."""
-    with log.waitfor("Disabling dm-verity on %s" % context.device) as w:
+    with log.waitfor("Disabling dm-verity on %s" % context.device):
         root()
 
         with AdbClient() as c:
@@ -434,7 +433,7 @@ def disable_verity():
 @with_device
 def remount():
     """Remounts the filesystem as writable."""
-    with log.waitfor("Remounting filesystem on %s" % context.device) as w:
+    with log.waitfor("Remounting filesystem on %s" % context.device):
         disable_verity()
         root()
 
@@ -854,7 +853,7 @@ def whoami():
 def forward(port):
     """Sets up a port to forward to the device."""
     tcp_port = 'tcp:%s' % port
-    start_forwarding = adb(['forward', tcp_port, tcp_port])
+    adb(['forward', tcp_port, tcp_port])
     atexit.register(lambda: adb(['forward', '--remove', tcp_port]))
 
 @context.quietfunc
@@ -1058,7 +1057,7 @@ class Kernel(object):
             'Nexus 7': 'oem uart-on',
         }
 
-        with log.waitfor('Enabling kernel UART') as w:
+        with log.waitfor('Enabling kernel UART'):
 
             if model not in known_commands:
                 log.error("Device UART is unsupported.")

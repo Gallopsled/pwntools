@@ -276,7 +276,7 @@ class AtomWrite(object):
             shift = (self.size - stop) * 8
         return AtomWrite(self.start + start, stop - start, (self.integer >> shift) & clip, (self.mask >> shift) & clip)
 
-def make_atoms_simple(address, data, badbytes=set()):
+def make_atoms_simple(address, data, badbytes=frozenset()):
     """
     Build format string atoms for writing some data at a given address where some bytes are not allowed
     to appear in addresses (such as nullbytes).
@@ -737,7 +737,7 @@ def make_atoms(writes, sz, szmax, numbwritten, overflows, strategy, badbytes):
         all_atoms += atoms
     return all_atoms
 
-def fmtstr_split(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small", badbytes=set()):
+def fmtstr_split(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small", badbytes=frozenset()):
     """
     Build a format string like fmtstr_payload but return the string and data separately.
     """
@@ -753,7 +753,7 @@ def fmtstr_split(offset, writes, numbwritten=0, write_size='byte', write_size_ma
 
     return make_payload_dollar(offset, atoms, numbwritten)
 
-def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small", badbytes=set(), offset_bytes=0):
+def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small", badbytes=frozenset(), offset_bytes=0):
     r"""fmtstr_payload(offset, writes, numbwritten=0, write_size='byte') -> str
 
     Makes payload with given parameter.
@@ -798,7 +798,7 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
     all_atoms = make_atoms(writes, sz, szmax, numbwritten, overflows, strategy, badbytes)
 
     fmt = ""
-    for iteration in xrange(1000000):
+    for _ in xrange(1000000):
         data_offset = (offset_bytes + len(fmt)) // context.bytes
         fmt, data = make_payload_dollar(offset + data_offset, all_atoms, numbwritten=numbwritten)
         fmt = fmt + cyclic((-len(fmt)-offset_bytes) % context.bytes)

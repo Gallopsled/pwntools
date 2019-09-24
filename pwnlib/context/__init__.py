@@ -260,10 +260,6 @@ def _longest(d):
     """
     return collections.OrderedDict((k,d[k]) for k in sorted(d, key=len, reverse=True))
 
-def TlsProperty(object):
-    def __get__(self, obj, objtype=None):
-        return obj._tls
-
 class ContextType(object):
     r"""
     Class for specifying information about the target machine.
@@ -421,7 +417,7 @@ class ContextType(object):
 
         All keyword arguments are passed to :func:`update`.
         """
-        self._tls = _Tls_DictStack(_defaultdict(ContextType.defaults))
+        self._tls = _Tls_DictStack(_defaultdict(self.defaults))
         self.update(**kwargs)
 
 
@@ -688,11 +684,11 @@ class ContextType(object):
                 break
 
         try:
-            defaults = ContextType.architectures[arch]
+            defaults = self.architectures[arch]
         except KeyError:
-            raise AttributeError('AttributeError: arch must be one of %r' % sorted(ContextType.architectures))
+            raise AttributeError('AttributeError: arch must be one of %r' % sorted(self.architectures))
 
-        for k,v in ContextType.architectures[arch].items():
+        for k,v in defaults.items():
             if k not in self._tls:
                 self._tls[k] = v
 
@@ -722,8 +718,8 @@ class ContextType(object):
         Even then, this doesn't matter much -- only when the the segment
         registers need to be known
         """
-        with context.local(arch=arch):
-            return context.arch
+        with self.local(arch=arch):
+            return self.arch
 
     @_validator
     def bits(self, bits):
@@ -836,10 +832,10 @@ class ContextType(object):
         """
         endian = endianness.lower()
 
-        if endian not in ContextType.endiannesses:
-            raise AttributeError("endian must be one of %r" % sorted(ContextType.endiannesses))
+        if endian not in self.endiannesses:
+            raise AttributeError("endian must be one of %r" % sorted(self.endiannesses))
 
-        return ContextType.endiannesses[endian]
+        return self.endiannesses[endian]
 
 
     @_validator
@@ -906,7 +902,6 @@ class ContextType(object):
             '...:DEBUG:...:Hello from bar!\n'
         """
         if isinstance(value, (str,unicode)):
-            modes = ('w', 'wb', 'a', 'ab')
             # check if mode was specified as "[value],[mode]"
             if ',' not in value:
                 value += ',a'
@@ -981,8 +976,8 @@ class ContextType(object):
         """
         os = os.lower()
 
-        if os not in ContextType.oses:
-            raise AttributeError("os must be one of %r" % ContextType.oses)
+        if os not in self.oses:
+            raise AttributeError("os must be one of %r" % self.oses)
 
         return os
 
@@ -1020,11 +1015,11 @@ class ContextType(object):
             ...
             AttributeError: signed must be one of ['no', 'signed', 'unsigned', 'yes'] or a non-string truthy value
         """
-        try:             signed = ContextType.signednesses[signed]
+        try:             signed = self.signednesses[signed]
         except KeyError: pass
 
         if isinstance(signed, str):
-            raise AttributeError('signed must be one of %r or a non-string truthy value' % sorted(ContextType.signednesses))
+            raise AttributeError('signed must be one of %r or a non-string truthy value' % sorted(self.signednesses))
 
         return bool(signed)
 
@@ -1129,13 +1124,13 @@ class ContextType(object):
     def device(self, device):
         """Sets the device being operated on.
         """
+        if isinstance(device, str):
+            device = Device(device)
         if isinstance(device, Device):
             self.arch = device.arch or self.arch
             self.bits = device.bits or self.bits
             self.endian = device.endian or self.endian
             self.os = device.os or self.os
-        elif isinstance(device, str):
-            device = Device(device)
         elif device is not None:
             raise AttributeError("device must be either a Device object or a serial number as a string")
 
