@@ -166,7 +166,7 @@ tether = sys.modules[__name__]
 shellcraft = module(__name__, '')
 
 class LazyImporter:
-    def find_module(self, fullname, path):
+    def find_module(self, fullname, path=None):
         if not fullname.startswith('pwnlib.shellcraft.'):
             return None
 
