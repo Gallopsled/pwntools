@@ -88,7 +88,7 @@ def should_check():
     if not filename:
         return False
 
-    if read(filename).strip() == 'never':
+    if read(filename).strip() == b'never':
         return False
 
     return time.time() > (last_check() + update_freq)
