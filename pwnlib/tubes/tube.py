@@ -159,6 +159,8 @@ class tube(Timeout, Logger):
     def _send_encode(self, data, encode):
         if isinstance(data, six.text_type):
             encode = encode or self.encode
+            if encode is None:
+                raise ValueError("Must provide encoding when sending string")
             return data.encode(encode)
         elif isinstance(data, bytes):
             if encode is not None:
@@ -207,7 +209,7 @@ class tube(Timeout, Logger):
         data = b''
 
         with self.countdown(timeout):
-            while not pred(self._recv_decode(data, decode)):
+            while not pred(data):
                 try:
                     res = self.recv(1)
                 except Exception:
@@ -220,7 +222,7 @@ class tube(Timeout, Logger):
                     self.unrecv(data)
                     return b''
 
-        return self._recv_decode(data, decode)
+        return data
 
     def recvn(self, numb, timeout = default, decode=None):
         """recvn(numb, timeout = default) -> str
@@ -268,7 +270,7 @@ class tube(Timeout, Logger):
         else:
             result = self.buffer.get(numb)
 
-        return self._recv_decode(result, decode)
+        return result
 
     def recvuntil(self, delims, drop=False, timeout=default, decode=None):
         """recvuntil(delims, drop=False, timeout=default) -> bytes
@@ -337,7 +339,7 @@ class tube(Timeout, Logger):
 
                 if not res:
                     self.unrecv(b''.join(data) + top)
-                    return self._recv_decode(b'', decode)
+                    return b''
 
                 top += res
                 start = len(top)
@@ -352,13 +354,13 @@ class tube(Timeout, Logger):
                         top = top[:start]
                     else:
                         top = top[:end]
-                    return self._recv_decode(b''.join(data) + top, decode)
+                    return b''.join(data) + top
                 if len(top) > longest:
                     i = -longest - 1
                     data.append(top[:i])
                     top = top[i:]
 
-        return self._recv_decode(b'', decode)
+        return b''
 
     def recvlines(self, numlines=2**20, keepends=False, timeout=default, decode=None):
         r"""recvlines(numlines, keepends=False, timeout=default) -> list of bytes objects

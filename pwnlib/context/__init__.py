@@ -811,15 +811,15 @@ class ContextType(object):
     def bytes(self, value):
         self.bits = value*8
 
-    @property
-    def decode(self):
+    @_validator
+    def decode(self, decode):
         """Return the default encoding for using in tubes receiving"""
-        return self.decode
+        return decode
 
-    @property
-    def encode(self):
+    @_validator
+    def encode(self, encode):
         """Return the default encoding for using in tubes transmission"""
-        return self.encode
+        return encode
 
     @_validator
     def encoding(self, charset):
