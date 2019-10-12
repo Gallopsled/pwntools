@@ -36,7 +36,7 @@ class tube(Timeout, Logger):
     #: and related functions.
     newline = b'\n'
 
-    def __init__(self, timeout = default, level = None, encode = context.encode, decode = context.decode, *a, **kw):
+    def __init__(self, timeout = default, level = None, encode = None, decode = None, *a, **kw):
         super(tube, self).__init__(timeout)
 
         Logger.__init__(self, None)
@@ -44,8 +44,8 @@ class tube(Timeout, Logger):
             self.setLevel(level)
 
         self.buffer = Buffer(*a, **kw)
-        self.decode = decode
-        self.encode = encode
+        self.decode = decode if decode is not None else context.decode
+        self.encode = encode if encode is not None else context.encode
         atexit.register(self.close)
 
     # Functions based on functions from subclasses
@@ -149,17 +149,17 @@ class tube(Timeout, Logger):
         return data
 
     def _recv_decode(self, data, decode):
-        decode = decode or self.decode
+        decode = decode if decode is not None else self.decode
         return data.decode(decode) if decode else data
 
     def _unrecv_encode(self, data, decode):
-        decode = decode or self.decode
+        decode = decode if decode is not None else self.decode
         return data.encode(decode) if decode else data
 
     def _send_encode(self, data, encode):
         if isinstance(data, six.text_type):
-            encode = encode or self.encode
-            if encode is None:
+            encode = encode if encode is not None else self.encode
+            if not encode:
                 raise ValueError("Must provide encoding when sending string")
             return data.encode(encode)
         elif isinstance(data, bytes):
