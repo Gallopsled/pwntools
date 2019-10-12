@@ -156,6 +156,16 @@ class tube(Timeout, Logger):
         decode = decode or self.decode
         return data.encode(decode) if decode else data
 
+    def _send_encode(self, data, encode):
+        if isinstance(data, six.text_type):
+            encode = encode or self.encode
+            return data.encode(encode)
+        elif isinstance(data, bytes):
+            if encode is not None:
+                raise ValueError("Can't set encoding if data is already bytes")
+            return data
+        raise ValueError("Can only send string or bytes")
+
     def _recv(self, numb = None, timeout = default, decode = None):
         """_recv(numb = 4096, timeout = default) -> str
 
@@ -173,7 +183,7 @@ class tube(Timeout, Logger):
 
         return result
 
-    def recvpred(self, pred, timeout = default):
+    def recvpred(self, pred, timeout = default, decode=None):
         """recvpred(pred, timeout = default) -> bytes
 
         Receives one byte at a time from the tube, until ``pred(all_bytes)``
@@ -350,7 +360,7 @@ class tube(Timeout, Logger):
 
         return self._recv_decode(b'', decode)
 
-    def recvlines(self, numlines=2**20, keepends=False, timeout=default):
+    def recvlines(self, numlines=2**20, keepends=False, timeout=default, decode=None):
         r"""recvlines(numlines, keepends=False, timeout=default) -> list of bytes objects
 
         Receive up to ``numlines`` lines.
@@ -424,7 +434,7 @@ class tube(Timeout, Logger):
             >>> t.recvlinesS(3)
             ['Foo', 'Bar', 'Baz']
         """
-        return [context._decode(x) for x in self.recvlines(numlines, keepends, timeout)]
+        return self.recvlines(numlines, keepends, timeout, decode=context.encoding)
 
     def recvlinesb(self, numlines=2**20, keepends=False, timeout=default):
         r"""recvlinesb(numlines, keepends=False, timeout=default) -> bytearray list
@@ -441,9 +451,9 @@ class tube(Timeout, Logger):
             >>> t.recvlinesb(3)
             [bytearray(b'Foo'), bytearray(b'Bar'), bytearray(b'Baz')]
         """
-        return [bytearray(x) for x in self.recvlines(numlines, keepends, timeout)]
+        return self.recvlines(numlines, keepends, timeout, decode=None)
 
-    def recvline(self, keepends=True, timeout=default):
+    def recvline(self, keepends=True, timeout=default, decode=None):
         r"""recvline(keepends=True, timeout=default) -> bytes
 
         Receive a single line from the tube.
@@ -479,7 +489,7 @@ class tube(Timeout, Logger):
         """
         return self.recvuntil(self.newline, drop = not keepends, timeout = timeout)
 
-    def recvline_pred(self, pred, keepends=False, timeout=default):
+    def recvline_pred(self, pred, keepends=False, timeout=default, decode=None):
         r"""recvline_pred(pred, keepends=False) -> bytes
 
         Receive data until ``pred(line)`` returns a truthy value.
@@ -527,7 +537,7 @@ class tube(Timeout, Logger):
 
         return b''
 
-    def recvline_contains(self, items, keepends = False, timeout = default):
+    def recvline_contains(self, items, keepends = False, timeout = default, decode=None):
         r"""
         Receive lines until one line is found which contains at least
         one of `items`.
@@ -562,7 +572,7 @@ class tube(Timeout, Logger):
 
         return self.recvline_pred(pred, keepends, timeout)
 
-    def recvline_startswith(self, delims, keepends=False, timeout=default):
+    def recvline_startswith(self, delims, keepends=False, timeout=default, decode=None):
         r"""recvline_startswith(delims, keepends=False, timeout=default) -> bytes
 
         Keep receiving lines until one is found that starts with one of
@@ -599,7 +609,7 @@ class tube(Timeout, Logger):
                                   keepends=keepends,
                                   timeout=timeout)
 
-    def recvline_endswith(self, delims, keepends=False, timeout=default):
+    def recvline_endswith(self, delims, keepends=False, timeout=default, decode=None):
         r"""recvline_endswith(delims, keepends=False, timeout=default) -> bytes
 
         Keep receiving lines until one is found that starts with one of
@@ -631,7 +641,7 @@ class tube(Timeout, Logger):
                                   keepends=keepends,
                                   timeout=timeout)
 
-    def recvregex(self, regex, exact=False, timeout=default):
+    def recvregex(self, regex, exact=False, timeout=default, decode=None):
         """recvregex(regex, exact=False, timeout=default) -> bytes
 
         Wrapper around :func:`recvpred`, which will return when a regex
@@ -655,7 +665,7 @@ class tube(Timeout, Logger):
 
         return self.recvpred(pred, timeout = timeout)
 
-    def recvline_regex(self, regex, exact=False, keepends=False, timeout=default):
+    def recvline_regex(self, regex, exact=False, keepends=False, timeout=default, decode=None):
         """recvline_regex(regex, exact=False, keepends=False, timeout=default) -> bytes
 
         Wrapper around :func:`recvline_pred`, which will return when a regex
@@ -679,7 +689,7 @@ class tube(Timeout, Logger):
 
         return self.recvline_pred(pred, keepends = keepends, timeout = timeout)
 
-    def recvrepeat(self, timeout=default):
+    def recvrepeat(self, timeout=default, decode=None):
         """recvrepeat(timeout=default) -> bytes
 
         Receives data until a timeout or EOF is reached.
@@ -711,7 +721,7 @@ class tube(Timeout, Logger):
 
         return self.buffer.get()
 
-    def recvall(self, timeout=Timeout.forever):
+    def recvall(self, timeout=Timeout.forever, decode=None):
         """recvall() -> bytes
 
         Receives data until EOF is reached.
@@ -733,7 +743,7 @@ class tube(Timeout, Logger):
 
         return self.buffer.get()
 
-    def send(self, data):
+    def send(self, data, encode=None):
         """send(data)
 
         Sends data.
@@ -753,7 +763,7 @@ class tube(Timeout, Logger):
             b'hello'
         """
 
-        data = context._encode(data)
+        data = self._send_encode(data, encode)
 
         if self.isEnabledFor(logging.DEBUG):
             self.debug('Sent %#x bytes:' % len(data))
@@ -766,7 +776,7 @@ class tube(Timeout, Logger):
                 self.indented(fiddling.hexdump(data), level = logging.DEBUG)
         self.send_raw(data)
 
-    def sendline(self, line=b''):
+    def sendline(self, line=b'', encode=None):
         r"""sendline(data)
 
         Shorthand for ``t.send(data + t.newline)``.
@@ -783,48 +793,48 @@ class tube(Timeout, Logger):
             b'hello\r\n'
         """
 
-        line = context._encode(line)
+        line = self._send_encode(line, encode)
 
         self.send(line + self.newline)
 
-    def sendlines(self, lines=[]):
+    def sendlines(self, lines=[], encode=None):
         for line in lines:
-            self.sendline(line)
+            self.sendline(line, encode=encode)
 
-    def sendafter(self, delim, data, timeout = default):
+    def sendafter(self, delim, data, timeout = default, encode=None, decode=None):
         """sendafter(delim, data, timeout = default) -> str
 
         A combination of ``recvuntil(delim, timeout=timeout)`` and ``send(data)``.
         """
 
-        res = self.recvuntil(delim, timeout=timeout)
-        self.send(data)
+        res = self.recvuntil(delim, timeout=timeout, decode=decode)
+        self.send(data, encode=encode)
         return res
 
-    def sendlineafter(self, delim, data, timeout = default):
+    def sendlineafter(self, delim, data, timeout = default, encode=None, decode=None):
         """sendlineafter(delim, data, timeout = default) -> str
 
         A combination of ``recvuntil(delim, timeout=timeout)`` and ``sendline(data)``."""
 
-        res = self.recvuntil(delim, timeout=timeout)
-        self.sendline(data)
+        res = self.recvuntil(delim, timeout=timeout, decode=decode)
+        self.sendline(data, encode=encode)
         return res
 
-    def sendthen(self, delim, data, timeout = default):
+    def sendthen(self, delim, data, timeout = default, encode=None, decode=None):
         """sendthen(delim, data, timeout = default) -> str
 
         A combination of ``send(data)`` and ``recvuntil(delim, timeout=timeout)``."""
 
-        self.send(data)
-        return self.recvuntil(delim, timeout=timeout)
+        self.send(data, encode=encode)
+        return self.recvuntil(delim, timeout=timeout, decode=decode)
 
-    def sendlinethen(self, delim, data, timeout = default):
+    def sendlinethen(self, delim, data, timeout = default, encode=None, decode=None):
         """sendlinethen(delim, data, timeout = default) -> str
 
         A combination of ``sendline(data)`` and ``recvuntil(delim, timeout=timeout)``."""
 
-        self.sendline(data)
-        return self.recvuntil(delim, timeout=timeout)
+        self.sendline(data, encode=encode)
+        return self.recvuntil(delim, timeout=timeout, decode=decode)
 
     def interactive(self, prompt = term.text.bold_red('$') + ' '):
         """interactive(prompt = pwnlib.term.text.bold_red('$') + ' ')
@@ -882,7 +892,7 @@ class tube(Timeout, Logger):
         while t.is_alive():
             t.join(timeout = 0.1)
 
-    def stream(self, line_mode=True):
+    def stream(self, line_mode=True, encode=None):
         """stream()
 
         Receive data until the tube exits, and print it to stdout.
