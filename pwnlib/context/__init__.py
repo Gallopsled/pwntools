@@ -343,8 +343,10 @@ class ContextType(object):
         'buffer_size': 4096,
         'cyclic_alphabet': string.ascii_lowercase.encode(),
         'cyclic_size': 4,
+        'decode': None,
         'delete_corefiles': False,
         'device': os.getenv('ANDROID_SERIAL', None) or None,
+        'encode': 'ascii',
         'encoding': 'auto',
         'endian': 'little',
         'gdbinit': "",
@@ -808,6 +810,16 @@ class ContextType(object):
     @bytes.setter
     def bytes(self, value):
         self.bits = value*8
+
+    @property
+    def decode(self):
+        """Return the default encoding for using in tubes receiving"""
+        return self.decode
+
+    @property
+    def encode(self):
+        """Return the default encoding for using in tubes transmission"""
+        return self.encode
 
     @_validator
     def encoding(self, charset):

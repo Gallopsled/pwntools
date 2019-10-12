@@ -36,7 +36,7 @@ class tube(Timeout, Logger):
     #: and related functions.
     newline = b'\n'
 
-    def __init__(self, timeout = default, level = None, *a, **kw):
+    def __init__(self, timeout = default, level = None, encode = context.encode, decode = context.decode, *a, **kw):
         super(tube, self).__init__(timeout)
 
         Logger.__init__(self, None)
@@ -44,10 +44,12 @@ class tube(Timeout, Logger):
             self.setLevel(level)
 
         self.buffer = Buffer(*a, **kw)
+        self.decode = decode
+        self.encode = encode
         atexit.register(self.close)
 
     # Functions based on functions from subclasses
-    def recv(self, numb = None, timeout = default):
+    def recv(self, numb = None, timeout = default, decode = None):
         r"""recv(numb = 4096, timeout = default) -> bytes
 
         Receives up to `numb` bytes of data from the tube, and returns
@@ -79,7 +81,7 @@ class tube(Timeout, Logger):
                 b'Hello, world'
         """
         numb = self.buffer.get_fill_size(numb)
-        return self._recv(numb, timeout) or b''
+        return self._recv(numb, timeout, decode) or b''
 
     def unrecv(self, data):
         """unrecv(data)
@@ -146,8 +148,15 @@ class tube(Timeout, Logger):
 
         return data
 
+    def _recv_decode(self, data, decode):
+        decode = decode or self.decode
+        return data.decode(decode) if decode else data
 
-    def _recv(self, numb = None, timeout = default):
+    def _unrecv_encode(self, data, decode):
+        decode = decode or self.decode
+        return data.encode(decode) if decode else data
+
+    def _recv(self, numb = None, timeout = default, decode = None):
         """_recv(numb = 4096, timeout = default) -> str
 
         Receives one chunk of from the internal buffer or from the OS if the
@@ -158,9 +167,11 @@ class tube(Timeout, Logger):
         # No buffered data, could not put anything in the buffer
         # before timeout.
         if not self.buffer and not self._fillbuffer(timeout):
-            return b''
+            result = b''
+        else:
+            result = self.buffer.get(numb)
 
-        return self.buffer.get(numb)
+        return result
 
     def recvpred(self, pred, timeout = default):
         """recvpred(pred, timeout = default) -> bytes
@@ -186,7 +197,7 @@ class tube(Timeout, Logger):
         data = b''
 
         with self.countdown(timeout):
-            while not pred(data):
+            while not pred(self._recv_decode(data, decode)):
                 try:
                     res = self.recv(1)
                 except Exception:
@@ -199,9 +210,9 @@ class tube(Timeout, Logger):
                     self.unrecv(data)
                     return b''
 
-        return data
+        return self._recv_decode(data, decode)
 
-    def recvn(self, numb, timeout = default):
+    def recvn(self, numb, timeout = default, decode=None):
         """recvn(numb, timeout = default) -> str
 
         Receives exactly `n` bytes.
@@ -243,11 +254,13 @@ class tube(Timeout, Logger):
                 pass
 
         if len(self.buffer) < numb:
-            return b''
+            result = b''
+        else:
+            result = self.buffer.get(numb)
 
-        return self.buffer.get(numb)
+        return self._recv_decode(result, decode)
 
-    def recvuntil(self, delims, drop=False, timeout=default):
+    def recvuntil(self, delims, drop=False, timeout=default, decode=None):
         """recvuntil(delims, drop=False, timeout=default) -> bytes
 
         Receive data until one of `delims` is encountered.
@@ -295,7 +308,7 @@ class tube(Timeout, Logger):
         # Convert string into singleton tupple
         if isinstance(delims, (bytes, six.text_type)):
             delims = (delims,)
-        delims = tuple(map(context._encode, delims))
+        delims = tuple(self._unrecv_encode(x, decode) for x in delims)
 
         # Longest delimiter for tracking purposes
         longest = max(map(len, delims))
@@ -314,7 +327,7 @@ class tube(Timeout, Logger):
 
                 if not res:
                     self.unrecv(b''.join(data) + top)
-                    return b''
+                    return self._recv_decode(b'', decode)
 
                 top += res
                 start = len(top)
@@ -329,13 +342,13 @@ class tube(Timeout, Logger):
                         top = top[:start]
                     else:
                         top = top[:end]
-                    return b''.join(data) + top
+                    return self._recv_decode(b''.join(data) + top, decode)
                 if len(top) > longest:
                     i = -longest - 1
                     data.append(top[:i])
                     top = top[i:]
 
-        return b''
+        return self._recv_decode(b'', decode)
 
     def recvlines(self, numlines=2**20, keepends=False, timeout=default):
         r"""recvlines(numlines, keepends=False, timeout=default) -> list of bytes objects
