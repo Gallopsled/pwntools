@@ -1534,12 +1534,13 @@ class ELF(ELFFile):
         return self.dynamic_string(dt_runpath.entry.d_ptr)
 
     def checksec(self, banner=True, color=True):
-        """checksec(banner=True)
+        """checksec(banner=True, color=True)
 
         Prints out information in the binary, similar to ``checksec.sh``.
 
         Arguments:
             banner(bool): Whether to print the path to the ELF binary.
+            color(bool): Whether to use colored output.
         """
         red    = text.red if color else str
         green  = text.green if color else str
