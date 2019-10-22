@@ -57,7 +57,7 @@ install_requires     = ['paramiko>=1.15.2',
                         'pypandoc',
                         'packaging',
                         'psutil>=3.3.0',
-                        'intervaltree',
+                        'intervaltree<3.0', # See Gallopsled/pwntools#1238
                         'sortedcontainers<2.0', # See Gallopsled/pwntools#1154
                         'unicorn']
 
@@ -87,7 +87,7 @@ except Exception as e:
 setup(
     name                 = 'pwntools',
     packages             = find_packages(),
-    version              = '3.12.0',
+    version              = '3.12.1',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],
