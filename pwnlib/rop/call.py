@@ -232,7 +232,7 @@ class Call(object):
                                     fmt % self.target,
                                     self.args)
 
-    def __str__(self):
+    def __bytes__(self):
         fmt = "%#x" if isinstance(self.target, six.integer_types) else "%r"
         args = []
         for arg in self.args:
