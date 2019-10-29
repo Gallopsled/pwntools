@@ -129,19 +129,10 @@ def cyclic(length = None, alphabet = None, n = None):
         log.error("Can't create a pattern length=%i with len(alphabet)==%i and n==%i" \
                   % (length, len(alphabet), n))
 
-    out = []
-    for ndx, c in enumerate(de_bruijn(alphabet, n)):
-        if length != None and ndx >= length:
-            break
-        else:
-            out.append(c)
+    generator = de_bruijn(alphabet, n)
+    out = [next(generator) for _ in range(length)] if length != None else list(generator)
 
-    if isinstance(alphabet, six.text_type):
-        return ''.join(out)
-    elif isinstance(alphabet, bytes):
-        return bytes(bytearray(out))
-    else:
-        return out
+    return _join_sequence(out, alphabet)
 
 @LocalContext
 def cyclic_find(subseq, alphabet = None, n = None):
@@ -289,12 +280,8 @@ def cyclic_metasploit(length = None, sets = None):
     sets = sets or [ string.ascii_uppercase.encode(), string.ascii_lowercase.encode(), string.digits.encode() ]
     out = bytearray()
 
-    for ndx, c in enumerate(metasploit_pattern(sets)):
-        if length != None and ndx >= length:
-            break
-        else:
-            out.append(c)
-
+    generator = metasploit_pattern(sets)
+    out = [next(generator) for _ in range(length)] if length != None else list(generator)
     out = bytes(out)
 
     if length != None and len(out) < length:
@@ -344,3 +331,49 @@ def _gen_find(subseq, generator):
         if saved == subseq:
             return pos
     return -1
+
+def _join_sequence(seq, alphabet):
+    if isinstance(alphabet, six.text_type):
+        return ''.join(seq)
+    elif isinstance(alphabet, bytes):
+        return bytes(bytearray(seq))
+    else:
+        return seq
+
+class cyclic_gen(object):
+    def __init__(self, alphabet = None, n = None):
+        if n is None:
+            n = context.cyclic_size
+
+        if alphabet is None:
+            alphabet = context.cyclic_alphabet
+
+        self._generator = de_bruijn(alphabet, n)
+        self._alphabet = alphabet
+        self._total_length = 0
+        self._n = n
+        self._chunks = []
+
+    def get(self, length = None):
+
+        if length != None:
+            self._chunks.append(length)
+            self._total_length += length
+            if len(self._alphabet) ** self._n < self._total_length:
+                log.error("Can't create a pattern length=%i with len(alphabet)==%i and n==%i" \
+                    % (self._total_length, len(self._alphabet), self._n))
+        else:
+            self._chunks.append(float("inf"))
+
+        out = [next(self._generator) for _ in range(length)] if length != None else [next(self._generator)] + list(self._generator)
+        return _join_sequence(out, self._alphabet)
+
+    def find(self, subseq):
+        global_index = cyclic_find(subseq, self._alphabet, self._n)
+        remaining_index = global_index
+        for chunk_idx in range(len(self._chunks)):
+            chunk = self._chunks[chunk_idx]
+            if remaining_index < chunk:
+                return (global_index, chunk_idx, remaining_index)
+            remaining_index -= chunk
+        return -1
