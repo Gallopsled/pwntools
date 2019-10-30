@@ -6,7 +6,7 @@ import string
 
 from pwnlib.context import context, LocalContext
 from pwnlib.log import getLogger
-from pwnlib.util import packing
+from pwnlib.util import packing, iters
 
 log = getLogger(__name__)
 
@@ -130,7 +130,7 @@ def cyclic(length = None, alphabet = None, n = None):
                   % (length, len(alphabet), n))
 
     generator = de_bruijn(alphabet, n)
-    out = [next(generator) for _ in range(length)] if length != None else list(generator)
+    out = iters.take(length, generator)
 
     return _join_sequence(out, alphabet)
 
@@ -278,17 +278,15 @@ def cyclic_metasploit(length = None, sets = None):
         20280
     """
     sets = sets or [ string.ascii_uppercase.encode(), string.ascii_lowercase.encode(), string.digits.encode() ]
-    out = bytearray()
 
     generator = metasploit_pattern(sets)
-    out = [next(generator) for _ in range(length)] if length != None else list(generator)
-    out = bytes(out)
+    out = iters.take(length, generator)
 
     if length != None and len(out) < length:
         log.error("Can't create a pattern of length %i with sets of lengths %s. Maximum pattern length is %i." \
                   % (length, list(map(len, sets)), len(out)))
 
-    return out
+    return _join_sequence(out, sets[0])
 
 def cyclic_metasploit_find(subseq, sets = None):
     """cyclic_metasploit_find(subseq, sets = [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]) -> int
@@ -355,7 +353,6 @@ class cyclic_gen(object):
         self._chunks = []
 
     def get(self, length = None):
-
         if length != None:
             self._chunks.append(length)
             self._total_length += length
