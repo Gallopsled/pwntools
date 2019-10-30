@@ -208,10 +208,6 @@ class ELF(ELFFile):
 
         super(ELF,self).__init__(self.mmap)
 
-        #: IntervalTree which maps all of the loaded memory segments
-        self.memory = intervaltree.IntervalTree()
-        self._populate_memory()
-
         #: :class:`str`: Path to the file
         self.path = os.path.abspath(path)
 
@@ -267,6 +263,10 @@ class ELF(ELFFile):
             or mask(flags, E_FLAGS.EF_MIPS_ARCH_64R2):
                 self.arch = 'mips64'
                 self.bits = 64
+
+        #: IntervalTree which maps all of the loaded memory segments
+        self.memory = intervaltree.IntervalTree()
+        self._populate_memory()
 
         # Is this a native binary? Should we be checking QEMU?
         try:
@@ -1012,7 +1012,8 @@ class ELF(ELFFile):
             # Check for holes which we can fill
             if self._fill_gaps and i+1 < len(load_segments):
                 next_start = load_segments[i+1].header.p_vaddr
-                if stop_mem < next_start:
+                
+                if stop_mem < next_start and stop_mem>>(self.bits-1) == next_start>>(self.bits-1):
                     self.memory.addi(stop_mem, next_start, None)
             else:
                 page_end = (stop_mem + 0xfff) & ~(0xfff)
