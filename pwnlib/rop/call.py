@@ -107,14 +107,18 @@ class AppendedArgument(Unresolved):
             value = [value]
         self.values = []
         self.address = address
-        self.size = len(value) * context.bytes
+        self.size = 0
         for v in value:
             if isinstance(v, (list, tuple)):
-                arg = Unresolved(v, self.address + self.size)
+                arg = AppendedArgument(v, self.address + self.size)
                 self.size += arg.size
                 self.values.append(arg)
             else:
                 self.values.append(v)
+                try:
+                    self.size += -(-len(v) // context.bytes * context.bytes)
+                except TypeError: # no 'len'
+                    self.size += context.bytes
 
     @property
     def address(self):
@@ -181,7 +185,8 @@ class AppendedArgument(Unresolved):
 
     def __bytes__(self):
         return packing.flat(self.resolve())
-    __str__ = __bytes__
+    if six.PY2:
+        __str__ = __bytes__
 
     def __repr__(self):
         if isinstance(self.address, six.integer_types):
@@ -231,15 +236,20 @@ class Call(object):
                                     self.name,
                                     fmt % self.target,
                                     self.args)
+    @classmethod
+    def _special_repr(cls, x):
+        if isinstance(x, AppendedArgument):
+            x = x.values
+        if isinstance(x, list):
+            return list(map(cls._special_repr, x))
+        else:
+            return x
 
     def __str__(self):
         fmt = "%#x" if isinstance(self.target, six.integer_types) else "%r"
         args = []
         for arg in self.args:
-            if isinstance(arg, AppendedArgument) and len(arg.values) == 1:
-                args.extend(map(repr, arg.values))
-            else:
-                args.append(arg)
+            args.append(self._special_repr(arg))
 
         name = self.name or (fmt % self.target)
         arg_str = []

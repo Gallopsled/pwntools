@@ -10,7 +10,7 @@ have been useful.
 
     >>> context.clear(arch='i386')
     >>> binary = ELF.from_assembly('add esp, 0x10; ret')
-    >>> binary.symbols = {'read': 0xdeadbeef, 'write': 0xdecafbad, 'exit': 0xfeedface}
+    >>> binary.symbols = {'read': 0xdeadbeef, 'write': 0xdecafbad, 'execve': 0xcafebabe, 'exit': 0xfeedface}
 
 Creating a ROP object which looks up symbols in the binary is
 pretty straightforward.
@@ -67,6 +67,27 @@ The stack is automatically adjusted for the next frame
     0x0034:              0x9 arg2
     0x0038:          b'oaaa' <pad>
     0x003c:       0xfeedface exit()
+
+You can also append complex arguments onto stack when the stack pointer is known.
+
+    >>> rop = ROP(binary, base=0x7fffe000)
+    >>> rop.call('execve', ['/bin/sh', [['/bin/sh'], ['-p'], ['-c'], ['ls']], 0])
+    >>> print(rop.dump())
+    0x7fffe000:       0xcafebabe execve(['/bin/sh'], [['/bin/sh'], ['-p'], ['-c'], ['ls']], 0)
+    0x7fffe004:          b'baaa' <return address>
+    0x7fffe008:       0x7fffe014 arg0 (+0xc)
+    0x7fffe00c:       0x7fffe01c arg1 (+0x10)
+    0x7fffe010:              0x0 arg2
+    0x7fffe014:   b'/bin/sh\x00'
+    0x7fffe01c:       0x7fffe02c (+0x10)
+    0x7fffe020:       0x7fffe034 (+0x14)
+    0x7fffe024:       0x7fffe038 (+0x14)
+    0x7fffe028:       0x7fffe03c (+0x14)
+    0x7fffe02c:   b'/bin/sh\x00'
+    0x7fffe034:       b'-p\x00$'
+    0x7fffe038:       b'-c\x00$'
+    0x7fffe03c:       b'ls\x00$'
+
 
 ROP Example
 -------------------
@@ -273,6 +294,7 @@ from pwnlib.rop.call import Call
 from pwnlib.rop.call import CurrentStackPointer
 from pwnlib.rop.call import NextGadgetAddress
 from pwnlib.rop.call import StackAdjustment
+from pwnlib.rop.call import Unresolved
 from pwnlib.rop.gadgets import Gadget
 from pwnlib.util import lists
 from pwnlib.util import packing
@@ -290,6 +312,12 @@ class Padding(object):
     def __init__(self, name='<pad>'):
         self.name = name
 
+def _slot_len(x):
+    if isinstance(x, six.integer_types+(Unresolved, Padding, Gadget)):
+        return context.bytes
+    else:
+        return len(packing.flat(x))
+
 class DescriptiveStack(list):
     """
     List of resolved ROP gadgets that correspond to the ROP calls that
@@ -305,10 +333,15 @@ class DescriptiveStack(list):
     def __init__(self, address):
         self.descriptions = collections.defaultdict(lambda: [])
         self.address      = address or 0
+        self._next_next   = 0
+        self._next_last   = 0
 
     @property
     def next(self):
-        return self.address + len(self) * context.bytes
+        for x in self[self._next_last:]:
+            self._next_next += _slot_len(x)
+        self._next_last = len(self)
+        return self.address + self._next_next
 
     def describe(self, text, address = None):
         if address is None:
@@ -317,8 +350,8 @@ class DescriptiveStack(list):
 
     def dump(self):
         rv = []
+        addr = self.address
         for i, data in enumerate(self):
-            addr = self.address + i * context.bytes
             off = None
             line = '0x%04x:' % addr
             if isinstance(data, (str, bytes)):
@@ -335,6 +368,7 @@ class DescriptiveStack(list):
             if off is not None:
                 line += ' (+%#x)' % off
             rv.append(line)
+            addr += _slot_len(data)
 
         return '\n'.join(rv)
 
@@ -811,8 +845,8 @@ class ROP(object):
         start = base
         end   = stack.next
         size  = (stack.next - base)
+        slot_address = base
         for i, slot in enumerate(stack):
-            slot_address = stack.address + (i * context.bytes)
             if isinstance(slot, six.integer_types):
                 pass
 
@@ -821,7 +855,7 @@ class ROP(object):
 
             elif isinstance(slot, AppendedArgument):
                 stack[i] = stack.next
-                stack.extend(slot.resolve(stack.next))
+                stack.extend(slot.resolve(stack.next + len(slot) - context.bytes))
 
             elif isinstance(slot, CurrentStackPointer):
                 stack[i] = slot_address
@@ -839,6 +873,8 @@ class ROP(object):
             # Also, it may work in pwnlib.util.packing.flat()
             else:
                 pass
+
+            slot_address += _slot_len(slot)
 
         return stack
 
