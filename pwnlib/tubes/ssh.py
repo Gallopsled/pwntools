@@ -435,9 +435,18 @@ class ssh_connecter(sock):
                 self.exception(e.message)
                 raise
 
-            sockname = self.sock.get_transport().sock.getsockname()
-            self.lhost = sockname[0]
-            self.lport = sockname[1]
+            try:
+                # Iterate all layers of proxying to get to base-level Socket object
+                curr = self.sock.get_transport().sock
+                while getattr(curr, "get_transport", None):
+                    curr = curr.get_transport().sock
+
+                sockname = curr.getsockname()
+                self.lhost = sockname[0]
+                self.lport = sockname[1]
+            except Exception as e:
+                self.exception("Could not find base-level Socket object.")
+                raise e
 
             h.success()
 
@@ -547,7 +556,21 @@ class ssh(Timeout, Logger):
             ssh_agent: If :const:`True`, enable usage of keys via ssh-agent
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
-        fairly new version of paramiko is used."""
+        fairly new version of paramiko is used.
+
+        Example proxying:
+
+            >>> s1 = ssh(host='example.pwnme',
+            ...          user='travis',
+            ...          password='demopass')
+            >>> r1 = s1.remote('localhost', 22)
+            >>> s2 = ssh(host='example.pwnme',
+            ...          user='travis',
+            ...          password='demopass',
+            ...          proxy_sock=r1.sock)
+            >>> r2 = s2.remote('localhost', 22) # and so on...
+            >>> for x in r2, s2, r1, s1: x.close()
+        """
         super(ssh, self).__init__(*a, **kw)
 
         Logger.__init__(self)
