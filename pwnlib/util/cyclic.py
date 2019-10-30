@@ -339,6 +339,50 @@ def _join_sequence(seq, alphabet):
         return seq
 
 class cyclic_gen(object):
+    """
+    Creates a stateful cyclic generator which can generate sequential chunks of de Bruijn sequences.
+
+    >>> g = cyclic_gen() # Create a generator
+    >>> g.get(4) # Get a chunk of length 4
+    b'aaaa'
+    >>> g.get(4) # Get a chunk of length 4
+    b'baaa'
+    >>> g.get(8) # Get a chunk of length 8
+    b'caaadaaa'
+    >>> g.get(4) # Get a chunk of length 4
+    b'eaaa'
+    >>> g.find(b'caaa') # Position 8, which is in chunk 2 at index 0
+    (8, 2, 0)
+    >>> g.find(b'aaaa') # Position 0, which is in chunk 0 at index 0
+    (0, 0, 0)
+    >>> g.find(b'baaa') # Position 4, which is in chunk 1 at index 0
+    (4, 1, 0)
+    >>> g.find(b'aaad') # Position 9, which is in chunk 2 at index 1
+    (9, 2, 1)
+    >>> g.find(b'aada') # Position 10, which is in chunk 2 at index 2
+    (10, 2, 2)
+    >>> g.get() # Get the rest of the sequence
+    b'faaagaaahaaaiaaajaaa...yyxzyzxzzyxzzzyyyyzyyzzyzyzzzz
+    >>> g.find(b'racz') # Position 7760, which is in chunk 4 at index 7740
+    (7760, 4, 7740)
+    >>> g.get(12) # Generator is exhausted
+    Traceback (most recent call last):
+    File "<stdin>", line 1, in <module>
+    File ".../pwntools/pwnlib/util/cyclic.py", line 368, in get
+        out = [next(self._generator) for _ in range(length)] if length != None else [next(self._generator)] + list(self._generator)
+    File ".../pwntools/pwnlib/util/cyclic.py", line 368, in <listcomp>
+        out = [next(self._generator) for _ in range(length)] if length != None else [next(self._generator)] + list(self._generator)
+    StopIteration
+
+    >>> g = cyclic_gen(string.ascii_uppercase, n=8) # Custom alphabet and item size
+    >>> g.get(12) # Get a chunk of length 12
+    'AAAAAAAABAAA'
+    >>> g.get(18) # Get a chunk of length 18
+    'AAAACAAAAAAADAAAAA'
+    >>> g.find('CAAAAAAA') # Position 16, which is in chunk 1 at index 4
+    (16, 1, 4)
+    """
+
     def __init__(self, alphabet = None, n = None):
         if n is None:
             n = context.cyclic_size
@@ -353,6 +397,30 @@ class cyclic_gen(object):
         self._chunks = []
 
     def get(self, length = None):
+        """
+        Get the next de Bruijn sequence from this generator.
+
+        >>> g = cyclic_gen()
+        >>> g.get(4) # Get a chunk of length 4
+        b'aaaa'
+        >>> g.get(4) # Get a chunk of length 4
+        b'baaa'
+        >>> g.get(8) # Get a chunk of length 8
+        b'caaadaaa'
+        >>> g.get(4) # Get a chunk of length 4
+        b'eaaa'
+        >>> g.get() # Get the rest of the sequence
+        b'faaagaaahaaaiaaajaaa...yyxzyzxzzyxzzzyyyyzyyzzyzyzzzz
+        >>> g.get(12) # Generator is exhausted
+        Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        File ".../pwntools/pwnlib/util/cyclic.py", line 368, in get
+            out = [next(self._generator) for _ in range(length)] if length != None else [next(self._generator)] + list(self._generator)
+        File ".../pwntools/pwnlib/util/cyclic.py", line 368, in <listcomp>
+            out = [next(self._generator) for _ in range(length)] if length != None else [next(self._generator)] + list(self._generator)
+        StopIteration
+        """
+        
         if length != None:
             self._chunks.append(length)
             self._total_length += length
@@ -366,6 +434,18 @@ class cyclic_gen(object):
         return _join_sequence(out, self._alphabet)
 
     def find(self, subseq):
+        """
+        Find a chunk and subindex from all the generates de Bruijn sequences.
+
+        >>> g = cyclic_gen()
+        >>> g.get(4)
+        >>> g.get(4)
+        >>> g.get(8)
+        >>> g.get(4)
+        >>> g.find(b'caaa') # Position 8, which is in chunk 2 at index 0
+        (8, 2, 0)
+        """
+
         global_index = cyclic_find(subseq, self._alphabet, self._n)
         remaining_index = global_index
         for chunk_idx in range(len(self._chunks)):
