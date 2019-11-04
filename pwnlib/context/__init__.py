@@ -1384,11 +1384,20 @@ def LocalContext(function):
     """
     @functools.wraps(function)
     def setter(*a, **kw):
-        # Fast path to skip adding a Context frame
-        if not kw:
-            return function(*a)
-
         with context.local(**{k:kw.pop(k) for k,v in kw.items() if isinstance(getattr(ContextType, k, None), property)}):
+            arch = context.arch
+            bits = context.bits
+            end = context.endian
+
+            # Prevent the user from doing silly things with invalid
+            # architecture / bits / endianness combinations.
+            if (arch == 'i386' and bits != 32) \
+              or (arch == 'amd64' and bits != 64):
+                raise AttributeError("Invalid arch/bits combination: %s/%s" % (arch, bits))
+
+            if arch in ('i386', 'amd64') and endianness == 'big':
+                raise AttributeError("Invalid arch/endianness combination: %s/%s" % (arch, endian))
+
             return function(*a, **kw)
     return setter
 
@@ -1410,6 +1419,14 @@ def update_context_defaults(section):
         else:
             log.warn("Unsupported configuration option %r in section %r" % (key, 'context'))
 
-        ContextType.defaults[key] = type(default)(value)
+        # Attempt to set the value, to see if it is value:
+        try:
+            with context.local(**{key: value}):
+                value = getattr(context, key)
+        except (ValueError, AttributeError) as e:
+            log.warn("Could not set context.%s=%s via pwn.conf (%s)", key, section[key], e)
+            continue
+
+        ContextType.defaults[key] = value
 
 register_config('context', update_context_defaults)
