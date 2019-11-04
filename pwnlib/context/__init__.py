@@ -1387,7 +1387,7 @@ def LocalContext(function):
         with context.local(**{k:kw.pop(k) for k,v in kw.items() if isinstance(getattr(ContextType, k, None), property)}):
             arch = context.arch
             bits = context.bits
-            end = context.endian
+            endian = context.endian
 
             # Prevent the user from doing silly things with invalid
             # architecture / bits / endianness combinations.
@@ -1395,7 +1395,7 @@ def LocalContext(function):
               or (arch == 'amd64' and bits != 64):
                 raise AttributeError("Invalid arch/bits combination: %s/%s" % (arch, bits))
 
-            if arch in ('i386', 'amd64') and endianness == 'big':
+            if arch in ('i386', 'amd64') and endian == 'big':
                 raise AttributeError("Invalid arch/endianness combination: %s/%s" % (arch, endian))
 
             return function(*a, **kw)
