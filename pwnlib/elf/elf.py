@@ -792,7 +792,7 @@ class ELF(ELFFile):
         try:
             with context.silent:
                 io = process(path)
-                data = io.recvall(timeout=2)
+                data = context._decode(io.recvall(timeout=2))
         except Exception:
             log.warn_once("Injected /proc/self/maps code did not execute correctly")
             return {}
