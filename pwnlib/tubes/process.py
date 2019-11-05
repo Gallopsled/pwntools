@@ -844,20 +844,17 @@ class process(tube):
         Return a dictionary mapping the path of each shared library loaded
         by the process to the address it is loaded at in the process' address
         space.
-
-        If ``/proc/$PID/maps`` for the process cannot be accessed, the output
-        of ``ldd`` alone is used.  This may give inaccurate results if ASLR
-        is enabled.
         """
-        with context.local(log_level='error'):
-            ldd = process(['ldd', self.executable]).recvall()
-
-        maps = parse_ldd_output(ldd)
-
         try:
             maps_raw = open('/proc/%d/maps' % self.pid).read()
         except IOError:
-            return maps
+            maps_raw = None
+
+        if not maps_raw:
+            import pwnlib.elf.elf
+
+            with context.quiet:
+                return pwnlib.elf.elf.ELF(self.executable).maps
 
         # Enumerate all of the libraries actually loaded right now.
         for line in maps_raw.splitlines():

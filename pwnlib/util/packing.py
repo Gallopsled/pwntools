@@ -39,7 +39,7 @@ import sys
 
 from six.moves import range
 
-from pwnlib.context import LocalContext
+from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
 from pwnlib.util import iters
 
@@ -159,7 +159,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         else:
             return b''.join(reversed(out))
 
-@LocalContext
+@LocalNoarchContext
 def unpack(data, word_size = None):
     """unpack(data, word_size = None, endianness = None, sign = None, **kwargs) -> int
 
@@ -231,7 +231,7 @@ def unpack(data, word_size = None):
     signbit = number & (1 << (word_size-1))
     return int(number - 2*signbit)
 
-@LocalContext
+@LocalNoarchContext
 def unpack_many(data, word_size = None):
     """unpack(data, word_size = None, endianness = None, sign = None) -> int list
 
@@ -330,7 +330,7 @@ def make_multi(op, size):
     bs = getattr(mod, "_%sbs" % (name))
     bu = getattr(mod, "_%sbu" % (name))
 
-    @LocalContext
+    @LocalNoarchContext
     def routine(number):
         endian = context.endian
         signed = context.signed
@@ -424,7 +424,7 @@ def make_packer(word_size = None, sign = None, **kwargs):
 
         return lambda number: pack(number, word_size, endianness, sign)
 
-@LocalContext
+@LocalNoarchContext
 def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
     """make_unpacker(word_size = None, endianness = None, sign = None,  **kwargs) -> str → number
 
@@ -569,7 +569,7 @@ def _flat(args, preprocessor, packer, filler):
 
     return b''.join(out)
 
-@LocalContext
+@LocalNoarchContext
 def flat(*args, **kwargs):
     r"""flat(\*args, preprocessor = None, length = None, filler = de_bruijn(),
      word_size = None, endianness = None, sign = None) -> str
