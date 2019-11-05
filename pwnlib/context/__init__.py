@@ -389,6 +389,7 @@ class ContextType(object):
         'sparc64':   big_64,
         'thumb':     little_32,
         'vax':       little_32,
+        'none':      {},
     })
 
     #: Valid values for :attr:`endian`
@@ -1398,6 +1399,14 @@ def LocalContext(function):
             if arch in ('i386', 'amd64') and endian == 'big':
                 raise AttributeError("Invalid arch/endianness combination: %s/%s" % (arch, endian))
 
+            return function(*a, **kw)
+    return setter
+
+def LocalNoarchContext(function):
+    @functools.wraps(function)
+    def setter(*a, **kw):
+        kw.setdefault('arch', 'none')
+        with context.local(**{k:kw.pop(k) for k,v in kw.items() if isinstance(getattr(ContextType, k, None), property)}):
             return function(*a, **kw)
     return setter
 
