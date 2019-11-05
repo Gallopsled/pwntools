@@ -1012,13 +1012,11 @@ class ROP(object):
         if isinstance(files, ELF):
             files = [files]
 
-        hashes = []
+        sha256 = hashlib.sha256()
+        for elf_data in sorted(elf.get_data() for elf in self.elfs):
+            sha256.update(elf_data)
 
-        for elf in self.elfs:
-            sha256 = hashlib.sha256(elf.get_data()).hexdigest()
-            hashes.append(sha256)
-
-        return os.path.join(cachedir, '_'.join(hashes))
+        return os.path.join(cachedir, sha256.hexdigest())
 
     def __cache_load(self, elf):
         filename = self.__get_cachefile_name(elf)
