@@ -3,7 +3,7 @@ from __future__ import division
 
 import string
 
-from pwnlib.context import context, LocalContext
+from pwnlib.context import context, LocalNoarchContext
 from pwnlib.log import getLogger
 from pwnlib.util import packing
 
@@ -138,7 +138,7 @@ def cyclic(length = None, alphabet = None, n = None):
     else:
         return out
 
-@LocalContext
+@LocalNoarchContext
 def cyclic_find(subseq, alphabet = None, n = None):
     """cyclic_find(subseq, alphabet = None, n = None) -> int
 
