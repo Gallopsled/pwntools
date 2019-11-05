@@ -1403,6 +1403,17 @@ def LocalContext(function):
     return setter
 
 def LocalNoarchContext(function):
+    """
+    Same as LocalContext, but resets arch to :const:`'none'` by default
+
+    Example:
+
+        >>> @LocalNoarchContext
+        ... def printArch():
+        ...     print(context.arch)
+        >>> printArch()
+        none
+    """
     @functools.wraps(function)
     def setter(*a, **kw):
         kw.setdefault('arch', 'none')
