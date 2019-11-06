@@ -576,7 +576,7 @@ def make_elf(data,
         _run(assembler + ['-o', step2, step1])
 
         linker_options = ['-z', 'execstack']
-        if vma:
+        if vma != None:
             linker_options += ['--section-start=.shellcode=%#x' % vma,
                                '--entry=%#x' % vma]
         elif shared:
