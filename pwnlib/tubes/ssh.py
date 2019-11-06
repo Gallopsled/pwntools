@@ -1208,15 +1208,16 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Returns a :class:`pwnlib.tubes.ssh.ssh_connecter` object.
 
         Examples:
+            >>> # connect to the local-only port 1337 on example.pwnme :
+            >>> # This is the equivalent of :
+            >>> # ssh -L 1337:localhost:1337 travis:demopass@example.pwnme
             >>> from pwn import *
-            >>> l = listen()
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
-            >>> a = s.connect_remote(s.host, l.lport)
-            >>> b = l.wait_for_connection()
+            >>> a = s.connect_remote(s.host, 1337)
             >>> a.sendline(b'Hello')
-            >>> print(repr(b.recvline()))
+            >>> print(repr(a.recvline()))
             b'Hello\n'
         """
 
