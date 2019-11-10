@@ -362,7 +362,7 @@ class cyclic_gen(object):
     >>> g.find(b'aada') # Position 10, which is in chunk 2 at index 2
     (10, 2, 2)
     >>> g.get() # Get the rest of the sequence
-    b'faaagaaahaaaiaaajaaa...yyxzyzxzzyxzzzyyyyzyyzzyzyzzzz
+    b'faaagaaahaaaiaaajaaa...yyxzyzxzzyxzzzyyyyzyyzzyzyzzzz'
     >>> g.find(b'racz') # Position 7760, which is in chunk 4 at index 7740
     (7760, 4, 7740)
     >>> g.get(12) # Generator is exhausted
@@ -410,7 +410,7 @@ class cyclic_gen(object):
         >>> g.get(4) # Get a chunk of length 4
         b'eaaa'
         >>> g.get() # Get the rest of the sequence
-        b'faaagaaahaaaiaaajaaa...yyxzyzxzzyxzzzyyyyzyyzzyzyzzzz
+        b'faaagaaahaaaiaaajaaa...yyxzyzxzzyxzzzyyyyzyyzzyzyzzzz'
         >>> g.get(12) # Generator is exhausted
         Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
