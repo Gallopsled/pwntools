@@ -367,11 +367,7 @@ class cyclic_gen(object):
     (7760, 4, 7740)
     >>> g.get(12) # Generator is exhausted
     Traceback (most recent call last):
-    File "<stdin>", line 1, in <module>
-    File ".../pwntools/pwnlib/util/cyclic.py", line 368, in get
-        out = [next(self._generator) for _ in range(length)] if length != None else [next(self._generator)] + list(self._generator)
-    File ".../pwntools/pwnlib/util/cyclic.py", line 368, in <listcomp>
-        out = [next(self._generator) for _ in range(length)] if length != None else [next(self._generator)] + list(self._generator)
+      ...
     StopIteration
 
     >>> g = cyclic_gen(string.ascii_uppercase, n=8) # Custom alphabet and item size
@@ -413,11 +409,7 @@ class cyclic_gen(object):
         b'faaagaaahaaaiaaajaaa...yyxzyzxzzyxzzzyyyyzyyzzyzyzzzz'
         >>> g.get(12) # Generator is exhausted
         Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-        File ".../pwntools/pwnlib/util/cyclic.py", line 368, in get
-            out = [next(self._generator) for _ in range(length)] if length != None else [next(self._generator)] + list(self._generator)
-        File ".../pwntools/pwnlib/util/cyclic.py", line 368, in <listcomp>
-            out = [next(self._generator) for _ in range(length)] if length != None else [next(self._generator)] + list(self._generator)
+          ...
         StopIteration
         """
         
@@ -439,9 +431,13 @@ class cyclic_gen(object):
 
         >>> g = cyclic_gen()
         >>> g.get(4)
+        b'aaaa'
         >>> g.get(4)
+        b'baaa'
         >>> g.get(8)
+        b'caaadaaa'
         >>> g.get(4)
+        b'eaaa'
         >>> g.find(b'caaa') # Position 8, which is in chunk 2 at index 0
         (8, 2, 0)
         """
