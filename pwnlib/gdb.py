@@ -727,17 +727,16 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         # The 'file' statement should go first
         pre = 'file %s\n%s' % (exe, pre)
 
-    cmd = binary()
+    cmd = [binary()]
 
     if gdb_args:
-        cmd += ' '
-        cmd += ' '.join(gdb_args)
+        cmd.append(gdb_args)
 
     if context.gdbinit:
-        cmd += ' -nh '                     # ignore ~/.gdbinit
-        cmd += ' -x %s ' % context.gdbinit # load custom gdbinit
+        cmd.append("-nh")              # ignore ~/.gdbinit
+        cmd += ['-x', context.gdbinit] # load custom gdbinit
 
-    cmd += ' -q '
+    cmd.append('-q')
 
     if exe and context.native:
         if ssh:
@@ -745,10 +744,10 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
             exe = os.path.basename(exe)
         if not os.path.isfile(exe):
             log.error('No such file: %s' % exe)
-        cmd += ' "%s"' % exe
+        cmd.append(exe)
 
     if pid and not context.os == 'android':
-        cmd += ' %d' % pid
+        cmd.append(str(pid))
 
     if context.os == 'android' and pid:
         runner  = _get_runner()
@@ -773,7 +772,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
         tmp.write(gdbscript)
         tmp.close()
-        cmd += ' -x "%s"' % (tmp.name)
+        cmd += ['-x', str(tmp.name)]
 
     log.info('running in new terminal: %s' % cmd)
 
