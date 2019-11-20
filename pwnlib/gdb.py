@@ -193,7 +193,7 @@ def debug_shellcode(data, gdbscript=None, vma=None):
 
     return debug(tmp_elf, gdbscript=gdbscript, arch=context.arch)
 
-def _gdbserver_args(pid=None, path=None, args=None, which=None):
+def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
     """_gdbserver_args(pid=None, path=None) -> list
 
     Sets up a listening gdbserver, to either connect to the specified
@@ -232,6 +232,14 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None):
     orig_args = args
 
     gdbserver_args = [gdbserver, '--multi']
+
+    #Special case to support LD_PRELOAD
+    try:
+        if env['LD_PRELOAD']:
+            gdbserver_args += ['--wrapper', 'env', 'LD_PRELOAD={}'.format(env['LD_PRELOAD']), '--']
+    except:
+        pass
+
     if context.aslr:
         gdbserver_args += ['--no-disable-randomization']
     else:
@@ -421,7 +429,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
         return runner(args, executable=exe, env=env)
 
     if ssh or context.native or (context.os == 'android'):
-        args = _gdbserver_args(args=args, which=which)
+        args = _gdbserver_args(args=args, which=which, env=env)
     else:
         qemu_port = random.randint(1024, 65535)
         qemu_user = qemu.user_path()
@@ -444,8 +452,16 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     else:
         gdbscript = 'file "%s"\n%s' % (exe, gdbscript)
 
+    #Remove LD_PRELOAD from environment variables
+    try:
+        if env['LD_PRELOAD']:
+            del env['LD_PRELOAD']
+    except:
+        pass
+
     # Start gdbserver/qemu
     # (Note: We override ASLR here for the gdbserver process itself.)
+    print(args)
     gdbserver = runner(args, env=env, aslr=1, **kwargs)
 
     # Set the .executable on the process object.
@@ -752,7 +768,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
     if context.os == 'android' and pid:
         runner  = _get_runner()
         which   = _get_which()
-        gdb_cmd = _gdbserver_args(pid=pid, which=which)
+        gdb_cmd = _gdbserver_args(pid=pid, which=which, env=env)
         gdbserver = runner(gdb_cmd)
         port    = _gdbserver_port(gdbserver, None)
         host    = context.adb_host
