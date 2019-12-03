@@ -449,7 +449,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     gdbserver = runner(args, env=env, aslr=1, **kwargs)
 
     # Set the .executable on the process object.
-    gdbserver.executable = which(orig_args[0])
+    gdbserver.executable = which(exe)
 
     # Find what port we need to connect to
     if context.native or (context.os == 'android'):
