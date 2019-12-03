@@ -438,7 +438,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     if not which(args[0]):
         log.error("%s is not installed" % args[0])
 
-    exe = exe or which(orig_args[0])
+    exe = os.path.abspath(exe) if exe else which(orig_args[0])
     if not exe:
         log.error("%s does not exist" % orig_args[0])
     else:
@@ -449,7 +449,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     gdbserver = runner(args, env=env, aslr=1, **kwargs)
 
     # Set the .executable on the process object.
-    gdbserver.executable = which(exe)
+    gdbserver.executable = exe
 
     # Find what port we need to connect to
     if context.native or (context.os == 'android'):
