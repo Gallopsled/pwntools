@@ -22,7 +22,7 @@ def yesno(prompt, default = None):
       `True` if the answer was "yes", `False` if "no"
 """
 
-    if not isinstance(default, (bool, types.NoneType)):
+    if default is not None and not isinstance(default, bool):
         raise ValueError('yesno(): default must be a boolean or None')
 
     if term.term_mode:
@@ -75,7 +75,7 @@ def options(prompt, opts, default = None):
       The users choice in the form of an integer.
 """
 
-    if not isinstance(default, six.integer_types+(types.NoneType,)):
+    if default is not None and not isinstance(default, six.integer_types):
         raise ValueError('options(): default must be a number or None')
 
     if term.term_mode:
