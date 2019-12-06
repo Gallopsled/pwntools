@@ -56,7 +56,7 @@ def search_by_hash(hex_encoded_id, hash_type='build_id'):
     data   = b""
     while not data.startswith(b'\x7fELF'):
         log.debug("Downloading data from LibcDB: %s", url)
-        data = wget(url)
+        data = wget(url, timeout=20)
 
         if not data:
             log.warn_once("Could not fetch libc for build_id %s", hex_encoded_id)
