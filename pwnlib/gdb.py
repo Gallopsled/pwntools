@@ -193,8 +193,8 @@ def debug_shellcode(data, gdbscript=None, vma=None):
 
     return debug(tmp_elf, gdbscript=gdbscript, arch=context.arch)
 
-def _gdbserver_args(pid=None, path=None, args=None, which=None):
-    """_gdbserver_args(pid=None, path=None) -> list
+def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
+    """_gdbserver_args(pid=None, path=None, args=None, which=None, env=None) -> list
 
     Sets up a listening gdbserver, to either connect to the specified
     PID, or launch the specified binary by its full path.
@@ -239,6 +239,14 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None):
 
     if pid:
         gdbserver_args += ['--once', '--attach']
+
+    if env:
+        env_args = []
+        for key in tuple(env):
+            if key.startswith('LD_'): # LD_PRELOAD / LD_LIBRARY_PATH etc.
+                env_args.append('{}={}'.format(key, env.pop(key)))
+        if env_args:
+            gdbserver_args += ['--wrapper', 'env'] + env_args + ['--']
 
     gdbserver_args += ['localhost:0']
     gdbserver_args += args
@@ -421,7 +429,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
         return runner(args, executable=exe, env=env)
 
     if ssh or context.native or (context.os == 'android'):
-        args = _gdbserver_args(args=args, which=which)
+        args = _gdbserver_args(args=args, which=which, env=env)
     else:
         qemu_port = random.randint(1024, 65535)
         qemu_user = qemu.user_path()
@@ -752,7 +760,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
     if context.os == 'android' and pid:
         runner  = _get_runner()
         which   = _get_which()
-        gdb_cmd = _gdbserver_args(pid=pid, which=which)
+        gdb_cmd = _gdbserver_args(pid=pid, which=which, env=env)
         gdbserver = runner(gdb_cmd)
         port    = _gdbserver_port(gdbserver, None)
         host    = context.adb_host
