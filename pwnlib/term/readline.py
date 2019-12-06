@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import print_function
 
 import six
 import sys
@@ -378,7 +379,7 @@ def readline(_size=None, prompt='', float=True, priority=10):
     from pwnlib.term import term_mode
     if not term_mode:
         print(prompt, end='', flush=True)
-        return sys.stdin.readline().rstrip('\n')
+        return sys.stdin.readline(_size).rstrip('\n')
     show_suggestions = False
     eof = False
     if prompt:
