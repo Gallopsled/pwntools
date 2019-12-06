@@ -267,10 +267,6 @@ def _longest(d):
     """
     return collections.OrderedDict((k,d[k]) for k in sorted(d, key=len, reverse=True))
 
-def TlsProperty(object):
-    def __get__(self, obj, objtype=None):
-        return obj._tls
-
 class ContextType(object):
     r"""
     Class for specifying information about the target machine.
@@ -401,6 +397,7 @@ class ContextType(object):
         'sparc64':   big_64,
         'thumb':     little_32,
         'vax':       little_32,
+        'none':      {},
     })
 
     #: Valid values for :attr:`endian`
@@ -429,7 +426,7 @@ class ContextType(object):
 
         All keyword arguments are passed to :func:`update`.
         """
-        self._tls = _Tls_DictStack(_defaultdict(ContextType.defaults))
+        self._tls = _Tls_DictStack(_defaultdict(self.defaults))
         self.update(**kwargs)
 
 
@@ -696,11 +693,11 @@ class ContextType(object):
                 break
 
         try:
-            defaults = ContextType.architectures[arch]
+            defaults = self.architectures[arch]
         except KeyError:
-            raise AttributeError('AttributeError: arch must be one of %r' % sorted(ContextType.architectures))
+            raise AttributeError('AttributeError: arch must be one of %r' % sorted(self.architectures))
 
-        for k,v in ContextType.architectures[arch].items():
+        for k,v in defaults.items():
             if k not in self._tls:
                 self._tls[k] = v
 
@@ -730,8 +727,8 @@ class ContextType(object):
         Even then, this doesn't matter much -- only when the the segment
         registers need to be known
         """
-        with context.local(arch=arch):
-            return context.arch
+        with self.local(arch=arch):
+            return self.arch
 
     @_validator
     def bits(self, bits):
@@ -874,10 +871,10 @@ class ContextType(object):
         """
         endian = endianness.lower()
 
-        if endian not in ContextType.endiannesses:
-            raise AttributeError("endian must be one of %r" % sorted(ContextType.endiannesses))
+        if endian not in self.endiannesses:
+            raise AttributeError("endian must be one of %r" % sorted(self.endiannesses))
 
-        return ContextType.endiannesses[endian]
+        return self.endiannesses[endian]
 
 
     @_validator
@@ -944,7 +941,6 @@ class ContextType(object):
             '...:DEBUG:...:Hello from bar!\n'
         """
         if isinstance(value, (bytes, six.text_type)):
-            modes = ('w', 'wb', 'a', 'ab')
             # check if mode was specified as "[value],[mode]"
             if ',' not in value:
                 value += ',a'
@@ -1019,8 +1015,8 @@ class ContextType(object):
         """
         os = os.lower()
 
-        if os not in ContextType.oses:
-            raise AttributeError("os must be one of %r" % ContextType.oses)
+        if os not in self.oses:
+            raise AttributeError("os must be one of %r" % self.oses)
 
         return os
 
@@ -1058,11 +1054,11 @@ class ContextType(object):
             ...
             AttributeError: signed must be one of ['no', 'signed', 'unsigned', 'yes'] or a non-string truthy value
         """
-        try:             signed = ContextType.signednesses[signed]
+        try:             signed = self.signednesses[signed]
         except KeyError: pass
 
         if isinstance(signed, str):
-            raise AttributeError('signed must be one of %r or a non-string truthy value' % sorted(ContextType.signednesses))
+            raise AttributeError('signed must be one of %r or a non-string truthy value' % sorted(self.signednesses))
 
         return bool(signed)
 
@@ -1167,13 +1163,13 @@ class ContextType(object):
     def device(self, device):
         """Sets the device being operated on.
         """
+        if isinstance(device, (bytes, six.text_type)):
+            device = Device(device)
         if isinstance(device, Device):
             self.arch = device.arch or self.arch
             self.bits = device.bits or self.bits
             self.endian = device.endian or self.endian
             self.os = device.os or self.os
-        elif isinstance(device, (bytes, six.text_type)):
-            device = Device(device)
         elif device is not None:
             raise AttributeError("device must be either a Device object or a serial number as a string")
 
@@ -1427,11 +1423,39 @@ def LocalContext(function):
     """
     @functools.wraps(function)
     def setter(*a, **kw):
-        # Fast path to skip adding a Context frame
-        if not kw:
-            return function(*a)
+        with context.local(**{k:kw.pop(k) for k,v in tuple(kw.items()) if isinstance(getattr(ContextType, k, None), property)}):
+            arch = context.arch
+            bits = context.bits
+            endian = context.endian
 
-        with context.local(**{k:kw.pop(k) for k,v in list(kw.items()) if isinstance(getattr(ContextType, k, None), property)}):
+            # Prevent the user from doing silly things with invalid
+            # architecture / bits / endianness combinations.
+            if (arch == 'i386' and bits != 32) \
+              or (arch == 'amd64' and bits != 64):
+                raise AttributeError("Invalid arch/bits combination: %s/%s" % (arch, bits))
+
+            if arch in ('i386', 'amd64') and endian == 'big':
+                raise AttributeError("Invalid arch/endianness combination: %s/%s" % (arch, endian))
+
+            return function(*a, **kw)
+    return setter
+
+def LocalNoarchContext(function):
+    """
+    Same as LocalContext, but resets arch to :const:`'none'` by default
+
+    Example:
+
+        >>> @LocalNoarchContext
+        ... def printArch():
+        ...     print(context.arch)
+        >>> printArch()
+        none
+    """
+    @functools.wraps(function)
+    def setter(*a, **kw):
+        kw.setdefault('arch', 'none')
+        with context.local(**{k:kw.pop(k) for k,v in tuple(kw.items()) if isinstance(getattr(ContextType, k, None), property)}):
             return function(*a, **kw)
     return setter
 
@@ -1453,6 +1477,14 @@ def update_context_defaults(section):
         else:
             log.warn("Unsupported configuration option %r in section %r" % (key, 'context'))
 
-        ContextType.defaults[key] = type(default)(value)
+        # Attempt to set the value, to see if it is value:
+        try:
+            with context.local(**{key: value}):
+                value = getattr(context, key)
+        except (ValueError, AttributeError) as e:
+            log.warn("Could not set context.%s=%s via pwn.conf (%s)", key, section[key], e)
+            continue
+
+        ContextType.defaults[key] = value
 
 register_config('context', update_context_defaults)

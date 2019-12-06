@@ -704,12 +704,14 @@ class DynELF(object):
             "A hash table of Elf32_Word objects supports symbol table access", or see:
             https://docs.oracle.com/cd/E19504-01/802-6319/6ia12qkfo/index.html#chapter6-48031
 
-            struct Elf_Hash {
-                uint32_t nbucket;
-                uint32_t nchain;
-                uint32_t bucket[nbucket];
-                uint32_t chain[nchain];
-            }
+            .. code-block:: c
+
+                struct Elf_Hash {
+                    uint32_t nbucket;
+                    uint32_t nchain;
+                    uint32_t bucket[nbucket];
+                    uint32_t chain[nchain];
+                }
 
             You can force an ELF to use this type of symbol table by compiling
             with 'gcc -Wl,--hash-style=sysv'

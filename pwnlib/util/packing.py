@@ -39,7 +39,7 @@ import sys
 
 from six.moves import range
 
-from pwnlib.context import LocalContext
+from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
 from pwnlib.util import iters
 
@@ -159,7 +159,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         else:
             return b''.join(reversed(out))
 
-@LocalContext
+@LocalNoarchContext
 def unpack(data, word_size = None):
     """unpack(data, word_size = None, endianness = None, sign = None, **kwargs) -> int
 
@@ -231,7 +231,7 @@ def unpack(data, word_size = None):
     signbit = number & (1 << (word_size-1))
     return int(number - 2*signbit)
 
-@LocalContext
+@LocalNoarchContext
 def unpack_many(data, word_size = None):
     """unpack(data, word_size = None, endianness = None, sign = None) -> int list
 
@@ -330,7 +330,7 @@ def make_multi(op, size):
     bs = getattr(mod, "_%sbs" % (name))
     bu = getattr(mod, "_%sbu" % (name))
 
-    @LocalContext
+    @LocalNoarchContext
     def routine(number):
         endian = context.endian
         signed = context.signed
@@ -424,7 +424,7 @@ def make_packer(word_size = None, sign = None, **kwargs):
 
         return lambda number: pack(number, word_size, endianness, sign)
 
-@LocalContext
+@LocalNoarchContext
 def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
     """make_unpacker(word_size = None, endianness = None, sign = None,  **kwargs) -> str → number
 
@@ -569,9 +569,9 @@ def _flat(args, preprocessor, packer, filler):
 
     return b''.join(out)
 
-@LocalContext
+@LocalNoarchContext
 def flat(*args, **kwargs):
-    """flat(*args, preprocessor = None, length = None, filler = de_bruijn(),
+    r"""flat(\*args, preprocessor = None, length = None, filler = de_bruijn(),
      word_size = None, endianness = None, sign = None) -> str
 
     Flattens the arguments into a string.
@@ -585,7 +585,7 @@ def flat(*args, **kwargs):
     (which are recursively flattened).  Offsets are relative to where the
     flattened dictionary occurs in the output (i.e. `{0: 'foo'}` is equivalent
     to `'foo'`).  Offsets can be integers, unicode strings or regular strings.
-    Integer offsets >= `2**(word_size-8)` are converted to a string using
+    Integer offsets >= ``2**(word_size-8)`` are converted to a string using
     `:func:pack`.  Unicode strings are UTF-8 encoded.  After these conversions
     offsets are either integers or strings.  In the latter case, the offset will
     be the lowest index at which the string occurs in `filler`.  See examples
@@ -615,7 +615,7 @@ def flat(*args, **kwargs):
 
     Examples:
       >>> flat(1, "test", [[["AB"]*2]*3], endianness = 'little', word_size = 16, sign = False)
-      b'\\x01\\x00testABABABABABAB'
+      b'\x01\x00testABABABABABAB'
       >>> flat([1, [2, 3]], preprocessor = lambda x: str(x+1))
       b'234'
       >>> flat({12: 0x41414141,

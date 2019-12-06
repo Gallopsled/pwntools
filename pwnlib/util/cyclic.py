@@ -4,9 +4,9 @@ from __future__ import division
 import six
 import string
 
-from pwnlib.context import context, LocalContext
+from pwnlib.context import context, LocalNoarchContext
 from pwnlib.log import getLogger
-from pwnlib.util import packing
+from pwnlib.util import packing, iters
 
 log = getLogger(__name__)
 
@@ -129,21 +129,12 @@ def cyclic(length = None, alphabet = None, n = None):
         log.error("Can't create a pattern length=%i with len(alphabet)==%i and n==%i" \
                   % (length, len(alphabet), n))
 
-    out = []
-    for ndx, c in enumerate(de_bruijn(alphabet, n)):
-        if length != None and ndx >= length:
-            break
-        else:
-            out.append(c)
+    generator = de_bruijn(alphabet, n)
+    out = iters.take(length, generator)
 
-    if isinstance(alphabet, six.text_type):
-        return ''.join(out)
-    elif isinstance(alphabet, bytes):
-        return bytes(bytearray(out))
-    else:
-        return out
+    return _join_sequence(out, alphabet)
 
-@LocalContext
+@LocalNoarchContext
 def cyclic_find(subseq, alphabet = None, n = None):
     """cyclic_find(subseq, alphabet = None, n = None) -> int
 
@@ -288,21 +279,15 @@ def cyclic_metasploit(length = None, sets = None):
         20280
     """
     sets = sets or [ string.ascii_uppercase.encode(), string.ascii_lowercase.encode(), string.digits.encode() ]
-    out = bytearray()
 
-    for ndx, c in enumerate(metasploit_pattern(sets)):
-        if length != None and ndx >= length:
-            break
-        else:
-            out.append(c)
-
-    out = bytes(out)
+    generator = metasploit_pattern(sets)
+    out = iters.take(length, generator)
 
     if length != None and len(out) < length:
         log.error("Can't create a pattern of length %i with sets of lengths %s. Maximum pattern length is %i." \
                   % (length, list(map(len, sets)), len(out)))
 
-    return out
+    return _join_sequence(out, sets[0])
 
 def cyclic_metasploit_find(subseq, sets = None):
     """cyclic_metasploit_find(subseq, sets = [ string.ascii_uppercase, string.ascii_lowercase, string.digits ]) -> int
@@ -345,3 +330,124 @@ def _gen_find(subseq, generator):
         if saved == subseq:
             return pos
     return -1
+
+def _join_sequence(seq, alphabet):
+    if isinstance(alphabet, six.text_type):
+        return ''.join(seq)
+    elif isinstance(alphabet, bytes):
+        return bytes(bytearray(seq))
+    else:
+        return seq
+
+class cyclic_gen(object):
+    """
+    Creates a stateful cyclic generator which can generate sequential chunks of de Bruijn sequences.
+
+    >>> g = cyclic_gen() # Create a generator
+    >>> g.get(4) # Get a chunk of length 4
+    b'aaaa'
+    >>> g.get(4) # Get a chunk of length 4
+    b'baaa'
+    >>> g.get(8) # Get a chunk of length 8
+    b'caaadaaa'
+    >>> g.get(4) # Get a chunk of length 4
+    b'eaaa'
+    >>> g.find(b'caaa') # Position 8, which is in chunk 2 at index 0
+    (8, 2, 0)
+    >>> g.find(b'aaaa') # Position 0, which is in chunk 0 at index 0
+    (0, 0, 0)
+    >>> g.find(b'baaa') # Position 4, which is in chunk 1 at index 0
+    (4, 1, 0)
+    >>> g.find(b'aaad') # Position 9, which is in chunk 2 at index 1
+    (9, 2, 1)
+    >>> g.find(b'aada') # Position 10, which is in chunk 2 at index 2
+    (10, 2, 2)
+    >>> g.get() # Get the rest of the sequence
+    b'faaagaaahaaaiaaajaaa...yyxzyzxzzyxzzzyyyyzyyzzyzyzzzz'
+    >>> g.find(b'racz') # Position 7760, which is in chunk 4 at index 7740
+    (7760, 4, 7740)
+    >>> g.get(12) # Generator is exhausted
+    Traceback (most recent call last):
+      ...
+    StopIteration
+
+    >>> g = cyclic_gen(string.ascii_uppercase, n=8) # Custom alphabet and item size
+    >>> g.get(12) # Get a chunk of length 12
+    'AAAAAAAABAAA'
+    >>> g.get(18) # Get a chunk of length 18
+    'AAAACAAAAAAADAAAAA'
+    >>> g.find('CAAAAAAA') # Position 16, which is in chunk 1 at index 4
+    (16, 1, 4)
+    """
+
+    def __init__(self, alphabet = None, n = None):
+        if n is None:
+            n = context.cyclic_size
+
+        if alphabet is None:
+            alphabet = context.cyclic_alphabet
+
+        self._generator = de_bruijn(alphabet, n)
+        self._alphabet = alphabet
+        self._total_length = 0
+        self._n = n
+        self._chunks = []
+
+    def get(self, length = None):
+        """
+        Get the next de Bruijn sequence from this generator.
+
+        >>> g = cyclic_gen()
+        >>> g.get(4) # Get a chunk of length 4
+        b'aaaa'
+        >>> g.get(4) # Get a chunk of length 4
+        b'baaa'
+        >>> g.get(8) # Get a chunk of length 8
+        b'caaadaaa'
+        >>> g.get(4) # Get a chunk of length 4
+        b'eaaa'
+        >>> g.get() # Get the rest of the sequence
+        b'faaagaaahaaaiaaajaaa...yyxzyzxzzyxzzzyyyyzyyzzyzyzzzz'
+        >>> g.get(12) # Generator is exhausted
+        Traceback (most recent call last):
+          ...
+        StopIteration
+        """
+        
+        if length != None:
+            self._chunks.append(length)
+            self._total_length += length
+            if len(self._alphabet) ** self._n < self._total_length:
+                log.error("Can't create a pattern length=%i with len(alphabet)==%i and n==%i" \
+                    % (self._total_length, len(self._alphabet), self._n))
+        else:
+            self._chunks.append(float("inf"))
+
+        out = [next(self._generator) for _ in range(length)] if length != None else [next(self._generator)] + list(self._generator)
+        return _join_sequence(out, self._alphabet)
+
+    def find(self, subseq):
+        """
+        Find a chunk and subindex from all the generates de Bruijn sequences.
+
+        >>> g = cyclic_gen()
+        >>> g.get(4)
+        b'aaaa'
+        >>> g.get(4)
+        b'baaa'
+        >>> g.get(8)
+        b'caaadaaa'
+        >>> g.get(4)
+        b'eaaa'
+        >>> g.find(b'caaa') # Position 8, which is in chunk 2 at index 0
+        (8, 2, 0)
+        """
+
+        global_index = cyclic_find(subseq, self._alphabet, self._n)
+        remaining_index = global_index
+        for chunk_idx in range(len(self._chunks)):
+            chunk = self._chunks[chunk_idx]
+            if remaining_index < chunk:
+                return (global_index, chunk_idx, remaining_index)
+            remaining_index -= chunk
+        return -1

@@ -435,14 +435,14 @@ class AdbClient(Logger):
     @_with_transport
     @_sync
     def stat(self, path):
-        """Execute the ``STAT`` command of the ``SYNC`` API.
+        """Execute the STAT command of the SYNC API.
 
         Arguments:
             path(str): Path to the file to stat.
 
         Return:
             On success, a dictionary mapping the values returned.
-            If the file cannot be ``stat()``ed, None is returned.
+            If the file cannot be stat() ed, None is returned.
 
         Example:
 

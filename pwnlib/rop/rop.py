@@ -10,7 +10,7 @@ have been useful.
 
     >>> context.clear(arch='i386')
     >>> binary = ELF.from_assembly('add esp, 0x10; ret')
-    >>> binary.symbols = {'read': 0xdeadbeef, 'write': 0xdecafbad, 'exit': 0xfeedface}
+    >>> binary.symbols = {'read': 0xdeadbeef, 'write': 0xdecafbad, 'execve': 0xcafebabe, 'exit': 0xfeedface}
 
 Creating a ROP object which looks up symbols in the binary is
 pretty straightforward.
@@ -68,6 +68,27 @@ The stack is automatically adjusted for the next frame
     0x0038:          b'oaaa' <pad>
     0x003c:       0xfeedface exit()
 
+You can also append complex arguments onto stack when the stack pointer is known.
+
+    >>> rop = ROP(binary, base=0x7fffe000)
+    >>> rop.call('execve', ['/bin/sh', [['/bin/sh'], ['-p'], ['-c'], ['ls']], 0])
+    >>> print(rop.dump())
+    0x7fffe000:       0xcafebabe execve(['/bin/sh'], [['/bin/sh'], ['-p'], ['-c'], ['ls']], 0)
+    0x7fffe004:          b'baaa' <return address>
+    0x7fffe008:       0x7fffe014 arg0 (+0xc)
+    0x7fffe00c:       0x7fffe01c arg1 (+0x10)
+    0x7fffe010:              0x0 arg2
+    0x7fffe014:   b'/bin/sh\x00'
+    0x7fffe01c:       0x7fffe02c (+0x10)
+    0x7fffe020:       0x7fffe034 (+0x14)
+    0x7fffe024:       0x7fffe038 (+0x14)
+    0x7fffe028:       0x7fffe03c (+0x14)
+    0x7fffe02c:   b'/bin/sh\x00'
+    0x7fffe034:       b'-p\x00$'
+    0x7fffe038:       b'-c\x00$'
+    0x7fffe03c:       b'ls\x00$'
+
+
 ROP Example
 -------------------
 
@@ -107,7 +128,7 @@ Finally, let's build our ROP stack
     >>> print(rop.dump())
     0x0000:       0x10000012 write(STDOUT_FILENO, 0x10000026, 8)
     0x0004:       0x1000000e <adjust @0x18> add esp, 0x10; ret
-    0x0008:              0x1 arg0
+    0x0008:              0x1 STDOUT_FILENO
     0x000c:       0x10000026 flag
     0x0010:              0x8 arg2
     0x0014:          b'faaa' <pad>
@@ -228,7 +249,7 @@ That's all there is to it.
     0x002c:       0x10000012 ebx = binsh
     0x0030:              0x0 edx
     0x0034:              0x0 ecx
-    0x0038:              0xb eax
+    0x0038:              0xb eax = SYS_execve
     0x003c:              0x0 trapno
     0x0040:              0x0 err
     0x0044:       0x1000000b int 0x80
@@ -273,6 +294,7 @@ from pwnlib.rop.call import Call
 from pwnlib.rop.call import CurrentStackPointer
 from pwnlib.rop.call import NextGadgetAddress
 from pwnlib.rop.call import StackAdjustment
+from pwnlib.rop.call import Unresolved
 from pwnlib.rop.gadgets import Gadget
 from pwnlib.util import lists
 from pwnlib.util import packing
@@ -290,25 +312,36 @@ class Padding(object):
     def __init__(self, name='<pad>'):
         self.name = name
 
+def _slot_len(x):
+    if isinstance(x, six.integer_types+(Unresolved, Padding, Gadget)):
+        return context.bytes
+    else:
+        return len(packing.flat(x))
+
 class DescriptiveStack(list):
     """
     List of resolved ROP gadgets that correspond to the ROP calls that
-    the user has specified.  Also includes
+    the user has specified.
     """
 
     #: Base address
     address = 0
 
-    #: Dictionary of ``{address: [list of descriptions]}``
+    #: Dictionary of \`{address: [list of descriptions]}`
     descriptions = {}
 
     def __init__(self, address):
         self.descriptions = collections.defaultdict(lambda: [])
         self.address      = address or 0
+        self._next_next   = 0
+        self._next_last   = 0
 
     @property
     def next(self):
-        return self.address + len(self) * context.bytes
+        for x in self[self._next_last:]:
+            self._next_next += _slot_len(x)
+        self._next_last = len(self)
+        return self.address + self._next_next
 
     def describe(self, text, address = None):
         if address is None:
@@ -317,8 +350,8 @@ class DescriptiveStack(list):
 
     def dump(self):
         rv = []
+        addr = self.address
         for i, data in enumerate(self):
-            addr = self.address + i * context.bytes
             off = None
             line = '0x%04x:' % addr
             if isinstance(data, (str, bytes)):
@@ -335,6 +368,7 @@ class DescriptiveStack(list):
             if off is not None:
                 line += ' (+%#x)' % off
             rv.append(line)
+            addr += _slot_len(data)
 
         return '\n'.join(rv)
 
@@ -354,7 +388,7 @@ class ROP(object):
        #  '0x0004:       0xdeadbeef',
        #  '0x0008:              0x0',
        #  '0x000c:        0x80496a8']
-       str(rop)
+       bytes(rop)
        # '\xfc\x82\x04\x08\xef\xbe\xad\xde\x00\x00\x00\x00\xa8\x96\x04\x08'
 
     >>> context.clear(arch = "i386", kernel = 'amd64')
@@ -389,7 +423,7 @@ class ROP(object):
     0x0050:              0x4 ebx
     0x0054:              0x6 edx
     0x0058:              0x5 ecx
-    0x005c:              0xb eax
+    0x005c:              0xb eax = SYS_execve
     0x0060:              0x0 trapno
     0x0064:              0x0 err
     0x0068:       0x10000000 int 0x80
@@ -427,7 +461,7 @@ class ROP(object):
     0x8048050:              0x4 ebx
     0x8048054:              0x6 edx
     0x8048058:              0x5 ecx
-    0x804805c:              0xb eax
+    0x804805c:              0xb eax = SYS_execve
     0x8048060:              0x0 trapno
     0x8048064:              0x0 err
     0x8048068:       0x10000000 int 0x80
@@ -650,12 +684,12 @@ class ROP(object):
         """
         Return a description for an object in the ROP stack
         """
+        if isinstance(object, (Call, constants.Constant)):
+            return str(object)
         if isinstance(object, six.integer_types):
             return self.unresolve(object)
         if isinstance(object, (bytes, six.text_type)):
             return repr(object)
-        if isinstance(object, Call):
-            return str(object)
         if isinstance(object, Gadget):
             return '; '.join(object.insns)
 
@@ -737,7 +771,7 @@ class ROP(object):
                 for value, name in self.setRegisters(registers):
                     if name in registers:
                         index = slot.abi.register_arguments.index(name)
-                        description = self.describe(value) or value
+                        description = self.describe(value) or repr(value)
                         stack.describe('[arg%d] %s = %s' % (index, name, description))
                     elif isinstance(name, Gadget):
                         stack.describe('; '.join(name.insns))
@@ -811,8 +845,8 @@ class ROP(object):
         start = base
         end   = stack.next
         size  = (stack.next - base)
+        slot_address = base
         for i, slot in enumerate(stack):
-            slot_address = stack.address + (i * context.bytes)
             if isinstance(slot, six.integer_types):
                 pass
 
@@ -821,7 +855,7 @@ class ROP(object):
 
             elif isinstance(slot, AppendedArgument):
                 stack[i] = stack.next
-                stack.extend(slot.resolve(stack.next))
+                stack.extend(slot.resolve(stack.next + len(slot) - context.bytes))
 
             elif isinstance(slot, CurrentStackPointer):
                 stack[i] = slot_address
@@ -839,6 +873,8 @@ class ROP(object):
             # Also, it may work in pwnlib.util.packing.flat()
             else:
                 pass
+
+            slot_address += _slot_len(slot)
 
         return stack
 
@@ -1018,13 +1054,11 @@ class ROP(object):
         if isinstance(files, ELF):
             files = [files]
 
-        hashes = []
+        sha256 = hashlib.sha256()
+        for elf_data in sorted(elf.get_data() for elf in self.elfs):
+            sha256.update(elf_data)
 
-        for elf in self.elfs:
-            sha256 = hashlib.sha256(elf.get_data()).hexdigest()
-            hashes.append(sha256)
-
-        return os.path.join(cachedir, '_'.join(hashes))
+        return os.path.join(cachedir, sha256.hexdigest())
 
     def __cache_load(self, elf):
         filename = self.__get_cachefile_name(elf)

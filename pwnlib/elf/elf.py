@@ -43,6 +43,7 @@ import os
 import re
 import six
 import subprocess
+import tempfile
 
 from six import BytesIO
 
@@ -74,12 +75,14 @@ from pwnlib.context import context
 from pwnlib.elf.config import kernel_configuration
 from pwnlib.elf.config import parse_kconfig
 from pwnlib.elf.datatypes import constants
+from pwnlib.elf.maps import CAT_PROC_MAPS_EXIT
 from pwnlib.elf.plt import emulate_plt_instructions
 from pwnlib.log import getLogger
 from pwnlib.term import text
 from pwnlib.tubes.process import process
 from pwnlib.util import misc
 from pwnlib.util import packing
+from pwnlib.util.fiddling import unhex
 from pwnlib.util.sh_string import sh_string
 
 log = getLogger(__name__)
@@ -174,7 +177,7 @@ class ELF(ELFFile):
            0x41dac0
            >>> u32(bash.read(bash.got['read'], 4))
            0x41dac6
-           >>> print bash.disasm(bash.plt.read, 16)
+           >>> print(bash.disasm(bash.plt.read, 16))
            0:   ff 25 1a 18 2d 00       jmp    QWORD PTR [rip+0x2d181a]        # 0x2d1820
            6:   68 59 00 00 00          push   0x59
            b:   e9 50 fa ff ff          jmp    0xfffffffffffffa60
@@ -208,10 +211,6 @@ class ELF(ELFFile):
         self.mmap = mmap.mmap(self.file.fileno(), 0, access=mmap.ACCESS_COPY)
 
         super(ELF,self).__init__(self.mmap)
-
-        #: IntervalTree which maps all of the loaded memory segments
-        self.memory = intervaltree.IntervalTree()
-        self._populate_memory()
 
         #: :class:`str`: Path to the file
         self.path = os.path.abspath(path)
@@ -268,6 +267,10 @@ class ELF(ELFFile):
             or mask(flags, E_FLAGS.EF_MIPS_ARCH_64R2):
                 self.arch = 'mips64'
                 self.bits = 64
+
+        #: IntervalTree which maps all of the loaded memory segments
+        self.memory = intervaltree.IntervalTree()
+        self._populate_memory()
 
         # Is this a native binary? Should we be checking QEMU?
         try:
@@ -349,12 +352,14 @@ class ELF(ELFFile):
             log.warn("Could not populate PLT: %s", e)
 
         self._populate_synthetic_symbols()
-        self._populate_libraries()
         self._populate_functions()
         self._populate_kernel_version()
 
         if checksec:
             self._describe()
+
+        self._libs = None
+        self._maps = None
 
     @staticmethod
     @LocalContext
@@ -439,9 +444,15 @@ class ELF(ELFFile):
         return pwnlib.gdb.debug([self.path] + argv, *a, **kw)
 
     def _describe(self, *a, **kw):
-        log.info_once('\n'.join((repr(self.path),
-                                '%-10s%s-%s-%s' % ('Arch:', self.arch, self.bits, self.endian),
-                                self.checksec(*a, **kw))))
+        log.info_once(
+            '%s\n%-10s%s-%s-%s\n%s',
+            repr(self.path),
+            'Arch:',
+            self.arch,
+            self.bits,
+            self.endian,
+            self.checksec(*a, **kw)
+        )
 
     def __repr__(self):
         return "ELF(%r)" % self.path
@@ -489,6 +500,41 @@ class ELF(ELFFile):
         for seg in self.iter_segments():
             if t == seg.header.p_type or t in str(seg.header.p_type):
                 yield seg
+
+    def get_segment_for_address(self, address, size=1):
+        """get_segment_for_address(address, size=1) -> Segment
+
+        Given a virtual address described by a ``PT_LOAD`` segment, return the
+        first segment which describes the virtual address.  An optional ``size``
+        may be provided to ensure the entire range falls into the same segment.
+
+        Arguments:
+            address(int): Virtual address to find
+            size(int): Number of bytes which must be available after ``address``
+                in **both** the file-backed data for the segment, and the memory
+                region which is reserved for the data.
+
+        Returns:
+            Either returns a :class:`.segments.Segment` object, or ``None``.
+        """
+        for seg in self.iter_segments_by_type("PT_LOAD"):
+            mem_start = seg.header.p_vaddr
+            mem_stop  = seg.header.p_memsz + mem_start
+
+            if not (mem_start <= address <= address+size < mem_stop):
+                continue
+
+            offset = self.vaddr_to_offset(address)
+
+            file_start = seg.header.p_offset
+            file_stop  = seg.header.p_filesz + file_start
+
+            if not (file_start <= offset <= offset+size < file_stop):
+                continue
+
+            return seg
+
+        return None
 
     @property
     def sections(self):
@@ -615,6 +661,20 @@ class ELF(ELFFile):
         return [s for s in self.segments if not s.header.p_flags & P_FLAGS.PF_W]
 
     @property
+    def libs(self):
+        """Dictionary of {path: address} for every library loaded for this ELF."""
+        if self._libs is None:
+            self._populate_libraries()
+        return self._libs
+
+    @property
+    def maps(self):
+        """Dictionary of {name: address} for every mapping in this ELF's address space."""
+        if self._maps is None:
+            self._populate_libraries()
+        return self._maps
+
+    @property
     def libc(self):
         """:class:`.ELF`: If this :class:`.ELF` imports any libraries which contain ``'libc[.-]``,
         and we can determine the appropriate path to it on the local
@@ -635,40 +695,140 @@ class ELF(ELFFile):
         >>> any(map(lambda x: 'libc' in x, bash.libs.keys()))
         True
         """
+        # Patch some shellcode into the ELF and run it.
+        maps = self._patch_elf_and_read_maps()
 
-        # We need a .dynamic section for dynamically linked libraries
-        if not self.get_section_by_name('.dynamic') or self.statically_linked:
-            self.libs= {}
-            return
+        self._maps = maps
+        self._libs = {}
 
-        # We must also specify a 'PT_INTERP', otherwise it's a 'statically-linked'
-        # binary which is also position-independent (and as such has a .dynamic).
-        for segment in self.iter_segments_by_type('PT_INTERP'):
-            break
-        else:
-            self.libs = {}
-            return
+        for lib, address in maps.items():
 
+            # Filter out [stack] and such from the library listings
+            if lib.startswith('['):
+                continue
+
+            # Any existing files we can just use
+            if os.path.exists(lib):
+                self._libs[lib] = address
+
+            # Try etc/qemu-binfmt, as per Ubuntu
+            if not self.native:
+                ld_prefix = qemu.ld_prefix()
+
+                qemu_lib = os.path.join(ld_prefix, lib)
+                qemu_lib = os.path.realpath(qemu_lib)
+
+                if os.path.exists(qemu_lib):
+                    self._libs[qemu_lib] = address
+
+    def _patch_elf_and_read_maps(self):
+        """patch_elf_and_read_maps(self) -> dict
+
+        Read ``/proc/self/maps`` as if the ELF were executing.
+
+        This is done by replacing the code at the entry point with shellcode which
+        dumps ``/proc/self/maps`` and exits, and **actually executing the binary**.
+
+        Returns:
+            A ``dict`` mapping file paths to the lowest address they appear at.
+            Does not do any translation for e.g. QEMU emulation, the raw results
+            are returned.
+
+            If there is not enough space to inject the shellcode in the segment
+            which contains the entry point, returns ``{}``.
+
+        Doctests:
+
+            These tests are just to ensure that our shellcode is correct.
+
+            >>> for arch in CAT_PROC_MAPS_EXIT:
+            ...   with context.local(arch=arch):
+            ...     sc = shellcraft.cat("/proc/self/maps")
+            ...     sc += shellcraft.exit()
+            ...     sc = asm(sc)
+            ...     sc = enhex(sc)
+            ...     assert sc == CAT_PROC_MAPS_EXIT[arch]
+        """
+
+        # Get our shellcode
+        sc = CAT_PROC_MAPS_EXIT.get(self.arch, None)
+
+        if sc is None:
+            log.error("Cannot patch /proc/self/maps shellcode into %r binary", self.arch)
+
+        sc = unhex(sc)
+
+        # Ensure there is enough room in the segment where the entry point resides
+        # in order to inject our shellcode.
+        seg = self.get_segment_for_address(self.entry, len(sc))
+        if not seg:
+            log.warn_once("Could not inject code to determine memory mapping for %r: Not enough space", self)
+            return {}
+
+        # Create our temporary file
+        # NOTE: We cannot use "with NamedTemporaryFile() as foo", because we cannot
+        # execute the file while the handle is open.
+        fd, path = tempfile.mkstemp()
+
+        # Close the file descriptor so that it may be executed
+        os.close(fd)
+
+        # Save off a copy of the ELF
+        self.save(path)
+
+        # Load a new copy of the ELF at the temporary file location
+        old = self.read(self.entry, len(sc))
         try:
-            cmd = 'ulimit -s unlimited; LD_TRACE_LOADED_OBJECTS=1 LD_WARN=1 LD_BIND_NOW=1 %s 2>/dev/null' % sh_string(self.path)
+            self.write(self.entry, sc)
+            self.save(path)
+        finally:
+            # Restore the original contents
+            self.write(self.entry, old)
 
-            data = subprocess.check_output(cmd, shell = True, stderr = subprocess.STDOUT, universal_newlines = True)
-            libs = misc.parse_ldd_output(data)
+        # Make the file executable
+        os.chmod(path, 0o755)
 
-            for lib in dict(libs):
-                if os.path.exists(lib):
-                    continue
+        # Run a copy of it, get the maps
+        try:
+            with context.silent:
+                io = process(path)
+                data = context._decode(io.recvall(timeout=2))
+        except Exception:
+            log.warn_once("Injected /proc/self/maps code did not execute correctly")
+            return {}
 
-                if not self.native:
-                    ld_prefix = qemu.ld_prefix()
-                    qemu_lib = os.path.exists(os.path.join(ld_prefix, lib))
-                    if qemu_lib:
-                        libs[os.path.realpath(qemu_lib)] = libs.pop(lib)
+        # Swap in the original ELF name
+        data = data.replace(path, self.path)
 
-            self.libs = libs
+        # All we care about in the data is the load address of each file-backed mapping,
+        # or each kernel-supplied mapping.
+        #
+        # For quick reference, the data looks like this:
+        # 7fcb025f2000-7fcb025f3000 r--p 00025000 fe:01 3025685  /lib/x86_64-linux-gnu/ld-2.23.so
+        # 7fcb025f3000-7fcb025f4000 rw-p 00026000 fe:01 3025685  /lib/x86_64-linux-gnu/ld-2.23.so
+        # 7fcb025f4000-7fcb025f5000 rw-p 00000000 00:00 0
+        # 7ffe39cd4000-7ffe39cf6000 rw-p 00000000 00:00 0        [stack]
+        # 7ffe39d05000-7ffe39d07000 r--p 00000000 00:00 0        [vvar]
+        result = {}
+        for line in data.splitlines():
+            if '/' in line:
+                index = line.index('/')
+            elif '[' in line:
+                index = line.index('[')
+            else:
+                continue
 
-        except subprocess.CalledProcessError:
-            self.libs = {}
+            address, _ = line.split('-', 1)
+
+            address = int(address, 0x10)
+            name = line[index:]
+
+            result.setdefault(name, address)
+
+        # Remove the temporary file, best-effort
+        os.unlink(path)
+
+        return result
 
     def _populate_functions(self):
         """Builds a dict of 'functions' (i.e. symbols of type 'STT_FUNC')
@@ -1003,7 +1163,8 @@ class ELF(ELFFile):
             # Check for holes which we can fill
             if self._fill_gaps and i+1 < len(load_segments):
                 next_start = load_segments[i+1].header.p_vaddr
-                if stop_mem < next_start:
+                
+                if stop_mem < next_start and stop_mem>>(self.bits-1) == next_start>>(self.bits-1):
                     self.memory.addi(stop_mem, next_start, None)
             else:
                 page_end = (stop_mem + 0xfff) & ~(0xfff)
@@ -1528,12 +1689,13 @@ class ELF(ELFFile):
         return self.dynamic_string(dt_runpath.entry.d_ptr)
 
     def checksec(self, banner=True, color=True):
-        """checksec(banner=True)
+        """checksec(banner=True, color=True)
 
         Prints out information in the binary, similar to ``checksec.sh``.
 
         Arguments:
             banner(bool): Whether to print the path to the ELF binary.
+            color(bool): Whether to use colored output.
         """
         red    = text.red if color else str
         green  = text.green if color else str

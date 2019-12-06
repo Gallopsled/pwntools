@@ -45,8 +45,8 @@ sp_to_data = num_pointers * ctx.bytes
 
 # List of amounts to subtract from $SP
 offsets = {}
-for i, value in reversed(list(enumerate(array))):
-    offsets[i] = sp_to_data + len(array_str) - len(array[i])
+for i,arg in enumerate(reversed(array)):
+    offsets[i] = sp_to_data + len(array_str) - len(arg)
 
 # If the array length is ODD we can sneak in our null terminator at the end
 if len(array) % 2 == 1:

@@ -9,7 +9,9 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.12.2](#3121)  | `stable` | Jan 7, 2019
+| [4.1.0](#410)    | `dev`    | Jan 20, 2020 (planned)
+| [4.0.0](#400)    | `beta`   | Dec 20, 2019 (planned)
+| [3.13.0](#3130)  | `stable` | Nov 5, 2019
 | [3.12.1](#3121)  |          | Sept 17, 2018
 | [3.12.0](#3120)  |          | Feb 22, 2018
 | [3.11.0](#3110)  |          | Jan 3, 2018
@@ -42,13 +44,44 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 3.14.0 (`dev`)
+## 4.1.0 (`dev`)
 
-To be released.
+To be released on Jan 20, 2020.
 
-## 3.13.0 (`beta`)
+## 4.0.0 (`beta`)
 
-To be released.
+To be released on Dec 20, 2019.
+
+- **Python 3 support! <3**
+- [#1317][1317] Tubes with `context.encoding`
+- [#1216][1216] Improve format string generator
+- [#1285][1285] Add freebsd generic syscall templates
+- [76413f][76413f] Add pwnlib.adb.bootimg for 'ANDROID!' format boot.img images
+- [#1202][1202] Docker: Kill 14 layers in pwntools base images
+- [#1182][1182] shellcraft.dupio() for mips
+
+[1317]: https://github.com/Gallopsled/pwntools/pulls/1317
+[1285]: https://github.com/Gallopsled/pwntools/pulls/1285
+[1216]: https://github.com/Gallopsled/pwntools/pulls/1216
+[1202]: https://github.com/Gallopsled/pwntools/pulls/1202
+[1182]: https://github.com/Gallopsled/pwntools/pulls/1182
+[76413f]: https://github.com/Gallopsled/pwntools/commit/76413f
+
+## 3.13.0
+
+- [#1204][1204] Reduce ROP cache filename length
+- [#1175][1175] Fix nested SSH connectors
+- [#1355][1355] Fix 'break' syscall
+- [#1277][1277] Fix timeout parameter passing in sendlineafter and other similar functions
+- [#1292][1292] Provide correct arch name to gdb for sparc64
+
+[1175]: https://github.com/Gallopsled/pwntools/pulls/1175
+[1204]: https://github.com/Gallopsled/pwntools/pulls/1355
+[1277]: https://github.com/Gallopsled/pwntools/pulls/1277
+[1292]: https://github.com/Gallopsled/pwntools/pulls/1292
+[1355]: https://github.com/Gallopsled/pwntools/pulls/1355
+
+## 3.12.1
 
 - [#1104][1104] Add `DynELF.dump()` for dumping remote ELF files
 - [#1101][1101] Set `context.os` via `context.binary`, useful for Android exploitation
@@ -56,13 +89,11 @@ To be released.
 - [63dfed][63dfed] Print warning when Corefile deletion fails instead of throwing an exception
 - [#1094][1094] Make hexdump output alignment more consistent
 - [#1096][1096] `flat()` and `fit()` are now the same function
-- [#1068][1068] Work around very old OpenSSL versions which don't have sha256 support *AND* don't exit with an error code when trying to use it
 
 [1104]: https://github.com/Gallopsled/pwntools/pull/1104
 [1101]: https://github.com/Gallopsled/pwntools/pull/1101
 [1094]: https://github.com/Gallopsled/pwntools/pull/1094
 [1096]: https://github.com/Gallopsled/pwntools/pull/1096
-[1068]: https://github.com/Gallopsled/pwntools/pull/1068
 [5fdc08]: https://github.com/Gallopsled/pwntools/commit/5fdc08
 [63dfed]: https://github.com/Gallopsled/pwntools/commit/63dfed
 
@@ -104,6 +135,7 @@ To be released.
 - [#1085][1085] Add support for extracting Android `BOOTLDR!` images
 - [#1075][1075] Add support for detecting GNU Screen for `run_in_new_terminal`
 - [#1074][1074] Add support for running `pwntools-gdb` wrapper script instead of `gdb`
+- [#1068][1068] Work around very old OpenSSL versions which don't have sha256 support *AND* don't exit with an error code when trying to use it
 - [#1067][1067] Add `pwnlib.tubes.server` module, which adds a reusable `server` listener
 - [#1063][1063] Add support for labels in `fit()`, allowing dynamic contents to be injected.  (This feature is really cool, check out the pull request!)
 
@@ -111,6 +143,7 @@ To be released.
 [1085]: https://github.com/Gallopsled/pwntools/pull/1085
 [1075]: https://github.com/Gallopsled/pwntools/pull/1075
 [1074]: https://github.com/Gallopsled/pwntools/pull/1074
+[1068]: https://github.com/Gallopsled/pwntools/pull/1068
 [1067]: https://github.com/Gallopsled/pwntools/pull/1067
 [1063]: https://github.com/Gallopsled/pwntools/pull/1063
 
