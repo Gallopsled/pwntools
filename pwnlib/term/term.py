@@ -487,7 +487,7 @@ def output(s = '', float = False, priority = 10, frozen = False,
         else:
             is_floating = False
             i = len(cells) - 1
-            while cells[i].float and i > 0:
+            while i > 0 and cells[i].float:
                 i -= 1
         # put('xx %d\n' % i)
         cell = Cell()

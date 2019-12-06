@@ -7,6 +7,7 @@ import types
 
 from pwnlib import term
 from pwnlib.log import getLogger
+from pwnlib.term.readline import raw_input
 
 log = getLogger(__name__)
 
