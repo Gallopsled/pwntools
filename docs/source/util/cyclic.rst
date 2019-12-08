@@ -1,5 +1,6 @@
 .. testsetup:: *
 
+   from pwn import *
    from pwnlib.util.cyclic import *
 
 

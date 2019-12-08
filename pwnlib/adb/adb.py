@@ -820,6 +820,7 @@ echo $PATH | while read -d: directory; do
     [ -x "$directory/{name}" ] || continue;
     echo -n "$directory/{name}\\x00";
 done
+[ -x "{name}" ] && echo -n "$PWD/{name}\\x00"
 '''.format(name=name)
 
     which_cmd = which_cmd.strip()
@@ -880,9 +881,16 @@ def logcat(stream=False):
 def pidof(name):
     """Returns a list of PIDs for the named process."""
     with context.quiet:
-        io = process(['pidof', name])
-        data = io.recvall().split()
-    return list(map(int, data))
+        # Older devices have a broken 'pidof', apparently.
+        # Try pgrep first.
+        io = process(['pgrep', name])
+        data = io.recvall()
+
+        if 'not found' in data:
+            io = process(['pidof', name])
+            data = io.recvall()
+
+    return list(map(int, data.split()))
 
 @with_device
 def proc_exe(pid):

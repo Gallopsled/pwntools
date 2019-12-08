@@ -363,7 +363,7 @@ class Logger(object):
         """
         m = message % args
         if m not in self._one_time_warnings:
-            if self.isEnabledFor(logging.INFO):
+            if self.isEnabledFor(logging.WARNING):
                 self._one_time_warnings.add(m)
             self._log(logging.WARNING, message, args, kwargs, 'warning_once')
 

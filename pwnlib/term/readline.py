@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
 from pwnlib.term import keyconsts as kc
@@ -7,7 +9,7 @@ from pwnlib.term import text
 
 cursor = text.reverse
 
-buffer_left, buffer_right = u'', u''
+buffer_left, buffer_right = '', ''
 saved_buffer = None
 history = []
 history_idx = None
@@ -28,6 +30,14 @@ complete_hook = None
 suggest_hook = None
 
 tabs = 0
+
+def force_to_bytes(data):
+    if isinstance(data, bytes):
+        return data
+    try:
+        return data.encode('utf-8')
+    except Exception:
+        return data.encode('latin-1')
 
 def set_completer(completer):
     global complete_hook, suggest_hook
@@ -80,7 +90,7 @@ def handle_keypress(trace):
 
 def clear():
     global buffer_left, buffer_right, history_idx, search_idx
-    buffer_left, buffer_right = u'', u''
+    buffer_left, buffer_right = '', ''
     history_idx = None
     search_idx = None
     redisplay()
@@ -141,7 +151,7 @@ def cancel_search(*_):
 def commit_search():
     global search_idx
     if search_idx is not None and search_results:
-        set_buffer(history[search_results[search_idx][0]], u'')
+        set_buffer(history[search_results[search_idx][0]], '')
         search_idx = None
         redisplay()
 
@@ -169,7 +179,7 @@ def update_search_results():
 def search_history(*_):
     global buffer_left, buffer_right, history_idx, search_idx
     if search_idx is None:
-        buffer_left, buffer_right = buffer_left + buffer_right, u''
+        buffer_left, buffer_right = buffer_left + buffer_right, ''
         history_idx = None
         search_idx = 0
         update_search_results()
@@ -187,7 +197,7 @@ def history_prev(*_):
         history_idx = -1
     if history_idx < len(history) - 1:
         history_idx += 1
-        set_buffer(history[history_idx], u'')
+        set_buffer(history[history_idx], '')
 
 def history_next(*_):
     global history_idx, saved_buffer
@@ -200,7 +210,7 @@ def history_next(*_):
         saved_buffer = None
     else:
         history_idx -= 1
-        set_buffer(history[history_idx], u'')
+        set_buffer(history[history_idx], '')
 
 def backward_char(*_):
     global buffer_left, buffer_right
@@ -319,11 +329,11 @@ def forward_word(*_):
 
 def go_beginning(*_):
     commit_search()
-    set_buffer(u'', buffer_left + buffer_right)
+    set_buffer('', buffer_left + buffer_right)
 
 def go_end(*_):
     commit_search()
-    set_buffer(buffer_left + buffer_right, u'')
+    set_buffer(buffer_left + buffer_right, '')
 
 keymap = km.Keymap({
     '<nomatch>'   : self_insert,
@@ -382,10 +392,10 @@ def readline(_size = None, prompt = '', float = True, priority = 10):
                 if eof:
                     return ''
                 else:
-                    buffer = (buffer_left + buffer_right).encode('utf-8')
+                    buffer = (buffer_left + buffer_right)
                     if buffer:
                         history.insert(0, buffer)
-                    return buffer + '\n'
+                    return force_to_bytes(buffer) + '\n'
             except KeyboardInterrupt:
                 control_c()
     finally:

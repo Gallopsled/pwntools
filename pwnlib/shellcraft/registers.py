@@ -40,6 +40,8 @@ mips = {
     '$31': 31, '$ra': 31,
 }
 
+mips_list = list(mips)
+
 arm = map('r{}'.format, range(13))
 arm += ["sp", "lr", "pc", "cpsr"]
 
@@ -211,7 +213,7 @@ def current():
         'arm': arm,
         'thumb': arm,
         'aarch64': aarch64,
-        'mips': mips,
+        'mips': mips_list,
         'powerpc': powerpc
     }[context.arch]
 

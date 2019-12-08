@@ -393,7 +393,7 @@ def sh_string(s):
         return "''"
 
     chars = set(s)
-    very_good = set(string.ascii_letters + string.digits + "_+.,/")
+    very_good = set(string.ascii_letters + string.digits + "_+.,/-")
 
     # Alphanumeric can always just be used verbatim.
     if chars <= very_good:

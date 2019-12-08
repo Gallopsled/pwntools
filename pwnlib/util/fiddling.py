@@ -574,9 +574,9 @@ def update_cyclic_pregenerated(size):
         cyclic_pregen += de_bruijn_gen.next()
 
 def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
-                 highlight=None, cyclic=False):
+                 highlight=None, cyclic=False, groupsize=4):
     r"""hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
-                    style = None, highlight = None, cyclic = False) -> str generator
+                    style = None, highlight = None, cyclic = False, groupsize=4) -> str generator
 
     Return a hexdump-dump of a string as a generator of lines.  Unless you have
     massive amounts of data you probably want to use :meth:`hexdump`.
@@ -584,6 +584,7 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
     Arguments:
         fd(file): File object to dump.  Use :meth:`StringIO.StringIO` or :meth:`hexdump` to dump a string.
         width(int): The number of characters per line
+        groupsize(int): The number of characters per group
         skip(bool): Set to True, if repeated lines should be replaced by a "*"
         hexii(bool): Set to True, if a hexii-dump should be returned instead of a hexdump.
         begin(int):  Offset of the first byte to print in the left column
@@ -601,7 +602,7 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
         >>> tmp.flush()
         >>> tmp.seek(4)
         >>> print '\n'.join(hexdump_iter(tmp))
-        00000000  48 45 4c 4c  4f 2c 20 57  4f 52 4c 44               │HELL│O, W│ORLD││
+        00000000  48 45 4c 4c  4f 2c 20 57  4f 52 4c 44               │HELL│O, W│ORLD│
         0000000c
 
         >>> t = tube()
@@ -612,6 +613,9 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
     """
     style     = style or {}
     highlight = highlight or []
+
+    if groupsize < 1:
+        groupsize = width
 
     for b in highlight:
         if isinstance(b, str):
@@ -625,15 +629,10 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
     lines       = []
     last_unique = ''
     byte_width  = len('00 ')
-    column_sep  = '  '
-    line_fmt    = '%%(offset)08x  %%(hexbytes)-%is │%%(printable)s│' % (len(column_sep)+(width*byte_width))
     spacer      = ' '
     marker      = (style.get('marker') or (lambda s:s))('│')
 
-    if hexii:
-        column_sep = ''
-        line_fmt   = '%%(offset)08x  %%(hexbytes)-%is│' % (len(column_sep)+(width*byte_width))
-    else:
+    if not hexii:
         def style_byte(b):
             hbyte = '%02x' % ord(b)
             abyte = b if isprint(b) else '·'
@@ -696,31 +695,38 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
         # Generate contents for line
         hexbytes = ''
         printable = ''
+        color_chars = 0
+        abyte = abyte_previous = ''
         for i, b in enumerate(chunk):
             if not hexii:
+                abyte_previous = abyte
                 hbyte, abyte = cache[ord(b)]
+                color_chars += len(hbyte) - 2
             else:
                 hbyte, abyte = _hexiichar(b), ''
 
-            if i % 4 == 3 and i < width - 1:
+            if (i + 1) % groupsize == 0 and i < width - 1:
                 hbyte += spacer
-                abyte += marker
+                abyte_previous += abyte
+                abyte = marker
 
             hexbytes += hbyte + ' '
+            printable += abyte_previous
+
+        if abyte != marker:
             printable += abyte
 
-        if i + 1 < width:
-            delta = width - i - 1
+        dividers_per_line = (width // groupsize)
+        if width % groupsize == 0:
+            dividers_per_line -= 1
 
-            # How many hex-bytes would we have printed?
-            count = byte_width * delta
-
-            # How many dividers do we need to fill out the line?
-            dividers_per_line = (width // 4) - (1 if width % 4 == 0 else 0)
-            dividers_printed = (i // 4) + (1 if i % 4 == 3 else 0)
-            count += dividers_per_line - dividers_printed
-
-            hexbytes += ' ' * count
+        if hexii:
+            line_fmt = '%%(offset)08x  %%(hexbytes)-%is│' % (width*byte_width)
+        else:
+            line_fmt = '%%(offset)08x  %%(hexbytes)-%is │%%(printable)s│' % (
+                 (width * byte_width)
+                + color_chars
+                + dividers_per_line )
 
         line = line_fmt % {'offset': offset, 'hexbytes': hexbytes, 'printable': printable}
         yield line
@@ -729,15 +735,16 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
     yield line
 
 def hexdump(s, width=16, skip=True, hexii=False, begin=0,
-            style=None, highlight=None, cyclic=False):
+            style=None, highlight=None, cyclic=False, groupsize=4):
     r"""hexdump(s, width = 16, skip = True, hexii = False, begin = 0,
-               style = None, highlight = None, cyclic = False) -> str generator
+               style = None, highlight = None, cyclic = False, groupsize=4) -> str generator
 
     Return a hexdump-dump of a string.
 
     Arguments:
         s(str): The data to hexdump.
         width(int): The number of characters per line
+        groupsize(int): The number of characters per group
         skip(bool): Set to True, if repeated lines should be replaced by a "*"
         hexii(bool): Set to True, if a hexii-dump should be returned instead of a hexdump.
         begin(int):  Offset of the first byte to print in the left column
@@ -760,7 +767,7 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         00000020
 
         >>> print hexdump('A'*32, width=8)
-        00000000  41 41 41 41  41 41 41 41   │AAAA│AAAA│
+        00000000  41 41 41 41  41 41 41 41  │AAAA│AAAA│
         *
         00000020
 
@@ -880,7 +887,7 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         00000010
         >>> print hexdump('A'*16, width=12)
         00000000  41 41 41 41  41 41 41 41  41 41 41 41  │AAAA│AAAA│AAAA│
-        0000000c  41 41 41 41                            │AAAA││
+        0000000c  41 41 41 41                            │AAAA│
         00000010
         >>> print hexdump('A'*16, width=13)
         00000000  41 41 41 41  41 41 41 41  41 41 41 41  41  │AAAA│AAAA│AAAA│A│
@@ -894,6 +901,15 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         00000000  41 41 41 41  41 41 41 41  41 41 41 41  41 41 41  │AAAA│AAAA│AAAA│AAA│
         0000000f  41                                               │A│
         00000010
+
+        >>> print hexdump('A'*24, width=16, groupsize=8)
+        00000000  41 41 41 41 41 41 41 41  41 41 41 41 41 41 41 41  │AAAAAAAA│AAAAAAAA│
+        00000010  41 41 41 41 41 41 41 41                           │AAAAAAAA│
+        00000018
+        >>> print hexdump('A'*24, width=16, groupsize=-1)
+        00000000  41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41  │AAAAAAAAAAAAAAAA│
+        00000010  41 41 41 41 41 41 41 41                          │AAAAAAAA│
+        00000018
     """
     s = packing.flat(s)
     return '\n'.join(hexdump_iter(StringIO.StringIO(s),
@@ -903,7 +919,8 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
                                   begin,
                                   style,
                                   highlight,
-                                  cyclic))
+                                  cyclic,
+                                  groupsize))
 
 def negate(value, width = None):
     """

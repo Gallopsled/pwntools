@@ -23,7 +23,7 @@ class remote(sock):
         typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
         timeout: A positive number, None or the string "default".
         ssl(bool): Wrap the socket with SSL
-        sock(socket): Socket to inherit, rather than connecting
+        sock(socket.socket): Socket to inherit, rather than connecting
 
     Examples:
 

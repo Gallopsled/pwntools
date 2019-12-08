@@ -417,7 +417,7 @@ class DynELF(object):
     def _find_linkmap(self, pltgot=None, debug=None):
         """
         The linkmap is a chained structure created by the loader at runtime
-        which contains information on the names and load addresses osf all
+        which contains information on the names and load addresses of all
         libraries.
 
         For non-RELRO binaries, a pointer to this is stored in the .got.plt
@@ -431,7 +431,7 @@ class DynELF(object):
         Got     = {32: elf.Elf_i386_GOT, 64: elf.Elf_x86_64_GOT}[self.elfclass]
         r_debug = {32: elf.Elf32_r_debug, 64: elf.Elf64_r_debug}[self.elfclass]
 
-        result = None
+        linkmap = None
 
         if not pltgot:
             w.status("Finding linkmap: DT_PLTGOT")
@@ -439,24 +439,24 @@ class DynELF(object):
 
         if pltgot:
             w.status("GOT.linkmap")
-            result = self.leak.field(pltgot, Got.linkmap)
-            w.status("GOT.linkmap %#x" % result)
+            linkmap = self.leak.field(pltgot, Got.linkmap)
+            w.status("GOT.linkmap %#x" % linkmap)
 
-        if not result:
+        if not linkmap:
             debug = debug or self._find_dt(constants.DT_DEBUG)
             if debug:
                 w.status("r_debug.linkmap")
-                result = self.leak.field(debug, r_debug.r_map)
-                w.status("r_debug.linkmap %#x" % result)
+                linkmap = self.leak.field(debug, r_debug.r_map)
+                w.status("r_debug.linkmap %#x" % linkmap)
 
-        if not (pltgot or debug):
+        if not linkmap:
             w.failure("Could not find DT_PLTGOT or DT_DEBUG")
             return None
 
-        result = self._make_absolute_ptr(result)
+        linkmap = self._make_absolute_ptr(linkmap)
 
-        w.success('%#x' % result)
-        return result
+        w.success('%#x' % linkmap)
+        return linkmap
 
     def waitfor(self, msg):
         if not self._waitfor:
@@ -523,6 +523,7 @@ class DynELF(object):
 
         Arguments:
             symb(str): Named routine to look up
+              If omitted, the base address of the library will be returned.
             lib(str): Substring to match for the library name.
               If omitted, the current library is searched.
               If set to ``'libc'``, ``'libc.so'`` is assumed.
@@ -566,7 +567,6 @@ class DynELF(object):
             # Try a quick lookup by build ID
             self.status("Trying lookup based on Build ID")
             build_id = dynlib._lookup_build_id(lib=lib)
-            result   = None
             if build_id:
                 log.info("Trying lookup based on Build ID: %s" % build_id)
                 path = libcdb.search_by_build_id(build_id)
@@ -575,11 +575,10 @@ class DynELF(object):
                         e = ELF(path)
                         e.address = dynlib.libbase
                         result = e.symbols[symb]
-
-            if not result:
-                self.status("Trying remote lookup")
-                result = dynlib._lookup(symb)
-        else:
+        if symb and not result:
+            self.status("Trying remote lookup")
+            result = dynlib._lookup(symb)
+        if not symb:
             result = dynlib.libbase
 
         #
@@ -839,6 +838,9 @@ class DynELF(object):
     def _lookup_build_id(self, lib = None):
 
         libbase = self.libbase
+        if not self.link_map:
+            self.status("No linkmap found")
+            return None
 
         if lib is not None:
             libbase = self.lookup(symb = None, lib = lib)
@@ -908,3 +910,65 @@ class DynELF(object):
         self.success('*curbrk: %#x' % brk)
 
         return brk
+
+    def _find_mapped_pages(self, readonly = False, page_size = 0x1000):
+        """
+        A generator of all mapped pages, as found using the Program Headers.
+
+        Yields tuples of the form: (virtual address, memory size)
+        """
+        leak  = self.leak
+        base  = self.libbase
+
+        Ehdr  = {32: elf.Elf32_Ehdr, 64: elf.Elf64_Ehdr}[self.elfclass]
+        Phdr  = {32: elf.Elf32_Phdr, 64: elf.Elf64_Phdr}[self.elfclass]
+
+        phead = base + leak.field(base, Ehdr.e_phoff)
+        phnum = leak.field(base, Ehdr.e_phnum)
+
+        for i in range(phnum):
+            if leak.field_compare(phead, Phdr.p_type, constants.PT_LOAD) :
+                # the interesting pages are those that are aligned to PAGE_SIZE
+                if leak.field_compare(phead, Phdr.p_align, page_size) and \
+                    (readonly or leak.field(phead, Phdr.p_flags) & 0x02 != 0):
+                    vaddr = leak.field(phead, Phdr.p_vaddr)
+                    memsz = leak.field(phead, Phdr.p_memsz)
+                    # fix relative offsets
+                    if vaddr < base :
+                        vaddr += base
+                    yield vaddr, memsz
+            phead += sizeof(Phdr)
+
+    def dump(self, libs = False, readonly = False):
+        """dump(libs = False, readonly = False)
+
+        Dumps the ELF's memory pages to allow further analysis.
+
+        Arguments:
+            libs(bool, optional): True if should dump the libraries too (False by default)
+            readonly(bool, optional): True if should dump read-only pages (False by default)
+
+        Returns:
+            a dictionary of the form: { address : bytes }
+        """
+        leak      = self.leak
+        page_size = 0x1000
+        pages     = {}
+
+        for vaddr, memsz in self._find_mapped_pages(readonly, page_size) :
+            offset    = vaddr % page_size
+            if offset != 0 :
+                memsz += offset
+                vaddr -= offset
+            memsz += (page_size - (memsz % page_size)) % page_size
+            pages[vaddr] = leak.n(vaddr, memsz)
+
+        if libs :
+            for lib_name in self.bases() :
+                if len(lib_name) == 0 :
+                    continue
+                dyn_lib = self._dynamic_load_dynelf(lib_name)
+                if dyn_lib is not None :
+                    pages.update(dyn_lib.dump(readonly = readonly))
+
+        return pages

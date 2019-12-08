@@ -534,8 +534,8 @@ def iter_except(func, exception):
     the end.
 
     Arguments:
-      func:  The function to call.
-      exception(exception):  The exception that signals the end.  Other
+      func(callable): The function to call.
+      exception(Exception):  The exception that signals the end.  Other
         exceptions will not be caught.
 
     Returns:

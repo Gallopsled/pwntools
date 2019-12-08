@@ -87,6 +87,7 @@ from pwnlib.tubes.process import process
 from pwnlib.tubes.ssh import ssh_channel
 from pwnlib.tubes.tube import tube
 from pwnlib.util.fiddling import b64d
+from pwnlib.util.fiddling import enhex
 from pwnlib.util.fiddling import unhex
 from pwnlib.util.misc import read
 from pwnlib.util.misc import write
@@ -223,6 +224,8 @@ class Mapping(object):
         return self._core.read(item, 1)
 
     def __contains__(self, item):
+        if isinstance(item, Mapping):
+            return (self.start <= item.start) and (item.stop <= self.stop)
         return self.start <= item < self.stop
 
     def find(self, sub, start=None, end=None):
@@ -389,7 +392,7 @@ class Corefile(ELF):
 
         >>> core.vdso.data[:4]
         '\x7fELF'
-        >>> core.libc # docteset: +ELLIPSIS
+        >>> core.libc # doctest: +ELLIPSIS
         Mapping('/lib/x86_64-linux-gnu/libc-...', ...)
 
         The corefile also contains a :attr:`.Corefile.stack` property, which gives
@@ -421,13 +424,63 @@ class Corefile(ELF):
 
         >>> s = ssh('travis', 'example.pwnme')
         >>> _ = s.set_working_directory()
-        >>> elf = ELF.from_assembly('int3')
+        >>> elf = ELF.from_assembly(shellcraft.trap())
         >>> path = s.upload(elf.path)
         >>> _ =s.chmod('+x', path)
         >>> io = s.process(path)
         >>> io.wait()
         -1
         >>> io.corefile.signal == signal.SIGTRAP # doctest: +SKIP
+        True
+
+        Make sure fault_addr synthesis works for amd64 on ret.
+
+        >>> context.clear(arch='amd64')
+        >>> elf = ELF.from_assembly('push 1234; ret')
+        >>> io = elf.process()
+        >>> io.wait()
+        >>> io.corefile.fault_addr
+        1234
+
+    Tests:
+
+        These are extra tests not meant to serve as examples.
+
+        Corefile.getenv() works correctly, even if the environment variable's
+        value contains embedded '='. Corefile is able to find the stack, even
+        if the stack pointer doesn't point at the stack.
+
+        >>> elf = ELF.from_assembly(shellcraft.crash())
+        >>> io = elf.process(env={'FOO': 'BAR=BAZ'})
+        >>> io.wait()
+        >>> core = io.corefile
+        >>> core.getenv('FOO')
+        'BAR=BAZ'
+        >>> core.sp == 0
+        True
+        >>> core.sp in core.stack
+        False
+
+        Corefile gracefully handles the stack being filled with garbage, including
+        argc / argv / envp being overwritten.
+
+        >>> context.clear(arch='i386')
+        >>> assembly = '''
+        ... LOOP:
+        ...   mov dword ptr [esp], 0x41414141
+        ...   pop eax
+        ...   jmp LOOP
+        ... '''
+        >>> elf = ELF.from_assembly(assembly)
+        >>> io = elf.process()
+        >>> io.wait()
+        >>> core = io.corefile
+        [!] End of the stack is corrupted, skipping stack parsing (got: 4141414141414141)
+        >>> core.argc, core.argv, core.env
+        (0, [], {})
+        >>> core.stack.data.endswith('AAAA')
+        True
+        >>> core.fault_addr == core.sp
         True
     """
 
@@ -454,6 +507,9 @@ class Corefile(ELF):
         #: variable.
         #:
         #: Note: Use with the :meth:`.ELF.string` method to extract them.
+        #:
+        #: Note: If FOO=BAR is in the environment, self.env['FOO'] is the
+        #:       address of the string "BAR\x00".
         self.env = {}
 
         #: :class:`list`: List of addresses of arguments on the stack.
@@ -493,36 +549,40 @@ class Corefile(ELF):
             for segment in self.segments:
                 if not isinstance(segment, elftools.elf.segments.NoteSegment):
                     continue
+
+
+                # Note that older versions of pyelftools (<=0.24) are missing enum values
+                # for NT_PRSTATUS, NT_PRPSINFO, NT_AUXV, etc.
+                # For this reason, we have to check if note.n_type is any of several values.
                 for note in iter_notes(segment):
-                    # Try to find NT_PRSTATUS.  Note that pyelftools currently
-                    # mis-identifies the enum name as 'NT_GNU_ABI_TAG'.
+                    # Try to find NT_PRSTATUS.
                     if prstatus_type and \
                        note.n_descsz == ctypes.sizeof(prstatus_type) and \
-                       note.n_type == 'NT_GNU_ABI_TAG':
+                       note.n_type in ('NT_GNU_ABI_TAG', 'NT_PRSTATUS'):
                         self.NT_PRSTATUS = note
                         self.prstatus = prstatus_type.from_buffer_copy(note.n_desc)
 
                     # Try to find NT_PRPSINFO
-                    # Note that pyelftools currently mis-identifies the enum name
-                    # as 'NT_GNU_BUILD_ID'
-                    if note.n_descsz == ctypes.sizeof(prpsinfo_type) and \
-                       note.n_type == 'NT_GNU_BUILD_ID':
+                    if prpsinfo_type and \
+                       note.n_descsz == ctypes.sizeof(prpsinfo_type) and \
+                       note.n_type in ('NT_GNU_ABI_TAG', 'NT_PRPSINFO'):
                         self.NT_PRPSINFO = note
                         self.prpsinfo = prpsinfo_type.from_buffer_copy(note.n_desc)
 
                     # Try to find NT_SIGINFO so we can see the fault
-                    if note.n_type == 0x53494749:
+                    if note.n_type in (0x53494749, 'NT_SIGINFO'):
                         self.NT_SIGINFO = note
                         self.siginfo = siginfo_type.from_buffer_copy(note.n_desc)
 
                     # Try to find the list of mapped files
-                    if note.n_type == constants.NT_FILE:
+                    if note.n_type in (constants.NT_FILE, 'NT_FILE'):
                         with context.local(bytes=self.bytes):
                             self._parse_nt_file(note)
 
                     # Try to find the auxiliary vector, which will tell us
                     # where the top of the stack is.
-                    if note.n_type == constants.NT_AUXV:
+                    if note.n_type in (constants.NT_AUXV, 'NT_AUXV'):
+                        self.NT_AUXV = note
                         with context.local(bytes=self.bytes):
                             self._parse_auxv(note)
 
@@ -531,19 +591,13 @@ class Corefile(ELF):
 
             if self.stack and self.mappings:
                 for mapping in self.mappings:
-                    if mapping.stop == self.stack:
+                    if self.stack in mapping or self.stack == mapping.stop:
                         mapping.name = '[stack]'
                         self.stack   = mapping
                         break
                 else:
-                    for mapping in self.mappings:
-                        if self.stack in mapping:
-                            mapping.name = '[stack]'
-                            self.stack   = mapping
-                            break
-                    else:
-                        log.warn('Could not find the stack!')
-                        self.stack = None
+                    log.warn('Could not find the stack!')
+                    self.stack = None
 
             with context.local(bytes=self.bytes, log_level='warn'):
                 try:
@@ -664,7 +718,22 @@ class Corefile(ELF):
 
     @property
     def signal(self):
-        """:class:`int`: Signal which caused the core to be dumped."""
+        """:class:`int`: Signal which caused the core to be dumped.
+
+        Example:
+
+            >>> elf = ELF.from_assembly(shellcraft.trap())
+            >>> io = elf.process()
+            >>> io.wait()
+            >>> io.corefile.signal == signal.SIGTRAP
+            True
+
+            >>> elf = ELF.from_assembly(shellcraft.crash())
+            >>> io = elf.process()
+            >>> io.wait()
+            >>> io.corefile.signal == signal.SIGSEGV
+            True
+        """
         if self.siginfo:
             return int(self.siginfo.si_signo)
         if self.prstatus:
@@ -675,11 +744,49 @@ class Corefile(ELF):
         """:class:`int`: Address which generated the fault, for the signals
             SIGILL, SIGFPE, SIGSEGV, SIGBUS.  This is only available in native
             core dumps created by the kernel.  If the information is unavailable,
-            this returns the address of the instruction pointer."""
-        if self.siginfo:
-            return int(self.siginfo.sigfault_addr)
+            this returns the address of the instruction pointer.
 
-        return getattr(self, 'pc', 0)
+
+        Example:
+
+            >>> elf = ELF.from_assembly('mov eax, 0xdeadbeef; jmp eax', arch='i386')
+            >>> io = elf.process()
+            >>> io.wait()
+            >>> io.corefile.fault_addr == io.corefile.eax == 0xdeadbeef
+            True
+        """
+        if not self.siginfo:
+            return getattr(self, 'pc', 0)
+
+        fault_addr = int(self.siginfo.sigfault_addr)
+
+        # The fault_addr is zero if the crash occurs due to a
+        # "protection fault", e.g. a dereference of 0x4141414141414141
+        # because this is technically a kernel address.
+        #
+        # A protection fault does not set "fault_addr" in the siginfo.
+        # (http://elixir.free-electrons.com/linux/v4.14-rc8/source/kernel/signal.c#L1052)
+        #
+        # Since a common use for corefiles is to spray the stack with a
+        # cyclic pattern to find the offset to get control of $PC,
+        # check for a "ret" instruction ("\xc3").
+        #
+        # If we find a RET at $PC, extract the "return address" from the
+        # top of the stack.
+        if fault_addr == 0 and self.siginfo.si_code == 0x80:
+            try:
+                code = self.read(self.pc, 1)
+                RET = '\xc3'
+                if code == RET:
+                    fault_addr = self.unpack(self.sp)
+            except Exception:
+                # Could not read $rsp or $rip
+                pass
+
+        return fault_addr
+
+        # No embedded siginfo structure, so just return the
+        # current instruction pointer.
 
     @property
     def _pc_register(self):
@@ -722,8 +829,8 @@ class Corefile(ELF):
         fields = [
             repr(self.path),
             '%-10s %s' % ('Arch:', gnu_triplet),
-            '%-10s %#x' % ('%s:' % self._pc_register.upper(), getattr(self, 'pc', 0)),
-            '%-10s %#x' % ('%s:' % self._sp_register.upper(), getattr(self, 'sp', 0)),
+            '%-10s %#x' % ('%s:' % self._pc_register.upper(), self.pc or 0),
+            '%-10s %#x' % ('%s:' % self._sp_register.upper(), self.sp or 0),
         ]
 
         if self.exe and self.exe.name:
@@ -790,18 +897,25 @@ class Corefile(ELF):
         if not stack:
             return
 
+        # If the stack does not end with zeroes, something is very wrong.
+        if not stack.data.endswith('\x00' * 8):
+            log.warn_once("End of the stack is corrupted, skipping stack parsing (got: %s)",
+                          enhex(self.data[-8:]))
+            return
+
         # AT_EXECFN is the start of the filename, e.g. '/bin/sh'
         # Immediately preceding is a NULL-terminated environment variable string.
         # We want to find the beginning of it
-        if self.at_execfn:
-            address = self.at_execfn-1
-        else:
-            log.debug('No AT_EXECFN')
+        if not self.at_execfn:
             address = stack.stop
             address -= 2*self.bytes
             address -= 1
             address = stack.rfind('\x00', None, address)
             address += 1
+            self.at_execfn = address
+
+        address = self.at_execfn-1
+
 
         # Sanity check!
         try:
@@ -848,11 +962,31 @@ class Corefile(ELF):
         # Now we can fill in the environment
         env_pointer_data = stack[start_of_envp:p_last_env_addr+self.bytes]
         for pointer in unpack_many(env_pointer_data):
-            end = stack.find('=', last_env_addr)
 
-            if pointer in stack and end in stack:
-                name = stack[pointer:end]
-                self.env[name] = pointer
+            # If the stack is corrupted, the pointer will be outside of
+            # the stack.
+            if pointer not in stack:
+                continue
+
+            try:
+                name_value = self.string(pointer)
+            except Exception:
+                continue
+
+            name, value = name_value.split('=', 1)
+
+            # "end" points at the byte after the null terminator
+            end = pointer + len(name_value) + 1
+
+            # Do not mark things as environment variables if they point
+            # outside of the stack itself, or we had to cross into a different
+            # mapping (after the stack) to read it.
+            # This may occur when the entire stack is filled with non-NUL bytes,
+            # and we NULL-terminate on a read failure in .string().
+            if end not in stack:
+                continue
+
+            self.env[name] = pointer + len(name) + len('=')
 
         # May as well grab the arguments off the stack as well.
         # argc comes immediately before argv[0] on the stack, but
@@ -904,15 +1038,32 @@ class Corefile(ELF):
 
         Returns:
             :class:`str`: The contents of the environment variable.
+
+        Example:
+
+            >>> elf = ELF.from_assembly(shellcraft.trap())
+            >>> io = elf.process(env={'GREETING': 'Hello!'})
+            >>> io.wait()
+            >>> io.corefile.getenv('GREETING')
+            'Hello!'
         """
         if name not in self.env:
             log.error("Environment variable %r not set" % name)
 
-        return self.string(self.env[name]).split('=',1)[-1]
+        return self.string(self.env[name])
 
     @property
     def registers(self):
-        """:class:`dict`: All available registers in the coredump."""
+        """:class:`dict`: All available registers in the coredump.
+
+        Example:
+
+            >>> elf = ELF.from_assembly('mov eax, 0xdeadbeef;' + shellcraft.trap(), arch='i386')
+            >>> io = elf.process()
+            >>> io.wait()
+            >>> io.corefile.registers['eax'] == 0xdeadbeef
+            True
+        """
         if not self.prstatus:
             return {}
 
@@ -960,7 +1111,7 @@ class Coredump(Corefile):
 class CorefileFinder(object):
     def __init__(self, proc):
         if proc.poll() is None:
-            log.error("Process %i has not exited" % (process.pid))
+            log.error("Process %i has not exited" % (proc.pid))
 
         self.process = proc
         self.pid = proc.pid
@@ -1020,6 +1171,10 @@ class CorefileFinder(object):
             new_path = 'core.%i' % core_pid
             if core_pid > 0 and new_path != self.core_path:
                 write(new_path, self.read(self.core_path))
+                try:
+                    self.unlink(self.core_path)
+                except (IOError, OSError):
+                    log.warn("Could not delete %r" % self.core_path)
                 self.core_path = new_path
 
         # Check the PID

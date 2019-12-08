@@ -146,13 +146,17 @@ class ssh_channel(sock):
         # However, we need to wait for the return value to propagate,
         # which may not happen by the time .close() is called by tube.recvall()
         tmp_sock = self.sock
+        tmp_close = self.close
+        self.close = lambda: None
 
         timeout = self.maximum if self.timeout is self.forever else self.timeout
         data = super(ssh_channel, self).recvall(timeout)
 
         # Restore self.sock to be able to call wait()
+        self.close = tmp_close
         self.sock = tmp_sock
         self.wait()
+        self.close()
 
         # Again set self.sock to None
         self.sock = None
@@ -341,7 +345,8 @@ class ssh_process(ssh_channel):
         libs = self.parent.libs(self.executable)
 
         for lib in libs:
-            if self.executable in lib:
+            # Cannot just check "executable in lib", see issue #1047
+            if lib.endswith(self.executable):
                 return pwnlib.elf.elf.ELF(lib)
 
 
@@ -417,9 +422,18 @@ class ssh_connecter(sock):
                 self.exception(e.message)
                 raise
 
-            sockname = self.sock.get_transport().sock.getsockname()
-            self.lhost = sockname[0]
-            self.lport = sockname[1]
+            try:
+                # Iterate all layers of proxying to get to base-level Socket object
+                curr = self.sock.get_transport().sock
+                while getattr(curr, "get_transport", None):
+                    curr = curr.get_transport().sock
+
+                sockname = curr.getsockname()
+                self.lhost = sockname[0]
+                self.lport = sockname[1]
+            except Exception as e:
+                self.exception("Could not find base-level Socket object.")
+                raise e
 
             h.success()
 
@@ -529,7 +543,21 @@ class ssh(Timeout, Logger):
             ssh_agent: If :const:`True`, enable usage of keys via ssh-agent
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
-        fairly new version of paramiko is used."""
+        fairly new version of paramiko is used.
+
+        Example proxying:
+
+            >>> s1 = ssh(host='example.pwnme',
+            ...          user='travis',
+            ...          password='demopass')
+            >>> r1 = s1.remote('localhost', 22)
+            >>> s2 = ssh(host='example.pwnme',
+            ...          user='travis',
+            ...          password='demopass',
+            ...          proxy_sock=r1.sock)
+            >>> r2 = s2.remote('localhost', 22) # and so on...
+            >>> for x in r2, s2, r1, s1: x.close()
+        """
         super(ssh, self).__init__(*a, **kw)
 
         Logger.__init__(self)
@@ -873,6 +901,8 @@ os.chdir(%(cwd)r)
 if env is not None:
     os.environ.clear()
     os.environ.update(env)
+else:
+    env = os.environ
 
 def is_exe(path):
     return os.path.isfile(path) and os.access(path, os.X_OK)
@@ -960,7 +990,7 @@ except Exception:
 %(func_src)s
 apply(%(func_name)s, %(func_args)r)
 
-os.execve(exe, argv, os.environ)
+os.execve(exe, argv, env)
 """ % locals()
 
         script = script.strip()
@@ -1301,7 +1331,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         return misc.parse_ldd_output(data)
 
     def _get_fingerprint(self, remote):
-        cmd = '(openssl sha256 || sha256 || sha256sum) 2>/dev/null < '
+        cmd = '(sha256 || sha256sum || openssl sha256) 2>/dev/null < '
         cmd = cmd + sh_string(remote)
         data, status = self.run_to_end(cmd)
 
@@ -1616,7 +1646,6 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         self.error('%r does not exist' % file_or_directory)
 
-
     def download(self, file_or_directory, local=None):
         """download(file_or_directory, local=None)
 
@@ -1630,7 +1659,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if not self.sftp:
             self.error("Cannot determine remote file type without SFTP")
 
-        if 0 == self.system('test -d ' + sh_string(file_or_directory)).wait():
+        with self.system('test -d ' + sh_string(file_or_directory)) as io:
+            is_dir = io.wait()
+
+        if 0 == is_dir:
             self.download_dir(file_or_directory, local)
         else:
             self.download_file(file_or_directory, local)
@@ -1991,7 +2023,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if value is not None:
             with open(path, 'w+') as f:
                 f.write(value)
-        else:
+        elif os.path.exists(path):
             with open(path, 'r+') as f:
                 return f.read()
 

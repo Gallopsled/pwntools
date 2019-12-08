@@ -164,6 +164,12 @@ p.add_argument(
     help='List available shellcodes, optionally provide a filter'
 )
 
+p.add_argument(
+    '-s', '--shared',
+    action='store_true',
+    help='Generated ELF is a shared library'
+)
+
 def get_template(name):
     func = shellcraft
     for attr in name.split('.'):
@@ -296,11 +302,11 @@ def main(args):
 
 
         if not args.avoid:
-            code = read(make_elf_from_assembly(assembly, vma=vma))
+            code = read(make_elf_from_assembly(assembly, vma=vma, shared=args.shared))
         else:
             code = asm(assembly)
             code = encode(code, args.avoid)
-            code = make_elf(code, vma=vma)
+            code = make_elf(code, vma=vma, shared=args.shared)
             # code = read(make_elf(encode(asm(code), args.avoid)))
     else:
         code = encode(asm(assembly), args.avoid)

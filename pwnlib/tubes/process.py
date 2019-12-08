@@ -16,9 +16,9 @@ import subprocess
 import time
 import tty
 
+from pwnlib import qemu
 from pwnlib.context import context
 from pwnlib.log import getLogger
-from pwnlib.qemu import get_qemu_user
 from pwnlib.timeout import Timeout
 from pwnlib.tubes.tube import tube
 from pwnlib.util.hashes import sha256file
@@ -107,10 +107,6 @@ class process(tube):
             List of arguments to display, instead of the main executable name.
         alarm(int):
             Set a SIGALRM alarm timeout on the process.
-
-    Attributes:
-
-        proc(subprocess)
 
     Examples:
 
@@ -238,7 +234,7 @@ class process(tube):
                 raise TypeError('Must provide argv or set context.binary')
 
 
-        #: `subprocess.Popen` object
+        #: :class:`subprocess.Popen` object that backs this process
         self.proc = None
 
         if not shell:
@@ -336,11 +332,11 @@ class process(tube):
 
         if self.pty is not None:
             if stdin is slave:
-                self.proc.stdin = os.fdopen(os.dup(master), 'r+')
+                self.proc.stdin = os.fdopen(os.dup(master), 'r+', 0)
             if stdout is slave:
-                self.proc.stdout = os.fdopen(os.dup(master), 'r+')
+                self.proc.stdout = os.fdopen(os.dup(master), 'r+', 0)
             if stderr is slave:
-                self.proc.stderr = os.fdopen(os.dup(master), 'r+')
+                self.proc.stderr = os.fdopen(os.dup(master), 'r+', 0)
 
             os.close(master)
             os.close(slave)
@@ -436,21 +432,21 @@ class process(tube):
 
         # Determine what architecture the binary is, and find the
         # appropriate qemu binary to run it.
-        qemu = get_qemu_user(arch=binary.arch)
+        qemu_path = qemu.user_path(arch=binary.arch)
 
-        if not qemu:
+        if not qemu_path:
             raise exception
 
-        qemu = which(qemu)
-        if qemu:
-            self._qemu = qemu
+        qemu_path = which(qemu_path)
+        if qemu_path:
+            self._qemu = qemu_path
 
-            args = [qemu]
+            args = [qemu_path]
             if self.argv:
                 args += ['-0', self.argv[0]]
             args += ['--']
 
-            return [args, qemu]
+            return [args, qemu_path]
 
         # If we get here, we couldn't run the binary directly, and
         # we don't have a qemu which can run it.
@@ -569,7 +565,7 @@ class process(tube):
         #
 
         # Create a duplicate so we can modify it safely
-        env = dict(os.environ if env is None else env)
+        env = (os.environ if env is None else env).copy()
 
         for k,v in env.items():
             if not isinstance(k, (str, unicode)):
@@ -879,7 +875,7 @@ class process(tube):
         from pwnlib.elf import ELF
 
         for lib, address in self.libs().items():
-            if 'libc.so' in lib:
+            if 'libc.so' in lib or 'libc-' in lib:
                 e = ELF(lib)
                 e.address = address
                 return e
@@ -935,7 +931,7 @@ class process(tube):
 
         Example:
 
-            >>> e = ELF('/bin/sh')
+            >>> e = ELF('/bin/bash')
             >>> p = process(e.path)
 
             In order to make sure there's not a race condition against
@@ -957,3 +953,25 @@ class process(tube):
         with open('/proc/%i/mem' % self.pid, 'rb') as mem:
             mem.seek(address)
             return mem.read(count) or None
+
+    @property
+    def stdin(self):
+        """Shorthand for ``self.proc.stdin``
+
+        See: :obj:`.process.proc`
+        """
+        return self.proc.stdin
+    @property
+    def stdout(self):
+        """Shorthand for ``self.proc.stdout``
+
+        See: :obj:`.process.proc`
+        """
+        return self.proc.stdout
+    @property
+    def stderr(self):
+        """Shorthand for ``self.proc.stderr``
+
+        See: :obj:`.process.proc`
+        """
+        return self.proc.stderr

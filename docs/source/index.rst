@@ -61,6 +61,7 @@ Each of the ``pwntools`` modules is documented here.
    log
    memleak
    protocols
+   qemu
    replacements
    rop
    rop/*
