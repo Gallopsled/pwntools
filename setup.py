@@ -2,6 +2,7 @@
 import glob
 import os
 import platform
+import subprocess
 import sys
 import traceback
 from distutils.command.install import INSTALL_SCHEMES
@@ -54,10 +55,9 @@ install_requires     = ['paramiko>=1.15.2',
                         'pygments>=2.0',
                         'pysocks',
                         'python-dateutil',
-                        'pypandoc',
                         'packaging',
                         'psutil>=3.3.0',
-                        'intervaltree',
+                        'intervaltree<3.0', # See Gallopsled/pwntools#1238
                         'sortedcontainers<2.0', # See Gallopsled/pwntools#1154
                         'unicorn']
 
@@ -71,23 +71,16 @@ if not os.path.exists(PythonH):
 # Convert README.md to reStructuredText for PyPI
 long_description = ''
 try:
-    import pypandoc
-    try:
-        pypandoc.get_pandoc_path()
-    except OSError:
-        pypandoc.download_pandoc()
-    long_description = pypandoc.convert_file('README.md', 'rst')
-except ImportError:
-    pass
+    long_description = subprocess.check_output(['pandoc', 'README.md', '--to=rst'])
 except Exception as e:
     print >>sys.stderr, "Failed to convert README.md through pandoc, proceeding anyway"
     traceback.print_exc()
 
-
 setup(
     name                 = 'pwntools',
+    python_requires      = '~=2.7',
     packages             = find_packages(),
-    version              = '3.12.0',
+    version              = '3.13.0',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],

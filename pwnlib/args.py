@@ -194,7 +194,7 @@ def initialize():
         value = 'True'
 
         if '=' in arg:
-            arg, value = arg.split('=')
+            arg, value = arg.split('=', 1)
 
         if arg in hooks:
             sys.argv.remove(orig)
