@@ -29,7 +29,7 @@ from pwnlib.elf.elf import ELF, load
 from pwnlib.encoders import *
 from pwnlib.exception import PwnlibException
 from pwnlib.gdb import attach, debug, debug_assembly, debug_shellcode
-from pwnlib.FilePointer import *
+from pwnlib.filepointer import *
 from pwnlib.flag import *
 from pwnlib.fmtstr import FmtStr, fmtstr_payload
 from pwnlib.log import getLogger
