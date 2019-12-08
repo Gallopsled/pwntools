@@ -378,7 +378,7 @@ def readline(_size=None, prompt='', float=True, priority=10):
     # XXX circular imports
     from pwnlib.term import term_mode
     if not term_mode:
-        print(prompt, end='', flush=True)
+        six.print_(prompt, end='', flush=True)
         return sys.stdin.readline(_size).rstrip('\n')
     show_suggestions = False
     eof = False
@@ -450,11 +450,12 @@ def eval_input(prompt='', float=True):
     Example:
 
         >>> try:
-        ...     saved_stdin = sys.stdin
-        ...     sys.stdin = io.StringIO("{'a':20}")
+        ...     saved = sys.stdin, pwnlib.term.term_mode
+        ...     pwnlib.term.term_mode = False
+        ...     sys.stdin = io.StringIO(u"{'a': 20}")
         ...     eval_input("Favorite object? ")['a']
         ... finally:
-        ...     sys.stdin = saved_stdin
+        ...     sys.stdin, pwnlib.term.term_mode = saved
         Favorite object? 20
     """
     from pwnlib.util import safeeval
