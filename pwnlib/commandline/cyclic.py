@@ -82,7 +82,7 @@ def main(args):
             log.critical('Given pattern does not exist in cyclic pattern')
             sys.exit(1)
         else:
-            print offset
+            print(offset)
     else:
         want   = args.count
         result = cyclic(want, alphabet, subsize)

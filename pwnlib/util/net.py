@@ -1,12 +1,13 @@
+from __future__ import absolute_import
 from __future__ import division
 
 import ctypes
 import ctypes.util
 import socket
 
-from packing import p16
-from packing import p32
-from packing import pack
+from pwnlib.util.packing import p16
+from pwnlib.util.packing import p32
+from pwnlib.util.packing import pack
 
 __all__ = ['getifaddrs', 'interfaces', 'interfaces4', 'interfaces6', 'sockaddr']
 

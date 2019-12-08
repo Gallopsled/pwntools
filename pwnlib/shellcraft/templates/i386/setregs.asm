@@ -15,11 +15,11 @@ Args:
 
 Example:
 
-    >>> print shellcraft.setregs({'eax':1, 'ebx':'eax'}).rstrip()
+    >>> print(shellcraft.setregs({'eax':1, 'ebx':'eax'}).rstrip())
         mov ebx, eax
         push 1
         pop eax
-    >>> print shellcraft.setregs({'eax':'ebx', 'ebx':'eax', 'ecx':'ebx'}).rstrip()
+    >>> print(shellcraft.setregs({'eax':'ebx', 'ebx':'eax', 'ecx':'ebx'}).rstrip())
         mov ecx, ebx
         xchg eax, ebx
 

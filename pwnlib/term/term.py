@@ -6,6 +6,7 @@ import fcntl
 import os
 import re
 import signal
+import six
 import struct
 import sys
 import termios
@@ -108,6 +109,8 @@ def init():
     s = ''
     while True:
         c = os.read(fd.fileno(), 1)
+        if not isinstance(c, six.string_types):
+            c = c.decode('utf-8')
         s += c
         if c == 'R':
             break
@@ -156,6 +159,8 @@ def init():
     sys.excepthook = hook
 
 def put(s):
+    if not isinstance(s, six.string_types):
+        s = s.decode('utf-8')
     fd.write(s)
 
 def flush(): fd.flush()
@@ -241,23 +246,21 @@ def parse_utf8(buf, offset):
 
 def parse(s):
     global _graphics_mode
-    if isinstance(s, unicode):
+    if isinstance(s, six.text_type):
         s = s.encode('utf8')
     out = []
-    buf = map(ord, s)
+    buf = bytearray(s)
     i = 0
-    while True:
-        if i >= len(buf):
-            break
+    while i < len(buf):
         x = None
         c = buf[i]
         if c >= 0x20 and c <= 0x7e:
-            x = (STR, [chr(c)])
+            x = (STR, [six.int2byte(c)])
             i += 1
         elif c & 0xc0:
             j = parse_utf8(buf, i)
             if j:
-                x = (STR, [''.join(map(chr, buf[i : j]))])
+                x = (STR, [b''.join(map(six.int2byte, buf[i : j]))])
                 i = j
         elif c == 0x1b and len(buf) > i + 1:
             c1 = buf[i + 1]
@@ -265,7 +268,7 @@ def parse(s):
                 ret = parse_csi(buf, i + 2)
                 if ret:
                     cmd, args, j = ret
-                    x = (CSI, (cmd, args, ''.join(map(chr, buf[i : j]))))
+                    x = (CSI, (cmd, args, b''.join(map(six.int2byte, buf[i : j]))))
                     i = j
             elif c1 == ord(']'):
                 # XXX: this is a dirty hack:
@@ -307,7 +310,7 @@ def parse(s):
             x = (BS, None)
             i += 1
         elif c == 0x09:
-            x = (STR, ['    ']) # who the **** uses tabs anyway?
+            x = (STR, [b'    ']) # who the **** uses tabs anyway?
             i += 1
         elif c == 0x0a:
             x = (LF, None)
@@ -315,10 +318,13 @@ def parse(s):
         elif c == 0x0d:
             x = (CR, None)
             i += 1
+        else:
+            i += 1
+
         if _graphics_mode:
             continue
         if x is None:
-            x = (STR, [c for c in '\\x%02x' % c])
+            x = (STR, [six.int2byte(c) for c in bytearray(b'\\x%02x' % c)])
             i += 1
         if x[0] == STR and out and out[-1][0] == STR:
             out[-1][1].extend(x[1])
@@ -346,6 +352,8 @@ def render_cell(cell, clear_after = False):
                     put(' ' * (indent - col))
                     col = indent
                 c = x[i]
+                if not hasattr(c, 'encode'):
+                    c = c.decode('utf-8', 'backslashreplace')
                 put(c)
                 col += 1
                 i += 1
@@ -479,7 +487,7 @@ def output(s = '', float = False, priority = 10, frozen = False,
         else:
             is_floating = False
             i = len(cells) - 1
-            while cells[i].float and i > 0:
+            while i > 0 and cells[i].float:
                 i -= 1
         # put('xx %d\n' % i)
         cell = Cell()
@@ -491,7 +499,7 @@ def output(s = '', float = False, priority = 10, frozen = False,
         i += 1
         cells.insert(i, cell)
         h = Handle(cell, is_floating)
-        if s == '':
+        if not s:
             cell.end = cell.start
             return h
         # the invariant is that the cursor is placed after the last cell

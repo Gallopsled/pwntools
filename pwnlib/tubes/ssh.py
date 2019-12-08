@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import shutil
+import six
 import string
 import sys
 import tarfile
@@ -30,7 +31,7 @@ from pwnlib.util.sh_string import sh_string
 # Kill the warning line:
 # No handlers could be found for logger "paramiko.transport"
 paramiko_log = logging.getLogger("paramiko.transport")
-h = logging.StreamHandler(file('/dev/null','w+'))
+h = logging.StreamHandler(open('/dev/null','w+'))
 h.setFormatter(logging.Formatter())
 paramiko_log.addHandler(h)
 
@@ -67,28 +68,35 @@ class ssh_channel(sock):
         self.tty  = tty
         self.env  = env
         self.process = process
-        self.cwd  = wd or '.'
+        if isinstance(wd, six.text_type):
+            wd = wd.encode('utf-8')
+        self.cwd  = wd or b'.'
 
         env = env or {}
         msg = 'Opening new channel: %r' % (process or 'shell')
 
         if isinstance(process, (list, tuple)):
-            process = ' '.join(sh_string(s) for s in process)
+            process = b' '.join((lambda x:x.encode('utf-8') if isinstance(x, six.text_type) else x)(sh_string(s)) for s in process)
+        if isinstance(process, six.text_type):
+            process = process.encode('utf-8')
 
         if process and wd:
-            process = 'cd %s >/dev/null 2>&1;%s' % (sh_string(wd), process)
+            process = b'cd ' + sh_string(wd) + b' >/dev/null 2>&1;' + process
 
         if process and env:
             for name, value in env.items():
                 if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', name):
-                    self.error('run(): Invalid environment key $r' % name)
-                process = 'export %s=%s;%s' % (name, sh_string(value), process)
+                    self.error('run(): Invalid environment key %r' % name)
+                export = 'export %s=%s;' % (name, sh_string(value))
+                if isinstance(export, six.text_type):
+                    export = export.encode('utf-8')
+                process = export + process
 
         if process and tty:
             if raw:
-                process = 'stty raw -ctlecho -echo; ' + process
+                process = b'stty raw -ctlecho -echo; ' + process
             else:
-                process = 'stty -ctlecho -echo; ' + process
+                process = b'stty -ctlecho -echo; ' + process
 
 
         # If this object is enabled for DEBUG-level logging, don't hide
@@ -147,13 +155,17 @@ class ssh_channel(sock):
         # However, we need to wait for the return value to propagate,
         # which may not happen by the time .close() is called by tube.recvall()
         tmp_sock = self.sock
+        tmp_close = self.close
+        self.close = lambda: None
 
         timeout = self.maximum if self.timeout is self.forever else self.timeout
         data = super(ssh_channel, self).recvall(timeout)
 
         # Restore self.sock to be able to call wait()
+        self.close = tmp_close
         self.sock = tmp_sock
         self.wait()
+        self.close()
 
         # Again set self.sock to None
         self.sock = None
@@ -216,15 +228,18 @@ class ssh_channel(sock):
             while not event.is_set():
                 try:
                     cur = self.recv(timeout = 0.05)
-                    cur = cur.replace('\r\n','\n')
-                    cur = cur.replace('\r','')
+                    cur = cur.replace(b'\r\n',b'\n')
+                    cur = cur.replace(b'\r',b'')
                     if cur == None:
                         continue
-                    elif cur == '\a':
+                    elif cur == b'\a':
                         # Ugly hack until term unstands bell characters
                         continue
-                    sys.stdout.write(cur)
-                    sys.stdout.flush()
+                    stdout = sys.stdout
+                    if not term.term_mode:
+                        stdout = getattr(stdout, 'buffer', stdout)
+                    stdout.write(cur)
+                    stdout.flush()
                 except EOFError:
                     self.info('Got EOF while reading in interactive')
                     event.set()
@@ -244,15 +259,16 @@ class ssh_channel(sock):
                     if not event.is_set():
                         raise
             else:
-                data = sys.stdin.read(1)
+                stdin = getattr(sys.stdin, 'buffer', sys.stdin)
+                data = stdin.read(1)
                 if not data:
                     event.set()
                 else:
-                    data = [ord(data)]
+                    data = [six.byte2int(data)]
 
             if data:
                 try:
-                    self.send(''.join(chr(c) for c in data))
+                    self.send(b''.join(six.int2byte(c) for c in data))
                 except EOFError:
                     event.set()
                     self.info('Got EOF while sending in interactive')
@@ -365,7 +381,7 @@ class ssh_process(ssh_channel):
         script = ';'.join(('from ctypes import *',
                            'import os',
                            'libc = CDLL("libc.so.6")',
-                           'print os.path.realpath(%r)' % self.executable,
+                           'print(os.path.realpath(%r))' % self.executable,
                            'print(libc.getenv(%r))' % variable,))
 
         try:
@@ -419,9 +435,18 @@ class ssh_connecter(sock):
                 self.exception(e.message)
                 raise
 
-            sockname = self.sock.get_transport().sock.getsockname()
-            self.lhost = sockname[0]
-            self.lport = sockname[1]
+            try:
+                # Iterate all layers of proxying to get to base-level Socket object
+                curr = self.sock.get_transport().sock
+                while getattr(curr, "get_transport", None):
+                    curr = curr.get_transport().sock
+
+                sockname = curr.getsockname()
+                self.lhost = sockname[0]
+                self.lport = sockname[1]
+            except Exception as e:
+                self.exception("Could not find base-level Socket object.")
+                raise e
 
             h.success()
 
@@ -531,7 +556,21 @@ class ssh(Timeout, Logger):
             ssh_agent: If :const:`True`, enable usage of keys via ssh-agent
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
-        fairly new version of paramiko is used."""
+        fairly new version of paramiko is used.
+
+        Example proxying:
+
+            >>> s1 = ssh(host='example.pwnme',
+            ...          user='travis',
+            ...          password='demopass')
+            >>> r1 = s1.remote('localhost', 22)
+            >>> s2 = ssh(host='example.pwnme',
+            ...          user='travis',
+            ...          password='demopass',
+            ...          proxy_sock=r1.sock)
+            >>> r2 = s2.remote('localhost', 22) # and so on...
+            >>> for x in r2, s2, r1, s1: x.close()
+        """
         super(ssh, self).__init__(*a, **kw)
 
         Logger.__init__(self)
@@ -570,7 +609,7 @@ class ssh(Timeout, Logger):
 
             if os.path.exists(config_file):
                 ssh_config  = paramiko.SSHConfig()
-                ssh_config.parse(file(config_file))
+                ssh_config.parse(open(config_file))
                 host_config = ssh_config.lookup(host)
                 if 'hostname' in host_config:
                     self.host = host = host_config['hostname']
@@ -615,7 +654,6 @@ class ssh(Timeout, Logger):
 
         with context.local(log_level='error'):
             def getppid():
-                import os
                 print(os.getppid())
             try:
                 self.pid = int(self.process('false', preexec_fn=getppid).recvall())
@@ -667,14 +705,14 @@ class ssh(Timeout, Logger):
             ...         user='travis',
             ...         password='demopass')
             >>> sh = s.shell('/bin/sh')
-            >>> sh.sendline('echo Hello; exit')
-            >>> print 'Hello' in sh.recvall()
+            >>> sh.sendline(b'echo Hello; exit')
+            >>> print(b'Hello' in sh.recvall())
             True
         """
         return self.run(shell, tty, timeout = timeout)
 
     def process(self, argv=None, executable=None, tty=True, cwd=None, env=None, timeout=Timeout.default, run=True,
-                stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=[], raw=True, aslr=None, setuid=None,
+                stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=(), raw=True, aslr=None, setuid=None,
                 shell=False):
         r"""
         Executes a process on the remote server, in the same fashion
@@ -746,34 +784,34 @@ class ssh(Timeout, Logger):
             ...         user='travis',
             ...         password='demopass')
             >>> sh = s.process('/bin/sh', env={'PS1':''})
-            >>> sh.sendline('echo Hello; exit')
+            >>> sh.sendline(b'echo Hello; exit')
             >>> sh.recvall()
-            'Hello\n'
-            >>> s.process(['/bin/echo', '\xff']).recvall()
-            '\xff\n'
+            b'Hello\n'
+            >>> s.process(['/bin/echo', b'\xff']).recvall()
+            b'\xff\n'
             >>> s.process(['readlink', '/proc/self/exe']).recvall()
-            '/bin/readlink\n'
+            b'/bin/readlink\n'
             >>> s.process(['LOLOLOL', '/proc/self/exe'], executable='readlink').recvall()
-            '/bin/readlink\n'
+            b'/bin/readlink\n'
             >>> s.process(['LOLOLOL\x00', '/proc/self/cmdline'], executable='cat').recvall()
-            'LOLOLOL\x00/proc/self/cmdline\x00'
+            b'LOLOLOL\x00/proc/self/cmdline\x00'
             >>> sh = s.process(executable='/bin/sh')
             >>> sh.pid in pidof('sh') # doctest: +SKIP
             True
             >>> s.process(['pwd'], cwd='/tmp').recvall()
-            '/tmp\n'
-            >>> p = s.process(['python','-c','import os; print os.read(2, 1024)'], stderr=0)
-            >>> p.send('hello')
+            b'/tmp\n'
+            >>> p = s.process(['python','-c','import os; print(os.read(2, 1024))'], stderr=0)
+            >>> p.send(b'hello')
             >>> p.recv()
-            'hello\n'
+            b'hello\n'
             >>> s.process(['/bin/echo', 'hello']).recvall()
-            'hello\n'
+            b'hello\n'
             >>> s.process(['/bin/echo', 'hello'], stdout='/dev/null').recvall()
-            ''
+            b''
             >>> s.process(['/usr/bin/env'], env={}).recvall()
-            ''
+            b''
             >>> s.process('/usr/bin/env', env={'A':'B'}).recvall()
-            'A=B\n'
+            b'A=B\n'
 
             >>> s.process('false', preexec_fn=1234)
             Traceback (most recent call last):
@@ -787,13 +825,13 @@ class ssh(Timeout, Logger):
 
             >>> def uses_globals():
             ...     foo = bar
-            >>> print s.process('false', preexec_fn=uses_globals).recvall().strip() # doctest: +ELLIPSIS
+            >>> print(s.process('false', preexec_fn=uses_globals).recvall().strip().decode()) # doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
             NameError: global name 'bar' is not defined
 
             >>> s.process('echo hello', shell=True).recvall()
-            'hello\n'
+            b'hello\n'
         """
         if not argv and not executable:
             self.error("Must specify argv or executable")
@@ -801,7 +839,7 @@ class ssh(Timeout, Logger):
         argv      = argv or []
         aslr      = aslr if aslr is not None else context.aslr
 
-        if isinstance(argv, (str, unicode)):
+        if isinstance(argv, (six.text_type, six.binary_type)):
             argv = [argv]
 
         if not isinstance(argv, (list, tuple)):
@@ -814,31 +852,41 @@ class ssh(Timeout, Logger):
 
         # Python doesn't like when an arg in argv contains '\x00'
         # -> execve() arg 2 must contain only strings
-        for i, arg in enumerate(argv):
-            if '\x00' in arg[:-1]:
-                self.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
-            argv[i] = arg.rstrip('\x00')
+        for i, oarg in enumerate(argv):
+            if isinstance(oarg, six.text_type):
+                arg = oarg.encode('utf-8')
+            else:
+                arg = oarg
+            if b'\x00' in arg[:-1]:
+                self.error('Inappropriate nulls in argv[%i]: %r' % (i, oarg))
+            argv[i] = arg.rstrip(b'\x00')
 
         # Python also doesn't like when envp contains '\x00'
+        env2 = {}
         if env and hasattr(env, 'items'):
             for k, v in env.items():
-                if '\x00' in k[:-1]:
+                if isinstance(k, six.text_type):
+                    k = k.encode('utf-8')
+                if isinstance(v, six.text_type):
+                    v = v.encode('utf-8')
+                if b'\x00' in k[:-1]:
                     self.error('Inappropriate nulls in environment key %r' % k)
-                if '\x00' in v[:-1]:
+                if b'\x00' in v[:-1]:
                     self.error('Inappropriate nulls in environment value %r=%r' % (k, v))
-                env[k.rstrip('\x00')] = v.rstrip('\x00')
+                env2[k.rstrip(b'\x00')] = v.rstrip(b'\x00')
+        env = env2 or env
 
         executable = executable or argv[0]
         cwd        = cwd or self.cwd
 
         # Validate, since failures on the remote side will suck.
-        if not isinstance(executable, str):
+        if not isinstance(executable, (six.text_type, six.binary_type)):
             self.error("executable / argv[0] must be a string: %r" % executable)
         if not isinstance(argv, (list, tuple)):
             self.error("argv must be a list or tuple: %r" % argv)
         if env is not None and not isinstance(env, dict) and env != os.environ:
             self.error("env must be a dict: %r" % env)
-        if not all(isinstance(s, str) for s in argv):
+        if not all(isinstance(s, (six.text_type, six.binary_type)) for s in argv):
             self.error("argv must only contain strings: %r" % argv)
 
         # Allow passing in sys.stdin/stdout/stderr objects
@@ -1028,7 +1076,7 @@ os.execve(exe, argv, env)
             python.suid = safeeval.const(python.recvline())
             python.sgid = safeeval.const(python.recvline())
             python.argv = argv
-            python.executable = python.recvuntil('\x00')[:-1]
+            python.executable = python.recvuntil(b'\x00')[:-1]
 
             h.success('pid %i' % python.pid)
 
@@ -1057,7 +1105,7 @@ os.execve(exe, argv, env)
         if os.path.sep in program:
             return program
 
-        result = self.run('export PATH=$PATH:$PWD; which %s' % program).recvall().strip()
+        result = self.run('export PATH=$PATH:$PWD; which %s' % program).recvall().strip().decode()
 
         if ('/%s' % program) not in result:
             return None
@@ -1080,11 +1128,11 @@ os.execve(exe, argv, env)
             ...         user='travis',
             ...         password='demopass')
             >>> py = s.run('python -i')
-            >>> _ = py.recvuntil('>>> ')
-            >>> py.sendline('print 2+2')
-            >>> py.sendline('exit')
-            >>> print repr(py.recvline())
-            '4\n'
+            >>> _ = py.recvuntil(b'>>> ')
+            >>> py.sendline(b'print(2+2)')
+            >>> py.sendline(b'exit')
+            >>> print(repr(py.recvline()))
+            b'4\n'
         """
 
         if wd is None:
@@ -1124,7 +1172,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         try:
             return int(result) & context.mask
-        except:
+        except ValueError:
             self.exception("Could not look up environment variable %r" % variable)
 
 
@@ -1140,8 +1188,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
-            >>> print s.run_to_end('echo Hello; exit 17')
-            ('Hello\n', 17)
+            >>> print(s.run_to_end('echo Hello; exit 17'))
+            (b'Hello\n', 17)
             """
 
         with context.local(log_level = 'ERROR'):
@@ -1167,9 +1215,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ...         password='demopass')
             >>> a = s.connect_remote(s.host, l.lport)
             >>> b = l.wait_for_connection()
-            >>> a.sendline('Hello')
-            >>> print repr(b.recvline())
-            'Hello\n'
+            >>> a.sendline(b'Hello')
+            >>> print(repr(b.recvline()))
+            b'Hello\n'
         """
 
         return ssh_connecter(self, host, port, timeout, level=self.level)
@@ -1193,9 +1241,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> l = s.listen_remote()
             >>> a = remote(s.host, l.port)
             >>> b = l.wait_for_connection()
-            >>> a.sendline('Hello')
-            >>> print repr(b.recvline())
-            'Hello\n'
+            >>> a.sendline(b'Hello')
+            >>> print(repr(b.recvline()))
+            b'Hello\n'
         """
 
         return ssh_listener(self, bind_address, port, timeout, level=self.level)
@@ -1210,8 +1258,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
-            >>> print s['echo hello']
-            hello
+            >>> print(repr(s['echo hello']))
+            b'hello'
         """
         return self.__getattr__(attr)()
 
@@ -1223,8 +1271,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
-            >>> print repr(s('echo hello'))
-            'hello'
+            >>> print(repr(s('echo hello')))
+            b'hello'
         """
         return self.__getattr__(attr)()
 
@@ -1237,11 +1285,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ...         user='travis',
             ...         password='demopass')
             >>> s.echo('hello')
-            'hello'
+            b'hello'
             >>> s.whoami()
-            'travis'
+            b'travis'
             >>> s.echo(['huh','yay','args'])
-            'huh yay args'
+            b'huh yay args'
         """
         bad_attrs = [
             'trait_names',          # ipython tab-complete
@@ -1307,6 +1355,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
     def _get_fingerprint(self, remote):
         cmd = '(sha256 || sha256sum || openssl sha256) 2>/dev/null < '
         cmd = cmd + sh_string(remote)
+
         data, status = self.run_to_end(cmd)
 
         if status != 0:
@@ -1314,13 +1363,16 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         # OpenSSL outputs in the format of...
         # (stdin)= e3b0c4429...
-        data = data.replace('(stdin)= ','')
+        data = data.replace(b'(stdin)= ',b'')
 
         # sha256 and sha256sum outputs in the format of...
         # e3b0c442...  -
-        data = data.replace('-','')
+        data = data.replace(b'-',b'').strip()
 
-        return data.strip()
+        if not isinstance(data, str):
+            data = data.decode('ascii')
+
+        return data
 
     def _get_cachefile(self, fingerprint):
         return os.path.join(self._cachedir, fingerprint)
@@ -1364,7 +1416,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         with context.local(log_level = 'ERROR'):
             cmd = 'cat < ' + sh_string(remote)
             c = self.run(cmd)
-        data = ''
+        data = b''
 
         while True:
             try:
@@ -1378,13 +1430,15 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             h.failure('Could not download file %r (%r)' % (remote, result))
             return
 
-        with open(local, 'w') as fd:
+        with open(local, 'wb') as fd:
             fd.write(data)
 
     def _download_to_cache(self, remote, p):
 
         with context.local(log_level='error'):
             remote = self.readlink('-f',remote)
+        if not hasattr(remote, 'encode'):
+            remote = remote.decode('utf-8')
 
         fingerprint = self._get_fingerprint(remote)
         if fingerprint is None:
@@ -1416,22 +1470,22 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
 
         Examples:
-            >>> with file('/tmp/bar','w+') as f:
-            ...     f.write('Hello, world')
+            >>> with open('/tmp/bar','w+') as f:
+            ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass',
             ...         cache=False)
             >>> s.download_data('/tmp/bar')
-            'Hello, world'
+            b'Hello, world'
             >>> s._sftp = None
             >>> s._tried_sftp = True
             >>> s.download_data('/tmp/bar')
-            'Hello, world'
+            b'Hello, world'
 
         """
         with self.progress('Downloading %r' % remote) as p:
-            with open(self._download_to_cache(remote, p)) as fd:
+            with open(self._download_to_cache(remote, p), 'rb') as fd:
                 return fd.read()
 
     def download_file(self, remote, local = None):
@@ -1475,7 +1529,6 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             with context.local(log_level='error'):
                 remote = self.system('readlink -f ' + sh_string(remote))
 
-        dirname  = os.path.dirname(remote)
         basename = os.path.basename(remote)
 
         local    = local or '.'
@@ -1512,13 +1565,13 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> s =  ssh(host='example.pwnme',
             ...         user='travis',
             ...         password='demopass')
-            >>> s.upload_data('Hello, world', '/tmp/upload_foo')
-            >>> print file('/tmp/upload_foo').read()
+            >>> s.upload_data(b'Hello, world', '/tmp/upload_foo')
+            >>> print(open('/tmp/upload_foo').read())
             Hello, world
             >>> s._sftp = False
             >>> s._tried_sftp = True
-            >>> s.upload_data('Hello, world', '/tmp/upload_bar')
-            >>> print file('/tmp/upload_bar').read()
+            >>> s.upload_data(b'Hello, world', '/tmp/upload_bar')
+            >>> print(open('/tmp/upload_bar').read())
             Hello, world
         """
         # If a relative path was provided, prepend the cwd
@@ -1555,7 +1608,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             remote = os.path.basename(remote)
             remote = os.path.join(self.cwd, remote)
 
-        with open(filename) as fd:
+        with open(filename, 'rb') as fd:
             data = fd.read()
 
         self.info("Uploading %r to %r" % (filename,remote))
@@ -1581,7 +1634,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             self.error("%r is not a directory" % local)
 
         msg = "Uploading %r to %r" % (basename,remote)
-        with self.waitfor(msg) as w:
+        with self.waitfor(msg):
             # Generate a tarfile with everything inside of it
             local_tar  = tempfile.mktemp()
             with tarfile.open(local_tar, 'w:gz') as tar:
@@ -1744,7 +1797,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ...         password='demopass')
             >>> cwd = s.set_working_directory()
             >>> s.ls()
-            ''
+            b''
             >>> s.pwd() == cwd
             True
 
@@ -1755,24 +1808,26 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> _=s.touch('foo')
 
             >>> _=s.set_working_directory()
-            >>> assert s.ls() == ''
+            >>> assert s.ls() == b''
 
             >>> _=s.set_working_directory(homedir)
-            >>> assert 'foo' in s.ls().split()
+            >>> assert b'foo' in s.ls().split()
 
             >>> _=s.set_working_directory(symlink=True)
-            >>> assert 'foo' in s.ls().split()
+            >>> assert b'foo' in s.ls().split()
             >>> assert homedir != s.pwd()
 
-            >>> symlink=os.path.join(homedir,'*')
+            >>> symlink=os.path.join(homedir,b'*')
             >>> _=s.set_working_directory(symlink=symlink)
-            >>> assert 'foo' in s.ls().split()
+            >>> assert b'foo' in s.ls().split()
             >>> assert homedir != s.pwd()
         """
         status = 0
 
-        if symlink and not isinstance(symlink, str):
-            symlink = os.path.join(self.pwd(), '*')
+        if symlink and not isinstance(symlink, (six.binary_type, six.text_type)):
+            symlink = os.path.join(self.pwd(), b'*')
+        if not hasattr(symlink, 'encode') and hasattr(symlink, 'decode'):
+            symlink = symlink.decode('utf-8')
 
         if not wd:
             wd, status = self.run_to_end('x=$(mktemp -d) && cd $x && chmod +x . && echo $PWD', wd='.')
@@ -1782,19 +1837,22 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 self.error("Could not generate a temporary directory (%i)\n%s" % (status, wd))
 
         else:
-            cmd = 'ls ' + sh_string(wd)
+            cmd = b'ls ' + sh_string(wd)
             _, status = self.run_to_end(cmd, wd = '.')
 
             if status:
                 self.error("%r does not appear to exist" % wd)
 
-        self.info("Working directory: %r" % wd)
         self.cwd = wd
+        if not isinstance(wd, str):
+            self.cwd = wd.decode('utf-8')
+
+        self.info("Working directory: %r" % self.cwd)
 
         if symlink:
             self.ln('-s', symlink, '.')
 
-        return self.cwd
+        return wd
 
     def write(self, path, data):
         """Wrapper around upload_data to match :func:`pwnlib.util.misc.write`"""
@@ -1805,7 +1863,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         return self.download_data(path)
 
     def _init_remote_platform_info(self):
-        """Fills _platform_info, e.g.:
+        r"""Fills _platform_info, e.g.:
 
         ::
 
@@ -1829,12 +1887,12 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             with self.process('true', preexec_fn=preexec) as io:
 
                 self._platform_info = {
-                    'system': io.recvline().lower().strip(),
-                    'node': io.recvline().lower().strip(),
-                    'release': io.recvline().lower().strip(),
-                    'version': io.recvline().lower().strip(),
-                    'machine': io.recvline().lower().strip(),
-                    'processor': io.recvline().lower().strip(),
+                    'system': io.recvline().lower().strip().decode(),
+                    'node': io.recvline().lower().strip().decode(),
+                    'release': io.recvline().lower().strip().decode(),
+                    'version': io.recvline().lower().strip().decode(),
+                    'machine': io.recvline().lower().strip().decode(),
+                    'processor': io.recvline().lower().strip().decode(),
                     'distro': 'Unknown',
                     'distro_ver': ''
                 }
@@ -1845,8 +1903,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
                 with self.process(['lsb_release', '-irs']) as io:
                     self._platform_info.update({
-                        'distro': io.recvline().strip(),
-                        'distro_ver': io.recvline().strip()
+                        'distro': io.recvline().strip().decode(),
+                        'distro_ver': io.recvline().strip().decode()
                     })
             except Exception:
                 pass
@@ -1927,7 +1985,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 with context.quiet:
                     rvs = self.read('/proc/sys/kernel/randomize_va_space')
 
-                self._aslr = not rvs.startswith('0')
+                self._aslr = not rvs.startswith(b'0')
 
         return self._aslr
 
@@ -1987,7 +2045,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         # Check for 555555000 (1/3 of the address space for PAE)
         # and for 40000000 (1/3 of the address space with 3BG barrier)
-        self._aslr_ulimit = bool('55555000' in maps or '40000000' in maps)
+        self._aslr_ulimit = bool(b'55555000' in maps or b'40000000' in maps)
 
         return self._aslr_ulimit
 
