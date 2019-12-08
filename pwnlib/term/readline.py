@@ -435,6 +435,19 @@ def raw_input(prompt='', float=True):
     """
     return readline(None, prompt, float)
 
+def str_input(prompt='', float=True):
+    r"""str_input(prompt='', float=True)
+
+    Replacement for the built-in ``input`` in python3 using ``pwnlib`` readline
+    implementation.
+
+    Arguments:
+        prompt(str): The prompt to show to the user.
+        float(bool): If set to `True`, prompt and input will float to the
+                     bottom of the screen when `term.term_mode` is enabled.
+    """
+    return readline(None, prompt, float).decode()
+
 def eval_input(prompt='', float=True):
     """eval_input(prompt='', float=True)
 
@@ -481,4 +494,4 @@ def init():
         builtins.raw_input = raw_input
         builtins.input = eval_input
     else:
-        builtins.input = raw_input
+        builtins.input = str_input
