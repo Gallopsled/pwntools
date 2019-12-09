@@ -18,7 +18,7 @@ The following doctest is commented out because it doesn't work on Travis
 for reasons I cannot diagnose.  However, it should work just fine :-)
 
     # >>> gcc = process(['aarch64-linux-gnu-gcc','-xc','-static','-Wl,-Ttext-segment=0x20000000','-'])
-    # >>> gcc.write('''
+    # >>> gcc.write(b'''
     # ... int main() {
     # ...     printf("Hello, %s!\\n", "world");
     # ... }

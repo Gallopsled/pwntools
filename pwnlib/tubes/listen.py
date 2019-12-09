@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 
 import errno
 import socket
@@ -30,16 +31,16 @@ class listen(sock):
         >>> l = listen(1234)
         >>> r = remote('localhost', l.lport)
         >>> _ = l.wait_for_connection()
-        >>> l.sendline('Hello')
+        >>> l.sendline(b'Hello')
         >>> r.recvline()
-        'Hello\n'
+        b'Hello\n'
 
         >>> l = listen()
         >>> l.spawn_process('/bin/sh')
         >>> r = remote('localhost', l.lport)
-        >>> r.sendline('echo Goodbye')
+        >>> r.sendline(b'echo Goodbye')
         >>> r.recvline()
-        'Goodbye\n'
+        b'Goodbye\n'
     """
 
     #: Local port

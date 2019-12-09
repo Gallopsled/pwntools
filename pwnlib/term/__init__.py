@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 
 import sys
 
@@ -81,3 +82,4 @@ def init():
     readline.init()
 
     term_mode = True
+    text.num_colors = termcap.get('colors', default = 8) or 8

@@ -14,7 +14,7 @@ Example:
     >>> asm  = shellcraft.mips.linux.cat(f)
     >>> asm += shellcraft.mips.linux.exit(0)
     >>> run_assembly(asm).recvall()
-    'FLAG'
+    b'FLAG'
 
 </%docstring>
 <%
@@ -22,5 +22,5 @@ label = common.label("sendfile_loop")
 %>
 
     ${mips.pushstr(filename)}
-    ${mips.open('$sp', 0, int(constants.O_RDONLY))}
+    ${mips.open('$sp', int(constants.O_RDONLY), 0)}
     ${mips.sendfile(fd, '$v0', 0, 0x7fffffff)}

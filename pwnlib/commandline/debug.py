@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import absolute_import
+from __future__ import division
 
 import argparse
 import sys
@@ -13,7 +14,7 @@ parser = common.parser_commands.add_parser(
 )
 parser.add_argument(
     '-x', metavar='GDBSCRIPT',
-    type=file,
+    type=argparse.FileType('r'),
     help='Execute GDB commands from this file.'
 )
 parser.add_argument(

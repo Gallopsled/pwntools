@@ -27,14 +27,14 @@ This exposes a standard interface to talk to processes, sockets, serial ports,
 and all manner of things, along with some nifty helpers for common tasks.
 For example, remote connections via :mod:`pwnlib.tubes.remote`.
 
-    >>> conn = remote('ftp.ubuntu.org',21)
+    >>> conn = remote('ftp.ubuntu.com',21)
     >>> conn.recvline() # doctest: +ELLIPSIS
-    '220 ...'
-    >>> conn.send('USER anonymous\r\n')
-    >>> conn.recvuntil(' ', drop=True)
-    '331'
+    b'220 ...'
+    >>> conn.send(b'USER anonymous\r\n')
+    >>> conn.recvuntil(b' ', drop=True)
+    b'331'
     >>> conn.recvline()
-    'Please specify the password.\r\n'
+    b'Please specify the password.\r\n'
     >>> conn.close()
 
 It's also easy to spin up a listener
@@ -42,20 +42,20 @@ It's also easy to spin up a listener
     >>> l = listen()
     >>> r = remote('localhost', l.lport)
     >>> c = l.wait_for_connection()
-    >>> r.send('hello')
+    >>> r.send(b'hello')
     >>> c.recv()
-    'hello'
+    b'hello'
 
 Interacting with processes is easy thanks to :mod:`pwnlib.tubes.process`.
 
 ::
 
     >>> sh = process('/bin/sh')
-    >>> sh.sendline('sleep 3; echo hello world;')
+    >>> sh.sendline(b'sleep 3; echo hello world;')
     >>> sh.recvline(timeout=1)
-    ''
+    b''
     >>> sh.recvline(timeout=5)
-    'hello world\n'
+    b'hello world\n'
     >>> sh.close()
 
 Not only can you interact with processes programmatically, but you can
@@ -74,14 +74,14 @@ a ``process`` tube.
 
     >>> shell = ssh('bandit0', 'bandit.labs.overthewire.org', password='bandit0', port=2220)
     >>> shell['whoami']
-    'bandit0'
+    b'bandit0'
     >>> shell.download_file('/etc/motd')
     >>> sh = shell.run('sh')
-    >>> sh.sendline('sleep 3; echo hello world;') # doctest: +SKIP
+    >>> sh.sendline(b'sleep 3; echo hello world;') # doctest: +SKIP
     >>> sh.recvline(timeout=1)
-    ''
+    b''
     >>> sh.recvline(timeout=5)
-    'hello world\n'
+    b'hello world\n'
     >>> shell.close()
 
 Packing Integers
@@ -97,13 +97,13 @@ unpacking codes, and littering your code with helper routines.
     >>> import struct
     >>> p32(0xdeadbeef) == struct.pack('I', 0xdeadbeef)
     True
-    >>> leet = '37130000'.decode('hex')
-    >>> u32('abcd') == struct.unpack('I', 'abcd')[0]
+    >>> leet = unhex('37130000')
+    >>> u32(b'abcd') == struct.unpack('I', b'abcd')[0]
     True
 
 The packing/unpacking operations are defined for many common bit-widths.
 
-    >>> u8('A') == 0x41
+    >>> u8(b'A') == 0x41
     True
 
 Setting the Target Architecture and OS
@@ -112,9 +112,9 @@ Setting the Target Architecture and OS
 The target architecture can generally be specified as an argument to the routine that requires it.
 
     >>> asm('nop')
-    '\x90'
+    b'\x90'
     >>> asm('nop', arch='arm')
-    '\x00\xf0 \xe3'
+    b'\x00\xf0 \xe3'
 
 However, it can also be set once in the global ``context``.  The operating system, word size, and endianness can also be set here.
 
@@ -126,10 +126,10 @@ However, it can also be set once in the global ``context``.  The operating syste
 Additionally, you can use a shorthand to set all of the values at once.
 
     >>> asm('nop')
-    '\x90'
+    b'\x90'
     >>> context(arch='arm', os='linux', endian='big', word_size=32)
     >>> asm('nop')
-    '\xe3 \xf0\x00'
+    b'\xe3 \xf0\x00'
 
 .. doctest::
    :hide:
@@ -158,12 +158,12 @@ Assembly and Disassembly
 Never again will you need to run some already-assembled pile of shellcode
 from the internet!  The :mod:`pwnlib.asm` module is full of awesome.
 
-    >>> asm('mov eax, 0').encode('hex')
+    >>> enhex(asm('mov eax, 0'))
     'b800000000'
 
 But if you do, it's easy to suss out!
 
-    >>> print disasm('6a0258cd80ebf9'.decode('hex'))
+    >>> print(disasm(unhex('6a0258cd80ebf9')))
        0:   6a 02                   push   0x2
        2:   58                      pop    eax
        3:   cd 80                   int    0x80
@@ -176,7 +176,7 @@ loaded with useful time-saving shellcodes.
 Let's say that we want to `setreuid(getuid(), getuid())` followed by `dup`ing
 file descriptor 4 to `stdin`, `stdout`, and `stderr`, and then pop a shell!
 
-    >>> asm(shellcraft.setreuid() + shellcraft.dupsh(4)).encode('hex') # doctest: +ELLIPSIS
+    >>> enhex(asm(shellcraft.setreuid() + shellcraft.dupsh(4))) # doctest: +ELLIPSIS
     '6a3158cd80...'
 
 
@@ -188,10 +188,10 @@ Never write another hexdump, thanks to :mod:`pwnlib.util.fiddling`.
 
 Find offsets in your buffer that cause a crash, thanks to :mod:`pwnlib.cyclic`.
 
-    >>> print cyclic(20)
+    >>> print(cyclic(20).decode())
     aaaabaaacaaadaaaeaaa
-    >>> # Assume EIP = 0x62616166 ('faab' which is pack(0x62616166))  at crash time
-    >>> print cyclic_find('faab')
+    >>> # Assume EIP = 0x62616166 (b'faab' which is pack(0x62616166))  at crash time
+    >>> print(cyclic_find(b'faab'))
     120
 
 ELF Manipulation
@@ -200,22 +200,22 @@ ELF Manipulation
 Stop hard-coding things!  Look them up at runtime with :mod:`pwnlib.elf`.
 
     >>> e = ELF('/bin/cat')
-    >>> print hex(e.address) #doctest: +SKIP
+    >>> print(hex(e.address)) #doctest: +SKIP
     0x400000
-    >>> print hex(e.symbols['write']) #doctest: +SKIP
+    >>> print(hex(e.symbols['write'])) #doctest: +SKIP
     0x401680
-    >>> print hex(e.got['write']) #doctest: +SKIP
+    >>> print(hex(e.got['write'])) #doctest: +SKIP
     0x60b070
-    >>> print hex(e.plt['write']) #doctest: +SKIP
+    >>> print(hex(e.plt['write'])) #doctest: +SKIP
     0x401680
 
 You can even patch and save the files.
 
     >>> e = ELF('/bin/cat')
     >>> e.read(e.address, 4)
-    '\x7fELF'
+    b'\x7fELF'
     >>> e.asm(e.address, 'ret')
     >>> e.save('/tmp/quiet-cat')
-    >>> disasm(file('/tmp/quiet-cat','rb').read(1))
+    >>> disasm(open('/tmp/quiet-cat','rb').read(1))
     '   0:   c3                      ret'
 

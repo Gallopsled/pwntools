@@ -1,9 +1,11 @@
 #!/usr/bin/env python2
 from __future__ import absolute_import
+from __future__ import division
 
 import argparse
 import os
 import sys
+import io
 
 import pwnlib
 pwnlib.args.free_form = False
@@ -21,8 +23,8 @@ parser.add_argument(
     metavar='file',
     nargs='?',
     help='File to hexdump.  Reads from stdin if missing.',
-    type=argparse.FileType('r'),
-    default=sys.stdin
+    type=argparse.FileType('rb'),
+    default=getattr(sys.stdin, 'buffer', sys.stdin)
 )
 
 parser.add_argument(
@@ -88,6 +90,9 @@ def main(args):
         else:
             infile.seek(skip, os.SEEK_CUR)
 
+    if count:
+        infile = io.BytesIO(infile.read(count))
+
     hl = []
     if args.highlight:
         for hs in args.highlight:
@@ -96,7 +101,7 @@ def main(args):
 
     try:
         for line in hexdump_iter(infile, width, highlight = hl, begin = offset + skip):
-            print line
+            print(line)
     except (KeyboardInterrupt, IOError):
         pass
 

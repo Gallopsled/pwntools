@@ -8,6 +8,19 @@ Useful in conjuncion with findpeer.
 Args:
     sock, the socket to read the payload from.
     size, the size of the payload
+
+Example:
+
+    >>> stage_2 = asm(shellcraft.echo('hello') + "\n" + shellcraft.syscalls.exit(42))
+    >>> p = run_assembly(shellcraft.stager(0, len(stage_2)))
+    >>> for c in bytearray(stage_2):
+    ...     p.write(bytearray((c,)))
+    >>> p.wait_for_close()
+    >>> p.poll()
+    42
+    >>> p.recvall()
+    b'hello'
+
 </%docstring>
 <%page args="sock, size, handle_error=False, tiny=False"/>
 <%
@@ -23,7 +36,7 @@ ${stager}:
     ${mov('ebx', 0)}
     ${syscall(SYS_mmap2, 'ebx', mmap_size, rwx, anon_priv, -1, 'ebx')}
 
-    pop  ebp /* socket */
+    pop  ebx /* socket */
     push eax /* save for: pop eax; call eax later */
 
 /* read/recv loop */
@@ -36,11 +49,12 @@ ${looplabel}:
     js ${errlabel}
 % endif
 % if not tiny:
-    add ebx, eax
-    sub edx, eax
+    add ecx, eax /* increment destination pointer */
+    sub edx, eax /* decrement remaining amount */
     jnz ${looplabel}
 % endif
 
+	mov ebp, ebx
     ret /* start of mmapped buffer, ebp = socket */
 
 % if handle_error:

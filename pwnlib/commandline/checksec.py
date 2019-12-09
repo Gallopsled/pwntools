@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import absolute_import
+from __future__ import division
 
 import argparse
 import sys
@@ -14,7 +15,7 @@ parser = common.parser_commands.add_parser(
 parser.add_argument(
     'elf',
     nargs='*',
-    type=file,
+    type=argparse.FileType('rb'),
     help='Files to check'
 )
 parser.add_argument(
@@ -22,7 +23,7 @@ parser.add_argument(
     nargs='*',
     dest='elf2',
     metavar='elf',
-    type=file,
+    type=argparse.FileType('rb'),
     help='File to check (for compatibility with checksec.sh)'
 )
 

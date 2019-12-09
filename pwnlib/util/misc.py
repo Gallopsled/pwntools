@@ -1,3 +1,5 @@
+from __future__ import division
+
 import base64
 import errno
 import os
@@ -46,7 +48,7 @@ def binary_ip(host):
 
     Example:
         >>> binary_ip("127.0.0.1")
-        '\\x7f\\x00\\x00\\x01'
+        b'\\x7f\\x00\\x00\\x01'
     """
     return socket.inet_aton(socket.gethostbyname(host))
 
@@ -108,21 +110,22 @@ def read(path, count=-1, skip=0):
 
     Examples:
         >>> read('/proc/self/exe')[:4]
-        '\x7fELF'
+        b'\x7fELF'
     """
     path = os.path.expanduser(os.path.expandvars(path))
-    with open(path) as fd:
+    with open(path, 'rb') as fd:
         if skip:
             fd.seek(skip)
         return fd.read(count)
 
 
-def write(path, data = '', create_dir = False, mode = 'w'):
+def write(path, data = b'', create_dir = False, mode = 'w'):
     """Create new file or truncate existing to zero length and write data."""
     path = os.path.expanduser(os.path.expandvars(path))
     if create_dir:
         path = os.path.realpath(path)
         mkdir_p(os.path.dirname(path))
+    if mode == 'w' and isinstance(data, bytes): mode += 'b'
     with open(path, mode) as f:
         f.write(data)
 
@@ -251,7 +254,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
     if pid == 0:
         # Closing the file descriptors makes everything fail under tmux on OSX.
         if platform.system() != 'Darwin':
-            devnull = open(os.devnull, 'rwb')
+            devnull = open(os.devnull, 'r+b')
             os.dup2(devnull.fileno(), 0)
             os.dup2(devnull.fileno(), 1)
             os.dup2(devnull.fileno(), 2)
@@ -344,12 +347,81 @@ def register_sizes(regs, in_sizes):
         >>> all_regs, sizes, bigger, smaller = register_sizes(regs, [32, 16, 8, 8])
         >>> all_regs
         ['eax', 'ax', 'al', 'ah', 'ebx', 'bx', 'bl', 'bh', 'ecx', 'cx', 'cl', 'ch', 'edx', 'dx', 'dl', 'dh', 'edi', 'di', 'esi', 'si', 'ebp', 'bp', 'esp', 'sp']
-        >>> sizes
-        {'ch': 8, 'cl': 8, 'ah': 8, 'edi': 32, 'al': 8, 'cx': 16, 'ebp': 32, 'ax': 16, 'edx': 32, 'ebx': 32, 'esp': 32, 'esi': 32, 'dl': 8, 'dh': 8, 'di': 16, 'bl': 8, 'bh': 8, 'eax': 32, 'bp': 16, 'dx': 16, 'bx': 16, 'ecx': 32, 'sp': 16, 'si': 16}
-        >>> bigger
-        {'ch': ['ecx', 'cx', 'ch'], 'cl': ['ecx', 'cx', 'cl'], 'ah': ['eax', 'ax', 'ah'], 'edi': ['edi'], 'al': ['eax', 'ax', 'al'], 'cx': ['ecx', 'cx'], 'ebp': ['ebp'], 'ax': ['eax', 'ax'], 'edx': ['edx'], 'ebx': ['ebx'], 'esp': ['esp'], 'esi': ['esi'], 'dl': ['edx', 'dx', 'dl'], 'dh': ['edx', 'dx', 'dh'], 'di': ['edi', 'di'], 'bl': ['ebx', 'bx', 'bl'], 'bh': ['ebx', 'bx', 'bh'], 'eax': ['eax'], 'bp': ['ebp', 'bp'], 'dx': ['edx', 'dx'], 'bx': ['ebx', 'bx'], 'ecx': ['ecx'], 'sp': ['esp', 'sp'], 'si': ['esi', 'si']}
-        >>> smaller
-        {'ch': [], 'cl': [], 'ah': [], 'edi': ['di'], 'al': [], 'cx': ['cl', 'ch'], 'ebp': ['bp'], 'ax': ['al', 'ah'], 'edx': ['dx', 'dl', 'dh'], 'ebx': ['bx', 'bl', 'bh'], 'esp': ['sp'], 'esi': ['si'], 'dl': [], 'dh': [], 'di': [], 'bl': [], 'bh': [], 'eax': ['ax', 'al', 'ah'], 'bp': [], 'dx': ['dl', 'dh'], 'bx': ['bl', 'bh'], 'ecx': ['cx', 'cl', 'ch'], 'sp': [], 'si': []}
+        >>> pprint(sizes)
+        {'ah': 8,
+         'al': 8,
+         'ax': 16,
+         'bh': 8,
+         'bl': 8,
+         'bp': 16,
+         'bx': 16,
+         'ch': 8,
+         'cl': 8,
+         'cx': 16,
+         'dh': 8,
+         'di': 16,
+         'dl': 8,
+         'dx': 16,
+         'eax': 32,
+         'ebp': 32,
+         'ebx': 32,
+         'ecx': 32,
+         'edi': 32,
+         'edx': 32,
+         'esi': 32,
+         'esp': 32,
+         'si': 16,
+         'sp': 16}
+        >>> pprint(bigger)
+        {'ah': ['eax', 'ax', 'ah'],
+         'al': ['eax', 'ax', 'al'],
+         'ax': ['eax', 'ax'],
+         'bh': ['ebx', 'bx', 'bh'],
+         'bl': ['ebx', 'bx', 'bl'],
+         'bp': ['ebp', 'bp'],
+         'bx': ['ebx', 'bx'],
+         'ch': ['ecx', 'cx', 'ch'],
+         'cl': ['ecx', 'cx', 'cl'],
+         'cx': ['ecx', 'cx'],
+         'dh': ['edx', 'dx', 'dh'],
+         'di': ['edi', 'di'],
+         'dl': ['edx', 'dx', 'dl'],
+         'dx': ['edx', 'dx'],
+         'eax': ['eax'],
+         'ebp': ['ebp'],
+         'ebx': ['ebx'],
+         'ecx': ['ecx'],
+         'edi': ['edi'],
+         'edx': ['edx'],
+         'esi': ['esi'],
+         'esp': ['esp'],
+         'si': ['esi', 'si'],
+         'sp': ['esp', 'sp']}
+        >>> pprint(smaller)
+        {'ah': [],
+         'al': [],
+         'ax': ['al', 'ah'],
+         'bh': [],
+         'bl': [],
+         'bp': [],
+         'bx': ['bl', 'bh'],
+         'ch': [],
+         'cl': [],
+         'cx': ['cl', 'ch'],
+         'dh': [],
+         'di': [],
+         'dl': [],
+         'dx': ['dl', 'dh'],
+         'eax': ['ax', 'al', 'ah'],
+         'ebp': ['bp'],
+         'ebx': ['bx', 'bl', 'bh'],
+         'ecx': ['cx', 'cl', 'ch'],
+         'edi': ['di'],
+         'edx': ['dx', 'dl', 'dh'],
+         'esi': ['si'],
+         'esp': ['sp'],
+         'si': [],
+         'sp': []}
     """
     sizes = {}
     bigger = {}
