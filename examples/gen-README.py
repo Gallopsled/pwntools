@@ -24,7 +24,7 @@ def append_example(_arg, top, names):
             continue
         path = os.path.join(top, name)[2:] # strip './'
         log.info('-> %s' % path)
-        data = read(path).strip()
+        data = read(path).strip().decode()
         if data[0:3] not in ('"""', "'''"):
             log.warning('  Has no docstring!')
             continue
@@ -37,6 +37,7 @@ def append_example(_arg, top, names):
         out += '* `%s`\n' % path
         out += '```%s```\n' % doc
 
-os.path.walk('.', append_example, None)
+for path, dirs, files in os.walk('.', onerror=None):
+    append_example(dirs, path, sorted(files))
 
 write('README.md', out)
