@@ -19,13 +19,13 @@ c1 = LongestPrefixCompleter([
 c2 = PathCompleter(mask = '*.py')
 
 with c1:
-    print 'type "exit" to exit'
+    print('type "exit" to exit')
     while True:
         s = term.readline.readline(prompt = '> ').strip()
         if s in ('exit', 'enough!'):
             break
-        print 'You wrote', s
+        print('You wrote', s)
 with c2:
-    print 'choose a file'
+    print('choose a file')
     s = term.readline.readline(prompt = text.bold_green('$ ')).strip()
-    print 'You picked', s
+    print('You picked', s)
