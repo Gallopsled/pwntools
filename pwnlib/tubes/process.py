@@ -857,6 +857,7 @@ class process(tube):
                 return pwnlib.elf.elf.ELF(self.executable).maps
 
         # Enumerate all of the libraries actually loaded right now.
+        maps = {}
         for line in maps_raw.splitlines():
             if '/' not in line: continue
             path = line[line.index('/'):]
