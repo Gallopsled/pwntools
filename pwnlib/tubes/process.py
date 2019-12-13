@@ -882,6 +882,14 @@ class process(tube):
         Returns an ELF for the libc for the current process.
         If possible, it is adjusted to the correct address
         automatically.
+
+        Example:
+
+        >>> p = process("/bin/cat")
+        >>> libc = p.libc
+        >>> libc # doctest: +SKIP
+        ELF('/lib64/libc-...so')
+        >>> p.close()
         """
         from pwnlib.elf import ELF
 

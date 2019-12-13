@@ -1055,7 +1055,7 @@ class ROP(object):
             files = [files]
 
         sha256 = hashlib.sha256()
-        for elf_data in sorted(elf.get_data() for elf in self.elfs):
+        for elf_data in sorted(elf.get_data() for elf in files):
             sha256.update(elf_data)
 
         return os.path.join(cachedir, sha256.hexdigest())
