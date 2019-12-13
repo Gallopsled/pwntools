@@ -886,7 +886,8 @@ class process(tube):
         Example:
 
         >>> p = process("/bin/cat")
-        >>> p.libc # doctest: +ELLIPSIS
+        >>> libc = p.libc
+        >>> libc # doctest: +SKIP
         ELF('/lib64/libc-...so')
         >>> p.close()
         """
