@@ -51,6 +51,7 @@ script:
   - flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=pwnlib/constants
   - PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest
   - coverage combine
+  - coverage report
 after_success:
   - coveralls
   - source travis/update_demo.sh
