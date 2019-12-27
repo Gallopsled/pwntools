@@ -2,6 +2,7 @@
 This module includes and extends the standard module :mod:`itertools`.
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import collections
 import copy
@@ -10,6 +11,7 @@ import operator
 import random
 import time
 from itertools import *
+from six.moves import map, filter, filterfalse, range, zip, zip_longest
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -51,12 +53,12 @@ __all__ = [
     'cycle'                                  ,
     'dropwhile'                              ,
     'groupby'                                ,
-    'ifilter'                                ,
-    'ifilterfalse'                           ,
-    'imap'                                   ,
+    'filter'                                 ,
+    'filterfalse'                            ,
+    'map'                                    ,
     'islice'                                 ,
-    'izip'                                   ,
-    'izip_longest'                           ,
+    'zip'                                    ,
+    'zip_longest'                            ,
     'permutations'                           ,
     'product'                                ,
     'repeat'                                 ,
@@ -64,8 +66,6 @@ __all__ = [
     'takewhile'                              ,
     'tee'
 ]
-
-
 
 log = getLogger(__name__)
 
@@ -112,7 +112,7 @@ def tabulate(func, start = 0):
       >>> take(5, tabulate(lambda x: x**2, start = 1))
       [1, 4, 9, 16, 25]
     """
-    return imap(func, count(start))
+    return map(func, count(start))
 
 def consume(n, iterator):
     """consume(n, iterator)
@@ -130,7 +130,7 @@ def consume(n, iterator):
     Examples:
       >>> i = count()
       >>> consume(5, i)
-      >>> i.next()
+      >>> next(i)
       5
       >>> i = iter([1, 2, 3, 4, 5])
       >>> consume(2, i)
@@ -193,7 +193,7 @@ def quantify(iterable, pred = bool):
       >>> quantify(['1', 'two', '3', '42'], str.isdigit)
       3
     """
-    return sum(imap(pred, iterable))
+    return sum(map(pred, iterable))
 
 def pad(iterable, value = None):
     """pad(iterable, value = None) -> iterator
@@ -260,7 +260,7 @@ def dotproduct(x, y):
       ... # 1 * 4 + 2 * 5 + 3 * 6 == 32
       32
     """
-    return sum(imap(operator.mul, x, y))
+    return sum(map(operator.mul, x, y))
 
 def flatten(xss):
     """flatten(xss) -> iterator
@@ -347,7 +347,7 @@ def pairwise(iterable):
     """
     a, b = tee(iterable)
     next(b, None)
-    return izip(a, b)
+    return zip(a, b)
 
 def group(n, iterable, fill_value = None):
     """group(n, iterable, fill_value = None) -> iterator
@@ -373,7 +373,7 @@ def group(n, iterable, fill_value = None):
       ['ABC', 'DEF', 'Gxx']
     """
     args = [iter(iterable)] * n
-    return izip_longest(fillvalue = fill_value, *args)
+    return zip_longest(fillvalue = fill_value, *args)
 
 def roundrobin(*iterables):
     """roundrobin(*iterables)
@@ -395,11 +395,11 @@ def roundrobin(*iterables):
     """
     # Recipe credited to George Sakkis
     pending = len(iterables)
-    nexts = cycle(iter(it).next for it in iterables)
+    nexts = cycle(iter(it) for it in iterables)
     while pending:
         try:
-            for next in nexts:
-                yield next()
+            for nxt in nexts:
+                yield next(nxt)
         except StopIteration:
             pending -= 1
             nexts = cycle(islice(nexts, pending))
@@ -453,7 +453,7 @@ def unique_everseen(iterable, key = None):
     seen = set()
     seen_add = seen.add
     if key is None:
-        for element in ifilterfalse(seen.__contains__, iterable):
+        for element in filterfalse(seen.__contains__, iterable):
             seen_add(element)
             yield element
     else:
@@ -485,7 +485,7 @@ def unique_justseen(iterable, key = None):
       >>> ''.join(unique_justseen('ABBCcAD', str.lower))
       'ABCAD'
     """
-    return imap(next, imap(operator.itemgetter(1), groupby(iterable, key)))
+    return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
 
 def unique_window(iterable, window, key = None):
     """unique_everseen(iterable, window, key = None) -> iterator
@@ -545,13 +545,13 @@ def iter_except(func, exception):
     Examples:
       >>> s = {1, 2, 3}
       >>> i = iter_except(s.pop, KeyError)
-      >>> i.next()
+      >>> next(i)
       1
-      >>> i.next()
+      >>> next(i)
       2
-      >>> i.next()
+      >>> next(i)
       3
-      >>> i.next()
+      >>> next(i)
       Traceback (most recent call last):
           ...
       StopIteration
@@ -585,7 +585,7 @@ def random_product(*args, **kwargs):
     if kwargs != {}:
         raise TypeError('random_product() does not support argument %s' % kwargs.popitem())
 
-    pools = map(tuple, args) * repeat
+    pools = list(map(tuple, args)) * repeat
     return tuple(random.choice(pool) for pool in pools)
 
 def random_permutation(iterable, r = None):
@@ -627,7 +627,7 @@ def random_combination(iterable, r):
     """
     pool = tuple(iterable)
     n = len(pool)
-    indices = sorted(random.sample(xrange(n), r))
+    indices = sorted(random.sample(range(n), r))
     return tuple(pool[i] for i in indices)
 
 def random_combination_with_replacement(iterable, r):
@@ -651,7 +651,7 @@ def random_combination_with_replacement(iterable, r):
     """
     pool = tuple(iterable)
     n = len(pool)
-    indices = sorted(random.randrange(n) for i in xrange(r))
+    indices = sorted(random.randrange(n) for i in range(r))
     return tuple(pool[i] for i in indices)
 
 def lookahead(n, iterable):
@@ -671,12 +671,12 @@ def lookahead(n, iterable):
       >>> i = count()
       >>> lookahead(4, i)
       4
-      >>> i.next()
+      >>> next(i)
       0
       >>> i = count()
       >>> nth(4, i)
       4
-      >>> i.next()
+      >>> next(i)
       5
       >>> lookahead(4, i)
       10
@@ -699,7 +699,7 @@ def lexicographic(alphabet):
       order.
 
     Example:
-      >>> take(8, imap(lambda x: ''.join(x), lexicographic('01')))
+      >>> take(8, map(lambda x: ''.join(x), lexicographic('01')))
       ['', '0', '1', '00', '01', '10', '11', '000']
     """
     for n in count():
@@ -758,7 +758,7 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
       if the search space was exhausted.
 
     Example:
-      >>> bruteforce(lambda x: x == 'hello', string.lowercase, length = 10)
+      >>> bruteforce(lambda x: x == 'hello', string.ascii_lowercase, length = 10)
       'hello'
       >>> bruteforce(lambda x: x == 'hello', 'hllo', 5) is None
       True
@@ -766,12 +766,12 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
 
     if   method == 'upto' and length > 1:
         iterator = product(alphabet, repeat = 1)
-        for i in xrange(2, length + 1):
+        for i in range(2, length + 1):
             iterator = chain(iterator, product(alphabet, repeat = i))
 
     elif method == 'downfrom' and length > 1:
         iterator = product(alphabet, repeat = length)
-        for i in xrange(length - 1, 1, -1):
+        for i in range(length - 1, 1, -1):
             iterator = chain(iterator, product(alphabet, repeat = i))
 
     elif method == 'fixed':
@@ -783,7 +783,7 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
     if method == 'fixed':
         total_iterations = len(alphabet) ** length
     else:
-        total_iterations = (len(alphabet) ** (length + 1) / (len(alphabet) - 1)) - 1
+        total_iterations = (len(alphabet) ** (length + 1) // (len(alphabet) - 1)) - 1
 
     if start is not None:
         i, N = start
@@ -791,7 +791,7 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
             raise ValueError('bruteforce(): invalid starting point')
 
         i -= 1
-        chunk_size = total_iterations / N
+        chunk_size = total_iterations // N
         rest = total_iterations % N
         starting_point = 0
 

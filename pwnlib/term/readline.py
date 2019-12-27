@@ -1,6 +1,11 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import six
+import sys
 
 from pwnlib.term import keyconsts as kc
 from pwnlib.term import keymap as km
@@ -138,8 +143,8 @@ def self_insert(trace):
 
 def set_buffer(left, right):
     global buffer_left, buffer_right
-    buffer_left = unicode(left)
-    buffer_right = unicode(right)
+    buffer_left = left
+    buffer_right = right
     redisplay()
 
 def cancel_search(*_):
@@ -363,13 +368,18 @@ keymap = km.Keymap({
     '<any>'       : handle_keypress,
     })
 
-def readline(_size = None, prompt = '', float = True, priority = 10):
+def readline(_size=None, prompt='', float=True, priority=10):
     # The argument  _size is unused, but is there for compatibility
     # with the existing readline
 
     global buffer_handle, prompt_handle, suggest_handle, eof, \
         show_suggestions
 
+    # XXX circular imports
+    from pwnlib.term import term_mode
+    if not term_mode:
+        six.print_(prompt, end='', flush=True)
+        return sys.stdin.readline(_size).rstrip('\n')
     show_suggestions = False
     eof = False
     if prompt:
@@ -388,14 +398,14 @@ def readline(_size = None, prompt = '', float = True, priority = 10):
                     keymap.handle_input()
                 except EOFError:
                     if len(buffer_left + buffer_right) == 0:
-                        return ''
+                        return b''
                 if eof:
-                    return ''
+                    return b''
                 else:
                     buffer = (buffer_left + buffer_right)
                     if buffer:
                         history.insert(0, buffer)
-                    return force_to_bytes(buffer) + '\n'
+                    return force_to_bytes(buffer) + b'\n'
             except KeyboardInterrupt:
                 control_c()
     finally:
@@ -412,9 +422,63 @@ def readline(_size = None, prompt = '', float = True, priority = 10):
         if shutdown_hook:
             shutdown_hook()
 
+def raw_input(prompt='', float=True):
+    r"""raw_input(prompt='', float=True)
+
+    Replacement for the built-in ``raw_input`` using ``pwnlib`` readline
+    implementation.
+
+    Arguments:
+        prompt(str): The prompt to show to the user.
+        float(bool): If set to `True`, prompt and input will float to the
+                     bottom of the screen when `term.term_mode` is enabled.
+    """
+    return readline(None, prompt, float)
+
+def str_input(prompt='', float=True):
+    r"""str_input(prompt='', float=True)
+
+    Replacement for the built-in ``input`` in python3 using ``pwnlib`` readline
+    implementation.
+
+    Arguments:
+        prompt(str): The prompt to show to the user.
+        float(bool): If set to `True`, prompt and input will float to the
+                     bottom of the screen when `term.term_mode` is enabled.
+    """
+    return readline(None, prompt, float).decode()
+
+def eval_input(prompt='', float=True):
+    """eval_input(prompt='', float=True)
+
+    Replacement for the built-in python 2 - style ``input`` using
+    ``pwnlib`` readline implementation, and `pwnlib.util.safeeval.expr`
+    instead of ``eval`` (!).
+
+    Arguments:
+        prompt(str): The prompt to show to the user.
+        float(bool): If set to ``True``, prompt and input will float to the
+                     bottom of the screen when `term.term_mode` is enabled.
+
+    Example:
+
+        >>> try:
+        ...     saved = sys.stdin, pwnlib.term.term_mode
+        ...     pwnlib.term.term_mode = False
+        ...     sys.stdin = io.StringIO(u"{'a': 20}")
+        ...     eval_input("Favorite object? ")['a']
+        ... finally:
+        ...     sys.stdin, pwnlib.term.term_mode = saved
+        Favorite object? 20
+    """
+    from pwnlib.util import safeeval
+    return safeeval.const(readline(None, prompt, float))
+
 def init():
+    global safeeval
     # defer imports until initialization
-    import sys, __builtin__
+    import sys
+    from six.moves import builtins
     from pwnlib.util import safeeval
 
     class Wrapper:
@@ -426,30 +490,8 @@ def init():
             return self._fd.__getattribute__(k)
     sys.stdin = Wrapper(sys.stdin)
 
-    def raw_input(prompt = '', float = True):
-        """raw_input(prompt = '', float = True)
-
-        Replacement for the built-in `raw_input` using ``pwnlib``s readline
-        implementation.
-
-        Arguments:
-            prompt(str): The prompt to show to the user.
-            float(bool): If set to `True`, prompt and input will float to the
-                         bottom of the screen when `term.term_mode` is enabled.
-        """
-        return readline(None, prompt, float)
-    __builtin__.raw_input = raw_input
-
-    def input(prompt = '', float = True):
-        """input(prompt = '', float = True)
-
-        Replacement for the built-in `input` using ``pwnlib``s readline
-        implementation, and `pwnlib.util.safeeval.expr` instead of `eval` (!).
-
-        Arguments:
-            prompt(str): The prompt to show to the user.
-            float(bool): If set to `True`, prompt and input will float to the
-                         bottom of the screen when `term.term_mode` is enabled.
-        """
-        return safeeval.const(readline(None, prompt, float))
-    __builtin__.input = input
+    if six.PY2:
+        builtins.raw_input = raw_input
+        builtins.input = eval_input
+    else:
+        builtins.input = str_input

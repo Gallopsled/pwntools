@@ -1,7 +1,7 @@
 from __future__ import absolute_import
+from __future__ import division
 
 import os
-from collections import defaultdict
 
 from pwnlib.context import context
 
@@ -19,7 +19,7 @@ def init_mako():
     if lookup != None:
         return
 
-    class IsInsideManager:
+    class IsInsideManager(object):
         def __init__(self, parent):
             self.parent = parent
         def __enter__(self):
@@ -142,16 +142,15 @@ def make_function(funcname, filename, directory):
     # It would be possible to simply create an (*args, **kwargs) wrapper,
     # but what would not have the right signature.
     # While we are at it, we insert the docstring too
-    T = '''
+    T = r'''
 def wrap(template, render_global):
     import pwnlib
     def %(funcname)s(%(args)s):
         %(docstring)r
         with render_global.go_inside() as was_inside:
             with pwnlib.context.context.local(**%(local_ctx)s):
-                lines = template.render(%(args_used)s).split('\\n')
-        for i in xrange(len(lines)):
-            line = lines[i]
+                lines = template.render(%(args_used)s).split('\n')
+        for i, line in enumerate(lines):
             def islabelchar(c):
                 return c.isalnum() or c == '.' or c == '_'
             if ':' in line and islabelchar(line.lstrip()[0]):
@@ -161,25 +160,27 @@ def wrap(template, render_global):
             lines[i] = line
         while lines and not lines[-1]: lines.pop()
         while lines and not lines[0]:  lines.pop(0)
-        s = '\\n'.join(lines)
-        while '\\n\\n\\n' in s:
-            s = s.replace('\\n\\n\\n', '\\n\\n')
+        s = '\n'.join(lines)
+        while '\n\n\n' in s:
+            s = s.replace('\n\n\n', '\n\n')
 
         if was_inside:
             return s
         else:
-            return s + '\\n'
+            return s + '\n'
     return %(funcname)s
 ''' % locals()
 
-    exec T in locals()
+    g = {}
+    exec(T, g, g)
+    wrap = g['wrap']
 
     # Setting _relpath is a slight hack only used to get better documentation
     res = wrap(template, render_global)
     res._relpath = path
     res.__module__ = 'pwnlib.shellcraft.' + os.path.dirname(path).replace('/','.')
 
-    import sys, inspect, functools
+    import sys, functools
 
     @functools.wraps(res)
     def function(*a):

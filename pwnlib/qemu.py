@@ -73,6 +73,7 @@ the appropriate path.
 Now QEMU should be able to run the libraries.
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import os
 
@@ -151,9 +152,14 @@ def ld_prefix(path=None, env=None):
 
     with context.quiet:
         with process([path, '--help'], env=env) as io:
-            line = io.recvline_regex('QEMU_LD_PREFIX *=')
+            line = io.recvline_regex(b'QEMU_LD_PREFIX *=')
 
-    name, libpath = line.split('=', 1)
+    _, libpath = line.split(b'=', 1)
 
-    return libpath.strip()
+    libpath = libpath.strip()
+
+    if not isinstance(libpath, str):
+        libpath = libpath.decode('utf-8')
+
+    return libpath
 

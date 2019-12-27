@@ -52,8 +52,8 @@ dump to extract the relevant information.
 
     # Get a shell!
     io = process(['./crash', payload])
-    io.sendline('id')
-    print io.recvline()
+    io.sendline(b'id')
+    print(io.recvline())
     # uid=1000(user) gid=1000(user) groups=1000(user)
 
 Module Members
@@ -61,6 +61,7 @@ Module Members
 
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import collections
 import ctypes
@@ -69,8 +70,10 @@ import gzip
 import re
 import os
 import socket
-import StringIO
+import subprocess
 import tempfile
+
+from io import BytesIO, StringIO
 
 import elftools
 from elftools.common.py3compat import bytes2str
@@ -87,6 +90,7 @@ from pwnlib.tubes.process import process
 from pwnlib.tubes.ssh import ssh_channel
 from pwnlib.tubes.tube import tube
 from pwnlib.util.fiddling import b64d
+from pwnlib.util.fiddling import enhex
 from pwnlib.util.fiddling import unhex
 from pwnlib.util.misc import read
 from pwnlib.util.misc import write
@@ -143,7 +147,7 @@ def iter_notes(self):
 class Mapping(object):
     """Encapsulates information about a memory mapping in a :class:`Corefile`.
     """
-    def __init__(self, core, name, start, stop, flags):
+    def __init__(self, core, name, start, stop, flags, page_offset):
         self._core=core
 
         #: :class:`str`: Name of the mapping, e.g. ``'/bin/bash'`` or ``'[vdso]'``.
@@ -157,6 +161,9 @@ class Mapping(object):
 
         #: :class:`int`: Size of the mapping, in bytes
         self.size = stop-start
+
+        #: :class:`int`: Offset in pages in the mapped file
+        self.page_offset = page_offset or 0
 
         #: :class:`int`: Mapping flags, using e.g. ``PROT_READ`` and so on.
         self.flags = flags
@@ -183,12 +190,13 @@ class Mapping(object):
         return '%x-%x %s %x %s' % (self.start,self.stop,self.permstr,self.size,self.name)
 
     def __repr__(self):
-        return '%s(%r, start=%#x, stop=%#x, size=%#x, flags=%#x)' \
+        return '%s(%r, start=%#x, stop=%#x, size=%#x, flags=%#x, page_offset=%#x)' \
             % (self.__class__.__name__,
                self.name,
                self.start,
                self.stop,
                self.size,
+               self.page_offset,
                self.flags)
 
     def __int__(self):
@@ -223,6 +231,8 @@ class Mapping(object):
         return self._core.read(item, 1)
 
     def __contains__(self, item):
+        if isinstance(item, Mapping):
+            return (self.start <= item.start) and (item.stop <= self.stop)
         return self.start <= item < self.stop
 
     def find(self, sub, start=None, end=None):
@@ -294,21 +304,21 @@ class Corefile(ELF):
     ::
 
         >>> Corefile('./core').mappings
-        [Mapping('/home/user/pwntools/crash', start=0x8048000, stop=0x8049000, size=0x1000, flags=0x5),
-         Mapping('/home/user/pwntools/crash', start=0x8049000, stop=0x804a000, size=0x1000, flags=0x4),
-         Mapping('/home/user/pwntools/crash', start=0x804a000, stop=0x804b000, size=0x1000, flags=0x6),
-         Mapping(None, start=0xf7528000, stop=0xf7529000, size=0x1000, flags=0x6),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf7529000, stop=0xf76d1000, size=0x1a8000, flags=0x5),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d1000, stop=0xf76d2000, size=0x1000, flags=0x0),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d2000, stop=0xf76d4000, size=0x2000, flags=0x4),
-         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d4000, stop=0xf76d5000, size=0x1000, flags=0x6),
-         Mapping(None, start=0xf76d5000, stop=0xf76d8000, size=0x3000, flags=0x6),
-         Mapping(None, start=0xf76ef000, stop=0xf76f1000, size=0x2000, flags=0x6),
-         Mapping('[vdso]', start=0xf76f1000, stop=0xf76f2000, size=0x1000, flags=0x5),
-         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf76f2000, stop=0xf7712000, size=0x20000, flags=0x5),
-         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7712000, stop=0xf7713000, size=0x1000, flags=0x4),
-         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7713000, stop=0xf7714000, size=0x1000, flags=0x6),
-         Mapping('[stack]', start=0xfff3e000, stop=0xfff61000, size=0x23000, flags=0x6)]
+        [Mapping('/home/user/pwntools/crash', start=0x8048000, stop=0x8049000, size=0x1000, flags=0x5, page_offset=0x0),
+         Mapping('/home/user/pwntools/crash', start=0x8049000, stop=0x804a000, size=0x1000, flags=0x4, page_offset=0x1),
+         Mapping('/home/user/pwntools/crash', start=0x804a000, stop=0x804b000, size=0x1000, flags=0x6, page_offset=0x2),
+         Mapping(None, start=0xf7528000, stop=0xf7529000, size=0x1000, flags=0x6, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf7529000, stop=0xf76d1000, size=0x1a8000, flags=0x5, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d1000, stop=0xf76d2000, size=0x1000, flags=0x0, page_offset=0x1a8),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d2000, stop=0xf76d4000, size=0x2000, flags=0x4, page_offset=0x1a9),
+         Mapping('/lib/i386-linux-gnu/libc-2.19.so', start=0xf76d4000, stop=0xf76d5000, size=0x1000, flags=0x6, page_offset=0x1aa),
+         Mapping(None, start=0xf76d5000, stop=0xf76d8000, size=0x3000, flags=0x6, page_offset=0x0),
+         Mapping(None, start=0xf76ef000, stop=0xf76f1000, size=0x2000, flags=0x6, page_offset=0x0),
+         Mapping('[vdso]', start=0xf76f1000, stop=0xf76f2000, size=0x1000, flags=0x5, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf76f2000, stop=0xf7712000, size=0x20000, flags=0x5, page_offset=0x0),
+         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7712000, stop=0xf7713000, size=0x1000, flags=0x4, page_offset=0x20),
+         Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7713000, stop=0xf7714000, size=0x1000, flags=0x6, page_offset=0x21),
+         Mapping('[stack]', start=0xfff3e000, stop=0xfff61000, size=0x23000, flags=0x6, page_offset=0x0)]
 
     Example:
 
@@ -379,16 +389,16 @@ class Corefile(ELF):
         Data can also be extracted directly from the corefile.
 
         >>> core.exe[elf.address:elf.address+4]
-        '\x7fELF'
+        b'\x7fELF'
         >>> core.exe.data[:4]
-        '\x7fELF'
+        b'\x7fELF'
 
         Various other mappings are available by name.  On Linux, 32-bit Intel binaries
         should have a VDSO section.  Since our ELF is statically linked, there is
         no libc which gets mapped.
 
         >>> core.vdso.data[:4]
-        '\x7fELF'
+        b'\x7fELF'
         >>> core.libc # doctest: +ELLIPSIS
         Mapping('/lib/x86_64-linux-gnu/libc-...', ...)
 
@@ -397,8 +407,8 @@ class Corefile(ELF):
         should contain two pointer-widths of NULL bytes, preceded by the NULL-
         terminated path to the executable (as passed via the first arg to ``execve``).
 
-        >>> stack_end = core.exe.name
-        >>> stack_end += '\x00' * (1+8)
+        >>> stack_end = core.exe.name.encode()
+        >>> stack_end += b'\x00' * (1+8)
         >>> core.stack.data.endswith(stack_end)
         True
         >>> len(core.stack.data) == core.stack.size
@@ -409,12 +419,12 @@ class Corefile(ELF):
         >>> 'HELLO' in core.env
         True
         >>> core.getenv('HELLO')
-        'WORLD'
+        b'WORLD'
         >>> core.argc
         1
         >>> core.argv[0] in core.stack
         True
-        >>> core.string(core.argv[0]) == core.exe.path
+        >>> core.string(core.argv[0]) == core.exe.path.encode()
         True
 
         Corefiles can also be pulled from remote machines via SSH!
@@ -452,7 +462,7 @@ class Corefile(ELF):
         >>> io.wait()
         >>> core = io.corefile
         >>> core.getenv('FOO')
-        'BAR=BAZ'
+        b'BAR=BAZ'
         >>> core.sp == 0
         True
         >>> core.sp in core.stack
@@ -472,9 +482,10 @@ class Corefile(ELF):
         >>> io = elf.process()
         >>> io.wait()
         >>> core = io.corefile
+        [!] End of the stack is corrupted, skipping stack parsing (got: 4141414141414141)
         >>> core.argc, core.argv, core.env
         (0, [], {})
-        >>> core.stack.data.endswith('AAAA')
+        >>> core.stack.data.endswith(b'AAAA')
         True
         >>> core.fault_addr == core.sp
         True
@@ -508,11 +519,20 @@ class Corefile(ELF):
         #:       address of the string "BAR\x00".
         self.env = {}
 
+        #: :class:`int`: Pointer to envp on the stack
+        self.envp_address = 0
+
         #: :class:`list`: List of addresses of arguments on the stack.
         self.argv = []
 
+        #: :class:`int`: Pointer to argv on the stack
+        self.argv_address = 0
+
         #: :class:`int`: Number of arguments passed
         self.argc = 0
+
+        #: :class:`int`: Pointer to argc on the stack
+        self.argc_address = 0
 
         # Pointer to the executable filename on the stack
         self.at_execfn = 0
@@ -545,57 +565,57 @@ class Corefile(ELF):
             for segment in self.segments:
                 if not isinstance(segment, elftools.elf.segments.NoteSegment):
                     continue
+
+
+                # Note that older versions of pyelftools (<=0.24) are missing enum values
+                # for NT_PRSTATUS, NT_PRPSINFO, NT_AUXV, etc.
+                # For this reason, we have to check if note.n_type is any of several values.
                 for note in iter_notes(segment):
-                    # Try to find NT_PRSTATUS.  Note that pyelftools currently
-                    # mis-identifies the enum name as 'NT_GNU_ABI_TAG'.
+                    if not isinstance(note.n_desc, bytes):
+                        note['n_desc'] = note.n_desc.encode('latin1')
+                    # Try to find NT_PRSTATUS.
                     if prstatus_type and \
                        note.n_descsz == ctypes.sizeof(prstatus_type) and \
-                       note.n_type == 'NT_GNU_ABI_TAG':
+                       note.n_type in ('NT_GNU_ABI_TAG', 'NT_PRSTATUS'):
                         self.NT_PRSTATUS = note
                         self.prstatus = prstatus_type.from_buffer_copy(note.n_desc)
 
                     # Try to find NT_PRPSINFO
-                    # Note that pyelftools currently mis-identifies the enum name
-                    # as 'NT_GNU_BUILD_ID'
-                    if note.n_descsz == ctypes.sizeof(prpsinfo_type) and \
-                       note.n_type == 'NT_GNU_BUILD_ID':
+                    if prpsinfo_type and \
+                       note.n_descsz == ctypes.sizeof(prpsinfo_type) and \
+                       note.n_type in ('NT_GNU_ABI_TAG', 'NT_PRPSINFO'):
                         self.NT_PRPSINFO = note
                         self.prpsinfo = prpsinfo_type.from_buffer_copy(note.n_desc)
 
                     # Try to find NT_SIGINFO so we can see the fault
-                    if note.n_type == 0x53494749:
+                    if note.n_type in (0x53494749, 'NT_SIGINFO'):
                         self.NT_SIGINFO = note
                         self.siginfo = siginfo_type.from_buffer_copy(note.n_desc)
 
                     # Try to find the list of mapped files
-                    if note.n_type == constants.NT_FILE:
+                    if note.n_type in (constants.NT_FILE, 'NT_FILE'):
                         with context.local(bytes=self.bytes):
                             self._parse_nt_file(note)
 
                     # Try to find the auxiliary vector, which will tell us
                     # where the top of the stack is.
-                    if note.n_type == constants.NT_AUXV:
+                    if note.n_type in (constants.NT_AUXV, 'NT_AUXV'):
+                        self.NT_AUXV = note
                         with context.local(bytes=self.bytes):
                             self._parse_auxv(note)
 
             if not self.stack and self.mappings:
-                self.stack = self.mappings[-1]
+                self.stack = self.mappings[-1].stop
 
             if self.stack and self.mappings:
                 for mapping in self.mappings:
-                    if mapping.stop == self.stack:
+                    if self.stack in mapping or self.stack == mapping.stop:
                         mapping.name = '[stack]'
                         self.stack   = mapping
                         break
                 else:
-                    for mapping in self.mappings:
-                        if self.stack in mapping:
-                            mapping.name = '[stack]'
-                            self.stack   = mapping
-                            break
-                    else:
-                        log.warn('Could not find the stack!')
-                        self.stack = None
+                    log.warn('Could not find the stack!')
+                    self.stack = None
 
             with context.local(bytes=self.bytes, log_level='warn'):
                 try:
@@ -620,16 +640,19 @@ class Corefile(ELF):
         for i in range(count):
             start = t.unpack()
             end = t.unpack()
-            ofs = t.unpack()
-            starts.append(start)
+            offset = t.unpack()
+            starts.append((start, offset))
 
         for i in range(count):
-            filename = t.recvuntil('\x00', drop=True)
-            start = starts[i]
+            filename = t.recvuntil(b'\x00', drop=True)
+            if not isinstance(filename, str):
+                filename = filename.decode('utf-8')
+            (start, offset) = starts[i]
 
             for mapping in self.mappings:
                 if mapping.start == start:
                     mapping.name = filename
+                    mapping.page_offset = offset
 
         self.mappings = sorted(self.mappings, key=lambda m: m.start)
 
@@ -646,7 +669,7 @@ class Corefile(ELF):
             if mapping.start == self.at_sysinfo_ehdr \
             or (not vdso and mapping.size in [0x1000, 0x2000] \
                 and mapping.flags == 5 \
-                and self.read(mapping.start, 4) == '\x7fELF'):
+                and self.read(mapping.start, 4) == b'\x7fELF'):
                 mapping.name = '[vdso]'
                 vdso = True
                 continue
@@ -699,6 +722,8 @@ class Corefile(ELF):
 
                 if not m.name and self.at_execfn:
                     m.name = self.string(self.at_execfn)
+                    if not isinstance(m.name, str):
+                        m.name = m.name.decode('utf-8')
 
                 return m
 
@@ -774,7 +799,7 @@ class Corefile(ELF):
         if fault_addr == 0 and self.siginfo.si_code == 0x80:
             try:
                 code = self.read(self.pc, 1)
-                RET = '\xc3'
+                RET = b'\xc3'
                 if code == RET:
                     fault_addr = self.unpack(self.sp)
 
@@ -857,7 +882,8 @@ class Corefile(ELF):
                               None,
                               s.header.p_vaddr,
                               s.header.p_vaddr + s.header.p_memsz,
-                              s.header.p_flags)
+                              s.header.p_flags,
+                              None)
             self.mappings.append(mapping)
 
     def _parse_auxv(self, note):
@@ -900,22 +926,29 @@ class Corefile(ELF):
         if not stack:
             return
 
+        # If the stack does not end with zeroes, something is very wrong.
+        if not stack.data.endswith(b'\x00' * 8):
+            log.warn_once("End of the stack is corrupted, skipping stack parsing (got: %s)",
+                          enhex(self.data[-8:]))
+            return
+
         # AT_EXECFN is the start of the filename, e.g. '/bin/sh'
         # Immediately preceding is a NULL-terminated environment variable string.
         # We want to find the beginning of it
-        if self.at_execfn:
-            address = self.at_execfn-1
-        else:
-            log.debug('No AT_EXECFN')
+        if not self.at_execfn:
             address = stack.stop
             address -= 2*self.bytes
             address -= 1
-            address = stack.rfind('\x00', None, address)
+            address = stack.rfind(b'\x00', None, address)
             address += 1
+            self.at_execfn = address
+
+        address = self.at_execfn-1
+
 
         # Sanity check!
         try:
-            assert stack[address] == '\x00'
+            assert stack[address] == b'\x00'
         except AssertionError:
             # Something weird is happening.  Just don't touch it.
             log.debug("Something is weird")
@@ -929,7 +962,7 @@ class Corefile(ELF):
 
         # address is currently set to the NULL terminator of the last
         # environment variable.
-        address = stack.rfind('\x00', None, address)
+        address = stack.rfind(b'\x00', None, address)
 
         # We've found the beginning of the last environment variable.
         # We should be able to search up the stack for the envp[] array to
@@ -953,10 +986,10 @@ class Corefile(ELF):
         # Now let's find the end of argv
         p_end_of_argv = stack.rfind(pack(0), None, p_last_env_addr)
 
-        start_of_envp = p_end_of_argv + self.bytes
+        self.envp_address = p_end_of_argv + self.bytes
 
         # Now we can fill in the environment
-        env_pointer_data = stack[start_of_envp:p_last_env_addr+self.bytes]
+        env_pointer_data = stack[self.envp_address:p_last_env_addr+self.bytes]
         for pointer in unpack_many(env_pointer_data):
 
             # If the stack is corrupted, the pointer will be outside of
@@ -969,7 +1002,7 @@ class Corefile(ELF):
             except Exception:
                 continue
 
-            name, value = name_value.split('=', 1)
+            name, _ = name_value.split(b'=', 1)
 
             # "end" points at the byte after the null terminator
             end = pointer + len(name_value) + 1
@@ -982,6 +1015,8 @@ class Corefile(ELF):
             if end not in stack:
                 continue
 
+            if not isinstance(name, str):
+                name = name.decode('utf-8', 'surrogateescape')
             self.env[name] = pointer + len(name) + len('=')
 
         # May as well grab the arguments off the stack as well.
@@ -994,10 +1029,12 @@ class Corefile(ELF):
             address -= self.bytes
 
         # address now points at argc
-        self.argc = self.unpack(address)
+        self.argc_address = address
+        self.argc = self.unpack(self.argc_address)
 
         # we can extract all of the arguments as well
-        self.argv = unpack_many(stack[address + self.bytes: p_end_of_argv])
+        self.argv_address = self.argc_address + self.bytes
+        self.argv = unpack_many(stack[self.argv_address: p_end_of_argv])
 
     @property
     def maps(self):
@@ -1005,7 +1042,7 @@ class Corefile(ELF):
 
         ::
 
-            >>> print Corefile('./core').maps
+            >>> print(Corefile('./core').maps)
             8048000-8049000 r-xp 1000 /home/user/pwntools/crash
             8049000-804a000 r--p 1000 /home/user/pwntools/crash
             804a000-804b000 rw-p 1000 /home/user/pwntools/crash
@@ -1041,8 +1078,10 @@ class Corefile(ELF):
             >>> io = elf.process(env={'GREETING': 'Hello!'})
             >>> io.wait()
             >>> io.corefile.getenv('GREETING')
-            'Hello!'
+            b'Hello!'
         """
+        if not isinstance(name, str):
+            name = name.decode('utf-8', 'surrogateescape')
         if name not in self.env:
             log.error("Environment variable %r not set" % name)
 
@@ -1231,7 +1270,7 @@ class CorefileFinder(object):
         Returns:
             `str`: Raw binary data for the core file, or ``None``.
         """
-        file = StringIO.StringIO(crashfile_data)
+        file = StringIO(crashfile_data)
 
         # Find the pid of the crashfile
         for line in file:
@@ -1260,8 +1299,8 @@ class CorefileFinder(object):
             chunks.append(b64d(line))
 
         # Smush everything together, then extract it
-        compressed_data = ''.join(chunks)
-        compressed_file = StringIO.StringIO(compressed_data)
+        compressed_data = b''.join(chunks)
+        compressed_file = BytesIO(compressed_data)
         gzip_file = gzip.GzipFile(fileobj=compressed_file)
         core_data = gzip_file.read()
 
@@ -1292,14 +1331,44 @@ class CorefileFinder(object):
 
         return data
 
+    def systemd_coredump_corefile(self):
+        """Find the systemd-coredump crash for the process and dump it to a file.
+
+        Arguments:
+            process(process): Process object we're looking for.
+
+        Returns:
+            `str`: Filename of core file, if coredump was found.
+        """
+        filename = "core.%s.%i.coredumpctl" % (self.basename, self.pid)
+        try:
+            subprocess.check_call(
+                [
+                    "coredumpctl",
+                    "dump",
+                    "--output=%s" % filename,
+                    # Filter coredump by pid and filename
+                    str(self.pid),
+                    self.basename,
+                ],
+                stdout=open(os.devnull, 'w'),
+                stderr=subprocess.STDOUT,
+                shell=False,
+            )
+            return filename
+        except subprocess.CalledProcessError as e:
+            log.debug("coredumpctl failed with status: %d" % e.returncode)
+
     def native_corefile(self):
         """Find the corefile for a native crash.
 
         Arguments:
             process(process): Process whose crash we should find.
 
+        Returns:
+            `str`: Filename of core file.
         """
-        if self.kernel_core_pattern.startswith('|'):
+        if self.kernel_core_pattern.startswith(b'|'):
             log.debug("Checking for corefile (piped)")
             return self.native_corefile_pipe()
 
@@ -1307,25 +1376,36 @@ class CorefileFinder(object):
         return self.native_corefile_pattern()
 
     def native_corefile_pipe(self):
-        """native_corefile_pipe(self) -> str
+        """Find the corefile for a piped core_pattern
+
+        Supports apport and systemd-coredump.
+
+        Arguments:
+            process(process): Process whose crash we should find.
+
+        Returns:
+            `str`: Filename of core file.
         """
-        # We only support apport
-        if '/apport' not in self.kernel_core_pattern:
-            log.warn_once("Unsupported core_pattern: %r" % self.kernel_core_pattern)
+        if b'/apport' in self.kernel_core_pattern:
+            log.debug("Found apport in core_pattern")
+            apport_core = self.apport_corefile()
+
+            if apport_core:
+                # Write the corefile to the local directory
+                filename = 'core.%s.%i.apport' % (self.basename, self.pid)
+                with open(filename, 'wb+') as f:
+                    f.write(apport_core)
+                return filename
+
+            # Pretend core_pattern was just 'core', and see if we come up with anything
+            self.kernel_core_pattern = 'core'
+            return self.native_corefile_pattern()
+        elif b'systemd-coredump' in self.kernel_core_pattern:
+            log.debug("Found systemd-coredump in core_pattern")
+            return self.systemd_coredump_corefile()
+        else:
+            log.warn_once("Unsupported core_pattern: %r", self.kernel_core_pattern)
             return None
-
-        apport_core = self.apport_corefile()
-
-        if apport_core:
-            # Write the corefile to the local directory
-            filename = 'core.%s.%i.apport' % (self.basename, self.pid)
-            with open(filename, 'wb+') as f:
-                f.write(apport_core)
-            return filename
-
-        # Pretend core_pattern was just 'core', and see if we come up with anything
-        self.kernel_core_pattern = 'core'
-        return self.native_corefile_pattern()
 
     def native_corefile_pattern(self):
         """
@@ -1346,7 +1426,7 @@ class CorefileFinder(object):
         """
         replace = {
             '%%': '%',
-            '%e': self.basename,
+            '%e': os.path.basename(self.interpreter) or self.basename,
             '%E': self.exe.replace('/', '!'),
             '%g': str(self.gid),
             '%h': socket.gethostname(),
@@ -1357,8 +1437,10 @@ class CorefileFinder(object):
             '%s': str(-self.process.poll()),
             '%u': str(self.uid)
         }
-        replace = dict((re.escape(k), v) for k, v in replace.iteritems())
+        replace = dict((re.escape(k), v) for k, v in replace.items())
         pattern = re.compile("|".join(replace.keys()))
+        if not hasattr(self.kernel_core_pattern, 'encode'):
+            self.kernel_core_pattern = self.kernel_core_pattern.decode('utf-8')
         core_pattern = self.kernel_core_pattern
         corefile_path = pattern.sub(lambda m: replace[re.escape(m.group(0))], core_pattern)
 
@@ -1444,7 +1526,7 @@ class CorefileFinder(object):
                 continue
 
             magic = bytearray(unhex(keys['magic']))
-            mask  = bytearray('\xff' * len(magic))
+            mask  = bytearray(b'\xff' * len(magic))
 
             if 'mask' in keys:
                 mask = bytearray(unhex(keys['mask']))

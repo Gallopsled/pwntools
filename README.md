@@ -2,7 +2,7 @@
 ![pwntools logo](https://github.com/Gallopsled/pwntools/blob/stable/docs/source/logo.png?raw=true)
 
 [![Docs](https://readthedocs.org/projects/pwntools/badge/?version=stable)](https://docs.pwntools.com/)
-[![PyPI](https://img.shields.io/badge/pypi-v3.12.0-green.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
+[![PyPI](https://img.shields.io/badge/pypi-v3.13.0-green.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
 [![Travis](https://travis-ci.org/Gallopsled/pwntools.svg)](https://travis-ci.org/Gallopsled/pwntools)
 [![Coveralls](https://img.shields.io/coveralls/Gallopsled/pwntools/dev.svg)](https://coveralls.io/github/Gallopsled/pwntools?branch=dev)
 [![Twitter](https://img.shields.io/badge/twitter-pwntools-4099FF.svg?style=flat)](https://twitter.com/pwntools)
@@ -32,15 +32,15 @@ To get you started, we've provided some example solutions for past CTF challenge
 
 # Installation
 
-Pwntools is best supported on 64-bit Ubuntu LTE releases (12.04, 14.04, and 16.04).  Most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).  Python 2.7 is required.
+Pwntools is best supported on 64-bit Ubuntu LTE releases (12.04, 14.04, 16.04 and 18.04).  Most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).  Python >= 2.7 is required (Python 3 suggested as best).
 
 Most of the functionality of pwntools is self-contained and Python-only.  You should be able to get running quickly with
 
 ```sh
 apt-get update
-apt-get install python2.7 python-pip python-dev git libssl-dev libffi-dev build-essential
-pip install --upgrade pip
-pip install --upgrade pwntools
+apt-get install python3 python3-pip python3-dev git libssl-dev libffi-dev build-essential
+python3 -m pip install --upgrade pip
+python3 -m pip install --upgrade git+https://github.com/Gallopsled/pwntools.git@dev3
 ```
 
 However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://docs.pwntools.com/en/stable/install.html).

@@ -2,6 +2,7 @@
   from pwnlib.shellcraft import i386, pretty
   from pwnlib.constants import Constant
   from pwnlib.abi import linux_i386_syscall as abi
+  from six import text_type
 %>
 <%page args="syscall = None, arg0 = None, arg1 = None, arg2 = None, arg3 = None, arg4 = None, arg5 = None"/>
 <%docstring>
@@ -12,7 +13,7 @@ Any of the arguments can be expressions to be evaluated by :func:`pwnlib.constan
 
 Example:
 
-        >>> print pwnlib.shellcraft.i386.linux.syscall('SYS_execve', 1, 'esp', 2, 0).rstrip()
+        >>> print(pwnlib.shellcraft.i386.linux.syscall('SYS_execve', 1, 'esp', 2, 0).rstrip())
             /* call execve(1, 'esp', 2, 0) */
             push SYS_execve /* 0xb */
             pop eax
@@ -23,7 +24,7 @@ Example:
             pop edx
             xor esi, esi
             int 0x80
-        >>> print pwnlib.shellcraft.i386.linux.syscall('SYS_execve', 2, 1, 0, 20).rstrip()
+        >>> print(pwnlib.shellcraft.i386.linux.syscall('SYS_execve', 2, 1, 0, 20).rstrip())
             /* call execve(2, 1, 0, 0x14) */
             push SYS_execve /* 0xb */
             pop eax
@@ -35,24 +36,24 @@ Example:
             pop esi
             cdq /* edx=0 */
             int 0x80
-        >>> print pwnlib.shellcraft.i386.linux.syscall().rstrip()
+        >>> print(pwnlib.shellcraft.i386.linux.syscall().rstrip())
             /* call syscall() */
             int 0x80
-        >>> print pwnlib.shellcraft.i386.linux.syscall('eax', 'ebx', 'ecx').rstrip()
+        >>> print(pwnlib.shellcraft.i386.linux.syscall('eax', 'ebx', 'ecx').rstrip())
             /* call syscall('eax', 'ebx', 'ecx') */
             /* setregs noop */
             int 0x80
-        >>> print pwnlib.shellcraft.i386.linux.syscall('ebp', None, None, 1).rstrip()
+        >>> print(pwnlib.shellcraft.i386.linux.syscall('ebp', None, None, 1).rstrip())
             /* call syscall('ebp', ?, ?, 1) */
             mov eax, ebp
             push 1
             pop edx
             int 0x80
-        >>> print pwnlib.shellcraft.i386.linux.syscall(
+        >>> print(pwnlib.shellcraft.i386.linux.syscall(
         ...               'SYS_mmap2', 0, 0x1000,
         ...               'PROT_READ | PROT_WRITE | PROT_EXEC',
         ...               'MAP_PRIVATE | MAP_ANONYMOUS',
-        ...               -1, 0).rstrip()
+        ...               -1, 0).rstrip())
             /* call mmap2(0, 0x1000, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
             xor eax, eax
             mov al, 0xc0
@@ -67,9 +68,9 @@ Example:
             push (MAP_PRIVATE | MAP_ANONYMOUS) /* 0x22 */
             pop esi
             int 0x80
-        >>> print pwnlib.shellcraft.open('/home/pwn/flag').rstrip()
+        >>> print(pwnlib.shellcraft.open('/home/pwn/flag').rstrip())
             /* open(file='/home/pwn/flag', oflag=0, mode=0) */
-            /* push '/home/pwn/flag\x00' */
+            /* push b'/home/pwn/flag\x00' */
             push 0x1010101
             xor dword ptr [esp], 0x1016660
             push 0x6c662f6e
@@ -84,7 +85,7 @@ Example:
             int 0x80
 </%docstring>
 <%
-  if isinstance(syscall, (str, unicode, Constant)) and str(syscall).startswith('SYS_'):
+  if isinstance(syscall, (str, text_type, Constant)) and str(syscall).startswith('SYS_'):
       syscall_repr = str(syscall)[4:] + "(%s)"
       args = []
   else:

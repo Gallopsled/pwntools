@@ -1,6 +1,7 @@
 .. testsetup:: *
 
    from pwnlib.util.proc import *
+   from pwnlib.tubes.process import process
    import os, sys
 
 

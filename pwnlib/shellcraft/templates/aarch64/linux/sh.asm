@@ -3,9 +3,9 @@
 Execute a different process.
 
     >>> p = run_assembly(shellcraft.aarch64.linux.sh())
-    >>> p.sendline('echo Hello')
+    >>> p.sendline(b'echo Hello')
     >>> p.recv()
-    'Hello\n'
+    b'Hello\n'
 
 </%docstring>
     ${SC.pushstr('/bin///sh')}

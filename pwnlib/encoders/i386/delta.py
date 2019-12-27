@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 
 import collections
 from random import choice
@@ -71,7 +72,7 @@ class i386DeltaEncoder(Encoder):
             a = ord(c)
             l = len(table[a])
             if l == 0:
-                print 'No encodings for character %02x' % a
+                print('No encodings for character %02x' % a)
                 return None
 
             res += table[a][randint(0, l - 1)]

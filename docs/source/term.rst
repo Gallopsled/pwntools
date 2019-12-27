@@ -3,3 +3,9 @@
 
 .. automodule:: pwnlib.term
    :members:
+
+Term Modules
+-------------------
+
+.. toctree::
+    term/readline

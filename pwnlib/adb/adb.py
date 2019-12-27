@@ -35,25 +35,26 @@ the :mod:`pwnlib.adb` module.
 .. code-block:: python
 
     # Get a process listing
-    print adb.process(['ps']).recvall()
+    print(adb.process(['ps']).recvall())
 
     # Fetch properties
-    print adb.properties.ro.build.fingerprint
+    print(adb.properties.ro.build.fingerprint)
 
     # Read and write files
-    print adb.read('/proc/version')
+    print(adb.read('/proc/version'))
     adb.write('/data/local/tmp/foo', 'my data')
 
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import functools
 import glob
 import logging
 import os
-import platform
 import re
 import shutil
+import six
 import stat
 import tempfile
 import time
@@ -75,9 +76,9 @@ def adb(argv, *a, **kw):
     r"""Returns the output of an ADB subcommand.
 
     >>> adb.adb(['get-serialno'])
-    'emulator-5554\n'
+    b'emulator-5554\n'
     """
-    if isinstance(argv, (str, unicode)):
+    if isinstance(argv, (bytes, six.text_type)):
         argv = [argv]
 
     log.debug("$ " + ' '.join(context.adb + argv))
@@ -276,7 +277,7 @@ class AdbDevice(Device):
             return
 
         with context.local(device=self.serial):
-            abi = str(properties.ro.product.cpu.abi)
+            abi = getprop('ro.product.cpu.abi')
             context.clear()
             context.arch = str(abi)
             self._arch = context.arch
@@ -355,7 +356,6 @@ class AdbDevice(Device):
 
             if name not in g:
                 raise AttributeError('%r object has no attribute %r' % (type(self).__name__,name))
-
             value = g[name]
 
         if not hasattr(value, '__call__'):
@@ -415,7 +415,7 @@ def wait_for_device(kick=False):
 @with_device
 def disable_verity():
     """Disables dm-verity on the device."""
-    with log.waitfor("Disabling dm-verity on %s" % context.device) as w:
+    with log.waitfor("Disabling dm-verity on %s" % context.device):
         root()
 
         with AdbClient() as c:
@@ -433,7 +433,7 @@ def disable_verity():
 @with_device
 def remount():
     """Remounts the filesystem as writable."""
-    with log.waitfor("Remounting filesystem on %s" % context.device) as w:
+    with log.waitfor("Remounting filesystem on %s" % context.device):
         disable_verity()
         root()
 
@@ -486,7 +486,7 @@ def pull(remote_path, local_path=None):
     Example:
 
         >>> _=adb.pull('/proc/version', './proc-version')
-        >>> print read('./proc-version') # doctest: +ELLIPSIS
+        >>> print(read('./proc-version').decode('utf-8')) # doctest: +ELLIPSIS
         Linux version ...
     """
     if local_path is None:
@@ -520,7 +520,7 @@ def push(local_path, remote_path):
         >>> adb.push('./filename', '/data/local/tmp')
         '/data/local/tmp/filename'
         >>> adb.read('/data/local/tmp/filename')
-        'contents'
+        b'contents'
         >>> adb.push('./filename', '/does/not/exist')
         Traceback (most recent call last):
         ...
@@ -573,7 +573,7 @@ def read(path, target=None, callback=None):
 
     Examples:
 
-        >>> print adb.read('/proc/version') # doctest: +ELLIPSIS
+        >>> print(adb.read('/proc/version').decode('utf-8')) # doctest: +ELLIPSIS
         Linux version ...
         >>> adb.read('/does/not/exist')
         Traceback (most recent call last):
@@ -593,7 +593,7 @@ def read(path, target=None, callback=None):
 
 @context.quietfunc
 @with_device
-def write(path, data=''):
+def write(path, data=b''):
     """Create a file on the device with the provided contents.
 
     Arguments:
@@ -602,7 +602,7 @@ def write(path, data=''):
 
     Examples:
 
-        >>> adb.write('/dev/null', 'data')
+        >>> adb.write('/dev/null', b'data')
         >>> adb.write('/data/local/tmp/')
     """
     with tempfile.NamedTemporaryFile() as temp:
@@ -650,7 +650,7 @@ def mkdir(path):
 
         # Any output at all is an error
         if result:
-            log.error(result)
+            log.error(result.rstrip().decode('utf-8'))
 
 @context.quietfunc
 @with_device
@@ -746,12 +746,12 @@ def unlink(path, recursive=False):
         if isdir(path) and c.list(path) and not recursive:
             log.error("Cannot delete non-empty directory %r without recursive=True" % path)
 
-        flags = '-rf' if recursive else '-r'
+        flags = '-rf' if recursive else '-f'
 
         output = c.execute(['rm', flags, path]).recvall()
 
         if output:
-            log.error(output)
+            log.error(output.decode('utf-8'))
 
 @with_device
 def process(argv, *a, **kw):
@@ -765,10 +765,10 @@ def process(argv, *a, **kw):
     Examples:
 
         >>> adb.root()
-        >>> print adb.process(['cat','/proc/version']).recvall() # doctest: +ELLIPSIS
+        >>> print(adb.process(['cat','/proc/version']).recvall().decode('utf-8')) # doctest: +ELLIPSIS
         Linux version ...
     """
-    if isinstance(argv, (str, unicode)):
+    if isinstance(argv, (bytes, six.text_type)):
         argv = [argv]
 
     message = "Starting %s process %r" % ('Android', argv[0])
@@ -825,6 +825,8 @@ done
 
     which_cmd = which_cmd.strip()
     data = process(['sh','-c', which_cmd], *a, **kw).recvall()
+    if not hasattr(data, 'encode'):
+        data = data.decode('utf-8')
     result = []
 
     for path in data.split('\x00'):
@@ -853,7 +855,7 @@ def whoami():
 def forward(port):
     """Sets up a port to forward to the device."""
     tcp_port = 'tcp:%s' % port
-    start_forwarding = adb(['forward', tcp_port, tcp_port])
+    adb(['forward', tcp_port, tcp_port])
     atexit.register(lambda: adb(['forward', '--remove', tcp_port]))
 
 @context.quietfunc
@@ -913,10 +915,16 @@ def getprop(name=None):
     """
     with context.quiet:
         if name:
-            return process(['getprop', name]).recvall().strip()
+            result = process(['getprop', name]).recvall().strip()
+            if not hasattr(result, 'encode'):
+                result = result.decode('utf-8')
+            return result
 
 
         result = process(['getprop']).recvall()
+
+    if not hasattr(result, 'encode'):
+        result = result.decode('utf-8')
 
     expr = r'\[([^\]]+)\]: \[(.*)\]'
 
@@ -967,17 +975,17 @@ def fastboot(args, *a, **kw):
 @with_device
 def fingerprint():
     """Returns the device build fingerprint."""
-    return str(properties.ro.build.fingerprint)
+    return getprop('ro.build.fingerprint')
 
 @with_device
 def product():
     """Returns the device product identifier."""
-    return str(properties.ro.build.product)
+    return getprop('ro.build.product')
 
 @with_device
 def build():
     """Returns the Build ID of the device."""
-    return str(properties.ro.build.id)
+    return getprop('ro.build.id')
 
 @with_device
 @no_emulator
@@ -987,9 +995,33 @@ def unlock_bootloader():
     Note:
         This requires physical interaction with the device.
     """
-    AdbClient().reboot_bootloader()
-    fastboot(['oem', 'unlock'])
-    fastboot(['continue'])
+    w = log.waitfor("Unlocking bootloader")
+    with w:
+        if getprop('ro.oem_unlock_supported') == '0':
+            log.error("Bootloader cannot be unlocked: ro.oem_unlock_supported=0")
+
+        if getprop('ro.boot.oem_unlock_support') == '0':
+            log.error("Bootloader cannot be unlocked: ro.boot.oem_unlock_support=0")
+
+        if getprop('sys.oem_unlock_allowed') == '0':
+            log.error("Bootloader cannot be unlocked: Enable OEM Unlock in developer settings first", context.device)
+
+        AdbClient().reboot_bootloader()
+
+        # Check to see if it's unlocked before attempting unlock
+        unlocked = fastboot(['getvar', 'unlocked'])
+        if 'unlocked: yes' in unlocked:
+            w.success("Already unlocked")
+            fastboot(['continue'])
+            return
+
+        fastboot(['oem', 'unlock'])
+        unlocked = fastboot(['getvar', 'unlocked'])
+
+        fastboot(['continue'])
+
+        if 'unlocked: yes' not in unlocked:
+            log.error("Unlock failed")
 
 class Kernel(object):
     _kallsyms = None
@@ -1046,7 +1078,7 @@ class Kernel(object):
 
     def enable_uart(self):
         """Reboots the device with kernel logging to the UART enabled."""
-        model = str(properties.ro.product.model)
+        model = getprop('ro.product.model')
 
         known_commands = {
             'Nexus 4': None,
@@ -1057,7 +1089,7 @@ class Kernel(object):
             'Nexus 7': 'oem uart-on',
         }
 
-        with log.waitfor('Enabling kernel UART') as w:
+        with log.waitfor('Enabling kernel UART'):
 
             if model not in known_commands:
                 log.error("Device UART is unsupported.")
@@ -1094,10 +1126,11 @@ kernel = Kernel()
 
 class Property(object):
     def __init__(self, name=None):
+        # Need to avoid overloaded setattr() so we go through __dict__
         self.__dict__['_name'] = name
 
     def __str__(self):
-        return getprop(self._name).strip()
+        return str(getprop(self._name)).strip()
 
     def __repr__(self):
         return repr(str(self))
@@ -1114,6 +1147,15 @@ class Property(object):
         if self._name:
             attr = '%s.%s' % (self._name, attr)
         setprop(attr, value)
+
+    def __eq__(self, other):
+        # Allow simple comparison, e.g.:
+        # adb.properties.ro.oem_unlock_supported == "1"
+        return str(self) == other
+
+    def __hash__(self, other):
+        # Allow hash indices matching on the property
+        return hash(self._name)
 
 properties = Property()
 
@@ -1217,8 +1259,8 @@ def compile(source):
 
         # If we have an attached device, use its settings.
         if context.device:
-            abi = str(properties.ro.product.cpu.abi)
-            sdk = str(properties.ro.build.version.sdk)
+            abi = getprop('ro.product.cpu.abi')
+            sdk = getprop('ro.build.version.sdk')
 
         if abi is None:
             log.error("Unknown CPU ABI")
@@ -1389,3 +1431,9 @@ def packages():
     """Returns a list of packages installed on the system"""
     packages = process(['pm', 'list', 'packages']).recvall()
     return [line.split('package:', 1)[-1] for line in packages.splitlines()]
+
+@context.quietfunc
+def version():
+    """Returns rthe platform version as a tuple."""
+    prop = getprop('ro.build.version.release')
+    return [int(v) for v in prop.split('.')]
