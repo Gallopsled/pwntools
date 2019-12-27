@@ -25,6 +25,9 @@ cache:
         - usr
         - /home/travis/virtualenv/python2.7.15/lib/python2.7/site-packages/
         - /home/travis/virtualenv/python2.7.15/bin/
+        - /home/travis/virtualenv/python3.8.*/lib/python3.8/site-packages/
+        - /home/travis/virtualenv/python3.8.*/bin/
+        - docs/build/doctest/.doctrees
 python:
   - "2.7"
   - "3.8"
