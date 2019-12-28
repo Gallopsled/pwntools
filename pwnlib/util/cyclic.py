@@ -220,6 +220,7 @@ def cyclic_find(subseq, alphabet = None, n = None):
 
     if alphabet is None:
         alphabet = context.cyclic_alphabet
+    alphabet = context._encode(alphabet)
 
     if any(c not in alphabet for c in subseq):
         return -1
