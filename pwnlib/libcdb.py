@@ -197,7 +197,7 @@ def get_build_id_offsets():
     # $ check_arch "x86-64"
     #       6 Displaying notes found at file offset 0x00000174 with length 0x00000024:
     #      82 Displaying notes found at file offset 0x00000270 with length 0x00000024:
-        'amd64': [0x270, 0x174],
+        'amd64': [0x270, 0x174, 0x2e0],
     # $ check_arch "PowerPC or cisco"
     #      88 Displaying notes found at file offset 0x00000174 with length 0x00000024:
         'powerpc': [0x174],

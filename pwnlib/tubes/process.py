@@ -858,6 +858,7 @@ class process(tube):
                 return pwnlib.elf.elf.ELF(self.executable).maps
 
         # Enumerate all of the libraries actually loaded right now.
+        maps = {}
         for line in maps_raw.splitlines():
             if '/' not in line: continue
             path = line[line.index('/'):]
@@ -882,6 +883,14 @@ class process(tube):
         Returns an ELF for the libc for the current process.
         If possible, it is adjusted to the correct address
         automatically.
+
+        Example:
+
+        >>> p = process("/bin/cat")
+        >>> libc = p.libc
+        >>> libc # doctest: +SKIP
+        ELF('/lib64/libc-...so')
+        >>> p.close()
         """
         from pwnlib.elf import ELF
 

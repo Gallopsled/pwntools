@@ -14,7 +14,7 @@ log.info("pwd: %s" % shell.pwd())
 tube = shell.run('cat')
 tube.send("Hello, cat")
 tube.shutdown("out")
-print tube.recvall()
+print(tube.recvall())
 
 # Show automatic working directories
 shell.set_working_directory()
@@ -29,12 +29,12 @@ int main() {
 
 shell.gcc(['example.c','-o','example'])
 
-print shell['./example']
+print(shell['./example'])
 
 # Show the different styles of calling
-print shell.echo("single string")
-print shell.echo(["list","of","strings"])
-print shell["echo single statement"]
+print(shell.echo("single string"))
+print(shell.echo(["list","of","strings"]))
+print(shell["echo single statement"])
 
 # Show off the interactive shell
 shell.interactive()

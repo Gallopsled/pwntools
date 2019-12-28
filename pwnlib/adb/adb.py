@@ -277,7 +277,7 @@ class AdbDevice(Device):
             return
 
         with context.local(device=self.serial):
-            abi = str(properties.ro.product.cpu.abi)
+            abi = getprop('ro.product.cpu.abi')
             context.clear()
             context.arch = str(abi)
             self._arch = context.arch
@@ -975,17 +975,17 @@ def fastboot(args, *a, **kw):
 @with_device
 def fingerprint():
     """Returns the device build fingerprint."""
-    return str(properties.ro.build.fingerprint)
+    return getprop('ro.build.fingerprint')
 
 @with_device
 def product():
     """Returns the device product identifier."""
-    return str(properties.ro.build.product)
+    return getprop('ro.build.product')
 
 @with_device
 def build():
     """Returns the Build ID of the device."""
-    return str(properties.ro.build.id)
+    return getprop('ro.build.id')
 
 @with_device
 @no_emulator
@@ -995,9 +995,33 @@ def unlock_bootloader():
     Note:
         This requires physical interaction with the device.
     """
-    AdbClient().reboot_bootloader()
-    fastboot(['oem', 'unlock'])
-    fastboot(['continue'])
+    w = log.waitfor("Unlocking bootloader")
+    with w:
+        if getprop('ro.oem_unlock_supported') == '0':
+            log.error("Bootloader cannot be unlocked: ro.oem_unlock_supported=0")
+
+        if getprop('ro.boot.oem_unlock_support') == '0':
+            log.error("Bootloader cannot be unlocked: ro.boot.oem_unlock_support=0")
+
+        if getprop('sys.oem_unlock_allowed') == '0':
+            log.error("Bootloader cannot be unlocked: Enable OEM Unlock in developer settings first", context.device)
+
+        AdbClient().reboot_bootloader()
+
+        # Check to see if it's unlocked before attempting unlock
+        unlocked = fastboot(['getvar', 'unlocked'])
+        if 'unlocked: yes' in unlocked:
+            w.success("Already unlocked")
+            fastboot(['continue'])
+            return
+
+        fastboot(['oem', 'unlock'])
+        unlocked = fastboot(['getvar', 'unlocked'])
+
+        fastboot(['continue'])
+
+        if 'unlocked: yes' not in unlocked:
+            log.error("Unlock failed")
 
 class Kernel(object):
     _kallsyms = None
@@ -1054,7 +1078,7 @@ class Kernel(object):
 
     def enable_uart(self):
         """Reboots the device with kernel logging to the UART enabled."""
-        model = str(properties.ro.product.model)
+        model = getprop('ro.product.model')
 
         known_commands = {
             'Nexus 4': None,
@@ -1102,6 +1126,7 @@ kernel = Kernel()
 
 class Property(object):
     def __init__(self, name=None):
+        # Need to avoid overloaded setattr() so we go through __dict__
         self.__dict__['_name'] = name
 
     def __str__(self):
@@ -1122,6 +1147,15 @@ class Property(object):
         if self._name:
             attr = '%s.%s' % (self._name, attr)
         setprop(attr, value)
+
+    def __eq__(self, other):
+        # Allow simple comparison, e.g.:
+        # adb.properties.ro.oem_unlock_supported == "1"
+        return str(self) == other
+
+    def __hash__(self, other):
+        # Allow hash indices matching on the property
+        return hash(self._name)
 
 properties = Property()
 
@@ -1225,8 +1259,8 @@ def compile(source):
 
         # If we have an attached device, use its settings.
         if context.device:
-            abi = str(properties.ro.product.cpu.abi)
-            sdk = str(properties.ro.build.version.sdk)
+            abi = getprop('ro.product.cpu.abi')
+            sdk = getprop('ro.build.version.sdk')
 
         if abi is None:
             log.error("Unknown CPU ABI")
@@ -1397,3 +1431,9 @@ def packages():
     """Returns a list of packages installed on the system"""
     packages = process(['pm', 'list', 'packages']).recvall()
     return [line.split('package:', 1)[-1] for line in packages.splitlines()]
+
+@context.quietfunc
+def version():
+    """Returns rthe platform version as a tuple."""
+    prop = getprop('ro.build.version.release')
+    return [int(v) for v in prop.split('.')]
