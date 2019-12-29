@@ -136,7 +136,6 @@ def debug_assembly(asm, gdbscript=None, vma=None):
 
     Example:
 
-    >>> context.terminal = [os.path.join(os.path.dirname(pwnlib.__file__), 'gdb_faketerminal.py')]
     >>> assembly = shellcraft.echo("Hello world!\n")
     >>> io = gdb.debug_assembly(assembly)
     >>> io.recvline()
@@ -170,7 +169,6 @@ def debug_shellcode(data, gdbscript=None, vma=None):
 
     Example:
 
-    >>> context.terminal = [os.path.join(os.path.dirname(pwnlib.__file__), 'gdb_faketerminal.py')]
     >>> assembly = shellcraft.echo("Hello world!\n")
     >>> shellcode = asm(assembly)
     >>> io = gdb.debug_shellcode(shellcode)
@@ -352,7 +350,6 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     Examples:
 
     >>> # Create a new process, and stop it at 'main'
-    >>> context.terminal = [os.path.join(os.path.dirname(pwnlib.__file__), 'gdb_faketerminal.py')]
     >>> io = gdb.debug('bash', '''
     ... break main
     ... continue
@@ -557,7 +554,6 @@ def attach(target, gdbscript = '', exe = None, need_ptrace_scope = True, gdb_arg
 
 
     >>> # Start a process
-    >>> context.terminal = [os.path.join(os.path.dirname(pwnlib.__file__), 'gdb_faketerminal.py')]
     >>> bash = process('bash')
 
     >>> # Attach the debugger
