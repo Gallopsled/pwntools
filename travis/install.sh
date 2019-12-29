@@ -64,6 +64,13 @@ setup_travis()
     rm -rf usr/share
 }
 
+setup_gdbserver()
+{
+    # https://docs.improbable.io/reference/14.3/shared/debug-cloud-workers#common-issues
+    wget http://archive.ubuntu.com/ubuntu/pool/main/g/gdb/gdbserver_8.3-0ubuntu1_amd64.deb
+    sudo apt-get install ./gdbserver_8.3-0ubuntu1_amd64.deb
+}
+
 setup_linux()
 {
     sudo apt-get install -y software-properties-common openssh-server libncurses5-dev libncursesw5-dev openjdk-8-jre-headless
@@ -187,6 +194,7 @@ setup_osx()
 
 if [[ "$USER" == "travis" ]]; then
 #   setup_travis
+    setup_gdbserver
     setup_android_emulator
 elif [[ "$USER" == "shippable" ]]; then
     sudo apt-get update

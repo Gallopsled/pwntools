@@ -136,12 +136,10 @@ def debug_assembly(asm, gdbscript=None, vma=None):
 
     Example:
 
-        .. code-block:: python
-
-            assembly = shellcraft.echo("Hello world!\n")
-            io = gdb.debug_assembly(assembly)
-            io.recvline()
-            # 'Hello world!'
+    >>> assembly = shellcraft.echo("Hello world!\n")
+    >>> io = gdb.debug_assembly(assembly)
+    >>> io.recvline()
+    b'Hello world!\n'
     """
     tmp_elf = make_elf_from_assembly(asm, vma=vma, extract=False)
     os.chmod(tmp_elf, 0o777)
@@ -157,7 +155,7 @@ def debug_assembly(asm, gdbscript=None, vma=None):
 
 @LocalContext
 def debug_shellcode(data, gdbscript=None, vma=None):
-    r"""
+    r"""debug_shellcode(data, gdbscript=None, vma=None) -> tube
     Creates an ELF file, and launches it under a debugger.
 
     Arguments:
@@ -171,13 +169,11 @@ def debug_shellcode(data, gdbscript=None, vma=None):
 
     Example:
 
-        .. code-block:: python
-
-            assembly = shellcraft.echo("Hello world!\n")
-            shellcode = asm(assembly)
-            io = gdb.debug_shellcode(shellcode)
-            io.recvline()
-            # 'Hello world!'
+    >>> assembly = shellcraft.echo("Hello world!\n")
+    >>> shellcode = asm(assembly)
+    >>> io = gdb.debug_shellcode(shellcode)
+    >>> io.recvline()
+    b'Hello world!\n'
     """
     if isinstance(data, six.text_type):
         log.error("Shellcode is cannot be unicode.  Did you mean debug_assembly?")
@@ -304,7 +300,7 @@ def _get_runner(ssh=None):
 
 @LocalContext
 def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kwargs):
-    """debug(args) -> tube
+    r"""debug(args) -> tube
 
     Launch a GDB server with the specified command line,
     and launches GDB to attach to it.
@@ -353,67 +349,57 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
 
     Examples:
 
-        .. code-block:: python
+    >>> # Create a new process, and stop it at 'main'
+    >>> io = gdb.debug('bash', '''
+    ... break main
+    ... continue
+    ... ''')
+    >>> io.sendline("echo hello")
+    >>> io.recvline()
+    b'hello\n'
+    >>> io.interactive() # doctest: +SKIP
+    >>> io.close()
 
-            # Create a new process, and stop it at 'main'
-            io = gdb.debug('bash', '''
-            break main
-            continue
-            ''')
+    >>> # Create a new process, and stop it at '_start'
+    >>> io = gdb.debug('bash', '''
+    ... # Wait until we hit the main executable's entry point
+    ... break _start
+    ... continue
+    ...
+    ... # Now set breakpoint on shared library routines
+    ... break malloc
+    ... break free
+    ... continue
+    ... ''')
+    >>> io.sendline("echo hello")
+    >>> io.recvline()
+    b'hello\n'
+    >>> io.interactive() # doctest: +SKIP
+    >>> io.close()
 
-            # Send a command to Bash
-            io.sendline("echo hello")
+    You can use :func:`debug` to spawn new processes on remote machines as well,
+    by using the ``ssh=`` keyword to pass in your :class:`.ssh` instance.
 
-            # Interact with the process
-            io.interactive()
+    >>> # Connect to the SSH server
 
-        .. code-block:: python
+    >>> # Start a process on the server
+    >>> shell = ssh('travis', 'example.pwnme', password='demopass')
+    >>> io = gdb.debug(['bash'],
+    ...                 ssh = shell,
+    ...                 gdbscript = '''
+    ... break main
+    ... continue
+    ... ''')
 
-            # Create a new process, and stop it at 'main'
-            io = gdb.debug('bash', '''
-            # Wait until we hit the main executable's entry point
-            break _start
-            continue
+    >>> # Send a command to Bash
+    >>> io.sendline("echo hello")
 
-            # Now set breakpoint on shared library routines
-            break malloc
-            break free
-            continue
-            ''')
-
-            # Send a command to Bash
-            io.sendline("echo hello")
-
-            # Interact with the process
-            io.interactive()
-
-        You can use :func:`debug` to spawn new processes on remote machines as well,
-        by using the ``ssh=`` keyword to pass in your :class:`.ssh` instance.
-
-        .. code-block:: python
-
-            # Connect to the SSH server
-            shell = ssh('passcode', 'pwnable.kr', 2222, password='guest')
-
-            # Start a process on the server
-            io = gdb.debug(['bash'],
-                            ssh=shell,
-                            gdbscript='''
-            break main
-            continue
-            ''')
-
-            # Send a command to Bash
-            io.sendline("echo hello")
-
-            # Interact with the process
-            io.interactive()
+    >>> # Interact with the process
+    >>> io.interactive() # doctest: +SKIP
+    >>> io.close()
     """
     if isinstance(args, (int, tubes.process.process, tubes.ssh.ssh_channel)):
         log.error("Use gdb.attach() to debug a running process")
-
-    if env is None:
-        env = os.environ
 
     if isinstance(args, (bytes, six.text_type)):
         args = [args]
@@ -449,11 +435,10 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     if not which(args[0]):
         log.error("%s is not installed" % args[0])
 
-    exe = os.path.abspath(exe) if exe else which(orig_args[0])
-    if not exe:
-        log.error("%s does not exist" % orig_args[0])
-    else:
-        gdbscript = 'file "%s"\n%s' % (exe, gdbscript)
+    if not ssh:
+        exe = exe or which(orig_args[0])
+        if not (exe and os.path.exists(exe)):
+            log.error("%s does not exist" % exe)
 
     # Start gdbserver/qemu
     # (Note: We override ASLR here for the gdbserver process itself.)
@@ -476,7 +461,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
 
     # gdbserver outputs a message when a client connects
     garbage = gdbserver.recvline(timeout=1)
-    
+
     # Some versions of gdbserver output an additional message
     garbage2 = gdbserver.recvline_startswith(b"Remote debugging from host ", timeout=1)
 
@@ -520,8 +505,8 @@ def binary():
     return gdb
 
 @LocalContext
-def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_args = None, ssh = None, sysroot = None):
-    """attach(target, gdbscript = None, exe = None, arch = None, ssh = None) -> None
+def attach(target, gdbscript = '', exe = None, need_ptrace_scope = True, gdb_args = None, ssh = None, sysroot = None):
+    r"""attach(target, gdbscript = None, exe = None, arch = None, ssh = None) -> None
 
     Start GDB in a new terminal and attach to `target`.
 
@@ -560,64 +545,68 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     Examples:
 
-        .. code-block:: python
+    >>> # Attach directly to pid 1234
+    >>> gdb.attach(1234) # doctest: +SKIP
 
-            # Attach directly to pid 1234
-            gdb.attach(1234)
 
-        .. code-block:: python
+    >>> # Attach to the youngest "bash" process
+    >>> gdb.attach('bash') # doctest: +SKIP
 
-            # Attach to the youngest "bash" process
-            gdb.attach('bash')
 
-        .. code-block:: python
+    >>> # Start a process
+    >>> bash = process('bash')
 
-            # Start a process
-            bash = process('bash')
+    >>> # Attach the debugger
+    >>> pid = gdb.attach(bash, '''
+    ... set follow-fork-mode child
+    ... break execve
+    ... continue
+    ... ''')
 
-            # Attach the debugger
-            gdb.attach(bash, '''
-            set follow-fork-mode child
-            break execve
-            continue
-            ''')
+    >>> # Interact with the process
+    >>> bash.sendline("whoami")
+    >>> bash.recvline()
+    b'travis\n'
+    >>> bash.close()
 
-            # Interact with the process
-            bash.sendline('whoami')
+    >>> # Start a forking server
+    >>> server = process(['socat', 'tcp-listen:12345,fork,reuseaddr', 'exec:/bin/bash'])
+    >>> sleep(1)
 
-        .. code-block:: python
+    >>> # Connect to the server
+    >>> io = remote('127.0.0.1', 12345)
 
-            # Start a forking server
-            server = process(['socat', 'tcp-listen:1234,fork,reuseaddr', 'exec:/bin/sh'])
+    >>> # Connect the debugger to the server-spawned process
+    >>> pid = gdb.attach(io, '''
+    ... break exit
+    ... continue
+    ... ''', exe = '/bin/bash')
 
-            # Connect to the server
-            io = remote('localhost', 1234)
+    >>> # Talk to the spawned 'sh'
+    >>> io.sendline("echo hello")
+    >>> io.recvline()
+    b'hello\n'
+    >>> io.sendline("exit")
 
-            # Connect the debugger to the server-spawned process
-            gdb.attach(io, '''
-            break exit
-            continue
-            ''')
+    >>> io.close()
 
-            # Talk to the spawned 'sh'
-            io.sendline('exit')
+    >>> # Connect to the SSH server
+    >>> shell = ssh('travis', 'example.pwnme', password='demopass')
 
-        .. code-block:: python
+    >>> # Start a process on the server
+    >>> cat = shell.process(['cat'])
 
-            # Connect to the SSH server
-            shell = ssh('bandit0', 'bandit.labs.overthewire.org', password='bandit0', port=2220)
+    >>> # Attach a debugger to it
+    >>> gdb.attach(cat, '''
+    ... break exit
+    ... continue
+    ... ''')
 
-            # Start a process on the server
-            cat = shell.process(['cat'])
-
-            # Attach a debugger to it
-            gdb.attach(cat, '''
-            break exit
-            continue
-            ''')
-
-            # Cause `cat` to exit
-            cat.close()
+    >>> cat.sendline("hello")
+    >>> cat.recvline()
+    b'hello\n'
+    >>> # Cause `cat` to exit
+    >>> cat.close()
     """
     if context.noptrace:
         log.warn_once("Skipping debug attach since context.noptrace==True")
@@ -673,8 +662,10 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
         shell = target.parent
 
         tmpfile = shell.mktemp()
+        if six.PY3:
+            tmpfile = tmpfile.decode()
         gdbscript = 'shell rm %s\n%s' % (tmpfile, gdbscript)
-        shell.upload_data(context._encode(gdbscript), tmpfile)
+        shell.upload_data(gdbscript or '', tmpfile)
 
         cmd = ['ssh', '-C', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
         if shell.password:
@@ -683,7 +674,10 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
-        cmd += ['gdb -q %r %s -x "%s"' % (target.executable,
+        exefile = target.executable
+        if six.PY3:
+            exefile = exefile.decode()
+        cmd += ['gdb -q %s %s -x "%s"' % (exefile,
                                        target.pid,
                                        tmpfile)]
 
@@ -733,12 +727,8 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
             exe_fn = adb.proc_exe
         exe = exe_fn(pid)
 
-    if not pid and not exe:
+    if not pid and not exe and not ssh:
         log.error('could not find target process')
-
-    if exe:
-        # The 'file' statement should go first
-        pre = 'file "%s"\n%s' % (exe, pre)
 
     cmd = binary()
 
@@ -867,10 +857,12 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
 
     Example:
 
-    >>> with context.local(log_level=9999): # doctest: +SKIP
-    ...     shell = ssh(host='bandit.labs.overthewire.org',user='bandit0',password='bandit0', port=2220)
+    >>> with context.local(log_level=9999):
+    ...     shell =  ssh(host='example.pwnme',
+    ...                 user='travis',
+    ...                 password='demopass')
     ...     bash_libs = gdb.find_module_addresses('/bin/bash', shell)
-    >>> os.path.basename(bash_libs[0].path) # doctest: +SKIP
+    >>> os.path.basename(bash_libs[0].path)
     'libc.so.6'
     >>> hex(bash_libs[0].symbols['system']) # doctest: +SKIP
     '0x7ffff7634660'
@@ -913,7 +905,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         """ % entry)
         gdb.clean(2)
         gdb.sendline('info sharedlibrary')
-        lines = gdb.recvrepeat(2)
+        lines = context._decode(gdb.recvrepeat(2))
 
         for line in lines.splitlines():
             m = expr.match(line)

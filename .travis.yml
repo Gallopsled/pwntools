@@ -12,6 +12,8 @@ addons:
     - zsh
     - pandoc
     - gdb
+    - socat
+    - sshpass
     - binutils
     - qemu-user-static
     - binutils-multiarch
@@ -47,6 +49,7 @@ before_script:
   - PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
   - PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
   - PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
+  - sudo sh -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
 script:
   # stop the build if there are Python syntax errors or undefined names
   - flake8 . --count --select=E9,F63,F7 --show-source --statistics --exclude=android-?dk  # TODO: Add F82
