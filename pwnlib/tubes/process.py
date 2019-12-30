@@ -26,6 +26,7 @@ from pwnlib.tubes.tube import tube
 from pwnlib.util.hashes import sha256file
 from pwnlib.util.misc import parse_ldd_output
 from pwnlib.util.misc import which
+from pwnlib.util.proc import MemoryMap
 
 log = getLogger(__name__)
 
@@ -875,6 +876,32 @@ class process(tube):
                     break
 
         return maps
+
+    def maps(self):
+        """maps() -> list of MemoryMap
+
+        Returns a list of the maps created by the process. Each item of
+        the list includes the information of the lines of /proc/<pid>/maps
+        such as the path of the mapped file, the starting and ending address
+        or the flags (read, write, execute, private or shared) of the map.
+
+        Returns:
+            list of MemoryMap: the list of maps of the current process
+
+        Example:
+            >>> p = process("/usr/bin/bash")
+            >>> m = p.maps()[0]
+            >>> str(m) # doctest: +SKIP
+            '556c5961b000-556c59648000 r--p 00000000 fe:01 9832010\\t\\t/usr/bin/bash'
+            >>> p.close()
+
+        """
+
+        with open('/proc/%d/maps' % self.pid) as fmap:
+            maps_raw = fmap.read()
+
+        return [MemoryMap.from_str(line) for line in maps_raw.splitlines()]
+
 
     @property
     def libc(self):
