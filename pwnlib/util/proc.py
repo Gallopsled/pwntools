@@ -340,3 +340,187 @@ def wait_for_debugger(pid):
         while tracer(pid) is None:
             time.sleep(0.01)
         l.success()
+
+
+class MemoryMap:
+    """Object with the information of the memory maps described in /proc/<pid>/maps
+
+        Arguments:
+            start_addr(int): The starting address of the map
+            end_addr(int): The ending address of the map
+            flags(MemoryMapFlags): The flags (read, write, exec, private, shared) of the map
+            offset(int): Offset of file mapped. 0 if no file
+            device_major(int): Device major version. 0 if no file
+            device_minor(int): Device minor version. 0 if no file
+            inode(int): Inode of the mapped file. 0 if no file
+            path(str): Path of the mapped file. Empty string if no file
+        
+        Example:
+
+            >>> m = MemoryMap.from_str("55db09b78000-55db09b81000 rw-p 00114000 fe:01 9832010                    /usr/bin/bash")
+            >>> hex(m.start_addr)
+            '0x55db09b78000'
+            >>> hex(m.end_addr)
+            '0x55db09b81000'
+            >>> m.readable
+            True
+            >>> m.writable
+            True
+            >>> m.executable
+            False
+            >>> m.private
+            True
+            >>> m.shared
+            False
+            >>> hex(m.offset)
+            '0x114000'
+            >>> hex(m.device_major)
+            '0xfe'
+            >>> hex(m.device_minor)
+            '0x1'
+            >>> m.inode
+            9832010
+            >>> m.path
+            '/usr/bin/bash'
+            >>> str(m)
+            '55db09b78000-55db09b81000 rw-p 00114000 fe:01 9832010\\t\\t/usr/bin/bash'
+    """
+
+    def __init__(self, start_addr, end_addr, flags, offset, device_major, device_minor, inode, path):
+        self.start_addr = start_addr
+        self.end_addr = end_addr
+        self.size = end_addr - start_addr
+        self.flags = flags
+        self.offset = offset
+        self.device_major = device_major
+        self.device_minor = device_minor
+        self.inode = inode
+        self.path = path
+    
+    @property
+    def size(self):
+        """The size of the map"""
+        return self.end_addr - self.start_addr
+    
+    @property
+    def readable(self):
+        return self.flags.readable
+    
+    @property
+    def writable(self):
+        return self.flags.writable
+    
+    @property
+    def executable(self):
+        return self.flags.executable
+
+    @property
+    def private(self):
+        return self.flags.private
+
+    @property
+    def shared(self):
+        return self.flags.shared
+
+    @classmethod
+    def from_str(cls, map_str):
+        parts = map_str.split()
+
+        start_addr, end_addr = parts[0].split("-")
+        start_addr = int(start_addr, 16)
+        end_addr = int(end_addr, 16)
+
+        flags = MemoryMapFlags.from_str(parts[1])
+
+        offset = int(parts[2], 16)
+
+        device_major, device_minor = parts[3].split(":")
+        device_major = int(device_major, 16)
+        device_minor = int(device_minor, 16)
+
+        inode = int(parts[4])
+
+        try:
+            path = parts[5]
+        except IndexError:
+            path = ""
+
+        return cls(start_addr, end_addr, flags, offset, device_major, device_minor, inode, path)
+
+    def __str__(self):
+        map_str = ""
+        map_str += "%x-%x" % (self.start_addr, self.end_addr)
+        map_str += " %s" % self.flags
+        map_str += " %08x" % self.offset
+        map_str += " %02x:%02x" % (self.device_major, self.device_minor)
+        map_str += " %d" % self.inode
+
+        if self.path:
+            map_str += "\t\t%s" % self.path
+
+        return map_str
+
+class MemoryMapFlags:
+    """Object with the information of the flags field of maps described in /proc/<pid>/maps
+
+        Arguments:
+            readable(bool): True if map is readable
+            writable(bool): True if map is writable
+            executable(bool): True if map can be executed
+            private(bool): True if map is not shared
+        
+        Example:
+
+            >>> m = MemoryMapFlags.from_str('rw-p')
+            >>> m.readable
+            True
+            >>> m.writable
+            True
+            >>> m.executable
+            False
+            >>> m.private
+            True
+            >>> m.shared
+            False
+            >>> str(m)
+            'rw-p'
+    """
+
+    def __init__(self, readable, writable, executable, private):
+        self.readable = readable
+        self.writable = writable
+        self.executable = executable
+        self.private = private
+
+    @property
+    def shared(self):
+        return not self.private
+
+    @classmethod
+    def from_str(cls, flags_str):
+        """Generates a MemoryMapFlags object from a flags string. Example: 'r-xp'
+
+        Arguments:
+            flags_str(str): Flag string with the format contained in /proc/pid/maps
+        
+        Returns:
+            MemoryMapFlags: The object representation of the string
+
+         Example:
+
+            >>> str(MemoryMapFlags.from_str('r-xp'))
+            'r-xp'
+        """
+        readable = flags_str[0] == "r"
+        writable = flags_str[1] == "w"
+        executable = flags_str[2] == "x"
+        private = flags_str[3] == "p"
+        return cls(readable, writable, executable, private)
+
+    def __str__(self):
+        flags_str = ""
+        flags_str += "r" if self.readable else "-"
+        flags_str += "w" if self.writable else "-"
+        flags_str += "x" if self.executable else "-"
+        flags_str += "p" if self.private else "s"
+        return flags_str
