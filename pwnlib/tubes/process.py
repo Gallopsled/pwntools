@@ -889,10 +889,10 @@ class process(tube):
             list of MemoryMap: the list of maps of the current process
 
         Example:
-            >>> p = process("/usr/bin/bash")
+            >>> p = process('sh')
             >>> m = p.maps()[0]
             >>> str(m) # doctest: +SKIP
-            '556c5961b000-556c59648000 r--p 00000000 fe:01 9832010\\t\\t/usr/bin/bash'
+            '556c5961b000-556c59648000 r--p 00000000 fe:01 9832010\\t\\t/usr/bin/sh'
             >>> p.close()
 
         """
