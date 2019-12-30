@@ -389,7 +389,6 @@ class MemoryMap:
     def __init__(self, start_addr, end_addr, flags, offset, device_major, device_minor, inode, path):
         self.start_addr = start_addr
         self.end_addr = end_addr
-        self.size = end_addr - start_addr
         self.flags = flags
         self.offset = offset
         self.device_major = device_major

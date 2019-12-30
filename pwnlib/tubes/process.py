@@ -26,7 +26,7 @@ from pwnlib.tubes.tube import tube
 from pwnlib.util.hashes import sha256file
 from pwnlib.util.misc import parse_ldd_output
 from pwnlib.util.misc import which
-from pwnlib.util.proc import MemoryMap
+import pwnlib.util.proc
 
 log = getLogger(__name__)
 
@@ -900,7 +900,7 @@ class process(tube):
         with open('/proc/%d/maps' % self.pid) as fmap:
             maps_raw = fmap.read()
 
-        return [MemoryMap.from_str(line) for line in maps_raw.splitlines()]
+        return [pwnlib.util.proc.MemoryMap.from_str(line) for line in maps_raw.splitlines()]
 
 
     @property
