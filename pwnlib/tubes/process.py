@@ -878,21 +878,24 @@ class process(tube):
         return maps
 
     def maps(self):
-        """maps() -> list of MemoryMap
+        """maps() -> MemoryMaps
 
-        Returns a list of the maps created by the process. Each item of
-        the list includes the information of the lines of /proc/<pid>/maps
-        such as the path of the mapped file, the starting and ending address
-        or the flags (read, write, execute, private or shared) of the map.
+        Returns a object which contains a list of the maps created by the 
+        process. Each item of the list includes the information of the lines
+        of /proc/<pid>/maps such as the path of the mapped file, the starting
+        and ending address or the flags (read, write, execute, private or shared) 
+        of the map.
 
         Returns:
-            list of MemoryMap: the list of maps of the current process
+            MemoryMaps: the list of maps of the current process
 
         Example:
             >>> p = process('sh')
             >>> m = p.maps()[0]
             >>> str(m) # doctest: +SKIP
             '556c5961b000-556c59648000 r--p 00000000 fe:01 9832010\\t\\t/usr/bin/sh'
+            >>> m = p.maps().heap # doctest: +SKIP
+            '55b3ce54e000-55b3ce56f000 rw-p 00000000 00:00 0\\t\\t[heap]'
             >>> p.close()
 
         """
@@ -900,7 +903,7 @@ class process(tube):
         with open('/proc/%d/maps' % self.pid) as fmap:
             maps_raw = fmap.read()
 
-        return [pwnlib.util.proc.MemoryMap.from_str(line) for line in maps_raw.splitlines()]
+        return pwnlib.util.proc.MemoryMaps.from_str(maps_raw)
 
 
     @property

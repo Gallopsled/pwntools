@@ -342,6 +342,78 @@ def wait_for_debugger(pid):
         l.success()
 
 
+class MemoryMaps:
+    """List of the memory maps described in /proc/<pid>/maps
+
+        Arguments:
+            maps(list of MemoryMap): The memory maps
+        
+        Example:
+
+            >>> maps = MemoryMaps.from_str(\"""561ce1d6f000-561ce1d70000 r--p 00000000 fe:01 3676814                    /home/zrt/test
+            ... 561ce1d70000-561ce1d71000 r-xp 00001000 fe:01 3676814                    /home/zrt/test
+            ... 561ce1d71000-561ce1d72000 r--p 00002000 fe:01 3676814                    /home/zrt/test
+            ... 561ce1d72000-561ce1d73000 r--p 00002000 fe:01 3676814                    /home/zrt/test
+            ... 561ce1d73000-561ce1d74000 rw-p 00003000 fe:01 3676814                    /home/zrt/test
+            ... 561ce2895000-561ce28b6000 rw-p 00000000 00:00 0                          [heap]
+            ... 7f6e59ff0000-7f6e5a012000 r--p 00000000 fe:01 9831037                    /usr/lib/x86_64-linux-gnu/libc-2.28.so
+            ... 7f6e5a012000-7f6e5a15a000 r-xp 00022000 fe:01 9831037                    /usr/lib/x86_64-linux-gnu/libc-2.28.so
+            ... 7f6e5a15a000-7f6e5a1a6000 r--p 0016a000 fe:01 9831037                    /usr/lib/x86_64-linux-gnu/libc-2.28.so
+            ... 7f6e5a1a6000-7f6e5a1a7000 ---p 001b6000 fe:01 9831037                    /usr/lib/x86_64-linux-gnu/libc-2.28.so
+            ... 7f6e5a1a7000-7f6e5a1ab000 r--p 001b6000 fe:01 9831037                    /usr/lib/x86_64-linux-gnu/libc-2.28.so
+            ... 7f6e5a1ab000-7f6e5a1ad000 rw-p 001ba000 fe:01 9831037                    /usr/lib/x86_64-linux-gnu/libc-2.28.so
+            ... 7f6e5a1ad000-7f6e5a1b3000 rw-p 00000000 00:00 0 
+            ... 7f6e5a1cd000-7f6e5a1ce000 r--p 00000000 fe:01 9830423                    /usr/lib/x86_64-linux-gnu/ld-2.28.so
+            ... 7f6e5a1ce000-7f6e5a1ec000 r-xp 00001000 fe:01 9830423                    /usr/lib/x86_64-linux-gnu/ld-2.28.so
+            ... 7f6e5a1ec000-7f6e5a1f4000 r--p 0001f000 fe:01 9830423                    /usr/lib/x86_64-linux-gnu/ld-2.28.so
+            ... 7f6e5a1f4000-7f6e5a1f5000 r--p 00026000 fe:01 9830423                    /usr/lib/x86_64-linux-gnu/ld-2.28.so
+            ... 7f6e5a1f5000-7f6e5a1f6000 rw-p 00027000 fe:01 9830423                    /usr/lib/x86_64-linux-gnu/ld-2.28.so
+            ... 7f6e5a1f6000-7f6e5a1f7000 rw-p 00000000 00:00 0 
+            ... 7ffd9bab9000-7ffd9bada000 rw-p 00000000 00:00 0                          [stack]
+            ... 7ffd9bb45000-7ffd9bb48000 r--p 00000000 00:00 0                          [vvar]
+            ... 7ffd9bb48000-7ffd9bb4a000 r-xp 00000000 00:00 0                          [vdso]
+            ... \""")
+            >>> str(maps.heap)
+            '561ce2895000-561ce28b6000 rw-p 00000000 00:00 0\\t\\t[heap]'
+            >>> str(maps.stack)
+            '7ffd9bab9000-7ffd9bada000 rw-p 00000000 00:00 0\\t\\t[stack]'
+            >>> len(maps)
+            22
+    """
+
+    def __init__(self, maps):
+        self.maps = maps
+    
+    @classmethod
+    def from_str(cls, maps_string):
+        maps = [MemoryMap.from_str(line) for line in maps_string.splitlines()]
+        return cls(maps)
+
+    @property
+    def heap(self):
+        for map in self.maps:
+            if map.path == "[heap]":
+                return map
+
+    @property
+    def stack(self):
+        for map in self.maps:
+            if map.path == "[stack]":
+                return map
+
+    def __str__(self):
+        return "\n".join([str(map) for map in self.maps])
+
+    def __len__(self):
+        return len(self.maps)
+    
+    def __getitem__(self, index):
+        return self.maps[index]
+    
+    def __iter__(self):
+        return iter(self.maps)
+
+
 class MemoryMap:
     """Object with the information of the memory maps described in /proc/<pid>/maps
 
