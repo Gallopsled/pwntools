@@ -57,10 +57,10 @@ def main(args):
     # Fix Mako formatting bs
     output = re.sub('\n\n\n', '\n\n', output)
 
-    print output
+    print(output)
 
     if not sys.stdout.isatty():
-        try: os.fchmod(sys.stdout.fileno(), 0700)
+        try: os.fchmod(sys.stdout.fileno(), 0o700)
         except OSError: pass
 
 if __name__ == '__main__':

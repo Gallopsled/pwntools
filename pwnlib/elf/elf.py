@@ -9,13 +9,13 @@ Example Usage
 .. code-block:: python
 
     >>> e = ELF('/bin/cat')
-    >>> print hex(e.address) #doctest: +SKIP
+    >>> print(hex(e.address)) #doctest: +SKIP
     0x400000
-    >>> print hex(e.symbols['write']) #doctest: +SKIP
+    >>> print(hex(e.symbols['write'])) #doctest: +SKIP
     0x401680
-    >>> print hex(e.got['write']) #doctest: +SKIP
+    >>> print(hex(e.got['write'])) #doctest: +SKIP
     0x60b070
-    >>> print hex(e.plt['write']) #doctest: +SKIP
+    >>> print(hex(e.plt['write'])) #doctest: +SKIP
     0x401680
 
 You can even patch and save the files.
@@ -24,10 +24,10 @@ You can even patch and save the files.
 
     >>> e = ELF('/bin/cat')
     >>> e.read(e.address+1, 3)
-    'ELF'
+    b'ELF'
     >>> e.asm(e.address, 'ret')
     >>> e.save('/tmp/quiet-cat')
-    >>> disasm(file('/tmp/quiet-cat','rb').read(1))
+    >>> disasm(open('/tmp/quiet-cat','rb').read(1))
     '   0:   c3                      ret'
 
 Module Members
@@ -36,14 +36,16 @@ Module Members
 from __future__ import absolute_import
 from __future__ import division
 
-import codecs
 import collections
 import gzip
 import mmap
 import os
 import re
-import StringIO
+import six
 import subprocess
+import tempfile
+
+from six import BytesIO
 
 from collections import namedtuple
 
@@ -73,12 +75,14 @@ from pwnlib.context import context
 from pwnlib.elf.config import kernel_configuration
 from pwnlib.elf.config import parse_kconfig
 from pwnlib.elf.datatypes import constants
+from pwnlib.elf.maps import CAT_PROC_MAPS_EXIT
 from pwnlib.elf.plt import emulate_plt_instructions
 from pwnlib.log import getLogger
 from pwnlib.term import text
 from pwnlib.tubes.process import process
 from pwnlib.util import misc
 from pwnlib.util import packing
+from pwnlib.util.fiddling import unhex
 from pwnlib.util.sh_string import sh_string
 
 log = getLogger(__name__)
@@ -173,7 +177,7 @@ class ELF(ELFFile):
            0x41dac0
            >>> u32(bash.read(bash.got['read'], 4))
            0x41dac6
-           >>> print bash.disasm(bash.plt.read, 16)
+           >>> print(bash.disasm(bash.plt.read, 16))
            0:   ff 25 1a 18 2d 00       jmp    QWORD PTR [rip+0x2d181a]        # 0x2d1820
            6:   68 59 00 00 00          push   0x59
            b:   e9 50 fa ff ff          jmp    0xfffffffffffffa60
@@ -208,10 +212,6 @@ class ELF(ELFFile):
 
         super(ELF,self).__init__(self.mmap)
 
-        #: IntervalTree which maps all of the loaded memory segments
-        self.memory = intervaltree.IntervalTree()
-        self._populate_memory()
-
         #: :class:`str`: Path to the file
         self.path = os.path.abspath(path)
 
@@ -219,7 +219,7 @@ class ELF(ELFFile):
         #:
         #: See: :attr:`.ContextType.arch`
         self.arch = self.get_machine_arch()
-        if isinstance(self.arch, (str, unicode)):
+        if isinstance(self.arch, (bytes, six.text_type)):
             self.arch = self.arch.lower()
 
         #: :class:`dotdict` of ``name`` to ``address`` for all symbols in the ELF
@@ -268,6 +268,10 @@ class ELF(ELFFile):
                 self.arch = 'mips64'
                 self.bits = 64
 
+        #: IntervalTree which maps all of the loaded memory segments
+        self.memory = intervaltree.IntervalTree()
+        self._populate_memory()
+
         # Is this a native binary? Should we be checking QEMU?
         try:
             with context.local(arch=self.arch):
@@ -289,13 +293,13 @@ class ELF(ELFFile):
         self.load_addr = self._address
 
         # Try to figure out if we have a kernel configuration embedded
-        IKCFG_ST='IKCFG_ST'
+        IKCFG_ST=b'IKCFG_ST'
 
         for start in self.search(IKCFG_ST):
             start += len(IKCFG_ST)
-            stop = next(self.search('IKCFG_ED'))
+            stop = next(self.search(b'IKCFG_ED'))
 
-            fileobj = StringIO.StringIO(self.read(start, stop-start))
+            fileobj = BytesIO(self.read(start, stop-start))
 
             # Python gzip throws an exception if there is non-Gzip data
             # after the Gzip stream.
@@ -321,12 +325,12 @@ class ELF(ELFFile):
 
             #: Path to the linker for the ELF
             self.linker = self.read(seg.header.p_vaddr, seg.header.p_memsz)
-            self.linker = self.linker.rstrip('\x00')
+            self.linker = self.linker.rstrip(b'\x00')
 
         #: Operating system of the ELF
         self.os = 'linux'
 
-        if self.linker and self.linker.startswith('/system/bin/linker'):
+        if self.linker and self.linker.startswith(b'/system/bin/linker'):
             self.os = 'android'
 
         #: ``True`` if the ELF is a shared library
@@ -348,12 +352,14 @@ class ELF(ELFFile):
             log.warn("Could not populate PLT: %s", e)
 
         self._populate_synthetic_symbols()
-        self._populate_libraries()
         self._populate_functions()
         self._populate_kernel_version()
 
         if checksec:
             self._describe()
+
+        self._libs = None
+        self._maps = None
 
     @staticmethod
     @LocalContext
@@ -394,7 +400,7 @@ class ELF(ELFFile):
 
         Example:
 
-            >>> e = ELF.from_bytes('\x90\xcd\x80', vma=0xc000)
+            >>> e = ELF.from_bytes(b'\x90\xcd\x80', vma=0xc000)
             >>> print(e.disasm(e.entry, 3))
                 c000:       90                      nop
                 c001:       cd 80                   int    0x80
@@ -438,9 +444,15 @@ class ELF(ELFFile):
         return pwnlib.gdb.debug([self.path] + argv, *a, **kw)
 
     def _describe(self, *a, **kw):
-        log.info_once('\n'.join((repr(self.path),
-                                '%-10s%s-%s-%s' % ('Arch:', self.arch, self.bits, self.endian),
-                                self.checksec(*a, **kw))))
+        log.info_once(
+            '%s\n%-10s%s-%s-%s\n%s',
+            repr(self.path),
+            'Arch:',
+            self.arch,
+            self.bits,
+            self.endian,
+            self.checksec(*a, **kw)
+        )
 
     def __repr__(self):
         return "ELF(%r)" % self.path
@@ -488,6 +500,41 @@ class ELF(ELFFile):
         for seg in self.iter_segments():
             if t == seg.header.p_type or t in str(seg.header.p_type):
                 yield seg
+
+    def get_segment_for_address(self, address, size=1):
+        """get_segment_for_address(address, size=1) -> Segment
+
+        Given a virtual address described by a ``PT_LOAD`` segment, return the
+        first segment which describes the virtual address.  An optional ``size``
+        may be provided to ensure the entire range falls into the same segment.
+
+        Arguments:
+            address(int): Virtual address to find
+            size(int): Number of bytes which must be available after ``address``
+                in **both** the file-backed data for the segment, and the memory
+                region which is reserved for the data.
+
+        Returns:
+            Either returns a :class:`.segments.Segment` object, or ``None``.
+        """
+        for seg in self.iter_segments_by_type("PT_LOAD"):
+            mem_start = seg.header.p_vaddr
+            mem_stop  = seg.header.p_memsz + mem_start
+
+            if not (mem_start <= address <= address+size < mem_stop):
+                continue
+
+            offset = self.vaddr_to_offset(address)
+
+            file_start = seg.header.p_offset
+            file_stop  = seg.header.p_filesz + file_start
+
+            if not (file_start <= offset <= offset+size < file_stop):
+                continue
+
+            return seg
+
+        return None
 
     @property
     def sections(self):
@@ -614,6 +661,20 @@ class ELF(ELFFile):
         return [s for s in self.segments if not s.header.p_flags & P_FLAGS.PF_W]
 
     @property
+    def libs(self):
+        """Dictionary of {path: address} for every library loaded for this ELF."""
+        if self._libs is None:
+            self._populate_libraries()
+        return self._libs
+
+    @property
+    def maps(self):
+        """Dictionary of {name: address} for every mapping in this ELF's address space."""
+        if self._maps is None:
+            self._populate_libraries()
+        return self._maps
+
+    @property
     def libc(self):
         """:class:`.ELF`: If this :class:`.ELF` imports any libraries which contain ``'libc[.-]``,
         and we can determine the appropriate path to it on the local
@@ -634,40 +695,140 @@ class ELF(ELFFile):
         >>> any(map(lambda x: 'libc' in x, bash.libs.keys()))
         True
         """
+        # Patch some shellcode into the ELF and run it.
+        maps = self._patch_elf_and_read_maps()
 
-        # We need a .dynamic section for dynamically linked libraries
-        if not self.get_section_by_name('.dynamic') or self.statically_linked:
-            self.libs= {}
-            return
+        self._maps = maps
+        self._libs = {}
 
-        # We must also specify a 'PT_INTERP', otherwise it's a 'statically-linked'
-        # binary which is also position-independent (and as such has a .dynamic).
-        for segment in self.iter_segments_by_type('PT_INTERP'):
-            break
-        else:
-            self.libs = {}
-            return
+        for lib, address in maps.items():
 
+            # Filter out [stack] and such from the library listings
+            if lib.startswith('['):
+                continue
+
+            # Any existing files we can just use
+            if os.path.exists(lib):
+                self._libs[lib] = address
+
+            # Try etc/qemu-binfmt, as per Ubuntu
+            if not self.native:
+                ld_prefix = qemu.ld_prefix()
+
+                qemu_lib = os.path.join(ld_prefix, lib)
+                qemu_lib = os.path.realpath(qemu_lib)
+
+                if os.path.exists(qemu_lib):
+                    self._libs[qemu_lib] = address
+
+    def _patch_elf_and_read_maps(self):
+        """patch_elf_and_read_maps(self) -> dict
+
+        Read ``/proc/self/maps`` as if the ELF were executing.
+
+        This is done by replacing the code at the entry point with shellcode which
+        dumps ``/proc/self/maps`` and exits, and **actually executing the binary**.
+
+        Returns:
+            A ``dict`` mapping file paths to the lowest address they appear at.
+            Does not do any translation for e.g. QEMU emulation, the raw results
+            are returned.
+
+            If there is not enough space to inject the shellcode in the segment
+            which contains the entry point, returns ``{}``.
+
+        Doctests:
+
+            These tests are just to ensure that our shellcode is correct.
+
+            >>> for arch in CAT_PROC_MAPS_EXIT:
+            ...   with context.local(arch=arch):
+            ...     sc = shellcraft.cat("/proc/self/maps")
+            ...     sc += shellcraft.exit()
+            ...     sc = asm(sc)
+            ...     sc = enhex(sc)
+            ...     assert sc == CAT_PROC_MAPS_EXIT[arch]
+        """
+
+        # Get our shellcode
+        sc = CAT_PROC_MAPS_EXIT.get(self.arch, None)
+
+        if sc is None:
+            log.error("Cannot patch /proc/self/maps shellcode into %r binary", self.arch)
+
+        sc = unhex(sc)
+
+        # Ensure there is enough room in the segment where the entry point resides
+        # in order to inject our shellcode.
+        seg = self.get_segment_for_address(self.entry, len(sc))
+        if not seg:
+            log.warn_once("Could not inject code to determine memory mapping for %r: Not enough space", self)
+            return {}
+
+        # Create our temporary file
+        # NOTE: We cannot use "with NamedTemporaryFile() as foo", because we cannot
+        # execute the file while the handle is open.
+        fd, path = tempfile.mkstemp()
+
+        # Close the file descriptor so that it may be executed
+        os.close(fd)
+
+        # Save off a copy of the ELF
+        self.save(path)
+
+        # Load a new copy of the ELF at the temporary file location
+        old = self.read(self.entry, len(sc))
         try:
-            cmd = 'ulimit -s unlimited; LD_TRACE_LOADED_OBJECTS=1 LD_WARN=1 LD_BIND_NOW=1 %s 2>/dev/null' % sh_string(self.path)
+            self.write(self.entry, sc)
+            self.save(path)
+        finally:
+            # Restore the original contents
+            self.write(self.entry, old)
 
-            data = subprocess.check_output(cmd, shell = True, stderr = subprocess.STDOUT)
-            libs = misc.parse_ldd_output(data)
+        # Make the file executable
+        os.chmod(path, 0o755)
 
-            for lib in dict(libs):
-                if os.path.exists(lib):
-                    continue
+        # Run a copy of it, get the maps
+        try:
+            with context.silent:
+                io = process(path)
+                data = context._decode(io.recvall(timeout=2))
+        except Exception:
+            log.warn_once("Injected /proc/self/maps code did not execute correctly")
+            return {}
 
-                if not self.native:
-                    ld_prefix = qemu.ld_prefix()
-                    qemu_lib = os.path.exists(os.path.join(ld_prefix, lib))
-                    if qemu_lib:
-                        libs[os.path.realpath(qemu_lib)] = libs.pop(lib)
+        # Swap in the original ELF name
+        data = data.replace(path, self.path)
 
-            self.libs = libs
+        # All we care about in the data is the load address of each file-backed mapping,
+        # or each kernel-supplied mapping.
+        #
+        # For quick reference, the data looks like this:
+        # 7fcb025f2000-7fcb025f3000 r--p 00025000 fe:01 3025685  /lib/x86_64-linux-gnu/ld-2.23.so
+        # 7fcb025f3000-7fcb025f4000 rw-p 00026000 fe:01 3025685  /lib/x86_64-linux-gnu/ld-2.23.so
+        # 7fcb025f4000-7fcb025f5000 rw-p 00000000 00:00 0
+        # 7ffe39cd4000-7ffe39cf6000 rw-p 00000000 00:00 0        [stack]
+        # 7ffe39d05000-7ffe39d07000 r--p 00000000 00:00 0        [vvar]
+        result = {}
+        for line in data.splitlines():
+            if '/' in line:
+                index = line.index('/')
+            elif '[' in line:
+                index = line.index('[')
+            else:
+                continue
 
-        except subprocess.CalledProcessError:
-            self.libs = {}
+            address, _ = line.split('-', 1)
+
+            address = int(address, 0x10)
+            name = line[index:]
+
+            result.setdefault(name, address)
+
+        # Remove the temporary file, best-effort
+        os.unlink(path)
+
+        return result
 
     def _populate_functions(self):
         """Builds a dict of 'functions' (i.e. symbols of type 'STT_FUNC')
@@ -680,14 +841,10 @@ class ELF(ELFFile):
 
             for sym in sec.iter_symbols():
                 # Avoid duplicates
-                if self.functions.has_key(sym.name):
+                if sym.name in self.functions:
                     continue
                 if sym.entry.st_info['type'] == 'STT_FUNC' and sym.entry.st_size != 0:
                     name = sym.name
-                    try:
-                        name = codecs.encode(name, 'latin-1')
-                    except Exception:
-                        pass
                     if name not in self.symbols:
                         continue
                     addr = self.symbols[name]
@@ -863,7 +1020,7 @@ class ELF(ELFFile):
                                                 section.data(),
                                                 inv_symbols)
 
-                for address, target in reversed(sorted(res.items())):
+                for address, target in sorted(res.items()):
                     self.plt[inv_symbols[target]] = address
 
         for a,n in sorted({v:k for k,v in self.plt.items()}.items()):
@@ -913,12 +1070,12 @@ class ELF(ELFFile):
             sould be able to find it easily.
 
             >>> bash = ELF('/bin/bash')
-            >>> bash.address + 1 == next(bash.search('ELF'))
+            >>> bash.address + 1 == next(bash.search(b'ELF'))
             True
 
             We can also search for string the binary.
 
-            >>> len(list(bash.search('GNU bash'))) > 0
+            >>> len(list(bash.search(b'GNU bash'))) > 0
             True
         """
         load_address_fixup = (self.address - self.load_addr)
@@ -934,7 +1091,7 @@ class ELF(ELFFile):
             zeroed = memsz - seg.header.p_filesz
             offset = seg.header.p_offset
             data   = self.mmap[offset:offset+memsz]
-            data   += '\x00' * zeroed
+            data   += b'\x00' * zeroed
             offset = 0
             while True:
                 offset = data.find(needle, offset)
@@ -980,7 +1137,7 @@ class ELF(ELFFile):
         return None
 
     def _populate_memory(self):
-        load_segments = filter(lambda s: s.header.p_type == 'PT_LOAD', self.iter_segments())
+        load_segments = list(filter(lambda s: s.header.p_type == 'PT_LOAD', self.iter_segments()))
 
         # Map all of the segments
         for i, segment in enumerate(load_segments):
@@ -1001,12 +1158,13 @@ class ELF(ELFFile):
                 self.memory.addi(start, stop_data, segment)
 
             if stop_data != stop_mem:
-                self.memory.addi(stop_data, stop_mem, '\x00')
+                self.memory.addi(stop_data, stop_mem, b'\x00')
 
             # Check for holes which we can fill
             if self._fill_gaps and i+1 < len(load_segments):
                 next_start = load_segments[i+1].header.p_vaddr
-                if stop_mem < next_start:
+                
+                if stop_mem < next_start and stop_mem>>(self.bits-1) == next_start>>(self.bits-1):
                     self.memory.addi(stop_mem, next_start, None)
             else:
                 page_end = (stop_mem + 0xfff) & ~(0xfff)
@@ -1066,7 +1224,7 @@ class ELF(ELFFile):
 
             >>> bash = ELF(which('bash'))
             >>> bash.read(bash.address, 4)
-            '\x7fELF'
+            b'\x7fELF'
 
             ELF segments do not have to contain all of the data on-disk
             that gets loaded into memory.
@@ -1086,7 +1244,7 @@ class ELF(ELFFile):
             By default, these come right after eachother in memory.
 
             >>> e.read(e.symbols.A, 2)
-            '\x90\xcc'
+            b'\x90\xcc'
             >>> e.symbols.B - e.symbols.A
             1
 
@@ -1107,33 +1265,33 @@ class ELF(ELFFile):
             >>> e.symbols.B - e.symbols.A
             6
             >>> e.read(e.symbols.A, 2)
-            '\x90\x00'
+            b'\x90\x00'
             >>> e.read(e.symbols.A, 7)
-            '\x90\x00\x00\x00\x00\x00\xcc'
+            b'\x90\x00\x00\x00\x00\x00\xcc'
             >>> e.read(e.symbols.A, 10)
-            '\x90\x00\x00\x00\x00\x00\xcc\x00\x00\x00'
+            b'\x90\x00\x00\x00\x00\x00\xcc\x00\x00\x00'
 
             Everything is relative to the user-selected base address, so moving
             things around keeps everything working.
 
             >>> e.address += 0x1000
             >>> e.read(e.symbols.A, 10)
-            '\x90\x00\x00\x00\x00\x00\xcc\x00\x00\x00'
+            b'\x90\x00\x00\x00\x00\x00\xcc\x00\x00\x00'
         """
         retval = []
 
         if count == 0:
-            return ''
+            return b''
 
         start = address
         stop = address + count
 
-        overlap = self.memory.search(start, stop)
+        overlap = self.memory.overlap(start, stop)
 
         # Create a new view of memory, for just what we need
         memory = intervaltree.IntervalTree(overlap)
-        memory.chop(None, start)
-        memory.chop(stop, None)
+        memory.chop(-1<<64, start)
+        memory.chop(stop, 1<<64)
 
         if memory.begin() != start:
             log.error("Address %#x is not contained in %s" % (start, self))
@@ -1145,8 +1303,8 @@ class ELF(ELFFile):
         for begin, end, data in sorted(memory):
             length = end-begin
 
-            if data in (None, '\x00'):
-                retval.append('\x00' * length)
+            if data in (None, b'\x00'):
+                retval.append(b'\x00' * length)
                 continue
 
             # Offset within VMA range
@@ -1163,7 +1321,7 @@ class ELF(ELFFile):
 
             retval.append(self.mmap[offset:offset+length])
 
-        return ''.join(retval)
+        return b''.join(retval)
 
     def write(self, address, data):
         """Writes data to the specified virtual address
@@ -1179,10 +1337,10 @@ class ELF(ELFFile):
         Examples:
           >>> bash = ELF(which('bash'))
           >>> bash.read(bash.address+1, 3)
-          'ELF'
-          >>> bash.write(bash.address, "HELO")
+          b'ELF'
+          >>> bash.write(bash.address, b"HELO")
           >>> bash.read(bash.address, 4)
-          'HELO'
+          b'HELO'
         """
         offset = self.vaddr_to_offset(address)
 
@@ -1197,8 +1355,8 @@ class ELF(ELFFile):
 
         >>> bash = ELF(which('bash'))
         >>> bash.save('/tmp/bash_copy')
-        >>> copy = file('/tmp/bash_copy')
-        >>> bash = file(which('bash'))
+        >>> copy = open('/tmp/bash_copy', 'rb')
+        >>> bash = open(which('bash'), 'rb')
         >>> bash.read() == copy.read()
         True
         """
@@ -1212,7 +1370,7 @@ class ELF(ELFFile):
         Retrieve the raw data from the ELF file.
 
         >>> bash = ELF(which('bash'))
-        >>> fd   = open(which('bash'))
+        >>> fd   = open(which('bash'), 'rb')
         >>> bash.get_data() == fd.read()
         True
         """
@@ -1245,7 +1403,7 @@ class ELF(ELFFile):
         Assembles the specified instructions and inserts them
         into the ELF at the specified address.
 
-        This modifies the ELF in-pace.
+        This modifies the ELF in-place.
         The resulting binary can be saved with :meth:`.ELF.save`
         """
         binary = asm(assembly, vma=address)
@@ -1315,11 +1473,11 @@ class ELF(ELFFile):
             return None
 
         address   = dt_strtab.entry.d_ptr + offset
-        string    = ''
-        while '\x00' not in string:
+        string    = b''
+        while b'\x00' not in string:
             string  += self.read(address, 1)
             address += 1
-        return string.rstrip('\x00')
+        return string.rstrip(b'\x00')
 
 
 
@@ -1502,7 +1660,7 @@ class ELF(ELFFile):
     @property
     def packed(self):
         """:class:`bool`: Whether the current binary is packed with UPX."""
-        return 'UPX!' in self.get_data()
+        return b'UPX!' in self.get_data()
 
     @property
     def pie(self):
@@ -1531,12 +1689,13 @@ class ELF(ELFFile):
         return self.dynamic_string(dt_runpath.entry.d_ptr)
 
     def checksec(self, banner=True, color=True):
-        """checksec(banner=True)
+        """checksec(banner=True, color=True)
 
         Prints out information in the binary, similar to ``checksec.sh``.
 
         Arguments:
             banner(bool): Whether to print the path to the ELF binary.
+            color(bool): Whether to use colored output.
         """
         red    = text.red if color else str
         green  = text.green if color else str
@@ -1723,7 +1882,7 @@ class ELF(ELFFile):
             A ``str`` with the string contents (NUL terminator is omitted),
             or an empty string if no NUL terminator could be found.
         """
-        data = ''
+        data = b''
         while True:
             read_size = 0x1000
             partial_page = address & 0xfff
@@ -1734,12 +1893,12 @@ class ELF(ELFFile):
             c = self.read(address, read_size)
 
             if not c:
-                return ''
+                return b''
 
             data += c
 
-            if '\x00' in c:
-                return data[:data.index('\x00')]
+            if b'\x00' in c:
+                return data[:data.index(b'\x00')]
 
             address += len(c)
 
@@ -1781,7 +1940,7 @@ class ELF(ELFFile):
             offset = phoff + phentsize * i
 
             if self.mmap[offset:offset+4] == PT_GNU_STACK:
-                self.mmap[offset:offset+4] = '\x00' * 4
+                self.mmap[offset:offset+4] = b'\x00' * 4
                 self.save()
                 return
 

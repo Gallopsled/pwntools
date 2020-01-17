@@ -12,6 +12,8 @@
 # serve to show the default.
 
 import os
+import doctest
+import six
 import subprocess
 import sys
 
@@ -67,9 +69,9 @@ doctest_global_setup = '''
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
 os.environ['PWNLIB_RANDOMIZE'] = '0'
-import pwnlib
+import pwnlib, logging
 pwnlib.context.context.reset_local()
-pwnlib.context.ContextType.defaults['log_level'] = 'ERROR'
+pwnlib.context.ContextType.defaults['log_level'] = logging.ERROR
 pwnlib.context.ContextType.defaults['randomize'] = False
 pwnlib.util.fiddling.default_style = {}
 pwnlib.term.text.when = 'never'
@@ -311,13 +313,13 @@ texinfo_documents = [
 branch = release
 
 try:
-    git_branch = subprocess.check_output('git describe --tags', shell = True)
+    git_branch = subprocess.check_output('git describe --tags', shell = True, universal_newlines = True)
 except subprocess.CalledProcessError:
     git_branch = '-'
 
 try:
     if '-' in git_branch:
-        branch = subprocess.check_output('git rev-parse HEAD', shell = True).strip()[:10]
+        branch = subprocess.check_output('git rev-parse HEAD', shell = True, universal_newlines = True).strip()[:10]
 except subprocess.CalledProcessError:
     pass
 
@@ -345,11 +347,11 @@ def linkcode_resolve(domain, info):
     else:
         filename = info['module'].replace('.', '/') + '.py'
 
-        if isinstance(val, (types.ModuleType, types.ClassType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType)):
+        if isinstance(val, (types.ModuleType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType) + six.class_types):
             try:
                 lines, first = inspect.getsourcelines(val)
                 filename += '#L%d-%d' % (first, first + len(lines) - 1)
-            except IOError:
+            except (IOError, TypeError):
                 pass
 
     return "https://github.com/Gallopsled/pwntools/blob/%s/%s" % (branch, filename)
@@ -408,8 +410,38 @@ def get_object_members_all(self, want_all):
                         safe_getattr(self.object, '__name__', '???'), mname))
         return False, ret
 
+class _DummyClass(object): pass
+
+class Py2OutputChecker(_DummyClass, doctest.OutputChecker):
+    def check_output(self, want, got, optionflags):
+        sup = super(Py2OutputChecker, self).check_output
+        if sup(want, got, optionflags):
+            return True
+        try:
+            rly_want = pwnlib.util.safeeval.const(want)
+            if sup(repr(rly_want), got, optionflags):
+                return True
+            rly_got = pwnlib.util.safeeval.const(got)
+            if rly_want == rly_got:
+                return True
+        except ValueError:
+            pass
+        rly_want = ' '.join(x[:2].replace('b"','"').replace("b'","'")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
+        if sup(rly_want, got, optionflags):
+            return True
+        rly_want = ' '.join(x[:2].replace('b"',' "').replace("b'"," '")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
+        return sup(rly_want, got, optionflags)
+
+def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
+    if checker is None:
+        checker = Py2OutputChecker()
+    doctest.DocTestRunner.__init__(self, checker, verbose, optionflags)
+
 if 'doctest' in sys.argv:
     def setup(app):
         app.connect('autodoc-skip-member', dont_skip_any_doctests)
 
+    if sys.version_info[:1] < (3,):
+        import sphinx.ext.doctest
+        sphinx.ext.doctest.SphinxDocTestRunner.__init__ = py2_doctest_init
     sphinx.ext.autodoc.ModuleDocumenter.get_object_members = get_object_members_all

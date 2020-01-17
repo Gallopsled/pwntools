@@ -14,13 +14,14 @@ Args: [sock (imm/reg) = rbp]
 ${dup}:
     ${amd64.mov('rbp', sock)}
 
-    push 2
-    pop rcx
+    push 3
 ${looplabel}:
-    push rcx
+    pop rsi
+    dec rsi
+    js ${after}
+    push rsi
 
-    ${amd64.linux.syscall('SYS_dup2', 'ebp', 'ecx')}
+    ${amd64.linux.syscall('SYS_dup2', 'rbp', 'rsi')}
 
-    pop rcx
-    loop ${looplabel}
+    jmp ${looplabel}
 ${after}:

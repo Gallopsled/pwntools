@@ -2,6 +2,7 @@
     from pwnlib import shellcraft
     from pwnlib.context import context as ctx
     from pwnlib.util.iters import group
+    from six import text_type, binary_type
 %>
 <%docstring>
 Pushes an array/envp-style array of pointers onto the stack.
@@ -16,11 +17,11 @@ Arguments:
 </%docstring>
 <%page args="reg, array, register1='x14', register2='x15'"/>
 <%
-if isinstance(array, (str, unicode)):
+if isinstance(array, (binary_type, text_type)):
     array = [array]
 
 # Normalize all of the arguments' endings
-array = [arg.rstrip('\x00') + '\x00' for arg in array]
+array = [arg.rstrip(b'\x00') + b'\x00' for arg in array]
 
 # Maximum amount that we can adjust SP by at once is 4095,
 # which seems like a safe maximum.
@@ -28,7 +29,7 @@ if len(array) * 8 > 4095:
     raise Exception("Array size is too large (%i), max=4095" % len(array))
 
 # Join them into one big string that can be pushed
-array_str = ''.join(array)
+array_str = b''.join(array)
 
 # Create a listing of offsets from what will be the "top" of the stack.
 num_pointers = len(array)
@@ -44,8 +45,8 @@ sp_to_data = num_pointers * ctx.bytes
 
 # List of amounts to subtract from $SP
 offsets = {}
-for i, value in reversed(list(enumerate(array))):
-    offsets[i] = sp_to_data + len(array_str) - len(array[i])
+for i,arg in enumerate(reversed(array)):
+    offsets[i] = sp_to_data + len(array_str) - len(arg)
 
 # If the array length is ODD we can sneak in our null terminator at the end
 if len(array) % 2 == 1:

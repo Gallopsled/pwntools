@@ -4,9 +4,9 @@
 Example:
 
     >>> p = run_assembly(shellcraft.mips.linux.sh())
-    >>> p.sendline('echo Hello')
+    >>> p.sendline(b'echo Hello')
     >>> p.recv()
-    'Hello\n'
+    b'Hello\n'
 
 </%docstring>
 

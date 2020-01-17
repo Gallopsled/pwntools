@@ -54,6 +54,7 @@ Each of the ``pwntools`` modules is documented here.
    encoders
    elf
    exception
+   filepointer
    flag
    fmtstr
    gdb

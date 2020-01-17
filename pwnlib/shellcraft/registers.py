@@ -43,35 +43,35 @@ mips = {
 
 mips_list = list(mips)
 
-arm = map('r{}'.format, range(13))
+arm = list(map('r{}'.format, range(13)))
 arm += ["sp", "lr", "pc", "cpsr"]
 
 thumb = arm
 
-aarch64 = map('x{}'.format, range(32))
+aarch64 = list(map('x{}'.format, range(32)))
 aarch64 += ["sp", "lr", "pc", "cpsr"]
 
 i386_baseregs = [ "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", "ip"]
 
-i386 = map('e{}'.format, i386_baseregs)
+i386 = list(map('e{}'.format, i386_baseregs))
 i386 += i386_baseregs
 i386 += [ "eflags", "cs", "ss", "ds", "es", "fs", "gs", ]
 
-amd64 =  map('r{}'.format, i386_baseregs)
-amd64 += map('r{}'.format, range(8,16))
-amd64 += map('r{}d'.format, range(8,16))
+amd64 =  list(map('r{}'.format, i386_baseregs))
+amd64 += list(map('r{}'.format, range(8,16)))
+amd64 += list(map('r{}d'.format, range(8,16)))
 amd64 += i386
 
-powerpc =  map('r{}'.format, range(32))
+powerpc =  list(map('r{}'.format, range(32)))
 powerpc += ["pc", "msr", "cr", "lr", "ctr", "xer", "orig_r3", "trap" ]
-powerpc =  map('%{}'.format, powerpc)
+powerpc =  list(map('%{}'.format, powerpc))
 
-sparc =  map('g{}'.format, range(8))
-sparc += map('o{}'.format, range(5))
-sparc += map('l{}'.format, range(8))
-sparc += map('i{}'.format, range(5))
+sparc =  list(map('g{}'.format, range(8)))
+sparc += list(map('o{}'.format, range(5)))
+sparc += list(map('l{}'.format, range(8)))
+sparc += list(map('i{}'.format, range(5)))
 sparc += ["pc", "sp", "fp", "psr" ]
-sparc =  map('%{}'.format, sparc)
+sparc =  list(map('%{}'.format, sparc))
 
 
 
