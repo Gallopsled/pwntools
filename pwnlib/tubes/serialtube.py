@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 
 import glob
 import platform
@@ -62,7 +63,7 @@ class serialtube(tube.tube):
             raise EOFError
 
         if self.convert_newlines:
-            data = data.replace('\n', '\r\n')
+            data = data.replace(b'\n', b'\r\n')
 
         while data:
             n = self.conn.write(data)

@@ -1,10 +1,14 @@
+from __future__ import division
+
 import sys
 from os.path import basename
 
 from docutils import nodes
 from docutils import statemachine
-
-from docutils.parsers.rst import Directive
+try:
+    from sphinx.util.compat import Directive
+except ImportError:
+    from docutils.parsers.rst import Directive
 
 try:
     from StringIO import StringIO

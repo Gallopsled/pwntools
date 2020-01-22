@@ -14,7 +14,7 @@ Arguments:
     address(int): Address of the ELF as a register or integer.
 </%docstring>
 <%
-elf_magic = unpack('\x7fELF', 32)
+elf_magic = unpack(b'\x7fELF', 32)
 die       = common.label('die')
 load_one  = common.label('load_one')
 next_phdr = common.label('next_phdr')

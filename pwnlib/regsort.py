@@ -3,6 +3,7 @@
 Topographical sort
 """
 from __future__ import absolute_import
+from __future__ import division
 
 from collections import OrderedDict
 from collections import defaultdict
@@ -249,7 +250,7 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
 
     post_mov = {}
 
-    for v,ks in sorted(v_k.items()):
+    for v,ks in sorted(v_k.items(), key=repr):
         for k in ks[1:]:
             post_mov[k] = ks[0]
             in_out.pop(k)

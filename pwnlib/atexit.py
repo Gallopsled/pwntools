@@ -8,6 +8,7 @@ This module also fixes a the issue that exceptions raised by an exit handler is
 printed twice when the standard :mod:`atexit` is used.
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import sys
 import threading

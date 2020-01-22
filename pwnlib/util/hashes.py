@@ -1,14 +1,16 @@
 """
 Functions for computing various hashes of files and strings.
 """
+from __future__ import division
+
 import hashlib
 
-for _algo in hashlib.algorithms:
+for _algo in hashlib.algorithms_guaranteed:
     def _closure():
         hash = hashlib.__dict__[_algo]
         def file(p):
             h = hash()
-            fd = open(p)
+            fd = open(p, 'rb')
             while True:
                 s = fd.read(4096)
                 if not s:

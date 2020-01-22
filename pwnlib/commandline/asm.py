@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import absolute_import
+from __future__ import division
 
 import argparse
 import sys
@@ -29,8 +30,8 @@ parser.add_argument(
     "-o","--output",
     metavar='file',
     help="Output file (defaults to stdout)",
-    type=argparse.FileType('w'),
-    default=sys.stdout
+    type=argparse.FileType('wb'),
+    default=getattr(sys.stdout, 'buffer', sys.stdout)
 )
 
 parser.add_argument(
@@ -45,14 +46,14 @@ parser.add_argument(
 parser.add_argument(
     '-v', '--avoid',
     action='append',
-    help = 'Encode the shellcode to avoid the listed bytes (provided as hex; default: 000a)'
+    help = 'Encode the shellcode to avoid the listed bytes (provided as hex)'
 )
 
 parser.add_argument(
     '-n', '--newline',
     dest='avoid',
     action='append_const',
-    const='\n',
+    const='0a',
     help = 'Encode the shellcode to avoid newlines'
 )
 
@@ -60,7 +61,7 @@ parser.add_argument(
     '-z', '--zero',
     dest='avoid',
     action='append_const',
-    const='\x00',
+    const='00',
     help = 'Encode the shellcode to avoid NULL bytes'
 )
 
@@ -83,7 +84,7 @@ parser.add_argument(
     '--infile',
     help="Specify input file",
     default=sys.stdin,
-    type=file
+    type=argparse.FileType('r')
 )
 
 parser.add_argument(
@@ -103,10 +104,11 @@ def main(args):
     data   = '\n'.join(args.lines) or args.infile.read()
     output = asm(data.replace(';', '\n'))
     fmt    = args.format or ('hex' if tty else 'raw')
-    formatters = {'r':str, 'h':enhex, 's':repr}
+    formatters = {'r':bytes, 'h':enhex, 's':repr}
 
     if args.avoid:
-        output = encode(output, args.avoid)
+        avoid = unhex(''.join(args.avoid))
+        output = encode(output, avoid)
 
     if args.debug:
         proc = gdb.debug_shellcode(output, arch=context.arch)
@@ -120,13 +122,16 @@ def main(args):
 
     if fmt[0] == 'e':
         args.output.write(make_elf(output))
-        try: os.fchmod(args.output.fileno(), 0700)
+        try: os.fchmod(args.output.fileno(), 0o700)
         except OSError: pass
     else:
-        args.output.write(formatters[fmt[0]](output))
+        output = formatters[fmt[0]](output)
+        if not hasattr(output, 'decode'):
+            output = output.encode('ascii')
+        args.output.write(output)
 
     if tty and fmt is not 'raw':
-        args.output.write('\n')
+        args.output.write(b'\n')
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)

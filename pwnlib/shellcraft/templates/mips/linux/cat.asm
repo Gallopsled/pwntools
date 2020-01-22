@@ -14,7 +14,7 @@ Example:
     >>> asm  = shellcraft.mips.linux.cat(f)
     >>> asm += shellcraft.mips.linux.exit(0)
     >>> run_assembly(asm).recvall()
-    'FLAG'
+    b'FLAG'
 
 </%docstring>
 <%
