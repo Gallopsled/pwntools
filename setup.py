@@ -61,7 +61,8 @@ install_requires     = ['paramiko>=1.15.2',
                         'psutil>=3.3.0',
                         'intervaltree>=3.0',
                         'sortedcontainers',
-                        'unicorn']
+                        'unicorn>=1.0.2rc1', # see unicorn-engine/unicorn#1100, unicorn-engine/unicorn#1170
+]
 
 # Check that the user has installed the Python development headers
 PythonH = os.path.join(get_python_inc(), 'Python.h')
