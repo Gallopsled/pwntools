@@ -7,6 +7,7 @@ paramiko>=1.15.2
 pip>=6.0.8
 pyelftools>=0.2.3
 pygments>=2.0
+pypandoc
 pyserial>=2.7
 requests>=2.5.1
 ropgadget>=5.3
