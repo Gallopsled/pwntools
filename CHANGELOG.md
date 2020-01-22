@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [4.2.0](#420)    | `dev`    | Feb 10, 2020 (planned)
 | [4.1.0](#410)    | `beta`   | Jan 30, 2020 (planned)
-| [4.0.0](#400)    | `stable` | Jan 09, 2020
+| [4.0.1](#401)    | `stable` | Jan 22, 2020
+| [4.0.0](#400)    |          | Jan 09, 2020
 | [3.13.0](#3130)  |          | Nov 5, 2019
 | [3.12.1](#3121)  |          | Sept 17, 2018
 | [3.12.0](#3120)  |          | Feb 22, 2018
@@ -63,7 +64,14 @@ To be released on Jan 30, 2020.
 [1241]: https://github.com/Gallopsled/pwntools/pulls/1218
 [1218]: https://github.com/Gallopsled/pwntools/pulls/1218
 
-## 4.0.0 (`stable`)
+## 4.0.1 (`stable`)
+
+- [#1412][1412] `recvline_pred()` and similar do not reorder data
+- Bypass unicorn-engine/unicorn#1100 and unicorn-engine/unicorn#1170 requiring unstable package
+
+[1412]: https://github.com/Gallopsled/pwntools/pulls/1412
+
+## 4.0.0
 
 - **Python 3 support! <3**
 - [#1402][1402] Fix serialtube in python 3
