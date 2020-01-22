@@ -46,9 +46,9 @@ i386 Example:
     Let's start the process, send the data, and check the message.
 
     >>> p = process(binary.path)
-    >>> p.send(str(frame))
+    >>> p.send(bytes(frame))
     >>> p.recvline()
-    'Hello, World\n'
+    b'Hello, World\n'
     >>> p.poll(block=True)
     0
 
@@ -71,9 +71,9 @@ amd64 Example:
     >>> frame.rsp = 0xdeadbeef
     >>> frame.rip = binary.symbols['syscall']
     >>> p = process(binary.path)
-    >>> p.send(str(frame))
+    >>> p.send(bytes(frame))
     >>> p.recvline()
-    'Hello, World\n'
+    b'Hello, World\n'
     >>> p.poll(block=True)
     0
 
@@ -96,9 +96,9 @@ arm Example:
     >>> frame.sp = 0xdead0000
     >>> frame.pc = binary.symbols['syscall']
     >>> p = process(binary.path)
-    >>> p.send(str(frame))
+    >>> p.send(bytes(frame))
     >>> p.recvline()
-    'Hello, World\n'
+    b'Hello, World\n'
     >>> p.wait_for_close()
     >>> p.poll(block=True)
     0
@@ -122,9 +122,9 @@ Mips Example:
     >>> frame.sp = 0xdead0000
     >>> frame.pc = binary.symbols['syscall']
     >>> p = process(binary.path)
-    >>> p.send(str(frame))
+    >>> p.send(bytes(frame))
     >>> p.recvline()
-    'Hello, World\n'
+    b'Hello, World\n'
     >>> p.poll(block=True)
     0
 
@@ -147,9 +147,9 @@ Mipsel Example:
     >>> frame.sp = 0xdead0000
     >>> frame.pc = binary.symbols['syscall']
     >>> p = process(binary.path)
-    >>> p.send(str(frame))
+    >>> p.send(bytes(frame))
     >>> p.recvline()
-    'Hello, World\n'
+    b'Hello, World\n'
     >>> p.poll(block=True)
     0
 
@@ -264,43 +264,43 @@ class SigreturnFrame(dict):
 
         >>> context.clear(arch='amd64')
         >>> s = SigreturnFrame()
-        >>> unpack_many(str(s))
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0]
         >>> assert len(s) == 248
         >>> s.rax = 0xa
         >>> s.rdi = 0x00601000
         >>> s.rsi = 0x1000
         >>> s.rdx = 0x7
-        >>> assert len(str(s)) == 248
-        >>> unpack_many(str(s))
+        >>> assert len(bytes(s)) == 248
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6295552, 4096, 0, 0, 7, 10, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0]
 
         Crafting a SigreturnFrame that calls mprotect on i386
 
         >>> context.clear(arch='i386')
         >>> s = SigreturnFrame(kernel='i386')
-        >>> unpack_many(str(s))
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 115, 0, 0, 123, 0]
         >>> assert len(s) == 80
         >>> s.eax = 125
         >>> s.ebx = 0x00601000
         >>> s.ecx = 0x1000
         >>> s.edx = 0x7
-        >>> assert len(str(s)) == 80
-        >>> unpack_many(str(s))
+        >>> assert len(bytes(s)) == 80
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 6295552, 7, 4096, 125, 0, 0, 0, 115, 0, 0, 123, 0]
 
         Crafting a SigreturnFrame that calls mprotect on ARM
 
         >>> s = SigreturnFrame(arch='arm')
-        >>> unpack_many(str(s))
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1073741840, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1447448577, 288]
         >>> s.r0 = 125
         >>> s.r1 = 0x00601000
         >>> s.r2 = 0x1000
         >>> s.r3 = 0x7
-        >>> assert len(str(s)) == 240
-        >>> unpack_many(str(s))
+        >>> assert len(bytes(s)) == 240
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 6, 0, 0, 125, 6295552, 4096, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1073741840, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1447448577, 288]
 
         Crafting a SigreturnFrame that calls mprotect on MIPS
@@ -308,14 +308,14 @@ class SigreturnFrame(dict):
         >>> context.clear()
         >>> context.endian = "big"
         >>> s = SigreturnFrame(arch='mips')
-        >>> unpack_many(str(s))
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         >>> s.v0 = 0x101d
         >>> s.a0 = 0x00601000
         >>> s.a1 = 0x1000
         >>> s.a2 = 0x7
-        >>> assert len(str(s)) == 296
-        >>> unpack_many(str(s))
+        >>> assert len(bytes(s)) == 296
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4125, 0, 0, 0, 6295552, 0, 4096, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         Crafting a SigreturnFrame that calls mprotect on MIPSel
@@ -323,14 +323,14 @@ class SigreturnFrame(dict):
         >>> context.clear()
         >>> context.endian = "little"
         >>> s = SigreturnFrame(arch='mips')
-        >>> unpack_many(str(s))
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         >>> s.v0 = 0x101d
         >>> s.a0 = 0x00601000
         >>> s.a1 = 0x1000
         >>> s.a2 = 0x7
-        >>> assert len(str(s)) == 292
-        >>> unpack_many(str(s))
+        >>> assert len(bytes(s)) == 292
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4125, 0, 0, 0, 6295552, 0, 4096, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         Crafting a SigreturnFrame that calls mprotect on Aarch64
@@ -338,14 +338,14 @@ class SigreturnFrame(dict):
         >>> context.clear()
         >>> context.endian = "little"
         >>> s = SigreturnFrame(arch='aarch64')
-        >>> unpack_many(str(s))
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1179680769, 528]
         >>> s.x8 = 0xe2
         >>> s.x0 = 0x4000
         >>> s.x1 = 0x1000
         >>> s.x2 = 0x7
-        >>> assert len(str(s)) == 600
-        >>> unpack_many(str(s))
+        >>> assert len(bytes(s)) == 600
+        >>> unpack_many(bytes(s))
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16384, 0, 4096, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 226, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1179680769, 528]
     """
 
@@ -364,7 +364,7 @@ class SigreturnFrame(dict):
         self.endian = context.endian
         self._regs = [self.registers[i] for i in sorted(self.registers.keys())]
         self.update({r:0 for r in self._regs})
-        self.size = len(str(self))
+        self.size = len(bytes(self))
         self.update(defaults[self.arch])
 
         if context.arch == 'i386' and context.kernel == 'amd64':
@@ -388,20 +388,23 @@ class SigreturnFrame(dict):
     def __getattr__(self, attr):
         return self[attr]
 
-    def __str__(self):
-        frame = ""
+    def __bytes__(self):
+        frame = b""
         with context.local(arch=self.arch):
             for register_offset in sorted(self.register_offsets):
                 if len(frame) < register_offset:
-                    frame += "\x00"*(register_offset - len(frame))
+                    frame += b"\x00"*(register_offset - len(frame))
                 frame += pack(self[self.registers[register_offset]])
         return frame
+
+    def __str__(self):
+        return str(self.__bytes__())
 
     def __len__(self):
         return self.size
 
     def __flat__(self):
-        return str(self)
+        return bytes(self)
 
     @property
     def registers(self):

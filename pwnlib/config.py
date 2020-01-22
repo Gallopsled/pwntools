@@ -30,7 +30,7 @@ supported by ``pwnlib.util.safeeval.expr``.
 from __future__ import absolute_import
 from __future__ import division
 
-import ConfigParser
+from six.moves import configparser
 import os
 
 registered_configs = {}
@@ -50,7 +50,7 @@ def initialize():
     from pwnlib.log import getLogger
     log = getLogger(__name__)
 
-    c = ConfigParser.ConfigParser()
+    c = configparser.ConfigParser()
     c.read(['/etc/pwn.conf', os.path.expanduser('~/.pwn.conf')])
 
     for section in c.sections():

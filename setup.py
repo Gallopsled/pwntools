@@ -1,4 +1,6 @@
 #!/usr/bin/env python2
+from __future__ import print_function
+
 import glob
 import os
 import platform
@@ -51,36 +53,35 @@ install_requires     = ['paramiko>=1.15.2',
                         'pyserial>=2.7',
                         'requests>=2.0',
                         'pip>=6.0.8',
-                        'tox>=1.8.1',
                         'pygments>=2.0',
                         'pysocks',
                         'python-dateutil',
                         'packaging',
                         'psutil>=3.3.0',
-                        'intervaltree',
-                        'sortedcontainers<2.0', # See Gallopsled/pwntools#1154
+                        'intervaltree>=3.0',
+                        'sortedcontainers',
                         'unicorn']
 
 # Check that the user has installed the Python development headers
 PythonH = os.path.join(get_python_inc(), 'Python.h')
 if not os.path.exists(PythonH):
-    print >> sys.stderr, "You must install the Python development headers!"
-    print >> sys.stderr, "$ apt-get install python-dev"
+    print("You must install the Python development headers!", file=sys.stderr)
+    print("$ apt-get install python-dev", file=sys.stderr)
     sys.exit(-1)
 
 # Convert README.md to reStructuredText for PyPI
 long_description = ''
 try:
-    long_description = subprocess.check_output(['pandoc', 'README.md', '--to=rst'])
+    long_description = subprocess.check_output(['pandoc', 'README.md', '--to=rst'], universal_newlines=True)
 except Exception as e:
-    print >>sys.stderr, "Failed to convert README.md through pandoc, proceeding anyway"
+    print("Failed to convert README.md through pandoc, proceeding anyway", file=sys.stderr)
     traceback.print_exc()
 
 setup(
     name                 = 'pwntools',
-    python_requires      = '~=2.7',
+    python_requires      = '>=2.7',
     packages             = find_packages(),
-    version              = '3.14.0dev',
+    version              = '4.2.0dev',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],

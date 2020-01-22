@@ -12,6 +12,7 @@ import pty
 import resource
 import select
 import signal
+import six
 import stat
 import subprocess
 import time
@@ -112,9 +113,9 @@ class process(tube):
     Examples:
 
         >>> p = process('python2')
-        >>> p.sendline("print 'Hello world'")
-        >>> p.sendline("print 'Wow, such data'");
-        >>> '' == p.recv(timeout=0.01)
+        >>> p.sendline(b"print 'Hello world'")
+        >>> p.sendline(b"print 'Wow, such data'");
+        >>> b'' == p.recv(timeout=0.01)
         True
         >>> p.shutdown('send')
         >>> p.proc.stdin.closed
@@ -122,62 +123,62 @@ class process(tube):
         >>> p.connected('send')
         False
         >>> p.recvline()
-        'Hello world\n'
-        >>> p.recvuntil(',')
-        'Wow,'
-        >>> p.recvregex('.*data')
-        ' such data'
+        b'Hello world\n'
+        >>> p.recvuntil(b',')
+        b'Wow,'
+        >>> p.recvregex(b'.*data')
+        b' such data'
         >>> p.recv()
-        '\n'
+        b'\n'
         >>> p.recv() # doctest: +ELLIPSIS
         Traceback (most recent call last):
         ...
         EOFError
 
         >>> p = process('cat')
-        >>> d = open('/dev/urandom').read(4096)
+        >>> d = open('/dev/urandom', 'rb').read(4096)
         >>> p.recv(timeout=0.1)
-        ''
+        b''
         >>> p.write(d)
         >>> p.recvrepeat(0.1) == d
         True
         >>> p.recv(timeout=0.1)
-        ''
+        b''
         >>> p.shutdown('send')
         >>> p.wait_for_close()
         >>> p.poll()
         0
 
-        >>> p = process('cat /dev/zero | head -c8', shell=True, stderr=open('/dev/null', 'w+'))
+        >>> p = process('cat /dev/zero | head -c8', shell=True, stderr=open('/dev/null', 'w+b'))
         >>> p.recv()
-        '\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
 
-        >>> p = process(['python','-c','import os; print os.read(2,1024)'],
+        >>> p = process(['python','-c','import os; print(os.read(2,1024).decode())'],
         ...             preexec_fn = lambda: os.dup2(0,2))
-        >>> p.sendline('hello')
+        >>> p.sendline(b'hello')
         >>> p.recvline()
-        'hello\n'
+        b'hello\n'
 
-        >>> stack_smashing = ['python','-c','open("/dev/tty","wb").write("stack smashing detected")']
+        >>> stack_smashing = ['python','-c','open("/dev/tty","wb").write(b"stack smashing detected")']
         >>> process(stack_smashing).recvall()
-        'stack smashing detected'
+        b'stack smashing detected'
 
         >>> process(stack_smashing, stdout=PIPE).recvall()
-        ''
+        b''
 
-        >>> getpass = ['python','-c','import getpass; print getpass.getpass("XXX")']
+        >>> getpass = ['python','-c','import getpass; print(getpass.getpass("XXX"))']
         >>> p = process(getpass, stdin=PTY)
         >>> p.recv()
-        'XXX'
-        >>> p.sendline('hunter2')
+        b'XXX'
+        >>> p.sendline(b'hunter2')
         >>> p.recvall()
-        '\nhunter2\n'
+        b'\nhunter2\n'
 
         >>> process('echo hello 1>&2', shell=True).recvall()
-        'hello\n'
+        b'hello\n'
 
         >>> process('echo hello 1>&2', shell=True, stderr=PIPE).recvall()
-        ''
+        b''
 
         >>> a = process(['cat', '/proc/self/maps']).recvall()
         >>> b = process(['cat', '/proc/self/maps'], aslr=False).recvall()
@@ -189,7 +190,7 @@ class process(tube):
         True
 
         >>> process(['sh','-c','ulimit -s'], aslr=0).recvline()
-        'unlimited\n'
+        b'unlimited\n'
 
         >>> io = process(['sh','-c','sleep 10; exit 7'], alarm=2)
         >>> io.poll(block=True) == -signal.SIGALRM
@@ -240,10 +241,6 @@ class process(tube):
 
         if not shell:
             executable, argv, env = self._validate(cwd, executable, argv, env)
-
-        # Permit invocation as process('sh') and process(['sh'])
-        if isinstance(argv, (str, unicode)):
-            argv = [argv]
 
         # Avoid the need to have to deal with the STDOUT magic value.
         if stderr is STDOUT:
@@ -307,13 +304,15 @@ class process(tube):
             # and binfmt is not installed (e.g. when running on
             # Travis CI), re-try with qemu-XXX if we get an
             # 'Exec format error'.
-            prefixes = [([], executable)]
-            executables = [executable]
+            prefixes = [([], self.executable)]
             exception = None
 
             for prefix, executable in prefixes:
                 try:
-                    self.proc = subprocess.Popen(args = prefix + argv,
+                    args = argv
+                    if prefix:
+                        args = prefix + args
+                    self.proc = subprocess.Popen(args = args,
                                                  shell = shell,
                                                  executable = executable,
                                                  cwd = cwd,
@@ -333,20 +332,21 @@ class process(tube):
 
         if self.pty is not None:
             if stdin is slave:
-                self.proc.stdin = os.fdopen(os.dup(master), 'r+', 0)
+                self.proc.stdin = os.fdopen(os.dup(master), 'r+b', 0)
             if stdout is slave:
-                self.proc.stdout = os.fdopen(os.dup(master), 'r+', 0)
+                self.proc.stdout = os.fdopen(os.dup(master), 'r+b', 0)
             if stderr is slave:
-                self.proc.stderr = os.fdopen(os.dup(master), 'r+', 0)
+                self.proc.stderr = os.fdopen(os.dup(master), 'r+b', 0)
 
             os.close(master)
             os.close(slave)
 
         # Set in non-blocking mode so that a call to call recv(1000) will
         # return as soon as a the first byte is available
-        fd = self.proc.stdout.fileno()
-        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+        if self.proc.stdout:
+            fd = self.proc.stdout.fileno()
+            fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+            fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
         # Save off information about whether the binary is setuid / setgid
         self.uid = os.getuid()
@@ -435,11 +435,11 @@ class process(tube):
         # appropriate qemu binary to run it.
         qemu_path = qemu.user_path(arch=binary.arch)
 
-        if not qemu:
+        if not qemu_path:
             raise exception
 
         qemu_path = which(qemu_path)
-        if qemu:
+        if qemu_path:
             self._qemu = qemu_path
 
             args = [qemu_path]
@@ -475,12 +475,12 @@ class process(tube):
         Example:
 
             >>> p = process('sh')
-            >>> p.sendline('cd /tmp; echo AAA')
-            >>> _ = p.recvuntil('AAA')
+            >>> p.sendline(b'cd /tmp; echo AAA')
+            >>> _ = p.recvuntil(b'AAA')
             >>> p.cwd == '/tmp'
             True
-            >>> p.sendline('cd /proc; echo BBB;')
-            >>> _ = p.recvuntil('BBB')
+            >>> p.sendline(b'cd /proc; echo BBB;')
+            >>> _ = p.recvuntil(b'BBB')
             >>> p.cwd
             '/proc'
         """
@@ -507,20 +507,26 @@ class process(tube):
         # - Must be a list/tuple of strings
         # - Each string must not contain '\x00'
         #
-        if isinstance(argv, (str, unicode)):
+        if isinstance(argv, (six.text_type, six.binary_type)):
             argv = [argv]
 
-        if not all(isinstance(arg, (str, unicode)) for arg in argv):
-            self.error("argv must be strings: %r" % argv)
+        if not isinstance(argv, (list, tuple)):
+            self.error('argv must be a list or tuple: %r' % argv)
+
+        if not all(isinstance(arg, (six.text_type, six.binary_type)) for arg in argv):
+            self.error("argv must be strings or bytes: %r" % argv)
 
         # Create a duplicate so we can modify it
         argv = list(argv or [])
 
-        for i, arg in enumerate(argv):
-            if '\x00' in arg[:-1]:
-                self.error('Inappropriate nulls in argv[%i]: %r' % (i, arg))
-
-            argv[i] = arg.rstrip('\x00')
+        for i, oarg in enumerate(argv):
+            if isinstance(oarg, six.text_type):
+                arg = oarg.encode('utf-8')
+            else:
+                arg = oarg
+            if b'\x00' in arg[:-1]:
+                self.error('Inappropriate nulls in argv[%i]: %r' % (i, oarg))
+            argv[i] = arg.rstrip(b'\x00')
 
         #
         # Validate executable
@@ -532,6 +538,9 @@ class process(tube):
             if not argv:
                 self.error("Must specify argv or executable")
             executable = argv[0]
+
+        if not isinstance(executable, str):
+            executable = executable.decode('utf-8')
 
         # Do not change absolute paths to binaries
         if executable.startswith(os.path.sep):
@@ -566,21 +575,25 @@ class process(tube):
         #
 
         # Create a duplicate so we can modify it safely
-        env = (os.environ if env is None else env).copy()
+        env = os.environ if env is None else env
 
+        env2 = {}
         for k,v in env.items():
-            if not isinstance(k, (str, unicode)):
+            if not isinstance(k, (bytes, six.text_type)):
                 self.error('Environment keys must be strings: %r' % k)
-            if not isinstance(k, (str, unicode)):
+            if not isinstance(k, (bytes, six.text_type)):
                 self.error('Environment values must be strings: %r=%r' % (k,v))
-            if '\x00' in k[:-1]:
+            if isinstance(k, six.text_type):
+                k = k.encode('utf-8')
+            if isinstance(v, six.text_type):
+                v = v.encode('utf-8', 'surrogateescape')
+            if b'\x00' in k[:-1]:
                 self.error('Inappropriate nulls in env key: %r' % (k))
-            if '\x00' in v[:-1]:
+            if b'\x00' in v[:-1]:
                 self.error('Inappropriate nulls in env value: %r=%r' % (k, v))
+            env2[k.rstrip(b'\x00')] = v.rstrip(b'\x00')
 
-            env[k.rstrip('\x00')] = v.rstrip('\x00')
-
-        return executable, argv, env
+        return executable, argv, env2
 
     def _handles(self, stdin, stdout, stderr):
         master = slave = None
@@ -832,22 +845,20 @@ class process(tube):
         Return a dictionary mapping the path of each shared library loaded
         by the process to the address it is loaded at in the process' address
         space.
-
-        If ``/proc/$PID/maps`` for the process cannot be accessed, the output
-        of ``ldd`` alone is used.  This may give inaccurate results if ASLR
-        is enabled.
         """
-        with context.local(log_level='error'):
-            ldd = process(['ldd', self.executable]).recvall()
-
-        maps = parse_ldd_output(ldd)
-
         try:
             maps_raw = open('/proc/%d/maps' % self.pid).read()
         except IOError:
-            return maps
+            maps_raw = None
+
+        if not maps_raw:
+            import pwnlib.elf.elf
+
+            with context.quiet:
+                return pwnlib.elf.elf.ELF(self.executable).maps
 
         # Enumerate all of the libraries actually loaded right now.
+        maps = {}
         for line in maps_raw.splitlines():
             if '/' not in line: continue
             path = line[line.index('/'):]
@@ -872,6 +883,14 @@ class process(tube):
         Returns an ELF for the libc for the current process.
         If possible, it is adjusted to the correct address
         automatically.
+
+        Example:
+
+        >>> p = process("/bin/cat")
+        >>> libc = p.libc
+        >>> libc # doctest: +SKIP
+        ELF('/lib64/libc-...so')
+        >>> p.close()
         """
         from pwnlib.elf import ELF
 
@@ -911,7 +930,7 @@ class process(tube):
         finder = pwnlib.elf.corefile.CorefileFinder(self)
         if not finder.core_path:
             self.warn("Could not find core file for pid %i" % self.pid)
-            return
+            return Ellipsis ##
 
         core_hash = sha256file(finder.core_path)
 
@@ -938,14 +957,14 @@ class process(tube):
             In order to make sure there's not a race condition against
             the process getting set up...
 
-            >>> p.sendline('echo hello')
-            >>> p.recvuntil('hello')
-            'hello'
+            >>> p.sendline(b'echo hello')
+            >>> p.recvuntil(b'hello')
+            b'hello'
 
             Now we can leak some data!
 
             >>> p.leak(e.address, 4)
-            '\x7fELF'
+            b'\x7fELF'
         """
         # If it's running under qemu-user, don't leak anything.
         if 'qemu-' in os.path.realpath('/proc/%i/exe' % self.pid):

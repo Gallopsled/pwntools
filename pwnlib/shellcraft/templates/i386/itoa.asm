@@ -17,8 +17,8 @@ Example:
     >>> sc = shellcraft.i386.mov('eax', 0xdeadbeef)
     >>> sc += shellcraft.i386.itoa('eax')
     >>> sc += shellcraft.i386.linux.write(1, 'esp', 32)
-    >>> run_assembly(sc).recvuntil('\x00')
-    '3735928559\x00'
+    >>> run_assembly(sc).recvuntil(b'\x00')
+    b'3735928559\x00'
 </%docstring>
 <%page args="v, buffer='esp', allocate_stack=True"/>
 <%

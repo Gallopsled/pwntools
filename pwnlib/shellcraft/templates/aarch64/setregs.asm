@@ -13,10 +13,10 @@ Args:
 
 Example:
 
-    >>> print shellcraft.setregs({'x0':1, 'x2':'x3'}).rstrip()
+    >>> print(shellcraft.setregs({'x0':1, 'x2':'x3'}).rstrip())
         mov  x0, #1
         mov  x2, x3
-    >>> print shellcraft.setregs({'x0':'x1', 'x1':'x0', 'x2':'x3'}).rstrip()
+    >>> print(shellcraft.setregs({'x0':'x1', 'x1':'x0', 'x2':'x3'}).rstrip())
         mov  x2, x3
         eor  x0, x0, x1 /* xchg x0, x1 */
         eor  x1, x0, x1

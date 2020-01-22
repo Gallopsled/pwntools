@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import socket
+import socks
 import ssl as _ssl
 
 from pwnlib.log import getLogger
@@ -25,13 +26,14 @@ class remote(sock):
         timeout: A positive number, None or the string "default".
         ssl(bool): Wrap the socket with SSL
         sock(socket.socket): Socket to inherit, rather than connecting
+        ssl_args(dict): Pass ssl.wrap_socket named arguments in a dictionary.
 
     Examples:
 
         >>> r = remote('google.com', 443, ssl=True)
-        >>> r.send('GET /\r\n\r\n')
+        >>> r.send(b'GET /\r\n\r\n')
         >>> r.recvn(4)
-        'HTTP'
+        b'HTTP'
 
         If a connection cannot be made, an exception is raised.
 
@@ -45,16 +47,16 @@ class remote(sock):
         >>> import socket
         >>> s = socket.socket()
         >>> s.connect(('google.com', 80))
-        >>> s.send('GET /' + '\r\n'*2)
+        >>> s.send(b'GET /' + b'\r\n'*2)
         9
         >>> r = remote.fromsocket(s)
         >>> r.recvn(4)
-        'HTTP'
+        b'HTTP'
     """
 
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
-                 ssl=False, sock=None, *args, **kwargs):
+                 ssl=False, sock=None, ssl_args=None, *args, **kwargs):
         super(remote, self).__init__(*args, **kwargs)
 
         self.rport  = int(port)
@@ -80,7 +82,7 @@ class remote(sock):
             self.lhost, self.lport = self.sock.getsockname()[:2]
 
             if ssl:
-                self.sock = _ssl.wrap_socket(self.sock)
+                self.sock = _ssl.wrap_socket(self.sock,**(ssl_args or {}))
 
     def _connect(self, fam, typ):
         sock    = None
@@ -106,6 +108,8 @@ class remote(sock):
                 try:
                     sock.connect(sockaddr)
                     return sock
+                except socks.ProxyError:
+                    raise
                 except socket.error:
                     pass
             self.error("Could not connect to %s on port %d" % (self.rhost, self.rport))

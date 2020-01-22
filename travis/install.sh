@@ -11,7 +11,7 @@ local_deb_extract()
 
 install_deb()
 {
-    version=${2:-artful}
+    version=${2:-bionic}
     package=$1
     echo "Installing $package"
     INDEX="http://packages.ubuntu.com/en/$version/amd64/$package/download"
@@ -47,6 +47,8 @@ setup_travis()
     powerpc-linux-gnu-as    --version
     qemu-arm-static         --version
 
+    mips-linux-gnu-ld       --version
+
     # Force-install capstone because it's broken somehow
     [[ -f usr/lib/libcapstone.so.3 ]] || install_deb libcapstone3
 
@@ -62,10 +64,17 @@ setup_travis()
     rm -rf usr/share
 }
 
+setup_gdbserver()
+{
+    # https://docs.improbable.io/reference/14.3/shared/debug-cloud-workers#common-issues
+    wget http://archive.ubuntu.com/ubuntu/pool/main/g/gdb/gdbserver_8.3-0ubuntu1_amd64.deb
+    sudo apt-get install ./gdbserver_8.3-0ubuntu1_amd64.deb
+}
+
 setup_linux()
 {
     sudo apt-get install -y software-properties-common openssh-server libncurses5-dev libncursesw5-dev openjdk-8-jre-headless
-    RELEASE="$(lsb-release -sr)"
+    RELEASE="$(lsb_release -sr)"
     if [[ "$RELEASE" < "16.04" ]]; then
         sudo apt-add-repository --yes ppa:pwntools/binutils
         sudo apt-get update
@@ -184,7 +193,8 @@ setup_osx()
 }
 
 if [[ "$USER" == "travis" ]]; then
-    setup_travis
+#   setup_travis
+    setup_gdbserver
     setup_android_emulator
 elif [[ "$USER" == "shippable" ]]; then
     sudo apt-get update
