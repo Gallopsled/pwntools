@@ -136,7 +136,7 @@ def which(name, all = False):
     returns a full path if found.
 
     If `all` is :const:`True` the set of all found locations is returned, else
-    the first occurence or :const:`None` is returned.
+    the first occurrence or :const:`None` is returned.
 
     Arguments:
       `name` (str): The file to search for.

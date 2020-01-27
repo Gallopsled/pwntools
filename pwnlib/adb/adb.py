@@ -662,9 +662,9 @@ def makedirs(path):
 
     Examples:
 
-        >>> adb.makedirs('/data/local/tmp/this/is/a/directory/heirarchy')
+        >>> adb.makedirs('/data/local/tmp/this/is/a/directory/hierarchy')
         >>> adb.listdir('/data/local/tmp/this/is/a/directory')
-        ['heirarchy']
+        ['hierarchy']
     """
     if path != '/':
         makedirs(os.path.dirname(path))
