@@ -28,6 +28,8 @@ from pwnlib.util.misc import parse_ldd_output
 from pwnlib.util.misc import which
 import pwnlib.util.proc
 
+from pwnlib.heap import HeapExplorer
+
 log = getLogger(__name__)
 
 class PTY(object): pass
@@ -922,13 +924,22 @@ class process(tube):
         ELF('/lib64/libc-...so')
         >>> p.close()
         """
+        e = self._libc()
+        e.checksec()
+        return e
+
+    def _libc(self):
         from pwnlib.elf import ELF
 
         for lib, address in self.libs().items():
             if 'libc.so' in lib or 'libc-' in lib:
-                e = ELF(lib)
+                e = ELF(lib, checksec=False)
                 e.address = address
                 return e
+
+    @property
+    def heap_explorer(self):
+        return HeapExplorer(self.pid, self._libc())
 
     @property
     def elf(self):
