@@ -65,6 +65,7 @@ from pwnlib.util.proc import pidof
 from pwnlib.util.sh_string import sh_string, sh_prepare, sh_command_with
 from pwnlib.util.splash import *
 from pwnlib.util.web import *
+from pwnlib.heap import *
 
 # Promote these modules, so that "from pwn import *" will let you access them
 

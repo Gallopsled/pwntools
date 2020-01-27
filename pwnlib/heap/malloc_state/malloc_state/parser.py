@@ -1,5 +1,5 @@
-from heap_explorer.malloc_state.bins import *
-from heap_explorer.malloc_state.fastbinsy import *
+from pwnlib.heap.malloc_state.bins import *
+from pwnlib.heap.malloc_state.fastbinsy import *
 from construct import *
 from .malloc_state import MallocState
 

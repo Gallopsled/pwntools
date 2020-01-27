@@ -1,5 +1,5 @@
-from heap_explorer.utils import *
-from heap_explorer.bins.fast_bin import FastBinEntry
+from pwnlib.heap.utils import *
+from pwnlib.heap.bins.fast_bin import FastBinEntry
 
 
 class FastBinsYParser:

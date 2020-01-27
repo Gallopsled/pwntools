@@ -37,6 +37,7 @@ __all__ = [
     'util',
     'adb',
     'update',
+    'heap'
 ]
 
 for module in __all__:

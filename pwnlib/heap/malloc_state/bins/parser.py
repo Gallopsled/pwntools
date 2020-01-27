@@ -1,7 +1,7 @@
 
-from heap_explorer.utils import *
+from pwnlib.heap.utils import *
 from .bins import Bins
-from heap_explorer.bins import *
+from pwnlib.heap.bins import *
 from .bins_indexes import *
 
 
