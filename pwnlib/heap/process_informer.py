@@ -1,6 +1,6 @@
 from .utils import *
-from .memory_maps import MemoryMaps
 import os.path
+import pwnlib.util.proc
 
 
 class ProcessInformer:
@@ -38,7 +38,7 @@ class ProcessInformer:
             return mem.read(size)
 
     def maps(self):
-        return MemoryMaps.from_process(self.pid)
+        return pwnlib.util.proc.MemoryMaps.from_process(self.pid)
 
     def is_libc_version_higher_than(self, version):
         return self.libc_version > version
