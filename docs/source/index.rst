@@ -58,6 +58,7 @@ Each of the ``pwntools`` modules is documented here.
    flag
    fmtstr
    gdb
+   heap
    libcdb
    log
    memleak
