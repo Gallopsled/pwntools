@@ -27,7 +27,7 @@ class FastBinParser:
         for bin_entry in malloc_state.fastbinsY:
             fast_bin = self._parse_from_fast_bin_entry(bin_entry)
             fast_bins.append(fast_bin)
-        return fast_bins
+        return FastBins(fast_bins)
 
     def _parse_from_fast_bin_entry(self, fast_bin_entry):
         chunks = []
@@ -48,6 +48,12 @@ class FastBinParser:
         return FastBin(fast_bin_entry, chunks)
 
 
+class FastBins(Bins):
+
+    def _name(self):
+        return "Fast Bins"
+
+
 class FastBin(Bin):
     """Class to represent a fast bin of the glibc.
     """
@@ -55,7 +61,7 @@ class FastBin(Bin):
     def __init__(self, bin_entry, malloc_chunks):
         super(FastBin, self).__init__(bin_entry, malloc_chunks)
 
-    def __str__(self):
+    def __repr__(self):
         msg = "Fastbin [size = {:#x}, count = {}] => {:#x}".format(
             self.chunks_size,
             len(self),
@@ -66,6 +72,9 @@ class FastBin(Bin):
             msg += chunk.to_bin_str()
 
         return msg
+
+    def _name(self):
+        return "Fast Bin"
 
 
 class FastBinEntry(BinEntry):

@@ -1,4 +1,6 @@
-from .bin_factory import BinFactory
+from .small_bin import *
+from .large_bin import *
+from .unsorted_bin import *
 
 
 class BinParser:
@@ -26,7 +28,9 @@ class BinParser:
         Returns:
             UnsortedBin
         """
-        return self._parse_from_bin_entry(malloc_state.unsorted_bin)
+        return UnsortedBins(
+            self._parse_from_bin_entry(malloc_state.unsorted_bin)
+        )
 
     def parse_small_bins_from_malloc_state(self, malloc_state):
         """Returns the small bins of the arena based on the malloc state
@@ -43,7 +47,7 @@ class BinParser:
             small_bins.append(
                 self._parse_from_bin_entry(small_entry)
             )
-        return small_bins
+        return SmallBins(small_bins)
 
     def parse_large_bins_from_malloc_state(self, malloc_state):
         """Returns the small bins of the arena based on the malloc state
@@ -60,7 +64,7 @@ class BinParser:
             large_bins.append(
                 self._parse_from_bin_entry(large_entry)
             )
-        return large_bins
+        return LargeBins(large_bins)
 
     def _parse_from_bin_entry(self, bin_entry):
         chunks = []
@@ -82,3 +86,19 @@ class BinParser:
         return BinFactory.create(bin_entry, chunks)
 
 
+class BinFactory:
+    """Helper class to create different bin classes based on the type of entry
+    provided.
+    """
+
+    @staticmethod
+    def create(bin_entry, chunks):
+
+        if isinstance(bin_entry, LargeBinEntry):
+            return LargeBin(bin_entry, chunks)
+        elif isinstance(bin_entry, SmallBinEntry):
+            return SmallBin(bin_entry, chunks)
+        elif isinstance(bin_entry, UnsortedBinEntry):
+            return UnsortedBin(bin_entry, chunks)
+
+        raise TypeError()

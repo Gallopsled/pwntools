@@ -1,6 +1,12 @@
 from .bin import *
 
 
+class SmallBins(Bins):
+
+    def _name(self):
+        return "Small Bins"
+
+
 class SmallBin(Bin):
     """Class to represent an small bin of the glibc
     """
@@ -8,7 +14,7 @@ class SmallBin(Bin):
     def __init__(self, bin_entry, malloc_chunks):
         super(SmallBin, self).__init__(bin_entry, malloc_chunks)
 
-    def __str__(self):
+    def __repr__(self):
 
         msg = "Smallbin [size = {:#x}, count = {}] => {:#x}".format(
             self.chunks_size,
@@ -20,6 +26,9 @@ class SmallBin(Bin):
             msg += chunk.to_bin_str()
 
         return msg
+
+    def _name(self):
+        return "Small Bin"
 
 
 class SmallBinEntry(BinEntry):

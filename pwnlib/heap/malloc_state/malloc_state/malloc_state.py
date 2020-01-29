@@ -1,3 +1,4 @@
+from pwnlib.heap.basic_formatter import BasicFormatter
 
 
 class MallocState:
@@ -60,6 +61,7 @@ class MallocState:
         self.attached_threads = attached_threads
         self.system_mem = system_mem
         self.max_system_mem = max_system_mem
+        self._basic_formatter = BasicFormatter()
 
     @property
     def unsorted_bin(self):
@@ -74,6 +76,87 @@ class MallocState:
         return self.bins.large_bins_entries
 
     def __str__(self):
+        msg = [
+            self._basic_formatter.header(
+                "Malloc State ({:#x})".format(self.address)
+            ),
+            self._format_malloc_state(),
+            self._basic_formatter.footer()
+        ]
+        return "\n".join(msg)
+
+    def _format_malloc_state(self):
+        string = [
+            "mutex = {:#x}".format(self.mutex),
+            "flags = {:#x}".format(self.flags)
+        ]
+
+        if self.have_fastchunks is not None:
+            string.append(
+                "have_fastchunks = {:#x}".format(self.have_fastchunks)
+            )
+
+        string.append(self._format_malloc_state_fastbinsY_as_str())
+
+        string.append("top = {:#x}".format(self.top))
+        string.append("last_remainder = {:#x}".format(self.last_remainder))
+        string.append(self._format_malloc_state_bins_as_str())
+
+        string.append("binmap = [{:#x}, {:#x}, {:#x}, {:#x}]".format(
+            self.binmap[0],
+            self.binmap[1],
+            self.binmap[2],
+            self.binmap[3]
+        ))
+        string.append("next = {:#x}".format(self.next))
+        string.append("next_free = {:#x}".format(self.next_free))
+
+        if self.attached_threads is not None:
+            string.append("attached_threads = {:#x}".format(
+                self.attached_threads
+            ))
+        string.append("system_mem = {:#x}".format(self.system_mem))
+        string.append("max_system_mem = {:#x}".format(self.max_system_mem))
+
+        return "\n".join(string)
+
+    def _format_malloc_state_fastbinsY_as_str(self):
+        string = ["fastbinsY"]
+        for i, entry in enumerate(self.fastbinsY):
+            string.append("  [{}] {:#x} => {:#x}".format(
+                i, entry.chunks_size, entry.fd
+            ))
+
+        return "\n".join(string)
+
+    def _format_malloc_state_bins_as_str(self):
+        string = ["bins"]
+        index = 0
+
+        string.append(" Unsorted bins")
+        unsorted_entry = self.bins.unsorted_bin_entry
+        string.append("  [{}] fd={:#x} bk={:#x}".format(
+            index, unsorted_entry.fd, unsorted_entry.bk
+        ))
+
+        index += 1
+        string.append(" Small bins")
+        for small_entry in self.bins.small_bins_entries:
+            string.append("  [{}] {:#x} fd={:#x} bk={:#x}".format(
+                index, small_entry.chunks_size, small_entry.fd, small_entry.bk
+            ))
+            index += 1
+
+        string.append(" Large bins")
+        for small_entry in self.bins.large_bins_entries:
+            string.append("  [{}] {:#x} fd={:#x} bk={:#x}".format(
+                index, small_entry.chunks_size, small_entry.fd, small_entry.bk
+            ))
+            index += 1
+
+        return "\n".join(string)
+
+    def __repr__(self):
         string = "mutex = {:#x}\n".format(self.mutex)
         string += "flags = {:#x}\n".format(self.flags)
 

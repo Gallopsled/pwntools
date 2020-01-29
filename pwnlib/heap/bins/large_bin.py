@@ -1,6 +1,12 @@
 from .bin import *
 
 
+class LargeBins(Bins):
+
+    def _name(self):
+        return "Large Bins"
+
+
 class LargeBin(Bin):
     """Class to represent an large bin of the glibc
     """
@@ -12,7 +18,7 @@ class LargeBin(Bin):
     def min_chunks_size(self):
         return self.chunks_size
 
-    def __str__(self):
+    def __repr__(self):
 
         msg = "Largebin [min_size = {:#x}, count = {}] => {:#x}".format(
             self.min_chunks_size,
@@ -24,6 +30,9 @@ class LargeBin(Bin):
             msg += chunk.to_bin_str()
 
         return msg
+
+    def _name(self):
+        return "Large Bin"
 
 
 class LargeBinEntry(BinEntry):

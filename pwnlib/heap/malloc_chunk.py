@@ -1,3 +1,6 @@
+from .utils import *
+from .basic_formatter import *
+
 
 class MallocChunkParser:
     """Class with the logic to parsing the malloc_chunk struct from binary
@@ -139,6 +142,11 @@ class MallocChunk:
         self.data_address = self.address + pointer_size * 2
         self.size_with_flags = size | int(non_main_arena)*4 | int(mmapped)*2 | int(prev_in_use)
 
+        if pointer_size == 8:
+            self._pack_pointer = p64
+        else:
+            self._pack_pointer = p32
+
     def __str__(self):
         string = ""
         string += "previous_size = {:#x}\n".format(self.previous_size)
@@ -149,3 +157,37 @@ class MallocChunk:
         string += "bk_nextsize = {:#x}\n".format(self.bk_nextsize)
 
         return string
+
+    def format_first_bytes_as_hexdump_str(self):
+        msg = []
+        raw_bytes = self._fd_bytes()
+        raw_bytes += self._bk_bytes()
+
+        for byte in raw_bytes:
+            msg.append("{:02x} ".format(byte))
+
+        msg.append("  ")
+
+        for byte in raw_bytes:
+            msg.append(
+                chr(byte) if 0x20 <= byte < 0x7F else "."
+            )
+
+        return "".join(msg)
+
+    def _fd_bytes(self):
+        return bytearray(self._pack_pointer(self.fd))
+
+    def _bk_bytes(self):
+        return bytearray(self._pack_pointer(self.bk))
+
+    def format_flags_as_str(self):
+        flags = []
+        if self.non_main_arena:
+            flags.append("NON_MAIN_ARENA")
+        if self.mmapped:
+            flags.append("MMAPPED")
+        if self.prev_in_use:
+            flags.append("PREV_IN_USE")
+
+        return "|".join(flags)

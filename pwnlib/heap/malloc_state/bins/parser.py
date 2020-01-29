@@ -1,8 +1,8 @@
 
 from pwnlib.heap.utils import *
-from .bins import Bins
-from pwnlib.heap.bins import *
+from pwnlib.heap.bins import SmallBinEntry, LargeBinEntry, UnsortedBinEntry
 from .bins_indexes import *
+from .bins import Bins
 
 
 class BinsParser:

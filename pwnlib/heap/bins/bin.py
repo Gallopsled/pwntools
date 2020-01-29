@@ -1,3 +1,73 @@
+from pwnlib.heap.basic_formatter import BasicFormatter
+
+
+class Bins(object):
+    """Base class to be inherit by the bins collections. This class provides
+    the methods to access the bins array as well as standard implementation
+    of the __str__ method.
+
+    Attributes:
+        bins (list of Bin): The bins of the collection.
+    """
+
+    def __init__(self, bins):
+        self._bins = bins
+        self._basic_formatter = BasicFormatter()
+
+    @property
+    def bins(self):
+        return self._bins
+
+    def __getitem__(self, item):
+        return self._bins[item]
+
+    def __len__(self):
+        return len(self._bins)
+
+    def __iter__(self):
+        return iter(self._bins)
+
+    def __str__(self):
+        msg = [
+            self._basic_formatter.header(self._name()),
+            self._format_bins(self._start_index()),
+            self._basic_formatter.footer()
+        ]
+        return "\n".join(msg)
+
+    def _name(self):
+        return self.__class__.__name__
+
+    def _start_index(self):
+        return 0
+
+    def _format_bins(self, start_index=0):
+        bins_str = []
+        for i, bin_ in enumerate(self.bins):
+            if len(bin_) > 0:
+                bins_str.append("[{}] {}".format(
+                    i + start_index, bin_)
+                )
+
+        if bins_str:
+            return "\n".join(bins_str)
+        else:
+            return "    [-] No chunks found"
+
+    def summary(self, start_index=0):
+        bins_str = []
+        for i, bin_ in enumerate(self.bins):
+            if len(bin_) > 0:
+                bins_str.append(
+                    "    [{}] {:#x} ({})".format(
+                        start_index + i, bin_.chunks_size, len(bin_))
+                )
+
+        if bins_str:
+            return "\n".join(bins_str)
+        else:
+            return "    [-] No chunks found"
+
 
 class Bin(object):
     """Base class to be inherit by the bins. This class provides the basic info
@@ -46,6 +116,31 @@ class Bin(object):
 
     def __iter__(self):
         return iter(self.malloc_chunks)
+
+    def __str__(self):
+        msg = [self._name()]
+
+        if self.chunks_size != 0:
+            msg.append(" {:#x}".format(self.chunks_size))
+
+        msg.append(" ({})".format(len(self.malloc_chunks)))
+
+        next_address = self.fd
+        for chunk in self.malloc_chunks:
+            flags = chunk.format_flags_as_str()
+            msg.append(
+                " => Chunk({:#x} {:#x}".format(next_address, chunk.size)
+            )
+            if flags:
+                msg.append(" {}".format(flags))
+            msg.append(")")
+            next_address = chunk.fd
+
+        msg.append(" => {:#x}".format(next_address))
+        return "".join(msg)
+
+    def _name(self):
+        return self.__class__.__name__
 
 
 class BinEntry(object):
