@@ -16,6 +16,7 @@ Heap Items
 
     heap/*
 
-
+Heap Explorer
+---------------
 .. autoclass:: pwnlib.heap.HeapExplorer()
    :members:

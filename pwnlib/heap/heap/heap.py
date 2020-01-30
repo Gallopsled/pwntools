@@ -7,7 +7,7 @@ class Heap:
 
     Attributes:
         address (int): The start address of the heap
-        chunks (list of MallocChunk):  The list of chunks of the heap
+        chunks (list of :class:`MallocChunk`):  The list of chunks of the heap
         top (MallocChunk): The Top chunk of the heap
     """
 
