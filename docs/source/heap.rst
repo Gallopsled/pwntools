@@ -8,3 +8,5 @@
 .. automodule:: pwnlib.heap
    :members:
 
+.. autoclass:: pwnlib.heap.HeapExplorer
+   :members:

@@ -9,6 +9,11 @@ from .process_informer import ProcessInformer
 class HeapExplorer:
     """Main class of the library. which functions to access to all items of the
     glibc heap management, such as arenas, malloc_state, heap and bins.
+
+    Attributes:
+        tcaches_enabled(bool): Indicates if tcaches are enabled for the current
+            glibc version.
+
     """
 
     def __init__(self, pid, libc):
@@ -70,7 +75,7 @@ class HeapExplorer:
                 is specified, then the index of the main arena will be selected
 
         Returns:
-            MallocState
+            :class:`MallocState`
         """
         return self.all_arenas_malloc_states()[arena_index]
 
@@ -78,7 +83,7 @@ class HeapExplorer:
         """Returns the malloc states of all arenas
 
         Returns:
-            list of MallocState
+            list of :class:`MallocState`
         """
         return self._malloc_state_parser.parse_all_from_main_malloc_state_address(
             self._main_arena_address
@@ -92,7 +97,7 @@ class HeapExplorer:
                 is specified, then the index of the main arena will be selected
 
         Returns:
-            Heap
+            :class:`Heap`
         """
         malloc_state = self.malloc_state(arena_index)
         return self._heap_parser.parse_from_malloc_state(malloc_state)
@@ -101,7 +106,7 @@ class HeapExplorer:
         """Returns the heaps of all arenas
 
         Returns:
-            list of Heap
+            list of :class:`Heap`
         """
         malloc_states = self.all_arenas_malloc_states()
         heaps = []
@@ -119,7 +124,7 @@ class HeapExplorer:
                 is specified, then the index of the main arena will be selected
 
         Returns:
-            UnsortedBin
+            :class:`UnsortedBins`
         """
         malloc_state = self.malloc_state(arena_index)
         return self._bin_parser.parse_unsorted_bin_from_malloc_state(
@@ -130,7 +135,7 @@ class HeapExplorer:
         """Returns the unsorted bins of all arenas
 
         Returns:
-            list of UnsortedBin
+            list of :class:`UnsortedBins`
         """
         unsorted_bins = []
         for malloc_state in self.all_arenas_malloc_states():
@@ -149,7 +154,7 @@ class HeapExplorer:
                 is specified, then the index of the main arena will be selected
 
         Returns:
-            list of SmallBin
+            :class:`SmallBins`
         """
         malloc_state = self.malloc_state(arena_index)
         return self._bin_parser.parse_small_bins_from_malloc_state(
@@ -160,7 +165,7 @@ class HeapExplorer:
         """Returns the small bins of all arenas
 
         Returns:
-            list of list of SmallBin
+            list of :class:`SmallBins`
         """
         all_small_bins = []
         for malloc_state in self.all_arenas_malloc_states():
@@ -179,7 +184,7 @@ class HeapExplorer:
                 is specified, then the index of the main arena will be selected
 
         Returns:
-            list of LargeBin
+            :class:`LargeBins`
         """
         malloc_state = self.malloc_state(arena_index)
         return self._bin_parser.parse_large_bins_from_malloc_state(
@@ -190,7 +195,7 @@ class HeapExplorer:
         """Returns the large bins of all arenas
 
         Returns:
-            list of list of LargeBin
+            list of :class:`LargeBins`
         """
         all_large_bins = []
         for malloc_state in self.all_arenas_malloc_states():
@@ -209,7 +214,7 @@ class HeapExplorer:
                 is specified, then the index of the main arena will be selected
 
         Returns:
-            list of FastBin
+            :class:`FastBins`
         """
         malloc_state = self.malloc_state(arena_index)
         return self._fast_bin_parser.parse_all_from_malloc_state(malloc_state)
@@ -218,7 +223,7 @@ class HeapExplorer:
         """Returns the small bins of all arenas
 
         Returns:
-            list of list of FastBin
+            list of :class:`FastBin`
         """
         malloc_states = self.all_arenas_malloc_states()
         all_fast_bins = []
@@ -236,7 +241,7 @@ class HeapExplorer:
                 is specified, then the index of the main arena will be selected
 
         Returns:
-            list of Tcache
+            :class:`Tcache`
         """
         if not self.tcaches_enabled:
             raise NoTcacheError()
@@ -248,7 +253,7 @@ class HeapExplorer:
         """Returns the tcaches of all arenas
 
         Returns:
-            list of list of Tcache
+            list of :class:`Tcache`
         """
         if not self.tcaches_enabled:
             raise NoTcacheError()
@@ -269,7 +274,7 @@ class HeapExplorer:
                 is specified, then the index of the main arena will be selected
 
         Returns:
-            Arena
+            :class:`Arena`
         """
         malloc_state = self.malloc_state(arena_index)
         return self._arena_parser.parse_from_malloc_state(malloc_state)
@@ -278,7 +283,7 @@ class HeapExplorer:
         """Returns all arenas
 
         Returns:
-            list of Arena
+            list of :class:`Arena`
         """
         return self._arena_parser.parse_all_from_main_malloc_state_address(
             self._main_arena_address

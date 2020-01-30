@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 During heap exploit development, it is frequently useful to obtain an
-image of the several items that compose the heap memory, such as
-bins and chunks.
+image of the heap layout as well as of the bins used by the glibc.
 
 
 
