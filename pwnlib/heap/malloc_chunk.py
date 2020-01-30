@@ -95,16 +95,18 @@ class MallocChunk:
     """Class to represent the information contained in the malloc_chunk struct
     of the glibc.
 
-    ```c
-    struct malloc_chunk {
-      INTERNAL_SIZE_T      mchunk_prev_size;
-      INTERNAL_SIZE_T      mchunk_size;
-      struct malloc_chunk* fd;
-      struct malloc_chunk* bk;
-      struct malloc_chunk* fd_nextsize;
-      struct malloc_chunk* bk_nextsize;
-    };
-    ```
+    .. highlight:: c
+    .. code-block:: c
+
+        struct malloc_chunk {
+          INTERNAL_SIZE_T      mchunk_prev_size;
+          INTERNAL_SIZE_T      mchunk_size;
+          struct malloc_chunk* fd;
+          struct malloc_chunk* bk;
+          struct malloc_chunk* fd_nextsize;
+          struct malloc_chunk* bk_nextsize;
+        };
+
 
     Attributes:
         address (int): The start address of the chunk
