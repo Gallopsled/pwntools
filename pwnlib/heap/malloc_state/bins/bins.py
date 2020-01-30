@@ -2,7 +2,7 @@ from .bins_indexes import *
 
 
 class Bins:
-    """Class to represent the `bins` attribute of malloc_state struct
+    """Class to represent the `bins` attribute of malloc_state struct.
 
     Attributes:
         entries (list of BinEntry): pointers to the first chunks of the each

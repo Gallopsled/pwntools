@@ -48,15 +48,6 @@ class FastBinsY:
     def __init__(self, entries):
         self.entries = entries
 
-    def base_address(self):
-        return self.entries[0].address
-
-    def address(self, index):
-        return self.entries[index].address
-
-    def fd(self, index):
-        return self.entries[index].fd
-
     def __getitem__(self, index):
         return self.entries[index]
 

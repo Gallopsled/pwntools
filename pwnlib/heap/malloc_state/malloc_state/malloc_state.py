@@ -2,46 +2,57 @@ from pwnlib.heap.basic_formatter import BasicFormatter
 
 
 class MallocState:
-    """
-    Representation of the glibc struct malloc_state
+    """Representation of the glibc malloc_state struct.
 
-    ```c
-    struct malloc_state
-    {
-      __libc_lock_define (, mutex);
-      int flags;
-      int have_fastchunks;
-      mfastbinptr fastbinsY[NFASTBINS];
-      mchunkptr top;
-      mchunkptr last_remainder;
-      mchunkptr bins[NBINS * 2 - 2];
-      unsigned int binmap[BINMAPSIZE];
-      struct malloc_state *next;
-      struct malloc_state *next_free;
-      INTERNAL_SIZE_T attached_threads;
-      INTERNAL_SIZE_T system_mem;
-      INTERNAL_SIZE_T max_system_mem;
-    };
-    ```
+
+    Here is the definition of the malloc_state struct in libc 2.27:
+
+    .. highlight:: c
+    .. code-block:: c
+
+        struct malloc_state
+        {
+          __libc_lock_define (, mutex);
+          int flags;
+          int have_fastchunks;
+          mfastbinptr fastbinsY[NFASTBINS];
+          mchunkptr top;
+          mchunkptr last_remainder;
+          mchunkptr bins[NBINS * 2 - 2];
+          unsigned int binmap[BINMAPSIZE];
+          struct malloc_state *next;
+          struct malloc_state *next_free;
+          INTERNAL_SIZE_T attached_threads;
+          INTERNAL_SIZE_T system_mem;
+          INTERNAL_SIZE_T max_system_mem;
+        };
 
     Notes:
-        The field have_fastchunks was introduced in glibc version 2.27. In that
-        case, in this class that field value will be None.
+        The field have_fastchunks was introduced in libc version 2.27. In case
+        libc version is inferior that field value will be None.
+
+        The field attached_threads was introduced in libc version 2.23. In case
+        libc version is inferior that field value will be None.
 
     Attributes:
-        mutex (int):
-        flags (int):
-        have_fastchunks (int or None):
-        fastbinsY (FastBinsY):
-        top (int):
-        last_remainder (int):
-        bins (Bins):
-        binmap (list[4] of int):
-        next (int):
-        next_free (int):
-        attached_threads (int):
-        system_mem (int):
-        max_system_mem (int):
+        mutex (int): Mutex value of the malloc_state
+        flags (int): Flags of the malloc_state
+        have_fastchunks (int or None): Indicates if there are chunks in the
+            fastbins
+        fastbinsY (FastBinsY): Fast bin entries
+        top (int): Pointer to the top chunk of the heap
+        last_remainder (int): Pointer to the last remainder chunk
+        bins (Bins): All bins entries of the malloc_state (Unsorted, Small and
+            Large)
+        unsorted_bin (BinEntry): Unsorted bin entry of the malloc_state
+        small_bins (list of BinEntry): Small bins entries of the malloc_state
+        large_bins (list of BinEntry): Large bins entries of the malloc_state
+        binmap (list[4] of int): Bitmap which indicates the bins with chunks
+        next (int): Address of the next malloc_state struct
+        next_free (int or None):
+        attached_threads (int): Number of threads attached to the arena
+        system_mem (int): Available heap size
+        max_system_mem (int): Maximum heap size
     """
 
     def __init__(self, address, mutex, flags, have_fastchunks,
