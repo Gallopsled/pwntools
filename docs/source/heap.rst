@@ -1,6 +1,8 @@
 .. testsetup:: *
 
    from pwnlib.heap import *
+   from pwnlib.tubes.process import process
+
 
 :mod:`pwnlib.heap` --- Heap explorer
 ===================================================
