@@ -2,6 +2,12 @@ from pwnlib.heap.bins.bin import *
 
 
 class Tcaches(Bins):
+    """Sequence of tcache bins.
+
+    Attributes:
+        bins (:obj:`list` of :class:`Tcache`): The bins of the sequence.
+
+    """
     pass
 
 

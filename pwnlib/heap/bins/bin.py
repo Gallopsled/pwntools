@@ -2,12 +2,12 @@ from pwnlib.heap.basic_formatter import BasicFormatter
 
 
 class Bins(object):
-    """Base class to be inherit by the bins collections. This class provides
+    """Base class to be inherit by the bins sequences. This class provides
     the methods to access the bins array as well as standard implementation
     of the __str__ method.
 
     Attributes:
-        bins (list of Bin): The bins of the collection.
+        bins (:obj:`list` of :class:`Bin`): The bins of the sequence.
     """
 
     def __init__(self, bins):
@@ -78,9 +78,9 @@ class Bin(object):
         fd (int): Shortcut to the fd pointer of the entry of the current bin.
         bk (int): Shortcut to the bk pointer of the entry of the current bin.
         chunks_size (int): Size which should have the chunks in the bin.
-        malloc_chunks (list of MallocChunk): The chunks which are inserted in
-            the bin.
-        chunks (list of MallocChunk): Alias for malloc_chunks.
+        malloc_chunks (:obj:`list` of :class:`MallocChunk`): The chunks which are
+            inserted in the bin.
+        chunks (:obj:`list` of :class:`MallocChunk`): Alias for malloc_chunks.
     """
 
     def __init__(self, bin_entry, malloc_chunks):

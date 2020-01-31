@@ -49,6 +49,11 @@ class FastBinParser:
 
 
 class FastBins(Bins):
+    """Sequence of fast bins.
+
+    Attributes:
+        bins (:obj:`list` of :class:`FastBin`): The bins of the sequence.
+    """
 
     def _name(self):
         return "Fast Bins"

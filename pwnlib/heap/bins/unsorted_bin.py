@@ -2,6 +2,13 @@ from .bin import *
 
 
 class UnsortedBins(Bins):
+    """Sequence of unsorted bins. There is only 1 bin in this sequence, however
+        it is encapsulated in this class for compatibility with the other bin
+        types.
+
+    Attributes:
+        bins (:obj:`list` of :class:`UnsortedBin`): The bins of the sequence.
+    """
 
     def __init__(self, bin):
         super(UnsortedBins, self).__init__([bin])

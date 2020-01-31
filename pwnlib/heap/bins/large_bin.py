@@ -2,6 +2,11 @@ from .bin import *
 
 
 class LargeBins(Bins):
+    """Sequence of large bins.
+
+    Attributes:
+        bins (:obj:`list` of :class:`LargeBin`): The bins of the sequence.
+    """
 
     def _name(self):
         return "Large Bins"

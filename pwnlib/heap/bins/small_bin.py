@@ -2,6 +2,11 @@ from .bin import *
 
 
 class SmallBins(Bins):
+    """Sequence of small bins.
+
+    Attributes:
+        bins (:obj:`list` of :class:`SmallBin`): The bins of the sequence.
+    """
 
     def _name(self):
         return "Small Bins"
