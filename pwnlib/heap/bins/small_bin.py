@@ -13,7 +13,10 @@ class SmallBins(Bins):
 
 
 class SmallBin(Bin):
-    """Class to represent an small bin of the glibc
+    """Class to represent an small bin of the glibc.
+
+    Attributes:
+        bin_entry (SmallBinEntry): The entry of malloc_state for the small bin.
     """
 
     def __init__(self, bin_entry, malloc_chunks):

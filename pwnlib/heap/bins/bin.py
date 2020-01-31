@@ -74,7 +74,8 @@ class Bin(object):
     of the bin entry as well as the chunks of the bin.
 
     Attributes:
-        bin_entry (BinEntry): The entry of malloc_state.bins for the bin.
+        bin_entry (BinEntry): The entry of malloc_state or
+            tcache_perthread_struct for the bin.
         fd (int): Shortcut to the fd pointer of the entry of the current bin.
         bk (int): Shortcut to the bk pointer of the entry of the current bin.
         chunks_size (int): Size which should have the chunks in the bin.

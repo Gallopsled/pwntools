@@ -61,6 +61,9 @@ class FastBins(Bins):
 
 class FastBin(Bin):
     """Class to represent a fast bin of the glibc.
+
+    Attributes:
+        bin_entry (FastBinEntry): The entry of malloc_state for the fast bin.
     """
 
     def __init__(self, bin_entry, malloc_chunks):

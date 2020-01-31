@@ -13,7 +13,10 @@ class LargeBins(Bins):
 
 
 class LargeBin(Bin):
-    """Class to represent an large bin of the glibc
+    """Class to represent an large bin of the glibc.
+
+    Attributes:
+        bin_entry (LargeBinEntry): The entry of malloc_state for the large bin.
     """
 
     def __init__(self, bin_entry, malloc_chunks):

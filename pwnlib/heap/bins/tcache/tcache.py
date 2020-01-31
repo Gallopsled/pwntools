@@ -17,8 +17,6 @@ class Tcache(Bin):
     Attributes:
         bin_entry (TcacheEntry): The entry of tcache_perthread_struct for the
             bin.
-        chunks (list of MallocChunk): The chunks which are inserted in
-            the tcache.
     """
 
     def __init__(self, bin_entry, malloc_chunks):

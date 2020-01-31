@@ -19,6 +19,10 @@ class UnsortedBins(Bins):
 
 class UnsortedBin(Bin):
     """Class to represent an unsorted bin of the glibc
+
+    Attributes:
+        bin_entry (UnsortedBinEntry): The entry of malloc_state for the unsorted
+            bin.
     """
 
     def __init__(self, bin_entry, malloc_chunks):
