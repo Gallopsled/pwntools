@@ -2,7 +2,7 @@
 ![pwntools logo](https://github.com/Gallopsled/pwntools/blob/stable/docs/source/logo.png?raw=true)
 
 [![Docs](https://readthedocs.org/projects/pwntools/badge/?version=stable)](https://docs.pwntools.com/)
-[![PyPI](https://img.shields.io/badge/pypi-v3.13.0-green.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
+[![PyPI](https://img.shields.io/pypi/v/pwntools?style=flat)](https://pypi.python.org/pypi/pwntools/)
 [![Travis](https://travis-ci.org/Gallopsled/pwntools.svg)](https://travis-ci.org/Gallopsled/pwntools)
 [![Coveralls](https://img.shields.io/coveralls/Gallopsled/pwntools/dev.svg)](https://coveralls.io/github/Gallopsled/pwntools?branch=dev)
 [![Twitter](https://img.shields.io/badge/twitter-pwntools-4099FF.svg?style=flat)](https://twitter.com/pwntools)
@@ -40,7 +40,7 @@ Most of the functionality of pwntools is self-contained and Python-only.  You sh
 apt-get update
 apt-get install python3 python3-pip python3-dev git libssl-dev libffi-dev build-essential
 python3 -m pip install --upgrade pip
-python3 -m pip install --upgrade git+https://github.com/Gallopsled/pwntools.git@dev3
+python3 -m pip install --upgrade git+https://github.com/Gallopsled/pwntools.git@dev
 ```
 
 However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://docs.pwntools.com/en/stable/install.html).

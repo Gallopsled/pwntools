@@ -226,4 +226,4 @@ def sockaddr(host, port, network = 'ipv4'):
         sockaddr += p32(0xffffffff) # Save three bytes 'push -1' vs 'push 0'
         sockaddr += host
         length    = len(sockaddr) + 4 # Save five bytes 'push 0'
-    return (sockaddr, length, address_family)
+    return (sockaddr, length, getattr(address_family, "name", address_family))

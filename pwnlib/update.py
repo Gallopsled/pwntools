@@ -9,7 +9,14 @@ every week.  It can be permanently disabled via:
 
 .. code-block:: bash
 
-    $ echo never > ~/.pwntools-cache/update
+    $ echo never > ~/.pwntools-cache-*/update
+
+Or adding the following lines to ~/.pwn.conf (or system-wide /etc/pwn.conf):
+
+.. code-block::
+
+    [update]
+    interval=never
 
 """
 from __future__ import absolute_import
@@ -24,6 +31,7 @@ from six.moves.xmlrpc_client import ServerProxy
 
 import packaging.version
 
+from pwnlib.config import register_config
 from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util.misc import read
@@ -37,6 +45,26 @@ current_version = packaging.version.Version(__version__)
 package_name    = 'pwntools'
 package_repo    = 'Gallopsled/pwntools'
 update_freq     = datetime.timedelta(days=7).total_seconds()
+disabled        = False
+
+def read_update_config(settings):
+    for key, value in settings.items():
+        if key == 'interval':
+            if value == 'never':
+                global disabled
+                disabled = True
+            else:
+                try:
+                    value = int(value)
+                except ValueError:
+                    log.warn("Wrong value")
+                else:
+                    global update_freq
+                    update_freq = datetime.timedelta(days=value).total_seconds()
+        else:
+            log.warn("Unknown configuration option %r in section %r" % (key, 'update'))
+
+register_config('update', read_update_config)
 
 def available_on_pypi(prerelease=current_version.is_prerelease):
     """Return True if an update is available on PyPI.
@@ -88,7 +116,7 @@ def should_check():
     if not filename:
         return False
 
-    if read(filename).strip() == b'never':
+    if disabled or read(filename).strip() == b'never':
         return False
 
     return time.time() > (last_check() + update_freq)
@@ -160,6 +188,9 @@ def perform_check(prerelease=current_version.is_prerelease):
 def check_automatically():
     if should_check():
         message  = ["Checking for new versions of %s" % package_name]
-        message += ["To disable this functionality, set the contents of %s to 'never'." % cache_file()]
+        message += ["To disable this functionality, set the contents of %s to 'never' (old way)." % cache_file()]
+        message += ["""Or add the following lines to ~/.pwn.conf (or /etc/pwn.conf system-wide):
+    [update]
+    interval=never"""]
         log.info("\n".join(message))
         perform_check()

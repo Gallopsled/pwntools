@@ -9,9 +9,11 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.1.0](#410)    | `dev`    | Jan 20, 2020 (planned)
-| [4.0.0](#400)    | `beta`   | Dec 20, 2019 (planned)
-| [3.13.0](#3130)  | `stable` | Nov 5, 2019
+| [4.2.0](#420)    | `dev`    | Feb 10, 2020 (planned)
+| [4.1.0](#410)    | `beta`   | Jan 30, 2020 (planned)
+| [4.0.1](#401)    | `stable` | Jan 22, 2020
+| [4.0.0](#400)    |          | Jan 09, 2020
+| [3.13.0](#3130)  |          | Nov 5, 2019
 | [3.12.1](#3121)  |          | Sept 17, 2018
 | [3.12.0](#3120)  |          | Feb 22, 2018
 | [3.11.0](#3110)  |          | Jan 3, 2018
@@ -44,15 +46,36 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.1.0 (`dev`)
+## 4.2.0 (`dev`)
 
-To be released on Jan 20, 2020.
+To be released on Feb 10, 2020.
 
-## 4.0.0 (`beta`)
+## 4.1.0 (`beta`)
 
-To be released on Dec 20, 2019.
+To be released on Jan 30, 2020.
+
+- [#1316][1316] Fix connect shellcraft in python 3
+- [#1323][1323] Fix issues related with debugging
+- [#1001][1001] Enhance `unlock_bootloader` with better status messages
+- [#1389][1389] remove old dependencies
+- [#1241][1241] Launch QEMU with sysroot if specified
+- [#1218][1218] Support for FileStructure exploitation
+
+[1241]: https://github.com/Gallopsled/pwntools/pulls/1218
+[1218]: https://github.com/Gallopsled/pwntools/pulls/1218
+
+## 4.0.1 (`stable`)
+
+- [#1412][1412] `recvline_pred()` and similar do not reorder data
+- Bypass unicorn-engine/unicorn#1100 and unicorn-engine/unicorn#1170 requiring unstable package
+
+[1412]: https://github.com/Gallopsled/pwntools/pulls/1412
+
+## 4.0.0
 
 - **Python 3 support! <3**
+- [#1402][1402] Fix serialtube in python 3
+- [#1391][1391] Fix process.libs
 - [#1317][1317] Tubes with `context.encoding`
 - [#1216][1216] Improve format string generator
 - [#1285][1285] Add freebsd generic syscall templates
@@ -60,6 +83,7 @@ To be released on Dec 20, 2019.
 - [#1202][1202] Docker: Kill 14 layers in pwntools base images
 - [#1182][1182] shellcraft.dupio() for mips
 
+[1391]: https://github.com/Gallopsled/pwntools/pulls/1391
 [1317]: https://github.com/Gallopsled/pwntools/pulls/1317
 [1285]: https://github.com/Gallopsled/pwntools/pulls/1285
 [1216]: https://github.com/Gallopsled/pwntools/pulls/1216
@@ -97,7 +121,7 @@ To be released on Dec 20, 2019.
 [5fdc08]: https://github.com/Gallopsled/pwntools/commit/5fdc08
 [63dfed]: https://github.com/Gallopsled/pwntools/commit/63dfed
 
-## 3.12.2 (`stable`)
+## 3.12.2
 
 - [1242][1242] Use IntervalTree 2.xx, disallow use of 3.xx
 - [1243][1243] Fix a typo that caused an exception when executing a binary with `process()` which returns `-ENOEXEC` and the system does not have `qemu-user` binaries installed.

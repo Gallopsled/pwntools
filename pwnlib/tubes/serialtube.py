@@ -63,7 +63,7 @@ class serialtube(tube.tube):
             raise EOFError
 
         if self.convert_newlines:
-            data = data.replace('\n', '\r\n')
+            data = data.replace(b'\n', b'\r\n')
 
         while data:
             n = self.conn.write(data)
