@@ -939,6 +939,12 @@ class process(tube):
 
     @property
     def heap_explorer(self):
+        """Returns a heap explorer that allows to inspect the items of the libc
+        heap.
+
+        Returns:
+            HeapExplorer
+        """
         return HeapExplorer(self.pid, self._libc())
 
     @property

@@ -14,6 +14,33 @@ class HeapExplorer:
         tcaches_enabled(bool): Indicates if tcaches are enabled for the current
             glibc version.
 
+    Examples:
+        >>> p = process('bash')
+        >>> hp = p.heap_explorer
+        >>> print(hp.arena().summary()) # doctest: +SKIP
+        ========================== Arena ==========================
+        - Malloc State (0x7fad3f0a5c40)
+            top = 0x564c90e90f20
+            last_remainder = 0x0
+            next = 0x7fad3f0a5c40
+            next_free = 0x0
+            system_mem = 0x21000
+        - Heap (0x564c90e83000)
+            chunks_count = 0x245
+            top: addr = 0x564c90e90f20, size = 0x130e0
+        - Tcaches
+            [23] 0x188 (1)
+            [41] 0x2a8 (1)
+        - Fast bins
+            [-] No chunks found
+        - Unsorted bins
+            [-] No chunks found
+        - Small bins
+            [-] No chunks found
+        - Large bins
+            [-] No chunks found
+        ===========================================================
+
     """
 
     def __init__(self, pid, libc):
@@ -240,6 +267,15 @@ class HeapExplorer:
             arena_index (int, optional): The index of the desired arena. If none
                 is specified, then the index of the main arena will be selected
 
+        >>> p = process('bash')
+        >>> hp = p.heap_explorer
+        >>> print(hp.tcaches())
+        =================================== Tcaches ===================================
+        [23] Tcache 0x188 (1) => Chunk(0x56383e3c0250 0x190 PREV_IN_USE) => 0x0
+        [41] Tcache 0x2a8 (1) => Chunk(0x56383e3bffa0 0x2b0 PREV_IN_USE) => 0x0
+        ================================================================================
+
+
         Returns:
             :class:`Tcache`
         """
@@ -272,6 +308,33 @@ class HeapExplorer:
         Args:
             arena_index (int, optional): The index of the desired arena. If none
                 is specified, then the index of the main arena will be selected
+
+        Examples:
+            >>> p = process('bash')
+            >>> hp = p.heap_explorer
+            >>> print(hp.arena().summary()) # doctest: +SKIP
+            ========================== Arena ==========================
+            - Malloc State (0x7fad3f0a5c40)
+                top = 0x564c90e90f20
+                last_remainder = 0x0
+                next = 0x7fad3f0a5c40
+                next_free = 0x0
+                system_mem = 0x21000
+            - Heap (0x564c90e83000)
+                chunks_count = 0x245
+                top: addr = 0x564c90e90f20, size = 0x130e0
+            - Tcaches
+                [23] 0x188 (1)
+                [41] 0x2a8 (1)
+            - Fast bins
+                [-] No chunks found
+            - Unsorted bins
+                [-] No chunks found
+            - Small bins
+                [-] No chunks found
+            - Large bins
+                [-] No chunks found
+            ===========================================================
 
         Returns:
             :class:`Arena`
