@@ -443,6 +443,23 @@ class ELF(ELFFile):
         import pwnlib.gdb
         return pwnlib.gdb.debug([self.path] + argv, *a, **kw)
 
+    def describe(self):
+        """Prints the several information related with the binary protection
+        measures as well as the architecture.
+
+        Examples:
+            >>> e = ELF("/bin/ls", checksec=False)
+            >>> e.describe() #doctest: +SKIP
+            [*] '/bin/ls'
+                Arch:     amd64-64-little
+                RELRO:    Partial RELRO
+                Stack:    Canary found
+                NX:       NX enabled
+                PIE:      PIE enabled
+                FORTIFY:  Enabled
+        """
+        return self._describe()
+
     def _describe(self, *a, **kw):
         log.info_once(
             '%s\n%-10s%s-%s-%s\n%s',

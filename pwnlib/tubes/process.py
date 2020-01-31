@@ -925,7 +925,7 @@ class process(tube):
         >>> p.close()
         """
         e = self._libc()
-        e.checksec()
+        e.describe()
         return e
 
     def _libc(self):
