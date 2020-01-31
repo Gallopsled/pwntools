@@ -26,6 +26,9 @@ supported by ``pwnlib.util.safeeval.expr``.
     randomize=1
     timeout=60
     terminal=['x-terminal-emulator', '-e']
+
+    [update]
+    interval=7
 """
 from __future__ import absolute_import
 from __future__ import division

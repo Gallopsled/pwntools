@@ -498,11 +498,11 @@ class tube(Timeout, Logger):
                 try:
                     line = self.recvline(keepends=True)
                 except Exception:
-                    self.buffer.add(tmpbuf)
+                    self.buffer.unget(tmpbuf)
                     raise
 
                 if not line:
-                    self.buffer.add(tmpbuf)
+                    self.buffer.unget(tmpbuf)
                     return b''
 
                 if pred(line):
