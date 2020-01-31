@@ -1,5 +1,6 @@
 from .arena import Arena
 
+
 class ArenaParser:
     """Class to parse the arena items and retrieve Arena objects
 

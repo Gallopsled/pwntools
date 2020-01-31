@@ -4,16 +4,18 @@ from pwnlib.heap.basic_formatter import BasicFormatter
 
 
 class Arena(object):
-    """Class with the information of the arena
+    """Class with the information of the arena.
 
     Attributes:
-        malloc_state (MallocState)
-        heap (Heap)
-        tcaches (list of Tcaches)
-        fast_bins (list of FastBin)
-        unsorted_bin (UnsortedBin)
-        small_bins (list of SmallBin)
-        large_bins (list of LargeBin)
+        malloc_state (MallocState): The malloc_state struct of the arena
+        heap (Heap): The heap of the arena
+        tcaches (Tcaches): The tcaches of the arena. If
+            tcaches are not available, an exception :class:`NoTcacheError` is
+            raised
+        fast_bins (FastBins): The fast bins of the arena
+        unsorted_bin (UnsortedBins): The unsorted bin of the arena
+        small_bins (SmallBins): The small bins of the arena
+        large_bins (LargeBins): The large bins of the arena
     """
 
     def __init__(self, malloc_state, heap, unsorted_bin,
