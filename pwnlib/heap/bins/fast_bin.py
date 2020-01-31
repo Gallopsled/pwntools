@@ -85,6 +85,9 @@ class FastBin(Bin):
 class FastBinEntry(BinEntry):
     """Class to contain the information of a entry in `fastbinsY` attribute
      of `malloc_state` struct.
+
+    Attributes:
+        bk (int): 0 since it is not used.
     """
 
     def __init__(self, address, fd, chunks_size):
