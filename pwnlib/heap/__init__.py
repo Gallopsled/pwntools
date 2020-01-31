@@ -319,14 +319,4 @@ Access to items of the non main arena:
 
 """
 
-# TODO: write heap documentation
-#   * Tcaches
-#   * Fast bins
-#   * Unsorted bin
-#   * Small bins
-#   * Large bins
-#   * Arena
-#   * Use examples
-#   * Memory Maps
-
 from .heap_explorer import HeapExplorer
