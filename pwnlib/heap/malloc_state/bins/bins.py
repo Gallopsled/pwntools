@@ -5,8 +5,13 @@ class Bins:
     """Class to represent the `bins` attribute of malloc_state struct.
 
     Attributes:
-        entries (list of BinEntry): pointers to the first chunks of the each
-            double linked bin.
+        entries (list of :class:`BinEntry`): entries with pointers to the first
+            and last chunks of the each double linked bin.
+        unsorted_bin_entry (:class:`BinEntry`): entry of the unsorted bin.
+        small_bins_entries (list of :class:`BinEntry`): entries of the small
+            bins.
+        large_bins_entries (list of :class:`BinEntry`): entries of the large
+            bins.
     """
 
     def __init__(self, entries):
@@ -23,19 +28,6 @@ class Bins:
     @property
     def large_bins_entries(self):
         return self.entries[LARGE_BINS_START_INDEX:]
-
-    @property
-    def base_address(self):
-        return self.address(0)
-
-    def address(self, index):
-        return self.entries[index].address
-
-    def fd(self, index):
-        return self.entries[index].fd
-
-    def bk(self, index):
-        return self.entries[index].bk
 
     def __getitem__(self, index):
         return self.entries[index]

@@ -41,8 +41,8 @@ class FastBinsY:
     """Class to represent the `fastbinsY` attribute of malloc_state struct.
 
     Attributes:
-        entries (list of FastBinEntry): pointers to the first chunks of the each
-            fast bin.
+        entries (list of :class:`FastBinEntry`): pointers to the first chunks
+            of the each fast bin.
     """
 
     def __init__(self, entries):
