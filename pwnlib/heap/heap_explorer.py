@@ -269,7 +269,7 @@ class HeapExplorer:
 
         >>> p = process('bash')
         >>> hp = p.heap_explorer
-        >>> print(hp.tcaches())
+        >>> print(hp.tcaches()) # doctest: +SKIP
         =================================== Tcaches ===================================
         [23] Tcache 0x188 (1) => Chunk(0x56383e3c0250 0x190 PREV_IN_USE) => 0x0
         [41] Tcache 0x2a8 (1) => Chunk(0x56383e3bffa0 0x2b0 PREV_IN_USE) => 0x0
