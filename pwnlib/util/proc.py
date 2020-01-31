@@ -506,7 +506,7 @@ class MemoryMap:
             True
             >>> m.is_in_range(0x55db09b81000)
             False
-            >>> >>> m.is_in_range(0x55db09b8200)
+            >>> m.is_in_range(0x55db09b8200)
             True
         """
         return self.start_address <= address < self.end_address
