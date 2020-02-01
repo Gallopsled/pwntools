@@ -494,6 +494,18 @@ class MemoryMap:
 
     @property
     def readable(self):
+        """Shorcut for flags.readable
+
+        Examples:
+            >>> m = MemoryMap.from_str("55db09b78000-55db09b81000 rw-p 00114000 fe:01 9832010                    /usr/bins/bash")
+            >>> m.flags.readable
+            True
+            >>> m.readable
+            True
+
+        Returns:
+            int
+        """
         return self.flags.readable
 
     @property
