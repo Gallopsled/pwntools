@@ -337,6 +337,15 @@ class HeapExplorer:
             arena_index (int, optional): The index of the desired arena. If none
                 is specified, then the index of the main arena will be selected
 
+        Examples:
+            >>> p = process('bash')
+            >>> hp = p.heap_explorer
+            >>> print(hp.large_bins()) # doctest: +SKIP
+            ================================== Large Bins ==================================
+                [-] No chunks found
+            ================================================================================
+
+
         Returns:
             :class:`LargeBins`
         """
