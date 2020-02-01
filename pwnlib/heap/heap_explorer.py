@@ -376,6 +376,15 @@ class HeapExplorer:
             arena_index (int, optional): The index of the desired arena. If none
                 is specified, then the index of the main arena will be selected
 
+        Examples:
+            >>> p = process('bash')
+            >>> hp = p.heap_explorer
+            >>> print(hp.fast_bins()) # doctest: +SKIP
+            ================================== Fast Bins ==================================
+            [4] Fast Bin 0x60 (2) => Chunk(0x555635100c20 0x60 PREV_IN_USE) => Chunk(0x55563
+            5100ba0 0x60 PREV_IN_USE) => 0x0
+            ================================================================================
+
         Returns:
             :class:`FastBins`
         """
