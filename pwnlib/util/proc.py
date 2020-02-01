@@ -808,7 +808,7 @@ class MemoryMaps:
             ... except IndexError as ex:
             ...     print(ex)
             ...
-            address out of range
+            address 0xdeadbeef out of range
 
         """
         for map_ in self.maps:
