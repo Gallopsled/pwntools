@@ -924,9 +924,13 @@ class process(tube):
         ELF('/lib64/libc-...so')
         >>> p.close()
         """
-        e = self._libc()
-        e.describe()
-        return e
+        lib = self._libc()
+
+        if lib is None:
+            return None
+
+        lib.describe()
+        return lib
 
     def _libc(self):
         from pwnlib.elf import ELF
