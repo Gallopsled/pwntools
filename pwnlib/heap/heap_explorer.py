@@ -258,6 +258,16 @@ class HeapExplorer:
             arena_index (int, optional): The index of the desired arena. If none
                 is specified, then the index of the main arena will be selected
 
+        Examples:
+
+            >>> p = process('bash')
+            >>> hp = p.heap_explorer
+            >>> print(hp.unsorted_bin()) # doctest: +SKIP
+            ================================ Unsorted Bins ================================
+            [0] Unsorted Bin (2) => Chunk(0x555635101d40 0x910 PREV_IN_USE) => Chunk(0x55563
+            5100ca0 0x1010 PREV_IN_USE) => 0x7f8bd66e9ca0
+            ================================================================================
+
         Returns:
             :class:`UnsortedBins`
         """
