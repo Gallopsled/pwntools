@@ -15,7 +15,7 @@ class HeapExplorer:
             glibc version.
 
     Examples:
-        >>> p = process('bash')
+        >>> p = process('sh')
         >>> hp = p.heap_explorer
         >>> hp.tcaches_enabled # doctest: +SKIP
         True
@@ -92,7 +92,7 @@ class HeapExplorer:
         """Returns the number of arenas
 
         Examples:
-            >>> p = process('bash')
+            >>> p = process('sh')
             >>> hp = p.heap_explorer
             >>> hp.arenas_count() # doctest: +SKIP
             2
@@ -110,7 +110,7 @@ class HeapExplorer:
                 is specified, then the index of the main arena will be selected
 
         Examples:
-            >>> p = process('bash')
+            >>> p = process('sh')
             >>> hp = p.heap_explorer
             >>> ms = hp.malloc_state()
             >>> hex(ms.top) # doctest: +SKIP
@@ -182,7 +182,7 @@ class HeapExplorer:
 
 
         Examples:
-            >>> p = process('bash')
+            >>> p = process('sh')
             >>> hp = p.heap_explorer
             >>> heap = hp.heap()
             >>> len(heap.chunks) # doctest: +SKIP
@@ -262,7 +262,7 @@ class HeapExplorer:
 
         Examples:
 
-            >>> p = process('bash')
+            >>> p = process('sh')
             >>> hp = p.heap_explorer
             >>> unsorted_bins = hp.unsorted_bin()
             >>> print(unsorted_bins) # doctest: +SKIP
@@ -302,7 +302,7 @@ class HeapExplorer:
                 is specified, then the index of the main arena will be selected
 
         Examples:
-            >>> p = process('bash')
+            >>> p = process('sh')
             >>> hp = p.heap_explorer
             >>> small_bins = hp.small_bins()
             >>> print(small_bins) # doctest: +SKIP
@@ -342,7 +342,7 @@ class HeapExplorer:
                 is specified, then the index of the main arena will be selected
 
         Examples:
-            >>> p = process('bash')
+            >>> p = process('sh')
             >>> hp = p.heap_explorer
             >>> large_bins = hp.large_bins()
             >>> print(large_bins) # doctest: +SKIP
@@ -382,7 +382,7 @@ class HeapExplorer:
                 is specified, then the index of the main arena will be selected
 
         Examples:
-            >>> p = process('bash')
+            >>> p = process('sh')
             >>> hp = p.heap_explorer
             >>> fast_bins = hp.fast_bins()
             >>> print(fast_bins) # doctest: +SKIP
@@ -418,7 +418,7 @@ class HeapExplorer:
             arena_index (int, optional): The index of the desired arena. If none
                 is specified, then the index of the main arena will be selected
 
-        >>> p = process('bash')
+        >>> p = process('sh')
         >>> hp = p.heap_explorer
         >>> try: # doctest: +SKIP
         ...     print(hp.tcaches())
@@ -465,7 +465,7 @@ class HeapExplorer:
                 is specified, then the index of the main arena will be selected
 
         Examples:
-            >>> p = process('bash')
+            >>> p = process('sh')
             >>> hp = p.heap_explorer
             >>> arena = hp.arena()
             >>> print(arena.summary()) # doctest: +SKIP

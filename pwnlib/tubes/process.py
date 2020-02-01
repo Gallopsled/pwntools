@@ -960,7 +960,7 @@ class process(tube):
         heap.
 
         Examples:
-            >>> p = process('bash')
+            >>> p = process('sh')
             >>> hp = p.heap_explorer
             >>> heap = hp.heap()
             >>> len(heap.chunks) # doctest: +SKIP

@@ -12,7 +12,7 @@ Examples
 
 Get a summary of the items of the arena:
 
-    >>> p = process('bash')
+    >>> p = process('sh')
     >>> hp = p.heap_explorer
     >>> print(hp.arena().summary()) # doctest: +SKIP
     ========================== Arena ==========================
@@ -40,7 +40,7 @@ Get a summary of the items of the arena:
 
 View the malloc state:
 
-    >>> p = process('bash')
+    >>> p = process('sh')
     >>> hp = p.heap_explorer
     >>> print(hp.malloc_state()) # doctest: +SKIP
     ======================== Malloc State (0x7f97053fbc40) ========================
@@ -86,7 +86,7 @@ View the malloc state:
 
 List the chunks of the bins:
 
-    >>> p = process('bash')
+    >>> p = process('sh')
     >>> hp = p.heap_explorer
     >>> print(hp.tcaches()) # doctest: +SKIP
     =================================== Tcaches ===================================
@@ -116,7 +116,7 @@ List the chunks of the bins:
 
 List the chunks of the arena heap:
 
-    >>> p = process('bash')
+    >>> p = process('sh')
     >>> hp = p.heap_explorer
     >>> print(hp.heap()) # doctest: +SKIP
     ============================ Heap (0x555635100000) ============================
@@ -166,7 +166,7 @@ List the chunks of the arena heap:
 
 Get all the arena information:
 
-    >>> p = process('bash')
+    >>> p = process('sh')
     >>> hp = p.heap_explorer
     >>> print(hp.arena()) # doctest: +SKIP
     ++++++++++++++++++++++++++++++++++++ Arena ++++++++++++++++++++++++++++++++++++
@@ -253,7 +253,7 @@ Get all the arena information:
 
 
 Access to items of the non main arena:
-    >>> p = process('bash')
+    >>> p = process('sh')
     >>> hp = p.heap_explorer
     >>> hp.arenas_count() # doctest: +SKIP
     2
