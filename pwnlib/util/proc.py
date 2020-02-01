@@ -757,9 +757,9 @@ class MemoryMaps:
             ... 7ffd9bb48000-7ffd9bb4a000 r-xp 00000000 00:00 0                          [vdso]
             ... \""")
             >>> str(maps[0])
-            '561ce1d6f000-561ce1d70000 r--p 00000000 fe:01 3676814\t\t/home/zrt/test'
+            '561ce1d6f000-561ce1d70000 r--p 00000000 fe:01 3676814\\t\\t/home/zrt/test'
             >>> str(maps[len(maps) - 1])
-            '7ffd9bb48000-7ffd9bb4a000 r-xp 00000000 00:00 0\t\t[vdso]'
+            '7ffd9bb48000-7ffd9bb4a000 r-xp 00000000 00:00 0\\t\\t[vdso]'
 
         """
         maps = [MemoryMap.from_str(line) for line in maps_string.splitlines()]
