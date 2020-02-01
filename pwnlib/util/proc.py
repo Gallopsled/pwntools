@@ -685,6 +685,22 @@ class MemoryMaps:
 
     @classmethod
     def from_process(cls, pid):
+        """Creates a new instance of MemoryMaps from a process.
+
+        Args:
+            pid: PID of the target process.
+
+        Returns:
+            MemoryMaps
+
+        Examples:
+            >>> import os
+            >>> maps = MemoryMaps.from_process(os.getpid())
+            >>> str(maps[0]) #doctest: +SKIP
+            '400000-421000 r--p 00000000 fe:01 9836223\t\t/usr/bin/python3.7'
+            >>> str(maps[len(maps) - 1]) #doctest: +SKIP
+            '7fff8d16e000-7fff8d170000 r-xp 00000000 00:00 0\t\t[vdso]'
+        """
         with open('/proc/%s/maps' % pid) as fmap:
             maps_raw = fmap.read()
 
