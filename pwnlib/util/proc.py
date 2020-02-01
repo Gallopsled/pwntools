@@ -546,6 +546,18 @@ class MemoryMap:
 
     @property
     def shared(self):
+        """Shorcut for flags.shared
+
+        Examples:
+            >>> m = MemoryMap.from_str("55db09b78000-55db09b81000 rw-p 00114000 fe:01 9832010                    /usr/bins/bash")
+            >>> m.flags.shared
+            False
+            >>> m.shared
+            False
+
+        Returns:
+            bool
+        """
         return self.flags.shared
 
     def is_in_range(self, address):
