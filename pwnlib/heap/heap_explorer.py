@@ -110,53 +110,53 @@ class HeapExplorer:
                 is specified, then the index of the main arena will be selected
 
         Examples:
-        >>> p = process('bash')
-        >>> hp = p.heap_explorer
-        >>> ms = hp.malloc_state()
-        >>> hex(ms.top) # doctest: +SKIP
-        '0x55c4669ff6e0'
-        >>> hex(ms.address) # doctest: +SKIP
-        '0x7f97053fbc40'
-        >>> print(ms) # doctest: +SKIP
-        ======================== Malloc State (0x7f97053fbc40) ========================
-        mutex = 0x0
-        flags = 0x1
-        have_fastchunks = 0x0
-        fastbinsY
-          [0] 0x20 => 0x0
-          [1] 0x30 => 0x0
-          [2] 0x40 => 0x0
-          [3] 0x50 => 0x0
-          [4] 0x60 => 0x55c4669fdc20
-          [5] 0x70 => 0x0
-          [6] 0x80 => 0x0
-          [7] 0x90 => 0x0
-          [8] 0xa0 => 0x0
-          [9] 0xb0 => 0x0
-        top = 0x55c4669ff6e0
-        last_remainder = 0x0
-        bins
-         Unsorted bins
-          [0] fd=0x55c4669fed40 bk=0x55c4669fdca0
-         Small bins
-          [1] 0x20 fd=0x7f97053fbcb0 bk=0x7f97053fbcb0
-          [2] 0x30 fd=0x7f97053fbcc0 bk=0x7f97053fbcc0
-                            .......
-          [61] 0x3e0 fd=0x7f97053fc070 bk=0x7f97053fc070
-          [62] 0x3f0 fd=0x7f97053fc080 bk=0x7f97053fc080
-         Large bins
-          [63] 0x400 fd=0x7f97053fc090 bk=0x7f97053fc090
-          [64] 0x440 fd=0x7f97053fc0a0 bk=0x7f97053fc0a0
-                            ......
-          [125] 0x80000 fd=0x7f97053fc470 bk=0x7f97053fc470
-          [126] 0x100000 fd=0x7f97053fc480 bk=0x7f97053fc480
-        binmap = [0x0, 0x0, 0x0, 0x0]
-        next = 0x7f96f8000020
-        next_free = 0x0
-        attached_threads = 0x1
-        system_mem = 0x21000
-        max_system_mem = 0x21000
-        ================================================================================
+            >>> p = process('bash')
+            >>> hp = p.heap_explorer
+            >>> ms = hp.malloc_state()
+            >>> hex(ms.top) # doctest: +SKIP
+            '0x55c4669ff6e0'
+            >>> hex(ms.address) # doctest: +SKIP
+            '0x7f97053fbc40'
+            >>> print(ms) # doctest: +SKIP
+            ======================== Malloc State (0x7f97053fbc40) ========================
+            mutex = 0x0
+            flags = 0x1
+            have_fastchunks = 0x0
+            fastbinsY
+              [0] 0x20 => 0x0
+              [1] 0x30 => 0x0
+              [2] 0x40 => 0x0
+              [3] 0x50 => 0x0
+              [4] 0x60 => 0x55c4669fdc20
+              [5] 0x70 => 0x0
+              [6] 0x80 => 0x0
+              [7] 0x90 => 0x0
+              [8] 0xa0 => 0x0
+              [9] 0xb0 => 0x0
+            top = 0x55c4669ff6e0
+            last_remainder = 0x0
+            bins
+             Unsorted bins
+              [0] fd=0x55c4669fed40 bk=0x55c4669fdca0
+             Small bins
+              [1] 0x20 fd=0x7f97053fbcb0 bk=0x7f97053fbcb0
+              [2] 0x30 fd=0x7f97053fbcc0 bk=0x7f97053fbcc0
+                                .......
+              [61] 0x3e0 fd=0x7f97053fc070 bk=0x7f97053fc070
+              [62] 0x3f0 fd=0x7f97053fc080 bk=0x7f97053fc080
+             Large bins
+              [63] 0x400 fd=0x7f97053fc090 bk=0x7f97053fc090
+              [64] 0x440 fd=0x7f97053fc0a0 bk=0x7f97053fc0a0
+                                ......
+              [125] 0x80000 fd=0x7f97053fc470 bk=0x7f97053fc470
+              [126] 0x100000 fd=0x7f97053fc480 bk=0x7f97053fc480
+            binmap = [0x0, 0x0, 0x0, 0x0]
+            next = 0x7f96f8000020
+            next_free = 0x0
+            attached_threads = 0x1
+            system_mem = 0x21000
+            max_system_mem = 0x21000
+            ================================================================================
 
         Returns:
             :class:`MallocState`
