@@ -755,9 +755,46 @@ class MemoryMaps:
 
     @property
     def stack(self):
+        """Shortcut to retrieve the map named "[stack]"
+
+        Raises:
+            KeyError: The map "[stack]" was not found
+
+        Returns:
+            MemoryMap
+
+        Examples:
+            >>> maps = MemoryMaps.from_str(\"""561ce1d6f000-561ce1d70000 r--p 00000000 fe:01 3676814                    /tmp/test
+            ... 561ce1d70000-561ce1d71000 r-xp 00001000 fe:01 3676814                    /home/zrt/test
+            ... 561ce1d71000-561ce1d72000 r--p 00002000 fe:01 3676814                    /home/zrt/test
+            ... 561ce1d72000-561ce1d73000 r--p 00002000 fe:01 3676814                    /home/zrt/test
+            ... 561ce1d73000-561ce1d74000 rw-p 00003000 fe:01 3676814                    /home/zrt/test
+            ... 561ce2895000-561ce28b6000 rw-p 00000000 00:00 0                          [heap]
+            ... 7f6e59ff0000-7f6e5a012000 r--p 00000000 fe:01 9831037                    /usr/lib/x86_64-linux-gnu/libc-2.28.so
+            ... 7f6e5a012000-7f6e5a15a000 r-xp 00022000 fe:01 9831037                    /usr/lib/x86_64-linux-gnu/libc-2.28.so
+            ... 7f6e5a15a000-7f6e5a1a6000 r--p 0016a000 fe:01 9831037                    /usr/lib/x86_64-linux-gnu/libc-2.28.so
+            ... 7f6e5a1a6000-7f6e5a1a7000 ---p 001b6000 fe:01 9831037                    /usr/lib/x86_64-linux-gnu/libc-2.28.so
+            ... 7f6e5a1a7000-7f6e5a1ab000 r--p 001b6000 fe:01 9831037                    /usr/lib/x86_64-linux-gnu/libc-2.28.so
+            ... 7f6e5a1ab000-7f6e5a1ad000 rw-p 001ba000 fe:01 9831037                    /usr/lib/x86_64-linux-gnu/libc-2.28.so
+            ... 7f6e5a1ad000-7f6e5a1b3000 rw-p 00000000 00:00 0
+            ... 7f6e5a1cd000-7f6e5a1ce000 r--p 00000000 fe:01 9830423                    /usr/lib/x86_64-linux-gnu/ld-2.28.so
+            ... 7f6e5a1ce000-7f6e5a1ec000 r-xp 00001000 fe:01 9830423                    /usr/lib/x86_64-linux-gnu/ld-2.28.so
+            ... 7f6e5a1ec000-7f6e5a1f4000 r--p 0001f000 fe:01 9830423                    /usr/lib/x86_64-linux-gnu/ld-2.28.so
+            ... 7f6e5a1f4000-7f6e5a1f5000 r--p 00026000 fe:01 9830423                    /usr/lib/x86_64-linux-gnu/ld-2.28.so
+            ... 7f6e5a1f5000-7f6e5a1f6000 rw-p 00027000 fe:01 9830423                    /usr/lib/x86_64-linux-gnu/ld-2.28.so
+            ... 7f6e5a1f6000-7f6e5a1f7000 rw-p 00000000 00:00 0
+            ... 7ffd9bab9000-7ffd9bada000 rw-p 00000000 00:00 0                          [stack]
+            ... 7ffd9bb45000-7ffd9bb48000 r--p 00000000 00:00 0                          [vvar]
+            ... 7ffd9bb48000-7ffd9bb4a000 r-xp 00000000 00:00 0                          [vdso]
+            ... \""")
+            >>> str(maps.stack)
+            '7ffd9bab9000-7ffd9bada000 rw-p 00000000 00:00 0\\t\\t[stack]'
+
+        """
         for map_ in self.maps:
             if map_.path == "[stack]":
                 return map_
+        raise KeyError("[stack]")
 
     def __str__(self):
         return "\n".join([str(map_) for map_ in self.maps])
