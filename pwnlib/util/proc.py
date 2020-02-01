@@ -411,7 +411,7 @@ class MemoryMapFlags:
 class MemoryMap:
     """Object with the information of the memory maps described in /proc/<pid>/maps
 
-        Arguments:
+        Attributes:
             start_address(int): The starting address of the map
             end_address(int): The ending address of the map
             flags(MemoryMapFlags): The flags (read, write, exec, private, shared) of the map
@@ -504,12 +504,24 @@ class MemoryMap:
             True
 
         Returns:
-            int
+            bool
         """
         return self.flags.readable
 
     @property
     def writable(self):
+        """Shorcut for flags.writable
+
+        Examples:
+            >>> m = MemoryMap.from_str("55db09b78000-55db09b81000 rw-p 00114000 fe:01 9832010                    /usr/bins/bash")
+            >>> m.flags.writable
+            True
+            >>> m.writable
+            True
+
+        Returns:
+            bool
+        """
         return self.flags.writable
 
     @property
