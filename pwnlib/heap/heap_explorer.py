@@ -89,6 +89,12 @@ class HeapExplorer:
     def arenas_count(self):
         """Returns the number of arenas
 
+        Examples:
+            >>> p = process('bash')
+            >>> hp = p.heap_explorer
+            >>> hp.arenas_count() # doctest: +SKIP
+            2
+
         Returns:
             int
         """
