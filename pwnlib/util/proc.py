@@ -604,6 +604,20 @@ class MemoryMap:
 
     @classmethod
     def from_str(cls, map_str):
+        """Retrieves a memory map from a string describing it, such as a line
+        of the file /proc/<pid>/maps.
+
+        Args:
+            map_str: String which describes a map
+
+        Returns:
+            MemoryMap
+
+        Example:
+            >>> m = MemoryMap.from_str("55db09b78000-55db09b81000 rw-p 00114000 fe:01 9832010                    /usr/bins/bash")
+            >>> str(m)
+            '55db09b78000-55db09b81000 rw-p 00114000 fe:01 9832010\\t\\t/usr/bins/bash'
+        """
         parts = map_str.split()
 
         start_address, end_address = parts[0].split("-")
