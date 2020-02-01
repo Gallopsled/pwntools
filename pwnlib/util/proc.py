@@ -542,6 +542,18 @@ class MemoryMap:
 
     @property
     def private(self):
+        """Shorcut for flags.private
+
+        Examples:
+            >>> m = MemoryMap.from_str("55db09b78000-55db09b81000 rw-p 00114000 fe:01 9832010                    /usr/bins/bash")
+            >>> m.flags.private
+            True
+            >>> m.private
+            True
+
+        Returns:
+            bool
+        """
         return self.flags.private
 
     @property
