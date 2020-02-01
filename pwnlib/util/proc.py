@@ -349,7 +349,7 @@ class MemoryMapFlags:
             readable(bool): True if map is readable
             writable(bool): True if map is writable
             executable(bool): True if map can be executed
-            private(bool): True if map is not shared
+            private(bool): True if map is not shared, therefore private
 
         Example:
 
@@ -376,6 +376,16 @@ class MemoryMapFlags:
 
     @property
     def shared(self):
+        """True if map is shared
+
+        Examples:
+            >>> m = MemoryMapFlags.from_str('rw-p')
+            >>> m.shared
+            False
+
+        Returns:
+            bool
+        """
         return not self.private
 
     @classmethod
