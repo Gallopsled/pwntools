@@ -948,7 +948,11 @@ class process(tube):
                 e.address = address
                 return e
 
-        self.error("Unable to find the libc library")
+        self.error(
+            "Unable to find the libc library in process {}".format(
+                self.executable
+            )
+        )
 
     @property
     def heap_explorer(self):
