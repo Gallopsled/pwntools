@@ -748,10 +748,7 @@ class MemoryMaps:
             '561ce2895000-561ce28b6000 rw-p 00000000 00:00 0\\t\\t[heap]'
 
         """
-        for map_ in self.maps:
-            if map_.path == "[heap]":
-                return map_
-        raise KeyError("[heap]")
+        return self._lookup_map("[heap]")
 
     @property
     def stack(self):
@@ -791,10 +788,24 @@ class MemoryMaps:
             '7ffd9bab9000-7ffd9bada000 rw-p 00000000 00:00 0\\t\\t[stack]'
 
         """
+        return self._lookup_map("[stack]")
+
+    def _lookup_map(self, map_path):
+        """Retrieves the first map with the name or file path given
+
+        Args:
+            map_path: The path of file or name of the map
+
+        Raises:
+            KeyError: The map was not found
+
+        Returns:
+            MemoryMap
+        """
         for map_ in self.maps:
-            if map_.path == "[stack]":
+            if map_.path == map_path:
                 return map_
-        raise KeyError("[stack]")
+        raise KeyError(map_path)
 
     def __str__(self):
         return "\n".join([str(map_) for map_ in self.maps])
