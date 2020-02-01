@@ -67,7 +67,7 @@ which is intended to prevent processes from debugging eachother unless there is
 a direct parent-child relationship.
 
 This causes some issues with the normal Pwntools workflow, since the process
-heirarchy looks like this:
+hierarchy looks like this:
 
 ::
 

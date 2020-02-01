@@ -456,7 +456,7 @@ class AdbClient(Logger):
             path = path.encode('utf-8')
         self.c.flat32('STAT', len(path), path)
         if self.c.recvn(4) != b'STAT':
-            self.error("An error occured while attempting to STAT a file.")
+            self.error("An error occurred while attempting to STAT a file.")
 
         mode = self.c.u32()
         size = self.c.u32()

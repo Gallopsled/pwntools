@@ -1600,7 +1600,7 @@ class ELF(ELFFile):
             ``PT_GNU_STACK``
 
             The p_flags member specifies the permissions on the segment
-            containing the stack and is used to indicate wether the stack
+            containing the stack and is used to indicate whether the stack
             should be executable. The absense of this header indicates
             that the stack will be executable.
 
