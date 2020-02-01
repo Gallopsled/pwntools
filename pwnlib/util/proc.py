@@ -814,7 +814,7 @@ class MemoryMaps:
         for map_ in self.maps:
             if map_.is_in_range(address):
                 return map_
-        raise IndexError("address out of range")
+        raise IndexError("address {:#x} out of range".format(address))
 
     @property
     def heap(self):
