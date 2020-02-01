@@ -526,6 +526,18 @@ class MemoryMap:
 
     @property
     def executable(self):
+        """Shorcut for flags.executable
+
+        Examples:
+            >>> m = MemoryMap.from_str("55db09b78000-55db09b81000 rw-p 00114000 fe:01 9832010                    /usr/bins/bash")
+            >>> m.flags.executable
+            False
+            >>> m.executable
+            False
+
+        Returns:
+            bool
+        """
         return self.flags.executable
 
     @property
