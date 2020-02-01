@@ -464,11 +464,32 @@ class MemoryMap:
 
     @property
     def address(self):
+        """Alias of start_address
+
+        Examples:
+            >>> m = MemoryMap.from_str("55db09b78000-55db09b81000 rw-p 00114000 fe:01 9832010                    /usr/bins/bash")
+            >>> hex(m.start_address)
+            '0x55db09b78000'
+            >>> hex(m.address)
+            '0x55db09b78000'
+
+        Returns:
+            int
+        """
         return self.start_address
 
     @property
     def size(self):
-        """The size of the map"""
+        """The size of the map
+
+        Examples:
+            >>> m = MemoryMap.from_str("55db09b78000-55db09b81000 rw-p 00114000 fe:01 9832010                    /usr/bins/bash")
+            >>> hex(m.size)
+            '0x9000'
+
+        Returns:
+            int
+        """
         return self.end_address - self.start_address
 
     @property
