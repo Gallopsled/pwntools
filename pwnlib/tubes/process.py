@@ -907,7 +907,6 @@ class process(tube):
 
         return pwnlib.util.proc.MemoryMaps.from_str(maps_raw)
 
-
     @property
     def libc(self):
         """libc() -> ELF
@@ -915,6 +914,9 @@ class process(tube):
         Returns an ELF for the libc for the current process.
         If possible, it is adjusted to the correct address
         automatically.
+
+        Raises:
+            PwnlibException: In case the libc is not found
 
         Example:
 
@@ -925,14 +927,19 @@ class process(tube):
         >>> p.close()
         """
         lib = self._libc()
-
-        if lib is None:
-            return None
-
         lib.describe()
         return lib
 
     def _libc(self):
+        """Function to retrieve the libc library from the current process
+
+        Raises:
+            PwnlibException: In case the libc is not found
+
+        Returns:
+            ELF
+        """
+
         from pwnlib.elf import ELF
 
         for lib, address in self.libs().items():
@@ -940,6 +947,8 @@ class process(tube):
                 e = ELF(lib, checksec=False)
                 e.address = address
                 return e
+
+        self.error("Unable to find the libc library")
 
     @property
     def heap_explorer(self):
