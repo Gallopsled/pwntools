@@ -17,6 +17,8 @@ class HeapExplorer:
     Examples:
         >>> p = process('bash')
         >>> hp = p.heap_explorer
+        >>> hp.tcaches_enabled # doctest: +SKIP
+        True
         >>> print(hp.arena().summary()) # doctest: +SKIP
         ========================== Arena ==========================
         - Malloc State (0x7fad3f0a5c40)
@@ -262,7 +264,8 @@ class HeapExplorer:
 
             >>> p = process('bash')
             >>> hp = p.heap_explorer
-            >>> print(hp.unsorted_bin()) # doctest: +SKIP
+            >>> unsorted_bins = hp.unsorted_bin()
+            >>> print(unsorted_bins) # doctest: +SKIP
             ================================ Unsorted Bins ================================
             [0] Unsorted Bin (2) => Chunk(0x555635101d40 0x910 PREV_IN_USE) => Chunk(0x55563
             5100ca0 0x1010 PREV_IN_USE) => 0x7f8bd66e9ca0
@@ -301,7 +304,8 @@ class HeapExplorer:
         Examples:
             >>> p = process('bash')
             >>> hp = p.heap_explorer
-            >>> print(hp.small_bins()) # doctest: +SKIP
+            >>> small_bins = hp.small_bins()
+            >>> print(small_bins) # doctest: +SKIP
             ================================== Small Bins ==================================
                 [-] No chunks found
             ================================================================================
@@ -340,7 +344,8 @@ class HeapExplorer:
         Examples:
             >>> p = process('bash')
             >>> hp = p.heap_explorer
-            >>> print(hp.large_bins()) # doctest: +SKIP
+            >>> large_bins = hp.large_bins()
+            >>> print(large_bins) # doctest: +SKIP
             ================================== Large Bins ==================================
                 [-] No chunks found
             ================================================================================
@@ -379,7 +384,8 @@ class HeapExplorer:
         Examples:
             >>> p = process('bash')
             >>> hp = p.heap_explorer
-            >>> print(hp.fast_bins()) # doctest: +SKIP
+            >>> fast_bins = hp.fast_bins()
+            >>> print(fast_bins) # doctest: +SKIP
             ================================== Fast Bins ==================================
             [4] Fast Bin 0x60 (2) => Chunk(0x555635100c20 0x60 PREV_IN_USE) => Chunk(0x55563
             5100ba0 0x60 PREV_IN_USE) => 0x0
@@ -461,7 +467,8 @@ class HeapExplorer:
         Examples:
             >>> p = process('bash')
             >>> hp = p.heap_explorer
-            >>> print(hp.arena().summary()) # doctest: +SKIP
+            >>> arena = hp.arena()
+            >>> print(arena.summary()) # doctest: +SKIP
             ========================== Arena ==========================
             - Malloc State (0x7fad3f0a5c40)
                 top = 0x564c90e90f20
