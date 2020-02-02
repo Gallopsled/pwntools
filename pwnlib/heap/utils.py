@@ -18,18 +18,6 @@ def p64(number):
     return packing.p64(number)
 
 
-def read_memory(pid, address, size):
-    with open('/proc/%s/mem' % pid, 'rb') as mem:
-        mem.seek(address)
-        return mem.read(size)
-
-
-def write_memory(pid, address, buffer):
-    with open('/proc/%s/mem' % pid, 'wb') as mem:
-        mem.seek(address)
-        return mem.write(buffer)
-
-
 def align_address(address, align):
     """Align the address to the given size."""
     return address + ((align - (address % align)) % align)
