@@ -1,5 +1,4 @@
-from .utils import *
-from .basic_formatter import *
+from pwnlib.heap.utils import p32, p64
 
 
 class MallocChunkParser:
