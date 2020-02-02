@@ -82,13 +82,3 @@ class TcachePerthreadStruct:
         self.counts = counts
         self.entries = entries
 
-    def __str__(self):
-        string = ""
-        for i in range(self.TCACHE_MAX_BINS):
-            string += "{} [{}] {:#x}\n".format(
-                i,
-                self.counts[i],
-                self.entries[i]
-            )
-        return string
-

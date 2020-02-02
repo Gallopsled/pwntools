@@ -920,8 +920,7 @@ class process(tube):
 
         Example:
 
-        >>> p = process("/bin/cat")
-        >>> p.sendline("init")
+        >>> p = process('sh')
         >>> libc = p.libc
         >>> libc # doctest: +SKIP
         ELF('/lib64/libc-...so')
@@ -961,8 +960,7 @@ class process(tube):
         heap.
 
         Examples:
-            >>> p = process('/bin/cat')
-            >>> p.sendline("init")
+            >>> p = process('sh')
             >>> hp = p.heap_explorer
             >>> heap = hp.heap()
             >>> len(heap.chunks) # doctest: +SKIP
