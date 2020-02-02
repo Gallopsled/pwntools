@@ -56,17 +56,3 @@ class FastBinsY:
 
     def __len__(self):
         return len(self.entries)
-
-    def __str__(self):
-        string = ""
-
-        i = 1
-        for fast_bin_entry in self.entries:
-            string += "{} Fastbin [{:#x}] => {:#x}\n".format(
-                i,
-                fast_bin_entry.chunks_size,
-                fast_bin_entry.fd
-            )
-            i += 1
-
-        return string

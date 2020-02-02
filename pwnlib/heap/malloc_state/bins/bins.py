@@ -48,12 +48,3 @@ class Bins:
 
     def __len__(self):
         return len(self.entries)
-
-    def __str__(self):
-        string = ""
-        i = 1
-        for bin_entry in self.entries:
-            string += "{} {}\n".format(i, bin_entry)
-            i += 1
-
-        return string

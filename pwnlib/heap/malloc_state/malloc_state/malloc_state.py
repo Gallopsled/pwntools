@@ -166,30 +166,3 @@ class MallocState:
             index += 1
 
         return "\n".join(string)
-
-    def __repr__(self):
-        string = "mutex = {:#x}\n".format(self.mutex)
-        string += "flags = {:#x}\n".format(self.flags)
-
-        if self.have_fastchunks is not None:
-            string += "have_fastchunks = {:#x}\n".format(self.have_fastchunks)
-
-        string += str(self.fastbinsY)
-
-        string += "top = {:#x}\n".format(self.top)
-        string += "last_remainder = {:#x}\n".format(self.last_remainder)
-        string += str(self.bins)
-
-        string += "binmap = [{:#x}, {:#x}, {:#x}, {:#x}]\n".format(
-            self.binmap[0],
-            self.binmap[1],
-            self.binmap[2],
-            self.binmap[3]
-        )
-        string += "next = {:#x}\n".format(self.next)
-        string += "next_free = {:#x}\n".format(self.next_free)
-        string += "attached_threads = {:#x}\n".format(self.attached_threads)
-        string += "system_mem = {:#x}\n".format(self.system_mem)
-        string += "max_system_mem = {:#x}\n".format(self.max_system_mem)
-
-        return string
