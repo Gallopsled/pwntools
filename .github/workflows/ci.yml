@@ -1,0 +1,66 @@
+name: Continuous Integration
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        python-version: [2.7, 3.8]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Lint
+      run: |
+        pip install flake8
+        flake8 . --count --select=E9,F63,F7 --show-source --statistics --exclude=android-?dk  # TODO: Add F82
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=pwnlib/constants,android-?dk,.git,__pycache__
+
+    - name: Install Linux dependencies
+      run: |
+        sudo apt update
+        sudo apt install ash bash dash ksh mksh zsh \
+          pandoc gdb socat sshpass \
+          binutils-multiarch qemu-user-static
+
+    - name: Set up SSH
+      run: |
+        ssh-keygen -t rsa -f ~/.ssh/pwntools-ci -N ''
+        cat > ~/.ssh/config <<EOF
+        Host example.pwnme
+            User $USER
+            HostName 127.0.0.1
+            IdentityFile ~/.ssh/pwntools-ci
+        EOF
+        echo -n 'from="127.0.0.1" ' | cat - ~/.ssh/pwntools-ci.pub >> ~/.ssh/authorized_keys
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install --upgrade flake8 appdirs
+        python setup.py egg_info
+        pip install --upgrade --editable .
+
+    - name: Sanity checks
+      run:  PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
+
+    - name: Install documentation dependencies
+      run:  pip install -r docs/requirements.txt
+
+    - name: Install android avd
+      run: |
+        sudo apt install openjdk-8-jre-headless
+        USER=travis source travis/install.sh
+
+    - name: Coverage doctests
+      run: |
+        PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest
+        coverage combine
+
+    - name: Upload coverage to coveralls.io
+      run:  coveralls
