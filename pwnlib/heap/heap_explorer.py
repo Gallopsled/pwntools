@@ -305,6 +305,15 @@ class HeapExplorer:
             [0] Unsorted Bin (2) => Chunk(0x555635101d40 0x910 PREV_IN_USE) => Chunk(0x55563
             5100ca0 0x1010 PREV_IN_USE) => 0x7f8bd66e9ca0
             ================================================================================
+            >>> unsorted_bin = unsorted_bins[0]
+            >>> unsorted_bin_entry = unsorted_bin.bin_entry
+            >>> unsorted_bin_entry.fd == unsorted_bin.fd
+            True
+            >>> unsorted_bin_entry.bk == unsorted_bin.bk
+            True
+            >>> unsorted_bin_entry.chunks_size == unsorted_bin.chunks_size
+            True
+
         """
         malloc_state = self.malloc_state(arena_index)
         return self._bin_parser.parse_unsorted_bin_from_malloc_state(
@@ -449,6 +458,8 @@ class HeapExplorer:
             [4] Fast Bin 0x60 (2) => Chunk(0x555635100c20 0x60 PREV_IN_USE) => Chunk(0x55563
             5100ba0 0x60 PREV_IN_USE) => 0x0
             ================================================================================
+            >>> number_of_fastbins = len(fast_bins)
+            >>> fast_bins_counts = [len(fast_bin) for fast_bin in fast_bins]
         """
         malloc_state = self.malloc_state(arena_index)
         return self._fast_bin_parser.parse_all_from_malloc_state(malloc_state)

@@ -920,8 +920,8 @@ class process(tube):
 
         Example:
 
-        >>> p = process('sh')
-        >>> libc = p.libc
+        >>> p = process('sh') # doctest: +SKIP
+        >>> libc = p.libc # doctest: +SKIP
         >>> libc # doctest: +SKIP
         ELF('/lib64/libc-...so')
         >>> p.close()
@@ -960,12 +960,12 @@ class process(tube):
         heap.
 
         Examples:
-            >>> p = process('sh')
-            >>> hp = p.heap_explorer
-            >>> heap = hp.heap()
+            >>> p = process('sh') # doctest: +SKIP
+            >>> hp = p.heap_explorer # doctest: +SKIP
+            >>> heap = hp.heap() # doctest: +SKIP
             >>> len(heap.chunks) # doctest: +SKIP
             574
-            >>> fast_bins = hp.fast_bins()
+            >>> fast_bins = hp.fast_bins() # doctest: +SKIP
             >>> print(fast_bins) # doctest: +SKIP
             ================================== Fast Bins ==================================
             [4] Fast Bin 0x60 (2) => Chunk(0x555635100c20 0x60 PREV_IN_USE) => Chunk(0x55563
