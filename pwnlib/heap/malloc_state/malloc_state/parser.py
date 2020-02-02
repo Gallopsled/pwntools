@@ -1,12 +1,13 @@
-from pwnlib.heap.malloc_state.bins import *
-from pwnlib.heap.malloc_state.fastbinsy import *
-from construct import *
+from pwnlib.heap.malloc_state.bins import BinsParser
+from pwnlib.heap.malloc_state.fastbinsy import FastBinsYParser
+from construct import Int32ul, Int64ul, Struct, Padding
 from .malloc_state import MallocState
 
 NFASTBINS = 10
 NBINS = 128
 INT_SIZE = 4
 BINMAPSIZE = 4
+
 
 class MallocStateParser:
     """Class with the logic of parsing the malloc_state struct from binary
