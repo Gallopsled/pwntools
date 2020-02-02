@@ -331,7 +331,7 @@ from .bins import \
     NoTcacheError, \
     FastBins, \
     FastBin, \
-    FastBinParser, \
+    FastBinEntry, \
     UnsortedBins, \
     UnsortedBin,\
     UnsortedBinEntry, \
@@ -341,3 +341,16 @@ from .bins import \
     LargeBins, \
     LargeBin, \
     LargeBinEntry
+
+__all__ = [
+    'HeapExplorer',
+    'Arena',
+    'MallocChunk',
+    'MallocState',
+    'Heap',
+    'Tcaches', 'Tcache', 'TcacheEntry', 'NoTcacheError',
+    'FastBins', 'FastBin', 'FastBinEntry',
+    'UnsortedBins', 'UnsortedBin', 'UnsortedBinEntry',
+    'SmallBins', 'SmallBin', 'SmallBinEntry',
+    'LargeBins', 'LargeBin', 'LargeBinEntry'
+]
