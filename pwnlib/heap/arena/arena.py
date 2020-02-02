@@ -1,5 +1,7 @@
-from pwnlib.heap.bins import *
-from pwnlib.heap.malloc_state import *
+from pwnlib.heap.bins import NoTcacheError
+from pwnlib.heap.malloc_state import \
+    SMALL_BINS_START_INDEX, \
+    LARGE_BINS_START_INDEX
 from pwnlib.heap.basic_formatter import BasicFormatter
 
 
