@@ -1,4 +1,4 @@
-from .bin import *
+from pwnlib.heap.bins.bin import Bins, Bin, BinEntry
 
 
 class UnsortedBins(Bins):
