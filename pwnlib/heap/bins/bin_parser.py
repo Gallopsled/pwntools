@@ -1,6 +1,9 @@
-from .small_bin import *
-from .large_bin import *
-from .unsorted_bin import *
+from pwnlib.heap.bins.small_bin import SmallBins, SmallBin, SmallBinEntry
+from pwnlib.heap.bins.large_bin import LargeBins, LargeBin, LargeBinEntry
+from pwnlib.heap.bins.unsorted_bin import \
+    UnsortedBins, \
+    UnsortedBin, \
+    UnsortedBinEntry
 
 
 class BinParser:
