@@ -1,9 +1,13 @@
-from .bins import *
-from .arena import ArenaParser
-from .malloc_state import MallocStateParser
-from .heap import HeapParser
-from .malloc_chunk import MallocChunkParser
-from .process_informer import ProcessInformer
+from pwnlib.heap.bins import \
+    BinParser, \
+    FastBinParser, \
+    EnabledTcacheParser, \
+    DisabledTcacheParser
+from pwnlib.heap.arena import ArenaParser
+from pwnlib.heap.malloc_state import MallocStateParser
+from pwnlib.heap.heap import HeapParser
+from pwnlib.heap.malloc_chunk import MallocChunkParser
+from pwnlib.heap.process_informer import ProcessInformer
 
 
 class HeapExplorer:
