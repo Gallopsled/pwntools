@@ -19,7 +19,7 @@ jobs:
 
     - name: Cache for dependencies
       uses: actions/cache@v1
-      id: cache
+      id: cache-deps
       with:
         path: usr
         key: ${{ matrix.os }}-cache-deps
@@ -40,7 +40,7 @@ jobs:
         sudo apt update
         sudo apt install ash bash dash ksh mksh zsh \
           pandoc gdb socat sshpass \
-          binutils-multiarch qemu-user-static
+          binutils-multiarch qemu-user-static openjdk-8-jre-headless
 
     - name: Set up SSH
       run: |
@@ -67,8 +67,8 @@ jobs:
       run:  pip install -r docs/requirements.txt
 
     - name: Install android avd
+      if:  steps.cache-deps.outputs.cache-hit != 'true'
       run: |
-        sudo apt install openjdk-8-jre-headless
         USER=travis source travis/install.sh
 
     - name: Coverage doctests
