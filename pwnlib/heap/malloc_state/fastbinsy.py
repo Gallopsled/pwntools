@@ -1,4 +1,4 @@
-from pwnlib.heap.utils import *
+from pwnlib.heap.utils import u64, u32
 from pwnlib.heap.bins.fast_bin import FastBinEntry
 
 
