@@ -21,7 +21,7 @@ jobs:
       uses: actions/cache@v1
       id: cache-deps
       with:
-        path: usr
+        path: android-?dk
         key: ${{ matrix.os }}-cache-deps
 
     - name: Set up Python ${{ matrix.python-version }}
