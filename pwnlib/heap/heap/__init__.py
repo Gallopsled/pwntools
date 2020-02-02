@@ -1,3 +1,3 @@
 
-from .heap import *
-from .heap_parser import *
+from .heap import Heap
+from .heap_parser import HeapParser
