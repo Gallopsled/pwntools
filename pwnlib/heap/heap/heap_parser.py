@@ -94,4 +94,3 @@ class HeapParser:
             chunks.append(chunk)
 
         return Heap(heap_address, chunks, self._pointer_size)
-

@@ -38,7 +38,6 @@ class Arena(object):
 
         return self._tcaches
 
-
     def __str__(self):
         msg = [
             self._basic_formatter.super_header("Arena"),
