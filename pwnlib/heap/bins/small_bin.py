@@ -22,19 +22,6 @@ class SmallBin(Bin):
     def __init__(self, bin_entry, malloc_chunks):
         super(SmallBin, self).__init__(bin_entry, malloc_chunks)
 
-    def __repr__(self):
-
-        msg = "Smallbin [size = {:#x}, count = {}] => {:#x}".format(
-            self.chunks_size,
-            len(self),
-            self.fd
-        )
-
-        for chunk in self.malloc_chunks:
-            msg += chunk.to_bin_str()
-
-        return msg
-
     def _name(self):
         return "Small Bin"
 
