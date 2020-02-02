@@ -187,7 +187,11 @@ class HeapExplorer:
             >>> heap = hp.heap()
             >>> len(heap.chunks) # doctest: +SKIP
             574
-            >>> print(heap) # doctest: +SKIP
+            >>> top_chunk = heap.top
+            >>> hex(top_chunk.address) # doctest: +SKIP
+            '0x56080f5dbb00'
+            >>> heap_str = str(heap)
+            >>> print(heap_str) # doctest: +SKIP
             ============================ Heap (0x555635100000) ============================
             0x555635100000 0x250 PREV_IN_USE
               00 00 00 00 07 00 00 00 00 00 00 00 00 00 00 00   ................
