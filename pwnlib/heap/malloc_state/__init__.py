@@ -6,3 +6,9 @@ from .bins import \
     UNSORTED_BIN_INDEX, \
     SMALL_BINS_START_INDEX, \
     LARGE_BINS_START_INDEX
+
+__all__ = [
+    'MallocState', 'MallocStateParser',
+    'FastBinsY', 'Bins',
+    'UNSORTED_BIN_INDEX', 'SMALL_BINS_START_INDEX', 'LARGE_BINS_START_INDEX'
+]
