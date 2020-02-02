@@ -26,19 +26,6 @@ class LargeBin(Bin):
     def min_chunks_size(self):
         return self.chunks_size
 
-    def __repr__(self):
-
-        msg = "Largebin [min_size = {:#x}, count = {}] => {:#x}".format(
-            self.min_chunks_size,
-            len(self),
-            self.fd
-        )
-
-        for chunk in self.malloc_chunks:
-            msg += chunk.to_bin_str()
-
-        return msg
-
     def _name(self):
         return "Large Bin"
 
