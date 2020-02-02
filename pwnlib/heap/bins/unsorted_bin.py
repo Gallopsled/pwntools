@@ -28,18 +28,6 @@ class UnsortedBin(Bin):
     def __init__(self, bin_entry, malloc_chunks):
         super(UnsortedBin, self).__init__(bin_entry, malloc_chunks)
 
-    def __repr__(self):
-
-        msg = "Unsorted bins [count = {}] => {:#x}".format(
-            len(self),
-            self.fd
-        )
-
-        for chunk in self.malloc_chunks:
-            msg += chunk.to_bin_str()
-
-        return msg
-
     def _name(self):
         return "Unsorted Bin"
 
