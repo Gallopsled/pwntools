@@ -854,7 +854,7 @@ class MemoryMaps:
             '561ce2895000-561ce28b6000 rw-p 00000000 00:00 0\\t\\t[heap]'
 
         """
-        return self._lookup_map("[heap]")
+        return self.lookup_map("[heap]")
 
     @property
     def stack(self):
@@ -890,13 +890,19 @@ class MemoryMaps:
             ... 7ffd9bb45000-7ffd9bb48000 r--p 00000000 00:00 0                          [vvar]
             ... 7ffd9bb48000-7ffd9bb4a000 r-xp 00000000 00:00 0                          [vdso]
             ... \""")
+            >>> maps_str = str(maps)
+            >>> maps_addresses = [m.address for m in maps]
             >>> str(maps.stack)
             '7ffd9bab9000-7ffd9bada000 rw-p 00000000 00:00 0\\t\\t[stack]'
-
+            >>> try:
+            ...     maps.lookup_map("unknown")
+            ... except KeyError:
+            ...     print("Not found")
+            Not found
         """
-        return self._lookup_map("[stack]")
+        return self.lookup_map("[stack]")
 
-    def _lookup_map(self, map_path):
+    def lookup_map(self, map_path):
         """Retrieves the first map with the name or file path given
 
         Args:
