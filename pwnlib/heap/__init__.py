@@ -328,6 +328,7 @@ from .bins import \
     Tcaches, \
     Tcache, \
     TcacheEntry, \
+    NoTcacheError, \
     FastBins, \
     FastBin, \
     FastBinParser, \
