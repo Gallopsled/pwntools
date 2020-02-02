@@ -1,3 +1,3 @@
 
-from .arena import *
-from .parser import *
+from .arena import Arena
+from .parser import ArenaParser
