@@ -1,5 +1,6 @@
-from .tcache_per_thread_struct import *
-from .tcache import *
+from pwnlib.heap.bins.tcache.tcache_per_thread_struct import \
+    TcachePerthreadStructParser
+from pwnlib.heap.bins.tcache.tcache import Tcaches, Tcache
 
 
 class TcacheParser:
