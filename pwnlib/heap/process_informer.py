@@ -1,6 +1,10 @@
-from .utils import *
 import os.path
 import pwnlib.util.proc
+from pwnlib.heap.utils import \
+    u64, \
+    u32, \
+    get_libc_version_from_name, \
+    get_main_arena_addr
 
 
 class ProcessInformer:
