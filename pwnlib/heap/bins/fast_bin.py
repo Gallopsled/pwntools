@@ -69,18 +69,6 @@ class FastBin(Bin):
     def __init__(self, bin_entry, malloc_chunks):
         super(FastBin, self).__init__(bin_entry, malloc_chunks)
 
-    def __repr__(self):
-        msg = "Fastbin [size = {:#x}, count = {}] => {:#x}".format(
-            self.chunks_size,
-            len(self),
-            self.fd
-        )
-
-        for chunk in self.chunks:
-            msg += chunk.to_bin_str()
-
-        return msg
-
     def _name(self):
         return "Fast Bin"
 
