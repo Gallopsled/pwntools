@@ -2,7 +2,8 @@ from pwnlib.heap.bins import \
     BinParser, \
     FastBinParser, \
     EnabledTcacheParser, \
-    DisabledTcacheParser
+    DisabledTcacheParser, \
+    NoTcacheError
 from pwnlib.heap.arena import ArenaParser
 from pwnlib.heap.malloc_state import MallocStateParser
 from pwnlib.heap.heap import HeapParser
