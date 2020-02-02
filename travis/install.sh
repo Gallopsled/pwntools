@@ -163,6 +163,7 @@ setup_android_emulator()
     # - x86
     # - x86_64
     ABI='armeabi-v7a'
+    echo $ABI | grep -q 64 || EMUOPTS='-force-32bit'
 
     # Grab the emulator image
     echo y | android update sdk --no-ui --all --filter sys-img-$ABI-android-21
@@ -172,7 +173,7 @@ setup_android_emulator()
 
     # In the future, it would be nice to be able to use snapshots.
     # However, I haven't gotten them to work nicely.
-    emulator64 -avd android-$ABI -no-window -no-boot-anim -no-skin -no-audio -no-window -no-snapshot || kill -INT $$ &
+    emulator $EMUOPTS -avd android-$ABI -no-window -no-boot-anim -no-skin -no-audio -no-window -no-snapshot &
     adb wait-for-device
     adb shell id
     adb shell getprop
