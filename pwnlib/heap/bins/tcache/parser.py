@@ -8,7 +8,7 @@ class TcacheParser:
     """
 
     def parse_all_from_malloc_state(self, malloc_state):
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
 class DisabledTcacheParser:

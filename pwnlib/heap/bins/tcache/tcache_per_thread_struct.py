@@ -18,8 +18,8 @@ class TcachePerthreadStructParser:
         self._pointer_size = process_informer.pointer_size
         self._unpack_pointer = process_informer.unpack_pointer
         self._tcache_perthread_struct_size = self.TCACHE_MAX_BINS + \
-                                             self._pointer_size * \
-                                             self.TCACHE_MAX_BINS
+            self._pointer_size * \
+            self.TCACHE_MAX_BINS
 
     def parse_from_address(self, address):
         """Returns a TcachePerthreadStruct object by parsing the
@@ -81,4 +81,3 @@ class TcachePerthreadStruct:
         self.address = address
         self.counts = counts
         self.entries = entries
-
