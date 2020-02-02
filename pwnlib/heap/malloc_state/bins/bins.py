@@ -1,4 +1,5 @@
-from .bins_indexes import *
+from pwnlib.heap.malloc_state.bins.bins_indexes import \
+    LARGE_BINS_START_INDEX, SMALL_BINS_START_INDEX, UNSORTED_BIN_INDEX
 
 
 class Bins:
@@ -7,11 +8,6 @@ class Bins:
     Attributes:
         entries (list of :class:`BinEntry`): entries with pointers to the first
             and last chunks of the each double linked bin.
-        unsorted_bin_entry (:class:`BinEntry`): entry of the unsorted bin.
-        small_bins_entries (list of :class:`BinEntry`): entries of the small
-            bins.
-        large_bins_entries (list of :class:`BinEntry`): entries of the large
-            bins.
     """
 
     def __init__(self, entries):
@@ -19,14 +15,29 @@ class Bins:
 
     @property
     def unsorted_bin_entry(self):
+        """Returns the entry of the unsorted bin.
+
+        Returns:
+            BinEntry
+        """
         return self.entries[UNSORTED_BIN_INDEX]
 
     @property
     def small_bins_entries(self):
+        """Returns the entries of the small bins.
+
+        Returns:
+            :obj:`list` of  :class:`BinEntry`
+        """
         return self.entries[SMALL_BINS_START_INDEX:LARGE_BINS_START_INDEX]
 
     @property
     def large_bins_entries(self):
+        """Returns the entries of the large bins.
+
+        Returns:
+            :obj:`list` of  :class:`BinEntry`
+        """
         return self.entries[LARGE_BINS_START_INDEX:]
 
     def __getitem__(self, index):
