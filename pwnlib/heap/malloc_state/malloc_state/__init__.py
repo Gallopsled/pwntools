@@ -1,3 +1,3 @@
 
-from .malloc_state import *
-from .parser import *
+from .malloc_state import MallocState
+from .parser import MallocStateParser
