@@ -320,3 +320,23 @@ Access to items of the non main arena:
 """
 
 from .heap_explorer import HeapExplorer
+from .arena import Arena
+from .malloc_chunk import MallocChunk
+from .malloc_state import MallocState
+from .heap import Heap
+from .bins import \
+    Tcaches, \
+    Tcache, \
+    TcacheEntry, \
+    FastBins, \
+    FastBin, \
+    FastBinParser, \
+    UnsortedBins, \
+    UnsortedBin,\
+    UnsortedBinEntry, \
+    SmallBins, \
+    SmallBin, \
+    SmallBinEntry, \
+    LargeBins, \
+    LargeBin, \
+    LargeBinEntry
