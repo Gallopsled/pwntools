@@ -920,8 +920,8 @@ class process(tube):
 
         Example:
 
-        >>> p = process('sh') # doctest: +SKIP
-        >>> libc = p.libc # doctest: +SKIP
+        >>> p = process('python')
+        >>> libc = p.libc
         >>> libc # doctest: +SKIP
         ELF('/lib64/libc-...so')
         >>> p.close()
