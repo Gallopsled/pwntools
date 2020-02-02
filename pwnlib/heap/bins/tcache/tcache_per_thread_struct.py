@@ -1,4 +1,4 @@
-from .entry import TcacheEntry
+from pwnlib.heap.bins.tcache.entry import TcacheEntry
 
 
 class TcachePerthreadStructParser:
