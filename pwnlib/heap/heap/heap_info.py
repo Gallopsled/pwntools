@@ -1,4 +1,4 @@
-from construct import *
+from construct import Int64ul, Int32ul, Struct
 
 
 class HeapInfoParser:
