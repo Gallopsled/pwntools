@@ -154,25 +154,25 @@ setup_android_emulator()
     fi
 
     # Grab prerequisites
-    echo y | android update sdk --no-ui --all --filter platform-tools,extra-android-support
-    echo y | android update sdk --no-ui --all --filter android-29
+    echo y | android update sdk --no-ui --all --filter platform-tools,extra-android-support,emulator
+    echo y | android update sdk --no-ui --all --filter android-21
 
     # Valid ABIs:
     # - armeabi-v7a
     # - arm64-v8a
     # - x86
     # - x86_64
-    ABI='x86_64'
+    ABI='armeabi-v7a'
 
     # Grab the emulator image
-    echo y | android update sdk --no-ui --all --filter sys-img-$ABI-android-29
+    echo y | android update sdk --no-ui --all --filter sys-img-$ABI-android-21
 
     # Create our emulator Android Virtual Device (AVD)
-    echo no | android --silent create avd --name android-$ABI   --target android-29 --force --snapshot --abi $ABI
+    echo no | android --silent create avd --name android-$ABI   --target android-21 --force --snapshot --abi $ABI
 
     # In the future, it would be nice to be able to use snapshots.
     # However, I haven't gotten them to work nicely.
-    emulator $EMUOPTS -avd android-$ABI -no-window -no-boot-anim -no-skin -no-audio -no-window -no-snapshot &
+    emulator -avd android-$ABI -no-window -no-boot-anim -no-skin -no-audio -no-window -no-snapshot &
     adb wait-for-device
     adb shell id
     adb shell getprop
