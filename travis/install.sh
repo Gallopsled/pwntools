@@ -151,7 +151,7 @@ setup_android_emulator()
     # - x86
     # - x86_64
     ABI='armeabi-v7a'
-    ANDROIDV=android-29
+    ANDROIDV=android-24
     yes | sdkmanager --install platform-tools 'extras;android;m2repository' emulator ndk-bundle \
           "platforms;$ANDROIDV" "system-images;$ANDROIDV;default;$ABI" >/dev/null
     yes | sdkmanager --licenses
