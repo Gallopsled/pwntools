@@ -121,14 +121,15 @@ setup_android_emulator()
     else
         if [ ! -f android-sdk/android ]; then
             # Install the SDK, which gives us the 'android' and 'emulator' commands
-            wget -nv https://dl.google.com/android/android-sdk_r24.4.1-linux.tgz
-            tar xf android-sdk_r24.4.1-linux.tgz
-            rm  -f android-sdk_r24.4.1-linux.tgz
+            wget -nv -O sdk-tools-linux.zip https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip
+            unzip sdk-tools-linux.zip
+            rm -f sdk-tools-linux.zip
 
             # Travis caching causes this to exist already
             rm -rf android-sdk
 
-            mv android-sdk-linux android-sdk
+            mkdir android-sdk
+            mv tools android-sdk/
             file android-sdk/tools/android
         fi
 
