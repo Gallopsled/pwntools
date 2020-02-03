@@ -150,7 +150,7 @@ setup_android_emulator()
     # - arm64-v8a
     # - x86
     # - x86_64
-    ABI='armeabi-v7a'
+    ANDROID_ABI='armeabi-v7a'
     ANDROIDV=android-24
     yes | sdkmanager --install platform-tools 'extras;android;m2repository' emulator ndk-bundle \
           "platforms;$ANDROIDV" "system-images;$ANDROIDV;default;$ABI" >/dev/null
@@ -158,11 +158,11 @@ setup_android_emulator()
 
     # Create our emulator Android Virtual Device (AVD)
     # --snapshot flag is deprecated, see bitrise-steplib/steps-create-android-emulator#18
-    echo no | avdmanager --silent create avd --name android-$ABI --force --package "system-images;$ANDROIDV;default;$ABI"
+    echo no | avdmanager --silent create avd --name android-$ANDROID_ABI --force --package "system-images;$ANDROIDV;default;$ANDROID_ABI"
 
     # In the future, it would be nice to be able to use snapshots.
     # However, I haven't gotten them to work nicely.
-    android-sdk/emulator/emulator -avd android-$ABI -no-window -no-boot-anim -no-skin -no-audio -no-window -no-snapshot &
+    android-sdk/emulator/emulator -avd android-$ANDROID_ABI -no-window -no-boot-anim -no-skin -no-audio -no-window -no-snapshot &
     adb wait-for-device
     adb shell id
     adb shell getprop

@@ -41,11 +41,15 @@ jobs:
         sudo apt install ash bash dash ksh mksh zsh \
           pandoc gdb socat sshpass \
           binutils-multiarch qemu-user-static \
+          binutils-aarch64-linux-gnu \
+          binutils-arm-linux-gnueabihf \
+          binutils-mips-linux-gnu \
+          binutils-powerpc-linux-gnu \
           openjdk-8-jre-headless
 
     - name: Set up SSH
       run: |
-        ssh-keygen -t rsa -f ~/.ssh/pwntools-ci -N ''
+        ssh-keygen -t ed25519 -f ~/.ssh/pwntools-ci -N ''
         cat > ~/.ssh/config <<EOF
         Host example.pwnme
             User $USER
@@ -71,9 +75,13 @@ jobs:
       if:  steps.cache-deps.outputs.cache-hit != 'true'
       run: |
         USER=travis source travis/install.sh
+        set | egrep '^(ANDROID|PATH)' >android.env
 
     - name: Coverage doctests
       run: |
+        source android.env
+        android-sdk/emulator/emulator -avd android-$ANDROID_ABI -no-window -no-boot-anim -no-skin -no-audio -no-window -no-snapshot &
+        adb wait-for-device
         PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest
         coverage combine
 
