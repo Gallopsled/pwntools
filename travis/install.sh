@@ -139,6 +139,8 @@ setup_android_emulator()
         done
         export PATH="$PWD/android-sdk/tools/bin:$PATH"
         export PATH="$PWD/android-sdk/platform-tools:$PATH"
+        export ANDROID_SDK_ROOT="$PWD/android-sdk"
+        export ANDROID_HOME="$PWD/android-sdk"
         which sdkmanager
     fi
 
