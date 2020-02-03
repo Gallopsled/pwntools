@@ -40,7 +40,8 @@ jobs:
         sudo apt update
         sudo apt install ash bash dash ksh mksh zsh \
           pandoc gdb socat sshpass \
-          binutils-multiarch qemu-user-static openjdk-8-jre-headless
+          binutils-multiarch qemu-user-static \
+          openjdk-8-jre-headless qemu-system-arm
 
     - name: Set up SSH
       run: |

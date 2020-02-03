@@ -153,8 +153,7 @@ setup_android_emulator()
     ABI='armeabi-v7a'
     ANDROIDV=android-21
     yes | sdkmanager --install platform-tools 'extras;android;m2repository' emulator ndk-bundle \
-          "platforms;$ANDROIDV" "system-images;$ANDROIDV;default;$ABI" 2>&1 \
-        | uniq
+          "platforms;$ANDROIDV" "system-images;$ANDROIDV;default;$ABI" >/dev/null
     yes | sdkmanager --licenses
 
     # Create our emulator Android Virtual Device (AVD)
