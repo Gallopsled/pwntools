@@ -1060,16 +1060,32 @@ class ELF(ELFFile):
         if 'exit' not in self.symbols:
             return 0
 
+        # If there's no delay slot, execution continues on the next instruction after a call.
+        call_return_offset = 1
+        if self.arch in ['arm', 'thumb']:
+            call_instructions = set(['blx', 'bl'])
+        elif self.arch == 'aarch64':
+            call_instructions = set(['blr', 'bl'])
+        elif self.arch in ['mips', 'mips64']:
+            call_instructions = set(['bal', 'jalr'])
+            # Account for the delay slot.
+            call_return_offset = 2
+        elif self.arch in ['i386', 'amd64', 'ia64']:
+            call_instructions = set(['call'])
+        else:
+            log.error('Unsupported architecture %s in ELF.libc_start_main_return', self.arch)
+            return 0
+        
         code = self.disasm(self.symbols['__libc_start_main'], self.functions['__libc_start_main'].size)
         exit_addr = hex(self.symbols['exit'])
         lines = code.split('\n')
-        calls = [(index, line) for index, line in enumerate(lines) if 'call' in line]
+        calls = [(index, line) for index, line in enumerate(lines) if set(line.split()) & call_instructions]
         exit_calls = [index for index, line in enumerate(calls) if exit_addr in line[1]]
         if len(exit_calls) != 1:
             return 0
 
         call_to_main = calls[exit_calls[0] - 1]
-        return_from_main = lines[call_to_main[0] + 1].lstrip()
+        return_from_main = lines[call_to_main[0] + call_return_offset].lstrip()
         return_from_main = int(return_from_main[ : return_from_main.index(':') ], 16)
         return return_from_main
 
