@@ -41,7 +41,7 @@ jobs:
         sudo apt install ash bash dash ksh mksh zsh \
           pandoc gdb socat sshpass \
           binutils-multiarch qemu-user-static \
-          openjdk-8-jre-headless qemu-system-arm
+          openjdk-8-jre-headless
 
     - name: Set up SSH
       run: |

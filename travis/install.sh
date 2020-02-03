@@ -162,7 +162,7 @@ setup_android_emulator()
 
     # In the future, it would be nice to be able to use snapshots.
     # However, I haven't gotten them to work nicely.
-    emulator -avd android-$ABI -no-window -no-boot-anim -no-skin -no-audio -no-window -no-snapshot &
+    android-sdk/emulator/emulator -avd android-$ABI -no-window -no-boot-anim -no-skin -no-audio -no-window -no-snapshot &
     adb wait-for-device
     adb shell id
     adb shell getprop
