@@ -122,8 +122,8 @@ setup_android_emulator()
         if [ ! -f android-sdk/tools/bin/sdkmanager ]; then
             # Install the SDK, which gives us the 'android' and 'emulator' commands
             wget -nv -O sdk-tools-linux.zip https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip
-            unzip sdk-tools-linux.zip
-            rm -f sdk-tools-linux.zip
+            unzip -q sdk-tools-linux.zip
+            rm    -f sdk-tools-linux.zip
 
             # Travis caching causes this to exist already
             rm -rf android-sdk
@@ -150,10 +150,14 @@ setup_android_emulator()
     # - x86_64
     ABI='armeabi-v7a'
     ANDROIDV=android-21
-    yes | sdkmanager --install platform-tools 'extras;android;m2repository' emulator ndk-bundle "platforms;$ANDROIDV" "system-images;$ANDROIDV;default;$ABI"
+    yes | sdkmanager --install platform-tools 'extras;android;m2repository' emulator ndk-bundle \
+          "platforms;$ANDROIDV" "system-images;$ANDROIDV;default;$ABI" 2>&1 \
+        | uniq
+    yes | sdkmanager --licenses
 
     # Create our emulator Android Virtual Device (AVD)
-    echo no | avdmanager --silent create avd --name android-$ABI --force --snapshot --package "system-images;$ANDROIDV;default;$ABI"
+    # --snapshot flag is deprecated, see bitrise-steplib/steps-create-android-emulator#18
+    echo no | avdmanager --silent create avd --name android-$ABI --force --package "system-images;$ANDROIDV;default;$ABI"
 
     # In the future, it would be nice to be able to use snapshots.
     # However, I haven't gotten them to work nicely.
