@@ -134,9 +134,6 @@ setup_android_emulator()
         fi
 
         export PATH="$PWD/android-sdk/tools:$PATH"
-        for d in "$PWD/android-sdk/ndk-bundle/"*/; do
-          export PATH="$d:$PATH"
-        done
         export PATH="$PWD/android-sdk/tools/bin:$PATH"
         export PATH="$PWD/android-sdk/platform-tools:$PATH"
         export ANDROID_SDK_ROOT="$PWD/android-sdk"
@@ -155,6 +152,11 @@ setup_android_emulator()
     yes | sdkmanager --install platform-tools 'extras;android;m2repository' emulator ndk-bundle \
           "platforms;$ANDROIDV" "system-images;$ANDROIDV;default;$ANDROID_ABI" >/dev/null
     yes | sdkmanager --licenses
+
+    # enable NDK for adb.compile()
+    for d in "$PWD/android-sdk/ndk-bundle/"*/; do
+        export PATH="$PATH:$d"
+    done
 
     # Create our emulator Android Virtual Device (AVD)
     # --snapshot flag is deprecated, see bitrise-steplib/steps-create-android-emulator#18

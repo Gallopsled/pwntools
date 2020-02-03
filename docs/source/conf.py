@@ -13,6 +13,7 @@
 
 import os
 import doctest
+import signal
 import six
 import subprocess
 import sys
@@ -350,7 +351,7 @@ def linkcode_resolve(domain, info):
         if isinstance(val, (types.ModuleType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType) + six.class_types):
             try:
                 lines, first = inspect.getsourcelines(val)
-                filename += '#L%d-%d' % (first, first + len(lines) - 1)
+                filename += '#L%d-L%d' % (first, first + len(lines) - 1)
             except (IOError, TypeError):
                 pass
 
@@ -436,6 +437,13 @@ def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
     if checker is None:
         checker = Py2OutputChecker()
     doctest.DocTestRunner.__init__(self, checker, verbose, optionflags)
+
+class EndlessLoop(Exception): pass
+def alrm_handler(self):
+    signal.alarm(1200) # two minutes
+    raise EndlessLoop()
+signal.signal(signal.SIGALRM, alrm_handler)
+signal.alarm(1200) # two minutes
 
 if 'doctest' in sys.argv:
     def setup(app):
