@@ -119,7 +119,7 @@ setup_android_emulator()
     if (uname | grep -i Darwin &>/dev/null); then
         brew install android-sdk android-ndk
     else
-        if [ ! -f android-sdk/android ]; then
+        if [ ! -f android-sdk/tools/bin/sdkmanager ]; then
             # Install the SDK, which gives us the 'android' and 'emulator' commands
             wget -nv -O sdk-tools-linux.zip https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip
             unzip sdk-tools-linux.zip
@@ -130,46 +130,30 @@ setup_android_emulator()
 
             mkdir android-sdk
             mv tools android-sdk/
-            file android-sdk/tools/android
+            file android-sdk/tools/bin/sdk-manager
         fi
 
         export PATH="$PWD/android-sdk/tools:$PATH"
+        for d in "$PWD/android-sdk/ndk-bundle/"*/; do
+          export PATH="$d:$PATH"
+        done
+        export PATH="$PWD/android-sdk/tools/bin:$PATH"
         export PATH="$PWD/android-sdk/platform-tools:$PATH"
-        which android
-
-        # Install the NDK, which is required for adb.compile()
-        NDK_VERSION=android-ndk-r12b
-        if [ ! -f android-ndk/ndk-build ]; then
-            wget -nv https://dl.google.com/android/repository/$NDK_VERSION-linux-x86_64.zip
-            unzip -q android-ndk-*.zip
-            rm -f    android-ndk-*.zip
-
-            # Travis caching causes this to exist already
-            rm -rf android-ndk
-
-            mv     $NDK_VERSION android-ndk
-        fi
-
-        export NDK=$PWD/android-ndk
-        export PATH=$NDK:$PATH
+        which sdkmanager
     fi
 
     # Grab prerequisites
-    echo y | android update sdk --no-ui --all --filter platform-tools,extra-android-support,emulator
-    echo y | android update sdk --no-ui --all --filter android-21
-
     # Valid ABIs:
     # - armeabi-v7a
     # - arm64-v8a
     # - x86
     # - x86_64
     ABI='armeabi-v7a'
-
-    # Grab the emulator image
-    echo y | android update sdk --no-ui --all --filter sys-img-$ABI-android-21
+    ANDROIDV=android-21
+    sdkmanager --install platform-tools 'extras;android;m2repository' emulator ndk-bundle "platforms;$ANDROIDV" "system-images;$ANDROIDV;default;$ABI"
 
     # Create our emulator Android Virtual Device (AVD)
-    echo no | android --silent create avd --name android-$ABI   --target android-21 --force --snapshot --abi $ABI
+    echo no | avdmanager --silent create avd --name android-$ABI --force --snapshot --package "system-images;$ANDROIDV;default;$ABI"
 
     # In the future, it would be nice to be able to use snapshots.
     # However, I haven't gotten them to work nicely.
