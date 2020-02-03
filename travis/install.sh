@@ -162,8 +162,7 @@ setup_android_emulator()
     # - arm64-v8a
     # - x86
     # - x86_64
-    ABI='armeabi-v7a'
-    echo $ABI | grep -q 64 || EMUOPTS='-force-32bit'
+    ABI='arm64-v8a'
 
     # Grab the emulator image
     echo y | android update sdk --no-ui --all --filter sys-img-$ABI-android-21
