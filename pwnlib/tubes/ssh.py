@@ -1214,7 +1214,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ...         user='runner',
             ...         password='demopass')
             >>> a = s.connect_remote(s.host, l.lport)
-            >>> b = l.wait_for_connection()
+            >>> a; b = l.wait_for_connection()  # a; prevents hangs
             >>> a.sendline(b'Hello')
             >>> print(repr(b.recvline()))
             b'Hello\n'
@@ -1240,7 +1240,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ...         password='demopass')
             >>> l = s.listen_remote()
             >>> a = remote(s.host, l.port)
-            >>> b = l.wait_for_connection()
+            >>> a; b = l.wait_for_connection()  # a; prevents hangs
             >>> a.sendline(b'Hello')
             >>> print(repr(b.recvline()))
             b'Hello\n'

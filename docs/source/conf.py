@@ -443,7 +443,7 @@ def alrm_handler(sig, frame):
     signal.alarm(180) # three minutes
     raise EndlessLoop()
 signal.signal(signal.SIGALRM, alrm_handler)
-signal.alarm(180) # three minutes
+signal.alarm(600) # ten minutes
 
 if 'doctest' in sys.argv:
     def setup(app):
