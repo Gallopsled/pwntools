@@ -18,7 +18,7 @@ __all__ = ['getch', 'getraw', 'get', 'unget']
 FLAG_CONVERTKP = True
 
 try:    _fd = sys.stdin.fileno()
-except Exception: _fd = file('/dev/null', 'r').fileno()
+except Exception: _fd = os.open(os.devnull, os.O_RDONLY)
 
 def getch(timeout = 0):
     while True:
