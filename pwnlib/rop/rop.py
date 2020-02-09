@@ -1305,18 +1305,19 @@ class ROP(object):
         if not exes:
             log.error('No non-library binaries in [elfs]')
 
+        nonpie = csu = None
         for elf in exes:
             if not elf.pie:
-                if u'__libc_csu_init' in elf.symbols:
+                if '__libc_csu_init' in elf.symbols:
                     break
                 nonpie = elf
-            elif u'__libc_csu_init' in elf.symbols:
+            elif '__libc_csu_init' in elf.symbols:
                 csu = elf
 
         if elf.pie:
-            if 'nonpie' in locals():
+            if nonpie:
                 elf = nonpie
-            elif 'csu' in locals():
+            elif csu:
                 elf = csu
 
         # Prepare capstone
@@ -1325,20 +1326,20 @@ class ROP(object):
         md.skipdata = True
 
         # Resolve __libc_csu_ symbols if candidate binary is stripped
-        if not u'__libc_csu_init' in elf.symbols:
+        if not '__libc_csu_init' in elf.symbols:
             if elf.pie:
                 for insn in md.disasm(elf.section('.text'), elf.offset_to_vaddr(elf.get_section_by_name('.text').header['sh_offset'])):
                     if insn.mnemonic == 'lea' and insn.operands[0].reg == X86_REG_R8:
-                        elf.sym[u'__libc_csu_fini'] = insn.address + insn.size + insn.disp
+                        elf.sym['__libc_csu_fini'] = insn.address + insn.size + insn.disp
                     if insn.mnemonic == 'lea' and insn.operands[0].reg == X86_REG_RCX:
-                        elf.sym[u'__libc_csu_init'] = insn.address + insn.size + insn.disp
+                        elf.sym['__libc_csu_init'] = insn.address + insn.size + insn.disp
                         break
             else:
                 for insn in md.disasm(elf.section('.text'), elf.get_section_by_name('.text').header['sh_addr']):
                     if insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_R8:
-                        elf.sym[u'__libc_csu_fini'] = insn.operands[1].imm
+                        elf.sym['__libc_csu_fini'] = insn.operands[1].imm
                     if insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_RCX:
-                        elf.sym[u'__libc_csu_init'] = insn.operands[1].imm
+                        elf.sym['__libc_csu_init'] = insn.operands[1].imm
                         break
 
         # Resolve location of _fini address if required
@@ -1347,10 +1348,10 @@ class ROP(object):
         elif elf.pie and not call:
             log.error('No non-PIE binaries in [elfs], \'call\' parameter is required')
 
-        csu_function = elf.read(elf.sym[u'__libc_csu_init'], elf.sym[u'__libc_csu_fini'] - elf.sym[u'__libc_csu_init'])
+        csu_function = elf.read(elf.sym['__libc_csu_init'], elf.sym['__libc_csu_fini'] - elf.sym['__libc_csu_init'])
 
         # 1st gadget: Populate registers in preparation for 2nd gadget
-        for insn in md.disasm(csu_function, elf.sym[u'__libc_csu_init']):
+        for insn in md.disasm(csu_function, elf.sym['__libc_csu_init']):
             if insn.mnemonic == 'pop' and insn.operands[0].reg == X86_REG_RBX:
                 self.raw(insn.address)
                 break
@@ -1364,7 +1365,7 @@ class ROP(object):
 
         # Older versions of gcc use r13 to populate rdx then r15d to populate edi, newer versions use the reverse
         # Account for this when the binary was linked against a glibc that was built with a newer gcc
-        for insn in md.disasm(csu_function, elf.sym[u'__libc_csu_init']):
+        for insn in md.disasm(csu_function, elf.sym['__libc_csu_init']):
             if insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_RDX and insn.operands[1].reg == X86_REG_R13:
                 self.raw(rdx)  # pop r13
                 self.raw(rsi)  # pop r14
@@ -1426,10 +1427,10 @@ class ROP(object):
                 count = int(attr.split('_')[1])
             return self.search(move=count)
 
-        if attr in ('int80', 'syscall', 'sysenter'):
-            mapping = {'int80': 'int 0x80',
-             'syscall': 'syscall',
-             'sysenter': 'sysenter'}
+        mapping = {'int80': 'int 0x80',
+            'syscall': 'syscall',
+            'sysenter': 'sysenter'}
+        if attr in mapping:
             for each in self.gadgets:
                 if self.gadgets[each]['insns'] == [mapping[attr]]:
                     return gadget(each, self.gadgets[each])
