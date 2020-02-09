@@ -24,7 +24,7 @@ class bootloader_images_header(ctypes.Structure):
         ('bootldr_size', ctypes.c_uint32),
     ]
 
-BOOTLDR_MAGIC = bytes('BOOTLDR!')
+BOOTLDR_MAGIC = b'BOOTLDR!'
 
 class BootloaderImage(object):
     def __init__(self, data):
@@ -120,5 +120,5 @@ class BootloaderImage(object):
 
 if __name__ == '__main__':
     # Easy sanity checking
-    b = BootloaderImage(open(sys.argv[1]).read())
+    b = BootloaderImage(open(sys.argv[1], 'rb').read())
     print(b)

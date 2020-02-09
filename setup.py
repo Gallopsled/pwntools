@@ -1,4 +1,6 @@
 #!/usr/bin/env python2
+from __future__ import print_function
+
 import glob
 import os
 import platform
@@ -46,40 +48,41 @@ for filename in glob.glob('pwnlib/commandline/*'):
 install_requires     = ['paramiko>=1.15.2',
                         'mako>=1.0.0',
                         'pyelftools>=0.2.4',
-                        'capstone',
+                        'capstone>=3.0.5rc2', # See Gallopsled/pwntools#971, Gallopsled/pwntools#1160
                         'ropgadget>=5.3',
                         'pyserial>=2.7',
                         'requests>=2.0',
                         'pip>=6.0.8',
-                        'tox>=1.8.1',
                         'pygments>=2.0',
                         'pysocks',
                         'python-dateutil',
                         'packaging',
                         'psutil>=3.3.0',
-                        'intervaltree',
-                        'unicorn']
+                        'intervaltree>=3.0',
+                        'sortedcontainers',
+                        'unicorn>=1.0.2rc1', # see unicorn-engine/unicorn#1100, unicorn-engine/unicorn#1170
+]
 
 # Check that the user has installed the Python development headers
 PythonH = os.path.join(get_python_inc(), 'Python.h')
 if not os.path.exists(PythonH):
-    print >> sys.stderr, "You must install the Python development headers!"
-    print >> sys.stderr, "$ apt-get install python-dev"
+    print("You must install the Python development headers!", file=sys.stderr)
+    print("$ apt-get install python-dev", file=sys.stderr)
     sys.exit(-1)
 
 # Convert README.md to reStructuredText for PyPI
 long_description = ''
 try:
-    long_description = subprocess.check_output(['pandoc', 'README.md', '--to=rst'])
+    long_description = subprocess.check_output(['pandoc', 'README.md', '--to=rst'], universal_newlines=True)
 except Exception as e:
-    print >>sys.stderr, "Failed to convert README.md through pandoc, proceeding anyway"
+    print("Failed to convert README.md through pandoc, proceeding anyway", file=sys.stderr)
     traceback.print_exc()
 
 setup(
     name                 = 'pwntools',
-    python_requires      = '~=2.7',
+    python_requires      = '>=2.7',
     packages             = find_packages(),
-    version              = '3.14.0dev',
+    version              = '4.2.0dev',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],

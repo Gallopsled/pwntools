@@ -30,6 +30,12 @@ def pidof(target):
 
     Returns:
         A list of found PIDs.
+
+    Example:
+        >>> l = tubes.listen.listen()
+        >>> p = process(['curl', '-s', 'http://127.0.0.1:%d'%l.lport])
+        >>> pidof(p) == pidof(l) == pidof(('127.0.0.1', l.lport))
+        True
     """
     if isinstance(target, tubes.ssh.ssh_channel):
         return [target.pid]
@@ -88,7 +94,7 @@ def pid_by_name(name):
 
     processes = sorted(processes, key=lambda p: p.create_time())
 
-    return list(reversed([p.pid for p in processes]))
+    return reversed([p.pid for p in processes])
 
 def name(pid):
     """name(pid) -> str
@@ -100,9 +106,9 @@ def name(pid):
         Name of process as listed in ``/proc/<pid>/status``.
 
     Example:
-        >>> pid = pidof('init')[0]
-        >>> name(pid) == 'init'
-        True
+        >>> p = process('cat')
+        >>> name(p.pid)
+        'cat'
     """
     return psutil.Process(pid).name()
 
@@ -140,6 +146,10 @@ def ancestors(pid):
 
     Returns:
         List of PIDs of whose parent process is `pid` or an ancestor of `pid`.
+
+    Example:
+        >>> ancestors(os.getpid()) # doctest: +ELLIPSIS
+        [..., 1]
     """
     pids = []
     while pid != 0:
@@ -155,6 +165,11 @@ def descendants(pid):
 
     Returns:
         Dictionary mapping the PID of each child of `pid` to it's descendants.
+
+    Example:
+        >>> d = descendants(os.getppid())
+        >>> os.getpid() in d.keys()
+        True
     """
     this_pid = pid
     allpids = all_pids()
@@ -177,6 +192,10 @@ def exe(pid):
 
     Returns:
         The path of the binary of the process. I.e. what ``/proc/<pid>/exe`` points to.
+
+    Example:
+        >>> exe(os.getpid()) == os.path.realpath(sys.executable)
+        True
     """
     return psutil.Process(pid).exe()
 
@@ -189,6 +208,10 @@ def cwd(pid):
     Returns:
         The path of the process's current working directory. I.e. what
         ``/proc/<pid>/cwd`` points to.
+
+    Example:
+        >>> cwd(os.getpid()) == os.getcwd()
+        True
     """
     return psutil.Process(pid).cwd()
 
@@ -200,6 +223,10 @@ def cmdline(pid):
 
     Returns:
         A list of the fields in ``/proc/<pid>/cmdline``.
+
+    Example:
+        >>> 'py' in ''.join(cmdline(os.getpid()))
+        True
     """
     return psutil.Process(pid).cmdline()
 
@@ -211,6 +238,10 @@ def stat(pid):
 
     Returns:
         A list of the values in ``/proc/<pid>/stat``, with the exception that ``(`` and ``)`` has been removed from around the process name.
+
+    Example:
+        >>> stat(os.getpid())[2]
+        'R'
     """
     with open('/proc/%d/stat' % pid) as fd:
          s = fd.read()
@@ -228,6 +259,10 @@ def starttime(pid):
 
     Returns:
         The time (in seconds) the process started after system boot
+
+    Example:
+        >>> starttime(os.getppid()) < starttime(os.getpid())
+        True
     """
     return psutil.Process(pid).create_time() - psutil.boot_time()
 
@@ -246,6 +281,8 @@ def status(pid):
     try:
         with open('/proc/%d/status' % pid) as fd:
             for line in fd:
+                if ':' not in line:
+                    continue
                 i = line.index(':')
                 key = line[:i]
                 val = line[i + 2:-1] # initial :\t and trailing \n

@@ -11,7 +11,7 @@ Example:
     >>> f = tempfile.mktemp()
     >>> write(f, 'FLAG')
     >>> run_assembly(shellcraft.i386.linux.cat(f)).recvall()
-    'FLAG'
+    b'FLAG'
 
 </%docstring>
 <%

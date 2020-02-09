@@ -108,11 +108,12 @@ class MipsXorEncoder(Encoder):
     >>> encoded = pwnlib.encoders.mips.xor.encode(shellcode, avoid)
     >>> assert not any(c in encoded for c in avoid)
     >>> p = run_shellcode(encoded)
-    >>> p.sendline('echo hello; exit')
+    >>> p.sendline(b'echo hello; exit')
     >>> p.recvline()
-    'hello\n'
+    b'hello\n'
     """
 
+    arch = 'mips'
     blacklist = cannot_avoid = set(''.join(v for v in decoders.values()))
 
     def __call__(self, raw_bytes, avoid, pcreg=''):

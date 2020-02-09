@@ -9,7 +9,7 @@ from pwnlib.term import termcap
 
 
 def eval_when(when):
-    if isinstance(when, file) or \
+    if hasattr(when, 'isatty') or \
       when in ('always', 'never', 'auto', sys.stderr, sys.stdout):
         if   when == 'always':
             return True
@@ -26,7 +26,7 @@ class Module(types.ModuleType):
     def __init__(self):
         self.__file__ = __file__
         self.__name__ = __name__
-        self.num_colors = termcap.get('colors', default = 8)
+        self.num_colors = 8
         self.has_bright = self.num_colors >= 16
         self.has_gray = self.has_bright
         self.when = 'auto'
@@ -47,6 +47,8 @@ class Module(types.ModuleType):
                      ('underline', 'smul'),
                      ('reverse'  , 'rev')]:
             s = termcap.get(y)
+            if not hasattr(s, 'encode'):
+                s = s.decode('utf-8')
             self._attributes[x] = s
         self._cache = {}
 
@@ -59,10 +61,16 @@ class Module(types.ModuleType):
         self._when = eval_when(val)
 
     def _fg_color(self, c):
-        return termcap.get('setaf', c) or termcap.get('setf', c)
+        c = termcap.get('setaf', c) or termcap.get('setf', c)
+        if not hasattr(c, 'encode'):
+            c = c.decode('utf-8')
+        return c
 
     def _bg_color(self, c):
-        return termcap.get('setab', c) or termcap.get('setb', c)
+        c = termcap.get('setab', c) or termcap.get('setb', c)
+        if not hasattr(c, 'encode'):
+            c = c.decode('utf-8')
+        return c
 
     def _decorator(self, desc, init):
         def f(self, s, when = None):

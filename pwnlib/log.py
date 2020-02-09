@@ -94,7 +94,6 @@ logger.
 from __future__ import absolute_import
 from __future__ import division
 
-import ConfigParser
 import logging
 import os
 import random
@@ -180,7 +179,7 @@ class Progress(object):
         self.rate = kwargs.pop('rate', 0)
         self._log(status, args, kwargs, 'status')
         # it is a common use case to create a logger and then immediately update
-        # its status line, so we reset `last_status` to accomodate this pattern
+        # its status line, so we reset `last_status` to accommodate this pattern
         self.last_status = 0
 
     def _log(self, status, args, kwargs, msgtype):
@@ -364,7 +363,7 @@ class Logger(object):
         """
         m = message % args
         if m not in self._one_time_warnings:
-            if self.isEnabledFor(logging.INFO):
+            if self.isEnabledFor(logging.WARNING):
                 self._one_time_warnings.add(m)
             self._log(logging.WARNING, message, args, kwargs, 'warning_once')
 
@@ -651,7 +650,7 @@ log_file.setFormatter(logging.Formatter(fmt, iso_8601))
 # The root 'pwnlib' logger is declared here.  To change the target of all
 # 'pwntools'-specific logging, only this logger needs to be changed.
 #
-# Logging cascades upward through the heirarchy,
+# Logging cascades upward through the hierarchy,
 # so the only point that should ever need to be
 # modified is the root 'pwnlib' logger.
 #

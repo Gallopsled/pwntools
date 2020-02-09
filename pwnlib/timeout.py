@@ -83,30 +83,30 @@ class Timeout(object):
         True
         >>> i = 0
         >>> with t.countdown():
-        ...     print (4 <= t.timeout and t.timeout <= 5)
+        ...     print(4 <= t.timeout and t.timeout <= 5)
         ...
         True
         >>> with t.countdown(0.5):
         ...     while t.timeout:
-        ...         print round(t.timeout,1)
+        ...         print(round(t.timeout,1))
         ...         time.sleep(0.1)
         0.5
         0.4
         0.3
         0.2
         0.1
-        >>> print t.timeout
+        >>> print(t.timeout)
         5.0
         >>> with t.local(0.5):
         ...     for i in range(5):
-        ...         print round(t.timeout,1)
+        ...         print(round(t.timeout,1))
         ...         time.sleep(0.1)
         0.5
         0.5
         0.5
         0.5
         0.5
-        >>> print t.timeout
+        >>> print(t.timeout)
         5.0
     """
 

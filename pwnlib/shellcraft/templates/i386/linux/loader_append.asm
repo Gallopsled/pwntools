@@ -15,7 +15,7 @@ Arguments:
 Example:
 
     >>> gcc = process(['gcc','-m32','-xc','-static','-Wl,-Ttext-segment=0x20000000','-'])
-    >>> gcc.write('''
+    >>> gcc.write(b'''
     ... int main() {
     ...     printf("Hello, %s!\\n", "i386");
     ... }
@@ -28,7 +28,7 @@ Example:
 The following doctest is commented out because it doesn't work on Travis
 for reasons I cannot diagnose.  However, it should work just fine :-)
 
-    # >>> run_assembly(sc).recvline() == 'Hello, i386!\n'
+    # >>> run_assembly(sc).recvline() == b'Hello, i386!\n'
     # True
 
 </%docstring>

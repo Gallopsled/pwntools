@@ -15,11 +15,11 @@ Example:
 
     >>> with context.local():
     ...    context.arch = 'i386'
-    ...    print enhex(asm(shellcraft.stackhunter()))
+    ...    print(enhex(asm(shellcraft.stackhunter())))
     3d58ebfc7a75faffe4
     >>> with context.local():
     ...    context.arch = 'i386'
-    ...    print enhex(asm(shellcraft.stackhunter(0xdeadbeef)))
+    ...    print(enhex(asm(shellcraft.stackhunter(0xdeadbeef))))
     583defbeadde75f8ffe4
 </%docstring>
 <% stackhunter = common.label("stackhunter") %>

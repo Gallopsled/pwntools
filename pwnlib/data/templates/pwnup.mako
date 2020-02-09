@@ -32,7 +32,7 @@ remote_path = remote_path or exe
 password = password or 'secret1234'
 binary_repr = repr(binary)
 %>\
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 %if not quiet:
 # This exploit template was generated via:
@@ -132,9 +132,9 @@ def start(argv=[], *a, **kw):
 gdbscript = '''
 %if ctx.binary:
   %if 'main' in ctx.binary.symbols:
-break *0x{exe.symbols.main:x}
-  %else:
-break *0x{exe.entry:x}
+tbreak main
+  %elif 'DYN' != ctx.binary.elftype:
+tbreak *0x{exe.entry:x}
   %endif
 %endif
 continue

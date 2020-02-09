@@ -48,7 +48,7 @@ ${looplabel}:
     ${i386.linux.push('esi')} /* sock */
     ${i386.linux.syscall('SYS_socketcall', 'SYS_socketcall_accept', 'esp')}
 
-    ${i386.linux.mov('ebp', 'eax')}      /* keep in-comming socket fd */
+    ${i386.linux.mov('ebp', 'eax')}      /* keep in-coming socket fd */
 
     ${i386.linux.syscall('SYS_fork')}
     xchg eax, edi

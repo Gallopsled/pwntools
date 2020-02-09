@@ -4,6 +4,7 @@ from __future__ import division
 import errno
 import os
 import select
+import six
 import string
 import sys
 
@@ -17,7 +18,7 @@ __all__ = ['getch', 'getraw', 'get', 'unget']
 FLAG_CONVERTKP = True
 
 try:    _fd = sys.stdin.fileno()
-except Exception: _fd = file('/dev/null', 'r').fileno()
+except Exception: _fd = os.open(os.devnull, os.O_RDONLY)
 
 def getch(timeout = 0):
     while True:
@@ -143,7 +144,7 @@ class Key:
         return self.__str__()
 
     def __eq__(self, other):
-        if   isinstance(other, (unicode, str)):
+        if   isinstance(other, (six.text_type, six.binary_type)):
             return Matcher(other)(self)
         elif isinstance(other, Matcher):
             return other(self)
@@ -212,7 +213,7 @@ def _init_ti_table():
             continue
         k = _name_to_key(fname)
         if k:
-            _ti_table.append((map(ord, seq), k))
+            _ti_table.append((list(bytearray(seq)), k))
 
 # csi
 def _parse_csi(offset):
@@ -278,7 +279,7 @@ def _csi_ss3(cmd, args):
     return k
 
 def _csi_u(cmd, args):
-    k = Key(kc.TYPE_UNICODE, unichr(args[0]))
+    k = Key(kc.TYPE_UNICODE, six.unichr(args[0]))
     if len(args) > 1 and args[1]:
         k.mods |= args[1] - 1
     return k
@@ -371,7 +372,7 @@ def _peekkey_csi(offset):
         _cbuf = _cbuf[offset:]
         return Key(kc.TYPE_UNICODE, u'[', kc.MOD_ALT)
     cmd, args, numb = ret
-    # print cmd, args, '\r'
+    # print(cmd, args, '\r')
     _cbuf = _cbuf[numb:]
     k = None
     if   chr(cmd[0]) in _csi_handlers:
@@ -407,7 +408,7 @@ def _peekkey_ss3(offset):
 
 def _peek_csi():
     global _cbuf
-    # print 'csi', _cbuf, '\r'
+    # print('csi', _cbuf, '\r')
     c0 = _cbuf[0]
     if   c0 == 0x1b and len(_cbuf) >= 2:
         c1 = _cbuf[1]
@@ -422,7 +423,7 @@ def _peek_csi():
 
 def _peek_simple():
     global _cbuf
-    # print 'simple', _cbuf, '\r'
+    # print('simple', _cbuf, '\r')
     if not _cbuf:
         return
     c0 = _cbuf.pop(0)
@@ -432,7 +433,7 @@ def _peek_simple():
     elif c0 == 0x1b:
         if _cbuf:
             k = _peek()
-            # print k
+            # print(k)
             if k:
                 # need to deep copy or we risk modifying keys in ti table
                 return Key(k.type, k.code, k.mods | kc.MOD_ALT)
@@ -450,18 +451,18 @@ def _peek_simple():
                 k = Key(kc.TYPE_UNICODE)
                 if   c0 == 0:
                     k.code = u' '
-                elif chr(c0 + 0x40) in string.uppercase:
-                    k.code = unichr(c0 + 0x60)
+                elif chr(c0 + 0x40) in string.ascii_uppercase:
+                    k.code = six.unichr(c0 + 0x60)
                 else:
-                    k.code = unichr(c0 + 0x40)
+                    k.code = six.unichr(c0 + 0x40)
                 k.mods |= kc.MOD_CTRL
         elif c0 == 0x7f:
-            # print 'del\r'
+            # print('del\r')
             k = Key(kc.TYPE_KEYSYM, kc.KEY_DEL)
         elif c0 >= 0x20 and c0 < 0x80:
-            k = Key(kc.TYPE_UNICODE, unichr(c0))
+            k = Key(kc.TYPE_UNICODE, six.unichr(c0))
         else:
-            k = Key(kc.TYPE_UNICODE, unichr(c0 - 0x40), kc.MOD_CTRL | kc.MOD_ALT)
+            k = Key(kc.TYPE_UNICODE, six.unichr(c0 - 0x40), kc.MOD_CTRL | kc.MOD_ALT)
     else: # utf8
         n = 0
         if   c0 & 0b11100000 == 0b11000000:
@@ -476,7 +477,7 @@ def _peek_simple():
             n = 6
         if n:
             c = [c0] + _cbuf[:n - 1]
-            k = Key(kc.TYPE_UNICODE, ''.join(chr(b) for b in c).decode('utf8'))
+            k = Key(kc.TYPE_UNICODE, bytearray(c).decode('utf8'))
             _cbuf = _cbuf[n - 1:]
         else:
             k = Key(kc.TYPE_UNKNOWN, _cbuf)

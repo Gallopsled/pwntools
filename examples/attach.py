@@ -5,7 +5,7 @@ Example showing `pwnlib.gdb.attach()`
 from pwn import *
 
 bash = process('/bin/bash')
-gdb.attach(bash, execute = '''
+gdb.attach(bash, gdbscript = '''
 p "hello from pwnlib"
 c
 ''')

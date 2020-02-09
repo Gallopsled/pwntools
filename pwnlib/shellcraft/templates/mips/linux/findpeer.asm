@@ -17,6 +17,7 @@ findpeer:
 
 next_socket:
     /* Next file descriptor */
+    .set noat
     ${mov('$at', 1)}
     add $s0, $s0, $at
 
