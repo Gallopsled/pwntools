@@ -53,7 +53,8 @@ class EnabledTcacheParser:
         Returns:
             list of Tcache
         """
-        heap_address, _ = self._heap_parser.calculate_heap_address_and_size_from_malloc_state(malloc_state)
+        heap_address, _ = self._heap_parser.calculate_heap_address_and_size_from_malloc_state(
+            malloc_state)
         return self._parse_all_from_heap_address(heap_address)
 
     def _parse_all_from_heap_address(self, heap_address):
@@ -81,7 +82,7 @@ class EnabledTcacheParser:
                 )
                 chunks.append(chunk)
                 pointer = chunk.fd
-            except OSError:
+            except (OSError, IOError):
                 # to avoid hanging in case some pointer is corrupted
                 break
 

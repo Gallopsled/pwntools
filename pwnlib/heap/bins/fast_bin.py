@@ -41,7 +41,7 @@ class FastBinParser:
                 )
                 chunks.append(chunk)
                 current_address = chunk.fd
-            except OSError:
+            except (OSError, IOError):
                 # to avoid hanging in case some pointer is corrupted
                 break
 
@@ -82,4 +82,5 @@ class FastBinEntry(BinEntry):
     """
 
     def __init__(self, address, fd, chunks_size):
-        super(FastBinEntry, self).__init__(address, fd, chunks_size=chunks_size)
+        super(FastBinEntry, self).__init__(
+            address, fd, chunks_size=chunks_size)

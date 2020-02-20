@@ -82,7 +82,7 @@ class BinParser:
                 )
                 chunks.append(chunk)
                 current_address = chunk.fd
-            except OSError:
+            except (OSError, IOError):
                 # to avoid hanging in case some pointer is corrupted
                 break
 
