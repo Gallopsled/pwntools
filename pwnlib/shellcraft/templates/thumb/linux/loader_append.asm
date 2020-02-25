@@ -17,18 +17,19 @@ Example:
 The following doctest is commented out because it doesn't work on Travis
 for reasons I cannot diagnose.  However, it should work just fine :-)
 
-    # >>> gcc = process(['arm-linux-gnueabihf-gcc','-xc','-static','-Wl,-Ttext-segment=0x20000000','-'])
-    # >>> gcc.write(b'''
-    # ... int main() {
-    # ...     printf("Hello, %s!\\n", "world");
-    # ... }
-    # ... ''')
-    # >>> gcc.shutdown('send')
-    # >>> gcc.poll(True)
-    # 0
-    # >>> sc = shellcraft.loader_append('a.out')
-    # >>> run_assembly(sc).recvline()
-    # 'Hello, world!\n'
+    >>> gcc = process(['arm-linux-gnueabihf-gcc','-xc','-static','-Wl,-Ttext-segment=0x20000000','-'])
+    >>> gcc.write(b'''
+    ... #include <stdio.h>
+    ... int main() {
+    ...     printf("Hello, %s!\\n", "world");
+    ... }
+    ... ''')
+    >>> gcc.shutdown('send')
+    >>> gcc.poll(True) and gcc.recvall()
+    0
+    >>> sc = shellcraft.loader_append('a.out')
+    >>> run_assembly(sc).recvline()
+    'Hello, world!\n'
 
 </%docstring>
 <%page args="data = None"/>

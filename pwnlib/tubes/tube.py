@@ -1112,9 +1112,8 @@ class tube(Timeout, Logger):
         with self.countdown(timeout):
             while self.countdown_active():
                 if not self.connected():
-                    return True
+                    return
                 time.sleep(min(self.timeout, 0.05))
-        return False
 
     wait = wait_for_close
 

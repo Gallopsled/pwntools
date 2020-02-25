@@ -172,7 +172,8 @@ class ssh_channel(sock):
 
         return data
 
-    def wait(self):
+    def wait(self, timeout=sock.default):
+        # TODO: deal with timeouts
         return self.poll(block=True)
 
     def poll(self, block=False):
@@ -1214,7 +1215,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ...         user='runner',
             ...         password='demopass')
             >>> a = s.connect_remote(s.host, l.lport)
-            >>> a; b = l.wait_for_connection()  # a; prevents hangs
+            >>> a=a; b = l.wait_for_connection()  # a=a; prevents hangs
             >>> a.sendline(b'Hello')
             >>> print(repr(b.recvline()))
             b'Hello\n'
@@ -1240,7 +1241,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ...         password='demopass')
             >>> l = s.listen_remote()
             >>> a = remote(s.host, l.port)
-            >>> a; b = l.wait_for_connection()  # a; prevents hangs
+            >>> a=a; b = l.wait_for_connection()  # a=a; prevents hangs
             >>> a.sendline(b'Hello')
             >>> print(repr(b.recvline()))
             b'Hello\n'
