@@ -49,6 +49,7 @@ jobs:
 
     - name: Set up SSH
       run: |
+        chmod og-rw ~ # see https://stackoverflow.com/a/60367309/3869724
         ssh-keygen -t ed25519 -f ~/.ssh/pwntools-ci -N ''
         cat > ~/.ssh/config <<EOF
         Host example.pwnme
