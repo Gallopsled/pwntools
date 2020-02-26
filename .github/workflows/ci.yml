@@ -45,6 +45,8 @@ jobs:
           binutils-arm-linux-gnueabihf \
           binutils-mips-linux-gnu \
           binutils-powerpc-linux-gnu \
+          gcc-aarch64-linux-gnu \
+          gcc-arm-linux-gnueabihf \
           openjdk-8-jre-headless
 
     - name: Set up SSH
