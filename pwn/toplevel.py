@@ -37,6 +37,7 @@ from pwnlib.memleak import MemLeak, RelativeMemLeak
 from pwnlib.regsort import *
 from pwnlib.replacements import *
 from pwnlib.rop import ROP
+from pwnlib.rop.ret2dlresolve import Ret2dlresolve, Ret2dlresolveRop
 from pwnlib.rop.srop import SigreturnFrame
 from pwnlib.runner import *
 from pwnlib.timeout import Timeout
