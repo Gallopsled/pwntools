@@ -154,7 +154,7 @@ def start(argv=[], *a, **kw):
         %if linker:
         return process([linker.path, ${binary_repr}] + argv, env={'LD_PRELOAD':preload.path},  *a, **kw)
         %else:
-        return process([${binary_repr}] + argv, env={'LD_PRELOAD':preload},  *a, **kw)
+        return process([${binary_repr}] + argv, env={'LD_PRELOAD':preload.path},  *a, **kw)
         %endif
       %else:
         %if linker:
