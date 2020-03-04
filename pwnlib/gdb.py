@@ -189,8 +189,8 @@ def debug_shellcode(data, gdbscript=None, vma=None):
 
     return debug(tmp_elf, gdbscript=gdbscript, arch=context.arch)
 
-def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
-    """_gdbserver_args(pid=None, path=None, args=None, which=None, env=None) -> list
+def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None, pre_args=None):
+    """_gdbserver_args(pid=None, path=None, args=None, which=None, env=None, pre_args=None) -> list
 
     Sets up a listening gdbserver, to either connect to the specified
     PID, or launch the specified binary by its full path.
@@ -200,6 +200,7 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
         path(str): Process to launch
         args(list): List of arguments to provide on the debugger command line
         which(callaable): Function to find the path of a binary.
+        pre_args(list): List of arguments for gdbserver
 
     Returns:
         A list of arguments to invoke gdbserver.
@@ -232,6 +233,9 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
         gdbserver_args += ['--no-disable-randomization']
     else:
         log.warn_once("Debugging process with ASLR disabled")
+
+    if pre_args:
+        gdbserver_args += pre_args
 
     if pid:
         gdbserver_args += ['--once', '--attach']
@@ -299,7 +303,7 @@ def _get_runner(ssh=None):
     else:                          return tubes.process.process
 
 @LocalContext
-def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kwargs):
+def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, pre_args=None, **kwargs):
     r"""debug(args) -> tube
 
     Launch a GDB server with the specified command line,
@@ -313,6 +317,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
         ssh(:class:`.ssh`): Remote ssh session to use to launch the process.
         sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
             and Android targets.
+        pre_args(list): List of arguments for gdbserver
 
     Returns:
         :class:`.process` or :class:`.ssh_channel`: A tube connected to the target process
@@ -415,7 +420,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
         return runner(args, executable=exe, env=env)
 
     if ssh or context.native or (context.os == 'android'):
-        args = _gdbserver_args(args=args, which=which, env=env)
+        args = _gdbserver_args(args=args, which=which, env=env, pre_args=pre_args)
     else:
         qemu_port = random.randint(1024, 65535)
         qemu_user = qemu.user_path()

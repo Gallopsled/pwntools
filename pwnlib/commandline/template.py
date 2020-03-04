@@ -21,6 +21,8 @@ parser.add_argument('--user', help='SSH Username')
 parser.add_argument('--pass', help='SSH Password', dest='password')
 parser.add_argument('--path', help='Remote path of file on SSH server')
 parser.add_argument('--quiet', help='Less verbose template comments', action='store_true')
+parser.add_argument('--preload', help='Preload libraries with LD_PRELOAD')
+parser.add_argument('--linker', help='Use a custom linker')
 
 def main(args):
     cache = None
@@ -52,7 +54,9 @@ def main(args):
                              args.user,
                              args.password,
                              args.path,
-                             args.quiet)
+                             args.quiet,
+                             args.preload,
+                             args.linker)
 
     # Fix Mako formatting bs
     output = re.sub('\n\n\n', '\n\n', output)
