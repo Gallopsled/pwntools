@@ -1,4 +1,4 @@
-<%page args="binary, host=None, port=None, user=None, password=None, remote_path=None, quiet=False"/>\
+<%page args="binary, host=None, port=None, user=None, password=None, remote_path=None, quiet=False, preload=None, linker=None"/>\
 <%
 import os
 import sys
@@ -74,6 +74,12 @@ password = args.PASSWORD or ${repr(password)}
 %if ssh:
 remote_path = ${repr(remote_path)}
 %endif
+%if preload:
+preload = ELF(${repr(preload)})
+%endif
+%if linker:
+linker = ELF(${repr(linker)})
+%endif
 
 %if ssh:
 # Connect to the remote SSH server
@@ -118,9 +124,45 @@ def start(argv=[], *a, **kw):
 def start(argv=[], *a, **kw):
     '''Start the exploit against the target.'''
     if args.GDB:
+      %if preload:
+        %if linker:
+        return gdb.debug([linker.path, ${binary_repr}] + argv,
+                         gdbscript=gdbscript,
+                         pre_args=['--wrapper',
+                                   'env',
+                                   'LD_PRELOAD={}'.format(preload.path),
+                                    '--'],
+                        *a, **kw)
+        %else:
+        return gdb.debug([${binary_repr}] + argv,
+                         gdbscript=gdbscript,
+                         pre_args=['--wrapper',
+                                   'env',
+                                   'LD_PRELOAD={}'.format(preload.path),
+                                    '--'],
+                         *a, **kw)
+        %endif
+      %else:
+        %if linker:
+        return gdb.debug([linker.path, ${binary_repr}] + argv, gdbscript=gdbscript, *a, **kw)
+        %else:
         return gdb.debug([${binary_repr}] + argv, gdbscript=gdbscript, *a, **kw)
+        %endif
+      %endif
     else:
+      %if preload:
+        %if linker:
+        return process([linker.path, ${binary_repr}] + argv, env={'LD_PRELOAD':preload.path},  *a, **kw)
+        %else:
+        return process([${binary_repr}] + argv, env={'LD_PRELOAD':preload},  *a, **kw)
+        %endif
+      %else:
+        %if linker:
+        return process([linker.path, ${binary_repr}] + argv, *a, **kw)
+        %else:
         return process([${binary_repr}] + argv, *a, **kw)
+        %endif
+      %endif
 %endif
 
 %if exe or remote_path:
