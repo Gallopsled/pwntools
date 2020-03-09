@@ -1532,6 +1532,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         basename = os.path.basename(remote)
 
+
         local    = local or '.'
         local    = os.path.expanduser(local)
 
@@ -1540,7 +1541,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         with context.local(log_level='error'):
             remote_tar = self.mktemp()
             cmd = 'tar -C %s -czf %s %s' % \
-                  (sh_string(dirname),
+                  (sh_string(remote),
                    sh_string(remote_tar),
                    sh_string(basename))
             tar = self.system(cmd)
