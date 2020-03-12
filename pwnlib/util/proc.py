@@ -94,7 +94,7 @@ def pid_by_name(name):
 
     processes = sorted(processes, key=lambda p: p.create_time())
 
-    return reversed([p.pid for p in processes])
+    return list(reversed([p.pid for p in processes]))
 
 def name(pid):
     """name(pid) -> str
