@@ -30,7 +30,10 @@ from pwnlib.util.sh_string import sh_string
 # Kill the warning line:
 # No handlers could be found for logger "paramiko.transport"
 paramiko_log = logging.getLogger("paramiko.transport")
-h = logging.StreamHandler(open('/dev/null','w+'))
+if sys.platform != 'win32':
+    h = logging.StreamHandler(open('/dev/null','w+'))
+else:
+    h = logging.StreamHandler(open('nul','w+'))
 h.setFormatter(logging.Formatter())
 paramiko_log.addHandler(h)
 

@@ -4,19 +4,22 @@ from __future__ import division
 
 import ctypes
 import errno
-import fcntl
 import logging
 import os
 import platform
-import pty
-import resource
 import select
 import signal
 import six
 import stat
 import subprocess
+import sys
 import time
-import tty
+
+if sys.platform != 'win32':
+    import fcntl
+    import pty
+    import resource
+    import tty
 
 from pwnlib import qemu
 from pwnlib.context import context

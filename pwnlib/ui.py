@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import fcntl
 import os
 import signal
 import six
@@ -9,7 +8,6 @@ import string
 import struct
 import subprocess
 import sys
-import termios
 import time
 import types
 
@@ -21,6 +19,8 @@ from pwnlib.tubes.process import process
 log = getLogger(__name__)
 
 def testpwnproc(cmd):
+    import fcntl
+    import termios
     env = dict(os.environ)
     env.pop("PWNLIB_NOTERM", None)
     def handleusr1(sig, frame):
