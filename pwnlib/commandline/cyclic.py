@@ -20,7 +20,8 @@ parser = common.parser_commands.add_parser(
 parser.add_argument(
     '-a', '--alphabet',
     metavar = 'alphabet',
-    default = string.ascii_lowercase,
+    default = string.ascii_lowercase.encode(),
+    type = bytes,
     help = 'The alphabet to use in the cyclic pattern (defaults to all lower case letters)',
 )
 
