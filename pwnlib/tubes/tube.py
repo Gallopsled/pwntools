@@ -1376,8 +1376,8 @@ class tube(Timeout, Logger):
             return context._decode(func(self, *a, **kw))
         wrapperb.__doc__ = 'Same as :meth:`{func.__name__}`, but returns a bytearray'.format(func=func)
         wrapperb.__name__ = func.__name__ + 'b'
-        wrapperS.__doc__ = 'Same as :meth:`{func.__name__}`, but returns a str,' \
-                           'decoding the result using `context.encoding`.' \
+        wrapperS.__doc__ = 'Same as :meth:`{func.__name__}`, but returns a str, ' \
+                           'decoding the result using `context.encoding`. ' \
                            '(note that the binary versions are way faster)'.format(func=func)
         wrapperS.__name__ = func.__name__ + 'S'
         return wrapperb, wrapperS
