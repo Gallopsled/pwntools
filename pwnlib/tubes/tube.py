@@ -1373,7 +1373,7 @@ class tube(Timeout, Logger):
         def wrapperb(self, *a, **kw):
             return bytearray(func(self, *a, **kw))
         def wrapperS(self, *a, **kw):
-            return context._encode(func(self, *a, **kw))
+            return context._decode(func(self, *a, **kw))
         wrapperb.__doc__ = 'Same as :meth:`{func.__name__}`, but returns a bytearray'.format(func=func)
         wrapperb.__name__ = func.__name__ + 'b'
         wrapperS.__doc__ = 'Same as :meth:`{func.__name__}`, but returns a str,' \
