@@ -29,7 +29,7 @@ for reasons I cannot diagnose.  However, it should work just fine :-)
     0
     >>> sc = shellcraft.loader_append('a.out')
     >>> run_assembly(sc).recvline()
-    'Hello, world!\n'
+    b'Hello, world!\n'
 
 </%docstring>
 <%page args="data = None"/>

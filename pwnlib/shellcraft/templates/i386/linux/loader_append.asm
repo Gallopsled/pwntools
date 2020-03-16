@@ -29,8 +29,8 @@ Example:
 The following doctest is commented out because it doesn't work on Travis
 for reasons I cannot diagnose.  However, it should work just fine :-)
 
-    >>> run_assembly(sc).recvline() == b'Hello, i386!\n'
-    True
+    >>> run_assembly(sc).recvline()
+    b'Hello, i386!\n'
 
 </%docstring>
 <%page args="data = None"/>
