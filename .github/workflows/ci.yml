@@ -38,7 +38,7 @@ jobs:
     - name: Install Linux dependencies
       run: |
         sudo apt update
-        sudo apt install -y ash bash dash ksh mksh zsh \
+        sudo apt install -vvvy ash bash dash ksh mksh zsh \
           pandoc gdb socat sshpass \
           binutils-multiarch qemu-user-static \
           binutils-aarch64-linux-gnu \
@@ -47,7 +47,7 @@ jobs:
           binutils-powerpc-linux-gnu \
           gcc-aarch64-linux-gnu \
           gcc-arm-linux-gnueabihf \
-          libc6-dev-i386 \
+          gcc-multilib \
           openjdk-8-jre-headless
 
     - name: Set up SSH
