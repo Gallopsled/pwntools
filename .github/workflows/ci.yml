@@ -38,7 +38,7 @@ jobs:
     - name: Install Linux dependencies
       run: |
         sudo apt update
-        sudo apt install -y ash bash dash ksh mksh zsh \
+        sudo apt install -y ash bash-static dash ksh mksh zsh \
           pandoc gdb socat sshpass \
           binutils-multiarch qemu-user-static \
           binutils-aarch64-linux-gnu \
