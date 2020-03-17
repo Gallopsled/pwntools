@@ -244,10 +244,11 @@ class AdbClient(Logger):
             msg = 'host:transport-any'
 
         if self.send(msg) == FAIL:
+            err = self.recvl().decode('utf-8')
             if serial:
-                self.error("Could not set transport to %r" % serial)
+                self.error("Could not set transport to %r (%s)" % (serial, err))
             else:
-                self.error("Could not set transport 'any'")
+                self.error("Could not set transport 'any' (%s)" % err)
 
     @_autoclose
     @_with_transport
