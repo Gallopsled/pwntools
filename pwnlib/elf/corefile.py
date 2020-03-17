@@ -381,13 +381,15 @@ class Corefile(ELF):
         This requires GDB to be installed, and can only be done with native
         processes.  Getting a "complete" corefile requires GDB 7.11 or better.
 
-        >>> elf = ELF('/bin/bash')
+        >>> elf = ELF('/bin/bash-static')
         >>> context.clear(binary=elf)
         >>> io = process(elf.path, env={'HELLO': 'WORLD'})
         >>> core = io.corefile
 
         Data can also be extracted directly from the corefile.
 
+        >>> elf.address > 0
+        True
         >>> core.exe[elf.address:elf.address+4]
         b'\x7fELF'
         >>> core.exe.data[:4]
