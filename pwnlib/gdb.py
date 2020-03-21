@@ -300,8 +300,7 @@ def _get_runner(ssh=None):
 
 @LocalContext
 def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kwargs):
-    r"""debug(args) -> tube
-
+    r"""
     Launch a GDB server with the specified command line,
     and launches GDB to attach to it.
 
@@ -354,9 +353,11 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     ... break main
     ... continue
     ... ''')
+    >>> # Send a command to Bash
     >>> io.sendline("echo hello")
     >>> io.recvline()
     b'hello\n'
+    >>> # Interact with the process
     >>> io.interactive() # doctest: +SKIP
     >>> io.close()
 
@@ -371,9 +372,11 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     ... break free
     ... continue
     ... ''')
+    >>> # Send a command to Bash
     >>> io.sendline("echo hello")
     >>> io.recvline()
     b'hello\n'
+    >>> # Interact with the process
     >>> io.interactive() # doctest: +SKIP
     >>> io.close()
 
@@ -381,19 +384,16 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     by using the ``ssh=`` keyword to pass in your :class:`.ssh` instance.
 
     >>> # Connect to the SSH server
-
-    >>> # Start a process on the server
     >>> shell = ssh('travis', 'example.pwnme', password='demopass')
+    >>> # Start a process on the server
     >>> io = gdb.debug(['bash'],
     ...                 ssh = shell,
     ...                 gdbscript = '''
     ... break main
     ... continue
     ... ''')
-
     >>> # Send a command to Bash
     >>> io.sendline("echo hello")
-
     >>> # Interact with the process
     >>> io.interactive() # doctest: +SKIP
     >>> io.close()
@@ -457,7 +457,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     if not ssh and context.os == 'android':
         host = context.adb_host
 
-    attach((host, port), exe=exe, gdbscript=gdbscript, need_ptrace_scope = False, ssh=ssh, sysroot=sysroot)
+    attach((host, port), exe=exe, gdbscript=gdbscript, ssh=ssh, sysroot=sysroot)
 
     # gdbserver outputs a message when a client connects
     garbage = gdbserver.recvline(timeout=1)
@@ -505,9 +505,8 @@ def binary():
     return gdb
 
 @LocalContext
-def attach(target, gdbscript = '', exe = None, need_ptrace_scope = True, gdb_args = None, ssh = None, sysroot = None):
-    r"""attach(target, gdbscript = None, exe = None, arch = None, ssh = None) -> None
-
+def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysroot = None):
+    r"""
     Start GDB in a new terminal and attach to `target`.
 
     Arguments:
@@ -555,14 +554,12 @@ def attach(target, gdbscript = '', exe = None, need_ptrace_scope = True, gdb_arg
 
     >>> # Start a process
     >>> bash = process('bash')
-
     >>> # Attach the debugger
     >>> pid = gdb.attach(bash, '''
     ... set follow-fork-mode child
     ... break execve
     ... continue
     ... ''')
-
     >>> # Interact with the process
     >>> bash.sendline("whoami")
     >>> bash.recvline()
@@ -572,36 +569,29 @@ def attach(target, gdbscript = '', exe = None, need_ptrace_scope = True, gdb_arg
     >>> # Start a forking server
     >>> server = process(['socat', 'tcp-listen:12345,fork,reuseaddr', 'exec:/bin/bash'])
     >>> sleep(1)
-
     >>> # Connect to the server
     >>> io = remote('127.0.0.1', 12345)
-
     >>> # Connect the debugger to the server-spawned process
     >>> pid = gdb.attach(io, '''
     ... break exit
     ... continue
     ... ''', exe = '/bin/bash')
-
-    >>> # Talk to the spawned 'sh'
+    >>> # Talk to the spawned 'bash'
     >>> io.sendline("echo hello")
     >>> io.recvline()
     b'hello\n'
     >>> io.sendline("exit")
-
     >>> io.close()
 
     >>> # Connect to the SSH server
     >>> shell = ssh('travis', 'example.pwnme', password='demopass')
-
     >>> # Start a process on the server
     >>> cat = shell.process(['cat'])
-
     >>> # Attach a debugger to it
     >>> gdb.attach(cat, '''
     ... break exit
     ... continue
     ... ''')
-
     >>> cat.sendline("hello")
     >>> cat.recvline()
     b'hello\n'
