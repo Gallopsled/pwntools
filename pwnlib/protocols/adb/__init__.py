@@ -168,6 +168,7 @@ class AdbClient(Logger):
 
         >>> c.version() > (4,0)
         True
+        >>> c.wait_for_device() # ensure doctests alive
         """
         try:
             self.send('host:kill')
