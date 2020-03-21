@@ -39,7 +39,7 @@ atexception.register(lambda:os.kill(os.getppid(), signal.SIGUSR1))
     try:
         p.recvuntil(b"\33[6n")
     except EOFError:
-        raise subprocess.CalledProcessError(p.poll())
+        raise EOFError("process terminated with code: %d" % p.poll())
     fcntl.ioctl(p.stdout.fileno(), termios.TIOCSWINSZ, struct.pack("hh", 80, 80))
     p.stdout.write(b"\x1b[1;1R")
     return p
