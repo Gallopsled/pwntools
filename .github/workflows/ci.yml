@@ -50,6 +50,13 @@ jobs:
         sudo apt install -y gcc-aarch64-linux-gnu \
           gcc-arm-linux-gnueabihf
 
+    - name: Install android avd
+      if:  steps.cache-deps.outputs.cache-hit != 'true'
+      run: |
+        USER=travis source travis/install.sh
+        adb shell poweroff
+        set | egrep '^(ANDROID|PATH)' >android.env
+
     - name: Set up SSH
       run: |
         chmod og-rw ~ # see https://stackoverflow.com/a/60367309/3869724
@@ -75,13 +82,6 @@ jobs:
 
     - name: Install documentation dependencies
       run:  pip install -r docs/requirements.txt
-
-    - name: Install android avd
-      if:  steps.cache-deps.outputs.cache-hit != 'true'
-      run: |
-        USER=travis source travis/install.sh
-        adb shell poweroff
-        set | egrep '^(ANDROID|PATH)' >android.env
 
     - name: Coverage doctests
       run: |
