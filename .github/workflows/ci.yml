@@ -80,12 +80,13 @@ jobs:
       if:  steps.cache-deps.outputs.cache-hit != 'true'
       run: |
         USER=travis source travis/install.sh
+        adb shell poweroff
         set | egrep '^(ANDROID|PATH)' >android.env
 
     - name: Coverage doctests
       run: |
         source android.env
-        android-sdk/emulator/emulator -avd android-$ANDROID_ABI -no-window -no-boot-anim -no-skin -no-audio -no-window -no-snapshot &
+        android-sdk/emulator/emulator -avd android-$ANDROID_ABI -no-window -no-boot-anim -read-only -no-audio -no-window -no-snapshot &
         adb wait-for-device
         PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest
         coverage combine
