@@ -384,7 +384,7 @@ class AdbClient(Logger):
         Examples:
 
             >>> pprint(AdbClient().list('/data/user'))
-            {'0': {'mode': 41471, 'size': 11, 'time': ...}}
+            {'0': {'mode': 41471, 'size': 10, 'time': ...}}
             >>> AdbClient().list('/does/not/exist')
             Traceback (most recent call last):
             ...
