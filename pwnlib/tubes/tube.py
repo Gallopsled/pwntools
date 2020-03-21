@@ -1106,11 +1106,14 @@ class tube(Timeout, Logger):
         """
         self << other << self
 
-    def wait_for_close(self):
+    def wait_for_close(self, timeout=default):
         """Waits until the tube is closed."""
 
-        while self.connected():
-            time.sleep(0.05)
+        with self.countdown(timeout):
+            while self.countdown_active():
+                if not self.connected():
+                    return
+                time.sleep(min(self.timeout, 0.05))
 
     wait = wait_for_close
 
