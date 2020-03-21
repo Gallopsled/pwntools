@@ -107,6 +107,7 @@ class AdbClient(Logger):
                 and self.port == context.defaults['adb_port']:
                     log.warn("Could not connect to ADB server, trying to start it")
                     process(context.adb + ['start-server']).recvall()
+                    time.sleep(0.1)
                 else:
                     log.exception('Could not connect to ADB server (%s:%s)' % \
                                     (self.host, self.port))
@@ -168,6 +169,7 @@ class AdbClient(Logger):
 
         >>> c.version() > (4,0)
         True
+        >>> c.wait_for_device() # ensure doctests alive
         """
         try:
             self.send('host:kill')
@@ -244,10 +246,11 @@ class AdbClient(Logger):
             msg = 'host:transport-any'
 
         if self.send(msg) == FAIL:
+            err = self.recvl().decode('utf-8')
             if serial:
-                self.error("Could not set transport to %r" % serial)
+                self.error("Could not set transport to %r (%s)" % (serial, err))
             else:
-                self.error("Could not set transport 'any'")
+                self.error("Could not set transport 'any' (%s)" % err)
 
     @_autoclose
     @_with_transport
@@ -382,7 +385,7 @@ class AdbClient(Logger):
         Examples:
 
             >>> pprint(AdbClient().list('/data/user'))
-            {'0': {'mode': 41471, 'size': 11, 'time': ...}}
+            {'0': {'mode': 41471, 'size': 10, 'time': ...}}
             >>> AdbClient().list('/does/not/exist')
             Traceback (most recent call last):
             ...
