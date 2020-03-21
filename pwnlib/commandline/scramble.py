@@ -80,8 +80,8 @@ def main(args):
         parser.print_usage()
         sys.exit(0)
 
-    data   = sys.stdin.read()
-    output = data
+    stdin_buffer = getattr(sys.stdin, 'buffer', sys.stdin)
+    output = stdin_buffer.read()
     fmt    = args.format or ('hex' if tty else 'raw')
     formatters = {'r':bytes, 'h':enhex, 's':repr}
 
