@@ -33,10 +33,13 @@ import signal
 atexception.register(lambda:os.kill(os.getppid(), signal.SIGUSR1))
 """ + cmd
     if "coverage" in sys.modules:
-      cmd = "import coverage; coverage.process_startup()\n" + cmd
-      env.setdefault("COVERAGE_PROCESS_START", ".coveragerc")
+        cmd = "import coverage; coverage.process_startup()\n" + cmd
+        env.setdefault("COVERAGE_PROCESS_START", ".coveragerc")
     p = process([sys.executable, "-c", cmd], env=env, stderr=subprocess.PIPE)
-    p.recvuntil(b"\33[6n")
+    try:
+        p.recvuntil(b"\33[6n")
+    except EOFError:
+        raise subprocess.CalledProcessError(p.poll())
     fcntl.ioctl(p.stdout.fileno(), termios.TIOCSWINSZ, struct.pack("hh", 80, 80))
     p.stdout.write(b"\x1b[1;1R")
     return p
