@@ -107,6 +107,7 @@ class AdbClient(Logger):
                 and self.port == context.defaults['adb_port']:
                     log.warn("Could not connect to ADB server, trying to start it")
                     process(context.adb + ['start-server']).recvall()
+                    time.sleep(0.1)
                 else:
                     log.exception('Could not connect to ADB server (%s:%s)' % \
                                     (self.host, self.port))
