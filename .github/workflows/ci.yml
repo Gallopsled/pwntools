@@ -100,4 +100,4 @@ jobs:
         path: dist/*
 
     - name: Upload coverage to coveralls.io
-      run:  coveralls
+      run:  COVERALLS_REPO_TOKEN=PP20MEgztXIQJJTguQwe2jeCh6Bm4lkbv coveralls
