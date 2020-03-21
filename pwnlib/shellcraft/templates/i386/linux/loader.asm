@@ -104,6 +104,9 @@ PT_LOAD  = 1
     /* AT_RANDOM */
     push esp
     push 25
+    /* AT_SECURE */
+    push ebx
+    push 23
 
     push ebx /* envp */
     push ebx /* argv */
