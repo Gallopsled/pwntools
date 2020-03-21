@@ -9,7 +9,7 @@ jobs:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Cache for pip
       uses: actions/cache@v1
       id: cache-pip
@@ -95,7 +95,7 @@ jobs:
         python setup.py sdist
         python setup.py bdist_wheel --universal
 
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v2-preview
       with:
         path: dist/*
 
