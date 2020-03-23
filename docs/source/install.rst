@@ -25,9 +25,9 @@ pwntools is available as a ``pip`` package.
 .. code-block:: bash
 
     $ apt-get update
-    $ apt-get install python2.7 python-pip python-dev git libssl-dev libffi-dev build-essential
-    $ pip install --upgrade pip
-    $ pip install --upgrade pwntools
+    $ apt-get install python3 python-pip python-dev git libssl-dev libffi-dev build-essential
+    $ pip3 install --upgrade pip3
+    $ pip3 install --upgrade pwntools
 
 Development
 --------------
