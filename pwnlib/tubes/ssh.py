@@ -891,6 +891,7 @@ class ssh(Timeout, Logger):
             self.error("env must be a dict: %r" % env)
 
         # Allow passing in sys.stdin/stdout/stderr objects
+        env = list(env.items())
         handles = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}
         stdin  = handles.get(stdin, stdin)
         stdout = handles.get(stdout, stdout)
@@ -917,7 +918,7 @@ import os, sys, ctypes, resource, platform, stat
 from collections import OrderedDict
 exe   = %(executable)r
 argv  = %(argv)r
-env   = %(env)r
+env   = OrderedDict(%(env)r)
 
 os.chdir(%(cwd)r)
 
