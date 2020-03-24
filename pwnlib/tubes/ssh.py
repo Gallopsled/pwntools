@@ -891,7 +891,6 @@ class ssh(Timeout, Logger):
             self.error("env must be a dict: %r" % env)
 
         # Allow passing in sys.stdin/stdout/stderr objects
-        env = list(env.items())
         handles = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}
         stdin  = handles.get(stdin, stdin)
         stdout = handles.get(stdout, stdout)
@@ -911,6 +910,9 @@ class ssh(Timeout, Logger):
 
         func_src  = inspect.getsource(func).strip()
         setuid = True if setuid is None else bool(setuid)
+        
+        # Converts the environment variables to a list of tuples to remain order.
+        env = list(env.items())
 
         script = r"""
 #!/usr/bin/env python2
