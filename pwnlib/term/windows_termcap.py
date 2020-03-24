@@ -17,7 +17,7 @@ def get(cap, *args, **kwargs):
     if kwargs != {}:
         raise TypeError("get(): No such argument %r" % kwargs.popitem()[0])
 
-    if cache == None:
+    if cache is None:
         init()
     
     s = cache.get(cap)
