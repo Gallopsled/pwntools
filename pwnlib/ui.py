@@ -37,9 +37,10 @@ atexception.register(lambda:os.kill(os.getppid(), signal.SIGUSR1))
         env.setdefault("COVERAGE_PROCESS_START", ".coveragerc")
     p = process([sys.executable, "-c", cmd], env=env, stderr=subprocess.PIPE)
     try:
-        p.recvuntil(b"\33[6n")
+        p.recv(1)
+        data = p.clean()
     except EOFError:
-        raise EOFError("process terminated with code: %r (%r)" % (p.poll(True), p.recvall()))
+        raise EOFError("process terminated with code: %r (%r)" % (p.poll(True), data))
     fcntl.ioctl(p.stdout.fileno(), termios.TIOCSWINSZ, struct.pack("hh", 80, 80))
     p.stdout.write(b"\x1b[1;1R")
     return p
