@@ -910,6 +910,9 @@ class ssh(Timeout, Logger):
 
         func_src  = inspect.getsource(func).strip()
         setuid = True if setuid is None else bool(setuid)
+        
+        # Converts the environment variables to a list of tuples to remain order.
+        env = list(env.items())
 
         script = r"""
 #!/usr/bin/env python2
@@ -917,7 +920,7 @@ import os, sys, ctypes, resource, platform, stat
 from collections import OrderedDict
 exe   = %(executable)r
 argv  = %(argv)r
-env   = %(env)r
+env   = OrderedDict(%(env)r)
 
 os.chdir(%(cwd)r)
 
