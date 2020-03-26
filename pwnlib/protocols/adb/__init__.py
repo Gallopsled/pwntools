@@ -339,12 +339,16 @@ class AdbClient(Logger):
 
         # The first OKAY is that the command was understood
         if response != OKAY:
-            self.error("An error occurred while waiting for device with serial %r" % serial)
+            if response == FAIL:
+                response = self.recvl().decode('utf-8')
+            self.error("An error occurred while trying to wait for device with serial %r (%r)" % (serial, response))
 
         # The second OKAY is that the device is available
         response = self.c.recvn(4)
         if response != OKAY:
-            self.error("An error occurred while waiting for device with serial %r" % serial)
+            if response == FAIL:
+                response = self.recvl().decode('utf-8')
+            self.error("An error occurred while waiting for device with serial %r (%r)" % (serial, response))
 
     def _sync(fn):
         """Decorator which enters 'sync:' mode to the selected transport,

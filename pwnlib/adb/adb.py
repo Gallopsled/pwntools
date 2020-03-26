@@ -133,8 +133,6 @@ def with_device(f):
                 log.warn_once('Automatically selecting device %s' % device)
                 context.device = device
         if not context.device:
-            import traceback
-            traceback.print_stack()
             log.error('No devices connected, cannot invoke %s.%s' % (f.__module__, f.__name__))
         return f(*a,**kw)
     return wrapper

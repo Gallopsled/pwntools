@@ -54,7 +54,7 @@ jobs:
       if:  steps.cache-deps.outputs.cache-hit != 'true'
       run: |
         USER=travis source travis/install.sh
-        adb shell poweroff
+        adb emu kill
         set | egrep '^(ANDROID|PATH)' >android.env
 
     - name: Set up SSH
