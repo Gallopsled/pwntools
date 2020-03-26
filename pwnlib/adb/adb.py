@@ -133,6 +133,8 @@ def with_device(f):
                 log.warn_once('Automatically selecting device %s' % device)
                 context.device = device
         if not context.device:
+            import traceback
+            traceback.print_stack()
             log.error('No devices connected, cannot invoke %s.%s' % (f.__module__, f.__name__))
         return f(*a,**kw)
     return wrapper
@@ -1132,10 +1134,9 @@ class Property(object):
     def __str__(self):
         return str(getprop(self._name)).strip()
 
-    def __repr__(self):
-        return repr(str(self))
-
     def __getattr__(self, attr):
+        if attr.startswith('_'):
+            raise AttributeError(attr)
         if self._name:
             attr = '%s.%s' % (self._name, attr)
         return Property(attr)
@@ -1358,9 +1359,10 @@ class Partitions(object):
         for name in listdir(self.by_name_dir):
             yield name
 
-    @context.quietfunc
-    @with_device
     def __getattr__(self, attr):
+        if name.startswith("_"):
+            raise AttributeError(attr)
+
         for name in self:
             if name == attr:
                 break
@@ -1369,19 +1371,20 @@ class Partitions(object):
 
         path = os.path.join(self.by_name_dir, name)
 
-        # Find the actual path of the device
-        devpath = readlink(path)
-        devname = os.path.basename(devpath)
+        with context.quiet:
+            # Find the actual path of the device
+            devpath = readlink(path)
+            devname = os.path.basename(devpath)
 
-        # Get the size of the partition
-        for line in read('/proc/partitions').splitlines():
-            if not line.strip():
-                continue
-            major, minor, blocks, name = line.split(None, 4)
-            if devname == name:
-                break
-        else:
-            log.error("Could not find size of partition %r" % name)
+            # Get the size of the partition
+            for line in read('/proc/partitions').splitlines():
+                if not line.strip():
+                    continue
+                major, minor, blocks, name = line.split(None, 4)
+                if devname == name:
+                    break
+            else:
+                log.error("Could not find size of partition %r" % name)
 
         return Partition(devpath, attr, int(blocks))
 
