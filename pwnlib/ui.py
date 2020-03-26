@@ -23,6 +23,7 @@ log = getLogger(__name__)
 def testpwnproc(cmd):
     env = dict(os.environ)
     env.pop("PWNLIB_NOTERM", None)
+    env["TERM"] = "xterm-256color"
     def handleusr1(sig, frame):
         s = p.stderr.read()
         log.error("child process failed:\n%s", s.decode())

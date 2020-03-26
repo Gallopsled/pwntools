@@ -1151,7 +1151,9 @@ class Property(object):
     def __eq__(self, other):
         # Allow simple comparison, e.g.:
         # adb.properties.ro.oem_unlock_supported == "1"
-        return str(self) == other
+        if isinstance(other, six.string_types):
+            return str(self) == other
+        return super(Property, self).__eq__(other)
 
     def __hash__(self, other):
         # Allow hash indices matching on the property
