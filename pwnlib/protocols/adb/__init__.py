@@ -388,6 +388,7 @@ class AdbClient(Logger):
 
         Examples:
 
+            >>> _ = AdbClient().root()
             >>> pprint(AdbClient().list('/data/user'))
             {'0': {'mode': 41471, 'size': 10, 'time': ...}}
             >>> AdbClient().list('/does/not/exist')
