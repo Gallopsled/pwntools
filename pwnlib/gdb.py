@@ -780,7 +780,7 @@ def attach(target, gdbscript = '', exe = None, need_ptrace_scope = True, gdb_arg
     gdb_pid = misc.run_in_new_terminal(cmd)
 
     if pid and context.native:
-        proc.wait_for_debugger(pid)
+        proc.wait_for_debugger(pid, gdb_pid)
 
     return gdb_pid
 
