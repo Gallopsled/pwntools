@@ -570,7 +570,7 @@ def attach(target, gdbscript = '', exe = None, need_ptrace_scope = True, gdb_arg
     >>> bash.close()
 
     >>> # Start a forking server
-    >>> server = process(['socat', 'tcp-listen:12345,fork,reuseaddr', 'exec:/bin/bash'])
+    >>> server = process(['socat', 'tcp-listen:12345,fork,reuseaddr', 'exec:/bin/bash,nofork'])
     >>> sleep(1)
 
     >>> # Connect to the server
@@ -689,7 +689,14 @@ def attach(target, gdbscript = '', exe = None, need_ptrace_scope = True, gdb_arg
         if not pids:
             log.error('could not find remote process (%s:%d) on this machine' %
                       target.sock.getpeername())
-        pid = pids[0]
+        waiting = True
+        while waiting:
+            for pid in pids:
+                if proc.exe(pid) == exe:
+                    waiting = False
+                    break
+            else:
+                time.sleep(0.01)
     elif isinstance(target, tubes.process.process):
         pid = proc.pidof(target)[0]
         exe = exe or target.executable
@@ -879,29 +886,27 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         local_elf  = elf.ELF(binary)
         local_libs = local_elf.libs
 
-    entry      = local_elf.header.e_entry
-
     #
     # Get the addresses from GDB
     #
     libs = {}
-    cmd  = "gdb -q --args %s" % (binary)
+    cmd  = "gdb -q -nh --args %s | cat" % (binary) # pipe through cat to disable colored output on GDB 9+
     expr = re.compile(r'(0x\S+)[^/]+(.*)')
 
     if ulimit:
-        cmd = 'sh -c "(ulimit -s unlimited; %s)"' % cmd
-
-    cmd = shlex.split(cmd)
+        cmd = ['sh', '-c', "(ulimit -s unlimited; %s)" % cmd]
+    else:
+        cmd = ['sh', '-c', cmd]
 
     with runner(cmd) as gdb:
         if context.aslr:
             gdb.sendline('set disable-randomization off')
+
         gdb.send("""
         set prompt
-        break *%#x
+        catch load
         run
-        """ % entry)
-        gdb.clean(2)
+        """)
         gdb.sendline('info sharedlibrary')
         lines = context._decode(gdb.recvrepeat(2))
 
@@ -993,7 +998,7 @@ def version(program='gdb'):
 
     Example:
 
-        >>> (7,0) <= gdb.version() <= (9,0)
+        >>> (7,0) <= gdb.version() <= (10,0)
         True
     """
     program = misc.which(program)
