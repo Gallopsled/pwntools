@@ -680,7 +680,7 @@ def exists(path):
 
         >>> adb.exists('/')
         True
-        >>> adb.exists('/init')
+        >>> adb.exists('/etc/hosts')
         True
         >>> adb.exists('/does/not/exist')
         False
