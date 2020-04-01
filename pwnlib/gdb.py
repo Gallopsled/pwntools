@@ -763,7 +763,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
         tmp.write(gdbscript)
         tmp.close()
-        cmd += ' -x "%s"' % (tmp.name)
+        cmd += ' -x %s' % (tmp.name)
 
     log.info('running in new terminal: %s' % cmd)
 
