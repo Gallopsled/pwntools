@@ -87,9 +87,11 @@ def gnu_hash(s):
 
     Function used to generated GNU-style hashes for strings.
     """
+    if isinstance(s, str):
+        s = bytearray(s, 'utf8')
     h = 5381
     for c in s:
-        h = h * 33 + ord(c)
+        h = h * 33 + c
     return h & 0xffffffff
 
 class DynELF(object):
