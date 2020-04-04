@@ -15,7 +15,7 @@ Example:
     ... int main(int argc, char** argv){
     ... 	vuln();
     ... }''')
-    >>> cmdline = ["gcc", source, "-fno-stack-protector", "-no-pie", "-o", program]
+    >>> cmdline = ["gcc", source, "-fno-stack-protector", "-no-pie", "-m32", "-o", program]
     >>> process(cmdline).wait_for_close()
 
     >>> context.binary = program
@@ -26,13 +26,13 @@ Example:
     ...     read_func="read", read_func_args=[0, dlresolve.data_addr])
     >>> raw_rop = rop.chain()
 
-    >>> payload = b"A"*72 + raw_rop
+    >>> payload = b"A"*76 + raw_rop
     >>> payload += (200-len(payload))*b"A"
     >>> payload2 = dlresolve.payload
     >>> p = process(program)
     >>> p.sendline(payload + payload2)
     >>> p.recvline()
-    pwned
+    b'pwned\n'
 """
 
 from copy import deepcopy
@@ -43,6 +43,9 @@ from pwnlib.rop import ROP
 from pwnlib.util.packing import *
 
 log = getLogger(__name__)
+
+ELF32_R_SYM_SHIFT = 8
+ELF64_R_SYM_SHIFT = 32
 
 class Elf32_Rel(object):
     """
@@ -58,9 +61,6 @@ class Elf32_Rel(object):
 
     def __bytes__(self):
         return p32(self.r_offset) + p32(self.r_info)
-
-    def __str__(self):
-        return str(bytes(self))
 
     def __flat__(self):
         return bytes(self)
@@ -80,9 +80,6 @@ class Elf64_Rel(object):
 
     def __bytes__(self):
         return p64(self.r_offset) + p64(self.r_info) + p64(0)
-
-    def __str__(self):
-        return str(bytes(self))
 
     def __flat__(self):
         return bytes(self)
@@ -116,9 +113,6 @@ class Elf32_Sym(object):
             p8(self.st_other) + \
             p16(self.st_shndx)
 
-    def __str__(self):
-        return str(bytes(self))
-
     def __flat__(self):
         return bytes(self)
 
@@ -151,9 +145,6 @@ class Elf64_Sym(object):
             p64(self.st_value) + \
             p64(self.st_size)
 
-    def __str__(self):
-        return str(bytes(self))
-
     def __flat__(self):
         return bytes(self)
 
@@ -178,10 +169,11 @@ class MarkedBytes(bytes):
 class Ret2dlresolvePayload(object):
     def __init__(self, elf, symbol, args, data_addr=None):
         self.elf = elf
-        self.elf_base = elf.address if elf.pie else 0
-        self.strtab = elf.dynamic_value_by_tag("DT_STRTAB") + self.elf_base
-        self.symtab = elf.dynamic_value_by_tag("DT_SYMTAB") + self.elf_base
-        self.jmprel = elf.dynamic_value_by_tag("DT_JMPREL") + self.elf_base
+        self.elf_load_address_fixup = self.elf.address - self.elf.load_addr
+        self.strtab = elf.dynamic_value_by_tag("DT_STRTAB") + self.elf_load_address_fixup
+        self.symtab = elf.dynamic_value_by_tag("DT_SYMTAB") + self.elf_load_address_fixup
+        self.jmprel = elf.dynamic_value_by_tag("DT_JMPREL") + self.elf_load_address_fixup
+        self.versym = elf.dynamic_value_by_tag("DT_VERSYM") + self.elf_load_address_fixup
         self.symbol = context._encode(symbol)
         self.args = args
         self.real_args = self._format_args()        
@@ -193,7 +185,7 @@ class Ret2dlresolvePayload(object):
         self.payload = b""
 
         # PIE is untested, gcc forces FULL-RELRO when PIE is set
-        if self.elf.pie and self.elf_base == 0:
+        if self.elf.pie and self.elf_load_address_fixup == 0:
             log.warning("WARNING: ELF is PIE but it has not base address")
 
         self._build()
@@ -216,7 +208,7 @@ class Ret2dlresolvePayload(object):
         return args
 
     def _get_recommended_address(self):
-        bss = self.elf.get_section_by_name(".bss").header.sh_addr + self.elf_base
+        bss = self.elf.get_section_by_name(".bss").header.sh_addr + self.elf_load_address_fixup
         bss_size = self.elf.get_section_by_name(".bss").header.sh_size
         addr = bss + bss_size
         addr = addr + (0x1000-(addr % 0x1000)) - 0x200 #next page in memory - 0x200
@@ -227,9 +219,11 @@ class Ret2dlresolvePayload(object):
         if context.bits == 32:
             ElfSym = Elf32_Sym
             ElfRel = Elf32_Rel
+            ELF_R_SYM_SHIFT = ELF32_R_SYM_SHIFT
         elif context.bits == 64:
             ElfSym = Elf64_Sym
             ElfRel = Elf64_Rel
+            ELF_R_SYM_SHIFT = ELF64_R_SYM_SHIFT
         else:
             log.error("Unsupported bits")
 
@@ -250,13 +244,9 @@ class Ret2dlresolvePayload(object):
 
         # ElfRel
         rel_addr = self.data_addr + len(self.payload)
-        index = (sym_addr - self.symtab) // ElfSym.size
-        if context.bits == 64:
-            index = index << 32
-        else: # 32
-            index = index << 8
+        index = (sym_addr - self.symtab) // ElfSym.size # index for both symtab and versym
         rel_type = 7
-        rel = ElfRel(r_offset=self.data_addr, r_info=index+rel_type)
+        rel = ElfRel(r_offset=self.data_addr, r_info=(index<<ELF_R_SYM_SHIFT)+rel_type)
         self.payload += bytes(rel)
 
         # It seems to be treated as an index in 64b and
