@@ -64,6 +64,7 @@ Each of the ``pwntools`` modules is documented here.
    protocols
    qemu
    replacements
+   ret2dlresolve
    rop
    rop/*
    runner

