@@ -803,7 +803,7 @@ class ssh(Timeout, Logger):
             >>> p = s.process(['python','-c','import os; os.write(1, os.read(2, 1024))'], stderr=0)
             >>> p.send(b'hello')
             >>> p.recv()
-            b'hello\n'
+            b'hello'
             >>> s.process(['/bin/echo', 'hello']).recvall()
             b'hello\n'
             >>> s.process(['/bin/echo', 'hello'], stdout='/dev/null').recvall()
