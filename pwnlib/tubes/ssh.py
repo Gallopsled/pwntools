@@ -800,7 +800,7 @@ class ssh(Timeout, Logger):
             True
             >>> s.process(['pwd'], cwd='/tmp').recvall()
             b'/tmp\n'
-            >>> p = s.process(['python','-c','import os; print(os.read(2, 1024))'], stderr=0)
+            >>> p = s.process(['python','-c','import os; os.write(1, os.read(2, 1024))'], stderr=0)
             >>> p.send(b'hello')
             >>> p.recv()
             b'hello\n'
