@@ -37,8 +37,9 @@ jobs:
 
     - name: Install Linux dependencies
       run: |
-        sudo apt update
-        sudo apt install -y ash bash-static dash ksh mksh zsh \
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
+          ash bash-static dash ksh mksh zsh \
           pandoc gdb socat sshpass \
           binutils-multiarch qemu-user-static \
           binutils-aarch64-linux-gnu \
@@ -47,7 +48,8 @@ jobs:
           binutils-powerpc-linux-gnu \
           gcc-multilib \
           openjdk-8-jre-headless
-        sudo apt install -y gcc-aarch64-linux-gnu \
+        sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
+          gcc-aarch64-linux-gnu \
           gcc-arm-linux-gnueabihf
 
     - name: Install android avd
@@ -55,7 +57,7 @@ jobs:
       run: |
         USER=travis source travis/install.sh
         adb emu kill
-        set | egrep '^(ANDROID|PATH)' >android.env
+        set | egrep '^(ANDROID|PATH)' >android-sdk/.android.env
 
     - name: Set up SSH
       run: |
@@ -85,7 +87,7 @@ jobs:
 
     - name: Coverage doctests
       run: |
-        source android.env
+        source android-sdk/.android.env
         android-sdk/emulator/emulator -avd android-$ANDROID_ABI -no-window -no-boot-anim -read-only -no-audio -no-window -no-snapshot &
         adb wait-for-device
         echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope # required by some gdb doctests
