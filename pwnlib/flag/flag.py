@@ -50,7 +50,7 @@ def submit_flag(flag,
         >>> _ = submit_flag('flag', server='localhost', port=l.lport)
         >>> c = l.wait_for_connection()
         >>> c.recvall().split()
-        ['flag', 'unnamed-exploit', 'unknown-target', 'unknown-team']
+        [b'flag', b'unnamed-exploit', b'unknown-target', b'unknown-team']
     """
     flag = flag.strip()
 
