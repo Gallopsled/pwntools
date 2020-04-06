@@ -690,13 +690,14 @@ def attach(target, gdbscript = '', exe = None, need_ptrace_scope = True, gdb_arg
             log.error('could not find remote process (%s:%d) on this machine' %
                       target.sock.getpeername())
         waiting = True
-        while waiting:
-            for pid in pids:
-                if proc.exe(pid) == exe:
-                    waiting = False
-                    break
-            else:
-                time.sleep(0.01)
+        if exe:
+            while waiting:
+                for pid in pids:
+                    if proc.exe(pid) == exe:
+                        waiting = False
+                        break
+                else:
+                    time.sleep(0.01)
     elif isinstance(target, tubes.process.process):
         pid = proc.pidof(target)[0]
         exe = exe or target.executable
@@ -865,7 +866,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     Example:
 
     >>> with context.local(log_level=9999):
-    ...     shell =  ssh(host='example.pwnme')
+    ...     shell =  ssh(host='example.pwnme', user='runner', password='demopass')
     ...     bash_libs = gdb.find_module_addresses('/bin/bash', shell)
     >>> os.path.basename(bash_libs[0].path)
     'libc.so.6'
