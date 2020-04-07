@@ -679,9 +679,10 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         if not pids:
             log.error('could not find remote process (%s:%d) on this machine' %
                       target.sock.getpeername())
-        waiting = True
+        waiting = 100
         if exe:
             while waiting:
+                waiting -= 1
                 for pid in pids:
                     if proc.exe(pid) == exe:
                         waiting = False
