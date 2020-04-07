@@ -839,6 +839,8 @@ class ContextType(object):
                 return b.decode('utf-8')
             except UnicodeDecodeError:
                 return b.decode('latin1')
+            except AttributeError:
+                return b
         return b.decode(self.encoding)
 
     @_validator

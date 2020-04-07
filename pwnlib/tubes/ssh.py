@@ -828,7 +828,7 @@ class ssh(Timeout, Logger):
             >>> print(s.process('false', preexec_fn=uses_globals).recvall().strip().decode()) # doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
-            NameError: global name 'bar' is not defined
+            NameError: name 'bar' is not defined
 
             >>> s.process('echo hello', shell=True).recvall()
             b'hello\n'
@@ -865,10 +865,14 @@ class ssh(Timeout, Logger):
                 arg = oarg
             if b'\x00' in arg[:-1]:
                 self.error('Inappropriate nulls in argv[%i]: %r' % (i, oarg))
-            argv[i] = arg.rstrip(b'\x00')
+            argv[i] = bytearray(arg.rstrip(b'\x00'))
 
+        if env is not None and not isinstance(env, dict) and env != os.environ:
+            self.error("env must be a dict: %r" % env)
+
+        # Converts the environment variables to a list of tuples to retain order.
+        env2 = []
         # Python also doesn't like when envp contains '\x00'
-        env2 = {}
         if env and hasattr(env, 'items'):
             for k, v in env.items():
                 if isinstance(k, six.text_type):
@@ -879,17 +883,16 @@ class ssh(Timeout, Logger):
                     self.error('Inappropriate nulls in environment key %r' % k)
                 if b'\x00' in v[:-1]:
                     self.error('Inappropriate nulls in environment value %r=%r' % (k, v))
-                env2[k.rstrip(b'\x00')] = v.rstrip(b'\x00')
+                env2.append((bytearray(k.rstrip(b'\x00')), bytearray(v.rstrip(b'\x00'))))
         env = env2 or env
 
         executable = executable or argv[0]
         cwd        = cwd or self.cwd
 
         # Validate, since failures on the remote side will suck.
-        if not isinstance(executable, (six.text_type, six.binary_type)):
+        if not isinstance(executable, (six.text_type, six.binary_type, bytearray)):
             self.error("executable / argv[0] must be a string: %r" % executable)
-        if env is not None and not isinstance(env, dict) and env != os.environ:
-            self.error("env must be a dict: %r" % env)
+        executable = context._decode(executable)
 
         # Allow passing in sys.stdin/stdout/stderr objects
         handles = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}
@@ -912,22 +915,20 @@ class ssh(Timeout, Logger):
         func_src  = inspect.getsource(func).strip()
         setuid = True if setuid is None else bool(setuid)
         
-        # Converts the environment variables to a list of tuples to remain order.
-        env = list(env.items())
-
         script = r"""
-#!/usr/bin/env python2
+#!/usr/bin/env python
 import os, sys, ctypes, resource, platform, stat
 from collections import OrderedDict
 exe   = %(executable)r
-argv  = %(argv)r
-env   = OrderedDict(%(env)r)
+argv  = [bytes(a) for a in %(argv)r]
+env   = %(env)r
 
 os.chdir(%(cwd)r)
 
 if env is not None:
+    env = OrderedDict((bytes(k), bytes(v)) for k,v in env)
     os.environ.clear()
-    os.environ.update(env)
+    getattr(os, 'environb', os.environ).update(env)
 else:
     env = os.environ
 
@@ -987,10 +988,11 @@ if sys.argv[-1] == 'check':
 
 for fd, newfd in {0: %(stdin)r, 1: %(stdout)r, 2:%(stderr)r}.items():
     if newfd is None:
-        close(fd)
-    elif isinstance(newfd, str):
         os.close(fd)
-        os.open(newfd, os.O_RDONLY if fd == 0 else (os.O_RDWR|os.O_CREAT))
+    elif isinstance(newfd, (str, bytes)):
+        newfd = os.open(newfd, os.O_RDONLY if fd == 0 else (os.O_RDWR|os.O_CREAT))
+        os.dup2(newfd, fd)
+        os.close(newfd)
     elif isinstance(newfd, int) and newfd != fd:
         os.dup2(fd, newfd)
 
@@ -1015,7 +1017,7 @@ except Exception:
     pass
 
 %(func_src)s
-apply(%(func_name)s, %(func_args)r)
+%(func_name)s(*%(func_args)r)
 
 os.execve(exe, argv, env)
 """ % locals()
@@ -1049,15 +1051,15 @@ os.execve(exe, argv, env)
 
         with self.progress(msg) as h:
 
-            script = 'for py in python2.7 python2 python; do test -x "$(which $py 2>&1)" && exec $py -c %s check; done; echo 2' % sh_string(script)
+            script = 'for py in python3 python; do test -x "$(which $py 2>&1)" && exec $py -c %s check; done; echo 2' % sh_string(script)
             with context.local(log_level='error'):
                 python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=self.timeout)
 
             try:
                 result = safeeval.const(python.recvline())
-            except Exception:
+            except (EOFError, ValueError):
                 h.failure("Process creation failed")
-                self.warn_once('Could not find a Python2 interpreter on %s\n' % self.host \
+                self.warn_once('Could not find a Python interpreter on %s\n' % self.host \
                                + "Use ssh.run() instead of ssh.process()")
                 return None
 
