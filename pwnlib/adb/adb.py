@@ -680,7 +680,7 @@ def exists(path):
 
         >>> adb.exists('/')
         True
-        >>> adb.exists('/init')
+        >>> adb.exists('/etc/hosts')
         True
         >>> adb.exists('/does/not/exist')
         False
@@ -1132,10 +1132,9 @@ class Property(object):
     def __str__(self):
         return str(getprop(self._name)).strip()
 
-    def __repr__(self):
-        return repr(str(self))
-
     def __getattr__(self, attr):
+        if attr.startswith('_'):
+            raise AttributeError(attr)
         if self._name:
             attr = '%s.%s' % (self._name, attr)
         return Property(attr)
@@ -1151,7 +1150,9 @@ class Property(object):
     def __eq__(self, other):
         # Allow simple comparison, e.g.:
         # adb.properties.ro.oem_unlock_supported == "1"
-        return str(self) == other
+        if isinstance(other, six.string_types):
+            return str(self) == other
+        return super(Property, self).__eq__(other)
 
     def __hash__(self, other):
         # Allow hash indices matching on the property
@@ -1356,9 +1357,10 @@ class Partitions(object):
         for name in listdir(self.by_name_dir):
             yield name
 
-    @context.quietfunc
-    @with_device
     def __getattr__(self, attr):
+        if name.startswith("_"):
+            raise AttributeError(attr)
+
         for name in self:
             if name == attr:
                 break
@@ -1367,19 +1369,20 @@ class Partitions(object):
 
         path = os.path.join(self.by_name_dir, name)
 
-        # Find the actual path of the device
-        devpath = readlink(path)
-        devname = os.path.basename(devpath)
+        with context.quiet:
+            # Find the actual path of the device
+            devpath = readlink(path)
+            devname = os.path.basename(devpath)
 
-        # Get the size of the partition
-        for line in read('/proc/partitions').splitlines():
-            if not line.strip():
-                continue
-            major, minor, blocks, name = line.split(None, 4)
-            if devname == name:
-                break
-        else:
-            log.error("Could not find size of partition %r" % name)
+            # Get the size of the partition
+            for line in read('/proc/partitions').splitlines():
+                if not line.strip():
+                    continue
+                major, minor, blocks, name = line.split(None, 4)
+                if devname == name:
+                    break
+            else:
+                log.error("Could not find size of partition %r" % name)
 
         return Partition(devpath, attr, int(blocks))
 
