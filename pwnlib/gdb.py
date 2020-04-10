@@ -665,8 +665,6 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
         exefile = target.executable
-        if six.PY3:
-            exefile = exefile.decode()
         cmd += ['gdb -q %s %s -x "%s"' % (exefile,
                                        target.pid,
                                        tmpfile)]
