@@ -649,7 +649,7 @@ def attach(target, gdbscript = '', exe = None, need_ptrace_scope = True, gdb_arg
         if context.os == 'android':
             pidof = adb.pidof
 
-        pids = pidof(target)
+        pids = list(pidof(target))
         if not pids:
             log.error('No such process: %s' % target)
         pid = pids[0]
