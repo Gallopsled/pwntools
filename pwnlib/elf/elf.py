@@ -1020,7 +1020,7 @@ class ELF(ELFFile):
                                                 section.data(),
                                                 inv_symbols)
 
-                for address, target in reversed(sorted(res.items())):
+                for address, target in sorted(res.items()):
                     self.plt[inv_symbols[target]] = address
 
         for a,n in sorted({v:k for k,v in self.plt.items()}.items()):
@@ -1045,6 +1045,49 @@ class ELF(ELFFile):
             self.version = list(map(int, version.split('.')))
 
         self.config['version'] = self.version
+
+    @property
+    def libc_start_main_return(self):
+        """
+            Try to find the return address from main into __libc_start_main.
+            The heuristic to find the call to the function pointer of main is
+            to list all calls inside __libc_start_main, find the call to exit
+            after the call to main and select the previous call.
+        """
+        if '__libc_start_main' not in self.functions:
+            return 0
+
+        if 'exit' not in self.symbols:
+            return 0
+
+        # If there's no delay slot, execution continues on the next instruction after a call.
+        call_return_offset = 1
+        if self.arch in ['arm', 'thumb']:
+            call_instructions = set(['blx', 'bl'])
+        elif self.arch == 'aarch64':
+            call_instructions = set(['blr', 'bl'])
+        elif self.arch in ['mips', 'mips64']:
+            call_instructions = set(['bal', 'jalr'])
+            # Account for the delay slot.
+            call_return_offset = 2
+        elif self.arch in ['i386', 'amd64', 'ia64']:
+            call_instructions = set(['call'])
+        else:
+            log.error('Unsupported architecture %s in ELF.libc_start_main_return', self.arch)
+            return 0
+        
+        code = self.disasm(self.symbols['__libc_start_main'], self.functions['__libc_start_main'].size)
+        exit_addr = hex(self.symbols['exit'])
+        lines = code.split('\n')
+        calls = [(index, line) for index, line in enumerate(lines) if set(line.split()) & call_instructions]
+        exit_calls = [index for index, line in enumerate(calls) if exit_addr in line[1]]
+        if len(exit_calls) != 1:
+            return 0
+
+        call_to_main = calls[exit_calls[0] - 1]
+        return_from_main = lines[call_to_main[0] + call_return_offset].lstrip()
+        return_from_main = int(return_from_main[ : return_from_main.index(':') ], 16)
+        return return_from_main
 
     def search(self, needle, writable = False):
         """search(needle, writable = False) -> generator
@@ -1600,7 +1643,7 @@ class ELF(ELFFile):
             ``PT_GNU_STACK``
 
             The p_flags member specifies the permissions on the segment
-            containing the stack and is used to indicate wether the stack
+            containing the stack and is used to indicate whether the stack
             should be executable. The absense of this header indicates
             that the stack will be executable.
 

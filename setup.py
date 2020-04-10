@@ -53,7 +53,6 @@ install_requires     = ['paramiko>=1.15.2',
                         'pyserial>=2.7',
                         'requests>=2.0',
                         'pip>=6.0.8',
-                        'tox>=1.8.1',
                         'pygments>=2.0',
                         'pysocks',
                         'python-dateutil',
@@ -63,6 +62,9 @@ install_requires     = ['paramiko>=1.15.2',
                         'sortedcontainers',
                         'unicorn>=1.0.2rc1', # see unicorn-engine/unicorn#1100, unicorn-engine/unicorn#1170
 ]
+
+if sys.platform == 'win32':
+    install_requires.append('windows-curses>=2.1.0')
 
 # Check that the user has installed the Python development headers
 PythonH = os.path.join(get_python_inc(), 'Python.h')
@@ -83,7 +85,7 @@ setup(
     name                 = 'pwntools',
     python_requires      = '>=2.7',
     packages             = find_packages(),
-    version              = '4.0.1',
+    version              = '4.2.0dev',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],

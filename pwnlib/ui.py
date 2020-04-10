@@ -1,19 +1,49 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import os
+import signal
 import six
+import string
+import struct
+import subprocess
+import sys
 import time
 import types
 
 from pwnlib import term
 from pwnlib.log import getLogger
 from pwnlib.term.readline import raw_input
+from pwnlib.tubes.process import process
 
 log = getLogger(__name__)
 
-def yesno(prompt, default = None):
-    """Presents the user with prompt (typically in the form of question) which
-    the user must answer yes or no.
+def testpwnproc(cmd):
+    import fcntl
+    import termios
+    env = dict(os.environ)
+    env.pop("PWNLIB_NOTERM", None)
+    def handleusr1(sig, frame):
+        s = p.stderr.read()
+        log.error("child process failed:\n%s", s.decode())
+    signal.signal(signal.SIGUSR1, handleusr1)
+    cmd = """
+from pwn import *
+import signal
+atexception.register(lambda:os.kill(os.getppid(), signal.SIGUSR1))
+""" + cmd
+    if "coverage" in sys.modules:
+      cmd = "import coverage; coverage.process_startup()\n" + cmd
+      env.setdefault("COVERAGE_PROCESS_START", ".coveragerc")
+    p = process([sys.executable, "-c", cmd], env=env, stderr=subprocess.PIPE)
+    p.recvuntil(b"\33[6n")
+    fcntl.ioctl(p.stdout.fileno(), termios.TIOCSWINSZ, struct.pack("hh", 80, 80))
+    p.stdout.write(b"\x1b[1;1R")
+    return p
+
+def yesno(prompt, default=None):
+    r"""Presents the user with prompt (typically in the form of question)
+    which the user must answer yes or no.
 
     Arguments:
       prompt (str): The prompt to show
@@ -21,7 +51,33 @@ def yesno(prompt, default = None):
 
     Returns:
       `True` if the answer was "yes", `False` if "no"
-"""
+
+    Examples:
+        >>> yesno("A number:", 20)
+        Traceback (most recent call last):
+        ...
+        ValueError: yesno(): default must be a boolean or None
+        >>> saved_stdin = sys.stdin
+        >>> try:
+        ...     sys.stdin = io.StringIO(u"x\nyes\nno\n\n")
+        ...     yesno("is it good 1")
+        ...     yesno("is it good 2", True)
+        ...     yesno("is it good 3", False)
+        ... finally:
+        ...     sys.stdin = saved_stdin
+         [?] is it good 1 [yes/no] Please answer yes or no
+         [?] is it good 1 [yes/no] True
+         [?] is it good 2 [Yes/no] False
+         [?] is it good 3 [yes/No] False
+
+    Tests:
+        >>> p = testpwnproc("print(yesno('is it ok??'))")
+        >>> b"is it ok" in p.recvuntil("??")
+        True
+        >>> p.sendline(b"x\nny")
+        >>> b"True" in p.recvall()
+        True
+    """
 
     if default is not None and not isinstance(default, bool):
         raise ValueError('yesno(): default must be a boolean or None')
@@ -30,9 +86,9 @@ def yesno(prompt, default = None):
         term.output(' [?] %s [' % prompt)
         yesfocus, yes = term.text.bold('Yes'), 'yes'
         nofocus, no = term.text.bold('No'), 'no'
-        hy = term.output(yesfocus if default == True else yes)
+        hy = term.output(yesfocus if default is True else yes)
         term.output('/')
-        hn = term.output(nofocus if default == False else no)
+        hn = term.output(nofocus if default is False else no)
         term.output(']\n')
         cur = default
         while True:
@@ -50,12 +106,12 @@ def yesno(prompt, default = None):
                     return cur
     else:
         prompt = ' [?] %s [%s/%s] ' % (prompt,
-                                       'Yes' if default == True else 'yes',
-                                       'No' if default == False else 'no',
+                                       'Yes' if default is True else 'yes',
+                                       'No' if default is False else 'no',
                                        )
         while True:
             opt = raw_input(prompt).lower()
-            if opt == '' and default != None:
+            if not opt and default is not None:
                 return default
             elif opt in ('y','yes'):
                 return True
@@ -64,7 +120,7 @@ def yesno(prompt, default = None):
             print('Please answer yes or no')
 
 def options(prompt, opts, default = None):
-    """Presents the user with a prompt (typically in the
+    r"""Presents the user with a prompt (typically in the
     form of a question) and a number of options.
 
     Arguments:
@@ -74,7 +130,44 @@ def options(prompt, opts, default = None):
 
     Returns:
       The users choice in the form of an integer.
-"""
+
+    Examples:
+        >>> options("Select a color", ("red", "green", "blue"), "green")
+        Traceback (most recent call last):
+        ...
+        ValueError: options(): default must be a number or None
+
+    Tests:
+        >>> p = testpwnproc("print(options('select a color', ('red', 'green', 'blue')))")
+        >>> p.sendline(b"\33[C\33[A\33[A\33[B\33[1;5A\33[1;5B 0310")
+        >>> _ = p.recvall()
+        >>> saved_stdin = sys.stdin
+        >>> try:
+        ...     sys.stdin = io.StringIO(u"\n4\n\n3\n")
+        ...     with context.local(log_level="INFO"):
+        ...         options("select a color A", ("red", "green", "blue"), 0)
+        ...         options("select a color B", ("red", "green", "blue"))
+        ... finally:
+        ...     sys.stdin = saved_stdin
+         [?] select a color A
+               1) red
+               2) green
+               3) blue
+             Choice [1] 0
+         [?] select a color B
+               1) red
+               2) green
+               3) blue
+             Choice  [?] select a color B
+               1) red
+               2) green
+               3) blue
+             Choice  [?] select a color B
+               1) red
+               2) green
+               3) blue
+             Choice 2
+    """
 
     if default is not None and not isinstance(default, six.integer_types):
         raise ValueError('options(): default must be a number or None')
@@ -93,7 +186,6 @@ def options(prompt, opts, default = None):
             term.output(opt + '\n', indent = len(num) + len(space))
             hs.append(h)
         ds = ''
-        prev = 0
         while True:
             prev = cur
             was_digit = False
@@ -115,16 +207,17 @@ def options(prompt, opts, default = None):
             elif k in ('<enter>', '<right>'):
                 if cur is not None:
                     return cur
-            elif k in tuple('1234567890'):
+            elif k in tuple(string.digits):
                 was_digit = True
                 d = str(k)
                 n = int(ds + d)
-                if n > 0 and n <= len(opts):
+                if 0 < n <= len(opts):
                     ds += d
+                    cur = n - 1
                 elif d != '0':
                     ds = d
-                n = int(ds)
-                cur = n - 1
+                    n = int(ds)
+                    cur = n - 1
 
             if prev != cur:
                 if prev is not None:
@@ -135,6 +228,8 @@ def options(prompt, opts, default = None):
                     hs[cur].update(arrow)
     else:
         linefmt =       '       %' + str(len(str(len(opts)))) + 'd) %s'
+        if default is not None:
+            default += 1
         while True:
             print(' [?] ' + prompt)
             for i, opt in enumerate(opts):
@@ -147,12 +242,39 @@ def options(prompt, opts, default = None):
             except (ValueError, TypeError):
                 continue
             if x >= 1 and x <= len(opts):
-                return x
+                return x - 1
 
-def pause(n = None):
-    """Waits for either user input or a specific number of seconds."""
+def pause(n=None):
+    r"""Waits for either user input or a specific number of seconds.
 
-    if n == None:
+    Examples:
+        >>> with context.local(log_level="INFO"):
+        ...     pause(1)
+        [x] Waiting
+        [x] Waiting: 1...
+        [+] Waiting: Done
+        >>> pause("whatever")
+        Traceback (most recent call last):
+        ...
+        ValueError: pause(): n must be a number or None
+
+    Tests:
+        >>> saved_stdin = sys.stdin
+        >>> try:
+        ...     sys.stdin = io.StringIO(u"\n")
+        ...     with context.local(log_level="INFO"):
+        ...         pause()
+        ... finally:
+        ...     sys.stdin = saved_stdin
+        [*] Paused (press enter to continue)
+        >>> p = testpwnproc("pause()")
+        >>> b"Paused" in p.recvuntil(b"press any")
+        True
+        >>> p.send(b"x")
+        >>> _ = p.recvall()
+    """
+
+    if n is None:
         if term.term_mode:
             log.info('Paused (press any to continue)')
             term.getkey()
@@ -169,7 +291,7 @@ def pause(n = None):
         raise ValueError('pause(): n must be a number or None')
 
 def more(text):
-    """more(text)
+    r"""more(text)
 
     Shows text like the command line tool ``more``.
 
@@ -180,6 +302,14 @@ def more(text):
 
     Returns:
       :const:`None`
+
+    Tests:
+        >>> more("text")
+        text
+        >>> p = testpwnproc("more('text\\n' * (term.height + 2))")
+        >>> p.send(b"x")
+        >>> b"text" in p.recvall()
+        True
     """
     if term.term_mode:
         lines = text.split('\n')

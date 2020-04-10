@@ -685,6 +685,7 @@ class ContextType(object):
                      ('x86_64', 'amd64'),
                      ('x86', 'i386'),
                      ('i686', 'i386'),
+                     ('armv7l', 'arm'),
                      ('armeabi', 'arm'),
                      ('arm64', 'aarch64')]
         for k, v in transform:
@@ -1224,12 +1225,13 @@ class ContextType(object):
             >>> cache_dir == context.cache_dir
             True
         """
-        home = os.path.expanduser('~')
+        xdg_cache_home = os.environ.get('XDG_CACHE_HOME') or \
+                         os.path.join(os.path.expanduser('~'), '.cache')
 
-        if not os.access(home, os.W_OK):
+        if not os.access(xdg_cache_home, os.W_OK):
             return None
 
-        cache = os.path.join(home, '.pwntools-cache-%d.%d' % sys.version_info[:2])
+        cache = os.path.join(xdg_cache_home, '.pwntools-cache-%d.%d' % sys.version_info[:2])
 
         if not os.path.exists(cache):
             try:

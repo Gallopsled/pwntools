@@ -246,9 +246,9 @@ class AtomWrite(object):
         Combine adjacent writes into a single write.
 
         Example:
-        >>> context.clear(endian = "little")
-        >>> pwnlib.fmtstr.AtomWrite(0x0, 0x1, 0x1, 0xff).union(pwnlib.fmtstr.AtomWrite(0x1, 0x1, 0x2, 0x77))
-        AtomWrite(start=0, size=2, integer=0x201, mask=0xff77)
+            >>> context.clear(endian = "little")
+            >>> pwnlib.fmtstr.AtomWrite(0x0, 0x1, 0x1, 0xff).union(pwnlib.fmtstr.AtomWrite(0x1, 0x1, 0x2, 0x77))
+            AtomWrite(start=0, size=2, integer=0x201, mask=0x77ff)
         """
         assert other.start == self.end, "writes to combine must be continous"
         if context.endian == "little":
@@ -778,22 +778,22 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
 
     Examples:
         >>> context.clear(arch = 'amd64')
-        >>> print(repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')))
+        >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')
         b'%322419390c%4$llnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00'
-        >>> print(repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short')))
+        >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short')
         b'%47806c%5$lln%22649c%6$hnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00'
-        >>> print(repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte')))
+        >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte')
         b'%190c%7$lln%85c%8$hhn%36c%9$hhn%131c%10$hhnaaaab\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
         >>> context.clear(arch = 'i386')
-        >>> print(repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')))
+        >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')
         b'%322419390c%5$na\x00\x00\x00\x00'
-        >>> print(repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short')))
+        >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short')
         b'%4919c%7$hn%42887c%8$hna\x02\x00\x00\x00\x00\x00\x00\x00'
-        >>> print(repr(fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte')))
+        >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte')
         b'%19c%12$hhn%36c%13$hhn%131c%14$hhn%4c%15$hhn\x03\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
-        >>> print(repr(fmtstr_payload(1, {0x0: 0x00000001}, write_size='byte')))
+        >>> fmtstr_payload(1, {0x0: 0x00000001}, write_size='byte')
         b'%1c%3$na\x00\x00\x00\x00'
-        >>> print(repr(fmtstr_payload(1, {0x0: b"\xff\xff\x04\x11\x00\x00\x00\x00"}, write_size='short')))
+        >>> fmtstr_payload(1, {0x0: b"\xff\xff\x04\x11\x00\x00\x00\x00"}, write_size='short')
         b'%327679c%7$lln%18c%8$hhn\x00\x00\x00\x00\x03\x00\x00\x00'
     """
     sz = WRITE_SIZE[write_size]
@@ -835,15 +835,6 @@ class FmtStr(object):
     """
 
     def __init__(self, execute_fmt, offset = None, padlen = 0, numbwritten = 0):
-        """
-        Instantiates an object which try to automating exploit the vulnerable process
-
-        Arguments:
-            execute_fmt(function): function to call for communicate with the vulnerable process
-            offset(int): the first formatter's offset you control
-            padlen(int): size of the pad you want to add before the payload
-            numbwritten(int): number of already written bytes
-        """
         self.execute_fmt = execute_fmt
         self.offset = offset
         self.padlen = padlen

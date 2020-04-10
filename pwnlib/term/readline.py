@@ -378,7 +378,7 @@ def readline(_size=None, prompt='', float=True, priority=10):
     # XXX circular imports
     from pwnlib.term import term_mode
     if not term_mode:
-        print(prompt, end='', flush=True)
+        six.print_(prompt, end='', flush=True)
         return sys.stdin.readline(_size).rstrip('\n')
     show_suggestions = False
     eof = False
@@ -435,6 +435,19 @@ def raw_input(prompt='', float=True):
     """
     return readline(None, prompt, float)
 
+def str_input(prompt='', float=True):
+    r"""str_input(prompt='', float=True)
+
+    Replacement for the built-in ``input`` in python3 using ``pwnlib`` readline
+    implementation.
+
+    Arguments:
+        prompt(str): The prompt to show to the user.
+        float(bool): If set to `True`, prompt and input will float to the
+                     bottom of the screen when `term.term_mode` is enabled.
+    """
+    return readline(None, prompt, float).decode()
+
 def eval_input(prompt='', float=True):
     """eval_input(prompt='', float=True)
 
@@ -450,11 +463,12 @@ def eval_input(prompt='', float=True):
     Example:
 
         >>> try:
-        ...     saved_stdin = sys.stdin
-        ...     sys.stdin = io.StringIO("{'a':20}")
+        ...     saved = sys.stdin, pwnlib.term.term_mode
+        ...     pwnlib.term.term_mode = False
+        ...     sys.stdin = io.StringIO(u"{'a': 20}")
         ...     eval_input("Favorite object? ")['a']
         ... finally:
-        ...     sys.stdin = saved_stdin
+        ...     sys.stdin, pwnlib.term.term_mode = saved
         Favorite object? 20
     """
     from pwnlib.util import safeeval
@@ -480,4 +494,4 @@ def init():
         builtins.raw_input = raw_input
         builtins.input = eval_input
     else:
-        builtins.input = raw_input
+        builtins.input = str_input

@@ -2,16 +2,18 @@ from __future__ import absolute_import
 from __future__ import division
 
 import atexit
-import fcntl
 import os
 import re
 import signal
 import six
 import struct
 import sys
-import termios
 import threading
 import traceback
+
+if sys.platform != 'win32':
+    import fcntl
+    import termios
 
 from pwnlib.context import ContextType
 from pwnlib.term import termcap
@@ -460,11 +462,13 @@ def render_from(i, force = False, clear_after = False):
 def redraw():
     for i in reversed(range(len(cells))):
         row = cells[i].start[0]
-        if row - scroll + height - 1 < 0:
+        if row - scroll + height <= 0:
+            # XXX: remove this line when render_cell is fixed
+            i += 1
             break
-    # XXX: remove this line when render_cell is fixed
-    if cells[i].start[0] - scroll + height <= 0:
-        i += 1
+    else:
+        if not cells:
+            return
     render_from(i, force = True, clear_after = True)
 
 lock = threading.Lock()
