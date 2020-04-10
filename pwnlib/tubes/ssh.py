@@ -172,7 +172,8 @@ class ssh_channel(sock):
 
         return data
 
-    def wait(self):
+    def wait(self, timeout=sock.default):
+        # TODO: deal with timeouts
         return self.poll(block=True)
 
     def poll(self, block=False):
@@ -536,9 +537,9 @@ class ssh(Timeout, Logger):
     #: PID of the remote ``sshd`` process servicing this connection.
     pid = None
 
-    def __init__(self, user, host, port = 22, password = None, key = None,
-                 keyfile = None, proxy_command = None, proxy_sock = None,
-                 level = None, cache = True, ssh_agent = False, *a, **kw):
+    def __init__(self, user=None, host=None, port=22, password=None, key=None,
+                 keyfile=None, proxy_command=None, proxy_sock=None,
+                 level=None, cache=True, ssh_agent=False, *a, **kw):
         """Creates a new ssh connection.
 
         Arguments:
@@ -561,11 +562,11 @@ class ssh(Timeout, Logger):
         Example proxying:
 
             >>> s1 = ssh(host='example.pwnme',
-            ...          user='travis',
+            ...          user='runner',
             ...          password='demopass')
             >>> r1 = s1.remote('localhost', 22)
             >>> s2 = ssh(host='example.pwnme',
-            ...          user='travis',
+            ...          user='runner',
             ...          password='demopass',
             ...          proxy_sock=r1.sock)
             >>> r2 = s2.remote('localhost', 22) # and so on...
@@ -702,7 +703,7 @@ class ssh(Timeout, Logger):
 
         Examples:
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> sh = s.shell('/bin/sh')
             >>> sh.sendline(b'echo Hello; exit')
@@ -781,7 +782,7 @@ class ssh(Timeout, Logger):
 
         Examples:
             >>> s = ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> sh = s.process('/bin/sh', env={'PS1':''})
             >>> sh.sendline(b'echo Hello; exit')
@@ -1125,7 +1126,7 @@ os.execve(exe, argv, env)
 
         Examples:
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> py = s.run('python -i')
             >>> _ = py.recvuntil(b'>>> ')
@@ -1186,7 +1187,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Examples:
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> print(s.run_to_end('echo Hello; exit 17'))
             (b'Hello\n', 17)
@@ -1211,10 +1212,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> from pwn import *
             >>> l = listen()
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> a = s.connect_remote(s.host, l.lport)
-            >>> b = l.wait_for_connection()
+            >>> a=a; b = l.wait_for_connection()  # a=a; prevents hangs
             >>> a.sendline(b'Hello')
             >>> print(repr(b.recvline()))
             b'Hello\n'
@@ -1236,11 +1237,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
             >>> from pwn import *
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> l = s.listen_remote()
             >>> a = remote(s.host, l.port)
-            >>> b = l.wait_for_connection()
+            >>> a=a; b = l.wait_for_connection()  # a=a; prevents hangs
             >>> a.sendline(b'Hello')
             >>> print(repr(b.recvline()))
             b'Hello\n'
@@ -1256,7 +1257,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Examples:
 
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> print(repr(s['echo hello']))
             b'hello'
@@ -1269,7 +1270,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Examples:
 
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> print(repr(s('echo hello')))
             b'hello'
@@ -1282,12 +1283,12 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Examples:
 
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> s.echo('hello')
             b'hello'
             >>> s.whoami()
-            b'travis'
+            b'runner'
             >>> s.echo(['huh','yay','args'])
             b'huh yay args'
         """
@@ -1315,7 +1316,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Example:
 
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> s.connected()
             True
@@ -1473,7 +1474,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> with open('/tmp/bar','w+') as f:
             ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass',
             ...         cache=False)
             >>> s.download_data('/tmp/bar')
@@ -1563,7 +1564,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Example:
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> s.upload_data(b'Hello, world', '/tmp/upload_foo')
             >>> print(open('/tmp/upload_foo').read())
@@ -1793,7 +1794,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Examples:
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> cwd = s.set_working_directory()
             >>> s.ls()
@@ -1802,7 +1803,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             True
 
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> homedir = s.pwd()
             >>> _=s.touch('foo')
@@ -1972,7 +1973,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Example:
 
-            >>> s = ssh("travis", "example.pwnme")
+            >>> s = ssh("runner", "example.pwnme")
             >>> s.aslr
             True
         """

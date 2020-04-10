@@ -381,13 +381,15 @@ class Corefile(ELF):
         This requires GDB to be installed, and can only be done with native
         processes.  Getting a "complete" corefile requires GDB 7.11 or better.
 
-        >>> elf = ELF('/bin/bash')
+        >>> elf = ELF('/bin/bash-static')
         >>> context.clear(binary=elf)
         >>> io = process(elf.path, env={'HELLO': 'WORLD'})
         >>> core = io.corefile
 
         Data can also be extracted directly from the corefile.
 
+        >>> elf.address > 0
+        True
         >>> core.exe[elf.address:elf.address+4]
         b'\x7fELF'
         >>> core.exe.data[:4]
@@ -429,13 +431,13 @@ class Corefile(ELF):
 
         Corefiles can also be pulled from remote machines via SSH!
 
-        >>> s = ssh('travis', 'example.pwnme')
+        >>> s = ssh(host='example.pwnme')
         >>> _ = s.set_working_directory()
         >>> elf = ELF.from_assembly(shellcraft.trap())
         >>> path = s.upload(elf.path)
         >>> _ =s.chmod('+x', path)
         >>> io = s.process(path)
-        >>> io.wait()
+        >>> io.wait(1)
         -1
         >>> io.corefile.signal == signal.SIGTRAP # doctest: +SKIP
         True
@@ -445,7 +447,7 @@ class Corefile(ELF):
         >>> context.clear(arch='amd64')
         >>> elf = ELF.from_assembly('push 1234; ret')
         >>> io = elf.process()
-        >>> io.wait()
+        >>> io.wait(1)
         >>> io.corefile.fault_addr
         1234
 
@@ -459,7 +461,7 @@ class Corefile(ELF):
 
         >>> elf = ELF.from_assembly(shellcraft.crash())
         >>> io = elf.process(env={'FOO': 'BAR=BAZ'})
-        >>> io.wait()
+        >>> io.wait(1)
         >>> core = io.corefile
         >>> core.getenv('FOO')
         b'BAR=BAZ'
@@ -480,7 +482,7 @@ class Corefile(ELF):
         ... '''
         >>> elf = ELF.from_assembly(assembly)
         >>> io = elf.process()
-        >>> io.wait()
+        >>> io.wait(2)
         >>> core = io.corefile
         [!] End of the stack is corrupted, skipping stack parsing (got: 4141414141414141)
         >>> core.argc, core.argv, core.env
@@ -747,13 +749,13 @@ class Corefile(ELF):
 
             >>> elf = ELF.from_assembly(shellcraft.trap())
             >>> io = elf.process()
-            >>> io.wait()
+            >>> io.wait(1)
             >>> io.corefile.signal == signal.SIGTRAP
             True
 
             >>> elf = ELF.from_assembly(shellcraft.crash())
             >>> io = elf.process()
-            >>> io.wait()
+            >>> io.wait(1)
             >>> io.corefile.signal == signal.SIGSEGV
             True
         """
@@ -774,7 +776,7 @@ class Corefile(ELF):
 
             >>> elf = ELF.from_assembly('mov eax, 0xdeadbeef; jmp eax', arch='i386')
             >>> io = elf.process()
-            >>> io.wait()
+            >>> io.wait(1)
             >>> io.corefile.fault_addr == io.corefile.eax == 0xdeadbeef
             True
         """
@@ -1071,7 +1073,7 @@ class Corefile(ELF):
 
             >>> elf = ELF.from_assembly(shellcraft.trap())
             >>> io = elf.process(env={'GREETING': 'Hello!'})
-            >>> io.wait()
+            >>> io.wait(1)
             >>> io.corefile.getenv('GREETING')
             b'Hello!'
         """
@@ -1090,7 +1092,7 @@ class Corefile(ELF):
 
             >>> elf = ELF.from_assembly('mov eax, 0xdeadbeef;' + shellcraft.trap(), arch='i386')
             >>> io = elf.process()
-            >>> io.wait()
+            >>> io.wait(1)
             >>> io.corefile.registers['eax'] == 0xdeadbeef
             True
         """

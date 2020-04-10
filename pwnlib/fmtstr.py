@@ -31,8 +31,9 @@ Examples:
     ...        write(1, my_var, sizeof(int));
     ...        return 0;
     ... }''')
-    >>> cmdline = ["gcc", source, "-Wno-format-security", "-m32", "-o", program]
-    >>> process(cmdline).wait_for_close()
+    >>> gcc = process(["gcc", source, "-Wno-format-security", "-m32", "-o", program])
+    >>> gcc.poll(True) and gcc.recvall()
+    0
     >>> def exec_fmt(payload):
     ...     p = process(program)
     ...     p.sendline(payload)
