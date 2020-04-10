@@ -92,9 +92,9 @@ def pid_by_name(name):
 
     processes = (p for p in psutil.process_iter() if match(p))
 
-    processes = sorted(processes, key=lambda p: p.create_time())
+    processes = sorted(processes, key=lambda p: p.create_time(), reverse=True)
 
-    return reversed([p.pid for p in processes])
+    return [p.pid for p in processes]
 
 def name(pid):
     """name(pid) -> str
