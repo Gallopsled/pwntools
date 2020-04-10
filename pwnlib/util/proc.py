@@ -346,7 +346,7 @@ def wait_for_debugger(pid, debugger_pid=None):
                 except psutil.TimeoutExpired:
                     pass
                 else:
-                    l.error("debugger exited! (maybe check /proc/sys/kernel/yama/ptrace_scope)")
+                    l.failure("debugger exited! (maybe check /proc/sys/kernel/yama/ptrace_scope)")
         else:
             while tracer(pid) is None:
                 time.sleep(0.01)
