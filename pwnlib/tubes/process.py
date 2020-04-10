@@ -927,20 +927,23 @@ class process(tube):
         import pwnlib.elf.corefile
         import pwnlib.gdb
 
-        if self.poll() is None:
-            return pwnlib.gdb.corefile(self)
+        try:
+            if self.poll() is None:
+                return pwnlib.gdb.corefile(self)
 
-        finder = pwnlib.elf.corefile.CorefileFinder(self)
-        if not finder.core_path:
-            self.warn("Could not find core file for pid %i" % self.pid)
-            return Ellipsis ##
+            finder = pwnlib.elf.corefile.CorefileFinder(self)
+            if not finder.core_path:
+                self.warn("Could not find core file for pid %i" % self.pid)
+                return None
 
-        core_hash = sha256file(finder.core_path)
+            core_hash = sha256file(finder.core_path)
 
-        if self._corefile and self._corefile._hash == core_hash:
-            return self._corefile
+            if self._corefile and self._corefile._hash == core_hash:
+                return self._corefile
 
-        self._corefile = pwnlib.elf.corefile.Corefile(finder.core_path)
+            self._corefile = pwnlib.elf.corefile.Corefile(finder.core_path)
+        except AttributeError as e:
+            raise RuntimeError(e) # AttributeError would route through __getattr__, losing original message
         self._corefile._hash = core_hash
 
         return self._corefile
