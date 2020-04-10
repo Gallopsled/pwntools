@@ -67,9 +67,9 @@ class ssh_channel(sock):
         self.tty  = tty
         self.env  = env
         self.process = process
+        self.cwd  = wd or '.'
         if isinstance(wd, six.text_type):
             wd = wd.encode('utf-8')
-        self.cwd  = wd or b'.'
 
         env = env or {}
         msg = 'Opening new channel: %r' % (process or 'shell')
@@ -1083,7 +1083,7 @@ os.execve(exe, argv, env)
             python.suid = safeeval.const(python.recvline())
             python.sgid = safeeval.const(python.recvline())
             python.argv = argv
-            python.executable = python.recvuntil(b'\x00')[:-1]
+            python.executable = context._decode(python.recvuntil(b'\x00')[:-1])
 
             h.success('pid %i' % python.pid)
 
