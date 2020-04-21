@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-"""
+r"""
 Routines here are for getting any NULL-terminated sequence of bytes evaluated
 intact by any shell.  This includes all variants of quotes, whitespace, and
 non-printable characters.
@@ -49,9 +49,9 @@ single-quotes.
     Double Quotes
       Enclosing characters within double quotes preserves the literal meaning
       of all characters except dollarsign ($), backquote (`), and backslash
-      (\\).  The backslash inside double quotes is historically weird, and
+      (\).  The backslash inside double quotes is historically weird, and
       serves to quote only the following characters:
-            $ ` " \\ <newline>.
+            $ ` " \ <newline>.
       Otherwise it remains literal.
 
 GNU Bash
@@ -70,7 +70,7 @@ single-quotes.
 
     3.1.2.1 Escape Character
 
-    A non-quoted backslash ‘\\’ is the Bash escape character. It preserves the
+    A non-quoted backslash ‘\’ is the Bash escape character. It preserves the
     literal value of the next character that follows, with the exception of
     newline. If a ``\\newline`` pair appears, and the backslash itself is not
     quoted, the ``\\newline`` is treated as a line continuation (that is, it
@@ -85,11 +85,11 @@ single-quotes.
     3.1.2.3 Double Quotes
 
     Enclosing characters in double quotes (‘"’) preserves the literal value of a
-    ll characters within the quotes, with the exception of ‘$’, ‘`’, ‘\\’, and,
+    ll characters within the quotes, with the exception of ‘$’, ‘`’, ‘\’, and,
     when history expansion is enabled, ‘!’. The characters ‘$’ and ‘`’ retain their
     pecial meaning within double quotes (see Shell Expansions). The backslash retains
     its special meaning only when followed by one of the following characters:
-    ‘$’, ‘`’, ‘"’, ‘\\’, or newline. Within double quotes, backslashes that are
+    ‘$’, ‘`’, ‘"’, ‘\’, or newline. Within double quotes, backslashes that are
     followed by one of these characters are removed. Backslashes preceding
     characters without a special meaning are left unmodified. A double quote may
     be quoted within double quotes by preceding it with a backslash. If enabled,
@@ -112,7 +112,7 @@ single-quotes.
 ::
 
     A character may be quoted (that is, made to stand for itself) by preceding
-    it with a ‘\\’. ‘\\’ followed by a newline is ignored.
+    it with a ‘\’. ‘\’ followed by a newline is ignored.
 
     A string enclosed between ‘$'’ and ‘'’ is processed the same way as the
     string arguments of the print builtin, and the resulting string is considered
@@ -129,7 +129,7 @@ single-quotes.
     quote if it is set.
 
     Inside double quotes (""), parameter and command substitution occur, and
-    ‘\\’ quotes the characters ‘\\’, ‘`’, ‘"’, and ‘$’.
+    ‘\’ quotes the characters ‘\’, ‘`’, ‘"’, and ‘$’.
 
 FreeBSD Shell
 ~~~~~~~~~~~~~
@@ -168,7 +168,7 @@ single-quotes.
          is historically weird.  It remains literal unless it precedes the
          following characters, which it serves to quote:
 
-           $     `     "     \\     \\n
+           $     `     "     \     \\n
 
      Backslash
          A backslash preserves the literal meaning of the following char-
@@ -184,7 +184,7 @@ single-quotes.
 
 ::
 
-    A backslash (\\) can be used to quote any character except a newline.
+    A backslash (\) can be used to quote any character except a newline.
     If a newline follows a backslash the shell removes them both, effectively
     making the following line part of the current one.
 
@@ -193,7 +193,7 @@ single-quotes.
 
     A group of characters can be enclosed within double quotes (") to quote
     every character within the quotes except a backquote (`) or a dollar
-    sign ($), both of which retain their special meaning. A backslash (\\)
+    sign ($), both of which retain their special meaning. A backslash (\)
     within double quotes retains its special meaning, but only when followed
     by a backquote, dollar sign, double quote, or another backslash.
     An at sign (@) within double quotes has a special meaning
