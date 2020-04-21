@@ -27,6 +27,11 @@ from pwnlib.config import register_config
 from pwnlib.device import Device
 from pwnlib.timeout import Timeout
 
+try:
+    from collections.abc import Iterable
+except ImportError:
+    from collections import Iterable
+
 __all__ = ['context', 'ContextType', 'Thread']
 
 _original_socket = socket.socket
@@ -1119,7 +1124,7 @@ class ContextType(object):
         if isinstance(proxy, str):
             proxy = (socks.SOCKS5, proxy)
 
-        if not isinstance(proxy, collections.Iterable):
+        if not isinstance(proxy, Iterable):
             raise AttributeError('proxy must be a string hostname, or tuple of arguments for socks.set_default_proxy')
 
         socks.set_default_proxy(*proxy)
