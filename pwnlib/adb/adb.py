@@ -1358,7 +1358,7 @@ class Partitions(object):
             yield name
 
     def __getattr__(self, attr):
-        if name.startswith("_"):
+        if attr.startswith("_"):
             raise AttributeError(attr)
 
         for name in self:
