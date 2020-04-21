@@ -63,9 +63,6 @@ install_requires     = ['paramiko>=1.15.2',
                         'unicorn>=1.0.2rc1', # see unicorn-engine/unicorn#1100, unicorn-engine/unicorn#1170
 ]
 
-if sys.platform == 'win32':
-    install_requires.append('windows-curses>=2.1.0')
-
 # Check that the user has installed the Python development headers
 PythonH = os.path.join(get_python_inc(), 'Python.h')
 if not os.path.exists(PythonH):
