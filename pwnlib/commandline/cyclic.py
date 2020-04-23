@@ -91,10 +91,11 @@ def main(args):
         if got < want:
             log.failure("Alphabet too small (max length = %i)" % got)
 
-        sys.stdout.write(result)
+        out = getattr(sys.stdout, 'buffer', sys.stdout)
+        out.write(result)
 
-        if sys.stdout.isatty():
-            sys.stdout.write('\n')
+        if out.isatty():
+            out.write(b'\n')
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)
