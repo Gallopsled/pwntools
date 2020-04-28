@@ -1264,7 +1264,17 @@ def compile(source):
     r"""Compile a source file or project with the Android NDK.
 
     Example:
-        >>> filename = adb.compile("../../examples/adb-compile.c")
+        >>> temp = tempfile.mktemp('.c')
+        >>> write(temp, '''
+        ... #include <stdio.h>
+        ... static char buf[4096];
+        ... int main() {
+        ...   FILE *fp = fopen("/proc/self/maps", "r");
+        ...   int n = fread(buf, 1, sizeof(buf), fp);
+        ...   fwrite(buf, 1, n, stdout);
+        ...   return 0;
+        ... }''')
+        >>> filename = adb.compile(temp)
         >>> sent = adb.push(filename, "/data/local/tmp")
         >>> adb.process(sent).recvall() # doctest: +ELLIPSIS
         b'... /system/bin/linker\n...'
