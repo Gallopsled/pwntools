@@ -27,6 +27,9 @@ def can_init():
     ``pwnlib`` manage the terminal.
     """
 
+    if sys.platform == 'win32':
+        return False
+
     if not sys.stdout.isatty():
         return False
 

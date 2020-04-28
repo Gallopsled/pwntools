@@ -9,4 +9,4 @@ Example:
 </%docstring>
     pop {r0-r12,lr}
     ldr sp, [sp, 64]
-    bx  r1
+    pop {pc}

@@ -1,6 +1,7 @@
 [run]
 branch = True
 parallel = True
+concurrency = thread,multiprocessing
 omit =
     */constants/*
 source =

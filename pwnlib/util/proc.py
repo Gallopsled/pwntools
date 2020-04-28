@@ -92,9 +92,9 @@ def pid_by_name(name):
 
     processes = (p for p in psutil.process_iter() if match(p))
 
-    processes = sorted(processes, key=lambda p: p.create_time())
+    processes = sorted(processes, key=lambda p: p.create_time(), reverse=True)
 
-    return reversed([p.pid for p in processes])
+    return [p.pid for p in processes]
 
 def name(pid):
     """name(pid) -> str
@@ -325,10 +325,11 @@ def state(pid):
     """
     return status(pid)['State']
 
-def wait_for_debugger(pid):
-    """wait_for_debugger(pid) -> None
+def wait_for_debugger(pid, debugger_pid=None):
+    """wait_for_debugger(pid, debugger_pid=None) -> None
 
     Sleeps until the process with PID `pid` is being traced.
+    If debugger_pid is set and debugger exits, raises an error.
 
     Arguments:
         pid (int): PID of the process.
@@ -337,6 +338,16 @@ def wait_for_debugger(pid):
         None
     """
     with log.waitfor('Waiting for debugger') as l:
-        while tracer(pid) is None:
-            time.sleep(0.01)
+        if debugger_pid:
+            debugger = psutil.Process(debugger_pid)
+            while tracer(pid) is None:
+                try:
+                    debugger.wait(0.01)
+                except psutil.TimeoutExpired:
+                    pass
+                else:
+                    l.failure("debugger exited! (maybe check /proc/sys/kernel/yama/ptrace_scope)")
+        else:
+            while tracer(pid) is None:
+                time.sleep(0.01)
         l.success()

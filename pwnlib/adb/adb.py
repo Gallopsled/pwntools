@@ -75,8 +75,10 @@ log = getLogger(__name__)
 def adb(argv, *a, **kw):
     r"""Returns the output of an ADB subcommand.
 
-    >>> adb.adb(['get-serialno'])
+    >>> adb.adb('get-serialno')
     b'emulator-5554\n'
+    >>> adb.adb(['shell', 'uname']) # it is better to use adb.process
+    b'Linux\n'
     """
     if isinstance(argv, (bytes, six.text_type)):
         argv = [argv]
@@ -198,6 +200,10 @@ def uptime():
 
     Returns:
         Uptime of the device, in seconds
+
+    Example:
+        >>> adb.uptime() > 3 # normally AVD takes ~7 seconds to boot
+        True
     """
     up, idle = map(float, read('/proc/uptime').split())
     return up
@@ -209,10 +215,15 @@ def boot_time():
     Returns:
         Boot time of the device, in Unix time, rounded to the
         nearest second.
+
+    Example:
+        >>> import time
+        >>> adb.boot_time() < time.time()
+        True
     """
     for line in read('/proc/stat').splitlines():
         name, value = line.split(None, 1)
-        if name == 'btime':
+        if name == b'btime':
             return int(value)
 
 class AdbDevice(Device):
@@ -680,7 +691,7 @@ def exists(path):
 
         >>> adb.exists('/')
         True
-        >>> adb.exists('/init')
+        >>> adb.exists('/etc/hosts')
         True
         >>> adb.exists('/does/not/exist')
         False
@@ -825,8 +836,7 @@ done
 
     which_cmd = which_cmd.strip()
     data = process(['sh','-c', which_cmd], *a, **kw).recvall()
-    if not hasattr(data, 'encode'):
-        data = data.decode('utf-8')
+    data = context._decode(data)
     result = []
 
     for path in data.split('\x00'):
@@ -849,6 +859,12 @@ done
 
 @with_device
 def whoami():
+    """Returns current shell user
+
+    Example:
+       >>> adb.whoami()
+       b'root'
+    """
     return process(['sh','-ic','echo $USER']).recvall().strip()
 
 @with_device
@@ -896,7 +912,12 @@ def pidof(name):
 
 @with_device
 def proc_exe(pid):
-    """Returns the full path of the executable for the provided PID."""
+    """Returns the full path of the executable for the provided PID.
+
+    Example:
+        >>> adb.proc_exe(1)
+        b'/init'
+    """
     with context.quiet:
         io  = process(['realpath','/proc/%d/exe' % pid])
         data = io.recvall().strip()
@@ -912,24 +933,23 @@ def getprop(name=None):
     Returns:
         If ``name`` is not specified, a ``dict`` of all properties is returned.
         Otherwise, a string is returned with the contents of the named property.
+
+    Example:
+        >>> adb.getprop() # doctest: +ELLIPSIS
+        {...}
     """
     with context.quiet:
         if name:
             result = process(['getprop', name]).recvall().strip()
-            if not hasattr(result, 'encode'):
-                result = result.decode('utf-8')
+            result = context._decode(result)
             return result
-
 
         result = process(['getprop']).recvall()
 
-    if not hasattr(result, 'encode'):
-        result = result.decode('utf-8')
-
+    result = context._decode(result)
     expr = r'\[([^\]]+)\]: \[(.*)\]'
 
     props = {}
-
     for line in result.splitlines():
         if not line.startswith('['):
             continue
@@ -960,7 +980,7 @@ def listdir(directory='/'):
         Otherwise, less files may be returned due to restrictive SELinux
         policies on adbd.
     """
-    return list(sorted(AdbClient().list(directory)))
+    return sorted(AdbClient().list(directory))
 
 @with_device
 def fastboot(args, *a, **kw):
@@ -1028,6 +1048,11 @@ class Kernel(object):
 
     @property
     def address(self):
+        """Returns kernel address
+        Example:
+            >>> hex(adb.kernel.address) # doctest: +ELLIPSIS
+            '0x...000'
+        """
         return self.symbols['_text']
 
     @property
@@ -1050,7 +1075,7 @@ class Kernel(object):
             self._kallsyms = {}
             root()
             write('/proc/sys/kernel/kptr_restrict', '1')
-            self._kallsyms = read('/proc/kallsyms')
+            self._kallsyms = read('/proc/kallsyms').decode('ascii')
         return self._kallsyms
 
     @property
@@ -1132,10 +1157,9 @@ class Property(object):
     def __str__(self):
         return str(getprop(self._name)).strip()
 
-    def __repr__(self):
-        return repr(str(self))
-
     def __getattr__(self, attr):
+        if attr.startswith('_'):
+            raise AttributeError(attr)
         if self._name:
             attr = '%s.%s' % (self._name, attr)
         return Property(attr)
@@ -1149,9 +1173,15 @@ class Property(object):
         setprop(attr, value)
 
     def __eq__(self, other):
-        # Allow simple comparison, e.g.:
-        # adb.properties.ro.oem_unlock_supported == "1"
-        return str(self) == other
+        """Allow simple comparison
+
+        Example:
+            >>> adb.properties.ro.build.version.sdk == "24"
+            True
+        """
+        if isinstance(other, six.string_types):
+            return str(self) == other
+        return super(Property, self).__eq__(other)
 
     def __hash__(self, other):
         # Allow hash indices matching on the property
@@ -1231,7 +1261,14 @@ def _generate_ndk_project(file_list, abi='arm-v7a', platform_version=21):
     return root
 
 def compile(source):
-    """Compile a source file or project with the Android NDK."""
+    r"""Compile a source file or project with the Android NDK.
+
+    Example:
+        >>> filename = adb.compile("../examples/adb-compile.c")
+        >>> sent = adb.push(filename, "/data/local/tmp")
+        >>> adb.process(sent).recvall() # doctest: +ELLIPSIS
+        b'... /system/bin/linker\n...'
+    """
 
     ndk_build = misc.which('ndk-build')
     if not ndk_build:
@@ -1278,7 +1315,7 @@ def compile(source):
     result = io.recvall()
 
     if 0 != io.poll():
-        log.error("Build failed:\n%s" % result)
+        log.error("Build failed:\n%s", result)
 
     # Find all of the output files
     output = glob.glob(os.path.join(lib, '*', '*'))
@@ -1328,24 +1365,41 @@ def find(top, name):
 
 @with_device
 def readlink(path):
-    path = process(['readlink', path]).recvall()
+    path = process(['realpath', path]).recvall()
 
     # Readlink will emit a single newline
     # We can't use the '-n' flag since old versions don't support it
-    if path.endswith('\n'):
+    if path.endswith(b'\n'):
         path = path[:-1]
 
-    return path
+    return path.decode()
 
 class Partitions(object):
+    """Enable access to partitions
+
+    Example:
+        >>> hex(adb.partitions.vda.size) # doctest: +ELLIPSIS
+        '0x...000'
+    """
     @property
     @context.quietfunc
     def by_name_dir(self):
-        return next(find('/dev/block/platform','by-name'))
+        try:
+            return next(find('/dev/block/platform','by-name'))
+        except StopIteration:
+            return '/dev/block'
 
     @context.quietfunc
     def __dir__(self):
         return list(self)
+
+    @context.quietfunc
+    def iter_proc_partitions(self):
+        for line in read('/proc/partitions').splitlines():
+            if not line.strip():
+                continue
+            major, minor, blocks, name = line.split(None, 4)
+            yield blocks, name.decode()
 
     @context.quietfunc
     @with_device
@@ -1353,12 +1407,17 @@ class Partitions(object):
         root()
 
         # Find all named partitions
-        for name in listdir(self.by_name_dir):
-            yield name
+        names = set(listdir(self.by_name_dir))
 
-    @context.quietfunc
-    @with_device
+        # Find all unnamed partitions
+        for _, name in self.iter_proc_partitions():
+            names.add(name)
+        return iter(names)
+
     def __getattr__(self, attr):
+        if attr.startswith("_"):
+            raise AttributeError(attr)
+
         for name in self:
             if name == attr:
                 break
@@ -1367,19 +1426,17 @@ class Partitions(object):
 
         path = os.path.join(self.by_name_dir, name)
 
-        # Find the actual path of the device
-        devpath = readlink(path)
-        devname = os.path.basename(devpath)
+        with context.quiet:
+            # Find the actual path of the device
+            devpath = readlink(path)
+            devname = os.path.basename(devpath)
 
-        # Get the size of the partition
-        for line in read('/proc/partitions').splitlines():
-            if not line.strip():
-                continue
-            major, minor, blocks, name = line.split(None, 4)
-            if devname == name:
-                break
-        else:
-            log.error("Could not find size of partition %r" % name)
+            # Get the size of the partition
+            for blocks, name in self.iter_proc_partitions():
+                if name in (devname, attr):
+                    break
+            else:
+                log.error("Could not find size of partition %r" % name)
 
         return Partition(devpath, attr, int(blocks))
 

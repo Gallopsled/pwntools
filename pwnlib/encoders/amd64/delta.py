@@ -5,19 +5,20 @@ from pwnlib.encoders.i386.delta import i386DeltaEncoder
 
 
 class amd64DeltaEncoder(i386DeltaEncoder):
-    """
+    r"""
     amd64 encoder built on delta-encoding.
 
     In addition to the loader stub, doubles the size of the shellcode.
 
     >>> context.clear(arch='amd64')
     >>> shellcode = asm(shellcraft.sh())
-    >>> avoid = '/bin/sh\x00'
+    >>> avoid = b'/bin/sh\x00'
     >>> encoded = pwnlib.encoders.amd64.delta.encode(shellcode, avoid)
     >>> assert not any(c in encoded for c in avoid)
     >>> p = run_shellcode(encoded)
     >>> p.sendline(b'echo hello; exit')
     >>> p.recvline()
+    b'hello\n'
     """
     assembly = '''
 base:
@@ -39,7 +40,7 @@ next:
 data:
 '''
     arch      = 'amd64'
-    raw       = 'H\x8d5\xf9\xff\xff\xffH\x83\xc6\x1a\xfcH\x89\xf7\xac\x93\xac(\xd8\xaa\x80\xeb\xacu\xf5'
+    raw       = b'H\x8d5\xf9\xff\xff\xffH\x83\xc6\x1a\xfcH\x89\xf7\xac\x93\xac(\xd8\xaa\x80\xeb\xacu\xf5'
     blacklist = set(raw)
 
 encode = amd64DeltaEncoder()

@@ -4,19 +4,22 @@ from __future__ import division
 
 import ctypes
 import errno
-import fcntl
 import logging
 import os
 import platform
-import pty
-import resource
 import select
 import signal
 import six
 import stat
 import subprocess
+import sys
 import time
-import tty
+
+if sys.platform != 'win32':
+    import fcntl
+    import pty
+    import resource
+    import tty
 
 from pwnlib import qemu
 from pwnlib.context import context
@@ -924,20 +927,23 @@ class process(tube):
         import pwnlib.elf.corefile
         import pwnlib.gdb
 
-        if self.poll() is None:
-            return pwnlib.gdb.corefile(self)
+        try:
+            if self.poll() is None:
+                return pwnlib.gdb.corefile(self)
 
-        finder = pwnlib.elf.corefile.CorefileFinder(self)
-        if not finder.core_path:
-            self.warn("Could not find core file for pid %i" % self.pid)
-            return Ellipsis ##
+            finder = pwnlib.elf.corefile.CorefileFinder(self)
+            if not finder.core_path:
+                self.warn("Could not find core file for pid %i" % self.pid)
+                return None
 
-        core_hash = sha256file(finder.core_path)
+            core_hash = sha256file(finder.core_path)
 
-        if self._corefile and self._corefile._hash == core_hash:
-            return self._corefile
+            if self._corefile and self._corefile._hash == core_hash:
+                return self._corefile
 
-        self._corefile = pwnlib.elf.corefile.Corefile(finder.core_path)
+            self._corefile = pwnlib.elf.corefile.Corefile(finder.core_path)
+        except AttributeError as e:
+            raise RuntimeError(e) # AttributeError would route through __getattr__, losing original message
         self._corefile._hash = core_hash
 
         return self._corefile
@@ -951,7 +957,7 @@ class process(tube):
 
         Example:
 
-            >>> e = ELF('/bin/bash')
+            >>> e = ELF('/bin/bash-static')
             >>> p = process(e.path)
 
             In order to make sure there's not a race condition against

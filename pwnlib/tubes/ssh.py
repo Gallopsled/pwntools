@@ -30,7 +30,7 @@ from pwnlib.util.sh_string import sh_string
 # Kill the warning line:
 # No handlers could be found for logger "paramiko.transport"
 paramiko_log = logging.getLogger("paramiko.transport")
-h = logging.StreamHandler(open('/dev/null','w+'))
+h = logging.StreamHandler(open(os.devnull,'w+'))
 h.setFormatter(logging.Formatter())
 paramiko_log.addHandler(h)
 
@@ -67,9 +67,9 @@ class ssh_channel(sock):
         self.tty  = tty
         self.env  = env
         self.process = process
+        self.cwd  = wd or '.'
         if isinstance(wd, six.text_type):
             wd = wd.encode('utf-8')
-        self.cwd  = wd or b'.'
 
         env = env or {}
         msg = 'Opening new channel: %r' % (process or 'shell')
@@ -171,7 +171,8 @@ class ssh_channel(sock):
 
         return data
 
-    def wait(self):
+    def wait(self, timeout=sock.default):
+        # TODO: deal with timeouts
         return self.poll(block=True)
 
     def poll(self, block=False):
@@ -535,9 +536,9 @@ class ssh(Timeout, Logger):
     #: PID of the remote ``sshd`` process servicing this connection.
     pid = None
 
-    def __init__(self, user, host, port = 22, password = None, key = None,
-                 keyfile = None, proxy_command = None, proxy_sock = None,
-                 level = None, cache = True, ssh_agent = False, *a, **kw):
+    def __init__(self, user=None, host=None, port=22, password=None, key=None,
+                 keyfile=None, proxy_command=None, proxy_sock=None,
+                 level=None, cache=True, ssh_agent=False, *a, **kw):
         """Creates a new ssh connection.
 
         Arguments:
@@ -560,11 +561,11 @@ class ssh(Timeout, Logger):
         Example proxying:
 
             >>> s1 = ssh(host='example.pwnme',
-            ...          user='travis',
+            ...          user='runner',
             ...          password='demopass')
             >>> r1 = s1.remote('localhost', 22)
             >>> s2 = ssh(host='example.pwnme',
-            ...          user='travis',
+            ...          user='runner',
             ...          password='demopass',
             ...          proxy_sock=r1.sock)
             >>> r2 = s2.remote('localhost', 22) # and so on...
@@ -701,7 +702,7 @@ class ssh(Timeout, Logger):
 
         Examples:
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> sh = s.shell('/bin/sh')
             >>> sh.sendline(b'echo Hello; exit')
@@ -780,7 +781,7 @@ class ssh(Timeout, Logger):
 
         Examples:
             >>> s = ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> sh = s.process('/bin/sh', env={'PS1':''})
             >>> sh.sendline(b'echo Hello; exit')
@@ -799,10 +800,10 @@ class ssh(Timeout, Logger):
             True
             >>> s.process(['pwd'], cwd='/tmp').recvall()
             b'/tmp\n'
-            >>> p = s.process(['python','-c','import os; print(os.read(2, 1024))'], stderr=0)
+            >>> p = s.process(['python','-c','import os; os.write(1, os.read(2, 1024))'], stderr=0)
             >>> p.send(b'hello')
             >>> p.recv()
-            b'hello\n'
+            b'hello'
             >>> s.process(['/bin/echo', 'hello']).recvall()
             b'hello\n'
             >>> s.process(['/bin/echo', 'hello'], stdout='/dev/null').recvall()
@@ -827,7 +828,7 @@ class ssh(Timeout, Logger):
             >>> print(s.process('false', preexec_fn=uses_globals).recvall().strip().decode()) # doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
-            NameError: global name 'bar' is not defined
+            NameError: name 'bar' is not defined
 
             >>> s.process('echo hello', shell=True).recvall()
             b'hello\n'
@@ -864,10 +865,14 @@ class ssh(Timeout, Logger):
                 arg = oarg
             if b'\x00' in arg[:-1]:
                 self.error('Inappropriate nulls in argv[%i]: %r' % (i, oarg))
-            argv[i] = arg.rstrip(b'\x00')
+            argv[i] = bytearray(arg.rstrip(b'\x00'))
 
+        if env is not None and not isinstance(env, dict) and env != os.environ:
+            self.error("env must be a dict: %r" % env)
+
+        # Converts the environment variables to a list of tuples to retain order.
+        env2 = []
         # Python also doesn't like when envp contains '\x00'
-        env2 = {}
         if env and hasattr(env, 'items'):
             for k, v in env.items():
                 if isinstance(k, six.text_type):
@@ -878,17 +883,16 @@ class ssh(Timeout, Logger):
                     self.error('Inappropriate nulls in environment key %r' % k)
                 if b'\x00' in v[:-1]:
                     self.error('Inappropriate nulls in environment value %r=%r' % (k, v))
-                env2[k.rstrip(b'\x00')] = v.rstrip(b'\x00')
+                env2.append((bytearray(k.rstrip(b'\x00')), bytearray(v.rstrip(b'\x00'))))
         env = env2 or env
 
         executable = executable or argv[0]
         cwd        = cwd or self.cwd
 
         # Validate, since failures on the remote side will suck.
-        if not isinstance(executable, (six.text_type, six.binary_type)):
+        if not isinstance(executable, (six.text_type, six.binary_type, bytearray)):
             self.error("executable / argv[0] must be a string: %r" % executable)
-        if env is not None and not isinstance(env, dict) and env != os.environ:
-            self.error("env must be a dict: %r" % env)
+        executable = context._decode(executable)
 
         # Allow passing in sys.stdin/stdout/stderr objects
         handles = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}
@@ -910,20 +914,21 @@ class ssh(Timeout, Logger):
 
         func_src  = inspect.getsource(func).strip()
         setuid = True if setuid is None else bool(setuid)
-
+        
         script = r"""
-#!/usr/bin/env python2
+#!/usr/bin/env python
 import os, sys, ctypes, resource, platform, stat
 from collections import OrderedDict
 exe   = %(executable)r
-argv  = %(argv)r
+argv  = [bytes(a) for a in %(argv)r]
 env   = %(env)r
 
 os.chdir(%(cwd)r)
 
 if env is not None:
+    env = OrderedDict((bytes(k), bytes(v)) for k,v in env)
     os.environ.clear()
-    os.environ.update(env)
+    getattr(os, 'environb', os.environ).update(env)
 else:
     env = os.environ
 
@@ -983,10 +988,11 @@ if sys.argv[-1] == 'check':
 
 for fd, newfd in {0: %(stdin)r, 1: %(stdout)r, 2:%(stderr)r}.items():
     if newfd is None:
-        close(fd)
-    elif isinstance(newfd, str):
         os.close(fd)
-        os.open(newfd, os.O_RDONLY if fd == 0 else (os.O_RDWR|os.O_CREAT))
+    elif isinstance(newfd, (str, bytes)):
+        newfd = os.open(newfd, os.O_RDONLY if fd == 0 else (os.O_RDWR|os.O_CREAT))
+        os.dup2(newfd, fd)
+        os.close(newfd)
     elif isinstance(newfd, int) and newfd != fd:
         os.dup2(fd, newfd)
 
@@ -1011,7 +1017,7 @@ except Exception:
     pass
 
 %(func_src)s
-apply(%(func_name)s, %(func_args)r)
+%(func_name)s(*%(func_args)r)
 
 os.execve(exe, argv, env)
 """ % locals()
@@ -1045,15 +1051,15 @@ os.execve(exe, argv, env)
 
         with self.progress(msg) as h:
 
-            script = 'for py in python2.7 python2 python; do test -x "$(which $py 2>&1)" && exec $py -c %s check; done; echo 2' % sh_string(script)
+            script = 'for py in python3 python; do test -x "$(which $py 2>&1)" && exec $py -c %s check; done; echo 2' % sh_string(script)
             with context.local(log_level='error'):
                 python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=self.timeout)
 
             try:
                 result = safeeval.const(python.recvline())
-            except Exception:
+            except (EOFError, ValueError):
                 h.failure("Process creation failed")
-                self.warn_once('Could not find a Python2 interpreter on %s\n' % self.host \
+                self.warn_once('Could not find a Python interpreter on %s\n' % self.host \
                                + "Use ssh.run() instead of ssh.process()")
                 return None
 
@@ -1077,7 +1083,7 @@ os.execve(exe, argv, env)
             python.suid = safeeval.const(python.recvline())
             python.sgid = safeeval.const(python.recvline())
             python.argv = argv
-            python.executable = python.recvuntil(b'\x00')[:-1]
+            python.executable = context._decode(python.recvuntil(b'\x00')[:-1])
 
             h.success('pid %i' % python.pid)
 
@@ -1126,7 +1132,7 @@ os.execve(exe, argv, env)
 
         Examples:
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> py = s.run('python -i')
             >>> _ = py.recvuntil(b'>>> ')
@@ -1187,7 +1193,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Examples:
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> print(s.run_to_end('echo Hello; exit 17'))
             (b'Hello\n', 17)
@@ -1212,10 +1218,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> from pwn import *
             >>> l = listen()
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> a = s.connect_remote(s.host, l.lport)
-            >>> b = l.wait_for_connection()
+            >>> a=a; b = l.wait_for_connection()  # a=a; prevents hangs
             >>> a.sendline(b'Hello')
             >>> print(repr(b.recvline()))
             b'Hello\n'
@@ -1237,11 +1243,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
             >>> from pwn import *
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> l = s.listen_remote()
             >>> a = remote(s.host, l.port)
-            >>> b = l.wait_for_connection()
+            >>> a=a; b = l.wait_for_connection()  # a=a; prevents hangs
             >>> a.sendline(b'Hello')
             >>> print(repr(b.recvline()))
             b'Hello\n'
@@ -1257,7 +1263,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Examples:
 
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> print(repr(s['echo hello']))
             b'hello'
@@ -1270,7 +1276,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Examples:
 
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> print(repr(s('echo hello')))
             b'hello'
@@ -1283,12 +1289,12 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Examples:
 
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> s.echo('hello')
             b'hello'
             >>> s.whoami()
-            b'travis'
+            b'runner'
             >>> s.echo(['huh','yay','args'])
             b'huh yay args'
         """
@@ -1316,7 +1322,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Example:
 
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> s.connected()
             True
@@ -1474,7 +1480,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> with open('/tmp/bar','w+') as f:
             ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass',
             ...         cache=False)
             >>> s.download_data('/tmp/bar')
@@ -1564,7 +1570,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Example:
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> s.upload_data(b'Hello, world', '/tmp/upload_foo')
             >>> print(open('/tmp/upload_foo').read())
@@ -1795,7 +1801,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Examples:
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> cwd = s.set_working_directory()
             >>> s.ls()
@@ -1804,7 +1810,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             True
 
             >>> s =  ssh(host='example.pwnme',
-            ...         user='travis',
+            ...         user='runner',
             ...         password='demopass')
             >>> homedir = s.pwd()
             >>> _=s.touch('foo')
@@ -1974,7 +1980,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Example:
 
-            >>> s = ssh("travis", "example.pwnme")
+            >>> s = ssh("runner", "example.pwnme")
             >>> s.aslr
             True
         """
