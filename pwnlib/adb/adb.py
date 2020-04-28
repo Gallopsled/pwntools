@@ -1264,7 +1264,7 @@ def compile(source):
     r"""Compile a source file or project with the Android NDK.
 
     Example:
-        >>> filename = adb.compile("examples/adb-compile.c")
+        >>> filename = adb.compile("../examples/adb-compile.c")
         >>> sent = adb.push(filename, "/data/local/tmp")
         >>> adb.process(sent).recvall() # doctest: +ELLIPSIS
         b'... /system/bin/linker\n...'
