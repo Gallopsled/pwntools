@@ -1277,6 +1277,24 @@ class ROP(object):
 
         return result
 
+    def ret2dlresolve(self, reloc_index, real_args, read_func, read_func_args):
+        elf = [elf for elf in self.elfs if elf.get_section_by_name(".plt") is not None][0]
+        elf_base = elf.address if elf.pie else 0
+        plt_init = elf.get_section_by_name(".plt").header.sh_addr + elf_base
+        log.debug("PLT_INIT: %s", hex(plt_init))
+
+        self.call(read_func, read_func_args)
+        if context.bits == 64:
+            self.call(plt_init, real_args)
+            self.raw(reloc_index)
+        else:
+            # not a regular x86 call
+            self.raw(plt_init)    # call plt_init
+            self.raw(reloc_index) # arg for plt init
+            self.raw(0xDEADBEEF)  # ret
+            for arg in real_args: # args for the called symbol
+                self.raw(arg)
+
     def __getattr__(self, attr):
         """Helper to make finding ROP gadets easier.
 

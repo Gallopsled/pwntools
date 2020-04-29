@@ -36,6 +36,7 @@ from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak, RelativeMemLeak
 from pwnlib.regsort import *
 from pwnlib.replacements import *
+from pwnlib.ret2dlresolve import Ret2dlresolvePayload
 from pwnlib.rop import ROP
 from pwnlib.rop.srop import SigreturnFrame
 from pwnlib.runner import *
