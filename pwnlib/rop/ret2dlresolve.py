@@ -25,7 +25,7 @@ Example:
     >>> rop.read(0, dlresolve.data_addr) # do not forget this step, but use whatever function you like
     >>> rop.ret2dlresolve(dlresolve)
     >>> raw_rop = rop.chain()
-    >>> print(rop.dump()) # doctest: +ELLIPSIS
+    >>> print(rop.dump()) # doctest: +SKIP
     0x0000:        0x8049030 read(0, 0x804ce00)
     0x0004:        0x8049208 <adjust @0x10> pop edi; pop ebp; ret
     0x0008:              0x0 arg0
@@ -49,7 +49,7 @@ Example:
     >>> rop.read(0, dlresolve.data_addr) # do not forget this step, but use whatever function you like
     >>> rop.ret2dlresolve(dlresolve)
     >>> raw_rop = rop.chain()
-    >>> print(rop.dump())
+    >>> print(rop.dump()) # doctest: +SKIP
     0x0000:         0x4011aa pop rdi; ret
     0x0008:              0x0 [arg0] rdi = 0
     0x0010:         0x4011a8 pop rsi; pop r15; ret
@@ -71,6 +71,7 @@ from copy import deepcopy
 from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util.packing import *
+from pwnlib.util.misc import align
 
 log = getLogger(__name__)
 
@@ -79,10 +80,12 @@ ELF64_R_SYM_SHIFT = 32
 
 class Elf32_Rel(object):
     """
-    typedef struct elf32_rel {
-        Elf32_Addr	r_offset;
-        Elf32_Word	r_info;
-    } Elf32_Rel;
+    .. code-block:: c
+
+        typedef struct elf32_rel {
+            Elf32_Addr	r_offset;
+            Elf32_Word	r_info;
+        } Elf32_Rel;
     """
     size=1 # see _build_structures method for explanation
     def __init__(self, r_offset=0, r_info=0):
@@ -98,10 +101,12 @@ class Elf32_Rel(object):
 
 class Elf64_Rel(object):
     """
-    typedef struct elf64_rel {
-        Elf64_Addr r_offset;
-        Elf64_Xword r_info;
-    } Elf64_Rel;
+    .. code-block:: c
+
+        typedef struct elf64_rel {
+            Elf64_Addr r_offset;
+            Elf64_Xword r_info;
+        } Elf64_Rel;
     """
     size=24
     def __init__(self, r_offset=0, r_info=0):
@@ -117,14 +122,16 @@ class Elf64_Rel(object):
 
 class Elf32_Sym(object):
     """
-    typedef struct elf32_sym{
-        Elf32_Word	st_name;
-        Elf32_Addr	st_value;
-        Elf32_Word	st_size;
-        unsigned char	st_info;
-        unsigned char	st_other;
-        Elf32_Half	st_shndx;
-    } Elf32_Sym;
+    .. code-block:: c
+
+        typedef struct elf32_sym{
+            Elf32_Word	st_name;
+            Elf32_Addr	st_value;
+            Elf32_Word	st_size;
+            unsigned char	st_info;
+            unsigned char	st_other;
+            Elf32_Half	st_shndx;
+        } Elf32_Sym;
     """
     size = 16
     def __init__(self, st_name=0, st_value=0, st_size=0, st_info=0, st_other=0, st_shndx=0):
@@ -149,14 +156,16 @@ class Elf32_Sym(object):
 
 class Elf64_Sym(object):
     """
-    typedef struct elf64_sym {
-        Elf64_Word st_name;
-        unsigned char	st_info;
-        unsigned char	st_other;
-        Elf64_Half st_shndx;
-        Elf64_Addr st_value;
-        Elf64_Xword st_size;
-    } Elf64_Sym;
+    .. code-block:: c
+
+        typedef struct elf64_sym {
+            Elf64_Word st_name;
+            unsigned char	st_info;
+            unsigned char	st_other;
+            Elf64_Half st_shndx;
+            Elf64_Addr st_value;
+            Elf64_Xword st_size;
+        } Elf64_Sym;
     """
     size=24
     def __init__(self, st_name=0, st_value=0, st_size=0, st_info=0, st_other=0, st_shndx=0):
@@ -206,8 +215,8 @@ class Ret2dlresolvePayload(object):
         self.versym = elf.dynamic_value_by_tag("DT_VERSYM") + self.elf_load_address_fixup
         self.symbol = context._encode(symbol)
         self.args = args
-        self.real_args = self._format_args()        
-        
+        self.real_args = self._format_args()
+
         self.data_addr = data_addr if data_addr is not None else self._get_recommended_address()
 
         # Will be set when built
@@ -216,13 +225,9 @@ class Ret2dlresolvePayload(object):
 
         # PIE is untested, gcc forces FULL-RELRO when PIE is set
         if self.elf.pie and self.elf_load_address_fixup == 0:
-            log.warning("WARNING: ELF is PIE but it has not base address")
+            log.warning("WARNING: ELF is PIE but has no base address set")
 
         self._build()
-
-    def _padding(self, payload_len, modulo):
-        if payload_len % modulo == 0: return b""
-        return (modulo - (payload_len%modulo))*b"A"
 
     def _format_args(self):
         # Encode every string in args
@@ -241,9 +246,9 @@ class Ret2dlresolvePayload(object):
         bss = self.elf.get_section_by_name(".bss").header.sh_addr + self.elf_load_address_fixup
         bss_size = self.elf.get_section_by_name(".bss").header.sh_size
         addr = bss + bss_size
-        addr = addr + (0x1000-(addr % 0x1000)) - 0x200 #next page in memory - 0x200
+        addr = addr + (-addr & 0xfff) - 0x200 #next page in memory - 0x200
         return addr
-        
+
     def _build_structures(self):
         # The first part of the payload is the usual of ret2dlresolve.
         if context.bits == 32:
@@ -259,30 +264,34 @@ class Ret2dlresolvePayload(object):
 
         # where the address of the symbol will be saved
         # (ElfRel.r_offset points here)
-        self.payload += b"A"*context.bytes
+        symbol_space = b"A"*context.bytes
 
         # Symbol name. Ej: system
         symbol_name_addr = self.data_addr + len(self.payload)
-        self.payload += self.symbol + b"\x00"
-        self.payload += self._padding(self.data_addr + len(self.payload) - self.symtab, ElfSym.size)
+        symbol_name = self.symbol + b"\x00"
+        symbol_end_addr = symbol_name_addr + len(symbol_name)
 
         # ElfSym
-        sym_addr = self.data_addr + len(self.payload)
+        index = align(ElfSym.size, symbol_end_addr - self.symtab) // ElfSym.size # index for both symtab and versym
+        sym_addr = self.symtab + ElfSym.size * index
         sym = ElfSym(st_name=symbol_name_addr - self.strtab)
-        self.payload += bytes(sym)
-        self.payload += self._padding(self.data_addr + len(self.payload) - self.jmprel, ElfRel.size)
-
-        # ElfRel
-        rel_addr = self.data_addr + len(self.payload)
-        index = (sym_addr - self.symtab) // ElfSym.size # index for both symtab and versym
-        rel_type = 7
-        rel = ElfRel(r_offset=self.data_addr, r_info=(index<<ELF_R_SYM_SHIFT)+rel_type)
-        self.payload += bytes(rel)
+        sym_end_addr = sym_addr + sym.size
 
         # It seems to be treated as an index in 64b and
         # as an offset in 32b. That's why Elf32_Rel.size = 1
-        self.reloc_index = (rel_addr - self.jmprel)//ElfRel.size
-        
+        self.reloc_index = align(ElfRel.size, sym_end_addr - self.jmprel) // ElfRel.size
+
+        # ElfRel
+        rel_addr = self.jmprel + self.reloc_index * ElfRel.size
+        rel_type = 7
+        rel = ElfRel(r_offset=self.data_addr, r_info=(index<<ELF_R_SYM_SHIFT)+rel_type)
+
+        self.payload = fit({
+            symbol_name_addr - self.data_addr: symbol_name,
+            sym_addr - self.data_addr: sym,
+            rel_addr - self.data_addr: rel
+        })
+
         log.debug("Symtab: %s", hex(self.symtab))
         log.debug("Strtab: %s", hex(self.strtab))
         log.debug("Jmprel: %s", hex(self.jmprel))
@@ -302,13 +311,13 @@ class Ret2dlresolvePayload(object):
             if isinstance(arg, (list, tuple)):
                 self.real_args[i] = self.data_addr + len(self.payload) + queue.size()
                 queue.extend(arg)
-            elif isinstance(arg, bytes): 
+            elif isinstance(arg, bytes):
                 self.real_args[i] = self.data_addr + len(self.payload) + queue.size()
                 queue.append(MarkedBytes(arg))
 
         # Now we process the generated queue, which contains elements that will be in
         # the payload. We replace lists and strings with pointers, add lists elements
-        # to the queue, and mark strings so next time they are processed they are 
+        # to the queue, and mark strings so next time they are processed they are
         # added and not replaced again.
         while len(queue) > 0:
             top = queue[0]

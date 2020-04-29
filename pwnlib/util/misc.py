@@ -25,7 +25,7 @@ def align(alignment, x):
       >>> [align(5, n) for n in range(15)]
       [0, 5, 5, 5, 5, 5, 10, 10, 10, 10, 10, 15, 15, 15, 15]
     """
-    return ((x + alignment - 1) // alignment) * alignment
+    return x + -x % alignment
 
 
 def align_down(alignment, x):
@@ -37,8 +37,7 @@ def align_down(alignment, x):
         >>> [align_down(5, n) for n in range(15)]
         [0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 10, 10, 10, 10, 10]
     """
-    a = alignment
-    return (x // a) * a
+    return x - x % alignment
 
 
 def binary_ip(host):
