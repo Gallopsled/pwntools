@@ -290,6 +290,7 @@ from pwnlib.context import context
 from pwnlib.elf import ELF
 from pwnlib.log import getLogger
 from pwnlib.rop import srop
+from . import ret2dlresolve
 from pwnlib.rop.call import AppendedArgument
 from pwnlib.rop.call import Call
 from pwnlib.rop.call import CurrentStackPointer
@@ -305,6 +306,13 @@ from pwnlib.util.packing import pack
 log = getLogger(__name__)
 __all__ = ['ROP']
 
+enums = Call, constants.Constant
+try:
+    from enum import Enum
+except ImportError:
+    pass
+else:
+    enums += Enum,
 
 class Padding(object):
     """
@@ -685,7 +693,7 @@ class ROP(object):
         """
         Return a description for an object in the ROP stack
         """
-        if isinstance(object, (Call, constants.Constant)):
+        if isinstance(object, enums):
             return str(object)
         if isinstance(object, six.integer_types):
             return self.unresolve(object)
@@ -767,7 +775,7 @@ class ROP(object):
             elif isinstance(slot, Call):
                 stack.describe(self.describe(slot))
 
-                registers    = dict(zip(slot.abi.register_arguments, slot.args))
+                registers    = slot.register_arguments
 
                 for value, name in self.setRegisters(registers):
                     if name in registers:
@@ -786,7 +794,10 @@ class ROP(object):
                 stack.append(slot.target)
 
                 # For any remaining arguments, put them on the stack
-                stackArguments = slot.args[len(slot.abi.register_arguments):]
+                stackArguments = slot.stack_arguments
+                for argument in slot.stack_arguments_before:
+                    stack.describe("[dlresolve index]")
+                    stack.append(argument)
                 nextGadgetAddr = stack.next + (context.bytes * len(stackArguments))
 
                 # Generally, stack-based arguments assume there's a return
@@ -1277,23 +1288,19 @@ class ROP(object):
 
         return result
 
-    def ret2dlresolve(self, reloc_index, real_args, read_func, read_func_args):
-        elf = [elf for elf in self.elfs if elf.get_section_by_name(".plt") is not None][0]
+    def ret2dlresolve(self, dlresolve):
+        elf = next(elf for elf in self.elfs if elf.get_section_by_name(".plt"))
         elf_base = elf.address if elf.pie else 0
         plt_init = elf.get_section_by_name(".plt").header.sh_addr + elf_base
-        log.debug("PLT_INIT: %s", hex(plt_init))
+        log.debug("PLT_INIT: %#x", plt_init)
 
-        self.call(read_func, read_func_args)
-        if context.bits == 64:
-            self.call(plt_init, real_args)
-            self.raw(reloc_index)
-        else:
-            # not a regular x86 call
-            self.raw(plt_init)    # call plt_init
-            self.raw(reloc_index) # arg for plt init
-            self.raw(0xDEADBEEF)  # ret
-            for arg in real_args: # args for the called symbol
-                self.raw(arg)
+        reloc_index = dlresolve.reloc_index
+        real_args = dlresolve.real_args
+        call = Call("[plt_init] " + dlresolve.symbol.decode(),
+                    plt_init,
+                    dlresolve.real_args,
+                    before=[reloc_index])
+        self.raw(call)
 
     def __getattr__(self, attr):
         """Helper to make finding ROP gadets easier.
