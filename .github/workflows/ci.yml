@@ -95,11 +95,13 @@ jobs:
 
     - name: Coverage running examples
       run: |
+        export TERM=linux
         python travis/coverage_chdir.py examples/fmtstr examples/fmtstr/exploit.py
         python travis/coverage_chdir.py examples/fmtstr examples/fmtstr/exploit2.py
         coverage run examples/asm.py
         coverage run examples/asm.py
         coverage run examples/text.py
+        for f in examples/sigreturn_corefile_*.py; do coverage run "$f"; done
 
     - name: Build source and wheel distributions
       run: |
