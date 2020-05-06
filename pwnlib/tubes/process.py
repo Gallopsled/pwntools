@@ -314,14 +314,14 @@ class process(tube):
 
             for prefix, executable in prefixes:
                 try:
-                    args = argv
+                    args = self.argv
                     if prefix:
                         args = prefix + args
                     self.proc = subprocess.Popen(args = args,
                                                  shell = shell,
                                                  executable = executable,
                                                  cwd = cwd,
-                                                 env = env,
+                                                 env = self.env,
                                                  stdin = stdin,
                                                  stdout = stdout,
                                                  stderr = stderr,
