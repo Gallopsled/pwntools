@@ -117,7 +117,7 @@ def current_device(any=False):
 
         >>> device = adb.current_device(any=True)
         >>> device
-        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_google_phone_armv7', model='sdk phone armv7', device='generic')
+        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_google_phone_armv7', model='sdk google phone armv7', device='generic')
         >>> device.port
         'emulator'
     """
