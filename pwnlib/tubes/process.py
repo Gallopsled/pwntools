@@ -242,8 +242,10 @@ class process(tube):
         #: :class:`subprocess.Popen` object that backs this process
         self.proc = None
 
-        if not shell:
-            executable, argv, env = self._validate(cwd, executable, argv, env)
+        if shell:
+            executable_val, argv_val, env_val = executable, argv, env
+        else:
+            executable_val, argv_val, env_val = self._validate(cwd, executable, argv, env)
 
         # Avoid the need to have to deal with the STDOUT magic value.
         if stderr is STDOUT:
@@ -268,10 +270,10 @@ class process(tube):
         stdin, stdout, stderr, master, slave = self._handles(*handles)
 
         #: Arguments passed on argv
-        self.argv = argv
+        self.argv = argv_val
 
         #: Full path to the executable
-        self.executable = executable
+        self.executable = executable_val
 
         if self.executable is None:
             if shell:
@@ -280,7 +282,7 @@ class process(tube):
                 self.executable = which(self.argv[0])
 
         #: Environment passed on envp
-        self.env = os.environ if env is None else env
+        self.env = os.environ if env is None else env_val
 
         self._cwd = os.path.realpath(cwd or os.path.curdir)
 
@@ -295,8 +297,8 @@ class process(tube):
         message = "Starting %s process %r" % (where, self.display)
 
         if self.isEnabledFor(logging.DEBUG):
-            if self.argv != [self.executable]: message += ' argv=%r ' % self.argv
-            if self.env  != os.environ:        message += ' env=%r ' % self.env
+            if argv != [self.executable]: message += ' argv=%r ' % self.argv
+            if env not in (os.environ, None):  message += ' env=%r ' % self.env
 
         with self.progress(message) as p:
 

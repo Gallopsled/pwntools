@@ -21,7 +21,7 @@ Example:
     >>> context.binary = program
     >>> elf = ELF(program)
     >>> rop = ROP(elf)
-    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=["echo pwned"])
+    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=[u"echo pwned"])
     >>> rop.read(0, dlresolve.data_addr) # do not forget this step, but use whatever function you like
     >>> rop.ret2dlresolve(dlresolve)
     >>> raw_rop = rop.chain()
@@ -45,7 +45,7 @@ Example:
     >>> context.binary = program
     >>> elf = ELF(program)
     >>> rop = ROP(elf)
-    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=["echo pwned"])
+    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=[u"echo pwned"])
     >>> rop.read(0, dlresolve.data_addr) # do not forget this step, but use whatever function you like
     >>> rop.ret2dlresolve(dlresolve)
     >>> raw_rop = rop.chain()
@@ -62,8 +62,11 @@ Example:
     0x0048:            0x318 [dlresolve index]
     >>> p = process(program)
     >>> p.sendline(fit({64+context.bytes: raw_rop, 200: dlresolve.payload}))
-    >>> p.recvline()
-    b'pwned\n'
+    >>> if dlresolve.unreliable:
+    ...     p.poll(True) == -signal.SIGSEGV
+    ... else:
+    ...     p.recvline() == b'pwned\n'
+    True
 """
 
 from copy import deepcopy
@@ -216,6 +219,7 @@ class Ret2dlresolvePayload(object):
         self.symbol = context._encode(symbol)
         self.args = args
         self.real_args = self._format_args()
+        self.unreliable = False
 
         self.data_addr = data_addr if data_addr is not None else self._get_recommended_address()
 
@@ -292,13 +296,23 @@ class Ret2dlresolvePayload(object):
             rel_addr - self.data_addr: rel
         })
 
+        ver_addr = self.versym + 2 * index # Elf_HalfWord
+
         log.debug("Symtab: %s", hex(self.symtab))
         log.debug("Strtab: %s", hex(self.strtab))
+        log.debug("Versym: %s", hex(self.versym))
         log.debug("Jmprel: %s", hex(self.jmprel))
         log.debug("ElfSym addr: %s", hex(sym_addr))
         log.debug("ElfRel addr: %s", hex(rel_addr))
         log.debug("Symbol name addr: %s", hex(symbol_name_addr))
+        log.debug("Version index addr: %s", hex(ver_addr))
         log.debug("Data addr: %s", hex(self.data_addr))
+        if not self.elf.memory[ver_addr]:
+            log.warn("Ret2dlresolve is likely impossible in this ELF "
+                     "(too big gap between text and writable sections).\n"
+                     "If you get a segmentation fault with fault_addr = %#x, "
+                     "try a different technique.", ver_addr)
+            self.unreliable = True
 
     def _build_args(self):
         # The second part of the payload will include strings and pointers needed for ROP.
