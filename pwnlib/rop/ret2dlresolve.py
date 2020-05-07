@@ -95,11 +95,11 @@ class Elf32_Rel(object):
         self.r_offset = r_offset
         self.r_info = r_info
 
-    def __bytes__(self):
+    def __flat__(self):
         return p32(self.r_offset) + p32(self.r_info)
 
-    def __flat__(self):
-        return bytes(self)
+    def __bytes__(self):
+        return self.__flat__()
 
 
 class Elf64_Rel(object):
@@ -116,11 +116,11 @@ class Elf64_Rel(object):
         self.r_offset = r_offset
         self.r_info = r_info
 
-    def __bytes__(self):
+    def __flat__(self):
         return p64(self.r_offset) + p64(self.r_info) + p64(0)
 
-    def __flat__(self):
-        return bytes(self)
+    def __bytes__(self):
+        return self.__flat__()
 
 
 class Elf32_Sym(object):
@@ -145,7 +145,7 @@ class Elf32_Sym(object):
         self.st_other = st_other
         self.st_shndx = st_shndx
 
-    def __bytes__(self):
+    def __flat__(self):
         return p32(self.st_name) + \
             p32(self.st_value) + \
             p32(self.st_size) + \
@@ -153,8 +153,8 @@ class Elf32_Sym(object):
             p8(self.st_other) + \
             p16(self.st_shndx)
 
-    def __flat__(self):
-        return bytes(self)
+    def __bytes__(self):
+        return self.__flat__()
 
 
 class Elf64_Sym(object):
@@ -179,7 +179,7 @@ class Elf64_Sym(object):
         self.st_other = st_other
         self.st_shndx = st_shndx
 
-    def __bytes__(self):
+    def __flat__(self):
         return p32(self.st_name) + \
             p8(self.st_info) + \
             p8(self.st_other) + \
@@ -187,8 +187,8 @@ class Elf64_Sym(object):
             p64(self.st_value) + \
             p64(self.st_size)
 
-    def __flat__(self):
-        return bytes(self)
+    def __bytes__(self):
+        return self.__flat__()
 
 
 class Queue(list):

@@ -219,7 +219,7 @@ class Call(object):
     args = []
 
     def __init__(self, name, target, args, abi=None, before=()):
-        assert isinstance(name, str)
+        assert isinstance(name, (bytes, six.text_type))
         # assert isinstance(target, six.integer_types)
         assert isinstance(args, (list, tuple))
         self.abi  = abi or ABI.default()
