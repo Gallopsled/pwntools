@@ -21,7 +21,7 @@ Example:
     >>> context.binary = program
     >>> elf = ELF(program)
     >>> rop = ROP(elf)
-    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=[u"echo pwned"])
+    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=["echo pwned"])
     >>> rop.read(0, dlresolve.data_addr) # do not forget this step, but use whatever function you like
     >>> rop.ret2dlresolve(dlresolve)
     >>> raw_rop = rop.chain()
@@ -45,7 +45,7 @@ Example:
     >>> context.binary = program
     >>> elf = ELF(program)
     >>> rop = ROP(elf)
-    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=[u"echo pwned"])
+    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=["echo pwned"])
     >>> rop.read(0, dlresolve.data_addr) # do not forget this step, but use whatever function you like
     >>> rop.ret2dlresolve(dlresolve)
     >>> raw_rop = rop.chain()

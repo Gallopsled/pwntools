@@ -166,7 +166,7 @@ class AppendedArgument(Unresolved):
             for i, value in enumerate(self.values):
                 if isinstance(value, six.integer_types):
                     rv[i] = value
-                if isinstance(value, str):
+                if isinstance(value, six.text_type):
                     value = context._encode(value)
                 if isinstance(value, (bytes, bytearray)):
                     value += b'\x00'
@@ -177,6 +177,7 @@ class AppendedArgument(Unresolved):
                 if isinstance(value, Unresolved):
                     rv[i] = value.address
                     rv.extend(value.resolve())
+                assert rv[i] is not None
 
         return rv
 
