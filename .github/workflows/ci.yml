@@ -21,7 +21,7 @@ jobs:
       uses: actions/cache@v1
       id: cache-deps
       with:
-        path: android-?dk
+        path: android-sdk
         key: ${{ matrix.os }}-cache-deps
 
     - name: Set up Python ${{ matrix.python-version }}
@@ -99,9 +99,26 @@ jobs:
         python setup.py sdist
         python setup.py bdist_wheel --universal
 
-    - uses: actions/upload-artifact@v2-preview
+    - uses: actions/upload-artifact@v2
       with:
-        path: dist/*
+        name: packages
+        path: dist/
 
     - name: Upload coverage to coveralls.io
       run:  COVERALLS_REPO_TOKEN=PP20MEgztXIQJJTguQwe2jeCh6Bm4lkbv coveralls
+
+  pypi:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+    needs: build
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: packages
+
+    - name: Publish package
+      uses: pypa/gh-action-pypi-publish@v1.1.0
+      with:
+        user: __token__
+        password: ${{ secrets.pypi_password }}
