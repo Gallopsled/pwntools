@@ -194,6 +194,9 @@ def run_in_new_terminal(command, terminal = None, args = None):
           variable), a new pane will be opened.
         - If GNU Screen is detected (by the presence of the ``$STY`` environment
           variable), a new screen will be opened.
+        - If WSL (Windows Subsystem for Linux) is detected (by the presence of
+          a ``wsl.exe`` binary in the ``$PATH`` and ``/proc/sys/kernel/osrelease``
+          containing ``Microsoft``), a new ``cmd.exe`` window will be opened.
 
     Arguments:
         command (str): The command to run.
@@ -226,6 +229,14 @@ def run_in_new_terminal(command, terminal = None, args = None):
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
+        else:
+            is_wsl = False
+            if os.path.exists('/proc/sys/kernel/osrelease'):
+                with open('/proc/sys/kernel/osrelease', 'rb') as f:
+                    is_wsl = b'Microsoft' in f.read()
+            if is_wsl and which('cmd.exe') and which('wsl.exe') and which('bash.exe'):
+                terminal = 'cmd.exe'
+                args     = ['/c', 'start', 'bash.exe', '-c']
 
     if not terminal:
         log.error('Could not find a terminal binary to use. Set context.terminal to your terminal.')
