@@ -20,7 +20,8 @@ parser = common.parser_commands.add_parser(
 parser.add_argument(
     '-a', '--alphabet',
     metavar = 'alphabet',
-    default = string.ascii_lowercase,
+    default = string.ascii_lowercase.encode(),
+    type = bytes,
     help = 'The alphabet to use in the cyclic pattern (defaults to all lower case letters)',
 )
 
@@ -90,10 +91,11 @@ def main(args):
         if got < want:
             log.failure("Alphabet too small (max length = %i)" % got)
 
-        sys.stdout.write(result)
+        out = getattr(sys.stdout, 'buffer', sys.stdout)
+        out.write(result)
 
-        if sys.stdout.isatty():
-            sys.stdout.write('\n')
+        if out.isatty():
+            out.write(b'\n')
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)

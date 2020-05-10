@@ -16,3 +16,4 @@ venv
 *.egg-info
 *.core
 .coverage
+.coverage.*

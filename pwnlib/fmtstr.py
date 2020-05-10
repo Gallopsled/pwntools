@@ -849,7 +849,8 @@ class FmtStr(object):
         self.leaker = MemLeak(self._leaker)
 
     def leak_stack(self, offset, prefix=b""):
-        leak = self.execute_fmt(prefix + b"START%%%d$pEND" % offset)
+        payload = b"START%%%d$pEND" % offset
+        leak = self.execute_fmt(prefix + payload)
         try:
             leak = re.findall(br"START(.*)END", leak, re.MULTILINE | re.DOTALL)[0]
             leak = int(leak, 16)
@@ -863,7 +864,7 @@ class FmtStr(object):
             leak = self.leak_stack(off, marker)
             leak = pack(leak)
 
-            pad = cyclic_find(leak)
+            pad = cyclic_find(leak[:4])
             if pad >= 0 and pad < 20:
                 return off, pad
         else:
@@ -880,7 +881,10 @@ class FmtStr(object):
         if addr & 0xfff == 0 and self.leaker._leak(addr+1, 3, False) == b"ELF":
             return b"\x7f"
 
-        fmtstr = randoms(self.padlen).encode() + pack(addr) + b"START%%%d$sEND" % self.offset
+        fmtstr = fit({
+          self.padlen: b"START%%%d$sEND" % (self.offset + 16//context.bytes),
+          16 + self.padlen: addr
+        })
 
         leak = self.execute_fmt(fmtstr)
         leak = re.findall(br"START(.*)END", leak, re.MULTILINE | re.DOTALL)[0]

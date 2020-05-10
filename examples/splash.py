@@ -9,5 +9,5 @@ splash()
 h = log.waitfor("You wrote", status = "--")
 
 while True:
-    l = raw_input('> ')
+    l = str_input('> ').strip()
     h.status(l.upper())

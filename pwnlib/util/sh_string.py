@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-"""
+r"""
 Routines here are for getting any NULL-terminated sequence of bytes evaluated
 intact by any shell.  This includes all variants of quotes, whitespace, and
 non-printable characters.

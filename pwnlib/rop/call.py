@@ -166,7 +166,7 @@ class AppendedArgument(Unresolved):
             for i, value in enumerate(self.values):
                 if isinstance(value, six.integer_types):
                     rv[i] = value
-                if isinstance(value, str):
+                if isinstance(value, six.text_type):
                     value = context._encode(value)
                 if isinstance(value, (bytes, bytearray)):
                     value += b'\x00'
@@ -177,6 +177,7 @@ class AppendedArgument(Unresolved):
                 if isinstance(value, Unresolved):
                     rv[i] = value.address
                     rv.extend(value.resolve())
+                assert rv[i] is not None
 
         return rv
 
@@ -218,8 +219,8 @@ class Call(object):
     #: Arguments to the call
     args = []
 
-    def __init__(self, name, target, args, abi=None):
-        assert isinstance(name, str)
+    def __init__(self, name, target, args, abi=None, before=()):
+        assert isinstance(name, (bytes, six.text_type))
         # assert isinstance(target, six.integer_types)
         assert isinstance(args, (list, tuple))
         self.abi  = abi or ABI.default()
@@ -229,6 +230,7 @@ class Call(object):
         for i, arg in enumerate(args):
             if not isinstance(arg, six.integer_types+(Unresolved,)):
                 self.args[i] = AppendedArgument(arg)
+        self.stack_arguments_before = before
 
     def __repr__(self):
         fmt = "%#x" if isinstance(self.target, six.integer_types) else "%r"
@@ -236,6 +238,15 @@ class Call(object):
                                     self.name,
                                     fmt % self.target,
                                     self.args)
+
+    @property
+    def register_arguments(self):
+        return dict(zip(self.abi.register_arguments, self.args))
+
+    @property
+    def stack_arguments(self):
+        return self.args[len(self.abi.register_arguments):]
+
     @classmethod
     def _special_repr(cls, x):
         if isinstance(x, AppendedArgument):

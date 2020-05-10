@@ -368,7 +368,7 @@ keymap = km.Keymap({
     '<any>'       : handle_keypress,
     })
 
-def readline(_size=None, prompt='', float=True, priority=10):
+def readline(_size=-1, prompt='', float=True, priority=10):
     # The argument  _size is unused, but is there for compatibility
     # with the existing readline
 
@@ -379,7 +379,7 @@ def readline(_size=None, prompt='', float=True, priority=10):
     from pwnlib.term import term_mode
     if not term_mode:
         six.print_(prompt, end='', flush=True)
-        return sys.stdin.readline(_size).rstrip('\n')
+        return getattr(sys.stdin, 'buffer', sys.stdin).readline(_size).rstrip(b'\n')
     show_suggestions = False
     eof = False
     if prompt:
@@ -433,7 +433,7 @@ def raw_input(prompt='', float=True):
         float(bool): If set to `True`, prompt and input will float to the
                      bottom of the screen when `term.term_mode` is enabled.
     """
-    return readline(None, prompt, float)
+    return readline(-1, prompt, float)
 
 def str_input(prompt='', float=True):
     r"""str_input(prompt='', float=True)
@@ -446,7 +446,7 @@ def str_input(prompt='', float=True):
         float(bool): If set to `True`, prompt and input will float to the
                      bottom of the screen when `term.term_mode` is enabled.
     """
-    return readline(None, prompt, float).decode()
+    return readline(-1, prompt, float).decode()
 
 def eval_input(prompt='', float=True):
     """eval_input(prompt='', float=True)
@@ -465,14 +465,14 @@ def eval_input(prompt='', float=True):
         >>> try:
         ...     saved = sys.stdin, pwnlib.term.term_mode
         ...     pwnlib.term.term_mode = False
-        ...     sys.stdin = io.StringIO(u"{'a': 20}")
+        ...     sys.stdin = io.TextIOWrapper(io.BytesIO(b"{'a': 20}"))
         ...     eval_input("Favorite object? ")['a']
         ... finally:
         ...     sys.stdin, pwnlib.term.term_mode = saved
         Favorite object? 20
     """
     from pwnlib.util import safeeval
-    return safeeval.const(readline(None, prompt, float))
+    return safeeval.const(readline(-1, prompt, float))
 
 def init():
     global safeeval

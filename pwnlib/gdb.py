@@ -384,7 +384,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     by using the ``ssh=`` keyword to pass in your :class:`.ssh` instance.
 
     >>> # Connect to the SSH server
-    >>> shell = ssh('travis', 'example.pwnme', password='demopass')
+    >>> shell = ssh('runner', 'example.pwnme', password='demopass')
     >>> # Start a process on the server
     >>> io = gdb.debug(['bash'],
     ...                 ssh = shell,
@@ -563,11 +563,11 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     >>> # Interact with the process
     >>> bash.sendline("whoami")
     >>> bash.recvline()
-    b'travis\n'
+    b'runner\n'
     >>> bash.close()
 
     >>> # Start a forking server
-    >>> server = process(['socat', 'tcp-listen:12345,fork,reuseaddr', 'exec:/bin/bash'])
+    >>> server = process(['socat', 'tcp-listen:12345,fork,reuseaddr', 'exec:/bin/bash,nofork'])
     >>> sleep(1)
     >>> # Connect to the server
     >>> io = remote('127.0.0.1', 12345)
@@ -584,7 +584,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     >>> io.close()
 
     >>> # Connect to the SSH server
-    >>> shell = ssh('travis', 'example.pwnme', password='demopass')
+    >>> shell = ssh('runner', 'example.pwnme', password='demopass')
     >>> # Start a process on the server
     >>> cat = shell.process(['cat'])
     >>> # Attach a debugger to it
@@ -639,7 +639,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         if context.os == 'android':
             pidof = adb.pidof
 
-        pids = pidof(target)
+        pids = list(pidof(target))
         if not pids:
             log.error('No such process: %s' % target)
         pid = pids[0]
@@ -665,8 +665,6 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
         exefile = target.executable
-        if six.PY3:
-            exefile = exefile.decode()
         cmd += ['gdb -q %s %s -x "%s"' % (exefile,
                                        target.pid,
                                        tmpfile)]
@@ -679,7 +677,16 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         if not pids:
             log.error('could not find remote process (%s:%d) on this machine' %
                       target.sock.getpeername())
-        pid = pids[0]
+        waiting = 100
+        if exe:
+            while waiting:
+                waiting -= 1
+                for pid in pids:
+                    if proc.exe(pid) == exe:
+                        waiting = False
+                        break
+                else:
+                    time.sleep(0.01)
     elif isinstance(target, tubes.process.process):
         pid = proc.pidof(target)[0]
         exe = exe or target.executable
@@ -770,7 +777,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     gdb_pid = misc.run_in_new_terminal(cmd)
 
     if pid and context.native:
-        proc.wait_for_debugger(pid)
+        proc.wait_for_debugger(pid, gdb_pid)
 
     return gdb_pid
 
@@ -848,9 +855,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     Example:
 
     >>> with context.local(log_level=9999):
-    ...     shell =  ssh(host='example.pwnme',
-    ...                 user='travis',
-    ...                 password='demopass')
+    ...     shell =  ssh(host='example.pwnme', user='runner', password='demopass')
     ...     bash_libs = gdb.find_module_addresses('/bin/bash', shell)
     >>> os.path.basename(bash_libs[0].path)
     'libc.so.6'
@@ -871,29 +876,27 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         local_elf  = elf.ELF(binary)
         local_libs = local_elf.libs
 
-    entry      = local_elf.header.e_entry
-
     #
     # Get the addresses from GDB
     #
     libs = {}
-    cmd  = "gdb -q --args %s" % (binary)
+    cmd  = "gdb -q -nh --args %s | cat" % (binary) # pipe through cat to disable colored output on GDB 9+
     expr = re.compile(r'(0x\S+)[^/]+(.*)')
 
     if ulimit:
-        cmd = 'sh -c "(ulimit -s unlimited; %s)"' % cmd
-
-    cmd = shlex.split(cmd)
+        cmd = ['sh', '-c', "(ulimit -s unlimited; %s)" % cmd]
+    else:
+        cmd = ['sh', '-c', cmd]
 
     with runner(cmd) as gdb:
         if context.aslr:
             gdb.sendline('set disable-randomization off')
+
         gdb.send("""
         set prompt
-        break *%#x
+        catch load
         run
-        """ % entry)
-        gdb.clean(2)
+        """)
         gdb.sendline('info sharedlibrary')
         lines = context._decode(gdb.recvrepeat(2))
 
@@ -985,7 +988,7 @@ def version(program='gdb'):
 
     Example:
 
-        >>> (7,0) <= gdb.version() <= (9,0)
+        >>> (7,0) <= gdb.version() <= (10,0)
         True
     """
     program = misc.which(program)

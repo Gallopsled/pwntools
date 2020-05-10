@@ -12,7 +12,7 @@ h = log.waitfor('spinners running', status = str(n))
 hs = []
 print('type "q" to quit')
 while True:
-    s = raw_input('> ')
+    s = str_input('> ').strip()
     if s == 'q':
         break
     hs.append(log.waitfor(s, status = 'running'))

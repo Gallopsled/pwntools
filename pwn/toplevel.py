@@ -38,7 +38,9 @@ from pwnlib.regsort import *
 from pwnlib.replacements import *
 from pwnlib.rop import ROP
 from pwnlib.rop.srop import SigreturnFrame
+from pwnlib.rop.ret2dlresolve import Ret2dlresolvePayload
 from pwnlib.runner import *
+from pwnlib.term.readline import str_input
 from pwnlib.timeout import Timeout
 from pwnlib.tubes.listen import listen
 from pwnlib.tubes.process import process, PTY, PIPE, STDOUT

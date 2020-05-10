@@ -83,6 +83,7 @@ from pwnlib.tubes.process import process
 from pwnlib.util import misc
 from pwnlib.util import packing
 from pwnlib.util.fiddling import unhex
+from pwnlib.util.misc import align, align_down
 from pwnlib.util.sh_string import sh_string
 
 log = getLogger(__name__)
@@ -1196,6 +1197,11 @@ class ELF(ELFFile):
             # DT_LOAD segment is **last** to load data into the region.
             self.memory.chop(start, stop_data)
 
+            # Fill the start of the segment's first page
+            page_start = align_down(0x1000, start)
+            if page_start < start and not self.memory[page_start]:
+                self.memory.addi(page_start, start, None)
+
             # Add the new segment
             if start != stop_data:
                 self.memory.addi(start, stop_data, segment)
@@ -1203,15 +1209,22 @@ class ELF(ELFFile):
             if stop_data != stop_mem:
                 self.memory.addi(stop_data, stop_mem, b'\x00')
 
+            page_end = align(0x1000, stop_mem)
+
             # Check for holes which we can fill
             if self._fill_gaps and i+1 < len(load_segments):
                 next_start = load_segments[i+1].header.p_vaddr
-                
-                if stop_mem < next_start and stop_mem>>(self.bits-1) == next_start>>(self.bits-1):
-                    self.memory.addi(stop_mem, next_start, None)
-            else:
-                page_end = (stop_mem + 0xfff) & ~(0xfff)
+                page_next = align_down(0x1000, next_start)
 
+                if stop_mem < next_start:
+                    if page_end < page_next:
+                        if stop_mem < page_end:
+                            self.memory.addi(stop_mem, page_end, None)
+                        if page_next < next_start:
+                            self.memory.addi(page_next, next_start, None)
+                    else:
+                        self.memory.addi(stop_mem, next_start, None)
+            else:
                 if stop_mem < page_end:
                     self.memory.addi(stop_mem, page_end, None)
 

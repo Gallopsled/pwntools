@@ -23,6 +23,7 @@ def testpwnproc(cmd):
     import termios
     env = dict(os.environ)
     env.pop("PWNLIB_NOTERM", None)
+    env["TERM"] = "xterm-256color"
     def handleusr1(sig, frame):
         s = p.stderr.read()
         log.error("child process failed:\n%s", s.decode())
@@ -33,10 +34,13 @@ import signal
 atexception.register(lambda:os.kill(os.getppid(), signal.SIGUSR1))
 """ + cmd
     if "coverage" in sys.modules:
-      cmd = "import coverage; coverage.process_startup()\n" + cmd
-      env.setdefault("COVERAGE_PROCESS_START", ".coveragerc")
+        cmd = "import coverage; coverage.process_startup()\n" + cmd
+        env.setdefault("COVERAGE_PROCESS_START", ".coveragerc")
     p = process([sys.executable, "-c", cmd], env=env, stderr=subprocess.PIPE)
-    p.recvuntil(b"\33[6n")
+    try:
+        p.recvuntil(b"\33[6n")
+    except EOFError:
+        raise EOFError("process terminated with code: %r (%r)" % (p.poll(True), p.stderr.read()))
     fcntl.ioctl(p.stdout.fileno(), termios.TIOCSWINSZ, struct.pack("hh", 80, 80))
     p.stdout.write(b"\x1b[1;1R")
     return p
@@ -59,7 +63,7 @@ def yesno(prompt, default=None):
         ValueError: yesno(): default must be a boolean or None
         >>> saved_stdin = sys.stdin
         >>> try:
-        ...     sys.stdin = io.StringIO(u"x\nyes\nno\n\n")
+        ...     sys.stdin = io.TextIOWrapper(io.BytesIO(b"x\nyes\nno\n\n"))
         ...     yesno("is it good 1")
         ...     yesno("is it good 2", True)
         ...     yesno("is it good 3", False)
@@ -110,12 +114,12 @@ def yesno(prompt, default=None):
                                        'No' if default is False else 'no',
                                        )
         while True:
-            opt = raw_input(prompt).lower()
+            opt = raw_input(prompt).strip().lower()
             if not opt and default is not None:
                 return default
-            elif opt in ('y','yes'):
+            elif opt in (b'y', b'yes'):
                 return True
-            elif opt in ('n', 'no'):
+            elif opt in (b'n', b'no'):
                 return False
             print('Please answer yes or no')
 
@@ -143,7 +147,7 @@ def options(prompt, opts, default = None):
         >>> _ = p.recvall()
         >>> saved_stdin = sys.stdin
         >>> try:
-        ...     sys.stdin = io.StringIO(u"\n4\n\n3\n")
+        ...     sys.stdin = io.TextIOWrapper(io.BytesIO(b"\n4\n\n3\n"))
         ...     with context.local(log_level="INFO"):
         ...         options("select a color A", ("red", "green", "blue"), 0)
         ...         options("select a color B", ("red", "green", "blue"))
@@ -261,7 +265,7 @@ def pause(n=None):
     Tests:
         >>> saved_stdin = sys.stdin
         >>> try:
-        ...     sys.stdin = io.StringIO(u"\n")
+        ...     sys.stdin = io.TextIOWrapper(io.BytesIO(b"\n"))
         ...     with context.local(log_level="INFO"):
         ...         pause()
         ... finally:

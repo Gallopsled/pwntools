@@ -484,7 +484,7 @@ class Corefile(ELF):
         >>> io = elf.process()
         >>> io.wait(2)
         >>> core = io.corefile
-        [!] End of the stack is corrupted, skipping stack parsing (got: 4141414141414141)
+        [!] End of the stack is corrupted, skipping stack parsing (got: 41414141)
         >>> core.argc, core.argv, core.env
         (0, [], {})
         >>> core.stack.data.endswith(b'AAAA')
@@ -924,9 +924,9 @@ class Corefile(ELF):
             return
 
         # If the stack does not end with zeroes, something is very wrong.
-        if not stack.data.endswith(b'\x00' * 8):
+        if not stack.data.endswith(b'\x00' * context.bytes):
             log.warn_once("End of the stack is corrupted, skipping stack parsing (got: %s)",
-                          enhex(self.data[-8:]))
+                          enhex(self.data[-context.bytes:]))
             return
 
         # AT_EXECFN is the start of the filename, e.g. '/bin/sh'

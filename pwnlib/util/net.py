@@ -59,8 +59,10 @@ struct_ifaddrs._fields_ = [
     ('ifa_data'   , ctypes.c_void_p)                ,
     ]
 
+AddressFamily = getattr(socket, 'AddressFamily', int)
+
 def sockaddr_fixup(saptr):
-    family = saptr.contents.sa_family
+    family = AddressFamily(saptr.contents.sa_family)
     addr = {}
     if   family == socket.AF_INET:
         sa = ctypes.cast(saptr, ctypes.POINTER(struct_sockaddr_in)).contents
@@ -162,6 +164,10 @@ def interfaces4(all = False):
     Returns:
       A dictionary mapping each of the hosts interfaces to a list of it's
       IPv4 addresses.
+
+    Examples:
+        >>> interfaces4(all=True) # doctest: +ELLIPSIS
+        {...'127.0.0.1'...}
 """
     out = {}
     for name, addrs in interfaces(all = all).items():
@@ -183,6 +189,10 @@ def interfaces6(all = False):
     Returns:
       A dictionary mapping each of the hosts interfaces to a list of it's
       IPv6 addresses.
+
+    Examples:
+        >>> interfaces6() # doctest: +ELLIPSIS
+        {...'::1'...}
 """
     out = {}
     for name, addrs in interfaces(all = all).items():
