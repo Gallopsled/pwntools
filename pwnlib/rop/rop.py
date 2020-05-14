@@ -751,7 +751,6 @@ class ROP(object):
                 stack.describe(self.describe(slot))
                 if not isinstance(slot, bytes):
                     slot = slot.encode()
-                slot += self.generatePadding(stack.next, len(slot) % context.bytes)
 
                 for chunk in lists.group(context.bytes, slot):
                     stack.append(chunk)
@@ -1053,9 +1052,7 @@ class ROP(object):
     def __bytes__(self):
         """Returns: Raw bytes of the ROP chain"""
         return self.chain()
-
-    def __str__(self):
-        return str(self.chain())
+    __str__ = __bytes__
 
     def __get_cachefile_name(self, files):
         """Given an ELF or list of ELF objects, return a cache file for the set of files"""
