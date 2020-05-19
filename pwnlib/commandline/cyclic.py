@@ -66,6 +66,7 @@ def main(args):
 
         try:
             pat = packing.pack(int(pat, 0), subsize*8)
+            pat = pat.decode('utf-8')
         except ValueError:
             pass
 
