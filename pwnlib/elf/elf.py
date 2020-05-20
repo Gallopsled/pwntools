@@ -530,6 +530,8 @@ class ELF(ELFFile):
         self.symbols = dotdict({k:update(v) for k,v in self.symbols.items()})
         self.plt     = dotdict({k:update(v) for k,v in self.plt.items()})
         self.got     = dotdict({k:update(v) for k,v in self.got.items()})
+        for f in self.functions.values():
+            f.address += delta
 
         # Update our view of memory
         memory = intervaltree.IntervalTree()
