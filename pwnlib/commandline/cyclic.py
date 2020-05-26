@@ -62,7 +62,7 @@ def main(args):
     subsize  = args.length
 
     if args.lookup:
-        pat = args.lookup
+        pat = bytearray(args.lookup, 'utf-8')
 
         try:
             pat = packing.pack(int(pat, 0), subsize*8)
