@@ -14,4 +14,4 @@ c''')
 
 c.sendline('ls -la')
 c.sendline('exit')
-print c.recvall()
+print(c.recvall())

@@ -12,30 +12,34 @@ though they can be overridden in the parameters.
 Examples:
 
     >>> p8(0)
-    '\x00'
+    b'\x00'
     >>> p32(0xdeadbeef)
-    '\xef\xbe\xad\xde'
+    b'\xef\xbe\xad\xde'
     >>> p32(0xdeadbeef, endian='big')
-    '\xde\xad\xbe\xef'
+    b'\xde\xad\xbe\xef'
     >>> with context.local(endian='big'): p32(0xdeadbeef)
-    '\xde\xad\xbe\xef'
+    b'\xde\xad\xbe\xef'
 
     Make a frozen packer, which does not change with context.
 
     >>> p=make_packer('all')
     >>> p(0xff)
-    '\xff'
+    b'\xff'
     >>> p(0x1ff)
-    '\xff\x01'
-    >>> with context.local(endian='big'): print repr(p(0x1ff))
-    '\xff\x01'
+    b'\xff\x01'
+    >>> with context.local(endian='big'): print(repr(p(0x1ff)))
+    b'\xff\x01'
 """
 from __future__ import absolute_import
+from __future__ import division
 
+import six
 import struct
 import sys
 
-from pwnlib.context import LocalContext
+from six.moves import range
+
+from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
 from pwnlib.util import iters
 
@@ -68,27 +72,27 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
 
     Examples:
         >>> pack(0x414243, 24, 'big', True)
-        'ABC'
+        b'ABC'
         >>> pack(0x414243, 24, 'little', True)
-        'CBA'
+        b'CBA'
         >>> pack(0x814243, 24, 'big', False)
-        '\\x81BC'
+        b'\\x81BC'
         >>> pack(0x814243, 24, 'big', True)
         Traceback (most recent call last):
            ...
         ValueError: pack(): number does not fit within word_size
         >>> pack(0x814243, 25, 'big', True)
-        '\\x00\\x81BC'
+        b'\\x00\\x81BC'
         >>> pack(-1, 'all', 'little', True)
-        '\\xff'
+        b'\\xff'
         >>> pack(-256, 'all', 'big', True)
-        '\\xff\\x00'
+        b'\\xff\\x00'
         >>> pack(0x0102030405, 'all', 'little', True)
-        '\\x05\\x04\\x03\\x02\\x01'
+        b'\\x05\\x04\\x03\\x02\\x01'
         >>> pack(-1)
-        '\\xff\\xff\\xff\\xff'
+        b'\\xff\\xff\\xff\\xff'
         >>> pack(0x80000000, 'all', 'big', True)
-        '\\x00\\x80\\x00\\x00\\x00'
+        b'\\x00\\x80\\x00\\x00\\x00'
 """
     if sign is None and number < 0:
         sign = True
@@ -105,7 +109,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         endianness = context.endianness
         sign       = context.sign
 
-        if not isinstance(number, (int,long)):
+        if not isinstance(number, six.integer_types):
             raise ValueError("pack(): number must be of type (int,long) (got %r)" % type(number))
 
         if sign not in [True, False]:
@@ -127,7 +131,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
                 if sign == False:
                     raise ValueError("pack(): number does not fit within word_size")
                 word_size = ((number + 1).bit_length() | 7) + 1
-        elif not isinstance(word_size, (int, long)) or word_size <= 0:
+        elif not isinstance(word_size, six.integer_types) or word_size <= 0:
             raise ValueError("pack(): word_size must be a positive integer or the string 'all'")
 
         if sign == True:
@@ -142,20 +146,20 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         # Normalize number and size now that we have verified them
         # From now on we can treat positive and negative numbers the same
         number = number & ((1 << word_size) - 1)
-        byte_size = (word_size + 7) / 8
+        byte_size = (word_size + 7) // 8
 
         out = []
 
         for _ in range(byte_size):
-            out.append(chr(number & 0xff))
+            out.append(_p8lu(number & 0xff))
             number = number >> 8
 
         if endianness == 'little':
-            return ''.join(out)
+            return b''.join(out)
         else:
-            return ''.join(reversed(out))
+            return b''.join(reversed(out))
 
-@LocalContext
+@LocalNoarchContext
 def unpack(data, word_size = None):
     """unpack(data, word_size = None, endianness = None, sign = None, **kwargs) -> int
 
@@ -180,17 +184,17 @@ def unpack(data, word_size = None):
         The unpacked number.
 
     Examples:
-        >>> hex(unpack('\\xaa\\x55', 16, endian='little', sign=False))
+        >>> hex(unpack(b'\\xaa\\x55', 16, endian='little', sign=False))
         '0x55aa'
-        >>> hex(unpack('\\xaa\\x55', 16, endian='big', sign=False))
+        >>> hex(unpack(b'\\xaa\\x55', 16, endian='big', sign=False))
         '0xaa55'
-        >>> hex(unpack('\\xaa\\x55', 16, endian='big', sign=True))
+        >>> hex(unpack(b'\\xaa\\x55', 16, endian='big', sign=True))
         '-0x55ab'
-        >>> hex(unpack('\\xaa\\x55', 15, endian='big', sign=True))
+        >>> hex(unpack(b'\\xaa\\x55', 15, endian='big', sign=True))
         '0x2a55'
-        >>> hex(unpack('\\xff\\x02\\x03', 'all', endian='little', sign=True))
+        >>> hex(unpack(b'\\xff\\x02\\x03', 'all', endian='little', sign=True))
         '0x302ff'
-        >>> hex(unpack('\\xff\\x02\\x03', 'all', endian='big', sign=True))
+        >>> hex(unpack(b'\\xff\\x02\\x03', 'all', endian='big', sign=True))
         '-0xfdfd'
     """
 
@@ -202,10 +206,10 @@ def unpack(data, word_size = None):
     # Verify that word_size make sense
     if word_size == 'all':
         word_size = len(data) * 8
-    elif not isinstance(word_size, (int, long)) or word_size <= 0:
+    elif not isinstance(word_size, six.integer_types) or word_size <= 0:
         raise ValueError("unpack(): word_size must be a positive integer or the string 'all'")
 
-    byte_size = (word_size + 7) / 8
+    byte_size = (word_size + 7) // 8
 
     if byte_size != len(data):
         raise ValueError("unpack(): data must have length %d, since word_size was %d" % (byte_size, word_size))
@@ -227,7 +231,7 @@ def unpack(data, word_size = None):
     signbit = number & (1 << (word_size-1))
     return int(number - 2*signbit)
 
-@LocalContext
+@LocalNoarchContext
 def unpack_many(data, word_size = None):
     """unpack(data, word_size = None, endianness = None, sign = None) -> int list
 
@@ -246,15 +250,15 @@ def unpack_many(data, word_size = None):
         The unpacked numbers.
 
     Examples:
-        >>> map(hex, unpack_many('\\xaa\\x55\\xcc\\x33', 16, endian='little', sign=False))
+        >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='little', sign=False)))
         ['0x55aa', '0x33cc']
-        >>> map(hex, unpack_many('\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=False))
+        >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=False)))
         ['0xaa55', '0xcc33']
-        >>> map(hex, unpack_many('\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=True))
+        >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=True)))
         ['-0x55ab', '-0x33cd']
-        >>> map(hex, unpack_many('\\xff\\x02\\x03', 'all', endian='little', sign=True))
+        >>> list(map(hex, unpack_many(b'\\xff\\x02\\x03', 'all', endian='little', sign=True)))
         ['0x302ff']
-        >>> map(hex, unpack_many('\\xff\\x02\\x03', 'all', endian='big', sign=True))
+        >>> list(map(hex, unpack_many(b'\\xff\\x02\\x03', 'all', endian='big', sign=True)))
         ['-0xfdfd']
     """
     # Lookup in context if None
@@ -281,7 +285,9 @@ def unpack_many(data, word_size = None):
 #
 # Make individual packers, e.g. _p8lu
 #
-ops   = {'p': struct.pack, 'u': lambda *a: struct.unpack(*a)[0]}
+ops   = {'p': struct.pack, 'u': lambda *a: struct.unpack(*(
+                                             x.encode('latin1') if not hasattr(x, 'decode') else x
+                                             for x in a))[0]}
 sizes = {8:'b', 16:'h', 32:'i', 64:'q'}
 ends  = ['b','l']
 signs = ['s','u']
@@ -297,7 +303,7 @@ def make_single(op,size,end,sign):
 
     def routine(data):
         return ops[op](fmt,data)
-    routine.__name__ = name
+    routine.__name__ = routine.__qualname__ = name
 
     return name, routine
 
@@ -324,7 +330,7 @@ def make_multi(op, size):
     bs = getattr(mod, "_%sbs" % (name))
     bu = getattr(mod, "_%sbu" % (name))
 
-    @LocalContext
+    @LocalNoarchContext
     def routine(number):
         endian = context.endian
         signed = context.signed
@@ -380,13 +386,13 @@ def make_packer(word_size = None, sign = None, **kwargs):
         >>> p
         <function _p32lu at 0x...>
         >>> p(42)
-        '*\\x00\\x00\\x00'
+        b'*\\x00\\x00\\x00'
         >>> p(-1)
         Traceback (most recent call last):
             ...
         error: integer out of range for 'I' format code
         >>> make_packer(33, endian='little', sign='unsigned')
-        <function <lambda> at 0x...>
+        <function ...<lambda> at 0x...>
 """
     with context.local(sign=sign, **kwargs):
         word_size  = word_size or context.word_size
@@ -418,7 +424,7 @@ def make_packer(word_size = None, sign = None, **kwargs):
 
         return lambda number: pack(number, word_size, endianness, sign)
 
-@LocalContext
+@LocalNoarchContext
 def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
     """make_unpacker(word_size = None, endianness = None, sign = None,  **kwargs) -> str → number
 
@@ -449,7 +455,7 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
             ...
         error: unpack requires a string argument of length 4
         >>> make_unpacker(33, endian='little', sign='unsigned')
-        <function <lambda> at 0x...>
+        <function ...<lambda> at 0x...>
 """
     word_size  = word_size or context.word_size
     endianness = context.endianness
@@ -479,43 +485,119 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
     else:
         return lambda number: unpack(number, word_size, endianness, sign)
 
+def _fit(pieces, preprocessor, packer, filler):
+    # Pulls bytes from `filler` and adds them to `pad` until it ends in `key`.
+    # Returns the index of `key` in `pad`.
+    pad = bytearray()
+    def fill(key):
+        key = bytearray(key)
+        while len(pad) < len(key) or pad[-len(key):] != key:
+            pad.append(next(filler))
+        return len(pad) - len(key)
 
+    # Key conversion:
+    # - convert str/unicode keys to offsets
+    # - convert large int (no null-bytes in a machine word) keys to offsets
+    pieces_ = dict()
+    large_key = 2**(context.word_size-8)
+    for k, v in pieces.items():
+        if isinstance(k, six.integer_types):
+            if k >= large_key:
+                k = fill(pack(k))
+        elif isinstance(k, six.text_type):
+            k = fill(k.encode('utf8'))
+        elif isinstance(k, (bytearray, bytes)):
+            k = fill(k)
+        else:
+            raise TypeError("flat(): offset must be of type int or str, but got '%s'" % type(k))
+        if k in pieces_:
+            raise ValueError("flag(): multiple values at offset %d" % k)
+        pieces_[k] = v
+    pieces = pieces_
 
-def _flat(args, preprocessor, packer):
+    # We must "roll back" `filler` so each recursive call to `_flat` gets it in
+    # the right position
+    filler = iters.chain(pad, filler)
+
+    # Build output
+    out = b''
+    for k, v in sorted(pieces.items()):
+        if k < len(out):
+            raise ValueError("flat(): data at offset %d overlaps with previous data which ends at offset %d" % (k, len(out)))
+
+        # Fill up to offset
+        while len(out) < k:
+            out += p8(next(filler))
+
+        # Recursively flatten data
+        out += _flat([v], preprocessor, packer, filler)
+
+    return filler, out
+
+def _flat(args, preprocessor, packer, filler):
     out = []
     for arg in args:
 
-        if not isinstance(arg, (list, tuple)):
+        if not isinstance(arg, (list, tuple, dict)):
             arg_ = preprocessor(arg)
             if arg_ != None:
                 arg = arg_
 
         if hasattr(arg, '__flat__'):
-            out.append(arg.__flat__())
+            val = arg.__flat__()
         elif isinstance(arg, (list, tuple)):
-            out.append(_flat(arg, preprocessor, packer))
-        elif isinstance(arg, str):
-            out.append(arg)
-        elif isinstance(arg, unicode):
-            out.append(arg.encode('utf8'))
-        elif isinstance(arg, (int, long)):
-            out.append(packer(arg))
+            val = _flat(arg, preprocessor, packer, filler)
+        elif isinstance(arg, dict):
+            filler, val = _fit(arg, preprocessor, packer, filler)
+        elif isinstance(arg, bytes):
+            val = arg
+        elif isinstance(arg, six.text_type):
+            val = arg.encode('utf8')
+        elif isinstance(arg, six.integer_types):
+            val = packer(arg)
         elif isinstance(arg, bytearray):
-            out.append(str(arg))
+            val = str(arg)
         else:
             raise ValueError("flat(): Flat does not support values of type %s" % type(arg))
-    return ''.join(out)
 
-@LocalContext
+        out.append(val)
+
+        # Advance `filler` for "non-recursive" values
+        if not isinstance(arg, (list, tuple, dict)):
+            for _ in range(len(val)):
+                next(filler)
+
+    return b''.join(out)
+
+@LocalNoarchContext
 def flat(*args, **kwargs):
-    """flat(*args, preprocessor = None, word_size = None, endianness = None, sign = None)
+    r"""flat(\*args, preprocessor = None, length = None, filler = de_bruijn(),
+     word_size = None, endianness = None, sign = None) -> str
 
     Flattens the arguments into a string.
 
-    This function takes an arbitrary number of arbitrarily nested lists and
-    tuples. It will then find every string and number inside those and flatten
-    them out. Strings are inserted directly while numbers are packed using the
-    :func:`pack` function.
+    This function takes an arbitrary number of arbitrarily nested lists, tuples
+    and dictionaries.  It will then find every string and number inside those
+    and flatten them out.  Strings are inserted directly while numbers are
+    packed using the :func:`pack` function.  Unicode strings are UTF-8 encoded.
+
+    Dictionary keys give offsets at which to place the corresponding values
+    (which are recursively flattened).  Offsets are relative to where the
+    flattened dictionary occurs in the output (i.e. `{0: 'foo'}` is equivalent
+    to `'foo'`).  Offsets can be integers, unicode strings or regular strings.
+    Integer offsets >= ``2**(word_size-8)`` are converted to a string using
+    `:func:pack`.  Unicode strings are UTF-8 encoded.  After these conversions
+    offsets are either integers or strings.  In the latter case, the offset will
+    be the lowest index at which the string occurs in `filler`.  See examples
+    below.
+
+    Space between pieces of data is filled out using the iterable `filler`.  The
+    `n`'th byte in the output will be byte at index ``n % len(iterable)`` byte
+    in `filler` if it has finite length or the byte at index `n` otherwise.
+
+    If `length` is given, the output will be padded with bytes from `filler` to
+    be this size.  If the output is longer than `length`, a :py:exc:`ValueError`
+    exception is raised.
 
     The three kwargs `word_size`, `endianness` and `sign` will default to using
     values in :mod:`pwnlib.context` if not specified as an argument.
@@ -524,31 +606,60 @@ def flat(*args, **kwargs):
       args: Values to flatten
       preprocessor (function): Gets called on every element to optionally
          transform the element before flattening. If :const:`None` is
-         returned, then the original value is uded.
-      word_size (int): Word size of the converted integer (in bits).
+         returned, then the original value is used.
+      length: The length of the output.
+      filler: Iterable to use for padding.
+      word_size (int): Word size of the converted integer.
       endianness (str): Endianness of the converted integer ("little"/"big").
       sign (str): Signedness of the converted integer (False/True)
 
     Examples:
       >>> flat(1, "test", [[["AB"]*2]*3], endianness = 'little', word_size = 16, sign = False)
-      '\\x01\\x00testABABABABABAB'
+      b'\x01\x00testABABABABABAB'
       >>> flat([1, [2, 3]], preprocessor = lambda x: str(x+1))
-      '234'
-"""
+      b'234'
+      >>> flat({12: 0x41414141,
+      ...       24: 'Hello',
+      ...      })
+      b'aaaabaaacaaaAAAAeaaafaaaHello'
+      >>> flat({'caaa': ''})
+      b'aaaabaaa'
+      >>> flat({12: 'XXXX'}, filler = (ord('A'), ord('B')), length = 20)
+      b'ABABABABABABXXXXABAB'
+      >>> flat({ 8: [0x41414141, 0x42424242],
+      ...       20: 'CCCC'})
+      b'aaaabaaaAAAABBBBeaaaCCCC'
+      >>> flat({ 0x61616162: 'X'})
+      b'aaaaX'
+      >>> flat({4: {0: 'X', 4: 'Y'}})
+      b'aaaaXaaaY'
+
+    """
+    # HACK: To avoid circular imports we need to delay the import of `cyclic`
+    from pwnlib.util import cyclic
 
     preprocessor = kwargs.pop('preprocessor', lambda x: None)
-    word_size    = kwargs.pop('word_size', None)
+    filler       = kwargs.pop('filler', cyclic.de_bruijn())
+    length       = kwargs.pop('length', None)
 
     if kwargs != {}:
         raise TypeError("flat() does not support argument %r" % kwargs.popitem()[0])
 
-    return _flat(args, preprocessor, make_packer(word_size))
+    filler = iters.cycle(filler)
+    out = _flat(args, preprocessor, make_packer(), filler)
 
+    if length:
+        if len(out) > length:
+            raise ValueError("flat(): Arguments does not fit within `length` (= %d) bytes" % length)
+        out += b''.join(p8(next(filler)) for _ in range(length - len(out)))
 
-@LocalContext
-def fit(pieces=None, **kwargs):
-    """fit(pieces, filler = de_bruijn(), length = None, preprocessor = None) -> str
+    return out
 
+def fit(*args, **kwargs):
+    """Legacy alias for `:func:flat`"""
+    return flat(*args, **kwargs)
+
+"""
     Generates a string from a dictionary mapping offsets to data to place at
     that offset.
 
@@ -582,97 +693,8 @@ def fit(pieces=None, **kwargs):
       sign (str): Signedness of the converted integer (False/True)
 
     Examples:
-      >>> fit({12: 0x41414141,
-      ...      24: 'Hello',
-      ...     })
-      'aaaabaaacaaaAAAAeaaafaaaHello'
-      >>> fit({'caaa': ''})
-      'aaaabaaa'
-      >>> fit({12: 'XXXX'}, filler = 'AB', length = 20)
-      'ABABABABABABXXXXABAB'
-      >>> fit({ 8: [0x41414141, 0x42424242],
-      ...      20: 'CCCC'})
-      'aaaabaaaAAAABBBBeaaaCCCC'
-      >>> fit({ 0x61616162: 'X'})
-      'aaaaX'
 
     """
-    # HACK: To avoid circular imports we need to delay the import of `cyclic`
-    from pwnlib.util import cyclic
-
-    filler       = kwargs.pop('filler', cyclic.de_bruijn())
-    length       = kwargs.pop('length', None)
-    preprocessor = kwargs.pop('preprocessor', lambda x: None)
-
-    if kwargs != {}:
-        raise TypeError("fit() does not support argument %r" % kwargs.popitem()[0])
-
-    packer = make_packer()
-    filler = iters.cycle(filler)
-    out = ''
-
-    if not length and not pieces:
-        return ''
-
-    if not pieces:
-        return ''.join(filler.next() for f in range(length))
-
-    def fill(out, value):
-        while value not in out:
-            out += filler.next()
-        return out, out.index(value)
-
-    # convert str keys to offsets
-    # convert large int keys to offsets
-    pieces_ = dict()
-    for k, v in pieces.items():
-        if isinstance(k, (int, long)):
-            # cyclic() generally starts with 'aaaa'
-            if k >= 0x61616161:
-                out, k = fill(out, pack(k))
-        elif isinstance(k, str):
-            out, k = fill(out, k)
-        else:
-            raise TypeError("fit(): offset must be of type int or str, but got '%s'" % type(k))
-        pieces_[k] = v
-    pieces = pieces_
-
-    # convert values to their flattened forms
-    for k,v in pieces.items():
-        pieces[k] = _flat([v], preprocessor, packer)
-
-    # if we were provided a length, make sure everything fits
-    last = max(pieces)
-    if length and last and (last + len(pieces[last]) > length):
-        raise ValueError("fit(): Pieces do not fit within `length` (= %d) bytes" % length)
-
-    # insert data into output
-    out = list(out)
-    l = 0
-    for k, v in sorted(pieces.items()):
-        if k < l:
-            raise ValueError("fit(): data at offset %d overlaps with previous data which ends at offset %d" % (k, l))
-        while len(out) < k:
-            out.append(filler.next())
-        v = _flat([v], preprocessor, packer)
-        l = k + len(v)
-
-        # consume the filler for each byte of actual data
-        for i in range(len(out), l):
-            filler.next()
-
-        out[k:l] = v
-
-    # truncate/pad output
-    if length:
-        if l > length:
-            raise ValueError("fit(): Pieces does not fit within `length` (= %d) bytes" % length)
-        while len(out) < length:
-            out.append(filler.next())
-    else:
-        out = out[:l]
-
-    return ''.join(out)
 
 def signed(integer):
     return unpack(pack(integer), signed=True)
@@ -714,42 +736,42 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         modified in-place.
 
     Examples:
-        >>> dd(tuple('Hello!'), '?', skip = 5)
-        ('H', 'e', 'l', 'l', 'o', '?')
+        >>> dd(tuple('Hello!'), b'?', skip = 5)
+        ('H', 'e', 'l', 'l', 'o', b'?')
         >>> dd(list('Hello!'), (63,), skip = 5)
-        ['H', 'e', 'l', 'l', 'o', '?']
-        >>> file('/tmp/foo', 'w').write('A' * 10)
-        >>> dd(file('/tmp/foo'), file('/dev/zero'), skip = 3, count = 4).read()
+        ['H', 'e', 'l', 'l', 'o', b'?']
+        >>> _ = open('/tmp/foo', 'w').write('A' * 10)
+        >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4).read()
         'AAA\\x00\\x00\\x00\\x00AAA'
-        >>> file('/tmp/foo', 'w').write('A' * 10)
-        >>> dd(file('/tmp/foo'), file('/dev/zero'), skip = 3, count = 4, truncate = True).read()
+        >>> _ = open('/tmp/foo', 'w').write('A' * 10)
+        >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4, truncate = True).read()
         'AAA\\x00\\x00\\x00\\x00'
     """
 
     # Re-open file objects to make sure we have the mode right
-    if isinstance(src, file):
-        src = file(src.name, 'rb')
-    if isinstance(dst, file):
+    if hasattr(src, 'name'):
+        src = open(src.name, 'rb')
+    if hasattr(dst, 'name'):
         real_dst = dst
-        dst = file(dst.name, 'rb+')
+        dst = open(dst.name, 'rb+')
 
     # Special case: both `src` and `dst` are files, so we don't need to hold
     # everything in memory
-    if isinstance(src, file) and isinstance(dst, file):
+    if hasattr(src, 'seek') and hasattr(dst, 'seek'):
         src.seek(seek)
         dst.seek(skip)
         n = 0
         if count:
             while n < count:
                 s = src.read(min(count - n, 0x1000))
-                if s == '':
+                if not s:
                     break
                 n += len(s)
                 dst.write(s)
         else:
             while True:
                 s = src.read(0x1000)
-                if s == '':
+                if not s:
                     break
                 n += len(s)
                 dst.write(s)
@@ -761,7 +783,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
 
     # Otherwise get `src` in canonical form, i.e. a string of at most `count`
     # bytes
-    if isinstance(src, unicode):
+    if isinstance(src, six.text_type):
         if count:
             # The only way to know where the `seek`th byte is, is to decode, but
             # we only need to decode up to the first `seek + count` code points
@@ -771,25 +793,25 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         else:
             src = src.encode('utf8')[seek:]
 
-    elif isinstance(src, file):
+    elif hasattr(src, 'seek'):
         src.seek(seek)
-        src_ = ''
+        src_ = b''
         if count:
             while len(src_) < count:
                 s = src.read(count - len(src_))
-                if s == '':
+                if not s:
                     break
                 src_ += s
         else:
             while True:
                 s = src.read()
-                if s == '':
+                if not s:
                     break
                 src_ += s
         src.close()
         src = src_
 
-    elif isinstance(src, str):
+    elif isinstance(src, bytes):
         if count:
             src = src[seek : seek + count]
         else:
@@ -797,16 +819,16 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
 
     elif hasattr(src, '__iter__'):
         src = src[seek:]
-        src_ = ''
+        src_ = b''
         for i, b in enumerate(src, seek):
             if count and i > count + seek:
                 break
-            if isinstance(b, str):
+            if isinstance(b, bytes):
                 src_ += b
-            elif isinstance(b, (int, long)):
+            elif isinstance(b, six.integer_types):
                 if b > 255 or b < 0:
                     raise ValueError("dd(): Source value %d at index %d is not in range [0;255]" % (b, i))
-                src_ += chr(b)
+                src_ += _p8lu(b)
             else:
                 raise TypeError("dd(): Unsupported `src` element type: %r" % type(b))
         src = src_
@@ -819,14 +841,14 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         truncate = skip + len(src)
 
     # UTF-8 encode unicode `dst`
-    if isinstance(dst, unicode):
+    if isinstance(dst, six.text_type):
         dst = dst.encode('utf8')
         utf8 = True
     else:
         utf8 = False
 
     # Match on the type of `dst`
-    if   isinstance(dst, file):
+    if   hasattr(dst, 'seek'):
         dst.seek(skip)
         dst.write(src)
         if truncate:
@@ -835,18 +857,18 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         dst = real_dst
 
     elif isinstance(dst, (list, bytearray)):
-        dst[skip : skip + len(src)] = list(src)
+        dst[skip : skip + len(src)] = list(map(p8, bytearray(src)))
         if truncate:
             while len(dst) > truncate:
                 dst.pop()
 
     elif isinstance(dst, tuple):
         tail = dst[skip + len(src):]
-        dst = dst[:skip] + tuple(src)
+        dst = dst[:skip] + tuple(map(p8, bytearray(src)))
         if not truncate:
             dst = dst + tail
 
-    elif isinstance(dst, str):
+    elif isinstance(dst, bytes):
         tail = dst[skip + len(src):]
         dst = dst[:skip] + src
         if not truncate:

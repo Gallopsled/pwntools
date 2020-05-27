@@ -34,7 +34,7 @@ Arguments:
     ... ''' % (locals())
     >>> p = run_assembly(shellcode)
     >>> p.recvall()
-    'Hello!'
+    b'Hello!'
     >>> p.wait_for_close()
     >>> p.poll()
     33

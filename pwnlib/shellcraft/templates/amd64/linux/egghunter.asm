@@ -46,7 +46,7 @@ ${egghunter_loop}:
     jz ${next_page}
 
 ## We found a page, scan all of the DWORDs
-    ${amd64.mov('rdx', 0x1000/4)}
+    ${amd64.mov('rdx', 0x1000 // 4)}
 ${memcmp}:
     test rdx, rdx
     jz   ${next_page}
@@ -54,7 +54,7 @@ ${memcmp}:
 ## Scan forward by DWORD
     ${amd64.setregs({'rsi':'rsp',
                     'rdi':'rbx',
-                    'rcx': len(egg_str)/4})}
+                    'rcx': len(egg_str) // 4})}
 ## Success?
     repe cmpsd
     jz ${done}

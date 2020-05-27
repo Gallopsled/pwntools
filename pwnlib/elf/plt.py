@@ -1,5 +1,6 @@
 """Emulates instructions in the PLT to locate symbols more accurately.
 """
+from __future__ import division
 import logging
 
 from pwnlib.args import args
@@ -162,9 +163,9 @@ def emulate_plt_instructions_inner(elf, got, pc, data, targets):
     try:
         uc.emu_start(pc, until=-1, count=5)
     except U.UcError as error:
-        UC_ERR = (k for k,v in \
+        UC_ERR = next(k for k,v in \
                     U.unicorn_const.__dict__.items()
-                    if error.errno == v and k.startswith('UC_ERR_')).next()
+                    if error.errno == v and k.startswith('UC_ERR_'))
         log.debug("%#x: %s (%s)", pc, error, UC_ERR)
 
     if elf.arch == 'mips':

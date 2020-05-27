@@ -12,6 +12,9 @@
 # serve to show the default.
 
 import os
+import doctest
+import signal
+import six
 import subprocess
 import sys
 
@@ -67,9 +70,9 @@ doctest_global_setup = '''
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
 os.environ['PWNLIB_RANDOMIZE'] = '0'
-import pwnlib
+import pwnlib, logging
 pwnlib.context.context.reset_local()
-pwnlib.context.ContextType.defaults['log_level'] = 'ERROR'
+pwnlib.context.ContextType.defaults['log_level'] = logging.ERROR
 pwnlib.context.ContextType.defaults['randomize'] = False
 pwnlib.util.fiddling.default_style = {}
 pwnlib.term.text.when = 'never'
@@ -311,13 +314,13 @@ texinfo_documents = [
 branch = release
 
 try:
-    git_branch = subprocess.check_output('git describe --tags', shell = True)
+    git_branch = subprocess.check_output('git describe --tags', shell = True, universal_newlines = True)
 except subprocess.CalledProcessError:
     git_branch = '-'
 
 try:
     if '-' in git_branch:
-        branch = subprocess.check_output('git rev-parse HEAD', shell = True).strip()[:10]
+        branch = subprocess.check_output('git rev-parse HEAD', shell = True, universal_newlines = True).strip()[:10]
 except subprocess.CalledProcessError:
     pass
 
@@ -345,11 +348,11 @@ def linkcode_resolve(domain, info):
     else:
         filename = info['module'].replace('.', '/') + '.py'
 
-        if isinstance(val, (types.ModuleType, types.ClassType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType)):
+        if isinstance(val, (types.ModuleType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType) + six.class_types):
             try:
                 lines, first = inspect.getsourcelines(val)
-                filename += '#L%d-%d' % (first, first + len(lines) - 1)
-            except IOError:
+                filename += '#L%d-L%d' % (first, first + len(lines) - 1)
+            except (IOError, TypeError):
                 pass
 
     return "https://github.com/Gallopsled/pwntools/blob/%s/%s" % (branch, filename)
@@ -378,27 +381,25 @@ from sphinx.util.inspect import safe_getmembers, safe_getattr
 def dont_skip_any_doctests(app, what, name, obj, skip, options):
     return False
 
-# Test non-exported members
-class ModuleDocumenter(sphinx.ext.autodoc.ModuleDocumenter):
-    def get_object_members(self, want_all):
-        if want_all:
-            # if not hasattr(self.object, '__all__'):
-            #     for implicit module members, check __module__ to avoid
-            #     documenting imported objects
-                return True, safe_getmembers(self.object)
-            # else:
-            #     memberlist = self.object.__all__
-            #     # Sometimes __all__ is broken...
-            #     if not isinstance(memberlist, (list, tuple)) or not \
-            #        all(isinstance(entry, string_types) for entry in memberlist):
-            #         self.directive.warn(
-            #             '__all__ should be a list of strings, not %r '
-            #             '(in module %s) -- ignoring __all__' %
-            #             (memberlist, self.fullname))
-            #         # fall back to all members
-            #         return True, safe_getmembers(self.object)
-        else:
-            memberlist = self.options.members or []
+def get_object_members_all(self, want_all):
+    if want_all:
+        # if not hasattr(self.object, '__all__'):
+        #     for implicit module members, check __module__ to avoid
+        #     documenting imported objects
+        return True, safe_getmembers(self.object)
+    # else:
+    #     memberlist = self.object.__all__
+    #     # Sometimes __all__ is broken...
+    #     if not isinstance(memberlist, (list, tuple)) or not \
+        #        all(isinstance(entry, string_types) for entry in memberlist):
+    #         self.directive.warn(
+    #             '__all__ should be a list of strings, not %r '
+    #             '(in module %s) -- ignoring __all__' %
+    #             (memberlist, self.fullname))
+    #         # fall back to all members
+    #         return True, safe_getmembers(self.object)
+    else:
+        memberlist = self.options.members or []
         ret = []
         for mname in memberlist:
             try:
@@ -410,8 +411,45 @@ class ModuleDocumenter(sphinx.ext.autodoc.ModuleDocumenter):
                         safe_getattr(self.object, '__name__', '???'), mname))
         return False, ret
 
+class _DummyClass(object): pass
+
+class Py2OutputChecker(_DummyClass, doctest.OutputChecker):
+    def check_output(self, want, got, optionflags):
+        sup = super(Py2OutputChecker, self).check_output
+        if sup(want, got, optionflags):
+            return True
+        try:
+            rly_want = pwnlib.util.safeeval.const(want)
+            if sup(repr(rly_want), got, optionflags):
+                return True
+            rly_got = pwnlib.util.safeeval.const(got)
+            if rly_want == rly_got:
+                return True
+        except ValueError:
+            pass
+        rly_want = ' '.join(x[:2].replace('b"','"').replace("b'","'")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
+        if sup(rly_want, got, optionflags):
+            return True
+        rly_want = ' '.join(x[:2].replace('b"',' "').replace("b'"," '")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
+        return sup(rly_want, got, optionflags)
+
+def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
+    if checker is None:
+        checker = Py2OutputChecker()
+    doctest.DocTestRunner.__init__(self, checker, verbose, optionflags)
+
+class EndlessLoop(Exception): pass
+def alrm_handler(sig, frame):
+    signal.alarm(180) # three minutes
+    raise EndlessLoop()
+signal.signal(signal.SIGALRM, alrm_handler)
+signal.alarm(600) # ten minutes
+
 if 'doctest' in sys.argv:
     def setup(app):
         app.connect('autodoc-skip-member', dont_skip_any_doctests)
 
-    sphinx.ext.autodoc.ModuleDocumenter = ModuleDocumenter
+    if sys.version_info[:1] < (3,):
+        import sphinx.ext.doctest
+        sphinx.ext.doctest.SphinxDocTestRunner.__init__ = py2_doctest_init
+    sphinx.ext.autodoc.ModuleDocumenter.get_object_members = get_object_members_all

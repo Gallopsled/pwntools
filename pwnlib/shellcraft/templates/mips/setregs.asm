@@ -15,11 +15,11 @@ Args:
 
 Example:
 
-    >>> print shellcraft.setregs({'$t0':1, '$a3':'0'}).rstrip()
+    >>> print(shellcraft.setregs({'$t0':1, '$a3':'0'}).rstrip())
         slti $a3, $zero, 0xFFFF /* $a3 = 0 */
         li $t9, ~1
         not $t0, $t9
-    >>> print shellcraft.setregs({'$a0':'$a1', '$a1':'$a0', '$a2':'$a1'}).rstrip()
+    >>> print(shellcraft.setregs({'$a0':'$a1', '$a1':'$a0', '$a2':'$a1'}).rstrip())
         sw $a1, -4($sp) /* mov $a2, $a1 */
         lw $a2, -4($sp)
         xor $a1, $a1, $a0 /* xchg $a1, $a0 */

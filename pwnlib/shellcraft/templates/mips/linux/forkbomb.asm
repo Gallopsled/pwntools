@@ -11,5 +11,6 @@ Performs a forkbomb attack.
 %>
 ${dosloop}:
     ${fork()}
+    .set noat
     beq $at, $at, ${dosloop}
     ${nop()}

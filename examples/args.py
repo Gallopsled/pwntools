@@ -14,5 +14,5 @@ Try running this example with::
 
 from pwn import *
 
-print args['RHOST'] or 'RHOST is not set'
-print args['RPORT'] or 'RPORT is not set'
+print(args['RHOST'] or 'RHOST is not set')
+print(args['RPORT'] or 'RPORT is not set')

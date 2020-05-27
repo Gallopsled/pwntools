@@ -11,6 +11,8 @@ docs/build
 build
 MANIFEST
 dist
+venv
+.vscode
 *.egg-info
 *.core
 .coverage

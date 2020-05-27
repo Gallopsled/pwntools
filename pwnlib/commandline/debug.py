@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import absolute_import
+from __future__ import division
 
 import argparse
 import sys
@@ -13,7 +14,7 @@ parser = common.parser_commands.add_parser(
 )
 parser.add_argument(
     '-x', metavar='GDBSCRIPT',
-    type=file,
+    type=argparse.FileType('r'),
     help='Execute GDB commands from this file.'
 )
 parser.add_argument(
@@ -78,7 +79,12 @@ def main(args):
         # pidof() returns a list
         if not target:
             log.error("Could not find a PID for %r", args.process)
+
         target = target[0]
+
+        # pidof will sometimes return all PIDs, including init
+        if target == 1:
+            log.error("Got PID 1 from pidof.  Check the process name, or use --pid 1 to debug init")
     else:
         parser.print_usage()
         return 1

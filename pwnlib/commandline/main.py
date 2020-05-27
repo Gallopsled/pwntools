@@ -46,6 +46,9 @@ commands = {
 }
 
 def main():
+    if len(sys.argv) < 2:
+        parser.print_usage()
+        sys.exit()
     args = parser.parse_args()
     with context.local(log_console = sys.stderr):
         commands[args.command](args)

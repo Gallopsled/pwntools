@@ -6,7 +6,7 @@ Example:
 
     >>> io = run_assembly(shellcraft.infloop())
     >>> io.recvall(timeout=1)
-    ''
+    b''
     >>> io.close()
 
 </%docstring>
