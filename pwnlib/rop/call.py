@@ -9,6 +9,8 @@ from pwnlib.util import packing
 
 import six
 
+from pwnlib.util.misc import python_2_bytes_compatible
+
 
 class Unresolved(object):
     """
@@ -55,6 +57,8 @@ class StackAdjustment(Unresolved):
     """
     pass
 
+
+@python_2_bytes_compatible
 class AppendedArgument(Unresolved):
     """
     Encapsulates information about a pointer argument, and the data
@@ -186,8 +190,6 @@ class AppendedArgument(Unresolved):
 
     def __bytes__(self):
         return packing.flat(self.resolve())
-    if six.PY2:
-        __str__ = __bytes__
 
     def __repr__(self):
         if isinstance(self.address, six.integer_types):

@@ -9,6 +9,8 @@ import socket
 import stat
 import string
 
+import six
+
 from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util import fiddling
@@ -446,3 +448,14 @@ def register_sizes(regs, in_sizes):
             smaller[r] = [r_ for r_ in l if sizes[r_] < sizes[r]]
 
     return lists.concat(regs), sizes, bigger, smaller
+
+
+def python_2_bytes_compatible(klass):
+    """
+    A class decorator that defines __str__ methods under Python 2.
+    Under Python 3 it does nothing.
+    """
+    if six.PY2:
+        if '__str__' not in klass.__dict__:
+            klass.__str__ = klass.__bytes__
+    return klass
