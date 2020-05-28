@@ -302,6 +302,7 @@ from pwnlib.util import lists
 from pwnlib.util import packing
 from pwnlib.util.cyclic import cyclic
 from pwnlib.util.packing import pack
+from pwnlib.util.misc import python_2_bytes_compatible
 
 log = getLogger(__name__)
 __all__ = ['ROP']
@@ -382,6 +383,7 @@ class DescriptiveStack(list):
         return '\n'.join(rv)
 
 
+@python_2_bytes_compatible
 class ROP(object):
     r"""Class which simplifies the generation of ROP-chains.
 
@@ -1052,7 +1054,6 @@ class ROP(object):
     def __bytes__(self):
         """Returns: Raw bytes of the ROP chain"""
         return self.chain()
-    __str__ = __bytes__
 
     def __get_cachefile_name(self, files):
         """Given an ELF or list of ELF objects, return a cache file for the set of files"""
