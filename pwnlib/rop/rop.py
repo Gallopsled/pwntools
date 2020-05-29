@@ -966,7 +966,10 @@ class ROP(object):
                 SYS_sigreturn  = constants.SYS_rt_sigreturn
 
             for register, value in zip(frame.arguments, arguments):
-                frame[register] = value
+                if not isinstance(value, six.integer_types + (Unresolved,)):
+                    frame[register] = AppendedArgument(value)
+                else:
+                    frame[register] = value
 
         # Set up a call frame which will set EAX and invoke the syscall
         call = Call('SYS_sigreturn',
