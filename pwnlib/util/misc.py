@@ -16,6 +16,11 @@ from pwnlib.log import getLogger
 from pwnlib.util import fiddling
 from pwnlib.util import lists
 
+try:
+    import ipdb as pdb
+except ImportError:
+    import pdb
+
 log = getLogger(__name__)
 
 def align(alignment, x):
@@ -459,3 +464,5 @@ def python_2_bytes_compatible(klass):
         if '__str__' not in klass.__dict__:
             klass.__str__ = klass.__bytes__
     return klass
+
+breakpoint = pdb.set_trace
