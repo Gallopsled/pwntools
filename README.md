@@ -20,10 +20,6 @@ r.send(asm(shellcraft.sh()))
 r.interactive()
 ```
 
-# Try It Now!
-
-You can now do a live demo of Pwntools, [right in your browser](https://demo.pwntools.com).
-
 # Documentation
 
 Our documentation is available at [docs.pwntools.com](https://docs.pwntools.com/)
