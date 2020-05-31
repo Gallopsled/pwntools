@@ -44,7 +44,7 @@ for filename in glob.glob('pwnlib/commandline/*'):
 
 install_requires     = ['paramiko>=1.15.2',
                         'mako>=1.0.0',
-                        'pyelftools>=0.2.4',
+                        'pyelftools==0.24',
                         'capstone',
                         'ropgadget>=5.3',
                         'pyserial>=2.7',
@@ -86,7 +86,7 @@ except Exception as e:
 setup(
     name                 = 'pwntools',
     packages             = find_packages(),
-    version              = '3.9.2',
+    version              = '3.9.3',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],
