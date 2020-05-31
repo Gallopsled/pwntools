@@ -13,12 +13,14 @@ every week.  It can be permanently disabled via:
 
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import datetime
 import json
 import os
 import time
-import xmlrpclib
+
+from six.moves.xmlrpc_client import ServerProxy
 
 import packaging.version
 
@@ -44,7 +46,7 @@ def available_on_pypi(prerelease=current_version.is_prerelease):
     >>> available_on_pypi(prerelease=False).is_prerelease
     False
     """
-    client = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
+    client = ServerProxy('https://pypi.python.org/pypi')
     versions = client.package_releases('pwntools', True)
     versions = map(packaging.version.Version, versions)
 
@@ -86,7 +88,7 @@ def should_check():
     if not filename:
         return False
 
-    if read(filename).strip() == 'never':
+    if read(filename).strip() == b'never':
         return False
 
     return time.time() > (last_check() + update_freq)
@@ -102,7 +104,7 @@ def perform_check(prerelease=current_version.is_prerelease):
 
     >>> from packaging.version import Version
     >>> pwnlib.update.current_version = Version("999.0.0")
-    >>> print perform_check()
+    >>> print(perform_check())
     None
     >>> pwnlib.update.current_version = Version("0.0.0")
     >>> perform_check() # doctest: +ELLIPSIS

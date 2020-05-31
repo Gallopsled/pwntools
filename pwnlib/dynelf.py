@@ -15,7 +15,7 @@ Example
     # leaks at least one byte at that address.
     def leak(address):
         data = p.read(address, 4)
-        log.debug("%#x => %s" % (address, (data or '').encode('hex')))
+        log.debug("%#x => %s" % (address, enhex(data or '')))
         return data
 
     # For the sake of this example, let's say that we
@@ -48,6 +48,7 @@ Example
 DynELF
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import ctypes
 
@@ -703,12 +704,14 @@ class DynELF(object):
             "A hash table of Elf32_Word objects supports symbol table access", or see:
             https://docs.oracle.com/cd/E19504-01/802-6319/6ia12qkfo/index.html#chapter6-48031
 
-            struct Elf_Hash {
-                uint32_t nbucket;
-                uint32_t nchain;
-                uint32_t bucket[nbucket];
-                uint32_t chain[nchain];
-            }
+            .. code-block:: c
+
+                struct Elf_Hash {
+                    uint32_t nbucket;
+                    uint32_t nchain;
+                    uint32_t bucket[nbucket];
+                    uint32_t chain[nchain];
+                }
 
             You can force an ELF to use this type of symbol table by compiling
             with 'gcc -Wl,--hash-style=sysv'
@@ -782,7 +785,7 @@ class DynELF(object):
         maskwords = leak.field(hshtab, elf.GNU_HASH.maskwords)
 
         # Skip over the bloom filter to get to the buckets
-        elfword = self.elfclass / 8
+        elfword = self.elfclass // 8
         buckets = hshtab + sizeof(elf.GNU_HASH) + (elfword * maskwords)
 
         # The chains come after the buckets
@@ -852,7 +855,7 @@ class DynELF(object):
         for offset in libcdb.get_build_id_offsets():
             address = libbase + offset
             if self.leak.compare(address + 0xC, "GNU\x00"):
-                return enhex(''.join(self.leak.raw(address + 0x10, 20)))
+                return enhex(b''.join(self.leak.raw(address + 0x10, 20)))
             else:
                 self.status("Magic did not match")
                 pass

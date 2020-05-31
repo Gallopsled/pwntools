@@ -21,7 +21,7 @@ Examples:
     >>> assembly += shellcraft.i386.linux.write('edx', 'esp', 5)
     >>> p = run_assembly(assembly)
     >>> l.wait_for_connection().recv()
-    'Hello'
+    b'Hello'
 
     >>> l = listen(fam='ipv6', timeout=5)
     >>> assembly = shellcraft.i386.linux.connect('::1', l.lport, 'ipv6')

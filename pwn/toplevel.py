@@ -22,7 +22,7 @@ from pwnlib import *
 from pwnlib.asm import *
 from pwnlib.args import args
 from pwnlib.context import Thread
-from pwnlib.context import context
+from pwnlib.context import context, LocalContext
 from pwnlib.dynelf import DynELF
 from pwnlib.encoders import *
 from pwnlib.elf.corefile import Core, Corefile, Coredump
@@ -68,15 +68,8 @@ from pwnlib.util.web import *
 
 # Promote these modules, so that "from pwn import *" will let you access them
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from six.moves import cPickle as pickle, cStringIO as StringIO
+from six import BytesIO
 
 error   = log.error
 warning = log.warning
@@ -84,3 +77,5 @@ warn    = log.warning
 info    = log.info
 debug   = log.debug
 success = log.success
+
+__all__ = [x for x in globals().keys() if x != '__name__']

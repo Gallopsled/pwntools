@@ -89,11 +89,13 @@ Member Documentation
 ===============================
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import os
 import random
 import re
 import shlex
+import six
 import tempfile
 import time
 
@@ -115,7 +117,7 @@ log = getLogger(__name__)
 
 @LocalContext
 def debug_assembly(asm, gdbscript=None, vma=None):
-    """debug_assembly(asm, gdbscript=None, vma=None) -> tube
+    r"""debug_assembly(asm, gdbscript=None, vma=None) -> tube
 
     Creates an ELF file, and launches it under a debugger.
 
@@ -127,7 +129,7 @@ def debug_assembly(asm, gdbscript=None, vma=None):
         asm(str): Assembly code to debug
         gdbscript(str): Script to run in GDB
         vma(int): Base address to load the shellcode at
-        **kwargs: Override any :obj:`pwnlib.context.context` values.
+        \**kwargs: Override any :obj:`pwnlib.context.context` values.
 
     Returns:
         :class:`.process`
@@ -142,7 +144,7 @@ def debug_assembly(asm, gdbscript=None, vma=None):
             # 'Hello world!'
     """
     tmp_elf = make_elf_from_assembly(asm, vma=vma, extract=False)
-    os.chmod(tmp_elf, 0777)
+    os.chmod(tmp_elf, 0o777)
 
     atexit.register(lambda: os.unlink(tmp_elf))
 
@@ -155,14 +157,14 @@ def debug_assembly(asm, gdbscript=None, vma=None):
 
 @LocalContext
 def debug_shellcode(data, gdbscript=None, vma=None):
-    """
+    r"""
     Creates an ELF file, and launches it under a debugger.
 
     Arguments:
         data(str): Assembled shellcode bytes
         gdbscript(str): Script to run in GDB
         vma(int): Base address to load the shellcode at
-        **kwargs: Override any :obj:`pwnlib.context.context` values.
+        \**kwargs: Override any :obj:`pwnlib.context.context` values.
 
     Returns:
         :class:`.process`
@@ -177,10 +179,10 @@ def debug_shellcode(data, gdbscript=None, vma=None):
             io.recvline()
             # 'Hello world!'
     """
-    if isinstance(data, unicode):
+    if isinstance(data, six.text_type):
         log.error("Shellcode is cannot be unicode.  Did you mean debug_assembly?")
     tmp_elf = make_elf(data, extract=False, vma=vma)
-    os.chmod(tmp_elf, 0777)
+    os.chmod(tmp_elf, 0o777)
 
     atexit.register(lambda: os.unlink(tmp_elf))
 
@@ -250,15 +252,15 @@ def _gdbserver_port(gdbserver, ssh):
     # Listening on port 34816
     process_created = gdbserver.recvline()
 
-    if process_created.startswith('ERROR:'):
+    if process_created.startswith(b'ERROR:'):
         raise ValueError(
             'Failed to spawn process under gdbserver. gdbserver error message: %s' % process_created
         )
 
     gdbserver.pid   = int(process_created.split()[-1], 0)
 
-    listening_on = ''
-    while 'Listening' not in listening_on:
+    listening_on = b''
+    while b'Listening' not in listening_on:
         listening_on    = gdbserver.recvline()
 
     port = int(listening_on.split()[-1])
@@ -274,7 +276,7 @@ def _gdbserver_port(gdbserver, ssh):
         listener.level = 'error'
 
         # Hook them up
-        remote <> listener
+        remote.connect_both(listener)
 
     # Set up port forwarding for ADB
     elif context.os == 'android':
@@ -405,7 +407,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     if env is None:
         env = os.environ
 
-    if isinstance(args, (str, unicode)):
+    if isinstance(args, (bytes, six.text_type)):
         args = [args]
 
     orig_args = args
@@ -440,7 +442,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     if not exe:
         log.error("%s does not exist" % orig_args[0])
     else:
-        gdbscript = 'file %s\n%s' % (exe, gdbscript)
+        gdbscript = 'file "%s"\n%s' % (exe, gdbscript)
 
     # Start gdbserver/qemu
     # (Note: We override ASLR here for the gdbserver process itself.)
@@ -463,9 +465,9 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
 
     # gdbserver outputs a message when a client connects
     garbage = gdbserver.recvline(timeout=1)
-
-    if "Remote debugging from host" not in garbage:
-        gdbserver.unrecv(garbage)
+    
+    # Some versions of gdbserver output an additional message
+    garbage2 = gdbserver.recvline_startswith(b"Remote debugging from host ", timeout=1)
 
     return gdbserver
 
@@ -612,7 +614,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     # if gdbscript is a file object, then read it; we probably need to run some
     # more gdb script anyway
-    if isinstance(gdbscript, file):
+    if hasattr(gdbscript, 'read'):
         with gdbscript:
             gdbscript = gdbscript.read()
 
@@ -637,7 +639,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     # let's see if we can find a pid to attach to
     pid = None
-    if   isinstance(target, (int, long)):
+    if   isinstance(target, six.integer_types):
         # target is a pid, easy peasy
         pid = target
     elif isinstance(target, str):
@@ -661,7 +663,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
         tmpfile = shell.mktemp()
         gdbscript = 'shell rm %s\n%s' % (tmpfile, gdbscript)
-        shell.upload_data(gdbscript or '', tmpfile)
+        shell.upload_data(context._encode(gdbscript), tmpfile)
 
         cmd = ['ssh', '-C', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
         if shell.password:
@@ -725,7 +727,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     if exe:
         # The 'file' statement should go first
-        pre = 'file %s\n%s' % (exe, pre)
+        pre = 'file "%s"\n%s' % (exe, pre)
 
     cmd = binary()
 
@@ -740,10 +742,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
     cmd += ' -q '
 
     if exe and context.native:
-        if ssh:
-            ssh.download_file(exe)
-            exe = os.path.basename(exe)
-        if not os.path.isfile(exe):
+        if not ssh and not os.path.isfile(exe):
             log.error('No such file: %s' % exe)
         cmd += ' "%s"' % exe
 
@@ -767,7 +766,7 @@ def attach(target, gdbscript = None, exe = None, need_ptrace_scope = True, gdb_a
 
     if gdbscript:
         tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.gdb',
-                                          delete = False)
+                                          delete = False, mode = 'w+')
         log.debug('Wrote gdb script to %r\n%s' % (tmp.name, gdbscript))
         gdbscript = 'shell rm %s\n%s' % (tmp.name, gdbscript)
 
@@ -799,9 +798,9 @@ def ssh_gdb(ssh, argv, gdbscript = None, arch = None, **kwargs):
     c = ssh.process(argv, **kwargs)
 
     # Find the port for the gdb server
-    c.recvuntil('port ')
+    c.recvuntil(b'port ')
     line = c.recvline().strip()
-    gdbport = re.match('[0-9]+', line)
+    gdbport = re.match(b'[0-9]+', line)
     if gdbport:
         gdbport = int(gdbport.group(0))
 
@@ -809,7 +808,7 @@ def ssh_gdb(ssh, argv, gdbscript = None, arch = None, **kwargs):
     forwardport = l.lport
 
     attach(('127.0.0.1', forwardport), gdbscript, local_exe, arch, ssh=ssh)
-    l.wait_for_connection() <> ssh.connect_remote('127.0.0.1', gdbport)
+    l.wait_for_connection().connect_both(ssh.connect_remote('127.0.0.1', gdbport))
     return c
 
 def find_module_addresses(binary, ssh=None, ulimit=False):
@@ -923,7 +922,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         try:
             path     = next(p for p in local_libs.keys() if remote_path in p)
         except StopIteration:
-            print "Skipping %r" % remote_path
+            print("Skipping %r" % remote_path)
             continue
 
         # Load it
@@ -993,15 +992,15 @@ def version(program='gdb'):
 
     Example:
 
-        >>> (7,0) <= gdb.version() <= (8,0)
+        >>> (7,0) <= gdb.version() <= (9,0)
         True
     """
     program = misc.which(program)
-    expr = r'([0-9]+\.?)+'
+    expr = br'([0-9]+\.?)+'
 
     with tubes.process.process([program, '--version'], level='error') as gdb:
         version = gdb.recvline()
 
     versions = re.search(expr, version).group()
 
-    return tuple(map(int, versions.split('.')))
+    return tuple(map(int, versions.split(b'.')))

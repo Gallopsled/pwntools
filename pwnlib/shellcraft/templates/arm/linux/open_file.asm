@@ -19,7 +19,7 @@ Args:
           break
   filepath_out = ', '.join(filepath_out)
 
-  if isinstance(mode, (int, long)):
+  if isinstance(mode, six.integer_types):
       mode = hex(mode)
 %>
 %if expr(cpp("%s & O_CREAT" % flags, arch = 'arm', os = 'linux')):

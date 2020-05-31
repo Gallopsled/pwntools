@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 
 import errno
 import socket
@@ -29,18 +30,18 @@ class server(sock):
         >>> s = server(8888)
         >>> client_conn = remote('localhost', s.lport)
         >>> server_conn = s.next_connection()
-        >>> client_conn.sendline('Hello')
+        >>> client_conn.sendline(b'Hello')
         >>> server_conn.recvline()
-        'Hello\n'
+        b'Hello\n'
         >>> def cb(r):
         ...     client_input = r.readline()
         ...     r.send(client_input[::-1])
         ...
         >>> t = server(8889, callback=cb)
         >>> client_conn = remote('localhost', t.lport)
-        >>> client_conn.sendline('callback')
+        >>> client_conn.sendline(b'callback')
         >>> client_conn.recv()
-        '\nkcabllac'
+        b'\nkcabllac'
     """
 
     #: Local port

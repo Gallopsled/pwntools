@@ -1,8 +1,10 @@
 [run]
 branch = True
+parallel = True
 omit =
     */constants/*
 source =
     pwn
     pwnlib
-    ~/.pwntools-cache/
+    ~/.pwntools-cache-2.7/
+    ~/.pwntools-cache-3.8/

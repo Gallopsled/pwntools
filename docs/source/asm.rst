@@ -6,6 +6,7 @@
    from pwnlib.asm import *
    from pwnlib import shellcraft
    from pwnlib.tubes.process import process
+   from pwnlib.util.fiddling import unhex
 
 
 :mod:`pwnlib.asm` --- Assembler functions

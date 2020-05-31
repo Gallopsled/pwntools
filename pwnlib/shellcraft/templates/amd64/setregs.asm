@@ -14,18 +14,18 @@ Args:
 
 Example:
 
-    >>> print shellcraft.setregs({'rax':1, 'rbx':'rax'}).rstrip()
+    >>> print(shellcraft.setregs({'rax':1, 'rbx':'rax'}).rstrip())
         mov rbx, rax
         push 1
         pop rax
-    >>> print shellcraft.setregs({'rax': 'SYS_write', 'rbx':'rax'}).rstrip()
+    >>> print(shellcraft.setregs({'rax': 'SYS_write', 'rbx':'rax'}).rstrip())
         mov rbx, rax
         push SYS_write /* 1 */
         pop rax
-    >>> print shellcraft.setregs({'rax':'rbx', 'rbx':'rax', 'rcx':'rbx'}).rstrip()
+    >>> print(shellcraft.setregs({'rax':'rbx', 'rbx':'rax', 'rcx':'rbx'}).rstrip())
         mov rcx, rbx
         xchg rax, rbx
-    >>> print shellcraft.setregs({'rax':1, 'rdx':0}).rstrip()
+    >>> print(shellcraft.setregs({'rax':1, 'rdx':0}).rstrip())
         push 1
         pop rax
         cdq /* rdx=0 */

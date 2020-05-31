@@ -26,6 +26,10 @@ Try running this example with::
 ```
 Example showing the interface to `pwnlib.asm.asm` and `pwnlib.shellcraft`.
 ```
+* `attach.py`
+```
+Example showing `pwnlib.gdb.attach()`
+```
 * `clean_and_log.py`
 ```
 Use case for `pwnlib.tubes.tube.clean_and_log`.
@@ -65,14 +69,17 @@ Example showing `pwnlib.ui.options()`
 ```
 * `port_forward.py`
 ```
-A very simple port forwarder using `pwnlib.tubes.tube.connect_both()`.  Notice
-that `<>` is just a shorthand.
+A very simple port forwarder using `pwnlib.tubes.tube.connect_both()`.
 ```
 * `readline_completers.py`
 ```
 Example showing pwnlib's readline implementation and a few completers.  This
 part of pwnlib will probably see some major changes soon, but we wanted to show
 off some proof-of-concepts.
+```
+* `remote.py`
+```
+Example showing how to use the remote class.
 ```
 * `remote_gdb_debugging.py`
 ```
@@ -103,7 +110,7 @@ and::
 
   $ TERM=xterm-256color python text.py
 ```
-* `remote.py`
+* `yesno.py`
 ```
-Example showing how to use the remote class.
+Example showing `pwnlib.ui.yesno()`
 ```
