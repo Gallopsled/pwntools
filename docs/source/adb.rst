@@ -1,5 +1,6 @@
 .. testsetup:: *
 
+   from pprint import pprint
    from pwn import *
    adb = pwnlib.adb
 

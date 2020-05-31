@@ -1,5 +1,6 @@
 """Silly module mostly meant as an easter-egg."""
 from __future__ import absolute_import
+from __future__ import division
 
 import threading
 import time
@@ -40,7 +41,7 @@ def splash():
             text.cyan   , text.bold_cyan   ,
         ]
         def getcolor(n):
-            return colors[(n / 4) % len(colors)]
+            return colors[(n // 4) % len(colors)]
 
         lines = ['    ' + line + '\n' for line in _banner.strip('\n').split('\n')]
 

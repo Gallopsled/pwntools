@@ -1,7 +1,7 @@
 """
 Kernel-specific ELF functionality
 """
-
+from __future__ import division
 
 class KernelConfig(object):
     def __init__(self, name, title, requires=[], excludes=[], minver=0, maxver=99):
@@ -150,9 +150,9 @@ kernel_configuration = [
     Disabled('SCSI_CONSTANTS'),
     Disabled('SCSI_LOGGING'),
     Disabled('SCSI_SCAN_ASYNC'),
-    Disabled('CONFIG_MEDIA_RADIO_SUPPORT'),
-    Disabled('CONFIG_PFT'),
-    Disabled('CONFIG_SYSVIPC'),
+    Disabled('MEDIA_RADIO_SUPPORT'),
+    Disabled('PFT'),
+    Disabled('SYSVIPC'),
 
 
     # Permits reloading the kernel from disk
@@ -166,7 +166,7 @@ kernel_configuration = [
     Enabled('HIGHMEM64G', requires=['X86_32']),
     Enabled('X86_PAE', requires=['X86_32']),
     Disabled('LEGACY_VSYSCALL_NONE', requires=['X86_32', 'X86_64'], minver=4.4),
-    Disabled('CONFIG_IA32_EMULATION'),
+    Disabled('IA32_EMULATION'),
     Disabled('X86_X32'),
     Disabled('MODIFY_LDT_SYSCALL'),
     Minimum('DEFAULT_MMAP_MIN_ADDR', 65536, requires=['X86_32', 'X86_64']),
@@ -181,7 +181,7 @@ kernel_configuration = [
     Minimum('ARCH_MMAP_RND_BITS', 24, requires=['ARM64']),
     Minimum('ARCH_MMAP_RND_COMPAT_BITS', 16, requires=['ARM64']),
     Enabled('CPU_SW_DOMAIN_PAN', requires=['ARM'], minver=4.3),
-    Enabled('CONFIG_ARM64_PAN', requires=['ARM64'], minver=4.3),
+    Enabled('ARM64_PAN', requires=['ARM64'], minver=4.3),
     Disabled('OABI_COMPAT'),
     Disabled('CP_ACCESS', requires=['ARM']),
     Disabled('CP_ACCESS64', requires=['ARM64']),

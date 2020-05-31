@@ -11,7 +11,7 @@ Arguments:
     address(int): Address of the ELF as a register or integer.
 </%docstring>
 <%
-elf_magic = unpack('\x7fELF')
+elf_magic = unpack(b'\x7fELF')
 die       = common.label('die')
 load_one  = common.label('load_one')
 next_phdr = common.label('next_phdr')
@@ -104,6 +104,9 @@ PT_LOAD  = 1
     /* AT_RANDOM */
     push esp
     push 25
+    /* AT_SECURE */
+    push ebx
+    push 23
 
     push ebx /* envp */
     push ebx /* argv */
