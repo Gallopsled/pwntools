@@ -236,13 +236,14 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
     if pid:
         gdbserver_args += ['--once', '--attach']
 
-    if env:
+    if env != None:
         env_args = []
         for key in tuple(env):
             if key.startswith('LD_'): # LD_PRELOAD / LD_LIBRARY_PATH etc.
                 env_args.append('{}={}'.format(key, env.pop(key)))
-        if env_args:
-            gdbserver_args += ['--wrapper', 'env'] + env_args + ['--']
+            else:
+                env_args.append('{}={}'.format(key, env[key]))
+        gdbserver_args += ['--wrapper', 'env', '-i'] + env_args + ['--']
 
     gdbserver_args += ['localhost:0']
     gdbserver_args += args
