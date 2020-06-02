@@ -107,6 +107,20 @@ jobs:
     - name: Upload coverage to coveralls.io
       run:  COVERALLS_REPO_TOKEN=PP20MEgztXIQJJTguQwe2jeCh6Bm4lkbv coveralls
 
+  staging-merge:
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'Gallopsled' && github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/') && endsWith(github.event.ref, '-staging')
+    needs: build
+    steps:
+    - uses: actions/checkout@v2
+    - name: Push changes to protected branch
+      env:
+        GITHUB_REF: ${{github.event.ref}}
+      run: |
+        BRANCH=${GITHUB_REF#refs/heads/}
+        git branch -f "${BRANCH%-staging}"
+        git push origin "${BRANCH%-staging}"
+
   pypi:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
@@ -122,3 +136,6 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.pypi_password }}
+
+    - if: failure()
+      run: ls -R
