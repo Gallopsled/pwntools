@@ -945,7 +945,7 @@ class Corefile(ELF):
 
         # Sanity check!
         try:
-            if stack[address] == b'\x00':
+            if stack[address] != b'\x00':
                 log.warning("Error parsing corefile stack: Could not find end of environment")
                 return
         except ValueError:
@@ -1531,4 +1531,3 @@ class CorefileFinder(object):
                 return keys['interpreter']
 
         return ''
-
