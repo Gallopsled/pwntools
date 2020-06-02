@@ -339,4 +339,4 @@ def wait_for_debugger(pid):
     with log.waitfor('Waiting for debugger') as l:
         while tracer(pid) is None:
             time.sleep(0.01)
-        l.success()
+        log.success("Debugger is running")
