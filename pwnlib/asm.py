@@ -191,6 +191,8 @@ def which_binutils(util):
             # e.g. objdump
             if arch is None:
                 pattern = gutil
+            elif arch == 'avr':
+                pattern ='avr-%s' % gutil
 
             # e.g. aarch64-linux-gnu-objdump
             else:
