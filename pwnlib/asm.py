@@ -324,6 +324,7 @@ def _bfdname():
         'amd64'   : 'elf64-x86-64',
         'arm'     : 'elf32-%sarm' % E,
         'thumb'   : 'elf32-%sarm' % E,
+        'avr'     : 'elf32-avr',
         'mips'    : 'elf32-trad%smips' % E,
         'mips64'  : 'elf64-trad%smips' % E,
         'alpha'   : 'elf64-alpha',
