@@ -1871,7 +1871,7 @@ class ELF(ELFFile):
     def unpack(self, address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""
         self._update_args(kw)
-        return packing.unpack(self.read(address, context.bytes), *a, **kw)
+        return packing.unpack(self.read(address, self.bytes), *a, **kw)
 
     def string(self, address):
         """string(address) -> str
