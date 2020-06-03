@@ -15,4 +15,3 @@ sphinx
 sphinx_rtd_theme
 sphinxcontrib-napoleon
 sphinxcontrib-autoprogram
-tox>=1.8.1

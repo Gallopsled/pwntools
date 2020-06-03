@@ -53,7 +53,6 @@ install_requires     = ['paramiko>=1.15.2',
                         'pyserial>=2.7',
                         'requests>=2.0',
                         'pip>=6.0.8',
-                        'tox>=1.8.1',
                         'pygments>=2.0',
                         'pysocks',
                         'python-dateutil',
@@ -61,7 +60,7 @@ install_requires     = ['paramiko>=1.15.2',
                         'psutil>=3.3.0',
                         'intervaltree>=3.0',
                         'sortedcontainers',
-                        'unicorn>=1.0.2rc1', # see unicorn-engine/unicorn#1100, unicorn-engine/unicorn#1170
+                        'unicorn>=1.0.2rc1,<1.0.2rc4', # see unicorn-engine/unicorn#1100, unicorn-engine/unicorn#1170, Gallopsled/pwntools#1538
 ]
 
 # Check that the user has installed the Python development headers
@@ -83,7 +82,7 @@ setup(
     name                 = 'pwntools',
     python_requires      = '>=2.7',
     packages             = find_packages(),
-    version              = '4.0.1',
+    version              = '4.1.0',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],
