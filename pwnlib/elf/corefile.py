@@ -945,16 +945,11 @@ class Corefile(ELF):
 
         # Sanity check!
         try:
-            assert stack[address] == b'\x00'
-        except AssertionError:
-            # Something weird is happening.  Just don't touch it.
-            log.debug("Something is weird")
-            return
+            if stack[address] != b'\x00':
+                log.warning("Error parsing corefile stack: Could not find end of environment")
+                return
         except ValueError:
-            # If the stack is not actually present in the coredump, we can't
-            # read from the stack.  This will fail as:
-            # ValueError: 'seek out of range'
-            log.debug("ValueError")
+            log.warning("Error parsing corefile stack: Address out of bounds")
             return
 
         # address is currently set to the NULL terminator of the last
@@ -968,12 +963,14 @@ class Corefile(ELF):
         p_last_env_addr = stack.find(pack(last_env_addr), None, last_env_addr)
         if p_last_env_addr < 0:
             # Something weird is happening.  Just don't touch it.
-            log.warn_once("Found bad environment at %#x", last_env_addr)
+            log.warn_once("Error parsing corefile stack: Found bad environment at %#x", last_env_addr)
             return
 
         # Sanity check that we did correctly find the envp NULL terminator.
         envp_nullterm = p_last_env_addr+context.bytes
-        assert self.unpack(envp_nullterm) == 0
+        if self.unpack(envp_nullterm) != 0:
+            log.warning("Error parsing corefile stack: Could not find end of environment variables")
+            return
 
         # We've successfully located the end of the envp[] array.
         #
@@ -1535,4 +1532,3 @@ class CorefileFinder(object):
                 return keys['interpreter']
 
         return ''
-
