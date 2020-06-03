@@ -56,7 +56,7 @@ def search_by_hash(hex_encoded_id, hash_type='build_id'):
     data   = b""
     while not data.startswith(b'\x7fELF'):
         log.debug("Downloading data from LibcDB: %s", url)
-        data = wget(url)
+        data = wget(url, timeout=20)
 
         if not data:
             log.warn_once("Could not fetch libc for build_id %s", hex_encoded_id)
@@ -197,7 +197,7 @@ def get_build_id_offsets():
     # $ check_arch "x86-64"
     #       6 Displaying notes found at file offset 0x00000174 with length 0x00000024:
     #      82 Displaying notes found at file offset 0x00000270 with length 0x00000024:
-        'amd64': [0x270, 0x174],
+        'amd64': [0x270, 0x174, 0x2e0],
     # $ check_arch "PowerPC or cisco"
     #      88 Displaying notes found at file offset 0x00000174 with length 0x00000024:
         'powerpc': [0x174],

@@ -685,6 +685,7 @@ class ContextType(object):
                      ('x86_64', 'amd64'),
                      ('x86', 'i386'),
                      ('i686', 'i386'),
+                     ('armv7l', 'arm'),
                      ('armeabi', 'arm'),
                      ('arm64', 'aarch64')]
         for k, v in transform:

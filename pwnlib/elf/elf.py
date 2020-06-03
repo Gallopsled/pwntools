@@ -1020,7 +1020,7 @@ class ELF(ELFFile):
                                                 section.data(),
                                                 inv_symbols)
 
-                for address, target in reversed(sorted(res.items())):
+                for address, target in sorted(res.items()):
                     self.plt[inv_symbols[target]] = address
 
         for a,n in sorted({v:k for k,v in self.plt.items()}.items()):
@@ -1871,7 +1871,7 @@ class ELF(ELFFile):
     def unpack(self, address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""
         self._update_args(kw)
-        return packing.unpack(self.read(address, context.bytes), *a, **kw)
+        return packing.unpack(self.read(address, self.bytes), *a, **kw)
 
     def string(self, address):
         """string(address) -> str

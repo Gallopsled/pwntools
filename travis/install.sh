@@ -64,6 +64,13 @@ setup_travis()
     rm -rf usr/share
 }
 
+setup_gdbserver()
+{
+    # https://docs.improbable.io/reference/14.3/shared/debug-cloud-workers#common-issues
+    wget http://archive.ubuntu.com/ubuntu/pool/main/g/gdb/gdbserver_8.3-0ubuntu1_amd64.deb
+    sudo apt-get install ./gdbserver_8.3-0ubuntu1_amd64.deb
+}
+
 setup_linux()
 {
     sudo apt-get install -y software-properties-common openssh-server libncurses5-dev libncursesw5-dev openjdk-8-jre-headless
@@ -164,7 +171,7 @@ setup_android_emulator()
 
     # In the future, it would be nice to be able to use snapshots.
     # However, I haven't gotten them to work nicely.
-    android-sdk/emulator/emulator -avd android-$ANDROID_ABI -no-window -no-boot-anim -no-skin -no-audio -no-window -no-snapshot &
+    android-sdk/emulator/emulator -avd android-$ANDROID_ABI -no-window -no-boot-anim -read-only -no-audio -no-window -no-snapshot &
     adb wait-for-device
     adb shell id
     adb shell getprop
@@ -179,6 +186,7 @@ setup_osx()
 
 if [[ "$USER" == "travis" ]]; then
 #   setup_travis
+    setup_gdbserver
     setup_android_emulator
 elif [[ "$USER" == "shippable" ]]; then
     sudo apt-get update
