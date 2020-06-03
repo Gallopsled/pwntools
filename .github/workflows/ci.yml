@@ -118,7 +118,8 @@ jobs:
         GITHUB_REF: ${{github.event.ref}}
       run: |
         BRANCH=${GITHUB_REF#refs/heads/}
-        git branch -f "${BRANCH%-staging}"
+        git checkout -B "${BRANCH%-staging}"
+        git pull --ff-only origin "${BRANCH-staging}"
         git push origin "${BRANCH%-staging}"
 
   pypi:
