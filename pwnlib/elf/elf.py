@@ -592,6 +592,8 @@ class ELF(ELFFile):
         self.symbols = dotdict({k:update(v) for k,v in self.symbols.items()})
         self.plt     = dotdict({k:update(v) for k,v in self.plt.items()})
         self.got     = dotdict({k:update(v) for k,v in self.got.items()})
+        for f in self.functions.values():
+            f.address += delta
 
         # Update our view of memory
         memory = intervaltree.IntervalTree()
@@ -1927,7 +1929,7 @@ class ELF(ELFFile):
     def unpack(self, address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""
         self._update_args(kw)
-        return packing.unpack(self.read(address, context.bytes), *a, **kw)
+        return packing.unpack(self.read(address, self.bytes), *a, **kw)
 
     def string(self, address):
         """string(address) -> str

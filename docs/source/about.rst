@@ -47,7 +47,7 @@ This module is our "clean" python-code. As a rule, we do not think that
 importing :mod:`pwnlib` or any of the submodules should have any significant
 side-effects (besides e.g. caching).
 
-For the most part, you will also only get the bits you import. You for instance
+For the most part, you will also only get the bits you import. You for instance would
 not get access to :mod:`pwnlib.util.packing` simply by doing ``import
 pwnlib.util``.
 
