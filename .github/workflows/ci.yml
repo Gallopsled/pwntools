@@ -124,15 +124,14 @@ jobs:
     needs: build
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 20
     - name: Push changes to protected branch
       env:
-        GITHUB_REF: ${{github.event.ref}}
+        GITHUB_REF: ${{ github.event.ref }}
       run: |
         BRANCH=${GITHUB_REF#refs/heads/}
         TARGET=${BRANCH%-staging}
-        git fetch --shallow-exclude="$TARGET"
-        # XXX here comes the ugliest hack I ever made with git
-        git fetch --depth=2 $(cat .git/shallow)
         git branch -f "$TARGET"
         git push origin "$TARGET"
 
