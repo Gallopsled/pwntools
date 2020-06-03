@@ -236,7 +236,7 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
     if pid:
         gdbserver_args += ['--once', '--attach']
 
-    if env != None:
+    if env is not None:
         env_args = []
         for key in tuple(env):
             if key.startswith('LD_'): # LD_PRELOAD / LD_LIBRARY_PATH etc.
