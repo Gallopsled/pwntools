@@ -970,6 +970,7 @@ class Corefile(ELF):
         envp_nullterm = p_last_env_addr+context.bytes
         if self.unpack(envp_nullterm) != 0:
             log.warning("Error parsing corefile stack: Could not find end of environment variables")
+            return
 
         # We've successfully located the end of the envp[] array.
         #
