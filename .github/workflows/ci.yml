@@ -10,6 +10,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 10 # used only for optimizing jre away
+
     - name: Cache for pip
       uses: actions/cache@v1
       id: cache-pip
@@ -114,6 +117,29 @@ jobs:
         coverage run examples/text.py
         # for f in examples/sigreturn_corefile_*.py; do coverage run "$f"; done # XXX something is wrong
 
+    - name: Coverage running commandline tools
+      run: |
+        alias pwn='coverage run -m pwnlib.commandline.main'
+        set -x
+
+        pwn cyclic 32
+        pwn cyclic -l 0x62616161
+
+        pwn shellcraft amd64.linux.sh
+
+        pwn disasm ff3424c3ebfe
+
+        pwn hex abcd
+        pwn unhex 4141 4141
+
+        head -c256 /dev/urandom | pwn phd
+
+        pwn errno 2
+
+        pwn constgrep -c freebsd -m ^PROT_ '3 + 4'
+        pwn constgrep ^MAP_
+        pwn constgrep ^O_
+
     - name: Build source and wheel distributions
       run: |
         python setup.py sdist
@@ -155,6 +181,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: packages
+        path: dist
 
     - name: Publish package
       uses: pypa/gh-action-pypi-publish@v1.1.0
