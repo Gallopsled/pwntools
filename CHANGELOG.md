@@ -10,8 +10,9 @@ The table below shows which release corresponds to each branch, and what date th
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
 | [4.3.0](#430)    | `dev`    | Jun 30, 2020 (planned)
-| [4.2.0](#420)    | `beta`   | May 30, 2020 (planned)
-| [4.1.0](#410)    | `stable` | May 8, 2020
+| [4.2.0](#420)    | `beta`   | Jun 5, 2020 (planned)
+| [4.1.1](#411)    | `stable` | Jun 3, 2020
+| [4.1.0](#410)    |          | May 8, 2020
 | [4.0.1](#401)    |          | Jan 22, 2020
 | [4.0.0](#400)    |          | Jan 09, 2020
 | [3.13.0](#3130)  |          | Nov 5, 2019
@@ -54,7 +55,7 @@ To be released on Jun 30, 2020.
 
 ## 4.2.0 (`beta`)
 
-To be released on May 30, 2020.
+To be released on Jun 5, 2020.
 
 - [#1436][1436] Add ret2dlresolve automation
 - [fecf9f] tubes.ssh.process() no longer requires python 2 installed on remote (still requires python, though)
@@ -65,7 +66,16 @@ To be released on May 30, 2020.
 [fecf9f]: http://github.com/Gallopsled/pwntools/commit/fecf9f
 [1454]: https://github.com/Gallopsled/pwntools/pull/1454
 
-## 4.1.0 (`stable`)
+## 4.1.1 (`stable`)
+
+- Fix PLT resolution by locking unicorn <1.0.2rc4 (#1538)
+- Fix wrong ELF/context unpack handling (c4c11a37)
+- Fix updating of ELF.functions addresses after changing ELF.address #1512 (#1513)
+- Update Corefile warnings and replace asserts with normal checks (#1526)
+- several py2-py3 issues (#1451)
+- Fix cyclic command
+
+## 4.1.0
 
 - [#1316][1316] Fix connect shellcraft in python 3
 - [#1323][1323] Fix issues related with debugging
