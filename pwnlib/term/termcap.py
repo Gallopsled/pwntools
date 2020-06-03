@@ -1,4 +1,5 @@
 from __future__ import division
+from __future__ import print_function
 
 __all__ = ['get']
 import curses
@@ -48,7 +49,8 @@ def init():
         # Fix for BPython
         try:
             curses.setupterm()
-        except:
-            pass
+        except curses.error as e:
+            import traceback
+            print('Warning:', ''.join(traceback.format_exception_only(e.__class__, e)), file=sys.stderr)
 
     cache = {}

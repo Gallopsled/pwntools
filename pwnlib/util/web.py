@@ -13,7 +13,7 @@ from pwnlib.util.misc import size
 log = getLogger(__name__)
 
 def wget(url, save=None, timeout=5, **kwargs):
-    """wget(url, save=None, timeout=5) -> str
+    r"""wget(url, save=None, timeout=5) -> str
 
     Downloads a file via HTTP/HTTPS.
 
@@ -28,7 +28,7 @@ def wget(url, save=None, timeout=5, **kwargs):
       >>> url    = 'https://httpbin.org/robots.txt'
       >>> result = wget(url, timeout=60)
       >>> result
-      b'User-agent: *\\nDisallow: /deny\\n'
+      b'User-agent: *\nDisallow: /deny\n'
       >>> result2 = wget(url, True, timeout=60)
       >>> result == open('robots.txt', 'rb').read()
       True

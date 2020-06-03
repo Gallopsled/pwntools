@@ -857,7 +857,7 @@ class DynELF(object):
             if self.leak.compare(address + 0xC, "GNU\x00"):
                 return enhex(b''.join(self.leak.raw(address + 0x10, 20)))
             else:
-                self.status("Magic did not match")
+                self.status("Build ID not found at offset %#x" % offset)
                 pass
 
     def _make_absolute_ptr(self, ptr_or_offset):

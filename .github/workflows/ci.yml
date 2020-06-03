@@ -17,13 +17,6 @@ jobs:
         path: ~/.cache/pip
         key: ${{ matrix.os }}-cache-pip
 
-    - name: Cache for dependencies
-      uses: actions/cache@v1
-      id: cache-deps
-      with:
-        path: android-?dk
-        key: ${{ matrix.os }}-cache-deps
-
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
@@ -35,10 +28,32 @@ jobs:
         flake8 . --count --select=E9,F63,F7 --show-source --statistics --exclude=android-?dk  # TODO: Add F82
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=pwnlib/constants,android-?dk,.git,__pycache__
 
-    - name: Install Linux dependencies
+    - name: Detect whether java is needed
+      id: java-needed
+      env:
+        GITHUB_REF: ${{ github.event.ref }}
+        GITHUB_COMMIT_RANGE: ${{ github.event.before }}...${{ github.event.after }}
       run: |
-        sudo apt update
-        sudo apt install -y ash bash-static dash ksh mksh zsh \
+        if echo "$GITHUB_REF" | grep -Eq 'staging|tags'; then
+          echo "Found release or important branch ($GITHUB_REF), forcing tests."
+        elif ! git show "$GITHUB_COMMIT_RANGE" >/dev/null; then
+          echo 'Incorrect commit range, forcing android tests.'
+        elif git log --stat "$GITHUB_COMMIT_RANGE" | grep -iE 'android|\<adb\>'; then
+          echo 'Found Android-related commits, forcing tests.'
+        else
+          # clear files that cause Android doctests
+          : > docs/source/adb.rst > docs/source/protocols/adb.rst
+          exit 0
+        fi
+        echo ::set-output name=need::openjdk-8-jre-headless
+
+    - name: Install Linux dependencies
+      env:
+        ANDROID_JRE: ${{ steps.java-needed.outputs.need }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
+          ash bash-static dash ksh mksh zsh \
           pandoc gdb socat sshpass \
           binutils-multiarch qemu-user-static \
           binutils-aarch64-linux-gnu \
@@ -46,9 +61,16 @@ jobs:
           binutils-mips-linux-gnu \
           binutils-powerpc-linux-gnu \
           gcc-multilib \
-          openjdk-8-jre-headless
-        sudo apt install -y gcc-aarch64-linux-gnu \
+          $ANDROID_JRE
+        sudo apt-get install -y -o Acquire::Retries=3 \
+          gcc-aarch64-linux-gnu \
           gcc-arm-linux-gnueabihf
+
+    - name: Install android avd
+      if:  steps.java-needed.outputs.need
+      run: |
+        USER=travis source travis/install.sh
+        set | egrep '^(ANDROID|PATH)' >.android.env
 
     - name: Set up SSH
       run: |
@@ -76,17 +98,10 @@ jobs:
     - name: Install documentation dependencies
       run:  pip install -r docs/requirements.txt
 
-    - name: Install android avd
-      if:  steps.cache-deps.outputs.cache-hit != 'true'
-      run: |
-        USER=travis source travis/install.sh
-        set | egrep '^(ANDROID|PATH)' >android.env
-
     - name: Coverage doctests
       run: |
-        source android.env
-        android-sdk/emulator/emulator -avd android-$ANDROID_ABI -no-window -no-boot-anim -no-skin -no-audio -no-window -no-snapshot &
-        adb wait-for-device
+        source .android.env || :
+        echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope # required by some gdb doctests
         PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest
         coverage combine
 
@@ -95,9 +110,46 @@ jobs:
         python setup.py sdist
         python setup.py bdist_wheel --universal
 
-    - uses: actions/upload-artifact@v2-preview
+    - uses: actions/upload-artifact@v2
       with:
-        path: dist/*
+        name: packages
+        path: dist/
 
     - name: Upload coverage to coveralls.io
       run:  COVERALLS_REPO_TOKEN=PP20MEgztXIQJJTguQwe2jeCh6Bm4lkbv coveralls
+
+  staging-merge:
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'Gallopsled' && github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/') && endsWith(github.event.ref, '-staging')
+    needs: build
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 20
+    - name: Push changes to protected branch
+      env:
+        GITHUB_REF: ${{ github.event.ref }}
+      run: |
+        BRANCH=${GITHUB_REF#refs/heads/}
+        TARGET=${BRANCH%-staging}
+        git branch -f "$TARGET"
+        git push origin "$TARGET"
+
+  pypi:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+    needs: build
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: packages
+
+    - name: Publish package
+      uses: pypa/gh-action-pypi-publish@v1.1.0
+      with:
+        user: __token__
+        password: ${{ secrets.pypi_password }}
+
+    - if: failure()
+      run: ls -R

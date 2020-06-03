@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.2.0](#420)    | `dev`    | Feb 10, 2020 (planned)
-| [4.1.0](#410)    | `beta`   | Jan 30, 2020 (planned)
-| [4.0.1](#401)    | `stable` | Jan 22, 2020
+| [4.3.0](#430)    | `dev`    | Jun 30, 2020 (planned)
+| [4.2.0](#420)    | `beta`   | May 30, 2020 (planned)
+| [4.1.0](#410)    | `stable` | May 8, 2020
+| [4.0.1](#401)    |          | Jan 22, 2020
 | [4.0.0](#400)    |          | Jan 09, 2020
 | [3.13.0](#3130)  |          | Nov 5, 2019
 | [3.12.1](#3121)  |          | Sept 17, 2018
@@ -46,13 +47,23 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.2.0 (`dev`)
+## 4.3.0 (`dev`)
 
-To be released on Feb 10, 2020.
+To be released on Jun 30, 2020.
 
-## 4.1.0 (`beta`)
+## 4.2.0 (`beta`)
 
-To be released on Jan 30, 2020.
+To be released on May 30, 2020.
+
+- #1436 Add ret2dlresolve automation
+- [fecf9f] tubes.ssh.process() no longer requires python 2 installed on remote (still requires python, though)
+- Miscellanous improvements to DynElf and fmtstr leaker (see examples/fmtstr/exploit2.py)
+- #1454 Support for windows console colors
+
+[fecf9f]: http://github.com/Gallopsled/pwntols/commit/fecf9f
+
+
+## 4.1.0 (`stable`)
 
 - [#1316][1316] Fix connect shellcraft in python 3
 - [#1323][1323] Fix issues related with debugging
@@ -64,7 +75,7 @@ To be released on Jan 30, 2020.
 [1241]: https://github.com/Gallopsled/pwntools/pulls/1218
 [1218]: https://github.com/Gallopsled/pwntools/pulls/1218
 
-## 4.0.1 (`stable`)
+## 4.0.1
 
 - [#1412][1412] `recvline_pred()` and similar do not reorder data
 - Bypass unicorn-engine/unicorn#1100 and unicorn-engine/unicorn#1170 requiring unstable package
