@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import argparse
+import six
 import string
 import sys
 
@@ -21,7 +22,7 @@ parser.add_argument(
     '-a', '--alphabet',
     metavar = 'alphabet',
     default = string.ascii_lowercase.encode(),
-    type = bytes,
+    type = six.ensure_binary,
     help = 'The alphabet to use in the cyclic pattern (defaults to all lower case letters)',
 )
 
@@ -65,9 +66,10 @@ def main(args):
         pat = args.lookup
 
         try:
-            pat = packing.pack(int(pat, 0), subsize*8)
+            pat = int(pat, 0)
         except ValueError:
             pass
+        pat = flat(pat)
 
         if len(pat) != subsize:
             log.critical('Subpattern must be %d bytes' % subsize)
