@@ -97,7 +97,7 @@ RUN echo y | android update sdk --no-ui --all --filter sys-img-armeabi-v7a-andro
 WORKDIR /root
 RUN git clone https://github.com/Gallopsled/pwntools
 WORKDIR /root/pwntools
-RUN git checkout dev3
+RUN git checkout dev
 RUN pip3 install --upgrade --editable .
 RUN pip3 install --upgrade --requirement docs/requirements.txt
 RUN pip3 uninstall --yes pwntools
