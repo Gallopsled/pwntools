@@ -28,6 +28,10 @@ jobs:
         echo GITHUB_HEAD_REF="$GITHUB_HEAD_REF"
         echo GITHUB_BASE_REF="$GITHUB_BASE_REF"
 
+    - name: Merge branch
+      run: |
+        git merge -v "$GITHUB_BASE_REF"
+
     - uses: actions/checkout@v2
     - name: Cache for pip
       uses: actions/cache@v1
