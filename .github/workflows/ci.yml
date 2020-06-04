@@ -119,7 +119,8 @@ jobs:
 
     - name: Coverage running commandline tools
       run: |
-        alias pwn='coverage run -m pwnlib.commandline.main'
+        export TERM=linux
+        pwn() { coverage run -m pwnlib.commandline.main "$@"; }
         set -x
 
         pwn cyclic 32
