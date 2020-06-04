@@ -84,6 +84,22 @@ setup_linux()
     fi
 }
 
+skip_android_tests()
+{
+    # In order to avoid running the doctests that require the Android
+    # emulator, while still leaving the code intact, we remove the
+    # RST file that Sphinx searches.
+    rm -f 'docs/source/adb.rst'
+    rm -f 'docs/source/protocols/adb.rst'
+
+    # However, the file needs to be present or else things break.
+    touch 'docs/source/adb.rst'
+    touch 'docs/source/protocols/adb.rst' || true
+
+    echo "Skipping Android emulator install, Android tests disabled."
+
+}
+
 setup_android_emulator()
 {
     # If we are running on Travis CI, and there were no changes to Android
@@ -102,18 +118,15 @@ setup_android_emulator()
         elif (git log --stat "$TRAVIS_COMMIT_RANGE" | grep -iE "android|adb" | grep -v "commit "); then
             echo "Found Android-related commits, forcing Android Emulator installation"
         else
-            # In order to avoid running the doctests that require the Android
-            # emulator, while still leaving the code intact, we remove the
-            # RST file that Sphinx searches.
-            rm -f 'docs/source/adb.rst'
-            rm -f 'docs/source/protocols/adb.rst'
+            return skip_android_tests
+        fi
+    fi
 
-            # However, the file needs to be present or else things break.
-            touch 'docs/source/adb.rst'
-            touch 'docs/source/protocols/adb.rst' || true
-
-            echo "Skipping Android emulator install, Android tests disabled."
-            return
+    if [ -n "$CI" ]; then
+        if (git log --stat "$GITHUB_REF".."$GITHUB_SHA" | grep -iE "android|adb" | grep -v "commit "); then
+            echo "Found Android-related commits, forcing Android Emulator installation"
+        else
+            return skip_android_tests
         fi
     fi
 
