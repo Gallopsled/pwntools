@@ -69,7 +69,13 @@ jobs:
           gcc-aarch64-linux-gnu \
           gcc-arm-linux-gnueabihf
 
-    - name: Install android avd
+    -name: Testing Corefiles
+      run: |
+        cat /proc/sys/kernel/core_pattern
+        cat /proc/sys/kernel/core_uses_pid
+        ( cd $(mktemp -d); sh -c 'kill -11 $$'; ls -la ./*core*; ls -la /var/crash/*.crash;)
+
+    - name: Install Android AVD
       if:  steps.java-needed.outputs.need
       run: |
         USER=travis source travis/install.sh
