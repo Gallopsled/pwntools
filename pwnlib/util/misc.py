@@ -211,7 +211,6 @@ def run_in_new_terminal(command, terminal = None, args = None):
     Returns:
       PID of the new terminal process
     """
-
     if not terminal:
         if context.terminal:
             terminal = context.terminal[0]
@@ -219,18 +218,18 @@ def run_in_new_terminal(command, terminal = None, args = None):
         elif which('pwntools-terminal'):
             terminal = 'pwntools-terminal'
             args     = []
-        elif 'TERM_PROGRAM' in os.environ:
-            terminal = os.environ['TERM_PROGRAM']
-            args     = []
-        elif 'DISPLAY' in os.environ and which('x-terminal-emulator'):
-            terminal = 'x-terminal-emulator'
-            args     = ['-e']
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
             args     = ['splitw']
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
+        elif 'TERM_PROGRAM' in os.environ:
+            terminal = os.environ['TERM_PROGRAM']
+            args     = []
+        elif 'DISPLAY' in os.environ and which('x-terminal-emulator'):
+            terminal = 'x-terminal-emulator'
+            args     = ['-e']
         else:
             is_wsl = False
             if os.path.exists('/proc/sys/kernel/osrelease'):
