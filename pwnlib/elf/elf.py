@@ -90,6 +90,12 @@ log = getLogger(__name__)
 
 __all__ = ['load', 'ELF']
 
+def _iter_symbols(sec):
+    # Cache result of iter_symbols.
+    if not hasattr(sec, '_symbols'):
+        sec._symbols = list(sec.iter_symbols())
+    return iter(sec._symbols)
+
 class Function(object):
     """Encapsulates information about a function in an :class:`.ELF` binary.
 
@@ -268,6 +274,9 @@ class ELF(ELFFile):
             or mask(flags, E_FLAGS.EF_MIPS_ARCH_64R2):
                 self.arch = 'mips64'
                 self.bits = 64
+
+        self._sections = None
+        self._segments = None
 
         #: IntervalTree which maps all of the loaded memory segments
         self.memory = intervaltree.IntervalTree()
@@ -485,6 +494,13 @@ class ELF(ELFFile):
         """:class:`str`: ELF type (``EXEC``, ``DYN``, etc)"""
         return describe_e_type(self.header.e_type).split()[0]
 
+    def iter_segments(self):
+        # Yield and cache all the segments in the file
+        if self._segments is None:
+            self._segments = [self.get_segment(i) for i in range(self.num_segments())]
+
+        return iter(self._segments)
+
     @property
     def segments(self):
         """
@@ -536,6 +552,13 @@ class ELF(ELFFile):
             return seg
 
         return None
+
+    def iter_sections(self):
+        # Yield and cache all the sections in the file
+        if self._sections is None:
+            self._sections = [self.get_section(i) for i in range(self.num_sections())]
+
+        return iter(self._sections)
 
     @property
     def sections(self):
@@ -842,7 +865,7 @@ class ELF(ELFFile):
             if not isinstance(sec, SymbolTableSection):
                 continue
 
-            for sym in sec.iter_symbols():
+            for sym in _iter_symbols(sec):
                 # Avoid duplicates
                 if sym.name in self.functions:
                     continue
@@ -866,7 +889,7 @@ class ELF(ELFFile):
             if not isinstance(section, SymbolTableSection):
                 continue
 
-            for symbol in section.iter_symbols():
+            for symbol in _iter_symbols(section):
                 value = symbol.entry.st_value
                 if not value:
                     continue
@@ -907,7 +930,7 @@ class ELF(ELFFile):
         if self.statically_linked:
             return
 
-        for section in self.iter_sections():
+        for section in self.sections:
             # We are only interested in relocations
             if not isinstance(section, RelocationSection):
                 continue
@@ -961,7 +984,7 @@ class ELF(ELFFile):
 
         # Iterate over the dynamic symbol table
         dynsym = self.get_section_by_name('.dynsym')
-        symbol_iter = dynsym.iter_symbols()
+        symbol_iter = _iter_symbols(dynsym)
 
         # 'gotsym' is the index of the first GOT symbol
         gotsym = self.dynamic_value_by_tag('DT_MIPS_GOTSYM')
