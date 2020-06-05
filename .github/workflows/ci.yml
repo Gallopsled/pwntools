@@ -101,6 +101,9 @@ jobs:
     - name: Install documentation dependencies
       run:  pip install -r docs/requirements.txt
 
+    - name: Disable Corefile tests
+      run: rm -f docs/source/elf/corefile.rst
+
     - name: Coverage doctests
       run: |
         source .android.env || :
