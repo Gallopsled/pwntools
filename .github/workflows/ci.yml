@@ -102,7 +102,9 @@ jobs:
       run:  pip install -r docs/requirements.txt
 
     - name: Disable Corefile tests
-      run: rm -f docs/source/elf/corefile.rst
+      run: |
+        rm -f docs/source/elf/corefile.rst
+        rm -f docs/source/ui.rst
 
     - name: Coverage doctests
       run: |
