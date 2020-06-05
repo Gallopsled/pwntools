@@ -407,13 +407,6 @@ def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
         checker = Py2OutputChecker()
     doctest.DocTestRunner.__init__(self, checker, verbose, optionflags)
 
-class EndlessLoop(Exception): pass
-def alrm_handler(sig, frame):
-    signal.alarm(180) # three minutes
-    raise EndlessLoop()
-signal.signal(signal.SIGALRM, alrm_handler)
-signal.alarm(600) # ten minutes
-
 if 'doctest' in sys.argv:
     def setup(app):
         app.connect('autodoc-skip-member', dont_skip_any_doctests)
