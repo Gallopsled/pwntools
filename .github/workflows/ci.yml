@@ -89,8 +89,12 @@ jobs:
 
     - name: Disable broken tests
       run: |
-        rm -f docs/source/elf/corefile.rst
         rm -f docs/source/ui.rst
+
+    - name: Enable core dumps
+      run: |
+        ulimit -c unlimited
+        ulimit -c
 
     - name: Manually install non-broken Unicorn
       run:  pip install unicorn==1.0.2rc3
