@@ -61,6 +61,7 @@ install_requires     = ['paramiko>=1.15.2',
                         'intervaltree>=3.0',
                         'sortedcontainers',
                         'unicorn>=1.0.2rc1,<1.0.2rc4', # see unicorn-engine/unicorn#1100, unicorn-engine/unicorn#1170, Gallopsled/pwntools#1538
+                        'six>=1.12.0',
 ]
 
 # Check that the user has installed the Python development headers
