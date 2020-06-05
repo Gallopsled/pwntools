@@ -10,6 +10,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
+    - name: Enable verbose logging
+      run: set -x
+
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
