@@ -101,7 +101,7 @@ jobs:
     - name: Install documentation dependencies
       run:  pip install -r docs/requirements.txt
 
-    - name: Disable Corefile tests
+    - name: Disable broken tests
       run: |
         rm -f docs/source/elf/corefile.rst
         rm -f docs/source/ui.rst
