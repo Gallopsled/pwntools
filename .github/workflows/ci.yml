@@ -126,7 +126,8 @@ jobs:
       run: |
         alias pwn='coverage run -m pwnlib.commandline.main'
         set -x
-
+        
+        export PWNLIB_NOTERM=1
         pwn cyclic 32
         pwn cyclic -l 0x62616161
 
