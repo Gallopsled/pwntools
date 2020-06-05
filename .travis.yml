@@ -2,7 +2,6 @@ language: python
 addons:
   apt:
     packages:
-    - gcc-multilib
     - lib32stdc++6
     - ash
     - bash
@@ -21,6 +20,10 @@ addons:
     - binutils-arm-linux-gnueabihf
     - binutils-mips-linux-gnu
     - binutils-powerpc-linux-gnu
+    - gcc-aarch64-linux-gnu
+    - gcc-arm-linux-gnueabihf
+    - bash-static
+
 cache:
     - pip
     - directories:
