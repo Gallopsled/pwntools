@@ -98,6 +98,7 @@ import logging
 import os
 import random
 import re
+import six
 import sys
 import threading
 import time
@@ -183,6 +184,9 @@ class Progress(object):
         self.last_status = 0
 
     def _log(self, status, args, kwargs, msgtype):
+        # Logs are strings, not bytes.  Handle Python3 bytes() objects.
+        status = six.ensure_text(status)
+
         # this progress logger is stopped, so don't generate any more records
         if self._stopped:
             return
@@ -284,6 +288,9 @@ class Logger(object):
         return logging._levelNames[levelString.upper()]
 
     def _log(self, level, msg, args, kwargs, msgtype, progress = None):
+        # Logs are strings, not bytes.  Handle Python3 bytes() objects.
+        msg = six.ensure_text(msg)
+
         extra = kwargs.get('extra', {})
         extra.setdefault('pwnlib_msgtype', msgtype)
         extra.setdefault('pwnlib_progress', progress)
