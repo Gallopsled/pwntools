@@ -106,6 +106,9 @@ jobs:
         rm -f docs/source/elf/corefile.rst
         rm -f docs/source/ui.rst
 
+    - name: Manually install non-broken Unicorn
+      run:  pip install unicorn==1.0.2rc3
+
     - name: Coverage doctests
       run: |
         source .android.env || :
