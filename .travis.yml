@@ -21,7 +21,6 @@ addons:
     - binutils-mips-linux-gnu
     - binutils-powerpc-linux-gnu
     - bash-static
-
 cache:
     - pip
     - directories:
