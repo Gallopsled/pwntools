@@ -69,9 +69,6 @@ jobs:
           binutils-powerpc-linux-gnu \
           gcc-multilib \
           $ANDROID_JRE
-        sudo apt-get install -y -o Acquire::Retries=3 \
-          gcc-aarch64-linux-gnu \
-          gcc-arm-linux-gnueabihf
 
     - name: Install android avd
       if:  steps.java-needed.outputs.need
