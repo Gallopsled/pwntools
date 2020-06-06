@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from pwnlib.data.elf import fmtstr
 from pwnlib.data.elf import relro
 from pwnlib.data.elf import ret2dlresolve
 
