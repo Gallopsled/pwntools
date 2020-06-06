@@ -44,4 +44,4 @@ data:
     blacklist = set(raw)
 
 encode = amd64DeltaEncoder()
-__all__ = [encode]
+__all__ = ['encode']
