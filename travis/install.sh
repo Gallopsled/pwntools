@@ -64,6 +64,11 @@ setup_travis()
     rm -rf usr/share
 }
 
+setup_ipv6()
+{
+    echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
+}
+
 setup_gdbserver()
 {
     # https://docs.improbable.io/reference/14.3/shared/debug-cloud-workers#common-issues
@@ -186,6 +191,7 @@ setup_osx()
 
 if [[ "$USER" == "travis" ]]; then
 #   setup_travis
+    setup_ipv6
     setup_gdbserver
     setup_android_emulator
 elif [[ "$USER" == "shippable" ]]; then
