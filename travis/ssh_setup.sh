@@ -32,6 +32,7 @@ fi
 
 # Generate a new key so that we can log into it
 ssh-keygen -t rsa -f ~/.ssh/$U -N ''
+chmod og-rw ~/.ssh
 
 # Load the public key into a memory for below
 pubkey=$(cat ~/.ssh/$U.pub)
@@ -42,6 +43,7 @@ USUDO mkdir $H/.ssh || true
 USUDO tee -a $H/.ssh/authorized_keys <<EOF
 from="127.0.0.1" $pubkey
 EOF
+USUDO chmod 700 $H $H/.ssh $H/.ssh/authorized_keys
 
 # In the pwntools examples, we ssh to 'example.pwnme'
 # Set up an SSH config entry to make this actually work
@@ -51,8 +53,13 @@ Host example.pwnme
     User $U
     HostName 127.0.0.1
     IdentityFile ~/.ssh/$U
+    StrictHostKeyChecking no
 EOF
+chmod 700 ~ ~/.ssh
 
-ssh -o "StrictHostKeyChecking no" -vvvv travis@example.pwnme id
+ls -la ~/.ssh
+USUDO ls -la $H/.ssh
+
+ssh -v travis@example.pwnme id
 
 set +ex
