@@ -78,6 +78,7 @@ ELF32_R_SYM_SHIFT = 8
 ELF64_R_SYM_SHIFT = 32
 
 class Elf32_Rel(object):
+    ''
     """
     .. code-block:: c
 
@@ -99,6 +100,7 @@ class Elf32_Rel(object):
 
 
 class Elf64_Rel(object):
+    ''
     """
     .. code-block:: c
 
@@ -120,6 +122,7 @@ class Elf64_Rel(object):
 
 
 class Elf32_Sym(object):
+    ''
     """
     .. code-block:: c
 
@@ -154,6 +157,7 @@ class Elf32_Sym(object):
 
 
 class Elf64_Sym(object):
+    ''
     """
     .. code-block:: c
 
@@ -188,6 +192,7 @@ class Elf64_Sym(object):
 
 
 class Queue(list):
+    ''
     def size(self):
         size = 0
         for v in self:
@@ -201,10 +206,21 @@ class Queue(list):
 
 
 class MarkedBytes(bytes):
+    ''
     pass
 
 
 class Ret2dlresolvePayload(object):
+    """Create a ret2dlresolve payload
+
+    Arguments:
+        elf (ELF): Binary to search
+        symbol (str): Function to search for
+        args (list): List of arguments to pass to the function
+
+    Returns:
+        A ``Ret2dlresolvePayload`` object which can be passed to ``rop.ret2dlresolve``
+    """
     def __init__(self, elf, symbol, args, data_addr=None):
         self.elf = elf
         self.elf_load_address_fixup = self.elf.address - self.elf.load_addr
