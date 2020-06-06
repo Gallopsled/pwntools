@@ -12,7 +12,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        fetch-depth: 100 # used only for optimizing jre away
+        fetch-depth: 0
+
+    - name: Git History 2
+      run: git log --oneline --graph -10
 
     - name: Cache for pip
       uses: actions/cache@v1
@@ -78,16 +81,7 @@ jobs:
 
     - name: Set up SSH
       run: |
-        chmod og-rw ~ # see https://stackoverflow.com/a/60367309/3869724
-        ssh-keygen -t ed25519 -f ~/.ssh/pwntools-ci -N ''
-        cat > ~/.ssh/config <<EOF
-        Host example.pwnme
-            User $USER
-            HostName 127.0.0.1
-            IdentityFile ~/.ssh/pwntools-ci
-        EOF
-        echo -n 'from="127.0.0.1" ' | cat - ~/.ssh/pwntools-ci.pub > ~/.ssh/authorized_keys
-        ssh -o 'StrictHostKeyChecking no' example.pwnme id
+        travis/ssh_setup.sh
 
     - name: Install dependencies
       run: |

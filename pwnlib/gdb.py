@@ -384,8 +384,8 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     by using the ``ssh=`` keyword to pass in your :class:`.ssh` instance.
 
     >>> # Connect to the SSH server
-    >>> shell = ssh('runner', 'example.pwnme', password='demopass')
     >>> # Start a process on the server
+    >>> shell = ssh('travis', 'example.pwnme', password='demopass')
     >>> io = gdb.debug(['bash'],
     ...                 ssh = shell,
     ...                 gdbscript = '''
@@ -561,9 +561,9 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     ... continue
     ... ''')
     >>> # Interact with the process
-    >>> bash.sendline("whoami")
+    >>> bash.sendline("/bin/echo hello")
     >>> bash.recvline()
-    b'runner\n'
+    b'hello\n'
     >>> bash.close()
 
     >>> # Start a forking server
@@ -584,7 +584,8 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     >>> io.close()
 
     >>> # Connect to the SSH server
-    >>> shell = ssh('runner', 'example.pwnme', password='demopass')
+    >>> shell = ssh('travis', 'example.pwnme', password='demopass')
+
     >>> # Start a process on the server
     >>> cat = shell.process(['cat'])
     >>> # Attach a debugger to it
@@ -855,7 +856,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     Example:
 
     >>> with context.local(log_level=9999):
-    ...     shell =  ssh(host='example.pwnme', user='runner', password='demopass')
+    ...     shell =  ssh(host='example.pwnme', user='travis', password='demopass')
     ...     bash_libs = gdb.find_module_addresses('/bin/bash', shell)
     >>> os.path.basename(bash_libs[0].path)
     'libc.so.6'
