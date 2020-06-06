@@ -29,12 +29,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Lint
-      run: |
-        pip install flake8
-        flake8 . --count --select=E9,F63,F7 --show-source --statistics --exclude=android-?dk  # TODO: Add F82
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=pwnlib/constants,android-?dk,.git,__pycache__
-
     - name: Detect whether java is needed
       id: java-needed
       env:

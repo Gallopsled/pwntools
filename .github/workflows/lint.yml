@@ -1,0 +1,33 @@
+name: Lint
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        python-version: [3.8]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Cache for pip
+      uses: actions/cache@v1
+      id: cache-pip
+      with:
+        path: ~/.cache/pip
+        key: ${{ matrix.os }}-cache-pip
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Lint
+      run: |
+        pip install flake8
+        flake8 . --count --select=E9,F63,F7 --show-source --statistics --exclude=android-?dk  # TODO: Add F82
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=pwnlib/constants,android-?dk,.git,__pycache__
