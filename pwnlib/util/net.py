@@ -91,7 +91,7 @@ def getifaddrs():
       `netmask` are themselves dictionaries.  Their structure depend on
       `family`.  If `family` is not :const:`socket.AF_INET` or
       :const:`socket.AF_INET6` they will be empty.
-"""
+    """
     libc = ctypes.CDLL(ctypes.util.find_library('c'))
     getifaddrs = libc.getifaddrs
     getifaddrs.restype = ctypes.c_int
@@ -136,7 +136,7 @@ def interfaces(all = False):
       A dictionary mapping each of the hosts interfaces to a list of it's
       addresses.  Each entry in the list is a tuple ``(family, addr)``, and
       `family` is either :const:`socket.AF_INET` or :const:`socket.AF_INET6`.
-"""
+    """
     out = {}
     for ifa in getifaddrs():
         name = ifa['name']
@@ -168,7 +168,7 @@ def interfaces4(all = False):
     Examples:
         >>> interfaces4(all=True) # doctest: +ELLIPSIS
         {...'127.0.0.1'...}
-"""
+    """
     out = {}
     for name, addrs in interfaces(all = all).items():
         addrs = [addr for fam, addr in addrs if fam == socket.AF_INET]
@@ -193,7 +193,7 @@ def interfaces6(all = False):
     Examples:
         >>> interfaces6() # doctest: +ELLIPSIS
         {...'::1'...}
-"""
+    """
     out = {}
     for name, addrs in interfaces(all = all).items():
         addrs = [addr for fam, addr in addrs if fam == socket.AF_INET6]
@@ -213,7 +213,7 @@ def sockaddr(host, port, network = 'ipv4'):
 
     Returns:
       A tuple containing the sockaddr buffer, length, and the address family.
-"""
+    """
     address_family = {'ipv4':socket.AF_INET,'ipv6':socket.AF_INET6}[network]
 
     for family, _, _, _, ip in socket.getaddrinfo(host, None, address_family):
