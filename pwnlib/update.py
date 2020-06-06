@@ -7,13 +7,13 @@ greatest version, Pwntools automatically checks for updates.
 Since this update check takes a moment, it is only performed once
 every week.  It can be permanently disabled via:
 
-.. code-block:: bash
+::
 
     $ echo never > ~/.pwntools-cache-*/update
 
 Or adding the following lines to ~/.pwn.conf (or system-wide /etc/pwn.conf):
 
-.. code-block::
+::
 
     [update]
     interval=never
