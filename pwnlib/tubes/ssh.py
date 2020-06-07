@@ -537,7 +537,7 @@ class ssh(Timeout, Logger):
 
     def __init__(self, user=None, host=None, port=22, password=None, key=None,
                  keyfile=None, proxy_command=None, proxy_sock=None,
-                 level=None, cache=True, ssh_agent=False, *a, **kw):
+                 level=None, cache=True, ssh_agent=False, ignore_config=False, *a, **kw):
         """Creates a new ssh connection.
 
         Arguments:
@@ -553,6 +553,7 @@ class ssh(Timeout, Logger):
             level: Log level
             cache: Cache downloaded files (by hash/size/timestamp)
             ssh_agent: If :const:`True`, enable usage of keys via ssh-agent
+            ignore_config: If :const:`True`, disable usage of ~/.ssh/config and ~/.ssh/authorized_keys
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used.
@@ -603,7 +604,7 @@ class ssh(Timeout, Logger):
         try:
             config_file = os.path.expanduser('~/.ssh/config')
 
-            if os.path.exists(config_file):
+            if not ignore_config and os.path.exists(config_file):
                 ssh_config  = paramiko.SSHConfig()
                 ssh_config.parse(open(config_file))
                 host_config = ssh_config.lookup(host)
@@ -623,9 +624,10 @@ class ssh(Timeout, Logger):
             self.client = paramiko.SSHClient()
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-            known_hosts = os.path.expanduser('~/.ssh/known_hosts')
-            if os.path.exists(known_hosts):
-                self.client.load_host_keys(known_hosts)
+            if not ignore_config:
+                known_hosts = os.path.expanduser('~/.ssh/known_hosts')
+                if os.path.exists(known_hosts):
+                    self.client.load_host_keys(known_hosts)
 
             has_proxy = bool(proxy_sock or proxy_command)
             if has_proxy:
@@ -637,9 +639,9 @@ class ssh(Timeout, Logger):
 
                 if proxy_command:
                     proxy_sock = paramiko.ProxyCommand(proxy_command)
-                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, allow_agent = ssh_agent, compress = True, sock = proxy_sock)
+                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, allow_agent = ssh_agent, compress = True, sock = proxy_sock, look_for_keys = not ignore_config)
             else:
-                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, allow_agent = ssh_agent, compress = True)
+                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, allow_agent = ssh_agent, compress = True, look_for_keys = not ignore_config)
 
             self.transport = self.client.get_transport()
             self.transport.use_compression(True)
