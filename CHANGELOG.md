@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [4.3.0](#430)    | `dev`    | Jun 30, 2020 (planned)
 | [4.2.0](#420)    | `beta`   | Jun 5, 2020 (planned)
-| [4.1.1](#411)    | `stable` | Jun 3, 2020
+| [4.1.2](#412)    | `stable` | Jun 3, 2020
+| [4.1.1](#411)    |          | Jun 3, 2020
 | [4.1.0](#410)    |          | May 8, 2020
 | [4.0.1](#401)    |          | Jan 22, 2020
 | [4.0.0](#400)    |          | Jan 09, 2020
@@ -66,7 +67,11 @@ To be released on Jun 5, 2020.
 [fecf9f]: http://github.com/Gallopsled/pwntools/commit/fecf9f
 [1454]: https://github.com/Gallopsled/pwntools/pull/1454
 
-## 4.1.1 (`stable`)
+## 4.1.2 (`stable`)
+
+- Pwntools requires `six` v.1.12.0 or higher
+
+## 4.1.1
 
 - Fix PLT resolution by locking unicorn <1.0.2rc4 (#1538)
 - Fix wrong ELF/context unpack handling (c4c11a37)
