@@ -597,12 +597,6 @@ class ssh(Timeout, Logger):
 
         misc.mkdir_p(self._cachedir)
 
-        # This is a dirty hack to make my Yubikey shut up.
-        # If anybody has a problem with this, please open a bug and I'll
-        # figure out a better workaround.
-        if not ssh_agent:
-            os.environ.pop('SSH_AUTH_SOCK', None)
-
         import paramiko
 
         # Make a basic attempt to parse the ssh_config file
@@ -643,9 +637,9 @@ class ssh(Timeout, Logger):
 
                 if proxy_command:
                     proxy_sock = paramiko.ProxyCommand(proxy_command)
-                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, compress = True, sock = proxy_sock)
+                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, allow_agent = ssh_agent, compress = True, sock = proxy_sock)
             else:
-                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, compress = True)
+                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, allow_agent = ssh_agent, compress = True)
 
             self.transport = self.client.get_transport()
             self.transport.use_compression(True)
