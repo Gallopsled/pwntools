@@ -399,7 +399,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     >>> io.interactive() # doctest: +SKIP
     >>> io.close()
     """
-    if isinstance(args, (int, tubes.process.process, tubes.ssh.ssh_channel)):
+    if isinstance(args, six.integer_types + (tubes.process.process, tubes.ssh.ssh_channel)):
         log.error("Use gdb.attach() to debug a running process")
 
     if isinstance(args, (bytes, six.text_type)):

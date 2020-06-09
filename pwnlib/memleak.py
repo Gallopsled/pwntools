@@ -155,17 +155,17 @@ class MemLeak(object):
         Arguments:
             address(int): Base address to calculate offsets from
             field(obj):   Instance of a ctypes field
-            expected(int,str): Expected value
+            expected(int,bytes): Expected value
 
         Return Value:
             The type of the return value will be dictated by
             the type of ``field``.
         """
-        if not isinstance(expected, (int, bytes)):
-            raise TypeError("Expected value must be an int or bytes")
 
-        if isinstance(expected, int):
+        if isinstance(expected, six.integer_types):
             expected = pack(expected, bytes=obj.size)
+        elif not isinstance(expected, bytes):
+            raise TypeError("Expected value must be an int or bytes")
 
         assert obj.size == len(expected)
 
