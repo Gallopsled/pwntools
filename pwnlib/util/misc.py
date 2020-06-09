@@ -394,7 +394,7 @@ def register_sizes(regs, in_sizes):
          'ch': ['ecx', 'cx', 'ch'],
          'cl': ['ecx', 'cx', 'cl'],
          'cx': ['ecx', 'cx'],
-         'dh': ['edx', 'dx', 'dh'],
+       'dh': ['edx', 'dx', 'dh'],
          'di': ['edi', 'di'],
          'dl': ['edx', 'dx', 'dl'],
          'dx': ['edx', 'dx'],
@@ -476,3 +476,6 @@ def bytes_iter(bytes_or_str):
   bytes_or_str = ensure_binary(bytes_or_str)
   for i in range(len(bytes_or_str)):
       yield bytes_or_str[i:i+1]
+
+def bytes_list(bytes_or_str):
+    return list(bytes_iter(bytes_or_str))
