@@ -496,7 +496,7 @@ def binary():
 
         if multiarch:
             return multiarch
-        log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n' \
+        log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n'
                       '$ apt-get install gdb-multiarch')
 
     if not gdb:

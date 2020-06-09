@@ -464,9 +464,6 @@ class ELF(ELFFile):
             self.checksec(*a, **kw)
         )
 
-    def __repr__(self):
-        return "ELF(%r)" % self.path
-
     def get_machine_arch(self):
         return {
             'EM_X86_64': 'amd64',

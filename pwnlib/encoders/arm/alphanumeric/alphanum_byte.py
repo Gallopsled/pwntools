@@ -42,10 +42,10 @@ def off_gen(c):
             return x
    return 0
 
-# return an alphanumeric value ret such that c XOR ret is also alphanumeric 
-# ========================================================================= 
+# return an alphanumeric value ret such that c XOR ret is also alphanumeric
+# =========================================================================
 def alphanumeric_get_complement(c):
-   c &= 0xff;
+   c &= 0xff
    while True:
       ret = alphanumeric_get_byte()
       if alphanumeric_check(c ^ ret):

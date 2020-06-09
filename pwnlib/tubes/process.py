@@ -823,7 +823,7 @@ class process(tube):
             fd = os.open("/dev/tty", os.O_RDWR | os.O_NOCTTY)
             if fd >= 0:
                 os.close(fd)
-                raise Exception('Failed to disconnect from ' +
+                raise Exception('Failed to disconnect from '
                     'controlling tty. It is still possible to open /dev/tty.')
         # which exception, shouldnt' we catch explicitly .. ?
         except OSError:

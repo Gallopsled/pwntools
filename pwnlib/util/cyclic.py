@@ -126,8 +126,8 @@ def cyclic(length = None, alphabet = None, n = None):
         alphabet = context.cyclic_alphabet
 
     if length is not None and len(alphabet) ** n < length:
-        log.error("Can't create a pattern length=%i with len(alphabet)==%i and n==%i" \
-                  % (length, len(alphabet), n))
+        log.error("Can't create a pattern length=%i with len(alphabet)==%i and n==%i",
+                  length, len(alphabet), n)
 
     generator = de_bruijn(alphabet, n)
     out = iters.take(length, generator)
@@ -212,9 +212,9 @@ def cyclic_find(subseq, alphabet = None, n = None):
     subseq = context._encode(subseq)
 
     if len(subseq) != n:
-        log.warn_once("cyclic_find() expects %i-byte subsequences by default, you gave %r\n"\
-            + "Unless you specified cyclic(..., n=%i), you probably just want the first 4 bytes.\n"\
-            + "Truncating the data at 4 bytes.  Specify cyclic_find(..., n=%i) to override this.",
+        log.warn_once("cyclic_find() expects %i-byte subsequences by default, you gave %r\n"
+            "Unless you specified cyclic(..., n=%i), you probably just want the first 4 bytes.\n"
+            "Truncating the data at 4 bytes.  Specify cyclic_find(..., n=%i) to override this.",
             n, subseq, len(subseq), len(subseq))
         subseq = subseq[:n]
 
@@ -285,8 +285,8 @@ def cyclic_metasploit(length = None, sets = None):
     out = iters.take(length, generator)
 
     if length is not None and len(out) < length:
-        log.error("Can't create a pattern of length %i with sets of lengths %s. Maximum pattern length is %i." \
-                  % (length, list(map(len, sets)), len(out)))
+        log.error("Can't create a pattern of length %i with sets of lengths %s. Maximum pattern length is %i.",
+                  length, list(map(len, sets)), len(out))
 
     return _join_sequence(out, sets[0])
 
@@ -419,8 +419,8 @@ class cyclic_gen(object):
             self._chunks.append(length)
             self._total_length += length
             if len(self._alphabet) ** self._n < self._total_length:
-                log.error("Can't create a pattern length=%i with len(alphabet)==%i and n==%i" \
-                    % (self._total_length, len(self._alphabet), self._n))
+                log.error("Can't create a pattern length=%i with len(alphabet)==%i and n==%i",
+                          self._total_length, len(self._alphabet), self._n)
             out = [next(self._generator) for _ in range(length)]
         else:
             self._chunks.append(float("inf"))

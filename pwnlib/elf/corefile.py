@@ -219,8 +219,8 @@ class Mapping(object):
                 stop += self.stop
 
             if not (self.start <= start <= stop <= self.stop):
-                log.error("Byte range [%#x:%#x] not within range [%#x:%#x]" \
-                    % (start, stop, self.start, self.stop))
+                log.error("Byte range [%#x:%#x] not within range [%#x:%#x]",
+                          start, stop, self.start, self.stop)
 
             data = self._core.read(start, stop-start)
 
@@ -669,8 +669,8 @@ class Corefile(ELF):
                 continue
 
             if mapping.start == self.at_sysinfo_ehdr \
-            or (not vdso and mapping.size in [0x1000, 0x2000] \
-                and mapping.flags == 5 \
+            or (not vdso and mapping.size in [0x1000, 0x2000]
+                and mapping.flags == 5
                 and self.read(mapping.start, 4) == b'\x7fELF'):
                 mapping.name = '[vdso]'
                 vdso = True

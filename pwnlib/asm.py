@@ -247,9 +247,9 @@ def _assembler():
                                          stderr=subprocess.STDOUT, universal_newlines=True)
         version = re.search(r' (\d\.\d+)', result).group(1)
         if version < '2.19':
-            log.warn_once('Your binutils version is too old and may not work!\n'  + \
-                'Try updating with: https://docs.pwntools.com/en/stable/install/binutils.html\n' + \
-                'Reported Version: %r' % result.strip())
+            log.warn_once('Your binutils version is too old and may not work!\n'
+                'Try updating with: https://docs.pwntools.com/en/stable/install/binutils.html\n'
+                'Reported Version: %r', result.strip())
 
 
     return assembler
