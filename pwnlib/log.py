@@ -283,7 +283,7 @@ class Logger(object):
         self._logger = logger
 
     def _getlevel(self, levelString):
-        if isinstance(levelString, int):
+        if isinstance(levelString, six.integer_types):
             return levelString
         return logging._levelNames[levelString.upper()]
 

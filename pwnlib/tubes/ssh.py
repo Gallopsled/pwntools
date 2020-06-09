@@ -919,6 +919,10 @@ class ssh(Timeout, Logger):
 #!/usr/bin/env python
 import os, sys, ctypes, resource, platform, stat
 from collections import OrderedDict
+try:
+    integer_types = int, long
+except NameError:
+    integer_types = int,
 exe   = %(executable)r
 argv  = [bytes(a) for a in %(argv)r]
 env   = %(env)r
@@ -993,7 +997,7 @@ for fd, newfd in {0: %(stdin)r, 1: %(stdout)r, 2:%(stderr)r}.items():
         newfd = os.open(newfd, os.O_RDONLY if fd == 0 else (os.O_RDWR|os.O_CREAT))
         os.dup2(newfd, fd)
         os.close(newfd)
-    elif isinstance(newfd, int) and newfd != fd:
+    elif isinstance(newfd, integer_types) and newfd != fd:
         os.dup2(fd, newfd)
 
 if not %(aslr)r:
