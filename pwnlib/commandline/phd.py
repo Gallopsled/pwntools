@@ -85,12 +85,12 @@ def main(args):
     text.when = color
 
     if skip:
-        if infile == sys.stdin:
-            infile.read(skip)
-        else:
+        try:
             infile.seek(skip, os.SEEK_CUR)
+        except IOError:
+            infile.read(skip)
 
-    if count:
+    if count != -1:
         infile = io.BytesIO(infile.read(count))
 
     hl = []
