@@ -133,7 +133,7 @@ jobs:
 
         pwn cyclic 32
         pwn cyclic -l 0x62616161
-        pwn cyclic -a ab 16
+        pwn cyclic -a ab
         echo
 
         pwn shellcraft --list |tail
