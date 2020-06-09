@@ -14,6 +14,35 @@ log = getLogger(__name__)
 
 all_pids = psutil.pids
 
+def sock_match(local, remote, fam=socket.AF_UNSPEC, typ=0):
+    def sockinfos(addr, f, t):
+        if not addr:
+            return set()
+        if f not in (socket.AF_UNSPEC, socket.AF_INET, socket.AF_INET6):
+            return {addr}
+        infos = set(socket.getaddrinfo(addr[0], addr[1], f, t))
+
+        # handle mixed IPv4-to-IPv6 and the other way round connections
+        for f, t, proto, _canonname, sockaddr in tuple(infos):
+            if f == socket.AF_INET and t != socket.SOCK_RAW:
+                infos |= set(socket.getaddrinfo(sockaddr[0], sockaddr[1], socket.AF_INET6, t, proto, socket.AI_V4MAPPED))
+        return infos
+
+    if local is not None:
+        local = sockinfos(local, fam, typ)
+    remote = sockinfos(remote, fam, typ)
+
+    def match(c):
+        laddrs = sockinfos(c.laddr, c.family, c.type)
+        raddrs = sockinfos(c.raddr, c.family, c.type)
+        if not (raddrs & remote):
+            return False
+        if local is None:
+            return True
+        return bool(laddrs & local)
+
+    return match
+
 def pidof(target):
     """pidof(target) -> int list
 
@@ -41,29 +70,20 @@ def pidof(target):
         return [target.pid]
 
     elif isinstance(target, tubes.sock.sock):
-         local  = target.sock.getsockname()
-         remote = target.sock.getpeername()
-
-         def match(c):
-             return (c.raddr, c.laddr, c.status) == (local, remote, 'ESTABLISHED')
-
-         return [c.pid for c in psutil.net_connections() if match(c)]
+        local  = target.sock.getsockname()
+        remote = target.sock.getpeername()
+        match = sock_match(remote, local, target.family, target.type)
+        return [c.pid for c in psutil.net_connections() if match(c)]
 
     elif isinstance(target, tuple):
-        host, port = target
-
-        host = socket.gethostbyname(host)
-
-        def match(c):
-            return c.raddr == (host, port)
-
+        match = sock_match(None, target)
         return [c.pid for c in psutil.net_connections() if match(c)]
 
     elif isinstance(target, tubes.process.process):
-         return [target.proc.pid]
+        return [target.proc.pid]
 
     else:
-         return pid_by_name(target)
+        return pid_by_name(target)
 
 def pid_by_name(name):
     """pid_by_name(name) -> int list
