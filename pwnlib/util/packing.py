@@ -112,7 +112,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         if not isinstance(number, six.integer_types):
             raise ValueError("pack(): number must be of type (int,long) (got %r)" % type(number))
 
-        if sign not in [True, False]:
+        if not isinstance(sign, bool):
             raise ValueError("pack(): sign must be either True or False (got %r)" % sign)
 
         if endianness not in ['little', 'big']:
@@ -123,18 +123,18 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
             if number == 0:
                 word_size = 8
             elif number > 0:
-                if sign == False:
-                    word_size = ((number.bit_length() - 1) | 7) + 1
-                else:
+                if sign:
                     word_size = (number.bit_length() | 7) + 1
+                else:
+                    word_size = ((number.bit_length() - 1) | 7) + 1
             else:
-                if sign == False:
+                if not sign:
                     raise ValueError("pack(): number does not fit within word_size")
                 word_size = ((number + 1).bit_length() | 7) + 1
         elif not isinstance(word_size, six.integer_types) or word_size <= 0:
             raise ValueError("pack(): word_size must be a positive integer or the string 'all'")
 
-        if sign == True:
+        if sign:
             limit = 1 << (word_size-1)
             if not -limit <= number < limit:
                 raise ValueError("pack(): number does not fit within word_size")
@@ -540,7 +540,7 @@ def _flat(args, preprocessor, packer, filler):
 
         if not isinstance(arg, (list, tuple, dict)):
             arg_ = preprocessor(arg)
-            if arg_ != None:
+            if arg_ is not None:
                 arg = arg_
 
         if hasattr(arg, '__flat__'):

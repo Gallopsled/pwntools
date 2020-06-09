@@ -1317,7 +1317,7 @@ class ROP(object):
         True
         >>> rop.ret_8   == rop.search(move=8)
         True
-        >>> rop.ret     != None
+        >>> rop.ret is not None
         True
         """
         gadget = collections.namedtuple('gadget', ['address', 'details'])

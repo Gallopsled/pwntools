@@ -666,7 +666,7 @@ class process(tube):
         self.proc.poll()
         returncode = self.proc.returncode
 
-        if returncode != None and not self._stop_noticed:
+        if returncode is not None and not self._stop_noticed:
             self._stop_noticed = time.time()
             signame = ''
             if returncode < 0:
@@ -736,7 +736,7 @@ class process(tube):
             return False
 
         try:
-            if timeout == None:
+            if timeout is None:
                 return select.select([self.proc.stdout], [], []) == ([self.proc.stdout], [], [])
 
             return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
@@ -754,7 +754,7 @@ class process(tube):
 
     def connected_raw(self, direction):
         if direction == 'any':
-            return self.poll() == None
+            return self.poll() is None
         elif direction == 'send':
             return not self.proc.stdin.closed
         elif direction == 'recv':

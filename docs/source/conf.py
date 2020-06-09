@@ -337,7 +337,7 @@ def linkcode_resolve(domain, info):
     val = mod
     for k in info['fullname'].split('.'):
         val = getattr(val, k, None)
-        if val == None:
+        if val is None:
             break
 
     # Special case for shellcraft

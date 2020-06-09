@@ -125,7 +125,7 @@ def cyclic(length = None, alphabet = None, n = None):
     if alphabet is None:
         alphabet = context.cyclic_alphabet
 
-    if length != None and len(alphabet) ** n < length:
+    if length is not None and len(alphabet) ** n < length:
         log.error("Can't create a pattern length=%i with len(alphabet)==%i and n==%i" \
                   % (length, len(alphabet), n))
 
@@ -284,7 +284,7 @@ def cyclic_metasploit(length = None, sets = None):
     generator = metasploit_pattern(sets)
     out = iters.take(length, generator)
 
-    if length != None and len(out) < length:
+    if length is not None and len(out) < length:
         log.error("Can't create a pattern of length %i with sets of lengths %s. Maximum pattern length is %i." \
                   % (length, list(map(len, sets)), len(out)))
 
@@ -414,17 +414,18 @@ class cyclic_gen(object):
           ...
         StopIteration
         """
-        
-        if length != None:
+
+        if length is not None:
             self._chunks.append(length)
             self._total_length += length
             if len(self._alphabet) ** self._n < self._total_length:
                 log.error("Can't create a pattern length=%i with len(alphabet)==%i and n==%i" \
                     % (self._total_length, len(self._alphabet), self._n))
+            out = [next(self._generator) for _ in range(length)]
         else:
             self._chunks.append(float("inf"))
+            out = list(self._generator)
 
-        out = [next(self._generator) for _ in range(length)] if length != None else [next(self._generator)] + list(self._generator)
         return _join_sequence(out, self._alphabet)
 
     def find(self, subseq):

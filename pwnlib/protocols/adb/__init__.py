@@ -462,7 +462,7 @@ class AdbClient(Logger):
             >>> expected = {'mode': 16749, 'size': 0, 'time': 0}
             >>> pwnlib.protocols.adb.AdbClient().stat('/proc')           == expected
             True
-            >>> pwnlib.protocols.adb.AdbClient().stat('/does/not/exist') == None
+            >>> pwnlib.protocols.adb.AdbClient().stat('/does/not/exist') is None
             True
         """
         if isinstance(path, six.text_type):

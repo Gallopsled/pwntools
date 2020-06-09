@@ -182,7 +182,7 @@ class ssh_channel(sock):
         process has not yet finished and the exit code otherwise.
         """
 
-        if self.returncode == None and self.sock \
+        if self.returncode is None and self.sock \
         and (block or self.sock.exit_status_ready()):
             while not self.sock.status_event.is_set():
                 self.sock.status_event.wait(0.05)
@@ -230,7 +230,7 @@ class ssh_channel(sock):
                     cur = self.recv(timeout = 0.05)
                     cur = cur.replace(b'\r\n',b'\n')
                     cur = cur.replace(b'\r',b'')
-                    if cur == None:
+                    if cur is None:
                         continue
                     elif cur == b'\a':
                         # Ugly hack until term unstands bell characters
@@ -1087,7 +1087,7 @@ os.execve(exe, argv, env)
 
             h.success('pid %i' % python.pid)
 
-        if aslr == False and setuid and (python.uid != python.suid or python.gid != python.sgid):
+        if not aslr and setuid and (python.uid != python.suid or python.gid != python.sgid):
             effect = "partial" if self.aslr_ulimit else "no"
             message = "Specfied aslr=False on setuid binary %s\n" % python.executable
             message += "This will have %s effect.  Add setuid=False to disable ASLR for debugging.\n" % effect
@@ -1612,7 +1612,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         remote(str): The remote filename to save it to. Default is to infer it from the local filename."""
 
 
-        if remote == None:
+        if remote is None:
             remote = os.path.normpath(filename)
             remote = os.path.basename(remote)
             remote = os.path.join(self.cwd, remote)
@@ -1733,7 +1733,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         remote = context._decode(self.readlink('-f',remote).strip())
         libs[remote] = 0
 
-        if directory == None:
+        if directory is None:
             directory = self.host
 
         directory = os.path.realpath(directory)
