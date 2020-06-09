@@ -458,3 +458,21 @@ def python_2_bytes_compatible(klass):
         if '__str__' not in klass.__dict__:
             klass.__str__ = klass.__bytes__
     return klass
+
+# Expose function from six to global namespace
+ensure_binary = six.ensure_binary
+
+def bytes_iter(bytes_or_str):
+  """Iterates over a ``bytes``-like object while maintaining compatibility with
+  Python2-style byte iteration.
+
+  This works around the fact that iterating over a Python3-style ``bytes``
+  object yields integers instead of single bytes.
+
+      >>> data = b'ABCD'
+      >>> list(bytes_iter(data))
+      [b'A', b'B', b'C', b'D']
+  """
+  bytes_or_str = ensure_binary(bytes_or_str)
+  for i in range(len(bytes_or_str)):
+      yield bytes_or_str[i:i+1]
