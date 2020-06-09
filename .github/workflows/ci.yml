@@ -29,6 +29,19 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Verify tag against version
+      if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+      env:
+        GITHUB_REF: ${{ github.event.ref }}
+      run: |
+        set -x
+        GITHUB_TAG=${GITHUB_REF#refs/tags/}
+        echo "$GITHUB_TAG" | grep -E '^[0-9.]*(beta[0-9])?$'
+        vsetup=$(grep -o "version\\s*=\\s*[\"'].*[\"'],$" setup.py | grep -o "[0-9][^\"']*")
+        vpwnlib=$(grep -o "__version__\\s*=\\s*[\"'].*[\"']$" pwnlib/version.py | grep -o "[0-9][^\"']*")
+        [ "$vsetup" = "$vpwnlib" ]
+        [ "$GITHUB_TAG" = "$vsetup" ]
+
     - name: Detect whether java is needed
       id: java-needed
       env:
