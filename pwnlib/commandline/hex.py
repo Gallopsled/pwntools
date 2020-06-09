@@ -26,4 +26,4 @@ def main(args):
         print(enhex(data))
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    common.main(__file__)
