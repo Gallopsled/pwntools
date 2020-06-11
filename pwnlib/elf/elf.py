@@ -1026,9 +1026,10 @@ class ELF(ELFFile):
         #              In particular, this is where EBX points when it points into the GOT.
         dt_pltgot = self.dynamic_value_by_tag('DT_PLTGOT') or 0
 
-        # There are two PLTs we may need to search
+        # There are three PLTs we may need to search
         plt = self.get_section_by_name('.plt')          # <-- Functions only
         plt_got = self.get_section_by_name('.plt.got')  # <-- Functions used as data
+        plt_sec = self.get_section_by_name('.plt.sec')
         plt_mips = self.get_section_by_name('.MIPS.stubs')
 
         # Invert the GOT symbols we already have, so we can look up by address
@@ -1036,7 +1037,7 @@ class ELF(ELFFile):
         inv_symbols.update({v:k for k,v in self.symbols.items()})
 
         with context.local(arch=self.arch, bits=self.bits, endian=self.endian):
-            for section in (plt, plt_got, plt_mips):
+            for section in (plt, plt_got, plt_sec, plt_mips):
                 if not section:
                     continue
 
