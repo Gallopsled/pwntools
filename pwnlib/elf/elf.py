@@ -1147,6 +1147,13 @@ class ELF(ELFFile):
 
             >>> len(list(bash.search(b'GNU bash'))) > 0
             True
+
+            It is also possible to search for instructions in executable sections.
+
+            >>> binary = ELF.from_assembly('nop; mov eax, 0; jmp esp; ret')
+            >>> jmp_addr = binary.search(asm('jmp esp'), executable = True).__next__()
+            >>> binary.read(jmp_addr, 2) == asm('jmp esp')
+            True
         """
         load_address_fixup = (self.address - self.load_addr)
 
