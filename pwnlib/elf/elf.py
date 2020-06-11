@@ -1151,7 +1151,7 @@ class ELF(ELFFile):
             It is also possible to search for instructions in executable sections.
 
             >>> binary = ELF.from_assembly('nop; mov eax, 0; jmp esp; ret')
-            >>> jmp_addr = binary.search(asm('jmp esp'), executable = True).__next__()
+            >>> jmp_addr = next(binary.search(asm('jmp esp'), executable = True))
             >>> binary.read(jmp_addr, 2) == asm('jmp esp')
             True
         """
