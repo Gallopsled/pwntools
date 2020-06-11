@@ -1115,8 +1115,8 @@ class ELF(ELFFile):
         return_from_main = int(return_from_main[ : return_from_main.index(':') ], 16)
         return return_from_main
 
-    def search(self, needle, writable = False):
-        """search(needle, writable = False) -> generator
+    def search(self, needle, writable = False, executable = False):
+        """search(needle, writable = False, executable = False) -> generator
 
         Search the ELF's virtual address space for the specified string.
 
@@ -1129,6 +1129,7 @@ class ELF(ELFFile):
         Arguments:
             needle(str): String to search for.
             writable(bool): Search only writable sections.
+            executable(bool): Search only executable sections.
 
         Yields:
             An iterator for each virtual address that matches.
@@ -1151,6 +1152,8 @@ class ELF(ELFFile):
 
         if writable:
             segments = self.writable_segments
+        elif executable:
+            segments = self.executable_segments
         else:
             segments = self.segments
 
