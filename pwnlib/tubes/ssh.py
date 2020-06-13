@@ -627,10 +627,6 @@ class ssh(Timeout, Logger):
             self.client = paramiko.SSHClient()
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-            known_hosts = os.path.expanduser('~/.ssh/known_hosts')
-            if os.path.exists(known_hosts):
-                self.client.load_host_keys(known_hosts)
-
             has_proxy = (proxy_sock or proxy_command) and True
             if has_proxy:
                 if 'ProxyCommand' not in dir(paramiko):
@@ -641,9 +637,11 @@ class ssh(Timeout, Logger):
 
                 if proxy_command:
                     proxy_sock = paramiko.ProxyCommand(proxy_command)
-                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, compress = True, sock = proxy_sock)
+                self.client.connect(host, port=port, username=user, password=password, pkey=key, key_filename=keyfiles,
+                        timeout=self.timeout, compress=True, sock=proxy_sock)
             else:
-                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, compress = True)
+                self.client.connect(host, port=port, username=user, password=password, pkey=key, key_filename=keyfiles,
+                        timeout=self.timeout, compress=True)
 
             self.transport = self.client.get_transport()
             self.transport.use_compression(True)
