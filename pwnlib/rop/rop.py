@@ -285,6 +285,7 @@ import tempfile
 
 from pwnlib import abi
 from pwnlib import constants
+from pwnlib.asm import asm
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.elf import ELF
@@ -1226,6 +1227,26 @@ class ROP(object):
         if leave and leave.regs != frame_regs:
             leave = None
         self.leave = leave
+
+        #
+        # Load ROP.jmp_esp ('i386') or ROP.jmp_rsp ('amd64') gadgets
+        #
+        jmp_sp = {
+            4: ['jmp esp', 'jmp_esp'],
+            8: ['jmp rsp', 'jmp_rsp']
+        }[context.bytes]
+
+        setattr(self, jmp_sp[1], None)
+        insn_asm = asm(jmp_sp[0])
+
+        for elf in self.elfs:
+            for addr in elf.search(insn_asm, executable = True):
+                if set(pack(addr)) & self._badchars:
+                    continue
+
+                gadget = Gadget(addr, jmp_sp[0], frame_regs[1], context.bytes)
+                setattr(self, jmp_sp[1], gadget)
+                return
 
     def __repr__(self):
         return 'ROP(%r)' % self.elfs
