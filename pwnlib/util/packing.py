@@ -616,6 +616,8 @@ def flat(*args, **kwargs):
       sign (str): Signedness of the converted integer (False/True)
 
     Examples:
+
+      >>> context.clear()
       >>> flat(1, "test", [[["AB"]*2]*3], endianness = 'little', word_size = 16, sign = False)
       b'\x01\x00testABABABABABAB'
       >>> flat([1, [2, 3]], preprocessor = lambda x: str(x+1))
