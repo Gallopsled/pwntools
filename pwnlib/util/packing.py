@@ -634,7 +634,10 @@ def flat(*args, **kwargs):
       b'aaaaX'
       >>> flat({4: {0: 'X', 4: 'Y'}})
       b'aaaaXaaaY'
-
+      >>> flat({0x61616161:'x', 0x61616162:'y'})
+      b'xaaay'
+      >>> flat({0x61616162:'y', 0x61616161:'x'})
+      b'xaaay'
     """
     # HACK: To avoid circular imports we need to delay the import of `cyclic`
     from pwnlib.util import cyclic
