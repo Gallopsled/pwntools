@@ -76,16 +76,16 @@ class builder(object):
         q = random_funcs.randel(arr2)
 
         # Add the instructions
-        if icache_flush != 0:
+        if icache_flush:
             dec_loop += swi(MI)
 
         rsalnum = alphanum_byte.alphanumeric_get_byte()
 
-        if icache_flush != 0:
+        if icache_flush:
             # EORMIS rp, r4, #(randomly selected alphanumeric value)
             dec_loop += dpimm(EOR, MI, 1, p, 4, rsalnum)
 
-        if icache_flush == 1:
+        if icache_flush:
             dist = 0x2c
         else:
             dist = 0x28
@@ -135,7 +135,7 @@ class builder(object):
         # STRPLB r4, [rt, #-(offset+1)]
         dec_loop += lsbyte(STR, PL, 4, t, offset + 1)
 
-        if icache_flush == 1:
+        if icache_flush:
             # SWIPL 0x9f0002
             dec_loop += swi(PL)
         return dec_loop
@@ -172,7 +172,7 @@ class builder(object):
                 break
 
         self.x = alphanum_byte.off_gen(0x01)
-        if icache_flush != 0:
+        if icache_flush:
             output += self.algo1(input, 0, 3)
             output += self.gap_traverse(0x1e)
             output += self.algo1(input, 33, 5)
@@ -180,7 +180,7 @@ class builder(object):
             output += self.gap_traverse(0x19)
             output += self.algo1(input, 25, 5)
         output += self.gap_traverse(0x0f)
-        if icache_flush != 0:
+        if icache_flush:
             output += self.algo1(input, 53, 15)
         else:
             output += self.algo1(input, 45, 11)
@@ -213,24 +213,18 @@ class builder(object):
 
             # Store 4 0x00
             # STRPLB random_funcs.randel(arr6), [!rm, -(r5 ROR #random_funcs.randel(arr5))]
-            output += sbyteposti(random_funcs.randel(arr6), m, 5, random_funcs.randel(arr5))
-            output += sbyteposti(random_funcs.randel(arr6), m, 5, random_funcs.randel(arr5))
-            output += sbyteposti(random_funcs.randel(arr6), m, 5, random_funcs.randel(arr5))
-            output += sbyteposti(random_funcs.randel(arr6), m, 5, random_funcs.randel(arr5))
+            for _ in range(4):
+                output += sbyteposti(random_funcs.randel(arr6), m, 5, random_funcs.randel(arr5))
 
             # Store 4 0xff
             # STRPLB r5, [!rm, -(r5 ROR #random_funcs.randel(arr5))]
-            output += sbyteposti(5, m, 5, random_funcs.randel(arr5))
-            output += sbyteposti(5, m, 5, random_funcs.randel(arr5))
-            output += sbyteposti(5, m, 5, random_funcs.randel(arr5))
-            output += sbyteposti(5, m, 5, random_funcs.randel(arr5))
+            for _ in range(4):
+                output += sbyteposti(5, m, 5, random_funcs.randel(arr5))
 
             # Store 4 0x00
             # STRPLB random_funcs.randel(arr6), [!rm, -(r5 ROR #random_funcs.randel(arr5))]
-            output += sbyteposti(random_funcs.randel(arr6), m, 5, random_funcs.randel(arr5))
-            output += sbyteposti(random_funcs.randel(arr6), m, 5, random_funcs.randel(arr5))
-            output += sbyteposti(random_funcs.randel(arr6), m, 5, random_funcs.randel(arr5))
-            output += sbyteposti(random_funcs.randel(arr6), m, 5, random_funcs.randel(arr5))
+            for _ in range(4):
+                output += sbyteposti(random_funcs.randel(arr6), m, 5, random_funcs.randel(arr5))
 
             # SUBPL rm, sp, #c
             output += dpimm(SUB, PL, 0, m, 13, c)
@@ -249,8 +243,19 @@ class builder(object):
             return b''
         output = b''
         offset = 0x91
-        for p in range(begin_inp, begin_inp + iter):
-            y = ord(input[p])
+
+        def op(oper, arg):
+            nonlocal output
+            # (EORPLS|SUBPL|SBRPL). rk, ri, #arg
+            output += dpimm(oper, PL, oper == EOR, self.k, self.i, arg)
+            # STRPLB rk, [raddr, #(-offset)]
+            output += lsbyte(STR, PL, self.k, self.addr, offset)
+            # SUBPL raddr, raddr, rj ROR rk
+            output += dpshiftreg(SUB, 0, self.addr, self.addr, self.j, ROR, self.k)
+
+            self.size += 4 * 3
+
+        for y in bytearray(input[begin_inp:begin_inp + iter]):
             if alphanum_byte.alphanumeric_check(y):
                 # SUBPL raddr, raddr, rj ROR rk
                 output += dpshiftreg(SUB, 0, self.addr, self.addr, self.j, ROR, self.k)
@@ -289,48 +294,25 @@ class builder(object):
                 z1 = self.x - y
                 if alphanum_byte.alphanumeric_check(z1):
                     # SUBPL rk, ri, #z
-                    output += dpimm(SUB, PL, 0, self.k, self.i, z1)
-                    # STRPLB rk, [raddr, #(-offset)]
-                    output += lsbyte(STR, PL, self.k, self.addr, offset)
-                    # SUBPL raddr, raddr, rj ROR rk
-                    output += dpshiftreg(SUB, 0, self.addr, self.addr, self.j, ROR, self.k)
-
-                    self.size += 4 * 3
+                    op(SUB, z1)
                     continue
             z2 = self.x + y
             if alphanum_byte.alphanumeric_check(z2):
                 # RSBPL rk, ri, #z
-                output += dpimm(RSB, PL, 0, self.k, self.i, z2)
-                # STRPLB rk, [raddr, #(-offset)]
-                output += lsbyte(STR, PL, self.k, self.addr, offset)
-                # SUBPL raddr, raddr, rj ROR rk
-                output += dpshiftreg(SUB, 0, self.addr, self.addr, self.j, ROR, self.k)
-
-                self.size += 4 * 3
+                op(RSB, z2)
                 continue
             z3 = self.x ^ y
             if alphanum_byte.alphanumeric_check(z3):
                 # EORPLS rk, ri, #z
-                output += dpimm(EOR, PL, 1, self.k, self.i, z3)
-                # STRPLB rk, [raddr, #(-offset)]
-                output += lsbyte(STR, PL, self.k, self.addr, offset)
-                # SUBPL raddr, raddr, rj ROR rk
-                output += dpshiftreg(SUB, 0, self.addr, self.addr, self.j, ROR, self.k)
-
-                self.size += 4 * 3
+                op(EOR, z3)
                 continue
             a2 = alphanum_byte.alphanumeric_get_complement(z3)
             b2 = a2 ^ z3
-            # EORPLS rk, ri, #a
-            output += dpimm(EOR, PL, 1, self.k, self.i, a2)
-            # EORPLS rk, rk, #b
-            output += dpimm(EOR, PL, 1, self.k, self.k, b2)
-            # STRPLB rk, [raddr, #(-offset)]
-            output += lsbyte(STR, PL, self.k, self.addr, offset)
-            # SUBPL raddr, raddr, rj ROR rk
-            output += dpshiftreg(SUB, 0, self.addr, self.addr, self.j, ROR, self.k)
-
-            self.size += 4 * 4
+            # EORPLS rk, rk, #a
+            output += dpimm(EOR, PL, 1, self.k, self.k, a2)
+            # EORPLS rk, ri, #b
+            op(EOR, b2)
+            self.size += 4
         return output
 
     def gap_traverse(self, gap):
@@ -406,13 +388,13 @@ class builder(object):
         # Initializer built!!
 
         # Replace 0x91s in decoder with addr_offset
-        input_new = b''
-        for p in input:
-            if p == b"\x91":
+        input_new = bytearray()
+        for p in bytearray(input):
+            if p == 0x91:
                 input_new.append(self.addr_offset)
             else:
-                input_new += p
-        return (output, input_new)
+                input_new.append(p)
+        return (output, bytes(input_new))
 
     def algo2(self):
         output = b''
@@ -424,13 +406,12 @@ class builder(object):
         # SUBPL rj, ri, #x
         output += dpimm(SUB, PL, 0, self.j, self.i, self.x)
 
-        quo = (self.size - 4) // 0x7a
+        quo, rem = divmod(self.size - 4, 0x7a)
         if quo >= 1:
             for p in range(quo):
                 # SUBPL rj, rj, #0x7a
                 output += dpimm(SUB, PL, 0, self.j, self.j, 0x7a)
 
-        rem = (self.size - 4) % 0x7a
         if rem >= 1 and rem <= 0x4a:
             self.addr_offset = alphanum_byte.off_gen(rem)
             # SUBPL rj, rj, #(offset+rem)

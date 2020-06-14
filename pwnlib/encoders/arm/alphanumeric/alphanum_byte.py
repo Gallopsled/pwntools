@@ -1,6 +1,7 @@
 from __future__ import division
 from __future__ import absolute_import
 
+import six
 from . import random_funcs
 
 # +------------------------------------------------------------------------+ 
@@ -13,7 +14,7 @@ ALPHANUMERIC_BYTES = bytearray(b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijk
 # ==================================== 
 def alphanumeric_check(c):
     if isinstance(c, six.integer_types):
-        return c in ALPHANUMERIC_BYTES
+        return c&0xff in ALPHANUMERIC_BYTES
     return c.isalnum()
 
 
@@ -27,7 +28,7 @@ def alphanumeric_get_byte():
 # CSE author actually returns a byte <= max, not strictly < max
 def alphanumeric_get_byte_ltmax(max):
     sz = 0
-    while sz < len(ALPHANUMERIC_BYTES) and ord(ALPHANUMERIC_BYTES[sz]) <= max:
+    while sz < len(ALPHANUMERIC_BYTES) and ALPHANUMERIC_BYTES[sz] <= max:
         sz += 1
     return random_funcs.randel(ALPHANUMERIC_BYTES[:sz])
 

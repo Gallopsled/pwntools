@@ -78,7 +78,7 @@ def smul(d, reglH, reglL):
 # LDMPLDB rn!, (Register List) 
 # ============================
 def lmul(n, reglH, reglL):
-    return bytes(bytearray((reglL, reglH, 0x30 | d, 0x59)))
+    return bytes(bytearray((reglL, reglH, 0x30 | n, 0x59)))
 
 # SWI(PL/MI) 0x9f0002 
 # ==============
