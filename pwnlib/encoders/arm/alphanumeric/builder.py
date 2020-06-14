@@ -241,36 +241,35 @@ class builder(object):
     def algo1(self, input, begin_inp, iter):
         if not input:
             return b''
-        output = b''
+        output = []
         offset = 0x91
 
         def op(oper, arg):
-            nonlocal output
             # (EORPLS|SUBPL|SBRPL). rk, ri, #arg
-            output += dpimm(oper, PL, oper == EOR, self.k, self.i, arg)
+            output.append(dpimm(oper, PL, oper == EOR, self.k, self.i, arg))
             # STRPLB rk, [raddr, #(-offset)]
-            output += lsbyte(STR, PL, self.k, self.addr, offset)
+            output.append(lsbyte(STR, PL, self.k, self.addr, offset))
             # SUBPL raddr, raddr, rj ROR rk
-            output += dpshiftreg(SUB, 0, self.addr, self.addr, self.j, ROR, self.k)
+            output.append(dpshiftreg(SUB, 0, self.addr, self.addr, self.j, ROR, self.k))
 
             self.size += 4 * 3
 
         for y in bytearray(input[begin_inp:begin_inp + iter]):
             if alphanum_byte.alphanumeric_check(y):
                 # SUBPL raddr, raddr, rj ROR rk
-                output += dpshiftreg(SUB, 0, self.addr, self.addr, self.j, ROR, self.k)
+                output.append(dpshiftreg(SUB, 0, self.addr, self.addr, self.j, ROR, self.k))
                 self.size += 4
                 continue
             if y >= 0x80:
                 if alphanum_byte.alphanumeric_check(~y):
                     # EORPLS rk, rj, #~y
-                    output += dpimm(EOR, PL, 1, self.k, self.j, ~y)
+                    output.append(dpimm(EOR, PL, 1, self.k, self.j, ~y))
                     # STRMIB rk, [raddr, #(-offset)]
-                    output += lsbyte(STR, MI, self.k, self.addr, offset)
+                    output.append(lsbyte(STR, MI, self.k, self.addr, offset))
                     # SUBMIS rk, ri, #x
-                    output += dpimm(SUB, MI, 1, self.k, self.i, self.x)
+                    output.append(dpimm(SUB, MI, 1, self.k, self.i, self.x))
                     # SUBPL raddr, raddr, rj ROR rk
-                    output += dpshiftreg(SUB, 0, self.addr, self.addr, self.j, ROR, self.k)
+                    output.append(dpshiftreg(SUB, 0, self.addr, self.addr, self.j, ROR, self.k))
 
                     self.size += 4 * 4
                     continue
@@ -278,15 +277,15 @@ class builder(object):
                 a = alphanum_byte.alphanumeric_get_complement(~y)
                 b = (a ^ ~y) & 0xff
                 # EORPLS rk, rj, #a
-                output += dpimm(EOR, PL, 1, self.k, self.j, a)
+                output.append(dpimm(EOR, PL, 1, self.k, self.j, a))
                 # EORMIS  rk,  rk, #b
-                output += dpimm(EOR, MI, 1, self.k, self.k, b)
+                output.append(dpimm(EOR, MI, 1, self.k, self.k, b))
                 # STRMIB rk, [raddr, #(-offset)]
-                output += lsbyte(STR, MI, self.k, self.addr, offset)
+                output.append(lsbyte(STR, MI, self.k, self.addr, offset))
                 # SUBMIS rk, ri, #x
-                output += dpimm(SUB, MI, 1, self.k, self.i, self.x)
+                output.append(dpimm(SUB, MI, 1, self.k, self.i, self.x))
                 # SUBPL raddr, raddr, rj ROR rk
-                output += dpshiftreg(SUB, 0, self.addr, self.addr, self.j, ROR, self.k)
+                output.append(dpshiftreg(SUB, 0, self.addr, self.addr, self.j, ROR, self.k))
 
                 self.size += 4 * 5
                 continue
@@ -309,11 +308,11 @@ class builder(object):
             a2 = alphanum_byte.alphanumeric_get_complement(z3)
             b2 = a2 ^ z3
             # EORPLS rk, rk, #a
-            output += dpimm(EOR, PL, 1, self.k, self.k, a2)
+            output.append(dpimm(EOR, PL, 1, self.k, self.k, a2))
             # EORPLS rk, ri, #b
             op(EOR, b2)
             self.size += 4
-        return output
+        return b''.join(output)
 
     def gap_traverse(self, gap):
         output = b''
