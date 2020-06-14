@@ -4,7 +4,6 @@ from __future__ import division
 import six
 import collections
 from random import choice
-from random import randint
 
 from pwnlib.asm import asm
 from pwnlib.asm import disasm
@@ -56,26 +55,30 @@ class i386DeltaEncoder(Encoder):
     blacklist  = set(raw)
 
     def __call__(self, raw_bytes, avoid, pcreg=''):
-        table = collections.defaultdict(lambda: [])
+        table = collections.defaultdict(list)
         endchar = bytearray()
 
-        not_bad = lambda x: six.int2byte(x) not in avoid
-        not_bad_or_term = lambda x: not_bad(x) and x != self.terminator
+        avoid = frozenset(bytearray(avoid))
+        avoid_or_term = {self.terminator} | avoid
 
-        for i in filter(not_bad_or_term, range(0, 256)):
+        for i in range(256):
+            if i in avoid_or_term:
+                continue
             endchar.append(i)
-            for j in filter(not_bad, range(0, 256)):
+            for j in range(256):
+                if j in avoid:
+                    continue
                 table[(j - i) & 0xff].append(bytearray([i, j]))
 
         res = bytearray(self.raw)
 
         for c in bytearray(raw_bytes):
-            l = len(table[c])
-            if l == 0:
+            choices = table[c]
+            if not choices:
                 print('No encodings for character %02x' % c)
                 return None
 
-            res += table[c][randint(0, l - 1)]
+            res.extend(choice(choices))
 
         res.append(self.terminator)
         res.append(choice(endchar))
