@@ -33,6 +33,7 @@ Examples:
 from __future__ import absolute_import
 from __future__ import division
 
+import collections
 import six
 import struct
 import sys
@@ -548,7 +549,7 @@ def _flat(args, preprocessor, packer, filler):
         elif isinstance(arg, (list, tuple)):
             val = _flat(arg, preprocessor, packer, filler)
         elif isinstance(arg, dict):
-            arg = {k:v for k,v in sorted(arg.items())}
+            arg = collections.OrderedDict(((k,v) for k,v in sorted(arg.items())))
             filler, val = _fit(arg, preprocessor, packer, filler)
         elif isinstance(arg, bytes):
             val = arg
