@@ -32,7 +32,7 @@ class ArmEncoder(Encoder):
             enc_dec_loop = b.encDecoderLoopBuilder(dec_loop)
             dec = b.DecoderBuilder(dec_loop, self.icache_flush)
 
-            output,dec = b.buildInit(dec);
+            output, dec = b.buildInit(dec)
 
             output += dec
             output += enc_dec_loop
