@@ -104,7 +104,7 @@ def main(args):
                 continue
 
             # Check the constant
-            if constant != None:
+            if constant is not None:
                 val = getattr(mod, k)
                 if args.mask_mode:
                     if constant & val != val:
@@ -124,7 +124,7 @@ def main(args):
         # If we are in match_mode, then try to find a combination of
         # constants that yield the exact given value
         # We do not want to find combinations using the value 0.
-        if not (constant == None or constant == 0) and args.mask_mode:
+        if constant and args.mask_mode:
             mask = constant
             good = []
             out = [(v, k) for v, k in out if v != 0]
