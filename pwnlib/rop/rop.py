@@ -341,7 +341,7 @@ class DescriptiveStack(list):
     descriptions = {}
 
     def __init__(self, address):
-        self.descriptions = collections.defaultdict(lambda: [])
+        self.descriptions = collections.defaultdict(list)
         self.address      = address or 0
         self._next_next   = 0
         self._next_last   = 0

@@ -1842,7 +1842,7 @@ class ELF(ELFFile):
         # Check for Linux configuration, it must contain more than
         # just the version.
         if len(self.config) > 1:
-            config_opts = collections.defaultdict(lambda: [])
+            config_opts = collections.defaultdict(list)
             for checker in kernel_configuration:
                 result, message = checker(self.config)
 
