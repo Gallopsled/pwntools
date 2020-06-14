@@ -237,3 +237,37 @@ def sockaddr(host, port, network = 'ipv4'):
         sockaddr += host
         length    = len(sockaddr) + 4 # Save five bytes 'push 0'
     return (sockaddr, length, getattr(address_family, "name", address_family))
+
+def sock_match(local, remote, fam=socket.AF_UNSPEC, typ=0):
+    """
+    Given two addresses, returns a function comparing address pairs from
+    psutil library against these two.  Useful for filtering done in
+    :func:`pwnlib.util.proc.pidof`.
+    """
+    def sockinfos(addr, f, t):
+        if not addr:
+            return set()
+        if f not in (socket.AF_UNSPEC, socket.AF_INET, socket.AF_INET6):
+            return {addr}
+        infos = set(socket.getaddrinfo(addr[0], addr[1], f, t))
+
+        # handle mixed IPv4-to-IPv6 and the other way round connections
+        for f, t, proto, _canonname, sockaddr in tuple(infos):
+            if f == socket.AF_INET and t != socket.SOCK_RAW:
+                infos |= set(socket.getaddrinfo(sockaddr[0], sockaddr[1], socket.AF_INET6, t, proto, socket.AI_V4MAPPED))
+        return infos
+
+    if local is not None:
+        local = sockinfos(local, fam, typ)
+    remote = sockinfos(remote, fam, typ)
+
+    def match(c):
+        laddrs = sockinfos(c.laddr, c.family, c.type)
+        raddrs = sockinfos(c.raddr, c.family, c.type)
+        if not (raddrs & remote):
+            return False
+        if local is None:
+            return True
+        return bool(laddrs & local)
+
+    return match
