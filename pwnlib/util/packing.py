@@ -492,9 +492,11 @@ def _fit(pieces, preprocessor, packer, filler):
     pad = bytearray()
     def fill(key):
         key = bytearray(key)
-        while len(pad) < len(key) or pad[-len(key):] != key:
+        offset = pad.find(key)
+        while offset == -1:
             pad.append(next(filler))
-        return len(pad) - len(key)
+            offset = pad.find(key, -len(key))
+        return offset
 
     # Key conversion:
     # - convert str/unicode keys to offsets
@@ -549,7 +551,6 @@ def _flat(args, preprocessor, packer, filler):
         elif isinstance(arg, (list, tuple)):
             val = _flat(arg, preprocessor, packer, filler)
         elif isinstance(arg, dict):
-            arg = collections.OrderedDict(((k,v) for k,v in sorted(arg.items())))
             filler, val = _fit(arg, preprocessor, packer, filler)
         elif isinstance(arg, bytes):
             val = arg
@@ -648,6 +649,11 @@ def flat(*args, **kwargs):
       ...     3: 'd',
       ... })
       b'abadbaaac'
+      >>> fit({
+      ...     0x62616161: '1',
+      ...     0x61616163: '2',
+      .... })
+      b'a1aabaaa2'
     """
     # HACK: To avoid circular imports we need to delay the import of `cyclic`
     from pwnlib.util import cyclic
