@@ -90,11 +90,11 @@ You can also append complex arguments onto stack when the stack pointer is known
 
 ROP also detects 'jmp $sp' gadget to help exploit binaries with NX disabled.
 
-    >>> context.clear(arch='amd64')
-    >>> elf = ELF.from_assembly('nop; mov rax, 0x10; jmp rsp; ret')
-    >>> rop = ROP(elf)
-    >>> jmp_gadget = rop.jmp_rsp
-    >>> elf.read(jmp_gadget.address,2) == asm('jmp rsp')
+    >>> context.clear(arch='i386')
+    >>> elf = ELF.from_assembly('nop; pop eax; jmp esp; int 0x80; jmp esp; ret')
+    >>> rop = ROP(elf, badchars=b'\x02')
+    >>> jmp_gadget = rop.jmp_esp
+    >>> elf.read(jmp_gadget.address, 2) == asm('jmp esp')
     True
 
 ROP Example
