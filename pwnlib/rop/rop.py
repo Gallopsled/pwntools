@@ -1240,21 +1240,18 @@ class ROP(object):
         # Load ROP.jmp_esp ('i386') or ROP.jmp_rsp ('amd64') gadgets
         #
         jmp_sp = {
-            4: ['jmp esp', 'jmp_esp'],
-            8: ['jmp rsp', 'jmp_rsp']
+            4: 'jmp esp',
+            8: 'jmp rsp'
         }[context.bytes]
 
-        setattr(self, jmp_sp[1], None)
-        insn_asm = asm(jmp_sp[0])
+        insn_asm = asm(jmp_sp)
 
         for elf in self.elfs:
             for addr in elf.search(insn_asm, executable = True):
                 if set(pack(addr)) & self._badchars:
                     continue
 
-                gadget = Gadget(addr, jmp_sp[0], frame_regs[1], context.bytes)
-                setattr(self, jmp_sp[1], gadget)
-                return
+                self.gadgets[addr] = Gadget(addr, [jmp_sp], [], context.bytes)
 
     def __repr__(self):
         return 'ROP(%r)' % self.elfs
@@ -1333,7 +1330,7 @@ class ROP(object):
         self.raw(call)
 
     def __getattr__(self, attr):
-        """Helper to make finding ROP gadets easier.
+        """Helper to make finding ROP gadgets easier.
 
         Also provides a shorthand for ``.call()``:
             ``rop.function(args)`` is equivalent to ``rop.call(function, args)``
@@ -1369,6 +1366,19 @@ class ROP(object):
             if '_' in attr:
                 count = int(attr.split('_')[1])
             return self.search(move=count)
+
+        #
+        # Check for 'jmp_esp' or 'jmp_rsp'
+        #
+        sp_regs = ['esp', 'rsp']
+
+        if attr.startswith('jmp') \
+        and attr.split('_')[1] in sp_regs:
+            insn = ' '.join(attr.split('_'))
+            for each in self.gadgets:
+                if self.gadgets[each]['insns'] == [insn]:
+                    return self.gadgets[each]
+            return None
 
         if attr in ('int80', 'syscall', 'sysenter'):
             mapping = {'int80': 'int 0x80',
