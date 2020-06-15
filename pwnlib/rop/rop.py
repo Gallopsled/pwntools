@@ -96,6 +96,9 @@ ROP also detects 'jmp $sp' gadget to help exploit binaries with NX disabled.
     >>> jmp_gadget = rop.jmp_esp
     >>> elf.read(jmp_gadget.address, 2) == asm('jmp esp')
     True
+    >>> rop = ROP(elf, badchars=b'\x02\x06')
+    >>> rop.jmp_esp == None
+    True
 
 ROP Example
 -------------------
