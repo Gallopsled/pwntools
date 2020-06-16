@@ -1,0 +1,20 @@
+name: Changelog
+on: [pull_request]
+env:
+  GITHUB_BASE: origin/${{ github.event.pull_request.base.ref }}
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Check changelog for updates
+      run: |
+        git log --stat ${GITHUB_BASE}..HEAD | grep CHANGELOG.md
