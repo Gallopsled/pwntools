@@ -1,5 +1,8 @@
 name: Changelog
-on: [pull_request]
+on:
+  pull_request:
+    paths:
+      pwnlib/*
 env:
   GITHUB_BASE: origin/${{ github.event.pull_request.base.ref }}
 
@@ -17,6 +20,4 @@ jobs:
 
     - name: Check changelog for updates
       run: |
-        if ( git diff --stat ${GITHUB_BASE}..HEAD | grep pwnlib/ ); then \
-            git log --stat ${GITHUB_BASE}..HEAD | grep CHANGELOG.md; \
-        fi
+        git log --stat ${GITHUB_BASE}..HEAD | grep CHANGELOG.md
