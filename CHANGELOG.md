@@ -54,6 +54,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 To be released on Jun 30, 2020.
 
+- [#1584][1584] Add `jmp_esp`/`jmp_rsp` attribute to `ROP`
+
+[1584]: https://github.com/Gallopsled/pwntools/pull/1584
+
 ## 4.2.0 (`beta`)
 
 To be released on Jun 5, 2020.
