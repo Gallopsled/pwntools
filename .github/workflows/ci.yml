@@ -1,5 +1,8 @@
 name: Continuous Integration
 on: [push, pull_request]
+env:
+  GITHUB_BASE: origin/${{ github.event.pull_request.base.ref }}
+  GITHUB_REF: ${{ github.event.ref }}
 
 jobs:
   build:
@@ -31,8 +34,6 @@ jobs:
 
     - name: Verify tag against version
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-      env:
-        GITHUB_REF: ${{ github.event.ref }}
       run: |
         set -x
         GITHUB_TAG=${GITHUB_REF#refs/tags/}
@@ -44,15 +45,12 @@ jobs:
 
     - name: Detect whether java is needed
       id: java-needed
-      env:
-        GITHUB_REF: ${{ github.event.ref }}
-        GITHUB_COMMIT_RANGE: ${{ github.event.before }}...${{ github.event.after }}
       run: |
         if echo "$GITHUB_REF" | grep -Eq 'staging|tags'; then
           echo "Found release or important branch ($GITHUB_REF), forcing tests."
-        elif ! git show "$GITHUB_COMMIT_RANGE" >/dev/null; then
+        elif ! git show "$GITHUB_BASE"..HEAD >/dev/null; then
           echo 'Incorrect commit range, forcing android tests.'
-        elif git log --stat "$GITHUB_COMMIT_RANGE" | grep -iE 'android|\<adb\>'; then
+        elif git log --stat "$GITHUB_BASE"..HEAD | grep -iE 'android|\<adb\>'; then
           echo 'Found Android-related commits, forcing tests.'
         else
           # clear files that cause Android doctests
@@ -191,8 +189,6 @@ jobs:
       with:
         fetch-depth: 20
     - name: Push changes to protected branch
-      env:
-        GITHUB_REF: ${{ github.event.ref }}
       run: |
         BRANCH=${GITHUB_REF#refs/heads/}
         TARGET=${BRANCH%-staging}
