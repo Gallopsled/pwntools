@@ -9,6 +9,7 @@ import psutil
 
 from pwnlib import tubes
 from pwnlib.log import getLogger
+from .net import sock_match
 
 log = getLogger(__name__)
 
@@ -41,29 +42,20 @@ def pidof(target):
         return [target.pid]
 
     elif isinstance(target, tubes.sock.sock):
-         local  = target.sock.getsockname()
-         remote = target.sock.getpeername()
-
-         def match(c):
-             return (c.raddr, c.laddr, c.status) == (local, remote, 'ESTABLISHED')
-
-         return [c.pid for c in psutil.net_connections() if match(c)]
+        local  = target.sock.getsockname()
+        remote = target.sock.getpeername()
+        match = sock_match(remote, local, target.family, target.type)
+        return [c.pid for c in psutil.net_connections() if match(c)]
 
     elif isinstance(target, tuple):
-        host, port = target
-
-        host = socket.gethostbyname(host)
-
-        def match(c):
-            return c.raddr == (host, port)
-
+        match = sock_match(None, target)
         return [c.pid for c in psutil.net_connections() if match(c)]
 
     elif isinstance(target, tubes.process.process):
-         return [target.proc.pid]
+        return [target.proc.pid]
 
     else:
-         return pid_by_name(target)
+        return pid_by_name(target)
 
 def pid_by_name(name):
     """pid_by_name(name) -> int list
@@ -92,9 +84,9 @@ def pid_by_name(name):
 
     processes = (p for p in psutil.process_iter() if match(p))
 
-    processes = sorted(processes, key=lambda p: p.create_time())
+    processes = sorted(processes, key=lambda p: p.create_time(), reverse=True)
 
-    return reversed([p.pid for p in processes])
+    return [p.pid for p in processes]
 
 def name(pid):
     """name(pid) -> str
@@ -325,10 +317,11 @@ def state(pid):
     """
     return status(pid)['State']
 
-def wait_for_debugger(pid):
-    """wait_for_debugger(pid) -> None
+def wait_for_debugger(pid, debugger_pid=None):
+    """wait_for_debugger(pid, debugger_pid=None) -> None
 
     Sleeps until the process with PID `pid` is being traced.
+    If debugger_pid is set and debugger exits, raises an error.
 
     Arguments:
         pid (int): PID of the process.
@@ -337,6 +330,16 @@ def wait_for_debugger(pid):
         None
     """
     with log.waitfor('Waiting for debugger') as l:
-        while tracer(pid) is None:
-            time.sleep(0.01)
+        if debugger_pid:
+            debugger = psutil.Process(debugger_pid)
+            while tracer(pid) is None:
+                try:
+                    debugger.wait(0.01)
+                except psutil.TimeoutExpired:
+                    pass
+                else:
+                    l.failure("debugger exited! (maybe check /proc/sys/kernel/yama/ptrace_scope)")
+        else:
+            while tracer(pid) is None:
+                time.sleep(0.01)
         l.success()

@@ -4,19 +4,22 @@ from __future__ import division
 
 import ctypes
 import errno
-import fcntl
 import logging
 import os
 import platform
-import pty
-import resource
 import select
 import signal
 import six
 import stat
 import subprocess
+import sys
 import time
-import tty
+
+if sys.platform != 'win32':
+    import fcntl
+    import pty
+    import resource
+    import tty
 
 from pwnlib import qemu
 from pwnlib.context import context
@@ -239,8 +242,10 @@ class process(tube):
         #: :class:`subprocess.Popen` object that backs this process
         self.proc = None
 
-        if not shell:
-            executable, argv, env = self._validate(cwd, executable, argv, env)
+        if shell:
+            executable_val, argv_val, env_val = executable, argv, env
+        else:
+            executable_val, argv_val, env_val = self._validate(cwd, executable, argv, env)
 
         # Avoid the need to have to deal with the STDOUT magic value.
         if stderr is STDOUT:
@@ -265,10 +270,10 @@ class process(tube):
         stdin, stdout, stderr, master, slave = self._handles(*handles)
 
         #: Arguments passed on argv
-        self.argv = argv
+        self.argv = argv_val
 
         #: Full path to the executable
-        self.executable = executable
+        self.executable = executable_val
 
         if self.executable is None:
             if shell:
@@ -277,7 +282,7 @@ class process(tube):
                 self.executable = which(self.argv[0])
 
         #: Environment passed on envp
-        self.env = os.environ if env is None else env
+        self.env = os.environ if env is None else env_val
 
         self._cwd = os.path.realpath(cwd or os.path.curdir)
 
@@ -292,8 +297,8 @@ class process(tube):
         message = "Starting %s process %r" % (where, self.display)
 
         if self.isEnabledFor(logging.DEBUG):
-            if self.argv != [self.executable]: message += ' argv=%r ' % self.argv
-            if self.env  != os.environ:        message += ' env=%r ' % self.env
+            if argv != [self.executable]: message += ' argv=%r ' % self.argv
+            if env not in (os.environ, None):  message += ' env=%r ' % self.env
 
         with self.progress(message) as p:
 
@@ -309,14 +314,14 @@ class process(tube):
 
             for prefix, executable in prefixes:
                 try:
-                    args = argv
+                    args = self.argv
                     if prefix:
                         args = prefix + args
                     self.proc = subprocess.Popen(args = args,
                                                  shell = shell,
                                                  executable = executable,
                                                  cwd = cwd,
-                                                 env = env,
+                                                 env = self.env,
                                                  stdin = stdin,
                                                  stdout = stdout,
                                                  stderr = stderr,
@@ -924,20 +929,23 @@ class process(tube):
         import pwnlib.elf.corefile
         import pwnlib.gdb
 
-        if self.poll() is None:
-            return pwnlib.gdb.corefile(self)
+        try:
+            if self.poll() is None:
+                return pwnlib.gdb.corefile(self)
 
-        finder = pwnlib.elf.corefile.CorefileFinder(self)
-        if not finder.core_path:
-            self.warn("Could not find core file for pid %i" % self.pid)
-            return Ellipsis ##
+            finder = pwnlib.elf.corefile.CorefileFinder(self)
+            if not finder.core_path:
+                self.warn("Could not find core file for pid %i" % self.pid)
+                return None
 
-        core_hash = sha256file(finder.core_path)
+            core_hash = sha256file(finder.core_path)
 
-        if self._corefile and self._corefile._hash == core_hash:
-            return self._corefile
+            if self._corefile and self._corefile._hash == core_hash:
+                return self._corefile
 
-        self._corefile = pwnlib.elf.corefile.Corefile(finder.core_path)
+            self._corefile = pwnlib.elf.corefile.Corefile(finder.core_path)
+        except AttributeError as e:
+            raise RuntimeError(e) # AttributeError would route through __getattr__, losing original message
         self._corefile._hash = core_hash
 
         return self._corefile
@@ -951,7 +959,7 @@ class process(tube):
 
         Example:
 
-            >>> e = ELF('/bin/bash')
+            >>> e = ELF('/bin/bash-static')
             >>> p = process(e.path)
 
             In order to make sure there's not a race condition against

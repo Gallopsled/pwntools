@@ -31,14 +31,16 @@ from pwnlib.exception import PwnlibException
 from pwnlib.gdb import attach, debug, debug_assembly, debug_shellcode
 from pwnlib.filepointer import *
 from pwnlib.flag import *
-from pwnlib.fmtstr import FmtStr, fmtstr_payload
+from pwnlib.fmtstr import FmtStr, fmtstr_payload, fmtstr_split
 from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak, RelativeMemLeak
 from pwnlib.regsort import *
 from pwnlib.replacements import *
 from pwnlib.rop import ROP
 from pwnlib.rop.srop import SigreturnFrame
+from pwnlib.rop.ret2dlresolve import Ret2dlresolvePayload
 from pwnlib.runner import *
+from pwnlib.term.readline import str_input
 from pwnlib.timeout import Timeout
 from pwnlib.tubes.listen import listen
 from pwnlib.tubes.process import process, PTY, PIPE, STDOUT

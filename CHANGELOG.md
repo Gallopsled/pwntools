@@ -9,11 +9,15 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.2.0](#420)    | `dev`    | Feb 10, 2020 (planned)
-| [4.1.0](#410)    | `beta`   | Jan 30, 2020 (planned)
-| [4.0.1](#401)    | `stable` | Jan 22, 2020
+| [4.3.0](#430)    | `dev`    | Jun 30, 2020 (planned)
+| [4.2.0](#420)    | `beta`   | Jun 5, 2020 (planned)
+| [4.1.2](#412)    | `stable` | Jun 3, 2020
+| [4.1.1](#411)    |          | Jun 3, 2020
+| [4.1.0](#410)    |          | May 8, 2020
+| [4.0.1](#401)    |          | Jan 22, 2020
 | [4.0.0](#400)    |          | Jan 09, 2020
 | [3.13.0](#3130)  |          | Nov 5, 2019
+| [3.12.2](#3122)  |          | Jan 8, 2019
 | [3.12.1](#3121)  |          | Sept 17, 2018
 | [3.12.0](#3120)  |          | Feb 22, 2018
 | [3.11.0](#3110)  |          | Jan 3, 2018
@@ -46,13 +50,37 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.2.0 (`dev`)
+## 4.3.0 (`dev`)
 
-To be released on Feb 10, 2020.
+To be released on Jun 30, 2020.
 
-## 4.1.0 (`beta`)
+## 4.2.0 (`beta`)
 
-To be released on Jan 30, 2020.
+To be released on Jun 5, 2020.
+
+- [#1436][1436] Add ret2dlresolve automation
+- [fecf9f] tubes.ssh.process() no longer requires python 2 installed on remote (still requires python, though)
+- Miscellanous improvements to DynElf and fmtstr leaker (see examples/fmtstr/exploit2.py)
+- [#1454][1454] Support for windows console colors
+
+[1436]: https://github.com/Gallopsled/pwntools/pull/1436
+[fecf9f]: http://github.com/Gallopsled/pwntools/commit/fecf9f
+[1454]: https://github.com/Gallopsled/pwntools/pull/1454
+
+## 4.1.2 (`stable`)
+
+- Pwntools requires `six` v.1.12.0 or higher
+
+## 4.1.1
+
+- Fix PLT resolution by locking unicorn <1.0.2rc4 (#1538)
+- Fix wrong ELF/context unpack handling (c4c11a37)
+- Fix updating of ELF.functions addresses after changing ELF.address #1512 (#1513)
+- Update Corefile warnings and replace asserts with normal checks (#1526)
+- several py2-py3 issues (#1451)
+- Fix cyclic command
+
+## 4.1.0
 
 - [#1316][1316] Fix connect shellcraft in python 3
 - [#1323][1323] Fix issues related with debugging
@@ -61,15 +89,19 @@ To be released on Jan 30, 2020.
 - [#1241][1241] Launch QEMU with sysroot if specified
 - [#1218][1218] Support for FileStructure exploitation
 
-[1241]: https://github.com/Gallopsled/pwntools/pulls/1218
-[1218]: https://github.com/Gallopsled/pwntools/pulls/1218
+[1316]: https://github.com/Gallopsled/pwntools/pull/1316
+[1323]: https://github.com/Gallopsled/pwntools/pull/1323
+[1001]: https://github.com/Gallopsled/pwntools/pull/1001
+[1389]: https://github.com/Gallopsled/pwntools/pull/1389
+[1241]: https://github.com/Gallopsled/pwntools/pull/1241
+[1218]: https://github.com/Gallopsled/pwntools/pull/1218  
 
-## 4.0.1 (`stable`)
+## 4.0.1
 
 - [#1412][1412] `recvline_pred()` and similar do not reorder data
 - Bypass unicorn-engine/unicorn#1100 and unicorn-engine/unicorn#1170 requiring unstable package
 
-[1412]: https://github.com/Gallopsled/pwntools/pulls/1412
+[1412]: https://github.com/Gallopsled/pwntools/pull/1412
 
 ## 4.0.0
 
@@ -83,12 +115,13 @@ To be released on Jan 30, 2020.
 - [#1202][1202] Docker: Kill 14 layers in pwntools base images
 - [#1182][1182] shellcraft.dupio() for mips
 
-[1391]: https://github.com/Gallopsled/pwntools/pulls/1391
-[1317]: https://github.com/Gallopsled/pwntools/pulls/1317
-[1285]: https://github.com/Gallopsled/pwntools/pulls/1285
-[1216]: https://github.com/Gallopsled/pwntools/pulls/1216
-[1202]: https://github.com/Gallopsled/pwntools/pulls/1202
-[1182]: https://github.com/Gallopsled/pwntools/pulls/1182
+[1402]: https://github.com/Gallopsled/pwntools/pull/1402
+[1391]: https://github.com/Gallopsled/pwntools/pull/1391
+[1317]: https://github.com/Gallopsled/pwntools/pull/1317
+[1285]: https://github.com/Gallopsled/pwntools/pull/1285
+[1216]: https://github.com/Gallopsled/pwntools/pull/1216
+[1202]: https://github.com/Gallopsled/pwntools/pull/1202
+[1182]: https://github.com/Gallopsled/pwntools/pull/1182
 [76413f]: https://github.com/Gallopsled/pwntools/commit/76413f
 
 ## 3.13.0
@@ -99,32 +132,16 @@ To be released on Jan 30, 2020.
 - [#1277][1277] Fix timeout parameter passing in sendlineafter and other similar functions
 - [#1292][1292] Provide correct arch name to gdb for sparc64
 
-[1175]: https://github.com/Gallopsled/pwntools/pulls/1175
-[1204]: https://github.com/Gallopsled/pwntools/pulls/1355
-[1277]: https://github.com/Gallopsled/pwntools/pulls/1277
-[1292]: https://github.com/Gallopsled/pwntools/pulls/1292
-[1355]: https://github.com/Gallopsled/pwntools/pulls/1355
-
-## 3.12.1
-
-- [#1104][1104] Add `DynELF.dump()` for dumping remote ELF files
-- [#1101][1101] Set `context.os` via `context.binary`, useful for Android exploitation
-- [5fdc08][5fdc08] Work around broken `pidof` on Android
-- [63dfed][63dfed] Print warning when Corefile deletion fails instead of throwing an exception
-- [#1094][1094] Make hexdump output alignment more consistent
-- [#1096][1096] `flat()` and `fit()` are now the same function
-
-[1104]: https://github.com/Gallopsled/pwntools/pull/1104
-[1101]: https://github.com/Gallopsled/pwntools/pull/1101
-[1094]: https://github.com/Gallopsled/pwntools/pull/1094
-[1096]: https://github.com/Gallopsled/pwntools/pull/1096
-[5fdc08]: https://github.com/Gallopsled/pwntools/commit/5fdc08
-[63dfed]: https://github.com/Gallopsled/pwntools/commit/63dfed
+[1175]: https://github.com/Gallopsled/pwntools/pull/1175
+[1204]: https://github.com/Gallopsled/pwntools/pull/1204
+[1277]: https://github.com/Gallopsled/pwntools/pull/1277
+[1292]: https://github.com/Gallopsled/pwntools/pull/1292
+[1355]: https://github.com/Gallopsled/pwntools/pull/1355
 
 ## 3.12.2
 
-- [1242][1242] Use IntervalTree 2.xx, disallow use of 3.xx
-- [1243][1243] Fix a typo that caused an exception when executing a binary with `process()` which returns `-ENOEXEC` and the system does not have `qemu-user` binaries installed.
+- [#1242][1242] Use IntervalTree 2.xx, disallow use of 3.xx
+- [#1243][1243] Fix a typo that caused an exception when executing a binary with `process()` which returns `-ENOEXEC` and the system does not have `qemu-user` binaries installed.
 
 [1242]: https://github.com/Gallopsled/pwntools/pull/1242
 [1243]: https://github.com/Gallopsled/pwntools/pull/1243
@@ -142,7 +159,15 @@ To be released on Jan 30, 2020.
 - [#1131][1131] Add "libc-" to libc prefixes in `process` tubes
 - [#1125][1125] Fix a typo
 - [#1121][1121] Fix tests which were broken by an upstream Sphinx change
+- [#1104][1104] Add `DynELF.dump()` for dumping remote ELF files
+- [#1101][1101] Set `context.os` via `context.binary`, useful for Android exploitation
+- [5fdc08][5fdc08] Work around broken `pidof` on Android
+- [63dfed][63dfed] Print warning when Corefile deletion fails instead of throwing an exception
+- [#1094][1094] Make hexdump output alignment more consistent
+- [#1096][1096] `flat()` and `fit()` are now the same function
 
+[1198]: https://github.com/Gallopsled/pwntools/pull/1198
+[1191]: https://github.com/Gallopsled/pwntools/pull/1191
 [1159]: https://github.com/Gallopsled/pwntools/pull/1159
 [1162]: https://github.com/Gallopsled/pwntools/pull/1162
 [1150]: https://github.com/Gallopsled/pwntools/pull/1150
@@ -152,6 +177,12 @@ To be released on Jan 30, 2020.
 [1131]: https://github.com/Gallopsled/pwntools/pull/1131
 [1125]: https://github.com/Gallopsled/pwntools/pull/1125
 [1121]: https://github.com/Gallopsled/pwntools/pull/1121
+[1104]: https://github.com/Gallopsled/pwntools/pull/1104
+[1101]: https://github.com/Gallopsled/pwntools/pull/1101
+[1094]: https://github.com/Gallopsled/pwntools/pull/1094
+[1096]: https://github.com/Gallopsled/pwntools/pull/1096
+[5fdc08]: https://github.com/Gallopsled/pwntools/commit/5fdc08
+[63dfed]: https://github.com/Gallopsled/pwntools/commit/63dfed
 
 ## 3.12.0
 

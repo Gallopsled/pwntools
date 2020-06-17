@@ -9,6 +9,8 @@ import socket
 import stat
 import string
 
+import six
+
 from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util import fiddling
@@ -25,7 +27,7 @@ def align(alignment, x):
       >>> [align(5, n) for n in range(15)]
       [0, 5, 5, 5, 5, 5, 10, 10, 10, 10, 10, 15, 15, 15, 15]
     """
-    return ((x + alignment - 1) // alignment) * alignment
+    return x + -x % alignment
 
 
 def align_down(alignment, x):
@@ -37,8 +39,7 @@ def align_down(alignment, x):
         >>> [align_down(5, n) for n in range(15)]
         [0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 10, 10, 10, 10, 10]
     """
-    a = alignment
-    return (x // a) * a
+    return x - x % alignment
 
 
 def binary_ip(host):
@@ -195,6 +196,9 @@ def run_in_new_terminal(command, terminal = None, args = None):
           variable), a new pane will be opened.
         - If GNU Screen is detected (by the presence of the ``$STY`` environment
           variable), a new screen will be opened.
+        - If WSL (Windows Subsystem for Linux) is detected (by the presence of
+          a ``wsl.exe`` binary in the ``$PATH`` and ``/proc/sys/kernel/osrelease``
+          containing ``Microsoft``), a new ``cmd.exe`` window will be opened.
 
     Arguments:
         command (str): The command to run.
@@ -207,7 +211,6 @@ def run_in_new_terminal(command, terminal = None, args = None):
     Returns:
       PID of the new terminal process
     """
-
     if not terminal:
         if context.terminal:
             terminal = context.terminal[0]
@@ -215,18 +218,26 @@ def run_in_new_terminal(command, terminal = None, args = None):
         elif which('pwntools-terminal'):
             terminal = 'pwntools-terminal'
             args     = []
-        elif 'TERM_PROGRAM' in os.environ:
-            terminal = os.environ['TERM_PROGRAM']
-            args     = []
-        elif 'DISPLAY' in os.environ and which('x-terminal-emulator'):
-            terminal = 'x-terminal-emulator'
-            args     = ['-e']
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
             args     = ['splitw']
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
+        elif 'TERM_PROGRAM' in os.environ:
+            terminal = os.environ['TERM_PROGRAM']
+            args     = []
+        elif 'DISPLAY' in os.environ and which('x-terminal-emulator'):
+            terminal = 'x-terminal-emulator'
+            args     = ['-e']
+        else:
+            is_wsl = False
+            if os.path.exists('/proc/sys/kernel/osrelease'):
+                with open('/proc/sys/kernel/osrelease', 'rb') as f:
+                    is_wsl = b'Microsoft' in f.read()
+            if is_wsl and which('cmd.exe') and which('wsl.exe') and which('bash.exe'):
+                terminal = 'cmd.exe'
+                args     = ['/c', 'start', 'bash.exe', '-c']
 
     if not terminal:
         log.error('Could not find a terminal binary to use. Set context.terminal to your terminal.')
@@ -436,3 +447,14 @@ def register_sizes(regs, in_sizes):
             smaller[r] = [r_ for r_ in l if sizes[r_] < sizes[r]]
 
     return lists.concat(regs), sizes, bigger, smaller
+
+
+def python_2_bytes_compatible(klass):
+    """
+    A class decorator that defines __str__ methods under Python 2.
+    Under Python 3 it does nothing.
+    """
+    if six.PY2:
+        if '__str__' not in klass.__dict__:
+            klass.__str__ = klass.__bytes__
+    return klass

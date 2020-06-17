@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 from __future__ import print_function
 
 import glob
@@ -60,7 +60,8 @@ install_requires     = ['paramiko>=1.15.2',
                         'psutil>=3.3.0',
                         'intervaltree>=3.0',
                         'sortedcontainers',
-                        'unicorn>=1.0.2rc1', # see unicorn-engine/unicorn#1100, unicorn-engine/unicorn#1170
+                        'unicorn>=1.0.2rc1,<1.0.2rc4', # see unicorn-engine/unicorn#1100, unicorn-engine/unicorn#1170, Gallopsled/pwntools#1538
+                        'six>=1.12.0',
 ]
 
 # Check that the user has installed the Python development headers
@@ -82,7 +83,7 @@ setup(
     name                 = 'pwntools',
     python_requires      = '>=2.7',
     packages             = find_packages(),
-    version              = '4.2.0dev',
+    version              = '4.3.0dev',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],

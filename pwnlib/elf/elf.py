@@ -83,11 +83,18 @@ from pwnlib.tubes.process import process
 from pwnlib.util import misc
 from pwnlib.util import packing
 from pwnlib.util.fiddling import unhex
+from pwnlib.util.misc import align, align_down
 from pwnlib.util.sh_string import sh_string
 
 log = getLogger(__name__)
 
 __all__ = ['load', 'ELF']
+
+def _iter_symbols(sec):
+    # Cache result of iter_symbols.
+    if not hasattr(sec, '_symbols'):
+        sec._symbols = list(sec.iter_symbols())
+    return iter(sec._symbols)
 
 class Function(object):
     """Encapsulates information about a function in an :class:`.ELF` binary.
@@ -267,6 +274,9 @@ class ELF(ELFFile):
             or mask(flags, E_FLAGS.EF_MIPS_ARCH_64R2):
                 self.arch = 'mips64'
                 self.bits = 64
+
+        self._sections = None
+        self._segments = None
 
         #: IntervalTree which maps all of the loaded memory segments
         self.memory = intervaltree.IntervalTree()
@@ -484,6 +494,13 @@ class ELF(ELFFile):
         """:class:`str`: ELF type (``EXEC``, ``DYN``, etc)"""
         return describe_e_type(self.header.e_type).split()[0]
 
+    def iter_segments(self):
+        # Yield and cache all the segments in the file
+        if self._segments is None:
+            self._segments = [self.get_segment(i) for i in range(self.num_segments())]
+
+        return iter(self._segments)
+
     @property
     def segments(self):
         """
@@ -535,6 +552,13 @@ class ELF(ELFFile):
             return seg
 
         return None
+
+    def iter_sections(self):
+        # Yield and cache all the sections in the file
+        if self._sections is None:
+            self._sections = [self.get_section(i) for i in range(self.num_sections())]
+
+        return iter(self._sections)
 
     @property
     def sections(self):
@@ -591,6 +615,8 @@ class ELF(ELFFile):
         self.symbols = dotdict({k:update(v) for k,v in self.symbols.items()})
         self.plt     = dotdict({k:update(v) for k,v in self.plt.items()})
         self.got     = dotdict({k:update(v) for k,v in self.got.items()})
+        for f in self.functions.values():
+            f.address += delta
 
         # Update our view of memory
         memory = intervaltree.IntervalTree()
@@ -839,7 +865,7 @@ class ELF(ELFFile):
             if not isinstance(sec, SymbolTableSection):
                 continue
 
-            for sym in sec.iter_symbols():
+            for sym in _iter_symbols(sec):
                 # Avoid duplicates
                 if sym.name in self.functions:
                     continue
@@ -863,7 +889,7 @@ class ELF(ELFFile):
             if not isinstance(section, SymbolTableSection):
                 continue
 
-            for symbol in section.iter_symbols():
+            for symbol in _iter_symbols(section):
                 value = symbol.entry.st_value
                 if not value:
                     continue
@@ -904,7 +930,7 @@ class ELF(ELFFile):
         if self.statically_linked:
             return
 
-        for section in self.iter_sections():
+        for section in self.sections:
             # We are only interested in relocations
             if not isinstance(section, RelocationSection):
                 continue
@@ -958,7 +984,7 @@ class ELF(ELFFile):
 
         # Iterate over the dynamic symbol table
         dynsym = self.get_section_by_name('.dynsym')
-        symbol_iter = dynsym.iter_symbols()
+        symbol_iter = _iter_symbols(dynsym)
 
         # 'gotsym' is the index of the first GOT symbol
         gotsym = self.dynamic_value_by_tag('DT_MIPS_GOTSYM')
@@ -1000,9 +1026,10 @@ class ELF(ELFFile):
         #              In particular, this is where EBX points when it points into the GOT.
         dt_pltgot = self.dynamic_value_by_tag('DT_PLTGOT') or 0
 
-        # There are two PLTs we may need to search
+        # There are three PLTs we may need to search
         plt = self.get_section_by_name('.plt')          # <-- Functions only
         plt_got = self.get_section_by_name('.plt.got')  # <-- Functions used as data
+        plt_sec = self.get_section_by_name('.plt.sec')
         plt_mips = self.get_section_by_name('.MIPS.stubs')
 
         # Invert the GOT symbols we already have, so we can look up by address
@@ -1010,7 +1037,7 @@ class ELF(ELFFile):
         inv_symbols.update({v:k for k,v in self.symbols.items()})
 
         with context.local(arch=self.arch, bits=self.bits, endian=self.endian):
-            for section in (plt, plt_got, plt_mips):
+            for section in (plt, plt_got, plt_sec, plt_mips):
                 if not section:
                     continue
 
@@ -1089,8 +1116,8 @@ class ELF(ELFFile):
         return_from_main = int(return_from_main[ : return_from_main.index(':') ], 16)
         return return_from_main
 
-    def search(self, needle, writable = False):
-        """search(needle, writable = False) -> generator
+    def search(self, needle, writable = False, executable = False):
+        """search(needle, writable = False, executable = False) -> generator
 
         Search the ELF's virtual address space for the specified string.
 
@@ -1103,6 +1130,7 @@ class ELF(ELFFile):
         Arguments:
             needle(str): String to search for.
             writable(bool): Search only writable sections.
+            executable(bool): Search only executable sections.
 
         Yields:
             An iterator for each virtual address that matches.
@@ -1120,11 +1148,20 @@ class ELF(ELFFile):
 
             >>> len(list(bash.search(b'GNU bash'))) > 0
             True
+
+            It is also possible to search for instructions in executable sections.
+
+            >>> binary = ELF.from_assembly('nop; mov eax, 0; jmp esp; ret')
+            >>> jmp_addr = next(binary.search(asm('jmp esp'), executable = True))
+            >>> binary.read(jmp_addr, 2) == asm('jmp esp')
+            True
         """
         load_address_fixup = (self.address - self.load_addr)
 
         if writable:
             segments = self.writable_segments
+        elif executable:
+            segments = self.executable_segments
         else:
             segments = self.segments
 
@@ -1196,6 +1233,11 @@ class ELF(ELFFile):
             # DT_LOAD segment is **last** to load data into the region.
             self.memory.chop(start, stop_data)
 
+            # Fill the start of the segment's first page
+            page_start = align_down(0x1000, start)
+            if page_start < start and not self.memory[page_start]:
+                self.memory.addi(page_start, start, None)
+
             # Add the new segment
             if start != stop_data:
                 self.memory.addi(start, stop_data, segment)
@@ -1203,15 +1245,22 @@ class ELF(ELFFile):
             if stop_data != stop_mem:
                 self.memory.addi(stop_data, stop_mem, b'\x00')
 
+            page_end = align(0x1000, stop_mem)
+
             # Check for holes which we can fill
             if self._fill_gaps and i+1 < len(load_segments):
                 next_start = load_segments[i+1].header.p_vaddr
-                
-                if stop_mem < next_start and stop_mem>>(self.bits-1) == next_start>>(self.bits-1):
-                    self.memory.addi(stop_mem, next_start, None)
-            else:
-                page_end = (stop_mem + 0xfff) & ~(0xfff)
+                page_next = align_down(0x1000, next_start)
 
+                if stop_mem < next_start:
+                    if page_end < page_next:
+                        if stop_mem < page_end:
+                            self.memory.addi(stop_mem, page_end, None)
+                        if page_next < next_start:
+                            self.memory.addi(page_next, next_start, None)
+                    else:
+                        self.memory.addi(stop_mem, next_start, None)
+            else:
                 if stop_mem < page_end:
                     self.memory.addi(stop_mem, page_end, None)
 
@@ -1914,7 +1963,7 @@ class ELF(ELFFile):
     def unpack(self, address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""
         self._update_args(kw)
-        return packing.unpack(self.read(address, context.bytes), *a, **kw)
+        return packing.unpack(self.read(address, self.bytes), *a, **kw)
 
     def string(self, address):
         """string(address) -> str

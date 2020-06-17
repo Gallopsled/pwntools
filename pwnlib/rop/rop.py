@@ -292,6 +292,7 @@ from pwnlib.context import context
 from pwnlib.elf import ELF
 from pwnlib.log import getLogger
 from pwnlib.rop import srop
+from . import ret2dlresolve
 from pwnlib.rop.call import AppendedArgument
 from pwnlib.rop.call import Call
 from pwnlib.rop.call import CurrentStackPointer
@@ -303,10 +304,18 @@ from pwnlib.util import lists
 from pwnlib.util import packing
 from pwnlib.util.cyclic import cyclic
 from pwnlib.util.packing import pack
+from pwnlib.util.misc import python_2_bytes_compatible
 
 log = getLogger(__name__)
 __all__ = ['ROP']
 
+enums = Call, constants.Constant
+try:
+    from enum import Enum
+except ImportError:
+    pass
+else:
+    enums += Enum,
 
 class Padding(object):
     """
@@ -376,6 +385,7 @@ class DescriptiveStack(list):
         return '\n'.join(rv)
 
 
+@python_2_bytes_compatible
 class ROP(object):
     r"""Class which simplifies the generation of ROP-chains.
 
@@ -687,7 +697,7 @@ class ROP(object):
         """
         Return a description for an object in the ROP stack
         """
-        if isinstance(object, (Call, constants.Constant)):
+        if isinstance(object, enums):
             return str(object)
         if isinstance(object, six.integer_types):
             return self.unresolve(object)
@@ -745,7 +755,6 @@ class ROP(object):
                 stack.describe(self.describe(slot))
                 if not isinstance(slot, bytes):
                     slot = slot.encode()
-                slot += self.generatePadding(stack.next, len(slot) % context.bytes)
 
                 for chunk in lists.group(context.bytes, slot):
                     stack.append(chunk)
@@ -769,7 +778,7 @@ class ROP(object):
             elif isinstance(slot, Call):
                 stack.describe(self.describe(slot))
 
-                registers    = dict(zip(slot.abi.register_arguments, slot.args))
+                registers    = slot.register_arguments
 
                 for value, name in self.setRegisters(registers):
                     if name in registers:
@@ -788,7 +797,10 @@ class ROP(object):
                 stack.append(slot.target)
 
                 # For any remaining arguments, put them on the stack
-                stackArguments = slot.args[len(slot.abi.register_arguments):]
+                stackArguments = slot.stack_arguments
+                for argument in slot.stack_arguments_before:
+                    stack.describe("[dlresolve index]")
+                    stack.append(argument)
                 nextGadgetAddr = stack.next + (context.bytes * len(stackArguments))
 
                 # Generally, stack-based arguments assume there's a return
@@ -968,7 +980,10 @@ class ROP(object):
                 SYS_sigreturn  = constants.SYS_rt_sigreturn
 
             for register, value in zip(frame.arguments, arguments):
-                frame[register] = value
+                if not isinstance(value, six.integer_types + (Unresolved,)):
+                    frame[register] = AppendedArgument(value)
+                else:
+                    frame[register] = value
 
         # Set up a call frame which will set EAX and invoke the syscall
         call = Call('SYS_sigreturn',
@@ -1044,9 +1059,6 @@ class ROP(object):
     def __bytes__(self):
         """Returns: Raw bytes of the ROP chain"""
         return self.chain()
-
-    def __str__(self):
-        return str(self.chain())
 
     def __get_cachefile_name(self, files):
         """Given an ELF or list of ELF objects, return a cache file for the set of files"""
@@ -1388,6 +1400,19 @@ class ROP(object):
         self.raw(r14)  # pop r14
         self.raw(r15)  # pop r15
 
+    def ret2dlresolve(self, dlresolve):
+        elf = next(elf for elf in self.elfs if elf.get_section_by_name(".plt"))
+        elf_base = elf.address if elf.pie else 0
+        plt_init = elf.get_section_by_name(".plt").header.sh_addr + elf_base
+        log.debug("PLT_INIT: %#x", plt_init)
+
+        reloc_index = dlresolve.reloc_index
+        real_args = dlresolve.real_args
+        call = Call("[plt_init] " + dlresolve.symbol.decode(),
+                    plt_init,
+                    dlresolve.real_args,
+                    before=[reloc_index])
+        self.raw(call)
 
     def __getattr__(self, attr):
         """Helper to make finding ROP gadets easier.

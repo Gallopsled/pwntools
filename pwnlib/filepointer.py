@@ -3,9 +3,12 @@
 r"""
 File Structure Exploitation
 
-struct FILE (_IO_FILE) is the structure for File Streams. This offers various targets for exploitation on an existing bug in the code. Examples - _IO_buf_base and _IO_buf_end for reading data to arbitrary location.
+struct FILE (_IO_FILE) is the structure for File Streams.
+This offers various targets for exploitation on an existing bug in the code.
+Examples - ``_IO_buf_base`` and ``_IO_buf_end`` for reading data to arbitrary location.
 
-Remembering the offsets of various structure members while faking a FILE structure can be difficult, so this python class helps you with that. Example-
+Remembering the offsets of various structure members while faking a FILE structure can be difficult,
+so this python class helps you with that. Example-
 
 >>> context.clear(arch='amd64')
 >>> fileStr = FileStructure(null=0xdeadbeef)
@@ -24,6 +27,7 @@ from __future__ import division
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
+from pwnlib.util.misc import python_2_bytes_compatible
 from pwnlib.util.packing import pack
 
 log = getLogger(__name__)
@@ -91,6 +95,8 @@ def update_var(l):
         var['unknown2']=48
     return var
 
+
+@python_2_bytes_compatible
 class FileStructure(object):
     r"""
     Crafts a FILE structure, with default values for some fields, like _lock which should point to null ideally, set.
@@ -187,7 +193,6 @@ class FileStructure(object):
             else:
                 structure += pack(self.__getattr__(val), self.length[val]*8)
         return structure
-    __str__ = __bytes__
 
     def struntil(self,v):
         r"""

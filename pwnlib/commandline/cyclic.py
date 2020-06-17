@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import argparse
+import six
 import string
 import sys
 
@@ -20,7 +21,8 @@ parser = common.parser_commands.add_parser(
 parser.add_argument(
     '-a', '--alphabet',
     metavar = 'alphabet',
-    default = string.ascii_lowercase,
+    default = string.ascii_lowercase.encode(),
+    type = six.ensure_binary,
     help = 'The alphabet to use in the cyclic pattern (defaults to all lower case letters)',
 )
 
@@ -41,7 +43,7 @@ parser.add_argument(
     help = 'The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: %s' % common.choices,
 )
 
-group = parser.add_mutually_exclusive_group(required = True)
+group = parser.add_mutually_exclusive_group(required=False)
 group.add_argument(
     '-l', '-o', '--offset', '--lookup',
     dest = 'lookup',
@@ -51,9 +53,10 @@ group.add_argument(
 
 group.add_argument(
     'count',
-    type = int,
-    nargs = '?',
-    help = 'Number of characters to print'
+    type=int,
+    nargs='?',
+    default=None,
+    help='Number of characters to print'
 )
 
 def main(args):
@@ -64,9 +67,10 @@ def main(args):
         pat = args.lookup
 
         try:
-            pat = packing.pack(int(pat, 0), subsize*8)
+            pat = int(pat, 0)
         except ValueError:
             pass
+        pat = flat(pat)
 
         if len(pat) != subsize:
             log.critical('Subpattern must be %d bytes' % subsize)
@@ -87,13 +91,14 @@ def main(args):
         want   = args.count
         result = cyclic(want, alphabet, subsize)
         got    = len(result)
-        if got < want:
+        if want is not None and got < want:
             log.failure("Alphabet too small (max length = %i)" % got)
 
-        sys.stdout.write(result)
+        out = getattr(sys.stdout, 'buffer', sys.stdout)
+        out.write(result)
 
-        if sys.stdout.isatty():
-            sys.stdout.write('\n')
+        if out.isatty():
+            out.write(b'\n')
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)

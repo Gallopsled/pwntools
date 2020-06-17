@@ -45,4 +45,4 @@ def main(args):
   print(os.strerror(value))
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    common.main(__file__)

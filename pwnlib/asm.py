@@ -190,16 +190,18 @@ def which_binutils(util):
         for gutil in utils:
             # e.g. objdump
             if arch is None:
-                pattern = gutil
+                patterns = [gutil]
 
-            # e.g. aarch64-linux-gnu-objdump
+            # e.g. aarch64-linux-gnu-objdump, avr-objdump
             else:
-                pattern = '%s*linux*-%s' % (arch,gutil)
+                patterns = ['%s*linux*-%s' % (arch, gutil),
+                            '%s-%s' % (arch, gutil)]
 
-            for dir in environ['PATH'].split(':'):
-                res = sorted(glob(path.join(dir, pattern)))
-                if res:
-                    return res[0]
+            for pattern in patterns:
+                for dir in environ['PATH'].split(':'):
+                    res = sorted(glob(path.join(dir, pattern)))
+                    if res:
+                        return res[0]
 
     # No dice!
     print_binutils_instructions(util, context)
@@ -322,6 +324,7 @@ def _bfdname():
         'amd64'   : 'elf64-x86-64',
         'arm'     : 'elf32-%sarm' % E,
         'thumb'   : 'elf32-%sarm' % E,
+        'avr'     : 'elf32-avr',
         'mips'    : 'elf32-trad%smips' % E,
         'mips64'  : 'elf64-trad%smips' % E,
         'alpha'   : 'elf64-alpha',

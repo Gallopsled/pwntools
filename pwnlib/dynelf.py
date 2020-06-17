@@ -75,8 +75,8 @@ def sysv_hash(symbol):
     """
     h = 0
     g = 0
-    for c in symbol:
-        h = (h << 4) + ord(c)
+    for c in bytearray(context._encode(symbol)):
+        h = (h << 4) + c
         g = h & 0xf0000000
         h ^= (g >> 24)
         h &= ~g
@@ -87,9 +87,10 @@ def gnu_hash(s):
 
     Function used to generated GNU-style hashes for strings.
     """
+    s = bytearray(context._encode(s))
     h = 5381
     for c in s:
-        h = h * 33 + ord(c)
+        h = h * 33 + c
     return h & 0xffffffff
 
 class DynELF(object):

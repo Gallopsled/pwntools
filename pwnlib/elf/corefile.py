@@ -381,13 +381,15 @@ class Corefile(ELF):
         This requires GDB to be installed, and can only be done with native
         processes.  Getting a "complete" corefile requires GDB 7.11 or better.
 
-        >>> elf = ELF('/bin/bash')
+        >>> elf = ELF('/bin/bash-static')
         >>> context.clear(binary=elf)
         >>> io = process(elf.path, env={'HELLO': 'WORLD'})
         >>> core = io.corefile
 
         Data can also be extracted directly from the corefile.
 
+        >>> elf.address > 0
+        True
         >>> core.exe[elf.address:elf.address+4]
         b'\x7fELF'
         >>> core.exe.data[:4]
@@ -429,13 +431,13 @@ class Corefile(ELF):
 
         Corefiles can also be pulled from remote machines via SSH!
 
-        >>> s = ssh('travis', 'example.pwnme')
+        >>> s = ssh(host='example.pwnme')
         >>> _ = s.set_working_directory()
         >>> elf = ELF.from_assembly(shellcraft.trap())
         >>> path = s.upload(elf.path)
         >>> _ =s.chmod('+x', path)
         >>> io = s.process(path)
-        >>> io.wait()
+        >>> io.wait(1)
         -1
         >>> io.corefile.signal == signal.SIGTRAP # doctest: +SKIP
         True
@@ -445,7 +447,7 @@ class Corefile(ELF):
         >>> context.clear(arch='amd64')
         >>> elf = ELF.from_assembly('push 1234; ret')
         >>> io = elf.process()
-        >>> io.wait()
+        >>> io.wait(1)
         >>> io.corefile.fault_addr
         1234
 
@@ -459,7 +461,7 @@ class Corefile(ELF):
 
         >>> elf = ELF.from_assembly(shellcraft.crash())
         >>> io = elf.process(env={'FOO': 'BAR=BAZ'})
-        >>> io.wait()
+        >>> io.wait(1)
         >>> core = io.corefile
         >>> core.getenv('FOO')
         b'BAR=BAZ'
@@ -480,9 +482,9 @@ class Corefile(ELF):
         ... '''
         >>> elf = ELF.from_assembly(assembly)
         >>> io = elf.process()
-        >>> io.wait()
+        >>> io.wait(2)
         >>> core = io.corefile
-        [!] End of the stack is corrupted, skipping stack parsing (got: 4141414141414141)
+        [!] End of the stack is corrupted, skipping stack parsing (got: 41414141)
         >>> core.argc, core.argv, core.env
         (0, [], {})
         >>> core.stack.data.endswith(b'AAAA')
@@ -747,13 +749,13 @@ class Corefile(ELF):
 
             >>> elf = ELF.from_assembly(shellcraft.trap())
             >>> io = elf.process()
-            >>> io.wait()
+            >>> io.wait(1)
             >>> io.corefile.signal == signal.SIGTRAP
             True
 
             >>> elf = ELF.from_assembly(shellcraft.crash())
             >>> io = elf.process()
-            >>> io.wait()
+            >>> io.wait(1)
             >>> io.corefile.signal == signal.SIGSEGV
             True
         """
@@ -774,7 +776,7 @@ class Corefile(ELF):
 
             >>> elf = ELF.from_assembly('mov eax, 0xdeadbeef; jmp eax', arch='i386')
             >>> io = elf.process()
-            >>> io.wait()
+            >>> io.wait(1)
             >>> io.corefile.fault_addr == io.corefile.eax == 0xdeadbeef
             True
         """
@@ -922,9 +924,9 @@ class Corefile(ELF):
             return
 
         # If the stack does not end with zeroes, something is very wrong.
-        if not stack.data.endswith(b'\x00' * 8):
+        if not stack.data.endswith(b'\x00' * context.bytes):
             log.warn_once("End of the stack is corrupted, skipping stack parsing (got: %s)",
-                          enhex(self.data[-8:]))
+                          enhex(self.data[-context.bytes:]))
             return
 
         # AT_EXECFN is the start of the filename, e.g. '/bin/sh'
@@ -943,16 +945,11 @@ class Corefile(ELF):
 
         # Sanity check!
         try:
-            assert stack[address] == b'\x00'
-        except AssertionError:
-            # Something weird is happening.  Just don't touch it.
-            log.debug("Something is weird")
-            return
+            if stack[address] != b'\x00':
+                log.warning("Error parsing corefile stack: Could not find end of environment")
+                return
         except ValueError:
-            # If the stack is not actually present in the coredump, we can't
-            # read from the stack.  This will fail as:
-            # ValueError: 'seek out of range'
-            log.debug("ValueError")
+            log.warning("Error parsing corefile stack: Address out of bounds")
             return
 
         # address is currently set to the NULL terminator of the last
@@ -966,12 +963,14 @@ class Corefile(ELF):
         p_last_env_addr = stack.find(pack(last_env_addr), None, last_env_addr)
         if p_last_env_addr < 0:
             # Something weird is happening.  Just don't touch it.
-            log.warn_once("Found bad environment at %#x", last_env_addr)
+            log.warn_once("Error parsing corefile stack: Found bad environment at %#x", last_env_addr)
             return
 
         # Sanity check that we did correctly find the envp NULL terminator.
         envp_nullterm = p_last_env_addr+context.bytes
-        assert self.unpack(envp_nullterm) == 0
+        if self.unpack(envp_nullterm) != 0:
+            log.warning("Error parsing corefile stack: Could not find end of environment variables")
+            return
 
         # We've successfully located the end of the envp[] array.
         #
@@ -1071,7 +1070,7 @@ class Corefile(ELF):
 
             >>> elf = ELF.from_assembly(shellcraft.trap())
             >>> io = elf.process(env={'GREETING': 'Hello!'})
-            >>> io.wait()
+            >>> io.wait(1)
             >>> io.corefile.getenv('GREETING')
             b'Hello!'
         """
@@ -1090,7 +1089,7 @@ class Corefile(ELF):
 
             >>> elf = ELF.from_assembly('mov eax, 0xdeadbeef;' + shellcraft.trap(), arch='i386')
             >>> io = elf.process()
-            >>> io.wait()
+            >>> io.wait(1)
             >>> io.corefile.registers['eax'] == 0xdeadbeef
             True
         """
@@ -1533,4 +1532,3 @@ class CorefileFinder(object):
                 return keys['interpreter']
 
         return ''
-

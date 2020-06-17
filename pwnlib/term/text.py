@@ -40,7 +40,7 @@ class Module(types.ModuleType):
             'cyan': 6,
             'white': 7,
             }
-        self._reset = '\x1b[m'
+        self._reset = termcap.get('reset')
         self._attributes = {}
         for x, y in [('italic'   , 'sitm'),
                      ('bold'     , 'bold'),

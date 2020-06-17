@@ -1106,11 +1106,14 @@ class tube(Timeout, Logger):
         """
         self << other << self
 
-    def wait_for_close(self):
+    def wait_for_close(self, timeout=default):
         """Waits until the tube is closed."""
 
-        while self.connected():
-            time.sleep(0.05)
+        with self.countdown(timeout):
+            while self.countdown_active():
+                if not self.connected():
+                    return
+                time.sleep(min(self.timeout, 0.05))
 
     wait = wait_for_close
 
@@ -1373,11 +1376,11 @@ class tube(Timeout, Logger):
         def wrapperb(self, *a, **kw):
             return bytearray(func(self, *a, **kw))
         def wrapperS(self, *a, **kw):
-            return context._encode(func(self, *a, **kw))
+            return context._decode(func(self, *a, **kw))
         wrapperb.__doc__ = 'Same as :meth:`{func.__name__}`, but returns a bytearray'.format(func=func)
         wrapperb.__name__ = func.__name__ + 'b'
-        wrapperS.__doc__ = 'Same as :meth:`{func.__name__}`, but returns a str,' \
-                           'decoding the result using `context.encoding`.' \
+        wrapperS.__doc__ = 'Same as :meth:`{func.__name__}`, but returns a str, ' \
+                           'decoding the result using `context.encoding`. ' \
                            '(note that the binary versions are way faster)'.format(func=func)
         wrapperS.__name__ = func.__name__ + 'S'
         return wrapperb, wrapperS
