@@ -296,7 +296,6 @@ import tempfile
 
 from pwnlib import abi
 from pwnlib import constants
-from pwnlib.asm import asm
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.elf import ELF
@@ -1239,23 +1238,6 @@ class ROP(object):
             leave = None
         self.leave = leave
 
-        #
-        # Load ROP.jmp_esp ('i386') or ROP.jmp_rsp ('amd64') gadgets
-        #
-        jmp_sp = {
-            4: 'jmp esp',
-            8: 'jmp rsp'
-        }[context.bytes]
-
-        insn_asm = asm(jmp_sp)
-
-        for elf in self.elfs:
-            for addr in elf.search(insn_asm, executable = True):
-                if set(pack(addr)) & self._badchars:
-                    continue
-
-                self.gadgets[addr] = Gadget(addr, [jmp_sp], [], context.bytes)
-
     def __repr__(self):
         return 'ROP(%r)' % self.elfs
 
@@ -1371,16 +1353,22 @@ class ROP(object):
             return self.search(move=count)
 
         #
-        # Check for 'jmp_esp' or 'jmp_rsp'
+        # Check for 'jmp_esp'('i386') or 'jmp_rsp'('amd64')
         #
-        sp_regs = ['esp', 'rsp']
+        if attr == 'jmp_esp' and context.arch == 'i386' \
+        or attr == 'jmp_rsp' and context.arch == 'amd64':
+            jmp_sp = {'i386': 'jmp esp',
+                      'amd64': 'jmp rsp'
+                     }[context.arch]
 
-        if attr.startswith('jmp') \
-        and attr.split('_')[1] in sp_regs:
-            insn = ' '.join(attr.split('_'))
-            for each in self.gadgets:
-                if self.gadgets[each]['insns'] == [insn]:
-                    return self.gadgets[each]
+            insn_asm = b'\xff\xe4'
+
+            for elf in self.elfs:
+                for addr in elf.search(insn_asm, executable = True):
+                    if set(pack(addr)) & self._badchars:
+                        continue
+
+                    return Gadget(addr, [jmp_sp], [], context.bytes)
             return None
 
         if attr in ('int80', 'syscall', 'sysenter'):
