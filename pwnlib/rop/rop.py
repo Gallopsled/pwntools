@@ -1291,7 +1291,10 @@ class ROP(object):
 
         return result
 
-    def ret2csu(self, edi, rsi, rdx, rbx=0, rbp=0, r12=0, r13=0, r14=0, r15=0, call=None):
+    def ret2csu(self, edi=Padding('edi'), rsi=Padding('rsi'),
+                rdx=Padding('rdx'), rbx=Padding('rbx'), rbp=Padding('rbp'),
+                r12=Padding('r12'), r13=Padding('r13'), r14=Padding('r14'),
+                r15=Padding('r15'), call=None):
         """Build a ret2csu ROPchain
 
         Arguments:
@@ -1308,7 +1311,7 @@ class ROP(object):
         # Ensure 'edi' argument is packable
         try:
             p32(edi)
-        except(struct.error):
+        except struct.error:
             log.error('edi must be a 32bit value')
 
         # Find an appropriate, non-library ELF.
@@ -1392,7 +1395,7 @@ class ROP(object):
                 break
 
         # 2nd gadget: Populate edi, rsi & rdx. Populate optional registers
-        self.raw(0x00) # add rsp, 8
+        self.raw(Padding('<add rsp, 8>')) # add rsp, 8
         self.raw(rbx)  # pop rbx
         self.raw(rbp)  # pop rbp
         self.raw(r12)  # pop r12
