@@ -89,15 +89,34 @@ You can also append complex arguments onto stack when the stack pointer is known
     0x7fffe03c:       b'ls\x00$'
 
 ROP also detects 'jmp $sp' gadget to help exploit binaries with NX disabled.
+You can get this gadget on 'i386':
+
+    >>> context.clear(arch='i386')
+    >>> elf = ELF.from_assembly('nop; jmp esp; ret')
+    >>> rop = ROP(elf)
+    >>> jmp_gadget = rop.jmp_esp
+    >>> elf.read(jmp_gadget.address, 2) == asm('jmp esp')
+    True
+
+You can also get this gadget on 'amd64':
+
+    >>> context.clear(arch='amd64')
+    >>> elf = ELF.from_assembly('nop; jmp rsp; ret')
+    >>> rop = ROP(elf)
+    >>> jmp_gadget = rop.jmp_rsp
+    >>> elf.read(jmp_gadget.address, 2) == asm('jmp rsp')
+    True
+
+Gadgets whose address has badchar are filtered out:
 
     >>> context.clear(arch='i386')
     >>> elf = ELF.from_assembly('nop; pop eax; jmp esp; int 0x80; jmp esp; ret')
     >>> rop = ROP(elf, badchars=b'\x02')
-    >>> jmp_gadget = rop.jmp_esp
+    >>> jmp_gadget = rop.jmp_esp    # It returns the second gadget
     >>> elf.read(jmp_gadget.address, 2) == asm('jmp esp')
     True
     >>> rop = ROP(elf, badchars=b'\x02\x06')
-    >>> rop.jmp_esp == None
+    >>> rop.jmp_esp == None         # The address of both gadgets has badchar
     True
 
 ROP Example
