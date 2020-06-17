@@ -17,4 +17,6 @@ jobs:
 
     - name: Check changelog for updates
       run: |
-        git log --stat ${GITHUB_BASE}..HEAD | grep CHANGELOG.md
+        if ( git diff --stat ${GITHUB_BASE}..HEAD | grep pwnlib/ ); then \
+            git log --stat ${GITHUB_BASE}..HEAD | grep CHANGELOG.md; \
+        fi
