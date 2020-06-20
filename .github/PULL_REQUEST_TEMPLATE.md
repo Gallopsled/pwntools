@@ -25,3 +25,8 @@ You can always [change the branch][change] after you create the PR if it's again
 [contributing]: https://github.com/Gallopsled/pwntools/blob/dev/CONTRIBUTING.md
 [testing]: https://github.com/Gallopsled/pwntools/blob/dev/TESTING.md
 [change]: https://github.com/blog/2224-change-the-base-branch-of-a-pull-request
+
+## Changelog
+
+After creating your Pull Request, please add and push a commit that updates the changelog for the appropriate branch.  
+You can look at the existing changelog for examples of how to do this.
