@@ -110,6 +110,7 @@ from pwnlib.asm import make_elf_from_assembly
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.log import getLogger
+from pwnlib.timeout import Timeout
 from pwnlib.util import misc
 from pwnlib.util import proc
 
@@ -545,68 +546,63 @@ def attach(target, gdbscript = '', exe = None, need_ptrace_scope = True, gdb_arg
 
     Examples:
 
-    >>> # Attach directly to pid 1234
-    >>> gdb.attach(1234) # doctest: +SKIP
 
+        Attach to a process by PID
 
-    >>> # Attach to the youngest "bash" process
-    >>> gdb.attach('bash') # doctest: +SKIP
+        >>> pid = gdb.attach(1234) # doctest: +SKIP
 
+        Attach to the youngest process by name
 
-    >>> # Start a process
-    >>> bash = process('bash')
+        >>> pid = gdb.attach('bash') # doctest: +SKIP
 
-    >>> # Attach the debugger
-    >>> pid = gdb.attach(bash, '''
-    ... set follow-fork-mode child
-    ... break execve
-    ... continue
-    ... ''')
+        Attach a debugger to a :class:`.process` tube and automate interaction
 
-    >>> # Interact with the process
-    >>> bash.sendline("/bin/echo hello")
-    >>> bash.recvline()
-    b'hello\n'
-    >>> bash.close()
+        >>> io = process('bash')
+        >>> pid = gdb.attach(io, gdbscript='''
+        ... call puts("Hello from process debugger!")
+        ... detach
+        ... quit
+        ... ''')
+        >>> io.recvline()
+        b'Hello from process debugger!\n'
+        >>> io.sendline('echo Hello from bash && exit')
+        >>> io.recvall()
+        b'Hello from bash\n'
 
-    >>> # Start a forking server
-    >>> server = process(['socat', 'tcp-listen:12345,fork,reuseaddr', 'exec:/bin/bash,nofork'])
-    >>> sleep(1)
+        Attach to the remote process from a :class:`.remote` or :class:`.listen` tube,
+        as long as it is running on the same machine.
 
-    >>> # Connect to the server
-    >>> io = remote('127.0.0.1', 12345)
+        >>> server = process(['socat', 'tcp-listen:12345,reuseaddr,fork', 'exec:/bin/bash,nofork'])
+        >>> sleep(1) # Wait for socat to start
+        >>> io = remote('127.0.0.1', 12345)
+        >>> sleep(1) # Wait for process to fork
+        >>> pid = gdb.attach(io, gdbscript='''
+        ... call puts("Hello from remote debugger!")
+        ... detach
+        ... quit
+        ... ''')
+        >>> io.recvline()
+        b'Hello from remote debugger!\n'
+        >>> io.sendline('echo Hello from bash && exit')
+        >>> io.recvall()
+        b'Hello from bash\n'
 
-    >>> # Connect the debugger to the server-spawned process
-    >>> pid = gdb.attach(io, '''
-    ... break exit
-    ... continue
-    ... ''', exe = '/bin/bash')
-
-    >>> # Talk to the spawned 'sh'
-    >>> io.sendline("echo hello")
-    >>> io.recvline()
-    b'hello\n'
-    >>> io.sendline("exit")
-
-    >>> io.close()
-
-    >>> # Connect to the SSH server
-    >>> shell = ssh('travis', 'example.pwnme', password='demopass')
-
-    >>> # Start a process on the server
-    >>> cat = shell.process(['cat'])
-
-    >>> # Attach a debugger to it
-    >>> gdb.attach(cat, '''
-    ... break exit
-    ... continue
-    ... ''')
-
-    >>> cat.sendline("hello")
-    >>> cat.recvline()
-    b'hello\n'
-    >>> # Cause `cat` to exit
-    >>> cat.close()
+        Attach to processes running on a remote machine via an SSH :class:`.ssh` process
+        
+        >>> shell = ssh('travis', 'example.pwnme', password='demopass')
+        >>> io = shell.process(['cat'])
+        >>> pid = gdb.attach(io, gdbscript='''
+        ... call sleep(5)
+        ... call puts("Hello from ssh debugger!")
+        ... detach
+        ... quit
+        ... ''')
+        >>> io.recvline(timeout=5)  # doctest: +SKIP
+        b'Hello from ssh debugger!\n'
+        >>> io.sendline('This will be echoed back')
+        >>> io.recvline()
+        b'This will be echoed back\n'
+        >>> io.close()
     """
     if context.noptrace:
         log.warn_once("Skipping debug attach since context.noptrace==True")
@@ -687,17 +683,24 @@ def attach(target, gdbscript = '', exe = None, need_ptrace_scope = True, gdb_arg
     elif isinstance(target, tubes.sock.sock):
         pids = proc.pidof(target)
         if not pids:
-            log.error('could not find remote process (%s:%d) on this machine' %
+            log.error('Could not find remote process (%s:%d) on this machine' %
                       target.sock.getpeername())
-        waiting = True
-        if exe:
-            while waiting:
-                for pid in pids:
-                    if proc.exe(pid) == exe:
-                        waiting = False
-                        break
-                else:
-                    time.sleep(0.01)
+        pid = pids[0]
+
+        # Specifically check for socat, since it has an intermediary process
+        # if you do not specify "nofork" to the EXEC: argument
+        # python(2640)───socat(2642)───socat(2643)───bash(2644)
+        if proc.exe(pid).endswith('/socat') and time.sleep(0.1) and proc.children(pid):
+            pid = proc.children(pid)[0]
+
+        # We may attach to the remote process after the fork but before it performs an exec.  
+        # If an exe is provided, wait until the process is actually running the expected exe
+        # before we attach the debugger.
+        t = Timeout()
+        with t.countdown(2):
+            while exe and os.realpath(proc.exe(pid)) != os.realpath(exe) and t.timeout:
+                time.sleep(0.1)
+
     elif isinstance(target, tubes.process.process):
         pid = proc.pidof(target)[0]
         exe = exe or target.executable
@@ -945,13 +948,23 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     return rv
 
 def corefile(process):
-    r"""Drops a core file for the process.
+    r"""Drops a core file for a running local process.
+
+    Note:
+        You should use :meth:`.process.corefile` instead of using this method directly.
 
     Arguments:
         process: Process to dump
 
     Returns:
         :class:`.Core`: The generated core file
+
+    Example:
+
+        >>> io = process('bash')
+        >>> core = gdb.corefile(io)
+        >>> core.exe.name
+        '/bin/bash'
     """
 
     if context.noptrace:

@@ -67,6 +67,7 @@ jobs:
           binutils-mips-linux-gnu \
           binutils-powerpc-linux-gnu \
           gcc-multilib \
+          libc6-dbg \
           $ANDROID_JRE
         sudo apt-get install -y -o Acquire::Retries=3 \
           gcc-aarch64-linux-gnu \
