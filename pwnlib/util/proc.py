@@ -9,6 +9,7 @@ import psutil
 
 from pwnlib import tubes
 from pwnlib.log import getLogger
+from pwnlib.timeout import Timeout
 
 log = getLogger(__name__)
 
@@ -337,17 +338,23 @@ def wait_for_debugger(pid, debugger_pid=None):
     Returns:
         None
     """
-    with log.waitfor('Waiting for debugger') as l:
-        if debugger_pid:
-            debugger = psutil.Process(debugger_pid)
-            while tracer(pid) is None:
-                try:
-                    debugger.wait(0.01)
-                except psutil.TimeoutExpired:
-                    pass
-                else:
-                    l.failure("debugger exited! (maybe check /proc/sys/kernel/yama/ptrace_scope)")
+    t = Timeout()
+    with t.countdown(timeout=15):
+        with log.waitfor('Waiting for debugger') as l:
+            if debugger_pid:
+                debugger = psutil.Process(debugger_pid)
+                while t.timeout and tracer(pid) is None:
+                    try:
+                        debugger.wait(0.01)
+                    except psutil.TimeoutExpired:
+                        pass
+                    else:
+                        l.failure("debugger exited! (maybe check /proc/sys/kernel/yama/ptrace_scope)")
+            else:
+                while t.timeout and tracer(pid) is None:
+                    time.sleep(0.01)
+
+        if tracer(pid):
+            l.success()
         else:
-            while tracer(pid) is None:
-                time.sleep(0.01)
-        l.success()
+            l.failure('Debugger did not attach to pid %d within 15 seconds', pid)

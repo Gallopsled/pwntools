@@ -1051,8 +1051,8 @@ os.execve(exe, argv, env)
 
         with self.progress(msg) as h:
 
-            script = 'for py in python3 python; do test -x "$(which $py 2>&1)" && exec $py -c %s check; done; echo 2' % sh_string(script)
-            with context.local(log_level='error'):
+            script = 'for py in python2.7 python2 python; do test -x "$(which $py 2>&1)" && exec $py -c %s check; done; echo 2' % sh_string(script)
+            with context.quiet:
                 python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=self.timeout)
 
             try:

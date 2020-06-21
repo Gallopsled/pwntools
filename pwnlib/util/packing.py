@@ -33,6 +33,7 @@ Examples:
 from __future__ import absolute_import
 from __future__ import division
 
+import collections
 import six
 import struct
 import sys
@@ -548,6 +549,7 @@ def _flat(args, preprocessor, packer, filler):
         elif isinstance(arg, (list, tuple)):
             val = _flat(arg, preprocessor, packer, filler)
         elif isinstance(arg, dict):
+            arg = collections.OrderedDict(((k,v) for k,v in sorted(arg.items())))
             filler, val = _fit(arg, preprocessor, packer, filler)
         elif isinstance(arg, bytes):
             val = arg
@@ -614,6 +616,8 @@ def flat(*args, **kwargs):
       sign (str): Signedness of the converted integer (False/True)
 
     Examples:
+
+      >>> context.clear()
       >>> flat(1, "test", [[["AB"]*2]*3], endianness = 'little', word_size = 16, sign = False)
       b'\x01\x00testABABABABABAB'
       >>> flat([1, [2, 3]], preprocessor = lambda x: str(x+1))
@@ -633,7 +637,17 @@ def flat(*args, **kwargs):
       b'aaaaX'
       >>> flat({4: {0: 'X', 4: 'Y'}})
       b'aaaaXaaaY'
-
+      >>> flat({0x61616161:'x', 0x61616162:'y'})
+      b'xaaay'
+      >>> flat({0x61616162:'y', 0x61616161:'x'})
+      b'xaaay'
+      >>> fit({
+      ...     0x61616161: 'a',
+      ...     1: 'b',
+      ...     0x61616161+2: 'c',
+      ...     3: 'd',
+      ... })
+      b'abadbaaac'
     """
     # HACK: To avoid circular imports we need to delay the import of `cyclic`
     from pwnlib.util import cyclic
