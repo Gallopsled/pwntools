@@ -828,7 +828,7 @@ class ssh(Timeout, Logger):
             >>> print(s.process('false', preexec_fn=uses_globals).recvall().strip().decode()) # doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
-            NameError: name 'bar' is not defined
+            NameError: ... name 'bar' is not defined
 
             >>> s.process('echo hello', shell=True).recvall()
             b'hello\n'
@@ -1055,8 +1055,8 @@ os.execve(exe, argv, env)
 
         with self.progress(msg) as h:
 
-            script = 'for py in python3 python; do test -x "$(which $py 2>&1)" && exec $py -c %s check; done; echo 2' % sh_string(script)
-            with context.local(log_level='error'):
+            script = 'for py in python2.7 python2 python; do test -x "$(which $py 2>&1)" && exec $py -c %s check; done; echo 2' % sh_string(script)
+            with context.quiet:
                 python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=self.timeout)
 
             try:

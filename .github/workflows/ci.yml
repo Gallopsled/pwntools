@@ -75,6 +75,7 @@ jobs:
           binutils-mips-linux-gnu \
           binutils-powerpc-linux-gnu \
           gcc-multilib \
+          libc6-dbg \
           $ANDROID_JRE
 
     - name: Install android avd

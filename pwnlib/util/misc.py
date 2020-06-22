@@ -5,6 +5,7 @@ import errno
 import os
 import platform
 import re
+import six
 import socket
 import stat
 import string
@@ -249,7 +250,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
 
     argv = [which(terminal)] + args
 
-    if isinstance(command, str):
+    if isinstance(command, six.string_types):
         if ';' in command:
             log.error("Cannot use commands with semicolon.  Create a script and invoke that directly.")
         argv += [command]
