@@ -56,9 +56,11 @@ To be released on Jun 30, 2020.
 
 - [#1576][1576] Add `executable=` argument to `ELF.search`
 - [#1584][1584] Add `jmp_esp`/`jmp_rsp` attribute to `ROP`
+- [#1592][1592] Fix over-verbose logging of process() environment
 
 [1576]: https://github.com/Gallopsled/pwntools/pull/1576
 [1584]: https://github.com/Gallopsled/pwntools/pull/1584
+[1592]: https://github.com/Gallopsled/pwntools/pull/1592
 
 ## 4.2.0 (`beta`)
 
