@@ -44,8 +44,6 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install Linux dependencies
-      env:
-        ANDROID_JRE: ${{ steps.java-needed.outputs.need }}
       run: |
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
