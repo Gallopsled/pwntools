@@ -832,6 +832,10 @@ class ssh(Timeout, Logger):
 
             >>> s.process('echo hello', shell=True).recvall()
             b'hello\n'
+
+            >>> io = s.process(['cat'], timeout=5)
+            >>> io.recvline()
+            b''
         """
         if not argv and not executable:
             self.error("Must specify argv or executable")
@@ -1049,11 +1053,14 @@ os.execve(exe, argv, env)
 
         msg = 'Starting remote process %s on %s' % (execve_repr, self.host)
 
+        if timeout == Timeout.default:
+            timeout = self.timeout
+
         with self.progress(msg) as h:
 
             script = 'for py in python2.7 python2 python; do test -x "$(which $py 2>&1)" && exec $py -c %s check; done; echo 2' % sh_string(script)
             with context.quiet:
-                python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=self.timeout)
+                python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=timeout)
 
             try:
                 result = safeeval.const(python.recvline())
