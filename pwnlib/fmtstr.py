@@ -834,14 +834,13 @@ class FmtStr(object):
 
     """
 
-    def __init__(self, execute_fmt, offset = None, padlen = 0, numbwritten = 0):
+    def __init__(self, execute_fmt, offset=None, padlen=0, numbwritten=0):
         self.execute_fmt = execute_fmt
         self.offset = offset
         self.padlen = padlen
         self.numbwritten = numbwritten
 
-
-        if self.offset == None:
+        if self.offset is None:
             self.offset, self.padlen = self.find_offset()
             log.info("Found format string offset: %d", self.offset)
 

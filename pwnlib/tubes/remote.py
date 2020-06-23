@@ -99,7 +99,7 @@ class remote(sock):
 
                 sock = socket.socket(self.family, self.type, self.proto)
 
-                if timeout != None and timeout <= 0:
+                if timeout is not None and timeout <= 0:
                     sock.setblocking(0)
                 else:
                     sock.setblocking(1)

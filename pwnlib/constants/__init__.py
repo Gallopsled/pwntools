@@ -92,7 +92,7 @@ class ConstantsModule(ModuleType):
         # Special case for __all__, we want to return the contextually
         # relevant module.
         if key == '__all__':
-            return self.guess().__dict__.keys()
+            return list(self.guess().__dict__.keys())
 
         # Special case for all other special properties which aren't defined
         if key.endswith('__'):

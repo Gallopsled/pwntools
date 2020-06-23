@@ -38,9 +38,9 @@ def getraw(timeout = None):
     '''Get list of raw key codes corresponding to zero or more key presses'''
     cs = []
     c = getch(timeout)
-    while c != None: # timeout
+    while c is not None: # timeout
         cs.append(c)
-        if c == None: # EOF
+        if c is None: # EOF
             break
         c = getch()
     return cs
@@ -196,7 +196,7 @@ _ti_table = None
 
 def _peek_ti():
     global _cbuf
-    if _ti_table == None:
+    if _ti_table is None:
         _init_ti_table()
     # XXX: Faster lookup, plox
     for seq, key in _ti_table:

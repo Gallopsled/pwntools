@@ -219,8 +219,8 @@ class Mapping(object):
                 stop += self.stop
 
             if not (self.start <= start <= stop <= self.stop):
-                log.error("Byte range [%#x:%#x] not within range [%#x:%#x]" \
-                    % (start, stop, self.start, self.stop))
+                log.error("Byte range [%#x:%#x] not within range [%#x:%#x]",
+                          start, stop, self.start, self.stop)
 
             data = self._core.read(start, stop-start)
 
@@ -431,7 +431,7 @@ class Corefile(ELF):
 
         Corefiles can also be pulled from remote machines via SSH!
 
-        >>> s = ssh(host='example.pwnme')
+        >>> s = ssh(user='travis', host='example.pwnme', password='demopass')
         >>> _ = s.set_working_directory()
         >>> elf = ELF.from_assembly(shellcraft.trap())
         >>> path = s.upload(elf.path)
@@ -551,15 +551,15 @@ class Corefile(ELF):
         self.load_addr = 0
         self._address  = 0
 
-        if not self.elftype == 'CORE':
+        if self.elftype != 'CORE':
             log.error("%s is not a valid corefile" % self.file.name)
 
-        if not self.arch in prstatus_types.keys():
+        if self.arch not in prstatus_types:
             log.warn_once("%s does not use a supported corefile architecture, registers are unavailable" % self.file.name)
 
-        prstatus_type = prstatus_types.get(self.arch, None)
-        prpsinfo_type = prpsinfo_types.get(self.bits, None)
-        siginfo_type = siginfo_types.get(self.bits, None)
+        prstatus_type = prstatus_types.get(self.arch)
+        prpsinfo_type = prpsinfo_types.get(self.bits)
+        siginfo_type = siginfo_types.get(self.bits)
 
         with log.waitfor("Parsing corefile...") as w:
             self._load_mappings()
@@ -669,8 +669,8 @@ class Corefile(ELF):
                 continue
 
             if mapping.start == self.at_sysinfo_ehdr \
-            or (not vdso and mapping.size in [0x1000, 0x2000] \
-                and mapping.flags == 5 \
+            or (not vdso and mapping.size in [0x1000, 0x2000]
+                and mapping.flags == 5
                 and self.read(mapping.start, 4) == b'\x7fELF'):
                 mapping.name = '[vdso]'
                 vdso = True

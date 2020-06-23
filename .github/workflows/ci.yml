@@ -78,7 +78,15 @@ jobs:
           libc6-dbg \
           $ANDROID_JRE
 
-    - name: Install android avd
+    - name: Testing Corefiles
+      run: |
+        ulimit -a
+        ulimit -c unlimited
+        cat /proc/sys/kernel/core_pattern
+        cat /proc/sys/kernel/core_uses_pid
+        ( cd $(mktemp -d); sh -c 'kill -11 $$' || true; ls -la ./*core* /var/crash/*.crash;) || true
+
+    - name: Install Android AVD
       if:  steps.java-needed.outputs.need
       run: |
         USER=travis source travis/install.sh
@@ -101,12 +109,11 @@ jobs:
     - name: Install documentation dependencies
       run:  pip install -r docs/requirements.txt
 
-    - name: Disable broken tests
-      run: |
-        rm -f docs/source/elf/corefile.rst
-
     - name: Manually install non-broken Unicorn
       run:  pip install unicorn==1.0.2rc3
+
+    - name: Version Check
+      run:  PWNLIB_NOTERM=1 pwn version
 
     - name: Coverage doctests
       run: |
@@ -199,6 +206,7 @@ jobs:
         TARGET=${BRANCH%-staging}
         git branch -f "$TARGET"
         git push origin "$TARGET"
+        git push origin --delete "$BRANCH"
 
   pypi:
     runs-on: ubuntu-latest

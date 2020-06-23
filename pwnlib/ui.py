@@ -97,11 +97,11 @@ def yesno(prompt, default=None):
         cur = default
         while True:
             k = term.key.get()
-            if   k in ('y', 'Y', '<left>') and cur != True:
+            if   k in ('y', 'Y', '<left>') and cur is not True:
                 cur = True
                 hy.update(yesfocus)
                 hn.update(no)
-            elif k in ('n', 'N', '<right>') and cur != False:
+            elif k in ('n', 'N', '<right>') and cur is not False:
                 cur = False
                 hy.update(yes)
                 hn.update(nofocus)

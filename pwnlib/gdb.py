@@ -497,7 +497,7 @@ def binary():
 
         if multiarch:
             return multiarch
-        log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n' \
+        log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n'
                       '$ apt-get install gdb-multiarch')
 
     if not gdb:
@@ -981,7 +981,7 @@ def corefile(process):
     # This is effectively the same as what the 'gcore' binary does
     gdb_args = ['-batch',
                 '-q',
-                '--nx',
+                '-nx',
                 '-ex', '"set pagination off"',
                 '-ex', '"set height 0"',
                 '-ex', '"set width 0"',
@@ -992,7 +992,14 @@ def corefile(process):
     with context.local(terminal = ['sh', '-c']):
         with context.quiet:
             pid = attach(process, gdb_args=gdb_args)
-            os.waitpid(pid, 0)
+            log.debug("Got GDB pid %d", pid)
+            try:
+                os.waitpid(pid, 0)
+            except Exception:
+                pass
+
+    if not os.path.exists(corefile_path):
+        log.error("Could not generate a corefile for process %d", process.pid)
 
     return elf.corefile.Core(corefile_path)
 
