@@ -21,8 +21,9 @@ def main(a):
 
 	git_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 	if os.path.exists(os.path.join(git_root, '.git')):
-		gitver = subprocess.check_output(['git', '-C',  git_root, 'log', '-1', '--format=%h (%cr)'])
-		version = '%s-%s' % (version, gitver.decode())
+		gitver = subprocess.check_output(['git', '-C', git_root, 'log', '-1', '--format=%h (%cr)'])
+		branch = subprocess.check_output(['git', '-C', git_root, 'rev-parse', '--abbrev-ref', 'HEAD'])
+		version = '%s-%s-%s' % (version, branch.decode().strip(), gitver.decode())
 
 	log.info("Pwntools v%s" % version)
 
