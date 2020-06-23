@@ -42,28 +42,7 @@ jobs:
         [ "$vsetup" = "$vpwnlib" ]
         [ "$GITHUB_TAG" = "$vsetup" ]
 
-    - name: Detect whether java is needed
-      id: java-needed
-      env:
-        GITHUB_REF: ${{ github.event.ref }}
-        GITHUB_COMMIT_RANGE: ${{ github.event.before }}...${{ github.event.after }}
-      run: |
-        if echo "$GITHUB_REF" | grep -Eq 'staging|tags'; then
-          echo "Found release or important branch ($GITHUB_REF), forcing tests."
-        elif ! git show "$GITHUB_COMMIT_RANGE" >/dev/null; then
-          echo 'Incorrect commit range, forcing android tests.'
-        elif git log --stat "$GITHUB_COMMIT_RANGE" | grep -iE 'android|\<adb\>'; then
-          echo 'Found Android-related commits, forcing tests.'
-        else
-          # clear files that cause Android doctests
-          : > docs/source/adb.rst > docs/source/protocols/adb.rst
-          exit 0
-        fi
-        echo ::set-output name=need::openjdk-8-jre-headless
-
     - name: Install Linux dependencies
-      env:
-        ANDROID_JRE: ${{ steps.java-needed.outputs.need }}
       run: |
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
@@ -75,14 +54,7 @@ jobs:
           binutils-mips-linux-gnu \
           binutils-powerpc-linux-gnu \
           gcc-multilib \
-          libc6-dbg \
-          $ANDROID_JRE
-
-    - name: Install android avd
-      if:  steps.java-needed.outputs.need
-      run: |
-        USER=travis source travis/install.sh
-        set | egrep '^(ANDROID|PATH)' >.android.env
+          libc6-dbg
 
     - name: Set up SSH
       run: |
@@ -101,17 +73,21 @@ jobs:
     - name: Install documentation dependencies
       run:  pip install -r docs/requirements.txt
 
-    - name: Disable broken tests
+    - name: Skip Corefile, ADB tests
       run: |
         rm -f docs/source/elf/corefile.rst
+        rm -f docs/source/adb.rst
+        rm -f docs/source/protocols/adb.rst
 
     - name: Manually install non-broken Unicorn
       run:  pip install unicorn==1.0.2rc3
 
+    - name: Disable yama ptrace_scope
+      run: |
+        echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope # required by some gdb doctests
+
     - name: Coverage doctests
       run: |
-        source .android.env || :
-        echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope # required by some gdb doctests
         PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest
 
     - name: Coverage running examples
