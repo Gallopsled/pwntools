@@ -16,7 +16,7 @@ on:
     - '.github/workflows/android.yml'
 
 jobs:
-  build:
+  test:
     strategy:
       matrix:
         python-version: 3.8
