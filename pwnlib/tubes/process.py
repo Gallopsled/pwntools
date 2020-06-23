@@ -242,6 +242,9 @@ class process(tube):
         #: :class:`subprocess.Popen` object that backs this process
         self.proc = None
 
+        # We need to keep a copy of the un-_validated environment for printing
+        original_env = env
+
         if shell:
             executable_val, argv_val, env_val = executable, argv, env
         else:
@@ -298,7 +301,7 @@ class process(tube):
 
         if self.isEnabledFor(logging.DEBUG):
             if argv != [self.executable]: message += ' argv=%r ' % self.argv
-            if env not in (os.environ, None):  message += ' env=%r ' % self.env
+            if original_env not in (os.environ, None):  message += ' env=%r ' % self.env
 
         with self.progress(message) as p:
 
