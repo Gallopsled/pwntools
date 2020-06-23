@@ -1,19 +1,6 @@
 name: Android Tests
 
-on:
-  push:
-    branches:
-      stable
-      beta
-      stable-staging
-      beta-staging
-  pull_request:
-    paths:
-    - 'pwnlib/adb/adb.py'
-    - 'docs/source/adb.rst'
-    - 'docs/source/protocols/adb.rst'
-    - 'examples/android.py'
-    - '.github/workflows/android.yml'
+on: [push, pull_request]
 
 jobs:
   test:
