@@ -347,10 +347,13 @@ def _bfdname():
 def _bfdarch():
     arch = context.arch
     convert = {
-    'i386': 'i386',
-    'amd64': 'i386:x86-64',
-    'thumb': 'arm',
-    'ia64': 'ia64-elf64'
+        'amd64':     'i386:x86-64',
+        'i386':      'i386',
+        'ia64':      'ia64-elf64',
+        'mips64':    'mips',
+        'powerpc64': 'powerpc',
+        'sparc64':   'sparc',
+        'thumb':     'arm',
     }
 
     if arch in convert:
