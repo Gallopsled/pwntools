@@ -371,7 +371,7 @@ class DescriptiveStack(list):
     descriptions = {}
 
     def __init__(self, address):
-        self.descriptions = collections.defaultdict(lambda: [])
+        self.descriptions = collections.defaultdict(list)
         self.address      = address or 0
         self._next_next   = 0
         self._next_last   = 0
@@ -1347,7 +1347,7 @@ class ROP(object):
         True
         >>> rop.ret_8   == rop.search(move=8)
         True
-        >>> rop.ret     != None
+        >>> rop.ret is not None
         True
         """
         gadget = collections.namedtuple('gadget', ['address', 'details'])

@@ -183,7 +183,7 @@ class Buffer(Exception):
             size (int): (Optional) If set and not None, returns the size variable back.
 
         Returns:
-            Fill size as integer if size == None, else size.
+            Fill size as integer if size is None, else size.
         """
         if size is None:
             size = self.buffer_fill_size

@@ -821,7 +821,7 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
 
     h = log.waitfor('Bruteforcing')
     cur_iteration = 0
-    if start != None:
+    if start is not None:
         consume(i, iterator)
     for e in iterator:
         cur = ''.join(e)
@@ -837,7 +837,7 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
         if res:
             h.success('Found key: "%s"' % cur)
             return cur
-        if start != None:
+        if start is not None:
             consume(N - 1, iterator)
 
     h.failure('No matches found')
@@ -871,10 +871,10 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
         context.log_level = oldloglevel
         databag["result"] = res
 
-    if start == None:
+    if start is None:
         start = (1, 1)
 
-    if threads == None:
+    if threads is None:
         try:
             threads = multiprocessing.cpu_count()
         except NotImplementedError:
@@ -906,9 +906,9 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
     while not done:
         # log status
         current_item_list = ",".join(["\"%s\"" % x["current_item"]
-                                for x in shareddata if x != None])
-        items_done = sum([x["items_done"] for x in shareddata if x != None])
-        items_total = sum([x["items_total"] for x in shareddata if x != None])
+                                for x in shareddata if x is not None])
+        items_done = sum([x["items_done"] for x in shareddata if x is not None])
+        items_total = sum([x["items_total"] for x in shareddata if x is not None])
 
         progress = 100.0 * items_done / items_total if items_total != 0 else 0.0
 
@@ -916,23 +916,23 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
 
         # handle finished threads
         for i in range(threads):
-            if processes[i] and processes[i].exitcode != None:
+            if processes[i] and processes[i].exitcode is not None:
                 # thread has terminated
                 res = shareddata[i]["result"]
                 processes[i].join()
                 processes[i] = None
 
                 # if successful, kill all other threads and return success
-                if res != None:
+                if res is not None:
                     for i in range(threads):
-                        if processes[i] != None:
+                        if processes[i] is not None:
                             processes[i].terminate()
                             processes[i].join()
                             processes[i] = None
                     h.success('Found key: "%s"' % res)
                     return res
 
-                if all([x == None for x in processes]):
+                if all([x is None for x in processes]):
                     done = True
         time.sleep(0.3)
     h.failure('No matches found')

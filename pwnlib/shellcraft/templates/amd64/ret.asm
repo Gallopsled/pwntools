@@ -6,7 +6,7 @@ Args:
 </%docstring>
 <%page args="return_value = None"/>
 
-% if return_value != None:
+% if return_value is not None:
     ${amd64.mov('rax', return_value)}
 % endif
 

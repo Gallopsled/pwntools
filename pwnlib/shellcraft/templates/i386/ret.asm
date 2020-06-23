@@ -6,7 +6,7 @@ Args:
 </%docstring>
 <%page args="return_value = None"/>
 
-% if return_value != None:
+% if return_value is not None:
     ${i386.mov('eax', return_value)}
 % endif
 

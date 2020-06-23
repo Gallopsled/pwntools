@@ -464,9 +464,6 @@ class ELF(ELFFile):
             self.checksec(*a, **kw)
         )
 
-    def __repr__(self):
-        return "ELF(%r)" % self.path
-
     def get_machine_arch(self):
         return {
             'EM_X86_64': 'amd64',
@@ -1856,7 +1853,7 @@ class ELF(ELFFile):
         # Check for Linux configuration, it must contain more than
         # just the version.
         if len(self.config) > 1:
-            config_opts = collections.defaultdict(lambda: [])
+            config_opts = collections.defaultdict(list)
             for checker in kernel_configuration:
                 result, message = checker(self.config)
 

@@ -63,7 +63,7 @@ class MemLeak(object):
         ...     if addr & 0xff == 0:
         ...         return None
         ...     return binsh[addr:addr+4]
-        >>> leaker_nonulls.d(0) == None
+        >>> leaker_nonulls.d(0) is None
         leaking 0x0
         True
         >>> leaker_nonulls[0x100:0x104] == binsh[0x100:0x104]
