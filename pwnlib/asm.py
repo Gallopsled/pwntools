@@ -334,6 +334,7 @@ def _bfdname():
         'cris'    : 'elf32-cris',
         'ia64'    : 'elf64-ia64-%s' % E,
         'm68k'    : 'elf32-m68k',
+        'msp430'  : 'elf32-msp430',
         'powerpc' : 'elf32-powerpc',
         'powerpc64' : 'elf64-powerpc',
         'vax'     : 'elf32-vax',

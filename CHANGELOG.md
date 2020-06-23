@@ -57,6 +57,9 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.4.0 (`dev`)
 
+- [#1606][1606] Fix `asm()` and `disasm()` for MSP430, S390
+
+[1606]: https://github.com/Gallopsled/pwntools/pull/1606
 
 ## 4.3.0 (`beta`)
 
