@@ -755,6 +755,12 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
         >>> print(disasm(unhex('656664676665400F18A4000000000051'), byte=0, arch='amd64'))
            0:   gs data16 fs data16 rex nop/reserved BYTE PTR gs:[eax+eax*1+0x0]
            f:   push   rcx
+        >>> print(disasm(unhex('01000000'), arch='sparc64'))
+           0:   01 00 00 00     nop
+        >>> print(disasm(unhex('60000000'), arch='powerpc64'))
+           0:   60 00 00 00     nop
+        >>> print(disasm(unhex('00000000'), arch='mips64'))
+           0:   00000000        nop
     """
     result = ''
 
