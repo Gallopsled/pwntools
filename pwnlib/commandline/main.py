@@ -21,6 +21,7 @@ from pwnlib.commandline import shellcraft
 from pwnlib.commandline import template
 from pwnlib.commandline import unhex
 from pwnlib.commandline import update
+from pwnlib.commandline import version
 from pwnlib.commandline.common import parser
 from pwnlib.context import context
 
@@ -43,6 +44,7 @@ commands = {
     'template': template.main,
     'unhex': unhex.main,
     'update': update.main,
+    'version': version.main,
 }
 
 def main():
