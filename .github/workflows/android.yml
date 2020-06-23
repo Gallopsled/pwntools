@@ -9,11 +9,11 @@ on:
       beta-staging
   pull_request:
     paths:
-      - '.github/**/android*'
-      - 'examples/**/android*'
-      - 'pwnlib/**/android*'
-      - 'pwnlib/**/adb*'
-      - 'docs/**/adb*'
+    - 'pwnlib/adb/adb.py'
+    - 'docs/source/adb.rst'
+    - 'docs/source/protocols/adb.rst'
+    - 'examples/android.py'
+    - '.github/workflows/android.yml'
 
 jobs:
   build:
