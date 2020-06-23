@@ -933,6 +933,13 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0, style=None,
         00000000  41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41  │AAAAAAAAAAAAAAAA│
         00000010  41 41 41 41 41 41 41 41                          │AAAAAAAA│
         00000018
+
+        >>> print(hexdump('A'*24, width=16, total=False))
+        00000000  41 41 41 41  41 41 41 41  41 41 41 41  41 41 41 41  │AAAA│AAAA│AAAA│AAAA│
+        00000010  41 41 41 41  41 41 41 41                            │AAAA│AAAA│
+        >>> print(hexdump('A'*24, width=16, groupsize=8, total=False))
+        00000000  41 41 41 41 41 41 41 41  41 41 41 41 41 41 41 41  │AAAAAAAA│AAAAAAAA│
+        00000010  41 41 41 41 41 41 41 41                           │AAAAAAAA│
     """
     s = packing.flat(s)
     return '\n'.join(hexdump_iter(BytesIO(s),
