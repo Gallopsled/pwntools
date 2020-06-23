@@ -832,6 +832,10 @@ class ssh(Timeout, Logger):
 
             >>> s.process('echo hello', shell=True).recvall()
             b'hello\n'
+
+            >>> io = s.process(['cat'], timeout=5)
+            >>> io.recvline()
+            b''
         """
         if not argv and not executable:
             self.error("Must specify argv or executable")
