@@ -199,6 +199,7 @@ jobs:
         TARGET=${BRANCH%-staging}
         git branch -f "$TARGET"
         git push origin "$TARGET"
+        git push origin --delete "$BRANCH"
 
   pypi:
     runs-on: ubuntu-latest
