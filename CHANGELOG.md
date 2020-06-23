@@ -56,9 +56,11 @@ To be released on Jun 30, 2020.
 
 - [#1576][1576] Add `executable=` argument to `ELF.search`
 - [#1584][1584] Add `jmp_esp`/`jmp_rsp` attribute to `ROP`
+- [#1593][1593] Colorize output of `pwn template`
 
 [1576]: https://github.com/Gallopsled/pwntools/pull/1576
 [1584]: https://github.com/Gallopsled/pwntools/pull/1584
+[1593]: https://github.com/Gallopsled/pwntools/pull/1593
 
 ## 4.2.0 (`beta`)
 
