@@ -83,8 +83,10 @@ To be released on Jun 5, 2020.
 
 - [#1590][1590] Fix `gdb.attach()` for `remote`, `listen`, `ssh` tubes
   - Also fix `run_in_new_terminal` for Py2 unicode strings
+- [#1595][1595] Fix ssh.process(timeout=)
 
 [1590]: https://github.com/Gallopsled/pwntools/pull/1590
+[1595]: https://github.com/Gallopsled/pwntools/pull/1595
 
 ## 4.1.2
 
