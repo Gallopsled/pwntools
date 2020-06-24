@@ -159,7 +159,6 @@ def which_binutils(util):
         Exception: Could not find 'as' installed for ContextType(arch = 'msp430')
     """
     arch = context.arch
-    import ipdb; ipdb.set_trace()
 
     # Fix up pwntools vs Debian triplet naming, and account
     # for 'thumb' being its own pwntools architecture.
