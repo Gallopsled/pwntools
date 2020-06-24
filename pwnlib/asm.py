@@ -159,6 +159,7 @@ def which_binutils(util):
         Exception: Could not find 'as' installed for ContextType(arch = 'msp430')
     """
     arch = context.arch
+    import ipdb; ipdb.set_trace()
 
     # Fix up pwntools vs Debian triplet naming, and account
     # for 'thumb' being its own pwntools architecture.
@@ -167,6 +168,9 @@ def which_binutils(util):
         'i386':   ['x86_64', 'amd64'],
         'i686':   ['x86_64', 'amd64'],
         'amd64':  ['x86_64', 'i386'],
+        'mips64': ['mips'],
+        'powerpc64': ['powerpc'],
+        'sparc64': ['sparc'],
     }.get(arch, [])
 
     # If one of the candidate architectures matches the native
