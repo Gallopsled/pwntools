@@ -618,42 +618,100 @@ def flat(*args, **kwargs):
 
     Examples:
 
-      >>> context.clear()
-      >>> flat(1, "test", [[["AB"]*2]*3], endianness = 'little', word_size = 16, sign = False)
-      b'\x01\x00testABABABABABAB'
-      >>> flat([1, [2, 3]], preprocessor = lambda x: str(x+1))
-      b'234'
-      >>> flat({12: 0x41414141,
-      ...       24: 'Hello',
-      ...      })
-      b'aaaabaaacaaaAAAAeaaafaaaHello'
-      >>> flat({'caaa': ''})
-      b'aaaabaaa'
-      >>> flat({12: 'XXXX'}, filler = (ord('A'), ord('B')), length = 20)
-      b'ABABABABABABXXXXABAB'
-      >>> flat({ 8: [0x41414141, 0x42424242],
-      ...       20: 'CCCC'})
-      b'aaaabaaaAAAABBBBeaaaCCCC'
-      >>> flat({ 0x61616162: 'X'})
-      b'aaaaX'
-      >>> flat({4: {0: 'X', 4: 'Y'}})
-      b'aaaaXaaaY'
-      >>> flat({0x61616161:'x', 0x61616162:'y'})
-      b'xaaay'
-      >>> flat({0x61616162:'y', 0x61616161:'x'})
-      b'xaaay'
-      >>> fit({
-      ...     0x61616161: 'a',
-      ...     1: 'b',
-      ...     0x61616161+2: 'c',
-      ...     3: 'd',
-      ... })
-      b'abadbaaac'
-      >>> fit({
-      ...     0x62616161: '1',
-      ...     0x61616163: '2',
-      .... })
-      b'a1aabaaa2'
+        (Test setup, please ignore)
+    
+        >>> context.clear()
+
+        Basic usage of :meth:`flat` works similar to the pack() routines.
+
+        >>> flat(4)
+        b'\x04\x00\x00\x00'
+
+        :meth:`flat` works with strings, bytes, lists, and dictionaries.
+
+        >>> flat(b'X')
+        b'X'
+        >>> flat([1,2,3])
+        b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00'
+        >>> flat({4:'X'})
+        b'aaaaX'
+
+        :meth:`.flat` flattens all of the values provided, and allows nested lists
+        and dictionaries.
+
+        >>> flat([{4:'X'}] * 2)
+        b'aaaaXaaacX'
+        >>> flat([[[[[[[[[1]]]], 2]]]]])
+        b'\x01\x00\x00\x00\x02\x00\x00\x00'
+
+        You can also provide additional arguments like endianness, word-size, and
+        whether the values are treated as signed or not.
+
+        >>> flat(1, "test", [[["AB"]*2]*3], endianness = 'little', word_size = 16, sign = False)
+        b'\x01\x00testABABABABABAB'
+
+        A preprocessor function can be provided in order to modify the values in-flight.
+        This example converts increments each value by 1, then converts to a string.
+
+        >>> flat([1, [2, 3]], preprocessor = lambda x: str(x+1))
+        b'234'
+
+        Using dictionaries is a fast way to get specific values at specific offsets,
+        without having to do ``data += "foo"`` repeatedly.
+
+        >>> flat({12: 0x41414141,
+        ...       24: 'Hello',
+        ...      })
+        b'aaaabaaacaaaAAAAeaaafaaaHello'
+
+        Dictionary usage permits directly using values derived from :func:`.cyclic`.
+        See :func:`.cyclic`, :function:`pwnlib.context.context.cyclic_alphabet`, and :data:`.context.cyclic_size`
+        for more options.  
+
+        The cyclic pattern can be provided as either the text or hexadecimal offset.
+
+        >>> flat({ 0x61616162: 'X'})
+        b'aaaaX'
+        >>> flat({'baaa': 'X'})
+        b'aaaaX'
+
+        Fields do not have to be in linear order, and can be freely mixed.
+        This also works with cyclic offsets.
+
+        >>> flat({2: 'A', 0:'B'})
+        b'BaA'
+        >>> flat({0x61616161:'x', 0x61616162:'y'})
+        b'xaaay'
+        >>> flat({0x61616162:'y', 0x61616161:'x'})
+        b'xaaay'
+
+        Fields do not have to be in order, and can be freely mixed.
+
+        >>> flat({'caaa': 'XXXX', 16: '\x41', 20: 0xdeadbeef})
+        b'aaaabaaaXXXXdaaaAaaa\xef\xbe\xad\xde'
+        >>> flat({ 8: [0x41414141, 0x42424242], 20: 'CCCC'})
+        b'aaaabaaaAAAABBBBeaaaCCCC'
+        >>> fit({
+        ...     0x61616161: 'a',
+        ...     1: 'b',
+        ...     0x61616161+2: 'c',
+        ...     3: 'd',
+        ... })
+        b'abadbaaac'
+
+        By default, gaps in the data are filled in with the :meth:`.cyclic` pattern.
+        You can customize this by providing an iterable or method for the ``filler``
+        argument.
+
+        >>> flat({12: 'XXXX'}, filler = (ord('A'), ord('B')), length = 20)
+        b'ABABABABABABXXXXABAB'
+
+        Nested dictionaries also work as expected.
+
+        >>> flat({4: {0: 'X', 4: 'Y'}})
+        b'aaaaXaaaY'
+        >>> fit({4: {4: 'XXXX'}})
+        b'aaaabaaaXXXX'
     """
     # HACK: To avoid circular imports we need to delay the import of `cyclic`
     from pwnlib.util import cyclic
@@ -676,7 +734,7 @@ def flat(*args, **kwargs):
     return out
 
 def fit(*args, **kwargs):
-    """Legacy alias for `:func:flat`"""
+    """Legacy alias for :func:`flat`"""
     return flat(*args, **kwargs)
 
 """
