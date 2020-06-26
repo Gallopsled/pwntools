@@ -150,6 +150,8 @@ ADD run.sh .
 COPY pwntools.tar.gz .
 RUN tar xf pwntools.tar.gz
 RUN sudo rm -f pwntools.tar.gz
-RUN pip2 install -U -e .
-RUN pip3 install -U -e .
+RUN pip2 install -e .
+RUN pip2 install -r docs/requirements.txt
+RUN pip3 install -e .
+RUN pip3 install -r docs/requirements.txt
 ENTRYPOINT bash run.sh
