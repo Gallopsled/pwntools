@@ -39,7 +39,7 @@ repo <https://github.com/Gallopsled/pwntools-binutils/>`__.
 
 .. code-block:: bash
 
-    $ brew install https://raw.githubusercontent.com/Gallopsled/pwntools-binutils/master/osx/binutils-$ARCH.rb
+    $ brew install https://raw.githubusercontent.com/Gallopsled/pwntools-binutils/master/macos/binutils-$ARCH.rb
 
 Alternate OSes
 ^^^^^^^^^^^^^^^^

@@ -81,7 +81,13 @@ To be released on Jun 5, 2020.
 [fecf9f]: http://github.com/Gallopsled/pwntools/commit/fecf9f
 [1454]: https://github.com/Gallopsled/pwntools/pull/1454
 
-## 4.1.3 (`stable`)
+## 4.1.4 (`stable`)
+
+- [#1698][1609] Fix issues in `packing.flat` with mis-ordred fields
+
+[1609]: https://github.com/Gallopsled/pwntools/pull/1609
+
+## 4.1.3
 
 - [#1590][1590] Fix `gdb.attach()` for `remote`, `listen`, `ssh` tubes
   - Also fix `run_in_new_terminal` for Py2 unicode strings
