@@ -100,6 +100,8 @@ WORKDIR /root/pwntools
 RUN git checkout dev
 RUN pip3 install --upgrade --editable .
 RUN pip3 install --upgrade --requirement docs/requirements.txt
+RUN pip2 install --upgrade --editable .
+RUN pip2 install --upgrade --requirement docs/requirements.txt
 RUN pip3 uninstall --yes pwntools
 WORKDIR /root
 RUN rm -rf pwntools
