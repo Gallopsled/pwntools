@@ -964,3 +964,6 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         dst = dst.decode('utf8')
 
     return dst
+
+del op, size, end, sign
+del name, routine, mod
