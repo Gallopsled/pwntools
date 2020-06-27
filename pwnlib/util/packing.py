@@ -703,7 +703,9 @@ def flat(*args, **kwargs):
         You can customize this by providing an iterable or method for the ``filler``
         argument.
 
-        >>> flat({12: 'XXXX'}, filler = (ord('A'), ord('B')), length = 20)
+        >>> flat({12: 'XXXX'}, filler = b'_', length = 20)
+        b'____________XXXX____'
+        >>> flat({12: 'XXXX'}, filler = b'AB', length = 20)
         b'ABABABABABABXXXXABAB'
 
         Nested dictionaries also work as expected.
@@ -719,6 +721,9 @@ def flat(*args, **kwargs):
     preprocessor = kwargs.pop('preprocessor', lambda x: None)
     filler       = kwargs.pop('filler', cyclic.de_bruijn())
     length       = kwargs.pop('length', None)
+
+    if isinstance(filler, str):
+        filler = bytearray(six.ensure_binary(filler))
 
     if kwargs != {}:
         raise TypeError("flat() does not support argument %r" % kwargs.popitem()[0])

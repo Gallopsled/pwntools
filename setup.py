@@ -83,7 +83,7 @@ setup(
     name                 = 'pwntools',
     python_requires      = '>=2.7',
     packages             = find_packages(),
-    version              = '4.1.4',
+    version              = '4.1.5',
     data_files           = [('',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],
