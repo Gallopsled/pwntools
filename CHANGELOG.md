@@ -81,7 +81,13 @@ To be released on Jun 5, 2020.
 [fecf9f]: http://github.com/Gallopsled/pwntools/commit/fecf9f
 [1454]: https://github.com/Gallopsled/pwntools/pull/1454
 
-## 4.1.4 (`stable`)
+## 4.1.5 (`stable`)
+
+- [#1517][1517] flat(..., filler=) is fixed for `str` values and Python2 `bytes`
+
+[1517]: https://github.com/Gallopsled/pwntools/pull/1517
+
+## 4.1.4
 
 - [#1698][1609] Fix issues in `packing.flat` with mis-ordred fields
 
