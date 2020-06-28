@@ -338,6 +338,7 @@ def _bfdname():
         'powerpc' : 'elf32-powerpc',
         'powerpc64' : 'elf64-powerpc',
         'vax'     : 'elf32-vax',
+        's390'    : 'elf%d-s390' % context.bits,
         'sparc'   : 'elf32-sparc',
         'sparc64' : 'elf64-sparc',
     }
