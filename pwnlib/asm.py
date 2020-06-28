@@ -167,6 +167,9 @@ def which_binutils(util):
         'i386':   ['x86_64', 'amd64'],
         'i686':   ['x86_64', 'amd64'],
         'amd64':  ['x86_64', 'i386'],
+        'mips64': ['mips'],
+        'powerpc64': ['powerpc'],
+        'sparc64': ['sparc'],
     }.get(arch, [])
 
     # If one of the candidate architectures matches the native
@@ -347,10 +350,13 @@ def _bfdname():
 def _bfdarch():
     arch = context.arch
     convert = {
-    'i386': 'i386',
-    'amd64': 'i386:x86-64',
-    'thumb': 'arm',
-    'ia64': 'ia64-elf64'
+        'amd64':     'i386:x86-64',
+        'i386':      'i386',
+        'ia64':      'ia64-elf64',
+        'mips64':    'mips',
+        'powerpc64': 'powerpc',
+        'sparc64':   'sparc',
+        'thumb':     'arm',
     }
 
     if arch in convert:
@@ -752,6 +758,12 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
         >>> print(disasm(unhex('656664676665400F18A4000000000051'), byte=0, arch='amd64'))
            0:   gs data16 fs data16 rex nop/reserved BYTE PTR gs:[eax+eax*1+0x0]
            f:   push   rcx
+        >>> print(disasm(unhex('01000000'), arch='sparc64'))
+           0:   01 00 00 00     nop
+        >>> print(disasm(unhex('60000000'), arch='powerpc64'))
+           0:   60 00 00 00     nop
+        >>> print(disasm(unhex('00000000'), arch='mips64'))
+           0:   00000000        nop
     """
     result = ''
 

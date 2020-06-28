@@ -36,5 +36,14 @@ print(shell.echo("single string"))
 print(shell.echo(["list","of","strings"]))
 print(shell["echo single statement"])
 
+# ssh.process() is the most flexible way to run a command)
+io = shell.process(['/bin/bash', '-c', 'echo Hello $FOO'], 
+                   env={'FOO': 'World'}, # Set environment
+                   stderr='/dev/null',   # Override file descriptors
+                   aslr=False,           # Disable ASLR on processes
+                   setuid=False,         # Disable setuid bit so processes can be debugged
+                   shell=False)          # Enable or disable shell evaluation
+print(io.recvall())
+
 # Show off the interactive shell
 shell.interactive()

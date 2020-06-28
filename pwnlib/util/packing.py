@@ -559,7 +559,7 @@ def _flat(args, preprocessor, packer, filler):
         elif isinstance(arg, six.integer_types):
             val = packer(arg)
         elif isinstance(arg, bytearray):
-            val = str(arg)
+            val = bytes(arg)
         else:
             raise ValueError("flat(): Flat does not support values of type %s" % type(arg))
 
@@ -964,3 +964,6 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         dst = dst.decode('utf8')
 
     return dst
+
+del op, size, end, sign
+del name, routine, mod
