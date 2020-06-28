@@ -60,6 +60,7 @@ To be released on Jun 30, 2020.
 - [#1593][1593] Colorize output of `pwn template`
 - [#1601][1601] Add `pwn version` command line tool
 - [#1605][1605] Add to `fiddling.hexdump` a way to suppress the total at the end
+- [#1564][1564] Fix `asm()` and `disasm()` for PowerPC64, MIPS64, Sparc64
 
 [1576]: https://github.com/Gallopsled/pwntools/pull/1576
 [1584]: https://github.com/Gallopsled/pwntools/pull/1584
@@ -67,6 +68,7 @@ To be released on Jun 30, 2020.
 [1593]: https://github.com/Gallopsled/pwntools/pull/1593
 [1601]: https://github.com/Gallopsled/pwntools/pull/1601
 [1605]: https://github.com/Gallopsled/pwntools/pull/1605
+[1564]: https://github.com/Gallopsled/pwntools/pull/1564
 
 ## 4.2.0 (`beta`)
 
