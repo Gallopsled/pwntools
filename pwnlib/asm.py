@@ -648,6 +648,10 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
         b'H\xc7\xc0\x17\x00\x00\x00'
         >>> asm("mov r0, #SYS_select", arch = 'arm', os = 'linux', bits=32)
         b'R\x00\xa0\xe3'
+        >>> asm("mov #42, r0", arch = 'msp430')
+        b'0@*\x00'
+        >>> asm("la %r0, 42", arch = 's390', bits=64)
+        b'A\x00\x00*'
     """
     result = ''
 
