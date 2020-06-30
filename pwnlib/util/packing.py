@@ -548,20 +548,21 @@ def _fit(pieces, preprocessor, packer, filler):
         out += _flat([v], preprocessor, packer, filler)
 
     # Now do negative indices
-    out_negative = b''
-    most_negative = min(negative.keys())
-    for k, v in sorted(negative.items()):
-        k += -most_negative
+    if negative:
+        out_negative = b''
+        most_negative = min(negative.keys())
+        for k, v in sorted(negative.items()):
+            k += -most_negative
 
-        if k < len(out_negative):
-            raise ValueError("flat(): data at offset %d overlaps with previous data which ends at offset %d" % (k, len(out)))
+            if k < len(out_negative):
+                raise ValueError("flat(): data at offset %d overlaps with previous data which ends at offset %d" % (k, len(out)))
 
-        # Fill up to offset
-        while len(out_negative) < k:
-            out_negative += p8(next(filler))
+            # Fill up to offset
+            while len(out_negative) < k:
+                out_negative += p8(next(filler))
 
-        # Recursively flatten data
-        out_negative += _flat([v], preprocessor, packer, filler)
+            # Recursively flatten data
+            out_negative += _flat([v], preprocessor, packer, filler)
 
     return filler, out_negative + out
 
