@@ -20,7 +20,7 @@ Example:
     >>> ELF.from_assembly(assembly).process().recvall()
     b'Hello string World!\n'
 
-    >>> assembly = shellcraft.execve(b"/bin/sh", [b"sh", b"-c", b"echo Hello binary $WORLD"], {b"WORLD": b"World!"})
+    >>> assembly = shellcraft.execve(b"/bin/sh", [b"sh", b"-c", b"echo Hello binary $WORLD"], {"WORLD": "World!"})
     >>> ELF.from_assembly(assembly).process().recvall()
     b'Hello binary World!\n'
 </%docstring>
