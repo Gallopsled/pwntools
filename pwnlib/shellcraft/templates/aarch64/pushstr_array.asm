@@ -36,18 +36,6 @@ string = b''.join(array)
 # which seems like a safe maximum.
 if len(array) * 8 > 4095:
     raise Exception("Array size is too large (%i), max=4095" % len(array))
-
-# Stack looks like this:
-#
-#  +0  p_arg0
-#  +8  p_arg1
-#  +16 p_arg2
-#  +24 null
-#  arg0/arg1/arg2
-
-# offsets = {}
-# for i, value in enumerate(reversed(array):)
-#    offsets.append(i * 8 + len(value))
 %>\
     /* push argument array ${repr(array)} */
     ${shellcraft.pushstr(string, register1=register1, register2=register2)}
