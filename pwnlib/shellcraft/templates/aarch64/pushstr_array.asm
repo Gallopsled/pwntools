@@ -19,10 +19,6 @@ Example:
     >>> assembly = shellcraft.execve("/bin/sh", ["sh", "-c", "echo Hello string $WORLD"], {"WORLD": "World!"})
     >>> ELF.from_assembly(assembly).process().recvall()
     b'Hello string World!\n'
-
-    >>> assembly = shellcraft.execve(b"/bin/sh", [b"sh", b"-c", b"echo Hello binary $WORLD"], {"WORLD": "World!"})
-    >>> ELF.from_assembly(assembly).process().recvall()
-    b'Hello binary World!\n'
 </%docstring>
 <%page args="reg, array, register1='x14', register2='x15'"/>
 <%
