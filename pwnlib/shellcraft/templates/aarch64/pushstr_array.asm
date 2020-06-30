@@ -19,7 +19,7 @@ Example:
 
     >>> assembly = shellcraft.execve("/bin/sh", ["sh", "-c", "echo Hello $WORLD"], {"WORLD": "World!"})
     >>> ELF.from_assembly(assembly).process().recvall()
-    b'Hello, World!''
+    b'Hello, World!\n'
 </%docstring>
 <%page args="reg, array, register1='x14', register2='x15'"/>
 <%
@@ -50,7 +50,6 @@ if len(array) * 8 > 4095:
    add ${register1}, sp, ${register1}
    str ${register1}, [sp, #-8]! /* ${array[-i]} */
 %endfor
-%if len(array[-1] != 'sp')
 
     /* set ${reg} to the current top of the stack */
     ${shellcraft.mov(reg,'sp')}
