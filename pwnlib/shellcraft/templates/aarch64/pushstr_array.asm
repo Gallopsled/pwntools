@@ -16,8 +16,11 @@ Arguments:
         ends with exactly one NULL byte.
 
 Example:
+    >>> assembly = shellcraft.execve("/bin/sh", ["sh", "-c", "echo Hello string $WORLD"], {"WORLD": "World!"})
+    >>> ELF.from_assembly(assembly).process().recvall()
+    b'Hello, World!\n'
 
-    >>> assembly = shellcraft.execve(b"/bin/sh", [b"sh", b"-c", b"echo Hello $WORLD"], {b"WORLD": b"World!"})
+    >>> assembly = shellcraft.execve(b"/bin/sh", [b"sh", b"-c", b"echo Hello binary $WORLD"], {b"WORLD": b"World!"})
     >>> ELF.from_assembly(assembly).process().recvall()
     b'Hello, World!\n'
 </%docstring>
