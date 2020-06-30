@@ -266,7 +266,7 @@ def _gdbserver_port(gdbserver, ssh):
     try:
         gdbserver.pid   = int(process_created.split()[-1], 0)
     except ValueError:
-        log.error('gdbserver did not output its pid (maybe chmod +x?): %s', process_created.decode())
+        log.error('gdbserver did not output its pid (maybe chmod +x?): %s', six.ensure_str(process_created))
 
     listening_on = b''
     while b'Listening' not in listening_on:
