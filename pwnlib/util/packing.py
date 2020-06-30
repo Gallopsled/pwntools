@@ -42,9 +42,12 @@ from six.moves import range
 
 from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
+from pwnlib.log import getLogger
+
 from pwnlib.util import iters
 
 mod = sys.modules[__name__]
+log = getLogger(__name__)
 
 def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
     """pack(number, word_size = None, endianness = None, sign = None, **kwargs) -> str
@@ -487,6 +490,7 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
         return lambda number: unpack(number, word_size, endianness, sign)
 
 def _fit(pieces, preprocessor, packer, filler):
+
     # Pulls bytes from `filler` and adds them to `pad` until it ends in `key`.
     # Returns the index of `key` in `pad`.
     pad = bytearray()
@@ -524,6 +528,14 @@ def _fit(pieces, preprocessor, packer, filler):
 
     # Build output
     out = b''
+
+    # Negative indices need to be removed and then re-submitted
+    negative = {k:v for k,v in pieces.items() if isinstance(k, int) and k<0}
+
+    for k in negative:
+        del pieces[k]
+
+    # Positive output
     for k, v in sorted(pieces.items()):
         if k < len(out):
             raise ValueError("flat(): data at offset %d overlaps with previous data which ends at offset %d" % (k, len(out)))
@@ -535,7 +547,23 @@ def _fit(pieces, preprocessor, packer, filler):
         # Recursively flatten data
         out += _flat([v], preprocessor, packer, filler)
 
-    return filler, out
+    # Now do negative indices
+    out_negative = b''
+    most_negative = min(negative.keys())
+    for k, v in sorted(negative.items()):
+        k += -most_negative
+
+        if k < len(out_negative):
+            raise ValueError("flat(): data at offset %d overlaps with previous data which ends at offset %d" % (k, len(out)))
+
+        # Fill up to offset
+        while len(out_negative) < k:
+            out_negative += p8(next(filler))
+
+        # Recursively flatten data
+        out_negative += _flat([v], preprocessor, packer, filler)
+
+    return filler, out_negative + out
 
 def _flat(args, preprocessor, packer, filler):
     out = []
@@ -714,6 +742,12 @@ def flat(*args, **kwargs):
         b'aaaaXaaaY'
         >>> fit({4: {4: 'XXXX'}})
         b'aaaabaaaXXXX'
+
+        Negative indices are also supported, though this only works for integer
+        keys.
+    
+        >>> flat({-4: 'x', -1: 'A', 0: '0', 4:'y'})
+        b'xaaA0aaay'
     """
     # HACK: To avoid circular imports we need to delay the import of `cyclic`
     from pwnlib.util import cyclic
