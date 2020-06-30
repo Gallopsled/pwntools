@@ -17,7 +17,7 @@ Arguments:
 
 Example:
 
-    >>> assembly = shellcraft.execve("/bin/sh", ["sh", "-c", "echo Hello $WORLD"], {"WORLD": "World!"})
+    >>> assembly = shellcraft.execve(b"/bin/sh", [b"sh", b"-c", b"echo Hello $WORLD"], {b"WORLD": b"World!"})
     >>> ELF.from_assembly(assembly).process().recvall()
     b'Hello, World!\n'
 </%docstring>
