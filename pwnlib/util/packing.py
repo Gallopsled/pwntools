@@ -548,8 +548,8 @@ def _fit(pieces, preprocessor, packer, filler):
         out += _flat([v], preprocessor, packer, filler)
 
     # Now do negative indices
+    out_negative = b''
     if negative:
-        out_negative = b''
         most_negative = min(negative.keys())
         for k, v in sorted(negative.items()):
             k += -most_negative
