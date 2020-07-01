@@ -181,7 +181,7 @@ def which(name, all = False):
     else:
         return None
 
-def run_in_new_terminal(command, terminal = None, args = None):
+def run_in_new_terminal(command, terminal = None, args = None, preexec_fn = None):
     """run_in_new_terminal(command, terminal = None) -> None
 
     Run a command in a new terminal.
@@ -205,6 +205,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
         command (str): The command to run.
         terminal (str): Which terminal to use.
         args (list): Arguments to pass to the terminal
+        preexec_fn (callable): Callable to invoke before exec().
 
     Note:
         The command is opened with ``/dev/null`` for stdin, stdout, stderr.
@@ -270,6 +271,8 @@ def run_in_new_terminal(command, terminal = None, args = None):
             os.dup2(devnull.fileno(), 0)
             os.dup2(devnull.fileno(), 1)
             os.dup2(devnull.fileno(), 2)
+        if preexec_fn is not None:
+            preexec_fn()
         os.execv(argv[0], argv)
         os._exit(1)
 

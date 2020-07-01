@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1687][1687] Actually import `requests` when doing `from pwn import *`
 - [#1688][1688] Add `__setattr__` and `__call__` interfaces to `ROP` for setting registers
 - [#1692][1692] Remove python2 shebangs where appropriate
+- [#1695][1695] Allow using GDB Python API
 
 [1602]: https://github.com/Gallopsled/pwntools/pull/1602
 [1606]: https://github.com/Gallopsled/pwntools/pull/1606
