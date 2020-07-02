@@ -752,7 +752,7 @@ class process(tube):
             # ValueError: I/O operation on closed file
             raise EOFError
         except select.error as v:
-            if v[0] == errno.EINTR:
+            if v.errno == errno.EINTR:
                 return False
 
     def connected_raw(self, direction):
