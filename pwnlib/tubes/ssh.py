@@ -1153,7 +1153,7 @@ os.execve(exe, argv, env)
             >>> py.sendline(b'exit')
             >>> print(repr(py.recvline()))
             b'4\n'
-            >>> s.system('env | grep AAAA', env={'AAAA': b'\x90'}).recvall()
+            >>> s.system('env | grep -a AAAA', env={'AAAA': b'\x90'}).recvall()
             b'AAAA=\x90\n'
         """
 
