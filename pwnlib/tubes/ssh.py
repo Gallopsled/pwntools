@@ -560,6 +560,15 @@ class ssh(Timeout, Logger):
 
         Example proxying:
 
+        .. doctest::
+           :skipif: github_actions
+
+           >>> False
+           True
+
+        .. doctest::
+           :skipif: github_actions
+
             >>> s1 = ssh(host='example.pwnme',
             ...          user='travis',
             ...          password='demopass')
@@ -631,7 +640,7 @@ class ssh(Timeout, Logger):
             if os.path.exists(known_hosts):
                 self.client.load_host_keys(known_hosts)
 
-            has_proxy = (proxy_sock or proxy_command) and True
+            has_proxy = bool(proxy_sock or proxy_command)
             if has_proxy:
                 if 'ProxyCommand' not in dir(paramiko):
                     self.error('This version of paramiko does not support proxies.')

@@ -88,6 +88,9 @@ class stdout(object):
     def __setattr__(self, name, value):
         return setattr(sys.stdout, name, value)
 pwnlib.context.ContextType.defaults['log_console'] = stdout()
+
+github_actions = os.environ.get('USER') == 'runner'
+travis_ci = os.environ.get('USER') == 'travis'
 '''
 
 autoclass_content = 'both'
