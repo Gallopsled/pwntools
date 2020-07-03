@@ -563,12 +563,6 @@ class ssh(Timeout, Logger):
         .. doctest::
            :skipif: github_actions
 
-           >>> False
-           True
-
-        .. doctest::
-           :skipif: github_actions
-
             >>> s1 = ssh(host='example.pwnme',
             ...          user='travis',
             ...          password='demopass')
