@@ -618,13 +618,9 @@ def flat(*args, **kwargs):
 
     Examples:
 
-    .. testsetup::
-
-        context.clear()
-
-    .. doctest::
-
-        >>> context
+        (Test setup, please ignore)
+    
+        >>> context.clear()
 
         Basic usage of :meth:`flat` works similar to the pack() routines.
 
