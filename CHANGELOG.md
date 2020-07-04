@@ -53,9 +53,10 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.3.0 (`dev`)
+## 4.4.0 (`dev`)
 
-To be released on Jun 30, 2020.
+
+## 4.3.0 (`beta`)
 
 - [#1576][1576] Add `executable=` argument to `ELF.search`
 - [#1584][1584] Add `jmp_esp`/`jmp_rsp` attribute to `ROP`
@@ -77,9 +78,7 @@ To be released on Jun 30, 2020.
 [1564]: https://github.com/Gallopsled/pwntools/pull/1564
 [1621]: https://github.com/Gallopsled/pwntools/pull/1621
 
-## 4.2.0 (`beta`)
-
-To be released on Jun 5, 2020.
+## 4.2.0 (`stable`)
 
 - [#1436][1436] Add ret2dlresolve automation
 - [fecf9f] tubes.ssh.process() no longer requires python 2 installed on remote (still requires python, though)
