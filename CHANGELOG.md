@@ -9,9 +9,11 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.3.0](#430)    | `dev`    | Aug 1, 2020 (planned)
-| [4.2.0](#420)    | `beta`   | Jul 1, 2020 (planned)
-| [4.1.5](#415)    | `stable` | Jun 27, 2020
+| [4.4.0](#440)    | `dev`    | Sep 1, 2020 (planned)
+| [4.3.0](#430)    | `beta`   | Aug 1, 2020 (planned)
+| [4.2.0](#420)    | `stable` | Jul 3, 2020 (planned)
+| [4.1.7](#417)    |          | Jun 30, 2020
+| [4.1.5](#415)    |          | Jun 27, 2020
 | [4.1.4](#414)    |          | Jun 26, 2020
 | [4.1.3](#413)    |          | Jun 23, 2020
 | [4.1.2](#412)    |          | Jun 5, 2020
