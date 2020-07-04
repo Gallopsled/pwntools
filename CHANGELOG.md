@@ -90,7 +90,7 @@ To be released on Jun 5, 2020.
 [fecf9f]: http://github.com/Gallopsled/pwntools/commit/fecf9f
 [1454]: https://github.com/Gallopsled/pwntools/pull/1454
 
-## 4.1.6 (`stable`)
+## 4.1.7 (`stable`)
 
 - [#1615][1615] Fix aarch64 pushstr and pushstr_array
 
