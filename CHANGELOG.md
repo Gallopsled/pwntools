@@ -55,6 +55,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.4.0 (`dev`)
 
+- [#1541][1541] Use `context.newline` for tubes by default
+
+[1541]: https://github.com/Gallopsled/pwntools/pull/1541
+
 
 ## 4.3.0 (`beta`)
 
