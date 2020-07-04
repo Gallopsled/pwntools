@@ -45,7 +45,7 @@ class tube(Timeout, Logger):
 
     @property
     def newline(self):
-        '''Character sent with methods like sendline() or used for recvline().
+        r'''Character sent with methods like sendline() or used for recvline().
 
             >>> t = tube()
             >>> t.newline = 'X'
