@@ -615,10 +615,10 @@ def flat(*args, **kwargs):
 
     Dictionary keys give offsets at which to place the corresponding values
     (which are recursively flattened).  Offsets are relative to where the
-    flattened dictionary occurs in the output (i.e. `{0: 'foo'}` is equivalent
-    to `'foo'`).  Offsets can be integers, unicode strings or regular strings.
+    flattened dictionary occurs in the output (i.e. ``{0: 'foo'}`` is equivalent
+    to ``'foo'``).  Offsets can be integers, unicode strings or regular strings.
     Integer offsets >= ``2**(word_size-8)`` are converted to a string using
-    `:func:pack`.  Unicode strings are UTF-8 encoded.  After these conversions
+    :func:`pack`.  Unicode strings are UTF-8 encoded.  After these conversions
     offsets are either integers or strings.  In the latter case, the offset will
     be the lowest index at which the string occurs in `filler`.  See examples
     below.
@@ -837,8 +837,8 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
     The seek offset of file objects will be preserved.
 
     Arguments:
-        dst: Supported types are `:class:file`, `:class:list`, `:class:tuple`,
-             `:class:str`, `:class:bytearray` and `:class:unicode`.
+        dst: Supported types are :class:`file`, :class:`list`, :class:`tuple`,
+             :class:`str`, :class:`bytearray` and :class:`unicode`.
         src: An iterable of byte values (characters or integers), a unicode
              string or a file object.
         count (int): How many bytes to copy.  If `count` is 0 or larger than
@@ -846,7 +846,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
                      copied.
         skip (int): Offset in `dst` to copy to.
         seek (int): Offset in `src` to copy from.
-        truncate (bool): If `:const:True`, `dst` is truncated at the last copied
+        truncate (bool): If :const:`True`, `dst` is truncated at the last copied
                          byte.
 
     Returns:
