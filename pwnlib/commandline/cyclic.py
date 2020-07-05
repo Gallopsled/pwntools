@@ -70,7 +70,7 @@ def main(args):
             pat = int(pat, 0)
         except ValueError:
             pass
-        pat = flat(pat, word_size=8 * args.length)
+        pat = flat(pat, bytes=args.length)
 
         if len(pat) != subsize:
             log.critical('Subpattern must be %d bytes' % subsize)
