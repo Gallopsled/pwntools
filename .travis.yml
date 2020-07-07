@@ -19,7 +19,9 @@ addons:
     - binutils-aarch64-linux-gnu
     - binutils-arm-linux-gnueabihf
     - binutils-mips-linux-gnu
+    - binutils-msp430
     - binutils-powerpc-linux-gnu
+    - binutils-s390x-linux-gnu
     - binutils-sparc64-linux-gnu
     - bash-static
 cache:
