@@ -57,6 +57,9 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.4.0 (`dev`)
 
+- [#1616][1616] Fix `cyclic` cli for 64 bit integers
+
+[1616]: https://github.com/Gallopsled/pwntools/pull/1616
 
 ## 4.3.0 (`beta`)
 
