@@ -43,6 +43,7 @@ atexception.register(lambda:os.kill(os.getppid(), signal.SIGUSR1))
         raise EOFError("process terminated with code: %r (%r)" % (p.poll(True), p.stderr.read()))
     fcntl.ioctl(p.stdout.fileno(), termios.TIOCSWINSZ, struct.pack("hh", 80, 80))
     p.stdout.write(b"\x1b[1;1R")
+    time.sleep(0.5)
     return p
 
 def yesno(prompt, default=None):
@@ -308,9 +309,6 @@ def more(text):
       :const:`None`
 
     Tests:
-
-    .. doctest::
-       :skipif: github_actions
 
         >>> more("text")
         text
