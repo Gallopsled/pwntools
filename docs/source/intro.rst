@@ -17,6 +17,13 @@ assemble, disassemble, pack, unpack, and many other things with a single functio
 A full list of everything that is imported is available on :doc:`globals`.
 
 
+Tutorials
+---------
+
+A series of tutorials for Pwntools exists online, at
+https://github.com/Gallopsled/pwntools-tutorial#readme
+
+
 Making Connections
 ------------------
 
