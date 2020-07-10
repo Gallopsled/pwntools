@@ -1,3 +1,4 @@
+<% import six %>
 <% from pwnlib.shellcraft.arm import mov %>
 <% from pwnlib.util.packing import unpack %>
 <% from pwnlib import constants %>

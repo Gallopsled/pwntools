@@ -1,3 +1,4 @@
+<% import six %>
 <%page args="filepath, flags = 'O_RDONLY', mode = 0644"/>
 <%docstring>Opens a file. Leaves the file descriptor in r0.
 
