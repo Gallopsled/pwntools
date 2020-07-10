@@ -308,6 +308,10 @@ def more(text):
       :const:`None`
 
     Tests:
+
+    .. doctest::
+       :skipif: github_actions
+
         >>> more("text")
         text
         >>> p = testpwnproc("more('text\\n' * (term.height + 2))")
