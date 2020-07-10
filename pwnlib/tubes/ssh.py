@@ -69,26 +69,25 @@ class ssh_channel(sock):
         self.process = process
         self.cwd  = wd or '.'
         if isinstance(wd, six.text_type):
-            wd = wd.encode('utf-8')
+            wd = context._encode(wd)
 
         env = env or {}
         msg = 'Opening new channel: %r' % (process or 'shell')
 
         if isinstance(process, (list, tuple)):
-            process = b' '.join((lambda x:x.encode('utf-8') if isinstance(x, six.text_type) else x)(sh_string(s)) for s in process)
+            process = b' '.join(context._encode(sh_string(s)) for s in process)
         if isinstance(process, six.text_type):
-            process = process.encode('utf-8')
+            process = context._encode(process)
 
         if process and wd:
             process = b'cd ' + sh_string(wd) + b' >/dev/null 2>&1;' + process
 
         if process and env:
             for name, value in env.items():
-                if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', name):
+                nameb = context._encode(name)
+                if not re.match(b'^[a-zA-Z_][a-zA-Z0-9_]*$', nameb):
                     self.error('run(): Invalid environment key %r' % name)
-                export = 'export %s=%s;' % (name, sh_string(value))
-                if isinstance(export, six.text_type):
-                    export = export.encode('utf-8')
+                export = b'export %s=%s;' % (nameb, sh_string(context._encode(value)))
                 process = export + process
 
         if process and tty:
@@ -264,11 +263,11 @@ class ssh_channel(sock):
                 if not data:
                     event.set()
                 else:
-                    data = [six.byte2int(data)]
+                    data = bytearray(data)
 
             if data:
                 try:
-                    self.send(b''.join(six.int2byte(c) for c in data))
+                    self.send(bytes(bytearray(data)))
                 except EOFError:
                     event.set()
                     self.info('Got EOF while sending in interactive')
@@ -1154,6 +1153,8 @@ os.execve(exe, argv, env)
             >>> py.sendline(b'exit')
             >>> print(repr(py.recvline()))
             b'4\n'
+            >>> s.system('env | grep -a AAAA', env={'AAAA': b'\x90'}).recvall()
+            b'AAAA=\x90\n'
         """
 
         if wd is None:
