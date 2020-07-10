@@ -25,6 +25,8 @@ r.interactive()
 
 Our documentation is available at [docs.pwntools.com](https://docs.pwntools.com/)
 
+A series of tutorials is also [available online](https://github.com/Gallopsled/pwntools-tutorial#readme)
+
 To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/Gallopsled/pwntools-write-ups).
 
 # Installation
