@@ -1,0 +1,28 @@
+name: Check for merge markers
+on: [pull_request]
+env:
+  GITHUB_BASE: origin/${{ github.event.pull_request.base.ref }}
+
+jobs:
+  mergecheck:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Check for merge conflict markers commited
+      run: |
+        if git show ${GITHUB_BASE}..HEAD | grep -EB15 --color=always '^\+\+(>>>>>|=====|<<<<<)'; then
+            echo 'WARNING: Merge marker commits found in history.'
+            if git diff ${GITHUB_BASE}..HEAD | grep -EB15 --color=always '^\+(>>>>>|=====|<<<<<)'; then
+                echo 'ERROR: Merge markers still present! Do something!'
+                exit 1
+            fi
+        else
+            echo 'Congrats! All the merges you did were clean or resolved correctly :)'
+        fi
