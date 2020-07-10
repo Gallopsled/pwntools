@@ -57,6 +57,9 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.4.0 (`dev`)
 
+- [#1602][1602] Fix bytes handling in ssh tubes
+
+[1602]: https://github.com/Gallopsled/pwntools/pull/1602
 
 ## 4.3.0 (`beta`)
 
@@ -65,7 +68,6 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1592][1592] Fix over-verbose logging of process() environment
 - [#1593][1593] Colorize output of `pwn template`
 - [#1601][1601] Add `pwn version` command line tool
-- [#1602][1602] Fix bytes handling in ssh tubes
 - [#1605][1605] Add to `fiddling.hexdump` a way to suppress the total at the end
 - [#1613][1613] Permit `--password` for `pwn template`
 - [#1564][1564] Fix `asm()` and `disasm()` for PowerPC64, MIPS64, Sparc64
@@ -76,7 +78,6 @@ The table below shows which release corresponds to each branch, and what date th
 [1592]: https://github.com/Gallopsled/pwntools/pull/1592
 [1593]: https://github.com/Gallopsled/pwntools/pull/1593
 [1601]: https://github.com/Gallopsled/pwntools/pull/1601
-[1602]: https://github.com/Gallopsled/pwntools/pull/1602
 [1605]: https://github.com/Gallopsled/pwntools/pull/1605
 [1613]: https://github.com/Gallopsled/pwntools/pull/1613
 [1564]: https://github.com/Gallopsled/pwntools/pull/1564
