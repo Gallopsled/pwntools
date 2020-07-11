@@ -632,6 +632,9 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         if context.os == 'android':
             pre += 'set gnutarget ' + _bfdname() + '\n'
 
+        if exe:
+            pre += 'file %s\n' % exe
+
     # let's see if we can find a pid to attach to
     pid = None
     if   isinstance(target, six.integer_types):
