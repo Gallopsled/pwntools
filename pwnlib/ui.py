@@ -43,6 +43,7 @@ atexception.register(lambda:os.kill(os.getppid(), signal.SIGUSR1))
         raise EOFError("process terminated with code: %r (%r)" % (p.poll(True), p.stderr.read()))
     fcntl.ioctl(p.stdout.fileno(), termios.TIOCSWINSZ, struct.pack("hh", 80, 80))
     p.stdout.write(b"\x1b[1;1R")
+    time.sleep(0.5)
     return p
 
 def yesno(prompt, default=None):
@@ -97,11 +98,11 @@ def yesno(prompt, default=None):
         cur = default
         while True:
             k = term.key.get()
-            if   k in ('y', 'Y', '<left>') and cur != True:
+            if   k in ('y', 'Y', '<left>') and cur is not True:
                 cur = True
                 hy.update(yesfocus)
                 hn.update(no)
-            elif k in ('n', 'N', '<right>') and cur != False:
+            elif k in ('n', 'N', '<right>') and cur is not False:
                 cur = False
                 hy.update(yes)
                 hn.update(nofocus)
@@ -308,11 +309,13 @@ def more(text):
       :const:`None`
 
     Tests:
+
         >>> more("text")
         text
         >>> p = testpwnproc("more('text\\n' * (term.height + 2))")
         >>> p.send(b"x")
-        >>> b"text" in p.recvall()
+        >>> data = p.recvall()
+        >>> b"text" in data or data
         True
     """
     if term.term_mode:

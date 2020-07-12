@@ -80,4 +80,4 @@ info    = log.info
 debug   = log.debug
 success = log.success
 
-__all__ = [x for x in globals().keys() if x != '__name__']
+__all__ = [x for x in tuple(globals()) if x != '__name__']

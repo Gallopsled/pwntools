@@ -88,6 +88,36 @@ You can also append complex arguments onto stack when the stack pointer is known
     0x7fffe038:       b'-c\x00$'
     0x7fffe03c:       b'ls\x00$'
 
+ROP also detects 'jmp $sp' gadget to help exploit binaries with NX disabled.
+You can get this gadget on 'i386':
+
+    >>> context.clear(arch='i386')
+    >>> elf = ELF.from_assembly('nop; jmp esp; ret')
+    >>> rop = ROP(elf)
+    >>> jmp_gadget = rop.jmp_esp
+    >>> elf.read(jmp_gadget.address, 2) == asm('jmp esp')
+    True
+
+You can also get this gadget on 'amd64':
+
+    >>> context.clear(arch='amd64')
+    >>> elf = ELF.from_assembly('nop; jmp rsp; ret')
+    >>> rop = ROP(elf)
+    >>> jmp_gadget = rop.jmp_rsp
+    >>> elf.read(jmp_gadget.address, 2) == asm('jmp rsp')
+    True
+
+Gadgets whose address has badchar are filtered out:
+
+    >>> context.clear(arch='i386')
+    >>> elf = ELF.from_assembly('nop; pop eax; jmp esp; int 0x80; jmp esp; ret')
+    >>> rop = ROP(elf, badchars=b'\x02')
+    >>> jmp_gadget = rop.jmp_esp    # It returns the second gadget
+    >>> elf.read(jmp_gadget.address, 2) == asm('jmp esp')
+    True
+    >>> rop = ROP(elf, badchars=b'\x02\x06')
+    >>> rop.jmp_esp == None         # The address of both gadgets has badchar
+    True
 
 ROP Example
 -------------------
@@ -341,7 +371,7 @@ class DescriptiveStack(list):
     descriptions = {}
 
     def __init__(self, address):
-        self.descriptions = collections.defaultdict(lambda: [])
+        self.descriptions = collections.defaultdict(list)
         self.address      = address or 0
         self._next_next   = 0
         self._next_last   = 0
@@ -1304,7 +1334,7 @@ class ROP(object):
         self.raw(call)
 
     def __getattr__(self, attr):
-        """Helper to make finding ROP gadets easier.
+        """Helper to make finding ROP gadgets easier.
 
         Also provides a shorthand for ``.call()``:
             ``rop.function(args)`` is equivalent to ``rop.call(function, args)``
@@ -1317,7 +1347,7 @@ class ROP(object):
         True
         >>> rop.ret_8   == rop.search(move=8)
         True
-        >>> rop.ret     != None
+        >>> rop.ret is not None
         True
         """
         gadget = collections.namedtuple('gadget', ['address', 'details'])
@@ -1340,6 +1370,25 @@ class ROP(object):
             if '_' in attr:
                 count = int(attr.split('_')[1])
             return self.search(move=count)
+
+        #
+        # Check for 'jmp_esp'('i386') or 'jmp_rsp'('amd64')
+        #
+        if attr == 'jmp_esp' and context.arch == 'i386' \
+        or attr == 'jmp_rsp' and context.arch == 'amd64':
+            jmp_sp = {'i386': 'jmp esp',
+                      'amd64': 'jmp rsp'
+                     }[context.arch]
+
+            insn_asm = b'\xff\xe4'
+
+            for elf in self.elfs:
+                for addr in elf.search(insn_asm, executable = True):
+                    if set(pack(addr)) & self._badchars:
+                        continue
+
+                    return Gadget(addr, [jmp_sp], [], context.bytes)
+            return None
 
         if attr in ('int80', 'syscall', 'sysenter'):
             mapping = {'int80': 'int 0x80',

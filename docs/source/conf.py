@@ -88,6 +88,9 @@ class stdout(object):
     def __setattr__(self, name, value):
         return setattr(sys.stdout, name, value)
 pwnlib.context.ContextType.defaults['log_console'] = stdout()
+
+github_actions = os.environ.get('USER') == 'runner'
+travis_ci = os.environ.get('USER') == 'travis'
 '''
 
 autoclass_content = 'both'
@@ -337,7 +340,7 @@ def linkcode_resolve(domain, info):
     val = mod
     for k in info['fullname'].split('.'):
         val = getattr(val, k, None)
-        if val == None:
+        if val is None:
             break
 
     # Special case for shellcraft

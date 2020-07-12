@@ -17,19 +17,19 @@
      count                                  ,
      cycle                                  ,
      dropwhile                              ,
+     filter                                 ,
+     filterfalse                            ,
      groupby                                ,
-     ifilter                                ,
-     ifilterfalse                           ,
-     imap                                   ,
      islice                                 ,
-     izip                                   ,
-     izip_longest                           ,
+     map                                    ,
      permutations                           ,
      product                                ,
      repeat                                 ,
      starmap                                ,
      takewhile                              ,
-     tee
+     tee                                    ,
+     zip                                    ,
+     zip_longest
 
 .. function:: chain
 
@@ -63,29 +63,29 @@
 
    Alias for :func:`itertools.groupby`
 
-.. function:: ifilter
+.. function:: filter
 
-   Alias for :func:`itertools.ifilter`
+   Alias for python3-style :func:`filter`
 
-.. function:: ifilterfalse
+.. function:: filterfalse
 
-   Alias for :func:`itertools.ifilterfalse`
+   Alias for :func:`itertools.filterfalse`
 
-.. function:: imap
+.. function:: map
 
-   Alias for :func:`itertools.imap`
+   Alias for python3-style :func:`map`
 
 .. function:: islice
 
    Alias for :func:`itertools.islice`
 
-.. function:: izip
+.. function:: zip
 
-   Alias for :func:`itertools.izip`
+   Alias for python3-style :func:`zip`
 
-.. function:: izip_longest
+.. function:: zip_longest
 
-   Alias for :func:`itertools.izip_longest`
+   Alias for :func:`itertools.zip_longest`
 
 .. function:: permutations
 

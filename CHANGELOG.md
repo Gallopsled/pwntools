@@ -9,9 +9,14 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.3.0](#430)    | `dev`    | Jun 30, 2020 (planned)
-| [4.2.0](#420)    | `beta`   | Jun 5, 2020 (planned)
-| [4.1.2](#412)    | `stable` | Jun 3, 2020
+| [4.4.0](#440)    | `dev`    | Sep 1, 2020 (planned)
+| [4.3.0](#430)    | `beta`   | Aug 1, 2020 (planned)
+| [4.2.0](#420)    | `stable` | Jul 3, 2020 (planned)
+| [4.1.7](#417)    |          | Jun 30, 2020
+| [4.1.5](#415)    |          | Jun 27, 2020
+| [4.1.4](#414)    |          | Jun 26, 2020
+| [4.1.3](#413)    |          | Jun 23, 2020
+| [4.1.2](#412)    |          | Jun 5, 2020
 | [4.1.1](#411)    |          | Jun 3, 2020
 | [4.1.0](#410)    |          | May 8, 2020
 | [4.0.1](#401)    |          | Jan 22, 2020
@@ -50,13 +55,73 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.3.0 (`dev`)
+## 4.4.0 (`dev`)
 
-To be released on Jun 30, 2020.
+- [#1602][1602] Fix bytes handling in ssh tubes
+- [#1606][1606] Fix `asm()` and `disasm()` for MSP430, S390
+- [#1616][1616] Fix `cyclic` cli for 64 bit integers
+- [#1632][1632] Enable usage of Pwntools in jupyter
+- [#1633][1633] Open a shell if `pwn template` cannot download the remote file
 
-## 4.2.0 (`beta`)
+[1602]: https://github.com/Gallopsled/pwntools/pull/1602
+[1606]: https://github.com/Gallopsled/pwntools/pull/1606
+[1616]: https://github.com/Gallopsled/pwntools/pull/1616
+[1632]: https://github.com/Gallopsled/pwntools/pull/1632
+[1633]: https://github.com/Gallopsled/pwntools/pull/1633
 
-To be released on Jun 5, 2020.
+## 4.3.0 (`beta`)
+
+- [#1576][1576] Add `executable=` argument to `ELF.search`
+- [#1584][1584] Add `jmp_esp`/`jmp_rsp` attribute to `ROP`
+- [#1592][1592] Fix over-verbose logging of process() environment
+- [#1593][1593] Colorize output of `pwn template`
+- [#1601][1601] Add `pwn version` command line tool
+- [#1605][1605] Add to `fiddling.hexdump` a way to suppress the total at the end
+- [#1613][1613] Permit `--password` for `pwn template`
+- [#1616][1616] Fix `cyclic` cli for 64 bit integers
+- [#1564][1564] Fix `asm()` and `disasm()` for PowerPC64, MIPS64, Sparc64
+- [#1621][1621] Permit negative values in flat() and fit()
+
+[1576]: https://github.com/Gallopsled/pwntools/pull/1576
+[1584]: https://github.com/Gallopsled/pwntools/pull/1584
+[1592]: https://github.com/Gallopsled/pwntools/pull/1592
+[1593]: https://github.com/Gallopsled/pwntools/pull/1593
+[1601]: https://github.com/Gallopsled/pwntools/pull/1601
+[1605]: https://github.com/Gallopsled/pwntools/pull/1605
+[1613]: https://github.com/Gallopsled/pwntools/pull/1613
+[1616]: https://github.com/Gallopsled/pwntools/pull/1616
+[1564]: https://github.com/Gallopsled/pwntools/pull/1564
+[1621]: https://github.com/Gallopsled/pwntools/pull/1621
+
+## 4.3.0 (`beta`)
+
+- [#1576][1576] Add `executable=` argument to `ELF.search`
+- [#1584][1584] Add `jmp_esp`/`jmp_rsp` attribute to `ROP`
+- [#1592][1592] Fix over-verbose logging of process() environment
+- [#1593][1593] Colorize output of `pwn template`
+- [#1601][1601] Add `pwn version` command line tool
+- [#1605][1605] Add to `fiddling.hexdump` a way to suppress the total at the end
+- [#1613][1613] Permit `--password` for `pwn template`
+- [#1564][1564] Fix `asm()` and `disasm()` for PowerPC64, MIPS64, Sparc64
+- [#1621][1621] Permit negative values in flat() and fit()
+
+[1576]: https://github.com/Gallopsled/pwntools/pull/1576
+[1584]: https://github.com/Gallopsled/pwntools/pull/1584
+[1592]: https://github.com/Gallopsled/pwntools/pull/1592
+[1593]: https://github.com/Gallopsled/pwntools/pull/1593
+[1601]: https://github.com/Gallopsled/pwntools/pull/1601
+[1605]: https://github.com/Gallopsled/pwntools/pull/1605
+[1613]: https://github.com/Gallopsled/pwntools/pull/1613
+[1564]: https://github.com/Gallopsled/pwntools/pull/1564
+[1621]: https://github.com/Gallopsled/pwntools/pull/1621
+
+## 4.2.1 (`stable`)
+
+- [#1625][1625] GDB now properly loads executables with QEMU
+
+[1625]: https://github.com/Gallopsled/pwntools/pull/1625
+
+## 4.2.0
 
 - [#1436][1436] Add ret2dlresolve automation
 - [fecf9f] tubes.ssh.process() no longer requires python 2 installed on remote (still requires python, though)
@@ -67,7 +132,34 @@ To be released on Jun 5, 2020.
 [fecf9f]: http://github.com/Gallopsled/pwntools/commit/fecf9f
 [1454]: https://github.com/Gallopsled/pwntools/pull/1454
 
-## 4.1.2 (`stable`)
+## 4.1.7 (`stable`)
+
+- [#1615][1615] Fix aarch64 pushstr and pushstr_array
+
+[1615]: https://github.com/Gallopsled/pwntools/pull/1454
+
+## 4.1.5
+
+- [#1517][1517] flat(..., filler=) is fixed for `str` values and Python2 `bytes`
+
+[1517]: https://github.com/Gallopsled/pwntools/pull/1517
+
+## 4.1.4
+
+- [#1698][1609] Fix issues in `packing.flat` with mis-ordred fields
+
+[1609]: https://github.com/Gallopsled/pwntools/pull/1609
+
+## 4.1.3
+
+- [#1590][1590] Fix `gdb.attach()` for `remote`, `listen`, `ssh` tubes
+  - Also fix `run_in_new_terminal` for Py2 unicode strings
+- [#1595][1595] Fix ssh.process(timeout=)
+
+[1590]: https://github.com/Gallopsled/pwntools/pull/1590
+[1595]: https://github.com/Gallopsled/pwntools/pull/1595
+
+## 4.1.2
 
 - Pwntools requires `six` v.1.12.0 or higher
 

@@ -45,6 +45,14 @@ def get(cap, *args, **kwargs):
 def init():
     global cache
 
+    # Detect running under Jupyter
+    try:
+        if get_ipython().__class__.__name__ == 'ZMQInteractiveShell':
+            os.environ['PWNLIB_NOTERM'] = '1'
+            os.environ['JUPYTER_DETECTED'] ='yes'
+    except NameError:
+        pass
+
     if 'PWNLIB_NOTERM' not in os.environ:
         # Fix for BPython
         try:

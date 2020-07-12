@@ -110,6 +110,7 @@ from pwnlib.asm import make_elf_from_assembly
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.log import getLogger
+from pwnlib.timeout import Timeout
 from pwnlib.util import misc
 from pwnlib.util import proc
 
@@ -262,7 +263,10 @@ def _gdbserver_port(gdbserver, ssh):
             'Failed to spawn process under gdbserver. gdbserver error message: %s' % process_created
         )
 
-    gdbserver.pid   = int(process_created.split()[-1], 0)
+    try:
+        gdbserver.pid   = int(process_created.split()[-1], 0)
+    except ValueError:
+        log.error('gdbserver did not output its pid (maybe chmod +x?): %s', six.ensure_str(process_created))
 
     listening_on = b''
     while b'Listening' not in listening_on:
@@ -496,7 +500,7 @@ def binary():
 
         if multiarch:
             return multiarch
-        log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n' \
+        log.warn_once('Cross-architecture debugging usually requires gdb-multiarch\n'
                       '$ apt-get install gdb-multiarch')
 
     if not gdb:
@@ -545,60 +549,62 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
     Examples:
 
-    >>> # Attach directly to pid 1234
-    >>> gdb.attach(1234) # doctest: +SKIP
+        Attach to a process by PID
 
+        >>> pid = gdb.attach(1234) # doctest: +SKIP
 
-    >>> # Attach to the youngest "bash" process
-    >>> gdb.attach('bash') # doctest: +SKIP
+        Attach to the youngest process by name
 
+        >>> pid = gdb.attach('bash') # doctest: +SKIP
 
-    >>> # Start a process
-    >>> bash = process('bash')
-    >>> # Attach the debugger
-    >>> pid = gdb.attach(bash, '''
-    ... set follow-fork-mode child
-    ... break execve
-    ... continue
-    ... ''')
-    >>> # Interact with the process
-    >>> bash.sendline("/bin/echo hello")
-    >>> bash.recvline()
-    b'hello\n'
-    >>> bash.close()
+        Attach a debugger to a :class:`.process` tube and automate interaction
 
-    >>> # Start a forking server
-    >>> server = process(['socat', 'tcp-listen:12345,fork,reuseaddr', 'exec:/bin/bash,nofork'])
-    >>> sleep(1)
-    >>> # Connect to the server
-    >>> io = remote('127.0.0.1', 12345)
-    >>> # Connect the debugger to the server-spawned process
-    >>> pid = gdb.attach(io, '''
-    ... break exit
-    ... continue
-    ... ''', exe = '/bin/bash')
-    >>> # Talk to the spawned 'bash'
-    >>> io.sendline("echo hello")
-    >>> io.recvline()
-    b'hello\n'
-    >>> io.sendline("exit")
-    >>> io.close()
+        >>> io = process('bash')
+        >>> pid = gdb.attach(io, gdbscript='''
+        ... call puts("Hello from process debugger!")
+        ... detach
+        ... quit
+        ... ''')
+        >>> io.recvline()
+        b'Hello from process debugger!\n'
+        >>> io.sendline('echo Hello from bash && exit')
+        >>> io.recvall()
+        b'Hello from bash\n'
 
-    >>> # Connect to the SSH server
-    >>> shell = ssh('travis', 'example.pwnme', password='demopass')
+        Attach to the remote process from a :class:`.remote` or :class:`.listen` tube,
+        as long as it is running on the same machine.
 
-    >>> # Start a process on the server
-    >>> cat = shell.process(['cat'])
-    >>> # Attach a debugger to it
-    >>> gdb.attach(cat, '''
-    ... break exit
-    ... continue
-    ... ''')
-    >>> cat.sendline("hello")
-    >>> cat.recvline()
-    b'hello\n'
-    >>> # Cause `cat` to exit
-    >>> cat.close()
+        >>> server = process(['socat', 'tcp-listen:12345,reuseaddr,fork', 'exec:/bin/bash,nofork'])
+        >>> sleep(1) # Wait for socat to start
+        >>> io = remote('127.0.0.1', 12345)
+        >>> sleep(1) # Wait for process to fork
+        >>> pid = gdb.attach(io, gdbscript='''
+        ... call puts("Hello from remote debugger!")
+        ... detach
+        ... quit
+        ... ''')
+        >>> io.recvline()
+        b'Hello from remote debugger!\n'
+        >>> io.sendline('echo Hello from bash && exit')
+        >>> io.recvall()
+        b'Hello from bash\n'
+
+        Attach to processes running on a remote machine via an SSH :class:`.ssh` process
+        
+        >>> shell = ssh('travis', 'example.pwnme', password='demopass')
+        >>> io = shell.process(['cat'])
+        >>> pid = gdb.attach(io, gdbscript='''
+        ... call sleep(5)
+        ... call puts("Hello from ssh debugger!")
+        ... detach
+        ... quit
+        ... ''')
+        >>> io.recvline(timeout=5)  # doctest: +SKIP
+        b'Hello from ssh debugger!\n'
+        >>> io.sendline('This will be echoed back')
+        >>> io.recvline()
+        b'This will be echoed back\n'
+        >>> io.close()
     """
     if context.noptrace:
         log.warn_once("Skipping debug attach since context.noptrace==True")
@@ -628,6 +634,9 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
         if context.os == 'android':
             pre += 'set gnutarget ' + _bfdname() + '\n'
+
+        if exe:
+            pre += 'file %s\n' % exe
 
     # let's see if we can find a pid to attach to
     pid = None
@@ -677,18 +686,24 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     elif isinstance(target, tubes.sock.sock):
         pids = proc.pidof(target)
         if not pids:
-            log.error('could not find remote process (%s:%d) on this machine' %
+            log.error('Could not find remote process (%s:%d) on this machine' %
                       target.sock.getpeername())
-        waiting = 100
-        if exe:
-            while waiting:
-                waiting -= 1
-                for pid in pids:
-                    if proc.exe(pid) == exe:
-                        waiting = False
-                        break
-                else:
-                    time.sleep(0.01)
+        pid = pids[0]
+
+        # Specifically check for socat, since it has an intermediary process
+        # if you do not specify "nofork" to the EXEC: argument
+        # python(2640)───socat(2642)───socat(2643)───bash(2644)
+        if proc.exe(pid).endswith('/socat') and time.sleep(0.1) and proc.children(pid):
+            pid = proc.children(pid)[0]
+
+        # We may attach to the remote process after the fork but before it performs an exec.  
+        # If an exe is provided, wait until the process is actually running the expected exe
+        # before we attach the debugger.
+        t = Timeout()
+        with t.countdown(2):
+            while exe and os.realpath(proc.exe(pid)) != os.realpath(exe) and t.timeout:
+                time.sleep(0.1)
+
     elif isinstance(target, tubes.process.process):
         pid = proc.pidof(target)[0]
         exe = exe or target.executable
@@ -936,13 +951,23 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
     return rv
 
 def corefile(process):
-    r"""Drops a core file for the process.
+    r"""Drops a core file for a running local process.
+
+    Note:
+        You should use :meth:`.process.corefile` instead of using this method directly.
 
     Arguments:
         process: Process to dump
 
     Returns:
         :class:`.Core`: The generated core file
+
+    Example:
+
+        >>> io = process('bash')
+        >>> core = gdb.corefile(io)
+        >>> core.exe.name
+        '/bin/bash'
     """
 
     if context.noptrace:
@@ -962,7 +987,7 @@ def corefile(process):
     # This is effectively the same as what the 'gcore' binary does
     gdb_args = ['-batch',
                 '-q',
-                '--nx',
+                '-nx',
                 '-ex', '"set pagination off"',
                 '-ex', '"set height 0"',
                 '-ex', '"set width 0"',
@@ -973,7 +998,14 @@ def corefile(process):
     with context.local(terminal = ['sh', '-c']):
         with context.quiet:
             pid = attach(process, gdb_args=gdb_args)
-            os.waitpid(pid, 0)
+            log.debug("Got GDB pid %d", pid)
+            try:
+                os.waitpid(pid, 0)
+            except Exception:
+                pass
+
+    if not os.path.exists(corefile_path):
+        log.error("Could not generate a corefile for process %d", process.pid)
 
     return elf.corefile.Core(corefile_path)
 

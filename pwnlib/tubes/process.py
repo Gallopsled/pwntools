@@ -242,6 +242,9 @@ class process(tube):
         #: :class:`subprocess.Popen` object that backs this process
         self.proc = None
 
+        # We need to keep a copy of the un-_validated environment for printing
+        original_env = env
+
         if shell:
             executable_val, argv_val, env_val = executable, argv, env
         else:
@@ -298,7 +301,7 @@ class process(tube):
 
         if self.isEnabledFor(logging.DEBUG):
             if argv != [self.executable]: message += ' argv=%r ' % self.argv
-            if env not in (os.environ, None):  message += ' env=%r ' % self.env
+            if original_env not in (os.environ, None):  message += ' env=%r ' % self.env
 
         with self.progress(message) as p:
 
@@ -666,7 +669,7 @@ class process(tube):
         self.proc.poll()
         returncode = self.proc.returncode
 
-        if returncode != None and not self._stop_noticed:
+        if returncode is not None and not self._stop_noticed:
             self._stop_noticed = time.time()
             signame = ''
             if returncode < 0:
@@ -736,7 +739,7 @@ class process(tube):
             return False
 
         try:
-            if timeout == None:
+            if timeout is None:
                 return select.select([self.proc.stdout], [], []) == ([self.proc.stdout], [], [])
 
             return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
@@ -749,12 +752,12 @@ class process(tube):
             # ValueError: I/O operation on closed file
             raise EOFError
         except select.error as v:
-            if v[0] == errno.EINTR:
+            if v.args[0] == errno.EINTR:
                 return False
 
     def connected_raw(self, direction):
         if direction == 'any':
-            return self.poll() == None
+            return self.poll() is None
         elif direction == 'send':
             return not self.proc.stdin.closed
         elif direction == 'recv':
@@ -823,7 +826,7 @@ class process(tube):
             fd = os.open("/dev/tty", os.O_RDWR | os.O_NOCTTY)
             if fd >= 0:
                 os.close(fd)
-                raise Exception('Failed to disconnect from ' +
+                raise Exception('Failed to disconnect from '
                     'controlling tty. It is still possible to open /dev/tty.')
         # which exception, shouldnt' we catch explicitly .. ?
         except OSError:

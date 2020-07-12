@@ -16,7 +16,7 @@ def init_mako():
     from mako import ast
     import threading
 
-    if lookup != None:
+    if lookup is not None:
         return
 
     class IsInsideManager(object):
