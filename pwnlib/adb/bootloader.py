@@ -4,6 +4,7 @@ from __future__ import division
 import ctypes
 import io
 import os
+import six
 import sys
 
 from pwnlib.log import getLogger

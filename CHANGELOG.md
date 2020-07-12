@@ -60,12 +60,38 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1602][1602] Fix bytes handling in ssh tubes
 - [#1606][1606] Fix `asm()` and `disasm()` for MSP430, S390
 - [#1616][1616] Fix `cyclic` cli for 64 bit integers
+- [#1632][1632] Enable usage of Pwntools in jupyter
 - [#1633][1633] Open a shell if `pwn template` cannot download the remote file
 
 [1602]: https://github.com/Gallopsled/pwntools/pull/1602
 [1606]: https://github.com/Gallopsled/pwntools/pull/1606
 [1616]: https://github.com/Gallopsled/pwntools/pull/1616
+[1632]: https://github.com/Gallopsled/pwntools/pull/1632
 [1633]: https://github.com/Gallopsled/pwntools/pull/1633
+
+## 4.3.0 (`beta`)
+
+- [#1576][1576] Add `executable=` argument to `ELF.search`
+- [#1584][1584] Add `jmp_esp`/`jmp_rsp` attribute to `ROP`
+- [#1592][1592] Fix over-verbose logging of process() environment
+- [#1593][1593] Colorize output of `pwn template`
+- [#1601][1601] Add `pwn version` command line tool
+- [#1605][1605] Add to `fiddling.hexdump` a way to suppress the total at the end
+- [#1613][1613] Permit `--password` for `pwn template`
+- [#1616][1616] Fix `cyclic` cli for 64 bit integers
+- [#1564][1564] Fix `asm()` and `disasm()` for PowerPC64, MIPS64, Sparc64
+- [#1621][1621] Permit negative values in flat() and fit()
+
+[1576]: https://github.com/Gallopsled/pwntools/pull/1576
+[1584]: https://github.com/Gallopsled/pwntools/pull/1584
+[1592]: https://github.com/Gallopsled/pwntools/pull/1592
+[1593]: https://github.com/Gallopsled/pwntools/pull/1593
+[1601]: https://github.com/Gallopsled/pwntools/pull/1601
+[1605]: https://github.com/Gallopsled/pwntools/pull/1605
+[1613]: https://github.com/Gallopsled/pwntools/pull/1613
+[1616]: https://github.com/Gallopsled/pwntools/pull/1616
+[1564]: https://github.com/Gallopsled/pwntools/pull/1564
+[1621]: https://github.com/Gallopsled/pwntools/pull/1621
 
 ## 4.3.0 (`beta`)
 
@@ -89,7 +115,13 @@ The table below shows which release corresponds to each branch, and what date th
 [1564]: https://github.com/Gallopsled/pwntools/pull/1564
 [1621]: https://github.com/Gallopsled/pwntools/pull/1621
 
-## 4.2.0 (`stable`)
+## 4.2.1 (`stable`)
+
+- [#1625][1625] GDB now properly loads executables with QEMU
+
+[1625]: https://github.com/Gallopsled/pwntools/pull/1625
+
+## 4.2.0
 
 - [#1436][1436] Add ret2dlresolve automation
 - [fecf9f] tubes.ssh.process() no longer requires python 2 installed on remote (still requires python, though)
