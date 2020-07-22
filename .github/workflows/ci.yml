@@ -71,6 +71,10 @@ jobs:
         cat /proc/sys/kernel/core_uses_pid
         ( cd $(mktemp -d); sh -c 'kill -11 $$' || true; ls -la ./*core* /var/crash/*.crash;) || true
 
+    - name: Misc Setup
+      run: |
+        USER=travis travis/install.sh
+
     - name: Set up SSH
       run: |
         travis/ssh_setup.sh
