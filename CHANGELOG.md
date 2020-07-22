@@ -57,12 +57,16 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.4.0 (`dev`)
 
+- [#1581][1581] Deprecate `pwnlib.adb` testing
+  - This module is no longer tested, and so may have unnoticed regressions
+  - Issues will be fixed as they are reported to us, but we are no longer doing conitnuous integration testing of it
 - [#1602][1602] Fix bytes handling in ssh tubes
 - [#1606][1606] Fix `asm()` and `disasm()` for MSP430, S390
 - [#1616][1616] Fix `cyclic` cli for 64 bit integers
 - [#1632][1632] Enable usage of Pwntools in jupyter
 - [#1633][1633] Open a shell if `pwn template` cannot download the remote file
 
+[1581]: https://github.com/Gallopsled/pwntools/pull/1581
 [1602]: https://github.com/Gallopsled/pwntools/pull/1602
 [1606]: https://github.com/Gallopsled/pwntools/pull/1606
 [1616]: https://github.com/Gallopsled/pwntools/pull/1616
