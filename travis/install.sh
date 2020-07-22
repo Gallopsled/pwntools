@@ -46,21 +46,19 @@ setup_linux()
 
 setup_android_emulator()
 {
-    # If we are running on Travis CI, and there were no changes to Android
-    # or ADB code, then we do not need the emulator
-    if [ -n "$TRAVIS" ]; then
-            # In order to avoid running the doctests that require the Android
-            # emulator, while still leaving the code intact, we remove the
-            # RST file that Sphinx searches.
-            rm -f 'docs/source/adb.rst'
-            rm -f 'docs/source/protocols/adb.rst'
+    if [ "$USER" == "travis" ] || [ "$USER" == "runner" ]; then
+        # In order to avoid running the doctests that require the Android
+        # emulator, while still leaving the code intact, we remove the
+        # RST file that Sphinx searches.
+        rm -f 'docs/source/adb.rst'
+        rm -f 'docs/source/protocols/adb.rst'
 
-            # However, the file needs to be present or else things break.
-            touch 'docs/source/adb.rst'
-            touch 'docs/source/protocols/adb.rst' || true
+        # However, the file needs to be present or else things break.
+        touch 'docs/source/adb.rst'
+        touch 'docs/source/protocols/adb.rst' || true
 
-            echo "Skipping Android emulator install, Android tests disabled."
-            return
+        echo "Skipping Android emulator install, Android tests disabled."
+        return
     fi
 
 
