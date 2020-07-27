@@ -199,11 +199,9 @@ def main(args):
         exit()
 
     try:
-        template = get_template(args.shellcode)
+        func = get_template(args.shellcode)
     except AttributeError:
         log.error("Unknown shellcraft template %r. Use --list to see available shellcodes." % args.shellcode)
-
-    func = get_template(args.shellcode)
 
     if args.show:
         # remove doctests
