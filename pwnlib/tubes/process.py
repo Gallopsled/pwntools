@@ -998,6 +998,7 @@ class process(tube):
         
             Let's write data to  the beginning of the mapped memory of the  ELF.
 
+            >>> context.clear(arch='i386')
             >>> address = 0x100000
             >>> data = cyclic(32)
             >>> asm = shellcraft.nop() * len(data)
