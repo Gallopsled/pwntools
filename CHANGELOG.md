@@ -64,6 +64,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1633][1633] Open a shell if `pwn template` cannot download the remote file
 - [#1644][1644] Enable and support SNI for SSL-wrapped tubes
 - [#1651][1651] Make `pwn shellcraft` faster
+- [#1652][1652] Add `process.readmem` and `process.writemem`
 
 [1602]: https://github.com/Gallopsled/pwntools/pull/1602
 [1606]: https://github.com/Gallopsled/pwntools/pull/1606
@@ -71,6 +72,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1632]: https://github.com/Gallopsled/pwntools/pull/1632
 [1633]: https://github.com/Gallopsled/pwntools/pull/1633
 [1651]: https://github.com/Gallopsled/pwntools/pull/1651
+[1652]: https://github.com/Gallopsled/pwntools/pull/1652
 
 ## 4.3.0 (`beta`)
 
