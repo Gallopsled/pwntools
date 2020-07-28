@@ -1014,8 +1014,8 @@ class process(tube):
             >>> io = elf.process()
             >>> io.writemem(address, data)
             >>> io.send('X')
-            >>> io.recvall() == data
-            True
+            >>> io.recvall()
+            b'aaaabaaacaaadaaaeaaafaaagaaahaaa'
         """
 
         if 'qemu-' in os.path.realpath('/proc/%i/exe' % self.pid):
