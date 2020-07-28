@@ -985,6 +985,47 @@ class process(tube):
             mem.seek(address)
             return mem.read(count) or None
 
+    readmem = leak
+
+    def writemem(self, address, data):
+        r"""Writes memory within the process at the specified address.
+
+        Arguments:
+            address(int): Address to write memory
+            data(bytes): Data to write to the address
+
+        Example:
+        
+            Let's write data to  the beginning of the mapped memory of the  ELF.
+
+            >>> address = 0x100000
+            >>> data = cyclic(32)
+            >>> asm = shellcraft.nop() * len(data)
+
+            Wait for one byte of input, then write the data to stdout
+
+            >>> asm += shellcraft.read(0, 'esp', 1)
+            >>> asm += shellcraft.write(1, address, 32)
+            >>> asm += shellcraft.exit()
+
+            Assemble the binary and test it
+
+            >>> elf = ELF.from_assembly(asm, vma=address)
+            >>> io = elf.process()
+            >>> io.writemem(address, data)
+            >>> io.send('X')
+            >>> io.recvall() == data
+            True
+        """
+
+        if 'qemu-' in os.path.realpath('/proc/%i/exe' % self.pid):
+            self.error("Cannot use leaker on binaries under QEMU.")
+
+        with open('/proc/%i/mem' % self.pid, 'wb') as mem:
+            mem.seek(address)
+            return mem.write(data)
+
+
     @property
     def stdin(self):
         """Shorthand for ``self.proc.stdin``
