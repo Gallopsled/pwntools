@@ -64,13 +64,14 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1633][1633] Open a shell if `pwn template` cannot download the remote file
 - [#1644][1644] Enable and support SNI for SSL-wrapped tubes
 - [#1651][1651] Make `pwn shellcraft` faster
+- [#1654][1654] Docker images (`pwntools/pwntools:stable` etc) now use Python3 by default, and includes assemblers for a few common architectures
 
 [1602]: https://github.com/Gallopsled/pwntools/pull/1602
 [1606]: https://github.com/Gallopsled/pwntools/pull/1606
 [1616]: https://github.com/Gallopsled/pwntools/pull/1616
 [1632]: https://github.com/Gallopsled/pwntools/pull/1632
 [1633]: https://github.com/Gallopsled/pwntools/pull/1633
-[1651]: https://github.com/Gallopsled/pwntools/pull/1651
+[1654]: https://github.com/Gallopsled/pwntools/pull/1654
 
 ## 4.3.0 (`beta`)
 
