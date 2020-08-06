@@ -1066,6 +1066,25 @@ class ROP(object):
             log.error('Cannot append to a migrated chain')
         self._chain.append(value)
 
+    def packed(self, value: int):
+        """Packs an integer and appends it to the ropchain
+        
+        Arguments:
+            data(int/str): The value to be packed then put onto the rop chain.
+
+        elf = context.binary = ELF('./vuln')
+
+        >>> rop = ROP([])
+        >>> rop.raw('AAAAAAAA')
+        >>> rop.raw('BBBBBBBB')
+        >>> rop.raw('CCCCCCCC')
+        >>> print(rop.dump())
+        """
+
+        if self.migrated:
+            log.error('Cannot append to a migrated chain')
+        self._chain.append(packing.flat(value))
+
     def migrate(self, next_base):
         """Explicitly set $sp, by using a ``leave; ret`` gadget"""
         if isinstance(next_base, ROP):
