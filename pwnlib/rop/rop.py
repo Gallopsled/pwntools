@@ -1070,7 +1070,7 @@ class ROP(object):
         """Packs an integer and appends it to the ropchain
         
         Arguments:
-            data(int/str): The value to be packed then put onto the rop chain.
+            data(int): The value to be packed then put onto the rop chain.
         """
 
         self.raw(packing.flat(value))
