@@ -967,8 +967,28 @@ class ROP(object):
             addr = resolvable
             resolvable = ''
 
+        log.info(str(type(arguments)))
+        
+        ####################### Changes
+        args = list(arguments)
+
+        for i, arg in enumerate(args):
+            if isinstance(arg, str):
+                arg += '\x00' if arg[-1] != '\x00'
+
+                log.progress(f'Fetching {arg}'s address')
+
+                arg_addr = next(self.elfs[0].search(arg.encode()))
+                log.success(f'Grabbed {arg} from {hex(arg_addr)}')
+
+                args[i] = arg_addr
+        
+        args = tuple(args)
+        #######################
+
         if addr:
-            self.raw(Call(resolvable, addr, arguments, abi))
+            #self.raw(Call(resolvable, addr, arguments, abi))
+            self.raw(Call(resolvable, addr, args, abi))
 
         # Otherwise, if it is a syscall we might be able to call it
         elif not self._srop_call(resolvable, arguments):
