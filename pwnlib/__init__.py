@@ -8,6 +8,7 @@ version = __version__
 
 __all__ = [
     'args',
+    'ascii_shellcode',
     'asm',
     'atexception',
     'atexit',

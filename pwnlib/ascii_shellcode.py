@@ -13,6 +13,8 @@ from pwnlib.util.iters import group
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 
+__all__ = ['asciify_shellcode']
+
 
 @LocalContext
 def asciify_shellcode(shellcode: bytes, slop: int, vocab: bytes = None) -> bytes:
