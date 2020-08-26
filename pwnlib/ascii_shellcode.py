@@ -5,9 +5,7 @@ import struct
 from itertools import chain
 from itertools import product
 from typing import List
-from typing import Sequence
 from typing import Tuple
-from typing import Union
 
 from pwnlib.util.iters import group
 from pwnlib.context import LocalContext
@@ -46,7 +44,7 @@ def asciify_shellcode(shellcode: bytes, slop: int, vocab: bytes = None) -> bytes
             raise RuntimeError(
                 "These characters ({}) are required because they assemble into instructions used to unpack the shellcode".format(str(required_chars, 'ascii')))
 
-    if context.arch != 'i386' and context.bits != 32:
+    if context.arch != 'i386' or context.bits != 32:
         raise RuntimeError('Only 32-bit i386 is currently supported')
 
     int_size = context.bits // 8
