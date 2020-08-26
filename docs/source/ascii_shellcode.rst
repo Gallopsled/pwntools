@@ -17,3 +17,15 @@
 
 .. automodule:: pwnlib.ascii_shellcode
    :members:
+
+Internal Functions
+-----------------------------------------
+
+These are only included so that their tests are run.
+
+You should never need these.
+
+.. autofunction:: pwnlib.ascii_shellcode._get_allocator
+.. autofunction:: pwnlib.ascii_shellcode._find_negatives
+.. autofunction:: pwnlib.ascii_shellcode._get_subtractions
+.. autofunction:: pwnlib.ascii_shellcode._calc_subtractions
