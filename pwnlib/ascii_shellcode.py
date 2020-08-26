@@ -16,12 +16,12 @@ __all__ = ['asciify_shellcode']
 
 @LocalContext
 def asciify_shellcode(shellcode: bytes, slop: int, vocab: bytes = None) -> bytes:
-    """ Pack i386 shellcode to ascii shellcode.
+    """ Pack shellcode into only ascii characters that unpacks itself and executes (on the stack)
 
     Args:
-        shellcode (bytes): The shellcode
-        slop (int): How much to add to the esp minus the shellcod length
-        vocab (bytes, optional): Allowed characters. Defaults to None.
+        shellcode (bytes): The shellcode to be packed
+        slop (int): The amount esp will be increased by in the allocation phase
+        vocab (bytes, optional): Allowed characters. Defaults to 0x21-0x7e.
 
     Raises:
         RuntimeError: A required character is not in ``vocab``
@@ -59,7 +59,7 @@ def asciify_shellcode(shellcode: bytes, slop: int, vocab: bytes = None) -> bytes
 
 @LocalContext
 def _get_allocator(slop: int, vocab: bytes) -> bytes:
-    """Allocate enough space on the stack for the shellcode
+    """ Allocate enough space on the stack for the shellcode
 
     int_size is taken from the context (context.bits / 8)
 
@@ -68,7 +68,7 @@ def _get_allocator(slop: int, vocab: bytes) -> bytes:
         vocab (bytes): Allowed characters
 
     Returns:
-        Tuple[bytes, bytes]: The allocator shellcode, the value of eax
+        bytes: The allocator shellcode
 
     Examples:
 
@@ -124,19 +124,17 @@ def _find_negatives(vocab: bytes) -> Tuple[int, int]:
 
 
 @LocalContext
-def _get_subtractions(
-        shellcode: bytes, vocab: bytes) -> bytes:
+def _get_subtractions(shellcode: bytes, vocab: bytes) -> bytes:
     """ Covert the sellcode to sub eax and posh eax instructions
 
     int_size is taken from the context (context.bits / 8)
 
     Args:
-        last (bytes): The value of eax
         shellcode (bytes): The shellcode to pack
         vocab (bytes): Allowed characters
 
     Returns:
-        Tuple[bytes, bytes]: packed shellcode, eax
+        bytes: packed shellcode
 
     Examples:
 
@@ -166,7 +164,8 @@ def _get_subtractions(
 @LocalContext
 def _calc_subtractions(
         last: bytes, target: bytes, vocab: bytes, max_subs: int = 4) -> List[bytearray]:
-    """Given `target` and `last`, return a list of integers that when subtracted from `last` will equal `target` while only constructing integers from bytes in `vocab`
+    """ Given `target` and `last`, return a list of integers that when subtracted from 
+    `last` will equal `target` while only constructing integers from bytes in `vocab`
 
     int_size is take from the context (context.bits / 8)
 
