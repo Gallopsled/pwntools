@@ -595,7 +595,7 @@ class tube(Timeout, Logger):
         If the request is not satisfied before ``timeout`` seconds pass,
         all data is buffered and an empty string (``''``) is returned.
 
-        See :meth:`recvline_endswith` for more details.
+        See :meth:`recvline_startswith` for more details.
 
         Examples:
 
