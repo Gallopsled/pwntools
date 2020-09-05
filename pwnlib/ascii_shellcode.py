@@ -4,8 +4,7 @@
 import struct
 from itertools import chain
 from itertools import product
-from typing import List
-from typing import Tuple
+import six
 
 from pwnlib.util.iters import group
 from pwnlib.context import LocalContext
@@ -15,7 +14,7 @@ __all__ = ['asciify_shellcode']
 
 
 @LocalContext
-def asciify_shellcode(shellcode: bytes, slop: int, vocab: bytes = None) -> bytes:
+def asciify_shellcode(shellcode, slop, vocab = None):
     """ Pack shellcode into only ascii characters that unpacks itself and executes (on the stack)
 
     Args:
@@ -40,7 +39,7 @@ def asciify_shellcode(shellcode: bytes, slop: int, vocab: bytes = None) -> bytes
         vocab = b"!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
     else:
         required_chars = b'\\-%TXP'
-        if not all((c in required_chars) for c in vocab):
+        if not all((c in vocab) for c in required_chars):
             raise RuntimeError(
                 "These characters ({}) are required because they assemble into instructions used to unpack the shellcode".format(str(required_chars, 'ascii')))
 
@@ -58,7 +57,7 @@ def asciify_shellcode(shellcode: bytes, slop: int, vocab: bytes = None) -> bytes
 
 
 @LocalContext
-def _get_allocator(slop: int, vocab: bytes) -> bytes:
+def _get_allocator(slop, vocab):
     """ Allocate enough space on the stack for the shellcode
 
     int_size is taken from the context (context.bits / 8)
@@ -80,11 +79,13 @@ def _get_allocator(slop: int, vocab: bytes) -> bytes:
     # Use eax for subtractions because sub esp, X doesn't assemble to ascii
     result = b'TX'  # push esp; pop eax
     # Set target to the `slop` arg
-    target = slop.to_bytes(int_size, 'little')
+    target = struct.pack('=I', slop)
     # All we are doing here is adding (subtracting) `slop` to esp (to allocate
     # space on the stack), so we don't care about esp's actual value.
     # That's why the `last` parameter for `calc_subtractions` can just be zero
     for subtraction in _calc_subtractions(b'\x00'*int_size, target, vocab):
+        if six.PY2:
+            subtraction = str(subtraction)
         # sub eax, subtraction
         result += struct.pack('=c{}s'.format(int_size), b'-', subtraction)
     result += b'P\\'  # push eax, pop esp
@@ -96,7 +97,7 @@ def _get_allocator(slop: int, vocab: bytes) -> bytes:
 
 
 @LocalContext
-def _find_negatives(vocab: bytes) -> Tuple[int, int]:
+def _find_negatives(vocab):
     """ Find two bitwise negatives in the vocab so that when they are and-ed the result is 0.
 
     int_size is taken from the context (context.bits / 8)
@@ -116,15 +117,19 @@ def _find_negatives(vocab: bytes) -> Tuple[int, int]:
     """
     int_size = context.bits // 8
     for products in product(*[vocab for _ in range(2)]):
-        if products[0] & products[1] == 0:
-            return tuple(int.from_bytes(x.to_bytes(1, 'little')*int_size, 'little') for x in products)
+        if six.PY3:
+            if products[0] & products[1] == 0:
+                return tuple(int.from_bytes(x.to_bytes(1, 'little')*int_size, 'little') for x in products)
+        elif six.PY2:
+            if six.byte2int(products[0]) & six.byte2int(products[1]) == 0:
+                return tuple(struct.unpack('=I', x*int_size)[0] for x in products)
     else:
         raise ArithmeticError(
             'Could not find two bitwise negatives in the provided vocab')
 
 
 @LocalContext
-def _get_subtractions(shellcode: bytes, vocab: bytes) -> bytes:
+def _get_subtractions(shellcode, vocab):
     """ Covert the sellcode to sub eax and posh eax instructions
 
     int_size is taken from the context (context.bits / 8)
@@ -150,10 +155,18 @@ def _get_subtractions(shellcode: bytes, vocab: bytes) -> bytes:
     # if the shellcode does not divide into stack cell size and reverse.
     # The shellcode will be reversed again back to it's original order once
     # it's pushed onto the stack
-    sc = tuple(group(int_size, shellcode, 0x90))[::-1]
+    if six.PY3:
+        sc = tuple(group(int_size, shellcode, 0x90))[::-1]
+    elif six.PY2:
+        sc = []
+        for byte in group(int_size, shellcode, b'\x90'):
+            sc.append(''.join(byte))
+        sc = sc[::-1]
     # Pack the shellcode to a sub/push sequence
-    for x in [bytes(y) for y in sc]:
+    for x in map(bytes, sc):
         for subtraction in _calc_subtractions(last, x, vocab):
+            if six.PY2:
+                subtraction = str(subtraction)
             # sub eax, `subtraction`
             result += struct.pack('=c{}s'.format(int_size), b'-', subtraction)
         last = x
@@ -162,8 +175,7 @@ def _get_subtractions(shellcode: bytes, vocab: bytes) -> bytes:
 
 
 @LocalContext
-def _calc_subtractions(
-        last: bytes, target: bytes, vocab: bytes, max_subs: int = 4) -> List[bytearray]:
+def _calc_subtractions(last, target, vocab, max_subs = 4):
     """ Given `target` and `last`, return a list of integers that when subtracted from 
     `last` will equal `target` while only constructing integers from bytes in `vocab`
 
@@ -191,6 +203,9 @@ def _calc_subtractions(
     """
     int_size = context.bits // 8
     subtractions = [bytearray(b'\x00'*int_size)]
+    if six.PY2:
+        last = map(ord, last)
+        target = map(ord, target)
     for subtraction in range(max_subs):
         carry = success_count = 0
         for byte in range(int_size):
@@ -201,6 +216,8 @@ def _calc_subtractions(
             for products in product(
                 *[x <= subtraction and vocab or (0,) for x in range(max_subs)]
             ):
+                if six.PY2:
+                    products = map(lambda x: isinstance(x, str) and ord(x) or x, products)
                 # Sum up all the products, carry from last byte and the target
                 attempt = sum(chain(
                     (target[byte], carry), products
