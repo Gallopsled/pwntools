@@ -66,6 +66,8 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1651][1651] Make `pwn shellcraft` faster
 - [#1654][1654] Docker images (`pwntools/pwntools:stable` etc) now use Python3 by default, and includes assemblers for a few common architectures
 - [#1667][1667] Add module `ascii_shellcode`
+- Fix syscall instruction lists for SROP on `i386` and `amd64`
+- Fix migration to another ROP
 
 [1602]: https://github.com/Gallopsled/pwntools/pull/1602
 [1606]: https://github.com/Gallopsled/pwntools/pull/1606

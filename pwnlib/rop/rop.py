@@ -1069,7 +1069,7 @@ class ROP(object):
     def migrate(self, next_base):
         """Explicitly set $sp, by using a ``leave; ret`` gadget"""
         if isinstance(next_base, ROP):
-            next_base = self.base
+            next_base = next_base.base
         pop_sp = self.rsp or self.esp
         pop_bp = self.rbp or self.ebp
         leave  = self.leave

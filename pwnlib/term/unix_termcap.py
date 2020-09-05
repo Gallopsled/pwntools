@@ -60,6 +60,8 @@ def init():
         except curses.error as e:
             import traceback
             print('Warning:', ''.join(traceback.format_exception_only(e.__class__, e)), file=sys.stderr)
+            print('Terminal features will not be available.  Consider setting TERM variable to your current terminal name (or xterm).', file=sys.stderr)
+            os.environ['PWNLIB_NOTERM'] = '1'
 
     cache = {}
     # Manually add reset sequence into the cache.
