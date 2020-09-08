@@ -31,9 +31,14 @@ def asciify_shellcode(shellcode, slop, vocab = None):
 
     Examples:
 
+        >>> context.update(arch='i386', os='linux')
         >>> sc = b"\\x83\\xc4\\x181\\xc01\\xdb\\xb0\\x06\\xcd\\x80Sh/ttyh/dev\\x89\\xe31\\xc9f\\xb9\\x12'\\xb0\\x05\\xcd\\x80j\\x17X1\\xdb\\xcd\\x80j.XS\\xcd\\x801\\xc0Ph//shh/bin\\x89\\xe3PS\\x89\\xe1\\x99\\xb0\\x0b\\xcd\\x80"
-        >>> asciify_shellcode(sc, 300, arch='i386')
+        >>> asciify_shellcode(sc, 300)
         b"TX-!!!!-5_``-~~~~P\\\\%!!!!%@@@@-!6!!-V~!!-~~<-P-!mha-a~~~P-!!L`-a^~~-~~~~P-!!if-9`~~P-!!!!-aOaf-~~~~P-!&!<-!~`~--~~~P-!!!!-!!H^-+A~~P-U!![-~A1~P-,<V!-~~~!-~~~GP-!2!8-j~O~P-!]!!-!~!r-y~w~P-c!!!-~<(+P-N!_W-~1~~P-!!]!-Mn~!-~~~<P-!<!!-r~!P-~~x~P-fe!$-~~S~-~~~~P-!!'$-%z~~P-A!!!-~!#!-~*~=P-!7!!-T~!!-~~E^PPP"
+        >>> sc = shellcraft.echo("Hello world") + shellcraft.exit()
+        >>> ascii = asciify_shellcode(asm(sc), 250) + asm('jmp esp')
+        >>> ELF.from_bytes(ascii).process().recvall()
+        b'Hello world'
     """
     if not vocab:
         vocab = b"!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"

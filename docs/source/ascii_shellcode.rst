@@ -1,5 +1,9 @@
 .. testsetup:: *
 
+   from pwnlib.asm import asm
+   from pwnlib.elf import ELF
+   from pwnlib import shellcraft
+   from pwnlib.context import context
    from pwnlib.ascii_shellcode import asciify_shellcode, _get_allocator, _find_negatives, _get_subtractions, _calc_subtractions
 
 :mod:`pwnlib.ascii_shellcode` --- ASCII Shell Code
