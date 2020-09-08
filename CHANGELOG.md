@@ -67,6 +67,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1654][1654] Docker images (`pwntools/pwntools:stable` etc) now use Python3 by default, and includes assemblers for a few common architectures
 - Fix syscall instruction lists for SROP on `i386` and `amd64`
 - Fix migration to another ROP
+- [#1673][1673] Add `base=` argument to `ROP.chain()` and `ROP.dump()`
 
 [1602]: https://github.com/Gallopsled/pwntools/pull/1602
 [1606]: https://github.com/Gallopsled/pwntools/pull/1606
@@ -76,6 +77,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1644]: https://github.com/Gallopsled/pwntools/pull/1644
 [1651]: https://github.com/Gallopsled/pwntools/pull/1651
 [1654]: https://github.com/Gallopsled/pwntools/pull/1654
+[1673]: https://github.com/Gallopsled/pwntools/pull/1673
 
 ## 4.3.0 (`beta`)
 
