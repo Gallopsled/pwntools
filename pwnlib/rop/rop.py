@@ -925,17 +925,28 @@ class ROP(object):
     def find_stack_adjustment(self, slots):
         self.search(move=slots * context.bytes)
 
-    def chain(self):
+    def chain(self, base=None):
         """Build the ROP chain
+        
+        Arguments:
+            base(int):
+                The base address to build the rop-chain from. Defaults to
+                :attr:`base`.
 
         Returns:
             str containing raw ROP bytes
         """
-        return packing.flat(self.build())
+        return packing.flat(self.build(base=base))
 
-    def dump(self):
-        """Dump the ROP chain in an easy-to-read manner"""
-        return self.build().dump()
+    def dump(self, base=None):
+        """Dump the ROP chain in an easy-to-read manner
+        
+        Arguments:
+            base(int):
+                The base address to build the rop-chain from. Defaults to
+                :attr:`base`.
+        """
+        return self.build(base=base).dump()
 
     def regs(self, registers=None, **kw):
         if registers is None:
