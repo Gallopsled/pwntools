@@ -267,7 +267,7 @@ That's all there is to it.
     >>> print(rop.dump())
     0x0000:       0x1000000e pop eax; ret
     0x0004:             0x77 [arg0] eax = SYS_sigreturn
-    0x0008:       0x1000000b int 0x80
+    0x0008:       0x1000000b int 0x80; ret
     0x000c:              0x0 gs
     0x0010:              0x0 fs
     0x0014:              0x0 es
@@ -282,7 +282,7 @@ That's all there is to it.
     0x0038:              0xb eax = SYS_execve
     0x003c:              0x0 trapno
     0x0040:              0x0 err
-    0x0044:       0x1000000b int 0x80
+    0x0044:       0x1000000b int 0x80; ret
     0x0048:             0x23 cs
     0x004c:              0x0 eflags
     0x0050:              0x0 esp_at_signal
@@ -452,7 +452,7 @@ class ROP(object):
     0x0020:              0x3 arg0
     0x0024:       0x10000007 pop eax; ret
     0x0028:             0x77 [arg0] eax = SYS_sigreturn
-    0x002c:       0x10000000 int 0x80
+    0x002c:       0x10000000 int 0x80; ret
     0x0030:              0x0 gs
     0x0034:              0x0 fs
     0x0038:              0x0 es
@@ -467,7 +467,7 @@ class ROP(object):
     0x005c:              0xb eax = SYS_execve
     0x0060:              0x0 trapno
     0x0064:              0x0 err
-    0x0068:       0x10000000 int 0x80
+    0x0068:       0x10000000 int 0x80; ret
     0x006c:             0x23 cs
     0x0070:              0x0 eflags
     0x0074:              0x0 esp_at_signal
@@ -490,7 +490,7 @@ class ROP(object):
     0x8048020:              0x3 arg0
     0x8048024:       0x10000007 pop eax; ret
     0x8048028:             0x77 [arg0] eax = SYS_sigreturn
-    0x804802c:       0x10000000 int 0x80
+    0x804802c:       0x10000000 int 0x80; ret
     0x8048030:              0x0 gs
     0x8048034:              0x0 fs
     0x8048038:              0x0 es
@@ -505,7 +505,7 @@ class ROP(object):
     0x804805c:              0xb eax = SYS_execve
     0x8048060:              0x0 trapno
     0x8048064:              0x0 err
-    0x8048068:       0x10000000 int 0x80
+    0x8048068:       0x10000000 int 0x80; ret
     0x804806c:             0x23 cs
     0x8048070:              0x0 eflags
     0x8048074:              0x0 esp_at_signal
@@ -1196,7 +1196,7 @@ class ROP(object):
             try:
                 sys.stdout = Wrapper(sys.stdout)
                 import ropgadget
-                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop']
+                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop', '--multibr']
                 args = ropgadget.args.Args().getArgs()
                 core = ropgadget.core.Core(args)
                 core.do_binary(elf.path)
