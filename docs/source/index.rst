@@ -44,7 +44,6 @@ Each of the ``pwntools`` modules is documented here.
 
    adb
    args
-   ascii_shellcode
    asm
    atexception
    atexit
