@@ -35,7 +35,10 @@ class AsciiShellcodeEncoder(Encoder):
             size of the NOP sled by adding/removing b'P'-s to/from the end of
             the packed shellcode)
         """
-        super().__init__()
+        if six.PY2:
+            super(AsciiShellcodeEncoder, self).__init__()
+        elif six.PY3:
+            super().__init__()
         self.slop = slop
 
     # def asciify_shellcode(shellcode, slop, vocab = None):
