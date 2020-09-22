@@ -1406,7 +1406,7 @@ class ROP(object):
              'syscall': 'syscall',
              'sysenter': 'sysenter'}
             for each in self.gadgets:
-                if self.gadgets[each]['insns'] == [mapping[attr]]:
+                if self.gadgets[each]['insns'][0] == mapping[attr]:
                     return gadget(each, self.gadgets[each])
             return None
 
