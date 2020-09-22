@@ -1360,6 +1360,10 @@ class ROP(object):
         True
         >>> rop.ret is not None
         True
+        >>> with context.local(arch='amd64'):
+        ...     r = ROP(ELF.from_assembly('syscall; ret'))
+        >>> r.syscall is not None
+        True
         """
         gadget = collections.namedtuple('gadget', ['address', 'details'])
         bad_attrs = [
