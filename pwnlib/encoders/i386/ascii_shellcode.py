@@ -91,7 +91,7 @@ class AsciiShellcodeEncoder(Encoder):
         if context.arch != 'i386' or context.bits != 32:
             raise RuntimeError('Only 32-bit i386 is currently supported')
 
-        int_size = context.bits // 8
+        int_size = context.bytes
 
         # Prepend with NOPs for the NOP sled
         shellcode = b'\x90'*int_size + raw_bytes
@@ -126,7 +126,7 @@ class AsciiShellcodeEncoder(Encoder):
         # Use eax for subtractions because sub esp, X doesn't assemble to ascii
         result = b'TX'  # push esp; pop eax
         # Set target to the `size` arg
-        target = struct.pack('=I', size)
+        target = pack(size)
         # All we are doing here is adding (subtracting) `size` 
         # to esp (to allocate space on the stack), so we don't care
         # about esp's actual value. That's why the `last` parameter 
@@ -136,12 +136,12 @@ class AsciiShellcodeEncoder(Encoder):
             if six.PY2:
                 subtraction = str(subtraction)
             # sub eax, subtraction
-            result += struct.pack('=c{}s'.format(int_size), b'-', subtraction)
+            result += b'-' + subtraction
         result += b'P\\'  # push eax, pop esp
         # Zero out eax for the unpacking part
         pos, neg = self._find_negatives(vocab)
         # and eax, pos; and eax, neg ; (0b00010101 & 0b00101010 = 0b0)
-        result += struct.pack('=cIcI', b'%', pos, b'%', neg)
+        result += flat((b'%', pos, b'%', neg))
         return result
 
 
@@ -170,11 +170,11 @@ class AsciiShellcodeEncoder(Encoder):
             >>> a & b
             0
         """
-        int_size = context.bits // 8
-        for products in product(*[vocab for _ in range(2)]):
+        int_size = context.bytes
+        for products in product(vocab, vocab):
             if six.PY3:
                 if products[0] & products[1] == 0:
-                    return tuple(int.from_bytes(x.to_bytes(1, 'little')*int_size, 'little') for x in products)
+                    return tuple(unpack(p8(x)*int_size) for x in bytearray(products))
             elif six.PY2:
                 if six.byte2int(products[0]) & six.byte2int(products[1]) == 0:
                     return tuple(struct.unpack('=I', x*int_size)[0] for x in products)
@@ -204,7 +204,7 @@ class AsciiShellcodeEncoder(Encoder):
             >>> encoders.i386.ascii_shellcode.encode._get_subtractions(sc, vocab)
             b'-(!!!-~NNNP-!=;:-f~~~-~~~~P-!!!!-edee-~~~~P-!!!!-eddd-~~~~P-!!!!-egdd-~~~~P-!!!!-eadd-~~~~P-!!!!-eddd-~~~~P'
         """
-        int_size = context.bits // 8
+        int_size = context.bytes
         result = bytes()
         last = b'\x00'*int_size
         # Group the shellcode into bytes of stack cell size, pad with NOPs
@@ -224,7 +224,7 @@ class AsciiShellcodeEncoder(Encoder):
                 if six.PY2:
                     subtraction = str(subtraction)
                 # sub eax, `subtraction`
-                result += struct.pack('=c{}s'.format(int_size), b'-', subtraction)
+                result += b'-' + subtraction
             last = x
             result += b'P'  # push eax
         return result
@@ -260,8 +260,8 @@ class AsciiShellcodeEncoder(Encoder):
             >>> print(encoders.i386.ascii_shellcode.encode._calc_subtractions(b'\x11\x12\x13\x14', b'\x15\x16\x17\x18', vocab))
             [bytearray(b'~}}}'), bytearray(b'~~~~')]
         """
-        int_size = context.bits // 8
-        subtractions = [bytearray(b'\x00'*int_size)]
+        int_size = context.bytes
+        subtractions = [bytearray(int_size)]
         if six.PY2:
             last = map(ord, last)
             target = map(ord, target)
@@ -278,7 +278,7 @@ class AsciiShellcodeEncoder(Encoder):
                     if six.PY2:
                         products = map(lambda x: isinstance(x, str) and ord(x) or x, products)
                     # Sum up all the products, carry from last byte and the target
-                    attempt = sum(chain(
+                    attempt = target[byte] + carry + sum(products)
                         (target[byte], carry), products
                     ))
                     # If the attempt equals last, we've found the combination
@@ -292,7 +292,7 @@ class AsciiShellcodeEncoder(Encoder):
             if success_count == int_size:
                 return subtractions
             else:
-                subtractions.append(bytearray(b'\x00'*int_size))
+                subtractions.append(bytearray(int_size))
         else:
             raise ArithmeticError(
                 str.format('Could not find the correct subtraction sequence to get the the desired target ({}) from ({})', target[byte], last[byte]))
