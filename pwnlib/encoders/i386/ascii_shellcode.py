@@ -1,31 +1,34 @@
-""" Module to convert shellcode to shellcode that contains only ascii characters
-"""
+""" Encoder to convert shellcode to shellcode that contains only ascii
+characters """
 # https://github.com/Gallopsled/pwntools/pull/1667
 
 from __future__ import absolute_import
 
 import struct
-from itertools import chain
 from itertools import product
+
 import six
 
-from pwnlib.util.iters import group
 from pwnlib.context import LocalContext
 from pwnlib.context import context
-from pwnlib.encoders.encoder import Encoder, all_chars
+from pwnlib.encoders.encoder import Encoder
+from pwnlib.encoders.encoder import all_chars
+from pwnlib.util.iters import group
+# pylint: disable=unused-wildcard-import
+from pwnlib.util.packing import *  # noqa: F403
 
 
 class AsciiShellcodeEncoder(Encoder):
     """ Ascii encoder based on:
     http://julianor.tripod.com/bc/bypass-msb.txt
-    
+
     A more visual explanation:
     https://github.com/VincentDary/PolyAsciiShellGen/blob/master/README.md#mechanism
 
     See the docstring of `__init__` and `__call__`
     """
 
-    def __init__(self, slop = 20):
+    def __init__(self, slop=20):
         """ Init
 
         Args:
@@ -84,7 +87,9 @@ class AsciiShellcodeEncoder(Encoder):
                 avoid = set(avoid)
             if avoid.intersection(required_chars):
                 raise RuntimeError(
-                    "These characters ({}) are required because they assemble into instructions used to unpack the shellcode".format(str(required_chars, 'ascii')))
+                    '''These characters ({}) are required because they assemble
+                    into instructions used to unpack the shellcode'''.format(
+                        str(required_chars, 'ascii')))
             allowed.difference_update(avoid)
             vocab = bytes(allowed)
 
@@ -99,7 +104,6 @@ class AsciiShellcodeEncoder(Encoder):
         allocator = self._get_allocator(len(subtractions) + self.slop, vocab)
         nop_sled = b'P' * self.slop  # push eax
         return allocator + subtractions + nop_sled
-
 
     @LocalContext
     def _get_allocator(self, size, vocab):
@@ -121,18 +125,18 @@ class AsciiShellcodeEncoder(Encoder):
             >>> encoders.i386.ascii_shellcode.encode._get_allocator(300, vocab)
             b'TX-!!!!-!_``-t~~~P\\%!!!!%@@@@'
         """
-        size += 0x1e # add typical allocator size
+        size += 0x1e  # add typical allocator size
         int_size = context.bits // 8
         # Use eax for subtractions because sub esp, X doesn't assemble to ascii
         result = b'TX'  # push esp; pop eax
         # Set target to the `size` arg
         target = pack(size)
-        # All we are doing here is adding (subtracting) `size` 
+        # All we are doing here is adding (subtracting) `size`
         # to esp (to allocate space on the stack), so we don't care
-        # about esp's actual value. That's why the `last` parameter 
+        # about esp's actual value. That's why the `last` parameter
         # for `calc_subtractions` can just be zero
         for subtraction in self._calc_subtractions(
-            b'\x00'*int_size, target, vocab):
+                b'\x00'*int_size, target, vocab):
             if six.PY2:
                 subtraction = str(subtraction)
             # sub eax, subtraction
@@ -144,10 +148,10 @@ class AsciiShellcodeEncoder(Encoder):
         result += flat((b'%', pos, b'%', neg))
         return result
 
-
     @LocalContext
     def _find_negatives(self, vocab):
-        r""" Find two bitwise negatives in the vocab so that when they are and-ed the result is 0.
+        r""" Find two bitwise negatives in the vocab so that when they are
+        and-ed the result is 0.
 
         int_size is taken from the context (context.bits / 8)
 
@@ -159,7 +163,7 @@ class AsciiShellcodeEncoder(Encoder):
 
         Raises:
             ArithmeticError: The allowed character set does not contain
-            two characters that when they are bitwise-anded with eachother
+            two characters that when they are bitwise-and-ed with eachother
             they result is 0
 
         Examples:
@@ -174,14 +178,15 @@ class AsciiShellcodeEncoder(Encoder):
         for products in product(vocab, vocab):
             if six.PY3:
                 if products[0] & products[1] == 0:
-                    return tuple(unpack(p8(x)*int_size) for x in bytearray(products))
+                    return tuple(
+                        unpack(p8(x)*int_size) for x in bytearray(products))
             elif six.PY2:
                 if six.byte2int(products[0]) & six.byte2int(products[1]) == 0:
-                    return tuple(struct.unpack('=I', x*int_size)[0] for x in products)
+                    return tuple(
+                        struct.unpack('=I', x*int_size)[0] for x in products)
         else:
             raise ArithmeticError(
                 'Could not find two bitwise negatives in the provided vocab')
-
 
     @LocalContext
     def _get_subtractions(self, shellcode, vocab):
@@ -229,9 +234,8 @@ class AsciiShellcodeEncoder(Encoder):
             result += b'P'  # push eax
         return result
 
-
     @LocalContext
-    def _calc_subtractions(self, last, target, vocab, max_subs = 4):
+    def _calc_subtractions(self, last, target, vocab, max_subs=4):
         r""" Given `target` and `last`, return a list of integers that when
          subtracted from `last` will equal `target` while only constructing
          integers from bytes in `vocab`
@@ -265,7 +269,7 @@ class AsciiShellcodeEncoder(Encoder):
         if six.PY2:
             last = map(ord, last)
             target = map(ord, target)
-        for subtraction in range(max_subs):
+        for sub in range(max_subs):
             carry = success_count = 0
             for byte in range(int_size):
                 # Try all combinations of all the characters in vocab of
@@ -273,19 +277,19 @@ class AsciiShellcodeEncoder(Encoder):
                 # is 4 and we're on the second subtraction attempt, products will
                 # equal [\, ", #, %, ...], [\, ", #, %, ...], 0, 0
                 for products in product(
-                    *[x <= subtraction and vocab or (0,) for x in range(max_subs)]
+                    *[x <= sub and vocab or (0,) for x in range(max_subs)]
                 ):
                     if six.PY2:
-                        products = map(lambda x: isinstance(x, str) and ord(x) or x, products)
-                    # Sum up all the products, carry from last byte and the target
+                        products = map(lambda x: isinstance(
+                            x, str) and ord(x) or x, products)
+                    # Sum up all the products, carry from last byte and
+                    # the target
                     attempt = target[byte] + carry + sum(products)
-                        (target[byte], carry), products
-                    ))
                     # If the attempt equals last, we've found the combination
                     if last[byte] == attempt & 0xff:
                         carry = (attempt & 0xff00) >> 8
                         # Update the result with the current `products`
-                        for p, i in zip(products, range(subtraction+1)):
+                        for p, i in zip(products, range(sub+1)):
                             subtractions[i][byte] = p
                         success_count += 1
                         break
@@ -295,6 +299,10 @@ class AsciiShellcodeEncoder(Encoder):
                 subtractions.append(bytearray(int_size))
         else:
             raise ArithmeticError(
-                str.format('Could not find the correct subtraction sequence to get the the desired target ({}) from ({})', target[byte], last[byte]))
+                str.format(
+                    '''Could not find the correct subtraction sequence
+                to get the the desired target ({}) from ({})''',
+                    target[byte], last[byte]))
+
 
 encode = AsciiShellcodeEncoder()
