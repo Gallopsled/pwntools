@@ -1109,7 +1109,7 @@ class ROP(object):
         #
 
         pop   = re.compile(r'^pop (.{3})')
-        add   = re.compile(r'^add [er]sp, (\S+)$')
+        add   = re.compile(r'^add [er]sp, ((?:0[xX])?[0-9a-fA-F]+)$')
         ret   = re.compile(r'^ret$')
         leave = re.compile(r'^leave$')
         int80 = re.compile(r'int +0x80')
