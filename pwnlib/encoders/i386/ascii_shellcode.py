@@ -199,8 +199,8 @@ class AsciiShellcodeEncoder(Encoder):
         Examples:
 
             >>> context.update(arch='i386', os='linux')
-            >>> sc = b'ABCDEFGHIGKLMNOPQRSTUVXYZ'
-            >>> vocab = b'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~'
+            >>> sc = bytearray(b'ABCDEFGHIGKLMNOPQRSTUVXYZ')
+            >>> vocab = bytearray(b'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~')
             >>> encoders.i386.ascii_shellcode.encode._get_subtractions(sc, vocab)
             bytearray(b'-(!!!-~NNNP-!=;:-f~~~-~~~~P-!!!!-edee-~~~~P-!!!!-eddd-~~~~P-!!!!-egdd-~~~~P-!!!!-eadd-~~~~P-!!!!-eddd-~~~~P')
         """
@@ -246,9 +246,9 @@ class AsciiShellcodeEncoder(Encoder):
 
             >>> context.update(arch='i386', os='linux')
             >>> vocab = bytearray(b'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~')
-            >>> print(encoders.i386.ascii_shellcode.encode._calc_subtractions(b'\x10'*4, b'\x11'*4, vocab))
+            >>> print(encoders.i386.ascii_shellcode.encode._calc_subtractions(bytearray(b'\x10'*4), bytearray(b'\x11'*4), vocab))
             [bytearray(b'!!!!'), bytearray(b'`___'), bytearray(b'~~~~')]
-            >>> print(encoders.i386.ascii_shellcode.encode._calc_subtractions(b'\x11\x12\x13\x14', b'\x15\x16\x17\x18', vocab))
+            >>> print(encoders.i386.ascii_shellcode.encode._calc_subtractions(bytearray(b'\x11\x12\x13\x14'), bytearray(b'\x15\x16\x17\x18'), vocab))
             [bytearray(b'~}}}'), bytearray(b'~~~~')]
         """
         int_size = context.bytes
