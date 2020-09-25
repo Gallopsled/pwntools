@@ -4,7 +4,6 @@ characters """
 
 from __future__ import absolute_import
 
-import struct
 from itertools import product
 
 import six
@@ -14,8 +13,7 @@ from pwnlib.context import context
 from pwnlib.encoders.encoder import Encoder
 from pwnlib.encoders.encoder import all_chars
 from pwnlib.util.iters import group
-# pylint: disable=unused-wildcard-import
-from pwnlib.util.packing import *  # noqa: F403
+from pwnlib.util.packing import *
 
 
 class AsciiShellcodeEncoder(Encoder):
