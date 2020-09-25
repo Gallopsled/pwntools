@@ -61,7 +61,7 @@ class AsciiShellcodeEncoder(Encoder):
             RuntimeError: Not supported architecture
             ArithmeticError: The allowed character set does not contain
             two characters that when they are bitwise-anded with eachother
-            they result is 0
+            their result is 0
 
         Returns:
             bytes: The packed shellcode
@@ -79,19 +79,18 @@ class AsciiShellcodeEncoder(Encoder):
             b'Hello world'
         """
         if not avoid:
-            vocab = b"!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+            vocab = bytearray(
+                b"!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~")
         else:
-            required_chars = set(b'\\-%TXP')
-            allowed = set(map(ord, all_chars))
-            if not isinstance(avoid, set):
-                avoid = set(avoid)
+            required_chars = set('\\-%TXP')
+            allowed = set(all_chars)
             if avoid.intersection(required_chars):
                 raise RuntimeError(
                     '''These characters ({}) are required because they assemble
                     into instructions used to unpack the shellcode'''.format(
                         str(required_chars, 'ascii')))
             allowed.difference_update(avoid)
-            vocab = bytes(allowed)
+            vocab = bytearray(map(ord, allowed))
 
         if context.arch != 'i386' or context.bits != 32:
             raise RuntimeError('Only 32-bit i386 is currently supported')
@@ -99,11 +98,11 @@ class AsciiShellcodeEncoder(Encoder):
         int_size = context.bytes
 
         # Prepend with NOPs for the NOP sled
-        shellcode = b'\x90'*int_size + raw_bytes
+        shellcode = bytearray(b'\x90'*int_size + raw_bytes)
         subtractions = self._get_subtractions(shellcode, vocab)
         allocator = self._get_allocator(len(subtractions) + self.slop, vocab)
         nop_sled = b'P' * self.slop  # push eax
-        return allocator + subtractions + nop_sled
+        return bytes(allocator + subtractions + nop_sled)
 
     @LocalContext
     def _get_allocator(self, size, vocab):
@@ -113,32 +112,30 @@ class AsciiShellcodeEncoder(Encoder):
 
         Args:
             size (int): The allocation size
-            vocab (bytes): Allowed characters
+            vocab (bytearray): Allowed characters
 
         Returns:
-            bytes: The allocator shellcode
+            bytearray: The allocator shellcode
 
         Examples:
 
             >>> context.update(arch='i386', os='linux')
-            >>> vocab = b'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~'
+            >>> vocab = bytearray(b'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~')
             >>> encoders.i386.ascii_shellcode.encode._get_allocator(300, vocab)
-            b'TX-!!!!-!_``-t~~~P\\%!!!!%@@@@'
+            bytearray(b'TX-!!!!-!_``-t~~~P\\%!!!!%@@@@')
         """
         size += 0x1e  # add typical allocator size
         int_size = context.bits // 8
         # Use eax for subtractions because sub esp, X doesn't assemble to ascii
-        result = b'TX'  # push esp; pop eax
+        result = bytearray(b'TX')  # push esp; pop eax
         # Set target to the `size` arg
-        target = pack(size)
+        target = bytearray(pack(size))
         # All we are doing here is adding (subtracting) `size`
         # to esp (to allocate space on the stack), so we don't care
         # about esp's actual value. That's why the `last` parameter
         # for `calc_subtractions` can just be zero
         for subtraction in self._calc_subtractions(
-                b'\x00'*int_size, target, vocab):
-            if six.PY2:
-                subtraction = str(subtraction)
+                bytearray(int_size), target, vocab):
             # sub eax, subtraction
             result += b'-' + subtraction
         result += b'P\\'  # push eax, pop esp
@@ -156,7 +153,7 @@ class AsciiShellcodeEncoder(Encoder):
         int_size is taken from the context (context.bits / 8)
 
         Args:
-            vocab (bytes): Allowed characters
+            vocab (bytearray): Allowed characters
 
         Returns:
             Tuple[int, int]: value A, value B
@@ -169,21 +166,19 @@ class AsciiShellcodeEncoder(Encoder):
         Examples:
 
             >>> context.update(arch='i386', os='linux')
-            >>> vocab = b'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~'
+            >>> vocab = bytearray(b'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~')
             >>> a, b = encoders.i386.ascii_shellcode.encode._find_negatives(vocab)
             >>> a & b
             0
         """
         int_size = context.bytes
         for products in product(vocab, vocab):
-            if six.PY3:
-                if products[0] & products[1] == 0:
-                    return tuple(
-                        unpack(p8(x)*int_size) for x in bytearray(products))
-            elif six.PY2:
-                if six.byte2int(products[0]) & six.byte2int(products[1]) == 0:
-                    return tuple(
-                        struct.unpack('=I', x*int_size)[0] for x in products)
+            if products[0] & products[1] == 0:
+                return tuple(
+                    # pylint: disable=undefined-variable
+                    unpack(p8(x)*int_size)  # noqa: F405
+                    for x in bytearray(products)
+                )
         else:
             raise ArithmeticError(
                 'Could not find two bitwise negatives in the provided vocab')
@@ -195,11 +190,11 @@ class AsciiShellcodeEncoder(Encoder):
         int_size is taken from the context (context.bits / 8)
 
         Args:
-            shellcode (bytes): The shellcode to pack
-            vocab (bytes): Allowed characters
+            shellcode (bytearray): The shellcode to pack
+            vocab (bytearray): Allowed characters
 
         Returns:
-            bytes: packed shellcode
+            bytearray: packed shellcode
 
         Examples:
 
@@ -207,28 +202,20 @@ class AsciiShellcodeEncoder(Encoder):
             >>> sc = b'ABCDEFGHIGKLMNOPQRSTUVXYZ'
             >>> vocab = b'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~'
             >>> encoders.i386.ascii_shellcode.encode._get_subtractions(sc, vocab)
-            b'-(!!!-~NNNP-!=;:-f~~~-~~~~P-!!!!-edee-~~~~P-!!!!-eddd-~~~~P-!!!!-egdd-~~~~P-!!!!-eadd-~~~~P-!!!!-eddd-~~~~P'
+            bytearray(b'-(!!!-~NNNP-!=;:-f~~~-~~~~P-!!!!-edee-~~~~P-!!!!-eddd-~~~~P-!!!!-egdd-~~~~P-!!!!-eadd-~~~~P-!!!!-eddd-~~~~P')
         """
         int_size = context.bytes
-        result = bytes()
-        last = b'\x00'*int_size
+        result = bytearray()
+        last = bytearray(int_size)
         # Group the shellcode into bytes of stack cell size, pad with NOPs
         # if the shellcode does not divide into stack cell size and reverse.
         # The shellcode will be reversed again back to it's original order once
         # it's pushed onto the stack
-        if six.PY3:
-            sc = tuple(group(int_size, shellcode, 0x90))[::-1]
-        elif six.PY2:
-            sc = []
-            for byte in group(int_size, shellcode, b'\x90'):
-                sc.append(''.join(byte))
-            sc = sc[::-1]
+        # if six.PY3:
+        sc = tuple(group(int_size, shellcode, 0x90))[::-1]
         # Pack the shellcode to a sub/push sequence
-        for x in map(bytes, sc):
+        for x in sc:
             for subtraction in self._calc_subtractions(last, x, vocab):
-                if six.PY2:
-                    subtraction = str(subtraction)
-                # sub eax, `subtraction`
                 result += b'-' + subtraction
             last = x
             result += b'P'  # push eax
@@ -243,9 +230,9 @@ class AsciiShellcodeEncoder(Encoder):
         int_size is take from the context (context.bits / 8)
 
         Args:
-            last (bytes): Current value of eax
-            target (bytes): Desired value of eax
-            vocab (bytes): Allowed characters
+            last (bytearray): Current value of eax
+            target (bytearray): Desired value of eax
+            vocab (bytearray): Allowed characters
             max_subs (int): Maximum subtraction attempts
 
         Raises:
@@ -258,7 +245,7 @@ class AsciiShellcodeEncoder(Encoder):
         Examples:
 
             >>> context.update(arch='i386', os='linux')
-            >>> vocab = b'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~'
+            >>> vocab = bytearray(b'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~')
             >>> print(encoders.i386.ascii_shellcode.encode._calc_subtractions(b'\x10'*4, b'\x11'*4, vocab))
             [bytearray(b'!!!!'), bytearray(b'`___'), bytearray(b'~~~~')]
             >>> print(encoders.i386.ascii_shellcode.encode._calc_subtractions(b'\x11\x12\x13\x14', b'\x15\x16\x17\x18', vocab))
@@ -266,22 +253,17 @@ class AsciiShellcodeEncoder(Encoder):
         """
         int_size = context.bytes
         subtractions = [bytearray(int_size)]
-        if six.PY2:
-            last = map(ord, last)
-            target = map(ord, target)
         for sub in range(max_subs):
             carry = success_count = 0
             for byte in range(int_size):
                 # Try all combinations of all the characters in vocab of
-                # `subtraction` characters in each combination. So if `max_subs`
-                # is 4 and we're on the second subtraction attempt, products will
-                # equal [\, ", #, %, ...], [\, ", #, %, ...], 0, 0
+                # `subtraction` characters in each combination. So if
+                # `max_subs` is 4 and we're on the second subtraction attempt,
+                # products will equal
+                # [\, ", #, %, ...], [\, ", #, %, ...], 0, 0
                 for products in product(
                     *[x <= sub and vocab or (0,) for x in range(max_subs)]
                 ):
-                    if six.PY2:
-                        products = map(lambda x: isinstance(
-                            x, str) and ord(x) or x, products)
                     # Sum up all the products, carry from last byte and
                     # the target
                     attempt = target[byte] + carry + sum(products)
