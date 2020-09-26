@@ -1101,7 +1101,7 @@ class ROP(object):
         #
         # - leave
         # - pop reg
-        # - add $sp, value
+        # - add $sp, <hexadecimal value>
         # - ret
         #
         # Currently, ROPgadget does not detect multi-byte "C2" ret.
@@ -1125,6 +1125,8 @@ class ROP(object):
         # False
         # >>> valid('add esp, 0x24')
         # True
+        # >>> valid('add esp, esi')
+        # False
         #
         valid = lambda insn: any(map(lambda pattern: pattern.match(insn), [pop,add,ret,leave,int80,syscall,sysenter]))
 
