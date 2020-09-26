@@ -65,14 +65,27 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1644][1644] Enable and support SNI for SSL-wrapped tubes
 - [#1651][1651] Make `pwn shellcraft` faster
 - [#1652][1652] Add `process.readmem` and `process.writemem`
+- [#1654][1654] Docker images (`pwntools/pwntools:stable` etc) now use Python3 by default, and includes assemblers for a few common architectures
+- [#1667][1667] Add i386 encoder `ascii_shellcode`
+- Fix syscall instruction lists for SROP on `i386` and `amd64`
+- Fix migration to another ROP
+- [#1673][1673] Add `base=` argument to `ROP.chain()` and `ROP.dump()`
+- [#1675][1675] Gdbserver now correctly accepts multiple libraries in `LD_PRELOAD` and `LD_LIBRARY_PATH`
+- [#1678][1678] ROPGadget multibr
 
 [1602]: https://github.com/Gallopsled/pwntools/pull/1602
 [1606]: https://github.com/Gallopsled/pwntools/pull/1606
 [1616]: https://github.com/Gallopsled/pwntools/pull/1616
 [1632]: https://github.com/Gallopsled/pwntools/pull/1632
 [1633]: https://github.com/Gallopsled/pwntools/pull/1633
+[1644]: https://github.com/Gallopsled/pwntools/pull/1644
 [1651]: https://github.com/Gallopsled/pwntools/pull/1651
 [1652]: https://github.com/Gallopsled/pwntools/pull/1652
+[1654]: https://github.com/Gallopsled/pwntools/pull/1654
+[1667]: https://github.com/Gallopsled/pwntools/pull/1667
+[1673]: https://github.com/Gallopsled/pwntools/pull/1673
+[1675]: https://github.com/Gallopsled/pwntools/pull/1675
+[1678]: https://github.com/Gallopsled/pwntools/pull/1678
 
 ## 4.3.0 (`beta`)
 
