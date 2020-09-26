@@ -1015,7 +1015,7 @@ class process(tube):
 
             >>> elf = ELF.from_assembly(assembly, vma=address)
             >>> io = elf.process()
-            >>> io.writemem(address, data)
+            >>> _ = io.writemem(address, data)
             >>> io.send('X')
             >>> io.recvall()
             b'aaaabaaacaaadaaaeaaafaaagaaahaaa'
