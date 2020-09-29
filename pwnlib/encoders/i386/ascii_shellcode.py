@@ -26,7 +26,7 @@ class AsciiShellcodeEncoder(Encoder):
     See the docstring of `__init__` and `__call__`
     """
 
-    def __init__(self, slop=20):
+    def __init__(self, slop=20, max_subs=4):
         """ Init
 
         Args:
@@ -41,6 +41,7 @@ class AsciiShellcodeEncoder(Encoder):
         elif six.PY3:
             super().__init__()
         self.slop = slop
+        self.max_subs = max_subs
 
     # def asciify_shellcode(shellcode, slop, vocab = None):
     @LocalContext
@@ -221,7 +222,7 @@ class AsciiShellcodeEncoder(Encoder):
         return result
 
     @LocalContext
-    def _calc_subtractions(self, last, target, vocab, max_subs=4):
+    def _calc_subtractions(self, last, target, vocab):
         r""" Given `target` and `last`, return a list of integers that when
          subtracted from `last` will equal `target` while only constructing
          integers from bytes in `vocab`
@@ -232,7 +233,6 @@ class AsciiShellcodeEncoder(Encoder):
             last (bytearray): Current value of eax
             target (bytearray): Desired value of eax
             vocab (bytearray): Allowed characters
-            max_subs (int): Maximum subtraction attempts
 
         Raises:
             ArithmeticError: If a sequence of subtractions could not be found
@@ -252,7 +252,7 @@ class AsciiShellcodeEncoder(Encoder):
         """
         int_size = context.bytes
         subtractions = [bytearray(int_size)]
-        for sub in range(max_subs):
+        for sub in range(self.max_subs):
             carry = success_count = 0
             for byte in range(int_size):
                 # Try all combinations of all the characters in vocab of
@@ -261,7 +261,7 @@ class AsciiShellcodeEncoder(Encoder):
                 # products will equal
                 # [\, ", #, %, ...], [\, ", #, %, ...], 0, 0
                 for products in product(
-                    *[x <= sub and vocab or (0,) for x in range(max_subs)]
+                    *[x <= sub and vocab or (0,) for x in range(self.max_subs)]
                 ):
                     # Sum up all the products, carry from last byte and
                     # the target
