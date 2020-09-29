@@ -17,24 +17,31 @@ from pwnlib.util.packing import *
 
 
 class AsciiShellcodeEncoder(Encoder):
-    """ Ascii encoder based on:
+    """ Pack shellcode into only ascii characters that unpacks itself and
+    executes (on the stack)
+
+    The original paper this encoder is based on:
     http://julianor.tripod.com/bc/bypass-msb.txt
 
-    A more visual explanation:
+    A more visual explanation as well as an implementation in C:
     https://github.com/VincentDary/PolyAsciiShellGen/blob/master/README.md#mechanism
-
-    See the docstring of `__init__` and `__call__`
     """
 
     def __init__(self, slop=20, max_subs=4):
         """ Init
 
         Args:
-            slop (int): The amount esp will be increased by in the allocation
-            phase (In addition to the length of the packed shellcode) as well
-            as defines the size of the NOP sled (you can increase/decrease the
-            size of the NOP sled by adding/removing b'P'-s to/from the end of
-            the packed shellcode)
+            slop (int, optional): The amount esp will be increased by in the
+                allocation phase (In addition to the length of the packed
+                shellcode) as well as defines the size of the NOP sled (you can
+                increase/ decrease the size of the NOP sled by adding/removing
+                b'P'-s to/ from the end of the packed shellcode).
+                Defaults to 20.
+            max_subs (int, optional): The maximum amount of subtraction is
+                allowed to be taken. This may be increased if you have a
+                relatively  restrictive ``avoid`` set. The more subtractions
+                there are, the bigger the packed shellcode will be.
+                Defaults to 4.
         """
         if six.PY2:
             super(AsciiShellcodeEncoder, self).__init__()
@@ -43,7 +50,6 @@ class AsciiShellcodeEncoder(Encoder):
         self.slop = slop
         self.max_subs = max_subs
 
-    # def asciify_shellcode(shellcode, slop, vocab = None):
     @LocalContext
     def __call__(self, raw_bytes, avoid=None, pcreg=None):
         r""" Pack shellcode into only ascii characters that unpacks itself and
@@ -52,15 +58,21 @@ class AsciiShellcodeEncoder(Encoder):
         Args:
             raw_bytes (bytes): The shellcode to be packed
             avoid (set, optional): Characters to avoid. Defaults to allow
-            printable ascii (0x21-0x7e).
+                printable ascii (0x21-0x7e).
             pcreg (NoneType, optional): Ignored
 
         Raises:
-            RuntimeError: A required character is not in ``vocab``
+            RuntimeError: A required character is in ``avoid`` (required
+                characters are characters which assemble into assembly
+                instructions and are used to unpack the shellcode onto the
+                stack, more details in the paper linked above ``\ - % T X P``).
             RuntimeError: Not supported architecture
             ArithmeticError: The allowed character set does not contain
-            two characters that when they are bitwise-anded with eachother
-            their result is 0
+                two characters that when they are bitwise-anded with eachother
+                their result is 0
+            ArithmeticError: Could not find a correct subtraction sequence
+                to get to the the desired target value with the given ``avoid``
+                arameter
 
         Returns:
             bytes: The packed shellcode
@@ -74,7 +86,7 @@ class AsciiShellcodeEncoder(Encoder):
             >>> avoid = {'\x00', '\x83', '\x04', '\x87', '\x08', '\x8b', '\x0c', '\x8f', '\x10', '\x93', '\x14', '\x97', '\x18', '\x9b', '\x1c', '\x9f', ' ', '\xa3', '\xa7', '\xab', '\xaf', '\xb3', '\xb7', '\xbb', '\xbf', '\xc3', '\xc7', '\xcb', '\xcf', '\xd3', '\xd7', '\xdb', '\xdf', '\xe3', '\xe7', '\xeb', '\xef', '\xf3', '\xf7', '\xfb', '\xff', '\x80', '\x03', '\x84', '\x07', '\x88', '\x0b', '\x8c', '\x0f', '\x90', '\x13', '\x94', '\x17', '\x98', '\x1b', '\x9c', '\x1f', '\xa0', '\xa4', '\xa8', '\xac', '\xb0', '\xb4', '\xb8', '\xbc', '\xc0', '\xc4', '\xc8', '\xcc', '\xd0', '\xd4', '\xd8', '\xdc', '\xe0', '\xe4', '\xe8', '\xec', '\xf0', '\xf4', '\xf8', '\xfc', '\x7f', '\x81', '\x02', '\x85', '\x06', '\x89', '\n', '\x8d', '\x0e', '\x91', '\x12', '\x95', '\x16', '\x99', '\x1a', '\x9d', '\x1e', '\xa1', '\xa5', '\xa9', '\xad', '\xb1', '\xb5', '\xb9', '\xbd', '\xc1', '\xc5', '\xc9', '\xcd', '\xd1', '\xd5', '\xd9', '\xdd', '\xe1', '\xe5', '\xe9', '\xed', '\xf1', '\xf5', '\xf9', '\xfd', '\x01', '\x82', '\x05', '\x86', '\t', '\x8a', '\r', '\x8e', '\x11', '\x92', '\x15', '\x96', '\x19', '\x9a', '\x1d', '\x9e', '\xa2', '\xa6', '\xaa', '\xae', '\xb2', '\xb6', '\xba', '\xbe', '\xc2', '\xc6', '\xca', '\xce', '\xd2', '\xd6', '\xda', '\xde', '\xe2', '\xe6', '\xea', '\xee', '\xf2', '\xf6', '\xfa', '\xfe'}
             >>> sc = shellcraft.echo("Hello world") + shellcraft.exit()
             >>> ascii = encoders.i386.ascii_shellcode.encode(asm(sc), avoid)
-            >>> ascii += asm('jmp esp')
+            >>> ascii += asm('jmp esp') # just for testing, the unpacker should also run on the stack
             >>> ELF.from_bytes(ascii).process().recvall()
             b'Hello world'
         """
@@ -108,7 +120,7 @@ class AsciiShellcodeEncoder(Encoder):
     def _get_allocator(self, size, vocab):
         r""" Allocate enough space on the stack for the shellcode
 
-        int_size is taken from the context (context.bits / 8)
+        int_size is taken from the context
 
         Args:
             size (int): The allocation size
@@ -150,7 +162,7 @@ class AsciiShellcodeEncoder(Encoder):
         r""" Find two bitwise negatives in the vocab so that when they are
         and-ed the result is 0.
 
-        int_size is taken from the context (context.bits / 8)
+        int_size is taken from the context
 
         Args:
             vocab (bytearray): Allowed characters
@@ -187,7 +199,7 @@ class AsciiShellcodeEncoder(Encoder):
     def _get_subtractions(self, shellcode, vocab):
         r""" Covert the sellcode to sub eax and posh eax instructions
 
-        int_size is taken from the context (context.bits / 8)
+        int_size is taken from the context
 
         Args:
             shellcode (bytearray): The shellcode to pack
@@ -211,12 +223,11 @@ class AsciiShellcodeEncoder(Encoder):
         # if the shellcode does not divide into stack cell size and reverse.
         # The shellcode will be reversed again back to it's original order once
         # it's pushed onto the stack
-        # if six.PY3:
         sc = tuple(group(int_size, shellcode, 0x90))[::-1]
         # Pack the shellcode to a sub/push sequence
         for x in sc:
             for subtraction in self._calc_subtractions(last, x, vocab):
-                result += b'-' + subtraction
+                result += b'-' + subtraction  # sub eax, ...
             last = x
             result += b'P'  # push eax
         return result
@@ -227,7 +238,7 @@ class AsciiShellcodeEncoder(Encoder):
          subtracted from `last` will equal `target` while only constructing
          integers from bytes in `vocab`
 
-        int_size is take from the context (context.bits / 8)
+        int_size is taken from the context
 
         Args:
             last (bytearray): Current value of eax
@@ -259,7 +270,7 @@ class AsciiShellcodeEncoder(Encoder):
                 # `subtraction` characters in each combination. So if
                 # `max_subs` is 4 and we're on the second subtraction attempt,
                 # products will equal
-                # [\, ", #, %, ...], [\, ", #, %, ...], 0, 0
+                # [\, ", #, %, ...], [\, ", #, %, ...], (0,), (0,)
                 for products in product(
                     *[x <= sub and vocab or (0,) for x in range(self.max_subs)]
                 ):

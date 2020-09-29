@@ -10,6 +10,8 @@
 
 .. automodule:: pwnlib.encoders.i386.ascii_shellcode
    :members:
+   :special-members:
+   :exclude-members: __init__
 
 .. automodule:: pwnlib.encoders.i386.xor
    :members:
