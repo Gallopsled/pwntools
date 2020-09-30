@@ -740,6 +740,7 @@ class ROP(object):
         """
         Generates padding to be inserted into the ROP stack.
 
+        >>> context.clear(arch='i386')
         >>> rop = ROP([])
         >>> val = rop.generatePadding(5,15)
         >>> cyclic_find(val[:4])
@@ -1098,6 +1099,7 @@ class ROP(object):
         Arguments:
             data(int/str): The raw value to put onto the rop chain.
 
+        >>> context.clear(arch='i386')
         >>> rop = ROP([])
         >>> rop.raw('AAAAAAAA')
         >>> rop.raw('BBBBBBBB')
@@ -1387,6 +1389,7 @@ class ROP(object):
         Also provides a shorthand for ``.call()``:
             ``rop.function(args)`` is equivalent to ``rop.call(function, args)``
 
+        >>> context.clear(arch='i386')
         >>> elf=ELF(which('bash'))
         >>> rop=ROP([elf])
         >>> rop.rdi     == rop.search(regs=['rdi'], order = 'regs')
