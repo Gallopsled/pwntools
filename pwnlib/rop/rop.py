@@ -661,6 +661,43 @@ class ROP(object):
 
         return stack
 
+    def __call__(self, *args, **kwargs):
+        """Set the given register(s)' by constructing a rop chain.
+
+        This is a thin wrapper around :meth:`setRegisters` which
+        actually executes the rop chain.
+
+        You can call this :class:`ROP` instance and provide keyword arguments,
+        or a dictionary.
+
+        Arguments:
+            regs(dict): Mapping of registers to values.
+                        Can instead provide ``kwargs``.
+
+        >>> context.clear(arch='amd64')
+        >>> assembly = 'pop rax; pop rdi; pop rsi; ret; pop rax; ret;'
+        >>> e = ELF.from_assembly(assembly)
+        >>> r = ROP(e)
+        >>> r(rax=0xdead, rdi=0xbeef, rsi=0xcafe)
+        >>> print(r.dump())
+        0x0000:       0x10000000
+        0x0008:           0xdead
+        0x0010:           0xbeef
+        0x0018:           0xcafe
+        >>> r = ROP(e)
+        >>> r({'rax': 0xdead, 'rdi': 0xbeef, 'rsi': 0xcafe})
+        >>> print(r.dump())
+        0x0000:       0x10000000
+        0x0008:           0xdead
+        0x0010:           0xbeef
+        0x0018:           0xcafe
+        """
+        if len(args) == 1 and isinstance(args[0], dict):
+            for value, _ in self.setRegisters(args[0]):
+                self.raw(value)
+        else:
+            self(kwargs)
+
     def resolve(self, resolvable):
         """Resolves a symbol to an address
 
