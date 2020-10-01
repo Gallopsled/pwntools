@@ -523,6 +523,14 @@ class ROP(object):
     >>> r.ret is None
     True
     """
+    BAD_ATTRS = [
+        'trait_names',          # ipython tab-complete
+        'download',             # frequent typo
+        'upload',               # frequent typo
+    ]
+    X86_SUFFIXES = ['ax', 'bx', 'cx', 'dx', 'bp', 'sp', 'di', 'si',
+                    'r8', 'r9', '10', '11', '12', '13', '14', '15']
+
     def __init__(self, elfs, base = None, badchars = b'', **kwargs):
         """
         Arguments:
@@ -661,6 +669,43 @@ class ROP(object):
 
         return stack
 
+    def __call__(self, *args, **kwargs):
+        """Set the given register(s)' by constructing a rop chain.
+
+        This is a thin wrapper around :meth:`setRegisters` which
+        actually executes the rop chain.
+
+        You can call this :class:`ROP` instance and provide keyword arguments,
+        or a dictionary.
+
+        Arguments:
+            regs(dict): Mapping of registers to values.
+                        Can instead provide ``kwargs``.
+
+        >>> context.clear(arch='amd64')
+        >>> assembly = 'pop rax; pop rdi; pop rsi; ret; pop rax; ret;'
+        >>> e = ELF.from_assembly(assembly)
+        >>> r = ROP(e)
+        >>> r(rax=0xdead, rdi=0xbeef, rsi=0xcafe)
+        >>> print(r.dump())
+        0x0000:       0x10000000
+        0x0008:           0xdead
+        0x0010:           0xbeef
+        0x0018:           0xcafe
+        >>> r = ROP(e)
+        >>> r({'rax': 0xdead, 'rdi': 0xbeef, 'rsi': 0xcafe})
+        >>> print(r.dump())
+        0x0000:       0x10000000
+        0x0008:           0xdead
+        0x0010:           0xbeef
+        0x0018:           0xcafe
+        """
+        if len(args) == 1 and isinstance(args[0], dict):
+            for value, _ in self.setRegisters(args[0]):
+                self.raw(value)
+        else:
+            self(kwargs)
+
     def resolve(self, resolvable):
         """Resolves a symbol to an address
 
@@ -703,6 +748,7 @@ class ROP(object):
         """
         Generates padding to be inserted into the ROP stack.
 
+        >>> context.clear(arch='i386')
         >>> rop = ROP([])
         >>> val = rop.generatePadding(5,15)
         >>> cyclic_find(val[:4])
@@ -1061,6 +1107,7 @@ class ROP(object):
         Arguments:
             data(int/str): The raw value to put onto the rop chain.
 
+        >>> context.clear(arch='i386')
         >>> rop = ROP([])
         >>> rop.raw('AAAAAAAA')
         >>> rop.raw('BBBBBBBB')
@@ -1350,6 +1397,7 @@ class ROP(object):
         Also provides a shorthand for ``.call()``:
             ``rop.function(args)`` is equivalent to ``rop.call(function, args)``
 
+        >>> context.clear(arch='i386')
         >>> elf=ELF(which('bash'))
         >>> rop=ROP([elf])
         >>> rop.rdi     == rop.search(regs=['rdi'], order = 'regs')
@@ -1366,14 +1414,9 @@ class ROP(object):
         True
         """
         gadget = collections.namedtuple('gadget', ['address', 'details'])
-        bad_attrs = [
-            'trait_names',          # ipython tab-complete
-            'download',             # frequent typo
-            'upload',               # frequent typo
-        ]
 
         if attr in self.__dict__ \
-        or attr in bad_attrs \
+        or attr in self.BAD_ATTRS \
         or attr.startswith('_'):
             raise AttributeError('ROP instance has no attribute %r' % attr)
 
@@ -1417,10 +1460,7 @@ class ROP(object):
         #
         # Check for a '_'-delimited list of registers
         #
-        x86_suffixes = ['ax', 'bx', 'cx', 'dx', 'bp', 'sp', 'di', 'si',
-                        'r8', 'r9', '10', '11', '12', '13', '14', '15']
-
-        if all(map(lambda x: x[-2:] in x86_suffixes, attr.split('_'))):
+        if all(map(lambda x: x[-2:] in self.X86_SUFFIXES, attr.split('_'))):
             return self.search(regs=attr.split('_'), order='regs')
 
         #
@@ -1430,3 +1470,42 @@ class ROP(object):
             return self.call(attr, args)
 
         return call
+
+    def __setattr__(self, attr, value):
+        """Helper for setting registers.
+
+        This convenience feature allows one to set the values of registers
+        with simple python assignment syntax.
+
+        Warning:
+            Only one register is set at a time (one per rop chain).
+            This may lead to some previously set to registers be overwritten!
+
+        Note:
+            If you would like to set multiple registers in as few rop chains
+            as possible, see :meth:`__call__`.
+
+        >>> context.clear(arch='amd64')
+        >>> assembly = 'pop rax; pop rdi; pop rsi; ret; pop rax; ret;'
+        >>> e = ELF.from_assembly(assembly)
+        >>> r = ROP(e)
+        >>> r.rax = 0xdead
+        >>> r.rdi = 0xbeef
+        >>> r.rsi = 0xcafe
+        >>> print(r.dump())
+        0x0000:       0x10000004 pop rax; ret
+        0x0008:           0xdead
+        0x0010:       0x10000001 pop rdi; pop rsi; ret
+        0x0018:           0xbeef
+        0x0020:      b'iaaajaaa' <pad rsi>
+        0x0028:       0x10000002 pop rsi; ret
+        0x0030:           0xcafe
+        """
+        if attr in self.BAD_ATTRS:
+            raise AttributeError('ROP instance has no attribute %r' % attr)
+
+        if attr[-2:] in self.X86_SUFFIXES:  # handle setting registers
+            self({attr: value})
+
+        # Otherwise, perform usual setting
+        self.__dict__[attr] = value
