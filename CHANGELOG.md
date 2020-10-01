@@ -71,6 +71,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1673][1673] Add `base=` argument to `ROP.chain()` and `ROP.dump()`
 - [#1675][1675] Gdbserver now correctly accepts multiple libraries in `LD_PRELOAD` and `LD_LIBRARY_PATH`
 - [#1678][1678] ROPGadget multibr
+- [#1688][1688] Add `__setattr__` and `__call__` interfaces to `ROP` for setting registers
 
 [1602]: https://github.com/Gallopsled/pwntools/pull/1602
 [1606]: https://github.com/Gallopsled/pwntools/pull/1606
@@ -84,6 +85,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1673]: https://github.com/Gallopsled/pwntools/pull/1673
 [1675]: https://github.com/Gallopsled/pwntools/pull/1675
 [1678]: https://github.com/Gallopsled/pwntools/pull/1678
+[1688]: https://github.com/Gallopsled/pwntools/pull/1688
 
 ## 4.3.0 (`beta`)
 
