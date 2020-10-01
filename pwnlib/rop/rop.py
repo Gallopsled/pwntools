@@ -1408,6 +1408,10 @@ class ROP(object):
         True
         >>> rop.ret is not None
         True
+        >>> with context.local(arch='amd64', bits='64'):
+        ...     r = ROP(ELF.from_assembly('syscall; ret'))
+        >>> r.syscall is not None
+        True
         """
         gadget = collections.namedtuple('gadget', ['address', 'details'])
 
@@ -1449,7 +1453,7 @@ class ROP(object):
              'syscall': 'syscall',
              'sysenter': 'sysenter'}
             for each in self.gadgets:
-                if self.gadgets[each]['insns'] == [mapping[attr]]:
+                if self.gadgets[each]['insns'][0] == mapping[attr]:
                     return gadget(each, self.gadgets[each])
             return None
 
