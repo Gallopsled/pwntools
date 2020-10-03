@@ -37,7 +37,7 @@ class AsciiShellcodeEncoder(Encoder):
                 increase/ decrease the size of the NOP sled by adding/removing
                 b'P'-s to/ from the end of the packed shellcode).
                 Defaults to 20.
-            max_subs (int, optional): The maximum amount of subtraction is
+            max_subs (int, optional): The maximum amount of subtractions
                 allowed to be taken. This may be increased if you have a
                 relatively  restrictive ``avoid`` set. The more subtractions
                 there are, the bigger the packed shellcode will be.
@@ -72,7 +72,7 @@ class AsciiShellcodeEncoder(Encoder):
                 their result is 0
             ArithmeticError: Could not find a correct subtraction sequence
                 to get to the the desired target value with the given ``avoid``
-                arameter
+                parameter
 
         Returns:
             bytes: The packed shellcode
@@ -137,7 +137,7 @@ class AsciiShellcodeEncoder(Encoder):
             bytearray(b'TX-!!!!-!_``-t~~~P\\%!!!!%@@@@')
         """
         size += 0x1e  # add typical allocator size
-        int_size = context.bits // 8
+        int_size = context.bytes
         # Use eax for subtractions because sub esp, X doesn't assemble to ascii
         result = bytearray(b'TX')  # push esp; pop eax
         # Set target to the `size` arg
@@ -172,8 +172,8 @@ class AsciiShellcodeEncoder(Encoder):
 
         Raises:
             ArithmeticError: The allowed character set does not contain
-            two characters that when they are bitwise-and-ed with eachother
-            they result is 0
+                two characters that when they are bitwise-and-ed with eachother
+                the result is 0
 
         Examples:
 
@@ -241,8 +241,8 @@ class AsciiShellcodeEncoder(Encoder):
         int_size is taken from the context
 
         Args:
-            last (bytearray): Current value of eax
-            target (bytearray): Desired value of eax
+            last (bytearray): Original value
+            target (bytearray): Desired value
             vocab (bytearray): Allowed characters
 
         Raises:
@@ -281,7 +281,7 @@ class AsciiShellcodeEncoder(Encoder):
                     if last[byte] == attempt & 0xff:
                         carry = (attempt & 0xff00) >> 8
                         # Update the result with the current `products`
-                        for p, i in zip(products, range(sub+1)):
+                        for p, i in zip(products, range(sub + 1)):
                             subtractions[i][byte] = p
                         success_count += 1
                         break
