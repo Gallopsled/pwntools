@@ -73,6 +73,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1678][1678] ROPGadget multibr
 - [#1682][1682] ROPGadget multibr fix
 - [#1688][1688] Add `__setattr__` and `__call__` interfaces to `ROP` for setting registers
+- [#1692][1692] Remove python2 shebangs where appropriate
 
 [1602]: https://github.com/Gallopsled/pwntools/pull/1602
 [1606]: https://github.com/Gallopsled/pwntools/pull/1606
@@ -88,6 +89,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1678]: https://github.com/Gallopsled/pwntools/pull/1678
 [1682]: https://github.com/Gallopsled/pwntools/pull/1679
 [1688]: https://github.com/Gallopsled/pwntools/pull/1688
+[1692]: https://github.com/Gallopsled/pwntools/pull/1692
 
 ## 4.3.0 (`beta`)
 
