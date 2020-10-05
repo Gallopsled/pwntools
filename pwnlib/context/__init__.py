@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
 Implements context management so that nested/scoped contexts and threaded
