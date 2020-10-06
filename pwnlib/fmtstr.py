@@ -851,7 +851,7 @@ class FmtStr(object):
         payload = b"START%%%d$pEND" % offset
         leak = self.execute_fmt(prefix + payload)
         try:
-            leak = re.findall(br"START(.*)END", leak, re.MULTILINE | re.DOTALL)[0]
+            leak = re.findall(br"START(.*?)END", leak, re.MULTILINE | re.DOTALL)[0]
             leak = int(leak, 16)
         except ValueError:
             leak = 0
@@ -886,7 +886,7 @@ class FmtStr(object):
         })
 
         leak = self.execute_fmt(fmtstr)
-        leak = re.findall(br"START(.*)END", leak, re.MULTILINE | re.DOTALL)[0]
+        leak = re.findall(br"START(.*?)END", leak, re.MULTILINE | re.DOTALL)[0]
 
         leak += b"\x00"
 
