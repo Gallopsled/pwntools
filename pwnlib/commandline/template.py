@@ -18,9 +18,10 @@ parser.add_argument('exe', nargs='?', help='Target binary')
 parser.add_argument('--host', help='Remote host / SSH server')
 parser.add_argument('--port', help='Remote port / SSH port', type=int)
 parser.add_argument('--user', help='SSH Username')
-parser.add_argument('--pass', help='SSH Password', dest='password')
+parser.add_argument('--pass', '--password', help='SSH Password', dest='password')
 parser.add_argument('--path', help='Remote path of file on SSH server')
 parser.add_argument('--quiet', help='Less verbose template comments', action='store_true')
+parser.add_argument('--color', help='Print the output in color', choices=['never', 'always', 'auto'], default='auto')
 
 def main(args):
     cache = None
@@ -40,7 +41,14 @@ def main(args):
             log.error("Must specify --path or a exe")
 
         s = ssh(args.user, args.host, args.port or 22, args.password or None)
-        s.download(args.path or args.exe)
+
+        try:
+            remote = args.path or args.exe
+            s.download(remote)
+        except Exception:
+            log.warning("Could not download file %r, opening a shell", remote)
+            s.interactive()
+            return
 
         if not args.exe:
             args.exe = os.path.basename(args.path)
@@ -57,8 +65,16 @@ def main(args):
     # Fix Mako formatting bs
     output = re.sub('\n\n\n', '\n\n', output)
 
+    # Colorize the output if it's a TTY
+    if args.color == 'always' or (args.color == 'auto' and sys.stdout.isatty()):
+        from pygments import highlight
+        from pygments.formatters import TerminalFormatter
+        from pygments.lexers.python import PythonLexer
+        output = highlight(output, PythonLexer(), TerminalFormatter())
+
     print(output)
 
+    # If redirected to a file, make the resulting script executable
     if not sys.stdout.isatty():
         try: os.fchmod(sys.stdout.fileno(), 0o700)
         except OSError: pass

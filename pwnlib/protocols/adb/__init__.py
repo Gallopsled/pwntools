@@ -109,8 +109,8 @@ class AdbClient(Logger):
                     process(context.adb + ['start-server']).recvall()
                     time.sleep(0.3)
                 else:
-                    log.exception('Could not connect to ADB server (%s:%s)' % \
-                                    (self.host, self.port))
+                    log.exception('Could not connect to ADB server (%s:%s)',
+                                  self.host, self.port)
 
         # Final attempt...
         if not self._c:
@@ -462,7 +462,7 @@ class AdbClient(Logger):
             >>> expected = {'mode': 16749, 'size': 0, 'time': 0}
             >>> pwnlib.protocols.adb.AdbClient().stat('/proc')           == expected
             True
-            >>> pwnlib.protocols.adb.AdbClient().stat('/does/not/exist') == None
+            >>> pwnlib.protocols.adb.AdbClient().stat('/does/not/exist') is None
             True
         """
         if isinstance(path, six.text_type):

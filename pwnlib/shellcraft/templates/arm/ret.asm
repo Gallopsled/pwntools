@@ -15,7 +15,7 @@ Examples:
 </%docstring>
 <%page args="return_value = None"/>
 
-% if return_value != None:
+% if return_value is not None:
     ${arm.mov('r0', return_value)}
 % endif
 

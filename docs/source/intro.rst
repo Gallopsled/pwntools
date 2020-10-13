@@ -17,6 +17,13 @@ assemble, disassemble, pack, unpack, and many other things with a single functio
 A full list of everything that is imported is available on :doc:`globals`.
 
 
+Tutorials
+---------
+
+A series of tutorials for Pwntools exists online, at
+https://github.com/Gallopsled/pwntools-tutorial#readme
+
+
 Making Connections
 ------------------
 
@@ -188,10 +195,10 @@ Never write another hexdump, thanks to :mod:`pwnlib.util.fiddling`.
 
 Find offsets in your buffer that cause a crash, thanks to :mod:`pwnlib.cyclic`.
 
-    >>> print(cyclic(20).decode())
-    aaaabaaacaaadaaaeaaa
+    >>> cyclic(20)
+    b'aaaabaaacaaadaaaeaaa'
     >>> # Assume EIP = 0x62616166 (b'faab' which is pack(0x62616166))  at crash time
-    >>> print(cyclic_find(b'faab'))
+    >>> cyclic_find(b'faab')
     120
 
 ELF Manipulation

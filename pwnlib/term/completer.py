@@ -116,9 +116,9 @@ class PathCompleter(Completer):
             if self.only_dirs:
                 cs = [c for c in cs if os.path.isdir(c)]
             if self.mask:
-                cs = [c for c in cs if \
-                      self.mask.match(os.path.basename(c)) or \
-                      os.path.isdir(c)]
+                cs = [c for c in cs
+                      if self.mask.match(os.path.basename(c))
+                      or os.path.isdir(c)]
             self._completions = cs
 
     def complete(self, buffer_left, buffer_right):
