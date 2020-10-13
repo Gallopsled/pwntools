@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 # Source:
 # http://www.iodigitalsec.com/python-cascading-xor-polymorphic-shellcode-generator/
 #

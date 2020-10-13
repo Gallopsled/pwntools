@@ -612,7 +612,7 @@ class tube(Timeout, Logger):
     def recvline_endswith(self, delims, keepends=False, timeout=default):
         r"""recvline_endswith(delims, keepends=False, timeout=default) -> bytes
 
-        Keep receiving lines until one is found that starts with one of
+        Keep receiving lines until one is found that ends with one of
         `delims`.  Returns the last line received.
 
         If the request is not satisfied before ``timeout`` seconds pass,

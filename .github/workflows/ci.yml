@@ -14,8 +14,10 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Git History 2
-      run: git log --oneline --graph -10
+    - name: Git History
+      run: |
+        git fetch origin
+        git log --oneline --graph -10
 
     - name: Cache for pip
       uses: actions/cache@v1
@@ -46,13 +48,12 @@ jobs:
       id: java-needed
       env:
         GITHUB_REF: ${{ github.event.ref }}
-        GITHUB_COMMIT_RANGE: ${{ github.event.before }}...${{ github.event.after }}
       run: |
         if echo "$GITHUB_REF" | grep -Eq 'staging|tags'; then
           echo "Found release or important branch ($GITHUB_REF), forcing tests."
-        elif ! git show "$GITHUB_COMMIT_RANGE" >/dev/null; then
+        elif ! git show "origin/$GITHUB_BASE_REF"..HEAD >/dev/null; then
           echo 'Incorrect commit range, forcing android tests.'
-        elif git log --stat "$GITHUB_COMMIT_RANGE" | grep -iE 'android|\<adb\>'; then
+        elif git log --stat "origin/$GITHUB_BASE_REF"..HEAD | grep -iE 'android|\<adb\>'; then
           echo 'Found Android-related commits, forcing tests.'
         else
           # clear files that cause Android doctests
@@ -73,7 +74,9 @@ jobs:
           binutils-aarch64-linux-gnu \
           binutils-arm-linux-gnueabihf \
           binutils-mips-linux-gnu \
+          binutils-msp430 \
           binutils-powerpc-linux-gnu \
+          binutils-s390x-linux-gnu \
           binutils-sparc64-linux-gnu \
           gcc-multilib \
           libc6-dbg \

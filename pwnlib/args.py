@@ -1,5 +1,3 @@
-
-#!/usr/bin/env python2
 """
 Pwntools exposes several magic command-line arguments and environment
 variables when operating in `from pwn import *` mode.

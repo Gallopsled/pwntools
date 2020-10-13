@@ -58,10 +58,66 @@ The table below shows which release corresponds to each branch, and what date th
 ## 4.4.0 (`dev`)
 
 - [#1541][1541] Use `context.newline` for tubes by default
+- [#1602][1602] Fix bytes handling in ssh tubes
+- [#1606][1606] Fix `asm()` and `disasm()` for MSP430, S390
 - [#1616][1616] Fix `cyclic` cli for 64 bit integers
+- [#1632][1632] Enable usage of Pwntools in jupyter
+- [#1633][1633] Open a shell if `pwn template` cannot download the remote file
+- [#1644][1644] Enable and support SNI for SSL-wrapped tubes
+- [#1651][1651] Make `pwn shellcraft` faster
+- [#1654][1654] Docker images (`pwntools/pwntools:stable` etc) now use Python3 by default, and includes assemblers for a few common architectures
+- [#1667][1667] Add i386 encoder `ascii_shellcode` (Fixed docs in #1693)
+- Fix syscall instruction lists for SROP on `i386` and `amd64`
+- Fix migration to another ROP
+- [#1673][1673] Add `base=` argument to `ROP.chain()` and `ROP.dump()`
+- [#1675][1675] Gdbserver now correctly accepts multiple libraries in `LD_PRELOAD` and `LD_LIBRARY_PATH`
+- [#1678][1678] ROPGadget multibr
+- [#1682][1682] ROPGadget multibr fix
+- [#1687][1687] Actually import `requests` when doing `from pwn import *`
+- [#1688][1688] Add `__setattr__` and `__call__` interfaces to `ROP` for setting registers
+- [#1692][1692] Remove python2 shebangs where appropriate
 
 [1541]: https://github.com/Gallopsled/pwntools/pull/1541
+[1602]: https://github.com/Gallopsled/pwntools/pull/1602
+[1606]: https://github.com/Gallopsled/pwntools/pull/1606
 [1616]: https://github.com/Gallopsled/pwntools/pull/1616
+[1632]: https://github.com/Gallopsled/pwntools/pull/1632
+[1633]: https://github.com/Gallopsled/pwntools/pull/1633
+[1644]: https://github.com/Gallopsled/pwntools/pull/1644
+[1651]: https://github.com/Gallopsled/pwntools/pull/1651
+[1654]: https://github.com/Gallopsled/pwntools/pull/1654
+[1667]: https://github.com/Gallopsled/pwntools/pull/1667
+[1673]: https://github.com/Gallopsled/pwntools/pull/1673
+[1675]: https://github.com/Gallopsled/pwntools/pull/1675
+[1678]: https://github.com/Gallopsled/pwntools/pull/1678
+[1682]: https://github.com/Gallopsled/pwntools/pull/1679
+[1687]: https://github.com/Gallopsled/pwntools/pull/1687
+[1688]: https://github.com/Gallopsled/pwntools/pull/1688
+[1692]: https://github.com/Gallopsled/pwntools/pull/1692
+
+## 4.3.0 (`beta`)
+
+- [#1576][1576] Add `executable=` argument to `ELF.search`
+- [#1584][1584] Add `jmp_esp`/`jmp_rsp` attribute to `ROP`
+- [#1592][1592] Fix over-verbose logging of process() environment
+- [#1593][1593] Colorize output of `pwn template`
+- [#1601][1601] Add `pwn version` command line tool
+- [#1605][1605] Add to `fiddling.hexdump` a way to suppress the total at the end
+- [#1613][1613] Permit `--password` for `pwn template`
+- [#1616][1616] Fix `cyclic` cli for 64 bit integers
+- [#1564][1564] Fix `asm()` and `disasm()` for PowerPC64, MIPS64, Sparc64
+- [#1621][1621] Permit negative values in flat() and fit()
+
+[1576]: https://github.com/Gallopsled/pwntools/pull/1576
+[1584]: https://github.com/Gallopsled/pwntools/pull/1584
+[1592]: https://github.com/Gallopsled/pwntools/pull/1592
+[1593]: https://github.com/Gallopsled/pwntools/pull/1593
+[1601]: https://github.com/Gallopsled/pwntools/pull/1601
+[1605]: https://github.com/Gallopsled/pwntools/pull/1605
+[1613]: https://github.com/Gallopsled/pwntools/pull/1613
+[1616]: https://github.com/Gallopsled/pwntools/pull/1616
+[1564]: https://github.com/Gallopsled/pwntools/pull/1564
+[1621]: https://github.com/Gallopsled/pwntools/pull/1621
 
 ## 4.3.0 (`beta`)
 
@@ -85,7 +141,13 @@ The table below shows which release corresponds to each branch, and what date th
 [1564]: https://github.com/Gallopsled/pwntools/pull/1564
 [1621]: https://github.com/Gallopsled/pwntools/pull/1621
 
-## 4.2.0 (`stable`)
+## 4.2.1 (`stable`)
+
+- [#1625][1625] GDB now properly loads executables with QEMU
+
+[1625]: https://github.com/Gallopsled/pwntools/pull/1625
+
+## 4.2.0
 
 - [#1436][1436] Add ret2dlresolve automation
 - [fecf9f] tubes.ssh.process() no longer requires python 2 installed on remote (still requires python, though)
