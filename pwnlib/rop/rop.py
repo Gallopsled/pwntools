@@ -436,7 +436,7 @@ class ROP(object):
     >>> context.clear(arch = "i386", kernel = 'amd64')
     >>> assembly = 'int 0x80; ret; add esp, 0x10; ret; pop eax; ret'
     >>> e = ELF.from_assembly(assembly)
-    >>> e.symbols['funcname'] = e.address + 0x1234
+    >>> e.symbols['funcname'] = e.entry + 0x1234
     >>> r = ROP(e)
     >>> r.funcname(1, 2)
     >>> r.funcname(3)
@@ -1147,6 +1147,12 @@ class ROP(object):
         """Returns: Raw bytes of the ROP chain"""
         return self.chain()
 
+    def __flat__(self):
+        return self.chain()
+
+    def __flat_at__(self, address):
+        return self.chain(address)
+
     def __get_cachefile_name(self, files):
         """Given an ELF or list of ELF objects, return a cache file for the set of files"""
         cachedir = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache-%d.%d' % sys.version_info[:2])
@@ -1396,7 +1402,7 @@ class ROP(object):
             >>> r = ROP(context.binary)
             >>> p = process()
             >>> r.ret2csu(1, 2, 3, 4, 5, 6, 7, 8, 9)
-            >>> r.raw(0xdeadbeef)
+            >>> r.call(0xdeadbeef)
             >>> p.send(fit({64+context.bytes: r}))
             >>> p.wait(0.5)
             >>> core = p.corefile
