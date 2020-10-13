@@ -57,6 +57,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.4.0 (`dev`)
 
+- [#1541][1541] Use `context.newline` for tubes by default
 - [#1602][1602] Fix bytes handling in ssh tubes
 - [#1606][1606] Fix `asm()` and `disasm()` for MSP430, S390
 - [#1616][1616] Fix `cyclic` cli for 64 bit integers
@@ -76,6 +77,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1688][1688] Add `__setattr__` and `__call__` interfaces to `ROP` for setting registers
 - [#1692][1692] Remove python2 shebangs where appropriate
 
+[1541]: https://github.com/Gallopsled/pwntools/pull/1541
 [1602]: https://github.com/Gallopsled/pwntools/pull/1602
 [1606]: https://github.com/Gallopsled/pwntools/pull/1606
 [1616]: https://github.com/Gallopsled/pwntools/pull/1616
