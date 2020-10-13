@@ -8,7 +8,9 @@ from .rop import Padding
 from ..log import getLogger
 from ..util.packing import p64
 
+
 log = getLogger(__name__)
+
 
 def ret2csu(rop, elf, edi, rsi, rdx, rbx, rbp, r12, r13, r14, r15, call=None):
     """Build a ret2csu ROPchain
@@ -28,9 +30,10 @@ def ret2csu(rop, elf, edi, rsi, rdx, rbx, rbp, r12, r13, r14, r15, call=None):
     md.skipdata = True
 
     # Resolve __libc_csu_ symbols if candidate binary is stripped
-    if not '__libc_csu_init' in elf.symbols:
+    if '__libc_csu_init' not in elf.symbols:
         if elf.pie:
-            for insn in md.disasm(elf.section('.text'), elf.offset_to_vaddr(elf.get_section_by_name('.text').header['sh_offset'])):
+            for insn in md.disasm(elf.section('.text'),
+                                  elf.offset_to_vaddr(elf.get_section_by_name('.text').header['sh_offset'])):
                 if insn.mnemonic == 'lea' and insn.operands[0].reg == X86_REG_R8:
                     elf.sym['__libc_csu_fini'] = insn.address + insn.size + insn.disp
                 if insn.mnemonic == 'lea' and insn.operands[0].reg == X86_REG_RCX:
@@ -58,12 +61,12 @@ def ret2csu(rop, elf, edi, rsi, rdx, rbx, rbp, r12, r13, r14, r15, call=None):
             rop.raw(insn.address)
             break
     # rbx and rbp must be equal after 'add rbx, 1'
-    rop.raw(0x00) # pop rbx
-    rop.raw(0x01) # pop rbp
+    rop.raw(0x00)  # pop rbx
+    rop.raw(0x01)  # pop rbp
     if call:
-        rop.raw(call) # pop r12
+        rop.raw(call)  # pop r12
     else:
-        rop.raw(fini) # pop r12
+        rop.raw(fini)  # pop r12
 
     # Older versions of gcc use r13 to populate rdx then r15d to populate edi, newer versions use the reverse
     # Account for this when the binary was linked against a glibc that was built with a newer gcc
@@ -82,7 +85,7 @@ def ret2csu(rop, elf, edi, rsi, rdx, rbx, rbp, r12, r13, r14, r15, call=None):
             break
 
     # 2nd gadget: Populate edi, rsi & rdx. Populate optional registers
-    rop.raw(Padding('<add rsp, 8>')) # add rsp, 8
+    rop.raw(Padding('<add rsp, 8>'))  # add rsp, 8
     rop.raw(rbx)  # pop rbx
     rop.raw(rbp)  # pop rbp
     rop.raw(r12)  # pop r12
