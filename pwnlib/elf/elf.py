@@ -310,7 +310,7 @@ class ELF(ELFFile):
                 config = gz.read()
 
             if config:
-                self.config = parse_kconfig(config)
+                self.config = parse_kconfig(config.decode())
 
         #: ``True`` if the ELF is a statically linked executable
         self.statically_linked = bool(self.elftype == 'EXEC' and self.load_addr)
