@@ -886,7 +886,7 @@ class FmtStr(object):
         })
 
         leak = self.execute_fmt(fmtstr)
-        leak = re.findall(br"START(.*?)END", leak, re.MULTILINE | re.DOTALL)[0]
+        leak = re.findall(br"START(.*)END", leak, re.MULTILINE | re.DOTALL)[0]
 
         leak += b"\x00"
 
