@@ -1148,7 +1148,7 @@ class ROP(object):
 
     def __get_cachefile_name(self, files):
         """Given an ELF or list of ELF objects, return a cache file for the set of files"""
-        cachedir = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache-%d.%d' % sys.version_info[:2])
+        cachedir = os.path.join(context.cache_dir, 'rop-cache')
         if not os.path.exists(cachedir):
             os.mkdir(cachedir)
 
@@ -1164,7 +1164,7 @@ class ROP(object):
     @staticmethod
     def clear_cache():
         """Clears the ROP gadget cache"""
-        cachedir = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache')
+        cachedir = os.path.join(context.cache_dir, 'rop-cache')
         shutil.rmtree(cachedir)
 
     def __cache_load(self, elf):
