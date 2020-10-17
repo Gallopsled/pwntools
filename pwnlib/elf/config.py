@@ -21,8 +21,8 @@ class KernelConfig(object):
         self.excludes = set(excludes)
 
         #: Kernel version that this check should be enforced on
-        self.minver = map(int, str(minver).split('.'))
-        self.maxver = map(int, str(maxver).split('.'))
+        self.minver = list(map(int, str(minver).split('.')))
+        self.maxver = list(map(int, str(maxver).split('.')))
 
     def relevant(self, config):
 
