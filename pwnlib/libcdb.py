@@ -34,18 +34,21 @@ def provider_libcdb(hex_encoded_id, hash_type):
     url      = urllib.parse.urljoin(url_base, hex_encoded_id)
 
     data     = b""
-    while not data.startswith(b'\x7fELF'):
-        log.debug("Downloading data from LibcDB: %s", url)
-        data = wget(url, timeout=20)
+    log.debug("Downloading data from LibcDB: %s", url)
+    try:
+        while not data.startswith(b'\x7fELF'):
+            data = wget(url, timeout=20)
 
-        if not data:
-            log.warn_once("Could not fetch libc for %s %s from libcdb", hash_type, hex_encoded_id)
-            break
-        
-        # GitLab serves up symlinks with
-        if data.startswith(b'..'):
-            url = os.path.dirname(url) + '/'
-            url = urllib.parse.urljoin(url.encode('utf-8'), data)
+            if not data:
+                log.warn_once("Could not fetch libc for %s %s from libcdb", hash_type, hex_encoded_id)
+                break
+            
+            # GitLab serves up symlinks with
+            if data.startswith(b'..'):
+                url = os.path.dirname(url) + '/'
+                url = urllib.parse.urljoin(url.encode('utf-8'), data)
+    except requests.RequestException as e:
+        log.warn_once("Failed to fetch libc for %s %s from libcdb: %s", hash_type, hex_encoded_id, e)
     return data
 
 # https://libc.rip/
@@ -57,18 +60,27 @@ def provider_libc_rip(hex_encoded_id, hash_type):
     url    = "https://libc.rip/api/find"
     params = {hash_type: hex_encoded_id}
 
-    result = requests.post(url, json=params, timeout=20)
-    if result.status_code != 200 or len(result.json()) == 0:
-        log.warn_once("Could not find libc for %s %s on libc.rip", hash_type, hex_encoded_id)
-        log.debug("Error: %s", result.text)
-        return None
+    data = b""
+    try:
+        result = requests.post(url, json=params, timeout=20)
+        if result.status_code != 200 or len(result.json()) == 0:
+            log.warn_once("Could not find libc for %s %s on libc.rip", hash_type, hex_encoded_id)
+            log.debug("Error: %s", result.text)
+            return None
 
-    libc_match = result.json()
-    assert len(libc_match) == 1, 'Invalid libc.rip response.'
+        libc_match = result.json()
+        assert len(libc_match) == 1, 'Invalid libc.rip response.'
 
-    url = libc_match[0]['download_url']
-    log.debug("Downloading data from libc.rip: %s", url)
-    return wget(url, timeout=20)
+        url = libc_match[0]['download_url']
+        log.debug("Downloading data from libc.rip: %s", url)
+        data = wget(url, timeout=20)
+
+        if not data:
+            log.warn_once("Could not fetch libc for %s %s from libc.rip", hash_type, hex_encoded_id)
+            return None
+    except requests.RequestException as e:
+        log.warn_once("Failed to fetch libc for %s %s from libc.rip: %s", hash_type, hex_encoded_id, e)
+    return data
 
 PROVIDERS = [provider_libcdb, provider_libc_rip]
 
@@ -103,7 +115,7 @@ def search_by_hash(hex_encoded_id, hash_type='build_id'):
             break
 
     if not data:
-        log.warn_once("Could not fetch libc for %s %s", hash_type, hex_encoded_id)
+        log.warn_once("Could not find libc for %s %s anywhere", hash_type, hex_encoded_id)
 
     # Save whatever we got to the cache
     write(cache, data or b'')
