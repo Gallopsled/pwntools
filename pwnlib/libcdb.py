@@ -7,6 +7,7 @@ from __future__ import division
 import codecs
 import json
 import os
+import requests
 import tempfile
 
 from six.moves import urllib
@@ -24,6 +25,52 @@ from pwnlib.util.web import wget
 log = getLogger(__name__)
 
 HASHES = ['build_id', 'sha1', 'sha256', 'md5']
+
+# https://gitlab.com/libcdb/libcdb wasn't updated after 2019,
+# but still is a massive database of older libc binaries.
+def provider_libcdb(hex_encoded_id, hash_type):
+    # Build the URL using the requested hash type
+    url_base = "https://gitlab.com/libcdb/libcdb/raw/master/hashes/%s/" % hash_type
+    url      = urllib.parse.urljoin(url_base, hex_encoded_id)
+
+    data     = b""
+    while not data.startswith(b'\x7fELF'):
+        log.debug("Downloading data from LibcDB: %s", url)
+        data = wget(url, timeout=20)
+
+        if not data:
+            log.warn_once("Could not fetch libc for %s %s from libcdb", hash_type, hex_encoded_id)
+            break
+        
+        # GitLab serves up symlinks with
+        if data.startswith(b'..'):
+            url = os.path.dirname(url) + '/'
+            url = urllib.parse.urljoin(url.encode('utf-8'), data)
+    return data
+
+# https://libc.rip/
+def provider_libc_rip(hex_encoded_id, hash_type):
+    # Build the request for the hash type
+    # https://github.com/niklasb/libc-database/blob/master/searchengine/api.yml
+    if hash_type == 'build_id':
+        hash_type = 'buildid'
+    url    = "https://libc.rip/api/find"
+    params = {hash_type: hex_encoded_id}
+
+    result = requests.post(url, json=params, timeout=20)
+    if result.status_code != 200 or len(result.json()) == 0:
+        log.warn_once("Could not find libc for %s %s on libc.rip", hash_type, hex_encoded_id)
+        log.debug("Error: %s", result.text)
+        return None
+
+    libc_match = result.json()
+    assert len(libc_match) == 1, 'Invalid libc.rip response.'
+
+    url = libc_match[0]['download_url']
+    log.debug("Downloading data from libc.rip: %s", url)
+    return wget(url, timeout=20)
+
+PROVIDERS = [provider_libcdb, provider_libc_rip]
 
 def search_by_hash(hex_encoded_id, hash_type='build_id'):
     assert hash_type in HASHES, hash_type
@@ -49,23 +96,14 @@ def search_by_hash(hex_encoded_id, hash_type='build_id'):
             log.info_once("Skipping unavialable libc %s", hex_encoded_id)
             return None
 
-    # Build the URL using the requested hash type
-    url_base = "https://gitlab.com/libcdb/libcdb/raw/master/hashes/%s/" % hash_type
-    url      = urllib.parse.urljoin(url_base, hex_encoded_id)
-
-    data   = b""
-    while not data.startswith(b'\x7fELF'):
-        log.debug("Downloading data from LibcDB: %s", url)
-        data = wget(url, timeout=20)
-
-        if not data:
-            log.warn_once("Could not fetch libc for build_id %s", hex_encoded_id)
+    # Run through all available libc database providers to see if we have a match.
+    for provider in PROVIDERS:
+        data = provider(hex_encoded_id, hash_type)
+        if data and data.startswith(b'\x7FELF'):
             break
 
-        # GitLab serves up symlinks with
-        if data.startswith(b'..'):
-            url = os.path.dirname(url) + '/'
-            url = urllib.parse.urljoin(url.encode('utf-8'), data)
+    if not data:
+        log.warn_once("Could not fetch libc for %s %s", hash_type, hex_encoded_id)
 
     # Save whatever we got to the cache
     write(cache, data or b'')
