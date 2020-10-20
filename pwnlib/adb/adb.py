@@ -827,10 +827,12 @@ def which(name, all = False, *a, **kw):
     """
     # Unfortunately, there is no native 'which' on many phones.
     which_cmd = '''
-echo $PATH | while read -d: directory; do
-    [ -x "$directory/{name}" ] || continue;
-    echo -n "$directory/{name}\\x00";
-done
+(IFS=:
+  for directory in $PATH; do
+      [ -x "$directory/{name}" ] || continue;
+      echo -n "$directory/{name}\\x00";
+  done
+)
 [ -x "{name}" ] && echo -n "$PWD/{name}\\x00"
 '''.format(name=name)
 

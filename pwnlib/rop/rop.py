@@ -267,7 +267,7 @@ That's all there is to it.
     >>> print(rop.dump())
     0x0000:       0x1000000e pop eax; ret
     0x0004:             0x77 [arg0] eax = SYS_sigreturn
-    0x0008:       0x1000000b int 0x80
+    0x0008:       0x1000000b int 0x80; ret
     0x000c:              0x0 gs
     0x0010:              0x0 fs
     0x0014:              0x0 es
@@ -282,7 +282,7 @@ That's all there is to it.
     0x0038:              0xb eax = SYS_execve
     0x003c:              0x0 trapno
     0x0040:              0x0 err
-    0x0044:       0x1000000b int 0x80
+    0x0044:       0x1000000b int 0x80; ret
     0x0048:             0x23 cs
     0x004c:              0x0 eflags
     0x0050:              0x0 esp_at_signal
@@ -452,7 +452,7 @@ class ROP(object):
     0x0020:              0x3 arg0
     0x0024:       0x10000007 pop eax; ret
     0x0028:             0x77 [arg0] eax = SYS_sigreturn
-    0x002c:       0x10000000 int 0x80
+    0x002c:       0x10000000 int 0x80; ret
     0x0030:              0x0 gs
     0x0034:              0x0 fs
     0x0038:              0x0 es
@@ -467,7 +467,7 @@ class ROP(object):
     0x005c:              0xb eax = SYS_execve
     0x0060:              0x0 trapno
     0x0064:              0x0 err
-    0x0068:       0x10000000 int 0x80
+    0x0068:       0x10000000 int 0x80; ret
     0x006c:             0x23 cs
     0x0070:              0x0 eflags
     0x0074:              0x0 esp_at_signal
@@ -490,7 +490,7 @@ class ROP(object):
     0x8048020:              0x3 arg0
     0x8048024:       0x10000007 pop eax; ret
     0x8048028:             0x77 [arg0] eax = SYS_sigreturn
-    0x804802c:       0x10000000 int 0x80
+    0x804802c:       0x10000000 int 0x80; ret
     0x8048030:              0x0 gs
     0x8048034:              0x0 fs
     0x8048038:              0x0 es
@@ -505,7 +505,7 @@ class ROP(object):
     0x804805c:              0xb eax = SYS_execve
     0x8048060:              0x0 trapno
     0x8048064:              0x0 err
-    0x8048068:       0x10000000 int 0x80
+    0x8048068:       0x10000000 int 0x80; ret
     0x804806c:             0x23 cs
     0x8048070:              0x0 eflags
     0x8048074:              0x0 esp_at_signal
@@ -523,6 +523,14 @@ class ROP(object):
     >>> r.ret is None
     True
     """
+    BAD_ATTRS = [
+        'trait_names',          # ipython tab-complete
+        'download',             # frequent typo
+        'upload',               # frequent typo
+    ]
+    X86_SUFFIXES = ['ax', 'bx', 'cx', 'dx', 'bp', 'sp', 'di', 'si',
+                    'r8', 'r9', '10', '11', '12', '13', '14', '15']
+
     def __init__(self, elfs, base = None, badchars = b'', **kwargs):
         """
         Arguments:
@@ -661,6 +669,43 @@ class ROP(object):
 
         return stack
 
+    def __call__(self, *args, **kwargs):
+        """Set the given register(s)' by constructing a rop chain.
+
+        This is a thin wrapper around :meth:`setRegisters` which
+        actually executes the rop chain.
+
+        You can call this :class:`ROP` instance and provide keyword arguments,
+        or a dictionary.
+
+        Arguments:
+            regs(dict): Mapping of registers to values.
+                        Can instead provide ``kwargs``.
+
+        >>> context.clear(arch='amd64')
+        >>> assembly = 'pop rax; pop rdi; pop rsi; ret; pop rax; ret;'
+        >>> e = ELF.from_assembly(assembly)
+        >>> r = ROP(e)
+        >>> r(rax=0xdead, rdi=0xbeef, rsi=0xcafe)
+        >>> print(r.dump())
+        0x0000:       0x10000000
+        0x0008:           0xdead
+        0x0010:           0xbeef
+        0x0018:           0xcafe
+        >>> r = ROP(e)
+        >>> r({'rax': 0xdead, 'rdi': 0xbeef, 'rsi': 0xcafe})
+        >>> print(r.dump())
+        0x0000:       0x10000000
+        0x0008:           0xdead
+        0x0010:           0xbeef
+        0x0018:           0xcafe
+        """
+        if len(args) == 1 and isinstance(args[0], dict):
+            for value, _ in self.setRegisters(args[0]):
+                self.raw(value)
+        else:
+            self(kwargs)
+
     def resolve(self, resolvable):
         """Resolves a symbol to an address
 
@@ -703,6 +748,7 @@ class ROP(object):
         """
         Generates padding to be inserted into the ROP stack.
 
+        >>> context.clear(arch='i386')
         >>> rop = ROP([])
         >>> val = rop.generatePadding(5,15)
         >>> cyclic_find(val[:4])
@@ -925,17 +971,28 @@ class ROP(object):
     def find_stack_adjustment(self, slots):
         self.search(move=slots * context.bytes)
 
-    def chain(self):
+    def chain(self, base=None):
         """Build the ROP chain
+        
+        Arguments:
+            base(int):
+                The base address to build the rop-chain from. Defaults to
+                :attr:`base`.
 
         Returns:
             str containing raw ROP bytes
         """
-        return packing.flat(self.build())
+        return packing.flat(self.build(base=base))
 
-    def dump(self):
-        """Dump the ROP chain in an easy-to-read manner"""
-        return self.build().dump()
+    def dump(self, base=None):
+        """Dump the ROP chain in an easy-to-read manner
+        
+        Arguments:
+            base(int):
+                The base address to build the rop-chain from. Defaults to
+                :attr:`base`.
+        """
+        return self.build(base=base).dump()
 
     def regs(self, registers=None, **kw):
         if registers is None:
@@ -1050,6 +1107,7 @@ class ROP(object):
         Arguments:
             data(int/str): The raw value to put onto the rop chain.
 
+        >>> context.clear(arch='i386')
         >>> rop = ROP([])
         >>> rop.raw('AAAAAAAA')
         >>> rop.raw('BBBBBBBB')
@@ -1069,7 +1127,7 @@ class ROP(object):
     def migrate(self, next_base):
         """Explicitly set $sp, by using a ``leave; ret`` gadget"""
         if isinstance(next_base, ROP):
-            next_base = self.base
+            next_base = next_base.base
         pop_sp = self.rsp or self.esp
         pop_bp = self.rbp or self.ebp
         leave  = self.leave
@@ -1090,7 +1148,7 @@ class ROP(object):
 
     def __get_cachefile_name(self, files):
         """Given an ELF or list of ELF objects, return a cache file for the set of files"""
-        cachedir = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache-%d.%d' % sys.version_info[:2])
+        cachedir = os.path.join(context.cache_dir, 'rop-cache')
         if not os.path.exists(cachedir):
             os.mkdir(cachedir)
 
@@ -1106,7 +1164,7 @@ class ROP(object):
     @staticmethod
     def clear_cache():
         """Clears the ROP gadget cache"""
-        cachedir = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache')
+        cachedir = os.path.join(context.cache_dir, 'rop-cache')
         shutil.rmtree(cachedir)
 
     def __cache_load(self, elf):
@@ -1129,7 +1187,7 @@ class ROP(object):
         #
         # - leave
         # - pop reg
-        # - add $sp, value
+        # - add $sp, <hexadecimal value>
         # - ret
         #
         # Currently, ROPgadget does not detect multi-byte "C2" ret.
@@ -1137,7 +1195,7 @@ class ROP(object):
         #
 
         pop   = re.compile(r'^pop (.{3})')
-        add   = re.compile(r'^add [er]sp, (\S+)$')
+        add   = re.compile(r'^add [er]sp, ((?:0[xX])?[0-9a-fA-F]+)$')
         ret   = re.compile(r'^ret$')
         leave = re.compile(r'^leave$')
         int80 = re.compile(r'int +0x80')
@@ -1153,6 +1211,8 @@ class ROP(object):
         # False
         # >>> valid('add esp, 0x24')
         # True
+        # >>> valid('add esp, esi')
+        # False
         #
         valid = lambda insn: any(map(lambda pattern: pattern.match(insn), [pop,add,ret,leave,int80,syscall,sysenter]))
 
@@ -1185,7 +1245,7 @@ class ROP(object):
             try:
                 sys.stdout = Wrapper(sys.stdout)
                 import ropgadget
-                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop']
+                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop', '--multibr']
                 args = ropgadget.args.Args().getArgs()
                 core = ropgadget.core.Core(args)
                 core.do_binary(elf.path)
@@ -1339,6 +1399,7 @@ class ROP(object):
         Also provides a shorthand for ``.call()``:
             ``rop.function(args)`` is equivalent to ``rop.call(function, args)``
 
+        >>> context.clear(arch='i386')
         >>> elf=ELF(which('bash'))
         >>> rop=ROP([elf])
         >>> rop.rdi     == rop.search(regs=['rdi'], order = 'regs')
@@ -1349,16 +1410,15 @@ class ROP(object):
         True
         >>> rop.ret is not None
         True
+        >>> with context.local(arch='amd64', bits='64'):
+        ...     r = ROP(ELF.from_assembly('syscall; ret'))
+        >>> r.syscall is not None
+        True
         """
         gadget = collections.namedtuple('gadget', ['address', 'details'])
-        bad_attrs = [
-            'trait_names',          # ipython tab-complete
-            'download',             # frequent typo
-            'upload',               # frequent typo
-        ]
 
         if attr in self.__dict__ \
-        or attr in bad_attrs \
+        or attr in self.BAD_ATTRS \
         or attr.startswith('_'):
             raise AttributeError('ROP instance has no attribute %r' % attr)
 
@@ -1395,17 +1455,14 @@ class ROP(object):
              'syscall': 'syscall',
              'sysenter': 'sysenter'}
             for each in self.gadgets:
-                if self.gadgets[each]['insns'] == [mapping[attr]]:
+                if self.gadgets[each]['insns'][0] == mapping[attr]:
                     return gadget(each, self.gadgets[each])
             return None
 
         #
         # Check for a '_'-delimited list of registers
         #
-        x86_suffixes = ['ax', 'bx', 'cx', 'dx', 'bp', 'sp', 'di', 'si',
-                        'r8', 'r9', '10', '11', '12', '13', '14', '15']
-
-        if all(map(lambda x: x[-2:] in x86_suffixes, attr.split('_'))):
+        if all(map(lambda x: x[-2:] in self.X86_SUFFIXES, attr.split('_'))):
             return self.search(regs=attr.split('_'), order='regs')
 
         #
@@ -1415,3 +1472,42 @@ class ROP(object):
             return self.call(attr, args)
 
         return call
+
+    def __setattr__(self, attr, value):
+        """Helper for setting registers.
+
+        This convenience feature allows one to set the values of registers
+        with simple python assignment syntax.
+
+        Warning:
+            Only one register is set at a time (one per rop chain).
+            This may lead to some previously set to registers be overwritten!
+
+        Note:
+            If you would like to set multiple registers in as few rop chains
+            as possible, see :meth:`__call__`.
+
+        >>> context.clear(arch='amd64')
+        >>> assembly = 'pop rax; pop rdi; pop rsi; ret; pop rax; ret;'
+        >>> e = ELF.from_assembly(assembly)
+        >>> r = ROP(e)
+        >>> r.rax = 0xdead
+        >>> r.rdi = 0xbeef
+        >>> r.rsi = 0xcafe
+        >>> print(r.dump())
+        0x0000:       0x10000004 pop rax; ret
+        0x0008:           0xdead
+        0x0010:       0x10000001 pop rdi; pop rsi; ret
+        0x0018:           0xbeef
+        0x0020:      b'iaaajaaa' <pad rsi>
+        0x0028:       0x10000002 pop rsi; ret
+        0x0030:           0xcafe
+        """
+        if attr in self.BAD_ATTRS:
+            raise AttributeError('ROP instance has no attribute %r' % attr)
+
+        if attr[-2:] in self.X86_SUFFIXES:  # handle setting registers
+            self({attr: value})
+
+        # Otherwise, perform usual setting
+        self.__dict__[attr] = value

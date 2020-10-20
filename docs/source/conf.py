@@ -91,6 +91,7 @@ pwnlib.context.ContextType.defaults['log_console'] = stdout()
 
 github_actions = os.environ.get('USER') == 'runner'
 travis_ci = os.environ.get('USER') == 'travis'
+branch_dev = os.environ.get('GITHUB_BASE_REF') == 'dev'
 '''
 
 autoclass_content = 'both'

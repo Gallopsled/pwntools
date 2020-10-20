@@ -31,4 +31,6 @@ jobs:
         git fetch origin
         git checkout origin/"$GITHUB_BASE_REF"
         pylint --exit-zero --errors-only  pwnlib > base.txt
-        diff base.txt current.txt
+        if diff base.txt current.txt | grep '>'; then
+          false
+        fi

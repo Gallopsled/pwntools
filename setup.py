@@ -83,7 +83,10 @@ setup(
     name                 = 'pwntools',
     python_requires      = '>=2.7',
     packages             = find_packages(),
-    version              = '4.4.0dev0',
+    version              = '4.5.0dev',
+    data_files           = [('pwntools-doc',
+                             glob.glob('*.md') + glob.glob('*.txt')),
+                            ],
     package_data         = {
         'pwnlib': [
             'data/crcsums.txt',
