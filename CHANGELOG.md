@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.4.0](#440)    | `dev`    | Sep 1, 2020 (planned)
-| [4.3.0](#430)    | `beta`   | Aug 1, 2020 (planned)
-| [4.2.0](#420)    | `stable` | Jul 3, 2020 (planned)
+| [4.5.0](#450)    | `dev`    | Dec 20, 2020 (planned)
+| [4.4.0](#440)    | `beta`   | Nov 20, 2020 (planned)
+| [4.3.0](#430)    | `stable` | Oct 20, 2020
+| [4.2.0](#420)    |          | Jul 3, 2020
 | [4.1.7](#417)    |          | Jun 30, 2020
 | [4.1.5](#415)    |          | Jun 27, 2020
 | [4.1.4](#414)    |          | Jun 26, 2020
@@ -55,9 +56,15 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.4.0 (`dev`)
+## 4.5.0 (`dev`)
 
 - [#1429][1429] Add a mechanism for ret2csu (originally #1138)
+
+[1429]: https://github.com/Gallopsled/pwntools/pull/1429
+
+## 4.4.0 (`beta`)
+
+- [#1541][1541] Use `context.newline` for tubes by default
 - [#1602][1602] Fix bytes handling in ssh tubes
 - [#1606][1606] Fix `asm()` and `disasm()` for MSP430, S390
 - [#1616][1616] Fix `cyclic` cli for 64 bit integers
@@ -76,8 +83,9 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1687][1687] Actually import `requests` when doing `from pwn import *`
 - [#1688][1688] Add `__setattr__` and `__call__` interfaces to `ROP` for setting registers
 - [#1692][1692] Remove python2 shebangs where appropriate
+- [#1703][1703] Update libcdb buildid offsets for amd64 and i386
 
-[1429]: https://github.com/Gallopsled/pwntools/pull/1429
+[1541]: https://github.com/Gallopsled/pwntools/pull/1541
 [1602]: https://github.com/Gallopsled/pwntools/pull/1602
 [1606]: https://github.com/Gallopsled/pwntools/pull/1606
 [1616]: https://github.com/Gallopsled/pwntools/pull/1616
@@ -94,8 +102,9 @@ The table below shows which release corresponds to each branch, and what date th
 [1687]: https://github.com/Gallopsled/pwntools/pull/1687
 [1688]: https://github.com/Gallopsled/pwntools/pull/1688
 [1692]: https://github.com/Gallopsled/pwntools/pull/1692
+[1703]: https://github.com/Gallopsled/pwntools/pull/1703
 
-## 4.3.0 (`beta`)
+## 4.3.0 (`stable`)
 
 - [#1576][1576] Add `executable=` argument to `ELF.search`
 - [#1584][1584] Add `jmp_esp`/`jmp_rsp` attribute to `ROP`
@@ -119,33 +128,14 @@ The table below shows which release corresponds to each branch, and what date th
 [1564]: https://github.com/Gallopsled/pwntools/pull/1564
 [1621]: https://github.com/Gallopsled/pwntools/pull/1621
 
-## 4.3.0 (`beta`)
-
-- [#1576][1576] Add `executable=` argument to `ELF.search`
-- [#1584][1584] Add `jmp_esp`/`jmp_rsp` attribute to `ROP`
-- [#1592][1592] Fix over-verbose logging of process() environment
-- [#1593][1593] Colorize output of `pwn template`
-- [#1601][1601] Add `pwn version` command line tool
-- [#1605][1605] Add to `fiddling.hexdump` a way to suppress the total at the end
-- [#1613][1613] Permit `--password` for `pwn template`
-- [#1564][1564] Fix `asm()` and `disasm()` for PowerPC64, MIPS64, Sparc64
-- [#1621][1621] Permit negative values in flat() and fit()
-
-[1576]: https://github.com/Gallopsled/pwntools/pull/1576
-[1584]: https://github.com/Gallopsled/pwntools/pull/1584
-[1592]: https://github.com/Gallopsled/pwntools/pull/1592
-[1593]: https://github.com/Gallopsled/pwntools/pull/1593
-[1601]: https://github.com/Gallopsled/pwntools/pull/1601
-[1605]: https://github.com/Gallopsled/pwntools/pull/1605
-[1613]: https://github.com/Gallopsled/pwntools/pull/1613
-[1564]: https://github.com/Gallopsled/pwntools/pull/1564
-[1621]: https://github.com/Gallopsled/pwntools/pull/1621
-
-## 4.2.1 (`stable`)
+## 4.2.1
 
 - [#1625][1625] GDB now properly loads executables with QEMU
+- [#1663][1663] Change lookup algorithm of `adb.which`
+- [#1699][1699] Fix broken linux shellcraft templates
 
 [1625]: https://github.com/Gallopsled/pwntools/pull/1625
+[1699]: https://github.com/Gallopsled/pwntools/pull/1699
 
 ## 4.2.0
 

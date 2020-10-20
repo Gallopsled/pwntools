@@ -1155,7 +1155,7 @@ class ROP(object):
 
     def __get_cachefile_name(self, files):
         """Given an ELF or list of ELF objects, return a cache file for the set of files"""
-        cachedir = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache-%d.%d' % sys.version_info[:2])
+        cachedir = os.path.join(context.cache_dir, 'rop-cache')
         if not os.path.exists(cachedir):
             os.mkdir(cachedir)
 
@@ -1171,7 +1171,7 @@ class ROP(object):
     @staticmethod
     def clear_cache():
         """Clears the ROP gadget cache"""
-        cachedir = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache')
+        cachedir = os.path.join(context.cache_dir, 'rop-cache')
         shutil.rmtree(cachedir)
 
     def __cache_load(self, elf):
@@ -1194,7 +1194,7 @@ class ROP(object):
         #
         # - leave
         # - pop reg
-        # - add $sp, value
+        # - add $sp, <hexadecimal value>
         # - ret
         #
         # Currently, ROPgadget does not detect multi-byte "C2" ret.
@@ -1202,7 +1202,7 @@ class ROP(object):
         #
 
         pop   = re.compile(r'^pop (.{3})')
-        add   = re.compile(r'^add [er]sp, (\S+)$')
+        add   = re.compile(r'^add [er]sp, ((?:0[xX])?[0-9a-fA-F]+)$')
         ret   = re.compile(r'^ret$')
         leave = re.compile(r'^leave$')
         int80 = re.compile(r'int +0x80')
@@ -1218,6 +1218,8 @@ class ROP(object):
         # False
         # >>> valid('add esp, 0x24')
         # True
+        # >>> valid('add esp, esi')
+        # False
         #
         valid = lambda insn: any(map(lambda pattern: pattern.match(insn), [pop,add,ret,leave,int80,syscall,sysenter]))
 
