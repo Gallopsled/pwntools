@@ -22,6 +22,6 @@
 %endif
 ${label}:
     ${i386.linux.syscall('SYS_mprotect', 'ebx', 'ecx', 'PROT_READ | PROT_WRITE | PROT_EXEC')}
-    ${i386.linux.mov('ecx', 0x1000)}
+    ${i386.mov('ecx', 0x1000)}
     add ebx, ecx
     jnz ${label}
