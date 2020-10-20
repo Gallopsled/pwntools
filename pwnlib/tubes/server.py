@@ -117,7 +117,7 @@ class server(sock):
                             data, rhost = listen_sock.recvfrom(4096)
                             listen_sock.connect(rhost)
                             sock = listen_sock
-                            sock.unrecv(data)
+                            self.unrecv(data)
                         sock.settimeout(self.timeout)
                         break
                     except socket.error as e:
