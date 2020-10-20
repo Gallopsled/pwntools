@@ -2,7 +2,7 @@ name: Continuous Integration
 on: [push, pull_request]
 
 jobs:
-  build:
+  test:
     strategy:
       matrix:
         python-version: [2.7, 3.8]
@@ -194,7 +194,7 @@ jobs:
   staging-merge:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'Gallopsled' && github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/') && endsWith(github.event.ref, '-staging')
-    needs: build
+    needs: test
     steps:
     - uses: actions/checkout@v2
       with:
@@ -212,7 +212,7 @@ jobs:
   pypi:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-    needs: build
+    needs: test
     steps:
     - name: Download artifacts
       uses: actions/download-artifact@v2

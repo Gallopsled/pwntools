@@ -106,8 +106,11 @@ The table below shows which release corresponds to each branch, and what date th
 ## 4.2.1 (`stable`)
 
 - [#1625][1625] GDB now properly loads executables with QEMU
+- [#1663][1663] Change lookup algorithm of `adb.which`
+- [#1699][1699] Fix broken linux shellcraft templates
 
 [1625]: https://github.com/Gallopsled/pwntools/pull/1625
+[1699]: https://github.com/Gallopsled/pwntools/pull/1699
 
 ## 4.2.0
 
