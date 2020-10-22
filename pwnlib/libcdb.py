@@ -144,6 +144,9 @@ def search_by_build_id(hex_encoded_id):
         '0xda260'
         >>> None == search_by_build_id('XX')
         True
+        >>> filename = search_by_build_id('a5a3c3f65fd94f4c7f323a175707c3a79cbbd614')
+        >>> hex(ELF(filename).symbols.read)
+        '0xeef40'
     """
     return search_by_hash(hex_encoded_id, 'build_id')
 
@@ -153,7 +156,7 @@ def search_by_md5(hex_encoded_id):
 
     Arguments:
         hex_encoded_id(str):
-            Hex-encoded Build ID (e.g. 'ABCDEF...') of the library
+            Hex-encoded md5sum (e.g. 'ABCDEF...') of the library
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -162,8 +165,11 @@ def search_by_md5(hex_encoded_id):
         >>> filename = search_by_md5('7a71dafb87606f360043dcd638e411bd')
         >>> hex(ELF(filename).symbols.read)
         '0xda260'
-        >>> None == search_by_build_id('XX')
+        >>> None == search_by_md5('XX')
         True
+        >>> filename = search_by_md5('74f2d3062180572fc8bcd964b587eeae')
+        >>> hex(ELF(filename).symbols.read)
+        '0xeef40'
     """
     return search_by_hash(hex_encoded_id, 'md5')
 
@@ -173,7 +179,7 @@ def search_by_sha1(hex_encoded_id):
 
     Arguments:
         hex_encoded_id(str):
-            Hex-encoded Build ID (e.g. 'ABCDEF...') of the library
+            Hex-encoded sha1sum (e.g. 'ABCDEF...') of the library
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -184,6 +190,9 @@ def search_by_sha1(hex_encoded_id):
         '0xda260'
         >>> None == search_by_sha1('XX')
         True
+        >>> filename = search_by_sha1('0041d2f397bc2498f62aeb4134d522c5b2635e87')
+        >>> hex(ELF(filename).symbols.read)
+        '0xeef40'
     """
     return search_by_hash(hex_encoded_id, 'sha1')
 
@@ -194,7 +203,7 @@ def search_by_sha256(hex_encoded_id):
 
     Arguments:
         hex_encoded_id(str):
-            Hex-encoded Build ID (e.g. 'ABCDEF...') of the library
+            Hex-encoded sha256sum (e.g. 'ABCDEF...') of the library
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -205,6 +214,9 @@ def search_by_sha256(hex_encoded_id):
         '0xda260'
         >>> None == search_by_sha256('XX')
         True
+        >>> filename = search_by_sha256('5d78fc60054df18df20480c71f3379218790751090f452baffb62ac6b2aff7ee')
+        >>> hex(ELF(filename).symbols.read)
+        '0xeef40'
     """
     return search_by_hash(hex_encoded_id, 'sha256')
 
