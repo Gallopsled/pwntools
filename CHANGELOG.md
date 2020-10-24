@@ -80,6 +80,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1688][1688] Add `__setattr__` and `__call__` interfaces to `ROP` for setting registers
 - [#1692][1692] Remove python2 shebangs where appropriate
 - [#1703][1703] Update libcdb buildid offsets for amd64 and i386
+- [#1704][1704] Try https://libc.rip/ for libcdb lookup
 
 [1541]: https://github.com/Gallopsled/pwntools/pull/1541
 [1602]: https://github.com/Gallopsled/pwntools/pull/1602
@@ -99,6 +100,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1688]: https://github.com/Gallopsled/pwntools/pull/1688
 [1692]: https://github.com/Gallopsled/pwntools/pull/1692
 [1703]: https://github.com/Gallopsled/pwntools/pull/1703
+[1704]: https://github.com/Gallopsled/pwntools/pull/1704
 
 ## 4.3.0 (`stable`)
 
