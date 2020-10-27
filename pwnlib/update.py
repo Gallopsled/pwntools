@@ -74,8 +74,12 @@ def available_on_pypi(prerelease=current_version.is_prerelease):
     >>> available_on_pypi(prerelease=False).is_prerelease
     False
     """
-    client = ServerProxy('https://pypi.python.org/pypi')
-    versions = client.package_releases('pwntools', True)
+    versions = getattr(available_on_pypi, 'cached', None)
+    if versions is None:
+        client = ServerProxy('https://pypi.python.org/pypi')
+        versions = client.package_releases('pwntools', True)
+        available_on_pypi.cached = versions
+
     versions = map(packaging.version.Version, versions)
 
     if not prerelease:
