@@ -342,7 +342,7 @@ class ssh_process(ssh_channel):
             >>> s =  ssh(host='example.pwnme')
             >>> p = s.process('true')
             >>> p.libc  # doctest: +ELLIPSIS
-            ELF('.../libc...')
+            ELF(.../libc.so.6')
         """
         from pwnlib.elf import ELF
 
