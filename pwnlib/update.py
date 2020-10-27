@@ -27,6 +27,7 @@ import json
 import os
 import time
 
+from functools import lru_cache
 from six.moves.xmlrpc_client import ServerProxy
 
 import packaging.version
@@ -66,6 +67,7 @@ def read_update_config(settings):
 
 register_config('update', read_update_config)
 
+@lru_cache
 def available_on_pypi(prerelease=current_version.is_prerelease):
     """Return True if an update is available on PyPI.
 
