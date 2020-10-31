@@ -5,7 +5,7 @@ import pwnlib.constants
 import pwnlib.shellcraft
 import six
 %>
-<%docstring>symlinkat(from, tofd, to) -> str
+<%docstring>symlinkat(from_, tofd, to) -> str
 
 Invokes the syscall symlinkat.
 
@@ -18,7 +18,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="from=0, tofd=0, to=0"/>
+<%page args="from_=0, tofd=0, to=0"/>
 <%
     abi = pwnlib.abi.ABI.syscall()
     stack = abi.stack
@@ -28,8 +28,8 @@ Returns:
     can_pushstr = ['from', 'to']
     can_pushstr_array = []
 
-    argument_names = ['from', 'tofd', 'to']
-    argument_values = [from, tofd, to]
+    argument_names = ['from_', 'tofd', 'to']
+    argument_values = [from_, tofd, to]
 
     # Load all of the arguments into their destination registers / stack slots.
     register_arguments = dict()
