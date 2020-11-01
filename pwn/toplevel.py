@@ -4,6 +4,7 @@ import logging
 import math
 import operator
 import os
+import platform
 import re
 import requests
 import socks
