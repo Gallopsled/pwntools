@@ -23,7 +23,7 @@ def dump(objdump, path):
     return n.name
 
 def diff(a,b):
-    try: return check_output(['diff',a,b])
+    try: return check_output(['diff',a,b], universal_newlines=True)
     except CalledProcessError as e:
         return e.output
 
@@ -56,7 +56,7 @@ def main(a):
     shutil.copy(y.path, name)
     y = dump(objdump, name)
 
-    print diff(x, y)
+    print(diff(x, y))
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)

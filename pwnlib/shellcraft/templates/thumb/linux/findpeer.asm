@@ -1,4 +1,4 @@
-<% from pwnlib.shellcraft.thumb.linux import mov %>
+<% from pwnlib.shellcraft.thumb import mov %>
 <% from socket import htons %>
 <%page args="port = None"/>
 <%docstring>
@@ -6,6 +6,10 @@
 
     Finds a connected socket. If port is specified it is checked
     against the peer port. Resulting socket is left in r6.
+
+    Example:
+        >>> enhex(asm(shellcraft.findpeer(1337)))
+        '6ff00006ee4606f101064ff001074fea072707f11f07f54630461fb401a96a4601df0130efdd01994fea11414ff039024fea022202f105029142e4d1'
 </%docstring>
 findpeer:
     /* File descriptor in r6 */
@@ -52,7 +56,7 @@ compare_port:
     ldr r1, [sp, #4]
     lsr r1, #16
 
-    /* Put the port (${port}) to search for into r1 */
+    /* Put the port (${port}) to search for into r2 */
     ${mov('r2', htons(int(port)))}
 
     /* Is it the one we have been searching for? */

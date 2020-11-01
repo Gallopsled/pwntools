@@ -5,6 +5,7 @@ import math
 import operator
 import os
 import re
+import requests
 import socks
 import signal
 import string
@@ -21,7 +22,7 @@ import pwnlib
 from pwnlib import *
 from pwnlib.asm import *
 from pwnlib.context import Thread
-from pwnlib.context import context
+from pwnlib.context import context, LocalContext
 from pwnlib.dynelf import DynELF
 from pwnlib.encoders import *
 from pwnlib.elf.corefile import Core, Corefile, Coredump
@@ -29,15 +30,18 @@ from pwnlib.elf.elf import ELF, load
 from pwnlib.encoders import *
 from pwnlib.exception import PwnlibException
 from pwnlib.gdb import attach, debug, debug_assembly, debug_shellcode
+from pwnlib.filepointer import *
 from pwnlib.flag import *
-from pwnlib.fmtstr import FmtStr, fmtstr_payload
+from pwnlib.fmtstr import FmtStr, fmtstr_payload, fmtstr_split
 from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak, RelativeMemLeak
 from pwnlib.regsort import *
 from pwnlib.replacements import *
 from pwnlib.rop import ROP
 from pwnlib.rop.srop import SigreturnFrame
+from pwnlib.rop.ret2dlresolve import Ret2dlresolvePayload
 from pwnlib.runner import *
+from pwnlib.term.readline import str_input
 from pwnlib.timeout import Timeout
 from pwnlib.tubes.listen import listen
 from pwnlib.tubes.process import process, PTY, PIPE, STDOUT
@@ -67,15 +71,8 @@ from pwnlib.util.web import *
 
 # Promote these modules, so that "from pwn import *" will let you access them
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from six.moves import cPickle as pickle, cStringIO as StringIO
+from six import BytesIO
 
 error   = log.error
 warning = log.warning
@@ -83,3 +80,5 @@ warn    = log.warning
 info    = log.info
 debug   = log.debug
 success = log.success
+
+__all__ = [x for x in tuple(globals()) if x != '__name__']

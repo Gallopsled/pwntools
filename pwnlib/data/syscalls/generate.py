@@ -17,6 +17,7 @@ import collections
 import pwnlib.abi
 import pwnlib.constants
 import pwnlib.shellcraft
+import six
 %>
 '''
 
@@ -74,7 +75,9 @@ CALL = """
 
         # The argument is not a register.  It is a string value, and we
         # are expecting a string value
-        elif name in can_pushstr and isinstance(arg, str):
+        elif name in can_pushstr and isinstance(arg, (six.binary_type, six.text_type)):
+            if isinstance(arg, six.text_type):
+                arg = arg.encode('utf-8')
             string_arguments[name] = arg
 
         # The argument is not a register.  It is a dictionary, and we are
@@ -108,7 +111,7 @@ CALL = """
 %>
     /* {name}(${{', '.join(syscall_repr)}}) */
 %for name, arg in string_arguments.items():
-    ${{pwnlib.shellcraft.pushstr(arg, append_null=('\\x00' not in arg))}}
+    ${{pwnlib.shellcraft.pushstr(arg, append_null=(b'\\x00' not in arg))}}
     ${{pwnlib.shellcraft.mov(regs[argument_names.index(name)], abi.stack)}}
 %endfor
 %for name, arg in array_arguments.items():
@@ -147,6 +150,8 @@ def fix_bad_arg_names(func, arg):
         return 'length'
     if arg.name == 'repr':
         return 'repr_'
+    if arg.name == 'from':
+        return 'from_'
 
     if func.name == 'open' and arg.name == 'vararg':
         return 'mode'
@@ -185,12 +190,12 @@ def generate_one(target):
 
         # Skip anything with uppercase
         if name.lower() != name:
-            print 'Skipping %s' % name
+            print('Skipping %s' % name)
             continue
 
         # Skip anything that starts with 'unused' or 'sys' after stripping
         if name.startswith('unused'):
-            print 'Skipping %s' % name
+            print('Skipping %s' % name)
             continue
 
         function = functions.get(name, None)
@@ -201,7 +206,7 @@ def generate_one(target):
         # If we can't find a function, just stub it out with something
         # that has a vararg argument.
         if function is None:
-            print 'Stubbing out %s' % name
+            print('Stubbing out %s' % name)
             args = [Argument('int', 0, 'vararg')]
             function = Function('long', 0, name, args)
 

@@ -1,12 +1,13 @@
+from __future__ import absolute_import
 from __future__ import division
 
 import ctypes
 import ctypes.util
 import socket
 
-from packing import p16
-from packing import p32
-from packing import pack
+from pwnlib.util.packing import p16
+from pwnlib.util.packing import p32
+from pwnlib.util.packing import pack
 
 __all__ = ['getifaddrs', 'interfaces', 'interfaces4', 'interfaces6', 'sockaddr']
 
@@ -58,8 +59,10 @@ struct_ifaddrs._fields_ = [
     ('ifa_data'   , ctypes.c_void_p)                ,
     ]
 
+AddressFamily = getattr(socket, 'AddressFamily', int)
+
 def sockaddr_fixup(saptr):
-    family = saptr.contents.sa_family
+    family = AddressFamily(saptr.contents.sa_family)
     addr = {}
     if   family == socket.AF_INET:
         sa = ctypes.cast(saptr, ctypes.POINTER(struct_sockaddr_in)).contents
@@ -88,7 +91,7 @@ def getifaddrs():
       `netmask` are themselves dictionaries.  Their structure depend on
       `family`.  If `family` is not :const:`socket.AF_INET` or
       :const:`socket.AF_INET6` they will be empty.
-"""
+    """
     libc = ctypes.CDLL(ctypes.util.find_library('c'))
     getifaddrs = libc.getifaddrs
     getifaddrs.restype = ctypes.c_int
@@ -133,7 +136,7 @@ def interfaces(all = False):
       A dictionary mapping each of the hosts interfaces to a list of it's
       addresses.  Each entry in the list is a tuple ``(family, addr)``, and
       `family` is either :const:`socket.AF_INET` or :const:`socket.AF_INET6`.
-"""
+    """
     out = {}
     for ifa in getifaddrs():
         name = ifa['name']
@@ -161,7 +164,11 @@ def interfaces4(all = False):
     Returns:
       A dictionary mapping each of the hosts interfaces to a list of it's
       IPv4 addresses.
-"""
+
+    Examples:
+        >>> interfaces4(all=True) # doctest: +ELLIPSIS
+        {...'127.0.0.1'...}
+    """
     out = {}
     for name, addrs in interfaces(all = all).items():
         addrs = [addr for fam, addr in addrs if fam == socket.AF_INET]
@@ -182,7 +189,11 @@ def interfaces6(all = False):
     Returns:
       A dictionary mapping each of the hosts interfaces to a list of it's
       IPv6 addresses.
-"""
+
+    Examples:
+        >>> interfaces6() # doctest: +ELLIPSIS
+        {...'::1'...}
+    """
     out = {}
     for name, addrs in interfaces(all = all).items():
         addrs = [addr for fam, addr in addrs if fam == socket.AF_INET6]
@@ -202,7 +213,7 @@ def sockaddr(host, port, network = 'ipv4'):
 
     Returns:
       A tuple containing the sockaddr buffer, length, and the address family.
-"""
+    """
     address_family = {'ipv4':socket.AF_INET,'ipv6':socket.AF_INET6}[network]
 
     for family, _, _, _, ip in socket.getaddrinfo(host, None, address_family):
@@ -225,4 +236,38 @@ def sockaddr(host, port, network = 'ipv4'):
         sockaddr += p32(0xffffffff) # Save three bytes 'push -1' vs 'push 0'
         sockaddr += host
         length    = len(sockaddr) + 4 # Save five bytes 'push 0'
-    return (sockaddr, length, address_family)
+    return (sockaddr, length, getattr(address_family, "name", address_family))
+
+def sock_match(local, remote, fam=socket.AF_UNSPEC, typ=0):
+    """
+    Given two addresses, returns a function comparing address pairs from
+    psutil library against these two.  Useful for filtering done in
+    :func:`pwnlib.util.proc.pidof`.
+    """
+    def sockinfos(addr, f, t):
+        if not addr:
+            return set()
+        if f not in (socket.AF_UNSPEC, socket.AF_INET, socket.AF_INET6):
+            return {addr}
+        infos = set(socket.getaddrinfo(addr[0], addr[1], f, t))
+
+        # handle mixed IPv4-to-IPv6 and the other way round connections
+        for f, t, proto, _canonname, sockaddr in tuple(infos):
+            if f == socket.AF_INET and t != socket.SOCK_RAW:
+                infos |= set(socket.getaddrinfo(sockaddr[0], sockaddr[1], socket.AF_INET6, t, proto, socket.AI_V4MAPPED))
+        return infos
+
+    if local is not None:
+        local = sockinfos(local, fam, typ)
+    remote = sockinfos(remote, fam, typ)
+
+    def match(c):
+        laddrs = sockinfos(c.laddr, c.family, c.type)
+        raddrs = sockinfos(c.raddr, c.family, c.type)
+        if not (raddrs & remote):
+            return False
+        if local is None:
+            return True
+        return bool(laddrs & local)
+
+    return match

@@ -31,16 +31,24 @@ class listen(sock):
         >>> l = listen(1234)
         >>> r = remote('localhost', l.lport)
         >>> _ = l.wait_for_connection()
-        >>> l.sendline('Hello')
+        >>> l.sendline(b'Hello')
         >>> r.recvline()
-        'Hello\n'
+        b'Hello\n'
 
+        >>> # It works with ipv4 by default
         >>> l = listen()
         >>> l.spawn_process('/bin/sh')
-        >>> r = remote('localhost', l.lport)
-        >>> r.sendline('echo Goodbye')
+        >>> r = remote('127.0.0.1', l.lport)
+        >>> r.sendline(b'echo Goodbye')
         >>> r.recvline()
-        'Goodbye\n'
+        b'Goodbye\n'
+
+        >>> # and it works with ipv6 by defaut, too!
+        >>> l = listen()
+        >>> r = remote('::1', l.lport)
+        >>> r.sendline(b'Bye-bye')
+        >>> l.recvline()
+        b'Bye-bye\n'
     """
 
     #: Local port
@@ -66,19 +74,17 @@ class listen(sock):
 
     _accepter = None
 
-    def __init__(self, port=0, bindaddr = "0.0.0.0",
-                 fam = "any", typ = "tcp", *args, **kwargs):
+    def __init__(self, port=0, bindaddr='::',
+                 fam='any', typ='tcp', *args, **kwargs):
         super(listen, self).__init__(*args, **kwargs)
 
         port = int(port)
-        fam  = {socket.AF_INET: 'ipv4',
-                socket.AF_INET6: 'ipv6'}.get(fam, fam)
 
         fam = self._get_family(fam)
         typ = self._get_type(typ)
 
-        if fam == socket.AF_INET6 and bindaddr == '0.0.0.0':
-            bindaddr = '::'
+        if fam == socket.AF_INET and bindaddr == '::':
+            bindaddr = '0.0.0.0'
 
         h = self.waitfor('Trying to bind to %s on port %d' % (bindaddr, port))
 
@@ -91,6 +97,11 @@ class listen(sock):
             h.status("Trying %s" % self.sockaddr[0])
             listen_sock = socket.socket(self.family, self.type, self.proto)
             listen_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            if self.family == socket.AF_INET6:
+                try:
+                    listen_sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, fam == socket.AF_INET6)
+                except (socket.error, AttributeError):
+                    self.warn("could not set socket to accept also IPV4")
             listen_sock.bind(self.sockaddr)
             self.lhost, self.lport = listen_sock.getsockname()[:2]
             if self.type == socket.SOCK_STREAM:

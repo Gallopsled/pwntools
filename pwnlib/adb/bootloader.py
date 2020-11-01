@@ -4,6 +4,7 @@ from __future__ import division
 import ctypes
 import io
 import os
+import six
 import sys
 
 from pwnlib.log import getLogger
@@ -24,7 +25,7 @@ class bootloader_images_header(ctypes.Structure):
         ('bootldr_size', ctypes.c_uint32),
     ]
 
-BOOTLDR_MAGIC = bytes('BOOTLDR!')
+BOOTLDR_MAGIC = b'BOOTLDR!'
 
 class BootloaderImage(object):
     def __init__(self, data):
@@ -64,7 +65,7 @@ class BootloaderImage(object):
         Returns:
             Contents of the image.
         """
-        if isinstance(index_or_name, int):
+        if isinstance(index_or_name, six.integer_types):
             index = index_or_name
         else:
             for i in range(len(self.img_info)):
@@ -120,5 +121,5 @@ class BootloaderImage(object):
 
 if __name__ == '__main__':
     # Easy sanity checking
-    b = BootloaderImage(open(sys.argv[1]).read())
+    b = BootloaderImage(open(sys.argv[1], 'rb').read())
     print(b)

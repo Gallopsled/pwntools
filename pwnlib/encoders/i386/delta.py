@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import six
 import collections
 from random import choice
 from random import randint
@@ -41,7 +42,7 @@ class i386DeltaEncoder(Encoder):
 
     Example:
 
-        >>> sc = pwnlib.encoders.i386.delta.encode('\xcc', '\x00\xcc')
+        >>> sc = pwnlib.encoders.i386.delta.encode(b'\xcc', b'\x00\xcc')
         >>> e  = ELF.from_bytes(sc)
         >>> e.process().poll(True)
         -5
@@ -50,36 +51,35 @@ class i386DeltaEncoder(Encoder):
     arch       = 'i386'
     stub       = None
     terminator = 0xac
-    raw        = '\xd9\xd0\xfc\xd9t$\xf4^\x83\xc6\x18\x89\xf7\xac\x93\xac(\xd8\xaa\x80\xeb\xacu\xf5'
+    raw        = b'\xd9\xd0\xfc\xd9t$\xf4^\x83\xc6\x18\x89\xf7\xac\x93\xac(\xd8\xaa\x80\xeb\xacu\xf5'
 
     blacklist  = set(raw)
 
-    def __call__(self, bytes, avoid, pcreg=''):
+    def __call__(self, raw_bytes, avoid, pcreg=''):
         table = collections.defaultdict(lambda: [])
-        endchar = ''
+        endchar = bytearray()
 
-        not_bad = lambda x: chr(x) not in avoid
+        not_bad = lambda x: six.int2byte(x) not in avoid
         not_bad_or_term = lambda x: not_bad(x) and x != self.terminator
 
         for i in filter(not_bad_or_term, range(0, 256)):
-            endchar += chr(i)
+            endchar.append(i)
             for j in filter(not_bad, range(0, 256)):
-                table[(j - i) & 0xff].append(chr(i) + chr(j))
+                table[(j - i) & 0xff].append(bytearray([i, j]))
 
-        res = self.raw
+        res = bytearray(self.raw)
 
-        for c in bytes:
-            a = ord(c)
-            l = len(table[a])
+        for c in bytearray(raw_bytes):
+            l = len(table[c])
             if l == 0:
-                print 'No encodings for character %02x' % a
+                print('No encodings for character %02x' % c)
                 return None
 
-            res += table[a][randint(0, l - 1)]
+            res += table[c][randint(0, l - 1)]
 
-        res += chr(self.terminator)
-        res += choice(endchar)
+        res.append(self.terminator)
+        res.append(choice(endchar))
 
-        return res
+        return bytes(res)
 
 encode = i386DeltaEncoder()

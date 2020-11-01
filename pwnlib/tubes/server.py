@@ -9,6 +9,7 @@ from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.tubes.sock import sock
 from pwnlib.tubes.remote import remote
+from six.moves.queue import Queue
 
 log = getLogger(__name__)
 
@@ -30,18 +31,18 @@ class server(sock):
         >>> s = server(8888)
         >>> client_conn = remote('localhost', s.lport)
         >>> server_conn = s.next_connection()
-        >>> client_conn.sendline('Hello')
+        >>> client_conn.sendline(b'Hello')
         >>> server_conn.recvline()
-        'Hello\n'
+        b'Hello\n'
         >>> def cb(r):
         ...     client_input = r.readline()
         ...     r.send(client_input[::-1])
         ...
         >>> t = server(8889, callback=cb)
         >>> client_conn = remote('localhost', t.lport)
-        >>> client_conn.sendline('callback')
+        >>> client_conn.sendline(b'callback')
         >>> client_conn.recv()
-        '\nkcabllac'
+        b'\nkcabllac'
     """
 
     #: Local port
@@ -67,19 +68,17 @@ class server(sock):
 
     _accepter = None
 
-    def __init__(self, port=0, bindaddr = "0.0.0.0", fam = "any", typ = "tcp",
+    def __init__(self, port=0, bindaddr = "::", fam = "any", typ = "tcp",
                  callback = None, blocking = False, *args, **kwargs):
         super(server, self).__init__(*args, **kwargs)
 
         port = int(port)
-        fam  = {socket.AF_INET: 'ipv4',
-                socket.AF_INET6: 'ipv6'}.get(fam, fam)
 
         fam = self._get_family(fam)
         typ = self._get_type(typ)
 
-        if fam == socket.AF_INET6 and bindaddr == '0.0.0.0':
-            bindaddr = '::'
+        if fam == socket.AF_INET and bindaddr == '::':
+            bindaddr = '0.0.0.0'
 
         h = self.waitfor('Trying to bind to %s on port %d' % (bindaddr, port))
 
@@ -104,8 +103,7 @@ class server(sock):
         h.success()
 
         self.sock = listen_sock
-        self.connections_waiting = threading.Event()
-        self.connections = []
+        self.connections = Queue()
         def accepter():
             while True:
                 h = self.waitfor('Waiting for connections on %s:%s' % (self.lhost, self.lport))
@@ -117,7 +115,7 @@ class server(sock):
                             data, rhost = listen_sock.recvfrom(4096)
                             listen_sock.connect(rhost)
                             sock = listen_sock
-                            sock.unrecv(data)
+                            self.unrecv(data)
                         sock.settimeout(self.timeout)
                         break
                     except socket.error as e:
@@ -139,21 +137,14 @@ class server(sock):
                     else:
                         callback(r)
                 else:
-                    self.connections.append(r)
-                    if not self.connections_waiting.is_set():
-                        self.connections_waiting.set()
+                    self.connections.put(r)
 
         self._accepter = context.Thread(target = accepter)
         self._accepter.daemon = True
         self._accepter.start()
 
     def next_connection(self):
-        if not self.connections_waiting.is_set():
-            self.connections_waiting.wait()
-        conn = self.connections.pop(0)
-        if not self.connections:
-            self.connections_waiting.clear()
-        return conn
+        return self.connections.get()
 
     def close(self):
         # since `close` is scheduled to run on exit we must check that we got

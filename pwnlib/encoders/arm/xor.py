@@ -15,13 +15,13 @@ class ArmXorEncoder(Encoder):
 
     >>> context.clear(arch='arm')
     >>> shellcode = asm(shellcraft.sh())
-    >>> avoid = 'binsh\x00\n'
+    >>> avoid = b'binsh\x00\n'
     >>> encoded = pwnlib.encoders.arm.xor.encode(shellcode, avoid)
     >>> assert not any(c in encoded for c in avoid)
     >>> p = run_shellcode(encoded)
-    >>> p.sendline('echo hello; exit')
+    >>> p.sendline(b'echo hello; exit')
     >>> p.recvline()
-    'hello\n'
+    b'hello\n'
     """
 
     arch = 'arm'

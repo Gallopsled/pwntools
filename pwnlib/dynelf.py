@@ -15,7 +15,7 @@ Example
     # leaks at least one byte at that address.
     def leak(address):
         data = p.read(address, 4)
-        log.debug("%#x => %s" % (address, (data or '').encode('hex')))
+        log.debug("%#x => %s" % (address, enhex(data or '')))
         return data
 
     # For the sake of this example, let's say that we
@@ -75,8 +75,8 @@ def sysv_hash(symbol):
     """
     h = 0
     g = 0
-    for c in symbol:
-        h = (h << 4) + ord(c)
+    for c in bytearray(context._encode(symbol)):
+        h = (h << 4) + c
         g = h & 0xf0000000
         h ^= (g >> 24)
         h &= ~g
@@ -87,9 +87,10 @@ def gnu_hash(s):
 
     Function used to generated GNU-style hashes for strings.
     """
+    s = bytearray(context._encode(s))
     h = 5381
     for c in s:
-        h = h * 33 + ord(c)
+        h = h * 33 + c
     return h & 0xffffffff
 
 class DynELF(object):
@@ -292,7 +293,7 @@ class DynELF(object):
         w = None
 
         while True:
-            if self.leak.compare(ptr, '\x7fELF'):
+            if self.leak.compare(ptr, b'\x7fELF'):
                 break
 
             # See if we can short circuit the search
@@ -641,7 +642,7 @@ class DynELF(object):
             p_name = leak.field(cur, LinkMap.l_name)
             name   = leak.s(p_name)
 
-            if libname in name:
+            if libname.encode('utf-8') in name:
                 break
 
             if name:
@@ -704,12 +705,14 @@ class DynELF(object):
             "A hash table of Elf32_Word objects supports symbol table access", or see:
             https://docs.oracle.com/cd/E19504-01/802-6319/6ia12qkfo/index.html#chapter6-48031
 
-            struct Elf_Hash {
-                uint32_t nbucket;
-                uint32_t nchain;
-                uint32_t bucket[nbucket];
-                uint32_t chain[nchain];
-            }
+            .. code-block:: c
+
+                struct Elf_Hash {
+                    uint32_t nbucket;
+                    uint32_t nchain;
+                    uint32_t bucket[nbucket];
+                    uint32_t chain[nchain];
+                }
 
             You can force an ELF to use this type of symbol table by compiling
             with 'gcc -Wl,--hash-style=sysv'
@@ -738,6 +741,7 @@ class DynELF(object):
 
                 # Leak the name of the function from the symbol table
                 name = leak.s(strtab + leak.field(sym, Sym.st_name))
+                name = name.decode('utf-8')
 
                 # Make sure it matches the name of the symbol we were looking for.
                 if name == symb:
@@ -821,6 +825,7 @@ class DynELF(object):
                 # Check for collision on hash values
                 sym  = symtab + sizeof(Sym) * (ndx + i)
                 name = leak.s(strtab + leak.field(sym, Sym.st_name))
+                name = name.decode('utf-8')
 
                 if name == symb:
                     # No collision, get offset and calculate address
@@ -852,10 +857,10 @@ class DynELF(object):
 
         for offset in libcdb.get_build_id_offsets():
             address = libbase + offset
-            if self.leak.compare(address + 0xC, "GNU\x00"):
-                return enhex(''.join(self.leak.raw(address + 0x10, 20)))
+            if self.leak.compare(address + 0xC, b"GNU\x00"):
+                return enhex(b''.join(self.leak.raw(address + 0x10, 20)))
             else:
-                self.status("Magic did not match")
+                self.status("Build ID not found at offset %#x" % offset)
                 pass
 
     def _make_absolute_ptr(self, ptr_or_offset):

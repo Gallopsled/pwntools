@@ -1,6 +1,9 @@
 from __future__ import division
 
 import collections
+import six
+
+from six.moves import range
 
 
 def partition(lst, f, save_keys = False):
@@ -21,6 +24,8 @@ def partition(lst, f, save_keys = False):
     Example:
       >>> partition([1,2,3,4,5], lambda x: x&1)
       [[1, 3, 5], [2, 4]]
+      >>> partition([1,2,3,4,5], lambda x: x%3, save_keys=True)
+      OrderedDict([(1, [1, 4]), (2, [2, 5]), (0, [3])])
     """
     d = collections.OrderedDict()
 
@@ -31,7 +36,7 @@ def partition(lst, f, save_keys = False):
     if save_keys:
         return d
     else:
-        return d.values()
+        return list(d.values())
 
 def group(n, lst, underfull_action = 'ignore', fill_value = None):
     """group(n, lst, underfull_action = 'ignore', fill_value = None) -> list
@@ -58,6 +63,8 @@ def group(n, lst, underfull_action = 'ignore', fill_value = None):
       ['ABC', 'DEF', 'GZZ']
       >>> group(3, list('ABCDEFG'), 'fill')
       [['A', 'B', 'C'], ['D', 'E', 'F'], ['G', None, None]]
+      >>> group(2, tuple('1234'), 'fill')
+      [('1', '2'), ('3', '4')]
     """
 
     if underfull_action not in ['ignore', 'drop', 'fill']:
@@ -68,8 +75,8 @@ def group(n, lst, underfull_action = 'ignore', fill_value = None):
             fill_value = (fill_value,)
         elif isinstance(lst, list):
             fill_value = [fill_value]
-        elif isinstance(lst, (str, unicode)):
-            if not isinstance(fill_value, (str, unicode)):
+        elif isinstance(lst, (bytes, six.text_type)):
+            if not isinstance(fill_value, (bytes, six.text_type)):
                 raise ValueError("group(): cannot fill a string with a non-string")
         else:
             raise ValueError("group(): 'lst' must be either a tuple, list or string")
@@ -135,7 +142,7 @@ def ordlist(s):
       >>> ordlist("hello")
       [104, 101, 108, 108, 111]
     """
-    return map(ord, s)
+    return list(map(ord, s))
 
 def unordlist(cs):
     """unordlist(cs) -> str
@@ -162,6 +169,10 @@ def findall(haystack, needle):
       4
       >>> next(foo)
       6
+      >>> list(foo) # no more appearances
+      []
+      >>> list(findall("aaabaaabc", "aab"))
+      [1, 5]
     """
     def __kmp_table(W):
         pos = 1
@@ -197,8 +208,8 @@ def findall(haystack, needle):
                 i = max(T[i], 0)
 
     def __single_search(S, w):
-        for i in xrange(len(S)):
-            if S[i] == w:
+        for i, v in enumerate(S):
+            if v == w:
                 yield i
 
 

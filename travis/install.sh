@@ -47,6 +47,8 @@ setup_travis()
     powerpc-linux-gnu-as    --version
     qemu-arm-static         --version
 
+    mips-linux-gnu-ld       --version
+
     # Force-install capstone because it's broken somehow
     [[ -f usr/lib/libcapstone.so.3 ]] || install_deb libcapstone3
 
@@ -62,10 +64,22 @@ setup_travis()
     rm -rf usr/share
 }
 
+setup_ipv6()
+{
+    echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
+}
+
+setup_gdbserver()
+{
+    # https://docs.improbable.io/reference/14.3/shared/debug-cloud-workers#common-issues
+    wget http://archive.ubuntu.com/ubuntu/pool/main/g/gdb/gdbserver_8.3-0ubuntu1_amd64.deb
+    sudo apt-get install ./gdbserver_8.3-0ubuntu1_amd64.deb
+}
+
 setup_linux()
 {
     sudo apt-get install -y software-properties-common openssh-server libncurses5-dev libncursesw5-dev openjdk-8-jre-headless
-    RELEASE="$(lsb-release -sr)"
+    RELEASE="$(lsb_release -sr)"
     if [[ "$RELEASE" < "16.04" ]]; then
         sudo apt-add-repository --yes ppa:pwntools/binutils
         sudo apt-get update
@@ -117,60 +131,52 @@ setup_android_emulator()
     if (uname | grep -i Darwin &>/dev/null); then
         brew install android-sdk android-ndk
     else
-        if [ ! -f android-sdk/android ]; then
+        if [ ! -f android-sdk/tools/bin/sdkmanager ]; then
             # Install the SDK, which gives us the 'android' and 'emulator' commands
-            wget -nv https://dl.google.com/android/android-sdk_r24.4.1-linux.tgz
-            tar xf android-sdk_r24.4.1-linux.tgz
-            rm  -f android-sdk_r24.4.1-linux.tgz
+            wget -nv -O sdk-tools-linux.zip https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip
+            unzip -q sdk-tools-linux.zip
+            rm    -f sdk-tools-linux.zip
 
             # Travis caching causes this to exist already
             rm -rf android-sdk
 
-            mv android-sdk-linux android-sdk
-            file android-sdk/tools/android
+            mkdir android-sdk
+            mv tools android-sdk/
+            file android-sdk/tools/bin/sdk-manager
         fi
 
         export PATH="$PWD/android-sdk/tools:$PATH"
+        export PATH="$PWD/android-sdk/tools/bin:$PATH"
         export PATH="$PWD/android-sdk/platform-tools:$PATH"
-        which android
-
-        # Install the NDK, which is required for adb.compile()
-        NDK_VERSION=android-ndk-r12b
-        if [ ! -f android-ndk/ndk-build ]; then
-            wget -nv https://dl.google.com/android/repository/$NDK_VERSION-linux-x86_64.zip
-            unzip -q android-ndk-*.zip
-            rm -f    android-ndk-*.zip
-
-            # Travis caching causes this to exist already
-            rm -rf android-ndk
-
-            mv     $NDK_VERSION android-ndk
-        fi
-
-        export NDK=$PWD/android-ndk
-        export PATH=$NDK:$PATH
+        export ANDROID_SDK_ROOT="$PWD/android-sdk"
+        export ANDROID_HOME="$PWD/android-sdk"
+        which sdkmanager
     fi
 
     # Grab prerequisites
-    echo y | android update sdk --no-ui --all --filter platform-tools,extra-android-support
-    echo y | android update sdk --no-ui --all --filter android-21
-
     # Valid ABIs:
     # - armeabi-v7a
     # - arm64-v8a
     # - x86
     # - x86_64
-    ABI='armeabi-v7a'
+    ANDROID_ABI='armeabi-v7a'
+    ANDROIDV=android-24
+    yes | sdkmanager --install platform-tools 'extras;android;m2repository' emulator ndk-bundle \
+          "platforms;$ANDROIDV" "system-images;$ANDROIDV;default;$ANDROID_ABI" >/dev/null
+    yes | sdkmanager --licenses
 
-    # Grab the emulator image
-    echo y | android update sdk --no-ui --all --filter sys-img-$ABI-android-21
+    # enable NDK for adb.compile()
+    for d in "$PWD/android-sdk/ndk-bundle/"*/; do
+        export PATH="$PATH:$d"
+    done
 
     # Create our emulator Android Virtual Device (AVD)
-    echo no | android --silent create avd --name android-$ABI   --target android-21 --force --snapshot --abi $ABI
+    # --snapshot flag is deprecated, see bitrise-steplib/steps-create-android-emulator#18
+    echo no | avdmanager --silent create avd --name android-$ANDROID_ABI --force --package "system-images;$ANDROIDV;default;$ANDROID_ABI"
 
     # In the future, it would be nice to be able to use snapshots.
     # However, I haven't gotten them to work nicely.
-    emulator -avd android-$ABI -no-window -no-boot-anim -no-skin -no-audio -no-window -no-snapshot &
+    android-sdk/emulator/emulator -avd android-$ANDROID_ABI -no-window -no-boot-anim -read-only -no-audio -no-window -no-snapshot &
     adb wait-for-device
     adb shell id
     adb shell getprop
@@ -184,7 +190,9 @@ setup_osx()
 }
 
 if [[ "$USER" == "travis" ]]; then
-    setup_travis
+#   setup_travis
+    setup_ipv6
+    setup_gdbserver
     setup_android_emulator
 elif [[ "$USER" == "shippable" ]]; then
     sudo apt-get update

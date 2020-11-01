@@ -10,6 +10,7 @@ from __future__ import division
 
 import logging
 import functools
+import six
 import stat
 import time
 
@@ -33,17 +34,19 @@ def pack(val):
 def unpack(val):
     return int(val, 16)
 
-OKAY = "OKAY"
-FAIL = "FAIL"
+OKAY = b"OKAY"
+FAIL = b"FAIL"
 
 class Message(object):
     """An ADB hex-length-prefixed message"""
     def __init__(self, string):
         self.string = string
+    def __bytes__(self):
+        return self.__flat__()
     def __str__(self):
-        return ('%04x' % len(self.string)) + self.string
+        return self.__flat__()
     def __flat__(self):
-        return str(self)
+        return ('%04x' % len(self.string)).encode('ascii') + self.string
 
 class Connection(remote):
     """Connection to the ADB server"""
@@ -61,7 +64,7 @@ class Connection(remote):
             super(Connection, self).close()
 
     def adb_send(self, message):
-        self.send(str(Message(message)))
+        self.send(bytes(Message(message)))
         return self.recvn(4)
 
     def adb_unpack(self):
@@ -104,9 +107,10 @@ class AdbClient(Logger):
                 and self.port == context.defaults['adb_port']:
                     log.warn("Could not connect to ADB server, trying to start it")
                     process(context.adb + ['start-server']).recvall()
+                    time.sleep(0.3)
                 else:
-                    log.exception('Could not connect to ADB server (%s:%s)' % \
-                                    (self.host, self.port))
+                    log.exception('Could not connect to ADB server (%s:%s)',
+                                  self.host, self.port)
 
         # Final attempt...
         if not self._c:
@@ -140,6 +144,8 @@ class AdbClient(Logger):
 
     def send(self, *a, **kw):
         """Sends data to the ADB server"""
+        if isinstance(a[0], six.text_type):
+            a = (a[0].encode('utf-8'),) + a[1:]
         return self.c.adb_send(*a, **kw)
 
     def unpack(self, *a, **kw):
@@ -163,6 +169,7 @@ class AdbClient(Logger):
 
         >>> c.version() > (4,0)
         True
+        >>> c.wait_for_device() # ensure doctests alive
         """
         try:
             self.send('host:kill')
@@ -197,8 +204,11 @@ class AdbClient(Logger):
         if long:
             msg += '-l'
         response = self.send(msg)
-        if response == 'OKAY':
-            return self.recvl()
+        if response == OKAY:
+            l = self.recvl()
+            if not hasattr(l, 'encode'):
+                l = l.decode('utf-8')
+            return l
         self.error("Could not enumerate devices")
 
     @_autoclose
@@ -210,10 +220,13 @@ class AdbClient(Logger):
         """
         self.send('host:track-devices')
         while True:
-            yield self.recvl()
+            l = self.recvl()
+            if not hasattr(l, 'encode'):
+                l = l.decode('utf-8')
+            yield l
 
-    def transport(self, serial=None):
-        """Sets the Transport on the rmeote device.
+    def transport(self, serial=None, try_again=True):
+        """Sets the Transport on the remote device.
 
         Examples:
 
@@ -233,10 +246,14 @@ class AdbClient(Logger):
             msg = 'host:transport-any'
 
         if self.send(msg) == FAIL:
+            err = self.recvl().decode('utf-8')
+            if err == 'device offline' and try_again:
+                self.wait_for_device(serial)
+                return self.transport(serial, try_again=False)
             if serial:
-                self.error("Could not set transport to %r" % serial)
+                self.error("Could not set transport to %r (%s)" % (serial, err))
             else:
-                self.error("Could not set transport 'any'")
+                self.error("Could not set transport 'any' (%s)" % err)
 
     @_autoclose
     @_with_transport
@@ -249,13 +266,12 @@ class AdbClient(Logger):
         Examples:
 
             >>> pwnlib.protocols.adb.AdbClient().execute(['echo','hello']).recvall()
-            'hello\n'
+            b'hello\n'
         """
         self.transport(context.device)
         if isinstance(argv, str):
             argv = [argv]
-        argv = list(map(sh_string, argv))
-        cmd = 'exec:%s' % (' '.join(argv))
+        cmd = 'exec:%s' % (' '.join(map(sh_string, argv)))
         if OKAY == self.send(cmd):
             rv = self._c
             self._c = None
@@ -279,13 +295,15 @@ class AdbClient(Logger):
     @_with_transport
     def root(self):
         self.send('root:')
-        return self.c.recvall()
+        rv = self.c.recvall().decode('utf-8')
+        time.sleep(0.1)
+        return rv
 
     @_autoclose
     @_with_transport
     def unroot(self):
         self.send('unroot:')
-        return self.c.recvall()
+        return self.c.recvall().decode('utf-8')
 
     @_autoclose
     @_with_transport
@@ -319,26 +337,32 @@ class AdbClient(Logger):
 
     @_autoclose
     def wait_for_device(self, serial=''):
-        response = self.send('host-serial:%s:wait-for-any-device' % serial)
+        if serial:
+            response = self.send('host-serial:%s:wait-for-any-device' % serial)
+        else:
+            response = self.send('host:wait-for-any-device')
 
         # The first OKAY is that the command was understood
-        if response != 'OKAY':
-            self.error("An error occurred while waiting for device with serial %r" % serial)
+        if response != OKAY:
+            if response == FAIL:
+                response = self.recvl().decode('utf-8')
+            self.error("An error occurred while trying to wait for device with serial %r (%r)" % (serial, response))
 
         # The second OKAY is that the device is available
         response = self.c.recvn(4)
-        if response != 'OKAY':
-            self.error("An error occurred while waiting for device with serial %r" % serial)
+        if response != OKAY:
+            if response == FAIL:
+                response = self.recvl().decode('utf-8')
+            self.error("An error occurred while waiting for device with serial %r (%r)" % (serial, response))
 
     def _sync(fn):
         """Decorator which enters 'sync:' mode to the selected transport,
         then invokes the decorated funciton."""
         @functools.wraps(fn)
         def wrapper(self, *a, **kw):
-            rv = None
-            if FAIL != self.send('sync:'):
-                rv = fn(self, *a, **kw)
-            return rv
+            if self.send('sync:') == FAIL:
+                self.error("An error occurred while trying to use SYNC API (%r)" % self.recvl().decode('utf-8'))
+            return fn(self, *a, **kw)
         return wrapper
 
     def list(self, path):
@@ -368,8 +392,10 @@ class AdbClient(Logger):
 
         Examples:
 
+            >>> _ = AdbClient().root()
+            >>> AdbClient().wait_for_device()
             >>> pprint(AdbClient().list('/data/user'))
-            {'0': {'mode': 41471, 'size': 11, 'time': ...}}
+            {'0': {'mode': 41471, 'size': 10, 'time': ...}}
             >>> AdbClient().list('/does/not/exist')
             Traceback (most recent call last):
             ...
@@ -388,21 +414,26 @@ class AdbClient(Logger):
     @_with_transport
     @_sync
     def _list(self, path):
+        if isinstance(path, six.text_type):
+            path = path.encode('utf-8')
         self.c.flat32('LIST', len(path), path)
         files = {}
         while True:
             response = self.c.recvn(4)
 
-            if response == 'DONE':
+            if response == b'DONE':
                 break
 
-            if response != 'DENT':
+            if response != b'DENT':
                 self.error('Unexpected response: %r' % response)
 
             mode = self.c.u32()
             size = self.c.u32()
             time = self.c.u32()
             name = self.c.recvn(self.c.u32())
+
+            if not hasattr(name, 'encode'):
+                name = name.decode('utf-8')
 
             # Ignore the current directory and parent
             if name in ('', '.', '..'):
@@ -417,26 +448,28 @@ class AdbClient(Logger):
     @_with_transport
     @_sync
     def stat(self, path):
-        """Execute the ``STAT`` command of the ``SYNC`` API.
+        """Execute the STAT command of the SYNC API.
 
         Arguments:
             path(str): Path to the file to stat.
 
         Return:
             On success, a dictionary mapping the values returned.
-            If the file cannot be ``stat()``ed, None is returned.
+            If the file cannot be stat() ed, None is returned.
 
         Example:
 
             >>> expected = {'mode': 16749, 'size': 0, 'time': 0}
             >>> pwnlib.protocols.adb.AdbClient().stat('/proc')           == expected
             True
-            >>> pwnlib.protocols.adb.AdbClient().stat('/does/not/exist') == None
+            >>> pwnlib.protocols.adb.AdbClient().stat('/does/not/exist') is None
             True
         """
+        if isinstance(path, six.text_type):
+            path = path.encode('utf-8')
         self.c.flat32('STAT', len(path), path)
-        if self.c.recvn(4) != 'STAT':
-            self.error("An error occured while attempting to STAT a file.")
+        if self.c.recvn(4) != b'STAT':
+            self.error("An error occurred while attempting to STAT a file.")
 
         mode = self.c.u32()
         size = self.c.u32()
@@ -494,7 +527,7 @@ class AdbClient(Logger):
         self.c.flat32('DONE', timestamp)
 
         result = self.c.recvn(4)
-        if result != 'OKAY':
+        if result != OKAY:
             log.error("Sync write failed: %r (expected OKAY)" % result)
 
         return
@@ -519,28 +552,30 @@ class AdbClient(Logger):
         Return:
             The data received as a string.
         """
-        self.c.send('RECV' + p32(len(path)) + path)
+        if isinstance(path, six.text_type):
+            path = path.encode('utf-8')
+        self.c.send(b'RECV' + p32(len(path)) + path)
 
         # Accumulate all data here
-        all_data = ''
+        all_data = b''
 
         while True:
             magic = self.c.recvn(4)
 
             # adbd says there is no more data to send
-            if magic == 'DONE':
+            if magic == b'DONE':
                 break
 
-            if magic == 'FAIL':
+            if magic == FAIL:
                 self.error('Could not read file %r: Got FAIL.' % path)
 
             # did we expect to be done?
-            if magic != 'DATA':
+            if magic != b'DATA':
                 self.error('Error after file read: %r (expected DATA)' % magic)
 
             # receive all of the data in the chunk
             chunk_size = self.c.u32()
-            chunk_data  = ''
+            chunk_data  = b''
             while len(chunk_data) != chunk_size:
                 chunk_data += self.c.recv(chunk_size - len(chunk_data))
 
@@ -576,4 +611,4 @@ def proxy(port=9999):
     l = listen(port)
     l.wait_for_connection()
     r = remote(context.adb_host, context.adb_port, level='debug')
-    l <> r
+    l.connect_both(r)

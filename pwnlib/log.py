@@ -94,11 +94,11 @@ logger.
 from __future__ import absolute_import
 from __future__ import division
 
-import ConfigParser
 import logging
 import os
 import random
 import re
+import six
 import sys
 import threading
 import time
@@ -180,10 +180,13 @@ class Progress(object):
         self.rate = kwargs.pop('rate', 0)
         self._log(status, args, kwargs, 'status')
         # it is a common use case to create a logger and then immediately update
-        # its status line, so we reset `last_status` to accomodate this pattern
+        # its status line, so we reset `last_status` to accommodate this pattern
         self.last_status = 0
 
     def _log(self, status, args, kwargs, msgtype):
+        # Logs are strings, not bytes.  Handle Python3 bytes() objects.
+        status = six.ensure_text(status)
+
         # this progress logger is stopped, so don't generate any more records
         if self._stopped:
             return
@@ -280,11 +283,14 @@ class Logger(object):
         self._logger = logger
 
     def _getlevel(self, levelString):
-        if isinstance(levelString, int):
+        if isinstance(levelString, six.integer_types):
             return levelString
         return logging._levelNames[levelString.upper()]
 
     def _log(self, level, msg, args, kwargs, msgtype, progress = None):
+        # Logs are strings, not bytes.  Handle Python3 bytes() objects.
+        msg = six.ensure_text(msg)
+
         extra = kwargs.get('extra', {})
         extra.setdefault('pwnlib_msgtype', msgtype)
         extra.setdefault('pwnlib_progress', progress)
@@ -651,7 +657,7 @@ log_file.setFormatter(logging.Formatter(fmt, iso_8601))
 # The root 'pwnlib' logger is declared here.  To change the target of all
 # 'pwntools'-specific logging, only this logger needs to be changed.
 #
-# Logging cascades upward through the heirarchy,
+# Logging cascades upward through the hierarchy,
 # so the only point that should ever need to be
 # modified is the root 'pwnlib' logger.
 #

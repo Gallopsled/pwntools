@@ -3,10 +3,12 @@
 
 Example:
 
+    >>> b'\0' in pwnlib.asm.asm(shellcraft.mips.linux.sh())
+    False
     >>> p = run_assembly(shellcraft.mips.linux.sh())
-    >>> p.sendline('echo Hello')
+    >>> p.sendline(b'echo Hello')
     >>> p.recv()
-    'Hello\n'
+    b'Hello\n'
 
 </%docstring>
 

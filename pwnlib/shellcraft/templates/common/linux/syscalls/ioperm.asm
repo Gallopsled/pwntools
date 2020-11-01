@@ -3,8 +3,9 @@ import collections
 import pwnlib.abi
 import pwnlib.constants
 import pwnlib.shellcraft
+import six
 %>
-<%docstring>ioperm(from, num, turn_on) -> str
+<%docstring>ioperm(from_, num, turn_on) -> str
 
 Invokes the syscall ioperm.
 
@@ -17,7 +18,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="from=0, num=0, turn_on=0"/>
+<%page args="from_=0, num=0, turn_on=0"/>
 <%
     abi = pwnlib.abi.ABI.syscall()
     stack = abi.stack
@@ -27,8 +28,8 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['from', 'num', 'turn_on']
-    argument_values = [from, num, turn_on]
+    argument_names = ['from_', 'num', 'turn_on']
+    argument_values = [from_, num, turn_on]
 
     # Load all of the arguments into their destination registers / stack slots.
     register_arguments = dict()
@@ -53,7 +54,9 @@ Returns:
 
         # The argument is not a register.  It is a string value, and we
         # are expecting a string value
-        elif name in can_pushstr and isinstance(arg, str):
+        elif name in can_pushstr and isinstance(arg, (six.binary_type, six.text_type)):
+            if isinstance(arg, six.text_type):
+                arg = arg.encode('utf-8')
             string_arguments[name] = arg
 
         # The argument is not a register.  It is a dictionary, and we are
@@ -87,7 +90,7 @@ Returns:
 %>
     /* ioperm(${', '.join(syscall_repr)}) */
 %for name, arg in string_arguments.items():
-    ${pwnlib.shellcraft.pushstr(arg, append_null=('\x00' not in arg))}
+    ${pwnlib.shellcraft.pushstr(arg, append_null=(b'\x00' not in arg))}
     ${pwnlib.shellcraft.mov(regs[argument_names.index(name)], abi.stack)}
 %endfor
 %for name, arg in array_arguments.items():

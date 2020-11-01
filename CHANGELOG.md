@@ -9,7 +9,21 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [3.12.2](#3121)  | `stable` | Jan 7, 2019
+| [4.5.0](#450)    | `dev`    | Dec 20, 2020 (planned)
+| [4.4.0](#440)    | `beta`   | Nov 20, 2020 (planned)
+| [4.3.0](#430)    | `stable` | Oct 20, 2020
+| [4.2.0](#420)    |          | Jul 3, 2020
+| [4.1.7](#417)    |          | Jun 30, 2020
+| [4.1.5](#415)    |          | Jun 27, 2020
+| [4.1.4](#414)    |          | Jun 26, 2020
+| [4.1.3](#413)    |          | Jun 23, 2020
+| [4.1.2](#412)    |          | Jun 5, 2020
+| [4.1.1](#411)    |          | Jun 3, 2020
+| [4.1.0](#410)    |          | May 8, 2020
+| [4.0.1](#401)    |          | Jan 22, 2020
+| [4.0.0](#400)    |          | Jan 09, 2020
+| [3.13.0](#3130)  |          | Nov 5, 2019
+| [3.12.2](#3122)  |          | Jan 8, 2019
 | [3.12.1](#3121)  |          | Sept 17, 2018
 | [3.12.0](#3120)  |          | Feb 22, 2018
 | [3.11.0](#3110)  |          | Jan 3, 2018
@@ -42,34 +56,198 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 3.14.0 (`dev`)
+## 4.5.0 (`dev`)
 
-To be released.
+## 4.4.0 (`beta`)
 
-## 3.13.0 (`beta`)
+- [#1541][1541] Use `context.newline` for tubes by default
+- [#1602][1602] Fix bytes handling in ssh tubes
+- [#1606][1606] Fix `asm()` and `disasm()` for MSP430, S390
+- [#1616][1616] Fix `cyclic` cli for 64 bit integers
+- [#1632][1632] Enable usage of Pwntools in jupyter
+- [#1633][1633] Open a shell if `pwn template` cannot download the remote file
+- [#1644][1644] Enable and support SNI for SSL-wrapped tubes
+- [#1651][1651] Make `pwn shellcraft` faster
+- [#1654][1654] Docker images (`pwntools/pwntools:stable` etc) now use Python3 by default, and includes assemblers for a few common architectures
+- [#1667][1667] Add i386 encoder `ascii_shellcode` (Fixed docs in #1693)
+- Fix syscall instruction lists for SROP on `i386` and `amd64`
+- Fix migration to another ROP
+- [#1673][1673] Add `base=` argument to `ROP.chain()` and `ROP.dump()`
+- [#1675][1675] Gdbserver now correctly accepts multiple libraries in `LD_PRELOAD` and `LD_LIBRARY_PATH`
+- [#1678][1678] ROPGadget multibr
+- [#1682][1682] ROPGadget multibr fix
+- [#1687][1687] Actually import `requests` when doing `from pwn import *`
+- [#1688][1688] Add `__setattr__` and `__call__` interfaces to `ROP` for setting registers
+- [#1692][1692] Remove python2 shebangs where appropriate
+- [#1703][1703] Update libcdb buildid offsets for amd64 and i386
+- [#1704][1704] Try https://libc.rip/ for libcdb lookup
 
-To be released.
+[1541]: https://github.com/Gallopsled/pwntools/pull/1541
+[1602]: https://github.com/Gallopsled/pwntools/pull/1602
+[1606]: https://github.com/Gallopsled/pwntools/pull/1606
+[1616]: https://github.com/Gallopsled/pwntools/pull/1616
+[1632]: https://github.com/Gallopsled/pwntools/pull/1632
+[1633]: https://github.com/Gallopsled/pwntools/pull/1633
+[1644]: https://github.com/Gallopsled/pwntools/pull/1644
+[1651]: https://github.com/Gallopsled/pwntools/pull/1651
+[1654]: https://github.com/Gallopsled/pwntools/pull/1654
+[1667]: https://github.com/Gallopsled/pwntools/pull/1667
+[1673]: https://github.com/Gallopsled/pwntools/pull/1673
+[1675]: https://github.com/Gallopsled/pwntools/pull/1675
+[1678]: https://github.com/Gallopsled/pwntools/pull/1678
+[1682]: https://github.com/Gallopsled/pwntools/pull/1679
+[1687]: https://github.com/Gallopsled/pwntools/pull/1687
+[1688]: https://github.com/Gallopsled/pwntools/pull/1688
+[1692]: https://github.com/Gallopsled/pwntools/pull/1692
+[1703]: https://github.com/Gallopsled/pwntools/pull/1703
+[1704]: https://github.com/Gallopsled/pwntools/pull/1704
 
-- [#1104][1104] Add `DynELF.dump()` for dumping remote ELF files
-- [#1101][1101] Set `context.os` via `context.binary`, useful for Android exploitation
-- [5fdc08][5fdc08] Work around broken `pidof` on Android
-- [63dfed][63dfed] Print warning when Corefile deletion fails instead of throwing an exception
-- [#1094][1094] Make hexdump output alignment more consistent
-- [#1096][1096] `flat()` and `fit()` are now the same function
-- [#1068][1068] Work around very old OpenSSL versions which don't have sha256 support *AND* don't exit with an error code when trying to use it
+## 4.3.0 (`stable`)
 
-[1104]: https://github.com/Gallopsled/pwntools/pull/1104
-[1101]: https://github.com/Gallopsled/pwntools/pull/1101
-[1094]: https://github.com/Gallopsled/pwntools/pull/1094
-[1096]: https://github.com/Gallopsled/pwntools/pull/1096
-[1068]: https://github.com/Gallopsled/pwntools/pull/1068
-[5fdc08]: https://github.com/Gallopsled/pwntools/commit/5fdc08
-[63dfed]: https://github.com/Gallopsled/pwntools/commit/63dfed
+- [#1576][1576] Add `executable=` argument to `ELF.search`
+- [#1584][1584] Add `jmp_esp`/`jmp_rsp` attribute to `ROP`
+- [#1592][1592] Fix over-verbose logging of process() environment
+- [#1593][1593] Colorize output of `pwn template`
+- [#1601][1601] Add `pwn version` command line tool
+- [#1605][1605] Add to `fiddling.hexdump` a way to suppress the total at the end
+- [#1613][1613] Permit `--password` for `pwn template`
+- [#1616][1616] Fix `cyclic` cli for 64 bit integers
+- [#1564][1564] Fix `asm()` and `disasm()` for PowerPC64, MIPS64, Sparc64
+- [#1621][1621] Permit negative values in flat() and fit()
 
-## 3.12.2 (`stable`)
+[1576]: https://github.com/Gallopsled/pwntools/pull/1576
+[1584]: https://github.com/Gallopsled/pwntools/pull/1584
+[1592]: https://github.com/Gallopsled/pwntools/pull/1592
+[1593]: https://github.com/Gallopsled/pwntools/pull/1593
+[1601]: https://github.com/Gallopsled/pwntools/pull/1601
+[1605]: https://github.com/Gallopsled/pwntools/pull/1605
+[1613]: https://github.com/Gallopsled/pwntools/pull/1613
+[1616]: https://github.com/Gallopsled/pwntools/pull/1616
+[1564]: https://github.com/Gallopsled/pwntools/pull/1564
+[1621]: https://github.com/Gallopsled/pwntools/pull/1621
 
-- [1242][1242] Use IntervalTree 2.xx, disallow use of 3.xx
-- [1243][1243] Fix a typo that caused an exception when executing a binary with `process()` which returns `-ENOEXEC` and the system does not have `qemu-user` binaries installed.
+## 4.2.1
+
+- [#1625][1625] GDB now properly loads executables with QEMU
+- [#1663][1663] Change lookup algorithm of `adb.which`
+- [#1699][1699] Fix broken linux shellcraft templates
+
+[1625]: https://github.com/Gallopsled/pwntools/pull/1625
+[1699]: https://github.com/Gallopsled/pwntools/pull/1699
+
+## 4.2.0
+
+- [#1436][1436] Add ret2dlresolve automation
+- [fecf9f] tubes.ssh.process() no longer requires python 2 installed on remote (still requires python, though)
+- Miscellanous improvements to DynElf and fmtstr leaker (see examples/fmtstr/exploit2.py)
+- [#1454][1454] Support for windows console colors
+
+[1436]: https://github.com/Gallopsled/pwntools/pull/1436
+[fecf9f]: http://github.com/Gallopsled/pwntools/commit/fecf9f
+[1454]: https://github.com/Gallopsled/pwntools/pull/1454
+
+## 4.1.7 (`stable`)
+
+- [#1615][1615] Fix aarch64 pushstr and pushstr_array
+
+[1615]: https://github.com/Gallopsled/pwntools/pull/1454
+
+## 4.1.5
+
+- [#1517][1517] flat(..., filler=) is fixed for `str` values and Python2 `bytes`
+
+[1517]: https://github.com/Gallopsled/pwntools/pull/1517
+
+## 4.1.4
+
+- [#1698][1609] Fix issues in `packing.flat` with mis-ordred fields
+
+[1609]: https://github.com/Gallopsled/pwntools/pull/1609
+
+## 4.1.3
+
+- [#1590][1590] Fix `gdb.attach()` for `remote`, `listen`, `ssh` tubes
+  - Also fix `run_in_new_terminal` for Py2 unicode strings
+- [#1595][1595] Fix ssh.process(timeout=)
+
+[1590]: https://github.com/Gallopsled/pwntools/pull/1590
+[1595]: https://github.com/Gallopsled/pwntools/pull/1595
+
+## 4.1.2
+
+- Pwntools requires `six` v.1.12.0 or higher
+
+## 4.1.1
+
+- Fix PLT resolution by locking unicorn <1.0.2rc4 (#1538)
+- Fix wrong ELF/context unpack handling (c4c11a37)
+- Fix updating of ELF.functions addresses after changing ELF.address #1512 (#1513)
+- Update Corefile warnings and replace asserts with normal checks (#1526)
+- several py2-py3 issues (#1451)
+- Fix cyclic command
+
+## 4.1.0
+
+- [#1316][1316] Fix connect shellcraft in python 3
+- [#1323][1323] Fix issues related with debugging
+- [#1001][1001] Enhance `unlock_bootloader` with better status messages
+- [#1389][1389] remove old dependencies
+- [#1241][1241] Launch QEMU with sysroot if specified
+- [#1218][1218] Support for FileStructure exploitation
+
+[1316]: https://github.com/Gallopsled/pwntools/pull/1316
+[1323]: https://github.com/Gallopsled/pwntools/pull/1323
+[1001]: https://github.com/Gallopsled/pwntools/pull/1001
+[1389]: https://github.com/Gallopsled/pwntools/pull/1389
+[1241]: https://github.com/Gallopsled/pwntools/pull/1241
+[1218]: https://github.com/Gallopsled/pwntools/pull/1218  
+
+## 4.0.1
+
+- [#1412][1412] `recvline_pred()` and similar do not reorder data
+- Bypass unicorn-engine/unicorn#1100 and unicorn-engine/unicorn#1170 requiring unstable package
+
+[1412]: https://github.com/Gallopsled/pwntools/pull/1412
+
+## 4.0.0
+
+- **Python 3 support! <3**
+- [#1402][1402] Fix serialtube in python 3
+- [#1391][1391] Fix process.libs
+- [#1317][1317] Tubes with `context.encoding`
+- [#1216][1216] Improve format string generator
+- [#1285][1285] Add freebsd generic syscall templates
+- [76413f][76413f] Add pwnlib.adb.bootimg for 'ANDROID!' format boot.img images
+- [#1202][1202] Docker: Kill 14 layers in pwntools base images
+- [#1182][1182] shellcraft.dupio() for mips
+
+[1402]: https://github.com/Gallopsled/pwntools/pull/1402
+[1391]: https://github.com/Gallopsled/pwntools/pull/1391
+[1317]: https://github.com/Gallopsled/pwntools/pull/1317
+[1285]: https://github.com/Gallopsled/pwntools/pull/1285
+[1216]: https://github.com/Gallopsled/pwntools/pull/1216
+[1202]: https://github.com/Gallopsled/pwntools/pull/1202
+[1182]: https://github.com/Gallopsled/pwntools/pull/1182
+[76413f]: https://github.com/Gallopsled/pwntools/commit/76413f
+
+## 3.13.0
+
+- [#1204][1204] Reduce ROP cache filename length
+- [#1175][1175] Fix nested SSH connectors
+- [#1355][1355] Fix 'break' syscall
+- [#1277][1277] Fix timeout parameter passing in sendlineafter and other similar functions
+- [#1292][1292] Provide correct arch name to gdb for sparc64
+
+[1175]: https://github.com/Gallopsled/pwntools/pull/1175
+[1204]: https://github.com/Gallopsled/pwntools/pull/1204
+[1277]: https://github.com/Gallopsled/pwntools/pull/1277
+[1292]: https://github.com/Gallopsled/pwntools/pull/1292
+[1355]: https://github.com/Gallopsled/pwntools/pull/1355
+
+## 3.12.2
+
+- [#1242][1242] Use IntervalTree 2.xx, disallow use of 3.xx
+- [#1243][1243] Fix a typo that caused an exception when executing a binary with `process()` which returns `-ENOEXEC` and the system does not have `qemu-user` binaries installed.
 
 [1242]: https://github.com/Gallopsled/pwntools/pull/1242
 [1243]: https://github.com/Gallopsled/pwntools/pull/1243
@@ -87,7 +265,15 @@ To be released.
 - [#1131][1131] Add "libc-" to libc prefixes in `process` tubes
 - [#1125][1125] Fix a typo
 - [#1121][1121] Fix tests which were broken by an upstream Sphinx change
+- [#1104][1104] Add `DynELF.dump()` for dumping remote ELF files
+- [#1101][1101] Set `context.os` via `context.binary`, useful for Android exploitation
+- [5fdc08][5fdc08] Work around broken `pidof` on Android
+- [63dfed][63dfed] Print warning when Corefile deletion fails instead of throwing an exception
+- [#1094][1094] Make hexdump output alignment more consistent
+- [#1096][1096] `flat()` and `fit()` are now the same function
 
+[1198]: https://github.com/Gallopsled/pwntools/pull/1198
+[1191]: https://github.com/Gallopsled/pwntools/pull/1191
 [1159]: https://github.com/Gallopsled/pwntools/pull/1159
 [1162]: https://github.com/Gallopsled/pwntools/pull/1162
 [1150]: https://github.com/Gallopsled/pwntools/pull/1150
@@ -97,6 +283,12 @@ To be released.
 [1131]: https://github.com/Gallopsled/pwntools/pull/1131
 [1125]: https://github.com/Gallopsled/pwntools/pull/1125
 [1121]: https://github.com/Gallopsled/pwntools/pull/1121
+[1104]: https://github.com/Gallopsled/pwntools/pull/1104
+[1101]: https://github.com/Gallopsled/pwntools/pull/1101
+[1094]: https://github.com/Gallopsled/pwntools/pull/1094
+[1096]: https://github.com/Gallopsled/pwntools/pull/1096
+[5fdc08]: https://github.com/Gallopsled/pwntools/commit/5fdc08
+[63dfed]: https://github.com/Gallopsled/pwntools/commit/63dfed
 
 ## 3.12.0
 
@@ -104,6 +296,7 @@ To be released.
 - [#1085][1085] Add support for extracting Android `BOOTLDR!` images
 - [#1075][1075] Add support for detecting GNU Screen for `run_in_new_terminal`
 - [#1074][1074] Add support for running `pwntools-gdb` wrapper script instead of `gdb`
+- [#1068][1068] Work around very old OpenSSL versions which don't have sha256 support *AND* don't exit with an error code when trying to use it
 - [#1067][1067] Add `pwnlib.tubes.server` module, which adds a reusable `server` listener
 - [#1063][1063] Add support for labels in `fit()`, allowing dynamic contents to be injected.  (This feature is really cool, check out the pull request!)
 
@@ -111,6 +304,7 @@ To be released.
 [1085]: https://github.com/Gallopsled/pwntools/pull/1085
 [1075]: https://github.com/Gallopsled/pwntools/pull/1075
 [1074]: https://github.com/Gallopsled/pwntools/pull/1074
+[1068]: https://github.com/Gallopsled/pwntools/pull/1068
 [1067]: https://github.com/Gallopsled/pwntools/pull/1067
 [1063]: https://github.com/Gallopsled/pwntools/pull/1063
 

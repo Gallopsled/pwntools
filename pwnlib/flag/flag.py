@@ -11,7 +11,6 @@ from pwnlib.tubes.remote import remote
 
 env_server  = args.get('FLAG_HOST', 'flag-submission-server').strip()
 env_port    = args.get('FLAG_PORT', '31337').strip()
-env_proto   = args.get('FLAG_PROTO', 'tcp').strip()
 env_file    = args.get('FLAG_FILE', '/does/not/exist').strip()
 env_exploit_name = args.get('EXPLOIT_NAME', 'unnamed-exploit').strip()
 env_target_host  = args.get('TARGET_HOST', 'unknown-target').strip()
@@ -24,7 +23,6 @@ def submit_flag(flag,
                 target=env_target_host,
                 server=env_server,
                 port=env_port,
-                proto=env_proto,
                 team=env_team_name):
     """
     Submits a flag to the game server
@@ -35,7 +33,7 @@ def submit_flag(flag,
         target(str): Target identifier, optional
         server(str): Flag server host name, optional
         port(int): Flag server port, optional
-        proto(str), Flag server protocol, optional
+        team(str): Team identifier, optional
 
     Optional arguments are inferred from the environment,
     or omitted if none is set.
@@ -50,7 +48,7 @@ def submit_flag(flag,
         >>> _ = submit_flag('flag', server='localhost', port=l.lport)
         >>> c = l.wait_for_connection()
         >>> c.recvall().split()
-        ['flag', 'unnamed-exploit', 'unknown-target', 'unknown-team']
+        [b'flag', b'unnamed-exploit', b'unknown-target', b'unknown-team']
     """
     flag = flag.strip()
 

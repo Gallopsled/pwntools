@@ -2,6 +2,7 @@
   from pwnlib.shellcraft import aarch64
   from pwnlib.constants import eval
   from pwnlib.abi import linux_aarch64_syscall as abi
+  from six import text_type
 %>
 <%page args="syscall = None, arg0 = None, arg1 = None, arg2 = None, arg3 = None, arg4 = None, arg5 = None, arg6 = None"/>
 <%docstring>
@@ -12,7 +13,7 @@ Any of the arguments can be expressions to be evaluated by :func:`pwnlib.constan
 
 Example:
 
-    >>> print shellcraft.aarch64.linux.syscall(11, 1, 'sp', 2, 0).rstrip()
+    >>> print(shellcraft.aarch64.linux.syscall(11, 1, 'sp', 2, 0).rstrip())
         /* call syscall(11, 1, 'sp', 2, 0) */
         mov  x0, #1
         mov  x1, sp
@@ -20,14 +21,14 @@ Example:
         mov  x3, xzr
         mov  x8, #11
         svc 0
-    >>> print shellcraft.aarch64.linux.syscall('SYS_exit', 0).rstrip()
+    >>> print(shellcraft.aarch64.linux.syscall('SYS_exit', 0).rstrip())
         /* call exit(0) */
         mov  x0, xzr
         mov  x8, #SYS_exit
         svc 0
-    >>> print pwnlib.shellcraft.openat(-2, '/home/pwn/flag').rstrip()
+    >>> print(pwnlib.shellcraft.openat(-2, '/home/pwn/flag').rstrip())
         /* openat(fd=-2, file='/home/pwn/flag', oflag=0) */
-        /* push '/home/pwn/flag\x00' */
+        /* push b'/home/pwn/flag\x00' */
         /* Set x14 = 8606431000579237935 = 0x77702f656d6f682f */
         mov  x14, #26671
         movk x14, #28015, lsl #16
@@ -50,18 +51,18 @@ Example:
         svc 0
 </%docstring>
 <%
-  if isinstance(syscall, (str, unicode)) and syscall.startswith('SYS_'):
+  if isinstance(syscall, (str, text_type)) and syscall.startswith('SYS_'):
       syscall_repr = syscall[4:] + "(%s)"
       args = []
   else:
       syscall_repr = 'syscall(%s)'
-      if syscall == None:
+      if syscall is None:
           args = ['?']
       else:
           args = [repr(syscall)]
 
   for arg in [arg0, arg1, arg2, arg3, arg4, arg5]:
-      if arg == None:
+      if arg is None:
           args.append('?')
       else:
           args.append(repr(arg))

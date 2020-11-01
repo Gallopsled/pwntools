@@ -11,6 +11,7 @@ import operator
 import random
 import time
 from itertools import *
+from six.moves import map, filter, filterfalse, range, zip, zip_longest
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -52,12 +53,12 @@ __all__ = [
     'cycle'                                  ,
     'dropwhile'                              ,
     'groupby'                                ,
-    'ifilter'                                ,
-    'ifilterfalse'                           ,
-    'imap'                                   ,
+    'filter'                                 ,
+    'filterfalse'                            ,
+    'map'                                    ,
     'islice'                                 ,
-    'izip'                                   ,
-    'izip_longest'                           ,
+    'zip'                                    ,
+    'zip_longest'                            ,
     'permutations'                           ,
     'product'                                ,
     'repeat'                                 ,
@@ -65,8 +66,6 @@ __all__ = [
     'takewhile'                              ,
     'tee'
 ]
-
-
 
 log = getLogger(__name__)
 
@@ -113,7 +112,7 @@ def tabulate(func, start = 0):
       >>> take(5, tabulate(lambda x: x**2, start = 1))
       [1, 4, 9, 16, 25]
     """
-    return imap(func, count(start))
+    return map(func, count(start))
 
 def consume(n, iterator):
     """consume(n, iterator)
@@ -137,6 +136,13 @@ def consume(n, iterator):
       >>> consume(2, i)
       >>> list(i)
       [3, 4, 5]
+      >>> def g():
+      ...     for i in range(2):
+      ...         yield i
+      ...         print(i)
+      >>> consume(None, g())
+      0
+      1
     """
     # Use functions that consume iterators at C speed.
     if n is None:
@@ -194,7 +200,7 @@ def quantify(iterable, pred = bool):
       >>> quantify(['1', 'two', '3', '42'], str.isdigit)
       3
     """
-    return sum(imap(pred, iterable))
+    return sum(map(pred, iterable))
 
 def pad(iterable, value = None):
     """pad(iterable, value = None) -> iterator
@@ -261,7 +267,7 @@ def dotproduct(x, y):
       ... # 1 * 4 + 2 * 5 + 3 * 6 == 32
       32
     """
-    return sum(imap(operator.mul, x, y))
+    return sum(map(operator.mul, x, y))
 
 def flatten(xss):
     """flatten(xss) -> iterator
@@ -348,7 +354,7 @@ def pairwise(iterable):
     """
     a, b = tee(iterable)
     next(b, None)
-    return izip(a, b)
+    return zip(a, b)
 
 def group(n, iterable, fill_value = None):
     """group(n, iterable, fill_value = None) -> iterator
@@ -374,7 +380,7 @@ def group(n, iterable, fill_value = None):
       ['ABC', 'DEF', 'Gxx']
     """
     args = [iter(iterable)] * n
-    return izip_longest(fillvalue = fill_value, *args)
+    return zip_longest(fillvalue = fill_value, *args)
 
 def roundrobin(*iterables):
     """roundrobin(*iterables)
@@ -454,7 +460,7 @@ def unique_everseen(iterable, key = None):
     seen = set()
     seen_add = seen.add
     if key is None:
-        for element in ifilterfalse(seen.__contains__, iterable):
+        for element in filterfalse(seen.__contains__, iterable):
             seen_add(element)
             yield element
     else:
@@ -486,7 +492,7 @@ def unique_justseen(iterable, key = None):
       >>> ''.join(unique_justseen('ABBCcAD', str.lower))
       'ABCAD'
     """
-    return imap(next, imap(operator.itemgetter(1), groupby(iterable, key)))
+    return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
 
 def unique_window(iterable, window, key = None):
     """unique_everseen(iterable, window, key = None) -> iterator
@@ -586,7 +592,7 @@ def random_product(*args, **kwargs):
     if kwargs != {}:
         raise TypeError('random_product() does not support argument %s' % kwargs.popitem())
 
-    pools = map(tuple, args) * repeat
+    pools = list(map(tuple, args)) * repeat
     return tuple(random.choice(pool) for pool in pools)
 
 def random_permutation(iterable, r = None):
@@ -628,7 +634,7 @@ def random_combination(iterable, r):
     """
     pool = tuple(iterable)
     n = len(pool)
-    indices = sorted(random.sample(xrange(n), r))
+    indices = sorted(random.sample(range(n), r))
     return tuple(pool[i] for i in indices)
 
 def random_combination_with_replacement(iterable, r):
@@ -652,7 +658,7 @@ def random_combination_with_replacement(iterable, r):
     """
     pool = tuple(iterable)
     n = len(pool)
-    indices = sorted(random.randrange(n) for i in xrange(r))
+    indices = sorted(random.randrange(n) for i in range(r))
     return tuple(pool[i] for i in indices)
 
 def lookahead(n, iterable):
@@ -700,7 +706,7 @@ def lexicographic(alphabet):
       order.
 
     Example:
-      >>> take(8, imap(lambda x: ''.join(x), lexicographic('01')))
+      >>> take(8, map(lambda x: ''.join(x), lexicographic('01')))
       ['', '0', '1', '00', '01', '10', '11', '000']
     """
     for n in count():
@@ -725,6 +731,12 @@ def chained(func):
       ...     for x in count():
       ...         yield (x, -x)
       >>> take(6, g())
+      [0, 0, 1, -1, 2, -2]
+      >>> @chained
+      ... def g2():
+      ...     for x in range(3):
+      ...         yield (x, -x)
+      >>> list(g2())
       [0, 0, 1, -1, 2, -2]
     """
     def wrapper(*args, **kwargs):
@@ -759,20 +771,18 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
       if the search space was exhausted.
 
     Example:
-      >>> bruteforce(lambda x: x == 'hello', string.lowercase, length = 10)
-      'hello'
-      >>> bruteforce(lambda x: x == 'hello', 'hllo', 5) is None
-      True
+      >>> bruteforce(lambda x: x == 'yes', string.ascii_lowercase, length=5)
+      'yes'
     """
 
     if   method == 'upto' and length > 1:
         iterator = product(alphabet, repeat = 1)
-        for i in xrange(2, length + 1):
+        for i in range(2, length + 1):
             iterator = chain(iterator, product(alphabet, repeat = i))
 
     elif method == 'downfrom' and length > 1:
         iterator = product(alphabet, repeat = length)
-        for i in xrange(length - 1, 1, -1):
+        for i in range(length - 1, 1, -1):
             iterator = chain(iterator, product(alphabet, repeat = i))
 
     elif method == 'fixed':
@@ -811,7 +821,7 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
 
     h = log.waitfor('Bruteforcing')
     cur_iteration = 0
-    if start != None:
+    if start is not None:
         consume(i, iterator)
     for e in iterator:
         cur = ''.join(e)
@@ -827,11 +837,18 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
         if res:
             h.success('Found key: "%s"' % cur)
             return cur
-        if start != None:
+        if start is not None:
             consume(N - 1, iterator)
 
     h.failure('No matches found')
 
+
+def _mbruteforcewrap(func, alphabet, length, method, start, databag):
+    oldloglevel = context.log_level
+    context.log_level = 'critical'
+    res = bruteforce(func, alphabet, length, method=method, start=start, databag=databag)
+    context.log_level = oldloglevel
+    databag["result"] = res
 
 
 def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads = None):
@@ -842,19 +859,22 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
     Arguments:
       func, alphabet, length, method, start: same as for bruteforce()
       threads: Amount of threads to spawn, default is the amount of cores.
+
+    Example:
+      >>> mbruteforce(lambda x: x == 'hello', string.ascii_lowercase, length = 10)
+      'hello'
+      >>> mbruteforce(lambda x: x == 'hello', 'hlo', 5, 'downfrom') is None
+      True
+      >>> mbruteforce(lambda x: x == 'no', string.ascii_lowercase, length=2, method='fixed')
+      'no'
+      >>> mbruteforce(lambda x: x == '9999', string.digits, length=4, threads=1, start=(2, 2))
+      '9999'
     """
 
-    def bruteforcewrap(func, alphabet, length, method, start, databag):
-        oldloglevel = context.log_level
-        context.log_level = 'critical'
-        res = bruteforce(func, alphabet, length, method=method, start=start, databag=databag)
-        context.log_level = oldloglevel
-        databag["result"] = res
-
-    if start == None:
+    if start is None:
         start = (1, 1)
 
-    if threads == None:
+    if threads is None:
         try:
             threads = multiprocessing.cpu_count()
         except NotImplementedError:
@@ -876,7 +896,7 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
 
         chunkid = (i2-1) + (i * N2) + 1
 
-        processes[i] = multiprocessing.Process(target=bruteforcewrap,
+        processes[i] = multiprocessing.Process(target=_mbruteforcewrap,
                 args=(func, alphabet, length, method, (chunkid, totalchunks),
                         shareddata[i]))
         processes[i].start()
@@ -886,9 +906,9 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
     while not done:
         # log status
         current_item_list = ",".join(["\"%s\"" % x["current_item"]
-                                for x in shareddata if x != None])
-        items_done = sum([x["items_done"] for x in shareddata if x != None])
-        items_total = sum([x["items_total"] for x in shareddata if x != None])
+                                for x in shareddata if x is not None])
+        items_done = sum([x["items_done"] for x in shareddata if x is not None])
+        items_total = sum([x["items_total"] for x in shareddata if x is not None])
 
         progress = 100.0 * items_done / items_total if items_total != 0 else 0.0
 
@@ -896,23 +916,23 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
 
         # handle finished threads
         for i in range(threads):
-            if processes[i] and processes[i].exitcode != None:
+            if processes[i] and processes[i].exitcode is not None:
                 # thread has terminated
                 res = shareddata[i]["result"]
                 processes[i].join()
                 processes[i] = None
 
                 # if successful, kill all other threads and return success
-                if res != None:
+                if res is not None:
                     for i in range(threads):
-                        if processes[i] != None:
+                        if processes[i] is not None:
                             processes[i].terminate()
                             processes[i].join()
                             processes[i] = None
                     h.success('Found key: "%s"' % res)
                     return res
 
-                if all([x == None for x in processes]):
+                if all([x is None for x in processes]):
                     done = True
         time.sleep(0.3)
     h.failure('No matches found')

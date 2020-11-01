@@ -7,9 +7,16 @@ greatest version, Pwntools automatically checks for updates.
 Since this update check takes a moment, it is only performed once
 every week.  It can be permanently disabled via:
 
-.. code-block:: bash
+::
 
-    $ echo never > ~/.pwntools-cache/update
+    $ echo never > ~/.pwntools-cache-*/update
+
+Or adding the following lines to ~/.pwn.conf (or system-wide /etc/pwn.conf):
+
+::
+
+    [update]
+    interval=never
 
 """
 from __future__ import absolute_import
@@ -19,10 +26,12 @@ import datetime
 import json
 import os
 import time
-import xmlrpclib
+
+from six.moves.xmlrpc_client import ServerProxy
 
 import packaging.version
 
+from pwnlib.config import register_config
 from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util.misc import read
@@ -36,6 +45,26 @@ current_version = packaging.version.Version(__version__)
 package_name    = 'pwntools'
 package_repo    = 'Gallopsled/pwntools'
 update_freq     = datetime.timedelta(days=7).total_seconds()
+disabled        = False
+
+def read_update_config(settings):
+    for key, value in settings.items():
+        if key == 'interval':
+            if value == 'never':
+                global disabled
+                disabled = True
+            else:
+                try:
+                    value = int(value)
+                except ValueError:
+                    log.warn("Wrong value")
+                else:
+                    global update_freq
+                    update_freq = datetime.timedelta(days=value).total_seconds()
+        else:
+            log.warn("Unknown configuration option %r in section %r" % (key, 'update'))
+
+register_config('update', read_update_config)
 
 def available_on_pypi(prerelease=current_version.is_prerelease):
     """Return True if an update is available on PyPI.
@@ -45,8 +74,12 @@ def available_on_pypi(prerelease=current_version.is_prerelease):
     >>> available_on_pypi(prerelease=False).is_prerelease
     False
     """
-    client = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
-    versions = client.package_releases('pwntools', True)
+    versions = getattr(available_on_pypi, 'cached', None)
+    if versions is None:
+        client = ServerProxy('https://pypi.python.org/pypi')
+        versions = client.package_releases('pwntools', True)
+        available_on_pypi.cached = versions
+
     versions = map(packaging.version.Version, versions)
 
     if not prerelease:
@@ -87,7 +120,7 @@ def should_check():
     if not filename:
         return False
 
-    if read(filename).strip() == 'never':
+    if disabled or read(filename).strip() == b'never':
         return False
 
     return time.time() > (last_check() + update_freq)
@@ -103,7 +136,7 @@ def perform_check(prerelease=current_version.is_prerelease):
 
     >>> from packaging.version import Version
     >>> pwnlib.update.current_version = Version("999.0.0")
-    >>> print perform_check()
+    >>> print(perform_check())
     None
     >>> pwnlib.update.current_version = Version("0.0.0")
     >>> perform_check() # doctest: +ELLIPSIS
@@ -159,6 +192,9 @@ def perform_check(prerelease=current_version.is_prerelease):
 def check_automatically():
     if should_check():
         message  = ["Checking for new versions of %s" % package_name]
-        message += ["To disable this functionality, set the contents of %s to 'never'." % cache_file()]
+        message += ["To disable this functionality, set the contents of %s to 'never' (old way)." % cache_file()]
+        message += ["""Or add the following lines to ~/.pwn.conf (or /etc/pwn.conf system-wide):
+    [update]
+    interval=never"""]
         log.info("\n".join(message))
         perform_check()

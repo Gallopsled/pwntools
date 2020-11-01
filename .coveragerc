@@ -1,8 +1,12 @@
 [run]
 branch = True
+parallel = True
+concurrency = thread,multiprocessing
 omit =
     */constants/*
 source =
     pwn
     pwnlib
-    ~/.pwntools-cache/
+    ~/.pwntools-cache-2.7/
+    ~/.pwntools-cache-3.8/
+disable_warnings = module-not-imported

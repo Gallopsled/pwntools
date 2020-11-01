@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import argparse
 import sys
 
 import pwnlib
@@ -16,7 +15,6 @@ p = common.parser_commands.add_parser(
     help = 'Patch an ELF file'
 )
 
-p = argparse.ArgumentParser()
 p.add_argument('elf',help="File to patch")
 p.add_argument('offset',help="Offset to patch in virtual address (hex encoded)")
 p.add_argument('bytes',help='Bytes to patch (hex encoded)')
@@ -33,7 +31,7 @@ def main(a):
         elf    = ELF(a.elf)
 
     elf.write(offset, bytes)
-    sys.stdout.write(elf.get_data())
+    getattr(sys.stdout, 'buffer', sys.stdout).write(elf.get_data())
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)

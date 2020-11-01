@@ -27,6 +27,9 @@ def can_init():
     ``pwnlib`` manage the terminal.
     """
 
+    if sys.platform == 'win32':
+        return False
+
     if not sys.stdout.isatty():
         return False
 
@@ -36,7 +39,7 @@ def can_init():
 
     # Check fancy REPLs
     mods = sys.modules.keys()
-    for repl in ['IPython', 'bpython', 'dreampielib']:
+    for repl in ['IPython', 'bpython', 'dreampielib', 'jupyter_client._version']:
         if repl in mods:
             return False
 
@@ -82,4 +85,4 @@ def init():
     readline.init()
 
     term_mode = True
-    text.num_colors = termcap.get('colors', default = 8)
+    text.num_colors = termcap.get('colors', default = 8) or 8
