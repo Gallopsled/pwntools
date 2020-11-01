@@ -48,6 +48,8 @@ class sock(tube):
                     raise EOFError
                 elif e.errno == errno.EINTR:
                     continue
+                elif 'timed out' in e.message:
+                    return None
                 else:
                     raise
 

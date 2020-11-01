@@ -241,9 +241,9 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
         env_args = []
         for key in tuple(env):
             if key.startswith('LD_'): # LD_PRELOAD / LD_LIBRARY_PATH etc.
-                env_args.append('{}={}'.format(key, env.pop(key)))
+                env_args.append('{}="{}"'.format(key, env.pop(key)))
             else:
-                env_args.append('{}={}'.format(key, env[key]))
+                env_args.append('{}="{}"'.format(key, env[key]))
         gdbserver_args += ['--wrapper', 'env', '-i'] + env_args + ['--']
 
     gdbserver_args += ['localhost:0']
@@ -263,7 +263,10 @@ def _gdbserver_port(gdbserver, ssh):
             'Failed to spawn process under gdbserver. gdbserver error message: %s' % process_created
         )
 
-    gdbserver.pid   = int(process_created.split()[-1], 0)
+    try:
+        gdbserver.pid   = int(process_created.split()[-1], 0)
+    except ValueError:
+        log.error('gdbserver did not output its pid (maybe chmod +x?): %s', six.ensure_str(process_created))
 
     listening_on = b''
     while b'Listening' not in listening_on:
@@ -631,6 +634,9 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
         if context.os == 'android':
             pre += 'set gnutarget ' + _bfdname() + '\n'
+
+        if exe:
+            pre += 'file %s\n' % exe
 
     # let's see if we can find a pid to attach to
     pid = None

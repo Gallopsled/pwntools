@@ -25,6 +25,8 @@ class remote(sock):
         typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
         timeout: A positive number, None or the string "default".
         ssl(bool): Wrap the socket with SSL
+        ssl_context(ssl.SSLContext): Specify SSLContext used to wrap the socket.
+        sni: Set 'server_hostname' in ssl_args based on the host parameter.
         sock(socket.socket): Socket to inherit, rather than connecting
         ssl_args(dict): Pass ssl.wrap_socket named arguments in a dictionary.
 
@@ -56,7 +58,8 @@ class remote(sock):
 
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
-                 ssl=False, sock=None, ssl_args=None, *args, **kwargs):
+                 ssl=False, sock=None, ssl_context=None, ssl_args=None, sni=True,
+                 *args, **kwargs):
         super(remote, self).__init__(*args, **kwargs)
 
         self.rport  = int(port)
@@ -82,7 +85,13 @@ class remote(sock):
             self.lhost, self.lport = self.sock.getsockname()[:2]
 
             if ssl:
-                self.sock = _ssl.wrap_socket(self.sock,**(ssl_args or {}))
+                ssl_args = ssl_args or {}
+                ssl_context = ssl_context or _ssl.SSLContext(_ssl.PROTOCOL_TLSv1_2)
+                if isinstance(sni, str):
+                    ssl_args["server_hostname"] = sni
+                elif sni:
+                    ssl_args["server_hostname"] = host
+                self.sock = ssl_context.wrap_socket(self.sock,**ssl_args)
 
     def _connect(self, fam, typ):
         sock    = None

@@ -5,7 +5,7 @@ import pwnlib.constants
 import pwnlib.shellcraft
 import six
 %>
-<%docstring>linkat(fromfd, from, tofd, to, flags) -> str
+<%docstring>linkat(fromfd, from_, tofd, to, flags) -> str
 
 Invokes the syscall linkat.
 
@@ -20,7 +20,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="fromfd=0, from=0, tofd=0, to=0, flags=0"/>
+<%page args="fromfd=0, from_=0, tofd=0, to=0, flags=0"/>
 <%
     abi = pwnlib.abi.ABI.syscall()
     stack = abi.stack
@@ -30,8 +30,8 @@ Returns:
     can_pushstr = ['from', 'to']
     can_pushstr_array = []
 
-    argument_names = ['fromfd', 'from', 'tofd', 'to', 'flags']
-    argument_values = [fromfd, from, tofd, to, flags]
+    argument_names = ['fromfd', 'from_', 'tofd', 'to', 'flags']
+    argument_values = [fromfd, from_, tofd, to, flags]
 
     # Load all of the arguments into their destination registers / stack slots.
     register_arguments = dict()

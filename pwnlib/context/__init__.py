@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
 Implements context management so that nested/scoped contexts and threaded
@@ -359,7 +358,7 @@ class ContextType(object):
         'log_console': sys.stdout,
         'randomize': False,
         'rename_corefiles': True,
-        'newline': '\n',
+        'newline': b'\n',
         'noptrace': False,
         'os': 'linux',
         'proxy': None,
@@ -1278,6 +1277,15 @@ class ContextType(object):
         Default value is ``True``.
         """
         return bool(v)
+
+    @_validator
+    def newline(self, v):
+        """Line ending used for Tubes by default.
+
+        This configures the newline emitted by e.g. ``sendline`` or that is used
+        as a delimiter for e.g. ``recvline``.
+        """
+        return six.ensure_binary(v)
 
 
     @_validator

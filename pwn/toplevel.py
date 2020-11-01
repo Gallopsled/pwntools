@@ -5,6 +5,7 @@ import math
 import operator
 import os
 import re
+import requests
 import socks
 import signal
 import string

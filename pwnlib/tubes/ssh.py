@@ -1426,7 +1426,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         total, exitcode = self.run_to_end(cmd)
 
         if exitcode != 0:
-            h.failure("%r does not exist or is not accessible" % remote)
+            h.error("%r does not exist or is not accessible" % remote)
             return
 
         total = int(total)
@@ -1476,7 +1476,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             self._download_raw(remote, local, p)
 
             if not self._verify_local_fingerprint(fingerprint):
-                p.failure('Could not download file %r' % remote)
+                p.error('Could not download file %r' % remote)
 
         return local
 
