@@ -82,7 +82,7 @@ class serialtube(tube.tube):
         return False
 
     def connected_raw(self, direction):
-        return self.conn != None
+        return self.conn is not None
 
     def close(self):
         if self.conn:

@@ -592,9 +592,9 @@ def update_cyclic_pregenerated(size):
         cyclic_pregen += packing._p8lu(next(de_bruijn_gen))
 
 def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
-                 highlight=None, cyclic=False, groupsize=4):
-    r"""hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0,
-                    style = None, highlight = None, cyclic = False, groupsize=4) -> str generator
+                 highlight=None, cyclic=False, groupsize=4, total=True):
+    r"""hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0, style = None,
+                    highlight = None, cyclic = False, groupsize=4, total = True) -> str generator
 
     Return a hexdump-dump of a string as a generator of lines.  Unless you have
     massive amounts of data you probably want to use :meth:`hexdump`.
@@ -609,6 +609,7 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
         style(dict): Color scheme to use.
         highlight(iterable): Byte values to highlight.
         cyclic(bool): Attempt to skip consecutive, unmodified cyclic lines
+        total(bool): Set to True, if total bytes should be printed
 
     Returns:
         A generator producing the hexdump-dump one line at a time.
@@ -750,13 +751,14 @@ def hexdump_iter(fd, width=16, skip=True, hexii=False, begin=0, style=None,
         line = line_fmt % {'offset': offset, 'hexbytes': hexbytes, 'printable': printable}
         yield line
 
-    line = "%08x" % (begin + numb)
-    yield line
+    if total:
+        line = "%08x" % (begin + numb)
+        yield line
 
-def hexdump(s, width=16, skip=True, hexii=False, begin=0,
-            style=None, highlight=None, cyclic=False, groupsize=4):
-    r"""hexdump(s, width = 16, skip = True, hexii = False, begin = 0,
-               style = None, highlight = None, cyclic = False, groupsize=4) -> str generator
+def hexdump(s, width=16, skip=True, hexii=False, begin=0, style=None,
+            highlight=None, cyclic=False, groupsize=4, total=True):
+    r"""hexdump(s, width = 16, skip = True, hexii = False, begin = 0, style = None,
+                highlight = None, cyclic = False, groupsize=4, total = True) -> str
 
     Return a hexdump-dump of a string.
 
@@ -770,6 +772,7 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         style(dict): Color scheme to use.
         highlight(iterable): Byte values to highlight.
         cyclic(bool): Attempt to skip consecutive, unmodified cyclic lines
+        total(bool): Set to True, if total bytes should be printed
 
     Returns:
         A hexdump-dump in the form of a string.
@@ -930,6 +933,13 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
         00000000  41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41  │AAAAAAAAAAAAAAAA│
         00000010  41 41 41 41 41 41 41 41                          │AAAAAAAA│
         00000018
+
+        >>> print(hexdump('A'*24, width=16, total=False))
+        00000000  41 41 41 41  41 41 41 41  41 41 41 41  41 41 41 41  │AAAA│AAAA│AAAA│AAAA│
+        00000010  41 41 41 41  41 41 41 41                            │AAAA│AAAA│
+        >>> print(hexdump('A'*24, width=16, groupsize=8, total=False))
+        00000000  41 41 41 41 41 41 41 41  41 41 41 41 41 41 41 41  │AAAAAAAA│AAAAAAAA│
+        00000010  41 41 41 41 41 41 41 41                           │AAAAAAAA│
     """
     s = packing.flat(s)
     return '\n'.join(hexdump_iter(BytesIO(s),
@@ -940,7 +950,8 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0,
                                   style,
                                   highlight,
                                   cyclic,
-                                  groupsize))
+                                  groupsize,
+                                  total))
 
 def negate(value, width = None):
     """

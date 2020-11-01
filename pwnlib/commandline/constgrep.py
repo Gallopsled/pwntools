@@ -4,7 +4,6 @@ from __future__ import division
 
 import argparse
 import functools
-import os
 import re
 
 import pwnlib
@@ -19,25 +18,22 @@ p = common.parser_commands.add_parser(
     formatter_class = argparse.RawDescriptionHelpFormatter,
 )
 
-group = p.add_mutually_exclusive_group()
-group.add_argument(
+p.add_argument(
     '-e', '--exact',
-    metavar = 'constant',
-    # nargs = 1,
-    default = None,
-    help = 'Do an exact match for a constant instead of searching for a regex',
+    action='store_true',
+    help='Do an exact match for a constant instead of searching for a regex',
 )
-group.add_argument(
+
+p.add_argument(
     'regex',
-    nargs = '?',
-    default = '',
-    help = 'The regex matching constant you want to find',
+    help='The regex matching constant you want to find',
 )
 
 p.add_argument(
     'constant',
     nargs = '?',
     default = None,
+    type = safeeval.expr,
     help = 'The constant to find',
 )
 
@@ -65,7 +61,7 @@ p.add_argument(
 def main(args):
     if args.exact:
         # This is the simple case
-        print(cpp(args.exact).strip())
+        print(cpp(args.regex).strip())
     else:
         # New we search in the right module.
         # But first: We find the right module
@@ -80,19 +76,11 @@ def main(args):
         else:
             matcher = re.compile(args.regex)
 
-
-        # Evaluate the given constant
-        if args.constant:
-            try:
-                constant = safeeval.expr(args.constant)
-            except:
-                log.error("Could not evaluate constant %r" % args.constant)
-        else:
-            constant = None
-
         # The found matching constants and the length of the longest string
         out    = []
         maxlen = 0
+
+        constant = args.constant
 
         for k in dir(mod):
             # No python stuff
@@ -104,7 +92,7 @@ def main(args):
                 continue
 
             # Check the constant
-            if constant != None:
+            if constant is not None:
                 val = getattr(mod, k)
                 if args.mask_mode:
                     if constant & val != val:
@@ -124,7 +112,7 @@ def main(args):
         # If we are in match_mode, then try to find a combination of
         # constants that yield the exact given value
         # We do not want to find combinations using the value 0.
-        if not (constant == None or constant == 0) and args.mask_mode:
+        if constant and args.mask_mode:
             mask = constant
             good = []
             out = [(v, k) for v, k in out if v != 0]

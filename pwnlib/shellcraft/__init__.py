@@ -155,7 +155,7 @@ class module(ModuleType):
             return hex(n)
 
     def okay(self, s, *a, **kw):
-        if isinstance(s, int):
+        if isinstance(s, six.integer_types):
             s = packing.pack(s, *a, **kw)
         return b'\0' not in s and b'\n' not in s
 

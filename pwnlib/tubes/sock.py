@@ -43,11 +43,13 @@ class sock(tube):
             except IOError as e:
                 if e.errno == errno.EAGAIN:
                     return None
-                elif e.errno in [errno.ECONNREFUSED, errno.ECONNRESET]:
+                elif e.errno in (errno.ECONNREFUSED, errno.ECONNRESET):
                     self.shutdown("recv")
                     raise EOFError
                 elif e.errno == errno.EINTR:
                     continue
+                elif 'timed out' in e.message:
+                    return None
                 else:
                     raise
 
@@ -64,7 +66,7 @@ class sock(tube):
         try:
             self.sock.sendall(data)
         except IOError as e:
-            eof_numbers = [errno.EPIPE, errno.ECONNRESET, errno.ECONNREFUSED]
+            eof_numbers = (errno.EPIPE, errno.ECONNRESET, errno.ECONNREFUSED)
             if e.errno in eof_numbers or 'Socket is closed' in e.args:
                 self.shutdown("send")
                 raise EOFError
@@ -122,7 +124,7 @@ class sock(tube):
             >>> r.connected()
             True
             >>> l.close()
-            >>> time.sleep(1) # Avoid race condition
+            >>> time.sleep(0.1) # Avoid race condition
             >>> r.connected()
             False
         """
@@ -208,8 +210,8 @@ class sock(tube):
         if False not in self.closed.values():
             self.close()
 
-    def _get_family(self, fam):
-
+    @classmethod
+    def _get_family(cls, fam):
         if isinstance(fam, six.integer_types):
             pass
         elif fam == 'any':
@@ -220,13 +222,13 @@ class sock(tube):
             fam = socket.AF_INET6
         else:
             self.error("%s(): socket family %r is not supported",
-                       self.__class__.__name__,
+                       cls.__name__,
                        fam)
 
         return fam
 
-    def _get_type(self, typ):
-
+    @classmethod
+    def _get_type(cls, typ):
         if isinstance(typ, six.integer_types):
             pass
         elif typ == "tcp":
@@ -235,7 +237,7 @@ class sock(tube):
             typ = socket.SOCK_DGRAM
         else:
             self.error("%s(): socket type %r is not supported",
-                       self.__class__.__name__,
+                       cls.__name__,
                        typ)
 
         return typ

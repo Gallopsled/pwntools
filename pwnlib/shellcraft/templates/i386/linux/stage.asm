@@ -1,4 +1,5 @@
 <%
+import six
 from pwnlib.shellcraft.i386 import push
 from pwnlib.shellcraft.i386.linux import read, readn, mmap
 from pwnlib import constants as C
@@ -29,7 +30,7 @@ Example:
     protection = C.PROT_READ | C.PROT_WRITE | C.PROT_EXEC
     flags      = C.MAP_ANONYMOUS | C.MAP_PRIVATE
 
-    assert isinstance(fd, int)
+    assert isinstance(fd, six.integer_types)
 %>
 %if length is None:
     /* How many bytes should we receive? */

@@ -5,6 +5,7 @@ import math
 import operator
 import os
 import re
+import requests
 import socks
 import signal
 import string
@@ -80,4 +81,4 @@ info    = log.info
 debug   = log.debug
 success = log.success
 
-__all__ = [x for x in globals().keys() if x != '__name__']
+__all__ = [x for x in tuple(globals()) if x != '__name__']

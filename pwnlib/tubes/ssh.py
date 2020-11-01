@@ -69,26 +69,25 @@ class ssh_channel(sock):
         self.process = process
         self.cwd  = wd or '.'
         if isinstance(wd, six.text_type):
-            wd = wd.encode('utf-8')
+            wd = context._encode(wd)
 
         env = env or {}
         msg = 'Opening new channel: %r' % (process or 'shell')
 
         if isinstance(process, (list, tuple)):
-            process = b' '.join((lambda x:x.encode('utf-8') if isinstance(x, six.text_type) else x)(sh_string(s)) for s in process)
+            process = b' '.join(context._encode(sh_string(s)) for s in process)
         if isinstance(process, six.text_type):
-            process = process.encode('utf-8')
+            process = context._encode(process)
 
         if process and wd:
             process = b'cd ' + sh_string(wd) + b' >/dev/null 2>&1;' + process
 
         if process and env:
             for name, value in env.items():
-                if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', name):
+                nameb = context._encode(name)
+                if not re.match(b'^[a-zA-Z_][a-zA-Z0-9_]*$', nameb):
                     self.error('run(): Invalid environment key %r' % name)
-                export = 'export %s=%s;' % (name, sh_string(value))
-                if isinstance(export, six.text_type):
-                    export = export.encode('utf-8')
+                export = b'export %s=%s;' % (nameb, sh_string(context._encode(value)))
                 process = export + process
 
         if process and tty:
@@ -182,7 +181,7 @@ class ssh_channel(sock):
         process has not yet finished and the exit code otherwise.
         """
 
-        if self.returncode == None and self.sock \
+        if self.returncode is None and self.sock \
         and (block or self.sock.exit_status_ready()):
             while not self.sock.status_event.is_set():
                 self.sock.status_event.wait(0.05)
@@ -230,7 +229,7 @@ class ssh_channel(sock):
                     cur = self.recv(timeout = 0.05)
                     cur = cur.replace(b'\r\n',b'\n')
                     cur = cur.replace(b'\r',b'')
-                    if cur == None:
+                    if cur is None:
                         continue
                     elif cur == b'\a':
                         # Ugly hack until term unstands bell characters
@@ -264,11 +263,11 @@ class ssh_channel(sock):
                 if not data:
                     event.set()
                 else:
-                    data = [six.byte2int(data)]
+                    data = bytearray(data)
 
             if data:
                 try:
-                    self.send(b''.join(six.int2byte(c) for c in data))
+                    self.send(bytes(bytearray(data)))
                 except EOFError:
                     event.set()
                     self.info('Got EOF while sending in interactive')
@@ -560,6 +559,9 @@ class ssh(Timeout, Logger):
 
         Example proxying:
 
+        .. doctest::
+           :skipif: github_actions
+
             >>> s1 = ssh(host='example.pwnme',
             ...          user='travis',
             ...          password='demopass')
@@ -631,7 +633,7 @@ class ssh(Timeout, Logger):
             if os.path.exists(known_hosts):
                 self.client.load_host_keys(known_hosts)
 
-            has_proxy = (proxy_sock or proxy_command) and True
+            has_proxy = bool(proxy_sock or proxy_command)
             if has_proxy:
                 if 'ProxyCommand' not in dir(paramiko):
                     self.error('This version of paramiko does not support proxies.')
@@ -828,10 +830,14 @@ class ssh(Timeout, Logger):
             >>> print(s.process('false', preexec_fn=uses_globals).recvall().strip().decode()) # doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
-            NameError: name 'bar' is not defined
+            NameError: ... name 'bar' is not defined
 
             >>> s.process('echo hello', shell=True).recvall()
             b'hello\n'
+
+            >>> io = s.process(['cat'], timeout=5)
+            >>> io.recvline()
+            b''
         """
         if not argv and not executable:
             self.error("Must specify argv or executable")
@@ -919,6 +925,10 @@ class ssh(Timeout, Logger):
 #!/usr/bin/env python
 import os, sys, ctypes, resource, platform, stat
 from collections import OrderedDict
+try:
+    integer_types = int, long
+except NameError:
+    integer_types = int,
 exe   = %(executable)r
 argv  = [bytes(a) for a in %(argv)r]
 env   = %(env)r
@@ -993,7 +1003,7 @@ for fd, newfd in {0: %(stdin)r, 1: %(stdout)r, 2:%(stderr)r}.items():
         newfd = os.open(newfd, os.O_RDONLY if fd == 0 else (os.O_RDWR|os.O_CREAT))
         os.dup2(newfd, fd)
         os.close(newfd)
-    elif isinstance(newfd, int) and newfd != fd:
+    elif isinstance(newfd, integer_types) and newfd != fd:
         os.dup2(fd, newfd)
 
 if not %(aslr)r:
@@ -1049,11 +1059,14 @@ os.execve(exe, argv, env)
 
         msg = 'Starting remote process %s on %s' % (execve_repr, self.host)
 
+        if timeout == Timeout.default:
+            timeout = self.timeout
+
         with self.progress(msg) as h:
 
-            script = 'for py in python3 python; do test -x "$(which $py 2>&1)" && exec $py -c %s check; done; echo 2' % sh_string(script)
-            with context.local(log_level='error'):
-                python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=self.timeout)
+            script = 'for py in python2.7 python2 python; do test -x "$(which $py 2>&1)" && exec $py -c %s check; done; echo 2' % sh_string(script)
+            with context.quiet:
+                python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=timeout)
 
             try:
                 result = safeeval.const(python.recvline())
@@ -1087,7 +1100,7 @@ os.execve(exe, argv, env)
 
             h.success('pid %i' % python.pid)
 
-        if aslr == False and setuid and (python.uid != python.suid or python.gid != python.sgid):
+        if not aslr and setuid and (python.uid != python.suid or python.gid != python.sgid):
             effect = "partial" if self.aslr_ulimit else "no"
             message = "Specfied aslr=False on setuid binary %s\n" % python.executable
             message += "This will have %s effect.  Add setuid=False to disable ASLR for debugging.\n" % effect
@@ -1140,6 +1153,8 @@ os.execve(exe, argv, env)
             >>> py.sendline(b'exit')
             >>> print(repr(py.recvline()))
             b'4\n'
+            >>> s.system('env | grep -a AAAA', env={'AAAA': b'\x90'}).recvall()
+            b'AAAA=\x90\n'
         """
 
         if wd is None:
@@ -1415,7 +1430,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         total, exitcode = self.run_to_end(cmd)
 
         if exitcode != 0:
-            h.failure("%r does not exist or is not accessible" % remote)
+            h.error("%r does not exist or is not accessible" % remote)
             return
 
         total = int(total)
@@ -1465,7 +1480,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             self._download_raw(remote, local, p)
 
             if not self._verify_local_fingerprint(fingerprint):
-                p.failure('Could not download file %r' % remote)
+                p.error('Could not download file %r' % remote)
 
         return local
 
@@ -1612,7 +1627,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         remote(str): The remote filename to save it to. Default is to infer it from the local filename."""
 
 
-        if remote == None:
+        if remote is None:
             remote = os.path.normpath(filename)
             remote = os.path.basename(remote)
             remote = os.path.join(self.cwd, remote)
@@ -1733,7 +1748,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         remote = context._decode(self.readlink('-f',remote).strip())
         libs[remote] = 0
 
-        if directory == None:
+        if directory is None:
             directory = self.host
 
         directory = os.path.realpath(directory)

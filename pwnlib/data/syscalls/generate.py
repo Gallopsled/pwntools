@@ -75,8 +75,8 @@ CALL = """
 
         # The argument is not a register.  It is a string value, and we
         # are expecting a string value
-        elif name in can_pushstr and isinstance(arg, (bytes, six.text_type)):
-            if not isinstance(arg, bytes):
+        elif name in can_pushstr and isinstance(arg, (six.binary_type, six.text_type)):
+            if isinstance(arg, six.text_type):
                 arg = arg.encode('utf-8')
             string_arguments[name] = arg
 
@@ -150,6 +150,8 @@ def fix_bad_arg_names(func, arg):
         return 'length'
     if arg.name == 'repr':
         return 'repr_'
+    if arg.name == 'from':
+        return 'from_'
 
     if func.name == 'open' and arg.name == 'vararg':
         return 'mode'

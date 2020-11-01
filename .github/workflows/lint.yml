@@ -2,7 +2,7 @@ name: Lint
 on: [push, pull_request]
 
 jobs:
-  build:
+  lint:
     strategy:
       matrix:
         python-version: [3.8]
@@ -11,9 +11,6 @@ jobs:
     timeout-minutes: 30
     steps:
     - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-
     - name: Cache for pip
       uses: actions/cache@v1
       id: cache-pip
@@ -26,8 +23,13 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Lint
+    - name: Critical lint
       run: |
         pip install flake8
-        flake8 . --count --select=E9,F63,F7 --show-source --statistics --exclude=android-?dk  # TODO: Add F82
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=pwnlib/constants,android-?dk,.git,__pycache__
+        flake8 . --count --select=E9,F63,F7,E71 --show-source --statistics --exclude=android-?dk  # TODO: Add F82
+
+    - name: Style lint
+      run: |
+        flake8 pwnlib setup.py docs travis --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 examples --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --ignore='F403,F405'
+        flake8 pwn --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --ignore='F401,F403,F405'

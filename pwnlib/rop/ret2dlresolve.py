@@ -65,6 +65,7 @@ You can also use ``Ret2dlresolve`` on AMD64:
     True
 """
 
+import six
 from copy import deepcopy
 
 from pwnlib.context import context
@@ -356,7 +357,7 @@ class Ret2dlresolvePayload(object):
             elif isinstance(top, bytes):
                 top = pack(self.data_addr + len(self.payload) + queue.size())
                 queue.append(MarkedBytes(queue[0]))
-            elif isinstance(top, int):
+            elif isinstance(top, six.integer_types):
                 top = pack(top)
 
             self.payload += top

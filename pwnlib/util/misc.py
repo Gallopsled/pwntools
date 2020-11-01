@@ -5,6 +5,7 @@ import errno
 import os
 import platform
 import re
+import six
 import socket
 import stat
 import string
@@ -234,7 +235,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
             is_wsl = False
             if os.path.exists('/proc/sys/kernel/osrelease'):
                 with open('/proc/sys/kernel/osrelease', 'rb') as f:
-                    is_wsl = b'Microsoft' in f.read()
+                    is_wsl = b'icrosoft' in f.read()
             if is_wsl and which('cmd.exe') and which('wsl.exe') and which('bash.exe'):
                 terminal = 'cmd.exe'
                 args     = ['/c', 'start', 'bash.exe', '-c']
@@ -249,7 +250,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
 
     argv = [which(terminal)] + args
 
-    if isinstance(command, str):
+    if isinstance(command, six.string_types):
         if ';' in command:
             log.error("Cannot use commands with semicolon.  Create a script and invoke that directly.")
         argv += [command]

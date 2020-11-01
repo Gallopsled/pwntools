@@ -83,8 +83,8 @@ setup(
     name                 = 'pwntools',
     python_requires      = '>=2.7',
     packages             = find_packages(),
-    version              = '4.3.0dev',
-    data_files           = [('',
+    version              = '4.5.0dev',
+    data_files           = [('pwntools-doc',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],
     package_data         = {
@@ -118,6 +118,7 @@ setup(
         'Natural Language :: English',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
         'Topic :: Security',
         'Topic :: Software Development :: Assemblers',
         'Topic :: Software Development :: Debuggers',

@@ -4,6 +4,7 @@ from __future__ import division
 import ctypes
 import io
 import os
+import six
 import sys
 
 from pwnlib.log import getLogger
@@ -64,7 +65,7 @@ class BootloaderImage(object):
         Returns:
             Contents of the image.
         """
-        if isinstance(index_or_name, int):
+        if isinstance(index_or_name, six.integer_types):
             index = index_or_name
         else:
             for i in range(len(self.img_info)):

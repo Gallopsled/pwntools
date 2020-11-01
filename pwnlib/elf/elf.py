@@ -319,7 +319,7 @@ class ELF(ELFFile):
                 config = gz.read()
 
             if config:
-                self.config = parse_kconfig(config)
+                self.config = parse_kconfig(config.decode())
 
         #: ``True`` if the ELF is a statically linked executable
         self.statically_linked = bool(self.elftype == 'EXEC' and self.load_addr)
@@ -463,9 +463,6 @@ class ELF(ELFFile):
             self.endian,
             self.checksec(*a, **kw)
         )
-
-    def __repr__(self):
-        return "ELF(%r)" % self.path
 
     def get_machine_arch(self):
         return {
@@ -1026,9 +1023,10 @@ class ELF(ELFFile):
         #              In particular, this is where EBX points when it points into the GOT.
         dt_pltgot = self.dynamic_value_by_tag('DT_PLTGOT') or 0
 
-        # There are two PLTs we may need to search
+        # There are three PLTs we may need to search
         plt = self.get_section_by_name('.plt')          # <-- Functions only
         plt_got = self.get_section_by_name('.plt.got')  # <-- Functions used as data
+        plt_sec = self.get_section_by_name('.plt.sec')
         plt_mips = self.get_section_by_name('.MIPS.stubs')
 
         # Invert the GOT symbols we already have, so we can look up by address
@@ -1036,7 +1034,7 @@ class ELF(ELFFile):
         inv_symbols.update({v:k for k,v in self.symbols.items()})
 
         with context.local(arch=self.arch, bits=self.bits, endian=self.endian):
-            for section in (plt, plt_got, plt_mips):
+            for section in (plt, plt_got, plt_sec, plt_mips):
                 if not section:
                     continue
 
@@ -1057,7 +1055,10 @@ class ELF(ELFFile):
             return
 
         banner = self.string(self.symbols.linux_banner)
-
+        
+        # convert banner into a utf-8 string since re.search does not accept bytes anymore
+        banner = banner.decode('utf-8')
+        
         # 'Linux version 3.18.31-gd0846ecc
         regex = r'Linux version (\S+)'
         match = re.search(regex, banner)
@@ -1855,7 +1856,7 @@ class ELF(ELFFile):
         # Check for Linux configuration, it must contain more than
         # just the version.
         if len(self.config) > 1:
-            config_opts = collections.defaultdict(lambda: [])
+            config_opts = collections.defaultdict(list)
             for checker in kernel_configuration:
                 result, message = checker(self.config)
 

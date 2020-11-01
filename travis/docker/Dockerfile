@@ -91,15 +91,17 @@ RUN echo y | android update sdk --no-ui --all --filter sys-img-armeabi-v7a-andro
 #                          PWNTOOLS TEST REQUIREMENTS
 #==============================================================================
 
-# Install pwntools from 'dev3', to get all of the latest dependencies
+# Install pwntools from 'dev', to get all of the latest dependencies
 # Then uninstall pwntools so we have a clean slate, but still have
 # all of its dependencies installed.
 WORKDIR /root
 RUN git clone https://github.com/Gallopsled/pwntools
 WORKDIR /root/pwntools
-RUN git checkout dev3
+RUN git checkout dev
 RUN pip3 install --upgrade --editable .
 RUN pip3 install --upgrade --requirement docs/requirements.txt
+RUN pip2 install --upgrade --editable .
+RUN pip2 install --upgrade --requirement docs/requirements.txt
 RUN pip3 uninstall --yes pwntools
 WORKDIR /root
 RUN rm -rf pwntools
@@ -138,7 +140,7 @@ USER root
 # Setting Python3 as the default
 RUN echo 'alias python=python3' >> ~/.bashrc
 
-RUN apt-get install -y strace nano vim tmux
+RUN apt-get install -y strace nano vim tmux socat bash-static
 
 # Entry point
 USER travis
@@ -150,4 +152,8 @@ ADD run.sh .
 COPY pwntools.tar.gz .
 RUN tar xf pwntools.tar.gz
 RUN sudo rm -f pwntools.tar.gz
+RUN pip2 install -e .
+RUN pip2 install -r docs/requirements.txt
+RUN pip3 install -e .
+RUN pip3 install -r docs/requirements.txt
 ENTRYPOINT bash run.sh
