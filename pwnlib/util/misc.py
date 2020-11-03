@@ -265,7 +265,7 @@ def run_in_new_terminal(command, terminal = None, args = None, kill_at_exit = Tr
 
     log.debug("Launching a new terminal: %r" % argv)
 
-    stdin = stdout = stderr = open(os.devnull, 'rwb')
+    stdin = stdout = stderr = open(os.devnull, 'r+b')
     if terminal == 'tmux':
         stdout = subprocess.PIPE
 
