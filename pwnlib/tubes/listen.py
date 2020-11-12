@@ -79,8 +79,6 @@ class listen(sock):
         super(listen, self).__init__(*args, **kwargs)
 
         port = int(port)
-        fam  = {socket.AF_INET: 'ipv4',
-                socket.AF_INET6: 'ipv6'}.get(fam, fam)
 
         fam = self._get_family(fam)
         typ = self._get_type(typ)

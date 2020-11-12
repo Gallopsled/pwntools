@@ -31,7 +31,7 @@ offset = len(array_str) + word_size
     ${mips.push(reg)} /* null terminate */
 % for i,arg in enumerate(reversed(array)):
     ${mips.mov(reg, offset + word_size*i - len(arg))}
-    add ${reg}, $sp
+    add ${reg}, $sp, ${reg}
     ${mips.push(reg)} /* ${repr(arg)} */
     <% offset -= len(arg) %>\
 % endfor
