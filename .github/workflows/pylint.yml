@@ -27,6 +27,7 @@ jobs:
       run: |
         set -x
         pip install pylint
+        pip install --upgrade -r requirements.txt
         pylint --exit-zero --errors-only  pwnlib > current.txt
         git fetch origin
         git checkout origin/"$GITHUB_BASE_REF"

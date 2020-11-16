@@ -59,8 +59,10 @@ The table below shows which release corresponds to each branch, and what date th
 ## 4.5.0 (`dev`)
 
 - [#1261][1261] Misc `run_in_new_terminal` improvements (notably gdb terminated by default)
+- [#1695][1695] Allow using GDB Python API
 
 [1261]: https://github.com/Gallopsled/pwntools/pull/1261
+[1695]: https://github.com/Gallopsled/pwntools/pull/1695
 
 ## 4.4.0 (`beta`)
 

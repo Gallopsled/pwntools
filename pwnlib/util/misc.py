@@ -181,8 +181,8 @@ def which(name, all = False):
     else:
         return None
 
-def run_in_new_terminal(command, terminal = None, args = None, kill_at_exit = True):
-    """run_in_new_terminal(command, terminal = None, args = None, kill_at_exit = True) -> int
+def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, preexec_fn=None):
+    """run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, preexec_fn=None) -> int
 
     Run a command in a new terminal.
 
@@ -209,6 +209,7 @@ def run_in_new_terminal(command, terminal = None, args = None, kill_at_exit = Tr
         terminal (str): Which terminal to use.
         args (list): Arguments to pass to the terminal
         kill_at_exit (bool): Whether to close the command/terminal on process exit.
+        preexec_fn (callable): Callable to invoke before exec().
 
     Note:
         The command is opened with ``/dev/null`` for stdin, stdout, stderr.
@@ -269,7 +270,7 @@ def run_in_new_terminal(command, terminal = None, args = None, kill_at_exit = Tr
     if terminal == 'tmux':
         stdout = subprocess.PIPE
 
-    p = subprocess.Popen(argv, stdin=stdin, stdout=stdout, stderr=stderr)
+    p = subprocess.Popen(argv, stdin=stdin, stdout=stdout, stderr=stderr, preexec_fn=preexec_fn)
 
     if terminal == 'tmux':
         out, _ = p.communicate()

@@ -41,6 +41,56 @@ the very first instruction (or even the start of ``main``), you instead should u
 When you use :func:`debug`, the return value is a :class:`.tube` object
 that you interact with exactly like normal.
 
+Using GDB Python API
+~~~~~~~~~~~~~~~~~~~~
+
+GDB provides Python API, which is documented at
+https://sourceware.org/gdb/onlinedocs/gdb/Python-API.html. Pwntools allows you
+to call it right from the exploit, without having to write a gdbscript. This is
+useful for inspecting program state, e.g. asserting that leaked values are
+correct, or that certain packets trigger a particular code path or put the heap
+in a desired state.
+
+Pass ``api=True`` to :func:`attach` or :func:`debug` in order to enable GDB
+Python API access. Pwntools will then connect to GDB using RPyC library:
+https://rpyc.readthedocs.io/en/latest/.
+
+At the moment this is an experimental feature with the following limitations:
+
+- Only Python 3 is supported.
+
+  Well, technically that's not quite true. The real limitation is that your
+  GDB's Python interpreter major version should be the same as that of
+  Pwntools. However, most GDBs use Python 3 nowadays.
+
+  Different minor versions are allowed as long as no incompatible values are
+  sent in either direction. See
+  https://rpyc.readthedocs.io/en/latest/install.html#cross-interpreter-compatibility
+  for more information.
+
+  Use
+
+  ::
+
+      $ gdb -batch -ex 'python import sys; print(sys.version)'
+
+  in order to check your GDB's Python version.
+- If your GDB uses a different Python interpreter than Pwntools (for example,
+  because you run Pwntools out of a virtualenv), you should install ``rpyc``
+  package into its ``sys.path``. Use
+
+  ::
+
+      $ gdb -batch -ex 'python import rpyc'
+
+  in order to check whether this is necessary.
+- Only local processes are supported.
+- It is not possible to tell whether ``gdb.execute('continue')`` will be
+  executed synchronously or asynchronously (in gdbscripts it is always
+  synchronous). Therefore it is recommended to use either the explicitly
+  synchronous :func:`pwnlib.gdb.Gdb.continue_and_wait` or the explicitly
+  asynchronous :func:`pwnlib.gdb.Gdb.continue_nowait` instead.
+
 Tips and Troubleshooting
 ------------------------
 
@@ -91,13 +141,20 @@ Member Documentation
 from __future__ import absolute_import
 from __future__ import division
 
+from contextlib import contextmanager
 import os
 import random
 import re
 import shlex
 import six
+import six.moves
+import socket
 import tempfile
+from threading import Event
 import time
+
+from rpyc import BgServingThread
+from rpyc.utils.factory import unix_connect
 
 from pwnlib import adb
 from pwnlib import atexit
@@ -117,8 +174,8 @@ from pwnlib.util import proc
 log = getLogger(__name__)
 
 @LocalContext
-def debug_assembly(asm, gdbscript=None, vma=None):
-    r"""debug_assembly(asm, gdbscript=None, vma=None) -> tube
+def debug_assembly(asm, gdbscript=None, vma=None, api=False):
+    r"""debug_assembly(asm, gdbscript=None, vma=None, api=False) -> tube
 
     Creates an ELF file, and launches it under a debugger.
 
@@ -130,6 +187,7 @@ def debug_assembly(asm, gdbscript=None, vma=None):
         asm(str): Assembly code to debug
         gdbscript(str): Script to run in GDB
         vma(int): Base address to load the shellcode at
+        api(bool): Enable access to GDB Python API
         \**kwargs: Override any :obj:`pwnlib.context.context` values.
 
     Returns:
@@ -152,17 +210,18 @@ def debug_assembly(asm, gdbscript=None, vma=None):
         adb.push(tmp_elf, android_path)
         tmp_elf = android_path
 
-    return debug(tmp_elf, gdbscript=gdbscript, arch=context.arch)
+    return debug(tmp_elf, gdbscript=gdbscript, arch=context.arch, api=api)
 
 @LocalContext
-def debug_shellcode(data, gdbscript=None, vma=None):
-    r"""debug_shellcode(data, gdbscript=None, vma=None) -> tube
+def debug_shellcode(data, gdbscript=None, vma=None, api=False):
+    r"""debug_shellcode(data, gdbscript=None, vma=None, api=False) -> tube
     Creates an ELF file, and launches it under a debugger.
 
     Arguments:
         data(str): Assembled shellcode bytes
         gdbscript(str): Script to run in GDB
         vma(int): Base address to load the shellcode at
+        api(bool): Enable access to GDB Python API
         \**kwargs: Override any :obj:`pwnlib.context.context` values.
 
     Returns:
@@ -188,7 +247,7 @@ def debug_shellcode(data, gdbscript=None, vma=None):
         adb.push(tmp_elf, android_path)
         tmp_elf = android_path
 
-    return debug(tmp_elf, gdbscript=gdbscript, arch=context.arch)
+    return debug(tmp_elf, gdbscript=gdbscript, arch=context.arch, api=api)
 
 def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
     """_gdbserver_args(pid=None, path=None, args=None, which=None, env=None) -> list
@@ -304,7 +363,7 @@ def _get_runner(ssh=None):
     else:                          return tubes.process.process
 
 @LocalContext
-def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kwargs):
+def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=False, **kwargs):
     r"""
     Launch a GDB server with the specified command line,
     and launches GDB to attach to it.
@@ -317,9 +376,12 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
         ssh(:class:`.ssh`): Remote ssh session to use to launch the process.
         sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
             and Android targets.
+        api(bool): Enable access to GDB Python API.
 
     Returns:
-        :class:`.process` or :class:`.ssh_channel`: A tube connected to the target process
+        :class:`.process` or :class:`.ssh_channel`: A tube connected to the target process.
+        When ``api=True``, ``gdb`` member of the returned object contains a :class:`Gdb`
+        instance.
 
     Notes:
 
@@ -385,6 +447,23 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     >>> io.interactive() # doctest: +SKIP
     >>> io.close()
 
+    Using GDB Python API:
+
+    >>> if six.PY3:
+    ...     # Debug a new process
+    ...     io = gdb.debug(['echo', 'foo'], api=True)
+    ...     # Stop at 'write'
+    ...     bp = io.gdb.Breakpoint('write', temporary=True)
+    ...     io.gdb.continue_and_wait()
+    ...     # Dump 'count'
+    ...     count = io.gdb.parse_and_eval('$rdx')
+    ...     long = io.gdb.lookup_type('long')
+    ...     assert int(count.cast(long)) == 4, count
+    ...     # Resume the program
+    ...     io.gdb.continue_nowait()
+    ...     s = io.recvline()
+    ...     assert s == b'foo\n', s
+
     You can use :func:`debug` to spawn new processes on remote machines as well,
     by using the ``ssh=`` keyword to pass in your :class:`.ssh` instance.
 
@@ -414,6 +493,9 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     runner = _get_runner(ssh)
     which  = _get_which(ssh)
     gdbscript = gdbscript or ''
+
+    if api and runner is not tubes.process.process:
+        raise ValueError('GDB Python API is supported only for local processes')
 
     if context.noptrace:
         log.warn_once("Skipping debugger since context.noptrace==True")
@@ -462,7 +544,10 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, **kw
     if not ssh and context.os == 'android':
         host = context.adb_host
 
-    attach((host, port), exe=exe, gdbscript=gdbscript, ssh=ssh, sysroot=sysroot)
+    tmp = attach((host, port), exe=exe, gdbscript=gdbscript, ssh=ssh, sysroot=sysroot, api=api)
+    if api:
+        _, gdb = tmp
+        gdbserver.gdb = gdb
 
     # gdbserver outputs a message when a client connects
     garbage = gdbserver.recvline(timeout=1)
@@ -509,8 +594,97 @@ def binary():
 
     return gdb
 
+class Breakpoint:
+    """Mirror of ``gdb.Breakpoint`` class.
+
+    See https://sourceware.org/gdb/onlinedocs/gdb/Breakpoints-In-Python.html
+    for more information.
+    """
+
+    def __init__(self, conn, *args, **kwargs):
+        """Do not create instances of this class directly.
+
+        Use ``pwnlib.gdb.Gdb.Breakpoint`` instead.
+        """
+        # Creates a real breakpoint and connects it with this mirror
+        self.conn = conn
+        self.server_breakpoint = conn.root.set_breakpoint(
+            self, hasattr(self, 'stop'), *args, **kwargs)
+
+    def __getattr__(self, item):
+        """Return attributes of the real breakpoint."""
+        if item in (
+                '____id_pack__',
+                '__name__',
+                '____conn__',
+                'stop',
+        ):
+            # Ignore RPyC netref attributes.
+            # Also, if stop() is not defined, hasattr() call in our
+            # __init__() will bring us here. Don't contact the
+            # server in this case either.
+            raise AttributeError()
+        return getattr(self.server_breakpoint, item)
+
+    def exposed_stop(self):
+        # Handle stop() call from the server.
+        return self.stop()
+
+class Gdb:
+    """Mirror of ``gdb`` module.
+
+    See https://sourceware.org/gdb/onlinedocs/gdb/Basic-Python.html for more
+    information.
+    """
+
+    def __init__(self, conn):
+        """Do not create instances of this class directly.
+
+        Use :func:`attach` or :func:`debug` with ``api=True`` instead.
+        """
+        self.conn = conn
+
+        class _Breakpoint(Breakpoint):
+            def __init__(self, *args, **kwargs):
+                super().__init__(conn, *args, **kwargs)
+
+        self.Breakpoint = _Breakpoint
+        self.stopped = Event()
+
+        def stop_handler(event):
+            self.stopped.set()
+
+        self.events.stop.connect(stop_handler)
+
+    def __getattr__(self, item):
+        """Provide access to the attributes of `gdb` module."""
+        return getattr(self.conn.root.gdb, item)
+
+    def wait(self):
+        """Wait until the program stops."""
+        self.stopped.wait()
+        self.stopped.clear()
+
+    def interrupt_and_wait(self):
+        """Interrupt the program and wait until it stops."""
+        self.execute('interrupt')
+        self.wait()
+
+    def continue_nowait(self):
+        """Continue the program. Do not wait until it stops again."""
+        self.execute('continue &')
+
+    def continue_and_wait(self):
+        """Continue the program and wait until it stops again."""
+        self.continue_nowait()
+        self.wait()
+
+    def quit(self):
+        """Terminate GDB."""
+        self.conn.root.quit()
+
 @LocalContext
-def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysroot = None):
+def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysroot = None, api = False):
     r"""
     Start GDB in a new terminal and attach to `target`.
 
@@ -523,9 +697,11 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         gdb_args(list): List of additional arguments to pass to GDB.
         sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
             and Android targets.
+        api(bool): Enable access to GDB Python API.
 
     Returns:
         PID of the GDB process (or the window which it is running in).
+        When ``api=True``, a (PID, :class:`Gdb`) tuple.
 
     Notes:
 
@@ -570,6 +746,25 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         >>> io.sendline('echo Hello from bash && exit')
         >>> io.recvall()
         b'Hello from bash\n'
+
+        Using GDB Python API:
+
+        >>> if six.PY3:
+        ...     io = process('bash')
+        ...     # Attach a debugger
+        ...     pid, io_gdb = gdb.attach(io, api=True)
+        ...     # Force the program to write something it normally wouldn't
+        ...     io_gdb.execute('call puts("Hello from process debugger!")')
+        ...     # Resume the program
+        ...     io_gdb.continue_nowait()
+        ...     # Observe the forced line
+        ...     s = io.recvline()
+        ...     assert s == b'Hello from process debugger!\n', s
+        ...     # Interact with the program in a regular way
+        ...     io.sendline('echo Hello from bash && exit')
+        ...     # Observe the results
+        ...     s = io.recvall()
+        ...     assert s == b'Hello from bash\n', s
 
         Attach to the remote process from a :class:`.remote` or :class:`.listen` tube,
         as long as it is running on the same machine.
@@ -744,7 +939,8 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     if not pid and not exe and not ssh:
         log.error('could not find target process')
 
-    cmd = binary()
+    gdb_binary = binary()
+    cmd = gdb_binary
 
     if gdb_args:
         cmd += ' '
@@ -777,6 +973,15 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         # when you're trying to debug anything that forks.
         pre += 'set detach-on-fork off\n'
 
+    if api:
+        # create a UNIX socket for talking to GDB
+        socket_dir = tempfile.mkdtemp()
+        socket_path = os.path.join(socket_dir, 'socket')
+        # inject the socket path and the GDB Python API bridge
+        pre += 'python socket_path = ' + repr(socket_path) + '\n'
+        bridge = os.path.join(os.path.dirname(__file__), 'gdb_api_bridge.py')
+        pre += 'source ' + bridge + '\n'
+
     gdbscript = pre + (gdbscript or '')
 
     if gdbscript:
@@ -791,10 +996,48 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
     log.info('running in new terminal: %s' % cmd)
 
-    gdb_pid = misc.run_in_new_terminal(cmd)
+    if api:
+        # prevent gdb_faketerminal.py from messing up api doctests
+        def preexec_fn():
+            os.environ['GDB_FAKETERMINAL'] = '0'
+    else:
+        preexec_fn = None
+    gdb_pid = misc.run_in_new_terminal(cmd, preexec_fn = preexec_fn)
 
     if pid and context.native:
         proc.wait_for_debugger(pid, gdb_pid)
+
+    if api:
+        # connect to the GDB Python API bridge
+        n_retries = 300
+        if six.PY2:
+            retriable = socket.error
+        else:
+            retriable = ConnectionRefusedError, FileNotFoundError
+        for retry in range(n_retries):
+            try:
+                conn = unix_connect(socket_path)
+                break
+            except retriable:
+                if retry == n_retries - 1:
+                    raise ValueError(
+                        'Failed to connect to GDB.\n' +
+                        'Does GDB use the same Python version as your script? ' +
+                        'Check with `' + six.moves.shlex_quote(gdb_binary) +
+                        ' -batch -ex \'python import sys; print(sys.version)\'`.\n' +
+                        'Does GDB\'s Python have RPyC in its sys.path? Check with `' +
+                        six.moves.shlex_quote(gdb_binary) + ' -batch -ex ' +
+                        '\'python import rpyc\'`.\n')
+                time.sleep(0.1)
+
+        # now that connection is up, remove the socket from the filesystem
+        os.unlink(socket_path)
+        os.rmdir(socket_dir)
+
+        # create a thread for receiving breakpoint notifications
+        BgServingThread(conn, callback=lambda: None)
+
+        return gdb_pid, Gdb(conn)
 
     return gdb_pid
 
