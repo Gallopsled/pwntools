@@ -2,9 +2,9 @@ import re
 
 class CipherBacon:
     def __init__(self):
-        self.code_table = self.code_table()
+        self.code_table = self.generate_code_table()
 
-    def code_table(self):
+    def generate_code_table(self):
         bacon_dict = {}
 
         for i in range(0, 26):
