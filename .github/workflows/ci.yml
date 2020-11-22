@@ -5,7 +5,7 @@ jobs:
   test:
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [2.7, 3.8]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
