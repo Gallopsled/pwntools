@@ -49,7 +49,7 @@ class Crypto():
             self.cipher = CipherTransposition()
         '''
         if(algo == 'vignere'):
-            self.cipher = CipherVignere()
+            self.cipher = CipherVigenere()
         if(algo == 'xor'):
             self.cipher = CipherXor()
 
