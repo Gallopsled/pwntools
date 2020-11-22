@@ -4,6 +4,7 @@ class CipherBacon:
     def __init__(self):
         self.code_table = self.generate_code_table()
 
+
     def generate_code_table(self):
         bacon_dict = {}
 
