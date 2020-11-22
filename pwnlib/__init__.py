@@ -11,6 +11,7 @@ __all__ = [
     'asm',
     'atexception',
     'atexit',
+    'crypto',
     'commandline',
     'constants',
     'context',
