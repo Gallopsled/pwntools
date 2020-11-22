@@ -12,7 +12,7 @@ from pwnlib.crypto.ciphers.morse import CipherMorse
 from pwnlib.crypto.ciphers.reverse import CipherReverse
 from pwnlib.crypto.ciphers.rot13 import CipherRot13
 from pwnlib.crypto.ciphers.transposition import CipherTransposition
-from pwnlib.crypto.ciphers.vignere import CipherVignere
+from pwnlib.crypto.ciphers.vigenere import CipherVigenere
 from pwnlib.crypto.ciphers.xor import CipherXor
 
 class Crypto():
