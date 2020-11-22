@@ -2,7 +2,7 @@ import re
 
 class CipherBacon:
     def __init__(self):
-        code_table = self.code_table()
+        self.code_table = self.code_table()
 
     def code_table(self):
         bacon_dict = {}

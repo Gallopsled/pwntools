@@ -1,6 +1,6 @@
 class CipherMorse:
     def __init__(self):
-        code_table = self.code_table()
+        self.code_table = self.code_table()
 
 
     def code_table(self):
