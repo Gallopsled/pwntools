@@ -9,6 +9,7 @@ import six
 import socket
 import stat
 import string
+import shlex
 
 import six
 
@@ -253,7 +254,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
     if isinstance(command, six.string_types):
         if ';' in command:
             log.error("Cannot use commands with semicolon.  Create a script and invoke that directly.")
-        argv += command.split()
+        argv += shlex.split(command)
     elif isinstance(command, (list, tuple)):
         if any(';' in c for c in command):
             log.error("Cannot use commands with semicolon.  Create a script and invoke that directly.")
