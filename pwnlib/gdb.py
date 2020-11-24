@@ -677,7 +677,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
                                        target.pid,
                                        tmpfile)]
 
-        misc.run_in_new_terminal(' '.join(cmd))
+        misc.run_in_new_terminal(cmd)
         return
 
     elif isinstance(target, tubes.sock.sock):
@@ -741,25 +741,24 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     if not pid and not exe and not ssh:
         log.error('could not find target process')
 
-    cmd = binary()
+    cmd = [binary()]
 
     if gdb_args:
-        cmd += ' '
-        cmd += ' '.join(gdb_args)
+        cmd += gdb_args
 
     if context.gdbinit:
-        cmd += ' -nh '                     # ignore ~/.gdbinit
-        cmd += ' -x %s ' % context.gdbinit # load custom gdbinit
+        # ignore ~/.gdbinit and load custom gdbinit
+        cmd += ['-nh', '-x', context.gdbinit]
 
-    cmd += ' -q '
+    cmd.append('-q')
 
     if exe and context.native:
         if not ssh and not os.path.isfile(exe):
             log.error('No such file: %s' % exe)
-        cmd += ' "%s"' % exe
+        cmd.append(exe)
 
     if pid and not context.os == 'android':
-        cmd += ' %d' % pid
+        cmd.append(str(pid))
 
     if context.os == 'android' and pid:
         runner  = _get_runner()
@@ -784,7 +783,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
         tmp.write(gdbscript)
         tmp.close()
-        cmd += ' -x %s' % (tmp.name)
+        cmd += ['-x', tmp.name]
 
     log.info('running in new terminal: %s' % cmd)
 
