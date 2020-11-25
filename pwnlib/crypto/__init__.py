@@ -15,7 +15,7 @@ from pwnlib.crypto.ciphers.transposition import cipher_transposition
 from pwnlib.crypto.ciphers.vigenere import cipher_vigenere
 from pwnlib.crypto.ciphers.xor import cipher_xor
 
-class Crypto():
+class crypto():
     def __init__(self, algo=None, key=None):
         cipher = None
         algo = algo
