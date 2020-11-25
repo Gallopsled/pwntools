@@ -1,4 +1,4 @@
-class reverse:
+class cipher_reverse:
     def encrypt(self, cleartext):
         return self.process(cleartext)
 

@@ -1,6 +1,6 @@
 import binascii
 
-class binary:
+class cipher_binary:
     def encrypt(self, data):
         return bin(int(binascii.hexlify(data.encode('utf-8')),16))
 

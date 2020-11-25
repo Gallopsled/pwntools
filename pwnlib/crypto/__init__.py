@@ -1,19 +1,19 @@
 from __future__ import absolute_import
 
 # load cipher suites
-from pwnlib.crypto.ciphers.atbash import CipherAtBash
-from pwnlib.crypto.ciphers.bacon import CipherBacon
-from pwnlib.crypto.ciphers.base64 import CipherBase64
-from pwnlib.crypto.ciphers.binary import CipherBinary
-from pwnlib.crypto.ciphers.caesar import CipherCaesar
-from pwnlib.crypto.ciphers.decimal import CipherDecimal
-from pwnlib.crypto.ciphers.hex import CipherHex
-from pwnlib.crypto.ciphers.morse import CipherMorse
-from pwnlib.crypto.ciphers.reverse import CipherReverse
-from pwnlib.crypto.ciphers.rot13 import CipherRot13
-from pwnlib.crypto.ciphers.transposition import CipherTransposition
-from pwnlib.crypto.ciphers.vigenere import CipherVigenere
-from pwnlib.crypto.ciphers.xor import CipherXor
+from pwnlib.crypto.ciphers.atbash import atbash
+from pwnlib.crypto.ciphers.bacon import bacon
+from pwnlib.crypto.ciphers.base64 import base64
+from pwnlib.crypto.ciphers.binary import binary
+from pwnlib.crypto.ciphers.caesar import caesar
+from pwnlib.crypto.ciphers.decimal import decimal
+from pwnlib.crypto.ciphers.hex import hexa
+from pwnlib.crypto.ciphers.morse import morse
+from pwnlib.crypto.ciphers.reverse import reverse
+from pwnlib.crypto.ciphers.rot13 import rot13
+from pwnlib.crypto.ciphers.transposition import transposition
+from pwnlib.crypto.ciphers.vigenere import vigenere
+from pwnlib.crypto.ciphers.xor import xor
 
 class Crypto():
     def __init__(self, algo=None, key=None):
@@ -23,13 +23,13 @@ class Crypto():
 
         # select cipher suite
         if(algo == 'atbash'):
-            self.cipher = CipherAtBash()
+            self.cipher = cipher_atbash()
         if(algo == 'bacon'):
-            self.cipher = CipherBacon()
+            self.cipher = cipher_bacon()
         if(algo == 'base64'):
-            self.cipher = CipherBase64()
+            self.cipher = cipher_base64()
         if(algo == 'binary'):
-            self.cipher = CipherBinary()
+            self.cipher = cipher_binary()
         ''' check key, mode parameter
         if(algo == 'caesar'):
             self.cipher = CipherCaesar()
@@ -37,21 +37,21 @@ class Crypto():
             self.cipher = CipherDecimal()
         '''
         if(algo == 'hex'):
-            self.cipher = CipherHex()
+            self.cipher = cipher_hex()
         if(algo == 'morse'):
-            self.cipher = CipherMorse()
+            self.cipher = cipher_morse()
         if(algo == 'reverse'):
-            self.cipher = CipherReverse()
+            self.cipher = cipher_reverse()
         if(algo == 'rot13'):
-            self.cipher = CipherRot13()
+            self.cipher = cipher_rot13()
         '''
         if(algo == 'transposition'):
             self.cipher = CipherTransposition()
         '''
         if(algo == 'vignere'):
-            self.cipher = CipherVigenere()
+            self.cipher = cipher_vigenere()
         if(algo == 'xor'):
-            self.cipher = CipherXor()
+            self.cipher = cipher_xor()
 
 
     def encrypt(self, data):

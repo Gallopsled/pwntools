@@ -1,6 +1,6 @@
 import binascii
 
-class hex:
+class cipher_hex:
     def encrypt(self, data):
         result = ''
 

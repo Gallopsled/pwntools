@@ -1,6 +1,6 @@
 import re
 
-class bacon:
+class cipher_bacon:
     def __init__(self):
         self.code_table = self.generate_code_table()
 

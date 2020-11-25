@@ -1,6 +1,6 @@
 import codecs
 
-class rot13:
+class cipher_rot13:
     def encrypt(self, data):
         return codecs.encode(data, 'rot13')
 
