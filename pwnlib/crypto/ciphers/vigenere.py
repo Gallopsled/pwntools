@@ -12,7 +12,7 @@ class vigenere:
 
 
     def encrypt(self, cleartext, key):
-        if(key == None):
+        if key is None:
             raise ValueError('No key given')
 
         if not (type(key) is str):

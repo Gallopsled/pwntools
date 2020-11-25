@@ -1,9 +1,9 @@
 class morse:
     def __init__(self):
-        self.code_table = self.code_table()
+        self.code_table = self.generate_code_table()
 
 
-    def code_table(self):
+    def generate_code_table(self):
         code_table = {
             'A':'.-', 'B':'-...',
             'C':'-.-.', 'D':'-..', 'E':'.',
