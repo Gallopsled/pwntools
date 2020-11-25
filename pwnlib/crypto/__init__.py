@@ -32,9 +32,9 @@ class crypto():
             self.cipher = cipher_binary()
         ''' check key, mode parameter
         if(algo == 'caesar'):
-            self.cipher = CipherCaesar()
+            self.cipher = cipher_caesar()
         if(algo == 'decimal'):
-            self.cipher = CipherDecimal()
+            self.cipher = cipher_decimal()
         '''
         if(algo == 'hex'):
             self.cipher = cipher_hex()
@@ -46,7 +46,7 @@ class crypto():
             self.cipher = cipher_rot13()
         '''
         if(algo == 'transposition'):
-            self.cipher = CipherTransposition()
+            self.cipher = cipher_transposition()
         '''
         if(algo == 'vignere'):
             self.cipher = cipher_vigenere()
