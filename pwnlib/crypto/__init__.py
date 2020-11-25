@@ -48,7 +48,7 @@ class crypto():
         if(algo == 'transposition'):
             self.cipher = cipher_transposition()
         '''
-        if(algo == 'vignere'):
+        if(algo == 'vigenere'):
             self.cipher = cipher_vigenere()
         if(algo == 'xor'):
             self.cipher = cipher_xor()
