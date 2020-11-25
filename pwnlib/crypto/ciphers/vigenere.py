@@ -50,8 +50,8 @@ class cipher_vigenere:
         if(key is None):
             raise ValueError('No key given')
 
-        if not (type(key) is str):
-            if(type(key) is int):
+        if not (isinstance(key, str)):
+            if(isinstance(key, int)):
                 raise ValueError('Key must be string not int')
             else:
                 raise ValueError('Key needs to be string')
