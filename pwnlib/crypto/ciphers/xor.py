@@ -1,4 +1,4 @@
-class CipherXor:
+class xor:
     def encrypt(self, string_a, string_b):
         return self.process(string_a, string_b)
 

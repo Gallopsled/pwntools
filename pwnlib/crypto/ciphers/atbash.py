@@ -1,6 +1,6 @@
 import string
 
-class CipherAtBash:
+class atbash:
     def __init__(self):
         self.alphabet = list(string.ascii_uppercase)
 

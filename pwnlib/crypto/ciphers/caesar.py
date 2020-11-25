@@ -1,6 +1,6 @@
 import string
 
-class CipherCaesar:
+class caesar:
     def __init__(self):
         self.alphabet = string.ascii_lowercase + string.ascii_uppercase
 

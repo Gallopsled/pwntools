@@ -1,6 +1,6 @@
 import binascii
 
-class CipherDecimal:
+class decimal:
     def encrypt(self, data):
         result = ''
 

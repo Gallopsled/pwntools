@@ -2,7 +2,7 @@ from __future__ import division
 import math
 
 
-class CipherTransposition:
+class transposition:
     def encrypt(self, data, key):
         message_size = len(data)
 

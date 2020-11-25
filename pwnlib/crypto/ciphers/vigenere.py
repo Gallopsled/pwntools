@@ -1,6 +1,6 @@
 import string
 
-class CipherVigenere:
+class vigenere:
     def __init__(self):
         self.alphabet = string.ascii_lowercase
 

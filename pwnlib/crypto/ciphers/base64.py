@@ -1,6 +1,6 @@
 import base64
 
-class CipherBase64:
+class base64:
     def encrypt(self, cleartext):
         return base64.b64encode(cleartext.encode('utf-8')).decode()
 
