@@ -16,10 +16,10 @@ class cipher_caesar:
     def process(self, text, key, mode):
         result = ''
 
-        for c in text:
-            index = self.alphabet.find(c)
+        for char in text:
+            index = self.alphabet.find(char)
             if index == -1:
-                result += c
+                result += char
             else:
                 new_index = index + key if mode == 1 else index - key
                 new_index %= len(self.alphabet)

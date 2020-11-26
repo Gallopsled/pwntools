@@ -22,35 +22,35 @@ class crypto():
         key = key
 
         # select cipher suite
-        if(algo == 'atbash'):
+        if algo == 'atbash':
             self.cipher = cipher_atbash()
-        if(algo == 'bacon'):
+        if algo == 'bacon':
             self.cipher = cipher_bacon()
-        if(algo == 'base64'):
+        if algo == 'base64':
             self.cipher = cipher_base64()
-        if(algo == 'binary'):
+        if algo == 'binary':
             self.cipher = cipher_binary()
         ''' check key, mode parameter
-        if(algo == 'caesar'):
+        if algo == 'caesar':
             self.cipher = cipher_caesar()
-        if(algo == 'decimal'):
+        if algo == 'decimal':
             self.cipher = cipher_decimal()
         '''
-        if(algo == 'hex'):
+        if algo == 'hex':
             self.cipher = cipher_hex()
-        if(algo == 'morse'):
+        if algo == 'morse':
             self.cipher = cipher_morse()
-        if(algo == 'reverse'):
+        if algo == 'reverse':
             self.cipher = cipher_reverse()
-        if(algo == 'rot13'):
+        if algo == 'rot13':
             self.cipher = cipher_rot13()
         '''
-        if(algo == 'transposition'):
+        if algo == 'transposition':
             self.cipher = cipher_transposition()
         '''
-        if(algo == 'vigenere'):
+        if algo == 'vigenere':
             self.cipher = cipher_vigenere()
-        if(algo == 'xor'):
+        if algo == 'xor':
             self.cipher = cipher_xor()
 
 
