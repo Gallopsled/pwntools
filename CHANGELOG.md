@@ -108,7 +108,13 @@ The table below shows which release corresponds to each branch, and what date th
 [1703]: https://github.com/Gallopsled/pwntools/pull/1703
 [1704]: https://github.com/Gallopsled/pwntools/pull/1704
 
-## 4.3.0 (`stable`)
+## 4.3.1 (`stable`)
+
+- [#1732][1732] Fix shellcraft SSTI vulnerability (first major pwntools vuln!)
+
+[1732]: https://github.com/Gallopsled/pwntools/pull/1732
+
+## 4.3.0
 
 - [#1576][1576] Add `executable=` argument to `ELF.search`
 - [#1584][1584] Add `jmp_esp`/`jmp_rsp` attribute to `ROP`
