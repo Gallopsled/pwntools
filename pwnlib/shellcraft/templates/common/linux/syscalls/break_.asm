@@ -5,7 +5,7 @@ import pwnlib.constants
 import pwnlib.shellcraft
 import six
 %>
-<%docstring>break_(vararg_0, vararg_1, vararg_2, vararg_3, vararg_4) -> str
+<%docstring>break(vararg_0, vararg_1, vararg_2, vararg_3, vararg_4) -> str
 
 Invokes the syscall break.
 
@@ -39,7 +39,7 @@ Returns:
 
     for name, arg in zip(argument_names, argument_values):
         if arg is not None:
-            syscall_repr.append('%s=%r' % (name, arg))
+            syscall_repr.append('%s=%s' % (name, pwnlib.shellcraft.pretty(arg, False)))
 
         # If the argument itself (input) is a register...
         if arg in allregs:
@@ -86,7 +86,7 @@ Returns:
     else:
         raise Exception("Could not locate any syscalls: %r" % syscalls)
 %>
-    /* break_(${', '.join(syscall_repr)}) */
+    /* break(${', '.join(syscall_repr)}) */
 %for name, arg in string_arguments.items():
     ${pwnlib.shellcraft.pushstr(arg, append_null=(b'\x00' not in arg))}
     ${pwnlib.shellcraft.mov(regs[argument_names.index(name)], abi.stack)}

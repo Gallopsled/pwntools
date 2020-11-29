@@ -1,5 +1,6 @@
 <% from pwnlib.util import lists, packing, fiddling %>
 <% from pwnlib.shellcraft.arm import push %>
+<% from pwnlib.shellcraft import pretty %>
 <% import six %>
 <%page args="string, append_null = True, register='r7'"/>
 <%docstring>
@@ -32,7 +33,7 @@ Examples:
     while len(string) % 4:
         string += b'\x41'
 %>\
-    /* push ${repr(string)} */
+    /* push ${pretty(string, False)} */
 % for word in packing.unpack_many(string, 32)[::-1]:
     ${push(word, register)}
 % endfor
