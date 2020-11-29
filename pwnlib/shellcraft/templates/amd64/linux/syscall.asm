@@ -1,5 +1,5 @@
 <%
-  from pwnlib.shellcraft import amd64
+  from pwnlib.shellcraft import amd64, pretty
   from pwnlib.constants import Constant
   from pwnlib.abi import linux_amd64_syscall as abi
   from six import text_type
@@ -54,7 +54,7 @@ Example:
         ...               'PROT_READ | PROT_WRITE | PROT_EXEC',
         ...               'MAP_PRIVATE | MAP_ANONYMOUS',
         ...               -1, 0).rstrip())
-            /* call mmap(0, 4096, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
+            /* call mmap(0, 0x1000, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
             push (MAP_PRIVATE | MAP_ANONYMOUS) /* 0x22 */
             pop r10
             push -1
@@ -84,6 +84,20 @@ Example:
             push SYS_open /* 2 */
             pop rax
             syscall
+        >>> print(shellcraft.amd64.write(0, '*/', 2).rstrip())
+            /* write(fd=0, buf='\x2a/', n=2) */
+            /* push b'\x2a/\x00' */
+            push 0x1010101 ^ 0x2f2a
+            xor dword ptr [rsp], 0x1010101
+            mov rsi, rsp
+            xor edi, edi /* 0 */
+            push 2
+            pop rdx
+            /* call write() */
+            push SYS_write /* 1 */
+            pop rax
+            syscall
+
 </%docstring>
 <%
   append_cdq = False
@@ -95,13 +109,13 @@ Example:
       if syscall is None:
           args = ['?']
       else:
-          args = [repr(syscall)]
+          args = [pretty(syscall, False)]
 
   for arg in [arg0, arg1, arg2, arg3, arg4, arg5]:
       if arg is None:
           args.append('?')
       else:
-          args.append(repr(arg))
+          args.append(pretty(arg, False))
   while args and args[-1] == '?':
       args.pop()
   syscall_repr = syscall_repr % ', '.join(args)

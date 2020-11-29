@@ -1,4 +1,4 @@
-<% from pwnlib.shellcraft import arm %>
+<% from pwnlib.shellcraft import arm, pretty %>
 <%docstring>
 Pushes an array/envp-style array of pointers onto the stack.
 
@@ -25,13 +25,13 @@ word_size = 4
 offset = len(array_str) + word_size
 
 %>\
-    /* push argument array ${repr(array)} */
+    /* push argument array ${pretty(array, False)} */
     ${arm.pushstr(array_str)}
     ${arm.push(0)} /* null terminate */
 % for i,arg in enumerate(reversed(array)):
     ${arm.mov(reg, offset + word_size*i - len(arg))}
     add ${reg}, sp
-    ${arm.push(reg)} /* ${repr(arg)} */
+    ${arm.push(reg)} /* ${pretty(arg, False)} */
     <% offset -= len(arg) %>\
 % endfor
     ${arm.mov(reg,'sp')}
