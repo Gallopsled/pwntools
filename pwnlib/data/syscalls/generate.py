@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 from __future__ import division
 import argparse
+import keyword
 import os
 
 from pwnlib import constants
@@ -62,7 +63,7 @@ CALL = """
 
     for name, arg in zip(argument_names, argument_values):
         if arg is not None:
-            syscall_repr.append('%s=%r' % (name, arg))
+            syscall_repr.append('%s=%s' % (name, pwnlib.shellcraft.pretty(arg, False)))
 
         # If the argument itself (input) is a register...
         if arg in allregs:
@@ -75,8 +76,8 @@ CALL = """
 
         # The argument is not a register.  It is a string value, and we
         # are expecting a string value
-        elif name in can_pushstr and isinstance(arg, (bytes, six.text_type)):
-            if not isinstance(arg, bytes):
+        elif name in can_pushstr and isinstance(arg, (six.binary_type, six.text_type)):
+            if isinstance(arg, six.text_type):
                 arg = arg.encode('utf-8')
             string_arguments[name] = arg
 
@@ -144,12 +145,11 @@ def can_be_array(arg):
 
 
 def fix_bad_arg_names(func, arg):
-    if arg.name == 'str':
-        return 'str_'
     if arg.name == 'len':
         return 'length'
-    if arg.name == 'repr':
-        return 'repr_'
+
+    if arg.name in ('str', 'repr') or keyword.iskeyword(arg.name):
+        return arg.name + '_'
 
     if func.name == 'open' and arg.name == 'vararg':
         return 'mode'
@@ -277,8 +277,10 @@ def generate_one(target):
             CALL.format(**template_variables)
         ]
 
-        with open(os.path.join(target, name + '.asm'), 'wt+') as f:
-            f.write('\n'.join(map(str.strip, lines)))
+        if keyword.iskeyword(name):
+            name += '_'
+        with open(os.path.join(target, name + '.asm'), 'wt') as f:
+            f.write('\n'.join(map(str.strip, lines)) + '\n')
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser()

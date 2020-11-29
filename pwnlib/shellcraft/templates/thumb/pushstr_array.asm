@@ -1,4 +1,4 @@
-<% from pwnlib.shellcraft import thumb %>
+<% from pwnlib.shellcraft import thumb, pretty %>
 <%docstring>
 Pushes an array/envp-style array of pointers onto the stack.
 
@@ -25,13 +25,13 @@ word_size = 4
 offset = len(array_str) + word_size
 
 %>\
-    /* push argument array ${repr(array)} */
+    /* push argument array ${pretty(array, False)} */
     ${thumb.pushstr(array_str)}
     ${thumb.push(0)} /* null terminate */
 % for i,arg in enumerate(reversed(array)):
     ${thumb.mov(reg, offset + word_size*i - len(arg))}
     add ${reg}, sp
-    ${thumb.push(reg)} /* ${repr(arg)} */
+    ${thumb.push(reg)} /* ${pretty(arg, False)} */
     <% offset -= len(arg) %>\
 % endfor
     ${thumb.mov(reg,'sp')}

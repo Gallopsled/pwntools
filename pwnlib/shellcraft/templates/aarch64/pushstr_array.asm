@@ -39,7 +39,7 @@ string = b''.join(array)
 if len(array) * 8 > 4095:
     raise Exception("Array size is too large (%i), max=4095" % len(array))
 %>\
-    /* push argument array ${repr(array)} */
+    /* push argument array ${shellcraft.pretty(array, False)} */
     ${shellcraft.pushstr(string, register1=register1, register2=register2)}
 
     /* push null terminator */

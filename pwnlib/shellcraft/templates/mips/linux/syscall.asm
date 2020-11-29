@@ -91,7 +91,7 @@ Example:
       if syscall is None:
           args = ['?']
       else:
-          args = [repr(syscall)]
+          args = [pretty(syscall, False)]
 
   for arg in [arg0, arg1, arg2, arg3, arg4, arg5]:
       if arg is None:
