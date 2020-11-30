@@ -1,4 +1,4 @@
-<% from pwnlib.shellcraft import mips %>
+<% from pwnlib.shellcraft import mips, pretty %>
 <%docstring>
 Pushes an array/envp-style array of pointers onto the stack.
 
@@ -25,14 +25,14 @@ word_size = 4
 offset = len(array_str) + word_size
 
 %>\
-    /* push argument array ${repr(array)} */
+    /* push argument array ${pretty(array, False)} */
     ${mips.pushstr(array_str)}
     ${mips.mov(reg, 0)}
     ${mips.push(reg)} /* null terminate */
 % for i,arg in enumerate(reversed(array)):
     ${mips.mov(reg, offset + word_size*i - len(arg))}
-    add ${reg}, $sp
-    ${mips.push(reg)} /* ${repr(arg)} */
+    add ${reg}, $sp, ${reg}
+    ${mips.push(reg)} /* ${pretty(arg, False)} */
     <% offset -= len(arg) %>\
 % endfor
     ${mips.mov(reg,'$sp')}
