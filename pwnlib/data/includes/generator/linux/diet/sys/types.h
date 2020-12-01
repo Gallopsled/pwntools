@@ -38,7 +38,7 @@ typedef uint64_t fsfilcnt_t;
              Used to identify a thread.
 */
 
-#if defined(__alpha__) || defined(__ia64__) || defined(__sparc64__) || defined(__s390x__)
+#if defined(__alpha__) || defined(__ia64__) || defined(__sparc64__) || defined(__s390x__) || defined(__aarch64__)
     typedef uint32_t dev_t;		/* Used for device IDs. */
     typedef uint32_t gid_t;		/* Used for group IDs. */
     typedef uint32_t mode_t;		/* Used for some file attributes. */
@@ -82,10 +82,28 @@ typedef int32_t id_t;			/* Used as a general identifier; can be
 typedef unsigned long ino_t;		/* Used for file serial numbers. */
 typedef int32_t key_t;			/* Used for interprocess communication. */
 typedef int32_t pid_t;			/* Used for process IDs and process group IDs. */
+#ifdef __SIZE_TYPE__
+/* horrible kludge to make sure size_t and ssize_t are both long or both int */
+#define unsigned signed
+typedef __SIZE_TYPE__ ssize_t;
+#undef unsigned
+#else
 typedef signed long ssize_t;		/* Used for a count of bytes or an error indication. */
+#endif
+#if (defined(__sparc__) && (__arch64__)) || defined(__sparcv9)
+/* sparc64 has 32bit suseconds_t for some reason, even though struct
+ * timeval is padded to 16 bytes anyway. */
+typedef signed int suseconds_t;		/* Used for time in microseconds. */
+typedef signed int useconds_t;		/* Used for time in microseconds. */
+#else
 typedef signed long suseconds_t;	/* Used for time in microseconds. */
-typedef signed long time_t;		/* Used for time in seconds. */
 typedef signed long useconds_t;		/* Used for time in microseconds. */
+#endif
+#if defined(__x86_64__) && defined(__ILP32__)
+typedef signed long long time_t;
+#else
+typedef signed long time_t;		/* Used for time in seconds. */
+#endif
 
 /* non-susv2 types: */
 __extension__ typedef signed long long loff_t;	/* 64-bit offset */
@@ -94,7 +112,12 @@ __extension__ typedef signed long long off64_t;
 #if defined _FILE_OFFSET_BITS && _FILE_OFFSET_BITS == 64
 typedef off64_t off_t;
 #else
+
+#if defined(__x86_64__) && defined(__ILP32__)
+typedef off64_t off_t;
+#else
 typedef signed long off_t;             /* Used for file sizes. */
+#endif
 #endif
 
 __extension__ typedef unsigned long long ino64_t;
@@ -122,11 +145,11 @@ typedef unsigned int u_int __attribute_dontuse__;
 typedef unsigned char uchar __attribute_dontuse__;
 typedef unsigned short ushort __attribute_dontuse__;
 typedef unsigned int uint __attribute_dontuse__;
-typedef uint32_t u_long __attribute_dontuse__;
+typedef unsigned long u_long __attribute_dontuse__;
 typedef uint32_t n_long __attribute_dontuse__;
 typedef uint32_t n_time __attribute_dontuse__;
 typedef uint16_t n_short __attribute_dontuse__;
-typedef uint32_t ulong __attribute_dontuse__;
+typedef unsigned long ulong __attribute_dontuse__;
 typedef uint32_t nlong __attribute_dontuse__;
 typedef uint32_t ntime __attribute_dontuse__;
 typedef uint16_t nshort __attribute_dontuse__;

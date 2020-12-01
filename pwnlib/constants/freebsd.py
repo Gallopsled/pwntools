@@ -1,5 +1,4 @@
 from pwnlib.constants.constant import Constant
-
 STDIN_FILENO = Constant('STDIN_FILENO',0)
 STDOUT_FILENO = Constant('STDOUT_FILENO',1)
 STDERR_FILENO = Constant('STDERR_FILENO',2)
