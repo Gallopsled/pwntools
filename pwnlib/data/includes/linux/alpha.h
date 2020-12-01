@@ -216,6 +216,7 @@
 #define __NR_osf_swapctl 259
 #define __NR_osf_memcntl 260
 #define __NR_osf_fdatasync 261
+#define __NR_umount_with_flags 22
 #define __NR_bdflush 300
 #define __NR_sethae 301
 #define __NR_mount 302
@@ -391,6 +392,73 @@
 #define __NR_signalfd 476
 #define __NR_timerfd 477
 #define __NR_eventfd 478
+#define __NR_recvmmsg 479
+#define __NR_fallocate 480
+#define __NR_timerfd_create 481
+#define __NR_timerfd_settime 482
+#define __NR_timerfd_gettime 483
+#define __NR_signalfd4 484
+#define __NR_eventfd2 485
+#define __NR_epoll_create1 486
+#define __NR_dup3 487
+#define __NR_pipe2 488
+#define __NR_inotify_init1 489
+#define __NR_preadv 490
+#define __NR_pwritev 491
+#define __NR_rt_tgsigqueueinfo 492
+#define __NR_perf_event_open 493
+#define __NR_fanotify_init 494
+#define __NR_fanotify_mark 495
+#define __NR_prlimit64 496
+#define __NR_name_to_handle_at 497
+#define __NR_open_by_handle_at 498
+#define __NR_clock_adjtime 499
+#define __NR_syncfs 500
+#define __NR_setns 501
+#define __NR_accept4 502
+#define __NR_sendmmsg 503
+#define __NR_process_vm_readv 504
+#define __NR_process_vm_writev 505
+#define __NR_kcmp 506
+#define __NR_finit_module 507
+#define __NR_sched_setattr 508
+#define __NR_sched_getattr 509
+#define __NR_renameat2 510
+#define __NR_getrandom 511
+#define __NR_memfd_create 512
+#define __NR_execveat 513
+#define __NR_seccomp 514
+#define __NR_bpf 515
+#define __NR_userfaultfd 516
+#define __NR_membarrier 517
+#define __NR_mlock2 518
+#define __NR_copy_file_range 519
+#define __NR_preadv2 520
+#define __NR_pwritev2 521
+#define __NR_statx 522
+#define __NR_io_pgetevents 523
+#define __NR_pkey_mprotect 524
+#define __NR_pkey_alloc 525
+#define __NR_pkey_free 526
+#define __NR_rseq 527
+#define __NR_statfs64 528
+#define __NR_fstatfs64 529
+#define __NR_getegid 530
+#define __NR_geteuid 531
+#define __NR_getppid 532
+#define __NR_pidfd_send_signal 534
+#define __NR_io_uring_setup 535
+#define __NR_io_uring_enter 536
+#define __NR_io_uring_register 537
+#define __NR_open_tree 538
+#define __NR_move_mount 539
+#define __NR_fsopen 540
+#define __NR_fsconfig 541
+#define __NR_fsmount 542
+#define __NR_fspick 543
+#define __NR_pidfd_open 544
+#define __NR_openat2 547
+#define __NR_pidfd_getfd 548
 #define MAP_32BIT 0x40
 #define INADDR_ANY 0
 #define INADDR_BROADCAST 0xffffffff
@@ -542,48 +610,48 @@
 #define INT8_MAX (127)
 #define INT16_MAX (32767)
 #define INT32_MAX (2147483647)
-#define INT64_MAX (9223372036854775807ll)
+#define INT64_MAX (9223372036854775807)
 #define INT8_MIN (-1 - (127))
 #define INT16_MIN (-1 - (32767))
 #define INT32_MIN (-1 - (2147483647))
-#define INT64_MIN (-1 - (9223372036854775807ll))
+#define INT64_MIN (-1 - (9223372036854775807))
 #define INT_LEAST8_MAX (127)
 #define INT_LEAST8_MIN (-1 - (127))
 #define INT_LEAST16_MAX (32767)
 #define INT_LEAST16_MIN (-1 - (32767))
 #define INT_LEAST32_MAX (2147483647)
 #define INT_LEAST32_MIN (-1 - (2147483647))
-#define INT_LEAST64_MAX (9223372036854775807ll)
-#define INT_LEAST64_MIN (-1 - (9223372036854775807ll))
+#define INT_LEAST64_MAX (9223372036854775807)
+#define INT_LEAST64_MIN (-1 - (9223372036854775807))
 #define UINT8_MAX 0xff
 #define UINT16_MAX 0xffff
-#define UINT32_MAX 0xfffffffful
-#define UINT64_MAX 0xffffffffffffffffull
+#define UINT32_MAX 0xffffffff
+#define UINT64_MAX 0xffffffffffffffff
 #define UINT_LEAST8_MAX 0xff
 #define UINT_LEAST16_MAX 0xffff
-#define UINT_LEAST32_MAX 0xfffffffful
-#define UINT_LEAST64_MAX 0xffffffffffffffffull
-#define INTPTR_MIN (-1 - (9223372036854775807ll))
-#define INTPTR_MAX (9223372036854775807ll)
-#define UINTPTR_MAX 0xffffffffffffffffull
-#define SIZE_MAX 0xffffffffffffffffull
-#define PTRDIFF_MIN (-1 - (9223372036854775807ll))
-#define PTRDIFF_MAX (9223372036854775807ll)
-#define INTMAX_MIN (-1 - (9223372036854775807ll))
-#define INTMAX_MAX (9223372036854775807ll)
-#define UINTMAX_MAX 0xffffffffffffffffull
+#define UINT_LEAST32_MAX 0xffffffff
+#define UINT_LEAST64_MAX 0xffffffffffffffff
+#define INTPTR_MIN (-1 - (9223372036854775807))
+#define INTPTR_MAX (9223372036854775807)
+#define UINTPTR_MAX 0xffffffffffffffff
+#define SIZE_MAX 0xffffffffffffffff
+#define PTRDIFF_MIN (-1 - (9223372036854775807))
+#define PTRDIFF_MAX (9223372036854775807)
+#define INTMAX_MIN (-1 - (9223372036854775807))
+#define INTMAX_MAX (9223372036854775807)
+#define UINTMAX_MAX 0xffffffffffffffff
 #define INT_FAST8_MIN (-1 - (127))
 #define INT_FAST8_MAX (127)
-#define INT_FAST64_MIN (-1 - (9223372036854775807ll))
-#define INT_FAST64_MAX (9223372036854775807ll)
+#define INT_FAST64_MIN (-1 - (9223372036854775807))
+#define INT_FAST64_MAX (9223372036854775807)
 #define UINT_FAST8_MAX 0xff
-#define UINT_FAST64_MAX 0xffffffffffffffffull
-#define INT_FAST16_MIN (-1 - (9223372036854775807ll))
-#define INT_FAST16_MAX (9223372036854775807ll)
-#define UINT_FAST16_MAX 0xffffffffffffffffull
-#define INT_FAST32_MIN (-1 - (9223372036854775807ll))
-#define INT_FAST32_MAX (9223372036854775807ll)
-#define UINT_FAST32_MAX 0xffffffffffffffffull
+#define UINT_FAST64_MAX 0xffffffffffffffff
+#define INT_FAST16_MIN (-1 - (9223372036854775807))
+#define INT_FAST16_MAX (9223372036854775807)
+#define UINT_FAST16_MAX 0xffffffffffffffff
+#define INT_FAST32_MIN (-1 - (9223372036854775807))
+#define INT_FAST32_MAX (9223372036854775807)
+#define UINT_FAST32_MAX 0xffffffffffffffff
 #define WINT_MIN 0
 #define __FSUID_H 1
 #define NSIG 32
@@ -1048,7 +1116,7 @@
 #define O_DIRECT 0x80000
 #define O_NOATIME 0x100000
 #define O_CLOEXEC 0x200000
-#define O_SYNC (0o20000000|0o40000)
+#define O_SYNC 0x404000
 #define O_PATH 0x800000
 #define __O_TMPFILE 0x1000000
 #define F_DUPFD 0
@@ -1078,7 +1146,7 @@
 #define LOCK_READ 64
 #define LOCK_WRITE 128
 #define LOCK_RW 192
-#define O_TMPFILE (0o100000000 | 0100000)
+#define O_TMPFILE 0x1008000
 #define O_ASYNC 0x2000
 #define F_SETOWN_EX 15
 #define F_GETOWN_EX 16
@@ -1195,6 +1263,7 @@
 #define PT_ATTACH 0x10
 #define PT_DETACH 0x11
 #define SYS_accept 99
+#define SYS_accept4 502
 #define SYS_access 33
 #define SYS_acct 51
 #define SYS_add_key 439
@@ -1221,14 +1290,20 @@
 #define SYS_dipc 373
 #define SYS_dup 41
 #define SYS_dup2 90
+#define SYS_dup3 487
+#define SYS_epoll_create1 486
 #define SYS_epoll_pwait 474
 #define SYS_eventfd 478
+#define SYS_eventfd2 485
 #define SYS_execve 59
 #define SYS_exec_with_loader 25
 #define SYS_exit 1
 #define SYS_exit_group 405
 #define SYS_faccessat 462
 #define SYS_fadvise64 413
+#define SYS_fallocate 480
+#define SYS_fanotify_init 494
+#define SYS_fanotify_mark 495
 #define SYS_fchdir 13
 #define SYS_fchmod 124
 #define SYS_fchmodat 461
@@ -1246,6 +1321,7 @@
 #define SYS_fstat64 427
 #define SYS_fstatat64 455
 #define SYS_fstatfs 329
+#define SYS_fstatfs64 529
 #define SYS_fsync 95
 #define SYS_ftruncate 130
 #define SYS_futex 394
@@ -1255,6 +1331,8 @@
 #define SYS_getdents 305
 #define SYS_getdents64 377
 #define SYS_getdtablesize 89
+#define SYS_getegid 530
+#define SYS_geteuid 531
 #define SYS_getgroups 79
 #define SYS_gethostname 87
 #define SYS_getitimer 361
@@ -1264,6 +1342,7 @@
 #define SYS_getpeername 141
 #define SYS_getpgid 233
 #define SYS_getpgrp 63
+#define SYS_getppid 532
 #define SYS_getpriority 100
 #define SYS_getresgid 372
 #define SYS_getresuid 344
@@ -1282,6 +1361,7 @@
 #define SYS_init_module 307
 #define SYS_inotify_add_watch 445
 #define SYS_inotify_init 444
+#define SYS_inotify_init1 489
 #define SYS_inotify_rm_watch 446
 #define SYS_io_cancel 402
 #define SYS_ioctl 54
@@ -1450,16 +1530,21 @@
 #define SYS_pciconfig_iobase 376
 #define SYS_pciconfig_read 345
 #define SYS_pciconfig_write 346
+#define SYS_perf_event_open 493
 #define SYS_personality 324
 #define SYS_pipe 42
+#define SYS_pipe2 488
 #define SYS_pivot_root 374
 #define SYS_poll 94
 #define SYS_ppoll 464
 #define SYS_prctl 348
 #define SYS_pread 349
+#define SYS_preadv 490
+#define SYS_prlimit64 496
 #define SYS_pselect6 463
 #define SYS_ptrace 26
 #define SYS_pwrite 350
+#define SYS_pwritev 491
 #define SYS_query_module 347
 #define SYS_quotactl 148
 #define SYS_read 3
@@ -1470,6 +1555,7 @@
 #define SYS_reboot 311
 #define SYS_recv 102
 #define SYS_recvfrom 125
+#define SYS_recvmmsg 479
 #define SYS_recvmsg 113
 #define SYS_remap_file_pages 410
 #define SYS_removexattr 391
@@ -1485,6 +1571,7 @@
 #define SYS_rt_sigreturn 351
 #define SYS_rt_sigsuspend 357
 #define SYS_rt_sigtimedwait 355
+#define SYS_rt_tgsigqueueinfo 492
 #define SYS_sched_getaffinity 396
 #define SYS_sched_getparam 331
 #define SYS_sched_get_priority_max 335
@@ -1535,6 +1622,7 @@
 #define SYS_sigaction 156
 #define SYS_sigaltstack 235
 #define SYS_signalfd 476
+#define SYS_signalfd4 484
 #define SYS_sigpending 52
 #define SYS_sigreturn 103
 #define SYS_sigsuspend 111
@@ -1544,6 +1632,7 @@
 #define SYS_stat 67
 #define SYS_stat64 425
 #define SYS_statfs 328
+#define SYS_statfs64 528
 #define SYS_swapoff 304
 #define SYS_swapon 322
 #define SYS_symlink 57
@@ -1562,6 +1651,9 @@
 #define SYS_timer_create 414
 #define SYS_timer_delete 418
 #define SYS_timerfd 477
+#define SYS_timerfd_create 481
+#define SYS_timerfd_gettime 483
+#define SYS_timerfd_settime 482
 #define SYS_timer_getoverrun 417
 #define SYS_timer_gettime 416
 #define SYS_timer_settime 415

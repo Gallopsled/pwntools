@@ -302,6 +302,52 @@
 #define __NR_fanotify_init 300
 #define __NR_fanotify_mark 301
 #define __NR_prlimit64 302
+#define __NR_name_to_handle_at 303
+#define __NR_open_by_handle_at 304
+#define __NR_clock_adjtime 305
+#define __NR_syncfs 306
+#define __NR_sendmmsg 307
+#define __NR_setns 308
+#define __NR_getcpu 309
+#define __NR_process_vm_readv 310
+#define __NR_process_vm_writev 311
+#define __NR_kcmp 312
+#define __NR_finit_module 313
+#define __NR_sched_setattr 314
+#define __NR_sched_getattr 315
+#define __NR_renameat2 316
+#define __NR_seccomp 317
+#define __NR_getrandom 318
+#define __NR_memfd_create 319
+#define __NR_kexec_file_load 320
+#define __NR_bpf 321
+#define __NR_execveat 322
+#define __NR_userfaultfd 323
+#define __NR_membarrier 324
+#define __NR_mlock2 325
+#define __NR_copy_file_range 326
+#define __NR_preadv2 327
+#define __NR_pwritev2 328
+#define __NR_pkey_mprotect 329
+#define __NR_pkey_alloc 330
+#define __NR_pkey_free 331
+#define __NR_statx 332
+#define __NR_io_pgetevents 333
+#define __NR_rseq 334
+#define __NR_pidfd_send_signal 424
+#define __NR_io_uring_setup 425
+#define __NR_io_uring_enter 426
+#define __NR_io_uring_register 427
+#define __NR_open_tree 428
+#define __NR_move_mount 429
+#define __NR_fsopen 430
+#define __NR_fsconfig 431
+#define __NR_fsmount 432
+#define __NR_fspick 433
+#define __NR_pidfd_open 434
+#define __NR_clone3 435
+#define __NR_openat2 437
+#define __NR_pidfd_getfd 438
 #define SYS32_restart_syscall 0
 #define SYS32_exit 1
 #define SYS32_fork 2
@@ -801,48 +847,48 @@
 #define INT8_MAX (127)
 #define INT16_MAX (32767)
 #define INT32_MAX (2147483647)
-#define INT64_MAX (9223372036854775807ll)
+#define INT64_MAX (9223372036854775807)
 #define INT8_MIN (-1 - (127))
 #define INT16_MIN (-1 - (32767))
 #define INT32_MIN (-1 - (2147483647))
-#define INT64_MIN (-1 - (9223372036854775807ll))
+#define INT64_MIN (-1 - (9223372036854775807))
 #define INT_LEAST8_MAX (127)
 #define INT_LEAST8_MIN (-1 - (127))
 #define INT_LEAST16_MAX (32767)
 #define INT_LEAST16_MIN (-1 - (32767))
 #define INT_LEAST32_MAX (2147483647)
 #define INT_LEAST32_MIN (-1 - (2147483647))
-#define INT_LEAST64_MAX (9223372036854775807ll)
-#define INT_LEAST64_MIN (-1 - (9223372036854775807ll))
+#define INT_LEAST64_MAX (9223372036854775807)
+#define INT_LEAST64_MIN (-1 - (9223372036854775807))
 #define UINT8_MAX 0xff
 #define UINT16_MAX 0xffff
-#define UINT32_MAX 0xfffffffful
-#define UINT64_MAX 0xffffffffffffffffull
+#define UINT32_MAX 0xffffffff
+#define UINT64_MAX 0xffffffffffffffff
 #define UINT_LEAST8_MAX 0xff
 #define UINT_LEAST16_MAX 0xffff
-#define UINT_LEAST32_MAX 0xfffffffful
-#define UINT_LEAST64_MAX 0xffffffffffffffffull
-#define INTPTR_MIN (-1 - (9223372036854775807ll))
-#define INTPTR_MAX (9223372036854775807ll)
-#define UINTPTR_MAX 0xffffffffffffffffull
-#define SIZE_MAX 0xffffffffffffffffull
-#define PTRDIFF_MIN (-1 - (9223372036854775807ll))
-#define PTRDIFF_MAX (9223372036854775807ll)
-#define INTMAX_MIN (-1 - (9223372036854775807ll))
-#define INTMAX_MAX (9223372036854775807ll)
-#define UINTMAX_MAX 0xffffffffffffffffull
+#define UINT_LEAST32_MAX 0xffffffff
+#define UINT_LEAST64_MAX 0xffffffffffffffff
+#define INTPTR_MIN (-1 - (9223372036854775807))
+#define INTPTR_MAX (9223372036854775807)
+#define UINTPTR_MAX 0xffffffffffffffff
+#define SIZE_MAX 0xffffffffffffffff
+#define PTRDIFF_MIN (-1 - (9223372036854775807))
+#define PTRDIFF_MAX (9223372036854775807)
+#define INTMAX_MIN (-1 - (9223372036854775807))
+#define INTMAX_MAX (9223372036854775807)
+#define UINTMAX_MAX 0xffffffffffffffff
 #define INT_FAST8_MIN (-1 - (127))
 #define INT_FAST8_MAX (127)
-#define INT_FAST64_MIN (-1 - (9223372036854775807ll))
-#define INT_FAST64_MAX (9223372036854775807ll)
+#define INT_FAST64_MIN (-1 - (9223372036854775807))
+#define INT_FAST64_MAX (9223372036854775807)
 #define UINT_FAST8_MAX 0xff
-#define UINT_FAST64_MAX 0xffffffffffffffffull
-#define INT_FAST16_MIN (-1 - (9223372036854775807ll))
-#define INT_FAST16_MAX (9223372036854775807ll)
-#define UINT_FAST16_MAX 0xffffffffffffffffull
-#define INT_FAST32_MIN (-1 - (9223372036854775807ll))
-#define INT_FAST32_MAX (9223372036854775807ll)
-#define UINT_FAST32_MAX 0xffffffffffffffffull
+#define UINT_FAST64_MAX 0xffffffffffffffff
+#define INT_FAST16_MIN (-1 - (9223372036854775807))
+#define INT_FAST16_MAX (9223372036854775807)
+#define UINT_FAST16_MAX 0xffffffffffffffff
+#define INT_FAST32_MIN (-1 - (9223372036854775807))
+#define INT_FAST32_MAX (9223372036854775807)
+#define UINT_FAST32_MAX 0xffffffffffffffff
 #define WINT_MIN 0
 #define __FSUID_H 1
 #define NSIG 32
@@ -1305,7 +1351,7 @@
 #define O_NOFOLLOW 0x20000
 #define O_NOATIME 0x40000
 #define O_CLOEXEC 0x80000
-#define O_SYNC (0o10000|0o4000000)
+#define O_SYNC 0x101000
 #define O_PATH 0x200000
 #define __O_TMPFILE 0x400000
 #define F_DUPFD 0
@@ -1338,7 +1384,7 @@
 #define LOCK_READ 64
 #define LOCK_WRITE 128
 #define LOCK_RW 192
-#define O_TMPFILE (0o20000000 | 0200000)
+#define O_TMPFILE 0x410000
 #define O_ASYNC 0x2000
 #define F_SETOWN_EX 15
 #define F_GETOWN_EX 16
@@ -1519,6 +1565,7 @@
 #define SYS_ftruncate 77
 #define SYS_futex 202
 #define SYS_futimesat 261
+#define SYS_getcpu 309
 #define SYS_getcwd 79
 #define SYS_getdents 78
 #define SYS_getdents64 217
