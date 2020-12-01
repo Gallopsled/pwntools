@@ -82,6 +82,11 @@ jobs:
           libc6-dbg \
           $ANDROID_JRE
 
+    - name: Install RPyC for GDB
+      run: |
+        sudo apt-get install -y python3-pip
+        /usr/bin/python3 -m pip install rpyc
+
     - name: Testing Corefiles
       run: |
         ulimit -a

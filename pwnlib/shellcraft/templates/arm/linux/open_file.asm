@@ -12,6 +12,7 @@ Args:
   from pwnlib.asm import cpp
   from pwnlib.util.safeeval import expr
   from pwnlib.constants.linux import arm as consts
+  from pwnlib.shellcraft import pretty
   filepath_lab, after = label("filepath"), label("after")
   filepath_out = [hex(ord(c)) for c in filepath]
   while True:
@@ -31,7 +32,7 @@ Args:
     svc SYS_open
     b ${after}
 
-    /* The string ${repr(str(filepath))} */
+    /* The string ${pretty(str(filepath), False)} */
 ${filepath_lab}: .byte ${filepath_out}
 
 ${after}:
