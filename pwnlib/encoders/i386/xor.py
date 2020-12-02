@@ -65,7 +65,7 @@ end:
 
     def __call__(self, raw_bytes, avoid, pcreg=''):
         while len(raw_bytes) % context.bytes:
-            raw_bytes += '\x00'
+            raw_bytes += b'\x00'
 
         a, b = xor_pair(raw_bytes, avoid)
 
