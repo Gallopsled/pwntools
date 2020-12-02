@@ -58,9 +58,13 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.5.0 (`dev`)
 
+- [#1261][1261] Misc `run_in_new_terminal` improvements (notably gdb terminated by default)
 - [#1429][1429] Add a mechanism for ret2csu (originally #1138)
+- [#1695][1695] Allow using GDB Python API
 
+[1261]: https://github.com/Gallopsled/pwntools/pull/1261
 [1429]: https://github.com/Gallopsled/pwntools/pull/1429
+[1695]: https://github.com/Gallopsled/pwntools/pull/1695
 
 ## 4.4.0 (`beta`)
 
@@ -84,6 +88,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1688][1688] Add `__setattr__` and `__call__` interfaces to `ROP` for setting registers
 - [#1692][1692] Remove python2 shebangs where appropriate
 - [#1703][1703] Update libcdb buildid offsets for amd64 and i386
+- [#1704][1704] Try https://libc.rip/ for libcdb lookup
 
 [1541]: https://github.com/Gallopsled/pwntools/pull/1541
 [1602]: https://github.com/Gallopsled/pwntools/pull/1602
@@ -103,8 +108,15 @@ The table below shows which release corresponds to each branch, and what date th
 [1688]: https://github.com/Gallopsled/pwntools/pull/1688
 [1692]: https://github.com/Gallopsled/pwntools/pull/1692
 [1703]: https://github.com/Gallopsled/pwntools/pull/1703
+[1704]: https://github.com/Gallopsled/pwntools/pull/1704
 
-## 4.3.0 (`stable`)
+## 4.3.1 (`stable`)
+
+- [#1732][1732] Fix shellcraft SSTI vulnerability (first major pwntools vuln!)
+
+[1732]: https://github.com/Gallopsled/pwntools/pull/1732
+
+## 4.3.0
 
 - [#1576][1576] Add `executable=` argument to `ELF.search`
 - [#1584][1584] Add `jmp_esp`/`jmp_rsp` attribute to `ROP`

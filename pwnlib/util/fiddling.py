@@ -105,7 +105,7 @@ def urldecode(s, ignore_invalid = False):
 def bits(s, endian = 'big', zero = 0, one = 1):
     """bits(s, endian = 'big', zero = 0, one = 1) -> list
 
-    Converts the argument a list of bits.
+    Converts the argument into a list of bits.
 
     Arguments:
         s: A string or number to be converted into bits.

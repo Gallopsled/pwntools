@@ -3,15 +3,15 @@ from __future__ import division
 import base64
 import errno
 import os
-import platform
 import re
+import signal
 import six
 import socket
 import stat
 import string
+import subprocess
 
-import six
-
+from pwnlib import atexit
 from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util import fiddling
@@ -181,8 +181,8 @@ def which(name, all = False):
     else:
         return None
 
-def run_in_new_terminal(command, terminal = None, args = None):
-    """run_in_new_terminal(command, terminal = None) -> None
+def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, preexec_fn=None):
+    """run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, preexec_fn=None) -> int
 
     Run a command in a new terminal.
 
@@ -190,21 +190,26 @@ def run_in_new_terminal(command, terminal = None, args = None):
         - If ``context.terminal`` is set it will be used.
           If it is an iterable then ``context.terminal[1:]`` are default arguments.
         - If a ``pwntools-terminal`` command exists in ``$PATH``, it is used
-        - If ``$TERM_PROGRAM`` is set, that is used.
-        - If X11 is detected (by the presence of the ``$DISPLAY`` environment
-          variable), ``x-terminal-emulator`` is used.
         - If tmux is detected (by the presence of the ``$TMUX`` environment
           variable), a new pane will be opened.
         - If GNU Screen is detected (by the presence of the ``$STY`` environment
           variable), a new screen will be opened.
+        - If ``$TERM_PROGRAM`` is set, that is used.
+        - If X11 is detected (by the presence of the ``$DISPLAY`` environment
+          variable), ``x-terminal-emulator`` is used.
         - If WSL (Windows Subsystem for Linux) is detected (by the presence of
           a ``wsl.exe`` binary in the ``$PATH`` and ``/proc/sys/kernel/osrelease``
           containing ``Microsoft``), a new ``cmd.exe`` window will be opened.
+
+    If `kill_at_exit` is :const:`True`, try to close the command/terminal when the
+    current process exits. This may not work for all terminal types.
 
     Arguments:
         command (str): The command to run.
         terminal (str): Which terminal to use.
         args (list): Arguments to pass to the terminal
+        kill_at_exit (bool): Whether to close the command/terminal on process exit.
+        preexec_fn (callable): Callable to invoke before exec().
 
     Note:
         The command is opened with ``/dev/null`` for stdin, stdout, stderr.
@@ -221,7 +226,7 @@ def run_in_new_terminal(command, terminal = None, args = None):
             args     = []
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
-            args     = ['splitw']
+            args     = ['splitw', '-F' '#{pane_pid}', '-P']
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
@@ -261,17 +266,23 @@ def run_in_new_terminal(command, terminal = None, args = None):
 
     log.debug("Launching a new terminal: %r" % argv)
 
-    pid = os.fork()
+    stdin = stdout = stderr = open(os.devnull, 'r+b')
+    if terminal == 'tmux':
+        stdout = subprocess.PIPE
 
-    if pid == 0:
-        # Closing the file descriptors makes everything fail under tmux on OSX.
-        if platform.system() != 'Darwin':
-            devnull = open(os.devnull, 'r+b')
-            os.dup2(devnull.fileno(), 0)
-            os.dup2(devnull.fileno(), 1)
-            os.dup2(devnull.fileno(), 2)
-        os.execv(argv[0], argv)
-        os._exit(1)
+    p = subprocess.Popen(argv, stdin=stdin, stdout=stdout, stderr=stderr, preexec_fn=preexec_fn)
+
+    if terminal == 'tmux':
+        out, _ = p.communicate()
+        pid = int(out)
+    else:
+        pid = p.pid
+
+    if kill_at_exit:
+        if terminal == 'tmux':
+            atexit.register(lambda: os.kill(pid, signal.SIGTERM))
+        else:
+            atexit.register(lambda: p.terminate())
 
     return pid
 

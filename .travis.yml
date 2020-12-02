@@ -24,6 +24,7 @@ addons:
     - binutils-s390x-linux-gnu
     - binutils-sparc64-linux-gnu
     - bash-static
+    - python3-pip
 cache:
     - pip
     - directories:
@@ -42,6 +43,7 @@ before_install:
   - source travis/ssh_setup.sh
   - echo $-
 install:
+  - /usr/bin/python3 -m pip install rpyc # for GDB
   - pip install --upgrade pip
   - pip install --upgrade flake8 appdirs # https://github.com/ActiveState/appdirs/issues/89#issuecomment-282326570
   - python setup.py egg_info      # pypa/pip#6275

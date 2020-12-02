@@ -1,6 +1,6 @@
 <%
     from pwnlib.util import lists, packing, fiddling
-    from pwnlib.shellcraft import mips
+    from pwnlib.shellcraft import mips, pretty
     import six
 %>\
 <%page args="string, append_null = True"/>
@@ -90,13 +90,10 @@ Args:
             num = 0x101
         return num
 
-    def pretty(n):
-        return hex(n & (2 ** 32 - 1))
-
     split_string = lists.group(4, string, 'fill', b'\x00')
     stack_offset = len(split_string) * -4
 %>\
-    /* push ${repr(string)} */
+    /* push ${pretty(string, False)} */
 % for index, word in enumerate(split_string):
 % if word == b'\x00\x00\x00\x00':
     sw $zero, ${stack_offset+(4 * index)}($sp)
