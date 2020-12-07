@@ -60,9 +60,11 @@ The table below shows which release corresponds to each branch, and what date th
 
 - [#1261][1261] Misc `run_in_new_terminal` improvements (notably gdb terminated by default)
 - [#1695][1695] Allow using GDB Python API
+- [#1735][1735] Python 3.9 support in safeeval
 
 [1261]: https://github.com/Gallopsled/pwntools/pull/1261
 [1695]: https://github.com/Gallopsled/pwntools/pull/1695
+[1735]: https://github.com/Gallopsled/pwntools/pull/1735
 
 ## 4.4.0 (`beta`)
 

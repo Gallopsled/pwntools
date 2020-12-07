@@ -3,7 +3,9 @@ from __future__ import division
 _const_codes = [
     'POP_TOP','ROT_TWO','ROT_THREE','ROT_FOUR','DUP_TOP',
     'BUILD_LIST','BUILD_MAP','BUILD_TUPLE','BUILD_SET',
-    'LOAD_CONST','RETURN_VALUE','STORE_SUBSCR', 'STORE_MAP'
+    'BUILD_CONST_KEY_MAP', 'BUILD_STRING',
+    'LOAD_CONST','RETURN_VALUE','STORE_SUBSCR', 'STORE_MAP',
+    'LIST_TO_TUPLE', 'LIST_EXTEND', 'SET_UPDATE', 'DICT_UPDATE', 'DICT_MERGE',
     ]
 
 _expr_codes = _const_codes + [
