@@ -131,7 +131,7 @@ def write(path, data = b'', create_dir = False, mode = 'w'):
     with open(path, mode) as f:
         f.write(data)
 
-def which(name, all = False):
+def which(name, all = False, path=None):
     """which(name, flags = os.X_OK, all = False) -> str or str set
 
     Works as the system command ``which``; searches $PATH for ``name`` and
@@ -159,7 +159,7 @@ def which(name, all = False):
     isroot = os.getuid() == 0
     out = set()
     try:
-        path = os.environ['PATH']
+        path = path or os.environ['PATH']
     except KeyError:
         log.exception('Environment variable $PATH is not set')
     for p in path.split(os.pathsep):
