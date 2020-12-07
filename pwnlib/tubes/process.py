@@ -550,7 +550,6 @@ class process(tube):
         if not isinstance(executable, str):
             executable = executable.decode('utf-8')
 
-        # Create a duplicate so we can modify it safely
         env = os.environ if env is None else env
 
         path = env.get('PATH')
@@ -585,6 +584,8 @@ class process(tube):
         # - Must be a dictionary of {string:string}
         # - No strings may contain '\x00'
         #
+
+        # Create a duplicate so we can modify it safely
         env2 = {}
         for k,v in env.items():
             if not isinstance(k, (bytes, six.text_type)):
