@@ -1405,6 +1405,23 @@ class ROP(object):
             >>> p = process()
             >>> r.ret2csu(1, 2, 3, 4, 5, 6, 7, 8, 9)
             >>> r.call(0xdeadbeef)
+            >>> print(r.dump())
+            0x0000:         0x40058a
+            0x0008:              0x0
+            0x0010:              0x1
+            0x0018:         0x600e48
+            0x0020:              0x1
+            0x0028:              0x2
+            0x0030:              0x3
+            0x0038:         0x400570
+            0x0040:      b'qaaaraaa' <add rsp, 8>
+            0x0048:              0x4
+            0x0050:              0x5
+            0x0058:              0x6
+            0x0060:              0x7
+            0x0068:              0x8
+            0x0070:              0x9
+            0x0078:       0xdeadbeef 0xdeadbeef()
             >>> p.send(fit({64+context.bytes: r}))
             >>> p.wait(0.5)
             >>> core = p.corefile
