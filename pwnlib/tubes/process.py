@@ -278,14 +278,14 @@ class process(tube):
         #: Full path to the executable
         self.executable = executable_val
 
+        #: Environment passed on envp
+        self.env = os.environ if env is None else env_val
+
         if self.executable is None:
             if shell:
                 self.executable = '/bin/sh'
             else:
-                self.executable = which(self.argv[0])
-
-        #: Environment passed on envp
-        self.env = os.environ if env is None else env_val
+                self.executable = which(self.argv[0], path=self.env.get('PATH'))
 
         self._cwd = os.path.realpath(cwd or os.path.curdir)
 
@@ -550,6 +550,9 @@ class process(tube):
         if not isinstance(executable, str):
             executable = executable.decode('utf-8')
 
+        env = os.environ if env is None else env
+
+        path = env.get('PATH')
         # Do not change absolute paths to binaries
         if executable.startswith(os.path.sep):
             pass
@@ -558,8 +561,8 @@ class process(tube):
         # target directory.
         #
         # For example, 'sh'
-        elif os.path.sep not in executable and which(executable):
-            executable = which(executable)
+        elif os.path.sep not in executable and which(executable, path=path):
+            executable = which(executable, path=path)
 
         # Either there is a path component, or the binary is not in $PATH
         # For example, 'foo/bar' or 'bar' with cwd=='foo'
@@ -583,8 +586,6 @@ class process(tube):
         #
 
         # Create a duplicate so we can modify it safely
-        env = os.environ if env is None else env
-
         env2 = {}
         for k,v in env.items():
             if not isinstance(k, (bytes, six.text_type)):
