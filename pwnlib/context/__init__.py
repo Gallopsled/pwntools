@@ -368,7 +368,7 @@ class ContextType(object):
     }
 
     #: Valid values for :meth:`pwnlib.context.ContextType.os`
-    oses = sorted(('linux','freebsd','windows','cgc','android'))
+    oses = sorted(('linux','freebsd','windows','cgc','android','baremetal'))
 
     big_32    = {'endian': 'big', 'bits': 32}
     big_64    = {'endian': 'big', 'bits': 64}
@@ -602,7 +602,7 @@ class ContextType(object):
 
     @property
     def native(self):
-        if context.os in ('android', 'cgc'):
+        if context.os in ('android', 'baremetal', 'cgc'):
             return False
 
         arch = context.arch
@@ -1018,7 +1018,7 @@ class ContextType(object):
             >>> context.os = 'foobar' #doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
-            AttributeError: os must be one of ['android', 'cgc', 'freebsd', 'linux', 'windows']
+            AttributeError: os must be one of ['android', 'baremetal', 'cgc', 'freebsd', 'linux', 'windows']
         """
         os = os.lower()
 
