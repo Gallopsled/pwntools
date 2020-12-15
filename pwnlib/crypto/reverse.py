@@ -8,4 +8,4 @@ class cipher_reverse:
 
 
     def process(self, text):
-        return ''.join(reversed(text))
+        return reversed(text)
