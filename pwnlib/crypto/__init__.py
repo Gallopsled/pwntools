@@ -1,19 +1,19 @@
 from __future__ import absolute_import
 
 # load cipher suites
-from pwnlib.crypto.ciphers.atbash import cipher_atbash
-from pwnlib.crypto.ciphers.bacon import cipher_bacon
-from pwnlib.crypto.ciphers.base64 import cipher_base64
-from pwnlib.crypto.ciphers.binary import cipher_binary
-from pwnlib.crypto.ciphers.caesar import cipher_caesar
-from pwnlib.crypto.ciphers.decimal import cipher_decimal
-from pwnlib.crypto.ciphers.hex import cipher_hex
-from pwnlib.crypto.ciphers.morse import cipher_morse
-from pwnlib.crypto.ciphers.reverse import cipher_reverse
-from pwnlib.crypto.ciphers.rot13 import cipher_rot13
-from pwnlib.crypto.ciphers.transposition import cipher_transposition
-from pwnlib.crypto.ciphers.vigenere import cipher_vigenere
-from pwnlib.crypto.ciphers.xor import cipher_xor
+from pwnlib.crypto.atbash import cipher_atbash
+from pwnlib.crypto.bacon import cipher_bacon
+from pwnlib.crypto.base64 import cipher_base64
+from pwnlib.crypto.binary import cipher_binary
+from pwnlib.crypto.caesar import cipher_caesar
+from pwnlib.crypto.decimal import cipher_decimal
+from pwnlib.crypto.hex import cipher_hex
+from pwnlib.crypto.morse import cipher_morse
+from pwnlib.crypto.reverse import cipher_reverse
+from pwnlib.crypto.rot13 import cipher_rot13
+from pwnlib.crypto.transposition import cipher_transposition
+from pwnlib.crypto.vigenere import cipher_vigenere
+from pwnlib.crypto.xor import cipher_xor
 
 class crypto():
     def __init__(self, algo=None, key=None):
