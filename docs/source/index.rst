@@ -50,6 +50,7 @@ Each of the ``pwntools`` modules is documented here.
    constants
    config
    context
+   crypto
    dynelf
    encoders
    elf
