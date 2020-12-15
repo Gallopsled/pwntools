@@ -1,11 +1,21 @@
 class cipher_xor:
-    def encrypt(self, string_a, string_b):
-        return self.process(string_a, string_b)
+    @staticmethod
+    def encrypt(a, b, byte=True):
+        return cipher_xor.process(a, b, byte)
 
 
-    def decrypt(self, string_a, string_b):
-        return self.process(string_a, string_b)
+    @staticmethod
+    def decrypt(a, b, byte=True):
+        return cipher_xor.process(a, b, byte)
 
 
-    def process(self, string_a, string_b):
-        return ''.join([hex(ord(string_a[i%len(string_a)]) ^ ord(string_b[i%(len(string_b))]))[2:] for i in range(max(len(string_a), len(string_b)))])
+    @staticmethod
+    def process(a, b, byte):
+        if isinstance(a,str) is not isinstance(b, str):
+            raise ValueError('Not same format exception')
+    
+        if isinstance(a,str) and isinstance(b, str):
+            return ''.join(chr(ord(a) ^ ord(b)) for a,b in zip(a,b))
+            
+        if isinstance(a,bytes) and isinstance(b,bytes):
+            return bytes([_a ^ _b for _a, _b in zip(a, b)])
