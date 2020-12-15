@@ -58,7 +58,8 @@ The table below shows which release corresponds to each branch, and what date th
 
 
 ## 4.5.0 (`dev`)
-- [#1722][1722] Added Crypto class and cypher suites
+
+- [#1722][1722] Added Crypto class and cipher suites
 - [#1261][1261] Misc `run_in_new_terminal` improvements (notably gdb terminated by default)
 - [#1695][1695] Allow using GDB Python API
 
