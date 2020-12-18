@@ -932,6 +932,14 @@ class ssh(Timeout, Logger):
 
         func_src  = inspect.getsource(func).strip()
         setuid = True if setuid is None else bool(setuid)
+
+        # executable may be a unicode string on Python2 and will get a u-prefix
+        # when passed to repr() in the script below.  
+        #
+        # This breaks things if a Python3 interpreter is selected.
+        executable = six.ensure_str(executable)
+        argv = [bytes(a) for a in argv]
+        env = None if not env else { six.ensure_str(k): six.ensure_str(v) for k,v in env}
         
         script = r"""
 #!/usr/bin/env python
@@ -942,7 +950,7 @@ try:
 except NameError:
     integer_types = int,
 exe   = %(executable)r
-argv  = [bytes(a) for a in %(argv)r]
+argv  = %(argv)r
 env   = %(env)r
 
 os.chdir(%(cwd)r)
@@ -1076,7 +1084,7 @@ os.execve(exe, argv, env)
 
         with self.progress(msg) as h:
 
-            script = 'for py in python2.7 python2 python; do test -x "$(which $py 2>&1)" && exec $py -c %s check; done; echo 2' % sh_string(script)
+            script = 'for py in python3 python2.7 python2 python; do test -x "$(which $py 2>&1)" && exec $py -c %s check; done; echo 2' % sh_string(script)
             with context.quiet:
                 python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=timeout)
 
