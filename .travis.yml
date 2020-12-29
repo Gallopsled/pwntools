@@ -11,6 +11,7 @@ addons:
     - zsh
     - pandoc
     - gdb
+    - gdbserver
     - socat
     - sshpass
     - binutils
