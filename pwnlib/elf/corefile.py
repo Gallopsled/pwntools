@@ -264,7 +264,7 @@ class Mapping(object):
         return result + self.address
 
 class Corefile(ELF):
-    r"""Enhances the inforation available about a corefile (which is an extension
+    r"""Enhances the information available about a corefile (which is an extension
     of the ELF format) by permitting extraction of information about the mapped
     data segments, and register state.
 
