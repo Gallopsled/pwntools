@@ -153,9 +153,6 @@ import tempfile
 from threading import Event
 import time
 
-from rpyc import BgServingThread
-from rpyc.utils.factory import unix_connect
-
 from pwnlib import adb
 from pwnlib import atexit
 from pwnlib import elf
@@ -1009,6 +1006,9 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
     if api:
         # connect to the GDB Python API bridge
+        from rpyc import BgServingThread
+        from rpyc.utils.factory import unix_connect
+
         n_retries = 300
         if six.PY2:
             retriable = socket.error

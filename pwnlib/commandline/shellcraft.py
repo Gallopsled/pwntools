@@ -8,7 +8,7 @@ import six
 import sys
 import types
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
