@@ -9,7 +9,7 @@ every week.  It can be permanently disabled via:
 
 ::
 
-    $ echo never > ~/.pwntools-cache-*/update
+    $ echo never > ~/.cache/.pwntools-cache-*/update
 
 Or adding the following lines to ~/.pwn.conf (or system-wide /etc/pwn.conf):
 
