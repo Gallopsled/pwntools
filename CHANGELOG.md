@@ -64,6 +64,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1738][1738] Which function support custom search path
   - process also looks now at `env['PATH']` to find the path for the executable
 - [#1742][1742] New `baremetal` os to debug binaries executed with qemu-system-$(arch)
+- [#1757][1757] update cache directories
 
 [1261]: https://github.com/Gallopsled/pwntools/pull/1261
 [1695]: https://github.com/Gallopsled/pwntools/pull/1695
