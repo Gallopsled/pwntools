@@ -295,7 +295,7 @@ def main(args):
 
     vma = args.address
     if vma:
-        vma = eval(vma)
+        vma = util.safeeval.expr(vma)
 
     if args.format in ['e','elf']:
         args.format = 'default'
