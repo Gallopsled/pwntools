@@ -65,12 +65,15 @@ The table below shows which release corresponds to each branch, and what date th
   - process also looks now at `env['PATH']` to find the path for the executable
 - [#1742][1742] New `baremetal` os to debug binaries executed with qemu-system-$(arch)
 - [#1757][1757] update cache directories
+- [#1758][1758] Remove eval from cli
 
 [1261]: https://github.com/Gallopsled/pwntools/pull/1261
 [1695]: https://github.com/Gallopsled/pwntools/pull/1695
 [1735]: https://github.com/Gallopsled/pwntools/pull/1735
 [1738]: https://github.com/Gallopsled/pwntools/pull/1738
 [1742]: https://github.com/Gallopsled/pwntools/pull/1742
+[1757]: https://github.com/Gallopsled/pwntools/pull/1757
+[1758]: https://github.com/Gallopsled/pwntools/pull/1758
 
 ## 4.4.0 (`beta`)
 
