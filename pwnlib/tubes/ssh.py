@@ -56,7 +56,7 @@ class ssh_channel(sock):
     #: Command specified for the constructor
     process = None
 
-    def __init__(self, parent, process = None, tty = False, wd = None, env = None, raw = True, *args, **kwargs):
+    def __init__(self, parent, process = None, tty = False, wd = None, env = None, env_add = {},raw = True, *args, **kwargs):
         super(ssh_channel, self).__init__(*args, **kwargs)
 
         # keep the parent from being garbage collected in some cases
@@ -727,7 +727,7 @@ class ssh(Timeout, Logger):
         """
         return self.run(shell, tty, timeout = timeout)
 
-    def process(self, argv=None, executable=None, tty=True, cwd=None, env=None, timeout=Timeout.default, run=True,
+    def process(self, argv=None, executable=None, tty=True, cwd=None, env=None, env_add={}, timeout=Timeout.default, run=True,
                 stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=(), raw=True, aslr=None, setuid=None,
                 shell=False):
         r"""
@@ -757,6 +757,8 @@ class ssh(Timeout, Logger):
             env(dict):
                 Environment variables to set in the child.  If :const:`None`, inherits the
                 default environment.
+            env_add(dict):
+                Environment variables to ADD in the child, in addition to those it inherits.
             timeout(int):
                 Timeout to set on the `tube` created to interact with the process.
             run(bool):
@@ -953,6 +955,8 @@ if env is not None:
     getattr(os, 'environb', os.environ).update(env)
 else:
     env = os.environ
+
+env.update(%(env_add)r)
 
 def is_exe(path):
     return os.path.isfile(path) and os.access(path, os.X_OK)
