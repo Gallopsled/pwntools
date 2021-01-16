@@ -57,6 +57,8 @@ class process(tube):
             Working directory.  Uses the current working directory by default.
         env(dict):
             Environment variables.  By default, inherits from Python's environment.
+        env_add(dict):
+            Environment variables to add to the environment.
         stdin(int):
             File object or file descriptor number to use for ``stdin``.
             By default, a pipe is used.  A pty can be used instead by setting
@@ -215,6 +217,7 @@ class process(tube):
                  executable = None,
                  cwd = None,
                  env = None,
+                 env_add = {},
                  stdin  = PIPE,
                  stdout = PTY,
                  stderr = STDOUT,
@@ -279,7 +282,10 @@ class process(tube):
         self.executable = executable_val
 
         #: Environment passed on envp
-        self.env = os.environ if env is None else env_val
+        self.env = dict(os.environ) if env is None else env_val
+
+        #: Add environmemnt variables as needed
+        self.env.update(env_add)
 
         if self.executable is None:
             if shell:
