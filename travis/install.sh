@@ -19,6 +19,20 @@ install_deb()
     local_deb_extract "$URL"
 }
 
+setup_gdb_and_gdbserver()
+{
+    export PATH=$PWD/usr/bin:$PATH
+
+    # Install a newer copy of GDB
+    wget https://github.com/Gallopsled/pwntools-gdb-travis-ci/raw/gdb-10-2021/gdb.tar.xz
+    tar xf gdb.tar.xz
+    which gdb
+    which gdbserver
+    gdb --version
+    gdbserver --version
+
+}
+
 setup_travis()
 {
     export PATH=$PWD/usr/bin:$PATH
@@ -52,14 +66,6 @@ setup_travis()
     # Force-install capstone because it's broken somehow
     [[ -f usr/lib/libcapstone.so.3 ]] || install_deb libcapstone3
 
-    # Install a newer copy of GDB
-    if [[ ! -f usr/bin/gdb ]]; then
-        git clone --depth=1 https://github.com/zachriggle/pwntools-gdb-travis-ci.git
-        tar xf pwntools-gdb-travis-ci/gdb.tar.xz
-        which gdb
-        usr/bin/gdb --version
-    fi
-
     # Get rid of files we don't want cached
     rm -rf usr/share
 }
@@ -67,13 +73,6 @@ setup_travis()
 setup_ipv6()
 {
     echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
-}
-
-setup_gdbserver()
-{
-    # https://docs.improbable.io/reference/14.3/shared/debug-cloud-workers#common-issues
-    wget http://archive.ubuntu.com/ubuntu/pool/main/g/gdb/gdbserver_8.3-0ubuntu1_amd64.deb
-    sudo apt-get install ./gdbserver_8.3-0ubuntu1_amd64.deb
 }
 
 setup_linux()
@@ -192,8 +191,8 @@ setup_osx()
 if [[ "$USER" == "travis" ]]; then
 #   setup_travis
     setup_ipv6
-    setup_gdbserver
     setup_android_emulator
+    setup_gdb_and_gdbserver
 elif [[ "$USER" == "shippable" ]]; then
     sudo apt-get update
     sudo apt-get install openssh-server gcc-multilib
