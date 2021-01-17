@@ -1219,10 +1219,10 @@ class ContextType(object):
     def cache_dir(self, directory):
         """Directory used for caching data.
 
-        Set to ``None`` to effectively disable caching via using a temporary directory.
+        Set to ``None`` to disable cachine.
         """
         if directory is None:
-            directory = tempfile.mkdtemp()
+            return None
 
         if not os.path.isdir(directory):
             log.error("Cache directory %s is not a directory", directory)
