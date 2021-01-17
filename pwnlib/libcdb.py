@@ -88,7 +88,12 @@ def search_by_hash(hex_encoded_id, hash_type='build_id'):
     assert hash_type in HASHES, hash_type
 
     # Ensure that the libcdb cache directory exists
-    cache_dir = os.path.join(context.cache_dir, 'libcdb', hash_type)
+    cache_dir = context.cache_dir
+
+    if cache_dir is None:
+        cache_dir = tempfile.mkdtemp()
+
+    cache_dir = os.path.join(cache_dir, 'libcdb', hash_type)
 
     if not os.path.isdir(cache_dir):
         os.makedirs(cache_dir)
