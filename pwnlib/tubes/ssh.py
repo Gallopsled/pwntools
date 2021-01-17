@@ -600,7 +600,7 @@ class ssh(Timeout, Logger):
         self.password        = password
         self.key             = key
         self.keyfile         = keyfile
-        self._cachedir       = os.path.join(tempfile.gettempdir(), 'pwntools-ssh-cache')
+        self._cachedir       = os.path.join(context.cache_dir, 'pwntools-ssh-cache')
         self.cwd             = '.'
         self.cache           = cache
 
