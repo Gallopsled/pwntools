@@ -1641,6 +1641,31 @@ class ELF(ELFFile):
 
         return "Partial"
 
+    def permissions(self, address):
+        """Return the permissions for the page which contains the provided address
+
+        Returns zero if the page is not mapped.
+
+        >>> e = ELF(os.path.join(pwnlib.data.elf.relro.path, 'test-x86-full'))
+        >>> e.permissions(e.start) == P_FLAGS.PF_R | P_FLAGS.PF_X
+        True
+        >>> e.permissions(0)
+        0
+        """
+        for region in self.memory[address]:
+            return region.data.header.p_flags
+
+        return 0
+
+    def _is_got_readonly(self):
+        for sym in self.got:
+            addr = self.got[sym]
+            perm = self.permissions(addr)
+            if perm & P_FLAGS.PF_W:
+                print("%s is on a writable page" % sym)
+                return False
+        return True
+
     @property
     def nx(self):
         """:class:`bool`: Whether the current binary uses NX protections.
