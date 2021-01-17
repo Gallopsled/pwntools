@@ -603,7 +603,7 @@ class ssh(Timeout, Logger):
         if context.cache_dir is not None:
             self._cachedir   = os.path.join(context.cache_dir, 'pwntools-ssh-cache')
         else:
-            self._cachedir   = tempfile.mkdtemp()
+            self._cachedir   = tempfile.mkdtemp(prefix='pwntools-ssh-cache')
         self.cwd             = '.'
         self.cache           = cache
 
