@@ -17,11 +17,13 @@ import stat
 import string
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 
 import socks
 
+from pwnlib.cache import get_default_cache_directory
 from pwnlib.config import register_config
 from pwnlib.device import Device
 from pwnlib.timeout import Timeout
@@ -345,6 +347,7 @@ class ContextType(object):
         'binary': None,
         'bits': 32,
         'buffer_size': 4096,
+        'cache_dir': get_default_cache_directory(),
         'cyclic_alphabet': string.ascii_lowercase.encode(),
         'cyclic_size': 4,
         'delete_corefiles': False,
@@ -1212,45 +1215,22 @@ class ContextType(object):
         """
         return int(size)
 
-    @property
-    def cache_dir(self):
+    @_validator
+    def cache_dir(self, directory):
         """Directory used for caching data.
 
-        Note:
-            May be either a path string, or :const:`None`.
-
-        Example:
-
-            >>> cache_dir = context.cache_dir
-            >>> cache_dir is not None
-            True
-            >>> os.chmod(cache_dir, 0o000)
-            >>> context.cache_dir is None
-            True
-            >>> os.chmod(cache_dir, 0o755)
-            >>> cache_dir == context.cache_dir
-            True
+        Set to ``None`` to effectively disable caching via using a temporary directory.
         """
-        xdg_cache_home = os.environ.get('XDG_CACHE_HOME') or \
-                         os.path.join(os.path.expanduser('~'), '.cache')
+        if directory is None:
+            directory = tempfile.mkdtemp()
 
-        if not os.access(xdg_cache_home, os.W_OK):
-            return None
+        if not os.path.isdir(directory):
+            log.error("Cache directory %s is not a directory", directory)
 
-        cache = os.path.join(xdg_cache_home, '.pwntools-cache-%d.%d' % sys.version_info[:2])
+        if not os.access(directory, os.W_OK):
+            log.error("Cache directory %s is not writable", directory)
 
-        if not os.path.exists(cache):
-            try:
-                os.mkdir(cache)
-            except OSError:
-                return None
-
-        # Some wargames e.g. pwnable.kr have created dummy directories
-        # which cannot be modified by the user account (owned by root).
-        if not os.access(cache, os.W_OK):
-            return None
-
-        return cache
+        return directory
 
     @_validator
     def delete_corefiles(self, v):
