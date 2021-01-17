@@ -26,7 +26,7 @@ parser.add_argument('--color', help='Print the output in color', choices=['never
 def main(args):
     cache = None
 
-    if cache:
+    if cache and context.cache_dir:
         cache = os.path.join(context.cache_dir, 'mako')
 
     lookup = TemplateLookup(
