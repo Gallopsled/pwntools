@@ -108,7 +108,7 @@ def last_check():
     """Return the date of the last check"""
     cache = cache_file()
     if cache:
-        return os.path.getmtime(cache_file())
+        return os.path.getmtime(cache)
 
     # Fallback
     return time.time()
