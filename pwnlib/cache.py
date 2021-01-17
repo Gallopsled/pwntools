@@ -21,9 +21,7 @@ def get_default_cache_directory():
 
     cache = os.path.join(cache, '.pwntools-cache-%d.%d' % sys.version_info[:2])
 
-    try:
-        os.makedirs(cache, exist_ok=True)
-    except Exception:
-        return tempfile.mkdtemp()
+    if not os.path.isdir(cache):
+        os.makedirs(cache)
 
     return cache
