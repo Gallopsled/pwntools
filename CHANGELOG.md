@@ -111,8 +111,10 @@ The table below shows which release corresponds to each branch, and what date th
 ## 4.3.1 (`stable`)
 
 - [#1732][1732] Fix shellcraft SSTI vulnerability (first major pwntools vuln!)
+- [#1776][1776] mips: do not use $t0 temporary variable in dupio
 
 [1732]: https://github.com/Gallopsled/pwntools/pull/1732
+[1776]: https://github.com/Gallopsled/pwntools/pull/1776
 
 ## 4.3.0
 
