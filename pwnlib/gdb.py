@@ -509,7 +509,10 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         sysroot = sysroot or qemu.ld_prefix(env=env)
         if not qemu_user:
             log.error("Cannot debug %s binaries without appropriate QEMU binaries" % context.arch)
-        qemu_args = [qemu_user, '-g', str(qemu_port)]
+        if context.os == 'baremetal':
+            qemu_args = [qemu_user, '-S', '-gdb', 'tcp::' + str(qemu_port)]
+        else:
+            qemu_args = [qemu_user, '-g', str(qemu_port)]
         if sysroot:
             qemu_args += ['-L', sysroot]
         args = qemu_args + args
@@ -830,7 +833,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         if context.os == 'android':
             pre += 'set gnutarget ' + _bfdname() + '\n'
 
-        if exe:
+        if exe and context.os != 'baremetal':
             pre += 'file %s\n' % exe
 
     # let's see if we can find a pid to attach to

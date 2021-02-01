@@ -295,7 +295,7 @@ def main(args):
 
     vma = args.address
     if vma:
-        vma = eval(vma)
+        vma = pwnlib.util.safeeval.expr(vma)
 
     if args.format in ['e','elf']:
         args.format = 'default'
