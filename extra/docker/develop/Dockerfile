@@ -23,6 +23,8 @@ RUN git clone https://github.com/Gallopsled/pwntools \
 RUN sudo apt-get install -y \
 	ash \
 	bash \
+	bash-static \
+	binutils-multiarch \
 	dash \
 	gcc \
 	gcc-multilib \
@@ -32,12 +34,9 @@ RUN sudo apt-get install -y \
 	libc6-dev-i386 \
 	mksh \
 	pandoc \
+	qemu-user-static \
+	sshpass \
 	zsh
-
-# Dependencies from travis/install.sh
-RUN sudo apt-get install -y \
-	binutils \
-	qemu-user-static
 
 # Misc useful things when developing
 RUN sudo apt-get install -y  \
@@ -48,3 +47,6 @@ RUN sudo apt-get install -y  \
 	ssh \
 	unzip \
 	wget
+
+# Do not require password for sudo
+RUN echo "pwntools ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/travis

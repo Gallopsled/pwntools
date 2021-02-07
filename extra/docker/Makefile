@@ -16,7 +16,7 @@ stable beta dev: base
 develop:
 	@echo "Building $@"
 	docker build -t pwntools/pwntools:$(shell basename $(@)) "$@"
-	docker run -it --privileged --net=host --hostname pwntools-develop \
+	docker run -it --privileged --net=host --hostname localhost \
 		--ulimit core=-1:-1 \
 		--mount type=bind,source="$(shell git rev-parse --show-toplevel)",target=/home/pwntools/pwntools \
 		pwntools/pwntools:$(shell basename $(@))
