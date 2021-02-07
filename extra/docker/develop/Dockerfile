@@ -15,16 +15,22 @@ ENV PATH="/home/pwntools/.local/bin:${PATH}"
 
 # Install Pwntools to the home directory, make it an editable install
 RUN git clone https://github.com/Gallopsled/pwntools \
- && python -m pip install --upgrade --editable pwntools \
+ && python  -m pip install --upgrade --editable pwntools \
  && python3 -m pip install --upgrade --editable pwntools \
  && PWNLIB_NOTERM=1 pwn version
+
+# Requirements for running the tests
+RUN python  -m pip install --upgrade --requirement pwntools/docs/requirements.txt \
+ && python3 -m pip install --upgrade --requirement pwntools/docs/requirements.txt
 
 # Dependencies from .travis.yml addons -> apt -> packages
 RUN sudo apt-get install -y \
 	ash \
 	bash \
 	bash-static \
+	binutils-msp430 \
 	binutils-multiarch \
+	binutils-s390x-linux-gnu \
 	dash \
 	gcc \
 	gcc-multilib \
@@ -35,6 +41,7 @@ RUN sudo apt-get install -y \
 	mksh \
 	pandoc \
 	qemu-user-static \
+	socat \
 	sshpass \
 	zsh
 

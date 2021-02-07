@@ -1,25 +1,25 @@
 ROOT = $(shell git rev-parse --show-toplevel)
-ANDROID ?= yes
-TARGET ?= ""
-TREE = $(shell cd $(ROOT) && git stash create "travis/docker testing")
-ARCHIVE = $(ROOT)/travis/docker/pwntools.tar.gz
 
-ifeq ($(strip $(TREE)),)
-TREE = HEAD
-endif
+all: shell
 
-all: image
-	docker run -e "ANDROID=$(ANDROID)" -e "TARGET=$(TARGET)" --rm --init --privileged -it travis
+Dockerfile: FORCE
+	cp $(ROOT)/extra/docker/develop/Dockerfile Dockerfile
+	cat Dockerfile.travis >> Dockerfile
 
-shell: image
-	docker run --rm --init --privileged --entrypoint /bin/bash -it travis
+all: doctest
 
-image: $(ARCHIVE)
+shell: bash
+
+doctest bash:
+	$(MAKE) image >/dev/null
+	docker run -it --privileged --net=host --hostname localhost \
+		--ulimit core=-1:-1 \
+		--mount type=bind,source="$(ROOT)",target=/home/pwntools/pwntools \
+		--entrypoint $(@) \
+		travis
+
+image: Dockerfile
 	docker build -t travis .
 
-$(ARCHIVE): FORCE
-	rm -f $@
-	cd $(ROOT) && git archive $(TREE) -o $@
-
 FORCE:
-.PHONY: all image
+.PHONY: all image doctest bash
