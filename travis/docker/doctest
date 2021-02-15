@@ -10,8 +10,12 @@ echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
 cd ~
 
 if [ -n "$TARGET" ]; then
+	TARGET=$(find ~/pwntools/docs/source -iname "$TARGET")
 	echo "DOCTEST TARGET is $TARGET"
 fi
 
-PWNLIB_NOTERM=1 coverage3 run -m sphinx -b doctest $HOME/pwntools/docs/source $HOME/pwntools/docs/build/doctest $TARGET
+export PWNLIB_NOTERM=1 
+exit
+
+coverage3 run -m sphinx -b doctest $HOME/pwntools/docs/source $HOME/pwntools/docs/build/doctest $TARGET
 

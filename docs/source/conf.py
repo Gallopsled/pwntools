@@ -95,9 +95,6 @@ travis_ci = os.environ.get('USER') == 'travis'
 local_doctest = os.environ.get('USER') == 'pwntools'
 branch_dev = os.environ.get('GITHUB_BASE_REF') == 'dev'
 skip_android = True
-
-# Inherit everything in the Pwntools global scope into every test scope
-from pwn import *
 '''
 
 autoclass_content = 'both'

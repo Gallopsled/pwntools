@@ -14,14 +14,13 @@ bash: image
 	docker run -it --privileged --net=host --hostname localhost \
 		--ulimit core=-1:-1 \
 		--mount type=bind,source="$(ROOT)",target=/home/pwntools/pwntools \
-		--entrypoint $(@) \
+		--entrypoint /bin/bash \
 		travis
 
-doctest:
+doctest: image
 	docker run --privileged --net=host --hostname localhost \
 		--ulimit core=-1:-1 \
 		--mount type=bind,source="$(ROOT)",target=/home/pwntools/pwntools \
-		--entrypoint $(@) \
 		--env TARGET=$(TARGET) \
 		travis
 
