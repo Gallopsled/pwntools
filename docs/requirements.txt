@@ -14,4 +14,4 @@ ropgadget>=5.3
 sphinx
 sphinx_rtd_theme
 sphinxcontrib-napoleon
-sphinxcontrib-autoprogram
+sphinxcontrib-autoprogram<=0.1.5
