@@ -1,3 +1,6 @@
+# Some additional debugging tools that are useful
+RUN python  -m pip install ipdb
+RUN python3 -m pip install ipdb
 
 # Create the Travis user
 USER root
@@ -26,7 +29,3 @@ ADD doctest /usr/bin
 # Switch back to pwntools to actually run the image
 USER pwntools
 WORKDIR /home/pwntools/pwntools
-
-# Some additional debugging tools that are useful
-RUN python  -m pip install ipdb
-RUN python3 -m pip install ipdb

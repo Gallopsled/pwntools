@@ -74,6 +74,7 @@ import pwnlib, logging
 pwnlib.context.context.reset_local()
 pwnlib.context.ContextType.defaults['log_level'] = logging.ERROR
 pwnlib.context.ContextType.defaults['randomize'] = False
+pwnlib.context.ContextType.defaults['terminal'] = ['sh', '-c']
 pwnlib.util.fiddling.default_style = {}
 pwnlib.term.text.when = 'never'
 pwnlib.log.install_default_handler()
@@ -91,8 +92,12 @@ pwnlib.context.ContextType.defaults['log_console'] = stdout()
 
 github_actions = os.environ.get('USER') == 'runner'
 travis_ci = os.environ.get('USER') == 'travis'
+local_doctest = os.environ.get('USER') == 'pwntools'
 branch_dev = os.environ.get('GITHUB_BASE_REF') == 'dev'
 skip_android = True
+
+# Inherit everything in the Pwntools global scope into every test scope
+from pwn import *
 '''
 
 autoclass_content = 'both'

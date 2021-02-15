@@ -751,23 +751,35 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         b'Hello from bash\n'
 
         Using GDB Python API:
+        
+        .. doctest
+           :skipif: six.PY2
 
-        >>> if six.PY3:
-        ...     io = process('bash')
-        ...     # Attach a debugger
-        ...     pid, io_gdb = gdb.attach(io, api=True)
-        ...     # Force the program to write something it normally wouldn't
-        ...     io_gdb.execute('call puts("Hello from process debugger!")')
-        ...     # Resume the program
-        ...     io_gdb.continue_nowait()
-        ...     # Observe the forced line
-        ...     s = io.recvline()
-        ...     assert s == b'Hello from process debugger!\n', s
-        ...     # Interact with the program in a regular way
-        ...     io.sendline('echo Hello from bash && exit')
-        ...     # Observe the results
-        ...     s = io.recvall()
-        ...     assert s == b'Hello from bash\n', s
+            >>> io = process('bash')
+            >>> # Attach a debugger
+            >>> pid, io_gdb = gdb.attach(io, api=True)
+            
+            Force the program to write something it normally wouldn't
+            
+            >>> io_gdb.execute('call puts("Hello from process debugger!")')
+            
+            Resume the program
+            
+            >>> io_gdb.continue_nowait()
+            
+            Observe the forced line
+            
+            >>> s = io.recvline()
+            >>> assert s == b'Hello from process debugger!\n', s
+            
+            Interact with the program in a regular way
+            
+            >>> io.sendline('echo Hello from bash && exit')
+            
+            Observe the results
+            
+            >>> s = io.recvall()
+            >>> assert s == b'Hello from bash\n', s
 
         Attach to the remote process from a :class:`.remote` or :class:`.listen` tube,
         as long as it is running on the same machine.

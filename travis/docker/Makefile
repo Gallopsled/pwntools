@@ -10,8 +10,7 @@ all: doctest
 
 shell: bash
 
-doctest bash:
-	$(MAKE) image >/dev/null
+doctest bash: image
 	docker run -it --privileged --net=host --hostname localhost \
 		--ulimit core=-1:-1 \
 		--mount type=bind,source="$(ROOT)",target=/home/pwntools/pwntools \

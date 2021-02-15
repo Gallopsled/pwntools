@@ -56,7 +56,10 @@ RUN sudo apt-get install -y  \
 	wget
 
 # Do not require password for sudo
-RUN echo "pwntools ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/travis
+RUN echo "pwntools ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/travis# Some additional debugging tools that are useful
+RUN python  -m pip install ipdb
+RUN python3 -m pip install ipdb
+
 # Create the Travis user
 USER root
 RUN useradd -m travis
@@ -84,7 +87,3 @@ ADD doctest /usr/bin
 # Switch back to pwntools to actually run the image
 USER pwntools
 WORKDIR /home/pwntools/pwntools
-
-# Some additional debugging tools that are useful
-RUN python  -m pip install ipdb
-RUN python3 -m pip install ipdb

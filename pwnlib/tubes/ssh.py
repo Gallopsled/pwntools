@@ -578,12 +578,11 @@ class ssh(Timeout, Logger):
         Example proxying:
 
         .. doctest::
-           :skipif: github_actions
+           :skipif: True
 
             >>> s1 = ssh(host='example.pwnme')
             >>> r1 = s1.remote('localhost', 22)
-            >>> s2 = ssh(host='example.pwnme',
-            ...          proxy_sock=r1.sock)
+            >>> s2 = ssh(host='example.pwnme', proxy_sock=r1.sock)
             >>> r2 = s2.remote('localhost', 22) # and so on...
             >>> for x in r2, s2, r1, s1: x.close()
         """
