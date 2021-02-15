@@ -1212,8 +1212,8 @@ def corefile(process):
 
         >>> io = process('bash')
         >>> core = gdb.corefile(io)
-        >>> core.exe.name
-        '/bin/bash'
+        >>> core.exe.name # doctest: +ELLIPSIS
+        '.../bin/bash'
     """
 
     if context.noptrace:
