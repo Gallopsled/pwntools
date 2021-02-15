@@ -1425,7 +1425,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         total, exitcode = self.run_to_end(cmd)
 
         if exitcode != 0:
-            h.error("%r does not exist or is not accessible" % remote)
+            h.failure("%r does not exist or is not accessible" % remote)
             return
 
         total = int(total)
