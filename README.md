@@ -49,8 +49,5 @@ However, some of the features (assembling/disassembling foreign architectures) r
 
 See [CONTRIBUTING.md](CONTRIBUTING.md)
 
-# Contact
-If you have any questions not worthy of a [bug report](https://github.com/Gallopsled/pwntools/issues), feel free to ping us
-at [`#pwntools` on Freenode](irc://irc.freenode.net/pwntools) and ask away.
-Click [here](https://kiwiirc.com/client/irc.freenode.net/pwntools) to connect.
-There is also a [mailing list](https://groups.google.com/forum/#!forum/pwntools-users) for higher latency discussion.
+# Contact and Community
+If you have any questions not worthy of a [bug report](https://github.com/Gallopsled/pwntools/issues), join the Discord server at https://discord.gg/BAk7nH2V
