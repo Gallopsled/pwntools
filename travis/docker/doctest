@@ -7,10 +7,11 @@ sudo service ssh start
 echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
 
 # Run the tests from the repo
-cd ~/pwntools
+cd ~
 
-# Explicitly disable Android tests
-rm -f docs/source/adb.rst
-rm -f docs/source/protocols/adb.rst
+if [ -n "$TARGET" ]; then
+	echo "DOCTEST TARGET is $TARGET"
+fi
 
-PWNLIB_NOTERM=1 coverage3 run -m sphinx -b doctest docs/source docs/build/doctest $@
+PWNLIB_NOTERM=1 coverage3 run -m sphinx -b doctest $HOME/pwntools/docs/source $HOME/pwntools/docs/build/doctest $TARGET
+

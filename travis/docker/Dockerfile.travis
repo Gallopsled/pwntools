@@ -28,4 +28,10 @@ ADD doctest /usr/bin
 
 # Switch back to pwntools to actually run the image
 USER pwntools
-WORKDIR /home/pwntools/pwntools
+WORKDIR /home/pwntools
+
+# Copy in the Doctest script
+COPY doctest /home/pwntools/doctest
+
+# Set entry point to doctest by default
+ENTRYPOINT /home/pwntools/doctest
