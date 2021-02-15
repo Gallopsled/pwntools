@@ -97,6 +97,11 @@ jobs:
     - name: Version Check
       run:  PWNLIB_NOTERM=1 pwn version
 
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      with:
+        limit-access-to-actor: true
+
     - name: Coverage doctests
       run: |
         echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope # required by some gdb doctests
