@@ -149,9 +149,10 @@ def which(name, all = False, path=None):
       else the first location or :const:`None` if not found.
 
     Example:
-      >>> which('sh')
-      '/bin/sh'
-"""
+
+        >>> which('sh') # doctest: +ELLIPSIS
+        '.../bin/sh'
+    """
     # If name is a path, do not attempt to resolve it.
     if os.path.sep in name:
         return name

@@ -467,7 +467,7 @@ class process(tube):
 
         Example:
 
-            >>> p = process('true')
+            >>> p = process('/bin/true')
             >>> p.executable == '/bin/true'
             True
             >>> p.executable == p.program
