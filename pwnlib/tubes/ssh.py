@@ -803,10 +803,10 @@ class ssh(Timeout, Logger):
             b'Hello\n'
             >>> s.process(['/bin/echo', b'\xff']).recvall()
             b'\xff\n'
-            >>> s.process(['readlink', '/proc/self/exe']).recvall()
-            b'/bin/readlink\n'
-            >>> s.process(['LOLOLOL', '/proc/self/exe'], executable='readlink').recvall()
-            b'/bin/readlink\n'
+            >>> s.process(['readlink', '/proc/self/exe']).recvall() # doctest: +ELLIPSIS
+            b'.../bin/readlink\n'
+            >>> s.process(['LOLOLOL', '/proc/self/exe'], executable='readlink').recvall() # doctest: +ELLIPSIS
+            b'.../bin/readlink\n'
             >>> s.process(['LOLOLOL\x00', '/proc/self/cmdline'], executable='cat').recvall()
             b'LOLOLOL\x00/proc/self/cmdline\x00'
             >>> sh = s.process(executable='/bin/sh')
