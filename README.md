@@ -4,10 +4,10 @@
 [![PyPI](https://img.shields.io/pypi/v/pwntools?style=flat)](https://pypi.python.org/pypi/pwntools/)
 [![Docs](https://readthedocs.org/projects/pwntools/badge/?version=stable)](https://docs.pwntools.com/)
 [![Travis](https://img.shields.io/travis/Gallopsled/pwntools/dev?logo=Travis)](https://travis-ci.org/Gallopsled/pwntools)
-![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/Gallopsled/pwntools/Continuous%20Integration/dev?logo=GitHub)
+[![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/Gallopsled/pwntools/Continuous%20Integration/dev?logo=GitHub)](https://github.com/Gallopsled/pwntools/actions?query=workflow%3A%22Continuous+Integration%22+branch%3Adev)
 [![Coveralls](https://img.shields.io/coveralls/github/Gallopsled/pwntools/dev?logo=coveralls)](https://coveralls.io/github/Gallopsled/pwntools?branch=dev)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](http://choosealicense.com/licenses/mit/)
-![Discord](https://img.shields.io/discord/809590285687980052?label=Discord&style=plastic)
+[![Discord](https://img.shields.io/discord/809590285687980052?label=Discord&style=plastic)](https://discord.gg/zpCj5WfFHq)
 [![Twitter](https://img.shields.io/twitter/follow/Pwntools)](https://twitter.com/pwntools)
 
 Pwntools is a CTF framework and exploit development library. Written in Python, it is designed for rapid prototyping and development, and intended to make exploit writing as simple as possible.
