@@ -931,21 +931,22 @@ class ContextType(object):
         Examples:
 
 
-            >>> log_file = tempfile.mktemp()
-            >>> context.log_file = log_file #doctest: +ELLIPSIS
+            >>> foo_txt = tempfile.mktemp()
+            >>> bar_txt = tempfile.mktemp()
+            >>> context.log_file = foo_txt #doctest: +ELLIPSIS
             >>> log.debug('Hello!') #doctest: +ELLIPSIS
             >>> with context.local(log_level='ERROR'): #doctest: +ELLIPSIS
             ...     log.info('Hello again!')
-            >>> with context.local(log_file='bar.txt'):
+            >>> with context.local(log_file='bar_txt'):
             ...     log.debug('Hello from bar!')
             >>> log.info('Hello from foo!')
-            >>> open(log_file).readlines()[-3] #doctest: +ELLIPSIS
+            >>> open(foo_txt).readlines()[-3] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello!\n'
-            >>> open(log_file).readlines()[-2] #doctest: +ELLIPSIS
+            >>> open(foo_txt).readlines()[-2] #doctest: +ELLIPSIS
             '...:INFO:...:Hello again!\n'
-            >>> open(log_file).readlines()[-1] #doctest: +ELLIPSIS
+            >>> open(foo_txt).readlines()[-1] #doctest: +ELLIPSIS
             '...:INFO:...:Hello from foo!\n'
-            >>> open('bar.txt').readlines()[-1] #doctest: +ELLIPSIS
+            >>> open('bar_txt').readlines()[-1] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello from bar!\n'
         """
         if isinstance(value, (bytes, six.text_type)):
