@@ -11,8 +11,8 @@ Example:
 
     >>> f = tempfile.mktemp()
     >>> write(f, 'FLAG')
-    >>> asm  = shellcraft.mips.linux.cat(f)
-    >>> asm += shellcraft.mips.linux.exit(0)
+    >>> sc = shellcraft.mips.linux.cat(f)
+    >>> sc += shellcraft.mips.linux.exit(0)
     >>> run_assembly(asm).recvall()
     b'FLAG'
 
