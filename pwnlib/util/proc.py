@@ -332,7 +332,6 @@ def wait_for_debugger(pid, debugger_pid=None):
     """
     t = Timeout()
     with t.countdown(timeout=15):
-        import ipdb; ipdb.set_trace()
         with log.waitfor('Waiting for debugger') as l:
             if debugger_pid:
                 debugger = psutil.Process(debugger_pid)

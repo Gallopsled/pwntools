@@ -119,6 +119,9 @@ def search_by_hash(hex_encoded_id, hash_type='build_id'):
 
     # Save whatever we got to the cache
     write(cache, data or b'')
+    import sys
+    log.warn('CACHE IS %s' % cache)
+    sys.exit(1)
 
     # Return ``None`` if we did not get a valid ELF file
     if not data or not data.startswith(b'\x7FELF'):

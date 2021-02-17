@@ -31,6 +31,7 @@ from six.moves.xmlrpc_client import ServerProxy
 
 import packaging.version
 
+from pwnlib.args import args
 from pwnlib.config import register_config
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -116,6 +117,9 @@ def last_check():
 def should_check():
     """Return True if we should check for an update"""
     filename = cache_file()
+
+    if args.DONT_CHECK_FOR_UPDATES:
+        return False
 
     if not filename:
         return False
