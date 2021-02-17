@@ -26,6 +26,7 @@ build_dash = tags.has('dash')
 sys.path.insert(0, os.path.abspath('../..'))
 
 import pwnlib
+pwnlib.update.disabled = True
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
@@ -70,13 +71,13 @@ doctest_global_setup = '''
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
 os.environ['PWNLIB_RANDOMIZE'] = '0'
-os.environ['PWNLIB_DONT_CHECK_FOR_UPDATES'] = '1'
 
 import pwnlib, logging
+pwnlib.update.disabled = True
 pwnlib.context.context.reset_local()
 pwnlib.context.ContextType.defaults['log_level'] = logging.ERROR
 pwnlib.context.ContextType.defaults['randomize'] = False
-pwnlib.context.ContextType.defaults['terminal'] = ['sh', '-c']
+# pwnlib.context.ContextType.defaults['terminal'] = ['sh', '-c']
 pwnlib.util.fiddling.default_style = {}
 pwnlib.term.text.when = 'never'
 pwnlib.log.install_default_handler()
@@ -383,45 +384,45 @@ if build_dash:
 
 
 # -- Customization to Sphinx autodoc generation --------------------------------------------
-# import sphinx.ext.autodoc
+import sphinx.ext.autodoc
 
 # Test hidden members (e.g. def _foo(...))
-# def dont_skip_any_doctests(app, what, name, obj, skip, options):
-#     print("Skipping",      app, what, name, obj, skip, options)
-#     return False
+def dont_skip_any_doctests(app, what, name, obj, skip, options):
+    return None
 
-# class _DummyClass(object): pass
+autodoc_default_options = {'special-members': None, 'private-members': None}
 
-# class Py2OutputChecker(_DummyClass, doctest.OutputChecker):
-#     def check_output(self, want, got, optionflags):
-#         sup = super(Py2OutputChecker, self).check_output
-#         if sup(want, got, optionflags):
-#             return True
-#         try:
-#             rly_want = pwnlib.util.safeeval.const(want)
-#             if sup(repr(rly_want), got, optionflags):
-#                 return True
-#             rly_got = pwnlib.util.safeeval.const(got)
-#             if rly_want == rly_got:
-#                 return True
-#         except ValueError:
-#             pass
-#         rly_want = ' '.join(x[:2].replace('b"','"').replace("b'","'")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
-#         if sup(rly_want, got, optionflags):
-#             return True
-#         rly_want = ' '.join(x[:2].replace('b"',' "').replace("b'"," '")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
-#         return sup(rly_want, got, optionflags)
+class _DummyClass(object): pass
 
-# def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
-#     if checker is None:
-#         checker = Py2OutputChecker()
-#     doctest.DocTestRunner.__init__(self, checker, verbose, optionflags)
+class Py2OutputChecker(_DummyClass, doctest.OutputChecker):
+    def check_output(self, want, got, optionflags):
+        sup = super(Py2OutputChecker, self).check_output
+        if sup(want, got, optionflags):
+            return True
+        try:
+            rly_want = pwnlib.util.safeeval.const(want)
+            if sup(repr(rly_want), got, optionflags):
+                return True
+            rly_got = pwnlib.util.safeeval.const(got)
+            if rly_want == rly_got:
+                return True
+        except ValueError:
+            pass
+        rly_want = ' '.join(x[:2].replace('b"','"').replace("b'","'")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
+        if sup(rly_want, got, optionflags):
+            return True
+        rly_want = ' '.join(x[:2].replace('b"',' "').replace("b'"," '")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
+        return sup(rly_want, got, optionflags)
 
-# if 'doctest' in sys.argv:
-#     def setup(app):
-#         pass
-#         # app.connect('autodoc-skip-member', dont_skip_any_doctests)
+def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
+    if checker is None:
+        checker = Py2OutputChecker()
+    doctest.DocTestRunner.__init__(self, checker, verbose, optionflags)
 
-#     if sys.version_info[:1] < (3,):
-#         import sphinx.ext.doctest
-#         sphinx.ext.doctest.SphinxDocTestRunner.__init__ = py2_doctest_init
+if 'doctest' in sys.argv:
+    def setup(app):
+        pass # app.connect('autodoc-skip-member', dont_skip_any_doctests)
+
+    if sys.version_info[:1] < (3,):
+        import sphinx.ext.doctest
+        sphinx.ext.doctest.SphinxDocTestRunner.__init__ = py2_doctest_init
