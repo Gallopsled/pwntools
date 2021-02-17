@@ -765,6 +765,7 @@ class ELF(ELFFile):
             These tests are just to ensure that our shellcode is correct.
 
             >>> for arch in CAT_PROC_MAPS_EXIT:
+            ...   context.clear()
             ...   with context.local(arch=arch):
             ...     sc = shellcraft.cat("/proc/self/maps")
             ...     sc += shellcraft.exit()
