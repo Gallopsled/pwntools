@@ -931,18 +931,19 @@ class ContextType(object):
         Examples:
 
 
-            >>> context.log_file = 'foo.txt' #doctest: +ELLIPSIS
+            >>> log_file = tempfile.mktemp()
+            >>> context.log_file = log_file #doctest: +ELLIPSIS
             >>> log.debug('Hello!') #doctest: +ELLIPSIS
             >>> with context.local(log_level='ERROR'): #doctest: +ELLIPSIS
             ...     log.info('Hello again!')
             >>> with context.local(log_file='bar.txt'):
             ...     log.debug('Hello from bar!')
             >>> log.info('Hello from foo!')
-            >>> open('foo.txt').readlines()[-3] #doctest: +ELLIPSIS
+            >>> open(log_file).readlines()[-3] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello!\n'
-            >>> open('foo.txt').readlines()[-2] #doctest: +ELLIPSIS
+            >>> open(log_file).readlines()[-2] #doctest: +ELLIPSIS
             '...:INFO:...:Hello again!\n'
-            >>> open('foo.txt').readlines()[-1] #doctest: +ELLIPSIS
+            >>> open(log_file).readlines()[-1] #doctest: +ELLIPSIS
             '...:INFO:...:Hello from foo!\n'
             >>> open('bar.txt').readlines()[-1] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello from bar!\n'
