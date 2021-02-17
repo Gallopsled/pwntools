@@ -1,4 +1,5 @@
 ROOT = $(shell git rev-parse --show-toplevel)
+$(shell reset)
 
 all: shell
 
@@ -11,6 +12,7 @@ all: doctest
 shell: bash
 
 bash: image
+	@echo Running interactive shell
 	docker run -it --privileged --net=host --hostname localhost \
 		--ulimit core=-1:-1 \
 		--mount type=bind,source="$(ROOT)",target=/home/pwntools/pwntools \
@@ -18,6 +20,7 @@ bash: image
 		travis
 
 doctest: image
+	@echo Running doctests
 	docker run --privileged --net=host --hostname localhost \
 		--ulimit core=-1:-1 \
 		--mount type=bind,source="$(ROOT)",target=/home/pwntools/pwntools \

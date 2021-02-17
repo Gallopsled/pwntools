@@ -385,6 +385,8 @@ import sphinx.ext.autodoc
 
 # Test hidden members (e.g. def _foo(...))
 def dont_skip_any_doctests(app, what, name, obj, skip, options):
+    import ipdb; ipdb.set_trace()
+    print("Skipping",      app, what, name, obj, skip, options)
     return False
 
 class _DummyClass(object): pass
