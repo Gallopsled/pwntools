@@ -937,7 +937,7 @@ class ContextType(object):
             >>> log.debug('Hello!') #doctest: +ELLIPSIS
             >>> with context.local(log_level='ERROR'): #doctest: +ELLIPSIS
             ...     log.info('Hello again!')
-            >>> with context.local(log_file='bar_txt'):
+            >>> with context.local(log_file=bar_txt):
             ...     log.debug('Hello from bar!')
             >>> log.info('Hello from foo!')
             >>> open(foo_txt).readlines()[-3] #doctest: +ELLIPSIS
@@ -946,7 +946,7 @@ class ContextType(object):
             '...:INFO:...:Hello again!\n'
             >>> open(foo_txt).readlines()[-1] #doctest: +ELLIPSIS
             '...:INFO:...:Hello from foo!\n'
-            >>> open('bar_txt').readlines()[-1] #doctest: +ELLIPSIS
+            >>> open(bar_txt).readlines()[-1] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello from bar!\n'
         """
         if isinstance(value, (bytes, six.text_type)):
