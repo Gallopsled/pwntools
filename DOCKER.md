@@ -51,7 +51,7 @@ $ python3 exploits/my_exploit.py
 
 ### Windows User Bind Mounts
 
-If you're a Windows user `$HOME` doesn't exist in the same way as on Linux, instead it is `%UserProfile%`.  The command from above would look like:
+If you're a Windows user `$HOME` doesn't exist in the same way as on Linux, instead it is `%UserProfile%`.  The command from above would look like this, assuming your editor is Visual Studio Code and you have code.exe in your `%PATH%`.
 
 ```sh
 C:\Users\user> mkdir Desktop\exploits
