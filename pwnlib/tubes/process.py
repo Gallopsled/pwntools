@@ -942,10 +942,12 @@ class process(tube):
 
             # Handle race condition against the kernel or QEMU to write the corefile
             # by waiting up to 5 seconds for it to be written.
-            t = Timeout().countdown(5)
+            t = Timeout()
             finder = None
-            while t.timeout and (finder is None or not finder.core_path):
-                finder = pwnlib.elf.corefile.CorefileFinder(self)
+            with t.countdown(5):
+                while t.timeout and (finder is None or not finder.core_path):
+                    finder = pwnlib.elf.corefile.CorefileFinder(self)
+                    time.sleep(0.5)
 
             if not finder.core_path:
                 self.error("Could not find core file for pid %i" % self.pid)
