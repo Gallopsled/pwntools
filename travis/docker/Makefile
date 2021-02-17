@@ -9,13 +9,13 @@ all: doctest
 
 # shell: bash
 
-bash: image
+shell bash: image
 	@echo Running interactive shell
 	docker run -it --privileged --net=host --hostname localhost \
 		--ulimit core=-1:-1 \
 		--mount type=bind,source="$(ROOT)",target=/home/pwntools/pwntools \
 		--mount type=bind,source="$(HOME)/.pwntools-cache-3.6",target=/home/pwntools/.pwntools-cache-3.6 \
-		--entrypoint /bin/bash \
+		--entrypoint ./tmux.sh \
 		travis
 
 doctest: image FORCE

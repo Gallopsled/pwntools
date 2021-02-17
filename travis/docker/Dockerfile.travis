@@ -1,6 +1,21 @@
+
 # Some additional debugging tools that are useful
 RUN python  -m pip install ipdb
 RUN python3 -m pip install ipdb
+
+# Install debugging utilities
+USER root
+RUN apt-get -y install gdb gdbserver tmux gdb-multiarch
+
+# Set up binfmt-misc mappings inside the VM
+RUN mkdir /etc/qemu-binfmt
+RUN ln -sf /usr/lib/arm-linux-gnueabihf /etc/qemu-binfmt/arm
+RUN ln -sf /usr/lib/aarch64-linux-gnu   /etc/qemu-binfmt/aarch64
+RUN ln -sf /usr/lib/mips-linux-gnu      /etc/qemu-binfmt/mips
+RUN ln -sf /usr/lib/mipsel-linux-gnu    /etc/qemu-binfmt/mipsel
+RUN ln -sf /usr/lib/powerpc-linux-gnu   /etc/qemu-binfmt/powerpc
+RUN ln -sf /usr/lib/powerpc-linux-gnu64 /etc/qemu-binfmt/powerpc64
+RUN ln -sf /usr/lib/sparc64-linux-gnu   /etc/qemu-binfmt/sparc64
 
 # Create the Travis user
 USER root
@@ -31,7 +46,18 @@ USER pwntools
 WORKDIR /home/pwntools
 
 # Copy in the Doctest script
-COPY doctest /home/pwntools/doctest
+COPY doctest /home/pwntools
+COPY tmux.sh /home/pwntools
+
+# Do everything in UTF-8 mode!
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
+# Install pwndbg!
+RUN git clone https://github.com/pwndbg/pwndbg.git
+WORKDIR /home/pwntools/pwndbg
+RUN ./setup.sh
 
 # Set entry point to doctest by default
+WORKDIR /home/pwntools
 ENTRYPOINT /home/pwntools/doctest
