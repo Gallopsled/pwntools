@@ -13,7 +13,7 @@ Example:
     >>> write(f, 'FLAG')
     >>> sc = shellcraft.mips.linux.cat(f)
     >>> sc += shellcraft.mips.linux.exit(0)
-    >>> run_assembly(asm).recvall()
+    >>> run_assembly(sc).recvall()
     b'FLAG'
 
 </%docstring>
