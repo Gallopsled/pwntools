@@ -94,7 +94,6 @@ class Timeout(object):
         0.3
         0.2
         0.1
-        ...
         >>> print(t.timeout)
         5.0
         >>> with t.local(0.5):# doctest: +ELLIPSIS
