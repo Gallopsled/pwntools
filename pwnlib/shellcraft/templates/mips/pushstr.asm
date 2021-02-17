@@ -69,11 +69,6 @@ Example:
     >>> print(enhex(asm(shellcraft.mips.pushstr("\x00", False))))
     fcffa0affcffbd27
 
-    TODO: This should flag in CI, but it doesn't currently
-
-    >>> False
-    True
-
 Args:
   string (str): The string to push.
   append_null (bool): Whether to append a single NULL-byte before pushing.
