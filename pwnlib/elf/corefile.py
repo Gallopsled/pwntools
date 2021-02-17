@@ -345,6 +345,7 @@ class Corefile(ELF):
         You can specify a full path a la ``Corefile('/path/to/core')``,
         but you can also just access the :attr:`.process.corefile` attribute.
 
+        >>> time.sleep(2)
         >>> core = io.corefile
 
         The core file has a :attr:`.Corefile.exe` property, which is a :class:`.Mapping`

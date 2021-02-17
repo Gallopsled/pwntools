@@ -1,5 +1,7 @@
 .. testsetup:: *
 
+   import time
+
    from glob import glob
    from pwn import *
 
