@@ -7,6 +7,11 @@ RUN python3 -m pip install ipdb
 USER root
 RUN apt-get -y install gdb gdbserver tmux gdb-multiarch
 
+# Install pwndbg for debugging issues
+RUN git clone https://github.com/pwndbg/pwndbg.git
+WORKDIR /home/pwntools/pwndbg
+RUN ./setup.sh
+
 # Set up binfmt-misc mappings inside the VM
 RUN mkdir /etc/qemu-binfmt
 RUN ln -sf /usr/lib/arm-linux-gnueabihf /etc/qemu-binfmt/arm
@@ -39,25 +44,21 @@ RUN echo 'from="127.0.0.1"' $(cat /tmp/id_rsa.pub) > ~/.ssh/authorized_keys
 
 # Add the doctest entrypoint to /usr/bin so we don't have to supply the full path
 USER root
-ADD doctest /usr/bin
+ADD doctest2 /usr/bin
+ADD doctest3 /usr/bin
 
 # Switch back to pwntools to actually run the image
 USER pwntools
 WORKDIR /home/pwntools
 
 # Copy in the Doctest script
-COPY doctest /home/pwntools
+COPY doctest2 /home/pwntools
+COPY doctest3 /home/pwntools
 COPY tmux.sh /home/pwntools
 
 # Do everything in UTF-8 mode!
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 
-# Install pwndbg!
-RUN git clone https://github.com/pwndbg/pwndbg.git
-WORKDIR /home/pwntools/pwndbg
-RUN ./setup.sh
-
 # Set entry point to doctest by default
 WORKDIR /home/pwntools
-ENTRYPOINT /home/pwntools/doctest
