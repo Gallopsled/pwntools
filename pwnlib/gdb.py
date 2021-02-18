@@ -911,7 +911,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         # before we attach the debugger.
         t = Timeout()
         with t.countdown(2):
-            while exe and os.realpath(proc.exe(pid)) != os.realpath(exe) and t.timeout:
+            while exe and os.path.realpath(proc.exe(pid)) != os.path.realpath(exe) and t.timeout:
                 time.sleep(0.1)
 
     elif isinstance(target, tubes.process.process):
