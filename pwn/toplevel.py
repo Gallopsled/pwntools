@@ -81,3 +81,6 @@ warn    = log.warning
 info    = log.info
 debug   = log.debug
 success = log.success
+
+# Equivalence with the default behavior of "from import *"
+# __all__ = [x for x in tuple(globals()) if not x.startswith('_')]
