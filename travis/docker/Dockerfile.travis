@@ -8,11 +8,14 @@ USER root
 RUN apt-get -y install gdb gdbserver tmux gdb-multiarch
 
 # Install pwndbg for debugging issues
+USER pwntools
 RUN git clone https://github.com/pwndbg/pwndbg.git
 WORKDIR /home/pwntools/pwndbg
 RUN ./setup.sh
+RUN echo "source $PWD/gdbinit.py" | tee $HOME/.gdbinit
 
 # Set up binfmt-misc mappings inside the VM
+USER root
 RUN mkdir /etc/qemu-binfmt
 RUN ln -sf /usr/lib/arm-linux-gnueabihf /etc/qemu-binfmt/arm
 RUN ln -sf /usr/lib/aarch64-linux-gnu   /etc/qemu-binfmt/aarch64
