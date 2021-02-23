@@ -933,8 +933,8 @@ class ContextType(object):
 
             >>> foo_txt = tempfile.mktemp()
             >>> bar_txt = tempfile.mktemp()
-            >>> context.log_file = foo_txt #doctest: +ELLIPSIS
-            >>> log.debug('Hello!') #doctest: +ELLIPSIS
+            >>> context.log_file = foo_txt
+            >>> log.debug('Hello!')
             >>> with context.local(log_level='ERROR'): #doctest: +ELLIPSIS
             ...     log.info('Hello again!')
             >>> with context.local(log_file=bar_txt):
