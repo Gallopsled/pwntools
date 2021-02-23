@@ -779,7 +779,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             Observe the results
             
             >>> s = io.recvall()
-            >>> assert s == b'Hello from bash\n', s
+            b'Hello from bash\n'
 
         Attach to the remote process from a :class:`.remote` or :class:`.listen` tube,
         as long as it is running on the same machine.
