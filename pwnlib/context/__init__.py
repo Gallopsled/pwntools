@@ -1239,12 +1239,10 @@ class ContextType(object):
             return None
 
         cache = os.path.join(xdg_cache_home, '.pwntools-cache-%d.%d' % sys.version_info[:2])
-
-        if not os.path.exists(cache):
-            try:
-                os.mkdir(cache)
-            except OSError:
-                return None
+        try:
+            os.makedirs(cache, exist_ok=True)
+        except OSError:
+            return None
 
         # Some wargames e.g. pwnable.kr have created dummy directories
         # which cannot be modified by the user account (owned by root).
