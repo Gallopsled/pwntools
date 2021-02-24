@@ -35,6 +35,7 @@ def _string(s):
 p = common.parser_commands.add_parser(
     'shellcraft',
     help = 'Microwave shellcode -- Easy, fast and delicious',
+    description = 'Microwave shellcode -- Easy, fast and delicious',
 )
 
 
