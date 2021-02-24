@@ -11,7 +11,8 @@ from mako.lookup import TemplateLookup
 
 parser = common.parser_commands.add_parser(
     'template',
-    help = 'Generate an exploit template'
+    help = 'Generate an exploit template',
+    description = 'Generate an exploit template'
 )
 
 parser.add_argument('exe', nargs='?', help='Target binary')

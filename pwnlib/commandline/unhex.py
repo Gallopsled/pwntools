@@ -11,9 +11,9 @@ from pwnlib.util.fiddling import unhex
 
 parser = common.parser_commands.add_parser(
     'unhex',
-    help = '''
-Decodes hex-encoded data provided on the command line or via stdin.
-''')
+    help = 'Decodes hex-encoded data provided on the command line or via stdin.',
+    description = 'Decodes hex-encoded data provided on the command line or via stdin.'
+)
 
 parser.add_argument('hex', nargs='*',
     help='Hex bytes to decode')
