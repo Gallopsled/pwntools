@@ -32,9 +32,9 @@ To get you started, we've provided some example solutions for past CTF challenge
 
 # Installation
 
-Pwntools is best supported on 64-bit Ubuntu LTE releases (14.04, 16.04, 18.04, and 20.04).  Most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).  Python >= 2.7 is required (Python 3 suggested as best).
+Pwntools is best supported on 64-bit Ubuntu LTS releases (14.04, 16.04, 18.04, and 20.04).  Most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).  
 
-Most of the functionality of pwntools is self-contained and Python-only.  You should be able to get running quickly with
+Python3 is suggested, but Pwntools still works with Python 2.7.  Most of the functionality of pwntools is self-contained and Python-only.  You should be able to get running quickly with
 
 ```sh
 apt-get update
@@ -42,6 +42,7 @@ apt-get install python3 python3-pip python3-dev git libssl-dev libffi-dev build-
 python3 -m pip install --upgrade pip
 python3 -m pip install --upgrade pwntools
 ```
+
 
 However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://docs.pwntools.com/en/stable/install.html).
 
