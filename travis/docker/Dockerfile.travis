@@ -62,6 +62,7 @@ COPY tmux.sh /home/pwntools
 # Do everything in UTF-8 mode!
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
+ENV SHELL=/bin/bash
 
 # Set entry point to doctest by default
 WORKDIR /home/pwntools
