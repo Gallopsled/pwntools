@@ -41,7 +41,7 @@ Additionally, due to `pip` dropping support for Python2, a specfic version of `p
 .. code-block:: bash
 
     $ apt-get update
-    $ apt-get install python python-pip python3-dev git libssl-dev libffi-dev build-essential
+    $ apt-get install python python-pip python-dev git libssl-dev libffi-dev build-essential
     $ python2 -m pip install --upgrade pip==20.3.4
     $ python2 -m pip install --upgrade pwntools
 
