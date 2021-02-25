@@ -280,10 +280,13 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         pid = p.pid
 
     if kill_at_exit:
-        if terminal == 'tmux':
-            atexit.register(lambda: os.kill(pid, signal.SIGTERM))
-        else:
-            atexit.register(lambda: p.terminate())
+        def kill():
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except OSError:
+                pass
+
+        atexit.register(kill)
 
     return pid
 
