@@ -935,12 +935,22 @@ class process(tube):
 
         try:
             if self.poll() is None:
-                return pwnlib.gdb.corefile(self)
+                corefile = pwnlib.gdb.corefile(self)
+                if corefile is None:
+                    self.error("Could not create corefile with GDB for %s", self.executable)
+                return corefile
 
-            finder = pwnlib.elf.corefile.CorefileFinder(self)
+            # Handle race condition against the kernel or QEMU to write the corefile
+            # by waiting up to 5 seconds for it to be written.
+            t = Timeout()
+            finder = None
+            with t.countdown(5):
+                while t.timeout and (finder is None or not finder.core_path):
+                    finder = pwnlib.elf.corefile.CorefileFinder(self)
+                    time.sleep(0.5)
+
             if not finder.core_path:
-                self.warn("Could not find core file for pid %i" % self.pid)
-                return None
+                self.error("Could not find core file for pid %i" % self.pid)
 
             core_hash = sha256file(finder.core_path)
 

@@ -751,23 +751,35 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         b'Hello from bash\n'
 
         Using GDB Python API:
+        
+        .. doctest
+           :skipif: six.PY2
 
-        >>> if six.PY3:
-        ...     io = process('bash')
-        ...     # Attach a debugger
-        ...     pid, io_gdb = gdb.attach(io, api=True)
-        ...     # Force the program to write something it normally wouldn't
-        ...     io_gdb.execute('call puts("Hello from process debugger!")')
-        ...     # Resume the program
-        ...     io_gdb.continue_nowait()
-        ...     # Observe the forced line
-        ...     s = io.recvline()
-        ...     assert s == b'Hello from process debugger!\n', s
-        ...     # Interact with the program in a regular way
-        ...     io.sendline('echo Hello from bash && exit')
-        ...     # Observe the results
-        ...     s = io.recvall()
-        ...     assert s == b'Hello from bash\n', s
+            >>> io = process('bash')
+            >>> # Attach a debugger
+            >>> pid, io_gdb = gdb.attach(io, api=True)
+            
+            Force the program to write something it normally wouldn't
+            
+            >>> io_gdb.execute('call puts("Hello from process debugger!")')
+            
+            Resume the program
+            
+            >>> io_gdb.continue_nowait()
+            
+            Observe the forced line
+            
+            >>> s = io.recvline()
+            >>> assert s == b'Hello from process debugger!\n', s
+            
+            Interact with the program in a regular way
+            
+            >>> io.sendline('echo Hello from bash && exit')
+            
+            Observe the results
+            
+            >>> s = io.recvall()
+            b'Hello from bash\n'
 
         Attach to the remote process from a :class:`.remote` or :class:`.listen` tube,
         as long as it is running on the same machine.
@@ -899,7 +911,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         # before we attach the debugger.
         t = Timeout()
         with t.countdown(2):
-            while exe and os.realpath(proc.exe(pid)) != os.realpath(exe) and t.timeout:
+            while exe and os.path.realpath(proc.exe(pid)) != os.path.realpath(exe) and t.timeout:
                 time.sleep(0.1)
 
     elif isinstance(target, tubes.process.process):
