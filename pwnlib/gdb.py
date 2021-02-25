@@ -782,8 +782,8 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
             Observe the forced line
 
-            >>> s = io.recvline()
-            >>> assert s == b'Hello from process debugger!\n', s
+            >>> io.recvline()
+            b'Hello from process debugger!\n'
 
             Interact with the program in a regular way
 
@@ -791,7 +791,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
             Observe the results
 
-            >>> s = io.recvall()
+            >>> io.recvall()
             b'Hello from bash\n'
 
         Attach to the remote process from a :class:`.remote` or :class:`.listen` tube,
