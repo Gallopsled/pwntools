@@ -550,7 +550,7 @@ class Corefile(ELF):
         #: The NT_SIGINFO object
         self.siginfo = None
 
-        #: :class:`dict`: A list of :class:`.Mapping` objects for each loaded memory region
+        #: :class:`list`: A list of :class:`.Mapping` objects for each loaded memory region
         self.mappings = []
 
         #: :class:`int`: A :class:`Mapping` corresponding to the stack
