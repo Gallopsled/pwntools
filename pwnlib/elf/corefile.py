@@ -786,7 +786,13 @@ class Corefile(ELF):
         # Find which segment conains the entry point
         for m in self.mappings:
             if m.start <= self.at_entry < m.stop:
-                return first_segment_for_name.get(m.name)
+
+                if not m.name and self.at_execfn:
+                    m.name = self.string(self.at_execfn)
+                    if not isinstance(m.name, str):
+                        m.name = m.name.decode('utf-8')
+
+                return first_segment_for_name.get(m.name, m)
 
     @property
     def pid(self):
