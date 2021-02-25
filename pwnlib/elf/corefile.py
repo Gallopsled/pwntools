@@ -196,8 +196,8 @@ class Mapping(object):
                self.start,
                self.stop,
                self.size,
-               self.page_offset,
-               self.flags)
+               self.flags,
+               self.page_offset)
 
     def __int__(self):
         return self.start
@@ -271,6 +271,9 @@ class Corefile(ELF):
     Registers can be accessed directly, e.g. via ``core_obj.eax`` and enumerated
     via :data:`Corefile.registers`.
 
+    Memory can be accessed directly via :meth:`.read` or :meth:`.write`, and also
+    via :meth:`.pack` or :meth:`.unpack` or even :meth:`.string`.
+
     Arguments:
         core: Path to the core file.  Alternately, may be a :class:`.process` instance,
               and the core file will be located automatically.
@@ -320,11 +323,7 @@ class Corefile(ELF):
          Mapping('/lib/i386-linux-gnu/ld-2.19.so', start=0xf7713000, stop=0xf7714000, size=0x1000, flags=0x6, page_offset=0x21),
          Mapping('[stack]', start=0xfff3e000, stop=0xfff61000, size=0x23000, flags=0x6, page_offset=0x0)]
 
-    Example:
-
-        The Linux kernel may not overwrite an existing core-file.
-
-        >>> if os.path.exists('core'): os.unlink('core')
+    Examples:
 
         Let's build an example binary which should eat ``R0=0xdeadbeef``
         and ``PC=0xcafebabe``.
@@ -345,18 +344,24 @@ class Corefile(ELF):
         You can specify a full path a la ``Corefile('/path/to/core')``,
         but you can also just access the :attr:`.process.corefile` attribute.
 
+        There's a lot of behind-the-scenes logic to locate the corefile for
+        a given process, but it's all handled transparently by Pwntools.
+
         >>> core = io.corefile
 
-        The core file has a :attr:`.Corefile.exe` property, which is a :class:`.Mapping`
+        The core file has a :attr:`exe` property, which is a :class:`.Mapping`
         object.  Each mapping can be accessed with virtual addresses via subscript, or
         contents can be examined via the :attr:`.Mapping.data` attribute.
 
-        >>> core.exe.address == address
+        >>> core.exe # doctest: +ELLIPSIS
+        Mapping('/.../step3', start=0x41410000, stop=0x41411000, size=0x1000, flags=0x5, page_offset=0x0)
+        >>> core.exe.address == elf.address
         True
 
         The core file also has registers which can be accessed direclty.
-        Pseudo-registers ``pc`` and ``sp`` are available on all architectures,
+        Pseudo-registers :attr:`pc` and :attr:`sp` are available on all architectures,
         to make writing architecture-agnostic code more simple.
+        If this were an amd64 corefile, we could access e.g. ``core.rax``.
 
         >>> core.pc == 0xcafebabe
         True
@@ -367,7 +372,8 @@ class Corefile(ELF):
 
         We may not always know which signal caused the core dump, or what address
         caused a segmentation fault.  Instead of accessing registers directly, we
-        can also extract this information from the core dump.
+        can also extract this information from the core dump via :attr:`fault_addr`
+        and :attr:`signal`.
 
         On QEMU-generated core dumps, this information is unavailable, so we
         substitute the value of PC.  In our example, that's correct anyway.
@@ -378,56 +384,100 @@ class Corefile(ELF):
         11
 
         Core files can also be generated from running processes.
-        This requires GDB to be installed, and can only be done with native
-        processes.  Getting a "complete" corefile requires GDB 7.11 or better.
+        This requires GDB to be installed, and can only be done with native processes.
+        Getting a "complete" corefile requires GDB 7.11 or better.
 
         >>> elf = ELF('/bin/bash-static')
         >>> context.clear(binary=elf)
-        >>> io = process(elf.path, env={'HELLO': 'WORLD'})
+        >>> env = dict(os.environ)
+        >>> env['HELLO'] = 'WORLD'
+        >>> io = process(elf.path, env=env)
+        >>> io.sendline('echo hello')
+        >>> io.recvline()
+        b'hello\n'
+
+        The process is still running, but accessing its :attr:`.process.corefile` property
+        automatically invokes GDB to attach and dump a corefile.
+
         >>> core = io.corefile
 
-        Data can also be extracted directly from the corefile.
+        The corefile can be inspected and read from, and even exposes various mappings
 
-        >>> elf.address > 0
-        True
-        >>> core.exe[elf.address:elf.address+4]
-        b'\x7fELF'
-        >>> core.exe.data[:4]
+        >>> core.exe # doctest: +ELLIPSIS
+        Mapping('/bin/bash-static', start=..., stop=..., size=..., flags=0x5, page_offset=0x0)
+        >>> core.exe.data[0:4]
         b'\x7fELF'
 
-        Various other mappings are available by name.  On Linux, 32-bit Intel binaries
-        should have a VDSO section.  Since our ELF is statically linked, there is
-        no libc which gets mapped.
+        It also supports all of the features of :class:`ELF`, so you can :meth:`.read`
+        or :meth:`.write` or even the helpers like :meth:`.pack` or :meth:`.unpack`.
+
+        Don't forget to call :meth:`.ELF.save` to save the changes to disk.
+
+        >>> core.read(elf.address, 4)
+        b'\x7fELF'
+        >>> core.pack(core.sp, 0xdeadbeef)
+        >>> core.save()
+
+        Let's re-load it as a new :attr:`Corefile` object and have a look!
+
+        >>> core2 = Corefile(core.path)
+        >>> hex(core2.unpack(core2.sp))
+        '0xdeadbeef'
+
+        Various other mappings are available by name, for the first segment of:
+
+        * :attr:`.exe` the executable
+        * :attr:`.libc` the loaded libc, if any
+        * :attr:`.stack` the stack mapping
+        * :attr:`.vvar`
+        * :attr:`.vdso`
+        * :attr:`.vsyscall`
+
+        On Linux, 32-bit Intel binaries should have a VDSO section via :attr:`vdso`.  
+        Since our ELF is statically linked, there is no libc which gets mapped.
 
         >>> core.vdso.data[:4]
         b'\x7fELF'
-        >>> core.libc # doctest: +ELLIPSIS
-        Mapping('/lib/x86_64-linux-gnu/libc-...', ...)
+        >>> core.libc is None
+        True
 
-        The corefile also contains a :attr:`.Corefile.stack` property, which gives
+        But if we dump a corefile from a dynamically-linked binary, the :attr:`.libc`
+        will be loaded.
+
+        >>> process('bash').corefile.libc # doctest: +ELLIPSIS
+        Mapping('/.../libc-....so', start=0x..., stop=0x..., size=0x..., flags=0x5, page_offset=0x0)
+
+        The corefile also contains a :attr:`.stack` property, which gives
         us direct access to the stack contents.  On Linux, the very top of the stack
         should contain two pointer-widths of NULL bytes, preceded by the NULL-
         terminated path to the executable (as passed via the first arg to ``execve``).
 
-        >>> stack_end = core.exe.name.encode()
-        >>> stack_end += b'\x00' * (1+8)
-        >>> core.stack.data.endswith(stack_end)
-        True
-        >>> len(core.stack.data) == core.stack.size
-        True
+        >>> core.stack # doctest: +ELLIPSIS
+        Mapping('[stack]', start=0x..., stop=0x..., size=0x..., flags=0x6, page_offset=0x0)
 
-        We can also directly access the environment variables and arguments.
+        When creating a process, the kernel puts the absolute path of the binary and some
+        padding bytes at the end of the stack.  We can look at those by looking at 
+        ``core.stack.data``.
+
+        >>> size = len('/bin/bash-static') + 8
+        >>> core.stack.data[-size:]
+        b'bin/bash-static\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+
+        We can also directly access the environment variables and arguments, via
+        :attr:`.argc`, :attr:`.argv`, and :attr:`.env`.
 
         >>> 'HELLO' in core.env
         True
+        >>> core.string(core.env['HELLO'])
+        b'WORLD'
         >>> core.getenv('HELLO')
         b'WORLD'
         >>> core.argc
         1
         >>> core.argv[0] in core.stack
         True
-        >>> core.string(core.argv[0]) == core.exe.path.encode()
-        True
+        >>> core.string(core.argv[0])
+        b'/bin/bash-static'
 
         Corefiles can also be pulled from remote machines via SSH!
 
@@ -450,10 +500,6 @@ class Corefile(ELF):
         >>> io.wait(1)
         >>> io.corefile.fault_addr
         1234
-
-    Tests:
-
-        These are extra tests not meant to serve as examples.
 
         Corefile.getenv() works correctly, even if the environment variable's
         value contains embedded '='. Corefile is able to find the stack, even
@@ -505,20 +551,21 @@ class Corefile(ELF):
         #: The NT_SIGINFO object
         self.siginfo = None
 
-        #: :class:`dict`: Dictionary of memory mappings from ``address`` to ``name``
+        #: :class:`dict`: A list of :class:`.Mapping` objects for each loaded memory region
         self.mappings = []
 
-        #: :class:`int`: Address of the stack base
+        #: :class:`int`: A :class:`Mapping` corresponding to the stack
         self.stack    = None
 
-        #: :class:`dict`: Environment variables read from the stack.  Keys are
-        #: the environment variable name, values are the memory address of the
-        #: variable.
-        #:
-        #: Note: Use with the :meth:`.ELF.string` method to extract them.
-        #:
-        #: Note: If FOO=BAR is in the environment, self.env['FOO'] is the
-        #:       address of the string "BAR\x00".
+        """
+        Environment variables read from the stack.
+        Keys are the environment variable name, values are the memory 
+        address of the variable.
+        
+        Use :meth:`.getenv` or :meth:`.string` to retrieve the textual value.
+        
+        Note: If ``FOO=BAR`` is in the environment, ``self.env['FOO']`` is the address of the string ``"BAR\x00"``.
+        """
         self.env = {}
 
         #: :class:`int`: Pointer to envp on the stack
@@ -839,7 +886,7 @@ class Corefile(ELF):
 
     @property
     def sp(self):
-        """:class:`int`: The program counter for the Corefile
+        """:class:`int`: The stack pointer for the Corefile
 
         This is a cross-platform way to get e.g. ``core.esp``, ``core.rsp``, etc.
         """
@@ -1109,11 +1156,8 @@ class Corefile(ELF):
 
         return rv
 
-    def debug(self, *a, **kw):
+    def debug(self):
         """Open the corefile under a debugger."""
-        if a or kw:
-            log.error("Arguments are not supported for %s.debug()" % self.__class__.__name__)
-
         import pwnlib.gdb
         pwnlib.gdb.attach(self, exe=self.exe.path)
 
