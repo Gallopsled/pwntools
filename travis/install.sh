@@ -72,7 +72,8 @@ setup_ipv6()
 setup_gdbserver()
 {
     # https://docs.improbable.io/reference/14.3/shared/debug-cloud-workers#common-issues
-    wget http://archive.ubuntu.com/ubuntu/pool/main/g/gdb/gdbserver_8.3-0ubuntu1_amd64.deb
+    # wget http://archive.ubuntu.com/ubuntu/pool/main/g/gdb/gdbserver_8.3-0ubuntu1_amd64.deb
+    wget https://launchpad.net/ubuntu/+source/gdb/8.3-0ubuntu1/+build/16807407/+files/gdbserver_8.3-0ubuntu1_amd64.deb
     sudo apt-get install ./gdbserver_8.3-0ubuntu1_amd64.deb
 }
 
