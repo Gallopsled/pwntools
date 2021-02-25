@@ -382,10 +382,9 @@ class ssh_process(ssh_channel):
         r"""Retrieve the address of an environment variable in the remote process.
 
         Examples:
-            >>> s =  ssh(host='example.pwnme')
-            >>> p = s.process(['python', '-c', 'print("Hello")'])
-            >>> with context.local(log_level='debug'):
-            ...     hex(p.getenv('PATH'))  # doctest: +ELLIPSIS
+            >>> s = ssh(host='example.pwnme', level='debug')
+            >>> p = s.process(['python', '-c', 'import time; time.sleep(10)'])
+            >>> hex(p.getenv('PATH'))  # doctest: +ELLIPSIS
             '0x...'
             >>> p.recvall()
             b'Hello\n'
@@ -402,9 +401,11 @@ class ssh_process(ssh_channel):
                            'print(os.path.realpath(%r))' % self.executable,
                            'print(getenv(%r))' % variable,))
 
+        print(script)
+
         try:
             with context.quiet:
-                python = self.parent.which('python')
+                python = self.parent.which('python2.7') or self.parent.which('python')
 
                 if not python:
                     self.error("Python is not installed on the remote system.")
