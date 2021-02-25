@@ -384,7 +384,8 @@ class ssh_process(ssh_channel):
         Examples:
             >>> s =  ssh(host='example.pwnme')
             >>> p = s.process(['python', '-c', 'print("Hello")'])
-            >>> hex(p.getenv('PATH'))  # doctest: +ELLIPSIS
+            >>> with context.local(log_level='debug'):
+            ...     hex(p.getenv('PATH'))  # doctest: +ELLIPSIS
             '0x...'
             >>> p.recvall()
             b'Hello\n'
@@ -402,7 +403,7 @@ class ssh_process(ssh_channel):
                            'print(getenv(%r))' % variable,))
 
         try:
-            with context.local(log_level='error'):
+            with context.quiet:
                 python = self.parent.which('python')
 
                 if not python:
