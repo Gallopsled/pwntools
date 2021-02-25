@@ -355,8 +355,8 @@ class Corefile(ELF):
 
         >>> core.exe # doctest: +ELLIPSIS
         Mapping('/.../step3', start=..., stop=..., size=0x1000, flags=0x..., page_offset=...)
-        >>> core.exe.address == elf.address
-        True
+        >>> hex(core.exe.address)
+        '0x41410000'
 
         The core file also has registers which can be accessed direclty.
         Pseudo-registers :attr:`pc` and :attr:`sp` are available on all architectures,
@@ -404,11 +404,7 @@ class Corefile(ELF):
         The corefile can be inspected and read from, and even exposes various mappings
 
         >>> core.exe # doctest: +ELLIPSIS
-        # Mapping('.../bin/bash-static', start=..., stop=..., size=..., flags=..., page_offset=...)
-        # >>> pprint(core.mappings)
-        # >>> hex(core.exe.address)
-        # >>> hex(elf.address)
-        # >>> pprint(list(s.header for s in elf.segments))
+        Mapping('.../bin/bash-static', start=..., stop=..., size=..., flags=..., page_offset=...)
         >>> core.exe.data[0:4]
         b'\x7fELF'
 
@@ -479,8 +475,8 @@ class Corefile(ELF):
         1
         >>> core.argv[0] in core.stack
         True
-        >>> core.string(core.argv[0])
-        b'/bin/bash-static'
+        >>> core.string(core.argv[0]) # doctest: +ELLIPSIS
+        b'.../bin/bash-static'
 
         Corefiles can also be pulled from remote machines via SSH!
 
