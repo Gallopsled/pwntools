@@ -387,12 +387,11 @@ class Corefile(ELF):
         This requires GDB to be installed, and can only be done with native processes.
         Getting a "complete" corefile requires GDB 7.11 or better.
 
-        >>> context.log_level = 'debug'
         >>> elf = ELF(which('bash-static'))
         >>> context.clear(binary=elf)
         >>> env = dict(os.environ)
         >>> env['HELLO'] = 'WORLD'
-        >>> env.setdefault('SHELL', elf.path) # Workaround for bash-static making itself dynamically linked
+        >>> _ = env.setdefault('SHELL', elf.path) # Workaround for bash-static making itself dynamically linked
         >>> io = process(elf.path, env=env)
         >>> io.sendline('echo hello')
         >>> io.recvline()
@@ -401,11 +400,7 @@ class Corefile(ELF):
         The process is still running, but accessing its :attr:`.process.corefile` property
         automatically invokes GDB to attach and dump a corefile.
 
-        >>> print(read('/proc/%s/maps' % io.pid))
         >>> core = io.corefile
-
-        >>> pprint(core.mappings)
-        >>> context.log_level = 'error'
 
         The corefile can be inspected and read from, and even exposes various mappings
 
