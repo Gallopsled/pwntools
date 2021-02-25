@@ -143,6 +143,7 @@ from __future__ import division
 
 from contextlib import contextmanager
 import os
+import platform
 import random
 import re
 import shlex
@@ -449,20 +450,29 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
 
     Using GDB Python API:
 
-    >>> if six.PY3:
-    ...     # Debug a new process
-    ...     io = gdb.debug(['echo', 'foo'], api=True)
-    ...     # Stop at 'write'
-    ...     bp = io.gdb.Breakpoint('write', temporary=True)
-    ...     io.gdb.continue_and_wait()
-    ...     # Dump 'count'
-    ...     count = io.gdb.parse_and_eval('$rdx')
-    ...     long = io.gdb.lookup_type('long')
-    ...     assert int(count.cast(long)) == 4, count
-    ...     # Resume the program
-    ...     io.gdb.continue_nowait()
-    ...     s = io.recvline()
-    ...     assert s == b'foo\n', s
+    .. doctest
+       :skipif: six.PY2
+
+        Debug a new process
+
+        >>> io = gdb.debug(['echo', 'foo'], api=True)
+
+        Stop at 'write'
+
+        >>> bp = io.gdb.Breakpoint('write', temporary=True)
+        >>> io.gdb.continue_and_wait()
+
+        Dump 'count'
+
+        >>> count = io.gdb.parse_and_eval('$rdx')
+        >>> long = io.gdb.lookup_type('long')
+        >>> assert int(count.cast(long)) == 4, count
+
+        Resume the program
+
+        >>> io.gdb.continue_nowait()
+        >>> s = io.recvall()
+        b'foo\n'
 
     You can use :func:`debug` to spawn new processes on remote machines as well,
     by using the ``ssh=`` keyword to pass in your :class:`.ssh` instance.
@@ -756,28 +766,30 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
            :skipif: six.PY2
 
             >>> io = process('bash')
-            >>> # Attach a debugger
+
+            Attach a debugger
+
             >>> pid, io_gdb = gdb.attach(io, api=True)
-            
+
             Force the program to write something it normally wouldn't
-            
+
             >>> io_gdb.execute('call puts("Hello from process debugger!")')
-            
+
             Resume the program
-            
+
             >>> io_gdb.continue_nowait()
-            
+
             Observe the forced line
-            
+
             >>> s = io.recvline()
             >>> assert s == b'Hello from process debugger!\n', s
-            
+
             Interact with the program in a regular way
-            
+
             >>> io.sendline('echo Hello from bash && exit')
-            
+
             Observe the results
-            
+
             >>> s = io.recvall()
             b'Hello from bash\n'
 
@@ -1022,39 +1034,52 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     if pid and context.native:
         proc.wait_for_debugger(pid, gdb_pid)
 
-    if api:
-        # connect to the GDB Python API bridge
-        n_retries = 300
-        if six.PY2:
-            retriable = socket.error
-        else:
-            retriable = ConnectionRefusedError, FileNotFoundError
-        for retry in range(n_retries):
+    if not api:
+        return gdb_pid
+
+    # connect to the GDB Python API bridge
+    if six.PY2:
+        retriable = socket.error
+    else:
+        retriable = ConnectionRefusedError, FileNotFoundError
+
+    t = Timeout()
+    with t.countdown(5):
+        while t.timeout:
             try:
                 conn = unix_connect(socket_path)
                 break
             except retriable:
-                if retry == n_retries - 1:
-                    raise ValueError(
-                        'Failed to connect to GDB.\n' +
-                        'Does GDB use the same Python version as your script? ' +
-                        'Check with `' + six.moves.shlex_quote(gdb_binary) +
-                        ' -batch -ex \'python import sys; print(sys.version)\'`.\n' +
-                        'Does GDB\'s Python have RPyC in its sys.path? Check with `' +
-                        six.moves.shlex_quote(gdb_binary) + ' -batch -ex ' +
-                        '\'python import rpyc\'`.\n')
                 time.sleep(0.1)
+        else:
+            # Check to see if RPyC is installed at all in GDB
+            rpyc_check = [gdb_binary, '--nx', '-batch', '-ex', 'py import rpyc; import sys; sys.exit(123)']
 
-        # now that connection is up, remove the socket from the filesystem
-        os.unlink(socket_path)
-        os.rmdir(socket_dir)
+            if 123 != process(rpyc_check).poll(block=True):
+                log.error('Failed to connect to GDB: rpyc is not installed')
 
-        # create a thread for receiving breakpoint notifications
-        BgServingThread(conn, callback=lambda: None)
+            # Check to see if the remote RPyC client is a compatible version
+            version_check = [gdb_binary, '--nx', '-batch', '-ex', 'python import platform; print(platform.python_version())']
+            gdb_python_version = process(version_check).recvall()
+            python_version = str(platform.python_version())
 
-        return gdb_pid, Gdb(conn)
+            if gdb_python_version != python_version:
+                log.error('Failed to connect to GDB: Version mismatch (%s vs %s)',
+                           gdb_python_version,
+                           python_version)
 
-    return gdb_pid
+            # Don't know what happened
+            log.error('Failed to connect to GDB: Unknown error')
+
+    # now that connection is up, remove the socket from the filesystem
+    os.unlink(socket_path)
+    os.rmdir(socket_dir)
+
+    # create a thread for receiving breakpoint notifications
+    BgServingThread(conn, callback=lambda: None)
+
+    return gdb_pid, Gdb(conn)
+
 
 def ssh_gdb(ssh, argv, gdbscript = None, arch = None, **kwargs):
     if not isinstance(argv, (list, tuple)):
