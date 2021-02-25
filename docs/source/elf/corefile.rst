@@ -3,7 +3,7 @@
    from glob import glob
    from pwn import *
 
-   # The Linunx kernel won't overwrite an existing corefile, so in case 
+   # The Linux kernel won't overwrite an existing corefile, so in case 
    # some other part of the doctests caused a segfault and core dump,
    # we need to get rid of it before our tests run.
    #
