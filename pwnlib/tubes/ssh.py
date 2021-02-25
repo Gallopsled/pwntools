@@ -382,12 +382,10 @@ class ssh_process(ssh_channel):
         r"""Retrieve the address of an environment variable in the remote process.
 
         Examples:
-            >>> s = ssh(host='example.pwnme', level='debug')
+            >>> s = ssh(host='example.pwnme')
             >>> p = s.process(['python', '-c', 'import time; time.sleep(10)'])
             >>> hex(p.getenv('PATH'))  # doctest: +ELLIPSIS
             '0x...'
-            >>> p.recvall()
-            b'Hello\n'
         """
         argv0 = self.argv[0]
 
