@@ -404,11 +404,12 @@ class Corefile(ELF):
         The corefile can be inspected and read from, and even exposes various mappings
 
         >>> core.exe # doctest: +ELLIPSIS
-        # Mapping('.../bin/bash-static', start=..., stop=..., size=..., flags=0x5, page_offset=...)
-        >>> pprint(core.mappings)
-        >>> hex(core.exe.address)
-        >>> hex(elf.address)
-        >>> core.exe.data[0:4] # doctest: +SKIP
+        # Mapping('.../bin/bash-static', start=..., stop=..., size=..., flags=..., page_offset=...)
+        # >>> pprint(core.mappings)
+        # >>> hex(core.exe.address)
+        # >>> hex(elf.address)
+        # >>> pprint(list(s.header for s in elf.segments))
+        >>> core.exe.data[0:4]
         b'\x7fELF'
 
         It also supports all of the features of :class:`ELF`, so you can :meth:`.read`
@@ -768,15 +769,24 @@ class Corefile(ELF):
     @property
     def exe(self):
         """:class:`Mapping`: First mapping for the executable file."""
+
+        # Finding the executable mapping requires knowing the entry point
+        # from the auxv
+        if not self.at_entry:
+            return None
+
+        # The entry point may not be in the first segment of a given file,
+        # but we want to find the first segment of the file -- not the segment that 
+        # contains the entrypoint.
+        first_segment_for_name = {}
+
         for m in self.mappings:
-            if self.at_entry and m.start <= self.at_entry <= m.stop:
+            first_segment_for_name.setdefault(m.name, m)
 
-                if not m.name and self.at_execfn:
-                    m.name = self.string(self.at_execfn)
-                    if not isinstance(m.name, str):
-                        m.name = m.name.decode('utf-8')
-
-                return m
+        # Find which segment conains the entry point
+        for m in self.mappings:
+            if m.start <= self.at_entry < m.stop:
+                return first_segment_for_name.get(m.name)
 
     @property
     def pid(self):
