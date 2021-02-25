@@ -80,18 +80,13 @@ setup_gdbserver()
 # Contents borrowed from Pwndbg setup.sh
 setup_rpyc()
 {
-    INSTALLFLAGS="--user"
-
     # Find the Python version used by GDB.
     PYVER=$(gdb -batch -q --nx -ex 'pi import platform; print(".".join(platform.python_version_tuple()[:2]))')
     PYTHON+=$(gdb -batch -q --nx -ex 'pi import sys; print(sys.executable)')
     PYTHON+="${PYVER}"
 
-    # Upgrade pip itself
-    ${PYTHON} -m pip install ${INSTALLFLAGS} --upgrade pip
-
     # Install rpyc
-    ${PYTHON} -m pip install ${INSTALLFLAGS} --upgrade rpyc
+    ${PYTHON} -m pip install --user --upgrade rpyc
 }
 
 setup_linux()
