@@ -388,7 +388,6 @@ class Corefile(ELF):
         Getting a "complete" corefile requires GDB 7.11 or better.
 
         >>> elf = ELF(which('bash-static'))
-        >>> read(elf.path)
         >>> context.clear(binary=elf)
         >>> env = dict(os.environ)
         >>> env['HELLO'] = 'WORLD'
@@ -401,7 +400,6 @@ class Corefile(ELF):
         automatically invokes GDB to attach and dump a corefile.
 
         >>> core = io.corefile
-        >>> read(core.path)
 
         The corefile can be inspected and read from, and even exposes various mappings
 
