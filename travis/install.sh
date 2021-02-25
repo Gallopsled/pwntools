@@ -77,6 +77,23 @@ setup_gdbserver()
     sudo apt-get install ./gdbserver_8.3-0ubuntu1_amd64.deb
 }
 
+# Contents borrowed from Pwndbg setup.sh
+setup_rpyc()
+{
+    INSTALLFLAGS="--user"
+
+    # Find the Python version used by GDB.
+    PYVER=$(gdb -batch -q --nx -ex 'pi import platform; print(".".join(platform.python_version_tuple()[:2]))')
+    PYTHON+=$(gdb -batch -q --nx -ex 'pi import sys; print(sys.executable)')
+    PYTHON+="${PYVER}"
+
+    # Upgrade pip itself
+    ${PYTHON} -m pip install ${INSTALLFLAGS} --upgrade pip
+
+    # Install rpyc
+    ${PYTHON} -m pip install ${INSTALLFLAGS} --upgrade rpyc
+}
+
 setup_linux()
 {
     sudo apt-get install -y software-properties-common openssh-server libncurses5-dev libncursesw5-dev openjdk-8-jre-headless
@@ -101,6 +118,7 @@ if [[ "$USER" == "travis" ]]; then
 #   setup_travis
     setup_ipv6
     setup_gdbserver
+    setup_rpyc
 elif [[ "$USER" == "shippable" ]]; then
     sudo apt-get update
     sudo apt-get install openssh-server gcc-multilib
