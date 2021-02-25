@@ -466,12 +466,13 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
 
         >>> count = io.gdb.parse_and_eval('$rdx')
         >>> long = io.gdb.lookup_type('long')
-        >>> assert int(count.cast(long)) == 4, count
+        >>> int(count.cast(long))
+        4
 
         Resume the program
 
         >>> io.gdb.continue_nowait()
-        >>> s = io.recvall()
+        >>> io.recvline()
         b'foo\n'
 
     You can use :func:`debug` to spawn new processes on remote machines as well,
@@ -1004,10 +1005,12 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         # create a UNIX socket for talking to GDB
         socket_dir = tempfile.mkdtemp()
         socket_path = os.path.join(socket_dir, 'socket')
-        # inject the socket path and the GDB Python API bridge
-        pre += 'python socket_path = ' + repr(socket_path) + '\n'
         bridge = os.path.join(os.path.dirname(__file__), 'gdb_api_bridge.py')
-        pre += 'source ' + bridge + '\n'
+
+        # inject the socket path and the GDB Python API bridge
+        pre = 'python socket_path = ' + repr(socket_path) + '\n' + \
+              'source ' + bridge + '\n' + \
+              pre
 
     gdbscript = pre + (gdbscript or '')
 
@@ -1053,14 +1056,20 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
                 time.sleep(0.1)
         else:
             # Check to see if RPyC is installed at all in GDB
-            rpyc_check = [gdb_binary, '--nx', '-batch', '-ex', 'py import rpyc; import sys; sys.exit(123)']
+            rpyc_check = [gdb_binary, '--nx', '-batch', '-ex',
+                          'python import rpyc; import sys; sys.exit(123)']
 
-            if 123 != process(rpyc_check).poll(block=True):
+            if 123 != tubes.process.process(rpyc_check).poll(block=True):
                 log.error('Failed to connect to GDB: rpyc is not installed')
 
+            # Check to see if the socket ever got created
+            if not os.path.exists(socket_path):
+                log.error('Failed to connect to GDB: Unix socket %s was never created', socket_path)
+
             # Check to see if the remote RPyC client is a compatible version
-            version_check = [gdb_binary, '--nx', '-batch', '-ex', 'python import platform; print(platform.python_version())']
-            gdb_python_version = process(version_check).recvall()
+            version_check = [gdb_binary, '--nx', '-batch', '-ex',
+                            'python import platform; print(platform.python_version())']
+            gdb_python_version = tubes.process.process(version_check).recvall().strip()
             python_version = str(platform.python_version())
 
             if gdb_python_version != python_version:
