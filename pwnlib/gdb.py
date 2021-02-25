@@ -978,7 +978,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     if context.os == 'android' and pid:
         runner  = _get_runner()
         which   = _get_which()
-        gdb_cmd = _gdbserver_args(pid=pid, which=which, env=env)
+        gdb_cmd = _gdbserver_args(pid=pid, which=which)
         gdbserver = runner(gdb_cmd)
         port    = _gdbserver_port(gdbserver, None)
         host    = context.adb_host
