@@ -392,6 +392,7 @@ class Corefile(ELF):
         >>> context.clear(binary=elf)
         >>> env = dict(os.environ)
         >>> env['HELLO'] = 'WORLD'
+        >>> env.setdefault('SHELL', elf.path) # Workaround for bash-static making itself dynamically linked
         >>> io = process(elf.path, env=env)
         >>> io.sendline('echo hello')
         >>> io.recvline()
