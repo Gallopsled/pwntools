@@ -354,7 +354,7 @@ class Corefile(ELF):
         contents can be examined via the :attr:`.Mapping.data` attribute.
 
         >>> core.exe # doctest: +ELLIPSIS
-        Mapping('/.../step3', start=0x41410000, stop=0x41411000, size=0x1000, flags=0x..., page_offset=0x0)
+        Mapping('/.../step3', start=..., stop=..., size=0x1000, flags=0x..., page_offset=...)
         >>> core.exe.address == elf.address
         True
 
@@ -388,6 +388,7 @@ class Corefile(ELF):
         Getting a "complete" corefile requires GDB 7.11 or better.
 
         >>> elf = ELF(which('bash-static'))
+        >>> read(elf.path)
         >>> context.clear(binary=elf)
         >>> env = dict(os.environ)
         >>> env['HELLO'] = 'WORLD'
@@ -400,11 +401,12 @@ class Corefile(ELF):
         automatically invokes GDB to attach and dump a corefile.
 
         >>> core = io.corefile
+        >>> read(core.path)
 
         The corefile can be inspected and read from, and even exposes various mappings
 
         >>> core.exe # doctest: +ELLIPSIS
-        # Mapping('.../bin/bash-static', start=..., stop=..., size=..., flags=0x5, page_offset=0x0)
+        # Mapping('.../bin/bash-static', start=..., stop=..., size=..., flags=0x5, page_offset=...)
         >>> pprint(core.mappings)
         >>> hex(core.exe.address)
         >>> hex(elf.address)
@@ -447,7 +449,7 @@ class Corefile(ELF):
         will be loaded.
 
         >>> process('bash').corefile.libc # doctest: +ELLIPSIS
-        Mapping('/.../libc-....so', start=0x..., stop=0x..., size=0x..., flags=..., page_offset=0x0)
+        Mapping('/.../libc-....so', start=0x..., stop=0x..., size=0x..., flags=..., page_offset=...)
 
         The corefile also contains a :attr:`.stack` property, which gives
         us direct access to the stack contents.  On Linux, the very top of the stack
