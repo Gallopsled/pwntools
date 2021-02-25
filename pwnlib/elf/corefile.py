@@ -354,7 +354,7 @@ class Corefile(ELF):
         contents can be examined via the :attr:`.Mapping.data` attribute.
 
         >>> core.exe # doctest: +ELLIPSIS
-        Mapping('/.../step3', start=0x41410000, stop=0x41411000, size=0x1000, flags=0x5, page_offset=0x0)
+        Mapping('/.../step3', start=0x41410000, stop=0x41411000, size=0x1000, flags=0x..., page_offset=0x0)
         >>> core.exe.address == elf.address
         True
 
@@ -387,7 +387,7 @@ class Corefile(ELF):
         This requires GDB to be installed, and can only be done with native processes.
         Getting a "complete" corefile requires GDB 7.11 or better.
 
-        >>> elf = ELF('/bin/bash-static')
+        >>> elf = ELF(which('bash-static'))
         >>> context.clear(binary=elf)
         >>> env = dict(os.environ)
         >>> env['HELLO'] = 'WORLD'
@@ -404,8 +404,11 @@ class Corefile(ELF):
         The corefile can be inspected and read from, and even exposes various mappings
 
         >>> core.exe # doctest: +ELLIPSIS
-        Mapping('/bin/bash-static', start=..., stop=..., size=..., flags=0x5, page_offset=0x0)
-        >>> core.exe.data[0:4]
+        # Mapping('.../bin/bash-static', start=..., stop=..., size=..., flags=0x5, page_offset=0x0)
+        >>> pprint(core.mappings)
+        >>> hex(core.exe.address)
+        >>> hex(elf.address)
+        >>> core.exe.data[0:4] # doctest: +SKIP
         b'\x7fELF'
 
         It also supports all of the features of :class:`ELF`, so you can :meth:`.read`
@@ -438,14 +441,13 @@ class Corefile(ELF):
 
         >>> core.vdso.data[:4]
         b'\x7fELF'
-        >>> core.libc is None
-        True
+        >>> core.libc
 
         But if we dump a corefile from a dynamically-linked binary, the :attr:`.libc`
         will be loaded.
 
         >>> process('bash').corefile.libc # doctest: +ELLIPSIS
-        Mapping('/.../libc-....so', start=0x..., stop=0x..., size=0x..., flags=0x5, page_offset=0x0)
+        Mapping('/.../libc-....so', start=0x..., stop=0x..., size=0x..., flags=..., page_offset=0x0)
 
         The corefile also contains a :attr:`.stack` property, which gives
         us direct access to the stack contents.  On Linux, the very top of the stack
