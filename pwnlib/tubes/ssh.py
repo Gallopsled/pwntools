@@ -399,8 +399,6 @@ class ssh_process(ssh_channel):
                            'print(os.path.realpath(%r))' % self.executable,
                            'print(getenv(%r))' % variable,))
 
-        print(script)
-
         try:
             with context.quiet:
                 python = self.parent.which('python2.7') or self.parent.which('python')
