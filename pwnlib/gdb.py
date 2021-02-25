@@ -1047,7 +1047,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         retriable = ConnectionRefusedError, FileNotFoundError
 
     t = Timeout()
-    with t.countdown(5):
+    with t.countdown(10):
         while t.timeout:
             try:
                 conn = unix_connect(socket_path)
