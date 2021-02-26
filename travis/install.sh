@@ -72,8 +72,21 @@ setup_ipv6()
 setup_gdbserver()
 {
     # https://docs.improbable.io/reference/14.3/shared/debug-cloud-workers#common-issues
-    wget http://archive.ubuntu.com/ubuntu/pool/main/g/gdb/gdbserver_8.3-0ubuntu1_amd64.deb
+    # wget http://archive.ubuntu.com/ubuntu/pool/main/g/gdb/gdbserver_8.3-0ubuntu1_amd64.deb
+    wget https://launchpad.net/ubuntu/+source/gdb/8.3-0ubuntu1/+build/16807407/+files/gdbserver_8.3-0ubuntu1_amd64.deb
     sudo apt-get install ./gdbserver_8.3-0ubuntu1_amd64.deb
+}
+
+# Contents borrowed from Pwndbg setup.sh
+setup_rpyc()
+{
+    # Find the Python version used by GDB.
+    PYVER=$(gdb -batch -q --nx -ex 'pi import platform; print(".".join(platform.python_version_tuple()[:2]))')
+    PYTHON+=$(gdb -batch -q --nx -ex 'pi import sys; print(sys.executable)')
+    PYTHON+="${PYVER}"
+
+    # Install rpyc
+    ${PYTHON} -m pip install --user --upgrade rpyc
 }
 
 setup_linux()
@@ -100,6 +113,7 @@ if [[ "$USER" == "travis" ]]; then
 #   setup_travis
     setup_ipv6
     setup_gdbserver
+    setup_rpyc
 elif [[ "$USER" == "shippable" ]]; then
     sudo apt-get update
     sudo apt-get install openssh-server gcc-multilib
