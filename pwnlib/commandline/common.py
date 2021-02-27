@@ -21,8 +21,31 @@ def context_arg(arg):
     except Exception: pass
     return arg
 
-parser = argparse.ArgumentParser(description='Pwntools Command-line Interface',
-                                 prog='pwn')
+description = '''
+Pwntools Command-line Interface
+
+Examples:
+
+.. code-block::
+
+    $ pwn asm 'nop'
+    90
+    $ pwn asm -c arm nop
+    00f020e3
+
+    $ pwn disasm 90
+    
+
+'''
+
+executable = sys.argv[0]
+if os.path.basename(executable) == 'pwn':
+    description = description.replace('.. code-block::\n', '')
+
+parser = argparse.ArgumentParser(prog='pwn', 
+                                 formatter_class=argparse.RawDescriptionHelpFormatter,
+                                 description=description)
+
 parser_commands = parser.add_subparsers(dest='command')
 
 def main(file=sys.argv[0]):

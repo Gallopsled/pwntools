@@ -1011,13 +1011,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
     log.info('running in new terminal: %s' % cmd)
 
-    if api:
-        # prevent gdb_faketerminal.py from messing up api doctests
-        def preexec_fn():
-            os.environ['GDB_FAKETERMINAL'] = '0'
-    else:
-        preexec_fn = None
-    gdb_pid = misc.run_in_new_terminal(cmd, preexec_fn = preexec_fn)
+    gdb_pid = misc.run_in_new_terminal(cmd)
 
     if pid and context.native:
         proc.wait_for_debugger(pid, gdb_pid)

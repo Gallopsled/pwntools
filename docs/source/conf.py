@@ -68,7 +68,7 @@ napoleon_use_ivar = True
 napoleon_use_rtype = False
 
 doctest_global_setup = '''
-import sys, os
+import sys, os, six
 os.environ['PWNLIB_NOTERM'] = '1'
 os.environ['PWNLIB_RANDOMIZE'] = '0'
 
@@ -98,6 +98,8 @@ travis_ci = os.environ.get('USER') == 'travis'
 local_doctest = os.environ.get('USER') == 'pwntools'
 branch_dev = os.environ.get('GITHUB_BASE_REF') == 'dev'
 skip_android = True
+PY2 = six.PY2
+PY3 = six.PY3
 '''
 
 autoclass_content = 'both'
