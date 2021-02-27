@@ -31,6 +31,7 @@ from six.moves.xmlrpc_client import ServerProxy
 
 import packaging.version
 
+from pwnlib.args import args
 from pwnlib.config import register_config
 from pwnlib.context import context
 from pwnlib.log import getLogger

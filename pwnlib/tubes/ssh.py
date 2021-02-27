@@ -382,12 +382,10 @@ class ssh_process(ssh_channel):
         r"""Retrieve the address of an environment variable in the remote process.
 
         Examples:
-            >>> s =  ssh(host='example.pwnme')
-            >>> p = s.process(['python', '-c', 'print("Hello")'])
+            >>> s = ssh(host='example.pwnme')
+            >>> p = s.process(['python', '-c', 'import time; time.sleep(10)'])
             >>> hex(p.getenv('PATH'))  # doctest: +ELLIPSIS
             '0x...'
-            >>> p.recvall()
-            b'Hello\n'
         """
         argv0 = self.argv[0]
 
@@ -402,8 +400,8 @@ class ssh_process(ssh_channel):
                            'print(getenv(%r))' % variable,))
 
         try:
-            with context.local(log_level='error'):
-                python = self.parent.which('python')
+            with context.quiet:
+                python = self.parent.which('python2.7') or self.parent.which('python')
 
                 if not python:
                     self.error("Python is not installed on the remote system.")
@@ -578,12 +576,11 @@ class ssh(Timeout, Logger):
         Example proxying:
 
         .. doctest::
-           :skipif: github_actions
+           :skipif: True
 
             >>> s1 = ssh(host='example.pwnme')
             >>> r1 = s1.remote('localhost', 22)
-            >>> s2 = ssh(host='example.pwnme',
-            ...          proxy_sock=r1.sock)
+            >>> s2 = ssh(host='example.pwnme', proxy_sock=r1.sock)
             >>> r2 = s2.remote('localhost', 22) # and so on...
             >>> for x in r2, s2, r1, s1: x.close()
         """
@@ -1426,7 +1423,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         total, exitcode = self.run_to_end(cmd)
 
         if exitcode != 0:
-            h.error("%r does not exist or is not accessible" % remote)
+            h.failure("%r does not exist or is not accessible" % remote)
             return
 
         total = int(total)

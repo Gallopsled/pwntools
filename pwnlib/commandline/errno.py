@@ -8,7 +8,8 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'errno',
-    help = 'Prints out error messages'
+    help = 'Prints out error messages',
+    description = 'Prints out error messages'
 )
 
 parser.add_argument(
