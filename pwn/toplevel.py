@@ -83,4 +83,5 @@ info    = log.info
 debug   = log.debug
 success = log.success
 
-__all__ = [x for x in tuple(globals()) if x != '__name__']
+# Equivalence with the default behavior of "from import *"
+# __all__ = [x for x in tuple(globals()) if not x.startswith('_')]
