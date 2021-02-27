@@ -77,7 +77,7 @@ pwnlib.update.disabled = True
 pwnlib.context.context.reset_local()
 pwnlib.context.ContextType.defaults['log_level'] = logging.ERROR
 pwnlib.context.ContextType.defaults['randomize'] = False
-# pwnlib.context.ContextType.defaults['terminal'] = ['sh', '-c']
+pwnlib.context.ContextType.defaults['terminal'] = ['sh', '-c']
 pwnlib.util.fiddling.default_style = {}
 pwnlib.term.text.when = 'never'
 pwnlib.log.install_default_handler()
