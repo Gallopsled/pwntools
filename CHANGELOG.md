@@ -69,6 +69,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1780][1780] Re-add Python2 to the official Dockerfile
 - [#1941][1941] Disable all Android tests, `pwnlib.adb` is no longer supported in CI
 - [#1811][1811] Remove unnecessary `pwn.toplevel.__all__`
+- [#1828][1828] libcdb: Load debug info and unstrip libc binary
 
 [1261]: https://github.com/Gallopsled/pwntools/pull/1261
 [1695]: https://github.com/Gallopsled/pwntools/pull/1695
@@ -80,6 +81,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1780]: https://github.com/Gallopsled/pwntools/pull/1780
 [1941]: https://github.com/Gallopsled/pwntools/pull/1941
 [1811]: https://github.com/Gallopsled/pwntools/pull/1811
+[1828]: https://github.com/Gallopsled/pwntools/pull/1828
 
 ## 4.4.0 (`beta`)
 
