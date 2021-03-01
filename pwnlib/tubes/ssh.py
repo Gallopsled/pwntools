@@ -16,7 +16,7 @@ import time
 import types
 
 from pwnlib import term
-from pwnlib.context import context
+from pwnlib.context import context, LocalContext
 from pwnlib.log import Logger
 from pwnlib.log import getLogger
 from pwnlib.term import text
@@ -80,7 +80,7 @@ class ssh_channel(sock):
             process = context._encode(process)
 
         if process and wd:
-            process = b'cd ' + sh_string(wd) + b' >/dev/null 2>&1;' + process
+            process = b'cd ' + sh_string(wd) + b' &>/dev/null;' + process
 
         if process and env:
             for name, value in env.items():
@@ -1317,11 +1317,12 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         or attr.startswith('_'):
             raise AttributeError
 
+        @LocalContext
         def runner(*args):
             if len(args) == 1 and isinstance(args[0], (list, tuple)):
                 command = [attr] + args[0]
             else:
-                command = ' '.join((attr,) + args)
+                command = ' '.join((attr,) + tuple(map(six.ensure_str, args)))
 
             return self.run(command).recvall().strip()
         return runner
