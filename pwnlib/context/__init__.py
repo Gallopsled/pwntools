@@ -548,7 +548,35 @@ class ContextType(object):
     @property
     def quiet(self, function=None):
         """Disables all non-error logging within the enclosed scope,
-        *unless* the debugging level is set to 'debug' or lower."""
+        *unless* the debugging level is set to 'debug' or lower.
+
+        Example:
+
+            Note that only the ERROR statement outputs anything.
+
+            >>> with context.quiet:
+            ...     log.debug("DEBUG")
+            ...     log.info("INFO")
+            ...     log.warn("WARN")
+            ...     log.error("ERR") # doctest: +ELLIPSIS
+            Traceback (most recent call last):
+            ...
+            PwnlibException: ERR
+
+            Next let's try with the debugging level set to 'debug' before we
+            enter the context handler:
+
+            >>> with context.local(log_level='debug'):
+            ...     with context.quiet:
+            ...         log.debug("DEBUG")
+            ...         log.info("INFO")
+            ...         log.warn("WARN")
+            ...         log.error("ERR") # doctest: +ELLIPSIS
+            [DEBUG] DEBUG
+            [*] INFO
+            [!] WARN
+            [ERROR] ERR
+        """
         level = 'error'
         if context.log_level <= logging.DEBUG:
             level = None
@@ -595,6 +623,27 @@ class ContextType(object):
     @property
     def verbose(self):
         """Enable all logging within the enclosed scope.
+
+        This is the opposite of :attr:`.quiet` and functionally equivalent to:
+
+        .. code-block:: python
+
+            with context.local(log_level='debug'):
+                ...
+
+        Example:
+
+            Note that the function does not emit any information by default
+
+            >>> def func(): log.debug("Hello")
+            >>> func()
+
+            But if we put it inside a :attr:`.verbose` context manager, the
+            information is printed.
+
+            >>> with context.verbose: func()
+            [DEBUG] Hello
+
         """
         return self.local(log_level='debug')
 
