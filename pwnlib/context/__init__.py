@@ -552,16 +552,16 @@ class ContextType(object):
 
         Example:
 
-            Note that only the ERROR statement outputs anything.
+            Let's assume the normal situation, where log_level is INFO.
+
+            >>> context.clear(log_level='info')
+
+            Note that only the log levels below ERROR do not print anything.
 
             >>> with context.quiet:
             ...     log.debug("DEBUG")
             ...     log.info("INFO")
             ...     log.warn("WARN")
-            ...     log.error("ERR") # doctest: +ELLIPSIS
-            Traceback (most recent call last):
-            ...
-            PwnlibException: ERR
 
             Next let's try with the debugging level set to 'debug' before we
             enter the context handler:
@@ -571,11 +571,9 @@ class ContextType(object):
             ...         log.debug("DEBUG")
             ...         log.info("INFO")
             ...         log.warn("WARN")
-            ...         log.error("ERR") # doctest: +ELLIPSIS
             [DEBUG] DEBUG
             [*] INFO
             [!] WARN
-            [ERROR] ERR
         """
         level = 'error'
         if context.log_level <= logging.DEBUG:
@@ -592,7 +590,7 @@ class ContextType(object):
 
             >>> def loud(): log.info("Loud")
             >>> @context.quietfunc
-            >>> def quiet(): log.info("Quiet")
+            ... def quiet(): log.info("Quiet")
 
             If we set the logging level to 'info', the loud function
             prints its contents.
@@ -635,6 +633,7 @@ class ContextType(object):
 
             Note that the function does not emit any information by default
 
+            >>> context.clear()
             >>> def func(): log.debug("Hello")
             >>> func()
 
