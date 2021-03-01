@@ -16,5 +16,5 @@ ${dup}:
     ${mov('$v0',2)}
 ${looplabel}:
     ${dup2(sock,'$v0')}
-    bgtz $v0,${looplabel}
-    addi $v0,-1
+    bgtz $v0, ${looplabel}
+    addi $v0, -1
