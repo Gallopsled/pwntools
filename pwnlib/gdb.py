@@ -816,13 +816,13 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         
         >>> shell = ssh('travis', 'example.pwnme', password='demopass')
         >>> io = shell.process(['cat'])
+        >>> time.sleep(1)
         >>> pid = gdb.attach(io, gdbscript='''
-        ... call sleep(5)
         ... call puts("Hello from ssh debugger!")
         ... detach
         ... quit
         ... ''')
-        >>> io.recvline(timeout=5)  # doctest: +SKIP
+        >>> io.recvline()
         b'Hello from ssh debugger!\n'
         >>> io.sendline('This will be echoed back')
         >>> io.recvline()
