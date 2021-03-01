@@ -555,7 +555,33 @@ class ContextType(object):
         return self.local(function, log_level=level)
 
     def quietfunc(self, function):
-        """Similar to :attr:`quiet`, but wraps a whole function."""
+        """Similar to :attr:`quiet`, but wraps a whole function.
+
+        Example:
+
+            Let's set up two functions, which are the same but one is
+            wrapped with :attr:`quietfunc`.
+
+            >>> def loud(): log.info("Loud")
+            >>> @context.quietfunc
+            >>> def quiet(): log.info("Quiet")
+
+            If we set the logging level to 'info', the loud function
+            prints its contents.
+
+            >>> with context.local(log_level='info'): loud()
+            [*] Loud
+
+            However, the quiet function does not, since :attr:`quietfunc`
+            silences all output unless the log level is DEBUG.
+
+            >>> with context.local(log_level='info'): quiet()
+
+            Now let's try again with debugging enabled.
+
+            >>> with context.local(log_level='debug'): quiet()
+            [*] Quiet
+        """
         @functools.wraps(function)
         def wrapper(*a, **kw):
             level = 'error'
