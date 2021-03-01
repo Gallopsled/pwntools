@@ -664,7 +664,7 @@ class ssh(Timeout, Logger):
             except paramiko.BadHostKeyException as e:
                 self.error("Remote host %(host)s is using a different key than stated in known_hosts\n"
                            "    To remove the existing entry from your known_hosts and trust the new key, run the following commands:\n"
-                           "        $ ssh-keygen -R leviathan.labs.overthewire.org\n"
+                           "        $ ssh-keygen -R %(host)s\n"
                            "        $ ssh-keygen -R [%(host)s]:%(port)s" % locals())
 
             self.transport = self.client.get_transport()
