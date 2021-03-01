@@ -656,9 +656,16 @@ class ssh(Timeout, Logger):
 
                 if proxy_command:
                     proxy_sock = paramiko.ProxyCommand(proxy_command)
-                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, compress = True, sock = proxy_sock)
             else:
-                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, compress = True)
+                proxy_sock = None
+
+            try:
+                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, compress = True, sock = proxy_sock)
+            except paramiko.BadHostKeyException as e:
+                self.error("Remote host %(host)s is using a different key than stated in known_hosts\n"
+                           "    To remove the existing entry from your known_hosts and trust the new key, run the following commands:\n"
+                           "        $ ssh-keygen -R %(host)s\n"
+                           "        $ ssh-keygen -R [%(host)s]:%(port)s" % locals())
 
             self.transport = self.client.get_transport()
             self.transport.use_compression(True)
