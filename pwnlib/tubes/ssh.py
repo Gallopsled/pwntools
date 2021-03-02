@@ -553,7 +553,7 @@ class ssh(Timeout, Logger):
 
     def __init__(self, user=None, host=None, port=22, password=None, key=None,
                  keyfile=None, proxy_command=None, proxy_sock=None,
-                 level=None, cache=True, ssh_agent=False, *a, **kw):
+                 level=None, cache=True, ssh_agent=False, banner=True, *a, **kw):
         """Creates a new ssh connection.
 
         Arguments:
@@ -569,6 +569,7 @@ class ssh(Timeout, Logger):
             level: Log level
             cache: Cache downloaded files (by hash/size/timestamp)
             ssh_agent: If :const:`True`, enable usage of keys via ssh-agent
+            banner: If :const:`False`, do not print message about the remote system
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used.
@@ -683,7 +684,8 @@ class ssh(Timeout, Logger):
                 self.pid = None
 
         try:
-            self.info_once(self.checksec())
+            if banner:
+                self.info_once(self.checksec())
         except Exception:
             self.warn_once("Couldn't check security settings on %r" % self.host)
 
@@ -1090,6 +1092,8 @@ os.execve(exe, argv, env)
                 h.failure("Process creation failed")
                 self.warn_once('Could not find a Python interpreter on %s\n' % self.host \
                                + "Use ssh.run() instead of ssh.process()")
+                if python.connected():
+                    python.close()
                 return None
 
             # If an error occurred, try to grab as much output
