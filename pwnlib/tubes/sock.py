@@ -112,6 +112,10 @@ class sock(tube):
             self.recv_raw(1, socket.MSG_PEEK)
         except EOFError:
             return False
+        # SSLSocket and Paramiko recv() do not support any flags
+        except (ValueError, TypeError):
+            # select() said there is data, so pass
+            pass
 
         return True
 
