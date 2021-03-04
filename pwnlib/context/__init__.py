@@ -362,7 +362,7 @@ class ContextType(object):
         'noptrace': False,
         'os': 'linux',
         'proxy': None,
-        'ssh': None,
+        'ssh_sesion': None,
         'signed': False,
         'terminal': tuple(),
         'timeout': Timeout.maximum,
@@ -1408,11 +1408,11 @@ class ContextType(object):
         return size
 
     @_validator
-    def ssh(self, shell):
+    def ssh_sesion(self, shell):
         from pwnlib.tubes.ssh import ssh
 
         if not isinstance(shell, ssh):
-            raise AttributeError("context.ssh must be an ssh tube") 
+            raise AttributeError("context.ssh_sesion must be an ssh tube") 
 
         return shell
 

@@ -32,7 +32,7 @@ class SSHPath(PosixPath):
     Note:
 
         You can avoid having to supply ``ssh=`` on every ``SSHPath`` by setting
-        :data:`.context.ssh`.  
+        :data:`.context.ssh_sesion`.  
         In these examples we provide ``ssh=`` for clarity.
 
     Examples:
@@ -58,10 +58,10 @@ class SSHPath(PosixPath):
         >>> f.read_bytes()
         b'asdf \xe2\x9d\xa4\xef\xb8\x8f'
 
-        ``context.ssh`` must be set to use the :meth:`.SSHPath.mktemp`
+        ``context.ssh_sesion`` must be set to use the :meth:`.SSHPath.mktemp`
         or :meth:`.SSHPath.mkdtemp` methods.
 
-        >>> context.ssh = ssh_conn
+        >>> context.ssh_sesion = ssh_conn
         >>> SSHPath.mktemp() # doctest: +ELLIPSIS
         SSHPath('...', ssh=ssh(user='travis', host='127.0.0.1'))
     """
@@ -70,10 +70,10 @@ class SSHPath(PosixPath):
 
     def __init__(self, path, ssh=None):
         self.path = self._s(path)
-        self.ssh = ssh or context.ssh
+        self.ssh = ssh or context.ssh_sesion
 
         if self.ssh is None:
-            raise ValueError('SSHPath requires an ssh session.  Provide onee or set context.ssh.')
+            raise ValueError('SSHPath requires an ssh session.  Provide onee or set context.ssh_sesion.')
 
     def _s(self, other):
         # We want strings
@@ -782,12 +782,12 @@ class SSHPath(PosixPath):
 #----------------------------- PWNTOOLS ADDITIONS -----------------------------
     @classmethod
     def mktemp(cls):
-        temp = context._decode(context.ssh.mktemp())
-        return SSHPath(temp, ssh=context.ssh)
+        temp = context._decode(context.ssh_sesion.mktemp())
+        return SSHPath(temp, ssh=context.ssh_sesion)
 
     @classmethod
     def mkdtemp(self):
-        temp = context._decode(context.ssh.mkdtemp())
-        return SSHPath(temp, ssh=context.ssh)
+        temp = context._decode(context.ssh_sesion.mkdtemp())
+        return SSHPath(temp, ssh=context.ssh_sesion)
 
 __all__ = ['SSHPath']
