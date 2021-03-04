@@ -1834,8 +1834,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> cwd = s.set_working_directory()
             >>> s.ls()
             b''
-            >>> s.pwd()
-            >>> cwd
+            >>> str(s.pwd()) == cwd
+            True
 
             >>> s =  ssh(host='example.pwnme')
             >>> homedir = s.pwd()
