@@ -57,7 +57,12 @@ class SSHPath(PosixPath):
         >>> f.write_text('asdf ❤️')
         >>> f.read_bytes()
         b'asdf \xe2\x9d\xa4\xef\xb8\x8f'
-        >>> SSHPath.mktemp(ssh_conn) # doctest: +ELLIPSIS
+
+        ``context.ssh`` must be set to use the :meth:`.SSHPath.mktemp`
+        or :meth:`.SSHPath.mkdtemp` methods.
+
+        >>> context.ssh = ssh_conn
+        >>> SSHPath.mktemp() # doctest: +ELLIPSIS
         SSHPath('...', ssh=ssh(user='travis', host='127.0.0.1'))
     """
 

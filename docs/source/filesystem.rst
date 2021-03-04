@@ -2,6 +2,7 @@
 
     import time
     import six
+    from pwnlib.context import context
     from pwnlib.tubes.ssh import ssh
     from pwnlib.filesystem import *
 
