@@ -9,16 +9,16 @@ import six
 import sys
 import tempfile
 import time
+
 from pwnlib.context import context
 from pwnlib.util.misc import read, write
-from pwnlib.filesystem.internal import _SshPosixFlavour
 
 if six.PY3:
     from pathlib import *
 else:
     from pathlib2 import *
 
-class SSHPath(object):
+class SSHPath(PosixPath):
     r"""Represents a file that exists on a remote filesystem.
 
     See :class:`.ssh` for more information on how to set up an SSH connection.
@@ -69,8 +69,6 @@ class SSHPath(object):
 
         if self.ssh is None:
             raise ValueError('SSHPath requires an ssh session.  Provide onee or set context.ssh.')
-
-        self._flavour = _SshPosixFlavour(ssh)
 
     def _s(self, other):
         # We want strings
@@ -352,10 +350,6 @@ class SSHPath(object):
         """Return the absolute path to a file, preserving e.g. "../".
         The current working directory is determined via the :class:`.ssh`
         member :attr:`.ssh.cwd`.
-
-        Note:
-
-            Does NOT normalize the path.
 
         Example:
             
@@ -781,17 +775,14 @@ class SSHPath(object):
         return home.joinpath(subpath)
 
 #----------------------------- PWNTOOLS ADDITIONS -----------------------------
-    def makedirs(self, mode):
-        self.mkdir(mode, parents=True)
-
     @classmethod
-    def mktemp(cls, ssh):
-        temp = ssh.mktemp()
-        return SSHPath(temp, ssh=ssh)
+    def mktemp(cls):
+        temp = context._decode(context.ssh.mktemp())
+        return SSHPath(temp, ssh=context.ssh)
 
     @classmethod
     def mkdtemp(self):
-        temp = ssh.mkdtemp()
-        return SSHPath(temp, ssh=ssh)
+        temp = context._decode(context.ssh.mkdtemp())
+        return SSHPath(temp, ssh=context.ssh)
 
 __all__ = ['SSHPath']
