@@ -64,8 +64,8 @@ install_requires     = ['paramiko>=1.15.2',
                         'six>=1.12.0',
                         'rpyc',
 ]
-
-if platform.python_version_tuple()[0] == 2:
+import ipdb; ipdb.set_trace()
+if platform.python_version_tuple()[0] == '2':
     install_requires += ['pathlib2']
 
 # Check that the user has installed the Python development headers

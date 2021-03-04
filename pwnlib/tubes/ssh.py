@@ -535,9 +535,6 @@ class ssh(Timeout, Logger):
     #: Remote port (``int``)
     port = None
 
-    #: Working directory (``str``)
-    cwd = None
-
     #: Enable caching of SSH downloads (``bool``)
     cache = True
 
@@ -550,6 +547,8 @@ class ssh(Timeout, Logger):
 
     #: PID of the remote ``sshd`` process servicing this connection.
     pid = None
+
+    _cwd = '.'
 
     def __init__(self, user=None, host=None, port=22, password=None, key=None,
                  keyfile=None, proxy_command=None, proxy_sock=None,
@@ -598,7 +597,6 @@ class ssh(Timeout, Logger):
         self.key             = key
         self.keyfile         = keyfile
         self._cachedir       = os.path.join(tempfile.gettempdir(), 'pwntools-ssh-cache')
-        self.cwd             = '.'
         self.cache           = cache
 
         # Deferred attributes
@@ -674,6 +672,12 @@ class ssh(Timeout, Logger):
 
         self._tried_sftp = False
 
+        if self.sftp:
+            with context.quiet:
+                self.cwd = context._decode(self.pwd())
+        else:
+            self.cwd = '.'
+
         with context.local(log_level='error'):
             def getppid():
                 print(os.getppid())
@@ -686,6 +690,19 @@ class ssh(Timeout, Logger):
             self.info_once(self.checksec())
         except Exception:
             self.warn_once("Couldn't check security settings on %r" % self.host)
+
+    def __repr__(self):
+        return "{}(user={!r}, host={!r})".format(self.__class__.__name__, self.user, self.host)
+
+    @property
+    def cwd(self):
+        return self._cwd
+
+    @cwd.setter
+    def cwd(self, cwd):
+        self._cwd = cwd
+        if self.sftp:
+            self.sftp.chdir(cwd)
 
     @property
     def sftp(self):
@@ -1860,9 +1877,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             if status:
                 self.error("%r does not appear to exist" % wd)
 
-        self.cwd = wd
         if not isinstance(wd, str):
-            self.cwd = wd.decode('utf-8')
+            wd = wd.decode('utf-8')
+        self.cwd = wd
 
         self.info("Working directory: %r" % self.cwd)
 
