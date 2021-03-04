@@ -64,7 +64,7 @@ install_requires     = ['paramiko>=1.15.2',
                         'six>=1.12.0',
                         'rpyc',
 ]
-import ipdb; ipdb.set_trace()
+
 if platform.python_version_tuple()[0] == '2':
     install_requires += ['pathlib2']
 
