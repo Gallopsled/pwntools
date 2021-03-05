@@ -17,6 +17,7 @@ import tempfile
 import threading
 import time
 
+import colored_traceback
 from pprint import pprint
 
 import pwnlib
@@ -82,6 +83,8 @@ warn    = log.warning
 info    = log.info
 debug   = log.debug
 success = log.success
+
+colored_traceback.add_hook()
 
 # Equivalence with the default behavior of "from import *"
 # __all__ = [x for x in tuple(globals()) if not x.startswith('_')]
