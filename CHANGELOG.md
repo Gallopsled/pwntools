@@ -69,6 +69,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1780][1780] Re-add Python2 to the official Dockerfile
 - [#1941][1941] Disable all Android tests, `pwnlib.adb` is no longer supported in CI
 - [#1811][1811] Remove unnecessary `pwn.toplevel.__all__`
+- [#1841][1841] Add colored_traceback
 - [#1839][1839] run_in_new_terminal now creates a runner script if given a list or tuple
 - [#1833][1833] Add pwnlib.filesystem module
 
@@ -82,7 +83,9 @@ The table below shows which release corresponds to each branch, and what date th
 [1780]: https://github.com/Gallopsled/pwntools/pull/1780
 
 [1941]: https://github.com/Gallopsled/pwntools/pull/1941
+
 [1811]: https://github.com/Gallopsled/pwntools/pull/1811
+[1841]: https://github.com/Gallopsled/pwntools/pull/1841
 [1839]: https://github.com/Gallopsled/pwntools/pull/1839
 [1833]:  https://github.com/Gallopsled/pwntools/pull/1833
 
