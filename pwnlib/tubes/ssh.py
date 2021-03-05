@@ -80,7 +80,7 @@ class ssh_channel(sock):
             process = context._encode(process)
 
         if process and wd:
-            process = b'cd ' + sh_string(wd) + b' &>/dev/null;' + process
+            process = b'cd ' + sh_string(wd) + b' >/dev/null 2>&1; ' + process
 
         if process and env:
             for name, value in env.items():
