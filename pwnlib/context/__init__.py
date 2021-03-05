@@ -362,6 +362,7 @@ class ContextType(object):
         'noptrace': False,
         'os': 'linux',
         'proxy': None,
+        'ssh_sesion': None,
         'signed': False,
         'terminal': tuple(),
         'timeout': Timeout.maximum,
@@ -1405,6 +1406,15 @@ class ContextType(object):
             raise AttributeError("cyclic pattern size cannot be larger than word size")
 
         return size
+
+    @_validator
+    def ssh_sesion(self, shell):
+        from pwnlib.tubes.ssh import ssh
+
+        if not isinstance(shell, ssh):
+            raise AttributeError("context.ssh_sesion must be an ssh tube") 
+
+        return shell
 
     #*************************************************************************
     #                               ALIASES

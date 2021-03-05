@@ -65,6 +65,9 @@ install_requires     = ['paramiko>=1.15.2',
                         'rpyc',
 ]
 
+if platform.python_version_tuple()[0] == '2':
+    install_requires += ['pathlib2']
+
 # Check that the user has installed the Python development headers
 PythonH = os.path.join(get_python_inc(), 'Python.h')
 if not os.path.exists(PythonH):

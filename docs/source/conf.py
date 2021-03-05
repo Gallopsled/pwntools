@@ -264,7 +264,7 @@ latex_documents = [
    u'2016, Gallopsled et al.', 'manual'),
 ]
 
-intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None),
+intersphinx_mapping = {'python': ('https://docs.python.org/3.8', None),
                        'paramiko': ('https://paramiko-docs.readthedocs.org/en/2.1/', None)}
 
 # The name of an image file (relative to this directory) to place at the top of
