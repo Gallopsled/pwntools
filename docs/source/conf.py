@@ -68,11 +68,12 @@ napoleon_use_ivar = True
 napoleon_use_rtype = False
 
 doctest_global_setup = '''
+from __future__ import print_function
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
 os.environ['PWNLIB_RANDOMIZE'] = '0'
 
-import pwnlib, logging
+import pwnlib, sys, logging
 pwnlib.update.disabled = True
 pwnlib.context.context.reset_local()
 pwnlib.context.ContextType.defaults['log_level'] = logging.ERROR
@@ -98,6 +99,16 @@ travis_ci = os.environ.get('USER') == 'travis'
 local_doctest = os.environ.get('USER') == 'pwntools'
 branch_dev = os.environ.get('GITHUB_BASE_REF') == 'dev'
 skip_android = True
+
+print("""
+============== Test Configuration ==============
+github_actions %(github_actions)
+travis_ci      %(travis_ci)
+local_doctest  %(local_doctest)
+branch_dev     %(branch_dev)
+skip_android   %(skip_android)
+================================================
+""".strip() % locals(), file=sys.stderr)
 '''
 
 autoclass_content = 'both'
