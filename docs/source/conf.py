@@ -102,11 +102,11 @@ skip_android = True
 
 print("""
 ============== Test Configuration ==============
-github_actions %(github_actions)
-travis_ci      %(travis_ci)
-local_doctest  %(local_doctest)
-branch_dev     %(branch_dev)
-skip_android   %(skip_android)
+github_actions %(github_actions)s
+travis_ci      %(travis_ci)s
+local_doctest  %(local_doctest)s
+branch_dev     %(branch_dev)s
+skip_android   %(skip_android)s
 ================================================
 """.strip() % locals(), file=sys.stderr)
 '''
