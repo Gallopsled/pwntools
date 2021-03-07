@@ -167,12 +167,14 @@ from pwnlib.asm import make_elf
 from pwnlib.asm import make_elf_from_assembly
 from pwnlib.context import LocalContext
 from pwnlib.context import context
+from pwnlib.filesystem import Path, SHSPath
 from pwnlib.log import getLogger
 from pwnlib.timeout import Timeout
 from pwnlib.util import misc
 from pwnlib.util import proc
 
 log = getLogger(__name__)
+detach_and_quit = False
 
 @LocalContext
 def debug_assembly(asm, gdbscript=None, vma=None, api=False):
@@ -494,7 +496,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         Connect to the SSH server and start a process on the server
 
         >>> shell = ssh('travis', 'example.pwnme', password='demopass')
-        >>> io = gdb.debug(['bash'],
+        >>> io = gdb.debug(['whoami'],
         ...                 ssh = shell,
         ...                 gdbscript = '''
         ... break main
@@ -573,6 +575,9 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     host = '127.0.0.1'
     if not ssh and context.os == 'android':
         host = context.adb_host
+
+    if detach_and_quit:
+        gdbscript += 'detach\nquit\n'
 
     tmp = attach((host, port), exe=exe, gdbscript=gdbscript, ssh=ssh, sysroot=sysroot, api=api)
     if api:
@@ -914,12 +919,9 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
-        exefile = target.executable
-        cmd += ['gdb -q %s %s -x "%s"' % (exefile,
-                                       target.pid,
-                                       tmpfile)]
+        cmd += ['gdb', '-q', target.executable, target.pid, '-x', tmpfile]
 
-        misc.run_in_new_terminal(' '.join(cmd))
+        misc.run_in_new_terminal(cmd)
         return
 
     elif isinstance(target, tubes.sock.sock):
@@ -984,25 +986,24 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         log.error('could not find target process')
 
     gdb_binary = binary()
-    cmd = gdb_binary
+    cmd = [gdb_binary]
 
     if gdb_args:
-        cmd += ' '
-        cmd += ' '.join(gdb_args)
+        cmd += gdb_args
 
     if context.gdbinit:
-        cmd += ' -nh '                     # ignore ~/.gdbinit
-        cmd += ' -x %s ' % context.gdbinit # load custom gdbinit
+        cmd += ['-nh']                  # ignore ~/.gdbinit
+        cmd += ['-x', context.gdbinit]  # load custom gdbinit
 
-    cmd += ' -q '
+    cmd += ['-q']
 
     if exe and context.native:
         if not ssh and not os.path.isfile(exe):
             log.error('No such file: %s' % exe)
-        cmd += ' "%s"' % exe
+        cmd += [exe]
 
     if pid and not context.os == 'android':
-        cmd += ' %d' % pid
+        cmd += [str(pid)]
 
     if context.os == 'android' and pid:
         runner  = _get_runner()
@@ -1034,13 +1035,12 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.gdb',
                                           delete = False, mode = 'w+')
         log.debug('Wrote gdb script to %r\n%s' % (tmp.name, gdbscript))
-        gdbscript = 'shell rm %s\n%s' % (tmp.name, gdbscript)
 
         tmp.write(gdbscript)
         tmp.close()
-        cmd += ' -x %s' % (tmp.name)
+        cmd += ['-x', temp.name]
 
-    log.info('running in new terminal: %s' % cmd)
+    log.info('running in new terminal: %s' % shlex.quote(cmd))
 
     if api:
         # prevent gdb_faketerminal.py from messing up api doctests
