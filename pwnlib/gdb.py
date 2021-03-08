@@ -174,7 +174,6 @@ from pwnlib.util import misc
 from pwnlib.util import proc
 
 log = getLogger(__name__)
-detach_and_quit = False
 
 @LocalContext
 def debug_assembly(asm, gdbscript=None, vma=None, api=False):
@@ -575,9 +574,6 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     host = '127.0.0.1'
     if not ssh and context.os == 'android':
         host = context.adb_host
-
-    if detach_and_quit:
-        gdbscript += 'detach\nquit\n'
 
     tmp = attach((host, port), exe=exe, gdbscript=gdbscript, ssh=ssh, sysroot=sysroot, api=api)
     if api:
