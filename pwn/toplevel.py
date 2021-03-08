@@ -17,6 +17,7 @@ import tempfile
 import threading
 import time
 
+import colored_traceback
 from pprint import pprint
 
 import pwnlib
@@ -32,6 +33,7 @@ from pwnlib.encoders import *
 from pwnlib.exception import PwnlibException
 from pwnlib.gdb import attach, debug_assembly, debug_shellcode
 from pwnlib.filepointer import *
+from pwnlib.filesystem import *
 from pwnlib.flag import *
 from pwnlib.fmtstr import FmtStr, fmtstr_payload, fmtstr_split
 from pwnlib.log import getLogger
@@ -82,6 +84,8 @@ warn    = log.warning
 info    = log.info
 debug   = log.debug
 success = log.success
+
+colored_traceback.add_hook()
 
 # Equivalence with the default behavior of "from import *"
 # __all__ = [x for x in tuple(globals()) if not x.startswith('_')]

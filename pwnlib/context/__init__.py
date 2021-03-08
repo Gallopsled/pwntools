@@ -362,6 +362,7 @@ class ContextType(object):
         'noptrace': False,
         'os': 'linux',
         'proxy': None,
+        'ssh_session': None,
         'signed': False,
         'terminal': tuple(),
         'timeout': Timeout.maximum,
@@ -548,14 +549,66 @@ class ContextType(object):
     @property
     def quiet(self, function=None):
         """Disables all non-error logging within the enclosed scope,
-        *unless* the debugging level is set to 'debug' or lower."""
+        *unless* the debugging level is set to 'debug' or lower.
+
+        Example:
+
+            Let's assume the normal situation, where log_level is INFO.
+
+            >>> context.clear(log_level='info')
+
+            Note that only the log levels below ERROR do not print anything.
+
+            >>> with context.quiet:
+            ...     log.debug("DEBUG")
+            ...     log.info("INFO")
+            ...     log.warn("WARN")
+
+            Next let's try with the debugging level set to 'debug' before we
+            enter the context handler:
+
+            >>> with context.local(log_level='debug'):
+            ...     with context.quiet:
+            ...         log.debug("DEBUG")
+            ...         log.info("INFO")
+            ...         log.warn("WARN")
+            [DEBUG] DEBUG
+            [*] INFO
+            [!] WARN
+        """
         level = 'error'
         if context.log_level <= logging.DEBUG:
             level = None
         return self.local(function, log_level=level)
 
     def quietfunc(self, function):
-        """Similar to :attr:`quiet`, but wraps a whole function."""
+        """Similar to :attr:`quiet`, but wraps a whole function.
+
+        Example:
+
+            Let's set up two functions, which are the same but one is
+            wrapped with :attr:`quietfunc`.
+
+            >>> def loud(): log.info("Loud")
+            >>> @context.quietfunc
+            ... def quiet(): log.info("Quiet")
+
+            If we set the logging level to 'info', the loud function
+            prints its contents.
+
+            >>> with context.local(log_level='info'): loud()
+            [*] Loud
+
+            However, the quiet function does not, since :attr:`quietfunc`
+            silences all output unless the log level is DEBUG.
+
+            >>> with context.local(log_level='info'): quiet()
+
+            Now let's try again with debugging enabled.
+
+            >>> with context.local(log_level='debug'): quiet()
+            [*] Quiet
+        """
         @functools.wraps(function)
         def wrapper(*a, **kw):
             level = 'error'
@@ -569,6 +622,28 @@ class ContextType(object):
     @property
     def verbose(self):
         """Enable all logging within the enclosed scope.
+
+        This is the opposite of :attr:`.quiet` and functionally equivalent to:
+
+        .. code-block:: python
+
+            with context.local(log_level='debug'):
+                ...
+
+        Example:
+
+            Note that the function does not emit any information by default
+
+            >>> context.clear()
+            >>> def func(): log.debug("Hello")
+            >>> func()
+
+            But if we put it inside a :attr:`.verbose` context manager, the
+            information is printed.
+
+            >>> with context.verbose: func()
+            [DEBUG] Hello
+
         """
         return self.local(log_level='debug')
 
@@ -1331,6 +1406,15 @@ class ContextType(object):
             raise AttributeError("cyclic pattern size cannot be larger than word size")
 
         return size
+
+    @_validator
+    def ssh_session(self, shell):
+        from pwnlib.tubes.ssh import ssh
+
+        if not isinstance(shell, ssh):
+            raise AttributeError("context.ssh_session must be an ssh tube") 
+
+        return shell
 
     #*************************************************************************
     #                               ALIASES
