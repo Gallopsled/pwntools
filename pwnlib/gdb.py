@@ -167,7 +167,7 @@ from pwnlib.asm import make_elf
 from pwnlib.asm import make_elf_from_assembly
 from pwnlib.context import LocalContext
 from pwnlib.context import context
-from pwnlib.filesystem import Path, SHSPath
+from pwnlib.filesystem import Path, SSHPath
 from pwnlib.log import getLogger
 from pwnlib.timeout import Timeout
 from pwnlib.util import misc
