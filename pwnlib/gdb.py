@@ -1036,7 +1036,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         tmp.close()
         cmd += ['-x', tmp.name]
 
-    log.info('running in new terminal: %s' % shlex.quote(cmd))
+    log.info('running in new terminal: %s' % ' '.join(cmd))
 
     if api:
         # prevent gdb_faketerminal.py from messing up api doctests
