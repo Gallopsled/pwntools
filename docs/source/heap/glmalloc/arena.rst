@@ -1,13 +1,13 @@
 .. testsetup:: *
 
-   from pwnlib.heap.arena import *
+   from pwnlib.heap.glmalloc.arena import *
 
 :mod:`pwnlib.heap.arena` --- Arena of libc
 ========================================================================
 
-.. autoclass:: pwnlib.heap.arena.Arena()
+.. autoclass:: pwnlib.heap.glmalloc.Arena()
    :members:
 
-.. autoclass:: pwnlib.heap.bins.tcache.NoTcacheError()
+.. autoclass:: pwnlib.heap.glmalloc.NoTcacheError()
    :members:
    :show-inheritance:

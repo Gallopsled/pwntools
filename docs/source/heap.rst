@@ -4,21 +4,15 @@
    from pwnlib.tubes.process import process
 
 
-:mod:`pwnlib.heap` --- Heap explorer
+:mod:`pwnlib.heap` --- Heap
 ===================================================
 
 .. automodule:: pwnlib.heap
-   :members:
 
-Heap Items
+Allocators
 -------------
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 1
     :glob:
 
-    heap/*
-
-Heap Explorer
----------------
-.. autoclass:: pwnlib.heap.HeapExplorer()
-   :members:
+    heap/glmalloc
