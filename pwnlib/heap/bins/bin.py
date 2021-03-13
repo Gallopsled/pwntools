@@ -5,9 +5,6 @@ class Bins(object):
     """Base class to be inherit by the bins sequences. This class provides
     the methods to access the bins array as well as standard implementation
     of the __str__ method.
-
-    Attributes:
-        bins (:obj:`list` of :class:`Bin`): The bins of the sequence.
     """
 
     def __init__(self, bins):
@@ -16,6 +13,7 @@ class Bins(object):
 
     @property
     def bins(self):
+        """(:obj:`list` of :class:`Bin`): The bins of the sequence."""
         return self._bins
 
     def __getitem__(self, item):
@@ -72,16 +70,6 @@ class Bins(object):
 class Bin(object):
     """Base class to be inherit by the bins. This class provides the basic info
     of the bin entry as well as the chunks of the bin.
-
-    Attributes:
-        bin_entry (BinEntry): The entry of malloc_state or
-            tcache_perthread_struct for the bin.
-        fd (int): Shortcut to the fd pointer of the entry of the current bin.
-        bk (int): Shortcut to the bk pointer of the entry of the current bin.
-        chunks_size (int): Size which should have the chunks in the bin.
-        malloc_chunks (:obj:`list` of :class:`MallocChunk`): The chunks which are
-            inserted in the bin.
-        chunks (:obj:`list` of :class:`MallocChunk`): Alias for malloc_chunks.
     """
 
     def __init__(self, bin_entry, malloc_chunks):
@@ -90,26 +78,34 @@ class Bin(object):
 
     @property
     def bin_entry(self):
+        """:class:`BinEntry`: The entry of malloc_state or
+            tcache_perthread_struct for the bin."""
         return self._bin_entry
 
     @property
     def fd(self):
+        """:class:`int`: Shortcut to the fd pointer of the entry of the current bin."""
         return self.bin_entry.fd
 
     @property
     def bk(self):
+        """:class:`int`: Shortcut to the bk pointer of the entry of the current bin."""
         return self.bin_entry.bk
 
     @property
     def chunks_size(self):
+        """:class:`int`: Size which should have the chunks in the bin."""
         return self.bin_entry.chunks_size
 
     @property
     def malloc_chunks(self):
+        """:obj:`list` of :class:`MallocChunk`: The chunks which are
+            inserted in the bin."""
         return self._malloc_chunks
 
     @property
     def chunks(self):
+        """:obj:`list` of :class:`MallocChunk`: Alias for malloc_chunks."""
         return self.malloc_chunks
 
     def __len__(self):
@@ -146,17 +142,18 @@ class Bin(object):
 
 class BinEntry(object):
     """Class to contain the common information of each bin entry.
-
-    Attributes:
-        address (int): The address of the bin entry.
-        fd (int): The address of first chunk of the bin.
-        bk (int): The address of last chunk of the bin. 0 if not used.
-        chunks_size (int): Size which should have the chunks in the bin. 0 if
-            not used.
     """
 
     def __init__(self, address, fd, bk=0, chunks_size=0):
+        #: :class:`int`: The address of the bin entry.
         self.address = address
+
+        #: :class:`int`: The address of first chunk of the bin.
         self.fd = fd
+
+        #: :class:`int`: The address of last chunk of the bin. 0 if not used.
         self.bk = bk
+
+        #: :class:`int`: Size which should have the chunks in the bin. 0 if
+        #: not used.
         self.chunks_size = chunks_size
