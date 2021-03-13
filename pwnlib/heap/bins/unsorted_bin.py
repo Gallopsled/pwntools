@@ -5,9 +5,6 @@ class UnsortedBins(Bins):
     """Sequence of unsorted bins. There is only 1 bin in this sequence, however
     it is encapsulated in this class for compatibility with the other bin
     types.
-
-    Attributes:
-        bins (:obj:`list` of :class:`UnsortedBin`): The bins of the sequence.
     """
 
     def __init__(self, bin):
@@ -16,13 +13,14 @@ class UnsortedBins(Bins):
     def _name(self):
         return "Unsorted Bins"
 
+    @property
+    def bins(self):
+        """:obj:`list` of :class:`UnsortedBin`: The bins of the sequence."""
+        return super(UnsortedBins, self).bins
+
 
 class UnsortedBin(Bin):
     """Class to represent an unsorted bin of the glibc
-
-    Attributes:
-        bin_entry (UnsortedBinEntry): The entry of malloc_state for the unsorted
-            bin.
     """
 
     def __init__(self, bin_entry, malloc_chunks):
@@ -31,13 +29,16 @@ class UnsortedBin(Bin):
     def _name(self):
         return "Unsorted Bin"
 
+    @property
+    def bin_entry(self):
+        """:class:`UnsortedBinEntry`: The entry of malloc_state for the unsorted
+            bin."""
+        return super(UnsortedBin, self).bin_entry
+
 
 class UnsortedBinEntry(BinEntry):
     """Class to contain the information of a unsorted bin entry in `bins` of
     malloc state.
-
-    Attributes:
-        chunks_size (int): 0 since any size is allowed.
     """
 
     def __init__(self, address, fd, bk):
