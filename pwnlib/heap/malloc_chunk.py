@@ -105,42 +105,51 @@ class MallocChunk:
           struct malloc_chunk* fd_nextsize;
           struct malloc_chunk* bk_nextsize;
         };
-
-
-    Attributes:
-        address (int): The start address of the chunk
-        previous_size (int): Size of the previous chunk (if previous is free)
-        size (int): Size of the chunk
-        prev_in_use (bool): True if previous chunk is being used (not free)
-        mmapped (bool): True if chunk is allocated through mmap
-        non_main_arena (bool): True if chunk resides in the main arena
-        fd (int): Pointer to the next chunk of the bins (if chunk is free)
-        bk (int): Pointer to the previous chunk of the bins (if chunk is free)
-        fd_nextsize (int): Pointer to the next chunk with a larger size
-            (only used in large bins)
-        bk_nextsize (int): Pointer to the next chunk with an smaller size
-            (only used in large bins)
-        data_address (int): Address where starts the chunk user data
-            (the address returned by malloc)
-        size_with_flags (int): The raw size value of the chunk, which includes
-            the NON_MAIN_ARENA, MMAPPED and PREV_IN_USE flags in the
-            lowest-value bits
-
     """
 
     def __init__(self, address, previous_size, size, prev_in_use, mmapped,
                  non_main_arena, fd, bk, fd_nextsize, bk_nextsize, pointer_size):
+        #: :class:`int`: The start address of the chunk
         self.address = address
+
+        #: :class:`int`: Size of the previous chunk (if previous is free)
         self.previous_size = previous_size
+
+        #: :class:`int`: Size of the chunk
         self.size = size
+
+        #: :class:`bool`: True if previous chunk is being used (not free)
         self.prev_in_use = prev_in_use
+
+        #: :class:`bool`: True if chunk is allocated through mmap
         self.mmapped = mmapped
+
+        #: :class:`bool`: True if chunk resides in the main arena
         self.non_main_arena = non_main_arena
+
+        #: :class:`int`: Pointer to the next chunk of the bins (if chunk
+        #: is free)
         self.fd = fd
+
+        #: :class:`int`: Pointer to the previous chunk of the bins (if chunk
+        #: is free)
         self.bk = bk
+
+        #: :class:`int`: Pointer to the next chunk with a larger size
+        #: (only used in large bins)
         self.fd_nextsize = fd_nextsize
+
+        #: :class:`int`: Pointer to the next chunk with an smaller size
+        #: (only used in large bins)
         self.bk_nextsize = bk_nextsize
+
+        #: :class:`int`: Address where starts the chunk user data
+        #: (the address returned by malloc)
         self.data_address = self.address + pointer_size * 2
+
+        #: :class:`int`: The raw size value of the chunk, which includes
+        #: the NON_MAIN_ARENA, MMAPPED and PREV_IN_USE flags in the
+        #: lowest-value bits
         self.size_with_flags = size | int(non_main_arena)*4 | int(mmapped)*2 | int(prev_in_use)
 
         if pointer_size == 8:
