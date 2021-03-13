@@ -1,4 +1,4 @@
-from pwnlib.heap.utils import p32, p64
+from pwnlib.heap.glmalloc.utils import p32, p64
 
 
 class MallocChunkParser:

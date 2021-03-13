@@ -1,14 +1,14 @@
-from pwnlib.heap.bins import \
+from pwnlib.heap.glmalloc.bins import \
     BinParser, \
     FastBinParser, \
     EnabledTcacheParser, \
     DisabledTcacheParser, \
     NoTcacheError
-from pwnlib.heap.arena import ArenaParser
-from pwnlib.heap.malloc_state import MallocStateParser
-from pwnlib.heap.heap import HeapParser
-from pwnlib.heap.malloc_chunk import MallocChunkParser
-from pwnlib.heap.process_informer import ProcessInformer
+from pwnlib.heap.glmalloc.arena import ArenaParser
+from pwnlib.heap.glmalloc.malloc_state import MallocStateParser
+from pwnlib.heap.glmalloc.heap import HeapParser
+from pwnlib.heap.glmalloc.malloc_chunk import MallocChunkParser
+from pwnlib.heap.glmalloc.process_informer import ProcessInformer
 
 
 class HeapExplorer:

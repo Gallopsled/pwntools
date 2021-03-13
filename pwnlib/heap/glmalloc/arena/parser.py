@@ -1,4 +1,4 @@
-from pwnlib.heap.arena.arena import Arena
+from pwnlib.heap.glmalloc.arena.arena import Arena
 
 
 class ArenaParser:

@@ -1,4 +1,4 @@
-from pwnlib.heap.basic_formatter import BasicFormatter
+from pwnlib.heap.glmalloc.basic_formatter import BasicFormatter
 
 
 class Heap:

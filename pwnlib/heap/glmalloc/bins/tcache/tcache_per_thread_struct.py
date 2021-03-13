@@ -1,4 +1,4 @@
-from pwnlib.heap.bins.tcache.tcache import TcacheEntry
+from pwnlib.heap.glmalloc.bins import TcacheEntry
 
 
 class TcachePerthreadStructParser:

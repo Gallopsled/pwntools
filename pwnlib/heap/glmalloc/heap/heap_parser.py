@@ -1,6 +1,6 @@
-from pwnlib.heap.utils import align_address
-from pwnlib.heap.heap.heap import Heap
-from pwnlib.heap.heap.heap_info import HeapInfoParser
+from pwnlib.heap.glmalloc.utils import align_address
+from pwnlib.heap.glmalloc.heap.heap import Heap
+from pwnlib.heap.glmalloc.heap.heap_info import HeapInfoParser
 
 
 class HeapParser:

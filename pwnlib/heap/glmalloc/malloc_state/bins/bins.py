@@ -1,4 +1,4 @@
-from pwnlib.heap.malloc_state.bins.bins_indexes import \
+from pwnlib.heap.glmalloc.malloc_state.bins import \
     LARGE_BINS_START_INDEX, SMALL_BINS_START_INDEX, UNSORTED_BIN_INDEX
 
 

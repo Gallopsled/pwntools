@@ -1,4 +1,4 @@
-from pwnlib.heap.bins.bin import Bins, Bin, BinEntry
+from pwnlib.heap.glmalloc.bins import Bins, Bin, BinEntry
 
 
 class LargeBins(Bins):

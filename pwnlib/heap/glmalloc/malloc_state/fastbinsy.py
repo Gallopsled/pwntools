@@ -1,5 +1,5 @@
-from pwnlib.heap.utils import u64, u32
-from pwnlib.heap.bins.fast_bin import FastBinEntry
+from pwnlib.heap.glmalloc.utils import u64, u32
+from pwnlib.heap.glmalloc.bins import FastBinEntry
 
 
 class FastBinsYParser:

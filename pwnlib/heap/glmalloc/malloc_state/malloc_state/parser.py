@@ -1,5 +1,5 @@
-from pwnlib.heap.malloc_state.bins import BinsParser
-from pwnlib.heap.malloc_state.fastbinsy import FastBinsYParser
+from pwnlib.heap.glmalloc.malloc_state.bins import BinsParser
+from pwnlib.heap.glmalloc.malloc_state import FastBinsYParser
 from construct import Int32ul, Int64ul, Struct, Padding
 from .malloc_state import MallocState
 
