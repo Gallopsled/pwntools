@@ -4,21 +4,21 @@ from pwnlib.heap.basic_formatter import BasicFormatter
 class Heap:
     """Class to represent a heap with some useful metadata. Heap is considered
     a collection of chunks.
-
-    Attributes:
-        address (int): The start address of the heap
-        chunks (list of :class:`MallocChunk`):  The list of chunks of the heap
-        top (MallocChunk): The Top chunk of the heap
     """
 
     def __init__(self, address, malloc_chunks, pointer_size):
+
+        #: :class:`int`: The start address of the heap
         self.address = address
+
+        #: :class:`list` of :class:`MallocChunk`:  The list of chunks of the heap
         self.chunks = malloc_chunks
         self._pointer_size = pointer_size
         self._basic_formatter = BasicFormatter()
 
     @property
     def top(self):
+        """:class:`MallocChunk`: The Top chunk of the heap"""
         return self.chunks[-1]
 
     def __str__(self):
