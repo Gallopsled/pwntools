@@ -325,6 +325,9 @@ from pwnlib.heap.glmalloc.malloc_chunk import MallocChunk
 from pwnlib.heap.glmalloc.malloc_state import MallocState
 from pwnlib.heap.glmalloc.heap import Heap
 from pwnlib.heap.glmalloc.bins import \
+    Bins, \
+    Bin, \
+    BinEntry, \
     Tcaches, \
     Tcache, \
     TcacheEntry, \
@@ -352,5 +355,6 @@ __all__ = [
     'FastBins', 'FastBin', 'FastBinEntry',
     'UnsortedBins', 'UnsortedBin', 'UnsortedBinEntry',
     'SmallBins', 'SmallBin', 'SmallBinEntry',
-    'LargeBins', 'LargeBin', 'LargeBinEntry'
+    'LargeBins', 'LargeBin', 'LargeBinEntry',
+    'Bins', 'Bin', 'BinEntry',
 ]
