@@ -3,20 +3,19 @@ from pwnlib.heap.bins.bin import Bins, Bin, BinEntry
 
 class LargeBins(Bins):
     """Sequence of large bins.
-
-    Attributes:
-        bins (:obj:`list` of :class:`LargeBin`): The bins of the sequence.
     """
 
     def _name(self):
         return "Large Bins"
 
+    @property
+    def bins(self):
+        """:obj:`list` of :class:`LargeBin`: The bins of the sequence."""
+        return super(LargeBins, self).bins
+
 
 class LargeBin(Bin):
     """Class to represent an large bin of the glibc.
-
-    Attributes:
-        bin_entry (LargeBinEntry): The entry of malloc_state for the large bin.
     """
 
     def __init__(self, bin_entry, malloc_chunks):
@@ -28,6 +27,11 @@ class LargeBin(Bin):
 
     def _name(self):
         return "Large Bin"
+
+    @property
+    def bin_entry(self):
+        """:class:`LargeBinEntry`: The entry of malloc_state for the large bin."""
+        return super(LargeBin, self).bin_entry
 
 
 class LargeBinEntry(BinEntry):
