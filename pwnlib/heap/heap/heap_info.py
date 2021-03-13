@@ -59,17 +59,18 @@ class HeapInfo:
       char pad[-6 * SIZE_SZ & MALLOC_ALIGN_MASK];
     } heap_info;
     ```
-
-    Attributes:
-        ar_ptr (int): Address of the arena `malloc_state` structure.
-        prev (int): Address of the previous heap.
-        size (int): Size of the heap.
-        mprotect_size (int): Size of the heap which has benn mprotected with
-            PROT_READ|PROT_WRITE.
     """
 
     def __init__(self, ar_ptr, prev, size, mprotect_size):
+        #: :class:`int`: Address of the arena `malloc_state` structure.
         self.ar_ptr = ar_ptr
+
+        #: :class:`int`: Address of the previous heap.
         self.prev = prev
+
+        #: :class:`int`: Size of the heap.
         self.size = size
+
+        #: :class:`int`: Size of the heap which has been mprotected with
+        #: PROT_READ|PROT_WRITE.
         self.mprotect_size = mprotect_size
