@@ -15,10 +15,6 @@ class HeapExplorer:
     """Main class of the library. which functions to access to all items of the
     glibc heap management, such as arenas, malloc_state, heap and bins.
 
-    Attributes:
-        tcaches_enabled(bool): Indicates if tcaches are enabled for the current
-            glibc version.
-
     Examples:
         >>> p = process('sh')
         >>> hp = p.heap_explorer
@@ -68,6 +64,8 @@ class HeapExplorer:
         self._bin_parser = BinParser(malloc_chunk_parser)
         self._fast_bin_parser = FastBinParser(malloc_chunk_parser)
 
+        #: :class:`bool`: Indicates if tcaches are enabled for the current
+        #: glibc version.
         self.tcaches_enabled = self._are_tcaches_enabled()
 
         if self.tcaches_enabled:
