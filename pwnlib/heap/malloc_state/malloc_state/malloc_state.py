@@ -33,57 +33,73 @@ class MallocState:
 
         The field attached_threads was introduced in libc version 2.23. In case
         libc version is inferior that field value will be None.
-
-    Attributes:
-        mutex (int): Mutex value of the malloc_state
-        flags (int): Flags of the malloc_state
-        have_fastchunks (int or None): Indicates if there are chunks in the
-            fastbins
-        fastbinsY (FastBinsY): Fast bin entries
-        top (int): Pointer to the top chunk of the heap
-        last_remainder (int): Pointer to the last remainder chunk
-        bins (Bins): All bins entries of the malloc_state (Unsorted, Small and
-            Large)
-        unsorted_bin (BinEntry): Unsorted bin entry of the malloc_state
-        small_bins (list of BinEntry): Small bins entries of the malloc_state
-        large_bins (list of BinEntry): Large bins entries of the malloc_state
-        binmap (list[4] of int): Bitmap which indicates the bins with chunks
-        next (int): Address of the next malloc_state struct
-        next_free (int or None):
-        attached_threads (int): Number of threads attached to the arena
-        system_mem (int): Available heap size
-        max_system_mem (int): Maximum heap size
-    """
+     """
 
     def __init__(self, address, mutex, flags, have_fastchunks,
                  fastbinsY, top, last_remainder, bins, binmap, next_,
                  next_free, attached_threads, system_mem, max_system_mem):
+
+        #: :class:`int`: Address of the malloc_state
         self.address = address
+
+        #: :class:`int`: Mutex value of the malloc_state
         self.mutex = mutex
+
+        #: :class:`int`: Flags of the malloc_state
         self.flags = flags
+
+        #: :class:`int` or :class:`None`: Indicates if there are chunks in the
+        #: fastbins
         self.have_fastchunks = have_fastchunks
+
+        #: :class:`FastBinsY`: Fast bin entries
         self.fastbinsY = fastbinsY
+
+        #: :class:`int`: Pointer to the top chunk of the heap
         self.top = top
+
+        #: :class:`int`: Pointer to the last remainder chunk
         self.last_remainder = last_remainder
+
+        #: :class:`Bins`: All bins entries of the malloc_state (Unsorted,
+        #: Small and Large)
         self.bins = bins
+
+        #: :class:`list[4]` of :class:`int`: Bitmap which indicates the bins
+        #: with chunks
         self.binmap = binmap
+
+        #: :class:`int`: Address of the next malloc_state struct
         self.next = next_
+
+        #: :class:`int` or :class:`None`
         self.next_free = next_free
+
+        #: :class:`int`: Number of threads attached to the arena
         self.attached_threads = attached_threads
+
+        #: :class:`int`: Available heap size
         self.system_mem = system_mem
+
+        #: :class:`int`: Maximum heap size
         self.max_system_mem = max_system_mem
         self._basic_formatter = BasicFormatter()
 
     @property
     def unsorted_bin(self):
+        """:class:`BinEntry`: Unsorted bin entry of the malloc_state"""
         return self.bins.unsorted_bin_entry
 
     @property
     def small_bins(self):
+        """:class:`list` of :class:`BinEntry`: Small bins entries of the
+        malloc_state"""
         return self.bins.small_bins_entries
 
     @property
     def large_bins(self):
+        """:class:`list` of :class:`BinEntry`: Large bins entries of the
+        malloc_state"""
         return self.bins.large_bins_entries
 
     def __str__(self):
