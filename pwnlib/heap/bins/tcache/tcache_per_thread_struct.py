@@ -67,17 +67,17 @@ class TcachePerthreadStruct:
       char counts[TCACHE_MAX_BINS];
       tcache_entry *entries[TCACHE_MAX_BINS];
     } tcache_perthread_struct;
-
-    Attributes:
-        counts (list of int): List with indicative counts of chunks of each
-            tcache
-        entries (list of TcacheEntry): One entrie per tcache,
-            which indicates the address of the first chunk in the bin
-
     """
     TCACHE_MAX_BINS = 64
 
     def __init__(self, address, counts, entries):
+        #: :class:`int`: Address of the structure
         self.address = address
+
+        #: :class:`list` of :class:`int`: List with indicative counts of chunks of each
+        #: tcache
         self.counts = counts
+
+        #: :class:`list` of :class:`TcacheEntry`: One entrie per tcache,
+        #: which indicates the address of the first chunk in the bin
         self.entries = entries
