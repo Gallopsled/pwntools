@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
+"""
 
+This is the module for exploring the heap.
+
+"""
 from pwnlib.heap.glmalloc.heap_explorer import HeapExplorer
 from pwnlib.heap.glmalloc.arena import Arena
 from pwnlib.heap.glmalloc.malloc_chunk import MallocChunk

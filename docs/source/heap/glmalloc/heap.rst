@@ -1,9 +1,11 @@
 .. testsetup:: *
 
-   from pwnlib.heap.heap import *
+   from pwnlib.heap.glmalloc.heap import *
 
-:mod:`pwnlib.heap.heap` --- Heap managed by the libc
+:mod:`pwnlib.heap.glmalloc.heap` --- Heap managed by the libc
 ========================================================================
 
-.. autoclass:: pwnlib.heap.heap.Heap()
+Heap
+------
+.. autoclass:: pwnlib.heap.glmalloc.Heap()
    :members:

@@ -1,16 +1,24 @@
 .. testsetup:: *
 
-   from pwnlib.heap.malloc_state import *
+   from pwnlib.heap.glmalloc.malloc_state import *
 
-:mod:`pwnlib.heap.malloc_state` --- Malloc state of each arena of the libc
-==========================================================================
+:mod:`pwnlib.heap.glmalloc.malloc_state` --- Malloc state of each arena of the libc
+=====================================================================================
 
-.. autoclass:: pwnlib.heap.malloc_state.MallocState()
+
+MallocState
+------------
+.. autoclass:: pwnlib.heap.glmalloc.MallocState()
    :members:
 
-.. autoclass:: pwnlib.heap.malloc_state.FastBinsY()
+
+FastBinsY
+-----------
+.. autoclass:: pwnlib.heap.glmalloc.malloc_state.FastBinsY()
    :members:
 
-.. autoclass:: pwnlib.heap.malloc_state.Bins()
+Bins
+------
+.. autoclass:: pwnlib.heap.glmalloc.malloc_state.Bins()
    :members:
 

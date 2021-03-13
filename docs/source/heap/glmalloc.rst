@@ -7,18 +7,17 @@
 :mod:`pwnlib.heap.glmalloc` --- glibc malloc
 ===================================================
 
-.. automodule:: pwnlib.heap.glmalloc
-   :members:
-
-Heap Items
+Items
 -------------
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 1
     :glob:
 
-    gmalloc/*
+    glmalloc/*
 
-Heap Explorer
----------------
-.. autoclass:: pwnlib.heap.glmalloc.HeapExplorer()
-   :members:
+
+Examples
+------------
+.. automodule:: pwnlib.heap.glmalloc
+
+
