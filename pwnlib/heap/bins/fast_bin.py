@@ -50,20 +50,19 @@ class FastBinParser:
 
 class FastBins(Bins):
     """Sequence of fast bins.
-
-    Attributes:
-        bins (:obj:`list` of :class:`FastBin`): The bins of the sequence.
     """
 
     def _name(self):
         return "Fast Bins"
 
+    @property
+    def bins(self):
+        """:obj:`list` of :class:`FastBin`: The bins of the sequence."""
+        return super(FastBins, self).bins
+
 
 class FastBin(Bin):
     """Class to represent a fast bin of the glibc.
-
-    Attributes:
-        bin_entry (FastBinEntry): The entry of malloc_state for the fast bin.
     """
 
     def __init__(self, bin_entry, malloc_chunks):
@@ -72,15 +71,22 @@ class FastBin(Bin):
     def _name(self):
         return "Fast Bin"
 
+    @property
+    def bin_entry(self):
+        """:class:`FastBinEntry`: The entry of malloc_state for the fast bin."""
+        return super(FastBin, self).bin_entry
+
 
 class FastBinEntry(BinEntry):
     """Class to contain the information of a entry in `fastbinsY` attribute
      of `malloc_state` struct.
-
-    Attributes:
-        bk (int): 0 since it is not used.
     """
 
     def __init__(self, address, fd, chunks_size):
         super(FastBinEntry, self).__init__(
             address, fd, chunks_size=chunks_size)
+
+    @property
+    def bk(self):
+        """:class:`int`: 0 since it is not used."""
+        return super(FastBinEntry, self).bk
