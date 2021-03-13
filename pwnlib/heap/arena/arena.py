@@ -7,32 +7,36 @@ from pwnlib.heap.basic_formatter import BasicFormatter
 
 class Arena(object):
     """Class with the information of the arena.
-
-    Attributes:
-        malloc_state (MallocState): The malloc_state struct of the arena
-        heap (Heap): The heap of the arena
-        tcaches (Tcaches): The tcaches of the arena. If
-            tcaches are not available, an exception :class:`NoTcacheError` is
-            raised
-        fast_bins (FastBins): The fast bins of the arena
-        unsorted_bin (UnsortedBins): The unsorted bin of the arena
-        small_bins (SmallBins): The small bins of the arena
-        large_bins (LargeBins): The large bins of the arena
     """
 
     def __init__(self, malloc_state, heap, unsorted_bin,
                  small_bins, large_bins, fast_bins, tcaches):
+        #: :class:`MallocState`: The malloc_state struct of the arena
         self.malloc_state = malloc_state
+
+        #: :class:`Heap`: The heap of the arena
         self.heap = heap
         self._tcaches = tcaches
+
+        #: :class:`FastBins`: The fast bins of the arena
         self.fast_bins = fast_bins
+
+        #: :class:`UnsortedBins`: The unsorted bin of the arena
         self.unsorted_bin = unsorted_bin
+
+        #: :class:`SmallBins`: The small bins of the arena
         self.small_bins = small_bins
+
+        #: :class:`LargeBins`: The large bins of the arena
         self.large_bins = large_bins
         self._basic_formatter = BasicFormatter()
 
     @property
     def tcaches(self):
+        """:class:`Tcaches`: The tcaches of the arena. If
+            tcaches are not available, an exception :class:`NoTcacheError` is
+            raised.
+        """
         if self._tcaches is None:
             raise NoTcacheError()
 
