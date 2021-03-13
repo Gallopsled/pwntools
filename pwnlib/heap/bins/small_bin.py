@@ -3,20 +3,19 @@ from pwnlib.heap.bins.bin import Bins, Bin, BinEntry
 
 class SmallBins(Bins):
     """Sequence of small bins.
-
-    Attributes:
-        bins (:obj:`list` of :class:`SmallBin`): The bins of the sequence.
     """
 
     def _name(self):
         return "Small Bins"
 
+    @property
+    def bins(self):
+        """:obj:`list` of :class:`SmallBin`: The bins of the sequence."""
+        return super(SmallBins, self).bins
+
 
 class SmallBin(Bin):
     """Class to represent an small bin of the glibc.
-
-    Attributes:
-        bin_entry (SmallBinEntry): The entry of malloc_state for the small bin.
     """
 
     def __init__(self, bin_entry, malloc_chunks):
@@ -24,6 +23,11 @@ class SmallBin(Bin):
 
     def _name(self):
         return "Small Bin"
+
+    @property
+    def bin_entry(self):
+        """:class:`SmallBinEntry`: The entry of malloc_state for the small bin."""
+        return super(SmallBin, self).bin_entry
 
 
 class SmallBinEntry(BinEntry):
