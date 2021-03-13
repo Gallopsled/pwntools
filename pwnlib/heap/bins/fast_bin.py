@@ -85,8 +85,3 @@ class FastBinEntry(BinEntry):
     def __init__(self, address, fd, chunks_size):
         super(FastBinEntry, self).__init__(
             address, fd, chunks_size=chunks_size)
-
-    @property
-    def bk(self):
-        """:class:`int`: 0 since it is not used."""
-        return super(FastBinEntry, self).bk
