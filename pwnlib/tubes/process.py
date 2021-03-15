@@ -976,12 +976,13 @@ class process(tube):
                     )
                 )
 
-    def heap_explorer(self, timeout=1):
+    def heap_explorer(self, timeout=1, tcache=None):
         """Returns a heap explorer that allows to inspect the items of the libc
         heap.
 
         Arguments:
             timeout(int): Time to wait for libc to being loaded
+            use_tcache(bool): Indicate if tcache is present
 
         Raises:
             PwnlibException: In case the libc is not found in the given timeout
@@ -1003,7 +1004,7 @@ class process(tube):
         Returns:
             HeapExplorer
         """
-        return HeapExplorer(self.pid, self._waitfor_libc(timeout=timeout))
+        return HeapExplorer(self.pid, self._waitfor_libc(timeout=timeout), use_tcache=tcache)
 
     @property
     def elf(self):
