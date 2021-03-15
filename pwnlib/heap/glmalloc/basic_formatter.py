@@ -12,12 +12,16 @@ def get_terminal_width():
 
 class BasicFormatter(object):
     _MAXIMUM_WIDTH = 80
+    _MINIMUM_WIDTH = 40
 
     def __init__(self):
-        self.width = self._MAXIMUM_WIDTH
         term_width = get_terminal_width()
 
-        if term_width < self.width:
+        if term_width > self._MAXIMUM_WIDTH:
+            self.width = self._MAXIMUM_WIDTH
+        elif term_width < self._MINIMUM_WIDTH:
+            self.width = self._MINIMUM_WIDTH
+        else:
             self.width = term_width
 
         self.title_surrounded_symbol = "="
