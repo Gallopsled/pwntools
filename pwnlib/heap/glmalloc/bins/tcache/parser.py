@@ -28,9 +28,10 @@ class EnabledTcacheParser:
         malloc_chunk_parser (MallocChunkParser): a parser of the chunks in the
             heap.
         heap_parser (HeapParser): a parser of the heap metadata and chunks.
+        demangle (bool): If demangle the fd pointer to bypass safe-link.
     """
 
-    def __init__(self, malloc_chunk_parser, heap_parser):
+    def __init__(self, malloc_chunk_parser, heap_parser, demangle=False):
         self._process_informer = malloc_chunk_parser.process_informer
         self._pointer_size = malloc_chunk_parser.pointer_size
         self._malloc_chunk_parser = malloc_chunk_parser
@@ -38,6 +39,8 @@ class EnabledTcacheParser:
             malloc_chunk_parser.process_informer
         )
         self._heap_parser = heap_parser
+
+        self._demangle = demangle
 
     def are_tcache_enabled(self):
         return True
@@ -81,6 +84,10 @@ class EnabledTcacheParser:
                 )
                 chunks.append(chunk)
                 pointer = chunk.fd
+
+                if self._demangle:
+                    pointer = chunk.data_address >> 12 ^ pointer
+
             except (OSError, IOError):
                 # to avoid hanging in case some pointer is corrupted
                 break
