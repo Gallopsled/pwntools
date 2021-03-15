@@ -17,7 +17,7 @@ class HeapExplorer:
 
     Examples:
         >>> p = process('sh')
-        >>> hp = p.heap_explorer
+        >>> hp = p.heap_explorer()
         >>> hp.tcaches_enabled # doctest: +SKIP
         True
         >>> print(hp.arena().summary()) # doctest: +SKIP
@@ -99,7 +99,7 @@ class HeapExplorer:
 
         Examples:
             >>> p = process('sh')
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> number_of_arenas = hp.arenas_count()
             >>> number_of_arenas # doctest: +SKIP
             2
@@ -118,7 +118,7 @@ class HeapExplorer:
 
         Examples:
             >>> p = process('sh')
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> ms = hp.malloc_state()
             >>> ms_top = ms.top
             >>> hex(ms_top) # doctest: +SKIP
@@ -178,7 +178,7 @@ class HeapExplorer:
 
         Examples:
             >>> p = process('sh')
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> mmss = hp.all_arenas_malloc_states()
             >>> mmss_str = "\\n".join([str(ms) for ms in mmss])
             >>> print(mmss_str) # doctest: +SKIP
@@ -200,7 +200,7 @@ class HeapExplorer:
         Examples:
             >>> p = process('sh')
             >>> p.sendline('init='+'A'*0x1000)
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> heap = hp.heap()
             >>> number_chunks = len(heap.chunks)
             >>> len(number_chunks) # doctest: +SKIP
@@ -268,7 +268,7 @@ class HeapExplorer:
         Example:
             >>> p = process('sh')
             >>> p.sendline('init='+'A'*0x1000)
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> hhpp = hp.all_arenas_heaps()
             >>> hhpp_str = "\\n".join([str(h) for h in hhpp])
             >>> print(hhpp_str) # doctest: +SKIP
@@ -295,7 +295,7 @@ class HeapExplorer:
 
             >>> p = process('sh')
             >>> p.sendline('init='+'A'*0x1000)
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> unsorted_bins = hp.unsorted_bin()
             >>> unsorted_bins_str = str(unsorted_bins)
             >>> print(unsorted_bins_str) # doctest: +SKIP
@@ -327,7 +327,7 @@ class HeapExplorer:
         Example:
             >>> p = process('sh')
             >>> p.sendline('init='+'A'*0x1000)
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> uubb = hp.all_arenas_unsorted_bins()
             >>> uubb_str = "\\n".join([str(ub) for ub in uubb])
             >>> print(uubb_str) # doctest: +SKIP
@@ -354,7 +354,7 @@ class HeapExplorer:
         Examples:
             >>> p = process('sh')
             >>> p.sendline('init bins')
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> small_bins = hp.small_bins()
             >>> print(small_bins) # doctest: +SKIP
             ================================== Small Bins ==================================
@@ -374,7 +374,7 @@ class HeapExplorer:
 
         Example:
             >>> p = process('sh')
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> bb = hp.all_arenas_small_bins()
             >>> bb_str = "\\n".join([str(b) for b in bb])
             >>> print(bb_str) # doctest: +SKIP
@@ -401,7 +401,7 @@ class HeapExplorer:
         Examples:
             >>> p = process('sh')
             >>> p.sendline('init bins')
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> large_bins = hp.large_bins()
             >>> print(large_bins) # doctest: +SKIP
             ================================== Large Bins ==================================
@@ -421,7 +421,7 @@ class HeapExplorer:
 
         Example:
             >>> p = process('sh')
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> bb = hp.all_arenas_large_bins()
             >>> bb_str = "\\n".join([str(b) for b in bb])
             >>> print(bb_str) # doctest: +SKIP
@@ -449,7 +449,7 @@ class HeapExplorer:
         Examples:
             >>> p = process('sh')
             >>> p.sendline('init bins')
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> fast_bins = hp.fast_bins()
             >>> print(fast_bins) # doctest: +SKIP
             ================================== Fast Bins ==================================
@@ -471,7 +471,7 @@ class HeapExplorer:
         Example:
             >>> p = process('sh')
             >>> p.sendline('init bins')
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> bb = hp.all_arenas_fast_bins()
             >>> bb_str = "\\n".join([str(b) for b in bb])
             >>> print(bb_str) # doctest: +SKIP
@@ -497,7 +497,7 @@ class HeapExplorer:
         Example:
             >>> p = process('sh')
             >>> p.sendline('init bins')
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> try:
             ...     tcaches_str = str(hp.tcaches())
             ... except NoTcacheError:
@@ -525,7 +525,7 @@ class HeapExplorer:
         Example:
             >>> p = process('sh')
             >>> p.sendline('init bins')
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> try:
             ...     ttcc = hp.all_arenas_tcaches()
             ...     tcaches_str = "\\n".join([str(tc) for tc in ttcc])
@@ -558,7 +558,7 @@ class HeapExplorer:
         Examples:
             >>> p = process('sh')
             >>> p.sendline('init bins')
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> arena = hp.arena()
             >>> arena_summary = arena.summary()
             >>> print(arena_summary) # doctest: +SKIP
@@ -681,7 +681,7 @@ class HeapExplorer:
         Example:
             >>> p = process('sh')
             >>> p.sendline('init bins')
-            >>> hp = p.heap_explorer
+            >>> hp = p.heap_explorer()
             >>> arenas = hp.all_arenas()
             >>> arenas_str = "\\n".join([str(a) for a in arenas])
             >>> print(arenas_str) # doctest: +SKIP

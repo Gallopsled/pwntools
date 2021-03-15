@@ -13,7 +13,7 @@ Examples
 Get a summary of the items of the arena:
 
     >>> p = process('sh')
-    >>> hp = p.heap_explorer
+    >>> hp = p.heap_explorer()
     >>> print(hp.arena().summary()) # doctest: +SKIP
     ========================== Arena ==========================
     - Malloc State (0x7fad3f0a5c40)
@@ -41,7 +41,7 @@ Get a summary of the items of the arena:
 View the malloc state:
 
     >>> p = process('sh')
-    >>> hp = p.heap_explorer
+    >>> hp = p.heap_explorer()
     >>> print(hp.malloc_state()) # doctest: +SKIP
     ======================== Malloc State (0x7f97053fbc40) ========================
     mutex = 0x0
@@ -87,7 +87,7 @@ View the malloc state:
 List the chunks of the bins:
 
     >>> p = process('sh')
-    >>> hp = p.heap_explorer
+    >>> hp = p.heap_explorer()
     >>> print(hp.tcaches()) # doctest: +SKIP
     =================================== Tcaches ===================================
     [23] Tcache 0x188 (1) => Chunk(0x56383e3c0250 0x190 PREV_IN_USE) => 0x0
@@ -117,7 +117,7 @@ List the chunks of the bins:
 List the chunks of the arena heap:
 
     >>> p = process('sh')
-    >>> hp = p.heap_explorer
+    >>> hp = p.heap_explorer()
     >>> print(hp.heap()) # doctest: +SKIP
     ============================ Heap (0x555635100000) ============================
     0x555635100000 0x250 PREV_IN_USE
@@ -167,7 +167,7 @@ List the chunks of the arena heap:
 Get all the arena information:
 
     >>> p = process('sh')
-    >>> hp = p.heap_explorer
+    >>> hp = p.heap_explorer()
     >>> print(hp.arena()) # doctest: +SKIP
     ++++++++++++++++++++++++++++++++++++ Arena ++++++++++++++++++++++++++++++++++++
     ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -254,7 +254,7 @@ Get all the arena information:
 
 Access to items of the non main arena:
     >>> p = process('sh')
-    >>> hp = p.heap_explorer
+    >>> hp = p.heap_explorer()
     >>> hp.arenas_count() # doctest: +SKIP
     2
     >>> _ = [print(arena.summary()) for arena in hp.all_arenas()] # doctest: +SKIP

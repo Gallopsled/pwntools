@@ -988,7 +988,7 @@ class process(tube):
 
         Examples:
             >>> p = process('sh') # doctest: +SKIP
-            >>> hp = p.heap_explorer # doctest: +SKIP
+            >>> hp = p.heap_explorer() # doctest: +SKIP
             >>> heap = hp.heap() # doctest: +SKIP
             >>> len(heap.chunks) # doctest: +SKIP
             574
