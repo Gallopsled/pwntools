@@ -94,26 +94,26 @@ List the chunks of the bins:
 
         >>> p = process('sh')
         >>> hp = p.heap_explorer()
-        >>> print(hp.tcaches()) # doctest: +SKIP
+        >>> print(hp.tcaches())
         =================================== Tcaches ===================================
         [23] Tcache 0x188 (1) => Chunk(0x56383e3c0250 0x190 PREV_IN_USE) => 0x0
         [41] Tcache 0x2a8 (1) => Chunk(0x56383e3bffa0 0x2b0 PREV_IN_USE) => 0x0
         ================================================================================
-        >>> print(hp.fast_bins()) # doctest: +SKIP
+        >>> print(hp.fast_bins())
         ================================== Fast Bins ==================================
         [4] Fast Bin 0x60 (2) => Chunk(0x555635100c20 0x60 PREV_IN_USE) => Chunk(0x55563
         5100ba0 0x60 PREV_IN_USE) => 0x0
         ================================================================================
-        >>> print(hp.unsorted_bin()) # doctest: +SKIP
+        >>> print(hp.unsorted_bin())
         ================================ Unsorted Bins ================================
         [0] Unsorted Bin (2) => Chunk(0x555635101d40 0x910 PREV_IN_USE) => Chunk(0x55563
         5100ca0 0x1010 PREV_IN_USE) => 0x7f8bd66e9ca0
         ================================================================================
-        >>> print(hp.small_bins()) # doctest: +SKIP
+        >>> print(hp.small_bins())
         ================================== Small Bins ==================================
             [-] No chunks found
         ================================================================================
-        >>> print(hp.large_bins()) # doctest: +SKIP
+        >>> print(hp.large_bins())
         ================================== Large Bins ==================================
             [-] No chunks found
         ================================================================================
@@ -126,7 +126,7 @@ List the chunks of the arena heap:
 
         >>> p = process('sh')
         >>> hp = p.heap_explorer()
-        >>> print(hp.heap()) # doctest: +SKIP
+        >>> print(hp.heap())
         ============================ Heap (0x555635100000) ============================
         0x555635100000 0x250 PREV_IN_USE
           00 00 00 00 07 00 00 00 00 00 00 00 00 00 00 00   ................
@@ -178,7 +178,7 @@ Get all the arena information:
 
         >>> p = process('sh')
         >>> hp = p.heap_explorer()
-        >>> print(hp.arena()) # doctest: +SKIP
+        >>> print(hp.arena())
         ++++++++++++++++++++++++++++++++++++ Arena ++++++++++++++++++++++++++++++++++++
         ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         ======================== Malloc State (0x7f97053fbc40) ========================
@@ -268,9 +268,9 @@ Access to items of the non main arena:
 
         >>> p = process('sh')
         >>> hp = p.heap_explorer()
-        >>> hp.arenas_count() # doctest: +SKIP
+        >>> hp.arenas_count()
         2
-        >>> _ = [print(arena.summary()) for arena in hp.all_arenas()] # doctest: +SKIP
+        >>> _ = [print(arena.summary()) for arena in hp.all_arenas()]
         ==================================== Arena ====================================
         - Malloc State (0x7f97053fbc40)
             top = 0x55c4669ff6e0
@@ -313,7 +313,7 @@ Access to items of the non main arena:
         - Large bins
             [-] No chunks found
         ================================================================================
-        >>> _ = [print(ms) for ms in hp.all_arenas_fast_bins()] # doctest: +SKIP
+        >>> _ = [print(ms) for ms in hp.all_arenas_fast_bins()]
         ================================== Fast Bins ==================================
         [4] Fast Bin 0x60 (2) => Chunk(0x55c4669fdc20 0x60 PREV_IN_USE) => Chunk(0x55c46
         69fdba0 0x60 PREV_IN_USE) => 0x0
@@ -321,11 +321,11 @@ Access to items of the non main arena:
         ================================== Fast Bins ==================================
             [-] No chunks found
         ================================================================================
-        >>> print(hp.fast_bins()) # doctest: +SKIP
+        >>> print(hp.fast_bins())
         ================================== Fast Bins ==================================
         [4] Fast Bin 0x60 (2) => Chunk(0x55c4669fdc20 0x60 PREV_IN_USE) => Chunk(0x55c4669fdba0 0x60 PREV_IN_USE) => 0x0
         ================================================================================
-        >>> print(hp.fast_bins(arena_index=1)) # doctest: +SKIP
+        >>> print(hp.fast_bins(arena_index=1))
         ================================== Fast Bins ==================================
             [-] No chunks found
         ================================================================================
