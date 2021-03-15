@@ -1,6 +1,7 @@
 from pwnlib.heap.glmalloc.utils import align_address
 from pwnlib.heap.glmalloc.heap.heap import Heap
 from pwnlib.heap.glmalloc.heap.heap_info import HeapInfoParser
+from .error import HeapError
 
 
 class HeapParser:
@@ -43,11 +44,22 @@ class HeapParser:
         Args:
             malloc_state (MallocState)
 
+        Raises:
+            HeapError: When the malloc state indicates no heap
+
         Returns:
             tuple(int, int)
         """
+
         maps = self._process_informer.maps()
-        current_heap_map = maps.map_with_address(malloc_state.top)
+        try:
+            current_heap_map = maps.map_with_address(malloc_state.top)
+        except IndexError:
+            if malloc_state.top == 0x0:
+                raise HeapError("No heap available")
+            else:
+                raise HeapError("No heap in address {}".format(malloc_state.top))
+
         main_heap_map = maps.heap
 
         is_main_heap = current_heap_map.address == main_heap_map.address
