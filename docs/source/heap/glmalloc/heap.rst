@@ -9,3 +9,8 @@ Heap
 ------
 .. autoclass:: pwnlib.heap.glmalloc.Heap()
    :members:
+
+HeapError
+-----------
+.. autoclass:: pwnlib.heap.glmalloc.HeapError()
+   :members:
