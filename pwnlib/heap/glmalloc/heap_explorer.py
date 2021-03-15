@@ -6,7 +6,7 @@ from pwnlib.heap.glmalloc.bins import \
     NoTcacheError
 from pwnlib.heap.glmalloc.arena import ArenaParser
 from pwnlib.heap.glmalloc.malloc_state import MallocStateParser
-from pwnlib.heap.glmalloc.heap import HeapParser
+from pwnlib.heap.glmalloc.heap import HeapParser, HeapError
 from pwnlib.heap.glmalloc.malloc_chunk import MallocChunkParser
 from pwnlib.heap.glmalloc.process_informer import ProcessInformer
 
@@ -59,8 +59,15 @@ class HeapExplorer:
         if self._process_informer.is_libc_version_lower_than((2, 26)):
             return False
 
-        tcache_chunk_size = self._pointer_size * 64 + 0x50
-        return tcache_chunk_size == self.heap().chunks[0].size
+        try:
+            # check if the first block of
+            # the heap that contains the tcache_per_thread_struct
+            tcache_chunk_size = self._pointer_size * 64 + 0x50
+            return tcache_chunk_size == self.heap().chunks[0].size
+        except HeapError:
+            # if there is no heap loaded yet return true since version is 2.26
+            # or higher so probably there are tcaches
+            return True
 
     def arenas_count(self):
         """Returns the number of arenas
