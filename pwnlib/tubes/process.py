@@ -927,18 +927,15 @@ class process(tube):
         ELF('/lib64/libc-...so')
         >>> p.close()
         """
-        lib = self._libc()
+        lib = self._waitfor_libc(timeout=0)
         lib.describe()
         return lib
 
     def _libc(self):
         """Function to retrieve the libc library from the current process
 
-        Raises:
-            PwnlibException: In case the libc is not found
-
         Returns:
-            ELF
+            ELF or None
         """
 
         from pwnlib.elf import ELF
@@ -949,11 +946,35 @@ class process(tube):
                 e.address = address
                 return e
 
-        self.error(
-            "Unable to find the libc library in process {}".format(
-                self.executable
-            )
-        )
+    def _waitfor_libc(self, timeout=1):
+        """Function to retrieve the libc library from the current process waiting for
+        it to be loaded
+
+        Arguments:
+            timeout(int): Time to wait for libc to being loaded
+
+        Raises:
+            PwnlibException: In case the libc is not found in the given timeout
+
+        Returns:
+            ELF
+        """
+
+        limit = time.time() + timeout
+        while True:
+            libc = self._libc()
+            if libc is not None:
+                return libc
+
+            if time.time() < limit:
+                time.sleep(0.01)
+                continue
+            else:
+                self.error(
+                    "Unable to find the libc library in process {}".format(
+                        self.executable
+                    )
+                )
 
     def heap_explorer(self, timeout=1):
         """Returns a heap explorer that allows to inspect the items of the libc
@@ -982,21 +1003,7 @@ class process(tube):
         Returns:
             HeapExplorer
         """
-
-        # wait until libc is loaded in the process or timeout is reached
-        limit = time.time() + timeout
-        while True:
-            try:
-                libc = self._libc()
-                break
-            except PwnlibException as ex:
-                if str(ex).startswith("Unable to find the libc"):
-                    if time.time() < limit:
-                        time.sleep(0.01)
-                        continue
-                raise
-
-        return HeapExplorer(self.pid, libc)
+        return HeapExplorer(self.pid, self._waitfor_libc(timeout=timeout))
 
     @property
     def elf(self):
