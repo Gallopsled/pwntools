@@ -27,6 +27,7 @@ from pwnlib.util.hashes import sha256file
 from pwnlib.util.misc import parse_ldd_output
 from pwnlib.util.misc import which
 import pwnlib.util.proc
+from pwnlib.exception import PwnlibException
 
 from pwnlib.heap import HeapExplorer
 
@@ -954,10 +955,15 @@ class process(tube):
             )
         )
 
-    @property
-    def heap_explorer(self):
+    def heap_explorer(self, timeout=1):
         """Returns a heap explorer that allows to inspect the items of the libc
         heap.
+
+        Arguments:
+            timeout(int): Time to wait for libc to being loaded
+
+        Raises:
+            PwnlibException: In case the libc is not found in the given timeout
 
         Examples:
             >>> p = process('sh') # doctest: +SKIP
@@ -976,7 +982,21 @@ class process(tube):
         Returns:
             HeapExplorer
         """
-        return HeapExplorer(self.pid, self._libc())
+
+        # wait until libc is loaded in the process or timeout is reached
+        limit = time.time() + timeout
+        while True:
+            try:
+                libc = self._libc()
+                break
+            except PwnlibException as ex:
+                if str(ex).startswith("Unable to find the libc"):
+                    if time.time() < limit:
+                        time.sleep(0.01)
+                        continue
+                raise
+
+        return HeapExplorer(self.pid, libc)
 
     @property
     def elf(self):
