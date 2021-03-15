@@ -45,43 +45,15 @@ class HeapExplorer:
 
     """
 
-    def __init__(self, pid, libc):
-        process_informer = ProcessInformer(pid, libc)
-        self._process_informer = process_informer
-        self._main_arena_address = process_informer.main_arena_address
-        self._pointer_size = process_informer.pointer_size
+    def __init__(self, pid, libc, use_tcache=None):
+        self._process_informer = ProcessInformer(pid, libc)
 
-        self._malloc_state_parser = MallocStateParser(process_informer)
-
-        malloc_chunk_parser = MallocChunkParser(process_informer)
-
-        self._heap_parser = HeapParser(
-            malloc_chunk_parser,
-            self._malloc_state_parser
-        )
-
-        self._bin_parser = BinParser(malloc_chunk_parser)
-        self._fast_bin_parser = FastBinParser(malloc_chunk_parser)
+        if use_tcache is None:
+            use_tcache = self._are_tcaches_enabled()
 
         #: :class:`bool`: Indicates if tcaches are enabled for the current
         #: glibc version.
-        self.tcaches_enabled = self._are_tcaches_enabled()
-
-        if self.tcaches_enabled:
-            self._tcache_parser = EnabledTcacheParser(
-                malloc_chunk_parser,
-                self._heap_parser
-            )
-        else:
-            self._tcache_parser = DisabledTcacheParser()
-
-        self._arena_parser = ArenaParser(
-            self._malloc_state_parser,
-            self._heap_parser,
-            self._bin_parser,
-            self._fast_bin_parser,
-            self._tcache_parser
-        )
+        self.tcaches_enabled = use_tcache
 
     def _are_tcaches_enabled(self):
         if self._process_informer.is_libc_version_lower_than((2, 26)):
@@ -660,4 +632,55 @@ class HeapExplorer:
         """
         return self._arena_parser.parse_all_from_main_malloc_state_address(
             self._main_arena_address
+        )
+
+    @property
+    def _main_arena_address(self):
+        return self._process_informer.main_arena_address
+
+    @property
+    def _pointer_size(self):
+        return self._process_informer.pointer_size
+
+    @property
+    def _malloc_state_parser(self):
+        return MallocStateParser(self._process_informer)
+
+    @property
+    def _malloc_chunk_parser(self):
+        return MallocChunkParser(self._process_informer)
+
+    @property
+    def _heap_parser(self):
+        return HeapParser(
+            self._malloc_chunk_parser,
+            self._malloc_state_parser
+        )
+
+    @property
+    def _bin_parser(self):
+        return BinParser(self._malloc_chunk_parser)
+
+    @property
+    def _fast_bin_parser(self):
+        return FastBinParser(self._malloc_chunk_parser)
+
+    @property
+    def _tcache_parser(self):
+        if self.tcaches_enabled:
+            return EnabledTcacheParser(
+                self._malloc_chunk_parser,
+                self._heap_parser
+            )
+        else:
+            return DisabledTcacheParser()
+
+    @property
+    def _arena_parser(self):
+        return ArenaParser(
+            self._malloc_state_parser,
+            self._heap_parser,
+            self._bin_parser,
+            self._fast_bin_parser,
+            self._tcache_parser
         )
