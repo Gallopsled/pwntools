@@ -51,7 +51,7 @@ class FastBinParser:
                 # to avoid hanging in case some pointer is corrupted
                 break
 
-        return FastBin(fast_bin_entry, chunks)
+        return FastBin(fast_bin_entry, chunks, safe_link=self._demangle)
 
 
 class FastBins(Bins):
@@ -71,8 +71,8 @@ class FastBin(Bin):
     """Class to represent a fast bin of the glibc.
     """
 
-    def __init__(self, bin_entry, malloc_chunks):
-        super(FastBin, self).__init__(bin_entry, malloc_chunks)
+    def __init__(self, bin_entry, malloc_chunks, safe_link):
+        super(FastBin, self).__init__(bin_entry, malloc_chunks, safe_link=safe_link)
 
     def _name(self):
         return "Fast Bin"

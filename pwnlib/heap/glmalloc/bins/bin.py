@@ -72,9 +72,10 @@ class Bin(object):
     of the bin entry as well as the chunks of the bin.
     """
 
-    def __init__(self, bin_entry, malloc_chunks):
+    def __init__(self, bin_entry, malloc_chunks, safe_link=False):
         self._bin_entry = bin_entry
         self._malloc_chunks = malloc_chunks
+        self._safe_link = safe_link
 
     @property
     def bin_entry(self):
@@ -131,7 +132,11 @@ class Bin(object):
             if flags:
                 msg.append(" {}".format(flags))
             msg.append(")")
-            next_address = chunk.fd
+
+            if self._safe_link:
+                next_address = chunk.fd_demangled
+            else:
+                next_address = chunk.fd
 
         msg.append(" => {:#x}".format(next_address))
         return "".join(msg)

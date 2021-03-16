@@ -15,8 +15,8 @@ class Tcache(Bin):
     """Class to represent a tcache of the glibc
     """
 
-    def __init__(self, bin_entry, malloc_chunks):
-        super(Tcache, self).__init__(bin_entry, malloc_chunks)
+    def __init__(self, bin_entry, malloc_chunks, safe_link):
+        super(Tcache, self).__init__(bin_entry, malloc_chunks, safe_link=safe_link)
 
     @property
     def bin_entry(self):

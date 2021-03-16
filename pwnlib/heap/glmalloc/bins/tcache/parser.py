@@ -92,4 +92,4 @@ class EnabledTcacheParser:
                 # to avoid hanging in case some pointer is corrupted
                 break
 
-        return Tcache(entry, chunks)
+        return Tcache(entry, chunks, safe_link=self._demangle)
