@@ -681,7 +681,10 @@ class HeapExplorer:
 
     @property
     def _fast_bin_parser(self):
-        return FastBinParser(self._malloc_chunk_parser)
+        return FastBinParser(
+            self._malloc_chunk_parser,
+            demangle=self.demangle
+        )
 
     @property
     def _tcache_parser(self):

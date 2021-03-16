@@ -157,6 +157,12 @@ class MallocChunk:
         else:
             self._pack_pointer = p32
 
+    @property
+    def fd_demangled(self):
+        """:class:`int`: The fd pointer demangled to return the original
+        value when safe-linking is used."""
+        return self.data_address >> 12 ^ self.fd
+
     def __str__(self):
         string = ""
         string += "previous_size = {:#x}\n".format(self.previous_size)

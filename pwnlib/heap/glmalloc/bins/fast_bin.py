@@ -8,10 +8,12 @@ class FastBinParser:
     Args:
         malloc_chunk_parser (MallocChunkParser): a parser of the chunks in the
             heap.
+        demangle (bool): If demangle the fd pointer to bypass safe-link.
     """
 
-    def __init__(self, malloc_chunk_parser):
+    def __init__(self, malloc_chunk_parser, demangle=False):
         self._malloc_chunk_parser = malloc_chunk_parser
+        self._demangle = demangle
 
     def parse_all_from_malloc_state(self, malloc_state):
         """Returns the fast bins of the arena based on the malloc state
@@ -40,7 +42,11 @@ class FastBinParser:
                     current_address
                 )
                 chunks.append(chunk)
-                current_address = chunk.fd
+
+                if self._demangle:
+                    current_address = chunk.fd_demangled
+                else:
+                    current_address = chunk.fd
             except (OSError, IOError):
                 # to avoid hanging in case some pointer is corrupted
                 break
