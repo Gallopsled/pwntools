@@ -67,18 +67,8 @@ class HeapExplorer:
         return self._process_informer.is_libc_version_higher_than((2, 31))
 
     def _are_tcaches_enabled(self):
-        if self._process_informer.is_libc_version_lower_than((2, 26)):
-            return False
-
-        try:
-            # check if the first block of
-            # the heap that contains the tcache_per_thread_struct
-            tcache_chunk_size = self._pointer_size * 64 + 0x50
-            return tcache_chunk_size == self.heap().chunks[0].size
-        except HeapError:
-            # if there is no heap loaded yet return true since version is 2.26
-            # or higher so probably there are tcaches
-            return True
+        # tcaches were added in version 2.26
+        return self._process_informer.is_libc_version_higher_than((2, 25))
 
     def arenas_count(self):
         """Returns the number of arenas
