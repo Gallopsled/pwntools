@@ -976,15 +976,15 @@ class process(tube):
                     )
                 )
 
-    def heap_explorer(self, timeout=1, tcache=None, demangle=None):
+    def heap_explorer(self, timeout=1, tcache=None, safe_link=None):
         """Returns a heap explorer that allows to inspect the items of the libc
         heap.
 
         Arguments:
             timeout(int): Time to wait for libc to being loaded
             tcache(bool): Indicate if tcache is present
-            demangle (bool): If demangle the tcache and fast-bins pointers to bypass
-            safe-link.
+            safe_link (bool): Indicate if safe-link is present in tcaches and
+                fastbisn pointers
 
         Raises:
             PwnlibException: In case the libc is not found in the given timeout
@@ -1010,7 +1010,7 @@ class process(tube):
             self.pid,
             self._waitfor_libc(timeout=timeout),
             use_tcache=tcache,
-            demangle=demangle
+            safe_link=safe_link
         )
 
     @property

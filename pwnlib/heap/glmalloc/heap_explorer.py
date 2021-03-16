@@ -45,7 +45,7 @@ class HeapExplorer:
 
     """
 
-    def __init__(self, pid, libc, use_tcache=None, demangle=None):
+    def __init__(self, pid, libc, use_tcache=None, safe_link=None):
         self._process_informer = ProcessInformer(pid, libc)
 
         if use_tcache is None:
@@ -55,14 +55,14 @@ class HeapExplorer:
         #: glibc version.
         self.tcaches_enabled = use_tcache
 
-        if demangle is None:
-            demangle = self._should_demangle()
+        if safe_link is None:
+            safe_link = self._is_safe_link_enabled()
 
-        #: :class:`bool`: Indicates if tcaches and fastbin pointers should
-        # be demangled to bypass safe-link protection
-        self.demangle = demangle
+        #: :class:`bool`: Indicates if tcaches and fastbin are protected
+        # by safe-link
+        self.safe_link = safe_link
 
-    def _should_demangle(self):
+    def _is_safe_link_enabled(self):
         # safe-link protection is included in version 2.32
         return self._process_informer.is_libc_version_higher_than((2, 31))
 
@@ -673,7 +673,7 @@ class HeapExplorer:
     def _fast_bin_parser(self):
         return FastBinParser(
             self._malloc_chunk_parser,
-            demangle=self.demangle
+            safe_link=self.safe_link
         )
 
     @property
@@ -682,7 +682,7 @@ class HeapExplorer:
             return EnabledTcacheParser(
                 self._malloc_chunk_parser,
                 self._heap_parser,
-                demangle=self.demangle,
+                safe_link=self.safe_link,
             )
         else:
             return DisabledTcacheParser()
