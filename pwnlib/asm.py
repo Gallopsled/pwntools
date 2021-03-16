@@ -610,7 +610,7 @@ def make_elf(data,
         log.exception("An error occurred while building an ELF:\n%s" % code)
     else:
         atexit.register(lambda: shutil.rmtree(tmpdir))
-
+    shutil.rmtree(tmpdir)
     return retval
 
 @LocalContext
@@ -717,7 +717,7 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
         log.exception("An error occurred while assembling:\n%s" % lines)
     else:
         atexit.register(lambda: shutil.rmtree(tmpdir))
-
+    shutil.rmtree(tmpdir)
     return result
 
 @LocalContext
@@ -810,7 +810,7 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
         log.exception("An error occurred while disassembling:\n%s" % data)
     else:
         atexit.register(lambda: shutil.rmtree(tmpdir))
-
+    shutil.rmtree(tmpdir)
 
     lines = []
     pattern = '^( *[0-9a-f]+: *)', '((?:[0-9a-f]+ )+ *)', '(.*)'
