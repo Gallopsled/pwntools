@@ -83,10 +83,10 @@ class EnabledTcacheParser:
                     chunk_base_address
                 )
                 chunks.append(chunk)
-                pointer = chunk.fd
-
                 if self._demangle:
-                    pointer = chunk.data_address >> 12 ^ pointer
+                    pointer = chunk.fd_demangled
+                else:
+                    pointer = chunk.fd
 
             except (OSError, IOError):
                 # to avoid hanging in case some pointer is corrupted
