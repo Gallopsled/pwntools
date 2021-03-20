@@ -1,21 +1,4 @@
 import re
-from pwnlib.util import packing
-
-
-def u32(bytes_):
-    return packing.u32(bytes_)
-
-
-def u64(bytes_):
-    return packing.u64(bytes_)
-
-
-def p32(number):
-    return packing.p32(number)
-
-
-def p64(number):
-    return packing.p64(number)
 
 
 def align_address(address, align):

@@ -1,10 +1,9 @@
 import os.path
 import pwnlib.util.proc
-from pwnlib.heap.glmalloc.utils import \
-    u64, \
-    u32, \
-    get_libc_version_from_name, \
-    get_main_arena_addr
+from pwnlib.heap.glmalloc.utils import (
+    get_libc_version_from_name, get_main_arena_addr
+)
+from pwnlib.util.packing import u32, u64
 
 
 class ProcessInformer:

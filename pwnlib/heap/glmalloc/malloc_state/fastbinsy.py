@@ -1,4 +1,4 @@
-from pwnlib.heap.glmalloc.utils import u64, u32
+from pwnlib.util.packing import u64, u32
 from pwnlib.heap.glmalloc.bins import FastBinEntry
 
 
