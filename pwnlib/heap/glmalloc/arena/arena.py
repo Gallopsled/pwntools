@@ -1,7 +1,7 @@
 from pwnlib.heap.glmalloc.bins import NoTcacheError
-from pwnlib.heap.glmalloc.malloc_state import \
-    SMALL_BINS_START_INDEX, \
-    LARGE_BINS_START_INDEX
+from pwnlib.heap.glmalloc.malloc_state import (
+    SMALL_BINS_START_INDEX, LARGE_BINS_START_INDEX
+)
 from pwnlib.heap.glmalloc.basic_formatter import BasicFormatter
 
 
