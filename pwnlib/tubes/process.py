@@ -960,21 +960,20 @@ class process(tube):
             ELF
         """
 
-        limit = time.time() + timeout
-        while True:
-            libc = self._libc()
-            if libc is not None:
-                return libc
+        t = Timeout()
+        with t.countdown(timeout):
+            while t.timeout:
+                libc = self._libc()
+                if libc is not None:
+                    return libc
 
-            if time.time() < limit:
                 time.sleep(0.01)
-                continue
-            else:
-                self.error(
-                    "Unable to find the libc library in process {}".format(
-                        self.executable
-                    )
-                )
+
+        self.error(
+            "Unable to find the libc library in process {}".format(
+                self.executable
+            )
+        )
 
     def heap_explorer(self, timeout=1, tcache=None, safe_link=None):
         """Returns a heap explorer that allows to inspect the items of the libc
