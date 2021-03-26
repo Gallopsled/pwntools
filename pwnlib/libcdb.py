@@ -145,6 +145,17 @@ def _search_debuginfo_by_hash(base_url, hex_encoded_id):
     return cache
 
 def _check_elf_cache(cache_type, hex_encoded_id, hash_type):
+    """
+    Check if there already is an ELF file for this hash in the cache.
+
+    >>> cache, _ = _check_elf_cache('libcdb', '2d1c5e0b85cb06ff47fa6fa088ec22cb6e06074e', 'build_id')
+    >>> os.unlink(cache) if os.path.exists(cache)
+    >>> filename = search_by_hash('2d1c5e0b85cb06ff47fa6fa088ec22cb6e06074e', 'build_id', unstrip=False)
+    >>> hex(ELF(filename).symbols.read)
+    '0xe56c0'
+    >>> filename == cache
+    True
+    """
     # Ensure that the cache directory exists
     cache_dir = os.path.join(context.cache_dir, cache_type, hash_type)
 
@@ -184,12 +195,21 @@ def unstrip_libc(filename):
 
     Examples:
         >>> filename = search_by_build_id('2d1c5e0b85cb06ff47fa6fa088ec22cb6e06074e', unstrip=False)
-        >>> hex(ELF(filename).symbols.read)
+        >>> libc = ELF(filename)
+        >>> hex(libc.symbols.read)
         '0xe56c0'
+        >>> 'main_arena' in libc.symbols
+        False
         >>> unstrip_libc(filename)
         True
-        >>> hex(ELF(filename).symbols.main_arena)
+        >>> libc = ELF(filename)
+        >>> hex(libc.symbols.main_arena)
         '0x1d57a0'
+        >>> unstrip(which('ls'))
+        False
+        >>> filename = search_by_build_id('06a8004be6e10c4aeabbe0db74423ace392a2d6b', unstrip=True)
+        >>> 'main_arena' in ELF(filename).symbols
+        True
     """
     if not which('eu-unstrip'):
         log.warn_once('Couldn\'t find "eu-unstrip" in PATH. Install elfutils first.')
@@ -214,7 +234,7 @@ def unstrip_libc(filename):
     p.close()
 
     if output:
-        log.error('Failed to unstrip libc binary: %s', output)
+        log.failure('Failed to unstrip libc binary: %s', output)
         return False
 
     return True
