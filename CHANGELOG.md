@@ -88,24 +88,14 @@ The table below shows which release corresponds to each branch, and what date th
 [1757]: https://github.com/Gallopsled/pwntools/pull/1757
 [1758]: https://github.com/Gallopsled/pwntools/pull/1758
 [1780]: https://github.com/Gallopsled/pwntools/pull/1780
-<<<<<<< HEAD
-
 [1941]: https://github.com/Gallopsled/pwntools/pull/1941
-
-=======
-[1941]: https://github.com/Gallopsled/pwntools/pull/1941
->>>>>>> stable
 [1811]: https://github.com/Gallopsled/pwntools/pull/1811
 [1827]: https://github.com/Gallopsled/pwntools/pull/1827
 [1841]: https://github.com/Gallopsled/pwntools/pull/1841
 [1839]: https://github.com/Gallopsled/pwntools/pull/1839
 [1833]:  https://github.com/Gallopsled/pwntools/pull/1833
 
-<<<<<<< HEAD
-## 4.4.0 (`beta`)
-=======
 ## 4.4.0 (`stable`)
->>>>>>> stable
 
 - [#1541][1541] Use `context.newline` for tubes by default
 - [#1602][1602] Fix bytes handling in ssh tubes
