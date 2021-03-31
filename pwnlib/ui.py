@@ -28,10 +28,16 @@ def testpwnproc(cmd):
         s = p.stderr.read()
         log.error("child process failed:\n%s", s.decode())
     signal.signal(signal.SIGUSR1, handleusr1)
-    cmd = """
-from pwn import *
+    cmd = """\
+import os
 import signal
-atexception.register(lambda:os.kill(os.getppid(), signal.SIGUSR1))
+import sys
+_ehook = sys.excepthook
+def ehook(*args):
+    _ehook(*args)
+    os.kill(os.getppid(), signal.SIGUSR1)
+sys.excepthook = ehook
+from pwn import *
 """ + cmd
     if "coverage" in sys.modules:
         cmd = "import coverage; coverage.process_startup()\n" + cmd
