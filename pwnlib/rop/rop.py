@@ -435,7 +435,7 @@ class ROP(object):
     >>> context.clear(arch = "i386", kernel = 'amd64')
     >>> assembly = 'int 0x80; ret; add esp, 0x10; ret; pop eax; ret'
     >>> e = ELF.from_assembly(assembly)
-    >>> e.symbols['funcname'] = e.address + 0x1234
+    >>> e.symbols['funcname'] = e.entry + 0x1234
     >>> r = ROP(e)
     >>> r.funcname(1, 2)
     >>> r.funcname(3)
@@ -944,7 +944,7 @@ class ROP(object):
 
             elif isinstance(slot, AppendedArgument):
                 stack[i] = stack.next
-                stack.extend(slot.resolve(stack.next + len(slot) - context.bytes))
+                stack.extend(slot.resolve(stack.next))
 
             elif isinstance(slot, CurrentStackPointer):
                 stack[i] = slot_address

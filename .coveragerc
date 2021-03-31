@@ -7,6 +7,6 @@ omit =
 source =
     pwn
     pwnlib
-    ~/.pwntools-cache-2.7/
-    ~/.pwntools-cache-3.8/
+    ~/.cache/.pwntools-cache-2.7/
+    ~/.cache/.pwntools-cache-3.8/
 disable_warnings = module-not-imported

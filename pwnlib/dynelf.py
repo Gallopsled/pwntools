@@ -538,6 +538,9 @@ class DynELF(object):
         if lib == 'libc':
             lib = 'libc.so'
 
+        if symb:
+            symb = context._encode(symb)
+
         #
         # Get a pretty name for the symbol to show the user
         #
@@ -637,12 +640,14 @@ class DynELF(object):
         while leak.field(cur, LinkMap.l_prev):
             cur = leak.field(cur, LinkMap.l_prev)
 
+        libname = context._encode(libname)
+
         while cur:
             self.status("link_map entry %#x" % cur)
             p_name = leak.field(cur, LinkMap.l_name)
             name   = leak.s(p_name)
 
-            if libname.encode('utf-8') in name:
+            if libname in name:
                 break
 
             if name:
@@ -741,7 +746,6 @@ class DynELF(object):
 
                 # Leak the name of the function from the symbol table
                 name = leak.s(strtab + leak.field(sym, Sym.st_name))
-                name = name.decode('utf-8')
 
                 # Make sure it matches the name of the symbol we were looking for.
                 if name == symb:
@@ -749,7 +753,7 @@ class DynELF(object):
                     addr = libbase + leak.field(sym, Sym.st_value)
                     return addr
 
-                self.status("%s (hash collision)" % name)
+                self.status("%r (hash collision)" % name)
 
             # The name did not match what we were looking for, or we assume
             # it did not since it was not a function.
@@ -825,7 +829,6 @@ class DynELF(object):
                 # Check for collision on hash values
                 sym  = symtab + sizeof(Sym) * (ndx + i)
                 name = leak.s(strtab + leak.field(sym, Sym.st_name))
-                name = name.decode('utf-8')
 
                 if name == symb:
                     # No collision, get offset and calculate address
@@ -833,7 +836,7 @@ class DynELF(object):
                     addr   = offset + libbase
                     return addr
 
-                self.status("%s (hash collision)" % name)
+                self.status("%r (hash collision)" % name)
 
             # Collision or no match, continue to the next item
             i += 1

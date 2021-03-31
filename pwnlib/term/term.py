@@ -431,7 +431,7 @@ def render_cell(cell, clear_after = False):
                 put('\x08')
                 col -= 1
         elif t == CR:
-#            put('\r')
+            put('\r')
             col = 0
         elif t == SOH:
             put('\x01')

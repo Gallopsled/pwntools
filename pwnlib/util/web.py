@@ -29,8 +29,10 @@ def wget(url, save=None, timeout=5, **kwargs):
       >>> result = wget(url, timeout=60)
       >>> result
       b'User-agent: *\nDisallow: /deny\n'
-      >>> result2 = wget(url, True, timeout=60)
-      >>> result == open('robots.txt', 'rb').read()
+
+      >>> filename = tempfile.mktemp()
+      >>> result2 = wget(url, filename, timeout=60)
+      >>> result == open(filename, 'rb').read()
       True
     """
     import requests

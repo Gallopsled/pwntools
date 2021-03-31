@@ -278,14 +278,14 @@ class process(tube):
         #: Full path to the executable
         self.executable = executable_val
 
+        #: Environment passed on envp
+        self.env = os.environ if env is None else env_val
+
         if self.executable is None:
             if shell:
                 self.executable = '/bin/sh'
             else:
-                self.executable = which(self.argv[0])
-
-        #: Environment passed on envp
-        self.env = os.environ if env is None else env_val
+                self.executable = which(self.argv[0], path=self.env.get('PATH'))
 
         self._cwd = os.path.realpath(cwd or os.path.curdir)
 
@@ -467,7 +467,7 @@ class process(tube):
 
         Example:
 
-            >>> p = process('true')
+            >>> p = process('/bin/true')
             >>> p.executable == '/bin/true'
             True
             >>> p.executable == p.program
@@ -550,6 +550,9 @@ class process(tube):
         if not isinstance(executable, str):
             executable = executable.decode('utf-8')
 
+        env = os.environ if env is None else env
+
+        path = env.get('PATH')
         # Do not change absolute paths to binaries
         if executable.startswith(os.path.sep):
             pass
@@ -558,8 +561,8 @@ class process(tube):
         # target directory.
         #
         # For example, 'sh'
-        elif os.path.sep not in executable and which(executable):
-            executable = which(executable)
+        elif os.path.sep not in executable and which(executable, path=path):
+            executable = which(executable, path=path)
 
         # Either there is a path component, or the binary is not in $PATH
         # For example, 'foo/bar' or 'bar' with cwd=='foo'
@@ -583,8 +586,6 @@ class process(tube):
         #
 
         # Create a duplicate so we can modify it safely
-        env = os.environ if env is None else env
-
         env2 = {}
         for k,v in env.items():
             if not isinstance(k, (bytes, six.text_type)):
@@ -934,12 +935,22 @@ class process(tube):
 
         try:
             if self.poll() is None:
-                return pwnlib.gdb.corefile(self)
+                corefile = pwnlib.gdb.corefile(self)
+                if corefile is None:
+                    self.error("Could not create corefile with GDB for %s", self.executable)
+                return corefile
 
-            finder = pwnlib.elf.corefile.CorefileFinder(self)
+            # Handle race condition against the kernel or QEMU to write the corefile
+            # by waiting up to 5 seconds for it to be written.
+            t = Timeout()
+            finder = None
+            with t.countdown(5):
+                while t.timeout and (finder is None or not finder.core_path):
+                    finder = pwnlib.elf.corefile.CorefileFinder(self)
+                    time.sleep(0.5)
+
             if not finder.core_path:
-                self.warn("Could not find core file for pid %i" % self.pid)
-                return None
+                self.error("Could not find core file for pid %i" % self.pid)
 
             core_hash = sha256file(finder.core_path)
 
