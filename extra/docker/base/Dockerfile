@@ -3,8 +3,10 @@
 # Based on Ubuntu
 ############################################################
 
-FROM ubuntu:xenial
+FROM ubuntu:bionic
 MAINTAINER Maintainer Gallopsled et al.
+
+env DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
     && apt-get install -y \
@@ -12,11 +14,24 @@ RUN apt-get update \
         git \
         libssl-dev \
         libffi-dev \
-        python2.7 \
+        python \
         python-pip \
         python-dev \
+        python3 \
+        python3-pip \
+        python3-dev \
+        qemu-user-static \
+        binutils-arm-linux-gnueabihf \
+        binutils-aarch64-linux-gnu \
+        binutils-mips-linux-gnu \
+        binutils-mipsel-linux-gnu \
+        binutils-powerpc-linux-gnu \
+        binutils-powerpc64-linux-gnu \
+        binutils-sparc64-linux-gnu \
     && pip install --upgrade pip \
     && python -m pip install --upgrade pwntools \
+    && pip3 install --upgrade pip \
+    && python3 -m pip install --upgrade pwntools \
     && PWNLIB_NOTERM=1 pwn update \
     && apt-get install -y sudo \
     && useradd -m pwntools \

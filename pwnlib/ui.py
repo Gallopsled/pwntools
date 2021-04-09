@@ -28,10 +28,16 @@ def testpwnproc(cmd):
         s = p.stderr.read()
         log.error("child process failed:\n%s", s.decode())
     signal.signal(signal.SIGUSR1, handleusr1)
-    cmd = """
-from pwn import *
+    cmd = """\
+import os
 import signal
-atexception.register(lambda:os.kill(os.getppid(), signal.SIGUSR1))
+import sys
+_ehook = sys.excepthook
+def ehook(*args):
+    _ehook(*args)
+    os.kill(os.getppid(), signal.SIGUSR1)
+sys.excepthook = ehook
+from pwn import *
 """ + cmd
     if "coverage" in sys.modules:
         cmd = "import coverage; coverage.process_startup()\n" + cmd
@@ -41,6 +47,7 @@ atexception.register(lambda:os.kill(os.getppid(), signal.SIGUSR1))
         p.recvuntil(b"\33[6n")
     except EOFError:
         raise EOFError("process terminated with code: %r (%r)" % (p.poll(True), p.stderr.read()))
+    # late initialization can lead to EINTR in many places
     fcntl.ioctl(p.stdout.fileno(), termios.TIOCSWINSZ, struct.pack("hh", 80, 80))
     p.stdout.write(b"\x1b[1;1R")
     time.sleep(0.5)
