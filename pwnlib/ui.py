@@ -43,6 +43,7 @@ atexception.register(lambda:os.kill(os.getppid(), signal.SIGUSR1))
         raise EOFError("process terminated with code: %r (%r)" % (p.poll(True), p.stderr.read()))
     fcntl.ioctl(p.stdout.fileno(), termios.TIOCSWINSZ, struct.pack("hh", 80, 80))
     p.stdout.write(b"\x1b[1;1R")
+    time.sleep(0.5)
     return p
 
 def yesno(prompt, default=None):
@@ -57,6 +58,10 @@ def yesno(prompt, default=None):
       `True` if the answer was "yes", `False` if "no"
 
     Examples:
+
+    .. doctest::
+       :skipif: branch_dev
+
         >>> yesno("A number:", 20)
         Traceback (most recent call last):
         ...
@@ -75,6 +80,10 @@ def yesno(prompt, default=None):
          [?] is it good 3 [yes/No] False
 
     Tests:
+
+    .. doctest::
+       :skipif: branch_dev
+
         >>> p = testpwnproc("print(yesno('is it ok??'))")
         >>> b"is it ok" in p.recvuntil("??")
         True
@@ -136,12 +145,20 @@ def options(prompt, opts, default = None):
       The users choice in the form of an integer.
 
     Examples:
+
+    .. doctest::
+       :skipif: branch_dev
+
         >>> options("Select a color", ("red", "green", "blue"), "green")
         Traceback (most recent call last):
         ...
         ValueError: options(): default must be a number or None
 
     Tests:
+
+    .. doctest::
+       :skipif: branch_dev
+
         >>> p = testpwnproc("print(options('select a color', ('red', 'green', 'blue')))")
         >>> p.sendline(b"\33[C\33[A\33[A\33[B\33[1;5A\33[1;5B 0310")
         >>> _ = p.recvall()
@@ -252,6 +269,10 @@ def pause(n=None):
     r"""Waits for either user input or a specific number of seconds.
 
     Examples:
+
+    .. doctest::
+       :skipif: branch_dev
+
         >>> with context.local(log_level="INFO"):
         ...     pause(1)
         [x] Waiting
@@ -263,6 +284,10 @@ def pause(n=None):
         ValueError: pause(): n must be a number or None
 
     Tests:
+
+    .. doctest::
+       :skipif: branch_dev
+
         >>> saved_stdin = sys.stdin
         >>> try:
         ...     sys.stdin = io.TextIOWrapper(io.BytesIO(b"\n"))
@@ -308,11 +333,16 @@ def more(text):
       :const:`None`
 
     Tests:
+
+    .. doctest::
+       :skipif: branch_dev
+       
         >>> more("text")
         text
         >>> p = testpwnproc("more('text\\n' * (term.height + 2))")
         >>> p.send(b"x")
-        >>> b"text" in p.recvall()
+        >>> data = p.recvall()
+        >>> b"text" in data or data
         True
     """
     if term.term_mode:
