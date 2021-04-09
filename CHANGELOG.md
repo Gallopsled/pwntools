@@ -9,9 +9,11 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.5.0](#450)    | `dev`    | Dec 20, 2020 (planned)
-| [4.4.0](#440)    | `beta`   | Nov 20, 2020 (planned)
-| [4.3.0](#430)    | `stable` | Oct 20, 2020
+| [4.6.0](#460)    | `dev`    | May 29, 2020 (planned)
+| [4.5.0](#450)    | `beta`   | Apr 29, 2020 (planned)
+| [4.4.0](#440)    | `stable` | Mar 29, 2020
+| [4.3.1](#431)    |          | Nov 29, 2020
+| [4.3.0](#430)    |          | Oct 20, 2020
 | [4.2.0](#420)    |          | Jul 3, 2020
 | [4.1.7](#417)    |          | Jun 30, 2020
 | [4.1.5](#415)    |          | Jun 27, 2020
@@ -56,7 +58,11 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.5.0 (`dev`)
+## 4.6.0 (`dev`)
+
+
+
+## 4.5.0 (`beta`)
 
 - [#1261][1261] Misc `run_in_new_terminal` improvements (notably gdb terminated by default)
 - [#1695][1695] Allow using GDB Python API
@@ -69,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1780][1780] Re-add Python2 to the official Dockerfile
 - [#1941][1941] Disable all Android tests, `pwnlib.adb` is no longer supported in CI
 - [#1811][1811] Remove unnecessary `pwn.toplevel.__all__`
+- [#1827][1827] Support `$XDG_CONFIG_HOME` dir for `pwn.conf`
 - [#1841][1841] Add colored_traceback
 - [#1839][1839] run_in_new_terminal now creates a runner script if given a list or tuple
 - [#1833][1833] Add pwnlib.filesystem module
@@ -81,15 +88,14 @@ The table below shows which release corresponds to each branch, and what date th
 [1757]: https://github.com/Gallopsled/pwntools/pull/1757
 [1758]: https://github.com/Gallopsled/pwntools/pull/1758
 [1780]: https://github.com/Gallopsled/pwntools/pull/1780
-
 [1941]: https://github.com/Gallopsled/pwntools/pull/1941
-
 [1811]: https://github.com/Gallopsled/pwntools/pull/1811
+[1827]: https://github.com/Gallopsled/pwntools/pull/1827
 [1841]: https://github.com/Gallopsled/pwntools/pull/1841
 [1839]: https://github.com/Gallopsled/pwntools/pull/1839
 [1833]:  https://github.com/Gallopsled/pwntools/pull/1833
 
-## 4.4.0 (`beta`)
+## 4.4.0 (`stable`)
 
 - [#1541][1541] Use `context.newline` for tubes by default
 - [#1602][1602] Fix bytes handling in ssh tubes
@@ -133,7 +139,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1703]: https://github.com/Gallopsled/pwntools/pull/1703
 [1704]: https://github.com/Gallopsled/pwntools/pull/1704
 
-## 4.3.1 (`stable`)
+## 4.3.1
 
 - [#1732][1732] Fix shellcraft SSTI vulnerability (first major pwntools vuln!)
 
