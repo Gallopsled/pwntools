@@ -8,7 +8,8 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'disablenx',
-    help = 'Disable NX for an ELF binary'
+    help = 'Disable NX for an ELF binary',
+    description = 'Disable NX for an ELF binary'
 )
 parser.add_argument(
     'elf',

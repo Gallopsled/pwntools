@@ -10,7 +10,8 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'debug',
-    help = 'Debug a binary in GDB'
+    help = 'Debug a binary in GDB',
+    description = 'Debug a binary in GDB'
 )
 parser.add_argument(
     '-x', metavar='GDBSCRIPT',

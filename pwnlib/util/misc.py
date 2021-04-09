@@ -10,6 +10,8 @@ import socket
 import stat
 import string
 import subprocess
+import sys
+import tempfile
 
 from pwnlib import atexit
 from pwnlib.context import context
@@ -149,9 +151,10 @@ def which(name, all = False, path=None):
       else the first location or :const:`None` if not found.
 
     Example:
-      >>> which('sh')
-      '/bin/sh'
-"""
+
+        >>> which('sh') # doctest: +ELLIPSIS
+        '.../bin/sh'
+    """
     # If name is a path, do not attempt to resolve it.
     if os.path.sep in name:
         return name
@@ -260,9 +263,26 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             log.error("Cannot use commands with semicolon.  Create a script and invoke that directly.")
         argv += [command]
     elif isinstance(command, (list, tuple)):
-        if any(';' in c for c in command):
-            log.error("Cannot use commands with semicolon.  Create a script and invoke that directly.")
-        argv += list(command)
+        # Dump the full command line to a temporary file so we can be sure that
+        # it is parsed correctly, and we do not need to account for shell expansion
+        script = '''
+#!{executable!s}
+import os
+os.execve({argv0!r}, {argv!r}, os.environ)
+'''
+        script = script.format(executable=sys.executable,
+                               argv=command,
+                               argv0=which(command[0]))
+        script = script.lstrip()
+
+        log.debug("Created script for new terminal:\n%s" % script)
+
+        with tempfile.NamedTemporaryFile(delete=False, mode='wt+') as tmp:
+          tmp.write(script)
+          tmp.flush()
+          os.chmod(tmp.name, 0o700)
+          argv += [tmp.name]
+
 
     log.debug("Launching a new terminal: %r" % argv)
 
@@ -279,10 +299,13 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         pid = p.pid
 
     if kill_at_exit:
-        if terminal == 'tmux':
-            atexit.register(lambda: os.kill(pid, signal.SIGTERM))
-        else:
-            atexit.register(lambda: p.terminate())
+        def kill():
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except OSError:
+                pass
+
+        atexit.register(kill)
 
     return pid
 

@@ -55,6 +55,7 @@ Each of the ``pwntools`` modules is documented here.
    elf
    exception
    filepointer
+   filesystem
    flag
    fmtstr
    gdb
