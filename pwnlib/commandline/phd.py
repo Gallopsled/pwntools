@@ -15,7 +15,8 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'phd',
-    help = 'Pwnlib HexDump'
+    help = 'Pretty hex dump',
+    description = 'Pretty hex dump'
 )
 
 parser.add_argument(

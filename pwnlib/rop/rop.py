@@ -945,7 +945,7 @@ class ROP(object):
 
             elif isinstance(slot, AppendedArgument):
                 stack[i] = stack.next
-                stack.extend(slot.resolve(stack.next + len(slot) - context.bytes))
+                stack.extend(slot.resolve(stack.next))
 
             elif isinstance(slot, CurrentStackPointer):
                 stack[i] = slot_address

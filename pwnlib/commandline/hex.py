@@ -10,9 +10,9 @@ from pwnlib.util.fiddling import enhex
 
 parser = common.parser_commands.add_parser(
     'hex',
-    help = '''
-Hex-encodes data provided on the command line or stdin
-''')
+    help = 'Hex-encodes data provided on the command line or stdin',
+    description = 'Hex-encodes data provided on the command line or stdin')
+
 parser.add_argument('data', nargs='*',
     help='Data to convert into hex')
 

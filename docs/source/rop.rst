@@ -1,7 +1,3 @@
-.. testsetup:: *
-
-   from pwn import *
-
 :mod:`pwnlib.rop` --- Return Oriented Programming
 =================================================
 
