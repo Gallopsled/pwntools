@@ -56,4 +56,4 @@ jobs:
     - name: Coverage Doctests (Android Only)
       run: |
         source .android.env
-        PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest docs/source/adb.rst docs/source/protocols/adb.rst
+        PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest docs/source/adb.rst
