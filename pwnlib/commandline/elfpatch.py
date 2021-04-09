@@ -12,7 +12,8 @@ from pwnlib.commandline import common
 
 p = common.parser_commands.add_parser(
     'elfpatch',
-    help = 'Patch an ELF file'
+    help = 'Patch an ELF file',
+    description = 'Patch an ELF file'
 )
 
 p.add_argument('elf',help="File to patch")

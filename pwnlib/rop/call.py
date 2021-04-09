@@ -9,7 +9,7 @@ from pwnlib.util import packing
 
 import six
 
-from pwnlib.util.misc import python_2_bytes_compatible
+from pwnlib.util.misc import python_2_bytes_compatible, align
 
 
 class Unresolved(object):
@@ -60,7 +60,7 @@ class StackAdjustment(Unresolved):
 
 @python_2_bytes_compatible
 class AppendedArgument(Unresolved):
-    """
+    r"""
     Encapsulates information about a pointer argument, and the data
     which is pointed to, where the absolute address of the data must
     be known, and the data can be appended to the ROP chain.
@@ -73,20 +73,20 @@ class AppendedArgument(Unresolved):
         >>> len(u)
         32
         >>> u.resolve()
-        [1, 2, 'hello\x00$$', 3]
+        [1, 2, b'hello\x00$$', 3]
 
         >>> u = AppendedArgument([1,2,['hello'],3])
         >>> u.resolve()
-        [1, 2, 32, 3, 'hello\x00$$']
+        [1, 2, 32, 3, b'hello\x00$$']
         >>> u.resolve(10000)
-        [1, 2, 10032, 3, 'hello\x00$$']
+        [1, 2, 10032, 3, b'hello\x00$$']
         >>> u.address = 20000
         >>> u.resolve()
-        [1, 2, 20032, 3, 'hello\x00$$']
+        [1, 2, 20032, 3, b'hello\x00$$']
 
         >>> u = AppendedArgument([[[[[[[[['pointers!']]]]]]]]], 1000)
         >>> u.resolve()
-        [1008, 1016, 1024, 1032, 1040, 1048, 1056, 1064, 'pointers!\x00$$$$$$']
+        [1008, 1016, 1024, 1032, 1040, 1048, 1056, 1064, b'pointers!\x00$$$$$$']
     """
     #: Symbolic name of the value.
     name = None
@@ -111,7 +111,14 @@ class AppendedArgument(Unresolved):
             value = [value]
         self.values = []
         self.address = address
-        self.size = 0
+        for v in value:
+            if isinstance(v, (list, tuple)):
+                self.size += context.bytes
+            else:
+                try:
+                    self.size += align(context.bytes, len(v))
+                except TypeError: # no 'len'
+                    self.size += context.bytes
         for v in value:
             if isinstance(v, (list, tuple)):
                 arg = AppendedArgument(v, self.address + self.size)
@@ -119,10 +126,6 @@ class AppendedArgument(Unresolved):
                 self.values.append(arg)
             else:
                 self.values.append(v)
-                try:
-                    self.size += -(-len(v) // context.bytes * context.bytes)
-                except TypeError: # no 'len'
-                    self.size += context.bytes
 
     @property
     def address(self):

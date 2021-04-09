@@ -1,4 +1,6 @@
 """GDB Python API bridge."""
+import gdb
+
 import socket
 from threading import Condition
 import time

@@ -15,6 +15,7 @@ from pwnlib.commandline import common
 p = common.parser_commands.add_parser(
     'constgrep',
     help = "Looking up constants from header files.\n\nExample: constgrep -c freebsd -m  ^PROT_ '3 + 4'",
+    description = "Looking up constants from header files.\n\nExample: constgrep -c freebsd -m  ^PROT_ '3 + 4'",
     formatter_class = argparse.RawDescriptionHelpFormatter,
 )
 
