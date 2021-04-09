@@ -1097,12 +1097,14 @@ os.execve(exe, argv, env)
 
         with self.progress(msg) as h:
 
-            script = 'for py in python2.7 python2 python; do test -x "$(which $py 2>&1)" && exec $py -c %s check; done; echo 2' % sh_string(script)
+            script = 'echo PWNTOOLS; for py in python2.7 python2 python; do test -x "$(which $py 2>&1)" && echo $py && exec $py -c %s check; done; echo 2' % sh_string(script)
             with context.quiet:
                 python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=timeout)
 
             try:
-                result = safeeval.const(python.recvline())
+                python.recvline_contains('PWNTOOLS')        # Magic flag so that any sh/bash initialization errors are swallowed
+                python.recvline()                           # Python interpreter that was selected
+                result = safeeval.const(python.recvline())  # Status flag from the Python script
             except (EOFError, ValueError):
                 h.failure("Process creation failed")
                 self.warn_once('Could not find a Python interpreter on %s\n' % self.host \
