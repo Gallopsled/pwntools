@@ -1,3 +1,4 @@
+dist: focal
 language: python
 addons:
   apt:
