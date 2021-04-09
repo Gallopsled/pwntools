@@ -11,7 +11,8 @@ from mako.lookup import TemplateLookup
 
 parser = common.parser_commands.add_parser(
     'template',
-    help = 'Generate an exploit template'
+    help = 'Generate an exploit template',
+    description = 'Generate an exploit template'
 )
 
 parser.add_argument('exe', nargs='?', help='Target binary')
@@ -41,7 +42,14 @@ def main(args):
             log.error("Must specify --path or a exe")
 
         s = ssh(args.user, args.host, args.port or 22, args.password or None)
-        s.download(args.path or args.exe)
+
+        try:
+            remote = args.path or args.exe
+            s.download(remote)
+        except Exception:
+            log.warning("Could not download file %r, opening a shell", remote)
+            s.interactive()
+            return
 
         if not args.exe:
             args.exe = os.path.basename(args.path)

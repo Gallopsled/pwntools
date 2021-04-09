@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import atexit
+import errno
 import os
 import re
 import signal
@@ -110,7 +111,12 @@ def init():
     fd.flush()
     s = ''
     while True:
-        c = os.read(fd.fileno(), 1)
+        try:
+            c = os.read(fd.fileno(), 1)
+        except OSError as e:
+            if e.errno != errno.EINTR:
+                raise
+            continue
         if not isinstance(c, six.string_types):
             c = c.decode('utf-8')
         s += c
@@ -425,7 +431,7 @@ def render_cell(cell, clear_after = False):
                 put('\x08')
                 col -= 1
         elif t == CR:
-#            put('\r')
+            put('\r')
             col = 0
         elif t == SOH:
             put('\x01')

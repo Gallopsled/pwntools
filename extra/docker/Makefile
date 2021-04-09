@@ -1,13 +1,34 @@
-subdirs=xenial stable $(wildcard */)
-makefiles=$(wildcard */Makefile)
+subdirs=$(shell find . -type d -depth 1 | xargs basename)
 tags=base stable beta dev
 
-all: $(makefiles) $(subdirs)
+all: $(subdirs) $(tags)
 
-$(subdirs):
+tags: $(tags)
+
+base:
+	@echo "Building $@"
 	docker build -t pwntools/pwntools:$(shell basename $(@)) "$@"
 
-$(makefiles):
-	make -C $(shell dirname $@)
+stable beta dev: base
+	@echo "Building $@"
+	docker build -t pwntools/pwntools:$(shell basename $(@)) "$@"
 
-.PHONY: all $(subdirs) $(makefiles)
+develop:
+	@echo "Building $@"
+	docker build -t pwntools/pwntools:$(shell basename $(@)) "$@"
+	docker run -it --privileged --net=host --hostname localhost \
+		--ulimit core=-1:-1 \
+		--mount type=bind,source="$(shell git rev-parse --show-toplevel)",target=/home/pwntools/pwntools \
+		pwntools/pwntools:$(shell basename $(@))
+
+debug:
+	@echo "Subdirs   $(subdirs)"
+	@echo "Tags      $(tags)"
+
+clean:
+	docker container prune
+	docker
+
+FORCE:
+
+.PHONY: all $(subdirs) $(makefiles) $(tags)

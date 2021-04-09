@@ -843,6 +843,13 @@ def bruteforce(func, alphabet, length, method = 'upto', start = None, databag = 
     h.failure('No matches found')
 
 
+def _mbruteforcewrap(func, alphabet, length, method, start, databag):
+    oldloglevel = context.log_level
+    context.log_level = 'critical'
+    res = bruteforce(func, alphabet, length, method=method, start=start, databag=databag)
+    context.log_level = oldloglevel
+    databag["result"] = res
+
 
 def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads = None):
     """mbruteforce(func, alphabet, length, method = 'upto', start = None, threads = None)
@@ -863,13 +870,6 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
       >>> mbruteforce(lambda x: x == '9999', string.digits, length=4, threads=1, start=(2, 2))
       '9999'
     """
-
-    def bruteforcewrap(func, alphabet, length, method, start, databag):
-        oldloglevel = context.log_level
-        context.log_level = 'critical'
-        res = bruteforce(func, alphabet, length, method=method, start=start, databag=databag)
-        context.log_level = oldloglevel
-        databag["result"] = res
 
     if start is None:
         start = (1, 1)
@@ -896,7 +896,7 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
 
         chunkid = (i2-1) + (i * N2) + 1
 
-        processes[i] = multiprocessing.Process(target=bruteforcewrap,
+        processes[i] = multiprocessing.Process(target=_mbruteforcewrap,
                 args=(func, alphabet, length, method, (chunkid, totalchunks),
                         shareddata[i]))
         processes[i].start()

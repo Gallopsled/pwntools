@@ -14,6 +14,10 @@
       :members: kill, poll, interactive
       :show-inheritance:
 
+   .. autoclass:: pwnlib.tubes.ssh.ssh_process
+      :members:
+      :show-inheritance:
+
    .. autoclass:: pwnlib.tubes.ssh.ssh_connecter()
       :show-inheritance:
 
