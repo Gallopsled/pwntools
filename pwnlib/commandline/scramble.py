@@ -12,7 +12,8 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'scramble',
-    help = 'Shellcode encoder'
+    help = 'Shellcode encoder',
+    description = 'Shellcode encoder'
 )
 
 parser.add_argument(

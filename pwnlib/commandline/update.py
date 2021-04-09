@@ -12,7 +12,8 @@ from pwnlib.commandline import common
 
 p = common.parser_commands.add_parser(
     'update',
-    help = 'Check for pwntools updates'
+    help = 'Check for pwntools updates',
+    description = 'Check for pwntools updates'
 )
 
 p.add_argument('--install', action='store_true', help='''

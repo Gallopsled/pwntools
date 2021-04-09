@@ -765,6 +765,7 @@ class ELF(ELFFile):
             These tests are just to ensure that our shellcode is correct.
 
             >>> for arch in CAT_PROC_MAPS_EXIT:
+            ...   context.clear()
             ...   with context.local(arch=arch):
             ...     sc = shellcraft.cat("/proc/self/maps")
             ...     sc += shellcraft.exit()
@@ -1047,8 +1048,8 @@ class ELF(ELFFile):
                 for address, target in sorted(res.items()):
                     self.plt[inv_symbols[target]] = address
 
-        for a,n in sorted({v:k for k,v in self.plt.items()}.items()):
-            log.debug('PLT %#x %s', a, n)
+        # for a,n in sorted({v:k for k,v in self.plt.items()}.items()):
+            # log.debug('PLT %#x %s', a, n)
 
     def _populate_kernel_version(self):
         if 'linux_banner' not in self.symbols:

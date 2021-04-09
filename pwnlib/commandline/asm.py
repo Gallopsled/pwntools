@@ -13,7 +13,8 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'asm',
-    help = 'Assemble shellcode into bytes'
+    help = 'Assemble shellcode into bytes',
+    description = 'Assemble shellcode into bytes',
 )
 
 parser.add_argument(

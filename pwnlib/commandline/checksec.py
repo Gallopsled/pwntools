@@ -10,7 +10,8 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'checksec',
-    help = 'Check binary security settings'
+    help = 'Check binary security settings',
+    description = 'Check binary security settings',
 )
 parser.add_argument(
     'elf',

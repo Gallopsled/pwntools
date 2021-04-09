@@ -12,6 +12,7 @@ from pwnlib.commandline import common
 p = common.parser_commands.add_parser(
     'pwnstrip',
     help = 'Strip binaries for CTF usage',
+    description = 'Strip binaries for CTF usage'
 )
 
 g = p.add_argument_group("actions")

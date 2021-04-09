@@ -15,7 +15,8 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'disasm',
-    help = 'Disassemble bytes into text format'
+    help = 'Disassemble bytes into text format',
+    description = 'Disassemble bytes into text format'
 )
 
 parser.add_argument(
