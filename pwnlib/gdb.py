@@ -416,37 +416,47 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
 
     Examples:
 
-    >>> # Create a new process, and stop it at 'main'
-    >>> io = gdb.debug('bash', '''
-    ... break main
-    ... continue
-    ... ''')
-    >>> # Send a command to Bash
-    >>> io.sendline("echo hello")
-    >>> io.recvline()
-    b'hello\n'
-    >>> # Interact with the process
-    >>> io.interactive() # doctest: +SKIP
-    >>> io.close()
+        Create a new process, and stop it at 'main'
 
-    >>> # Create a new process, and stop it at '_start'
-    >>> io = gdb.debug('bash', '''
-    ... # Wait until we hit the main executable's entry point
-    ... break _start
-    ... continue
-    ...
-    ... # Now set breakpoint on shared library routines
-    ... break malloc
-    ... break free
-    ... continue
-    ... ''')
-    >>> # Send a command to Bash
-    >>> io.sendline("echo hello")
-    >>> io.recvline()
-    b'hello\n'
-    >>> # Interact with the process
-    >>> io.interactive() # doctest: +SKIP
-    >>> io.close()
+        >>> io = gdb.debug('bash', '''
+        ... break main
+        ... continue
+        ... ''')
+
+        Send a command to Bash
+
+        >>> io.sendline("echo hello")
+        >>> io.recvline()
+        b'hello\n'
+
+        Interact with the process
+
+        >>> io.interactive() # doctest: +SKIP
+        >>> io.close()
+
+        Create a new process, and stop it at '_start'
+
+        >>> io = gdb.debug('bash', '''
+        ... # Wait until we hit the main executable's entry point
+        ... break _start
+        ... continue
+        ...
+        ... # Now set breakpoint on shared library routines
+        ... break malloc
+        ... break free
+        ... continue
+        ... ''')
+
+        Send a command to Bash
+
+        >>> io.sendline("echo hello")
+        >>> io.recvline()
+        b'hello\n'
+
+        Interact with the process
+
+        >>> io.interactive() # doctest: +SKIP
+        >>> io.close()
 
     Using GDB Python API:
 
@@ -475,23 +485,29 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         >>> io.recvline()
         b'foo\n'
 
-    You can use :func:`debug` to spawn new processes on remote machines as well,
-    by using the ``ssh=`` keyword to pass in your :class:`.ssh` instance.
 
-    >>> # Connect to the SSH server
-    >>> # Start a process on the server
-    >>> shell = ssh('travis', 'example.pwnme', password='demopass')
-    >>> io = gdb.debug(['bash'],
-    ...                 ssh = shell,
-    ...                 gdbscript = '''
-    ... break main
-    ... continue
-    ... ''')
-    >>> # Send a command to Bash
-    >>> io.sendline("echo hello")
-    >>> # Interact with the process
-    >>> io.interactive() # doctest: +SKIP
-    >>> io.close()
+    Using SSH:
+
+        You can use :func:`debug` to spawn new processes on remote machines as well,
+        by using the ``ssh=`` keyword to pass in your :class:`.ssh` instance.
+
+        Connect to the SSH server and start a process on the server
+
+        >>> shell = ssh('travis', 'example.pwnme', password='demopass')
+        >>> io = gdb.debug(['bash'],
+        ...                 ssh = shell,
+        ...                 gdbscript = '''
+        ... break main
+        ... continue
+        ... ''')
+
+        Send a command to Bash
+
+        >>> io.sendline("echo hello")
+
+        Interact with the process
+        >>> io.interactive() # doctest: +SKIP
+        >>> io.close()
     """
     if isinstance(args, six.integer_types + (tubes.process.process, tubes.ssh.ssh_channel)):
         log.error("Use gdb.attach() to debug a running process")
@@ -762,7 +778,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         b'Hello from bash\n'
 
         Using GDB Python API:
-        
+
         .. doctest
            :skipif: six.PY2
 
@@ -813,7 +829,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         b'Hello from bash\n'
 
         Attach to processes running on a remote machine via an SSH :class:`.ssh` process
-        
+
         >>> shell = ssh('travis', 'example.pwnme', password='demopass')
         >>> io = shell.process(['cat'])
         >>> pid = gdb.attach(io, gdbscript='''

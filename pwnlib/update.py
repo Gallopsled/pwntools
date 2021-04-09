@@ -191,10 +191,13 @@ def perform_check(prerelease=current_version.is_prerelease):
     return command
 
 def check_automatically():
+    xdg_config_home = os.environ.get('XDG_CONFIG_HOME') or "~/.config"
+
     if should_check():
         message  = ["Checking for new versions of %s" % package_name]
         message += ["To disable this functionality, set the contents of %s to 'never' (old way)." % cache_file()]
-        message += ["""Or add the following lines to ~/.pwn.conf (or /etc/pwn.conf system-wide):
+        message += ["Or add the following lines to ~/.pwn.conf or %s/pwn.conf (or /etc/pwn.conf system-wide):" % xdg_config_home]
+        message += ["""\
     [update]
     interval=never"""]
         log.info("\n".join(message))
