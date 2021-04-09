@@ -62,7 +62,12 @@ install_requires     = ['paramiko>=1.15.2',
                         'sortedcontainers',
                         'unicorn>=1.0.2rc1,<1.0.2rc4', # see unicorn-engine/unicorn#1100, unicorn-engine/unicorn#1170, Gallopsled/pwntools#1538
                         'six>=1.12.0',
+                        'rpyc',
+                        'colored_traceback',
 ]
+
+if platform.python_version_tuple()[0] == '2':
+    install_requires += ['pathlib2']
 
 # Check that the user has installed the Python development headers
 PythonH = os.path.join(get_python_inc(), 'Python.h')
@@ -83,8 +88,8 @@ setup(
     name                 = 'pwntools',
     python_requires      = '>=2.7',
     packages             = find_packages(),
-    version              = '4.4.0dev0',
-    data_files           = [('',
+    version              = '4.6.0dev',
+    data_files           = [('pwntools-doc',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],
     package_data         = {

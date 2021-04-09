@@ -1,4 +1,4 @@
-<% from pwnlib.shellcraft import amd64 %>
+<% from pwnlib.shellcraft import amd64, pretty %>
 <%docstring>
 Pushes an array/envp-style array of pointers onto the stack.
 
@@ -25,14 +25,14 @@ word_size = 8
 offset = len(array_str) + word_size
 
 %>\
-    /* push argument array ${repr(array)} */
+    /* push argument array ${pretty(array, False)} */
     ${amd64.pushstr(array_str)}
     ${amd64.mov(reg, 0)}
     push ${reg} /* null terminate */
 % for i,arg in enumerate(reversed(array)):
     ${amd64.mov(reg, offset + word_size*i - len(arg))}
     add ${reg}, rsp
-    push ${reg} /* ${repr(arg)} */
+    push ${reg} /* ${pretty(arg, False)} */
     <% offset -= len(arg) %>\
 % endfor
     ${amd64.mov(reg,'rsp')}

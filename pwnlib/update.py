@@ -9,7 +9,7 @@ every week.  It can be permanently disabled via:
 
 ::
 
-    $ echo never > ~/.pwntools-cache-*/update
+    $ echo never > ~/.cache/.pwntools-cache-*/update
 
 Or adding the following lines to ~/.pwn.conf (or system-wide /etc/pwn.conf):
 
@@ -31,6 +31,7 @@ from six.moves.xmlrpc_client import ServerProxy
 
 import packaging.version
 
+from pwnlib.args import args
 from pwnlib.config import register_config
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -74,8 +75,12 @@ def available_on_pypi(prerelease=current_version.is_prerelease):
     >>> available_on_pypi(prerelease=False).is_prerelease
     False
     """
-    client = ServerProxy('https://pypi.python.org/pypi')
-    versions = client.package_releases('pwntools', True)
+    versions = getattr(available_on_pypi, 'cached', None)
+    if versions is None:
+        client = ServerProxy('https://pypi.python.org/pypi')
+        versions = client.package_releases('pwntools', True)
+        available_on_pypi.cached = versions
+
     versions = map(packaging.version.Version, versions)
 
     if not prerelease:
@@ -186,10 +191,13 @@ def perform_check(prerelease=current_version.is_prerelease):
     return command
 
 def check_automatically():
+    xdg_config_home = os.environ.get('XDG_CONFIG_HOME') or "~/.config"
+
     if should_check():
         message  = ["Checking for new versions of %s" % package_name]
         message += ["To disable this functionality, set the contents of %s to 'never' (old way)." % cache_file()]
-        message += ["""Or add the following lines to ~/.pwn.conf (or /etc/pwn.conf system-wide):
+        message += ["Or add the following lines to ~/.pwn.conf or %s/pwn.conf (or /etc/pwn.conf system-wide):" % xdg_config_home]
+        message += ["""\
     [update]
     interval=never"""]
         log.info("\n".join(message))

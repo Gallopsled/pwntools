@@ -319,7 +319,7 @@ class ELF(ELFFile):
                 config = gz.read()
 
             if config:
-                self.config = parse_kconfig(config)
+                self.config = parse_kconfig(config.decode())
 
         #: ``True`` if the ELF is a statically linked executable
         self.statically_linked = bool(self.elftype == 'EXEC' and self.load_addr)
@@ -765,6 +765,7 @@ class ELF(ELFFile):
             These tests are just to ensure that our shellcode is correct.
 
             >>> for arch in CAT_PROC_MAPS_EXIT:
+            ...   context.clear()
             ...   with context.local(arch=arch):
             ...     sc = shellcraft.cat("/proc/self/maps")
             ...     sc += shellcraft.exit()
@@ -1047,15 +1048,18 @@ class ELF(ELFFile):
                 for address, target in sorted(res.items()):
                     self.plt[inv_symbols[target]] = address
 
-        for a,n in sorted({v:k for k,v in self.plt.items()}.items()):
-            log.debug('PLT %#x %s', a, n)
+        # for a,n in sorted({v:k for k,v in self.plt.items()}.items()):
+            # log.debug('PLT %#x %s', a, n)
 
     def _populate_kernel_version(self):
         if 'linux_banner' not in self.symbols:
             return
 
         banner = self.string(self.symbols.linux_banner)
-
+        
+        # convert banner into a utf-8 string since re.search does not accept bytes anymore
+        banner = banner.decode('utf-8')
+        
         # 'Linux version 3.18.31-gd0846ecc
         regex = r'Linux version (\S+)'
         match = re.search(regex, banner)

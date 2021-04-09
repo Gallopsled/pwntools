@@ -77,7 +77,7 @@ Args:
     else:
         extend = b'\x00'
 %>\
-    /* push ${repr(string)} */
+    /* push ${pretty(string, False)} */
 % for word in lists.group(8, string, 'fill', extend)[::-1]:
 <%
     sign = packing.u64(word, endian='little', sign='signed')

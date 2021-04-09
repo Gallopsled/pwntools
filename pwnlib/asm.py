@@ -492,9 +492,7 @@ def make_elf_from_assembly(assembly,
         >>> file_b = make_elf_from_assembly('nop', extract=True)
         >>> file_a[:4] == file_b[:4]
         True
-        >>> len(file_a) < 0x200
-        True
-        >>> len(file_b) > 0x1000
+        >>> len(file_a) < len(file_b)
         True
     """
     if shared and vma:

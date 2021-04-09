@@ -2,7 +2,7 @@ name: Lint
 on: [push, pull_request]
 
 jobs:
-  build:
+  lint:
     strategy:
       matrix:
         python-version: [3.8]
