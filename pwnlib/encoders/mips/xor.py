@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 # Source:
 # https://github.com/zcutlip/bowcaster/blob/master/src/bowcaster/encoders/mips.py
 #

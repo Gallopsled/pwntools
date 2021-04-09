@@ -15,7 +15,8 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'cyclic',
-    help = "Cyclic pattern creator/finder"
+    help = "Cyclic pattern creator/finder",
+    description = "Cyclic pattern creator/finder"
 )
 
 parser.add_argument(
@@ -70,7 +71,7 @@ def main(args):
             pat = int(pat, 0)
         except ValueError:
             pass
-        pat = flat(pat)
+        pat = flat(pat, bytes=args.length)
 
         if len(pat) != subsize:
             log.critical('Subpattern must be %d bytes' % subsize)

@@ -1,6 +1,6 @@
 <%
   from pwnlib.util import packing
-  from pwnlib.shellcraft import amd64
+  from pwnlib.shellcraft import amd64, pretty
   from pwnlib.shellcraft.amd64 import pushstr
   from pwnlib import constants
   from pwnlib.shellcraft.registers import amd64 as regs
@@ -31,7 +31,7 @@ Example:
         /* push 1 */
         push 1
     >>> print(pwnlib.shellcraft.amd64.push(256).rstrip())
-        /* push 256 */
+        /* push 0x100 */
         push 0x1010201 ^ 0x100
         xor dword ptr [rsp], 0x1010201
     >>> with context.local(os = 'linux'):
@@ -58,7 +58,7 @@ Example:
         pass
 %>
 %if not is_reg:
-    /* push ${repr(value_orig)} */
+    /* push ${pretty(value_orig, False)} */
     ${re.sub(r'^\s*/.*\n', '', amd64.pushstr(packing.pack(value), False), 1)}
 % else:
     push ${value}

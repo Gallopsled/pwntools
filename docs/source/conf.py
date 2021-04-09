@@ -26,6 +26,7 @@ build_dash = tags.has('dash')
 sys.path.insert(0, os.path.abspath('../..'))
 
 import pwnlib
+pwnlib.update.disabled = True
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
@@ -70,10 +71,13 @@ doctest_global_setup = '''
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
 os.environ['PWNLIB_RANDOMIZE'] = '0'
+
 import pwnlib, logging
+pwnlib.update.disabled = True
 pwnlib.context.context.reset_local()
 pwnlib.context.ContextType.defaults['log_level'] = logging.ERROR
 pwnlib.context.ContextType.defaults['randomize'] = False
+# pwnlib.context.ContextType.defaults['terminal'] = ['sh', '-c']
 pwnlib.util.fiddling.default_style = {}
 pwnlib.term.text.when = 'never'
 pwnlib.log.install_default_handler()
@@ -88,6 +92,12 @@ class stdout(object):
     def __setattr__(self, name, value):
         return setattr(sys.stdout, name, value)
 pwnlib.context.ContextType.defaults['log_console'] = stdout()
+
+github_actions = os.environ.get('USER') == 'runner'
+travis_ci = os.environ.get('USER') == 'travis'
+local_doctest = os.environ.get('USER') == 'pwntools'
+branch_dev = os.environ.get('GITHUB_BASE_REF') == 'dev'
+skip_android = True
 '''
 
 autoclass_content = 'both'
@@ -254,7 +264,7 @@ latex_documents = [
    u'2016, Gallopsled et al.', 'manual'),
 ]
 
-intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None),
+intersphinx_mapping = {'python': ('https://docs.python.org/3.8', None),
                        'paramiko': ('https://paramiko-docs.readthedocs.org/en/2.1/', None)}
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -337,7 +347,7 @@ def linkcode_resolve(domain, info):
     val = mod
     for k in info['fullname'].split('.'):
         val = getattr(val, k, None)
-        if val == None:
+        if val is None:
             break
 
     # Special case for shellcraft
@@ -378,7 +388,9 @@ import sphinx.ext.autodoc
 
 # Test hidden members (e.g. def _foo(...))
 def dont_skip_any_doctests(app, what, name, obj, skip, options):
-    return False
+    return None
+
+autodoc_default_options = {'special-members': None, 'private-members': None}
 
 class _DummyClass(object): pass
 
@@ -409,7 +421,7 @@ def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
 
 if 'doctest' in sys.argv:
     def setup(app):
-        app.connect('autodoc-skip-member', dont_skip_any_doctests)
+        pass # app.connect('autodoc-skip-member', dont_skip_any_doctests)
 
     if sys.version_info[:1] < (3,):
         import sphinx.ext.doctest

@@ -75,10 +75,13 @@ log = getLogger(__name__)
 def adb(argv, *a, **kw):
     r"""Returns the output of an ADB subcommand.
 
-    >>> adb.adb('get-serialno')
-    b'emulator-5554\n'
-    >>> adb.adb(['shell', 'uname']) # it is better to use adb.process
-    b'Linux\n'
+    .. doctest::
+       :skipif: skip_android
+
+        >>> adb.adb('get-serialno')
+        b'emulator-5554\n'
+        >>> adb.adb(['shell', 'uname']) # it is better to use adb.process
+        b'Linux\n'
     """
     if isinstance(argv, (bytes, six.text_type)):
         argv = [argv]
@@ -113,7 +116,8 @@ def current_device(any=False):
     """Returns an ``AdbDevice`` instance for the currently-selected device
     (via ``context.device``).
 
-    Example:
+    .. doctest::
+       :skipif: skip_android
 
         >>> device = adb.current_device(any=True)
         >>> device
@@ -144,7 +148,10 @@ def with_device(f):
 def root():
     """Restarts adbd as root.
 
-    >>> adb.root()
+    .. doctest::
+       :skipif: skip_android
+
+        >>> adb.root()
     """
     log.info("Enabling root on %s" % context.device)
 
@@ -202,6 +209,10 @@ def uptime():
         Uptime of the device, in seconds
 
     Example:
+
+    .. doctest::
+       :skipif: skip_android
+
         >>> adb.uptime() > 3 # normally AVD takes ~7 seconds to boot
         True
     """
@@ -217,6 +228,10 @@ def boot_time():
         nearest second.
 
     Example:
+
+    .. doctest::
+       :skipif: skip_android
+
         >>> import time
         >>> adb.boot_time() < time.time()
         True
@@ -230,6 +245,9 @@ class AdbDevice(Device):
     """Encapsulates information about a connected device.
 
     Example:
+
+    .. doctest::
+       :skipif: skip_android
 
         >>> device = adb.wait_for_device()
         >>> device.arch
@@ -357,10 +375,13 @@ class AdbDevice(Device):
         """Provides scoped access to ``adb`` module propertise, in the context
         of this device.
 
-        >>> property = 'ro.build.fingerprint'
-        >>> device = adb.wait_for_device()
-        >>> adb.getprop(property) == device.getprop(property)
-        True
+        .. doctest::
+           :skipif: skip_android
+
+            >>> property = 'ro.build.fingerprint'
+            >>> device = adb.wait_for_device()
+            >>> adb.getprop(property) == device.getprop(property)
+            True
         """
         with context.local(device=self):
             g = globals()
@@ -386,6 +407,9 @@ def wait_for_device(kick=False):
         An ``AdbDevice`` instance for the device.
 
     Examples:
+
+    .. doctest::
+       :skipif: skip_android
 
         >>> device = adb.wait_for_device()
     """
@@ -496,6 +520,9 @@ def pull(remote_path, local_path=None):
 
     Example:
 
+    .. doctest::
+       :skipif: skip_android
+
         >>> _=adb.pull('/proc/version', './proc-version')
         >>> print(read('./proc-version').decode('utf-8')) # doctest: +ELLIPSIS
         Linux version ...
@@ -526,6 +553,9 @@ def push(local_path, remote_path):
         Remote path of the file.
 
     Example:
+
+    .. doctest::
+       :skipif: skip_android
 
         >>> write('./filename', 'contents')
         >>> adb.push('./filename', '/data/local/tmp')
@@ -584,6 +614,9 @@ def read(path, target=None, callback=None):
 
     Examples:
 
+    .. doctest::
+       :skipif: skip_android
+
         >>> print(adb.read('/proc/version').decode('utf-8')) # doctest: +ELLIPSIS
         Linux version ...
         >>> adb.read('/does/not/exist')
@@ -613,6 +646,9 @@ def write(path, data=b''):
 
     Examples:
 
+    .. doctest::
+       :skipif: skip_android
+
         >>> adb.write('/dev/null', b'data')
         >>> adb.write('/data/local/tmp/')
     """
@@ -632,6 +668,9 @@ def mkdir(path):
         path(str): Directory to create.
 
     Examples:
+
+    .. doctest::
+       :skipif: skip_android
 
         >>> adb.mkdir('/')
 
@@ -673,6 +712,9 @@ def makedirs(path):
 
     Examples:
 
+    .. doctest::
+       :skipif: skip_android
+
         >>> adb.makedirs('/data/local/tmp/this/is/a/directory/hierarchy')
         >>> adb.listdir('/data/local/tmp/this/is/a/directory')
         ['hierarchy']
@@ -688,6 +730,9 @@ def exists(path):
     """Return :const:`True` if ``path`` exists on the target device.
 
     Examples:
+
+    .. doctest::
+       :skipif: skip_android
 
         >>> adb.exists('/')
         True
@@ -706,6 +751,9 @@ def isdir(path):
 
     Examples:
 
+    .. doctest::
+       :skipif: skip_android
+
         >>> adb.isdir('/')
         True
         >>> adb.isdir('/init')
@@ -723,6 +771,9 @@ def unlink(path, recursive=False):
     """Unlinks a file or directory on the target device.
 
     Examples:
+
+    .. doctest::
+       :skipif: skip_android
 
         >>> adb.unlink("/does/not/exist")
         Traceback (most recent call last):
@@ -775,6 +826,9 @@ def process(argv, *a, **kw):
 
     Examples:
 
+    .. doctest::
+       :skipif: skip_android
+
         >>> adb.root()
         >>> print(adb.process(['cat','/proc/version']).recvall().decode('utf-8')) # doctest: +ELLIPSIS
         Linux version ...
@@ -815,6 +869,9 @@ def which(name, all = False, *a, **kw):
 
     Example:
 
+    .. doctest::
+       :skipif: skip_android
+
         >>> adb.which('sh')
         '/system/bin/sh'
         >>> adb.which('sh', all=True)
@@ -827,10 +884,12 @@ def which(name, all = False, *a, **kw):
     """
     # Unfortunately, there is no native 'which' on many phones.
     which_cmd = '''
-echo $PATH | while read -d: directory; do
-    [ -x "$directory/{name}" ] || continue;
-    echo -n "$directory/{name}\\x00";
-done
+(IFS=:
+  for directory in $PATH; do
+      [ -x "$directory/{name}" ] || continue;
+      echo -n "$directory/{name}\\x00";
+  done
+)
 [ -x "{name}" ] && echo -n "$PWD/{name}\\x00"
 '''.format(name=name)
 
@@ -862,6 +921,10 @@ def whoami():
     """Returns current shell user
 
     Example:
+
+    .. doctest::
+       :skipif: skip_android
+
        >>> adb.whoami()
        b'root'
     """
@@ -915,6 +978,10 @@ def proc_exe(pid):
     """Returns the full path of the executable for the provided PID.
 
     Example:
+
+    .. doctest::
+       :skipif: skip_android
+
         >>> adb.proc_exe(1)
         b'/init'
     """
@@ -935,6 +1002,10 @@ def getprop(name=None):
         Otherwise, a string is returned with the contents of the named property.
 
     Example:
+
+    .. doctest::
+       :skipif: skip_android
+
         >>> adb.getprop() # doctest: +ELLIPSIS
         {...}
     """
@@ -1050,6 +1121,10 @@ class Kernel(object):
     def address(self):
         """Returns kernel address
         Example:
+
+        .. doctest::
+           :skipif: skip_android
+
             >>> hex(adb.kernel.address) # doctest: +ELLIPSIS
             '0x...000'
         """
@@ -1176,6 +1251,10 @@ class Property(object):
         """Allow simple comparison
 
         Example:
+
+        .. doctest::
+           :skipif: skip_android
+
             >>> adb.properties.ro.build.version.sdk == "24"
             True
         """
@@ -1264,6 +1343,10 @@ def compile(source):
     r"""Compile a source file or project with the Android NDK.
 
     Example:
+
+    .. doctest::
+       :skipif: skip_android
+
         >>> temp = tempfile.mktemp('.c')
         >>> write(temp, '''
         ... #include <stdio.h>
@@ -1388,6 +1471,10 @@ class Partitions(object):
     """Enable access to partitions
 
     Example:
+
+    .. doctest::
+       :skipif: skip_android
+
         >>> hex(adb.partitions.vda.size) # doctest: +ELLIPSIS
         '0x...000'
     """

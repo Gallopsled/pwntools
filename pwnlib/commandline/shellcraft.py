@@ -35,6 +35,7 @@ def _string(s):
 p = common.parser_commands.add_parser(
     'shellcraft',
     help = 'Microwave shellcode -- Easy, fast and delicious',
+    description = 'Microwave shellcode -- Easy, fast and delicious',
 )
 
 
@@ -198,10 +199,10 @@ def main(args):
         common.parser.print_usage()
         exit()
 
-    if args.shellcode not in shellcraft.templates:
+    try:
+        func = get_template(args.shellcode)
+    except AttributeError:
         log.error("Unknown shellcraft template %r. Use --list to see available shellcodes." % args.shellcode)
-
-    func = get_template(args.shellcode)
 
     if args.show:
         # remove doctests
@@ -295,7 +296,7 @@ def main(args):
 
     vma = args.address
     if vma:
-        vma = eval(vma)
+        vma = pwnlib.util.safeeval.expr(vma)
 
     if args.format in ['e','elf']:
         args.format = 'default'

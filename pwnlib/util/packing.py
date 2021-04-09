@@ -42,9 +42,12 @@ from six.moves import range
 
 from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
+from pwnlib.log import getLogger
+
 from pwnlib.util import iters
 
 mod = sys.modules[__name__]
+log = getLogger(__name__)
 
 def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
     """pack(number, word_size = None, endianness = None, sign = None, **kwargs) -> str
@@ -113,7 +116,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         if not isinstance(number, six.integer_types):
             raise ValueError("pack(): number must be of type (int,long) (got %r)" % type(number))
 
-        if sign not in [True, False]:
+        if not isinstance(sign, bool):
             raise ValueError("pack(): sign must be either True or False (got %r)" % sign)
 
         if endianness not in ['little', 'big']:
@@ -124,18 +127,18 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
             if number == 0:
                 word_size = 8
             elif number > 0:
-                if sign == False:
-                    word_size = ((number.bit_length() - 1) | 7) + 1
-                else:
+                if sign:
                     word_size = (number.bit_length() | 7) + 1
+                else:
+                    word_size = ((number.bit_length() - 1) | 7) + 1
             else:
-                if sign == False:
+                if not sign:
                     raise ValueError("pack(): number does not fit within word_size")
                 word_size = ((number + 1).bit_length() | 7) + 1
         elif not isinstance(word_size, six.integer_types) or word_size <= 0:
             raise ValueError("pack(): word_size must be a positive integer or the string 'all'")
 
-        if sign == True:
+        if sign:
             limit = 1 << (word_size-1)
             if not -limit <= number < limit:
                 raise ValueError("pack(): number does not fit within word_size")
@@ -487,14 +490,17 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
         return lambda number: unpack(number, word_size, endianness, sign)
 
 def _fit(pieces, preprocessor, packer, filler):
+
     # Pulls bytes from `filler` and adds them to `pad` until it ends in `key`.
     # Returns the index of `key` in `pad`.
     pad = bytearray()
     def fill(key):
         key = bytearray(key)
-        while len(pad) < len(key) or pad[-len(key):] != key:
+        offset = pad.find(key)
+        while offset == -1:
             pad.append(next(filler))
-        return len(pad) - len(key)
+            offset = pad.find(key, -len(key))
+        return offset
 
     # Key conversion:
     # - convert str/unicode keys to offsets
@@ -522,6 +528,14 @@ def _fit(pieces, preprocessor, packer, filler):
 
     # Build output
     out = b''
+
+    # Negative indices need to be removed and then re-submitted
+    negative = {k:v for k,v in pieces.items() if isinstance(k, int) and k<0}
+
+    for k in negative:
+        del pieces[k]
+
+    # Positive output
     for k, v in sorted(pieces.items()):
         if k < len(out):
             raise ValueError("flat(): data at offset %d overlaps with previous data which ends at offset %d" % (k, len(out)))
@@ -533,7 +547,24 @@ def _fit(pieces, preprocessor, packer, filler):
         # Recursively flatten data
         out += _flat([v], preprocessor, packer, filler)
 
-    return filler, out
+    # Now do negative indices
+    out_negative = b''
+    if negative:
+        most_negative = min(negative.keys())
+        for k, v in sorted(negative.items()):
+            k += -most_negative
+
+            if k < len(out_negative):
+                raise ValueError("flat(): data at offset %d overlaps with previous data which ends at offset %d" % (k, len(out)))
+
+            # Fill up to offset
+            while len(out_negative) < k:
+                out_negative += p8(next(filler))
+
+            # Recursively flatten data
+            out_negative += _flat([v], preprocessor, packer, filler)
+
+    return filler, out_negative + out
 
 def _flat(args, preprocessor, packer, filler):
     out = []
@@ -541,7 +572,7 @@ def _flat(args, preprocessor, packer, filler):
 
         if not isinstance(arg, (list, tuple, dict)):
             arg_ = preprocessor(arg)
-            if arg_ != None:
+            if arg_ is not None:
                 arg = arg_
 
         if hasattr(arg, '__flat__'):
@@ -549,7 +580,6 @@ def _flat(args, preprocessor, packer, filler):
         elif isinstance(arg, (list, tuple)):
             val = _flat(arg, preprocessor, packer, filler)
         elif isinstance(arg, dict):
-            arg = collections.OrderedDict(((k,v) for k,v in sorted(arg.items())))
             filler, val = _fit(arg, preprocessor, packer, filler)
         elif isinstance(arg, bytes):
             val = arg
@@ -558,7 +588,7 @@ def _flat(args, preprocessor, packer, filler):
         elif isinstance(arg, six.integer_types):
             val = packer(arg)
         elif isinstance(arg, bytearray):
-            val = str(arg)
+            val = bytes(arg)
         else:
             raise ValueError("flat(): Flat does not support values of type %s" % type(arg))
 
@@ -585,10 +615,10 @@ def flat(*args, **kwargs):
 
     Dictionary keys give offsets at which to place the corresponding values
     (which are recursively flattened).  Offsets are relative to where the
-    flattened dictionary occurs in the output (i.e. `{0: 'foo'}` is equivalent
-    to `'foo'`).  Offsets can be integers, unicode strings or regular strings.
+    flattened dictionary occurs in the output (i.e. ``{0: 'foo'}`` is equivalent
+    to ``'foo'``).  Offsets can be integers, unicode strings or regular strings.
     Integer offsets >= ``2**(word_size-8)`` are converted to a string using
-    `:func:pack`.  Unicode strings are UTF-8 encoded.  After these conversions
+    :func:`pack`.  Unicode strings are UTF-8 encoded.  After these conversions
     offsets are either integers or strings.  In the latter case, the offset will
     be the lowest index at which the string occurs in `filler`.  See examples
     below.
@@ -617,37 +647,108 @@ def flat(*args, **kwargs):
 
     Examples:
 
-      >>> context.clear()
-      >>> flat(1, "test", [[["AB"]*2]*3], endianness = 'little', word_size = 16, sign = False)
-      b'\x01\x00testABABABABABAB'
-      >>> flat([1, [2, 3]], preprocessor = lambda x: str(x+1))
-      b'234'
-      >>> flat({12: 0x41414141,
-      ...       24: 'Hello',
-      ...      })
-      b'aaaabaaacaaaAAAAeaaafaaaHello'
-      >>> flat({'caaa': ''})
-      b'aaaabaaa'
-      >>> flat({12: 'XXXX'}, filler = (ord('A'), ord('B')), length = 20)
-      b'ABABABABABABXXXXABAB'
-      >>> flat({ 8: [0x41414141, 0x42424242],
-      ...       20: 'CCCC'})
-      b'aaaabaaaAAAABBBBeaaaCCCC'
-      >>> flat({ 0x61616162: 'X'})
-      b'aaaaX'
-      >>> flat({4: {0: 'X', 4: 'Y'}})
-      b'aaaaXaaaY'
-      >>> flat({0x61616161:'x', 0x61616162:'y'})
-      b'xaaay'
-      >>> flat({0x61616162:'y', 0x61616161:'x'})
-      b'xaaay'
-      >>> fit({
-      ...     0x61616161: 'a',
-      ...     1: 'b',
-      ...     0x61616161+2: 'c',
-      ...     3: 'd',
-      ... })
-      b'abadbaaac'
+        (Test setup, please ignore)
+    
+        >>> context.clear()
+
+        Basic usage of :meth:`flat` works similar to the pack() routines.
+
+        >>> flat(4)
+        b'\x04\x00\x00\x00'
+
+        :meth:`flat` works with strings, bytes, lists, and dictionaries.
+
+        >>> flat(b'X')
+        b'X'
+        >>> flat([1,2,3])
+        b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00'
+        >>> flat({4:'X'})
+        b'aaaaX'
+
+        :meth:`.flat` flattens all of the values provided, and allows nested lists
+        and dictionaries.
+
+        >>> flat([{4:'X'}] * 2)
+        b'aaaaXaaacX'
+        >>> flat([[[[[[[[[1]]]], 2]]]]])
+        b'\x01\x00\x00\x00\x02\x00\x00\x00'
+
+        You can also provide additional arguments like endianness, word-size, and
+        whether the values are treated as signed or not.
+
+        >>> flat(1, "test", [[["AB"]*2]*3], endianness = 'little', word_size = 16, sign = False)
+        b'\x01\x00testABABABABABAB'
+
+        A preprocessor function can be provided in order to modify the values in-flight.
+        This example converts increments each value by 1, then converts to a string.
+
+        >>> flat([1, [2, 3]], preprocessor = lambda x: str(x+1))
+        b'234'
+
+        Using dictionaries is a fast way to get specific values at specific offsets,
+        without having to do ``data += "foo"`` repeatedly.
+
+        >>> flat({12: 0x41414141,
+        ...       24: 'Hello',
+        ...      })
+        b'aaaabaaacaaaAAAAeaaafaaaHello'
+
+        Dictionary usage permits directly using values derived from :func:`.cyclic`.
+        See :func:`.cyclic`, :function:`pwnlib.context.context.cyclic_alphabet`, and :data:`.context.cyclic_size`
+        for more options.  
+
+        The cyclic pattern can be provided as either the text or hexadecimal offset.
+
+        >>> flat({ 0x61616162: 'X'})
+        b'aaaaX'
+        >>> flat({'baaa': 'X'})
+        b'aaaaX'
+
+        Fields do not have to be in linear order, and can be freely mixed.
+        This also works with cyclic offsets.
+
+        >>> flat({2: 'A', 0:'B'})
+        b'BaA'
+        >>> flat({0x61616161:'x', 0x61616162:'y'})
+        b'xaaay'
+        >>> flat({0x61616162:'y', 0x61616161:'x'})
+        b'xaaay'
+
+        Fields do not have to be in order, and can be freely mixed.
+
+        >>> flat({'caaa': 'XXXX', 16: '\x41', 20: 0xdeadbeef})
+        b'aaaabaaaXXXXdaaaAaaa\xef\xbe\xad\xde'
+        >>> flat({ 8: [0x41414141, 0x42424242], 20: 'CCCC'})
+        b'aaaabaaaAAAABBBBeaaaCCCC'
+        >>> fit({
+        ...     0x61616161: 'a',
+        ...     1: 'b',
+        ...     0x61616161+2: 'c',
+        ...     3: 'd',
+        ... })
+        b'abadbaaac'
+
+        By default, gaps in the data are filled in with the :meth:`.cyclic` pattern.
+        You can customize this by providing an iterable or method for the ``filler``
+        argument.
+
+        >>> flat({12: 'XXXX'}, filler = b'_', length = 20)
+        b'____________XXXX____'
+        >>> flat({12: 'XXXX'}, filler = b'AB', length = 20)
+        b'ABABABABABABXXXXABAB'
+
+        Nested dictionaries also work as expected.
+
+        >>> flat({4: {0: 'X', 4: 'Y'}})
+        b'aaaaXaaaY'
+        >>> fit({4: {4: 'XXXX'}})
+        b'aaaabaaaXXXX'
+
+        Negative indices are also supported, though this only works for integer
+        keys.
+    
+        >>> flat({-4: 'x', -1: 'A', 0: '0', 4:'y'})
+        b'xaaA0aaay'
     """
     # HACK: To avoid circular imports we need to delay the import of `cyclic`
     from pwnlib.util import cyclic
@@ -655,6 +756,9 @@ def flat(*args, **kwargs):
     preprocessor = kwargs.pop('preprocessor', lambda x: None)
     filler       = kwargs.pop('filler', cyclic.de_bruijn())
     length       = kwargs.pop('length', None)
+
+    if isinstance(filler, str):
+        filler = bytearray(six.ensure_binary(filler))
 
     if kwargs != {}:
         raise TypeError("flat() does not support argument %r" % kwargs.popitem()[0])
@@ -670,7 +774,7 @@ def flat(*args, **kwargs):
     return out
 
 def fit(*args, **kwargs):
-    """Legacy alias for `:func:flat`"""
+    """Legacy alias for :func:`flat`"""
     return flat(*args, **kwargs)
 
 """
@@ -733,8 +837,8 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
     The seek offset of file objects will be preserved.
 
     Arguments:
-        dst: Supported types are `:class:file`, `:class:list`, `:class:tuple`,
-             `:class:str`, `:class:bytearray` and `:class:unicode`.
+        dst: Supported types are :class:`file`, :class:`list`, :class:`tuple`,
+             :class:`str`, :class:`bytearray` and :class:`unicode`.
         src: An iterable of byte values (characters or integers), a unicode
              string or a file object.
         count (int): How many bytes to copy.  If `count` is 0 or larger than
@@ -742,7 +846,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
                      copied.
         skip (int): Offset in `dst` to copy to.
         seek (int): Offset in `src` to copy from.
-        truncate (bool): If `:const:True`, `dst` is truncated at the last copied
+        truncate (bool): If :const:`True`, `dst` is truncated at the last copied
                          byte.
 
     Returns:
@@ -895,3 +999,6 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         dst = dst.decode('utf8')
 
     return dst
+
+del op, size, end, sign
+del name, routine, mod

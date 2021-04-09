@@ -66,6 +66,8 @@ variables={
     26:{name:'vtable',size:length}
 }
 
+del name, size, length
+
 
 def update_var(l):
     r"""

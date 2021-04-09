@@ -33,13 +33,13 @@ Example:
       args = []
   else:
       syscall_repr = 'syscall(%s)'
-      if syscall == None:
+      if syscall is None:
           args = ['?']
       else:
-          args = [repr(syscall)]
+          args = [pretty(syscall, False)]
 
   for arg in [arg0, arg1, arg2, arg3, arg4, arg5]:
-      if arg == None:
+      if arg is None:
           args.append('?')
       else:
           args.append(pretty(arg, False))

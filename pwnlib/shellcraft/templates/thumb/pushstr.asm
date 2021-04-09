@@ -1,5 +1,5 @@
 <%
-  from pwnlib.shellcraft import thumb
+  from pwnlib.shellcraft import thumb, pretty
   from pwnlib.util import lists, packing
   import six
 %>
@@ -46,7 +46,7 @@ on your version of binutils.
     while offset % 4:
         offset += 1
 %>\
-    /* push ${repr(string)} */
+    /* push ${pretty(string, False)} */
 % for word in lists.group(4, string, 'fill', b'\x00')[::-1]:
     ${thumb.mov(register, packing.unpack(word))}
     push {${register}}

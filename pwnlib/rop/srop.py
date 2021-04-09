@@ -24,7 +24,8 @@ i386 Example:
     immediately by ``exit(0)``.
 
     >>> context.clear(arch='i386')
-    >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, 'esp', 1024)
+    >>> assembly =  'setup: sub esp, 1024\n'
+    >>> assembly += 'read:'      + shellcraft.read(constants.STDIN_FILENO, 'esp', 1024)
     >>> assembly += 'sigreturn:' + shellcraft.sigreturn()
     >>> assembly += 'int3:'      + shellcraft.trap()
     >>> assembly += 'syscall: '  + shellcraft.syscall()
@@ -56,7 +57,8 @@ amd64 Example:
 
     >>> context.clear()
     >>> context.arch = "amd64"
-    >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, 'rsp', 1024)
+    >>> assembly =  'setup: sub rsp, 1024\n'
+    >>> assembly += 'read:'      + shellcraft.read(constants.STDIN_FILENO, 'rsp', 1024)
     >>> assembly += 'sigreturn:' + shellcraft.sigreturn()
     >>> assembly += 'int3:'      + shellcraft.trap()
     >>> assembly += 'syscall: '  + shellcraft.syscall()
@@ -81,7 +83,8 @@ arm Example:
 
     >>> context.clear()
     >>> context.arch = "arm"
-    >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, 'sp', 1024)
+    >>> assembly =  'setup: sub sp, sp, 1024\n'
+    >>> assembly += 'read:'      + shellcraft.read(constants.STDIN_FILENO, 'sp', 1024)
     >>> assembly += 'sigreturn:' + shellcraft.sigreturn()
     >>> assembly += 'int3:'      + shellcraft.trap()
     >>> assembly += 'syscall: '  + shellcraft.syscall()
@@ -108,7 +111,8 @@ Mips Example:
     >>> context.clear()
     >>> context.arch = "mips"
     >>> context.endian = "big"
-    >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, '$sp', 1024)
+    >>> assembly =  'setup: sub $sp, $sp, 1024\n'
+    >>> assembly += 'read:'      + shellcraft.read(constants.STDIN_FILENO, '$sp', 1024)
     >>> assembly += 'sigreturn:' + shellcraft.sigreturn()
     >>> assembly += 'syscall: '  + shellcraft.syscall()
     >>> assembly += 'exit: '     + shellcraft.exit(0)
@@ -133,7 +137,8 @@ Mipsel Example:
     >>> context.clear()
     >>> context.arch = "mips"
     >>> context.endian = "little"
-    >>> assembly =  'read:'      + shellcraft.read(constants.STDIN_FILENO, '$sp', 1024)
+    >>> assembly =  'setup: sub $sp, $sp, 1024\n'
+    >>> assembly += 'read:'      + shellcraft.read(constants.STDIN_FILENO, '$sp', 1024)
     >>> assembly += 'sigreturn:' + shellcraft.sigreturn()
     >>> assembly += 'syscall: '  + shellcraft.syscall()
     >>> assembly += 'exit: '     + shellcraft.exit(0)
@@ -240,8 +245,8 @@ stack_pointers = {
 # # XXX Need to add support for Capstone in order to extract ARM and MIPS
 # XXX as the SVC code may vary.
 syscall_instructions = {
-    'amd64': ['int 0x80', 'syscall', 'sysenter'],
-    'i386': ['int 0x80', 'syscall', 'sysenter'],
+    'amd64': ['syscall'],
+    'i386': ['int 0x80'],
     'arm': ['svc 0'],
     'aarch64': ['svc 0'],
     'thumb': ['svc 0'],

@@ -32,10 +32,6 @@ class tube(Timeout, Logger):
     default = Timeout.default
     forever = Timeout.forever
 
-    #: Delimiter to use for :meth:`sendline`, :meth:`recvline`,
-    #: and related functions.
-    newline = b'\n'
-
     def __init__(self, timeout = default, level = None, *a, **kw):
         super(tube, self).__init__(timeout)
 
@@ -44,7 +40,34 @@ class tube(Timeout, Logger):
             self.setLevel(level)
 
         self.buffer = Buffer(*a, **kw)
+        self._newline = None
         atexit.register(self.close)
+
+    @property
+    def newline(self):
+        r'''Character sent with methods like sendline() or used for recvline().
+
+            >>> t = tube()
+            >>> t.newline = 'X'
+            >>> t.unrecv('A\nB\nCX')
+            >>> t.recvline()
+            b'A\nB\nCX'
+
+            >>> t = tube()
+            >>> context.newline = '\r\n'
+            >>> t.newline
+            b'\r\n'
+
+            # Clean up
+            >>> context.clear()
+        '''
+        if self._newline is not None:
+            return self._newline
+        return context.newline
+
+    @newline.setter
+    def newline(self, newline):
+        self._newline = six.ensure_binary(newline)
 
     # Functions based on functions from subclasses
     def recv(self, numb = None, timeout = default):
@@ -589,7 +612,7 @@ class tube(Timeout, Logger):
     def recvline_endswith(self, delims, keepends=False, timeout=default):
         r"""recvline_endswith(delims, keepends=False, timeout=default) -> bytes
 
-        Keep receiving lines until one is found that starts with one of
+        Keep receiving lines until one is found that ends with one of
         `delims`.  Returns the last line received.
 
         If the request is not satisfied before ``timeout`` seconds pass,

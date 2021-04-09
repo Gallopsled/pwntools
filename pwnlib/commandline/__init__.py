@@ -18,5 +18,6 @@ __all__ = [
     'scramble',
     'shellcraft',
     'unhex',
-    'update'
+    'update',
+    'version'
 ]

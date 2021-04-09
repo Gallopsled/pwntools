@@ -1,0 +1,37 @@
+name: PyLint
+on: [pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        python-version: [3.8]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v2
+    - name: Cache for pip
+      uses: actions/cache@v1
+      id: cache-pip
+      with:
+        path: ~/.cache/pip
+        key: ${{ matrix.os }}-cache-pip
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: PyLint
+      run: |
+        set -x
+        pip install pylint
+        pip install --upgrade -r requirements.txt
+        pylint --exit-zero --errors-only  pwnlib > current.txt
+        git fetch origin
+        git checkout origin/"$GITHUB_BASE_REF"
+        pylint --exit-zero --errors-only  pwnlib > base.txt
+        if diff base.txt current.txt | grep '>'; then
+          false
+        fi

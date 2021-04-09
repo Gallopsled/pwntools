@@ -242,6 +242,9 @@ class process(tube):
         #: :class:`subprocess.Popen` object that backs this process
         self.proc = None
 
+        # We need to keep a copy of the un-_validated environment for printing
+        original_env = env
+
         if shell:
             executable_val, argv_val, env_val = executable, argv, env
         else:
@@ -275,14 +278,14 @@ class process(tube):
         #: Full path to the executable
         self.executable = executable_val
 
+        #: Environment passed on envp
+        self.env = os.environ if env is None else env_val
+
         if self.executable is None:
             if shell:
                 self.executable = '/bin/sh'
             else:
-                self.executable = which(self.argv[0])
-
-        #: Environment passed on envp
-        self.env = os.environ if env is None else env_val
+                self.executable = which(self.argv[0], path=self.env.get('PATH'))
 
         self._cwd = os.path.realpath(cwd or os.path.curdir)
 
@@ -298,7 +301,7 @@ class process(tube):
 
         if self.isEnabledFor(logging.DEBUG):
             if argv != [self.executable]: message += ' argv=%r ' % self.argv
-            if env not in (os.environ, None):  message += ' env=%r ' % self.env
+            if original_env not in (os.environ, None):  message += ' env=%r ' % self.env
 
         with self.progress(message) as p:
 
@@ -464,7 +467,7 @@ class process(tube):
 
         Example:
 
-            >>> p = process('true')
+            >>> p = process('/bin/true')
             >>> p.executable == '/bin/true'
             True
             >>> p.executable == p.program
@@ -547,6 +550,9 @@ class process(tube):
         if not isinstance(executable, str):
             executable = executable.decode('utf-8')
 
+        env = os.environ if env is None else env
+
+        path = env.get('PATH')
         # Do not change absolute paths to binaries
         if executable.startswith(os.path.sep):
             pass
@@ -555,8 +561,8 @@ class process(tube):
         # target directory.
         #
         # For example, 'sh'
-        elif os.path.sep not in executable and which(executable):
-            executable = which(executable)
+        elif os.path.sep not in executable and which(executable, path=path):
+            executable = which(executable, path=path)
 
         # Either there is a path component, or the binary is not in $PATH
         # For example, 'foo/bar' or 'bar' with cwd=='foo'
@@ -580,8 +586,6 @@ class process(tube):
         #
 
         # Create a duplicate so we can modify it safely
-        env = os.environ if env is None else env
-
         env2 = {}
         for k,v in env.items():
             if not isinstance(k, (bytes, six.text_type)):
@@ -666,7 +670,7 @@ class process(tube):
         self.proc.poll()
         returncode = self.proc.returncode
 
-        if returncode != None and not self._stop_noticed:
+        if returncode is not None and not self._stop_noticed:
             self._stop_noticed = time.time()
             signame = ''
             if returncode < 0:
@@ -736,7 +740,7 @@ class process(tube):
             return False
 
         try:
-            if timeout == None:
+            if timeout is None:
                 return select.select([self.proc.stdout], [], []) == ([self.proc.stdout], [], [])
 
             return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
@@ -749,12 +753,12 @@ class process(tube):
             # ValueError: I/O operation on closed file
             raise EOFError
         except select.error as v:
-            if v[0] == errno.EINTR:
+            if v.args[0] == errno.EINTR:
                 return False
 
     def connected_raw(self, direction):
         if direction == 'any':
-            return self.poll() == None
+            return self.poll() is None
         elif direction == 'send':
             return not self.proc.stdin.closed
         elif direction == 'recv':
@@ -823,7 +827,7 @@ class process(tube):
             fd = os.open("/dev/tty", os.O_RDWR | os.O_NOCTTY)
             if fd >= 0:
                 os.close(fd)
-                raise Exception('Failed to disconnect from ' +
+                raise Exception('Failed to disconnect from '
                     'controlling tty. It is still possible to open /dev/tty.')
         # which exception, shouldnt' we catch explicitly .. ?
         except OSError:
@@ -931,12 +935,22 @@ class process(tube):
 
         try:
             if self.poll() is None:
-                return pwnlib.gdb.corefile(self)
+                corefile = pwnlib.gdb.corefile(self)
+                if corefile is None:
+                    self.error("Could not create corefile with GDB for %s", self.executable)
+                return corefile
 
-            finder = pwnlib.elf.corefile.CorefileFinder(self)
+            # Handle race condition against the kernel or QEMU to write the corefile
+            # by waiting up to 5 seconds for it to be written.
+            t = Timeout()
+            finder = None
+            with t.countdown(5):
+                while t.timeout and (finder is None or not finder.core_path):
+                    finder = pwnlib.elf.corefile.CorefileFinder(self)
+                    time.sleep(0.5)
+
             if not finder.core_path:
-                self.warn("Could not find core file for pid %i" % self.pid)
-                return None
+                self.error("Could not find core file for pid %i" % self.pid)
 
             core_hash = sha256file(finder.core_path)
 
