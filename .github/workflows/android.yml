@@ -6,17 +6,12 @@ jobs:
   test:
     strategy:
       matrix:
-        python-version: 3.8
+        python-version: [3.8]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
     - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-
-    - name: Git History 2
-      run: git log --oneline --graph -10
 
     - name: Cache for pip
       uses: actions/cache@v1
@@ -34,14 +29,10 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
-          ash bash-static dash ksh mksh zsh \
-          pandoc gdb gdbserver socat sshpass \
-          binutils-multiarch qemu-user-static \
+          gdb gdbserver socat \
+          qemu-user-static \
           binutils-aarch64-linux-gnu \
           binutils-arm-linux-gnueabihf \
-          binutils-mips-linux-gnu \
-          binutils-powerpc-linux-gnu \
-          gcc-multilib \
           libc6-dbg \
           openjdk-8-jre-headless
 
@@ -53,7 +44,6 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install --upgrade flake8 appdirs
         python setup.py egg_info
         pip install --upgrade --editable .
 
@@ -63,15 +53,7 @@ jobs:
     - name: Install documentation dependencies
       run:  pip install -r docs/requirements.txt
 
-    - name: Manually install non-broken Unicorn
-      run:  pip install unicorn==1.0.2rc3
-
     - name: Coverage Doctests (Android Only)
       run: |
         source .android.env
         PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest docs/source/adb.rst docs/source/protocols/adb.rst
-
-    - name: Upload coverage to coveralls.io
-      run: |
-        coverage combine
-        COVERALLS_REPO_TOKEN=PP20MEgztXIQJJTguQwe2jeCh6Bm4lkbv coveralls
