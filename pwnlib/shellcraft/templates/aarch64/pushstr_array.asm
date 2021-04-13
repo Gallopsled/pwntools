@@ -2,7 +2,7 @@
     from pwnlib import shellcraft
     from pwnlib.context import context as ctx
     from pwnlib.util.iters import group
-    from six import text_type, binary_type, ensure_binary
+    from six import text_type, binary_type
 %>
 <%docstring>
 Pushes an array/envp-style array of pointers onto the stack.
@@ -26,7 +26,7 @@ if isinstance(array, (binary_type, text_type)):
     array = [array]
 
 # Convert all items to strings
-array = [ensure_binary(x) for x in array]
+array = [ctx._encode(x) for x in array]
 
 # Normalize line endings for each item
 array = [arg.rstrip(b'\x00') + b'\x00' for arg in array]

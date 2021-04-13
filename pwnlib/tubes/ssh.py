@@ -1102,7 +1102,7 @@ os.execve(exe, argv, env)
                 python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=timeout)
 
             try:
-                python.recvline_contains('PWNTOOLS')        # Magic flag so that any sh/bash initialization errors are swallowed
+                python.recvline_contains(b'PWNTOOLS')        # Magic flag so that any sh/bash initialization errors are swallowed
                 python.recvline()                           # Python interpreter that was selected
                 result = safeeval.const(python.recvline())  # Status flag from the Python script
             except (EOFError, ValueError):
@@ -1348,7 +1348,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             if len(args) == 1 and isinstance(args[0], (list, tuple)):
                 command = [attr] + args[0]
             else:
-                command = ' '.join((attr,) + tuple(map(six.ensure_str, args)))
+                command = b' '.join((context._encode(attr),) + tuple(map(context._encode, args)))
 
             return self.run(command).recvall().strip()
         return runner

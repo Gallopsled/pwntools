@@ -19,6 +19,7 @@ import subprocess
 import sys
 import threading
 import time
+import warnings
 
 import socks
 
@@ -901,6 +902,45 @@ class ContextType(object):
 
         return charset
 
+    def _need_bytes(self, s, level=1):
+        if isinstance(s, (bytes, bytearray)):
+            return s   # already bytes
+
+        encoding = self.encoding
+        errors = 'strict'
+        if encoding == 'auto':
+            worst = max(map(ord, s))
+            if worst > 255:
+                encoding = 'UTF-8'
+                errors = 'surrogateescape'
+            elif worst > 127:
+                encoding = 'ISO-8859-1'
+            else:
+                encoding = 'ASCII'
+
+        warnings.warn("Text is not bytes; assuming {}, no guarantees. See https://docs.pwntools.com/#bytes"
+                      .format(encoding), BytesWarning, level + 2)
+        return s.encode(encoding, errors)
+
+    def _need_text(self, s, level=1):
+        if isinstance(s, six.text_type):
+            return s   # already text
+
+        encoding = self.encoding
+        errors = 'strict'
+        if encoding == 'auto':
+            for encoding in 'ASCII', 'UTF-8', 'ISO-8859-1':
+                try:
+                    s = s.decode(encoding)
+                except UnicodeDecodeError:
+                    pass
+                else:
+                    break
+
+        warnings.warn("Bytes is not text; assuming {}, no guarantees. See https://docs.pwntools.com/#bytes"
+                      .format(encoding), BytesWarning, level + 2)
+        return s.decode(encoding, errors)
+
     def _encode(self, s):
         if isinstance(s, (bytes, bytearray)):
             return s   # already bytes
@@ -1362,7 +1402,7 @@ class ContextType(object):
         This configures the newline emitted by e.g. ``sendline`` or that is used
         as a delimiter for e.g. ``recvline``.
         """
-        return six.ensure_binary(v)
+        return context._need_bytes(v)
 
 
     @_validator

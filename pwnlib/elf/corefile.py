@@ -392,7 +392,7 @@ class Corefile(ELF):
         >>> env = dict(os.environ)
         >>> env['HELLO'] = 'WORLD'
         >>> io = process(elf.path, env=env)
-        >>> io.sendline('echo hello')
+        >>> io.sendline(b'echo hello')
         >>> io.recvline()
         b'hello\n'
 

@@ -320,13 +320,13 @@ def _gdbserver_port(gdbserver, ssh):
 
     if process_created.startswith(b'ERROR:'):
         raise ValueError(
-            'Failed to spawn process under gdbserver. gdbserver error message: %s' % process_created
+            'Failed to spawn process under gdbserver. gdbserver error message: %r' % process_created
         )
 
     try:
         gdbserver.pid   = int(process_created.split()[-1], 0)
     except ValueError:
-        log.error('gdbserver did not output its pid (maybe chmod +x?): %s', six.ensure_str(process_created))
+        log.error('gdbserver did not output its pid (maybe chmod +x?): %r', process_created)
 
     listening_on = b''
     while b'Listening' not in listening_on:
