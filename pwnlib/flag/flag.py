@@ -69,4 +69,4 @@ def submit_flag(flag,
             r.send(data)
             return r.recvall(timeout=1)
     except Exception:
-        log.warn("Could not submit flag %r to %s:%s" % (flag, server, port))
+        log.warn("Could not submit flag %r to %s:%s", flag, server, port)

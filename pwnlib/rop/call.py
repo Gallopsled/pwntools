@@ -112,6 +112,8 @@ class AppendedArgument(Unresolved):
         self.values = []
         self.address = address
         for v in value:
+            if isinstance(v, six.text_type):
+                v = context._need_bytes(v)
             if isinstance(v, (list, tuple)):
                 self.size += context.bytes
             else:
@@ -156,9 +158,9 @@ class AppendedArgument(Unresolved):
 
         return LocalAddress()
 
-    def resolve(self, addr = None):
+    def resolve(self, addr=None):
         """
-        Return a flat list of ``int`` or ``str`` objects which can be
+        Return a flat list of ``int`` or ``bytes`` objects which can be
         passed to :func:`.flat`.
 
         Arguments:

@@ -824,7 +824,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         ... ''')
         >>> io.recvline()
         b'Hello from remote debugger!\n'
-        >>> io.sendline('echo Hello from bash && exit')
+        >>> io.sendline(b'echo Hello from bash && exit')
         >>> io.recvall()
         b'Hello from bash\n'
 
@@ -840,7 +840,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         ... ''')
         >>> io.recvline(timeout=5)  # doctest: +SKIP
         b'Hello from ssh debugger!\n'
-        >>> io.sendline('This will be echoed back')
+        >>> io.sendline(b'This will be echoed back')
         >>> io.recvline()
         b'This will be echoed back\n'
         >>> io.close()
@@ -1215,23 +1215,23 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
 
     with runner(cmd) as gdb:
         if context.aslr:
-            gdb.sendline('set disable-randomization off')
+            gdb.sendline(b'set disable-randomization off')
 
         gdb.send("""
         set prompt
         catch load
         run
         """)
-        gdb.sendline('info sharedlibrary')
+        gdb.sendline(b'info sharedlibrary')
         lines = context._decode(gdb.recvrepeat(2))
 
         for line in lines.splitlines():
             m = expr.match(line)
             if m:
                 libs[m.group(2)] = int(m.group(1),16)
-        gdb.sendline('kill')
-        gdb.sendline('y')
-        gdb.sendline('quit')
+        gdb.sendline(b'kill')
+        gdb.sendline(b'y')
+        gdb.sendline(b'quit')
 
     #
     # Fix up all of the addresses against the .text address
@@ -1330,7 +1330,7 @@ def version(program='gdb'):
 
     Example:
 
-        >>> (7,0) <= gdb.version() <= (10,0)
+        >>> (7,0) <= gdb.version() <= (12,0)
         True
     """
     program = misc.which(program)

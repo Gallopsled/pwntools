@@ -1569,7 +1569,7 @@ class CorefileFinder(object):
             path = os.path.join(binfmt_misc, entry)
 
             try:
-                data = self.read(path)
+                data = self.read(path).decode()
             except Exception:
                 continue
 
