@@ -1,5 +1,6 @@
 <%
     from pwnlib import shellcraft
+    from pwnlib.shellcraft import pretty
     from pwnlib.context import context as ctx
     from pwnlib.util.iters import group
     from six import text_type, binary_type
@@ -50,7 +51,7 @@ if len(array) * 8 > 4095:
 %for i, value in enumerate(reversed(array)):
    ${shellcraft.mov(register1, (i+1)*8 + string.index(value))}
    add ${register1}, sp, ${register1}
-   str ${register1}, [sp, #-8]! /* ${array[-i]} */
+   str ${register1}, [sp, #-8]! /* ${pretty(array[-i], False)} */
 %endfor
 
     /* set ${reg} to the current top of the stack */

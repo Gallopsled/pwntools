@@ -1,6 +1,7 @@
 <%
     from pwnlib.util import lists, packing, fiddling
     from pwnlib.shellcraft import pretty, okay
+    from pwnlib.context import context as ctx
     import six
 %>
 <%page args="string, append_null = True"/>
@@ -63,7 +64,9 @@ Args:
 </%docstring>
 <%
 original = string
-string   = packing.flat(string)
+if isinstance(string, six.text_type):
+    string   = ctx._encode(string)
+string = packing.flat(string)
 
 if append_null:
     string += b'\x00'

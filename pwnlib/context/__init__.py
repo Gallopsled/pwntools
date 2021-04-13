@@ -923,7 +923,7 @@ class ContextType(object):
         return s.encode(encoding, errors)
 
     def _need_text(self, s, level=1):
-        if isinstance(s, six.text_type):
+        if isinstance(s, (str, six.text_type)):
             return s   # already text
 
         encoding = self.encoding
