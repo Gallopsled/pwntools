@@ -425,7 +425,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
 
         Send a command to Bash
 
-        >>> io.sendline("echo hello")
+        >>> io.sendline(b"echo hello")
         >>> io.recvline()
         b'hello\n'
 
@@ -449,7 +449,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
 
         Send a command to Bash
 
-        >>> io.sendline("echo hello")
+        >>> io.sendline(b"echo hello")
         >>> io.recvline()
         b'hello\n'
 
@@ -503,7 +503,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
 
         Send a command to Bash
 
-        >>> io.sendline("echo hello")
+        >>> io.sendline(b"echo hello")
 
         Interact with the process
         >>> io.interactive() # doctest: +SKIP
@@ -583,7 +583,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     garbage = gdbserver.recvline(timeout=1)
 
     # Some versions of gdbserver output an additional message
-    garbage2 = gdbserver.recvline_startswith(b"Remote debugging from host ", timeout=1)
+    garbage2 = gdbserver.recvline_startswith(b"Remote debugging from host ", timeout=2)
 
     return gdbserver
 
@@ -1217,7 +1217,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         if context.aslr:
             gdb.sendline(b'set disable-randomization off')
 
-        gdb.send("""
+        gdb.send(b"""\
         set prompt
         catch load
         run

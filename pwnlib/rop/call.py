@@ -214,8 +214,8 @@ class Call(object):
 
     Example:
 
-        >>> Call('system', 0xdeadbeef, [1, 2, '/bin/sh'])
-        Call('system', 0xdeadbeef, [1, 2, AppendedArgument(['/bin/sh'], 0x0)])
+        >>> Call('system', 0xdeadbeef, [1, 2, b'/bin/sh'])
+        Call('system', 0xdeadbeef, [1, 2, AppendedArgument([b'/bin/sh'], 0x0)])
     """
     #: Pretty name of the call target, e.g. 'system'
     name = None
