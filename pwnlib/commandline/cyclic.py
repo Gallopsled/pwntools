@@ -23,7 +23,7 @@ parser.add_argument(
     '-a', '--alphabet',
     metavar = 'alphabet',
     default = string.ascii_lowercase.encode(),
-    type = six.ensure_binary,
+    type = context._encode,
     help = 'The alphabet to use in the cyclic pattern (defaults to all lower case letters)',
 )
 

@@ -4,7 +4,7 @@ env:
   GITHUB_BASE: origin/${{ github.event.pull_request.base.ref }}
 
 jobs:
-  build:
+  check:
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -20,7 +20,7 @@ jobs:
         if git log --stat ${GITHUB_BASE}..HEAD | grep CHANGELOG.md; then
            echo 'Changelog updated :D'
         else
-           if git log --stat ${GITHUB_BASE}..HEAD | grep '++\|--'; then
+           if git log --stat ${GITHUB_BASE}..HEAD pwnlib pwn | grep '++\|--'; then
               echo 'Major changes detected, changelog required!'
               false
            else
