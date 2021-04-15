@@ -299,7 +299,7 @@ def _arch_header():
     prefix  = ['.section .shellcode,"awx"',
                 '.global _start',
                 '.global __start',
-                '.p2align 3',
+                '.p2align 2',
                 '_start:',
                 '__start:']
     headers = {

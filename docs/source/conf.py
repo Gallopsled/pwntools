@@ -433,3 +433,9 @@ if 'doctest' in sys.argv:
     if sys.version_info[:1] < (3,):
         import sphinx.ext.doctest
         sphinx.ext.doctest.SphinxDocTestRunner.__init__ = py2_doctest_init
+    else:
+        # monkey patching paramiko due to https://github.com/paramiko/paramiko/pull/1661
+        import paramiko.client
+        import binascii
+        paramiko.client.hexlify = lambda x: binascii.hexlify(x).decode()
+        paramiko.util.safe_string = lambda x: '' # function result never *actually used*
