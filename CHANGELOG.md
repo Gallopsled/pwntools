@@ -60,7 +60,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.6.0 (`dev`)
 
-- [#1739][1739] Fix wrong description for shellcraft.amd64.linux.kill()
+- [#1739][1739] Add/fix shellcraft.linux.kill() / shellcraft.linux.killparent()
 
 [1739]: https://github.com/Gallopsled/pwntools/pull/1739
 
