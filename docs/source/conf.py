@@ -413,7 +413,14 @@ class Py2OutputChecker(_DummyClass, doctest.OutputChecker):
         if sup(rly_want, got, optionflags):
             return True
         rly_want = ' '.join(x[:2].replace('b"',' "').replace("b'"," '")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
-        return sup(rly_want, got, optionflags)
+        if sup(rly_want, got, optionflags):
+            return True
+        for wantl, gotl in six.moves.zip_longest(want.splitlines(), got.splitlines(), fillvalue=''):
+            rly_want1 = '['.join(x[:2].replace('b"','"').replace("b'","'")+x[2:] for x in wantl.split('['))
+            rly_want2 = ' '.join(x[:2].replace('b"',' "').replace("b'"," '")+x[2:] for x in wantl.split(' '))
+            if not sup(rly_want1, gotl, optionflags) and not sup(rly_want2, gotl, optionflags):
+                return False
+        return True
 
 def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
     if checker is None:
@@ -427,3 +434,9 @@ if 'doctest' in sys.argv:
     if sys.version_info[:1] < (3,):
         import sphinx.ext.doctest
         sphinx.ext.doctest.SphinxDocTestRunner.__init__ = py2_doctest_init
+    else:
+        # monkey patching paramiko due to https://github.com/paramiko/paramiko/pull/1661
+        import paramiko.client
+        import binascii
+        paramiko.client.hexlify = lambda x: binascii.hexlify(x).decode()
+        paramiko.util.safe_string = lambda x: '' # function result never *actually used*

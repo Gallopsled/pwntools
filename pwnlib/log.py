@@ -185,7 +185,7 @@ class Progress(object):
 
     def _log(self, status, args, kwargs, msgtype):
         # Logs are strings, not bytes.  Handle Python3 bytes() objects.
-        status = six.ensure_text(status)
+        status = context._need_text(status)
 
         # this progress logger is stopped, so don't generate any more records
         if self._stopped:
@@ -289,7 +289,7 @@ class Logger(object):
 
     def _log(self, level, msg, args, kwargs, msgtype, progress = None):
         # Logs are strings, not bytes.  Handle Python3 bytes() objects.
-        msg = six.ensure_text(msg)
+        msg = context._need_text(msg)
 
         extra = kwargs.get('extra', {})
         extra.setdefault('pwnlib_msgtype', msgtype)

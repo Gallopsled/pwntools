@@ -317,13 +317,13 @@ def _gdbserver_port(gdbserver, ssh):
 
     if process_created.startswith(b'ERROR:'):
         raise ValueError(
-            'Failed to spawn process under gdbserver. gdbserver error message: %s' % process_created
+            'Failed to spawn process under gdbserver. gdbserver error message: %r' % process_created
         )
 
     try:
         gdbserver.pid   = int(process_created.split()[-1], 0)
     except ValueError:
-        log.error('gdbserver did not output its pid (maybe chmod +x?): %s', six.ensure_str(process_created))
+        log.error('gdbserver did not output its pid (maybe chmod +x?): %r', process_created)
 
     listening_on = b''
     while b'Listening' not in listening_on:
@@ -422,7 +422,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
 
         Send a command to Bash
 
-        >>> io.sendline("echo hello")
+        >>> io.sendline(b"echo hello")
         >>> io.recvline()
         b'hello\n'
 
@@ -446,7 +446,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
 
         Send a command to Bash
 
-        >>> io.sendline("echo hello")
+        >>> io.sendline(b"echo hello")
         >>> io.recvline()
         b'hello\n'
 
@@ -500,7 +500,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
 
         Send a command to Bash
 
-        >>> io.sendline("echo hello")
+        >>> io.sendline(b"echo hello")
 
         Interact with the process
         >>> io.interactive() # doctest: +SKIP
@@ -580,7 +580,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     garbage = gdbserver.recvline(timeout=1)
 
     # Some versions of gdbserver output an additional message
-    garbage2 = gdbserver.recvline_startswith(b"Remote debugging from host ", timeout=1)
+    garbage2 = gdbserver.recvline_startswith(b"Remote debugging from host ", timeout=2)
 
     return gdbserver
 
@@ -770,7 +770,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         ... ''')
         >>> io.recvline()
         b'Hello from process debugger!\n'
-        >>> io.sendline('echo Hello from bash && exit')
+        >>> io.sendline(b'echo Hello from bash && exit')
         >>> io.recvall()
         b'Hello from bash\n'
 
@@ -800,7 +800,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
             Interact with the program in a regular way
 
-            >>> io.sendline('echo Hello from bash && exit')
+            >>> io.sendline(b'echo Hello from bash && exit')
 
             Observe the results
 
@@ -821,7 +821,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         ... ''')
         >>> io.recvline()
         b'Hello from remote debugger!\n'
-        >>> io.sendline('echo Hello from bash && exit')
+        >>> io.sendline(b'echo Hello from bash && exit')
         >>> io.recvall()
         b'Hello from bash\n'
 
@@ -837,7 +837,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         ... ''')
         >>> io.recvline(timeout=5)  # doctest: +SKIP
         b'Hello from ssh debugger!\n'
-        >>> io.sendline('This will be echoed back')
+        >>> io.sendline(b'This will be echoed back')
         >>> io.recvline()
         b'This will be echoed back\n'
         >>> io.close()
@@ -888,7 +888,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
         pids = list(pidof(target))
         if not pids:
-            log.error('No such process: %s' % target)
+            log.error('No such process: %s', target)
         pid = pids[0]
         log.info('Attaching to youngest process "%s" (PID = %d)' %
                  (target, pid))
@@ -968,7 +968,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     elif isinstance(target, elf.corefile.Corefile):
         pre += 'target core %s\n' % target.path
     else:
-        log.error("don't know how to attach to target: %r" % target)
+        log.error("don't know how to attach to target: %r", target)
 
     # if we have a pid but no exe, just look it up in /proc/
     if pid and not exe:
@@ -995,7 +995,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
     if exe and context.native:
         if not ssh and not os.path.isfile(exe):
-            log.error('No such file: %s' % exe)
+            log.error('No such file: %s', exe)
         cmd += ' "%s"' % exe
 
     if pid and not context.os == 'android':
@@ -1030,14 +1030,14 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     if gdbscript:
         tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.gdb',
                                           delete = False, mode = 'w+')
-        log.debug('Wrote gdb script to %r\n%s' % (tmp.name, gdbscript))
+        log.debug('Wrote gdb script to %r\n%s', tmp.name, gdbscript)
         gdbscript = 'shell rm %s\n%s' % (tmp.name, gdbscript)
 
         tmp.write(gdbscript)
         tmp.close()
         cmd += ' -x %s' % (tmp.name)
 
-    log.info('running in new terminal: %s' % cmd)
+    log.info('running in new terminal: %s', cmd)
 
     if api:
         # prevent gdb_faketerminal.py from messing up api doctests
@@ -1214,23 +1214,23 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
 
     with runner(cmd) as gdb:
         if context.aslr:
-            gdb.sendline('set disable-randomization off')
+            gdb.sendline(b'set disable-randomization off')
 
-        gdb.send("""
+        gdb.send(b"""\
         set prompt
         catch load
         run
         """)
-        gdb.sendline('info sharedlibrary')
+        gdb.sendline(b'info sharedlibrary')
         lines = context._decode(gdb.recvrepeat(2))
 
         for line in lines.splitlines():
             m = expr.match(line)
             if m:
                 libs[m.group(2)] = int(m.group(1),16)
-        gdb.sendline('kill')
-        gdb.sendline('y')
-        gdb.sendline('quit')
+        gdb.sendline(b'kill')
+        gdb.sendline(b'y')
+        gdb.sendline(b'quit')
 
     #
     # Fix up all of the addresses against the .text address
@@ -1329,7 +1329,7 @@ def version(program='gdb'):
 
     Example:
 
-        >>> (7,0) <= gdb.version() <= (10,0)
+        >>> (7,0) <= gdb.version() <= (12,0)
         True
     """
     program = misc.which(program)
