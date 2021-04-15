@@ -25,7 +25,7 @@ build_dash = tags.has('dash')
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../..'))
 
-import pwnlib
+import pwnlib.update
 pwnlib.update.disabled = True
 
 # If your documentation needs a minimal Sphinx version, state it here.
