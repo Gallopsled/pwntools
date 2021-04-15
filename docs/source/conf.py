@@ -440,3 +440,9 @@ if 'doctest' in sys.argv:
         import binascii
         paramiko.client.hexlify = lambda x: binascii.hexlify(x).decode()
         paramiko.util.safe_string = lambda x: '' # function result never *actually used*
+    class EndlessLoop(Exception): pass
+    def alrm_handler(sig, frame):
+        signal.alarm(180) # three minutes
+        raise EndlessLoop()
+    signal.signal(signal.SIGALRM, alrm_handler)
+    signal.alarm(600) # ten minutes
