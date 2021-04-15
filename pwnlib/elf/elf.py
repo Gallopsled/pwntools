@@ -745,7 +745,7 @@ class ELF(ELFFile):
                     self._libs[qemu_lib] = address
 
     def _patch_elf_and_read_maps(self):
-        """patch_elf_and_read_maps(self) -> dict
+        r"""patch_elf_and_read_maps(self) -> dict
 
         Read ``/proc/self/maps`` as if the ELF were executing.
 
@@ -769,7 +769,7 @@ class ELF(ELFFile):
             ...   with context.local(arch=arch):
             ...     sc = shellcraft.cat("/proc/self/maps")
             ...     sc += shellcraft.exit()
-            ...     sc = asm(sc)
+            ...     sc = asm(sc).rstrip(b'\x00\xbf')
             ...     sc = enhex(sc)
             ...     assert sc == CAT_PROC_MAPS_EXIT[arch]
         """
