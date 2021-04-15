@@ -58,7 +58,7 @@ def submit_flag(flag,
                       exploit,
                       target,
                       team,
-                      ''])
+                      '']).encode('ascii')
 
     if os.path.exists(env_file):
         write(env_file, data)
