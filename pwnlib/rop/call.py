@@ -69,13 +69,13 @@ class AppendedArgument(Unresolved):
 
         >>> context.clear()
         >>> context.arch = 'amd64'
-        >>> u = AppendedArgument([1,2,'hello',3])
+        >>> u = AppendedArgument([1,2,b'hello',3])
         >>> len(u)
         32
         >>> u.resolve()
         [1, 2, b'hello\x00$$', 3]
 
-        >>> u = AppendedArgument([1,2,['hello'],3])
+        >>> u = AppendedArgument([1,2,[b'hello'],3])
         >>> u.resolve()
         [1, 2, 32, 3, b'hello\x00$$']
         >>> u.resolve(10000)
@@ -84,7 +84,7 @@ class AppendedArgument(Unresolved):
         >>> u.resolve()
         [1, 2, 20032, 3, b'hello\x00$$']
 
-        >>> u = AppendedArgument([[[[[[[[['pointers!']]]]]]]]], 1000)
+        >>> u = AppendedArgument([[[[[[[[[b'pointers!']]]]]]]]], 1000)
         >>> u.resolve()
         [1008, 1016, 1024, 1032, 1040, 1048, 1056, 1064, b'pointers!\x00$$$$$$']
     """
@@ -112,6 +112,8 @@ class AppendedArgument(Unresolved):
         self.values = []
         self.address = address
         for v in value:
+            if isinstance(v, six.text_type):
+                v = context._need_bytes(v)
             if isinstance(v, (list, tuple)):
                 self.size += context.bytes
             else:
@@ -156,9 +158,9 @@ class AppendedArgument(Unresolved):
 
         return LocalAddress()
 
-    def resolve(self, addr = None):
+    def resolve(self, addr=None):
         """
-        Return a flat list of ``int`` or ``str`` objects which can be
+        Return a flat list of ``int`` or ``bytes`` objects which can be
         passed to :func:`.flat`.
 
         Arguments:
@@ -174,7 +176,7 @@ class AppendedArgument(Unresolved):
                 if isinstance(value, six.integer_types):
                     rv[i] = value
                 if isinstance(value, six.text_type):
-                    value = context._encode(value)
+                    value = context._need_bytes(value)
                 if isinstance(value, (bytes, bytearray)):
                     value += b'\x00'
                     while len(value) % context.bytes:
@@ -212,8 +214,8 @@ class Call(object):
 
     Example:
 
-        >>> Call('system', 0xdeadbeef, [1, 2, '/bin/sh'])
-        Call('system', 0xdeadbeef, [1, 2, AppendedArgument(['/bin/sh'], 0x0)])
+        >>> Call('system', 0xdeadbeef, [1, 2, b'/bin/sh'])
+        Call('system', 0xdeadbeef, [1, 2, AppendedArgument([b'/bin/sh'], 0x0)])
     """
     #: Pretty name of the call target, e.g. 'system'
     name = None
