@@ -67,7 +67,7 @@ class tube(Timeout, Logger):
 
     @newline.setter
     def newline(self, newline):
-        self._newline = context._need_bytes(newline)
+        self._newline = packing._need_bytes(newline)
 
     # Functions based on functions from subclasses
     def recv(self, numb = None, timeout = default):
@@ -124,7 +124,7 @@ class tube(Timeout, Logger):
             >>> t.recv()
             b'hello'
         """
-        data = context._need_bytes(data)
+        data = packing._need_bytes(data)
         self.buffer.unget(data)
 
     def _fillbuffer(self, timeout = default):
@@ -318,7 +318,7 @@ class tube(Timeout, Logger):
         # Convert string into singleton tupple
         if isinstance(delims, (bytes, bytearray, six.text_type)):
             delims = (delims,)
-        delims = tuple(map(context._need_bytes, delims))
+        delims = tuple(map(packing._need_bytes, delims))
 
         # Longest delimiter for tracking purposes
         longest = max(map(len, delims))
@@ -434,7 +434,7 @@ class tube(Timeout, Logger):
             >>> t.recvlinesS(3)
             ['Foo', 'Bar', 'Baz']
         """
-        return [context._decode(x) for x in self.recvlines(numlines, keepends, timeout)]
+        return [packing._decode(x) for x in self.recvlines(numlines, keepends, timeout)]
 
     def recvlinesb(self, numlines=2**20, keepends=False, timeout=default):
         r"""recvlinesb(numlines, keepends=False, timeout=default) -> bytearray list
@@ -565,7 +565,7 @@ class tube(Timeout, Logger):
         """
         if isinstance(items, (bytes, bytearray, six.text_type)):
             items = (items,)
-        items = tuple(map(context._need_bytes, items))
+        items = tuple(map(packing._need_bytes, items))
 
         def pred(line):
             return any(d in line for d in items)
@@ -603,7 +603,7 @@ class tube(Timeout, Logger):
         # Convert string into singleton tupple
         if isinstance(delims, (bytes, bytearray, six.text_type)):
             delims = (delims,)
-        delims = tuple(map(context._need_bytes, delims))
+        delims = tuple(map(packing._need_bytes, delims))
 
         return self.recvline_pred(lambda line: any(map(line.startswith, delims)),
                                   keepends=keepends,
@@ -635,7 +635,7 @@ class tube(Timeout, Logger):
         if isinstance(delims, (bytes, bytearray, six.text_type)):
             delims = (delims,)
 
-        delims = tuple(context._need_bytes(delim) + self.newline for delim in delims)
+        delims = tuple(packing._need_bytes(delim) + self.newline for delim in delims)
 
         return self.recvline_pred(lambda line: any(map(line.endswith, delims)),
                                   keepends=keepends,
@@ -655,7 +655,7 @@ class tube(Timeout, Logger):
         """
 
         if isinstance(regex, (bytes, bytearray, six.text_type)):
-            regex = context._need_bytes(regex)
+            regex = packing._need_bytes(regex)
             regex = re.compile(regex)
 
         if exact:
@@ -679,7 +679,7 @@ class tube(Timeout, Logger):
         """
 
         if isinstance(regex, (bytes, bytearray, six.text_type)):
-            regex = context._need_bytes(regex)
+            regex = packing._need_bytes(regex)
             regex = re.compile(regex)
 
         if exact:
@@ -763,7 +763,7 @@ class tube(Timeout, Logger):
             b'hello'
         """
 
-        data = context._need_bytes(data)
+        data = packing._need_bytes(data)
 
         if self.isEnabledFor(logging.DEBUG):
             self.debug('Sent %#x bytes:' % len(data))
@@ -793,13 +793,13 @@ class tube(Timeout, Logger):
             b'hello\r\n'
         """
 
-        line = context._need_bytes(line)
+        line = packing._need_bytes(line)
 
         self.send(line + self.newline)
 
     def sendlines(self, lines=[]):
         for line in lines:
-            line = context._need_bytes(line)
+            line = packing._need_bytes(line)
             self.sendline(line)
 
     def sendafter(self, delim, data, timeout = default):
@@ -808,7 +808,7 @@ class tube(Timeout, Logger):
         A combination of ``recvuntil(delim, timeout=timeout)`` and ``send(data)``.
         """
 
-        data = context._need_bytes(data)
+        data = packing._need_bytes(data)
         res = self.recvuntil(delim, timeout=timeout)
         self.send(data)
         return res
@@ -818,7 +818,7 @@ class tube(Timeout, Logger):
 
         A combination of ``recvuntil(delim, timeout=timeout)`` and ``sendline(data)``."""
 
-        data = context._need_bytes(data)
+        data = packing._need_bytes(data)
         res = self.recvuntil(delim, timeout=timeout)
         self.sendline(data)
         return res
@@ -828,7 +828,7 @@ class tube(Timeout, Logger):
 
         A combination of ``send(data)`` and ``recvuntil(delim, timeout=timeout)``."""
 
-        data = context._need_bytes(data)
+        data = packing._need_bytes(data)
         self.send(data)
         return self.recvuntil(delim, timeout=timeout)
 
@@ -837,7 +837,7 @@ class tube(Timeout, Logger):
 
         A combination of ``sendline(data)`` and ``recvuntil(delim, timeout=timeout)``."""
 
-        data = context._need_bytes(data)
+        data = packing._need_bytes(data)
         self.sendline(data)
         return self.recvuntil(delim, timeout=timeout)
 
@@ -1404,7 +1404,7 @@ class tube(Timeout, Logger):
         def wrapperb(self, *a, **kw):
             return bytearray(func(self, *a, **kw))
         def wrapperS(self, *a, **kw):
-            return context._decode(func(self, *a, **kw))
+            return packing._decode(func(self, *a, **kw))
         wrapperb.__doc__ = 'Same as :meth:`{func.__name__}`, but returns a bytearray'.format(func=func)
         wrapperb.__name__ = func.__name__ + 'b'
         wrapperS.__doc__ = 'Same as :meth:`{func.__name__}`, but returns a str, ' \

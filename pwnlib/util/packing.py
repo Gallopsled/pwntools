@@ -37,6 +37,7 @@ import collections
 import six
 import struct
 import sys
+import warnings
 
 from six.moves import range
 
@@ -206,7 +207,7 @@ def unpack(data, word_size = None):
     word_size  = word_size  or context.word_size
     endianness = context.endianness
     sign       = context.sign
-    data = context._need_bytes(data, 2)
+    data = _need_bytes(data, 2)
 
     # Verify that word_size make sense
     if word_size == 'all':
@@ -315,7 +316,7 @@ def make_single(op,size,end,sign):
     struct_op = getattr(struct.Struct(fmt), op_verbs[op])
     if op == 'u':
         def routine(data, stacklevel=1):
-            data = context._need_bytes(data, stacklevel)
+            data = _need_bytes(data, stacklevel)
             return struct_op(data)[0]
     else:
         def routine(data, stacklevel=None):
@@ -520,7 +521,7 @@ def _fit(pieces, preprocessor, packer, filler, stacklevel=1):
             if k >= large_key:
                 k = fill(pack(k))
         elif isinstance(k, (six.text_type, bytearray, bytes)):
-            k = fill(context._encode(k))
+            k = fill(_encode(k))
         else:
             raise TypeError("flat(): offset must be of type int or str, but got '%s'" % type(k))
         if k in pieces_:
@@ -590,7 +591,7 @@ def _flat(args, preprocessor, packer, filler, stacklevel=1):
         elif isinstance(arg, bytes):
             val = arg
         elif isinstance(arg, six.text_type):
-            val = context._need_bytes(arg, stacklevel + 1)
+            val = _need_bytes(arg, stacklevel + 1)
         elif isinstance(arg, six.integer_types):
             val = packer(arg)
         elif isinstance(arg, bytearray):
@@ -765,7 +766,7 @@ def flat(*args, **kwargs):
     stacklevel   = kwargs.pop('stacklevel', 0)
 
     if isinstance(filler, (str, six.text_type)):
-        filler = bytearray(context._need_bytes(filler))
+        filler = bytearray(_need_bytes(filler))
 
     if kwargs != {}:
         raise TypeError("flat() does not support argument %r" % kwargs.popitem()[0])
@@ -1007,6 +1008,66 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         dst = dst.decode('utf8')
 
     return dst
+
+def _need_bytes(s, level=1):
+    if isinstance(s, (bytes, bytearray)):
+        return s   # already bytes
+
+    encoding = context.encoding
+    errors = 'strict'
+    if encoding == 'auto':
+        worst = max(map(ord, s))
+        if worst > 255:
+            encoding = 'UTF-8'
+            errors = 'surrogateescape'
+        elif worst > 127:
+            encoding = 'ISO-8859-1'
+        else:
+            encoding = 'ASCII'
+
+    warnings.warn("Text is not bytes; assuming {}, no guarantees. See https://docs.pwntools.com/#bytes"
+                  .format(encoding), BytesWarning, level + 2)
+    return s.encode(encoding, errors)
+
+def _need_text(s, level=1):
+    if isinstance(s, (str, six.text_type)):
+        return s   # already text
+
+    encoding = context.encoding
+    errors = 'strict'
+    if encoding == 'auto':
+        for encoding in 'ASCII', 'UTF-8', 'ISO-8859-1':
+            try:
+                s = s.decode(encoding)
+            except UnicodeDecodeError:
+                pass
+            else:
+                break
+
+    warnings.warn("Bytes is not text; assuming {}, no guarantees. See https://docs.pwntools.com/#bytes"
+                  .format(encoding), BytesWarning, level + 2)
+    return s.decode(encoding, errors)
+
+def _encode(s):
+    if isinstance(s, (bytes, bytearray)):
+        return s   # already bytes
+
+    if context.encoding == 'auto':
+        try:
+            return s.encode('latin1')
+        except UnicodeEncodeError:
+            return s.encode('utf-8', 'surrogateescape')
+    return s.encode(context.encoding)
+
+def _decode(b):
+    if context.encoding == 'auto':
+        try:
+            return b.decode('utf-8')
+        except UnicodeDecodeError:
+            return b.decode('latin1')
+        except AttributeError:
+            return b
+    return b.decode(context.encoding)
 
 del op, size, end, sign
 del name, routine, mod

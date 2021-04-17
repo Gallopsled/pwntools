@@ -66,7 +66,8 @@ Args:
 original = string
 if isinstance(string, six.text_type):
     string   = ctx._encode(string)
-string = packing.flat(string)
+else:
+    string = packing.flat(string)
 
 if append_null:
     string += b'\x00'

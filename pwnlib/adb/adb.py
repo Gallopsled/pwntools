@@ -68,6 +68,7 @@ from pwnlib.context import context
 from pwnlib.device import Device
 from pwnlib.log import getLogger
 from pwnlib.protocols.adb import AdbClient
+from pwnlib.util.packing import _decode
 from pwnlib.util import misc
 
 log = getLogger(__name__)
@@ -895,7 +896,7 @@ def which(name, all = False, *a, **kw):
 
     which_cmd = which_cmd.strip()
     data = process(['sh','-c', which_cmd], *a, **kw).recvall()
-    data = context._decode(data)
+    data = _decode(data)
     result = []
 
     for path in data.split('\x00'):
@@ -1012,12 +1013,12 @@ def getprop(name=None):
     with context.quiet:
         if name:
             result = process(['getprop', name]).recvall().strip()
-            result = context._decode(result)
+            result = _decode(result)
             return result
 
         result = process(['getprop']).recvall()
 
-    result = context._decode(result)
+    result = _decode(result)
     expr = r'\[([^\]]+)\]: \[(.*)\]'
 
     props = {}
