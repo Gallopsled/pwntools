@@ -634,7 +634,7 @@ def _need_text(s):
     # circular import wrapper
     global _need_text
     from pwnlib.util.packing import _need_text
-    _need_text(s, 2)
+    return _need_text(s, 2)
 
 # we keep a dictionary of loggers such that multiple calls to `getLogger` with
 # the same name will return the same logger
