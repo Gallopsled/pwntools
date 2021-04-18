@@ -37,3 +37,5 @@ __all__ = [
     'update',
     'version',
 ]
+
+from . import args
