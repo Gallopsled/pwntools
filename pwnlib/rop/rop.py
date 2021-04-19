@@ -1402,7 +1402,6 @@ class ROP(object):
         Test:
             >>> context.clear(binary=pwnlib.data.elf.ret2dlresolve.get("amd64"))
             >>> r = ROP(context.binary)
-            >>> p = process()
             >>> r.ret2csu(1, 2, 3, 4, 5, 6, 7, 8, 9)
             >>> r.call(0xdeadbeef)
             >>> print(r.dump())
@@ -1422,9 +1421,10 @@ class ROP(object):
             0x0068:              0x8
             0x0070:              0x9
             0x0078:       0xdeadbeef 0xdeadbeef()
-            >>> p.send(fit({64+context.bytes: r}))
-            >>> p.wait(0.5)
             >>> with context.verbose:
+            ...     p = process()
+            ...     p.send(fit({64+context.bytes: r}))
+            ...     p.wait(0.5)
             ...     import os
             ...     os.listdir('.')
             ...     os.listdir('/var/crash')
