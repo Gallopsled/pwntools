@@ -62,7 +62,7 @@ from pwnlib.elf import constants
 from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak
 from pwnlib.util.fiddling import enhex
-from pwnlib.util.packing import unpack
+from pwnlib.util.packing import unpack, _encode
 from pwnlib.util.web import wget
 
 log    = getLogger(__name__)
@@ -75,7 +75,7 @@ def sysv_hash(symbol):
     """
     h = 0
     g = 0
-    for c in bytearray(context._encode(symbol)):
+    for c in bytearray(_encode(symbol)):
         h = (h << 4) + c
         g = h & 0xf0000000
         h ^= (g >> 24)
@@ -87,7 +87,7 @@ def gnu_hash(s):
 
     Function used to generated GNU-style hashes for strings.
     """
-    s = bytearray(context._encode(s))
+    s = bytearray(_encode(s))
     h = 5381
     for c in s:
         h = h * 33 + c
@@ -539,7 +539,7 @@ class DynELF(object):
             lib = 'libc.so'
 
         if symb:
-            symb = context._encode(symb)
+            symb = _encode(symb)
 
         #
         # Get a pretty name for the symbol to show the user
@@ -640,7 +640,7 @@ class DynELF(object):
         while leak.field(cur, LinkMap.l_prev):
             cur = leak.field(cur, LinkMap.l_prev)
 
-        libname = context._encode(libname)
+        libname = _encode(libname)
 
         while cur:
             self.status("link_map entry %#x" % cur)

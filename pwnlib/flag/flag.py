@@ -58,7 +58,7 @@ def submit_flag(flag,
                       exploit,
                       target,
                       team,
-                      ''])
+                      '']).encode('ascii')
 
     if os.path.exists(env_file):
         write(env_file, data)
@@ -69,4 +69,4 @@ def submit_flag(flag,
             r.send(data)
             return r.recvall(timeout=1)
     except Exception:
-        log.warn("Could not submit flag %r to %s:%s" % (flag, server, port))
+        log.warn("Could not submit flag %r to %s:%s", flag, server, port)

@@ -33,5 +33,5 @@ echo > ~/pwntools/docs/source/adb.rst
 echo > ~/pwntools/docs/source/protocols.rst
 
 export PWNLIB_NOTERM=1 
-coverage-2.7 run -m sphinx -b doctest $HOME/pwntools/docs/source $HOME/pwntools/docs/build/doctest $TARGET
+python2.7 -bb -m coverage run -m sphinx -b doctest $HOME/pwntools/docs/source $HOME/pwntools/docs/build/doctest $TARGET
 
