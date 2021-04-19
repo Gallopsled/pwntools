@@ -170,6 +170,7 @@ from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.timeout import Timeout
 from pwnlib.util import misc
+from pwnlib.util import packing
 from pwnlib.util import proc
 
 log = getLogger(__name__)
@@ -1223,7 +1224,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         run
         """)
         gdb.sendline(b'info sharedlibrary')
-        lines = context._decode(gdb.recvrepeat(2))
+        lines = packing._decode(gdb.recvrepeat(2))
 
         for line in lines.splitlines():
             m = expr.match(line)

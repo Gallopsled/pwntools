@@ -185,7 +185,7 @@ class Progress(object):
 
     def _log(self, status, args, kwargs, msgtype):
         # Logs are strings, not bytes.  Handle Python3 bytes() objects.
-        status = context._need_text(status)
+        status = _need_text(status)
 
         # this progress logger is stopped, so don't generate any more records
         if self._stopped:
@@ -289,7 +289,7 @@ class Logger(object):
 
     def _log(self, level, msg, args, kwargs, msgtype, progress = None):
         # Logs are strings, not bytes.  Handle Python3 bytes() objects.
-        msg = context._need_text(msg)
+        msg = _need_text(msg)
 
         extra = kwargs.get('extra', {})
         extra.setdefault('pwnlib_msgtype', msgtype)
@@ -629,6 +629,12 @@ class Formatter(logging.Formatter):
         msg = prefix + msg
         msg = self.nlindent.join(msg.splitlines())
         return msg
+
+def _need_text(s):
+    # circular import wrapper
+    global _need_text
+    from pwnlib.util.packing import _need_text
+    return _need_text(s, 2)
 
 # we keep a dictionary of loggers such that multiple calls to `getLogger` with
 # the same name will return the same logger

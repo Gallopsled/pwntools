@@ -112,11 +112,11 @@ class AppendedArgument(Unresolved):
         self.values = []
         self.address = address
         for v in value:
-            if isinstance(v, six.text_type):
-                v = context._need_bytes(v)
             if isinstance(v, (list, tuple)):
                 self.size += context.bytes
             else:
+                if isinstance(v, six.text_type):
+                    v = packing._need_bytes(v)
                 try:
                     self.size += align(context.bytes, len(v))
                 except TypeError: # no 'len'
@@ -175,15 +175,15 @@ class AppendedArgument(Unresolved):
             for i, value in enumerate(self.values):
                 if isinstance(value, six.integer_types):
                     rv[i] = value
-                if isinstance(value, six.text_type):
-                    value = context._need_bytes(value)
+                elif isinstance(value, six.text_type):
+                    value = packing._need_bytes(value)
                 if isinstance(value, (bytes, bytearray)):
                     value += b'\x00'
                     while len(value) % context.bytes:
                         value += b'$'
 
                     rv[i] = value
-                if isinstance(value, Unresolved):
+                elif isinstance(value, Unresolved):
                     rv[i] = value.address
                     rv.extend(value.resolve())
                 assert rv[i] is not None
