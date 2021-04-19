@@ -151,6 +151,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.3.1
 
+- [#1852][1852] Fix `atexit` on Python 3
 - [#1732][1732] Fix shellcraft SSTI vulnerability (first major pwntools vuln!)
 
 [1732]: https://github.com/Gallopsled/pwntools/pull/1732
