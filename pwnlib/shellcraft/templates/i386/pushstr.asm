@@ -63,7 +63,10 @@ Args:
 </%docstring>
 <%
 original = string
-string   = packing.flat(string)
+if isinstance(string, six.text_type):
+    string   = packing._encode(string)
+else:
+    string = packing.flat(string)
 
 if append_null:
     string += b'\x00'

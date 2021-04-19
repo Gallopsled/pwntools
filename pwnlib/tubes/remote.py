@@ -79,7 +79,7 @@ class remote(sock):
             except socket.gaierror as e:
                 if e.errno != socket.EAI_NONAME:
                     raise
-                self.error('Could not resolve hostname: %r' % host)
+                self.error('Could not resolve hostname: %r', host)
         if self.sock:
             self.settimeout(self.timeout)
             self.lhost, self.lport = self.sock.getsockname()[:2]
@@ -104,7 +104,7 @@ class remote(sock):
                 if self.type not in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
                     continue
 
-                h.status("Trying %s" % sockaddr[0])
+                h.status("Trying %s", sockaddr[0])
 
                 sock = socket.socket(self.family, self.type, self.proto)
 
@@ -121,7 +121,7 @@ class remote(sock):
                     raise
                 except socket.error:
                     pass
-            self.error("Could not connect to %s on port %d" % (self.rhost, self.rport))
+            self.error("Could not connect to %s on port %d", self.rhost, self.rport)
 
     @classmethod
     def fromsocket(cls, socket):

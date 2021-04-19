@@ -175,7 +175,7 @@ class sock(tube):
         self._close_msg()
 
     def _close_msg(self):
-        self.info('Closed connection to %s port %d' % (self.rhost, self.rport))
+        self.info('Closed connection to %s port %d', self.rhost, self.rport)
 
     def fileno(self):
         if not self.sock:
