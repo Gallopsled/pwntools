@@ -79,6 +79,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1841][1841] Add colored_traceback
 - [#1839][1839] run_in_new_terminal now creates a runner script if given a list or tuple
 - [#1833][1833] Add pwnlib.filesystem module
+- [#1852][1852] Fix `atexit` on Python 3
 
 [1261]: https://github.com/Gallopsled/pwntools/pull/1261
 [1695]: https://github.com/Gallopsled/pwntools/pull/1695
@@ -88,24 +89,15 @@ The table below shows which release corresponds to each branch, and what date th
 [1757]: https://github.com/Gallopsled/pwntools/pull/1757
 [1758]: https://github.com/Gallopsled/pwntools/pull/1758
 [1780]: https://github.com/Gallopsled/pwntools/pull/1780
-<<<<<<< HEAD
-
 [1941]: https://github.com/Gallopsled/pwntools/pull/1941
-
-=======
-[1941]: https://github.com/Gallopsled/pwntools/pull/1941
->>>>>>> stable
 [1811]: https://github.com/Gallopsled/pwntools/pull/1811
 [1827]: https://github.com/Gallopsled/pwntools/pull/1827
 [1841]: https://github.com/Gallopsled/pwntools/pull/1841
 [1839]: https://github.com/Gallopsled/pwntools/pull/1839
 [1833]:  https://github.com/Gallopsled/pwntools/pull/1833
+[1852]: https://github.com/Gallopsled/pwntools/pull/1852
 
-<<<<<<< HEAD
-## 4.4.0 (`beta`)
-=======
 ## 4.4.0 (`stable`)
->>>>>>> stable
 
 - [#1541][1541] Use `context.newline` for tubes by default
 - [#1602][1602] Fix bytes handling in ssh tubes
@@ -151,7 +143,6 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.3.1
 
-- [#1852][1852] Fix `atexit` on Python 3
 - [#1732][1732] Fix shellcraft SSTI vulnerability (first major pwntools vuln!)
 
 [1732]: https://github.com/Gallopsled/pwntools/pull/1732
