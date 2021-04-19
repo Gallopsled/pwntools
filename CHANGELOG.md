@@ -83,6 +83,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1841][1841] Add colored_traceback
 - [#1839][1839] run_in_new_terminal now creates a runner script if given a list or tuple
 - [#1833][1833] Add pwnlib.filesystem module
+- [#1852][1852] Fix `atexit` on Python 3
 
 [1261]: https://github.com/Gallopsled/pwntools/pull/1261
 [1695]: https://github.com/Gallopsled/pwntools/pull/1695
@@ -98,6 +99,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1841]: https://github.com/Gallopsled/pwntools/pull/1841
 [1839]: https://github.com/Gallopsled/pwntools/pull/1839
 [1833]:  https://github.com/Gallopsled/pwntools/pull/1833
+[1852]: https://github.com/Gallopsled/pwntools/pull/1852
 
 ## 4.4.0 (`stable`)
 
