@@ -1424,7 +1424,11 @@ class ROP(object):
             0x0078:       0xdeadbeef 0xdeadbeef()
             >>> p.send(fit({64+context.bytes: r}))
             >>> p.wait(0.5)
-            >>> core = p.corefile
+            >>> with context.verbose:
+            ...     import os
+            ...     os.listdir('.')
+            ...     os.listdir('/var/crash')
+            ...     core = p.corefile
             >>> hex(core.pc)
             '0xdeadbeef'
             >>> core.rdi, core.rsi, core.rdx, core.rbx, core.rbp, core.r12, core.r13, core.r14, core.r15
