@@ -60,8 +60,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.6.0 (`dev`)
 
+- [#1753][1753] major change: less unconditional imports in pwnlib
 - [#1776][1776] mips: do not use $t0 temporary variable in dupio
 
+[1753]: https://github.com/Gallopsled/pwntools/pull/1753
 [1776]: https://github.com/Gallopsled/pwntools/pull/1776
 
 ## 4.5.0 (`beta`)
