@@ -7,6 +7,7 @@ from __future__ import division
 import codecs
 import json
 import os
+import requests
 import tempfile
 
 from six.moves import urllib
@@ -24,6 +25,64 @@ from pwnlib.util.web import wget
 log = getLogger(__name__)
 
 HASHES = ['build_id', 'sha1', 'sha256', 'md5']
+
+# https://gitlab.com/libcdb/libcdb wasn't updated after 2019,
+# but still is a massive database of older libc binaries.
+def provider_libcdb(hex_encoded_id, hash_type):
+    # Build the URL using the requested hash type
+    url_base = "https://gitlab.com/libcdb/libcdb/raw/master/hashes/%s/" % hash_type
+    url      = urllib.parse.urljoin(url_base, hex_encoded_id)
+
+    data     = b""
+    log.debug("Downloading data from LibcDB: %s", url)
+    try:
+        while not data.startswith(b'\x7fELF'):
+            data = wget(url, timeout=20)
+
+            if not data:
+                log.warn_once("Could not fetch libc for %s %s from libcdb", hash_type, hex_encoded_id)
+                break
+            
+            # GitLab serves up symlinks with
+            if data.startswith(b'..'):
+                url = os.path.dirname(url) + '/'
+                url = urllib.parse.urljoin(url.encode('utf-8'), data)
+    except requests.RequestException as e:
+        log.warn_once("Failed to fetch libc for %s %s from libcdb: %s", hash_type, hex_encoded_id, e)
+    return data
+
+# https://libc.rip/
+def provider_libc_rip(hex_encoded_id, hash_type):
+    # Build the request for the hash type
+    # https://github.com/niklasb/libc-database/blob/master/searchengine/api.yml
+    if hash_type == 'build_id':
+        hash_type = 'buildid'
+    url    = "https://libc.rip/api/find"
+    params = {hash_type: hex_encoded_id}
+
+    data = b""
+    try:
+        result = requests.post(url, json=params, timeout=20)
+        if result.status_code != 200 or len(result.json()) == 0:
+            log.warn_once("Could not find libc for %s %s on libc.rip", hash_type, hex_encoded_id)
+            log.debug("Error: %s", result.text)
+            return None
+
+        libc_match = result.json()
+        assert len(libc_match) == 1, 'Invalid libc.rip response.'
+
+        url = libc_match[0]['download_url']
+        log.debug("Downloading data from libc.rip: %s", url)
+        data = wget(url, timeout=20)
+
+        if not data:
+            log.warn_once("Could not fetch libc for %s %s from libc.rip", hash_type, hex_encoded_id)
+            return None
+    except requests.RequestException as e:
+        log.warn_once("Failed to fetch libc for %s %s from libc.rip: %s", hash_type, hex_encoded_id, e)
+    return data
+
+PROVIDERS = [provider_libcdb, provider_libc_rip]
 
 def search_by_hash(hex_encoded_id, hash_type='build_id'):
     assert hash_type in HASHES, hash_type
@@ -49,23 +108,14 @@ def search_by_hash(hex_encoded_id, hash_type='build_id'):
             log.info_once("Skipping unavailable libc %s", hex_encoded_id)
             return None
 
-    # Build the URL using the requested hash type
-    url_base = "https://gitlab.com/libcdb/libcdb/raw/master/hashes/%s/" % hash_type
-    url      = urllib.parse.urljoin(url_base, hex_encoded_id)
-
-    data   = b""
-    while not data.startswith(b'\x7fELF'):
-        log.debug("Downloading data from LibcDB: %s", url)
-        data = wget(url, timeout=20)
-
-        if not data:
-            log.warn_once("Could not fetch libc for build_id %s", hex_encoded_id)
+    # Run through all available libc database providers to see if we have a match.
+    for provider in PROVIDERS:
+        data = provider(hex_encoded_id, hash_type)
+        if data and data.startswith(b'\x7FELF'):
             break
 
-        # GitLab serves up symlinks with
-        if data.startswith(b'..'):
-            url = os.path.dirname(url) + '/'
-            url = urllib.parse.urljoin(url.encode('utf-8'), data)
+    if not data:
+        log.warn_once("Could not find libc for %s %s anywhere", hash_type, hex_encoded_id)
 
     # Save whatever we got to the cache
     write(cache, data or b'')
@@ -94,6 +144,9 @@ def search_by_build_id(hex_encoded_id):
         '0xda260'
         >>> None == search_by_build_id('XX')
         True
+        >>> filename = search_by_build_id('a5a3c3f65fd94f4c7f323a175707c3a79cbbd614')
+        >>> hex(ELF(filename).symbols.read)
+        '0xeef40'
     """
     return search_by_hash(hex_encoded_id, 'build_id')
 
@@ -103,7 +156,7 @@ def search_by_md5(hex_encoded_id):
 
     Arguments:
         hex_encoded_id(str):
-            Hex-encoded Build ID (e.g. 'ABCDEF...') of the library
+            Hex-encoded md5sum (e.g. 'ABCDEF...') of the library
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -112,8 +165,11 @@ def search_by_md5(hex_encoded_id):
         >>> filename = search_by_md5('7a71dafb87606f360043dcd638e411bd')
         >>> hex(ELF(filename).symbols.read)
         '0xda260'
-        >>> None == search_by_build_id('XX')
+        >>> None == search_by_md5('XX')
         True
+        >>> filename = search_by_md5('74f2d3062180572fc8bcd964b587eeae')
+        >>> hex(ELF(filename).symbols.read)
+        '0xeef40'
     """
     return search_by_hash(hex_encoded_id, 'md5')
 
@@ -123,7 +179,7 @@ def search_by_sha1(hex_encoded_id):
 
     Arguments:
         hex_encoded_id(str):
-            Hex-encoded Build ID (e.g. 'ABCDEF...') of the library
+            Hex-encoded sha1sum (e.g. 'ABCDEF...') of the library
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -134,6 +190,9 @@ def search_by_sha1(hex_encoded_id):
         '0xda260'
         >>> None == search_by_sha1('XX')
         True
+        >>> filename = search_by_sha1('0041d2f397bc2498f62aeb4134d522c5b2635e87')
+        >>> hex(ELF(filename).symbols.read)
+        '0xeef40'
     """
     return search_by_hash(hex_encoded_id, 'sha1')
 
@@ -144,7 +203,7 @@ def search_by_sha256(hex_encoded_id):
 
     Arguments:
         hex_encoded_id(str):
-            Hex-encoded Build ID (e.g. 'ABCDEF...') of the library
+            Hex-encoded sha256sum (e.g. 'ABCDEF...') of the library
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -155,6 +214,9 @@ def search_by_sha256(hex_encoded_id):
         '0xda260'
         >>> None == search_by_sha256('XX')
         True
+        >>> filename = search_by_sha256('5d78fc60054df18df20480c71f3379218790751090f452baffb62ac6b2aff7ee')
+        >>> hex(ELF(filename).symbols.read)
+        '0xeef40'
     """
     return search_by_hash(hex_encoded_id, 'sha256')
 

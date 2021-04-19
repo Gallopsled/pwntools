@@ -160,16 +160,22 @@ class AdbClient(Logger):
     @_autoclose
     def kill(self):
         """Kills the remote ADB server"
+        
+        .. doctest::
+           :skipif: skip_android
 
-        >>> c=pwnlib.protocols.adb.AdbClient()
-        >>> c.kill()
+            >>> c=pwnlib.protocols.adb.AdbClient()
+            >>> c.kill()
 
         The server is automatically re-started on the next request,
         if the default host/port are used.
 
-        >>> c.version() > (4,0)
-        True
-        >>> c.wait_for_device() # ensure doctests alive
+        .. doctest::
+           :skipif: skip_android
+
+            >>> c.version() > (4,0)
+            True
+            >>> c.wait_for_device() # ensure doctests alive
         """
         try:
             self.send('host:kill')
@@ -183,6 +189,9 @@ class AdbClient(Logger):
             Tuple containing the ``(major, minor)`` version from the ADB server
 
         Example:
+        
+        .. doctest::
+           :skipif: skip_android
 
             >>> pwnlib.protocols.adb.AdbClient().version() # doctest: +SKIP
             (4, 36)
@@ -230,6 +239,9 @@ class AdbClient(Logger):
 
         Examples:
 
+        .. doctest::
+           :skipif: skip_android
+
             >>> pwnlib.protocols.adb.AdbClient().transport()
         """
 
@@ -264,6 +276,9 @@ class AdbClient(Logger):
             A :class:`pwnlib.tubes.tube.tube` which is connected to the process.
 
         Examples:
+
+        .. doctest::
+           :skipif: skip_android
 
             >>> pwnlib.protocols.adb.AdbClient().execute(['echo','hello']).recvall()
             b'hello\n'
@@ -391,6 +406,9 @@ class AdbClient(Logger):
             'adb root', since adbd then runs in the ``su`` domain.
 
         Examples:
+        
+        .. doctest::
+           :skipif: skip_android
 
             >>> _ = AdbClient().root()
             >>> AdbClient().wait_for_device()
@@ -458,6 +476,9 @@ class AdbClient(Logger):
             If the file cannot be stat() ed, None is returned.
 
         Example:
+        
+        .. doctest::
+           :skipif: skip_android
 
             >>> expected = {'mode': 16749, 'size': 0, 'time': 0}
             >>> pwnlib.protocols.adb.AdbClient().stat('/proc')           == expected

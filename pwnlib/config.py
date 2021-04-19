@@ -5,7 +5,9 @@ The list of configurable options includes all of the logging symbols
 and colors, as well as all of the default values on the global context
 object.
 
-The configuration file is read from ``~/.pwn.conf`` and ``/etc/pwn.conf``.
+The configuration file is read from ``~/.pwn.conf``, ``$XDG_CONFIG_HOME/pwn.conf``
+(``$XDG_CONFIG_HOME`` defaults to ``~/.config``, per XDG Base Directory Specification),
+and ``/etc/pwn.conf``.
 
 The configuration file is only read in ``from pwn import *`` mode, and not
 when used in library mode (``import pwnlib``).  To read the configuration
@@ -53,8 +55,13 @@ def initialize():
     from pwnlib.log import getLogger
     log = getLogger(__name__)
 
+    xdg_config_home = (os.environ.get('XDG_CONFIG_HOME') or
+                       os.path.expanduser("~/.config"))
+
     c = configparser.ConfigParser()
-    c.read(['/etc/pwn.conf', os.path.expanduser('~/.pwn.conf')])
+    c.read(['/etc/pwn.conf',
+            os.path.join(xdg_config_home, 'pwn.conf'),
+            os.path.expanduser('~/.pwn.conf')])
 
     for section in c.sections():
         if section not in registered_configs:

@@ -85,7 +85,7 @@ class Timeout(object):
         ...     print(4 <= t.timeout and t.timeout <= 5)
         ...
         True
-        >>> with t.countdown(0.5):
+        >>> with t.countdown(0.5): # doctest: +ELLIPSIS
         ...     while t.timeout:
         ...         print(round(t.timeout,1))
         ...         time.sleep(0.1)
@@ -96,7 +96,7 @@ class Timeout(object):
         0.1
         >>> print(t.timeout)
         5.0
-        >>> with t.local(0.5):
+        >>> with t.local(0.5):# doctest: +ELLIPSIS
         ...     for i in range(5):
         ...         print(round(t.timeout,1))
         ...         time.sleep(0.1)
@@ -104,7 +104,7 @@ class Timeout(object):
         0.5
         0.5
         0.5
-        0.5
+        ...
         >>> print(t.timeout)
         5.0
     """

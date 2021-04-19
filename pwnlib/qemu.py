@@ -119,14 +119,19 @@ def user_path():
     'qemu-arm-static'
     """
     arch   = archname()
+    system = 'qemu-system-' + arch
     normal = 'qemu-' + arch
     static = normal + '-static'
 
-    if misc.which(static):
-        return static
+    if context.os == 'baremetal':
+        if misc.which(system):
+            return system
+    else:
+        if misc.which(static):
+            return static
 
-    if misc.which(normal):
-        return normal
+        if misc.which(normal):
+            return normal
 
     log.warn_once("Neither %r nor %r are available" % (normal, static))
 
@@ -137,6 +142,9 @@ def ld_prefix(path=None, env=None):
     >>> pwnlib.qemu.ld_prefix(arch='arm')
     '/etc/qemu-binfmt/arm'
     """
+    if context.os == 'baremetal':
+        return ""
+
     if path is None:
         path = user_path()
 
