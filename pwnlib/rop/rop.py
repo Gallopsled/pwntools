@@ -71,9 +71,9 @@ The stack is automatically adjusted for the next frame
 You can also append complex arguments onto stack when the stack pointer is known.
 
     >>> rop = ROP(binary, base=0x7fffe000)
-    >>> rop.call('execve', ['/bin/sh', [['/bin/sh'], ['-p'], ['-c'], ['ls']], 0])
+    >>> rop.call('execve', [b'/bin/sh', [[b'/bin/sh'], [b'-p'], [b'-c'], [b'ls']], 0])
     >>> print(rop.dump())
-    0x7fffe000:       0xcafebabe execve(['/bin/sh'], [['/bin/sh'], ['-p'], ['-c'], ['ls']], 0)
+    0x7fffe000:       0xcafebabe execve([b'/bin/sh'], [[b'/bin/sh'], [b'-p'], [b'-c'], [b'ls']], 0)
     0x7fffe004:          b'baaa' <return address>
     0x7fffe008:       0x7fffe014 arg0 (+0xc)
     0x7fffe00c:       0x7fffe01c arg1 (+0x10)
@@ -1106,7 +1106,7 @@ class ROP(object):
         sure that any given string is aligned!
 
         Arguments:
-            data(int/str): The raw value to put onto the rop chain.
+            data(int/bytes): The raw value to put onto the rop chain.
 
         >>> context.clear(arch='i386')
         >>> rop = ROP([])

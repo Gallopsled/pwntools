@@ -13,6 +13,7 @@ from __future__ import division
 import sys
 import threading
 import traceback
+import atexit as std_atexit
 
 from pwnlib.context import context
 
@@ -95,4 +96,8 @@ def _run_handlers():
 if hasattr(sys, "exitfunc"):
     register(sys.exitfunc)
 
-sys.exitfunc = _run_handlers
+if sys.version_info[0] < 3:
+    sys.exitfunc = _run_handlers
+else:
+    std_atexit.register(_run_handlers)
+

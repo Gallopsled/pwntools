@@ -12,6 +12,7 @@ import time
 
 from pwnlib.context import context
 from pwnlib.util.misc import read, write
+from pwnlib.util.packing import _decode
 
 if six.PY3:
     from pathlib import *
@@ -86,7 +87,7 @@ class SSHPath(PosixPath):
 
         # We also don't want binary
         if isinstance(other, six.binary_type):
-            return str(context._decode(other))
+            return str(_decode(other))
 
     def _new(self, path, *a, **kw):
         kw['ssh'] = self.ssh
@@ -782,12 +783,12 @@ class SSHPath(PosixPath):
 #----------------------------- PWNTOOLS ADDITIONS -----------------------------
     @classmethod
     def mktemp(cls):
-        temp = context._decode(context.ssh_session.mktemp())
+        temp = _decode(context.ssh_session.mktemp())
         return SSHPath(temp, ssh=context.ssh_session)
 
     @classmethod
     def mkdtemp(self):
-        temp = context._decode(context.ssh_session.mkdtemp())
+        temp = _decode(context.ssh_session.mkdtemp())
         return SSHPath(temp, ssh=context.ssh_session)
 
 __all__ = ['SSHPath']
