@@ -1421,7 +1421,7 @@ class ROP(object):
             0x0068:              0x8
             0x0070:              0x9
             0x0078:       0xdeadbeef 0xdeadbeef()
-            >>> write('core'); os.unlink('core')  # remove any old core file for the tests
+            >>> open('core','w').close(); os.unlink('core')  # remove any old core file for the tests
             >>> p = process()
             >>> p.send(fit({64+context.bytes: r}))
             >>> p.wait(0.5)
