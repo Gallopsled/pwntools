@@ -1421,16 +1421,11 @@ class ROP(object):
             0x0068:              0x8
             0x0070:              0x9
             0x0078:       0xdeadbeef 0xdeadbeef()
-            >>> with context.verbose:
-            ...     p = process()
-            ...     import os
-            ...     os.listdir('.')
-            ...     os.listdir('/var/crash')
-            ...     p.send(fit({64+context.bytes: r}))
-            ...     p.wait(0.5)
-            ...     os.listdir('.')
-            ...     os.listdir('/var/crash')
-            ...     core = p.corefile
+            >>> write('core'); os.unlink('core')  # remove any old core file for the tests
+            >>> p = process()
+            >>> p.send(fit({64+context.bytes: r}))
+            >>> p.wait(0.5)
+            >>> core = p.corefile
             >>> hex(core.pc)
             '0xdeadbeef'
             >>> core.rdi, core.rsi, core.rdx, core.rbx, core.rbp, core.r12, core.r13, core.r14, core.r15
