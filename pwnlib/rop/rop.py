@@ -71,9 +71,9 @@ The stack is automatically adjusted for the next frame
 You can also append complex arguments onto stack when the stack pointer is known.
 
     >>> rop = ROP(binary, base=0x7fffe000)
-    >>> rop.call('execve', ['/bin/sh', [['/bin/sh'], ['-p'], ['-c'], ['ls']], 0])
+    >>> rop.call('execve', [b'/bin/sh', [[b'/bin/sh'], [b'-p'], [b'-c'], [b'ls']], 0])
     >>> print(rop.dump())
-    0x7fffe000:       0xcafebabe execve(['/bin/sh'], [['/bin/sh'], ['-p'], ['-c'], ['ls']], 0)
+    0x7fffe000:       0xcafebabe execve([b'/bin/sh'], [[b'/bin/sh'], [b'-p'], [b'-c'], [b'ls']], 0)
     0x7fffe004:          b'baaa' <return address>
     0x7fffe008:       0x7fffe014 arg0 (+0xc)
     0x7fffe00c:       0x7fffe01c arg1 (+0x10)
@@ -310,6 +310,7 @@ import re
 import shutil
 import six
 import string
+import struct
 import sys
 import tempfile
 
@@ -1105,7 +1106,7 @@ class ROP(object):
         sure that any given string is aligned!
 
         Arguments:
-            data(int/str): The raw value to put onto the rop chain.
+            data(int/bytes): The raw value to put onto the rop chain.
 
         >>> context.clear(arch='i386')
         >>> rop = ROP([])
@@ -1145,6 +1146,12 @@ class ROP(object):
     def __bytes__(self):
         """Returns: Raw bytes of the ROP chain"""
         return self.chain()
+
+    def __flat__(self):
+        return self.chain()
+
+    def __flat_at__(self, address):
+        return self.chain(address)
 
     def __get_cachefile_name(self, files):
         """Given an ELF or list of ELF objects, return a cache file for the set of files"""
@@ -1379,6 +1386,84 @@ class ROP(object):
 
         return result
 
+    def ret2csu(self, edi=Padding('edi'), rsi=Padding('rsi'),
+                rdx=Padding('rdx'), rbx=Padding('rbx'), rbp=Padding('rbp'),
+                r12=Padding('r12'), r13=Padding('r13'), r14=Padding('r14'),
+                r15=Padding('r15'), call=None):
+        """Build a ret2csu ROPchain
+
+        Arguments:
+            edi, rsi, rdx: Three primary registers to populate
+            rbx, rbp, r12, r13, r14, r15: Optional registers to populate
+            call: Pointer to the address of a function to call during
+                second gadget. If None then use the address of _fini in the
+                .dynamic section. .got.plt entries are a good target. Required
+                for PIE binaries.
+        Test:
+            >>> context.clear(binary=pwnlib.data.elf.ret2dlresolve.get("amd64"))
+            >>> r = ROP(context.binary)
+            >>> r.ret2csu(1, 2, 3, 4, 5, 6, 7, 8, 9)
+            >>> r.call(0xdeadbeef)
+            >>> print(r.dump())
+            0x0000:         0x40058a
+            0x0008:              0x0
+            0x0010:              0x1
+            0x0018:         0x600e48
+            0x0020:              0x1
+            0x0028:              0x2
+            0x0030:              0x3
+            0x0038:         0x400570
+            0x0040:      b'qaaaraaa' <add rsp, 8>
+            0x0048:              0x4
+            0x0050:              0x5
+            0x0058:              0x6
+            0x0060:              0x7
+            0x0068:              0x8
+            0x0070:              0x9
+            0x0078:       0xdeadbeef 0xdeadbeef()
+            >>> open('core','w').close(); os.unlink('core')  # remove any old core file for the tests
+            >>> p = process()
+            >>> p.send(fit({64+context.bytes: r}))
+            >>> p.wait(0.5)
+            >>> core = p.corefile
+            >>> hex(core.pc)
+            '0xdeadbeef'
+            >>> core.rdi, core.rsi, core.rdx, core.rbx, core.rbp, core.r12, core.r13, core.r14, core.r15
+            (1, 2, 3, 4, 5, 6, 7, 8, 9)
+        """
+        if self.migrated:
+            log.error('Cannot append to a migrated chain')
+
+        # Ensure 'edi' argument is packable
+        try:
+            packing.p32(edi)
+        except struct.error:
+            log.error('edi must be a 32bit value')
+
+        # Find an appropriate, non-library ELF.
+        # Prioritise non-PIE binaries so we can use _fini
+        exes = (elf for elf in self.elfs if not elf.library and elf.bits == 64)
+        if not exes:
+            log.error('No non-library binaries in [elfs]')
+
+        nonpie = csu = None
+        for elf in exes:
+            if not elf.pie:
+                if '__libc_csu_init' in elf.symbols:
+                    break
+                nonpie = elf
+            elif '__libc_csu_init' in elf.symbols:
+                csu = elf
+
+        if elf.pie:
+            if nonpie:
+                elf = nonpie
+            elif csu:
+                elf = csu
+
+        from .ret2csu import ret2csu
+        ret2csu(self, elf, edi, rsi, rdx, rbx, rbp, r12, r13, r14, r15, call)
+
     def ret2dlresolve(self, dlresolve):
         elf = next(elf for elf in self.elfs if elf.get_section_by_name(".plt"))
         elf_base = elf.address if elf.pie else 0
@@ -1449,11 +1534,10 @@ class ROP(object):
 
                     return Gadget(addr, [jmp_sp], [], context.bytes)
             return None
-
-        if attr in ('int80', 'syscall', 'sysenter'):
-            mapping = {'int80': 'int 0x80',
-             'syscall': 'syscall',
-             'sysenter': 'sysenter'}
+        mapping = {'int80': 'int 0x80',
+            'syscall': 'syscall',
+            'sysenter': 'sysenter'}
+        if attr in mapping:
             for each in self.gadgets:
                 if self.gadgets[each]['insns'][0] == mapping[attr]:
                     return gadget(each, self.gadgets[each])

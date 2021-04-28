@@ -1,6 +1,5 @@
 <%
     from pwnlib.shellcraft.mips.linux import getppid, kill
-    from pwnlib.constants import SIGKILL
     from pwnlib.shellcraft.common import label
 %>
 <%docstring>
@@ -12,5 +11,5 @@ cannot be killed any longer.
 %>
 ${killparent_loop}:
     ${getppid()}
-    ${kill('$v0', SIGKILL)}
+    ${kill('$v0')}
     beq $v0, $zero, ${killparent_loop}

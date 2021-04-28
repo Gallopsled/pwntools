@@ -362,16 +362,14 @@ class process(tube):
             fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
         # Save off information about whether the binary is setuid / setgid
-        self.uid = os.getuid()
-        self.gid = os.getgid()
-        self.suid = -1
-        self.sgid = -1
+        self.suid = self.uid = os.getuid()
+        self.sgid = self.gid = os.getgid()
         st = os.stat(self.executable)
         if self._setuid:
             if (st.st_mode & stat.S_ISUID):
-                self.setuid = st.st_uid
+                self.suid = st.st_uid
             if (st.st_mode & stat.S_ISGID):
-                self.setgid = st.st_gid
+                self.sgid = st.st_gid
 
     def __preexec_fn(self):
         """
