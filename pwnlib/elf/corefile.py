@@ -392,7 +392,7 @@ class Corefile(ELF):
         >>> env = dict(os.environ)
         >>> env['HELLO'] = 'WORLD'
         >>> io = process(elf.path, env=env)
-        >>> io.sendline('echo hello')
+        >>> io.sendline(b'echo hello')
         >>> io.recvline()
         b'hello\n'
 
@@ -1569,7 +1569,7 @@ class CorefileFinder(object):
             path = os.path.join(binfmt_misc, entry)
 
             try:
-                data = self.read(path)
+                data = self.read(path).decode()
             except Exception:
                 continue
 
