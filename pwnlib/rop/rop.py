@@ -1423,9 +1423,11 @@ class ROP(object):
             0x0078:       0xdeadbeef 0xdeadbeef()
             >>> with context.verbose:
             ...     p = process()
+            ...     import os
+            ...     os.listdir('.')
+            ...     os.listdir('/var/crash')
             ...     p.send(fit({64+context.bytes: r}))
             ...     p.wait(0.5)
-            ...     import os
             ...     os.listdir('.')
             ...     os.listdir('/var/crash')
             ...     core = p.corefile
