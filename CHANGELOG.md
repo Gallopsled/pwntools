@@ -62,7 +62,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 - [#1739][1739] Add/fix shellcraft.linux.kill() / shellcraft.linux.killparent()
 - [#1776][1776] mips: do not use $t0 temporary variable in dupio
-- [#1846][1846] support launching more terminals
+- [#1846][1846] support launching GDB in more different terminals
 
 [1739]: https://github.com/Gallopsled/pwntools/pull/1739
 [1776]: https://github.com/Gallopsled/pwntools/pull/1776
