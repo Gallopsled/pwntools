@@ -144,6 +144,7 @@ from __future__ import division
 from contextlib import contextmanager
 import os
 import platform
+import psutil
 import random
 import re
 import shlex
@@ -1293,11 +1294,11 @@ def corefile(process):
     gdb_args = ['-batch',
                 '-q',
                 '-nx',
-                '-ex', '"set pagination off"',
-                '-ex', '"set height 0"',
-                '-ex', '"set width 0"',
-                '-ex', '"set use-coredump-filter on"',
-                '-ex', '"generate-core-file %s"' % corefile_path,
+                '-ex', 'set pagination off',
+                '-ex', 'set height 0',
+                '-ex', 'set width 0',
+                '-ex', 'set use-coredump-filter on',
+                '-ex', 'generate-core-file %s' % corefile_path,
                 '-ex', 'detach']
 
     with context.local(terminal = ['sh', '-c']):
@@ -1305,8 +1306,8 @@ def corefile(process):
             pid = attach(process, gdb_args=gdb_args)
             log.debug("Got GDB pid %d", pid)
             try:
-                os.waitpid(pid, 0)
-            except Exception:
+                psutil.Process(pid).wait()
+            except psutil.Error:
                 pass
 
     if not os.path.exists(corefile_path):
