@@ -963,25 +963,27 @@ try:
     integer_types = int, long
 except NameError:
     integer_types = int,
-exe   = %(executable)r
+exe   = bytes(%(executable)r)
 argv  = [bytes(a) for a in %(argv)r]
 env   = %(env)r
 
 os.chdir(%(cwd)r)
 
+environ = getattr(os, 'environb', os.environ)
+
 if env is not None:
     env = OrderedDict((bytes(k), bytes(v)) for k,v in env)
     os.environ.clear()
-    getattr(os, 'environb', os.environ).update(env)
+    environ.update(env)
 else:
     env = os.environ
 
 def is_exe(path):
     return os.path.isfile(path) and os.access(path, os.X_OK)
 
-PATH = os.environ.get('PATH','').split(os.pathsep)
+PATH = environ.get(b'PATH',b'').split(os.pathsep.encode())
 
-if os.path.sep not in exe and not is_exe(exe):
+if os.path.sep.encode() not in exe and not is_exe(exe):
     for path in PATH:
         test_path = os.path.join(path, exe)
         if is_exe(test_path):
@@ -990,7 +992,7 @@ if os.path.sep not in exe and not is_exe(exe):
 
 if not is_exe(exe):
     sys.stderr.write('3\n')
-    sys.stderr.write("{} is not executable or does not exist in $PATH: {}".format(exe,PATH))
+    sys.stderr.write("{!r} is not executable or does not exist in $PATH: {!r}".format(exe,PATH))
     sys.exit(-1)
 
 if not %(setuid)r:
@@ -1027,7 +1029,7 @@ if sys.argv[-1] == 'check':
     sys.stdout.write(str(os.getgid()) + "\n")
     sys.stdout.write(str(suid) + "\n")
     sys.stdout.write(str(sgid) + "\n")
-    sys.stdout.write(os.path.realpath(exe) + '\x00')
+    getattr(sys.stdout, 'buffer', sys.stdout).write(os.path.realpath(exe) + b'\x00')
     sys.stdout.flush()
 
 for fd, newfd in {0: %(stdin)r, 1: %(stdout)r, 2:%(stderr)r}.items():
@@ -1108,8 +1110,10 @@ os.execve(exe, argv, env)
                 result = safeeval.const(python.recvline())  # Status flag from the Python script
             except (EOFError, ValueError):
                 h.failure("Process creation failed")
-                self.warn_once('Could not find a Python interpreter on %s\n' % self.host \
-                               + "Use ssh.run() instead of ssh.process()")
+                self.warn_once('Could not find a Python interpreter on %s\n' % self.host
+                               + "Use ssh.run() instead of ssh.process()\n"
+                                 "The original error message:\n"
+                               + python.recvall().decode())
                 return None
 
             # If an error occurred, try to grab as much output
