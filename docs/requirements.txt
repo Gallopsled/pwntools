@@ -11,7 +11,7 @@ pypandoc
 pyserial>=2.7
 requests>=2.5.1
 ropgadget>=5.3
-sphinx
+sphinx<3.4
 sphinx_rtd_theme
 sphinxcontrib-napoleon
-sphinxcontrib-autoprogram
+sphinxcontrib-autoprogram<=0.1.5

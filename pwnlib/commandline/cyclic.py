@@ -15,14 +15,15 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'cyclic',
-    help = "Cyclic pattern creator/finder"
+    help = "Cyclic pattern creator/finder",
+    description = "Cyclic pattern creator/finder"
 )
 
 parser.add_argument(
     '-a', '--alphabet',
     metavar = 'alphabet',
     default = string.ascii_lowercase.encode(),
-    type = six.ensure_binary,
+    type = packing._encode,
     help = 'The alphabet to use in the cyclic pattern (defaults to all lower case letters)',
 )
 

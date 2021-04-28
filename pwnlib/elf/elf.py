@@ -745,7 +745,7 @@ class ELF(ELFFile):
                     self._libs[qemu_lib] = address
 
     def _patch_elf_and_read_maps(self):
-        """patch_elf_and_read_maps(self) -> dict
+        r"""patch_elf_and_read_maps(self) -> dict
 
         Read ``/proc/self/maps`` as if the ELF were executing.
 
@@ -765,12 +765,13 @@ class ELF(ELFFile):
             These tests are just to ensure that our shellcode is correct.
 
             >>> for arch in CAT_PROC_MAPS_EXIT:
+            ...   context.clear()
             ...   with context.local(arch=arch):
             ...     sc = shellcraft.cat("/proc/self/maps")
             ...     sc += shellcraft.exit()
             ...     sc = asm(sc)
             ...     sc = enhex(sc)
-            ...     assert sc == CAT_PROC_MAPS_EXIT[arch]
+            ...     assert sc == CAT_PROC_MAPS_EXIT[arch], (arch, sc)
         """
 
         # Get our shellcode
@@ -815,7 +816,7 @@ class ELF(ELFFile):
         try:
             with context.silent:
                 io = process(path)
-                data = context._decode(io.recvall(timeout=2))
+                data = packing._decode(io.recvall(timeout=2))
         except Exception:
             log.warn_once("Injected /proc/self/maps code did not execute correctly")
             return {}
@@ -1047,8 +1048,8 @@ class ELF(ELFFile):
                 for address, target in sorted(res.items()):
                     self.plt[inv_symbols[target]] = address
 
-        for a,n in sorted({v:k for k,v in self.plt.items()}.items()):
-            log.debug('PLT %#x %s', a, n)
+        # for a,n in sorted({v:k for k,v in self.plt.items()}.items()):
+            # log.debug('PLT %#x %s', a, n)
 
     def _populate_kernel_version(self):
         if 'linux_banner' not in self.symbols:

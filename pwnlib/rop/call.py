@@ -9,7 +9,7 @@ from pwnlib.util import packing
 
 import six
 
-from pwnlib.util.misc import python_2_bytes_compatible
+from pwnlib.util.misc import python_2_bytes_compatible, align
 
 
 class Unresolved(object):
@@ -60,7 +60,7 @@ class StackAdjustment(Unresolved):
 
 @python_2_bytes_compatible
 class AppendedArgument(Unresolved):
-    """
+    r"""
     Encapsulates information about a pointer argument, and the data
     which is pointed to, where the absolute address of the data must
     be known, and the data can be appended to the ROP chain.
@@ -69,24 +69,24 @@ class AppendedArgument(Unresolved):
 
         >>> context.clear()
         >>> context.arch = 'amd64'
-        >>> u = AppendedArgument([1,2,'hello',3])
+        >>> u = AppendedArgument([1,2,b'hello',3])
         >>> len(u)
         32
         >>> u.resolve()
-        [1, 2, 'hello\x00$$', 3]
+        [1, 2, b'hello\x00$$', 3]
 
-        >>> u = AppendedArgument([1,2,['hello'],3])
+        >>> u = AppendedArgument([1,2,[b'hello'],3])
         >>> u.resolve()
-        [1, 2, 32, 3, 'hello\x00$$']
+        [1, 2, 32, 3, b'hello\x00$$']
         >>> u.resolve(10000)
-        [1, 2, 10032, 3, 'hello\x00$$']
+        [1, 2, 10032, 3, b'hello\x00$$']
         >>> u.address = 20000
         >>> u.resolve()
-        [1, 2, 20032, 3, 'hello\x00$$']
+        [1, 2, 20032, 3, b'hello\x00$$']
 
-        >>> u = AppendedArgument([[[[[[[[['pointers!']]]]]]]]], 1000)
+        >>> u = AppendedArgument([[[[[[[[[b'pointers!']]]]]]]]], 1000)
         >>> u.resolve()
-        [1008, 1016, 1024, 1032, 1040, 1048, 1056, 1064, 'pointers!\x00$$$$$$']
+        [1008, 1016, 1024, 1032, 1040, 1048, 1056, 1064, b'pointers!\x00$$$$$$']
     """
     #: Symbolic name of the value.
     name = None
@@ -111,7 +111,16 @@ class AppendedArgument(Unresolved):
             value = [value]
         self.values = []
         self.address = address
-        self.size = 0
+        for v in value:
+            if isinstance(v, (list, tuple)):
+                self.size += context.bytes
+            else:
+                if isinstance(v, six.text_type):
+                    v = packing._need_bytes(v)
+                try:
+                    self.size += align(context.bytes, len(v))
+                except TypeError: # no 'len'
+                    self.size += context.bytes
         for v in value:
             if isinstance(v, (list, tuple)):
                 arg = AppendedArgument(v, self.address + self.size)
@@ -119,10 +128,6 @@ class AppendedArgument(Unresolved):
                 self.values.append(arg)
             else:
                 self.values.append(v)
-                try:
-                    self.size += -(-len(v) // context.bytes * context.bytes)
-                except TypeError: # no 'len'
-                    self.size += context.bytes
 
     @property
     def address(self):
@@ -153,9 +158,9 @@ class AppendedArgument(Unresolved):
 
         return LocalAddress()
 
-    def resolve(self, addr = None):
+    def resolve(self, addr=None):
         """
-        Return a flat list of ``int`` or ``str`` objects which can be
+        Return a flat list of ``int`` or ``bytes`` objects which can be
         passed to :func:`.flat`.
 
         Arguments:
@@ -170,15 +175,15 @@ class AppendedArgument(Unresolved):
             for i, value in enumerate(self.values):
                 if isinstance(value, six.integer_types):
                     rv[i] = value
-                if isinstance(value, six.text_type):
-                    value = context._encode(value)
+                elif isinstance(value, six.text_type):
+                    value = packing._need_bytes(value)
                 if isinstance(value, (bytes, bytearray)):
                     value += b'\x00'
                     while len(value) % context.bytes:
                         value += b'$'
 
                     rv[i] = value
-                if isinstance(value, Unresolved):
+                elif isinstance(value, Unresolved):
                     rv[i] = value.address
                     rv.extend(value.resolve())
                 assert rv[i] is not None
@@ -209,8 +214,8 @@ class Call(object):
 
     Example:
 
-        >>> Call('system', 0xdeadbeef, [1, 2, '/bin/sh'])
-        Call('system', 0xdeadbeef, [1, 2, AppendedArgument(['/bin/sh'], 0x0)])
+        >>> Call('system', 0xdeadbeef, [1, 2, b'/bin/sh'])
+        Call('system', 0xdeadbeef, [1, 2, AppendedArgument([b'/bin/sh'], 0x0)])
     """
     #: Pretty name of the call target, e.g. 'system'
     name = None

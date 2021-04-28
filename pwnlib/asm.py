@@ -299,6 +299,7 @@ def _arch_header():
     prefix  = ['.section .shellcode,"awx"',
                 '.global _start',
                 '.global __start',
+                '.p2align 2',
                 '_start:',
                 '__start:']
     headers = {
@@ -367,7 +368,7 @@ def _bfdarch():
     return arch
 
 def _run(cmd, stdin = None):
-    log.debug(subprocess.list2cmdline(cmd))
+    log.debug('%s', subprocess.list2cmdline(cmd))
     try:
         proc = subprocess.Popen(
             cmd,
@@ -380,17 +381,20 @@ def _run(cmd, stdin = None):
         exitcode = proc.wait()
     except OSError as e:
         if e.errno == errno.ENOENT:
-            log.exception('Could not run %r the program' % cmd[0])
+            log.exception('Could not run %r the program', cmd[0])
         else:
             raise
 
     if (exitcode, stderr) != (0, ''):
-        msg = 'There was an error running %s:\n' % repr(cmd)
+        msg = 'There was an error running %r:\n'
+        args = cmd,
         if exitcode != 0:
-            msg += 'It had the exitcode %d.\n' % exitcode
+            msg += 'It had the exitcode %d.\n'
+            args += exitcode,
         if stderr != '':
-            msg += 'It had this on stdout:\n%s\n' % stderr
-        log.error(msg)
+            msg += 'It had this on stdout:\n%s\n'
+            args += stderr,
+        log.error(msg, *args)
 
     return stdout
 
@@ -492,9 +496,7 @@ def make_elf_from_assembly(assembly,
         >>> file_b = make_elf_from_assembly('nop', extract=True)
         >>> file_a[:4] == file_b[:4]
         True
-        >>> len(file_a) < 0x200
-        True
-        >>> len(file_b) > 0x1000
+        >>> len(file_a) < len(file_b)
         True
     """
     if shared and vma:
