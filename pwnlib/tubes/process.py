@@ -1014,16 +1014,18 @@ class process(tube):
 
             Wait for one byte of input, then write the data to stdout
 
+            >>> assembly += shellcraft.write(1, address, 1)
             >>> assembly += shellcraft.read(0, 'esp', 1)
             >>> assembly += shellcraft.write(1, address, 32)
             >>> assembly += shellcraft.exit()
             >>> asm(assembly)[32:]
-            b'1\xdb\x89\xe1j\x01Zj\x03X\xcd\x80j\x01[\xb9\xff\xff\xef\xff\xf7\xd1j Zj\x04X\xcd\x801\xdbj\x01X\xcd\x80'
+            b'j\x01[\xb9\xff\xff\xef\xff\xf7\xd1\x89\xdaj\x04X\xcd\x801\xdb\x89\xe1j\x01Zj\x03X\xcd\x80j\x01[\xb9\xff\xff\xef\xff\xf7\xd1j Zj\x04X\xcd\x801\xdbj\x01X\xcd\x80'
 
             Assemble the binary and test it
 
             >>> elf = ELF.from_assembly(assembly, vma=address)
             >>> io = elf.process()
+            >>> _ = io.recvuntil(b'\x90')
             >>> _ = io.writemem(address, data)
             >>> io.send(b'X')
             >>> io.recvall()
