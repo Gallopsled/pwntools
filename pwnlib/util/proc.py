@@ -254,7 +254,7 @@ def starttime(pid):
         The time (in seconds) the process started after system boot
 
     Example:
-        >>> starttime(os.getppid()) < starttime(os.getpid())
+        >>> starttime(os.getppid()) <= starttime(os.getpid())
         True
     """
     return psutil.Process(pid).create_time() - psutil.boot_time()
@@ -333,7 +333,7 @@ def wait_for_debugger(pid, debugger_pid=None):
     t = Timeout()
     with t.countdown(timeout=15):
         with log.waitfor('Waiting for debugger') as l:
-            if debugger_pid:
+            while debugger_pid:
                 debugger = psutil.Process(debugger_pid)
                 while t.timeout and tracer(pid) is None:
                     try:
@@ -341,12 +341,15 @@ def wait_for_debugger(pid, debugger_pid=None):
                     except psutil.TimeoutExpired:
                         pass
                     else:
-                        l.failure("debugger exited! (maybe check /proc/sys/kernel/yama/ptrace_scope)")
+                        debugger_pid = 0
+                        break
             else:
                 while t.timeout and tracer(pid) is None:
                     time.sleep(0.01)
 
         if tracer(pid):
             l.success()
+        elif debugger_pid == 0:
+            l.failure("debugger exited! (maybe check /proc/sys/kernel/yama/ptrace_scope)")
         else:
             l.failure('Debugger did not attach to pid %d within 15 seconds', pid)
