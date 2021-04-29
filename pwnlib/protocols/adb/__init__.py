@@ -46,7 +46,7 @@ class Message(object):
     def __str__(self):
         return self.__flat__()
     def __flat__(self):
-        return ('%04x' % len(self.string)).encode('ascii') + self.string
+        return b'%04x' % len(self.string) + self.string
 
 class Connection(remote):
     """Connection to the ADB server"""
@@ -434,7 +434,7 @@ class AdbClient(Logger):
     def _list(self, path):
         if isinstance(path, six.text_type):
             path = path.encode('utf-8')
-        self.c.flat32('LIST', len(path), path)
+        self.c.flat32(b'LIST', len(path), path)
         files = {}
         while True:
             response = self.c.recvn(4)
@@ -488,7 +488,7 @@ class AdbClient(Logger):
         """
         if isinstance(path, six.text_type):
             path = path.encode('utf-8')
-        self.c.flat32('STAT', len(path), path)
+        self.c.flat32(b'STAT', len(path), path)
         if self.c.recvn(4) != b'STAT':
             self.error("An error occurred while attempting to STAT a file.")
 
@@ -530,14 +530,17 @@ class AdbClient(Logger):
     @_with_transport
     @_sync
     def _write(self, path, data, mode=0o755, timestamp=None, callback=None):
-        path += ',' + str(mode)
-        self.c.flat32('SEND', len(path), path)
+        if isinstance(path, six.text_type):
+            path = path.encode('utf-8')
+        path += b',%d' % mode
+
+        self.c.flat32(b'SEND', len(path), path)
 
         sent = 0
 
         # Data needs to be broken up into chunks!
         for chunk in group(0x10000, data):
-            self.c.flat32('DATA', len(chunk), chunk)
+            self.c.flat32(b'DATA', len(chunk), chunk)
             if callback:
                 callback(path, data[:sent], len(data), chunk, len(chunk))
             sent += len(chunk)
@@ -545,7 +548,7 @@ class AdbClient(Logger):
         # Send completion notification and timestamp
         if timestamp is None:
             timestamp = int(time.time())
-        self.c.flat32('DONE', timestamp)
+        self.c.flat32(b'DONE', timestamp)
 
         result = self.c.recvn(4)
         if result != OKAY:

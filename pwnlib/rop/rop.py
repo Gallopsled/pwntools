@@ -653,12 +653,12 @@ class ROP(object):
         stack = []
 
         for gadget in winner:
-            moved = 8 # Account for the gadget itself
+            moved = context.bytes # Account for the gadget itself
             goodregs = set(gadget.regs) & regset
             name = ",".join(goodregs)
             stack.append((gadget.address, gadget))
             for r in gadget.regs:
-                moved += 8
+                moved += context.bytes
                 if r in registers:
                     stack.append((registers[r], r))
                 else:
