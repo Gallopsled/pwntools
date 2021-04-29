@@ -39,6 +39,7 @@ jobs:
     - name: Install Android AVD
       run: |
         USER=travis source travis/install.sh
+        sed -i 's/skip_android = True/skip_android=False' docs/source/conf.py
         set | egrep '^(ANDROID|PATH)' >.android.env
 
     - name: Install dependencies
