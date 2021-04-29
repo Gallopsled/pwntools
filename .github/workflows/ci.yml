@@ -91,11 +91,6 @@ jobs:
     - name: Install documentation dependencies
       run:  pip install -r docs/requirements.txt
 
-    - name: Skip ADB tests
-      run: |
-        rm -f docs/source/adb.rst
-        rm -f docs/source/protocols/adb.rst
-
     - name: Manually install non-broken Unicorn
       run:  pip install unicorn==1.0.2rc3
 
