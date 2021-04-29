@@ -144,6 +144,7 @@ from __future__ import division
 from contextlib import contextmanager
 import os
 import platform
+import psutil
 import random
 import re
 import shlex
@@ -167,6 +168,7 @@ from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.timeout import Timeout
 from pwnlib.util import misc
+from pwnlib.util import packing
 from pwnlib.util import proc
 
 log = getLogger(__name__)
@@ -491,7 +493,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         Connect to the SSH server and start a process on the server
 
         >>> shell = ssh('travis', 'example.pwnme', password='demopass')
-        >>> io = gdb.debug(['bash'],
+        >>> io = gdb.debug(['whoami'],
         ...                 ssh = shell,
         ...                 gdbscript = '''
         ... break main
@@ -911,12 +913,9 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
-        exefile = target.executable
-        cmd += ['gdb -q %s %s -x "%s"' % (exefile,
-                                       target.pid,
-                                       tmpfile)]
+        cmd += ['gdb', '-q', target.executable, target.pid, '-x', tmpfile]
 
-        misc.run_in_new_terminal(' '.join(cmd))
+        misc.run_in_new_terminal(cmd)
         return
 
     elif isinstance(target, tubes.sock.sock):
@@ -981,30 +980,29 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         log.error('could not find target process')
 
     gdb_binary = binary()
-    cmd = gdb_binary
+    cmd = [gdb_binary]
 
     if gdb_args:
-        cmd += ' '
-        cmd += ' '.join(gdb_args)
+        cmd += gdb_args
 
     if context.gdbinit:
-        cmd += ' -nh '                     # ignore ~/.gdbinit
-        cmd += ' -x %s ' % context.gdbinit # load custom gdbinit
+        cmd += ['-nh']                  # ignore ~/.gdbinit
+        cmd += ['-x', context.gdbinit]  # load custom gdbinit
 
-    cmd += ' -q '
+    cmd += ['-q']
 
     if exe and context.native:
         if not ssh and not os.path.isfile(exe):
             log.error('No such file: %s', exe)
-        cmd += ' "%s"' % exe
+        cmd += [exe]
 
     if pid and not context.os == 'android':
-        cmd += ' %d' % pid
+        cmd += [str(pid)]
 
     if context.os == 'android' and pid:
         runner  = _get_runner()
         which   = _get_which()
-        gdb_cmd = _gdbserver_args(pid=pid, which=which, env=env)
+        gdb_cmd = _gdbserver_args(pid=pid, which=which)
         gdbserver = runner(gdb_cmd)
         port    = _gdbserver_port(gdbserver, None)
         host    = context.adb_host
@@ -1035,7 +1033,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
         tmp.write(gdbscript)
         tmp.close()
-        cmd += ' -x %s' % (tmp.name)
+        cmd += ['-x', tmp.name]
 
     log.info('running in new terminal: %s', cmd)
 
@@ -1222,7 +1220,7 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
         run
         """)
         gdb.sendline(b'info sharedlibrary')
-        lines = context._decode(gdb.recvrepeat(2))
+        lines = packing._decode(gdb.recvrepeat(2))
 
         for line in lines.splitlines():
             m = expr.match(line)
@@ -1295,11 +1293,11 @@ def corefile(process):
     gdb_args = ['-batch',
                 '-q',
                 '-nx',
-                '-ex', '"set pagination off"',
-                '-ex', '"set height 0"',
-                '-ex', '"set width 0"',
-                '-ex', '"set use-coredump-filter on"',
-                '-ex', '"generate-core-file %s"' % corefile_path,
+                '-ex', 'set pagination off',
+                '-ex', 'set height 0',
+                '-ex', 'set width 0',
+                '-ex', 'set use-coredump-filter on',
+                '-ex', 'generate-core-file %s' % corefile_path,
                 '-ex', 'detach']
 
     with context.local(terminal = ['sh', '-c']):
@@ -1307,8 +1305,8 @@ def corefile(process):
             pid = attach(process, gdb_args=gdb_args)
             log.debug("Got GDB pid %d", pid)
             try:
-                os.waitpid(pid, 0)
-            except Exception:
+                psutil.Process(pid).wait()
+            except psutil.Error:
                 pass
 
     if not os.path.exists(corefile_path):

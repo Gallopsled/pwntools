@@ -1,8 +1,8 @@
 <%
     from pwnlib import shellcraft
     from pwnlib.shellcraft import pretty
-    from pwnlib.context import context as ctx
     from pwnlib.util.iters import group
+    from pwnlib.util.packing import _encode
     from six import text_type, binary_type
 %>
 <%docstring>
@@ -27,7 +27,7 @@ if isinstance(array, (binary_type, text_type)):
     array = [array]
 
 # Convert all items to strings
-array = [ctx._encode(x) for x in array]
+array = [_encode(x) for x in array]
 
 # Normalize line endings for each item
 array = [arg.rstrip(b'\x00') + b'\x00' for arg in array]

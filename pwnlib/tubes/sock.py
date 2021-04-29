@@ -41,15 +41,13 @@ class sock(tube):
             except socket.timeout:
                 return None
             except IOError as e:
-                if e.errno == errno.EAGAIN:
+                if e.errno in (errno.EAGAIN, errno.ETIMEDOUT) or 'timed out' in e.strerror:
                     return None
                 elif e.errno in (errno.ECONNREFUSED, errno.ECONNRESET):
                     self.shutdown("recv")
                     raise EOFError
                 elif e.errno == errno.EINTR:
                     continue
-                elif 'timed out' in e.message:
-                    return None
                 else:
                     raise
 
