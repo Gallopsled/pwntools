@@ -92,7 +92,7 @@ def yesno(prompt, default=None):
        :skipif: branch_dev
 
         >>> p = testpwnproc("print(yesno('is it ok??'))")
-        >>> b"is it ok" in p.recvuntil("??")
+        >>> b"is it ok" in p.recvuntil(b"??")
         True
         >>> p.sendline(b"x\nny")
         >>> b"True" in p.recvall()

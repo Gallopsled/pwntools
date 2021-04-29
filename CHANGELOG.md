@@ -60,7 +60,21 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.6.0 (`dev`)
 
+- [#1429][1429] Add a mechanism for ret2csu (originally #1138)
+- [#1652][1652] Add `process.readmem` and `process.writemem`
+- [#1739][1739] Add/fix shellcraft.linux.kill() / shellcraft.linux.killparent()
+- [#1746][1746] Prefer Python3 over Python2 for spawning remote processes over SSH
+- [#1753][1753] major change: less unconditional imports in pwnlib
+- [#1776][1776] mips: do not use $t0 temporary variable in dupio
+- [#1846][1846] support launching GDB in more different terminals
 
+[1429]: https://github.com/Gallopsled/pwntools/pull/1429
+[1652]: https://github.com/Gallopsled/pwntools/pull/1652
+[1739]: https://github.com/Gallopsled/pwntools/pull/1739
+[1746]: https://github.com/Gallopsled/pwntools/pull/1746
+[1753]: https://github.com/Gallopsled/pwntools/pull/1753
+[1776]: https://github.com/Gallopsled/pwntools/pull/1776
+[1846]: https://github.com/Gallopsled/pwntools/pull/1846
 
 ## 4.5.0 (`beta`)
 
@@ -79,6 +93,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1841][1841] Add colored_traceback
 - [#1839][1839] run_in_new_terminal now creates a runner script if given a list or tuple
 - [#1833][1833] Add pwnlib.filesystem module
+- [#1852][1852] Fix `atexit` on Python 3
 
 [1261]: https://github.com/Gallopsled/pwntools/pull/1261
 [1695]: https://github.com/Gallopsled/pwntools/pull/1695
@@ -94,6 +109,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1841]: https://github.com/Gallopsled/pwntools/pull/1841
 [1839]: https://github.com/Gallopsled/pwntools/pull/1839
 [1833]:  https://github.com/Gallopsled/pwntools/pull/1833
+[1852]: https://github.com/Gallopsled/pwntools/pull/1852
 
 ## 4.4.0 (`stable`)
 
@@ -105,7 +121,6 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1633][1633] Open a shell if `pwn template` cannot download the remote file
 - [#1644][1644] Enable and support SNI for SSL-wrapped tubes
 - [#1651][1651] Make `pwn shellcraft` faster
-- [#1652][1652] Add `process.readmem` and `process.writemem`
 - [#1654][1654] Docker images (`pwntools/pwntools:stable` etc) now use Python3 by default, and includes assemblers for a few common architectures
 - [#1667][1667] Add i386 encoder `ascii_shellcode` (Fixed docs in #1693)
 - Fix syscall instruction lists for SROP on `i386` and `amd64`
@@ -128,7 +143,6 @@ The table below shows which release corresponds to each branch, and what date th
 [1633]: https://github.com/Gallopsled/pwntools/pull/1633
 [1644]: https://github.com/Gallopsled/pwntools/pull/1644
 [1651]: https://github.com/Gallopsled/pwntools/pull/1651
-[1652]: https://github.com/Gallopsled/pwntools/pull/1652
 [1654]: https://github.com/Gallopsled/pwntools/pull/1654
 [1667]: https://github.com/Gallopsled/pwntools/pull/1667
 [1673]: https://github.com/Gallopsled/pwntools/pull/1673

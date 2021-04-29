@@ -7,7 +7,7 @@ import six
 import string
 import sys
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
@@ -23,7 +23,7 @@ parser.add_argument(
     '-a', '--alphabet',
     metavar = 'alphabet',
     default = string.ascii_lowercase.encode(),
-    type = six.ensure_binary,
+    type = packing._encode,
     help = 'The alphabet to use in the cyclic pattern (defaults to all lower case letters)',
 )
 

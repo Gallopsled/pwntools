@@ -8,7 +8,7 @@ from subprocess import CalledProcessError
 from subprocess import check_output
 from tempfile import NamedTemporaryFile
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
