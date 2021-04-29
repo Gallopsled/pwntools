@@ -864,7 +864,7 @@ class ssh(Timeout, Logger):
             >>> print(s.process('false', preexec_fn=uses_globals).recvall().strip().decode()) # doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
-            NameError: ... name 'bar' is not defined
+            NameError: ...name 'bar' is not defined
 
             >>> s.process('echo hello', shell=True).recvall()
             b'hello\n'
@@ -932,7 +932,7 @@ class ssh(Timeout, Logger):
         # Validate, since failures on the remote side will suck.
         if not isinstance(executable, (six.text_type, six.binary_type, bytearray)):
             self.error("executable / argv[0] must be a string: %r" % executable)
-        executable = packing._decode(executable)
+        executable = bytearray(packing._encode(executable))
 
         # Allow passing in sys.stdin/stdout/stderr objects
         handles = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}
@@ -954,7 +954,7 @@ class ssh(Timeout, Logger):
 
         func_src  = inspect.getsource(func).strip()
         setuid = True if setuid is None else bool(setuid)
-        
+
         script = r"""
 #!/usr/bin/env python
 import os, sys, ctypes, resource, platform, stat
@@ -963,25 +963,27 @@ try:
     integer_types = int, long
 except NameError:
     integer_types = int,
-exe   = %(executable)r
+exe   = bytes(%(executable)r)
 argv  = [bytes(a) for a in %(argv)r]
 env   = %(env)r
 
 os.chdir(%(cwd)r)
 
+environ = getattr(os, 'environb', os.environ)
+
 if env is not None:
     env = OrderedDict((bytes(k), bytes(v)) for k,v in env)
     os.environ.clear()
-    getattr(os, 'environb', os.environ).update(env)
+    environ.update(env)
 else:
     env = os.environ
 
 def is_exe(path):
     return os.path.isfile(path) and os.access(path, os.X_OK)
 
-PATH = os.environ.get('PATH','').split(os.pathsep)
+PATH = environ.get(b'PATH',b'').split(os.pathsep.encode())
 
-if os.path.sep not in exe and not is_exe(exe):
+if os.path.sep.encode() not in exe and not is_exe(exe):
     for path in PATH:
         test_path = os.path.join(path, exe)
         if is_exe(test_path):
@@ -990,7 +992,7 @@ if os.path.sep not in exe and not is_exe(exe):
 
 if not is_exe(exe):
     sys.stderr.write('3\n')
-    sys.stderr.write("{} is not executable or does not exist in $PATH: {}".format(exe,PATH))
+    sys.stderr.write("{!r} is not executable or does not exist in $PATH: {!r}".format(exe,PATH))
     sys.exit(-1)
 
 if not %(setuid)r:
@@ -1027,7 +1029,7 @@ if sys.argv[-1] == 'check':
     sys.stdout.write(str(os.getgid()) + "\n")
     sys.stdout.write(str(suid) + "\n")
     sys.stdout.write(str(sgid) + "\n")
-    sys.stdout.write(os.path.realpath(exe) + '\x00')
+    getattr(sys.stdout, 'buffer', sys.stdout).write(os.path.realpath(exe) + b'\x00')
     sys.stdout.flush()
 
 for fd, newfd in {0: %(stdin)r, 1: %(stdout)r, 2:%(stderr)r}.items():
@@ -1098,7 +1100,7 @@ os.execve(exe, argv, env)
 
         with self.progress(msg) as h:
 
-            script = 'echo PWNTOOLS; for py in python2.7 python2 python; do test -x "$(which $py 2>&1)" && echo $py && exec $py -c %s check; done; echo 2' % sh_string(script)
+            script = 'echo PWNTOOLS; for py in python3 python2.7 python2 python; do test -x "$(which $py 2>&1)" && echo $py && exec $py -c %s check; done; echo 2' % sh_string(script)
             with context.quiet:
                 python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=timeout)
 
@@ -1108,8 +1110,10 @@ os.execve(exe, argv, env)
                 result = safeeval.const(python.recvline())  # Status flag from the Python script
             except (EOFError, ValueError):
                 h.failure("Process creation failed")
-                self.warn_once('Could not find a Python interpreter on %s\n' % self.host \
-                               + "Use ssh.run() instead of ssh.process()")
+                self.warn_once('Could not find a Python interpreter on %s\n' % self.host
+                               + "Use ssh.run() instead of ssh.process()\n"
+                                 "The original error message:\n"
+                               + python.recvall().decode())
                 return None
 
             # If an error occurred, try to grab as much output
