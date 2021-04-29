@@ -112,7 +112,7 @@ setup_osx()
 if [[ "$USER" == "travis" ]]; then
 #   setup_travis
     setup_ipv6
-#   setup_gdbserver
+    setup_gdbserver
     setup_rpyc
 elif [[ "$USER" == "shippable" ]]; then
     sudo apt-get update
