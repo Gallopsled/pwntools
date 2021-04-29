@@ -18,3 +18,5 @@ venv
 .coverage
 .coverage.*
 .idea
+__pycache__
+!.github
