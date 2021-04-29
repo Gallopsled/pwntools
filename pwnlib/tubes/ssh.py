@@ -553,7 +553,7 @@ class ssh(Timeout, Logger):
 
     def __init__(self, user=None, host=None, port=22, password=None, key=None,
                  keyfile=None, proxy_command=None, proxy_sock=None,
-                 level=None, cache=True, ssh_agent=False, *a, **kw):
+                 level=None, cache=True, ssh_agent=False, ignore_config=False, *a, **kw):
         """Creates a new ssh connection.
 
         Arguments:
@@ -569,6 +569,7 @@ class ssh(Timeout, Logger):
             level: Log level
             cache: Cache downloaded files (by hash/size/timestamp)
             ssh_agent: If :const:`True`, enable usage of keys via ssh-agent
+            ignore_config: If :const:`True`, disable usage of ~/.ssh/config and ~/.ssh/authorized_keys
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used.
@@ -607,19 +608,13 @@ class ssh(Timeout, Logger):
 
         misc.mkdir_p(self._cachedir)
 
-        # This is a dirty hack to make my Yubikey shut up.
-        # If anybody has a problem with this, please open a bug and I'll
-        # figure out a better workaround.
-        if not ssh_agent:
-            os.environ.pop('SSH_AUTH_SOCK', None)
-
         import paramiko
 
         # Make a basic attempt to parse the ssh_config file
         try:
             config_file = os.path.expanduser('~/.ssh/config')
 
-            if os.path.exists(config_file):
+            if not ignore_config and os.path.exists(config_file):
                 ssh_config  = paramiko.SSHConfig()
                 ssh_config.parse(open(config_file))
                 host_config = ssh_config.lookup(host)
@@ -641,9 +636,10 @@ class ssh(Timeout, Logger):
             self.client = paramiko.SSHClient()
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-            known_hosts = os.path.expanduser('~/.ssh/known_hosts')
-            if os.path.exists(known_hosts):
-                self.client.load_host_keys(known_hosts)
+            if not ignore_config:
+                known_hosts = os.path.expanduser('~/.ssh/known_hosts')
+                if os.path.exists(known_hosts):
+                    self.client.load_host_keys(known_hosts)
 
             has_proxy = bool(proxy_sock or proxy_command)
             if has_proxy:
@@ -659,7 +655,7 @@ class ssh(Timeout, Logger):
                 proxy_sock = None
 
             try:
-                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, compress = True, sock = proxy_sock)
+                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, allow_agent=ssh_agent, compress=True, sock=proxy_sock, look_for_keys=not ignore_config)
             except paramiko.BadHostKeyException as e:
                 self.error("Remote host %(host)s is using a different key than stated in known_hosts\n"
                            "    To remove the existing entry from your known_hosts and trust the new key, run the following commands:\n"

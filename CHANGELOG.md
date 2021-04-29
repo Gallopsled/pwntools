@@ -61,6 +61,7 @@ The table below shows which release corresponds to each branch, and what date th
 ## 4.6.0 (`dev`)
 
 - [#1429][1429] Add a mechanism for ret2csu (originally #1138)
+- [#1566][1566] Add `ignore_config` argument to `pwnlib.tubes.ssh` and improve `allow_agent` implementation
 - [#1652][1652] Add `process.readmem` and `process.writemem`
 - [#1739][1739] Add/fix shellcraft.linux.kill() / shellcraft.linux.killparent()
 - [#1746][1746] Prefer Python3 over Python2 for spawning remote processes over SSH
@@ -70,6 +71,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1846][1846] support launching GDB in more different terminals
 
 [1429]: https://github.com/Gallopsled/pwntools/pull/1429
+[1566]: https://github.com/Gallopsled/pwntools/pull/1566
 [1652]: https://github.com/Gallopsled/pwntools/pull/1652
 [1739]: https://github.com/Gallopsled/pwntools/pull/1739
 [1746]: https://github.com/Gallopsled/pwntools/pull/1746
