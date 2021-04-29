@@ -25,7 +25,7 @@ build_dash = tags.has('dash')
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../..'))
 
-import pwnlib
+import pwnlib.update
 pwnlib.update.disabled = True
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -71,8 +71,9 @@ doctest_global_setup = '''
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
 os.environ['PWNLIB_RANDOMIZE'] = '0'
-
-import pwnlib, logging
+import pwnlib.update
+import pwnlib.util.fiddling
+import logging
 pwnlib.update.disabled = True
 pwnlib.context.context.reset_local()
 pwnlib.context.ContextType.defaults['log_level'] = logging.ERROR
@@ -439,3 +440,9 @@ if 'doctest' in sys.argv:
         import binascii
         paramiko.client.hexlify = lambda x: binascii.hexlify(x).decode()
         paramiko.util.safe_string = lambda x: '' # function result never *actually used*
+    class EndlessLoop(Exception): pass
+    def alrm_handler(sig, frame):
+        signal.alarm(180) # three minutes
+        raise EndlessLoop()
+    signal.signal(signal.SIGALRM, alrm_handler)
+    signal.alarm(600) # ten minutes

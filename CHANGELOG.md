@@ -63,12 +63,14 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1429][1429] Add a mechanism for ret2csu (originally #1138)
 - [#1739][1739] Add/fix shellcraft.linux.kill() / shellcraft.linux.killparent()
 - [#1746][1746] Prefer Python3 over Python2 for spawning remote processes over SSH
+- [#1753][1753] major change: less unconditional imports in pwnlib
 - [#1776][1776] mips: do not use $t0 temporary variable in dupio
 - [#1846][1846] support launching GDB in more different terminals
 
 [1429]: https://github.com/Gallopsled/pwntools/pull/1429
 [1739]: https://github.com/Gallopsled/pwntools/pull/1739
 [1746]: https://github.com/Gallopsled/pwntools/pull/1746
+[1753]: https://github.com/Gallopsled/pwntools/pull/1753
 [1776]: https://github.com/Gallopsled/pwntools/pull/1776
 [1846]: https://github.com/Gallopsled/pwntools/pull/1846
 
