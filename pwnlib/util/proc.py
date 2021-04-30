@@ -254,7 +254,7 @@ def starttime(pid):
         The time (in seconds) the process started after system boot
 
     Example:
-        >>> starttime(os.getppid()) < starttime(os.getpid())
+        >>> starttime(os.getppid()) <= starttime(os.getpid())
         True
     """
     return psutil.Process(pid).create_time() - psutil.boot_time()
