@@ -59,11 +59,7 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-<<<<<<< HEAD
-## 4.6.0 (`dev`)
-=======
 ## 4.7.0 (`dev`)
->>>>>>> stable
 
 - [#1429][1429] Add a mechanism for ret2csu (originally #1138)
 - [#1566][1566] Add `ignore_config` argument to `pwnlib.tubes.ssh` and improve `allow_agent` implementation
@@ -85,9 +81,6 @@ The table below shows which release corresponds to each branch, and what date th
 [1776]: https://github.com/Gallopsled/pwntools/pull/1776
 [1846]: https://github.com/Gallopsled/pwntools/pull/1846
 
-<<<<<<< HEAD
-## 4.5.0 (`beta`)
-=======
 ## 4.6.0 (`beta`)
 
 - [#1429][1429] Add a mechanism for ret2csu (originally #1138)
@@ -111,7 +104,6 @@ The table below shows which release corresponds to each branch, and what date th
 [1846]: https://github.com/Gallopsled/pwntools/pull/1846
 
 ## 4.5.0 (`stable`)
->>>>>>> stable
 
 - [#1261][1261] Misc `run_in_new_terminal` improvements (notably gdb terminated by default)
 - [#1695][1695] Allow using GDB Python API
