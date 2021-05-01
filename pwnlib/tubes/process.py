@@ -201,6 +201,11 @@ class process(tube):
 
         >>> binary = ELF.from_assembly('nop', arch='mips')
         >>> p = process(binary.path)
+        >>> binary_dir, binary_name = os.path.split(binary.path)
+        >>> p = process('./{}'.format(binary_name), cwd=binary_dir)
+        >>> p = process(binary.path, cwd=binary_dir)
+        >>> p = process('./{}'.format(binary_name), cwd=os.path.relpath(binary_dir))
+        >>> p = process(binary.path, cwd=os.path.relpath(binary_dir))
     """
 
     STDOUT = STDOUT
@@ -357,16 +362,14 @@ class process(tube):
             fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
         # Save off information about whether the binary is setuid / setgid
-        self.uid = os.getuid()
-        self.gid = os.getgid()
-        self.suid = -1
-        self.sgid = -1
+        self.suid = self.uid = os.getuid()
+        self.sgid = self.gid = os.getgid()
         st = os.stat(self.executable)
         if self._setuid:
             if (st.st_mode & stat.S_ISUID):
-                self.setuid = st.st_uid
+                self.suid = st.st_uid
             if (st.st_mode & stat.S_ISGID):
-                self.setgid = st.st_gid
+                self.sgid = st.st_gid
 
     def __preexec_fn(self):
         """
@@ -507,6 +510,7 @@ class process(tube):
         Mostly to make Python happy, but also to prevent common pitfalls.
         """
 
+        orig_cwd = cwd
         cwd = cwd or os.path.curdir
 
         #
@@ -570,6 +574,12 @@ class process(tube):
             tmp = executable
             executable = os.path.join(cwd, executable)
             self.warn_once("Could not find executable %r in $PATH, using %r instead" % (tmp, executable))
+
+        # There is a path component and user specified a working directory,
+        # it must be relative to that directory. For example, 'bar/baz' with
+        # cwd='foo' or './baz' with cwd='foo/bar'
+        elif orig_cwd:
+            executable = os.path.join(orig_cwd, executable)
 
         if not os.path.exists(executable):
             self.error("%r does not exist"  % executable)
@@ -995,6 +1005,52 @@ class process(tube):
         with open('/proc/%i/mem' % self.pid, 'rb') as mem:
             mem.seek(address)
             return mem.read(count) or None
+
+    readmem = leak
+
+    def writemem(self, address, data):
+        r"""Writes memory within the process at the specified address.
+
+        Arguments:
+            address(int): Address to write memory
+            data(bytes): Data to write to the address
+
+        Example:
+        
+            Let's write data to  the beginning of the mapped memory of the  ELF.
+
+            >>> context.clear(arch='i386')
+            >>> address = 0x100000
+            >>> data = cyclic(32)
+            >>> assembly = shellcraft.nop() * len(data)
+
+            Wait for one byte of input, then write the data to stdout
+
+            >>> assembly += shellcraft.write(1, address, 1)
+            >>> assembly += shellcraft.read(0, 'esp', 1)
+            >>> assembly += shellcraft.write(1, address, 32)
+            >>> assembly += shellcraft.exit()
+            >>> asm(assembly)[32:]
+            b'j\x01[\xb9\xff\xff\xef\xff\xf7\xd1\x89\xdaj\x04X\xcd\x801\xdb\x89\xe1j\x01Zj\x03X\xcd\x80j\x01[\xb9\xff\xff\xef\xff\xf7\xd1j Zj\x04X\xcd\x801\xdbj\x01X\xcd\x80'
+
+            Assemble the binary and test it
+
+            >>> elf = ELF.from_assembly(assembly, vma=address)
+            >>> io = elf.process()
+            >>> _ = io.recvuntil(b'\x90')
+            >>> _ = io.writemem(address, data)
+            >>> io.send(b'X')
+            >>> io.recvall()
+            b'aaaabaaacaaadaaaeaaafaaagaaahaaa'
+        """
+
+        if 'qemu-' in os.path.realpath('/proc/%i/exe' % self.pid):
+            self.error("Cannot use leaker on binaries under QEMU.")
+
+        with open('/proc/%i/mem' % self.pid, 'wb') as mem:
+            mem.seek(address)
+            return mem.write(data)
+
 
     @property
     def stdin(self):

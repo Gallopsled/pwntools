@@ -78,6 +78,7 @@ from pwnlib.util.web import *
 from six.moves import cPickle as pickle, cStringIO as StringIO
 from six import BytesIO
 
+log = getLogger("pwnlib.exploit")
 error   = log.error
 warning = log.warning
 warn    = log.warning

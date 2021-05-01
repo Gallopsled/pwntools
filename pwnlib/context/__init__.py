@@ -901,27 +901,6 @@ class ContextType(object):
 
         return charset
 
-    def _encode(self, s):
-        if isinstance(s, (bytes, bytearray)):
-            return s   # already bytes
-
-        if self.encoding == 'auto':
-            try:
-                return s.encode('latin1')
-            except UnicodeEncodeError:
-                return s.encode('utf-8', 'surrogateescape')
-        return s.encode(self.encoding)
-
-    def _decode(self, b):
-        if self.encoding == 'auto':
-            try:
-                return b.decode('utf-8')
-            except UnicodeDecodeError:
-                return b.decode('latin1')
-            except AttributeError:
-                return b
-        return b.decode(self.encoding)
-
     @_validator
     def endian(self, endianness):
         """
@@ -1362,7 +1341,9 @@ class ContextType(object):
         This configures the newline emitted by e.g. ``sendline`` or that is used
         as a delimiter for e.g. ``recvline``.
         """
-        return six.ensure_binary(v)
+        # circular imports
+        from pwnlib.util.packing import _need_bytes
+        return _need_bytes(v)
 
 
     @_validator

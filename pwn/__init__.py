@@ -7,7 +7,6 @@ pwnlib.args.initialize()
 pwnlib.log.install_default_handler()
 pwnlib.config.initialize()
 
-log = pwnlib.log.getLogger('pwnlib.exploit')
 args = pwnlib.args.args
 
 if not platform.architecture()[0].startswith('64'):

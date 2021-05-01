@@ -87,7 +87,7 @@ jobs:
         pip install --upgrade --editable .
 
     - name: Sanity checks
-      run:  PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
+      run:  PWNLIB_NOTERM=1 python -bb -c 'from pwn import *; print(pwnlib.term.term_mode)'
 
     - name: Install documentation dependencies
       run:  pip install -r docs/requirements.txt
@@ -95,29 +95,29 @@ jobs:
     - name: Manually install non-broken Unicorn
       run:  pip install unicorn==1.0.2rc3
 
-    - name: Version Check
-      run:  PWNLIB_NOTERM=1 pwn version
+    - name: Disable yama ptrace_scope
+      run: |
+        echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope # required by some gdb doctests
 
     - name: Coverage doctests
       run: |
-        echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope # required by some gdb doctests
-        PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest
+        PWNLIB_NOTERM=1 python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest
 
     - name: Coverage running examples
       run: |
         export TERM=linux
         set -x
-        python travis/coverage_chdir.py examples/fmtstr examples/fmtstr/exploit.py
-        python travis/coverage_chdir.py examples/fmtstr examples/fmtstr/exploit2.py || : # can fail randomly?
-        coverage run examples/asm.py
-        coverage run examples/asm.py
-        coverage run examples/text.py
+        python -bb travis/coverage_chdir.py examples/fmtstr examples/fmtstr/exploit.py
+        python -bb travis/coverage_chdir.py examples/fmtstr examples/fmtstr/exploit2.py || : # can fail randomly?
+        python -bb -m coverage run examples/asm.py
+        python -bb -m coverage run examples/asm.py
+        python -bb -m coverage run examples/text.py
         # for f in examples/sigreturn_corefile_*.py; do coverage run "$f"; done # XXX something is wrong
 
     - name: Coverage running commandline tools
       run: |
         export TERM=linux
-        pwn() { ( set +x; cmd=$1; shift; PYTHONUNBUFFERED=1 exec coverage run -m pwnlib.commandline."$cmd" "$@" ) }
+        pwn() { ( set +x; cmd=$1; shift; PYTHONUNBUFFERED=1 exec python -bb -m coverage run -m pwnlib.commandline."$cmd" "$@" ) }
         set -x
 
         pwn cyclic 32

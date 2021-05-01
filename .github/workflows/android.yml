@@ -1,0 +1,60 @@
+name: Android Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        python-version: [3.8]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Cache for pip
+      uses: actions/cache@v1
+      id: cache-pip
+      with:
+        path: ~/.cache/pip
+        key: ${{ matrix.os }}-cache-pip
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Linux dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
+          gdb gdbserver socat \
+          qemu-user-static \
+          binutils-aarch64-linux-gnu \
+          binutils-arm-linux-gnueabihf \
+          libc6-dbg \
+          openjdk-8-jre-headless
+
+    - name: Install Android AVD
+      run: |
+        USER=travis source travis/setup_avd.sh
+        sed -i 's/skip_android = True/skip_android = False/' docs/source/conf.py
+        set | egrep '^(ANDROID|PATH)' >.android.env
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        python setup.py egg_info
+        pip install --upgrade --editable .
+
+    - name: Sanity checks
+      run:  PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
+
+    - name: Install documentation dependencies
+      run:  pip install -r docs/requirements.txt
+
+    - name: Coverage Doctests (Android Only)
+      run: |
+        source .android.env
+        PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest docs/source/adb.rst
