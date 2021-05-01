@@ -205,7 +205,7 @@ def unstrip_libc(filename):
         >>> libc = ELF(filename)
         >>> hex(libc.symbols.main_arena)
         '0x1d57a0'
-        >>> unstrip(which('ls'))
+        >>> unstrip_libc(which('python'))
         False
         >>> filename = search_by_build_id('06a8004be6e10c4aeabbe0db74423ace392a2d6b', unstrip=True)
         >>> 'main_arena' in ELF(filename).symbols
