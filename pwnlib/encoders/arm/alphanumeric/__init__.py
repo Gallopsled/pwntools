@@ -14,8 +14,8 @@ from pwnlib.encoders.encoder import Encoder
 class ArmEncoder(Encoder):
     arch = 'arm'
 
-    blacklist  = {chr(c) for c in range(256) if chr(c) in (string.ascii_letters + string.digits)}
-    icache_flush = 1
+    blacklist  = set((string.ascii_letters + string.digits).encode())
+    icache_flush = True
 
     def __call__(self, input, avoid, pcreg=None):
         # If randomization is disabled, ensure that the seed
@@ -41,7 +41,7 @@ class ArmEncoder(Encoder):
         finally:
             random.setstate(state)
 
-        return output.encode()
+        return output
 
 class ThumbEncoder(ArmEncoder):
     arch = 'thumb'

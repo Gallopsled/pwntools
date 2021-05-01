@@ -15,7 +15,7 @@ from pwnlib.util.fiddling import hexdump
 log = getLogger(__name__)
 
 class Encoder(object):
-    _encoders = collections.defaultdict(lambda: [])
+    _encoders = collections.defaultdict(list)
 
     #: Architecture which this encoder works on
     arch = None
@@ -62,12 +62,10 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
     """
     orig_avoid = avoid
 
-    avoid = set(avoid or '')
+    avoid = set(avoid or b'')
 
     if expr:
-        for char in all_chars:
-            if re.search(expr, char):
-                avoid.add(char)
+        avoid |= set(b''.join(re.findall(expr, all_chars)))
 
     if not (force or avoid & set(raw_bytes)):
         return raw_bytes
@@ -90,26 +88,25 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
 
         return v
 
-
     avoid_errmsg = ''
     if orig_avoid and expr:
         avoid_errmsg = '%r and %r' % (orig_avoid, expr)
     elif expr:
         avoid_errmsg = repr(expr)
     else:
-        avoid_errmsg = ''.join(avoid)
+        avoid_errmsg = repr(bytearray(avoid))
 
     args = (context.arch, avoid_errmsg, hexdump(raw_bytes))
     msg = "No encoders for %s which can avoid %s for\n%s" % args
     msg = msg.replace('%', '%%')
     log.error(msg)
 
-all_chars        = list(chr(i) for i in range(256))
-re_alphanumeric  = r'[^A-Za-z0-9]'
-re_printable     = r'[^\x21-\x7e]'
-re_whitespace    = r'\s'
-re_null          = r'\x00'
-re_line          = r'[\s\x00]'
+all_chars        = bytes(bytearray(range(256)))
+re_alphanumeric  = br'[^A-Za-z0-9]'
+re_printable     = br'[^\x21-\x7e]'
+re_whitespace    = br'\s'
+re_null          = br'\x00'
+re_line          = br'[\s\x00]'
 
 @LocalContext
 def null(raw_bytes, *a, **kw):
@@ -163,4 +160,4 @@ def scramble(raw_bytes, *a, **kw):
 
     Accepts the same arguments as :func:`encode`.
     """
-    return encode(raw_bytes, force=1, *a, **kw)
+    return encode(raw_bytes, force=True, *a, **kw)
