@@ -97,7 +97,7 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
     elif expr:
         avoid_errmsg = repr(expr)
     else:
-        avoid_errmsg = ''.join(repr(avoid))
+        avoid_errmsg = repr(bytes(avoid))
 
     args = (context.arch, avoid_errmsg, hexdump(raw_bytes))
     msg = "No encoders for %s which can avoid %s for\n%s" % args
