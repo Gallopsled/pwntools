@@ -70,6 +70,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1753][1753] major change: less unconditional imports in pwnlib
 - [#1776][1776] mips: do not use $t0 temporary variable in dupio
 - [#1846][1846] support launching GDB in more different terminals
+- [#1877][1877] encoders error message handles when `avoid` is bytes in python3
 
 [1429]: https://github.com/Gallopsled/pwntools/pull/1429
 [1566]: https://github.com/Gallopsled/pwntools/pull/1566
@@ -80,6 +81,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1753]: https://github.com/Gallopsled/pwntools/pull/1753
 [1776]: https://github.com/Gallopsled/pwntools/pull/1776
 [1846]: https://github.com/Gallopsled/pwntools/pull/1846
+[1877]: https://github.com/Gallopsled/pwntools/pull/1877
 
 ## 4.6.0 (`beta`)
 
