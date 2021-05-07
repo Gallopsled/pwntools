@@ -61,25 +61,11 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.7.0 (`dev`)
 
-- [#1429][1429] Add a mechanism for ret2csu (originally #1138)
-- [#1566][1566] Add `ignore_config` argument to `pwnlib.tubes.ssh` and improve `allow_agent` implementation
-- [#1652][1652] Add `process.readmem` and `process.writemem`
-- [#1739][1739] Add/fix shellcraft.linux.kill() / shellcraft.linux.killparent()
-- [#1746][1746] Prefer Python3 over Python2 for spawning remote processes over SSH
-- [#1751][1751] Fix process() with executable relative to cwd
-- [#1753][1753] major change: less unconditional imports in pwnlib
-- [#1776][1776] mips: do not use $t0 temporary variable in dupio
-- [#1846][1846] support launching GDB in more different terminals
+- [#1876][1876] add `self.message` and change `sys.exc_type` to `sys.exec_info()` in PwnlibException
+- [#1877][1877] encoders error message handles when `avoid` is bytes in python3
 
-[1429]: https://github.com/Gallopsled/pwntools/pull/1429
-[1566]: https://github.com/Gallopsled/pwntools/pull/1566
-[1652]: https://github.com/Gallopsled/pwntools/pull/1652
-[1739]: https://github.com/Gallopsled/pwntools/pull/1739
-[1746]: https://github.com/Gallopsled/pwntools/pull/1746
-[1751]: https://github.com/Gallopsled/pwntools/pull/1751
-[1753]: https://github.com/Gallopsled/pwntools/pull/1753
-[1776]: https://github.com/Gallopsled/pwntools/pull/1776
-[1846]: https://github.com/Gallopsled/pwntools/pull/1846
+[1876]: https://github.com/Gallopsled/pwntools/pull/1876
+[1877]: https://github.com/Gallopsled/pwntools/pull/1877
 
 ## 4.6.0 (`beta`)
 
