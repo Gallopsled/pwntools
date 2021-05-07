@@ -10,13 +10,16 @@ __BEGIN_DECLS
 typedef struct sigcontext mcontext_t;
 #endif
 
-#if defined(__i386__) || defined(__arm__) || defined(__mips__) || defined(__mips64__) || defined(__powerpc__) || defined(__powerpc64__) || defined(__hppa__)
+#if defined(__i386__) || defined(__x86_64__) || defined(__arm__) || defined(__mips__) || defined(__mips64__) || defined(__powerpc__) || defined(__powerpc64__) || defined(__hppa__)
 struct ucontext {
   unsigned long		uc_flags;
   struct ucontext	*uc_link;
   stack_t		uc_stack;
   struct sigcontext	uc_mcontext;
   sigset_t		uc_sigmask;	/* mask last for extensibility */
+#if defined(__i386__) || defined(__x86_64__)
+  struct _fpstate	__fpregs_mem;
+#endif
 };
 #elif defined(__alpha__)
 struct ucontext {
@@ -84,8 +87,10 @@ typedef struct {
 struct ucontext {
   struct ucontext         *uc_link;
   unsigned long           uc_flags;
-  sigset_t                uc_sigmask;
+  unsigned long           __uc_sigmask;
   mcontext_t              uc_mcontext;
+  stack_t                 uc_stack;
+  sigset_t                uc_sigmask;
 };
 #elif defined(__s390__)
 struct ucontext {
@@ -94,6 +99,14 @@ struct ucontext {
   stack_t		uc_stack;
   _sigregs		uc_mcontext;
   sigset_t		uc_sigmask;	/* mask last for extensibility */
+};
+#elif defined(__aarch64__)
+struct ucontext {
+  unsigned long		uc_flags;
+  struct ucontext	*uc_link;
+  stack_t		uc_stack;
+  sigset_t		uc_sigmask;
+  mcontext_t		uc_mcontext;
 };
 #elif defined(__ia64__)
 
@@ -105,18 +118,9 @@ struct ucontext {
 #define uc_link		uc_mcontext.sc_gr[0]	/* wrong type; nobody cares */
 #define uc_sigmask	uc_mcontext.sc_sigmask
 #define uc_stack	uc_mcontext.sc_stack
-#elif defined(__x86_64__)
-
-struct ucontext {
-	unsigned long	  uc_flags;
-	struct ucontext  *uc_link;
-	stack_t		  uc_stack;
-	struct sigcontext uc_mcontext;
-	sigset_t	  uc_sigmask;	/* mask last for extensibility */
-};
 
 #else
-//#error NEED TO PORT <sys/sigcontext.h>!
+#error NEED TO PORT <sys/sigcontext.h>!
 #endif
 
 typedef struct ucontext ucontext_t;
