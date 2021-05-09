@@ -1406,9 +1406,8 @@ class CorefileFinder(object):
                     "coredumpctl",
                     "dump",
                     "--output=%s" % filename,
-                    # Filter coredump by pid and filename
+                    # Filter coredump by pid
                     str(self.pid),
-                    self.basename,
                 ],
                 stdout=open(os.devnull, 'w'),
                 stderr=subprocess.STDOUT,
