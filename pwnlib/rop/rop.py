@@ -40,7 +40,7 @@ which corresponds to their offset, which is useful when debuggging your exploit.
     >>> print(rop.dump())
     0x0000:       0x10000006 pop ecx; pop ebx; ret
     0x0004:       0x22222222
-    0x0008:           'caaa' <pad ebx>
+    0x0008:          b'caaa' <pad ebx>
     0x000c:       0x10000004 pop eax; ret
     0x0010:       0x11111111
 
