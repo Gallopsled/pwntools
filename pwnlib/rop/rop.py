@@ -12,12 +12,11 @@ have been useful.
     >>> binary = ELF.from_assembly('add esp, 0x10; ret; pop eax; ret; pop ecx; pop ebx; ret')
     >>> binary.symbols = {'read': 0xdeadbeef, 'write': 0xdecafbad, 'execve': 0xcafebabe, 'exit': 0xfeedface}
 
-Creating a ROP object which looks up symbols in the binary is
-pretty straightforward.
+Creating a ROP object which looks up symbols in the binary is pretty straightforward.
 
     >>> rop = ROP(binary)
 
-Once to ROP object has been loaded, you can trivially find gadgets.  
+Once to ROP object has been loaded, you can trivially find gadgets, by using magic properties on the ``ROP`` object.  
 Each :class:`Gadget` has an ``address`` property which has the real address as well.
 
     >>> rop.eax
@@ -30,27 +29,18 @@ Other, more complicated gdagets also happen magically
     >>> rop.ecx
     Gadget(0x10000006, ['pop ecx', 'pop ebx', 'ret'], ['ecx', 'ebx'], 0xc)
 
-To make it easier to use complex gadgets, you should use :meth:`ROP.setRegisters` and add them manually via :meth:`ROP.raw`,
-Note that :meth:`setRegisters` returns a list of tuples, where the first entry is the address of the gadget (or a placeholder),
-while the second value is a description of the gadget.
+The easiest way to set up individual registers is to invoke the ``ROP`` object as a callable, with the registers as arguments.
+    
+    >>> rop(eax=0x11111111, ecx=0x22222222)
 
-    >>> ropchain = rop.setRegisters({'eax':0x11111111, 'ecx': 0x22222222})
-    >>> ropchain
-    [(268435462,
-      Gadget(0x10000006, ['pop ecx', 'pop ebx', 'ret'], ['ecx', 'ebx'], 0xc)),
-     (572662306, 'ecx'),
-     (<pwnlib.rop.rop.Padding at 0x107c27c40>, 'ebx'),
-     (268435460, Gadget(0x10000004, ['pop eax', 'ret'], ['eax'], 0x8)),
-     (286331153, 'eax')]
+Setting register values this way accounts for padding and extra registers which are popped off the stack.
+Values which are filled with garbage (i.e. are not used) are filled with the :func:`cyclic` pattern
+which corresponds to their offset, which is useful when debuggging your exploit.
 
-In this situation, just add the first value of each tuple via :meth:`ROP.raw`:
-
-    >>> for addr, description in ropchain:
-    ...     rop.raw(addr)
     >>> print(rop.dump())
     0x0000:       0x10000006 pop ecx; pop ebx; ret
     0x0004:       0x22222222
-    0x0008:          b'caaa' <pad ebx>
+    0x0008:           'caaa' <pad ebx>
     0x000c:       0x10000004 pop eax; ret
     0x0010:       0x11111111
 
