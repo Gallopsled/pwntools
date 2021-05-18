@@ -64,6 +64,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1733][1733] Update libc headers -> more syscalls available!
 - [#1876][1876] add `self.message` and change `sys.exc_type` to `sys.exec_info()` in PwnlibException
 - [#1877][1877] encoders error message handles when `avoid` is bytes in python3
+- [#1890][1890] `call()` and `raw()` return `self` for method chaining
 
 [1733]: https://github.com/Gallopsled/pwntools/pull/1733
 [1876]: https://github.com/Gallopsled/pwntools/pull/1876
