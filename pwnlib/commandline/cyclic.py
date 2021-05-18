@@ -67,6 +67,9 @@ def main(args):
     if args.lookup:
         pat = args.lookup
 
+        if six.PY3:
+            pat = bytes(pat, encoding='utf-8')
+
         try:
             pat = int(pat, 0)
         except ValueError:

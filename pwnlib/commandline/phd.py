@@ -4,6 +4,7 @@ from __future__ import division
 
 import argparse
 import os
+import signal
 import sys
 import io
 
@@ -99,6 +100,8 @@ def main(args):
         for hs in args.highlight:
             for h in hs.split(','):
                 hl.append(asint(h))
+
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
     try:
         for line in hexdump_iter(infile, width, highlight = hl, begin = offset + skip):
