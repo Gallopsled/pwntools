@@ -597,7 +597,7 @@ class ROP(object):
         regset = set(registers)
 
         bad_instructions = set(('syscall', 'sysenter', 'int 0x80'))
-
+        
         # Collect all gadgets which use these registers
         # Also collect the "best" gadget for each combination of registers
         gadgets = []
@@ -974,7 +974,7 @@ class ROP(object):
 
     def chain(self, base=None):
         """Build the ROP chain
-
+        
         Arguments:
             base(int):
                 The base address to build the rop-chain from. Defaults to
@@ -987,7 +987,7 @@ class ROP(object):
 
     def dump(self, base=None):
         """Dump the ROP chain in an easy-to-read manner
-
+        
         Arguments:
             base(int):
                 The base address to build the rop-chain from. Defaults to
