@@ -298,14 +298,15 @@ def make_atoms_simple(address, data, badbytes=frozenset()):
 
     i = 0
     out = []
+    end = address + len(data)
     while i < len(data):
         candidate = AtomWrite(address + i, 1, data[i])
-        while candidate.end < len(data) and any(x in badbytes for x in pack(candidate.end)):
+        while candidate.end < end and any(x in badbytes for x in pack(candidate.end)):
             candidate = candidate.union(AtomWrite(candidate.end, 1, data[i + candidate.size]))
 
         sz = min([s for s in SPECIFIER if s >= candidate.size] + [float("inf")])
-        if candidate.start + sz > len(data):
-            raise RuntimeError("impossible to avoid badbytes starting after offset %d (address %x)" % (i, i + address))
+        if candidate.start + sz > end:
+            raise RuntimeError("impossible to avoid badbytes starting after offset %d (address %#x)" % (i, i + address))
         i += candidate.size
         candidate = candidate.union(AtomWrite(candidate.end, sz - candidate.size, 0, 0))
         out.append(candidate)
@@ -740,7 +741,7 @@ def make_atoms(writes, sz, szmax, numbwritten, overflows, strategy, badbytes):
         all_atoms += atoms
     return all_atoms
 
-def fmtstr_split(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small", badbytes=frozenset()):
+def fmtstr_split(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=255, strategy="small", badbytes=frozenset()):
     """
     Build a format string like fmtstr_payload but return the string and data separately.
     """
@@ -756,7 +757,7 @@ def fmtstr_split(offset, writes, numbwritten=0, write_size='byte', write_size_ma
 
     return make_payload_dollar(offset, atoms, numbwritten)
 
-def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small", badbytes=frozenset(), offset_bytes=0):
+def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=255, strategy="small", badbytes=frozenset(), offset_bytes=0):
     r"""fmtstr_payload(offset, writes, numbwritten=0, write_size='byte') -> str
 
     Makes payload with given parameter.
@@ -834,11 +835,12 @@ class FmtStr(object):
 
     """
 
-    def __init__(self, execute_fmt, offset=None, padlen=0, numbwritten=0):
+    def __init__(self, execute_fmt, offset=None, padlen=0, numbwritten=0, badbytes=frozenset()):
         self.execute_fmt = execute_fmt
         self.offset = offset
         self.padlen = padlen
         self.numbwritten = numbwritten
+        self.badbytes = badbytes
 
         if self.offset is None:
             self.offset, self.padlen = self.find_offset()
@@ -902,7 +904,7 @@ class FmtStr(object):
 
         """
         fmtstr = randoms(self.padlen).encode()
-        fmtstr += fmtstr_payload(self.offset, self.writes, numbwritten=self.padlen + self.numbwritten, write_size='byte')
+        fmtstr += fmtstr_payload(self.offset, self.writes, numbwritten=self.padlen + self.numbwritten, badbytes=self.badbytes, write_size='byte')
         self.execute_fmt(fmtstr)
         self.writes = {}
 
