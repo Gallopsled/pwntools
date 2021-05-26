@@ -234,7 +234,7 @@ def unstrip_libc(filename):
     p.close()
 
     if output:
-        log.failure('Failed to unstrip libc binary: %s', output)
+        log.error('Failed to unstrip libc binary: %s', output)
         return False
 
     return True
