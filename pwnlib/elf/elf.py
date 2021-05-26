@@ -1070,7 +1070,7 @@ class ELF(ELFFile):
             if '-' in version:
                 version, self.build = version.split('-', 1)
 
-            self.version = list(map(int, version.split('.')))
+            self.version = list(map(int, version.rstrip('+').split('.')))
 
         self.config['version'] = self.version
 
