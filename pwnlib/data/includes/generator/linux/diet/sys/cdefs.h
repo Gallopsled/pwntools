@@ -1,6 +1,10 @@
 #ifndef _SYS_CDEFS_H
 #define _SYS_CDEFS_H
 
+#ifndef __has_attribute
+#define __has_attribute(foo) 0
+#endif
+
 #ifndef __cplusplus
 #define __THROW
 #define __BEGIN_DECLS
@@ -14,6 +18,27 @@
 #ifndef __GNUC__
 #define __attribute__(xyz)
 #define __extension__
+#endif
+
+#if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6))
+#define __leaf , __leaf__
+#else
+#define __leaf
+#endif
+
+#if defined(__clang__) && __has_attribute(leaf)
+#undef __leaf
+#define __leaf
+#endif
+
+#if !defined(__cplusplus) && ((__GNUC__ > 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 3)))
+#undef __THROW
+#define __THROW __attribute__((__nothrow__ __leaf))
+#define __THROWNL __attribute__((__nothrow__))
+#endif
+
+#ifndef __THROWNL
+#define __THROWNL __THROW
 #endif
 
 #if (__GNUC__ > 2) || ((__GNUC__ == 2) && (__GNUC_MINOR__ >= 96))
@@ -94,8 +119,8 @@
 #define __attribute_alloc__(x)
 #define __attribute_alloc2__(x,y)
 #else
-#define __attribute_alloc__(x) __attribute__((alloc_size(x))
-#define __attribute_alloc2__(x,y) __attribute__((alloc_size(x,y))
+#define __attribute_alloc__(x) __attribute__((alloc_size(x)))
+#define __attribute_alloc2__(x,y) __attribute__((alloc_size(x,y)))
 #endif
 
 #if (__GNUC__ < 2) || ((__GNUC__ == 2) && (__GNUC_MINOR__ < 5))
@@ -108,6 +133,59 @@
 #define __attribute_formatarg__(x)
 #else
 #define __attribute_formatarg__(x) __attribute__((format_arg(x)))
+#endif
+
+#if (__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 1))
+#define __dontinline__
+#else
+#define __dontinline__ __attribute__((noinline))
+#endif
+
+#if (__GNUC__ < 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ < 6))
+#define __hidden__
+#else
+#define __hidden__ __attribute__((visibility("hidden")))
+#endif
+
+#if (__GNUC__ < 10)
+#define __readmem__(argno_ptr)
+#define __readmemsz__(argno_ptr, argno_size)
+#define __writemem__(argno_ptr)
+#define __writememsz__(argno_ptr, argno_size)
+#define __readwritemem__(argno_ptr)
+#define __readwritememsz__(argno_ptr, argno_size)
+#else
+#define __readmem__(argno_ptr) __attribute__((access(read_only, argno_ptr)))
+#define __readmemsz__(argno_ptr, argno_size) __attribute__((access(read_only, argno_ptr, argno_size)))
+#define __writemem__(argno_ptr) __attribute__((access(write_only, argno_ptr)))
+#define __writememsz__(argno_ptr, argno_size) __attribute__((access(write_only, argno_ptr, argno_size)))
+#define __readwritemem__(argno_ptr) __attribute__((access(read_write, argno_ptr)))
+#define __readwritememsz__(argno_ptr, argno_size) __attribute__((access(read_write, argno_ptr, argno_size)))
+#endif
+
+#if (__GNUC__ < 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ < 3))
+#define __warn(message)
+#define __error(message)
+#else
+#define __warn(message) __attribute__((warning(message)))
+#define __error(message) __attribute__((error(message)))
+#endif
+
+#if __has_attribute(diagnose_if)
+#define __condwarn(condition, message) diagnose_if(condition, message, "warning")
+#define __conderr(condition, message) diagnose_if(condition, message, "error")
+#else
+#define __condwarn(condition, message)
+#define __conderr(condition, message)
+#endif
+
+#if __has_attribute(enable_if)
+#endif
+
+#if __has_attribute(callback)
+#define __callback(...) callback(__VA_ARGS__)
+#else
+#define __callback(...)
 #endif
 
 #endif

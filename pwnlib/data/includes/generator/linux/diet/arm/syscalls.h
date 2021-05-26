@@ -365,6 +365,87 @@
 #define __NR_fallocate			(__NR_SYSCALL_BASE+352)
 #define __NR_timerfd_settime		(__NR_SYSCALL_BASE+353)
 #define __NR_timerfd_gettime		(__NR_SYSCALL_BASE+354)
+#define __NR_signalfd4			(__NR_SYSCALL_BASE+355)
+#define __NR_eventfd2			(__NR_SYSCALL_BASE+356)
+#define __NR_epoll_create1		(__NR_SYSCALL_BASE+357)
+#define __NR_dup3			(__NR_SYSCALL_BASE+358)
+#define __NR_pipe2			(__NR_SYSCALL_BASE+359)
+#define __NR_inotify_init1		(__NR_SYSCALL_BASE+360)
+#define __NR_preadv			(__NR_SYSCALL_BASE+361)
+#define __NR_pwritev			(__NR_SYSCALL_BASE+362)
+#define __NR_rt_tgsigqueueinfo		(__NR_SYSCALL_BASE+363)
+#define __NR_perf_event_open		(__NR_SYSCALL_BASE+364)
+#define __NR_recvmmsg			(__NR_SYSCALL_BASE+365)
+#define __NR_accept4			(__NR_SYSCALL_BASE+366)
+#define __NR_fanotify_init		(__NR_SYSCALL_BASE+367)
+#define __NR_fanotify_mark		(__NR_SYSCALL_BASE+368)
+#define __NR_prlimit64			(__NR_SYSCALL_BASE+369)
+#define __NR_name_to_handle_at		(__NR_SYSCALL_BASE+370)
+#define __NR_open_by_handle_at		(__NR_SYSCALL_BASE+371)
+#define __NR_clock_adjtime		(__NR_SYSCALL_BASE+372)
+#define __NR_syncfs			(__NR_SYSCALL_BASE+373)
+#define __NR_sendmmsg			(__NR_SYSCALL_BASE+374)
+#define __NR_setns			(__NR_SYSCALL_BASE+375)
+#define __NR_process_vm_readv		(__NR_SYSCALL_BASE+376)
+#define __NR_process_vm_writev		(__NR_SYSCALL_BASE+377)
+#define __NR_kcmp			(__NR_SYSCALL_BASE+378)
+#define __NR_finit_module		(__NR_SYSCALL_BASE+379)
+#define __NR_sched_setattr		(__NR_SYSCALL_BASE+380)
+#define __NR_sched_getattr		(__NR_SYSCALL_BASE+381)
+#define __NR_renameat2			(__NR_SYSCALL_BASE+382)
+#define __NR_seccomp			(__NR_SYSCALL_BASE+383)
+#define __NR_getrandom			(__NR_SYSCALL_BASE+384)
+#define __NR_memfd_create		(__NR_SYSCALL_BASE+385)
+#define __NR_bpf			(__NR_SYSCALL_BASE+386)
+#define __NR_execveat			(__NR_SYSCALL_BASE+387)
+#define __NR_userfaultfd		(__NR_SYSCALL_BASE+388)
+#define __NR_membarrier			(__NR_SYSCALL_BASE+389)
+#define __NR_mlock2			(__NR_SYSCALL_BASE+390)
+#define __NR_copy_file_range		(__NR_SYSCALL_BASE+391)
+#define __NR_preadv2			(__NR_SYSCALL_BASE+392)
+#define __NR_pwritev2			(__NR_SYSCALL_BASE+393)
+#define __NR_pkey_mprotect (__NR_SYSCALL_BASE + 394)
+#define __NR_pkey_alloc (__NR_SYSCALL_BASE + 395)
+#define __NR_pkey_free (__NR_SYSCALL_BASE + 396)
+#define __NR_statx (__NR_SYSCALL_BASE + 397)
+#define __NR_rseq (__NR_SYSCALL_BASE + 398)
+#define __NR_io_pgetevents (__NR_SYSCALL_BASE + 399)
+#define __NR_migrate_pages (__NR_SYSCALL_BASE + 400)
+#define __NR_kexec_file_load (__NR_SYSCALL_BASE + 401)
+#define __NR_clock_gettime64 (__NR_SYSCALL_BASE + 403)
+#define __NR_clock_settime64 (__NR_SYSCALL_BASE + 404)
+#define __NR_clock_adjtime64 (__NR_SYSCALL_BASE + 405)
+#define __NR_clock_getres_time64 (__NR_SYSCALL_BASE + 406)
+#define __NR_clock_nanosleep_time64 (__NR_SYSCALL_BASE + 407)
+#define __NR_timer_gettime64 (__NR_SYSCALL_BASE + 408)
+#define __NR_timer_settime64 (__NR_SYSCALL_BASE + 409)
+#define __NR_timerfd_gettime64 (__NR_SYSCALL_BASE + 410)
+#define __NR_timerfd_settime64 (__NR_SYSCALL_BASE + 411)
+#define __NR_utimensat_time64 (__NR_SYSCALL_BASE + 412)
+#define __NR_pselect6_time64 (__NR_SYSCALL_BASE + 413)
+#define __NR_ppoll_time64 (__NR_SYSCALL_BASE + 414)
+#define __NR_io_pgetevents_time64 (__NR_SYSCALL_BASE + 416)
+#define __NR_recvmmsg_time64 (__NR_SYSCALL_BASE + 417)
+#define __NR_mq_timedsend_time64 (__NR_SYSCALL_BASE + 418)
+#define __NR_mq_timedreceive_time64 (__NR_SYSCALL_BASE + 419)
+#define __NR_semtimedop_time64 (__NR_SYSCALL_BASE + 420)
+#define __NR_rt_sigtimedwait_time64 (__NR_SYSCALL_BASE + 421)
+#define __NR_futex_time64 (__NR_SYSCALL_BASE + 422)
+#define __NR_sched_rr_get_interval_time64 (__NR_SYSCALL_BASE + 423)
+#define __NR_pidfd_send_signal (__NR_SYSCALL_BASE + 424)
+#define __NR_io_uring_setup (__NR_SYSCALL_BASE + 425)
+#define __NR_io_uring_enter (__NR_SYSCALL_BASE + 426)
+#define __NR_io_uring_register (__NR_SYSCALL_BASE + 427)
+#define __NR_open_tree (__NR_SYSCALL_BASE + 428)
+#define __NR_move_mount (__NR_SYSCALL_BASE + 429)
+#define __NR_fsopen (__NR_SYSCALL_BASE + 430)
+#define __NR_fsconfig (__NR_SYSCALL_BASE + 431)
+#define __NR_fsmount (__NR_SYSCALL_BASE + 432)
+#define __NR_fspick (__NR_SYSCALL_BASE + 433)
+#define __NR_pidfd_open (__NR_SYSCALL_BASE + 434)
+#define __NR_clone3 (__NR_SYSCALL_BASE + 435)
+#define __NR_openat2 (__NR_SYSCALL_BASE + 437)
+#define __NR_pidfd_getfd (__NR_SYSCALL_BASE + 438)
 
 /*
  * The following SWIs are ARM private.
@@ -700,9 +781,9 @@
 #define __ARGS_getpeername		0
 #define __ARGS_socketpair		0
 #define __ARGS_send			0
-#define __ARGS_sendto			0
+#define __ARGS_sendto			1
 #define __ARGS_recv			0
-#define __ARGS_recvfrom			0
+#define __ARGS_recvfrom			1
 #define __ARGS_shutdown			0
 #define __ARGS_setsockopt		0
 #define __ARGS_getsockopt		0
@@ -768,73 +849,59 @@
 #define __ARGS_timerfd_settime		0
 #define __ARGS_timerfd_gettime		0
 
+#define __ARGS_signalfd4		0
+#define __ARGS_eventfd2			0
+#define __ARGS_epoll_create1		0
+#define __ARGS_dup3			0
+#define __ARGS_pipe2			0
+#define __ARGS_inotify_init1		0
+#define __ARGS_preadv			0
+#define __ARGS_pwritev			0
+#define __ARGS_rt_tgsigqueueinfo	0
+#define __ARGS_perf_event_open		1
+#define __ARGS_recvmmsg			1
+#define __ARGS_accept4			0
+#define __ARGS_fanotify_init		0
+#define __ARGS_fanotify_mark		1
+#define __ARGS_prlimit64		0
+#define __ARGS_name_to_handle_at	1
+#define __ARGS_open_by_handle_at	0
+#define __ARGS_clock_adjtime		0
+#define __ARGS_syncfs			0
+#define __ARGS_sendmmsg			0
+#define __ARGS_setns			0
+#define __ARGS_process_vm_readv		1
+#define __ARGS_process_vm_writev	1
+#define __ARGS_kcmp			1
+#define __ARGS_finit_module		0
+
 
 #ifdef __ASSEMBLER__
 
-#ifdef __ARM_EABI__
+#include "arm-features.h"
 
 #define syscall_weak(name,wsym,sym) __syscall_weak __NR_##name, wsym, sym, __ARGS_##name
 .macro __syscall_weak name wsym sym typ
-.text
-.type \wsym,function
-.weak \wsym
-\wsym:
-.type \sym,function
-.global \sym
-\sym:
-        stmfd	sp!,{r4,r5,r7,lr}
-	ldr	r4, [sp,#16]
-	ldr	r5, [sp,#20]
-        ldr     r7, =\name
-	swi	0
-	b	__unified_syscall
+FUNC_START_WEAK	\wsym
+__syscall	\name, \sym, \typ
+FUNC_END	\wsym
 .endm
 
+#ifdef __ARM_EABI__
 
 #define syscall(name,sym) __syscall __NR_##name, sym, __ARGS_##name
 .macro __syscall name sym typ
-.text
-.type \sym,function
-.global \sym
-\sym:
-        stmfd	sp!,{r4,r5,r7,lr}
-	ldr	r4, [sp,#16]
-	ldr	r5, [sp,#20]
-        ldr     r7, =\name
-	swi	0
-	b	__unified_syscall
+FUNC_START	\sym
+        ldr     ip, =\name
+	b	__unified_syscall_swi
+FUNC_END	\sym
 .endm
 
 #else
 
-#define syscall_weak(name,wsym,sym) __syscall_weak $__NR_##name, wsym, sym, __ARGS_##name
-.macro __syscall_weak name wsym sym typ
-.text
-.type \wsym,function
-.weak \wsym
-\wsym:
-.type \sym,function
-.global \sym
-\sym:
-.ifgt \typ
-	mov	ip, sp
-	stmfd	sp!,{r4, r5, r6}
-	ldmia	ip, {r4, r5, r6}
-.endif
-	swi	\name
-.ifgt \typ
-	b	__unified_syscall4
-.else
-	b	__unified_syscall
-.endif
-.endm
-
 #define syscall(name,sym) __syscall $__NR_##name, sym, __ARGS_##name
 .macro __syscall name sym typ
-.text
-.type \sym,function
-.global \sym
-\sym:
+FUNC_START	\sym
 .ifgt \typ
 	mov	ip, sp
 	stmfd	sp!,{r4, r5, r6}
@@ -846,6 +913,7 @@
 .else
 	b	__unified_syscall
 .endif
+FUNC_END	\sym
 .endm
 
 #endif

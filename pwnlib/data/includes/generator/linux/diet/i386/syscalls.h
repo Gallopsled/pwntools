@@ -339,6 +339,96 @@
 #define __NR_fanotify_init	338
 #define __NR_fanotify_mark	339
 #define __NR_prlimit64		340
+#define __NR_name_to_handle_at 341
+#define __NR_open_by_handle_at 342
+#define __NR_clock_adjtime 343
+#define __NR_syncfs 344
+#define __NR_sendmmsg 345
+#define __NR_setns 346
+#define __NR_process_vm_readv 347
+#define __NR_process_vm_writev 348
+#define __NR_kcmp 349
+#define __NR_finit_module 350
+#define __NR_sched_setattr 351
+#define __NR_sched_getattr 352
+#define __NR_renameat2 353
+#define __NR_seccomp 354
+#define __NR_getrandom 355
+#define __NR_memfd_create 356
+#define __NR_bpf 357
+#define __NR_execveat 358
+#define __NR_socket 359
+#define __NR_socketpair 360
+#define __NR_bind 361
+#define __NR_connect 362
+#define __NR_listen 363
+#define __NR_accept4 364
+#define __NR_getsockopt 365
+#define __NR_setsockopt 366
+#define __NR_getsockname 367
+#define __NR_getpeername 368
+#define __NR_sendto 369
+#define __NR_sendmsg 370
+#define __NR_recvfrom 371
+#define __NR_recvmsg 372
+#define __NR_shutdown 373
+#define __NR_userfaultfd 374
+#define __NR_membarrier 375
+#define __NR_mlock2 376
+#define __NR_copy_file_range 377
+#define __NR_preadv2 378
+#define __NR_pwritev2 379
+#define __NR_pkey_mprotect 380
+#define __NR_pkey_alloc 381
+#define __NR_pkey_free 382
+#define __NR_ia32_statx 383
+#define __NR_ia32_arch_prctl 384
+#define __NR_ia32_io_pgetevents 385
+#define __NR_ia32_rseq 386
+#define __NR_semget 393
+#define __NR_semctl 394
+#define __NR_shmget 395
+#define __NR_shmctl 396
+#define __NR_shmat 397
+#define __NR_shmdt 398
+#define __NR_msgget 399
+#define __NR_msgsnd 400
+#define __NR_msgrcv 401
+#define __NR_msgctl 402
+#define __NR_clock_gettime64 403
+#define __NR_clock_settime64 404
+#define __NR_clock_adjtime64 405
+#define __NR_clock_getres_time64 406
+#define __NR_clock_nanosleep_time64 407
+#define __NR_timer_gettime64 408
+#define __NR_timer_settime64 409
+#define __NR_timerfd_gettime64 410
+#define __NR_timerfd_settime64 411
+#define __NR_utimensat_time64 412
+#define __NR_pselect6_time64 413
+#define __NR_ppoll_time64 414
+#define __NR_io_pgetevents_time64 416
+#define __NR_recvmmsg_time64 417
+#define __NR_mq_timedsend_time64 418
+#define __NR_mq_timedreceive_time64 419
+#define __NR_semtimedop_time64 420
+#define __NR_rt_sigtimedwait_time64 421
+#define __NR_futex_time64 422
+#define __NR_sched_rr_get_interval_time64 423
+#define __NR_pidfd_send_signal 424
+#define __NR_io_uring_setup 425
+#define __NR_io_uring_enter 426
+#define __NR_io_uring_register 427
+#define __NR_open_tree 428
+#define __NR_move_mount 429
+#define __NR_fsopen 430
+#define __NR_fsconfig 431
+#define __NR_fsmount 432
+#define __NR_fspick 433
+#define __NR_pidfd_open 434
+#define __NR_clone3 435
+#define __NR_openat2 437
+#define __NR_pidfd_getfd 438
 
 #define syscall_weak(name,wsym,sym) \
 .text; \
@@ -348,8 +438,13 @@ wsym: ; \
 .type sym,@function; \
 .global sym; \
 sym: \
+.ifle __NR_##name-255; \
 	movb $__NR_##name,%al; \
 	jmp __unified_syscall; \
+.else; \
+	movw $__NR_##name,%ax; \
+	jmp __unified_syscall_256; \
+.endif; \
 .Lend##sym: ; \
 .size sym,.Lend##sym-sym
 
@@ -368,7 +463,7 @@ sym: \
 .Lend##sym: ; \
 .size sym,.Lend##sym-sym
 
-#ifndef __PIC__
+#ifndef __DYN_LIB
 #define __socketcall(name,NAME) \
 .text; \
 .type name,@function; \

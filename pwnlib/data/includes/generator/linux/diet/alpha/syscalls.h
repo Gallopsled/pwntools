@@ -231,6 +231,8 @@
 #define __NR_osf_memcntl	260	/* not implemented */
 #define __NR_osf_fdatasync	261	/* not implemented */
 
+#define __NR_umount_without_flags __NR_oldumount
+#define __NR_umount_with_flags __NR_umount
 
 /*
  * Linux-specific system calls begin at 300
@@ -412,7 +414,73 @@
 #define __NR_signalfd			476
 #define __NR_timerfd			477
 #define __NR_eventfd			478
-
+#define __NR_recvmmsg			479
+#define __NR_fallocate			480
+#define __NR_timerfd_create		481
+#define __NR_timerfd_settime		482
+#define __NR_timerfd_gettime		483
+#define __NR_signalfd4			484
+#define __NR_eventfd2			485
+#define __NR_epoll_create1		486
+#define __NR_dup3			487
+#define __NR_pipe2			488
+#define __NR_inotify_init1		489
+#define __NR_preadv			490
+#define __NR_pwritev			491
+#define __NR_rt_tgsigqueueinfo		492
+#define __NR_perf_event_open		493
+#define __NR_fanotify_init		494
+#define __NR_fanotify_mark		495
+#define __NR_prlimit64			496
+#define __NR_name_to_handle_at		497
+#define __NR_open_by_handle_at		498
+#define __NR_clock_adjtime		499
+#define __NR_syncfs			500
+#define __NR_setns			501
+#define __NR_accept4			502
+#define __NR_sendmmsg			503
+#define __NR_process_vm_readv		504
+#define __NR_process_vm_writev		505
+#define __NR_kcmp			506
+#define __NR_finit_module		507
+#define __NR_sched_setattr		508
+#define __NR_sched_getattr		509
+#define __NR_renameat2			510
+#define __NR_getrandom			511
+#define __NR_memfd_create		512
+#define __NR_execveat			513
+#define __NR_seccomp			514
+#define __NR_bpf			515
+#define __NR_userfaultfd		516
+#define __NR_membarrier			517
+#define __NR_mlock2			518
+#define __NR_copy_file_range		519
+#define __NR_preadv2			520
+#define __NR_pwritev2			521
+#define __NR_statx			522
+#define __NR_io_pgetevents	523
+#define __NR_pkey_mprotect	524
+#define __NR_pkey_alloc	525
+#define __NR_pkey_free	526
+#define __NR_rseq	527
+#define __NR_statfs64	528
+#define __NR_fstatfs64	529
+#define __NR_getegid	530
+#define __NR_geteuid	531
+#define __NR_getppid	532
+#define __NR_pidfd_send_signal	534
+#define __NR_io_uring_setup	535
+#define __NR_io_uring_enter	536
+#define __NR_io_uring_register	537
+#define __NR_open_tree	538
+#define __NR_move_mount	539
+#define __NR_fsopen	540
+#define __NR_fsconfig	541
+#define __NR_fsmount	542
+#define __NR_fspick	543
+#define __NR_pidfd_open	544
+#define __NR_openat2	547
+#define __NR_pidfd_getfd	548
 
 #define syscall_weak(name,wsym,sym) \
 .text ; \

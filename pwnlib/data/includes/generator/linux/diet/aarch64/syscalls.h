@@ -1,6 +1,5 @@
-/*
- * This file contains the system call numbers.
- */
+#ifndef _AARCH64_SYSCALL_H
+#define _AARCH64_SYSCALL_H 1
 
 #define __NR_io_setup 0
 #define __NR_io_destroy 1
@@ -81,13 +80,13 @@
 #define __NR_splice 76
 #define __NR_tee 77
 #define __NR_readlinkat 78
-#define __NR_fstatat64 79
+#define __NR_fstatat 79
+#define __NR_newfstatat __NR_fstatat
 #define __NR_fstat 80
 #define __NR_sync 81
 #define __NR_fsync 82
 #define __NR_fdatasync 83
-#define __NR_sync_file_range2 84
-/* #define __NR_sync_file_range 84 */
+#define __NR_sync_file_range 84
 #define __NR_timerfd_create 85
 #define __NR_timerfd_settime 86
 #define __NR_timerfd_gettime 87
@@ -252,8 +251,8 @@
 #define __NR_prlimit64 261
 #define __NR_fanotify_init 262
 #define __NR_fanotify_mark 263
-#define __NR_name_to_handle_at         264
-#define __NR_open_by_handle_at         265
+#define __NR_name_to_handle_at 264
+#define __NR_open_by_handle_at 265
 #define __NR_clock_adjtime 266
 #define __NR_syncfs 267
 #define __NR_setns 268
@@ -262,3 +261,61 @@
 #define __NR_process_vm_writev 271
 #define __NR_kcmp 272
 #define __NR_finit_module 273
+#define __NR_sched_setattr 274
+#define __NR_sched_getattr 275
+#define __NR_renameat2 276
+#define __NR_seccomp 277
+#define __NR_getrandom 278
+#define __NR_memfd_create 279
+#define __NR_bpf 280
+#define __NR_execveat 281
+#define __NR_userfaultfd 282
+#define __NR_membarrier 283
+#define __NR_mlock2 284
+#define __NR_copy_file_range 285
+#define __NR_preadv2 286
+#define __NR_pwritev2 287
+#define __NR_pkey_mprotect 288
+#define __NR_pkey_alloc 289
+#define __NR_pkey_free 290
+#define __NR_statx 291
+#define __NR_io_pgetevents 292
+#define __NR_rseq 293
+#define __NR_kexec_file_load 294
+
+#define __NR_pidfd_send_signal 424
+#define __NR_io_uring_setup 425
+#define __NR_io_uring_enter 426
+#define __NR_io_uring_register 427
+#define __NR_open_tree 428
+#define __NR_move_mount 429
+#define __NR_fsopen 430
+#define __NR_fsconfig 431
+#define __NR_fsmount 432
+#define __NR_fspick 433
+#define __NR_pidfd_open 434
+#define __NR_clone3 435
+
+#ifdef __ASSEMBLER__
+
+#include "aarch64-features.h"
+
+#define syscall_weak(name,wsym,sym) __syscall_weak __NR_##name, wsym, sym, __ARGS_##name
+.macro __syscall_weak name wsym sym typ
+FUNC_START_WEAK	\wsym
+__syscall	\name, \sym, \typ
+FUNC_END	\wsym
+.endm
+
+#define syscall(name,sym) __syscall __NR_##name, sym, __ARGS_##name
+.macro __syscall name sym typ
+FUNC_START	\sym
+        mov	x8, #\name
+        svc	#0
+        b	__unified_syscall
+FUNC_END	\sym
+.endm
+
+#endif
+
+#endif

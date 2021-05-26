@@ -1,5 +1,9 @@
 #!/bin/bash
 set -e
+
+grep -hEo '__NR_\w*' linux/diet/*/syscalls.h | sed 's/__NR\(.*\)/#define SYS\1 __NR\1/' |LC_ALL=C sort -dfu - linux/syscall_map.h >linux/syscall_map.h.new
+mv linux/syscall_map.h.new linux/syscall_map.h
+
 pushd linux
 ARCHS="$(ls *.h | sed 's/.h$//' | grep -v -e common -e syscall_map)"
 popd
@@ -14,7 +18,7 @@ find "$python" -type d -empty -delete
 
 for arch in $ARCHS; do
   echo $arch
-  swig -Ilinux -Ilinux -Ilinux/diet -includeall -E linux/$arch.h | egrep "^%constant" | ./load_constants.py $python/linux/$arch.py $headers/linux/$arch.h
+  swig -python -E -cpperraswarn -Ilinux -Ilinux -Ilinux/diet -Ilinux/diet/$arch -includeall linux/$arch.h | egrep "^%constant" | ./load_constants.py $python/linux/$arch.py $headers/linux/$arch.h
 done
 
-swig -Ifreebsd -includeall -E freebsd/common.h | egrep "^%constant" | ./load_constants.py $python/freebsd.py $headers/freebsd.h
+swig -python -E -Ifreebsd -includeall freebsd/common.h | egrep "^%constant" | ./load_constants.py $python/freebsd.py $headers/freebsd.h

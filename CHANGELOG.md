@@ -61,9 +61,19 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.7.0 (`dev`)
 
+- [#1733][1733] Update libc headers -> more syscalls available!
 - [#1828][1828] libcdb: Load debug info and unstrip libc binary
+- [#1876][1876] add `self.message` and change `sys.exc_type` to `sys.exec_info()` in PwnlibException
+- [#1877][1877] encoders error message handles when `avoid` is bytes in python3
+- [#1892][1892] Silence SIGPIPE error for "pwn phd"
+- [#1893][1893] Fix bytes warning in "pwn cyclic"
 
+[1733]: https://github.com/Gallopsled/pwntools/pull/1733
 [1828]: https://github.com/Gallopsled/pwntools/pull/1828
+[1876]: https://github.com/Gallopsled/pwntools/pull/1876
+[1877]: https://github.com/Gallopsled/pwntools/pull/1877
+[1892]: https://github.com/Gallopsled/pwntools/pull/1892
+[1893]: https://github.com/Gallopsled/pwntools/pull/1893
 
 ## 4.6.0 (`beta`)
 
@@ -105,6 +115,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1839][1839] run_in_new_terminal now creates a runner script if given a list or tuple
 - [#1833][1833] Add pwnlib.filesystem module
 - [#1852][1852] Fix `atexit` on Python 3
+- [#1883][1883] ROP gadget verifier accounts for 2 character registers
 
 [1261]: https://github.com/Gallopsled/pwntools/pull/1261
 [1695]: https://github.com/Gallopsled/pwntools/pull/1695
@@ -121,6 +132,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1839]: https://github.com/Gallopsled/pwntools/pull/1839
 [1833]:  https://github.com/Gallopsled/pwntools/pull/1833
 [1852]: https://github.com/Gallopsled/pwntools/pull/1852
+[1883]: https://github.com/Gallopsled/pwntools/pull/1883
 
 ## 4.4.0
 

@@ -9,11 +9,42 @@ Let's create a fake binary which has some symbols which might
 have been useful.
 
     >>> context.clear(arch='i386')
-    >>> binary = ELF.from_assembly('add esp, 0x10; ret')
+    >>> binary = ELF.from_assembly('add esp, 0x10; ret; pop eax; ret; pop ecx; pop ebx; ret')
     >>> binary.symbols = {'read': 0xdeadbeef, 'write': 0xdecafbad, 'execve': 0xcafebabe, 'exit': 0xfeedface}
 
-Creating a ROP object which looks up symbols in the binary is
-pretty straightforward.
+Creating a ROP object which looks up symbols in the binary is pretty straightforward.
+
+    >>> rop = ROP(binary)
+
+Once to ROP object has been loaded, you can trivially find gadgets, by using magic properties on the ``ROP`` object.  
+Each :class:`Gadget` has an ``address`` property which has the real address as well.
+
+    >>> rop.eax
+    Gadget(0x10000004, ['pop eax', 'ret'], ['eax'], 0x8)
+    >>> hex(rop.eax.address)
+    '0x10000004'
+
+Other, more complicated gdagets also happen magically
+
+    >>> rop.ecx
+    Gadget(0x10000006, ['pop ecx', 'pop ebx', 'ret'], ['ecx', 'ebx'], 0xc)
+
+The easiest way to set up individual registers is to invoke the ``ROP`` object as a callable, with the registers as arguments.
+    
+    >>> rop(eax=0x11111111, ecx=0x22222222)
+
+Setting register values this way accounts for padding and extra registers which are popped off the stack.
+Values which are filled with garbage (i.e. are not used) are filled with the :func:`cyclic` pattern
+which corresponds to their offset, which is useful when debuggging your exploit.
+
+    >>> print(rop.dump())
+    0x0000:       0x10000006 pop ecx; pop ebx; ret
+    0x0004:       0x22222222
+    0x0008:          b'caaa' <pad ebx>
+    0x000c:       0x10000004 pop eax; ret
+    0x0010:       0x11111111
+
+Let's re-create our ROP object now to show for some other examples.:
 
     >>> rop = ROP(binary)
 
@@ -1201,7 +1232,7 @@ class ROP(object):
         # https://github.com/JonathanSalwan/ROPgadget/issues/53
         #
 
-        pop   = re.compile(r'^pop (.{3})')
+        pop   = re.compile(r'^pop (.{2,3})')
         add   = re.compile(r'^add [er]sp, ((?:0[xX])?[0-9a-fA-F]+)$')
         ret   = re.compile(r'^ret$')
         leave = re.compile(r'^leave$')

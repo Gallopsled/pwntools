@@ -121,8 +121,8 @@ def current_device(any=False):
        :skipif: skip_android
 
         >>> device = adb.current_device(any=True)
-        >>> device
-        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_google_phone_armv7', model='sdk google phone armv7', device='generic')
+        >>> device  # doctest: +ELLIPSIS
+        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_...phone_armv7', model='sdk ...phone armv7', device='generic')
         >>> device.port
         'emulator'
     """
@@ -257,8 +257,8 @@ class AdbDevice(Device):
         32
         >>> device.os
         'android'
-        >>> device.product
-        'sdk_google_phone_armv7'
+        >>> device.product  # doctest: +ELLIPSIS
+        'sdk_...phone_armv7'
         >>> device.serial
         'emulator-5554'
     """
