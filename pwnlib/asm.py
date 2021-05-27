@@ -198,6 +198,7 @@ def which_binutils(util):
             # e.g. aarch64-linux-gnu-objdump, avr-objdump
             else:
                 patterns = ['%s*linux*-%s' % (arch, gutil),
+                            '%s*-elf-%s' % (arch, gutil),
                             '%s-%s' % (arch, gutil)]
 
             for pattern in patterns:
@@ -338,6 +339,7 @@ def _bfdname():
         'msp430'  : 'elf32-msp430',
         'powerpc' : 'elf32-powerpc',
         'powerpc64' : 'elf64-powerpc',
+        'riscv'   : 'elf%d-%sriscv' % (context.bits, E),
         'vax'     : 'elf32-vax',
         's390'    : 'elf%d-s390' % context.bits,
         'sparc'   : 'elf32-sparc',
