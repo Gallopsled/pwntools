@@ -872,50 +872,14 @@ class ssh(Timeout, Logger):
         if not argv and not executable:
             self.error("Must specify argv or executable")
 
-        argv      = argv or []
         aslr      = aslr if aslr is not None else context.aslr
 
-        if isinstance(argv, (six.text_type, bytes, bytearray)):
-            argv = [argv]
-
-        if not isinstance(argv, (list, tuple)):
-            self.error('argv must be a list or tuple')
-
-        if not all(isinstance(arg, (six.text_type, bytes, bytearray)) for arg in argv):
-            self.error("argv must be strings or bytes: %r" % argv)
+        argv, env = misc.normalize_argv_env(argv, env, self)
 
         if shell:
             if len(argv) != 1:
                 self.error('Cannot provide more than 1 argument if shell=True')
-            argv = ['/bin/sh', '-c'] + argv
-
-        # Create a duplicate so we can modify it
-        argv = list(argv or [])
-
-        # Python doesn't like when an arg in argv contains '\x00'
-        # -> execve() arg 2 must contain only strings
-        for i, oarg in enumerate(argv):
-            arg = packing._need_bytes(oarg, min_wrong=0x80)
-            if b'\x00' in arg[:-1]:
-                self.error('Inappropriate nulls in argv[%i]: %r' % (i, oarg))
-            argv[i] = bytearray(arg.rstrip(b'\x00'))
-
-        if env is not None and not isinstance(env, dict) and env != os.environ:
-            self.error("env must be a dict: %r" % env)
-
-        # Converts the environment variables to a list of tuples to retain order.
-        env2 = []
-        # Python also doesn't like when envp contains '\x00'
-        if env and hasattr(env, 'items'):
-            for k, v in env.items():
-                k = packing._need_bytes(k, min_wrong=0x80)
-                v = packing._need_bytes(v, min_wrong=0x80)
-                if b'\x00' in k[:-1]:
-                    self.error('Inappropriate nulls in environment key %r' % k)
-                if b'\x00' in v[:-1]:
-                    self.error('Inappropriate nulls in environment value %r=%r' % (k, v))
-                env2.append((bytearray(k.rstrip(b'\x00')), bytearray(v.rstrip(b'\x00'))))
-        env = env2 or env
+            argv = [b'/bin/sh', b'-c'] + argv
 
         executable = executable or argv[0]
         cwd        = cwd or self.cwd
