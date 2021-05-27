@@ -29,6 +29,7 @@ from pwnlib.tubes.tube import tube
 from pwnlib.util.hashes import sha256file
 from pwnlib.util.misc import parse_ldd_output
 from pwnlib.util.misc import which
+from pwnlib.util.packing import _need_bytes
 
 log = getLogger(__name__)
 
@@ -532,10 +533,7 @@ class process(tube):
         argv = list(argv or [])
 
         for i, oarg in enumerate(argv):
-            if isinstance(oarg, six.text_type):
-                arg = oarg.encode('utf-8')
-            else:
-                arg = oarg
+            arg = _need_bytes(oarg, 2, 0x80)  # ASCII text is okay
             if b'\x00' in arg[:-1]:
                 self.error('Inappropriate nulls in argv[%i]: %r' % (i, oarg))
             argv[i] = arg.rstrip(b'\x00')
@@ -602,10 +600,8 @@ class process(tube):
                 self.error('Environment keys must be strings: %r' % k)
             if not isinstance(k, (bytes, six.text_type)):
                 self.error('Environment values must be strings: %r=%r' % (k,v))
-            if isinstance(k, six.text_type):
-                k = k.encode('utf-8')
-            if isinstance(v, six.text_type):
-                v = v.encode('utf-8', 'surrogateescape')
+            k = _need_bytes(k, 2, 0x80)  # ASCII text is okay
+            v = _need_bytes(v, 2, 0x80)  # ASCII text is okay
             if b'\x00' in k[:-1]:
                 self.error('Inappropriate nulls in env key: %r' % (k))
             if b'\x00' in v[:-1]:

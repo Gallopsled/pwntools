@@ -2,7 +2,7 @@
     from pwnlib import shellcraft
     from pwnlib.shellcraft import pretty
     from pwnlib.util.iters import group
-    from pwnlib.util.packing import _encode
+    from pwnlib.util.packing import _need_bytes
     from six import text_type, binary_type
 %>
 <%docstring>
@@ -27,7 +27,7 @@ if isinstance(array, (binary_type, text_type)):
     array = [array]
 
 # Convert all items to strings
-array = [_encode(x) for x in array]
+array = [_need_bytes(x, 2, 0x80) for x in array]
 
 # Normalize line endings for each item
 array = [arg.rstrip(b'\x00') + b'\x00' for arg in array]

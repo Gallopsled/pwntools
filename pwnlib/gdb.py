@@ -901,10 +901,8 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         shell = target.parent
 
         tmpfile = shell.mktemp()
-        if six.PY3:
-            tmpfile = tmpfile.decode()
-        gdbscript = 'shell rm %s\n%s' % (tmpfile, gdbscript)
-        shell.upload_data(gdbscript or '', tmpfile)
+        gdbscript = b'shell rm %s\n%s' % (tmpfile, packing._need_bytes(gdbscript, 2, 0x80))
+        shell.upload_data(gdbscript or b'', tmpfile)
 
         cmd = ['ssh', '-C', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
         if shell.password:
