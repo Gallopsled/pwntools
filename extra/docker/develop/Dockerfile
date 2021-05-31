@@ -58,5 +58,12 @@ RUN sudo apt-get install -y  \
 	unzip \
 	wget
 
+# Use zsh by default
+RUN sudo chsh -s /bin/zsh pwntools
+
+# Get and install prezto
+RUN git clone --recursive https://github.com/sorin-ionescu/prezto.git .zprezto
+RUN bash -c 'for file in .zprezto/runcoms/z*; do ln -s $file .$(basename $file); done'
+
 # Do not require password for sudo
 RUN echo "pwntools ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/travis
