@@ -67,6 +67,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1892][1892] Silence SIGPIPE error for "pwn phd"
 - [#1893][1893] Fix bytes warning in "pwn cyclic"
 - [#1903][1903] Add zsh completion script
+- [#1904][1904] Add bash completion script
 
 [1733]: https://github.com/Gallopsled/pwntools/pull/1733
 [1876]: https://github.com/Gallopsled/pwntools/pull/1876
@@ -74,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1892]: https://github.com/Gallopsled/pwntools/pull/1892
 [1893]: https://github.com/Gallopsled/pwntools/pull/1893
 [1903]: https://github.com/Gallopsled/pwntools/pull/1903
+[1904]: https://github.com/Gallopsled/pwntools/pull/1904
 
 ## 4.6.0 (`beta`)
 
