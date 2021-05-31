@@ -74,5 +74,8 @@ RUN bash -c 'for file in .zprezto/runcoms/z*; do ln -s $file .$(basename $file);
 RUN git clone --recursive https://github.com/pwndbg/pwndbg
 RUN cd pwndbg && ./setup.sh
 
+# Install autocompletion
+RUN ln -s /home/pwntools/pwntools/extra/zsh_completion/_pwn /home/pwntools/.zprezto/modules/completion/external/src
+
 # Do not require password for sudo
 RUN echo "pwntools ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/travis
