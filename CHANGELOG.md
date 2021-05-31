@@ -68,7 +68,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1893][1893] Fix bytes warning in "pwn cyclic"
 - [#1903][1903] Add zsh completion script
 - [#1904][1904] Add bash completion script
-- [#1906][1906] Defer import of urlrequests and urllib
+- [#1906][1906] Defer import of several modules to save on startup time
 
 [1733]: https://github.com/Gallopsled/pwntools/pull/1733
 [1876]: https://github.com/Gallopsled/pwntools/pull/1876
