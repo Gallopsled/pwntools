@@ -1,5 +1,8 @@
 FROM pwntools/pwntools:base
 
+# Support sharing history with the develop Dockerfile
+ENV HISTFILE=/home/pwntools/.history
+
 # Uninstall existing versions of pwntools
 USER root
 RUN python -m pip uninstall -q -y pwntools \
