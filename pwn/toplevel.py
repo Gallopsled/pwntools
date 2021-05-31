@@ -6,7 +6,6 @@ import operator
 import os
 import platform
 import re
-import requests
 import socks
 import signal
 import string
