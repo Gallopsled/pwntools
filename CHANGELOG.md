@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.7.0](#470)    | `dev`    | May 29, 2020 (planned)
-| [4.6.0](#460)    | `beta`   | May 29, 2020 (planned)
-| [4.5.0](#450)    | `stable` | Apr 30, 2020
+| [4.7.0](#470)    | `dev`    |
+| [4.6.0](#460)    | `beta`   |
+| [4.5.1](#451)    | `stable` | May 30, 2020
+| [4.5.0](#450)    |          | Apr 30, 2020
 | [4.4.0](#440)    |          | Mar 29, 2020
 | [4.3.1](#431)    |          | Nov 29, 2020
 | [4.3.0](#430)    |          | Oct 20, 2020
@@ -101,7 +102,13 @@ The table below shows which release corresponds to each branch, and what date th
 [1776]: https://github.com/Gallopsled/pwntools/pull/1776
 [1846]: https://github.com/Gallopsled/pwntools/pull/1846
 
-## 4.5.0 (`stable`)
+## 4.5.1 (`stable`)
+
+- [#1902][1902] Always specify -F and -P for tmux in run_in_new_termianl
+
+[1902]: https://github.com/Gallopsled/pwntools/pull/1902
+
+## 4.5.0
 
 - [#1261][1261] Misc `run_in_new_terminal` improvements (notably gdb terminated by default)
 - [#1695][1695] Allow using GDB Python API
