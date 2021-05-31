@@ -3,7 +3,6 @@ from __future__ import division
 
 import socket
 import socks
-import ssl as _ssl
 
 from pwnlib.log import getLogger
 from pwnlib.timeout import Timeout
@@ -85,6 +84,9 @@ class remote(sock):
             self.lhost, self.lport = self.sock.getsockname()[:2]
 
             if ssl:
+                # Deferred import to save startup time
+                import ssl as _ssl
+
                 ssl_args = ssl_args or {}
                 ssl_context = ssl_context or _ssl.SSLContext(_ssl.PROTOCOL_TLSv1_2)
                 if isinstance(sni, str):

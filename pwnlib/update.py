@@ -27,8 +27,6 @@ import json
 import os
 import time
 
-from six.moves.xmlrpc_client import ServerProxy
-
 import packaging.version
 
 from pwnlib.args import args
@@ -75,6 +73,9 @@ def available_on_pypi(prerelease=current_version.is_prerelease):
     >>> available_on_pypi(prerelease=False).is_prerelease
     False
     """
+    # Deferred import to save startup time
+    from six.moves.xmlrpc_client import ServerProxy
+
     versions = getattr(available_on_pypi, 'cached', None)
     if versions is None:
         client = ServerProxy('https://pypi.python.org/pypi')
