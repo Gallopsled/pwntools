@@ -229,7 +229,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             args     = []
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
-            args     = ['splitw', '-F' '#{pane_pid}', '-P']
+            args     = ['splitw']
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
@@ -255,6 +255,12 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
 
     if isinstance(args, tuple):
         args = list(args)
+
+    # When not specifying context.terminal explicitly, we used to set these flags above.
+    # However, if specifying terminal=['tmux', 'splitw', '-h'], we would be lacking these flags.
+    # Instead, set them here and hope for the best.
+    if terminal == 'tmux':
+        args += ['-F' '#{pane_pid}', '-P']
 
     argv = [which(terminal)] + args
 
