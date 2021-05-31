@@ -77,5 +77,10 @@ RUN cd pwndbg && ./setup.sh
 # Install autocompletion
 RUN ln -s /home/pwntools/pwntools/extra/zsh_completion/_pwn /home/pwntools/.zprezto/modules/completion/external/src
 
+# Install ipython profile and auto-import
+RUN mkdir -p           /home/pwntools/.ipython/profile_default/startup
+ADD 10-import.py       /home/pwntools/.ipython/profile_default/startup
+ADD ipython_config.py  /home/pwntools/.ipython/profile_default
+
 # Do not require password for sudo
 RUN echo "pwntools ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/travis
