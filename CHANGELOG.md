@@ -92,6 +92,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.5.1 (`stable`)
 
+- [#1911][1911] Use `ld` to retrieve libraries for ELF files
 - [#1902][1902] Always specify -F and -P for tmux in run_in_new_termianl
 
 [1902]: https://github.com/Gallopsled/pwntools/pull/1902
