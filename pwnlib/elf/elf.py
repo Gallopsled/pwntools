@@ -718,8 +718,8 @@ class ELF(ELFFile):
         >>> any(map(lambda x: 'libc' in x, bash.libs.keys()))
         True
         """
-        # Patch some shellcode into the ELF and run it.
-        maps = self._patch_elf_and_read_maps()
+        # Use LD to trace loaded libraries
+        maps = self._trace_and_read_libraries()
 
         self._maps = maps
         self._libs = {}
@@ -853,6 +853,37 @@ class ELF(ELFFile):
         os.unlink(path)
 
         return result
+
+    def _trace_and_read_libraries(self):
+        r"""trace_and_read_libraries(self) -> dict
+
+        Uses the `LD_TRACE_LOADED_OBJECTS` variable to detect object files loaded by the executable.
+
+        Returns:
+            A ``dict`` mapping file paths to the lowest address they appear at.
+            Does not do any translation for e.g. QEMU emulation, the raw results
+            are returned.
+        """
+
+        maps = {}
+        with context.silent:
+            io = process(self.path, env={"LD_TRACE_LOADED_OBJECTS": "1"})
+            data = io.recvall(timeout=2).decode()
+
+        # Data looks like
+        # 	linux-vdso.so.1 (0x00007ffe6b3d9000)
+        # 	libc.so.6 => /usr/lib/libc.so.6 (0x00007fa6f94a2000)
+        # 	/lib64/ld-linux-x86-64.so.2 (0x00007fa6f969b000)
+
+        for line in data.split("\x0a"):
+            # Remove tab character
+            line = line[1:]
+            if '/' in line:
+                link, address = line.split(" ")[-2:]
+                address = int(address[1:-1], 16)
+                # Resolve symlinks and get the real library file
+                maps.setdefault(os.path.realpath(link), address)
+        return maps
 
     def _populate_functions(self):
         """Builds a dict of 'functions' (i.e. symbols of type 'STT_FUNC')
