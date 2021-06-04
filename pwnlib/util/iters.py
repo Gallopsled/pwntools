@@ -7,6 +7,9 @@ from __future__ import division
 import collections
 import copy
 import multiprocessing
+import sys
+if sys.platform == "darwin" and sys.version_info>=(3,8) : # fix bugs about multiprocessing  in Macos with python version bigger or equal than 3.8, see #1665
+    multiprocessing.set_start_method('fork')    
 import operator
 import random
 import time
