@@ -45,8 +45,8 @@ class HeapExplorer:
 
     """
 
-    def __init__(self, pid, libc, use_tcache=None, safe_link=None):
-        self._process_informer = ProcessInformer(pid, libc)
+    def __init__(self, process_informer, use_tcache=None, safe_link=None):
+        self._process_informer = process_informer
 
         if use_tcache is None:
             use_tcache = self._are_tcaches_enabled()

@@ -30,6 +30,7 @@ import pwnlib.util.proc
 from pwnlib.exception import PwnlibException
 
 from pwnlib.heap import HeapExplorer
+from pwnlib.heap import ProcessInformer
 
 log = getLogger(__name__)
 
@@ -1005,11 +1006,11 @@ class process(tube):
         Returns:
             HeapExplorer
         """
+        process_informer = ProcessInformer(self.pid, self._waitfor_libc(timeout=timeout))
         return HeapExplorer(
-            self.pid,
-            self._waitfor_libc(timeout=timeout),
+            process_informer,
             use_tcache=tcache,
-            safe_link=safe_link
+            safe_link=safe_link,
         )
 
     @property

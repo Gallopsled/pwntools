@@ -26,6 +26,7 @@ from pwnlib.heap.glmalloc.bins import \
     LargeBins, \
     LargeBin, \
     LargeBinEntry
+from pwnlib.heap.glmalloc.process_informer import ProcessInformer
 
 __all__ = [
     'HeapExplorer',
@@ -37,5 +38,6 @@ __all__ = [
     'FastBins', 'FastBin', 'FastBinEntry',
     'UnsortedBins', 'UnsortedBin', 'UnsortedBinEntry',
     'SmallBins', 'SmallBin', 'SmallBinEntry',
-    'LargeBins', 'LargeBin', 'LargeBinEntry'
+    'LargeBins', 'LargeBin', 'LargeBinEntry',
+    'ProcessInformer'
 ]
