@@ -6,7 +6,6 @@ class MallocChunkParser:
         data.
 
         Attributes:
-            pid (int): Target process pid
             pointer_size (int): Size of pointers in target process
             unpack_pointer (func(bytes)): Function to get an int from the
                 pointer bytes
@@ -18,7 +17,6 @@ class MallocChunkParser:
 
     def __init__(self, process_informer):
         self.process_informer = process_informer
-        self.pid = process_informer.pid
         self.pointer_size = process_informer.pointer_size
         self.unpack_pointer = process_informer.unpack_pointer
 
