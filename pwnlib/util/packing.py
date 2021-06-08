@@ -1017,7 +1017,7 @@ def _need_bytes(s, level=1, min_wrong=0):
     errors = 'strict'
     worst = -1
     if encoding == 'auto':
-        worst = max(map(ord, s), default=0)
+        worst = s and max(map(ord, s)) or 0
         if worst > 255:
             encoding = 'UTF-8'
             errors = 'surrogateescape'
