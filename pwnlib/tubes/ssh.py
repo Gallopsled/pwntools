@@ -879,7 +879,7 @@ class ssh(Timeout, Logger):
         if shell:
             if len(argv) != 1:
                 self.error('Cannot provide more than 1 argument if shell=True')
-            argv = [b'/bin/sh', b'-c'] + argv
+            argv = [bytearray(b'/bin/sh'), bytearray(b'-c')] + argv
 
         executable = executable or argv[0]
         cwd        = cwd or self.cwd
