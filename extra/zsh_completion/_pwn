@@ -1,0 +1,197 @@
+#compdef pwn
+# ----------------------------------------------------------------------------------------
+# Zsh completion file for pwn
+#
+# Pwntools Command-line Interface
+#
+# This file was generated with help from Zargparse (https://github.com/ctil/zargparse)
+# ----------------------------------------------------------------------------------------
+
+typeset -A opt_args
+
+_pwn() {
+  # Define the subcommands
+  local -a commands
+  commands=(
+    'asm:Assemble shellcode into bytes'
+    'checksec:Check binary security settings'
+    'constgrep:Looking up constants from header files.'
+    'cyclic:Cyclic pattern creator/finder'
+    'debug:Debug a binary in GDB'
+    'disasm:Disassemble bytes into text format'
+    'disablenx:Disable NX for an ELF binary'
+    'elfdiff:Compare two ELF files'
+    'elfpatch:Patch an ELF file'
+    'errno:Prints out error messages'
+    'hex:Hex-encodes data provided on the command line or stdin'
+    'phd:Pretty hex dump'
+    'scramble:Strip binaries for CTF usage'
+    'shellcraft:Shellcode encoder'
+    'template:Microwave shellcode -- Easy, fast and delicious'
+    'unhex:Generate an exploit template'
+    'update:Decodes hex-encoded data provided on the command line or via stdin.'
+    'version:Check for pwntools updates'
+  )
+
+  # Global flags (i.e. ones not associated with a subcommand)
+  _arguments \
+    "1: :{_describe 'command' commands}" \
+    '(-h --help)'{-h,--help}'[show this help message and exit]' \
+    '*:: :->args'
+
+  # Flags for each subcommand
+  case $state in
+    args)
+      case $words[1] in
+        pwnstrip)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            '(-b --build-id)'{-b,--build-id}'[Strip build ID]' \
+            '(-p --patch)'{-p,--patch}'=[Patch function]:' \
+            '(-o --output)'{-o,--output}'=[None]:' \
+            ;;
+        asm)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            '(-f --format)'{-f,--format}'=[Output format (defaults to hex for ttys, otherwise raw)]:-f :(raw hex string elf)' \
+            '(-o --output)'{-o,--output}'=[Output file (defaults to stdout)]:' \
+            '(-c --context)'{-c,--context}'=[The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: \["16", "32", "64", "android", "baremetal", "cgc", "freebsd", "linux", "windows", "powerpc64", "aarch64", "powerpc", "sparc64", "mips64", "msp430", "alpha", "amd64", "sparc", "thumb", "cris", "i386", "ia64", "m68k", "mips", "s390", "none", "avr", "arm", "vax", "little", "big", "be", "eb", "le", "el"\]]:-c :(16 32 64 android baremetal cgc freebsd linux windows powerpc64 aarch64 powerpc sparc64 mips64 msp430 alpha amd64 sparc thumb cris i386 ia64 m68k mips s390 none avr arm vax little big be eb le el)' \
+            '(-v --avoid)'{-v,--avoid}'=[Encode the shellcode to avoid the listed bytes (provided as hex)]:' \
+            '(-n --newline)'{-n,--newline}'[Encode the shellcode to avoid newlines]' \
+            '(-z --zero)'{-z,--zero}'[Encode the shellcode to avoid NULL bytes]' \
+            '(-d --debug)'{-d,--debug}'[Debug the shellcode with GDB]' \
+            '(-e --encoder)'{-e,--encoder}'=[Specific encoder to use]:' \
+            '(-i --infile)'{-i,--infile}'=[Specify input file]:' \
+            '(-r --run)'{-r,--run}'[Run output]' \
+            ;;
+        checksec)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            '--file=[File to check (for compatibility with checksec.sh)]:' \
+            ;;
+        constgrep)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            '(-e --exact)'{-e,--exact}'[Do an exact match for a constant instead of searching for a regex]' \
+            '(-i --case-insensitive)'{-i,--case-insensitive}'[Search case insensitive]' \
+            '(-m --mask-mode)'{-m,--mask-mode}'[Instead of searching for a specific constant value, search for values not containing strictly less bits that the given value.]' \
+            '(-c --context)'{-c,--context}'=[The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: \["16", "32", "64", "android", "baremetal", "cgc", "freebsd", "linux", "windows", "powerpc64", "aarch64", "powerpc", "sparc64", "mips64", "msp430", "alpha", "amd64", "sparc", "thumb", "cris", "i386", "ia64", "m68k", "mips", "s390", "none", "avr", "arm", "vax", "little", "big", "be", "eb", "le", "el"\]]:-c :(16 32 64 android baremetal cgc freebsd linux windows powerpc64 aarch64 powerpc sparc64 mips64 msp430 alpha amd64 sparc thumb cris i386 ia64 m68k mips s390 none avr arm vax little big be eb le el)' \
+            ;;
+        cyclic)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            '(-a --alphabet)'{-a,--alphabet}'=[The alphabet to use in the cyclic pattern (defaults to all lower case letters)]:' \
+            '(-n --length)'{-n,--length}'=[Size of the unique subsequences (defaults to 4).]:' \
+            '(-c --context)'{-c,--context}'=[The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: \["16", "32", "64", "android", "baremetal", "cgc", "freebsd", "linux", "windows", "powerpc64", "aarch64", "powerpc", "sparc64", "mips64", "msp430", "alpha", "amd64", "sparc", "thumb", "cris", "i386", "ia64", "m68k", "mips", "s390", "none", "avr", "arm", "vax", "little", "big", "be", "eb", "le", "el"\]]:-c :(16 32 64 android baremetal cgc freebsd linux windows powerpc64 aarch64 powerpc sparc64 mips64 msp430 alpha amd64 sparc thumb cris i386 ia64 m68k mips s390 none avr arm vax little big be eb le el)' \
+            '(-l -o --offset --lookup)'{-l,-o,--offset,--lookup}'=[Do a lookup instead printing the alphabet]:' \
+            ;;
+        debug)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            '-x=[Execute GDB commands from this file.]:' \
+            '--pid=[PID to attach to]:' \
+            '(-c --context)'{-c,--context}'=[The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: \["16", "32", "64", "android", "baremetal", "cgc", "freebsd", "linux", "windows", "powerpc64", "aarch64", "powerpc", "sparc64", "mips64", "msp430", "alpha", "amd64", "sparc", "thumb", "cris", "i386", "ia64", "m68k", "mips", "s390", "none", "avr", "arm", "vax", "little", "big", "be", "eb", "le", "el"\]]:-c :(16 32 64 android baremetal cgc freebsd linux windows powerpc64 aarch64 powerpc sparc64 mips64 msp430 alpha amd64 sparc thumb cris i386 ia64 m68k mips s390 none avr arm vax little big be eb le el)' \
+            '--exec=[File to debug]:' \
+            '--process=[Name of the process to attach to (e.g. "bash")]:' \
+            '--sysroot=[GDB sysroot path]:' \
+            ;;
+        disasm)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            '(-c --context)'{-c,--context}'=[The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: \["16", "32", "64", "android", "baremetal", "cgc", "freebsd", "linux", "windows", "powerpc64", "aarch64", "powerpc", "sparc64", "mips64", "msp430", "alpha", "amd64", "sparc", "thumb", "cris", "i386", "ia64", "m68k", "mips", "s390", "none", "avr", "arm", "vax", "little", "big", "be", "eb", "le", "el"\]]:-c :(16 32 64 android baremetal cgc freebsd linux windows powerpc64 aarch64 powerpc sparc64 mips64 msp430 alpha amd64 sparc thumb cris i386 ia64 m68k mips s390 none avr arm vax little big be eb le el)' \
+            '(-a --address)'{-a,--address}'=[Base address]:' \
+            '--color[Color output]' \
+            '--no-color[Disable color output]' \
+            ;;
+        disablenx)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            ;;
+        elfdiff)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            ;;
+        elfpatch)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            ;;
+        errno)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            ;;
+        hex)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            ;;
+        phd)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            '(-w --width)'{-w,--width}'=[Number of bytes per line.]:' \
+            '(-l --highlight)'{-l,--highlight}'=[Byte to highlight.]:' \
+            '(-s --skip)'{-s,--skip}'=[Skip this many initial bytes.]:' \
+            '(-c --count)'{-c,--count}'=[Only show this many bytes.]:' \
+            '(-o --offset)'{-o,--offset}'=[Addresses in left hand column starts at this address.]:' \
+            '--color=[Colorize the output.  When "auto" output is colorized exactly when stdout is a TTY.  Default is "auto".]:--color :(always never auto)' \
+            ;;
+        scramble)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            '(-f --format)'{-f,--format}'=[Output format (defaults to hex for ttys, otherwise raw)]:-f :(raw hex string elf)' \
+            '(-o --output)'{-o,--output}'=[Output file (defaults to stdout)]:' \
+            '(-c --context)'{-c,--context}'=[The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: \["16", "32", "64", "android", "baremetal", "cgc", "freebsd", "linux", "windows", "powerpc64", "aarch64", "powerpc", "sparc64", "mips64", "msp430", "alpha", "amd64", "sparc", "thumb", "cris", "i386", "ia64", "m68k", "mips", "s390", "none", "avr", "arm", "vax", "little", "big", "be", "eb", "le", "el"\]]:-c :(16 32 64 android baremetal cgc freebsd linux windows powerpc64 aarch64 powerpc sparc64 mips64 msp430 alpha amd64 sparc thumb cris i386 ia64 m68k mips s390 none avr arm vax little big be eb le el)' \
+            '(-p --alphanumeric)'{-p,--alphanumeric}'[Encode the shellcode with an alphanumeric encoder]' \
+            '(-v --avoid)'{-v,--avoid}'=[Encode the shellcode to avoid the listed bytes]:' \
+            '(-n --newline)'{-n,--newline}'[Encode the shellcode to avoid newlines]' \
+            '(-z --zero)'{-z,--zero}'[Encode the shellcode to avoid NULL bytes]' \
+            '(-d --debug)'{-d,--debug}'[Debug the shellcode with GDB]' \
+            ;;
+        shellcraft)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            '(-? --show)'{-?,--show}'[Show shellcode documentation]' \
+            '(-o --out)'{-o,--out}'=[Output file (default: stdout)]:' \
+            '(-f --format)'{-f,--format}'=[Output format (default: hex), choose from {e}lf, {r}aw, {s}tring, {c}-style array, {h}ex string, hex{i}i, {a}ssembly code, {p}reprocssed code, escape{d} hex string]:-f :(r raw s str string c h hex a asm assembly p i hexii e elf d escaped default)' \
+            '(-d --debug)'{-d,--debug}'[Debug the shellcode with GDB]' \
+            '(-b --before)'{-b,--before}'[Insert a debug trap before the code]' \
+            '(-a --after)'{-a,--after}'[Insert a debug trap after the code]' \
+            '(-v --avoid)'{-v,--avoid}'=[Encode the shellcode to avoid the listed bytes]:' \
+            '(-n --newline)'{-n,--newline}'[Encode the shellcode to avoid newlines]' \
+            '(-z --zero)'{-z,--zero}'[Encode the shellcode to avoid NULL bytes]' \
+            '(-r --run)'{-r,--run}'[Run output]' \
+            '--color[Color output]' \
+            '--no-color[Disable color output]' \
+            '--syscalls[List syscalls]' \
+            '--address=[Load address]:' \
+            '(-l --list)'{-l,--list}'[List available shellcodes, optionally provide a filter]' \
+            '(-s --shared)'{-s,--shared}'[Generated ELF is a shared library]' \
+            ;;
+        template)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            '--host=[Remote host / SSH server]:' \
+            '--port=[Remote port / SSH port]:' \
+            '--user=[SSH Username]:' \
+            '(--pass --password)'{--pass,--password}'=[SSH Password]:' \
+            '--path=[Remote path of file on SSH server]:' \
+            '--quiet[Less verbose template comments]' \
+            '--color=[Print the output in color]:--color :(never always auto)' \
+            ;;
+        unhex)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            ;;
+        update)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            '--install[Install the update automatically.]' \
+            '--pre[Check for pre-releases.]' \
+            ;;
+        version)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show this help message and exit]' \
+            ;;
+      esac
+      ;;
+  esac
+}
+_pwn
