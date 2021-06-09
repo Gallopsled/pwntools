@@ -67,6 +67,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1877][1877] encoders error message handles when `avoid` is bytes in python3
 - [#1892][1892] Silence SIGPIPE error for "pwn phd"
 - [#1893][1893] Fix bytes warning in "pwn cyclic"
+- [#1897][1897] Add basic support for RISC-V
 - [#1903][1903] Add zsh completion script
 - [#1904][1904] Add bash completion script
 - [#1906][1906] Defer import of several modules to save on startup time
@@ -76,6 +77,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1877]: https://github.com/Gallopsled/pwntools/pull/1877
 [1892]: https://github.com/Gallopsled/pwntools/pull/1892
 [1893]: https://github.com/Gallopsled/pwntools/pull/1893
+[1897]: https://github.com/Gallopsled/pwntools/pull/1897
 [1903]: https://github.com/Gallopsled/pwntools/pull/1903
 [1904]: https://github.com/Gallopsled/pwntools/pull/1904
 [1906]: https://github.com/Gallopsled/pwntools/pull/1906
