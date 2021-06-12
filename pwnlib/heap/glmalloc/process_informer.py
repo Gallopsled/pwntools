@@ -75,8 +75,13 @@ class CoreFileInformer:
 
         self.unpack_int = u32
 
-        libc_name = os.path.basename(libc.path)
+        # read the libc version from corefile since libc can be provided by an user
+        # from a different path that does not include the version
+        libc_map = corefile.libc
+        libc_name = os.path.basename(libc_map.path)
         self.libc_version = get_libc_version_from_name(libc_name)
+
+        # libc required to read symbols and locate the main arena address
         self.main_arena_address = get_main_arena_addr(libc, self.pointer_size)
 
     def read_memory(self, address, size):

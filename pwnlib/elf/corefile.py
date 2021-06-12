@@ -1134,7 +1134,7 @@ class Corefile(ELF):
     def _populate_got(*a): pass
     def _populate_plt(*a): pass
 
-    def heap_explorer(self, tcache=None, safe_link=None):
+    def heap_explorer(self, tcache=None, safe_link=None, libc_path=""):
         """Returns a heap explorer that allows to inspect the items of the libc
         heap.
 
@@ -1142,6 +1142,9 @@ class Corefile(ELF):
             tcache(bool): Indicate if tcache is present
             safe_link (bool): Indicate if safe-link is present in tcaches and
                 fastbisn pointers
+            libc_path (str): Indicate the path to retrieve the libc in case
+                the path specified in corefile is incorrect (e.g corefile
+                moved to another machine for analysis)
 
         Raises:
             PwnlibException: In case the libc is not found in the corefile
@@ -1171,7 +1174,8 @@ class Corefile(ELF):
                 )
             )
 
-        libc = ELF(libc_map.path, checksec=False)
+        libc_path = libc_path or libc_map.path
+        libc = ELF(libc_path, checksec=False)
         libc.address = libc_map.address
 
         corefile_informer = CoreFileInformer(self, libc)

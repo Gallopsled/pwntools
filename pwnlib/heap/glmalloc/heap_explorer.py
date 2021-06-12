@@ -15,32 +15,62 @@ class HeapExplorer:
     glibc heap management, such as arenas, malloc_state, heap and bins.
 
     Examples:
-        >>> p = process('sh')
-        >>> hp = p.heap_explorer()
-        >>> hp.tcaches_enabled # doctest: +SKIP
-        True
-        >>> print(hp.arena().summary()) # doctest: +ELLIPSIS
-        =====... Arena =====...
-        - Malloc State (...)
-            top = ...
-            last_remainder = ...
-            next = ...
-            next_free = ...
-            system_mem = ...
-        - Heap (...)
-            chunks_count = ...
-            top: addr = ..., size = ...
+
+        >>> c = Corefile('./samples/x86_64/core-sample1')
+        >>> he = c.heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
+        >>> print(he.arena().summary()) # doctest: +ELLIPSIS
+        ===... Arena ===...
+        - Malloc State (0x7ff101adaba0)
+            top = 0x55c9539e11a0
+            last_remainder = 0x0
+            next = 0x7ff101adaba0
+            next_free = 0x0
+            system_mem = 0x21000
+        - Heap (0x55c9539df000)
+            chunks_count = 0x3f
+            top: addr = 0x55c9539e11a0, size = 0x1ee60
         - Tcaches
-        ...
+            [10] 0xb8 (7)
         - Fast bins
-        ...
+            [-] No chunks found
         - Unsorted bins
-        ...
+            [-] No chunks found
         - Small bins
-        ...
+            [3] 0x40 (23)
         - Large bins
-        ...
-        =====...
+            [-] No chunks found
+        ======...
+        >>> he = Corefile('./samples/x86_64/core.unsorted_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
+        >>> print(he.unsorted_bin())
+        ===... Unsorted Bins ===...
+        [0] Unsorted Bin (2) => Chunk(0x55c9a83ed330 0x1010 PREV_IN_USE) => Chunk(0x55c9a83ec2e0 0x1010 PREV_IN_USE) => 0x7fcbe729bc00
+        ======...
+
+        >>> he = Corefile('./samples/x86_64/core.small_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
+        >>> print(he.small_bins()) # doctest: +ELLIPSIS
+        ===... Small Bins ===...
+        [6] Small Bin 0x80 (3) => Chunk(0x55bed6e87ed0 0x80 PREV_IN_USE) => Chunk(0x55bed6e88070 0x80 PREV_IN_USE) => Chunk(0x55bed6e88210 0x80 PREV_IN_USE) => 0x7feeee344c70
+        [8] Small Bin 0xa0 (3) => Chunk(0x55bed6e88130 0xa0 PREV_IN_USE) => Chunk(0x55bed6e87f90 0xa0 PREV_IN_USE) => Chunk(0x55bed6e87df0 0xa0 PREV_IN_USE) => 0x7feeee344c90
+        ======...
+
+        >>> he = Corefile('./samples/x86_64/core.large_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
+        >>> print(he.large_bins()) # doctest: +ELLIPSIS
+        ===... Large Bins ===...
+        [35] Large Bin 0x1000 (3) => Chunk(0x558fce0db290 0x1010 PREV_IN_USE) => Chunk(0x558fce0e01d0 0x1010 PREV_IN_USE) => Chunk(0x558fce0dda30 0x1010 PREV_IN_USE) => 0x7f90c8f3e220
+        [38] Large Bin 0x1600 (4) => Chunk(0x558fce0dc2e0 0x1710 PREV_IN_USE) => Chunk(0x558fce0e39c0 0x1710 PREV_IN_USE) => Chunk(0x558fce0e1220 0x1710 PREV_IN_USE) => Chunk(0x558fce0dea80 0x1710 PREV_IN_USE) => 0x7f90c8f3e250
+        ======...
+
+        >>> he = Corefile('./samples/x86_64/core.tcaches1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
+        >>> he.tcaches_enabled
+        True
+        >>> print(he.tcaches()) # doctest: +ELLIPSIS
+        ===... Tcaches ===...
+        [10] Tcache 0xb8 (3) => Chunk(0x5597c998c460 0x40 PREV_IN_USE) => Chunk(0x5597c998c380 0x40 PREV_IN_USE) => Chunk(0x5597c998c2a0 0x40 PREV_IN_USE) => 0x0
+        [12] Tcache 0xd8 (3) => Chunk(0x5597c998c4a0 0x60 PREV_IN_USE) => Chunk(0x5597c998c3c0 0x60 PREV_IN_USE) => Chunk(0x5597c998c2e0 0x60 PREV_IN_USE) => 0x0
+        ======...
+
+
+
 
     """
 
