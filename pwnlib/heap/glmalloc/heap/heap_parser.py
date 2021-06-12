@@ -59,9 +59,7 @@ class HeapParser:
             else:
                 raise HeapError("No heap in address {}".format(malloc_state.top))
 
-        main_heap_map = self._process_informer.heap()
-
-        is_main_heap = current_heap_map.address == main_heap_map.address
+        is_main_heap = malloc_state.address == self._process_informer.main_arena_address
         if is_main_heap:
             heap_start_address = current_heap_map.address
         else:
@@ -70,7 +68,7 @@ class HeapParser:
             )
 
         heap_size = current_heap_map.size - \
-            (heap_start_address - current_heap_map.start_address)
+            (heap_start_address - current_heap_map.start)
         return heap_start_address, heap_size
 
     def _calculate_non_main_heap_start_address(self, heap_map_start_address):
