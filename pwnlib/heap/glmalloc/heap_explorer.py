@@ -14,54 +14,6 @@ class HeapExplorer:
     """Main class of the library. which functions to access to all items of the
     glibc heap management, such as arenas, malloc_state, heap and bins.
 
-    Examples:
-
-        >>> c = Corefile('./samples/x86_64/core-sample1')
-        >>> he = c.heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
-        >>> print(he.arena().summary()) # doctest: +ELLIPSIS
-        ===... Arena ===...
-        - Malloc State (0x7ff101adaba0)
-            top = 0x55c9539e11a0
-            last_remainder = 0x0
-            next = 0x7ff101adaba0
-            next_free = 0x0
-            system_mem = 0x21000
-        - Heap (0x55c9539df000)
-            chunks_count = 0x3f
-            top: addr = 0x55c9539e11a0, size = 0x1ee60
-        - Tcaches
-            [10] 0xb8 (7)
-        - Fast bins
-            [-] No chunks found
-        - Unsorted bins
-            [-] No chunks found
-        - Small bins
-            [3] 0x40 (23)
-        - Large bins
-            [-] No chunks found
-        ======...
-        >>> he = Corefile('./samples/x86_64/core.unsorted_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
-        >>> print(he.unsorted_bin())
-        ===... Unsorted Bins ===...
-        [0] Unsorted Bin (2) => Chunk(0x55c9a83ed330 0x1010 PREV_IN_USE) => Chunk(0x55c9a83ec2e0 0x1010 PREV_IN_USE) => 0x7fcbe729bc00
-        ======...
-
-        >>> he = Corefile('./samples/x86_64/core.small_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
-        >>> print(he.small_bins()) # doctest: +ELLIPSIS
-        ===... Small Bins ===...
-        [6] Small Bin 0x80 (3) => Chunk(0x55bed6e87ed0 0x80 PREV_IN_USE) => Chunk(0x55bed6e88070 0x80 PREV_IN_USE) => Chunk(0x55bed6e88210 0x80 PREV_IN_USE) => 0x7feeee344c70
-        [8] Small Bin 0xa0 (3) => Chunk(0x55bed6e88130 0xa0 PREV_IN_USE) => Chunk(0x55bed6e87f90 0xa0 PREV_IN_USE) => Chunk(0x55bed6e87df0 0xa0 PREV_IN_USE) => 0x7feeee344c90
-        ======...
-
-        >>> he = Corefile('./samples/x86_64/core.large_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
-        >>> print(he.large_bins()) # doctest: +ELLIPSIS
-        ===... Large Bins ===...
-        [35] Large Bin 0x1000 (3) => Chunk(0x558fce0db290 0x1010 PREV_IN_USE) => Chunk(0x558fce0e01d0 0x1010 PREV_IN_USE) => Chunk(0x558fce0dda30 0x1010 PREV_IN_USE) => 0x7f90c8f3e220
-        [38] Large Bin 0x1600 (4) => Chunk(0x558fce0dc2e0 0x1710 PREV_IN_USE) => Chunk(0x558fce0e39c0 0x1710 PREV_IN_USE) => Chunk(0x558fce0e1220 0x1710 PREV_IN_USE) => Chunk(0x558fce0dea80 0x1710 PREV_IN_USE) => 0x7f90c8f3e250
-        ======...
-
-
-
     """
 
     def __init__(self, process_informer, use_tcache=None, safe_link=None):
@@ -282,25 +234,25 @@ class HeapExplorer:
         Returns:
             :class:`UnsortedBins`
 
-        Examples:
+        ::
 
             >>> p = process('sh')
             >>> p.sendline('init='+'A'*0x1000)
             >>> hp = p.heap_explorer()
             >>> unsorted_bins = hp.unsorted_bin()
             >>> unsorted_bins_str = str(unsorted_bins)
-            >>> print(unsorted_bins_str) # doctest: +SKIP
-            =====... Unsorted Bins =====...
-            ...
-            =====...
-            >>> unsorted_bin = unsorted_bins[0]
-            >>> unsorted_bin_entry = unsorted_bin.bin_entry
-            >>> unsorted_bin_entry.fd == unsorted_bin.fd
-            True
-            >>> unsorted_bin_entry.bk == unsorted_bin.bk
-            True
-            >>> unsorted_bin_entry.chunks_size == unsorted_bin.chunks_size
-            True
+            >>> print(unsorted_bins) # doctest: +SKIP
+            ================================ Unsorted Bins ================================
+            [0] Unsorted Bin (2) => Chunk(0x5597afccc330 0x1010 PREV_IN_USE) => Chunk(0x5597afccb2e0 0x1010 PREV_IN_USE) => 0x7f1c523a4c00
+            ================================================================================
+
+        Tests:
+
+            >>> he = Corefile('./samples/x86_64/core.unsorted_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
+            >>> print(he.unsorted_bin())
+            ===... Unsorted Bins ===...
+            [0] Unsorted Bin (2) => Chunk(0x55c9a83ed330 0x1010 PREV_IN_USE) => Chunk(0x55c9a83ec2e0 0x1010 PREV_IN_USE) => 0x7fcbe729bc00
+            ======...
 
         """
         malloc_state = self.malloc_state(arena_index)
@@ -343,15 +295,24 @@ class HeapExplorer:
         Returns:
             :class:`SmallBins`
 
-        Examples:
+        ::
+
             >>> p = process('sh')
-            >>> p.sendline('init bins')
-            >>> hp = p.heap_explorer()
-            >>> small_bins = hp.small_bins()
-            >>> print(small_bins) # doctest: +ELLIPSIS
-            =====... Small Bins =====...
-            ...
-            =====...
+            >>> he = p.heap_explorer()
+            >>> print(he.small_bins())
+            ================================== Small Bins ==================================
+            [6] Small Bin 0x80 (3) => Chunk(0x55f241d7fed0 0x80 PREV_IN_USE) => Chunk(0x55f241d80070 0x80 PREV_IN_USE) => Chunk(0x55f241d80210 0x80 PREV_IN_USE) => 0x7ff159b83c70
+            [8] Small Bin 0xa0 (3) => Chunk(0x55f241d80130 0xa0 PREV_IN_USE) => Chunk(0x55f241d7ff90 0xa0 PREV_IN_USE) => Chunk(0x55f241d7fdf0 0xa0 PREV_IN_USE) => 0x7ff159b83c90
+            ================================================================================
+
+        Tests:
+
+            >>> he = Corefile('./samples/x86_64/core.small_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
+            >>> print(he.small_bins()) # doctest: +ELLIPSIS
+            ===... Small Bins ===...
+            [6] Small Bin 0x80 (3) => Chunk(0x55bed6e87ed0 0x80 PREV_IN_USE) => Chunk(0x55bed6e88070 0x80 PREV_IN_USE) => Chunk(0x55bed6e88210 0x80 PREV_IN_USE) => 0x7feeee344c70
+            [8] Small Bin 0xa0 (3) => Chunk(0x55bed6e88130 0xa0 PREV_IN_USE) => Chunk(0x55bed6e87f90 0xa0 PREV_IN_USE) => Chunk(0x55bed6e87df0 0xa0 PREV_IN_USE) => 0x7feeee344c90
+            ======...
         """
         malloc_state = self.malloc_state(arena_index)
         return self._bin_parser.parse_small_bins_from_malloc_state(
@@ -392,15 +353,24 @@ class HeapExplorer:
         Returns:
             :class:`LargeBins`
 
-        Examples:
+        ::
+
             >>> p = process('sh')
-            >>> p.sendline('init bins')
-            >>> hp = p.heap_explorer()
-            >>> large_bins = hp.large_bins()
-            >>> print(large_bins) # doctest: +ELLIPSIS
-            =====... Large Bins =====...
-            ...
-            =====...
+            >>> he = p.heap_explorer()
+            >>> print(he.large_bins())
+            ================================== Large Bins ==================================
+            [35] Large Bin 0x1000 (3) => Chunk(0x55efb3ce9290 0x1010 PREV_IN_USE) => Chunk(0x55efb3cee1d0 0x1010 PREV_IN_USE) => Chunk(0x55efb3ceba30 0x1010 PREV_IN_USE) => 0x7f3cddff8220
+            [38] Large Bin 0x1600 (4) => Chunk(0x55efb3cea2e0 0x1710 PREV_IN_USE) => Chunk(0x55efb3cf19c0 0x1710 PREV_IN_USE) => Chunk(0x55efb3cef220 0x1710 PREV_IN_USE) => Chunk(0x55efb3ceca80 0x1710 PREV_IN_USE) => 0x7f3cddff8250
+            ================================================================================
+
+
+        Tests:
+            >>> he = Corefile('./samples/x86_64/core.large_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
+            >>> print(he.large_bins()) # doctest: +ELLIPSIS
+            ===... Large Bins ===...
+            [35] Large Bin 0x1000 (3) => Chunk(0x558fce0db290 0x1010 PREV_IN_USE) => Chunk(0x558fce0e01d0 0x1010 PREV_IN_USE) => Chunk(0x558fce0dda30 0x1010 PREV_IN_USE) => 0x7f90c8f3e220
+            [38] Large Bin 0x1600 (4) => Chunk(0x558fce0dc2e0 0x1710 PREV_IN_USE) => Chunk(0x558fce0e39c0 0x1710 PREV_IN_USE) => Chunk(0x558fce0e1220 0x1710 PREV_IN_USE) => Chunk(0x558fce0dea80 0x1710 PREV_IN_USE) => 0x7f90c8f3e250
+            ======...
         """
         malloc_state = self.malloc_state(arena_index)
         return self._bin_parser.parse_large_bins_from_malloc_state(
@@ -441,17 +411,15 @@ class HeapExplorer:
         Returns:
             :class:`FastBins`
 
-        Examples:
+        ::
+
             >>> p = process('sh')
-            >>> p.sendline('init bins')
-            >>> hp = p.heap_explorer()
-            >>> fast_bins = hp.fast_bins()
-            >>> print(fast_bins) # doctest: +ELLIPSIS
-            =====... Fast Bins =====...
-            ...
-            ======...
-            >>> number_of_fastbins = len(fast_bins)
-            >>> fast_bins_counts = [len(fast_bin) for fast_bin in fast_bins]
+            >>> he = p.heap_explorer()
+            >>> print(he.fast_bins()) # doctest: +ELLIPSIS
+            ================================== Fast Bins ==================================
+            [0] Fast Bin 0x20 (2) => Chunk(0x1330140 0x20 PREV_IN_USE) => Chunk(0x1330070 0x20 PREV_IN_USE) => 0x0
+            [3] Fast Bin 0x50 (2) => Chunk(0x13300d0 0x50 PREV_IN_USE) => Chunk(0x1330000 0x50 PREV_IN_USE) => 0x0
+            ================================================================================
 
         Tests:
             >>> he = Corefile('./samples/x86_64/core.fast_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.23.so')
@@ -575,93 +543,60 @@ class HeapExplorer:
         Returns:
             :class:`Arena`
 
-        Examples:
+        ::
+
             >>> p = process('sh')
-            >>> p.sendline('init bins')
             >>> hp = p.heap_explorer()
             >>> arena = hp.arena()
-            >>> arena_summary = arena.summary()
-            >>> print(arena_summary) # doctest: +ELLIPSIS
-            =====... Arena =====...
-            - Malloc State (0x...)
-                top = 0x...
-                last_remainder = 0x...
-                next = 0x...
-                next_free = 0x...
-                system_mem = 0x...
-            - Heap (0x...)
-                chunks_count = 0x...
-                top: addr = 0x..., size = 0x...
+            >>> print(arena.summary())
+            ==================================== Arena ====================================
+            - Malloc State (0x7f4ca8fe8ba0)
+                top = 0x55587a7bf380
+                last_remainder = 0x0
+                next = 0x7f4ca8fe8ba0
+                next_free = 0x0
+                system_mem = 0x21000
+            - Heap (0x55587a7bc000)
+                chunks_count = 0x8
+                top: addr = 0x55587a7bf380, size = 0x1dc80
             - Tcaches
-            ...
+                [-] No chunks found
             - Fast bins
-            ...
+                [-] No chunks found
             - Unsorted bins
-            ...
+                [0] 0x0 (2)
             - Small bins
-            ...
+                [-] No chunks found
             - Large bins
-            ...
+                [-] No chunks found
+            ================================================================================
+
+        Tests:
+
+            >>> c = Corefile('./samples/x86_64/core-sample1')
+            >>> he = c.heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
+            >>> print(he.arena().summary()) # doctest: +ELLIPSIS
+            ===... Arena ===...
+            - Malloc State (0x7ff101adaba0)
+                top = 0x55c9539e11a0
+                last_remainder = 0x0
+                next = 0x7ff101adaba0
+                next_free = 0x0
+                system_mem = 0x21000
+            - Heap (0x55c9539df000)
+                chunks_count = 0x3f
+                top: addr = 0x55c9539e11a0, size = 0x1ee60
+            - Tcaches
+                [10] 0xb8 (7)
+            - Fast bins
+                [-] No chunks found
+            - Unsorted bins
+                [-] No chunks found
+            - Small bins
+                [3] 0x40 (23)
+            - Large bins
+                [-] No chunks found
             ======...
-            >>> arena_str = str(arena)
-            >>> print(arena_str) # doctest: +SKIP
-            +++++... Arena +++++...
-            +++++++++++...
-            =====... Malloc State (0x...) =====...
-            mutex = 0x...
-            flags = 0x...
-            have_fastchunks = 0x...
-            fastbinsY
-              [0] 0x20 => 0x...
-              [1] 0x30 => 0x...
-              [2] 0x40 => 0x...
-              [3] 0x50 => 0x...
-              [4] 0x60 => 0x...
-              [5] 0x70 => 0x...
-              [6] 0x80 => 0x...
-              [7] 0x90 => 0x...
-              [8] 0xa0 => 0x...
-              [9] 0xb0 => 0x...
-            top = 0x...
-            last_remainder = 0x...
-            bins
-             Unsorted bins
-              [0] fd=0x... bk=0x...
-             Small bins
-              [1] 0x20 fd=0x... bk=0x...
-              [2] 0x30 fd=0x... bk=0x...
-            ...
-             Large bins
-              [63] 0x400 fd=0x... bk=0x...
-              [64] 0x440 fd=0x... bk=0x...
-            ...
-            binmap = [0x..., 0x..., 0x..., 0x...]
-            next = 0x...
-            next_free = 0x...
-            attached_threads = 0x...
-            system_mem = 0x...
-            max_system_mem = 0x...
-            =====...
-            =====... Heap (0x...) =====...
-            0x... 0x...
-            ...
-            =====...
-            =====... Tcaches =====...
-            ...
-            =====...
-            =====... Fast Bins ======...
-            ...
-            =====...
-            =====... Unsorted Bins =====...
-            ...
-            =====...
-            =====... Small Bins =====...
-            ...
-            =====...
-            =====... Large Bins =====...
-            ...
-            =====...
-            ++++++...
 
         """
         malloc_state = self.malloc_state(arena_index)
