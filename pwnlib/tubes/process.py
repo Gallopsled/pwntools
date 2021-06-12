@@ -29,9 +29,6 @@ from pwnlib.util.misc import which
 import pwnlib.util.proc
 from pwnlib.exception import PwnlibException
 
-from pwnlib.heap import HeapExplorer
-from pwnlib.heap import ProcessInformer, CoreFileInformer
-
 log = getLogger(__name__)
 
 class PTY(object): pass
@@ -1006,12 +1003,10 @@ class process(tube):
         Returns:
             HeapExplorer
         """
-        corefile_informer = CoreFileInformer(self.corefile, self._waitfor_libc(timeout=timeout))
-        return HeapExplorer(
-            corefile_informer,
-            use_tcache=tcache,
-            safe_link=safe_link,
-        )
+        # make sure that libc is loaded
+        self._waitfor_libc(timeout=timeout)
+
+        return self.corefile.heap_explorer(tcache=tcache, safe_link=safe_link)
 
     @property
     def elf(self):

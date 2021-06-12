@@ -64,8 +64,6 @@ class CoreFileInformer:
     """
 
     def __init__(self, corefile, libc):
-        libc_name = os.path.basename(libc.path)
-        self.libc_version = get_libc_version_from_name(libc_name)
         self.corefile = corefile
 
         if "64" in self.corefile.get_machine_arch():
@@ -77,6 +75,8 @@ class CoreFileInformer:
 
         self.unpack_int = u32
 
+        libc_name = os.path.basename(libc.path)
+        self.libc_version = get_libc_version_from_name(libc_name)
         self.main_arena_address = get_main_arena_addr(libc, self.pointer_size)
 
     def read_memory(self, address, size):

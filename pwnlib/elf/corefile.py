@@ -96,6 +96,8 @@ from pwnlib.util.misc import read
 from pwnlib.util.misc import write
 from pwnlib.util.packing import pack
 from pwnlib.util.packing import unpack_many
+from pwnlib.heap import HeapExplorer
+from pwnlib.heap import CoreFileInformer
 
 log = getLogger(__name__)
 
@@ -1131,6 +1133,53 @@ class Corefile(ELF):
     # Override routines which don't make sense for Corefiles
     def _populate_got(*a): pass
     def _populate_plt(*a): pass
+
+    def heap_explorer(self, tcache=None, safe_link=None):
+        """Returns a heap explorer that allows to inspect the items of the libc
+        heap.
+
+        Arguments:
+            tcache(bool): Indicate if tcache is present
+            safe_link (bool): Indicate if safe-link is present in tcaches and
+                fastbisn pointers
+
+        Raises:
+            PwnlibException: In case the libc is not found in the corefile
+
+        Examples:
+            >>> c = CoreFile('./core') # doctest: +SKIP
+            >>> hp = c.heap_explorer() # doctest: +SKIP
+            >>> heap = hp.heap() # doctest: +SKIP
+            >>> len(heap.chunks) # doctest: +SKIP
+            574
+            >>> fast_bins = hp.fast_bins() # doctest: +SKIP
+            >>> print(fast_bins) # doctest: +SKIP
+            ================================== Fast Bins ==================================
+            [4] Fast Bin 0x60 (2) => Chunk(0x555635100c20 0x60 PREV_IN_USE) => Chunk(0x55563
+            5100ba0 0x60 PREV_IN_USE) => 0x0
+            ================================================================================
+
+
+        Returns:
+            HeapExplorer
+        """
+        libc_map = self.libc
+        if libc_map is None:
+            self.error(
+                "Unable to find the libc library in corefile {}".format(
+                    self.path
+                )
+            )
+
+        libc = ELF(libc_map.path, checksec=False)
+        libc.address = libc_map.address
+
+        corefile_informer = CoreFileInformer(self, libc)
+        return HeapExplorer(
+            corefile_informer,
+            use_tcache=tcache,
+            safe_link=safe_link,
+        )
 
 class Core(Corefile):
     """Alias for :class:`.Corefile`"""
