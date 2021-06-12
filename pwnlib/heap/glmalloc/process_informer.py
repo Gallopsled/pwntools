@@ -11,18 +11,17 @@ class ProcessInformer:
     and which allows perform operations over memory.
 
     Attributes:
+        process : The process to explore
         libc_version (tuple(int, int)): The glibc version in
             format (major, minor)
-        pid (int): pid of the process
         pointer_size (int): size in bytes of a pointer in the process
         main_arena_address (int): address of the main arena malloc state
 
     """
 
-    def __init__(self, pid, libc):
-        libc_name = os.path.basename(libc.path)
-        self.libc_version = get_libc_version_from_name(libc_name)
-        self.pid = pid
+    def __init__(self, process):
+        self.process = process
+        libc = process._libc()
 
         if "64" in libc.get_machine_arch():
             self.pointer_size = 8
@@ -33,15 +32,19 @@ class ProcessInformer:
 
         self.unpack_int = u32
 
+        libc_name = os.path.basename(libc.path)
+        self.libc_version = get_libc_version_from_name(libc_name)
         self.main_arena_address = get_main_arena_addr(libc, self.pointer_size)
 
     def read_memory(self, address, size):
-        with open('/proc/%s/mem' % self.pid, 'rb') as mem:
-            mem.seek(address)
-            return mem.read(size)
+        return self.process.leak(address, size)
 
-    def maps(self):
-        return pwnlib.util.proc.MemoryMaps.from_process(self.pid)
+    def map_with_address(self, addr):
+        for mapping in self.corefile.mappings:
+            if mapping.start <= addr < mapping.stop:
+                return mapping
+
+        raise IndexError("address {:#x} out of range".format(addr))
 
     def is_libc_version_higher_than(self, version):
         return self.libc_version > version
@@ -55,9 +58,9 @@ class CoreFileInformer:
     and which allows perform operations over memory.
 
     Attributes:
+        corefile : The corefile to explore
         libc_version (tuple(int, int)): The glibc version in
             format (major, minor)
-        pid (int): pid of the process
         pointer_size (int): size in bytes of a pointer in the process
         main_arena_address (int): address of the main arena malloc state
 
@@ -86,9 +89,6 @@ class CoreFileInformer:
 
     def read_memory(self, address, size):
         return self.corefile.read(address, size)
-
-    def maps(self):
-        return pwnlib.util.proc.MemoryMaps.from_str(str(self.corefile.mappings))
 
     def map_with_address(self, addr):
         for mapping in self.corefile.mappings:
