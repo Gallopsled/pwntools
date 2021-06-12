@@ -60,16 +60,6 @@ class HeapExplorer:
         [38] Large Bin 0x1600 (4) => Chunk(0x558fce0dc2e0 0x1710 PREV_IN_USE) => Chunk(0x558fce0e39c0 0x1710 PREV_IN_USE) => Chunk(0x558fce0e1220 0x1710 PREV_IN_USE) => Chunk(0x558fce0dea80 0x1710 PREV_IN_USE) => 0x7f90c8f3e250
         ======...
 
-        >>> he = Corefile('./samples/x86_64/core.tcaches1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
-        >>> he.tcaches_enabled
-        True
-        >>> print(he.tcaches()) # doctest: +ELLIPSIS
-        ===... Tcaches ===...
-        [10] Tcache 0xb8 (3) => Chunk(0x5597c998c460 0x40 PREV_IN_USE) => Chunk(0x5597c998c380 0x40 PREV_IN_USE) => Chunk(0x5597c998c2a0 0x40 PREV_IN_USE) => 0x0
-        [12] Tcache 0xd8 (3) => Chunk(0x5597c998c4a0 0x60 PREV_IN_USE) => Chunk(0x5597c998c3c0 0x60 PREV_IN_USE) => Chunk(0x5597c998c2e0 0x60 PREV_IN_USE) => 0x0
-        ======...
-
-
 
 
     """
@@ -462,6 +452,14 @@ class HeapExplorer:
             ======...
             >>> number_of_fastbins = len(fast_bins)
             >>> fast_bins_counts = [len(fast_bin) for fast_bin in fast_bins]
+
+        Tests:
+            >>> he = Corefile('./samples/x86_64/core.fast_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.23.so')
+            >>> print(he.fast_bins()) # doctest: +ELLIPSIS
+            ===... Fast Bins ===...
+            [0] Fast Bin 0x20 (2) => Chunk(0x1b5c140 0x20 PREV_IN_USE) => Chunk(0x1b5c070 0x20 PREV_IN_USE) => 0x0
+            [3] Fast Bin 0x50 (2) => Chunk(0x1b5c0d0 0x50 PREV_IN_USE) => Chunk(0x1b5c000 0x50 PREV_IN_USE) => 0x0
+            ======...
         """
         malloc_state = self.malloc_state(arena_index)
         return self._fast_bin_parser.parse_all_from_malloc_state(malloc_state)
@@ -500,20 +498,36 @@ class HeapExplorer:
         Returns:
             :class:`Tcaches`
 
-        Example:
+        ::
+
             >>> p = process('sh')
             >>> p.sendline('init bins')
-            >>> hp = p.heap_explorer()
-            >>> try:
-            ...     tcaches_str = str(hp.tcaches())
-            ... except NoTcacheError:
-            ...     tcaches_str = ""
-            ...
-            >>> print(tcaches_str) # doctest: +SKIP
+            >>> he = p.heap_explorer()
+            >>> print(he.tcaches())
             =================================== Tcaches ===================================
             [23] Tcache 0x188 (1) => Chunk(0x56383e3c0250 0x190 PREV_IN_USE) => 0x0
             [41] Tcache 0x2a8 (1) => Chunk(0x56383e3bffa0 0x2b0 PREV_IN_USE) => 0x0
             ================================================================================
+
+        Tests:
+
+            >>> he = Corefile('./samples/x86_64/core.tcaches1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
+            >>> he.tcaches_enabled
+            True
+            >>> print(he.tcaches()) # doctest: +ELLIPSIS
+            ===... Tcaches ===...
+            [10] Tcache 0xb8 (3) => Chunk(0x5597c998c460 0x40 PREV_IN_USE) => Chunk(0x5597c998c380 0x40 PREV_IN_USE) => Chunk(0x5597c998c2a0 0x40 PREV_IN_USE) => 0x0
+            [12] Tcache 0xd8 (3) => Chunk(0x5597c998c4a0 0x60 PREV_IN_USE) => Chunk(0x5597c998c3c0 0x60 PREV_IN_USE) => Chunk(0x5597c998c2e0 0x60 PREV_IN_USE) => 0x0
+            ======...
+
+            Tcaches were included in libc 2.26 so trying to access them in previous versions raises an error
+
+            >>> he = Corefile('./samples/x86_64/core.fast_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.23.so')
+            >>> try:
+            ...    he.tcaches()
+            ... except NoTcacheError as e:
+            ...    print(e)
+            Tcache are not available in the current libc
 
         """
         if not self.tcaches_enabled:
