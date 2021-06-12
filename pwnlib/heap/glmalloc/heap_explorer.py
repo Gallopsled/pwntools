@@ -8,7 +8,6 @@ from pwnlib.heap.glmalloc.arena import ArenaParser
 from pwnlib.heap.glmalloc.malloc_state import MallocStateParser
 from pwnlib.heap.glmalloc.heap import HeapParser, HeapError
 from pwnlib.heap.glmalloc.malloc_chunk import MallocChunkParser
-from pwnlib.heap.glmalloc.process_informer import ProcessInformer
 
 
 class HeapExplorer:

@@ -357,7 +357,7 @@ from pwnlib.heap.glmalloc.bins import \
     LargeBins, \
     LargeBin, \
     LargeBinEntry
-from pwnlib.heap.glmalloc.process_informer import ProcessInformer
+from pwnlib.heap.glmalloc.process_informer import ProcessInformer, CoreFileInformer
 
 __all__ = [
     'HeapExplorer',
@@ -371,5 +371,5 @@ __all__ = [
     'SmallBins', 'SmallBin', 'SmallBinEntry',
     'LargeBins', 'LargeBin', 'LargeBinEntry',
     'Bins', 'Bin', 'BinEntry',
-    'ProcessInformer'
+    'ProcessInformer', 'CoreFileInformer'
 ]

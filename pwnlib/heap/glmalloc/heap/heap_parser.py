@@ -51,16 +51,15 @@ class HeapParser:
             tuple(int, int)
         """
 
-        maps = self._process_informer.maps()
         try:
-            current_heap_map = maps.map_with_address(malloc_state.top)
+            current_heap_map = self._process_informer.map_with_address(malloc_state.top)
         except IndexError:
             if malloc_state.top == 0x0:
                 raise HeapError("No heap available")
             else:
                 raise HeapError("No heap in address {}".format(malloc_state.top))
 
-        main_heap_map = maps.heap
+        main_heap_map = self._process_informer.heap()
 
         is_main_heap = current_heap_map.address == main_heap_map.address
         if is_main_heap:
