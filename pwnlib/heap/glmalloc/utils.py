@@ -7,7 +7,32 @@ def align_address(address, align):
 
 
 def get_libc_version_from_name(name):
-    libc_version = tuple(int(_) for _ in re.search(r"libc6?[-_](\d+)\.(\d+)\.so", name).groups())
+    """Tries to identify the glibc version based on the filename
+
+    Args:
+        name: The filename of the libc, which usually is something
+            like libc-2.32.so
+
+    Returns:
+        tuple(int, int): The glibc version in format (major, minor)
+
+    Examples:
+        >>> get_libc_version_from_name("libc-2.23.so")
+        (2, 23)
+
+        >>> try:
+        ...     get_libc_version_from_name("libc.so")
+        ... except ValueError as e:
+        ...     print(e)
+        Unable to get libc version from filename libc.so
+
+    """
+    matches = re.search(r"libc6?[-_](\d+)\.(\d+)\.so", name)
+
+    if matches is None:
+        raise ValueError("Unable to get libc version from filename %s" % name)
+
+    libc_version = tuple(int(_) for _ in matches.groups())
     return libc_version
 
 
