@@ -1,6 +1,6 @@
 from pwnlib.heap.glmalloc.bins import SmallBinEntry, LargeBinEntry, UnsortedBinEntry
 from .bins_indexes import \
-    LARGE_BINS_START_INDEX, SMALL_BINS_START_INDEX
+    LARGE_BINS_START_INDEX, SMALL_BINS_START_INDEX, LARGE_BINS_END_INDEX
 from .bins import Bins
 
 
@@ -58,7 +58,7 @@ class BinsParser:
             return 0
         elif index < LARGE_BINS_START_INDEX:
             return (self._pointer_size * 4) + (index - 1) * (self._pointer_size * 2)
-        elif index < 126:
+        elif index < LARGE_BINS_END_INDEX:
             return self._largebin_index_to_min_size[index+1]
         else:
             return 0x100000
