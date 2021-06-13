@@ -447,9 +447,10 @@ class ELF(ELFFile):
         """Prints the several information related with the binary protection
         measures as well as the architecture.
 
-        Examples:
+        .. code-block:: python
+
             >>> e = ELF("/bin/ls", checksec=False)
-            >>> e.describe() #doctest: +SKIP
+            >>> e.describe()
             [*] '/bin/ls'
                 Arch:     amd64-64-little
                 RELRO:    Partial RELRO
