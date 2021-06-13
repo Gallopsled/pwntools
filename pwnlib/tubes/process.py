@@ -28,6 +28,7 @@ from pwnlib.util.misc import parse_ldd_output
 from pwnlib.util.misc import which
 import pwnlib.util.proc
 from pwnlib.exception import PwnlibException
+from pwnlib.heap import HeapExplorer, ProcessInformer
 
 log = getLogger(__name__)
 
@@ -1038,7 +1039,11 @@ class process(tube):
         # make sure that libc is loaded
         self._waitfor_libc(timeout=timeout)
 
-        return self.corefile.heap_explorer(tcache=tcache, safe_link=safe_link)
+        return HeapExplorer(
+            ProcessInformer(self),
+            use_tcache=tcache,
+            safe_link=safe_link,
+        )
 
     @property
     def elf(self):

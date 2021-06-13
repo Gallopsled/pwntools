@@ -40,7 +40,7 @@ class ProcessInformer:
         return self.process.leak(address, size)
 
     def map_with_address(self, addr):
-        for mapping in self.corefile.mappings:
+        for mapping in self.process.mappings:
             if mapping.start <= addr < mapping.stop:
                 return mapping
 
