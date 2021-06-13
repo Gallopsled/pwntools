@@ -249,8 +249,12 @@ def _assembler():
         checked_assembler_version[gas] = True
         result = subprocess.check_output([gas, '--version','/dev/null'],
                                          stderr=subprocess.STDOUT, universal_newlines=True)
-        version = re.search(r' (\d\.\d+)', result).group(1)
-        if version < '2.19':
+        version = re.search(r' (\d+\.\d+)', result).group(1)
+        if 'clang' in result:
+            log.warn_once('Your binutils is clang version and may not work!\n'
+                'Try install with: https://docs.pwntools.com/en/stable/install/binutils.html\n'
+                'Reported Version: %r', result.strip())
+        elif version < '2.19':
             log.warn_once('Your binutils version is too old and may not work!\n'
                 'Try updating with: https://docs.pwntools.com/en/stable/install/binutils.html\n'
                 'Reported Version: %r', result.strip())
