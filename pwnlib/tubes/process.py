@@ -878,33 +878,65 @@ class process(tube):
 
         return maps
 
-    def maps(self):
-        """maps() -> MemoryMaps
+    @property
+    def mappings(self):
+        """mappings() -> list[Mapping]
 
         Returns a object which contains a list of the maps created by the 
         process. Each item of the list includes the information of the lines
         of /proc/<pid>/maps such as the path of the mapped file, the starting
-        and ending address or the flags (read, write, execute, private or shared) 
-        of the map.
+        and ending address or the flags of the map.
 
         Returns:
-            MemoryMaps: the list of maps of the current process
+            list[Mapping]: the list of maps of the current process
 
-        Example:
-            >>> p = process('sh')
-            >>> m = p.maps()[0]
-            >>> str(m) # doctest: +SKIP
-            '556c5961b000-556c59648000 r--p 00000000 fe:01 9832010\\t\\t/usr/bin/sh'
-            >>> m = p.maps().heap # doctest: +SKIP
-            '55b3ce54e000-55b3ce56f000 rw-p 00000000 00:00 0\\t\\t[heap]'
-            >>> p.close()
+        ::
+
+            >>> p = process('bash')
+            >>> print(p.mappings[0])
+            Mapping('/usr/bin/bash', start=0x55609a056000, stop=0x55609a083000, size=0x2d000, flags=0x4, page_offset=0x0)
 
         """
 
         with open('/proc/%d/maps' % self.pid) as fmap:
-            maps_raw = fmap.read()
+            maps_string = fmap.read()
 
-        return pwnlib.util.proc.MemoryMaps.from_str(maps_raw)
+        mappings = []
+        for line in maps_string.splitlines():
+            parts = line.split()
+
+            start_address, end_address = parts[0].split("-")
+            start_address = int(start_address, 16)
+            end_address = int(end_address, 16)
+
+            flags_str = parts[1]
+            flags = 0
+            if flags_str[0] == "r":
+                flags = flags | 4
+
+            if flags_str[1] == "w":
+                flags = flags | 2
+
+            if flags_str[2] == "x":
+                flags = flags | 1
+
+            offset = int(parts[2], 16)
+
+            try:
+                path = parts[5]
+            except IndexError:
+                path = ""
+
+            mappings.append(pwnlib.elf.corefile.Mapping(
+                core=None,
+                name=path,
+                start=start_address,
+                stop=end_address,
+                flags=flags,
+                page_offset=offset
+            ))
+
+        return mappings
 
     @property
     def libc(self):
