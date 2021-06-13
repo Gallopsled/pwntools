@@ -1006,7 +1006,7 @@ class process(tube):
             )
         )
 
-    def heap_explorer(self, timeout=1, tcache=None, safe_link=None):
+    def heap_explorer(self, timeout=1, tcache=None, safe_link=None, libc_version=None):
         """Returns a heap explorer that allows to inspect the items of the libc
         heap.
 
@@ -1015,6 +1015,9 @@ class process(tube):
             tcache(bool): Indicate if tcache is present
             safe_link (bool): Indicate if safe-link is present in tcaches and
                 fastbisn pointers
+            libc_version (tuple(int, int)): The glibc version in format
+                (major, minor). To use in case libc version is not
+                automatically detected.
 
         Raises:
             PwnlibException: In case the libc is not found in the given timeout
@@ -1040,7 +1043,7 @@ class process(tube):
         self._waitfor_libc(timeout=timeout)
 
         return HeapExplorer(
-            ProcessInformer(self),
+            ProcessInformer(self, libc_version=libc_version),
             use_tcache=tcache,
             safe_link=safe_link,
         )
