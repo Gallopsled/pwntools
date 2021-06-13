@@ -4,6 +4,7 @@ try:
     # These files are not distributed with Pwntools, but
     # are in the source tree and used for testing.
     from pwnlib.data import elf
+    from pwnlib.data import heap
 except ImportError:
     pass
 

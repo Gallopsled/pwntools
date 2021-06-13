@@ -248,7 +248,8 @@ class HeapExplorer:
 
         Tests:
 
-            >>> he = Corefile('./samples/x86_64/core.unsorted_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
+            >>> c = Corefile(pwnlib.data.heap.x86_64.get('core.unsorted_bins1'))
+            >>> he = c.heap_explorer(libc_path=pwnlib.data.heap.x86_64.get('libc-2.32.so'))
             >>> print(he.unsorted_bin())
             ===... Unsorted Bins ===...
             [0] Unsorted Bin (2) => Chunk(0x55c9a83ed330 0x1010 PREV_IN_USE) => Chunk(0x55c9a83ec2e0 0x1010 PREV_IN_USE) => 0x7fcbe729bc00
@@ -307,7 +308,8 @@ class HeapExplorer:
 
         Tests:
 
-            >>> he = Corefile('./samples/x86_64/core.small_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
+            >>> c = Corefile(pwnlib.data.heap.x86_64.get('core.small_bins1'))
+            >>> he = c.heap_explorer(libc_path=pwnlib.data.heap.x86_64.get('libc-2.32.so'))
             >>> print(he.small_bins()) # doctest: +ELLIPSIS
             ===... Small Bins ===...
             [6] Small Bin 0x80 (3) => Chunk(0x55bed6e87ed0 0x80 PREV_IN_USE) => Chunk(0x55bed6e88070 0x80 PREV_IN_USE) => Chunk(0x55bed6e88210 0x80 PREV_IN_USE) => 0x7feeee344c70
@@ -365,7 +367,8 @@ class HeapExplorer:
 
 
         Tests:
-            >>> he = Corefile('./samples/x86_64/core.large_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
+            >>> c = Corefile(pwnlib.data.heap.x86_64.get('core.large_bins1'))
+            >>> he = c.heap_explorer(libc_path=pwnlib.data.heap.x86_64.get('libc-2.32.so'))
             >>> print(he.large_bins()) # doctest: +ELLIPSIS
             ===... Large Bins ===...
             [35] Large Bin 0x1000 (3) => Chunk(0x558fce0db290 0x1010 PREV_IN_USE) => Chunk(0x558fce0e01d0 0x1010 PREV_IN_USE) => Chunk(0x558fce0dda30 0x1010 PREV_IN_USE) => 0x7f90c8f3e220
@@ -422,7 +425,8 @@ class HeapExplorer:
             ================================================================================
 
         Tests:
-            >>> he = Corefile('./samples/x86_64/core.fast_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.23.so')
+            >>> c = Corefile(pwnlib.data.heap.x86_64.get('core.fast_bins1'))
+            >>> he = c.heap_explorer(libc_path=pwnlib.data.heap.x86_64.get('libc-2.23.so'))
             >>> print(he.fast_bins()) # doctest: +ELLIPSIS
             ===... Fast Bins ===...
             [0] Fast Bin 0x20 (2) => Chunk(0x1b5c140 0x20 PREV_IN_USE) => Chunk(0x1b5c070 0x20 PREV_IN_USE) => 0x0
@@ -479,7 +483,8 @@ class HeapExplorer:
 
         Tests:
 
-            >>> he = Corefile('./samples/x86_64/core.tcaches1').heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
+            >>> c = Corefile(pwnlib.data.heap.x86_64.get('core.tcaches1'))
+            >>> he = c.heap_explorer(libc_path=pwnlib.data.heap.x86_64.get('libc-2.32.so'))
             >>> he.tcaches_enabled
             True
             >>> print(he.tcaches()) # doctest: +ELLIPSIS
@@ -490,7 +495,8 @@ class HeapExplorer:
 
             Tcaches were included in libc 2.26 so trying to access them in previous versions raises an error
 
-            >>> he = Corefile('./samples/x86_64/core.fast_bins1').heap_explorer(libc_path='./samples/x86_64/libc-2.23.so')
+            >>> c = Corefile(pwnlib.data.heap.x86_64.get('core.fast_bins1'))
+            >>> he = c.heap_explorer(libc_path=pwnlib.data.heap.x86_64.get('libc-2.23.so'))
             >>> try:
             ...    he.tcaches()
             ... except NoTcacheError as e:
@@ -573,8 +579,8 @@ class HeapExplorer:
 
         Tests:
 
-            >>> c = Corefile('./samples/x86_64/core-sample1')
-            >>> he = c.heap_explorer(libc_path='./samples/x86_64/libc-2.32.so')
+            >>> c = Corefile(pwnlib.data.heap.x86_64.get('core-sample1'))
+            >>> he = c.heap_explorer(libc_path=pwnlib.data.heap.x86_64.get('libc-2.32.so'))
             >>> print(he.arena().summary()) # doctest: +ELLIPSIS
             ===... Arena ===...
             - Malloc State (0x7ff101adaba0)
