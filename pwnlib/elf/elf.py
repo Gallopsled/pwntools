@@ -1511,6 +1511,16 @@ class ELF(ELFFile):
         orig_bss = self.get_section_by_name('.bss').header.sh_addr
         curr_bss = orig_bss - self.load_addr + self.address
         return curr_bss + offset
+    
+    def section_addr(self, name):
+        """section_addr(name) -> str
+
+        Returns:
+            Address of the ``name`` section.
+        """
+        orig_section_addr = self.get_section_by_name(name).header.sh_addr
+        curr_section_addr = orig_section - self.load_addr + self.address
+        return curr_section_addr
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.path)
