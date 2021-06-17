@@ -1519,7 +1519,7 @@ class ELF(ELFFile):
             Address of the ``name`` section.
         """
         orig_section_addr = self.get_section_by_name(name).header.sh_addr
-        curr_section_addr = orig_section - self.load_addr + self.address
+        curr_section_addr = orig_section_addr - self.load_addr + self.address
         return curr_section_addr
 
     def __repr__(self):
