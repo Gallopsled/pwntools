@@ -12,7 +12,7 @@ import time
 
 from pwnlib.context import context
 from pwnlib.util.misc import read, write
-from pwnlib.util.packing import _decode
+from pwnlib.util.packing import _encode, _decode
 
 if six.PY3:
     from pathlib import *
@@ -481,6 +481,7 @@ class SSHPath(PosixPath):
         >>> f.read_text()
         'HELLO 😭'
         """
+        data = _encode(data)
         self.write_bytes(data)
 
     def readlink(self):
@@ -512,7 +513,7 @@ class SSHPath(PosixPath):
 
         >>> f = SSHPath('dirA/dirB/dirC', ssh=ssh_conn)
         >>> f.mkdir(parents=True)
-        >>> ssh_conn.run(['ls', '-la', f.absolute().path]).recvline()
+        >>> ssh_conn.run(['ls', '-la', f.absolute().path], env={'LC_ALL': 'C.UTF-8'}).recvline()
         b'total 8\n'
         """
         if exist_ok and self.is_dir():

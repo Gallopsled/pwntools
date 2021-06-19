@@ -521,7 +521,7 @@ def _fit(pieces, preprocessor, packer, filler, stacklevel=1):
             if k >= large_key:
                 k = fill(pack(k))
         elif isinstance(k, (six.text_type, bytearray, bytes)):
-            k = fill(_encode(k))
+            k = fill(_need_bytes(k, stacklevel, 0x80))
         else:
             raise TypeError("flat(): offset must be of type int or str, but got '%s'" % type(k))
         if k in pieces_:
@@ -1009,14 +1009,15 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
 
     return dst
 
-def _need_bytes(s, level=1):
+def _need_bytes(s, level=1, min_wrong=0):
     if isinstance(s, (bytes, bytearray)):
         return s   # already bytes
 
     encoding = context.encoding
     errors = 'strict'
+    worst = -1
     if encoding == 'auto':
-        worst = max(map(ord, s))
+        worst = s and max(map(ord, s)) or 0
         if worst > 255:
             encoding = 'UTF-8'
             errors = 'surrogateescape'
@@ -1025,8 +1026,9 @@ def _need_bytes(s, level=1):
         else:
             encoding = 'ASCII'
 
-    warnings.warn("Text is not bytes; assuming {}, no guarantees. See https://docs.pwntools.com/#bytes"
-                  .format(encoding), BytesWarning, level + 2)
+    if worst >= min_wrong:
+        warnings.warn("Text is not bytes; assuming {}, no guarantees. See https://docs.pwntools.com/#bytes"
+                      .format(encoding), BytesWarning, level + 2)
     return s.encode(encoding, errors)
 
 def _need_text(s, level=1):

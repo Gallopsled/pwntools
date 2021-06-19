@@ -249,7 +249,7 @@ from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.tubes.process import process
 from pwnlib.util import fiddling
-from pwnlib.util.misc import which
+from pwnlib.util.misc import which, normalize_argv_env
 
 log = getLogger(__name__)
 
@@ -391,14 +391,14 @@ def sh_string(s):
         "'foo\\x01'\\''bar'"
     """
     orig_s = s
-    if isinstance(s, six.binary_type):
+    if isinstance(s, (bytes, bytearray)):
         s = s.decode('latin1')
     if '\x00' in s: ##
         log.error("sh_string(): Cannot create a null-byte")
 
     if not s:
         quoted_string = "''" ##
-        if isinstance(orig_s, six.binary_type):
+        if isinstance(orig_s, (bytes, bytearray)):
             quoted_string = quoted_string.encode('latin1')
         return quoted_string
 
@@ -412,7 +412,7 @@ def sh_string(s):
     # If there are no single-quotes, the entire thing can be single-quoted
     if not (chars & set(ESCAPED)):
         quoted_string = "'%s'" % s ##
-        if isinstance(orig_s, six.binary_type):
+        if isinstance(orig_s, (bytes, bytearray)):
             quoted_string = quoted_string.encode('latin1')
         return quoted_string
 
@@ -435,7 +435,7 @@ def sh_string(s):
     if quoted:
         quoted_string += SINGLE_QUOTE
 
-    if isinstance(orig_s, six.binary_type):
+    if isinstance(orig_s, (bytes, bytearray)):
         quoted_string = quoted_string.encode('latin1')
     return quoted_string
 
@@ -456,37 +456,39 @@ def sh_prepare(variables, export = False):
     Examples:
 
         >>> sh_prepare({'X': 'foobar'})
-        'X=foobar'
+        b'X=foobar'
         >>> r = sh_prepare({'X': 'foobar', 'Y': 'cookies'})
-        >>> r == 'X=foobar;Y=cookies' or r == 'Y=cookies;X=foobar'
+        >>> r == b'X=foobar;Y=cookies' or r == b'Y=cookies;X=foobar' or r
         True
         >>> sh_prepare({'X': 'foo bar'})
-        "X='foo bar'"
+        b"X='foo bar'"
         >>> sh_prepare({'X': "foo'bar"})
-        "X='foo'\\''bar'"
+        b"X='foo'\\''bar'"
         >>> sh_prepare({'X': "foo\\\\bar"})
-        "X='foo\\\\bar'"
+        b"X='foo\\\\bar'"
         >>> sh_prepare({'X': "foo\\\\'bar"})
-        "X='foo\\\\'\\''bar'"
+        b"X='foo\\\\'\\''bar'"
         >>> sh_prepare({'X': "foo\\x01'bar"})
-        "X='foo\\x01'\\''bar'"
+        b"X='foo\\x01'\\''bar'"
         >>> sh_prepare({'X': "foo\\x01'bar"}, export = True)
-        "export X='foo\\x01'\\''bar'"
+        b"export X='foo\\x01'\\''bar'"
         >>> sh_prepare({'X': "foo\\x01'bar\\n"})
-        "X='foo\\x01'\\''bar\\n'"
+        b"X='foo\\x01'\\''bar\\n'"
         >>> sh_prepare({'X': "foo\\x01'bar\\n"})
-        "X='foo\\x01'\\''bar\\n'"
+        b"X='foo\\x01'\\''bar\\n'"
         >>> sh_prepare({'X': "foo\\x01'bar\\n"}, export = True)
-        "export X='foo\\x01'\\''bar\\n'"
+        b"export X='foo\\x01'\\''bar\\n'"
     """
 
     out = []
-    export = 'export ' if export else ''
+    export = b'export ' if export else b''
 
-    for k, v in variables.items():
-        out.append('%s%s=%s' % (export, k, sh_string(v)))
+    _, variables = normalize_argv_env([], variables, log)
 
-    return ';'.join(out)
+    for k, v in variables:
+        out.append(b'%s%s=%s' % (export, k, sh_string(v)))
+
+    return b';'.join(out)
 
 def sh_command_with(f, *args):
     r"""sh_command_with(f, arg0, ..., argN) -> command
