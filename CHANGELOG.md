@@ -84,7 +84,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1903]: https://github.com/Gallopsled/pwntools/pull/1903
 [1904]: https://github.com/Gallopsled/pwntools/pull/1904
 [1906]: https://github.com/Gallopsled/pwntools/pull/1906
-[1916]: https://github.com/Gallopsled/pwntools/pull/1916/
+[1916]: https://github.com/Gallopsled/pwntools/pull/1916
 
 ## 4.6.0 (`beta`)
 
