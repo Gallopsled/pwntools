@@ -199,6 +199,7 @@ def which_binutils(util):
             else:
                 patterns = ['%s*linux*-%s' % (arch, gutil),
                             '%s*-elf-%s' % (arch, gutil),
+                            '%s-none*-%s' % (arch, gutil),
                             '%s-%s' % (arch, gutil)]
 
             for pattern in patterns:
