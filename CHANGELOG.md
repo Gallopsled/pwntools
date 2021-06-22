@@ -62,6 +62,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.7.0 (`dev`)
 
+- [#1922][1922] Fix logic in `wait_for_debugger`
 - [#1733][1733] Update libc headers -> more syscalls available!
 - [#1876][1876] add `self.message` and change `sys.exc_type` to `sys.exec_info()` in PwnlibException
 - [#1877][1877] encoders error message handles when `avoid` is bytes in python3
