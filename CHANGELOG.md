@@ -65,6 +65,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1733][1733] Update libc headers -> more syscalls available!
 - [#1876][1876] add `self.message` and change `sys.exc_type` to `sys.exec_info()` in PwnlibException
 - [#1877][1877] encoders error message handles when `avoid` is bytes in python3
+- [#1891][1891] Keep ROP gadgets when setting registers via setattr/call
 - [#1892][1892] Silence SIGPIPE error for "pwn phd"
 - [#1893][1893] Fix bytes warning in "pwn cyclic"
 - [#1897][1897] Add basic support for RISC-V
@@ -77,6 +78,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1733]: https://github.com/Gallopsled/pwntools/pull/1733
 [1876]: https://github.com/Gallopsled/pwntools/pull/1876
 [1877]: https://github.com/Gallopsled/pwntools/pull/1877
+[1891]: https://github.com/Gallopsled/pwntools/pull/1891
 [1892]: https://github.com/Gallopsled/pwntools/pull/1892
 [1893]: https://github.com/Gallopsled/pwntools/pull/1893
 [1897]: https://github.com/Gallopsled/pwntools/pull/1897

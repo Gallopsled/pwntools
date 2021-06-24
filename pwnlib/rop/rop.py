@@ -720,21 +720,24 @@ class ROP(object):
         >>> r = ROP(e)
         >>> r(rax=0xdead, rdi=0xbeef, rsi=0xcafe)
         >>> print(r.dump())
-        0x0000:       0x10000000
+        0x0000:       0x10000000 pop rax; pop rdi; pop rsi; ret
         0x0008:           0xdead
         0x0010:           0xbeef
         0x0018:           0xcafe
         >>> r = ROP(e)
         >>> r({'rax': 0xdead, 'rdi': 0xbeef, 'rsi': 0xcafe})
         >>> print(r.dump())
-        0x0000:       0x10000000
+        0x0000:       0x10000000 pop rax; pop rdi; pop rsi; ret
         0x0008:           0xdead
         0x0010:           0xbeef
         0x0018:           0xcafe
         """
         if len(args) == 1 and isinstance(args[0], dict):
-            for value, _ in self.setRegisters(args[0]):
-                self.raw(value)
+            for value, name in self.setRegisters(args[0]):
+                if isinstance(name, Gadget):
+                    self.raw(name)
+                else:
+                    self.raw(value)
         else:
             self(kwargs)
 

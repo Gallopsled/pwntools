@@ -149,8 +149,8 @@ def ld_prefix(path=None, env=None):
         path = user_path()
 
     # Did we explicitly specify the path in an environment variable?
-    if env and 'QEMU_LD_PREFIX' in env:
-        return env['QEMU_LD_PREFIX']
+    if env and b'QEMU_LD_PREFIX' in env:
+        return env[b'QEMU_LD_PREFIX'].decode()
 
     if 'QEMU_LD_PREFIX' in os.environ:
         return os.environ['QEMU_LD_PREFIX']

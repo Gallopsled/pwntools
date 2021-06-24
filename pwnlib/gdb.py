@@ -299,10 +299,10 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
     if env is not None:
         env_args = []
         for key in tuple(env):
-            if key.startswith('LD_'): # LD_PRELOAD / LD_LIBRARY_PATH etc.
-                env_args.append('{}="{}"'.format(key, env.pop(key)))
+            if key.startswith(b'LD_'): # LD_PRELOAD / LD_LIBRARY_PATH etc.
+                env_args.append(b'%s=%s' % (key, env.pop(key)))
             else:
-                env_args.append('{}="{}"'.format(key, env[key]))
+                env_args.append(b'%s=%s' % (key, env[key]))
         gdbserver_args += ['--wrapper', 'env', '-i'] + env_args + ['--']
 
     gdbserver_args += ['localhost:0']
@@ -522,6 +522,10 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
 
     if api and runner is not tubes.process.process:
         raise ValueError('GDB Python API is supported only for local processes')
+
+    args, env = misc.normalize_argv_env(args, env, log)
+    if env:
+        env = {bytes(k): bytes(v) for k, v in env}
 
     if context.noptrace:
         log.warn_once("Skipping debugger since context.noptrace==True")
@@ -901,10 +905,8 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         shell = target.parent
 
         tmpfile = shell.mktemp()
-        if six.PY3:
-            tmpfile = tmpfile.decode()
-        gdbscript = 'shell rm %s\n%s' % (tmpfile, gdbscript)
-        shell.upload_data(gdbscript or '', tmpfile)
+        gdbscript = b'shell rm %s\n%s' % (tmpfile, packing._need_bytes(gdbscript, 2, 0x80))
+        shell.upload_data(gdbscript or b'', tmpfile)
 
         cmd = ['ssh', '-C', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
         if shell.password:
