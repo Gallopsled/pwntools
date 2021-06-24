@@ -72,6 +72,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1904][1904] Add bash completion script
 - [#1906][1906] Defer import of several modules to save on startup time
 - [#1918][1918] Add `section_addr` method in pwnlib.elf
+- [#1921][1921] Add basic support for the bare-metal ARM specific toolchain
 
 [1733]: https://github.com/Gallopsled/pwntools/pull/1733
 [1876]: https://github.com/Gallopsled/pwntools/pull/1876
@@ -83,6 +84,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1904]: https://github.com/Gallopsled/pwntools/pull/1904
 [1906]: https://github.com/Gallopsled/pwntools/pull/1906
 [1918]: https://github.com/Gallopsled/pwntools/pull/1918
+[1921]: https://github.com/Gallopsled/pwntools/pull/1921
 
 ## 4.6.0 (`beta`)
 
