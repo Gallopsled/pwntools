@@ -2,49 +2,17 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import collections
 import random
 import re
-import string
 
 from pwnlib.context import LocalContext
 from pwnlib.context import context
+from pwnlib.encoders.encoder_class import Encoder
 from pwnlib.log import getLogger
 from pwnlib.util.fiddling import hexdump
 from pwnlib.util.misc import byteset
 
 log = getLogger(__name__)
-
-class Encoder(object):
-    _encoders = collections.defaultdict(lambda: [])
-
-    #: Architecture which this encoder works on
-    arch = None
-
-    #: Blacklist of bytes which are known not to be supported
-    blacklist = set()
-
-    def __init__(self):
-        """Shellcode encoder class
-
-        Implements an architecture-specific shellcode encoder
-        """
-        Encoder._encoders[self.arch].append(self)
-
-    def __call__(self, raw_bytes, avoid, pcreg):
-        """avoid(raw_bytes, avoid)
-
-        Arguments:
-            raw_bytes(bytes):
-                Bytes to encode
-            avoid(bytes):
-                Bytes to avoid
-            pcreg(str):
-                Register which contains the address of the shellcode.
-                May be necessary for some shellcode.
-        """
-        raise NotImplementedError()
-
 
 @LocalContext
 def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
