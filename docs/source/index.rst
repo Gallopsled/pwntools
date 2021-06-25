@@ -52,7 +52,7 @@ Each of the ``pwntools`` modules is documented here.
    context
    dynelf
    encoders
-   elf
+   elf/*
    exception
    filepointer
    filesystem
@@ -65,7 +65,6 @@ Each of the ``pwntools`` modules is documented here.
    protocols
    qemu
    replacements
-   rop
    rop/*
    runner
    shellcraft
@@ -83,6 +82,7 @@ Each of the ``pwntools`` modules is documented here.
    :hidden:
 
    testexample
+   rop/call
 
 .. only:: not dash
 
