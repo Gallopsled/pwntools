@@ -50,6 +50,8 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
         if encoder.blacklist & avoid:
             continue
 
+        log.debug('Selected encoder %r', encoder)
+
         bytes_avoid = b''.join(avoid)
 
         try:
@@ -57,7 +59,7 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
         except NotImplementedError:
             continue
 
-        if avoid & set(v):
+        if avoid & byteset(v):
             log.warning_once("Encoder %s did not succeed" % encoder)
             continue
 
@@ -77,7 +79,7 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
     msg = msg.replace('%', '%%')
     log.error(msg)
 
-all_chars        = list(chr(i) for i in range(256))
+all_chars        = list(bytes([i]) for i in range(256))
 re_alphanumeric  = r'[^A-Za-z0-9]'
 re_printable     = r'[^\x21-\x7e]'
 re_whitespace    = r'\s'

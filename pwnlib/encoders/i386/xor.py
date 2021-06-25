@@ -15,10 +15,10 @@ from __future__ import division
 from pwnlib import shellcraft
 from pwnlib.asm import asm
 from pwnlib.context import context
-from pwnlib.encoders.encoder import Encoder
+from pwnlib.encoders.encoder_class import Encoder
 from pwnlib.util.fiddling import xor_pair
 from pwnlib.util.lists import group
-
+from pwnlib.util.misc import byteset
 
 # Note shellcode assumes it's based at ecx
 
@@ -61,7 +61,7 @@ loop:
 end:
 '''
 
-    blacklist = set('\x14$1I^tu\x83\x89\x93\xab\xad\xc6\xd8\xd9\xf4\xf7\xfc')
+    blacklist = byteset(b'\x14$1I^tu\x83\x89\x93\xab\xad\xc6\xd8\xd9\xf4\xf7\xfc')
 
     def __call__(self, raw_bytes, avoid, pcreg=''):
         while len(raw_bytes) % context.bytes:

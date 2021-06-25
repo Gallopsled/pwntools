@@ -9,8 +9,9 @@ from random import randint
 from pwnlib.asm import asm
 from pwnlib.asm import disasm
 from pwnlib.context import context
-from pwnlib.encoders.encoder import Encoder
+from pwnlib.encoders.encoder_class import Encoder
 from pwnlib.util.fiddling import hexdump
+from pwnlib.util.misc import byteset
 
 
 '''
@@ -53,7 +54,7 @@ class i386DeltaEncoder(Encoder):
     terminator = 0xac
     raw        = b'\xd9\xd0\xfc\xd9t$\xf4^\x83\xc6\x18\x89\xf7\xac\x93\xac(\xd8\xaa\x80\xeb\xacu\xf5'
 
-    blacklist  = set(raw)
+    blacklist  = byteset(raw)
 
     def __call__(self, raw_bytes, avoid, pcreg=''):
         table = collections.defaultdict(lambda: [])
