@@ -62,6 +62,20 @@ e.g. ``pop eax; pop ecx; ret`` gadget that can be taken advantage of.
     0x0010:          b'eaaa' <pad ebx>
     0x0014:       0xffffffff
 
+If you just want to FIND a ROP gadget, you can access them as a property on the ``ROP``
+object by register name.
+
+    >>> rop = ROP(binary)
+    >>> rop.eax
+    Gadget(0x10000004, ['pop eax', 'ret'], ['eax'], 0x8)
+    >>> hex(rop.eax.address)
+    '0x10000004'
+    >>> rop.raw(rop.eax)
+    >>> rop.raw(0x12345678)
+    >>> print(rop.dump())
+    0x0000:       0x10000004 pop eax; ret
+    0x0004:       0x12345678
+
 Let's re-create our ROP object now to show for some other examples.:
 
     >>> rop = ROP(binary)
