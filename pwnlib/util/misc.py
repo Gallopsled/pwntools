@@ -500,7 +500,7 @@ def python_2_bytes_compatible(klass):
             klass.__str__ = klass.__bytes__
     return klass
 
-def byteset(b):
+def byteset(b=b''):
     """
     Converts a ``bytes`` object into a ``set`` of ``bytes``.
 
