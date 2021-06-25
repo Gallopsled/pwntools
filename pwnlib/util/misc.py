@@ -499,3 +499,27 @@ def python_2_bytes_compatible(klass):
         if '__str__' not in klass.__dict__:
             klass.__str__ = klass.__bytes__
     return klass
+
+def byteset(b):
+    """
+    Converts a ``bytes`` object into a ``set`` of ``bytes``.
+
+    This is necessary because of differences between Python2 and Python3.
+
+    In Python2, a ``set`` of ``bytes`` contains individual objects of ``bytes`` class.
+
+    In Python3, a ``set`` of ``bytes`` contains individual objects of ``int`` class.
+
+    This class normalizes the behavior, so that the ``set`` return always contains
+    objects of the ``bytes`` class.
+
+    >>> sorted(byteset(b'asdf'))
+    [b'a', b'd', b'f', b's']
+    """
+    if not isinstance(b, bytes):
+        log.error("byteset only accepts type bytes")
+
+    if six.PY2:
+        return set(b)
+
+    return set([b[i:i+1] for i in range(len(b))])

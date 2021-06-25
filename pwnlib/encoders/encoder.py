@@ -11,6 +11,7 @@ from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util.fiddling import hexdump
+from pwnlib.util.misc import byteset
 
 log = getLogger(__name__)
 
@@ -34,10 +35,10 @@ class Encoder(object):
         """avoid(raw_bytes, avoid)
 
         Arguments:
-            raw_bytes(str):
-                String of bytes to encode
-            avoid(set):
-                Set of bytes to avoid
+            raw_bytes(bytes):
+                Bytes to encode
+            avoid(bytes):
+                Bytes to avoid
             pcreg(str):
                 Register which contains the address of the shellcode.
                 May be necessary for some shellcode.
@@ -54,33 +55,37 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
 
     Arguments:
 
-        raw_bytes(str): Sequence of shellcode bytes to encode.
-        avoid(str):     Bytes to avoid
-        expr(str):      Regular expression which matches bad characters.
-        force(bool):    Force re-encoding of the shellcode, even if it
-                        doesn't contain any bytes in ``avoid``.
+        raw_bytes(bytes): Sequence of shellcode bytes to encode.
+        avoid(bytes):     Bytes to avoid
+        expr(bytes):      Regular expression which matches bad characters.
+        force(bool):      Force re-encoding of the shellcode, even if it
+                          doesn't contain any bytes in ``avoid``.
     """
     orig_avoid = avoid
 
-    avoid = set(avoid or '')
+    avoid = byteset(avoid or '')
 
     if expr:
         for char in all_chars:
             if re.search(expr, char):
                 avoid.add(char)
 
-    if not (force or avoid & set(raw_bytes)):
+    if not (force or avoid & byteset(raw_bytes)):
         return raw_bytes
 
     encoders = Encoder._encoders[context.arch]
-    random.shuffle(encoders)
+
+    if context.randomize:
+        random.shuffle(encoders)
 
     for encoder in encoders:
         if encoder.blacklist & avoid:
             continue
 
+        bytes_avoid = b''.join(avoid)
+
         try:
-            v = encoder(raw_bytes, avoid, pcreg)
+            v = encoder(raw_bytes, bytes_avoid, pcreg)
         except NotImplementedError:
             continue
 
@@ -113,7 +118,7 @@ re_line          = r'[\s\x00]'
 
 @LocalContext
 def null(raw_bytes, *a, **kw):
-    """null(raw_bytes) -> str
+    """null(raw_bytes) -> bytes
 
     Encode the shellcode ``raw_bytes`` such that it does not
     contain any NULL bytes.
@@ -124,7 +129,7 @@ def null(raw_bytes, *a, **kw):
 
 @LocalContext
 def line(raw_bytes, *a, **kw):
-    """line(raw_bytes) -> str
+    """line(raw_bytes) -> bytes
 
     Encode the shellcode ``raw_bytes`` such that it does not
     contain any NULL bytes or whitespace.
@@ -135,7 +140,7 @@ def line(raw_bytes, *a, **kw):
 
 @LocalContext
 def alphanumeric(raw_bytes, *a, **kw):
-    """alphanumeric(raw_bytes) -> str
+    """alphanumeric(raw_bytes) -> bytes
 
     Encode the shellcode ``raw_bytes`` such that it does not
     contain any bytes except for [A-Za-z0-9].
@@ -146,7 +151,7 @@ def alphanumeric(raw_bytes, *a, **kw):
 
 @LocalContext
 def printable(raw_bytes, *a, **kw):
-    """printable(raw_bytes) -> str
+    """printable(raw_bytes) -> bytes
 
     Encode the shellcode ``raw_bytes`` such that it only contains
     non-space printable bytes.
@@ -157,7 +162,7 @@ def printable(raw_bytes, *a, **kw):
 
 @LocalContext
 def scramble(raw_bytes, *a, **kw):
-    """scramble(raw_bytes) -> str
+    """scramble(raw_bytes) -> bytes
 
     Encodes the input data with a random encoder.
 
