@@ -100,13 +100,13 @@ def size(n, abbrev = 'B', si = False):
 
     return '%.02fP%s' % (n / base, abbrev)
 
-KB = 1024
-MB = 1024 * KB
-GB = 1024 * MB
+KB = 1000
+MB = 1000 * KB
+GB = 1000 * MB
 
-KiB = 1000
-MiB = 1000 * KB
-GiB = 1000 * MB
+KiB = 1024
+MiB = 1024 * KiB
+GiB = 1024 * MiB
 
 def read(path, count=-1, skip=0):
     r"""read(path, count=-1, skip=0) -> str
