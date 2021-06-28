@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1906][1906] Defer import of several modules to save on startup time
 - [#1921][1921] Add basic support for the bare-metal ARM specific toolchain
 
+[1922]: https://github.com/Gallopsled/pwntools/pull/1922
 [1733]: https://github.com/Gallopsled/pwntools/pull/1733
 [1876]: https://github.com/Gallopsled/pwntools/pull/1876
 [1877]: https://github.com/Gallopsled/pwntools/pull/1877
