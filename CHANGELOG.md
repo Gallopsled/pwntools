@@ -62,7 +62,6 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.7.0 (`dev`)
 
-- [#1922][1922] Fix logic in `wait_for_debugger`
 - [#1733][1733] Update libc headers -> more syscalls available!
 - [#1876][1876] add `self.message` and change `sys.exc_type` to `sys.exec_info()` in PwnlibException
 - [#1877][1877] encoders error message handles when `avoid` is bytes in python3
@@ -74,8 +73,8 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1904][1904] Add bash completion script
 - [#1906][1906] Defer import of several modules to save on startup time
 - [#1921][1921] Add basic support for the bare-metal ARM specific toolchain
+- [#1922][1922] Fix logic in `wait_for_debugger`
 
-[1922]: https://github.com/Gallopsled/pwntools/pull/1922
 [1733]: https://github.com/Gallopsled/pwntools/pull/1733
 [1876]: https://github.com/Gallopsled/pwntools/pull/1876
 [1877]: https://github.com/Gallopsled/pwntools/pull/1877
@@ -87,6 +86,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1904]: https://github.com/Gallopsled/pwntools/pull/1904
 [1906]: https://github.com/Gallopsled/pwntools/pull/1906
 [1921]: https://github.com/Gallopsled/pwntools/pull/1921
+[1922]: https://github.com/Gallopsled/pwntools/pull/1922
 
 ## 4.6.0 (`beta`)
 
