@@ -15,6 +15,15 @@ import subprocess
 import sys
 import time
 
+import windows
+import windows.winobject
+import windows.winproxy
+import windows.native_exec.nativeutils
+import windows.generated_def as gdef
+from win32process import CREATE_SUSPENDED
+from windows.generated_def.winstructs import *
+import windows.native_exec.simple_x64 as x64
+
 if sys.platform != 'win32':
     import fcntl
     import pty
@@ -41,7 +50,72 @@ PIPE = subprocess.PIPE
 
 signal_names = {-v:k for k,v in signal.__dict__.items() if k.startswith('SIG')}
 
-class process(tube):
+CreatePipePrototype = gdef.WINFUNCTYPE(gdef.BOOL, gdef.PHANDLE, gdef.PHANDLE, gdef.LPSECURITY_ATTRIBUTES, gdef.DWORD)
+CreatePipeParams = ((1, 'hReadPipe'), (1, 'hReadPipe'), (1, 'lpPipeAttributes'), (1, 'nSize'))
+
+@windows.winproxy.Kernel32Proxy('CreatePipe', deffunc_module=sys.modules[__name__])
+def CreatePipe(lpPipeAttributes=None, nSize=0):
+    hReadPipe = gdef.HANDLE()
+    hWritePipe = gdef.HANDLE()
+    CreatePipe.ctypes_function(hReadPipe, hWritePipe, lpPipeAttributes, nSize)
+    return hReadPipe.value, hWritePipe.value
+
+PeekNamedPipePrototype = gdef.WINFUNCTYPE(gdef.BOOL, gdef.HANDLE, gdef.LPVOID, gdef.DWORD, gdef.LPDWORD, gdef.LPDWORD, gdef.LPDWORD)
+PeekNamedPipeParams = ((1, 'hNamedPipe'), (1, 'lpBuffer'), (1, 'nBufferSize'), (1, 'lpBytesRead'), (1, 'lpTotalBytesAvail'), (1, 'lpBytesLeftThisMessage'))
+
+@windows.winproxy.Kernel32Proxy('PeekNamedPipe', deffunc_module=sys.modules[__name__])
+def PeekNamedPipe(hNamedPipe):
+    lpTotalBytesAvail = gdef.DWORD()
+    PeekNamedPipe.ctypes_function(hNamedPipe, None, 0, None, lpTotalBytesAvail, None)
+    return lpTotalBytesAvail.value
+
+class Pipe(object):
+    """Windows pipe support"""
+
+    def __init__(self, bInheritHandle=1):
+        attr = SECURITY_ATTRIBUTES()
+        attr.lpSecurityDescriptor = 0
+        attr.bInheritHandle = bInheritHandle
+        attr.nLength = ctypes.sizeof(attr)
+        self._rpipe, self._wpipe = CreatePipe(attr)
+        self.timeout = 500  # ms
+        self.tick = 40  # ms
+
+    def get_handle(self, mode='r'):
+        """get_handle(mode = 'r') returns the 'r'ead / 'w'rite HANDLE of the pipe"""
+        if mode and mode[0] == 'w':
+            return self._wpipe
+        return self._rpipe
+
+    def __del__(self):
+        windows.winproxy.CloseHandle(self._rpipe)
+        windows.winproxy.CloseHandle(self._wpipe)
+
+    def select(self):
+        """select() returns the number of bytes available to read on the pipe"""
+        return PeekNamedPipe(self._rpipe)
+
+    def _read(self, size):
+        if size == 0:
+            return ''
+        buffer = ctypes.create_string_buffer(size)
+        windows.winproxy.ReadFile(self._rpipe, buffer)
+        return buffer.raw
+
+    def read(self, size):
+        """read(size) returns the bytes read on the pipe (returned length <= size)"""
+        if self.select() < size:
+            elapsed = 0
+            while elapsed <= self.timeout and self.select() < size:
+                time.sleep(float(self.tick) / 1000)
+                elapsed += self.tick
+        return self._read(min(self.select(), size))
+
+    def write(self, buffer):
+        """write(buffer) sends the buffer on the pipe"""
+        windows.winproxy.WriteFile(self._wpipe, buffer)
+
+class process(windows.winobject.process.WinProcess, tube):
     r"""
     Spawns a new process, and wraps it with a tube for communication.
 
@@ -210,6 +284,7 @@ class process(tube):
         >>> p = process(binary.path, cwd=os.path.relpath(binary_dir))
     """
 
+
     STDOUT = STDOUT
     PIPE = PIPE
     PTY = PTY
@@ -233,145 +308,175 @@ class process(tube):
                  where = 'local',
                  display = None,
                  alarm = None,
+                 flags=0,
+                 nostdhandles=False,
                  *args,
                  **kwargs
                  ):
-        super(process, self).__init__(*args,**kwargs)
 
-        # Permit using context.binary
-        if argv is None:
-            if context.binary:
-                argv = [context.binary.path]
-            else:
-                raise TypeError('Must provide argv or set context.binary')
+        if context.os == "linux":
+            super(process, self).__init__(*args, **kwargs)
+
+            # Permit using context.binary
+            if argv is None:
+                if context.binary:
+                    argv = [context.binary.path]
+                else:
+                    raise TypeError('Must provide argv or set context.binary')
 
 
-        #: :class:`subprocess.Popen` object that backs this process
-        self.proc = None
+            #: :class:`subprocess.Popen` object that backs this process
+            self.proc = None
 
-        # We need to keep a copy of the un-_validated environment for printing
-        original_env = env
+            # We need to keep a copy of the un-_validated environment for printing
+            original_env = env
 
-        if shell:
-            executable_val, argv_val, env_val = executable, argv, env
-        else:
-            executable_val, argv_val, env_val = self._validate(cwd, executable, argv, env)
-
-        # Avoid the need to have to deal with the STDOUT magic value.
-        if stderr is STDOUT:
-            stderr = stdout
-
-        # Determine which descriptors will be attached to a new PTY
-        handles = (stdin, stdout, stderr)
-
-        #: Which file descriptor is the controlling TTY
-        self.pty          = handles.index(PTY) if PTY in handles else None
-
-        #: Whether the controlling TTY is set to raw mode
-        self.raw          = raw
-
-        #: Whether ASLR should be left on
-        self.aslr         = aslr if aslr is not None else context.aslr
-
-        #: Whether setuid is permitted
-        self._setuid      = setuid if setuid is None else bool(setuid)
-
-        # Create the PTY if necessary
-        stdin, stdout, stderr, master, slave = self._handles(*handles)
-
-        #: Arguments passed on argv
-        self.argv = argv_val
-
-        #: Full path to the executable
-        self.executable = executable_val
-
-        #: Environment passed on envp
-        self.env = os.environ if env is None else env_val
-
-        if self.executable is None:
             if shell:
-                self.executable = '/bin/sh'
+                executable_val, argv_val, env_val = executable, argv, env
             else:
-                self.executable = which(self.argv[0], path=self.env.get('PATH'))
+                executable_val, argv_val, env_val = self._validate(cwd, executable, argv, env)
 
-        self._cwd = os.path.realpath(cwd or os.path.curdir)
+            # Avoid the need to have to deal with the STDOUT magic value.
+            if stderr is STDOUT:
+                stderr = stdout
 
-        #: Alarm timeout of the process
-        self.alarm        = alarm
+            # Determine which descriptors will be attached to a new PTY
+            handles = (stdin, stdout, stderr)
 
-        self.preexec_fn = preexec_fn
-        self.display    = display or self.program
-        self._qemu      = False
-        self._corefile  = None
+            #: Which file descriptor is the controlling TTY
+            self.pty          = handles.index(PTY) if PTY in handles else None
 
-        message = "Starting %s process %r" % (where, self.display)
+            #: Whether the controlling TTY is set to raw mode
+            self.raw          = raw
 
-        if self.isEnabledFor(logging.DEBUG):
-            if argv != [self.executable]: message += ' argv=%r ' % self.argv
-            if original_env not in (os.environ, None):  message += ' env=%r ' % self.env
+            #: Whether ASLR should be left on
+            self.aslr         = aslr if aslr is not None else context.aslr
 
-        with self.progress(message) as p:
+            #: Whether setuid is permitted
+            self._setuid      = setuid if setuid is None else bool(setuid)
 
-            if not self.aslr:
-                self.warn_once("ASLR is disabled!")
+            # Create the PTY if necessary
+            stdin, stdout, stderr, master, slave = self._handles(*handles)
 
-            # In the event the binary is a foreign architecture,
-            # and binfmt is not installed (e.g. when running on
-            # Travis CI), re-try with qemu-XXX if we get an
-            # 'Exec format error'.
-            prefixes = [([], self.executable)]
-            exception = None
+            #: Arguments passed on argv
+            self.argv = argv_val
 
-            for prefix, executable in prefixes:
-                try:
-                    args = self.argv
-                    if prefix:
-                        args = prefix + args
-                    self.proc = subprocess.Popen(args = args,
-                                                 shell = shell,
-                                                 executable = executable,
-                                                 cwd = cwd,
-                                                 env = self.env,
-                                                 stdin = stdin,
-                                                 stdout = stdout,
-                                                 stderr = stderr,
-                                                 close_fds = close_fds,
-                                                 preexec_fn = self.__preexec_fn)
-                    break
-                except OSError as exception:
-                    if exception.errno != errno.ENOEXEC:
-                        raise
-                    prefixes.append(self.__on_enoexec(exception))
+            #: Full path to the executable
+            self.executable = executable_val
 
-            p.success('pid %i' % self.pid)
+            #: Environment passed on envp
+            self.env = os.environ if env is None else env_val
 
-        if self.pty is not None:
-            if stdin is slave:
-                self.proc.stdin = os.fdopen(os.dup(master), 'r+b', 0)
-            if stdout is slave:
-                self.proc.stdout = os.fdopen(os.dup(master), 'r+b', 0)
-            if stderr is slave:
-                self.proc.stderr = os.fdopen(os.dup(master), 'r+b', 0)
+            if self.executable is None:
+                if shell:
+                    self.executable = '/bin/sh'
+                else:
+                    self.executable = which(self.argv[0], path=self.env.get('PATH'))
 
-            os.close(master)
-            os.close(slave)
+            self._cwd = os.path.realpath(cwd or os.path.curdir)
 
-        # Set in non-blocking mode so that a call to call recv(1000) will
-        # return as soon as a the first byte is available
-        if self.proc.stdout:
-            fd = self.proc.stdout.fileno()
-            fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-            fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+            #: Alarm timeout of the process
+            self.alarm        = alarm
 
-        # Save off information about whether the binary is setuid / setgid
-        self.suid = self.uid = os.getuid()
-        self.sgid = self.gid = os.getgid()
-        st = os.stat(self.executable)
-        if self._setuid:
-            if (st.st_mode & stat.S_ISUID):
-                self.suid = st.st_uid
-            if (st.st_mode & stat.S_ISGID):
-                self.sgid = st.st_gid
+            self.preexec_fn = preexec_fn
+            self.display    = display or self.program
+            self._qemu      = False
+            self._corefile  = None
+
+            message = "Starting %s process %r" % (where, self.display)
+
+            if self.isEnabledFor(logging.DEBUG):
+                if argv != [self.executable]: message += ' argv=%r ' % self.argv
+                if original_env not in (os.environ, None):  message += ' env=%r ' % self.env
+
+            with self.progress(message) as p:
+
+                if not self.aslr:
+                    self.warn_once("ASLR is disabled!")
+
+                # In the event the binary is a foreign architecture,
+                # and binfmt is not installed (e.g. when running on
+                # Travis CI), re-try with qemu-XXX if we get an
+                # 'Exec format error'.
+                prefixes = [([], self.executable)]
+                exception = None
+
+                for prefix, executable in prefixes:
+                    try:
+                        args = self.argv
+                        if prefix:
+                            args = prefix + args
+                        self.proc = subprocess.Popen(args = args,
+                                                     shell = shell,
+                                                     executable = executable,
+                                                     cwd = cwd,
+                                                     env = self.env,
+                                                     stdin = stdin,
+                                                     stdout = stdout,
+                                                     stderr = stderr,
+                                                     close_fds = close_fds,
+                                                     preexec_fn = self.__preexec_fn)
+                        break
+                    except OSError as exception:
+                        if exception.errno != errno.ENOEXEC:
+                            raise
+                        prefixes.append(self.__on_enoexec(exception))
+
+                p.success('pid %i' % self.pid)
+
+            if self.pty is not None:
+                if stdin is slave:
+                    self.proc.stdin = os.fdopen(os.dup(master), 'r+b', 0)
+                if stdout is slave:
+                    self.proc.stdout = os.fdopen(os.dup(master), 'r+b', 0)
+                if stderr is slave:
+                    self.proc.stderr = os.fdopen(os.dup(master), 'r+b', 0)
+
+                os.close(master)
+                os.close(slave)
+
+            # Set in non-blocking mode so that a call to call recv(1000) will
+            # return as soon as a the first byte is available
+            if self.proc.stdout:
+                fd = self.proc.stdout.fileno()
+                fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+                fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+
+            # Save off information about whether the binary is setuid / setgid
+            self.suid = self.uid = os.getuid()
+            self.sgid = self.gid = os.getgid()
+            st = os.stat(self.executable)
+            if self._setuid:
+                if (st.st_mode & stat.S_ISUID):
+                    self.suid = st.st_uid
+                if (st.st_mode & stat.S_ISGID):
+                    self.sgid = st.st_gid
+
+        elif context.os == "windows":
+            executable_val = executable
+            self.flags = flags
+            self.stdhandles = not nostdhandles
+
+            self.debuggerpath = r'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\windbg.exe'
+            self.newline = b'\n'
+            self.__imports = None
+            self.__symbols = None
+            self.__libs = None
+            self.__offsets = None
+
+            if self.stdhandles:
+                self.stdin = Pipe()
+                self.stdout = Pipe()
+                # stderr mixed with stdout self.stderr = Pipe()
+                self.timeout = 500  # ms
+                self._default_timeout = 500  # ms
+
+            if self._create_process() != 0:
+                raise (ValueError("CreateProcess failed - Invalid arguments"))
+            super(process, self).__init__(pid=self.__pid, handle=self.__phandle)
+            if not (flags & CREATE_SUSPENDED):
+                self.wait_initialized()
+
 
     def __preexec_fn(self):
         """
@@ -608,9 +713,10 @@ class process(tube):
         """Permit pass-through access to the underlying process object for
         fields like ``pid`` and ``stdin``.
         """
-        if hasattr(self.proc, attr):
-            return getattr(self.proc, attr)
-        raise AttributeError("'process' object has no attribute '%s'" % attr)
+        if context.os == "linux":
+            if hasattr(self.proc, attr):
+                return getattr(self.proc, attr)
+            raise AttributeError("'process' object has no attribute '%s'" % attr)
 
     def kill(self):
         """kill()
@@ -734,25 +840,31 @@ class process(tube):
             return not self.proc.stdout.closed
 
     def close(self):
-        if self.proc is None:
-            return
+        if context.os == "linux":
+            if self.proc is None:
+                return
 
-        # First check if we are already dead
-        self.poll()
+            # First check if we are already dead
+            self.poll()
 
-        #close file descriptors
-        for fd in [self.proc.stdin, self.proc.stdout, self.proc.stderr]:
-            if fd is not None:
-                fd.close()
+            #close file descriptors
+            for fd in [self.proc.stdin, self.proc.stdout, self.proc.stderr]:
+                if fd is not None:
+                    fd.close()
 
-        if not self._stop_noticed:
-            try:
-                self.proc.kill()
-                self.proc.wait()
-                self._stop_noticed = time.time()
-                self.info('Stopped process %r (pid %i)' % (self.program, self.pid))
-            except OSError:
-                pass
+            if not self._stop_noticed:
+                try:
+                    self.proc.kill()
+                    self.proc.wait()
+                    self._stop_noticed = time.time()
+                    self.info('Stopped process %r (pid %i)' % (self.program, self.pid))
+                except OSError:
+                    pass
+
+        if context.os == "windows":#TODO : close the windows process
+            """if not self.is_exit:
+                self.exit(0)"""
+            pass
 
 
     def fileno(self):

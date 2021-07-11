@@ -17,3 +17,10 @@ if not platform.architecture()[0].startswith('64'):
 
 with context.local(log_console=sys.stderr):
     pwnlib.update.check_automatically()
+
+context.os = "windows"
+print(context.os)
+
+p = process(b"C:\Users\yoshi\Desktop\coucou-printf.exe")#, nostdhandles=True
+
+print("hey")

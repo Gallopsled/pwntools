@@ -4,3 +4,4 @@
 
 # Amazing command
 -e .
+git+git://github.com/hakril/PythonForWindows
