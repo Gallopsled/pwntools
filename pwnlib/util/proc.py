@@ -333,7 +333,7 @@ def wait_for_debugger(pid, debugger_pid=None):
     t = Timeout()
     with t.countdown(timeout=15):
         with log.waitfor('Waiting for debugger') as l:
-            while debugger_pid:
+            while debugger_pid and tracer(pid) is None:
                 debugger = psutil.Process(debugger_pid)
                 while t.timeout and tracer(pid) is None:
                     try:
