@@ -68,6 +68,7 @@ from pwnlib.context import context
 from pwnlib.device import Device
 from pwnlib.log import getLogger
 from pwnlib.protocols.adb import AdbClient
+from pwnlib.util.packing import _decode
 from pwnlib.util import misc
 
 log = getLogger(__name__)
@@ -120,8 +121,8 @@ def current_device(any=False):
        :skipif: skip_android
 
         >>> device = adb.current_device(any=True)
-        >>> device
-        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_google_phone_armv7', model='sdk google phone armv7', device='generic')
+        >>> device  # doctest: +ELLIPSIS
+        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_...phone_armv7', model='sdk ...phone armv7', device='generic')
         >>> device.port
         'emulator'
     """
@@ -256,8 +257,8 @@ class AdbDevice(Device):
         32
         >>> device.os
         'android'
-        >>> device.product
-        'sdk_google_phone_armv7'
+        >>> device.product  # doctest: +ELLIPSIS
+        'sdk_...phone_armv7'
         >>> device.serial
         'emulator-5554'
     """
@@ -895,7 +896,7 @@ def which(name, all = False, *a, **kw):
 
     which_cmd = which_cmd.strip()
     data = process(['sh','-c', which_cmd], *a, **kw).recvall()
-    data = context._decode(data)
+    data = _decode(data)
     result = []
 
     for path in data.split('\x00'):
@@ -1012,12 +1013,12 @@ def getprop(name=None):
     with context.quiet:
         if name:
             result = process(['getprop', name]).recvall().strip()
-            result = context._decode(result)
+            result = _decode(result)
             return result
 
         result = process(['getprop']).recvall()
 
-    result = context._decode(result)
+    result = _decode(result)
     expr = r'\[([^\]]+)\]: \[(.*)\]'
 
     props = {}
@@ -1591,3 +1592,4 @@ def version():
     """Returns rthe platform version as a tuple."""
     prop = getprop('ro.build.version.release')
     return [int(v) for v in prop.split('.')]
+

@@ -6,7 +6,7 @@ import argparse
 import functools
 import re
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
