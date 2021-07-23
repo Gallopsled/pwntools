@@ -80,7 +80,7 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
             continue
 
         try:
-            v = encoder(raw_bytes, avoid, pcreg)
+            v = encoder(raw_bytes, bytes(avoid), pcreg)
         except NotImplementedError:
             continue
 

@@ -18,6 +18,7 @@ from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util import fiddling
 from pwnlib.util import lists
+from pwnlib.util import packing
 
 log = getLogger(__name__)
 
@@ -184,6 +185,63 @@ def which(name, all = False, path=None):
     else:
         return None
 
+
+def normalize_argv_env(argv, env, log, level=2):
+    #
+    # Validate argv
+    #
+    # - Must be a list/tuple of strings
+    # - Each string must not contain '\x00'
+    #
+    argv = argv or []
+    if isinstance(argv, (six.text_type, six.binary_type)):
+        argv = [argv]
+
+    if not isinstance(argv, (list, tuple)):
+        log.error('argv must be a list or tuple: %r' % argv)
+
+    if not all(isinstance(arg, (six.text_type, bytes, bytearray)) for arg in argv):
+        log.error("argv must be strings or bytes: %r" % argv)
+
+    # Create a duplicate so we can modify it
+    argv = list(argv)
+
+    for i, oarg in enumerate(argv):
+        arg = packing._need_bytes(oarg, level, 0x80)  # ASCII text is okay
+        if b'\x00' in arg[:-1]:
+            log.error('Inappropriate nulls in argv[%i]: %r' % (i, oarg))
+        argv[i] = bytearray(arg.rstrip(b'\x00'))
+
+    #
+    # Validate environment
+    #
+    # - Must be a dictionary of {string:string}
+    # - No strings may contain '\x00'
+    #
+
+    # Create a duplicate so we can modify it safely
+    env2 = []
+    if hasattr(env, 'items'):
+        env_items = env.items()
+    else:
+        env_items = env
+    if env:
+        for k,v in env_items:
+            if not isinstance(k, (bytes, six.text_type)):
+                log.error('Environment keys must be strings: %r' % k)
+            if not isinstance(k, (bytes, six.text_type)):
+                log.error('Environment values must be strings: %r=%r' % (k,v))
+            k = packing._need_bytes(k, level, 0x80)  # ASCII text is okay
+            v = packing._need_bytes(v, level, 0x80)  # ASCII text is okay
+            if b'\x00' in k[:-1]:
+                log.error('Inappropriate nulls in env key: %r' % (k))
+            if b'\x00' in v[:-1]:
+                log.error('Inappropriate nulls in env value: %r=%r' % (k, v))
+            env2.append((bytearray(k.rstrip(b'\x00')), bytearray(v.rstrip(b'\x00'))))
+
+    return argv, env2 or env
+
+
 def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, preexec_fn=None):
     """run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, preexec_fn=None) -> int
 
@@ -229,7 +287,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             args     = []
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
-            args     = ['splitw', '-F' '#{pane_pid}', '-P']
+            args     = ['splitw']
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
@@ -255,6 +313,12 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
 
     if isinstance(args, tuple):
         args = list(args)
+
+    # When not specifying context.terminal explicitly, we used to set these flags above.
+    # However, if specifying terminal=['tmux', 'splitw', '-h'], we would be lacking these flags.
+    # Instead, set them here and hope for the best.
+    if terminal == 'tmux':
+        args += ['-F' '#{pane_pid}', '-P']
 
     argv = [which(terminal)] + args
 

@@ -7,10 +7,7 @@ from __future__ import division
 import codecs
 import json
 import os
-import requests
 import tempfile
-
-from six.moves import urllib
 
 from pwnlib.context import context
 from pwnlib.elf import ELF
@@ -33,6 +30,10 @@ DEBUGINFOD_SERVERS = ['https://debuginfod.systemtap.org/']
 # https://gitlab.com/libcdb/libcdb wasn't updated after 2019,
 # but still is a massive database of older libc binaries.
 def provider_libcdb(hex_encoded_id, hash_type):
+    # Deferred import because it's slow
+    import requests
+    from six.moves import urllib
+
     # Build the URL using the requested hash type
     url_base = "https://gitlab.com/libcdb/libcdb/raw/master/hashes/%s/" % hash_type
     url      = urllib.parse.urljoin(url_base, hex_encoded_id)
@@ -57,6 +58,9 @@ def provider_libcdb(hex_encoded_id, hash_type):
 
 # https://libc.rip/
 def provider_libc_rip(hex_encoded_id, hash_type):
+    # Deferred import because it's slow
+    import requests
+
     # Build the request for the hash type
     # https://github.com/niklasb/libc-database/blob/master/searchengine/api.yml
     if hash_type == 'build_id':
@@ -119,6 +123,9 @@ def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True):
     return cache
 
 def _search_debuginfo_by_hash(base_url, hex_encoded_id):
+    # Deferred import because it's slow
+    from six.moves import urllib
+
     # Check if we tried this buildid before.
     cache, cache_valid = _check_elf_cache('libcdb_dbg', hex_encoded_id, 'build_id')
     if cache_valid:

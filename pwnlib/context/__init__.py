@@ -397,6 +397,7 @@ class ContextType(object):
         'msp430':    little_16,
         'powerpc':   big_32,
         'powerpc64': big_64,
+        'riscv':     little_32,
         's390':      big_32,
         'sparc':     big_32,
         'sparc64':   big_64,

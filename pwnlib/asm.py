@@ -198,6 +198,8 @@ def which_binutils(util):
             # e.g. aarch64-linux-gnu-objdump, avr-objdump
             else:
                 patterns = ['%s*linux*-%s' % (arch, gutil),
+                            '%s*-elf-%s' % (arch, gutil),
+                            '%s-none*-%s' % (arch, gutil),
                             '%s-%s' % (arch, gutil)]
 
             for pattern in patterns:
@@ -248,8 +250,12 @@ def _assembler():
         checked_assembler_version[gas] = True
         result = subprocess.check_output([gas, '--version','/dev/null'],
                                          stderr=subprocess.STDOUT, universal_newlines=True)
-        version = re.search(r' (\d\.\d+)', result).group(1)
-        if version < '2.19':
+        version = re.search(r' (\d+\.\d+)', result).group(1)
+        if 'clang' in result:
+            log.warn_once('Your binutils is clang version and may not work!\n'
+                'Try install with: https://docs.pwntools.com/en/stable/install/binutils.html\n'
+                'Reported Version: %r', result.strip())
+        elif version < '2.19':
             log.warn_once('Your binutils version is too old and may not work!\n'
                 'Try updating with: https://docs.pwntools.com/en/stable/install/binutils.html\n'
                 'Reported Version: %r', result.strip())
@@ -338,6 +344,7 @@ def _bfdname():
         'msp430'  : 'elf32-msp430',
         'powerpc' : 'elf32-powerpc',
         'powerpc64' : 'elf64-powerpc',
+        'riscv'   : 'elf%d-%sriscv' % (context.bits, E),
         'vax'     : 'elf32-vax',
         's390'    : 'elf%d-s390' % context.bits,
         'sparc'   : 'elf32-sparc',

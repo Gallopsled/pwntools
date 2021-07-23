@@ -370,7 +370,7 @@ def xor_pair(data, avoid = b'\x00\n'):
     if isinstance(data, six.integer_types):
         data = packing.pack(data)
 
-    if not isinstance(avoid, bytes):
+    if not isinstance(avoid, (bytes, bytearray)):
         avoid = avoid.encode('utf-8')
 
     avoid = bytearray(avoid)

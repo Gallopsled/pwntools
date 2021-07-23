@@ -71,7 +71,7 @@ from copy import deepcopy
 from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util.packing import *
-from pwnlib.util.packing import _encode
+from pwnlib.util.packing import _need_bytes
 from pwnlib.util.misc import align
 
 log = getLogger(__name__)
@@ -230,7 +230,7 @@ class Ret2dlresolvePayload(object):
         self.symtab = elf.dynamic_value_by_tag("DT_SYMTAB") + self.elf_load_address_fixup
         self.jmprel = elf.dynamic_value_by_tag("DT_JMPREL") + self.elf_load_address_fixup
         self.versym = elf.dynamic_value_by_tag("DT_VERSYM") + self.elf_load_address_fixup
-        self.symbol = _encode(symbol)
+        self.symbol = _need_bytes(symbol, min_wrong=0x80)
         self.args = args
         self.real_args = self._format_args()
         self.unreliable = False
@@ -252,7 +252,7 @@ class Ret2dlresolvePayload(object):
         def aux(args):
             for i, arg in enumerate(args):
                 if isinstance(arg, (str,bytes)):
-                    args[i] = _encode(args[i]) + b"\x00"
+                    args[i] = _need_bytes(args[i], min_wrong=0x80) + b"\x00"
                 elif isinstance(arg, (list, tuple)):
                     aux(arg)
 

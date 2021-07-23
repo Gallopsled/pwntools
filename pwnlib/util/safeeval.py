@@ -57,7 +57,7 @@ def test_expr(expr, allowed_codes):
     try:
         c = compile(expr, "", "eval")
     except SyntaxError:
-        raise ValueError("%s is not a valid expression" % expr)
+        raise ValueError("%r is not a valid expression" % expr)
     codes = _get_opcodes(c)
     for code in codes:
         if code not in allowed_codes:
