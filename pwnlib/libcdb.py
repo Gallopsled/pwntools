@@ -124,6 +124,7 @@ def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True):
 
 def _search_debuginfo_by_hash(base_url, hex_encoded_id):
     # Deferred import because it's slow
+    import requests
     from six.moves import urllib
 
     # Check if we tried this buildid before.
