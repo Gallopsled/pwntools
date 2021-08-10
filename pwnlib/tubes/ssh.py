@@ -1055,9 +1055,9 @@ os.execve(exe, argv, env)
 
         with self.progress(msg) as h:
 
-            script = 'echo PWNTOOLS; for py in python3 python2.7 python2 python; do test -x "$(which $py 2>&1)" && echo $py && exec $py -c %s check; done; echo 2' % sh_string(script)
+            script = 'echo PWNTOOLS; for py in python3 python2.7 python2 python; do test -x "$(command -v $py 2>&1)" && echo $py && exec $py -c %s check; done; echo 2' % sh_string(script)
             with context.quiet:
-                python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=timeout)
+                python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=timeout/)
 
             try:
                 python.recvline_contains(b'PWNTOOLS')        # Magic flag so that any sh/bash initialization errors are swallowed
@@ -1120,7 +1120,7 @@ os.execve(exe, argv, env)
         if os.path.sep in program:
             return program
 
-        result = self.run('export PATH=$PATH:$PWD; which %s' % program).recvall().strip().decode()
+        result = self.run('export PATH=$PATH:$PWD; command -v %s' % program).recvall().strip().decode()
 
         if ('/%s' % program) not in result:
             return None
