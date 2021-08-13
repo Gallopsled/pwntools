@@ -1753,8 +1753,8 @@ class ELF(ELFFile):
     @property
     def packed(self):
         """:class:`bool`: Whether the current binary is packed with UPX."""
-        if b'UPX!' in self.get_data()[:0xFF]:
-            return True
+        return b'UPX!' in self.get_data()[:0xFF]:
+           
 
     @property
     def pie(self):
