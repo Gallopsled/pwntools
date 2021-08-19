@@ -321,8 +321,11 @@ def _arch_header():
                    '.set noreorder',
                    ],
     }
-
-    return '\n'.join(prefix + headers.get(context.arch, [])) + '\n'
+    if len(context.headers) > 0:
+        headers = context.headers
+    else:
+        headers = prefix + headers.get(context.arch, [])
+    return '\n'.join(headers) + '\n'
 
 def _bfdname():
     arch = context.arch
