@@ -65,6 +65,7 @@ install_requires     = ['paramiko>=1.15.2',
                         'six>=1.12.0',
                         'rpyc',
                         'colored_traceback',
+                        'git+git://github.com/hakril/PythonForWindows',
 ]
 
 if platform.python_version_tuple()[0] == '2':
