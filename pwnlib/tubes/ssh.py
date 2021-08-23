@@ -81,7 +81,7 @@ class ssh_channel(sock):
             process = packing._need_bytes(process, 2, 0x80)
 
         if process and wd:
-            process = b'cd ' + sh_string(wd) + b' >/dev/null 2>&1; ' + process
+            process = b'cd ' + sh_string(wd).encode('utf-8') + b' >/dev/null 2>&1; ' + process
 
         if process and env:
             for name, value in env.items():
@@ -1836,7 +1836,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 self.error("Could not generate a temporary directory (%i)\n%s" % (status, wd))
 
         else:
-            cmd = b'ls ' + sh_string(wd)
+            cmd = 'ls ' + sh_string(wd)
             _, status = self.run_to_end(cmd, wd = '.')
 
             if status:
