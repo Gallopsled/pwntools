@@ -1,0 +1,31 @@
+name: Windows Tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os:
+          - windows
+    runs-on:
+      - windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: say hello
+      run:  |
+        echo "hello"
+        python3 -c "import platform; print(platform.system());"
+        pwd
+
+    - name: install dependencies
+      run: |
+        choco install pandoc
+        choco install sphinx
+        choco install make
+        pip install --upgrade pip --user
+        pip install doctest --user
+        python setup.py install --user
+
+    - name: run tests
+      run: |
+        make -C docs win-doctest
