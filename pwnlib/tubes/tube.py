@@ -101,8 +101,12 @@ class tube(Timeout, Logger):
             [...] Received 0xc bytes:
                 b'Hello, world'
         """
-        numb = self.buffer.get_fill_size(numb)
-        return self._recv(numb, timeout) or b''
+        if sys.platform.startswith('linux'):
+            numb = self.buffer.get_fill_size(numb)
+            return self._recv(numb, timeout) or b''
+        elif sys.platform.startswith('win'):
+            return bytes(self.read(numb, timeout))
+
 
     def unrecv(self, data):
         """unrecv(data)
@@ -258,17 +262,26 @@ class tube(Timeout, Logger):
             >>> t.recvn(10, timeout=0.06) # doctest: +ELLIPSIS
             b'aaaaaa...'
         """
-        # Keep track of how much data has been received
-        # It will be pasted together at the end if a
-        # timeout does not occur, or put into the tube buffer.
-        with self.countdown(timeout):
-            while self.countdown_active() and len(self.buffer) < numb and self._fillbuffer(self.timeout):
-                pass
 
-        if len(self.buffer) < numb:
-            return b''
+        if sys.platform.startswith("linux"):
+            # Keep track of how much data has been received
+            # It will be pasted together at the end if a
+            # timeout does not occur, or put into the tube buffer.
+            with self.countdown(timeout):
+                while self.countdown_active() and len(self.buffer) < numb and self._fillbuffer(self.timeout):
+                    pass
 
-        return self.buffer.get(numb)
+            if len(self.buffer) < numb:
+                return b''
+
+            return self.buffer.get(numb)
+
+        elif sys.platform.startswith("win"):
+            buf = self.read(numb, timeout)
+            if len(buf) != numb:
+                raise (EOFError("Timeout {:s} - Incomplete read".format(self)))
+            return bytes(buf)
+
 
     def recvuntil(self, delims, drop=False, timeout=default):
         """recvuntil(delims, drop=False, timeout=default) -> bytes
@@ -315,50 +328,58 @@ class tube(Timeout, Logger):
             b'Hello'
 
         """
-        # Convert string into singleton tupple
-        if isinstance(delims, (bytes, bytearray, six.text_type)):
-            delims = (delims,)
-        delims = tuple(map(packing._need_bytes, delims))
 
-        # Longest delimiter for tracking purposes
-        longest = max(map(len, delims))
+        if sys.platform.startswith("linux"):
+            # Convert string into singleton tupple
+            if isinstance(delims, (bytes, bytearray, six.text_type)):
+                delims = (delims,)
+            delims = tuple(map(packing._need_bytes, delims))
 
-        # Cumulative data to search
-        data = []
-        top = b''
+            # Longest delimiter for tracking purposes
+            longest = max(map(len, delims))
 
-        with self.countdown(timeout):
-            while self.countdown_active():
-                try:
-                    res = self.recv(timeout=self.timeout)
-                except Exception:
-                    self.unrecv(b''.join(data) + top)
-                    raise
+            # Cumulative data to search
+            data = []
+            top = b''
 
-                if not res:
-                    self.unrecv(b''.join(data) + top)
-                    return b''
+            with self.countdown(timeout):
+                while self.countdown_active():
+                    try:
+                        res = self.recv(timeout=self.timeout)
+                    except Exception:
+                        self.unrecv(b''.join(data) + top)
+                        raise
 
-                top += res
-                start = len(top)
-                for d in delims:
-                    j = top.find(d)
-                    if start > j > -1:
-                        start = j
-                        end = j + len(d)
-                if start < len(top):
-                    self.unrecv(top[end:])
-                    if drop:
-                        top = top[:start]
-                    else:
-                        top = top[:end]
-                    return b''.join(data) + top
-                if len(top) > longest:
-                    i = -longest - 1
-                    data.append(top[:i])
-                    top = top[i:]
+                    if not res:
+                        self.unrecv(b''.join(data) + top)
+                        return b''
 
-        return b''
+                    top += res
+                    start = len(top)
+                    for d in delims:
+                        j = top.find(d)
+                        if start > j > -1:
+                            start = j
+                            end = j + len(d)
+                    if start < len(top):
+                        self.unrecv(top[end:])
+                        if drop:
+                            top = top[:start]
+                        else:
+                            top = top[:end]
+                        return b''.join(data) + top
+                    if len(top) > longest:
+                        i = -longest - 1
+                        data.append(top[:i])
+                        top = top[i:]
+
+            return b''
+
+        elif sys.platform.startswith("win"):
+            buf = b''
+            while delims not in buf:
+                buf += self.recvn(1, timeout)
+            return buf if not drop else buf[:-len(delims)]
 
     def recvlines(self, numlines=2**20, keepends=False, timeout=default):
         r"""recvlines(numlines, keepends=False, timeout=default) -> list of bytes objects
@@ -395,27 +416,30 @@ class tube(Timeout, Logger):
             >>> t.recvlines(3, True)
             [b'Foo\n', b'Bar\n', b'Baz\n']
         """
-        lines = []
-        with self.countdown(timeout):
-            for _ in range(numlines):
-                try:
-                    # We must set 'keepends' to True here so that we can
-                    # restore the original, unmodified data to the buffer
-                    # in the event of a timeout.
-                    res = self.recvline(keepends=True, timeout=timeout)
-                except Exception:
-                    self.unrecv(b''.join(lines))
-                    raise
+        if sys.platform.startswith('linux'):
+            lines = []
+            with self.countdown(timeout):
+                for _ in range(numlines):
+                    try:
+                        # We must set 'keepends' to True here so that we can
+                        # restore the original, unmodified data to the buffer
+                        # in the event of a timeout.
+                        res = self.recvline(keepends=True, timeout=timeout)
+                    except Exception:
+                        self.unrecv(b''.join(lines))
+                        raise
 
-                if res:
-                    lines.append(res)
-                else:
-                    break
+                    if res:
+                        lines.append(res)
+                    else:
+                        break
 
-        if not keepends:
-            lines = [line.rstrip(self.newline) for line in lines]
+            if not keepends:
+                lines = [line.rstrip(self.newline) for line in lines]
 
-        return lines
+            return lines
+        elif sys.platform.startswith('win'):
+            return self.recvuntil(self.newline, not keepends, timeout)
 
     def recvlinesS(self, numlines=2**20, keepends=False, timeout=default):
         r"""recvlinesS(numlines, keepends=False, timeout=default) -> str list
@@ -726,22 +750,26 @@ class tube(Timeout, Logger):
 
         Receives data until EOF is reached.
         """
+        if sys.platform.startswith('linux'):
+            with self.waitfor('Receiving all data') as h:
+                l = len(self.buffer)
+                with self.local(timeout):
+                    try:
+                        while True:
+                            l = misc.size(len(self.buffer))
+                            h.status(l)
+                            if not self._fillbuffer():
+                                break
+                    except EOFError:
+                        pass
+                h.success("Done (%s)" % l)
+            self.close()
 
-        with self.waitfor('Receiving all data') as h:
-            l = len(self.buffer)
-            with self.local(timeout):
-                try:
-                    while True:
-                        l = misc.size(len(self.buffer))
-                        h.status(l)
-                        if not self._fillbuffer():
-                            break
-                except EOFError:
-                    pass
-            h.success("Done (%s)" % l)
-        self.close()
+            return self.buffer.get()
 
-        return self.buffer.get()
+        elif sys.platform.startswith('win'):
+            return self.read(0x100000, timeout, no_warning=True)
+
 
     def send(self, data):
         """send(data)
@@ -763,18 +791,25 @@ class tube(Timeout, Logger):
             b'hello'
         """
 
-        data = packing._need_bytes(data)
+        if sys.platform.startswith('linux'):
+            data = packing._need_bytes(data)
 
-        if self.isEnabledFor(logging.DEBUG):
-            self.debug('Sent %#x bytes:' % len(data))
-            if len(set(data)) == 1:
-                self.indented('%r * %#x' % (data[0], len(data)))
-            elif all(c in string.printable.encode() for c in data):
-                for line in data.splitlines(True):
-                    self.indented(repr(line), level = logging.DEBUG)
-            else:
-                self.indented(fiddling.hexdump(data), level = logging.DEBUG)
-        self.send_raw(data)
+            if self.isEnabledFor(logging.DEBUG):
+                self.debug('Sent %#x bytes:' % len(data))
+                if len(set(data)) == 1:
+                    self.indented('%r * %#x' % (data[0], len(data)))
+                elif all(c in string.printable.encode() for c in data):
+                    for line in data.splitlines(True):
+                        self.indented(repr(line), level=logging.DEBUG)
+                else:
+                    self.indented(fiddling.hexdump(data), level=logging.DEBUG)
+            self.send_raw(data)
+        elif sys.platform.startswith('win'):
+            self.write(data)
+
+
+
+
 
     def sendline(self, line=b''):
         r"""sendline(data)
@@ -793,14 +828,23 @@ class tube(Timeout, Logger):
             b'hello\r\n'
         """
 
-        line = packing._need_bytes(line)
+        if sys.platform.startswith('linux'):
+            line = packing._need_bytes(line)
+            self.send(line + self.newline)
+        elif sys.platform.startswith('win'):
+            self.write(line + self.newline)
 
-        self.send(line + self.newline)
+
 
     def sendlines(self, lines=[]):
-        for line in lines:
-            line = packing._need_bytes(line)
-            self.sendline(line)
+        if sys.platform.startswith('linux'):
+            for line in lines:
+                line = packing._need_bytes(line)
+                self.sendline(line)
+        elif sys.platform.startswith('win'):
+            for line in lines:
+                self.write(line + self.newline)
+
 
     def sendafter(self, delim, data, timeout = default):
         """sendafter(delim, data, timeout = default) -> str
@@ -852,50 +896,93 @@ class tube(Timeout, Logger):
         Thus it only works in while in :data:`pwnlib.term.term_mode`.
         """
 
-        self.info('Switching to interactive mode')
+        if sys.platform.startswith('linux'):
+            self.info('Switching to interactive mode')
 
-        go = threading.Event()
-        def recv_thread():
-            while not go.isSet():
-                try:
-                    cur = self.recv(timeout = 0.05)
-                    cur = cur.replace(self.newline, b'\n')
-                    if cur:
-                        stdout = sys.stdout
-                        if not term.term_mode:
-                            stdout = getattr(stdout, 'buffer', stdout)
-                        stdout.write(cur)
-                        stdout.flush()
-                except EOFError:
-                    self.info('Got EOF while reading in interactive')
-                    break
-
-        t = context.Thread(target = recv_thread)
-        t.daemon = True
-        t.start()
-
-        try:
-            while not go.isSet():
-                if term.term_mode:
-                    data = term.readline.readline(prompt = prompt, float = True)
-                else:
-                    stdin = getattr(sys.stdin, 'buffer', sys.stdin)
-                    data = stdin.read(1)
-
-                if data:
+            go = threading.Event()
+            def recv_thread():
+                while not go.isSet():
                     try:
-                        self.send(data)
+                        cur = self.recv(timeout = 0.05)
+                        cur = cur.replace(self.newline, b'\n')
+                        if cur:
+                            stdout = sys.stdout
+                            if not term.term_mode:
+                                stdout = getattr(stdout, 'buffer', stdout)
+                            stdout.write(cur)
+                            stdout.flush()
+                    except EOFError:
+                        self.info('Got EOF while reading in interactive')
+                        break
+
+            t = context.Thread(target = recv_thread)
+            t.daemon = True
+            t.start()
+
+            try:
+                while not go.isSet():
+                    if term.term_mode:
+                        data = term.readline.readline(prompt = prompt, float = True)
+                    else:
+                        stdin = getattr(sys.stdin, 'buffer', sys.stdin)
+                        data = stdin.read(1)
+
+                    if data:
+                        try:
+                            self.send(data)
+                        except EOFError:
+                            go.set()
+                            self.info('Got EOF while sending in interactive')
+                    else:
+                        go.set()
+            except KeyboardInterrupt:
+                self.info('Interrupted')
+                go.set()
+
+            while t.is_alive():
+                t.join(timeout = 0.1)
+
+        elif sys.platform.startswith('win'):#todo use self.newline attribute in windows
+            go = threading.Event()
+            go.clear()
+
+            def recv_thread():
+                while not go.is_set():
+                    cur = str(self.recvall(timeout=200))
+                    cur = cur.replace('\r\n', '\n')
+                    cur = cur.encode('string-escape')
+                    cur = cur.replace('\\n', '\n')  # check bytes
+                    cur = cur.replace('\\t', '\t')  # check bytes
+                    cur = cur.replace('\\\\', '\\')  # check bytes
+                    if cur:
+                        sys.stdout.buffer.write(bytes(cur.encode()))
+                        if not cur.endswith(b'\n'):
+                            sys.stdout.buffer.write(b'\n')
+                        sys.stdout.flush()
+                    go.wait(0.2)
+
+            t = threading.Thread(target=recv_thread)
+            t.daemon = True
+            t.start()
+            try:
+                while not go.is_set():
+                    # Impossible to timeout readline
+                    # Wait a little and check obj
+                    go.wait(0.2)
+                    try:
+                        self.check_closed()
+                        data = sys.stdin.readline()
+                        if data:
+                            self.send(data)
+                        else:
+                            go.set()
                     except EOFError:
                         go.set()
-                        self.info('Got EOF while sending in interactive')
-                else:
-                    go.set()
-        except KeyboardInterrupt:
-            self.info('Interrupted')
-            go.set()
+            except KeyboardInterrupt:
+                go.set()
 
-        while t.is_alive():
-            t.join(timeout = 0.1)
+            while t.is_alive():
+                t.join(timeout=0.1)
 
     def stream(self, line_mode=True):
         """stream()

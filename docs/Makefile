@@ -164,3 +164,6 @@ doctest:
 	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/doctest/output.txt."
+
+win-doctest:
+	@python -m doctest -v D:/a/pwntools/pwntools/pwnlib/tubes/process.py
