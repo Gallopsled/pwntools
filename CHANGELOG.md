@@ -9,11 +9,12 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.7.0](#470)    | `dev`    |
-| [4.6.0](#460)    | `beta`   |
-| [4.5.1](#451)    | `stable` | May 30, 2020
-| [4.5.0](#450)    |          | Apr 30, 2020
-| [4.4.0](#440)    |          | Mar 29, 2020
+| [4.8.0](#480)    | `dev`    |
+| [4.7.0](#470)    | `beta`   |
+| [4.6.0](#460)    | `stable` | Jul 12, 2021
+| [4.5.1](#451)    |          | May 30, 2021
+| [4.5.0](#450)    |          | Apr 30, 2021
+| [4.4.0](#440)    |          | Mar 29, 2021
 | [4.3.1](#431)    |          | Nov 29, 2020
 | [4.3.0](#430)    |          | Oct 20, 2020
 | [4.2.0](#420)    |          | Jul 3, 2020
@@ -60,7 +61,15 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.7.0 (`dev`)
+## 4.8.0 (`dev`)
+
+- [#1922][1922] Fix logic in `wait_for_debugger`
+- [#1939][1939] Fix error in validating log levels
+
+[1922]: https://github.com/Gallopsled/pwntools/pull/1922
+[1939]: https://github.com/Gallopsled/pwntools/pull/1939
+
+## 4.7.0 (`beta`)
 
 - [#1733][1733] Update libc headers -> more syscalls available!
 - [#1876][1876] add `self.message` and change `sys.exc_type` to `sys.exec_info()` in PwnlibException
@@ -88,7 +97,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1918]: https://github.com/Gallopsled/pwntools/pull/1918
 [1921]: https://github.com/Gallopsled/pwntools/pull/1921
 
-## 4.6.0 (`beta`)
+## 4.6.0 (`stable`)
 
 - [#1429][1429] Add a mechanism for ret2csu (originally #1138)
 - [#1566][1566] Add `ignore_config` argument to `pwnlib.tubes.ssh` and improve `allow_agent` implementation
@@ -110,9 +119,9 @@ The table below shows which release corresponds to each branch, and what date th
 [1776]: https://github.com/Gallopsled/pwntools/pull/1776
 [1846]: https://github.com/Gallopsled/pwntools/pull/1846
 
-## 4.5.1 (`stable`)
+## 4.5.1
 
-- [#1902][1902] Always specify -F and -P for tmux in run_in_new_termianl
+- [#1902][1902] Always specify -F and -P for tmux in `run_in_new_terminal`
 
 [1902]: https://github.com/Gallopsled/pwntools/pull/1902
 
