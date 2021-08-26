@@ -81,7 +81,7 @@ class ssh_channel(sock):
             process = packing._need_bytes(process, 2, 0x80)
 
         if process and wd:
-            process = b'cd ' + packing._need_bytes(sh_string(wd), 2, 0x80) + b' >/dev/null 2>&1; ' + packing._need_bytes(process, 2, 0x80)
+            process = b'cd ' + sh_string(packing._need_bytes(wd, 2, 0x80)) + b' >/dev/null 2>&1; ' + packing._need_bytes(process, 2, 0x80)
 
         if process and env:
             for name, value in env.items():
