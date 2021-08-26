@@ -1836,7 +1836,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 self.error("Could not generate a temporary directory (%i)\n%s" % (status, wd))
 
         else:
-            cmd = 'ls ' + sh_string(wd)
+            cmd = b'ls ' + sh_string(packing._need_bytes(wd, 2, 0x80))
             _, status = self.run_to_end(cmd, wd = '.')
 
             if status:
