@@ -762,6 +762,7 @@ class ContextType(object):
         # We have to make sure that x86_64 appears before x86 for this to work correctly.
         transform = [('ppc64', 'powerpc64'),
                      ('ppc', 'powerpc'),
+                     ('x86-64', 'amd64'),
                      ('x86_64', 'amd64'),
                      ('x86', 'i386'),
                      ('i686', 'i386'),
