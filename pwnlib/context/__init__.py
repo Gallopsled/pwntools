@@ -972,7 +972,10 @@ class ContextType(object):
         except AttributeError:  pass
 
         # Otherwise, fail
-        level_names = filter(lambda x: isinstance(x,str), logging._levelNames)
+        try:
+            level_names = logging._levelToName.values()
+        except AttributeError:
+            level_names = filter(lambda x: isinstance(x,str), logging._levelNames)
         permitted = sorted(level_names)
         raise AttributeError('log_level must be an integer or one of %r' % permitted)
 
