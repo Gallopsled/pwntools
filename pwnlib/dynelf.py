@@ -15,7 +15,7 @@ Example
     # leaks at least one byte at that address.
     def leak(address):
         data = p.read(address, 4)
-        log.debug("%#x => %s" % (address, enhex(data or '')))
+        log.debug("%#x => %s", address, enhex(data or ''))
         return data
 
     # For the sake of this example, let's say that we
@@ -62,8 +62,7 @@ from pwnlib.elf import constants
 from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak
 from pwnlib.util.fiddling import enhex
-from pwnlib.util.packing import unpack, _need_bytes
-from pwnlib.util.web import wget
+from pwnlib.util.packing import _need_bytes
 
 log    = getLogger(__name__)
 sizeof = ctypes.sizeof
@@ -562,7 +561,7 @@ class DynELF(object):
         else:   dynlib = self
 
         if dynlib is None:
-            log.failure("Could not find %r" % lib)
+            log.failure("Could not find %r", lib)
             return None
 
         #
@@ -573,7 +572,7 @@ class DynELF(object):
             self.status("Trying lookup based on Build ID")
             build_id = dynlib._lookup_build_id(lib=lib)
             if build_id:
-                log.info("Trying lookup based on Build ID: %s" % build_id)
+                log.info("Trying lookup based on Build ID: %s", build_id)
                 path = libcdb.search_by_build_id(build_id)
                 if path:
                     with context.local(log_level='error'):
@@ -615,7 +614,7 @@ class DynELF(object):
                 addr   = leak.field(cur, LinkMap.l_addr)
                 cur    = leak.field(cur, LinkMap.l_next)
 
-                log.debug('Found %r @ %#x' % (name, addr))
+                log.debug('Found %r @ %#x', name, addr)
 
                 self._bases[name] = addr
 
