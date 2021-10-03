@@ -45,7 +45,15 @@ jobs:
         [ "$GITHUB_TAG" = "$vsetup" ]
 
     - name: Install Linux dependencies
+      # Install newer elfutils version from groovy due to regression in 0.176 available in focal.
       run: |
+        if lsb_release -c | grep focal; then
+          echo 'APT::Default-Release "focal";' | sudo tee /etc/apt/apt.conf.d/99elfutils > /dev/null
+          sudo cp /etc/apt/sources.list /etc/apt/sources.list.d/groovy.list
+          sudo sed -i 's/focal/groovy/g' /etc/apt/sources.list.d/groovy.list
+          echo -e 'Package: elfutils libdw1 libelf1 libasm1\nPin: release n=groovy\nPin-Priority: 1001' | sudo tee /etc/apt/preferences.d/elfutils.pref > /dev/null
+        fi
+
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
           ash bash-static dash ksh mksh zsh \
@@ -59,7 +67,8 @@ jobs:
           binutils-s390x-linux-gnu \
           binutils-sparc64-linux-gnu \
           gcc-multilib \
-          libc6-dbg
+          libc6-dbg \
+          elfutils
 
     - name: Install RPyC for GDB
       run: |

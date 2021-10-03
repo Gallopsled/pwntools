@@ -16,6 +16,7 @@ RUN apt-get update \
     && locale-gen en_US.UTF-8 \
     && apt-get install -y \
         build-essential \
+        elfutils \
         git \
         libssl-dev \
         libffi-dev \
