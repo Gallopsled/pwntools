@@ -17,6 +17,7 @@
 # This file had been modified:
 # * The notice about installing gmpy2 has been moved into functions to make for a quieter import
 # * The use of secrets.randbelow() has been replaced with random.randrange() for Python2 compatibility
+# * The 'can_bypass' mechanism has been removed to eliminate the dependence on ecdsa
 
 import base64
 import os
@@ -109,19 +110,21 @@ def solve_challenge(chal):
     y = sloth_root(x, diff, MODULUS)
     return encode_challenge([y])
 
-def can_bypass(chal, sol):
-    from ecdsa import VerifyingKey
-    from ecdsa.util import sigdecode_der
-    if not sol.startswith('b.'):
-        return False
-    sig = bytes.fromhex(sol[2:])
-    with open("/kctf/pow-bypass/pow-bypass-key-pub.pem", "r") as fd:
-        vk = VerifyingKey.from_pem(fd.read())
-    return vk.verify(signature=sig, data=bytes(chal, 'ascii'), hashfunc=hashlib.sha256, sigdecode=sigdecode_der)
+#def can_bypass(chal, sol):
+#    from ecdsa import VerifyingKey
+#    from ecdsa.util import sigdecode_der
+#    if not sol.startswith('b.'):
+#        return False
+#    sig = bytes.fromhex(sol[2:])
+#    with open("/kctf/pow-bypass/pow-bypass-key-pub.pem", "r") as fd:
+#        vk = VerifyingKey.from_pem(fd.read())
+#    return vk.verify(signature=sig, data=bytes(chal, 'ascii'), hashfunc=hashlib.sha256, sigdecode=sigdecode_der)
 
-def verify_challenge(chal, sol, allow_bypass=True):
-    if allow_bypass and can_bypass(chal, sol):
-        return True
+def verify_challenge(chal, sol, allow_bypass=False):
+    #if allow_bypass and can_bypass(chal, sol):
+    #    return True
+    if allow_bypass:
+        raise NotImplementedError("allow_bypass is not supported")
     [diff, x] = decode_challenge(chal)
     [y] = decode_challenge(sol)
     res = sloth_square(y, diff, MODULUS)
