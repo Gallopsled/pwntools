@@ -65,8 +65,10 @@ The table below shows which release corresponds to each branch, and what date th
 ## 4.9.0 (`dev`)
 
 - [#2011][2011] Fix tube's debug output of same byte compression
+- [#1975][1975] Add libcdb commandline tool
 
 [2011]: https://github.com/Gallopsled/pwntools/pull/2011
+[1975]: https://github.com/Gallopsled/pwntools/pull/1975
 
 ## 4.8.0 (`beta`)
 
