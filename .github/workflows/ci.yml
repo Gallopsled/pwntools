@@ -182,6 +182,10 @@ jobs:
         pwn constgrep ^MAP_ 0
         pwn constgrep -e O_RDWR
 
+        pwn libcdb file /lib/x86_64-linux-gnu/libc.so.6
+        pwn libcdb lookup puts 5f0 __libc_start_main_ret d0a
+        pwn libcdb hash b229d1da1e161f95e839cf90cded5f719e5de308
+
     - name: Build source and wheel distributions
       run: |
         python setup.py sdist
