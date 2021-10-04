@@ -6,6 +6,7 @@ from __future__ import print_function
 import re
 import requests
 import shutil
+import sys
 
 import pwnlib.args
 pwnlib.args.free_form = False
@@ -20,8 +21,7 @@ parser = common.parser_commands.add_parser(
 )
 
 libc_commands = parser.add_subparsers(
-    dest = 'libc_command',
-    required = True
+    dest = 'libc_command'
 )
 
 lookup_parser = libc_commands.add_parser(
@@ -219,6 +219,10 @@ def collect_synthetic_symbols(exe):
     return available_symbols
 
 def main(args):
+    if len(sys.argv) < 3:
+        parser.print_usage()
+        sys.exit()
+
     if args.libc_command == 'lookup':
         pairs = args.symbol_offset_pairs
         if len(pairs) % 2 != 0:
