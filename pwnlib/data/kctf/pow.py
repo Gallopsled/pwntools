@@ -14,12 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This file had been modified
-# The notice about installing gmpy2 has been moved into functions to make for a quieter import
+# This file had been modified:
+# * The notice about installing gmpy2 has been moved into functions to make for a quieter import
+# * The use of secrets.randbelow() has been replaced with random.randrange() for Python2 compatibility
 
 import base64
 import os
-import secrets
+import random
 import socket
 import sys
 import hashlib
@@ -99,7 +100,8 @@ def encode_challenge(arr):
     return '.'.join([VERSION] + list(map(encode_number, arr)))
 
 def get_challenge(diff):
-    x = secrets.randbelow(CHALSIZE)
+    sys.stderr.write("[WARNING] kctf-pow using random.randrange() which is not cryptographically secure\n")
+    x = random.randrange(CHALSIZE)
     return encode_challenge([diff, x])
 
 def solve_challenge(chal):
