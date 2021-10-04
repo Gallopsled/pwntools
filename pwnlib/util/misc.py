@@ -19,6 +19,8 @@ from pwnlib.log import getLogger
 from pwnlib.util import fiddling
 from pwnlib.util import lists
 from pwnlib.util import packing
+from pwnlib.data.kctf.pow import solve_challenge as _kctf_pow_solve_challenge, \
+    verify_challenge as _kctf_pow_verify_challenge
 
 log = getLogger(__name__)
 
@@ -133,6 +135,46 @@ def write(path, data = b'', create_dir = False, mode = 'w'):
     if mode == 'w' and isinstance(data, bytes): mode += 'b'
     with open(path, mode) as f:
         f.write(data)
+
+def kctf_pow_solve(challenge):
+    """
+    Solve a kCTF Proof of Work challenge
+
+    Arguments:
+      `challenge` (str): The challenge to solve
+
+    Returns:
+      A string representing an acceptable solution
+
+    >>> challenge = 's.AAAB.AAAvm89LbEt4meEnXGwbHp3z'
+    >>> kctf_pow_solve(challenge)[:20] + '...'
+    's.AAAo8s+2Q06cSBM4nf...'
+
+    >>> kctf_pow_verify(challenge, kctf_pow_solve(challenge))
+    True
+    """
+    return _kctf_pow_solve_challenge(challenge)
+
+def kctf_pow_verify(challenge, solution):
+    """
+    Verify a kCFT Proof of Work solution
+
+    Argumentss:
+      `challenge` (str): The challenge that was solved
+      `solution` (str): The solution to verify
+
+    Returns:
+      True if the solution is acceptable, else False
+
+    >>> challenge1 = 's.AAAB.AACWfrVaxyStTpI9CMADif7K'
+    >>> challenge2 = 's.AAAB.AADfBgsLMimWUq6CK09bXtyO'
+    >>> kctf_pow_verify(challenge1, kctf_pow_solve(challenge1))
+    True
+
+    >>> kctf_pow_verify(challenge1, kctf_pow_solve(challenge2))
+    False
+    """
+    return _kctf_pow_verify_challenge(challenge, solution, False)
 
 def which(name, all = False, path=None):
     """which(name, flags = os.X_OK, all = False) -> str or str set
