@@ -66,10 +66,12 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1922][1922] Fix logic in `wait_for_debugger`
 - [#1828][1828] libcdb: Load debug info and unstrip libc binary
 - [#1939][1939] Fix error in validating log levels
+- [#1974][1974] Add kCTF Proof of Work challenge generator, solver and verifier
 
 [1922]: https://github.com/Gallopsled/pwntools/pull/1922
 [1828]: https://github.com/Gallopsled/pwntools/pull/1828
 [1939]: https://github.com/Gallopsled/pwntools/pull/1939
+[1974]: https://github.com/Gallopsled/pwntools/pull/1974
 
 ## 4.7.0 (`beta`)
 
