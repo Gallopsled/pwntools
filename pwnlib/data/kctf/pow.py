@@ -94,11 +94,11 @@ def sloth_square(x, diff, p):
 def encode_number(num):
     size = (num.bit_length() // 24) * 3 + 3
     # return str(base64.b64encode(num.to_bytes(size, 'big')), 'utf-8')
-    return six.ensure_str(base64.b64encode(packing.pack(num, size * 8, endian='big')), 'utf-8')
+    return six.ensure_str(base64.b64encode(packing.pack(num, size * 8, endianness='big')), 'utf-8')
 
 def decode_number(enc):
     # return int.from_bytes(base64.b64decode(bytes(enc, 'utf-8')), 'big')
-    return packing.unpack(base64.b64decode(six.ensure_binary(enc, 'utf-8')), 'all', endian='big')
+    return packing.unpack(base64.b64decode(six.ensure_binary(enc, 'utf-8')), 'all', endianness='big')
 
 def decode_challenge(enc):
     dec = enc.split('.')
