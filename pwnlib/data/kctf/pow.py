@@ -18,6 +18,11 @@
 # * The notice about installing gmpy2 has been moved into functions to make for a quieter import
 # * The use of secrets.randbelow() has been replaced with random.randrange() for Python2 compatibility
 # * The 'can_bypass' mechanism has been removed to eliminate the dependence on ecdsa
+# * str(b, 'utf-8') has been replaced with six.ensure_str(b, 'utf-8')
+# * bytes(s, 'utf-8') has been replaced with six.ensure_binary(s, 'utf-8')
+# * n.to_bytes() has been replaced with packing.pack(n)
+# * int.from_bytes(b) has been replaced with packing.unpack(b, 'all')
+
 
 import base64
 import os
@@ -25,6 +30,8 @@ import random
 import socket
 import sys
 import hashlib
+import six
+from pwnlib.util import packing
 
 try:
     import gmpy2
@@ -86,10 +93,12 @@ def sloth_square(x, diff, p):
 
 def encode_number(num):
     size = (num.bit_length() // 24) * 3 + 3
-    return str(base64.b64encode(num.to_bytes(size, 'big')), 'utf-8')
+    # return str(base64.b64encode(num.to_bytes(size, 'big')), 'utf-8')
+    return six.ensure_str(base64.b64encode(packing.pack(num, size * 8, endian='big')), 'utf-8')
 
 def decode_number(enc):
-    return int.from_bytes(base64.b64decode(bytes(enc, 'utf-8')), 'big')
+    # return int.from_bytes(base64.b64decode(bytes(enc, 'utf-8')), 'big')
+    return packing.unpack(base64.b64decode(six.ensure_binary(enc, 'utf-8')), 'all', endian='big')
 
 def decode_challenge(enc):
     dec = enc.split('.')

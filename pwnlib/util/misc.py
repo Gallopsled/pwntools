@@ -17,6 +17,7 @@ from pwnlib import atexit
 from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util import fiddling
+from pwnlib.util import hashes
 from pwnlib.util import lists
 from pwnlib.util import packing
 from pwnlib.data.kctf.pow import solve_challenge as _kctf_pow_solve_challenge, \
@@ -149,6 +150,8 @@ def kctf_pow_solve(challenge):
     >>> challenge = 's.AAAB.AAAvm89LbEt4meEnXGwbHp3z'
     >>> kctf_pow_solve(challenge)[:20] + '...'
     's.AAAo8s+2Q06cSBM4nf...'
+    >>> hashes.sha256sumhex(six.ensure_binary(kctf_pow_solve(challenge)))
+    'fd13e60761fb4119848f2d7704100f8737c0ed754ef90f573cff74faac8ca800'
 
     >>> kctf_pow_verify(challenge, kctf_pow_solve(challenge))
     True
