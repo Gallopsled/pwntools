@@ -16,8 +16,9 @@
 
 # This file had been modified:
 # * Unnecessary code has been disabled
+# * It uses pwnlib logging instead of sys.stderr.write()
 # * The notice about installing gmpy2 has been moved into functions to make for a quieter import
-# * The use of secrets.randbelow() has been replaced with random.randrange() for Python2 compatibility
+# * For Python 2 compatibility, random.randrange() is used if secrets.randbelow() is not available
 # * The 'can_bypass' mechanism has been removed to eliminate the dependence on ecdsa
 # * str(b, 'utf-8') has been replaced with six.ensure_str(b, 'utf-8')
 # * bytes(s, 'utf-8') has been replaced with six.ensure_binary(s, 'utf-8')
@@ -27,12 +28,15 @@
 
 import base64
 # import os
-import random
+# import secrets
 # import socket
-import sys
+# import sys
 # import hashlib
 import six
+from pwnlib.log import getLogger
 from pwnlib.util import packing
+
+log = getLogger(__name__)
 
 try:
     import gmpy2
@@ -41,7 +45,12 @@ except ImportError:
     HAVE_GMP = False
     # sys.stderr.write("[NOTICE] Running 10x slower, gotta go fast? pip3 install gmpy2\n")
 
-GMP_NOTICE_ISSUED = False
+try:
+    import secrets
+    HAVE_SECRETS = True
+except ImportError:
+    import random
+    HAVE_SECRETS = False
 
 VERSION = 's'
 MODULUS = 2**1279-1
@@ -73,23 +82,17 @@ def gmpy_sloth_square(y, diff, p):
     return int(y)
 
 def sloth_root(x, diff, p):
-    global GMP_NOTICE_ISSUED
     if HAVE_GMP:
         return gmpy_sloth_root(x, diff, p)
     else:
-        if not GMP_NOTICE_ISSUED:
-            sys.stderr.write("[NOTICE] kctf-pow running 10x slower, gotta go fast? pip3 install gmpy2\n")
-            GMP_NOTICE_ISSUED = True
+        log.warning_once("kctf-pow is running 10x slower, gotta go fast? pip3 install gmpy2")
         return python_sloth_root(x, diff, p)
 
 def sloth_square(x, diff, p):
-    global GMP_NOTICE_ISSUED
     if HAVE_GMP:
         return gmpy_sloth_square(x, diff, p)
     else:
-        if not GMP_NOTICE_ISSUED:
-            sys.stderr.write("[NOTICE] kctf-pow running 10x slower, gotta go fast? pip3 install gmpy2\n")
-            GMP_NOTICE_ISSUED = True
+        log.warning_once("kctf-pow is running 10x slower, gotta go fast? pip3 install gmpy2")
         return python_sloth_square(x, diff, p)
 
 def encode_number(num):
@@ -111,8 +114,11 @@ def encode_challenge(arr):
     return '.'.join([VERSION] + list(map(encode_number, arr)))
 
 def get_challenge(diff):
-    sys.stderr.write("[WARNING] kctf-pow using random.randrange() which is not cryptographically secure\n")
-    x = random.randrange(CHALSIZE)
+    if HAVE_SECRETS:
+        x = secrets.randbelow(CHALSIZE)
+    else:
+        log.warning_once("kctf-pow is using random.randrange() which is not cryptographically secure")
+        x = random.randrange(CHALSIZE)
     return encode_challenge([diff, x])
 
 def solve_challenge(chal):
