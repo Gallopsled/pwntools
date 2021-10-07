@@ -15,6 +15,7 @@
 # limitations under the License.
 
 # This file had been modified:
+# * Unnecessary code has been disabled
 # * The notice about installing gmpy2 has been moved into functions to make for a quieter import
 # * The use of secrets.randbelow() has been replaced with random.randrange() for Python2 compatibility
 # * The 'can_bypass' mechanism has been removed to eliminate the dependence on ecdsa
@@ -25,11 +26,11 @@
 
 
 import base64
-import os
+# import os
 import random
-import socket
+# import socket
 import sys
-import hashlib
+# import hashlib
 import six
 from pwnlib.util import packing
 
@@ -46,7 +47,7 @@ VERSION = 's'
 MODULUS = 2**1279-1
 CHALSIZE = 2**128
 
-SOLVER_URL = 'https://goo.gle/kctf-pow'
+# SOLVER_URL = 'https://goo.gle/kctf-pow'
 
 def python_sloth_root(x, diff, p):
     exponent = (p + 1) // 4
@@ -139,76 +140,76 @@ def verify_challenge(chal, sol, allow_bypass=False):
     res = sloth_square(y, diff, MODULUS)
     return (x == res) or (MODULUS - x == res)
 
-def usage():
-    sys.stdout.write('Usage:\n')
-    sys.stdout.write('Solve pow: {} solve $challenge\n')
-    sys.stdout.write('Check pow: {} ask $difficulty\n')
-    sys.stdout.write('  $difficulty examples (for 1.6GHz CPU) in fast mode:\n')
-    sys.stdout.write('             1337:   1 sec\n')
-    sys.stdout.write('             31337:  30 secs\n')
-    sys.stdout.write('             313373: 5 mins\n')
-    sys.stdout.flush()
-    sys.exit(1)
+# def usage():
+#     sys.stdout.write('Usage:\n')
+#     sys.stdout.write('Solve pow: {} solve $challenge\n')
+#     sys.stdout.write('Check pow: {} ask $difficulty\n')
+#     sys.stdout.write('  $difficulty examples (for 1.6GHz CPU) in fast mode:\n')
+#     sys.stdout.write('             1337:   1 sec\n')
+#     sys.stdout.write('             31337:  30 secs\n')
+#     sys.stdout.write('             313373: 5 mins\n')
+#     sys.stdout.flush()
+#     sys.exit(1)
 
-def main():
-    if len(sys.argv) != 3:
-        usage()
-        sys.exit(1)
-
-    cmd = sys.argv[1]
-
-    if cmd == 'ask':
-        difficulty = int(sys.argv[2])
-
-        if difficulty == 0:
-            sys.stdout.write("== proof-of-work: disabled ==\n")
-            sys.exit(0)
-
-
-        challenge = get_challenge(difficulty)
-
-        sys.stdout.write("== proof-of-work: enabled ==\n")
-        sys.stdout.write("please solve a pow first\n")
-        sys.stdout.write("You can run the solver with:\n")
-        sys.stdout.write("    python3 <(curl -sSL {}) solve {}\n".format(SOLVER_URL, challenge))
-        sys.stdout.write("===================\n")
-        sys.stdout.write("\n")
-        sys.stdout.write("Solution? ")
-        sys.stdout.flush()
-        solution = ''
-        with os.fdopen(0, "rb", 0) as f:
-            while not solution:
-                line = f.readline().decode("utf-8")
-                if not line:
-                    sys.stdout.write("EOF")
-                    sys.stdout.flush()
-                    sys.exit(1)
-                solution = line.strip()
-
-        if verify_challenge(challenge, solution):
-            sys.stdout.write("Correct\n")
-            sys.stdout.flush()
-            sys.exit(0)
-        else:
-            sys.stdout.write("Proof-of-work fail")
-            sys.stdout.flush()
-
-    elif cmd == 'solve':
-        challenge = sys.argv[2]
-        solution = solve_challenge(challenge)
-
-        if verify_challenge(challenge, solution, False):
-            sys.stderr.write("Solution: \n".format(solution))
-            sys.stderr.flush()
-            sys.stdout.write(solution)
-            sys.stdout.flush()
-            sys.stderr.write("\n")
-            sys.stderr.flush()
-            sys.exit(0)
-    else:
-        usage()
-
-    sys.exit(1)
-
-if __name__ == "__main__":
-    main()
+# def main():
+#     if len(sys.argv) != 3:
+#         usage()
+#         sys.exit(1)
+#
+#     cmd = sys.argv[1]
+#
+#     if cmd == 'ask':
+#         difficulty = int(sys.argv[2])
+#
+#         if difficulty == 0:
+#             sys.stdout.write("== proof-of-work: disabled ==\n")
+#             sys.exit(0)
+#
+#
+#         challenge = get_challenge(difficulty)
+#
+#         sys.stdout.write("== proof-of-work: enabled ==\n")
+#         sys.stdout.write("please solve a pow first\n")
+#         sys.stdout.write("You can run the solver with:\n")
+#         sys.stdout.write("    python3 <(curl -sSL {}) solve {}\n".format(SOLVER_URL, challenge))
+#         sys.stdout.write("===================\n")
+#         sys.stdout.write("\n")
+#         sys.stdout.write("Solution? ")
+#         sys.stdout.flush()
+#         solution = ''
+#         with os.fdopen(0, "rb", 0) as f:
+#             while not solution:
+#                 line = f.readline().decode("utf-8")
+#                 if not line:
+#                     sys.stdout.write("EOF")
+#                     sys.stdout.flush()
+#                     sys.exit(1)
+#                 solution = line.strip()
+#
+#         if verify_challenge(challenge, solution):
+#             sys.stdout.write("Correct\n")
+#             sys.stdout.flush()
+#             sys.exit(0)
+#         else:
+#             sys.stdout.write("Proof-of-work fail")
+#             sys.stdout.flush()
+#
+#     elif cmd == 'solve':
+#         challenge = sys.argv[2]
+#         solution = solve_challenge(challenge)
+#
+#         if verify_challenge(challenge, solution, False):
+#             sys.stderr.write("Solution: \n".format(solution))
+#             sys.stderr.flush()
+#             sys.stdout.write(solution)
+#             sys.stdout.flush()
+#             sys.stderr.write("\n")
+#             sys.stderr.flush()
+#             sys.exit(0)
+#     else:
+#         usage()
+#
+#     sys.exit(1)
+#
+# if __name__ == "__main__":
+#     main()
