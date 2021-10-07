@@ -165,7 +165,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
             return b''.join(reversed(out))
 
 @LocalNoarchContext
-def unpack(data, word_size = None, endianness = None, sign = None, **kwargs):
+def unpack(data, word_size = None, **kwargs):
     r"""unpack(data, word_size = None, endianness = None, sign = None, **kwargs) -> int
 
     Packs arbitrary-sized integer.
