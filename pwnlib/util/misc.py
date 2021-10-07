@@ -17,11 +17,8 @@ from pwnlib import atexit
 from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util import fiddling
-from pwnlib.util import hashes
 from pwnlib.util import lists
 from pwnlib.util import packing
-from pwnlib.data.kctf.pow import solve_challenge as _kctf_pow_solve_challenge, \
-    verify_challenge as _kctf_pow_verify_challenge, get_challenge as _kctf_get_challenge
 
 log = getLogger(__name__)
 
@@ -136,61 +133,6 @@ def write(path, data = b'', create_dir = False, mode = 'w'):
     if mode == 'w' and isinstance(data, bytes): mode += 'b'
     with open(path, mode) as f:
         f.write(data)
-
-def kctf_pow_solve(challenge):
-    """
-    Solve a kCTF Proof of Work challenge
-
-    Arguments:
-      `challenge` (str): The challenge to solve
-
-    Returns:
-      A string representing an acceptable solution
-
-    >>> challenge = 's.AAAB.AAAvm89LbEt4meEnXGwbHp3z'
-    >>> kctf_pow_solve(challenge)[:20] + '...'
-    's.AAAo8s+2Q06cSBM4nf...'
-    >>> hashes.sha256sumhex(six.ensure_binary(kctf_pow_solve(challenge)))
-    'fd13e60761fb4119848f2d7704100f8737c0ed754ef90f573cff74faac8ca800'
-
-    >>> kctf_pow_verify(challenge, kctf_pow_solve(challenge))
-    True
-    """
-    return _kctf_pow_solve_challenge(challenge)
-
-def kctf_pow_verify(challenge, solution):
-    """
-    Verify a kCFT Proof of Work solution
-
-    Arguments:
-      `challenge` (str): The challenge that was solved
-      `solution` (str): The solution to verify
-
-    Returns:
-      True if the solution is acceptable, else False
-
-    >>> challenge1 = kctf_pow_generate_challenge(1)
-    >>> challenge2 = kctf_pow_generate_challenge(1)
-    >>> kctf_pow_verify(challenge1, kctf_pow_solve(challenge1))
-    True
-
-    >>> kctf_pow_verify(challenge1, kctf_pow_solve(challenge2))
-    False
-    """
-    return _kctf_pow_verify_challenge(challenge, solution, False)
-
-def kctf_pow_generate_challenge(difficulty):
-    """
-    Generate a kCTF Proof of Work challenge
-
-    Arguments:
-      `difficulty` (int): The challenge difficulty. A difficulty of 31337 can be solved in ~30 seconds
-        at 1.66GHz with gmpy2 installed
-
-    Returns:
-      A string representing the challenge
-    """
-    return _kctf_get_challenge(difficulty)
 
 def which(name, all = False, path=None):
     """which(name, flags = os.X_OK, all = False) -> str or str set
