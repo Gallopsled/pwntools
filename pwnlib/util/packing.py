@@ -1134,7 +1134,8 @@ def js_unescape(s, **kwargs):
     >>> js_unescape('abc%u4141123')
     b'abcAA123'
 
-    >>> js_unescape(js_escape(_encode(string.printable))) == _encode(string.printable)
+    >>> data = b'abcdABCD1234!@#$\x00\x01\x02\x03\x80\x81\x82\x83'
+    >>> js_unescape(js_escape(data)) == data
     True
 
     >>> js_unescape('%u4141%u42')
