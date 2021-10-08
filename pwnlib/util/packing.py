@@ -1107,6 +1107,10 @@ def js_escape(data, padding=context.cyclic_alphabet[0:1], **kwargs):
     if len(data) % 2:
         data += padding[0:1]
 
+    if isinstance(data, six.string_types):
+        # Give Python 2 an iterable of ints, similar to how a Python 3 bytes works
+        data = map(ord, data)
+
     if context.endian == 'little':
         return ''.join('%u{a:02x}{b:02x}'.format(a=a, b=b) for b, a in iters.group(2, data))
     else:
