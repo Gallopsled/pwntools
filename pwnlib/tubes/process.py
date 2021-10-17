@@ -147,11 +147,11 @@ class process(tube):
             Set a SIGALRM alarm timeout on the process.
     Examples:
         >>> import sys, doctest
-        >>> if platform.system().startswith('win'):
+        >>> if sys.platform.startswith('win'):
         ...     p = process(b"C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe")
         ...     p.recvuntil(b".")
         ... else:
-        ...     b'Windows PowerShell \r\nCopyright (C) Microsoft Corporation.'
+        ...     b'Windows PowerShell \r\nCopyright (C).'
         b'Windows PowerShell \r\nCopyright (C) Microsoft Corporation.'
 
         >>> if sys.platform.startswith('win'):

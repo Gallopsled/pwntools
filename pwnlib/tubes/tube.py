@@ -105,7 +105,16 @@ class tube(Timeout, Logger):
             numb = self.buffer.get_fill_size(numb)
             return self._recv(numb, timeout) or b''
         elif sys.platform.startswith('win'):
-            return bytes(self.read(numb, timeout))
+            if timeout:
+                self.timeout = timeout
+            buf = b''
+            if self.stdhandles:
+                buf = self.stdout.read(numb)
+                if len(buf) != numb:
+                    logging.warning("EOFError: Timeout {:s} - Incomplete read".format(self))
+            self.check_closed()  # but signal it
+            return bytes(buf)
+            #return bytes(self.read(numb, timeout))
 
 
     def unrecv(self, data):
@@ -277,7 +286,7 @@ class tube(Timeout, Logger):
             return self.buffer.get(numb)
 
         elif sys.platform.startswith("win"):
-            buf = self.read(numb, timeout)
+            buf = self.recv(numb, timeout)
             if len(buf) != numb:
                 raise (EOFError("Timeout {:s} - Incomplete read".format(self)))
             return bytes(buf)
@@ -768,7 +777,7 @@ class tube(Timeout, Logger):
             return self.buffer.get()
 
         elif sys.platform.startswith('win'):
-            return self.read(0x100000, timeout, no_warning=True)
+            return self.recv(0x100000, timeout)
 
 
     def send(self, data):

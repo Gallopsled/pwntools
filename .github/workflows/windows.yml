@@ -12,7 +12,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: say hello
-      run:  echo "hello"
+      run:  |
+        echo "hello"
+        python3 -c "import platform; print(platform.system());"
 
     - name: install dependencies
       run: |
