@@ -64,9 +64,10 @@ install_requires     = ['paramiko>=1.15.2',
                         'unicorn>=1.0.2rc1',
                         'six>=1.12.0',
                         'rpyc',
-                        'colored_traceback',
-                        'PythonForWindows==0.6.5'
+                        'colored_traceback'
 ]
+if sys.platform.startswith("win"):
+    install_requires.append('PythonForWindows==0.6.5')
 
 if platform.python_version_tuple()[0] == '2':
     install_requires += ['pathlib2']

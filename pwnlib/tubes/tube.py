@@ -111,7 +111,7 @@ class tube(Timeout, Logger):
             if self.stdhandles:
                 buf = self.stdout.read(numb)
                 if len(buf) != numb:
-                    logging.warning("EOFError: Timeout {:s} - Incomplete read".format(self))
+                    logging.warning("EOFError: Timeout {0} - Incomplete read".format(self))
             self.check_closed()  # but signal it
             return bytes(buf)
             #return bytes(self.read(numb, timeout))

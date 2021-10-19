@@ -42,7 +42,7 @@ class Pipe(object):
         self._rh = [h for h in windows.current_process.handles if h.value == self._rpipe][0]
         self._wh = [h for h in windows.current_process.handles if h.value == self._wpipe][0]
 
-        self.timeout = 500  # ms
+        self._timeout = 500  # ms
         self.tick = 40  # ms
 
     @windows.winproxy.Kernel32Proxy('PeekNamedPipe', deffunc_module=sys.modules[__name__])
@@ -89,7 +89,7 @@ class Pipe(object):
         """read(size) returns the bytes read on the pipe (returned length <= size)"""
         if self.select() < size:
             elapsed = 0
-            while elapsed <= self.timeout and self.select() < size:
+            while elapsed <= self._timeout and self.select() < size:
                 time.sleep(float(self.tick) / 1000)
                 elapsed += self.tick
         return self._read(min(self.select(), size))

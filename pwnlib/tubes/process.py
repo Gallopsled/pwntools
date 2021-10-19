@@ -15,6 +15,9 @@ import subprocess
 import sys
 import time
 
+
+
+
 if sys.platform != 'win32':
     import fcntl
     import pty
@@ -45,6 +48,7 @@ if sys.platform == 'win32':
     from windows.generated_def.winstructs import *
     import windows.native_exec.simple_x64 as x64
     import windows.debug
+    from windows.winobject.process import WinProcess
 
 
 
@@ -151,7 +155,7 @@ class process(tube):
         ...     p = process(b"C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe")
         ...     p.recvuntil(b".")
         ... else:
-        ...     b'Windows PowerShell \r\nCopyright (C).'
+        ...     b'Windows PowerShell \r\nCopyright (C) Microsoft Corporation.'
         b'Windows PowerShell \r\nCopyright (C) Microsoft Corporation.'
 
         >>> if sys.platform.startswith('win'):
@@ -406,10 +410,14 @@ class process(tube):
         ... else:
         ...      p = process(binary.path, cwd=os.path.relpath(binary_dir))
     """
-
-    STDOUT = STDOUT
-    PIPE = PIPE
-    PTY = PTY
+    if sys.platform.startswith("linux"):
+        STDOUT = STDOUT
+        PIPE = PIPE
+        PTY = PTY
+    elif sys.platform.startswith("win"):
+        STDOUT = Pipe()
+        PIPE = Pipe()
+        PTY = PTY
 
     #: Have we seen the process stop?  If so, this is a unix timestamp.
     _stop_noticed = 0
@@ -585,15 +593,23 @@ class process(tube):
             self.__offsets = None
 
             if self.stdhandles:
-                self.stdin = Pipe()
-                self.stdout = Pipe()
+                self._stdin = Pipe()
+                self._stdout = Pipe()
                 # stderr mixed with stdout self.stderr = Pipe()
                 self.timeout = 500  # ms
                 self._default_timeout = 500  # ms
 
+            """try:
+                p = windows.utils.create_process(self.cmd)
+                pipe_read, pipe_write = os.fdopen(p.pid)
+                os.read(pipe_read, 5)
+            except:
+                raise (ValueError("CreateProcess failed - Invalid arguments"))"""
+
             if self._create_process() != 0:
                 raise (ValueError("CreateProcess failed - Invalid arguments"))
-            super().__init__(pid=self.mypid, handle=self.myphandle)
+            self.peb = [proc.peb for proc in windows.system.processes if proc.name.encode() == self.cmd.split(b"/")[-1]][0]
+
             if flags != CREATE_SUSPENDED:
                 self.wait_initialized()
 
@@ -861,7 +877,7 @@ class process(tube):
             raise AttributeError("'process' object has no attribute '%s'" % attr)
 
         elif sys.platform.startswith('win'):
-            raise Exception("not implemented for windows")
+            pass
 
     def kill(self):
         """kill()
@@ -1133,7 +1149,12 @@ class process(tube):
 
             return maps
         elif sys.platform.startswith('win'):
-            raise Exception("Functions libs not implemented on windows yet. It will be implemented in the future.")
+            """libs returns a dict of loaded modules with their baseaddr like {'ntdll.dll': 0x123456000, ...}"""
+            if not self.check_initialized():
+                return {}
+            if not self.__libs:
+                self.__libs = {module.name.lower(): module.baseaddr for module in self.peb.modules if module.name}
+            return self.__libs
 
     @property
     def libc(self):
@@ -1320,7 +1341,7 @@ class process(tube):
         if sys.platform.startswith('linux'):
             return self.proc.stdin
         elif sys.platform.startswith('win'):
-            raise Exception("not implemented yet")
+            return self._stdin
 
     @property
     def stdout(self):
@@ -1330,7 +1351,7 @@ class process(tube):
         if sys.platform.startswith('linux'):
             return self.proc.stdout
         elif sys.platform.startswith('win'):
-            raise Exception("not implemented yet")
+            return self._stdout
 
     @property
     def stderr(self):
@@ -1342,7 +1363,6 @@ class process(tube):
         elif sys.platform.startswith('win'):
             raise Exception("not implemented yet")
 
-    #if sys.platform == 'win32':
     def check_initialized(self):
         if sys.platform.startswith('linux'):
             Exception("avaible only on windows")
@@ -1363,7 +1383,7 @@ class process(tube):
             raise Exception("avaible only on windows")
         elif sys.platform.startswith('win'):
             while not self.check_initialized():
-                print(GetLastError())
+                #print(GetLastError())
                 time.sleep(0.50)
 
     def __del__(self):
@@ -1371,8 +1391,8 @@ class process(tube):
         """"# TODO: Kill the debugger too
         if self.__pid:  # and not self.is_exit():
             self.exit(0)
-        # os.close(self.stdin)
-        # os.close(self.stdout)"""
+        # os.close(self._stdin)
+        # os.close(self._stdout)"""
 
     def _create_process(self):
         if sys.platform.startswith('linux'):
@@ -1441,7 +1461,7 @@ class process(tube):
             if not self.stdhandles:
                 logging.error("client_count called on process {:s} with no input forwarding".format(self))
                 return 0
-            return max(self.stdin.number_of_clients(), self.stdout.number_of_clients())
+            return max(self.stdin.number_of_clients(), self._stdout.number_of_clients())
 
     def get_timeout(self):
         if sys.platform.startswith('linux'):
@@ -1458,8 +1478,8 @@ class process(tube):
             if timeout:
                 self._timeout = timeout
                 if self.stdhandles:
-                    self.stdin.timeout = timeout
-                    self.stdout.timeout = timeout
+                    self._stdin.timeout = timeout
+                    self._stdout.timeout = timeout
             elif self._timeout != self._default_timeout:
                 self.timeout = self._default_timeout
 
@@ -1489,4 +1509,4 @@ class process(tube):
             pass
         elif sys.platform.startswith('win'):
             if self.stdhandles and not self.check_closed(True):
-                return self.stdin.write(buf)"""
+                return self._stdin.write(buf)"""
