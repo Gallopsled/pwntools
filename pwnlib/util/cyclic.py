@@ -221,10 +221,10 @@ def cyclic_find(subseq, alphabet = None, n = None):
         if subseq >= 2**(8*n):
             # Assumption: The user has given an integer that is more than 2**(8n) bits, but would otherwise fit within
             #  a register of size 2**(8m) where m is a multiple of four
-            notice = ("cyclic_find() expected an integer argument < {cap:#x}, you gave {gave:#x}\n"
+            notice = ("cyclic_find() expected an integer argument <= {cap:#x}, you gave {gave:#x}\n"
                       "Unless you specified cyclic(..., n={fits}), you probably just want the first {n} bytes.\n"
                       "Truncating the data at {n} bytes.  Specify cyclic_find(..., n={fits}) to override this.").format(
-                cap=2**(8*n),
+                cap=2**(8*n)-1,
                 gave=subseq,
                 # The number of bytes needed to represent subseq, rounded to the next 4
                 fits=int(round(float(subseq.bit_length()) / 32 + 0.5) * 32) // 8,
