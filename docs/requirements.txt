@@ -1,6 +1,7 @@
 capstone
 coveralls
 doc2dash
+docutils<0.18
 isort
 mako>=1.0.0
 paramiko>=1.15.2
