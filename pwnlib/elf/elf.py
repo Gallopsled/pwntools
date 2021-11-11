@@ -767,7 +767,7 @@ class ELF(ELFFile):
             >>> for arch in CAT_PROC_MAPS_EXIT:
             ...   context.clear()
             ...   with context.local(arch=arch):
-            ...     sc = shellcraft.cat("/proc/self/maps")
+            ...     sc = shellcraft.cat2("/proc/self/maps")
             ...     sc += shellcraft.exit()
             ...     sc = asm(sc)
             ...     sc = enhex(sc)
