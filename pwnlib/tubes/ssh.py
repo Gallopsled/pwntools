@@ -1079,7 +1079,7 @@ os.execve(exe, argv, env)
             if result == 0:
                 self.error("%r does not exist or is not executable" % executable)
             elif result == 3:
-                self.error(error_message)
+                self.error("%r" % error_message)
             elif result == 2:
                 self.error("python is not installed on the remote system %r" % self.host)
             elif result != 1:
