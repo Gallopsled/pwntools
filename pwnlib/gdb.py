@@ -1335,7 +1335,7 @@ def version(program='gdb'):
     program = misc.which(program)
     expr = br'([0-9]+\.?)+'
 
-    with tubes.process.process([program, '--version'], level='error') as gdb:
+    with tubes.process.process([program, '--version'], level='error', stdout=tubes.process.PIPE) as gdb:
         version = gdb.recvline()
 
     versions = re.search(expr, version).group()
