@@ -400,6 +400,7 @@ class Corefile(ELF):
         automatically invokes GDB to attach and dump a corefile.
 
         >>> core = io.corefile
+        >>> io.close()
 
         The corefile can be inspected and read from, and even exposes various mappings
 
@@ -1456,6 +1457,10 @@ class CorefileFinder(object):
                     f.write(apport_core)
                 return filename
 
+            filename = self.apport_coredump()
+            if filename:
+                return filename
+
             # Pretend core_pattern was just 'core', and see if we come up with anything
             self.kernel_core_pattern = 'core'
             return self.native_corefile_pattern()
@@ -1538,6 +1543,42 @@ class CorefileFinder(object):
 
         # Get the full path
         corefile_path = os.path.join(self.cwd, corefile_name)
+
+        log.debug("Trying corefile_path: %r" % corefile_path)
+
+        # Glob all of them, return the *most recent* based on numeric sort order.
+        for corefile in sorted(glob.glob(corefile_path), reverse=True):
+            return corefile
+
+    def apport_coredump(self):
+        """Find new-style apport coredump of executables not belonging
+        to a system package
+        """
+        # Now Ubuntu, which is the most silly distro of all, doesn't follow
+        # anybody else's rules either...
+        # ...and it uses apport FROM SOME OTHER REPO THAN THE DOCS SAY
+        # Hey, thanks for making our lives easier, Canonical :----)
+        # Seriously, why is Ubuntu even considered to be the default distro
+        # on GH Actions?
+        #
+        #     core.<_path_to_target_binary>.<uid>.<boot_id>.<pid>.<timestamp>
+        #
+        # Note that we don't give any fucks about the timestamp, since the PID
+        # should be unique enough that we can just glob.
+
+        boot_id = read('/proc/sys/kernel/random/boot_id').strip().decode()
+        path = self.exe.replace('/', '_')
+
+        # Format the name
+        corefile_name = 'core.{path}.{uid}.{boot_id}.{pid}.*'.format(
+            path=path,
+            uid=self.uid,
+            boot_id=boot_id,
+            pid=self.pid,
+        )
+
+        # Get the full path
+        corefile_path = os.path.join('/var/lib/apport/coredump', corefile_name)
 
         log.debug("Trying corefile_path: %r" % corefile_path)
 
