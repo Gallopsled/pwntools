@@ -13,7 +13,7 @@ See 'man 2 munmap' for more information.
 
 Arguments:
     addr(void*): addr
-    len(size_t): len
+    length(size_t): length
 Returns:
     int
 </%docstring>
