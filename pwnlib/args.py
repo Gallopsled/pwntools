@@ -62,6 +62,8 @@ from pwnlib.context import context
 
 class PwnlibArgs(collections.defaultdict):
     def __getattr__(self, attr):
+        if attr.startswith('_'):
+            raise AttributeError(attr)
         return self[attr]
 
 args = PwnlibArgs(str)

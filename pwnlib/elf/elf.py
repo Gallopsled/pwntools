@@ -167,8 +167,7 @@ class dotdict(dict):
 
         if subkeys:
             return dotdict(subkeys)
-
-        return getattr(super(dotdict, self), name)
+        raise AttributeError(name)
 
 class ELF(ELFFile):
     """Encapsulates information about an ELF file.

@@ -89,6 +89,9 @@ class Module(types.ModuleType):
         return functools.partial(f, self)
 
     def __getattr__(self, desc):
+        if desc.startswith('_'):
+            raise AttributeError(desc)
+
         try:
             ds = desc.replace('gray', 'bright_black').split('_')
             init = ''

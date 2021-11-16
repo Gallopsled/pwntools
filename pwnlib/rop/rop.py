@@ -1274,7 +1274,7 @@ class ROP(object):
                 pass
 
             def __getattr__(self, k):
-                return self._fd.__getattribute__(k)
+                return getattr(self._fd, k)
 
         gadgets = {}
         for elf in self.elfs:
