@@ -13,6 +13,14 @@ import time
 
 from six.moves import range
 
+from subprocess import PIPE, Popen
+from threading import Thread
+
+try:
+    from queue import Queue, Empty
+except ImportError:
+    from Queue import Queue, Empty
+
 from pwnlib import atexit
 from pwnlib import term
 from pwnlib.context import context
@@ -101,8 +109,28 @@ class tube(Timeout, Logger):
             [...] Received 0xc bytes:
                 b'Hello, world'
         """
-        numb = self.buffer.get_fill_size(numb)
-        return self._recv(numb, timeout) or b''
+        if sys.platform.startswith("linux"):
+            numb = self.buffer.get_fill_size(numb)
+            return self._recv(numb, timeout) or b''
+        elif sys.platform.startswith("win"):
+            def read_process(out, queue):
+                self.data = b""
+                for i in range(numb):
+                    char = self.proc.stdout.read(1)
+                    self.data += char
+                queue.put(self.data)
+
+            q = Queue()
+            t = Thread(target=read_process, args=(self.proc.stdout, q))
+            t.daemon = True
+            t.start()
+
+            try:
+                line = q.get(timeout=timeout)
+            except Empty:
+                return self.data
+            else:
+                return line
 
     def unrecv(self, data):
         """unrecv(data)
