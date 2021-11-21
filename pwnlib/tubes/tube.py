@@ -404,17 +404,33 @@ class tube(Timeout, Logger):
             return b''
 
         elif sys.platform.startswith("win"):
-            data = b""
-            while True:
-                for delim in delims:
-                    if delim not in data:
-                        data += self.recv(1)  # put in a thread for timeout
-                    else:
-                        if drop:
-                            return data[:-len(delim)]
+            def read_process(out, queue):
+                data = b""
+                while True:
+                    for delim in delims:
+                        if delim not in data:
+                            data += self.recv(1)  # put in a thread for timeout
                         else:
-                            return data
+                            if drop:
+                                return queue.put(data[:-len(delim)])
+                            else:
+                                return queue.put(data)
 
+            q = Queue()
+            t = Thread(target=read_process, args=(self.proc.stdout, q))
+            t.daemon = True
+            t.start()
+
+            try:
+                if timeout is Timeout.default:
+                    t.join()
+                else:
+                    t.join(timeout)
+                line = q.get_nowait()
+            except Empty:
+                return b""
+            else:
+                return line
 
     def recvlines(self, numlines=2**20, keepends=False, timeout=default):
         r"""recvlines(numlines, keepends=False, timeout=default) -> list of bytes objects
