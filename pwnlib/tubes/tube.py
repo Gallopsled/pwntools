@@ -113,22 +113,37 @@ class tube(Timeout, Logger):
             numb = self.buffer.get_fill_size(numb)
             return self._recv(numb, timeout) or b''
         elif sys.platform.startswith("win"):
+            if numb is None and timeout is Timeout.default:
+                raise Exception("You must let at least the timeout or the size of data expected.")
             def read_process(out, queue):
                 self.data = b""
-                for i in range(numb):
-                    char = self.proc.stdout.read(1)
-                    self.data += char
-                queue.put(self.data)
+                if numb is None:
+                    while True:
+                        char = self.proc.stdout.read(1)
+                        self.data += char
+                else:
+                    for i in range(numb):
+                        char = self.proc.stdout.read(1)
+                        self.data += char
+                    queue.put(self.data)
 
             q = Queue()
             t = Thread(target=read_process, args=(self.proc.stdout, q))
             t.daemon = True
             t.start()
 
+            t.join()
+
+            data = self.data
+            self.data = b""
+
             try:
-                line = q.get(timeout=timeout)
+                if timeout is Timeout.default:
+                    line = q.get_nowait()
+                else:
+                    line = q.get(timeout=timeout)
             except Empty:
-                return self.data
+                return data
             else:
                 return line
 
@@ -351,42 +366,52 @@ class tube(Timeout, Logger):
         # Longest delimiter for tracking purposes
         longest = max(map(len, delims))
 
-        # Cumulative data to search
-        data = []
-        top = b''
+        if sys.platform.startswith("linux"):
+            # Cumulative data to search
+            data = []
+            top = b''
 
-        with self.countdown(timeout):
-            while self.countdown_active():
-                try:
-                    res = self.recv(timeout=self.timeout)
-                except Exception:
-                    self.unrecv(b''.join(data) + top)
-                    raise
+            with self.countdown(timeout):
+                while self.countdown_active():
+                    try:
+                        res = self.recv(timeout=self.timeout)
+                    except Exception:
+                        self.unrecv(b''.join(data) + top)
+                        raise
 
-                if not res:
-                    self.unrecv(b''.join(data) + top)
-                    return b''
+                    if not res:
+                        self.unrecv(b''.join(data) + top)
+                        return b''
 
-                top += res
-                start = len(top)
-                for d in delims:
-                    j = top.find(d)
-                    if start > j > -1:
-                        start = j
-                        end = j + len(d)
-                if start < len(top):
-                    self.unrecv(top[end:])
-                    if drop:
-                        top = top[:start]
+                    top += res
+                    start = len(top)
+                    for d in delims:
+                        j = top.find(d)
+                        if start > j > -1:
+                            start = j
+                            end = j + len(d)
+                    if start < len(top):
+                        self.unrecv(top[end:])
+                        if drop:
+                            top = top[:start]
+                        else:
+                            top = top[:end]
+                        return b''.join(data) + top
+                    if len(top) > longest:
+                        i = -longest - 1
+                        data.append(top[:i])
+                        top = top[i:]
+            return b''
+
+        elif sys.platform.startswith("win"):
+            data = b""
+            while True:
+                for delim in delims:
+                    if delim not in data:
+                        data += self.recv(1)  # put in a thread for timeout
                     else:
-                        top = top[:end]
-                    return b''.join(data) + top
-                if len(top) > longest:
-                    i = -longest - 1
-                    data.append(top[:i])
-                    top = top[i:]
+                        return data
 
-        return b''
 
     def recvlines(self, numlines=2**20, keepends=False, timeout=default):
         r"""recvlines(numlines, keepends=False, timeout=default) -> list of bytes objects
