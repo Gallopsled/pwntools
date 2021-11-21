@@ -410,7 +410,10 @@ class tube(Timeout, Logger):
                     if delim not in data:
                         data += self.recv(1)  # put in a thread for timeout
                     else:
-                        return data
+                        if drop:
+                            return data[:-len(delim)]
+                        else:
+                            return data
 
 
     def recvlines(self, numlines=2**20, keepends=False, timeout=default):
