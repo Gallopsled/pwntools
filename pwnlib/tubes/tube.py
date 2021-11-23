@@ -113,18 +113,14 @@ class tube(Timeout, Logger):
             numb = self.buffer.get_fill_size(numb)
             return self._recv(numb, timeout) or b''
         elif sys.platform.startswith("win"):
-            if numb is None and timeout is Timeout.default:
-                raise Exception("You must let at least the timeout or the size of data expected.")
             def read_process(out, queue):
                 self.data = b""
                 if numb is None:
                     while True:
-                        char = self.proc.stdout.read(1)
-                        self.data += char
+                        self.data += self.proc.stdout.read(1)
                 else:
                     for i in range(numb):
-                        char = self.proc.stdout.read(1)
-                        self.data += char
+                        self.data += self.proc.stdout.read(1)
                     queue.put(self.data)
 
             q = Queue()
@@ -261,23 +257,50 @@ class tube(Timeout, Logger):
             or ``''`` if a timeout occurred while waiting.
         """
 
-        data = b''
+        if sys.platform.startswith("linux"):
+            data = b''
 
-        with self.countdown(timeout):
-            while not pred(data):
-                try:
-                    res = self.recv(1)
-                except Exception:
-                    self.unrecv(data)
-                    return b''
+            with self.countdown(timeout):
+                while not pred(data):
+                    try:
+                        res = self.recv(1)
+                    except Exception:
+                        self.unrecv(data)
+                        return b''
 
-                if res:
-                    data += res
+                    if res:
+                        data += res
+                    else:
+                        self.unrecv(data)
+                        return b''
+
+            return data
+
+        elif sys.platform.startswith("win"):
+            def read_process(out, queue):
+                data = b""
+                while pred(data) is False:
+                    data += self.recv(1)
+                queue.put(data)
+
+            q = Queue()
+            t = Thread(target=read_process, args=(self.proc.stdout, q))
+            t.daemon = True
+            t.start()
+
+            try:
+                if timeout is Timeout.default:
+                    t.join()
                 else:
-                    self.unrecv(data)
-                    return b''
-
-        return data
+                    t.join(timeout)
+                line = q.get_nowait()
+            except Empty:
+                data = self.data
+                self.data = b""
+                return data
+            else:
+                self.data = b""
+                return line
 
     def recvn(self, numb, timeout = default):
         """recvn(numb, timeout = default) -> str
