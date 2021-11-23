@@ -132,19 +132,18 @@ class tube(Timeout, Logger):
             t.daemon = True
             t.start()
 
-            t.join()
-
-            data = self.data
-            self.data = b""
-
             try:
                 if timeout is Timeout.default:
-                    line = q.get_nowait()
+                    t.join()
                 else:
-                    line = q.get(timeout=timeout)
+                    t.join(timeout)
+                line = q.get_nowait()
             except Empty:
+                data = self.data
+                self.data = b""
                 return data
             else:
+                self.data = b""
                 return line
 
     def unrecv(self, data):
@@ -212,6 +211,19 @@ class tube(Timeout, Logger):
 
         return data
 
+    def _convert_for_buffer(self, data):
+        if data and self.isEnabledFor(logging.DEBUG):
+            self.debug('Received %#x bytes:' % len(data))
+
+            if len(set(data)) == 1 and len(data) > 1:
+                self.indented('%r * %#x' % (data[0], len(data)), level = logging.DEBUG)
+            elif all(c in string.printable.encode() for c in data):
+                for line in data.splitlines(True):
+                    self.indented(repr(line), level = logging.DEBUG)
+            else:
+                self.indented(fiddling.hexdump(data), level = logging.DEBUG)
+
+        return data
 
     def _recv(self, numb = None, timeout = default):
         """_recv(numb = 4096, timeout = default) -> str
@@ -785,13 +797,17 @@ class tube(Timeout, Logger):
             b'd'
         """
 
-        try:
-            while self._fillbuffer(timeout=timeout):
+        if sys.platform.startswith("linux"):
+            try:
+                while self._fillbuffer(timeout=timeout):
+                    pass
+            except EOFError:
                 pass
-        except EOFError:
-            pass
 
-        return self.buffer.get()
+            return self.buffer.get()
+
+        elif sys.platform.startswith("win"):
+            return self.recv(timeout=timeout)
 
     def recvall(self, timeout=Timeout.forever):
         """recvall() -> bytes
