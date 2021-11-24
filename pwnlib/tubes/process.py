@@ -223,7 +223,7 @@ class process(tube):
                  cwd = None,
                  env = None,
                  stdin  = PIPE,
-                 stdout = PTY,
+                 stdout = PTY if not sys.platform.startswith("win") else subprocess.PIPE,
                  stderr = STDOUT,
                  close_fds = True,
                  preexec_fn = lambda: None,
@@ -283,9 +283,6 @@ class process(tube):
         if not sys.platform.startswith("win"):
             # Create the PTY if necessary
             stdin, stdout, stderr, master, slave = self._handles(*handles)
-        else:
-            stdin, stdout = os.pipe()
-            stderr = stdout
 
         #: Arguments passed on argv
         self.argv = argv_val
@@ -344,9 +341,9 @@ class process(tube):
                                              executable = executable,
                                              cwd = cwd,
                                              env = self.env,
-                                             stdin = stdin if not sys.platform.startswith("win") else subprocess.PIPE,
-                                             stdout = stdout if not sys.platform.startswith("win") else subprocess.PIPE,
-                                             stderr = stderr if not sys.platform.startswith("win") else subprocess.PIPE,
+                                             stdin = stdin,
+                                             stdout = stdout,
+                                             stderr = stderr,
                                              close_fds = close_fds if not sys.platform.startswith("win") else None,
                                              preexec_fn = self.__preexec_fn if not sys.platform.startswith("win") else None)
 
