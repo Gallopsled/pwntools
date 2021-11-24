@@ -223,7 +223,7 @@ class process(tube):
                  cwd = None,
                  env = None,
                  stdin  = PIPE,
-                 stdout = PTY if not sys.platform.startswith("win") else subprocess.PIPE,
+                 stdout = PTY,
                  stderr = STDOUT,
                  close_fds = True,
                  preexec_fn = lambda: None,
@@ -255,13 +255,13 @@ class process(tube):
         if shell:
             executable_val, argv_val, env_val = executable, argv, env
         else:
-            if not sys.platform.startswith("win"):
+            if not context.os == "windows":
                 executable_val, argv_val, env_val = self._validate(cwd, executable, argv, env)
             else:#TODO make shell on windows
                 executable_val, argv_val, env_val = executable, argv, env
 
         # Avoid the need to have to deal with the STDOUT magic value.
-        if not sys.platform.startswith("win"):
+        if not context.os == "windows":
             if stderr is STDOUT:
                 stderr = stdout
 
@@ -280,7 +280,7 @@ class process(tube):
         #: Whether setuid is permitted
         self._setuid      = setuid if setuid is None else bool(setuid)
 
-        if not sys.platform.startswith("win"):
+        if not context.os == "windows":
             # Create the PTY if necessary
             stdin, stdout, stderr, master, slave = self._handles(*handles)
 
@@ -293,7 +293,7 @@ class process(tube):
         #: Environment passed on envp
         self.env = os.environ if env is None else env_val
 
-        if not sys.platform.startswith("win"):
+        if not context.os == "windows":
             if self.executable is None:
                 if shell:
                     self.executable = '/bin/sh'
@@ -336,6 +336,9 @@ class process(tube):
                     if prefix:
                         args = prefix + args
 
+                    if context.os == "windows":
+                        stdout = subprocess.PIPE
+
                     self.proc = subprocess.Popen(args = args,
                                              shell = shell,
                                              executable = executable,
@@ -344,8 +347,8 @@ class process(tube):
                                              stdin = stdin,
                                              stdout = stdout,
                                              stderr = stderr,
-                                             close_fds = close_fds if not sys.platform.startswith("win") else None,
-                                             preexec_fn = self.__preexec_fn if not sys.platform.startswith("win") else None)
+                                             close_fds = close_fds if not context.os == "windows" else None,
+                                             preexec_fn = self.__preexec_fn if not context.os == "windows" else None)
 
                     self.pid = self.proc.pid
 
@@ -357,7 +360,7 @@ class process(tube):
 
             p.success('pid %i' % self.pid)
 
-        if not sys.platform.startswith("win"):
+        if not context.os == "windows":
             if self.pty is not None:
                 if stdin is slave:
                     self.proc.stdin = os.fdopen(os.dup(master), 'r+b', 0)
@@ -368,7 +371,7 @@ class process(tube):
                 os.close(master)
                 os.close(slave)
 
-        if not sys.platform.startswith("win"):
+        if not context.os == "windows":
             # Set in non-blocking mode so that a call to call recv(1000) will
             # return as soon as a the first byte is available
             if self.proc.stdout:
@@ -645,7 +648,7 @@ class process(tube):
 
         # In order to facilitate retrieving core files, force an update
         # to the current working directory
-        if not sys.platform.startswith("win"):
+        if not context.os == "windows":
             _ = self.cwd
 
             if block:
@@ -683,7 +686,7 @@ class process(tube):
         if not self.connected_raw('recv'):
             raise EOFError
 
-        if not sys.platform.startswith("win"):
+        if not context.os == "windows":
             if not self.can_recv_raw(self.timeout):
                 return ''
 
@@ -750,7 +753,7 @@ class process(tube):
             return not self.proc.stdout.closed
 
     def close(self):
-        if not sys.platform.startswith("win"):
+        if not context.os == "windows":
             if self.proc is None:
                 return
 
