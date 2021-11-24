@@ -50,6 +50,7 @@ class tube(Timeout, Logger):
         self.buffer = Buffer(*a, **kw)
         self._newline = None
         atexit.register(self.close)
+        self.data_buffer = b""
 
     @property
     def newline(self):
@@ -336,17 +337,45 @@ class tube(Timeout, Logger):
             >>> t.recvn(10, timeout=0.06) # doctest: +ELLIPSIS
             b'aaaaaa...'
         """
-        # Keep track of how much data has been received
-        # It will be pasted together at the end if a
-        # timeout does not occur, or put into the tube buffer.
-        with self.countdown(timeout):
-            while self.countdown_active() and len(self.buffer) < numb and self._fillbuffer(self.timeout):
-                pass
+        if sys.platform.startswith("linux"):
+            # Keep track of how much data has been received
+            # It will be pasted together at the end if a
+            # timeout does not occur, or put into the tube buffer.
+            with self.countdown(timeout):
+                while self.countdown_active() and len(self.buffer) < numb and self._fillbuffer(self.timeout):
+                    pass
 
-        if len(self.buffer) < numb:
-            return b''
+            if len(self.buffer) < numb:
+                return b''
 
-        return self.buffer.get(numb)
+            return self.buffer.get(numb)
+
+        elif sys.platform.startswith("win"):
+            def read_process(out, queue):
+                if numb > len(self.data_buffer):
+                    for n in range(numb):
+                        self.data_buffer += self.recv(1)
+                    queue.put(b"")
+                else:
+                    for n in range(len(self.data_buffer), numb+numb):
+                        self.data_buffer = self.data_buffer[0:n:] + self.data_buffer[n + 1::]
+                    queue.put(self.data_buffer)
+
+            q = Queue()
+            t = Thread(target=read_process, args=(self.proc.stdout, q))
+            t.daemon = True
+            t.start()
+
+            try:
+                if timeout is Timeout.default:
+                    t.join()
+                else:
+                    t.join(timeout)
+                line = q.get_nowait()
+            except Empty:
+                return b""
+            else:
+                return line
 
     def recvuntil(self, delims, drop=False, timeout=default):
         """recvuntil(delims, drop=False, timeout=default) -> bytes
