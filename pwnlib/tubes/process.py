@@ -255,13 +255,13 @@ class process(tube):
         if shell:
             executable_val, argv_val, env_val = executable, argv, env
         else:
-            if sys.platform.startswith("linux"):
+            if not sys.platform.startswith("win"):
                 executable_val, argv_val, env_val = self._validate(cwd, executable, argv, env)
-            elif sys.platform.startswith("win"):#TODO make shell on windows
+            else:#TODO make shell on windows
                 executable_val, argv_val, env_val = executable, argv, env
 
         # Avoid the need to have to deal with the STDOUT magic value.
-        if sys.platform.startswith("linux"):
+        if not sys.platform.startswith("win"):
             if stderr is STDOUT:
                 stderr = stdout
 
@@ -280,10 +280,10 @@ class process(tube):
         #: Whether setuid is permitted
         self._setuid      = setuid if setuid is None else bool(setuid)
 
-        if sys.platform.startswith("linux"):
+        if not sys.platform.startswith("win"):
             # Create the PTY if necessary
             stdin, stdout, stderr, master, slave = self._handles(*handles)
-        elif sys.platform.startswith("win"):
+        else:
             stdin, stdout = os.pipe()
             stderr = stdout
 
@@ -296,13 +296,13 @@ class process(tube):
         #: Environment passed on envp
         self.env = os.environ if env is None else env_val
 
-        if sys.platform.startswith("linux"):
+        if not sys.platform.startswith("win"):
             if self.executable is None:
                 if shell:
                     self.executable = '/bin/sh'
                 else:
                      self.executable = which(self.argv[0], path=self.env.get('PATH'))
-        elif sys.platform.startswith("win"):
+        else:
             pass#TODO implement the which for windows
 
         self._cwd = os.path.realpath(cwd or os.path.curdir)
@@ -344,11 +344,11 @@ class process(tube):
                                              executable = executable,
                                              cwd = cwd,
                                              env = self.env,
-                                             stdin = stdin if sys.platform.startswith("linux") else subprocess.PIPE,
-                                             stdout = stdout if sys.platform.startswith("linux") else subprocess.PIPE,
-                                             stderr = stderr if sys.platform.startswith("linux") else subprocess.PIPE,
-                                             close_fds = close_fds if sys.platform.startswith("linux") else None,
-                                             preexec_fn = self.__preexec_fn if sys.platform.startswith("linux") else None)
+                                             stdin = stdin if not sys.platform.startswith("win") else subprocess.PIPE,
+                                             stdout = stdout if not sys.platform.startswith("win") else subprocess.PIPE,
+                                             stderr = stderr if not sys.platform.startswith("win") else subprocess.PIPE,
+                                             close_fds = close_fds if not sys.platform.startswith("win") else None,
+                                             preexec_fn = self.__preexec_fn if not sys.platform.startswith("win") else None)
 
                     self.pid = self.proc.pid
 
@@ -360,7 +360,7 @@ class process(tube):
 
             p.success('pid %i' % self.pid)
 
-        if sys.platform.startswith("linux"):
+        if not sys.platform.startswith("win"):
             if self.pty is not None:
                 if stdin is slave:
                     self.proc.stdin = os.fdopen(os.dup(master), 'r+b', 0)
@@ -370,10 +370,8 @@ class process(tube):
                     self.proc.stderr = os.fdopen(os.dup(master), 'r+b', 0)
                 os.close(master)
                 os.close(slave)
-        elif sys.platform.startswith("win"):
-            pass
 
-        if sys.platform.startswith("linux"):
+        if not sys.platform.startswith("win"):
             # Set in non-blocking mode so that a call to call recv(1000) will
             # return as soon as a the first byte is available
             if self.proc.stdout:
@@ -390,8 +388,7 @@ class process(tube):
                     self.suid = st.st_uid
                 if (st.st_mode & stat.S_ISGID):
                      self.sgid = st.st_gid
-        elif sys.platform.startswith("win"):
-            pass
+
 
     def __preexec_fn(self):
         """
@@ -651,7 +648,7 @@ class process(tube):
 
         # In order to facilitate retrieving core files, force an update
         # to the current working directory
-        if sys.platform.startswith("linux"):
+        if not sys.platform.startswith("win"):
             _ = self.cwd
 
             if block:
@@ -689,11 +686,9 @@ class process(tube):
         if not self.connected_raw('recv'):
             raise EOFError
 
-        if sys.platform.startswith("linux"):
+        if not sys.platform.startswith("win"):
             if not self.can_recv_raw(self.timeout):
                 return ''
-        elif sys.platform.startswith("win"):
-            pass#todo: make it portable
 
         # This will only be reached if we either have data,
         # or we have reached an EOF. In either case, it
@@ -758,7 +753,7 @@ class process(tube):
             return not self.proc.stdout.closed
 
     def close(self):
-        if sys.platform.startswith("linux"):
+        if not sys.platform.startswith("win"):
             if self.proc is None:
                 return
 
