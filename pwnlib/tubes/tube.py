@@ -114,7 +114,7 @@ class tube(Timeout, Logger):
             numb = self.buffer.get_fill_size(numb)
             return self._recv(numb, timeout) or b''
         elif sys.platform.startswith("win"):
-            def read_process(out, queue):
+            def read_process(queue):
                 self.data = b""
                 if numb is None:
                     while True:
@@ -125,7 +125,7 @@ class tube(Timeout, Logger):
                     queue.put(self.data)
 
             q = Queue()
-            t = Thread(target=read_process, args=(self.proc.stdout, q))
+            t = Thread(target=read_process, args=(q,))
             t.daemon = True
             t.start()
 
@@ -278,14 +278,14 @@ class tube(Timeout, Logger):
             return data
 
         elif sys.platform.startswith("win"):
-            def read_process(out, queue):
+            def read_process(queue):
                 data = b""
                 while pred(data) is False:
                     data += self.recv(1)
                 queue.put(data)
 
             q = Queue()
-            t = Thread(target=read_process, args=(self.proc.stdout, q))
+            t = Thread(target=read_process, args=(q,))
             t.daemon = True
             t.start()
 
@@ -351,7 +351,7 @@ class tube(Timeout, Logger):
             return self.buffer.get(numb)
 
         elif sys.platform.startswith("win"):
-            def read_process(out, queue):
+            def read_process(queue):
                 if numb > len(self.data_buffer):
                     for n in range(numb):
                         self.data_buffer += self.recv(1)
@@ -362,7 +362,7 @@ class tube(Timeout, Logger):
                     queue.put(self.data_buffer)
 
             q = Queue()
-            t = Thread(target=read_process, args=(self.proc.stdout, q))
+            t = Thread(target=read_process, args=(q,))
             t.daemon = True
             t.start()
 
@@ -468,7 +468,7 @@ class tube(Timeout, Logger):
             return b''
 
         elif sys.platform.startswith("win"):
-            def read_process(out, queue):
+            def read_process(queue):
                 data = b""
                 while True:
                     for delim in delims:
@@ -481,7 +481,7 @@ class tube(Timeout, Logger):
                                 return queue.put(data)
 
             q = Queue()
-            t = Thread(target=read_process, args=(self.proc.stdout, q))
+            t = Thread(target=read_process, args=(q,))
             t.daemon = True
             t.start()
 
