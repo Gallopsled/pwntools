@@ -110,10 +110,11 @@ class tube(Timeout, Logger):
             [...] Received 0xc bytes:
                 b'Hello, world'
         """
-        if sys.platform.startswith("linux"):
+
+        if context.os != "windows":
             numb = self.buffer.get_fill_size(numb)
             return self._recv(numb, timeout) or b''
-        elif sys.platform.startswith("win"):
+        else:
             def read_process(queue):
                 self.data = b""
                 if numb is None:
@@ -163,6 +164,7 @@ class tube(Timeout, Logger):
             >>> t.recv()
             b'hello'
         """
+
         data = packing._need_bytes(data)
         self.buffer.unget(data)
 
@@ -258,7 +260,7 @@ class tube(Timeout, Logger):
             or ``''`` if a timeout occurred while waiting.
         """
 
-        if sys.platform.startswith("linux"):
+        if context.os != "windows":
             data = b''
 
             with self.countdown(timeout):
@@ -277,7 +279,7 @@ class tube(Timeout, Logger):
 
             return data
 
-        elif sys.platform.startswith("win"):
+        else:
             def read_process(queue):
                 data = b""
                 while pred(data) is False:
@@ -337,7 +339,7 @@ class tube(Timeout, Logger):
             >>> t.recvn(10, timeout=0.06) # doctest: +ELLIPSIS
             b'aaaaaa...'
         """
-        if sys.platform.startswith("linux"):
+        if context.os != "windows":
             # Keep track of how much data has been received
             # It will be pasted together at the end if a
             # timeout does not occur, or put into the tube buffer.
@@ -350,7 +352,7 @@ class tube(Timeout, Logger):
 
             return self.buffer.get(numb)
 
-        elif sys.platform.startswith("win"):
+        else:
             def read_process(queue):
                 if numb > len(self.data_buffer):
                     for n in range(numb):
@@ -430,7 +432,7 @@ class tube(Timeout, Logger):
         # Longest delimiter for tracking purposes
         longest = max(map(len, delims))
 
-        if sys.platform.startswith("linux"):
+        if context.os != "windows":
             # Cumulative data to search
             data = []
             top = b''
@@ -467,13 +469,14 @@ class tube(Timeout, Logger):
                         top = top[i:]
             return b''
 
-        elif sys.platform.startswith("win"):
-            def read_process(queue):
+        else:
+            def read_process(queue, cont):
+                context.os = cont
                 data = b""
                 while True:
                     for delim in delims:
                         if delim not in data:
-                            data += self.recv(1)  # put in a thread for timeout
+                            data += self.recv(1)
                         else:
                             if drop:
                                 return queue.put(data[:-len(delim)])
@@ -481,7 +484,7 @@ class tube(Timeout, Logger):
                                 return queue.put(data)
 
             q = Queue()
-            t = Thread(target=read_process, args=(q,))
+            t = Thread(target=read_process, args=(q, context.os))
             t.daemon = True
             t.start()
 
@@ -539,9 +542,9 @@ class tube(Timeout, Logger):
                     # restore the original, unmodified data to the buffer
                     # in the event of a timeout.
                     res = self.recvline(keepends=True, timeout=timeout)
-                except Exception:
-                    self.unrecv(b''.join(lines))
-                    raise
+                except Exception as exc:
+                    #self.unrecv(b''.join(lines))
+                    raise exc
 
                 if res:
                     lines.append(res)
@@ -849,7 +852,7 @@ class tube(Timeout, Logger):
             b'd'
         """
 
-        if sys.platform.startswith("linux"):
+        if context.os != "windows":
             try:
                 while self._fillbuffer(timeout=timeout):
                     pass
@@ -858,7 +861,7 @@ class tube(Timeout, Logger):
 
             return self.buffer.get()
 
-        elif sys.platform.startswith("win"):
+        else:
             return self.recv(timeout=timeout)
 
     def recvall(self, timeout=Timeout.forever):
