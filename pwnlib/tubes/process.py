@@ -646,28 +646,30 @@ class process(tube):
         process has not yet finished and the exit code otherwise.
         """
 
+        if context.os == "windows":
+            return None
+
         # In order to facilitate retrieving core files, force an update
         # to the current working directory
-        if not context.os == "windows":
-            _ = self.cwd
+        _ = self.cwd
 
-            if block:
-                self.wait_for_close()
+        if block:
+            self.wait_for_close()
 
-            self.proc.poll()
-            returncode = self.proc.returncode
+        self.proc.poll()
+        returncode = self.proc.returncode
 
-            if returncode is not None and not self._stop_noticed:
-                self._stop_noticed = time.time()
-                signame = ''
-                if returncode < 0:
-                    signame = ' (%s)' % (signal_names.get(returncode, 'SIG???'))
+        if returncode is not None and not self._stop_noticed:
+            self._stop_noticed = time.time()
+            signame = ''
+            if returncode < 0:
+                signame = ' (%s)' % (signal_names.get(returncode, 'SIG???'))
 
-                self.info("Process %r stopped with exit code %d%s (pid %i)" % (self.display,
-                                                                      returncode,
-                                                                      signame,
-                                                                      self.pid))
-            return returncode
+            self.info("Process %r stopped with exit code %d%s (pid %i)" % (self.display,
+                                                                  returncode,
+                                                                  signame,
+                                                                  self.pid))
+        return returncode
 
     def communicate(self, stdin = None):
         """communicate(stdin = None) -> str
