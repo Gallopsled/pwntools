@@ -347,7 +347,7 @@ class process(tube):
                                              stdin = stdin,
                                              stdout = stdout,
                                              stderr = stderr,
-                                             close_fds = close_fds if not context.os == "windows" else None,
+                                             close_fds = close_fds,
                                              preexec_fn = self.__preexec_fn if not context.os == "windows" else None)
 
                     self.pid = self.proc.pid
