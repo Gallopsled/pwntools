@@ -18,6 +18,13 @@ import six
 import subprocess
 import sys
 
+try:
+    from queue import Queue, Empty
+except ImportError:
+    from Queue import Queue, Empty
+
+from threading import Thread
+
 build_dash = tags.has('dash')
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -427,7 +434,8 @@ def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
         checker = Py2OutputChecker()
     doctest.DocTestRunner.__init__(self, checker, verbose, optionflags)
 
-if 'doctest' in sys.argv:
+
+def launch_test():
     def setup(app):
         pass # app.connect('autodoc-skip-member', dont_skip_any_doctests)
 
@@ -441,8 +449,14 @@ if 'doctest' in sys.argv:
         paramiko.client.hexlify = lambda x: binascii.hexlify(x).decode()
         paramiko.util.safe_string = lambda x: '' # function result never *actually used*
     class EndlessLoop(Exception): pass
-    def alrm_handler(sig, frame):
-        signal.alarm(180) # three minutes
+
+if 'doctest' in sys.argv:
+    q = Queue()
+    t = Thread(target=launch_test, args=())
+    t.daemon = True
+    t.start()
+
+    try:
+        t.join(timeout=180)
+    except:
         raise EndlessLoop()
-    signal.signal(signal.SIGALRM, alrm_handler)
-    signal.alarm(600) # ten minutes
