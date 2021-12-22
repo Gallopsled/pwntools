@@ -157,7 +157,7 @@ class tube(Timeout, Logger):
             self.debug('Received %#x bytes:' % len(data))
 
             if len(set(data)) == 1 and len(data) > 1:
-                self.indented('%r * %#x' % (data[0], len(data)), level = logging.DEBUG)
+                self.indented('%r * %#x' % (data[:1], len(data)), level = logging.DEBUG)
             elif all(c in string.printable.encode() for c in data):
                 for line in data.splitlines(True):
                     self.indented(repr(line), level = logging.DEBUG)
@@ -767,8 +767,8 @@ class tube(Timeout, Logger):
 
         if self.isEnabledFor(logging.DEBUG):
             self.debug('Sent %#x bytes:' % len(data))
-            if len(set(data)) == 1:
-                self.indented('%r * %#x' % (data[0], len(data)))
+            if len(set(data)) == 1 and len(data) > 1:
+                self.indented('%r * %#x' % (data[:1], len(data)))
             elif all(c in string.printable.encode() for c in data):
                 for line in data.splitlines(True):
                     self.indented(repr(line), level = logging.DEBUG)
