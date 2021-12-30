@@ -691,13 +691,49 @@ class process(tube):
         # should be safe to read without expecting it to block.
         data = ""
 
-        #for i in range(numb if numb is not None else 9000):
+        from threading import Thread
+
         try:
-            data = self.proc.stdout.read(numb)
-        except IOError:
-            pass
-        except TypeError:
-            pass
+            from queue import Queue, Empty
+        except ImportError:
+            from Queue import Queue, Empty
+
+        def read_process(queue, numb):
+            self.data = b""
+            if numb is None:
+                try:
+                    while True:
+                        self.data += self.proc.stdout.read(1)
+                except IOError:
+                    pass
+                except EOFError:
+                    pass
+            else:
+                try:
+                    for i in range(numb):
+                        new_character = self.proc.stdout.read(1)
+                        self.data += new_character if new_character is not None else b""
+                    queue.put(self.data)
+                except IOError:
+                    pass
+                except EOFError:
+                    pass
+
+        q = Queue()
+        t = Thread(target=read_process, args=(q, numb))
+        t.daemon = True
+        t.start()
+
+        try:
+            t.join(3)
+            line = q.get_nowait()
+        except Empty:
+            data = self.data
+            self.data = b""
+            return data
+        else:
+            self.data = b""
+            return line
 
         if not data:
             self.shutdown("recv")
