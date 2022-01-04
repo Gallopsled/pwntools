@@ -14,7 +14,7 @@ See 'man 2 lookup_dcookie' for more information.
 Arguments:
     cookie(u64): cookie
     buffer(char*): buffer
-    len(size_t): len
+    length(size_t): length
 Returns:
     int
 </%docstring>
