@@ -99,6 +99,7 @@ import os
 import random
 import re
 import six
+import string
 import sys
 import threading
 import time
@@ -401,6 +402,24 @@ class Logger(object):
 
         self.info(pwnlib.util.fiddling.hexdump(message, *args, **kwargs))
 
+    def maybe_hexdump(self, message, *args, **kwargs):
+        """maybe_hexdump(self, message, *args, **kwargs)
+
+        Logs a message. Repeated single byte is compressed, and unprintable
+        message is hexdumped.
+
+        Arguments:
+            level(int): Alternate log level at which to set the message.
+                        Defaults to :const:`logging.INFO`.
+        """
+        if len(set(message)) == 1 and len(message) > 1:
+            self.indented('%r * %#x' % (message[:1], len(message)), *args, **kwargs)
+        elif len(message) == 1 or all(c in string.printable.encode() for c in message):
+            for line in message.splitlines(True):
+                self.indented(repr(line), *args, **kwargs)
+        else:
+            import pwnlib.util.fiddling
+            self.indented(pwnlib.util.fiddling.hexdump(message), *args, **kwargs)
 
     def warning(self, message, *args, **kwargs):
         """warning(message, *args, **kwargs)
