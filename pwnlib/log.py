@@ -405,12 +405,8 @@ class Logger(object):
     def maybe_hexdump(self, message, *args, **kwargs):
         """maybe_hexdump(self, message, *args, **kwargs)
 
-        Logs a message. Repeated single byte is compressed, and unprintable
-        message is hexdumped.
-
-        Arguments:
-            level(int): Alternate log level at which to set the message.
-                        Defaults to :const:`logging.INFO`.
+        Logs a message using indented. Repeated single byte is compressed, and
+        unprintable message is hexdumped.
         """
         if len(set(message)) == 1 and len(message) > 1:
             self.indented('%r * %#x' % (message[:1], len(message)), *args, **kwargs)
