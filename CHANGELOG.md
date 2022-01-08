@@ -64,7 +64,9 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.9.0 (`dev`)
 
+- [#2011][2011] Fix tube's debug output of same byte compression
 
+[2011]: https://github.com/Gallopsled/pwntools/pull/2011
 
 ## 4.8.0 (`beta`)
 
