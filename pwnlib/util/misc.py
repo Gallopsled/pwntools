@@ -258,6 +258,8 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         - If ``$TERM_PROGRAM`` is set, that is used.
         - If X11 is detected (by the presence of the ``$DISPLAY`` environment
           variable), ``x-terminal-emulator`` is used.
+        - If KDE Konsole is detected (by the presence of the ``$KONSOLE_VERSION``
+          environment variable), a terminal will be split.
         - If WSL (Windows Subsystem for Linux) is detected (by the presence of
           a ``wsl.exe`` binary in the ``$PATH`` and ``/proc/sys/kernel/osrelease``
           containing ``Microsoft``), a new ``cmd.exe`` window will be opened.
@@ -297,6 +299,23 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         elif 'DISPLAY' in os.environ and which('x-terminal-emulator'):
             terminal = 'x-terminal-emulator'
             args     = ['-e']
+        elif 'KONSOLE_VERSION' in os.environ and which('qdbus'):
+            konsole_window = os.environ['KONSOLE_DBUS_WINDOW'].split('/')[-1]
+            konsole_dbus_service = os.environ['KONSOLE_DBUS_SERVICE']
+            qdbus = which('qdbus')
+            # SPLIT
+            subprocess.run((qdbus, konsole_dbus_service, '/konsole/MainWindow_{}'.format(konsole_window),
+                            'org.kde.KMainWindow.activateAction', 'split-view-left-right'), stdout=subprocess.DEVNULL)
+
+            with subprocess.Popen((qdbus, konsole_dbus_service, os.environ['KONSOLE_DBUS_WINDOW'],
+                                   'org.kde.konsole.Window.sessionList'), stdout=subprocess.PIPE) as proc:
+                session_list = map(int, proc.communicate()[0].decode().split())
+            last_konsole_session = max(session_list)
+
+            terminal = 'qdbus'
+            args = [konsole_dbus_service, '/Sessions/{}'.format(last_konsole_session),
+                    'org.kde.konsole.Session.runCommand']
+
         else:
             is_wsl = False
             if os.path.exists('/proc/sys/kernel/osrelease'):
@@ -359,13 +378,20 @@ os.execve({argv0!r}, {argv!r}, os.environ)
     if terminal == 'tmux':
         out, _ = p.communicate()
         pid = int(out)
+    elif terminal == 'qdbus':
+        with subprocess.Popen((qdbus, konsole_dbus_service, '/Sessions/{}'.format(last_konsole_session),
+                               'org.kde.konsole.Session.processId'), stdout=subprocess.PIPE) as proc:
+            pid = int(proc.communicate()[0].decode())
     else:
         pid = p.pid
 
     if kill_at_exit:
         def kill():
             try:
-                os.kill(pid, signal.SIGTERM)
+                if terminal == 'qdbus':
+                    os.kill(pid, signal.SIGHUP)
+                else:
+                    os.kill(pid, signal.SIGTERM)
             except OSError:
                 pass
 
