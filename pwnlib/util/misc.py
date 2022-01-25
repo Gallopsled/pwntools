@@ -309,7 +309,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
 
             with subprocess.Popen((qdbus, konsole_dbus_service, os.environ['KONSOLE_DBUS_WINDOW'],
                                    'org.kde.konsole.Window.sessionList'), stdout=subprocess.PIPE) as proc:
-                session_list = map(int, proc.stdout.read().decode().split())
+                session_list = map(int, proc.communicate()[0].decode().split())
             last_konsole_session = max(session_list)
 
             terminal = 'qdbus'
@@ -381,7 +381,7 @@ os.execve({argv0!r}, {argv!r}, os.environ)
     elif terminal == 'qdbus':
         with subprocess.Popen((qdbus, konsole_dbus_service, '/Sessions/{}'.format(last_konsole_session),
                                'org.kde.konsole.Session.processId'), stdout=subprocess.PIPE) as proc:
-            pid = int(proc.stdout.read().decode())
+            pid = int(proc.communicate()[0].decode())
     else:
         pid = p.pid
 
