@@ -249,6 +249,16 @@ def debug_shellcode(data, gdbscript=None, vma=None, api=False):
 
     return debug(tmp_elf, gdbscript=gdbscript, arch=context.arch, api=api)
 
+def _find_python(which):
+    for py in ["python2.7", "python2", "python", "python3"]:
+        # python3 os.execve does not support os.exec* with no argv, so it is last resort
+        found = which(py)
+
+        if found is not None:
+            return found
+    
+    return None
+
 def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
     """_gdbserver_args(pid=None, path=None, args=None, which=None, env=None) -> list
 
@@ -256,24 +266,38 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
     PID, or launch the specified binary by its full path.
 
     Arguments:
-        pid(int): Process ID to attach to
-        path(str): Process to launch
-        args(list): List of arguments to provide on the debugger command line
+        pid(int): Process ID to attach to.
+        path(str): Process to launch.
+        args(list): List of arguments to provide on the debugger command line.
         which(callaable): Function to find the path of a binary.
+        env(dict): Dictionary containing the debugged process environment variables.
 
     Returns:
         A list of arguments to invoke gdbserver.
     """
-    if [pid, path, args].count(None) != 2:
-        log.error("Must specify exactly one of pid, path, or args")
+    if [path, args, pid].count(None) == 3:
+        log.error("Must specify at least one of pid, path, or args")
+
+    if pid is not None:
+        if [path, args].count(None) != 2:
+            log.error("Cannot specify both pid and path or args")
+
+    elif path is None:
+        if args:
+            path = args[0]
+    
+    path = packing._need_bytes(path, min_wrong=0x80)
+    
+    if args is None:
+        args = [path or str(pid).encode("utf-8")]
+
 
     if not which:
         log.error("Must specify which.")
 
-    gdbserver = ''
+    args = list(map(bytes, args))
 
-    if not args:
-        args = [str(path or pid)]
+    gdbserver = ''
 
     # Android targets have a distinct gdbserver
     if context.bits == 64:
@@ -285,8 +309,6 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
     if not gdbserver:
         log.error("gdbserver is not installed")
 
-    orig_args = args
-
     gdbserver_args = [gdbserver, '--multi']
     if context.aslr:
         gdbserver_args += ['--no-disable-randomization']
@@ -297,13 +319,26 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
         gdbserver_args += ['--once', '--attach']
 
     if env is not None:
-        env_args = []
+        env_args = {}
+
         for key in tuple(env):
             if key.startswith(b'LD_'): # LD_PRELOAD / LD_LIBRARY_PATH etc.
-                env_args.append(b'%s=%s' % (key, env.pop(key)))
+                env_args[key] = env.pop(key)
             else:
-                env_args.append(b'%s=%s' % (key, env[key]))
-        gdbserver_args += ['--wrapper', 'env', '-i'] + env_args + ['--']
+                env_args[key] = env[key]
+
+        python = _find_python(which)
+
+        gdbserver_args += ['--wrapper', '%s -c "import os; os.execvpe(%s, %s, %s)"' % (python, bytes(path), args, env_args)] + ['--']
+
+    elif not args or path != args[0]:
+        python = _find_python(which)
+
+        gdbserver_args += ['--wrapper', '%s -c "import os; os.execvp(%s, %s)"' % (python, bytes(path), args)] + ['--']
+
+    if not args:
+        # gdbserver won't start with no arguments supplied, so pass some dummy args in order to satisfy it.
+        args += ["dummy_arg"]
 
     gdbserver_args += ['localhost:0']
     gdbserver_args += args
