@@ -300,13 +300,33 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             terminal = 'x-terminal-emulator'
             args     = ['-e']
         elif 'KONSOLE_VERSION' in os.environ and which('qdbus'):
-            konsole_window = os.environ['KONSOLE_DBUS_WINDOW'].split('/')[-1]
-            konsole_dbus_service = os.environ['KONSOLE_DBUS_SERVICE']
             qdbus = which('qdbus')
-            # SPLIT
-            subprocess.run((qdbus, konsole_dbus_service, '/konsole/MainWindow_{}'.format(konsole_window),
+            window_id = os.environ['WINDOWID']
+            konsole_dbus_service = os.environ['KONSOLE_DBUS_SERVICE']
+
+            with subprocess.Popen(
+                    (qdbus, konsole_dbus_service, '/konsole', 'org.freedesktop.DBus.Introspectable.Introspect'),
+                    stdout=subprocess.PIPE) as proc:
+                xml = proc.communicate()[0].decode()
+                parser = BeautifulSoup(xml, 'html.parser')
+
+            # Find MainWindow
+            for MainWindow in parser.findAll('node'):
+                name = MainWindow.get('name')
+                if name and name.startswith('MainWindow_'):
+                    with subprocess.Popen((qdbus, konsole_dbus_service, '/konsole/' + name,
+                                           'org.kde.KMainWindow.winId'), stdout=subprocess.PIPE) as proc:
+                        target_window_id = proc.communicate()[0].decode().strip()
+                        if target_window_id == window_id:
+                            break
+            else:
+                log.error('MainWindow not found')
+
+            # Split
+            subprocess.run((qdbus, konsole_dbus_service, '/konsole/' + name,
                             'org.kde.KMainWindow.activateAction', 'split-view-left-right'), stdout=subprocess.DEVNULL)
 
+            # Find new session
             with subprocess.Popen((qdbus, konsole_dbus_service, os.environ['KONSOLE_DBUS_WINDOW'],
                                    'org.kde.konsole.Window.sessionList'), stdout=subprocess.PIPE) as proc:
                 session_list = map(int, proc.communicate()[0].decode().split())
