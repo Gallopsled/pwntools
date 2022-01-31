@@ -304,16 +304,14 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             window_id = os.environ['WINDOWID']
             konsole_dbus_service = os.environ['KONSOLE_DBUS_SERVICE']
 
-            with subprocess.Popen(
-                    (qdbus, konsole_dbus_service, '/konsole', 'org.freedesktop.DBus.Introspectable.Introspect'),
-                    stdout=subprocess.PIPE) as proc:
-                xml = proc.communicate()[0].decode()
-                parser = BeautifulSoup(xml, 'html.parser')
+            with subprocess.Popen((qdbus, konsole_dbus_service), stdout=subprocess.PIPE) as proc:
+                lines = proc.communicate()[0].decode().split('\n')
 
-            # Find MainWindow
-            for MainWindow in parser.findAll('node'):
-                name = MainWindow.get('name')
-                if name and name.startswith('MainWindow_'):
+            # Iterate over all MainWindows
+            for line in lines:
+                parts = line.split('/')
+                if len(parts) == 3 and parts[2].startswith('MainWindow_'):
+                    name = parts[2]
                     with subprocess.Popen((qdbus, konsole_dbus_service, '/konsole/' + name,
                                            'org.kde.KMainWindow.winId'), stdout=subprocess.PIPE) as proc:
                         target_window_id = proc.communicate()[0].decode().strip()
