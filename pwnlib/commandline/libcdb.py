@@ -175,33 +175,6 @@ def translate_offset(offs, args, exe):
         return offs - exe.symbols[args.offset]
     return offs
 
-def libc_main_arena(exe):
-    """
-        Calculate main_arena offset inside libc based on common
-        location between public symbols.
-        From https://github.com/bash-c/main_arena_offset
-    """
-    if 'main_arena' in exe.symbols:
-        return exe.symbols.main_arena
-
-    if '__malloc_hook' not in exe.symbols:
-        return 0
-    
-    malloc_hook = exe.symbols['__malloc_hook']
-
-    if exe.arch == 'i386':
-        return malloc_hook + 0x18
-    elif exe.arch == 'amd64':
-        if '__realloc_hook' not in exe.symbols:
-            return 0
-
-        realloc_hook = exe.symbols['__realloc_hook']
-        offset = malloc_hook - realloc_hook
-        return malloc_hook + offset * 2
-    else:
-        log.failure('Unsupported architecture %s in ELF.libc_main_arena', exe.arch)
-        return 0
-
 def collect_synthetic_symbols(exe):
     available_symbols = ['str_bin_sh']
     exe.symbols['str_bin_sh'] = next(exe.search(b'/bin/sh\x00'))
@@ -210,11 +183,6 @@ def collect_synthetic_symbols(exe):
     if libc_start_main_return > 0:
         exe.symbols['__libc_start_main_ret'] = libc_start_main_return
         available_symbols.append('__libc_start_main_ret')
-
-    main_arena = libc_main_arena(exe)
-    if main_arena > 0:
-        exe.symbols['main_arena'] = main_arena
-        available_symbols.append('main_arena')
 
     return available_symbols
 
