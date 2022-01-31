@@ -68,6 +68,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2023][2023] Support KDE Konsole in run_in_new_terminal function
 
 [2011]: https://github.com/Gallopsled/pwntools/pull/2011
+[2023]: https://github.com/Gallopsled/pwntools/pull/2023
 
 ## 4.8.0 (`beta`)
 
