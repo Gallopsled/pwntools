@@ -300,13 +300,31 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             terminal = 'x-terminal-emulator'
             args     = ['-e']
         elif 'KONSOLE_VERSION' in os.environ and which('qdbus'):
-            konsole_window = os.environ['KONSOLE_DBUS_WINDOW'].split('/')[-1]
-            konsole_dbus_service = os.environ['KONSOLE_DBUS_SERVICE']
             qdbus = which('qdbus')
-            # SPLIT
-            subprocess.run((qdbus, konsole_dbus_service, '/konsole/MainWindow_{}'.format(konsole_window),
+            window_id = os.environ['WINDOWID']
+            konsole_dbus_service = os.environ['KONSOLE_DBUS_SERVICE']
+
+            with subprocess.Popen((qdbus, konsole_dbus_service), stdout=subprocess.PIPE) as proc:
+                lines = proc.communicate()[0].decode().split('\n')
+
+            # Iterate over all MainWindows
+            for line in lines:
+                parts = line.split('/')
+                if len(parts) == 3 and parts[2].startswith('MainWindow_'):
+                    name = parts[2]
+                    with subprocess.Popen((qdbus, konsole_dbus_service, '/konsole/' + name,
+                                           'org.kde.KMainWindow.winId'), stdout=subprocess.PIPE) as proc:
+                        target_window_id = proc.communicate()[0].decode().strip()
+                        if target_window_id == window_id:
+                            break
+            else:
+                log.error('MainWindow not found')
+
+            # Split
+            subprocess.run((qdbus, konsole_dbus_service, '/konsole/' + name,
                             'org.kde.KMainWindow.activateAction', 'split-view-left-right'), stdout=subprocess.DEVNULL)
 
+            # Find new session
             with subprocess.Popen((qdbus, konsole_dbus_service, os.environ['KONSOLE_DBUS_WINDOW'],
                                    'org.kde.konsole.Window.sessionList'), stdout=subprocess.PIPE) as proc:
                 session_list = map(int, proc.communicate()[0].decode().split())
