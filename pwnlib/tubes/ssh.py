@@ -552,8 +552,8 @@ class ssh(Timeout, Logger):
     _cwd = '.'
 
     def __init__(self, user=None, host=None, port=22, password=None, key=None,
-                 keyfile=None, proxy_command=None, proxy_sock=None,
-                 level=None, cache=True, ssh_agent=False, ignore_config=False, *a, **kw):
+                 keyfile=None, proxy_command=None, proxy_sock=None, level=None,
+                 cache=True, ssh_agent=False, ignore_config=False, raw=False, *a, **kw):
         """Creates a new ssh connection.
 
         Arguments:
@@ -570,6 +570,7 @@ class ssh(Timeout, Logger):
             cache: Cache downloaded files (by hash/size/timestamp)
             ssh_agent: If :const:`True`, enable usage of keys via ssh-agent
             ignore_config: If :const:`True`, disable usage of ~/.ssh/config and ~/.ssh/authorized_keys
+            raw: If :const:`True`, assume a non-standard shell and don't probe the environment
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used.
@@ -666,6 +667,9 @@ class ssh(Timeout, Logger):
             self.transport.use_compression(True)
 
             h.success()
+
+        if self.raw:
+            return
 
         self._tried_sftp = False
 
