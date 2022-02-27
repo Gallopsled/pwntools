@@ -366,6 +366,7 @@ class ContextType(object):
         'signed': False,
         'terminal': tuple(),
         'timeout': Timeout.maximum,
+        'headers': list(),
     }
 
     #: Valid values for :meth:`pwnlib.context.ContextType.os`
@@ -1402,6 +1403,16 @@ class ContextType(object):
 
         return shell
 
+    @_validator
+    def headers(self, headers):
+        """Headers for assembly codes.
+
+        Default value is empty list, which means no headers are set and default headers will be used.
+        """
+        if type(headers) is not list:
+            raise AttributeError("headers must be a list")
+        
+        return headers
     #*************************************************************************
     #                               ALIASES
     #*************************************************************************
