@@ -601,6 +601,7 @@ class ssh(Timeout, Logger):
         self.keyfile         = keyfile
         self._cachedir       = os.path.join(tempfile.gettempdir(), 'pwntools-ssh-cache')
         self.cache           = cache
+        self.raw             = raw
 
         # Deferred attributes
         self._platform_info = {}
