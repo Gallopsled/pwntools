@@ -696,6 +696,7 @@ class process(tube):
             raise EOFError
 
         try:
+            breakpoint()
             self.proc.stdin.write(data)
             self.proc.stdin.flush()
         except IOError:
@@ -745,8 +746,11 @@ class process(tube):
             if fd is not None:
                 try:
                     fd.close()
-                except IOError:
-                    pass
+                except IOError as e:
+                    if e.errno == errno.EPIPE:
+                        pass
+                    else:
+                        print(e)
 
         if not self._stop_noticed:
             try:
