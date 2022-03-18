@@ -235,7 +235,7 @@ def options(prompt, opts, default = None):
             elif k in ('<enter>', '<right>'):
                 if cur is not None:
                     return cur
-            elif k in tuple(string.digits):
+            elif k in min(tuple(string.digits), tuple(map(str, range(len(opts)))), key=len):
                 was_digit = True
                 d = str(k)
                 n = int(ds + d)
