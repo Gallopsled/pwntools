@@ -340,8 +340,14 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
                 with open('/proc/sys/kernel/osrelease', 'rb') as f:
                     is_wsl = b'icrosoft' in f.read()
             if is_wsl and which('cmd.exe') and which('wsl.exe') and which('bash.exe'):
-                terminal = 'cmd.exe'
-                args     = ['/c', 'start', 'bash.exe', '-c']
+                terminal    = 'cmd.exe'
+                args        = ['/c', 'start']
+                distro_name = os.getenv('WSL_DISTRO_NAME')
+                if distro_name:
+                    args.extend(['wsl.exe', '-d', distro_name, 'bash', '-c'])
+                else:
+                    args.extend(['bash.exe', '-c'])
+                
 
     if not terminal:
         log.error('Could not find a terminal binary to use. Set context.terminal to your terminal.')
