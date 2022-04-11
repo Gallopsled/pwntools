@@ -89,13 +89,3 @@ colored_traceback.add_hook()
 
 # Equivalence with the default behavior of "from import *"
 # __all__ = [x for x in tuple(globals()) if not x.startswith('_')]
-
-
-def condition(data):
-    if b"e" in data:
-        return True
-    else:
-        return False
-
-def condition_alway_false(data):
-    return False

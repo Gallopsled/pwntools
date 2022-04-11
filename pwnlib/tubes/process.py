@@ -357,36 +357,34 @@ class process(tube):
 
             p.success('pid %i' % self.pid)
 
-        if context.os == "windows":
-            return None
+        if context.os != "windows":
+            if self.pty is not None:
+                if stdin is slave:
+                    self.proc.stdin = os.fdopen(os.dup(master), 'r+b', 0)
+                if stdout is slave:
+                    self.proc.stdout = os.fdopen(os.dup(master), 'r+b', 0)
+                if stderr is slave:
+                    self.proc.stderr = os.fdopen(os.dup(master), 'r+b', 0)
 
-        if self.pty is not None:
-            if stdin is slave:
-                self.proc.stdin = os.fdopen(os.dup(master), 'r+b', 0)
-            if stdout is slave:
-                self.proc.stdout = os.fdopen(os.dup(master), 'r+b', 0)
-            if stderr is slave:
-                self.proc.stderr = os.fdopen(os.dup(master), 'r+b', 0)
+                os.close(master)
+                os.close(slave)
 
-            os.close(master)
-            os.close(slave)
+            # Set in non-blocking mode so that a call to call recv(1000) will
+            # return as soon as a the first byte is available
+            if self.proc.stdout:
+                fd = self.proc.stdout.fileno()
+                fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+                fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
-        # Set in non-blocking mode so that a call to call recv(1000) will
-        # return as soon as a the first byte is available
-        if self.proc.stdout:
-            fd = self.proc.stdout.fileno()
-            fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-            fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
-
-        # Save off information about whether the binary is setuid / setgid
-        self.suid = self.uid = os.getuid()
-        self.sgid = self.gid = os.getgid()
-        st = os.stat(self.executable)
-        if self._setuid:
-            if (st.st_mode & stat.S_ISUID):
-                self.suid = st.st_uid
-            if (st.st_mode & stat.S_ISGID):
-                self.sgid = st.st_gid
+            # Save off information about whether the binary is setuid / setgid
+            self.suid = self.uid = os.getuid()
+            self.sgid = self.gid = os.getgid()
+            st = os.stat(self.executable)
+            if self._setuid:
+                if (st.st_mode & stat.S_ISUID):
+                    self.suid = st.st_uid
+                if (st.st_mode & stat.S_ISGID):
+                    self.sgid = st.st_gid
 
     def __preexec_fn(self):
         """
@@ -776,10 +774,29 @@ class process(tube):
         if not self.connected_raw('recv'):
             return False
 
-        if self.proc.stdout.readable and self.proc.stdout.readable:
-            return True
-        else:
-            return False
+        if context.os == "android" or context.os == "baremetal" or context.os == "cgc" or context.os == "freebsd" or context.os == "linux":
+            try:
+                if timeout is None:
+                    return select.select([self.proc.stdout], [], []) == ([self.proc.stdout], [], [])
+
+                return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
+            except ValueError:
+                # Not sure why this isn't caught when testing self.proc.stdout.closed,
+                # but it's not.
+
+                #
+                # File "/home/user/pwntools/pwnlib/tubes/process.py", line 112, in can_recv_raw
+                # return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
+                # ValueError: I/O operation on closed file
+                raise EOFError
+            except select.error as v:
+                if v.args[0] == errno.EINTR:
+                    return False
+        elif context.os == "windows":
+            if self.proc.stdout.readable and self.proc.stderr.readable:
+                return True
+            else:
+                return False
 
 
     def connected_raw(self, direction):
@@ -791,7 +808,6 @@ class process(tube):
             return not self.proc.stdout.closed
 
     def close(self):
-
         if self.proc is None:
             return
 

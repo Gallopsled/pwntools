@@ -67,6 +67,14 @@ The table below shows which release corresponds to each branch, and what date th
 ## 4.10.0 (`dev`)
 
 - [#2067][2067] Fix cicd error on CRC
+- [#2003][2003] Allow input/output on windows
+
+- [2067]: https://github.com/Gallopsled/pwntools/pull/2067
+- [2003]: https://github.com/Gallopsled/pwntools/pull/2003
+
+## 4.9.1 (`dev`)
+
+## 4.9.0 (`dev`)
 
 ## 4.9.0 (`beta`)
 
