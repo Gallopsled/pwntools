@@ -171,6 +171,7 @@ class tube(Timeout, Logger):
 
         # No buffered data, could not put anything in the buffer
         # before timeout.
+        context.buffer_size = numb
         if not self.buffer and not self._fillbuffer(timeout):
             return b''
 

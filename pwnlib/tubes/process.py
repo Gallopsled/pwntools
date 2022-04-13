@@ -255,11 +255,15 @@ class process(tube):
         if shell:
             executable_val, argv_val, env_val = executable, argv, env
         else:
-            executable_val, argv_val, env_val = self._validate(cwd, executable, argv, env)
+            if not context.os == "windows":
+                executable_val, argv_val, env_val = self._validate(cwd, executable, argv, env)
+            else:#TODO make shell on windows
+                executable_val, argv_val, env_val = executable, argv, env
 
         # Avoid the need to have to deal with the STDOUT magic value.
-        if stderr is STDOUT:
-            stderr = stdout
+        if not context.os == "windows":
+            if stderr is STDOUT:
+                stderr = stdout
 
         # Determine which descriptors will be attached to a new PTY
         handles = (stdin, stdout, stderr)
@@ -277,7 +281,9 @@ class process(tube):
         self._setuid      = setuid if setuid is None else bool(setuid)
 
         # Create the PTY if necessary
-        stdin, stdout, stderr, master, slave = self._handles(*handles)
+        if not context.os == "windows":
+            # Create the PTY if necessary
+            stdin, stdout, stderr, master, slave = self._handles(*handles)
 
         #: Arguments passed on argv
         self.argv = argv_val
@@ -288,11 +294,14 @@ class process(tube):
         #: Environment passed on envp
         self.env = os.environ if env is None else env_val
 
-        if self.executable is None:
-            if shell:
-                self.executable = '/bin/sh'
-            else:
-                self.executable = which(self.argv[0], path=self.env.get('PATH'))
+        if not context.os == "windows":
+            if self.executable is None:
+                if shell:
+                    self.executable = '/bin/sh'
+                else:
+                     self.executable = which(self.argv[0], path=self.env.get('PATH'))
+        else:
+            pass#TODO implement the which for windows
 
         self._cwd = os.path.realpath(cwd or os.path.curdir)
 
@@ -327,6 +336,9 @@ class process(tube):
                     args = self.argv
                     if prefix:
                         args = prefix + args
+
+                    if context.os == "windows":
+                        stdout = subprocess.PIPE
                     self.proc = subprocess.Popen(args = args,
                                                  shell = shell,
                                                  executable = executable,
@@ -336,7 +348,7 @@ class process(tube):
                                                  stdout = stdout,
                                                  stderr = stderr,
                                                  close_fds = close_fds,
-                                                 preexec_fn = self.__preexec_fn)
+                                                 preexec_fn = self.__preexec_fn if not context.os == "windows" else None)
                     break
                 except OSError as exception:
                     if exception.errno != errno.ENOEXEC:
@@ -344,6 +356,9 @@ class process(tube):
                     prefixes.append(self.__on_enoexec(exception))
 
             p.success('pid %i' % self.pid)
+
+        if context.os == "windows":
+            return None
 
         if self.pty is not None:
             if stdin is slave:
@@ -669,16 +684,19 @@ class process(tube):
             raise EOFError
 
         if not self.can_recv_raw(self.timeout):
-            return ''
+            return b'test'
 
         # This will only be reached if we either have data,
         # or we have reached an EOF. In either case, it
         # should be safe to read without expecting it to block.
-        data = ''
+        data = ""
 
+        #for i in range(numb if numb is not None else 9000):
         try:
             data = self.proc.stdout.read(numb)
         except IOError:
+            pass
+        except TypeError:
             pass
 
         if not data:
@@ -708,22 +726,11 @@ class process(tube):
         if not self.connected_raw('recv'):
             return False
 
-        try:
-            if timeout is None:
-                return select.select([self.proc.stdout], [], []) == ([self.proc.stdout], [], [])
+        if self.proc.stdout.readable and self.proc.stdout.readable:
+            return True
+        else:
+            return False
 
-            return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
-        except ValueError:
-            # Not sure why this isn't caught when testing self.proc.stdout.closed,
-            # but it's not.
-            #
-            #   File "/home/user/pwntools/pwnlib/tubes/process.py", line 112, in can_recv_raw
-            #     return select.select([self.proc.stdout], [], [], timeout) == ([self.proc.stdout], [], [])
-            # ValueError: I/O operation on closed file
-            raise EOFError
-        except select.error as v:
-            if v.args[0] == errno.EINTR:
-                return False
 
     def connected_raw(self, direction):
         if direction == 'any':
@@ -734,6 +741,7 @@ class process(tube):
             return not self.proc.stdout.closed
 
     def close(self):
+
         if self.proc is None:
             return
 
