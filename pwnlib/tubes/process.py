@@ -771,10 +771,9 @@ class process(tube):
         pass
 
     def can_recv_raw(self, timeout):
-        if not self.connected_raw('recv'):
-            return False
-
-        if context.os == "android" or context.os == "baremetal" or context.os == "cgc" or context.os == "freebsd" or context.os == "linux":
+        if context.os != "windows":
+            if not self.connected_raw('recv'):
+                return False
             try:
                 if timeout is None:
                     return select.select([self.proc.stdout], [], []) == ([self.proc.stdout], [], [])
