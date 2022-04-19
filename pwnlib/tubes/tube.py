@@ -216,7 +216,7 @@ class tube(Timeout, Logger):
         return data
 
     def recvn(self, numb, timeout = default):
-        """recvn(numb, timeout = default) -> str
+        """recvn(numb, timeout = default) -> bytes
 
         Receives exactly `n` bytes.
 
