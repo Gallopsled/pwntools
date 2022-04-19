@@ -246,6 +246,13 @@ class Call(object):
                                     fmt % self.target,
                                     self.args)
 
+    def is_flat(self):
+        if isinstance(self, six.integer_types + (Unresolved,)):
+            return True
+        if not isinstance(self, Call):
+            return False
+        return bool(self.args or self.stack_arguments_before)
+
     @property
     def register_arguments(self):
         return dict(zip(self.abi.register_arguments, self.args))

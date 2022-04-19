@@ -115,7 +115,7 @@ jobs:
       run:  PWNLIB_NOTERM=1 python -bb -c 'from pwn import *; print(pwnlib.term.term_mode)'
 
     - name: Install documentation dependencies
-      run:  pip install -r docs/requirements.txt
+      run: pip install -r docs/requirements.txt
 
     - name: Manually install non-broken Unicorn
       run:  pip install unicorn==1.0.2rc3
