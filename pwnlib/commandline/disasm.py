@@ -7,7 +7,7 @@ import argparse
 import string
 import sys
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
@@ -15,7 +15,8 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'disasm',
-    help = 'Disassemble bytes into text format'
+    help = 'Disassemble bytes into text format',
+    description = 'Disassemble bytes into text format'
 )
 
 parser.add_argument(

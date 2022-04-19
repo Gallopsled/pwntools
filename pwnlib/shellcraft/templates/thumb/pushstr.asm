@@ -1,5 +1,5 @@
 <%
-  from pwnlib.shellcraft import thumb
+  from pwnlib.shellcraft import thumb, pretty
   from pwnlib.util import lists, packing
   import six
 %>
@@ -19,6 +19,7 @@ on your version of binutils.
 
     >>> enhex(asm(shellcraft.pushstr('Hello\nWorld!', True))) in [
     ... '87ea070780b4dff8047001e0726c642180b4dff8047001e06f0a576f80b4dff8047001e048656c6c80b4',
+    ... '87ea070780b4dff8047001e0726c642180b4dff8047001e06f0a576f80b4dff8047001e048656c6c80b400bf',
     ... '87ea070780b4dff8067000f002b8726c642180b4dff8047000f002b86f0a576f80b4014f00f002b848656c6c80b4']
     True
     >>> print(shellcraft.pushstr('abc').rstrip()) #doctest: +ELLIPSIS
@@ -30,7 +31,7 @@ on your version of binutils.
         lsl r7, #8
         lsr r7, #8
         push {r7}
-    >>> print(enhex(asm(shellcraft.pushstr('\x00', False))))
+    >>> print(enhex(asm(shellcraft.pushstr('\x00', False)).rstrip(b'\x00\xbf')))
     87ea070780b4
 
 </%docstring>
@@ -46,7 +47,7 @@ on your version of binutils.
     while offset % 4:
         offset += 1
 %>\
-    /* push ${repr(string)} */
+    /* push ${pretty(string, False)} */
 % for word in lists.group(4, string, 'fill', b'\x00')[::-1]:
     ${thumb.mov(register, packing.unpack(word))}
     push {${register}}

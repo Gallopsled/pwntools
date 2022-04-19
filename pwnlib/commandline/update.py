@@ -4,7 +4,7 @@ from __future__ import division
 
 import subprocess
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
@@ -12,7 +12,8 @@ from pwnlib.commandline import common
 
 p = common.parser_commands.add_parser(
     'update',
-    help = 'Check for pwntools updates'
+    help = 'Check for pwntools updates',
+    description = 'Check for pwntools updates'
 )
 
 p.add_argument('--install', action='store_true', help='''

@@ -13,7 +13,7 @@ See 'man 2 msync' for more information.
 
 Arguments:
     addr(void*): addr
-    len(size_t): len
+    length(size_t): length
     flags(int): flags
 Returns:
     int
@@ -41,7 +41,7 @@ Returns:
 
     for name, arg in zip(argument_names, argument_values):
         if arg is not None:
-            syscall_repr.append('%s=%r' % (name, arg))
+            syscall_repr.append('%s=%s' % (name, pwnlib.shellcraft.pretty(arg, False)))
 
         # If the argument itself (input) is a register...
         if arg in allregs:

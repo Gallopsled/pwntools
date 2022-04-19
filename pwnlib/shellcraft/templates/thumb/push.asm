@@ -1,6 +1,6 @@
 <%
   from pwnlib.util import packing
-  from pwnlib.shellcraft import thumb, registers
+  from pwnlib.shellcraft import thumb, registers, pretty
   from pwnlib import constants
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
   import six
@@ -32,7 +32,7 @@ Example:
         mov r7, #1
         push {r7}
     >>> print(pwnlib.shellcraft.thumb.push(256).rstrip())
-        /* push 256 */
+        /* push 0x100 */
         mov r7, #0x100
         push {r7}
     >>> print(pwnlib.shellcraft.thumb.push('SYS_execve').rstrip())
@@ -61,7 +61,7 @@ if not is_register and isinstance(value, (six.binary_type, six.text_type)):
 % if is_register:
     push {${value}}
 % elif isinstance(value, six.integer_types):
-    /* push ${repr(value_orig)} */
+    /* push ${pretty(value_orig, False)} */
     ${re.sub(r'^\s*/.*\n', '', thumb.pushstr(packing.pack(value), False), 1)}
 % else:
     push ${value}

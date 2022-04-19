@@ -143,6 +143,8 @@ from __future__ import division
 
 from contextlib import contextmanager
 import os
+import platform
+import psutil
 import random
 import re
 import shlex
@@ -152,9 +154,6 @@ import socket
 import tempfile
 from threading import Event
 import time
-
-from rpyc import BgServingThread
-from rpyc.utils.factory import unix_connect
 
 from pwnlib import adb
 from pwnlib import atexit
@@ -169,6 +168,7 @@ from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.timeout import Timeout
 from pwnlib.util import misc
+from pwnlib.util import packing
 from pwnlib.util import proc
 
 log = getLogger(__name__)
@@ -299,10 +299,10 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
     if env is not None:
         env_args = []
         for key in tuple(env):
-            if key.startswith('LD_'): # LD_PRELOAD / LD_LIBRARY_PATH etc.
-                env_args.append('{}="{}"'.format(key, env.pop(key)))
+            if key.startswith(b'LD_'): # LD_PRELOAD / LD_LIBRARY_PATH etc.
+                env_args.append(b'%s=%s' % (key, env.pop(key)))
             else:
-                env_args.append('{}="{}"'.format(key, env[key]))
+                env_args.append(b'%s=%s' % (key, env[key]))
         gdbserver_args += ['--wrapper', 'env', '-i'] + env_args + ['--']
 
     gdbserver_args += ['localhost:0']
@@ -319,13 +319,13 @@ def _gdbserver_port(gdbserver, ssh):
 
     if process_created.startswith(b'ERROR:'):
         raise ValueError(
-            'Failed to spawn process under gdbserver. gdbserver error message: %s' % process_created
+            'Failed to spawn process under gdbserver. gdbserver error message: %r' % process_created
         )
 
     try:
         gdbserver.pid   = int(process_created.split()[-1], 0)
     except ValueError:
-        log.error('gdbserver did not output its pid (maybe chmod +x?): %s', six.ensure_str(process_created))
+        log.error('gdbserver did not output its pid (maybe chmod +x?): %r', process_created)
 
     listening_on = b''
     while b'Listening' not in listening_on:
@@ -415,72 +415,98 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
 
     Examples:
 
-    >>> # Create a new process, and stop it at 'main'
-    >>> io = gdb.debug('bash', '''
-    ... break main
-    ... continue
-    ... ''')
-    >>> # Send a command to Bash
-    >>> io.sendline("echo hello")
-    >>> io.recvline()
-    b'hello\n'
-    >>> # Interact with the process
-    >>> io.interactive() # doctest: +SKIP
-    >>> io.close()
+        Create a new process, and stop it at 'main'
 
-    >>> # Create a new process, and stop it at '_start'
-    >>> io = gdb.debug('bash', '''
-    ... # Wait until we hit the main executable's entry point
-    ... break _start
-    ... continue
-    ...
-    ... # Now set breakpoint on shared library routines
-    ... break malloc
-    ... break free
-    ... continue
-    ... ''')
-    >>> # Send a command to Bash
-    >>> io.sendline("echo hello")
-    >>> io.recvline()
-    b'hello\n'
-    >>> # Interact with the process
-    >>> io.interactive() # doctest: +SKIP
-    >>> io.close()
+        >>> io = gdb.debug('bash', '''
+        ... break main
+        ... continue
+        ... ''')
+
+        Send a command to Bash
+
+        >>> io.sendline(b"echo hello")
+        >>> io.recvline()
+        b'hello\n'
+
+        Interact with the process
+
+        >>> io.interactive() # doctest: +SKIP
+        >>> io.close()
+
+        Create a new process, and stop it at '_start'
+
+        >>> io = gdb.debug('bash', '''
+        ... # Wait until we hit the main executable's entry point
+        ... break _start
+        ... continue
+        ...
+        ... # Now set breakpoint on shared library routines
+        ... break malloc
+        ... break free
+        ... continue
+        ... ''')
+
+        Send a command to Bash
+
+        >>> io.sendline(b"echo hello")
+        >>> io.recvline()
+        b'hello\n'
+
+        Interact with the process
+
+        >>> io.interactive() # doctest: +SKIP
+        >>> io.close()
 
     Using GDB Python API:
 
-    >>> if six.PY3:
-    ...     # Debug a new process
-    ...     io = gdb.debug(['echo', 'foo'], api=True)
-    ...     # Stop at 'write'
-    ...     bp = io.gdb.Breakpoint('write', temporary=True)
-    ...     io.gdb.continue_and_wait()
-    ...     # Dump 'count'
-    ...     count = io.gdb.parse_and_eval('$rdx')
-    ...     long = io.gdb.lookup_type('long')
-    ...     assert int(count.cast(long)) == 4, count
-    ...     # Resume the program
-    ...     io.gdb.continue_nowait()
-    ...     s = io.recvline()
-    ...     assert s == b'foo\n', s
+    .. doctest
+       :skipif: six.PY2
 
-    You can use :func:`debug` to spawn new processes on remote machines as well,
-    by using the ``ssh=`` keyword to pass in your :class:`.ssh` instance.
+        Debug a new process
 
-    >>> # Connect to the SSH server
-    >>> # Start a process on the server
-    >>> shell = ssh('travis', 'example.pwnme', password='demopass')
-    >>> io = gdb.debug(['bash'],
-    ...                 ssh = shell,
-    ...                 gdbscript = '''
-    ... break main
-    ... continue
-    ... ''')
-    >>> # Send a command to Bash
-    >>> io.sendline("echo hello")
-    >>> # Interact with the process
-    >>> io.interactive() # doctest: +SKIP
-    >>> io.close()
+        >>> io = gdb.debug(['echo', 'foo'], api=True)
+
+        Stop at 'write'
+
+        >>> bp = io.gdb.Breakpoint('write', temporary=True)
+        >>> io.gdb.continue_and_wait()
+
+        Dump 'count'
+
+        >>> count = io.gdb.parse_and_eval('$rdx')
+        >>> long = io.gdb.lookup_type('long')
+        >>> int(count.cast(long))
+        4
+
+        Resume the program
+
+        >>> io.gdb.continue_nowait()
+        >>> io.recvline()
+        b'foo\n'
+
+
+    Using SSH:
+
+        You can use :func:`debug` to spawn new processes on remote machines as well,
+        by using the ``ssh=`` keyword to pass in your :class:`.ssh` instance.
+
+        Connect to the SSH server and start a process on the server
+
+        >>> shell = ssh('travis', 'example.pwnme', password='demopass')
+        >>> io = gdb.debug(['whoami'],
+        ...                 ssh = shell,
+        ...                 gdbscript = '''
+        ... break main
+        ... continue
+        ... ''')
+
+        Send a command to Bash
+
+        >>> io.sendline(b"echo hello")
+
+        Interact with the process
+        >>> io.interactive() # doctest: +SKIP
+        >>> io.close()
     """
     if isinstance(args, six.integer_types + (tubes.process.process, tubes.ssh.ssh_channel)):
         log.error("Use gdb.attach() to debug a running process")
@@ -497,6 +523,10 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     if api and runner is not tubes.process.process:
         raise ValueError('GDB Python API is supported only for local processes')
 
+    args, env = misc.normalize_argv_env(args, env, log)
+    if env:
+        env = {bytes(k): bytes(v) for k, v in env}
+
     if context.noptrace:
         log.warn_once("Skipping debugger since context.noptrace==True")
         return runner(args, executable=exe, env=env)
@@ -509,7 +539,10 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         sysroot = sysroot or qemu.ld_prefix(env=env)
         if not qemu_user:
             log.error("Cannot debug %s binaries without appropriate QEMU binaries" % context.arch)
-        qemu_args = [qemu_user, '-g', str(qemu_port)]
+        if context.os == 'baremetal':
+            qemu_args = [qemu_user, '-S', '-gdb', 'tcp::' + str(qemu_port)]
+        else:
+            qemu_args = [qemu_user, '-g', str(qemu_port)]
         if sysroot:
             qemu_args += ['-L', sysroot]
         args = qemu_args + args
@@ -553,7 +586,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     garbage = gdbserver.recvline(timeout=1)
 
     # Some versions of gdbserver output an additional message
-    garbage2 = gdbserver.recvline_startswith(b"Remote debugging from host ", timeout=1)
+    garbage2 = gdbserver.recvline_startswith(b"Remote debugging from host ", timeout=2)
 
     return gdbserver
 
@@ -743,28 +776,42 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         ... ''')
         >>> io.recvline()
         b'Hello from process debugger!\n'
-        >>> io.sendline('echo Hello from bash && exit')
+        >>> io.sendline(b'echo Hello from bash && exit')
         >>> io.recvall()
         b'Hello from bash\n'
 
         Using GDB Python API:
 
-        >>> if six.PY3:
-        ...     io = process('bash')
-        ...     # Attach a debugger
-        ...     pid, io_gdb = gdb.attach(io, api=True)
-        ...     # Force the program to write something it normally wouldn't
-        ...     io_gdb.execute('call puts("Hello from process debugger!")')
-        ...     # Resume the program
-        ...     io_gdb.continue_nowait()
-        ...     # Observe the forced line
-        ...     s = io.recvline()
-        ...     assert s == b'Hello from process debugger!\n', s
-        ...     # Interact with the program in a regular way
-        ...     io.sendline('echo Hello from bash && exit')
-        ...     # Observe the results
-        ...     s = io.recvall()
-        ...     assert s == b'Hello from bash\n', s
+        .. doctest
+           :skipif: six.PY2
+
+            >>> io = process('bash')
+
+            Attach a debugger
+
+            >>> pid, io_gdb = gdb.attach(io, api=True)
+
+            Force the program to write something it normally wouldn't
+
+            >>> io_gdb.execute('call puts("Hello from process debugger!")')
+
+            Resume the program
+
+            >>> io_gdb.continue_nowait()
+
+            Observe the forced line
+
+            >>> io.recvline()
+            b'Hello from process debugger!\n'
+
+            Interact with the program in a regular way
+
+            >>> io.sendline(b'echo Hello from bash && exit')
+
+            Observe the results
+
+            >>> io.recvall()
+            b'Hello from bash\n'
 
         Attach to the remote process from a :class:`.remote` or :class:`.listen` tube,
         as long as it is running on the same machine.
@@ -780,12 +827,12 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         ... ''')
         >>> io.recvline()
         b'Hello from remote debugger!\n'
-        >>> io.sendline('echo Hello from bash && exit')
+        >>> io.sendline(b'echo Hello from bash && exit')
         >>> io.recvall()
         b'Hello from bash\n'
 
         Attach to processes running on a remote machine via an SSH :class:`.ssh` process
-        
+
         >>> shell = ssh('travis', 'example.pwnme', password='demopass')
         >>> io = shell.process(['cat'])
         >>> pid = gdb.attach(io, gdbscript='''
@@ -796,7 +843,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         ... ''')
         >>> io.recvline(timeout=5)  # doctest: +SKIP
         b'Hello from ssh debugger!\n'
-        >>> io.sendline('This will be echoed back')
+        >>> io.sendline(b'This will be echoed back')
         >>> io.recvline()
         b'This will be echoed back\n'
         >>> io.close()
@@ -830,7 +877,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         if context.os == 'android':
             pre += 'set gnutarget ' + _bfdname() + '\n'
 
-        if exe:
+        if exe and context.os != 'baremetal':
             pre += 'file %s\n' % exe
 
     # let's see if we can find a pid to attach to
@@ -847,7 +894,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
         pids = list(pidof(target))
         if not pids:
-            log.error('No such process: %s' % target)
+            log.error('No such process: %s', target)
         pid = pids[0]
         log.info('Attaching to youngest process "%s" (PID = %d)' %
                  (target, pid))
@@ -858,10 +905,8 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         shell = target.parent
 
         tmpfile = shell.mktemp()
-        if six.PY3:
-            tmpfile = tmpfile.decode()
-        gdbscript = 'shell rm %s\n%s' % (tmpfile, gdbscript)
-        shell.upload_data(gdbscript or '', tmpfile)
+        gdbscript = b'shell rm %s\n%s' % (tmpfile, packing._need_bytes(gdbscript, 2, 0x80))
+        shell.upload_data(gdbscript or b'', tmpfile)
 
         cmd = ['ssh', '-C', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
         if shell.password:
@@ -870,12 +915,9 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
-        exefile = target.executable
-        cmd += ['gdb -q %s %s -x "%s"' % (exefile,
-                                       target.pid,
-                                       tmpfile)]
+        cmd += ['gdb', '-q', target.executable, target.pid, '-x', tmpfile]
 
-        misc.run_in_new_terminal(' '.join(cmd))
+        misc.run_in_new_terminal(cmd)
         return
 
     elif isinstance(target, tubes.sock.sock):
@@ -896,7 +938,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         # before we attach the debugger.
         t = Timeout()
         with t.countdown(2):
-            while exe and os.realpath(proc.exe(pid)) != os.realpath(exe) and t.timeout:
+            while exe and os.path.realpath(proc.exe(pid)) != os.path.realpath(exe) and t.timeout:
                 time.sleep(0.1)
 
     elif isinstance(target, tubes.process.process):
@@ -927,7 +969,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     elif isinstance(target, elf.corefile.Corefile):
         pre += 'target core %s\n' % target.path
     else:
-        log.error("don't know how to attach to target: %r" % target)
+        log.error("don't know how to attach to target: %r", target)
 
     # if we have a pid but no exe, just look it up in /proc/
     if pid and not exe:
@@ -940,30 +982,29 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         log.error('could not find target process')
 
     gdb_binary = binary()
-    cmd = gdb_binary
+    cmd = [gdb_binary]
 
     if gdb_args:
-        cmd += ' '
-        cmd += ' '.join(gdb_args)
+        cmd += gdb_args
 
     if context.gdbinit:
-        cmd += ' -nh '                     # ignore ~/.gdbinit
-        cmd += ' -x %s ' % context.gdbinit # load custom gdbinit
+        cmd += ['-nh']                  # ignore ~/.gdbinit
+        cmd += ['-x', context.gdbinit]  # load custom gdbinit
 
-    cmd += ' -q '
+    cmd += ['-q']
 
     if exe and context.native:
         if not ssh and not os.path.isfile(exe):
-            log.error('No such file: %s' % exe)
-        cmd += ' "%s"' % exe
+            log.error('No such file: %s', exe)
+        cmd += [exe]
 
     if pid and not context.os == 'android':
-        cmd += ' %d' % pid
+        cmd += [str(pid)]
 
     if context.os == 'android' and pid:
         runner  = _get_runner()
         which   = _get_which()
-        gdb_cmd = _gdbserver_args(pid=pid, which=which, env=env)
+        gdb_cmd = _gdbserver_args(pid=pid, which=which)
         gdbserver = runner(gdb_cmd)
         port    = _gdbserver_port(gdbserver, None)
         host    = context.adb_host
@@ -977,24 +1018,26 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         # create a UNIX socket for talking to GDB
         socket_dir = tempfile.mkdtemp()
         socket_path = os.path.join(socket_dir, 'socket')
-        # inject the socket path and the GDB Python API bridge
-        pre += 'python socket_path = ' + repr(socket_path) + '\n'
         bridge = os.path.join(os.path.dirname(__file__), 'gdb_api_bridge.py')
-        pre += 'source ' + bridge + '\n'
+
+        # inject the socket path and the GDB Python API bridge
+        pre = 'python socket_path = ' + repr(socket_path) + '\n' + \
+              'source ' + bridge + '\n' + \
+              pre
 
     gdbscript = pre + (gdbscript or '')
 
     if gdbscript:
         tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.gdb',
                                           delete = False, mode = 'w+')
-        log.debug('Wrote gdb script to %r\n%s' % (tmp.name, gdbscript))
+        log.debug('Wrote gdb script to %r\n%s', tmp.name, gdbscript)
         gdbscript = 'shell rm %s\n%s' % (tmp.name, gdbscript)
 
         tmp.write(gdbscript)
         tmp.close()
-        cmd += ' -x %s' % (tmp.name)
+        cmd += ['-x', tmp.name]
 
-    log.info('running in new terminal: %s' % cmd)
+    log.info('running in new terminal: %s', cmd)
 
     if api:
         # prevent gdb_faketerminal.py from messing up api doctests
@@ -1007,39 +1050,60 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     if pid and context.native:
         proc.wait_for_debugger(pid, gdb_pid)
 
-    if api:
-        # connect to the GDB Python API bridge
-        n_retries = 300
-        if six.PY2:
-            retriable = socket.error
-        else:
-            retriable = ConnectionRefusedError, FileNotFoundError
-        for retry in range(n_retries):
+    if not api:
+        return gdb_pid
+
+    # connect to the GDB Python API bridge
+    from rpyc import BgServingThread
+    from rpyc.utils.factory import unix_connect
+    if six.PY2:
+        retriable = socket.error
+    else:
+        retriable = ConnectionRefusedError, FileNotFoundError
+
+    t = Timeout()
+    with t.countdown(10):
+        while t.timeout:
             try:
                 conn = unix_connect(socket_path)
                 break
             except retriable:
-                if retry == n_retries - 1:
-                    raise ValueError(
-                        'Failed to connect to GDB.\n' +
-                        'Does GDB use the same Python version as your script? ' +
-                        'Check with `' + six.moves.shlex_quote(gdb_binary) +
-                        ' -batch -ex \'python import sys; print(sys.version)\'`.\n' +
-                        'Does GDB\'s Python have RPyC in its sys.path? Check with `' +
-                        six.moves.shlex_quote(gdb_binary) + ' -batch -ex ' +
-                        '\'python import rpyc\'`.\n')
                 time.sleep(0.1)
+        else:
+            # Check to see if RPyC is installed at all in GDB
+            rpyc_check = [gdb_binary, '--nx', '-batch', '-ex',
+                          'python import rpyc; import sys; sys.exit(123)']
 
-        # now that connection is up, remove the socket from the filesystem
-        os.unlink(socket_path)
-        os.rmdir(socket_dir)
+            if 123 != tubes.process.process(rpyc_check).poll(block=True):
+                log.error('Failed to connect to GDB: rpyc is not installed')
 
-        # create a thread for receiving breakpoint notifications
-        BgServingThread(conn, callback=lambda: None)
+            # Check to see if the socket ever got created
+            if not os.path.exists(socket_path):
+                log.error('Failed to connect to GDB: Unix socket %s was never created', socket_path)
 
-        return gdb_pid, Gdb(conn)
+            # Check to see if the remote RPyC client is a compatible version
+            version_check = [gdb_binary, '--nx', '-batch', '-ex',
+                            'python import platform; print(platform.python_version())']
+            gdb_python_version = tubes.process.process(version_check).recvall().strip()
+            python_version = str(platform.python_version())
 
-    return gdb_pid
+            if gdb_python_version != python_version:
+                log.error('Failed to connect to GDB: Version mismatch (%s vs %s)',
+                           gdb_python_version,
+                           python_version)
+
+            # Don't know what happened
+            log.error('Failed to connect to GDB: Unknown error')
+
+    # now that connection is up, remove the socket from the filesystem
+    os.unlink(socket_path)
+    os.rmdir(socket_dir)
+
+    # create a thread for receiving breakpoint notifications
+    BgServingThread(conn, callback=lambda: None)
+
+    return gdb_pid, Gdb(conn)
+
 
 def ssh_gdb(ssh, argv, gdbscript = None, arch = None, **kwargs):
     if not isinstance(argv, (list, tuple)):
@@ -1150,23 +1214,23 @@ def find_module_addresses(binary, ssh=None, ulimit=False):
 
     with runner(cmd) as gdb:
         if context.aslr:
-            gdb.sendline('set disable-randomization off')
+            gdb.sendline(b'set disable-randomization off')
 
-        gdb.send("""
+        gdb.send(b"""\
         set prompt
         catch load
         run
         """)
-        gdb.sendline('info sharedlibrary')
-        lines = context._decode(gdb.recvrepeat(2))
+        gdb.sendline(b'info sharedlibrary')
+        lines = packing._decode(gdb.recvrepeat(2))
 
         for line in lines.splitlines():
             m = expr.match(line)
             if m:
                 libs[m.group(2)] = int(m.group(1),16)
-        gdb.sendline('kill')
-        gdb.sendline('y')
-        gdb.sendline('quit')
+        gdb.sendline(b'kill')
+        gdb.sendline(b'y')
+        gdb.sendline(b'quit')
 
     #
     # Fix up all of the addresses against the .text address
@@ -1209,8 +1273,8 @@ def corefile(process):
 
         >>> io = process('bash')
         >>> core = gdb.corefile(io)
-        >>> core.exe.name
-        '/bin/bash'
+        >>> core.exe.name # doctest: +ELLIPSIS
+        '.../bin/bash'
     """
 
     if context.noptrace:
@@ -1231,11 +1295,11 @@ def corefile(process):
     gdb_args = ['-batch',
                 '-q',
                 '-nx',
-                '-ex', '"set pagination off"',
-                '-ex', '"set height 0"',
-                '-ex', '"set width 0"',
-                '-ex', '"set use-coredump-filter on"',
-                '-ex', '"generate-core-file %s"' % corefile_path,
+                '-ex', 'set pagination off',
+                '-ex', 'set height 0',
+                '-ex', 'set width 0',
+                '-ex', 'set use-coredump-filter on',
+                '-ex', 'generate-core-file %s' % corefile_path,
                 '-ex', 'detach']
 
     with context.local(terminal = ['sh', '-c']):
@@ -1243,8 +1307,8 @@ def corefile(process):
             pid = attach(process, gdb_args=gdb_args)
             log.debug("Got GDB pid %d", pid)
             try:
-                os.waitpid(pid, 0)
-            except Exception:
+                psutil.Process(pid).wait()
+            except psutil.Error:
                 pass
 
     if not os.path.exists(corefile_path):
@@ -1265,13 +1329,13 @@ def version(program='gdb'):
 
     Example:
 
-        >>> (7,0) <= gdb.version() <= (10,0)
+        >>> (7,0) <= gdb.version() <= (12,0)
         True
     """
     program = misc.which(program)
     expr = br'([0-9]+\.?)+'
 
-    with tubes.process.process([program, '--version'], level='error') as gdb:
+    with tubes.process.process([program, '--version'], level='error', stdout=tubes.process.PIPE) as gdb:
         version = gdb.recvline()
 
     versions = re.search(expr, version).group()

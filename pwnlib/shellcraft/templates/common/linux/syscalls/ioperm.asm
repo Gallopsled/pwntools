@@ -12,7 +12,7 @@ Invokes the syscall ioperm.
 See 'man 2 ioperm' for more information.
 
 Arguments:
-    from(unsigned): from
+    from_(unsigned): from
     num(unsigned): num
     turn_on(int): turn_on
 Returns:
@@ -28,7 +28,7 @@ Returns:
     can_pushstr = []
     can_pushstr_array = []
 
-    argument_names = ['from_', 'num', 'turn_on']
+    argument_names = ['from', 'num', 'turn_on']
     argument_values = [from_, num, turn_on]
 
     # Load all of the arguments into their destination registers / stack slots.
@@ -41,7 +41,7 @@ Returns:
 
     for name, arg in zip(argument_names, argument_values):
         if arg is not None:
-            syscall_repr.append('%s=%r' % (name, arg))
+            syscall_repr.append('%s=%s' % (name, pwnlib.shellcraft.pretty(arg, False)))
 
         # If the argument itself (input) is a register...
         if arg in allregs:

@@ -198,6 +198,8 @@ def which_binutils(util):
             # e.g. aarch64-linux-gnu-objdump, avr-objdump
             else:
                 patterns = ['%s*linux*-%s' % (arch, gutil),
+                            '%s*-elf-%s' % (arch, gutil),
+                            '%s-none*-%s' % (arch, gutil),
                             '%s-%s' % (arch, gutil)]
 
             for pattern in patterns:
@@ -248,8 +250,12 @@ def _assembler():
         checked_assembler_version[gas] = True
         result = subprocess.check_output([gas, '--version','/dev/null'],
                                          stderr=subprocess.STDOUT, universal_newlines=True)
-        version = re.search(r' (\d\.\d+)', result).group(1)
-        if version < '2.19':
+        version = re.search(r' (\d+\.\d+)', result).group(1)
+        if 'clang' in result:
+            log.warn_once('Your binutils is clang version and may not work!\n'
+                'Try install with: https://docs.pwntools.com/en/stable/install/binutils.html\n'
+                'Reported Version: %r', result.strip())
+        elif version < '2.19':
             log.warn_once('Your binutils version is too old and may not work!\n'
                 'Try updating with: https://docs.pwntools.com/en/stable/install/binutils.html\n'
                 'Reported Version: %r', result.strip())
@@ -299,6 +305,7 @@ def _arch_header():
     prefix  = ['.section .shellcode,"awx"',
                 '.global _start',
                 '.global __start',
+                '.p2align 2',
                 '_start:',
                 '__start:']
     headers = {
@@ -337,6 +344,7 @@ def _bfdname():
         'msp430'  : 'elf32-msp430',
         'powerpc' : 'elf32-powerpc',
         'powerpc64' : 'elf64-powerpc',
+        'riscv'   : 'elf%d-%sriscv' % (context.bits, E),
         'vax'     : 'elf32-vax',
         's390'    : 'elf%d-s390' % context.bits,
         'sparc'   : 'elf32-sparc',
@@ -367,7 +375,7 @@ def _bfdarch():
     return arch
 
 def _run(cmd, stdin = None):
-    log.debug(subprocess.list2cmdline(cmd))
+    log.debug('%s', subprocess.list2cmdline(cmd))
     try:
         proc = subprocess.Popen(
             cmd,
@@ -380,17 +388,20 @@ def _run(cmd, stdin = None):
         exitcode = proc.wait()
     except OSError as e:
         if e.errno == errno.ENOENT:
-            log.exception('Could not run %r the program' % cmd[0])
+            log.exception('Could not run %r the program', cmd[0])
         else:
             raise
 
     if (exitcode, stderr) != (0, ''):
-        msg = 'There was an error running %s:\n' % repr(cmd)
+        msg = 'There was an error running %r:\n'
+        args = cmd,
         if exitcode != 0:
-            msg += 'It had the exitcode %d.\n' % exitcode
+            msg += 'It had the exitcode %d.\n'
+            args += exitcode,
         if stderr != '':
-            msg += 'It had this on stdout:\n%s\n' % stderr
-        log.error(msg)
+            msg += 'It had this on stdout:\n%s\n'
+            args += stderr,
+        log.error(msg, *args)
 
     return stdout
 
@@ -492,9 +503,7 @@ def make_elf_from_assembly(assembly,
         >>> file_b = make_elf_from_assembly('nop', extract=True)
         >>> file_a[:4] == file_b[:4]
         True
-        >>> len(file_a) < 0x200
-        True
-        >>> len(file_b) > 0x1000
+        >>> len(file_a) < len(file_b)
         True
     """
     if shared and vma:

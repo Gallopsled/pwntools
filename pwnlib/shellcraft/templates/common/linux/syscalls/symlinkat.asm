@@ -12,7 +12,7 @@ Invokes the syscall symlinkat.
 See 'man 2 symlinkat' for more information.
 
 Arguments:
-    from(char*): from
+    from_(char*): from
     tofd(int): tofd
     to(char*): to
 Returns:
@@ -28,7 +28,7 @@ Returns:
     can_pushstr = ['from', 'to']
     can_pushstr_array = []
 
-    argument_names = ['from_', 'tofd', 'to']
+    argument_names = ['from', 'tofd', 'to']
     argument_values = [from_, tofd, to]
 
     # Load all of the arguments into their destination registers / stack slots.
@@ -41,7 +41,7 @@ Returns:
 
     for name, arg in zip(argument_names, argument_values):
         if arg is not None:
-            syscall_repr.append('%s=%r' % (name, arg))
+            syscall_repr.append('%s=%s' % (name, pwnlib.shellcraft.pretty(arg, False)))
 
         # If the argument itself (input) is a register...
         if arg in allregs:

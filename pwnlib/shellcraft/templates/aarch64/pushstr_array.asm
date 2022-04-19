@@ -1,8 +1,9 @@
 <%
     from pwnlib import shellcraft
-    from pwnlib.context import context as ctx
+    from pwnlib.shellcraft import pretty
     from pwnlib.util.iters import group
-    from six import text_type, binary_type, ensure_binary
+    from pwnlib.util.packing import _need_bytes
+    from six import text_type, binary_type
 %>
 <%docstring>
 Pushes an array/envp-style array of pointers onto the stack.
@@ -26,7 +27,7 @@ if isinstance(array, (binary_type, text_type)):
     array = [array]
 
 # Convert all items to strings
-array = [ensure_binary(x) for x in array]
+array = [_need_bytes(x, 2, 0x80) for x in array]
 
 # Normalize line endings for each item
 array = [arg.rstrip(b'\x00') + b'\x00' for arg in array]
@@ -39,7 +40,7 @@ string = b''.join(array)
 if len(array) * 8 > 4095:
     raise Exception("Array size is too large (%i), max=4095" % len(array))
 %>\
-    /* push argument array ${repr(array)} */
+    /* push argument array ${shellcraft.pretty(array, False)} */
     ${shellcraft.pushstr(string, register1=register1, register2=register2)}
 
     /* push null terminator */
@@ -50,7 +51,7 @@ if len(array) * 8 > 4095:
 %for i, value in enumerate(reversed(array)):
    ${shellcraft.mov(register1, (i+1)*8 + string.index(value))}
    add ${register1}, sp, ${register1}
-   str ${register1}, [sp, #-8]! /* ${array[-i]} */
+   str ${register1}, [sp, #-8]! /* ${pretty(array[-i], False)} */
 %endfor
 
     /* set ${reg} to the current top of the stack */

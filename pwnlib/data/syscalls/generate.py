@@ -1,6 +1,7 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 from __future__ import division
 import argparse
+import keyword
 import os
 
 from pwnlib import constants
@@ -62,7 +63,7 @@ CALL = """
 
     for name, arg in zip(argument_names, argument_values):
         if arg is not None:
-            syscall_repr.append('%s=%r' % (name, arg))
+            syscall_repr.append('%s=%s' % (name, pwnlib.shellcraft.pretty(arg, False)))
 
         # If the argument itself (input) is a register...
         if arg in allregs:
@@ -136,6 +137,7 @@ def can_be_string(arg):
     if arg.type == 'void' and arg.derefcnt == 1:
         return True
 
+
 def can_be_array(arg):
     if arg.type == 'char' and arg.derefcnt == 2:
         return True
@@ -144,14 +146,11 @@ def can_be_array(arg):
 
 
 def fix_bad_arg_names(func, arg):
-    if arg.name == 'str':
-        return 'str_'
     if arg.name == 'len':
         return 'length'
-    if arg.name == 'repr':
-        return 'repr_'
-    if arg.name == 'from':
-        return 'from_'
+
+    if arg.name in ('str', 'repr') or keyword.iskeyword(arg.name):
+        return arg.name + '_'
 
     if func.name == 'open' and arg.name == 'vararg':
         return 'mode'
@@ -162,10 +161,12 @@ def fix_bad_arg_names(func, arg):
 def get_arg_default(arg):
     return 0
 
+
 def fix_rt_syscall_name(name):
     if name.startswith('rt_'):
         return name[3:]
     return name
+
 
 def fix_syscall_names(name):
     # Do not use old_mmap
@@ -181,6 +182,7 @@ def main(target):
     for arch in ARCHITECTURES:
         with context.local(arch=arch):
             generate_one(target)
+
 
 def generate_one(target):
     SYSCALL_NAMES = [c for c in dir(constants) if c.startswith('SYS_')]
@@ -216,13 +218,33 @@ def generate_one(target):
 
         # Set up the argument string for Mako
         argument_names = []
+        argument_names_ = []
         argument_defaults = []
+
+        string_arguments = []
+        array_arguments = []
+        arg_docs = []
 
         #
 
         for arg in function.args:
-            argname = fix_bad_arg_names(function, arg)
+            argname_ = fix_bad_arg_names(function, arg)
+            argname = argname_.rstrip('_')
             default = get_arg_default(arg)
+
+            if can_be_array(arg):
+                array_arguments.append(argname)
+
+            if can_be_string(arg):
+                string_arguments.append(argname)
+
+            argtype = str(arg.type) + ('*' * arg.derefcnt)
+            arg_docs.append(
+                '    {argname_}({argtype}): {argname}'.format(
+                    argname_=argname_,
+                    argname=argname,
+                    argtype=argtype,
+                ))
 
             # Mako is unable to use *vararg and *kwarg, so we just stub in
             # a whole bunch of additional arguments.
@@ -230,32 +252,16 @@ def generate_one(target):
                 for j in range(5):
                     argname = 'vararg_%i' % j
                     argument_names.append(argname)
+                    argument_names_.append(argname)
                     argument_defaults.append('%s=%s' % (argname, None))
                 break
 
             argument_names.append(argname)
-            argument_defaults.append('%s=%s' % (argname, default))
+            argument_names_.append(argname_)
+            argument_defaults.append('%s=%s' % (argname_, default))
 
         arguments_default_values = ', '.join(argument_defaults)
-        arguments_comma_separated = ', '.join(argument_names)
-
-        string_arguments = []
-        array_arguments = []
-        arg_docs = []
-
-        for arg in function.args:
-
-            if can_be_array(arg):
-                array_arguments.append(arg.name)
-
-            if can_be_string(arg):
-                string_arguments.append(arg.name)
-
-            argname = arg.name
-            argtype = str(arg.type) + ('*' * arg.derefcnt)
-            arg_docs.append(
-                '    {argname}({argtype}): {argname}'.format(argname=argname,
-                                                             argtype=argtype))
+        arguments_comma_separated = ', '.join(argument_names_)
 
         return_type = str(function.type) + ('*' * function.derefcnt)
         arg_docs = '\n'.join(arg_docs)
@@ -279,8 +285,11 @@ def generate_one(target):
             CALL.format(**template_variables)
         ]
 
-        with open(os.path.join(target, name + '.asm'), 'wt+') as f:
-            f.write('\n'.join(map(str.strip, lines)))
+        if keyword.iskeyword(name):
+            name += '_'
+        with open(os.path.join(target, name + '.asm'), 'wt') as f:
+            f.write('\n'.join(map(str.strip, lines)) + '\n')
+
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser()

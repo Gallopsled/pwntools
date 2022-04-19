@@ -14,7 +14,7 @@ See 'man 2 open' for more information.
 Arguments:
     file(char*): file
     oflag(int): oflag
-    vararg(int): vararg
+    mode(int): mode
 Returns:
     int
 </%docstring>
@@ -41,7 +41,7 @@ Returns:
 
     for name, arg in zip(argument_names, argument_values):
         if arg is not None:
-            syscall_repr.append('%s=%r' % (name, arg))
+            syscall_repr.append('%s=%s' % (name, pwnlib.shellcraft.pretty(arg, False)))
 
         # If the argument itself (input) is a register...
         if arg in allregs:

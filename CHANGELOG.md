@@ -9,9 +9,15 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.5.0](#450)    | `dev`    | Dec 20, 2020 (planned)
-| [4.4.0](#440)    | `beta`   | Nov 20, 2020 (planned)
-| [4.3.0](#430)    | `stable` | Oct 20, 2020
+| [4.9.0](#490)    | `dev`    |
+| [4.8.0](#480)    | `beta`   |
+| [4.7.0](#470)    | `stable` | Nov 15, 2021
+| [4.6.0](#460)    |          | Jul 12, 2021
+| [4.5.1](#451)    |          | May 30, 2021
+| [4.5.0](#450)    |          | Apr 30, 2021
+| [4.4.0](#440)    |          | Mar 29, 2021
+| [4.3.1](#431)    |          | Nov 29, 2020
+| [4.3.0](#430)    |          | Oct 20, 2020
 | [4.2.0](#420)    |          | Jul 3, 2020
 | [4.1.7](#417)    |          | Jun 30, 2020
 | [4.1.5](#415)    |          | Jun 27, 2020
@@ -57,16 +63,126 @@ The table below shows which release corresponds to each branch, and what date th
 | [2.2.0](#220)    |          | Jan 5, 2015
 
 
-## 4.5.0 (`dev`)
+## 4.9.0 (`dev`)
 
 - [#1722][1722] Added Crypto class and cipher suites
+- [#2011][2011] Fix tube's debug output of same byte compression
+- [#2023][2023] Support KDE Konsole in run_in_new_terminal function
+- [#2027][2027] Fix ELF.libc_start_main_return with glibc 2.34
+- [#2035][2035] Change Buffer's parent class to object
+
+[1722]: https://github.com/Gallopsled/pwntools/pull/1722
+[2011]: https://github.com/Gallopsled/pwntools/pull/2011
+[2023]: https://github.com/Gallopsled/pwntools/pull/2023
+[2027]: https://github.com/Gallopsled/pwntools/pull/2027
+[2035]: https://github.com/Gallopsled/pwntools/pull/2035
+
+## 4.8.0 (`beta`)
+
+- [#1922][1922] Fix logic in `wait_for_debugger`
+- [#1828][1828] libcdb: Load debug info and unstrip libc binary
+- [#1939][1939] Fix error in validating log levels
+- [#1981][1981] Fix `cyclic_find()` to make it work with large int values
+
+[1922]: https://github.com/Gallopsled/pwntools/pull/1922
+[1828]: https://github.com/Gallopsled/pwntools/pull/1828
+[1939]: https://github.com/Gallopsled/pwntools/pull/1939
+[1981]: https://github.com/Gallopsled/pwntools/pull/1981
+
+## 4.7.0 (`stable`)
+
+- [#1733][1733] Update libc headers -> more syscalls available!
+- [#1876][1876] add `self.message` and change `sys.exc_type` to `sys.exec_info()` in PwnlibException
+- [#1877][1877] encoders error message handles when `avoid` is bytes in python3
+- [#1891][1891] Keep ROP gadgets when setting registers via setattr/call
+- [#1892][1892] Silence SIGPIPE error for "pwn phd"
+- [#1893][1893] Fix bytes warning in "pwn cyclic"
+- [#1897][1897] Add basic support for RISC-V
+- [#1903][1903] Add zsh completion script
+- [#1904][1904] Add bash completion script
+- [#1906][1906] Defer import of several modules to save on startup time
+- [#1921][1921] Add basic support for the bare-metal ARM specific toolchain
+- [#1995][1995] Add `shellcraft.*.linux.cat2`, which uses alloc+read+write instead of sendfile
+
+[1733]: https://github.com/Gallopsled/pwntools/pull/1733
+[1876]: https://github.com/Gallopsled/pwntools/pull/1876
+[1877]: https://github.com/Gallopsled/pwntools/pull/1877
+[1891]: https://github.com/Gallopsled/pwntools/pull/1891
+[1892]: https://github.com/Gallopsled/pwntools/pull/1892
+[1893]: https://github.com/Gallopsled/pwntools/pull/1893
+[1897]: https://github.com/Gallopsled/pwntools/pull/1897
+[1903]: https://github.com/Gallopsled/pwntools/pull/1903
+[1904]: https://github.com/Gallopsled/pwntools/pull/1904
+[1906]: https://github.com/Gallopsled/pwntools/pull/1906
+[1921]: https://github.com/Gallopsled/pwntools/pull/1921
+[1995]: https://github.com/Gallopsled/pwntools/pull/1995
+
+## 4.6.0
+
+- [#1429][1429] Add a mechanism for ret2csu (originally #1138)
+- [#1566][1566] Add `ignore_config` argument to `pwnlib.tubes.ssh` and improve `allow_agent` implementation
+- [#1652][1652] Add `process.readmem` and `process.writemem`
+- [#1739][1739] Add/fix shellcraft.linux.kill() / shellcraft.linux.killparent()
+- [#1746][1746] Prefer Python3 over Python2 for spawning remote processes over SSH
+- [#1751][1751] Fix process() with executable relative to cwd
+- [#1753][1753] major change: less unconditional imports in pwnlib
+- [#1776][1776] mips: do not use $t0 temporary variable in dupio
+- [#1846][1846] support launching GDB in more different terminals
+
+[1429]: https://github.com/Gallopsled/pwntools/pull/1429
+[1566]: https://github.com/Gallopsled/pwntools/pull/1566
+[1652]: https://github.com/Gallopsled/pwntools/pull/1652
+[1739]: https://github.com/Gallopsled/pwntools/pull/1739
+[1746]: https://github.com/Gallopsled/pwntools/pull/1746
+[1751]: https://github.com/Gallopsled/pwntools/pull/1751
+[1753]: https://github.com/Gallopsled/pwntools/pull/1753
+[1776]: https://github.com/Gallopsled/pwntools/pull/1776
+[1846]: https://github.com/Gallopsled/pwntools/pull/1846
+
+## 4.5.1
+
+- [#1902][1902] Always specify -F and -P for tmux in `run_in_new_terminal`
+
+[1902]: https://github.com/Gallopsled/pwntools/pull/1902
+
+## 4.5.0
+
 - [#1261][1261] Misc `run_in_new_terminal` improvements (notably gdb terminated by default)
 - [#1695][1695] Allow using GDB Python API
+- [#1735][1735] Python 3.9 support in safeeval
+- [#1738][1738] Which function support custom search path
+  - process also looks now at `env['PATH']` to find the path for the executable
+- [#1742][1742] New `baremetal` os to debug binaries executed with qemu-system-$(arch)
+- [#1757][1757] update cache directories
+- [#1758][1758] Remove eval from cli
+- [#1780][1780] Re-add Python2 to the official Dockerfile
+- [#1941][1941] Disable all Android tests, `pwnlib.adb` is no longer supported in CI
+- [#1811][1811] Remove unnecessary `pwn.toplevel.__all__`
+- [#1827][1827] Support `$XDG_CONFIG_HOME` dir for `pwn.conf`
+- [#1841][1841] Add colored_traceback
+- [#1839][1839] run_in_new_terminal now creates a runner script if given a list or tuple
+- [#1833][1833] Add pwnlib.filesystem module
+- [#1852][1852] Fix `atexit` on Python 3
+- [#1883][1883] ROP gadget verifier accounts for 2 character registers
 
 [1261]: https://github.com/Gallopsled/pwntools/pull/1261
 [1695]: https://github.com/Gallopsled/pwntools/pull/1695
+[1735]: https://github.com/Gallopsled/pwntools/pull/1735
+[1738]: https://github.com/Gallopsled/pwntools/pull/1738
+[1742]: https://github.com/Gallopsled/pwntools/pull/1742
+[1757]: https://github.com/Gallopsled/pwntools/pull/1757
+[1758]: https://github.com/Gallopsled/pwntools/pull/1758
+[1780]: https://github.com/Gallopsled/pwntools/pull/1780
+[1941]: https://github.com/Gallopsled/pwntools/pull/1941
+[1811]: https://github.com/Gallopsled/pwntools/pull/1811
+[1827]: https://github.com/Gallopsled/pwntools/pull/1827
+[1841]: https://github.com/Gallopsled/pwntools/pull/1841
+[1839]: https://github.com/Gallopsled/pwntools/pull/1839
+[1833]:  https://github.com/Gallopsled/pwntools/pull/1833
+[1852]: https://github.com/Gallopsled/pwntools/pull/1852
+[1883]: https://github.com/Gallopsled/pwntools/pull/1883
 
-## 4.4.0 (`beta`)
+## 4.4.0
 
 - [#1541][1541] Use `context.newline` for tubes by default
 - [#1602][1602] Fix bytes handling in ssh tubes
@@ -110,7 +226,13 @@ The table below shows which release corresponds to each branch, and what date th
 [1703]: https://github.com/Gallopsled/pwntools/pull/1703
 [1704]: https://github.com/Gallopsled/pwntools/pull/1704
 
-## 4.3.0 (`stable`)
+## 4.3.1
+
+- [#1732][1732] Fix shellcraft SSTI vulnerability (first major pwntools vuln!)
+
+[1732]: https://github.com/Gallopsled/pwntools/pull/1732
+
+## 4.3.0
 
 - [#1576][1576] Add `executable=` argument to `ELF.search`
 - [#1584][1584] Add `jmp_esp`/`jmp_rsp` attribute to `ROP`
@@ -208,7 +330,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1001]: https://github.com/Gallopsled/pwntools/pull/1001
 [1389]: https://github.com/Gallopsled/pwntools/pull/1389
 [1241]: https://github.com/Gallopsled/pwntools/pull/1241
-[1218]: https://github.com/Gallopsled/pwntools/pull/1218  
+[1218]: https://github.com/Gallopsled/pwntools/pull/1218
 
 ## 4.0.1
 

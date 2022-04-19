@@ -145,7 +145,13 @@ class ConstantsModule(ModuleType):
         if key not in self._env_store:
             self._env_store[key] = {key: getattr(self, key) for key in dir(self) if not key.endswith('__')}
 
-        return Constant('(%s)' % string, safeeval.values(string, self._env_store[key]))
+        val = safeeval.values(string, self._env_store[key])
+
+        # if the expression is not assembly-safe, it is not so vital to preserve it
+        if set(string) & (set(bytearray(range(32)).decode()) | set('"#$\',.;@[\\]`{}')):
+            string = val
+
+        return Constant('(%s)' % string, val)
 
 
 # To prevent garbage collection

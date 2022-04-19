@@ -1,5 +1,7 @@
 .. testsetup:: *
 
+   import tempfile
+
    from pwnlib.context import context
    from pwnlib.util.web import *
 

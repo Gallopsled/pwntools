@@ -11,7 +11,7 @@ in order to run, debug, and pwn foreign architecture binaries.
 In general, everything magic happens "behind the scenes", and pwntools
 attempts to make your life easier.
 
-When using :class:`.process.process`, pwntools will attempt to blindly
+When using :class:`.process`, pwntools will attempt to blindly
 execute the binary, in case your system is configured to use ``binfmt-misc``.
 
 If this fails, pwntools will attempt to manually launch the binary under
@@ -38,19 +38,19 @@ For Ubuntu 16.04 and newer, the setup is relatively straightforward for most
 architectures.
 
 First, install the QEMU emulator itself.  If your binary is statically-linked,
-thsi is sufficient.
+this is sufficient. ::
 
     $ sudo apt-get install qemu-user
 
 If your binary is dynamically linked, you need to install libraries like libc.
 Generally, this package is named ``libc6-$ARCH-cross``, e.g. ``libc-mips-cross``.
-ARM comes in both soft-float and hard-float variants, e.g. ``armhf``.
+ARM comes in both soft-float and hard-float variants, e.g. ``armhf``. ::
 
     $ sudo apt-get install libc6-arm64-cross
 
 If your binary relies on additional libraries, you can generally find them
 easily with ``apt-cache search``.  For example, if it's a C++ binary it
-may require ``libstdc++``.
+may require ``libstdc++``. ::
 
     $ apt-cache search 'libstdc++' | grep arm64
 
@@ -65,7 +65,7 @@ QEMU does not know where they are, and expects them to be at e.g. ``/etc/qemu-bi
 If you try to run your library now, you'll probably see an error about ``libc.so.6`` missing.
 
 Create the ``/etc/qemu-binfmt`` directory if it does not exist, and create a symlink to
-the appropriate path.
+the appropriate path. ::
 
     $ sudo mkdir /etc/qemu-binfmt
     $ sudo ln -s /usr/aarch64-linux-gnu /etc/qemu-binfmt/aarch64
@@ -119,14 +119,19 @@ def user_path():
     'qemu-arm-static'
     """
     arch   = archname()
+    system = 'qemu-system-' + arch
     normal = 'qemu-' + arch
     static = normal + '-static'
 
-    if misc.which(static):
-        return static
+    if context.os == 'baremetal':
+        if misc.which(system):
+            return system
+    else:
+        if misc.which(static):
+            return static
 
-    if misc.which(normal):
-        return normal
+        if misc.which(normal):
+            return normal
 
     log.warn_once("Neither %r nor %r are available" % (normal, static))
 
@@ -137,12 +142,15 @@ def ld_prefix(path=None, env=None):
     >>> pwnlib.qemu.ld_prefix(arch='arm')
     '/etc/qemu-binfmt/arm'
     """
+    if context.os == 'baremetal':
+        return ""
+
     if path is None:
         path = user_path()
 
     # Did we explicitly specify the path in an environment variable?
-    if env and 'QEMU_LD_PREFIX' in env:
-        return env['QEMU_LD_PREFIX']
+    if env and b'QEMU_LD_PREFIX' in env:
+        return env[b'QEMU_LD_PREFIX'].decode()
 
     if 'QEMU_LD_PREFIX' in os.environ:
         return os.environ['QEMU_LD_PREFIX']

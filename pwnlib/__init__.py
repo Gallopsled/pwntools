@@ -1,12 +1,11 @@
 from __future__ import absolute_import
 
-import importlib
-
-from pwnlib.version import __version__
+from .version import __version__
 
 version = __version__
 
 __all__ = [
+    'adb',
     'args',
     'asm',
     'atexception',
@@ -36,9 +35,8 @@ __all__ = [
     'ui',
     'useragents',
     'util',
-    'adb',
     'update',
+    'version',
 ]
 
-for module in __all__:
-    importlib.import_module('.%s' % module, 'pwnlib')
+from . import args

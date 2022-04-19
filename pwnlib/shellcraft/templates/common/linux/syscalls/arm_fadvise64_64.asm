@@ -15,7 +15,7 @@ Arguments:
     fd(int): fd
     advice(int): advice
     offset(loff_t): offset
-    len(loff_t): len
+    length(loff_t): length
 Returns:
     long
 </%docstring>
@@ -42,7 +42,7 @@ Returns:
 
     for name, arg in zip(argument_names, argument_values):
         if arg is not None:
-            syscall_repr.append('%s=%r' % (name, arg))
+            syscall_repr.append('%s=%s' % (name, pwnlib.shellcraft.pretty(arg, False)))
 
         # If the argument itself (input) is a register...
         if arg in allregs:

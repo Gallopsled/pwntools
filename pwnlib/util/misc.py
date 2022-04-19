@@ -10,12 +10,15 @@ import socket
 import stat
 import string
 import subprocess
+import sys
+import tempfile
 
 from pwnlib import atexit
 from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util import fiddling
 from pwnlib.util import lists
+from pwnlib.util import packing
 
 log = getLogger(__name__)
 
@@ -97,13 +100,13 @@ def size(n, abbrev = 'B', si = False):
 
     return '%.02fP%s' % (n / base, abbrev)
 
-KB = 1024
-MB = 1024 * KB
-GB = 1024 * MB
+KB = 1000
+MB = 1000 * KB
+GB = 1000 * MB
 
-KiB = 1000
-MiB = 1000 * KB
-GiB = 1000 * MB
+KiB = 1024
+MiB = 1024 * KiB
+GiB = 1024 * MiB
 
 def read(path, count=-1, skip=0):
     r"""read(path, count=-1, skip=0) -> str
@@ -131,7 +134,7 @@ def write(path, data = b'', create_dir = False, mode = 'w'):
     with open(path, mode) as f:
         f.write(data)
 
-def which(name, all = False):
+def which(name, all = False, path=None):
     """which(name, flags = os.X_OK, all = False) -> str or str set
 
     Works as the system command ``which``; searches $PATH for ``name`` and
@@ -149,9 +152,10 @@ def which(name, all = False):
       else the first location or :const:`None` if not found.
 
     Example:
-      >>> which('sh')
-      '/bin/sh'
-"""
+
+        >>> which('sh') # doctest: +ELLIPSIS
+        '.../bin/sh'
+    """
     # If name is a path, do not attempt to resolve it.
     if os.path.sep in name:
         return name
@@ -159,7 +163,7 @@ def which(name, all = False):
     isroot = os.getuid() == 0
     out = set()
     try:
-        path = os.environ['PATH']
+        path = path or os.environ['PATH']
     except KeyError:
         log.exception('Environment variable $PATH is not set')
     for p in path.split(os.pathsep):
@@ -181,6 +185,63 @@ def which(name, all = False):
     else:
         return None
 
+
+def normalize_argv_env(argv, env, log, level=2):
+    #
+    # Validate argv
+    #
+    # - Must be a list/tuple of strings
+    # - Each string must not contain '\x00'
+    #
+    argv = argv or []
+    if isinstance(argv, (six.text_type, six.binary_type)):
+        argv = [argv]
+
+    if not isinstance(argv, (list, tuple)):
+        log.error('argv must be a list or tuple: %r' % argv)
+
+    if not all(isinstance(arg, (six.text_type, bytes, bytearray)) for arg in argv):
+        log.error("argv must be strings or bytes: %r" % argv)
+
+    # Create a duplicate so we can modify it
+    argv = list(argv)
+
+    for i, oarg in enumerate(argv):
+        arg = packing._need_bytes(oarg, level, 0x80)  # ASCII text is okay
+        if b'\x00' in arg[:-1]:
+            log.error('Inappropriate nulls in argv[%i]: %r' % (i, oarg))
+        argv[i] = bytearray(arg.rstrip(b'\x00'))
+
+    #
+    # Validate environment
+    #
+    # - Must be a dictionary of {string:string}
+    # - No strings may contain '\x00'
+    #
+
+    # Create a duplicate so we can modify it safely
+    env2 = []
+    if hasattr(env, 'items'):
+        env_items = env.items()
+    else:
+        env_items = env
+    if env:
+        for k,v in env_items:
+            if not isinstance(k, (bytes, six.text_type)):
+                log.error('Environment keys must be strings: %r' % k)
+            if not isinstance(k, (bytes, six.text_type)):
+                log.error('Environment values must be strings: %r=%r' % (k,v))
+            k = packing._need_bytes(k, level, 0x80)  # ASCII text is okay
+            v = packing._need_bytes(v, level, 0x80)  # ASCII text is okay
+            if b'\x00' in k[:-1]:
+                log.error('Inappropriate nulls in env key: %r' % (k))
+            if b'\x00' in v[:-1]:
+                log.error('Inappropriate nulls in env value: %r=%r' % (k, v))
+            env2.append((bytearray(k.rstrip(b'\x00')), bytearray(v.rstrip(b'\x00'))))
+
+    return argv, env2 or env
+
+
 def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, preexec_fn=None):
     """run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, preexec_fn=None) -> int
 
@@ -197,6 +258,8 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         - If ``$TERM_PROGRAM`` is set, that is used.
         - If X11 is detected (by the presence of the ``$DISPLAY`` environment
           variable), ``x-terminal-emulator`` is used.
+        - If KDE Konsole is detected (by the presence of the ``$KONSOLE_VERSION``
+          environment variable), a terminal will be split.
         - If WSL (Windows Subsystem for Linux) is detected (by the presence of
           a ``wsl.exe`` binary in the ``$PATH`` and ``/proc/sys/kernel/osrelease``
           containing ``Microsoft``), a new ``cmd.exe`` window will be opened.
@@ -226,7 +289,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             args     = []
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
-            args     = ['splitw', '-F' '#{pane_pid}', '-P']
+            args     = ['splitw']
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
@@ -236,6 +299,41 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         elif 'DISPLAY' in os.environ and which('x-terminal-emulator'):
             terminal = 'x-terminal-emulator'
             args     = ['-e']
+        elif 'KONSOLE_VERSION' in os.environ and which('qdbus'):
+            qdbus = which('qdbus')
+            window_id = os.environ['WINDOWID']
+            konsole_dbus_service = os.environ['KONSOLE_DBUS_SERVICE']
+
+            with subprocess.Popen((qdbus, konsole_dbus_service), stdout=subprocess.PIPE) as proc:
+                lines = proc.communicate()[0].decode().split('\n')
+
+            # Iterate over all MainWindows
+            for line in lines:
+                parts = line.split('/')
+                if len(parts) == 3 and parts[2].startswith('MainWindow_'):
+                    name = parts[2]
+                    with subprocess.Popen((qdbus, konsole_dbus_service, '/konsole/' + name,
+                                           'org.kde.KMainWindow.winId'), stdout=subprocess.PIPE) as proc:
+                        target_window_id = proc.communicate()[0].decode().strip()
+                        if target_window_id == window_id:
+                            break
+            else:
+                log.error('MainWindow not found')
+
+            # Split
+            subprocess.run((qdbus, konsole_dbus_service, '/konsole/' + name,
+                            'org.kde.KMainWindow.activateAction', 'split-view-left-right'), stdout=subprocess.DEVNULL)
+
+            # Find new session
+            with subprocess.Popen((qdbus, konsole_dbus_service, os.environ['KONSOLE_DBUS_WINDOW'],
+                                   'org.kde.konsole.Window.sessionList'), stdout=subprocess.PIPE) as proc:
+                session_list = map(int, proc.communicate()[0].decode().split())
+            last_konsole_session = max(session_list)
+
+            terminal = 'qdbus'
+            args = [konsole_dbus_service, '/Sessions/{}'.format(last_konsole_session),
+                    'org.kde.konsole.Session.runCommand']
+
         else:
             is_wsl = False
             if os.path.exists('/proc/sys/kernel/osrelease'):
@@ -253,6 +351,12 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
     if isinstance(args, tuple):
         args = list(args)
 
+    # When not specifying context.terminal explicitly, we used to set these flags above.
+    # However, if specifying terminal=['tmux', 'splitw', '-h'], we would be lacking these flags.
+    # Instead, set them here and hope for the best.
+    if terminal == 'tmux':
+        args += ['-F' '#{pane_pid}', '-P']
+
     argv = [which(terminal)] + args
 
     if isinstance(command, six.string_types):
@@ -260,9 +364,26 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             log.error("Cannot use commands with semicolon.  Create a script and invoke that directly.")
         argv += [command]
     elif isinstance(command, (list, tuple)):
-        if any(';' in c for c in command):
-            log.error("Cannot use commands with semicolon.  Create a script and invoke that directly.")
-        argv += list(command)
+        # Dump the full command line to a temporary file so we can be sure that
+        # it is parsed correctly, and we do not need to account for shell expansion
+        script = '''
+#!{executable!s}
+import os
+os.execve({argv0!r}, {argv!r}, os.environ)
+'''
+        script = script.format(executable=sys.executable,
+                               argv=command,
+                               argv0=which(command[0]))
+        script = script.lstrip()
+
+        log.debug("Created script for new terminal:\n%s" % script)
+
+        with tempfile.NamedTemporaryFile(delete=False, mode='wt+') as tmp:
+          tmp.write(script)
+          tmp.flush()
+          os.chmod(tmp.name, 0o700)
+          argv += [tmp.name]
+
 
     log.debug("Launching a new terminal: %r" % argv)
 
@@ -275,14 +396,24 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
     if terminal == 'tmux':
         out, _ = p.communicate()
         pid = int(out)
+    elif terminal == 'qdbus':
+        with subprocess.Popen((qdbus, konsole_dbus_service, '/Sessions/{}'.format(last_konsole_session),
+                               'org.kde.konsole.Session.processId'), stdout=subprocess.PIPE) as proc:
+            pid = int(proc.communicate()[0].decode())
     else:
         pid = p.pid
 
     if kill_at_exit:
-        if terminal == 'tmux':
-            atexit.register(lambda: os.kill(pid, signal.SIGTERM))
-        else:
-            atexit.register(lambda: p.terminate())
+        def kill():
+            try:
+                if terminal == 'qdbus':
+                    os.kill(pid, signal.SIGHUP)
+                else:
+                    os.kill(pid, signal.SIGTERM)
+            except OSError:
+                pass
+
+        atexit.register(kill)
 
     return pid
 

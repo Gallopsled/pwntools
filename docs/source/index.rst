@@ -53,9 +53,10 @@ Each of the ``pwntools`` modules is documented here.
    crypto
    dynelf
    encoders
-   elf
+   elf/*
    exception
    filepointer
+   filesystem
    flag
    fmtstr
    gdb
@@ -65,7 +66,6 @@ Each of the ``pwntools`` modules is documented here.
    protocols
    qemu
    replacements
-   rop
    rop/*
    runner
    shellcraft
@@ -83,6 +83,7 @@ Each of the ``pwntools`` modules is documented here.
    :hidden:
 
    testexample
+   rop/call
 
 .. only:: not dash
 
@@ -92,3 +93,12 @@ Each of the ``pwntools`` modules is documented here.
    * :ref:`genindex`
    * :ref:`modindex`
    * :ref:`search`
+
+Bytes
+-----
+
+The bytes vs text distinction is so important that it even made it to this main page.
+See the pwntools-tutorial_ repo for the latest tutorial finally
+explaining the difference once and for all (hopefully).
+
+.. _pwntools-tutorial: https://github.com/Gallopsled/pwntools-tutorial/blob/master/bytes.md

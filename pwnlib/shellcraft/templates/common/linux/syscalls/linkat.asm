@@ -13,7 +13,7 @@ See 'man 2 linkat' for more information.
 
 Arguments:
     fromfd(int): fromfd
-    from(char*): from
+    from_(char*): from
     tofd(int): tofd
     to(char*): to
     flags(int): flags
@@ -30,7 +30,7 @@ Returns:
     can_pushstr = ['from', 'to']
     can_pushstr_array = []
 
-    argument_names = ['fromfd', 'from_', 'tofd', 'to', 'flags']
+    argument_names = ['fromfd', 'from', 'tofd', 'to', 'flags']
     argument_values = [fromfd, from_, tofd, to, flags]
 
     # Load all of the arguments into their destination registers / stack slots.
@@ -43,7 +43,7 @@ Returns:
 
     for name, arg in zip(argument_names, argument_values):
         if arg is not None:
-            syscall_repr.append('%s=%r' % (name, arg))
+            syscall_repr.append('%s=%s' % (name, pwnlib.shellcraft.pretty(arg, False)))
 
         # If the argument itself (input) is a register...
         if arg in allregs:

@@ -16,7 +16,7 @@ Arguments:
     offin(off64_t*): offin
     fdout(int): fdout
     offout(off64_t*): offout
-    len(size_t): len
+    length(size_t): length
     flags(unsigned): flags
 Returns:
     ssize_t
@@ -44,7 +44,7 @@ Returns:
 
     for name, arg in zip(argument_names, argument_values):
         if arg is not None:
-            syscall_repr.append('%s=%r' % (name, arg))
+            syscall_repr.append('%s=%s' % (name, pwnlib.shellcraft.pretty(arg, False)))
 
         # If the argument itself (input) is a register...
         if arg in allregs:

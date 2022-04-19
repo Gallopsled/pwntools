@@ -4,10 +4,11 @@ from __future__ import division
 
 import argparse
 import os
+import signal
 import sys
 import io
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
@@ -15,7 +16,8 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'phd',
-    help = 'Pwnlib HexDump'
+    help = 'Pretty hex dump',
+    description = 'Pretty hex dump'
 )
 
 parser.add_argument(
@@ -98,6 +100,8 @@ def main(args):
         for hs in args.highlight:
             for h in hs.split(','):
                 hl.append(asint(h))
+
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
     try:
         for line in hexdump_iter(infile, width, highlight = hl, begin = offset + skip):

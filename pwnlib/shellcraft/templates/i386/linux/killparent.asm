@@ -1,6 +1,5 @@
 <%
     from pwnlib.shellcraft.i386.linux import getppid, kill
-    from pwnlib.constants import SIGKILL
     from pwnlib.shellcraft.common import label
 %>
 <%docstring>
@@ -12,6 +11,6 @@ cannot be killed any longer.
 %>
 ${killparent_loop}:
     ${getppid()}
-    ${kill('eax', SIGKILL)}
+    ${kill('eax')}
     test eax, eax
     jz ${killparent_loop}

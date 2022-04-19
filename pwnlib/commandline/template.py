@@ -2,8 +2,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import re
-
 from pwn import *
 from pwnlib.commandline import common
 
@@ -11,7 +9,8 @@ from mako.lookup import TemplateLookup
 
 parser = common.parser_commands.add_parser(
     'template',
-    help = 'Generate an exploit template'
+    help = 'Generate an exploit template',
+    description = 'Generate an exploit template'
 )
 
 parser.add_argument('exe', nargs='?', help='Target binary')
@@ -24,14 +23,9 @@ parser.add_argument('--quiet', help='Less verbose template comments', action='st
 parser.add_argument('--color', help='Print the output in color', choices=['never', 'always', 'auto'], default='auto')
 
 def main(args):
-    cache = None
-
-    if cache:
-        cache = os.path.join(context.cache_dir, 'mako')
-
     lookup = TemplateLookup(
         directories      = [os.path.join(pwnlib.data.path, 'templates')],
-        module_directory = cache
+        module_directory = None
     )
 
     # For the SSH scenario, check that the binary is at the
@@ -43,10 +37,10 @@ def main(args):
         s = ssh(args.user, args.host, args.port or 22, args.password or None)
 
         try:
-            remote = args.path or args.exe
-            s.download(remote)
+            remote_file = args.path or args.exe
+            s.download(remote_file)
         except Exception:
-            log.warning("Could not download file %r, opening a shell", remote)
+            log.warning("Could not download file %r, opening a shell", remote_file)
             s.interactive()
             return
 

@@ -13,7 +13,7 @@ See 'man 2 mbind' for more information.
 
 Arguments:
     addr(void*): addr
-    len(unsigned): len
+    length(unsigned): length
     mode(int): mode
     nodemask(unsigned*): nodemask
     maxnode(unsigned): maxnode
@@ -44,7 +44,7 @@ Returns:
 
     for name, arg in zip(argument_names, argument_values):
         if arg is not None:
-            syscall_repr.append('%s=%r' % (name, arg))
+            syscall_repr.append('%s=%s' % (name, pwnlib.shellcraft.pretty(arg, False)))
 
         # If the argument itself (input) is a register...
         if arg in allregs:
