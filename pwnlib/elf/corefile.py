@@ -1184,14 +1184,13 @@ class Corefile(ELF):
         pwnlib.gdb.attach(self, exe=self.exe.path)
 
     def __getattr__(self, attribute):
-        if self.prstatus:
-            if hasattr(self.prstatus, attribute):
-                return getattr(self.prstatus, attribute)
+        if attribute.startswith('_') or not self.prstatus:
+            raise AttributeError(attribute)
 
-            if hasattr(self.prstatus.pr_reg, attribute):
-                return getattr(self.prstatus.pr_reg, attribute)
+        if hasattr(self.prstatus, attribute):
+            return getattr(self.prstatus, attribute)
 
-        return super(Corefile, self).__getattribute__(attribute)
+        return getattr(self.prstatus.pr_reg, attribute)
 
     # Override routines which don't make sense for Corefiles
     def _populate_got(*a): pass

@@ -139,7 +139,7 @@ def init():
         def write(self, s):
             output(s, frozen = True)
         def __getattr__(self, k):
-            return self._fd.__getattribute__(k)
+            return getattr(self._fd, k)
     if sys.stdout.isatty():
         sys.stdout = Wrapper(sys.stdout)
     if sys.stderr.isatty():

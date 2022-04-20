@@ -608,7 +608,7 @@ class process(tube):
         """Permit pass-through access to the underlying process object for
         fields like ``pid`` and ``stdin``.
         """
-        if hasattr(self.proc, attr):
+        if not attr.startswith('_') and hasattr(self.proc, attr):
             return getattr(self.proc, attr)
         raise AttributeError("'process' object has no attribute '%s'" % attr)
 

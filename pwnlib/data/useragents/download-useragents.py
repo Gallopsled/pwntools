@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """Script for downloading lists of user agent strings."""
 from __future__ import division
 import os
@@ -43,7 +43,7 @@ with log.waitfor('Fetching from from http://www.user-agents.org') as l:
     l.success()
 
 with log.waitfor('Parsing list') as l:
-    for item in soup.__getattr__('user-agents'):
+    for item in getattr(soup, 'user-agents'):
         if item.name == 'user-agent':
             ua = item.select('string')[0].string.strip()
             try:

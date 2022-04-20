@@ -72,8 +72,9 @@ class sock(tube):
                 raise
 
     def settimeout_raw(self, timeout):
-        if getattr(self, 'sock', None):
-            self.sock.settimeout(timeout)
+        sock = getattr(self, 'sock', None)
+        if sock:
+            sock.settimeout(timeout)
 
     def can_recv_raw(self, timeout):
         """
@@ -161,14 +162,15 @@ class sock(tube):
         return True
 
     def close(self):
-        if not getattr(self, 'sock', None):
+        sock = getattr(self, 'sock', None)
+        if not sock:
             return
 
         # Mark as closed in both directions
         self.closed['send'] = True
         self.closed['recv'] = True
 
-        self.sock.close()
+        sock.close()
         self.sock = None
         self._close_msg()
 

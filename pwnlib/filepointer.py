@@ -176,13 +176,8 @@ class FileStructure(object):
     def __repr__(self):
         structure=[]
         for i in self.vars_:
-            structure.append(" %s: %s" % (i,hex(self.__getattr__(i))))
+            structure.append(" %s: %s" % (i,hex(getattr(self, i))))
         return "{"+ "\n".join(structure)+"}"
-
-    def __getattr__(self,item):
-        if item in FileStructure.__dict__ or item in self.vars_:
-            return object.__getattribute__(self,item)
-        log.error("Unknown variable %r" % item)
 
     def __len__(self):
         return len(bytes(self))
@@ -190,11 +185,11 @@ class FileStructure(object):
     def __bytes__(self):
         structure = b''
         for val in self.vars_:
-            if isinstance(self.__getattr__(val), bytes):
-                structure += self.__getattr__(val).ljust(context.bytes, b'\x00')
+            if isinstance(getattr(self, val), bytes):
+                structure += getattr(self, val).ljust(context.bytes, b'\x00')
             else:
                 if self.length[val] > 0:
-                    structure += pack(self.__getattr__(val), self.length[val]*8)
+                    structure += pack(getattr(self, val), self.length[val]*8)
         return structure
 
     def struntil(self,v):
@@ -219,10 +214,10 @@ class FileStructure(object):
             return b''
         structure = b''
         for val in self.vars_:
-            if isinstance(self.__getattr__(val), bytes):
-                structure += self.__getattr__(val).ljust(context.bytes, b'\x00')
+            if isinstance(getattr(self, val), bytes):
+                structure += getattr(self, val).ljust(context.bytes, b'\x00')
             else:
-                structure += pack(self.__getattr__(val), self.length[val]*8)
+                structure += pack(getattr(self, val), self.length[val]*8)
             if val == v:
                 break
         return structure[:-1]

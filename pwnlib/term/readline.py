@@ -486,7 +486,7 @@ def init():
         def readline(self, size = None):
             return readline(size)
         def __getattr__(self, k):
-            return self._fd.__getattribute__(k)
+            return getattr(self._fd, k)
     sys.stdin = Wrapper(sys.stdin)
 
     if six.PY2:

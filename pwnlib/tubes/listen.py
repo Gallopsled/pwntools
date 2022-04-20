@@ -159,15 +159,18 @@ class listen(sock):
         self.sock
         return self
 
-    def __getattr__(self, key):
-        if key == 'sock':
-            self._accepter.join(timeout = self.timeout)
-            if 'sock' in self.__dict__:
-                return self.sock
-            else:
-                return None
-        else:
-            return getattr(super(listen, self), key)
+    @property
+    def sock(self):
+        try:
+            return self.__dict__['sock']
+        except KeyError:
+            pass
+        self._accepter.join(timeout=self.timeout)
+        return self.__dict__.get('sock')
+
+    @sock.setter
+    def sock(self, s):
+        self.__dict__['sock'] = s
 
     def close(self):
         # since `close` is scheduled to run on exit we must check that we got

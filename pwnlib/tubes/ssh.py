@@ -519,13 +519,19 @@ class ssh_listener(sock):
         _ = self.sock
         return self
 
-    def __getattr__(self, key):
-        if key == 'sock':
-            while self._accepter.is_alive():
-                self._accepter.join(timeout = 0.1)
-            return self.sock
-        else:
-            return getattr(super(ssh_listener, self), key)
+    @property
+    def sock(self):
+        try:
+            return self.__dict__['sock']
+        except KeyError:
+            pass
+        while self._accepter.is_alive():
+            self._accepter.join(timeout=0.1)
+        return self.__dict__.get('sock')
+
+    @sock.setter
+    def sock(self, s):
+        self.__dict__['sock'] = s
 
 
 class ssh(Timeout, Logger):
