@@ -17,9 +17,7 @@ import platform
 import shutil
 import six
 import socket
-import stat
 import string
-import subprocess
 import sys
 import tempfile
 import threading
@@ -339,7 +337,7 @@ class ContextType(object):
     # Setting any properties on a ContextType object will throw an
     # exception.
     #
-    __slots__ = ('_tls', )
+    __slots__ = '_tls',
 
     #: Default values for :class:`pwnlib.context.ContextType`
     defaults = {
@@ -1289,7 +1287,7 @@ class ContextType(object):
 
         if new_base != self.cache_dir_base:
             del self._tls["cache_dir"]
-        if os.access(new_base, os.F_OK) and not os.access(new_base, W_OK):
+        if os.access(new_base, os.F_OK) and not os.access(new_base, os.W_OK):
             raise OSError(errno.EPERM, "Cache base dir is not writable")
         return new_base
 
@@ -1306,6 +1304,7 @@ class ContextType(object):
             >>> cache_dir is not None
             True
             >>> os.chmod(cache_dir, 0o000)
+            >>> del context._tls['cache_dir']
             >>> context.cache_dir is None
             True
             >>> os.chmod(cache_dir, 0o755)
@@ -1333,7 +1332,7 @@ class ContextType(object):
             if exc.errno != errno.EEXIST:
                 try:
                     cache_dirpath = tempfile.mkdtemp(prefix=".pwntools-tmp")
-                except IOError as exc:
+                except IOError:
                     # This implies no good candidates for temporary files so we
                     # have to return `None`
                     return None
@@ -1352,6 +1351,12 @@ class ContextType(object):
             return cache_dirpath
         else:
             return None
+
+    @cache_dir.setter
+    def cache_dir(self, v):
+        if os.access(v, os.W_OK):
+            # Stash this in TLS for later reuse
+            self._tls["cache_dir"] = v
 
     @_validator
     def delete_corefiles(self, v):
