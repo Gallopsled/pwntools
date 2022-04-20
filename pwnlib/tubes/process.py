@@ -117,9 +117,9 @@ class process(tube):
 
     Examples:
 
-        >>> p = process('python2')
-        >>> p.sendline(b"print 'Hello world'")
-        >>> p.sendline(b"print 'Wow, such data'");
+        >>> p = process('python')
+        >>> p.sendline(b"print('Hello world')")
+        >>> p.sendline(b"print('Wow, such data')")
         >>> b'' == p.recv(timeout=0.01)
         True
         >>> p.shutdown('send')

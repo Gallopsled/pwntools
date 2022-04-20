@@ -13,7 +13,7 @@ See 'man 2 mbind' for more information.
 
 Arguments:
     addr(void*): addr
-    len(unsigned): len
+    length(unsigned): length
     mode(int): mode
     nodemask(unsigned*): nodemask
     maxnode(unsigned): maxnode

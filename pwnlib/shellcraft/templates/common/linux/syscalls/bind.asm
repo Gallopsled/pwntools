@@ -14,7 +14,7 @@ See 'man 2 bind' for more information.
 Arguments:
     fd(int): fd
     addr(CONST_SOCKADDR_ARG): addr
-    len(socklen_t): len
+    length(socklen_t): length
 Returns:
     int
 </%docstring>

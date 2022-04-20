@@ -19,7 +19,6 @@ from pwnlib.context import context
 from pwnlib.log import Logger
 from pwnlib.timeout import Timeout
 from pwnlib.tubes.buffer import Buffer
-from pwnlib.util import fiddling
 from pwnlib.util import misc
 from pwnlib.util import packing
 
@@ -155,15 +154,7 @@ class tube(Timeout, Logger):
 
         if data and self.isEnabledFor(logging.DEBUG):
             self.debug('Received %#x bytes:' % len(data))
-
-            if len(set(data)) == 1 and len(data) > 1:
-                self.indented('%r * %#x' % (data[0], len(data)), level = logging.DEBUG)
-            elif all(c in string.printable.encode() for c in data):
-                for line in data.splitlines(True):
-                    self.indented(repr(line), level = logging.DEBUG)
-            else:
-                self.indented(fiddling.hexdump(data), level = logging.DEBUG)
-
+            self.maybe_hexdump(data, level=logging.DEBUG)
         if data:
             self.buffer.add(data)
 
@@ -225,7 +216,7 @@ class tube(Timeout, Logger):
         return data
 
     def recvn(self, numb, timeout = default):
-        """recvn(numb, timeout = default) -> str
+        """recvn(numb, timeout = default) -> bytes
 
         Receives exactly `n` bytes.
 
@@ -767,13 +758,8 @@ class tube(Timeout, Logger):
 
         if self.isEnabledFor(logging.DEBUG):
             self.debug('Sent %#x bytes:' % len(data))
-            if len(set(data)) == 1:
-                self.indented('%r * %#x' % (data[0], len(data)))
-            elif all(c in string.printable.encode() for c in data):
-                for line in data.splitlines(True):
-                    self.indented(repr(line), level = logging.DEBUG)
-            else:
-                self.indented(fiddling.hexdump(data), level = logging.DEBUG)
+            self.maybe_hexdump(data, level=logging.DEBUG)
+
         self.send_raw(data)
 
     def sendline(self, line=b''):

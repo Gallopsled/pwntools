@@ -7,6 +7,7 @@
 [![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/Gallopsled/pwntools/Continuous%20Integration/dev?logo=GitHub)](https://github.com/Gallopsled/pwntools/actions?query=workflow%3A%22Continuous+Integration%22+branch%3Adev)
 [![Coveralls](https://img.shields.io/coveralls/github/Gallopsled/pwntools/dev?logo=coveralls)](https://coveralls.io/github/Gallopsled/pwntools?branch=dev)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](http://choosealicense.com/licenses/mit/)
+[![Packaging status](https://img.shields.io/repology/repositories/python:pwntools)](https://repology.org/project/python:pwntools/versions)
 [![Discord](https://img.shields.io/discord/809590285687980052?label=Discord&style=plastic)](https://discord.gg/96VA2zvjCB)
 [![Twitter](https://img.shields.io/twitter/follow/Pwntools)](https://twitter.com/pwntools)
 

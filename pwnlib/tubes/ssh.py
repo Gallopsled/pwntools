@@ -1079,7 +1079,7 @@ os.execve(exe, argv, env)
             if result == 0:
                 self.error("%r does not exist or is not executable" % executable)
             elif result == 3:
-                self.error(error_message)
+                self.error("%r" % error_message)
             elif result == 2:
                 self.error("python is not installed on the remote system %r" % self.host)
             elif result != 1:
@@ -1523,29 +1523,24 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             local: Local directory
             remote: Remote directory
         """
-        remote   = remote or self.cwd
-
+        remote = packing._encode(remote or self.cwd)
 
         if self.sftp:
-            remote = str(self.sftp.normalize(remote))
+            remote = packing._encode(self.sftp.normalize(remote))
         else:
             with context.local(log_level='error'):
-                remote = self.system('readlink -f ' + sh_string(remote))
+                remote = self.system(b'readlink -f ' + sh_string(remote))
 
-        basename = os.path.basename(remote)
+        local = local or '.'
+        local = os.path.expanduser(local)
 
-
-        local    = local or '.'
-        local    = os.path.expanduser(local)
-
-        self.info("Downloading %r to %r" % (basename,local))
+        self.info("Downloading %r to %r" % (remote, local))
 
         with context.local(log_level='error'):
             remote_tar = self.mktemp()
-            cmd = 'tar -C %s -czf %s %s' % \
+            cmd = b'tar -C %s -czf %s .' % \
                   (sh_string(remote),
-                   sh_string(remote_tar),
-                   sh_string(basename))
+                   sh_string(remote_tar))
             tar = self.system(cmd)
 
             if 0 != tar.wait():
@@ -1686,10 +1681,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             local(str): Local path to store the data.
                 By default, uses the current directory.
         """
-        if not self.sftp:
-            self.error("Cannot determine remote file type without SFTP")
-
-        with self.system('test -d ' + sh_string(file_or_directory)) as io:
+        file_or_directory = packing._encode(file_or_directory)
+        with self.system(b'test -d ' + sh_string(file_or_directory)) as io:
             is_dir = io.wait()
 
         if 0 == is_dir:
@@ -1827,6 +1820,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             symlink = os.path.join(self.pwd(), b'*')
         if not hasattr(symlink, 'encode') and hasattr(symlink, 'decode'):
             symlink = symlink.decode('utf-8')
+            
+        if isinstance(wd, six.text_type):
+            wd = packing._need_bytes(wd, 2, 0x80)
 
         if not wd:
             wd, status = self.run_to_end('x=$(mktemp -d) && cd $x && chmod +x . && echo $PWD', wd='.')

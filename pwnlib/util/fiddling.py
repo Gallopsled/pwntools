@@ -767,7 +767,7 @@ def hexdump(s, width=16, skip=True, hexii=False, begin=0, style=None,
     Return a hexdump-dump of a string.
 
     Arguments:
-        s(str): The data to hexdump.
+        s(bytes): The data to hexdump.
         width(int): The number of characters per line
         groupsize(int): The number of characters per group
         skip(bool): Set to True, if repeated lines should be replaced by a "*"

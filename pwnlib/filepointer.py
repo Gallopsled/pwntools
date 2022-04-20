@@ -125,7 +125,7 @@ class FileStructure(object):
         >>> len(fileStr)
         224
 
-        The defination for __repr__ orders the structure members and displays then in a dictionary format. It's useful when viewing a structure objet in python/IPython shell
+        The definition for __repr__ orders the structure members and displays then in a dictionary format. It's useful when viewing a structure objet in python/IPython shell
 
         >>> q=FileStructure(0xdeadbeef)
         >>> q
@@ -193,7 +193,8 @@ class FileStructure(object):
             if isinstance(self.__getattr__(val), bytes):
                 structure += self.__getattr__(val).ljust(context.bytes, b'\x00')
             else:
-                structure += pack(self.__getattr__(val), self.length[val]*8)
+                if self.length[val] > 0:
+                    structure += pack(self.__getattr__(val), self.length[val]*8)
         return structure
 
     def struntil(self,v):

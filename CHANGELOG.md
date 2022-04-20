@@ -9,9 +9,11 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.8.0](#480)    | `dev`    |
-| [4.7.0](#470)    | `beta`   |
-| [4.6.0](#460)    | `stable` | Jul 12, 2021
+| [4.9.0](#490)    | `dev`    |
+| [4.8.0](#480)    | `beta`   |
+| [4.7.1](#471)    | `stable` | Apr 20, 2022
+| [4.7.0](#470)    |          | Nov 15, 2021
+| [4.6.0](#460)    |          | Jul 12, 2021
 | [4.5.1](#451)    |          | May 30, 2021
 | [4.5.0](#450)    |          | Apr 30, 2021
 | [4.4.0](#440)    |          | Mar 29, 2021
@@ -61,19 +63,52 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.8.0 (`dev`)
+## 4.9.0 (`dev`)
+
+- [#1975][1975] Add libcdb commandline tool
+- [#1979][1979] Add `js_escape()` and `js_unescape()` to `util.fiddling`
+- [#2011][2011] Fix tube's debug output of same byte compression
+- [#2023][2023] Support KDE Konsole in run_in_new_terminal function
+- [#2027][2027] Fix ELF.libc_start_main_return with glibc 2.34
+- [#2035][2035] Change Buffer's parent class to object
+
+[1975]: https://github.com/Gallopsled/pwntools/pull/1975
+[1979]: https://github.com/Gallopsled/pwntools/pull/1979
+[2011]: https://github.com/Gallopsled/pwntools/pull/2011
+[2023]: https://github.com/Gallopsled/pwntools/pull/2023
+[2027]: https://github.com/Gallopsled/pwntools/pull/2027
+[2035]: https://github.com/Gallopsled/pwntools/pull/2035
+
+## 4.8.0 (`beta`)
 
 - [#1922][1922] Fix logic in `wait_for_debugger`
 - [#1828][1828] libcdb: Load debug info and unstrip libc binary
 - [#1939][1939] Fix error in validating log levels
-- [#1979][1979] Add `js_escape()` and `js_unescape()` to `util.fiddling`
+- [#1981][1981] Fix `cyclic_find()` to make it work with large int values
 
 [1922]: https://github.com/Gallopsled/pwntools/pull/1922
 [1828]: https://github.com/Gallopsled/pwntools/pull/1828
 [1939]: https://github.com/Gallopsled/pwntools/pull/1939
-[1979]: https://github.com/Gallopsled/pwntools/pull/1979
+[1981]: https://github.com/Gallopsled/pwntools/pull/1981
 
-## 4.7.0 (`beta`)
+## 4.7.1 (`stable`)
+
+- [#1784][1784] Use temporary cache directory when persistent cache cannot be used
+- [#1973][1973] ELF symbols can be looked up by bytes values
+- several bugfixes ([#2012][2012], [#2031][2031], [#1912][1912], [#1961][1961],
+[#2007][2007], [#2040][2040], [#2051][2051])
+
+[1784]: https://github.com/Gallopsled/pwntools/pull/1784
+[1912]: https://github.com/Gallopsled/pwntools/pull/1912
+[1961]: https://github.com/Gallopsled/pwntools/pull/1961
+[1973]: https://github.com/Gallopsled/pwntools/pull/1973
+[2007]: https://github.com/Gallopsled/pwntools/pull/2007
+[2012]: https://github.com/Gallopsled/pwntools/pull/2012
+[2031]: https://github.com/Gallopsled/pwntools/pull/2031
+[2040]: https://github.com/Gallopsled/pwntools/pull/2040
+[2051]: https://github.com/Gallopsled/pwntools/pull/2051
+
+## 4.7.0
 
 - [#1733][1733] Update libc headers -> more syscalls available!
 - [#1876][1876] add `self.message` and change `sys.exc_type` to `sys.exec_info()` in PwnlibException
@@ -86,6 +121,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1904][1904] Add bash completion script
 - [#1906][1906] Defer import of several modules to save on startup time
 - [#1921][1921] Add basic support for the bare-metal ARM specific toolchain
+- [#1995][1995] Add `shellcraft.*.linux.cat2`, which uses alloc+read+write instead of sendfile
 
 [1733]: https://github.com/Gallopsled/pwntools/pull/1733
 [1876]: https://github.com/Gallopsled/pwntools/pull/1876
@@ -98,8 +134,9 @@ The table below shows which release corresponds to each branch, and what date th
 [1904]: https://github.com/Gallopsled/pwntools/pull/1904
 [1906]: https://github.com/Gallopsled/pwntools/pull/1906
 [1921]: https://github.com/Gallopsled/pwntools/pull/1921
+[1995]: https://github.com/Gallopsled/pwntools/pull/1995
 
-## 4.6.0 (`stable`)
+## 4.6.0
 
 - [#1429][1429] Add a mechanism for ret2csu (originally #1138)
 - [#1566][1566] Add `ignore_config` argument to `pwnlib.tubes.ssh` and improve `allow_agent` implementation

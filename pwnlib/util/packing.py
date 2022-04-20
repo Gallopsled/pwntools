@@ -1041,7 +1041,7 @@ def _need_text(s, level=1):
     if encoding == 'auto':
         for encoding in 'ASCII', 'UTF-8', 'ISO-8859-1':
             try:
-                s = s.decode(encoding)
+                s.decode(encoding)
             except UnicodeDecodeError:
                 pass
             else:

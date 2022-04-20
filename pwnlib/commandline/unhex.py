@@ -28,6 +28,7 @@ def main(args):
             o.write(unhex(''.join(args.hex)))
     except TypeError as e:
         sys.stderr.write(str(e) + '\n')
+        raise
 
 if __name__ == '__main__':
     common.main(__file__)

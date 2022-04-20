@@ -15,7 +15,7 @@ Arguments:
     fd(int): fd
     path(char*): path
     buf(char*): buf
-    len(size_t): len
+    length(size_t): length
 Returns:
     ssize_t
 </%docstring>

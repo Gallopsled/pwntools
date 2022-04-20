@@ -12,7 +12,7 @@ Invokes the syscall link.
 See 'man 2 link' for more information.
 
 Arguments:
-    from(char*): from
+    from_(char*): from
     to(char*): to
 Returns:
     int
@@ -27,7 +27,7 @@ Returns:
     can_pushstr = ['from', 'to']
     can_pushstr_array = []
 
-    argument_names = ['from_', 'to']
+    argument_names = ['from', 'to']
     argument_values = [from_, to]
 
     # Load all of the arguments into their destination registers / stack slots.
