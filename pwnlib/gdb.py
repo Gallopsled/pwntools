@@ -915,7 +915,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
-        cmd += ['gdb', '-q', target.executable, target.pid, '-x', tmpfile]
+        cmd += ['gdb', '-q', target.executable, str(target.pid), '-x', tmpfile]
 
         misc.run_in_new_terminal(cmd)
         return
