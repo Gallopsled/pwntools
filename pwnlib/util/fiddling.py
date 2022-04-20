@@ -13,9 +13,11 @@ import string
 from six import BytesIO
 from six.moves import range
 
+from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.term import text
+from pwnlib.util import iters
 from pwnlib.util import lists
 from pwnlib.util import packing
 from pwnlib.util.cyclic import cyclic
@@ -971,3 +973,114 @@ def bnot(value, width=None):
         width = context.bits
     mask = ((1<<width)-1)
     return mask ^ value
+
+@LocalNoarchContext
+def js_escape(data, padding=context.cyclic_alphabet[0:1], **kwargs):
+    r"""js_escape(data, padding=context.cyclic_alphabet[0:1], endian = None, **kwargs) -> str
+
+    Pack data as an escaped Unicode string for use in JavaScript's `unescape()` function
+
+    Arguments:
+        data (bytes): Bytes to pack
+        padding (bytes): A single byte to use as padding if data is of uneven length
+        endian (str): Endianness with which to pack the string ("little"/"big")
+
+    Returns:
+        A string representation of the packed data
+
+    >>> js_escape(b'\xde\xad\xbe\xef')
+    '%uadde%uefbe'
+
+    >>> js_escape(b'\xde\xad\xbe\xef', endian='big')
+    '%udead%ubeef'
+
+    >>> js_escape(b'\xde\xad\xbe')
+    '%uadde%u61be'
+
+    >>> js_escape(b'aaaa')
+    '%u6161%u6161'
+    """
+    data = packing._need_bytes(data)
+
+    padding = packing._need_bytes(padding)
+    if len(padding) != 1:
+        raise ValueError("Padding must be a single byte")
+
+    if len(data) % 2:
+        data += padding[0:1]
+
+    data = bytearray(data)
+
+    if context.endian == 'little':
+        return ''.join('%u{a:02x}{b:02x}'.format(a=a, b=b) for b, a in iters.group(2, data))
+    else:
+        return ''.join('%u{a:02x}{b:02x}'.format(a=a, b=b) for a, b in iters.group(2, data))
+
+@LocalNoarchContext
+def js_unescape(s, **kwargs):
+    r"""js_unescape(s, endian = None, **kwargs) -> bytes
+
+    Unpack an escaped Unicode string from JavaScript's `escape()` function
+
+    Arguments:
+        s (str): Escaped string to unpack
+        endian (str): Endianness with which to unpack the string ("little"/"big")
+
+    Returns:
+        A bytes representation of the unpacked data
+
+    >>> js_unescape('%uadde%uefbe')
+    b'\xde\xad\xbe\xef'
+
+    >>> js_unescape('%udead%ubeef', endian='big')
+    b'\xde\xad\xbe\xef'
+
+    >>> js_unescape('abc%u4141123')
+    b'a\x00b\x00c\x00AA1\x002\x003\x00'
+
+    >>> data = b'abcdABCD1234!@#$\x00\x01\x02\x03\x80\x81\x82\x83'
+    >>> js_unescape(js_escape(data)) == data
+    True
+
+    >>> js_unescape('%u4141%u42')
+    Traceback (most recent call last):
+    ValueError: Incomplete Unicode token: %u42
+
+    >>> js_unescape('%u4141%uwoot%4141')
+    Traceback (most recent call last):
+    ValueError: Failed to decode token: %uwoot
+
+    >>> js_unescape('%u4141%E4%F6%FC%u4141')
+    Traceback (most recent call last):
+    NotImplementedError: Non-Unicode % tokens are not supported: %E4
+
+    >>> js_unescape('%u4141%zz%u4141')
+    Traceback (most recent call last):
+    ValueError: Bad % token: %zz
+    """
+    s = packing._decode(s)
+    res = []
+    p = 0
+    while p < len(s):
+        if s[p] == '%':
+            if s[p+1] == "u":
+                # Decode Unicode token e.g. %u4142
+                n = s[p+2:p+6]
+                if len(n) < 4:
+                    raise ValueError('Incomplete Unicode token: %s' % s[p:])
+                try:
+                    n = int(n, 16)
+                except ValueError:
+                    raise ValueError('Failed to decode token: %s' % s[p:p+6])
+                res.append(packing.p16(n))
+                p += 6
+            elif s[p+1] in string.hexdigits and s[p+2] in string.hexdigits:
+                # Decode Non-Unicode token e.g. %E4
+                raise NotImplementedError('Non-Unicode %% tokens are not supported: %s' % s[p:p+3])
+            else:
+                raise ValueError('Bad %% token: %s' % s[p:p+3])
+        else:
+            res.append(packing.p16(ord(s[p])))
+            p += 1
+
+    return b''.join(res)
