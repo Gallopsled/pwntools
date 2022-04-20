@@ -78,7 +78,13 @@ The table below shows which release corresponds to each branch, and what date th
 [1939]: https://github.com/Gallopsled/pwntools/pull/1939
 [1981]: https://github.com/Gallopsled/pwntools/pull/1981
 
-## 4.7.0 (`stable`)
+## 4.7.1 (`stable`)
+
+- [#1973][1973] ELF symbols can be looked up by bytes values
+
+[1973]: https://github.com/Gallopsled/pwntools/pull/1973
+
+## 4.7.0
 
 - [#1733][1733] Update libc headers -> more syscalls available!
 - [#1876][1876] add `self.message` and change `sys.exc_type` to `sys.exec_info()` in PwnlibException
