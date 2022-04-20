@@ -779,6 +779,9 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
            0:   60 00 00 00     nop
         >>> print(disasm(unhex('00000000'), arch='mips64'))
            0:   00000000        nop
+        >>> print(disasm(unhex('48b84141414141414100c3'), arch='amd64'))
+           0:   48 b8 41 41 41 41 41 41 41 00   movabs rax, 0x41414141414141
+           a:   c3                      ret
     """
     result = ''
 
@@ -790,7 +793,7 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
 
     bfdarch = _bfdarch()
     bfdname = _bfdname()
-    objdump = _objdump() + ['-d', '--adjust-vma', str(vma), '-b', bfdname]
+    objdump = _objdump() + ['-w', '-d', '--adjust-vma', str(vma), '-b', bfdname]
     objcopy = _objcopy() + [
         '-I', 'binary',
         '-O', bfdname,
