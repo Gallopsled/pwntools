@@ -303,7 +303,7 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
                 env_args.append(b'%s=%s' % (key, env.pop(key)))
             else:
                 env_args.append(b'%s=%s' % (key, env[key]))
-        gdbserver_args += ['--wrapper', 'env', '-i'] + env_args + ['--']
+        gdbserver_args += ['--wrapper', which('env'), '-i'] + env_args + ['--']
 
     gdbserver_args += ['localhost:0']
     gdbserver_args += args
@@ -915,7 +915,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
-        cmd += ['gdb', '-q', target.executable, target.pid, '-x', tmpfile]
+        cmd += ['gdb', '-q', target.executable, str(target.pid), '-x', tmpfile]
 
         misc.run_in_new_terminal(cmd)
         return

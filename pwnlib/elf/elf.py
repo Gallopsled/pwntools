@@ -157,6 +157,12 @@ class dotdict(dict):
         >>> x.bar.baz
         4
     """
+    def __missing__(self, name):
+        if isinstance(name, (bytes, bytearray)):
+            name = packing._decode(name)
+            return self[name]
+        raise KeyError(name)
+
     def __getattr__(self, name):
         if name in self:
             return self[name]

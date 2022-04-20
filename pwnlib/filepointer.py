@@ -193,7 +193,8 @@ class FileStructure(object):
             if isinstance(self.__getattr__(val), bytes):
                 structure += self.__getattr__(val).ljust(context.bytes, b'\x00')
             else:
-                structure += pack(self.__getattr__(val), self.length[val]*8)
+                if self.length[val] > 0:
+                    structure += pack(self.__getattr__(val), self.length[val]*8)
         return structure
 
     def struntil(self,v):
