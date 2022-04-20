@@ -68,11 +68,13 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2023][2023] Support KDE Konsole in run_in_new_terminal function
 - [#2027][2027] Fix ELF.libc_start_main_return with glibc 2.34
 - [#2033][2033] Quote file and core path in generated GDB script
+- [#2035][2035] Change Buffer's parent class to object
 
 [2011]: https://github.com/Gallopsled/pwntools/pull/2011
 [2023]: https://github.com/Gallopsled/pwntools/pull/2023
 [2027]: https://github.com/Gallopsled/pwntools/pull/2027
 [2033]: https://github.com/Gallopsled/pwntools/pull/2033
+[2035]: https://github.com/Gallopsled/pwntools/pull/2035
 
 ## 4.8.0 (`beta`)
 
