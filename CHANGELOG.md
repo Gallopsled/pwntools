@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.9.0](#490)    | `dev`    |
-| [4.8.0](#480)    | `beta`   |
-| [4.7.1](#471)    | `stable` | Apr 20, 2022
+| [4.10.0](#4100)  | `dev`    |
+| [4.9.0](#490)    | `beta`   |
+| [4.8.0](#480)    | `stable` | Apr 21, 2022
+| [4.7.1](#471)    |          | Apr 20, 2022
 | [4.7.0](#470)    |          | Nov 15, 2021
 | [4.6.0](#460)    |          | Jul 12, 2021
 | [4.5.1](#451)    |          | May 30, 2021
@@ -63,19 +64,31 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.9.0 (`dev`)
+## 4.10.0 (`dev`)
 
+
+
+## 4.9.0 (`beta`)
+
+- [#1975][1975] Add libcdb commandline tool
+- [#1979][1979] Add `js_escape()` and `js_unescape()` to `util.fiddling`
 - [#2011][2011] Fix tube's debug output of same byte compression
 - [#2023][2023] Support KDE Konsole in run_in_new_terminal function
 - [#2027][2027] Fix ELF.libc_start_main_return with glibc 2.34
+- [#2033][2033] Quote file and core path in generated GDB script
 - [#2035][2035] Change Buffer's parent class to object
+- [#2037][2037] Allow SSH tunnel to be treated like a TCP socket (with 'raw=True')
 
+[1975]: https://github.com/Gallopsled/pwntools/pull/1975
+[1979]: https://github.com/Gallopsled/pwntools/pull/1979
 [2011]: https://github.com/Gallopsled/pwntools/pull/2011
 [2023]: https://github.com/Gallopsled/pwntools/pull/2023
 [2027]: https://github.com/Gallopsled/pwntools/pull/2027
+[2033]: https://github.com/Gallopsled/pwntools/pull/2033
 [2035]: https://github.com/Gallopsled/pwntools/pull/2035
+[2037]: https://github.com/Gallopsled/pwntools/pull/2037
 
-## 4.8.0 (`beta`)
+## 4.8.0 (`stable`)
 
 - [#1922][1922] Fix logic in `wait_for_debugger`
 - [#1828][1828] libcdb: Load debug info and unstrip libc binary
@@ -87,7 +100,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1939]: https://github.com/Gallopsled/pwntools/pull/1939
 [1981]: https://github.com/Gallopsled/pwntools/pull/1981
 
-## 4.7.1 (`stable`)
+## 4.7.1
 
 - [#1784][1784] Use temporary cache directory when persistent cache cannot be used
 - [#1973][1973] ELF symbols can be looked up by bytes values
