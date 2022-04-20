@@ -3,7 +3,7 @@ name: Android Tests
 on: [push, pull_request]
 
 jobs:
-  test:
+  android-test:
     strategy:
       matrix:
         python-version: [3.8]
