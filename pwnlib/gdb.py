@@ -878,7 +878,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             pre += 'set gnutarget ' + _bfdname() + '\n'
 
         if exe and context.os != 'baremetal':
-            pre += 'file %s\n' % exe
+            pre += 'file "%s"\n' % exe
 
     # let's see if we can find a pid to attach to
     pid = None
@@ -967,7 +967,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
         exe = exe or findexe()
     elif isinstance(target, elf.corefile.Corefile):
-        pre += 'target core %s\n' % target.path
+        pre += 'target core "%s"\n' % target.path
     else:
         log.error("don't know how to attach to target: %r", target)
 
