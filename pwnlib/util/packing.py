@@ -1,6 +1,6 @@
  # -*- coding: utf-8 -*-
 r"""
-Module for packing and unpacking integers and data.
+Module for packing and unpacking integers.
 
 Simplifies access to the standard ``struct.pack`` and ``struct.unpack``
 functions, and also adds support for packing/unpacking arbitrary-width
@@ -35,7 +35,6 @@ from __future__ import division
 
 import collections
 import six
-import string
 import struct
 import sys
 import warnings

@@ -1002,16 +1002,14 @@ def js_escape(data, padding=context.cyclic_alphabet[0:1], **kwargs):
     """
     data = packing._need_bytes(data)
 
+    padding = packing._need_bytes(padding)
     if len(padding) != 1:
         raise ValueError("Padding must be a single byte")
-    padding = packing._need_bytes(padding)
 
     if len(data) % 2:
         data += padding[0:1]
 
-    if isinstance(data, six.string_types):
-        # Give Python 2 an iterable of ints, similar to how a Python 3 bytes works
-        data = map(ord, data)
+    data = bytearray(data)
 
     if context.endian == 'little':
         return ''.join('%u{a:02x}{b:02x}'.format(a=a, b=b) for b, a in iters.group(2, data))
@@ -1038,7 +1036,7 @@ def js_unescape(s, **kwargs):
     b'\xde\xad\xbe\xef'
 
     >>> js_unescape('abc%u4141123')
-    b'abcAA123'
+    b'a\x00b\x00c\x00AA1\x002\x003\x00'
 
     >>> data = b'abcdABCD1234!@#$\x00\x01\x02\x03\x80\x81\x82\x83'
     >>> js_unescape(js_escape(data)) == data
@@ -1060,7 +1058,7 @@ def js_unescape(s, **kwargs):
     Traceback (most recent call last):
     ValueError: Bad % token: %zz
     """
-    s = packing._need_text(s)
+    s = packing._decode(s)
     res = []
     p = 0
     while p < len(s):
@@ -1082,7 +1080,7 @@ def js_unescape(s, **kwargs):
             else:
                 raise ValueError('Bad %% token: %s' % s[p:p+3])
         else:
-            res.append(packing._encode(s[p]))
+            res.append(packing.p16(ord(s[p])))
             p += 1
 
     return b''.join(res)
