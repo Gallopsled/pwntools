@@ -740,10 +740,14 @@ class process(tube):
         # First check if we are already dead
         self.poll()
 
-        #close file descriptors
+        # close file descriptors
         for fd in [self.proc.stdin, self.proc.stdout, self.proc.stderr]:
             if fd is not None:
-                fd.close()
+                try:
+                    fd.close()
+                except IOError as e:
+                    if e.errno != errno.EPIPE:
+                        raise
 
         if not self._stop_noticed:
             try:
