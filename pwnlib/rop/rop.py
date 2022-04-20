@@ -92,12 +92,10 @@ The stack is automatically adjusted for the next frame
     0x001c:              0x6 arg2
     0x0020:          b'iaaa' <pad>
     0x0024:       0xdecafbad write(7, 8, 9)
-    0x0028:       0x10000000 <adjust @0x3c> add esp, 0x10; ret
+    0x0028:       0xfeedface exit()
     0x002c:              0x7 arg0
     0x0030:              0x8 arg1
     0x0034:              0x9 arg2
-    0x0038:          b'oaaa' <pad>
-    0x003c:       0xfeedface exit()
 
 You can also append complex arguments onto stack when the stack pointer is known.
 
@@ -188,18 +186,16 @@ Finally, let's build our ROP stack
     >>> rop.exit()
     >>> print(rop.dump())
     0x0000:       0x10000012 write(STDOUT_FILENO, 0x10000026, 8)
-    0x0004:       0x1000000e <adjust @0x18> add esp, 0x10; ret
+    0x0004:       0x1000002f exit()
     0x0008:              0x1 STDOUT_FILENO
     0x000c:       0x10000026 flag
     0x0010:              0x8 arg2
-    0x0014:          b'faaa' <pad>
-    0x0018:       0x1000002f exit()
 
-The raw data from the ROP stack is available via `str`.
+The raw data from the ROP stack is available via `r.chain()` (or `bytes(r)`).
 
     >>> raw_rop = rop.chain()
     >>> print(enhex(raw_rop))
-    120000100e000010010000002600001008000000666161612f000010
+    120000102f000010010000002600001008000000
 
 Let's try it out!
 
@@ -927,7 +923,7 @@ class ROP(object):
                     # If there were arguments on the stack, we need to stick something
                     # in the slot where the return address goes.
                     if len(stackArguments) > 0:
-                        if remaining:
+                        if remaining and (remaining > 1 or Call.is_flat(chain[-1])):
                             fix_size  = (1 + len(stackArguments))
                             fix_bytes = fix_size * context.bytes
                             adjust   = self.search(move = fix_bytes)
@@ -944,6 +940,13 @@ class ROP(object):
                                 stackArguments.append(Padding())
 
                         # We could not find a proper "adjust" gadget, but also didn't need one.
+                        elif remaining:
+                            _, nxslot = next(iterable)
+                            stack.describe(self.describe(nxslot))
+                            if isinstance(nxslot, Call):
+                                stack.append(nxslot.target)
+                            else:
+                                stack.append(nxslot)
                         else:
                             stack.append(Padding("<return address>"))
 

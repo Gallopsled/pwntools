@@ -779,6 +779,11 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
            0:   60 00 00 00     nop
         >>> print(disasm(unhex('00000000'), arch='mips64'))
            0:   00000000        nop
+        >>> print(disasm(unhex('48b84141414141414100c3'), arch='amd64'))
+           0:   48 b8 41 41 41 41 41 41 41 00   movabs rax, 0x41414141414141
+           a:   c3                      ret
+        >>> print(disasm(unhex('00000000'), vma=0x80000000, arch='mips'))
+        80000000:       00000000        nop
     """
     result = ''
 
@@ -790,7 +795,7 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
 
     bfdarch = _bfdarch()
     bfdname = _bfdname()
-    objdump = _objdump() + ['-d', '--adjust-vma', str(vma), '-b', bfdname]
+    objdump = _objdump() + ['-w', '-d', '--adjust-vma', str(vma), '-b', bfdname]
     objcopy = _objcopy() + [
         '-I', 'binary',
         '-O', bfdname,
@@ -815,7 +820,7 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
         _run(objcopy + [step1, step2])
 
         output0 = _run(objdump + [step2])
-        output1 = output0.split('<.text>:\n')
+        output1 = re.split(r'<\.text(?:\+0x0)?>:\n', output0, flags=re.MULTILINE)
 
         if len(output1) != 2:
             log.error('Could not find .text in objdump output:\n%s' % output0)

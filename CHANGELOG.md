@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [4.9.0](#490)    | `dev`    |
 | [4.8.0](#480)    | `beta`   |
-| [4.7.0](#470)    | `stable` | Nov 15, 2021
+| [4.7.1](#471)    | `stable` | Apr 20, 2022
+| [4.7.0](#470)    |          | Nov 15, 2021
 | [4.6.0](#460)    |          | Jul 12, 2021
 | [4.5.1](#451)    |          | May 30, 2021
 | [4.5.0](#450)    |          | Apr 30, 2021
@@ -67,10 +68,12 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2011][2011] Fix tube's debug output of same byte compression
 - [#2023][2023] Support KDE Konsole in run_in_new_terminal function
 - [#2027][2027] Fix ELF.libc_start_main_return with glibc 2.34
+- [#2035][2035] Change Buffer's parent class to object
 
 [2011]: https://github.com/Gallopsled/pwntools/pull/2011
 [2023]: https://github.com/Gallopsled/pwntools/pull/2023
 [2027]: https://github.com/Gallopsled/pwntools/pull/2027
+[2035]: https://github.com/Gallopsled/pwntools/pull/2035
 
 ## 4.8.0 (`beta`)
 
@@ -84,7 +87,24 @@ The table below shows which release corresponds to each branch, and what date th
 [1939]: https://github.com/Gallopsled/pwntools/pull/1939
 [1981]: https://github.com/Gallopsled/pwntools/pull/1981
 
-## 4.7.0 (`stable`)
+## 4.7.1 (`stable`)
+
+- [#1784][1784] Use temporary cache directory when persistent cache cannot be used
+- [#1973][1973] ELF symbols can be looked up by bytes values
+- several bugfixes ([#2012][2012], [#2031][2031], [#1912][1912], [#1961][1961],
+[#2007][2007], [#2040][2040], [#2051][2051])
+
+[1784]: https://github.com/Gallopsled/pwntools/pull/1784
+[1912]: https://github.com/Gallopsled/pwntools/pull/1912
+[1961]: https://github.com/Gallopsled/pwntools/pull/1961
+[1973]: https://github.com/Gallopsled/pwntools/pull/1973
+[2007]: https://github.com/Gallopsled/pwntools/pull/2007
+[2012]: https://github.com/Gallopsled/pwntools/pull/2012
+[2031]: https://github.com/Gallopsled/pwntools/pull/2031
+[2040]: https://github.com/Gallopsled/pwntools/pull/2040
+[2051]: https://github.com/Gallopsled/pwntools/pull/2051
+
+## 4.7.0
 
 - [#1733][1733] Update libc headers -> more syscalls available!
 - [#1876][1876] add `self.message` and change `sys.exc_type` to `sys.exec_info()` in PwnlibException
