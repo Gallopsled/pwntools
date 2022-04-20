@@ -30,6 +30,7 @@ Other, more complicated gdagets also happen magically
     Gadget(0x10000006, ['pop ecx', 'pop ebx', 'ret'], ['ecx', 'ebx'], 0xc)
 
 The easiest way to set up individual registers is to invoke the ``ROP`` object as a callable, with the registers as arguments.
+This has the benefit of using multi-pop gadgets to set multiple registers with one gadget.
     
     >>> rop(eax=0x11111111, ecx=0x22222222)
 
@@ -43,6 +44,37 @@ which corresponds to their offset, which is useful when debuggging your exploit.
     0x0008:          b'caaa' <pad ebx>
     0x000c:       0x10000004 pop eax; ret
     0x0010:       0x11111111
+
+
+If you really want to set one register at a time, you can also use the assignment form.
+It's generally advised to use the rop(eax=..., ecx=...) form, since there may be an
+e.g. ``pop eax; pop ecx; ret`` gadget that can be taken advantage of.
+
+    >>> rop = ROP(binary)
+    >>> rop.eax = 0xdeadf00d
+    >>> rop.ecx = 0xc01dbeef
+    >>> rop.raw(0xffffffff)
+    >>> print(rop.dump())
+    0x0000:       0x10000004 pop eax; ret
+    0x0004:       0xdeadf00d
+    0x0008:       0x10000006 pop ecx; pop ebx; ret
+    0x000c:       0xc01dbeef
+    0x0010:          b'eaaa' <pad ebx>
+    0x0014:       0xffffffff
+
+If you just want to FIND a ROP gadget, you can access them as a property on the ``ROP``
+object by register name.
+
+    >>> rop = ROP(binary)
+    >>> rop.eax
+    Gadget(0x10000004, ['pop eax', 'ret'], ['eax'], 0x8)
+    >>> hex(rop.eax.address)
+    '0x10000004'
+    >>> rop.raw(rop.eax)
+    >>> rop.raw(0x12345678)
+    >>> print(rop.dump())
+    0x0000:       0x10000004 pop eax; ret
+    0x0004:       0x12345678
 
 Let's re-create our ROP object now to show for some other examples.:
 
