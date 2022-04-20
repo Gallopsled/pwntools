@@ -78,15 +78,13 @@ class listen(sock):
                  fam='any', typ='tcp', *args, **kwargs):
         super(listen, self).__init__(*args, **kwargs)
 
-        port = int(port)
-
         fam = self._get_family(fam)
         typ = self._get_type(typ)
 
         if fam == socket.AF_INET and bindaddr == '::':
             bindaddr = '0.0.0.0'
 
-        h = self.waitfor('Trying to bind to %s on port %d' % (bindaddr, port))
+        h = self.waitfor('Trying to bind to %s on port %s' % (bindaddr, port))
 
         for res in socket.getaddrinfo(bindaddr, port, fam, typ, 0, socket.AI_PASSIVE):
             self.family, self.type, self.proto, self.canonname, self.sockaddr = res
@@ -109,7 +107,7 @@ class listen(sock):
             break
         else:
             h.failure()
-            self.error("Could not bind to %s on port %d" % (bindaddr, port))
+            self.error("Could not bind to %s on port %s" % (bindaddr, port))
 
         h.success()
 

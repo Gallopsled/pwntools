@@ -61,7 +61,7 @@ class remote(sock):
                  *args, **kwargs):
         super(remote, self).__init__(*args, **kwargs)
 
-        self.rport  = int(port)
+        self.rport  = port
         self.rhost  = host
 
         if sock:
@@ -99,7 +99,7 @@ class remote(sock):
         sock    = None
         timeout = self.timeout
 
-        with self.waitfor('Opening connection to %s on port %d' % (self.rhost, self.rport)) as h:
+        with self.waitfor('Opening connection to %s on port %s' % (self.rhost, self.rport)) as h:
             for res in socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE):
                 self.family, self.type, self.proto, _canonname, sockaddr = res
 
@@ -123,7 +123,7 @@ class remote(sock):
                     raise
                 except socket.error:
                     pass
-            self.error("Could not connect to %s on port %d", self.rhost, self.rport)
+            self.error("Could not connect to %s on port %s", self.rhost, self.rport)
 
     @classmethod
     def fromsocket(cls, socket):
