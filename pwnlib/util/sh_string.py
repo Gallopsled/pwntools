@@ -231,11 +231,11 @@ BusyBox Shell
 and should therefore be compatible with ``dash``.
 
 
-.. _Ubuntu Man Pages: http://manpages.ubuntu.com/manpages/trusty/man1/dash.1.html
+.. _Ubuntu Man Pages: https://manpages.ubuntu.com/manpages/trusty/man1/dash.1.html
 .. _GNU Bash Manual: https://www.gnu.org/software/bash/manual/bash.html#Quoting
-.. _Z Shell Manual: http://zsh.sourceforge.net/Doc/Release/Shell-Grammar.html#Quoting
+.. _Z Shell Manual: https://zsh.sourceforge.io/Doc/Release/Shell-Grammar.html#Quoting
 .. _FreeBSD man pages: https://www.freebsd.org/cgi/man.cgi?query=sh
-.. _OpenBSD Man Pages: http://man.openbsd.org/cgi-bin/man.cgi?query=sh#SHELL_GRAMMAR
+.. _OpenBSD Man Pages: https://man.openbsd.org/sh#SHELL_GRAMMAR
 .. _BusyBox's Wikipedia page: https://en.wikipedia.org/wiki/BusyBox#Features
 """
 from __future__ import absolute_import

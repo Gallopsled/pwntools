@@ -33,7 +33,7 @@ Mac OS X
 
 Mac OS X is just as easy, but requires building binutils from source.
 However, we've made ``homebrew`` recipes to make this a single command.
-After installing `brew <http://brew.sh>`__, grab the appropriate
+After installing `brew <https://brew.sh>`__, grab the appropriate
 recipe from our `binutils
 repo <https://github.com/Gallopsled/pwntools-binutils/>`__.
 
