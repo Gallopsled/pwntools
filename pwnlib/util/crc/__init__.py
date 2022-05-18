@@ -269,7 +269,7 @@ class Module(types.ModuleType):
         """A generic CRC-sum function.
 
         This is suitable to use with:
-        http://reveng.sourceforge.net/crc-catalogue/all.htm
+        https://reveng.sourceforge.io/crc-catalogue/all.htm
 
         The "check" value in the document is the CRC-sum of the string "123456789".
 

@@ -1653,7 +1653,7 @@ class ELF(ELFFile):
         .. _page 81: https://refspecs.linuxbase.org/elf/elf.pdf#page=81
         .. _DT_BIND_NOW: https://refspecs.linuxbase.org/elf/elf.pdf#page=81
         .. _PT_GNU_RELRO: https://refspecs.linuxbase.org/LSB_3.1.1/LSB-Core-generic/LSB-Core-generic.html#PROGHEADER
-        .. _DF_BIND_NOW: http://refspecs.linuxbase.org/elf/gabi4+/ch5.dynamic.html#df_bind_now
+        .. _DF_BIND_NOW: https://refspecs.linuxbase.org/elf/gabi4+/ch5.dynamic.html#df_bind_now
 
         >>> path = pwnlib.data.elf.relro.path
         >>> for test in glob(os.path.join(path, 'test-*')):
