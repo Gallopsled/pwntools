@@ -63,27 +63,45 @@ def ret2csu(rop, elf, edi, rsi, rdx, rbx, rbp, r12, r13, r14, r15, call=None):
     # rbx and rbp must be equal after 'add rbx, 1'
     rop.raw(0x00)  # pop rbx
     rop.raw(0x01)  # pop rbp
-    if call:
-        rop.raw(call)  # pop r12
-    else:
-        rop.raw(fini)  # pop r12
 
     # Older versions of gcc use r13 to populate rdx then r15d to populate edi, newer versions use the reverse
     # Account for this when the binary was linked against a glibc that was built with a newer gcc
+    found = False
     for insn in md.disasm(csu_function, elf.sym['__libc_csu_init']):
         if insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_RDX and insn.operands[1].reg == X86_REG_R13:
+            if call:
+                rop.raw(call)  # pop r12
+            else:
+                rop.raw(fini)  # pop r12
             rop.raw(rdx)  # pop r13
             rop.raw(rsi)  # pop r14
             rop.raw(edi)  # pop r15
             rop.raw(insn.address)
+            found = True
+            break
+        elif insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_RDX and insn.operands[1].reg == X86_REG_R14:
+            rop.raw(edi)  # pop r12
+            rop.raw(rsi)  # pop r13
+            rop.raw(rdx)  # pop r14
+            if call:
+                rop.raw(call)  # pop r15
+            else:
+                rop.raw(fini)  # pop r15
+            rop.raw(insn.address)
+            found = True
             break
         elif insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_RDX and insn.operands[1].reg == X86_REG_R15:
+            if call:
+                rop.raw(call)  # pop r12
+            else:
+                rop.raw(fini)  # pop r12
             rop.raw(edi)  # pop r13
             rop.raw(rsi)  # pop r14
             rop.raw(rdx)  # pop r15
             rop.raw(insn.address)
+            found = True
             break
-
+    assert(found == True)
     # 2nd gadget: Populate edi, rsi & rdx. Populate optional registers
     rop.raw(Padding('<add rsp, 8>'))  # add rsp, 8
     rop.raw(rbx)  # pop rbx
