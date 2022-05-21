@@ -1,5 +1,7 @@
 <% from pwnlib.util import lists, packing, fiddling %>
 <% from pwnlib.shellcraft.arm import push %>
+<% from pwnlib.shellcraft import pretty %>
+<% import six %>
 <%page args="string, append_null = True, register='r7'"/>
 <%docstring>
 Pushes a string onto the stack.
@@ -11,8 +13,8 @@ Args:
 
 Examples:
 
-    >>> print shellcraft.arm.pushstr("Hello!").rstrip()
-        /* push 'Hello!\x00A' */
+    >>> print(shellcraft.arm.pushstr("Hello!").rstrip())
+        /* push b'Hello!\x00A' */
         movw r7, #0x4100216f & 0xffff
         movt r7, #0x4100216f >> 16
         push {r7}
@@ -22,13 +24,16 @@ Examples:
 
 </%docstring>
 <%
+    if isinstance(string, six.text_type):
+        string = string.encode('utf-8')
+
     if append_null:
-        string += '\x00'
+        string += b'\x00'
 
     while len(string) % 4:
-        string += '\x41'
+        string += b'\x41'
 %>\
-    /* push ${repr(string)} */
+    /* push ${pretty(string, False)} */
 % for word in packing.unpack_many(string, 32)[::-1]:
     ${push(word, register)}
 % endfor

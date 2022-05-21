@@ -3,6 +3,7 @@ import collections
 import pwnlib.abi
 import pwnlib.constants
 import pwnlib.shellcraft
+import six
 %>
 <%docstring>epoll_create1(flags) -> str
 
@@ -38,7 +39,7 @@ Returns:
 
     for name, arg in zip(argument_names, argument_values):
         if arg is not None:
-            syscall_repr.append('%s=%r' % (name, arg))
+            syscall_repr.append('%s=%s' % (name, pwnlib.shellcraft.pretty(arg, False)))
 
         # If the argument itself (input) is a register...
         if arg in allregs:
@@ -51,7 +52,9 @@ Returns:
 
         # The argument is not a register.  It is a string value, and we
         # are expecting a string value
-        elif name in can_pushstr and isinstance(arg, str):
+        elif name in can_pushstr and isinstance(arg, (six.binary_type, six.text_type)):
+            if isinstance(arg, six.text_type):
+                arg = arg.encode('utf-8')
             string_arguments[name] = arg
 
         # The argument is not a register.  It is a dictionary, and we are
@@ -85,7 +88,7 @@ Returns:
 %>
     /* epoll_create1(${', '.join(syscall_repr)}) */
 %for name, arg in string_arguments.items():
-    ${pwnlib.shellcraft.pushstr(arg, append_null=('\x00' not in arg))}
+    ${pwnlib.shellcraft.pushstr(arg, append_null=(b'\x00' not in arg))}
     ${pwnlib.shellcraft.mov(regs[argument_names.index(name)], abi.stack)}
 %endfor
 %for name, arg in array_arguments.items():

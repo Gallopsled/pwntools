@@ -1,5 +1,6 @@
 """Emulates instructions in the PLT to locate symbols more accurately.
 """
+from __future__ import division
 import logging
 
 from pwnlib.args import args
@@ -9,10 +10,6 @@ from pwnlib.util import packing
 
 log = getLogger(__name__)
 
-DEBUG = args.PLT_DEBUG or 0
-
-if not DEBUG:
-    log.setLevel(logging.DEBUG + 1)
 
 def emulate_plt_instructions(elf, got, address, data, targets):
     """Emulates instructions in ``data``
@@ -30,10 +27,15 @@ def emulate_plt_instructions(elf, got, address, data, targets):
     """
     rv = {}
 
+    if not args.PLT_DEBUG:
+        log.setLevel(logging.DEBUG + 1)
+
     # Unicorn doesn't support big-endian for everything yet.
     if elf.endian == 'big' and elf.arch == 'mips':
         data = packing.unpack_many(data, bits=32, endian='little')
         data = packing.flat(data, bits=32, endian='big')
+
+    uc, ctx = prepare_unicorn_and_context(elf, got, address, data)
 
     # Brute force addresses, assume that PLT entry points are at 4-byte aligned
     # Do not emulate more than a handful of instructions.
@@ -41,7 +43,9 @@ def emulate_plt_instructions(elf, got, address, data, targets):
         if log.isEnabledFor(logging.DEBUG):
             log.debug('%s %#x', fiddling.enhex(data[i*4:(i+1) * 4]), pc)
             log.debug(elf.disasm(pc, 4))
-        target = emulate_plt_instructions_inner(elf, got, pc, data[i*4:], targets)
+
+        uc.context_restore(ctx)
+        target = emulate_plt_instructions_inner(uc, elf, got, pc, data[i*4:])
 
         if target in targets:
             log.debug("%#x -> %#x", pc, target)
@@ -49,8 +53,7 @@ def emulate_plt_instructions(elf, got, address, data, targets):
 
     return rv
 
-def emulate_plt_instructions_inner(elf, got, pc, data, targets):
-    # Deferred import to not affect load time
+def prepare_unicorn_and_context(elf, got, address, data):
     import unicorn as U
 
     # Instantiate the emulator with the correct arguments for the current
@@ -87,29 +90,29 @@ def emulate_plt_instructions_inner(elf, got, pc, data, targets):
     uc = U.Uc(arch, mode)
 
     # Map the page of memory, and fill it with the contents
-    start = pc & (~0xfff)
-    stop  = (pc + len(data) + 0xfff) & (~0xfff)
+    start = address & (~0xfff)
+    stop  = (address + len(data) + 0xfff) & (~0xfff)
 
     if not (0 <= start <= stop <= (1 << elf.bits)):
         return None
 
     uc.mem_map(start, stop-start)
-    uc.mem_write(pc, data)
-    assert uc.mem_read(pc, len(data)) == data
+    uc.mem_write(address, data)
+    assert uc.mem_read(address, len(data)) == data
 
     # MIPS is unique in that it relies entirely on _DYNAMIC, at the beginning
     # of the GOT.  Each PLT stub loads an address stored here.
     # Because of this, we have to support loading memory from this location.
     #
     # https://www.cr0.org/paper/mips.elf.external.resolution.txt
-    magic_addr = 0xdbdbdbdb
+    magic_addr = 0x7c7c7c7c
 
     if elf.arch == 'mips':
         # Map the GOT so that MIPS can access it
         p_magic = packing.p32(magic_addr)
         start = got & (~0xfff)
         try:
-            uc.mem_map(start, start+0x1000)
+            uc.mem_map(start, 0x1000)
         except Exception:
             # Ignore double-mapping
             pass
@@ -121,15 +124,24 @@ def emulate_plt_instructions_inner(elf, got, pc, data, targets):
         # the magic address.
         start = magic_addr & (~0xfff)
         try:
-            uc.mem_map(start, start+0x1000)
+            uc.mem_map(start, 0x1000)
         except Exception:
             # Ignore double-mapping
             pass
         trap = packing.p32(0x34000000, endian=elf.endian)
         uc.mem_write(magic_addr, trap)
 
+    return uc, uc.context_save()
+
+
+def emulate_plt_instructions_inner(uc, elf, got, pc, data):
+    import unicorn as U
+
     # Hook invalid addresses and any accesses out of the specified address range
     stopped_addr = []
+
+    # For MIPS. Explanation at prepare_unicorn_and_context.
+    magic_addr = 0x7c7c7c7c
 
     def hook_mem(uc, access, address, size, value, user_data):
         # Special case to allow MIPS to dereference the _DYNAMIC pointer
@@ -141,13 +153,16 @@ def emulate_plt_instructions_inner(elf, got, pc, data, targets):
         uc.emu_stop()
         return False
 
-    uc.hook_add(U.UC_HOOK_MEM_READ, hook_mem, stopped_addr)
-    uc.hook_add(U.UC_HOOK_MEM_UNMAPPED, hook_mem, stopped_addr)
+    hooks = [
+        uc.hook_add(U.UC_HOOK_MEM_READ | U.UC_HOOK_MEM_READ_UNMAPPED,
+                    hook_mem, stopped_addr),
+    ]
 
     # callback for tracing instructions
     # def hook_code(uc, address, size, user_data):
-    #     print(">>> Tracing instruction at 0x%x, instruction size = 0x%x, data=%r" %(address, size, uc.mem_read(address, size)))
-    # uc.hook_add(U.UC_HOOK_CODE, hook_code)
+    #     print(">>> Tracing instruction at %#x, instr size = %#x, data=%r"
+    #           % (address, size, uc.mem_read(address, size)))
+    # hooks.append(uc.hook_add(U.UC_HOOK_CODE, hook_code))
 
     # For Intel, set the value of EBX
     if elf.arch == 'i386':
@@ -162,19 +177,22 @@ def emulate_plt_instructions_inner(elf, got, pc, data, targets):
     try:
         uc.emu_start(pc, until=-1, count=5)
     except U.UcError as error:
-        UC_ERR = (k for k,v in \
+        UC_ERR = next(k for k,v in \
                     U.unicorn_const.__dict__.items()
-                    if error.errno == v and k.startswith('UC_ERR_')).next()
+                    if error.errno == v and k.startswith('UC_ERR_'))
         log.debug("%#x: %s (%s)", pc, error, UC_ERR)
 
     if elf.arch == 'mips':
         pc = uc.reg_read(U.mips_const.UC_MIPS_REG_PC)
-        if pc+1 == magic_addr:
+        if pc == magic_addr:
             t8 = uc.reg_read(U.mips_const.UC_MIPS_REG_T8)
             stopped_addr.append(elf._mips_got.get(t8, 0))
 
     retval = 0
     if stopped_addr:
         retval = stopped_addr.pop()
+
+    for hook in hooks:
+        uc.hook_del(hook)
 
     return retval

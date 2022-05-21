@@ -11,7 +11,13 @@ docs/build
 build
 MANIFEST
 dist
+venv
+.vscode
+.idea
 *.egg-info
 *.core
 .coverage
-.tox
+.coverage.*
+.idea
+__pycache__
+!.github

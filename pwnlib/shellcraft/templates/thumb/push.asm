@@ -1,8 +1,9 @@
 <%
   from pwnlib.util import packing
-  from pwnlib.shellcraft import thumb, registers
+  from pwnlib.shellcraft import thumb, registers, pretty
   from pwnlib import constants
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
+  import six
   import re
 %>
 <%page args="value"/>
@@ -20,26 +21,26 @@ Args:
 
 Example:
 
-    >>> print pwnlib.shellcraft.thumb.push('r0').rstrip()
+    >>> print(pwnlib.shellcraft.thumb.push('r0').rstrip())
         push {r0}
-    >>> print pwnlib.shellcraft.thumb.push(0).rstrip()
+    >>> print(pwnlib.shellcraft.thumb.push(0).rstrip())
         /* push 0 */
         eor r7, r7
         push {r7}
-    >>> print pwnlib.shellcraft.thumb.push(1).rstrip()
+    >>> print(pwnlib.shellcraft.thumb.push(1).rstrip())
         /* push 1 */
         mov r7, #1
         push {r7}
-    >>> print pwnlib.shellcraft.thumb.push(256).rstrip()
-        /* push 256 */
+    >>> print(pwnlib.shellcraft.thumb.push(256).rstrip())
+        /* push 0x100 */
         mov r7, #0x100
         push {r7}
-    >>> print pwnlib.shellcraft.thumb.push('SYS_execve').rstrip()
+    >>> print(pwnlib.shellcraft.thumb.push('SYS_execve').rstrip())
         /* push 'SYS_execve' */
         mov r7, #0xb
         push {r7}
     >>> with context.local(os = 'freebsd'):
-    ...     print pwnlib.shellcraft.thumb.push('SYS_execve').rstrip()
+    ...     print(pwnlib.shellcraft.thumb.push('SYS_execve').rstrip())
         /* push 'SYS_execve' */
         mov r7, #0x3b
         push {r7}
@@ -49,7 +50,7 @@ Example:
 value_orig = value
 is_register = value in registers.arm
 
-if not is_register and isinstance(value, (str, unicode)):
+if not is_register and isinstance(value, (six.binary_type, six.text_type)):
     try:
         with ctx.local(arch = 'thumb'):
             value = constants.eval(value)
@@ -59,8 +60,8 @@ if not is_register and isinstance(value, (str, unicode)):
 
 % if is_register:
     push {${value}}
-% elif isinstance(value, (int,long)):
-    /* push ${repr(value_orig)} */
+% elif isinstance(value, six.integer_types):
+    /* push ${pretty(value_orig, False)} */
     ${re.sub(r'^\s*/.*\n', '', thumb.pushstr(packing.pack(value), False), 1)}
 % else:
     push ${value}

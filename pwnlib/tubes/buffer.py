@@ -1,5 +1,5 @@
-#!/usr/bin/env python2
 from __future__ import absolute_import
+from __future__ import division
 
 from pwnlib.context import context
 
@@ -11,20 +11,20 @@ class Buffer(Exception):
     Example:
 
         >>> b = Buffer()
-        >>> b.add("A" * 10)
-        >>> b.add("B" * 10)
+        >>> b.add(b"A" * 10)
+        >>> b.add(b"B" * 10)
         >>> len(b)
         20
         >>> b.get(1)
-        'A'
+        b'A'
         >>> len(b)
         19
         >>> b.get(9999)
-        'AAAAAAAAABBBBBBBBBB'
+        b'AAAAAAAAABBBBBBBBBB'
         >>> len(b)
         0
         >>> b.get(1)
-        ''
+        b''
 
     Implementation Details:
 
@@ -40,10 +40,10 @@ class Buffer(Exception):
     def __len__(self):
         """
         >>> b = Buffer()
-        >>> b.add('lol')
+        >>> b.add(b'lol')
         >>> len(b) == 3
         True
-        >>> b.add('foobar')
+        >>> b.add(b'foobar')
         >>> len(b) == 9
         True
         """
@@ -55,11 +55,11 @@ class Buffer(Exception):
     def __contains__(self, x):
         """
         >>> b = Buffer()
-        >>> b.add('asdf')
-        >>> 'x' in b
+        >>> b.add(b'asdf')
+        >>> b'x' in b
         False
-        >>> b.add('x')
-        >>> 'x' in b
+        >>> b.add(b'x')
+        >>> b'x' in b
         True
         """
         for b in self.data:
@@ -70,9 +70,9 @@ class Buffer(Exception):
     def index(self, x):
         """
         >>> b = Buffer()
-        >>> b.add('asdf')
-        >>> b.add('qwert')
-        >>> b.index('t') == len(b) - 1
+        >>> b.add(b'asdf')
+        >>> b.add(b'qwert')
+        >>> b.index(b't') == len(b) - 1
         True
         """
         sofar = 0
@@ -109,13 +109,13 @@ class Buffer(Exception):
         Example:
 
             >>> b = Buffer()
-            >>> b.add("hello")
-            >>> b.add("world")
+            >>> b.add(b"hello")
+            >>> b.add(b"world")
             >>> b.get(5)
-            'hello'
-            >>> b.unget("goodbye")
+            b'hello'
+            >>> b.unget(b"goodbye")
             >>> b.get()
-            'goodbyeworld'
+            b'goodbyeworld'
         """
         if isinstance(data, Buffer):
             self.data = data.data + self.data
@@ -137,16 +137,16 @@ class Buffer(Exception):
         Example:
 
             >>> b = Buffer()
-            >>> b.add('hello')
-            >>> b.add('world')
+            >>> b.add(b'hello')
+            >>> b.add(b'world')
             >>> b.get(1)
-            'h'
+            b'h'
             >>> b.get()
-            'elloworld'
+            b'elloworld'
         """
         # Fast path, get all of the data
         if want >= self.size:
-            data   = ''.join(self.data)
+            data   = b''.join(self.data)
             self.size = 0
             self.data = []
             return data
@@ -159,7 +159,7 @@ class Buffer(Exception):
             i    += 1
 
         # Join the chunks, evict from the buffer
-        data   = ''.join(self.data[:i])
+        data   = b''.join(self.data[:i])
         self.data = self.data[i:]
 
         # If the last chunk puts us over the limit,
@@ -182,7 +182,7 @@ class Buffer(Exception):
             size (int): (Optional) If set and not None, returns the size variable back.
 
         Returns:
-            Fill size as integer if size == None, else size.
+            Fill size as integer if size is None, else size.
         """
         if size is None:
             size = self.buffer_fill_size

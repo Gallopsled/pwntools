@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
 """Abstracting ROP calls
 """
+from __future__ import division
+
 from pwnlib.abi import ABI
 from pwnlib.context import context
 from pwnlib.util import packing
+
+import six
+
+from pwnlib.util.misc import python_2_bytes_compatible, align
 
 
 class Unresolved(object):
@@ -51,8 +57,10 @@ class StackAdjustment(Unresolved):
     """
     pass
 
+
+@python_2_bytes_compatible
 class AppendedArgument(Unresolved):
-    """
+    r"""
     Encapsulates information about a pointer argument, and the data
     which is pointed to, where the absolute address of the data must
     be known, and the data can be appended to the ROP chain.
@@ -61,24 +69,24 @@ class AppendedArgument(Unresolved):
 
         >>> context.clear()
         >>> context.arch = 'amd64'
-        >>> u = AppendedArgument([1,2,'hello',3])
+        >>> u = AppendedArgument([1,2,b'hello',3])
         >>> len(u)
         32
         >>> u.resolve()
-        [1, 2, 'hello\x00$$', 3]
+        [1, 2, b'hello\x00$$', 3]
 
-        >>> u = AppendedArgument([1,2,['hello'],3])
+        >>> u = AppendedArgument([1,2,[b'hello'],3])
         >>> u.resolve()
-        [1, 2, 32, 3, 'hello\x00$$']
+        [1, 2, 32, 3, b'hello\x00$$']
         >>> u.resolve(10000)
-        [1, 2, 10032, 3, 'hello\x00$$']
+        [1, 2, 10032, 3, b'hello\x00$$']
         >>> u.address = 20000
         >>> u.resolve()
-        [1, 2, 20032, 3, 'hello\x00$$']
+        [1, 2, 20032, 3, b'hello\x00$$']
 
-        >>> u = AppendedArgument([[[[[[[[['pointers!']]]]]]]]], 1000)
+        >>> u = AppendedArgument([[[[[[[[[b'pointers!']]]]]]]]], 1000)
         >>> u.resolve()
-        [1008, 1016, 1024, 1032, 1040, 1048, 1056, 1064, 'pointers!\x00$$$$$$']
+        [1008, 1016, 1024, 1032, 1040, 1048, 1056, 1064, b'pointers!\x00$$$$$$']
     """
     #: Symbolic name of the value.
     name = None
@@ -103,10 +111,19 @@ class AppendedArgument(Unresolved):
             value = [value]
         self.values = []
         self.address = address
-        self.size = len(value) * context.bytes
         for v in value:
             if isinstance(v, (list, tuple)):
-                arg = Unresolved(v, self.address + self.size)
+                self.size += context.bytes
+            else:
+                if isinstance(v, six.text_type):
+                    v = packing._need_bytes(v)
+                try:
+                    self.size += align(context.bytes, len(v))
+                except TypeError: # no 'len'
+                    self.size += context.bytes
+        for v in value:
+            if isinstance(v, (list, tuple)):
+                arg = AppendedArgument(v, self.address + self.size)
                 self.size += arg.size
                 self.values.append(arg)
             else:
@@ -141,9 +158,9 @@ class AppendedArgument(Unresolved):
 
         return LocalAddress()
 
-    def resolve(self, addr = None):
+    def resolve(self, addr=None):
         """
-        Return a flat list of ``int`` or ``str`` objects which can be
+        Return a flat list of ``int`` or ``bytes`` objects which can be
         passed to :func:`.flat`.
 
         Arguments:
@@ -156,28 +173,31 @@ class AppendedArgument(Unresolved):
             self.address = addr
             rv = [None] * len(self.values)
             for i, value in enumerate(self.values):
-                if isinstance(value, int):
+                if isinstance(value, six.integer_types):
                     rv[i] = value
-                if isinstance(value, str):
-                    value += '\x00'
+                elif isinstance(value, six.text_type):
+                    value = packing._need_bytes(value)
+                if isinstance(value, (bytes, bytearray)):
+                    value += b'\x00'
                     while len(value) % context.bytes:
-                        value += '$'
+                        value += b'$'
 
                     rv[i] = value
-                if isinstance(value, Unresolved):
+                elif isinstance(value, Unresolved):
                     rv[i] = value.address
                     rv.extend(value.resolve())
+                assert rv[i] is not None
 
         return rv
 
     def __len__(self):
         return self.size
 
-    def __str__(self):
+    def __bytes__(self):
         return packing.flat(self.resolve())
 
     def __repr__(self):
-        if isinstance(self.address, int):
+        if isinstance(self.address, six.integer_types):
             return '%s(%r, %#x)' % (self.__class__.__name__, self.values, self.address)
         else:
             return '%s(%r, %r)' % (self.__class__.__name__, self.values, self.address)
@@ -194,8 +214,8 @@ class Call(object):
 
     Example:
 
-        >>> Call('system', 0xdeadbeef, [1, 2, '/bin/sh'])
-        Call('system', 0xdeadbeef, [1, 2, AppendedArgument(['/bin/sh'], 0x0)])
+        >>> Call('system', 0xdeadbeef, [1, 2, b'/bin/sh'])
+        Call('system', 0xdeadbeef, [1, 2, AppendedArgument([b'/bin/sh'], 0x0)])
     """
     #: Pretty name of the call target, e.g. 'system'
     name = None
@@ -206,31 +226,54 @@ class Call(object):
     #: Arguments to the call
     args = []
 
-    def __init__(self, name, target, args, abi=None):
-        assert isinstance(name, str)
-        # assert isinstance(target, int)
+    def __init__(self, name, target, args, abi=None, before=()):
+        assert isinstance(name, (bytes, six.text_type))
+        # assert isinstance(target, six.integer_types)
         assert isinstance(args, (list, tuple))
         self.abi  = abi or ABI.default()
         self.name = name
         self.target = target
         self.args = list(args)
         for i, arg in enumerate(args):
-            if not isinstance(arg, (int, long, Unresolved)):
+            if not isinstance(arg, six.integer_types+(Unresolved,)):
                 self.args[i] = AppendedArgument(arg)
+        self.stack_arguments_before = before
 
     def __repr__(self):
-        fmt = "%#x" if isinstance(self.target, (int, long)) else "%r"
+        fmt = "%#x" if isinstance(self.target, six.integer_types) else "%r"
         return '%s(%r, %s, %r)' % (self.__class__.__name__,
                                     self.name,
                                     fmt % self.target,
                                     self.args)
 
+    @property
+    def register_arguments(self):
+        return dict(zip(self.abi.register_arguments, self.args))
+
+    @property
+    def stack_arguments(self):
+        return self.args[len(self.abi.register_arguments):]
+
+    @classmethod
+    def _special_repr(cls, x):
+        if isinstance(x, AppendedArgument):
+            x = x.values
+        if isinstance(x, list):
+            return list(map(cls._special_repr, x))
+        else:
+            return x
+
     def __str__(self):
-        fmt = "%#x" if isinstance(self.target, (int, long)) else "%r"
+        fmt = "%#x" if isinstance(self.target, six.integer_types) else "%r"
         args = []
         for arg in self.args:
-            if isinstance(arg, AppendedArgument) and len(arg.values) == 1:
-                args.extend(map(repr, arg.values))
+            args.append(self._special_repr(arg))
+
+        name = self.name or (fmt % self.target)
+        arg_str = []
+        for arg in args:
+            if isinstance(arg, six.integer_types) and arg > 0x100:
+                arg_str.append(hex(arg))
             else:
-                args.append(arg)
-        return '%s(%s)' % (self.name or fmt % self.target, ', '.join(map(str, args)))
+                arg_str.append(str(arg))
+        return '%s(%s)' % (name, ', '.join(arg_str))

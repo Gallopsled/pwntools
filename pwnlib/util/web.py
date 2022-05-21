@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+from __future__ import division
 
 import os
+import six
 import tempfile
 
 from pwnlib.log import getLogger
@@ -11,7 +13,7 @@ from pwnlib.util.misc import size
 log = getLogger(__name__)
 
 def wget(url, save=None, timeout=5, **kwargs):
-    """wget(url, save=None, timeout=5) -> str
+    r"""wget(url, save=None, timeout=5) -> str
 
     Downloads a file via HTTP/HTTPS.
 
@@ -26,14 +28,16 @@ def wget(url, save=None, timeout=5, **kwargs):
       >>> url    = 'https://httpbin.org/robots.txt'
       >>> result = wget(url, timeout=60)
       >>> result
-      'User-agent: *\\nDisallow: /deny\\n'
-      >>> result2 = wget(url, True, timeout=60)
-      >>> result == file('robots.txt').read()
+      b'User-agent: *\nDisallow: /deny\n'
+
+      >>> filename = tempfile.mktemp()
+      >>> result2 = wget(url, filename, timeout=60)
+      >>> result == open(filename, 'rb').read()
       True
     """
     import requests
 
-    with log.progress("Downloading '%s'" % url, rate=0.1) as w:
+    with log.progress("Downloading %r" % url, rate=0.1) as w:
         w.status("Making request...")
 
         response = requests.get(url, stream=True, timeout=timeout, **kwargs)
@@ -66,10 +70,10 @@ def wget(url, save=None, timeout=5, **kwargs):
 
         # Save to the target file if provided
         if save:
-            if not isinstance(save, (str, unicode)):
+            if not isinstance(save, (bytes, six.text_type)):
                 save = os.path.basename(url)
                 save = save or tempfile.NamedTemporaryFile(dir='.', delete=False).name
-            with file(save,'wb+') as f:
+            with open(save,'wb+') as f:
                 f.write(total_data)
                 w.success('Saved %r (%s)' % (f.name, size(total_data)))
         else:

@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import absolute_import
+from __future__ import division
 
 import shutil
 from argparse import ArgumentParser
@@ -7,7 +8,7 @@ from subprocess import CalledProcessError
 from subprocess import check_output
 from tempfile import NamedTemporaryFile
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
@@ -22,13 +23,14 @@ def dump(objdump, path):
     return n.name
 
 def diff(a,b):
-    try: return check_output(['diff',a,b])
+    try: return check_output(['diff',a,b], universal_newlines=True)
     except CalledProcessError as e:
         return e.output
 
 p = common.parser_commands.add_parser(
     'elfdiff',
-    help = 'Compare two ELF files'
+    help = 'Compare two ELF files',
+    description = 'Compare two ELF files'
 )
 
 p.add_argument('a')
@@ -55,7 +57,7 @@ def main(a):
     shutil.copy(y.path, name)
     y = dump(objdump, name)
 
-    print diff(x, y)
+    print(diff(x, y))
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)

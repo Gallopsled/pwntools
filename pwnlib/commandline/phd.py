@@ -1,11 +1,14 @@
 #!/usr/bin/env python2
 from __future__ import absolute_import
+from __future__ import division
 
 import argparse
 import os
+import signal
 import sys
+import io
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
@@ -13,7 +16,8 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'phd',
-    help = 'Pwnlib HexDump'
+    help = 'Pretty hex dump',
+    description = 'Pretty hex dump'
 )
 
 parser.add_argument(
@@ -21,8 +25,8 @@ parser.add_argument(
     metavar='file',
     nargs='?',
     help='File to hexdump.  Reads from stdin if missing.',
-    type=argparse.FileType('r'),
-    default=sys.stdin
+    type=argparse.FileType('rb'),
+    default=getattr(sys.stdin, 'buffer', sys.stdin)
 )
 
 parser.add_argument(
@@ -83,10 +87,13 @@ def main(args):
     text.when = color
 
     if skip:
-        if infile == sys.stdin:
-            infile.read(skip)
-        else:
+        try:
             infile.seek(skip, os.SEEK_CUR)
+        except IOError:
+            infile.read(skip)
+
+    if count != -1:
+        infile = io.BytesIO(infile.read(count))
 
     hl = []
     if args.highlight:
@@ -94,9 +101,11 @@ def main(args):
             for h in hs.split(','):
                 hl.append(asint(h))
 
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
     try:
         for line in hexdump_iter(infile, width, highlight = hl, begin = offset + skip):
-            print line
+            print(line)
     except (KeyboardInterrupt, IOError):
         pass
 

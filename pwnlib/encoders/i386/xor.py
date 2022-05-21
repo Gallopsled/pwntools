@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 # Source:
 # http://www.iodigitalsec.com/python-cascading-xor-polymorphic-shellcode-generator/
 #
@@ -11,6 +10,7 @@
 #; but WITHOUT ANY WARRANTY; without even the implied warranty of
 #; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 from __future__ import absolute_import
+from __future__ import division
 
 from pwnlib import shellcraft
 from pwnlib.asm import asm
@@ -27,13 +27,15 @@ class i386XorEncoder(Encoder):
 
     >>> context.clear(arch='i386')
     >>> shellcode = asm(shellcraft.sh())
-    >>> avoid = '/bin/sh\xcc\xcd\x80'
+    >>> avoid = b'/bin/sh\xcc\xcd\x80'
     >>> encoded = pwnlib.encoders.i386.xor.encode(shellcode, avoid)
     >>> assert not any(c in encoded for c in avoid)
     >>> p = run_shellcode(encoded)
-    >>> p.sendline('echo hello; exit')
+    >>> p.sendline(b'echo hello; exit')
     >>> p.recvline()
-    'hello\n'
+    b'hello\n'
+    >>> encoders.i386.xor.encode(asm(shellcraft.execve('/bin/sh')), avoid=bytearray([0x31]))
+    b'\xd9\xd0\xd9t$\xf4^\xfcj\x07Y\x83\xc6\x19\x89\xf7\xad\x93\xad1\xd8\xabIu\xf7\x00\x00\x00\x00h\x01\x01\x01\x00\x00\x00\x00\x01\x814$\x00\x00\x00\x00.ri\x01\x00\x00\x00\x00h/bi\x00\x00\x00\x01n\x89\xe30\x00\x01\x00\x00\xc90\xd2j\x00\x00\x00\x00\x0bX\xcd\x80'
     """
 
     arch = 'i386'
@@ -65,11 +67,11 @@ end:
 
     def __call__(self, raw_bytes, avoid, pcreg=''):
         while len(raw_bytes) % context.bytes:
-            raw_bytes += '\x00'
+            raw_bytes += b'\x00'
 
         a, b = xor_pair(raw_bytes, avoid)
 
-        mov_ecx = shellcraft.i386.mov('ecx', len(raw_bytes) / context.bytes)
+        mov_ecx = shellcraft.i386.mov('ecx', len(raw_bytes) // context.bytes)
         decoder = self.decoder % mov_ecx
         decoder = asm(decoder)
 

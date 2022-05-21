@@ -1,9 +1,10 @@
 from __future__ import absolute_import
+from __future__ import division
 
 import argparse
 import sys
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
@@ -11,7 +12,8 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'scramble',
-    help = 'Shellcode encoder'
+    help = 'Shellcode encoder',
+    description = 'Shellcode encoder'
 )
 
 parser.add_argument(
@@ -24,8 +26,8 @@ parser.add_argument(
     "-o","--output",
     metavar='file',
     help="Output file (defaults to stdout)",
-    type=argparse.FileType('w'),
-    default=sys.stdout
+    type=argparse.FileType('wb'),
+    default=getattr(sys.stdout, 'buffer', sys.stdout)
 )
 
 parser.add_argument(
@@ -79,10 +81,10 @@ def main(args):
         parser.print_usage()
         sys.exit(0)
 
-    data   = sys.stdin.read()
-    output = data
+    stdin_buffer = getattr(sys.stdin, 'buffer', sys.stdin)
+    output = stdin_buffer.read()
     fmt    = args.format or ('hex' if tty else 'raw')
-    formatters = {'r':str, 'h':enhex, 's':repr}
+    formatters = {'r':bytes, 'h':enhex, 's':repr}
 
     if args.alphanumeric:
         output = alphanumeric(output)
@@ -98,10 +100,13 @@ def main(args):
     if fmt[0] == 'e':
         sys.stdout.write(make_elf(output))
     else:
-        args.output.write(formatters[fmt[0]](output))
+        output = formatters[fmt[0]](output)
+        if not hasattr(output, 'decode'):
+            output = output.encode('ascii')
+        args.output.write(output)
 
-    if tty and fmt is not 'raw':
-        args.output.write('\n')
+    if tty and fmt != 'raw':
+        args.output.write(b'\n')
 
 
 if __name__ == '__main__':

@@ -14,22 +14,15 @@ Arguments:
 
 Example:
 
-    >>> gcc = process(['gcc','-m64','-xc','-static','-Wl,-Ttext-segment=0x20000000','-'])
-    >>> gcc.write('''
-    ... int main() {
-    ...     printf("Hello, %s!\\n", "amd64");
-    ... }
-    ... ''')
-    >>> gcc.shutdown('send')
-    >>> gcc.poll(True)
-    0
-    >>> sc = shellcraft.loader_append('a.out')
+    >>> payload = shellcraft.echo(b'Hello, world!\n') + shellcraft.exit(0)
+    >>> payloadELF = ELF.from_assembly(payload)
+    >>> payloadELF.arch
+    'amd64'
+    >>> loader = shellcraft.loader_append(payloadELF.data)
+    >>> loaderELF = ELF.from_assembly(loader, vma=0, shared=True)
+    >>> loaderELF.process().recvall()
+    b'Hello, world!\n'
 
-The following doctest is commented out because it doesn't work on Travis
-for reasons I cannot diagnose.  However, it should work just fine :-)
-
-    # >>> run_assembly(sc).recvline() == 'Hello, amd64!\n'
-    # True
 
 </%docstring>
 <%page args="data = None"/>
@@ -47,7 +40,7 @@ ${elf_data}:
 <%
 import os
 
-if os.path.isfile(data):
+if b'\x00' not in data and os.path.isfile(data):
     with open(data, 'rb') as f:
         data = f.read()
 %>

@@ -1,12 +1,14 @@
 # pwntools - CTF toolkit
 ![pwntools logo](https://github.com/Gallopsled/pwntools/blob/stable/docs/source/logo.png?raw=true)
 
+[![PyPI](https://img.shields.io/pypi/v/pwntools?style=flat)](https://pypi.python.org/pypi/pwntools/)
 [![Docs](https://readthedocs.org/projects/pwntools/badge/?version=stable)](https://docs.pwntools.com/)
-[![PyPI](https://img.shields.io/badge/pypi-v3.11.0-green.svg?style=flat)](https://pypi.python.org/pypi/pwntools/)
-[![Travis](https://travis-ci.org/Gallopsled/pwntools.svg)](https://travis-ci.org/Gallopsled/pwntools)
-[![Coveralls](https://img.shields.io/coveralls/Gallopsled/pwntools/dev.svg)](https://coveralls.io/github/Gallopsled/pwntools?branch=dev)
-[![Twitter](https://img.shields.io/badge/twitter-pwntools-4099FF.svg?style=flat)](https://twitter.com/pwntools)
+[![Travis](https://img.shields.io/travis/Gallopsled/pwntools/dev?logo=Travis)](https://travis-ci.org/Gallopsled/pwntools)
+[![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/Gallopsled/pwntools/Continuous%20Integration/dev?logo=GitHub)](https://github.com/Gallopsled/pwntools/actions?query=workflow%3A%22Continuous+Integration%22+branch%3Adev)
+[![Coveralls](https://img.shields.io/coveralls/github/Gallopsled/pwntools/dev?logo=coveralls)](https://coveralls.io/github/Gallopsled/pwntools?branch=dev)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](http://choosealicense.com/licenses/mit/)
+[![Discord](https://img.shields.io/discord/809590285687980052?label=Discord&style=plastic)](https://discord.gg/96VA2zvjCB)
+[![Twitter](https://img.shields.io/twitter/follow/Pwntools)](https://twitter.com/pwntools)
 
 Pwntools is a CTF framework and exploit development library. Written in Python, it is designed for rapid prototyping and development, and intended to make exploit writing as simple as possible.
 
@@ -20,28 +22,27 @@ r.send(asm(shellcraft.sh()))
 r.interactive()
 ```
 
-# Try It Now!
-
-You can now do a live demo of Pwntools, [right in your browser](https://demo.pwntools.com).
-
 # Documentation
 
 Our documentation is available at [docs.pwntools.com](https://docs.pwntools.com/)
+
+A series of tutorials is also [available online](https://github.com/Gallopsled/pwntools-tutorial#readme)
 
 To get you started, we've provided some example solutions for past CTF challenges in our [write-ups repository](https://github.com/Gallopsled/pwntools-write-ups).
 
 # Installation
 
-Pwntools is best supported on 64-bit Ubuntu LTE releases (12.04, 14.04, and 16.04).  Most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).  Python 2.7 is required.
+Pwntools is best supported on 64-bit Ubuntu LTS releases (14.04, 16.04, 18.04, and 20.04).  Most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).  
 
-Most of the functionality of pwntools is self-contained and Python-only.  You should be able to get running quickly with
+Python3 is suggested, but Pwntools still works with Python 2.7.  Most of the functionality of pwntools is self-contained and Python-only.  You should be able to get running quickly with
 
 ```sh
 apt-get update
-apt-get install python2.7 python-pip python-dev git libssl-dev libffi-dev build-essential
-pip install --upgrade pip
-pip install --upgrade pwntools
+apt-get install python3 python3-pip python3-dev git libssl-dev libffi-dev build-essential
+python3 -m pip install --upgrade pip
+python3 -m pip install --upgrade pwntools
 ```
+
 
 However, some of the features (assembling/disassembling foreign architectures) require non-Python dependencies.  For more information, see the [complete installation instructions here](https://docs.pwntools.com/en/stable/install.html).
 
@@ -50,8 +51,5 @@ However, some of the features (assembling/disassembling foreign architectures) r
 
 See [CONTRIBUTING.md](CONTRIBUTING.md)
 
-# Contact
-If you have any questions not worthy of a [bug report](https://github.com/Gallopsled/pwntools/issues), feel free to ping us
-at [`#pwntools` on Freenode](irc://irc.freenode.net/pwntools) and ask away.
-Click [here](https://kiwiirc.com/client/irc.freenode.net/pwntools) to connect.
-There is also a [mailing list](https://groups.google.com/forum/#!forum/pwntools-users) for higher latency discussion.
+# Contact and Community
+If you have any questions not worthy of a [bug report](https://github.com/Gallopsled/pwntools/issues), join the Discord server at https://discord.gg/96VA2zvjCB

@@ -1,10 +1,11 @@
 <%
   from pwnlib.util import packing
-  from pwnlib.shellcraft import amd64
+  from pwnlib.shellcraft import amd64, pretty
   from pwnlib.shellcraft.amd64 import pushstr
   from pwnlib import constants
   from pwnlib.shellcraft.registers import amd64 as regs
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
+  from six import text_type
   import re
 %>
 <%page args="value"/>
@@ -22,23 +23,23 @@ Args:
 
 Example:
 
-    >>> print pwnlib.shellcraft.amd64.push(0).rstrip()
+    >>> print(pwnlib.shellcraft.amd64.push(0).rstrip())
         /* push 0 */
         push 1
         dec byte ptr [rsp]
-    >>> print pwnlib.shellcraft.amd64.push(1).rstrip()
+    >>> print(pwnlib.shellcraft.amd64.push(1).rstrip())
         /* push 1 */
         push 1
-    >>> print pwnlib.shellcraft.amd64.push(256).rstrip()
-        /* push 256 */
+    >>> print(pwnlib.shellcraft.amd64.push(256).rstrip())
+        /* push 0x100 */
         push 0x1010201 ^ 0x100
         xor dword ptr [rsp], 0x1010201
     >>> with context.local(os = 'linux'):
-    ...     print pwnlib.shellcraft.amd64.push('SYS_write').rstrip()
+    ...     print(pwnlib.shellcraft.amd64.push('SYS_write').rstrip())
         /* push 'SYS_write' */
         push 1
     >>> with context.local(os = 'freebsd'):
-    ...     print pwnlib.shellcraft.amd64.push('SYS_write').rstrip()
+    ...     print(pwnlib.shellcraft.amd64.push('SYS_write').rstrip())
         /* push 'SYS_write' */
         push 4
 
@@ -49,7 +50,7 @@ Example:
   is_reg = False
   if value in regs:
     is_reg = True
-  if not is_reg and isinstance(value, (str, unicode)):
+  if not is_reg and isinstance(value, (str, text_type)):
     try:
       with ctx.local(arch = 'amd64'):
         value = constants.eval(value)
@@ -57,7 +58,7 @@ Example:
         pass
 %>
 %if not is_reg:
-    /* push ${repr(value_orig)} */
+    /* push ${pretty(value_orig, False)} */
     ${re.sub(r'^\s*/.*\n', '', amd64.pushstr(packing.pack(value), False), 1)}
 % else:
     push ${value}

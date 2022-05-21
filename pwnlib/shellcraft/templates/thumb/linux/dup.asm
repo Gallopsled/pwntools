@@ -9,6 +9,7 @@ Args: [sock (imm/reg) = r6]
   dup       = common.label("dup")
   looplabel = common.label("loop")
 %>
+    /* dup() file descriptor ${sock} into stdin/stdout/stderr */
 ${dup}:
         ${mov('r1', 2)}
         ${mov('r7', 'SYS_dup2')}

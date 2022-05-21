@@ -2,11 +2,7 @@
 
    import tempfile
    import subprocess
-   from pwnlib.context import context
-   from pwnlib.asm import *
-   from pwnlib import shellcraft
-   from pwnlib.tubes.process import process
-
+   from pwn import *
 
 :mod:`pwnlib.asm` --- Assembler functions
 =========================================

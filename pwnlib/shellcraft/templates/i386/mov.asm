@@ -3,6 +3,7 @@
   from pwnlib.util import lists, packing, fiddling, misc
   from pwnlib.log import getLogger
   from pwnlib.shellcraft.registers import get_register, is_register, bits_required
+  import six
   log = getLogger('pwnlib.shellcraft.i386.mov')
 %>
 <%page args="dest, src, stack_allowed = True"/>
@@ -27,65 +28,65 @@ Args:
 
 Example:
 
-    >>> print shellcraft.i386.mov('eax','ebx').rstrip()
+    >>> print(shellcraft.i386.mov('eax','ebx').rstrip())
         mov eax, ebx
-    >>> print shellcraft.i386.mov('eax', 0).rstrip()
+    >>> print(shellcraft.i386.mov('eax', 0).rstrip())
         xor eax, eax
-    >>> print shellcraft.i386.mov('ax', 0).rstrip()
+    >>> print(shellcraft.i386.mov('ax', 0).rstrip())
         xor ax, ax
-    >>> print shellcraft.i386.mov('ax', 17).rstrip()
+    >>> print(shellcraft.i386.mov('ax', 17).rstrip())
         xor ax, ax
         mov al, 0x11
-    >>> print shellcraft.i386.mov('edi', ord('\n')).rstrip()
+    >>> print(shellcraft.i386.mov('edi', ord('\n')).rstrip())
         push 9 /* mov edi, '\n' */
         pop edi
         inc edi
-    >>> print shellcraft.i386.mov('al', 'ax').rstrip()
+    >>> print(shellcraft.i386.mov('al', 'ax').rstrip())
         /* moving ax into al, but this is a no-op */
-    >>> print shellcraft.i386.mov('al','ax').rstrip()
+    >>> print(shellcraft.i386.mov('al','ax').rstrip())
         /* moving ax into al, but this is a no-op */
-    >>> print shellcraft.i386.mov('esp', 'esp').rstrip()
+    >>> print(shellcraft.i386.mov('esp', 'esp').rstrip())
         /* moving esp into esp, but this is a no-op */
-    >>> print shellcraft.i386.mov('ax', 'bl').rstrip()
+    >>> print(shellcraft.i386.mov('ax', 'bl').rstrip())
         movzx ax, bl
-    >>> print shellcraft.i386.mov('eax', 1).rstrip()
+    >>> print(shellcraft.i386.mov('eax', 1).rstrip())
         push 1
         pop eax
-    >>> print shellcraft.i386.mov('eax', 1, stack_allowed=False).rstrip()
+    >>> print(shellcraft.i386.mov('eax', 1, stack_allowed=False).rstrip())
         xor eax, eax
         mov al, 1
-    >>> print shellcraft.i386.mov('eax', 0xdead00ff).rstrip()
+    >>> print(shellcraft.i386.mov('eax', 0xdead00ff).rstrip())
         mov eax, -0xdead00ff
         neg eax
-    >>> print shellcraft.i386.mov('eax', 0xc0).rstrip()
+    >>> print(shellcraft.i386.mov('eax', 0xc0).rstrip())
         xor eax, eax
         mov al, 0xc0
-    >>> print shellcraft.i386.mov('edi', 0xc0).rstrip()
+    >>> print(shellcraft.i386.mov('edi', 0xc0).rstrip())
         mov edi, -0xc0
         neg edi
-    >>> print shellcraft.i386.mov('eax', 0xc000).rstrip()
+    >>> print(shellcraft.i386.mov('eax', 0xc000).rstrip())
         xor eax, eax
         mov ah, 0xc000 >> 8
-    >>> print shellcraft.i386.mov('eax', 0xffc000).rstrip()
+    >>> print(shellcraft.i386.mov('eax', 0xffc000).rstrip())
         mov eax, 0x1010101
         xor eax, 0x1010101 ^ 0xffc000
-    >>> print shellcraft.i386.mov('edi', 0xc000).rstrip()
+    >>> print(shellcraft.i386.mov('edi', 0xc000).rstrip())
         mov edi, (-1) ^ 0xc000
         not edi
-    >>> print shellcraft.i386.mov('edi', 0xf500).rstrip()
+    >>> print(shellcraft.i386.mov('edi', 0xf500).rstrip())
         mov edi, 0x1010101
         xor edi, 0x1010101 ^ 0xf500
-    >>> print shellcraft.i386.mov('eax', 0xc0c0).rstrip()
+    >>> print(shellcraft.i386.mov('eax', 0xc0c0).rstrip())
         xor eax, eax
         mov ax, 0xc0c0
-    >>> print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
+    >>> print(shellcraft.i386.mov('eax', 'SYS_execve').rstrip())
         push SYS_execve /* 0xb */
         pop eax
     >>> with context.local(os='freebsd'):
-    ...     print shellcraft.i386.mov('eax', 'SYS_execve').rstrip()
+    ...     print(shellcraft.i386.mov('eax', 'SYS_execve').rstrip())
         push SYS_execve /* 0x3b */
         pop eax
-    >>> print shellcraft.i386.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip()
+    >>> print(shellcraft.i386.mov('eax', 'PROT_READ | PROT_WRITE | PROT_EXEC').rstrip())
         push (PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
         pop eax
 </%docstring>
@@ -142,7 +143,7 @@ else:
     % else:
     mov ${dest}, ${src}
     % endif
-% elif isinstance(src, (int, long)):
+% elif isinstance(src, six.integer_types):
 ## Special case for zeroes
     % if src == 0:
         xor ${dest}, ${dest}
@@ -157,20 +158,20 @@ else:
     % elif stack_allowed and dest.size == 32 and okay(srcp):
         push ${pretty(src)}
         pop ${dest}
-    % elif stack_allowed and dest.size == 32 and  -127 <= srcs < 128 and okay(srcp[0]):
+    % elif stack_allowed and dest.size == 32 and  -127 <= srcs < 128 and okay(srcp[:1]):
         push ${pretty(src)}
         pop ${dest}
 ## Easy case, everybody is happy
     % elif okay(srcp):
         mov ${dest}, ${pretty(src)}
 ## If it's an IMM8, we can use the 8-bit register
-    % elif 0 <= srcu < 2**8 and okay(srcp[0]) and dest.sizes.get(8, 0):
+    % elif 0 <= srcu < 2**8 and okay(srcp[:1]) and dest.sizes.get(8, 0):
         xor ${dest}, ${dest}
         mov ${dest.sizes[8]}, ${pretty(srcu)}
 ## If it's an IMM16, but there's nothing in the lower 8 bits,
 ## we can use the high-8-bits register.
 ## However, we must check that it exists.
-    % elif srcu == (srcu & 0xff00) and okay(srcp[1]) and dest.ff00:
+    % elif srcu == (srcu & 0xff00) and okay(srcp[1:2]) and dest.ff00:
         xor ${dest}, ${dest}
         mov ${dest.ff00}, ${pretty(src)} >> 8
 ## If it's an IMM16, use the 16-bit register

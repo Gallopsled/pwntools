@@ -15,7 +15,7 @@ __BEGIN_DECLS
 #ifdef __mips__
 #define _NSIG		128
 #else
-#define _NSIG		64
+#define _NSIG		65
 #endif
 
 #define SIGHUP		 1
@@ -33,7 +33,7 @@ __BEGIN_DECLS
 #define SIGTERM		15
 #define SIGUNUSED	31
 #if defined(__i386__) || defined(__x86_64__) || defined(__powerpc__) || defined(__arm__) \
-	|| defined(__s390__) || defined(__ia64__) || defined(__powerpc64__)
+	|| defined(__s390__) || defined(__ia64__) || defined(__powerpc64__) || defined(__aarch64__)
 #define SIGBUS		 7
 #define SIGUSR1		10
 #define SIGUSR2		12
@@ -97,9 +97,9 @@ __BEGIN_DECLS
 #define SIGXCPU		30
 #define SIGXFSZ		31
 #elif defined(__hppa__)
-#define SIGEMT		 7
+#define SIGSTKFLT	 7
 #define SIGBUS		10
-#define SIGSYS		12
+#define SIGXCPU		12
 #define SIGUSR1		16
 #define SIGUSR2		17
 #define SIGCHLD		18
@@ -114,27 +114,21 @@ __BEGIN_DECLS
 #define SIGTTIN		27
 #define SIGTTOU		28
 #define SIGURG		29
-#define SIGLOST		30
+#define SIGXFSZ		30
 #define SIGUNUSED	31
-#define SIGRESERVE	SIGUNUSE
-#define SIGXCPU		33
-#define SIGXFSZ		34
-#define SIGSTKFLT	36
+#define SIGRESERVE	SIGUNUSED
+#define SIGSYS		31
 
 #else
-//#error signal layout not yet known
+#error signal layout not yet known
 #endif
 
 #define SIGCLD		SIGCHLD
 #define SIGPOLL		SIGIO
 
 /* These should not be considered constants from userland.  */
-#ifdef __hppa__
-#define SIGRTMIN	37
-#else
 #define SIGLOST		SIGPWR
 #define SIGRTMIN	32
-#endif
 #define SIGRTMAX	(_NSIG-1)
 
 /* SA_FLAGS values: */
@@ -431,10 +425,10 @@ enum {
 # define POLL_HUP	POLL_HUP
 };
 
-#define _NSIG_WORDS	((_NSIG/sizeof(long))>>3)
+#define _SIGSET_WORDS	(1024 / (8 * sizeof (unsigned long int)))
 
 typedef struct {
-  unsigned long sig[_NSIG_WORDS];
+  unsigned long sig[_SIGSET_WORDS];
 } sigset_t;
 
 struct sigaction {

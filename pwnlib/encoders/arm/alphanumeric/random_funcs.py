@@ -1,3 +1,7 @@
+# Copyright (c) 2013 Pratik Kumar Sahu, Nagendra Chowdary, Anish Mathuria
+# Ported to Python by Gallopsled
+from __future__ import division
+
 import os
 import random
 import struct
@@ -7,11 +11,11 @@ import struct
 # |                       RANDOM NUMBERS FUNCTIONS                         |
 # +------------------------------------------------------------------------+
 
-# get a random integer i (0<=i<max)
-# =================================
-def random_get_int(max):
-   return random.randint(0, max-1)
-   return struct.unpack("I", os.urandom(4))[0] % max
+# get a random integer i (0<=i<maxv)
+# ==================================
+def random_get_int(maxv):
+   return random.randrange(0, maxv)
+
 
 def randel(arr):
    return arr[random_get_int(len(arr))]

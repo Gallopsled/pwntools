@@ -15,7 +15,7 @@ Example
     # leaks at least one byte at that address.
     def leak(address):
         data = p.read(address, 4)
-        log.debug("%#x => %s" % (address, (data or '').encode('hex')))
+        log.debug("%#x => %s", address, enhex(data or ''))
         return data
 
     # For the sake of this example, let's say that we
@@ -48,6 +48,7 @@ Example
 DynELF
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import ctypes
 
@@ -61,8 +62,7 @@ from pwnlib.elf import constants
 from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak
 from pwnlib.util.fiddling import enhex
-from pwnlib.util.packing import unpack
-from pwnlib.util.web import wget
+from pwnlib.util.packing import _need_bytes
 
 log    = getLogger(__name__)
 sizeof = ctypes.sizeof
@@ -74,8 +74,8 @@ def sysv_hash(symbol):
     """
     h = 0
     g = 0
-    for c in symbol:
-        h = (h << 4) + ord(c)
+    for c in bytearray(_need_bytes(symbol, 4, 0x80)):
+        h = (h << 4) + c
         g = h & 0xf0000000
         h ^= (g >> 24)
         h &= ~g
@@ -86,9 +86,10 @@ def gnu_hash(s):
 
     Function used to generated GNU-style hashes for strings.
     """
+    s = bytearray(_need_bytes(s, 4, 0x80))
     h = 5381
     for c in s:
-        h = h * 33 + ord(c)
+        h = h * 33 + c
     return h & 0xffffffff
 
 class DynELF(object):
@@ -291,7 +292,7 @@ class DynELF(object):
         w = None
 
         while True:
-            if self.leak.compare(ptr, '\x7fELF'):
+            if self.leak.compare(ptr, b'\x7fELF'):
                 break
 
             # See if we can short circuit the search
@@ -495,7 +496,7 @@ class DynELF(object):
         Returns:
             An ELF object, or None.
         """
-        libc = 'libc.so'
+        libc = b'libc.so'
 
         with self.waitfor('Downloading libc'):
             dynlib = self._dynamic_load_dynelf(libc)
@@ -536,6 +537,9 @@ class DynELF(object):
         if lib == 'libc':
             lib = 'libc.so'
 
+        if symb:
+            symb = _need_bytes(symb, min_wrong=0x80)
+
         #
         # Get a pretty name for the symbol to show the user
         #
@@ -557,7 +561,7 @@ class DynELF(object):
         else:   dynlib = self
 
         if dynlib is None:
-            log.failure("Could not find %r" % lib)
+            log.failure("Could not find %r", lib)
             return None
 
         #
@@ -568,7 +572,7 @@ class DynELF(object):
             self.status("Trying lookup based on Build ID")
             build_id = dynlib._lookup_build_id(lib=lib)
             if build_id:
-                log.info("Trying lookup based on Build ID: %s" % build_id)
+                log.info("Trying lookup based on Build ID: %s", build_id)
                 path = libcdb.search_by_build_id(build_id)
                 if path:
                     with context.local(log_level='error'):
@@ -610,7 +614,7 @@ class DynELF(object):
                 addr   = leak.field(cur, LinkMap.l_addr)
                 cur    = leak.field(cur, LinkMap.l_next)
 
-                log.debug('Found %r @ %#x' % (name, addr))
+                log.debug('Found %r @ %#x', name, addr)
 
                 self._bases[name] = addr
 
@@ -634,6 +638,8 @@ class DynELF(object):
         # make sure we rewind to the beginning!
         while leak.field(cur, LinkMap.l_prev):
             cur = leak.field(cur, LinkMap.l_prev)
+
+        libname = _need_bytes(libname, 2, 0x80)
 
         while cur:
             self.status("link_map entry %#x" % cur)
@@ -703,12 +709,14 @@ class DynELF(object):
             "A hash table of Elf32_Word objects supports symbol table access", or see:
             https://docs.oracle.com/cd/E19504-01/802-6319/6ia12qkfo/index.html#chapter6-48031
 
-            struct Elf_Hash {
-                uint32_t nbucket;
-                uint32_t nchain;
-                uint32_t bucket[nbucket];
-                uint32_t chain[nchain];
-            }
+            .. code-block:: c
+
+                struct Elf_Hash {
+                    uint32_t nbucket;
+                    uint32_t nchain;
+                    uint32_t bucket[nbucket];
+                    uint32_t chain[nchain];
+                }
 
             You can force an ELF to use this type of symbol table by compiling
             with 'gcc -Wl,--hash-style=sysv'
@@ -744,7 +752,7 @@ class DynELF(object):
                     addr = libbase + leak.field(sym, Sym.st_value)
                     return addr
 
-                self.status("%s (hash collision)" % name)
+                self.status("%r (hash collision)" % name)
 
             # The name did not match what we were looking for, or we assume
             # it did not since it was not a function.
@@ -782,7 +790,7 @@ class DynELF(object):
         maskwords = leak.field(hshtab, elf.GNU_HASH.maskwords)
 
         # Skip over the bloom filter to get to the buckets
-        elfword = self.elfclass / 8
+        elfword = self.elfclass // 8
         buckets = hshtab + sizeof(elf.GNU_HASH) + (elfword * maskwords)
 
         # The chains come after the buckets
@@ -827,7 +835,7 @@ class DynELF(object):
                     addr   = offset + libbase
                     return addr
 
-                self.status("%s (hash collision)" % name)
+                self.status("%r (hash collision)" % name)
 
             # Collision or no match, continue to the next item
             i += 1
@@ -851,10 +859,10 @@ class DynELF(object):
 
         for offset in libcdb.get_build_id_offsets():
             address = libbase + offset
-            if self.leak.compare(address + 0xC, "GNU\x00"):
-                return enhex(''.join(self.leak.raw(address + 0x10, 20)))
+            if self.leak.compare(address + 0xC, b"GNU\x00"):
+                return enhex(b''.join(self.leak.raw(address + 0x10, 20)))
             else:
-                self.status("Magic did not match")
+                self.status("Build ID not found at offset %#x" % offset)
                 pass
 
     def _make_absolute_ptr(self, ptr_or_offset):
@@ -910,3 +918,65 @@ class DynELF(object):
         self.success('*curbrk: %#x' % brk)
 
         return brk
+
+    def _find_mapped_pages(self, readonly = False, page_size = 0x1000):
+        """
+        A generator of all mapped pages, as found using the Program Headers.
+
+        Yields tuples of the form: (virtual address, memory size)
+        """
+        leak  = self.leak
+        base  = self.libbase
+
+        Ehdr  = {32: elf.Elf32_Ehdr, 64: elf.Elf64_Ehdr}[self.elfclass]
+        Phdr  = {32: elf.Elf32_Phdr, 64: elf.Elf64_Phdr}[self.elfclass]
+
+        phead = base + leak.field(base, Ehdr.e_phoff)
+        phnum = leak.field(base, Ehdr.e_phnum)
+
+        for i in range(phnum):
+            if leak.field_compare(phead, Phdr.p_type, constants.PT_LOAD) :
+                # the interesting pages are those that are aligned to PAGE_SIZE
+                if leak.field_compare(phead, Phdr.p_align, page_size) and \
+                    (readonly or leak.field(phead, Phdr.p_flags) & 0x02 != 0):
+                    vaddr = leak.field(phead, Phdr.p_vaddr)
+                    memsz = leak.field(phead, Phdr.p_memsz)
+                    # fix relative offsets
+                    if vaddr < base :
+                        vaddr += base
+                    yield vaddr, memsz
+            phead += sizeof(Phdr)
+
+    def dump(self, libs = False, readonly = False):
+        """dump(libs = False, readonly = False)
+
+        Dumps the ELF's memory pages to allow further analysis.
+
+        Arguments:
+            libs(bool, optional): True if should dump the libraries too (False by default)
+            readonly(bool, optional): True if should dump read-only pages (False by default)
+
+        Returns:
+            a dictionary of the form: { address : bytes }
+        """
+        leak      = self.leak
+        page_size = 0x1000
+        pages     = {}
+
+        for vaddr, memsz in self._find_mapped_pages(readonly, page_size) :
+            offset    = vaddr % page_size
+            if offset != 0 :
+                memsz += offset
+                vaddr -= offset
+            memsz += (page_size - (memsz % page_size)) % page_size
+            pages[vaddr] = leak.n(vaddr, memsz)
+
+        if libs:
+            for lib_name in self.bases():
+                if len(lib_name) == 0:
+                    continue
+                dyn_lib = self._dynamic_load_dynelf(lib_name)
+                if dyn_lib is not None:
+                    pages.update(dyn_lib.dump(readonly = readonly))
+
+        return pages

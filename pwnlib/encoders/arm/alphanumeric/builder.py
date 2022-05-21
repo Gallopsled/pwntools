@@ -1,6 +1,11 @@
-import alphanum_byte
-import ARM_Instructions
-import random_funcs
+# Copyright (c) 2013 Pratik Kumar Sahu, Nagendra Chowdary, Anish Mathuria
+# Ported to Python by Gallopsled
+from __future__ import absolute_import
+from __future__ import division
+
+from . import alphanum_byte
+from . import ARM_Instructions
+from . import random_funcs
 
 #+---------------------------------------------------+*/
 #|                Builder Functions                  |*/
@@ -36,14 +41,12 @@ class builder:
       output = ''
       arr = [1,2,3,4,5,6,7,8,9]
       self.I = random_funcs.randel(arr)
-      p = 0
-      for p in range(len(input)):
-         ab = input[p]
-         b = ord(ab) & 0x0f
+      for _, ab in enumerate(bytearray(input)):
+         b = ab & 0x0f
          e0 = random_funcs.enc_data_msn(b, self.I)
          e0 = e0 << 4
          ef = e0 | b
-         d = ((ord(ab) & 0xf0) ^ e0) >> 4
+         d = ((ab & 0xf0) ^ e0) >> 4
          c0 = random_funcs.enc_data_msn(d, self.I) << 4
          cd = c0 | d
          output += chr(cd & 0xff)
@@ -360,12 +363,12 @@ class builder:
       v1 = random_funcs.randel(arr1)
       v2 = random_funcs.randel(arr1)
 
-      topv = ((total - (v1 + v2))/4) + 1
+      topv = ((total - (v1 + v2)) // 4) + 1
 
       w1 = random_funcs.randel(arr1)
       w2 = random_funcs.randel(arr1)
 
-      topw = ((total - (w1 + w2))/4) + 2
+      topw = ((total - (w1 + w2)) // 4) + 2
 
       arrop = [EOR, SUB, RSB]
       arrcond = [PL, MI]
@@ -373,7 +376,7 @@ class builder:
       arrd = [3, 5, 7]
       arrn = [1, 2, 3, 4, 5, 6, 7, 8, 9]
       p = 1
-      while p <= ((total-8)/4):
+      while p <= ((total-8) // 4):
          op = random_funcs.randel(arrop)
          cond = random_funcs.randel(arrcond)
          if op == EOR:
@@ -422,7 +425,7 @@ class builder:
       #SUBPL rj, ri, #x*/
       output += ARM_Instructions.dpimm(SUB, PL, 0, self.j, self.i, self.x)
 
-      quo = (self.size - 4) / 0x7a
+      quo = (self.size - 4) // 0x7a
       if quo >= 1:
          for p in range(quo):
             #SUBPL rj, rj, #0x7a*/

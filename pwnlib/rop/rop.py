@@ -9,24 +9,55 @@ Let's create a fake binary which has some symbols which might
 have been useful.
 
     >>> context.clear(arch='i386')
-    >>> binary = ELF.from_assembly('add esp, 0x10; ret')
-    >>> binary.symbols = {'read': 0xdeadbeef, 'write': 0xdecafbad, 'exit': 0xfeedface}
+    >>> binary = ELF.from_assembly('add esp, 0x10; ret; pop eax; ret; pop ecx; pop ebx; ret')
+    >>> binary.symbols = {'read': 0xdeadbeef, 'write': 0xdecafbad, 'execve': 0xcafebabe, 'exit': 0xfeedface}
 
-Creating a ROP object which looks up symbols in the binary is
-pretty straightforward.
+Creating a ROP object which looks up symbols in the binary is pretty straightforward.
+
+    >>> rop = ROP(binary)
+
+Once to ROP object has been loaded, you can trivially find gadgets, by using magic properties on the ``ROP`` object.  
+Each :class:`Gadget` has an ``address`` property which has the real address as well.
+
+    >>> rop.eax
+    Gadget(0x10000004, ['pop eax', 'ret'], ['eax'], 0x8)
+    >>> hex(rop.eax.address)
+    '0x10000004'
+
+Other, more complicated gdagets also happen magically
+
+    >>> rop.ecx
+    Gadget(0x10000006, ['pop ecx', 'pop ebx', 'ret'], ['ecx', 'ebx'], 0xc)
+
+The easiest way to set up individual registers is to invoke the ``ROP`` object as a callable, with the registers as arguments.
+    
+    >>> rop(eax=0x11111111, ecx=0x22222222)
+
+Setting register values this way accounts for padding and extra registers which are popped off the stack.
+Values which are filled with garbage (i.e. are not used) are filled with the :func:`cyclic` pattern
+which corresponds to their offset, which is useful when debuggging your exploit.
+
+    >>> print(rop.dump())
+    0x0000:       0x10000006 pop ecx; pop ebx; ret
+    0x0004:       0x22222222
+    0x0008:          b'caaa' <pad ebx>
+    0x000c:       0x10000004 pop eax; ret
+    0x0010:       0x11111111
+
+Let's re-create our ROP object now to show for some other examples.:
 
     >>> rop = ROP(binary)
 
 With the ROP object, you can manually add stack frames.
 
     >>> rop.raw(0)
-    >>> rop.raw(unpack('abcd'))
+    >>> rop.raw(unpack(b'abcd'))
     >>> rop.raw(2)
 
 Inspecting the ROP stack is easy, and laid out in an easy-to-read
 manner.
 
-    >>> print rop.dump()
+    >>> print(rop.dump())
     0x0000:              0x0
     0x0004:       0x64636261
     0x0008:              0x2
@@ -35,12 +66,12 @@ The ROP module is also aware of how to make function calls with
 standard Linux ABIs.
 
     >>> rop.call('read', [4,5,6])
-    >>> print rop.dump()
+    >>> print(rop.dump())
     0x0000:              0x0
     0x0004:       0x64636261
     0x0008:              0x2
     0x000c:       0xdeadbeef read(4, 5, 6)
-    0x0010:           'eaaa' <return address>
+    0x0010:          b'eaaa' <return address>
     0x0014:              0x4 arg0
     0x0018:              0x5 arg1
     0x001c:              0x6 arg2
@@ -50,7 +81,7 @@ The stack is automatically adjusted for the next frame
 
     >>> rop.write(7,8,9)
     >>> rop.exit()
-    >>> print rop.dump()
+    >>> print(rop.dump())
     0x0000:              0x0
     0x0004:       0x64636261
     0x0008:              0x2
@@ -59,14 +90,65 @@ The stack is automatically adjusted for the next frame
     0x0014:              0x4 arg0
     0x0018:              0x5 arg1
     0x001c:              0x6 arg2
-    0x0020:           'iaaa' <pad>
+    0x0020:          b'iaaa' <pad>
     0x0024:       0xdecafbad write(7, 8, 9)
     0x0028:       0x10000000 <adjust @0x3c> add esp, 0x10; ret
     0x002c:              0x7 arg0
     0x0030:              0x8 arg1
     0x0034:              0x9 arg2
-    0x0038:           'oaaa' <pad>
+    0x0038:          b'oaaa' <pad>
     0x003c:       0xfeedface exit()
+
+You can also append complex arguments onto stack when the stack pointer is known.
+
+    >>> rop = ROP(binary, base=0x7fffe000)
+    >>> rop.call('execve', [b'/bin/sh', [[b'/bin/sh'], [b'-p'], [b'-c'], [b'ls']], 0])
+    >>> print(rop.dump())
+    0x7fffe000:       0xcafebabe execve([b'/bin/sh'], [[b'/bin/sh'], [b'-p'], [b'-c'], [b'ls']], 0)
+    0x7fffe004:          b'baaa' <return address>
+    0x7fffe008:       0x7fffe014 arg0 (+0xc)
+    0x7fffe00c:       0x7fffe01c arg1 (+0x10)
+    0x7fffe010:              0x0 arg2
+    0x7fffe014:   b'/bin/sh\x00'
+    0x7fffe01c:       0x7fffe02c (+0x10)
+    0x7fffe020:       0x7fffe034 (+0x14)
+    0x7fffe024:       0x7fffe038 (+0x14)
+    0x7fffe028:       0x7fffe03c (+0x14)
+    0x7fffe02c:   b'/bin/sh\x00'
+    0x7fffe034:       b'-p\x00$'
+    0x7fffe038:       b'-c\x00$'
+    0x7fffe03c:       b'ls\x00$'
+
+ROP also detects 'jmp $sp' gadget to help exploit binaries with NX disabled.
+You can get this gadget on 'i386':
+
+    >>> context.clear(arch='i386')
+    >>> elf = ELF.from_assembly('nop; jmp esp; ret')
+    >>> rop = ROP(elf)
+    >>> jmp_gadget = rop.jmp_esp
+    >>> elf.read(jmp_gadget.address, 2) == asm('jmp esp')
+    True
+
+You can also get this gadget on 'amd64':
+
+    >>> context.clear(arch='amd64')
+    >>> elf = ELF.from_assembly('nop; jmp rsp; ret')
+    >>> rop = ROP(elf)
+    >>> jmp_gadget = rop.jmp_rsp
+    >>> elf.read(jmp_gadget.address, 2) == asm('jmp rsp')
+    True
+
+Gadgets whose address has badchar are filtered out:
+
+    >>> context.clear(arch='i386')
+    >>> elf = ELF.from_assembly('nop; pop eax; jmp esp; int 0x80; jmp esp; ret')
+    >>> rop = ROP(elf, badchars=b'\x02')
+    >>> jmp_gadget = rop.jmp_esp    # It returns the second gadget
+    >>> elf.read(jmp_gadget.address, 2) == asm('jmp esp')
+    True
+    >>> rop = ROP(elf, badchars=b'\x02\x06')
+    >>> rop.jmp_esp == None         # The address of both gadgets has badchar
+    True
 
 ROP Example
 -------------------
@@ -104,27 +186,27 @@ Finally, let's build our ROP stack
     >>> rop = ROP(binary)
     >>> rop.write(c.STDOUT_FILENO, binary.symbols['flag'], 8)
     >>> rop.exit()
-    >>> print rop.dump()
-    0x0000:       0x10000012 write(STDOUT_FILENO, 268435494, 8)
+    >>> print(rop.dump())
+    0x0000:       0x10000012 write(STDOUT_FILENO, 0x10000026, 8)
     0x0004:       0x1000000e <adjust @0x18> add esp, 0x10; ret
-    0x0008:              0x1 arg0
+    0x0008:              0x1 STDOUT_FILENO
     0x000c:       0x10000026 flag
     0x0010:              0x8 arg2
-    0x0014:           'faaa' <pad>
+    0x0014:          b'faaa' <pad>
     0x0018:       0x1000002f exit()
 
 The raw data from the ROP stack is available via `str`.
 
-    >>> raw_rop = str(rop)
-    >>> print enhex(raw_rop)
+    >>> raw_rop = rop.chain()
+    >>> print(enhex(raw_rop))
     120000100e000010010000002600001008000000666161612f000010
 
 Let's try it out!
 
     >>> p = process(binary.path)
     >>> p.send(raw_rop)
-    >>> print p.recvall(timeout=5)
-    The flag
+    >>> print(repr(p.recvall(timeout=5)))
+    b'The flag'
 
 ROP Example (amd64)
 -------------------
@@ -138,35 +220,50 @@ requirements so that everything "just works".
     >>> binary = ELF.from_assembly(assembly)
     >>> rop = ROP(binary)
     >>> rop.target(1,2,3)
-    >>> print rop.dump()
+    >>> print(rop.dump())
     0x0000:       0x10000000 pop rdx; pop rdi; pop rsi; add rsp, 0x20; ret
     0x0008:              0x3 [arg2] rdx = 3
     0x0010:              0x1 [arg0] rdi = 1
     0x0018:              0x2 [arg1] rsi = 2
-    0x0020:       'iaaajaaa' <pad 0x20>
-    0x0028:       'kaaalaaa' <pad 0x18>
-    0x0030:       'maaanaaa' <pad 0x10>
-    0x0038:       'oaaapaaa' <pad 0x8>
+    0x0020:      b'iaaajaaa' <pad 0x20>
+    0x0028:      b'kaaalaaa' <pad 0x18>
+    0x0030:      b'maaanaaa' <pad 0x10>
+    0x0038:      b'oaaapaaa' <pad 0x8>
     0x0040:       0x10000008 target
     >>> rop.target(1)
-    >>> print rop.dump()
+    >>> print(rop.dump())
     0x0000:       0x10000000 pop rdx; pop rdi; pop rsi; add rsp, 0x20; ret
     0x0008:              0x3 [arg2] rdx = 3
     0x0010:              0x1 [arg0] rdi = 1
     0x0018:              0x2 [arg1] rsi = 2
-    0x0020:       'iaaajaaa' <pad 0x20>
-    0x0028:       'kaaalaaa' <pad 0x18>
-    0x0030:       'maaanaaa' <pad 0x10>
-    0x0038:       'oaaapaaa' <pad 0x8>
+    0x0020:      b'iaaajaaa' <pad 0x20>
+    0x0028:      b'kaaalaaa' <pad 0x18>
+    0x0030:      b'maaanaaa' <pad 0x10>
+    0x0038:      b'oaaapaaa' <pad 0x8>
     0x0040:       0x10000008 target
     0x0048:       0x10000001 pop rdi; pop rsi; add rsp, 0x20; ret
     0x0050:              0x1 [arg0] rdi = 1
-    0x0058:       'waaaxaaa' <pad rsi>
-    0x0060:       'yaaazaab' <pad 0x20>
-    0x0068:       'baabcaab' <pad 0x18>
-    0x0070:       'daabeaab' <pad 0x10>
-    0x0078:       'faabgaab' <pad 0x8>
+    0x0058:      b'waaaxaaa' <pad rsi>
+    0x0060:      b'yaaazaab' <pad 0x20>
+    0x0068:      b'baabcaab' <pad 0x18>
+    0x0070:      b'daabeaab' <pad 0x10>
+    0x0078:      b'faabgaab' <pad 0x8>
     0x0080:       0x10000008 target
+
+Pwntools will also filter out some bad instructions while setting the registers
+( e.g. syscall, int 0x80... )
+
+    >>> assembly = 'syscall; pop rdx; pop rsi; ret ; pop rdi ; int 0x80; pop rsi; pop rdx; ret ; pop rdi ; ret'
+    >>> binary = ELF.from_assembly(assembly)
+    >>> rop = ROP(binary)
+    >>> rop.call(0xdeadbeef, [1, 2, 3])
+    >>> print(rop.dump())
+    0x0000:       0x1000000b pop rdi; ret
+    0x0008:              0x1 [arg0] rdi = 1
+    0x0010:       0x10000002 pop rdx; pop rsi; ret
+    0x0018:              0x3 [arg2] rdx = 3
+    0x0020:              0x2 [arg1] rsi = 2
+    0x0028:       0xdeadbeef
 
 ROP + Sigreturn
 -----------------------
@@ -198,10 +295,10 @@ Let's create a ROP object and invoke the call.
 
 That's all there is to it.
 
-    >>> print rop.dump()
+    >>> print(rop.dump())
     0x0000:       0x1000000e pop eax; ret
     0x0004:             0x77 [arg0] eax = SYS_sigreturn
-    0x0008:       0x1000000b int 0x80
+    0x0008:       0x1000000b int 0x80; ret
     0x000c:              0x0 gs
     0x0010:              0x0 fs
     0x0014:              0x0 es
@@ -213,10 +310,10 @@ That's all there is to it.
     0x002c:       0x10000012 ebx = binsh
     0x0030:              0x0 edx
     0x0034:              0x0 ecx
-    0x0038:              0xb eax
+    0x0038:              0xb eax = SYS_execve
     0x003c:              0x0 trapno
     0x0040:              0x0 err
-    0x0044:       0x1000000b int 0x80
+    0x0044:       0x1000000b int 0x80; ret
     0x0048:             0x23 cs
     0x004c:              0x0 eflags
     0x0050:              0x0 esp_at_signal
@@ -226,13 +323,14 @@ That's all there is to it.
 Let's try it out!
 
     >>> p = process(binary.path)
-    >>> p.send(str(rop))
+    >>> p.send(rop.chain())
     >>> time.sleep(1)
-    >>> p.sendline('echo hello; exit')
+    >>> p.sendline(b'echo hello; exit')
     >>> p.recvline()
-    'hello\n'
+    b'hello\n'
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import collections
 import copy
@@ -240,7 +338,10 @@ import hashlib
 import itertools
 import os
 import re
+import shutil
+import six
 import string
+import struct
 import sys
 import tempfile
 
@@ -251,20 +352,30 @@ from pwnlib.context import context
 from pwnlib.elf import ELF
 from pwnlib.log import getLogger
 from pwnlib.rop import srop
+from . import ret2dlresolve
 from pwnlib.rop.call import AppendedArgument
 from pwnlib.rop.call import Call
 from pwnlib.rop.call import CurrentStackPointer
 from pwnlib.rop.call import NextGadgetAddress
 from pwnlib.rop.call import StackAdjustment
+from pwnlib.rop.call import Unresolved
 from pwnlib.rop.gadgets import Gadget
 from pwnlib.util import lists
 from pwnlib.util import packing
 from pwnlib.util.cyclic import cyclic
-from pwnlib.util.packing import *
+from pwnlib.util.packing import pack
+from pwnlib.util.misc import python_2_bytes_compatible
 
 log = getLogger(__name__)
 __all__ = ['ROP']
 
+enums = Call, constants.Constant
+try:
+    from enum import Enum
+except ImportError:
+    pass
+else:
+    enums += Enum,
 
 class Padding(object):
     """
@@ -273,25 +384,36 @@ class Padding(object):
     def __init__(self, name='<pad>'):
         self.name = name
 
+def _slot_len(x):
+    if isinstance(x, six.integer_types+(Unresolved, Padding, Gadget)):
+        return context.bytes
+    else:
+        return len(packing.flat(x))
+
 class DescriptiveStack(list):
     """
     List of resolved ROP gadgets that correspond to the ROP calls that
-    the user has specified.  Also includes
+    the user has specified.
     """
 
     #: Base address
     address = 0
 
-    #: Dictionary of ``{address: [list of descriptions]}``
+    #: Dictionary of \`{address: [list of descriptions]}`
     descriptions = {}
 
     def __init__(self, address):
-        self.descriptions = collections.defaultdict(lambda: [])
+        self.descriptions = collections.defaultdict(list)
         self.address      = address or 0
+        self._next_next   = 0
+        self._next_last   = 0
 
     @property
     def next(self):
-        return self.address + len(self) * context.bytes
+        for x in self[self._next_last:]:
+            self._next_next += _slot_len(x)
+        self._next_last = len(self)
+        return self.address + self._next_next
 
     def describe(self, text, address = None):
         if address is None:
@@ -300,13 +422,13 @@ class DescriptiveStack(list):
 
     def dump(self):
         rv = []
+        addr = self.address
         for i, data in enumerate(self):
-            addr = self.address + i * context.bytes
             off = None
             line = '0x%04x:' % addr
-            if isinstance(data, str):
+            if isinstance(data, (str, bytes)):
                 line += ' %16r' % data
-            elif isinstance(data, (int,long)):
+            elif isinstance(data, six.integer_types):
                 line += ' %#16x' % data
                 if self.address != 0 and self.address < data < self.next:
                     off = data - addr
@@ -318,10 +440,12 @@ class DescriptiveStack(list):
             if off is not None:
                 line += ' (+%#x)' % off
             rv.append(line)
+            addr += _slot_len(data)
 
         return '\n'.join(rv)
 
 
+@python_2_bytes_compatible
 class ROP(object):
     r"""Class which simplifies the generation of ROP-chains.
 
@@ -337,30 +461,30 @@ class ROP(object):
        #  '0x0004:       0xdeadbeef',
        #  '0x0008:              0x0',
        #  '0x000c:        0x80496a8']
-       str(rop)
+       bytes(rop)
        # '\xfc\x82\x04\x08\xef\xbe\xad\xde\x00\x00\x00\x00\xa8\x96\x04\x08'
 
     >>> context.clear(arch = "i386", kernel = 'amd64')
     >>> assembly = 'int 0x80; ret; add esp, 0x10; ret; pop eax; ret'
     >>> e = ELF.from_assembly(assembly)
-    >>> e.symbols['funcname'] = e.address + 0x1234
+    >>> e.symbols['funcname'] = e.entry + 0x1234
     >>> r = ROP(e)
     >>> r.funcname(1, 2)
     >>> r.funcname(3)
     >>> r.execve(4, 5, 6)
-    >>> print r.dump()
+    >>> print(r.dump())
     0x0000:       0x10001234 funcname(1, 2)
     0x0004:       0x10000003 <adjust @0x18> add esp, 0x10; ret
     0x0008:              0x1 arg0
     0x000c:              0x2 arg1
-    0x0010:           'eaaa' <pad>
-    0x0014:           'faaa' <pad>
+    0x0010:          b'eaaa' <pad>
+    0x0014:          b'faaa' <pad>
     0x0018:       0x10001234 funcname(3)
     0x001c:       0x10000007 <adjust @0x24> pop eax; ret
     0x0020:              0x3 arg0
     0x0024:       0x10000007 pop eax; ret
     0x0028:             0x77 [arg0] eax = SYS_sigreturn
-    0x002c:       0x10000000 int 0x80
+    0x002c:       0x10000000 int 0x80; ret
     0x0030:              0x0 gs
     0x0034:              0x0 fs
     0x0038:              0x0 es
@@ -372,10 +496,10 @@ class ROP(object):
     0x0050:              0x4 ebx
     0x0054:              0x6 edx
     0x0058:              0x5 ecx
-    0x005c:              0xb eax
+    0x005c:              0xb eax = SYS_execve
     0x0060:              0x0 trapno
     0x0064:              0x0 err
-    0x0068:       0x10000000 int 0x80
+    0x0068:       0x10000000 int 0x80; ret
     0x006c:             0x23 cs
     0x0070:              0x0 eflags
     0x0074:              0x0 esp_at_signal
@@ -386,19 +510,19 @@ class ROP(object):
     >>> r.funcname(1, 2)
     >>> r.funcname(3)
     >>> r.execve(4, 5, 6)
-    >>> print r.dump()
+    >>> print(r.dump())
     0x8048000:       0x10001234 funcname(1, 2)
     0x8048004:       0x10000003 <adjust @0x8048018> add esp, 0x10; ret
     0x8048008:              0x1 arg0
     0x804800c:              0x2 arg1
-    0x8048010:           'eaaa' <pad>
-    0x8048014:           'faaa' <pad>
+    0x8048010:          b'eaaa' <pad>
+    0x8048014:          b'faaa' <pad>
     0x8048018:       0x10001234 funcname(3)
     0x804801c:       0x10000007 <adjust @0x8048024> pop eax; ret
     0x8048020:              0x3 arg0
     0x8048024:       0x10000007 pop eax; ret
     0x8048028:             0x77 [arg0] eax = SYS_sigreturn
-    0x804802c:       0x10000000 int 0x80
+    0x804802c:       0x10000000 int 0x80; ret
     0x8048030:              0x0 gs
     0x8048034:              0x0 fs
     0x8048038:              0x0 es
@@ -410,10 +534,10 @@ class ROP(object):
     0x8048050:              0x4 ebx
     0x8048054:              0x6 edx
     0x8048058:              0x5 ecx
-    0x804805c:              0xb eax
+    0x804805c:              0xb eax = SYS_execve
     0x8048060:              0x0 trapno
     0x8048064:              0x0 err
-    0x8048068:       0x10000000 int 0x80
+    0x8048068:       0x10000000 int 0x80; ret
     0x804806c:             0x23 cs
     0x8048070:              0x0 eflags
     0x8048074:              0x0 esp_at_signal
@@ -425,13 +549,21 @@ class ROP(object):
     >>> r = ROP(elf)
     >>> r.ret.address == 0x10000000
     True
-    >>> r = ROP(elf, badchars='\x00')
+    >>> r = ROP(elf, badchars=b'\x00')
     >>> r.gadgets == {}
     True
     >>> r.ret is None
     True
     """
-    def __init__(self, elfs, base = None, badchars = '', **kwargs):
+    BAD_ATTRS = [
+        'trait_names',          # ipython tab-complete
+        'download',             # frequent typo
+        'upload',               # frequent typo
+    ]
+    X86_SUFFIXES = ['ax', 'bx', 'cx', 'dx', 'bp', 'sp', 'di', 'si',
+                    'r8', 'r9', '10', '11', '12', '13', '14', '15']
+
+    def __init__(self, elfs, base = None, badchars = b'', **kwargs):
         """
         Arguments:
             elfs(list): List of :class:`.ELF` objects for mining
@@ -443,7 +575,7 @@ class ROP(object):
         # Permit singular ROP(elf) vs ROP([elf])
         if isinstance(elfs, ELF):
             elfs = [elfs]
-        elif isinstance(elfs, (str, unicode)):
+        elif isinstance(elfs, (bytes, six.text_type)):
             elfs = [ELF(elfs)]
 
         #: List of individual ROP gadgets, ROP calls, SROP frames, etc.
@@ -495,14 +627,19 @@ class ROP(object):
 
         regset = set(registers)
 
+        bad_instructions = set(('syscall', 'sysenter', 'int 0x80'))
+        
         # Collect all gadgets which use these registers
         # Also collect the "best" gadget for each combination of registers
         gadgets = []
         best_gadgets = {}
 
         for gadget in self.gadgets.values():
-            # Do not use gadgets which end in e.g. "int 0x80"
+            # Do not use gadgets which doesn't end with 'ret'
             if gadget.insns[-1] != 'ret':
+                continue
+            # Do not use gadgets which contain 'syscall' or 'int'
+            if set(gadget.insns) & bad_instructions:
                 continue
 
             touched = tuple(regset & set(gadget.regs))
@@ -512,15 +649,19 @@ class ROP(object):
 
             old = best_gadgets.get(touched, gadget)
 
-            if old is gadget or old.move > gadget.move:
+            # if we have a new gadget for the touched registers, choose it
+            # if the new gadget requires less stack space, choose it
+            # if both gadgets require same stack space, choose the one with less instructions
+            if (old is gadget) \
+              or (old.move > gadget.move) \
+              or (old.move == gadget.move and len(old.insns) > len(gadget.insns)):
                 best_gadgets[touched] = gadget
-
 
         winner = None
         budget = 999999999
 
         for num_gadgets in range(len(registers)):
-            for combo in itertools.combinations(best_gadgets.values(), 1+num_gadgets):
+            for combo in itertools.combinations(sorted(best_gadgets.values(), key=repr, reverse=True), 1+num_gadgets):
                 # Is this better than what we can already do?
                 cost = sum((g.move for g in combo))
                 if cost > budget:
@@ -543,12 +684,12 @@ class ROP(object):
         stack = []
 
         for gadget in winner:
-            moved = 8 # Account for the gadget itself
+            moved = context.bytes # Account for the gadget itself
             goodregs = set(gadget.regs) & regset
             name = ",".join(goodregs)
             stack.append((gadget.address, gadget))
             for r in gadget.regs:
-                moved += 8
+                moved += context.bytes
                 if r in registers:
                     stack.append((registers[r], r))
                 else:
@@ -559,6 +700,46 @@ class ROP(object):
                 stack.append((Padding('<pad %#x>' % left), 'stack padding'))
 
         return stack
+
+    def __call__(self, *args, **kwargs):
+        """Set the given register(s)' by constructing a rop chain.
+
+        This is a thin wrapper around :meth:`setRegisters` which
+        actually executes the rop chain.
+
+        You can call this :class:`ROP` instance and provide keyword arguments,
+        or a dictionary.
+
+        Arguments:
+            regs(dict): Mapping of registers to values.
+                        Can instead provide ``kwargs``.
+
+        >>> context.clear(arch='amd64')
+        >>> assembly = 'pop rax; pop rdi; pop rsi; ret; pop rax; ret;'
+        >>> e = ELF.from_assembly(assembly)
+        >>> r = ROP(e)
+        >>> r(rax=0xdead, rdi=0xbeef, rsi=0xcafe)
+        >>> print(r.dump())
+        0x0000:       0x10000000 pop rax; pop rdi; pop rsi; ret
+        0x0008:           0xdead
+        0x0010:           0xbeef
+        0x0018:           0xcafe
+        >>> r = ROP(e)
+        >>> r({'rax': 0xdead, 'rdi': 0xbeef, 'rsi': 0xcafe})
+        >>> print(r.dump())
+        0x0000:       0x10000000 pop rax; pop rdi; pop rsi; ret
+        0x0008:           0xdead
+        0x0010:           0xbeef
+        0x0018:           0xcafe
+        """
+        if len(args) == 1 and isinstance(args[0], dict):
+            for value, name in self.setRegisters(args[0]):
+                if isinstance(name, Gadget):
+                    self.raw(name)
+                else:
+                    self.raw(value)
+        else:
+            self(kwargs)
 
     def resolve(self, resolvable):
         """Resolves a symbol to an address
@@ -574,7 +755,7 @@ class ROP(object):
                 if resolvable in elf.symbols:
                     return elf.symbols[resolvable]
 
-        if isinstance(resolvable, (int, long)):
+        if isinstance(resolvable, six.integer_types):
             return resolvable
 
     def unresolve(self, value):
@@ -602,6 +783,7 @@ class ROP(object):
         """
         Generates padding to be inserted into the ROP stack.
 
+        >>> context.clear(arch='i386')
         >>> rop = ROP([])
         >>> val = rop.generatePadding(5,15)
         >>> cyclic_find(val[:4])
@@ -609,27 +791,27 @@ class ROP(object):
         >>> len(val)
         15
         >>> rop.generatePadding(0,0)
-        ''
+        b''
 
         """
 
         # Ensure we don't generate a cyclic pattern which contains badchars
-        alphabet = ''.join(c for c in string.ascii_lowercase if c not in self._badchars)
+        alphabet = b''.join(packing.p8(c) for c in bytearray(string.ascii_lowercase.encode()) if c not in self._badchars)
 
         if count:
             return cyclic(offset + count, alphabet=alphabet)[-count:]
-        return ''
+        return b''
 
     def describe(self, object):
         """
         Return a description for an object in the ROP stack
         """
-        if isinstance(object, (int, long)):
-            return self.unresolve(object)
-        if isinstance(object, str):
-            return repr(object)
-        if isinstance(object, Call):
+        if isinstance(object, enums):
             return str(object)
+        if isinstance(object, six.integer_types):
+            return self.unresolve(object)
+        if isinstance(object, (bytes, six.text_type)):
+            return repr(object)
         if isinstance(object, Gadget):
             return '; '.join(object.insns)
 
@@ -671,16 +853,17 @@ class ROP(object):
 
             # Integers can just be added.
             # Do our best to find out what the address is.
-            if isinstance(slot, (int, long)):
+            if isinstance(slot, six.integer_types):
                 stack.describe(self.describe(slot))
                 stack.append(slot)
 
 
             # Byte blobs can also be added, however they must be
             # broken down into pointer-width blobs.
-            elif isinstance(slot, (str, unicode)):
+            elif isinstance(slot, (bytes, six.text_type)):
                 stack.describe(self.describe(slot))
-                slot += self.generatePadding(stack.next, len(slot) % context.bytes)
+                if not isinstance(slot, bytes):
+                    slot = slot.encode()
 
                 for chunk in lists.group(context.bytes, slot):
                     stack.append(chunk)
@@ -704,13 +887,13 @@ class ROP(object):
             elif isinstance(slot, Call):
                 stack.describe(self.describe(slot))
 
-                registers    = dict(zip(slot.abi.register_arguments, slot.args))
+                registers    = slot.register_arguments
 
                 for value, name in self.setRegisters(registers):
                     if name in registers:
                         index = slot.abi.register_arguments.index(name)
-                        description = self.describe(value) or value
-                        stack.describe('[arg%s] %s = %s' % (index, name, description))
+                        description = self.describe(value) or repr(value)
+                        stack.describe('[arg%d] %s = %s' % (index, name, description))
                     elif isinstance(name, Gadget):
                         stack.describe('; '.join(name.insns))
                     elif isinstance(name, str):
@@ -723,7 +906,10 @@ class ROP(object):
                 stack.append(slot.target)
 
                 # For any remaining arguments, put them on the stack
-                stackArguments = slot.args[len(slot.abi.register_arguments):]
+                stackArguments = slot.stack_arguments
+                for argument in slot.stack_arguments_before:
+                    stack.describe("[dlresolve index]")
+                    stack.append(argument)
                 nextGadgetAddr = stack.next + (context.bytes * len(stackArguments))
 
                 # Generally, stack-based arguments assume there's a return
@@ -783,12 +969,12 @@ class ROP(object):
         start = base
         end   = stack.next
         size  = (stack.next - base)
+        slot_address = base
         for i, slot in enumerate(stack):
-            slot_address = stack.address + (i * context.bytes)
-            if isinstance(slot, (int, long)):
+            if isinstance(slot, six.integer_types):
                 pass
 
-            elif isinstance(slot, (str, unicode)):
+            elif isinstance(slot, (bytes, six.text_type)):
                 pass
 
             elif isinstance(slot, AppendedArgument):
@@ -812,23 +998,36 @@ class ROP(object):
             else:
                 pass
 
+            slot_address += _slot_len(slot)
+
         return stack
 
 
     def find_stack_adjustment(self, slots):
-        self.search(move=slots * context.arch)
+        self.search(move=slots * context.bytes)
 
-    def chain(self):
+    def chain(self, base=None):
         """Build the ROP chain
+        
+        Arguments:
+            base(int):
+                The base address to build the rop-chain from. Defaults to
+                :attr:`base`.
 
         Returns:
             str containing raw ROP bytes
         """
-        return packing.flat(self.build())
+        return packing.flat(self.build(base=base))
 
-    def dump(self):
-        """Dump the ROP chain in an easy-to-read manner"""
-        return self.build().dump()
+    def dump(self, base=None):
+        """Dump the ROP chain in an easy-to-read manner
+        
+        Arguments:
+            base(int):
+                The base address to build the rop-chain from. Defaults to
+                :attr:`base`.
+        """
+        return self.build(base=base).dump()
 
     def regs(self, registers=None, **kw):
         if registers is None:
@@ -901,7 +1100,10 @@ class ROP(object):
                 SYS_sigreturn  = constants.SYS_rt_sigreturn
 
             for register, value in zip(frame.arguments, arguments):
-                frame[register] = value
+                if not isinstance(value, six.integer_types + (Unresolved,)):
+                    frame[register] = AppendedArgument(value)
+                else:
+                    frame[register] = value
 
         # Set up a call frame which will set EAX and invoke the syscall
         call = Call('SYS_sigreturn',
@@ -938,19 +1140,20 @@ class ROP(object):
         sure that any given string is aligned!
 
         Arguments:
-            data(int/str): The raw value to put onto the rop chain.
+            data(int/bytes): The raw value to put onto the rop chain.
 
+        >>> context.clear(arch='i386')
         >>> rop = ROP([])
         >>> rop.raw('AAAAAAAA')
         >>> rop.raw('BBBBBBBB')
         >>> rop.raw('CCCCCCCC')
-        >>> print rop.dump()
-        0x0000:           'AAAA' 'AAAAAAAA'
-        0x0004:           'AAAA'
-        0x0008:           'BBBB' 'BBBBBBBB'
-        0x000c:           'BBBB'
-        0x0010:           'CCCC' 'CCCCCCCC'
-        0x0014:           'CCCC'
+        >>> print(rop.dump())
+        0x0000:          b'AAAA' 'AAAAAAAA'
+        0x0004:          b'AAAA'
+        0x0008:          b'BBBB' 'BBBBBBBB'
+        0x000c:          b'BBBB'
+        0x0010:          b'CCCC' 'CCCCCCCC'
+        0x0014:          b'CCCC'
         """
         if self.migrated:
             log.error('Cannot append to a migrated chain')
@@ -959,7 +1162,7 @@ class ROP(object):
     def migrate(self, next_base):
         """Explicitly set $sp, by using a ``leave; ret`` gadget"""
         if isinstance(next_base, ROP):
-            next_base = self.base
+            next_base = next_base.base
         pop_sp = self.rsp or self.esp
         pop_bp = self.rbp or self.ebp
         leave  = self.leave
@@ -974,39 +1177,49 @@ class ROP(object):
             log.error('Cannot find the gadgets to migrate')
         self.migrated = True
 
-    def __str__(self):
+    def __bytes__(self):
         """Returns: Raw bytes of the ROP chain"""
         return self.chain()
 
+    def __flat__(self):
+        return self.chain()
+
+    def __flat_at__(self, address):
+        return self.chain(address)
+
     def __get_cachefile_name(self, files):
         """Given an ELF or list of ELF objects, return a cache file for the set of files"""
-        cachedir = os.path.join(tempfile.gettempdir(), 'pwntools-rop-cache')
+        cachedir = os.path.join(context.cache_dir, 'rop-cache')
         if not os.path.exists(cachedir):
             os.mkdir(cachedir)
 
         if isinstance(files, ELF):
             files = [files]
 
-        hashes = []
+        sha256 = hashlib.sha256()
+        for elf_data in sorted(elf.get_data() for elf in files):
+            sha256.update(elf_data)
 
-        for elf in self.elfs:
-            sha256 = hashlib.sha256(elf.get_data()).hexdigest()
-            hashes.append(sha256)
+        return os.path.join(cachedir, sha256.hexdigest())
 
-        return os.path.join(cachedir, '_'.join(hashes))
+    @staticmethod
+    def clear_cache():
+        """Clears the ROP gadget cache"""
+        cachedir = os.path.join(context.cache_dir, 'rop-cache')
+        shutil.rmtree(cachedir)
 
     def __cache_load(self, elf):
         filename = self.__get_cachefile_name(elf)
         if not os.path.exists(filename):
             return None
-        log.info_once('Loaded cached gadgets for %r' % elf.file.name)
-        gadgets = eval(file(filename).read())
+        gadgets = eval(open(filename).read())
         gadgets = {k - elf.load_addr + elf.address:v for k, v in gadgets.items()}
+        log.info_once('Loaded %s cached gadgets for %r', len(gadgets), elf.file.name)
         return gadgets
 
     def __cache_save(self, elf, data):
         data = {k + elf.load_addr - elf.address:v for k, v in data.items()}
-        file(self.__get_cachefile_name(elf), 'w+').write(repr(data))
+        open(self.__get_cachefile_name(elf), 'w+').write(repr(data))
 
     def __load(self):
         """Load all ROP gadgets for the selected ELF files"""
@@ -1015,15 +1228,15 @@ class ROP(object):
         #
         # - leave
         # - pop reg
-        # - add $sp, value
+        # - add $sp, <hexadecimal value>
         # - ret
         #
         # Currently, ROPgadget does not detect multi-byte "C2" ret.
         # https://github.com/JonathanSalwan/ROPgadget/issues/53
         #
 
-        pop   = re.compile(r'^pop (.{3})')
-        add   = re.compile(r'^add [er]sp, (\S+)$')
+        pop   = re.compile(r'^pop (.{2,3})')
+        add   = re.compile(r'^add [er]sp, ((?:0[xX])?[0-9a-fA-F]+)$')
         ret   = re.compile(r'^ret$')
         leave = re.compile(r'^leave$')
         int80 = re.compile(r'int +0x80')
@@ -1039,6 +1252,8 @@ class ROP(object):
         # False
         # >>> valid('add esp, 0x24')
         # True
+        # >>> valid('add esp, esi')
+        # False
         #
         valid = lambda insn: any(map(lambda pattern: pattern.match(insn), [pop,add,ret,leave,int80,syscall,sysenter]))
 
@@ -1071,7 +1286,7 @@ class ROP(object):
             try:
                 sys.stdout = Wrapper(sys.stdout)
                 import ropgadget
-                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop']
+                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop', '--multibr']
                 args = ropgadget.args.Args().getArgs()
                 core = ropgadget.core.Core(args)
                 core.do_binary(elf.path)
@@ -1156,6 +1371,8 @@ class ROP(object):
         regs = set(regs or ())
 
         for addr, gadget in self.gadgets.items():
+            addr_bytes = set(pack(gadget.address))
+            if addr_bytes & self._badchars:     continue
             if gadget.insns[-1] != 'ret':        continue
             if gadget.move < move:               continue
             if not (regs <= set(gadget.regs)):   continue
@@ -1203,12 +1420,105 @@ class ROP(object):
 
         return result
 
+    def ret2csu(self, edi=Padding('edi'), rsi=Padding('rsi'),
+                rdx=Padding('rdx'), rbx=Padding('rbx'), rbp=Padding('rbp'),
+                r12=Padding('r12'), r13=Padding('r13'), r14=Padding('r14'),
+                r15=Padding('r15'), call=None):
+        """Build a ret2csu ROPchain
+
+        Arguments:
+            edi, rsi, rdx: Three primary registers to populate
+            rbx, rbp, r12, r13, r14, r15: Optional registers to populate
+            call: Pointer to the address of a function to call during
+                second gadget. If None then use the address of _fini in the
+                .dynamic section. .got.plt entries are a good target. Required
+                for PIE binaries.
+        Test:
+            >>> context.clear(binary=pwnlib.data.elf.ret2dlresolve.get("amd64"))
+            >>> r = ROP(context.binary)
+            >>> r.ret2csu(1, 2, 3, 4, 5, 6, 7, 8, 9)
+            >>> r.call(0xdeadbeef)
+            >>> print(r.dump())
+            0x0000:         0x40058a
+            0x0008:              0x0
+            0x0010:              0x1
+            0x0018:         0x600e48
+            0x0020:              0x1
+            0x0028:              0x2
+            0x0030:              0x3
+            0x0038:         0x400570
+            0x0040:      b'qaaaraaa' <add rsp, 8>
+            0x0048:              0x4
+            0x0050:              0x5
+            0x0058:              0x6
+            0x0060:              0x7
+            0x0068:              0x8
+            0x0070:              0x9
+            0x0078:       0xdeadbeef 0xdeadbeef()
+            >>> open('core','w').close(); os.unlink('core')  # remove any old core file for the tests
+            >>> p = process()
+            >>> p.send(fit({64+context.bytes: r}))
+            >>> p.wait(0.5)
+            >>> core = p.corefile
+            >>> hex(core.pc)
+            '0xdeadbeef'
+            >>> core.rdi, core.rsi, core.rdx, core.rbx, core.rbp, core.r12, core.r13, core.r14, core.r15
+            (1, 2, 3, 4, 5, 6, 7, 8, 9)
+        """
+        if self.migrated:
+            log.error('Cannot append to a migrated chain')
+
+        # Ensure 'edi' argument is packable
+        try:
+            packing.p32(edi)
+        except struct.error:
+            log.error('edi must be a 32bit value')
+
+        # Find an appropriate, non-library ELF.
+        # Prioritise non-PIE binaries so we can use _fini
+        exes = (elf for elf in self.elfs if not elf.library and elf.bits == 64)
+
+        nonpie = csu = None
+        for elf in exes:
+            if not elf.pie:
+                if '__libc_csu_init' in elf.symbols:
+                    break
+                nonpie = elf
+            elif '__libc_csu_init' in elf.symbols:
+                csu = elf
+        else:
+            log.error('No non-library binaries in [elfs]')
+
+        if elf.pie:
+            if nonpie:
+                elf = nonpie
+            elif csu:
+                elf = csu
+
+        from .ret2csu import ret2csu
+        ret2csu(self, elf, edi, rsi, rdx, rbx, rbp, r12, r13, r14, r15, call)
+
+    def ret2dlresolve(self, dlresolve):
+        elf = next(elf for elf in self.elfs if elf.get_section_by_name(".plt"))
+        elf_base = elf.address if elf.pie else 0
+        plt_init = elf.get_section_by_name(".plt").header.sh_addr + elf_base
+        log.debug("PLT_INIT: %#x", plt_init)
+
+        reloc_index = dlresolve.reloc_index
+        real_args = dlresolve.real_args
+        call = Call("[plt_init] " + dlresolve.symbol.decode(),
+                    plt_init,
+                    dlresolve.real_args,
+                    before=[reloc_index])
+        self.raw(call)
+
     def __getattr__(self, attr):
-        """Helper to make finding ROP gadets easier.
+        """Helper to make finding ROP gadgets easier.
 
         Also provides a shorthand for ``.call()``:
             ``rop.function(args)`` is equivalent to ``rop.call(function, args)``
 
+        >>> context.clear(arch='i386')
         >>> elf=ELF(which('bash'))
         >>> rop=ROP([elf])
         >>> rop.rdi     == rop.search(regs=['rdi'], order = 'regs')
@@ -1217,18 +1527,17 @@ class ROP(object):
         True
         >>> rop.ret_8   == rop.search(move=8)
         True
-        >>> rop.ret     != None
+        >>> rop.ret is not None
+        True
+        >>> with context.local(arch='amd64', bits='64'):
+        ...     r = ROP(ELF.from_assembly('syscall; ret'))
+        >>> r.syscall is not None
         True
         """
         gadget = collections.namedtuple('gadget', ['address', 'details'])
-        bad_attrs = [
-            'trait_names',          # ipython tab-complete
-            'download',             # frequent typo
-            'upload',               # frequent typo
-        ]
 
         if attr in self.__dict__ \
-        or attr in bad_attrs \
+        or attr in self.BAD_ATTRS \
         or attr.startswith('_'):
             raise AttributeError('ROP instance has no attribute %r' % attr)
 
@@ -1241,22 +1550,37 @@ class ROP(object):
                 count = int(attr.split('_')[1])
             return self.search(move=count)
 
-        if attr in ('int80', 'syscall', 'sysenter'):
-            mapping = {'int80': 'int 0x80',
-             'syscall': 'syscall',
-             'sysenter': 'sysenter'}
+        #
+        # Check for 'jmp_esp'('i386') or 'jmp_rsp'('amd64')
+        #
+        if attr == 'jmp_esp' and context.arch == 'i386' \
+        or attr == 'jmp_rsp' and context.arch == 'amd64':
+            jmp_sp = {'i386': 'jmp esp',
+                      'amd64': 'jmp rsp'
+                     }[context.arch]
+
+            insn_asm = b'\xff\xe4'
+
+            for elf in self.elfs:
+                for addr in elf.search(insn_asm, executable = True):
+                    if set(pack(addr)) & self._badchars:
+                        continue
+
+                    return Gadget(addr, [jmp_sp], [], context.bytes)
+            return None
+        mapping = {'int80': 'int 0x80',
+            'syscall': 'syscall',
+            'sysenter': 'sysenter'}
+        if attr in mapping:
             for each in self.gadgets:
-                if self.gadgets[each]['insns'] == [mapping[attr]]:
+                if self.gadgets[each]['insns'][0] == mapping[attr]:
                     return gadget(each, self.gadgets[each])
             return None
 
         #
         # Check for a '_'-delimited list of registers
         #
-        x86_suffixes = ['ax', 'bx', 'cx', 'dx', 'bp', 'sp', 'di', 'si',
-                        'r8', 'r9', '10', '11', '12', '13', '14', '15']
-
-        if all(map(lambda x: x[-2:] in x86_suffixes, attr.split('_'))):
+        if all(map(lambda x: x[-2:] in self.X86_SUFFIXES, attr.split('_'))):
             return self.search(regs=attr.split('_'), order='regs')
 
         #
@@ -1266,3 +1590,42 @@ class ROP(object):
             return self.call(attr, args)
 
         return call
+
+    def __setattr__(self, attr, value):
+        """Helper for setting registers.
+
+        This convenience feature allows one to set the values of registers
+        with simple python assignment syntax.
+
+        Warning:
+            Only one register is set at a time (one per rop chain).
+            This may lead to some previously set to registers be overwritten!
+
+        Note:
+            If you would like to set multiple registers in as few rop chains
+            as possible, see :meth:`__call__`.
+
+        >>> context.clear(arch='amd64')
+        >>> assembly = 'pop rax; pop rdi; pop rsi; ret; pop rax; ret;'
+        >>> e = ELF.from_assembly(assembly)
+        >>> r = ROP(e)
+        >>> r.rax = 0xdead
+        >>> r.rdi = 0xbeef
+        >>> r.rsi = 0xcafe
+        >>> print(r.dump())
+        0x0000:       0x10000004 pop rax; ret
+        0x0008:           0xdead
+        0x0010:       0x10000001 pop rdi; pop rsi; ret
+        0x0018:           0xbeef
+        0x0020:      b'iaaajaaa' <pad rsi>
+        0x0028:       0x10000002 pop rsi; ret
+        0x0030:           0xcafe
+        """
+        if attr in self.BAD_ATTRS:
+            raise AttributeError('ROP instance has no attribute %r' % attr)
+
+        if attr[-2:] in self.X86_SUFFIXES:  # handle setting registers
+            self({attr: value})
+
+        # Otherwise, perform usual setting
+        self.__dict__[attr] = value

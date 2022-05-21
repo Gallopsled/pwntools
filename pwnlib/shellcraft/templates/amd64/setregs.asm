@@ -1,4 +1,5 @@
 <%
+  import six
   from pwnlib.regsort import regsort
   from pwnlib.shellcraft import registers, eval
   from pwnlib.shellcraft.amd64 import mov
@@ -14,18 +15,18 @@ Args:
 
 Example:
 
-    >>> print shellcraft.setregs({'rax':1, 'rbx':'rax'}).rstrip()
+    >>> print(shellcraft.setregs({'rax':1, 'rbx':'rax'}).rstrip())
         mov rbx, rax
         push 1
         pop rax
-    >>> print shellcraft.setregs({'rax': 'SYS_write', 'rbx':'rax'}).rstrip()
+    >>> print(shellcraft.setregs({'rax': 'SYS_write', 'rbx':'rax'}).rstrip())
         mov rbx, rax
         push SYS_write /* 1 */
         pop rax
-    >>> print shellcraft.setregs({'rax':'rbx', 'rbx':'rax', 'rcx':'rbx'}).rstrip()
+    >>> print(shellcraft.setregs({'rax':'rbx', 'rbx':'rax', 'rcx':'rbx'}).rstrip())
         mov rcx, rbx
         xchg rax, rbx
-    >>> print shellcraft.setregs({'rax':1, 'rdx':0}).rstrip()
+    >>> print(shellcraft.setregs({'rax':1, 'rdx':0}).rstrip())
         push 1
         pop rax
         cdq /* rdx=0 */
@@ -50,7 +51,7 @@ if isinstance(edx, str):
     except NameError:
         pass
 
-if isinstance(eax, int) and isinstance(edx, int) and eax >> 63 == edx:
+if isinstance(eax, six.integer_types) and isinstance(edx, six.integer_types) and eax >> 63 == edx:
     cdq = True
     reg_context.pop('rdx')
 

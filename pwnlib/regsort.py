@@ -3,6 +3,7 @@
 Topographical sort
 """
 from __future__ import absolute_import
+from __future__ import division
 
 from collections import OrderedDict
 from collections import defaultdict
@@ -242,14 +243,14 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
     # Collapse constant values
     #
     # For eaxmple, {'eax': 0, 'ebx': 0} => {'eax': 0, 'ebx': 'eax'}
-    v_k = defaultdict(lambda: [])
+    v_k = defaultdict(list)
     for k,v in sorted(in_out.items()):
         if v not in all_regs and v != 0:
             v_k[v].append(k)
 
     post_mov = {}
 
-    for v,ks in sorted(v_k.items()):
+    for v,ks in sorted(v_k.items(), key=repr):
         for k in ks[1:]:
             post_mov[k] = ks[0]
             in_out.pop(k)

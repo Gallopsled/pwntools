@@ -1,12 +1,14 @@
 #!/usr/bin/env python2
 from __future__ import absolute_import
+from __future__ import division
 
 import argparse
 import os
+import six
 import sys
 import types
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
@@ -21,8 +23,8 @@ from pwnlib.commandline import common
 
 def _string(s):
     out = []
-    for c in s:
-        co = ord(c)
+    for co in bytearray(s):
+        c = chr(co)
         if co >= 0x20 and co <= 0x7e and c not in '/$\'"`':
             out.append(c)
         else:
@@ -33,6 +35,7 @@ def _string(s):
 p = common.parser_commands.add_parser(
     'shellcraft',
     help = 'Microwave shellcode -- Easy, fast and delicious',
+    description = 'Microwave shellcode -- Easy, fast and delicious',
 )
 
 
@@ -45,8 +48,8 @@ p.add_argument(
 p.add_argument(
     '-o', '--out',
     metavar = 'file',
-    type = argparse.FileType('w'),
-    default = sys.stdout,
+    type = argparse.FileType('wb'),
+    default = getattr(sys.stdout, 'buffer', sys.stdout),
     help = 'Output file (default: stdout)',
 )
 
@@ -189,17 +192,17 @@ def main(args):
         elif not args.syscalls:
             templates = filter(is_not_a_syscall_template, templates)
 
-        print '\n'.join(templates)
+        print('\n'.join(templates))
         exit()
 
     if not args.shellcode:
         common.parser.print_usage()
         exit()
 
-    if args.shellcode not in shellcraft.templates:
+    try:
+        func = get_template(args.shellcode)
+    except AttributeError:
         log.error("Unknown shellcraft template %r. Use --list to see available shellcodes." % args.shellcode)
-
-    func = get_template(args.shellcode)
 
     if args.show:
         # remove doctests
@@ -244,11 +247,11 @@ def main(args):
             if not in_doctest:
                 doc.append(line)
             i += 1
-        print '\n'.join(doc).rstrip()
+        print('\n'.join(doc).rstrip())
         exit()
 
-    defargs = len(func.func_defaults or ())
-    reqargs = func.func_code.co_argcount - defargs
+    defargs = len(six.get_function_defaults(func) or ())
+    reqargs = six.get_function_code(func).co_argcount - defargs
     if len(args.args) < reqargs:
         if defargs > 0:
             log.critical('%s takes at least %d arguments' % (args.shellcode, reqargs))
@@ -265,7 +268,7 @@ def main(args):
             pass
 
     # And he strikes again!
-    map(common.context_arg, args.shellcode.split('.'))
+    list(map(common.context_arg, args.shellcode.split('.')))
     code = func(*args.args)
 
 
@@ -283,21 +286,21 @@ def main(args):
 
             code = highlight(code, PwntoolsLexer(), TerminalFormatter())
 
-        print code
+        print(code)
         exit()
     if args.format == 'p':
-        print cpp(code)
+        print(cpp(code))
         exit()
 
     assembly = code
 
     vma = args.address
     if vma:
-        vma = eval(vma)
+        vma = pwnlib.util.safeeval.expr(vma)
 
     if args.format in ['e','elf']:
         args.format = 'default'
-        try: os.fchmod(args.out.fileno(), 0700)
+        try: os.fchmod(args.out.fileno(), 0o700)
         except OSError: pass
 
 
@@ -341,10 +344,12 @@ def main(args):
     elif args.format in ['i', 'hexii']:
         code = hexii(code) + '\n'
     elif args.format in ['d', 'escaped']:
-        code = ''.join('\\x%02x' % ord(c) for c in code) + '\n'
+        code = ''.join('\\x%02x' % c for c in bytearray(code)) + '\n'
     if not sys.stdin.isatty():
-        args.out.write(sys.stdin.read())
+        args.out.write(getattr(sys.stdin, 'buffer', sys.stdin).read())
 
+    if not hasattr(code, 'decode'):
+        code = code.encode()
     args.out.write(code)
 
 if __name__ == '__main__':

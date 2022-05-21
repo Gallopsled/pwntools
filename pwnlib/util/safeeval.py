@@ -1,7 +1,11 @@
+from __future__ import division
+
 _const_codes = [
     'POP_TOP','ROT_TWO','ROT_THREE','ROT_FOUR','DUP_TOP',
-    'BUILD_LIST','BUILD_MAP','BUILD_TUPLE',
-    'LOAD_CONST','RETURN_VALUE','STORE_SUBSCR', 'STORE_MAP'
+    'BUILD_LIST','BUILD_MAP','BUILD_TUPLE','BUILD_SET',
+    'BUILD_CONST_KEY_MAP', 'BUILD_STRING',
+    'LOAD_CONST','RETURN_VALUE','STORE_SUBSCR', 'STORE_MAP',
+    'LIST_TO_TUPLE', 'LIST_EXTEND', 'SET_UPDATE', 'DICT_UPDATE', 'DICT_MERGE',
     ]
 
 _expr_codes = _const_codes + [
@@ -15,6 +19,8 @@ _expr_codes = _const_codes + [
 
 _values_codes = _expr_codes + ['LOAD_NAME']
 
+import six
+
 def _get_opcodes(codeobj):
     """_get_opcodes(codeobj) -> [opcodes]
 
@@ -25,11 +31,13 @@ def _get_opcodes(codeobj):
     [100, 100, 103, 83]
     """
     import dis
+    if hasattr(dis, 'get_instructions'):
+        return [ins.opcode for ins in dis.get_instructions(codeobj)]
     i = 0
     opcodes = []
     s = codeobj.co_code
     while i < len(s):
-        code = ord(s[i])
+        code = six.indexbytes(s, i)
         opcodes.append(code)
         if code >= dis.HAVE_ARGUMENT:
             i += 3
@@ -45,11 +53,11 @@ def test_expr(expr, allowed_codes):
     return the compiled code object. Otherwise raise a ValueError
     """
     import dis
-    allowed_codes = [dis.opmap[c] for c in allowed_codes]
+    allowed_codes = [dis.opmap[c] for c in allowed_codes if c in dis.opmap]
     try:
         c = compile(expr, "", "eval")
     except SyntaxError:
-        raise ValueError("%s is not a valid expression" % expr)
+        raise ValueError("%r is not a valid expression" % expr)
     codes = _get_opcodes(c)
     for code in codes:
         if code not in allowed_codes:
@@ -122,7 +130,7 @@ def values(expr, env):
         10
         >>> class Foo:
         ...    def __add__(self, other):
-        ...        print "Firing the missiles"
+        ...        print("Firing the missiles")
         >>> values("A + 1", {'A': Foo()})
         Firing the missiles
         >>> values("A.x", {'A': Foo()})

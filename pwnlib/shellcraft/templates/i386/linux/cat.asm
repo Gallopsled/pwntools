@@ -11,7 +11,7 @@ Example:
     >>> f = tempfile.mktemp()
     >>> write(f, 'FLAG')
     >>> run_assembly(shellcraft.i386.linux.cat(f)).recvall()
-    'FLAG'
+    b'FLAG'
 
 </%docstring>
 <%
@@ -19,5 +19,5 @@ label = common.label("sendfile_loop")
 %>
 
     ${sc.pushstr(filename)}
-    ${sc.open('esp', 0, 'O_RDONLY')}
+    ${sc.open('esp', 'O_RDONLY', 'edx')}
     ${sc.sendfile(fd, 'eax', 0, 0x7fffffff)}

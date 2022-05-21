@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 
 import errno
 import socket
@@ -8,6 +9,8 @@ import psutil
 
 from pwnlib import tubes
 from pwnlib.log import getLogger
+from .net import sock_match
+from pwnlib.timeout import Timeout
 
 log = getLogger(__name__)
 
@@ -29,34 +32,31 @@ def pidof(target):
 
     Returns:
         A list of found PIDs.
+
+    Example:
+        >>> l = tubes.listen.listen()
+        >>> p = process(['curl', '-s', 'http://127.0.0.1:%d'%l.lport])
+        >>> pidof(p) == pidof(l) == pidof(('127.0.0.1', l.lport))
+        True
     """
     if isinstance(target, tubes.ssh.ssh_channel):
         return [target.pid]
 
     elif isinstance(target, tubes.sock.sock):
-         local  = target.sock.getsockname()
-         remote = target.sock.getpeername()
-
-         def match(c):
-             return (c.raddr, c.laddr, c.status) == (local, remote, 'ESTABLISHED')
-
-         return [c.pid for c in psutil.net_connections() if match(c)]
+        local  = target.sock.getsockname()
+        remote = target.sock.getpeername()
+        match = sock_match(remote, local, target.family, target.type)
+        return [c.pid for c in psutil.net_connections() if match(c)]
 
     elif isinstance(target, tuple):
-        host, port = target
-
-        host = socket.gethostbyname(host)
-
-        def match(c):
-            return c.raddr == (host, port)
-
+        match = sock_match(None, target)
         return [c.pid for c in psutil.net_connections() if match(c)]
 
     elif isinstance(target, tubes.process.process):
-         return [target.proc.pid]
+        return [target.proc.pid]
 
     else:
-         return pid_by_name(target)
+        return pid_by_name(target)
 
 def pid_by_name(name):
     """pid_by_name(name) -> int list
@@ -85,9 +85,9 @@ def pid_by_name(name):
 
     processes = (p for p in psutil.process_iter() if match(p))
 
-    processes = sorted(processes, key=lambda p: p.create_time())
+    processes = sorted(processes, key=lambda p: p.create_time(), reverse=True)
 
-    return list(reversed([p.pid for p in processes]))
+    return [p.pid for p in processes]
 
 def name(pid):
     """name(pid) -> str
@@ -99,9 +99,9 @@ def name(pid):
         Name of process as listed in ``/proc/<pid>/status``.
 
     Example:
-        >>> pid = pidof('init')[0]
-        >>> name(pid) == 'init'
-        True
+        >>> p = process('cat')
+        >>> name(p.pid)
+        'cat'
     """
     return psutil.Process(pid).name()
 
@@ -139,6 +139,10 @@ def ancestors(pid):
 
     Returns:
         List of PIDs of whose parent process is `pid` or an ancestor of `pid`.
+
+    Example:
+        >>> ancestors(os.getpid()) # doctest: +ELLIPSIS
+        [..., 1]
     """
     pids = []
     while pid != 0:
@@ -154,6 +158,11 @@ def descendants(pid):
 
     Returns:
         Dictionary mapping the PID of each child of `pid` to it's descendants.
+
+    Example:
+        >>> d = descendants(os.getppid())
+        >>> os.getpid() in d.keys()
+        True
     """
     this_pid = pid
     allpids = all_pids()
@@ -176,6 +185,10 @@ def exe(pid):
 
     Returns:
         The path of the binary of the process. I.e. what ``/proc/<pid>/exe`` points to.
+
+    Example:
+        >>> exe(os.getpid()) == os.path.realpath(sys.executable)
+        True
     """
     return psutil.Process(pid).exe()
 
@@ -188,6 +201,10 @@ def cwd(pid):
     Returns:
         The path of the process's current working directory. I.e. what
         ``/proc/<pid>/cwd`` points to.
+
+    Example:
+        >>> cwd(os.getpid()) == os.getcwd()
+        True
     """
     return psutil.Process(pid).cwd()
 
@@ -199,6 +216,10 @@ def cmdline(pid):
 
     Returns:
         A list of the fields in ``/proc/<pid>/cmdline``.
+
+    Example:
+        >>> 'py' in ''.join(cmdline(os.getpid()))
+        True
     """
     return psutil.Process(pid).cmdline()
 
@@ -210,6 +231,10 @@ def stat(pid):
 
     Returns:
         A list of the values in ``/proc/<pid>/stat``, with the exception that ``(`` and ``)`` has been removed from around the process name.
+
+    Example:
+        >>> stat(os.getpid())[2]
+        'R'
     """
     with open('/proc/%d/stat' % pid) as fd:
          s = fd.read()
@@ -227,6 +252,10 @@ def starttime(pid):
 
     Returns:
         The time (in seconds) the process started after system boot
+
+    Example:
+        >>> starttime(os.getppid()) <= starttime(os.getpid())
+        True
     """
     return psutil.Process(pid).create_time() - psutil.boot_time()
 
@@ -245,6 +274,8 @@ def status(pid):
     try:
         with open('/proc/%d/status' % pid) as fd:
             for line in fd:
+                if ':' not in line:
+                    continue
                 i = line.index(':')
                 key = line[:i]
                 val = line[i + 2:-1] # initial :\t and trailing \n
@@ -287,10 +318,11 @@ def state(pid):
     """
     return status(pid)['State']
 
-def wait_for_debugger(pid):
-    """wait_for_debugger(pid) -> None
+def wait_for_debugger(pid, debugger_pid=None):
+    """wait_for_debugger(pid, debugger_pid=None) -> None
 
     Sleeps until the process with PID `pid` is being traced.
+    If debugger_pid is set and debugger exits, raises an error.
 
     Arguments:
         pid (int): PID of the process.
@@ -298,7 +330,25 @@ def wait_for_debugger(pid):
     Returns:
         None
     """
-    with log.waitfor('Waiting for debugger') as l:
-        while tracer(pid) is None:
-            time.sleep(0.01)
-        l.success()
+    t = Timeout()
+    with t.countdown(timeout=15):
+        with log.waitfor('Waiting for debugger') as l:
+            while t.timeout and tracer(pid) is None:
+                if debugger_pid:
+                    debugger = psutil.Process(debugger_pid)
+                    try:
+                        debugger.wait(0.01)
+                    except psutil.TimeoutExpired:
+                        pass
+                    else:
+                        debugger_pid = 0
+                        break
+                else:
+                    time.sleep(0.01)
+
+        if tracer(pid):
+            l.success()
+        elif debugger_pid == 0:
+            l.failure("debugger exited! (maybe check /proc/sys/kernel/yama/ptrace_scope)")
+        else:
+            l.failure('Debugger did not attach to pid %d within 15 seconds', pid)

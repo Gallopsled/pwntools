@@ -30,23 +30,23 @@ what happens in :mod:`pwnlib.shellcraft`.
 Example:
 
     >>> with context.local(os = 'freebsd'):
-    ...     print int(constants.SYS_stat)
+    ...     print(int(constants.SYS_stat))
     188
     >>> with context.local(os = 'linux', arch = 'i386'):
-    ...     print int(constants.SYS_stat)
+    ...     print(int(constants.SYS_stat))
     106
     >>> with context.local(os = 'linux', arch = 'amd64'):
-    ...     print int(constants.SYS_stat)
+    ...     print(int(constants.SYS_stat))
     4
 
     >>> with context.local(arch = 'i386', os = 'linux'):
-    ...    print constants.SYS_execve + constants.PROT_WRITE
+    ...    print(constants.SYS_execve + constants.PROT_WRITE)
     13
     >>> with context.local(arch = 'amd64', os = 'linux'):
-    ...    print constants.SYS_execve + constants.PROT_WRITE
+    ...    print(constants.SYS_execve + constants.PROT_WRITE)
     61
     >>> with context.local(arch = 'amd64', os = 'linux'):
-    ...    print constants.SYS_execve + constants.PROT_WRITE
+    ...    print(constants.SYS_execve + constants.PROT_WRITE)
     61
 
 """
@@ -92,7 +92,7 @@ class ConstantsModule(ModuleType):
         # Special case for __all__, we want to return the contextually
         # relevant module.
         if key == '__all__':
-            return self.guess().__dict__.keys()
+            return list(self.guess().__dict__.keys())
 
         # Special case for all other special properties which aren't defined
         if key.endswith('__'):
@@ -111,7 +111,7 @@ class ConstantsModule(ModuleType):
                 pass
         else:
             mod = self.guess()
-            if hasattr(mod, key):
+            if mod is not self and hasattr(mod, key):
                 return getattr(mod, key)
 
         raise AttributeError("'module' object has no attribute '%s'" % key)
@@ -124,13 +124,13 @@ class ConstantsModule(ModuleType):
         Example:
 
             >>> with context.local(arch = 'i386', os = 'linux'):
-            ...    print 13 == constants.eval('SYS_execve + PROT_WRITE')
+            ...    print(13 == constants.eval('SYS_execve + PROT_WRITE'))
             True
             >>> with context.local(arch = 'amd64', os = 'linux'):
-            ...    print 61 == constants.eval('SYS_execve + PROT_WRITE')
+            ...    print(61 == constants.eval('SYS_execve + PROT_WRITE'))
             True
             >>> with context.local(arch = 'amd64', os = 'linux'):
-            ...    print 61 == constants.eval('SYS_execve + PROT_WRITE')
+            ...    print(61 == constants.eval('SYS_execve + PROT_WRITE'))
             True
         """
         if not isinstance(string, str):
@@ -145,7 +145,13 @@ class ConstantsModule(ModuleType):
         if key not in self._env_store:
             self._env_store[key] = {key: getattr(self, key) for key in dir(self) if not key.endswith('__')}
 
-        return Constant('(%s)' % string, safeeval.values(string, self._env_store[key]))
+        val = safeeval.values(string, self._env_store[key])
+
+        # if the expression is not assembly-safe, it is not so vital to preserve it
+        if set(string) & (set(bytearray(range(32)).decode()) | set('"#$\',.;@[\\]`{}')):
+            string = val
+
+        return Constant('(%s)' % string, val)
 
 
 # To prevent garbage collection

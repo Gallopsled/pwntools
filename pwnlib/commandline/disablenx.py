@@ -1,17 +1,20 @@
 #!/usr/bin/env python2
 from __future__ import absolute_import
+from __future__ import division
 
+import argparse
 from pwn import *
 from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'disablenx',
-    help = 'Disable NX for an ELF binary'
+    help = 'Disable NX for an ELF binary',
+    description = 'Disable NX for an ELF binary'
 )
 parser.add_argument(
     'elf',
     nargs='+',
-    type=file,
+    type=argparse.FileType('rb'),
     help='Files to check'
 )
 

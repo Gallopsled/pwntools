@@ -1,5 +1,7 @@
 #!/usr/bin/env python2
+from __future__ import division
 import argparse
+import keyword
 import os
 
 from pwnlib import constants
@@ -16,6 +18,7 @@ import collections
 import pwnlib.abi
 import pwnlib.constants
 import pwnlib.shellcraft
+import six
 %>
 '''
 
@@ -60,7 +63,7 @@ CALL = """
 
     for name, arg in zip(argument_names, argument_values):
         if arg is not None:
-            syscall_repr.append('%s=%r' % (name, arg))
+            syscall_repr.append('%s=%s' % (name, pwnlib.shellcraft.pretty(arg, False)))
 
         # If the argument itself (input) is a register...
         if arg in allregs:
@@ -73,7 +76,9 @@ CALL = """
 
         # The argument is not a register.  It is a string value, and we
         # are expecting a string value
-        elif name in can_pushstr and isinstance(arg, str):
+        elif name in can_pushstr and isinstance(arg, (six.binary_type, six.text_type)):
+            if isinstance(arg, six.text_type):
+                arg = arg.encode('utf-8')
             string_arguments[name] = arg
 
         # The argument is not a register.  It is a dictionary, and we are
@@ -107,7 +112,7 @@ CALL = """
 %>
     /* {name}(${{', '.join(syscall_repr)}}) */
 %for name, arg in string_arguments.items():
-    ${{pwnlib.shellcraft.pushstr(arg, append_null=('\\x00' not in arg))}}
+    ${{pwnlib.shellcraft.pushstr(arg, append_null=(b'\\x00' not in arg))}}
     ${{pwnlib.shellcraft.mov(regs[argument_names.index(name)], abi.stack)}}
 %endfor
 %for name, arg in array_arguments.items():
@@ -140,12 +145,11 @@ def can_be_array(arg):
 
 
 def fix_bad_arg_names(func, arg):
-    if arg.name == 'str':
-        return 'str_'
     if arg.name == 'len':
         return 'length'
-    if arg.name == 'repr':
-        return 'repr_'
+
+    if arg.name in ('str', 'repr') or keyword.iskeyword(arg.name):
+        return arg.name + '_'
 
     if func.name == 'open' and arg.name == 'vararg':
         return 'mode'
@@ -184,12 +188,12 @@ def generate_one(target):
 
         # Skip anything with uppercase
         if name.lower() != name:
-            print 'Skipping %s' % name
+            print('Skipping %s' % name)
             continue
 
         # Skip anything that starts with 'unused' or 'sys' after stripping
         if name.startswith('unused'):
-            print 'Skipping %s' % name
+            print('Skipping %s' % name)
             continue
 
         function = functions.get(name, None)
@@ -200,7 +204,7 @@ def generate_one(target):
         # If we can't find a function, just stub it out with something
         # that has a vararg argument.
         if function is None:
-            print 'Stubbing out %s' % name
+            print('Stubbing out %s' % name)
             args = [Argument('int', 0, 'vararg')]
             function = Function('long', 0, name, args)
 
@@ -273,8 +277,10 @@ def generate_one(target):
             CALL.format(**template_variables)
         ]
 
-        with open(os.path.join(target, name + '.asm'), 'wt+') as f:
-            f.write('\n'.join(map(str.strip, lines)))
+        if keyword.iskeyword(name):
+            name += '_'
+        with open(os.path.join(target, name + '.asm'), 'wt') as f:
+            f.write('\n'.join(map(str.strip, lines)) + '\n')
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser()

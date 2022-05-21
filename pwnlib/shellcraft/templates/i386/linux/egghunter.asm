@@ -1,4 +1,5 @@
 <%
+import six
 from pwnlib.shellcraft import i386, pretty, common
 from pwnlib.util.packing import pack, unpack
 from pwnlib.util.lists import group
@@ -24,7 +25,7 @@ done           = common.label('egghunter_done')
 next_page      = common.label('egghunter_nextpage')
 
 egg_str = egg
-if isinstance(egg, int):
+if isinstance(egg, six.integer_types):
     egg_str = pack(egg)
 
 if len(egg_str) % 4:
@@ -46,7 +47,7 @@ ${egghunter_loop}:
     jz ${next_page}
 
 ## We found a page, scan all of the DWORDs
-    ${i386.mov('edx', 0x1000/4)}
+    ${i386.mov('edx', 0x1000 // 4)}
 ${memcmp}:
     test edx, edx
     jz   ${next_page}
@@ -54,7 +55,7 @@ ${memcmp}:
 ## Scan forward by DWORD
     ${i386.setregs({'esi':'esp',
                     'edi':'ebx',
-                    'ecx': len(egg_str)/4})}
+                    'ecx': len(egg_str) // 4})}
 ## Success?
     repe cmpsd
     jz ${done}

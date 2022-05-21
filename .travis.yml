@@ -1,9 +1,7 @@
-dist: precise
 language: python
 addons:
   apt:
     packages:
-    - gcc-multilib
     - lib32stdc++6
     - ash
     - bash
@@ -13,31 +11,57 @@ addons:
     - zsh
     - pandoc
     - gdb
+    - socat
+    - sshpass
+    - binutils
+    - qemu-user-static
+    - binutils-multiarch
+    - binutils-aarch64-linux-gnu
+    - binutils-arm-linux-gnueabihf
+    - binutils-mips-linux-gnu
+    - binutils-msp430
+    - binutils-powerpc-linux-gnu
+    - binutils-s390x-linux-gnu
+    - binutils-sparc64-linux-gnu
+    - bash-static
+    - python3-pip
+    - elfutils
 cache:
     - pip
     - directories:
         - usr
-        - /home/travis/virtualenv/python2.7.13/lib/python2.7/site-packages/
-        - /home/travis/virtualenv/python2.7.13/bin/
+        - /home/travis/virtualenv/python2.7.15/lib/python2.7/site-packages/
+        - /home/travis/virtualenv/python2.7.15/bin/
+        - /home/travis/virtualenv/python3.8.*/lib/python3.8/site-packages/
+        - /home/travis/virtualenv/python3.8.*/bin/
+        - docs/build/doctest/.doctrees
 python:
   - "2.7"
+  - "3.8"
 before_install:
   - echo $-
   - source travis/install.sh
   - source travis/ssh_setup.sh
   - echo $-
 install:
+  - /usr/bin/python3 -m pip install rpyc # for GDB
   - pip install --upgrade pip
-  - pip install --upgrade appdirs # https://github.com/ActiveState/appdirs/issues/89#issuecomment-282326570
+  - pip install --upgrade flake8 appdirs # https://github.com/ActiveState/appdirs/issues/89#issuecomment-282326570
+  - python setup.py egg_info      # pypa/pip#6275
   - pip install --upgrade --editable .
   - pip install --upgrade --requirement docs/requirements.txt
 before_script:
-  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
-  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
-  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
-  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print pwnlib.term.term_mode'
+  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
+  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
+  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
+  - PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
+  - sudo sh -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
 script:
+  # stop the build if there are Python syntax errors or undefined names
+  - flake8 . --count --select=E9,F63,F7 --show-source --statistics --exclude=android-?dk  # TODO: Add F82
+  # exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
   - PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest
+  - coverage combine
 after_success:
   - coveralls
   - source travis/update_demo.sh

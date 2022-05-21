@@ -1,13 +1,15 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import argparse
 import os
+import errno
 
 from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'errno',
-    help = 'Prints out error messages'
+    help = 'Prints out error messages',
+    description = 'Prints out error messages'
 )
 
 parser.add_argument(
@@ -24,24 +26,24 @@ def main(args):
     if 0x100000000 - value < 0x200:
       value = 0x100000000 - value
 
-    if value not in os.errno.errorcode:
-      print "No errno for %s" % value
+    if value not in errno.errorcode:
+      print("No errno for %s" % value)
       return
 
-    name = os.errno.errorcode[value]
+    name = errno.errorcode[value]
 
   except ValueError:
     name = args.error.upper()
 
-    if not hasattr(os.errno, name):
-      print "No errno for %s" % name
+    if not hasattr(errno, name):
+      print("No errno for %s" % name)
       return
 
-    value = getattr(os.errno, name)
+    value = getattr(errno, name)
 
 
-  print '#define', name, value
-  print os.strerror(value)
+  print('#define', name, value)
+  print(os.strerror(value))
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    common.main(__file__)

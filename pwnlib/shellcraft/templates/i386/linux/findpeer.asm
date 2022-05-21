@@ -28,7 +28,7 @@ ${looplabel}:
     pushad
 
     int 0x80
-% if port == None:
+% if port is None:
     test eax, eax
     popad
     pop edx

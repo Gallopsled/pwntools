@@ -1,6 +1,7 @@
 .. testsetup:: *
 
    from pwn import *
+   from pwnlib.tubes.server import server
 
 :mod:`pwnlib.tubes.sock` --- Sockets
 ===========================================================
@@ -21,5 +22,11 @@
 .. automodule:: pwnlib.tubes.listen
 
    .. autoclass:: pwnlib.tubes.listen.listen
+      :members:
+      :show-inheritance:
+
+.. automodule:: pwnlib.tubes.server
+
+   .. autoclass:: pwnlib.tubes.server.server
       :members:
       :show-inheritance:

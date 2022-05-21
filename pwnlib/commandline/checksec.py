@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import absolute_import
+from __future__ import division
 
 import argparse
 import sys
@@ -9,12 +10,13 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'checksec',
-    help = 'Check binary security settings'
+    help = 'Check binary security settings',
+    description = 'Check binary security settings',
 )
 parser.add_argument(
     'elf',
     nargs='*',
-    type=file,
+    type=argparse.FileType('rb'),
     help='Files to check'
 )
 parser.add_argument(
@@ -22,7 +24,7 @@ parser.add_argument(
     nargs='*',
     dest='elf2',
     metavar='elf',
-    type=file,
+    type=argparse.FileType('rb'),
     help='File to check (for compatibility with checksec.sh)'
 )
 

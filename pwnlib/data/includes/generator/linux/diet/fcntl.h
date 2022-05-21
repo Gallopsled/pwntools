@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/uio.h>
 
 __BEGIN_DECLS
 
@@ -14,8 +15,6 @@ __BEGIN_DECLS
 
 #if defined(__i386__) || defined(__s390__) || defined(__x86_64__) || defined(__ia64__)
 
-/* open/fcntl - O_SYNC is only implemented on blocks devices and on files
-   located on an ext2 file system */
 #define O_ACCMODE	   0003
 #define O_RDONLY	     00
 #define O_WRONLY	     01
@@ -27,13 +26,17 @@ __BEGIN_DECLS
 #define O_APPEND	  02000
 #define O_NONBLOCK	  04000
 #define O_NDELAY	O_NONBLOCK
-#define O_SYNC		 010000
+#define O_DSYNC		 010000
 #define FASYNC		 020000	/* fcntl, for BSD compatibility */
 #define O_DIRECT	 040000	/* direct disk access hint - currently ignored */
 #define O_LARGEFILE	0100000
 #define O_DIRECTORY	0200000	/* must be a directory */
 #define O_NOFOLLOW	0400000 /* don't follow links */
 #define O_NOATIME	01000000
+#define O_CLOEXEC	02000000
+#define O_SYNC		(O_DSYNC|04000000)
+#define O_PATH		010000000
+#define __O_TMPFILE	020000000
 
 #define F_DUPFD		0	/* dup */
 #define F_GETFD		1	/* get close_on_exec */
@@ -96,8 +99,6 @@ struct flock64 {
 
 #elif defined(__alpha__)
 
-/* open/fcntl - O_SYNC is only implemented on blocks devices and on files
-   located on an ext2 file system */
 #define O_ACCMODE	  0003
 #define O_RDONLY	    00
 #define O_WRONLY	    01
@@ -110,13 +111,17 @@ struct flock64 {
 #define O_NONBLOCK	 00004
 #define O_APPEND	 00010
 #define O_NDELAY	O_NONBLOCK
-#define O_SYNC		040000
+#define O_DSYNC		040000
 #define FASYNC		020000	/* fcntl, for BSD compatibility */
 #define O_DIRECTORY	0100000	/* must be a directory */
 #define O_NOFOLLOW	0200000 /* don't follow links */
 #define O_LARGEFILE	0400000 /* will be set by the kernel on every open */
 #define O_DIRECT	02000000	/* direct disk access - should check with OSF/1 */
 #define O_NOATIME	04000000
+#define O_CLOEXEC	010000000
+#define O_SYNC		(020000000|O_DSYNC)
+#define O_PATH		040000000
+#define __O_TMPFILE	0100000000
 
 #define F_DUPFD		0	/* dup */
 #define F_GETFD		1	/* get close_on_exec */
@@ -167,25 +172,31 @@ struct flock {
 
 #elif defined(__mips__)
 
-/* open/fcntl - O_SYNC is only implemented on blocks devices and on files
-   located on an ext2 file system */
 #define O_ACCMODE	0x0003
 #define O_RDONLY	0x0000
 #define O_WRONLY	0x0001
 #define O_RDWR		0x0002
 #define O_APPEND	0x0008
-#define O_SYNC		0x0010
+#define O_DSYNC		0x0010
 #define O_NONBLOCK	0x0080
 #define O_CREAT         0x0100	/* not fcntl */
 #define O_TRUNC		0x0200	/* not fcntl */
 #define O_EXCL		0x0400	/* not fcntl */
 #define O_NOCTTY	0x0800	/* not fcntl */
 #define FASYNC		0x1000	/* fcntl, for BSD compatibility */
+#ifdef __mips64__
+#define O_LARGEFILE	0
+#else
 #define O_LARGEFILE	0x2000	/* allow large file opens - currently ignored */
+#endif
+#define O_SYNC		(0x4000|O_DSYNC)
 #define O_DIRECT	0x8000	/* direct disk access hint - currently ignored */
 #define O_DIRECTORY	0x10000	/* must be a directory */
 #define O_NOFOLLOW	0x20000	/* don't follow links */
 #define O_NOATIME	0x40000
+#define O_CLOEXEC	0x80000
+#define O_PATH		010000000
+#define __O_TMPFILE	020000000
 
 #define O_NDELAY	O_NONBLOCK
 
@@ -266,8 +277,6 @@ struct flock {
 
 #elif defined(__sparc__)
 
-/* open/fcntl - O_SYNC is only implemented on blocks devices and on files
-   located on an ext2 file system */
 #define O_RDONLY	0x0000
 #define O_WRONLY	0x0001
 #define O_RDWR		0x0002
@@ -277,7 +286,7 @@ struct flock {
 #define O_CREAT		0x0200	/* not fcntl */
 #define O_TRUNC		0x0400	/* not fcntl */
 #define O_EXCL		0x0800	/* not fcntl */
-#define O_SYNC		0x2000
+#define O_DSYNC		0x2000
 #define O_NONBLOCK	0x4000
 #define O_NDELAY	(0x0004 | O_NONBLOCK)
 #define O_NOCTTY	0x8000	/* not fcntl */
@@ -286,6 +295,10 @@ struct flock {
 #define O_LARGEFILE	0x40000
 #define O_DIRECT        0x100000 /* direct disk access hint */
 #define O_NOATIME	0x200000
+#define O_CLOEXEC	0x400000
+#define O_SYNC		(0x800000|O_DSYNC)
+#define O_PATH		0x1000000
+#define __O_TMPFILE	0x2000000
 
 #define F_DUPFD		0	/* dup */
 #define F_GETFD		1	/* get close_on_exec */
@@ -355,8 +368,6 @@ struct flock64 {
 
 #elif defined(__powerpc__) || defined(__powerpc64__)
 
-/* open/fcntl - O_SYNC is only implemented on blocks devices and on files
-   located on an ext2 file system */
 #define O_ACCMODE	   0003
 #define O_RDONLY	     00
 #define O_WRONLY	     01
@@ -368,13 +379,17 @@ struct flock64 {
 #define O_APPEND	  02000
 #define O_NONBLOCK	  04000
 #define O_NDELAY	O_NONBLOCK
-#define O_SYNC		 010000
+#define O_DSYNC		 010000
 #define FASYNC		 020000	/* fcntl, for BSD compatibility */
 #define O_DIRECTORY      040000	/* must be a directory */
 #define O_NOFOLLOW      0100000	/* don't follow links */
 #define O_LARGEFILE     0200000
 #define O_DIRECT	0400000	/* direct disk access hint - currently ignored */
 #define O_NOATIME	01000000
+#define O_CLOEXEC	02000000
+#define O_SYNC		(O_DSYNC|04000000)
+#define O_PATH		010000000
+#define __O_TMPFILE	020000000
 
 #define F_DUPFD		0	/* dup */
 #define F_GETFD		1	/* get close_on_exec */
@@ -437,10 +452,8 @@ struct flock64 {
   pid_t  l_pid;
 };
 
-#elif defined (__arm__)
+#elif defined (__arm__) || defined(__aarch64__)
 
-/* open/fcntl - O_SYNC is only implemented on blocks devices and on files
-   located on an ext2 file system */
 #define O_ACCMODE	   0003
 #define O_RDONLY	     00
 #define O_WRONLY	     01
@@ -452,13 +465,21 @@ struct flock64 {
 #define O_APPEND	  02000
 #define O_NONBLOCK	  04000
 #define O_NDELAY	O_NONBLOCK
-#define O_SYNC		 010000
+#define O_DSYNC		 010000
 #define FASYNC		 020000	/* fcntl, for BSD compatibility */
 #define O_DIRECTORY	 040000	/* must be a directory */
 #define O_NOFOLLOW	0100000	/* don't follow links */
 #define O_DIRECT	0200000	/* direct disk access hint - currently ignored */
+#ifdef __aarch64__
+#define O_LARGEFILE	0
+#else
 #define O_LARGEFILE	0400000
+#endif
 #define O_NOATIME	01000000
+#define O_CLOEXEC	02000000
+#define O_SYNC		(O_DSYNC|04000000)
+#define O_PATH		010000000
+#define __O_TMPFILE	020000000
 
 #define F_DUPFD		0	/* dup */
 #define F_GETFD		1	/* get close_on_exec */
@@ -474,9 +495,15 @@ struct flock64 {
 #define F_SETSIG	10	/*  for sockets. */
 #define F_GETSIG	11	/*  for sockets. */
 
+#ifdef __arch64__
+#define F_GETLK64	5
+#define F_SETLK64	6
+#define F_SETLKW64	7
+#else
 #define F_GETLK64	12	/*  using 'struct flock64' */
 #define F_SETLK64	13
 #define F_SETLKW64	14
+#endif
 
 /* for F_[GET|SET]FL */
 #define FD_CLOEXEC	1	/* actually anything with low bit set goes */
@@ -536,18 +563,23 @@ struct flock64 {
 #define O_EXCL      00002000 /* not fcntl */
 #define O_LARGEFILE 00004000
 #define O_ASYNC     00020000
-#define O_SYNC      00100000
+#define __O_SYNC      00100000
 #define O_NONBLOCK  00200004 /* HPUX has separate NDELAY & NONBLOCK */
 #define O_NDELAY    O_NONBLOCK
 #define O_NOCTTY    00400000 /* not fcntl */
 #define O_DSYNC     01000000 /* HPUX only */
 #define O_RSYNC     02000000 /* HPUX only */
 #define O_NOATIME   04000000
+#define O_CLOEXEC   010000000
 #define O_DIRECTORY  00010000
 
 #define O_DIRECT    00040000 /* direct disk access hint - currently ignored */
 #define O_NOFOLLOW  00000200 /* don't follow links */
 #define O_INVISIBLE 04000000 /* invisible I/O, for DMAPI/XDSM */
+
+#define O_PATH		020000000
+#define __O_TMPFILE	040000000
+#define O_SYNC		(__O_SYNC|O_DSYNC)
 
 #define F_DUPFD     0   /* Duplicate file descriptor.  */
 #define F_GETFD     1   /* Get file descriptor flags.  */
@@ -611,11 +643,57 @@ struct flock64
 
 #endif
 
+#define O_TMPFILE (__O_TMPFILE | O_DIRECTORY)
+
+#ifdef _GNU_SOURCE
+
+#define F_SETLEASE	(F_LINUX_SPECIFIC_BASE + 0)
+#define F_GETLEASE	(F_LINUX_SPECIFIC_BASE + 1)
+
+/*
+ * Cancel a blocking posix lock; internal use only until we expose an
+ * asynchronous lock api to userspace:
+ */
+#define F_CANCELLK	(F_LINUX_SPECIFIC_BASE + 5)
+
+/* Create a file descriptor with FD_CLOEXEC set. */
+#define F_DUPFD_CLOEXEC	(F_LINUX_SPECIFIC_BASE + 6)
+
+/*
+ * Request nofications on a directory.
+ * See below for events that may be notified.
+ */
+#define F_NOTIFY	(F_LINUX_SPECIFIC_BASE+2)
+
+/*
+ * Set and get of pipe page size array
+ */
+#define F_SETPIPE_SZ	(F_LINUX_SPECIFIC_BASE + 7)
+#define F_GETPIPE_SZ	(F_LINUX_SPECIFIC_BASE + 8)
+
+/*
+ * Set/Get seals
+ */
+#define F_ADD_SEALS	(F_LINUX_SPECIFIC_BASE + 9)
+#define F_GET_SEALS	(F_LINUX_SPECIFIC_BASE + 10)
+
+/*
+ * Types of seals
+ */
+#define F_SEAL_SEAL	0x0001	/* prevent further seals from being set */
+#define F_SEAL_SHRINK	0x0002	/* prevent file from shrinking */
+#define F_SEAL_GROW	0x0004	/* prevent file from growing */
+#define F_SEAL_WRITE	0x0008	/* prevent writes */
+/* (1U << 31) is reserved for signed error codes */
+#endif
+
 extern int fcntl (int __fd, int __cmd, ...) __THROW;
 #ifndef __NO_STAT64
 extern int fcntl64 (int __fd, int __cmd, ...) __THROW;
+extern int fstatat64(int dirfd, const char *pathname, struct stat64 *buf, int flags) __THROW;
 #if defined _FILE_OFFSET_BITS && _FILE_OFFSET_BITS == 64
 #define fcntl fcntl64
+#define fstatat fstatat64
 #endif
 #endif
 
@@ -628,39 +706,75 @@ ssize_t readahead(int fd, off64_t *offset, size_t count) __THROW;
 #endif
 
 #ifdef _GNU_SOURCE
-#define SPLICE_F_MOVE	(0x01)	/* move pages instead of copying */
-#define SPLICE_F_NONBLOCK (0x02) /* don't block on the pipe splicing (but */
-				 /* we may still block on the fd we splice */
-				 /* from/to, of course */
-#define SPLICE_F_MORE	(0x04)	/* expect more data */
-#define SPLICE_F_GIFT	(0x08)	/* pages passed in are a gift */
+enum {
+  SPLICE_F_MOVE=1,	/* move pages instead of copying */
+#define SPLICE_F_MOVE SPLICE_F_MOVE
+  SPLICE_F_NONBLOCK=2,	/* don't block on splicing (may still block on fd we splice */
+#define SPLICE_F_NONBLOCK SPLICE_F_NONBLOCK
+  SPLICE_F_MORE=4,	/* expect more data */
+#define SPLICE_F_MORE SPLICE_F_MORE
+  SPLICE_F_GIFT=8	/* pages passed in are a gift */
+#define SPLICE_F_GIFT SPLICE_F_GIFT
+};
 
-long tee(int fd_in, int fd_out, size_t len, unsigned int flags) __THROW;
+ssize_t tee(int fd_in, int fd_out, size_t len, unsigned int flags) __THROW;
 
 #include <sys/uio.h>
 
-long vmsplice(int fd, const struct iovec *iov, unsigned long nr_segs, unsigned int flags) __THROW;
-long splice(int fd_in, loff_t *off_in, int fd_out, loff_t *off_out, size_t len, unsigned int flags) __THROW;
+ssize_t splice(int fd_in, loff_t *off_in, int fd_out, loff_t *off_out, size_t len, unsigned int flags) __THROW;
+ssize_t vmsplice(int fd, const struct iovec *iov, unsigned long nr_segs, unsigned int flags) __THROW;
 
 int sync_file_range(int fd, off64_t offset, off64_t nbytes, unsigned int flags) __THROW;
 
 #define FALLOC_FL_KEEP_SIZE 1
 
 int fallocate(int fd, int mode, loff_t offset, loff_t len) __THROW;
+
+/*
+ * Types of directory notifications that may be requested.
+ */
+#define DN_ACCESS	0x00000001	/* File accessed */
+#define DN_MODIFY	0x00000002	/* File modified */
+#define DN_CREATE	0x00000004	/* File created */
+#define DN_DELETE	0x00000008	/* File removed */
+#define DN_RENAME	0x00000010	/* File renamed */
+#define DN_ATTRIB	0x00000020	/* File changed attibutes */
+#define DN_MULTISHOT	0x80000000	/* Don't remove notifier */
+
 #endif
 
-#if defined(_ATFILE_SOURCE) || ((_XOPEN_SOURCE + 0) >= 700) || ((_POSIX_C_SOURCE + 0) >= 200809L)
+#define F_SETOWN_EX	15
+#define F_GETOWN_EX	16
+#define F_GETOWNER_UIDS	17
+
+#define F_OFD_GETLK	36
+#define F_OFD_SETLK	37
+#define F_OFD_SETLKW	38
+
+#define F_OWNER_TID	0
+#define F_OWNER_PID	1
+#define F_OWNER_PGRP	2
+
+struct f_owner_ex {
+	int	type;
+	int	pid;
+};
+
 #define AT_FDCWD		-100    /* Special value used to indicate openat should use the current working directory. */
 #define AT_SYMLINK_NOFOLLOW	0x100   /* Do not follow symbolic links.  */
 #define AT_REMOVEDIR		0x200   /* Remove directory instead of unlinking file.  */
 #define AT_SYMLINK_FOLLOW	0x400   /* Follow symbolic links.  */
+#define AT_NO_AUTOMOUNT		0x800	/* Suppress terminal automount traversal */
+#define AT_EMPTY_PATH		0x1000	/* Allow empty relative pathname */
+
+/* for faccessat */
+#define AT_EACCESS		0x200	/* using euid, not uid for accessat */
 
 int openat(int dirfd, const char *pathname, int flags, ...) __THROW;
 int futimesat(int dirfd, const char *pathname, const struct timeval times[2]) __THROW;
 int unlinkat(int dirfd, const char *pathname, int flags) __THROW;
-#endif
 
-#if defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE - 0) >= 600
+#if (defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE - 0) >= 600) || defined(_POSIX_SOURCE)
 #include "linux/fadvise.h"
 int posix_fallocate(int fd, off64_t offset, off64_t len) __THROW;
 int posix_fadvise(int fd, off64_t offset, off64_t len, int advice) __THROW;

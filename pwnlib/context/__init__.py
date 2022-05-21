@@ -1,21 +1,25 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
 Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
 from __future__ import absolute_import
+from __future__ import division
 
+import atexit
 import collections
+import errno
 import functools
 import logging
 import os
+import os.path
 import platform
+import shutil
+import six
 import socket
-import stat
 import string
-import subprocess
 import sys
+import tempfile
 import threading
 import time
 
@@ -24,6 +28,11 @@ import socks
 from pwnlib.config import register_config
 from pwnlib.device import Device
 from pwnlib.timeout import Timeout
+
+try:
+    from collections.abc import Iterable
+except ImportError:
+    from collections import Iterable
 
 __all__ = ['context', 'ContextType', 'Thread']
 
@@ -138,9 +147,9 @@ class _Tls_DictStack(threading.local, _DictStack):
 
         >>> t = pwnlib.context._Tls_DictStack({})
         >>> t['key'] = 'value'
-        >>> print t
+        >>> print(t)
         {'key': 'value'}
-        >>> def p(): print t
+        >>> def p(): print(t)
         >>> thread = threading.Thread(target=p)
         >>> _ = (thread.start(), thread.join())
         {}
@@ -194,9 +203,9 @@ class Thread(threading.Thread):
         >>> context.clear()
         >>> context.update(arch='arm')
         >>> def p():
-        ...     print context.arch
+        ...     print(context.arch)
         ...     context.arch = 'mips'
-        ...     print context.arch
+        ...     print(context.arch)
         >>> # Note that a normal Thread starts with a clean context
         >>> # (i386 is the default architecture)
         >>> t = threading.Thread(target=p)
@@ -204,7 +213,7 @@ class Thread(threading.Thread):
         i386
         mips
         >>> # Note that the main Thread's context is unchanged
-        >>> print context.arch
+        >>> print(context.arch)
         arm
         >>> # Note that a context-aware Thread receives a copy of the context
         >>> t = pwnlib.context.Thread(target=p)
@@ -212,7 +221,7 @@ class Thread(threading.Thread):
         arm
         mips
         >>> # Again, the main thread is unchanged
-        >>> print context.arch
+        >>> print(context.arch)
         arm
 
     Implementation Details:
@@ -238,7 +247,13 @@ class Thread(threading.Thread):
             differently.
         """
         context.update(**self.old)
-        super(Thread, self).__bootstrap()
+        sup = super(Thread, self)
+        bootstrap = getattr(sup, '_bootstrap', None)
+        if bootstrap is None:
+            sup.__bootstrap()
+        else:
+            bootstrap()
+    _bootstrap = __bootstrap
 
 def _longest(d):
     """
@@ -252,16 +267,12 @@ def _longest(d):
     >>> pwnlib.context._longest(data) == data
     True
     >>> for i in pwnlib.context._longest(data):
-    ...     print i
+    ...     print(i)
     ccc
     bb
     a
     """
     return collections.OrderedDict((k,d[k]) for k in sorted(d, key=len, reverse=True))
-
-def TlsProperty(object):
-    def __get__(self, obj, objtype=None):
-        return obj._tls
 
 class ContextType(object):
     r"""
@@ -298,7 +309,7 @@ class ContextType(object):
         >>> context.bits
         32
         >>> def nop():
-        ...   print pwnlib.asm.asm('nop').encode('hex')
+        ...   print(enhex(pwnlib.asm.asm('nop')))
         >>> nop()
         00f020e3
         >>> with context.local(arch = 'i386'):
@@ -337,10 +348,15 @@ class ContextType(object):
         'binary': None,
         'bits': 32,
         'buffer_size': 4096,
-        'cyclic_alphabet': string.ascii_lowercase,
+        'cache_dir_base': os.environ.get(
+            'XDG_CACHE_HOME',
+            os.path.join(os.path.expanduser('~'), '.cache')
+        ),
+        'cyclic_alphabet': string.ascii_lowercase.encode(),
         'cyclic_size': 4,
         'delete_corefiles': False,
         'device': os.getenv('ANDROID_SERIAL', None) or None,
+        'encoding': 'auto',
         'endian': 'little',
         'gdbinit': "",
         'kernel': None,
@@ -349,17 +365,18 @@ class ContextType(object):
         'log_console': sys.stdout,
         'randomize': False,
         'rename_corefiles': True,
-        'newline': '\n',
+        'newline': b'\n',
         'noptrace': False,
         'os': 'linux',
         'proxy': None,
+        'ssh_session': None,
         'signed': False,
         'terminal': tuple(),
         'timeout': Timeout.maximum,
     }
 
     #: Valid values for :meth:`pwnlib.context.ContextType.os`
-    oses = sorted(('linux','freebsd','windows','cgc','android'))
+    oses = sorted(('linux','freebsd','windows','cgc','android','baremetal'))
 
     big_32    = {'endian': 'big', 'bits': 32}
     big_64    = {'endian': 'big', 'bits': 64}
@@ -387,11 +404,13 @@ class ContextType(object):
         'msp430':    little_16,
         'powerpc':   big_32,
         'powerpc64': big_64,
+        'riscv':     little_32,
         's390':      big_32,
         'sparc':     big_32,
         'sparc64':   big_64,
         'thumb':     little_32,
         'vax':       little_32,
+        'none':      {},
     })
 
     #: Valid values for :attr:`endian`
@@ -420,7 +439,7 @@ class ContextType(object):
 
         All keyword arguments are passed to :func:`update`.
         """
-        self._tls = _Tls_DictStack(_defaultdict(ContextType.defaults))
+        self._tls = _Tls_DictStack(_defaultdict(self.defaults))
         self.update(**kwargs)
 
 
@@ -500,15 +519,15 @@ class ContextType(object):
             >>> context.timeout = 1
             >>> context.timeout == 1
             True
-            >>> print context.timeout
+            >>> print(context.timeout)
             1.0
             >>> with context.local(timeout = 2):
-            ...     print context.timeout
+            ...     print(context.timeout)
             ...     context.timeout = 3
-            ...     print context.timeout
+            ...     print(context.timeout)
             2.0
             3.0
-            >>> print context.timeout
+            >>> print(context.timeout)
             1.0
         """
         class LocalContext(object):
@@ -538,14 +557,66 @@ class ContextType(object):
     @property
     def quiet(self, function=None):
         """Disables all non-error logging within the enclosed scope,
-        *unless* the debugging level is set to 'debug' or lower."""
+        *unless* the debugging level is set to 'debug' or lower.
+
+        Example:
+
+            Let's assume the normal situation, where log_level is INFO.
+
+            >>> context.clear(log_level='info')
+
+            Note that only the log levels below ERROR do not print anything.
+
+            >>> with context.quiet:
+            ...     log.debug("DEBUG")
+            ...     log.info("INFO")
+            ...     log.warn("WARN")
+
+            Next let's try with the debugging level set to 'debug' before we
+            enter the context handler:
+
+            >>> with context.local(log_level='debug'):
+            ...     with context.quiet:
+            ...         log.debug("DEBUG")
+            ...         log.info("INFO")
+            ...         log.warn("WARN")
+            [DEBUG] DEBUG
+            [*] INFO
+            [!] WARN
+        """
         level = 'error'
         if context.log_level <= logging.DEBUG:
             level = None
         return self.local(function, log_level=level)
 
     def quietfunc(self, function):
-        """Similar to :attr:`quiet`, but wraps a whole function."""
+        """Similar to :attr:`quiet`, but wraps a whole function.
+
+        Example:
+
+            Let's set up two functions, which are the same but one is
+            wrapped with :attr:`quietfunc`.
+
+            >>> def loud(): log.info("Loud")
+            >>> @context.quietfunc
+            ... def quiet(): log.info("Quiet")
+
+            If we set the logging level to 'info', the loud function
+            prints its contents.
+
+            >>> with context.local(log_level='info'): loud()
+            [*] Loud
+
+            However, the quiet function does not, since :attr:`quietfunc`
+            silences all output unless the log level is DEBUG.
+
+            >>> with context.local(log_level='info'): quiet()
+
+            Now let's try again with debugging enabled.
+
+            >>> with context.local(log_level='debug'): quiet()
+            [*] Quiet
+        """
         @functools.wraps(function)
         def wrapper(*a, **kw):
             level = 'error'
@@ -559,6 +630,28 @@ class ContextType(object):
     @property
     def verbose(self):
         """Enable all logging within the enclosed scope.
+
+        This is the opposite of :attr:`.quiet` and functionally equivalent to:
+
+        .. code-block:: python
+
+            with context.local(log_level='debug'):
+                ...
+
+        Example:
+
+            Note that the function does not emit any information by default
+
+            >>> context.clear()
+            >>> def func(): log.debug("Hello")
+            >>> func()
+
+            But if we put it inside a :attr:`.verbose` context manager, the
+            information is printed.
+
+            >>> with context.verbose: func()
+            [DEBUG] Hello
+
         """
         return self.local(log_level='debug')
 
@@ -592,7 +685,7 @@ class ContextType(object):
 
     @property
     def native(self):
-        if context.os in ('android', 'cgc'):
+        if context.os in ('android', 'baremetal', 'cgc'):
             return False
 
         arch = context.arch
@@ -679,6 +772,7 @@ class ContextType(object):
                      ('x86_64', 'amd64'),
                      ('x86', 'i386'),
                      ('i686', 'i386'),
+                     ('armv7l', 'arm'),
                      ('armeabi', 'arm'),
                      ('arm64', 'aarch64')]
         for k, v in transform:
@@ -687,11 +781,11 @@ class ContextType(object):
                 break
 
         try:
-            defaults = ContextType.architectures[arch]
+            defaults = self.architectures[arch]
         except KeyError:
-            raise AttributeError('AttributeError: arch must be one of %r' % sorted(ContextType.architectures))
+            raise AttributeError('AttributeError: arch must be one of %r' % sorted(self.architectures))
 
-        for k,v in ContextType.architectures[arch].items():
+        for k,v in defaults.items():
             if k not in self._tls:
                 self._tls[k] = v
 
@@ -721,8 +815,8 @@ class ContextType(object):
         Even then, this doesn't matter much -- only when the the segment
         registers need to be known
         """
-        with context.local(arch=arch):
-            return context.arch
+        with self.local(arch=arch):
+            return self.arch
 
     @_validator
     def bits(self, bits):
@@ -777,6 +871,7 @@ class ContextType(object):
         self.arch   = binary.arch
         self.bits   = binary.bits
         self.endian = binary.endian
+        self.os     = binary.os
 
         return binary
 
@@ -785,7 +880,7 @@ class ContextType(object):
         """
         Target machine word size, in bytes (i.e. the size of general purpose registers).
 
-        This is a convenience wrapper around ``bits / 8``.
+        This is a convenience wrapper around ``bits // 8``.
 
         Examples:
 
@@ -798,10 +893,21 @@ class ContextType(object):
             ...
             AttributeError: bits must be > 0 (0)
         """
-        return self.bits/8
+        return self.bits // 8
     @bytes.setter
     def bytes(self, value):
         self.bits = value*8
+
+    @_validator
+    def encoding(self, charset):
+        if charset == 'auto':
+            return charset
+
+        if (  b'aA'.decode(charset) != 'aA'
+            or 'aA'.encode(charset) != b'aA'):
+            raise ValueError('Strange encoding!')
+
+        return charset
 
     @_validator
     def endian(self, endianness):
@@ -834,10 +940,10 @@ class ContextType(object):
         """
         endian = endianness.lower()
 
-        if endian not in ContextType.endiannesses:
-            raise AttributeError("endian must be one of %r" % sorted(ContextType.endiannesses))
+        if endian not in self.endiannesses:
+            raise AttributeError("endian must be one of %r" % sorted(self.endiannesses))
 
-        return ContextType.endiannesses[endian]
+        return self.endiannesses[endian]
 
 
     @_validator
@@ -873,7 +979,10 @@ class ContextType(object):
         except AttributeError:  pass
 
         # Otherwise, fail
-        level_names = filter(lambda x: isinstance(x,str), logging._levelNames)
+        try:
+            level_names = logging._levelToName.values()
+        except AttributeError:
+            level_names = filter(lambda x: isinstance(x,str), logging._levelNames)
         permitted = sorted(level_names)
         raise AttributeError('log_level must be an integer or one of %r' % permitted)
 
@@ -887,31 +996,32 @@ class ContextType(object):
         Examples:
 
 
-            >>> context.log_file = 'foo.txt' #doctest: +ELLIPSIS
-            >>> log.debug('Hello!') #doctest: +ELLIPSIS
+            >>> foo_txt = tempfile.mktemp()
+            >>> bar_txt = tempfile.mktemp()
+            >>> context.log_file = foo_txt
+            >>> log.debug('Hello!')
             >>> with context.local(log_level='ERROR'): #doctest: +ELLIPSIS
             ...     log.info('Hello again!')
-            >>> with context.local(log_file='bar.txt'):
+            >>> with context.local(log_file=bar_txt):
             ...     log.debug('Hello from bar!')
             >>> log.info('Hello from foo!')
-            >>> file('foo.txt').readlines()[-3] #doctest: +ELLIPSIS
+            >>> open(foo_txt).readlines()[-3] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello!\n'
-            >>> file('foo.txt').readlines()[-2] #doctest: +ELLIPSIS
+            >>> open(foo_txt).readlines()[-2] #doctest: +ELLIPSIS
             '...:INFO:...:Hello again!\n'
-            >>> file('foo.txt').readlines()[-1] #doctest: +ELLIPSIS
+            >>> open(foo_txt).readlines()[-1] #doctest: +ELLIPSIS
             '...:INFO:...:Hello from foo!\n'
-            >>> file('bar.txt').readlines()[-1] #doctest: +ELLIPSIS
+            >>> open(bar_txt).readlines()[-1] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello from bar!\n'
         """
-        if isinstance(value, (str,unicode)):
-            modes = ('w', 'wb', 'a', 'ab')
+        if isinstance(value, (bytes, six.text_type)):
             # check if mode was specified as "[value],[mode]"
             if ',' not in value:
                 value += ',a'
             filename, mode = value.rsplit(',', 1)
             value = open(filename, mode)
 
-        elif not isinstance(value, (file)):
+        elif not hasattr(value, "fileno"):
             raise AttributeError('log_file must be a file')
 
         # Is this the same file we already have open?
@@ -975,12 +1085,12 @@ class ContextType(object):
             >>> context.os = 'foobar' #doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
-            AttributeError: os must be one of ['android', 'cgc', 'freebsd', 'linux', 'windows']
+            AttributeError: os must be one of ['android', 'baremetal', 'cgc', 'freebsd', 'linux', 'windows']
         """
         os = os.lower()
 
-        if os not in ContextType.oses:
-            raise AttributeError("os must be one of %r" % ContextType.oses)
+        if os not in self.oses:
+            raise AttributeError("os must be one of %r" % self.oses)
 
         return os
 
@@ -1018,11 +1128,11 @@ class ContextType(object):
             ...
             AttributeError: signed must be one of ['no', 'signed', 'unsigned', 'yes'] or a non-string truthy value
         """
-        try:             signed = ContextType.signednesses[signed]
+        try:             signed = self.signednesses[signed]
         except KeyError: pass
 
         if isinstance(signed, str):
-            raise AttributeError('signed must be one of %r or a non-string truthy value' % sorted(ContextType.signednesses))
+            raise AttributeError('signed must be one of %r or a non-string truthy value' % sorted(self.signednesses))
 
         return bool(signed)
 
@@ -1046,7 +1156,7 @@ class ContextType(object):
         Can be a string or an iterable of strings.  In the latter case the first
         entry is the terminal and the rest are default arguments.
         """
-        if isinstance(value, (str, unicode)):
+        if isinstance(value, (bytes, six.text_type)):
             return [value]
         return value
 
@@ -1080,7 +1190,7 @@ class ContextType(object):
         if isinstance(proxy, str):
             proxy = (socks.SOCKS5, proxy)
 
-        if not isinstance(proxy, collections.Iterable):
+        if not isinstance(proxy, Iterable):
             raise AttributeError('proxy must be a string hostname, or tuple of arguments for socks.set_default_proxy')
 
         socks.set_default_proxy(*proxy)
@@ -1127,13 +1237,13 @@ class ContextType(object):
     def device(self, device):
         """Sets the device being operated on.
         """
+        if isinstance(device, (bytes, six.text_type)):
+            device = Device(device)
         if isinstance(device, Device):
             self.arch = device.arch or self.arch
             self.bits = device.bits or self.bits
             self.endian = device.endian or self.endian
             self.os = device.os or self.os
-        elif isinstance(device, str):
-            device = Device(device)
         elif device is not None:
             raise AttributeError("device must be either a Device object or a serial number as a string")
 
@@ -1169,6 +1279,21 @@ class ContextType(object):
         """
         return int(size)
 
+    @_validator
+    def cache_dir_base(self, new_base):
+        """Base directory to use for caching content.
+
+        Changing this to a different value will clear the `cache_dir` path
+        stored in TLS since a new path will need to be generated to respect the
+        new `cache_dir_base` value.
+        """
+
+        if new_base != self.cache_dir_base:
+            del self._tls["cache_dir"]
+        if os.access(new_base, os.F_OK) and not os.access(new_base, os.W_OK):
+            raise OSError(errno.EPERM, "Cache base dir is not writable")
+        return new_base
+
     @property
     def cache_dir(self):
         """Directory used for caching data.
@@ -1182,31 +1307,59 @@ class ContextType(object):
             >>> cache_dir is not None
             True
             >>> os.chmod(cache_dir, 0o000)
+            >>> del context._tls['cache_dir']
             >>> context.cache_dir is None
             True
             >>> os.chmod(cache_dir, 0o755)
             >>> cache_dir == context.cache_dir
             True
         """
-        home = os.path.expanduser('~')
+        try:
+            # If the TLS already has a cache directory path, we return it
+            # without any futher checks since it must have been valid when it
+            # was set and if that has changed, hiding the TOCTOU here would be
+            # potentially confusing
+            return self._tls["cache_dir"]
+        except KeyError:
+            pass
 
-        if not os.access(home, os.W_OK):
+        # Attempt to create a Python version specific cache dir and its parents
+        cache_dirname = '.pwntools-cache-%d.%d' % sys.version_info[:2]
+        cache_dirpath = os.path.join(self.cache_dir_base, cache_dirname)
+        try:
+            os.makedirs(cache_dirpath)
+        except OSError as exc:
+            # If we failed for any reason other than the cache directory
+            # already existing then we'll fall back to a temporary directory
+            # object which doesn't respect the `cache_dir_base`
+            if exc.errno != errno.EEXIST:
+                try:
+                    cache_dirpath = tempfile.mkdtemp(prefix=".pwntools-tmp")
+                except IOError:
+                    # This implies no good candidates for temporary files so we
+                    # have to return `None`
+                    return None
+                else:
+                    # Ensure the temporary cache dir is cleaned up on exit. A
+                    # `TemporaryDirectory` would do this better upon garbage
+                    # collection but this is necessary for Python 2 support.
+                    atexit.register(shutil.rmtree, cache_dirpath)
+        # By this time we have a cache directory which exists but we don't know
+        # if it is actually writable. Some wargames e.g. pwnable.kr have
+        # created dummy directories which cannot be modified by the user
+        # account (owned by root).
+        if os.access(cache_dirpath, os.W_OK):
+            # Stash this in TLS for later reuse
+            self._tls["cache_dir"] = cache_dirpath
+            return cache_dirpath
+        else:
             return None
 
-        cache = os.path.join(home, '.pwntools-cache')
-
-        if not os.path.exists(cache):
-            try:
-                os.mkdir(cache)
-            except OSError:
-                return None
-
-        # Some wargames e.g. pwnable.kr have created dummy directories
-        # which cannot be modified by the user account (owned by root).
-        if not os.access(cache, os.W_OK):
-            return None
-
-        return cache
+    @cache_dir.setter
+    def cache_dir(self, v):
+        if os.access(v, os.W_OK):
+            # Stash this in TLS for later reuse
+            self._tls["cache_dir"] = v
 
     @_validator
     def delete_corefiles(self, v):
@@ -1233,6 +1386,17 @@ class ContextType(object):
         Default value is ``True``.
         """
         return bool(v)
+
+    @_validator
+    def newline(self, v):
+        """Line ending used for Tubes by default.
+
+        This configures the newline emitted by e.g. ``sendline`` or that is used
+        as a delimiter for e.g. ``recvline``.
+        """
+        # circular imports
+        from pwnlib.util.packing import _need_bytes
+        return _need_bytes(v)
 
 
     @_validator
@@ -1262,7 +1426,7 @@ class ContextType(object):
         if len(set(alphabet)) != len(alphabet):
             raise AttributeError("cyclic alphabet cannot contain duplicates")
 
-        return str(alphabet)
+        return alphabet.encode()
 
     @_validator
     def cyclic_size(self, size):
@@ -1276,6 +1440,15 @@ class ContextType(object):
             raise AttributeError("cyclic pattern size cannot be larger than word size")
 
         return size
+
+    @_validator
+    def ssh_session(self, shell):
+        from pwnlib.tubes.ssh import ssh
+
+        if not isinstance(shell, ssh):
+            raise AttributeError("context.ssh_session must be an ssh tube") 
+
+        return shell
 
     #*************************************************************************
     #                               ALIASES
@@ -1387,11 +1560,39 @@ def LocalContext(function):
     """
     @functools.wraps(function)
     def setter(*a, **kw):
-        # Fast path to skip adding a Context frame
-        if not kw:
-            return function(*a)
+        with context.local(**{k:kw.pop(k) for k,v in tuple(kw.items()) if isinstance(getattr(ContextType, k, None), property)}):
+            arch = context.arch
+            bits = context.bits
+            endian = context.endian
 
-        with context.local(**{k:kw.pop(k) for k,v in kw.items() if isinstance(getattr(ContextType, k, None), property)}):
+            # Prevent the user from doing silly things with invalid
+            # architecture / bits / endianness combinations.
+            if (arch == 'i386' and bits != 32) \
+              or (arch == 'amd64' and bits != 64):
+                raise AttributeError("Invalid arch/bits combination: %s/%s" % (arch, bits))
+
+            if arch in ('i386', 'amd64') and endian == 'big':
+                raise AttributeError("Invalid arch/endianness combination: %s/%s" % (arch, endian))
+
+            return function(*a, **kw)
+    return setter
+
+def LocalNoarchContext(function):
+    """
+    Same as LocalContext, but resets arch to :const:`'none'` by default
+
+    Example:
+
+        >>> @LocalNoarchContext
+        ... def printArch():
+        ...     print(context.arch)
+        >>> printArch()
+        none
+    """
+    @functools.wraps(function)
+    def setter(*a, **kw):
+        kw.setdefault('arch', 'none')
+        with context.local(**{k:kw.pop(k) for k,v in tuple(kw.items()) if isinstance(getattr(ContextType, k, None), property)}):
             return function(*a, **kw)
     return setter
 
@@ -1408,11 +1609,19 @@ def update_context_defaults(section):
 
         default = ContextType.defaults[key]
 
-        if isinstance(default, (str, unicode, tuple, int, long, list, dict)):
+        if isinstance(default, six.string_types + six.integer_types + (tuple, list, dict)):
             value = safeeval.expr(value)
         else:
             log.warn("Unsupported configuration option %r in section %r" % (key, 'context'))
 
-        ContextType.defaults[key] = type(default)(value)
+        # Attempt to set the value, to see if it is value:
+        try:
+            with context.local(**{key: value}):
+                value = getattr(context, key)
+        except (ValueError, AttributeError) as e:
+            log.warn("Could not set context.%s=%s via pwn.conf (%s)", key, section[key], e)
+            continue
+
+        ContextType.defaults[key] = value
 
 register_config('context', update_context_defaults)

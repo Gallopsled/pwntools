@@ -1,3 +1,4 @@
+<% import six %>
 <% from pwnlib.shellcraft.arm import mov %>
 <% from pwnlib.util.packing import unpack %>
 <% from pwnlib import constants %>
@@ -14,7 +15,7 @@
     first address of the page that contains that address.
 </%docstring>
 <%
-    if not isinstance(egg, (int, long)):
+    if not isinstance(egg, six.integer_types):
         if not len(egg) == 4:
             raise Exception('Egg should be either an integer or a four byte string')
         egg = unpack(egg)

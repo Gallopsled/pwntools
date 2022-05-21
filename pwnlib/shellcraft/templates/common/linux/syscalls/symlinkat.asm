@@ -3,8 +3,9 @@ import collections
 import pwnlib.abi
 import pwnlib.constants
 import pwnlib.shellcraft
+import six
 %>
-<%docstring>symlinkat(from, tofd, to) -> str
+<%docstring>symlinkat(from_, tofd, to) -> str
 
 Invokes the syscall symlinkat.
 
@@ -17,7 +18,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="from=0, tofd=0, to=0"/>
+<%page args="from_=0, tofd=0, to=0"/>
 <%
     abi = pwnlib.abi.ABI.syscall()
     stack = abi.stack
@@ -27,8 +28,8 @@ Returns:
     can_pushstr = ['from', 'to']
     can_pushstr_array = []
 
-    argument_names = ['from', 'tofd', 'to']
-    argument_values = [from, tofd, to]
+    argument_names = ['from_', 'tofd', 'to']
+    argument_values = [from_, tofd, to]
 
     # Load all of the arguments into their destination registers / stack slots.
     register_arguments = dict()
@@ -40,7 +41,7 @@ Returns:
 
     for name, arg in zip(argument_names, argument_values):
         if arg is not None:
-            syscall_repr.append('%s=%r' % (name, arg))
+            syscall_repr.append('%s=%s' % (name, pwnlib.shellcraft.pretty(arg, False)))
 
         # If the argument itself (input) is a register...
         if arg in allregs:
@@ -53,7 +54,9 @@ Returns:
 
         # The argument is not a register.  It is a string value, and we
         # are expecting a string value
-        elif name in can_pushstr and isinstance(arg, str):
+        elif name in can_pushstr and isinstance(arg, (six.binary_type, six.text_type)):
+            if isinstance(arg, six.text_type):
+                arg = arg.encode('utf-8')
             string_arguments[name] = arg
 
         # The argument is not a register.  It is a dictionary, and we are
@@ -87,7 +90,7 @@ Returns:
 %>
     /* symlinkat(${', '.join(syscall_repr)}) */
 %for name, arg in string_arguments.items():
-    ${pwnlib.shellcraft.pushstr(arg, append_null=('\x00' not in arg))}
+    ${pwnlib.shellcraft.pushstr(arg, append_null=(b'\x00' not in arg))}
     ${pwnlib.shellcraft.mov(regs[argument_names.index(name)], abi.stack)}
 %endfor
 %for name, arg in array_arguments.items():
