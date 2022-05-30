@@ -171,7 +171,6 @@ class tube(Timeout, Logger):
 
         # No buffered data, could not put anything in the buffer
         # before timeout.
-        
         if not self.buffer and not self._fillbuffer(timeout):
             return b''
 
