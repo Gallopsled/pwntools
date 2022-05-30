@@ -1,0 +1,236 @@
+name: Bionic Continuous Integration
+on: [push, pull_request]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        python-version: [2.7, 3.8]
+        os: [ubuntu-18.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Git History
+      run: |
+        git fetch origin
+        git log --oneline --graph -10
+
+    - name: Cache for pip
+      uses: actions/cache@v1
+      id: cache-pip
+      with:
+        path: ~/.cache/pip
+        key: ${{ matrix.os }}-cache-pip
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Verify tag against version
+      if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+      env:
+        GITHUB_REF: ${{ github.event.ref }}
+      run: |
+        set -x
+        GITHUB_TAG=${GITHUB_REF#refs/tags/}
+        echo "$GITHUB_TAG" | grep -E '^[0-9.]*(beta[0-9])?$'
+        vsetup=$(grep -o "version\\s*=\\s*[\"'].*[\"'],$" setup.py | grep -o "[0-9][^\"']*")
+        vpwnlib=$(grep -o "__version__\\s*=\\s*[\"'].*[\"']$" pwnlib/version.py | grep -o "[0-9][^\"']*")
+        [ "$vsetup" = "$vpwnlib" ]
+        [ "$GITHUB_TAG" = "$vsetup" ]
+
+    - name: Install Linux dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
+          ash bash-static dash ksh mksh zsh \
+          pandoc gdb gdbserver socat sshpass \
+          binutils-multiarch qemu-user-static \
+          binutils-aarch64-linux-gnu \
+          binutils-arm-linux-gnueabihf \
+          binutils-mips-linux-gnu \
+          binutils-msp430 \
+          binutils-powerpc-linux-gnu \
+          binutils-s390x-linux-gnu \
+          binutils-sparc64-linux-gnu \
+          gcc-multilib \
+          libc6-dbg
+      
+    - name: Cache for elfutils
+      uses: actions/cache@v1
+      id: cache-elfutils
+      with:
+        path: ~/.cache/elfutils
+        key: ${{ matrix.os }}-cache-elfutils
+    
+    # Install newer elfutils version due to regression in 0.176 available in focal.
+    - name: Install newer elfutils
+      env:
+        ELFUTILS_VERSION: 0.181
+      run: |
+        if [[ ! -d ~/.cache/elfutils/elfutils-${ELFUTILS_VERSION} ]]
+        then
+          wget -O /tmp/elfutils-${ELFUTILS_VERSION}.tar.bz2 https://sourceware.org/elfutils/ftp/${ELFUTILS_VERSION}/elfutils-${ELFUTILS_VERSION}.tar.bz2
+          mkdir -p ~/.cache/elfutils && cd ~/.cache/elfutils
+          tar -xf /tmp/elfutils-${ELFUTILS_VERSION}.tar.bz2
+          cd elfutils-${ELFUTILS_VERSION}
+          LDFLAGS=-Wl,-rpath=/usr/local/lib,--enable-new-dtags ./configure --disable-libdebuginfod --disable-debuginfod && make && sudo make install
+        else
+          cd ~/.cache/elfutils/elfutils-${ELFUTILS_VERSION}
+          sudo make install
+        fi
+        eu-unstrip --version
+
+    - name: Install RPyC for GDB
+      run: |
+        sudo apt-get install -y python3-pip
+        /usr/bin/python3 -m pip install rpyc
+
+    - name: Testing Corefiles
+      run: |
+        ulimit -a
+        ulimit -c unlimited
+        cat /proc/sys/kernel/core_pattern
+        cat /proc/sys/kernel/core_uses_pid
+        ( cd $(mktemp -d); sh -c 'kill -11 $$' || true; ls -la ./*core* /var/crash/*.crash /var/lib/apport/coredump/core*) || true
+
+    - name: Set up SSH
+      run: |
+        travis/ssh_setup.sh
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install --upgrade wheel
+        pip install --upgrade flake8 appdirs
+        python setup.py egg_info
+        pip install --upgrade --editable .
+
+    - name: Sanity checks
+      run:  PWNLIB_NOTERM=1 python -bb -c 'from pwn import *; print(pwnlib.term.term_mode)'
+
+    - name: Install documentation dependencies
+      run:  pip install -r docs/requirements.txt
+
+    - name: Manually install non-broken Unicorn
+      run:  pip install unicorn==1.0.2rc3
+
+    - name: Disable yama ptrace_scope
+      run: |
+        echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope # required by some gdb doctests
+
+    - name: Coverage doctests
+      run: |
+        PWNLIB_NOTERM=1 python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest
+
+    - name: Coverage running examples
+      run: |
+        export TERM=linux
+        set -x
+        python -bb travis/coverage_chdir.py examples/fmtstr examples/fmtstr/exploit.py
+        python -bb travis/coverage_chdir.py examples/fmtstr examples/fmtstr/exploit2.py || : # can fail randomly?
+        python -bb -m coverage run examples/asm.py
+        python -bb -m coverage run examples/asm.py
+        python -bb -m coverage run examples/text.py
+        # for f in examples/sigreturn_corefile_*.py; do coverage run "$f"; done # XXX something is wrong
+
+    - name: Coverage running commandline tools
+      run: |
+        export TERM=linux
+        pwn() { ( set +x; cmd=$1; shift; PYTHONUNBUFFERED=1 exec python -bb -m coverage run -m pwnlib.commandline."$cmd" "$@" ) }
+        set -x
+
+        pwn cyclic 32
+        pwn cyclic -l 0x62616161
+        pwn cyclic -a ab
+        echo
+
+        pwn shellcraft --list |tail
+        pwn shellcraft -l --syscalls |tail
+        pwn shellcraft -l execve
+        pwn shellcraft --show i386.linux.loader_append
+        pwn shellcraft -f asm --color amd64.linux.sh
+        pwn shellcraft -f elf amd64.linux.syscalls.exit 0 </dev/null |pwn hex
+        pwn shellcraft -f i   --color amd64.linux.cat /etc/passwd </dev/null
+        pwn shellcraft -f c   amd64.linux.syscalls.exit 0 </dev/null
+        pwn shellcraft -f str aarch64.linux.sh </dev/null
+        pwn shellcraft -abr -f elf -o /dev/null amd64.linux.cat /etc/passwd </dev/null
+        pwn shellcraft -nzr thumb.linux.syscalls.execve /bin/cat '["/bin/cat", "/etc/os-release"]' </dev/null
+        pwn shellcraft -fp aarch64.trap
+
+        pwn disasm --color ff3424c3ebfe
+        pwn asm -f hex nop
+
+        pwn hex abcd
+        pwn unhex 4141 4141
+
+        cat /dev/urandom | pwn phd --color -c 256 -s 2
+        pwn phd -l 0x3d --color=always /etc/os-release
+
+        pwn checksec /bin/bash
+
+        pwn errno 2
+        pwn errno -1
+        pwn errno EADDRINUSE
+
+        pwn constgrep -c freebsd -m ^PROT_ '3 + 4'
+        pwn constgrep ^MAP_ 0
+        pwn constgrep -e O_RDWR
+
+    - name: Build source and wheel distributions
+      run: |
+        python setup.py sdist
+        python setup.py bdist_wheel --universal
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: packages
+        path: dist/
+
+    - name: Upload coverage to coveralls.io
+      run: |
+        coverage combine
+        COVERALLS_REPO_TOKEN=PP20MEgztXIQJJTguQwe2jeCh6Bm4lkbv coveralls
+
+  staging-merge:
+    runs-on: ubuntu-18.04
+    if: github.repository_owner == 'Gallopsled' && github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/') && endsWith(github.event.ref, '-staging')
+    needs: test
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 20
+    - name: Push changes to protected branch
+      env:
+        GITHUB_REF: ${{ github.event.ref }}
+      run: |
+        BRANCH=${GITHUB_REF#refs/heads/}
+        TARGET=${BRANCH%-staging}
+        git branch -f "$TARGET"
+        git push origin "$TARGET"
+        git push origin --delete "$BRANCH"
+
+  pypi:
+    runs-on: ubuntu-18.04
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+    needs: test
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: packages
+        path: dist
+
+    - name: Publish package
+      uses: pypa/gh-action-pypi-publish@v1.1.0
+      with:
+        user: __token__
+        password: ${{ secrets.pypi_password }}
+
+    - if: failure()
+      run: ls -R
