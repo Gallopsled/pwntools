@@ -66,7 +66,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.10.0 (`dev`)
 
-
+- [#2067][2067] Fix cicd error on CRC
 
 ## 4.9.0 (`beta`)
 
