@@ -117,6 +117,14 @@ class process(tube):
 
     Examples:
 
+        >>> if sys.platform.startswith('win'):
+        ...     context.os = "windows"
+        ...     p = process(b"C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe")
+        ...     p.recvuntil(b".")
+        ... else:
+        ...     b'Windows PowerShell \r\nCopyright (C) Microsoft Corporation.'
+        b'Windows PowerShell \r\nCopyright (C) Microsoft Corporation.'
+
         >>> p = process('python')
         >>> p.sendline(b"print('Hello world')")
         >>> p.sendline(b"print('Wow, such data')")
