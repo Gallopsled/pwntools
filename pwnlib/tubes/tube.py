@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import abc
 import logging
 import re
 import six
@@ -1276,6 +1277,7 @@ class tube(Timeout, Logger):
         self.close()
 
     # The minimal interface to be implemented by a child
+    @abc.abstractmethod
     def recv_raw(self, numb):
         """recv_raw(numb) -> str
 
@@ -1289,6 +1291,7 @@ class tube(Timeout, Logger):
 
         raise EOFError('Not implemented')
 
+    @abc.abstractmethod
     def send_raw(self, data):
         """send_raw(data)
 
