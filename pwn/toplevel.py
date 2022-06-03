@@ -89,3 +89,35 @@ colored_traceback.add_hook()
 
 # Equivalence with the default behavior of "from import *"
 # __all__ = [x for x in tuple(globals()) if not x.startswith('_')]
+
+
+
+context.os = "windows"
+p = process(r'C:\Python39\python.exe')
+
+p.sendline(b"print('Hello world')")
+p.sendline(b"print('Wow, such data')")
+
+a = b'' == p.recv(timeout=0.01)
+
+print(a)
+p.shutdown('send')
+print(p.proc.stdin.closed)
+print(p.connected('send'))
+
+print(p.recv(3))
+print(p.recvline())
+
+"""print(p.poll())
+
+print(p.recv(5))
+print(p.recvline())
+
+context.clear(arch='i386')
+cycle = cyclic(32)
+assembly = shellcraft.nop() * len(cycle)
+print(assembly)
+
+context.os = "windows"
+p = process(r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe")
+print(p.executable)"""

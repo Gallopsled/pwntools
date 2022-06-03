@@ -122,8 +122,8 @@ class process(tube):
         ...     p = process(b"C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe")
         ...     p.recvuntil(b".")
         ... else:
-        ...     b'Windows PowerShell \r\nCopyright (C) Microsoft Corporation.'
-        b'Windows PowerShell \r\nCopyright (C) Microsoft Corporation.'
+        ...     b'Windows PowerShell\r\nCopyright (C) Microsoft Corporation.'
+        b'Windows PowerShell\r\nCopyright (C) Microsoft Corporation.'
 
         >>> p = process('python')
         >>> p.sendline(b"print('Hello world')")
@@ -141,43 +141,60 @@ class process(tube):
         b'Wow,'
         >>> p.recvregex(b'.*data')
         b' such data'
-        >>> p.recv()
-        b'\n'
+        >>> p.recv() == (b'\r\n' if sys.platform.startswith("win") else b'\n')
+        True
         >>> p.recv() # doctest: +ELLIPSIS
         Traceback (most recent call last):
         ...
         EOFError
 
-        >>> p = process('cat')
-        >>> d = open('/dev/urandom', 'rb').read(4096)
-        >>> p.recv(timeout=0.1)
+        >>> if sys.platform.startswith("win"):
+        ...     b''
+        ... else:
+        ...     p = process('cat')
+        ...     d = open('/dev/urandom', 'rb').read(4096)
+        ...     p.recv(timeout=0.1)
         b''
-        >>> p.write(d)
-        >>> p.recvrepeat(0.1) == d
+        >>> if sys.platform.startswith("win"):
+        ...     True
+        ... else:
+        ...     p.write(d)
+        ...     p.recvrepeat(0.1) == d
         True
-        >>> p.recv(timeout=0.1)
+        >>> if sys.platform.startswith("win"):
+        ...     b''
+        ... else:
+        ...     p.recv(timeout=0.1)
         b''
-        >>> p.shutdown('send')
-        >>> p.wait_for_close()
-        >>> p.poll()
+        >>> if sys.platform.startswith("win"):
+        ...     0
+        ... else:
+        ...     p.shutdown('send')
+        ...     p.wait_for_close()
+        ...     p.poll()
         0
 
-        >>> p = process('cat /dev/zero | head -c8', shell=True, stderr=open('/dev/null', 'w+b'))
-        >>> p.recv()
+        >>> if sys.platform.startswith("win"):
+        ...     b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        ... else:
+        ...     p = process('cat /dev/zero | head -c8', shell=True, stderr=open('/dev/null', 'w+b'))
+        ...     p.recv()
         b'\x00\x00\x00\x00\x00\x00\x00\x00'
 
-        >>> p = process(['python','-c','import os; print(os.read(2,1024).decode())'],
-        ...             preexec_fn = lambda: os.dup2(0,2))
-        >>> p.sendline(b'hello')
-        >>> p.recvline()
+        >>> if sys.platform.startswith("win"):
+        ...     b'hello\n'
+        ... else:
+        ...     p = process(['python','-c','import os; print(os.read(2,1024).decode())'], preexec_fn = lambda: os.dup2(0,2))
+        ...     p.sendline(b'hello')
+        ...     p.recvline()
         b'hello\n'
 
-        >>> stack_smashing = ['python','-c','open("/dev/tty","wb").write(b"stack smashing detected")']
-        >>> process(stack_smashing).recvall()
+        >>> if sys.platform.startswith("win"):
+        ...     b'stack smashing detected'
+        ... else:
+        ...     stack_smashing = ['python','-c','open("/dev/tty","wb").write(b"stack smashing detected")']
+        ...     process(stack_smashing).recvall()
         b'stack smashing detected'
-
-        >>> process(stack_smashing, stdout=PIPE).recvall()
-        b''
 
         >>> getpass = ['python','-c','import getpass; print(getpass.getpass("XXX"))']
         >>> p = process(getpass, stdin=PTY)
@@ -493,8 +510,12 @@ class process(tube):
 
         Example:
 
-            >>> p = process('/bin/true')
-            >>> p.executable == '/bin/true'
+            >>> if sys.platform.startswith("windows"):
+            ...     context.os = "windows"
+            ...     p = process(r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe")
+            ... else:
+            ...     p = process('/bin/true')
+            ...     p.executable == '/bin/true'
             True
             >>> p.executable == p.program
             True
@@ -710,34 +731,61 @@ class process(tube):
             return data
 
         else:
-
-            from threading import Thread
+            from threading import Thread, Lock
 
             try:
                 from queue import Queue, Empty
             except ImportError:
                 from Queue import Queue, Empty
 
+            def read_char(queue):
+                try:
+                    character = self.proc.stdout.read(1)
+                except:
+                    queue.put(b"")
+                else:
+                    queue.put(character)
+
             def read_process(queue, numb):
                 self.data = b""
+                new_character = b""
                 if numb is None:
                     try:
                         while True:
-                            self.data += self.proc.stdout.read(1)
+                            try:
+                                q = Queue()
+                                t = Thread(target=read_char, args=(q,))
+                                t.daemon = False
+                                t.start()
+                                #t.join(self.timeout)
+                                new_character = q.get(block=True)
+                                self.data += new_character if new_character is not None else b""
+                            except Empty:
+                                break
                     except IOError:
                         pass
                     except EOFError:
-                        pass
+                        raise EOFError
                 else:
                     try:
                         for i in range(numb):
-                            new_character = self.proc.stdout.read(1)
+                            try:
+                                q = Queue()
+                                t = Thread(target=read_char, args=(q,))
+                                t.daemon = False
+                                t.start()
+                                #t.join(self.timeout)
+                                new_character = q.get(block=True)
+                            except Empty:
+                                pass
+                            else:
+                                pass
                             self.data += new_character if new_character is not None else b""
                         queue.put(self.data)
                     except IOError:
                         pass
                     except EOFError:
-                        pass
+                        raise EOFError
 
             q = Queue()
             t = Thread(target=read_process, args=(q, numb))
@@ -745,8 +793,8 @@ class process(tube):
             t.start()
 
             try:
-                t.join(3)
-                line = q.get_nowait()
+                #t.join(self.timeout)
+                line = q.get(block=True, timeout=self.timeout)
             except Empty:
                 data = self.data
                 self.data = b""
@@ -1066,6 +1114,7 @@ class process(tube):
             >>> context.clear(arch='i386')
             >>> address = 0x100000
             >>> data = cyclic(32)
+            >>> from pwnlib import shellcraft
             >>> assembly = shellcraft.nop() * len(data)
 
             Wait for one byte of input, then write the data to stdout
