@@ -360,7 +360,7 @@ class Module(types.ModuleType):
 
         l = len(data)
         data += packing.pack(l, 'all', endian='little', sign=False)
-        return crc.crc_32_posix(data)
+        return crc.crc_32_cksum(data)
 
     @staticmethod
     def find_crc_function(data, checksum):
