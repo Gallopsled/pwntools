@@ -738,54 +738,36 @@ class process(tube):
             except ImportError:
                 from Queue import Queue, Empty
 
-            def read_char(queue):
-                try:
-                    character = self.proc.stdout.read(1)
-                except:
-                    queue.put(b"")
-                else:
-                    queue.put(character)
-
             def read_process(queue, numb):
                 self.data = b""
-                new_character = b""
                 if numb is None:
-                    try:
-                        while True:
-                            try:
-                                q = Queue()
-                                t = Thread(target=read_char, args=(q,))
-                                t.daemon = False
-                                t.start()
-                                #t.join(self.timeout)
-                                new_character = q.get(block=True)
-                                self.data += new_character if new_character is not None else b""
-                            except Empty:
-                                break
-                    except IOError:
-                        pass
-                    except EOFError:
-                        raise EOFError
+                    while True:
+                        try:
+                            new_character = self.proc.stdout.read(1)
+                        except Empty:
+                            pass
+                        except IOError:
+                            pass
+                        except EOFError:
+                            raise EOFError
+                        else:
+                            if new_character is not None:
+                                self.data += new_character
                 else:
-                    try:
-                        for i in range(numb):
-                            try:
-                                q = Queue()
-                                t = Thread(target=read_char, args=(q,))
-                                t.daemon = False
-                                t.start()
-                                #t.join(self.timeout)
-                                new_character = q.get(block=True)
-                            except Empty:
-                                pass
-                            else:
-                                pass
-                            self.data += new_character if new_character is not None else b""
-                        queue.put(self.data)
-                    except IOError:
-                        pass
-                    except EOFError:
-                        raise EOFError
+                    for i in range(numb):
+                        try:
+                            new_character = self.proc.stdout.read(1)
+                        except Empty:
+                            pass
+                        except IOError:
+                            pass
+                        except EOFError:
+                            raise EOFError
+                        else:
+                            pass
+                        if new_character is not None:
+                            self.data += new_character
+                    queue.put(self.data)
 
             q = Queue()
             t = Thread(target=read_process, args=(q, numb))
@@ -793,7 +775,6 @@ class process(tube):
             t.start()
 
             try:
-                #t.join(self.timeout)
                 line = q.get(block=True, timeout=self.timeout)
             except Empty:
                 data = self.data
