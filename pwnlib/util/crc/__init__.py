@@ -1,3 +1,22 @@
+"""Module for calculating CRC-sums.
+
+Contains all crc implementations know on the interwebz. For most implementations
+it contains only the core crc algorithm and not e.g. padding schemes.
+
+It is horribly slow, as implements a naive algorithm working direclty on
+bit polynomials. This class is exposed as `BitPolynom`.
+
+The current algorithm is super-linear and takes about 4 seconds to calculate
+the crc32-sum of ``'A'*40000``.
+
+An obvious optimization would be to actually generate some lookup-tables.
+
+This doctest is to ensure that the known data are accurate:
+    >>> known = sys.modules['pwnlib.util.crc.known']
+    >>> known.all_crcs == known.generate()
+    True
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 
@@ -9,28 +28,6 @@ from pwnlib.util import fiddling
 from pwnlib.util import packing
 from pwnlib.util import safeeval
 from pwnlib.util.crc import known
-
-class Nothing:
-    """Module for calculating CRC-sums.
-
-    Contains all crc implementations know on the interwebz. For most implementations
-    it contains only the core crc algorithm and not e.g. padding schemes.
-
-    It is horribly slow, as implements a naive algorithm working direclty on
-    bit polynomials. This class is exposed as `BitPolynom`.
-
-    The current algorithm is super-linear and takes about 4 seconds to calculate
-    the crc32-sum of ``'A'*40000``.
-
-    An obvious optimization would be to actually generate some lookup-tables.
-
-    This doctest is to ensure that the known data are accurate:
-        >>> known = sys.modules['pwnlib.util.crc.known']
-        >>> known.all_crcs == known.generate()
-        True
-    """
-    pass
-
 
 class BitPolynom(object):
     """Class for representing GF(2)[X], i.e. the field of polynomials over
