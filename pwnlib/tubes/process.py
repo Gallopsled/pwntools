@@ -21,6 +21,14 @@ if sys.platform != 'win32':
     import resource
     import tty
 
+from threading import Thread, Lock
+
+try:
+    from queue import Queue, Empty
+except ImportError:
+    from Queue import Queue, Empty
+
+
 from pwnlib import qemu
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -512,7 +520,7 @@ class process(tube):
 
             >>> if sys.platform.startswith("windows"):
             ...     context.os = "windows"
-            ...     p = process(r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe")
+            ...     p = process("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
             ... else:
             ...     p = process('/bin/true')
             ...     p.executable == '/bin/true'
@@ -729,50 +737,34 @@ class process(tube):
                 raise EOFError
 
             return data
-
         else:
-            from threading import Thread, Lock
-
-            try:
-                from queue import Queue, Empty
-            except ImportError:
-                from Queue import Queue, Empty
-
             def read_process(queue, numb):
-                self.data = b""
                 if numb is None:
                     while True:
-                        try:
-                            new_character = self.proc.stdout.read(1)
-                        except Empty:
-                            pass
-                        except IOError:
-                            pass
-                        except EOFError:
-                            raise EOFError
-                        else:
-                            if new_character is not None:
-                                self.data += new_character
-                else:
-                    for i in range(numb):
-                        try:
-                            new_character = self.proc.stdout.read(1)
-                        except Empty:
-                            pass
-                        except IOError:
-                            pass
-                        except EOFError:
-                            raise EOFError
-                        else:
-                            pass
+                        new_character = self.proc.stdout.read(1)
                         if new_character is not None:
                             self.data += new_character
+                        else:
+                            break
+                            break
+                else:
+                    for i in range(numb):
+                        new_character = self.proc.stdout.read(1)
+                        if new_character is not None:
+                            self.data += new_character
+                        else:
+                            break
+                            break
                     queue.put(self.data)
 
-            q = Queue()
-            t = Thread(target=read_process, args=(q, numb))
-            t.daemon = True
-            t.start()
+            self.data = b""
+            try:
+                q = Queue()
+                t = Thread(target=read_process, args=(q, numb))
+                t.daemon = False
+                t.start()
+            except Exception as e:
+                print("exception:" + e)
 
             try:
                 line = q.get(block=True, timeout=self.timeout)
@@ -780,6 +772,10 @@ class process(tube):
                 data = self.data
                 self.data = b""
                 return data
+            except IOError:
+                pass
+            except EOFError:
+                raise EOFError
             else:
                 self.data = b""
                 return line
