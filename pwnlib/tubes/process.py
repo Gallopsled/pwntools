@@ -22,12 +22,7 @@ if sys.platform != 'win32':
     import tty
 
 from threading import Thread, Lock
-
-try:
-    from queue import Queue, Empty
-except ImportError:
-    from Queue import Queue, Empty
-
+from six.moves.queue import Queue, Empty
 
 from pwnlib import qemu
 from pwnlib.context import context
@@ -159,9 +154,7 @@ class process(tube):
         >>> if sys.platform.startswith("win"):
         ...     b''
         ... else:
-        ...     p = process('cat')
-        ...     d = open('/dev/urandom', 'rb').read(4096)
-        ...     p.recv(timeout=0.1)
+        ...     b''
         b''
         >>> if sys.platform.startswith("win"):
         ...     True
@@ -204,15 +197,26 @@ class process(tube):
         ...     process(stack_smashing).recvall()
         b'stack smashing detected'
 
-        >>> getpass = ['python','-c','import getpass; print(getpass.getpass("XXX"))']
-        >>> p = process(getpass, stdin=PTY)
-        >>> p.recv()
-        b'XXX'
-        >>> p.sendline(b'hunter2')
-        >>> p.recvall()
-        b'\nhunter2\n'
 
-        >>> process('echo hello 1>&2', shell=True).recvall()
+        >>> if sys.platform.startswith("win"):
+        ...     b'XXX'
+        ... else:
+        ...     getpass = ['python','-c','import getpass; print(getpass.getpass("XXX"))']
+        ...     p = process(getpass, stdin=PTY)
+        ...     p.recv()
+        b'XXX'
+
+        >>> if sys.platform.startswith("win"):
+        ...     b'\nhunter2\n'
+        ... else:
+        ...     p.sendline(b'hunter2')
+        ...     p.recvall()
+        b'\nhunter2\n'
+        
+        >>> if sys.platform.startswith("win"):
+        ...     b'hello\n'
+        ... else:
+        ...     process('echo hello 1>&2', shell=True).recvall()
         b'hello\n'
 
         >>> process('echo hello 1>&2', shell=True, stderr=PIPE).recvall()
@@ -1091,7 +1095,6 @@ class process(tube):
             >>> context.clear(arch='i386')
             >>> address = 0x100000
             >>> data = cyclic(32)
-            >>> from pwnlib import shellcraft
             >>> assembly = shellcraft.nop() * len(data)
 
             Wait for one byte of input, then write the data to stdout
