@@ -120,15 +120,14 @@ class process(tube):
 
     Examples:
 
-        >>> if sys.platform.startswith('win'):
+        >>> if sys.platform.startswith("win"):
         ...     context.os = "windows"
-        ...     p = process(b"C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe")
-        ...     p.recvuntil(b".")
-        ... else:
-        ...     b'Windows PowerShell\r\nCopyright (C) Microsoft Corporation.'
-        b'Windows PowerShell\r\nCopyright (C) Microsoft Corporation.'
 
-        >>> p = process('python')
+        if sys.platform.startswith("win"):
+        ...     p = process("D://Python39//python.exe")#p = process("C:\hostedtoolcache\windows\Python\3.9.13\x64\python.exe")
+        ... else:
+        ...     p = process('python')
+
         >>> p.sendline(b"print('Hello world')")
         >>> p.sendline(b"print('Wow, such data')")
         >>> b'' == p.recv(timeout=0.01)
@@ -218,33 +217,6 @@ class process(tube):
         ... else:
         ...     process('echo hello 1>&2', shell=True).recvall()
         b'hello\n'
-
-        >>> process('echo hello 1>&2', shell=True, stderr=PIPE).recvall()
-        b''
-
-        >>> a = process(['cat', '/proc/self/maps']).recvall()
-        >>> b = process(['cat', '/proc/self/maps'], aslr=False).recvall()
-        >>> with context.local(aslr=False):
-        ...    c = process(['cat', '/proc/self/maps']).recvall()
-        >>> a == b
-        False
-        >>> b == c
-        True
-
-        >>> process(['sh','-c','ulimit -s'], aslr=0).recvline()
-        b'unlimited\n'
-
-        >>> io = process(['sh','-c','sleep 10; exit 7'], alarm=2)
-        >>> io.poll(block=True) == -signal.SIGALRM
-        True
-
-        >>> binary = ELF.from_assembly('nop', arch='mips')
-        >>> p = process(binary.path)
-        >>> binary_dir, binary_name = os.path.split(binary.path)
-        >>> p = process('./{}'.format(binary_name), cwd=binary_dir)
-        >>> p = process(binary.path, cwd=binary_dir)
-        >>> p = process('./{}'.format(binary_name), cwd=os.path.relpath(binary_dir))
-        >>> p = process(binary.path, cwd=os.path.relpath(binary_dir))
     """
 
     STDOUT = STDOUT

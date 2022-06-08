@@ -164,4 +164,4 @@ doctest:
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/doctest/output.txt."
 win-doctest:
-	@python -m doctest -v D:/a/pwntools/pwntools/pwnlib/tubes/process.py
+	@python -m doctest ../pwnlib/tubes/process.py -v
