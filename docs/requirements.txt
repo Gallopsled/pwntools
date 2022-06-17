@@ -12,8 +12,7 @@ pypandoc
 pyserial>=2.7
 requests>=2.5.1
 ropgadget>=5.3
-sphinx==1.8.6; python_version < '3.0.0'
-sphinx==4.5.0; python_version >= '3.0.0'
+sphinx==1.8.6; python_version<'3'
+sphinx>=4.5.0; python_version>='3'
 sphinx_rtd_theme
-sphinxcontrib-napoleon
 sphinxcontrib-autoprogram<=0.1.5

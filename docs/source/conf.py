@@ -42,8 +42,8 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.todo',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.napoleon',
     'sphinxcontrib.autoprogram',
-    'sphinxcontrib.napoleon'
 ]
 
 # Disable "info" logging directly to stdout by Sphinx
