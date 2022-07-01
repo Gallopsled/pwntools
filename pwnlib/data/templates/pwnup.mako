@@ -54,6 +54,7 @@ exe = ${binary_repr}
 %if not libc:
 libc = os.path.basename(binary)
 %endif
+
 %if not quiet:
 # Many built-in settings can be controlled on the command-line and show up
 # in "args".  For example, to dump all data sent/received, and disable ASLR
