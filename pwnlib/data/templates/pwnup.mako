@@ -1,4 +1,4 @@
-<%page args="binary, host=None, port=None, user=None, password=None, remote_path=None, quiet=False"/>\
+<%page args="binary, host=None, port=None, user=None, password=None, remote_path=None, quiet=False, libc=None"/>\
 <%
 import os
 import sys
@@ -51,7 +51,9 @@ context.update(arch='i386')
 exe = ${binary_repr}
 <% binary_repr = 'exe' %>
 %endif
-
+%if not libc:
+libc = os.path.basename(binary)
+%endif
 %if not quiet:
 # Many built-in settings can be controlled on the command-line and show up
 # in "args".  For example, to dump all data sent/received, and disable ASLR
