@@ -51,7 +51,7 @@ context.update(arch='i386')
 exe = ${binary_repr}
 <% binary_repr = 'exe' %>
 %endif
-%if not libc:
+%if libc:
 libc = os.path.basename(binary)
 %endif
 
