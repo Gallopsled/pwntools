@@ -374,8 +374,10 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         exe(str): Path to the executable on disk
         env(dict): Environment to start the binary in
         ssh(:class:`.ssh`): Remote ssh session to use to launch the process.
-        sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
-            and Android targets.
+        sysroot(str): Set an alternate system root. The system root is used to
+            load absolute shared library symbol files. This is useful to instruct
+            gdb to load a local version of binaries/libraries instead of downloading
+            them from the gdbserver, which is faster
         api(bool): Enable access to GDB Python API.
 
     Returns:
@@ -728,8 +730,10 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         arch(str): Architechture of the target binary.  If `exe` known GDB will
           detect the architechture automatically (if it is supported).
         gdb_args(list): List of additional arguments to pass to GDB.
-        sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
-            and Android targets.
+        sysroot(str): Set an alternate system root. The system root is used to
+            load absolute shared library symbol files. This is useful to instruct
+            gdb to load a local version of binaries/libraries instead of downloading
+            them from the gdbserver, which is faster
         api(bool): Enable access to GDB Python API.
 
     Returns:
@@ -868,11 +872,11 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
     # gdb script to run before `gdbscript`
     pre = ''
+    if sysroot:
+        pre += 'set sysroot %s\n' % sysroot
     if not context.native:
         pre += 'set endian %s\n' % context.endian
         pre += 'set architecture %s\n' % get_gdb_arch()
-        if sysroot:
-            pre += 'set sysroot %s\n' % sysroot
 
         if context.os == 'android':
             pre += 'set gnutarget ' + _bfdname() + '\n'
