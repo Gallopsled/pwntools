@@ -229,7 +229,7 @@ def normalize_argv_env(argv, env, log, level=2):
         for k,v in env_items:
             if not isinstance(k, (bytes, six.text_type)):
                 log.error('Environment keys must be strings: %r' % k)
-            if not isinstance(k, (bytes, six.text_type)):
+            if not isinstance(v, (bytes, six.text_type)):
                 log.error('Environment values must be strings: %r=%r' % (k,v))
             k = packing._need_bytes(k, level, 0x80)  # ASCII text is okay
             v = packing._need_bytes(v, level, 0x80)  # ASCII text is okay
