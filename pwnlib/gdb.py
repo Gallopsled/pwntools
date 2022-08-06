@@ -568,7 +568,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     gdbserver.executable = exe
 
     # Find what port we need to connect to
-    if context.native or (context.os == 'android'):
+    if ssh or context.native or (context.os == 'android'):
         port = _gdbserver_port(gdbserver, ssh)
     else:
         port = qemu_port
