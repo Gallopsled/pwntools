@@ -1364,7 +1364,11 @@ class ROP(object):
                     regs.append(pop.match(insn).group(1))
                     sp_move += context.bytes
                 elif add.match(insn):
-                    sp_move += int(add.match(insn).group(1), 16)
+                    arg = int(add.match(insn).group(1), 16)
+                    sp_move += arg
+                    while arg >= context.bytes:
+                        regs.append(hex(arg))
+                        arg -= context.bytes
                 elif ret.match(insn):
                     sp_move += context.bytes
                 elif leave.match(insn):
