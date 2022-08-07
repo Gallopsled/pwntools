@@ -66,7 +66,9 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.10.0 (`dev`)
 
+- [#2093][2093] setresuid() in shellcraft uses current euid by default
 
+[2093]: https://github.com/Gallopsled/pwntools/pull/2093
 
 ## 4.9.0 (`beta`)
 
