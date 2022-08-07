@@ -66,7 +66,9 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.10.0 (`dev`)
 
+- [#2092][2092] shellcraft: dup() is now called dupio() consistently across all supported arches
 
+[2092]: https://github.com/Gallopsled/pwntools/pull/2092
 
 ## 4.9.0 (`beta`)
 
