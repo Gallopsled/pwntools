@@ -70,10 +70,10 @@ def main(args):
         if six.PY3:
             pat = bytes(pat, encoding='utf-8')
 
-        if pat[:2] == b'0x':
-            pat = bytes.fromhex(pat[2::].decode())
-            pat = pat[::-1]
-
+        try:
+            pat = int(pat, 0)
+        except ValueError:
+            pass
         pat = flat(pat, bytes=args.length)
 
         if len(pat) < subsize:
