@@ -72,6 +72,7 @@ def main(args):
 
         try:
             pat = int(pat, 0)
+            pat = pack(pat, 'all')
         except ValueError:
             pass
         pat = flat(pat, bytes=args.length)
