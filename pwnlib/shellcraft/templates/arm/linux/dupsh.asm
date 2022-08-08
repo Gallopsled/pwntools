@@ -1,4 +1,4 @@
-<% from pwnlib.shellcraft.thumb import linux %>
+<% from pwnlib.shellcraft.arm import linux %>
 <%page args="sock = 'r6'"/>
 <%docstring>
 Args: [sock (imm/reg) = r6]
