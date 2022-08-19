@@ -303,7 +303,7 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
                 env_args.append(b'%s=%s' % (key, env.pop(key)))
             else:
                 env_args.append(b'%s=%s' % (key, env[key]))
-        gdbserver_args += ['--wrapper', 'env', '-i'] + env_args + ['--']
+        gdbserver_args += ['--wrapper', which('env'), '-i'] + env_args + ['--']
 
     gdbserver_args += ['localhost:0']
     gdbserver_args += args
@@ -374,8 +374,10 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         exe(str): Path to the executable on disk
         env(dict): Environment to start the binary in
         ssh(:class:`.ssh`): Remote ssh session to use to launch the process.
-        sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
-            and Android targets.
+        sysroot(str): Set an alternate system root. The system root is used to
+            load absolute shared library symbol files. This is useful to instruct
+            gdb to load a local version of binaries/libraries instead of downloading
+            them from the gdbserver, which is faster
         api(bool): Enable access to GDB Python API.
 
     Returns:
@@ -568,7 +570,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     gdbserver.executable = exe
 
     # Find what port we need to connect to
-    if context.native or (context.os == 'android'):
+    if ssh or context.native or (context.os == 'android'):
         port = _gdbserver_port(gdbserver, ssh)
     else:
         port = qemu_port
@@ -728,8 +730,10 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         arch(str): Architechture of the target binary.  If `exe` known GDB will
           detect the architechture automatically (if it is supported).
         gdb_args(list): List of additional arguments to pass to GDB.
-        sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
-            and Android targets.
+        sysroot(str): Set an alternate system root. The system root is used to
+            load absolute shared library symbol files. This is useful to instruct
+            gdb to load a local version of binaries/libraries instead of downloading
+            them from the gdbserver, which is faster
         api(bool): Enable access to GDB Python API.
 
     Returns:
@@ -868,17 +872,17 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
     # gdb script to run before `gdbscript`
     pre = ''
+    if sysroot:
+        pre += 'set sysroot %s\n' % sysroot
     if not context.native:
         pre += 'set endian %s\n' % context.endian
         pre += 'set architecture %s\n' % get_gdb_arch()
-        if sysroot:
-            pre += 'set sysroot %s\n' % sysroot
 
         if context.os == 'android':
             pre += 'set gnutarget ' + _bfdname() + '\n'
 
         if exe and context.os != 'baremetal':
-            pre += 'file %s\n' % exe
+            pre += 'file "%s"\n' % exe
 
     # let's see if we can find a pid to attach to
     pid = None
@@ -915,7 +919,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
-        cmd += ['gdb', '-q', target.executable, target.pid, '-x', tmpfile]
+        cmd += ['gdb', '-q', target.executable, str(target.pid), '-x', tmpfile]
 
         misc.run_in_new_terminal(cmd)
         return
@@ -967,7 +971,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
         exe = exe or findexe()
     elif isinstance(target, elf.corefile.Corefile):
-        pre += 'target core %s\n' % target.path
+        pre += 'target core "%s"\n' % target.path
     else:
         log.error("don't know how to attach to target: %r", target)
 
@@ -1335,7 +1339,7 @@ def version(program='gdb'):
     program = misc.which(program)
     expr = br'([0-9]+\.?)+'
 
-    with tubes.process.process([program, '--version'], level='error') as gdb:
+    with tubes.process.process([program, '--version'], level='error', stdout=tubes.process.PIPE) as gdb:
         version = gdb.recvline()
 
     versions = re.search(expr, version).group()

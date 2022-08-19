@@ -117,9 +117,9 @@ class process(tube):
 
     Examples:
 
-        >>> p = process('python2')
-        >>> p.sendline(b"print 'Hello world'")
-        >>> p.sendline(b"print 'Wow, such data'");
+        >>> p = process('python')
+        >>> p.sendline(b"print('Hello world')")
+        >>> p.sendline(b"print('Wow, such data')")
         >>> b'' == p.recv(timeout=0.01)
         True
         >>> p.shutdown('send')
@@ -216,6 +216,8 @@ class process(tube):
 
     #: Have we seen the process stop?  If so, this is a unix timestamp.
     _stop_noticed = 0
+
+    proc = None
 
     def __init__(self, argv = None,
                  shell = False,
@@ -608,7 +610,7 @@ class process(tube):
         """Permit pass-through access to the underlying process object for
         fields like ``pid`` and ``stdin``.
         """
-        if hasattr(self.proc, attr):
+        if not attr.startswith('_') and hasattr(self.proc, attr):
             return getattr(self.proc, attr)
         raise AttributeError("'process' object has no attribute '%s'" % attr)
 
@@ -740,10 +742,14 @@ class process(tube):
         # First check if we are already dead
         self.poll()
 
-        #close file descriptors
+        # close file descriptors
         for fd in [self.proc.stdin, self.proc.stdout, self.proc.stderr]:
             if fd is not None:
-                fd.close()
+                try:
+                    fd.close()
+                except IOError as e:
+                    if e.errno != errno.EPIPE:
+                        raise
 
         if not self._stop_noticed:
             try:

@@ -1,3 +1,5 @@
+# Copyright (c) 2013 Pratik Kumar Sahu, Nagendra Chowdary, Anish Mathuria
+# Ported to Python by Gallopsled
 from __future__ import division
 
 import os

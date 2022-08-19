@@ -30,6 +30,7 @@ Other, more complicated gdagets also happen magically
     Gadget(0x10000006, ['pop ecx', 'pop ebx', 'ret'], ['ecx', 'ebx'], 0xc)
 
 The easiest way to set up individual registers is to invoke the ``ROP`` object as a callable, with the registers as arguments.
+This has the benefit of using multi-pop gadgets to set multiple registers with one gadget.
     
     >>> rop(eax=0x11111111, ecx=0x22222222)
 
@@ -43,6 +44,37 @@ which corresponds to their offset, which is useful when debuggging your exploit.
     0x0008:          b'caaa' <pad ebx>
     0x000c:       0x10000004 pop eax; ret
     0x0010:       0x11111111
+
+
+If you really want to set one register at a time, you can also use the assignment form.
+It's generally advised to use the rop(eax=..., ecx=...) form, since there may be an
+e.g. ``pop eax; pop ecx; ret`` gadget that can be taken advantage of.
+
+    >>> rop = ROP(binary)
+    >>> rop.eax = 0xdeadf00d
+    >>> rop.ecx = 0xc01dbeef
+    >>> rop.raw(0xffffffff)
+    >>> print(rop.dump())
+    0x0000:       0x10000004 pop eax; ret
+    0x0004:       0xdeadf00d
+    0x0008:       0x10000006 pop ecx; pop ebx; ret
+    0x000c:       0xc01dbeef
+    0x0010:          b'eaaa' <pad ebx>
+    0x0014:       0xffffffff
+
+If you just want to FIND a ROP gadget, you can access them as a property on the ``ROP``
+object by register name.
+
+    >>> rop = ROP(binary)
+    >>> rop.eax
+    Gadget(0x10000004, ['pop eax', 'ret'], ['eax'], 0x8)
+    >>> hex(rop.eax.address)
+    '0x10000004'
+    >>> rop.raw(rop.eax)
+    >>> rop.raw(0x12345678)
+    >>> print(rop.dump())
+    0x0000:       0x10000004 pop eax; ret
+    0x0004:       0x12345678
 
 Let's re-create our ROP object now to show for some other examples.:
 
@@ -92,12 +124,10 @@ The stack is automatically adjusted for the next frame
     0x001c:              0x6 arg2
     0x0020:          b'iaaa' <pad>
     0x0024:       0xdecafbad write(7, 8, 9)
-    0x0028:       0x10000000 <adjust @0x3c> add esp, 0x10; ret
+    0x0028:       0xfeedface exit()
     0x002c:              0x7 arg0
     0x0030:              0x8 arg1
     0x0034:              0x9 arg2
-    0x0038:          b'oaaa' <pad>
-    0x003c:       0xfeedface exit()
 
 You can also append complex arguments onto stack when the stack pointer is known.
 
@@ -188,18 +218,16 @@ Finally, let's build our ROP stack
     >>> rop.exit()
     >>> print(rop.dump())
     0x0000:       0x10000012 write(STDOUT_FILENO, 0x10000026, 8)
-    0x0004:       0x1000000e <adjust @0x18> add esp, 0x10; ret
+    0x0004:       0x1000002f exit()
     0x0008:              0x1 STDOUT_FILENO
     0x000c:       0x10000026 flag
     0x0010:              0x8 arg2
-    0x0014:          b'faaa' <pad>
-    0x0018:       0x1000002f exit()
 
-The raw data from the ROP stack is available via `str`.
+The raw data from the ROP stack is available via `r.chain()` (or `bytes(r)`).
 
     >>> raw_rop = rop.chain()
     >>> print(enhex(raw_rop))
-    120000100e000010010000002600001008000000666161612f000010
+    120000102f000010010000002600001008000000
 
 Let's try it out!
 
@@ -927,7 +955,7 @@ class ROP(object):
                     # If there were arguments on the stack, we need to stick something
                     # in the slot where the return address goes.
                     if len(stackArguments) > 0:
-                        if remaining:
+                        if remaining and (remaining > 1 or Call.is_flat(chain[-1])):
                             fix_size  = (1 + len(stackArguments))
                             fix_bytes = fix_size * context.bytes
                             adjust   = self.search(move = fix_bytes)
@@ -944,6 +972,13 @@ class ROP(object):
                                 stackArguments.append(Padding())
 
                         # We could not find a proper "adjust" gadget, but also didn't need one.
+                        elif remaining:
+                            _, nxslot = next(iterable)
+                            stack.describe(self.describe(nxslot))
+                            if isinstance(nxslot, Call):
+                                stack.append(nxslot.target)
+                            else:
+                                stack.append(nxslot)
                         else:
                             stack.append(Padding("<return address>"))
 
@@ -1274,7 +1309,7 @@ class ROP(object):
                 pass
 
             def __getattr__(self, k):
-                return self._fd.__getattribute__(k)
+                return getattr(self._fd, k)
 
         gadgets = {}
         for elf in self.elfs:
@@ -1329,7 +1364,11 @@ class ROP(object):
                     regs.append(pop.match(insn).group(1))
                     sp_move += context.bytes
                 elif add.match(insn):
-                    sp_move += int(add.match(insn).group(1), 16)
+                    arg = int(add.match(insn).group(1), 16)
+                    sp_move += arg
+                    while arg >= context.bytes:
+                        regs.append(hex(arg))
+                        arg -= context.bytes
                 elif ret.match(insn):
                     sp_move += context.bytes
                 elif leave.match(insn):
@@ -1477,8 +1516,6 @@ class ROP(object):
         # Find an appropriate, non-library ELF.
         # Prioritise non-PIE binaries so we can use _fini
         exes = (elf for elf in self.elfs if not elf.library and elf.bits == 64)
-        if not exes:
-            log.error('No non-library binaries in [elfs]')
 
         nonpie = csu = None
         for elf in exes:
@@ -1488,6 +1525,8 @@ class ROP(object):
                 nonpie = elf
             elif '__libc_csu_init' in elf.symbols:
                 csu = elf
+        else:
+            log.error('No non-library binaries in [elfs]')
 
         if elf.pie:
             if nonpie:

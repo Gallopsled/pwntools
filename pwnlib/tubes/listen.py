@@ -78,15 +78,13 @@ class listen(sock):
                  fam='any', typ='tcp', *args, **kwargs):
         super(listen, self).__init__(*args, **kwargs)
 
-        port = int(port)
-
         fam = self._get_family(fam)
         typ = self._get_type(typ)
 
         if fam == socket.AF_INET and bindaddr == '::':
             bindaddr = '0.0.0.0'
 
-        h = self.waitfor('Trying to bind to %s on port %d' % (bindaddr, port))
+        h = self.waitfor('Trying to bind to %s on port %s' % (bindaddr, port))
 
         for res in socket.getaddrinfo(bindaddr, port, fam, typ, 0, socket.AI_PASSIVE):
             self.family, self.type, self.proto, self.canonname, self.sockaddr = res
@@ -109,7 +107,7 @@ class listen(sock):
             break
         else:
             h.failure()
-            self.error("Could not bind to %s on port %d" % (bindaddr, port))
+            self.error("Could not bind to %s on port %s" % (bindaddr, port))
 
         h.success()
 
@@ -159,15 +157,18 @@ class listen(sock):
         self.sock
         return self
 
-    def __getattr__(self, key):
-        if key == 'sock':
-            self._accepter.join(timeout = self.timeout)
-            if 'sock' in self.__dict__:
-                return self.sock
-            else:
-                return None
-        else:
-            return getattr(super(listen, self), key)
+    @property
+    def sock(self):
+        try:
+            return self.__dict__['sock']
+        except KeyError:
+            pass
+        self._accepter.join(timeout=self.timeout)
+        return self.__dict__.get('sock')
+
+    @sock.setter
+    def sock(self, s):
+        self.__dict__['sock'] = s
 
     def close(self):
         # since `close` is scheduled to run on exit we must check that we got

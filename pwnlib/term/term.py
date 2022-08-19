@@ -139,7 +139,7 @@ def init():
         def write(self, s):
             output(s, frozen = True)
         def __getattr__(self, k):
-            return self._fd.__getattribute__(k)
+            return getattr(self._fd, k)
     if sys.stdout.isatty():
         sys.stdout = Wrapper(sys.stdout)
     if sys.stderr.isatty():
@@ -326,14 +326,14 @@ def parse(s):
         elif c == 0x0d:
             x = (CR, None)
             i += 1
-        else:
+
+        if x is None:
+            x = (STR, [six.int2byte(c) for c in bytearray(b'\\x%02x' % c)])
             i += 1
 
         if _graphics_mode:
             continue
-        if x is None:
-            x = (STR, [six.int2byte(c) for c in bytearray(b'\\x%02x' % c)])
-            i += 1
+
         if x[0] == STR and out and out[-1][0] == STR:
             out[-1][1].extend(x[1])
         else:

@@ -140,10 +140,10 @@ class DynELF(object):
     .. _.got.plt:  https://refspecs.linuxbase.org/LSB_3.1.1/LSB-Core-generic/LSB-Core-generic/specialsections.html
     .. _DYNAMIC:   http://www.sco.com/developers/gabi/latest/ch5.dynamic.html#dynamic_section
     .. _SYSV:      https://refspecs.linuxbase.org/elf/gabi4+/ch5.dynamic.html#hash
-    .. _GNU:       https://blogs.oracle.com/ali/entry/gnu_hash_elf_sections
+    .. _GNU:       https://blogs.oracle.com/solaris/post/gnu-hash-elf-sections
     .. _DT_DEBUG:  https://reverseengineering.stackexchange.com/questions/6525/elf-link-map-when-linked-as-relro
     .. _link map:  https://sourceware.org/git/?p=glibc.git;a=blob;f=elf/link.h;h=eaca8028e45a859ac280301a6e955a14eed1b887;hb=HEAD#l84
-    .. _DT_PLTGOT: http://refspecs.linuxfoundation.org/ELF/zSeries/lzsabi0_zSeries/x2251.html
+    .. _DT_PLTGOT: https://refspecs.linuxfoundation.org/ELF/zSeries/lzsabi0_zSeries/x2251.html
     '''
 
     def __init__(self, leak, pointer=None, elf=None, libcdb=True):
@@ -769,7 +769,7 @@ class DynELF(object):
             structure.
 
             Again, Oracle has good documentation.
-            https://blogs.oracle.com/ali/entry/gnu_hash_elf_sections
+            https://blogs.oracle.com/solaris/post/gnu-hash-elf-sections
 
             You can force an ELF to use this type of symbol table by compiling
             with 'gcc -Wl,--hash-style=gnu'

@@ -391,7 +391,9 @@ class SigreturnFrame(dict):
             self.set_regvalue(attr, value)
 
     def __getattr__(self, attr):
-        return self[attr]
+        if attr in self:
+            return self[attr]
+        raise AttributeError(attr)
 
     def __bytes__(self):
         frame = b""

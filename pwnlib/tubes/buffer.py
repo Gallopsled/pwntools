@@ -4,7 +4,7 @@ from __future__ import division
 from pwnlib.context import context
 
 
-class Buffer(Exception):
+class Buffer(object):
     """
     List of strings with some helper routines.
 

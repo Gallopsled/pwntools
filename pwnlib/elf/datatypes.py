@@ -604,7 +604,8 @@ class user_regs_struct_aarch64(ctypes.Structure):
     def __getattr__(self, name):
         if name.startswith('r'):
             name = 'x' + name[1:]
-            return getattr(name) & 0xffffffff
+            return getattr(self, name) & 0xffffffff
+        raise AttributeError(name)
 
 class elf_prstatus_i386(ctypes.Structure):
     _fields_ = generate_prstatus_common(32, user_regs_struct_i386)

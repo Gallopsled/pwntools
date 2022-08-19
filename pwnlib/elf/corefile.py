@@ -400,6 +400,7 @@ class Corefile(ELF):
         automatically invokes GDB to attach and dump a corefile.
 
         >>> core = io.corefile
+        >>> io.close()
 
         The corefile can be inspected and read from, and even exposes various mappings
 
@@ -1183,14 +1184,13 @@ class Corefile(ELF):
         pwnlib.gdb.attach(self, exe=self.exe.path)
 
     def __getattr__(self, attribute):
-        if self.prstatus:
-            if hasattr(self.prstatus, attribute):
-                return getattr(self.prstatus, attribute)
+        if attribute.startswith('_') or not self.prstatus:
+            raise AttributeError(attribute)
 
-            if hasattr(self.prstatus.pr_reg, attribute):
-                return getattr(self.prstatus.pr_reg, attribute)
+        if hasattr(self.prstatus, attribute):
+            return getattr(self.prstatus, attribute)
 
-        return super(Corefile, self).__getattribute__(attribute)
+        return getattr(self.prstatus.pr_reg, attribute)
 
     # Override routines which don't make sense for Corefiles
     def _populate_got(*a): pass
@@ -1406,9 +1406,8 @@ class CorefileFinder(object):
                     "coredumpctl",
                     "dump",
                     "--output=%s" % filename,
-                    # Filter coredump by pid and filename
+                    # Filter coredump by pid
                     str(self.pid),
-                    self.basename,
                 ],
                 stdout=open(os.devnull, 'w'),
                 stderr=subprocess.STDOUT,
@@ -1454,6 +1453,10 @@ class CorefileFinder(object):
                 filename = 'core.%s.%i.apport' % (self.basename, self.pid)
                 with open(filename, 'wb+') as f:
                     f.write(apport_core)
+                return filename
+
+            filename = self.apport_coredump()
+            if filename:
                 return filename
 
             # Pretend core_pattern was just 'core', and see if we come up with anything
@@ -1538,6 +1541,42 @@ class CorefileFinder(object):
 
         # Get the full path
         corefile_path = os.path.join(self.cwd, corefile_name)
+
+        log.debug("Trying corefile_path: %r" % corefile_path)
+
+        # Glob all of them, return the *most recent* based on numeric sort order.
+        for corefile in sorted(glob.glob(corefile_path), reverse=True):
+            return corefile
+
+    def apport_coredump(self):
+        """Find new-style apport coredump of executables not belonging
+        to a system package
+        """
+        # Now Ubuntu, which is the most silly distro of all, doesn't follow
+        # anybody else's rules either...
+        # ...and it uses apport FROM SOME OTHER REPO THAN THE DOCS SAY
+        # Hey, thanks for making our lives easier, Canonical :----)
+        # Seriously, why is Ubuntu even considered to be the default distro
+        # on GH Actions?
+        #
+        #     core.<_path_to_target_binary>.<uid>.<boot_id>.<pid>.<timestamp>
+        #
+        # Note that we don't give any fucks about the timestamp, since the PID
+        # should be unique enough that we can just glob.
+
+        boot_id = read('/proc/sys/kernel/random/boot_id').strip().decode()
+        path = self.exe.replace('/', '_')
+
+        # Format the name
+        corefile_name = 'core.{path}.{uid}.{boot_id}.{pid}.*'.format(
+            path=path,
+            uid=self.uid,
+            boot_id=boot_id,
+            pid=self.pid,
+        )
+
+        # Get the full path
+        corefile_path = os.path.join('/var/lib/apport/coredump', corefile_name)
 
         log.debug("Trying corefile_path: %r" % corefile_path)
 

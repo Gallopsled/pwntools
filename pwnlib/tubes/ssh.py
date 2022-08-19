@@ -519,13 +519,19 @@ class ssh_listener(sock):
         _ = self.sock
         return self
 
-    def __getattr__(self, key):
-        if key == 'sock':
-            while self._accepter.is_alive():
-                self._accepter.join(timeout = 0.1)
-            return self.sock
-        else:
-            return getattr(super(ssh_listener, self), key)
+    @property
+    def sock(self):
+        try:
+            return self.__dict__['sock']
+        except KeyError:
+            pass
+        while self._accepter.is_alive():
+            self._accepter.join(timeout=0.1)
+        return self.__dict__.get('sock')
+
+    @sock.setter
+    def sock(self, s):
+        self.__dict__['sock'] = s
 
 
 class ssh(Timeout, Logger):
@@ -552,8 +558,8 @@ class ssh(Timeout, Logger):
     _cwd = '.'
 
     def __init__(self, user=None, host=None, port=22, password=None, key=None,
-                 keyfile=None, proxy_command=None, proxy_sock=None,
-                 level=None, cache=True, ssh_agent=False, ignore_config=False, *a, **kw):
+                 keyfile=None, proxy_command=None, proxy_sock=None, level=None,
+                 cache=True, ssh_agent=False, ignore_config=False, raw=False, *a, **kw):
         """Creates a new ssh connection.
 
         Arguments:
@@ -570,6 +576,7 @@ class ssh(Timeout, Logger):
             cache: Cache downloaded files (by hash/size/timestamp)
             ssh_agent: If :const:`True`, enable usage of keys via ssh-agent
             ignore_config: If :const:`True`, disable usage of ~/.ssh/config and ~/.ssh/authorized_keys
+            raw: If :const:`True`, assume a non-standard shell and don't probe the environment
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used.
@@ -600,6 +607,7 @@ class ssh(Timeout, Logger):
         self.keyfile         = keyfile
         self._cachedir       = os.path.join(tempfile.gettempdir(), 'pwntools-ssh-cache')
         self.cache           = cache
+        self.raw             = raw
 
         # Deferred attributes
         self._platform_info = {}
@@ -666,6 +674,9 @@ class ssh(Timeout, Logger):
             self.transport.use_compression(True)
 
             h.success()
+
+        if self.raw:
+            return
 
         self._tried_sftp = False
 
@@ -1079,7 +1090,7 @@ os.execve(exe, argv, env)
             if result == 0:
                 self.error("%r does not exist or is not executable" % executable)
             elif result == 3:
-                self.error(error_message)
+                self.error("%r" % error_message)
             elif result == 2:
                 self.error("python is not installed on the remote system %r" % self.host)
             elif result != 1:
@@ -1523,29 +1534,24 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             local: Local directory
             remote: Remote directory
         """
-        remote   = remote or self.cwd
-
+        remote = packing._encode(remote or self.cwd)
 
         if self.sftp:
-            remote = str(self.sftp.normalize(remote))
+            remote = packing._encode(self.sftp.normalize(remote))
         else:
             with context.local(log_level='error'):
-                remote = self.system('readlink -f ' + sh_string(remote))
+                remote = self.system(b'readlink -f ' + sh_string(remote))
 
-        basename = os.path.basename(remote)
+        local = local or '.'
+        local = os.path.expanduser(local)
 
-
-        local    = local or '.'
-        local    = os.path.expanduser(local)
-
-        self.info("Downloading %r to %r" % (basename,local))
+        self.info("Downloading %r to %r" % (remote, local))
 
         with context.local(log_level='error'):
             remote_tar = self.mktemp()
-            cmd = 'tar -C %s -czf %s %s' % \
+            cmd = b'tar -C %s -czf %s .' % \
                   (sh_string(remote),
-                   sh_string(remote_tar),
-                   sh_string(basename))
+                   sh_string(remote_tar))
             tar = self.system(cmd)
 
             if 0 != tar.wait():
@@ -1686,10 +1692,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             local(str): Local path to store the data.
                 By default, uses the current directory.
         """
-        if not self.sftp:
-            self.error("Cannot determine remote file type without SFTP")
-
-        with self.system('test -d ' + sh_string(file_or_directory)) as io:
+        file_or_directory = packing._encode(file_or_directory)
+        with self.system(b'test -d ' + sh_string(file_or_directory)) as io:
             is_dir = io.wait()
 
         if 0 == is_dir:
@@ -1827,6 +1831,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             symlink = os.path.join(self.pwd(), b'*')
         if not hasattr(symlink, 'encode') and hasattr(symlink, 'decode'):
             symlink = symlink.decode('utf-8')
+            
+        if isinstance(wd, six.text_type):
+            wd = packing._need_bytes(wd, 2, 0x80)
 
         if not wd:
             wd, status = self.run_to_end('x=$(mktemp -d) && cd $x && chmod +x . && echo $PWD', wd='.')
