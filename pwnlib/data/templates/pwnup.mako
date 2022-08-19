@@ -1,4 +1,4 @@
-<%page args="binary, host=None, port=None, user=None, password=None, remote_path=None, quiet=False, libc=None"/>\
+<%page args="binary, libc=None, host=None, port=None, user=None, password=None, remote_path=None, quiet=False"/>\
 <%
 import os
 import sys
@@ -52,7 +52,7 @@ exe = ${binary_repr}
 <% binary_repr = 'exe' %>
 %endif
 %if libc:
-libc = os.path.basename(binary)
+libc = ELF(${libc_repr})
 %endif
 
 %if not quiet:

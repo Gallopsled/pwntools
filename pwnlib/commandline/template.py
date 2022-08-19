@@ -14,6 +14,7 @@ parser = common.parser_commands.add_parser(
 )
 
 parser.add_argument('exe', nargs='?', help='Target binary')
+parser.add_argument('--libc', help='Target libc')
 parser.add_argument('--host', help='Remote host / SSH server')
 parser.add_argument('--port', help='Remote port / SSH port', type=int)
 parser.add_argument('--user', help='SSH Username')
@@ -49,6 +50,7 @@ def main(args):
 
     template = lookup.get_template('pwnup.mako')
     output = template.render(args.exe,
+                             args.libc,
                              args.host,
                              args.port,
                              args.user,
@@ -74,4 +76,4 @@ def main(args):
         except OSError: pass
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    main(parser.parse_args())
