@@ -76,4 +76,4 @@ def main(args):
         except OSError: pass
 
 if __name__ == '__main__':
-    main(parser.parse_args())
+    pwnlib.commandline.common.main(__file__)
