@@ -595,7 +595,7 @@ def make_elf(data,
 
         _run(assembler + ['-o', step2, step1])
 
-        linker_options = ['-z', 'execstack']
+        linker_options = ['-z', 'execstack', '--no-warn-rwx-segments', '--no-warn-execstack']
         if vma is not None:
             linker_options += ['--section-start=.shellcode=%#x' % vma,
                                '--entry=%#x' % vma]
