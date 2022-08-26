@@ -278,6 +278,18 @@ def _linker():
 
     return ld + bfd + [E] + arguments
 
+def _linker_warns_rwx():
+    ld  = [which_binutils('ld')][0]
+    result = subprocess.check_output([ld, '--version','/dev/null'],
+                                         stderr=subprocess.STDOUT, universal_newlines=True)
+    version = re.search(r' (\d+\.\d+.\d+)', result).group(1)
+    ld_version=list(map(int, version.split('.')))    
+    if ((ld_version[0] > 2) or (ld_version[0] == 2 and ld_version[1] > 38) 
+                         or (ld_version[0]==2 and ld_version[1]==38 and ld_version[2]>=90)):
+       return True
+    else:
+       return False
+
 def _objcopy():
     return [which_binutils('objcopy')]
 
@@ -594,8 +606,11 @@ def make_elf(data,
             f.write(code)
 
         _run(assembler + ['-o', step2, step1])
+        if _linker_warns_rwx():
+            linker_options = ['-z', 'execstack', '--no-warn-rwx-segments', '--no-warn-execstack']
+        else:
+            linker_options = ['-z', 'execstack']
 
-        linker_options = ['-z', 'execstack', '--no-warn-rwx-segments', '--no-warn-execstack']
         if vma is not None:
             linker_options += ['--section-start=.shellcode=%#x' % vma,
                                '--entry=%#x' % vma]
@@ -689,7 +704,11 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
             shutil.copy(step2, step3)
 
         if vma or not extract:
-            ldflags = ['-z', 'execstack', '-o', step3, step2]
+            if _linker_warns_rwx(): 
+                ldflags = ['-z', 'execstack', '--no-warn-rwx-segments', '--no-warn-execstack', '-o', step3, step2]
+            else:
+                ldflags = ['-z', 'execstack', '-o', step3, step2]
+
             if vma:
                 ldflags += ['--section-start=.shellcode=%#x' % vma,
                             '--entry=%#x' % vma]
