@@ -71,13 +71,15 @@ def provider_libc_rip(hex_encoded_id, hash_type):
     data = b""
     try:
         result = requests.post(url, json=params, timeout=20)
-        if result.status_code != 200 or len(result.json()) == 0:
+        result.raise_for_status()
+        if len(result.json()) == 0:
             log.warn_once("Could not find libc for %s %s on libc.rip", hash_type, hex_encoded_id)
-            log.debug("Error: %s", result.text)
             return None
 
         libc_match = result.json()
-        assert len(libc_match) == 1, 'Invalid libc.rip response.'
+        if len(libc_match) > 1:
+            log.debug("Received multiple matches. Choosing the first match and discarding the others.")
+            log.debug("%r", libc_match)
 
         url = libc_match[0]['download_url']
         log.debug("Downloading data from libc.rip: %s", url)
