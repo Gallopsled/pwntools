@@ -4,6 +4,7 @@ from __future__ import division
 
 import ctypes
 import errno
+import io
 import logging
 import os
 import platform
@@ -350,10 +351,22 @@ class process(tube):
         if self.pty is not None:
             if stdin is slave:
                 self.proc.stdin = os.fdopen(os.dup(master), 'r+b', 0)
+            elif isinstance(stdin, io.TextIOWrapper):
+                self.proc.stdin = os.fdopen(os.dup(stdin.fileno()), 'r+b', 0)
+            elif isinstance(stdin, int) and self.__is_valid_fd(stdin):
+                self.proc.stdin = os.fdopen(os.dup(stdin), 'r+b', 0)
             if stdout is slave:
                 self.proc.stdout = os.fdopen(os.dup(master), 'r+b', 0)
+            elif isinstance(stdout, io.TextIOWrapper):
+                self.proc.stdout = os.fdopen(os.dup(stdout.fileno()), 'r+b', 0)
+            elif isinstance(stdout, int) and self.__is_valid_fd(stdout):
+                self.proc.stdout = os.fdopen(os.dup(stdout), 'r+b', 0)
             if stderr is slave:
                 self.proc.stderr = os.fdopen(os.dup(master), 'r+b', 0)
+            elif isinstance(stderr, io.TextIOWrapper):
+                self.proc.stderr = os.fdopen(os.dup(stderr.fileno()), 'r+b', 0)
+            elif isinstance(stderr, int) and self.__is_valid_fd(stderr):
+                self.proc.stderr = os.fdopen(os.dup(stderr), 'r+b', 0)
 
             os.close(master)
             os.close(slave)
@@ -374,6 +387,13 @@ class process(tube):
                 self.suid = st.st_uid
             if (st.st_mode & stat.S_ISGID):
                 self.sgid = st.st_gid
+
+    def __is_valid_fd(self, fd):
+        try:
+            os.fstat(fd)
+        except OSError:
+            return False
+        return True
 
     def __preexec_fn(self):
         """
