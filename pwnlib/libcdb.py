@@ -25,7 +25,7 @@ from pwnlib.util.web import wget
 log = getLogger(__name__)
 
 HASHES = ['build_id', 'sha1', 'sha256', 'md5']
-DEBUGINFOD_SERVERS = ['https://debuginfod.systemtap.org/']
+DEBUGINFOD_SERVERS = ['https://debuginfod.elfutils.org/']
 
 # https://gitlab.com/libcdb/libcdb wasn't updated after 2019,
 # but still is a massive database of older libc binaries.
