@@ -348,28 +348,45 @@ class process(tube):
 
             p.success('pid %i' % self.pid)
 
+        stdin_assigned, stdout_assigned, stderr_assigned = False, False, False
+
         if self.pty is not None:
             if stdin is slave:
                 self.proc.stdin = os.fdopen(os.dup(master), 'r+b', 0)
-            elif isinstance(stdin, io.TextIOWrapper):
-                self.proc.stdin = os.fdopen(os.dup(stdin.fileno()), 'r+b', 0)
-            elif isinstance(stdin, int) and self.__is_valid_fd(stdin):
-                self.proc.stdin = os.fdopen(os.dup(stdin), 'r+b', 0)
+                stdin_assigned = True
             if stdout is slave:
                 self.proc.stdout = os.fdopen(os.dup(master), 'r+b', 0)
-            elif isinstance(stdout, io.TextIOWrapper):
-                self.proc.stdout = os.fdopen(os.dup(stdout.fileno()), 'r+b', 0)
-            elif isinstance(stdout, int) and self.__is_valid_fd(stdout):
-                self.proc.stdout = os.fdopen(os.dup(stdout), 'r+b', 0)
+                stdout_assigned = True
             if stderr is slave:
                 self.proc.stderr = os.fdopen(os.dup(master), 'r+b', 0)
-            elif isinstance(stderr, io.TextIOWrapper):
-                self.proc.stderr = os.fdopen(os.dup(stderr.fileno()), 'r+b', 0)
-            elif isinstance(stderr, int) and self.__is_valid_fd(stderr):
-                self.proc.stderr = os.fdopen(os.dup(stderr), 'r+b', 0)
+                stderr_assigned = True
 
             os.close(master)
             os.close(slave)
+
+        if not stdin_assigned:
+            if isinstance(stdin, io.TextIOWrapper):
+                self.proc.stdin = os.fdopen(os.dup(stdin.fileno()), 'r+b', 0)
+                stdin_assigned = True
+            elif isinstance(stdin, int) and self.__is_valid_fd(stdin):
+                self.proc.stdin = os.fdopen(os.dup(stdin), 'r+b', 0)
+                stdin_assigned = True
+
+        if not stdout_assigned:
+            if isinstance(stdout, io.TextIOWrapper):
+                self.proc.stdout = os.fdopen(os.dup(stdout.fileno()), 'r+b', 0)
+                stdout_assigned = True
+            elif isinstance(stdout, int) and self.__is_valid_fd(stdout):
+                self.proc.stdout = os.fdopen(os.dup(stdout), 'r+b', 0)
+                stdout_assigned = True
+
+        if not stderr_assigned:
+            if isinstance(stderr, io.TextIOWrapper):
+                self.proc.stderr = os.fdopen(os.dup(stderr.fileno()), 'r+b', 0)
+                stderr_assigned = True
+            elif isinstance(stderr, int) and self.__is_valid_fd(stderr):
+                self.proc.stderr = os.fdopen(os.dup(stderr), 'r+b', 0)
+                stderr_assigned = True
 
         # Set in non-blocking mode so that a call to call recv(1000) will
         # return as soon as a the first byte is available
