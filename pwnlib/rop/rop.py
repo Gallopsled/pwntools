@@ -24,7 +24,7 @@ Each :class:`Gadget` has an ``address`` property which has the real address as w
     >>> hex(rop.eax.address)
     '0x10000004'
 
-Other, more complicated gdagets also happen magically
+Other, more complicated gadgets also happen magically
 
     >>> rop.ecx
     Gadget(0x10000006, ['pop ecx', 'pop ebx', 'ret'], ['ecx', 'ebx'], 0xc)
