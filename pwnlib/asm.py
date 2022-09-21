@@ -705,6 +705,9 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
             # across architectures.
             ldflags += ['-z', 'max-page-size=4096',
                         '-z', 'common-page-size=4096']
+            
+            #Mute linker warning: LOAD segment with RWX permissions
+            ldflags += ['--no-warn-rwx-segment']
 
             _run(linker + ldflags)
 
