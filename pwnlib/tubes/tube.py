@@ -5,6 +5,7 @@ from __future__ import division
 import abc
 import logging
 import re
+import select
 import six
 import string
 import subprocess
@@ -17,6 +18,7 @@ from six.moves import range
 from pwnlib import atexit
 from pwnlib import term
 from pwnlib.context import context
+from pwnlib.exception import PwnlibException
 from pwnlib.log import Logger
 from pwnlib.timeout import Timeout
 from pwnlib.tubes.buffer import Buffer
@@ -862,21 +864,33 @@ class tube(Timeout, Logger):
         t.start()
 
         try:
-            while not go.isSet():
-                if term.term_mode:
-                    data = term.readline.readline(prompt = prompt, float = True)
-                else:
-                    stdin = getattr(sys.stdin, 'buffer', sys.stdin)
-                    data = stdin.read(1)
-
-                if data:
-                    try:
-                        self.send(data)
-                    except EOFError:
-                        go.set()
-                        self.info('Got EOF while sending in interactive')
-                else:
+            while not go.isSet() and self.connected():
+                # Block until there is input on stdin or there's input on the receiving side
+                try:
+                    rfds, _, _ = select.select([sys.stdin, self], [], [])
+                except PwnlibException:
+                    # If the process stops while we're waiting for input, an
+                    # exception will be thrown
                     go.set()
+                    continue
+
+                # If the there's input on stdin, handle it. Otherwise, on the
+                # next iteration of the loop we'll check if the receiving side disconnected
+                if sys.stdin in rfds:
+                    if term.term_mode:
+                        data = term.readline.readline(prompt = prompt, float = True)
+                    else:
+                        stdin = getattr(sys.stdin, 'buffer', sys.stdin)
+                        data = stdin.read(1)
+
+                    if data:
+                        try:
+                            self.send(data)
+                        except EOFError:
+                            go.set()
+                            self.info('Got EOF while sending in interactive')
+                    else:
+                        go.set()
         except KeyboardInterrupt:
             self.info('Interrupted')
             go.set()
