@@ -52,7 +52,7 @@ exe = ${binary_repr}
 <% binary_repr = 'exe' %>
 %endif
 %if libc:
-libc = ELF(${libc_repr})
+libc = ELF('${libc}')
 %endif
 
 %if not quiet:
