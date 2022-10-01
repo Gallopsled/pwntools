@@ -1,5 +1,5 @@
 <% from pwnlib.shellcraft.i386.linux import dup2 %>
-<% from pwnlib.shellcraft.i386 import mov %>
+<% from pwnlib.shellcraft.i386 import setregs %>
 <% from pwnlib.shellcraft import common %>
 <%page args="sock = 'ebp'"/>
 <%docstring>
@@ -7,16 +7,12 @@ Args: [sock (imm/reg) = ebp]
     Duplicates sock to stdin, stdout and stderr
 </%docstring>
 <%
-  dup       = common.label("dup")
   looplabel = common.label("loop")
 %>
 
     /* dup() file descriptor ${sock} into stdin/stdout/stderr */
-${dup}:
-    ${mov('ebx', sock)}
-    ${mov('ecx', 3)}
+    ${setregs({'ebx': sock, 'ecx': 2})}
 ${looplabel}:
-    dec ecx
-
     ${dup2('ebx', 'ecx')}
-    jnz ${looplabel}
+    dec ecx
+    jns ${looplabel}

@@ -217,6 +217,8 @@ class process(tube):
     #: Have we seen the process stop?  If so, this is a unix timestamp.
     _stop_noticed = 0
 
+    proc = None
+
     def __init__(self, argv = None,
                  shell = False,
                  executable = None,

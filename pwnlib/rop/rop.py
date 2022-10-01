@@ -24,7 +24,7 @@ Each :class:`Gadget` has an ``address`` property which has the real address as w
     >>> hex(rop.eax.address)
     '0x10000004'
 
-Other, more complicated gdagets also happen magically
+Other, more complicated gadgets also happen magically
 
     >>> rop.ecx
     Gadget(0x10000006, ['pop ecx', 'pop ebx', 'ret'], ['ecx', 'ebx'], 0xc)
@@ -1364,7 +1364,11 @@ class ROP(object):
                     regs.append(pop.match(insn).group(1))
                     sp_move += context.bytes
                 elif add.match(insn):
-                    sp_move += int(add.match(insn).group(1), 16)
+                    arg = int(add.match(insn).group(1), 16)
+                    sp_move += arg
+                    while arg >= context.bytes:
+                        regs.append(hex(arg))
+                        arg -= context.bytes
                 elif ret.match(insn):
                     sp_move += context.bytes
                 elif leave.match(insn):

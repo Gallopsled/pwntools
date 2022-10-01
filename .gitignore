@@ -21,3 +21,4 @@ venv
 .idea
 __pycache__
 !.github
+.DS_Store
