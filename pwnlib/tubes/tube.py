@@ -1298,7 +1298,7 @@ class tube(Timeout, Logger):
         Should not be called directly. Sends data to the tube.
 
         Should return ``exceptions.EOFError``, if it is unable to send any
-        more, because of a close tube.
+        more, because of a closed tube.
         """
 
         raise EOFError('Not implemented')
@@ -1314,9 +1314,8 @@ class tube(Timeout, Logger):
 
     def timeout_change(self):
         """
-        Informs the raw layer of the tube that the timeout has changed.
+        Should not be called directly. Informs the raw layer of the tube that the timeout has changed.
 
-        Should not be called directly.
 
         Inherited from :class:`Timeout`.
         """
