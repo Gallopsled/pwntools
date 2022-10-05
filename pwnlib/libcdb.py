@@ -329,7 +329,7 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
             return search_by_build_id(matching_libcs[0]['buildid'], unstrip=unstrip)
 
         if select_index is not None:
-            if select_index > 0 and select_index < len(matching_libcs):
+            if select_index > 0 and select_index <= len(matching_libcs):
                 return search_by_build_id(matching_libcs[select_index - 1]['buildid'], unstrip=unstrip)
             else:
                 log.error('Invalid selected libc index. %d is not in the range of 1-%d.', select_index, len(matching_libcs))
