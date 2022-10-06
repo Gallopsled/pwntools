@@ -300,11 +300,11 @@ def make_atoms_simple(address, data, badbytes=frozenset()):
     out = []
     while i < len(data):
         candidate = AtomWrite(address + i, 1, data[i])
-        while i + candidate.size < len(data) and any(x in badbytes for x in pack(candidate.end)):
+        while candidate.end < len(data) and any(x in badbytes for x in pack(candidate.end)):
             candidate = candidate.union(AtomWrite(candidate.end, 1, data[i + candidate.size]))
 
         sz = min([s for s in SPECIFIER if s >= candidate.size] + [float("inf")])
-        if i + sz >= len(data):
+        if candidate.start + sz > len(data):
             raise RuntimeError("impossible to avoid badbytes starting after offset %d (address %x)" % (i, i + address))
         i += candidate.size
         candidate = candidate.union(AtomWrite(candidate.end, sz - candidate.size, 0, 0))
