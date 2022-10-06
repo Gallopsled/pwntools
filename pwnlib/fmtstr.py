@@ -300,7 +300,7 @@ def make_atoms_simple(address, data, badbytes=frozenset()):
     out = []
     while i < len(data):
         candidate = AtomWrite(address + i, 1, data[i])
-        while candidate.end < len(data) and any(x in badbytes for x in pack(candidate.end)):
+        while i + candidate.size < len(data) and any(x in badbytes for x in pack(candidate.end)):
             candidate = candidate.union(AtomWrite(candidate.end, 1, data[i + candidate.size]))
 
         sz = min([s for s in SPECIFIER if s >= candidate.size] + [float("inf")])
