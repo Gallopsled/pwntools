@@ -290,20 +290,20 @@ def make_atoms_simple(address, data, badbytes=frozenset()):
     
     If there are bad bytes, it will try to bypass by skipping addresses containing bad bytes, otherwise a
     RuntimeError will be raised:
-        >>> pwnlib.fmtstr.make_atoms_simple(0xdeadbeef, b'abc', b'\xf0')
-        [AtomWrite(start=3735928559, size=2, integer=0x6261, mask=0xffff), AtomWrite(start=3735928561, size=1, integer=0x63, mask=0xff)]    >>> pwnlib.fmtstr.make_atoms_simple(0x1010, b'a'*0x10, b'\x10')
-        >>> pwnlib.fmtstr.make_atoms_simple(0xdeadbeef, b'abc', b'\xef')
+        >>> pwnlib.fmtstr.make_atoms_simple(0x61, b'abc', b'\x62')
+        [AtomWrite(start=97, size=2, integer=0x6261, mask=0xffff), AtomWrite(start=99, size=1, integer=0x63, mask=0xff)]
+        >>> pwnlib.fmtstr.make_atoms_simple(0x61, b'abc', b'\x61')
         Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
-        File "/home/pwwwn/code/pwntools/pwnlib/fmtstr.py", line 297, in make_atoms_simple
-            File "/home/pwwwn/code/pwntools/pwnlib/fmtstr.py", line 308, in make_atoms_simple
-        RuntimeError: impossible to avoid a bad byte in starting address deadbeef
-        >>> pwnlib.fmtstr.make_atoms_simple(0xdeadbeef, b'a'*0x10, b'\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7')
+        File "/home/pwwwn/code/pwntools/pwnlib/fmtstr.py", line 313, in make_atoms_simple
+            raise RuntimeError("impossible to avoid a bad byte in starting address %x" % address)
+        RuntimeError: impossible to avoid a bad byte in starting address 61
+        >>> pwnlib.fmtstr.make_atoms_simple(0x61, b'a'*0x10, b'\x62\x63\x64\x65\x66\x67\x68\x69')
         Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
-        File "/home/pwwwn/code/pwntools/pwnlib/fmtstr.py", line 316, in make_atoms_simple
+        File "/home/pwwwn/code/pwntools/pwnlib/fmtstr.py", line 324, in make_atoms_simple
             raise RuntimeError("impossible to avoid badbytes starting after offset %d (address %x)" % (i, i + address))
-        RuntimeError: impossible to avoid badbytes starting after offset 0 (address deadbeef)
+        RuntimeError: impossible to avoid badbytes starting after offset 0 (address 61)
     """
     data = bytearray(data)
     if not badbytes:
