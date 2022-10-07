@@ -288,6 +288,20 @@ def make_atoms_simple(address, data, badbytes=frozenset()):
 
     >>> pwnlib.fmtstr.make_atoms_simple(0x0, b"abc", set())
     [AtomWrite(start=0, size=1, integer=0x61, mask=0xff), AtomWrite(start=1, size=1, integer=0x62, mask=0xff), AtomWrite(start=2, size=1, integer=0x63, mask=0xff)]
+    >>> pwnlib.fmtstr.make_atoms_simple(0xdeadbeef, b'abc', b'\xf0')
+    [AtomWrite(start=3735928559, size=2, integer=0x6261, mask=0xffff), AtomWrite(start=3735928561, size=1, integer=0x63, mask=0xff)]    >>> pwnlib.fmtstr.make_atoms_simple(0x1010, b'a'*0x10, b'\x10')
+    >>> pwnlib.fmtstr.make_atoms_simple(0xdeadbeef, b'abc', b'\xef')
+    Traceback (most recent call last):
+    File "<stdin>", line 1, in <module>
+    File "/home/pwwwn/code/pwntools/pwnlib/fmtstr.py", line 297, in make_atoms_simple
+        File "/home/pwwwn/code/pwntools/pwnlib/fmtstr.py", line 308, in make_atoms_simple
+    RuntimeError: impossible to avoid a bad byte in starting address deadbeef
+    >>> pwnlib.fmtstr.make_atoms_simple(0xdeadbeef, b'a'*0x10, b'\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7')
+    Traceback (most recent call last):
+    File "<stdin>", line 1, in <module>
+    File "/home/pwwwn/code/pwntools/pwnlib/fmtstr.py", line 316, in make_atoms_simple
+        raise RuntimeError("impossible to avoid badbytes starting after offset %d (address %x)" % (i, i + address))
+    RuntimeError: impossible to avoid badbytes starting after offset 0 (address deadbeef)
     """
     data = bytearray(data)
     if not badbytes:
