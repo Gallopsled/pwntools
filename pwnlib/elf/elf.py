@@ -2109,3 +2109,36 @@ class ELF(ELFFile):
         except subprocess.CalledProcessError as e:
             log.failure('Patching RUNPATH failed (%d): %r', e.returncode, e.stdout)
         return ELF(exepath, checksec=False)
+
+    @staticmethod
+    def set_interpreter(exepath, interpreter_path):
+        r"""set_interpreter(str, str) -> ELF
+
+        Patches the interpreter of the ELF to the given binary using the `patchelf utility <https://github.com/NixOS/patchelf>`_.
+
+        When running the binary, the new interpreter will be used to load the ELF.
+
+        Arguments:
+            exepath(str): Path to the binary to patch.
+            interpreter_path(str): Path to the ld.so dynamic loader.
+
+        Returns:
+            A new ELF instance is returned after patching the binary with the external ``patchelf`` tool.
+
+        Example:
+            >>> tmpdir = tempfile.mkdtemp()
+            >>> ls_path = os.path.join(tmpdir, 'ls')
+            >>> _ = shutil.copy(which('ls'), ls_path)
+            >>> e = ELF.set_interpreter(ls_path, '/tmp/correct_ld.so')
+            >>> e.linker == b'/tmp/correct_ld.so'
+            True
+        """
+        # patch the interpreter
+        if not which('patchelf'):
+            log.error('"patchelf" tool not installed. See https://github.com/NixOS/patchelf')
+            return None
+        try:
+            subprocess.check_output(['patchelf', '--set-interpreter', interpreter_path, exepath], stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            log.failure('Patching interpreter failed (%d): %r', e.returncode, e.stdout)
+        return ELF(exepath, checksec=False)
