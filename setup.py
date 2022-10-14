@@ -65,6 +65,8 @@ install_requires     = ['paramiko>=1.15.2',
                         'six>=1.12.0',
                         'rpyc',
                         'colored_traceback',
+                        'unix-ar;python_version>="3"',
+                        'zstandard',
 ]
 
 if platform.python_version_tuple()[0] == '2':
