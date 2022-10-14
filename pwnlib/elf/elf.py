@@ -2142,3 +2142,54 @@ class ELF(ELFFile):
         except subprocess.CalledProcessError as e:
             log.failure('Patching interpreter failed (%d): %r', e.returncode, e.stdout)
         return ELF(exepath, checksec=False)
+
+    @staticmethod
+    def patch_custom_libraries(exe_path, custom_library_path, create_copy=True, suffix='_remotelibc'):
+        r"""patch_custom_libraries(str, str, bool, str) -> ELF
+
+        Looks for the interpreter binary in the given path and patches the binary to use
+        it if available. Also patches the RUNPATH to the given path using the `patchelf utility <https://github.com/NixOS/patchelf>`_.
+
+        Arguments:
+            exe_path(str): Path to the binary to patch.
+            custom_library_path(str): Path to a folder containing the libraries.
+            create_copy(bool): Create a copy of the binary and apply the patches to the copy.
+            suffix(str): Suffix to append to the filename when creating the copy to patch.
+
+        Returns:
+            A new ELF instance is returned after patching the binary with the external ``patchelf`` tool.
+
+        Example:
+
+            >>> tmpdir = tempfile.mkdtemp()
+            >>> linker_path = os.path.join(tmpdir, 'ld-mock.so')
+            >>> write(linker_path, b'loader')
+            >>> ls_path = os.path.join(tmpdir, 'ls')
+            >>> _ = shutil.copy(which('ls'), ls_path)
+            >>> e = ELF.patch_custom_libraries(ls_path, tmpdir)
+            >>> e.runpath.decode() == tmpdir
+            True
+            >>> e.linker.decode() == linker_path
+            True
+        """
+        if not which('patchelf'):
+            log.error('"patchelf" tool not installed. See https://github.com/NixOS/patchelf')
+            return None
+        
+        # Create a copy of the ELF to patch instead of the original file.
+        if create_copy:
+            import shutil
+            patched_path = exe_path + suffix
+            shutil.copy2(exe_path, patched_path)
+            exe_path = patched_path
+
+        # Set interpreter in ELF to the one in the library path.
+        interpreter_name = [filename for filename in os.listdir(custom_library_path) if filename.startswith('ld-')]
+        if interpreter_name:
+            interpreter_path = os.path.realpath(os.path.join(custom_library_path, interpreter_name[0]))
+            ELF.set_interpreter(exe_path, interpreter_path)
+        else:
+            log.warn("Couldn't find ld.so in library path. Interpreter not set.")
+
+        # Set RUNPATH to library path in order to find other libraries.
+        return ELF.set_runpath(exe_path, custom_library_path)
