@@ -1,4 +1,4 @@
-<%page args="binary, host=None, port=None, user=None, password=None, remote_path=None, quiet=False"/>\
+<%page args="binary, host=None, port=None, user=None, password=None, libc=None, remote_path=None, quiet=False"/>\
 <%
 import os
 import sys
@@ -31,6 +31,7 @@ elif host and not port:
 remote_path = remote_path or exe
 password = password or 'secret1234'
 binary_repr = repr(binary)
+libc_repr = repr(libc)
 %>\
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -81,6 +82,33 @@ shell = None
 if not args.LOCAL:
     shell = ssh(user, host, port, password)
     shell.set_working_directory(symlink=True)
+%endif
+
+%if libc:
+# Use the specified remote libc version unless explicitly told to use the
+# local system version with the `LOCAL_LIBC` argument.
+# ./exploit.py LOCAL LOCAL_LIBC
+if args.LOCAL_LIBC:
+    libc = exe.libc
+%if host:
+elif args.LOCAL:
+%else:
+else:
+%endif
+    library_path = libcdb.download_libraries(${libc_repr})
+    if library_path:
+      %if ctx.binary:
+        exe = context.binary = ELF.patch_custom_libraries(${binary_repr}, library_path)
+      %else:
+        exe = ELF.patch_custom_libraries(exe, library_path)
+      %endif
+        libc = exe.libc
+    else:
+        libc = ELF(${libc_repr})
+%if host:
+else:
+    libc = ELF(${libc_repr})
+%endif
 %endif
 
 %if host:
