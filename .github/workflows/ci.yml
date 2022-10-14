@@ -59,7 +59,8 @@ jobs:
           binutils-s390x-linux-gnu \
           binutils-sparc64-linux-gnu \
           gcc-multilib \
-          libc6-dbg
+          libc6-dbg \
+          patchelf
       
     - name: Cache for elfutils
       uses: actions/cache@v1

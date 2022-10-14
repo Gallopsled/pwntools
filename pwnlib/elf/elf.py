@@ -83,7 +83,7 @@ from pwnlib.tubes.process import process
 from pwnlib.util import misc
 from pwnlib.util import packing
 from pwnlib.util.fiddling import unhex
-from pwnlib.util.misc import align, align_down
+from pwnlib.util.misc import align, align_down, which
 from pwnlib.util.sh_string import sh_string
 
 log = getLogger(__name__)
@@ -2074,3 +2074,38 @@ class ELF(ELFFile):
                 return
 
         log.error("Could not find PT_GNU_STACK, stack should already be executable")
+    
+    @staticmethod
+    def set_runpath(exepath, runpath):
+        r"""set_runpath(str, str) -> ELF
+
+        Patches the RUNPATH of the ELF to the given path using the `patchelf utility <https://github.com/NixOS/patchelf>`_.
+
+        The dynamic loader will look for any needed shared libraries in the given path first,
+        before trying the system library paths. This is useful to run a binary with a different
+        libc binary.
+
+        Arguments:
+            exepath(str): Path to the binary to patch.
+            runpath(str): Path containing the needed libraries.
+
+        Returns:
+            A new ELF instance is returned after patching the binary with the external ``patchelf`` tool.
+
+        Example:
+
+            >>> tmpdir = tempfile.mkdtemp()
+            >>> ls_path = os.path.join(tmpdir, 'ls')
+            >>> _ = shutil.copy(which('ls'), ls_path)
+            >>> e = ELF.set_runpath(ls_path, './libs')
+            >>> e.runpath == b'./libs'
+            True
+        """
+        if not which('patchelf'):
+            log.error('"patchelf" tool not installed. See https://github.com/NixOS/patchelf')
+            return None
+        try:
+            subprocess.check_output(['patchelf', '--set-rpath', runpath, exepath], stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            log.failure('Patching RUNPATH failed (%d): %r', e.returncode, e.stdout)
+        return ELF(exepath, checksec=False)
