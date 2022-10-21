@@ -74,7 +74,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2062]: https://github.com/Gallopsled/pwntools/pull/2062
 [2092]: https://github.com/Gallopsled/pwntools/pull/2092
 [2093]: https://github.com/Gallopsled/pwntools/pull/2093
-
+[2121]: https://github.com/Gallopsled/pwntools/pull/2121
 ## 4.9.0 (`beta`)
 
 - [#1975][1975] Add libcdb commandline tool
