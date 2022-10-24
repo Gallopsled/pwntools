@@ -44,7 +44,7 @@ from pwn import *
 # Set up pwntools for the correct architecture
 %endif
 %if ctx.binary:
-exe = context.binary = ELF(args.EXE) or ELF(${binary_repr})
+exe = context.binary = ELF(args.EXE) if args.EXE else ELF(${binary_repr})
 <% binary_repr = 'exe.path' %>
 %else:
 context.update(arch='i386')
