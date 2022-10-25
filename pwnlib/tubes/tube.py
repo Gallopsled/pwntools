@@ -633,17 +633,30 @@ class tube(Timeout, Logger):
                                   keepends=keepends,
                                   timeout=timeout)
 
-    def recvregex(self, regex, exact=False, timeout=default):
-        """recvregex(regex, exact=False, timeout=default) -> bytes
+    def recvregex(self, regex, exact=False, timeout=default, capture=False):
+        r"""recvregex(regex, exact=False, timeout=default, capture=False) -> bytes
 
         Wrapper around :func:`recvpred`, which will return when a regex
         matches the string in the buffer.
+
+        Returns all received data up until the regex matched. If `capture` is
+        set to True, a :class:`re.Match` object is returned instead.
 
         By default :func:`re.RegexObject.search` is used, but if `exact` is
         set to True, then :func:`re.RegexObject.match` will be used instead.
 
         If the request is not satisfied before ``timeout`` seconds pass,
         all data is buffered and an empty string (``''``) is returned.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b'The lucky number is 1337 as always\nBla blubb blargh\n'
+            >>> m = t.recvregex(br'number is ([0-9]+) as always\n', capture=True)
+            >>> m.group(1)
+            b'1337'
+            >>> t.recvregex(br'Bla .* blargh\n')
+            b'Bla blubb blargh\n'
         """
 
         if isinstance(regex, (bytes, bytearray, six.text_type)):
@@ -655,7 +668,10 @@ class tube(Timeout, Logger):
         else:
             pred = regex.search
 
-        return self.recvpred(pred, timeout = timeout)
+        if capture:
+            return pred(self.recvpred(pred, timeout = timeout))
+        else:
+            return self.recvpred(pred, timeout = timeout)
 
     def recvline_regex(self, regex, exact=False, keepends=False, timeout=default):
         """recvline_regex(regex, exact=False, keepends=False, timeout=default) -> bytes
