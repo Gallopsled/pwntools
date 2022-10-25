@@ -1167,6 +1167,15 @@ class ROP(object):
             if tuple(gadget.insns)[:n] == tuple(instructions):
                 return gadget
 
+    def _flatten(self, initial_list):
+        # Flatten out any nested lists.
+        flattened_list = list()
+        for data in initial_list:
+            if isinstance(data, (list, tuple)):
+                flattened_list.extend(self._flatten(data))
+            else:
+                flattened_list.append(data)
+        return flattened_list
 
     def raw(self, value):
         """Adds a raw integer or string to the ROP chain.
@@ -1174,14 +1183,18 @@ class ROP(object):
         If your architecture requires aligned values, then make
         sure that any given string is aligned!
 
+        When given a list or a tuple of values, the list is
+        flattened before adding every item to the chain.
+
         Arguments:
-            data(int/bytes): The raw value to put onto the rop chain.
+            data(int/bytes/list): The raw value to put onto the rop chain.
 
         >>> context.clear(arch='i386')
         >>> rop = ROP([])
         >>> rop.raw('AAAAAAAA')
         >>> rop.raw('BBBBBBBB')
         >>> rop.raw('CCCCCCCC')
+        >>> rop.raw(['DDDD', 'DDDD'])
         >>> print(rop.dump())
         0x0000:          b'AAAA' 'AAAAAAAA'
         0x0004:          b'AAAA'
@@ -1189,10 +1202,16 @@ class ROP(object):
         0x000c:          b'BBBB'
         0x0010:          b'CCCC' 'CCCCCCCC'
         0x0014:          b'CCCC'
+        0x0018:          b'DDDD' 'DDDD'
+        0x001c:          b'DDDD' 'DDDD'
         """
         if self.migrated:
             log.error('Cannot append to a migrated chain')
-        self._chain.append(value)
+
+        if isinstance(value, (list, tuple)):
+            self._chain.extend(self._flatten(value))
+        else:
+            self._chain.append(value)
 
     def migrate(self, next_base):
         """Explicitly set $sp, by using a ``leave; ret`` gadget"""
