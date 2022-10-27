@@ -4,6 +4,7 @@ from __future__ import division
 
 import abc
 import logging
+import os
 import re
 import six
 import string
@@ -852,7 +853,7 @@ class tube(Timeout, Logger):
         is much more usable, since we are using :mod:`pwnlib.term` to print a
         floating prompt.
 
-        Thus it only works in while in :data:`pwnlib.term.term_mode`.
+        Thus it only works while in :data:`pwnlib.term.term_mode`.
         """
 
         self.info('Switching to interactive mode')
@@ -879,11 +880,21 @@ class tube(Timeout, Logger):
 
         try:
             while not go.isSet():
+                os_linesep = os.linesep.encode()
                 if term.term_mode:
                     data = term.readline.readline(prompt = prompt, float = True)
                 else:
                     stdin = getattr(sys.stdin, 'buffer', sys.stdin)
-                    data = stdin.read(1)
+                    data = b''
+                    if sys.stdin.isatty():
+                        while not data.endswith(os_linesep):
+                            new_byte = stdin.read(1)
+                            if not new_byte:
+                                break
+                            data += new_byte
+                    else:
+                        data = stdin.read(1)
+                data = data.replace(os_linesep, self.newline)
 
                 if data:
                     try:
