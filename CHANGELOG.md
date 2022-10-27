@@ -94,11 +94,13 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1828][1828] libcdb: Load debug info and unstrip libc binary
 - [#1939][1939] Fix error in validating log levels
 - [#1981][1981] Fix `cyclic_find()` to make it work with large int values
+- [#2123][2123] Fix ROP without a writeable cache directory
 
 [1922]: https://github.com/Gallopsled/pwntools/pull/1922
 [1828]: https://github.com/Gallopsled/pwntools/pull/1828
 [1939]: https://github.com/Gallopsled/pwntools/pull/1939
 [1981]: https://github.com/Gallopsled/pwntools/pull/1981
+[2123]: https://github.com/Gallopsled/pwntools/pull/2123
 
 ## 4.7.1
 
