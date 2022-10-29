@@ -25,7 +25,11 @@ from pwnlib.util.web import wget
 log = getLogger(__name__)
 
 HASHES = ['build_id', 'sha1', 'sha256', 'md5']
-DEBUGINFOD_SERVERS = ['https://debuginfod.systemtap.org/']
+DEBUGINFOD_SERVERS = ['https://debuginfod.elfutils.org/']
+
+if 'DEBUGINFOD_URLS' in os.environ:
+    urls = os.environ['DEBUGINFOD_URLS'].split(' ')
+    DEBUGINFOD_SERVERS = urls + DEBUGINFOD_SERVERS
 
 # https://gitlab.com/libcdb/libcdb wasn't updated after 2019,
 # but still is a massive database of older libc binaries.
@@ -227,6 +231,8 @@ def unstrip_libc(filename):
     if not libc.buildid:
         log.warn_once('Given libc does not have a buildid. Cannot look for debuginfo to unstrip.')
         return False
+
+    log.debug('Trying debuginfod servers: %r', DEBUGINFOD_SERVERS)
 
     for server_url in DEBUGINFOD_SERVERS:
         libc_dbg = _search_debuginfo_by_hash(server_url, enhex(libc.buildid))
