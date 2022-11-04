@@ -883,6 +883,7 @@ class tube(Timeout, Logger):
                 os_linesep = os.linesep.encode()
                 if term.term_mode:
                     data = term.readline.readline(prompt = prompt, float = True)
+                    data = data.replace(os_linesep, self.newline)
                 else:
                     stdin = getattr(sys.stdin, 'buffer', sys.stdin)
                     data = b''
@@ -892,9 +893,9 @@ class tube(Timeout, Logger):
                             if not new_byte:
                                 break
                             data += new_byte
+                        data = data.replace(os_linesep, self.newline)
                     else:
                         data = stdin.read(1)
-                data = data.replace(os_linesep, self.newline)
 
                 if data:
                     try:
