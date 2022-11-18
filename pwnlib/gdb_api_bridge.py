@@ -92,12 +92,11 @@ class GdbService(Service):
     def exposed_set_finish_breakpoint(self, client, has_stop, has_out_of_scope, *args, **kwargs):
         """Create a finish breakpoint and connect it with the client-side mirror."""
         class FinishBreakpoint(gdb.FinishBreakpoint):
-            def stop(self):
-                if has_stop:
+            if has_stop:
+                def stop(self):
                     return client.stop()
-                return True
-            def out_of_scope(self):
-                if has_out_of_scope:
+            if has_out_of_scope:
+                def out_of_scope(self):
                     client.out_of_scope()
         return FinishBreakpoint(*args, **kwargs)
 
