@@ -276,6 +276,16 @@ def _linker():
         'i386': ['-m', 'elf_i386'],
     }.get(context.arch, [])
 
+    try:
+        # Test if this argument is recognised
+        # If so, we should add it to the commandline so we don't throw spurious errors later on
+        # https://sourceware.org/git/gitweb.cgi?p=binutils-gdb.git;a=blob_plain;f=ld/NEWS;hb=refs/heads/binutils-2_39-branch
+        proc = subprocess.run(ld + ["--no-warn-rwx-segments", "--help"], capture_output=True)
+        if proc.returncode == 0:
+            arguments.append("--no-warn-rwx-segments")
+    except Exception as e:
+        pass
+
     return ld + bfd + [E] + arguments
 
 def _objcopy():

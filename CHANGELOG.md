@@ -96,6 +96,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1981][1981] Fix `cyclic_find()` to make it work with large int values
 - [#2123][2123] Fix ROP without a writeable cache directory
 - [#2124][2124] Fix `tube.recvpred()` timout argument
+- [#2141][2141] Fix `make_elf` on systems with GNU ld 2.39+
 
 [1922]: https://github.com/Gallopsled/pwntools/pull/1922
 [1828]: https://github.com/Gallopsled/pwntools/pull/1828
@@ -103,6 +104,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1981]: https://github.com/Gallopsled/pwntools/pull/1981
 [2123]: https://github.com/Gallopsled/pwntools/pull/2123
 [2124]: https://github.com/Gallopsled/pwntools/pull/2124
+[2141]: https://github.com/Gallopsled/pwntools/pull/2141
 
 ## 4.7.1
 
