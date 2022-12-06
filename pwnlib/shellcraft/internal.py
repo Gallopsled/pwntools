@@ -109,11 +109,14 @@ def get_context_from_dirpath(directory):
     return {'os': osys, 'arch': arch}
 
 def make_function(funcname, filename, directory):
-    import inspect
+    import inspect, six
     path       = os.path.join(directory, filename)
     template   = lookup_template(path)
 
-    args, varargs, keywords, defaults = inspect.getargspec(template.module.render_body)
+    if six.PY2:
+        args, varargs, keywords, defaults = inspect.getargspec(template.module.render_body)
+    else:
+        args, varargs, keywords, defaults, _, _, _ = inspect.getfullargspec(template.module.render_body)
 
     defaults = defaults or []
 
