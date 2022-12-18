@@ -22,7 +22,9 @@ assert dll == b'kernel32.dll'
     mov r8d, [rbx + 0x3c]
     mov rdx, r8
     add rdx, rbx
-    mov r8d, [rdx + 0x88]
+    ${amd64.mov('r9', 0x88)}
+    add rdx, r9
+    mov r8d, [rdx]
     add r8, rbx /* r8 = export table */
     mov esi, [r8 + 0x20]
     add rsi, rbx /* rsi = names table */
