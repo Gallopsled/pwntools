@@ -31,7 +31,7 @@ RUN python  -m pip install -U ipython ipdb \
  && python3 -m pip install -U ipython ipdb
 
 # Dependencies from .travis.yml addons -> apt -> packages
-RUN sudo apt-get install -y \
+RUN sudo apt-get update && sudo apt-get install -y \
 	ash \
 	bash \
 	bash-static \
