@@ -1535,7 +1535,7 @@ class ELF(ELFFile):
         This modifies the ELF in-place.
         The resulting binary can be saved with :meth:`.ELF.save`
         """
-        binary = asm(assembly, vma=address)
+        binary = asm(assembly, vma=address, arch=self.arch, endian=self.endian, bits=self.bits)
         self.write(address, binary)
 
     def bss(self, offset=0):
