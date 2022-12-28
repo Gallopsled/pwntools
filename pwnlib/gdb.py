@@ -1329,7 +1329,7 @@ def version(program='gdb'):
 
     Example:
 
-        >>> (7,0) <= gdb.version() <= (12,0)
+        >>> (7,0) <= gdb.version() <= (19,0)
         True
     """
     program = misc.which(program)

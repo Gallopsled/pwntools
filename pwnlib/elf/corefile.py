@@ -445,7 +445,7 @@ class Corefile(ELF):
         will be loaded.
 
         >>> process('bash').corefile.libc # doctest: +ELLIPSIS
-        Mapping('/.../libc-....so', start=0x..., stop=0x..., size=0x..., flags=..., page_offset=...)
+        Mapping('.../libc...so...', start=0x..., stop=0x..., size=0x..., flags=..., page_offset=...)
 
         The corefile also contains a :attr:`.stack` property, which gives
         us direct access to the stack contents.  On Linux, the very top of the stack
@@ -759,7 +759,7 @@ class Corefile(ELF):
     @property
     def libc(self):
         """:class:`Mapping`: First mapping for ``libc.so``"""
-        expr = r'libc\b.*so$'
+        expr = r'^libc\b.*so(?:\.6)?$'
 
         for m in self.mappings:
             if not m.name:
