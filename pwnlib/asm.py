@@ -317,7 +317,7 @@ def _arch_header():
         'thumb' : ['.syntax unified',
                    '.arch armv7-a',
                    '.thumb',
-                   '.p2align 0'
+                   '.p2align 1'
                    ],
         'mips'  : ['.set mips2',
                    '.set noreorder',
