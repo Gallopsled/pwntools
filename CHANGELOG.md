@@ -86,6 +86,8 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2033][2033] Quote file and core path in generated GDB script
 - [#2035][2035] Change Buffer's parent class to object
 - [#2037][2037] Allow SSH tunnel to be treated like a TCP socket (with 'raw=True')
+- [#2123][2123] Fix ROP without a writeable cache directory
+- [#2124][2124] Fix `tube.recvpred()` timeout argument
 
 [1975]: https://github.com/Gallopsled/pwntools/pull/1975
 [1979]: https://github.com/Gallopsled/pwntools/pull/1979
@@ -95,6 +97,8 @@ The table below shows which release corresponds to each branch, and what date th
 [2033]: https://github.com/Gallopsled/pwntools/pull/2033
 [2035]: https://github.com/Gallopsled/pwntools/pull/2035
 [2037]: https://github.com/Gallopsled/pwntools/pull/2037
+[2123]: https://github.com/Gallopsled/pwntools/pull/2123
+[2124]: https://github.com/Gallopsled/pwntools/pull/2124
 
 ## 4.8.0 (`stable`)
 

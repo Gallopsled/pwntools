@@ -27,7 +27,7 @@ jobs:
         key: ${{ matrix.os }}-cache-pip
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -59,33 +59,9 @@ jobs:
           binutils-s390x-linux-gnu \
           binutils-sparc64-linux-gnu \
           gcc-multilib \
-          libc6-dbg
+          libc6-dbg \
+          elfutils
       
-    - name: Cache for elfutils
-      uses: actions/cache@v1
-      id: cache-elfutils
-      with:
-        path: ~/.cache/elfutils
-        key: ${{ matrix.os }}-cache-elfutils
-    
-    # Install newer elfutils version due to regression in 0.176 available in focal.
-    - name: Install newer elfutils
-      env:
-        ELFUTILS_VERSION: 0.181
-      run: |
-        if [[ ! -d ~/.cache/elfutils/elfutils-${ELFUTILS_VERSION} ]]
-        then
-          wget -O /tmp/elfutils-${ELFUTILS_VERSION}.tar.bz2 https://sourceware.org/elfutils/ftp/${ELFUTILS_VERSION}/elfutils-${ELFUTILS_VERSION}.tar.bz2
-          mkdir -p ~/.cache/elfutils && cd ~/.cache/elfutils
-          tar -xf /tmp/elfutils-${ELFUTILS_VERSION}.tar.bz2
-          cd elfutils-${ELFUTILS_VERSION}
-          LDFLAGS=-Wl,-rpath=/usr/local/lib,--enable-new-dtags ./configure --disable-libdebuginfod --disable-debuginfod && make && sudo make install
-        else
-          cd ~/.cache/elfutils/elfutils-${ELFUTILS_VERSION}
-          sudo make install
-        fi
-        eu-unstrip --version
-
     - name: Install RPyC for GDB
       run: |
         sudo apt-get install -y python3-pip
