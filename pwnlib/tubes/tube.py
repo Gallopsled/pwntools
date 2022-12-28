@@ -195,14 +195,29 @@ class tube(Timeout, Logger):
         Returns:
             A bytes object containing bytes received from the socket,
             or ``''`` if a timeout occurred while waiting.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b'abbbaccc'
+            >>> pred = lambda p: p.count(b'a') == 2
+            >>> t.recvpred(pred)
+            b'abbba'
+            >>> pred = lambda p: p.count(b'd') > 0
+            >>> t.recvpred(pred, timeout=0.05)
+            b''
         """
 
         data = b''
 
         with self.countdown(timeout):
             while not pred(data):
+                if not self.countdown_active():
+                    self.unrecv(data)
+                    return b''
+
                 try:
-                    res = self.recv(1)
+                    res = self.recv(1, timeout=timeout)
                 except Exception:
                     self.unrecv(data)
                     return b''

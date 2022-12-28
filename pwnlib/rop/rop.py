@@ -1224,6 +1224,9 @@ class ROP(object):
 
     def __get_cachefile_name(self, files):
         """Given an ELF or list of ELF objects, return a cache file for the set of files"""
+        if context.cache_dir is None:
+            return None
+
         cachedir = os.path.join(context.cache_dir, 'rop-cache')
         if not os.path.exists(cachedir):
             os.mkdir(cachedir)
@@ -1240,12 +1243,14 @@ class ROP(object):
     @staticmethod
     def clear_cache():
         """Clears the ROP gadget cache"""
+        if context.cache_dir is None:
+            return
         cachedir = os.path.join(context.cache_dir, 'rop-cache')
         shutil.rmtree(cachedir)
 
     def __cache_load(self, elf):
         filename = self.__get_cachefile_name(elf)
-        if not os.path.exists(filename):
+        if filename is None or not os.path.exists(filename):
             return None
         gadgets = eval(open(filename).read())
         gadgets = {k - elf.load_addr + elf.address:v for k, v in gadgets.items()}
@@ -1253,8 +1258,11 @@ class ROP(object):
         return gadgets
 
     def __cache_save(self, elf, data):
+        filename = self.__get_cachefile_name(elf)
+        if filename is None:
+            return
         data = {k + elf.load_addr - elf.address:v for k, v in data.items()}
-        open(self.__get_cachefile_name(elf), 'w+').write(repr(data))
+        open(filename, 'w+').write(repr(data))
 
     def __load(self):
         """Load all ROP gadgets for the selected ELF files"""
