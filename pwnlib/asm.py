@@ -320,20 +320,23 @@ def _arch_header():
     prefix  = ['.section .shellcode,"awx"',
                 '.global _start',
                 '.global __start',
-                '.p2align 2',
                 '_start:',
                 '__start:']
     headers = {
-        'i386'  :  ['.intel_syntax noprefix'],
-        'amd64' :  ['.intel_syntax noprefix'],
+        'i386'  :  ['.intel_syntax noprefix', '.p2align 0'],
+        'amd64' :  ['.intel_syntax noprefix', '.p2align 0'],
         'arm'   : ['.syntax unified',
                    '.arch armv7-a',
-                   '.arm'],
+                   '.arm',
+                   '.p2align 2'],
         'thumb' : ['.syntax unified',
                    '.arch armv7-a',
-                   '.thumb'],
+                   '.thumb',
+                   '.p2align 1'
+                   ],
         'mips'  : ['.set mips2',
                    '.set noreorder',
+                   '.p2align 2'
                    ],
     }
 
