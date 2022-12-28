@@ -303,7 +303,11 @@ class Ret2dlresolvePayload(object):
         rel_addr = self.jmprel + self.reloc_index * ElfRel.size
         rel_type = 7
         rel = ElfRel(r_offset=self.data_addr, r_info=(index<<ELF_R_SYM_SHIFT)+rel_type)
-
+        
+        # When a program's PIE is enabled, r_offset should be the relative address, not the absolute address
+        if self.elf.pie:
+            rel = ElfRel(r_offset=self.data_addr - (self.elf.load_addr + self.elf_load_address_fixup), r_info=(index<<ELF_R_SYM_SHIFT)+rel_type)
+        
         self.payload = fit({
             symbol_name_addr - self.data_addr: symbol_name,
             sym_addr - self.data_addr: sym,
