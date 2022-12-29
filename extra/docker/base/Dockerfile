@@ -22,6 +22,7 @@ RUN apt-get update \
         libffi-dev \
         python2.7 \
         python2.7-dev \
+        python2-pip-whl \
         python3 \
         python3-pip \
         python3-dev \
@@ -37,8 +38,7 @@ RUN apt-get update \
         patchelf \
     && locale-gen en_US.UTF-8 \
     && update-locale LANG=en_US.UTF-8 \
-    && python2.7 -m ensurepip \
-    && python2.7 -m pip install --upgrade pip \
+    && PYTHONPATH=`echo /usr/share/python-wheels/pip-*.whl` python2.7 -m pip install --upgrade pip setuptools wheel \
     && python2.7 -m pip install --upgrade pwntools \
     && python3 -m pip install --upgrade pip \
     && python3 -m pip install --upgrade pwntools \
