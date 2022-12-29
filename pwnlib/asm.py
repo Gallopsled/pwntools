@@ -136,8 +136,23 @@ Try installing binutils for this architecture:
 %(instructions)s
 """.strip() % locals())
 
+
+def check_binutils_version(util):
+    if util_versions[util]:
+        return util_versions[util]
+    result = subprocess.check_output([util, '--version','/dev/null'],
+                                     stderr=subprocess.STDOUT, universal_newlines=True)
+    if 'clang' in result:
+        log.warn_once('Your binutils is clang-based and may not work!\n'
+            'Try installing with: https://docs.pwntools.com/en/stable/install/binutils.html\n'
+            'Reported version: %r', result.strip())
+    version = re.search(r' (\d+\.\d+)', result).group(1)
+    util_versions[util] = version = tuple(map(int, version.split('.')))
+    return version
+
+
 @LocalContext
-def which_binutils(util):
+def which_binutils(util, check_version=False):
     """
     Finds a binutils in the PATH somewhere.
     Expects that the utility is prefixed with the architecture name.
@@ -204,17 +219,23 @@ def which_binutils(util):
 
             for pattern in patterns:
                 for dir in environ['PATH'].split(':'):
-                    res = sorted(glob(path.join(dir, pattern)))
-                    if res:
-                        return res[0]
+                    for res in sorted(glob(path.join(dir, pattern))):
+                        if check_version:
+                            ver = check_binutils_version(res)
+                            return res, ver
+                        return res
 
     # No dice!
     print_binutils_instructions(util, context)
 
-checked_assembler_version = defaultdict(lambda: False)
+util_versions = defaultdict(tuple)
 
 def _assembler():
-    gas = which_binutils('as')
+    gas, version = which_binutils('as', check_version=True)
+    if version < (2, 19):
+        log.warn_once('Your binutils version is too old and may not work!\n'
+            'Try updating with: https://docs.pwntools.com/en/stable/install/binutils.html\n'
+            'Reported version: %r', version)
 
     E = {
         'big':    '-EB',
@@ -246,25 +267,10 @@ def _assembler():
 
     assembler = assemblers.get(context.arch, [gas])
 
-    if not checked_assembler_version[gas]:
-        checked_assembler_version[gas] = True
-        result = subprocess.check_output([gas, '--version','/dev/null'],
-                                         stderr=subprocess.STDOUT, universal_newlines=True)
-        version = re.search(r' (\d+\.\d+)', result).group(1)
-        if 'clang' in result:
-            log.warn_once('Your binutils is clang version and may not work!\n'
-                'Try install with: https://docs.pwntools.com/en/stable/install/binutils.html\n'
-                'Reported Version: %r', result.strip())
-        elif version < '2.19':
-            log.warn_once('Your binutils version is too old and may not work!\n'
-                'Try updating with: https://docs.pwntools.com/en/stable/install/binutils.html\n'
-                'Reported Version: %r', result.strip())
-
-
     return assembler
 
 def _linker():
-    ld  = [which_binutils('ld')]
+    ld, _ = which_binutils('ld', check_version=True)
     bfd = ['--oformat=' + _bfdname()]
 
     E = {
@@ -276,7 +282,16 @@ def _linker():
         'i386': ['-m', 'elf_i386'],
     }.get(context.arch, [])
 
-    return ld + bfd + [E] + arguments
+    return [ld] + bfd + [E] + arguments
+
+
+def _execstack(linker):
+    ldflags = ['-z', 'execstack']
+    version = util_versions[linker[0]]
+    if version >= (2, 39):
+        return ldflags + ['--no-warn-execstack', '--no-warn-rwx-segments']
+    return ldflags
+
 
 def _objcopy():
     return [which_binutils('objcopy')]
@@ -305,20 +320,23 @@ def _arch_header():
     prefix  = ['.section .shellcode,"awx"',
                 '.global _start',
                 '.global __start',
-                '.p2align 2',
                 '_start:',
                 '__start:']
     headers = {
-        'i386'  :  ['.intel_syntax noprefix'],
-        'amd64' :  ['.intel_syntax noprefix'],
+        'i386'  :  ['.intel_syntax noprefix', '.p2align 0'],
+        'amd64' :  ['.intel_syntax noprefix', '.p2align 0'],
         'arm'   : ['.syntax unified',
                    '.arch armv7-a',
-                   '.arm'],
+                   '.arm',
+                   '.p2align 2'],
         'thumb' : ['.syntax unified',
                    '.arch armv7-a',
-                   '.thumb'],
+                   '.thumb',
+                   '.p2align 2'
+                   ],
         'mips'  : ['.set mips2',
                    '.set noreorder',
+                   '.p2align 2'
                    ],
     }
 
@@ -595,7 +613,7 @@ def make_elf(data,
 
         _run(assembler + ['-o', step2, step1])
 
-        linker_options = ['-z', 'execstack']
+        linker_options = _execstack(linker)
         if vma is not None:
             linker_options += ['--section-start=.shellcode=%#x' % vma,
                                '--entry=%#x' % vma]
@@ -689,7 +707,7 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
             shutil.copy(step2, step3)
 
         if vma or not extract:
-            ldflags = ['-z', 'execstack', '-o', step3, step2]
+            ldflags = _execstack(linker) + ['-o', step3, step2]
             if vma:
                 ldflags += ['--section-start=.shellcode=%#x' % vma,
                             '--entry=%#x' % vma]
@@ -771,7 +789,7 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
         >>> print(disasm(unhex('4ff00500'), arch = 'thumb', bits=32))
            0:   f04f 0005       mov.w   r0, #5
         >>> print(disasm(unhex('656664676665400F18A4000000000051'), byte=0, arch='amd64'))
-           0:   gs data16 fs data16 rex nop/reserved BYTE PTR gs:[eax+eax*1+0x0]
+           0:   gs data16 fs rex nop WORD PTR gs:[eax+eax*1+0x0]
            f:   push   rcx
         >>> print(disasm(unhex('01000000'), arch='sparc64'))
            0:   01 00 00 00     nop

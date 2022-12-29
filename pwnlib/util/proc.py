@@ -346,9 +346,9 @@ def wait_for_debugger(pid, debugger_pid=None):
                 else:
                     time.sleep(0.01)
 
-        if tracer(pid):
-            l.success()
-        elif debugger_pid == 0:
-            l.failure("debugger exited! (maybe check /proc/sys/kernel/yama/ptrace_scope)")
-        else:
-            l.failure('Debugger did not attach to pid %d within 15 seconds', pid)
+            if tracer(pid):
+                l.success()
+            elif debugger_pid == 0:
+                l.failure("debugger exited! (maybe check /proc/sys/kernel/yama/ptrace_scope)")
+            else:
+                l.failure('Debugger did not attach to pid %d within 15 seconds', pid)

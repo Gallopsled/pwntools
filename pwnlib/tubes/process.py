@@ -731,9 +731,9 @@ class process(tube):
         if direction == 'any':
             return self.poll() is None
         elif direction == 'send':
-            return not self.proc.stdin.closed
+            return self.proc.stdin and not self.proc.stdin.closed
         elif direction == 'recv':
-            return not self.proc.stdout.closed
+            return self.proc.stdout and not self.proc.stdout.closed
 
     def close(self):
         if self.proc is None:
@@ -774,7 +774,7 @@ class process(tube):
         if direction == "recv":
             self.proc.stdout.close()
 
-        if False not in [self.proc.stdin.closed, self.proc.stdout.closed]:
+        if all(fp is None or fp.closed for fp in [self.proc.stdin, self.proc.stdout]):
             self.close()
 
     def __pty_make_controlling_tty(self, tty_fd):
