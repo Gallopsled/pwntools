@@ -24,7 +24,7 @@ Each :class:`Gadget` has an ``address`` property which has the real address as w
     >>> hex(rop.eax.address)
     '0x10000004'
 
-Other, more complicated gdagets also happen magically
+Other, more complicated gadgets also happen magically
 
     >>> rop.ecx
     Gadget(0x10000006, ['pop ecx', 'pop ebx', 'ret'], ['ecx', 'ebx'], 0xc)
@@ -1167,6 +1167,15 @@ class ROP(object):
             if tuple(gadget.insns)[:n] == tuple(instructions):
                 return gadget
 
+    def _flatten(self, initial_list):
+        # Flatten out any nested lists.
+        flattened_list = []
+        for data in initial_list:
+            if isinstance(data, (list, tuple)):
+                flattened_list.extend(self._flatten(data))
+            else:
+                flattened_list.append(data)
+        return flattened_list
 
     def raw(self, value):
         """Adds a raw integer or string to the ROP chain.
@@ -1174,14 +1183,18 @@ class ROP(object):
         If your architecture requires aligned values, then make
         sure that any given string is aligned!
 
+        When given a list or a tuple of values, the list is
+        flattened before adding every item to the chain.
+
         Arguments:
-            data(int/bytes): The raw value to put onto the rop chain.
+            data(int/bytes/list): The raw value to put onto the rop chain.
 
         >>> context.clear(arch='i386')
         >>> rop = ROP([])
         >>> rop.raw('AAAAAAAA')
         >>> rop.raw('BBBBBBBB')
         >>> rop.raw('CCCCCCCC')
+        >>> rop.raw(['DDDD', 'DDDD'])
         >>> print(rop.dump())
         0x0000:          b'AAAA' 'AAAAAAAA'
         0x0004:          b'AAAA'
@@ -1189,10 +1202,16 @@ class ROP(object):
         0x000c:          b'BBBB'
         0x0010:          b'CCCC' 'CCCCCCCC'
         0x0014:          b'CCCC'
+        0x0018:          b'DDDD' 'DDDD'
+        0x001c:          b'DDDD' 'DDDD'
         """
         if self.migrated:
             log.error('Cannot append to a migrated chain')
-        self._chain.append(value)
+
+        if isinstance(value, (list, tuple)):
+            self._chain.extend(self._flatten(value))
+        else:
+            self._chain.append(value)
 
     def migrate(self, next_base):
         """Explicitly set $sp, by using a ``leave; ret`` gadget"""
@@ -1224,6 +1243,9 @@ class ROP(object):
 
     def __get_cachefile_name(self, files):
         """Given an ELF or list of ELF objects, return a cache file for the set of files"""
+        if context.cache_dir is None:
+            return None
+
         cachedir = os.path.join(context.cache_dir, 'rop-cache')
         if not os.path.exists(cachedir):
             os.mkdir(cachedir)
@@ -1240,12 +1262,14 @@ class ROP(object):
     @staticmethod
     def clear_cache():
         """Clears the ROP gadget cache"""
+        if context.cache_dir is None:
+            return
         cachedir = os.path.join(context.cache_dir, 'rop-cache')
         shutil.rmtree(cachedir)
 
     def __cache_load(self, elf):
         filename = self.__get_cachefile_name(elf)
-        if not os.path.exists(filename):
+        if filename is None or not os.path.exists(filename):
             return None
         gadgets = eval(open(filename).read())
         gadgets = {k - elf.load_addr + elf.address:v for k, v in gadgets.items()}
@@ -1253,8 +1277,11 @@ class ROP(object):
         return gadgets
 
     def __cache_save(self, elf, data):
+        filename = self.__get_cachefile_name(elf)
+        if filename is None:
+            return
         data = {k + elf.load_addr - elf.address:v for k, v in data.items()}
-        open(self.__get_cachefile_name(elf), 'w+').write(repr(data))
+        open(filename, 'w+').write(repr(data))
 
     def __load(self):
         """Load all ROP gadgets for the selected ELF files"""

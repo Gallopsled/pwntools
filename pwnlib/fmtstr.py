@@ -285,9 +285,15 @@ def make_atoms_simple(address, data, badbytes=frozenset()):
 
     This function is simple and does not try to minimize the number of atoms. For example, if there are no
     bad bytes, it simply returns one atom for each byte:
-
-    >>> pwnlib.fmtstr.make_atoms_simple(0x0, b"abc", set())
-    [AtomWrite(start=0, size=1, integer=0x61, mask=0xff), AtomWrite(start=1, size=1, integer=0x62, mask=0xff), AtomWrite(start=2, size=1, integer=0x63, mask=0xff)]
+        >>> pwnlib.fmtstr.make_atoms_simple(0x0, b"abc", set())
+        [AtomWrite(start=0, size=1, integer=0x61, mask=0xff), AtomWrite(start=1, size=1, integer=0x62, mask=0xff), AtomWrite(start=2, size=1, integer=0x63, mask=0xff)]
+    
+    If there are bad bytes, it will try to bypass by skipping addresses containing bad bytes, otherwise a
+    RuntimeError will be raised:
+        >>> pwnlib.fmtstr.make_atoms_simple(0x61, b'abc', b'\x62')
+        [AtomWrite(start=97, size=2, integer=0x6261, mask=0xffff), AtomWrite(start=99, size=1, integer=0x63, mask=0xff)]
+        >>> pwnlib.fmtstr.make_atoms_simple(0x61, b'a'*0x10, b'\x62\x63\x64\x65\x66\x67\x68')
+        [AtomWrite(start=97, size=8, integer=0x6161616161616161, mask=0xffffffffffffffff), AtomWrite(start=105, size=1, integer=0x61, mask=0xff), AtomWrite(start=106, size=1, integer=0x61, mask=0xff), AtomWrite(start=107, size=1, integer=0x61, mask=0xff), AtomWrite(start=108, size=1, integer=0x61, mask=0xff), AtomWrite(start=109, size=1, integer=0x61, mask=0xff), AtomWrite(start=110, size=1, integer=0x61, mask=0xff), AtomWrite(start=111, size=1, integer=0x61, mask=0xff), AtomWrite(start=112, size=1, integer=0x61, mask=0xff)]
     """
     data = bytearray(data)
     if not badbytes:
@@ -300,11 +306,11 @@ def make_atoms_simple(address, data, badbytes=frozenset()):
     out = []
     while i < len(data):
         candidate = AtomWrite(address + i, 1, data[i])
-        while candidate.end < len(data) and any(x in badbytes for x in pack(candidate.end)):
+        while i + candidate.size < len(data) and any(x in badbytes for x in pack(candidate.end)):
             candidate = candidate.union(AtomWrite(candidate.end, 1, data[i + candidate.size]))
 
         sz = min([s for s in SPECIFIER if s >= candidate.size] + [float("inf")])
-        if candidate.start + sz > len(data):
+        if i + sz > len(data):
             raise RuntimeError("impossible to avoid badbytes starting after offset %d (address %x)" % (i, i + address))
         i += candidate.size
         candidate = candidate.union(AtomWrite(candidate.end, sz - candidate.size, 0, 0))

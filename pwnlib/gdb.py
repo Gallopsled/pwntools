@@ -665,6 +665,48 @@ class Breakpoint:
         # Handle stop() call from the server.
         return self.stop()
 
+class FinishBreakpoint:
+    """Mirror of ``gdb.FinishBreakpoint`` class.
+
+    See https://sourceware.org/gdb/onlinedocs/gdb/Finish-Breakpoints-in-Python.html
+    for more information.
+    """
+
+    def __init__(self, conn, *args, **kwargs):
+        """Do not create instances of this class directly.
+
+        Use ``pwnlib.gdb.Gdb.FinishBreakpoint`` instead.
+        """
+        # Creates a real finish breakpoint and connects it with this mirror
+        self.conn = conn
+        self.server_breakpoint = conn.root.set_finish_breakpoint(
+            self, hasattr(self, 'stop'), hasattr(self, 'out_of_scope'),
+            *args, **kwargs)
+
+    def __getattr__(self, item):
+        """Return attributes of the real breakpoint."""
+        if item in (
+                '____id_pack__',
+                '__name__',
+                '____conn__',
+                'stop',
+                'out_of_scope',
+        ):
+            # Ignore RPyC netref attributes.
+            # Also, if stop() or out_of_scope() are not defined, hasattr() call
+            # in our __init__() will bring us here. Don't contact the
+            # server in this case either.
+            raise AttributeError()
+        return getattr(self.server_breakpoint, item)
+
+    def exposed_stop(self):
+        # Handle stop() call from the server.
+        return self.stop()
+
+    def exposed_out_of_scope(self):
+        # Handle out_of_scope() call from the server.
+        return self.out_of_scope()
+
 class Gdb:
     """Mirror of ``gdb`` module.
 
@@ -682,8 +724,12 @@ class Gdb:
         class _Breakpoint(Breakpoint):
             def __init__(self, *args, **kwargs):
                 super().__init__(conn, *args, **kwargs)
+        class _FinishBreakpoint(FinishBreakpoint):
+            def __init__(self, *args, **kwargs):
+                super().__init__(conn, *args, **kwargs)
 
         self.Breakpoint = _Breakpoint
+        self.FinishBreakpoint = _FinishBreakpoint
         self.stopped = Event()
 
         def stop_handler(event):
@@ -1333,7 +1379,7 @@ def version(program='gdb'):
 
     Example:
 
-        >>> (7,0) <= gdb.version() <= (12,0)
+        >>> (7,0) <= gdb.version() <= (19,0)
         True
     """
     program = misc.which(program)

@@ -35,6 +35,7 @@ RUN apt-get update \
         binutils-powerpc64-linux-gnu \
         binutils-sparc64-linux-gnu \
         tmux \
+        patchelf \
     && pip install --upgrade pip \
     && python -m pip install --upgrade pwntools \
     && pip3 install --upgrade pip \

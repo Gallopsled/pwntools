@@ -1,5 +1,8 @@
 FROM pwntools/pwntools:base
 
+# Support sharing history with the develop Dockerfile
+ENV HISTFILE=/home/pwntools/.history
+
 # Uninstall existing versions of pwntools
 USER root
 RUN python -m pip uninstall -q -y pwntools \
@@ -23,8 +26,12 @@ RUN git clone https://github.com/Gallopsled/pwntools \
 RUN python  -m pip install --upgrade --requirement pwntools/docs/requirements.txt \
  && python3 -m pip install --upgrade --requirement pwntools/docs/requirements.txt
 
+# Python niceties for debugging
+RUN python  -m pip install -U ipython ipdb \
+ && python3 -m pip install -U ipython ipdb
+
 # Dependencies from .travis.yml addons -> apt -> packages
-RUN sudo apt-get install -y \
+RUN sudo apt-get update && sudo apt-get install -y \
 	ash \
 	bash \
 	bash-static \
@@ -43,6 +50,7 @@ RUN sudo apt-get install -y \
 	qemu-user-static \
 	socat \
 	sshpass \
+	vim \
 	zsh
 
 # Misc useful things when developing
@@ -55,6 +63,25 @@ RUN sudo apt-get install -y  \
 	unzip \
 	wget
 
+# Use zsh by default
+RUN sudo chsh -s /bin/zsh pwntools
+
+# Get and install prezto
+RUN git clone --recursive https://github.com/sorin-ionescu/prezto.git .zprezto
+RUN bash -c 'for file in .zprezto/runcoms/z*; do ln -s $file .$(basename $file); done'
+
+# Get and install pwndbg
+RUN git clone --recursive https://github.com/pwndbg/pwndbg
+RUN cd pwndbg && ./setup.sh
+
+# Install autocompletion
+RUN ln -s /home/pwntools/pwntools/extra/zsh_completion/_pwn /home/pwntools/.zprezto/modules/completion/external/src
+
+# Install ipython profile and auto-import
+RUN mkdir -p           /home/pwntools/.ipython/profile_default/startup
+ADD 10-import.py       /home/pwntools/.ipython/profile_default/startup
+ADD ipython_config.py  /home/pwntools/.ipython/profile_default
+
 # Do not require password for sudo
 RUN echo "pwntools ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/travis
 # Some additional debugging tools that are useful
@@ -64,13 +91,6 @@ RUN python3 -m pip install ipdb
 # Install debugging utilities
 USER root
 RUN apt-get -y install gdb gdbserver tmux gdb-multiarch
-
-# Install pwndbg for debugging issues
-USER pwntools
-RUN git clone https://github.com/pwndbg/pwndbg.git
-WORKDIR /home/pwntools/pwndbg
-RUN ./setup.sh
-RUN echo "source $PWD/gdbinit.py" | tee $HOME/.gdbinit
 
 # Set up binfmt-misc mappings inside the VM
 USER root

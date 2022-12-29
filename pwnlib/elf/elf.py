@@ -1165,7 +1165,7 @@ class ELF(ELFFile):
             won't work.
 
         Arguments:
-            needle(str): String to search for.
+            needle(bytes): String to search for.
             writable(bool): Search only writable sections.
             executable(bool): Search only executable sections.
 
@@ -1346,7 +1346,7 @@ class ELF(ELFFile):
             count(int): Number of bytes to read
 
         Returns:
-            A :class:`str` object, or :const:`None`.
+            A :class:`bytes` object, or :const:`None`.
 
         Examples:
             The simplest example is just to read the ELF header.
@@ -1507,7 +1507,7 @@ class ELF(ELFFile):
 
     @property
     def data(self):
-        """:class:`str`: Raw data of the ELF file.
+        """:class:`bytes`: Raw data of the ELF file.
 
         See:
             :meth:`get_data`
@@ -1535,7 +1535,7 @@ class ELF(ELFFile):
         This modifies the ELF in-place.
         The resulting binary can be saved with :meth:`.ELF.save`
         """
-        binary = asm(assembly, vma=address)
+        binary = asm(assembly, vma=address, arch=self.arch, endian=self.endian, bits=self.bits)
         self.write(address, binary)
 
     def bss(self, offset=0):
@@ -1915,7 +1915,7 @@ class ELF(ELFFile):
 
     @property
     def buildid(self):
-        """:class:`str`: GNU Build ID embedded into the binary"""
+        """:class:`bytes`: GNU Build ID embedded into the binary"""
         section = self.get_section_by_name('.note.gnu.build-id')
         if section:
             return section.data()[16:]

@@ -4,7 +4,6 @@ from __future__ import division
 from __future__ import print_function
 
 import re
-import requests
 import shutil
 import sys
 
@@ -138,6 +137,7 @@ file_parser.add_argument(
 common_symbols = ['dup2', 'printf', 'puts', 'read', 'system', 'write']
 
 def find_libc(params):
+    import requests
     url    = "https://libc.rip/api/find"
     result = requests.post(url, json=params, timeout=20)
     log.debug('Request: %s', params)
