@@ -7,7 +7,7 @@ ifneq ($(HISTFILE),)
 MOUNT_HISTFILE=--mount type=bind,source="$(HISTFILE)",target=/home/pwntools/.history
 endif
 
-all: $(subdirs) $(tags)
+all: $(tags) $(subdirs)
 
 tags: $(tags)
 
