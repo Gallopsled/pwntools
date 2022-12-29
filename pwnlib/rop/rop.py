@@ -1169,7 +1169,7 @@ class ROP(object):
 
     def _flatten(self, initial_list):
         # Flatten out any nested lists.
-        flattened_list = list()
+        flattened_list = []
         for data in initial_list:
             if isinstance(data, (list, tuple)):
                 flattened_list.extend(self._flatten(data))
