@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.10.0](#4100)  | `dev`    |
-| [4.9.0](#490)    | `beta`   |
-| [4.8.0](#480)    | `stable` | Apr 21, 2022
+| [4.11.0](#4110)  | `dev`    |
+| [4.10.0](#4100)  | `beta`   |
+| [4.9.0](#490)    | `stable` | Dec 29, 2022
+| [4.8.0](#480)    |          | Apr 21, 2022
 | [4.7.1](#471)    |          | Apr 20, 2022
 | [4.7.0](#470)    |          | Nov 15, 2021
 | [4.6.0](#460)    |          | Jul 12, 2021
@@ -64,11 +65,25 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.10.0 (`dev`)
+## 4.11.0 (`dev`)
 
 
 
-## 4.9.0 (`beta`)
+## 4.10.0 (`beta`)
+
+- [#2062][2062] make pwn cyclic -l work with entry larger than 4 bytes
+- [#2092][2092] shellcraft: dup() is now called dupio() consistently across all supported arches
+- [#2093][2093] setresuid() in shellcraft uses current euid by default
+- [#2125][2125] Allow tube.recvregex to return capture groups
+- [#2144][2144] Removes `p2align 2` `asm()` headers from `x86-32`, `x86-64` and `mips` architectures to avoid inconsistent instruction length when patching binaries
+
+[2062]: https://github.com/Gallopsled/pwntools/pull/2062
+[2092]: https://github.com/Gallopsled/pwntools/pull/2092
+[2093]: https://github.com/Gallopsled/pwntools/pull/2093
+[2125]: https://github.com/Gallopsled/pwntools/pull/2125
+[2144]: https://github.com/Gallopsled/pwntools/pull/2144
+
+## 4.9.0 (`stable`)
 
 - [#1975][1975] Add libcdb commandline tool
 - [#1979][1979] Add `js_escape()` and `js_unescape()` to `util.fiddling`
@@ -92,7 +107,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2123]: https://github.com/Gallopsled/pwntools/pull/2123
 [2124]: https://github.com/Gallopsled/pwntools/pull/2124
 
-## 4.8.0 (`stable`)
+## 4.8.0
 
 - [#1922][1922] Fix logic in `wait_for_debugger`
 - [#1828][1828] libcdb: Load debug info and unstrip libc binary
