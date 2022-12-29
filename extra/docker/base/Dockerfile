@@ -3,7 +3,7 @@
 # Based on Ubuntu
 ############################################################
 
-FROM ubuntu:focal
+FROM ubuntu:jammy
 MAINTAINER Maintainer Gallopsled et al.
 
 ENV LANG en_US.UTF-8
@@ -20,6 +20,8 @@ RUN apt-get update \
         git \
         libssl-dev \
         libffi-dev \
+        python2.7 \
+        python2.7-dev \
         python3 \
         python3-pip \
         python3-dev \
@@ -34,6 +36,9 @@ RUN apt-get update \
         tmux \
     && locale-gen en_US.UTF-8 \
     && update-locale LANG=en_US.UTF-8 \
+    && python2.7 -m ensurepip \
+    && python2.7 -m pip install --upgrade pip \
+    && python2.7 -m pip install --upgrade pwntools \
     && python3 -m pip install --upgrade pip \
     && python3 -m pip install --upgrade pwntools \
     && PWNLIB_NOTERM=1 pwn update \
