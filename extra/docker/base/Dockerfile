@@ -34,6 +34,7 @@ RUN apt-get update \
         binutils-powerpc64-linux-gnu \
         binutils-sparc64-linux-gnu \
         tmux \
+        patchelf \
     && locale-gen en_US.UTF-8 \
     && update-locale LANG=en_US.UTF-8 \
     && python2.7 -m ensurepip \

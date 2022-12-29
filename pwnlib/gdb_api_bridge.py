@@ -89,6 +89,17 @@ class GdbService(Service):
             return Breakpoint(*args, **kwargs)
         return gdb.Breakpoint(*args, **kwargs)
 
+    def exposed_set_finish_breakpoint(self, client, has_stop, has_out_of_scope, *args, **kwargs):
+        """Create a finish breakpoint and connect it with the client-side mirror."""
+        class FinishBreakpoint(gdb.FinishBreakpoint):
+            if has_stop:
+                def stop(self):
+                    return client.stop()
+            if has_out_of_scope:
+                def out_of_scope(self):
+                    client.out_of_scope()
+        return FinishBreakpoint(*args, **kwargs)
+
     def exposed_quit(self):
         """Terminate GDB."""
         gdb.post_event(lambda: gdb.execute('quit'))

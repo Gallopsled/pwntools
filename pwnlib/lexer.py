@@ -38,7 +38,7 @@ class PwntoolsLexer(RegexLexer):
     string = r'"(\\"|[^"])*"'
     char = r'[\w$.@-]'
     identifier = r'(?:[a-zA-Z$_]' + char + r'*|\.' + char + '+|or)'
-    number = r'(?:0[xX][a-zA-Z0-9]+|\d+)'
+    number = r'(?:-?0[xX][a-zA-Z0-9]+|\d+)'
     memory = r'(?:[\]\[])'
     bad = r'(?:\(bad\))'
 

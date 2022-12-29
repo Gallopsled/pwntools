@@ -33,8 +33,8 @@ RUN python2.7 -m pip install -U ipython ipdb \
 # Dependencies from .travis.yml addons -> apt -> packages
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ="UTC"
-RUN sudo -E apt-get install -y \
-        tzdata \
+RUN sudo apt-get update && sudo -E apt-get install -y \
+  tzdata \
 	ash \
 	bash \
 	bash-static \

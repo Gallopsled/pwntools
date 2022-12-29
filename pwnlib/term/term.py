@@ -59,10 +59,14 @@ def update_geometry():
     height, width = h, w
 
 def handler_sigwinch(signum, stack):
+    if hasattr(signal, 'pthread_sigmask'):
+        signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGWINCH})
     update_geometry()
     redraw()
     for cb in on_winch:
         cb()
+    if hasattr(signal, 'pthread_sigmask'):
+        signal.pthread_sigmask(signal.SIG_UNBLOCK, {signal.SIGWINCH})
 
 def handler_sigstop(signum, stack):
     resetterm()
