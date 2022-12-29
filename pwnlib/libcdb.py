@@ -72,11 +72,11 @@ def provider_libc_rip(hex_encoded_id, hash_type):
     try:
         result = requests.post(url, json=params, timeout=20)
         result.raise_for_status()
-        if len(result.json()) == 0:
+        libc_match = result.json()
+        if not libc_match:
             log.warn_once("Could not find libc for %s %s on libc.rip", hash_type, hex_encoded_id)
             return None
 
-        libc_match = result.json()
         if len(libc_match) > 1:
             log.debug("Received multiple matches. Choosing the first match and discarding the others.")
             log.debug("%r", libc_match)
