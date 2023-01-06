@@ -1377,17 +1377,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if status != 0:
             return None
 
-        # OpenSSL outputs in the format of...
-        # (stdin)= e3b0c4429...
-        data = data.replace(b'(stdin)= ',b'')
-
-        # sha256 and sha256sum outputs in the format of...
-        # e3b0c442...  -
-        data = data.replace(b'-',b'').strip()
-
         if not isinstance(data, str):
             data = data.decode('ascii')
 
+        data = re.search("([a-fA-F0-9]{64})",data).group()
         return data
 
     def _get_cachefile(self, fingerprint):
