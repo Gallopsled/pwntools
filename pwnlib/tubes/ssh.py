@@ -1565,8 +1565,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             local_tar = tempfile.NamedTemporaryFile(suffix='.tar.gz')
             self.download_file(remote_tar, local_tar.name)
             
-            #Delete temporary tarfile from remote host
-            if(self.sftp):
+            # Delete temporary tarfile from remote host
+            if self.sftp:
                 self.unlink(remote_tar)
             else:
                 self.system(b'rm ' + sh_string(remote_tar)).wait()
