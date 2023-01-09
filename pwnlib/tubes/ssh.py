@@ -1547,7 +1547,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         self.info("Downloading %r to %r" % (remote, local))
 
-        if(ignore_failed_read):
+        if ignore_failed_read:
             opts = b" --ignore-failed-read"
         else:
             opts = b""
@@ -1564,7 +1564,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
             local_tar = tempfile.NamedTemporaryFile(suffix='.tar.gz')
             self.download_file(remote_tar, local_tar.name)
-            
+
             # Delete temporary tarfile from remote host
             if self.sftp:
                 self.unlink(remote_tar)
