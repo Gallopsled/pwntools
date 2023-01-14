@@ -1529,8 +1529,8 @@ class ROP(object):
                 nonpie = elf
             elif '__libc_csu_init' in elf.symbols:
                 csu = elf
-        else:
-            log.error('No non-library binaries in [elfs]')
+            else:
+                log.error('No non-library binaries in [elfs]')
 
         if elf.pie:
             if nonpie:
