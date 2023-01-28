@@ -728,9 +728,9 @@ class tube(Timeout, Logger):
         return self.buffer.get()
 
     def recvall(self, timeout=Timeout.forever):
-        """recvall() -> bytes
+        """recvall(timeout=Timeout.forever) -> bytes
 
-        Receives data until EOF is reached.
+        Receives data until EOF is reached and closes the tube.
         """
 
         with self.waitfor('Receiving all data') as h:
