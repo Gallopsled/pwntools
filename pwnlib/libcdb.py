@@ -267,6 +267,19 @@ def _extract_tarfile(cache_dir, data_filename, tarball):
         tarball.close()
         tarball = decompressed_tar
 
+    if six.PY2 and data_filename.endswith('.xz'):
+        # Python 2's tarfile doesn't support xz, so we need to decompress it first.
+        # Shell out to xz, since the Python 2 pylzma module is broken.
+        # (https://github.com/fancycode/pylzma/issues/67)
+        if not which('xz'):
+            log.error('Couldn\'t find "xz" in PATH. Please install xz first.')
+        p = process(['xz', '--decompress', '--stdout', tarball.name])
+        uncompressed_tarball = p.readall()
+        if p.poll() != 0:
+            log.error('Failed to decompress xz archive.')
+        p.close()
+        tarball = BytesIO(uncompressed_tarball)
+
     with tarfile.open(fileobj=tarball) as tar_file:
         # Find the library folder in the archive (e.g. /lib/x86_64-linux-gnu/)
         lib_dir = None
@@ -324,11 +337,15 @@ def _extract_debfile(cache_dir, package_filename, package):
             debfile.flush()
             p = process(['ar', 't', debfile.name])
             files_in_deb = p.recvall().split(b'\n')
+            if p.poll() != 0:
+                log.error('Failed to list files in .deb archive.')
             p.close()
-            data_filename = next(filter(lambda f: f.startswith(b'data.tar'), files_in_deb)).decode()
+            data_filename = filter(lambda f: f.startswith(b'data.tar'), files_in_deb)[0]
 
-            p = process(['ar', 'x', '--output', tempdir, debfile.name, data_filename])
+            p = process(['ar', 'x', debfile.name, data_filename], cwd=tempdir)
             p.wait_for_close()
+            if p.poll() != 0:
+                log.error('Failed to extract data.tar from .deb archive.')
             p.close()
 
             with open(os.path.join(tempdir, data_filename), 'rb') as tarball:
