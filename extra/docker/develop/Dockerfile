@@ -5,8 +5,8 @@ ENV HISTFILE=/home/pwntools/.history
 
 # Uninstall existing versions of pwntools
 USER root
-RUN python -m pip uninstall -q -y pwntools \
- && python3 -m pip uninstall -q -y pwntools
+RUN python2.7 -m pip uninstall -q -y pwntools \
+    && python3 -m pip uninstall -q -y pwntools
 
 # Switch back to the pwntools user from here forward
 USER pwntools
@@ -18,20 +18,23 @@ ENV PATH="/home/pwntools/.local/bin:${PATH}"
 
 # Install Pwntools to the home directory, make it an editable install
 RUN git clone https://github.com/Gallopsled/pwntools \
- && python  -m pip install --upgrade --editable pwntools \
+ && python2.7 -m pip install --upgrade --editable pwntools \
  && python3 -m pip install --upgrade --editable pwntools \
  && PWNLIB_NOTERM=1 pwn version
 
 # Requirements for running the tests
-RUN python  -m pip install --upgrade --requirement pwntools/docs/requirements.txt \
- && python3 -m pip install --upgrade --requirement pwntools/docs/requirements.txt
+RUN python2.7 -m pip install --upgrade --requirement pwntools/docs/requirements.txt \
+    && python3 -m pip install --upgrade --requirement pwntools/docs/requirements.txt
 
 # Python niceties for debugging
-RUN python  -m pip install -U ipython ipdb \
- && python3 -m pip install -U ipython ipdb
+RUN python2.7 -m pip install -U ipython ipdb \
+    && python3 -m pip install -U ipython ipdb
 
 # Dependencies from .travis.yml addons -> apt -> packages
-RUN sudo apt-get install -y \
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ="UTC"
+RUN sudo apt-get update && sudo -E apt-get install -y \
+  tzdata \
 	ash \
 	bash \
 	bash-static \
@@ -41,7 +44,7 @@ RUN sudo apt-get install -y \
 	dash \
 	gcc \
 	gcc-multilib \
-	gdb \ 
+	gdb \
 	ksh \
 	lib32stdc++6 \
 	libc6-dev-i386 \
@@ -51,12 +54,9 @@ RUN sudo apt-get install -y \
 	socat \
 	sshpass \
 	vim \
-	zsh
-
+	zsh \
 # Misc useful things when developing
-RUN sudo apt-get install -y  \
 	curl \
-	ipython \
 	ipython3 \
 	lsb-release \
 	ssh \
@@ -64,7 +64,7 @@ RUN sudo apt-get install -y  \
 	wget
 
 # Use zsh by default
-RUN sudo chsh -s /bin/zsh pwntools
+RUN sudo -E chsh -s /bin/zsh pwntools
 
 # Get and install prezto
 RUN git clone --recursive https://github.com/sorin-ionescu/prezto.git .zprezto
