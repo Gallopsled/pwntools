@@ -225,7 +225,7 @@ class ELF(ELFFile):
         super(ELF,self).__init__(self.mmap)
 
         #: :class:`str`: Path to the file
-        self.path = os.path.abspath(path)
+        self.path = packing._need_text(os.path.abspath(path))
 
         #: :class:`str`: Architecture of the file (e.g. ``'i386'``, ``'arm'``).
         #:
