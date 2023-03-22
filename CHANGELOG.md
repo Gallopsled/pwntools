@@ -70,12 +70,14 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2062][2062] make pwn cyclic -l work with entry larger than 4 bytes
 - [#2092][2092] shellcraft: dup() is now called dupio() consistently across all supported arches
 - [#2093][2093] setresuid() in shellcraft uses current euid by default
+- [#2103][2103] Add search for libc binary by leaked function addresses `libcdb.search_by_symbol_offsets()`
 - [#2125][2125] Allow tube.recvregex to return capture groups
 - [#2144][2144] Removes `p2align 2` `asm()` headers from `x86-32`, `x86-64` and `mips` architectures to avoid inconsistent instruction length when patching binaries
 
 [2062]: https://github.com/Gallopsled/pwntools/pull/2062
 [2092]: https://github.com/Gallopsled/pwntools/pull/2092
 [2093]: https://github.com/Gallopsled/pwntools/pull/2093
+[2103]: https://github.com/Gallopsled/pwntools/pull/2103
 [2125]: https://github.com/Gallopsled/pwntools/pull/2125
 [2144]: https://github.com/Gallopsled/pwntools/pull/2144
 
