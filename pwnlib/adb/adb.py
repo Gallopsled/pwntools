@@ -1370,8 +1370,12 @@ def compile(source):
     ndk_build = misc.which('ndk-build')
     if not ndk_build:
         # Ensure that we can find the NDK.
-        ndk = os.environ.get('NDK', None)
-        if ndk is None:
+        for envvar in ('NDK', 'ANDROID_NDK', 'ANDROID_NDK_ROOT',
+                       'ANDROID_NDK_HOME', 'ANDROID_NDK_LATEST_HOME'):
+            ndk = os.environ.get(envvar)
+            if ndk is not None:
+                break
+        else:
             log.error('$NDK must be set to the Android NDK directory')
         ndk_build = os.path.join(ndk, 'ndk-build')
 
