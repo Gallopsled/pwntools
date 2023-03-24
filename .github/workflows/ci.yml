@@ -84,7 +84,6 @@ jobs:
         pip install --upgrade pip
         pip install --upgrade wheel
         pip install --upgrade flake8 appdirs
-        python setup.py egg_info
         pip install --upgrade --editable .
 
     - name: Sanity checks
@@ -163,6 +162,7 @@ jobs:
         pwn libcdb hash b229d1da1e161f95e839cf90cded5f719e5de308
 
     - name: Build source and wheel distributions
+      if: matrix.python-version != '2.7'
       run: |
         python setup.py sdist
         python setup.py bdist_wheel --universal

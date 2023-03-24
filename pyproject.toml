@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=44.0", "wheel"]
+requires = ["setuptools>=44.0", "wheel", "toml; python_version<'3.4'"]
 build-backend = "setuptools.build_meta"
 
 [project]
