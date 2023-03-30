@@ -227,13 +227,6 @@ class ELF(ELFFile):
         #: :class:`str`: Path to the file
         self.path = os.path.abspath(path)
 
-        #: :class:`str`: Architecture of the file (e.g. ``'i386'``, ``'arm'``).
-        #:
-        #: See: :attr:`.ContextType.arch`
-        self.arch = self.get_machine_arch()
-        if isinstance(self.arch, (bytes, six.text_type)):
-            self.arch = self.arch.lower()
-
         #: :class:`dotdict` of ``name`` to ``address`` for all symbols in the ELF
         self.symbols = dotdict()
 
@@ -268,17 +261,12 @@ class ELF(ELFFile):
         #: :class:`int`: Pointer width, in bytes
         self.bytes = self.bits // 8
 
-        if self.arch == 'mips':
-            mask = lambda a, b: a & b == b
-            flags = self.header['e_flags']
-
-            if mask(flags, E_FLAGS.EF_MIPS_ARCH_32) \
-            or mask(flags, E_FLAGS.EF_MIPS_ARCH_32R2):
-                pass
-            elif mask(flags, E_FLAGS.EF_MIPS_ARCH_64) \
-            or mask(flags, E_FLAGS.EF_MIPS_ARCH_64R2):
-                self.arch = 'mips64'
-                self.bits = 64
+        #: :class:`str`: Architecture of the file (e.g. ``'i386'``, ``'arm'``).
+        #:
+        #: See: :attr:`.ContextType.arch`
+        self.arch = self.get_machine_arch()
+        if isinstance(self.arch, (bytes, six.text_type)):
+            self.arch = self.arch.lower()
 
         self._sections = None
         self._segments = None
@@ -471,18 +459,21 @@ class ELF(ELFFile):
 
     def get_machine_arch(self):
         return {
-            'EM_X86_64': 'amd64',
-            'EM_386' :'i386',
-            'EM_486': 'i386',
-            'EM_ARM': 'arm',
-            'EM_AARCH64': 'aarch64',
-            'EM_MIPS': 'mips',
-            'EM_PPC': 'powerpc',
-            'EM_PPC64': 'powerpc64',
-            'EM_SPARC32PLUS': 'sparc',
-            'EM_SPARCV9': 'sparc64',
-            'EM_IA_64': 'ia64'
-        }.get(self['e_machine'], self['e_machine'])
+            ('EM_X86_64', 64): 'amd64',
+            ('EM_386', 32): 'i386',
+            ('EM_486', 32): 'i386',
+            ('EM_ARM', 32): 'arm',
+            ('EM_AARCH64', 64): 'aarch64',
+            ('EM_MIPS', 32): 'mips',
+            ('EM_MIPS', 64): 'mips64',
+            ('EM_PPC', 32): 'powerpc',
+            ('EM_PPC64', 64): 'powerpc64',
+            ('EM_SPARC32PLUS', 32): 'sparc',
+            ('EM_SPARCV9', 64): 'sparc64',
+            ('EM_IA_64', 64): 'ia64',
+            ('EM_RISCV', 32): 'riscv32',
+            ('EM_RISCV', 64): 'riscv64'
+        }.get((self['e_machine'], self.bits), self['e_machine'])
 
     @property
     def entry(self):
@@ -1061,10 +1052,10 @@ class ELF(ELFFile):
             return
 
         banner = self.string(self.symbols.linux_banner)
-        
+
         # convert banner into a utf-8 string since re.search does not accept bytes anymore
         banner = banner.decode('utf-8')
-        
+
         # 'Linux version 3.18.31-gd0846ecc
         regex = r'Linux version (\S+)'
         match = re.search(regex, banner)
@@ -1114,7 +1105,7 @@ class ELF(ELFFile):
         else:
             log.error('Unsupported architecture %s in ELF.libc_start_main_return', self.arch)
             return 0
-        
+
         lines = self.functions['__libc_start_main'].disasm().split('\n')
         exit_addr = hex(self.symbols['exit'])
         calls = [(index, line) for index, line in enumerate(lines) if set(line.split()) & call_instructions]
@@ -1128,7 +1119,7 @@ class ELF(ELFFile):
             return_from_main = lines[call_to_main[0] + call_return_offset].lstrip()
             return_from_main = int(return_from_main[ : return_from_main.index(':') ], 16)
             return return_from_main
-        
+
         # Starting with glibc-2.34 calling `main` is split out into `__libc_start_call_main`
         ret_addr = find_ret_main_addr(lines, calls)
         # Pre glibc-2.34 case - `main` is called directly
@@ -1142,7 +1133,7 @@ class ELF(ELFFile):
             match = direct_call_pattern.search(line[1])
             if not match:
                 continue
-            
+
             target_addr = int(match.group(1), 0)
             # `__libc_start_call_main` is usually smaller than `__libc_start_main`, so
             # we might disassemble a bit too much, but it's a good dynamic estimate.
