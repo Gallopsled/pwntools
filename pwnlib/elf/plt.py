@@ -68,7 +68,7 @@ def prepare_unicorn_and_context(elf, got, address, data):
         # 'powerpc': U.UC_ARCH_PPC, <-- Not actually supported
         'thumb': U.UC_ARCH_ARM,
         'riscv32': U.UC_ARCH_RISCV,
-        'riscv64': U.UC_ARCH_RISCV
+        'riscv64': U.UC_ARCH_RISCV,
     }.get(elf.arch, None)
 
     if arch is None:
