@@ -94,7 +94,7 @@ jobs:
       run: pip install -r docs/requirements.txt
 
     - name: Manually install non-broken Unicorn
-      run:  pip install unicorn==1.0.2rc3
+      run:  pip install unicorn==2.0.0rc7
 
     - name: Disable yama ptrace_scope
       run: |
