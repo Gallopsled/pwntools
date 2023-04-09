@@ -472,7 +472,7 @@ class ELF(ELFFile):
             ('EM_SPARCV9', 64): 'sparc64',
             ('EM_IA_64', 64): 'ia64',
             ('EM_RISCV', 32): 'riscv32',
-            ('EM_RISCV', 64): 'riscv64'
+            ('EM_RISCV', 64): 'riscv64',
         }.get((self['e_machine'], self.bits), self['e_machine'])
 
     @property
