@@ -185,6 +185,7 @@ def which_binutils(util, check_version=False):
         'mips64': ['mips'],
         'powerpc64': ['powerpc'],
         'sparc64': ['sparc'],
+        'riscv32': ['riscv32', 'riscv64'],
     }.get(arch, [])
 
     # If one of the candidate architectures matches the native
@@ -262,7 +263,11 @@ def _assembler():
         'powerpc64': [gas, '-m%s' % context.endianness, '-mppc%s' % context.bits],
 
         # ia64 only accepts -mbe or -mle
-        'ia64':    [gas, '-m%ce' % context.endianness[0]]
+        'ia64':    [gas, '-m%ce' % context.endianness[0]],
+
+        # riscv64-unknown-elf-as supports riscv32 as well as riscv64
+        'riscv32': [gas, '-march=rv32gc', '-mabi=ilp32'],
+        'riscv64': [gas, '-march=rv64gc', '-mabi=lp64'],
     }
 
     assembler = assemblers.get(context.arch, [gas])
@@ -362,7 +367,8 @@ def _bfdname():
         'msp430'  : 'elf32-msp430',
         'powerpc' : 'elf32-powerpc',
         'powerpc64' : 'elf64-powerpc',
-        'riscv'   : 'elf%d-%sriscv' % (context.bits, E),
+        'riscv32' : 'elf%d-%sriscv' % (context.bits, E),
+        'riscv64' : 'elf%d-%sriscv' % (context.bits, E),
         'vax'     : 'elf32-vax',
         's390'    : 'elf%d-s390' % context.bits,
         'sparc'   : 'elf32-sparc',
@@ -385,6 +391,8 @@ def _bfdarch():
         'powerpc64': 'powerpc',
         'sparc64':   'sparc',
         'thumb':     'arm',
+        'riscv32':   'riscv',
+        'riscv64':   'riscv',
     }
 
     if arch in convert:
