@@ -185,7 +185,8 @@ def which_binutils(util, check_version=False):
         'mips64': ['mips'],
         'powerpc64': ['powerpc'],
         'sparc64': ['sparc'],
-        'riscv32': ['riscv32', 'riscv64'],
+        'riscv32': ['riscv32', 'riscv64', 'riscv'],
+        'riscv64': ['riscv32', 'riscv64', 'riscv'],
     }.get(arch, [])
 
     # If one of the candidate architectures matches the native
