@@ -82,7 +82,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install --upgrade wheel
+        pip install --upgrade wheel build
         pip install --upgrade flake8 appdirs
         pip install --upgrade --editable .
 
@@ -162,10 +162,8 @@ jobs:
         pwn libcdb hash b229d1da1e161f95e839cf90cded5f719e5de308
 
     - name: Build source and wheel distributions
-      if: matrix.python-version != '2.7'
       run: |
-        python setup.py sdist
-        python setup.py bdist_wheel
+        python -m build
 
     - uses: actions/upload-artifact@v2
       with:
