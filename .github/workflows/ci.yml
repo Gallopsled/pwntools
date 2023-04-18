@@ -165,7 +165,7 @@ jobs:
       if: matrix.python-version != '2.7'
       run: |
         python setup.py sdist
-        python setup.py bdist_wheel --universal
+        python setup.py bdist_wheel
 
     - uses: actions/upload-artifact@v2
       with:

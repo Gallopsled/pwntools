@@ -11,7 +11,6 @@ from distutils.command.install import INSTALL_SCHEMES
 from distutils.sysconfig import get_python_inc
 from distutils.util import convert_path
 
-from setuptools import find_packages
 from setuptools import setup
 
 # Get all template files
@@ -60,7 +59,6 @@ if not os.path.exists(PythonH):
     sys.exit(-1)
 
 setup(
-    packages             = find_packages(),
     version              = '4.11.0dev',
     data_files           = [('pwntools-doc',
                              glob.glob('*.md') + glob.glob('*.txt')),
