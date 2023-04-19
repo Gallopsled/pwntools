@@ -166,6 +166,11 @@ jobs:
         pwn disasm --color ff3424c3ebfe
         pwn asm -f hex nop
 
+        pwn hex ABCD
+        pwn hex ABCD --separator ' '
+        pwn hex ABCD --prefix '\x'
+        pwn hex ABCD -p '0x' -s ' '
+
         pwn hex abcd
         pwn unhex 4141 4141
 
