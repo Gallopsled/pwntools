@@ -717,40 +717,41 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4, no_dol
         # perform write
         if padding:
             fmt += "%" + str(padding) + "c"
-            ''' 
-            [ @murph12F was here ]
 
-            the data += pack(0) is used to keey the arguments aligned when a %c is performed, so it wont use the actual address to write at
-            examplea stack and payload:
+            if no_dollars:
+                data += pack(0)
+                ''' 
+                [ @murph12F was here ]
+
+                the data += pack(0) is used to keey the arguments aligned when a %c is performed, so it wont use the actual address to write at
+                examplea stack and payload:
+                    
+                    fmtsr = %44c%hhn%66c%hhn
+
+                    ---------
+                    | addr2 |
+                    ---------
+                    | 0x000 |   
+                    ---------
+                    | addr1 |
+                    ---------
+                    | 0x000 | <-- (rsp)
+                    ---------
                 
-                fmtsr = %44c%hhn%66c%hhn
+                    in this case the the first %44c will use the current arugument used pointed by rsp ( 0 ), and increment  rsp
 
-                ---------
-                | addr2 |
-                ---------
-                | 0x000 |   
-                ---------
-                | addr1 |
-                ---------
-                | 0x000 | <-- (rsp)
-                ---------
-            
-                in this case the the first %44c will use the current arugument used pointed by rsp ( 0 ), and increment  rsp
+                    ---------
+                    | addr2 |
+                    ---------
+                    | 0X000 |   
+                    ---------
+                    | addr1 | <-- (rsp)
+                    ---------
+                    | 0x000 | 
+                    ---------
 
-                ---------
-                | addr2 |
-                ---------
-                | 0X000 |   
-                ---------
-                | addr1 | <-- (rsp)
-                ---------
-                | 0x000 | 
-                ---------
-
-                now it will perform the %hhn, and it will correctly use the addr1 argument
-                ...
-            '''
-            data += pack(0)
+                    now it will perform the %hhn, and it will correctly use the addr1 argument
+                '''
             
         if no_dollars:
             fmt += "%" +  SPECIFIER[atom.size]
