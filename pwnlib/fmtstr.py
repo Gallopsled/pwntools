@@ -688,7 +688,7 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4, no_dol
         atoms(list): list of atoms to execute
         numbwritten(int): number of byte already written by the printf function
         countersize(int): size in bytes of the format string counter (usually 4)
-        no_dollars(boolean) : flag to generete the payload with or w/o $ notation 
+        no_dollars(bool) : flag to generete the payload with or w/o $ notation 
 
     Examples:
         >>> pwnlib.fmtstr.make_payload_dollar(1, [pwnlib.fmtstr.AtomWrite(0x0, 0x1, 0xff)])
@@ -827,7 +827,7 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
         write_size(str): must be ``byte``, ``short`` or ``int``. Tells if you want to write byte by byte, short by short or int by int (hhn, hn or n)
         overflows(int): how many extra overflows (at size sz) to tolerate to reduce the length of the format string
         strategy(str): either 'fast' or 'small' ('small' is default, 'fast' can be used if there are many writes)
-        no_dollars(boolean) : flag to generete the payload with or w/o $ notation 
+        no_dollars(bool) : flag to generete the payload with or w/o $ notation 
     Returns:
         The payload in order to do needed writes
 
