@@ -707,7 +707,7 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4, no_dol
 
     for idx, atom in enumerate(atoms):
         # set format string counter to correct value
-        padding = atom.compute_padding(counter) 
+        padding = atom.compute_padding(counter)
         counter = (counter + padding) % (1 << (countersize * 8))
         if countersize == 32 and counter > 2147483600:
             log.warn("number of written bytes in format string close to 1 << 31. this will likely not work on glibc")
@@ -829,6 +829,7 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
         no_dollars(boolean) : flag to generete the payload with or w/o $ notation 
     Returns:
         The payload in order to do needed writes
+
     Examples:
         >>> context.clear(arch = 'amd64')
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')
@@ -864,8 +865,7 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
         else:
             fmt, data = make_payload_dollar(offset + data_offset, all_atoms, numbwritten=numbwritten)
 
-        #pad fmt to context.bytes
-        fmt = fmt + ((-len(fmt)  % context.bytes )* b" ")
+        fmt = fmt + cyclic((-len(fmt)-offset_bytes) % context.bytes)
 
         if len(fmt) + offset_bytes == data_offset * context.bytes:
             break
