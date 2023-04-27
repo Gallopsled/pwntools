@@ -285,7 +285,7 @@ def make_atoms_simple(address, data, badbytes=frozenset()):
 
     This function is simple and does not try to minimize the number of atoms. For example, if there are no
     bad bytes, it simply returns one atom for each byte:
-         >>> pwnlib.fmtstr.make_atoms_simple(0x0, b"abc", set())
+        >>> pwnlib.fmtstr.make_atoms_simple(0x0, b"abc", set())
         [AtomWrite(start=0, size=1, integer=0x61, mask=0xff), AtomWrite(start=1, size=1, integer=0x62, mask=0xff), AtomWrite(start=2, size=1, integer=0x63, mask=0xff)]
     
     If there are bad bytes, it will try to bypass by skipping addresses containing bad bytes, otherwise a
@@ -306,7 +306,7 @@ def make_atoms_simple(address, data, badbytes=frozenset()):
     out = []
     while i < len(data):
         candidate = AtomWrite(address + i, 1, data[i])
-        while i + candidate.end < len(data) and any(x in badbytes for x in pack(candidate.end)):
+        while i + candidate.size < len(data) and any(x in badbytes for x in pack(candidate.end)):
             candidate = candidate.union(AtomWrite(candidate.end, 1, data[i + candidate.size]))
 
         sz = min([s for s in SPECIFIER if s >= candidate.size] + [float("inf")])
@@ -829,7 +829,7 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
         no_dollars(boolean) : flag to generete the payload with or w/o $ notation 
     Returns:
         The payload in order to do needed writes
-     Examples:
+    Examples:
         >>> context.clear(arch = 'amd64')
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')
         b'%322419390c%4$llnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00'
@@ -848,7 +848,6 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
         b'%1c%3$na\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: b"\xff\xff\x04\x11\x00\x00\x00\x00"}, write_size='short')
         b'%327679c%7$lln%18c%8$hhn\x00\x00\x00\x00\x03\x00\x00\x00'
-
     """
     sz = WRITE_SIZE[write_size]
     szmax = WRITE_SIZE[write_size_max]
@@ -857,7 +856,6 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
     fmt = b""
     for _ in range(1000000):
         data_offset = (offset_bytes + len(fmt)) // context.bytes
-        fmt = fmt + cyclic((-len(fmt)-offset_bytes) % context.bytes)
 
         # if no dollar is set, call the payload with the parameter no dollar set
         if no_dollars:
