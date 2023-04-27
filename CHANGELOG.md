@@ -9,6 +9,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
+| [4.12.0](#4110)  | `dev`    |
 | [4.11.0](#4110)  | `dev`    |
 | [4.10.0](#4100)  | `beta`   |
 | [4.9.0](#490)    | `stable` | Dec 29, 2022
@@ -64,6 +65,10 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.1](#301)    |          | Aug 20, 2016
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
+
+## 4.12.0 (`dev`)
+
+- [#2185][2185] make fmtstr able to create payload without $ notation 
 
 ## 4.11.0 (`dev`)
 
