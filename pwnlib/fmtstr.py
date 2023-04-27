@@ -858,14 +858,7 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
     fmt = b""
     for _ in range(1000000):
         data_offset = (offset_bytes + len(fmt)) // context.bytes
-
-        # if no dollar is set, call the payload with the parameter no dollar set
-        if no_dollars:
-            fmt, data = make_payload_dollar(offset + data_offset, all_atoms, numbwritten=numbwritten, no_dollars=True)
-
-        else:
-            fmt, data = make_payload_dollar(offset + data_offset, all_atoms, numbwritten=numbwritten)
-
+        fmt, data = make_payload_dollar(offset + data_offset, all_atoms, numbwritten=numbwritten, no_dollars=no_dollars)
         fmt = fmt + cyclic((-len(fmt)-offset_bytes) % context.bytes)
 
         if len(fmt) + offset_bytes == data_offset * context.bytes:
