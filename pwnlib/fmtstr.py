@@ -700,8 +700,8 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4, no_dol
     counter = numbwritten
 
     if no_dollars:
-        # since we cant dynamically offset, we have to increment manually the parameter index, use %c, so the numeber of bytes written is predictable
-        fmt += "%c" * ( data_offset - 1)
+        # since we can't dynamically offset, we have to increment manually the parameter index, use %c, so the number of bytes written is predictable
+        fmt += "%c" * (data_offset - 1)
         # every %c write a byte, so we need to keep track of that to have the right pad
         counter += data_offset - 1
 
