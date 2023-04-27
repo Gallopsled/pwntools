@@ -719,7 +719,7 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4, no_dol
             fmt += "%" + str(padding) + "c"
 
             if no_dollars:
-                data += pack(0)
+                data += b'c' * context.bytes
                 ''' 
                 [ @murph12F was here ]
 
