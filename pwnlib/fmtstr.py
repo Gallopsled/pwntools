@@ -715,7 +715,12 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4, no_dol
             log.warn("padding is negative, this will not work on glibc")
 
         # perform write
-        if padding:
+        # if the padding is less than 3, it is more convenient to write it : [ len("cc") < len("%2c") ] , this could help save some bytes, if it is 3 it will take the same amout of bytes
+        # we also add ( context.bytes * no_dollars ) because , "%nccccccccc%n...ptr1ptr2" is more convenient than %"n%8c%n...ptr1ccccccccptr2"
+        if padding < 4 + context.bytes * no_dollars:
+                fmt += "c" * padding
+                ## if do not padded with %{n}c  do not need to add something in data to use as argument, since  we are not using a printf argument
+        else: 
             fmt += "%" + str(padding) + "c"
 
             if no_dollars:
@@ -723,7 +728,7 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4, no_dol
                 ''' 
                 [ @murph12F was here ]
 
-                the data += pack(0) is used to keey the arguments aligned when a %c is performed, so it wont use the actual address to write at
+                the data += b'c' * context.bytes , is used to keey the arguments aligned when a %c is performed, so it wont use the actual address to write at
                 examplea stack and payload:
                     
                     fmtsr = %44c%hhn%66c%hhn
