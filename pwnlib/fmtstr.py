@@ -852,9 +852,15 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte')
         b'%19c%12$hhn%36c%13$hhn%131c%14$hhn%4c%15$hhn\x03\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x00000001}, write_size='byte')
-        b'%1c%3$na\x00\x00\x00\x00'
+        b'c%3$naaa\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: b"\xff\xff\x04\x11\x00\x00\x00\x00"}, write_size='short')
         b'%327679c%7$lln%18c%8$hhn\x00\x00\x00\x00\x03\x00\x00\x00'
+        >>> fmtstr_payload(10, {0x404048 : 0xbadc0ffe, 0x40403c : 0xdeadbeef}, no_dollars=True)
+        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%125c%hhn%17c%hhn%32c%hhn%17c%hhn%203c%hhn%34c%hhn%3618c%hnacccc>@@\x00cccc=@@\x00cccc?@@\x00cccc<@@\x00ccccK@@\x00ccccJ@@\x00ccccH@@\x00'
+        >>> fmtstr_payload(6, {0x404048 : 0xbadbad00}, no_dollars=True)
+        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%229c%hhn%173c%hhn%13c%hhn%33c%hhnccccH@@\x00ccccI@@\x00ccccK@@\x00ccccJ@@\x00'
+        >>> fmtstr_payload(6, {0x4040 : 0xbadbad00, 0x4060: 0xbadbad02}, no_dollars=True)
+        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%212c%hhn%173c%hhn%13c%hhn%33c%hhn%39c%hhn%171c%hhn%13c%hhn%33c%hhnacccc@@\x00\x00ccccA@\x00\x00ccccC@\x00\x00ccccB@\x00\x00cccc`@\x00\x00cccca@\x00\x00ccccc@\x00\x00ccccb@\x00\x00'
     """
     sz = WRITE_SIZE[write_size]
     szmax = WRITE_SIZE[write_size_max]
