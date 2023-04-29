@@ -74,6 +74,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2125][2125] Allow tube.recvregex to return capture groups
 - [#2144][2144] Removes `p2align 2` `asm()` headers from `x86-32`, `x86-64` and `mips` architectures to avoid inconsistent instruction length when patching binaries
 - [#2177][2177] Support for RISC-V 64-bit architecture
+- [#2186][2186] Enhance `ELF.nx` and `ELF.execstack`
 
 [2062]: https://github.com/Gallopsled/pwntools/pull/2062
 [2092]: https://github.com/Gallopsled/pwntools/pull/2092
@@ -82,6 +83,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2125]: https://github.com/Gallopsled/pwntools/pull/2125
 [2144]: https://github.com/Gallopsled/pwntools/pull/2144
 [2177]: https://github.com/Gallopsled/pwntools/pull/2177
+[2186]: https://github.com/Gallopsled/pwntools/pull/2186
 
 ## 4.10.0 (`beta`)
 
