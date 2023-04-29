@@ -1676,24 +1676,94 @@ class ELF(ELFFile):
         Specifically, we are checking for ``READ_IMPLIES_EXEC`` being set
         by the kernel, as a result of honoring ``PT_GNU_STACK`` in the kernel.
 
-        The **Linux kernel** directly honors ``PT_GNU_STACK`` to `mark the
-        stack as executable.`__
+        ``READ_IMPLIES_EXEC`` is set, according to a set of architecture specific
+        rules, that depend on the CPU features, and the presence of ``PT_GNU_STACK``.
 
-        .. __: https://github.com/torvalds/linux/blob/v4.9/fs/binfmt_elf.c#L784-L789
+        Unfortunately, :class:`ELF` is not context-aware, so it's impossible to
+        determine whether the process of a binary that's missing ``PT_GNU_STACK``
+        will have NX or not.
+        
+        The rules are as follows:
 
-        .. code-block:: c
+            x86__:
 
-            case PT_GNU_STACK:
-                if (elf_ppnt->p_flags & PF_X)
-                    executable_stack = EXSTACK_ENABLE_X;
-                else
-                    executable_stack = EXSTACK_DISABLE_X;
-                break;
+            .. __: https://github.com/torvalds/linux/blob/v6.3/arch/x86/include/asm/elf.h#L288-L289
 
-        Additionally, it then sets ``read_implies_exec``, so that `all readable pages
-        are executable`__.
+            .. code-block:: c
 
-        .. __: https://github.com/torvalds/linux/blob/v4.9/fs/binfmt_elf.c#L849-L850
+                #define elf_read_implies_exec(ex, executable_stack)	\\
+                    (mmap_is_ia32() && executable_stack == EXSTACK_DEFAULT)
+
+            ARM__:
+
+            .. __: https://github.com/torvalds/linux/blob/v6.3/arch/arm/kernel/elf.c#L104-L111
+
+            .. code-block:: c
+
+                int arm_elf_read_implies_exec(int executable_stack)
+                {
+                	if (executable_stack == EXSTACK_DEFAULT)
+                		return 1;
+                	if (cpu_architecture() < CPU_ARCH_ARMv6)
+                		return 1;
+                	return 0;
+                }
+
+            IA-64__:
+
+            .. __: https://github.com/torvalds/linux/blob/v6.3/arch/ia64/include/asm/elf.h#L203-L204
+
+            .. code-block:: c
+
+                #define elf_read_implies_exec(ex, executable_stack)					\\
+                    ((executable_stack!=EXSTACK_DISABLE_X) && ((ex).e_flags & EF_IA_64_LINUX_EXECUTABLE_STACK) != 0)
+
+
+            MIPS__:
+
+            .. __: https://github.com/torvalds/linux/blob/v6.3/arch/mips/kernel/elf.c#L329-L336
+
+            .. code-block:: c
+
+                int mips_elf_read_implies_exec(void *elf_ex, int exstack)
+                {
+                	/*
+                	 * Set READ_IMPLIES_EXEC only on non-NX systems that
+                	 * do not request a specific state via PT_GNU_STACK.
+                	 */
+                	return (!cpu_has_rixi && exstack == EXSTACK_DEFAULT);
+                }
+
+            PowerPC__:
+
+            .. __: https://github.com/torvalds/linux/blob/v6.3/arch/powerpc/include/asm/elf.h#L82-L108
+
+            .. code-block:: c
+
+                #ifdef __powerpc64__
+                /* stripped */
+                # define elf_read_implies_exec(ex, exec_stk) (is_32bit_task() ? \\
+                		(exec_stk == EXSTACK_DEFAULT) : 0)
+                #else 
+                # define elf_read_implies_exec(ex, exec_stk) (exec_stk == EXSTACK_DEFAULT)
+                #endif /* __powerpc64__ */
+
+            `The rest of the architectures`__:
+
+            .. __: https://github.com/torvalds/linux/blob/v4.9/include/linux/elf.h#L7-L12
+
+            .. code-block:: c
+
+                #ifndef elf_read_implies_exec
+                  /* Executables for which elf_read_implies_exec() returns TRUE will
+                     have the READ_IMPLIES_EXEC personality flag set automatically.
+                     Override in asm/elf.h as needed.  */
+                # define elf_read_implies_exec(ex, have_pt_gnu_stack)	0
+                #endif
+        
+        If ``READ_IMPLIES_EXEC`` is set, then `all readable pages are executable`__.
+
+        .. __: https://github.com/torvalds/linux/blob/v6.3/fs/binfmt_elf.c#L1008-L1009
 
         .. code-block:: c
 
@@ -1702,35 +1772,37 @@ class ELF(ELFFile):
         """
         if not self.executable:
             return True
+        
+        # If the ``PT_GNU_STACK`` program header is preset, it explicitly sets the
+        # permissions to the stack, and ``READ_IMPLIES_EXEC`` is not set.
+        for _ in self.iter_segments_by_type('GNU_STACK'):
+            return True
 
-        for seg in self.iter_segments_by_type('GNU_STACK'):
-            return not bool(seg.header.p_flags & P_FLAGS.PF_X)
-
-        # If you NULL out the PT_GNU_STACK section via ELF.disable_nx(),
-        # everything is executable.
-        return False
+        # ``PT_GNU_STACK`` is missing, it's impossible to determine whether the process of
+        # that binary will have NX or not because it depends on the context of the process.
+        return None
 
     @property
     def execstack(self):
-        """:class:`bool`: Whether the current binary uses an executable stack.
+        """:class:`bool`: Whether dynamically loading the current binary will make the stack executable.
 
-        This is based on the presence of a program header PT_GNU_STACK_
-        being present, and its setting.
+        This is based on the presence of a program header ``PT_GNU_STACK``,
+        its setting, and the default stack permissions for the architecture.
 
-            ``PT_GNU_STACK``
+        If ``PT_GNU_STACK`` is persent, the stack permissions are `set according to it`__:
 
-            The p_flags member specifies the permissions on the segment
-            containing the stack and is used to indicate whether the stack
-            should be executable. The absense of this header indicates
-            that the stack will be executable.
+        .. __: https://github.com/bminor/glibc/blob/glibc-2.37/elf/dl-load.c#L1218-L1220
 
-        In particular, if the header is missing the stack is executable.
-        If the header is present, it may **explicitly** mark that the stack is
-        executable.
+        .. code-block:: c
 
-        This is only somewhat accurate.  When using the GNU Linker, it usees
-        DEFAULT_STACK_PERMS_ to decide whether a lack of ``PT_GNU_STACK``
-        should mark the stack as executable:
+	        case PT_GNU_STACK:
+	          stack_flags = ph->p_flags;
+	          break;
+
+        Else, the stack permissions are set according to the architecture defaults
+        as `defined by`__ ``DEFAULT_STACK_PERMS``:
+
+        .. __: https://github.com/bminor/glibc/blob/glibc-2.37/elf/dl-load.c#L1093-L1096
 
         .. code-block:: c
 
@@ -1745,29 +1817,25 @@ class ELF(ELFFile):
         ::
 
             $ git grep '#define DEFAULT_STACK_PERMS' | grep -v PF_X
-            sysdeps/aarch64/stackinfo.h:31:#define DEFAULT_STACK_PERMS (PF_R|PF_W)
-            sysdeps/nios2/stackinfo.h:31:#define DEFAULT_STACK_PERMS (PF_R|PF_W)
-            sysdeps/tile/stackinfo.h:31:#define DEFAULT_STACK_PERMS (PF_R|PF_W)
-
-        .. _PT_GNU_STACK: https://refspecs.linuxbase.org/LSB_3.0.0/LSB-PDA/LSB-PDA/progheader.html
-        .. _DEFAULT_STACK_PERMS: https://github.com/bminor/glibc/blob/glibc-2.25/elf/dl-load.c#L1036-L1038
+            sysdeps/aarch64/stackinfo.h:    #define DEFAULT_STACK_PERMS (PF_R|PF_W)
+            sysdeps/arc/stackinfo.h:        #define DEFAULT_STACK_PERMS (PF_R|PF_W)
+            sysdeps/csky/stackinfo.h:       #define DEFAULT_STACK_PERMS (PF_R|PF_W)
+            sysdeps/ia64/stackinfo.h:       #define DEFAULT_STACK_PERMS (PF_R|PF_W)
+            sysdeps/loongarch/stackinfo.h:  #define DEFAULT_STACK_PERMS (PF_R | PF_W)
+            sysdeps/nios2/stackinfo.h:      #define DEFAULT_STACK_PERMS (PF_R|PF_W)
+            sysdeps/riscv/stackinfo.h:      #define DEFAULT_STACK_PERMS (PF_R | PF_W)
         """
-        # Dynamic objects do not have the ability to change the executable state of the stack.
         if not self.executable:
             return False
 
-        # If NX is completely off for the process, the stack is executable.
-        if not self.nx:
-            return True
-
+        # If the ``PT_GNU_STACK`` program header is preset, use it's premissions.
+        for seg in self.iter_segments_by_type('GNU_STACK'):
+            return bool(seg.header.p_flags & P_FLAGS.PF_X)
+        
         # If the ``PT_GNU_STACK`` program header is missing, then use the
-        # default rules.  Only AArch64 gets a non-executable stack by default.
-        for _ in self.iter_segments_by_type('GNU_STACK'):
-            break
-        else:
-            return self.arch != 'aarch64'
-
-        return False
+        # default rules. Out of the supported architectures, only AArch64,
+        # IA-64, and RISC-V get a non-executable stack by default.
+        return self.arch not in ['aarch64', 'ia64', 'riscv32', 'riscv64']
 
     @property
     def canary(self):
@@ -1842,6 +1910,7 @@ class ELF(ELFFile):
             "NX:".ljust(10) + {
                 True:  green("NX enabled"),
                 False: red("NX disabled"),
+                None: yellow("GNU_STACK missing"),
             }[self.nx],
             "PIE:".ljust(10) + {
                 True: green("PIE enabled"),
@@ -1850,7 +1919,7 @@ class ELF(ELFFile):
         ])
 
         # Execstack may be a thing, even with NX enabled, because of glibc
-        if self.execstack and self.nx:
+        if self.execstack and self.nx is not False:
             res.append("Stack:".ljust(10) + red("Executable"))
 
         # Are there any RWX areas in the binary?
@@ -2062,6 +2131,8 @@ class ELF(ELFFile):
             if self.mmap[offset:offset+4] == PT_GNU_STACK:
                 self.mmap[offset:offset+4] = b'\x00' * 4
                 self.save()
+                # Invalidate the cached segments, ``PT_GNU_STACK`` was removed.
+                self._segments = None
                 return
 
         log.error("Could not find PT_GNU_STACK, stack should already be executable")
