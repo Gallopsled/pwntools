@@ -67,6 +67,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.11.0 (`dev`)
 
+- [#2185][2185] make fmtstr module able to create payload without $ notation 
 - [#2062][2062] make pwn cyclic -l work with entry larger than 4 bytes
 - [#2092][2092] shellcraft: dup() is now called dupio() consistently across all supported arches
 - [#2093][2093] setresuid() in shellcraft uses current euid by default
@@ -75,6 +76,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2144][2144] Removes `p2align 2` `asm()` headers from `x86-32`, `x86-64` and `mips` architectures to avoid inconsistent instruction length when patching binaries
 - [#2177][2177] Support for RISC-V 64-bit architecture
 
+[2185]: https://github.com/Gallopsled/pwntools/pull/2185
 [2062]: https://github.com/Gallopsled/pwntools/pull/2062
 [2092]: https://github.com/Gallopsled/pwntools/pull/2092
 [2093]: https://github.com/Gallopsled/pwntools/pull/2093
