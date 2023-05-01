@@ -49,7 +49,6 @@ from six import BytesIO
 
 from collections import namedtuple
 
-from elftools.elf.constants import E_FLAGS
 from elftools.elf.constants import P_FLAGS
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
@@ -1679,108 +1678,219 @@ class ELF(ELFFile):
         ``READ_IMPLIES_EXEC`` is set, according to a set of architecture specific
         rules, that depend on the CPU features, and the presence of ``PT_GNU_STACK``.
 
-        Unfortunately, :class:`ELF` is not context-aware, so it's impossible to
-        determine whether the process of a binary that's missing ``PT_GNU_STACK``
+        Unfortunately, :class:`ELF` is not context-aware, so it's not always possible
+        to determine whether the process of a binary that's missing ``PT_GNU_STACK``
         will have NX or not.
         
         The rules are as follows:
 
-            x86__:
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | ELF arch  | linux        | GNU_STACK                 | other                                          | NX       |
+            +===========+==============+===========================+================================================+==========+
+            | i386      | < 5.8        | non-exec                  |                                                | enabled  |
+            |           | [#x86_5.7]_  +---------------------------+------------------------------------------------+----------+
+            |           |              | exec / missing            |                                                | disabled |
+            |           +--------------+---------------------------+------------------------------------------------+----------+
+            |           | >= 5.8       | exec / non-exec           |                                                | enabled  |
+            |           | [#x86_5.8]_  +---------------------------+------------------------------------------------+----------+
+            |           |              | missing                   |                                                | disabled |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | amd64     | < 5.8        | non-exec                  |                                                | enabled  |
+            |           | [#x86_5.7]_  +---------------------------+------------------------------------------------+----------+
+            |           |              | exec / missing            |                                                | disabled |
+            |           +--------------+---------------------------+------------------------------------------------+----------+
+            |           | >= 5.8       | exec / non-exec / missing |                                                | enabled  |
+            |           | [#x86_5.8]_  |                           |                                                |          |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | arm       | < 5.8        | non-exec*                 |                                                | enabled  |
+            |           | [#arm_5.7]_  +---------------------------+------------------------------------------------+----------+
+            |           |              | exec / missing            |                                                | disabled |
+            |           +--------------+---------------------------+------------------------------------------------+----------+
+            |           | >= 5.8       | exec / non-exec*          |                                                | enabled  |
+            |           | [#arm_5.8]_  +---------------------------+------------------------------------------------+----------+
+            |           |              | missing                   |                                                | disabled |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | mips      | < 5.18       | non-exec*                 |                                                | enabled  |
+            |           | [#mips_5.17]_+---------------------------+------------------------------------------------+----------+
+            |           |              | exec / missing            |                                                | disabled |
+            |           +--------------+---------------------------+------------------------------------------------+----------+
+            |           | >= 5.18      | exec / non-exec*          |                                                | enabled  |
+            |           | [#mips_5.18]_+---------------------------+------------------------------------------------+----------+
+            |           |              | missing                   |                                                | disabled |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | powerpc   | [#powerpc]_  | non-exec / exec           |                                                | enabled  |
+            |           |              +---------------------------+------------------------------------------------+----------+
+            |           |              | missing                   |                                                | disabled |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | powerpc64 | [#powerpc]_  | exec / non-exec / missing |                                                | enabled  |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | ia64      | [#ia64]_     | non-exec                  |                                                | enabled  |
+            |           |              +---------------------------+------------------------------------------------+----------+
+            |           |              | exec / missing            | e_flags & EF_IA_64_LINUX_EXECUTABLE_STACK == 0 | enabled  |
+            |           |              +                           +------------------------------------------------+----------+
+            |           |              |                           | e_flags & EF_IA_64_LINUX_EXECUTABLE_STACK != 0 | disabled |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | the rest  | [#the_rest]_ | exec / non-exec / missing |                                                | enabled  |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
 
-            .. __: https://github.com/torvalds/linux/blob/v6.3/arch/x86/include/asm/elf.h#L288-L289
+            \\* Hardware limitations are ignored.
+
+        If ``READ_IMPLIES_EXEC`` is set, then `all readable pages are executable`__.
+            .. __: https://github.com/torvalds/linux/blob/v6.3/fs/binfmt_elf.c#L1008-L1009
+            .. code-block:: c
+
+                if (elf_read_implies_exec(loc->elf_ex, executable_stack))
+                    current->personality |= READ_IMPLIES_EXEC;
+
+        .. [#x86_5.7]
+            `source <https://github.com/torvalds/linux/blob/v5.7/arch/x86/include/asm/elf.h#L285-L286>`__
+
+            .. code-block:: c
+
+                #define elf_read_implies_exec(ex, executable_stack)	\\
+                    (executable_stack != EXSTACK_DISABLE_X)
+
+        .. [#x86_5.8]
+            `source <https://github.com/torvalds/linux/blob/v5.8/arch/x86/include/asm/elf.h#L305-L306>`__
 
             .. code-block:: c
 
                 #define elf_read_implies_exec(ex, executable_stack)	\\
                     (mmap_is_ia32() && executable_stack == EXSTACK_DEFAULT)
 
-            ARM__:
+            `mmap_is_ia32()`__:
+                .. __: https://github.com/torvalds/linux/blob/v5.8/arch/x86/include/asm/elf.h#L318-L321
+                .. code-block:: c
 
-            .. __: https://github.com/torvalds/linux/blob/v6.3/arch/arm/kernel/elf.c#L104-L111
+                    /*
+                     * True on X86_32 or when emulating IA32 on X86_64
+                     */
+                    static inline int mmap_is_ia32(void)
+
+        .. [#arm_5.7]
+            `source <https://github.com/torvalds/linux/blob/v5.7/arch/arm/kernel/elf.c#L85-L92>`__
 
             .. code-block:: c
 
                 int arm_elf_read_implies_exec(int executable_stack)
                 {
-                	if (executable_stack == EXSTACK_DEFAULT)
-                		return 1;
-                	if (cpu_architecture() < CPU_ARCH_ARMv6)
-                		return 1;
-                	return 0;
+                    if (executable_stack != EXSTACK_DISABLE_X)
+                        return 1;
+                    if (cpu_architecture() < CPU_ARCH_ARMv6)
+                        return 1;
+                    return 0;
                 }
 
-            IA-64__:
-
-            .. __: https://github.com/torvalds/linux/blob/v6.3/arch/ia64/include/asm/elf.h#L203-L204
+        .. [#arm_5.8]
+            `source <https://github.com/torvalds/linux/blob/v5.8/arch/arm/kernel/elf.c#L104-L111>`__
 
             .. code-block:: c
 
-                #define elf_read_implies_exec(ex, executable_stack)					\\
-                    ((executable_stack!=EXSTACK_DISABLE_X) && ((ex).e_flags & EF_IA_64_LINUX_EXECUTABLE_STACK) != 0)
+                int arm_elf_read_implies_exec(int executable_stack)
+                {
+                    if (executable_stack == EXSTACK_DEFAULT)
+                        return 1;
+                    if (cpu_architecture() < CPU_ARCH_ARMv6)
+                        return 1;
+                    return 0;
+                }
 
-
-            MIPS__:
-
-            .. __: https://github.com/torvalds/linux/blob/v6.3/arch/mips/kernel/elf.c#L329-L336
+        .. [#mips_5.17]
+            `source <https://github.com/torvalds/linux/blob/v5.17/arch/mips/kernel/elf.c#L329-L342>`__
 
             .. code-block:: c
 
                 int mips_elf_read_implies_exec(void *elf_ex, int exstack)
                 {
-                	/*
-                	 * Set READ_IMPLIES_EXEC only on non-NX systems that
-                	 * do not request a specific state via PT_GNU_STACK.
-                	 */
-                	return (!cpu_has_rixi && exstack == EXSTACK_DEFAULT);
+                    if (exstack != EXSTACK_DISABLE_X) {
+                        /* The binary doesn't request a non-executable stack */
+                        return 1;
+                    }
+                    if (!cpu_has_rixi) {
+                        /* The CPU doesn't support non-executable memory */
+                        return 1;
+                    }
+                    return 0;
                 }
 
-            PowerPC__:
+        .. [#mips_5.18]
+            `source <https://github.com/torvalds/linux/blob/v5.18/arch/mips/kernel/elf.c#L329-L336>`__
 
-            .. __: https://github.com/torvalds/linux/blob/v6.3/arch/powerpc/include/asm/elf.h#L82-L108
+            .. code-block:: c
+
+                int mips_elf_read_implies_exec(void *elf_ex, int exstack)
+                {
+                    /*
+                     * Set READ_IMPLIES_EXEC only on non-NX systems that
+                     * do not request a specific state via PT_GNU_STACK.
+                     */
+                    return (!cpu_has_rixi && exstack == EXSTACK_DEFAULT);
+                }
+
+        .. [#powerpc]
+            `source <https://github.com/torvalds/linux/blob/v6.3/arch/powerpc/include/asm/elf.h#L82-L108>`__
 
             .. code-block:: c
 
                 #ifdef __powerpc64__
                 /* stripped */
                 # define elf_read_implies_exec(ex, exec_stk) (is_32bit_task() ? \\
-                		(exec_stk == EXSTACK_DEFAULT) : 0)
+                        (exec_stk == EXSTACK_DEFAULT) : 0)
                 #else 
                 # define elf_read_implies_exec(ex, exec_stk) (exec_stk == EXSTACK_DEFAULT)
                 #endif /* __powerpc64__ */
 
-            `The rest of the architectures`__:
-
-            .. __: https://github.com/torvalds/linux/blob/v4.9/include/linux/elf.h#L7-L12
+        .. [#ia64]
+            `source <https://github.com/torvalds/linux/blob/v6.3/arch/ia64/include/asm/elf.h#L203-L204>`__
 
             .. code-block:: c
 
-                #ifndef elf_read_implies_exec
-                  /* Executables for which elf_read_implies_exec() returns TRUE will
-                     have the READ_IMPLIES_EXEC personality flag set automatically.
-                     Override in asm/elf.h as needed.  */
+                #define elf_read_implies_exec(ex, executable_stack)					\\
+                    ((executable_stack!=EXSTACK_DISABLE_X) && ((ex).e_flags & EF_IA_64_LINUX_EXECUTABLE_STACK) != 0)
+
+            EF_IA_64_LINUX_EXECUTABLE_STACK__:
+                .. __: https://github.com/torvalds/linux/blob/v6.3/arch/ia64/include/asm/elf.h#L33
+
+                .. code-block:: c
+
+                    #define EF_IA_64_LINUX_EXECUTABLE_STACK	0x1	/* is stack (& heap) executable by default? */
+
+        .. [#the_rest]
+            `source <https://github.com/torvalds/linux/blob/v6.3/include/linux/elf.h#L13>`__
+
+            .. code-block:: c
+
                 # define elf_read_implies_exec(ex, have_pt_gnu_stack)	0
-                #endif
-        
-        If ``READ_IMPLIES_EXEC`` is set, then `all readable pages are executable`__.
-
-        .. __: https://github.com/torvalds/linux/blob/v6.3/fs/binfmt_elf.c#L1008-L1009
-
-        .. code-block:: c
-
-            if (elf_read_implies_exec(loc->elf_ex, executable_stack))
-                current->personality |= READ_IMPLIES_EXEC;
         """
         if not self.executable:
             return True
         
-        # If the ``PT_GNU_STACK`` program header is preset, it explicitly sets the
-        # permissions to the stack, and ``READ_IMPLIES_EXEC`` is not set.
-        for _ in self.iter_segments_by_type('GNU_STACK'):
-            return True
+        exec_bit = None
+        for seg in self.iter_segments_by_type('GNU_STACK'):
+            exec_bit = bool(seg.header.p_flags & P_FLAGS.PF_X)
 
-        # ``PT_GNU_STACK`` is missing, it's impossible to determine whether the process of
-        # that binary will have NX or not because it depends on the context of the process.
-        return None
+        non_exec = exec_bit is False
+        missing = exec_bit is None
+        EF_IA_64_LINUX_EXECUTABLE_STACK = 1
+
+        if self.arch in ['i386', 'arm', 'aarch64', 'mips', 'mips64']:
+            if non_exec:
+                return True
+            elif missing:
+                return False
+            return None
+        elif self.arch == 'amd64':
+            return True if non_exec else None
+        elif self.arch == 'powerpc':
+            return not missing
+        elif self.arch == 'powerpc64':
+            return True
+        elif self.arch == 'ia64':
+            if non_exec:
+                return True
+            return not bool(self['e_flags'] & EF_IA_64_LINUX_EXECUTABLE_STACK)
+
+        return True
 
     @property
     def execstack(self):
@@ -1795,9 +1905,9 @@ class ELF(ELFFile):
 
         .. code-block:: c
 
-	        case PT_GNU_STACK:
-	          stack_flags = ph->p_flags;
-	          break;
+            case PT_GNU_STACK:
+              stack_flags = ph->p_flags;
+              break;
 
         Else, the stack permissions are set according to the architecture defaults
         as `defined by`__ ``DEFAULT_STACK_PERMS``:
@@ -1910,7 +2020,7 @@ class ELF(ELFFile):
             "NX:".ljust(10) + {
                 True:  green("NX enabled"),
                 False: red("NX disabled"),
-                None: yellow("GNU_STACK missing"),
+                None: yellow("NX unknown - GNU_STACK missing"),
             }[self.nx],
             "PIE:".ljust(10) + {
                 True: green("PIE enabled"),
