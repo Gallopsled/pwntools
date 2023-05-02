@@ -72,6 +72,7 @@ jobs:
           binutils-powerpc-linux-gnu \
           binutils-s390x-linux-gnu \
           binutils-sparc64-linux-gnu \
+          binutils-riscv64-linux-gnu \
           gcc-multilib \
           libc6-dbg \
           elfutils \

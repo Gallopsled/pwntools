@@ -48,6 +48,7 @@ class ABI(object):
         (32, 'mips', 'linux'):   linux_mips,
         (32, 'powerpc', 'linux'): linux_ppc,
         (64, 'powerpc', 'linux'): linux_ppc64,
+        (64, 'riscv64', 'linux'): linux_riscv64,
         (32, 'i386', 'freebsd'):  freebsd_i386,
         (64, 'aarch64', 'freebsd'): freebsd_aarch64,
         (64, 'amd64', 'freebsd'): freebsd_amd64,
@@ -76,6 +77,7 @@ class ABI(object):
         (64, 'aarch64', 'linux'):   linux_aarch64_syscall,
         (32, 'powerpc', 'linux'): linux_ppc_syscall,
         (64, 'powerpc', 'linux'): linux_ppc64_syscall,
+        (64, 'riscv64', 'linux'): linux_riscv64_syscall,
         (32, 'i386', 'freebsd'):  freebsd_i386_syscall,
         (64, 'amd64', 'freebsd'): freebsd_amd64_syscall,
         (64, 'aarch64', 'freebsd'): freebsd_aarch64_syscall,
@@ -132,6 +134,7 @@ linux_aarch64 = ABI('sp', ['x0', 'x1', 'x2', 'x3'], 16, 0)
 linux_mips  = ABI('$sp', ['$a0','$a1','$a2','$a3'], 4, 0)
 linux_ppc = ABI('sp', ['r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10'], 4, 0)
 linux_ppc64 = ABI('sp', ['r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10'], 8, 0)
+linux_riscv64 = ABI('sp', ['a0', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7'], 8, 0)
 
 sysv_i386 = linux_i386
 sysv_amd64 = linux_amd64
@@ -140,14 +143,16 @@ sysv_aarch64 = linux_aarch64
 sysv_mips = linux_mips
 sysv_ppc = linux_ppc
 sysv_ppc64 = linux_ppc64
+sysv_riscv64 = linux_riscv64
 
 linux_i386_syscall = SyscallABI('esp', ['eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp'], 4, 0)
 linux_amd64_syscall = SyscallABI('rsp', ['rax', 'rdi', 'rsi', 'rdx', 'r10', 'r8', 'r9'],   8, 0)
 linux_arm_syscall   = SyscallABI('sp', ['r7', 'r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6'], 4, 0)
 linux_aarch64_syscall   = SyscallABI('sp', ['x8', 'x0', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6'], 16, 0)
 linux_mips_syscall  = SyscallABI('$sp', ['$v0','$a0','$a1','$a2','$a3'], 4, 0)
-linux_ppc_syscall = ABI('sp', ['r0', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9'], 4, 0)
-linux_ppc64_syscall = ABI('sp', ['r0', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9'], 8, 0)
+linux_ppc_syscall = SyscallABI('sp', ['r0', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9'], 4, 0)
+linux_ppc64_syscall = SyscallABI('sp', ['r0', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9'], 8, 0)
+linux_riscv64_syscall = SyscallABI('sp', ['a7', 'a0', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6'], 8, 0)
 
 linux_i386_sigreturn = SigreturnABI('esp', ['eax'], 4, 0)
 linux_amd64_sigreturn = SigreturnABI('rsp', ['rax'], 4, 0)
