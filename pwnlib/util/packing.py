@@ -438,9 +438,9 @@ def u8(data, endianness = None, sign = None, **kwargs):
 
 @LocalNoarchContext
 def u16(data, endianness = None, sign = None, **kwargs):
-    """u8(data, endianness, sign, ...) -> int
+    """u16(data, endianness, sign, ...) -> int
 
-    Unpacks an 8-bit integer
+    Unpacks an 16-bit integer
 
     Arguments:
         data (bytes): Byte string to convert
