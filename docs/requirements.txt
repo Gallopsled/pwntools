@@ -1,5 +1,6 @@
 capstone
 coveralls
+python-dateutil
 doc2dash
 docutils<0.18
 isort
