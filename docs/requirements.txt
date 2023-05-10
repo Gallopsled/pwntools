@@ -10,6 +10,7 @@ pyelftools>=0.2.3
 pygments>=2.0
 pypandoc
 pyserial>=2.7
+pysocks
 requests>=2.5.1
 ropgadget>=5.3
 sphinx==1.8.6; python_version<'3'
