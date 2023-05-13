@@ -233,7 +233,7 @@ class ELF(ELFFile):
         #: :class:`dotdict` of ``name`` to ``address`` for all Global Offset Table (GOT) entries
         self.got = dotdict()
 
-        #: :class:`dotdict` of ``name`` to ``address`` for all Procedure Linkate Table (PLT) entries
+        #: :class:`dotdict` of ``name`` to ``address`` for all Procedure Linkage Table (PLT) entries
         self.plt = dotdict()
 
         #: :class:`dotdict` of ``name`` to :class:`.Function` for each function in the ELF
