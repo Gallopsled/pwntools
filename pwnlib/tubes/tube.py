@@ -878,24 +878,44 @@ class tube(Timeout, Logger):
         t.daemon = True
         t.start()
 
+        from pwnlib.args import term_mode
         try:
+            os_linesep = os.linesep.encode()
+            to_skip = b''
             while not go.isSet():
-                os_linesep = os.linesep.encode()
                 if term.term_mode:
-                    data = term.readline.readline(prompt = prompt, float = True)
-                    data = data.replace(os_linesep, self.newline)
+                    data = term.readline.readline(prompt=prompt, float=True)
+                    if data:
+                        data = data.replace(b'\n', self.newline)
                 else:
                     stdin = getattr(sys.stdin, 'buffer', sys.stdin)
-                    data = b''
-                    if sys.stdin.isatty():
-                        while not data.endswith(os_linesep):
-                            new_byte = stdin.read(1)
-                            if not new_byte:
-                                break
-                            data += new_byte
-                        data = data.replace(os_linesep, self.newline)
-                    else:
-                        data = stdin.read(1)
+                    data = stdin.read(1)
+                    # Keep OS's line separator if NOTERM is set and
+                    # the user did not specify a custom newline
+                    # even if stdin is a tty.
+                    if sys.stdin.isatty() and (
+                        term_mode
+                        or context.newline != b"\n"
+                        or self._newline is not None
+                    ):
+                        if to_skip:
+                            if to_skip[:1] != data:
+                                data = os_linesep[: -len(to_skip)] + data
+                            else:
+                                to_skip = to_skip[1:]
+                                if to_skip:
+                                    continue
+                                data = self.newline
+                        # If we observe a prefix of the line separator in a tty,
+                        # assume we'll see the rest of it immediately after.
+                        # This could stall until the next character is seen if
+                        # the line separator is started but never finished, but
+                        # that is unlikely to happen in a dynamic tty.
+                        elif data and os_linesep.startswith(data):
+                            if len(os_linesep) > 1:
+                                to_skip = os_linesep[1:]
+                                continue
+                            data = self.newline
 
                 if data:
                     try:
