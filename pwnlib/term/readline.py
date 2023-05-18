@@ -404,7 +404,7 @@ def readline(_size=-1, prompt='', float=True, priority=10):
                     buffer = (buffer_left + buffer_right)
                     if buffer:
                         history.insert(0, buffer)
-                    return force_to_bytes(buffer) + b'\n'
+                    return force_to_bytes(buffer)
             except KeyboardInterrupt:
                 control_c()
     finally:
