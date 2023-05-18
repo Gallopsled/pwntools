@@ -72,7 +72,7 @@ CALL = """
                 target = regs[index]
                 register_arguments[target] = arg
             elif arg is not None:
-                stack_arguments[index] = arg
+                stack_arguments[name] = arg
 
         # The argument is not a register.  It is a string value, and we
         # are expecting a string value
@@ -100,7 +100,7 @@ CALL = """
                 target = regs[index]
                 register_arguments[target] = arg
             elif arg is not None:
-                stack_arguments[target] = arg
+                stack_arguments[name] = arg
 
     # Some syscalls have different names on various architectures.
     # Determine which syscall number to use for the current architecture.
