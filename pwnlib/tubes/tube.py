@@ -886,7 +886,7 @@ class tube(Timeout, Logger):
                 if term.term_mode:
                     data = term.readline.readline(prompt=prompt, float=True)
                     if data:
-                        data = data.replace(b'\n', self.newline)
+                        data += self.newline
                 else:
                     stdin = getattr(sys.stdin, 'buffer', sys.stdin)
                     data = stdin.read(1)
