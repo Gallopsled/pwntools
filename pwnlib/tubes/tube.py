@@ -899,7 +899,7 @@ class tube(Timeout, Logger):
             to_skip = b''
             while not go.isSet():
                 if term.term_mode:
-                    data = term.readline.readline(prompt=prompt, float=True)
+                    data = term.readline.readline(prompt = prompt, float = True)
                     if data:
                         data += self.newline
                 else:

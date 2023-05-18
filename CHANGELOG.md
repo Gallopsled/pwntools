@@ -97,7 +97,6 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2125][2125] Allow tube.recvregex to return capture groups
 - [#2144][2144] Removes `p2align 2` `asm()` headers from `x86-32`, `x86-64` and `mips` architectures to avoid inconsistent instruction length when patching binaries
 
-
 [2062]: https://github.com/Gallopsled/pwntools/pull/2062
 [2092]: https://github.com/Gallopsled/pwntools/pull/2092
 [2093]: https://github.com/Gallopsled/pwntools/pull/2093
