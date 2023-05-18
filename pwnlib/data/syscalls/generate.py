@@ -108,7 +108,7 @@ CALL = """
         if hasattr(pwnlib.constants, syscall):
             break
     else:
-        raise Exception("Could not locate any syscalls: %r" % syscalls)
+        raise Exception("Could not locate any syscalls: %r" % {syscalls!r})
 %>
     /* {name}(${{', '.join(syscall_repr)}}) */
 %for name, arg in string_arguments.items():
