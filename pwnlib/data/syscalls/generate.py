@@ -249,7 +249,7 @@ def generate_one(target):
             # Mako is unable to use *vararg and *kwarg, so we just stub in
             # a whole bunch of additional arguments.
             if argname == 'vararg':
-                for j in range(5):
+                for j in range(6):
                     argname = 'vararg_%i' % j
                     argument_names.append(argname)
                     argument_names_.append(argname)
