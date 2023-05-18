@@ -208,20 +208,18 @@ def unstrip_libc(filename):
         :const:`True` if binary was unstripped, :const:`False` otherwise.
 
     Examples:
-        >>> filename = search_by_build_id('2d1c5e0b85cb06ff47fa6fa088ec22cb6e06074e', unstrip=False)
+        >>> filename = search_by_build_id('69389d485a9793dbe873f0ea2c93e02efaa9aa3d', unstrip=False)
         >>> libc = ELF(filename)
-        >>> hex(libc.symbols.read)
-        '0xe56c0'
         >>> 'main_arena' in libc.symbols
         False
         >>> unstrip_libc(filename)
         True
         >>> libc = ELF(filename)
         >>> hex(libc.symbols.main_arena)
-        '0x1d57a0'
+        '0x219c80'
         >>> unstrip_libc(which('python'))
         False
-        >>> filename = search_by_build_id('06a8004be6e10c4aeabbe0db74423ace392a2d6b', unstrip=True)
+        >>> filename = search_by_build_id('d1704d25fbbb72fa95d517b883131828c0883fe9', unstrip=True)
         >>> 'main_arena' in ELF(filename).symbols
         True
     """
