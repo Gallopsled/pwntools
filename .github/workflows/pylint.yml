@@ -10,16 +10,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Cache for pip
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       id: cache-pip
       with:
         path: ~/.cache/pip
         key: ${{ matrix.os }}-cache-pip
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -27,11 +27,11 @@ jobs:
       run: |
         set -x
         pip install pylint
-        pip install --upgrade -r requirements.txt
-        pylint --exit-zero --errors-only  pwnlib > current.txt
+        pip install --upgrade -e .
+        pylint --exit-zero --errors-only pwnlib -f parseable | cut -d ' ' -f2- > current.txt
         git fetch origin
         git checkout origin/"$GITHUB_BASE_REF"
-        pylint --exit-zero --errors-only  pwnlib > base.txt
+        pylint --exit-zero --errors-only pwnlib -f parseable | cut -d ' ' -f2- > base.txt
         if diff base.txt current.txt | grep '>'; then
           false
         fi

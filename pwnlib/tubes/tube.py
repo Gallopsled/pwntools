@@ -197,14 +197,29 @@ class tube(Timeout, Logger):
         Returns:
             A bytes object containing bytes received from the socket,
             or ``''`` if a timeout occurred while waiting.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b'abbbaccc'
+            >>> pred = lambda p: p.count(b'a') == 2
+            >>> t.recvpred(pred)
+            b'abbba'
+            >>> pred = lambda p: p.count(b'd') > 0
+            >>> t.recvpred(pred, timeout=0.05)
+            b''
         """
 
         data = b''
 
         with self.countdown(timeout):
             while not pred(data):
+                if not self.countdown_active():
+                    self.unrecv(data)
+                    return b''
+
                 try:
-                    res = self.recv(1)
+                    res = self.recv(1, timeout=timeout)
                 except Exception:
                     self.unrecv(data)
                     return b''
@@ -731,9 +746,9 @@ class tube(Timeout, Logger):
         return self.buffer.get()
 
     def recvall(self, timeout=Timeout.forever):
-        """recvall() -> bytes
+        """recvall(timeout=Timeout.forever) -> bytes
 
-        Receives data until EOF is reached.
+        Receives data until EOF is reached and closes the tube.
         """
 
         with self.waitfor('Receiving all data') as h:
@@ -1346,7 +1361,7 @@ class tube(Timeout, Logger):
         Should not be called directly. Sends data to the tube.
 
         Should return ``exceptions.EOFError``, if it is unable to send any
-        more, because of a close tube.
+        more, because of a closed tube.
         """
 
         raise EOFError('Not implemented')
@@ -1362,9 +1377,8 @@ class tube(Timeout, Logger):
 
     def timeout_change(self):
         """
-        Informs the raw layer of the tube that the timeout has changed.
+        Should not be called directly. Informs the raw layer of the tube that the timeout has changed.
 
-        Should not be called directly.
 
         Inherited from :class:`Timeout`.
         """

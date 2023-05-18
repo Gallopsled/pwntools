@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
@@ -20,14 +20,14 @@ jobs:
         git log --oneline --graph -10
 
     - name: Cache for pip
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       id: cache-pip
       with:
         path: ~/.cache/pip
         key: ${{ matrix.os }}-cache-pip
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -49,7 +49,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
           ash bash-static dash ksh mksh zsh \
-          pandoc gdb gdbserver socat sshpass \
+          pandoc gdb gdbserver socat \
           binutils-multiarch qemu-user-static \
           binutils-aarch64-linux-gnu \
           binutils-arm-linux-gnueabihf \
@@ -59,33 +59,9 @@ jobs:
           binutils-s390x-linux-gnu \
           binutils-sparc64-linux-gnu \
           gcc-multilib \
-          libc6-dbg
+          libc6-dbg \
+          elfutils
       
-    - name: Cache for elfutils
-      uses: actions/cache@v1
-      id: cache-elfutils
-      with:
-        path: ~/.cache/elfutils
-        key: ${{ matrix.os }}-cache-elfutils
-    
-    # Install newer elfutils version due to regression in 0.176 available in focal.
-    - name: Install newer elfutils
-      env:
-        ELFUTILS_VERSION: 0.181
-      run: |
-        if [[ ! -d ~/.cache/elfutils/elfutils-${ELFUTILS_VERSION} ]]
-        then
-          wget -O /tmp/elfutils-${ELFUTILS_VERSION}.tar.bz2 https://sourceware.org/elfutils/ftp/${ELFUTILS_VERSION}/elfutils-${ELFUTILS_VERSION}.tar.bz2
-          mkdir -p ~/.cache/elfutils && cd ~/.cache/elfutils
-          tar -xf /tmp/elfutils-${ELFUTILS_VERSION}.tar.bz2
-          cd elfutils-${ELFUTILS_VERSION}
-          LDFLAGS=-Wl,-rpath=/usr/local/lib,--enable-new-dtags ./configure --disable-libdebuginfod --disable-debuginfod && make && sudo make install
-        else
-          cd ~/.cache/elfutils/elfutils-${ELFUTILS_VERSION}
-          sudo make install
-        fi
-        eu-unstrip --version
-
     - name: Install RPyC for GDB
       run: |
         sudo apt-get install -y python3-pip
@@ -106,9 +82,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install --upgrade wheel
+        pip install --upgrade wheel build
         pip install --upgrade flake8 appdirs
-        python setup.py egg_info
         pip install --upgrade --editable .
 
     - name: Sanity checks
@@ -118,7 +93,7 @@ jobs:
       run: pip install -r docs/requirements.txt
 
     - name: Manually install non-broken Unicorn
-      run:  pip install unicorn==1.0.2rc3
+      run:  pip install unicorn==2.0.0rc7
 
     - name: Disable yama ptrace_scope
       run: |
@@ -188,8 +163,7 @@ jobs:
 
     - name: Build source and wheel distributions
       run: |
-        python setup.py sdist
-        python setup.py bdist_wheel --universal
+        python -m build
 
     - uses: actions/upload-artifact@v2
       with:
