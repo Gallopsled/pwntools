@@ -25,7 +25,9 @@ from pwnlib.util.web import wget
 log = getLogger(__name__)
 
 HASHES = ['build_id', 'sha1', 'sha256', 'md5']
-DEBUGINFOD_SERVERS = ['https://debuginfod.elfutils.org/']
+DEBUGINFOD_SERVERS = [
+    'https://debuginfod.elfutils.org/',
+]
 
 if 'DEBUGINFOD_URLS' in os.environ:
     urls = os.environ['DEBUGINFOD_URLS'].split(' ')
