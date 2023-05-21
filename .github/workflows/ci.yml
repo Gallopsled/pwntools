@@ -198,6 +198,8 @@ jobs:
   pypi:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+    permissions:
+      id-token: write
     needs: test
     steps:
     - name: Download artifacts
@@ -207,10 +209,7 @@ jobs:
         path: dist
 
     - name: Publish package
-      uses: pypa/gh-action-pypi-publish@v1.1.0
-      with:
-        user: __token__
-        password: ${{ secrets.pypi_password }}
+      uses: pypa/gh-action-pypi-publish@release/v1
 
     - if: failure()
       run: ls -R
