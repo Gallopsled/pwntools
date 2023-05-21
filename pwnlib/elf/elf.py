@@ -224,7 +224,7 @@ class ELF(ELFFile):
         super(ELF,self).__init__(self.mmap)
 
         #: :class:`str`: Path to the file
-        self.path = os.path.abspath(path)
+        self.path = packing._need_text(os.path.abspath(path))
 
         #: :class:`dotdict` of ``name`` to ``address`` for all symbols in the ELF
         self.symbols = dotdict()
