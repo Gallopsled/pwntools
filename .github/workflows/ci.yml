@@ -5,7 +5,7 @@ jobs:
   test:
     strategy:
       matrix:
-        python-version: [2.7, 3.8]
+        python_version: [2.7, 3.8]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -26,10 +26,10 @@ jobs:
         path: ~/.cache/pip
         key: ${{ matrix.os }}-cache-pip
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python ${{ matrix.python_version }}
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ matrix.python_version }}
 
     - name: Verify tag against version
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
@@ -162,6 +162,7 @@ jobs:
         pwn libcdb hash b229d1da1e161f95e839cf90cded5f719e5de308
 
     - name: Build source and wheel distributions
+      if: matrix.python_version > '2.7'
       run: |
         python -m build
 
