@@ -82,9 +82,9 @@ def main(args):
         instrs  = disasm(dat, vma=safeeval.const(args.address), byte=False, offset=False)
         # instrs  = highlight(instrs, PwntoolsLexer(), TerminalFormatter())
 
+        highlight_bytes = lambda t: ''.join(map(lambda x: x.replace('00', text.red('00')).replace('0a', text.red('0a')), group(2, t)))
         for o,b,i in zip(*map(str.splitlines, (offsets, bytes, instrs))):
-            b = b.replace('00', text.red('00'))
-            b = b.replace('0a', text.red('0a'))
+            b = ' '.join(highlight_bytes(bb) for bb in b.split(' '))
             i = highlight(i.strip(), PwntoolsLexer(), TerminalFormatter()).strip()
             i = i.replace(',',', ')
 
