@@ -405,7 +405,8 @@ def download_libraries(libc_path, unstrip=True):
         return cache_dir
 
     libc_match = query_libc_rip({'buildid': enhex(libc.buildid)})
-    if libc_match is None:
+    if libc_match is None or len(libc_match) == 0:
+        log.warn_once('Failed to find matching libraries for provided libc.')
         return None
 
     package_url = libc_match[0]['libs_url']
