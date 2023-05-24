@@ -599,7 +599,9 @@ def get_gdb_arch():
         'powerpc64': 'powerpc:common64',
         'mips64': 'mips:isa64',
         'thumb': 'arm',
-        'sparc64': 'sparc:v9'
+        'sparc64': 'sparc:v9',
+        'riscv32': 'riscv:rv32',
+        'riscv64': 'riscv:rv64',
     }.get(context.arch, context.arch)
 
 def binary():

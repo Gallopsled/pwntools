@@ -5,12 +5,12 @@ jobs:
   test:
     strategy:
       matrix:
-        python-version: [2.7, 3.8]
+        python_version: [2.7, 3.8]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
@@ -20,16 +20,16 @@ jobs:
         git log --oneline --graph -10
 
     - name: Cache for pip
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       id: cache-pip
       with:
         path: ~/.cache/pip
         key: ${{ matrix.os }}-cache-pip
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python ${{ matrix.python_version }}
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ matrix.python_version }}
 
     - name: Verify tag against version
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
@@ -49,7 +49,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
           ash bash-static dash ksh mksh zsh \
-          pandoc gdb gdbserver socat sshpass \
+          pandoc gdb gdbserver socat \
           binutils-multiarch qemu-user-static \
           binutils-aarch64-linux-gnu \
           binutils-arm-linux-gnueabihf \
@@ -83,9 +83,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install --upgrade wheel
+        pip install --upgrade wheel build
         pip install --upgrade flake8 appdirs
-        python setup.py egg_info
         pip install --upgrade --editable .
 
     - name: Sanity checks
@@ -95,7 +94,7 @@ jobs:
       run: pip install -r docs/requirements.txt
 
     - name: Manually install non-broken Unicorn
-      run:  pip install unicorn==1.0.2rc3
+      run:  pip install unicorn==2.0.0rc7
 
     - name: Disable yama ptrace_scope
       run: |
@@ -164,9 +163,9 @@ jobs:
         pwn libcdb hash b229d1da1e161f95e839cf90cded5f719e5de308
 
     - name: Build source and wheel distributions
+      if: matrix.python_version > '2.7'
       run: |
-        python setup.py sdist
-        python setup.py bdist_wheel --universal
+        python -m build
 
     - uses: actions/upload-artifact@v2
       with:
@@ -199,6 +198,8 @@ jobs:
   pypi:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+    permissions:
+      id-token: write
     needs: test
     steps:
     - name: Download artifacts
@@ -208,10 +209,7 @@ jobs:
         path: dist
 
     - name: Publish package
-      uses: pypa/gh-action-pypi-publish@v1.1.0
-      with:
-        user: __token__
-        password: ${{ secrets.pypi_password }}
+      uses: pypa/gh-action-pypi-publish@release/v1
 
     - if: failure()
       run: ls -R
