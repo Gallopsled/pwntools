@@ -172,6 +172,7 @@ from pwnlib.util import packing
 from pwnlib.util import proc
 
 log = getLogger(__name__)
+GDB_BIN_BINARY = ""
 
 @LocalContext
 def debug_assembly(asm, gdbscript=None, vma=None, api=False):
@@ -604,6 +605,11 @@ def get_gdb_arch():
         'riscv64': 'riscv:rv64',
     }.get(context.arch, context.arch)
 
+def gdb_binary_file(gdb_bin):
+    global GDB_BIN_BINARY
+    GDB_BIN_BINARY = gdb_bin
+
+
 def binary():
     """binary() -> str
 
@@ -615,6 +621,10 @@ def binary():
         >>> gdb.binary() # doctest: +SKIP
         '/usr/bin/gdb'
     """
+    if(GDB_BIN_BINARY != ""):
+        gdb = misc.which(GDB_BIN_BINARY)
+        return gdb
+
     gdb = misc.which('pwntools-gdb') or misc.which('gdb')
 
     if not context.native:
