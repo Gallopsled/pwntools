@@ -7,6 +7,7 @@ import sys
 
 from pwnlib.commandline import common
 from pwnlib.util.fiddling import enhex
+from pwnlib.util.lists import group
 
 parser = common.parser_commands.add_parser(
     'hex',
@@ -32,10 +33,8 @@ parser.add_argument(
     help = 'Add a separator between each byte',
 )
 
-def format_hex(s, prefix, separator):
-    n = 2
-    parts = [s[i:i+n] for i in range(0, len(s), n)]
-    return separator.join([f"{prefix}{x}" for x in parts])
+def format_hex(hex_string, prefix, separator):
+    return separator.join([f"{prefix}{x}" for x in group(2, hex_string)])
 
 def main(args):
     if not args.data:
