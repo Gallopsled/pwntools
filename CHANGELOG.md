@@ -73,23 +73,13 @@ The table below shows which release corresponds to each branch, and what date th
 ## 4.11.0 (`beta`)
 
 - [#2185][2185] make fmtstr module able to create payload without $ notation 
-- [#2062][2062] make pwn cyclic -l work with entry larger than 4 bytes
-- [#2092][2092] shellcraft: dup() is now called dupio() consistently across all supported arches
-- [#2093][2093] setresuid() in shellcraft uses current euid by default
 - [#2103][2103] Add search for libc binary by leaked function addresses `libcdb.search_by_symbol_offsets()`
-- [#2125][2125] Allow tube.recvregex to return capture groups
-- [#2144][2144] Removes `p2align 2` `asm()` headers from `x86-32`, `x86-64` and `mips` architectures to avoid inconsistent instruction length when patching binaries
 - [#2177][2177] Support for RISC-V 64-bit architecture
 - [#2186][2186] Enhance `ELF.nx` and `ELF.execstack`
 - [#2129][2129] Handle `context.newline` correctly when typing in `tube.interactive()`
 
 [2185]: https://github.com/Gallopsled/pwntools/pull/2185
-[2062]: https://github.com/Gallopsled/pwntools/pull/2062
-[2092]: https://github.com/Gallopsled/pwntools/pull/2092
-[2093]: https://github.com/Gallopsled/pwntools/pull/2093
 [2103]: https://github.com/Gallopsled/pwntools/pull/2103
-[2125]: https://github.com/Gallopsled/pwntools/pull/2125
-[2144]: https://github.com/Gallopsled/pwntools/pull/2144
 [2177]: https://github.com/Gallopsled/pwntools/pull/2177
 [2186]: https://github.com/Gallopsled/pwntools/pull/2186
 [2129]: https://github.com/Gallopsled/pwntools/pull/2129
