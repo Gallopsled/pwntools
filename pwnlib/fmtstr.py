@@ -285,9 +285,15 @@ def make_atoms_simple(address, data, badbytes=frozenset()):
 
     This function is simple and does not try to minimize the number of atoms. For example, if there are no
     bad bytes, it simply returns one atom for each byte:
-
-    >>> pwnlib.fmtstr.make_atoms_simple(0x0, b"abc", set())
-    [AtomWrite(start=0, size=1, integer=0x61, mask=0xff), AtomWrite(start=1, size=1, integer=0x62, mask=0xff), AtomWrite(start=2, size=1, integer=0x63, mask=0xff)]
+        >>> pwnlib.fmtstr.make_atoms_simple(0x0, b"abc", set())
+        [AtomWrite(start=0, size=1, integer=0x61, mask=0xff), AtomWrite(start=1, size=1, integer=0x62, mask=0xff), AtomWrite(start=2, size=1, integer=0x63, mask=0xff)]
+    
+    If there are bad bytes, it will try to bypass by skipping addresses containing bad bytes, otherwise a
+    RuntimeError will be raised:
+        >>> pwnlib.fmtstr.make_atoms_simple(0x61, b'abc', b'\x62')
+        [AtomWrite(start=97, size=2, integer=0x6261, mask=0xffff), AtomWrite(start=99, size=1, integer=0x63, mask=0xff)]
+        >>> pwnlib.fmtstr.make_atoms_simple(0x61, b'a'*0x10, b'\x62\x63\x64\x65\x66\x67\x68')
+        [AtomWrite(start=97, size=8, integer=0x6161616161616161, mask=0xffffffffffffffff), AtomWrite(start=105, size=1, integer=0x61, mask=0xff), AtomWrite(start=106, size=1, integer=0x61, mask=0xff), AtomWrite(start=107, size=1, integer=0x61, mask=0xff), AtomWrite(start=108, size=1, integer=0x61, mask=0xff), AtomWrite(start=109, size=1, integer=0x61, mask=0xff), AtomWrite(start=110, size=1, integer=0x61, mask=0xff), AtomWrite(start=111, size=1, integer=0x61, mask=0xff), AtomWrite(start=112, size=1, integer=0x61, mask=0xff)]
     """
     data = bytearray(data)
     if not badbytes:
@@ -304,7 +310,7 @@ def make_atoms_simple(address, data, badbytes=frozenset()):
             candidate = candidate.union(AtomWrite(candidate.end, 1, data[i + candidate.size]))
 
         sz = min([s for s in SPECIFIER if s >= candidate.size] + [float("inf")])
-        if i + sz >= len(data):
+        if i + sz > len(data):
             raise RuntimeError("impossible to avoid badbytes starting after offset %d (address %x)" % (i, i + address))
         i += candidate.size
         candidate = candidate.union(AtomWrite(candidate.end, sz - candidate.size, 0, 0))
@@ -669,7 +675,7 @@ def sort_atoms(atoms, numbwritten):
 
     return out
 
-def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4):
+def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4, no_dollars=False):
     r'''
     Makes a format-string payload using glibc's dollar syntax to access the arguments.
 
@@ -682,6 +688,7 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4):
         atoms(list): list of atoms to execute
         numbwritten(int): number of byte already written by the printf function
         countersize(int): size in bytes of the format string counter (usually 4)
+        no_dollars(bool) : flag to generete the payload with or w/o $ notation 
 
     Examples:
         >>> pwnlib.fmtstr.make_payload_dollar(1, [pwnlib.fmtstr.AtomWrite(0x0, 0x1, 0xff)])
@@ -691,6 +698,13 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4):
     fmt = ""
 
     counter = numbwritten
+
+    if no_dollars:
+        # since we can't dynamically offset, we have to increment manually the parameter index, use %c, so the number of bytes written is predictable
+        fmt += "%c" * (data_offset - 1)
+        # every %c write a byte, so we need to keep track of that to have the right pad
+        counter += data_offset - 1
+
     for idx, atom in enumerate(atoms):
         # set format string counter to correct value
         padding = atom.compute_padding(counter)
@@ -701,9 +715,54 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4):
             log.warn("padding is negative, this will not work on glibc")
 
         # perform write
-        if padding:
+        # if the padding is less than 3, it is more convenient to write it : [ len("cc") < len("%2c") ] , this could help save some bytes, if it is 3 it will take the same amout of bytes
+        # we also add ( context.bytes * no_dollars ) because , "%nccccccccc%n...ptr1ptr2" is more convenient than %"n%8c%n...ptr1ccccccccptr2"
+        if padding < 4 + context.bytes * no_dollars:
+                fmt += "c" * padding
+                ## if do not padded with %{n}c  do not need to add something in data to use as argument, since  we are not using a printf argument
+        else: 
             fmt += "%" + str(padding) + "c"
-        fmt += "%" + str(data_offset + idx) + "$" + SPECIFIER[atom.size]
+
+            if no_dollars:
+                data += b'c' * context.bytes
+                ''' 
+                [ @murph12F was here ]
+
+                the data += b'c' * context.bytes , is used to keey the arguments aligned when a %c is performed, so it wont use the actual address to write at
+                examplea stack and payload:
+                    
+                    fmtsr = %44c%hhn%66c%hhn
+
+                    ---------
+                    | addr2 |
+                    ---------
+                    | 0x000 |   
+                    ---------
+                    | addr1 |
+                    ---------
+                    | 0x000 | <-- (rsp)
+                    ---------
+                
+                    in this case the the first %44c will use the current arugument used pointed by rsp ( 0 ), and increment  rsp
+
+                    ---------
+                    | addr2 |
+                    ---------
+                    | 0X000 |   
+                    ---------
+                    | addr1 | <-- (rsp)
+                    ---------
+                    | 0x000 | 
+                    ---------
+
+                    now it will perform the %hhn, and it will correctly use the addr1 argument
+                '''
+            
+        if no_dollars:
+            fmt += "%" +  SPECIFIER[atom.size]
+        else:
+            fmt += "%" + str(data_offset + idx) + "$" + SPECIFIER[atom.size]
+
         data += pack(atom.start)
 
     return fmt.encode(), data
@@ -756,7 +815,7 @@ def fmtstr_split(offset, writes, numbwritten=0, write_size='byte', write_size_ma
 
     return make_payload_dollar(offset, atoms, numbwritten)
 
-def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small", badbytes=frozenset(), offset_bytes=0):
+def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small", badbytes=frozenset(), offset_bytes=0, no_dollars=False):
     r"""fmtstr_payload(offset, writes, numbwritten=0, write_size='byte') -> str
 
     Makes payload with given parameter.
@@ -773,6 +832,7 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
         write_size(str): must be ``byte``, ``short`` or ``int``. Tells if you want to write byte by byte, short by short or int by int (hhn, hn or n)
         overflows(int): how many extra overflows (at size sz) to tolerate to reduce the length of the format string
         strategy(str): either 'fast' or 'small' ('small' is default, 'fast' can be used if there are many writes)
+        no_dollars(bool) : flag to generete the payload with or w/o $ notation 
     Returns:
         The payload in order to do needed writes
 
@@ -792,9 +852,15 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte')
         b'%19c%12$hhn%36c%13$hhn%131c%14$hhn%4c%15$hhn\x03\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x00000001}, write_size='byte')
-        b'%1c%3$na\x00\x00\x00\x00'
+        b'c%3$naaa\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: b"\xff\xff\x04\x11\x00\x00\x00\x00"}, write_size='short')
         b'%327679c%7$lln%18c%8$hhn\x00\x00\x00\x00\x03\x00\x00\x00'
+        >>> fmtstr_payload(10, {0x404048 : 0xbadc0ffe, 0x40403c : 0xdeadbeef}, no_dollars=True)
+        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%125c%hhn%17c%hhn%32c%hhn%17c%hhn%203c%hhn%34c%hhn%3618c%hnacccc>@@\x00cccc=@@\x00cccc?@@\x00cccc<@@\x00ccccK@@\x00ccccJ@@\x00ccccH@@\x00'
+        >>> fmtstr_payload(6, {0x404048 : 0xbadbad00}, no_dollars=True)
+        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%229c%hhn%173c%hhn%13c%hhn%33c%hhnccccH@@\x00ccccI@@\x00ccccK@@\x00ccccJ@@\x00'
+        >>> fmtstr_payload(6, {0x4040 : 0xbadbad00, 0x4060: 0xbadbad02}, no_dollars=True)
+        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%212c%hhn%173c%hhn%13c%hhn%33c%hhn%39c%hhn%171c%hhn%13c%hhn%33c%hhnacccc@@\x00\x00ccccA@\x00\x00ccccC@\x00\x00ccccB@\x00\x00cccc`@\x00\x00cccca@\x00\x00ccccc@\x00\x00ccccb@\x00\x00'
     """
     sz = WRITE_SIZE[write_size]
     szmax = WRITE_SIZE[write_size_max]
@@ -803,7 +869,7 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
     fmt = b""
     for _ in range(1000000):
         data_offset = (offset_bytes + len(fmt)) // context.bytes
-        fmt, data = make_payload_dollar(offset + data_offset, all_atoms, numbwritten=numbwritten)
+        fmt, data = make_payload_dollar(offset + data_offset, all_atoms, numbwritten=numbwritten, no_dollars=no_dollars)
         fmt = fmt + cyclic((-len(fmt)-offset_bytes) % context.bytes)
 
         if len(fmt) + offset_bytes == data_offset * context.bytes:

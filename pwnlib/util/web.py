@@ -25,7 +25,7 @@ def wget(url, save=None, timeout=5, **kwargs):
 
     Example:
 
-      >>> url    = 'https://httpbin.org/robots.txt'
+      >>> url    = 'https://httpbingo.org/robots.txt'
       >>> result = wget(url, timeout=60)
       >>> result
       b'User-agent: *\nDisallow: /deny\n'

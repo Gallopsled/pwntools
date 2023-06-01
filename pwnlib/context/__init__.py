@@ -404,7 +404,8 @@ class ContextType(object):
         'msp430':    little_16,
         'powerpc':   big_32,
         'powerpc64': big_64,
-        'riscv':     little_32,
+        'riscv32':   little_32,
+        'riscv64':   little_64,
         's390':      big_32,
         'sparc':     big_32,
         'sparc64':   big_64,
@@ -775,7 +776,9 @@ class ContextType(object):
                      ('i686', 'i386'),
                      ('armv7l', 'arm'),
                      ('armeabi', 'arm'),
-                     ('arm64', 'aarch64')]
+                     ('arm64', 'aarch64'),
+                     ('rv32', 'riscv32'),
+                     ('rv64', 'riscv64')]
         for k, v in transform:
             if arch.startswith(k):
                 arch = v
@@ -1447,7 +1450,7 @@ class ContextType(object):
         from pwnlib.tubes.ssh import ssh
 
         if not isinstance(shell, ssh):
-            raise AttributeError("context.ssh_session must be an ssh tube") 
+            raise AttributeError("context.ssh_session must be an ssh tube")
 
         return shell
 

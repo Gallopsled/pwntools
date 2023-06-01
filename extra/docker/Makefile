@@ -1,4 +1,4 @@
-subdirs=$(shell find . -type d -depth 1 | xargs basename)
+subdirs=$(shell find . -mindepth 1 -maxdepth 1 -type d | xargs -n1 basename)
 tags=base stable beta dev
 ROOT=$(shell git rev-parse --show-toplevel)
 CMD ?= zsh
@@ -7,7 +7,7 @@ ifneq ($(HISTFILE),)
 MOUNT_HISTFILE=--mount type=bind,source="$(HISTFILE)",target=/home/pwntools/.history
 endif
 
-all: $(subdirs) $(tags)
+all: $(tags) $(subdirs)
 
 tags: $(tags)
 

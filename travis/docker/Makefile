@@ -4,6 +4,8 @@ $(shell reset)
 Dockerfile: FORCE
 	cp $(ROOT)/extra/docker/develop/Dockerfile Dockerfile
 	cat Dockerfile.travis >> Dockerfile
+	cp $(ROOT)/extra/docker/develop/10-import.py 10-import.py
+	cp $(ROOT)/extra/docker/develop/ipython_config.py ipython_config.py
 
 all: doctest3
 

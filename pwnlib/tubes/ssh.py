@@ -1377,17 +1377,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if status != 0:
             return None
 
-        # OpenSSL outputs in the format of...
-        # (stdin)= e3b0c4429...
-        data = data.replace(b'(stdin)= ',b'')
-
-        # sha256 and sha256sum outputs in the format of...
-        # e3b0c442...  -
-        data = data.replace(b'-',b'').strip()
-
         if not isinstance(data, str):
             data = data.decode('ascii')
 
+        data = re.search("([a-fA-F0-9]{64})",data).group()
         return data
 
     def _get_cachefile(self, fingerprint):
@@ -1527,7 +1520,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if not os.path.exists(local) or hashes.sha256filehex(local_tmp) != hashes.sha256filehex(local):
             shutil.copy2(local_tmp, local)
 
-    def download_dir(self, remote=None, local=None):
+    def download_dir(self, remote=None, local=None, ignore_failed_read=False):
         """Recursively downloads a directory from the remote server
 
         Arguments:
@@ -1540,17 +1533,22 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             remote = packing._encode(self.sftp.normalize(remote))
         else:
             with context.local(log_level='error'):
-                remote = self.system(b'readlink -f ' + sh_string(remote))
+                remote = self.system(b'readlink -f ' + sh_string(remote)).recvall().strip()
 
         local = local or '.'
         local = os.path.expanduser(local)
 
         self.info("Downloading %r to %r" % (remote, local))
 
+        if ignore_failed_read:
+            opts = b" --ignore-failed-read"
+        else:
+            opts = b""
         with context.local(log_level='error'):
             remote_tar = self.mktemp()
-            cmd = b'tar -C %s -czf %s .' % \
-                  (sh_string(remote),
+            cmd = b'tar %s -C %s -czf %s .' % \
+                  (opts,
+                   sh_string(remote),
                    sh_string(remote_tar))
             tar = self.system(cmd)
 
@@ -1560,6 +1558,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             local_tar = tempfile.NamedTemporaryFile(suffix='.tar.gz')
             self.download_file(remote_tar, local_tar.name)
 
+            # Delete temporary tarfile from remote host
+            if self.sftp:
+                self.unlink(remote_tar)
+            else:
+                self.system(b'rm ' + sh_string(remote_tar)).wait()
             tar = tarfile.open(local_tar.name)
             tar.extractall(local)
 
@@ -1633,7 +1636,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             remote: Remote directory
         """
 
-        remote    = remote or self.cwd
+        remote    = packing._encode(remote or self.cwd)
 
         local     = os.path.expanduser(local)
         dirname   = os.path.dirname(local)
@@ -1654,7 +1657,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 remote_tar = self.mktemp('--suffix=.tar.gz')
                 self.upload_file(local_tar, remote_tar)
 
-                untar = self.run('cd %s && tar -xzf %s' % (remote, remote_tar))
+                untar = self.run(b'cd %s && tar -xzf %s' % (sh_string(remote), sh_string(remote_tar)))
                 message = untar.recvrepeat(2)
 
                 if untar.wait() != 0:
