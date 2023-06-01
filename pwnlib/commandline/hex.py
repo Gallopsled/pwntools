@@ -34,7 +34,7 @@ parser.add_argument(
 )
 
 def format_hex(hex_string, prefix, separator):
-    return separator.join([f"{prefix}{x}" for x in group(2, hex_string)])
+    return separator.join(["%s%s" % (prefix, x) for x in group(2, hex_string)])
 
 def main(args):
     if not args.data:
