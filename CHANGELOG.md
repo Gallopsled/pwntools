@@ -67,8 +67,9 @@ The table below shows which release corresponds to each branch, and what date th
 | [2.2.0](#220)    |          | Jan 5, 2015
 
 ## 4.12.0 (`dev`)
+- [#2202][2202] Fix `remote` and `listen` in sagemath
 
-
+[2202]: https://github.com/Gallopsled/pwntools/pull/2202
 
 ## 4.11.0 (`beta`)
 
