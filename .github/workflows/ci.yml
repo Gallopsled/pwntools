@@ -27,9 +27,22 @@ jobs:
         key: ${{ matrix.os }}-cache-pip
 
     - name: Set up Python ${{ matrix.python_version }}
+      if: matrix.python_version != '2.7'
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python_version }}
+
+    - name: Set up Python 2.7
+      if: matrix.python_version == '2.7'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          python2.7 python2.7-dev python2-pip-whl
+        sudo ln -sf python2.7 /usr/bin/python
+        export PYTHONPATH=`echo /usr/share/python-wheels/pip-*py2*.whl`
+        sudo --preserve-env=PYTHONPATH python -m pip install --upgrade pip setuptools wheel
+        sudo chown -R $USER /usr/local/lib/python2.7
+
 
     - name: Verify tag against version
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
@@ -49,7 +62,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
           ash bash-static dash ksh mksh zsh \
-          pandoc gdb gdbserver socat \
+          python3-rpyc \
+          gdb gdbserver socat \
           binutils-multiarch qemu-user-static \
           binutils-aarch64-linux-gnu \
           binutils-arm-linux-gnueabihf \
@@ -62,11 +76,6 @@ jobs:
           libc6-dbg \
           elfutils
       
-    - name: Install RPyC for GDB
-      run: |
-        sudo apt-get install -y python3-pip
-        /usr/bin/python3 -m pip install rpyc
-
     - name: Testing Corefiles
       run: |
         ulimit -a
@@ -93,6 +102,7 @@ jobs:
       run: pip install -r docs/requirements.txt
 
     - name: Manually install non-broken Unicorn
+      if:   matrix.python_version == '2.7'
       run:  pip install unicorn==2.0.0rc7
 
     - name: Disable yama ptrace_scope
