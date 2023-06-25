@@ -50,6 +50,9 @@ if sys.version_info < (3, 4):
     project = toml.load('pyproject.toml')['project']
     compat['install_requires'] = project['dependencies']
     compat['name'] = project['name']
+    if '--user' in sys.argv:
+        sys.argv.remove('--user')
+
 
 # Check that the user has installed the Python development headers
 PythonH = os.path.join(get_python_inc(), 'Python.h')
