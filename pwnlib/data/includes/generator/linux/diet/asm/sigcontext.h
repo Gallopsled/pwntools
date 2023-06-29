@@ -33,6 +33,10 @@ __BEGIN_DECLS
 #include <asm/arm-sigcontext.h>
 #endif
 
+#ifdef __aarch64__
+#include <asm/aarch64-sigcontext.h>
+#endif
+
 #ifdef __hppa__
 #include <asm/parisc-sigcontext.h>
 #endif

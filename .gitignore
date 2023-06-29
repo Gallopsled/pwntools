@@ -13,7 +13,12 @@ MANIFEST
 dist
 venv
 .vscode
+.idea
 *.egg-info
 *.core
 .coverage
 .coverage.*
+.idea
+__pycache__
+!.github
+.DS_Store

@@ -1,4 +1,9 @@
-class Constant(int):
+try:
+    base = long  # workaround for py2
+except NameError:
+    base = int
+
+class Constant(base):
     def __new__(cls, s, i):
         obj = super(Constant, cls).__new__(cls, i)
         obj.s = s

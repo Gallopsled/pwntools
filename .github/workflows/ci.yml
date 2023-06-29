@@ -5,12 +5,12 @@ jobs:
   test:
     strategy:
       matrix:
-        python-version: [2.7, 3.8]
+        python_version: [2.7, 3.8]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
@@ -20,16 +20,29 @@ jobs:
         git log --oneline --graph -10
 
     - name: Cache for pip
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       id: cache-pip
       with:
         path: ~/.cache/pip
         key: ${{ matrix.os }}-cache-pip
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+    - name: Set up Python ${{ matrix.python_version }}
+      if: matrix.python_version != '2.7'
+      uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ matrix.python_version }}
+
+    - name: Set up Python 2.7
+      if: matrix.python_version == '2.7'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          python2.7 python2.7-dev python2-pip-whl
+        sudo ln -sf python2.7 /usr/bin/python
+        export PYTHONPATH=`echo /usr/share/python-wheels/pip-*py2*.whl`
+        sudo --preserve-env=PYTHONPATH python -m pip install --upgrade pip setuptools wheel
+        sudo chown -R $USER /usr/local/lib/python2.7
+
 
     - name: Verify tag against version
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
@@ -44,32 +57,13 @@ jobs:
         [ "$vsetup" = "$vpwnlib" ]
         [ "$GITHUB_TAG" = "$vsetup" ]
 
-    - name: Detect whether java is needed
-      id: java-needed
-      env:
-        GITHUB_REF: ${{ github.event.ref }}
-      run: |
-        if echo "$GITHUB_REF" | grep -Eq 'staging|tags'; then
-          echo "Found release or important branch ($GITHUB_REF), forcing tests."
-        elif ! git show "origin/$GITHUB_BASE_REF"..HEAD >/dev/null; then
-          echo 'Incorrect commit range, forcing android tests.'
-        elif git log --stat "origin/$GITHUB_BASE_REF"..HEAD | grep -iE 'android|\<adb\>'; then
-          echo 'Found Android-related commits, forcing tests.'
-        else
-          # clear files that cause Android doctests
-          : > docs/source/adb.rst > docs/source/protocols/adb.rst
-          exit 0
-        fi
-        echo ::set-output name=need::openjdk-8-jre-headless
-
     - name: Install Linux dependencies
-      env:
-        ANDROID_JRE: ${{ steps.java-needed.outputs.need }}
       run: |
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
           ash bash-static dash ksh mksh zsh \
-          pandoc gdb gdbserver socat sshpass \
+          python3-rpyc \
+          gdb gdbserver socat \
           binutils-multiarch qemu-user-static \
           binutils-aarch64-linux-gnu \
           binutils-arm-linux-gnueabihf \
@@ -80,26 +74,15 @@ jobs:
           binutils-sparc64-linux-gnu \
           gcc-multilib \
           libc6-dbg \
-          $ANDROID_JRE
-
-    - name: Install RPyC for GDB
-      run: |
-        sudo apt-get install -y python3-pip
-        /usr/bin/python3 -m pip install rpyc
-
+          elfutils
+      
     - name: Testing Corefiles
       run: |
         ulimit -a
         ulimit -c unlimited
         cat /proc/sys/kernel/core_pattern
         cat /proc/sys/kernel/core_uses_pid
-        ( cd $(mktemp -d); sh -c 'kill -11 $$' || true; ls -la ./*core* /var/crash/*.crash;) || true
-
-    - name: Install Android AVD
-      if:  steps.java-needed.outputs.need
-      run: |
-        USER=travis source travis/install.sh
-        set | egrep '^(ANDROID|PATH)' >.android.env
+        ( cd $(mktemp -d); sh -c 'kill -11 $$' || true; ls -la ./*core* /var/crash/*.crash /var/lib/apport/coredump/core*) || true
 
     - name: Set up SSH
       run: |
@@ -108,43 +91,43 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
+        pip install --upgrade wheel build
         pip install --upgrade flake8 appdirs
-        python setup.py egg_info
         pip install --upgrade --editable .
 
     - name: Sanity checks
-      run:  PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
+      run:  PWNLIB_NOTERM=1 python -bb -c 'from pwn import *; print(pwnlib.term.term_mode)'
 
     - name: Install documentation dependencies
-      run:  pip install -r docs/requirements.txt
+      run: pip install -r docs/requirements.txt
 
     - name: Manually install non-broken Unicorn
-      run:  pip install unicorn==1.0.2rc3
+      if:   matrix.python_version == '2.7'
+      run:  pip install unicorn==2.0.0rc7
 
-    - name: Version Check
-      run:  PWNLIB_NOTERM=1 pwn version
+    - name: Disable yama ptrace_scope
+      run: |
+        echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope # required by some gdb doctests
 
     - name: Coverage doctests
       run: |
-        source .android.env || :
-        echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope # required by some gdb doctests
-        PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest
+        PWNLIB_NOTERM=1 python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest
 
     - name: Coverage running examples
       run: |
         export TERM=linux
         set -x
-        python travis/coverage_chdir.py examples/fmtstr examples/fmtstr/exploit.py
-        python travis/coverage_chdir.py examples/fmtstr examples/fmtstr/exploit2.py || : # can fail randomly?
-        coverage run examples/asm.py
-        coverage run examples/asm.py
-        coverage run examples/text.py
+        python -bb travis/coverage_chdir.py examples/fmtstr examples/fmtstr/exploit.py
+        python -bb travis/coverage_chdir.py examples/fmtstr examples/fmtstr/exploit2.py || : # can fail randomly?
+        python -bb -m coverage run examples/asm.py
+        python -bb -m coverage run examples/asm.py
+        python -bb -m coverage run examples/text.py
         # for f in examples/sigreturn_corefile_*.py; do coverage run "$f"; done # XXX something is wrong
 
     - name: Coverage running commandline tools
       run: |
         export TERM=linux
-        pwn() { ( set +x; cmd=$1; shift; PYTHONUNBUFFERED=1 exec coverage run -m pwnlib.commandline."$cmd" "$@" ) }
+        pwn() { ( set +x; cmd=$1; shift; PYTHONUNBUFFERED=1 exec python -bb -m coverage run -m pwnlib.commandline."$cmd" "$@" ) }
         set -x
 
         pwn cyclic 32
@@ -168,6 +151,11 @@ jobs:
         pwn disasm --color ff3424c3ebfe
         pwn asm -f hex nop
 
+        pwn hex ABCD
+        pwn hex ABCD --separator ' '
+        pwn hex ABCD --prefix '\x'
+        pwn hex ABCD -p '0x' -s ' '
+
         pwn hex abcd
         pwn unhex 4141 4141
 
@@ -184,10 +172,14 @@ jobs:
         pwn constgrep ^MAP_ 0
         pwn constgrep -e O_RDWR
 
+        pwn libcdb file /lib/x86_64-linux-gnu/libc.so.6
+        pwn libcdb lookup puts 5f0 __libc_start_main_ret d0a
+        pwn libcdb hash b229d1da1e161f95e839cf90cded5f719e5de308
+
     - name: Build source and wheel distributions
+      if: matrix.python_version > '2.7'
       run: |
-        python setup.py sdist
-        python setup.py bdist_wheel --universal
+        python -m build
 
     - uses: actions/upload-artifact@v2
       with:
@@ -220,6 +212,8 @@ jobs:
   pypi:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+    permissions:
+      id-token: write
     needs: test
     steps:
     - name: Download artifacts
@@ -229,10 +223,7 @@ jobs:
         path: dist
 
     - name: Publish package
-      uses: pypa/gh-action-pypi-publish@v1.1.0
-      with:
-        user: __token__
-        password: ${{ secrets.pypi_password }}
+      uses: pypa/gh-action-pypi-publish@release/v1
 
     - if: failure()
       run: ls -R

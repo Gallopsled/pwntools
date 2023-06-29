@@ -8,7 +8,7 @@ import six
 import sys
 import types
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
@@ -35,6 +35,7 @@ def _string(s):
 p = common.parser_commands.add_parser(
     'shellcraft',
     help = 'Microwave shellcode -- Easy, fast and delicious',
+    description = 'Microwave shellcode -- Easy, fast and delicious',
 )
 
 
@@ -295,7 +296,7 @@ def main(args):
 
     vma = args.address
     if vma:
-        vma = eval(vma)
+        vma = pwnlib.util.safeeval.expr(vma)
 
     if args.format in ['e','elf']:
         args.format = 'default'

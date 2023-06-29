@@ -5,7 +5,7 @@ from __future__ import division
 import os
 import subprocess
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
@@ -13,7 +13,8 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'version',
-    help = 'Pwntools version'
+    help = 'Pwntools version',
+    description = 'Pwntools version'
 )
 
 def main(a):

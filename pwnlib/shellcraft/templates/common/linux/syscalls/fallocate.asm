@@ -15,7 +15,7 @@ Arguments:
     fd(int): fd
     mode(int): mode
     offset(off_t): offset
-    len(off_t): len
+    length(off_t): length
 Returns:
     int
 </%docstring>

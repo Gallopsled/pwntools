@@ -13,7 +13,7 @@ See 'man 2 sethostname' for more information.
 
 Arguments:
     name(char*): name
-    len(size_t): len
+    length(size_t): length
 Returns:
     int
 </%docstring>

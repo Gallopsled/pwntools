@@ -13,7 +13,7 @@ See 'man 2 mmap' for more information.
 
 Arguments:
     addr(void*): addr
-    len(size_t): len
+    length(size_t): length
     prot(int): prot
     flags(int): flags
     fd(int): fd

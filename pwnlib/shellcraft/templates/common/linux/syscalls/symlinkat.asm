@@ -12,7 +12,7 @@ Invokes the syscall symlinkat.
 See 'man 2 symlinkat' for more information.
 
 Arguments:
-    from(char*): from
+    from_(char*): from
     tofd(int): tofd
     to(char*): to
 Returns:
@@ -28,7 +28,7 @@ Returns:
     can_pushstr = ['from', 'to']
     can_pushstr_array = []
 
-    argument_names = ['from_', 'tofd', 'to']
+    argument_names = ['from', 'tofd', 'to']
     argument_values = [from_, tofd, to]
 
     # Load all of the arguments into their destination registers / stack slots.

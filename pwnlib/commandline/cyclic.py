@@ -7,7 +7,7 @@ import six
 import string
 import sys
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
@@ -15,14 +15,15 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'cyclic',
-    help = "Cyclic pattern creator/finder"
+    help = "Cyclic pattern creator/finder",
+    description = "Cyclic pattern creator/finder"
 )
 
 parser.add_argument(
     '-a', '--alphabet',
     metavar = 'alphabet',
     default = string.ascii_lowercase.encode(),
-    type = six.ensure_binary,
+    type = packing._encode,
     help = 'The alphabet to use in the cyclic pattern (defaults to all lower case letters)',
 )
 
@@ -66,15 +67,21 @@ def main(args):
     if args.lookup:
         pat = args.lookup
 
+        if six.PY3:
+            pat = bytes(pat, encoding='utf-8')
+
         try:
             pat = int(pat, 0)
+            pat = pack(pat, 'all')
         except ValueError:
             pass
         pat = flat(pat, bytes=args.length)
 
-        if len(pat) != subsize:
-            log.critical('Subpattern must be %d bytes' % subsize)
+        if len(pat) < subsize:
+            log.critical('Subpattern must be at least %d bytes' % subsize)
             sys.exit(1)
+        else:
+            pat = pat[:subsize]
 
         if not all(c in alphabet for c in pat):
             log.critical('Pattern contains characters not present in the alphabet')

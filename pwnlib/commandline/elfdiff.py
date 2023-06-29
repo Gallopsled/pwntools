@@ -8,7 +8,7 @@ from subprocess import CalledProcessError
 from subprocess import check_output
 from tempfile import NamedTemporaryFile
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
@@ -29,7 +29,8 @@ def diff(a,b):
 
 p = common.parser_commands.add_parser(
     'elfdiff',
-    help = 'Compare two ELF files'
+    help = 'Compare two ELF files',
+    description = 'Compare two ELF files'
 )
 
 p.add_argument('a')

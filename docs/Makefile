@@ -6,7 +6,6 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build
-DASHBUILD     = ./dashbuild.py
 TAR           = tar
 
 # Internal variables.
@@ -45,7 +44,7 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)/*
 	-rm -rf /tmp/user/pwn*
-	-rm -rf $(HOME)/.pwntools-cache
+	-rm -rf $(HOME)/.cache/.pwntools-cache
 	-rm -rf /tmp/pwn* 2>/dev/null || true
 	-rm -rf build
 
@@ -145,8 +144,8 @@ gettext:
 	@echo "Build finished. The message catalogs are in $(BUILDDIR)/locale."
 
 dash:
-	$(DASHBUILD) source $(BUILDDIR)/dash
-	$(TAR) --exclude='.DS_Store' -cvzf $(BUILDDIR)/dash/pwntools.tgz -C $(BUILDDIR)/dash pwntools.docset
+	$(SPHINXBUILD) -b html -d $(BUILDDIR)/doctrees -t dash source $(BUILDDIR)/html
+	doc2dash $(BUILDDIR)/html -d $(BUILDDIR)/dash -n pwntools -f -I index.html
 	@echo "Build finished. The Dash docset is in $(BUILDDIR)/dash."
 
 changes:

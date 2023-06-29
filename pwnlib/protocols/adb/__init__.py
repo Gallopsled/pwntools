@@ -46,7 +46,7 @@ class Message(object):
     def __str__(self):
         return self.__flat__()
     def __flat__(self):
-        return ('%04x' % len(self.string)).encode('ascii') + self.string
+        return b'%04x' % len(self.string) + self.string
 
 class Connection(remote):
     """Connection to the ADB server"""
@@ -160,16 +160,22 @@ class AdbClient(Logger):
     @_autoclose
     def kill(self):
         """Kills the remote ADB server"
+        
+        .. doctest::
+           :skipif: skip_android
 
-        >>> c=pwnlib.protocols.adb.AdbClient()
-        >>> c.kill()
+            >>> c=pwnlib.protocols.adb.AdbClient()
+            >>> c.kill()
 
         The server is automatically re-started on the next request,
         if the default host/port are used.
 
-        >>> c.version() > (4,0)
-        True
-        >>> c.wait_for_device() # ensure doctests alive
+        .. doctest::
+           :skipif: skip_android
+
+            >>> c.version() > (4,0)
+            True
+            >>> c.wait_for_device() # ensure doctests alive
         """
         try:
             self.send('host:kill')
@@ -183,6 +189,9 @@ class AdbClient(Logger):
             Tuple containing the ``(major, minor)`` version from the ADB server
 
         Example:
+        
+        .. doctest::
+           :skipif: skip_android
 
             >>> pwnlib.protocols.adb.AdbClient().version() # doctest: +SKIP
             (4, 36)
@@ -230,6 +239,9 @@ class AdbClient(Logger):
 
         Examples:
 
+        .. doctest::
+           :skipif: skip_android
+
             >>> pwnlib.protocols.adb.AdbClient().transport()
         """
 
@@ -264,6 +276,9 @@ class AdbClient(Logger):
             A :class:`pwnlib.tubes.tube.tube` which is connected to the process.
 
         Examples:
+
+        .. doctest::
+           :skipif: skip_android
 
             >>> pwnlib.protocols.adb.AdbClient().execute(['echo','hello']).recvall()
             b'hello\n'
@@ -391,6 +406,9 @@ class AdbClient(Logger):
             'adb root', since adbd then runs in the ``su`` domain.
 
         Examples:
+        
+        .. doctest::
+           :skipif: skip_android
 
             >>> _ = AdbClient().root()
             >>> AdbClient().wait_for_device()
@@ -416,7 +434,7 @@ class AdbClient(Logger):
     def _list(self, path):
         if isinstance(path, six.text_type):
             path = path.encode('utf-8')
-        self.c.flat32('LIST', len(path), path)
+        self.c.flat32(b'LIST', len(path), path)
         files = {}
         while True:
             response = self.c.recvn(4)
@@ -458,6 +476,9 @@ class AdbClient(Logger):
             If the file cannot be stat() ed, None is returned.
 
         Example:
+        
+        .. doctest::
+           :skipif: skip_android
 
             >>> expected = {'mode': 16749, 'size': 0, 'time': 0}
             >>> pwnlib.protocols.adb.AdbClient().stat('/proc')           == expected
@@ -467,7 +488,7 @@ class AdbClient(Logger):
         """
         if isinstance(path, six.text_type):
             path = path.encode('utf-8')
-        self.c.flat32('STAT', len(path), path)
+        self.c.flat32(b'STAT', len(path), path)
         if self.c.recvn(4) != b'STAT':
             self.error("An error occurred while attempting to STAT a file.")
 
@@ -509,14 +530,17 @@ class AdbClient(Logger):
     @_with_transport
     @_sync
     def _write(self, path, data, mode=0o755, timestamp=None, callback=None):
-        path += ',' + str(mode)
-        self.c.flat32('SEND', len(path), path)
+        if isinstance(path, six.text_type):
+            path = path.encode('utf-8')
+        path += b',%d' % mode
+
+        self.c.flat32(b'SEND', len(path), path)
 
         sent = 0
 
         # Data needs to be broken up into chunks!
         for chunk in group(0x10000, data):
-            self.c.flat32('DATA', len(chunk), chunk)
+            self.c.flat32(b'DATA', len(chunk), chunk)
             if callback:
                 callback(path, data[:sent], len(data), chunk, len(chunk))
             sent += len(chunk)
@@ -524,7 +548,7 @@ class AdbClient(Logger):
         # Send completion notification and timestamp
         if timestamp is None:
             timestamp = int(time.time())
-        self.c.flat32('DONE', timestamp)
+        self.c.flat32(b'DONE', timestamp)
 
         result = self.c.recvn(4)
         if result != OKAY:
