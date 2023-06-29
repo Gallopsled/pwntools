@@ -229,7 +229,7 @@ def normalize_argv_env(argv, env, log, level=2):
         for k,v in env_items:
             if not isinstance(k, (bytes, six.text_type)):
                 log.error('Environment keys must be strings: %r' % k)
-            if not isinstance(k, (bytes, six.text_type)):
+            if not isinstance(v, (bytes, six.text_type)):
                 log.error('Environment values must be strings: %r=%r' % (k,v))
             k = packing._need_bytes(k, level, 0x80)  # ASCII text is okay
             v = packing._need_bytes(v, level, 0x80)  # ASCII text is okay
@@ -340,8 +340,19 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
                 with open('/proc/sys/kernel/osrelease', 'rb') as f:
                     is_wsl = b'icrosoft' in f.read()
             if is_wsl and which('cmd.exe') and which('wsl.exe') and which('bash.exe'):
-                terminal = 'cmd.exe'
-                args     = ['/c', 'start', 'bash.exe', '-c']
+                terminal    = 'cmd.exe'
+                args        = ['/c', 'start']
+                distro_name = os.getenv('WSL_DISTRO_NAME')
+
+                # Split pane in Windows Terminal
+                if 'WT_SESSION' in os.environ and which('wt.exe'):
+                    args.extend(['wt.exe', '-w', '0', 'split-pane', '-d', '.'])
+
+                if distro_name:
+                    args.extend(['wsl.exe', '-d', distro_name, 'bash', '-c'])
+                else:
+                    args.extend(['bash.exe', '-c'])
+                
 
     if not terminal:
         log.error('Could not find a terminal binary to use. Set context.terminal to your terminal.')

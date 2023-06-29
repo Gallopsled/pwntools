@@ -7,13 +7,6 @@ RUN python3 -m pip install ipdb
 USER root
 RUN apt-get -y install gdb gdbserver tmux gdb-multiarch
 
-# Install pwndbg for debugging issues
-USER pwntools
-RUN git clone https://github.com/pwndbg/pwndbg.git
-WORKDIR /home/pwntools/pwndbg
-RUN ./setup.sh
-RUN echo "source $PWD/gdbinit.py" | tee $HOME/.gdbinit
-
 # Set up binfmt-misc mappings inside the VM
 USER root
 RUN mkdir /etc/qemu-binfmt

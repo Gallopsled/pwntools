@@ -5,12 +5,12 @@ jobs:
   test:
     strategy:
       matrix:
-        python-version: [2.7, 3.8]
+        python_version: [2.7, 3.8]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
@@ -20,16 +20,29 @@ jobs:
         git log --oneline --graph -10
 
     - name: Cache for pip
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       id: cache-pip
       with:
         path: ~/.cache/pip
         key: ${{ matrix.os }}-cache-pip
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+    - name: Set up Python ${{ matrix.python_version }}
+      if: matrix.python_version != '2.7'
+      uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ matrix.python_version }}
+
+    - name: Set up Python 2.7
+      if: matrix.python_version == '2.7'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          python2.7 python2.7-dev python2-pip-whl
+        sudo ln -sf python2.7 /usr/bin/python
+        export PYTHONPATH=`echo /usr/share/python-wheels/pip-*py2*.whl`
+        sudo --preserve-env=PYTHONPATH python -m pip install --upgrade pip setuptools wheel
+        sudo chown -R $USER /usr/local/lib/python2.7
+
 
     - name: Verify tag against version
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
@@ -49,7 +62,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
           ash bash-static dash ksh mksh zsh \
-          pandoc gdb gdbserver socat sshpass \
+          python3-rpyc \
+          gdb gdbserver socat \
           binutils-multiarch qemu-user-static \
           binutils-aarch64-linux-gnu \
           binutils-arm-linux-gnueabihf \
@@ -59,38 +73,9 @@ jobs:
           binutils-s390x-linux-gnu \
           binutils-sparc64-linux-gnu \
           gcc-multilib \
-          libc6-dbg
+          libc6-dbg \
+          elfutils
       
-    - name: Cache for elfutils
-      uses: actions/cache@v1
-      id: cache-elfutils
-      with:
-        path: ~/.cache/elfutils
-        key: ${{ matrix.os }}-cache-elfutils
-    
-    # Install newer elfutils version due to regression in 0.176 available in focal.
-    - name: Install newer elfutils
-      env:
-        ELFUTILS_VERSION: 0.181
-      run: |
-        if [[ ! -d ~/.cache/elfutils/elfutils-${ELFUTILS_VERSION} ]]
-        then
-          wget -O /tmp/elfutils-${ELFUTILS_VERSION}.tar.bz2 https://sourceware.org/elfutils/ftp/${ELFUTILS_VERSION}/elfutils-${ELFUTILS_VERSION}.tar.bz2
-          mkdir -p ~/.cache/elfutils && cd ~/.cache/elfutils
-          tar -xf /tmp/elfutils-${ELFUTILS_VERSION}.tar.bz2
-          cd elfutils-${ELFUTILS_VERSION}
-          LDFLAGS=-Wl,-rpath=/usr/local/lib,--enable-new-dtags ./configure --disable-libdebuginfod --disable-debuginfod && make && sudo make install
-        else
-          cd ~/.cache/elfutils/elfutils-${ELFUTILS_VERSION}
-          sudo make install
-        fi
-        eu-unstrip --version
-
-    - name: Install RPyC for GDB
-      run: |
-        sudo apt-get install -y python3-pip
-        /usr/bin/python3 -m pip install rpyc
-
     - name: Testing Corefiles
       run: |
         ulimit -a
@@ -106,9 +91,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install --upgrade wheel
+        pip install --upgrade wheel build
         pip install --upgrade flake8 appdirs
-        python setup.py egg_info
         pip install --upgrade --editable .
 
     - name: Sanity checks
@@ -118,7 +102,8 @@ jobs:
       run: pip install -r docs/requirements.txt
 
     - name: Manually install non-broken Unicorn
-      run:  pip install unicorn==1.0.2rc3
+      if:   matrix.python_version == '2.7'
+      run:  pip install unicorn==2.0.0rc7
 
     - name: Disable yama ptrace_scope
       run: |
@@ -166,6 +151,11 @@ jobs:
         pwn disasm --color ff3424c3ebfe
         pwn asm -f hex nop
 
+        pwn hex ABCD
+        pwn hex ABCD --separator ' '
+        pwn hex ABCD --prefix '\x'
+        pwn hex ABCD -p '0x' -s ' '
+
         pwn hex abcd
         pwn unhex 4141 4141
 
@@ -182,10 +172,14 @@ jobs:
         pwn constgrep ^MAP_ 0
         pwn constgrep -e O_RDWR
 
+        pwn libcdb file /lib/x86_64-linux-gnu/libc.so.6
+        pwn libcdb lookup puts 5f0 __libc_start_main_ret d0a
+        pwn libcdb hash b229d1da1e161f95e839cf90cded5f719e5de308
+
     - name: Build source and wheel distributions
+      if: matrix.python_version > '2.7'
       run: |
-        python setup.py sdist
-        python setup.py bdist_wheel --universal
+        python -m build
 
     - uses: actions/upload-artifact@v2
       with:
@@ -218,6 +212,8 @@ jobs:
   pypi:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+    permissions:
+      id-token: write
     needs: test
     steps:
     - name: Download artifacts
@@ -227,10 +223,7 @@ jobs:
         path: dist
 
     - name: Publish package
-      uses: pypa/gh-action-pypi-publish@v1.1.0
-      with:
-        user: __token__
-        password: ${{ secrets.pypi_password }}
+      uses: pypa/gh-action-pypi-publish@release/v1
 
     - if: failure()
       run: ls -R

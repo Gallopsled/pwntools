@@ -217,6 +217,8 @@ class process(tube):
     #: Have we seen the process stop?  If so, this is a unix timestamp.
     _stop_noticed = 0
 
+    proc = None
+
     def __init__(self, argv = None,
                  shell = False,
                  executable = None,
@@ -608,7 +610,7 @@ class process(tube):
         """Permit pass-through access to the underlying process object for
         fields like ``pid`` and ``stdin``.
         """
-        if hasattr(self.proc, attr):
+        if not attr.startswith('_') and hasattr(self.proc, attr):
             return getattr(self.proc, attr)
         raise AttributeError("'process' object has no attribute '%s'" % attr)
 
@@ -729,9 +731,9 @@ class process(tube):
         if direction == 'any':
             return self.poll() is None
         elif direction == 'send':
-            return not self.proc.stdin.closed
+            return self.proc.stdin and not self.proc.stdin.closed
         elif direction == 'recv':
-            return not self.proc.stdout.closed
+            return self.proc.stdout and not self.proc.stdout.closed
 
     def close(self):
         if self.proc is None:
@@ -740,10 +742,14 @@ class process(tube):
         # First check if we are already dead
         self.poll()
 
-        #close file descriptors
+        # close file descriptors
         for fd in [self.proc.stdin, self.proc.stdout, self.proc.stderr]:
             if fd is not None:
-                fd.close()
+                try:
+                    fd.close()
+                except IOError as e:
+                    if e.errno != errno.EPIPE:
+                        raise
 
         if not self._stop_noticed:
             try:
@@ -768,7 +774,7 @@ class process(tube):
         if direction == "recv":
             self.proc.stdout.close()
 
-        if False not in [self.proc.stdin.closed, self.proc.stdout.closed]:
+        if all(fp is None or fp.closed for fp in [self.proc.stdin, self.proc.stdout]):
             self.close()
 
     def __pty_make_controlling_tty(self, tty_fd):

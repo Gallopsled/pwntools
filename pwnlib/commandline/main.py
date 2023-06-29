@@ -14,6 +14,7 @@ from pwnlib.commandline import elfdiff
 from pwnlib.commandline import elfpatch
 from pwnlib.commandline import errno
 from pwnlib.commandline import hex
+from pwnlib.commandline import libcdb
 from pwnlib.commandline import phd
 from pwnlib.commandline import pwnstrip
 from pwnlib.commandline import scramble
@@ -37,6 +38,7 @@ commands = {
     'elfpatch': elfpatch.main,
     'errno': errno.main,
     'hex': hex.main,
+    'libcdb': libcdb.main,
     'phd': phd.main,
     'pwnstrip': pwnstrip.main,
     'scramble': scramble.main,

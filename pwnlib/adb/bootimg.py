@@ -46,7 +46,7 @@ class BootImage(object):
         self.kernel = self.data[PAGE:PAGE+self.kernel_size]
 
     def __getattr__(self, name):
-        value = getattr(self.header, name, None)
-        if value is not None:
-            return value
-        return getattr(super(BootImage, self), name)
+        if name.startswith('_'):
+            raise AttributeError(name)
+
+        return getattr(self.header, name)

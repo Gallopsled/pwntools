@@ -384,6 +384,9 @@ class AdbDevice(Device):
             >>> adb.getprop(property) == device.getprop(property)
             True
         """
+        if name.startswith('_'):
+            raise AttributeError(name)
+
         with context.local(device=self):
             g = globals()
 
@@ -1367,8 +1370,12 @@ def compile(source):
     ndk_build = misc.which('ndk-build')
     if not ndk_build:
         # Ensure that we can find the NDK.
-        ndk = os.environ.get('NDK', None)
-        if ndk is None:
+        for envvar in ('NDK', 'ANDROID_NDK', 'ANDROID_NDK_ROOT',
+                       'ANDROID_NDK_HOME', 'ANDROID_NDK_LATEST_HOME'):
+            ndk = os.environ.get(envvar)
+            if ndk is not None:
+                break
+        else:
             log.error('$NDK must be set to the Android NDK directory')
         ndk_build = os.path.join(ndk, 'ndk-build')
 
@@ -1513,7 +1520,7 @@ class Partitions(object):
         return iter(names)
 
     def __getattr__(self, attr):
-        if attr.startswith("_"):
+        if attr.startswith('_'):
             raise AttributeError(attr)
 
         for name in self:

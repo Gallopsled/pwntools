@@ -31,27 +31,34 @@ def ret2csu(rop, elf, edi, rsi, rdx, rbx, rbp, r12, r13, r14, r15, call=None):
 
     # Resolve __libc_csu_ symbols if candidate binary is stripped
     if '__libc_csu_init' not in elf.symbols:
-        if elf.pie:
-            for insn in md.disasm(elf.section('.text'),
-                                  elf.offset_to_vaddr(elf.get_section_by_name('.text').header['sh_offset'])):
-                if insn.mnemonic == 'lea' and insn.operands[0].reg == X86_REG_R8:
-                    elf.sym['__libc_csu_fini'] = insn.address + insn.size + insn.disp
-                if insn.mnemonic == 'lea' and insn.operands[0].reg == X86_REG_RCX:
-                    elf.sym['__libc_csu_init'] = insn.address + insn.size + insn.disp
+        textaddr = elf.offset_to_vaddr(elf.get_section_by_name('.text').header.sh_offset)
+        entry = elf.entry
+        data = elf.section('.text')[entry-textaddr:]
+        mnemonic = elf.pie and 'lea' or 'mov'
+        for insn in md.disasm(data, entry):
+            if insn.mnemonic == mnemonic:
+                if mnemonic == 'lea':
+                    addr = insn.address + insn.size + insn.disp
+                else:
+                    addr = insn.operands[1].imm
+
+                if insn.operands[0].reg == X86_REG_R8:
+                    elf.sym['__libc_csu_fini'] = addr
+                if insn.operands[0].reg == X86_REG_RCX:
+                    elf.sym['__libc_csu_init'] = addr
                     break
+            elif insn.mnemonic == 'xor' and insn.operands[0].reg == insn.operands[1].reg == X86_REG_ECX:
+                log.error("This binary is compiled for glibc 2.34+ and does not have __libc_csu_init")
+            elif insn.mnemonic in ('hlt', 'jmp', 'call', 'syscall'):
+                log.error("No __libc_csu_init (no glibc _start)")
         else:
-            for insn in md.disasm(elf.section('.text'), elf.get_section_by_name('.text').header['sh_addr']):
-                if insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_R8:
-                    elf.sym['__libc_csu_fini'] = insn.operands[1].imm
-                if insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_RCX:
-                    elf.sym['__libc_csu_init'] = insn.operands[1].imm
-                    break
+            log.error("Weird _start, definitely no __libc_csu_init")
 
     # Resolve location of _fini address if required
     if not elf.pie and not call:
-        fini = next(elf.search(p64(elf.dynamic_by_tag('DT_FINI')['d_ptr'])))
+        call = next(elf.search(p64(elf.dynamic_by_tag('DT_FINI')['d_ptr'])))
     elif elf.pie and not call:
-        log.error('No non-PIE binaries in [elfs], \'call\' parameter is required')
+        log.error("No non-PIE binaries in [elfs], 'call' parameter is required")
 
     csu_function = elf.read(elf.sym['__libc_csu_init'], elf.sym['__libc_csu_fini'] - elf.sym['__libc_csu_init'])
 
@@ -63,26 +70,33 @@ def ret2csu(rop, elf, edi, rsi, rdx, rbx, rbp, r12, r13, r14, r15, call=None):
     # rbx and rbp must be equal after 'add rbx, 1'
     rop.raw(0x00)  # pop rbx
     rop.raw(0x01)  # pop rbp
-    if call:
-        rop.raw(call)  # pop r12
-    else:
-        rop.raw(fini)  # pop r12
 
     # Older versions of gcc use r13 to populate rdx then r15d to populate edi, newer versions use the reverse
     # Account for this when the binary was linked against a glibc that was built with a newer gcc
     for insn in md.disasm(csu_function, elf.sym['__libc_csu_init']):
         if insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_RDX and insn.operands[1].reg == X86_REG_R13:
+            rop.raw(call)  # pop r12
             rop.raw(rdx)  # pop r13
             rop.raw(rsi)  # pop r14
             rop.raw(edi)  # pop r15
             rop.raw(insn.address)
             break
+        elif insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_RDX and insn.operands[1].reg == X86_REG_R14:
+            rop.raw(edi)  # pop r12
+            rop.raw(rsi)  # pop r13
+            rop.raw(rdx)  # pop r14
+            rop.raw(call)  # pop r15
+            rop.raw(insn.address)
+            break
         elif insn.mnemonic == 'mov' and insn.operands[0].reg == X86_REG_RDX and insn.operands[1].reg == X86_REG_R15:
+            rop.raw(call)  # pop r12
             rop.raw(edi)  # pop r13
             rop.raw(rsi)  # pop r14
             rop.raw(rdx)  # pop r15
             rop.raw(insn.address)
             break
+    else:
+        log.error("This CSU init variant is not supported by pwntools")
 
     # 2nd gadget: Populate edi, rsi & rdx. Populate optional registers
     rop.raw(Padding('<add rsp, 8>'))  # add rsp, 8

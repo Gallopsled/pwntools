@@ -35,14 +35,16 @@ assert v in registers.amd64
     ${mov('rdi', buffer)}
     ${mov('rax', v)}
     push rax /* save for later */
+    ${mov('rcx', 10)}
 ${size_loop}:
     ${mov('rdx', 0)}
-    ${mov('rcx', 10)}
     div rcx
-    inc rdi
+    stosb
     test rax, rax
     jnz ${size_loop}
-    dec rdi
+## null terminate
+    std
+    stosb
 ## Now we begin the actual division process
     pop rax
  ${itoa_loop}:
@@ -54,7 +56,4 @@ ${size_loop}:
     dec  rdi
     test rax, rax
     jnz  ${itoa_loop}
-## null terminate
-    ${mov('rdx', 0)}
-    mov  BYTE PTR [rdi], dl
-    inc  rdi
+    cld

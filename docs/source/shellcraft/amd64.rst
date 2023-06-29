@@ -17,3 +17,9 @@
 
 .. automodule:: pwnlib.shellcraft.amd64.linux
    :members:
+
+:mod:`pwnlib.shellcraft.amd64.windows`
+---------------------------------------
+
+.. automodule:: pwnlib.shellcraft.amd64.windows
+   :members:

@@ -2,7 +2,9 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import abc
 import logging
+import os
 import re
 import six
 import string
@@ -195,14 +197,29 @@ class tube(Timeout, Logger):
         Returns:
             A bytes object containing bytes received from the socket,
             or ``''`` if a timeout occurred while waiting.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b'abbbaccc'
+            >>> pred = lambda p: p.count(b'a') == 2
+            >>> t.recvpred(pred)
+            b'abbba'
+            >>> pred = lambda p: p.count(b'd') > 0
+            >>> t.recvpred(pred, timeout=0.05)
+            b''
         """
 
         data = b''
 
         with self.countdown(timeout):
             while not pred(data):
+                if not self.countdown_active():
+                    self.unrecv(data)
+                    return b''
+
                 try:
-                    res = self.recv(1)
+                    res = self.recv(1, timeout=timeout)
                 except Exception:
                     self.unrecv(data)
                     return b''
@@ -632,17 +649,30 @@ class tube(Timeout, Logger):
                                   keepends=keepends,
                                   timeout=timeout)
 
-    def recvregex(self, regex, exact=False, timeout=default):
-        """recvregex(regex, exact=False, timeout=default) -> bytes
+    def recvregex(self, regex, exact=False, timeout=default, capture=False):
+        r"""recvregex(regex, exact=False, timeout=default, capture=False) -> bytes
 
         Wrapper around :func:`recvpred`, which will return when a regex
         matches the string in the buffer.
+
+        Returns all received data up until the regex matched. If `capture` is
+        set to True, a :class:`re.Match` object is returned instead.
 
         By default :func:`re.RegexObject.search` is used, but if `exact` is
         set to True, then :func:`re.RegexObject.match` will be used instead.
 
         If the request is not satisfied before ``timeout`` seconds pass,
         all data is buffered and an empty string (``''``) is returned.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b'The lucky number is 1337 as always\nBla blubb blargh\n'
+            >>> m = t.recvregex(br'number is ([0-9]+) as always\n', capture=True)
+            >>> m.group(1)
+            b'1337'
+            >>> t.recvregex(br'Bla .* blargh\n')
+            b'Bla blubb blargh\n'
         """
 
         if isinstance(regex, (bytes, bytearray, six.text_type)):
@@ -654,7 +684,10 @@ class tube(Timeout, Logger):
         else:
             pred = regex.search
 
-        return self.recvpred(pred, timeout = timeout)
+        if capture:
+            return pred(self.recvpred(pred, timeout = timeout))
+        else:
+            return self.recvpred(pred, timeout = timeout)
 
     def recvline_regex(self, regex, exact=False, keepends=False, timeout=default):
         """recvline_regex(regex, exact=False, keepends=False, timeout=default) -> bytes
@@ -713,9 +746,9 @@ class tube(Timeout, Logger):
         return self.buffer.get()
 
     def recvall(self, timeout=Timeout.forever):
-        """recvall() -> bytes
+        """recvall(timeout=Timeout.forever) -> bytes
 
-        Receives data until EOF is reached.
+        Receives data until EOF is reached and closes the tube.
         """
 
         with self.waitfor('Receiving all data') as h:
@@ -835,14 +868,14 @@ class tube(Timeout, Logger):
         is much more usable, since we are using :mod:`pwnlib.term` to print a
         floating prompt.
 
-        Thus it only works in while in :data:`pwnlib.term.term_mode`.
+        Thus it only works while in :data:`pwnlib.term.term_mode`.
         """
 
         self.info('Switching to interactive mode')
 
         go = threading.Event()
         def recv_thread():
-            while not go.isSet():
+            while not go.is_set():
                 try:
                     cur = self.recv(timeout = 0.05)
                     cur = cur.replace(self.newline, b'\n')
@@ -860,13 +893,44 @@ class tube(Timeout, Logger):
         t.daemon = True
         t.start()
 
+        from pwnlib.args import term_mode
         try:
-            while not go.isSet():
+            os_linesep = os.linesep.encode()
+            to_skip = b''
+            while not go.is_set():
                 if term.term_mode:
                     data = term.readline.readline(prompt = prompt, float = True)
+                    if data:
+                        data += self.newline
                 else:
                     stdin = getattr(sys.stdin, 'buffer', sys.stdin)
                     data = stdin.read(1)
+                    # Keep OS's line separator if NOTERM is set and
+                    # the user did not specify a custom newline
+                    # even if stdin is a tty.
+                    if sys.stdin.isatty() and (
+                        term_mode
+                        or context.newline != b"\n"
+                        or self._newline is not None
+                    ):
+                        if to_skip:
+                            if to_skip[:1] != data:
+                                data = os_linesep[: -len(to_skip)] + data
+                            else:
+                                to_skip = to_skip[1:]
+                                if to_skip:
+                                    continue
+                                data = self.newline
+                        # If we observe a prefix of the line separator in a tty,
+                        # assume we'll see the rest of it immediately after.
+                        # This could stall until the next character is seen if
+                        # the line separator is started but never finished, but
+                        # that is unlikely to happen in a dynamic tty.
+                        elif data and os_linesep.startswith(data):
+                            if len(os_linesep) > 1:
+                                to_skip = os_linesep[1:]
+                                continue
+                            data = self.newline
 
                 if data:
                     try:
@@ -1276,6 +1340,7 @@ class tube(Timeout, Logger):
         self.close()
 
     # The minimal interface to be implemented by a child
+    @abc.abstractmethod
     def recv_raw(self, numb):
         """recv_raw(numb) -> str
 
@@ -1289,13 +1354,14 @@ class tube(Timeout, Logger):
 
         raise EOFError('Not implemented')
 
+    @abc.abstractmethod
     def send_raw(self, data):
         """send_raw(data)
 
         Should not be called directly. Sends data to the tube.
 
         Should return ``exceptions.EOFError``, if it is unable to send any
-        more, because of a close tube.
+        more, because of a closed tube.
         """
 
         raise EOFError('Not implemented')
@@ -1311,9 +1377,8 @@ class tube(Timeout, Logger):
 
     def timeout_change(self):
         """
-        Informs the raw layer of the tube that the timeout has changed.
+        Should not be called directly. Informs the raw layer of the tube that the timeout has changed.
 
-        Should not be called directly.
 
         Inherited from :class:`Timeout`.
         """
