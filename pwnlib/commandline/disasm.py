@@ -7,7 +7,7 @@ import argparse
 import string
 import sys
 
-import pwnlib
+import pwnlib.args
 pwnlib.args.free_form = False
 
 from pwn import *
@@ -15,7 +15,8 @@ from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
     'disasm',
-    help = 'Disassemble bytes into text format'
+    help = 'Disassemble bytes into text format',
+    description = 'Disassemble bytes into text format'
 )
 
 parser.add_argument(
@@ -81,9 +82,9 @@ def main(args):
         instrs  = disasm(dat, vma=safeeval.const(args.address), byte=False, offset=False)
         # instrs  = highlight(instrs, PwntoolsLexer(), TerminalFormatter())
 
+        highlight_bytes = lambda t: ''.join(map(lambda x: x.replace('00', text.red('00')).replace('0a', text.red('0a')), group(2, t)))
         for o,b,i in zip(*map(str.splitlines, (offsets, bytes, instrs))):
-            b = b.replace('00', text.red('00'))
-            b = b.replace('0a', text.red('0a'))
+            b = ' '.join(highlight_bytes(bb) for bb in b.split(' '))
             i = highlight(i.strip(), PwntoolsLexer(), TerminalFormatter()).strip()
             i = i.replace(',',', ')
 

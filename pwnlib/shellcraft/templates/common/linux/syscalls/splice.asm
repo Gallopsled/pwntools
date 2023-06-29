@@ -16,7 +16,7 @@ Arguments:
     offin(off64_t*): offin
     fdout(int): fdout
     offout(off64_t*): offout
-    len(size_t): len
+    length(size_t): length
     flags(unsigned): flags
 Returns:
     ssize_t

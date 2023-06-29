@@ -13,7 +13,7 @@ See 'man 2 set_robust_list' for more information.
 
 Arguments:
     head(robust_list_head*): head
-    len(size_t): len
+    length(size_t): length
 Returns:
     long
 </%docstring>

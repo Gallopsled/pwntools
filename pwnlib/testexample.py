@@ -14,7 +14,7 @@ the Python prompt.  For more on doctests, see the `Python documentation
 <https://docs.python.org/2/library/doctest.html>`_.
 
 All of the syntax in this file is ReStructuredText.  You can find a
-`nice cheat sheet here <https://goo.gl/qEKFIu>`_.
+`nice cheat sheet here <https://github.com/ralsina/rst-cheatsheet/blob/master/rst-cheatsheet.rst>`_.
 
 Here's an example of a module-level doctest:
 

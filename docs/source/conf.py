@@ -25,7 +25,8 @@ build_dash = tags.has('dash')
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../..'))
 
-import pwnlib
+import pwnlib.update
+pwnlib.update.disabled = True
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
@@ -41,8 +42,8 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.todo',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.napoleon',
     'sphinxcontrib.autoprogram',
-    'sphinxcontrib.napoleon'
 ]
 
 # Disable "info" logging directly to stdout by Sphinx
@@ -70,10 +71,14 @@ doctest_global_setup = '''
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
 os.environ['PWNLIB_RANDOMIZE'] = '0'
-import pwnlib, logging
+import pwnlib.update
+import pwnlib.util.fiddling
+import logging
+pwnlib.update.disabled = True
 pwnlib.context.context.reset_local()
 pwnlib.context.ContextType.defaults['log_level'] = logging.ERROR
 pwnlib.context.ContextType.defaults['randomize'] = False
+# pwnlib.context.ContextType.defaults['terminal'] = ['sh', '-c']
 pwnlib.util.fiddling.default_style = {}
 pwnlib.term.text.when = 'never'
 pwnlib.log.install_default_handler()
@@ -91,7 +96,9 @@ pwnlib.context.ContextType.defaults['log_console'] = stdout()
 
 github_actions = os.environ.get('USER') == 'runner'
 travis_ci = os.environ.get('USER') == 'travis'
+local_doctest = os.environ.get('USER') == 'pwntools'
 branch_dev = os.environ.get('GITHUB_BASE_REF') == 'dev'
+skip_android = True
 '''
 
 autoclass_content = 'both'
@@ -258,7 +265,7 @@ latex_documents = [
    u'2016, Gallopsled et al.', 'manual'),
 ]
 
-intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None),
+intersphinx_mapping = {'python': ('https://docs.python.org/3.8', None),
                        'paramiko': ('https://paramiko-docs.readthedocs.org/en/2.1/', None)}
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -370,9 +377,10 @@ if build_dash:
     on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
     if not on_rtd:  # only import and set the theme if we're building docs locally
-        import sphinx_rtd_theme
-        html_theme = 'sphinx_rtd_theme'
-        html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+        import alabaster
+        html_theme = 'alabaster'
+        html_theme_path = [alabaster.get_path()]
+        html_theme_options = { 'nosidebar' : True }
 
     # otherwise, readthedocs.org uses their theme by default, so no need to specify it
 
@@ -382,7 +390,9 @@ import sphinx.ext.autodoc
 
 # Test hidden members (e.g. def _foo(...))
 def dont_skip_any_doctests(app, what, name, obj, skip, options):
-    return False
+    return None
+
+autodoc_default_options = {'special-members': None, 'private-members': None}
 
 class _DummyClass(object): pass
 
@@ -404,7 +414,14 @@ class Py2OutputChecker(_DummyClass, doctest.OutputChecker):
         if sup(rly_want, got, optionflags):
             return True
         rly_want = ' '.join(x[:2].replace('b"',' "').replace("b'"," '")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
-        return sup(rly_want, got, optionflags)
+        if sup(rly_want, got, optionflags):
+            return True
+        for wantl, gotl in six.moves.zip_longest(want.splitlines(), got.splitlines(), fillvalue=''):
+            rly_want1 = '['.join(x[:2].replace('b"','"').replace("b'","'")+x[2:] for x in wantl.split('['))
+            rly_want2 = ' '.join(x[:2].replace('b"',' "').replace("b'"," '")+x[2:] for x in wantl.split(' '))
+            if not sup(rly_want1, gotl, optionflags) and not sup(rly_want2, gotl, optionflags):
+                return False
+        return True
 
 def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
     if checker is None:
@@ -413,8 +430,20 @@ def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
 
 if 'doctest' in sys.argv:
     def setup(app):
-        app.connect('autodoc-skip-member', dont_skip_any_doctests)
+        pass # app.connect('autodoc-skip-member', dont_skip_any_doctests)
 
     if sys.version_info[:1] < (3,):
         import sphinx.ext.doctest
         sphinx.ext.doctest.SphinxDocTestRunner.__init__ = py2_doctest_init
+    else:
+        # monkey patching paramiko due to https://github.com/paramiko/paramiko/pull/1661
+        import paramiko.client
+        import binascii
+        paramiko.client.hexlify = lambda x: binascii.hexlify(x).decode()
+        paramiko.util.safe_string = lambda x: '' # function result never *actually used*
+    class EndlessLoop(Exception): pass
+    def alrm_handler(sig, frame):
+        signal.alarm(180) # three minutes
+        raise EndlessLoop()
+    signal.signal(signal.SIGALRM, alrm_handler)
+    signal.alarm(600) # ten minutes

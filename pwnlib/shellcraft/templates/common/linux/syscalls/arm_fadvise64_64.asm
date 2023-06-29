@@ -15,7 +15,7 @@ Arguments:
     fd(int): fd
     advice(int): advice
     offset(loff_t): offset
-    len(loff_t): len
+    length(loff_t): length
 Returns:
     long
 </%docstring>

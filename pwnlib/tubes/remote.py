@@ -3,7 +3,6 @@ from __future__ import division
 
 import socket
 import socks
-import ssl as _ssl
 
 from pwnlib.log import getLogger
 from pwnlib.timeout import Timeout
@@ -62,7 +61,8 @@ class remote(sock):
                  *args, **kwargs):
         super(remote, self).__init__(*args, **kwargs)
 
-        self.rport  = int(port)
+        # convert port to string for sagemath support
+        self.rport  = str(port)
         self.rhost  = host
 
         if sock:
@@ -79,12 +79,15 @@ class remote(sock):
             except socket.gaierror as e:
                 if e.errno != socket.EAI_NONAME:
                     raise
-                self.error('Could not resolve hostname: %r' % host)
+                self.error('Could not resolve hostname: %r', host)
         if self.sock:
             self.settimeout(self.timeout)
             self.lhost, self.lport = self.sock.getsockname()[:2]
 
             if ssl:
+                # Deferred import to save startup time
+                import ssl as _ssl
+
                 ssl_args = ssl_args or {}
                 ssl_context = ssl_context or _ssl.SSLContext(_ssl.PROTOCOL_TLSv1_2)
                 if isinstance(sni, str):
@@ -97,14 +100,14 @@ class remote(sock):
         sock    = None
         timeout = self.timeout
 
-        with self.waitfor('Opening connection to %s on port %d' % (self.rhost, self.rport)) as h:
+        with self.waitfor('Opening connection to %s on port %s' % (self.rhost, self.rport)) as h:
             for res in socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE):
                 self.family, self.type, self.proto, _canonname, sockaddr = res
 
                 if self.type not in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
                     continue
 
-                h.status("Trying %s" % sockaddr[0])
+                h.status("Trying %s", sockaddr[0])
 
                 sock = socket.socket(self.family, self.type, self.proto)
 
@@ -121,7 +124,7 @@ class remote(sock):
                     raise
                 except socket.error:
                     pass
-            self.error("Could not connect to %s on port %d" % (self.rhost, self.rport))
+            self.error("Could not connect to %s on port %s", self.rhost, self.rport)
 
     @classmethod
     def fromsocket(cls, socket):

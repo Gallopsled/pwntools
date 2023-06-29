@@ -1,0 +1,61 @@
+
+# Some additional debugging tools that are useful
+RUN python  -m pip install ipdb
+RUN python3 -m pip install ipdb
+
+# Install debugging utilities
+USER root
+RUN apt-get -y install gdb gdbserver tmux gdb-multiarch
+
+# Set up binfmt-misc mappings inside the VM
+USER root
+RUN mkdir /etc/qemu-binfmt
+RUN ln -sf /usr/lib/arm-linux-gnueabihf /etc/qemu-binfmt/arm
+RUN ln -sf /usr/lib/aarch64-linux-gnu   /etc/qemu-binfmt/aarch64
+RUN ln -sf /usr/lib/mips-linux-gnu      /etc/qemu-binfmt/mips
+RUN ln -sf /usr/lib/mipsel-linux-gnu    /etc/qemu-binfmt/mipsel
+RUN ln -sf /usr/lib/powerpc-linux-gnu   /etc/qemu-binfmt/powerpc
+RUN ln -sf /usr/lib/powerpc-linux-gnu64 /etc/qemu-binfmt/powerpc64
+RUN ln -sf /usr/lib/sparc64-linux-gnu   /etc/qemu-binfmt/sparc64
+
+# Create the Travis user
+USER root
+RUN useradd -m travis
+RUN echo "travis ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/travis
+
+# Set up SSH stuff so we can SSH into localhost
+USER pwntools
+RUN ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ''
+RUN cp ~/.ssh/id_rsa.pub /tmp
+RUN echo \
+"Host *\n\
+    User travis\n\
+    HostName 127.0.0.1\n\
+"> ~/.ssh/config
+
+# Set up authorized_keys so we can login as travis with no creds
+USER travis
+RUN mkdir -m 0700 ~/.ssh
+RUN echo 'from="127.0.0.1"' $(cat /tmp/id_rsa.pub) > ~/.ssh/authorized_keys
+
+# Add the doctest entrypoint to /usr/bin so we don't have to supply the full path
+USER root
+ADD doctest2 /usr/bin
+ADD doctest3 /usr/bin
+
+# Switch back to pwntools to actually run the image
+USER pwntools
+WORKDIR /home/pwntools
+
+# Copy in the Doctest script
+COPY doctest2 /home/pwntools
+COPY doctest3 /home/pwntools
+COPY tmux.sh /home/pwntools
+
+# Do everything in UTF-8 mode!
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV SHELL=/bin/bash
+
+# Set entry point to doctest by default
+WORKDIR /home/pwntools

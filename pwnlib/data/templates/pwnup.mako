@@ -32,7 +32,7 @@ remote_path = remote_path or exe
 password = password or 'secret1234'
 binary_repr = repr(binary)
 %>\
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 %if not quiet:
 # This exploit template was generated via:
@@ -44,7 +44,7 @@ from pwn import *
 # Set up pwntools for the correct architecture
 %endif
 %if ctx.binary:
-exe = context.binary = ELF(${binary_repr})
+exe = context.binary = ELF(args.EXE or ${binary_repr})
 <% binary_repr = 'exe.path' %>
 %else:
 context.update(arch='i386')
@@ -58,7 +58,7 @@ exe = ${binary_repr}
 # for all created processes...
 # ./exploit.py DEBUG NOASLR
 %if host or port or user:
-# ./exploit.py GDB HOST=example.com PORT=4141
+# ./exploit.py GDB HOST=example.com PORT=4141 EXE=/tmp/executable
 %endif
 %endif
 %if host:
@@ -84,14 +84,14 @@ if not args.LOCAL:
 %endif
 
 %if host:
-def local(argv=[], *a, **kw):
+def start_local(argv=[], *a, **kw):
     '''Execute the target binary locally'''
     if args.GDB:
         return gdb.debug([${binary_repr}] + argv, gdbscript=gdbscript, *a, **kw)
     else:
         return process([${binary_repr}] + argv, *a, **kw)
 
-def remote(argv=[], *a, **kw):
+def start_remote(argv=[], *a, **kw):
   %if ssh:
     '''Execute the target binary on the remote host'''
     if args.GDB:
@@ -111,9 +111,9 @@ def remote(argv=[], *a, **kw):
 def start(argv=[], *a, **kw):
     '''Start the exploit against the target.'''
     if args.LOCAL:
-        return local(argv, *a, **kw)
+        return start_local(argv, *a, **kw)
     else:
-        return remote(argv, *a, **kw)
+        return start_remote(argv, *a, **kw)
 %else:
 def start(argv=[], *a, **kw):
     '''Start the exploit against the target.'''

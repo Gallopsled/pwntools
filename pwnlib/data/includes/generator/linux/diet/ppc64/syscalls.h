@@ -311,7 +311,134 @@
 #define __NR_subpage_prot	310
 #define __NR_timerfd_settime	311
 #define __NR_timerfd_gettime	312
+#define __NR_signalfd4		313
+#define __NR_eventfd2		314
+#define __NR_epoll_create1	315
+#define __NR_dup3		316
+#define __NR_pipe2		317
+#define __NR_inotify_init1	318
+#define __NR_perf_event_open	319
+#define __NR_preadv		320
+#define __NR_pwritev		321
+#define __NR_rt_tgsigqueueinfo	322
+#define __NR_fanotify_init	323
+#define __NR_fanotify_mark	324
+#define __NR_prlimit64		325
+#define __NR_socket		326
+#define __NR_bind		327
+#define __NR_connect		328
+#define __NR_listen		329
+#define __NR_accept		330
+#define __NR_getsockname	331
+#define __NR_getpeername	332
+#define __NR_socketpair		333
+#define __NR_send		334
+#define __NR_sendto		335
+#define __NR_recv		336
+#define __NR_recvfrom		337
+#define __NR_shutdown		338
+#define __NR_setsockopt		339
+#define __NR_getsockopt		340
+#define __NR_sendmsg		341
+#define __NR_recvmsg		342
+#define __NR_recvmmsg		343
+#define __NR_accept4		344
+#define __NR_name_to_handle_at	345
+#define __NR_open_by_handle_at	346
+#define __NR_clock_adjtime	347
+#define __NR_syncfs		348
+#define __NR_sendmmsg		349
+#define __NR_setns		350
+#define __NR_process_vm_readv	351
+#define __NR_process_vm_writev	352
+#define __NR_finit_module	353
+#define __NR_kcmp		354
+#define __NR_sched_setattr	355
+#define __NR_sched_getattr	356
+#define __NR_renameat2		357
+#define __NR_seccomp		358
+#define __NR_getrandom		359
+#define __NR_memfd_create	360
+#define __NR_bpf		361
+#define __NR_execveat		362
+#define __NR_switch_endian	363
+#define __NR_userfaultfd	364
+#define __NR_membarrier		365
+#define __NR_mlock2		378
+#define __NR_copy_file_range	379
+#define __NR_preadv2		380
+#define __NR_pwritev2		381
+#define __NR_kexec_file_load	382
+#define __NR_statx		383
+#define __NR_pkey_alloc		384
+#define __NR_pkey_free		385
+#define __NR_pkey_mprotect	386
+#define __NR_rseq		387
+#define __NR_io_pgetevents	388
+#define __NR_semtimedop	392
+#define __NR_semget	393
+#define __NR_semctl	394
+#define __NR_shmget	395
+#define __NR_shmctl	396
+#define __NR_shmat	397
+#define __NR_shmdt	398
+#define __NR_msgget	399
+#define __NR_msgsnd	400
+#define __NR_msgrcv	401
+#define __NR_msgctl	402
+#define __NR_pidfd_send_signal	424
+#define __NR_io_uring_setup	425
+#define __NR_io_uring_enter	426
+#define __NR_io_uring_register	427
+#define __NR_open_tree	428
+#define __NR_move_mount	429
+#define __NR_fsopen	430
+#define __NR_fsconfig	431
+#define __NR_fsmount	432
+#define __NR_fspick	433
+#define __NR_pidfd_open	434
+#define __NR_clone3	435
+#define __NR_openat2	437
+#define __NR_pidfd_getfd	438
 
+#if defined(_CALL_ELF) && _CALL_ELF == 2
+
+#define __diet_proto_common(sym) \
+	.type	sym,@function
+
+#define diet_proto_weak(sym) \
+	.weak	sym; \
+	__diet_proto_common(sym)
+
+#define diet_proto(sym) \
+	.globl	sym; \
+	__diet_proto_common(sym)
+
+
+#define syscall_weak(name,wsym,sym) \
+.text; \
+diet_proto_weak(wsym); \
+diet_proto(sym); \
+wsym: \
+sym: \
+	addis	2,12,.TOC.-sym@ha; \
+	addi	2,2,.TOC.-sym@l; \
+.localentry	sym,.-sym; \
+.localentry	wsym,.-wsym; \
+	li	0,__NR_##name; \
+	b	__unified_syscall
+
+#define syscall(name,sym) \
+.text; \
+diet_proto(sym); \
+sym: \
+	addis	2,12,.TOC.-sym@ha; \
+	addi	2,2,.TOC.-sym@l; \
+.localentry	sym,.-sym; \
+	li	0,__NR_##name; \
+	b	__unified_syscall
+
+#else /* _ELF_CALL != 2 */
 
 #define __diet_proto_common(sym) \
 	.section ".opd","aw"; \
@@ -349,3 +476,4 @@ diet_proto(sym); \
 	li	0,__NR_##name; \
 	b	__unified_syscall
 
+#endif /* _ELF_CALL == 2 */

@@ -84,7 +84,7 @@ result in a message being emitted but rather an animated progress line (with a
 spinner!) being created.  Note that other handlers will still see a meaningful
 log record.
 
-The custom handler will only handle log records whith a level of at least
+The custom handler will only handle log records with a level of at least
 :data:`context.log_level`.  Thus if e.g. the level for the
 ``'pwnlib.tubes.ssh'`` is set to ``'DEBUG'`` no additional output will show up
 unless :data:`context.log_level` is also set to ``'DEBUG'``.  Other handlers
@@ -99,6 +99,7 @@ import os
 import random
 import re
 import six
+import string
 import sys
 import threading
 import time
@@ -185,7 +186,7 @@ class Progress(object):
 
     def _log(self, status, args, kwargs, msgtype):
         # Logs are strings, not bytes.  Handle Python3 bytes() objects.
-        status = six.ensure_text(status)
+        status = _need_text(status)
 
         # this progress logger is stopped, so don't generate any more records
         if self._stopped:
@@ -289,7 +290,7 @@ class Logger(object):
 
     def _log(self, level, msg, args, kwargs, msgtype, progress = None):
         # Logs are strings, not bytes.  Handle Python3 bytes() objects.
-        msg = six.ensure_text(msg)
+        msg = _need_text(msg)
 
         extra = kwargs.get('extra', {})
         extra.setdefault('pwnlib_msgtype', msgtype)
@@ -401,6 +402,20 @@ class Logger(object):
 
         self.info(pwnlib.util.fiddling.hexdump(message, *args, **kwargs))
 
+    def maybe_hexdump(self, message, *args, **kwargs):
+        """maybe_hexdump(self, message, *args, **kwargs)
+
+        Logs a message using indented. Repeated single byte is compressed, and
+        unprintable message is hexdumped.
+        """
+        if len(set(message)) == 1 and len(message) > 1:
+            self.indented('%r * %#x' % (message[:1], len(message)), *args, **kwargs)
+        elif len(message) == 1 or all(c in string.printable.encode() for c in message):
+            for line in message.splitlines(True):
+                self.indented(repr(line), *args, **kwargs)
+        else:
+            import pwnlib.util.fiddling
+            self.indented(pwnlib.util.fiddling.hexdump(message), *args, **kwargs)
 
     def warning(self, message, *args, **kwargs):
         """warning(message, *args, **kwargs)
@@ -629,6 +644,12 @@ class Formatter(logging.Formatter):
         msg = prefix + msg
         msg = self.nlindent.join(msg.splitlines())
         return msg
+
+def _need_text(s):
+    # circular import wrapper
+    global _need_text
+    from pwnlib.util.packing import _need_text
+    return _need_text(s, 2)
 
 # we keep a dictionary of loggers such that multiple calls to `getLogger` with
 # the same name will return the same logger

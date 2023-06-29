@@ -1,5 +1,7 @@
+graft build
 graft examples
 graft extra
+graft travis
 include *.md *.txt *.sh *.yml MANIFEST.in
 recursive-include docs   *.rst *.png Makefile *.py *.txt
 recursive-include pwnlib *.py *.asm *.rst *.md *.txt *.sh __doc__ *.mako

@@ -14,7 +14,7 @@ See 'man 2 tee' for more information.
 Arguments:
     fdin(int): fdin
     fdout(int): fdout
-    len(size_t): len
+    length(size_t): length
     flags(unsigned): flags
 Returns:
     ssize_t

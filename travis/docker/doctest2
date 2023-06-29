@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+reset
+
+# We have to explicitly start the ssh service
+sudo service ssh start
+
+# Enable the IPv6 interface
+echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
+
+# Run the tests from the repo
+cd ~
+
+ORIG_TARGET="$TARGET"
+
+if [ -n "$TARGET" ]; then
+	TARGET=$(find ~/pwntools/docs/source -iname "$TARGET")
+
+	if [ -z "$TARGET" ]; then
+		echo "Could not find target $ORIG_TARGET"
+		exit 1
+	fi
+
+	echo "DOCTEST TARGET is $TARGET"
+fi
+
+# GDB tests currently don't work inside Docker for unknown reasons.
+# Disable these tests until we can get them working.
+echo > ~/pwntools/docs/source/gdb.rst
+
+# Android tests are disabled in general, support is deprecateds
+echo > ~/pwntools/docs/source/adb.rst
+echo > ~/pwntools/docs/source/protocols.rst
+
+export PWNLIB_NOTERM=1 
+python2.7 -bb -m coverage run -m sphinx -b doctest $HOME/pwntools/docs/source $HOME/pwntools/docs/build/doctest $TARGET
+

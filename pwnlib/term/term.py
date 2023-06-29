@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import atexit
+import errno
 import os
 import re
 import signal
@@ -58,10 +59,14 @@ def update_geometry():
     height, width = h, w
 
 def handler_sigwinch(signum, stack):
+    if hasattr(signal, 'pthread_sigmask'):
+        signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGWINCH})
     update_geometry()
     redraw()
     for cb in on_winch:
         cb()
+    if hasattr(signal, 'pthread_sigmask'):
+        signal.pthread_sigmask(signal.SIG_UNBLOCK, {signal.SIGWINCH})
 
 def handler_sigstop(signum, stack):
     resetterm()
@@ -110,7 +115,12 @@ def init():
     fd.flush()
     s = ''
     while True:
-        c = os.read(fd.fileno(), 1)
+        try:
+            c = os.read(fd.fileno(), 1)
+        except OSError as e:
+            if e.errno != errno.EINTR:
+                raise
+            continue
         if not isinstance(c, six.string_types):
             c = c.decode('utf-8')
         s += c
@@ -133,7 +143,7 @@ def init():
         def write(self, s):
             output(s, frozen = True)
         def __getattr__(self, k):
-            return self._fd.__getattribute__(k)
+            return getattr(self._fd, k)
     if sys.stdout.isatty():
         sys.stdout = Wrapper(sys.stdout)
     if sys.stderr.isatty():
@@ -320,14 +330,14 @@ def parse(s):
         elif c == 0x0d:
             x = (CR, None)
             i += 1
-        else:
+
+        if x is None:
+            x = (STR, [six.int2byte(c) for c in bytearray(b'\\x%02x' % c)])
             i += 1
 
         if _graphics_mode:
             continue
-        if x is None:
-            x = (STR, [six.int2byte(c) for c in bytearray(b'\\x%02x' % c)])
-            i += 1
+
         if x[0] == STR and out and out[-1][0] == STR:
             out[-1][1].extend(x[1])
         else:

@@ -6,17 +6,20 @@ contexts work properly and as expected.
 from __future__ import absolute_import
 from __future__ import division
 
+import atexit
 import collections
+import errno
 import functools
 import logging
 import os
+import os.path
 import platform
+import shutil
 import six
 import socket
-import stat
 import string
-import subprocess
 import sys
+import tempfile
 import threading
 import time
 
@@ -345,6 +348,10 @@ class ContextType(object):
         'binary': None,
         'bits': 32,
         'buffer_size': 4096,
+        'cache_dir_base': os.environ.get(
+            'XDG_CACHE_HOME',
+            os.path.join(os.path.expanduser('~'), '.cache')
+        ),
         'cyclic_alphabet': string.ascii_lowercase.encode(),
         'cyclic_size': 4,
         'delete_corefiles': False,
@@ -362,13 +369,14 @@ class ContextType(object):
         'noptrace': False,
         'os': 'linux',
         'proxy': None,
+        'ssh_session': None,
         'signed': False,
         'terminal': tuple(),
         'timeout': Timeout.maximum,
     }
 
     #: Valid values for :meth:`pwnlib.context.ContextType.os`
-    oses = sorted(('linux','freebsd','windows','cgc','android'))
+    oses = sorted(('linux','freebsd','windows','cgc','android','baremetal'))
 
     big_32    = {'endian': 'big', 'bits': 32}
     big_64    = {'endian': 'big', 'bits': 64}
@@ -396,6 +404,8 @@ class ContextType(object):
         'msp430':    little_16,
         'powerpc':   big_32,
         'powerpc64': big_64,
+        'riscv32':   little_32,
+        'riscv64':   little_64,
         's390':      big_32,
         'sparc':     big_32,
         'sparc64':   big_64,
@@ -548,14 +558,66 @@ class ContextType(object):
     @property
     def quiet(self, function=None):
         """Disables all non-error logging within the enclosed scope,
-        *unless* the debugging level is set to 'debug' or lower."""
+        *unless* the debugging level is set to 'debug' or lower.
+
+        Example:
+
+            Let's assume the normal situation, where log_level is INFO.
+
+            >>> context.clear(log_level='info')
+
+            Note that only the log levels below ERROR do not print anything.
+
+            >>> with context.quiet:
+            ...     log.debug("DEBUG")
+            ...     log.info("INFO")
+            ...     log.warn("WARN")
+
+            Next let's try with the debugging level set to 'debug' before we
+            enter the context handler:
+
+            >>> with context.local(log_level='debug'):
+            ...     with context.quiet:
+            ...         log.debug("DEBUG")
+            ...         log.info("INFO")
+            ...         log.warn("WARN")
+            [DEBUG] DEBUG
+            [*] INFO
+            [!] WARN
+        """
         level = 'error'
         if context.log_level <= logging.DEBUG:
             level = None
         return self.local(function, log_level=level)
 
     def quietfunc(self, function):
-        """Similar to :attr:`quiet`, but wraps a whole function."""
+        """Similar to :attr:`quiet`, but wraps a whole function.
+
+        Example:
+
+            Let's set up two functions, which are the same but one is
+            wrapped with :attr:`quietfunc`.
+
+            >>> def loud(): log.info("Loud")
+            >>> @context.quietfunc
+            ... def quiet(): log.info("Quiet")
+
+            If we set the logging level to 'info', the loud function
+            prints its contents.
+
+            >>> with context.local(log_level='info'): loud()
+            [*] Loud
+
+            However, the quiet function does not, since :attr:`quietfunc`
+            silences all output unless the log level is DEBUG.
+
+            >>> with context.local(log_level='info'): quiet()
+
+            Now let's try again with debugging enabled.
+
+            >>> with context.local(log_level='debug'): quiet()
+            [*] Quiet
+        """
         @functools.wraps(function)
         def wrapper(*a, **kw):
             level = 'error'
@@ -569,6 +631,28 @@ class ContextType(object):
     @property
     def verbose(self):
         """Enable all logging within the enclosed scope.
+
+        This is the opposite of :attr:`.quiet` and functionally equivalent to:
+
+        .. code-block:: python
+
+            with context.local(log_level='debug'):
+                ...
+
+        Example:
+
+            Note that the function does not emit any information by default
+
+            >>> context.clear()
+            >>> def func(): log.debug("Hello")
+            >>> func()
+
+            But if we put it inside a :attr:`.verbose` context manager, the
+            information is printed.
+
+            >>> with context.verbose: func()
+            [DEBUG] Hello
+
         """
         return self.local(log_level='debug')
 
@@ -602,7 +686,7 @@ class ContextType(object):
 
     @property
     def native(self):
-        if context.os in ('android', 'cgc'):
+        if context.os in ('android', 'baremetal', 'cgc'):
             return False
 
         arch = context.arch
@@ -686,12 +770,15 @@ class ContextType(object):
         # We have to make sure that x86_64 appears before x86 for this to work correctly.
         transform = [('ppc64', 'powerpc64'),
                      ('ppc', 'powerpc'),
+                     ('x86-64', 'amd64'),
                      ('x86_64', 'amd64'),
                      ('x86', 'i386'),
                      ('i686', 'i386'),
                      ('armv7l', 'arm'),
                      ('armeabi', 'arm'),
-                     ('arm64', 'aarch64')]
+                     ('arm64', 'aarch64'),
+                     ('rv32', 'riscv32'),
+                     ('rv64', 'riscv64')]
         for k, v in transform:
             if arch.startswith(k):
                 arch = v
@@ -826,27 +913,6 @@ class ContextType(object):
 
         return charset
 
-    def _encode(self, s):
-        if isinstance(s, (bytes, bytearray)):
-            return s   # already bytes
-
-        if self.encoding == 'auto':
-            try:
-                return s.encode('latin1')
-            except UnicodeEncodeError:
-                return s.encode('utf-8', 'surrogateescape')
-        return s.encode(self.encoding)
-
-    def _decode(self, b):
-        if self.encoding == 'auto':
-            try:
-                return b.decode('utf-8')
-            except UnicodeDecodeError:
-                return b.decode('latin1')
-            except AttributeError:
-                return b
-        return b.decode(self.encoding)
-
     @_validator
     def endian(self, endianness):
         """
@@ -917,7 +983,10 @@ class ContextType(object):
         except AttributeError:  pass
 
         # Otherwise, fail
-        level_names = filter(lambda x: isinstance(x,str), logging._levelNames)
+        try:
+            level_names = logging._levelToName.values()
+        except AttributeError:
+            level_names = filter(lambda x: isinstance(x,str), logging._levelNames)
         permitted = sorted(level_names)
         raise AttributeError('log_level must be an integer or one of %r' % permitted)
 
@@ -931,20 +1000,22 @@ class ContextType(object):
         Examples:
 
 
-            >>> context.log_file = 'foo.txt' #doctest: +ELLIPSIS
-            >>> log.debug('Hello!') #doctest: +ELLIPSIS
+            >>> foo_txt = tempfile.mktemp()
+            >>> bar_txt = tempfile.mktemp()
+            >>> context.log_file = foo_txt
+            >>> log.debug('Hello!')
             >>> with context.local(log_level='ERROR'): #doctest: +ELLIPSIS
             ...     log.info('Hello again!')
-            >>> with context.local(log_file='bar.txt'):
+            >>> with context.local(log_file=bar_txt):
             ...     log.debug('Hello from bar!')
             >>> log.info('Hello from foo!')
-            >>> open('foo.txt').readlines()[-3] #doctest: +ELLIPSIS
+            >>> open(foo_txt).readlines()[-3] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello!\n'
-            >>> open('foo.txt').readlines()[-2] #doctest: +ELLIPSIS
+            >>> open(foo_txt).readlines()[-2] #doctest: +ELLIPSIS
             '...:INFO:...:Hello again!\n'
-            >>> open('foo.txt').readlines()[-1] #doctest: +ELLIPSIS
+            >>> open(foo_txt).readlines()[-1] #doctest: +ELLIPSIS
             '...:INFO:...:Hello from foo!\n'
-            >>> open('bar.txt').readlines()[-1] #doctest: +ELLIPSIS
+            >>> open(bar_txt).readlines()[-1] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello from bar!\n'
         """
         if isinstance(value, (bytes, six.text_type)):
@@ -1018,7 +1089,7 @@ class ContextType(object):
             >>> context.os = 'foobar' #doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
-            AttributeError: os must be one of ['android', 'cgc', 'freebsd', 'linux', 'windows']
+            AttributeError: os must be one of ['android', 'baremetal', 'cgc', 'freebsd', 'linux', 'windows']
         """
         os = os.lower()
 
@@ -1212,6 +1283,21 @@ class ContextType(object):
         """
         return int(size)
 
+    @_validator
+    def cache_dir_base(self, new_base):
+        """Base directory to use for caching content.
+
+        Changing this to a different value will clear the `cache_dir` path
+        stored in TLS since a new path will need to be generated to respect the
+        new `cache_dir_base` value.
+        """
+
+        if new_base != self.cache_dir_base:
+            del self._tls["cache_dir"]
+        if os.access(new_base, os.F_OK) and not os.access(new_base, os.W_OK):
+            raise OSError(errno.EPERM, "Cache base dir is not writable")
+        return new_base
+
     @property
     def cache_dir(self):
         """Directory used for caching data.
@@ -1225,32 +1311,59 @@ class ContextType(object):
             >>> cache_dir is not None
             True
             >>> os.chmod(cache_dir, 0o000)
+            >>> del context._tls['cache_dir']
             >>> context.cache_dir is None
             True
             >>> os.chmod(cache_dir, 0o755)
             >>> cache_dir == context.cache_dir
             True
         """
-        xdg_cache_home = os.environ.get('XDG_CACHE_HOME') or \
-                         os.path.join(os.path.expanduser('~'), '.cache')
+        try:
+            # If the TLS already has a cache directory path, we return it
+            # without any futher checks since it must have been valid when it
+            # was set and if that has changed, hiding the TOCTOU here would be
+            # potentially confusing
+            return self._tls["cache_dir"]
+        except KeyError:
+            pass
 
-        if not os.access(xdg_cache_home, os.W_OK):
+        # Attempt to create a Python version specific cache dir and its parents
+        cache_dirname = '.pwntools-cache-%d.%d' % sys.version_info[:2]
+        cache_dirpath = os.path.join(self.cache_dir_base, cache_dirname)
+        try:
+            os.makedirs(cache_dirpath)
+        except OSError as exc:
+            # If we failed for any reason other than the cache directory
+            # already existing then we'll fall back to a temporary directory
+            # object which doesn't respect the `cache_dir_base`
+            if exc.errno != errno.EEXIST:
+                try:
+                    cache_dirpath = tempfile.mkdtemp(prefix=".pwntools-tmp")
+                except IOError:
+                    # This implies no good candidates for temporary files so we
+                    # have to return `None`
+                    return None
+                else:
+                    # Ensure the temporary cache dir is cleaned up on exit. A
+                    # `TemporaryDirectory` would do this better upon garbage
+                    # collection but this is necessary for Python 2 support.
+                    atexit.register(shutil.rmtree, cache_dirpath)
+        # By this time we have a cache directory which exists but we don't know
+        # if it is actually writable. Some wargames e.g. pwnable.kr have
+        # created dummy directories which cannot be modified by the user
+        # account (owned by root).
+        if os.access(cache_dirpath, os.W_OK):
+            # Stash this in TLS for later reuse
+            self._tls["cache_dir"] = cache_dirpath
+            return cache_dirpath
+        else:
             return None
 
-        cache = os.path.join(xdg_cache_home, '.pwntools-cache-%d.%d' % sys.version_info[:2])
-
-        if not os.path.exists(cache):
-            try:
-                os.mkdir(cache)
-            except OSError:
-                return None
-
-        # Some wargames e.g. pwnable.kr have created dummy directories
-        # which cannot be modified by the user account (owned by root).
-        if not os.access(cache, os.W_OK):
-            return None
-
-        return cache
+    @cache_dir.setter
+    def cache_dir(self, v):
+        if os.access(v, os.W_OK):
+            # Stash this in TLS for later reuse
+            self._tls["cache_dir"] = v
 
     @_validator
     def delete_corefiles(self, v):
@@ -1285,7 +1398,9 @@ class ContextType(object):
         This configures the newline emitted by e.g. ``sendline`` or that is used
         as a delimiter for e.g. ``recvline``.
         """
-        return six.ensure_binary(v)
+        # circular imports
+        from pwnlib.util.packing import _need_bytes
+        return _need_bytes(v)
 
 
     @_validator
@@ -1329,6 +1444,15 @@ class ContextType(object):
             raise AttributeError("cyclic pattern size cannot be larger than word size")
 
         return size
+
+    @_validator
+    def ssh_session(self, shell):
+        from pwnlib.tubes.ssh import ssh
+
+        if not isinstance(shell, ssh):
+            raise AttributeError("context.ssh_session must be an ssh tube")
+
+        return shell
 
     #*************************************************************************
     #                               ALIASES

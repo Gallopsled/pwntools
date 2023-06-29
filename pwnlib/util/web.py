@@ -25,17 +25,19 @@ def wget(url, save=None, timeout=5, **kwargs):
 
     Example:
 
-      >>> url    = 'https://httpbin.org/robots.txt'
+      >>> url    = 'https://httpbingo.org/robots.txt'
       >>> result = wget(url, timeout=60)
       >>> result
       b'User-agent: *\nDisallow: /deny\n'
-      >>> result2 = wget(url, True, timeout=60)
-      >>> result == open('robots.txt', 'rb').read()
+
+      >>> filename = tempfile.mktemp()
+      >>> result2 = wget(url, filename, timeout=60)
+      >>> result == open(filename, 'rb').read()
       True
     """
     import requests
 
-    with log.progress("Downloading '%s'" % url, rate=0.1) as w:
+    with log.progress("Downloading %r" % url, rate=0.1) as w:
         w.status("Making request...")
 
         response = requests.get(url, stream=True, timeout=timeout, **kwargs)

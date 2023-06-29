@@ -1,17 +1,21 @@
 name: Changelog
-on: [pull_request]
+on:
+  pull_request:
+    paths:
+    - pwnlib/**
+    - pwn/**
 env:
   GITHUB_BASE: origin/${{ github.event.pull_request.base.ref }}
 
 jobs:
-  build:
+  check:
     strategy:
       matrix:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 5
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
@@ -20,7 +24,7 @@ jobs:
         if git log --stat ${GITHUB_BASE}..HEAD | grep CHANGELOG.md; then
            echo 'Changelog updated :D'
         else
-           if git log --stat ${GITHUB_BASE}..HEAD | grep '++\|--'; then
+           if git log --stat ${GITHUB_BASE}..HEAD pwnlib pwn | grep '++\|--'; then
               echo 'Major changes detected, changelog required!'
               false
            else

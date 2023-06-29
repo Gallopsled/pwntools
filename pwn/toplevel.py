@@ -6,7 +6,6 @@ import operator
 import os
 import platform
 import re
-import requests
 import socks
 import signal
 import string
@@ -32,6 +31,7 @@ from pwnlib.encoders import *
 from pwnlib.exception import PwnlibException
 from pwnlib.gdb import attach, debug_assembly, debug_shellcode
 from pwnlib.filepointer import *
+from pwnlib.filesystem import *
 from pwnlib.flag import *
 from pwnlib.fmtstr import FmtStr, fmtstr_payload, fmtstr_split
 from pwnlib.log import getLogger
@@ -39,6 +39,7 @@ from pwnlib.memleak import MemLeak, RelativeMemLeak
 from pwnlib.regsort import *
 from pwnlib.replacements import *
 from pwnlib.rop import ROP
+from pwnlib.rop.call import AppendedArgument
 from pwnlib.rop.srop import SigreturnFrame
 from pwnlib.rop.ret2dlresolve import Ret2dlresolvePayload
 from pwnlib.runner import *
@@ -75,6 +76,7 @@ from pwnlib.util.web import *
 from six.moves import cPickle as pickle, cStringIO as StringIO
 from six import BytesIO
 
+log = getLogger("pwnlib.exploit")
 error   = log.error
 warning = log.warning
 warn    = log.warning
@@ -82,4 +84,12 @@ info    = log.info
 debug   = log.debug
 success = log.success
 
-__all__ = [x for x in tuple(globals()) if x != '__name__']
+try:
+    import colored_traceback
+except ImportError:
+    pass
+else:
+    colored_traceback.add_hook()
+
+# Equivalence with the default behavior of "from import *"
+# __all__ = [x for x in tuple(globals()) if not x.startswith('_')]

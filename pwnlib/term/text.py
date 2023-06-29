@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import functools
+import os
 import sys
 import types
 
@@ -11,7 +12,7 @@ from pwnlib.term import termcap
 def eval_when(when):
     if hasattr(when, 'isatty') or \
       when in ('always', 'never', 'auto', sys.stderr, sys.stdout):
-        if   when == 'always':
+        if os.environ.get('PWNLIB_COLOR') == 'always' or when == 'always':
             return True
         elif when == 'never':
             return False
@@ -88,6 +89,9 @@ class Module(types.ModuleType):
         return functools.partial(f, self)
 
     def __getattr__(self, desc):
+        if desc.startswith('_'):
+            raise AttributeError(desc)
+
         try:
             ds = desc.replace('gray', 'bright_black').split('_')
             init = ''
