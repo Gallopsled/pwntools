@@ -21,10 +21,10 @@ class AsciiShellcodeEncoder(Encoder):
     executes (on the stack)
 
     The original paper this encoder is based on:
-    http://julianor.tripod.com/bc/bypass-msb.txt
+    https://julianor.tripod.com/bc/bypass-msb.txt
 
     A more visual explanation as well as an implementation in C:
-    https://github.com/VincentDary/PolyAsciiShellGen/blob/master/README.md#mechanism
+    https://vincentdary.github.io/blog-posts/polyasciishellgen-caezar-ascii-shellcode-generator/index.html#22-mechanism
     """
 
     def __init__(self, slop=20, max_subs=4):

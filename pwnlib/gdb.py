@@ -374,8 +374,10 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         exe(str): Path to the executable on disk
         env(dict): Environment to start the binary in
         ssh(:class:`.ssh`): Remote ssh session to use to launch the process.
-        sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
-            and Android targets.
+        sysroot(str): Set an alternate system root. The system root is used to
+            load absolute shared library symbol files. This is useful to instruct
+            gdb to load a local version of binaries/libraries instead of downloading
+            them from the gdbserver, which is faster
         api(bool): Enable access to GDB Python API.
 
     Returns:
@@ -568,7 +570,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     gdbserver.executable = exe
 
     # Find what port we need to connect to
-    if context.native or (context.os == 'android'):
+    if ssh or context.native or (context.os == 'android'):
         port = _gdbserver_port(gdbserver, ssh)
     else:
         port = qemu_port
@@ -663,6 +665,48 @@ class Breakpoint:
         # Handle stop() call from the server.
         return self.stop()
 
+class FinishBreakpoint:
+    """Mirror of ``gdb.FinishBreakpoint`` class.
+
+    See https://sourceware.org/gdb/onlinedocs/gdb/Finish-Breakpoints-in-Python.html
+    for more information.
+    """
+
+    def __init__(self, conn, *args, **kwargs):
+        """Do not create instances of this class directly.
+
+        Use ``pwnlib.gdb.Gdb.FinishBreakpoint`` instead.
+        """
+        # Creates a real finish breakpoint and connects it with this mirror
+        self.conn = conn
+        self.server_breakpoint = conn.root.set_finish_breakpoint(
+            self, hasattr(self, 'stop'), hasattr(self, 'out_of_scope'),
+            *args, **kwargs)
+
+    def __getattr__(self, item):
+        """Return attributes of the real breakpoint."""
+        if item in (
+                '____id_pack__',
+                '__name__',
+                '____conn__',
+                'stop',
+                'out_of_scope',
+        ):
+            # Ignore RPyC netref attributes.
+            # Also, if stop() or out_of_scope() are not defined, hasattr() call
+            # in our __init__() will bring us here. Don't contact the
+            # server in this case either.
+            raise AttributeError()
+        return getattr(self.server_breakpoint, item)
+
+    def exposed_stop(self):
+        # Handle stop() call from the server.
+        return self.stop()
+
+    def exposed_out_of_scope(self):
+        # Handle out_of_scope() call from the server.
+        return self.out_of_scope()
+
 class Gdb:
     """Mirror of ``gdb`` module.
 
@@ -680,8 +724,12 @@ class Gdb:
         class _Breakpoint(Breakpoint):
             def __init__(self, *args, **kwargs):
                 super().__init__(conn, *args, **kwargs)
+        class _FinishBreakpoint(FinishBreakpoint):
+            def __init__(self, *args, **kwargs):
+                super().__init__(conn, *args, **kwargs)
 
         self.Breakpoint = _Breakpoint
+        self.FinishBreakpoint = _FinishBreakpoint
         self.stopped = Event()
 
         def stop_handler(event):
@@ -728,8 +776,10 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         arch(str): Architechture of the target binary.  If `exe` known GDB will
           detect the architechture automatically (if it is supported).
         gdb_args(list): List of additional arguments to pass to GDB.
-        sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
-            and Android targets.
+        sysroot(str): Set an alternate system root. The system root is used to
+            load absolute shared library symbol files. This is useful to instruct
+            gdb to load a local version of binaries/libraries instead of downloading
+            them from the gdbserver, which is faster
         api(bool): Enable access to GDB Python API.
 
     Returns:
@@ -868,11 +918,11 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
     # gdb script to run before `gdbscript`
     pre = ''
+    if sysroot:
+        pre += 'set sysroot %s\n' % sysroot
     if not context.native:
         pre += 'set endian %s\n' % context.endian
         pre += 'set architecture %s\n' % get_gdb_arch()
-        if sysroot:
-            pre += 'set sysroot %s\n' % sysroot
 
         if context.os == 'android':
             pre += 'set gnutarget ' + _bfdname() + '\n'

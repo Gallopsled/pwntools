@@ -269,7 +269,7 @@ class Module(types.ModuleType):
         """A generic CRC-sum function.
 
         This is suitable to use with:
-        http://reveng.sourceforge.net/crc-catalogue/all.htm
+        https://reveng.sourceforge.io/crc-catalogue/all.htm
 
         The "check" value in the document is the CRC-sum of the string "123456789".
 
@@ -360,7 +360,7 @@ class Module(types.ModuleType):
 
         l = len(data)
         data += packing.pack(l, 'all', endian='little', sign=False)
-        return crc.crc_32_posix(data)
+        return crc.crc_32_cksum(data)
 
     @staticmethod
     def find_crc_function(data, checksum):

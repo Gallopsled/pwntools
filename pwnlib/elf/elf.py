@@ -225,7 +225,7 @@ class ELF(ELFFile):
         super(ELF,self).__init__(self.mmap)
 
         #: :class:`str`: Path to the file
-        self.path = os.path.abspath(path)
+        self.path = packing._need_text(os.path.abspath(path))
 
         #: :class:`str`: Architecture of the file (e.g. ``'i386'``, ``'arm'``).
         #:
@@ -1165,7 +1165,7 @@ class ELF(ELFFile):
             won't work.
 
         Arguments:
-            needle(str): String to search for.
+            needle(bytes): String to search for.
             writable(bool): Search only writable sections.
             executable(bool): Search only executable sections.
 
@@ -1346,7 +1346,7 @@ class ELF(ELFFile):
             count(int): Number of bytes to read
 
         Returns:
-            A :class:`str` object, or :const:`None`.
+            A :class:`bytes` object, or :const:`None`.
 
         Examples:
             The simplest example is just to read the ELF header.
@@ -1507,7 +1507,7 @@ class ELF(ELFFile):
 
     @property
     def data(self):
-        """:class:`str`: Raw data of the ELF file.
+        """:class:`bytes`: Raw data of the ELF file.
 
         See:
             :meth:`get_data`
@@ -1535,7 +1535,7 @@ class ELF(ELFFile):
         This modifies the ELF in-place.
         The resulting binary can be saved with :meth:`.ELF.save`
         """
-        binary = asm(assembly, vma=address)
+        binary = asm(assembly, vma=address, arch=self.arch, endian=self.endian, bits=self.bits)
         self.write(address, binary)
 
     def bss(self, offset=0):
@@ -1653,7 +1653,7 @@ class ELF(ELFFile):
         .. _page 81: https://refspecs.linuxbase.org/elf/elf.pdf#page=81
         .. _DT_BIND_NOW: https://refspecs.linuxbase.org/elf/elf.pdf#page=81
         .. _PT_GNU_RELRO: https://refspecs.linuxbase.org/LSB_3.1.1/LSB-Core-generic/LSB-Core-generic.html#PROGHEADER
-        .. _DF_BIND_NOW: http://refspecs.linuxbase.org/elf/gabi4+/ch5.dynamic.html#df_bind_now
+        .. _DF_BIND_NOW: https://refspecs.linuxbase.org/elf/gabi4+/ch5.dynamic.html#df_bind_now
 
         >>> path = pwnlib.data.elf.relro.path
         >>> for test in glob(os.path.join(path, 'test-*')):
@@ -1915,7 +1915,7 @@ class ELF(ELFFile):
 
     @property
     def buildid(self):
-        """:class:`str`: GNU Build ID embedded into the binary"""
+        """:class:`bytes`: GNU Build ID embedded into the binary"""
         section = self.get_section_by_name('.note.gnu.build-id')
         if section:
             return section.data()[16:]

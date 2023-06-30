@@ -59,10 +59,14 @@ def update_geometry():
     height, width = h, w
 
 def handler_sigwinch(signum, stack):
+    if hasattr(signal, 'pthread_sigmask'):
+        signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGWINCH})
     update_geometry()
     redraw()
     for cb in on_winch:
         cb()
+    if hasattr(signal, 'pthread_sigmask'):
+        signal.pthread_sigmask(signal.SIG_UNBLOCK, {signal.SIGWINCH})
 
 def handler_sigstop(signum, stack):
     resetterm()
@@ -326,14 +330,14 @@ def parse(s):
         elif c == 0x0d:
             x = (CR, None)
             i += 1
-        else:
+
+        if x is None:
+            x = (STR, [six.int2byte(c) for c in bytearray(b'\\x%02x' % c)])
             i += 1
 
         if _graphics_mode:
             continue
-        if x is None:
-            x = (STR, [six.int2byte(c) for c in bytearray(b'\\x%02x' % c)])
-            i += 1
+
         if x[0] == STR and out and out[-1][0] == STR:
             out[-1][1].extend(x[1])
         else:

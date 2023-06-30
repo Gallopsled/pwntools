@@ -309,7 +309,7 @@ class FileStructure(object):
 
     def orange(self,io_list_all,vtable):
         r"""
-        Perform a House of Orange (https://github.com/shellphish/how2heap/blob/master/glibc_2.25/house_of_orange.c), provided you have libc leaks.
+        Perform a House of Orange (https://github.com/shellphish/how2heap/blob/master/glibc_2.23/house_of_orange.c), provided you have libc leaks.
 
         Arguments:
             io_list_all(int)
