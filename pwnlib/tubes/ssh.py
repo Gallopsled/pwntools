@@ -1151,10 +1151,10 @@ os.execve(exe, argv, env)
 
         Examples:
             >>> s =  ssh(host='example.pwnme')
-            >>> py = s.run('python -i')
+            >>> py = s.run('python3 -i')
             >>> _ = py.recvuntil(b'>>> ')
             >>> py.sendline(b'print(2+2)')
-            >>> py.sendline(b'exit')
+            >>> py.sendline(b'exit()')
             >>> print(repr(py.recvline()))
             b'4\n'
             >>> s.system('env | grep -a AAAA', env={'AAAA': b'\x90'}).recvall()
