@@ -1474,7 +1474,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             self._download_raw(remote, local, p)
 
             if not self._verify_local_fingerprint(fingerprint):
-                raise PwnlibException('Could not download file %r' % remote)
+                self.error('Could not download file %r', remote)
 
         return local
 
