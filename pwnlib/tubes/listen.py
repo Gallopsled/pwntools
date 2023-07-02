@@ -80,6 +80,9 @@ class listen(sock):
                  fam='any', typ='tcp', *args, **kwargs):
         super(listen, self).__init__(*args, **kwargs)
 
+        # convert port to string for sagemath support
+        port = str(port)
+
         fam = self._get_family(fam)
         typ = self._get_type(typ)
 

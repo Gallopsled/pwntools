@@ -61,7 +61,8 @@ class remote(sock):
                  *args, **kwargs):
         super(remote, self).__init__(*args, **kwargs)
 
-        self.rport  = port
+        # convert port to string for sagemath support
+        self.rport  = str(port)
         self.rhost  = host
 
         if sock:
