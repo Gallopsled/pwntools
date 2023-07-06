@@ -1509,7 +1509,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         calling the function twice has little overhead.
 
         Arguments:
-            remote(str): The remote filename to download
+            remote(str/bytes): The remote filename to download
             local(str): The local filename to save it to. Default is to infer it from the remote filename.
         """
 
@@ -1517,8 +1517,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if not local:
             local = os.path.basename(os.path.normpath(remote))
 
-        if os.path.basename(remote) == remote:
-            remote = os.path.join(self.cwd, remote)
+        if not os.path.isabs(remote):
+            # Make sure cwd and remote are bytes before joining 
+            remote = packing._encode(remote)
+            remote = os.path.join(packing._encode(self.cwd), remote)
 
         with self.progress('Downloading %r to %r' % (remote, local)) as p:
             local_tmp = self._download_to_cache(remote, p)
