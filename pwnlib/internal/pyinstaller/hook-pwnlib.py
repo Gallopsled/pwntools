@@ -1,3 +1,4 @@
+# pylint: disable=import-error
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 hiddenimports = [
