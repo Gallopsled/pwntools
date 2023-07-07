@@ -1511,16 +1511,21 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Arguments:
             remote(str/bytes): The remote filename to download
             local(str): The local filename to save it to. Default is to infer it from the remote filename.
+        
+        Examples:
+            >>> with open('foobar','w+') as f:
+            ...     _ = f.write('Hello, world')
+            >>> s =  ssh(host='example.pwnme',
+            ...         cache=False)
+            >>> s.download_file('foobar', 'barfoo')
+            >>> with open('barfoo','r') as f:
+            ...     print(f.read())
+            b'Hello, world'
         """
 
 
         if not local:
             local = os.path.basename(os.path.normpath(remote))
-
-        if not os.path.isabs(remote):
-            # Make sure cwd and remote are bytes before joining 
-            remote = packing._encode(remote)
-            remote = os.path.join(packing._encode(self.cwd), remote)
 
         with self.progress('Downloading %r to %r' % (remote, local)) as p:
             local_tmp = self._download_to_cache(remote, p)
@@ -1693,6 +1698,17 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             file_or_directory(str): Path to the file or directory to download.
             local(str): Local path to store the data.
                 By default, uses the current directory.
+        
+
+        Examples:
+            >>> with open('foobar','w+') as f:
+            ...     _ = f.write('Hello, world')
+            >>> s =  ssh(host='example.pwnme',
+            ...         cache=False)
+            >>> s.download('foobar', 'barfoo')
+            >>> with open('barfoo','r') as f:
+            ...     print(f.read())
+            b'Hello, world'
         """
         file_or_directory = packing._encode(file_or_directory)
         with self.system(b'test -d ' + sh_string(file_or_directory)) as io:
