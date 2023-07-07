@@ -68,3 +68,6 @@ include-package-data = false
 
 [tool.setuptools.packages.find]
 namespaces = false
+
+[project.entry-points.pyinstaller40]
+hook-dirs = "pwnlib.internal.pyinstaller:get_hook_dirs"
