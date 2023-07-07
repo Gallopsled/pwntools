@@ -363,7 +363,7 @@ def _get_runner(ssh=None):
     else:                          return tubes.process.process
 
 @LocalContext
-def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=False, **kwargs):
+def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=False, force_args=False, **kwargs):
     r"""
     Launch a GDB server with the specified command line,
     and launches GDB to attach to it.
@@ -533,7 +533,49 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         log.warn_once("Skipping debugger since context.noptrace==True")
         return runner(args, executable=exe, env=env)
 
-    if ssh or context.native or (context.os == 'android'):
+    if force_args: 
+        # gdbserver does not support passing argv[0] to the executable
+        # To work around this, we use the --wrapper option 
+        # https://sourceware.org/pipermail/gdb/2013-May/043021.html
+
+        # Here we create a wrapper that calls execve with the correct argv[0]
+        src = """
+#include <unistd.h>
+int main(){
+    char** argv = {0};
+    execv("EXE", argv, envp);
+}
+        """
+        exe = exe.encode()
+        src = src.replace("EXE", str(exe)[2:-1])
+        print(src)
+        # And a execve binary
+        outfile = tempfile.NamedTemporaryFile()
+        outfile.close()
+        with tempfile.NamedTemporaryFile(suffix=".c") as srcfile:
+            print(srcfile.name, outfile.name)
+            srcfile.write(src.encode())
+            srcfile.flush()
+            os.system("gcc -o {} {}".format(outfile.name, srcfile.name))
+            os.system("echo WIN")
+
+        
+        # # Transform env to list if env:
+        #     env_list = [k + b'=' + v for k, v in env.items()]
+        # else:
+        #     env_list = 0
+        
+        # # Transform args to list
+        # args = [bytes(a) for a in args]
+
+
+        # Create gdbserver args
+        args = ['gdbserver', '--no-disable-randomization', '--wrapper', outfile.name, '--']
+        args += ["localhost:0", "dummy"]
+
+
+
+    elif ssh or context.native or (context.os == 'android'):
         args = _gdbserver_args(args=args, which=which, env=env)
     else:
         qemu_port = random.randint(1024, 65535)
