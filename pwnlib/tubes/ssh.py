@@ -1516,7 +1516,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> with open('/tmp/foobar','w+') as f:
             ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
-            ...         cache=False, wd='/tmp')
+            ...         cache=False)
+            >>> s.set_working_directory(wd='/tmp')
             >>> s.download_file('foobar', 'barfoo')
             >>> with open('barfoo','r') as f:
             ...     print(f.read())
@@ -1704,7 +1705,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> with open('/tmp/foobar','w+') as f:
             ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
-            ...         cache=False, wd='/tmp')
+            ...         cache=False)
+            >>> s.set_working_directory('/tmp')
             >>> s.download('foobar', 'barfoo')
             >>> with open('barfoo','r') as f:
             ...     print(f.read())
