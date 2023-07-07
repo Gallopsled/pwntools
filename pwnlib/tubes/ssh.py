@@ -1513,10 +1513,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             local(str): The local filename to save it to. Default is to infer it from the remote filename.
         
         Examples:
-            >>> with open('foobar','w+') as f:
+            >>> with open('/tmp/foobar','w+') as f:
             ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
-            ...         cache=False)
+            ...         cache=False, wd='/tmp')
             >>> s.download_file('foobar', 'barfoo')
             >>> with open('barfoo','r') as f:
             ...     print(f.read())
@@ -1701,10 +1701,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         
 
         Examples:
-            >>> with open('foobar','w+') as f:
+            >>> with open('/tmp/foobar','w+') as f:
             ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
-            ...         cache=False)
+            ...         cache=False, wd='/tmp')
             >>> s.download('foobar', 'barfoo')
             >>> with open('barfoo','r') as f:
             ...     print(f.read())
