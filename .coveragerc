@@ -4,6 +4,7 @@ parallel = True
 concurrency = thread,multiprocessing
 omit =
     */constants/*
+    */pyinstaller/*
 source =
     pwn
     pwnlib
