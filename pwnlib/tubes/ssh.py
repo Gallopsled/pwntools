@@ -1517,11 +1517,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
             ...         cache=False)
-            >>> s.set_working_directory(wd='/tmp')
-            >>> s.download_file('foobar', 'barfoo')
+            >>> _ = s.set_working_directory(wd='/tmp')
+            >>> _ = s.download_file('foobar', 'barfoo')
             >>> with open('barfoo','r') as f:
             ...     print(f.read())
-            b'Hello, world'
+            Hello, world
         """
 
 
@@ -1706,11 +1706,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
             ...         cache=False)
-            >>> s.set_working_directory('/tmp')
-            >>> s.download('foobar', 'barfoo')
+            >>> _ = s.set_working_directory('/tmp')
+            >>> _ = s.download('foobar', 'barfoo')
             >>> with open('barfoo','r') as f:
             ...     print(f.read())
-            b'Hello, world'
+            Hello, world
         """
         file_or_directory = packing._encode(file_or_directory)
         with self.system(b'test -d ' + sh_string(file_or_directory)) as io:
