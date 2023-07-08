@@ -249,6 +249,89 @@ def debug_shellcode(data, gdbscript=None, vma=None, api=False):
 
     return debug(tmp_elf, gdbscript=gdbscript, arch=context.arch, api=api)
 
+def _find_python(which):
+    """Finds the path to a Python interpreter."""
+    for py in ["python2.7", "python2", "python", "python3"]:
+        found = which(py)
+
+        if found is not None:
+            return found
+
+    return None
+
+def _generate_execve_script(exe, args, env):
+    """Generates a python script to execve() a binary.
+    This method uses `ctypes` to call `execve()` directly, since in 
+    python3 os.execve() doesn't allow us to specify argv[0]=NULL or argv[0]=b''
+
+    This script might want to be called by `python -c`, to ensure it's safety, 
+    we add typechecks to cast all user-controlled input into hexstrings.
+
+    Arguments:
+        exe(str): Path to the binary to execute
+        argv(list): List of arguments to pass to the binary
+        env(dict): Environment variables to pass to the binary
+    
+    Returns:
+        The generated script as a string
+    """
+    if args is None:
+        args = []
+    if env is None:
+        env = {}
+
+    # Type checks
+    if type(exe) not in [bytes, bytearray, str]:
+        log.error("exe must be a string or bytes")
+    
+    if isinstance(args, list):
+        for arg in args:
+            if type(arg) not in [bytes, bytearray, str]:
+                log.error("args must be a list of strings or bytes")
+    else:
+        log.error("args must be a list of strings or bytes")
+    
+    if isinstance(env, dict):
+        for key, value in env.items():
+            if type(key) not in [bytes, bytearray, str]:
+                log.error("env keys must be strings or bytes")
+            if type(value) not in [bytes, bytearray, str]:
+                log.error("env values must be strings or bytes")
+    else:
+        log.error("env must be a dictionary of strings or bytes")
+
+    # This script calls execve() directly using ctypes
+    script = """
+import ctypes
+
+exe = bytes.fromhex({executable!r})
+argv = [bytes.fromhex(x) for x in {formatted_args!r}]
+envp = [bytes.fromhex(x) for x in {formatted_env!r}]
+
+def get_string_list(string_list):
+    #Transform a list of bytes into a ctypes array of char pointers
+    char_p_array = (ctypes.c_char_p * len(string_list))()
+    for i, string in enumerate(string_list):
+        char_p_array[i] = ctypes.c_char_p(string)
+
+    return char_p_array
+
+c_exe = ctypes.c_char_p(exe) 
+c_argv = get_string_list(argv)
+c_envp = get_string_list(envp)
+
+# Call execve
+libc = ctypes.CDLL(None)
+libc.execve(c_exe, c_argv, c_envp)
+"""
+    script = script.format(executable=(packing._encode(exe)).hex(),
+                            formatted_args=[(packing._encode(arg)).hex() for arg in args],
+                            formatted_env=[((packing._encode(k)) + b'=' + bytes(packing._encode(v))).hex() for k, v in env.items()])
+
+    # log.debug("Generated execve script:\n%s", script)
+    
+    return script
+
 def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
     """_gdbserver_args(pid=None, path=None, args=None, which=None, env=None) -> list
 
@@ -260,20 +343,35 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
         path(str): Process to launch
         args(list): List of arguments to provide on the debugger command line
         which(callaable): Function to find the path of a binary.
+        env(dict): Dictionary containing the debugged process environment variables.
 
     Returns:
         A list of arguments to invoke gdbserver.
     """
-    if [pid, path, args].count(None) != 2:
-        log.error("Must specify exactly one of pid, path, or args")
+    if [path, args, pid].count(None) == 3:
+        log.error("Must specify at least one of pid, path, or args")
+
+    if pid is not None:
+        if [path, args].count(None) != 2:
+            log.error("Cannot specify both pid and path or args")
+
+    elif path is None:
+        if args:
+            # Local which needs str not bytes
+            path = which(packing._decode(args[0]))
+        else:
+            log.error("Must specify at least one of pid, path, or args")
+    
+
+    path = packing._need_bytes(path, min_wrong=0x80)
+
+    if args is None:
+        args = []
 
     if not which:
         log.error("Must specify which.")
 
     gdbserver = ''
-
-    if not args:
-        args = [str(path or pid)]
 
     # Android targets have a distinct gdbserver
     if context.bits == 64:
@@ -285,8 +383,6 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
     if not gdbserver:
         log.error("gdbserver is not installed")
 
-    orig_args = args
-
     gdbserver_args = [gdbserver, '--multi']
     if context.aslr:
         gdbserver_args += ['--no-disable-randomization']
@@ -296,7 +392,24 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
     if pid:
         gdbserver_args += ['--once', '--attach']
 
-    if env is not None:
+    # gdbserver does not support passing argv[0] to the executable
+    # To work around this, we use the --wrapper option to start a python
+    # script which calls execve() directly
+    # https://sourceware.org/pipermail/gdb/2013-May/043021.html
+    if context.native:
+        script = _generate_execve_script(path, args, env)
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".py") as tmp:
+            tmp.write(script)
+
+        log.debug("Wrote execve wrapper script to %s", tmp.name)
+        python = _find_python(which)
+        gdbserver_args += ["--wrapper", python, tmp.name, "--"]
+
+        # Gdbserver needs to start with args, therefore we add a dummy arg if none are specified
+        if args is None or len(args) == 0 or len(args[0].strip()) == 0:
+            args = ['dummy']
+
+    elif env is not None:
         env_args = []
         for key in tuple(env):
             if key.startswith(b'LD_'): # LD_PRELOAD / LD_LIBRARY_PATH etc.
@@ -363,7 +476,7 @@ def _get_runner(ssh=None):
     else:                          return tubes.process.process
 
 @LocalContext
-def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=False, force_args=False, **kwargs):
+def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=False, **kwargs):
     r"""
     Launch a GDB server with the specified command line,
     and launches GDB to attach to it.
@@ -433,6 +546,14 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         Interact with the process
 
         >>> io.interactive() # doctest: +SKIP
+        >>> io.close()
+
+        Create a new process with empty argv[0]
+        
+        >>> io = gdb.debug([''], exe="/bin/bash")
+        >>> io.sendline(b"echo $0")
+        >>> io.recvline()
+        b'\n'
         >>> io.close()
 
         Create a new process, and stop it at '_start'
@@ -533,50 +654,8 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         log.warn_once("Skipping debugger since context.noptrace==True")
         return runner(args, executable=exe, env=env)
 
-    if force_args: 
-        # gdbserver does not support passing argv[0] to the executable
-        # To work around this, we use the --wrapper option 
-        # https://sourceware.org/pipermail/gdb/2013-May/043021.html
-
-        # Here we create a wrapper that calls execve with the correct argv[0]
-        src = """
-#include <unistd.h>
-int main(){
-    char** argv = {0};
-    execv("EXE", argv, envp);
-}
-        """
-        exe = exe.encode()
-        src = src.replace("EXE", str(exe)[2:-1])
-        print(src)
-        # And a execve binary
-        outfile = tempfile.NamedTemporaryFile()
-        outfile.close()
-        with tempfile.NamedTemporaryFile(suffix=".c") as srcfile:
-            print(srcfile.name, outfile.name)
-            srcfile.write(src.encode())
-            srcfile.flush()
-            os.system("gcc -o {} {}".format(outfile.name, srcfile.name))
-            os.system("echo WIN")
-
-        
-        # # Transform env to list if env:
-        #     env_list = [k + b'=' + v for k, v in env.items()]
-        # else:
-        #     env_list = 0
-        
-        # # Transform args to list
-        # args = [bytes(a) for a in args]
-
-
-        # Create gdbserver args
-        args = ['gdbserver', '--no-disable-randomization', '--wrapper', outfile.name, '--']
-        args += ["localhost:0", "dummy"]
-
-
-
-    elif ssh or context.native or (context.os == 'android'):
-        args = _gdbserver_args(args=args, which=which, env=env)
+    if ssh or context.native or (context.os == 'android'):
+        args = _gdbserver_args(args=args, path=exe, which=which, env=env)
     else:
         qemu_port = random.randint(1024, 65535)
         qemu_user = qemu.user_path()
