@@ -54,7 +54,7 @@ OSes, ``binutils`` is simple to build by hand.
     V=2.38   # Binutils Version
     ARCH=arm # Target architecture
 
-    cd ${TMP:-$PREFIX/tmp}
+    cd ${TMPDIR:-/tmp}
     wget -nc https://ftp.gnu.org/gnu/binutils/binutils-$V.tar.gz
     wget -nc https://ftp.gnu.org/gnu/binutils/binutils-$V.tar.gz.sig
 
