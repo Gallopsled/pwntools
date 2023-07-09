@@ -875,7 +875,7 @@ class tube(Timeout, Logger):
 
         go = threading.Event()
         def recv_thread():
-            while not go.isSet():
+            while not go.is_set():
                 try:
                     cur = self.recv(timeout = 0.05)
                     cur = cur.replace(self.newline, b'\n')
@@ -897,7 +897,7 @@ class tube(Timeout, Logger):
         try:
             os_linesep = os.linesep.encode()
             to_skip = b''
-            while not go.isSet():
+            while not go.is_set():
                 if term.term_mode:
                     data = term.readline.readline(prompt = prompt, float = True)
                     if data:

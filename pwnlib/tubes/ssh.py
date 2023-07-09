@@ -1151,10 +1151,10 @@ os.execve(exe, argv, env)
 
         Examples:
             >>> s =  ssh(host='example.pwnme')
-            >>> py = s.run('python -i')
+            >>> py = s.run('python3 -i')
             >>> _ = py.recvuntil(b'>>> ')
             >>> py.sendline(b'print(2+2)')
-            >>> py.sendline(b'exit')
+            >>> py.sendline(b'exit()')
             >>> print(repr(py.recvline()))
             b'4\n'
             >>> s.system('env | grep -a AAAA', env={'AAAA': b'\x90'}).recvall()
@@ -1467,7 +1467,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             self._download_raw(remote, local, p)
 
             if not self._verify_local_fingerprint(fingerprint):
-                p.error('Could not download file %r' % remote)
+                self.error('Could not download file %r', remote)
 
         return local
 
@@ -1502,16 +1502,24 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         calling the function twice has little overhead.
 
         Arguments:
-            remote(str): The remote filename to download
+            remote(str/bytes): The remote filename to download
             local(str): The local filename to save it to. Default is to infer it from the remote filename.
+        
+        Examples:
+            >>> with open('/tmp/foobar','w+') as f:
+            ...     _ = f.write('Hello, world')
+            >>> s =  ssh(host='example.pwnme',
+            ...         cache=False)
+            >>> _ = s.set_working_directory(wd='/tmp')
+            >>> _ = s.download_file('foobar', 'barfoo')
+            >>> with open('barfoo','r') as f:
+            ...     print(f.read())
+            Hello, world
         """
 
 
         if not local:
             local = os.path.basename(os.path.normpath(remote))
-
-        if os.path.basename(remote) == remote:
-            remote = os.path.join(self.cwd, remote)
 
         with self.progress('Downloading %r to %r' % (remote, local)) as p:
             local_tmp = self._download_to_cache(remote, p)
@@ -1636,7 +1644,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             remote: Remote directory
         """
 
-        remote    = remote or self.cwd
+        remote    = packing._encode(remote or self.cwd)
 
         local     = os.path.expanduser(local)
         dirname   = os.path.dirname(local)
@@ -1657,7 +1665,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 remote_tar = self.mktemp('--suffix=.tar.gz')
                 self.upload_file(local_tar, remote_tar)
 
-                untar = self.run('cd %s && tar -xzf %s' % (remote, remote_tar))
+                untar = self.run(b'cd %s && tar -xzf %s' % (sh_string(remote), sh_string(remote_tar)))
                 message = untar.recvrepeat(2)
 
                 if untar.wait() != 0:
@@ -1694,6 +1702,18 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             file_or_directory(str): Path to the file or directory to download.
             local(str): Local path to store the data.
                 By default, uses the current directory.
+        
+
+        Examples:
+            >>> with open('/tmp/foobar','w+') as f:
+            ...     _ = f.write('Hello, world')
+            >>> s =  ssh(host='example.pwnme',
+            ...         cache=False)
+            >>> _ = s.set_working_directory('/tmp')
+            >>> _ = s.download('foobar', 'barfoo')
+            >>> with open('barfoo','r') as f:
+            ...     print(f.read())
+            Hello, world
         """
         file_or_directory = packing._encode(file_or_directory)
         with self.system(b'test -d ' + sh_string(file_or_directory)) as io:
@@ -1769,7 +1789,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         if self.cwd != '.':
             cmd = 'cd ' + sh_string(self.cwd)
-            s.sendline(cmd)
+            s.sendline(packing._need_bytes(cmd, 2, 0x80))
 
         s.interactive()
         s.close()

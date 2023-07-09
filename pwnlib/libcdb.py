@@ -25,7 +25,9 @@ from pwnlib.util.web import wget
 log = getLogger(__name__)
 
 HASHES = ['build_id', 'sha1', 'sha256', 'md5']
-DEBUGINFOD_SERVERS = ['https://debuginfod.elfutils.org/']
+DEBUGINFOD_SERVERS = [
+    'https://debuginfod.elfutils.org/',
+]
 
 if 'DEBUGINFOD_URLS' in os.environ:
     urls = os.environ['DEBUGINFOD_URLS'].split(' ')
@@ -217,7 +219,7 @@ def unstrip_libc(filename):
         >>> libc = ELF(filename)
         >>> hex(libc.symbols.main_arena)
         '0x219c80'
-        >>> unstrip_libc(which('python'))
+        >>> unstrip_libc(which('python3'))
         False
         >>> filename = search_by_build_id('d1704d25fbbb72fa95d517b883131828c0883fe9', unstrip=True)
         >>> 'main_arena' in ELF(filename).symbols
