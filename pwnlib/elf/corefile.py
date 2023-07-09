@@ -666,7 +666,7 @@ class Corefile(ELF):
                     log.warn('Could not find the stack!')
                     self.stack = None
 
-            with context.local(bytes=self.bytes, log_level='warn'):
+            with context.local(bytes=self.bytes):
                 try:
                     self._parse_stack()
                 except ValueError:
