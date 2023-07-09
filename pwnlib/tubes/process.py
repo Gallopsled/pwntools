@@ -29,6 +29,8 @@ from pwnlib.tubes.tube import tube
 from pwnlib.util.hashes import sha256file
 from pwnlib.util.misc import parse_ldd_output
 from pwnlib.util.misc import which
+from pwnlib.util.misc import normalize_argv_env
+from pwnlib.util.packing import _need_bytes
 
 log = getLogger(__name__)
 
@@ -115,9 +117,9 @@ class process(tube):
 
     Examples:
 
-        >>> p = process('python2')
-        >>> p.sendline(b"print 'Hello world'")
-        >>> p.sendline(b"print 'Wow, such data'");
+        >>> p = process('python')
+        >>> p.sendline(b"print('Hello world')")
+        >>> p.sendline(b"print('Wow, such data')")
         >>> b'' == p.recv(timeout=0.01)
         True
         >>> p.shutdown('send')
@@ -214,6 +216,8 @@ class process(tube):
 
     #: Have we seen the process stop?  If so, this is a unix timestamp.
     _stop_noticed = 0
+
+    proc = None
 
     def __init__(self, argv = None,
                  shell = False,
@@ -513,32 +517,11 @@ class process(tube):
         orig_cwd = cwd
         cwd = cwd or os.path.curdir
 
-        #
-        # Validate argv
-        #
-        # - Must be a list/tuple of strings
-        # - Each string must not contain '\x00'
-        #
-        if isinstance(argv, (six.text_type, six.binary_type)):
-            argv = [argv]
-
-        if not isinstance(argv, (list, tuple)):
-            self.error('argv must be a list or tuple: %r' % argv)
-
-        if not all(isinstance(arg, (six.text_type, six.binary_type)) for arg in argv):
-            self.error("argv must be strings or bytes: %r" % argv)
-
-        # Create a duplicate so we can modify it
-        argv = list(argv or [])
-
-        for i, oarg in enumerate(argv):
-            if isinstance(oarg, six.text_type):
-                arg = oarg.encode('utf-8')
-            else:
-                arg = oarg
-            if b'\x00' in arg[:-1]:
-                self.error('Inappropriate nulls in argv[%i]: %r' % (i, oarg))
-            argv[i] = arg.rstrip(b'\x00')
+        argv, env = normalize_argv_env(argv, env, self, 4)
+        if env:
+            env = {bytes(k): bytes(v) for k, v in env}
+        if argv:
+            argv = list(map(bytes, argv))
 
         #
         # Validate executable
@@ -554,9 +537,11 @@ class process(tube):
         if not isinstance(executable, str):
             executable = executable.decode('utf-8')
 
-        env = os.environ if env is None else env
-
-        path = env.get('PATH')
+        path = env and env.get(b'PATH')
+        if path:
+            path = path.decode()
+        else:
+            path = os.environ.get('PATH')
         # Do not change absolute paths to binaries
         if executable.startswith(os.path.sep):
             pass
@@ -588,31 +573,7 @@ class process(tube):
         if not os.access(executable, os.X_OK):
             self.error("%r is not marked as executable (+x)" % executable)
 
-        #
-        # Validate environment
-        #
-        # - Must be a dictionary of {string:string}
-        # - No strings may contain '\x00'
-        #
-
-        # Create a duplicate so we can modify it safely
-        env2 = {}
-        for k,v in env.items():
-            if not isinstance(k, (bytes, six.text_type)):
-                self.error('Environment keys must be strings: %r' % k)
-            if not isinstance(k, (bytes, six.text_type)):
-                self.error('Environment values must be strings: %r=%r' % (k,v))
-            if isinstance(k, six.text_type):
-                k = k.encode('utf-8')
-            if isinstance(v, six.text_type):
-                v = v.encode('utf-8', 'surrogateescape')
-            if b'\x00' in k[:-1]:
-                self.error('Inappropriate nulls in env key: %r' % (k))
-            if b'\x00' in v[:-1]:
-                self.error('Inappropriate nulls in env value: %r=%r' % (k, v))
-            env2[k.rstrip(b'\x00')] = v.rstrip(b'\x00')
-
-        return executable, argv, env2
+        return executable, argv, env
 
     def _handles(self, stdin, stdout, stderr):
         master = slave = None
@@ -649,7 +610,7 @@ class process(tube):
         """Permit pass-through access to the underlying process object for
         fields like ``pid`` and ``stdin``.
         """
-        if hasattr(self.proc, attr):
+        if not attr.startswith('_') and hasattr(self.proc, attr):
             return getattr(self.proc, attr)
         raise AttributeError("'process' object has no attribute '%s'" % attr)
 
@@ -770,9 +731,9 @@ class process(tube):
         if direction == 'any':
             return self.poll() is None
         elif direction == 'send':
-            return not self.proc.stdin.closed
+            return self.proc.stdin and not self.proc.stdin.closed
         elif direction == 'recv':
-            return not self.proc.stdout.closed
+            return self.proc.stdout and not self.proc.stdout.closed
 
     def close(self):
         if self.proc is None:
@@ -781,10 +742,14 @@ class process(tube):
         # First check if we are already dead
         self.poll()
 
-        #close file descriptors
+        # close file descriptors
         for fd in [self.proc.stdin, self.proc.stdout, self.proc.stderr]:
             if fd is not None:
-                fd.close()
+                try:
+                    fd.close()
+                except IOError as e:
+                    if e.errno != errno.EPIPE:
+                        raise
 
         if not self._stop_noticed:
             try:
@@ -809,7 +774,7 @@ class process(tube):
         if direction == "recv":
             self.proc.stdout.close()
 
-        if False not in [self.proc.stdin.closed, self.proc.stdout.closed]:
+        if all(fp is None or fp.closed for fp in [self.proc.stdin, self.proc.stdout]):
             self.close()
 
     def __pty_make_controlling_tty(self, tty_fd):
@@ -983,7 +948,7 @@ class process(tube):
 
         Example:
 
-            >>> e = ELF('/bin/bash-static')
+            >>> e = ELF(which('bash-static'))
             >>> p = process(e.path)
 
             In order to make sure there's not a race condition against

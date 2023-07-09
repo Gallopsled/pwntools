@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=44.0", "wheel", "toml; python_version<'3.4'"]
+build-backend = "setuptools.build_meta"
+
+[project]
+dynamic = ["version", "scripts"]
+
+name = "pwntools"
+description = "Pwntools CTF framework and exploit development library."
+license = {text = "Mostly MIT, some GPL/BSD, see LICENSE-pwntools.txt"}
+readme = "README.md"
+authors = [{name = "Gallopsled et al.", email = "pwntools-users@googlegroups.com"}]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: 3",
+    "Topic :: Security",
+    "Topic :: Software Development :: Assemblers",
+    "Topic :: Software Development :: Debuggers",
+    "Topic :: Software Development :: Disassemblers",
+    "Topic :: Software Development :: Embedded Systems",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: System Shells",
+    "Topic :: Utilities",
+]
+keywords = ["pwntools", "exploit", "ctf", "capture", "the", "flag", "binary", "wargame", "overflow", "stack", "heap", "defcon"]
+
+requires-python = ">=2.7"
+dependencies = [
+    "paramiko>=1.15.2",
+    "mako>=1.0.0",
+    "pyelftools>=0.2.4",
+    "capstone>=3.0.5rc2",  # see Gallopsled/pwntools#971, Gallopsled/pwntools#1160
+    "ropgadget>=5.3",
+    "pyserial>=2.7",
+    "requests>=2.0",
+    "pip>=6.0.8",
+    "pygments>=2.0",
+    "pysocks",
+    "python-dateutil",
+    "packaging",
+    "psutil>=3.3.0",
+    "intervaltree>=3.0",
+    "sortedcontainers",
+    "unicorn>=1.0.2rc1",  # see unicorn-engine/unicorn#1100 and #1170
+    "six>=1.12.0",
+    "rpyc",
+    "colored_traceback",
+    "pathlib2; python_version < '3.4'",
+]
+
+[project.urls]
+homepage = "https://pwntools.com"
+download = "https://github.com/Gallopsled/pwntools/releases"
+
+[tool.distutils.bdist_wheel]
+universal = 1
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+namespaces = false

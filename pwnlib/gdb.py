@@ -299,11 +299,11 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None):
     if env is not None:
         env_args = []
         for key in tuple(env):
-            if key.startswith('LD_'): # LD_PRELOAD / LD_LIBRARY_PATH etc.
-                env_args.append('{}="{}"'.format(key, env.pop(key)))
+            if key.startswith(b'LD_'): # LD_PRELOAD / LD_LIBRARY_PATH etc.
+                env_args.append(b'%s=%s' % (key, env.pop(key)))
             else:
-                env_args.append('{}="{}"'.format(key, env[key]))
-        gdbserver_args += ['--wrapper', 'env', '-i'] + env_args + ['--']
+                env_args.append(b'%s=%s' % (key, env[key]))
+        gdbserver_args += ['--wrapper', which('env'), '-i'] + env_args + ['--']
 
     gdbserver_args += ['localhost:0']
     gdbserver_args += args
@@ -374,8 +374,10 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         exe(str): Path to the executable on disk
         env(dict): Environment to start the binary in
         ssh(:class:`.ssh`): Remote ssh session to use to launch the process.
-        sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
-            and Android targets.
+        sysroot(str): Set an alternate system root. The system root is used to
+            load absolute shared library symbol files. This is useful to instruct
+            gdb to load a local version of binaries/libraries instead of downloading
+            them from the gdbserver, which is faster
         api(bool): Enable access to GDB Python API.
 
     Returns:
@@ -523,6 +525,10 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     if api and runner is not tubes.process.process:
         raise ValueError('GDB Python API is supported only for local processes')
 
+    args, env = misc.normalize_argv_env(args, env, log)
+    if env:
+        env = {bytes(k): bytes(v) for k, v in env}
+
     if context.noptrace:
         log.warn_once("Skipping debugger since context.noptrace==True")
         return runner(args, executable=exe, env=env)
@@ -564,7 +570,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     gdbserver.executable = exe
 
     # Find what port we need to connect to
-    if context.native or (context.os == 'android'):
+    if ssh or context.native or (context.os == 'android'):
         port = _gdbserver_port(gdbserver, ssh)
     else:
         port = qemu_port
@@ -593,7 +599,9 @@ def get_gdb_arch():
         'powerpc64': 'powerpc:common64',
         'mips64': 'mips:isa64',
         'thumb': 'arm',
-        'sparc64': 'sparc:v9'
+        'sparc64': 'sparc:v9',
+        'riscv32': 'riscv:rv32',
+        'riscv64': 'riscv:rv64',
     }.get(context.arch, context.arch)
 
 def binary():
@@ -659,6 +667,48 @@ class Breakpoint:
         # Handle stop() call from the server.
         return self.stop()
 
+class FinishBreakpoint:
+    """Mirror of ``gdb.FinishBreakpoint`` class.
+
+    See https://sourceware.org/gdb/onlinedocs/gdb/Finish-Breakpoints-in-Python.html
+    for more information.
+    """
+
+    def __init__(self, conn, *args, **kwargs):
+        """Do not create instances of this class directly.
+
+        Use ``pwnlib.gdb.Gdb.FinishBreakpoint`` instead.
+        """
+        # Creates a real finish breakpoint and connects it with this mirror
+        self.conn = conn
+        self.server_breakpoint = conn.root.set_finish_breakpoint(
+            self, hasattr(self, 'stop'), hasattr(self, 'out_of_scope'),
+            *args, **kwargs)
+
+    def __getattr__(self, item):
+        """Return attributes of the real breakpoint."""
+        if item in (
+                '____id_pack__',
+                '__name__',
+                '____conn__',
+                'stop',
+                'out_of_scope',
+        ):
+            # Ignore RPyC netref attributes.
+            # Also, if stop() or out_of_scope() are not defined, hasattr() call
+            # in our __init__() will bring us here. Don't contact the
+            # server in this case either.
+            raise AttributeError()
+        return getattr(self.server_breakpoint, item)
+
+    def exposed_stop(self):
+        # Handle stop() call from the server.
+        return self.stop()
+
+    def exposed_out_of_scope(self):
+        # Handle out_of_scope() call from the server.
+        return self.out_of_scope()
+
 class Gdb:
     """Mirror of ``gdb`` module.
 
@@ -676,8 +726,12 @@ class Gdb:
         class _Breakpoint(Breakpoint):
             def __init__(self, *args, **kwargs):
                 super().__init__(conn, *args, **kwargs)
+        class _FinishBreakpoint(FinishBreakpoint):
+            def __init__(self, *args, **kwargs):
+                super().__init__(conn, *args, **kwargs)
 
         self.Breakpoint = _Breakpoint
+        self.FinishBreakpoint = _FinishBreakpoint
         self.stopped = Event()
 
         def stop_handler(event):
@@ -724,8 +778,10 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         arch(str): Architechture of the target binary.  If `exe` known GDB will
           detect the architechture automatically (if it is supported).
         gdb_args(list): List of additional arguments to pass to GDB.
-        sysroot(str): Foreign-architecture sysroot, used for QEMU-emulated binaries
-            and Android targets.
+        sysroot(str): Set an alternate system root. The system root is used to
+            load absolute shared library symbol files. This is useful to instruct
+            gdb to load a local version of binaries/libraries instead of downloading
+            them from the gdbserver, which is faster
         api(bool): Enable access to GDB Python API.
 
     Returns:
@@ -864,17 +920,17 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
     # gdb script to run before `gdbscript`
     pre = ''
+    if sysroot:
+        pre += 'set sysroot %s\n' % sysroot
     if not context.native:
         pre += 'set endian %s\n' % context.endian
         pre += 'set architecture %s\n' % get_gdb_arch()
-        if sysroot:
-            pre += 'set sysroot %s\n' % sysroot
 
         if context.os == 'android':
             pre += 'set gnutarget ' + _bfdname() + '\n'
 
         if exe and context.os != 'baremetal':
-            pre += 'file %s\n' % exe
+            pre += 'file "%s"\n' % exe
 
     # let's see if we can find a pid to attach to
     pid = None
@@ -901,10 +957,8 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         shell = target.parent
 
         tmpfile = shell.mktemp()
-        if six.PY3:
-            tmpfile = tmpfile.decode()
-        gdbscript = 'shell rm %s\n%s' % (tmpfile, gdbscript)
-        shell.upload_data(gdbscript or '', tmpfile)
+        gdbscript = b'shell rm %s\n%s' % (tmpfile, packing._need_bytes(gdbscript, 2, 0x80))
+        shell.upload_data(gdbscript or b'', tmpfile)
 
         cmd = ['ssh', '-C', '-t', '-p', str(shell.port), '-l', shell.user, shell.host]
         if shell.password:
@@ -913,7 +967,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             cmd = ['sshpass', '-p', shell.password] + cmd
         if shell.keyfile:
             cmd += ['-i', shell.keyfile]
-        cmd += ['gdb', '-q', target.executable, target.pid, '-x', tmpfile]
+        cmd += ['gdb', '-q', target.executable, str(target.pid), '-x', tmpfile]
 
         misc.run_in_new_terminal(cmd)
         return
@@ -965,7 +1019,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
         exe = exe or findexe()
     elif isinstance(target, elf.corefile.Corefile):
-        pre += 'target core %s\n' % target.path
+        pre += 'target core "%s"\n' % target.path
     else:
         log.error("don't know how to attach to target: %r", target)
 
@@ -1327,13 +1381,13 @@ def version(program='gdb'):
 
     Example:
 
-        >>> (7,0) <= gdb.version() <= (12,0)
+        >>> (7,0) <= gdb.version() <= (19,0)
         True
     """
     program = misc.which(program)
     expr = br'([0-9]+\.?)+'
 
-    with tubes.process.process([program, '--version'], level='error') as gdb:
+    with tubes.process.process([program, '--version'], level='error', stdout=tubes.process.PIPE) as gdb:
         version = gdb.recvline()
 
     versions = re.search(expr, version).group()

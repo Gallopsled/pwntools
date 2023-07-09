@@ -9,10 +9,17 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.7.0](#470)    | `dev`    | May 29, 2020 (planned)
-| [4.6.0](#460)    | `beta`   | May 29, 2020 (planned)
-| [4.5.0](#450)    | `stable` | Apr 30, 2020
-| [4.4.0](#440)    |          | Mar 29, 2020
+| [4.12.0](#4120)  | `dev`    |
+| [4.11.0](#4110)  | `beta`   |
+| [4.10.0](#4100)  | `stable` | May 21, 2023
+| [4.9.0](#490)    |          | Dec 29, 2022
+| [4.8.0](#480)    |          | Apr 21, 2022
+| [4.7.1](#471)    |          | Apr 20, 2022
+| [4.7.0](#470)    |          | Nov 15, 2021
+| [4.6.0](#460)    |          | Jul 12, 2021
+| [4.5.1](#451)    |          | May 30, 2021
+| [4.5.0](#450)    |          | Apr 30, 2021
+| [4.4.0](#440)    |          | Mar 29, 2021
 | [4.3.1](#431)    |          | Nov 29, 2020
 | [4.3.0](#430)    |          | Oct 20, 2020
 | [4.2.0](#420)    |          | Jul 3, 2020
@@ -59,21 +66,134 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.7.0 (`dev`)
+## 4.12.0 (`dev`)
+- [#2202][2202] Fix `remote` and `listen` in sagemath
+- [#2117][2117] Add -p (--prefix) and -s (--separator) arguments to `hex` command
+- [#2221][2221] Add shellcraft.sleep template wrapping SYS_nanosleep
+
+[2202]: https://github.com/Gallopsled/pwntools/pull/2202
+[2117]: https://github.com/Gallopsled/pwntools/pull/2117
+[2221]: https://github.com/Gallopsled/pwntools/pull/2221
+
+## 4.11.0 (`beta`)
+
+- [#2185][2185] make fmtstr module able to create payload without $ notation 
+- [#2103][2103] Add search for libc binary by leaked function addresses `libcdb.search_by_symbol_offsets()`
+- [#2177][2177] Support for RISC-V 64-bit architecture
+- [#2186][2186] Enhance `ELF.nx` and `ELF.execstack`
+- [#2129][2129] Handle `context.newline` correctly when typing in `tube.interactive()`
+
+[2185]: https://github.com/Gallopsled/pwntools/pull/2185
+[2103]: https://github.com/Gallopsled/pwntools/pull/2103
+[2177]: https://github.com/Gallopsled/pwntools/pull/2177
+[2186]: https://github.com/Gallopsled/pwntools/pull/2186
+[2129]: https://github.com/Gallopsled/pwntools/pull/2129
+
+## 4.10.1 (`stable`)
+
+- [#2214][2214] Fix bug at ssh.py:`download` and `download_file` with relative paths
+
+[2214]: https://github.com/Gallopsled/pwntools/pull/2214
+
+## 4.10.0
+
+In memoriam — [Zach Riggle][zach] — long time contributor and maintainer of Pwntools.
+
+- [#2062][2062] make pwn cyclic -l work with entry larger than 4 bytes
+- [#2092][2092] shellcraft: dup() is now called dupio() consistently across all supported arches
+- [#2093][2093] setresuid() in shellcraft uses current euid by default
+- [#2125][2125] Allow tube.recvregex to return capture groups
+- [#2144][2144] Removes `p2align 2` `asm()` headers from `x86-32`, `x86-64` and `mips` architectures to avoid inconsistent instruction length when patching binaries
+
+[2062]: https://github.com/Gallopsled/pwntools/pull/2062
+[2092]: https://github.com/Gallopsled/pwntools/pull/2092
+[2093]: https://github.com/Gallopsled/pwntools/pull/2093
+[2125]: https://github.com/Gallopsled/pwntools/pull/2125
+[2144]: https://github.com/Gallopsled/pwntools/pull/2144
+[zach]: https://github.com/zachriggle
+
+## 4.9.0
+
+- [#1975][1975] Add libcdb commandline tool
+- [#1979][1979] Add `js_escape()` and `js_unescape()` to `util.fiddling`
+- [#2011][2011] Fix tube's debug output of same byte compression
+- [#2023][2023] Support KDE Konsole in run_in_new_terminal function
+- [#2027][2027] Fix ELF.libc_start_main_return with glibc 2.34
+- [#2033][2033] Quote file and core path in generated GDB script
+- [#2035][2035] Change Buffer's parent class to object
+- [#2037][2037] Allow SSH tunnel to be treated like a TCP socket (with 'raw=True')
+- [#2123][2123] Fix ROP without a writeable cache directory
+- [#2124][2124] Fix `tube.recvpred()` timeout argument
+
+[1975]: https://github.com/Gallopsled/pwntools/pull/1975
+[1979]: https://github.com/Gallopsled/pwntools/pull/1979
+[2011]: https://github.com/Gallopsled/pwntools/pull/2011
+[2023]: https://github.com/Gallopsled/pwntools/pull/2023
+[2027]: https://github.com/Gallopsled/pwntools/pull/2027
+[2033]: https://github.com/Gallopsled/pwntools/pull/2033
+[2035]: https://github.com/Gallopsled/pwntools/pull/2035
+[2037]: https://github.com/Gallopsled/pwntools/pull/2037
+[2123]: https://github.com/Gallopsled/pwntools/pull/2123
+[2124]: https://github.com/Gallopsled/pwntools/pull/2124
+
+## 4.8.0
+
+- [#1922][1922] Fix logic in `wait_for_debugger`
+- [#1828][1828] libcdb: Load debug info and unstrip libc binary
+- [#1939][1939] Fix error in validating log levels
+- [#1981][1981] Fix `cyclic_find()` to make it work with large int values
+
+[1922]: https://github.com/Gallopsled/pwntools/pull/1922
+[1828]: https://github.com/Gallopsled/pwntools/pull/1828
+[1939]: https://github.com/Gallopsled/pwntools/pull/1939
+[1981]: https://github.com/Gallopsled/pwntools/pull/1981
+
+## 4.7.1
+
+- [#1784][1784] Use temporary cache directory when persistent cache cannot be used
+- [#1973][1973] ELF symbols can be looked up by bytes values
+- several bugfixes ([#2012][2012], [#2031][2031], [#1912][1912], [#1961][1961],
+[#2007][2007], [#2040][2040], [#2051][2051])
+
+[1784]: https://github.com/Gallopsled/pwntools/pull/1784
+[1912]: https://github.com/Gallopsled/pwntools/pull/1912
+[1961]: https://github.com/Gallopsled/pwntools/pull/1961
+[1973]: https://github.com/Gallopsled/pwntools/pull/1973
+[2007]: https://github.com/Gallopsled/pwntools/pull/2007
+[2012]: https://github.com/Gallopsled/pwntools/pull/2012
+[2031]: https://github.com/Gallopsled/pwntools/pull/2031
+[2040]: https://github.com/Gallopsled/pwntools/pull/2040
+[2051]: https://github.com/Gallopsled/pwntools/pull/2051
+
+## 4.7.0
 
 - [#1733][1733] Update libc headers -> more syscalls available!
 - [#1876][1876] add `self.message` and change `sys.exc_type` to `sys.exec_info()` in PwnlibException
 - [#1877][1877] encoders error message handles when `avoid` is bytes in python3
+- [#1891][1891] Keep ROP gadgets when setting registers via setattr/call
 - [#1892][1892] Silence SIGPIPE error for "pwn phd"
 - [#1893][1893] Fix bytes warning in "pwn cyclic"
+- [#1897][1897] Add basic support for RISC-V
+- [#1903][1903] Add zsh completion script
+- [#1904][1904] Add bash completion script
+- [#1906][1906] Defer import of several modules to save on startup time
+- [#1921][1921] Add basic support for the bare-metal ARM specific toolchain
+- [#1995][1995] Add `shellcraft.*.linux.cat2`, which uses alloc+read+write instead of sendfile
 
 [1733]: https://github.com/Gallopsled/pwntools/pull/1733
 [1876]: https://github.com/Gallopsled/pwntools/pull/1876
 [1877]: https://github.com/Gallopsled/pwntools/pull/1877
+[1891]: https://github.com/Gallopsled/pwntools/pull/1891
 [1892]: https://github.com/Gallopsled/pwntools/pull/1892
 [1893]: https://github.com/Gallopsled/pwntools/pull/1893
+[1897]: https://github.com/Gallopsled/pwntools/pull/1897
+[1903]: https://github.com/Gallopsled/pwntools/pull/1903
+[1904]: https://github.com/Gallopsled/pwntools/pull/1904
+[1906]: https://github.com/Gallopsled/pwntools/pull/1906
+[1921]: https://github.com/Gallopsled/pwntools/pull/1921
+[1995]: https://github.com/Gallopsled/pwntools/pull/1995
 
-## 4.6.0 (`beta`)
+## 4.6.0
 
 - [#1429][1429] Add a mechanism for ret2csu (originally #1138)
 - [#1566][1566] Add `ignore_config` argument to `pwnlib.tubes.ssh` and improve `allow_agent` implementation
@@ -95,7 +215,13 @@ The table below shows which release corresponds to each branch, and what date th
 [1776]: https://github.com/Gallopsled/pwntools/pull/1776
 [1846]: https://github.com/Gallopsled/pwntools/pull/1846
 
-## 4.5.0 (`stable`)
+## 4.5.1
+
+- [#1902][1902] Always specify -F and -P for tmux in `run_in_new_terminal`
+
+[1902]: https://github.com/Gallopsled/pwntools/pull/1902
+
+## 4.5.0
 
 - [#1261][1261] Misc `run_in_new_terminal` improvements (notably gdb terminated by default)
 - [#1695][1695] Allow using GDB Python API

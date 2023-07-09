@@ -71,7 +71,7 @@ from copy import deepcopy
 from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util.packing import *
-from pwnlib.util.packing import _encode
+from pwnlib.util.packing import _need_bytes
 from pwnlib.util.misc import align
 
 log = getLogger(__name__)
@@ -230,7 +230,7 @@ class Ret2dlresolvePayload(object):
         self.symtab = elf.dynamic_value_by_tag("DT_SYMTAB") + self.elf_load_address_fixup
         self.jmprel = elf.dynamic_value_by_tag("DT_JMPREL") + self.elf_load_address_fixup
         self.versym = elf.dynamic_value_by_tag("DT_VERSYM") + self.elf_load_address_fixup
-        self.symbol = _encode(symbol)
+        self.symbol = _need_bytes(symbol, min_wrong=0x80)
         self.args = args
         self.real_args = self._format_args()
         self.unreliable = False
@@ -252,7 +252,7 @@ class Ret2dlresolvePayload(object):
         def aux(args):
             for i, arg in enumerate(args):
                 if isinstance(arg, (str,bytes)):
-                    args[i] = _encode(args[i]) + b"\x00"
+                    args[i] = _need_bytes(args[i], min_wrong=0x80) + b"\x00"
                 elif isinstance(arg, (list, tuple)):
                     aux(arg)
 
@@ -303,7 +303,11 @@ class Ret2dlresolvePayload(object):
         rel_addr = self.jmprel + self.reloc_index * ElfRel.size
         rel_type = 7
         rel = ElfRel(r_offset=self.data_addr, r_info=(index<<ELF_R_SYM_SHIFT)+rel_type)
-
+        
+        # When a program's PIE is enabled, r_offset should be the relative address, not the absolute address
+        if self.elf.pie:
+            rel = ElfRel(r_offset=self.data_addr - (self.elf.load_addr + self.elf_load_address_fixup), r_info=(index<<ELF_R_SYM_SHIFT)+rel_type)
+        
         self.payload = fit({
             symbol_name_addr - self.data_addr: symbol_name,
             sym_addr - self.data_addr: sym,

@@ -13,7 +13,7 @@ See 'man 2 mprotect' for more information.
 
 Arguments:
     addr(void*): addr
-    len(size_t): len
+    length(size_t): length
     prot(int): prot
 Returns:
     int

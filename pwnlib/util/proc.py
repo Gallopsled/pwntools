@@ -333,9 +333,9 @@ def wait_for_debugger(pid, debugger_pid=None):
     t = Timeout()
     with t.countdown(timeout=15):
         with log.waitfor('Waiting for debugger') as l:
-            while debugger_pid:
-                debugger = psutil.Process(debugger_pid)
-                while t.timeout and tracer(pid) is None:
+            while t.timeout and tracer(pid) is None:
+                if debugger_pid:
+                    debugger = psutil.Process(debugger_pid)
                     try:
                         debugger.wait(0.01)
                     except psutil.TimeoutExpired:
@@ -343,13 +343,12 @@ def wait_for_debugger(pid, debugger_pid=None):
                     else:
                         debugger_pid = 0
                         break
-            else:
-                while t.timeout and tracer(pid) is None:
+                else:
                     time.sleep(0.01)
 
-        if tracer(pid):
-            l.success()
-        elif debugger_pid == 0:
-            l.failure("debugger exited! (maybe check /proc/sys/kernel/yama/ptrace_scope)")
-        else:
-            l.failure('Debugger did not attach to pid %d within 15 seconds', pid)
+            if tracer(pid):
+                l.success()
+            elif debugger_pid == 0:
+                l.failure("debugger exited! (maybe check /proc/sys/kernel/yama/ptrace_scope)")
+            else:
+                l.failure('Debugger did not attach to pid %d within 15 seconds', pid)

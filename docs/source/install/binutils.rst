@@ -5,7 +5,7 @@ Assembly of foreign architectures (e.g. assembling Sparc shellcode on
 Mac OS X) requires cross-compiled versions of ``binutils`` to be
 installed. We've made this process as smooth as we can.
 
-In these examples, replace ``$ARCH`` with your target architecture (e.g., arm, mips64, vax, etc.).
+In these examples, replace ``$ARCH`` with your target architecture (e.g., arm, aarch64, mips64, vax, etc.).
 
 Building `binutils` from source takes about 60 seconds on a modern 8-core machine.
 
@@ -33,7 +33,7 @@ Mac OS X
 
 Mac OS X is just as easy, but requires building binutils from source.
 However, we've made ``homebrew`` recipes to make this a single command.
-After installing `brew <http://brew.sh>`__, grab the appropriate
+After installing `brew <https://brew.sh>`__, grab the appropriate
 recipe from our `binutils
 repo <https://github.com/Gallopsled/pwntools-binutils/>`__.
 
@@ -51,10 +51,10 @@ OSes, ``binutils`` is simple to build by hand.
 
     #!/usr/bin/env bash
 
-    V=2.25   # Binutils Version
+    V=2.38   # Binutils Version
     ARCH=arm # Target architecture
 
-    cd /tmp
+    cd ${TMPDIR:-/tmp}
     wget -nc https://ftp.gnu.org/gnu/binutils/binutils-$V.tar.gz
     wget -nc https://ftp.gnu.org/gnu/binutils/binutils-$V.tar.gz.sig
 
@@ -70,7 +70,7 @@ OSes, ``binutils`` is simple to build by hand.
     export AS=as
 
     ../binutils-$V/configure \
-        --prefix=/usr/local \
+        --prefix=${PREFIX:-/usr/local} \
         --target=$ARCH-unknown-linux-gnu \
         --disable-static \
         --disable-multilib \

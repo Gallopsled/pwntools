@@ -3,7 +3,7 @@ name: Android Tests
 on: [push, pull_request]
 
 jobs:
-  test:
+  android-test:
     strategy:
       matrix:
         python-version: [3.8]
@@ -11,17 +11,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Cache for pip
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       id: cache-pip
       with:
         path: ~/.cache/pip
         key: ${{ matrix.os }}-cache-pip
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -33,14 +33,13 @@ jobs:
           qemu-user-static \
           binutils-aarch64-linux-gnu \
           binutils-arm-linux-gnueabihf \
-          libc6-dbg \
-          openjdk-8-jre-headless
+          libc6-dbg
 
     - name: Install Android AVD
       run: |
-        USER=travis source travis/setup_avd.sh
+        source travis/setup_avd_fast.sh
         sed -i 's/skip_android = True/skip_android = False/' docs/source/conf.py
-        set | egrep '^(ANDROID|PATH)' >.android.env
+        set | grep ^PATH >.android.env
 
     - name: Install dependencies
       run: |

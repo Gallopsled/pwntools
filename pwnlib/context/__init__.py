@@ -6,17 +6,20 @@ contexts work properly and as expected.
 from __future__ import absolute_import
 from __future__ import division
 
+import atexit
 import collections
+import errno
 import functools
 import logging
 import os
+import os.path
 import platform
+import shutil
 import six
 import socket
-import stat
 import string
-import subprocess
 import sys
+import tempfile
 import threading
 import time
 
@@ -345,6 +348,10 @@ class ContextType(object):
         'binary': None,
         'bits': 32,
         'buffer_size': 4096,
+        'cache_dir_base': os.environ.get(
+            'XDG_CACHE_HOME',
+            os.path.join(os.path.expanduser('~'), '.cache')
+        ),
         'cyclic_alphabet': string.ascii_lowercase.encode(),
         'cyclic_size': 4,
         'delete_corefiles': False,
@@ -397,6 +404,8 @@ class ContextType(object):
         'msp430':    little_16,
         'powerpc':   big_32,
         'powerpc64': big_64,
+        'riscv32':   little_32,
+        'riscv64':   little_64,
         's390':      big_32,
         'sparc':     big_32,
         'sparc64':   big_64,
@@ -761,12 +770,15 @@ class ContextType(object):
         # We have to make sure that x86_64 appears before x86 for this to work correctly.
         transform = [('ppc64', 'powerpc64'),
                      ('ppc', 'powerpc'),
+                     ('x86-64', 'amd64'),
                      ('x86_64', 'amd64'),
                      ('x86', 'i386'),
                      ('i686', 'i386'),
                      ('armv7l', 'arm'),
                      ('armeabi', 'arm'),
-                     ('arm64', 'aarch64')]
+                     ('arm64', 'aarch64'),
+                     ('rv32', 'riscv32'),
+                     ('rv64', 'riscv64')]
         for k, v in transform:
             if arch.startswith(k):
                 arch = v
@@ -971,7 +983,10 @@ class ContextType(object):
         except AttributeError:  pass
 
         # Otherwise, fail
-        level_names = filter(lambda x: isinstance(x,str), logging._levelNames)
+        try:
+            level_names = logging._levelToName.values()
+        except AttributeError:
+            level_names = filter(lambda x: isinstance(x,str), logging._levelNames)
         permitted = sorted(level_names)
         raise AttributeError('log_level must be an integer or one of %r' % permitted)
 
@@ -1268,6 +1283,21 @@ class ContextType(object):
         """
         return int(size)
 
+    @_validator
+    def cache_dir_base(self, new_base):
+        """Base directory to use for caching content.
+
+        Changing this to a different value will clear the `cache_dir` path
+        stored in TLS since a new path will need to be generated to respect the
+        new `cache_dir_base` value.
+        """
+
+        if new_base != self.cache_dir_base:
+            del self._tls["cache_dir"]
+        if os.access(new_base, os.F_OK) and not os.access(new_base, os.W_OK):
+            raise OSError(errno.EPERM, "Cache base dir is not writable")
+        return new_base
+
     @property
     def cache_dir(self):
         """Directory used for caching data.
@@ -1281,32 +1311,59 @@ class ContextType(object):
             >>> cache_dir is not None
             True
             >>> os.chmod(cache_dir, 0o000)
+            >>> del context._tls['cache_dir']
             >>> context.cache_dir is None
             True
             >>> os.chmod(cache_dir, 0o755)
             >>> cache_dir == context.cache_dir
             True
         """
-        xdg_cache_home = os.environ.get('XDG_CACHE_HOME') or \
-                         os.path.join(os.path.expanduser('~'), '.cache')
+        try:
+            # If the TLS already has a cache directory path, we return it
+            # without any futher checks since it must have been valid when it
+            # was set and if that has changed, hiding the TOCTOU here would be
+            # potentially confusing
+            return self._tls["cache_dir"]
+        except KeyError:
+            pass
 
-        if not os.access(xdg_cache_home, os.W_OK):
+        # Attempt to create a Python version specific cache dir and its parents
+        cache_dirname = '.pwntools-cache-%d.%d' % sys.version_info[:2]
+        cache_dirpath = os.path.join(self.cache_dir_base, cache_dirname)
+        try:
+            os.makedirs(cache_dirpath)
+        except OSError as exc:
+            # If we failed for any reason other than the cache directory
+            # already existing then we'll fall back to a temporary directory
+            # object which doesn't respect the `cache_dir_base`
+            if exc.errno != errno.EEXIST:
+                try:
+                    cache_dirpath = tempfile.mkdtemp(prefix=".pwntools-tmp")
+                except IOError:
+                    # This implies no good candidates for temporary files so we
+                    # have to return `None`
+                    return None
+                else:
+                    # Ensure the temporary cache dir is cleaned up on exit. A
+                    # `TemporaryDirectory` would do this better upon garbage
+                    # collection but this is necessary for Python 2 support.
+                    atexit.register(shutil.rmtree, cache_dirpath)
+        # By this time we have a cache directory which exists but we don't know
+        # if it is actually writable. Some wargames e.g. pwnable.kr have
+        # created dummy directories which cannot be modified by the user
+        # account (owned by root).
+        if os.access(cache_dirpath, os.W_OK):
+            # Stash this in TLS for later reuse
+            self._tls["cache_dir"] = cache_dirpath
+            return cache_dirpath
+        else:
             return None
 
-        cache = os.path.join(xdg_cache_home, '.pwntools-cache-%d.%d' % sys.version_info[:2])
-
-        if not os.path.exists(cache):
-            try:
-                os.mkdir(cache)
-            except OSError:
-                return None
-
-        # Some wargames e.g. pwnable.kr have created dummy directories
-        # which cannot be modified by the user account (owned by root).
-        if not os.access(cache, os.W_OK):
-            return None
-
-        return cache
+    @cache_dir.setter
+    def cache_dir(self, v):
+        if os.access(v, os.W_OK):
+            # Stash this in TLS for later reuse
+            self._tls["cache_dir"] = v
 
     @_validator
     def delete_corefiles(self, v):
@@ -1393,7 +1450,7 @@ class ContextType(object):
         from pwnlib.tubes.ssh import ssh
 
         if not isinstance(shell, ssh):
-            raise AttributeError("context.ssh_session must be an ssh tube") 
+            raise AttributeError("context.ssh_session must be an ssh tube")
 
         return shell
 

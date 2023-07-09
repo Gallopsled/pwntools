@@ -69,7 +69,7 @@ if not dst.startswith('$'):
     log.error("Registers must start with $")
     return
 
-if isinstance(src, str) and dst.startswith('$') and dst not in registers.mips:
+if isinstance(dst, str) and dst.startswith('$') and dst not in registers.mips:
     log.error("Unknown register %r" % dst)
     return
 

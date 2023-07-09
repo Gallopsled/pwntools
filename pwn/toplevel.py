@@ -6,7 +6,6 @@ import operator
 import os
 import platform
 import re
-import requests
 import socks
 import signal
 import string
@@ -17,7 +16,6 @@ import tempfile
 import threading
 import time
 
-import colored_traceback
 from pprint import pprint
 
 import pwnlib
@@ -86,7 +84,12 @@ info    = log.info
 debug   = log.debug
 success = log.success
 
-colored_traceback.add_hook()
+try:
+    import colored_traceback
+except ImportError:
+    pass
+else:
+    colored_traceback.add_hook()
 
 # Equivalence with the default behavior of "from import *"
 # __all__ = [x for x in tuple(globals()) if not x.startswith('_')]

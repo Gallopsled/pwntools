@@ -15,7 +15,7 @@ Example
     # leaks at least one byte at that address.
     def leak(address):
         data = p.read(address, 4)
-        log.debug("%#x => %s" % (address, enhex(data or '')))
+        log.debug("%#x => %s", address, enhex(data or ''))
         return data
 
     # For the sake of this example, let's say that we
@@ -62,8 +62,7 @@ from pwnlib.elf import constants
 from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak
 from pwnlib.util.fiddling import enhex
-from pwnlib.util.packing import unpack, _encode
-from pwnlib.util.web import wget
+from pwnlib.util.packing import _need_bytes
 
 log    = getLogger(__name__)
 sizeof = ctypes.sizeof
@@ -75,7 +74,7 @@ def sysv_hash(symbol):
     """
     h = 0
     g = 0
-    for c in bytearray(_encode(symbol)):
+    for c in bytearray(_need_bytes(symbol, 4, 0x80)):
         h = (h << 4) + c
         g = h & 0xf0000000
         h ^= (g >> 24)
@@ -87,7 +86,7 @@ def gnu_hash(s):
 
     Function used to generated GNU-style hashes for strings.
     """
-    s = bytearray(_encode(s))
+    s = bytearray(_need_bytes(s, 4, 0x80))
     h = 5381
     for c in s:
         h = h * 33 + c
@@ -141,10 +140,10 @@ class DynELF(object):
     .. _.got.plt:  https://refspecs.linuxbase.org/LSB_3.1.1/LSB-Core-generic/LSB-Core-generic/specialsections.html
     .. _DYNAMIC:   http://www.sco.com/developers/gabi/latest/ch5.dynamic.html#dynamic_section
     .. _SYSV:      https://refspecs.linuxbase.org/elf/gabi4+/ch5.dynamic.html#hash
-    .. _GNU:       https://blogs.oracle.com/ali/entry/gnu_hash_elf_sections
+    .. _GNU:       https://blogs.oracle.com/solaris/post/gnu-hash-elf-sections
     .. _DT_DEBUG:  https://reverseengineering.stackexchange.com/questions/6525/elf-link-map-when-linked-as-relro
     .. _link map:  https://sourceware.org/git/?p=glibc.git;a=blob;f=elf/link.h;h=eaca8028e45a859ac280301a6e955a14eed1b887;hb=HEAD#l84
-    .. _DT_PLTGOT: http://refspecs.linuxfoundation.org/ELF/zSeries/lzsabi0_zSeries/x2251.html
+    .. _DT_PLTGOT: https://refspecs.linuxfoundation.org/ELF/zSeries/lzsabi0_zSeries/x2251.html
     '''
 
     def __init__(self, leak, pointer=None, elf=None, libcdb=True):
@@ -497,7 +496,7 @@ class DynELF(object):
         Returns:
             An ELF object, or None.
         """
-        libc = 'libc.so'
+        libc = b'libc.so'
 
         with self.waitfor('Downloading libc'):
             dynlib = self._dynamic_load_dynelf(libc)
@@ -539,7 +538,7 @@ class DynELF(object):
             lib = 'libc.so'
 
         if symb:
-            symb = _encode(symb)
+            symb = _need_bytes(symb, min_wrong=0x80)
 
         #
         # Get a pretty name for the symbol to show the user
@@ -562,7 +561,7 @@ class DynELF(object):
         else:   dynlib = self
 
         if dynlib is None:
-            log.failure("Could not find %r" % lib)
+            log.failure("Could not find %r", lib)
             return None
 
         #
@@ -573,7 +572,7 @@ class DynELF(object):
             self.status("Trying lookup based on Build ID")
             build_id = dynlib._lookup_build_id(lib=lib)
             if build_id:
-                log.info("Trying lookup based on Build ID: %s" % build_id)
+                log.info("Trying lookup based on Build ID: %s", build_id)
                 path = libcdb.search_by_build_id(build_id)
                 if path:
                     with context.local(log_level='error'):
@@ -615,7 +614,7 @@ class DynELF(object):
                 addr   = leak.field(cur, LinkMap.l_addr)
                 cur    = leak.field(cur, LinkMap.l_next)
 
-                log.debug('Found %r @ %#x' % (name, addr))
+                log.debug('Found %r @ %#x', name, addr)
 
                 self._bases[name] = addr
 
@@ -640,7 +639,7 @@ class DynELF(object):
         while leak.field(cur, LinkMap.l_prev):
             cur = leak.field(cur, LinkMap.l_prev)
 
-        libname = _encode(libname)
+        libname = _need_bytes(libname, 2, 0x80)
 
         while cur:
             self.status("link_map entry %#x" % cur)
@@ -770,7 +769,7 @@ class DynELF(object):
             structure.
 
             Again, Oracle has good documentation.
-            https://blogs.oracle.com/ali/entry/gnu_hash_elf_sections
+            https://blogs.oracle.com/solaris/post/gnu-hash-elf-sections
 
             You can force an ELF to use this type of symbol table by compiling
             with 'gcc -Wl,--hash-style=gnu'
@@ -972,12 +971,12 @@ class DynELF(object):
             memsz += (page_size - (memsz % page_size)) % page_size
             pages[vaddr] = leak.n(vaddr, memsz)
 
-        if libs :
-            for lib_name in self.bases() :
-                if len(lib_name) == 0 :
+        if libs:
+            for lib_name in self.bases():
+                if len(lib_name) == 0:
                     continue
                 dyn_lib = self._dynamic_load_dynelf(lib_name)
-                if dyn_lib is not None :
+                if dyn_lib is not None:
                     pages.update(dyn_lib.dump(readonly = readonly))
 
         return pages

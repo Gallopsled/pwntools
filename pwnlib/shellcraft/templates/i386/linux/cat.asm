@@ -19,5 +19,5 @@ label = common.label("sendfile_loop")
 %>
 
     ${sc.pushstr(filename)}
-    ${sc.open('esp', 'O_RDONLY', 0)}
+    ${sc.open('esp', 'O_RDONLY', 'edx')}
     ${sc.sendfile(fd, 'eax', 0, 0x7fffffff)}
