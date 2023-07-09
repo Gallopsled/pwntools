@@ -53,21 +53,21 @@ Example:
         ...               'PROT_READ | PROT_WRITE | PROT_EXEC',
         ...               'MAP_PRIVATE | MAP_ANONYMOUS',
         ...               -1, 0).rstrip())
-                /* call mmap2(0, 0x1000, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
-                li $t0, -1
-                sw $t0, -4($sp)
-                addi $sp, $sp, -4
-                slti $t0, $zero, 0xFFFF /* $t0 = 0 */
-                sw $t0, -4($sp)
-                addi $sp, $sp, -4
-                slti $a0, $zero, 0xFFFF /* $a0 = 0 */
-                li $t9, ~0x1000
-                not $a1, $t9
-                li $t9, ~(PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
-                not $a2, $t9
-                ori $a3, $zero, (MAP_PRIVATE | MAP_ANONYMOUS)
-                ori $v0, $zero, SYS_mmap2
-                syscall 0x40404
+            /* call mmap2(0, 0x1000, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
+            li $t0, -1
+            sw $t0, -4($sp)
+            addi $sp, $sp, -4
+            slti $t0, $zero, 0xFFFF /* $t0 = 0 */
+            sw $t0, -4($sp)
+            addi $sp, $sp, -4
+            slti $a0, $zero, 0xFFFF /* $a0 = 0 */
+            li $t9, ~0x1000
+            not $a1, $t9
+            li $t9, ~(PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
+            not $a2, $t9
+            ori $a3, $zero, (MAP_PRIVATE | MAP_ANONYMOUS)
+            ori $v0, $zero, SYS_mmap2
+            syscall 0x40404
         >>> print(pwnlib.shellcraft.open('/home/pwn/flag').rstrip())
             /* open(file='/home/pwn/flag', oflag=0, mode=0) */
             /* push b'/home/pwn/flag\x00' */
