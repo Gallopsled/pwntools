@@ -530,7 +530,6 @@ class Corefile(ELF):
         >>> io = elf.process()
         >>> io.wait(2)
         >>> core = io.corefile
-        [!] End of the stack is corrupted, skipping stack parsing (got: 41414141)
         >>> core.argc, core.argv, core.env
         (0, [], {})
         >>> core.stack.data.endswith(b'AAAA')
