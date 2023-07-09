@@ -84,7 +84,13 @@ The table below shows which release corresponds to each branch, and what date th
 [2186]: https://github.com/Gallopsled/pwntools/pull/2186
 [2129]: https://github.com/Gallopsled/pwntools/pull/2129
 
-## 4.10.0 (`stable`)
+## 4.10.1 (`stable`)
+
+- [#2214][2214] Fix bug at ssh.py:`download` and `download_file` with relative paths
+
+[2214]: https://github.com/Gallopsled/pwntools/pull/2214
+
+## 4.10.0
 
 In memoriam — [Zach Riggle][zach] — long time contributor and maintainer of Pwntools.
 
@@ -93,14 +99,12 @@ In memoriam — [Zach Riggle][zach] — long time contributor and maintainer of 
 - [#2093][2093] setresuid() in shellcraft uses current euid by default
 - [#2125][2125] Allow tube.recvregex to return capture groups
 - [#2144][2144] Removes `p2align 2` `asm()` headers from `x86-32`, `x86-64` and `mips` architectures to avoid inconsistent instruction length when patching binaries
-- [#2214][2214] Fix bug at ssh.py:download and download_file with relative paths by removing broken `os.path.join()`
 
 [2062]: https://github.com/Gallopsled/pwntools/pull/2062
 [2092]: https://github.com/Gallopsled/pwntools/pull/2092
 [2093]: https://github.com/Gallopsled/pwntools/pull/2093
 [2125]: https://github.com/Gallopsled/pwntools/pull/2125
 [2144]: https://github.com/Gallopsled/pwntools/pull/2144
-[2214]: https://github.com/Gallopsled/pwntools/pull/2214
 [zach]: https://github.com/zachriggle
 
 ## 4.9.0
