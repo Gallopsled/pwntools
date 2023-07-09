@@ -25,4 +25,4 @@ Args:
     /* sleep(${seconds}) */
     ${shellcraft.push(tv_nsec)}
     ${shellcraft.push(tv_sec)}
-    ${shellcraft.syscall('SYS_nanosleep', stack, 0)}
+    ${shellcraft.nanosleep(stack, 0)}
