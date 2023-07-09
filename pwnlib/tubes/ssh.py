@@ -1786,7 +1786,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         if self.cwd != '.':
             cmd = 'cd ' + sh_string(self.cwd)
-            s.sendline(cmd)
+            s.sendline(packing._need_bytes(cmd, 2, 0x80))
 
         s.interactive()
         s.close()
