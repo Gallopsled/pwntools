@@ -69,9 +69,11 @@ The table below shows which release corresponds to each branch, and what date th
 ## 4.12.0 (`dev`)
 - [#2202][2202] Fix `remote` and `listen` in sagemath
 - [#2117][2117] Add -p (--prefix) and -s (--separator) arguments to `hex` command
+- [#2219][2219] Fix passing arguments on the stack in shellcraft syscall template
 
 [2202]: https://github.com/Gallopsled/pwntools/pull/2202
 [2117]: https://github.com/Gallopsled/pwntools/pull/2117
+[2219]: https://github.com/Gallopsled/pwntools/pull/2219
 
 ## 4.11.0 (`beta`)
 
