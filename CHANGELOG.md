@@ -84,7 +84,13 @@ The table below shows which release corresponds to each branch, and what date th
 [2186]: https://github.com/Gallopsled/pwntools/pull/2186
 [2129]: https://github.com/Gallopsled/pwntools/pull/2129
 
-## 4.10.1 (`stable`)
+## 4.10.2 (`stable`)
+- [#2225][2225] Fix bug at ssh.py:process() - empty argv[0] Error
+
+[2225]: https://github.com/Gallopsled/pwntools/pull/2225
+
+
+## 4.10.1 
 
 - [#2214][2214] Fix bug at ssh.py:`download` and `download_file` with relative paths
 
