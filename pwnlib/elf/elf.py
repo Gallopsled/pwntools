@@ -1191,7 +1191,7 @@ class ELF(ELFFile):
             segments = self.executable_segments
         else:
             segments = self.segments
-
+        needle = packing._need_bytes(needle)
         for seg in segments:
             addr   = seg.header.p_vaddr
             memsz  = seg.header.p_memsz
