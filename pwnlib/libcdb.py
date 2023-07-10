@@ -276,12 +276,12 @@ def _extract_tarfile(cache_dir, data_filename, tarball):
         # (https://github.com/fancycode/pylzma/issues/67)
         if not which('xz'):
             log.error('Couldn\'t find "xz" in PATH. Please install xz first.')
-        p = process(['xz', '--decompress', '--stdout', tarball.name])
-        uncompressed_tarball = p.readall()
-        if p.poll() != 0:
+        import subprocess
+        try:
+            uncompressed_tarball = subprocess.check_output(['xz', '--decompress', '--stdout', tarball.name])
+            tarball = BytesIO(uncompressed_tarball)
+        except subprocess.CalledProcessError:
             log.error('Failed to decompress xz archive.')
-        p.close()
-        tarball = BytesIO(uncompressed_tarball)
 
     with tarfile.open(fileobj=tarball) as tar_file:
         # Find the library folder in the archive (e.g. /lib/x86_64-linux-gnu/)
@@ -332,24 +332,24 @@ def _extract_debfile(cache_dir, package_filename, package):
 
         import atexit
         import shutil
+        import subprocess
+
         # Use mkdtemp instead of TemporaryDirectory because the latter is not available in Python 2.
         tempdir = tempfile.mkdtemp(prefix=".pwntools-tmp")
         atexit.register(shutil.rmtree, tempdir)
         with tempfile.NamedTemporaryFile(mode='wb', dir=tempdir) as debfile:
             debfile.write(package)
             debfile.flush()
-            p = process(['ar', 't', debfile.name])
-            files_in_deb = p.recvall().split(b'\n')
-            if p.poll() != 0:
+            try:
+                files_in_deb = subprocess.check_output(['ar', 't', debfile.name]).split(b'\n')
+            except subprocess.CalledProcessError:
                 log.error('Failed to list files in .deb archive.')
-            p.close()
             data_filename = filter(lambda f: f.startswith(b'data.tar'), files_in_deb)[0]
 
-            p = process(['ar', 'x', debfile.name, data_filename], cwd=tempdir)
-            p.wait_for_close()
-            if p.poll() != 0:
+            try:
+                subprocess.check_call(['ar', 'x', debfile.name, data_filename], cwd=tempdir)
+            except subprocess.CalledProcessError:
                 log.error('Failed to extract data.tar from .deb archive.')
-            p.close()
 
             with open(os.path.join(tempdir, data_filename), 'rb') as tarball:
                 return _extract_tarfile(cache_dir, data_filename, tarball)
