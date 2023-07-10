@@ -879,6 +879,23 @@ class ssh(Timeout, Logger):
             >>> io = s.process(['cat'], timeout=5)
             >>> io.recvline()
             b''
+
+            >>> # Testing that empty argv works
+            >>> io = s.process([], executable='sh')
+            >>> io.sendline(b'echo $0')
+            >>> io.recvline()
+            b'$ \n'
+            >>> # Make sure that we have a shell
+            >>> io.sendline(b'echo hello')
+            >>> io.recvline()
+            b'$ hello\n'
+
+            >>> # Testing that empty argv[0] works
+            >>> io = s.process([''], executable='sh')
+            >>> io.sendline(b'echo $0')
+            >>> io.recvline()
+            b'$ \n'
+
         """
         if not argv and not executable:
             self.error("Must specify argv or executable")
@@ -942,7 +959,7 @@ if env is not None:
     os.environ.clear()
     environ.update(env)
 else:
-    env = os.environ
+    env = environ
 
 def is_exe(path):
     return os.path.isfile(path) and os.access(path, os.X_OK)
@@ -1031,7 +1048,30 @@ except Exception:
 %(func_src)s
 %(func_name)s(*%(func_args)r)
 
-os.execve(exe, argv, env)
+# os.execve does not allow us to pass empty argv[0]
+# Therefore we use ctypes to call execve directly
+# os.execve(exe, argv, env)
+        
+# Transform envp from dict to list
+env_list = [key + b"=" + value for key, value in env.items()]
+
+# Transform Python types to C types
+def get_string_list(string_list):
+    #Transform a list of bytes into a NULL-terminated
+    # ctypes array of char pointers
+    char_p_array = (ctypes.c_char_p * (len(string_list) + 1))()
+    for i, string in enumerate(string_list):
+        char_p_array[i] = ctypes.c_char_p(string)
+
+    return char_p_array
+
+c_exe = ctypes.c_char_p(exe)
+c_argv = get_string_list(argv)
+c_env = get_string_list(env_list)
+
+# Call execve
+libc = ctypes.CDLL(None)
+libc.execve(c_exe, c_argv, c_env)
 """ % locals()  # """
 
         script = script.strip()
@@ -1051,7 +1091,7 @@ os.execve(exe, argv, env)
             execve_repr = "execve(%r, %s, %s)" % (executable,
                                                   argv,
                                                   'os.environ'
-                                                  if (env in (None, os.environ))
+                                                  if (env in (None, os.environb))
                                                   else env)
             # Avoid spamming the screen
             if self.isEnabledFor(logging.DEBUG) and len(execve_repr) > 512:
