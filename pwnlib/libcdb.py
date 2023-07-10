@@ -444,7 +444,7 @@ def download_libraries(libc_path, unstrip=True):
     try:
         if unstrip:
             unstrip_libc(libc_path)
-    except:
+    except Exception:
         pass
 
     return cache_dir
