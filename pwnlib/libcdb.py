@@ -316,17 +316,7 @@ def _extract_tarfile(cache_dir, data_filename, tarball):
 
 def _extract_debfile(cache_dir, package_filename, package):
     # Extract data.tar in the .deb archive.
-    if six.PY3:
-        from six import BytesIO
-        import unix_ar
-        ar_file = unix_ar.open(BytesIO(package))
-        data_filename = next(filter(lambda f: f.name.startswith(b'data.tar'), ar_file.infolist())).name.decode()
-        tarball = ar_file.open(data_filename)
-        try:
-            return _extract_tarfile(cache_dir, data_filename, tarball)
-        finally:
-            ar_file.close()
-    else:
+    if six.PY2:
         if not which('ar'):
             log.error('Missing command line tool "ar" to extract .deb archive. Please install "ar" first.')
 
@@ -353,6 +343,16 @@ def _extract_debfile(cache_dir, package_filename, package):
 
             with open(os.path.join(tempdir, data_filename), 'rb') as tarball:
                 return _extract_tarfile(cache_dir, data_filename, tarball)
+    else:
+        import unix_ar
+        from six import BytesIO
+        ar_file = unix_ar.open(BytesIO(package))
+        try:
+            data_filename = next(filter(lambda f: f.name.startswith(b'data.tar'), ar_file.infolist())).name.decode()
+            tarball = ar_file.open(data_filename)
+            return _extract_tarfile(cache_dir, data_filename, tarball)
+        finally:
+            ar_file.close()
 
 def _extract_pkgfile(cache_dir, package_filename, package):
     from six import BytesIO
