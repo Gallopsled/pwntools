@@ -7,6 +7,7 @@
 Sleeps for the specified amount of seconds.
 
 Uses SYS_nanosleep under the hood.
+Doesn't check for interrupts and doesn't retry with the remaining time.
 
 Args:
   seconds (int,float): The time to sleep in seconds.
