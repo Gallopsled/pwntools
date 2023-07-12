@@ -250,7 +250,7 @@ def debug_shellcode(data, gdbscript=None, vma=None, api=False):
 
     return debug(tmp_elf, gdbscript=gdbscript, arch=context.arch, api=api)
 
-def _execve_script(argv, executable, env, ssh, which):
+def _execve_script(argv, executable, env, ssh):
     """_execve_script(argv, executable, env, ssh) -> str
 
     Returns the filename of a python script that calls 
@@ -267,6 +267,9 @@ def _execve_script(argv, executable, env, ssh, which):
     Returns:
         The filename of the created script.
     """
+    # Make sure args are bytes, not str or bytearray
+    argv = [bytes(packing._encode(arg)) for arg in argv]
+    executable = packing._encode(executable)
     if ssh:
         # ssh.process creates the script for us
         return ssh.process(argv, executable=executable, env=env, run=False)
@@ -276,9 +279,6 @@ def _execve_script(argv, executable, env, ssh, which):
         env_list = []
     else:
         env_list = [bytes(key) + b"=" + bytes(value) for key, value in env.items()]
-    # Make sure args are bytes, not str or bytearray
-    argv = [bytes(arg) for arg in argv]
-    executable = packing._encode(executable)
 
     # Create a python script that calls execve
     # This script uses ctypes to call execve directly, instead of using os.execve
@@ -627,7 +627,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         # but can use the ``--wrapper`` option to execute commands and catches
         # ``execve`` calls.
         # Therefore, we use a wrapper script to execute the target binary
-        script = _execve_script(args, executable=exe, env=env, ssh=ssh, which=which)
+        script = _execve_script(args, executable=exe, env=env, ssh=ssh)
         args = _gdbserver_args(args=args, which=which, env=env, python_wrapper_script=script)
     else:
         qemu_port = random.randint(1024, 65535)
