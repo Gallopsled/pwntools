@@ -71,11 +71,13 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2117][2117] Add -p (--prefix) and -s (--separator) arguments to `hex` command
 - [#2221][2221] Add shellcraft.sleep template wrapping SYS_nanosleep
 - [#2219][2219] Fix passing arguments on the stack in shellcraft syscall template
+- [#2227][2227] Fix gdb.debug: exe parameter now respected
 
 [2202]: https://github.com/Gallopsled/pwntools/pull/2202
 [2117]: https://github.com/Gallopsled/pwntools/pull/2117
 [2221]: https://github.com/Gallopsled/pwntools/pull/2221
 [2219]: https://github.com/Gallopsled/pwntools/pull/2219
+[2227]: https://github.com/Gallopsled/pwntools/pull/2227
 
 ## 4.11.0 (`beta`)
 
