@@ -77,13 +77,15 @@ def provider_libc_rip(hex_encoded_id, hash_type):
     data = b""
     try:
         result = requests.post(url, json=params, timeout=20)
-        if result.status_code != 200 or len(result.json()) == 0:
+        result.raise_for_status()
+        libc_match = result.json()
+        if not libc_match:
             log.warn_once("Could not find libc for %s %s on libc.rip", hash_type, hex_encoded_id)
-            log.debug("Error: %s", result.text)
             return None
 
-        libc_match = result.json()
-        assert len(libc_match) == 1, 'Invalid libc.rip response.'
+        if len(libc_match) > 1:
+            log.debug("Received multiple matches. Choosing the first match and discarding the others.")
+            log.debug("%r", libc_match)
 
         url = libc_match[0]['download_url']
         log.debug("Downloading data from libc.rip: %s", url)
@@ -253,6 +255,98 @@ def unstrip_libc(filename):
 
     return True
 
+def _handle_multiple_matching_libcs(matching_libcs):
+    from pwnlib.term import text
+    from pwnlib.ui import options
+    log.info('Multiple matching libc libraries for requested symbols:')
+    for idx, libc in enumerate(matching_libcs):
+        log.info('%d. %s', idx+1, text.red(libc['id']))
+        log.indented('\t%-20s %s', text.green('BuildID:'), libc['buildid'])
+        log.indented('\t%-20s %s', text.green('MD5:'), libc['md5'])
+        log.indented('\t%-20s %s', text.green('SHA1:'), libc['sha1'])
+        log.indented('\t%-20s %s', text.green('SHA256:'), libc['sha256'])
+        log.indented('\t%s', text.green('Symbols:'))
+        for symbol, address in libc['symbols'].items():
+            log.indented('\t%25s = %s', symbol, address)
+
+    selected_index = options("Select the libc version to use:", [libc['id'] for libc in matching_libcs])
+    return matching_libcs[selected_index]
+
+def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False):
+    """
+    Lookup possible matching libc versions based on leaked function addresses.
+
+    The leaked function addresses have to be provided as a dict mapping the
+    function name to the leaked value. Only the lower 3 nibbles are relevant
+    for the lookup.
+
+    If there are multiple matches you are presented with a list to select one
+    interactively, unless the ``select_index`` or ``return_as_list`` arguments
+    are used.
+
+    Arguments:
+        symbols(dict):
+            Dictionary mapping symbol names to their addresses.
+        select_index(int):
+            The libc to select if there are multiple matches (starting at 1).
+        unstrip(bool):
+            Try to fetch debug info for the libc and apply it to the downloaded file.
+        return_as_list(bool):
+            Return a list of build ids of all matching libc versions
+            instead of a path to a downloaded file.
+
+    Returns:
+        Path to the downloaded library on disk, or :const:`None`.
+        If the ``return_as_list`` argument is :const:`True`, a list of build ids
+        is returned instead.
+
+    Examples:
+        >>> filename = search_by_symbol_offsets({'puts': 0x420, 'printf': 0xc90}, select_index=1)
+        >>> libc = ELF(filename)
+        >>> libc.sym.system == 0x52290
+        True
+        >>> matched_libcs = search_by_symbol_offsets({'__libc_start_main_ret': '7f89ad926550'}, return_as_list=True)
+        >>> len(matched_libcs) > 1
+        True
+        >>> for buildid in matched_libcs: # doctest +SKIP
+        ...     libc = ELF(search_by_build_id(buildid)) # doctest +SKIP
+    """
+    import requests
+    for symbol, address in symbols.items():
+        if isinstance(address, int):
+            symbols[symbol] = hex(address)
+    try:
+        params = {'symbols': symbols}
+        url    = "https://libc.rip/api/find"
+        log.debug('Request: %s', params)
+        result = requests.post(url, json=params, timeout=20)
+        result.raise_for_status()
+
+        matching_libcs = result.json()
+        log.debug('Result: %s', matching_libcs)
+        if len(matching_libcs) == 0:
+            log.warn_once("No matching libc for symbols %r on libc.rip", symbols)
+            return None
+
+        if return_as_list:
+            return [libc['buildid'] for libc in matching_libcs]
+
+        if len(matching_libcs) == 1:
+            return search_by_build_id(matching_libcs[0]['buildid'], unstrip=unstrip)
+
+        if select_index is not None:
+            if select_index > 0 and select_index <= len(matching_libcs):
+                return search_by_build_id(matching_libcs[select_index - 1]['buildid'], unstrip=unstrip)
+            else:
+                log.error('Invalid selected libc index. %d is not in the range of 1-%d.', select_index, len(matching_libcs))
+                return None
+
+        selected_libc = _handle_multiple_matching_libcs(matching_libcs)
+        return search_by_build_id(selected_libc['buildid'], unstrip=unstrip)
+    except requests.RequestException as e:
+        log.warn_once("Failed to lookup libc for symbols %r from libc.rip: %s", symbols, e)
+        return None
+
 def search_by_build_id(hex_encoded_id, unstrip=True):
     """
     Given a hex-encoded Build ID, attempt to download a matching libc from libcdb.
@@ -409,4 +503,4 @@ def get_build_id_offsets():
     }.get(context.arch, [])
 
 
-__all__ = ['get_build_id_offsets', 'search_by_build_id', 'search_by_sha1', 'search_by_sha256', 'search_by_md5', 'unstrip_libc']
+__all__ = ['get_build_id_offsets', 'search_by_build_id', 'search_by_sha1', 'search_by_sha256', 'search_by_md5', 'unstrip_libc', 'search_by_symbol_offsets']

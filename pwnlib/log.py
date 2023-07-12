@@ -84,7 +84,7 @@ result in a message being emitted but rather an animated progress line (with a
 spinner!) being created.  Note that other handlers will still see a meaningful
 log record.
 
-The custom handler will only handle log records whith a level of at least
+The custom handler will only handle log records with a level of at least
 :data:`context.log_level`.  Thus if e.g. the level for the
 ``'pwnlib.tubes.ssh'`` is set to ``'DEBUG'`` no additional output will show up
 unless :data:`context.log_level` is also set to ``'DEBUG'``.  Other handlers

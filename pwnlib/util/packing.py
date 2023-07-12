@@ -168,7 +168,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
 def unpack(data, word_size = None):
     r"""unpack(data, word_size = None, endianness = None, sign = None, **kwargs) -> int
 
-    Packs arbitrary-sized integer.
+    Unpacks arbitrary-sized integer.
 
     Word-size, endianness and signedness is done according to context.
 
@@ -239,7 +239,7 @@ def unpack(data, word_size = None):
 
 @LocalNoarchContext
 def unpack_many(data, word_size = None):
-    """unpack(data, word_size = None, endianness = None, sign = None) -> int list
+    """unpack_many(data, word_size = None, endianness = None, sign = None) -> int list
 
     Splits `data` into groups of ``word_size//8`` bytes and calls :func:`unpack` on each group.  Returns a list of the results.
 

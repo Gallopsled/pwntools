@@ -530,7 +530,6 @@ class Corefile(ELF):
         >>> io = elf.process()
         >>> io.wait(2)
         >>> core = io.corefile
-        [!] End of the stack is corrupted, skipping stack parsing (got: 41414141)
         >>> core.argc, core.argv, core.env
         (0, [], {})
         >>> core.stack.data.endswith(b'AAAA')
@@ -666,7 +665,7 @@ class Corefile(ELF):
                     log.warn('Could not find the stack!')
                     self.stack = None
 
-            with context.local(bytes=self.bytes, log_level='warn'):
+            with context.local(bytes=self.bytes):
                 try:
                     self._parse_stack()
                 except ValueError:
