@@ -283,8 +283,9 @@ def _execve_script(argv, executable, env, ssh, which):
     # Create a python script that calls execve
     # This script uses ctypes to call execve directly, instead of using os.execve
     # since os.execve doesn't allow an empty argv[0] 
-    script = f"""
-#!{sys.executable!s}
+    exe = sys.executable
+    script = """
+#!{exe!s}
 import ctypes
 
 # ctypes helper to convert a python list to a NULL-terminated C array
@@ -295,8 +296,7 @@ c_argv = to_carray({argv!r})
 c_env = to_carray({env_list!r})
 # Call execve
 execve = ctypes.CDLL(None).execve
-execve({executable!r}, c_argv, c_env)
-"""
+execve({executable!r}, c_argv, c_env)""".format(**locals())
     script = script.strip()
     # Create a temporary file to hold the script
     tmp = tempfile.NamedTemporaryFile(mode="w+t",prefix='pwn', suffix='.py', delete=False)
