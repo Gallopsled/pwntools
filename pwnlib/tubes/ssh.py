@@ -1055,23 +1055,17 @@ except Exception:
 # Transform envp from dict to list
 env_list = [key + b"=" + value for key, value in env.items()]
 
-# Transform Python types to C types
-def get_string_list(string_list):
-    #Transform a list of bytes into a NULL-terminated
-    # ctypes array of char pointers
-    char_p_array = (ctypes.c_char_p * (len(string_list) + 1))()
-    for i, string in enumerate(string_list):
-        char_p_array[i] = ctypes.c_char_p(string)
+# ctypes helper to convert a python list to a NULL-terminated C array
+def to_carray(py_list):
+    py_list += [None] # NULL-terminated
+    return (ctypes.c_char_p * len(py_list))(*py_list)
 
-    return char_p_array
-
-c_exe = ctypes.c_char_p(exe)
-c_argv = get_string_list(argv)
-c_env = get_string_list(env_list)
+c_argv = to_carray(argv)
+c_env = to_carray(env_list)
 
 # Call execve
-libc = ctypes.CDLL(None)
-libc.execve(c_exe, c_argv, c_env)
+execve = ctypes.CDLL(None).execve
+execve(exe, c_argv, c_env)
 """ % locals()  # """
 
         script = script.strip()
