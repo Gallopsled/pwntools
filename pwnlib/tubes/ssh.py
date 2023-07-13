@@ -1044,6 +1044,7 @@ os.execve(exe, argv, env)
                 self.chmod('+x', tmpfile)
 
             self.info("Uploading execve script to %r" % tmpfile)
+            script = packing._encode(script)
             self.upload_data(script, tmpfile)
             return tmpfile
 
