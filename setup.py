@@ -86,7 +86,7 @@ setup(
             'data/templates/*.mako',
         ] + templates,
     },
-    entry_points={'console_scripts': console_scripts},
-    scripts=glob.glob("bin/*"),
+    entry_points = {'console_scripts': console_scripts},
+    scripts              = glob.glob("bin/*"),
     **compat
 )
