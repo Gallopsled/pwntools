@@ -15,8 +15,11 @@ from setuptools import setup
 
 # Make it explicit that 32-bit systems are not supported
 if platform.architecture()[0] == '32bit':
+    """Determines if the current Python interpreter is supported by Pwntools.
+
+    See Gallopsled/pwntools#518 for more information."""
     print("[!] Pwntools does not support 32-bit Python. Use a 64-bit release.")
-    quit(1)
+    sys.exit(-1)
 
 # Get all template files
 templates = []
@@ -69,11 +72,11 @@ if not os.path.exists(PythonH):
     sys.exit(-1)
 
 setup(
-    version='4.12.0dev',
-    data_files=[('pwntools-doc',
-                 glob.glob('*.md') + glob.glob('*.txt')),
-                ],
-    package_data={
+    version              = '4.12.0dev',
+    data_files           = [('pwntools-doc',
+                             glob.glob('*.md') + glob.glob('*.txt')),
+                            ],
+    package_data         = {
         'pwnlib': [
             'data/crcsums.txt',
             'data/useragents/useragents.txt',
