@@ -267,7 +267,7 @@ def _execve_script(argv, executable, env, ssh):
     Returns:
         The filename of the created script.
     """
-    # Make sure args are bytes, not str or bytearray
+    # Make sure args are bytes, not str or bytearray.
     argv = [bytes(packing._encode(arg)) for arg in argv]
     executable = packing._encode(executable)
     if ssh:
