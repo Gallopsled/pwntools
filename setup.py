@@ -13,6 +13,11 @@ from distutils.util import convert_path
 
 from setuptools import setup
 
+# Make it explicit that 32-bit systems are not supported
+if platform.architecture()[0] == '32bit':
+    print("[!] Pwntools does not support 32-bit Python. Use a 64-bit release.")
+    quit(1)
+
 # Get all template files
 templates = []
 for dirpath, dirnames, filenames in os.walk(convert_path('pwnlib/shellcraft/templates'), followlinks=True):
@@ -64,11 +69,11 @@ if not os.path.exists(PythonH):
     sys.exit(-1)
 
 setup(
-    version              = '4.12.0dev',
-    data_files           = [('pwntools-doc',
-                             glob.glob('*.md') + glob.glob('*.txt')),
-                            ],
-    package_data         = {
+    version='4.12.0dev',
+    data_files=[('pwntools-doc',
+                 glob.glob('*.md') + glob.glob('*.txt')),
+                ],
+    package_data={
         'pwnlib': [
             'data/crcsums.txt',
             'data/useragents/useragents.txt',
@@ -78,7 +83,7 @@ setup(
             'data/templates/*.mako',
         ] + templates,
     },
-    entry_points = {'console_scripts': console_scripts},
-    scripts              = glob.glob("bin/*"),
+    entry_points={'console_scripts': console_scripts},
+    scripts=glob.glob("bin/*"),
     **compat
 )
