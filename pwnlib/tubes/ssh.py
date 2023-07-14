@@ -1064,8 +1064,13 @@ c_argv = to_carray(argv)
 c_env = to_carray(env_list)
 
 # Call execve
-execve = ctypes.CDLL(None).execve
-execve(exe, c_argv, c_env)
+libc = ctypes.CDLL(None)
+libc.execve(exe, c_argv, c_env)
+
+# We should never get here, since we sanitized argv and env,
+# but just in case, indicate that something went wrong.
+libc.perror(b"execve")
+raise OSError("execve failed")
 """ % locals()  # """
 
         script = script.strip()
