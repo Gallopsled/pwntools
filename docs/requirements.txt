@@ -1,7 +1,9 @@
 capstone
 coveralls
+python-dateutil
 doc2dash
 docutils<0.18
+intervaltree
 isort
 mako>=1.0.0
 paramiko>=1.15.2
@@ -10,6 +12,8 @@ pyelftools>=0.2.3
 pygments>=2.0
 pypandoc
 pyserial>=2.7
+pysocks
+psutil
 requests>=2.5.1
 ropgadget>=5.3
 sphinx==1.8.6; python_version<'3'
