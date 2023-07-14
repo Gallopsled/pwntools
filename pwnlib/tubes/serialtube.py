@@ -19,13 +19,6 @@ class serialtube(tube.tube):
             convert_newlines = True,
             bytesize = 8, parity='N', stopbits=1, xonxoff = False,
             rtscts = False, dsrdtr = False, *a, **kw):
-        """
-        Initializes a serial tube
-
-        If some parameter is invalid and triggers a serial.SerialException
-        during initialization, the function propagates this error with a call 
-        to self.exception().
-        """
         super(serialtube, self).__init__(*a, **kw)
 
         if port is None:
@@ -60,15 +53,6 @@ class serialtube(tube.tube):
 
     # Implementation of the methods required for tube
     def recv_raw(self, numb):
-        """
-        Method that receives `numb` bytes from a serial tube
-
-        Arguments: 
-            numb(int): number of bytes to read from the connection
-        
-        Returns:
-            data received from the connection or None
-        """
         if not self.conn:
             raise EOFError
 
@@ -96,25 +80,9 @@ class serialtube(tube.tube):
         self.conn.flush()
 
     def settimeout_raw(self, timeout):
-        """
-        Method to set the timeout of a serial tube.
-
-        Currently unimplemented
-        """
         pass
 
     def can_recv_raw(self, timeout):
-        """
-        Method to indicate if a serial tube is waiting
-        and can receive data. 
-
-        Arguments:
-            timeout: a duration in number of seconds
-        
-        Returns:
-            A boolean to indicate if the current serial tube can receive
-            data
-        """
         with self.countdown(timeout):
             while self.conn and self.countdown_active():
                 if self.conn.inWaiting():
@@ -126,21 +94,11 @@ class serialtube(tube.tube):
         return self.conn is not None
 
     def close(self):
-        """
-        Method that attempts to close a serial tube if it has an open
-        connection
-        """
         if self.conn:
             self.conn.close()
             self.conn = None
 
     def fileno(self):
-        """
-        Method that returns the fileno of the serial connection
-
-        Returns:
-            An integer representing the fileno
-        """
         if not self.connected():
             self.error("A closed serialtube does not have a file number")
 
