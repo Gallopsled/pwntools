@@ -130,8 +130,8 @@ if src_reg == 0:
 % else:
 <%
 a,b = fiddling.xor_pair(srcp, avoid = '\x00\n')
-a = hex(packing.unpack(a, 32))
-b = hex(packing.unpack(b, 32))
+a = '%#x' % packing.unpack(a, 32)
+b = '%#x' % packing.unpack(b, 32)
 %>
     li ${tmp_reg}, ${a} ^ ${pretty(src)}
     li ${dst}, ${a}
