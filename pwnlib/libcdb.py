@@ -358,6 +358,21 @@ def _extract_pkgfile(cache_dir, package_filename, package):
     from six import BytesIO
     return _extract_tarfile(cache_dir, package_filename, BytesIO(package))
 
+def _find_libc_package_lib_url(libc):
+    # Check https://libc.rip for the libc package
+    libc_match = query_libc_rip({'buildid': enhex(libc.buildid)})
+    if libc_match is not None:
+        for match in libc_match:
+            yield match['libs_url']
+    
+    # Check launchpad.net if it's an Ubuntu libc
+    # GNU C Library (Ubuntu GLIBC 2.36-0ubuntu4)
+    import re
+    version = re.search(br'GNU C Library \(Ubuntu E?GLIBC ([^\)]+)\)', libc.data)
+    if version is not None:
+        libc_version = version.group(1).decode()
+        yield 'https://launchpad.net/ubuntu/+archive/primary/+files/libc6_{}_{}.deb'.format(libc_version, libc.arch)
+
 def download_libraries(libc_path, unstrip=True):
     """download_libraries(str, bool) -> str
     Download the matching libraries for the given libc binary and cache
@@ -404,50 +419,48 @@ def download_libraries(libc_path, unstrip=True):
     if os.path.exists(cache_dir):
         return cache_dir
 
-    libc_match = query_libc_rip({'buildid': enhex(libc.buildid)})
-    if libc_match is None or len(libc_match) == 0:
-        log.warn_once('Failed to find matching libraries for provided libc.')
-        return None
+    for package_url in _find_libc_package_lib_url(libc):
+        extension_handlers = {
+            '.deb': _extract_debfile,
+            '.pkg.tar.xz': _extract_pkgfile,
+            '.pkg.tar.zst': _extract_pkgfile,
+        }
 
-    package_url = libc_match[0]['libs_url']
-    extension_handlers = {
-        '.deb': _extract_debfile,
-        '.pkg.tar.xz': _extract_pkgfile,
-        '.pkg.tar.zst': _extract_pkgfile,
-    }
+        package_filename = os.path.basename(package_url)
+        for extension, handler in extension_handlers.items():
+            if package_filename.endswith(extension):
+                break
+        else:
+            log.failure('Cannot handle %s (%s)', package_filename, package_url)
+            continue
 
-    package_filename = os.path.basename(package_url)
-    for extension, handler in extension_handlers.items():
-        if package_filename.endswith(extension):
-            break
-    else:
-        log.failure('Cannot handle %s (%s)', package_filename, package_url)
-        return None
+        # Download the package
+        package = wget(package_url, timeout=20)
+        if not package:
+            continue
 
-    # Download the package
-    package = wget(package_url, timeout=20)
-    if not package:
-        return None
+        # Create target cache directory to extract files into
+        if not os.path.isdir(cache_dir):
+            os.makedirs(cache_dir)
 
-    # Create target cache directory to extract files into
-    if not os.path.isdir(cache_dir):
-        os.makedirs(cache_dir)
+        try:
+            # Extract the archive
+            libc_path = handler(cache_dir, package_filename, package)
+        except Exception as e:
+            os.removedirs(cache_dir)
+            log.failure('Failed to extract %s: %s', package_filename, e)
+            continue
+        # Unstrip the libc binary
+        try:
+            if unstrip:
+                unstrip_libc(libc_path)
+        except Exception:
+            pass
 
-    try:
-        # Extract the archive
-        libc_path = handler(cache_dir, package_filename, package)
-    except Exception as e:
-        os.removedirs(cache_dir)
-        log.failure('Failed to extract %s: %s', package_filename, e)
-        return None
-    # Unstrip the libc binary
-    try:
-        if unstrip:
-            unstrip_libc(libc_path)
-    except Exception:
-        pass
+        return cache_dir
 
-    return cache_dir
+    log.warn_once('Failed to find matching libraries for provided libc.')
+    return None
 
 def _handle_multiple_matching_libcs(matching_libcs):
     from pwnlib.term import text
