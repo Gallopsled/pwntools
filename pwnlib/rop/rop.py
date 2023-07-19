@@ -1544,22 +1544,17 @@ class ROP(object):
         # Prioritise non-PIE binaries so we can use _fini
         exes = (elf for elf in self.elfs if not elf.library and elf.bits == 64)
 
-        nonpie = csu = None
+        csu = None
         for elf in exes:
-            if not elf.pie:
-                if '__libc_csu_init' in elf.symbols:
-                    break
-                nonpie = elf
-            elif '__libc_csu_init' in elf.symbols:
+            if '__libc_csu_init' in elf.symbols:
                 csu = elf
+                if not elf.pie:
+                    break
+
+        if csu:
+            elf = csu
         else:
             log.error('No non-library binaries in [elfs]')
-
-        if elf.pie:
-            if nonpie:
-                elf = nonpie
-            elif csu:
-                elf = csu
 
         from .ret2csu import ret2csu
         ret2csu(self, elf, edi, rsi, rdx, rbx, rbp, r12, r13, r14, r15, call)
