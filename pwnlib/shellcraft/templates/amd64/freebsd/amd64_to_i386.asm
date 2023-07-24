@@ -5,6 +5,6 @@ in low address space before (or afterwards).</%docstring>
 .code64
     call $+4
     .byte 0xc0  /* inc eax */
-    mov byte ptr [rsp+4], 0x23  /* This is the segment we want to go to */
+    mov byte ptr [rsp+4], 0x33  /* This is the segment we want to go to */
     retfd
 .code32
