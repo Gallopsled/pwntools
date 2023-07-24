@@ -7,8 +7,7 @@
 
 Example:
 
-    >>> with context.local():
-    ...    context.arch = 'i386'
+    >>> with context.local(arch='i386'):
     ...    print(enhex(asm(shellcraft.stackhunter_helper())))
     75fcffe43d75fcffe43d75fcffe43d75fcffe4
 </%docstring>

@@ -13,16 +13,13 @@
 
 Example:
 
-    >>> with context.local():
-    ...    context.arch = 'i386'
+    >>> with context.local(arch='i386'):
     ...    print(enhex(asm(shellcraft.stackhunter())))
     583d75fcffe4ebfa
-    >>> with context.local():
-    ...    context.arch = 'i386'
+    >>> with context.local(arch='i386'):
     ...    print(enhex(asm(shellcraft.stackhunter(0x7afceb58))))
     3d58ebfc7a75faffe4
-    >>> with context.local():
-    ...    context.arch = 'i386'
+    >>> with context.local(arch='i386'):
     ...    print(enhex(asm(shellcraft.stackhunter(0xdeadbeef))))
     583defbeadde75f8ffe4
 </%docstring>
