@@ -85,9 +85,11 @@ if not args.LOCAL:
 %endif
 
 %if libc:
+%if not quiet:
 # Use the specified remote libc version unless explicitly told to use the
 # local system version with the `LOCAL_LIBC` argument.
 # ./exploit.py LOCAL LOCAL_LIBC
+%endif
 if args.LOCAL_LIBC:
     libc = exe.libc
 %if host:
