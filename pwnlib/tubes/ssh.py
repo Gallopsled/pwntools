@@ -1090,7 +1090,7 @@ raise OSError("execve failed")
             execve_repr = "execve(%r, %s, %s)" % (executable,
                                                   argv,
                                                   'os.environ'
-                                                  if (env in (None, os.environb))
+                                                  if (env in (None, getattr(os, "environb", os.environ))) 
                                                   else env)
             # Avoid spamming the screen
             if self.isEnabledFor(logging.DEBUG) and len(execve_repr) > 512:
