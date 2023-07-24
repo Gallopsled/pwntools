@@ -190,8 +190,8 @@ else:
     % else:
         <%
         a,b = fiddling.xor_pair(srcp, avoid = '\x00\n')
-        a = hex(packing.unpack(a, dest.size))
-        b = hex(packing.unpack(b, dest.size))
+        a = '%#x' % packing.unpack(a, dest.size)
+        b = '%#x' % packing.unpack(b, dest.size)
         %>\
         mov ${dest}, ${a}
         xor ${dest}, ${a} ^ ${pretty(src)}
