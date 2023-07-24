@@ -334,7 +334,7 @@ def _extract_debfile(cache_dir, package_filename, package):
                 files_in_deb = subprocess.check_output(['ar', 't', debfile.name]).split(b'\n')
             except subprocess.CalledProcessError:
                 log.error('Failed to list files in .deb archive.')
-            data_filename = filter(lambda f: f.startswith(b'data.tar'), files_in_deb)[0]
+            [data_filename] = filter(lambda f: f.startswith(b'data.tar'), files_in_deb)
 
             try:
                 subprocess.check_call(['ar', 'x', debfile.name, data_filename], cwd=tempdir)
