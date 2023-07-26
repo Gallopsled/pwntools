@@ -80,6 +80,6 @@ source = [
     "pwn",
     "pwnlib",
     "~/.cache/.pwntools-cache-2.7/",
-    "~/.cache/.pwntools-cache-3.8/",
+    "~/.cache/.pwntools-cache-3.10/",
 ]
 disable_warnings = ["module-not-imported"]
