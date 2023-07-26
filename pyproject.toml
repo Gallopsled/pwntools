@@ -54,6 +54,8 @@ dependencies = [
     "rpyc",
     "colored_traceback",
     "pathlib2; python_version < '3.4'",
+    "unix-ar; python_version >= '3'",
+    "zstandard",
 ]
 
 [project.urls]
