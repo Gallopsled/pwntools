@@ -71,12 +71,14 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2117][2117] Add -p (--prefix) and -s (--separator) arguments to `hex` command
 - [#2221][2221] Add shellcraft.sleep template wrapping SYS_nanosleep
 - [#2219][2219] Fix passing arguments on the stack in shellcraft syscall template
+- [#2212][2212] Add `--libc libc.so` argument to `pwn template` command
 - [#2225][2225] Fix bug at ssh.py:process() - empty argv[0] Error
 
 [2202]: https://github.com/Gallopsled/pwntools/pull/2202
 [2117]: https://github.com/Gallopsled/pwntools/pull/2117
 [2221]: https://github.com/Gallopsled/pwntools/pull/2221
 [2219]: https://github.com/Gallopsled/pwntools/pull/2219
+[2212]: https://github.com/Gallopsled/pwntools/pull/2212
 [2225]: https://github.com/Gallopsled/pwntools/pull/2225
 
 ## 4.11.0 (`beta`)
