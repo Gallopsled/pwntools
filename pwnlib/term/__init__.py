@@ -13,8 +13,6 @@ from pwnlib.term import text
 
 # Re-exports (XXX: Are these needed?)
 output = term.output
-width =  term.width
-height = term.height
 getkey = key.get
 Keymap = keymap.Keymap
 

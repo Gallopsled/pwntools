@@ -410,13 +410,10 @@ def readline(_size=-1, prompt='', float=True, priority=10):
     finally:
         line = buffer_left + buffer_right + '\n'
         buffer_handle.update(line)
-        buffer_handle.freeze()
         buffer_handle = None
         if prompt_handle:
-            prompt_handle.freeze()
             prompt_handle = None
         if suggest_handle:
-            suggest_handle.freeze()
             suggest_handle = None
         if shutdown_hook:
             shutdown_hook()

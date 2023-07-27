@@ -107,9 +107,9 @@ def yesno(prompt, default=None):
         yesfocus, yes = term.text.bold('Yes'), 'yes'
         nofocus, no = term.text.bold('No'), 'no'
         hy = term.output(yesfocus if default is True else yes)
-        term.output('/')
+        hs = term.output('/')
         hn = term.output(nofocus if default is False else no)
-        term.output(']\n')
+        he = term.output(']\n')
         cur = default
         while True:
             k = term.key.get()
@@ -361,6 +361,5 @@ def more(text):
                 print(l)
             if i + step < len(lines):
                 term.key.get()
-        h.delete()
     else:
         print(text)
