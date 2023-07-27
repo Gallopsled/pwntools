@@ -236,8 +236,9 @@ def goto(rc):
 
 
 class Cell(object):
-    def __init__(self, value):
+    def __init__(self, value, float, priority):
         self.value = value
+        self.float = float
         self.draw()
 
     def draw(self):
@@ -280,20 +281,34 @@ class Cell(object):
             flush()
 
 
-class WeakList(list):
+class WeakCellList(object):
+    def __init__(self):
+        self.cells = []
+        self.floats = []
+
     def __iter__(self):
-        for iref in self[:]:
+        for iref in self.cells[:]:
             i = iref()
             if i is None:
-                self.remove(iref)
+                self.cells.remove(iref)
+            else:
+                yield i
+
+        for iref in self.floats[:]:
+            i = iref()
+            if i is None:
+                self.floats.remove(iref)
             else:
                 yield i
 
     def append(self, v):
-        super(WeakList, self).append(weakref.ref(v))
+        if v.float:
+            self.floats.append(weakref.ref(v))
+        else:
+            self.cells.append(weakref.ref(v))
 
 
-cells = WeakList()
+cells = WeakCellList()
 
 
 def get_position():
@@ -323,11 +338,13 @@ def get_position():
     return tuple(cached_pos)
 
 
-def output(s, frozen=False):
+def output(s='', float=False, priority=10, frozen=False, indent=0):
     with rlock, winchlock:
+        if isinstance(s, bytes):
+            s = s.decode('utf-8', 'backslashreplace')
         if frozen:
             return put(s)
 
-        c = Cell(s)
+        c = Cell(s, float, priority)
         cells.append(c)
         return c
