@@ -1591,6 +1591,10 @@ def uninstall(package, *arguments):
 @context.quietfunc
 def packages():
     """Returns a list of packages installed on the system"""
+
+    # Decodes the received bytes as UTF-8 per:
+    # https://stuff.mit.edu/afs/sipb/project/android/docs/reference/java/nio/charset/Charset.html
+    # where it is specified that UTF-8 is the default charset for Android.
     packages = process(['pm', 'list', 'packages']).recvall().decode('utf-8')
     return [line.split('package:', 1)[-1] for line in packages.splitlines()]
 
