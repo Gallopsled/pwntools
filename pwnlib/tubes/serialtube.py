@@ -28,19 +28,28 @@ class serialtube(tube.tube):
                 port = '/dev/ttyUSB0'
 
         self.convert_newlines = convert_newlines
-        self.conn = serial.Serial(
-            port = port,
-            baudrate = baudrate,
-            bytesize = bytesize,
-            parity = parity,
-            stopbits = stopbits,
-            timeout = 0,
-            xonxoff = xonxoff,
-            rtscts = rtscts,
-            writeTimeout = None,
-            dsrdtr = dsrdtr,
-            interCharTimeout = 0
-        )
+        # serial.Serial might throw an exception, which must be handled
+        # and propagated accordingly using self.exception
+        try:
+            self.conn = serial.Serial(
+                port = port,
+                baudrate = baudrate,
+                bytesize = bytesize,
+                parity = parity,
+                stopbits = stopbits,
+                timeout = 0,
+                xonxoff = xonxoff,
+                rtscts = rtscts,
+                writeTimeout = None,
+                dsrdtr = dsrdtr,
+                interCharTimeout = 0
+            )
+        except serial.SerialException:
+            # self.conn is set to None to avoid an AttributeError when
+            # initialization fails, but the program still tries closing
+            # the serial tube anyway
+            self.conn = None
+            self.exception("Could not open a serial tube on port %s", port)
 
     # Implementation of the methods required for tube
     def recv_raw(self, numb):

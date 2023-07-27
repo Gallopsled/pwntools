@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.11.0](#4110)  | `dev`    |
-| [4.10.0](#4100)  | `beta`   |
-| [4.9.0](#490)    | `stable` | Dec 29, 2022
+| [4.12.0](#4120)  | `dev`    |
+| [4.11.0](#4110)  | `beta`   |
+| [4.10.0](#4100)  | `stable` | May 21, 2023
+| [4.9.0](#490)    |          | Dec 29, 2022
 | [4.8.0](#480)    |          | Apr 21, 2022
 | [4.7.1](#471)    |          | Apr 20, 2022
 | [4.7.0](#470)    |          | Nov 15, 2021
@@ -65,29 +66,44 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.11.0 (`dev`)
-
-- [#2185][2185] make fmtstr module able to create payload without $ notation 
-- [#2062][2062] make pwn cyclic -l work with entry larger than 4 bytes
-- [#2092][2092] shellcraft: dup() is now called dupio() consistently across all supported arches
-- [#2093][2093] setresuid() in shellcraft uses current euid by default
-- [#2103][2103] Add search for libc binary by leaked function addresses `libcdb.search_by_symbol_offsets()`
-- [#2125][2125] Allow tube.recvregex to return capture groups
-- [#2144][2144] Removes `p2align 2` `asm()` headers from `x86-32`, `x86-64` and `mips` architectures to avoid inconsistent instruction length when patching binaries
-- [#2177][2177] Support for RISC-V 64-bit architecture
+## 4.12.0 (`dev`)
+- [#2202][2202] Fix `remote` and `listen` in sagemath
+- [#2117][2117] Add -p (--prefix) and -s (--separator) arguments to `hex` command
+- [#2221][2221] Add shellcraft.sleep template wrapping SYS_nanosleep
+- [#2219][2219] Fix passing arguments on the stack in shellcraft syscall template
+- [#2212][2212] Add `--libc libc.so` argument to `pwn template` command
 - [#2189][2189] Explicitly define p64/u64 functions for IDE support
 
-[2185]: https://github.com/Gallopsled/pwntools/pull/2185
-[2062]: https://github.com/Gallopsled/pwntools/pull/2062
-[2092]: https://github.com/Gallopsled/pwntools/pull/2092
-[2093]: https://github.com/Gallopsled/pwntools/pull/2093
-[2103]: https://github.com/Gallopsled/pwntools/pull/2103
-[2125]: https://github.com/Gallopsled/pwntools/pull/2125
-[2144]: https://github.com/Gallopsled/pwntools/pull/2144
-[2177]: https://github.com/Gallopsled/pwntools/pull/2177
+[2202]: https://github.com/Gallopsled/pwntools/pull/2202
+[2117]: https://github.com/Gallopsled/pwntools/pull/2117
+[2221]: https://github.com/Gallopsled/pwntools/pull/2221
+[2219]: https://github.com/Gallopsled/pwntools/pull/2219
+[2212]: https://github.com/Gallopsled/pwntools/pull/2212
 [2189]: https://github.com/Gallopsled/pwntools/pull/2189
 
-## 4.10.0 (`beta`)
+## 4.11.0 (`beta`)
+
+- [#2185][2185] make fmtstr module able to create payload without $ notation 
+- [#2103][2103] Add search for libc binary by leaked function addresses `libcdb.search_by_symbol_offsets()`
+- [#2177][2177] Support for RISC-V 64-bit architecture
+- [#2186][2186] Enhance `ELF.nx` and `ELF.execstack`
+- [#2129][2129] Handle `context.newline` correctly when typing in `tube.interactive()`
+
+[2185]: https://github.com/Gallopsled/pwntools/pull/2185
+[2103]: https://github.com/Gallopsled/pwntools/pull/2103
+[2177]: https://github.com/Gallopsled/pwntools/pull/2177
+[2186]: https://github.com/Gallopsled/pwntools/pull/2186
+[2129]: https://github.com/Gallopsled/pwntools/pull/2129
+
+## 4.10.1 (`stable`)
+
+- [#2214][2214] Fix bug at ssh.py:`download` and `download_file` with relative paths
+
+[2214]: https://github.com/Gallopsled/pwntools/pull/2214
+
+## 4.10.0
+
+In memoriam — [Zach Riggle][zach] — long time contributor and maintainer of Pwntools.
 
 - [#2062][2062] make pwn cyclic -l work with entry larger than 4 bytes
 - [#2092][2092] shellcraft: dup() is now called dupio() consistently across all supported arches
@@ -100,8 +116,9 @@ The table below shows which release corresponds to each branch, and what date th
 [2093]: https://github.com/Gallopsled/pwntools/pull/2093
 [2125]: https://github.com/Gallopsled/pwntools/pull/2125
 [2144]: https://github.com/Gallopsled/pwntools/pull/2144
+[zach]: https://github.com/zachriggle
 
-## 4.9.0 (`stable`)
+## 4.9.0
 
 - [#1975][1975] Add libcdb commandline tool
 - [#1979][1979] Add `js_escape()` and `js_unescape()` to `util.fiddling`

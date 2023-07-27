@@ -18,6 +18,7 @@ parser.add_argument('--host', help='Remote host / SSH server')
 parser.add_argument('--port', help='Remote port / SSH port', type=int)
 parser.add_argument('--user', help='SSH Username')
 parser.add_argument('--pass', '--password', help='SSH Password', dest='password')
+parser.add_argument('--libc', help='Path to libc binary to use')
 parser.add_argument('--path', help='Remote path of file on SSH server')
 parser.add_argument('--quiet', help='Less verbose template comments', action='store_true')
 parser.add_argument('--color', help='Print the output in color', choices=['never', 'always', 'auto'], default='auto')
@@ -53,6 +54,7 @@ def main(args):
                              args.port,
                              args.user,
                              args.password,
+                             args.libc,
                              args.path,
                              args.quiet)
 
