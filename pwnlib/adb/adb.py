@@ -1591,7 +1591,7 @@ def uninstall(package, *arguments):
 @context.quietfunc
 def packages():
     """Returns a list of packages installed on the system"""
-    packages = process(['pm', 'list', 'packages']).recvall()
+    packages = process(['pm', 'list', 'packages']).recvall().decode('utf-8')
     return [line.split('package:', 1)[-1] for line in packages.splitlines()]
 
 @context.quietfunc
