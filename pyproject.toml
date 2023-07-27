@@ -70,3 +70,18 @@ include-package-data = false
 
 [tool.setuptools.packages.find]
 namespaces = false
+
+[tool.coverage.run]
+branch = true
+parallel = true
+concurrency = ["thread", "multiprocessing"]
+omit = [
+    "*/constants/*",
+]
+source = [
+    "pwn",
+    "pwnlib",
+    "~/.cache/.pwntools-cache-2.7/",
+    "~/.cache/.pwntools-cache-3.10/",
+]
+disable_warnings = ["module-not-imported"]
