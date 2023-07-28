@@ -172,6 +172,8 @@ def init():
             os.close(fd.fileno())
     sys.excepthook = hook
 
+tmap = {c: '\\x{:02x}'.format(c) for c in set(range(0x20)) - {0x09, 0x0a, 0x0d} | {0x7f}}
+
 def put(s):
     global cached_pos, scroll
     if cached_pos:
@@ -208,7 +210,7 @@ def put(s):
             else:
                 # normal character, nothing to see here
                 cached_pos[1] += 1
-    fd.write(s)
+    fd.write(s.translate(tmap))
 
 def flush(): fd.flush()
 
