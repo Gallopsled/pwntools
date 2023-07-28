@@ -255,7 +255,7 @@ class Cell(object):
                     cell.draw()
             else:
                 saved = get_position()
-                if saved < self.pos:
+                if saved < self.pos or saved == (1, 1):
                     epoch += 1
                     for cell in cells:
                         cell.draw()
