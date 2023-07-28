@@ -5,14 +5,14 @@ jobs:
   test:
     strategy:
       matrix:
-        python_version: [2.7, 3.8]
+        python_version: ['2.7', '3.10']
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
     - uses: actions/checkout@v3
       with:
-        fetch-depth: 0
+        fetch-depth: 20
 
     - name: Git History
       run: |
@@ -74,7 +74,8 @@ jobs:
           binutils-sparc64-linux-gnu \
           gcc-multilib \
           libc6-dbg \
-          elfutils
+          elfutils \
+          patchelf
       
     - name: Testing Corefiles
       run: |
@@ -186,10 +187,34 @@ jobs:
         name: packages
         path: dist/
 
+    - uses: actions/upload-artifact@v2
+      with:
+        name: coverage
+        path: .coverage*
+
+
+  upload-coverage:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 20
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: coverage
+        path: .
+
+    - name: Install coveralls
+      run: |
+        pip install tomli coveralls
+
     - name: Upload coverage to coveralls.io
       run: |
         coverage combine
         COVERALLS_REPO_TOKEN=PP20MEgztXIQJJTguQwe2jeCh6Bm4lkbv coveralls
+
 
   staging-merge:
     runs-on: ubuntu-latest
@@ -208,6 +233,7 @@ jobs:
         git branch -f "$TARGET"
         git push origin "$TARGET"
         git push origin --delete "$BRANCH"
+
 
   pypi:
     runs-on: ubuntu-latest
